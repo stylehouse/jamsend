@@ -10,10 +10,32 @@ story:Snaptesting
       style:background-color,v:#8e29d6
     matstyle:see
       style:background-color,v:#c5b759
+    matstyle:fail
+      style:background-color,v:#298699
+    matstyle:pass
+      style:background-color,v:#bc2476
+    matstyle:one_as_string
+      style:background-color,v:#61bd42
+    matstyle:finished
+      style:background-color,v:#534ed0
+    matstyle:bignumber
+      style:background-color,v:#a34b1f
+    matstyle:req
+      style:background-color,v:#3aa67e
+    matstyle:zero
+      style:background-color,v:#bd36c9
+    matstyle:count
+      style:background-color,v:#bbdb43
   Plan
   Opt
     For
+    noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.025
+    TimeTotal:beliefs,avg:0.024
       sample:0.025,at:1780571790
-  step,dige:55c5be2b5be70bca
+      sample:0.018,at:1780572944
+      sample:0.024,at:1780572973
+      sample:0.024,at:1780573023
+      sample:0.024,at:1780573096
+      sample:0.032,at:1780573097
+  step,dige:8e462b7752981747

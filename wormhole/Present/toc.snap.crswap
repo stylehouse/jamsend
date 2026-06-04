@@ -152,10 +152,9 @@ Library
         sample:0.131,at:1780528488
         sample:0.131,at:1780528488
         sample:0.131,at:1780528492
-  Book:Snaptesting,active,ok_pct,done,last_run_ms:1780573102.82
+  Book:Snaptesting,active,ok_pct,done,last_run_ms:1780573103.462
     TimeSpool
-      TimeTotal:beliefs,avg:0.027
-        sample:0.024,at:1780573084
+      TimeTotal:beliefs,avg:0.028
         sample:0.024,at:1780573088
         sample:0.024,at:1780573092
         sample:0.024,at:1780573095
@@ -165,3 +164,4 @@ Library
         sample:0.032,at:1780573098
         sample:0.032,at:1780573099
         sample:0.032,at:1780573102
+        sample:0.032,at:1780573103

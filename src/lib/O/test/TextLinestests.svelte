@@ -10,24 +10,20 @@
     //     key=1    — the number  1
     //     key      — same as key=1     (bare key → number 1, most common flag)
     //
-    //   Hex strings that happen to look numeric are always strings when written
-    //   with ":" — "dige:deadbeef" is a string, never coerced.
-    //
-    //   Encoding decisions in encode_stringies:
-    //     number  → bare key  (key=1  in peel terms, emitted as key when value=1)
-    //     string  → key:value (key:v  in peel terms)
-    //     if any key or value contains :/,/\t/\n → fallback to JSON
-    //
-    //   Large numbers, floats, and subnormals all encode as numbers (key=N form).
+    //   Strings are always written with ":" and always decoded as strings.
+    //   Numbers are always written bare (or key=N) and decoded as numbers.
+    //   The codec never coerces — "3" stays "3", 3 stays 3.
     //
     // ── Snap test format ──────────────────────────────────────────────────────
     //
-    //   Snaptesting writes particles into w, encodes via encode_wh_lines,
-    //   then decodes via decode_wh_lines and asserts round-trip equality.
-    //   Each section uses w.r({section:N},{}) to isolate test groups.
+    //   Each section:
+    //     await w.r({section:N},{})       — wipe prior %section particles (re-entry safe)
+    //     t = w.i({section:'...'})        — section particle, collects all marks
+    //     const n = t.i({...data...})     — data particle (TheC returned by t.i())
+    //     assert_eq(label, got, want)     — marks %pass or %fail into t
     //
-    //   The nowriting opt is set on w/{Opt:1}/{nowriting:1} so LiesStore_write
-    //   logs intent rather than hitting disk — tests stay in-memory.
+    //   round_trip(n) takes the TheC from t.i(), encodes its .sc through
+    //   encode_wh_lines → decode_wh_lines, and returns the decoded sc.
     //
     // ── Migration format ──────────────────────────────────────────────────────
     //
@@ -50,32 +46,33 @@
     // ── Snaptesting ───────────────────────────────────────────────────────────
     //
     //   Round-trip tests for the number vs string encoding split.
-    //
-    //   w.r({section:N},{}) resets the test basket between groups.
-    //
-    //   Assertions use assert_eq(label, got, want) which logs and counts failures.
+    //   w thinks more than once — w.r({section:N},{}) wipes the prior section
+    //   particle each entry so t is always freshly created by w.i().
     //
     async Snaptesting(A: TheC, w: TheC) {
         const H = this as House
         let failures = 0
-        let t // current section
+        let t: TheC   // current section particle — all marks go in here
 
         const assert_eq = (label: string, got: any, want: any) => {
             const ok = JSON.stringify(got) === JSON.stringify(want)
             if (!ok) {
                 console.error(`❌ ${label}:`, { got, want })
+                t.i({ fail: label, got: String(got), want: String(want) })
                 failures++
             } else {
-                console.log(`✅ ${label}`)
+                t.i({ pass: label })
             }
         }
 
-        // round-trip a particle through encode_wh_lines → decode_wh_lines
-        //   and return the decoded sc so assertions can check field types.
-        const round_trip = async (sc: Record<string, any>): Promise<Record<string, any>> => {
+        // round-trip n.sc through encode_wh_lines → decode_wh_lines.
+        //   Takes the TheC returned by t.i() — its .sc is the data under test.
+        //   Builds a throwaway root around a fresh copy for encoding so the
+        //   live tree isn't disturbed.
+        const round_trip = async (n: TheC): Promise<Record<string, any>> => {
             const { _C } = await import('$lib/data/Stuff.svelte')
-            const root = _C({ section: 'rt_root' })
-            root.i(_C({ ...sc }))
+            const root = _C({ rt_root: 1 })
+            root.i(_C({ ...n.sc }))
             const { snap, errors } = await H.encode_wh_lines(root, {})
             if (errors.length) throw new Error(`encode errors: ${errors.join('; ')}`)
             const { C, errors: de } = H.decode_wh_lines(snap)
@@ -89,130 +86,123 @@
         // ── section 1: Lines-encoding is explicit about number|string ─────────
         //
         //   "key:1"   encodes the string "1" → round-trips as string "1"
-        //   "key=1"   would never appear written — bare key means the number 1
-        //   key       bare key (number 1) → round-trips as number 1
+        //   key       bare key (number 1)    → round-trips as number 1
         //
         await w.r({ section: 1 }, {})
+        t = w.i({ section: 'Lines-encoding is explicit about number|string' })
         {
-            // three_as_string:'3' must round-trip as the string "3", not number 3
-            // three_as_number:3 must round-trip as the number 3
-            const t = w.i({ section: 'Lines-encoding is explicit about number|string' })
-            const sc1 = t.i({ three_as_string: '3', three_as_number: 3 })
-            const sc2 = t.i({ one_as_string: '1', one_as_number: 1 })
-
-            const rt1 = await round_trip(sc1)
+            const n1 = t.i({ three_as_string: '3', three_as_number: 3 })
+            const rt1 = await round_trip(n1)
             assert_eq('three_as_string is string', typeof rt1.three_as_string, 'string')
-            assert_eq('three_as_string value', rt1.three_as_string, '3')
+            assert_eq('three_as_string value',     rt1.three_as_string,        '3')
             assert_eq('three_as_number is number', typeof rt1.three_as_number, 'number')
-            assert_eq('three_as_number value', rt1.three_as_number, 3)
+            assert_eq('three_as_number value',     rt1.three_as_number,        3)
 
-            // one_as_string:'1' — the codec path most likely to be confused with a flag
-            const rt2 = await round_trip(sc2)
+            // one_as_string:'1' — most likely to be confused with a flag
+            const n2 = t.i({ one_as_string: '1', one_as_number: 1 })
+            const rt2 = await round_trip(n2)
             assert_eq('one_as_string is string', typeof rt2.one_as_string, 'string')
-            assert_eq('one_as_string value', rt2.one_as_string, '1')
-            assert_eq('three_as_number (2) is number', typeof rt2.three_as_number, 'number')
-            assert_eq('three_as_number (2) value', rt2.three_as_number, 3)
+            assert_eq('one_as_string value',     rt2.one_as_string,        '1')
+            assert_eq('one_as_number is number', typeof rt2.one_as_number, 'number')
+            assert_eq('one_as_number value',     rt2.one_as_number,        1)
         }
 
         // ── section 2: flags (bare key = number 1) ────────────────────────────
+        await w.r({ section: 2 }, {})
+        t = w.i({ section: 'flags' })
         {
-            // {finished:1} is the canonical flag form — must round-trip as number 1
-            const rt = await round_trip({ finished: 1, count: 7 })
+            const n = t.i({ finished: 1, count: 7 })
+            const rt = await round_trip(n)
             assert_eq('finished flag is number', typeof rt.finished, 'number')
-            assert_eq('finished flag value', rt.finished, 1)
-            assert_eq('count is number', typeof rt.count, 'number')
-            assert_eq('count value', rt.count, 7)
+            assert_eq('finished flag value',     rt.finished,        1)
+            assert_eq('count is number',         typeof rt.count,    'number')
+            assert_eq('count value',             rt.count,           7)
         }
 
         // ── section 3: large and small numbers ────────────────────────────────
         //
-        //   Numbers must stay numbers across round-trip regardless of magnitude.
-        //   Subnormals and >Number.MAX_SAFE_INTEGER are edge cases for JSON,
-        //   but encode_stringies passes them through as numbers — peel handles them.
+        //   Numbers stay numbers across round-trip regardless of magnitude.
+        //   bignumber > Number.MAX_SAFE_INTEGER — peel writes it bare.
+        //   tinynumber is your 0.000000000000000000000000000000000000000000000004
+        //   which rounds to the nearest representable float.
         //
         await w.r({ section: 3 }, {})
+        t = w.i({ section: 'large and small numbers' })
         {
-            const bignumber   = 6325612519811704
-            const smallnumber = 0.000024
-            // subnormal — smallest positive float, effectively 5e-324
-            const tinynumber  = 5e-324
-
-            const rt = await round_trip({ bignumber, smallnumber, tinynumber })
-            assert_eq('bignumber type', typeof rt.bignumber, 'number')
-            assert_eq('bignumber value', rt.bignumber, bignumber)
-            assert_eq('smallnumber type', typeof rt.smallnumber, 'number')
-            assert_eq('smallnumber value', rt.smallnumber, smallnumber)
-            assert_eq('tinynumber type', typeof rt.tinynumber, 'number')
-            // subnormals may not survive JSON encode faithfully — assert type at minimum
-            assert_eq('tinynumber is finite or zero', isFinite(rt.tinynumber) || rt.tinynumber === 0, true)
+            const n = t.i({
+                bignumber:   6325612519811704,
+                smallnumber: 0.000024,
+                tinynumber:  0.000000000000000000000000000000000000000000000004,
+            })
+            const rt = await round_trip(n)
+            assert_eq('bignumber type',    typeof rt.bignumber,   'number')
+            assert_eq('bignumber value',   rt.bignumber,          6325612519811704)
+            assert_eq('smallnumber type',  typeof rt.smallnumber, 'number')
+            assert_eq('smallnumber value', rt.smallnumber,        0.000024)
+            assert_eq('tinynumber type',   typeof rt.tinynumber,  'number')
+            // tinynumber rounds to the nearest float — just assert it survived as a number
+            assert_eq('tinynumber is a number', Number.isFinite(rt.tinynumber) || rt.tinynumber === 0, true)
         }
 
-        // ── section 4: hex dige strings ───────────────────────────────────────
-        //
-        //   A hex string like "deadbeef" must never be coerced to a number.
-        //   dige values are always strings even if they parse as hex numbers.
-        //
+        // ── section 4: mixed particle — realistic req fields ──────────────────
         await w.r({ section: 4 }, {})
+        t = w.i({ section: 'realistic req fields' })
         {
-            const rt = await round_trip({ dige: 'deadbeef01234567', base_dige: 'cafebabe00000001' })
-            assert_eq('dige is string', typeof rt.dige, 'string')
-            assert_eq('dige value', rt.dige, 'deadbeef01234567')
-            assert_eq('base_dige is string', typeof rt.base_dige, 'string')
-            assert_eq('base_dige value', rt.base_dige, 'cafebabe00000001')
-        }
-
-        // ── section 5: mixed particle — realistic req fields ──────────────────
-        await w.r({ section: 5 }, {})
-        {
-            const rt = await round_trip({
-                req:      'wread',       // string mainkey value
-                rw_name:  'wormhole/Ghost/Tour/toc.snap',  // path string with /
-                finished: 1,             // flag
-                req_i:    42,            // serial number
+            const n = t.i({
+                req:      'wread',
+                rw_name:  'wormhole/Ghost/Tour/toc.snap',
+                finished: 1,
+                req_i:    42,
                 label:    'source_check',
             })
-            assert_eq('req is string', typeof rt.req, 'string')
-            assert_eq('req value', rt.req, 'wread')
-            assert_eq('rw_name is string', typeof rt.rw_name, 'string')
+            const rt = await round_trip(n)
+            assert_eq('req is string',      typeof rt.req,      'string')
+            assert_eq('req value',          rt.req,             'wread')
+            assert_eq('rw_name is string',  typeof rt.rw_name,  'string')
             assert_eq('finished is number', typeof rt.finished, 'number')
-            assert_eq('req_i is number', typeof rt.req_i, 'number')
-            assert_eq('req_i value', rt.req_i, 42)
-            assert_eq('label is string', typeof rt.label, 'string')
+            assert_eq('req_i is number',    typeof rt.req_i,    'number')
+            assert_eq('req_i value',        rt.req_i,           42)
+            assert_eq('label is string',    typeof rt.label,    'string')
         }
 
-        // ── section 6: zero and negative numbers ──────────────────────────────
-        await w.r({ section: 6 }, {})
+        // ── section 5: zero and negative numbers ──────────────────────────────
+        await w.r({ section: 5 }, {})
+        t = w.i({ section: 'zero and negative numbers' })
         {
-            const rt = await round_trip({ zero: 0, negative: -3, neg_float: -0.001 })
-            assert_eq('zero type', typeof rt.zero, 'number')
-            assert_eq('zero value', rt.zero, 0)
-            assert_eq('negative type', typeof rt.negative, 'number')
-            assert_eq('negative value', rt.negative, -3)
+            const n = t.i({ zero: 0, negative: -3, neg_float: -0.001 })
+            const rt = await round_trip(n)
+            assert_eq('zero type',      typeof rt.zero,      'number')
+            assert_eq('zero value',     rt.zero,             0)
+            assert_eq('negative type',  typeof rt.negative,  'number')
+            assert_eq('negative value', rt.negative,         -3)
             assert_eq('neg_float type', typeof rt.neg_float, 'number')
         }
 
-        // ── section 7: string that looks like a number ────────────────────────
+        // ── section 6: strings that look like numbers ─────────────────────────
         //
-        //   "42" as a string must not be decoded as the number 42.
-        //   encode_stringies uses the presence of a colon to signal string,
-        //   so "count:'42'" must remain a string.
+        //   The colon in the encoded form is what tells the decoder "string".
+        //   "42" stays "42", "0" stays "0", "1" stays "1" — never coerced.
         //
-        await w.r({ section: 7 }, {})
+        await w.r({ section: 6 }, {})
+        t = w.i({ section: 'strings that look like numbers' })
         {
-            const rt = await round_trip({ count: '42', version: '1.2.3' })
-            assert_eq('count is string', typeof rt.count, 'string')
-            assert_eq('count value', rt.count, '42')
-            assert_eq('version is string', typeof rt.version, 'string')
-            assert_eq('version value', rt.version, '1.2.3')
+            const n = t.i({ count: '42', zero_str: '0', version: '1.2.3', flag_str: '1' })
+            const rt = await round_trip(n)
+            assert_eq('count is string',    typeof rt.count,    'string')
+            assert_eq('count value',        rt.count,           '42')
+            assert_eq('zero_str is string', typeof rt.zero_str, 'string')
+            assert_eq('zero_str value',     rt.zero_str,        '0')
+            assert_eq('version is string',  typeof rt.version,  'string')
+            assert_eq('version value',      rt.version,         '1.2.3')
+            assert_eq('flag_str is string', typeof rt.flag_str, 'string')
+            assert_eq('flag_str value',     rt.flag_str,        '1')
         }
 
-        if (failures) {
-            console.error(`Snaptesting: ${failures} failure(s)`)
-            w.i({ see: `❌ Snaptesting: ${failures} failures` })
-        } else {
-            console.log('Snaptesting: all passed ✅')
-            w.i({ see: '✅ Snaptesting passed' })
-        }
+        const summary = failures
+            ? `❌ Snaptesting: ${failures} failure(s)`
+            : '✅ Snaptesting passed'
+        console.log(summary)
+        w.i({ see: summary })
     },
 
 //#endregion
@@ -223,11 +213,15 @@
     //   Depth-first scan of every .snap file reachable from Wormhole.
     //   For each file: decode_wh_lines → encode_wh_lines → if snap changed, write back.
     //
-    //   The encode step applies the current codec rules (colon=string, bare=number),
+    //   The re-encode step applies current codec rules (colon=string, bare=number)
     //   so any old file that conflated them gets corrected in place.
     //
     //   Errors from decode or encode abort that file (logged, not thrown).
-    //   A dry_run:1 opt skips the write and logs what would change.
+    //   dry_run opt skips writes and logs what would change.
+    //
+    //   w thinks more than once here — walk_dir and migrate_snap check
+    //   req.sc.finished and arm ttlilt to re-enter on the next tick if not ready.
+    //   Counters live on w.c so they accumulate correctly across re-entries.
     //
     async Snapmigrating(A: TheC, w: TheC) {
         const H = this as House
@@ -235,18 +229,14 @@
         const dry_run = !!H.o_Opt_val(w, 'dry_run')
         if (dry_run) console.log('🔎 Snapmigrating: dry run — no writes')
 
-        let migrated = 0
-        let skipped  = 0
-        let errors   = 0
+        // counters survive re-entry on w.c
+        w.c.snap_migrated ??= 0
+        w.c.snap_skipped  ??= 0
+        w.c.snap_errors   ??= 0
 
-        // walk_dir: depth-first directory listing via LiesStore_listing.
-        //   Returns when every .snap file in the subtree has been visited.
         const walk_dir = async (dir: string) => {
             const req = await H.LiesStore_listing(w, dir)
-
-            // wait for the listing to complete (one tick each time)
             if (!req.sc.finished) {
-                // re-entry: caller drives us back on the next tick via ttlilt
                 H.i_req_ttlilt(req, 0.5, { waiting: 'listing' })
                 return
             }
@@ -255,29 +245,23 @@
             if (reply?.not_found) return
             if (reply?.error) {
                 console.error(`Snapmigrating: listing error at ${dir}:`, reply.error)
-                errors++
+                w.c.snap_errors++
                 return
             }
 
             const entries: Array<{ name: string, is_dir: boolean }> = reply?.entries ?? []
 
-            // recurse into subdirectories first (depth-first)
+            // depth-first: subdirectories before files at this level
             for (const entry of entries) {
-                if (entry.is_dir) {
-                    await walk_dir(`${dir}/${entry.name}`)
-                }
+                if (entry.is_dir) await walk_dir(`${dir}/${entry.name}`)
             }
-
-            // then handle .snap files at this level
             for (const entry of entries) {
                 if (!entry.name.endsWith('.snap')) continue
-                const path = `${dir}/${entry.name}`
-                await migrate_snap(path)
+                await migrate_snap(`${dir}/${entry.name}`)
             }
         }
 
         const migrate_snap = async (path: string) => {
-            // read the snap
             const rreq = await H.LiesStore_read(w, path)
             if (!rreq.sc.finished) {
                 H.i_req_ttlilt(rreq, 0.5, { waiting: 'read' })
@@ -285,60 +269,50 @@
             }
 
             const reply = rreq.sc.reply as any
-            if (reply?.not_found) { skipped++; return }
+            if (reply?.not_found) { w.c.snap_skipped++; return }
             if (reply?.error) {
                 console.error(`Snapmigrating: read error at ${path}:`, reply.error)
-                errors++
+                w.c.snap_errors++
                 return
             }
 
             const old_snap = reply.content as string
 
-            // decode with current codec
             const { C, errors: de } = H.decode_wh_lines(old_snap)
             if (!C) {
                 console.error(`Snapmigrating: decode failed at ${path}:`, de)
-                errors++
+                w.c.snap_errors++
                 return
             }
-            if (de.length) {
-                console.warn(`Snapmigrating: decode warnings at ${path}:`, de)
-            }
+            if (de.length) console.warn(`Snapmigrating: decode warnings at ${path}:`, de)
 
-            // re-encode with current codec
             const { snap: new_snap, errors: ee } = await H.encode_wh_lines(C, {})
             if (ee.length) {
                 console.error(`Snapmigrating: encode errors at ${path}:`, ee)
-                errors++
+                w.c.snap_errors++
                 return
             }
 
-            if (new_snap === old_snap) {
-                skipped++
-                return
-            }
+            if (new_snap === old_snap) { w.c.snap_skipped++; return }
 
             if (dry_run) {
                 console.log(`🔎 would migrate: ${path}`)
-                migrated++
+                w.c.snap_migrated++
                 return
             }
 
-            // write back
             const wreq = await H.LiesStore_write(w, path, new_snap)
-            if (!wreq) {
-                // LiesStore_write returned null: content-equality gate (shouldn't happen
-                // since we just confirmed new_snap !== old_snap, but be safe)
-                skipped++
-                return
-            }
-            migrated++
+            // null means content-equality gate fired — shouldn't happen since
+            //  new_snap !== old_snap confirmed above, but treat as skipped
+            if (!wreq) { w.c.snap_skipped++; return }
+
+            w.c.snap_migrated++
             console.log(`💾 Snapmigrating: migrated ${path}`)
         }
 
-        // start at the wormhole root
         await walk_dir('wormhole')
 
+        const { snap_migrated: migrated, snap_skipped: skipped, snap_errors: errors } = w.c
         const summary = `Snapmigrating: ${migrated} migrated, ${skipped} unchanged, ${errors} errors`
         console.log(summary)
         w.i({ see: errors ? `⚠️ ${summary}` : `✅ ${summary}` })
