@@ -55,10 +55,10 @@ w:Lang
   /req:workon
     c.src                 latest cursored TheC (stashed by e_Lang_workon_update)
     /req:settle           permanent, open-ended — Lang_settle do_fn
-      /req:checkout          c.armed_src, sc.what — identity-keyed re-arm gate
-      /req:furnish           sc.doc_path, sc.have_dock
-      /req:compile           sc.have_methods
-      /req:graft             sc.n_pmirrors
+      /%checkout          c.armed_src, sc.what — identity-keyed re-arm gate
+      /%furnish           sc.doc_path, sc.have_dock
+      /%compile           sc.have_methods
+      /%graft             sc.n_pmirrors
     /req:push             encode → replace → verify; /%dirty fault child
 
   /docks/%dock:$path

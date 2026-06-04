@@ -945,6 +945,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         want.c.src = src
         wants.bump_version()
         this.i_elvisto(w, 'think')
+        this.whittle_N(wants.i({ want: 1}))
     },
 
 

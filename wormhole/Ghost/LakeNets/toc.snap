@@ -6,14 +6,15 @@ Waft:Ghost/LakeNets
     What:peer
       Doc:Ghost/Peeroleum.g
       Point,method:Peeroleum
-      What
-        What
-      Point:Figaro
   What:transport
     What:first look
       Doc:Ghost/Peeroleum.g
       Point,method:transport
       Point,method:PeerJS
+    What:reliability
+      Doc:Ghost/Peeroleum.g
+      Point,method:Socket
+      Point,method:Mesh
   What:integration
     What:story
       Doc:Ghost/Story/Peeroleum.g

@@ -227,7 +227,7 @@ await M.eatfunc({
     // All editable working clones (clean C**).  Meanings live on C.c.U.
     // Callers that push or encode filter out U%unaccepted themselves.
     LE_clones(LE: TheC): TheC[] {
-        const working = LE.oai({ Seem: 'working' })
+        const working = LE.o({ Seem: 'working' })[0]
         return working.sc.C ? (working.sc.C as TheC).o({}) : []
     },
 
@@ -423,8 +423,9 @@ await M.eatfunc({
     // working) — returned to caller, not swallowed.
     async LE_encode_compare(LE: TheC) {
         const H = this as House
-        const origin  = LE.oai({ Seem: 'origin' })
-        const working = LE.oai({ Seem: 'working' })
+        const origin  = LE.o({ Seem: 'origin' })[0]
+        const working = LE.o({ Seem: 'working' })[0]
+        if (!(origin && working)) throw "!Seems"
 
         const o  = await H.Seem_toString(origin)
         const wk = await H.Seem_toString(working)

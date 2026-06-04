@@ -64,6 +64,9 @@ story:LakeNets
     Prep
       i_elvisto:Lies,e:Lies_open_Waft
         esc:path,v:Ghost/LakeNets
+    Prep:3
+      i_elvisto:Lang,e:e_LE_preen
+        esc:op,v:something
   Opt
     For
       w:Lang
@@ -73,16 +76,16 @@ story:LakeNets
     noCyto
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg:0.484
-      sample:0.492,at:1780522797
-      sample:0.337,at:1780522807
-      sample:0.421,at:1780522814
-      sample:0.393,at:1780522830
-      sample:0.561,at:1780522843
-      sample:0.568,at:1780523555
-      sample:0.444,at:1780523583
-      sample:0.617,at:1780524625
+    TimeTotal:beliefs,avg:0.518
       sample:0.533,at:1780525895
       sample:0.469,at:1780526499
+      sample:0.422,at:1780529808
+      sample:0.736,at:1780529923
+      sample:0.48,at:1780530081
+      sample:0.527,at:1780530109
+      sample:0.425,at:1780530178
+      sample:0.597,at:1780538407
+      sample:0.457,at:1780538690
+      sample:0.533,at:1780540497
   step,dige:ebdf62c7429cb089
   step:2,dige:4195219159042c57
