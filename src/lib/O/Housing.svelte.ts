@@ -1559,7 +1559,7 @@ export class House extends StorableHousing {
             if (!finish) return
 
             const nav    = A.c.nav as WormholeNav | undefined
-            const name   = req.sc.rw_name as string
+            const name   = (req.sc.rw_dir || req.sc.rw_name) as string
             const op     = req.sc.rw_op   as string
             const done   = (reply: any) => { finish(reply); rw_req.sc.finished = true }
 
@@ -1576,6 +1576,23 @@ export class House extends StorableHousing {
                 } else if (op === 'write') {
                     await nav.write_file(dir_path, filename, req.sc.rw_data as string)
                     done({ ok: true })
+                } else if (op === 'list') {
+                    // rw_dir is the full directory path — no filename to pop.
+                    //   expand() re-fetches from the filesystem each time so
+                    //   listings aren't stale when called after writes.
+                    const rw_dir  = req.sc.rw_dir as string
+                    const dparts  = rw_dir.split('/').filter(Boolean)
+                    const dl      = await nav.dir(...dparts)
+                    if (!dl) {
+                        done({ not_found: true })
+                    } else {
+                        await dl.expand()
+                        const entries = [
+                            ...dl.directories.map(d => ({ name: d.name, is_dir: true  })),
+                            ...dl.files      .map(f => ({ name: f.name, is_dir: false })),
+                        ]
+                        done({ entries })
+                    }
                 } else {
                     done({ error: `unknown rw op: ${op}` })
                 }

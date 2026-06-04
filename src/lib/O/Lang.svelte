@@ -540,41 +540,45 @@
         return docks?.o({ dock: path })[0] as TheC | undefined
     },
 
-    // ── e_LE_preen ────────────────────────────────────────────────────────────
+    // ── e_LE_operate (Lang side) ──────────────────────────────────────────────
     //
-    //   One write-path for the working clone tree — folds add / edit / drop and
-    //   the orb's unshow onto a single handler keyed on e%action.  The LE-locate
-    //   prologue and the spec→clone lookup were ~80% of each old e_Lang_LE_*
-    //   handler; they live here once.  Every action ends in feebly_ponder() so
-    //   req:settle re-encodes on the next think.
+    //   One write-path for the working clone tree, keyed on e%op.
+    //   Same event name as LiesCurse's e_LE_operate — different world, different
+    //   domain.  Lang operates ON the clone contents; Lies operates ON the cursor.
     //
-    //   Push is NOT here — e_Lang_LE_push is a resumable, inspectable req cluster.
+    //   The LE-locate prologue and the spec→clone lookup were ~80% of each old
+    //   e_Lang_LE_* handler; they live here once.  Most ops end in feebly_ponder()
+    //   so req:settle re-encodes on the next think.  push delegates to e_Lang_LE_push
+    //   which owns the resumable, inspectable req:push cluster.
     //
-    //   e.sc: { action: 'add'|'edit'|'drop'|'unshow', spec?, sc?, patch?, on? }
-    //     drop   — U%unaccepted: virtual deletion, omitted from push and encode
-    //     unshow — U%unshowing: Lang-UI hide; no effect on push or encode
+    //   e.sc: { op: string, spec?, sc?, patch? }
     //     add    — append a new clone (e.sc.sc is the raw sc)
     //     edit   — patch an existing clone's sc (e.sc.patch merged in)
+    //     drop   — set U%unaccepted; virtual deletion, omitted from push + encode
+    //     undrop — clear U%unaccepted; restore a dropped clone
+    //     unshow — set U%unshowing; Lang-UI hide, no effect on push or encode
+    //     show   — clear U%unshowing; restore to visible
+    //     push   — trigger the encode→replace→verify cluster (e_Lang_LE_push)
     //
-    //   < the U-edit encode gate (open fault): drop / unshow mutate c.U without
-    //     bumping Seem:working.version, so settle's encode_key never changes after
-    //     an × or orb demote with no cursor move.  Fix: stamp LE.c.u_edit_serial++
-    //     here; encode_key = `${wv}:${u_edit_serial}`.
-    async e_LE_preen(A: TheC, w: TheC, e: TheC) {
+    //   < U-edit encode gate (open fault): drop/undrop/unshow/show mutate c.U
+    //     without bumping Seem:working.version, so settle's encode_key never
+    //     changes after those ops without a cursor move.  Fix: stamp
+    //     LE.c.u_edit_serial++ here; encode_key = `${wv}:${u_edit_serial}`.
+    async e_LE_operate(A: TheC, w: TheC, e: TheC) {
         const H      = this as House
         const workon = H.reqy(w).o({ req: 'workon' })[0] as TheC | undefined
         const LE     = workon?.o({ LE: 1 })[0] as TheC | undefined
         if (!LE) return
-        const action = e.sc.action as string | undefined
-        if (!action) return
+        const op = e.sc.op as string | undefined
+        if (!op) return
 
-        // spec→clone for actions that target an existing clone
+        // spec→clone for ops that target an existing clone
         const find = (spec?: unknown) =>
             typeof spec === 'string'
                 ? (H.LE_clones(LE) as TheC[]).find(c => (c.sc as any).method === spec)
                 : undefined
 
-        switch (action) {
+        switch (op) {
             case 'add': {
                 const sc = e.sc.sc as Record<string, any> | undefined
                 if (sc) H.LE_add_clone(LE, sc)
@@ -591,14 +595,25 @@
                 if (clone) H.LE_drop_clone(LE, clone)
                 break
             }
-            case 'unshow': {
+            case 'undrop': {
                 const clone = find(e.sc.spec)
-                if (clone?.c.U) {
-                    if (e.sc.on) clone.c.U.sc.unshowing = 1
-                    else         delete clone.c.U.sc.unshowing
-                }
+                if (clone?.c.U) delete clone.c.U.sc.unaccepted
                 break
             }
+            case 'unshow': {
+                const clone = find(e.sc.spec)
+                if (clone?.c.U) clone.c.U.sc.unshowing = 1
+                break
+            }
+            case 'show': {
+                const clone = find(e.sc.spec)
+                if (clone?.c.U) delete clone.c.U.sc.unshowing
+                break
+            }
+            case 'push':
+                // push owns its own timing — delegate to the cluster handler
+                H.i_elvisto(w, 'Lang_LE_push', {})
+                return   // no feebly_ponder — push cluster manages the think
         }
         H.feebly_ponder()
     },

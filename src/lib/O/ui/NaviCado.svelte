@@ -28,7 +28,7 @@
     // ── Tools row (second row, always when LE armed) ──────────────────────────
     //
     //   ↘ dive / ↓ branch — moved here from the nav bar.
-    //   PeelItem — type a method name, Enter → LE_preen{action:'add'}.
+    //   PeelItem — type a method name, Enter → LE_operate{op:'add'}.
     //   req:desire transport (‖/▶, →step) — only when req:timemachine exists.
     //   Unsent bar (~↑↩) — absolute overlay when in_group state has drifted.
     //
@@ -41,7 +41,7 @@
     //   unsent bar stays hidden until the user actually changes something.
     //
     //   Capsule label click — < fires Lang_navigate_to; needs handler on Lang side.
-    //   × fires LE_preen{action:'drop'} when LE is armed at a %What; else
+    //   × fires LE_operate{op:'drop'} when LE is armed at a %What; else
     //   local demote() for bare %Doc sessions.
     //   Push fires Lies_accept_What_Point; Reset reverts to pushed_snapshot (two-tap).
 
@@ -273,7 +273,7 @@
     }
 
     // Demote: remove from in_group+showing and prevent future auto-promotion.
-    // Used for bare %Doc sessions; armed %What sessions go through LE_preen.
+    // Used for bare %Doc sessions; armed %What sessions go through LE_operate.
     function demote(spec: string) {
         _user_demoted.add(spec)
         const ig = new Set(in_group); ig.delete(spec)
@@ -326,7 +326,7 @@
 
     // ── PeelItem — inject a Point into the working C** ────────────────────────
     //
-    //   Type a method name and press Enter.  Fires LE_preen{action:'add'} so the
+    //   Type a method name and press Enter.  Fires LE_operate{op:'add'} so the
     //   working clone tree gains the new Point immediately; req:settle re-encodes
     //   on the next think and changey updates.
     //
@@ -336,7 +336,7 @@
     function peel_commit() {
         const method = peel_text.trim()
         if (method && LE && (LE.sc.target as any)?.sc?.What !== undefined) {
-            H.i_elvisto('Lang/Lang', 'LE_preen', { action: 'add', sc: { Point: 1, method } })
+            H.i_elvisto('Lang/Lang', 'LE_operate', { op: 'add', sc: { Point: 1, method } })
         }
         peel_text = ''
     }
@@ -467,11 +467,11 @@
                     {spec}
                 </button>
                 {#if !is_sh}
-                    <!-- × fires LE_preen{action:'drop'} when LE is armed at a %What;
+                    <!-- × fires LE_operate{op:'drop'} when LE is armed at a %What;
                          falls back to local demote() for bare %Doc sessions. -->
                     <button class="lmm-capsule-demote" title="Remove Point" onclick={() => {
                         if (LE && (LE.sc.target as any)?.sc?.What !== undefined) {
-                            H.i_elvisto('Lang/Lang', 'LE_preen', { action: 'drop', spec })
+                            H.i_elvisto('Lang/Lang', 'LE_operate', { op: 'drop', spec })
                         } else {
                             demote(spec)
                         }

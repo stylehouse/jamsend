@@ -628,70 +628,125 @@ export function heq(
 }
 
 //#region peel
-// Hash from 'k:v' or comma-separated, v=1 if not given
-// Handles nestings of the : and , separators
-export function peel(s: any, d?: { sep?: string; hie?: string }): Record<string, any> {
+// Hash from 'k:str,le=3,obvious' comma-separated.
+//
+// ── defaults ──────────────────────────────────────────────────────────────
+//   sep      ','   field separator
+//   hie      ':'   string-value separator  (colon → always string on decode)
+//   hie_num  '='   number-value separator  (equals → always number on decode)
+//              defaults to hie when hie is non-default, so custom-separator
+//              callers see zero behaviour change and can still type-scheme freely
+//
+// ── codec rules (default hie=':' path) ───────────────────────────────────
+//   k        bare key    → number 1   (flag)
+//   k=N      equals      → number N   (equations have numbers)
+//   k:v      colon       → string v   (writing has colons — never coerced)
+//
+// The colon form is always a string, even when v looks numeric ("3", "0", "1").
+// This is the one rule that makes number|string unambiguous across round-trips.
+//
+// < hie_num is transitional; once all snaps are migrated it can be removed
+//   along with the depeel modern opt, leaving the clean codec permanent.
+//
+export function peel(s: any, d?: { sep?: string; hie?: string; hie_num?: string }): Record<string, any> {
     d = d || {};
-    d.sep ??= ','
-    d.hie ??= ':'
+    const hie_was_default = !('hie' in d)
+    d.sep     ??= ','
+    d.hie     ??= ':'
+    d.hie_num ??= hie_was_default ? '=' : d.hie
     if (s == null || s === '') return {};
-    
+ 
     if (isar(s)) {
         // < is just hashkv(s)?
         return hashkv(s.map(k => [k, 1]));
     }
-    
+ 
     // Clone supplied hash
     if (isha(s)) {
         return ex({}, s);
     }
-    
+ 
     if (isst(s)) {
-        
-        // Parse the string
         const c: Record<string, any> = {};
         const parts = s.split(d.sep);
-        
+ 
         for (const part of parts) {
-            const kvParts = part.split(d.hie);
-            const k = kvParts.shift();
-            if (!k) continue;
-            
-            const v = kvParts.length === 1 ? kvParts[0]
-                // < odd. should it be string[] ?
-                : kvParts.length > 1 ? kvParts.join(d.hie)
-                : 1;
-            
-            // Convert numeric strings to numbers
-            if (v && typeof v === 'string' && v.match(/^-?\d+\.?\d*$/)) {
-                c[k] = parseFloat(v);
+            // find the first hie or hie_num character to split on;
+            //  whichever comes first wins — ties go to hie (string)
+            const hi      = part.indexOf(d.hie)
+            const ni      = d.hie_num !== d.hie ? part.indexOf(d.hie_num) : -1
+            const use_hie = hi >= 0 && (ni < 0 || hi <= ni)
+            const use_num = ni >= 0 && !use_hie
+ 
+            let k
+            if (use_hie) {
+                // k:v — always a string, never coerced
+                k = part.slice(0, hi)
+                if (!k) continue
+                c[k] = part.slice(hi + 1)
+            } else if (use_num) {
+                // k=N — always a number
+                k = part.slice(0, ni)
+                if (!k) continue
+                const raw = part.slice(ni + 1)
+                const n = Number(raw)
+                c[k] = Number.isNaN(n) ? raw : n
             } else {
-                c[k] = v;
+                // bare key — number 1
+                k = part.trim()
+                if (!k) continue
+                c[k] = 1
+            }
+             if ('unmodernised') {
+                // Convert numeric strings to numbers
+                if (c[k] && typeof c[k] === 'string' && c[k].match(/^-?\d+\.?\d*$/)) {
+                    c[k] = parseFloat(c[k]);
+                }
             }
         }
         return c;
     }
-    
+ 
     throw erring("not peely", String(s));
 }
 
-// Hash into ke:va,ys:lue string
-export function depeel(s: Record<string, any>, d?: { sort?:boolean, sep?: string; hie?: string }): string {
+// Hash into 'k:v,k2=N,k3' string.
+//
+// ── codec rules (modern=true, the default on hie=':' path) ──────────────
+//   number 1  → bare key     (flag shorthand)
+//   number N  → k=N          (equals — unambiguously numeric on decode)
+//   string v  → k:v          (colon — always string on decode)
+//
+// ── legacy behaviour (modern=false) ──────────────────────────────────────
+//   all non-1 values → k:v; value===1 → bare key
+//   callers with custom hie get modern=false automatically (hie_num==hie,
+//   no distinction) so they keep their existing fuzzy-decode behaviour.
+//
+// < modern: flip to always-on once all existing snaps are migrated
+//
+export function depeel(s: Record<string, any>, d?: { sort?: boolean; sep?: string; hie?: string; hie_num?: string; modern?: boolean }): string {
     d = d || {};
-    d.sep ??= ','
-    d.hie ??= ':'
-    d.sort ??= false
+    const hie_was_default = !('hie' in d)
+    d.sep     ??= ','
+    d.hie     ??= ':'
+    d.hie_num ??= hie_was_default ? '=' : d.hie
+    d.sort    ??= false
+    // d.modern  ??= hie_was_default  // < uncomment once all snaps are migrated
     let ks = Object.keys(s);
     if (d.sort) ks = ks.sort()
     const hs: string[] = [];
-    
+ 
     for (const k of ks) {
-        let set = k;
-        if (s[k] !== '1' && s[k] !== 1) {
-            set += (d.hie || ':') + s[k];
+        const v = s[k]
+        if (d.modern && typeof v === 'number') {
+            // bare key for the canonical flag value 1; k=N for everything else
+            hs.push(v === 1 ? k : k + d.hie_num + v)
+        } else {
+            // legacy: bare only for value===1; everything else gets hie
+            if (v === 1) hs.push(k)
+            else hs.push(k + d.hie + v)
         }
-        hs.push(set);
     }
-    
-    return hs.join(d.sep || ',');
+ 
+    return hs.join(d.sep);
 }

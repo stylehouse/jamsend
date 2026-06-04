@@ -31,11 +31,13 @@ story:Snaptesting
     For
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.024
+    TimeTotal:beliefs,avg:0.027
       sample:0.025,at:1780571790
       sample:0.018,at:1780572944
       sample:0.024,at:1780572973
       sample:0.024,at:1780573023
       sample:0.024,at:1780573096
       sample:0.032,at:1780573097
+      sample:0.04,at:1780576247
+      sample:0.026,at:1780576256
   step,dige:8e462b7752981747

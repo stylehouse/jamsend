@@ -201,20 +201,28 @@
         const summary = failures
             ? `❌ Snaptesting: ${failures} failure(s)`
             : '✅ Snaptesting passed'
-        console.log(summary)
+        // console.log(summary)
         w.i({ see: summary })
     },
 
 //#endregion
 //#region Snapmigrating
-
+ 
     // ── Snapmigrating ─────────────────────────────────────────────────────────
     //
     //   Depth-first scan of every .snap file reachable from Wormhole.
-    //   For each file: decode_wh_lines → encode_wh_lines → if snap changed, write back.
+    //   For each file: line-by-line rewrite of stringies segments using the
+    //   modern depeel codec (colon=string, equals=number, bare=flag).
     //
-    //   The re-encode step applies current codec rules (colon=string, bare=number)
-    //   so any old file that conflated them gets corrected in place.
+    //   Line structure (from deL comment in Text.svelte):
+    //     ^(  )*(\{.+\}\t)?(\S.*)?$
+    //     group 1: indent (even spaces)
+    //     group 2: objecties JSON + tab (optional)
+    //     group 3: stringies — either JSON (starts with '{') or peel format
+    //
+    //   Only the peel-format stringies segment is touched.  JSON-format lines,
+    //   BQ key/body lines, and blank lines pass through verbatim.
+    //   The indent and objecties tab are preserved character-for-character.
     //
     //   Errors from decode or encode abort that file (logged, not thrown).
     //   dry_run opt skips writes and logs what would change.
@@ -225,14 +233,76 @@
     //
     async Snapmigrating(A: TheC, w: TheC) {
         const H = this as House
-
+        const { peel, depeel } = await import('$lib/Y.svelte')
+ 
         const dry_run = !!H.o_Opt_val(w, 'dry_run')
         if (dry_run) console.log('🔎 Snapmigrating: dry run — no writes')
-
+ 
         // counters survive re-entry on w.c
         w.c.snap_migrated ??= 0
         w.c.snap_skipped  ??= 0
         w.c.snap_errors   ??= 0
+ 
+        // migrate_line: rewrite the stringies segment of one snap line.
+        //   Passes JSON lines and BQ lines through verbatim.
+        //   For peel-format lines: apply the old fuzzy-coerce rule to each
+        //   k:v pair, then re-emit with modern depeel (numbers → k=N, strings → k:v).
+        //
+        //   The old peel coerced a value to a number when it matched:
+        //     /^-?\d+\.?\d*$/
+        //   That regex did NOT match scientific notation (4e-48, 1.5e10) so those
+        //   were stored as strings in old snaps — they need : on migration too.
+        //   Bare keys (number 1) and values with no separator are already correct.
+        //
+        const OLD_NUMERIC = /^-?\d+\.?\d*$/
+ 
+        const migrate_line = (raw: string): string => {
+            // blank lines pass through
+            if (!raw.trim()) return raw
+ 
+            // split indent / objecties-tab / stringies
+            //  the tab is present only when objecties JSON precedes it
+            const indent_len = raw.match(/^ */)?.[0].length ?? 0
+            const rest       = raw.slice(indent_len)
+            const tab        = rest.indexOf('\t')
+            const obj_part   = tab >= 0 ? rest.slice(0, tab) : ''
+            const str_raw    = tab >= 0 ? rest.slice(tab + 1) : rest
+ 
+            // JSON stringies — pass through (already type-safe, no peel coercion)
+            if (str_raw.startsWith('{')) return raw
+ 
+            // BQ key lines have odd indent (2*d+1 spaces) — body lines pass through too
+            if (indent_len % 2 !== 0) return raw
+ 
+            // parse with old fuzzy rule: split on commas, then on first colon.
+            //   k alone → number 1 (bare key, already correct).
+            //   k:v where v matches OLD_NUMERIC → number (was coerced by old peel).
+            //   k:v otherwise → string (was left as string by old peel).
+            const parts = str_raw.split(',')
+            const rebuilt: Record<string, any> = {}
+            for (const part of parts) {
+                const ci = part.indexOf(':')
+                if (ci < 0) {
+                    // bare key — number 1
+                    const k = part.trim()
+                    if (k) rebuilt[k] = 1
+                } else {
+                    const k = part.slice(0, ci)
+                    const v = part.slice(ci + 1)
+                    if (!k) continue
+                    // apply the old coerce rule to decide the original type
+                    rebuilt[k] = OLD_NUMERIC.test(v) ? parseFloat(v) : v
+                }
+            }
+ 
+            const new_str = depeel(rebuilt,{modern:true})
+            if (new_str === str_raw) return raw
+ 
+            const indent = ' '.repeat(indent_len)
+            return obj_part
+                ? `${indent}${obj_part}\t${new_str}`
+                : `${indent}${new_str}`
+        }
 
         const walk_dir = async (dir: string) => {
             const req = await H.LiesStore_listing(w, dir)
@@ -240,7 +310,7 @@
                 H.i_req_ttlilt(req, 0.5, { waiting: 'listing' })
                 return
             }
-
+ 
             const reply = req.sc.reply as any
             if (reply?.not_found) return
             if (reply?.error) {
@@ -248,9 +318,9 @@
                 w.c.snap_errors++
                 return
             }
-
+ 
             const entries: Array<{ name: string, is_dir: boolean }> = reply?.entries ?? []
-
+ 
             // depth-first: subdirectories before files at this level
             for (const entry of entries) {
                 if (entry.is_dir) await walk_dir(`${dir}/${entry.name}`)
@@ -260,14 +330,14 @@
                 await migrate_snap(`${dir}/${entry.name}`)
             }
         }
-
+ 
         const migrate_snap = async (path: string) => {
             const rreq = await H.LiesStore_read(w, path)
             if (!rreq.sc.finished) {
                 H.i_req_ttlilt(rreq, 0.5, { waiting: 'read' })
                 return
             }
-
+ 
             const reply = rreq.sc.reply as any
             if (reply?.not_found) { w.c.snap_skipped++; return }
             if (reply?.error) {
@@ -275,49 +345,38 @@
                 w.c.snap_errors++
                 return
             }
-
+ 
             const old_snap = reply.content as string
-
-            const { C, errors: de } = H.decode_wh_lines(old_snap)
-            if (!C) {
-                console.error(`Snapmigrating: decode failed at ${path}:`, de)
-                w.c.snap_errors++
-                return
-            }
-            if (de.length) console.warn(`Snapmigrating: decode warnings at ${path}:`, de)
-
-            const { snap: new_snap, errors: ee } = await H.encode_wh_lines(C, {})
-            if (ee.length) {
-                console.error(`Snapmigrating: encode errors at ${path}:`, ee)
-                w.c.snap_errors++
-                return
-            }
-
+            const new_snap = old_snap
+                .split('\n')
+                .map(migrate_line)
+                .join('\n')
+ 
             if (new_snap === old_snap) { w.c.snap_skipped++; return }
-
+ 
             if (dry_run) {
                 console.log(`🔎 would migrate: ${path}`)
                 w.c.snap_migrated++
                 return
             }
-
+ 
             const wreq = await H.LiesStore_write(w, path, new_snap)
             // null means content-equality gate fired — shouldn't happen since
             //  new_snap !== old_snap confirmed above, but treat as skipped
             if (!wreq) { w.c.snap_skipped++; return }
-
+ 
             w.c.snap_migrated++
             console.log(`💾 Snapmigrating: migrated ${path}`)
         }
-
+ 
         await walk_dir('wormhole')
-
+ 
         const { snap_migrated: migrated, snap_skipped: skipped, snap_errors: errors } = w.c
         const summary = `Snapmigrating: ${migrated} migrated, ${skipped} unchanged, ${errors} errors`
         console.log(summary)
         w.i({ see: errors ? `⚠️ ${summary}` : `✅ ${summary}` })
     },
-
+ 
 //#endregion
 
     })
