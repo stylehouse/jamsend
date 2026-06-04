@@ -100,19 +100,19 @@ Library
         sample:0.049,at:1780418648
         sample:0.049,at:1780418651
         sample:0.049,at:1780418655
-  Book:LakeNets,ok_pct:0,last_pct_change:1779979876.845,done:3,last_run_ms:1780569503.121,time_avg:0.173,active
+  Book:LakeNets,ok_pct:0,last_pct_change:1779979876.845,done:3,last_run_ms:1780571785.765,time_avg:0.173
     TimeSpool
-      TimeTotal:beliefs,avg:1.217
-        sample:1.217,at:1780569498
-        sample:1.217,at:1780569499
-        sample:1.217,at:1780569499
-        sample:1.217,at:1780569499
-        sample:1.217,at:1780569500
-        sample:1.217,at:1780569500
-        sample:1.217,at:1780569501
-        sample:1.217,at:1780569502
-        sample:1.217,at:1780569502
-        sample:1.217,at:1780569503
+      TimeTotal:beliefs,avg:1.397
+        sample:1.397,at:1780571753
+        sample:1.397,at:1780571757
+        sample:1.397,at:1780571761
+        sample:1.397,at:1780571764
+        sample:1.397,at:1780571768
+        sample:1.397,at:1780571771
+        sample:1.397,at:1780571775
+        sample:1.397,at:1780571779
+        sample:1.397,at:1780571782
+        sample:1.397,at:1780571785
   Book:Understandity,ok_pct,done,last_run_ms:1780138366.519
     TimeSpool
       TimeTotal:beliefs,avg:0.013
@@ -152,3 +152,8 @@ Library
         sample:0.131,at:1780528488
         sample:0.131,at:1780528488
         sample:0.131,at:1780528492
+  Book:Snaptesting,active,ok_pct,done,last_run_ms:1780571790.449
+    TimeSpool
+      TimeTotal:beliefs,avg:0.025
+        sample:0.025,at:1780571790
+        sample:0.025,at:1780571790

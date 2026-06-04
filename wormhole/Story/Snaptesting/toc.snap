@@ -1,0 +1,19 @@
+story:Snaptesting
+  Styles
+    matstyle:w
+      style:background-color,v:#8f3232
+      meta:is_compound,v
+      meta:label,fmt:%s,keys:w
+    matstyle:section
+      style:background-color,v:#2fb155
+    matstyle:three_as_string
+      style:background-color,v:#8e29d6
+    matstyle:see
+      style:background-color,v:#c5b759
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg:0.025
+      sample:0.025,at:1780571790
+  step,dige:55c5be2b5be70bca

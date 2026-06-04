@@ -12,6 +12,7 @@
     import Understandity from "./Understandity.svelte";
     import Understandium from "./Understandium.svelte";
     import Understandication from "./Understandication.svelte";
+    import TextLinestests from "./TextLinestests.svelte";
 
     let {M} = $props()
 
@@ -1450,3 +1451,4 @@ The double-envelopment became the template for every subsequent battle of annihi
 <Understandity {M} />
 <Understandium {M} />
 <Understandication {M} />
+<TextLinestests {M} />

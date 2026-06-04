@@ -5,8 +5,9 @@
     //
     //   %req:wwrite,path,dige   — one stable req per (path, content-hash) pair.
     //   %req:wread,rw_name      — one stable req per wormhole path (+ optional label).
+    //   %req:wlisting,rw_dir    — one stable req per directory path.
     //
-    //   Both channels live on w (not %Store:1) so i_Story_o_req_ttlilt's
+    //   All channels live on w (not %Store:1) so i_Story_o_req_ttlilt's
     //   reqcons walker finds them — it starts at w and only follows w's direct
     //   reqcons children.  %Store:1 holds metadata only (wrote_at timestamps).
     //
@@ -14,9 +15,12 @@
     //
     //   const req  = await H.LiesStore_read(w, rw_name, {label?})
     //   const req2 = await H.LiesStore_write(w, path, text, {rw_name?})
+    //   const req3 = await H.LiesStore_listing(w, rw_dir)
     //   if (!req.sc.finished)   { w.i({see:'⏳ …'}); return false }
     //   if (!req2?.sc.finished) { w.i({see:'⏳ …'}); return false }
-    //   // use req.sc.reply?.content / req2.sc.reply?.error etc.
+    //   if (!req3.sc.finished)  { w.i({see:'⏳ …'}); return false }
+    //   // use req.sc.reply?.content / req2.sc.reply?.error
+    //   // use req3.sc.reply?.entries (array of {name,is_dir})
     //
     //   Neither helper exposes i_elvis_req to callers.
     //
@@ -41,6 +45,27 @@
     //   finished dropped → roai creates fresh → fires again → Wormhole replies
     //   → think → loop.
     //
+    // ── Listing behaviour ─────────────────────────────────────────────────────
+    //
+    //   LiesStore_listing fires i_elvis_req immediately (same idempotency as read).
+    //   Wormhole replies with { entries: [{name, is_dir}] } or { not_found: true }.
+    //   Callers check req.sc.finished; LiesStore_run drops finished listing reqs
+    //   after the same window as reads (after LiesPersist, so callers see reply).
+    //
+    //   Listing reqs also live on w (not %Store:1) so the %ttlilt walker finds them.
+    //
+    // ── req:Store ─────────────────────────────────────────────────────────────
+    //
+    //   wread, wwrite, and wlisting all live inside req:Store so the w(/req)+
+    //   %ttlilt pickup applies naturally.
+    //
+    //   %Store:1 holds metadata (wrote_at).
+    //   w/reqcons/reqcon:Store → w/req:Store is the req:Store particle.
+    //   w/req:Store is the host for wread, wwrite, wlisting reqs:
+    //     w/req:Store/req:wwrite,path,dige
+    //     w/req:Store/req:wread,rw_name
+    //     w/req:Store/req:wlisting,rw_dir
+    //
     import type { TheC }  from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import { dig }        from "$lib/Y.svelte"
@@ -61,6 +86,20 @@
         const store = w.oai({ Store: 1 })
         store.c.up ||= w
         return store
+    },
+
+    // ── LiesStore_req ─────────────────────────────────────────────────────────
+    //
+    //   Returns (or creates) the w/req:Store particle — the host for all
+    //   wread, wwrite, wlisting reqs.  Routing them through req:Store means
+    //   the w(/req)+ %ttlilt picker naturally finds them.
+    //
+    LiesStore_req(w: TheC): TheC {
+        const H    = this as House
+        const rq   = H.reqy(w, { k: 'Store', noserial: 1 })
+        // roai({Store:1}) — the identity is the literal key Store:1
+        //  so only ever one req:Store per w.
+        return w.oai({ req: 'Store' })
     },
 
     // ── LiesStore_write ───────────────────────────────────────────────────────
@@ -84,11 +123,12 @@
         const ld = w.o({ loaded_doc: 1, path })[0] as TheC | undefined
         if (ld?.sc.base_dige && ld.sc.base_dige === new_dige) return null
 
-        const wq = H.reqy(w)
+        const host = H.LiesStore_req(w)
+        const wq   = H.reqy(host)
 
         // Drop stale finished write reqs for this path so roai can create a fresh one.
         for (const old of wq.o({ path }) as TheC[]) {
-            if (old.sc.finished) w.drop(old)
+            if (old.sc.finished) host.drop(old)
         }
 
         // Dige-dedup: reuse an in-flight req for the same content rather than
@@ -127,13 +167,40 @@
         rw_name: string,
         opts:    { label?: string } = {}
     ): Promise<TheC> {
-        const H = this as House
-        const rq = H.reqy(w)
+        const H    = this as House
+        const host = H.LiesStore_req(w)
+        const rq   = H.reqy(host)
         const c = opts.label
             ? { req: 'wread', rw_name, label: opts.label }
             : { req: 'wread', rw_name }
 
         const req = await rq.roai(c, { rw_op: 'read' })
+
+        if (!req.sc.finished) {
+            H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
+        }
+
+        return req
+    },
+
+    // ── LiesStore_listing ────────────────────────────────────────────────────
+    //
+    //   Returns the %req:wlisting for this directory path.
+    //   Same idempotency pattern as LiesStore_read — fires i_elvis_req once,
+    //   callers check req.sc.finished and read req.sc.reply?.entries.
+    //
+    //   reply.entries: Array<{ name: string, is_dir: boolean }>
+    //   reply.not_found: true when the directory doesn't exist.
+    //
+    //   LiesStore_run Phase 3 drops finished listing reqs (same window as reads).
+    async LiesStore_listing(
+        w:      TheC,
+        rw_dir: string,
+    ): Promise<TheC> {
+        const H    = this as House
+        const host = H.LiesStore_req(w)
+        const rq   = H.reqy(host)
+        const req  = await rq.roai({ req: 'wlisting', rw_dir }, { rw_op: 'list' })
 
         if (!req.sc.finished) {
             H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
@@ -157,7 +224,7 @@
     //    check to-be-overwritten data is what we expect, reasonable timeframes, etc
     async req_wwrite(req: TheC, q: any) {
         const H     = this as House
-        const w     = req.c.up as TheC
+        const w     = req.c.up?.c.up as TheC   // req → req:Store → w
         const Store = H.LiesStore_store(w)
         const path  = req.sc.path as string
 
@@ -189,7 +256,7 @@
         // (d) Dispatch.
         H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
     },
-    // < all compiley stuff should goelsewhere, as a consequence of %finished
+    // < all compiley stuff should go elsewhere, as a consequence of %finished
     async req_wwrite_done(w: TheC, req: TheC) {
         const H     = this as House
         const Store = H.LiesStore_store(w)
@@ -241,7 +308,8 @@
                 console.log(`🔪 Lies compile settled: ${pending.sc.path} [write+run] write=${write_ms}ms`)
             }
         }
-        w.drop(req)
+        const host = H.LiesStore_req(w)
+        host.drop(req)
     },
 
     // ── LiesStore_run ─────────────────────────────────────────────────────────
@@ -249,22 +317,29 @@
     //   Called from the Lies tick after LiesPersist + LiesCurse.
     //
     async LiesStore_run(A: TheC, w: TheC) {
-        const H     = this as House
-        const rq = H.reqy(w)
+        const H    = this as House
+        const host = H.LiesStore_req(w)
+        const rq   = H.reqy(host)
         // call their methods req_wwrite() etc
         await rq.do()
 
-        // drop completed req:wwrite
+        // ── Phase 1: wwrite completions ───────────────────────────────────────
         for (const req of rq.o() as TheC[]) {
             if (req.sc.finished) {
-                if (req.sc.req == 'wwrite') H.req_wwrite_done(w,req)
-                w.drop(req)
+                if (req.sc.req == 'wwrite') H.req_wwrite_done(w, req)
+                host.drop(req)
             }
         }
 
+        // ── Phase 2: drop finished reads (after LiesPersist sees them) ────────
+        for (const req of rq.o({ req: 'wread' }) as TheC[]) {
+            if (req.sc.finished) host.drop(req)
+        }
 
-
-        // ── Phase 3 ───────────────────────────────────────────────────────────
+        // ── Phase 3: drop finished listings ───────────────────────────────────
+        for (const req of rq.o({ req: 'wlisting' }) as TheC[]) {
+            if (req.sc.finished) host.drop(req)
+        }
     },
 
 //#endregion
