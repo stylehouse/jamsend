@@ -201,116 +201,205 @@
         const summary = failures
             ? `❌ Snaptesting: ${failures} failure(s)`
             : '✅ Snaptesting passed'
-        // console.log(summary)
+        console.log(summary)
         w.i({ see: summary })
     },
 
 //#endregion
 //#region Snapmigrating
- 
+
     // ── Snapmigrating ─────────────────────────────────────────────────────────
     //
-    //   Depth-first scan of every .snap file reachable from Wormhole.
-    //   For each file: line-by-line rewrite of stringies segments using the
-    //   modern depeel codec (colon=string, equals=number, bare=flag).
+    //   Depth-first scan of every .snap file under wormhole/.
+    //   Each file is rewritten line-by-line: deL splits the line into
+    //   {d, objecties, stringies}, the stringies are re-depeel'd with
+    //   modern=true (numbers → k=N, strings → k:v), then the line is
+    //   reassembled manually — because enL calls encode_stringies which
+    //   calls depeel() still in legacy mode.
     //
-    //   Line structure (from deL comment in Text.svelte):
-    //     ^(  )*(\{.+\}\t)?(\S.*)?$
-    //     group 1: indent (even spaces)
-    //     group 2: objecties JSON + tab (optional)
-    //     group 3: stringies — either JSON (starts with '{') or peel format
+    //   BQ key lines (odd leading-space count) and BQ body lines pass through
+    //   verbatim — deL would throw on them and they carry no peel stringies.
+    //   JSON-stringies lines pass through verbatim too.
     //
-    //   Only the peel-format stringies segment is touched.  JSON-format lines,
-    //   BQ key/body lines, and blank lines pass through verbatim.
-    //   The indent and objecties tab are preserved character-for-character.
-    //
-    //   Errors from decode or encode abort that file (logged, not thrown).
-    //   dry_run opt skips writes and logs what would change.
-    //
-    //   w thinks more than once here — walk_dir and migrate_snap check
-    //   req.sc.finished and arm ttlilt to re-enter on the next tick if not ready.
-    //   Counters live on w.c so they accumulate correctly across re-entries.
+    //   Concurrency: at most MAX_INFLIGHT migrate_snap calls in flight at once,
+    //   drained ≤ RATE_PER_SEC per second.  w.c.snap_dirs_todo is the queue;
+    //   w.c.snap_inflight is the live set (path → true); w.c.snap_done_dirs
+    //   prevents re-visiting on re-entry.
     //
     async Snapmigrating(A: TheC, w: TheC) {
         const H = this as House
-        const { peel, depeel } = await import('$lib/Y.svelte')
- 
+        const { depeel } = await import('$lib/Y.svelte')
+
+        const MAX_INFLIGHT  = 10
+        const RATE_PER_SEC  = 3
+        const TICK_MS       = Math.ceil(1000 / RATE_PER_SEC)
+
         const dry_run = !!H.o_Opt_val(w, 'dry_run')
-        if (dry_run) console.log('🔎 Snapmigrating: dry run — no writes')
- 
-        // counters survive re-entry on w.c
-        w.c.snap_migrated ??= 0
-        w.c.snap_skipped  ??= 0
-        w.c.snap_errors   ??= 0
- 
-        // migrate_line: rewrite the stringies segment of one snap line.
-        //   Passes JSON lines and BQ lines through verbatim.
-        //   For peel-format lines: apply the old fuzzy-coerce rule to each
-        //   k:v pair, then re-emit with modern depeel (numbers → k=N, strings → k:v).
-        //
-        //   The old peel coerced a value to a number when it matched:
-        //     /^-?\d+\.?\d*$/
-        //   That regex did NOT match scientific notation (4e-48, 1.5e10) so those
-        //   were stored as strings in old snaps — they need : on migration too.
-        //   Bare keys (number 1) and values with no separator are already correct.
-        //
-        const OLD_NUMERIC = /^-?\d+\.?\d*$/
- 
-        const migrate_line = (raw: string): string => {
-            // blank lines pass through
-            if (!raw.trim()) return raw
- 
-            // split indent / objecties-tab / stringies
-            //  the tab is present only when objecties JSON precedes it
-            const indent_len = raw.match(/^ */)?.[0].length ?? 0
-            const rest       = raw.slice(indent_len)
-            const tab        = rest.indexOf('\t')
-            const obj_part   = tab >= 0 ? rest.slice(0, tab) : ''
-            const str_raw    = tab >= 0 ? rest.slice(tab + 1) : rest
- 
-            // JSON stringies — pass through (already type-safe, no peel coercion)
-            if (str_raw.startsWith('{')) return raw
- 
-            // BQ key lines have odd indent (2*d+1 spaces) — body lines pass through too
-            if (indent_len % 2 !== 0) return raw
- 
-            // parse with old fuzzy rule: split on commas, then on first colon.
-            //   k alone → number 1 (bare key, already correct).
-            //   k:v where v matches OLD_NUMERIC → number (was coerced by old peel).
-            //   k:v otherwise → string (was left as string by old peel).
-            const parts = str_raw.split(',')
-            const rebuilt: Record<string, any> = {}
-            for (const part of parts) {
-                const ci = part.indexOf(':')
-                if (ci < 0) {
-                    // bare key — number 1
-                    const k = part.trim()
-                    if (k) rebuilt[k] = 1
-                } else {
-                    const k = part.slice(0, ci)
-                    const v = part.slice(ci + 1)
-                    if (!k) continue
-                    // apply the old coerce rule to decide the original type
-                    rebuilt[k] = OLD_NUMERIC.test(v) ? parseFloat(v) : v
-                }
-            }
- 
-            const new_str = depeel(rebuilt,{modern:true})
-            if (new_str === str_raw) return raw
- 
-            const indent = ' '.repeat(indent_len)
-            return obj_part
-                ? `${indent}${obj_part}\t${new_str}`
-                : `${indent}${new_str}`
+        if (dry_run && !w.c.snap_dry_logged) {
+            console.log('🔎 Snapmigrating: dry run — no writes')
+            w.c.snap_dry_logged = true
         }
 
-        const walk_dir = async (dir: string) => {
+        // all state on w.c — survives re-entry
+        w.c.snap_migrated   ??= 0
+        w.c.snap_skipped    ??= 0
+        w.c.snap_errors     ??= 0
+        w.c.snap_dirs_todo  ??= ['wormhole'] as string[]
+        w.c.snap_done_dirs  ??= new Set<string>()
+        w.c.snap_inflight   ??= new Set<string>()   // paths currently being migrated
+        w.c.snap_last_tick  ??= 0
+
+        const dirs_todo  = w.c.snap_dirs_todo  as string[]
+        const done_dirs  = w.c.snap_done_dirs  as Set<string>
+        const inflight   = w.c.snap_inflight   as Set<string>
+
+        // ── migrate_lines ─────────────────────────────────────────────────────
+        //
+        //   Rewrites peel-format stringies in each line with modern depeel.
+        //   Must be stateful across lines to track BQ blocks correctly:
+        //
+        //   BQ key line:   exactly 2*d+1 leading spaces, matches /^(\w+):\s*\|$/
+        //                  → pass through; enter BQ body mode for this depth
+        //   BQ body lines: ≥ 2*d+3 leading spaces while in BQ body mode
+        //                  → pass through verbatim (raw prose, not peel)
+        //   Normal lines:  even spaces, not in BQ body → deL + re-depeel
+        //   JSON-stringies: str_raw starts with '{' → pass through
+        //
+        //   deL is used for the structural split (handles objecties-tab correctly).
+        //   Old fuzzy coerce rule (/^-?\d+\.?\d*$/) applied to str_raw segments
+        //   to recover what old peel produced, then modern depeel re-emits.
+        //
+        const OLD_NUMERIC = /^-?\d+\.?\d*$/
+        const BQ_KEY      = /^(\w+):\s*\|$/
+
+        const migrate_lines = (snap: string): string => {
+            const lines  = snap.split('\n')
+            const out: string[] = []
+
+            // bq_body_min: when > 0 we are inside a BQ body block;
+            //   any line with ≥ bq_body_min spaces is a body line (pass through).
+            //   Reset to 0 when a line with fewer spaces is seen.
+            let bq_body_min = 0
+
+            for (const raw of lines) {
+                if (!raw.trim()) { out.push(raw); continue }
+
+                const spaces = raw.match(/^ */)?.[0].length ?? 0
+
+                // leaving a BQ body block when indent drops back
+                if (bq_body_min > 0 && spaces < bq_body_min) bq_body_min = 0
+
+                // inside BQ body — raw prose, never peel
+                if (bq_body_min > 0) { out.push(raw); continue }
+
+                // BQ key line: odd spaces + matches /key: |/
+                if (spaces % 2 !== 0) {
+                    const key_part = raw.slice(spaces).trimEnd()
+                    if (BQ_KEY.test(key_part)) {
+                        // body lines have ≥ spaces+2 leading spaces (2*d+3 where d=(spaces-1)/2)
+                        bq_body_min = spaces + 2
+                    }
+                    out.push(raw)
+                    continue
+                }
+
+                let parsed: { d: number, objecties: Record<string,any>, stringies: Record<string,any> } | null
+                try { parsed = H.deL(raw) } catch { out.push(raw); continue }
+                if (!parsed) { out.push(raw); continue }
+
+                const { d, objecties } = parsed
+
+                // JSON-stringies: already type-safe
+                const tab     = raw.indexOf('\t')
+                const str_raw = tab >= 0 ? raw.slice(tab + 1) : raw.slice(spaces)
+                if (str_raw.startsWith('{')) { out.push(raw); continue }
+
+                // apply old fuzzy coerce rule to str_raw to recover original types
+                const recovered: Record<string, any> = {}
+                for (const part of str_raw.split(',')) {
+                    const ci = part.indexOf(':')
+                    if (ci < 0) {
+                        const k = part.trim(); if (k) recovered[k] = 1
+                    } else {
+                        const k = part.slice(0, ci)
+                        const v = part.slice(ci + 1)
+                        if (!k) continue
+                        recovered[k] = OLD_NUMERIC.test(v) ? parseFloat(v) : v
+                    }
+                }
+
+                const new_str = depeel(recovered, { modern: true })
+                if (new_str === str_raw) { out.push(raw); continue }
+
+                const ind      = '  '.repeat(d)
+                const obj_part = Object.keys(objecties).length ? JSON.stringify(objecties) : ''
+                out.push(obj_part ? `${ind}${obj_part}\t${new_str}` : `${ind}${new_str}`)
+            }
+
+            return out.join('\n')
+        }
+
+        // ── migrate_one ────────────────────────────────────────────────────────
+        const migrate_one = async (path: string) => {
+            if (inflight.has(path)) return
+            inflight.add(path)
+
+            try {
+                const rreq = await H.LiesStore_read(w, path)
+                if (!rreq.sc.finished) {
+                    H.i_req_ttlilt(rreq, 0.5, { waiting: 'read' })
+                    inflight.delete(path)
+                    return
+                }
+
+                const reply = rreq.sc.reply as any
+                if (reply?.not_found) { w.c.snap_skipped++; inflight.delete(path); return }
+                if (reply?.error) {
+                    console.error(`Snapmigrating: read error at ${path}:`, reply.error)
+                    w.c.snap_errors++
+                    inflight.delete(path)
+                    return
+                }
+
+                const old_snap = reply.content as string
+                const new_snap = migrate_lines(old_snap)
+
+                if (new_snap === old_snap) {
+                    w.c.snap_skipped++
+                    inflight.delete(path)
+                    return
+                }
+
+                if (dry_run) {
+                    console.log(`🔎 would migrate: ${path}`)
+                    w.c.snap_migrated++
+                    inflight.delete(path)
+                    return
+                }
+
+                const wreq = await H.LiesStore_write(w, path, new_snap)
+                if (!wreq) { w.c.snap_skipped++; inflight.delete(path); return }
+
+                w.c.snap_migrated++
+                console.log(`💾 migrated: ${path}`)
+            } finally {
+                inflight.delete(path)
+                H.update_see_snap(w)
+            }
+        }
+
+        // ── walk one directory off the todo queue ──────────────────────────────
+        const walk_one = async (dir: string) => {
+            if (done_dirs.has(dir)) return
+            done_dirs.add(dir)
+
             const req = await H.LiesStore_listing(w, dir)
             if (!req.sc.finished) {
+                done_dirs.delete(dir)   // retry on next tick
                 H.i_req_ttlilt(req, 0.5, { waiting: 'listing' })
                 return
             }
- 
+
             const reply = req.sc.reply as any
             if (reply?.not_found) return
             if (reply?.error) {
@@ -318,65 +407,64 @@
                 w.c.snap_errors++
                 return
             }
- 
+
             const entries: Array<{ name: string, is_dir: boolean }> = reply?.entries ?? []
- 
-            // depth-first: subdirectories before files at this level
-            for (const entry of entries) {
-                if (entry.is_dir) await walk_dir(`${dir}/${entry.name}`)
-            }
-            for (const entry of entries) {
-                if (!entry.name.endsWith('.snap')) continue
-                await migrate_snap(`${dir}/${entry.name}`)
+
+            // push subdirs onto the front of the queue (depth-first)
+            const subdirs = entries
+                .filter(e => e.is_dir)
+                .map(e => `${dir}/${e.name}`)
+                .filter(d => !done_dirs.has(d))
+            dirs_todo.unshift(...subdirs)
+
+            // queue .snap files
+            for (const e of entries) {
+                if (!e.name.endsWith('.snap')) continue
+                const path = `${dir}/${e.name}`
+                if (!inflight.has(path)) migrate_one(path)   // fire and don't await — rate below
             }
         }
- 
-        const migrate_snap = async (path: string) => {
-            const rreq = await H.LiesStore_read(w, path)
-            if (!rreq.sc.finished) {
-                H.i_req_ttlilt(rreq, 0.5, { waiting: 'read' })
-                return
+
+        // ── drain: process dirs + respect rate limit ───────────────────────────
+        const now = Date.now()
+        if (now - (w.c.snap_last_tick as number) >= TICK_MS) {
+            w.c.snap_last_tick = now
+
+            // process up to one dir per tick
+            while (dirs_todo.length && (inflight.size) < MAX_INFLIGHT) {
+                const dir = dirs_todo.shift()!
+                await walk_one(dir)
+                break  // one dir per tick keeps the queue predictable
             }
- 
-            const reply = rreq.sc.reply as any
-            if (reply?.not_found) { w.c.snap_skipped++; return }
-            if (reply?.error) {
-                console.error(`Snapmigrating: read error at ${path}:`, reply.error)
-                w.c.snap_errors++
-                return
-            }
- 
-            const old_snap = reply.content as string
-            const new_snap = old_snap
-                .split('\n')
-                .map(migrate_line)
-                .join('\n')
- 
-            if (new_snap === old_snap) { w.c.snap_skipped++; return }
- 
-            if (dry_run) {
-                console.log(`🔎 would migrate: ${path}`)
-                w.c.snap_migrated++
-                return
-            }
- 
-            const wreq = await H.LiesStore_write(w, path, new_snap)
-            // null means content-equality gate fired — shouldn't happen since
-            //  new_snap !== old_snap confirmed above, but treat as skipped
-            if (!wreq) { w.c.snap_skipped++; return }
- 
-            w.c.snap_migrated++
-            console.log(`💾 Snapmigrating: migrated ${path}`)
         }
- 
-        await walk_dir('wormhole')
- 
+
+        H.update_see_snap(w)
+
+        // re-enter until everything is done
+        const still_going = dirs_todo.length > 0 || inflight.size > 0
+        if (still_going) {
+            H.demand_time_to_think(TICK_MS)
+            return
+        }
+
         const { snap_migrated: migrated, snap_skipped: skipped, snap_errors: errors } = w.c
         const summary = `Snapmigrating: ${migrated} migrated, ${skipped} unchanged, ${errors} errors`
         console.log(summary)
         w.i({ see: errors ? `⚠️ ${summary}` : `✅ ${summary}` })
     },
- 
+
+    // shows inflight names + running totals in w/%done
+    update_see_snap(w: TheC) {
+        const H       = this as House
+        const inflight = w.c.snap_inflight as Set<string> | undefined
+        const names    = inflight ? [...inflight].map(p => p.split('/').pop()) : []
+        const label    = names.length
+            ? `⏳ migrating (${w.c.snap_migrated ?? 0} done): ${names.join(', ')}`
+            : `⏳ scanning… (${w.c.snap_migrated ?? 0} done)`
+        const done = w.oai({ done: 1 })
+        done.sc.see = label
+    },
+
 //#endregion
 
     })
