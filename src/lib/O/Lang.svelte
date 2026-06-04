@@ -335,6 +335,17 @@
         return docks?.o({dock: path})[0] as TheC | undefined
     },
 
+    // ── Lang_LE ────────────────────────────────────────────────────────────────
+    //
+    //   The %LE for this Lang instance.  Held on w:Lang/req:workon/%LE — stable
+    //   across cursor moves (installed at Lang_plan, armed on the first cursor
+    //   move).  Returns undefined before workon exists (pre-plan) or before the
+    //   hold is installed, so callers can no-op on an unready Understanding.
+    Lang_LE(w: TheC): TheC | undefined {
+        const workon = (this as House).reqy(w).o({ req: 'workon' })[0] as TheC | undefined
+        return workon?.o({ LE: 1 })[0] as TheC | undefined
+    },
+
     // ── Lang_set_active_dock ──────────────────────────────────────────────────
     //
     //   Marks a path as active. Stamps dock.sc.active so a tabs UI can see which
@@ -540,65 +551,91 @@
         return docks?.o({ dock: path })[0] as TheC | undefined
     },
 
-    // ── e_Lang_LE_drop ────────────────────────────────────────────────────────
+    // ── e_LE_operate ────────────────────────────────────────────────────────────
     //
-    //   Mark a clone as a virtual deletion by setting U%unaccepted.
-    //   The clone stays in the working tree; LE_push and encode-compare skip it.
-    //   DocMinimap's × demote button fires this instead of local demote().
+    //   The single write path for clone-tree mutation — the gather of the old
+    //   e_Lang_LE_add / _edit / _drop, which were 80% the same boilerplate
+    //   (resolve %LE off req:workon, find the clone by spec, mutate one clone or
+    //   its U node, feebly_ponder).  One elvis now; e%op selects the verb:
     //
-    //   e.sc: { spec: string }
-    async e_Lang_LE_drop(A: TheC, w: TheC, e: TheC) {
-        const H      = this as House
-        const rq     = H.reqy(w)
-        const workon = rq.o({ req: 'workon' })[0] as TheC | undefined
-        if (!workon) return
-        const LE = workon.o({ LE: 1 })[0] as TheC | undefined
-        if (!LE) return
-        const spec  = e.sc.spec as string | undefined
-        if (!spec) return
-        const clone = (H.LE_clones(LE) as TheC[]).find(c => (c.sc as any).method === spec)
-        if (!clone) return
-        H.LE_drop_clone(LE, clone)
-        H.feebly_ponder()
-    },
+    //     op:add      e%sc:$sc            append a fresh clone (full Waft sc)
+    //     op:edit     e%spec, e%patch     patch a clone's sc in place
+    //     op:drop     e%spec              U%unaccepted — virtual deletion
+    //     op:undrop   e%spec              clear U%unaccepted — re-include
+    //     op:unshow   e%spec              U%unshowing — fold out of the Lang UI
+    //     op:show     e%spec              clear U%unshowing — show again
+    //     op:push     —                   hand to the push cluster (e_Lang_LE_push)
+    //
+    //   spec matches a clone by its %method (the Point spec).  add carries a
+    //   whole sc so the caller can mint any Waft particle (Point, nested What…).
+    //
+    //   The U-sphere ops (drop/undrop/show/unshow) and the sc ops (add/edit) all
+    //   change what enWaft would emit but do NOT bump the %Seem:working particle's
+    //   own version — they touch the clone-tree root or a clone's U node, neither
+    //   of which is the Seem.  So Lang_settle's encode gate keys on
+    //     `${working.version}:${u_edit_serial}`
+    //   and we bump LE.c.u_edit_serial here on every mutation; without it
+    //   %State.changey would never update after an edit (the minimap-× demote bug).
+    //   Then feebly_ponder so req:settle re-encodes next tick; push pokes its own think.
+    //
+    //   A missing op or required param throws (loud in test); a spec that matches
+    //   no clone is a live runtime state, not malformed input — return quietly.
+    //
+    //   e.sc: { op, spec?, patch?, sc? }
+    async e_LE_operate(A: TheC, w: TheC, e: TheC) {
+        const H  = this as House
+        const op = e.sc.op as string | undefined
+        if (!op) throw 'e_LE_operate: needs e%op'
 
-    // ── e_Lang_LE_add ─────────────────────────────────────────────────────────
-    //
-    //   Append a fresh clone to the working tree.
-    //   The settler's encode step picks up the change on the next think.
-    //
-    //   e.sc: { sc: Record<string, any> }   — the sc for the new Point
-    async e_Lang_LE_add(A: TheC, w: TheC, e: TheC) {
-        const H      = this as House
-        const rq     = H.reqy(w)
-        const workon = rq.o({ req: 'workon' })[0] as TheC | undefined
-        if (!workon) return
-        const LE = workon.o({ LE: 1 })[0] as TheC | undefined
-        if (!LE) return
-        const sc = e.sc.sc as Record<string, any> | undefined
-        if (!sc) return
-        H.LE_add_clone(LE, sc)
-        H.feebly_ponder()
-    },
+        // push is its own resumable cluster, not boilerplate — delegate whole.
+        if (op === 'push') { await H.e_Lang_LE_push(A, w, e); return }
 
-    // ── e_Lang_LE_edit ────────────────────────────────────────────────────────
-    //
-    //   Patch a clone's sc in place.  The settler re-encodes on the next think.
-    //
-    //   e.sc: { spec: string, patch: Record<string, any> }
-    async e_Lang_LE_edit(A: TheC, w: TheC, e: TheC) {
-        const H      = this as House
-        const rq     = H.reqy(w)
-        const workon = rq.o({ req: 'workon' })[0] as TheC | undefined
-        if (!workon) return
-        const LE = workon.o({ LE: 1 })[0] as TheC | undefined
-        if (!LE) return
-        const spec  = e.sc.spec  as string | undefined
-        const patch = e.sc.patch as Record<string, any> | undefined
-        if (!spec || !patch) return
-        const clone = (H.LE_clones(LE) as TheC[]).find(c => (c.sc as any).method === spec)
-        if (!clone) return
-        Object.assign(clone.sc, patch)
+        const LE = H.Lang_LE(w)
+        if (!LE) return   // pre-plan / unarmed — nothing to operate on
+
+        const by_spec = (spec: string) =>
+            (H.LE_clones(LE) as TheC[]).find(c => (c.sc as any).method === spec)
+
+        // sc / patch may arrive as a real object (programmatic caller) or a
+        // JSON string (a plain-text Prep esc, where everything after v: is one
+        // value) — same trick as Lang_i_alterationStation's match/replacement.
+        const as_obj = (v: any): Record<string, any> | undefined =>
+            typeof v === 'string' ? JSON.parse(v) : v
+
+        switch (op) {
+            case 'add': {
+                const sc = as_obj(e.sc.sc)
+                if (!sc) throw 'e_LE_operate add: needs e%sc (object or JSON)'
+                H.LE_add_clone(LE, sc)
+                break
+            }
+            case 'edit': {
+                const spec  = e.sc.spec as string | undefined
+                const patch = as_obj(e.sc.patch)
+                if (!spec || !patch) throw 'e_LE_operate edit: needs e%spec and e%patch (object or JSON)'
+                const clone = by_spec(spec)
+                if (!clone) return
+                Object.assign(clone.sc, patch)
+                break
+            }
+            case 'drop': case 'undrop': case 'unshow': case 'show': {
+                const spec = e.sc.spec as string | undefined
+                if (!spec) throw `e_LE_operate ${op}: needs e%spec`
+                const clone = by_spec(spec)
+                if (!clone) return
+                if      (op === 'drop')   H.LE_drop_clone(LE, clone)
+                else if (op === 'undrop') H.LE_undrop_clone(LE, clone)
+                else if (op === 'unshow') H.LE_unshow_clone(LE, clone)
+                else                      H.LE_show_clone(LE, clone)
+                break
+            }
+            default:
+                throw `e_LE_operate: unknown e%op:${op}`
+        }
+
+        // record the edit for Lang_settle's encode gate (see the version note above),
+        // then converge on the next tick.
+        LE.c.u_edit_serial = ((LE.c.u_edit_serial as number) ?? 0) + 1
         H.feebly_ponder()
     },
 
@@ -786,13 +823,17 @@
         settle.oai({ graft: 1 }).sc.n_pmirrors =
             (dock.o({ Pmirrors: 1 })[0]?.o({ Pmirror: 1 }) as TheC[] ?? []).length
 
-        // encode — gated on working.version so enWaft is not called every pass.
-        // < U-edits (unaccepted/unshowing) change the encode result without
-        //   bumping working.version — a separate trigger is needed for that case.
-        const wv = LE.o({ Seem: 'working' })[0]?.version
-        if (settle.c.last_encode_ver !== wv) {
+        // encode — gated on a composite key so enWaft is not called every pass.
+        // A pull bumps the %Seem:working particle's version; a clone-tree or
+        // U-sphere edit instead bumps LE.c.u_edit_serial (e_LE_operate stamps it),
+        // because those edits touch the clone root or a clone's U node, neither of
+        // which is the Seem.  Keying on both means either kind of change re-encodes
+        // — without the serial, %State.changey never updated after a minimap-× demote.
+        const wv         = LE.o({ Seem: 'working' })[0]?.version
+        const encode_key = `${wv}:${(LE.c.u_edit_serial as number) ?? 0}`
+        if (settle.c.last_encode_key !== encode_key) {
             await H.LE_encode_compare(LE)   // stamps %State.changey
-            settle.c.last_encode_ver = wv
+            settle.c.last_encode_key = encode_key
         }
     },
 

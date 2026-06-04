@@ -34,7 +34,7 @@
     //   unsent bar stays hidden until the user actually changes something.
     //
     //   Capsule label click — < fires Lang_navigate_to; needs handler on Lang side.
-    //   × fires e_Lang_LE_drop when LE is armed at a %What; else local demote().
+    //   × fires LE_operate op:drop when LE is armed at a %What; else local demote().
     //   Push fires Lies_accept_What_Point; Reset reverts to pushed_snapshot (two-tap).
 
     import type { TheC } from "$lib/data/Stuff.svelte"
@@ -223,6 +223,7 @@
     $effect(() => {
         void lang_dock?.vers
         void LE?.vers
+        if (!LE?.oa({ Seem: 'working' })) return // dont go on to oai() create this accidentally!
         const marks      = collect_graft_marks()
         const membership = collect_le_membership()
 
@@ -527,11 +528,11 @@
                     {spec}
                 </button>
                 {#if !is_sh}
-                    <!-- x fires e_Lang_LE_drop when LE is armed at a %What;
+                    <!-- × fires LE_operate op:drop when LE is armed at a %What;
                          falls back to local demote() for bare %Doc sessions. -->
                     <button class="lmm-capsule-demote" title="Remove Point" onclick={() => {
                         if (LE && (LE.sc.target as any)?.sc?.What !== undefined) {
-                            H.i_elvisto('Lang/Lang', 'Lang_LE_drop', { spec })
+                            H.i_elvisto('Lang/Lang', 'LE_operate', { op: 'drop', spec })
                         } else {
                             demote(spec)
                         }

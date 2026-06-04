@@ -508,8 +508,8 @@
     //
     //   Runs after graft has minted the Pmirrors and on every think thereafter
     //   (cheap — it short-circuits when the U-fingerprint is unchanged).  The
-    //   feebly_ponder() that LE_drop_clone / e_Lang_LE_edit already fire re-enters
-    //   it directly; no dirty flag.
+    //   feebly_ponder() that e_LE_operate fires on every edit re-enters it
+    //   directly; no dirty flag.
     //
     //   < the CM decoration field (pointDecorationField / setPointDecorationsEffect)
     //     and the squish fold widget are Waft_spec deliverables that live in

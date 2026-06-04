@@ -316,7 +316,8 @@ class StuffIO {
         return nonemptyArray_or_null(this.bo1(c,q))
     }
 
-    // select or insert but not update
+    // select one or insert but not update
+    //  warning: not for 'select one' if you're not ready to insert it, use C.o({...})[0]
     //  when you want .r(), but preserving the first version of the C once matching s
     //  oai(match_sc,props_sc) doesn't merge props onto the found particle, only if created
     //   otherwise see roai()

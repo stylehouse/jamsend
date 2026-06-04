@@ -191,6 +191,7 @@ await M.eatfunc({
     // origin diff is non-empty.  changey is set by LE_encode_compare, not here.
     async LE_pull(LE: TheC, strict = 0) {
         const H = this as House
+        if (!LE.oa({ Seem: 'working' })) throw "was no SeemWorking,"
         const origin  = LE.oai({ Seem: 'origin' })
         const working = LE.oai({ Seem: 'working' })
 
@@ -227,7 +228,8 @@ await M.eatfunc({
     // All editable working clones (clean C**).  Meanings live on C.c.U.
     // Callers that push or encode filter out U%unaccepted themselves.
     LE_clones(LE: TheC): TheC[] {
-        const working = LE.o({ Seem: 'working' })[0]
+        if (!LE.oa({ Seem: 'working' })) throw "was no SeemWorking,"
+        const working = LE.oai({ Seem: 'working' })
         return working.sc.C ? (working.sc.C as TheC).o({}) : []
     },
 
@@ -342,20 +344,46 @@ await M.eatfunc({
     // needed.  The next LE_pull wires C.c.D and C.c.U for the new child.
     LE_add_clone(LE: TheC, sc: Record<string, unknown>): TheC {
         const H = this as House
+        if (!LE.oa({ Seem: 'working' })) throw "was no SeemWorking,"
         const working = LE.oai({ Seem: 'working' })
         const root    = working.sc.C as TheC | undefined
         if (!root) throw 'LE_add_clone: no working C — call LE_pull first'
         return root.i({ ...sc })
     },
 
-    // ── LE_drop_clone ────────────────────────────────────────────────────────
-    // Mark a clone as a virtual deletion by setting U%unaccepted.
-    // The clone stays in the working tree so LE_accepted_clones can filter it;
-    // LE_push skips it. encode-compare omits it from working's snap via Seem_toString.
-    // Requires C.c.U — call LE_pull at least once after LE_arm before dropping.
+    // ── LE_u_set ───────────────────────────────────────────────────────────
+    // Set (on=1) or clear (on=0) a flag on a clone's %Understandable node.
+    // U meanings are OF the clone within this Understanding, never IN its sc —
+    // so they ride C.c.U, invisible to enWaft.  Absence is the positive case:
+    // C are showing and accepted by default, so clearing is just delete.
+    // Requires C.c.U, which _Seem_CDUsive wires on the first LE_pull after an arm.
+    LE_u_set(clone: TheC, key: string, on: 0 | 1) {
+        const U = clone.c.U as TheC | undefined
+        if (!U) throw `LE_u_set: clone has no U node — has LE_pull run since LE_arm?`
+        if (on) U.sc[key] = 1
+        else    delete U.sc[key]
+    },
+
+    // ── LE_drop_clone / LE_undrop_clone ──────────────────────────────────────
+    // U%unaccepted is a virtual deletion.  The clone stays in the working tree
+    // so LE_accepted_clones can filter it; LE_push skips it and Seem_toString
+    // omits it from working's snap.  undrop re-includes by clearing the flag.
     LE_drop_clone(LE: TheC, clone: TheC) {
-        if (!clone.c.U) throw 'LE_drop_clone: clone has no U node — has LE_pull been called?'
-        clone.c.U.sc.unaccepted = 1
+        (this as House).LE_u_set(clone, 'unaccepted', 1)
+    },
+    LE_undrop_clone(LE: TheC, clone: TheC) {
+        (this as House).LE_u_set(clone, 'unaccepted', 0)
+    },
+
+    // ── LE_unshow_clone / LE_show_clone ───────────────────────────────────────
+    // U%unshowing opts a clone out of the Lang UI display (fold it away) with no
+    // effect on push or encode — Lang reads it from each clone's U node when
+    // building fold/decoration state.  show clears it back to the default.
+    LE_unshow_clone(LE: TheC, clone: TheC) {
+        (this as House).LE_u_set(clone, 'unshowing', 1)
+    },
+    LE_show_clone(LE: TheC, clone: TheC) {
+        (this as House).LE_u_set(clone, 'unshowing', 0)
     },
 
     // ── LE_accepted_clones ──────────────────────────────────────────────────
@@ -423,9 +451,9 @@ await M.eatfunc({
     // working) — returned to caller, not swallowed.
     async LE_encode_compare(LE: TheC) {
         const H = this as House
-        const origin  = LE.o({ Seem: 'origin' })[0]
-        const working = LE.o({ Seem: 'working' })[0]
-        if (!(origin && working)) throw "!Seems"
+        if (!LE.oa({ Seem: 'working' })) throw "was no SeemWorking,"
+        const origin  = LE.oai({ Seem: 'origin' })
+        const working = LE.oai({ Seem: 'working' })
 
         const o  = await H.Seem_toString(origin)
         const wk = await H.Seem_toString(working)
