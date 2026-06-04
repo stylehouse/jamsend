@@ -18,8 +18,9 @@
     //
     // ── Nav buttons ──────────────────────────────────────────────────────────
     //
-    //   ↑  ←  →  — up / prev / next What via c.up chain
-    //   ↘  ↓     — branch (new sibling) / dive (new child) What
+    //   ↑  ←  →  ↘  ↓  — all emit i_elvisto(w, 'LE_operate', { op }) where op
+    //   is 'up'/'prev'/'next'/'dive'/'branch'.  The handler (LiesCurse) reads the
+    //   live cursor from %examining/%Spotlight and drives movement from there.
     //
     //   Transport bar (when req:timemachine exists):
     //   ‖/▶  — i_elvisto Lies_desire_pause / Lies_desire_play
@@ -34,7 +35,8 @@
     //   unsent bar stays hidden until the user actually changes something.
     //
     //   Capsule label click — < fires Lang_navigate_to; needs handler on Lang side.
-    //   × fires LE_operate op:drop when LE is armed at a %What; else local demote().
+    //   × fires e_LE_preen{action:'drop'} when LE is armed at a %What; else
+    //   local demote() for bare %Doc sessions.
     //   Push fires Lies_accept_What_Point; Reset reverts to pushed_snapshot (two-tap).
 
     import type { TheC } from "$lib/data/Stuff.svelte"
@@ -111,9 +113,9 @@
     let has_up     = $derived(depth > 0)
     let has_branch = $derived(!!target)   // ↓ new next sibling — always possible
     let has_dive   = $derived(!!target)   // ↘ new child — always possible
-    // has_prev/has_next reflect depth-first reachability (see what_dfs_* helpers)
-    let has_prev   = $derived(target ? !!what_dfs_prev(target) : false)
-    let has_next   = $derived(target ? !!what_dfs_next(target) : false)
+    // has_prev/has_next: DFS reachability via LE tree helpers (LiesEnd)
+    let has_prev   = $derived(target ? !!(H as any).LE_what_dfs_prev(target) : false)
+    let has_next   = $derived(target ? !!(H as any).LE_what_dfs_next(target) : false)
 
     // ── capsule state ─────────────────────────────────────────────────────────
 
@@ -199,7 +201,7 @@
     //   Points; returns an empty Map for bare %Doc sessions.
     function collect_le_membership(): Map<string, { unaccepted: boolean, unshowing: boolean }> {
         const out = new Map<string, { unaccepted: boolean, unshowing: boolean }>()
-        if (!LE) return out
+        if (!LE?.oa({ Seem: 'working' })) return out   // don't oai() — not ready to insert
         const target_c = LE.sc.target as TheC | undefined
         // bare %Doc as target has no .What on sc — skip
         if (!target_c || (target_c.sc as any).What === undefined) return out
@@ -223,7 +225,7 @@
     $effect(() => {
         void lang_dock?.vers
         void LE?.vers
-        if (!LE?.oa({ Seem: 'working' })) return // dont go on to oai() create this accidentally!
+        if (!LE?.oa({ Seem: 'working' })) return   // don't oai() create this accidentally!
         const marks      = collect_graft_marks()
         const membership = collect_le_membership()
 
@@ -254,8 +256,7 @@
 
     // ── Spotlight echo — receive pushed state from Lies ───────────────────────
     //
-    //   Fires on e_Lies_accept_What_Point round-trip and on e_Lies_cursor_next
-    //   (the restored Spotlight from the next Doc's stored set).
+    //   Fires on e_Lies_accept_What_Point round-trip.
     //   Our own push is identified by _our_last_push_id — ignore to avoid loop.
     $effect(() => {
         void examining?.vers
@@ -281,6 +282,7 @@
     }
 
     // Demote: remove from in_group+showing and prevent future auto-promotion.
+    // Used for bare %Doc sessions; armed %What sessions go through LE_preen.
     function demote(spec: string) {
         _user_demoted.add(spec)
         const ig = new Set(in_group); ig.delete(spec)
@@ -327,86 +329,26 @@
         reset_confirm = false
     }
 
-    // Advance Lies cursor to the next Doc across all loaded Wafts.
-    // < What-level navigation (sibling time-slices) is a future arc.
-    function cursor_next() {
-        H.i_elvisto('Lies/Lies', 'Lies_cursor_next', { dock_path: active_path })
-    }
-
-    // ── nav actions ──────────────────────────────────────────────────────────
-
-    function go_up() {
-        if (!target) return
-        const parent = (H as any).LE_what_parent(target) as TheC | undefined
-        if (!parent) return
-        H.i_elvisto('Lies/Lies', 'Lies_cursor_what', { what: parent })
-    }
-
-    function go_prev() {
-        if (!target) return
-        const dest = what_dfs_prev(target)
-        if (dest) H.i_elvisto('Lies/Lies', 'Lies_cursor_what', { what: dest })
-    }
-
-    function go_next() {
-        if (!target) return
-        const dest = what_dfs_next(target)
-        if (dest) H.i_elvisto('Lies/Lies', 'Lies_cursor_what', { what: dest })
-    }
-
-    // ── depth-first What traversal ────────────────────────────────────────────
+    // ── nav actions ───────────────────────────────────────────────────────────
     //
-    //   what_dfs_next — dive into first child, else advance to next sibling,
-    //     else fall out to ancestor's next sibling.  Same order Travel uses.
-    //   what_dfs_prev — reverse: go to deepest-last of previous sibling,
-    //     else go up to parent.
-    //   what_deepest_last — rightmost leaf of a subtree (used by dfs_prev).
-
-    function what_dfs_next(what: TheC): TheC | undefined {
-        // descend into first child if any
-        const children = what.o({ What: 1 }) as TheC[]
-        if (children.length) return children[0]
-        return what_find_next_ancestor(what)
-    }
-
-    function what_find_next_ancestor(what: TheC): TheC | undefined {
-        const next = (H as any).LE_what_next(what) as TheC | undefined
-        if (next) return next
-        const parent = (H as any).LE_what_parent(what) as TheC | undefined
-        return parent ? what_find_next_ancestor(parent) : undefined
-    }
-
-    function what_dfs_prev(what: TheC): TheC | undefined {
-        const prev = (H as any).LE_what_prev(what) as TheC | undefined
-        if (prev) return what_deepest_last(prev)
-        return (H as any).LE_what_parent(what) as TheC | undefined
-    }
-
-    // last What in DFS order within a subtree: keep following the last child down
-    function what_deepest_last(what: TheC): TheC {
-        const children = what.o({ What: 1 }) as TheC[]
-        return children.length ? what_deepest_last(children[children.length - 1]) : what
-    }
-
-    function go_branch() {
-        if (!target) return
-        H.i_elvisto('Lies/Lies', 'Lies_branch_what', { what: target })
-    }
-
-    function go_dive() {
-        if (!target) return
-        H.i_elvisto('Lies/Lies', 'Lies_dive_what', { what: target })
-    }
+    //   Single emitter — all button presses funnel through e_LE_operate in
+    //   LiesCurse, which reads the live cursor from %examining/%Spotlight and
+    //   drives movement from there.  The op string flows through as the %want
+    //   kind so the resolver log is chatty.
+    const op = (kind: string) => H.i_elvisto('Lies/Lies', 'LE_operate', { op: kind })
 
     // Label for the current What — shown in the middle of the toolbar.
-    // target is only set for %What particles (confirmed above); unlabeled Whats show blank.
-    let what_label = $derived(
-        target
-            ? ((target.sc as any).label as string | undefined)
-              ?? ((target.sc as any).path as string | undefined)?.split('/').pop()
-              ?? ''
-            : ''
-    )
+    // What:story → sc.What = 'story'; sc.label is a legacy/explicit override.
+    // Unlabelled Whats show blank (bare What:1 has no string value).
+    let what_label = $derived.by(() => {
+        void target?.vers
+        if (!target) return ''
+        const wv = (target.sc as any).What
+        return (typeof wv === 'string' ? wv : undefined)   // What:story → 'story'
+            ?? (target.sc as any).label                    // explicit label, if any
+            ?? ((target.sc as any).path as string | undefined)?.split('/').pop()
+            ?? ''
+    })
 </script>
 
 {#if LE && target}
@@ -415,20 +357,20 @@
     <!-- up — ghosted at top level -->
     <div class="nvc-seed" class:nvc-ghost={!has_up}>
         {#if slot_up}
-            {@render slot_up({ ghosted: !has_up, onclick: go_up })}
+            {@render slot_up({ ghosted: !has_up, onclick: () => op('up') })}
         {:else}
             <button class="nvc-btn" class:nvc-ghosted={!has_up}
-                    disabled={!has_up} onclick={go_up} title="Up to parent What">↑</button>
+                    disabled={!has_up} onclick={() => op('up')} title="Up to parent What">↑</button>
         {/if}
     </div>
 
     <!-- prev -->
     <div class="nvc-seed" class:nvc-ghost={!has_prev}>
         {#if slot_prev}
-            {@render slot_prev({ ghosted: !has_prev, onclick: go_prev })}
+            {@render slot_prev({ ghosted: !has_prev, onclick: () => op('prev') })}
         {:else}
             <button class="nvc-btn" class:nvc-ghosted={!has_prev}
-                    disabled={!has_prev} onclick={go_prev} title="Previous What">←</button>
+                    disabled={!has_prev} onclick={() => op('prev')} title="Previous What">←</button>
         {/if}
     </div>
 
@@ -438,20 +380,20 @@
     <!-- next -->
     <div class="nvc-seed" class:nvc-ghost={!has_next}>
         {#if slot_next}
-            {@render slot_next({ ghosted: !has_next, onclick: go_next })}
+            {@render slot_next({ ghosted: !has_next, onclick: () => op('next') })}
         {:else}
             <button class="nvc-btn" class:nvc-ghosted={!has_next}
-                    disabled={!has_next} onclick={go_next} title="Next What">→</button>
+                    disabled={!has_next} onclick={() => op('next')} title="Next What">→</button>
         {/if}
     </div>
 
     <!-- ↘ dive — new child %What inside current (go deeper) -->
     <div class="nvc-seed" class:nvc-ghost={!has_dive}>
         {#if slot_branch}
-            {@render slot_branch({ ghosted: !has_dive, onclick: go_dive })}
+            {@render slot_branch({ ghosted: !has_dive, onclick: () => op('dive') })}
         {:else}
             <button class="nvc-btn" class:nvc-ghosted={!has_dive}
-                    disabled={!has_dive} onclick={go_dive}
+                    disabled={!has_dive} onclick={() => op('dive')}
                     title="Child (↘ new What inside current)">↘</button>
         {/if}
     </div>
@@ -459,10 +401,10 @@
     <!-- ↓ branch — new next sibling %What after current -->
     <div class="nvc-seed" class:nvc-ghost={!has_branch}>
         {#if slot_dive}
-            {@render slot_dive({ ghosted: !has_branch, onclick: go_branch })}
+            {@render slot_dive({ ghosted: !has_branch, onclick: () => op('branch') })}
         {:else}
             <button class="nvc-btn" class:nvc-ghosted={!has_branch}
-                    disabled={!has_branch} onclick={go_branch}
+                    disabled={!has_branch} onclick={() => op('branch')}
                     title="Next (↓ new sibling What after current)">↓</button>
         {/if}
     </div>
@@ -528,11 +470,11 @@
                     {spec}
                 </button>
                 {#if !is_sh}
-                    <!-- × fires LE_operate op:drop when LE is armed at a %What;
+                    <!-- × fires LE_preen{action:'drop'} when LE is armed at a %What;
                          falls back to local demote() for bare %Doc sessions. -->
                     <button class="lmm-capsule-demote" title="Remove Point" onclick={() => {
                         if (LE && (LE.sc.target as any)?.sc?.What !== undefined) {
-                            H.i_elvisto('Lang/Lang', 'LE_operate', { op: 'drop', spec })
+                            H.i_elvisto('Lang/Lang', 'LE_preen', { action: 'drop', spec })
                         } else {
                             demote(spec)
                         }
@@ -541,7 +483,7 @@
             </div>
         {/each}
         <!-- Step Lies cursor to the next What in the Waft order. -->
-        <button class="lmm-cursor-next" title="Next What in Waft" onclick={cursor_next}>→</button>
+        <button class="lmm-cursor-next" title="Next What in Waft" onclick={() => op('next_doc')}>→</button>
     </div>
 {/if}
 

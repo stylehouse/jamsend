@@ -1,42 +1,34 @@
 <script lang="ts">
-    // LiesCurse — graft-cursor wiring for w:Lies.
+    // LiesCurse — cursor wiring and all movement over the %What tree.
     //
     // ── What this does ───────────────────────────────────────────────────────
     //
     //   Owns everything that reads and writes %examining's cursor fields.
-    //   %examining itself is created by Lies's one-time setup (like Lang
-    //   creating dock while LangGraft owns the Pmirror layer).  LiesCurse
-    //   reads it via w.o({ examining:1 })[0] and returns early if Lies
-    //   hasn't run setup yet — retries naturally next tick.
+    //   Every cursor gesture becomes a %want emitted via i_elvisto(w,'Lies_want',
+    //   {src,kind}); Lies_resolve_wants picks the newest and funnels it through
+    //   Lies_i_Spotlight — the one seam.
     //
-    // ── Responsibilities ─────────────────────────────────────────────────────
+    // ── Regions ──────────────────────────────────────────────────────────────
     //
-    //   Every cursor gesture becomes a %want (Spotlight-Interest-trajectory §3e):
-    //   the handlers below emit i_elvisto(w, 'Lies_want', { src, kind }) instead
-    //   of setting the cursor in-place.  Lies' wants resolver (Lies_resolve_wants)
-    //   picks the newest and funnels it through Lies_i_Spotlight — the one seam.
-    //
-    //   - Cold-start placement: on the first tick where Wafts are loaded and the
-    //     cursor has no target, emit a cold want for the first inhabited %What.
-    //   - e:Lies_active_doc_changed — fired by Lang_set_active_dock; emits a doc
-    //     want when the foreground doc is in a loaded Waft and the cursor is not
-    //     already on a %What.
-    //   - e:Lies_set_cursor — explicit cursor jump from Waft/DocRow click.
-    //   - e:Lies_cursor_next / e:Lies_cursor_what — NaviCado / → stepping.
-    //   - e:Lies_branch_what / e:Lies_dive_what — ↘ / ↓ +time gestures.
-    //   - Lies_find_doc_in_wafts — walk loaded Wafts by path.
-    //   - Lies_i_Spotlight — the seam: stamp src + bump + fire Lang_workon_update.
+    //   seam        — Lies_i_Spotlight (the one cursor write); LiesCurse tick
+    //   operate     — e_LE_operate dispatcher + branch/dive workers +
+    //                 e_Lies_cursor_what (Waft label-click with dive:true)
+    //   doc-follow  — e_Lies_active_doc_changed, e_Lies_set_cursor
+    //   finders     — pure tree-walk / find helpers (no side effects)
+    //   stepping    — Waft-level cursor stepping (timemachine / acquire)
+    //   carry-over  — +time Point seeding into new %Whats
+    //   accept      — e_Lies_accept_What_Point round-trip
     //
     // ── Particle ownership ───────────────────────────────────────────────────
     //
     //   %examining is Lies's.  LiesCurse never oai()s it — only reads it.
-    //   %examining/%Spotlight,1 is written only through Lies_i_Spotlight (called
-    //   by the resolver), so the stamp is always atomic.
+    //   %examining/%Spotlight,1 is written only through Lies_i_Spotlight, so
+    //   the stamp is always atomic.
     //
-    //   - Waft_cursor_candidates / Waft_cursor_first / Waft_cursor_next_candidate:
-    //     shared stepping helpers (finders; they emit wants, they don't set).
-    //   - e_Lies_cursor_next (→ button): step cursor across all loaded Wafts.
-    //   < Lies_accept_What_Point: echo accepted_push_id back to DocMinimap.
+    //   < Se_o as a standing watch — call-driven for now.
+    //   < Lies_accept_What_Point: will likely be subsumed once the U sphere is
+    //     the single truth for accepted/showing and NaviCado pushes via
+    //     e_Lang_LE_push.
 
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
@@ -47,21 +39,21 @@
     onMount(async () => {
     await M.eatfunc({
 
-//#region LiesCurse
+//#region LiesCurse — cold-start cursor placement
 
+    // ── LiesCurse ─────────────────────────────────────────────────────────────
+    //
+    //   Fires every tick.  When the cursor has no target yet — i.e. the Waft
+    //   just finished loading for the first time — pick the first inhabited
+    //   %What, or the first %Doc if the Waft is fresh and has no Points yet.
+    //
+    //   Doc-switch following lives in e_Lies_active_doc_changed, fired directly
+    //   from Lang_set_active_dock as an elvis — no watch_c loop.
     async LiesCurse(A: TheC, w: TheC) {
         const H         = this as House
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
         if (!examining) return   // Lies one-time setup hasn't run yet; retry next tick
 
-        // ── cold-start cursor placement ───────────────────────────────────────
-        //
-        //   Only fires when the cursor has no target yet — i.e. the Waft just
-        //   finished loading for the first time.  Pick the first inhabited %What,
-        //   or the first %Doc if the Waft is fresh and has no Points yet.
-        //
-        //   Doc-switch following now lives in e_Lies_active_doc_changed, fired
-        //   directly from Lang_set_active_dock as an elvis — no watch_c loop.
         const spot = examining.o({ Spotlight: 1 })[0] as TheC | undefined
         if (!spot?.sc.src) {
             const first = H.Lies_first_point_doc(w) ?? H.Lies_first_doc(w)
@@ -75,6 +67,192 @@
         }
     },
 
+//#endregion
+//#region seam — Lies_i_Spotlight: the one cursor write
+
+    // ── Lies_i_Spotlight ──────────────────────────────────────────────────────
+    //
+    //   Single seam for all cursor moves — called only from the wants resolver
+    //   (§3e), never from a click handler directly.  Stamps %Spotlight with the
+    //   new src, bumps, then fires Lang_workon_update so w:Lang's req:workon
+    //   cluster resets and re-checkouts.
+    //
+    //   §3a: src_Waft drops.  waft_key is derivable from src by waft_key_of
+    //   (c.waft / c.up), so nothing stores it; readers call waft_key_of instead.
+    //
+    //   Cold-start rehydration of sc.accepted / sc.showing from %Point children
+    //   lives here — only injected when accepted Points exist so a live
+    //   accepted_entries from a prior push isn't overwritten.
+    //   accepted_push_id = 1 as a cold-start sentinel (always < any real Date.now()).
+    async Lies_i_Spotlight(examining: TheC, src: TheC, waft_key: string) {
+        const H    = this as House
+        const spot = examining.oai({ Spotlight: 1 })
+        spot.sc.src = src
+
+        const pts      = src.o({ Point: 1 }) as TheC[]
+        const accepted = pts.filter(pt => pt.sc.accepted)
+        if (accepted.length) {
+            const entries = accepted.map(pt => ({
+                spec:    pt.sc.method as string,
+                showing: !!pt.sc.showing,
+            }))
+            spot.sc.accepted_push_id = 1
+            spot.sc.accepted_entries = entries
+        }
+
+        spot.bump_version()
+        examining.bump_version()   // Waft snippet reads void examining?.version for glow reactivity
+        console.log(`👁 cursor → Waft:${waft_key} ${(src.sc as any).What !== undefined ? 'What:' + (src.sc as any).What : 'doc:' + ((src.sc as any).Doc ?? '?')}`)
+
+        H.i_elvisto('Lang/Lang', 'Lang_workon_update', { src })
+    },
+
+//#endregion
+//#region operate — cursor-movement gestures
+
+    // ── e_LE_operate ──────────────────────────────────────────────────────────
+    //
+    //   One seam for every cursor-movement gesture NaviCado owns as a button.
+    //   Button bodies collapse to i_elvisto(w, 'LE_operate', { op }); the pivot
+    //   is read here from %examining/%Spotlight,src — Lies-local and synchronous,
+    //   no cross-world LE reach, no LE.sc.target lag.  This half only moves the
+    //   cursor over the live %What tree; working-clone mutation is e_LE_preen
+    //   on w:Lang.
+    //
+    //   op → kind: the op string flows through as the %want kind so the resolver
+    //   log reads 'up'/'prev'/'next'/'branch'/'dive'/'next_doc' rather than a
+    //   generic 'next' — chatty is good for tracing cursor intent.
+    //
+    //   op: up | prev | next     — structural moves, c.up chain + DFS helpers
+    //       branch | dive        — +time gestures; splice and step in (workers)
+    //       next_doc             — cross-Waft step; identity-tracked, wraps at end
+    //
+    //   < next_doc steps flat Waft_cursor_candidates; branch/dive hierarchy not
+    //     yet traversed.
+    async e_LE_operate(A: TheC, w: TheC, e: TheC) {
+        const H         = this as House
+        const examining = w.o({ examining: 1 })[0] as TheC | undefined
+        if (!examining) return
+        const op = e.sc.op as string | undefined
+        if (!op) return
+
+        // pivot — the cursored %What.  A bare-%Doc src has no .What and can
+        // step docs (next_doc); structural ops no-op from there.
+        const src  = examining.o({ Spotlight: 1 })[0]?.sc.src as TheC | undefined
+        const what = src && (src.sc as any).What !== undefined ? src : undefined
+
+        const want = (dest: TheC | undefined) => {
+            if (dest) H.i_elvisto(w, 'Lies_want', { src: dest, kind: op })
+        }
+
+        switch (op) {
+            case 'up':   return void want(what ? H.LE_what_parent(what)   : undefined)
+            case 'prev': return void want(what ? H.LE_what_dfs_prev(what) : undefined)
+            case 'next': return void want(what ? H.LE_what_dfs_next(what) : undefined)
+            case 'branch': if (what) H.Lies_branch_what(w, what, op);        return
+            case 'dive':   if (what) await H.Lies_dive_what(w, what, op);    return
+            case 'next_doc': {
+                // cross-Waft depth-first step, wraps at end
+                const cands = H.Waft_cursor_candidates(w)
+                if (!cands.length) return
+                const i = cands.findIndex(c => c.what === src)
+                want(cands[(i + 1) % cands.length].what)
+                return
+            }
+        }
+    },
+
+    // ── Lies_branch_what ─────────────────────────────────────────────────────
+    //
+    //   Branch body — called by e_LE_operate{op:'branch'}.  Splices a new
+    //   sibling %What immediately after `what` in the parent's child list,
+    //   seeds it from carry-over, stamps back-refs, saves, and emits a want.
+    //   `op` flows through as the want kind.
+    //
+    //   Existing sibling %Whats that follow `what` are held, dropped from the
+    //   parent, the new What inserted, then re-inserted in order.  Outside of a
+    //   replace() fn parent.i(existing_particle) is fine — the particle's own X
+    //   (children) and c.* refs are unaffected.  Insertion order in the replace
+    //   fn determines how resolve() pairs sc duplicates — existing particles go
+    //   first, so a second unnamed sibling won't steal the first one's slot.
+    Lies_branch_what(w: TheC, what: TheC, op: string) {
+        const H      = this as House
+        const parent = (what.c.up as TheC | undefined) ?? (what.c.waft as TheC | undefined)
+        if (!parent) return
+        const waft_C = H.LE_what_waft(what)
+        if (!waft_C) return
+
+        const carry  = H.Lies_what_carry_over(what)
+        const sibs   = parent.o({ What: 1 }) as TheC[]
+        const idx    = sibs.indexOf(what)
+        const after  = idx >= 0 ? sibs.slice(idx + 1) : []
+        for (const sib of after) parent.drop(sib)
+        const new_what = parent.i({ What: 1 })
+        for (const sib of after) parent.i(sib)
+
+        H.Lies_seed_what_carry_over(new_what, carry)
+        // stamp back-refs so navigation helpers work before the next LE_pull re-links;
+        // Waft_link_up stamps the new What's children at checkout time
+        new_what.c.up   = parent
+        new_what.c.waft = waft_C
+
+        H.Lies_waft_save(w, waft_C)
+        H.i_elvisto(w, 'Lies_want', { src: new_what, kind: op })
+    },
+
+    // ── Lies_dive_what ────────────────────────────────────────────────────────
+    //
+    //   Dive body — called by e_LE_operate{op:'dive'}.  Creates a new child
+    //   %What inside `what`, seeds from carry-over, and steps in.  The parent
+    //   keeps its original Points intact — the carry-over is a copy, not a move.
+    //   `op` flows through as the want kind.
+    //
+    //   The secondary strip (prev-What ghost layer) is Chunk 4d — for now dive
+    //   always seeds from the last accepted+showing Points.
+    async Lies_dive_what(w: TheC, what: TheC, op: string) {
+        const H      = this as House
+        const waft_C = H.LE_what_waft(what)
+        if (!waft_C) return
+
+        const carry    = H.Lies_what_carry_over(what)
+        const new_what = what.i({ What: 1 })
+        H.Lies_seed_what_carry_over(new_what, carry)
+        // stamp back-refs immediately; Waft_link_up fills in the new What's
+        // children at the next LE_pull
+        new_what.c.up   = what
+        new_what.c.waft = waft_C
+
+        H.Lies_waft_save(w, waft_C)
+        H.i_elvisto(w, 'Lies_want', { src: new_what, kind: op })
+    },
+
+    // ── e_Lies_cursor_what ────────────────────────────────────────────────────
+    //
+    //   Fired by Waft.svelte's What label click.  This path is separate from
+    //   e_LE_operate because it carries dive:true — auto-dive to the first DFS
+    //   descendant with direct Points.  Lets the user click a container What
+    //   (`foundations`) and land somewhere useful rather than on an empty strip.
+    //   NaviCado's structural nav buttons (↑/←/→) go through e_LE_operate and
+    //   do NOT pass dive:true — they should land exactly where requested.
+    //
+    //   e.sc: { what: TheC, dive?: true }
+    async e_Lies_cursor_what(A: TheC, w: TheC, e: TheC) {
+        const H         = this as House
+        const examining = w.o({ examining: 1 })[0] as TheC | undefined
+        if (!examining) return
+        const what = e.sc.what as TheC | undefined
+        if (!what) return
+
+        const effective = e.sc.dive
+            ? (H.Lies_first_what_with_direct_points(what) ?? what)
+            : what
+
+        H.i_elvisto(w, 'Lies_want', { src: effective, kind: 'next' })
+    },
+
+//#endregion
+//#region doc-follow — doc-change and cursor-set events
+
     // ── e_Lies_active_doc_changed ─────────────────────────────────────────────
     //
     //   Fired by Lang_set_active_dock whenever the foregrounded doc changes.
@@ -85,7 +263,7 @@
     //   - Skip when the cursor is already on a %What (deliberate placement).
     //   - Skip when already aimed at this path (same-target no-op).
     //   - Otherwise find the doc in loaded Wafts, lift to parent %What, and
-    //     set examining.  No-op when the path isn't in any Waft.
+    //     emit a want.  No-op when the path isn't in any Waft.
     //
     //   e.sc: { path: string }
     async e_Lies_active_doc_changed(A: TheC, w: TheC, e: TheC) {
@@ -139,6 +317,9 @@
         this.i_elvisto(w, 'Lies_want', { src, kind: 'click' })
     },
 
+//#endregion
+//#region finders — pure tree-walk helpers
+
     // ── Lies_walk_docs ────────────────────────────────────────────────────────
     //
     //   Yield every %Doc reachable from a container C (Waft or What),
@@ -190,9 +371,8 @@
 
     // ── Lies_first_doc ────────────────────────────────────────────────────────
     //
-    //   Walk all loaded Wafts — descending into %What children at any depth —
-    //   and return the very first %Doc, regardless of Points.
-    //   Fallback for freshly created Wafts with no Points yet.
+    //   Walk all loaded Wafts and return the very first %Doc, regardless of
+    //   Points.  Fallback for freshly created Wafts with no Points yet.
     Lies_first_doc(w: TheC): { doc: TheC, waft_key: string } | undefined {
         for (const waft of w.o({ Waft: 1 }) as TheC[]) {
             const waft_key = waft.sc.Waft as string
@@ -203,47 +383,23 @@
         return undefined
     },
 
-    // ── Lies_i_Spotlight ──────────────────────────────────────────────────────
+    // ── Lies_what_has_points ──────────────────────────────────────────────────
     //
-    //   Single seam for all cursor moves — now called only from the wants
-    //   resolver (§3e), never from a click handler directly.  Stamps %Spotlight
-    //   with the new src, bumps, then fires Lang_workon_update so w:Lang's
-    //   req:workon cluster resets and re-checkouts.
-    //
-    //   §3a: src_Waft drops.  The waft_key is derivable from src by waft_key_of
-    //   (c.waft / c.up), so nothing stores it; readers that needed it (req:acquire,
-    //   the graft) call waft_key_of instead.
-    //
-    //   Cold-start rehydration of sc.accepted / sc.showing from %Point children
-    //   lives here too — only injected when accepted Points exist so a live
-    //   accepted_entries from a prior push isn't overwritten.
-    //   accepted_push_id = 1 as a cold-start sentinel (always < any real Date.now());
-    //   DocMinimap's _our_last_push_id starts at 0, so 1 is distinguishable.
-    async Lies_i_Spotlight(examining: TheC, src: TheC, waft_key: string) {
-        const H = this as House
-        const spot = examining.oai({ Spotlight: 1 })
-        spot.sc.src = src
-
-        const pts      = src.o({ Point: 1 }) as TheC[]
-        const accepted = pts.filter(pt => pt.sc.accepted)
-        if (accepted.length) {
-            const entries = accepted.map(pt => ({
-                spec:    pt.sc.method as string,
-                showing: !!pt.sc.showing,
-            }))
-            spot.sc.accepted_push_id = 1
-            spot.sc.accepted_entries = entries
+    //   True when a %What carries at least one %Point anywhere in its subtree —
+    //   direct %Point child, %Point inside a %Doc child, or %Point inside a
+    //   nested %What at any depth.
+    Lies_what_has_points(what: TheC): boolean {
+        if ((what.o({ Point: 1 }) as TheC[]).length) return true
+        for (const doc of what.o({ Doc: 1 }) as TheC[]) {
+            if ((doc.o({ Point: 1 }) as TheC[]).length) return true
         }
-
-        spot.bump_version()
-        examining.bump_version()   // Waft snippet reads void examining?.version for glow reactivity
-        console.log(`👁 cursor → Waft:${waft_key} ${(src.sc as any).What !== undefined ? 'What:' + (src.sc as any).What : 'doc:' + ((src.sc as any).Doc ?? '?')}`)
-
-        // Fire generic workon update — req:workon in w:Lang resets the cluster.
-        H.i_elvisto('Lang/Lang', 'Lang_workon_update', { src })
+        for (const sub of what.o({ What: 1 }) as TheC[]) {
+            if (this.Lies_what_has_points(sub)) return true
+        }
+        return false
     },
 
-    // ── Lies_what_has_direct_points ──────────────────────────────────────────
+    // ── Lies_what_has_direct_points ───────────────────────────────────────────
     //
     //   True when a %What has Points *directly* — either as direct %Point
     //   children or inside its direct %Doc children.  Does NOT recurse into
@@ -273,6 +429,19 @@
         return undefined
     },
 
+    // ── Lies_what_first_doc_path ──────────────────────────────────────────────
+    //
+    //   Return the path of the first %Doc child of a %What, or undefined when
+    //   the %What holds direct %Point children with no %Doc container (the pure
+    //   time-slice case — doc is implied by the Points' methods).
+    Lies_what_first_doc_path(what: TheC): string | undefined {
+        const doc = what.o({ Doc: 1 })[0] as TheC | undefined
+        return doc?.sc.Doc as string | undefined
+    },
+
+//#endregion
+//#region stepping — Waft-level cursor stepping (timemachine / acquire)
+
     // ── Waft_cursor_candidates ────────────────────────────────────────────────
     //
     //   Depth-first collect of all %What particles across all loaded Wafts
@@ -280,10 +449,11 @@
     //   check out.  Container Whats (sub-Whats only, no direct Points) are
     //   skipped so the cursor never lands somewhere with an empty capsule strip.
     //
-    //   Shared by Waft_cursor_first, Waft_cursor_next, and e_Lies_cursor_next
-    //   so "what counts as a cursor stop" is defined in one place.
+    //   Shared by Waft_cursor_first, Waft_cursor_next_candidate, and
+    //   e_LE_operate's next_doc case so "what counts as a cursor stop" is
+    //   defined in one place.
     Waft_cursor_candidates(w: TheC): Array<{ what: TheC, waft_key: string }> {
-        const H = this as House
+        const H   = this as House
         const out: Array<{ what: TheC, waft_key: string }> = []
         const collect = (container: TheC, waft_key: string) => {
             for (const what of container.o({ What: 1 }) as TheC[]) {
@@ -334,8 +504,8 @@
     //   cursor inside `waft`, or undefined at the end of the trail.
     //   Sets nothing — the timemachine emits a %want with the result (§3f).
     //
-    //   Scoped to a single Waft — cross-Waft stepping is e_Lies_cursor_next.
-    //   < e_Lies_cursor_next steps flat siblings; branch/dive hierarchy not yet traversed.
+    //   Scoped to a single Waft — cross-Waft stepping is e_LE_operate next_doc.
+    //   < steps flat siblings; branch/dive hierarchy not yet traversed.
     Waft_cursor_next_candidate(w: TheC, waft: TheC): TheC | undefined {
         const H         = this as House
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
@@ -353,61 +523,8 @@
         return candidates[next_idx]
     },
 
-    // ── e_Lies_cursor_next ────────────────────────────────────────────────────
-    //
-    //   Fired by the → button in DocMinimap.  Steps the graft cursor to the
-    //   next %What (across all loaded Wafts, depth-first) that carries at
-    //   least one %Point in its extent.  Wraps around across Wafts.
-    //
-    //   Position is tracked by particle identity — a %What has a label, not a path.
-    //
-    //   e.sc: { dock_path: string }  — current active doc path (unused; kept for
-    //     caller compat; identity tracking supersedes path-based position finding)
-    //
-    //   < e_Lies_cursor_next steps flat siblings; branch/dive hierarchy not yet traversed.
-    async e_Lies_cursor_next(A: TheC, w: TheC, e: TheC) {
-        const H         = this as House
-        const examining = w.o({ examining: 1 })[0] as TheC | undefined
-        if (!examining) return
-
-        const candidates = H.Waft_cursor_candidates(w)
-        if (!candidates.length) return
-
-        const cur_src  = (examining.o({ Spotlight: 1 })[0] as TheC | undefined)
-            ?.sc.src as TheC | undefined
-        const cur_idx  = candidates.findIndex(c => c.what === cur_src)
-        const next_idx = (cur_idx + 1) % candidates.length
-        const { what } = candidates[next_idx]
-
-        H.i_elvisto(w, 'Lies_want', { src: what, kind: 'next' })
-    },
-
-    // ── e_Lies_cursor_what ────────────────────────────────────────────────────
-    //
-    //   Fired by NaviCado's ↑ / ← / → buttons and by the What label click in
-    //   Waft.svelte.
-    //
-    //   e.sc.dive:true (Waft label click path) — auto-dive to the first DFS
-    //   descendant with direct Points.  Lets the user click a container What
-    //   (`foundations`) and land somewhere useful rather than on an empty strip.
-    //   Nav buttons (↑/←/→) do NOT pass dive:true — structural navigation
-    //   should land exactly where requested; the DFS helpers handle diving when
-    //   pressing →.
-    //
-    //   e.sc: { what: TheC, dive?: true }
-    async e_Lies_cursor_what(A: TheC, w: TheC, e: TheC) {
-        const H         = this as House
-        const examining = w.o({ examining: 1 })[0] as TheC | undefined
-        if (!examining) return
-        const what = e.sc.what as TheC | undefined
-        if (!what) return
-
-        const effective = e.sc.dive
-            ? (H.Lies_first_what_with_direct_points(what) ?? what)
-            : what
-
-        H.i_elvisto(w, 'Lies_want', { src: effective, kind: 'next' })
-    },
+//#endregion
+//#region carry-over — +time Point seeding into new %Whats
 
     // ── Lies_what_carry_over ──────────────────────────────────────────────────
     //
@@ -459,116 +576,12 @@
         }
     },
 
-    // ── e_Lies_branch_what ────────────────────────────────────────────────────
-    //
-    //   Fired by NaviCado's ↘ button.  Inserts a new sibling %What immediately
-    //   after the current one in the parent's child list, seeds it with
-    //   accepted+showing Points from the current What, and steps the cursor in.
-    //
-    //   Uses parent.replace() to rebuild the child list in order with the new
-    //   What spliced in after the target.  Existing children are re-inserted as
-    //   the same objects (same-object path in resume_X) so their sub-trees and
-    //   c.* references survive the replace intact.
-    //
-    //   Insertion order in the replace fn determines how resolve() pairs sc
-    //   duplicates — existing particles go first, so a second unnamed sibling
-    //   won't steal the first one's pairing slot.
-    //
-    //   e.sc: { what: TheC }
-    e_Lies_branch_what(A: TheC, w: TheC, e: TheC) {
-        const H         = this as House
-        const examining = w.o({ examining: 1 })[0] as TheC | undefined
-        if (!examining) return
-        const what = e.sc.what as TheC | undefined
-        if (!what) return
-
-        // parent is the containing %What or the %Waft itself (top-level What)
-        const parent = (what.c.up as TheC | undefined) ?? (what.c.waft as TheC | undefined)
-        if (!parent) return
-        const waft_C = H.LE_what_waft(what)
-        if (!waft_C) return
-
-        const carry = H.Lies_what_carry_over(what)
-
-        // Splice-in-after without replace(): drop the siblings that come after
-        // `what`, insert the new What, then re-insert those siblings in order.
-        // Outside of a replace() fn, parent.i(existing_particle) is fine —
-        // the particle's own X (children) and c.* refs are unaffected.
-        const sibs       = parent.o({ What: 1 }) as TheC[]
-        const what_idx   = sibs.indexOf(what)
-        const after_sibs = what_idx >= 0 ? sibs.slice(what_idx + 1) : []
-        for (const w of after_sibs) parent.drop(w)
-        const new_what   = parent.i({ What: 1 })
-        for (const w of after_sibs) parent.i(w)
-
-        H.Lies_seed_what_carry_over(new_what, carry)
-        // stamp back-refs so navigation helpers work before the next LE_pull
-        // re-links; Waft_link_up stamps the new What's children at checkout time
-        new_what.c.up   = parent
-        new_what.c.waft = waft_C
-
-        H.Lies_waft_save(w, waft_C)
-        H.i_elvisto(w, 'Lies_want', { src: new_what, kind: 'next' })
-    },
-
-    // ── e_Lies_dive_what ──────────────────────────────────────────────────────
-    //
-    //   Fired by NaviCado's ↓ button.  Creates a new child %What inside the
-    //   current one, seeds it with accepted+showing Points, and steps in.
-    //   The parent What keeps its original Points intact — this is a copy,
-    //   not a move.  The secondary strip (prev-What ghost layer) is Chunk 4d.
-    //
-    //   e.sc: { what: TheC }
-    async e_Lies_dive_what(A: TheC, w: TheC, e: TheC) {
-        const H         = this as House
-        const examining = w.o({ examining: 1 })[0] as TheC | undefined
-        if (!examining) return
-        const what = e.sc.what as TheC | undefined
-        if (!what) return
-
-        const waft_C = H.LE_what_waft(what)
-        if (!waft_C) return
-
-        const carry    = H.Lies_what_carry_over(what)
-        const new_what = what.i({ What: 1 })
-        H.Lies_seed_what_carry_over(new_what, carry)
-        // stamp back-refs immediately; Waft_link_up fills in the new What's
-        // children at the next LE_pull
-        new_what.c.up   = what
-        new_what.c.waft = waft_C
-
-        H.Lies_waft_save(w, waft_C)
-        H.i_elvisto(w, 'Lies_want', { src: new_what, kind: 'next' })
-    },
-
-    //
-    //   True when a %What carries at least one %Point anywhere in its subtree —
-    //   direct %Point child, %Point inside a %Doc child, or %Point inside a
-    //   nested %What at any depth.
-    Lies_what_has_points(what: TheC): boolean {
-        if ((what.o({ Point: 1 }) as TheC[]).length) return true
-        for (const doc of what.o({ Doc: 1 }) as TheC[]) {
-            if ((doc.o({ Point: 1 }) as TheC[]).length) return true
-        }
-        for (const sub of what.o({ What: 1 }) as TheC[]) {
-            if (this.Lies_what_has_points(sub)) return true
-        }
-        return false
-    },
-
-    // ── Lies_what_first_doc_path ──────────────────────────────────────────────
-    //
-    //   Return the path of the first %Doc child of a %What, or undefined when
-    //   the %What holds direct %Point children with no %Doc container (the pure
-    //   time-slice case — doc is implied by the Points' methods).
-    Lies_what_first_doc_path(what: TheC): string | undefined {
-        const doc = what.o({ Doc: 1 })[0] as TheC | undefined
-        return doc?.sc.Doc as string | undefined
-    },
+//#endregion
+//#region accept — What_Point acceptance round-trip
 
     // ── e_Lies_accept_What_Point ──────────────────────────────────────────────
     //
-    //   Fired by DocMinimap's "push" button.  The minimap sends its current
+    //   Fired by NaviCado's "push" button.  The minimap sends its current
     //   in_group + showing state for a doc; we acknowledge it by echoing
     //   accepted_push_id and accepted_entries back onto %Spotlight so the
     //   minimap's $effect sees the round-trip and clears the unsent bar.
@@ -581,14 +594,14 @@
     //
     //   e.sc: { dock_path: string, what_point: { spec, showing }[] }
     //
-    //   < carry-forward: seed the next %What's in-group from accepted+showing
-    //     entries when +time branches (Chunk 4 ↘ / ↓ gestures).
+    //   < likely subsumed once NaviCado pushes via e_Lang_LE_push and the U
+    //     sphere is the single truth for accepted/showing.
     //   < validate specs exist in current compile before accepting.
     async e_Lies_accept_What_Point(A: TheC, w: TheC, e: TheC) {
         const H          = this as House
         const examining  = w.o({ examining: 1 })[0] as TheC | undefined
         if (!examining) return
-        const dock_path   = e.sc.dock_path   as string | undefined
+        const dock_path  = e.sc.dock_path  as string | undefined
         const what_point = e.sc.what_point as { spec: string, showing: boolean }[] | undefined
         if (!dock_path || !what_point) return
 
@@ -617,9 +630,9 @@
             break
         }
 
-        // Echo back on %Spotlight so DocMinimap's $effect fires.
-        // push_id uniqueness: Date.now() is sufficient — the minimap guards
-        // against its own pushes via _our_last_push_id.
+        // Echo back on %Spotlight so NaviCado's $effect fires.
+        // push_id uniqueness: Date.now() is sufficient — NaviCado guards against
+        // its own pushes via _our_last_push_id.
         const spot = examining.o({ Spotlight: 1 })[0] as TheC | undefined
         if (!spot) return
         spot.sc.accepted_push_id  = Date.now()
