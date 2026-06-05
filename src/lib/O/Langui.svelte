@@ -331,6 +331,15 @@
     //   dock=undefined, which tears down {#if active_path} / {#if dock} and
     //   destroys+recreates the container, spawning a fresh EditorView on each wave.
     //   Compare-before-write on path means a no-op flush never clears active_path.
+    //
+    //   The beliefs heartbeat wakes this $effect every cycle even with nothing
+    //   on screen changing, so the trace + the hold warnings are deduped: the
+    //   info line prints only when the (path, dock, active_dock) shape changes,
+    //   and each "vanished mid-ave" warning fires once on the edge into a hold,
+    //   not on every heartbeat — an idle editor stays silent.
+    let _signal_seen    = ''      // last logged (path,dock,active) shape
+    let _holding_dock   = false   // currently holding a vanished lang_dock?
+    let _holding_active = false   // currently holding a vanished active_dock_C?
     $effect(() => {
         const la          = H.ave.ob({ lang_actions: 1 })[0] as TheC | undefined
         const languinio   = H.ave.ob({ Languinio: 1 })[0] as TheC | undefined
@@ -338,7 +347,8 @@
         const active_dock_C = languinio?.ob({ dock: 1 })[0] as TheC | undefined
         const path        = (active_dock_C?.sc.dock as string | undefined) ?? ''
         const new_dock    = path ? H.ave.ob({ lang_dock: path })[0] as TheC | undefined : undefined
-        console.log(`🔭 signal $effect: languinio=${!!languinio} path=${path} dock=${!!new_dock} active_dock=${!!active_dock_C}`)
+        const sig = `lang=${!!languinio} path=${path} dock=${!!new_dock} active=${!!active_dock_C}`
+        if (sig !== _signal_seen) { console.log(`🔭 signal $effect: ${sig}`); _signal_seen = sig }
         H.clear(async () => {
             lang_actions = la ? la.o({ action: 1 }) as TheC[] : []
             // never overwrite with a falsy value — a mid-mutation ave flush where
@@ -346,12 +356,19 @@
             // this guard {#if dock} collapses, the container is destroyed, and the
             // construction $effect re-fires before the setTimeout fires, scheduling
             // a second new EditorView on the re-appeared container.
-            // Log the skip so the console trace shows when the ave is settling.
-            if (path)          active_path = path
-            if (new_dock)      dock        = new_dock
-            else if (dock)     console.warn(`🔭 lang_dock for '${path || active_path}' vanished mid-ave — holding`)
-            if (active_dock_C) active_dock = active_dock_C
-            else if (active_dock) console.warn(`🔭 active_dock_C vanished mid-ave — holding`)
+            if (path) active_path = path
+            if (new_dock)    { dock = new_dock; _holding_dock = false }
+            else if (dock)   {
+                if (!_holding_dock) console.warn(`🔭 lang_dock for '${path || active_path}' vanished mid-ave — holding`)
+                _holding_dock = true
+            }
+            if (active_dock_C) { active_dock = active_dock_C; _holding_active = false }
+            else if (active_dock) {
+                // < since Lang re-points %Languinio/%dock atomically this branch
+                //   should no longer fire; kept as a quiet backstop.
+                if (!_holding_active) console.warn(`🔭 active_dock_C vanished mid-ave — holding`)
+                _holding_active = true
+            }
         })
     })
 
@@ -371,7 +388,7 @@
         _compile = change?.ob({ compile: 1 })[0] as TheC | undefined
     })
 
-        // ── switch $effect ────────────────────────────────────────────────────────
+    // ── switch $effect ────────────────────────────────────────────────────────
     //   Runs whenever active_path changes.  Saves the departing EditorState
     //   (after flushing bookmarks and scroll position), then calls
     //   view.setState() with the arriving one.
@@ -381,8 +398,8 @@
     let prev_path = ''   // plain let — not reactive; switch $effect is sole writer
     $effect(() => {
         const arriving = active_path
-        console.log(`🔀 switch $effect: arriving=${arriving} prev=${prev_path} view=${!!untrack(()=>view)}`)
         if (!view || !arriving || arriving === prev_path) return
+        console.log(`🔀 switch $effect: arriving=${arriving} prev=${prev_path}`)
 
         untrack(() => {
             // Flush any pending text push for the departing path.
@@ -839,9 +856,8 @@
         // recognised cleanly even before any local edits land.
         spool_remember(captured_path, initial)
 
-        container_ro = new ResizeObserver((entries) => {
-            const h = entries[0]?.contentRect.height ?? 0
-            console.log(`🏗 ResizeObserver fired: height=${h}`)
+        container_ro = new ResizeObserver(() => {
+            // < CM re-measures on late layout settling (fonts, flex, minimap toggle)
             view?.requestMeasure()
         })
         container_ro.observe(captured_container)
@@ -859,7 +875,6 @@
         // Register view+state with backend.
         // Pass current bookmark + graft positions for initial sync (normally
         // empty on first construction, but included for consistency).
-        console.log(`🏗 firing Lang_editorBegins for path=${captured_path}`)
         Lang_i_elvis(view, 'Lang_editorBegins',
             { addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect,
               addGraftMark, removeGraftMark, clearAllGrafts,
@@ -867,25 +882,24 @@
     }
 
     $effect(() => {
-        console.log(`🏗 construction $effect: container=${!!container} dock=${!!dock} view=${!!untrack(()=>view)} constructing=${constructing}`)
         if (!container || !active_path) return
-        const already = untrack(() => view)
-        if (already)        { console.log(`🏗 already have view — bailing`);         return }
-        if (constructing)   { console.log(`🏗 setTimeout already in flight — bailing`); return }
+        // view set === already built; constructing === a build is mid-flight.
+        // Both are plain (non-$state) reads via untrack so this never self-wakes.
+        if (untrack(() => view) || constructing) return
+        constructing = true
 
+        // Capture now — by the time the setTimeout fires the reactive reads may
+        // have moved on, and we want the values that gated this build.
         const captured_container = container
         const captured_path      = active_path
         const captured_dock      = dock
-        console.log(`🏗 locking + scheduling setTimeout for path=${captured_path}`)
-        constructing = true
 
         // Defer one task so the browser has done a layout pass after {#if dock} flips.
         // The $effect fires in the same microtask as the DOM insertion — the container
         // exists but has zero clientHeight, so CM measures 0 and stops painting.
         setTimeout(async () => {
-            console.log(`🏗 setTimeout fired: isConnected=${captured_container.isConnected} clientHeight=${captured_container.clientHeight}`)
-            if (!captured_container.isConnected) { constructing = false; return }
-            await build_editor(captured_container, captured_path, captured_dock)
+            if (captured_container.isConnected)
+                await build_editor(captured_container, captured_path, captured_dock)
             constructing = false
         }, 0)
     })

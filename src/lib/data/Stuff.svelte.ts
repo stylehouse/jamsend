@@ -573,7 +573,18 @@ export class Stuff extends TimeOffice {
                 C = this.i(s)
             }
         })
-        return C
+        return C!
+    }
+
+    async place(pattern_sc: TheUniversal, n: TheC | TheC[]): Promise<void> {
+        const N: TheC[] = n instanceof TheC ? [n] : n as TheC[]
+        const existing = this.o(pattern_sc) as TheC[]
+        for (const e of existing) {
+            if (!N.includes(e)) this.drop(e)
+        }
+        for (const c of N) {
+            if (!existing.includes(c)) this.i(c)
+        }
     }
 
     // resolved C usually resume C/*
@@ -662,7 +673,7 @@ export class Stuff extends TimeOffice {
                         let innered = b.X?.z?.length
                         if (innered && !b.c.Isness) {
                             // < if they have b.i() already? post-hoc resolve()?
-                            console.error(`C.replace() resolved n have /*:\n`
+                            console.error(`C.replace() resolved n have /*, should you be using C.place()?:\n`
                                 +`  C: ${keyser(this)}\n`
                                 +`    n: ${keyser(b)}\n`
                                 +(b.X.z.map(s => `      s: ${keyser(s)}\n`).join(''))

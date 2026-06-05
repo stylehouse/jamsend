@@ -48,7 +48,14 @@
         view: EditorView | undefined
     } = $props()
 
+    // Trace the view↔minimap wiring, but only when it actually flips — the
+    // beliefs heartbeat re-runs this $effect every cycle and we don't want it
+    // narrating an unchanged "EditorView OK" while just sitting there.
+    let _view_wire_seen = ''
     $effect(() => {
+        const wire = `${view ? 'EditorView OK' : 'undefined'} ${active_path}`
+        if (wire === _view_wire_seen) return
+        _view_wire_seen = wire
         console.log(`🗺 minimap view prop = ${view ? 'EditorView OK' : 'undefined'}, active_path = ${active_path}`)
     })
 

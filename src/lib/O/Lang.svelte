@@ -323,11 +323,12 @@
             // /{LE:1} — stable; oai is idempotent on re-plan.
             const LE = workon.oai({ LE: 1 })
 
-            // Same-object hold in %Languinio — r() first so re-plan never piles.
+            // Same-object hold in %Languinio — r({LE:1}, LE) removes any prior
+            // hold and re-inserts atomically (inside one replace()) so re-plan
+            // never piles a second %LE onto languinio.
             const languinio_now = w.o({ Languinio: 1 })[0] as TheC | undefined
             if (languinio_now) {
-                await languinio_now.r({ LE: 1 }, {})
-                languinio_now.i(LE)
+                await languinio_now.r({ LE: 1 }, LE)
             }
 
             // req:settle — permanent, open-ended; Lang_settle is its do_fn.
@@ -385,7 +386,7 @@
     //   §3d: ave/%active_dock is gone — %Languinio/%dock is the single
     //   foreground-doc truth, and Langui watches %Languinio (already in ave).
     //   w.c.active_dock_path stays as a cheap routing string.
-    Lang_set_active_dock(w: TheC, path: string) {
+    async Lang_set_active_dock(w: TheC, path: string) {
         const H = this as House
         w.c.active_dock_path = path
         const docks = w.o({docks: 1})[0] as TheC | undefined
@@ -398,13 +399,24 @@
         // Re-point the same-object hold on the active dock into %Languinio so
         // consumers reach it via languinio.o({dock:1})[0] (its bookmarks, view,
         // state, Pmirrors) without any ave round-trip.
+        //
+        // Atomic re-point: r({dock:1}, dock) removes any prior %dock hold and
+        // re-inserts this same-ref one inside a single replace() — there is no
+        // gap in which the hold is absent.  During the replace, readers see
+        // X_before (the outgoing dock); after commit they see the new one; never
+        // nothing.  We await it: this runs in Atime (called from beliefs), so the
+        // await keeps us in Atime until the dock is settled — no H.clear() UItime
+        // read fires against a half-done swap.  replace() bumps the version in its
+        // finally, so the await alone wakes Langui's signal $effect; no separate
+        // bump_version() needed.
+        //   < was r({dock:1},{}).then(() => i(dock)) — the gap between the removal
+        //     and the re-insert was when Langui's signal $effect could read an
+        //     empty %Languinio and log "active_dock_C vanished mid-ave — holding",
+        //     and was why the very first doc switch sometimes stuck.
         const dock = docks?.o({dock: path})[0] as TheC | undefined
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
         if (languinio && dock) {
-            languinio.r({ dock: 1 }, {}).then(() => {
-                languinio.i(dock)
-                languinio.bump_version()
-            })
+            await languinio.r({ dock: 1 }, dock)
         }
         // Tell w:Lies the foregrounded doc changed — direct Atime elvis.
         // (The notify stays; only the ave storage went.)
@@ -436,7 +448,7 @@
         // Only activate if we have a real path — empty string means the dock
         // isn't known yet and Lies hasn't fired e_Lang_open_dock yet.
         if (!w.c.active_dock_path && e.sc.dock) {
-            this.Lang_set_active_dock(w, e.sc.dock as string)
+            await this.Lang_set_active_dock(w, e.sc.dock as string)
         }
         // §3d — the dock hold lives on %Languinio.  On the first open the hold
         // may have been re-pointed before the dock particle existed;
@@ -446,10 +458,9 @@
             const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
             const held = languinio?.o({ dock: 1 })[0] as TheC | undefined
             if (languinio && held !== dock) {
-                languinio.r({ dock: 1 }, {}).then(() => {
-                    languinio.i(dock)
-                    languinio.bump_version()
-                })
+                // Same atomic re-point as Lang_set_active_dock — await keeps it
+                // in Atime, replace() bumps version in its finally.
+                await languinio.r({ dock: 1 }, dock)
             }
         }
 
@@ -509,7 +520,7 @@
         if (!path) return
 
         // Switch active doc — Langui's $effect on %Languinio/%dock reacts.
-        this.Lang_set_active_dock(w, path)
+        await this.Lang_set_active_dock(w, path)
 
         // Point navigation: resolve the point spec against the compiled methods
         // index, apply region-based openness (fold/unfold), and scroll the view.
@@ -670,7 +681,7 @@
             return
         }
         fu.sc.have_dock = 1
-        H.Lang_set_active_dock(w, doc_path)
+        await H.Lang_set_active_dock(w, doc_path)
 
         // compile — Languish builds %Compile/%methods; the graft needs the index.
         const cp  = settle.oai({ compile: 1 })
@@ -800,7 +811,7 @@
             }
 
             // always activate — Lies owns doc order, last open wins for now
-            this.Lang_set_active_dock(w, path)
+            await this.Lang_set_active_dock(w, path)
             w.i({ received: 1, doc_opened: 1, doc: path })
         }
 
@@ -951,7 +962,6 @@
 
     async Lang(A: TheC, w: TheC) {
         const H = this
-        console.log(`Lang!`)
 
         if (!w.c.plan_done) await this.Lang_plan(A, w)
         // these go every time so their toggle state can visually change

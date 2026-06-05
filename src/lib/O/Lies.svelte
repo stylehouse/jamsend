@@ -84,12 +84,31 @@
     //       /{doc_rename_job:1,old_path,new_path} — in-progress doc rename (crash-safe)
     //   w/{Waft:'Look/YMD/HH'}                — hourly scratch Waft (+Now button)
     //     sc.active = 1                        — session-only; never written to snap
-    //   w/{req:'Open',src}             — demand-loaded doc (legacy; Furnishing is the new path)
+    //   w/{req:'Open',src}             — demand-loaded doc, keyed by src identity.
     //                                    sc.waft_key, sc.new?
     //                                    → sc.loaded=1 on completion
     //                                    → sc.not_found=1 when file absent
+    //                                    wread source → Lang_open_dock (direct
+    //                                    i_elvisto) → stamp loaded_doc.  Carries
+    //                                    the not_found path and the %new flag for
+    //                                    Liesui-created docs — the one job Furnishing
+    //                                    doesn't currently cover.
     //   w/{req:'Furnishing',path}      — doc-open RPC courier to Lang (§3i)
     //                                    c.src → %What or %Doc; carries path/text/gen_path
+    //                                    wread source → courier the req to Lang via
+    //                                    i_elvis_req('Lang_open_dock') → loaded_doc.
+    //                                    Kept (not dropped) when finished so a
+    //                                    re-visit doesn't restart Languish.
+    //   < Open and Furnishing do the same job: wread the source, hand it to Lang
+    //     as a dock.  "Open" is the right parent name for "open a doc into the
+    //     system"; "Furnishing" is an odd name for it.  The clean shape is a
+    //     polymorph — req:Open specialised by what is being opened:
+    //       req:OpenWaft  (the src-flavour Open does now)
+    //       req:OpenDoc   (the path-flavour Furnishing does now), whose keep-alive
+    //                     is just a property of the Doc variant.
+    //     (open_waft_req below is a different thing — the Waft-loading step, not a
+    //      doc-open.)  Doing this properly renames in code, so it waits for its own
+    //     pass; this note is the placeholder until then.
     //   w/{loaded_doc:1,path,gen_path} — after load + Lang handoff
     //   w/{compile_pending:1,path,...}         — waiting for gen/ write
     //   w/{waft_rename_job:1,old_path,new_path} — in-progress waft rename (crash-safe)
@@ -439,12 +458,12 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 return C
             })()
 
-            // r() clears any prior {Waft:path} child before inserting the fresh one.
-            // i() always inserts — without the r() a second load tick (stale done flag,
-            // duplicate open_waft_req) would give two children with the same Waft key
-            // and Liesui's keyed each would throw each_key_duplicate.
-            await w.r({ Waft: path }, {})
-            w.i(waft)
+            // r({Waft:path}, waft) removes any prior %Waft:path hold and inserts
+            // the fresh one atomically inside a single replace() — a second load
+            // tick (stale done flag, duplicate open_waft_req) can't pile a second
+            // child with the same Waft key, and there is no window between the
+            // remove and the insert.
+            await w.r({ Waft: path }, waft)
             await H.Waft_link_up(waft, waft)   // C.c.up back-refs; Waft is its own ceiling
 
             // Lies_sync_waft_docs now only trims; doc open_reqs come via cursor/workon.
@@ -737,7 +756,15 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //   Languish (which would wipe the compile result on every cursor re-visit).
     //   Genuine re-opens (source text changed) go through Lies_source_write →
     //   e_Lang_open_dock directly, bypassing this path.
-    Lies_roai_Furnishing(w: TheC, src: TheC, path: string): Promise<TheC> {
+    //
+    //   On %src: it is a live TheC handle (the %What or %Doc), so it lives on .c,
+    //   not sc — refs aren't snappable, and .c is the right home for a live ref.
+    //   roai's two-arg form roai(identity_sc, extra_sc) merges extra_sc into the
+    //   found-or-made particle's non-identity *snap* fields, so it can't carry %src.
+    //   That is why c.src is set by a plain mutation after roai resolves (and
+    //   refreshed on the reuse branch in case the src moved): a live ref updated by
+    //   mutation, never a snap field.
+    async Lies_roai_Furnishing(w: TheC, src: TheC, path: string): Promise<TheC> {
         const H = this as House
         const rqg = H.reqy(w)
         // Reuse any existing Furnishing — finished or in-progress.  Dropping a
@@ -746,12 +773,11 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const existing = rqg.o({ req: 'Furnishing', path })[0] as TheC | undefined
         if (existing) {
             existing.c.src = src   // update src ref in case it moved
-            return Promise.resolve(existing)
+            return existing
         }
-        return rqg.roai({ req: 'Furnishing', path }).then((req: TheC) => {
-            req.c.src = src
-            return req
-        })
+        const req = await rqg.roai({ req: 'Furnishing', path })
+        req.c.src = src
+        return req
     },
 
     // ── req_Furnishing ──────────────────────────────────────────────────────────

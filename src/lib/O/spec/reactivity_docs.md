@@ -1,12 +1,59 @@
 # Reactivity, H.ave, and the Stuff/Housing system — working notes
 
+## the frontier
+
+Atime and UItime are basically the same thing, both share an H** global mutex lock.
+
+Atime is got to by calling H.i_elvis*(target,method,sc), UItime via H.UItime(async () => ...).
+
+Not awaiting a replace() in Atime causes it to fall outside microtick space chasm,
+always keep your limbs within Atime, or a UItime might read transacting state,
+which for replace() starts empty! So your UI reading state has things that vanish
+for a tiny moment, all the time.
+
+It was called clear() but just calling it UItime() might be clearer.
+
+I think we'll figure out how to ideally:
+    //  use it in an $effect() block
+    //   after reading the reactive state,
+    //   put the reactive state read AGAIN in one of these
+    //    to make sure all state is read without any other Atime changing things
+
+Langui does this at the mo, but probably wants the clear() end of it throttling...
+But it really shouldn't need throttling?
+
+### conflict
+
+Having to wait UItime (with the global mutex lock) is in conflict with wanting to
+stay in $effect's sync time so the state reads can become reactive.
+
+Ie, we don't get reactivity via ob() in UItime(), only outside it,
+directly in the $effect(), so we might repeat ourselves (read then read+assign).
+
+To redesign the language to do this elegantly...
+
+I'm thinking something like:
+
+```
+$effect
+    dock.vers
+    time:
+        something = dock?.o({ something: 1 })[0]
+```
+
+Requiring all effects to be pure IOing might work... Then we can split off the read part.
+Probably going to hide $effect() with something else along those lines,
+it looks under the hood from where we're going....
+
+Anyway.
+
 ---
 
 ## Reactivity basics
 
 `C.bump_version()` — which `C.i|r|replace|drop` all do — makes anyone reading `C.vers` react. In Atime that means `C.ob()` (observe); in UItime it means `$derived` and `$effect` via the watched flush. Worker methods manipulate C trees directly with no Svelte involvement; Svelte only ever sees the version signals.
 
-`vers` is the UItime-safe reactive signal ($state); `version` is the raw Atime counter. Use `vers` in UI code, `version` in worker code.
+`vers` is just an accessor for `C.version` plus one, so it can be is the UItime-safe reactive signal ($state); `version` is the raw Atime counter. Use `vers` in UI code, `version` in worker code.
 
 **oai vs roai:**
 

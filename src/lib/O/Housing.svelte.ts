@@ -806,9 +806,17 @@ export class House extends StorableHousing {
         const top = this.top_House()
         if (top.c._mutex_beliefs) await top.c._mutex_beliefs
     }
-    // clear(fn): create+do a UItime isolation — waits for all_clear(), then runs fn()
-    //  before the next beliefs cycle (Atime) can begin.
+    // UItime(fn): does a UItime transaction|isolation
+    //   waits for all_clear(), then runs fn()
+    //  use it in an $effect() block
+    //   after reading the reactive state,
+    //   put the reactive state read AGAIN in one of these
+    //    to make sure all state is read without any other Atime changing things
+    //  and it completes before the next beliefs cycle (Atime) can begin.
     // show: hospital staff call it to isolate the patient for an electric shock
+    async UItime(fn: () => void | Promise<void>): Promise<void> {
+        await this.clear(fn)
+    }
     async clear(fn: () => void | Promise<void>): Promise<void> {
         await this.all_clear()
         let H = this.top_House()
