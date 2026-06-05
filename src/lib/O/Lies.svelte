@@ -458,12 +458,11 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 return C
             })()
 
-            // r({Waft:path}, waft) removes any prior %Waft:path hold and inserts
-            // the fresh one atomically inside a single replace() — a second load
-            // tick (stale done flag, duplicate open_waft_req) can't pile a second
-            // child with the same Waft key, and there is no window between the
-            // remove and the insert.
-            await w.r({ Waft: path }, waft)
+            // place() ensures exactly this waft is held under %Waft:path — drops
+            // any prior hold, inserts this one if not already there.  waft's own
+            // X (its doc tree) belongs to the waft particle, not to w, so r()
+            // would hit the "n have /*" diagnostic.
+            await w.place({ Waft: path }, waft)
             await H.Waft_link_up(waft, waft)   // C.c.up back-refs; Waft is its own ceiling
 
             // Lies_sync_waft_docs now only trims; doc open_reqs come via cursor/workon.

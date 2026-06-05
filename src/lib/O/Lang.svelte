@@ -323,12 +323,11 @@
             // /{LE:1} — stable; oai is idempotent on re-plan.
             const LE = workon.oai({ LE: 1 })
 
-            // Same-object hold in %Languinio — r({LE:1}, LE) removes any prior
-            // hold and re-inserts atomically (inside one replace()) so re-plan
-            // never piles a second %LE onto languinio.
+            // Same-object hold in %Languinio — place() so re-plan never piles a
+            // second %LE; drops any stale hold and inserts this one if not already there.
             const languinio_now = w.o({ Languinio: 1 })[0] as TheC | undefined
             if (languinio_now) {
-                await languinio_now.r({ LE: 1 }, LE)
+                await languinio_now.place({ LE: 1 }, LE)
             }
 
             // req:settle — permanent, open-ended; Lang_settle is its do_fn.
@@ -400,23 +399,19 @@
         // consumers reach it via languinio.o({dock:1})[0] (its bookmarks, view,
         // state, Pmirrors) without any ave round-trip.
         //
-        // Atomic re-point: r({dock:1}, dock) removes any prior %dock hold and
-        // re-inserts this same-ref one inside a single replace() — there is no
-        // gap in which the hold is absent.  During the replace, readers see
-        // X_before (the outgoing dock); after commit they see the new one; never
-        // nothing.  We await it: this runs in Atime (called from beliefs), so the
-        // await keeps us in Atime until the dock is settled — no H.clear() UItime
-        // read fires against a half-done swap.  replace() bumps the version in its
-        // finally, so the await alone wakes Langui's signal $effect; no separate
-        // bump_version() needed.
-        //   < was r({dock:1},{}).then(() => i(dock)) — the gap between the removal
-        //     and the re-insert was when Langui's signal $effect could read an
-        //     empty %Languinio and log "active_dock_C vanished mid-ave — holding",
-        //     and was why the very first doc switch sometimes stuck.
+        // place() is the right primitive here: the dock is a same-object hold
+        // whose X (with %Compile, %Pmirrors etc.) belongs to the dock itself,
+        // not to %Languinio.  r() would go through replace()/resolve() and flag
+        // those children as "n have /*", which is a diagnostic for new nodes that
+        // would silently lose children — not for an existing hold being re-pointed.
+        //   < was r({dock:1},{}).then(() => i(dock)) — the .then() put i() into a
+        //     new microtask outside Atime; the two-step await r + i form and now
+        //     place() are both safe because Svelte effects are on setTimeout and
+        //     can't observe any gap between drop and insert while we're in Atime.
         const dock = docks?.o({dock: path})[0] as TheC | undefined
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
         if (languinio && dock) {
-            await languinio.r({ dock: 1 }, dock)
+            await languinio.place({ dock: 1 }, dock)
         }
         // Tell w:Lies the foregrounded doc changed — direct Atime elvis.
         // (The notify stays; only the ave storage went.)
@@ -458,9 +453,8 @@
             const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
             const held = languinio?.o({ dock: 1 })[0] as TheC | undefined
             if (languinio && held !== dock) {
-                // Same atomic re-point as Lang_set_active_dock — await keeps it
-                // in Atime, replace() bumps version in its finally.
-                await languinio.r({ dock: 1 }, dock)
+                // Same-object hold re-point — see Lang_set_active_dock for the why.
+                await languinio.place({ dock: 1 }, dock)
             }
         }
 

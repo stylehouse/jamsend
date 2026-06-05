@@ -100,19 +100,19 @@ Library
         sample=0.049,at=1780418648
         sample=0.049,at=1780418651
         sample=0.049,at=1780418655
-  Book:LakeNets,ok_pct=0,last_pct_change=1779979876.845,done=3,last_run_ms=1780669394.571,time_avg=0.173,active
+  Book:LakeNets,ok_pct=0,last_pct_change=1779979876.845,done=3,last_run_ms=1780671431.019,time_avg=0.173,active
     TimeSpool
-      TimeTotal:beliefs,avg=0.446
-        sample=0.446,at=1780669391
-        sample=0.446,at=1780669391
-        sample=0.446,at=1780669391
-        sample=0.446,at=1780669392
-        sample=0.446,at=1780669392
-        sample=0.446,at=1780669393
-        sample=0.446,at=1780669393
-        sample=0.446,at=1780669393
-        sample=0.446,at=1780669394
-        sample=0.446,at=1780669394
+      TimeTotal:beliefs,avg=0.911
+        sample=0.911,at=1780671427
+        sample=0.911,at=1780671428
+        sample=0.911,at=1780671428
+        sample=0.911,at=1780671428
+        sample=0.911,at=1780671429
+        sample=0.911,at=1780671429
+        sample=0.911,at=1780671429
+        sample=0.911,at=1780671430
+        sample=0.911,at=1780671430
+        sample=0.911,at=1780671431
   Book:Understandity,ok_pct,done,last_run_ms=1780138366.519
     TimeSpool
       TimeTotal:beliefs,avg=0.013

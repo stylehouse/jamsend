@@ -541,6 +541,19 @@ abstract class TimeOffice extends StuffIO {
 //#endregion
 //#region Stuff.replace
 export class Stuff extends TimeOffice {
+    // ensure given things are the only ones in a match
+    //  does nothing if the things are already there
+    async place(pattern_sc: TheUniversal, n: TheC | TheC[]): Promise<void> {
+        const N: TheC[] = n instanceof TheC ? [n] : n as TheC[]
+        const existing = this.o(pattern_sc) as TheC[]
+        for (const e of existing) {
+            if (!N.includes(e)) this.drop(e)
+        }
+        for (const c of N) {
+            if (!existing.includes(c)) this.i(c)
+        }
+    }
+
     // replace one thing
     async r(pattern_sc:TheUniversal,sc?:TheUniversal):Promise<TheC> {
         if (!sc) {
@@ -574,17 +587,6 @@ export class Stuff extends TimeOffice {
             }
         })
         return C!
-    }
-
-    async place(pattern_sc: TheUniversal, n: TheC | TheC[]): Promise<void> {
-        const N: TheC[] = n instanceof TheC ? [n] : n as TheC[]
-        const existing = this.o(pattern_sc) as TheC[]
-        for (const e of existing) {
-            if (!N.includes(e)) this.drop(e)
-        }
-        for (const c of N) {
-            if (!existing.includes(c)) this.i(c)
-        }
     }
 
     // resolved C usually resume C/*
