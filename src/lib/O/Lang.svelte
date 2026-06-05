@@ -542,41 +542,60 @@
 
     // ── e_LE_operate (Lang side) ──────────────────────────────────────────────
     //
-    //   One write-path for the working clone tree, keyed on e%op.
-    //   Same event name as LiesCurse's e_LE_operate — different world, different
-    //   domain.  Lang operates ON the clone contents; Lies operates ON the cursor.
+    //   Push cluster trigger.  Lang's e_LE_operate is intentionally narrow —
+    //   cursor moves live on w:Lies (LiesCurse), clone mutations on e_LE_mark.
+    //   push is the one structural act that belongs on w:Lang because the push
+    //   cluster (req:push/encode/replace/verify) hangs off workon here.
     //
-    //   The LE-locate prologue and the spec→clone lookup were ~80% of each old
-    //   e_Lang_LE_* handler; they live here once.  Most ops end in feebly_ponder()
-    //   so req:settle re-encodes on the next think.  push delegates to e_Lang_LE_push
-    //   which owns the resumable, inspectable req:push cluster.
+    //   e.sc: { op: 'push' }
+    async e_LE_operate(A: TheC, w: TheC, e: TheC) {
+        const H  = this as House
+        const op = e.sc.op as string | undefined
+        if (op === 'push') {
+            H.i_elvisto(w, 'Lang_LE_push', {})
+            // no feebly_ponder — push cluster manages its own think
+            return
+        }
+        // delegate clone/U mutations to e_LE_mark — same world, same w
+        // (test snaps and old callers that still fire e:LE_operate for mark ops)
+        await H.e_LE_mark(A, w, e)
+    },
+
+    // ── e_LE_mark — U-sphere mutations on the working clone tree ──────────────
     //
-    //   e.sc: { op: string, spec?, sc?, patch? }
+    //   One write-path for clone contents and their U meanings.  The caller
+    //   passes e.sc.LE directly — the %LE particle from languinio — so there
+    //   is no re-derive and no lag from workon round-trips.
+    //   Falls back to the workon-derived LE when e.sc.LE is absent (test macros
+    //   that fire the old way, before the caller was updated).
+    //
+    //   U-sphere ops bump LE.c.U_serial so Lang_settle's encode_key changes
+    //   without needing a cursor move (the serial rides on .c, never .sc,
+    //   so it never enters the snap or perturbs enWaft).
+    //
+    //   e.sc: { LE?: TheC, op: string, spec?, sc?, patch? }
     //     add    — append a new clone (e.sc.sc is the raw sc)
     //     edit   — patch an existing clone's sc (e.sc.patch merged in)
     //     drop   — set U%unaccepted; virtual deletion, omitted from push + encode
     //     undrop — clear U%unaccepted; restore a dropped clone
     //     unshow — set U%unshowing; Lang-UI hide, no effect on push or encode
     //     show   — clear U%unshowing; restore to visible
-    //     push   — trigger the encode→replace→verify cluster (e_Lang_LE_push)
-    //
-    //   < U-edit encode gate (open fault): drop/undrop/unshow/show mutate c.U
-    //     without bumping Seem:working.version, so settle's encode_key never
-    //     changes after those ops without a cursor move.  Fix: stamp
-    //     LE.c.u_edit_serial++ here; encode_key = `${wv}:${u_edit_serial}`.
-    async e_LE_operate(A: TheC, w: TheC, e: TheC) {
+    async e_LE_mark(A: TheC, w: TheC, e: TheC) {
         const H      = this as House
-        const workon = H.reqy(w).o({ req: 'workon' })[0] as TheC | undefined
-        const LE     = workon?.o({ LE: 1 })[0] as TheC | undefined
-        if (!LE) throw `no LE`
+        // prefer the caller-supplied LE; fall back to the workon-derived one
+        const LE: TheC = (e.sc.LE as TheC | undefined)
+            ?? H.reqy(w).o({ req: 'workon' })[0]?.o({ LE: 1 })[0] as TheC | undefined
+        if (!LE) throw `e_LE_mark: no LE`
         const op = e.sc.op as string | undefined
-        if (!op) throw `no op`
+        if (!op) throw `e_LE_mark: no op`
 
         // spec→clone for ops that target an existing clone
         const find = (spec?: unknown) =>
             typeof spec === 'string'
                 ? (H.LE_clones(LE) as TheC[]).find(c => (c.sc as any).method === spec)
                 : undefined
+
+        let U_mutated = false
 
         switch (op) {
             case 'add': {
@@ -592,29 +611,30 @@
             }
             case 'drop': {
                 const clone = find(e.sc.spec)
-                if (clone) H.LE_drop_clone(LE, clone)
+                if (clone) { H.LE_drop_clone(LE, clone); U_mutated = true }
                 break
             }
             case 'undrop': {
                 const clone = find(e.sc.spec)
-                if (clone?.c.U) delete clone.c.U.sc.unaccepted
+                if (clone?.c.U) { delete clone.c.U.sc.unaccepted; U_mutated = true }
                 break
             }
             case 'unshow': {
                 const clone = find(e.sc.spec)
-                if (clone?.c.U) clone.c.U.sc.unshowing = 1
+                if (clone?.c.U) { clone.c.U.sc.unshowing = 1; U_mutated = true }
                 break
             }
             case 'show': {
                 const clone = find(e.sc.spec)
-                if (clone?.c.U) delete clone.c.U.sc.unshowing
+                if (clone?.c.U) { delete clone.c.U.sc.unshowing; U_mutated = true }
                 break
             }
-            case 'push':
-                // push owns its own timing — delegate to the cluster handler
-                H.i_elvisto(w, 'Lang_LE_push', {})
-                return   // no feebly_ponder — push cluster manages the think
         }
+
+        // U_serial — lets Lang_settle's encode_key see U-sphere changes without
+        // waiting for a cursor move (which would bump Seem:working.version).
+        if (U_mutated) LE.c.U_serial = ((LE.c.U_serial as number) ?? 0) + 1
+
         H.feebly_ponder()
     },
 
@@ -802,13 +822,16 @@
         settle.oai({ graft: 1 }).sc.n_pmirrors =
             (dock.o({ Pmirrors: 1 })[0]?.o({ Pmirror: 1 }) as TheC[] ?? []).length
 
-        // encode — gated on working.version so enWaft is not called every pass.
-        // < U-edits (unaccepted/unshowing) change the encode result without
-        //   bumping working.version — a separate trigger is needed for that case.
-        const wv = LE.o({ Seem: 'working' })[0]?.version
-        if (settle.c.last_encode_ver !== wv) {
+        // encode — gated on working.version + U_serial so enWaft is not called
+        // every pass.  U-sphere ops (drop/undrop/unshow/show) don't touch
+        // Seem:working.version, so e_LE_mark increments LE.c.U_serial; the
+        // combined key ensures a re-encode fires after any U mutation too.
+        const wv         = LE.o({ Seem: 'working' })[0]?.version
+        const u_serial   = (LE.c.U_serial as number | undefined) ?? 0
+        const encode_key = `${wv}:${u_serial}`
+        if (settle.c.last_encode_key !== encode_key) {
             await H.LE_encode_compare(LE)   // stamps %State.changey
-            settle.c.last_encode_ver = wv
+            settle.c.last_encode_key = encode_key
         }
     },
 

@@ -110,14 +110,18 @@
 //#endregion
 //#region operate — cursor-movement gestures
 
-    // ── e_LE_operate ──────────────────────────────────────────────────────────
+    // ── e_LE_operate / e_operate ─────────────────────────────────────────────
     //
     //   One seam for every cursor-movement gesture NaviCado owns as a button.
-    //   Button bodies collapse to i_elvisto(w, 'LE_operate', { op }); the pivot
-    //   is read here from %examining/%Spotlight,src — Lies-local and synchronous,
-    //   no cross-world LE reach, no LE.sc.target lag.  This half only moves the
-    //   cursor over the live %What tree; working-clone mutation is e_LE_operate
-    //   on w:Lang.
+    //   Reachable as e:operate (generalised) or e:LE_operate (scoped alias);
+    //   Housing tries e_LE_operate first, then e_operate.
+    //   The pivot is read from %examining/%Spotlight,src — Lies-local and
+    //   synchronous, no cross-world LE reach, no LE.sc.target lag.
+    //   This half only moves the cursor over the live %What tree;
+    //   working-clone and U-sphere mutations live on e_LE_mark at w:Lang.
+    //
+    //   e.sc.LE is accepted but not used here — cursor state is read from
+    //   %examining directly, so there is no lag from LE.sc.target.
     //
     //   op → kind: the op string flows through as the %want kind so the resolver
     //   log reads 'up'/'prev'/'next'/'branch'/'dive'/'next_doc' rather than a
@@ -160,6 +164,11 @@
                 return
             }
         }
+    },
+
+    // ── e_operate (Lies side) — generalised alias for e_LE_operate ───────────
+    async e_operate(A: TheC, w: TheC, e: TheC) {
+        await (this as House).e_LE_operate(A, w, e)
     },
 
     // ── Lies_branch_what ─────────────────────────────────────────────────────

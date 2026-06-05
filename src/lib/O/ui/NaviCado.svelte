@@ -284,13 +284,20 @@
     }
 
     // Toggle showing for an in-group spec (active vs dormant).
-    // < should also fire i_elvisto to update fold/glow in CM for this spec.
+    // Local showing set controls the CM fold/glow (session-only view state).
+    // U%unshowing on the clone is the Understanding-level persistence — both
+    // are toggled here so the UI strip and the U sphere stay in agreement.
     function toggle_showing(spec: string) {
+        const is_unshowing = le_membership.get(spec)?.unshowing
         const sh = new Set(showing)
         if (sh.has(spec)) sh.delete(spec)
         else              sh.add(spec)
         showing       = sh
         reset_confirm = false
+        // fire U-sphere mutation when LE is armed at a %What
+        if (LE && (LE.sc.target as any)?.sc?.What !== undefined) {
+            H.i_elvisto('Lang/Lang', 'LE_mark', { LE, op: is_unshowing ? 'show' : 'unshow', spec })
+        }
     }
 
     function push_what_point() {
@@ -320,9 +327,10 @@
 
     // ── nav actions ───────────────────────────────────────────────────────────
     //
-    //   Single emitter for structural cursor movement (e_LE_operate in LiesCurse).
+    //   Single emitter for structural cursor movement (e_operate / e_LE_operate in LiesCurse).
     //   op flows through as the %want kind — chatty in the resolver log.
-    const op = (kind: string) => H.i_elvisto('Lies/Lies', 'LE_operate', { op: kind })
+    //   e:operate is the generalised name; e:LE_operate is the alias Housing falls back to.
+    const op = (kind: string) => H.i_elvisto('Lies/Lies', 'operate', { LE, op: kind })
 
     // ── PeelItem — inject a Point into the working C** ────────────────────────
     //
@@ -336,7 +344,7 @@
     function peel_commit() {
         const method = peel_text.trim()
         if (method && LE && (LE.sc.target as any)?.sc?.What !== undefined) {
-            H.i_elvisto('Lang/Lang', 'LE_operate', { op: 'add', sc: { Point: 1, method } })
+            H.i_elvisto('Lang/Lang', 'LE_mark', { LE, op: 'add', sc: { Point: 1, method } })
         }
         peel_text = ''
     }
@@ -471,7 +479,7 @@
                          falls back to local demote() for bare %Doc sessions. -->
                     <button class="lmm-capsule-demote" title="Remove Point" onclick={() => {
                         if (LE && (LE.sc.target as any)?.sc?.What !== undefined) {
-                            H.i_elvisto('Lang/Lang', 'LE_operate', { op: 'drop', spec })
+                            H.i_elvisto('Lang/Lang', 'LE_mark', { LE, op: 'drop', spec })
                         } else {
                             demote(spec)
                         }

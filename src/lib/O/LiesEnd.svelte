@@ -30,6 +30,60 @@ let { M } = $props()
 onMount(async () => {
 await M.eatfunc({
 
+//#region operate / mark — generalised routed handlers
+//
+//   e:operate — structural moves and cluster triggers over %What** / %LE.
+//     Routed to the world that owns the data being moved.
+//     w:Lies receives cursor moves (up/prev/next/branch/dive/next_doc).
+//     w:Lang receives the push cluster trigger (push).
+//     Future worlds can add their own operate flavours — e%LE narrows scope.
+//
+//   e:mark — U-sphere mutations on the working clone tree.
+//     Always routed to w:Lang (where %LE and C** live).
+//     e.sc.LE is the %LE particle passed directly by the caller —
+//       no re-derive needed; the caller already holds it from languinio.
+//     Ops: add | edit | drop | undrop | unshow | show
+//
+//   The event name generalises: a caller that knows the world and the scope
+//   can fire e:operate or e:mark without embedding the scope in the event name.
+//   Housing routes to e_operate / e_mark on the target world's w handler.
+//   A narrower alias (e:LE_operate, e:LE_mark) can also be used — Housing
+//   will look for e_LE_operate / e_LE_mark first, then fall back to e_operate /
+//   e_mark, so existing callers keep working while new ones use the short form.
+//
+//   U%unshowing / U%unaccepted mutations increment LE.c.U_serial so
+//   Lang_settle's encode_key sees a change without waiting for a cursor move.
+//   (The serial rides on %LE.c, never .sc, so it never enters the snap.)
+
+    // ── e_operate (w:Lies) ────────────────────────────────────────────────────
+    //
+    //   Cursor-movement and +time gestures.  Delegates to e_LE_operate in
+    //   LiesCurse for the full pivot + want machinery.
+    //   Having a named e_operate here means callers can drop the LE_ prefix
+    //   while still reaching the same handler via the alias fallback.
+    //
+    //   e.sc: { LE?, op: string, ... }  (LE ignored on Lies side — cursor state
+    //   is read from %examining directly, same as e_LE_operate does)
+    async e_operate(A: TheC, w: TheC, e: TheC) {
+        // delegate to the existing cursor seam in LiesCurse
+        await (this as House).e_LE_operate(A, w, e)
+    },
+
+    // ── e_mark (w:Lang) ───────────────────────────────────────────────────────
+    //
+    //   U-sphere mutations on the working clone tree.
+    //   Caller supplies e.sc.LE — the %LE particle from languinio.
+    //   Op set mirrors e_LE_mark in Lang.svelte; this stub lives here so the
+    //   region comment above documents both sides in one place.
+    //   The real body is e_LE_mark on w:Lang (Lang.svelte).
+    //
+    //   e.sc: { LE: TheC, op: string, spec?, sc?, patch? }
+    //
+    //   < stub: w:Lies does not own clone mutations — this entry is intentionally
+    //     absent from LiesEnd's eatfunc.  e:mark fired at Lies/Lies would be a
+    //     routing mistake; the comment documents the contract for callers.
+
+//#endregion
 //#region Seem
 
 
