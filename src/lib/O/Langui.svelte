@@ -341,13 +341,17 @@
         console.log(`🔭 signal $effect: languinio=${!!languinio} path=${path} dock=${!!new_dock} active_dock=${!!active_dock_C}`)
         H.clear(async () => {
             lang_actions = la ? la.o({ action: 1 }) as TheC[] : []
-            // only overwrite active_path when we have a real path — a mid-mutation
-            // flush with path='' must never clear it and collapse the {#if} guard.
-            if (path) active_path = path
-            // dock and active_dock are safe to update only once beliefs is stable,
-            // so the bar and minimap never see a transient undefined between ticks.
-            dock        = new_dock
-            active_dock = active_dock_C
+            // never overwrite with a falsy value — a mid-mutation ave flush where
+            // lang_dock:path hasn't arrived yet produces new_dock=undefined; without
+            // this guard {#if dock} collapses, the container is destroyed, and the
+            // construction $effect re-fires before the setTimeout fires, scheduling
+            // a second new EditorView on the re-appeared container.
+            // Log the skip so the console trace shows when the ave is settling.
+            if (path)          active_path = path
+            if (new_dock)      dock        = new_dock
+            else if (dock)     console.warn(`🔭 lang_dock for '${path || active_path}' vanished mid-ave — holding`)
+            if (active_dock_C) active_dock = active_dock_C
+            else if (active_dock) console.warn(`🔭 active_dock_C vanished mid-ave — holding`)
         })
     })
 
@@ -754,29 +758,25 @@
     //   onDestroy can disconnect it.
     let container_ro: ResizeObserver | undefined
 
-    $effect(() => {
-        console.log(`🏗 construction $effect: container=${!!container} dock=${!!dock} view=${!!untrack(()=>view)}`)
-        if (!container || !active_path) return
-        const already = untrack(() => view)
-        if (already) { console.log(`🏗 construction $effect: already have view, bailing`); return }
+    // ── construction lock ────────────────────────────────────────────────────
+    //   Plain let — not $state, so the construction $effect never re-runs
+    //   because this flips.  Guards against scheduling a second setTimeout while
+    //   the first is still in flight, which happens because await lang(...) inside
+    //   the async body suspends for tens of ms — long enough for a reactive change
+    //   (active_path re-read, dock re-set) to re-fire the effect and see view===undefined.
+    let constructing = false
 
-        // Capture what we need from reactive scope before the setTimeout.
-        const captured_container = container
-        const captured_path      = active_path
-        const captured_dock      = dock
-        console.log(`🏗 construction $effect: scheduling setTimeout for path=${captured_path} container.clientHeight=${captured_container.clientHeight}`)
-
-        // Defer EditorView construction by one task so the browser has done
-        // a layout pass after {#if dock} flips.  The $effect fires in the
-        // same microtask as the DOM insertion — the container exists but has
-        // zero clientHeight, so CM measures 0 and stops painting.
-        // HMR works because Svelte remounts into a settled layout; cold load
-        // now behaves the same way.
-        setTimeout(async () => {
-        console.log(`🏗 setTimeout fired: isConnected=${captured_container.isConnected} clientHeight=${captured_container.clientHeight}`)
-        if (!captured_container.isConnected) return   // destroyed while we waited
-
-        // Read dock fresh — text may have arrived during the delay.
+    // ── build_editor ─────────────────────────────────────────────────────────
+    //   The async body of EditorView construction, extracted from the setTimeout
+    //   so the setTimeout itself is a small, easy-to-read wrapper and the lock
+    //   placement is obvious.  Assumes captured_container.isConnected is already
+    //   verified.  Sets view, prev_path, stateCache, fires editorBegins.
+    async function build_editor(
+        captured_container: HTMLDivElement,
+        captured_path:      string,
+        captured_dock:      TheC | undefined
+    ) {
+        // Read dock fresh — text may have arrived during the setTimeout delay.
         // Prefer active_dock.c.initial_text (set synchronously by req_text_loaded
         // reqonce onto the dock particle — arrives with Languinio before the ave flush).
         const fresh_dock = H.ave.ob({ lang_dock: captured_path })[0] as TheC | undefined
@@ -839,9 +839,6 @@
         // recognised cleanly even before any local edits land.
         spool_remember(captured_path, initial)
 
-        // No requestMeasure() here — layout has already settled by the time
-        // this setTimeout fires.  ResizeObserver handles any subsequent changes
-        // (e.g. sidebars opening, fonts loading late).
         container_ro = new ResizeObserver((entries) => {
             const h = entries[0]?.contentRect.height ?? 0
             console.log(`🏗 ResizeObserver fired: height=${h}`)
@@ -867,6 +864,29 @@
             { addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect,
               addGraftMark, removeGraftMark, clearAllGrafts,
               updates: readBookmarks(view), graft_updates: readGrafts(view) })
+    }
+
+    $effect(() => {
+        console.log(`🏗 construction $effect: container=${!!container} dock=${!!dock} view=${!!untrack(()=>view)} constructing=${constructing}`)
+        if (!container || !active_path) return
+        const already = untrack(() => view)
+        if (already)        { console.log(`🏗 already have view — bailing`);         return }
+        if (constructing)   { console.log(`🏗 setTimeout already in flight — bailing`); return }
+
+        const captured_container = container
+        const captured_path      = active_path
+        const captured_dock      = dock
+        console.log(`🏗 locking + scheduling setTimeout for path=${captured_path}`)
+        constructing = true
+
+        // Defer one task so the browser has done a layout pass after {#if dock} flips.
+        // The $effect fires in the same microtask as the DOM insertion — the container
+        // exists but has zero clientHeight, so CM measures 0 and stops painting.
+        setTimeout(async () => {
+            console.log(`🏗 setTimeout fired: isConnected=${captured_container.isConnected} clientHeight=${captured_container.clientHeight}`)
+            if (!captured_container.isConnected) { constructing = false; return }
+            await build_editor(captured_container, captured_path, captured_dock)
+            constructing = false
         }, 0)
     })
 

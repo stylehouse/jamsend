@@ -116,7 +116,7 @@
     //   Button bodies collapse to i_elvisto(w, 'LE_operate', { op }); the pivot
     //   is read here from %examining/%Spotlight,src — Lies-local and synchronous,
     //   no cross-world LE reach, no LE.sc.target lag.  This half only moves the
-    //   cursor over the live %What tree; working-clone mutation is e_LE_preen
+    //   cursor over the live %What tree; working-clone mutation is e_LE_operate
     //   on w:Lang.
     //
     //   op → kind: the op string flows through as the %want kind so the resolver

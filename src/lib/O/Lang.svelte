@@ -568,9 +568,9 @@
         const H      = this as House
         const workon = H.reqy(w).o({ req: 'workon' })[0] as TheC | undefined
         const LE     = workon?.o({ LE: 1 })[0] as TheC | undefined
-        if (!LE) return
+        if (!LE) throw `no LE`
         const op = e.sc.op as string | undefined
-        if (!op) return
+        if (!op) throw `no op`
 
         // spec→clone for ops that target an existing clone
         const find = (spec?: unknown) =>

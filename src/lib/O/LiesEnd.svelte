@@ -123,8 +123,8 @@ await M.eatfunc({
         // replace-not-pile: Seem/%News carries the latest counts only.
         // stringified so bare 1 never reads as the has-key wildcard.
         await Seem.r({ News: seemName }, {
-            goners: '' + goners.length,
-            neus:   '' + neus.length,
+            goners: goners.length,
+            neus:   neus.length,
         })
 
         Seem.sc.topD = topD   // the D-sphere root for this walk; stale after next pull

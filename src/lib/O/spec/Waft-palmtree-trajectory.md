@@ -93,11 +93,6 @@ w:Lang
 
 and that's what we have to watch, via every act on LE setting off an elvis to update some state in a controlled fashion (involved %req to watch it complete, etc.)
 
-- `e_Lang_LE_add`, `e_Lang_LE_edit`, `e_Lang_LE_drop`, `e_Lang_LE_push` are the
-  write paths for clone-tree mutation.  All call `feebly_ponder()` so the
-  `req:settle` re-encodes on the next tick.
-gathering all these e_Lang_LE_drop into a generic e_LE_preen method that does e%action:drop etc as they are 80% boilerplate.
-
 they've separated their navigation into cursoring the origin right? I suppose LE could abstract that too, presenting a manifold of C** you can read or write.
 
 ### LE operation
