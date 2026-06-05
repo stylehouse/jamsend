@@ -697,12 +697,6 @@ export function peel(s: any, d?: { sep?: string; hie?: string; hie_num?: string 
                 if (!k) continue
                 c[k] = 1
             }
-             if ('before migration to d.modern') {
-                // Convert numeric strings to numbers
-                if (c[k] && typeof c[k] === 'string' && c[k].match(/^-?\d+\.?\d*$/)) {
-                    c[k] = parseFloat(c[k]);
-                }
-            }
         }
         return c;
     }

@@ -15,14 +15,14 @@ story:Understandity
     For
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.012
-      sample:0.003,at:1780130159
-      sample:0.004,at:1780130188
-      sample:0.004,at:1780130192
-      sample:0.004,at:1780130195
-      sample:0.004,at:1780130197
-      sample:0.044,at:1780131191
-      sample:0.015,at:1780132172
-      sample:0.015,at:1780132199
-      sample:0.013,at:1780132202
+    TimeTotal:beliefs,avg=0.012
+      sample=0.003,at=1780130159
+      sample=0.004,at=1780130188
+      sample=0.004,at=1780130192
+      sample=0.004,at=1780130195
+      sample=0.004,at=1780130197
+      sample=0.044,at=1780131191
+      sample=0.015,at=1780132172
+      sample=0.015,at=1780132199
+      sample=0.013,at=1780132202
   step,dige:e53730fff693c51c

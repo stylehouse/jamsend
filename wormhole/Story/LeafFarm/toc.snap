@@ -8,102 +8,102 @@ story:LeafFarm
       style:background-color,v:#bbdb43
       style:color,v:#331800
       style:shape,v:star
-      style:width,v:44
-      meta:dose,drives:size,min:22,max:66,cap:3
+      style:width,v=44
+      meta:dose,drives:size,min=22,max=66,cap=3
       meta:label,keys:sunshine,fmt:sunshine
     matstyle:poo
       style:background-color,v:#5c3010
       style:color,v:#c88040
-      meta:dose,drives:size,min:18,max:28,cap:8
+      meta:dose,drives:size,min=18,max=28,cap=8
     matstyle:leaf
       style:background-color,v:#29d638
       style:color,v:#b0ffb0
-      meta:dose,drives:size,min:5,max:32,cap:4
+      meta:dose,drives:size,min=5,max=32,cap=4
       meta:label,keys:dose,fmt:🌿\n%d
     matstyle:mouthful
       style:background-color,v:#4a7a20
       style:color,v:#003300
-      style:width,v:10
-      meta:dose,drives:size,min:5,max:32,cap:6
+      style:width,v=10
+      meta:dose,drives:size,min=5,max=32,cap=6
       meta:label,keys:mouthful
     matstyle:material
       style:background-color,v:#3a2810
       style:color,v:#ffe8c0
       style:shape,v:round-rectangle
-      meta:dose,drives:size,min:18,max:36,cap:20,key:amount
+      meta:dose,drives:size,min=18,max=36,cap=20,key:amount
     matstyle:protein
       style:background-color,v:#3a1a4a
       style:color,v:#ddc8ff
       style:shape,v:hexagon
-      style:width,v:24
-      meta:dose,drives:size,min:18,max:42,cap:8,key:complexity
+      style:width,v=24
+      meta:dose,drives:size,min=18,max=42,cap=8,key:complexity
     matstyle:wants_enzyme
       style:background-color,v:#6a1a08
       style:color,v:#ff9070
       style:shape,v:star
-      style:width,v:22
+      style:width,v=22
     matstyle:producing
       style:background-color,v:#142060
       style:color,v:#9ab4ff
       style:shape,v:round-rectangle
-      style:width,v:42
+      style:width,v=42
     matstyle:enzyme
       style:background-color,v:#3aa67e
     matstyle:wants_to_produce
       style:background-color,v:#6a1a08
       style:color,v:#ff9070
       style:shape,v:star
-      style:width,v:22
+      style:width,v=22
     matstyle:shelf
       style:background-color,v:#1a4828
       style:color,v:#90ffc0
       style:shape,v:round-rectangle
-      style:width,v:24
+      style:width,v=24
   Plan
   Opt
     For
     waitCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.247
-      sample:0.251,at:1778378035
-      sample:0.251,at:1778378052
-      sample:0.251,at:1778378056
-      sample:0.234,at:1778378089
-      sample:0.223,at:1778378110
-      sample:0.277,at:1778378154
-      sample:0.231,at:1778378447
-      sample:0.253,at:1778413662
-      sample:0.221,at:1779063019
-      sample:0.278,at:1779622749
+    TimeTotal:beliefs,avg=0.247
+      sample=0.251,at=1778378035
+      sample=0.251,at=1778378052
+      sample=0.251,at=1778378056
+      sample=0.234,at=1778378089
+      sample=0.223,at=1778378110
+      sample=0.277,at=1778378154
+      sample=0.231,at=1778378447
+      sample=0.253,at=1778413662
+      sample=0.221,at=1779063019
+      sample=0.278,at=1779622749
   step,dige:16af8162fcae6222
-  step:2,dige:de8ea36813915842
-  step:3,dige:09f230e0ef6e7be9
-  step:4,dige:bd2debd2450b924f
-  step:5,dige:64fbf6e9443e8ec4
-  step:6,dige:3fb862be265ee0fd
-  step:7,dige:daae29c13761801f
-  step:8,dige:044a6c6797eca344
-  step:9,dige:0cc7b5c411b41f17
-  step:10,dige:14ec1cdc56f352a9
-  step:11,dige:792d7f18ccbf0d7d
-  step:12,dige:d809587678025d52
-  step:13,dige:0addbfd95e5cccd5
-  step:14,dige:d122d490c2409db3
-  step:15,dige:0b6de2ffa139205e
-  step:16,dige:ab038d246ba48ff0
-  step:17,dige:144545d158f4060e
-  step:18,dige:4e33c2e9f58499f1
-  step:19,dige:1bd63eb39ca36f70
+  step=2,dige:de8ea36813915842
+  step=3,dige:09f230e0ef6e7be9
+  step=4,dige:bd2debd2450b924f
+  step=5,dige:64fbf6e9443e8ec4
+  step=6,dige:3fb862be265ee0fd
+  step=7,dige:daae29c13761801f
+  step=8,dige:044a6c6797eca344
+  step=9,dige:0cc7b5c411b41f17
+  step=10,dige:14ec1cdc56f352a9
+  step=11,dige:792d7f18ccbf0d7d
+  step=12,dige:d809587678025d52
+  step=13,dige:0addbfd95e5cccd5
+  step=14,dige:d122d490c2409db3
+  step=15,dige:0b6de2ffa139205e
+  step=16,dige:ab038d246ba48ff0
+  step=17,dige:144545d158f4060e
+  step=18,dige:4e33c2e9f58499f1
+  step=19,dige:1bd63eb39ca36f70
     note,that:leaf_2_0 is about to get harvested
-  step:20,dige:cf378eac7715c370
+  step=20,dige:cf378eac7715c370
     note,that:leaf_2_0 emerges again
-  step:21,dige:9a153bba3b5bac66
-  step:22,dige:1b3f3a54323f4216
-  step:23,dige:f738324971edfe4f
-  step:24,dige:2933c31dbfcf19f0
-  step:25,dige:7d5dbe35826f6b28
-  step:26,dige:ee72258b306dc140
-  step:27,dige:6f8eba6df9c1e935
-  step:28,dige:658cf6e1ba4ba836
-  step:29,dige:733a86973e0cf932
-  step:30,dige:0e055868a11d8fa0
+  step=21,dige:9a153bba3b5bac66
+  step=22,dige:1b3f3a54323f4216
+  step=23,dige:f738324971edfe4f
+  step=24,dige:2933c31dbfcf19f0
+  step=25,dige:7d5dbe35826f6b28
+  step=26,dige:ee72258b306dc140
+  step=27,dige:6f8eba6df9c1e935
+  step=28,dige:658cf6e1ba4ba836
+  step=29,dige:733a86973e0cf932
+  step=30,dige:0e055868a11d8fa0

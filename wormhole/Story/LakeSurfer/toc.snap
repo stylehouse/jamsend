@@ -69,19 +69,19 @@ story:LakeSurfer
       w:Lang
         txtsyntaxdump
     trickle
-    quiesce_snap_time:0.4
+    quiesce_snap_time=0.4
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.525
-      sample:0.448,at:1780308284
-      sample:0.473,at:1780312911
-      sample:0.516,at:1780313301
-      sample:1.442,at:1780317901
-      sample:0.242,at:1780317988
-      sample:0.242,at:1780317999
-      sample:0.226,at:1780318009
-      sample:0.563,at:1780421621
-      sample:0.563,at:1780421691
-      sample:0.535,at:1780422145
+    TimeTotal:beliefs,avg=0.525
+      sample=0.448,at=1780308284
+      sample=0.473,at=1780312911
+      sample=0.516,at=1780313301
+      sample=1.442,at=1780317901
+      sample=0.242,at=1780317988
+      sample=0.242,at=1780317999
+      sample=0.226,at=1780318009
+      sample=0.563,at=1780421621
+      sample=0.563,at=1780421691
+      sample=0.535,at=1780422145
   step,dige:efaa9386b3bf379e
-  step:2,dige:7c90e760316ed675
+  step=2,dige:7c90e760316ed675

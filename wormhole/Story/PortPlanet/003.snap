@@ -1,17 +1,17 @@
 Snap:H
   H:PortPlanet,Run
     A:PortPlanet
-      {"mung":["age"]}	self,round:4
+      {"mung":["age"]}	self,round=4
       w:PortPlanet
         orders
-          order:rose,dose:3
-          order:fern,dose:7
+          order:rose,dose=3
+          order:fern,dose=7
         req:receive
-          req:2,order:rose,dose:3,out
-          req:3,order:fern,dose:7,out
+          req=2,order:rose,dose=3,out
+          req=3,order:fern,dose=7,out
         req:transport
         world
-          order:rose,dose:3
-          order:fern,dose:7
-        {"mung":["age"]}	self,round:4
-    {"mung":["id"]}	mo:main,interval:3.6
+          order:rose,dose=3
+          order:fern,dose=7
+        {"mung":["age"]}	self,round=4
+    {"mung":["id"]}	mo:main,interval=3.6

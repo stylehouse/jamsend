@@ -1,9 +1,9 @@
 Snap:H
   H:Understandium,Run
     A:Understandium
-      {"mung":["age"]}	self,round:3
+      {"mung":["age"]}	self,round=3
       w:Understandium
-        tally,passed:8,failed:0
+        tally,passed=8,failed=0
         {"ref":{"target":"%What:1, label:routing"}}	LE
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
             Demonstrations:origin
@@ -11,7 +11,7 @@ Snap:H
               Demonstrations:origin,Point,method:Lang_doc_from_event
               Demonstrations:origin,What,label:deeper
               Demonstrations:origin,Point,method:fresh_point
-            News:origin,goners:0,neus
+            News:origin,goners=0,neus
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:working"}}	Seem:working
             Demonstrations:working
               Understandable
@@ -21,7 +21,7 @@ Snap:H
                 Understandable
               Demonstrations:working,What,label:deeper
                 Understandable
-            News:working,goners:0,neus:0
+            News:working,goners=0,neus=0
           State,stale
         src
           What,label:routing
@@ -30,9 +30,9 @@ Snap:H
             What,label:deeper
               Point,method:inner_secret
             Point,method:fresh_point
-        {"mung":["age"]}	self,round:3
+        {"mung":["age"]}	self,round=3
         see:step 3 source add
-          goners:0,neus
+          goners=0,neus
           neu:fresh_point
           PASS,t:1 neu on source add
-    {"mung":["id"]}	mo:main,interval:3.6
+    {"mung":["id"]}	mo:main,interval=3.6

@@ -1,9 +1,9 @@
 Snap:H
   H:Understandication,Run
     A:Understandication
-      {"mung":["age"]}	self,round:11
+      {"mung":["age"]}	self,round=11
       w:Understandication
-        tally,passed:36,failed:0
+        tally,passed=36,failed=0
         {"ref":{"target":"%What:1, label:routing"}}	LE
           State
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
@@ -12,7 +12,7 @@ Snap:H
               Demonstrations:origin,Point,method:Lang_doc_from_event
               Demonstrations:origin,What,label:routing_detail
               Demonstrations:origin,Point,method:pipeline_start
-            News:origin,goners:0,neus:0
+            News:origin,goners=0,neus=0
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:working"}}	Seem:working
             Demonstrations:working
               Understandable
@@ -26,7 +26,7 @@ Snap:H
                 Understandable,unaccepted
               Demonstrations:working,Point,method:pipeline_start
                 Understandable
-            News:working,goners:0,neus:0
+            News:working,goners=0,neus=0
         src
           What,label:routing
             Point,method:e_Dock_open
@@ -42,7 +42,7 @@ Snap:H
             What,label:compilation_detail
               Point,method:write_gen
               Point,method:notify_Pantheate
-        {"mung":["age"]}	self,round:11
+        {"mung":["age"]}	self,round=11
         see:step 11 deep resume
           deep_point:resolve_path
           deep_point:normalise_ext
@@ -50,4 +50,4 @@ Snap:H
           PASS,t:resolve_path still in routing_detail
           PASS,t:normalise_ext still in routing_detail
           PASS,t:exactly 2 deep Points (none leaked in)
-    {"mung":["id"]}	mo:main,interval:3.6
+    {"mung":["id"]}	mo:main,interval=3.6

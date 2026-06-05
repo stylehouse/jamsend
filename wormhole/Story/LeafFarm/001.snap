@@ -4,10 +4,10 @@ Snap:H
       {"mung":["age"]}	self,round
       w:farm
         {"mung":["age"]}	self,round
-        sunshine,dose:0.7477601033306698
+        sunshine,dose=0.7477601033306698
         sunny_streak,count
-        poo,dose:0.34
-        leaf,leaf_id:seed_0,dose:1.86
+        poo,dose=0.34
+        leaf,leaf_id:seed_0,dose=1.86
     A:plate
       {"mung":["age"]}	self,round
       w:plate
@@ -17,62 +17,62 @@ Snap:H
       {"mung":["age"]}	self,round
       w:enzymeco
         {"mung":["age"]}	self,round
-    {"mung":["id"]}	mo:main,interval:3.6
+    {"mung":["id"]}	mo:main,interval=3.6
 Snap:cytowave
   upsert,id:cytoid_1_1,label:farm,isCompound:true
     style,background-color:#8f3232
-    style,background-opacity:0.6
+    style,background-opacity=0.6
     style,color:#ccc
     style,font-size:8px
     style,font-style:italic
-    style,height:20
+    style,height=20
     style,padding:7px
     style,shape:ellipse
     style,text-valign:top
-    style,width:20
+    style,width=20
   upsert,id:cytoid_1_1_1,label:sunshine,parent:cytoid_1_1
     style,background-color:#bbdb43
     style,color:#331800
-    style,height:33
+    style,height=33
     style,shape:star
-    style,width:33
+    style,width=33
   {"upsert":1,"id":"cytoid_1_1_2","label":"poo\ndose:0.34","parent":"cytoid_1_1"}
     style,background-color:#5c3010
     style,color:#c88040
-    style,height:18
+    style,height=18
     style,shape:ellipse
-    style,width:18
+    style,width=18
   {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n1.860","parent":"cytoid_1_1"}
     style,background-color:#29d638
     style,color:#b0ffb0
-    style,height:18
+    style,height=18
     style,shape:ellipse
-    style,width:18
+    style,width=18
   upsert,id:cytoid_1_2,label:plate,isCompound:true
     style,background-color:#8f3232
-    style,background-opacity:0.6
+    style,background-opacity=0.6
     style,color:#ccc
     style,font-size:8px
     style,font-style:italic
-    style,height:20
+    style,height=20
     style,padding:7px
     style,shape:ellipse
     style,text-valign:top
-    style,width:20
+    style,width=20
   upsert,id:cytoid_1_2_1,label:sunshine,parent:cytoid_1_2
     style,background-color:#bbdb43
     style,color:#331800
-    style,height:37
+    style,height=37
     style,shape:star
-    style,width:37
+    style,width=37
   upsert,id:cytoid_1_3,label:enzymeco,isCompound:true
     style,background-color:#8f3232
-    style,background-opacity:0.6
+    style,background-opacity=0.6
     style,color:#ccc
     style,font-size:8px
     style,font-style:italic
-    style,height:20
+    style,height=20
     style,padding:7px
     style,shape:ellipse
     style,text-valign:top
-    style,width:20
+    style,width=20

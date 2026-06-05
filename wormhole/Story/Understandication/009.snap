@@ -1,9 +1,9 @@
 Snap:H
   H:Understandication,Run
     A:Understandication
-      {"mung":["age"]}	self,round:9
+      {"mung":["age"]}	self,round=9
       w:Understandication
-        tally,passed:28,failed:0
+        tally,passed=28,failed=0
         {"ref":{"target":"%What:1, label:routing"}}	LE
           State,stale
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
@@ -12,7 +12,7 @@ Snap:H
               Demonstrations:origin,Point,method:Lang_doc_from_event
               Demonstrations:origin,What,label:routing_detail
               Demonstrations:origin,Point,method:new_route_handler
-            News:origin,goners,neus:0
+            News:origin,goners,neus=0
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:working"}}	Seem:working
             Demonstrations:working
               Understandable
@@ -26,7 +26,7 @@ Snap:H
                 Understandable
               Demonstrations:working,Point,method:new_route_handler
                 Understandable
-            News:working,goners:0,neus:0
+            News:working,goners=0,neus=0
         src
           What,label:routing
             Point,method:e_Dock_open
@@ -42,10 +42,10 @@ Snap:H
             What,label:compilation_detail
               Point,method:write_gen
               Point,method:notify_Pantheate
-        {"mung":["age"]}	self,round:9
+        {"mung":["age"]}	self,round=9
         see:step 9 push deletion
-          path_guard_on_source:0
-          push_dirty_fires:0
+          path_guard_on_source=0
+          push_dirty_fires=0
           PASS,t:path_guard gone from source
           PASS,t:no push_dirty after clean deletion push
-    {"mung":["id"]}	mo:main,interval:3.6
+    {"mung":["id"]}	mo:main,interval=3.6

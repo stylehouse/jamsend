@@ -9,16 +9,16 @@ Snap:H
           Doc,path:a.g
         Waft:test2
           Doc,path:x.g
-        logger,n:8
+        logger,n=8
           mount,Waft:test1,inA
           mount,Waft:test2,inA
           Lies,gen
           render,Waft:test1
           render,Waft:test2
-          form,Waft:test1,open:0
-          form,Waft:test2,open:0
-          wafts,n:2
-    {"mung":["id"]}	mo:main,interval:3.6
+          form,Waft:test1,open=0
+          form,Waft:test2,open=0
+          wafts,n=2
+    {"mung":["id"]}	mo:main,interval=3.6
     watched:ave
     watched:UIs
       {"ref":{"component":"Function()"}}	UI:ReactiveWaft

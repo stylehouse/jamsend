@@ -64,44 +64,44 @@ story:LakeNets
     Prep
       i_elvisto:Lies,e:Lies_open_Waft
         esc:path,v:Ghost/LakeNets
-    Prep:2
+    Prep=2
       i_elvisto:Lang,e:LE_operate
         esc:op,v:add
         {"esc":"sc","v":{"Point":1,"method":"LakeNetherland","class":"focus"}}
-    Prep:3
+    Prep=3
       i_elvisto:Lang,e:LE_operate
         esc:op,v:edit
         esc:spec,v:LakeNetherland
         {"esc":"patch","v":{"class":"caution"}}
-    Prep:4
+    Prep=4
       i_elvisto:Lang,e:LE_operate
         esc:op,v:unshow
         esc:spec,v:LakeNetherland
-    Prep:5
+    Prep=5
       i_elvisto:Lang,e:LE_operate
         esc:op,v:show
         esc:spec,v:LakeNetherland
-    Prep:6
+    Prep=6
       i_elvisto:Lang,e:LE_operate
         esc:op,v:drop
         esc:spec,v:LakeNetherland
-    Prep:7
+    Prep=7
       i_elvisto:Lang,e:LE_operate
         esc:op,v:undrop
         esc:spec,v:LakeNetherland
-    Prep:8
+    Prep=8
       i_elvisto:Lang,e:LE_operate
         esc:op,v:push
-    Prep:9
+    Prep=9
       i_elvisto:Lies,e:LE_operate
         esc:op,v:next
-    Prep:10
+    Prep=10
       i_elvisto:Lies,e:LE_operate
         esc:op,v:branch
-    Prep:11
+    Prep=11
       i_elvisto:Lies,e:LE_operate
         esc:op,v:prev
-    Prep:12
+    Prep=12
       i_elvisto:Lies,e:LE_operate
         esc:op,v:up
   Opt
@@ -111,31 +111,31 @@ story:LakeNets
       w:Lang
         txtsyntaxdump
         nogen
-    quiesce_snap_time:0.4
+    quiesce_snap_time=0.4
     noCyto
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg:1.651
-      sample:2.356,at:1780564943
-      sample:2.363,at:1780565038
-      sample:1.63,at:1780566335
-      sample:2.022,at:1780567055
-      sample:1.437,at:1780568743
-      sample:1.459,at:1780568799
-      sample:1.459,at:1780568813
-      sample:1.175,at:1780569462
-      sample:1.217,at:1780569498
-      sample:1.397,at:1780569700
+    TimeTotal:beliefs,avg=1.651
+      sample=2.356,at=1780564943
+      sample=2.363,at=1780565038
+      sample=1.63,at=1780566335
+      sample=2.022,at=1780567055
+      sample=1.437,at=1780568743
+      sample=1.459,at=1780568799
+      sample=1.459,at=1780568813
+      sample=1.175,at=1780569462
+      sample=1.217,at=1780569498
+      sample=1.397,at=1780569700
   step,dige:93f520424fb3da91
-  step:2,dige:37bef69df11eaf36
-  step:3,dige:d03d7b5ceff862c8
-  step:4,dige:a68707640055a4ec
-  step:5,dige:7e883dc6b3eaffab
-  step:6,dige:6fb336d66fed8094
-  step:7,dige:1204ca1a109aa855
-  step:8,dige:f618effdf3366980
-  step:9,dige:b425c71b68b78e13
-  step:10,dige:a22d48ce95f05a33
-  step:11,dige:52d1bb743ee2042f
-  step:12,dige:13b2fdcb6c59fdfe
-  step:13,dige:0f972b66c7731d46
+  step=2,dige:37bef69df11eaf36
+  step=3,dige:d03d7b5ceff862c8
+  step=4,dige:a68707640055a4ec
+  step=5,dige:7e883dc6b3eaffab
+  step=6,dige:6fb336d66fed8094
+  step=7,dige:1204ca1a109aa855
+  step=8,dige:f618effdf3366980
+  step=9,dige:b425c71b68b78e13
+  step=10,dige:a22d48ce95f05a33
+  step=11,dige:52d1bb743ee2042f
+  step=12,dige:13b2fdcb6c59fdfe
+  step=13,dige:0f972b66c7731d46

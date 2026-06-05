@@ -1,9 +1,9 @@
 Snap:H
   H:Understandium,Run
     A:Understandium
-      {"mung":["age"]}	self,round:11
+      {"mung":["age"]}	self,round=11
       w:Understandium
-        tally,passed:29,failed:0
+        tally,passed=29,failed=0
         {"ref":{"target":"%What:1, label:second"}}	LE
           State
           {"encode":1,"snap_origin":"Point,method:e_Dock_open_RENAMED\nPoint,method:Lang_doc_from_event\nWhat,label:deeper\n","snap_working":"Point,method:e_Dock_open_RENAMED\nPoint,method:Lang_doc_from_event\nWhat,label:deeper\n","dirty":"0"}
@@ -11,7 +11,7 @@ Snap:H
             Demonstrations:origin
               Demonstrations:origin,Point,method:alpha2
               Demonstrations:origin,Point,method:beta
-            News:origin,goners:0,neus:0
+            News:origin,goners=0,neus=0
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:second","topD":"%Demonstrations:working"}}	Seem:working
             Demonstrations:working
               Understandable
@@ -19,7 +19,7 @@ Snap:H
                 Understandable
               Demonstrations:working,Point,method:beta
                 Understandable
-            News:working,goners:0,neus:0
+            News:working,goners=0,neus=0
         src
           What,label:routing
             Point,method:e_Dock_open_RENAMED
@@ -30,7 +30,7 @@ Snap:H
           What,label:second
             Point,method:alpha2
             Point,method:beta
-        {"mung":["age"]}	self,round:11
+        {"mung":["age"]}	self,round=11
         see:step 11 encode-compare clean
           {"snap_origin":"Point,method:one\nPoint,method:two\n","snap_working":"Point,method:one\nPoint,method:two\n","dirty":"0"}
           {"PASS":1,"t":"clean compare: not dirty"}
@@ -46,7 +46,7 @@ Snap:H
             Demonstrations:origin
               Demonstrations:origin,Point,method:one
               Demonstrations:origin,Point,method:two
-            News:origin,goners:0,neus:2
+            News:origin,goners=0,neus=2
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:enc","topD":"%Demonstrations:working"}}	Seem:working
             Demonstrations:working
               Demonstrations:working,Point,method:one
@@ -54,7 +54,7 @@ Snap:H
               Demonstrations:working,Point,method:two
                 Understandable
               Understandable
-            News:working,goners:0,neus:2
+            News:working,goners=0,neus=2
           State
           {"encode":1,"snap_origin":"Point,method:one\nPoint,method:two\n","snap_working":"Point,method:one\nPoint,method:two\n","dirty":"0"}
-    {"mung":["id"]}	mo:main,interval:3.6
+    {"mung":["id"]}	mo:main,interval=3.6

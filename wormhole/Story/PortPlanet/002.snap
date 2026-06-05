@@ -1,20 +1,20 @@
 Snap:H
   H:PortPlanet,Run
     A:PortPlanet
-      {"mung":["age"]}	self,round:2
+      {"mung":["age"]}	self,round=2
       w:PortPlanet
         orders
-          order:rose,dose:3
-          order:fern,dose:7
+          order:rose,dose=3
+          order:fern,dose=7
         req:receive
-          req:2,order:rose,dose:3
-          req:3,order:fern,dose:7
-        {"mung":["age"]}	self,round:2
+          req=2,order:rose,dose=3
+          req=3,order:fern,dose=7
+        {"mung":["age"]}	self,round=2
         logger,n
           driver[2],dispatch,inA
         req:transport
-          req,van:rose,dose:3
+          req,van:rose,dose=3
             waits:in transit
-          req,van:fern,dose:7
+          req,van:fern,dose=7
             waits:in transit
-    {"mung":["id"]}	mo:main,interval:3.6
+    {"mung":["id"]}	mo:main,interval=3.6

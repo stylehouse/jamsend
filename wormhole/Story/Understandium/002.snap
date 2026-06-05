@@ -1,16 +1,16 @@
 Snap:H
   H:Understandium,Run
     A:Understandium
-      {"mung":["age"]}	self,round:2
+      {"mung":["age"]}	self,round=2
       w:Understandium
-        tally,passed:7,failed:0
+        tally,passed=7,failed=0
         {"ref":{"target":"%What:1, label:routing"}}	LE
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
             Demonstrations:origin
               Demonstrations:origin,Point,method:e_Dock_open
               Demonstrations:origin,Point,method:Lang_doc_from_event
               Demonstrations:origin,What,label:deeper
-            News:origin,goners:0,neus:0
+            News:origin,goners=0,neus=0
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:working"}}	Seem:working
             Demonstrations:working
               Understandable
@@ -20,7 +20,7 @@ Snap:H
                 Understandable
               Demonstrations:working,What,label:deeper
                 Understandable
-            News:working,goners:0,neus:0
+            News:working,goners=0,neus=0
           State
         src
           What,label:routing
@@ -28,9 +28,9 @@ Snap:H
             Point,method:Lang_doc_from_event
             What,label:deeper
               Point,method:inner_secret
-        {"mung":["age"]}	self,round:2
+        {"mung":["age"]}	self,round=2
         see:step 2 repull unchanged
-          goners:0,neus:0
+          goners=0,neus=0
           {"PASS":1,"t":"unchanged source: no-diff"}
           PASS,t:Seem/%News still singular after re-pull
-    {"mung":["id"]}	mo:main,interval:3.6
+    {"mung":["id"]}	mo:main,interval=3.6

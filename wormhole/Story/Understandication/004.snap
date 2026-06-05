@@ -1,9 +1,9 @@
 Snap:H
   H:Understandication,Run
     A:Understandication
-      {"mung":["age"]}	self,round:4
+      {"mung":["age"]}	self,round=4
       w:Understandication
-        tally,passed:11,failed:0
+        tally,passed=11,failed=0
         {"ref":{"target":"%What:1, label:routing"}}	LE
           State
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
@@ -12,7 +12,7 @@ Snap:H
               Demonstrations:origin,Point,method:Lang_doc_from_event
               Demonstrations:origin,Point,method:path_guard
               Demonstrations:origin,What,label:routing_detail
-            News:origin,goners:0,neus:4
+            News:origin,goners=0,neus=4
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:working"}}	Seem:working
             Demonstrations:working
               Demonstrations:working,Point,method:e_Dock_open
@@ -24,7 +24,7 @@ Snap:H
               Demonstrations:working,What,label:routing_detail
                 Understandable
               Understandable
-            News:working,goners:0,neus:4
+            News:working,goners=0,neus=4
         src
           What,label:routing
             Point,method:e_Dock_open
@@ -40,10 +40,10 @@ Snap:H
             What,label:compilation_detail
               Point,method:write_gen
               Point,method:notify_Pantheate
-        {"mung":["age"]}	self,round:4
+        {"mung":["age"]}	self,round=4
         see:step 4 wander back routing
-          goners:0,neus:4
+          goners=0,neus=4
           {"PASS":1,"t":"routing: 4 neus after re-arm (fresh sphere)"}
           PASS,t:no unshowing bled from compilation U
           PASS,t:e_Dock_open back in clones
-    {"mung":["id"]}	mo:main,interval:3.6
+    {"mung":["id"]}	mo:main,interval=3.6

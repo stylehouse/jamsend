@@ -24,7 +24,7 @@ story:PotPlant
       style:background-color,v:#1a4828
       style:color,v:#90ffc0
       style:shape,v:round-rectangle
-      style:width,v:24
+      style:width,v=24
     matstyle:yard
       style:background-color,v:#bd36c9
     matstyle:body
@@ -38,23 +38,23 @@ story:PotPlant
     For
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.064
-      sample:0.069,at:1778746283
-      sample:0.065,at:1778756130
-      sample:0.065,at:1778756147
-      sample:0.064,at:1778762189
-      sample:0.058,at:1778762278
-      sample:0.061,at:1778762973
-      sample:0.062,at:1778762980
-      sample:0.075,at:1778765684
-      sample:0.059,at:1778804529
-      sample:0.064,at:1778828616
+    TimeTotal:beliefs,avg=0.064
+      sample=0.069,at=1778746283
+      sample=0.065,at=1778756130
+      sample=0.065,at=1778756147
+      sample=0.064,at=1778762189
+      sample=0.058,at=1778762278
+      sample=0.061,at=1778762973
+      sample=0.062,at=1778762980
+      sample=0.075,at=1778765684
+      sample=0.059,at=1778804529
+      sample=0.064,at=1778828616
   step,dige:3c8fb9c9daacd294
-  step:2,dige:ae22066928086c7b
-  step:3,dige:5ab94a8562974d54
-  step:4,dige:22e035c5719af78d
-  step:5,dige:a35c2e942a56943d
-  step:6,dige:79e196c2c82afe03
-  step:7,dige:70228711a0ab4814
-  step:8,dige:22324f90503f5390
-  step:9,dige:a9eed07d9f1de655
+  step=2,dige:ae22066928086c7b
+  step=3,dige:5ab94a8562974d54
+  step=4,dige:22e035c5719af78d
+  step=5,dige:a35c2e942a56943d
+  step=6,dige:79e196c2c82afe03
+  step=7,dige:70228711a0ab4814
+  step=8,dige:22324f90503f5390
+  step=9,dige:a9eed07d9f1de655

@@ -1,42 +1,42 @@
 Snap:H
   H:LeafFarm,Run
     A:farm
-      {"mung":["age"]}	self,round:18
+      {"mung":["age"]}	self,round=18
       w:farm
-        sunshine,dose:0.21361775622200613
-        sunny_streak,count:0
-        poo,dose:2.145068137774072
-        leaf,leaf_id:leaf_2_0,dose:1.6123297907438832
-        leaf,leaf_id:leaf_3_0,dose:1.3215817956917073
-        leaf,leaf_id:leaf_4_0,dose:1.0832637669604162
+        sunshine,dose=0.21361775622200613
+        sunny_streak,count=0
+        poo,dose=2.145068137774072
+        leaf,leaf_id:leaf_2_0,dose=1.6123297907438832
+        leaf,leaf_id:leaf_3_0,dose=1.3215817956917073
+        leaf,leaf_id:leaf_4_0,dose=1.0832637669604162
         seen:wonder
-        {"mung":["age"]}	self,round:18
+        {"mung":["age"]}	self,round=18
     A:plate
-      {"mung":["age"]}	self,round:18
+      {"mung":["age"]}	self,round=18
       w:plate
         sunshine,dose
-        material:basic,amount:0.6987417591811158
+        material:basic,amount=0.6987417591811158
         wants_enzyme
         shelf,enzyme,units
-        shelf,enzyme,units:5
-        {"mung":["age"]}	self,round:18
+        shelf,enzyme,units=5
+        {"mung":["age"]}	self,round=18
     A:enzymeco
-      {"mung":["age"]}	self,round:18
+      {"mung":["age"]}	self,round=18
       w:enzymeco
-        {"mung":["age"]}	self,round:18
-    {"mung":["id"]}	mo:main,interval:3.6
+        {"mung":["age"]}	self,round=18
+    {"mung":["id"]}	mo:main,interval=3.6
 Snap:cytowave
   upsert,id:cytoid_1_1_1
-    style,height:25
-    style,width:25
+    style,height=25
+    style,width=25
   {"upsert":1,"id":"cytoid_1_1_2","label":"poo\ndose:2.15"}
   {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n1.612"}
-    style,height:16
-    style,width:16
+    style,height=16
+    style,width=16
   {"upsert":1,"id":"cytoid_1_1_4","label":"🌿\n1.322"}
-    style,height:14
-    style,width:14
+    style,height=14
+    style,width=14
   {"upsert":1,"id":"cytoid_1_1_5","label":"🌿\n1.083"}
-    style,height:12
-    style,width:12
+    style,height=12
+    style,width=12
   {"upsert":1,"id":"cytoid_1_2_4","label":"material:basic\namount:0.7"}

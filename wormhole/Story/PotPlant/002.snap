@@ -1,28 +1,28 @@
 Snap:H
   H:PotPlant,Run
     A:PotPlant
-      {"mung":["age"]}	self,round:2
+      {"mung":["age"]}	self,round=2
       w:PotPlant
-        body,hands:2
+        body,hands=2
           pot:rose
             plant
-            soil,dose:3
+            soil,dose=3
           pot:fern
             plant
-            soil,dose:3
+            soil,dose=3
         shelf
           pot:cactus
             plant
-            soil,dose:3
+            soil,dose=3
         yard
-          soil,dose:12
+          soil,dose=12
         De:repot
           req:move_outside
-          req:repot,maz:2
-          req:move_inside,maz:3
-        De:celebrate,maz:2
-        {"mung":["age"]}	self,round:2
+          req:repot,maz=2
+          req:move_inside,maz=3
+        De:celebrate,maz=2
+        {"mung":["age"]}	self,round=2
         log
           msg:carrying rose
           msg:carrying fern
-    {"mung":["id"]}	mo:main,interval:3.6
+    {"mung":["id"]}	mo:main,interval=3.6

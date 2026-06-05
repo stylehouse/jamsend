@@ -1,52 +1,52 @@
 Snap:H
   H:LeafFarm,Run
     A:farm
-      {"mung":["age"]}	self,round:9
+      {"mung":["age"]}	self,round=9
       w:farm
-        sunshine,dose:0.8136899401169151
-        sunny_streak,count:9
-        poo,dose:1.7416682550914064
-        leaf,leaf_id:leaf_2_0,dose:0.4022710830106882
-        leaf,leaf_id:leaf_3_0,dose:0.32973039591040015
-        leaf,leaf_id:leaf_4_0,dose:0.2702708163200001
-        {"mung":["age"]}	self,round:9
+        sunshine,dose=0.8136899401169151
+        sunny_streak,count=9
+        poo,dose=1.7416682550914064
+        leaf,leaf_id:leaf_2_0,dose=0.4022710830106882
+        leaf,leaf_id:leaf_3_0,dose=0.32973039591040015
+        leaf,leaf_id:leaf_4_0,dose=0.2702708163200001
+        {"mung":["age"]}	self,round=9
     A:plate
-      {"mung":["age"]}	self,round:9
+      {"mung":["age"]}	self,round=9
       w:plate
         sunshine,dose
-        material:basic,amount:0.7558612060546875
-        protein,protein_id:prot_7,complexity:2
+        material:basic,amount=0.7558612060546875
+        protein,protein_id:prot_7,complexity=2
         wants_enzyme
-        {"mung":["age"]}	self,round:9
-        mouthful,mouthful_id:seed_0_m9,dose:0.2291999999999999,spawning_from:seed_0,ttl:0
-        shelf,enzyme,units:5
+        {"mung":["age"]}	self,round=9
+        mouthful,mouthful_id:seed_0_m9,dose=0.2291999999999999,spawning_from:seed_0,ttl=0
+        shelf,enzyme,units=5
     A:enzymeco
-      {"mung":["age"]}	self,round:9
+      {"mung":["age"]}	self,round=9
       w:enzymeco
         wants_to_produce
-        {"mung":["age"]}	self,round:9
-    {"mung":["id"]}	mo:main,interval:3.6
+        {"mung":["age"]}	self,round=9
+    {"mung":["id"]}	mo:main,interval=3.6
 Snap:cytowave
   upsert,id:cytoid_1_1_1
-    style,height:34
-    style,width:34
+    style,height=34
+    style,width=34
   {"upsert":1,"id":"cytoid_1_1_2","label":"poo\ndose:1.74"}
   {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n0.402"}
-    style,height:8
-    style,width:8
+    style,height=8
+    style,width=8
   {"upsert":1,"id":"cytoid_1_1_4","label":"🌿\n0.330","parent":"cytoid_1_1"}
     style,background-color:#29d638
     style,color:#b0ffb0
-    style,height:7
+    style,height=7
     style,shape:ellipse
-    style,width:7
+    style,width=7
   {"upsert":1,"id":"cytoid_1_2_4","label":"material:basic\namount:0.76"}
   {"upsert":1,"id":"cytoid_1_2_7","label":"shelf\nenzyme\nunits:5","parent":"cytoid_1_2"}
     style,background-color:#1a4828
     style,color:#90ffc0
-    style,height:24
+    style,height=24
     style,shape:round-rectangle
-    style,width:24
+    style,width=24
   remove,id:cytoid_1_1_5
   remove,id:cytoid_1_2_2
   remove,id:cytoid_1_3_1

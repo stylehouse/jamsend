@@ -1,20 +1,20 @@
 Snap:H
   H:PotPlanet,Run
     A:PotPlanet
-      {"mung":["age"]}	self,round:3
+      {"mung":["age"]}	self,round=3
       w:PotPlanet
         orders
-          order:rose,dose:5
-          order:fern,dose:7
+          order:rose,dose=5
+          order:fern,dose=7
         De:receive
-          req:order,order:rose,dose:5
-          req:order,order:fern,dose:7
+          req:order,order:rose,dose=5
+          req:order,order:fern,dose=7
           req:confirm
             waits:staged
-          req:order,order:rose_extra,dose:2
-        De:report,maz:2
-        {"mung":["age"]}	self,round:3
-        logger,n:2
-          driver[3],order:rose,dose:5,inA
-          extra_order,order:rose,gap:2,inA
-    {"mung":["id"]}	mo:main,interval:3.6
+          req:order,order:rose_extra,dose=2
+        De:report,maz=2
+        {"mung":["age"]}	self,round=3
+        logger,n=2
+          driver[3],order:rose,dose=5,inA
+          extra_order,order:rose,gap=2,inA
+    {"mung":["id"]}	mo:main,interval=3.6

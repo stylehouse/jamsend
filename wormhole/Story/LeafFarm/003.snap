@@ -1,45 +1,45 @@
 Snap:H
   H:LeafFarm,Run
     A:farm
-      {"mung":["age"]}	self,round:3
+      {"mung":["age"]}	self,round=3
       w:farm
-        sunshine,dose:0.9916634548137416
-        sunny_streak,count:3
-        poo,dose:0.8746499999999999
-        leaf,leaf_id:leaf_2_0,dose:0.12200000000000001
-        {"mung":["age"]}	self,round:3
-        leaf,leaf_id:leaf_3_0,dose:0.1
+        sunshine,dose=0.9916634548137416
+        sunny_streak,count=3
+        poo,dose=0.8746499999999999
+        leaf,leaf_id:leaf_2_0,dose=0.12200000000000001
+        {"mung":["age"]}	self,round=3
+        leaf,leaf_id:leaf_3_0,dose=0.1
     A:plate
-      {"mung":["age"]}	self,round:3
+      {"mung":["age"]}	self,round=3
       w:plate
         sunshine,dose
-        leaf,leaf_id:seed_0,dose:1.6792,tick:2
-        {"mung":["age"]}	self,round:3
-        mouthful,mouthful_id:seed_0_m3,dose:0.26,spawning_from:seed_0,ttl:0
-        material:basic,amount:0.2475
+        leaf,leaf_id:seed_0,dose=1.6792,tick=2
+        {"mung":["age"]}	self,round=3
+        mouthful,mouthful_id:seed_0_m3,dose=0.26,spawning_from:seed_0,ttl=0
+        material:basic,amount=0.2475
     A:enzymeco
-      {"mung":["age"]}	self,round:3
+      {"mung":["age"]}	self,round=3
       w:enzymeco
-        {"mung":["age"]}	self,round:3
-    {"mung":["id"]}	mo:main,interval:3.6
+        {"mung":["age"]}	self,round=3
+    {"mung":["id"]}	mo:main,interval=3.6
 Snap:cytowave
   upsert,id:cytoid_1_1_1
-    style,height:37
-    style,width:37
+    style,height=37
+    style,width=37
   {"upsert":1,"id":"cytoid_1_1_2","label":"poo\ndose:0.87"}
   {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n0.122"}
   {"upsert":1,"id":"cytoid_1_1_4","label":"🌿\n0.100","parent":"cytoid_1_1"}
     style,background-color:#29d638
     style,color:#b0ffb0
-    style,height:6
+    style,height=6
     style,shape:ellipse
-    style,width:6
+    style,width=6
   {"upsert":1,"id":"cytoid_1_2_2","label":"🌿\n1.679"}
-    style,height:16
-    style,width:16
+    style,height=16
+    style,width=16
   {"upsert":1,"id":"cytoid_1_2_4","label":"material:basic\namount:0.25","parent":"cytoid_1_2"}
     style,background-color:#3a2810
     style,color:#ffe8c0
-    style,height:18
+    style,height=18
     style,shape:round-rectangle
-    style,width:18
+    style,width=18

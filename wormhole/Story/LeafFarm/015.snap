@@ -1,37 +1,37 @@
 Snap:H
   H:LeafFarm,Run
     A:farm
-      {"mung":["age"]}	self,round:15
+      {"mung":["age"]}	self,round=15
       w:farm
-        sunshine,dose:0.11123494116745147
-        sunny_streak,count:0
-        poo,dose:2.0686637700371624
-        leaf,leaf_id:leaf_2_0,dose:1.1575113992842685
-        leaf,leaf_id:leaf_3_0,dose:0.9487798354789085
-        leaf,leaf_id:leaf_4_0,dose:0.7776883897368103
+        sunshine,dose=0.11123494116745147
+        sunny_streak,count=0
+        poo,dose=2.0686637700371624
+        leaf,leaf_id:leaf_2_0,dose=1.1575113992842685
+        leaf,leaf_id:leaf_3_0,dose=0.9487798354789085
+        leaf,leaf_id:leaf_4_0,dose=0.7776883897368103
         seen:wonder
-        {"mung":["age"]}	self,round:15
+        {"mung":["age"]}	self,round=15
     A:plate
-      {"mung":["age"]}	self,round:15
+      {"mung":["age"]}	self,round=15
       w:plate
         sunshine,dose
-        material:basic,amount:1.6562767625033854
+        material:basic,amount=1.6562767625033854
         wants_enzyme
         shelf,enzyme,units
-        shelf,enzyme,units:5
-        {"mung":["age"]}	self,round:15
+        shelf,enzyme,units=5
+        {"mung":["age"]}	self,round=15
     A:enzymeco
-      {"mung":["age"]}	self,round:15
+      {"mung":["age"]}	self,round=15
       w:enzymeco
-        {"mung":["age"]}	self,round:15
-    {"mung":["id"]}	mo:main,interval:3.6
+        {"mung":["age"]}	self,round=15
+    {"mung":["id"]}	mo:main,interval=3.6
 Snap:cytowave
   {"upsert":1,"id":"cytoid_1_1_2","label":"poo\ndose:2.07"}
   {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n1.158"}
-    style,height:13
-    style,width:13
+    style,height=13
+    style,width=13
   {"upsert":1,"id":"cytoid_1_1_4","label":"🌿\n0.949"}
   {"upsert":1,"id":"cytoid_1_1_5","label":"🌿\n0.778"}
   {"upsert":1,"id":"cytoid_1_2_4","label":"material:basic\namount:1.66"}
-    style,height:19
-    style,width:19
+    style,height=19
+    style,width=19

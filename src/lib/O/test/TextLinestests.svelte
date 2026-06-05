@@ -32,8 +32,9 @@
     //   depth-first walks every .snap under wormhole/ and re-encodes via
     //   decode_wh_lines → encode_wh_lines so the codec makes the decision.
     //
-    import type { TheC } from "$lib/data/Stuff.svelte"
+    import { _C, type TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
+    import { depeel } from "$lib/Y.svelte";
     import { onMount }   from "svelte"
 
     let { M } = $props()
@@ -70,7 +71,6 @@
         //   Builds a throwaway root around a fresh copy for encoding so the
         //   live tree isn't disturbed.
         const round_trip = async (n: TheC): Promise<Record<string, any>> => {
-            const { _C } = await import('$lib/data/Stuff.svelte')
             const root = _C({ rt_root: 1 })
             root.i(_C({ ...n.sc }))
             const { snap, errors } = await H.encode_wh_lines(root, {})
@@ -228,7 +228,6 @@
     //
     async Snapmigrating(A: TheC, w: TheC) {
         const H = this as House
-        const { depeel } = await import('$lib/Y.svelte')
 
         const MAX_INFLIGHT  = 10
         const RATE_PER_SEC  = 3
@@ -396,13 +395,18 @@
 
             const req = await H.LiesStore_listing(w, dir)
             if (!req.sc.finished) {
-                done_dirs.delete(dir)   // retry on next tick
+                // listing still in flight — put dir back so the drain loop retries it
+                done_dirs.delete(dir)
+                dirs_todo.unshift(dir)
                 H.i_req_ttlilt(req, 0.5, { waiting: 'listing' })
                 return
             }
 
             const reply = req.sc.reply as any
-            if (reply?.not_found) return
+            if (reply?.not_found) {
+                console.warn(`Snapmigrating: dir not found: ${dir}`)
+                return
+            }
             if (reply?.error) {
                 console.error(`Snapmigrating: listing error at ${dir}:`, reply.error)
                 w.c.snap_errors++

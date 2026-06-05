@@ -9,19 +9,19 @@ Snap:H
         Folder:videos
         De:populate
           req:make_item,n
-          req:make_item,n:2,maz:2
-          req:make_item,n:3,maz:3
-          req:make_item,n:4,maz:4,ttlilt
+          req:make_item,n=2,maz=2
+          req:make_item,n=3,maz=3
+          req:make_item,n=4,maz=4,ttlilt
         export_for:Items
-          openity,v:-11
+          openity,v=-11
           {"ref":{"path":"[music]"}}	export_D,name:music,line:Object()
-            openity,v:-11
+            openity,v=-11
           {"ref":{"path":"[videos]"}}	export_D,name:videos,line:Object()
-            openity,v:-11
+            openity,v=-11
         see:ttlilting...
     A:MundaneOuter
       {"mung":["age"]}	self,round
       w:MundaneOuter
         {"mung":["age"]}	self,round
         {"see":"mirror: ∅"}
-    {"mung":["id"]}	mo:main,interval:3.6
+    {"mung":["id"]}	mo:main,interval=3.6

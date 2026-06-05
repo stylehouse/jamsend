@@ -10,7 +10,7 @@ story:StuffFlipping
       style:background-color,v:#1a1a28
       style:color,v:#8888bb
       style:shape,v:round-rectangle
-      style:width,v:24
+      style:width,v=24
       style:border-color,v:#5a5a9a
       style:border-width,v
       meta:label,fmt:%s,keys:hand
@@ -68,15 +68,15 @@ story:StuffFlipping
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg:0.108
-      sample:0.138,at:1776682322
-      sample:0.116,at:1776682362
-      sample:0.114,at:1776914296
-      sample:0.092,at:1776929359
-      sample:0.079,at:1776929364
-      sample:0.045,at:1777260473
-      sample:0.118,at:1778378534
-      sample:0.084,at:1779062991
-      sample:0.148,at:1779622702
-      sample:0.148,at:1779622713
+    TimeTotal:beliefs,avg=0.108
+      sample=0.138,at=1776682322
+      sample=0.116,at=1776682362
+      sample=0.114,at=1776914296
+      sample=0.092,at=1776929359
+      sample=0.079,at=1776929364
+      sample=0.045,at=1777260473
+      sample=0.118,at=1778378534
+      sample=0.084,at=1779062991
+      sample=0.148,at=1779622702
+      sample=0.148,at=1779622713
   step,dige:2df72ae7e64b9d9e

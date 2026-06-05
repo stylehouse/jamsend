@@ -4,7 +4,7 @@ Snap:H
       {"mung":["age"]}	self,round
       w:PortPlan
         {"mung":["age"]}	self,round
-        req:sort,maz:2
-          req:wait,time:123
+        req:sort,maz=2
+          req:wait,time=123
         req:yay
-    {"mung":["id"]}	mo:main,interval:3.6
+    {"mung":["id"]}	mo:main,interval=3.6

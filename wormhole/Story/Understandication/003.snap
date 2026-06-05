@@ -1,9 +1,9 @@
 Snap:H
   H:Understandication,Run
     A:Understandication
-      {"mung":["age"]}	self,round:3
+      {"mung":["age"]}	self,round=3
       w:Understandication
-        tally,passed:8,failed:0
+        tally,passed=8,failed=0
         {"ref":{"target":"%What:1, label:compilation"}}	LE
           State
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:compilation","topD":"%Demonstrations:origin"}}	Seem:origin
@@ -12,7 +12,7 @@ Snap:H
               Demonstrations:origin,Point,method:LangCompiling_run
               Demonstrations:origin,Point,method:emit_go
               Demonstrations:origin,What,label:compilation_detail
-            News:origin,goners:0,neus:4
+            News:origin,goners=0,neus=4
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:compilation","topD":"%Demonstrations:working"}}	Seem:working
             Demonstrations:working
               Demonstrations:working,Point,method:Lang_compile
@@ -24,7 +24,7 @@ Snap:H
               Demonstrations:working,What,label:compilation_detail
                 Understandable
               Understandable
-            News:working,goners:0,neus:4
+            News:working,goners=0,neus=4
         src
           What,label:routing
             Point,method:e_Dock_open
@@ -40,13 +40,13 @@ Snap:H
             What,label:compilation_detail
               Point,method:write_gen
               Point,method:notify_Pantheate
-        {"mung":["age"]}	self,round:3
+        {"mung":["age"]}	self,round=3
         see:step 3 wander compilation
           clone_method:Lang_compile
           clone_method:LangCompiling_run
           clone_method:emit_go
-          goners:0,neus:4
+          goners=0,neus=4
           {"PASS":1,"t":"compilation: 4 neus after re-arm"}
           PASS,t:Lang_compile present
           PASS,t:routing Points gone — different What
-    {"mung":["id"]}	mo:main,interval:3.6
+    {"mung":["id"]}	mo:main,interval=3.6

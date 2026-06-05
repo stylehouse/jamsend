@@ -5,32 +5,32 @@ Snap:H
       w:Snaptesting
         {"mung":["age"]}	self,round
         section:Lines-encoding is explicit about number|string
-          three_as_string:3,three_as_number:3
-          fail:three_as_string is string,got:number,want:string
-          fail:three_as_string value,got:3,want:3
+          three_as_string:3,three_as_number=3
+          pass:three_as_string is string
+          pass:three_as_string value
           pass:three_as_number is number
           pass:three_as_number value
-          one_as_string,one_as_number
-          fail:one_as_string is string,got:number,want:string
-          fail:one_as_string value,got,want
+          one_as_string:1,one_as_number
+          pass:one_as_string is string
+          pass:one_as_string value
           pass:one_as_number is number
           pass:one_as_number value
         section:flags
-          finished,count:7
+          finished,count=7
           pass:finished flag is number
           pass:finished flag value
           pass:count is number
           pass:count value
         section:large and small numbers
-          bignumber:6325612519811704,smallnumber:0.000024,tinynumber:4e-48
+          bignumber=6325612519811704,smallnumber=0.000024,tinynumber=4e-48
           pass:bignumber type
           pass:bignumber value
           pass:smallnumber type
           pass:smallnumber value
-          fail:tinynumber type,got:string,want:number
-          fail:tinynumber is a number,got:false,want:true
+          pass:tinynumber type
+          pass:tinynumber is a number
         section:realistic req fields
-          req:wread,rw_name:wormhole/Ghost/Tour/toc.snap,finished,req_i:42,label:source_check
+          req:wread,rw_name:wormhole/Ghost/Tour/toc.snap,finished,req_i=42,label:source_check
           pass:req is string
           pass:req value
           pass:rw_name is string
@@ -39,21 +39,21 @@ Snap:H
           pass:req_i value
           pass:label is string
         section:zero and negative numbers
-          zero:0,negative:-3,neg_float:-0.001
+          zero=0,negative=-3,neg_float=-0.001
           pass:zero type
           pass:zero value
           pass:negative type
           pass:negative value
           pass:neg_float type
         section:strings that look like numbers
-          count:42,zero_str:0,version:1.2.3,flag_str
-          fail:count is string,got:number,want:string
-          fail:count value,got:42,want:42
-          fail:zero_str is string,got:number,want:string
-          fail:zero_str value,got:0,want:0
+          count:42,zero_str:0,version:1.2.3,flag_str:1
+          pass:count is string
+          pass:count value
+          pass:zero_str is string
+          pass:zero_str value
           pass:version is string
           pass:version value
-          fail:flag_str is string,got:number,want:string
-          fail:flag_str value,got,want
-        {"see":"❌ Snaptesting: 12 failure(s)"}
-    {"mung":["id"]}	mo:main,interval:3.6
+          pass:flag_str is string
+          pass:flag_str value
+        see:✅ Snaptesting passed
+    {"mung":["id"]}	mo:main,interval=3.6

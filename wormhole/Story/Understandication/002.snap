@@ -1,9 +1,9 @@
 Snap:H
   H:Understandication,Run
     A:Understandication
-      {"mung":["age"]}	self,round:2
+      {"mung":["age"]}	self,round=2
       w:Understandication
-        tally,passed:5,failed:0
+        tally,passed=5,failed=0
         {"ref":{"target":"%What:1, label:routing"}}	LE
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
             Demonstrations:origin
@@ -11,7 +11,7 @@ Snap:H
               Demonstrations:origin,Point,method:Lang_doc_from_event
               Demonstrations:origin,Point,method:path_guard
               Demonstrations:origin,What,label:routing_detail
-            News:origin,goners:0,neus:0
+            News:origin,goners=0,neus=0
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:working"}}	Seem:working
             Demonstrations:working
               Understandable
@@ -23,7 +23,7 @@ Snap:H
                 Understandable
               Demonstrations:working,What,label:routing_detail
                 Understandable
-            News:working,goners:0,neus:0
+            News:working,goners=0,neus=0
           State
         src
           What,label:routing
@@ -40,9 +40,9 @@ Snap:H
             What,label:compilation_detail
               Point,method:write_gen
               Point,method:notify_Pantheate
-        {"mung":["age"]}	self,round:2
+        {"mung":["age"]}	self,round=2
         see:step 2 repull unchanged
-          goners:0,neus:0
+          goners=0,neus=0
           {"PASS":1,"t":"routing unchanged: no-diff"}
           PASS,t:still 4 clones after re-pull
-    {"mung":["id"]}	mo:main,interval:3.6
+    {"mung":["id"]}	mo:main,interval=3.6

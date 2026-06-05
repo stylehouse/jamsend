@@ -1,9 +1,9 @@
 Snap:H
   H:Understandication,Run
     A:Understandication
-      {"mung":["age"]}	self,round:7
+      {"mung":["age"]}	self,round=7
       w:Understandication
-        tally,passed:23,failed:0
+        tally,passed=23,failed=0
         {"ref":{"target":"%What:1, label:routing"}}	LE
           State,stale
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
@@ -13,7 +13,7 @@ Snap:H
               Demonstrations:origin,Point,method:path_guard
               Demonstrations:origin,What,label:routing_detail
               Demonstrations:origin,Point,method:new_route_handler
-            News:origin,goners:0,neus
+            News:origin,goners=0,neus
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:working"}}	Seem:working
             Demonstrations:working
               Understandable
@@ -27,7 +27,7 @@ Snap:H
                 Understandable
               Demonstrations:working,Point,method:new_route_handler
                 Understandable
-            News:working,goners:0,neus:0
+            News:working,goners=0,neus=0
         src
           What,label:routing
             Point,method:e_Dock_open
@@ -44,7 +44,7 @@ Snap:H
             What,label:compilation_detail
               Point,method:write_gen
               Point,method:notify_Pantheate
-        {"mung":["age"]}	self,round:7
+        {"mung":["age"]}	self,round=7
         see:step 7 drop clone (unaccepted)
           dropped:path_guard
           unaccepted_on_U
@@ -52,4 +52,4 @@ Snap:H
           PASS,t:clone sc stays clean (no unaccepted in .sc)
           PASS,t:LE_clones still includes unaccepted
           PASS,t:LE_accepted_clones excludes it
-    {"mung":["id"]}	mo:main,interval:3.6
+    {"mung":["id"]}	mo:main,interval=3.6

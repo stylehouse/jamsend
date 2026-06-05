@@ -1,9 +1,9 @@
 Snap:H
   H:Understandication,Run
     A:Understandication
-      {"mung":["age"]}	self,round:12
+      {"mung":["age"]}	self,round=12
       w:Understandication
-        tally,passed:39,failed:0
+        tally,passed=39,failed=0
         {"ref":{"target":"%What:1, label:routing"}}	LE
           State
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
@@ -12,7 +12,7 @@ Snap:H
               Demonstrations:origin,Point,method:Lang_doc_from_event
               Demonstrations:origin,What,label:routing_detail
               Demonstrations:origin,Point,method:pipeline_start
-            News:origin,goners:0,neus:4
+            News:origin,goners=0,neus=4
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:working"}}	Seem:working
             Demonstrations:working
               Demonstrations:working,Point,method:e_Dock_open
@@ -24,7 +24,7 @@ Snap:H
               Demonstrations:working,Point,method:pipeline_start
                 Understandable
               Understandable
-            News:working,goners:0,neus:4
+            News:working,goners=0,neus=4
         src
           What,label:routing
             Point,method:e_Dock_open
@@ -41,7 +41,7 @@ Snap:H
               Point,method:write_gen
               Point,method:notify_Pantheate
             Point,method:codegen_pass
-        {"mung":["age"]}	self,round:12
+        {"mung":["age"]}	self,round=12
         see:step 12 wander compile add push back
           codegen_on_compilation
           PASS,t:codegen_pass landed on compilation
@@ -50,4 +50,4 @@ Snap:H
           routing_clone:pipeline_start
           PASS,t:codegen_pass not in routing after wander back
           PASS,t:e_Dock_open back in routing clones
-    {"mung":["id"]}	mo:main,interval:3.6
+    {"mung":["id"]}	mo:main,interval=3.6

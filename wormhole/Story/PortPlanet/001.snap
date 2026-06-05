@@ -4,10 +4,10 @@ Snap:H
       {"mung":["age"]}	self,round
       w:PortPlanet
         orders
-          order:rose,dose:3
-          order:fern,dose:7
+          order:rose,dose=3
+          order:fern,dose=7
         {"mung":["age"]}	self,round
         req:receive
-          req:2,order:rose,dose:3
-          req:3,order:fern,dose:7
-    {"mung":["id"]}	mo:main,interval:3.6
+          req=2,order:rose,dose=3
+          req=3,order:fern,dose=7
+    {"mung":["id"]}	mo:main,interval=3.6

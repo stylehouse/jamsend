@@ -1,9 +1,9 @@
 Snap:H
   H:Understandication,Run
     A:Understandication
-      {"mung":["age"]}	self,round:10
+      {"mung":["age"]}	self,round=10
       w:Understandication
-        tally,passed:32,failed:0
+        tally,passed=32,failed=0
         {"ref":{"target":"%What:1, label:routing"}}	LE
           State
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
@@ -12,7 +12,7 @@ Snap:H
               Demonstrations:origin,Point,method:Lang_doc_from_event
               Demonstrations:origin,What,label:routing_detail
               Demonstrations:origin,Point,method:pipeline_start
-            News:origin,goners:0,neus:0
+            News:origin,goners=0,neus=0
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:working"}}	Seem:working
             Demonstrations:working
               Understandable
@@ -26,7 +26,7 @@ Snap:H
                 Understandable,unaccepted
               Demonstrations:working,Point,method:pipeline_start
                 Understandable
-            News:working,goners:0,neus:0
+            News:working,goners=0,neus=0
         src
           What,label:routing
             Point,method:e_Dock_open
@@ -42,14 +42,14 @@ Snap:H
             What,label:compilation_detail
               Point,method:write_gen
               Point,method:notify_Pantheate
-        {"mung":["age"]}	self,round:10
+        {"mung":["age"]}	self,round=10
         see:step 10 compound edit push
-          clones_before:4
+          clones_before=4
           dirty_before_push
           {"PASS":1,"t":"compound edit: dirty before push"}
           pipeline_on_source
-          new_route_on_source:0
+          new_route_on_source=0
           PASS,t:pipeline_start landed on source
           PASS,t:new_route_handler gone from source
           PASS,t:encode-compare reflects compound push outcome
-    {"mung":["id"]}	mo:main,interval:3.6
+    {"mung":["id"]}	mo:main,interval=3.6

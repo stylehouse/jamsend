@@ -4,7 +4,7 @@ Snap:H
       {"mung":["age"]}	self,round
       w:Understandication
         {"mung":["age"]}	self,round
-        tally,passed:3,failed:0
+        tally,passed=3,failed=0
         {"ref":{"target":"%What:1, label:routing"}}	LE
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
             Demonstrations:origin
@@ -12,7 +12,7 @@ Snap:H
               Demonstrations:origin,Point,method:Lang_doc_from_event
               Demonstrations:origin,Point,method:path_guard
               Demonstrations:origin,What,label:routing_detail
-            News:origin,goners:0,neus:4
+            News:origin,goners=0,neus=4
           {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:working"}}	Seem:working
             Demonstrations:working
               Demonstrations:working,Point,method:e_Dock_open
@@ -24,7 +24,7 @@ Snap:H
               Demonstrations:working,What,label:routing_detail
                 Understandable
               Understandable
-            News:working,goners:0,neus:4
+            News:working,goners=0,neus=4
           State
         src
           What,label:routing
@@ -42,7 +42,7 @@ Snap:H
               Point,method:write_gen
               Point,method:notify_Pantheate
         see:step 1 arm routing pull
-          goners:0,neus:4
+          goners=0,neus=4
           neu:e_Dock_open
           neu:Lang_doc_from_event
           neu:path_guard
@@ -54,4 +54,4 @@ Snap:H
           {"PASS":1,"t":"arm routing: 4 neus (3 Points + nested What)"}
           PASS,t:routing_detail cloned shallow — inner Points not in clones
           PASS,t:path_guard present in working set
-    {"mung":["id"]}	mo:main,interval:3.6
+    {"mung":["id"]}	mo:main,interval=3.6

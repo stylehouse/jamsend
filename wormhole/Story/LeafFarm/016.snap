@@ -1,40 +1,40 @@
 Snap:H
   H:LeafFarm,Run
     A:farm
-      {"mung":["age"]}	self,round:16
+      {"mung":["age"]}	self,round=16
       w:farm
-        sunshine,dose:0.10191769558207964
-        sunny_streak,count:0
-        poo,dose:2.098364204531588
-        leaf,leaf_id:leaf_2_0,dose:1.2584935527335912
-        leaf,leaf_id:leaf_3_0,dose:1.031552092404583
-        leaf,leaf_id:leaf_4_0,dose:0.8455345019709697
+        sunshine,dose=0.10191769558207964
+        sunny_streak,count=0
+        poo,dose=2.098364204531588
+        leaf,leaf_id:leaf_2_0,dose=1.2584935527335912
+        leaf,leaf_id:leaf_3_0,dose=1.031552092404583
+        leaf,leaf_id:leaf_4_0,dose=0.8455345019709697
         seen:wonder
-        {"mung":["age"]}	self,round:16
+        {"mung":["age"]}	self,round=16
     A:plate
-      {"mung":["age"]}	self,round:16
+      {"mung":["age"]}	self,round=16
       w:plate
         sunshine,dose
-        material:basic,amount:1.2422075718775392
+        material:basic,amount=1.2422075718775392
         wants_enzyme
         shelf,enzyme,units
-        shelf,enzyme,units:5
-        {"mung":["age"]}	self,round:16
+        shelf,enzyme,units=5
+        {"mung":["age"]}	self,round=16
     A:enzymeco
-      {"mung":["age"]}	self,round:16
+      {"mung":["age"]}	self,round=16
       w:enzymeco
-        {"mung":["age"]}	self,round:16
-    {"mung":["id"]}	mo:main,interval:3.6
+        {"mung":["age"]}	self,round=16
+    {"mung":["id"]}	mo:main,interval=3.6
 Snap:cytowave
   upsert,id:cytoid_1_1_1
-    style,height:23
-    style,width:23
+    style,height=23
+    style,width=23
   {"upsert":1,"id":"cytoid_1_1_2","label":"poo\ndose:2.1"}
   {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n1.258"}
   {"upsert":1,"id":"cytoid_1_1_4","label":"🌿\n1.032"}
-    style,height:12
-    style,width:12
+    style,height=12
+    style,width=12
   {"upsert":1,"id":"cytoid_1_1_5","label":"🌿\n0.846"}
-    style,height:11
-    style,width:11
+    style,height=11
+    style,width=11
   {"upsert":1,"id":"cytoid_1_2_4","label":"material:basic\namount:1.24"}

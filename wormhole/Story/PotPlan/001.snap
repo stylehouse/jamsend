@@ -5,6 +5,6 @@ Snap:H
       w:PotPlan
         {"mung":["age"]}	self,round
         De:sort
-          req:wait,time:123
-        De:yay,maz:2
-    {"mung":["id"]}	mo:main,interval:3.6
+          req:wait,time=123
+        De:yay,maz=2
+    {"mung":["id"]}	mo:main,interval=3.6

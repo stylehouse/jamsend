@@ -1,19 +1,19 @@
 Snap:H
   H:PeeringLive,Run
     A:PeeringLive
-      {"mung":["age"]}	self,round:20
+      {"mung":["age"]}	self,round=20
       w:PeeringLive
         req:p2pman,finished
           req:init,finished
         timeDoubt
-        {"mung":["age"]}	self,round:20
+        {"mung":["age"]}	self,round=20
         {"see":"PeeringLive  open:3/3"}
     A:Bearing
-      {"mung":["age"]}	self,round:23
+      {"mung":["age"]}	self,round=23
       w:Bearing
         req:listen,finished
-          {"ref":{"Id":"Idento()"}}	req:keygen,maz:3,finished
-          req:register,maz:2,finished
+          {"ref":{"Id":"Idento()"}}	req:keygen,maz=3,finished
+          req:register,maz=2,finished
           req:listening,finished
           log
             msg:keygen started
@@ -26,18 +26,18 @@ Snap:H
           req:dial,finished
           req:connected,finished
         req:handshake,target:8cbc667bb0c8e748,finished
-          req:said_hello,maz:4,demand:800,finished
-          req:heard_hello,maz:3,demand:800,finished
-          req:said_trust,maz:2,demand:1500,finished
-          req:heard_trust,demand:1500,finished
+          req:said_hello,maz=4,demand=800,finished
+          req:heard_hello,maz=3,demand=800,finished
+          req:said_trust,maz=2,demand=1500,finished
+          req:heard_trust,demand=1500,finished
         Pier,pub:8cbc667bb0c8e748,name:8cbc667bb0c8e748
-        {"mung":["age"]}	self,round:23
+        {"mung":["age"]}	self,round=23
     A:Nearing
-      {"mung":["age"]}	self,round:22
+      {"mung":["age"]}	self,round=22
       w:Nearing
         req:listen,finished
-          {"ref":{"Id":"Idento()"}}	req:keygen,maz:3,finished
-          req:register,maz:2,finished
+          {"ref":{"Id":"Idento()"}}	req:keygen,maz=3,finished
+          req:register,maz=2,finished
           req:listening,finished
           log
             msg:keygen started
@@ -48,17 +48,17 @@ Snap:H
           open
         Pier,pub:7acf614d876d69a4,name:7acf614d876d69a4
         req:handshake,target:7acf614d876d69a4,finished
-          req:said_hello,maz:4,demand:800,finished
-          req:heard_hello,maz:3,demand:800,finished
-          req:said_trust,maz:2,demand:1500,finished
-          req:heard_trust,demand:1500,finished
-        {"mung":["age"]}	self,round:22
+          req:said_hello,maz=4,demand=800,finished
+          req:heard_hello,maz=3,demand=800,finished
+          req:said_trust,maz=2,demand=1500,finished
+          req:heard_trust,demand=1500,finished
+        {"mung":["age"]}	self,round=22
     A:Tearing
-      {"mung":["age"]}	self,round:22
+      {"mung":["age"]}	self,round=22
       w:Tearing
         req:listen,finished
-          {"ref":{"Id":"Idento()"}}	req:keygen,maz:3,finished
-          req:register,maz:2,finished
+          {"ref":{"Id":"Idento()"}}	req:keygen,maz=3,finished
+          req:register,maz=2,finished
           req:listening,finished
           log
             msg:keygen started
@@ -67,5 +67,5 @@ Snap:H
         Peering,name:tearing,prepub:962af4326c28f29b
           {"ref":{"Id":"Idento()"}}	prepri:386df6d9
           open
-        {"mung":["age"]}	self,round:22
-    {"mung":["id"]}	mo:main,interval:3.6
+        {"mung":["age"]}	self,round=22
+    {"mung":["id"]}	mo:main,interval=3.6

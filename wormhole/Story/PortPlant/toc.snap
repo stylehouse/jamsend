@@ -24,7 +24,7 @@ story:PortPlant
       style:background-color,v:#1a4828
       style:color,v:#90ffc0
       style:shape,v:round-rectangle
-      style:width,v:24
+      style:width,v=24
     matstyle:yard
       style:background-color,v:#bd36c9
     matstyle:body
@@ -38,23 +38,23 @@ story:PortPlant
     For
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.135
-      sample:0.245,at:1779343664
-      sample:0.227,at:1779343678
-      sample:0.253,at:1779344794
-      sample:0.109,at:1779532698
-      sample:0.109,at:1779532714
-      sample:0.075,at:1779532870
-      sample:0.067,at:1779622903
-      sample:0.097,at:1780416516
-      sample:0.097,at:1780416665
-      sample:0.066,at:1780417589
+    TimeTotal:beliefs,avg=0.135
+      sample=0.245,at=1779343664
+      sample=0.227,at=1779343678
+      sample=0.253,at=1779344794
+      sample=0.109,at=1779532698
+      sample=0.109,at=1779532714
+      sample=0.075,at=1779532870
+      sample=0.067,at=1779622903
+      sample=0.097,at=1780416516
+      sample=0.097,at=1780416665
+      sample=0.066,at=1780417589
   step,dige:8baadb6f5a792a41
-  step:2,dige:b17d8cb684bcc476
-  step:3,dige:7b0dfce001f31ba6
-  step:4,dige:65ec5cc58cede51e
-  step:5,dige:07a2c53400a7b7ac
-  step:6,dige:36136edc42fd47db
-  step:7,dige:777e7b4a7ea97212
-  step:8,dige:0cd7c4bf0fc01200
-  step:9,dige:f13432ebc9e3efc9
+  step=2,dige:b17d8cb684bcc476
+  step=3,dige:7b0dfce001f31ba6
+  step=4,dige:65ec5cc58cede51e
+  step=5,dige:07a2c53400a7b7ac
+  step=6,dige:36136edc42fd47db
+  step=7,dige:777e7b4a7ea97212
+  step=8,dige:0cd7c4bf0fc01200
+  step=9,dige:f13432ebc9e3efc9

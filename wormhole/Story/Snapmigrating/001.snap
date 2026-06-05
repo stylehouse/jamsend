@@ -1,0 +1,91 @@
+Snap:H
+  H:Snapmigrating,Run
+    A:Snapmigrating
+      {"mung":["age"]}	self,round=2
+      w:Snapmigrating
+        req:Store
+          {"ref":{"reply":"Object()"}}	req:wlisting,rw_dir:wormhole,rw_op:list,finished:true
+            req_sent
+            ttlilt,until_ts=1780584327.666,waiting:listing
+        {"mung":["age"]}	self,round=2
+        done,see:⏳ scanning… (0 done)
+        {"see":"✅ Snapmigrating: 0 migrated, 0 unchanged, 0 errors"}
+    {"mung":["id"]}	mo:main,interval=3.6
+Snap:cytowave
+  upsert,id:cytoid_1_1,label:Snapmigrating,isCompound:true
+    style,background-color:#8f3232
+    style,background-opacity=0.6
+    style,color:#ccc
+    style,font-size:8px
+    style,font-style:italic
+    style,height=20
+    style,padding:7px
+    style,shape:ellipse
+    style,text-valign:top
+    style,width=20
+  upsert,id:cytoid_1_1_1,label:reqcons,parent:cytoid_1_1
+    style,background-color:#2fb155
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  {"upsert":1,"id":"cytoid_1_1_1_1","label":"reqcon:req\nserial_i:2\nnoserial","parent":"cytoid_1_1"}
+    style,background-color:#8e29d6
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  {"upsert":1,"id":"cytoid_1_1_2","label":"req:Store","parent":"cytoid_1_1"}
+    style,background-color:#c5b759
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  upsert,id:cytoid_1_1_2_1,label:reqcons,parent:cytoid_1_1
+    style,background-color:#2fb155
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  {"upsert":1,"id":"cytoid_1_1_2_1_2","label":"reqcon:req\nserial_i:2","parent":"cytoid_1_1"}
+    style,background-color:#8e29d6
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  {"upsert":1,"id":"cytoid_1_1_2_2","label":"req:wlisting\nrw_dir:wormhole\nrw_op:list\nfinished","parent":"cytoid_1_1"}
+    style,background-color:#c5b759
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  upsert,id:cytoid_1_1_2_2_2,label:req_sent,parent:cytoid_1_1
+    style,background-color:#298699
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  {"upsert":1,"id":"cytoid_1_1_2_2_3","label":"ttlilt\nuntil_ts:1780584327.67\nwaiting:listing","parent":"cytoid_1_1"}
+    style,background-color:#bc2476
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  {"upsert":1,"id":"cytoid_1_1_3","label":"done\nsee:⏳ scannin…","parent":"cytoid_1_1"}
+    style,background-color:#61bd42
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  {"upsert":1,"id":"cytoid_1_1_4","label":"see:✅ Snapmig…","parent":"cytoid_1_1"}
+    style,background-color:#534ed0
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  edge_upsert,id:cytoid_1_1_1_1_1,source:cytoid_1_1_1,target:cytoid_1_1_1_1
+  edge_upsert,id:cytoid_1_1_2_1_1,source:cytoid_1_1_2,target:cytoid_1_1_2_1
+  edge_upsert,id:cytoid_1_1_2_1_2_1,source:cytoid_1_1_2_1,target:cytoid_1_1_2_1_2
+  edge_upsert,id:cytoid_1_1_2_2_1,source:cytoid_1_1_2,target:cytoid_1_1_2_2
+  edge_upsert,id:cytoid_1_1_2_2_2_1,source:cytoid_1_1_2_2,target:cytoid_1_1_2_2_2
+  edge_upsert,id:cytoid_1_1_2_2_3_1,source:cytoid_1_1_2_2,target:cytoid_1_1_2_2_3

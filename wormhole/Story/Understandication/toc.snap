@@ -9,28 +9,28 @@ story:Understandication
     For
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg:0.167
-      sample:0.131,at:1780230137
-      sample:0.131,at:1780230152
-      sample:0.227,at:1780233293
-      sample:0.198,at:1780234706
-      sample:0.443,at:1780236180
-      sample:0.091,at:1780247785
-      sample:0.065,at:1780249359
-      sample:0.12,at:1780249409
-      sample:0.131,at:1780528472
-      sample:0.131,at:1780528488
+    TimeTotal:beliefs,avg=0.167
+      sample=0.131,at=1780230137
+      sample=0.131,at=1780230152
+      sample=0.227,at=1780233293
+      sample=0.198,at=1780234706
+      sample=0.443,at=1780236180
+      sample=0.091,at=1780247785
+      sample=0.065,at=1780249359
+      sample=0.12,at=1780249409
+      sample=0.131,at=1780528472
+      sample=0.131,at=1780528488
   step,dige:7e5c2a6350dbdeb9
-  step:2,dige:bc7f845e5b0dc89a
-  step:3,dige:fdd60b7730486144
-  step:4,dige:90c0748575149b6b
-  step:5,dige:5410f9302365065a
-  step:6,dige:58c4103dc05a3335
-  step:7,dige:9fca905e470db2ea
-  step:8,dige:bc36b7c3b0013756
-  step:9,dige:08b98ee690e0df2d
-  step:10,dige:42bee93e0c656737
-  step:11,dige:f9f8f622554cea06
-  step:12,dige:c176578a24200c35
-  step:13,dige:8bf13532531329dd
-  step:14,dige:2da5768d848dd6f0
+  step=2,dige:bc7f845e5b0dc89a
+  step=3,dige:fdd60b7730486144
+  step=4,dige:90c0748575149b6b
+  step=5,dige:5410f9302365065a
+  step=6,dige:58c4103dc05a3335
+  step=7,dige:9fca905e470db2ea
+  step=8,dige:bc36b7c3b0013756
+  step=9,dige:08b98ee690e0df2d
+  step=10,dige:42bee93e0c656737
+  step=11,dige:f9f8f622554cea06
+  step=12,dige:c176578a24200c35
+  step=13,dige:8bf13532531329dd
+  step=14,dige:2da5768d848dd6f0

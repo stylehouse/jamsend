@@ -16,8 +16,8 @@ story:LangTiles
       style:background-color,v:#bc2476
     matstyle:Line
       style:background-color,v:#61bd42
-      style:width,v:46
-      style:height,v:46
+      style:width,v=46
+      style:height,v=46
       style:color,v:#000
     matstyle:node
       style:background-color,v:#534ed0
@@ -103,16 +103,16 @@ story:LangTiles
     Prep
       i_elvisto:Lies,e:Lies_open_Waft
         esc:path,v:Story/LangTiles/Waftily
-    Prep:2
+    Prep=2
       i_elvisto:Lang,e:Lang_i_bookmark
-        esc:from,v:98
-        esc:to,v:132
-    Prep:3
+        esc:from,v=98
+        esc:to,v=132
+    Prep=3
       i_elvisto:Lang,e:Lang_compile
         esc:Pantheate_method,v:theCompiledStuff
-    notPrep:4,disabled:now we save the hacked version so we need to know how to avoid saving or reset to tagged versions if we are to not corrupt the test data
+    notPrep=4,disabled:now we save the hacked version so we need to know how to avoid saving or reset to tagged versions if we are to not corrupt the test data
       i_elvisto:Lang,e:Lang_i_alterationStation
-        esc:line_n,v:6
+        esc:line_n,v=6
         {"esc":"match","v":",they,can,be,mixed"}
         {"esc":"replacement","v":"/they,can,be,mixed"}
   Opt
@@ -121,20 +121,20 @@ story:LangTiles
       w:Lang
         txtsyntaxdump
   TimeSpool
-    TimeTotal:beliefs,avg:0.734
-      sample:0.667,at:1780422065
-      sample:0.667,at:1780422112
-      sample:0.278,at:1780519096
-      sample:0.502,at:1780519109
-      sample:0.309,at:1780519155
-      sample:0.858,at:1780519233
-      sample:0.637,at:1780519280
-      sample:1.071,at:1780519329
-      sample:1.175,at:1780519361
-      sample:1.175,at:1780519530
+    TimeTotal:beliefs,avg=0.734
+      sample=0.667,at=1780422065
+      sample=0.667,at=1780422112
+      sample=0.278,at=1780519096
+      sample=0.502,at=1780519109
+      sample=0.309,at=1780519155
+      sample=0.858,at=1780519233
+      sample=0.637,at=1780519280
+      sample=1.071,at=1780519329
+      sample=1.175,at=1780519361
+      sample=1.175,at=1780519530
   step,dige:02ebc2e70c65f5cb
-  step:2,dige:fd24b6dee952fa5a
-  step:3,dige:886fa9fb5aee3ebd
-  step:4,dige:43f3a54f59306c0d
+  step=2,dige:fd24b6dee952fa5a
+  step=3,dige:886fa9fb5aee3ebd
+  step=4,dige:43f3a54f59306c0d
     note,bug:edge problems with Leg/PeelGroup/Leg the other PeelGroup alone
-  step:5,dige:b270307b1cfe3c60
+  step=5,dige:b270307b1cfe3c60

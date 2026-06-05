@@ -1,27 +1,27 @@
 Snap:H
   H:PortPlant,Run
     A:PortPlant
-      {"mung":["age"]}	self,round:13
+      {"mung":["age"]}	self,round=13
       w:PortPlant
-        body,hands:2
+        body,hands=2
         shelf
           pot:rose
             plant
-            soil,dose:5
+            soil,dose=5
           pot:fern
             plant
-            soil,dose:5
+            soil,dose=5
           pot:cactus
             plant
-            soil,dose:5
+            soil,dose=5
         yard
-          soil,dose:6
-        req:repot,maz:2,finished
-          req:move_outside,maz:3,finished
-          req:repot,maz:2,finished
+          soil,dose=6
+        req:repot,maz=2,finished
+          req:move_outside,maz=3,finished
+          req:repot,maz=2,finished
           req:move_inside,finished
         req:celebrate,finished
           req:confetti,finished
         thus:🎉 all repotted and shelved!
-        {"mung":["age"]}	self,round:13
-    {"mung":["id"]}	mo:main,interval:3.6
+        {"mung":["age"]}	self,round=13
+    {"mung":["id"]}	mo:main,interval=3.6

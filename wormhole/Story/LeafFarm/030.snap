@@ -1,44 +1,44 @@
 Snap:H
   H:LeafFarm,Run
     A:farm
-      {"mung":["age"]}	self,round:30
+      {"mung":["age"]}	self,round=30
       w:farm
-        sunshine,dose:0.8060592426208782
-        sunny_streak,count:10
-        poo,dose:2.24937027825181
+        sunshine,dose=0.8060592426208782
+        sunny_streak,count=10
+        poo,dose=2.24937027825181
         seen:wonder
-        leaf,leaf_id:leaf_22_0,dose:0.4907707212730396
-        leaf,leaf_id:leaf_23_0,dose:0.4022710830106882
-        leaf,leaf_id:leaf_24_0,dose:0.32973039591040015
-        {"mung":["age"]}	self,round:30
+        leaf,leaf_id:leaf_22_0,dose=0.4907707212730396
+        leaf,leaf_id:leaf_23_0,dose=0.4022710830106882
+        leaf,leaf_id:leaf_24_0,dose=0.32973039591040015
+        {"mung":["age"]}	self,round=30
         seen:wonder
     A:plate
-      {"mung":["age"]}	self,round:30
+      {"mung":["age"]}	self,round=30
       w:plate
         sunshine,dose
-        material:basic,amount:2.798210308327062
-        shelf,enzyme,units:2
-        {"mung":["age"]}	self,round:30
-        mouthful,mouthful_id:leaf_4_0_m30,dose:0.07163445606779284,spawning_from:leaf_4_0,ttl:0
+        material:basic,amount=2.798210308327062
+        shelf,enzyme,units=2
+        {"mung":["age"]}	self,round=30
+        mouthful,mouthful_id:leaf_4_0_m30,dose=0.07163445606779284,spawning_from:leaf_4_0,ttl=0
     A:enzymeco
-      {"mung":["age"]}	self,round:30
+      {"mung":["age"]}	self,round=30
       w:enzymeco
-        {"mung":["age"]}	self,round:30
-    {"mung":["id"]}	mo:main,interval:3.6
+        {"mung":["age"]}	self,round=30
+    {"mung":["id"]}	mo:main,interval=3.6
 Snap:cytowave
   upsert,id:cytoid_1_1_1
-    style,height:34
-    style,width:34
+    style,height=34
+    style,width=34
   {"upsert":1,"id":"cytoid_1_1_5","label":"🌿\n0.491"}
   {"upsert":1,"id":"cytoid_1_1_6","label":"🌿\n0.402","parent":"cytoid_1_1"}
     style,background-color:#29d638
     style,color:#b0ffb0
-    style,height:8
+    style,height=8
     style,shape:ellipse
-    style,width:8
+    style,width=8
   upsert,id:cytoid_1_2_15
-    style,height:5
-    style,width:5
+    style,height=5
+    style,width=5
   {"upsert":1,"id":"cytoid_1_2_4","label":"material:basic\namount:2.8"}
   remove,id:cytoid_1_1_7
   remove,id:cytoid_1_2_14
