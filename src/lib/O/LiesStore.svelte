@@ -61,16 +61,25 @@
     //
     //   %Store:1 holds metadata (wrote_at).
     //   w/reqcons/reqcon:Store → w/req:Store is the req:Store particle.
+    //   w/req:Store is eternal — born once, never finished by unify_finished.
     //   w/req:Store is the host for wread, wwrite, wlisting reqs:
     //     w/req:Store/req:wwrite,path,dige
     //     w/req:Store/req:wread,rw_name
     //     w/req:Store/req:wlisting,rw_dir
     //
-    import type { TheC }  from "$lib/data/Stuff.svelte"
-    import type { House } from "$lib/O/Housing.svelte"
-    import { dig }        from "$lib/Y.svelte"
+    // ── Waft higher-level ops ─────────────────────────────────────────────────
+    //
+    //   Waft_link_up, Lies_waft_save, Lies_waft_snap_path,
+    //   Lies_sync_waft_docs, Lies_spawn_look_waft live here because they are
+    //   storage-layer concerns: loading, saving, and keeping the Waft tree
+    //   back-linked.  Lies.svelte orchestrates when they run; LiesStore owns how.
+    //
+    import { _C, type TheC } from "$lib/data/Stuff.svelte"
+    import { Travel }         from "$lib/mostly/Selection.svelte"
+    import type { House }     from "$lib/O/Housing.svelte"
+    import { dig, throttle }  from "$lib/Y.svelte"
     import { now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte"
-    import { onMount }    from "svelte"
+    import { onMount }        from "svelte"
 
     // < only relevant when remote storage makes the queued-write path actually fire
     const MIN_WRITE_INTERVAL = 0.4
@@ -80,6 +89,140 @@
     onMount(async () => {
     await M.eatfunc({
 
+//#region Waft
+
+    // ── Waft_link_up ──────────────────────────────────────────────────────────
+    //
+    //   Walk a Waft subtree with Travel and stamp C.c.up / C.c.waft on every
+    //   child.  Travel handles loop detection; we stop early when a node's
+    //   c.up already points to the right parent — the subtree below is assumed
+    //   already linked.
+    //
+    //   Call with the Waft itself as top; top gets no c.up (there is no above).
+    //   Also callable from LE_pull's done_fn after a push lands fresh children.
+    //
+    //   Security: the chain terminates at the Waft particle (sc.Waft defined).
+    //   NaviCado detects the ceiling via node.sc.Waft !== undefined.
+    async Waft_link_up(top: TheC, waft: TheC) {
+        await new Travel().dive({
+            n: top,
+            match_sc: {},
+            each_fn: async (n: TheC, T: Travel) => {
+                const parent_n = T.sc.up?.sc.n as TheC | undefined
+                if (!parent_n) return   // top node — no c.up to set
+                if (n.c.up === parent_n && n.c.waft === waft) {
+                    // subtree already linked from a prior call — stop early
+                    T.sc.no_further = 'already linked'
+                    return
+                }
+                n.c.up   = parent_n
+                n.c.waft = waft
+            },
+        })
+    },
+
+    // ── Lies_waft_snap_path ───────────────────────────────────────────────────
+    //   'Ghost/Tour' → 'wormhole/Ghost/Tour/toc.snap'
+    Lies_waft_snap_path(waft_path: string): string {
+        return `wormhole/${waft_path}/toc.snap`
+    },
+
+    // ── Lies_sync_waft_docs ───────────────────────────────────────────────────
+    //
+    //   Trim req:Open particles for Docs removed from this Waft (CRUD removal).
+    //   Doc loading is demand-driven via Lies_roai_Open — this function no
+    //   longer mints load requests.  Already-loaded docs are left open.
+    //   < full close on Doc removal: future work.
+    Lies_sync_waft_docs(w: TheC, waft: TheC) {
+        const wpath = waft.sc.Waft as string
+        const live_paths = new Set(
+            (waft.o({ Doc: 1 }) as TheC[]).map(d => d.sc.Doc as string)
+        )
+        // Drop unfinished req:Open that lost their Doc from this Waft.
+        const rq = (this as House).reqy(w)
+        for (const req of rq.o({ req: 'Open', waft_key: wpath }) as TheC[]) {
+            if (req.sc.finished) continue
+            const src  = req.sc.src as TheC | undefined
+            const path = (src?.sc as any)?.Doc as string | undefined
+            if (path && !live_paths.has(path)) w.drop(req)
+        }
+    },
+
+    // ── Lies_spawn_look_waft ──────────────────────────────────────────────────
+    //
+    //   Spawn or reuse the Waft:Look/YMD/HH slot for this hour.
+    //   One per hour — oai is idempotent, so rapid clicks reuse the same Waft.
+    //   Returns the (possibly pre-existing) Waft TheC.
+    Lies_spawn_look_waft(w: TheC): TheC {
+        const now = new Date()
+        const ymd = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`
+        const hh  = String(now.getHours()).padStart(2,'0')
+        const key = `Look/${ymd}/${hh}`
+        const waft = w.oai({ Waft: key })
+        console.log(`👁 Look waft: ${key}`)
+        return waft
+    },
+
+    // ── Lies_log_want ─────────────────────────────────────────────────────────
+    //
+    //   Record a save that was intercepted by the nowriting opt.
+    //     kind — 'waft_save' | 'source_write' | 'gen_write'
+    //     path — the target path that would have gone to disk
+    //     content — the full content string; hashed so identical successive saves
+    //               collapse onto the same oai particle rather than piling.
+    //
+    //   Produces: w/%log:$kind,path:$path,dige:$hash
+    async Lies_log_want(w: TheC, kind: string, path: string, content: string) {
+        const dige = (await dig(content)).slice(0, 8)
+        w.oai({ log: kind, path, dige })
+    },
+
+    // ── Lies_waft_save ────────────────────────────────────────────────────────
+    //
+    //   Throttled write of a Waft container back to its wormhole snap path.
+    //   One throttle per Waft path, created lazily on w.c.
+    //   Rapid CRUD bursts collapse into a single post_do.
+    //
+    //   The encode root is always {Waft:path} — sc.active and other session
+    //   fields on the waft particle are never included in the snap.
+    //   Saves: Doc children, Points grandchildren.
+    //
+    //   With Opt nowriting active the snap is encoded but logged to
+    //   w/%log:waft_save rather than going to LiesStore_write — the test
+    //   reads the log particle's presence as the save-would-have-happened assertion.
+    Lies_waft_save(w: TheC, waft: TheC) {
+        const H    = this as House
+        const path = waft.sc.Waft as string
+
+        const throttle_key = `waft_save_throttle_${path}`
+        if (!w.c[throttle_key]) {
+            w.c[throttle_key] = throttle(() => {
+                H.post_do(async () => {
+                    const { snap, errors, muted_log } = await H.enWaft(waft)
+                    if (muted_log.length) {
+                        // < surface muted_log in the UI once a per-mainkey review panel exists
+                        console.debug(`💾 Waft:${path} muted ${muted_log.length} session key(s)`, muted_log)
+                    }
+                    if (errors.length) {
+                        console.error(`Waft:${path} encode errors (save aborted):`, errors)
+                        return
+                    }
+                    // nowriting opt: log intent rather than writing disk
+                    if (H.o_Opt_val(w, 'nowriting')) {
+                        await H.Lies_log_want(w, 'waft_save', path, snap)
+                        return
+                    }
+                    const snap_path = H.Lies_waft_snap_path(path)
+                    await H.LiesStore_write(w, snap_path, snap)
+                    // LiesStore_run dispatches; Waft snap writes don't have a loaded_doc so
+                    // base_dige gate never fires — every distinct snap content goes through.
+                }, { see: `waft_save_${path}` })
+            }, 800)
+        }
+        w.c[throttle_key]()
+    },
+
+//#endregion
 //#region LiesStore
 
     LiesStore_store(w: TheC): TheC {
@@ -94,12 +237,16 @@
     //   wread, wwrite, wlisting reqs.  Routing them through req:Store means
     //   the w(/req)+ %ttlilt picker naturally finds them.
     //
+    //   req:Store is eternal: sc.eternal prevents unify_finished from ever
+    //   closing it, so the channel and its sub-reqs survive across ticks.
+    //
     LiesStore_req(w: TheC): TheC {
         const H    = this as House
-        const rq   = H.reqy(w, { k: 'Store', noserial: 1 })
-        // roai({Store:1}) — the identity is the literal key Store:1
-        //  so only ever one req:Store per w.
-        return w.oai({ req: 'Store' })
+        H.reqy(w, { k: 'Store', noserial: 1 })
+        // oai: only ever one req:Store per w; eternal keeps it open-ended.
+        const rq = w.oai({ req: 'Store' })
+        rq.sc.eternal = 1
+        return rq
     },
 
     // ── LiesStore_write ───────────────────────────────────────────────────────

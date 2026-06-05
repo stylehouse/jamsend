@@ -779,7 +779,7 @@
         if (!dock) {
             // Lies' req:Furnishing RPC mints it; its completion feebly_ponders us.
             fu.sc.have_dock = 0
-            H.i_req_ttlilt(settle, 0.5, { waiting: 'dock' })
+            H.i_req_ttlilt(settle, 1.5, { waiting: 'dock' })
             return
         }
         fu.sc.have_dock = 1
@@ -793,7 +793,7 @@
         if (!cp.sc.have_methods && !err) {
             // compile_error is terminal — fall through so graft mints unresolved
             //   Pmirrors the minimap can surface; otherwise hold for the index.
-            H.i_req_ttlilt(settle, 0.5, { waiting: 'methods' })
+            H.i_req_ttlilt(settle, 1.5, { waiting: 'methods' })
             return
         }
 
