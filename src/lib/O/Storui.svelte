@@ -60,9 +60,8 @@
     // ── copy — range collection ───────────────────────────────────────────────
     //
     //   Clicking "copy diff" immediately arms this step as the anchor and enters
-    //   collecting mode — the button becomes a throbbing "from NNN — pick end ×".
+    //   collecting mode — the button becomes a throbbing "pick end ×".
     //   Click any other pip to collect [anchor, pip]; click × to cancel.
-    //   A "just NNN" button alongside lets you bail out to a single-step copy.
     //
     //   Pure text functions (compute_diff, squish_context, positional_diff,
     //   enDif, deDif, depth_of, char_diff_ops) live in Textures.svelte and
@@ -627,25 +626,21 @@
             const prev      = n > 1 ? live_step(n - 1) : null
             const prev_snap = (prev?.sc.got_snap as string) ?? ''
 
-            // ── raw mode: always emit full snap, no diff markers 
-            if (mode === 'naive' || !prev_snap) {
-                const header = !prev_snap ? `  Snap,first` : `  Snap,raw`
-                all_lines.push(header)
-                for (const line of got_snap.split('\n').filter(Boolean)) {
-                    all_lines.push(`    ${line.trimEnd()}`)
-                }
-                continue
-            }
-
-            // ── diff mode: emit Dif markers 
+            // ── resolve ref snap for chosen mode ─────────────────────────
             const ref_snap = mode === 'exp' || mode === 'exp_naive'
                 ? (Step.sc.exp_snap   as string) ?? ''
                 : mode === 'first'
                 ? (Step.sc.first_snap as string) ?? ''
-                : prev_snap
+                : prev_snap   // prev / naive
 
-            if (!ref_snap) {
-                all_lines.push(`  Snap,first`)
+            // ── raw mode: naive, or ref absent for this mode ──────────────
+            //   Snap,first: prev mode but no prev step — first step in run.
+            //   Snap,raw:   exp/first mode ref not yet loaded, or naive.
+            if (mode === 'naive' || !ref_snap) {
+                const header = (!prev_snap && mode !== 'exp' && mode !== 'exp_naive' && mode !== 'first')
+                    ? `  Snap,first`
+                    : `  Snap,raw`
+                all_lines.push(header)
                 for (const line of got_snap.split('\n').filter(Boolean)) {
                     all_lines.push(`    ${line.trimEnd()}`)
                 }
@@ -686,10 +681,12 @@
         diff_status     = ''
     }
 
-    // copy_single: immediately copies the open step without entering collect mode.
+    // copy_single: copies the open step alone and exits collect mode.
     async function copy_single() {
         const n = display.open_at
         if (n == null) return
+        diff_collecting = false
+        diff_anchor     = null
         try { await navigator.clipboard.writeText('') } catch { /* prompt on actual write */ }
         await collect_range(n, n, eff_mode)
     }
@@ -1050,26 +1047,21 @@
 
                     <!-- copy: range collector ─────────────────────────── -->
                     <!-- idle: "copy diff" immediately arms this step as    -->
-                    <!--   the anchor — button becomes throbbing pick-end.  -->
-                    <!-- collecting: "just NNN" copies this step alone;     -->
-                    <!--   "from NNN — pick end ×" cancels on click.        -->
-                    <!-- "to NNN" appears when open step ≠ anchor.          -->
+                    <!--   the anchor — button becomes throbbing "pick end ×". -->
+                    <!-- collecting: "to NNN" always shown — copies this    -->
+                    <!--   step alone when NNN = anchor, range otherwise.   -->
+                    <!--   "pick end ×" cancels on click.                   -->
                     <!-- Output: Step/Snap/Dif:* block, enL-compatible.     -->
                     <!-- T.deDif(lines, 2) decodes it back to DiffRow[].    -->
                     {#if !hollow}
                         {#if diff_collecting}
-                            <!-- "to NNN" completes the range immediately
-                                 when the open step differs from the anchor -->
-                            {#if n !== diff_anchor}
-                                <button class="sr-diffrange" onclick={() => { collect_range(diff_anchor!, n, eff_mode); diff_collecting = false; diff_anchor = null }}>
-                                    to {String(n).padStart(3,'0')}
-                                </button>
-                            {/if}
-                            <button class="sr-diffrange" onclick={copy_single}>
-                                just {String(n).padStart(3,'0')}
+                            <!-- "just NNN" when on the anchor step — single-step copy.
+                                 "to NNN" when on a different step — completes the range. -->
+                            <button class="sr-diffrange" onclick={() => { collect_range(diff_anchor!, n, eff_mode); diff_collecting = false; diff_anchor = null }}>
+                                {n === diff_anchor ? 'just' : 'to'} {String(n).padStart(3,'0')}
                             </button>
                             <button class="sr-diffrange collecting" onclick={cancel_collect}>
-                                from {String(diff_anchor).padStart(3,'0')} — pick end ×
+                                pick end ×
                             </button>
                         {:else}
                             <button class="sr-diffrange" onclick={start_diff_collect}>copy diff</button>
