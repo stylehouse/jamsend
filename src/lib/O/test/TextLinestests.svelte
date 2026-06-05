@@ -58,7 +58,7 @@
             const ok = JSON.stringify(got) === JSON.stringify(want)
             if (!ok) {
                 console.error(`❌ ${label}:`, { got, want })
-                t.i({ fail: label, got: String(got), want: String(want) })
+                t.i({ fail: label, got: `${typeof got}:${got}`, want: `${typeof want}:${want}` })
                 failures++
             } else {
                 t.i({ pass: label })
@@ -245,11 +245,13 @@
         w.c.snap_skipped    ??= 0
         w.c.snap_errors     ??= 0
         w.c.snap_dirs_todo  ??= ['wormhole'] as string[]
+        w.c.snap_files_todo ??= [] as string[]      // .snap paths queued for migration
         w.c.snap_done_dirs  ??= new Set<string>()
         w.c.snap_inflight   ??= new Set<string>()   // paths currently being migrated
         w.c.snap_last_tick  ??= 0
 
         const dirs_todo  = w.c.snap_dirs_todo  as string[]
+        const files_todo = w.c.snap_files_todo as string[]
         const done_dirs  = w.c.snap_done_dirs  as Set<string>
         const inflight   = w.c.snap_inflight   as Set<string>
 
@@ -341,14 +343,13 @@
 
         // ── migrate_one ────────────────────────────────────────────────────────
         const migrate_one = async (path: string) => {
-            if (inflight.has(path)) return
-            inflight.add(path)
-
+            // inflight.add(path) already called by drain loop before firing us
             try {
                 const rreq = await H.LiesStore_read(w, path)
                 if (!rreq.sc.finished) {
                     H.i_req_ttlilt(rreq, 0.5, { waiting: 'read' })
                     inflight.delete(path)
+                    files_todo.push(path)   // requeue — drain loop will redispatch
                     return
                 }
 
@@ -417,31 +418,42 @@
                 .filter(d => !done_dirs.has(d))
             dirs_todo.unshift(...subdirs)
 
-            // queue .snap files
+            // push .snap files onto files_todo — drain loop dispatches them
+            //   (not fired here: inflight must be tracked before this async returns)
             for (const e of entries) {
                 if (!e.name.endsWith('.snap')) continue
                 const path = `${dir}/${e.name}`
-                if (!inflight.has(path)) migrate_one(path)   // fire and don't await — rate below
+                if (!inflight.has(path) && !files_todo.includes(path))
+                    files_todo.push(path)
             }
         }
 
-        // ── drain: process dirs + respect rate limit ───────────────────────────
+        // ── drain: process dirs and files, respect rate limit ────────────────
         const now = Date.now()
         if (now - (w.c.snap_last_tick as number) >= TICK_MS) {
             w.c.snap_last_tick = now
 
-            // process up to one dir per tick
-            while (dirs_todo.length && (inflight.size) < MAX_INFLIGHT) {
+            // one dir per tick (listings are async — result arrives next think)
+            if (dirs_todo.length) {
                 const dir = dirs_todo.shift()!
                 await walk_one(dir)
-                break  // one dir per tick keeps the queue predictable
+            }
+
+            // dispatch files up to MAX_INFLIGHT; each migrate_one adds to inflight
+            //   synchronously before doing any async work so the count is accurate
+            while (files_todo.length && inflight.size < MAX_INFLIGHT) {
+                const path = files_todo.shift()!
+                if (!inflight.has(path)) {
+                    inflight.add(path)   // reserve slot before async work starts
+                    migrate_one(path)    // fire without await
+                }
             }
         }
 
         H.update_see_snap(w)
 
         // re-enter until everything is done
-        const still_going = dirs_todo.length > 0 || inflight.size > 0
+        const still_going = dirs_todo.length > 0 || files_todo.length > 0 || inflight.size > 0
         if (still_going) {
             H.demand_time_to_think(TICK_MS)
             return

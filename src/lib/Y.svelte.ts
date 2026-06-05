@@ -697,7 +697,7 @@ export function peel(s: any, d?: { sep?: string; hie?: string; hie_num?: string 
                 if (!k) continue
                 c[k] = 1
             }
-             if ('unmodernised') {
+             if ('before migration to d.modern') {
                 // Convert numeric strings to numbers
                 if (c[k] && typeof c[k] === 'string' && c[k].match(/^-?\d+\.?\d*$/)) {
                     c[k] = parseFloat(c[k]);
@@ -722,8 +722,6 @@ export function peel(s: any, d?: { sep?: string; hie?: string; hie_num?: string 
 //   callers with custom hie get modern=false automatically (hie_num==hie,
 //   no distinction) so they keep their existing fuzzy-decode behaviour.
 //
-// < modern: flip to always-on once all existing snaps are migrated
-//
 export function depeel(s: Record<string, any>, d?: { sort?: boolean; sep?: string; hie?: string; hie_num?: string; modern?: boolean }): string {
     d = d || {};
     const hie_was_default = !('hie' in d)
@@ -731,7 +729,7 @@ export function depeel(s: Record<string, any>, d?: { sort?: boolean; sep?: strin
     d.hie     ??= ':'
     d.hie_num ??= hie_was_default ? '=' : d.hie
     d.sort    ??= false
-    // d.modern  ??= hie_was_default  // < uncomment once all snaps are migrated
+    d.modern  ??= hie_was_default
     let ks = Object.keys(s);
     if (d.sort) ks = ks.sort()
     const hs: string[] = [];
