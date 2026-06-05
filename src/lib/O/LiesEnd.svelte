@@ -32,56 +32,251 @@ await M.eatfunc({
 
 //#region operate / mark — generalised routed handlers
 //
-//   e:operate — structural moves and cluster triggers over %What** / %LE.
-//     Routed to the world that owns the data being moved.
-//     w:Lies receives cursor moves (up/prev/next/branch/dive/next_doc).
-//     w:Lang receives the push cluster trigger (push).
-//     Future worlds can add their own operate flavours — e%LE narrows scope.
+//   Two thin public events sit above the LE-scoped implementations.
+//   Either can carry e%LE=1 (the flag sentinel, not a particle) when fired from
+//   a test snap — the handler resolves the live LE from H.ave/%Languinio/%LE and
+//   substitutes it before delegating.  That lookup is gated on H.sc.Run
+//   ("!testrun") so it only fires inside a Story test run, never in production.
 //
-//   e:mark — U-sphere mutations on the working clone tree.
-//     Always routed to w:Lang (where %LE and C** live).
-//     e.sc.LE is the %LE particle passed directly by the caller —
-//       no re-derive needed; the caller already holds it from languinio.
+//   e:operate — structural moves and cluster triggers over %What** or %LE.
+//     On w:Lies: cursor moves (up | prev | next | branch | dive | next_doc).
+//     On w:Lang: LE cluster triggers (push | pull).
+//
+//   e:mark — U-sphere mutations on the working clone tree (w:Lang only).
 //     Ops: add | edit | drop | undrop | unshow | show
+//     U-mutating ops bump LE.c.U_serial so Lang_settle's encode_key
+//     changes without a cursor move (serial on .c, never .sc).
 //
-//   The event name generalises: a caller that knows the world and the scope
-//   can fire e:operate or e:mark without embedding the scope in the event name.
-//   Housing routes to e_operate / e_mark on the target world's w handler.
-//   A narrower alias (e:LE_operate, e:LE_mark) can also be used — Housing
-//   will look for e_LE_operate / e_LE_mark first, then fall back to e_operate /
-//   e_mark, so existing callers keep working while new ones use the short form.
+//   e:LE_operate / e:LE_mark are the direct implementations.
+//   e_Lang_LE_push is the durable push cluster (req:push|encode|replace|verify).
 //
-//   U%unshowing / U%unaccepted mutations increment LE.c.U_serial so
-//   Lang_settle's encode_key sees a change without waiting for a cursor move.
-//   (The serial rides on %LE.c, never .sc, so it never enters the snap.)
+//   LiesEnd is the right home for all of this: it owns %LE, the U/D sphere
+//   protocol, and the clone tree API.  Lang touches at the edges — workon
+//   threading, doc lifecycle, CM wiring.  Lies touches at the cursor seam.
+//
+//   Mounting: LiesEnd must be mounted by BOTH Lies.svelte and Lang.svelte so
+//   each Housing's eatfunc gets these handlers.  On w:Lies, e:LE_operate routes
+//   to LiesCurse's cursor handler (not this one) because LiesCurse is mounted
+//   last and overwrites it in that Housing.  On w:Lang, this e_LE_operate
+//   (push|pull) is the one that resolves.
 
-    // ── e_operate (w:Lies) ────────────────────────────────────────────────────
+    // ── e:operate ───────────────────────────────────────────────────────────────
     //
-    //   Cursor-movement and +time gestures.  Delegates to e_LE_operate in
-    //   LiesCurse for the full pivot + want machinery.
-    //   Having a named e_operate here means callers can drop the LE_ prefix
-    //   while still reaching the same handler via the alias fallback.
+    //   Resolves LE from ave when e%LE=1 (test-run sentinel, requires H.sc.Run),
+    //   then delegates to e_LE_operate.  Production callers always pass the particle.
     //
-    //   e.sc: { LE?, op: string, ... }  (LE ignored on Lies side — cursor state
-    //   is read from %examining directly, same as e_LE_operate does)
+    //   e.sc: { LE: TheC | 1, op: string }
     async e_operate(A: TheC, w: TheC, e: TheC) {
-        // delegate to the existing cursor seam in LiesCurse
-        await (this as House).e_LE_operate(A, w, e)
+        const H = this as House
+        if (e.sc.LE == 1) {
+            if (!H.sc.Run) throw '!testrun — e%LE=1 sentinel only valid inside a Story Run'
+            const languinio = (H.ave as TheC).o({ Languinio: 1 })[0] as TheC | undefined
+            const live_LE   = languinio?.o({ LE: 1 })[0] as TheC | undefined
+            if (!live_LE) throw 'e_operate: LE=1 sentinel but no live LE in ave/%Languinio'
+            e.sc.LE = live_LE
+        }
+        await H.e_LE_operate(A, w, e)
     },
 
-    // ── e_mark (w:Lang) ───────────────────────────────────────────────────────
+    // ── e:mark ──────────────────────────────────────────────────────────────────
     //
-    //   U-sphere mutations on the working clone tree.
-    //   Caller supplies e.sc.LE — the %LE particle from languinio.
-    //   Op set mirrors e_LE_mark in Lang.svelte; this stub lives here so the
-    //   region comment above documents both sides in one place.
-    //   The real body is e_LE_mark on w:Lang (Lang.svelte).
+    //   Same LE=1 sentinel contract as e:operate; delegates to e_LE_mark.
+    //
+    //   e.sc: { LE: TheC | 1, op: string, spec?, sc?, patch? }
+    async e_mark(A: TheC, w: TheC, e: TheC) {
+        const H = this as House
+        if (e.sc.LE === 1) {
+            if (!H.sc.Run) throw '!testrun — e%LE=1 sentinel only valid inside a Story Run'
+            const languinio = (H.ave as TheC).o({ Languinio: 1 })[0] as TheC | undefined
+            const live_LE   = languinio?.o({ LE: 1 })[0] as TheC | undefined
+            if (!live_LE) throw 'e_mark: LE=1 sentinel but no live LE in ave/%Languinio'
+            e.sc.LE = live_LE
+        }
+        await H.e_LE_mark(A, w, e)
+    },
+
+    // ── e:LE_operate ─────────────────────────────────────────────────────────────
+    //
+    //   LE cluster triggers — the operate ops that belong on w:Lang because
+    //   the clusters they fire hang off workon here.
+    //   Cursor moves live on w:Lies (LiesCurse); U-sphere mutations on e_LE_mark.
+    //
+    //   e.sc: { LE: TheC, op: string }
+    //     push — drive the encode|replace|verify cluster directly
+    //     pull — force a fresh LE_pull + feebly_ponder (resync after external edit)
+    async e_LE_operate(A: TheC, w: TheC, e: TheC) {
+        const H  = this as House
+        const op = e.sc.op as string | undefined
+        switch (op) {
+            case 'push':
+                await H.e_Lang_LE_push(A, w, e)
+                return   // no feebly_ponder — push cluster manages its own think
+            case 'pull': {
+                const workon = H.reqy(w).o({ req: 'workon' })[0] as TheC | undefined
+                const LE     = (e.sc.LE as TheC | undefined)
+                    ?? workon?.o({ LE: 1 })[0] as TheC | undefined
+                if (LE) await H.LE_pull(LE)
+                H.feebly_ponder()
+                return
+            }
+            default:
+                throw `e_LE_operate (Lang): unknown op '${op}' — operate handles push|pull; use e:mark for clone mutations`
+        }
+    },
+
+    // ── e:LE_mark ────────────────────────────────────────────────────────────────
+    //
+    //   Direct write-path for clone contents and U meanings.  The caller
+    //   passes e.sc.LE — the %LE particle from languinio (or resolved by e_mark).
+    //   U-mutating ops bump LE.c.U_serial so Lang_settle's encode_key changes
+    //   without waiting for a cursor move (serial on .c, never .sc).
     //
     //   e.sc: { LE: TheC, op: string, spec?, sc?, patch? }
+    //     add    — append a new clone (e.sc.sc is the raw sc)
+    //     edit   — patch an existing clone's sc (e.sc.patch merged in)
+    //     drop   — set U%unaccepted; virtual deletion, omitted from push + encode
+    //     undrop — clear U%unaccepted; restore a dropped clone
+    //     unshow — set U%unshowing; Lang-UI hide, no effect on push or encode
+    //     show   — clear U%unshowing; restore to visible
+    async e_LE_mark(A: TheC, w: TheC, e: TheC) {
+        const H      = this as House
+        const LE: TheC = e.sc.LE as TheC
+        if (!LE || LE === (1 as any)) throw `e_LE_mark: no LE — call via e_mark or pass LE directly`
+        const op = e.sc.op as string | undefined
+        if (!op) throw `e_LE_mark: no op`
+
+        // spec→clone for ops that target an existing clone
+        const find = (spec?: unknown) =>
+            typeof spec === 'string'
+                ? (H.LE_clones(LE) as TheC[]).find(c => (c.sc as any).method === spec)
+                : undefined
+
+        let U_mutated = false
+
+        switch (op) {
+            case 'add': {
+                const sc = e.sc.sc as Record<string, any> | undefined
+                if (sc) H.LE_add_clone(LE, sc)
+                break
+            }
+            case 'edit': {
+                const clone = find(e.sc.spec)
+                const patch = e.sc.patch as Record<string, any> | undefined
+                if (clone && patch) Object.assign(clone.sc, patch)
+                break
+            }
+            case 'drop': {
+                const clone = find(e.sc.spec)
+                if (clone) { H.LE_drop_clone(LE, clone); U_mutated = true }
+                break
+            }
+            case 'undrop': {
+                const clone = find(e.sc.spec)
+                if (clone?.c.U) { delete clone.c.U.sc.unaccepted; U_mutated = true }
+                break
+            }
+            case 'unshow': {
+                const clone = find(e.sc.spec)
+                if (clone?.c.U) { clone.c.U.sc.unshowing = 1; U_mutated = true }
+                break
+            }
+            case 'show': {
+                const clone = find(e.sc.spec)
+                if (clone?.c.U) { delete clone.c.U.sc.unshowing; U_mutated = true }
+                break
+            }
+        }
+
+        // U_serial — lets Lang_settle's encode_key see U-sphere changes without
+        // waiting for a cursor move (which would bump Seem:working.version).
+        if (U_mutated) LE.c.U_serial = ((LE.c.U_serial as number) ?? 0) + 1
+
+        H.feebly_ponder()
+    },
+
+    // ── e:Lang_LE_push ───────────────────────────────────────────────────────────
     //
-    //   < stub: w:Lies does not own clone mutations — this entry is intentionally
-    //     absent from LiesEnd's eatfunc.  e:mark fired at Lies/Lies would be a
-    //     routing mistake; the comment documents the contract for callers.
+    //   The push machine — a coherent, resumable, desire-independent cluster
+    //   (Spotlight-Interest-trajectory §3h).  maz bottoms at 1, three phases:
+    //     maz:3  encode   — LE_encode_compare; clean → finish (nothing to push)
+    //     maz:2  replace   — LE_replace_back, skipping U%unaccepted (the
+    //                        irreversible step; reqonce-gated so a re-entry on
+    //                        "push anyway" never replaces twice)
+    //     maz:1  verify    — LE_pull + re-encode; clean → finish; dirty → stamp
+    //                        req:push/%dirty (the fault) and leave open
+    //
+    //   "Push anyway" re-enters from verify: drop the cluster's %dirty + re-do()
+    //   and the encode/replace reqonce gates keep it from re-running.  The cached
+    //   encode snaps dumped on working.c.encode (by LE_encode_compare) resume the
+    //   push-state across a reload without re-deriving from the live ropeways.
+    //
+    //   < the spec houses this at w:Lies/req:git so a push reads as a Waftlet
+    //     commit on the showy end; that needs a Lies→Lang bridge to the clones,
+    //     which isn't built.  Lives on w:Lang for now — where the %LE and its
+    //     clone tree actually are — wired to this elvis from DocMinimap's push.
+    async e_Lang_LE_push(A: TheC, w: TheC, e: TheC) {
+        const H      = this as House
+        const rq     = H.reqy(w)
+        const workon = rq.o({ req: 'workon' })[0] as TheC | undefined
+        if (!workon) return
+        const LE = workon.o({ LE: 1 })[0] as TheC | undefined
+        if (!LE) return
+
+        // The push cluster hangs off workon (stable for the Lang instance), one
+        // per attempt.  Durable + inspectable: phases collapse to %finished, the
+        // fault lands as req:push/%dirty.
+        const pq = H.reqy(workon)
+        ;(await pq.doai({ req: 'push' }))?.(async (push: TheC) => {
+            const psub = H.reqy(push)
+
+            ;(await psub.doai({ req: 'encode', maz: 3 }))?.(async (encode: TheC) => {
+                const { dirty } = await H.LE_encode_compare(LE)
+                if (!dirty) {
+                    // nothing to push — finish the whole cluster cleanly.
+                    psub.finish(encode)
+                    push.sc.clean = 1
+                }
+                else psub.finish(encode)
+            })
+
+            ;(await psub.doai({ req: 'replace', maz: 2 }))?.(async (replace: TheC) => {
+                // skip the replace when encode found nothing — clean attempt.
+                if (push.sc.clean) { psub.finish(replace); return }
+                if (H.reqonce(replace, 'replaced')) {
+                    await H.LE_replace_back(LE)
+                }
+                psub.finish(replace)
+            })
+
+            ;(await psub.doai({ req: 'verify', maz: 1 }))?.(async (verify: TheC) => {
+                if (push.sc.clean) { psub.finish(verify); return }
+                // Post-push: re-pull and re-encode.  The structural goners/neus
+                // diff would false-positive on what we just pushed (additions land
+                // as neus, unaccepted deletions as goners), so encode-compare is
+                // the trustworthy signal — same shallow extent on both sides.
+                await H.LE_pull(LE)
+                const { dirty } = await H.LE_encode_compare(LE)
+                if (dirty) {
+                    // fault: push didn't land clean.  Stamp the fault child and
+                    // leave verify OPEN so a "push anyway" re-enters here.
+                    push.oai({ dirty: 1 })
+                    // < req:push/%dirty not yet surfaced in the reqy fault UI.
+                    // < vanish: an unaccepted clone's absence lands as a goner on
+                    //   this re-pull and reads as dirty.  The pending fix stamps
+                    //   bD/was_disincluded:1 before LE_replace_back so resolved_fn
+                    //   recognises the expected goner and suppresses it.
+                    return   // no finish — stays open
+                }
+                psub.finish(verify)
+            })
+
+            await psub.do()
+            psub.unify_finished(pq)
+        })
+
+        await pq.do()
+        H.i_elvisto(w, 'think')
+    },
 
 //#endregion
 //#region Seem

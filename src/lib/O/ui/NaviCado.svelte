@@ -17,7 +17,7 @@
     //
     // ── Nav buttons (top row) ─────────────────────────────────────────────────
     //
-    //   ↑  ←  →  — emit i_elvisto(w, 'LE_operate', { op }) where op is
+    //   ↑  ←  →  — emit op(kind) → i_elvisto(Lies, 'operate', { LE, op }) where op is
     //   'up'/'prev'/'next'.  Handler (LiesCurse) reads the live cursor from
     //   %examining/%Spotlight and drives movement from there.
     //
@@ -28,7 +28,7 @@
     // ── Tools row (second row, always when LE armed) ──────────────────────────
     //
     //   ↘ dive / ↓ branch — moved here from the nav bar.
-    //   PeelItem — type a method name, Enter → LE_operate{op:'add'}.
+    //   PeelItem — type a method name, Enter → mark('add', ...).
     //   req:desire transport (‖/▶, →step) — only when req:timemachine exists.
     //   Unsent bar (~↑↩) — absolute overlay when in_group state has drifted.
     //
@@ -41,7 +41,7 @@
     //   unsent bar stays hidden until the user actually changes something.
     //
     //   Capsule label click — < fires Lang_navigate_to; needs handler on Lang side.
-    //   × fires LE_operate{op:'drop'} when LE is armed at a %What; else
+    //   × fires mark('drop', ...) when LE is armed at a %What; else
     //   local demote() for bare %Doc sessions.
     //   Push fires Lies_accept_What_Point; Reset reverts to pushed_snapshot (two-tap).
 
@@ -295,9 +295,8 @@
         showing       = sh
         reset_confirm = false
         // fire U-sphere mutation when LE is armed at a %What
-        if (LE && (LE.sc.target as any)?.sc?.What !== undefined) {
-            H.i_elvisto('Lang/Lang', 'LE_mark', { LE, op: is_unshowing ? 'show' : 'unshow', spec })
-        }
+        if (LE && (LE.sc.target as any)?.sc?.What !== undefined)
+            mark(is_unshowing ? 'show' : 'unshow', { spec })
     }
 
     function push_what_point() {
@@ -327,10 +326,14 @@
 
     // ── nav actions ───────────────────────────────────────────────────────────
     //
-    //   Single emitter for structural cursor movement (e_operate / e_LE_operate in LiesCurse).
+    //   op()  — structural cursor move to w:Lies (e_operate → e_LE_operate in LiesCurse).
+    //   mark() — U-sphere mutation to w:Lang  (e_mark   → e_LE_mark  in Lang).
+    //   Both pass LE as a particle so the handlers need no ave round-trip.
     //   op flows through as the %want kind — chatty in the resolver log.
-    //   e:operate is the generalised name; e:LE_operate is the alias Housing falls back to.
-    const op = (kind: string) => H.i_elvisto('Lies/Lies', 'operate', { LE, op: kind })
+    const op   = (kind: string, extra?: Partial<TheUniversal>) =>
+        H.i_elvisto('Lies/Lies', 'operate', { LE, op: kind, ...extra })
+    const mark = (kind: string, extra?: Partial<TheUniversal>) =>
+        H.i_elvisto('Lang/Lang', 'mark',    { LE, op: kind, ...extra })
 
     // ── PeelItem — inject a Point into the working C** ────────────────────────
     //
@@ -344,7 +347,7 @@
     function peel_commit() {
         const method = peel_text.trim()
         if (method && LE && (LE.sc.target as any)?.sc?.What !== undefined) {
-            H.i_elvisto('Lang/Lang', 'LE_mark', { LE, op: 'add', sc: { Point: 1, method } })
+            mark('add', { sc: { Point: 1, method } })
         }
         peel_text = ''
     }
@@ -453,11 +456,11 @@
     <div class="lmm-inbox"
          onmouseleave={() => { reset_confirm = false }}>
         {#each [...in_group] as spec (spec)}
-            {@const mark = all_marks.find(p => p.spec === spec)}
+            {@const pm   = all_marks.find(p => p.spec === spec)}
             {@const is_sh = showing.has(spec)}
             {@const mem  = le_membership.get(spec)}
             <div class="lmm-capsule"
-                 class:lmm-capsule-bad={mark?.unresolved}
+                 class:lmm-capsule-bad={pm?.unresolved}
                  class:lmm-capsule-dormant={!is_sh}
                  class:lmm-capsule-unaccepted={mem?.unaccepted}>
                 <button class="lmm-capsule-orb"
@@ -467,19 +470,19 @@
                         onclick={() => toggle_showing(spec)}>
                 </button>
                 <button class="lmm-capsule-label"
-                        title="{spec}{mark?.unresolved ? ' (unresolved)' : mark ? ` → line ${mark.line}` : ''}"
+                        title="{spec}{pm?.unresolved ? ' (unresolved)' : pm ? ` → line ${pm.line}` : ''}"
                         onclick={() => {
                             // < fire Lang_navigate_to once wired on Lang side
-                            if (mark) H.i_elvisto('Lang/Lang', 'Lang_navigate_to', { from: mark.from, to: mark.to, spec })
+                            if (pm) H.i_elvisto('Lang/Lang', 'Lang_navigate_to', { from: pm.from, to: pm.to, spec })
                         }}>
                     {spec}
                 </button>
                 {#if !is_sh}
-                    <!-- × fires LE_operate{op:'drop'} when LE is armed at a %What;
+                    <!-- × fires mark('drop') when LE is armed at a %What;
                          falls back to local demote() for bare %Doc sessions. -->
                     <button class="lmm-capsule-demote" title="Remove Point" onclick={() => {
                         if (LE && (LE.sc.target as any)?.sc?.What !== undefined) {
-                            H.i_elvisto('Lang/Lang', 'LE_mark', { LE, op: 'drop', spec })
+                            mark('drop', { spec })
                         } else {
                             demote(spec)
                         }

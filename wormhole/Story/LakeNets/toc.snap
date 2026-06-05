@@ -65,44 +65,55 @@ story:LakeNets
       i_elvisto:Lies,e:Lies_open_Waft
         esc:path,v:Ghost/LakeNets
     Prep=2
-      i_elvisto:Lang,e:LE_operate
+      i_elvisto:Lang,e:mark
+        esc:LE,v
         esc:op,v:add
         {"esc":"sc","v":{"Point":1,"method":"LakeNetherland","class":"focus"}}
     Prep=3
-      i_elvisto:Lang,e:LE_operate
+      i_elvisto:Lang,e:mark
+        esc:LE,v
         esc:op,v:edit
         esc:spec,v:LakeNetherland
         {"esc":"patch","v":{"class":"caution"}}
     Prep=4
-      i_elvisto:Lang,e:LE_operate
+      i_elvisto:Lang,e:mark
+        esc:LE,v
         esc:op,v:unshow
         esc:spec,v:LakeNetherland
     Prep=5
-      i_elvisto:Lang,e:LE_operate
+      i_elvisto:Lang,e:mark
+        esc:LE,v
         esc:op,v:show
         esc:spec,v:LakeNetherland
     Prep=6
-      i_elvisto:Lang,e:LE_operate
+      i_elvisto:Lang,e:mark
+        esc:LE,v
         esc:op,v:drop
         esc:spec,v:LakeNetherland
     Prep=7
-      i_elvisto:Lang,e:LE_operate
+      i_elvisto:Lang,e:mark
+        esc:LE,v
         esc:op,v:undrop
         esc:spec,v:LakeNetherland
     Prep=8
-      i_elvisto:Lang,e:LE_operate
+      i_elvisto:Lang,e:operate
+        esc:LE,v
         esc:op,v:push
     Prep=9
-      i_elvisto:Lies,e:LE_operate
+      i_elvisto:Lies,e:operate
+        esc:LE,v
         esc:op,v:next
     Prep=10
-      i_elvisto:Lies,e:LE_operate
+      i_elvisto:Lies,e:operate
+        esc:LE,v
         esc:op,v:branch
     Prep=11
-      i_elvisto:Lies,e:LE_operate
+      i_elvisto:Lies,e:operate
+        esc:LE,v
         esc:op,v:prev
     Prep=12
-      i_elvisto:Lies,e:LE_operate
+      i_elvisto:Lies,e:operate
+        esc:LE,v
         esc:op,v:up
   Opt
     For

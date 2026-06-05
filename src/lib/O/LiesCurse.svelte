@@ -110,26 +110,38 @@
 //#endregion
 //#region operate — cursor-movement gestures
 
-    // ── e_LE_operate / e_operate ─────────────────────────────────────────────
+    // ── e:operate ─────────────────────────────────────────────────────────────────
     //
-    //   One seam for every cursor-movement gesture NaviCado owns as a button.
-    //   Reachable as e:operate (generalised) or e:LE_operate (scoped alias);
-    //   Housing tries e_LE_operate first, then e_operate.
-    //   The pivot is read from %examining/%Spotlight,src — Lies-local and
-    //   synchronous, no cross-world LE reach, no LE.sc.target lag.
-    //   This half only moves the cursor over the live %What tree;
-    //   working-clone and U-sphere mutations live on e_LE_mark at w:Lang.
+    //   Lies-side sentinel resolver.  Resolves e%LE=1 from ave/%Languinio when
+    //   inside a Story Run, then delegates to e_LE_operate.  The LE particle is
+    //   not used for cursor pivot (reads %examining directly) but flows through
+    //   so the event shape is consistent across worlds.
     //
-    //   e.sc.LE is accepted but not used here — cursor state is read from
-    //   %examining directly, so there is no lag from LE.sc.target.
+    //   e.sc: { LE: TheC | 1, op: string }
+    async e_operate(A: TheC, w: TheC, e: TheC) {
+        const H = this as House
+        if (e.sc.LE === 1) {
+            if (!H.sc.Run) throw '!testrun — e%LE=1 sentinel only valid inside a Story Run'
+            const languinio = (H.ave as TheC).o({ Languinio: 1 })[0] as TheC | undefined
+            const live_LE   = languinio?.o({ LE: 1 })[0] as TheC | undefined
+            if (!live_LE) throw 'e_operate (Lies): LE=1 sentinel but no live LE in ave/%Languinio'
+            e.sc.LE = live_LE
+        }
+        await H.e_LE_operate(A, w, e)
+    },
+
+    // ── e:LE_operate ──────────────────────────────────────────────────────────────
     //
-    //   op → kind: the op string flows through as the %want kind so the resolver
-    //   log reads 'up'/'prev'/'next'/'branch'/'dive'/'next_doc' rather than a
-    //   generic 'next' — chatty is good for tracing cursor intent.
+    //   Cursor-movement seam, called directly or via e_operate after LE resolution.  The pivot reads %examining/%Spotlight,src — Lies-local
+    //   and synchronous; no cross-world LE reach, no LE.sc.target lag.
+    //   e.sc.LE is accepted and passed through for logging; not used for pivot.
     //
-    //   op: up | prev | next     — structural moves, c.up chain + DFS helpers
-    //       branch | dive        — +time gestures; splice and step in (workers)
-    //       next_doc             — cross-Waft step; identity-tracked, wraps at end
+    //   op → kind: flows through as the %want kind so the resolver log reads
+    //   the actual gesture name rather than a generic 'operate'.
+    //
+    //   op: up | prev | next   — structural moves, c.up chain + DFS helpers
+    //       branch | dive      — +time gestures; splice and step in (workers below)
+    //       next_doc           — cross-Waft step; identity-tracked, wraps at end
     //
     //   < next_doc steps flat Waft_cursor_candidates; branch/dive hierarchy not
     //     yet traversed.
@@ -164,11 +176,6 @@
                 return
             }
         }
-    },
-
-    // ── e_operate (Lies side) — generalised alias for e_LE_operate ───────────
-    async e_operate(A: TheC, w: TheC, e: TheC) {
-        await (this as House).e_LE_operate(A, w, e)
     },
 
     // ── Lies_branch_what ─────────────────────────────────────────────────────

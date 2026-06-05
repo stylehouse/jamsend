@@ -160,6 +160,45 @@
     //
     // Consumed by w:Lang, which runs one whatsthis() call per w/%bookmark
     // into a per-bookmark subcontainer under model/**.
+    //
+    // ── State flows ──────────────────────────────────────────────────────────
+    //
+    //   e:Lang_workon_update  ← Lies_i_Spotlight, every cursor move
+    //     takes  e%src (cursored %What or %Doc from Spotlight)
+    //     makes  workon.c.src; pokes think → Lang_settle picks it up
+    //
+    //   Lang_settle (req:settle, permanent open-ended)
+    //     takes  workon.c.src, %LE, dock.c.state, Compile/%methods, Pmirrors
+    //     makes  %Languinio/%Interest.sc.src (clone root for NaviCado)
+    //            %Languinio/%Interest.c.LE   (handle for LangGraft)
+    //            %LE/%State.changey           (set by LE_encode_compare)
+    //            %LE/%encode                  (snap_origin, snap_working, dirty)
+    //            settle/%checkout.c.armed_src (memoised — skipped on same src)
+    //
+    //   e:mark / e:LE_mark  ← NaviCado, test snaps
+    //     takes  e%LE (particle or sentinel 1), op, spec
+    //     makes  C.c.U.sc.unshowing | unaccepted; LE.c.U_serial++
+    //            → Lang_settle encode_key = wv:U_serial changes → re-encode
+    //
+    //   e:LE_operate%op=push  ← NaviCado / DocMinimap
+    //     makes  req:push|encode|replace|verify cluster under workon/%LE
+    //
+    //   e:Lang_editorBegins  ← Langui on CM mount
+    //     takes  e%dock, view, state, updates (live bookmark positions)
+    //     makes  dock.c.view, dock.c.state; reconciles %bookmark from/to
+    //            → feebly_ponder wakes req:text_loaded monitor in Languish
+    //
+    //   e:Lang_open_dock  ← Lies req:Furnishing RPC courier
+    //     takes  furnishing.sc.path, .c.text, .sc.gen_path
+    //     makes  req:Languish (text_loaded → compile phases)
+    //            → finish({path,ready:1}) resolves the Furnishing RPC
+    //
+    //   Lang_update_change  (each tick, active dock known)
+    //     takes  ave/{lang_dock}, dock/{Compile}/{Output}
+    //     makes  %Languinio/%Change/{backend|storage|compile} (roai → new C ref
+    //            → Svelte re-renders Langui's three-leg change strip)
+    //
+
 
     import { _C, TheC } from "$lib/data/Stuff.svelte"
     import { dig }       from "$lib/Y.svelte"
@@ -176,6 +215,7 @@
     import LangRegions from "./LangRegions.svelte";
     import LangLang from "./LangLang.svelte";
     import LangGraft from "./LangGraft.svelte";
+    import LiesEnd  from "$lib/O/LiesEnd.svelte";
 
     let { M } = $props()
 
@@ -373,6 +413,10 @@
 
 //#region e
 
+    // ── e:Lang_editorBegins ──────────────────────────────────────────────────────
+    //
+    //   CM has mounted a new editor view.  Registers view+state via the DRY
+    //   router and reconciles any live bookmark positions from the CM state.
     async e_Lang_editorBegins(A, w, e) {
         // Register view + state via the DRY router.
         const dock = this.Lang_dock_from_event(w, e)
@@ -449,7 +493,7 @@
         ;(this as House).feebly_ponder()
     },
 
-    // ── e_Dock_open ───────────────────────────────────────────────────────────
+    // ── e:Dock_open ──────────────────────────────────────────────────────────────
     //
     //   Fired by Liesui / Waft / DocRow when the user clicks a Doc label or a
     //   Point inside one.  Switches the active doc to `path`.
@@ -478,7 +522,7 @@
         this.i_elvisto(w, 'think')
     },
 
-    // ── e_Lang_open_dock ──────────────────────────────────────────────────────
+    // ── e:Lang_open_dock ─────────────────────────────────────────────────────────
     //
     //   §3i — doc-open is now an RPC.  Lies owns the intent (w:Lies/req:Furnishing)
     //   and couriers the req particle here via i_elvis_req; we drain it with
@@ -540,193 +584,16 @@
         return docks?.o({ dock: path })[0] as TheC | undefined
     },
 
-    // ── e_LE_operate (Lang side) ──────────────────────────────────────────────
+    // ── e:Lang_workon_update ────────────────────────────────────────────
     //
-    //   Push cluster trigger.  Lang's e_LE_operate is intentionally narrow —
-    //   cursor moves live on w:Lies (LiesCurse), clone mutations on e_LE_mark.
-    //   push is the one structural act that belongs on w:Lang because the push
-    //   cluster (req:push/encode/replace/verify) hangs off workon here.
-    //
-    //   e.sc: { op: 'push' }
-    async e_LE_operate(A: TheC, w: TheC, e: TheC) {
-        const H  = this as House
-        const op = e.sc.op as string | undefined
-        if (op === 'push') {
-            H.i_elvisto(w, 'Lang_LE_push', {})
-            // no feebly_ponder — push cluster manages its own think
-            return
-        }
-        // delegate clone/U mutations to e_LE_mark — same world, same w
-        // (test snaps and old callers that still fire e:LE_operate for mark ops)
-        await H.e_LE_mark(A, w, e)
-    },
-
-    // ── e_LE_mark — U-sphere mutations on the working clone tree ──────────────
-    //
-    //   One write-path for clone contents and their U meanings.  The caller
-    //   passes e.sc.LE directly — the %LE particle from languinio — so there
-    //   is no re-derive and no lag from workon round-trips.
-    //   Falls back to the workon-derived LE when e.sc.LE is absent (test macros
-    //   that fire the old way, before the caller was updated).
-    //
-    //   U-sphere ops bump LE.c.U_serial so Lang_settle's encode_key changes
-    //   without needing a cursor move (the serial rides on .c, never .sc,
-    //   so it never enters the snap or perturbs enWaft).
-    //
-    //   e.sc: { LE?: TheC, op: string, spec?, sc?, patch? }
-    //     add    — append a new clone (e.sc.sc is the raw sc)
-    //     edit   — patch an existing clone's sc (e.sc.patch merged in)
-    //     drop   — set U%unaccepted; virtual deletion, omitted from push + encode
-    //     undrop — clear U%unaccepted; restore a dropped clone
-    //     unshow — set U%unshowing; Lang-UI hide, no effect on push or encode
-    //     show   — clear U%unshowing; restore to visible
-    async e_LE_mark(A: TheC, w: TheC, e: TheC) {
-        const H      = this as House
-        // prefer the caller-supplied LE; fall back to the workon-derived one
-        const LE: TheC = (e.sc.LE as TheC | undefined)
-            ?? H.reqy(w).o({ req: 'workon' })[0]?.o({ LE: 1 })[0] as TheC | undefined
-        if (!LE) throw `e_LE_mark: no LE`
-        const op = e.sc.op as string | undefined
-        if (!op) throw `e_LE_mark: no op`
-
-        // spec→clone for ops that target an existing clone
-        const find = (spec?: unknown) =>
-            typeof spec === 'string'
-                ? (H.LE_clones(LE) as TheC[]).find(c => (c.sc as any).method === spec)
-                : undefined
-
-        let U_mutated = false
-
-        switch (op) {
-            case 'add': {
-                const sc = e.sc.sc as Record<string, any> | undefined
-                if (sc) H.LE_add_clone(LE, sc)
-                break
-            }
-            case 'edit': {
-                const clone = find(e.sc.spec)
-                const patch = e.sc.patch as Record<string, any> | undefined
-                if (clone && patch) Object.assign(clone.sc, patch)
-                break
-            }
-            case 'drop': {
-                const clone = find(e.sc.spec)
-                if (clone) { H.LE_drop_clone(LE, clone); U_mutated = true }
-                break
-            }
-            case 'undrop': {
-                const clone = find(e.sc.spec)
-                if (clone?.c.U) { delete clone.c.U.sc.unaccepted; U_mutated = true }
-                break
-            }
-            case 'unshow': {
-                const clone = find(e.sc.spec)
-                if (clone?.c.U) { clone.c.U.sc.unshowing = 1; U_mutated = true }
-                break
-            }
-            case 'show': {
-                const clone = find(e.sc.spec)
-                if (clone?.c.U) { delete clone.c.U.sc.unshowing; U_mutated = true }
-                break
-            }
-        }
-
-        // U_serial — lets Lang_settle's encode_key see U-sphere changes without
-        // waiting for a cursor move (which would bump Seem:working.version).
-        if (U_mutated) LE.c.U_serial = ((LE.c.U_serial as number) ?? 0) + 1
-
-        H.feebly_ponder()
-    },
-
-    // ── e_Lang_LE_push ─────────────────────────────────────────────────────────
-    //
-    //   The push machine — a coherent, resumable, desire-independent cluster
-    //   (Spotlight-Interest-trajectory §3h).  maz bottoms at 1, three phases:
-    //     maz:3  encode   — LE_encode_compare; clean → finish (nothing to push)
-    //     maz:2  replace   — LE_replace_back, skipping U%unaccepted (the
-    //                        irreversible step; reqonce-gated so a re-entry on
-    //                        "push anyway" never replaces twice)
-    //     maz:1  verify    — LE_pull + re-encode; clean → finish; dirty → stamp
-    //                        req:push/%dirty (the fault) and leave open
-    //
-    //   "Push anyway" re-enters from verify: drop the cluster's %dirty + re-do()
-    //   and the encode/replace reqonce gates keep it from re-running.  The cached
-    //   encode snaps dumped on working.c.encode (by LE_encode_compare) resume the
-    //   push-state across a reload without re-deriving from the live ropeways.
-    //
-    //   < the spec houses this at w:Lies/req:git so a push reads as a Waftlet
-    //     commit on the showy end; that needs a Lies→Lang bridge to the clones,
-    //     which isn't built.  Lives on w:Lang for now — where the %LE and its
-    //     clone tree actually are — wired to this elvis from DocMinimap's push.
-    async e_Lang_LE_push(A: TheC, w: TheC, e: TheC) {
-        const H      = this as House
-        const rq     = H.reqy(w)
-        const workon = rq.o({ req: 'workon' })[0] as TheC | undefined
-        if (!workon) return
-        const LE = workon.o({ LE: 1 })[0] as TheC | undefined
-        if (!LE) return
-
-        // The push cluster hangs off workon (stable for the Lang instance), one
-        // per attempt.  Durable + inspectable: phases collapse to %finished, the
-        // fault lands as req:push/%dirty.
-        const pq = H.reqy(workon)
-        ;(await pq.doai({ req: 'push' }))?.(async (push: TheC) => {
-            const psub = H.reqy(push)
-
-            ;(await psub.doai({ req: 'encode', maz: 3 }))?.(async (encode: TheC) => {
-                const { dirty } = await H.LE_encode_compare(LE)
-                if (!dirty) {
-                    // nothing to push — finish the whole cluster cleanly.
-                    psub.finish(encode)
-                    push.sc.clean = 1
-                }
-                else psub.finish(encode)
-            })
-
-            ;(await psub.doai({ req: 'replace', maz: 2 }))?.(async (replace: TheC) => {
-                // skip the replace when encode found nothing — clean attempt.
-                if (push.sc.clean) { psub.finish(replace); return }
-                if (H.reqonce(replace, 'replaced')) {
-                    await H.LE_replace_back(LE)
-                }
-                psub.finish(replace)
-            })
-
-            ;(await psub.doai({ req: 'verify', maz: 1 }))?.(async (verify: TheC) => {
-                if (push.sc.clean) { psub.finish(verify); return }
-                // Post-push: re-pull and re-encode.  The structural goners/neus
-                // diff would false-positive on what we just pushed (additions land
-                // as neus, unaccepted deletions as goners), so encode-compare is
-                // the trustworthy signal — same shallow extent on both sides.
-                await H.LE_pull(LE)
-                const { dirty } = await H.LE_encode_compare(LE)
-                if (dirty) {
-                    // fault: push didn't land clean.  Stamp the fault child and
-                    // leave verify OPEN so a "push anyway" re-enters here.
-                    push.oai({ dirty: 1 })
-                    // < req:push/%dirty not yet surfaced in the reqy fault UI.
-                    // < vanish: an unaccepted clone's absence lands as a goner on
-                    //   this re-pull and reads as dirty.  The pending fix stamps
-                    //   bD/was_disincluded:1 before LE_replace_back so resolved_fn
-                    //   recognises the expected goner and suppresses it.
-                    return   // no finish — stays open
-                }
-                psub.finish(verify)
-            })
-
-            await psub.do()
-            psub.unify_finished(pq)
-        })
-
-        await pq.do()
-        H.i_elvisto(w, 'think')
-    },
-
-    // ── e_Lang_workon_update ──────────────────────────────────────────
-    //
-    //   Fired by Lies' cursor seam on every cursor move.  Stashes the new src
+    //   Fired by Lies_i_Spotlight on every cursor move.  Stashes the new src
     //   on workon.c.src and pokes a think — Lang_settle converges from there.
-    //   All checkout / furnish / graft / encode logic lives in Lang_settle.
+    //   All checkout | furnish | graft | encode logic lives in Lang_settle.
+    //
+    //   < design direction: replace with e:operate{LE,op:'pull',src} so cursor
+    //     moves and LE resync share one event.  A pull on an already-armed src
+    //     is a cheap noop in Lang_settle (armed_src identity check), so the
+    //     extra specificity of this dedicated handler buys little.
     //
     //   e.sc: { src: TheC }
     async e_Lang_workon_update(A: TheC, w: TheC, e: TheC) {
@@ -799,7 +666,7 @@
         if (!dock) {
             // Lies' req:Furnishing RPC mints it; its completion feebly_ponders us.
             fu.sc.have_dock = 0
-            H.i_req_ttlilt(settle, 1.5, { waiting: 'dock' })
+            H.i_req_ttlilt(settle, 0.5, { waiting: 'dock' })
             return
         }
         fu.sc.have_dock = 1
@@ -813,7 +680,7 @@
         if (!cp.sc.have_methods && !err) {
             // compile_error is terminal — fall through so graft mints unresolved
             //   Pmirrors the minimap can surface; otherwise hold for the index.
-            H.i_req_ttlilt(settle, 1.5, { waiting: 'methods' })
+            H.i_req_ttlilt(settle, 0.5, { waiting: 'methods' })
             return
         }
 
@@ -1003,6 +870,10 @@
 
 
 
+    // ── e:Lang_set_doc ───────────────────────────────────────────────────────────
+    //
+    //   UI-initiated text update.  Writes the new text into ave/{lang_dock:path}.
+    //   e.sc: { dock: path, text: string }
     async e_Lang_set_doc(A: TheC, w: TheC, e: TheC) {
         if (!A.sc.A) throw "!A"
         const path = e.sc.dock as string | undefined
@@ -1116,7 +987,7 @@
 
         // Drive workon: req:settle (permanent, open-ended) re-enters every think
         //   and converges src → LE → dock → graft → encode.  req:push sub-reqs
-        //   (encode/replace/verify) hang one level deeper, so they need their own do().
+        //   (encode|replace|verify) hang one level deeper, so they need their own do().
         const workon = rq.o({ req: 'workon' })[0] as TheC | undefined
         if (workon) {
             const wsub = H.reqy(workon)
@@ -1359,7 +1230,7 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
         this.i_elvisto(w, 'think', {})
     },
 
-    // ── e_Lang_i_bookmark ────────────────────────────────────────────────────
+    // ── e:Lang_i_bookmark ────────────────────────────────────────────────────
     //
     //   Generic Plan/Prep action: place a bookmark at a given char range.
     //   No action button — params must come from the Prep/esc children.
@@ -1389,7 +1260,7 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
         })
     },
 
-    // ── e_Lang_i_alterationStation ───────────────────────────────────────────
+    // ── e:Lang_i_alterationStation ───────────────────────────────────────────
     //
     //   Generic Plan/Prep action: surgically replace a substring within a line.
     //   Operates within the existing text so CM can remap any bookmark decorations
@@ -1447,13 +1318,13 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
 
 
 //#region bm e
-    // Ctrl+B from the editor — create a w/{dock}/%bookmark at the current selection.
+    // ── e:Lang_add_bookmark ──────────────────────────────────────────────────────
     //
-    // The editor marks the range with a CodeMirror Decoration.mark so from/to
-    // track document edits automatically. Periodic e_Lang_update_bookmarks
-    // calls push the live mark positions (and a fresh editorState) back here.
+    //   Ctrl+B from the editor — create a w/{dock}/%bookmark at the current
+    //   selection.  CM marks the range so from/to track edits automatically.
+    //   Periodic e:Lang_update_bookmarks pushes live positions back here.
     //
-    // e.sc carries: doc, from, to, label?, view, state
+    //   e.sc: { doc, from, to, label?, view, state }
     async e_Lang_add_bookmark(A: TheC, w: TheC, e: TheC) {
         const dock = this.Lang_dock_from_event(w, e)
 
@@ -1503,10 +1374,14 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
     //
     // Carries the live from/to for every bookmark still present in the CM
     // decoration set, plus a fresh editorState so whatsthis() sees the updated
-    // parse tree.  Any known bookmark id absent from updates[] has vanished —
-    // its decoration was wiped by an edit that fully replaced its span.
+    // ── e:Lang_update_bookmarks ──────────────────────────────────────────────────
     //
-    // e.sc carries: doc, updates=[{id, from, to}], view, state
+    //   Fired by the editor after the debounce (or immediately via saveEffect).
+    //   Carries live from/to for every bookmark in CM's decoration set plus
+    //   a fresh editorState.  Bookmarks absent from updates[] have vanished —
+    //   their decoration was wiped by an edit that fully replaced the span.
+    //
+    //   e.sc: { doc, updates=[{id,from,to}], view, state }
     async e_Lang_update_bookmarks(A: TheC, w: TheC, e: TheC) {
         if (!A.sc.A) throw "!A"
         const doc = this.Lang_dock_from_event(w, e)
@@ -1532,7 +1407,7 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
         this.i_elvisto(w, 'think', {})
     },
 
-    // ── e_Lang_update_grafts ─────────────────────────────────────────────────
+    // ── e:Lang_update_grafts ─────────────────────────────────────────────────
     //
     //   Counterpart to e_Lang_update_bookmarks for Pmirror grafts.  Carries
     //   the live from/to for every graft mark in CM's graftMarkField.  The
@@ -1571,7 +1446,7 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
         // < copy+paste recovery pass goes here
     },
 
-    // ── e_Lang_remove_bookmark ───────────────────────────────────────────────
+    // ── e:Lang_remove_bookmark ───────────────────────────────────────────────
     //
     //   Remove one bookmark by id.  Dispatches removeBookmarkMark to CM
     //   and drops the particle from the doc.  Wired to DocPoint's delete button.
@@ -1592,7 +1467,7 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
         this.i_elvisto(w, 'think', {})
     },
 
-    // ── e_Lang_point_fuzzify ─────────────────────────────────────────────────
+    // ── e:Lang_point_fuzzify ─────────────────────────────────────────────────
     //
     //   Resolve a bookmark's char-offset range to the enclosing method name
     //   from the compile index.  Stamps bm.sc.method, upgrading from a
@@ -1616,7 +1491,7 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
         this.i_elvisto(w, 'think', {})
     },
 
-    // ── e_Lang_stamp_bookmark_serial ─────────────────────────────────────────
+    // ── e:Lang_stamp_bookmark_serial ─────────────────────────────────────────
     //
     //   Stamp a global Point serial onto a bookmark after it has been exported
     //   to a Waft Doc via e_Lies_export_point.  The DocPoint UI shows this to
@@ -1687,3 +1562,4 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
 <LangRegions {M} />
 <LangLang {M} />
 <LangGraft {M} />
+<LiesEnd    {M} />
