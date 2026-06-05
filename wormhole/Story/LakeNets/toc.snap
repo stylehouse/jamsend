@@ -124,28 +124,30 @@ story:LakeNets
         nogen
     quiesce_snap_time=0.4
     noCyto
+    trickle
   TimeSpool
-    TimeTotal:beliefs,avg=1.57
-      sample=1.634,at=1780629743
-      sample=1.81,at=1780630057
-      sample=1.302,at=1780630393
-      sample=1.413,at=1780632026
-      sample=1.304,at=1780632082
-      sample=1.54,at=1780632311
-      sample=2.078,at=1780632598
-      sample=1.524,at=1780633876
-      sample=1.542,at=1780634333
-      sample=1.557,at=1780634699
-  step,dige:31902c53f058c7ed
-  step=2,dige:1a1870508a011791
-  step=3,dige:fdfdca1f60690108
-  step=4,dige:5eb9a892c279eedc
-  step=5,dige:d0eb84f401ad83bd
-  step=6,dige:f4451867d6f571ef
-  step=7,dige:1204ca1a109aa855
-  step=8,dige:f618effdf3366980
-  step=9,dige:b425c71b68b78e13
-  step=10,dige:a22d48ce95f05a33
+    TimeTotal:beliefs,avg=578.629
+      sample=642.757,at=1780645844
+      sample=642.757,at=1780645848
+      sample=642.757,at=1780645849
+      sample=642.757,at=1780645852
+      sample=642.757,at=1780645853
+      sample=642.757,at=1780646277
+      sample=642.757,at=1780646280
+      sample=642.757,at=1780646283
+      sample=642.757,at=1780646287
+      sample=1.481,at=1780646317
+  step,dige:f4f52af5cfc601f8
+    note,frontier
+  step=2,dige:95c962cd09d081f0
+  step=3,dige:74cfca6bdca0a74c
+  step=4,dige:6faa165fe96a5ab1
+  step=5,dige:9ac4f48dff147390
+  step=6,dige:55ebc70ba308f27b
+  step=7,dige:0f2c9d5a24a7d57b
+  step=8,dige:e57b37aa6c5bbd2b
+  step=9,dige:9315f8626a8d6594
+  step=10,dige:4f3a1e3716ac21a4
   step=11,dige:52d1bb743ee2042f
   step=12,dige:13b2fdcb6c59fdfe
   step=13,dige:fc63ed6daa87836f

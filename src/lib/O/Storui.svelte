@@ -573,7 +573,8 @@
 
     function go_to_diff() {
         const n = popup_step
-        popup_open = false
+        popup_open  = false
+        sticky_mode = 'exp'   // arrive showing exp diff, not auto-resolved mode
         // short delay so the popup's layout space collapses before NaviScroll
         // measures the scroll target — avoids the viewport jumping twice
         setTimeout(() => {
@@ -823,6 +824,10 @@
 
     function accept(n: number) {
         H.i_elvisto('Story/Story', 'story_accept', { accept_n: n })
+        // open the next step immediately so sequences can be checked rapidly
+        const idx  = display.steps.findIndex(ts => ts.n === n)
+        const next = display.steps[idx + 1]
+        if (next) pick(next.n)
     }
     function accept_all() {
         H.i_elvisto('Story/Story', 'story_accept_all', {})
@@ -1055,10 +1060,9 @@
                     <!-- T.deDif(lines, 2) decodes it back to DiffRow[].    -->
                     {#if !hollow}
                         {#if diff_collecting}
-                            <!-- "just NNN" when on the anchor step — single-step copy.
-                                 "to NNN" when on a different step — completes the range. -->
+                            <!-- "just NNN": copy this single step and done. -->
                             <button class="sr-diffrange" onclick={() => { collect_range(diff_anchor!, n, eff_mode); diff_collecting = false; diff_anchor = null }}>
-                                {n === diff_anchor ? 'just' : 'to'} {String(n).padStart(3,'0')}
+                                just {String(n).padStart(3,'0')}
                             </button>
                             <button class="sr-diffrange collecting" onclick={cancel_collect}>
                                 pick end ×
@@ -1535,8 +1539,7 @@
 .sr-diff2.first-bg .sr-diff2-col:last-child { border-left-color: #261e08; }
 .sr-diff2.first-bg .sr-squish { background: #100c04; border-top-color: #1e1604; border-bottom-color: #1e1604; }
 
-/* first mode button — amber accent to match first-bg tint */
-.sr-diff-modes button.sr-first-btn         { border-color: #3a3020; color: #a87; }
+/* first mode button — amber accent only when active */
 .sr-diff-modes button.sr-first-btn.active  { background: #1a1208; border-color: #4a3818; color: #cb9; }
 
 /* ── Resnapture popup content (inside Vexpandy fixed modal) ─────────────── */
