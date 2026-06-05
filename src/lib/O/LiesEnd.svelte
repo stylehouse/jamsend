@@ -54,11 +54,10 @@ await M.eatfunc({
 //   protocol, and the clone tree API.  Lang touches at the edges — workon
 //   threading, doc lifecycle, CM wiring.  Lies touches at the cursor seam.
 //
-//   Mounting: LiesEnd must be mounted by BOTH Lies.svelte and Lang.svelte so
-//   each Housing's eatfunc gets these handlers.  On w:Lies, e:LE_operate routes
-//   to LiesCurse's cursor handler (not this one) because LiesCurse is mounted
-//   last and overwrites it in that Housing.  On w:Lang, this e_LE_operate
-//   (push|pull) is the one that resolves.
+//   Mounting: LiesEnd must be mounted by BOTH Lies.svelte and Lang.svelte.
+//   All eatfunc calls mix into one H.* table — file placement is organisational.
+//   LiesCurse provides the branch/dive/stepping workers; this file owns all
+//   handler entry points.
 
     // ── e:operate ───────────────────────────────────────────────────────────────
     //
@@ -68,7 +67,7 @@ await M.eatfunc({
     //   e.sc: { LE: TheC | 1, op: string }
     async e_operate(A: TheC, w: TheC, e: TheC) {
         const H = this as House
-        if (e.sc.LE == 1) {
+        if (e.sc.LE === 1) {
             if (!H.sc.Run) throw '!testrun — e%LE=1 sentinel only valid inside a Story Run'
             const languinio = (H.ave as TheC).o({ Languinio: 1 })[0] as TheC | undefined
             const live_LE   = languinio?.o({ LE: 1 })[0] as TheC | undefined
@@ -97,17 +96,60 @@ await M.eatfunc({
 
     // ── e:LE_operate ─────────────────────────────────────────────────────────────
     //
-    //   LE cluster triggers — the operate ops that belong on w:Lang because
-    //   the clusters they fire hang off workon here.
-    //   Cursor moves live on w:Lies (LiesCurse); U-sphere mutations on e_LE_mark.
+    //   All operate ops in one place — eatfunc mixes into a single H.* table so
+    //   splitting by file is organisational only; splitting by handler name loses
+    //   the whole op set to whichever definition wins Object.assign order.
+    //
+    //   Cursor moves read %examining from w (w:Lies call site); cluster triggers
+    //   read workon from w (w:Lang call site).  The op itself is the dispatch key.
     //
     //   e.sc: { LE: TheC, op: string }
-    //     push — drive the encode|replace|verify cluster directly
-    //     pull — force a fresh LE_pull + feebly_ponder (resync after external edit)
+    //     up | prev | next    — DFS cursor moves over the live %What tree
+    //     branch | dive       — +time gestures; splice / step in (workers below)
+    //     next_doc            — cross-Waft step; wraps at end
+    //     push                — drive the encode|replace|verify cluster (e_Lang_LE_push)
+    //     pull                — force a fresh LE_pull + feebly_ponder
     async e_LE_operate(A: TheC, w: TheC, e: TheC) {
         const H  = this as House
         const op = e.sc.op as string | undefined
+        if (!op) return
+
         switch (op) {
+            // ── cursor moves — pivot from %examining on w:Lies ────────────────
+            case 'up':
+            case 'prev':
+            case 'next':
+            case 'branch':
+            case 'dive':
+            case 'next_doc': {
+                const examining = w.o({ examining: 1 })[0] as TheC | undefined
+                if (!examining) return
+                // pivot — the cursored %What.  A bare-%Doc src has no .What and
+                // can step docs (next_doc); structural ops no-op from there.
+                const src  = examining.o({ Spotlight: 1 })[0]?.sc.src as TheC | undefined
+                const what = src && (src.sc as any).What !== undefined ? src : undefined
+                const want = (dest: TheC | undefined) => {
+                    if (dest) H.i_elvisto(w, 'Lies_want', { src: dest, kind: op })
+                }
+                switch (op) {
+                    case 'up':       return void want(what ? H.LE_what_parent(what)   : undefined)
+                    case 'prev':     return void want(what ? H.LE_what_dfs_prev(what) : undefined)
+                    case 'next':     return void want(what ? H.LE_what_dfs_next(what) : undefined)
+                    case 'branch':   if (what) H.Lies_branch_what(w, what, op);       return
+                    case 'dive':     if (what) await H.Lies_dive_what(w, what, op);   return
+                    case 'next_doc': {
+                        // cross-Waft depth-first step, wraps at end
+                        // < steps flat Waft_cursor_candidates; branch/dive hierarchy not yet traversed
+                        const cands = H.Waft_cursor_candidates(w)
+                        if (!cands.length) return
+                        const i = cands.findIndex(c => c.what === src)
+                        want(cands[(i + 1) % cands.length].what)
+                        return
+                    }
+                }
+                return
+            }
+            // ── LE cluster triggers — workon on w:Lang ────────────────────────
             case 'push':
                 await H.e_Lang_LE_push(A, w, e)
                 return   // no feebly_ponder — push cluster manages its own think
@@ -120,7 +162,7 @@ await M.eatfunc({
                 return
             }
             default:
-                throw `e_LE_operate (Lang): unknown op '${op}' — operate handles push|pull; use e:mark for clone mutations`
+                throw `e_LE_operate: unknown op '${op}'`
         }
     },
 

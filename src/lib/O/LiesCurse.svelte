@@ -11,7 +11,7 @@
     // ── Regions ──────────────────────────────────────────────────────────────
     //
     //   seam        — Lies_i_Spotlight (the one cursor write); LiesCurse tick
-    //   operate     — e_LE_operate dispatcher + branch/dive workers +
+    //   operate     — branch/dive workers + cursor stepping helpers
     //                 e_Lies_cursor_what (Waft label-click with dive:true)
     //   doc-follow  — e_Lies_active_doc_changed, e_Lies_set_cursor
     //   finders     — pure tree-walk / find helpers (no side effects)
@@ -110,77 +110,10 @@
 //#endregion
 //#region operate — cursor-movement gestures
 
-    // ── e:operate ─────────────────────────────────────────────────────────────────
-    //
-    //   Lies-side sentinel resolver.  Resolves e%LE=1 from ave/%Languinio when
-    //   inside a Story Run, then delegates to e_LE_operate.  The LE particle is
-    //   not used for cursor pivot (reads %examining directly) but flows through
-    //   so the event shape is consistent across worlds.
-    //
-    //   e.sc: { LE: TheC | 1, op: string }
-    async e_operate(A: TheC, w: TheC, e: TheC) {
-        const H = this as House
-        if (e.sc.LE === 1) {
-            if (!H.sc.Run) throw '!testrun — e%LE=1 sentinel only valid inside a Story Run'
-            const languinio = (H.ave as TheC).o({ Languinio: 1 })[0] as TheC | undefined
-            const live_LE   = languinio?.o({ LE: 1 })[0] as TheC | undefined
-            if (!live_LE) throw 'e_operate (Lies): LE=1 sentinel but no live LE in ave/%Languinio'
-            e.sc.LE = live_LE
-        }
-        await H.e_LE_operate(A, w, e)
-    },
-
-    // ── e:LE_operate ──────────────────────────────────────────────────────────────
-    //
-    //   Cursor-movement seam, called directly or via e_operate after LE resolution.  The pivot reads %examining/%Spotlight,src — Lies-local
-    //   and synchronous; no cross-world LE reach, no LE.sc.target lag.
-    //   e.sc.LE is accepted and passed through for logging; not used for pivot.
-    //
-    //   op → kind: flows through as the %want kind so the resolver log reads
-    //   the actual gesture name rather than a generic 'operate'.
-    //
-    //   op: up | prev | next   — structural moves, c.up chain + DFS helpers
-    //       branch | dive      — +time gestures; splice and step in (workers below)
-    //       next_doc           — cross-Waft step; identity-tracked, wraps at end
-    //
-    //   < next_doc steps flat Waft_cursor_candidates; branch/dive hierarchy not
-    //     yet traversed.
-    async e_LE_operate(A: TheC, w: TheC, e: TheC) {
-        const H         = this as House
-        const examining = w.o({ examining: 1 })[0] as TheC | undefined
-        if (!examining) return
-        const op = e.sc.op as string | undefined
-        if (!op) return
-
-        // pivot — the cursored %What.  A bare-%Doc src has no .What and can
-        // step docs (next_doc); structural ops no-op from there.
-        const src  = examining.o({ Spotlight: 1 })[0]?.sc.src as TheC | undefined
-        const what = src && (src.sc as any).What !== undefined ? src : undefined
-
-        const want = (dest: TheC | undefined) => {
-            if (dest) H.i_elvisto(w, 'Lies_want', { src: dest, kind: op })
-        }
-
-        switch (op) {
-            case 'up':   return void want(what ? H.LE_what_parent(what)   : undefined)
-            case 'prev': return void want(what ? H.LE_what_dfs_prev(what) : undefined)
-            case 'next': return void want(what ? H.LE_what_dfs_next(what) : undefined)
-            case 'branch': if (what) H.Lies_branch_what(w, what, op);        return
-            case 'dive':   if (what) await H.Lies_dive_what(w, what, op);    return
-            case 'next_doc': {
-                // cross-Waft depth-first step, wraps at end
-                const cands = H.Waft_cursor_candidates(w)
-                if (!cands.length) return
-                const i = cands.findIndex(c => c.what === src)
-                want(cands[(i + 1) % cands.length].what)
-                return
-            }
-        }
-    },
 
     // ── Lies_branch_what ─────────────────────────────────────────────────────
     //
-    //   Branch body — called by e_LE_operate{op:'branch'}.  Splices a new
+    //   Branch body — called from e_LE_operate (LiesEnd) for op:'branch'.  Splices a new
     //   sibling %What immediately after `what` in the parent's child list,
     //   seeds it from carry-over, stamps back-refs, saves, and emits a want.
     //   `op` flows through as the want kind.
@@ -218,7 +151,7 @@
 
     // ── Lies_dive_what ────────────────────────────────────────────────────────
     //
-    //   Dive body — called by e_LE_operate{op:'dive'}.  Creates a new child
+    //   Dive body — called from e_LE_operate (LiesEnd) for op:'dive'.  Creates a new child
     //   %What inside `what`, seeds from carry-over, and steps in.  The parent
     //   keeps its original Points intact — the carry-over is a copy, not a move.
     //   `op` flows through as the want kind.

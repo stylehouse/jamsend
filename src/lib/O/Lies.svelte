@@ -66,85 +66,79 @@
     //
     // ── Particle layout ───────────────────────────────────────────────────────
     //
-    //   w/examining
-    //     // reactive signal in watched:ave; bumps on w change and cursor move
-    //     // examining.c.w = w (back-ref for Liesui)
-    //     /Spotlight                                — written only through Lies_i_Spotlight
-    //       sc.src: $C                               the %What or %Doc particle
-    //       // waft_key_of(src) replaces the old sc.src_Waft
-    //     /req:timemachine,playing=0                — playback engine; seeded by req:acquire
+    //   w/{examining:1}                         — reactive signal in watched:ave;
+    //                                            bumps when w changes and when the
+    //                                            cursor moves.  examining.c.w = w.
+    //     /{Spotlight:1}                         — child of examining; written only through
+    //                                              Lies_i_Spotlight (the one seam).
+    //                                              sc.src     : $C  the %What or %Doc particle
+    //                                              sc.src_Waft: gone — waft_key_of(src) replaces it
+    //     /req:timemachine                        — the playback engine (sc.playing:0|1);
+    //                                              seeded by req:desire/req:acquire (§3f)
+    //   w/{req:'wants'}                         — cursor-intent accumulator (§3e)
+    //     /{want:$ts}                              c.src → wanted C; sc.kind: click|drag|step|next|cold
+    //   w/{open_waft_req:1,path}               — queued by e_Lies_open_Waft
+    //   w/{Waft:'Ghost/Tour'}                  — loaded Waft container
+    //     /{Doc:path}                          — persisted doc entry
+    //       /{Point:1,method}                  — individual point
+    //       /{doc_rename_job:1,old_path,new_path} — in-progress doc rename (crash-safe)
+    //   w/{Waft:'Look/YMD/HH'}                — hourly scratch Waft (+Now button)
+    //     sc.active = 1                        — session-only; never written to snap
+    //   w/{req:'Open',src}             — demand-loaded doc (legacy; Furnishing is the new path)
+    //                                    sc.waft_key, sc.new?
+    //                                    → sc.loaded=1 on completion
+    //                                    → sc.not_found=1 when file absent
+    //   w/{req:'Furnishing',path}      — doc-open RPC courier to Lang (§3i)
+    //                                    c.src → %What or %Doc; carries path/text/gen_path
+    //   w/{loaded_doc:1,path,gen_path} — after load + Lang handoff
+    //   w/{compile_pending:1,path,...}         — waiting for gen/ write
+    //   w/{waft_rename_job:1,old_path,new_path} — in-progress waft rename (crash-safe)
+    //   w/{Opt:1}                              — options container
     //
-    //   w/req:wants                                 — cursor-intent accumulator
-    //     /want:$ts                                   c.src → wanted C; sc.kind: click|drag|step|next|cold
-    //     // history kept; never pruned
+    //   w/{req:'desire'}                       — the Waft lock (§3f; thinned)
+    //     /{req:'acquire',maz:9}                 one-shot lock; inserts desire/{Waft:$waftpath}
+    //     /{Waft:$waftpath}                      correlates to w/{Waft:$waftpath}; set by acquire
+    //     // req:completion → req:timemachine on %examining (§3f)
+    //     /{req:'git'}                           Waftlet accumulator; commits patches
+    //     // < req:git do_fn — Chunk 4b+
     //
-    //   w/open_waft_req,path                        — queued by e_Lies_open_Waft; sc.done once loaded
+    // ── Doc flags (on the Doc particle in its Waft) ────────────────────────
     //
-    //   w/Waft:Ghost/Tour                           — loaded Waft container (persisted snap)
-    //     /What:foundations                           section / time-slice / subsection
-    //       /What:story
-    //         /Doc:Ghost/Story/Peeroleum.g
-    //           /Point,method:LakeNetherland
-    //   w/Waft:Look/YMD/HH                          — hourly scratch Waft (+Now button)
-    //     sc.active = 1                               session-only; not written to snap
-    //
-    //   w/req:Open,src                              — demand-loaded doc (older path; still active
-    //     sc.waft_key, sc.new?                        for Liesui-created docs and re-navigate)
-    //     // sc.loaded=1 on completion; sc.not_found=1 when file absent
-    //
-    //   w/req:Furnishing,path                       — doc-open courier to Lang (permanent variant)
-    //     // c.src → %What or %Doc (live ref; updated by Lies_roai_Furnishing on re-visit)
-    //     // sc.gen_path set after wread; c.text holds full source (not snapped)
-    //     // survives finished so Languish isn't restarted on cursor re-visit
-    //     // < req:Open and req:Furnishing do the same job; unify as req:Open,path (Doc)
-    //     //   vs the Waft-open path.  Furnishing's "keep when finished" becomes the Doc variant's
-    //     //   behaviour; req:Open,src (the old form) retires.
-    //
-    //   w/loaded_doc,path,gen_path                  — present after load + Lang handoff
-    //     sc.base_dige                                disk dige at load time; gate for source writes
-    //     /surprise_read                              set when disk dige diverged from base_dige
-    //     /pending_write                              < future: parked save waiting for pull-before-push
-    //
-    //   w/compile_pending,path                      — waiting for gen/ write to land
-    //     sc.gen_path, sc.source, sc.dige, sc.source_dige, sc.done
-    //     c.write_t0                                  timestamp for write_ms telemetry
-    //
-    //   w/Opt                                       — options container
-    //     /nogen                                      skip gen/ write and Pantheate notify
-    //     /nowriting                                  skip all disk writes (test opt)
-    //
-    //   w/req:desire                                — Waft lock + timemachine seed
-    //     /req:acquire,maz:9                          one-shot; finishes once Waft is locked
-    //     /Waft:$waftpath                             sc.src → locked %Waft particle
-    //     // timemachine moves to examining; desire is just the lock now
-    //
-    //   w/req:git                                   — Waftlet accumulator
-    //     // < do_fn: flush committed Waftlets to disk/remote
-    //
-    //   w/req:Store,eternal                         — LiesStore channel host (born once; never finished)
-    //     /req:wwrite,path,dige
-    //     /req:wread,rw_name
-    //     /req:wlisting,rw_dir
-    //   w/Store                                     — LiesStore metadata (wrote_at timestamps)
-    //
-    //   w/waft_rename_job,old_path,new_path         — crash-safe rename marker
-    //
-    // ── Doc flags (on the %Doc particle in its Waft) ────────────────────────
-    //
-    //   doc.sc.new = 1          set by Liesui on creation; cleared on first load
-    //   doc.sc.not_found = 1    set when wormhole says absent; cleared on load or rename
-    //                           // rename (e:Lies_rename_doc) clears both so the new path
-    //                           //   loads fresh (not_found set again if absent)
+    //   doc.sc.new = 1         — set by Liesui on creation; cleared on load
+    //   doc.sc.not_found = 1   — set when wormhole says absent; cleared on load
+    //                            rename (e:Lies_rename_doc) clears both so the
+    //                            new path loads fresh (not_found set again if absent)
     //
     // ── future ────────────────────────────────────────────────────────────────
     //   < full close on Doc removal (drop loaded_doc, tell Lang)
+    //   < %pending_write / %surprise_read / diff per loaded_doc
     //   < nested Waft save
     //   < rename Waft: write fresh snap at new path
-    //   < req:Open unification — see req:Furnishing note above
+    let future = `
+
+future directions for Lies as a code editor trainstation
+
+Small/crisp:
+
+Escape → Lang_compile with permission — the belief that the current editor state is trustworthy enough to compile. Probably a flag on loaded_doc or dock that the user explicitly arms, and the escape key checks it before firing.
+Dige tracking — stamp each gen/* write with the dige of the source it came from; DocRow shows a ⚠ when the source has changed since last write.
+
+Medium:
+
+Pull-before-push / pending_write / surprise_read — when Lies is about to write a compiled gen file, it first reads the current disk state. If it differs from what it read at load time, that's a surprise_read. Surface it in Liesui with a diff view and a "Push OK" button to unblock. The loaded_doc grows /%pending_write and /%surprise_read children.
+
+Larger/more inventive:
+
+Rename cascade — when a Doc is renamed, the old gen/ file should be deleted and the new path compiled fresh. Needs Lies to coordinate with Lang and track the old gen_path.
+Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy locator that matches method defs, call sites, and comments, with ranking (defs before calls). A whole new subsystem.
+    
+    
+    `
 
     import { _C, TheC }     from "$lib/data/Stuff.svelte"
+    import { Travel }        from "$lib/mostly/Selection.svelte"
     import type { House }   from "$lib/O/Housing.svelte"
-    import { dig }          from "$lib/Y.svelte"
+    import { throttle, dig } from "$lib/Y.svelte"
     import { onMount }      from "svelte"
     import Liesui           from "$lib/O/Liesui.svelte"
     import LiesCurse        from "$lib/O/LiesCurse.svelte"
@@ -218,8 +212,8 @@
     // ── e_Lies_source_write ────────────────────────────────────────────
     //
     //   Fired by Langui's auto-save timer (quiet 3s / active 10s).
-    //   Parks the current CM text as a /%pending_write req and wakes the tick;
-    //   Lies_pending_write_do_fn does the actual pull-before-push + disk write.
+    //   Parks the current CM text as a req:pending_write and wakes the tick;
+    //   req_pending_write does the actual pull-before-push + disk write.
     //
     //   The work can't happen inline here: the pull-before-push read settles on
     //   a later think() (Wormhole done → finish → think back to w:Lies), so a
@@ -244,26 +238,22 @@
         // Drop a finished sibling first so roai builds a fresh req, not a
         // mutate-on-a-dead-one that do() would skip.
         const pwq = H.Lies_pending_write_reqy(w)
-        for (const old of pwq.o({ path }) as TheC[]) if (old.sc.finished) w.drop(old)
-        await pwq.roai({ pending_write: 1, path }, { text, dige: await dig(text) })
+        for (const old of pwq.o({ req: 'pending_write', path }) as TheC[]) if (old.sc.finished) w.drop(old)
+        await pwq.roai({ req: 'pending_write', path }, { text, dige: await dig(text) })
         H.i_elvisto(w, 'think')
     },
 
-    // ── %pending_write channel ──────────────────────────────────────────────
+    // ── pending_write channel ──────────────────────────────────────────────
     //
     //   One reqy handle, shared by the parker (e_Lies_source_write) and the
-    //   driver (LiesStore_run Phase 1.5) so both attach the same do_fn to the
-    //   one reqcon — whoever opens the channel first wins, the other reuses it.
+    //   driver (LiesStore_run Phase 1.5) so both attach to the same reqcon.
+    //   do_one finds req_pending_write by name — no explicit do_fn needed.
     Lies_pending_write_reqy(w: TheC) {
         const H = this as House
-        return H.reqy(w, {
-            k:        'pending_write',
-            noserial: 1,
-            do_fn:    (req: TheC, q: any) => H.Lies_pending_write_do_fn(req, q),
-        })
+        return H.reqy(w, { noserial: 1 })
     },
 
-    // ── Lies_pending_write_do_fn ──────────────────────────────────────────────
+    // ── req_pending_write ─────────────────────────────────────────────────────
     //
     //   Drives one parked save across ticks:
     //     1. content gate — text already on disk (echo, or a sibling write
@@ -279,7 +269,7 @@
     //
     //   < the surprise path blocks the write but doesn't yet resume it; the
     //     "push anyway" affordance lives in Liesui's future and reads sr.sc.text.
-    async Lies_pending_write_do_fn(req: TheC, q: any) {
+    async req_pending_write(req: TheC, q: any) {
         const H    = this as House
         const w    = req.c.up as TheC
         const path = req.sc.path as string
@@ -1056,6 +1046,7 @@
         if (prev && SECOND_LEVEL_FILETYPES.includes(prev)) return `${prev}.${ext}`
         return ext
     },
+
 
     })
     })
