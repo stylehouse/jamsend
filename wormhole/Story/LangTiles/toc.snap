@@ -1,104 +1,5 @@
 story:LangTiles
   Styles
-    matstyle:w
-      style:background-color,v:#8f3232
-      meta:is_compound,v
-      meta:label,fmt:%s,keys:w
-    matstyle:model
-      style:background-color,v:#8f8f32
-    matstyle:Bit
-      style:background-color,v:#8e29d6
-    matstyle:see
-      style:background-color,v:#c5b759
-    matstyle:error
-      style:background-color,v:#298699
-    matstyle:bookmark_view
-      style:background-color,v:#bc2476
-    matstyle:Line
-      style:background-color,v:#61bd42
-      style:width,v=46
-      style:height,v=46
-      style:color,v:#000
-    matstyle:node
-      style:background-color,v:#534ed0
-    matstyle:texts
-      style:background-color,v:#a34b1f
-    matstyle:text
-      style:background-color,v:#3aa67e
-    matstyle:bookmark_node
-      style:background-color,v:#bd36c9
-    matstyle:cyto_edge
-      style:background-color,v:#bbdb43
-    matstyle:bookmark_edge
-      style:background-color,v:#32618f
-    matstyle:constraint
-      style:background-color,v:#b12f4a
-    matstyle:edge
-      style:background-color,v:#29d638
-    matstyle:cyto_constraint
-      style:background-color,v:#8259c5
-    matstyle:cyto_cons
-      style:background-color,v:#997429
-    matstyle:cyto_fold
-      style:background-color,v:#24bcb6
-    matstyle:bookmark
-      style:background-color,v:#bd429e
-    matstyle:result
-      style:background-color,v:#89d04e
-    matstyle:include
-      style:background-color,v:#1f35a3
-    matstyle:hut
-      style:background-color,v:#a6483a
-    matstyle:toot
-      style:background-color,v:#36c974
-    matstyle:something
-      style:background-color,v:#af43db
-    matstyle:thung
-      style:background-color,v:#8f8f32
-    matstyle:with
-      style:background-color,v:#2f8bb1
-    matstyle:etc
-      style:background-color,v:#d62970
-    matstyle:yeses
-      style:background-color,v:#66c559
-    matstyle:because
-      style:background-color,v:#3c2999
-    matstyle:Compile
-      style:background-color,v:#bc6a24
-    matstyle:Output
-      style:background-color,v:#42bd9f
-    matstyle:received
-      style:background-color,v:#d04eca
-    matstyle:Pending
-      style:background-color,v:#76a31f
-    matstyle:compile_write
-      style:background-color,v:#3a62a6
-    matstyle:req_sent
-      style:background-color,v:#c93641
-    matstyle:IOing
-      style:background-color,v:#43db63
-    matstyle:IOness
-      style:background-color,v:#61328f
-    matstyle:IOpath
-      style:background-color,v:#b1972f
-    matstyle:Leg
-      style:background-color,v:#29c7d6
-    matstyle:PeelGroup
-      style:background-color,v:#c5599c
-    matstyle:PeelItem
-      style:background-color,v:#c5599c
-    matstyle:PeelKey
-      style:background-color,v:#c5599c
-    matstyle:Name
-      style:background-color,v:#c5599c
-    matstyle:Colon
-      style:background-color,v:#c5599c
-    matstyle:PeelVal
-      style:background-color,v:#c5599c
-    matstyle:Number
-      style:background-color,v:#c5599c
-    matstyle:Comma
-      style:background-color,v:#c5599c
   Plan
     Prep
       i_elvisto:Lies,e:Lies_open_Waft
@@ -115,6 +16,11 @@ story:LangTiles
         esc:line_n,v=6
         {"esc":"match","v":",they,can,be,mixed"}
         {"esc":"replacement","v":"/they,can,be,mixed"}
+    Prep=6
+      i_elvisto:Lang,e:Lang_i_alterationStation
+        esc:line_n,v=8
+        esc:match,v:thung
+        esc:replacement,v:UltraThung
   Opt
     noCyto
     For
@@ -124,20 +30,22 @@ story:LangTiles
         nowriting:^Ghost
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=0.943
-      sample=1.109,at=1780637228
-      sample=0.781,at=1780637382
-      sample=0.825,at=1780639158
-      sample=0.725,at=1780639197
-      sample=0.689,at=1780639211
-      sample=1.577,at=1780641335
-      sample=0.878,at=1780642758
-      sample=0.878,at=1780642777
-      sample=1.064,at=1780712844
-      sample=0.905,at=1780717851
-  step,dige:6c16eb5dc7b019bf
-  step=2,dige:f0da1e6cfa5a5009
-  step=3,dige:2e03a19c21b0eece
-  step=4,dige:f8a0bed104f88f70
-    note,bug:edge problems with Leg/PeelGroup/Leg the other PeelGroup alone
-  step=5,dige:67f9108024f0f971
+    TimeTotal:beliefs,avg=328.448
+      sample=0.685,at=1780726025
+      sample=3268.585,at=1780729336
+      sample=0.869,at=1780731228
+      sample=2.191,at=1780731408
+      sample=1.136,at=1780731572
+      sample=1.432,at=1780731858
+      sample=1.432,at=1780733460
+      sample=5.219,at=1780733495
+      sample=1.463,at=1780733563
+      sample=1.463,at=1780734206
+  step,dige:24d28c475a0854e2
+  step=2,dige:10cae142af6e3067
+  step=3,dige:d2c6d0b7a6240bc6
+  step=4,dige:80a8baf1363e3a13
+    note,bug:Cyto edge problems with Leg/PeelGroup/Leg the other PeelGroup alone
+  step=5,dige:7241020ecc094057
+  step=6,dige:523599c42d49f5f2
+  step=7,dige:938659ab1707c519

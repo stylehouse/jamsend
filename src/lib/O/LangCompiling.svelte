@@ -273,6 +273,7 @@
         }
         const dock = this.Lang_active_dock(w)
         // Drop the compile when one is already in-flight for this doc.
+        // < should be in req:Languish
         if (dock?.o({ Compile: 1 })[0]?.oa({ Pending: 1 })) {
             console.log(`⏭ Lang_compile: skipped — in-flight for ${dock.sc.dock}`)
             return

@@ -254,7 +254,7 @@
         //   departing text lands as a Lang_set_doc on the arriving dock — the
         //   disk-reload $effect then paints it back over the freshly switched view
         //   and the arriving doc is silently overwritten on disk.
-        Lang_i_elvis(view, 'Lang_set_doc', { dock: path, text })
+        Lang_i_elvis(view, 'Lang_set_doc', { dock_path: path, text })
     }
     function schedule_push_text(path: string) {
         push_pending_path = path

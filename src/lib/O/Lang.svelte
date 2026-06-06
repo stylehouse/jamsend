@@ -418,8 +418,10 @@
         H.i_elvisto('Lies/Lies', 'Lies_active_doc_changed', { path })
     },
 
+//#endregion
 //#region e
 
+//#region e cm -> Lang
     // ── e:Lang_editorBegins ──────────────────────────────────────────────────────
     //
     //   CM has mounted a new editor view.  Registers view+state via the DRY
@@ -497,7 +499,50 @@
         // this — wake a think so its monitor re-checks and descends to compile.
         ;(this as House).feebly_ponder()
     },
+    // ── e:Lang_set_doc ───────────────────────────────────────────────────────────
+    //
+    //   UI-initiated text update.  Writes the new text into ave/{lang_dock:path}.
+    //   e.sc: { dock: path, text: string }
+    async e_Lang_set_doc(A: TheC, w: TheC, e: TheC) {
+        if (!A.sc.A) throw "!A"
+        const path = e.sc.dock_path as string | undefined
+        if (!path) throw "!path"
+        // update the ave text-sync particle for this doc path
+        const ave = this.oai_enroll(this as House, { watched: 'ave' })
+        const docTextC = ave.oai({ lang_dock: path })
+        const text = e?.sc.text as string | undefined
+        if (text == null) throw "!text"
+        if (docTextC.sc.text === text) return // < might be redundant
+        {
+            docTextC.sc.text = text
+            docTextC.sc.text_dige = await dig(text)
+            docTextC.bump_version()
+        }
+        // no main() — UI initiated this, no one else needs waking
+        const dock = this.Lang_active_dock(w)
+        // < get this from dock/req:Languish
+        let La = w.o({req:'Languish',dock})[0]
+        let tm = La.o({req:'text_mutated'})[0]
+        this.reqyoncile(tm,{see:`text changes`,text})
+    },
+    async req_text_mutated(req: TheC, q: any) {
+        const La = req.c.up as TheC
+        const w = La.c.up as TheC
+        req.sc.eternal = 1
+        if (req.sc.mutated) {
+            // < throttle here... queue, waiting for one to complete?
+            let com = La.o({req:'compile'})[0]
+            // < this could be a reqyoncile() interface in sc like see, restart ?
+            delete com.sc.finished
+            this.reqyoncile(com,{see:`text mutated`})
+            // kick off another compile, whatever it is
+            this.feebly_ponder()
+        }
+    },
 
+
+//#endregion
+//#region e etc
     // ── e:Dock_open ──────────────────────────────────────────────────────────────
     //
     //   Fired by Liesui / Waft / DocRow when the user clicks a Doc label or a
@@ -724,9 +769,14 @@
         return doc?.sc.Doc as string | undefined
     },
 
+
+    
 //#region Languish
 
-    // ── req:Languish — Lang's mind for one doc ────────────────────────────────
+
+    // see e:Lang_set_doc where CodeMirror pushes test
+
+    // ── req:Languish — Lang's per-dock mind
     //
     //   The do_fn for a /req:Languish.  Stages two maz-ordered phase reqs on the
     //   Languish particle and runs them; unify_finished finishes Languish when
@@ -749,6 +799,7 @@
 
         const sub = H.reqy(req)
         await sub.roai({ req: 'text_loaded', maz: 3 })
+        await sub.roai({ req: 'text_mutated', maz: 2 })
         await sub.roai({ req: 'compile',     maz: 2 })
         // grafted dropped — Lang_settle owns all grafting; Languish builds the
         //   dock and the compile index; the settler wires the rest.
@@ -773,12 +824,11 @@
         const languish = req.c.up as TheC
         const w        = languish.c.up as TheC
         const path     = languish.sc.path as string
-        const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
 
         if (H.reqonce(req, 'opening')) {
             // one chance: mint dock + install text.  Replaces the old inline
             // e_Lang_open_dock body.
-            languinio?.oai({ spinner: 'text_load' })
+            await H.Langspinner(w,'text_load')
 
             const gen_path = languish.sc.gen_path as string | undefined
             const text     = (languish.c.open_text as string) ?? ''
@@ -817,8 +867,12 @@
             H.i_req_ttlilt(req, 1.5, { waiting: 'cm_mount' })
             return
         }
-        languinio?.o({ spinner: 'text_load' }).map(s => languinio.drop(s))
+        await H.Langspinner(w,'text_load')
         q.finish(req)
+    },
+    async Langspinner(w,spinner:string,not=false) {
+        const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
+        await languinio.r({spinner}, not ? {} : undefined)
     },
 
     // ── req:compile, maz:2 ────────────────────────────────────────────────────
@@ -837,11 +891,10 @@
         const languish = req.c.up as TheC
         const w        = languish.c.up as TheC
         const dock     = languish.sc.dock as TheC
-        const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
 
         if (H.reqonce(req, 'firing')) {
             // one chance: state is in — build the index.
-            languinio?.oai({ spinner: 'compile' })
+            await H.Langspinner(w,'compile')
             await this.Lang_compile_dock(w, dock)
         }
 
@@ -851,7 +904,7 @@
         // never clears, so don't ttlilt forever — finish and let grafting find
         // nothing (the minimap surfaces unresolved Pmirrors).
         if (dock.oa({ compile_error: 1 }) || job?.oa({ compile_error: 1 })) {
-            languinio?.o({ spinner: 'compile' }).map(s => languinio.drop(s))
+            await H.Langspinner(w,'compile',true)
             q.finish(req)
             return
         }
@@ -869,31 +922,12 @@
             H.i_req_ttlilt(req, 0.5, { waiting: 'gen_write' })
             return
         }
-        languinio?.o({ spinner: 'compile' }).map(s => languinio.drop(s))
+        await H.Langspinner(w,'compile',true)
         q.finish(req)
     },
 
 
 
-    // ── e:Lang_set_doc ───────────────────────────────────────────────────────────
-    //
-    //   UI-initiated text update.  Writes the new text into ave/{lang_dock:path}.
-    //   e.sc: { dock: path, text: string }
-    async e_Lang_set_doc(A: TheC, w: TheC, e: TheC) {
-        if (!A.sc.A) throw "!A"
-        const path = e.sc.dock as string | undefined
-        if (!path) return
-        // update the ave text-sync particle for this doc path
-        const ave = this.oai_enroll(this as House, { watched: 'ave' })
-        const docTextC = ave.oai({ lang_dock: path })
-        const text = e?.sc.text as string | undefined
-        if (text == null) return
-        if (docTextC.sc.text === text) return
-        docTextC.sc.text = text
-        docTextC.sc.text_dige = await dig(text)
-        docTextC.bump_version()
-        // no main() — UI initiated this, no one else needs waking
-    },
 
 // ── Lang_update_change ───────────────────────────────────────────────────────
     //
