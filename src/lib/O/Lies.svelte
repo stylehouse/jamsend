@@ -304,7 +304,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         // nowriting opt: log write intent; source never goes to disk.
         // Skip the pull-before-push machinery — the base_dige surprise-check is
         // meaningless in tests where there is no disk to diverge from.
-        if (H.o_Opt_val(w, 'nowriting')) {
+        if (H.Lies_nowriting(w, path)) {
             await H.Lies_log_want(w, 'source_write', path, text)
             return q.finish(req)
         }
@@ -587,7 +587,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             const gen_path = pending.sc.gen_path  as string
             const source   = pending.sc.source    as string
 
-            const do_write = !H.o_Opt_val(w, 'nogen') && !H.o_Opt_val(w, 'nowriting')
+            const nowriting = H.Lies_nowriting(w, gen_path)
+            const do_write = !H.o_Opt_val(w, 'nogen') && !nowriting
 
             if (do_write) {
                 // Key the write on gen_path, not the source path.  The source has a
@@ -602,7 +603,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 // Phase 1 also fires Ghost_update_notify — after the file is on disk.
                 pending.c.write_t0 = Date.now()
                 // < surface write errors when reply carries one.
-            } else if (H.o_Opt_val(w, 'nowriting')) {
+            } else if (nowriting) {
                 // nowriting opt: record gen write was wanted
                 await H.Lies_log_want(w, 'gen_write', gen_path, source)
             }
@@ -611,7 +612,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             if (!do_write) {
                 // nogen / nowriting: no file written, no Pantheate notify — settle immediately.
                 H.i_elvisto('Lang/Lang', 'Lies_compile_settled', { path })
-                console.log(`🔪 Lies compile settled: ${path} [${H.o_Opt_val(w, 'nowriting') ? 'nowriting' : 'nogen'}]`)
+                console.log(`🔪 Lies compile settled: ${path} [${nowriting ? 'nowriting' : 'nogen'}]`)
             }
             // do_write: Lies_compile_settled and Ghost_update_notify both deferred
             // to LiesStore_run Phase 1 after the wwrite finishes.
@@ -1043,6 +1044,20 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //   Story's The_Opt_val(), which has the full The/* hierarchy.
     o_Opt_val(w: TheC, k: string) {
         return w.o({ Opt: 1 })[0]?.o({ [k]: 1 })[0]?.sc[k]
+    },
+
+    // ── Lies_nowriting ────────────────────────────────────────────────────────
+    //
+    //   Returns true when the nowriting Opt is active AND path matches it.
+    //   nowriting:1 (bare flag) blocks everything — backward compat.
+    //   nowriting:^Ghost/test blocks only the test subtree; any regex works.
+    //   Replaces direct o_Opt_val(w,'nowriting') at every write-gate so the
+    //   path of the thing being written is part of the suppression decision.
+    Lies_nowriting(w: TheC, path: string): boolean {
+        const val = this.o_Opt_val(w, 'nowriting')
+        if (!val) return false
+        if (typeof val === 'string') return new RegExp(val).test(path)
+        return true   // numeric 1 or other truthy — block everything
     },
 
     // ── Lies_gen_path ─────────────────────────────────────────────────────────

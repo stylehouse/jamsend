@@ -110,7 +110,7 @@ story:LangTiles
     Prep=3
       i_elvisto:Lang,e:Lang_compile
         esc:Pantheate_method,v:theCompiledStuff
-    notPrep=4,disabled:now we save the hacked version so we need to know how to avoid saving or reset to tagged versions if we are to not corrupt the test data
+    Prep=4
       i_elvisto:Lang,e:Lang_i_alterationStation
         esc:line_n,v=6
         {"esc":"match","v":",they,can,be,mixed"}
@@ -120,11 +120,11 @@ story:LangTiles
     For
       w:Lang
         txtsyntaxdump
+      w:Lies
+        nowriting:^Ghost
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=0.899
-      sample=0.768,at=1780637176
-      sample=0.756,at=1780637189
+    TimeTotal:beliefs,avg=0.943
       sample=1.109,at=1780637228
       sample=0.781,at=1780637382
       sample=0.825,at=1780639158
@@ -133,9 +133,11 @@ story:LangTiles
       sample=1.577,at=1780641335
       sample=0.878,at=1780642758
       sample=0.878,at=1780642777
-  step,dige:28a3e0ae86212ac8
-  step=2,dige:af4ed41fbf11ec1b
-  step=3,dige:d3add9638acd8491
+      sample=1.064,at=1780712844
+      sample=0.905,at=1780717851
+  step,dige:6c16eb5dc7b019bf
+  step=2,dige:f0da1e6cfa5a5009
+  step=3,dige:2e03a19c21b0eece
   step=4,dige:f8a0bed104f88f70
     note,bug:edge problems with Leg/PeelGroup/Leg the other PeelGroup alone
   step=5,dige:67f9108024f0f971

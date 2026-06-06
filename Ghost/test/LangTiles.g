@@ -3,7 +3,7 @@ theCompiledStuff(A,w) {
     i hut/toot:3
     o hut/toot$
     let la = i hut/$toot
-    o hut/although:1/they,can,be,mixed
+    o hut/although:1,they,can,be,mixed
     i $la/something
     i thung/wither/etc
     i yeses/because,it:2

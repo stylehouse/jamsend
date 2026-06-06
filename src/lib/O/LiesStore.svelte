@@ -208,7 +208,7 @@
                         return
                     }
                     // nowriting opt: log intent rather than writing disk
-                    if (H.o_Opt_val(w, 'nowriting')) {
+                    if (H.Lies_nowriting(w, path)) {
                         await H.Lies_log_want(w, 'waft_save', path, snap)
                         return
                     }
@@ -237,16 +237,8 @@
     //   wread, wwrite, wlisting reqs.  Routing them through req:Store means
     //   the w(/req)+ %ttlilt picker naturally finds them.
     //
-    //   req:Store is eternal: sc.eternal prevents unify_finished from ever
-    //   closing it, so the channel and its sub-reqs survive across ticks.
-    //
-    LiesStore_req(w: TheC): TheC {
-        const H    = this as House
-        H.reqy(w, { k: 'Store', noserial: 1 })
-        // oai: only ever one req:Store per w; eternal keeps it open-ended.
-        const rq = w.oai({ req: 'Store' })
-        rq.sc.eternal = 1
-        return rq
+    async LiesStore_req(w: TheC): TheC {
+        return this.reqy(w).roai({req:'Store',eterenal:1}) // eterenal means it doesn't finish
     },
 
     // ── LiesStore_write ───────────────────────────────────────────────────────
@@ -270,14 +262,13 @@
         const ld = w.o({ loaded_doc: 1, path })[0] as TheC | undefined
         if (ld?.sc.base_dige && ld.sc.base_dige === new_dige) return null
 
-        const host = H.LiesStore_req(w)
+        const host = await H.LiesStore_req(w)
         const wq   = H.reqy(host)
+        wq.drop_finished({req: 'wwrite', path}) // < weird? just keep the latest one?
 
-        // Drop stale finished write reqs for this path so roai can create a fresh one.
-        for (const old of wq.o({ path }) as TheC[]) {
-            if (old.sc.finished) host.drop(old)
-        }
-
+        // < not necessary given req%mutated, which should be how we trigger resends
+        //    we are going to fail to 'eventual consistency' I think
+        //     ie write the latest version of a stampede of versions
         // Dige-dedup: reuse an in-flight req for the same content rather than
         // creating a second one that would just write identical bytes.
         const existing = (wq.o({ path }) as TheC[]).find(
@@ -315,7 +306,7 @@
         opts:    { label?: string } = {}
     ): Promise<TheC> {
         const H    = this as House
-        const host = H.LiesStore_req(w)
+        const host = await H.LiesStore_req(w)
         const rq   = H.reqy(host)
         const c = opts.label
             ? { req: 'wread', rw_name, label: opts.label }
@@ -345,7 +336,7 @@
         rw_dir: string,
     ): Promise<TheC> {
         const H    = this as House
-        const host = H.LiesStore_req(w)
+        const host = await H.LiesStore_req(w)
         const rq   = H.reqy(host)
         const req  = await rq.roai({ req: 'wlisting', rw_dir }, { rw_op: 'list' })
 
@@ -455,7 +446,7 @@
                 console.log(`🔪 Lies compile settled: ${pending.sc.path} [write+run] write=${write_ms}ms`)
             }
         }
-        const host = H.LiesStore_req(w)
+        const host = await H.LiesStore_req(w)
         host.drop(req)
     },
 
@@ -465,7 +456,7 @@
     //
     async LiesStore_run(A: TheC, w: TheC) {
         const H    = this as House
-        const host = H.LiesStore_req(w)
+        const host = await H.LiesStore_req(w)
         const rq   = H.reqy(host)
         // call their methods req_wwrite() etc
         await rq.do()

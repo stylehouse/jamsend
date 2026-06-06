@@ -233,7 +233,7 @@
 
 
         q = { ...q,
- 
+            
             o(c: TheUniversal = {}): TheC[] {
                 return w.o({ ...keying, ...c })
             },
@@ -375,6 +375,13 @@
                 const all = q.o()
                 return all.length > 0 && all.every((r: TheC) => r.sc.finished)
             },
+            // you might
+            drop_finished(sc:TheUniversal={}) {
+                for (const old of q.o(sc) as TheC[]) {
+                    if (old.sc.finished) w.drop(old)
+                }
+            },
+
  
             // do req/*req recursively — the handler_of_last_resort for nested req**.
             //   if req has sub-reqs it manages them; gets %finished when they all do.

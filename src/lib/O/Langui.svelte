@@ -159,17 +159,21 @@
 
     // Called on doc switch — flush any unsaved edits for the departing doc
     // before its CM state is archived to stateCache.
+    // `path` is the doc the live view text belongs to — the caller passes the
+    // departing path on a switch (active_path has already moved to the arrival)
+    // and the live path on an Esc.  Without it this wrote the departing text to
+    // whatever active_path had become.
     // Guard: if no keystrokes have landed for this doc, seed last_saved_doc
     // from the live view so the next doc's check_autosave starts clean.
-    function flush_autosave_now() {
-        if (!view || !active_path) return
+    function flush_autosave_now(path: string) {
+        if (!view || !path) return
         if (_autosave_last_input_ts === 0) {
             // no edits — just mark the current text as "already saved" so the
             // arriving doc's first check_autosave doesn't see a stale undefined
             _autosave_last_saved_doc = view.state.doc
         } else {
             const doc = view.state.doc
-            if (doc !== _autosave_last_saved_doc) fire_autosave(active_path, doc)
+            if (doc !== _autosave_last_saved_doc) fire_autosave(path, doc)
         }
         _autosave_last_input_ts  = 0
         _autosave_last_save_ts   = 0
@@ -243,7 +247,14 @@
         // Already remembered in spool by the updateListener that scheduled us;
         // re-remember here in case a programmatic dispatch slipped through.
         spool_remember(path, text)
-        Lang_i_elvis(view, 'Lang_set_doc', { text })
+        // < pin the dock to `path`, not active_path.  A doc switch flushes this
+        //   from the switch $effect, which fires after active_path has already
+        //   advanced to the arriving doc while the view still holds the departing
+        //   text.  Lang_i_elvis defaults dock to active_path, so without this the
+        //   departing text lands as a Lang_set_doc on the arriving dock — the
+        //   disk-reload $effect then paints it back over the freshly switched view
+        //   and the arriving doc is silently overwritten on disk.
+        Lang_i_elvis(view, 'Lang_set_doc', { dock: path, text })
     }
     function schedule_push_text(path: string) {
         push_pending_path = path
@@ -409,7 +420,7 @@
                 // Flush any unsaved edits for the departing doc before
                 // archiving its state — avoids losing a burst of typing
                 // that hasn't hit the 3s quiet window yet.
-                flush_autosave_now()
+                flush_autosave_now(prev_path)
 
                 // Flush departing bookmark positions immediately — bypass the
                 // 800ms debounce so dock always holds current positions.
@@ -728,7 +739,7 @@
                 flush_push_text_now()
                 // Esc is "push everything" — save immediately, don't wait for
                 // the autosave quiet/active thresholds.
-                flush_autosave_now()
+                flush_autosave_now(active_path)
                 Lang_i_elvis(view,'Lang_compile', {})
                 return true;
             },
