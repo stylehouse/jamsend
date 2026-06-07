@@ -39,6 +39,7 @@
     $effect(() => {
         const ex = H.ave.ob({ examining: 1 })[0] as TheC | undefined
         if (!ex) return
+        ex.ob()   // track examining.version; re-runs when w:Lies bumps via watch_c
         const lies_w = ex.c?.w as TheC | undefined
         if (!lies_w) return
         if (lies_w !== Lies) Lies = lies_w

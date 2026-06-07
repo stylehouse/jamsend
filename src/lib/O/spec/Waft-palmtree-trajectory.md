@@ -45,10 +45,11 @@ w:Lies
   /req:git                Waftlet accumulator; < do_fn pending
   /req:Furnishing,path    doc-open RPC; seeded by wants resolver
   /req:Store,eternal      all IO reqs live here; LiesStore_run rq.do() drives them
-    /req:pending_write,path  source-file save with pull-before-push (noserial)
-    /req:wwrite,path,dige
-    /req:wread,rw_name
-    /req:wlisting,rw_dir
+    /req:LuxuryLiesStore_write,path  source-file save with pull-before-push (noserial)
+    /req:LiesStore_write,path,dige
+    /req:LiesStore_read,rw_name
+    /req:LiesStore_listing,rw_dir
+    /known:path           last-known dige + kind (read|write) + at — Store/* impression
 
 w:Lang
   /%Languinio
@@ -69,8 +70,6 @@ w:Lang
   /docks/%dock:$path
     /%Text                sc.dige, sc.disk_dige, sc.disk_rev  — text metadata visible in snap
                           c.text: string  — source string, hidden from snap (moai to update)
-                          // enrolled in ave via Languinio/%dock same-object hold;
-                          // replaces ave/{lang_dock:path}.  Langui reads c.text directly.
     /%Compile → %methods, %Output
     /%Pmirrors
       /%Pmirror,$waft_key,$spec
@@ -149,14 +148,11 @@ any more isolations or interface togetherings we'd like to imagine...
 
 ## Where we are — what's next
 
-**LiesStore tidy-up done.**  `pending_write` moved inside `req:Store` (all IO
-reqs now under one host, one `rq.do()`).  `ave/{lang_dock:path}` sublated:
-source text lives as `dock.c.text` (hidden from snap), metadata as
-`dock/{Text:1}` with `sc.dige`, `sc.disk_dige`, `sc.disk_rev`; updated via
-`moai` + `dock.bump_version()`.  `active_dock` merged into `dock` in Langui —
-they were always the same particle.  Langui now has three layered `$effect`s:
-Languinio→dock, dock→Text, Text→disk-reload.  `req:compile` event-driven via
-`i_elvistwo` reqturn; no more 0.5s polling gap.  `lang_doc` typo fixed.
+**LiesStore tidy-up done.**  `pending_write` → `LuxuryLiesStore_write`; `wwrite`/`wread`/`wlisting` → `LiesStore_write`/`LiesStore_read`/`LiesStore_listing`.  `req_wwrite` handler deleted — dispatch happens in the helpers directly.  Throttle machinery (`MIN_WRITE_INTERVAL`, `wrote_at`, `now_in_seconds_with_ms`) gone.  All three IO reqs now arm a 1.6s `%ttlilt` at dispatch so Story sees them as in-flight rather than snapping mid-write.  `LuxuryLiesStore_write` gains a cavalier skip: if `Store/known:path` is < 4s old and dige matches `base_dige`, the pull-before-push Wormhole read is skipped.  `Store/known:path` is stamped on every read completion (Phase 2 of `LiesStore_run`) and every write completion (`req_LiesStore_write_done`), carrying `dige`, `kind` (read|write), and `at` (epoch seconds).  `LUXURY_WRITE_SKIP_CHECK_SECS = 4` lives outside `eatfunc`.
+
+**Liesui Waft reactivity fixed.**  After the "layer effects, Languinio/dock" commit added `languinio?.ob()` to Langui's `$effect`, Liesui's parallel `$effect` was missing the corresponding `ex.ob()`.  Without it, `examining.bump_version()` (fired by `watch_c(w:Lies)` when `w` changes) didn't re-trigger Liesui's `$effect` — `all_wafts` stayed stale.  One-line fix: `ex.ob()` after the null-guard, mirroring Langui exactly.
+
+**`ave/{lang_dock:path}` sublated.**  Source text lives as `dock.c.text` (hidden from snap), metadata as `dock/{Text:1}` with `sc.dige`, `sc.disk_dige`, `sc.disk_rev`; updated via `moai` + `dock.bump_version()`.  `active_dock` merged into `dock` in Langui.  Langui now has three layered `$effect`s: Languinio→dock, dock→Text, Text→disk-reload.  `req:compile` event-driven via `i_elvistwo` reqturn; no more 0.5s polling gap.  `lang_doc` typo fixed.
 
 **Spotlight-Interest (4b.5) is done.**  The 3a–3j work landed: req:wants,
 Lies_i_Spotlight called only from the resolver, %Interest, waft_key_of,
@@ -270,11 +266,11 @@ attention with particular Points illuminated on the walls.
 //   Lang_drive_languish(w, path, text, gen_path) → Lang_drive_languish(dock, text).
 
 // < compile_pending lifetime — oai'd by path, never dropped; one permanent
-//   particle per Ghost/ doc.  Should be dropped after req_wwrite_done fires
+//   particle per Ghost/ doc.  Should be dropped after req_LiesStore_write_done fires
 //   settle signals, or converted to a req with a proper lifecycle.
 
-// < LiesStore req_wwrite_done cross-world dock lookup — after a source write,
-//   req_wwrite_done tries w.o({docks:1})[0]?.o({dock:path})[0] to moai Text,
+// < req_LiesStore_write_done cross-world dock lookup — after a source write,
+//   req_LiesStore_write_done tries w.o({docks:1})[0]?.o({dock:path})[0] to moai Text,
 //   but w is w:Lies and dock lives on w:Lang.  Currently the moai is a no-op
 //   (finds nothing).  Fix: carry disk_dige in Lies_compile_settled / a new
 //   event, or have Lang handle the disk_dige update after wwrite.
