@@ -31,8 +31,8 @@
     //   On each dispatch we fire an elvis to w:Lang with doc,view,state:
     //     - Ctrl+B:           Lang_add_bookmark {from,to,label}
     //     - 800ms post-edit:  Lang_update_bookmarks {updates}
-    //     - any text change:  Lang_set_doc      {text}
-    //     - Escape key     :  Lang_compile      {}
+    //     - any text change:  Lang_texting   {dock_path, text}
+    //     - Escape key     :  Lang_compile   {}
     //     - saveEffect     :  Lang_update_bookmarks immediately (cancels debounce)
     //
     //   Bookmark flush on switch: flush_update_bookmarks_for_path(prev_path) is
@@ -69,8 +69,8 @@
     //   identical from the particle's POV but are not at all the same:
     //     (a) disk/remote pulls — Lies has loaded a new file, or in future a
     //         peer has merged something in.  These should be applied to the view.
-    //     (b) echoes of our own pushes — we sent Lang_set_doc on a keystroke,
-    //         it round-tripped through e_Lang_set_doc which bumped the particle,
+    //     (b) echoes of our own pushes — we sent Lang_texting on a keystroke,
+    //         it round-tripped through e_Lang_texting which bumped the particle,
     //         and now the disk-reload $effect sees a "change".
     //   Without distinguishing the two, fast typing drives an oscillation: a
     //   stale snapshot from the elvis queue arrives, the $effect dispatches
@@ -84,7 +84,7 @@
     //
     // ── Push throttle ────────────────────────────────────────────────────────
     //
-    //   Lang_set_doc is throttled (~60ms) so the elvis queue isn't fed faster
+    //   Lang_texting is throttled (80ms) so the elvis queue isn't fed faster
     //   than it can drain.  When the trailing call fires we read the LIVE view
     //   text, not whatever was current when we scheduled — so the backend
     //   always lands on the freshest snapshot.  Doc switch flushes any pending
@@ -128,11 +128,11 @@
 
     // ── auto-save timing ─────────────────────────────────────────────────────
     //   Two triggers — whichever fires first:
-    //     quiet:   3 s of no keystrokes
+    //     quiet:   1.5 s of no keystrokes
     //     active: 10 s of continuous typing (prevents losing a long session)
     //   Compares CM Text objects by identity; no hashing in the hot path.
     //   Writes source to disk via e:Lies_source_write; does NOT compile.
-    const AUTOSAVE_QUIET_MS  = 3_000
+    const AUTOSAVE_QUIET_MS  = 1_500
     const AUTOSAVE_ACTIVE_MS = 10_000
     let _autosave_last_input_ts  = 0
     let _autosave_last_save_ts   = 0
@@ -230,12 +230,12 @@
     }
 
     // ── push-text throttle ───────────────────────────────────────────────────
-    //   Coalesce keystrokes into one Lang_set_doc per 2s window.  The flush
+    //   Coalesce keystrokes into one Lang_texting per 80ms window.  The flush
     //   reads the LIVE view text rather than a captured snapshot, so the
     //   backend always lands on the freshest text the editor has.
     //   push_pending_path tracks which doc the pending push belongs to — doc
     //   switch flushes it for the departing path before swapping.
-    const PUSH_TEXT_THROTTLE_MS = 2000   // flush before Esc/switch ensures compile always sees current text
+    const PUSH_TEXT_THROTTLE_MS = 80   // flush before Esc/switch ensures compile always sees current text
     let push_timer: ReturnType<typeof setTimeout> | null = null
     let push_pending_path: string | null = null
     function flush_push_text() {
@@ -247,14 +247,14 @@
         // Already remembered in spool by the updateListener that scheduled us;
         // re-remember here in case a programmatic dispatch slipped through.
         spool_remember(path, text)
-        // < pin the dock to `path`, not active_path.  A doc switch flushes this
+        // pin the dock to `path`, not active_path.  A doc switch flushes this
         //   from the switch $effect, which fires after active_path has already
         //   advanced to the arriving doc while the view still holds the departing
         //   text.  Lang_i_elvis defaults dock to active_path, so without this the
-        //   departing text lands as a Lang_set_doc on the arriving dock — the
+        //   departing text lands as a Lang_texting on the arriving dock — the
         //   disk-reload $effect then paints it back over the freshly switched view
         //   and the arriving doc is silently overwritten on disk.
-        Lang_i_elvis(view, 'Lang_set_doc', { dock_path: path, text })
+        Lang_i_elvis(view, 'Lang_texting', { dock_path: path, text })
     }
     function schedule_push_text(path: string) {
         push_pending_path = path
@@ -480,7 +480,7 @@
     //   Guards with active_path === prev_path to avoid firing mid-switch.
     //
     //   disk_rev gate: dock.version bumps on every text write, including the
-    //   echoes of our own keystrokes (e_Lang_set_doc).  Only disk-origin writes
+    //   echoes of our own keystrokes (e_Lang_texting).  Only disk-origin writes
     //   (req_text_loaded) advance dock.sc.disk_rev, so gating on a per-path
     //   disk_rev key means editor echoes hit `key === _applied` and return
     //   without dispatching back into the view.  The spool below is a second
@@ -534,7 +534,7 @@
     //
     //   Central CM→backend bridge.  Stamps { dock, view, state } on every event
     //   so Lang_dock_from_event can update dock.c.view/state in one place, and
-    //   handlers like e_Lang_set_doc know which dock they're updating.
+    //   handlers like e_Lang_texting know which dock they're updating.
     //   `dock` is the dock path (string); `view` and `state` carry the CM objects.
     //   state.doc (CM Text) is separate from the dock particle — `cmdoc` when
     //   disambiguating in code; `state.doc` as CM's own property name.
@@ -846,7 +846,7 @@
                 const text = v.state.doc.toString()
                 // Spool first, then schedule the throttled push.  Spooling
                 // synchronously means even if the elvis queue gets way behind,
-                // by the time stale snapshots bubble back through e_Lang_set_doc
+                // by the time stale snapshots bubble back through e_Lang_texting
                 // and the disk-reload $effect, they're recognised as echoes.
                 spool_remember(active_path, text)
                 schedule_push_text(active_path)
@@ -863,7 +863,7 @@
         console.log(`🏗 EditorView created: dom.clientHeight=${view.dom.clientHeight} scrollDOM.clientHeight=${view.scrollDOM.clientHeight}`)
 
         // Seed the spool with the initial text so the very first echo
-        // (e_Lang_set_doc bumping dock after our first keystroke) is
+        // (e_Lang_texting bumping dock after our first keystroke) is
         // recognised cleanly even before any local edits land.
         spool_remember(captured_path, initial)
 

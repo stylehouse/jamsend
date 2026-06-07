@@ -499,44 +499,67 @@
         // this — wake a think so its monitor re-checks and descends to compile.
         ;(this as House).feebly_ponder()
     },
-    // ── e:Lang_set_doc ───────────────────────────────────────────────────────────
+    // ── e:Lang_texting ───────────────────────────────────────────────────────────
     //
-    //   UI-initiated text update.  Writes the new text into ave/{lang_dock:path}.
-    //   e.sc: { dock: path, text: string }
-    async e_Lang_set_doc(A: TheC, w: TheC, e: TheC) {
+    //   Text arrived from the UI (80ms throttle) or from e_Lang_i_alterationStation
+    //   (machine:true, fires immediately alongside the CM dispatch).
+    //   Updates the ave text particle, then drives the Languish pipeline.
+    //
+    //   machine:true → compile_ready fires after 30ms (test / programmatic edits).
+    //   machine:false (default) → compile_ready fires after 6s of quiet typing.
+    //   Esc in the editor still calls Lang_compile directly, bypassing the timer.
+    //
+    //   e.sc: { dock_path: string, text: string, machine?: true }
+    async e_Lang_texting(A: TheC, w: TheC, e: TheC) {
         if (!A.sc.A) throw "!A"
         const path = e.sc.dock_path as string | undefined
         if (!path) throw "!path"
-        // update the ave text-sync particle for this doc path
-        const ave = this.oai_enroll(this as House, { watched: 'ave' })
-        const docTextC = ave.oai({ lang_dock: path })
         const text = e?.sc.text as string | undefined
         if (text == null) throw "!text"
-        if (docTextC.sc.text === text) return // < might be redundant
-        {
-            docTextC.sc.text = text
-            docTextC.sc.text_dige = await dig(text)
-            docTextC.bump_version()
-        }
-        // no main() — UI initiated this, no one else needs waking
-        const dock = this.Lang_active_dock(w)
-        // < get this from dock/req:Languish
-        let La = w.o({req:'Languish',dock})[0]
-        let tm = La.o({req:'text_mutated'})[0]
-        this.reqyoncile(tm,{see:`text changes`,text})
+        const machine = !!e.sc.machine
+
+        // update the ave text-sync particle for this doc path
+        const ave      = this.oai_enroll(this as House, { watched: 'ave' })
+        const docTextC = ave.oai({ lang_dock: path })
+        if (docTextC.sc.text === text) return
+        docTextC.sc.text = text
+        docTextC.sc.text_dige = await dig(text)
+        docTextC.bump_version()
+
+        // find req:Languish for this path and drive text_mutated + compile timing
+        const languish = w.o({ req: 'Languish', path })[0] as TheC | undefined
+        if (!languish) return
+        const tm = languish.o({ req: 'text_mutated' })[0] as TheC | undefined
+        if (tm) this.reqyoncile(tm, { text, ...(machine ? { machine: 1 } : {}) })
+        // reqyoncile Languish itself so sub.do() runs in this same pass,
+        //   driving text_mutated without needing a separate Lang think()
+        this.reqyoncile(languish, {})
     },
     async req_text_mutated(req: TheC, q: any) {
-        const La = req.c.up as TheC
-        const w = La.c.up as TheC
+        const H      = this as House
+        const La     = req.c.up as TheC
+        const w      = La.c.up as TheC
         req.sc.eternal = 1
-        if (req.sc.mutated) {
-            // < throttle here... queue, waiting for one to complete?
-            let com = La.o({req:'compile'})[0]
-            // < this could be a reqyoncile() interface in sc like see, restart ?
-            delete com.sc.finished
-            this.reqyoncile(com,{see:`text mutated`})
-            // kick off another compile, whatever it is
-            this.feebly_ponder()
+        if (!req.sc.mutated) return
+
+        // machine mode: test or programmatic edit wants compile immediately.
+        // normal: wait for a quiet period so rapid typing doesn't re-compile every keystroke.
+        const machine    = !!(req.sc.machine as any) || !!H.o_Opt_val(w, 'Langui-machine-texting')
+        const delay_ms   = machine ? 30 : 6_000
+        const dock       = La.sc.dock as TheC | undefined
+        if (!dock) return
+
+        // coalesce rapid text changes — only the trailing edge triggers compile
+        clearTimeout(dock.c.compile_timer as ReturnType<typeof setTimeout>)
+        if (machine) {
+            // no wait: flag immediately, ponder will pick it up
+            dock.c.compile_ready = true
+            H.feebly_ponder()
+        } else {
+            dock.c.compile_timer = setTimeout(() => {
+                dock.c.compile_ready = true
+                H.feebly_ponder()
+            }, delay_ms)
         }
     },
 
@@ -774,7 +797,7 @@
 //#region Languish
 
 
-    // see e:Lang_set_doc where CodeMirror pushes test
+    // see e:Lang_texting where CodeMirror pushes text
 
     // ── req:Languish — Lang's per-dock mind
     //
@@ -1081,12 +1104,33 @@
 
         w.i({ see: `🟦 tiles ${bookmarks.length} bookmarks` })
 
+        // ── compile_ready gate ────────────────────────────────────────────────
+        // req_text_mutated sets dock.c.compile_ready after the quiet period
+        //   (30ms for machine edits, 6s for keyboard typing).  We reset the
+        //   reqonce on compile so req_compile re-fires with fresh text.
+        if (dock?.c.compile_ready) {
+            delete dock.c.compile_ready
+            clearTimeout(dock.c.compile_timer as ReturnType<typeof setTimeout>)
+            dock.c.compile_timer = null
+            const path     = dock.sc.dock as string
+            const languish = rq.o({ req: 'Languish', path })[0] as TheC | undefined
+            const com      = languish?.o({ req: 'compile' })[0] as TheC | undefined
+            if (com && languish) {
+                // reset the reqonce so Lang_compile_dock runs again for the new text
+                delete com.sc.firing
+                if (com.c.oncelers) delete (com.c.oncelers as any).firing
+                delete com.sc.finished
+                // re-drive Languish so sub.do() picks up the un-finished compile
+                this.reqyoncile(languish, {})
+            }
+        }
+
         // Push the three-leg change strip into Languinio/Change for Langui.
         if (dock) await this.Lang_update_change(w, dock)
 
-        // < first compile per doc is now Languish's req:compile phase, not a
-        //   tick-time ever_compiled guard.  Re-compile on edit / manual compile
-        //   still flows through the Lang_compile action.
+        // first compile per doc: Languish req:compile phase.
+        //   Re-compile on text edit: req_text_mutated timer → compile_ready → above gate.
+        //   Manual re-compile: the Lang_compile action / Esc key (direct).
     },
 
     // Helper function to check if r2 is contained by r1
@@ -1345,13 +1389,22 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
 
         // Surgical replace — CM remaps any decoration whose range spans this
         // position, so bookmarks within the line survive intact.
-        // updateListener fires Lang_set_doc (dock updated) and arms the 800ms timer.
+        // updateListener fires Lang_texting (dock updated) and arms the 80ms timer.
         view.dispatch({ changes: { from: line.from + idx, to: line.from + idx + match.length, insert: replacement } })
 
         // saveEffect flushes bookmark positions immediately — updateListener cancels
         // the debounce and fires Lang_update_bookmarks with the fresh editorState.
         view.dispatch({ effects: dock.c.saveEffect.of(null) })
         console.log(`Lang_i_alterationStation — line ${line_n} [${match}] → [${replacement}], saveEffect dispatched`)
+
+        // machine-texting: bypass the 80ms push throttle and compile immediately
+        //   rather than waiting 6s.  The Langui timer will also fire (80ms) but
+        //   will be a no-op since the text is already in ave.
+        this.i_elvisto(w, 'Lang_texting', {
+            dock_path: dock.sc.dock as string,
+            text:      view.state.doc.toString(),
+            machine:   true,
+        })
     },
 
 
