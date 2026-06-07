@@ -597,7 +597,7 @@ export class House extends StorableHousing {
             const req = e.sc.req as TheC
             const finish = (reply: any) => {
                 req.sc.reply = reply
-                req.sc.finished = true
+                req.sc.finished = 1
                 this.i_elvistwo(w, e.sc.sourceHousing, 'think', { reqturn:1 })
             }
             return { e, req, finish }
@@ -1516,7 +1516,7 @@ export class House extends StorableHousing {
             const op   = req.sc.wh_op   as string
             const pad  = (n: number) => String(n).padStart(3, '0')
     
-            const done = (reply: any) => { finish(reply); fs_req.sc.finished = true }
+            const done = (reply: any) => { finish(reply); fs_req.sc.finished = 1 }
     
             if (!nav) { w.i({ see: '📭 nav not ready' }); return }
     
@@ -1569,7 +1569,7 @@ export class House extends StorableHousing {
             const nav    = A.c.nav as WormholeNav | undefined
             const name   = (req.sc.rw_dir || req.sc.rw_name) as string
             const op     = req.sc.rw_op   as string
-            const done   = (reply: any) => { finish(reply); rw_req.sc.finished = true }
+            const done   = (reply: any) => { finish(reply); rw_req.sc.finished = 1 }
 
             if (!nav) { done({ error: '📭 nav not ready' }); return }
 

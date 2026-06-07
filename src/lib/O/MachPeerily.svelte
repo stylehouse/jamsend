@@ -299,7 +299,7 @@
                         const mfn = (ce.o({ meddle_fn: 1 })[0] as TheC | undefined)?.sc.meddle_fn as Function | undefined
                         return real_emit(type, data, { ...emit_opts, meddle_fn: mfn })
                     }
-                    ;(ce.oai({ req: 'wrap_emit' }) as TheC).sc.finished = true
+                    ;(ce.oai({ req: 'wrap_emit' }) as TheC).sc.finished = 1
                     H.trace('meddle', `${side} emit wrapped via Pier_init_completo (pre-hello)`)
                 }
 
