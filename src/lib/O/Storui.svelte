@@ -803,8 +803,9 @@
             e.preventDefault()
             diff_mode   = 'naive'
             sticky_mode = 'naive'
-        } else if (e.key === 'f') {
+        } else if (e.key === 'f' && !e.ctrlKey && !e.metaKey) {
             // f: toggle first mode (first_snap <=> got_snap Resnapture diff)
+            // Ctrl/Cmd+F falls through so the browser's find bar can open
             if (displayed_at == null || !live_step(displayed_at)) return
             e.preventDefault()
             if (has_first_snap) toggle_mode('first')
