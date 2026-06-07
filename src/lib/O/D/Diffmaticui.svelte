@@ -1,24 +1,32 @@
 <script lang="ts">
-// Diffmaticui.svelte — Diffmatic diff frontend.
+// Diffmaticui.svelte — Diffmatic animated diff frontend.
 //
-//   Receives H (the sub-House running the Diffmatic test).
-//   Reads from H.ave via ob() — tracks H.ave.version reactively, same
-//   pattern as Storui.  A single $effect drains ave on every settled
-//   beliefs cycle; no other Atime-side reads.
+//   Reads from H.ave via ob() — one $effect per beliefs cycle.
 //
-//   ave particles read here:
-//     {dm_state:1}          — sc.loading, sc.error, sc.step_count
-//     {dm_step:1, step_n:N} — one per step, sc.dige, sc.ok
-//     {dm_snap:1, step_n:N} — one per loaded snap, sc.snap
+//   ave particles consumed:
+//     {dm_toc:1}               sc.step_count, sc.intro
+//     {dm_cursor:1}            sc.step_n, sc.loading
+//     {dm_diff:1, side}        sc.rows, sc.label_l, sc.label_r  (side: prev|exp|next)
+//     {dm_snap:1, step_n}      sc.got, sc.exp
+//     {dm_step:1, step_n}      (still published by toc decode for the strip)
 //
-//   Three panels:
-//     1. Orbit canvas — particles from dm_correlate drift to depth-band positions,
-//                       animated by rAF.  Hover highlights matching diff rows.
-//     2. Text diff    — two-column compute_diff view, highlighted by hovered particle.
-//     3. Inspiration  — ranked interesting transitions from dm_inspire.
+//   Animated diff:
+//     diff_rows renders as a list of DiffRow items with spring-physics
+//     positions. When the cursor moves, old rows animate out, new rows
+//     in — each row independently (staggered by index).
 //
-//   Time muting: shift-click two step pips to create a mute pointer (net diff).
-//   Multiple mute pointers can coexist; click one to remove it.
+//     A "pinned" row stays visually stable at its y position while
+//     everything around it reflows. The user clicks a diff line to pin it.
+//     Pinning is by identity (dm_identity of the line text) so the same
+//     particle stays stable across step transitions.
+//
+//   Viewing modes (toggle buttons):
+//     prev — step(n-1).got → step(n).got  [default on cursor advance]
+//     exp  — exp vs got for current step
+//     next — step(n).got → step(n+1).got  [pre-loaded lookahead]
+//
+//   Step strip: click to set cursor. Steps from ave/%dm_step:1.
+//   Intro text: from ave/%dm_toc:1.sc.intro — shown at top.
 
 import type { TheC } from "$lib/data/Stuff.svelte"
 import type { House } from "$lib/O/Housing.svelte"
@@ -29,476 +37,355 @@ let { H }: { H: House } = $props()
 
 // ── types ─────────────────────────────────────────────────────────────────
 
-type DmStep = { n: number, dige: string, ok: boolean }
-type DmSnaps = Record<number, string>
-
-type DmParticle = {
-    identity:   string
-    left_line:  string | null
-    right_line: string | null
-    left_d:     number
-    right_d:    number
-    status:     'same' | 'changed' | 'added' | 'removed'
-}
-
-type MutePtr = { from_n: number, to_n: number, color: string }
-
 type DiffRow =
-    | { kind: 'pair';       left: string; right: string; tag: 'same' }
-    | { kind: 'pair';       left: string; right: string; tag: 'changed'; ops: Array<[number,string]> }
+    | { kind: 'pair';       left: string; right: string; tag: 'same' | 'changed'; ops?: Array<[number,string]> }
     | { kind: 'left_only';  line: string }
     | { kind: 'right_only'; line: string }
     | { kind: 'squish';     count: number }
 
-type Inspiration = { step_n: number, headline: string, rows: DiffRow[], score: number }
+type DmStep    = { n: number, dige: string, ok: boolean }
+type DmDiff    = { rows: DiffRow[], label_l: string, label_r: string }
+type ViewMode  = 'prev' | 'exp' | 'next'
 
 
-// ── reactive state — read from H.ave once per beliefs cycle ───────────────
+// ── reactive state from H.ave ─────────────────────────────────────────────
 
-let dm_loading  = $state(true)
-let dm_error    = $state<string | undefined>(undefined)
+let intro       = $state('')
+let step_count  = $state(0)
+let cursor_n    = $state<number | null>(null)
+let cursor_load = $state(true)
 let dm_steps    = $state<DmStep[]>([])
-let dm_snaps    = $state<DmSnaps>({})
+let diffs       = $state<Record<string, DmDiff>>({})   // keyed by side
 
 $effect(() => {
-    // ob() reads H.ave.version — fires once per settled beliefs cycle
-    const state_p = H.ave.ob({ dm_state: 1 })[0] as TheC | undefined
-    const step_ps = H.ave.ob({ dm_step:  1 })    as TheC[]
-    const snap_ps = H.ave.ob({ dm_snap:  1 })    as TheC[]
+    // one read gate — fires once per settled beliefs cycle
+    const toc_p    = H.ave.ob({ dm_toc:    1 })[0] as TheC | undefined
+    const cursor_p = H.ave.ob({ dm_cursor: 1 })[0] as TheC | undefined
+    const diff_ps  = H.ave.ob({ dm_diff:   1 })    as TheC[]
+    const step_ps  = H.ave.ob({ dm_step:   1 })    as TheC[]
 
-    dm_loading = !!(state_p?.sc.loading ?? true)
-    dm_error   = state_p?.sc.error as string | undefined
+    intro      = (toc_p?.sc.intro    as string) ?? ''
+    step_count = (toc_p?.sc.step_count as number) ?? 0
 
-    const steps: DmStep[] = step_ps
+    cursor_n    = (cursor_p?.sc.step_n  as number | undefined) ?? null
+    cursor_load = !!(cursor_p?.sc.loading ?? true)
+
+    dm_steps = step_ps
         .map(p => ({ n: p.sc.step_n as number, dige: (p.sc.dige as string) ?? '', ok: !!p.sc.ok }))
         .sort((a, b) => a.n - b.n)
-    dm_steps = steps
 
-    const snaps: DmSnaps = {}
-    for (const p of snap_ps) snaps[p.sc.step_n as number] = p.sc.snap as string
-    dm_snaps = snaps
+    const next_diffs: Record<string, DmDiff> = {}
+    for (const p of diff_ps) {
+        const side = p.sc.side as string
+        next_diffs[side] = {
+            rows:    (p.sc.rows    as DiffRow[]) ?? [],
+            label_l: (p.sc.label_l as string)   ?? '',
+            label_r: (p.sc.label_r as string)   ?? '',
+        }
+    }
+    diffs = next_diffs
 })
 
 
-// ── step selection ────────────────────────────────────────────────────────
+// ── view mode ─────────────────────────────────────────────────────────────
 
-let left_n  = $state<number | null>(null)
-let right_n = $state<number | null>(null)
+let mode = $state<ViewMode>('prev')
 
-// seed defaults once steps arrive
+let active_diff = $derived(diffs[mode] ?? null)
+let raw_rows    = $derived(active_diff?.rows ?? [])
+
+
+// ── pinned line ───────────────────────────────────────────────────────────
+//
+//   Clicking a diff line pins it by identity.  The pinned identity floats
+//   the row to a stable visual position; surrounding rows animate past it.
+
+let pinned_id = $state<string | null>(null)
+
+function line_identity(line: string): string | null {
+    return H.dm_identity(line)
+}
+
+function row_line(row: DiffRow): string {
+    if (row.kind === 'squish') return ''
+    if (row.kind === 'pair')   return row.right || row.left
+    return (row as any).line ?? ''
+}
+
+function toggle_pin(row: DiffRow) {
+    const id = line_identity(row_line(row))
+    if (!id) return
+    pinned_id = pinned_id === id ? null : id
+}
+
+function row_pinned(row: DiffRow): boolean {
+    if (!pinned_id || row.kind === 'squish') return false
+    return line_identity(row_line(row)) === pinned_id
+}
+
+
+// ── animated rows ─────────────────────────────────────────────────────────
+//
+//   Each row has a spring-y target position.  When raw_rows changes, we
+//   diff the old layout against the new by identity, so stable rows animate
+//   to their new y rather than popping.  New rows fade in, removed rows fade out.
+//
+//   The pinned row is exempt from position animation — it stays at its
+//   current y while the target list is derived without it, then re-inserted
+//   at the same pixel position.  Layout rows around it shift to accommodate.
+
+const ROW_H    = 19    // px per row (matches CSS line-height)
+const SPRING_K = 0.14  // spring constant — higher = snappier
+const FADE_DUR = 300   // ms for enter/exit opacity transitions
+
+type AnimRow = {
+    key:     string    // unique stable key
+    row:     DiffRow
+    y:       number    // current animated y
+    ty:      number    // target y
+    opacity: number
+    t_op:    number    // target opacity (1=visible, 0=removing)
+    pinned:  boolean
+}
+
+let anim_rows    = $state<AnimRow[]>([])
+let anim_handle: number | null = null
+
+// Recompute target layout whenever raw_rows changes
 $effect(() => {
-    if (left_n !== null || dm_steps.length < 2) return
-    left_n  = dm_steps[0].n
-    right_n = dm_steps[1].n
+    const next_rows = raw_rows
+    if (!next_rows.length) { anim_rows = []; return }
+
+    // build new layout, matching by identity where possible
+    const pinned_ar = anim_rows.find(ar => ar.pinned)
+    const pin_id    = pinned_id   // read from state
+
+    const prev_by_key = new Map(anim_rows.map(ar => [ar.key, ar]))
+
+    // assign stable keys: squish rows by index, data rows by identity or index
+    let target_y = 0
+    const next_ars: AnimRow[] = []
+
+    for (let i = 0; i < next_rows.length; i++) {
+        const row = next_rows[i]
+        const id  = row.kind !== 'squish' ? (line_identity(row_line(row)) ?? `idx:${i}`) : `sq:${i}`
+        const is_pinned = pin_id != null && id === pin_id
+
+        // if pinned, its y stays wherever the old animrow was
+        const old       = prev_by_key.get(id)
+        const start_y   = old?.y ?? target_y
+        const start_op  = old?.opacity ?? 0   // new rows fade in
+
+        next_ars.push({
+            key:     id,
+            row,
+            y:       is_pinned ? (pinned_ar?.y ?? target_y) : start_y,
+            ty:      target_y,
+            opacity: start_op,
+            t_op:    1,
+            pinned:  is_pinned,
+        })
+        target_y += ROW_H
+    }
+
+    // mark removed rows (in old but not in next) for fade-out
+    for (const ar of anim_rows) {
+        if (!next_ars.find(n => n.key === ar.key)) {
+            next_ars.push({ ...ar, t_op: 0 })
+        }
+    }
+
+    anim_rows = next_ars
+    if (!anim_handle) anim_handle = requestAnimationFrame(anim_tick)
 })
 
-// request snaps lazily when selection changes
-$effect(() => {
-    if (left_n  != null && !dm_snaps[left_n])  ensure_snap(left_n)
-    if (right_n != null && !dm_snaps[right_n]) ensure_snap(right_n)
-})
+function anim_tick() {
+    let any_moving = false
+    const still_alive: AnimRow[] = []
 
-// find w:Diffmatication — the worker whose w.c.toc_loaded is set,
-// or any w under A:Diffmatication (before toc loads)
-function get_dm_w(): TheC | undefined {
-    for (const A of (H.o({ A: 1 }) as TheC[])) {
+    for (const ar of anim_rows) {
+        // position spring (skip for pinned)
+        if (!ar.pinned) {
+            const dy = ar.ty - ar.y
+            if (Math.abs(dy) > 0.3) { ar.y += dy * SPRING_K; any_moving = true }
+            else ar.y = ar.ty
+        }
+        // opacity spring
+        const do_ = ar.t_op - ar.opacity
+        if (Math.abs(do_) > 0.005) { ar.opacity += do_ * 0.12; any_moving = true }
+        else ar.opacity = ar.t_op
+
+        // drop rows that are fully faded out
+        if (ar.t_op === 0 && ar.opacity < 0.01) continue
+        still_alive.push(ar)
+    }
+
+    anim_rows = still_alive
+    if (any_moving) anim_handle = requestAnimationFrame(anim_tick)
+    else            anim_handle = null
+}
+
+onMount(() => () => { if (anim_handle) cancelAnimationFrame(anim_handle) })
+
+// container height = max of all row y positions
+let list_h = $derived(
+    anim_rows.length
+        ? Math.max(...anim_rows.map(ar => ar.y + ROW_H)) + 8
+        : 48
+)
+
+
+// ── cursor movement ────────────────────────────────────────────────────────
+
+function go_to_step(n: number) {
+    const w = dm_w()
+    if (!w) return
+    H.dm_set_cursor(w, n)
+}
+
+function dm_w(): TheC | undefined {
+    for (const A of H.o({ A: 1 }) as TheC[]) {
         const w = A.o({ w: 1 })[0] as TheC | undefined
-        if (w?.c.wh_path) return w   // toc loaded — proper wh
-        if (w)            return w   // pre-toc — want will wait
+        if (w?.c.toc_loaded) return w
     }
     return undefined
 }
 
-function ensure_snap(n: number) {
-    if (dm_snaps[n]) return
-    const w = get_dm_w()
-    if (w) H.dm_want_step(w, n)
+// ── auto-advance ──────────────────────────────────────────────────────────
+//
+//   Once showing is ready and the user hasn't interacted, slowly walk
+//   forward — one step every AUTO_MS ms.  Any click or key resets the timer.
+//   Pauses at the last step.
+
+const AUTO_MS   = 4200
+let auto_timer: ReturnType<typeof setTimeout> | null = null
+let user_acted  = $state(false)
+
+function reset_auto() {
+    if (auto_timer) clearTimeout(auto_timer)
+    auto_timer = null
+    user_acted = true
+    // restart after a longer pause following user interaction
+    auto_timer = setTimeout(tick_auto, AUTO_MS * 2)
 }
 
-
-// ── mute pointers ─────────────────────────────────────────────────────────
-
-const MUTE_COLORS = ['#e07b39', '#5b9bd5', '#8fd16e', '#c97cb5', '#d4c35a']
-
-let mute_ptrs     = $state<MutePtr[]>([])
-let shift_anchor: number | null = null
-
-function add_mute(from_n: number, to_n: number) {
-    const [a, b] = from_n < to_n ? [from_n, to_n] : [to_n, from_n]
-    if (a === b) return
-    const color = MUTE_COLORS[mute_ptrs.length % MUTE_COLORS.length]
-    mute_ptrs = [...mute_ptrs, { from_n: a, to_n: b, color }]
-    ensure_snap(a); ensure_snap(b)
-    if (a > 0) ensure_snap(a - 1)
+function tick_auto() {
+    auto_timer = null
+    if (!cursor_n) return
+    const idx = dm_steps.findIndex(s => s.n === cursor_n)
+    if (idx < 0 || idx >= dm_steps.length - 1) return
+    go_to_step(dm_steps[idx + 1].n)
+    auto_timer = setTimeout(tick_auto, AUTO_MS)
 }
 
-function remove_mute(i: number) {
-    mute_ptrs = mute_ptrs.filter((_, idx) => idx !== i)
-}
-
-
-// ── active diff ───────────────────────────────────────────────────────────
-
-type ActiveDiff = {
-    left_snap:  string
-    right_snap: string
-    label_l:    string
-    label_r:    string
-    is_muted:   boolean
-    mute_label: string
-}
-
-let active_diff = $derived.by((): ActiveDiff | null => {
-    if (mute_ptrs.length === 1) {
-        const mp       = mute_ptrs[0]
-        const baseline = dm_snaps[mp.from_n - 1] ?? ''
-        const target   = dm_snaps[mp.to_n]        ?? ''
-        if (!baseline && !target) return null
-        return {
-            left_snap:  baseline,
-            right_snap: target,
-            label_l:    `step ${mp.from_n - 1 > 0 ? mp.from_n - 1 : '—'}`,
-            label_r:    `step ${mp.to_n}`,
-            is_muted:   true,
-            mute_label: `steps ${mp.from_n}–${mp.to_n} (net)`,
-        }
-    }
-    if (left_n == null || right_n == null) return null
-    return {
-        left_snap:  dm_snaps[left_n]  ?? '',
-        right_snap: dm_snaps[right_n] ?? '',
-        label_l:    `step ${left_n}`,
-        label_r:    `step ${right_n}`,
-        is_muted:   false,
-        mute_label: '',
-    }
-})
-
-let correlation = $derived.by(() => {
-    if (!active_diff || (!active_diff.left_snap && !active_diff.right_snap)) return null
-    return H.dm_correlate(active_diff.left_snap, active_diff.right_snap)
-})
-
-let diff_rows = $derived.by((): DiffRow[] => (correlation?.rows ?? []) as DiffRow[])
-
-
-// ── hovered particle ──────────────────────────────────────────────────────
-
-let hovered_id = $state<string | null>(null)
-
-function row_hi(row: DiffRow): boolean {
-    if (!hovered_id) return false
-    const line = 'line' in row ? (row as any).line : ('right' in row ? (row as any).right : '')
-    return H.dm_identity(line) === hovered_id
-}
-
-
-// ── inspiration ───────────────────────────────────────────────────────────
-
-let show_inspiration = $state(false)
-
-let inspirations = $derived.by((): Inspiration[] => {
-    if (Object.keys(dm_snaps).length < 3) return []
-    return H.dm_inspire(dm_steps, dm_snaps, 6) as Inspiration[]
-})
-
-function jump_to_inspiration(ins: Inspiration) {
-    const idx = dm_steps.findIndex(s => s.n === ins.step_n)
-    if (idx < 1) return
-    left_n  = dm_steps[idx - 1].n
-    right_n = ins.step_n
-    ensure_snap(left_n)
-    ensure_snap(right_n)
-    show_inspiration = false
-}
-
-
-// ── eagerly load first several steps for inspiration ─────────────────────
-
+// start auto-advance once toc loads
 $effect(() => {
-    if (dm_steps.length < 2) return
-    for (const s of dm_steps.slice(0, 8)) ensure_snap(s.n)
+    if (!step_count || auto_timer) return
+    auto_timer = setTimeout(tick_auto, AUTO_MS * 1.5)
+    return () => { if (auto_timer) clearTimeout(auto_timer) }
 })
 
+// ── keyboard nav ──────────────────────────────────────────────────────────
 
-// ── step strip ────────────────────────────────────────────────────────────
-
-function step_click(n: number, e: MouseEvent) {
-    if (e.shiftKey) {
-        if (shift_anchor === null) { shift_anchor = n }
-        else { add_mute(shift_anchor, n); shift_anchor = null }
-        return
+function handle_key(e: KeyboardEvent) {
+    if (!cursor_n) return
+    const idx = dm_steps.findIndex(s => s.n === cursor_n)
+    if (e.key === 'ArrowRight' && idx < dm_steps.length - 1) {
+        e.preventDefault(); reset_auto(); go_to_step(dm_steps[idx + 1].n)
+    } else if (e.key === 'ArrowLeft' && idx > 0) {
+        e.preventDefault(); reset_auto(); go_to_step(dm_steps[idx - 1].n)
+    } else if (e.key === 'p') {
+        e.preventDefault(); reset_auto()
+        mode = mode === 'prev' ? 'exp' : mode === 'exp' ? 'next' : 'prev'
+    } else if (e.key === 'Escape') {
+        pinned_id = null
     }
-    // first click → set left, clear right; second click → set right, order
-    if (left_n === null || right_n !== null) {
-        left_n  = n
-        right_n = null
-    } else {
-        right_n = n
-        if (left_n > right_n) { [left_n, right_n] = [right_n, left_n] }
-        ensure_snap(left_n)
-        ensure_snap(right_n)
-    }
-}
-
-
-// ── canvas: particle drift ────────────────────────────────────────────────
-
-let canvas_el    = $state<HTMLCanvasElement | undefined>()
-let canvas_w_px  = $state(640)
-let canvas_h_px  = $state(280)
-
-const STATUS_FILL: Record<string, string> = {
-    same:    'rgba(100,100,120,0.35)',
-    changed: 'rgba(212,168,75,0.88)',
-    added:   'rgba(85,195,100,0.88)',
-    removed: 'rgba(205,65,65,0.88)',
-}
-
-type CP = { id: string; status: string; x: number; y: number; tx: number; ty: number; r: number }
-
-let cps = $state<CP[]>([])
-let anim_handle: number | null = null
-
-$effect(() => {
-    if (!correlation) { cps = []; return }
-    const particles = correlation.particles
-    const by_depth  = new Map<number, DmParticle[]>()
-    for (const p of particles.values() as IterableIterator<DmParticle>) {
-        const d = Math.max(0, p.status === 'removed' ? p.left_d : p.right_d)
-        if (!by_depth.has(d)) by_depth.set(d, [])
-        by_depth.get(d)!.push(p)
-    }
-    const depths  = [...by_depth.keys()].sort((a, b) => a - b)
-    const max_d   = depths.at(-1) ?? 0
-    const x_band  = max_d > 0 ? (canvas_w_px - 80) / (max_d + 1) : canvas_w_px - 80
-
-    const next: CP[] = []
-    for (const d of depths) {
-        const group = by_depth.get(d)!
-        const x     = 40 + d * x_band + x_band / 2
-        for (let i = 0; i < group.length; i++) {
-            const p  = group[i]
-            const ty = 24 + (i + 0.5) * ((canvas_h_px - 48) / Math.max(group.length, 1))
-            const old = cps.find(c => c.id === p.identity)
-            next.push({ id: p.identity, status: p.status,
-                x: old?.x ?? x, y: old?.y ?? ty, tx: x, ty, r: p.status === 'same' ? 3.5 : 6 })
-        }
-    }
-    cps = next
-})
-
-function draw() {
-    const ctx = canvas_el?.getContext('2d')
-    if (!ctx) return
-    ctx.clearRect(0, 0, canvas_w_px, canvas_h_px)
-    // depth guides
-    ctx.strokeStyle = 'rgba(255,255,255,0.035)'
-    ctx.lineWidth   = 1
-    const xs = [...new Set(cps.map(p => p.tx))]
-    for (const x of xs) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas_h_px); ctx.stroke() }
-    // particles
-    for (const p of cps) {
-        const hi = hovered_id === p.id
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, hi ? p.r * 1.9 : p.r, 0, Math.PI * 2)
-        ctx.fillStyle = STATUS_FILL[p.status] ?? 'rgba(150,150,150,0.4)'
-        ctx.fill()
-        if (hi) {
-            ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1.2; ctx.stroke()
-            ctx.fillStyle   = '#dde'; ctx.font = '10px monospace'
-            ctx.fillText(p.id.slice(0, 32), p.x + 9, p.y + 4)
-        }
-    }
-}
-
-function tick() {
-    let moving = false
-    for (const p of cps) {
-        const dx = p.tx - p.x, dy = p.ty - p.y
-        if (Math.abs(dx) > 0.25 || Math.abs(dy) > 0.25) { p.x += dx * 0.13; p.y += dy * 0.13; moving = true }
-        else { p.x = p.tx; p.y = p.ty }
-    }
-    draw()
-    anim_handle = requestAnimationFrame(tick)
-}
-
-$effect(() => {
-    void cps; void hovered_id
-    if (!canvas_el) return
-    if (!anim_handle) anim_handle = requestAnimationFrame(tick)
-})
-
-onMount(() => () => { if (anim_handle) cancelAnimationFrame(anim_handle) })
-
-function canvas_move(e: MouseEvent) {
-    const rect = canvas_el?.getBoundingClientRect()
-    if (!rect) return
-    const mx = e.clientX - rect.left, my = e.clientY - rect.top
-    let best = 18, nearest: string | null = null
-    for (const p of cps) { const d = Math.hypot(p.x - mx, p.y - my); if (d < best) { best = d; nearest = p.id } }
-    hovered_id = nearest
 }
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<div class="dm">
+<div class="dm" tabindex="0" onkeydown={handle_key} onfocus={() => {}}>
 
-    <!-- header ─────────────────────────────────────────────────────────── -->
-    <div class="dm-bar">
-        <span class="dm-title">Diffmatic</span>
-        <span class="dm-sub">LangTiles</span>
-        {#if dm_loading}
-            <span class="dm-pill loading">loading…</span>
-        {:else if dm_error}
-            <span class="dm-pill error">{dm_error}</span>
-        {:else}
-            <span class="dm-pill ok">{dm_steps.length} steps</span>
-        {/if}
-        <button class="dm-btn"
-                class:on={show_inspiration}
-                disabled={inspirations.length === 0}
-                onclick={() => show_inspiration = !show_inspiration}>
-            ✦ {inspirations.length}
-        </button>
-    </div>
-
-    <!-- inspiration drawer ──────────────────────────────────────────────── -->
-    {#if show_inspiration}
-        <div class="dm-inspire">
-            <div class="dm-inspire-hd">interesting transitions</div>
-            {#each inspirations as ins (ins.step_n)}
-                <button class="dm-ins-row" onclick={() => jump_to_inspiration(ins)}>
-                    <span class="dm-ins-score">{ins.score | 0}pt</span>
-                    <span class="dm-ins-hl">{ins.headline}</span>
-                    <span class="dm-ins-sum">
-                        +{ins.rows.filter(r => r.kind === 'right_only').length}
-                        −{ins.rows.filter(r => r.kind === 'left_only').length}
-                    </span>
-                </button>
-            {/each}
+    <!-- intro ──────────────────────────────────────────────────────────── -->
+    {#if intro}
+        <div class="dm-intro">
+            {intro}
+            {#if !user_acted}<span class="dm-auto">auto ▶</span>{/if}
         </div>
+    {:else}
+        <div class="dm-intro loading">loading story…</div>
     {/if}
 
     <!-- step strip ─────────────────────────────────────────────────────── -->
     {#if dm_steps.length > 0}
         <div class="dm-strip">
             {#each dm_steps as s (s.n)}
-                {@const is_l   = s.n === left_n}
-                {@const is_r   = s.n === right_n}
-                {@const mute   = mute_ptrs.find(mp => s.n >= mp.from_n && s.n <= mp.to_n)}
-                {@const anchor = s.n === shift_anchor}
+                {@const on = s.n === cursor_n}
                 <button class="dm-pip"
                         class:ok={s.ok}
-                        class:is-l={is_l}
-                        class:is-r={is_r}
-                        class:loaded={!!dm_snaps[s.n]}
-                        class:in-mute={!!mute}
-                        class:anchor={anchor}
-                        style:box-shadow={mute ? `inset 0 0 0 2px ${mute.color}` : undefined}
-                        onclick={e => step_click(s.n, e)}
-                        title="step {s.n}  {s.dige.slice(0,6)}{s.ok ? '' : ' ✗'}">
+                        class:on
+                        class:loading={on && cursor_load}
+                        onclick={() => { reset_auto(); go_to_step(s.n) }}
+                        title="step {s.n}  {s.dige.slice(0,7)}{s.ok ? '' : ' ✗'}">
                     {s.n}
                 </button>
             {/each}
         </div>
-        <div class="dm-mute-row">
-            {#if mute_ptrs.length}
-                {#each mute_ptrs as mp, i (i)}
-                    <button class="dm-mute" style:border-color={mp.color}
-                            onclick={() => remove_mute(i)}>[{mp.from_n}–{mp.to_n}] ×</button>
-                {/each}
-            {/if}
-            <span class="dm-hint">
-                {shift_anchor != null ? `shift-click to close mute from step ${shift_anchor}` : 'shift-click two steps to mute a range'}
-            </span>
-        </div>
     {/if}
 
-    <!-- selection label ────────────────────────────────────────────────── -->
-    {#if active_diff}
-        <div class="dm-sel">
-            {#if active_diff.is_muted}
-                <span class="dm-muted">⊘ {active_diff.mute_label}</span>
+    <!-- view mode + label ──────────────────────────────────────────────── -->
+    {#if cursor_n != null}
+        <div class="dm-bar">
+            <button class="dm-mode" class:on={mode==='prev'} onclick={() => { reset_auto(); mode='prev' }}>prev</button>
+            <button class="dm-mode" class:on={mode==='exp'}  onclick={() => { reset_auto(); mode='exp' }} >exp</button>
+            <button class="dm-mode" class:on={mode==='next'} onclick={() => { reset_auto(); mode='next' }}
+                    disabled={!diffs['next']}>next</button>
+            {#if active_diff}
+                <span class="dm-label">{active_diff.label_l} → {active_diff.label_r}</span>
             {:else}
-                <span class="dm-sel-l">{active_diff.label_l}</span>
-                <span class="dm-arrow">→</span>
-                <span class="dm-sel-r">{active_diff.label_r}</span>
-                {#if (left_n != null && !dm_snaps[left_n]) || (right_n != null && !dm_snaps[right_n])}
-                    <span class="dm-pill loading">loading snaps…</span>
-                {/if}
+                <span class="dm-label loading">computing diff…</span>
+            {/if}
+            {#if pinned_id}
+                <button class="dm-unpin" onclick={() => pinned_id = null}>unpin ×</button>
             {/if}
         </div>
-    {:else if !dm_loading && dm_steps.length > 1}
-        <div class="dm-sel dm-hint">click a step to pick left, then another for right</div>
     {/if}
 
-    <!-- orbit canvas ───────────────────────────────────────────────────── -->
-    {#if correlation && correlation.particles.size > 0}
-        <div class="dm-canvas-wrap">
-            <div class="dm-legend">
-                <span class="leg same">same</span>
-                <span class="leg changed">changed</span>
-                <span class="leg added">added</span>
-                <span class="leg removed">removed</span>
-                <span class="leg-hint">← shallower · deeper →</span>
-            </div>
-            <canvas bind:this={canvas_el}
-                    width={canvas_w_px} height={canvas_h_px}
-                    class="dm-canvas"
-                    onmousemove={canvas_move}
-                    onmouseleave={() => hovered_id = null}></canvas>
-        </div>
-    {/if}
-
-    <!-- text diff ──────────────────────────────────────────────────────── -->
-    {#if diff_rows.length > 0}
-        <div class="dm-diff">
-            <div class="dm-diff-hdr">
-                <span>{active_diff?.label_l ?? ''}</span>
-                <span>{active_diff?.label_r ?? ''}</span>
-            </div>
-            <div class="dm-cols">
-                <div class="dm-col">
-                    {#each diff_rows as row, i (i)}
-                        {#if row.kind === 'squish'}
-                            <div class="dm-squish">… {row.count}</div>
-                        {:else if row.kind === 'pair'}
-                            <div class="dm-cell" class:changed={row.tag === 'changed'} class:hi={row_hi(row)}>
-                                {@render ln((row as any).left)}
-                            </div>
-                        {:else if row.kind === 'left_only'}
-                            <div class="dm-cell gone" class:hi={row_hi(row)}>{@render ln(row.line)}</div>
-                        {:else}
-                            <div class="dm-cell dm-gap"></div>
-                        {/if}
-                    {/each}
+    <!-- animated diff ──────────────────────────────────────────────────── -->
+    {#if anim_rows.length > 0}
+        <div class="dm-diff" style="height:{list_h}px">
+            {#each anim_rows as ar (ar.key)}
+                {@const hi = ar.pinned}
+                {@const row = ar.row}
+                <div class="dm-row {row.kind}"
+                     class:pinned={hi}
+                     class:changed={row.kind === 'pair' && row.tag === 'changed'}
+                     style:transform="translateY({ar.y}px)"
+                     style:opacity={ar.opacity}
+                     onclick={() => { reset_auto(); toggle_pin(row) }}>
+                    {#if row.kind === 'squish'}
+                        <span class="dm-squish">… {row.count} unchanged</span>
+                    {:else if row.kind === 'pair'}
+                        {@render diff_row(row.left, row.right, row.tag === 'changed')}
+                    {:else if row.kind === 'left_only'}
+                        {@render gone_row(row.line)}
+                    {:else if row.kind === 'right_only'}
+                        {@render neu_row(row.line)}
+                    {/if}
                 </div>
-                <div class="dm-col">
-                    {#each diff_rows as row, i (i)}
-                        {#if row.kind === 'squish'}
-                            <div class="dm-squish">… {row.count}</div>
-                        {:else if row.kind === 'pair'}
-                            <div class="dm-cell" class:changed={row.tag === 'changed'} class:hi={row_hi(row)}>
-                                {@render ln((row as any).right)}
-                            </div>
-                        {:else if row.kind === 'right_only'}
-                            <div class="dm-cell neu" class:hi={row_hi(row)}>{@render ln(row.line)}</div>
-                        {:else}
-                            <div class="dm-cell dm-gap"></div>
-                        {/if}
-                    {/each}
-                </div>
-            </div>
+            {/each}
         </div>
-    {:else if active_diff && !dm_loading}
-        <div class="dm-hint" style="padding:8px">no diff — snaps identical or not yet loaded</div>
+    {:else if cursor_load}
+        <div class="dm-hint">loading…</div>
+    {:else if cursor_n != null}
+        <div class="dm-hint">no diff — snaps identical</div>
     {/if}
 
 </div>
 
 <!-- ── snippets ──────────────────────────────────────────────────────────── -->
-{#snippet ln(line: string)}
+
+{#snippet line_span(line: string)}
     {@const ind = line.match(/^ */)?.[0] ?? ''}
     {@const tab = line.indexOf('\t')}
     {@const obj = tab > ind.length ? line.slice(ind.length, tab) : ''}
@@ -506,18 +393,39 @@ function canvas_move(e: MouseEvent) {
     <span class="ind">{ind}</span>{#if obj}<span class="obj">{obj}</span> {/if}<span class="str">{str}</span>
 {/snippet}
 
+{#snippet diff_row(left: string, right: string, changed: boolean)}
+    <div class="dm-2col">
+        <div class="dm-side" class:changed>{@render line_span(left)}</div>
+        <div class="dm-side" class:changed>{@render line_span(right)}</div>
+    </div>
+{/snippet}
+
+{#snippet gone_row(line: string)}
+    <div class="dm-2col">
+        <div class="dm-side gone">{@render line_span(line)}</div>
+        <div class="dm-side dm-gap"></div>
+    </div>
+{/snippet}
+
+{#snippet neu_row(line: string)}
+    <div class="dm-2col">
+        <div class="dm-side dm-gap"></div>
+        <div class="dm-side neu">{@render line_span(line)}</div>
+    </div>
+{/snippet}
+
 <style>
 .dm {
-    --bg:      #111214;
-    --surf:    #191b1f;
-    --bord:    #2a2d35;
-    --text:    #c4c6cc;
-    --dim:     #60636e;
-    --amber:   #d4a84b;
-    --green:   #58c56a;
-    --red:     #cc4f4a;
-    --blue:    #4f8ec9;
-    --hi:      rgba(255,255,255,0.07);
+    --bg:    #111214;
+    --surf:  #181a1e;
+    --bord:  #282b33;
+    --text:  #c2c4ca;
+    --dim:   #5c5f6a;
+    --amber: #d4a84b;
+    --green: #57c268;
+    --red:   #cc4e4a;
+    --blue:  #4e8cc7;
+    --pin:   rgba(212,168,75,0.18);
     display:        flex;
     flex-direction: column;
     gap:            8px;
@@ -527,92 +435,88 @@ function canvas_move(e: MouseEvent) {
     font-size:      12px;
     padding:        12px;
     min-height:     100%;
+    box-sizing:     border-box;
+    outline:        none;
 }
 
-/* bar */
-.dm-bar { display: flex; align-items: baseline; gap: 8px; border-bottom: 1px solid var(--bord); padding-bottom: 8px; }
-.dm-title { font-size: 14px; font-weight: 700; color: #dde; letter-spacing: .04em; }
-.dm-sub   { color: var(--dim); }
-.dm-pill  { font-size: 10px; padding: 1px 6px; border-radius: 10px; border: 1px solid; }
-.dm-pill.loading { border-color: var(--amber); color: var(--amber); }
-.dm-pill.error   { border-color: var(--red);   color: var(--red); }
-.dm-pill.ok      { border-color: #3a5a3a;      color: var(--green); }
-.dm-btn {
-    margin-left:   auto;
-    background:    transparent;
-    border:        1px solid var(--bord);
-    color:         var(--dim);
-    padding:       2px 8px;
-    border-radius: 3px;
-    cursor:        pointer;
-    font:          11px/1 inherit;
-    transition:    all .12s;
-}
-.dm-btn:hover, .dm-btn.on { border-color: var(--amber); color: var(--amber); background: rgba(212,168,75,.07); }
-.dm-btn:disabled { opacity: .3; cursor: default; }
+/* auto indicator */
+.dm-auto { float: right; font-size: 10px; color: var(--amber); opacity: 0.5; }
 
-/* inspiration */
-.dm-inspire { background: var(--surf); border: 1px solid var(--bord); border-radius: 3px; padding: 6px; display: flex; flex-direction: column; gap: 3px; }
-.dm-inspire-hd { color: var(--dim); font-size: 10px; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 3px; }
-.dm-ins-row { display: flex; gap: 7px; align-items: center; background: none; border: 1px solid transparent; color: var(--text); padding: 3px 5px; border-radius: 2px; cursor: pointer; font: 11px/1.4 inherit; text-align: left; }
-.dm-ins-row:hover { background: var(--hi); border-color: var(--bord); }
-.dm-ins-score { color: var(--amber); width: 26px; flex-shrink: 0; font-size: 10px; }
-.dm-ins-hl    { flex: 1; }
-.dm-ins-sum   { color: var(--dim); font-size: 10px; white-space: nowrap; }
+/* intro */
+.dm-intro { font-size: 11px; color: var(--dim); padding: 2px 0 4px; border-bottom: 1px solid var(--bord); }
+.dm-intro.loading { font-style: italic; }
 
 /* strip */
 .dm-strip { display: flex; flex-wrap: wrap; gap: 3px; }
 .dm-pip {
-    background: var(--surf); border: 1px solid var(--bord); color: var(--dim);
-    width: 26px; height: 20px; font: 10px/1 inherit;
-    border-radius: 2px; cursor: pointer; padding: 0; transition: all .08s;
+    background: var(--surf); border: 1px solid var(--bord);
+    color: var(--dim); width: 26px; height: 20px;
+    font: 10px/1 inherit; border-radius: 2px; cursor: pointer; padding: 0;
+    transition: border-color .1s, color .1s, background .1s;
 }
-.dm-pip:hover  { border-color: #44475a; color: var(--text); }
-.dm-pip.ok     { color: #4a7a4a; }
-.dm-pip.loaded { border-color: #2f3240; }
-.dm-pip.is-l   { border-color: var(--blue)!important;  background: rgba(79,142,201,.14); color: var(--blue); }
-.dm-pip.is-r   { border-color: var(--green)!important; background: rgba(88,197,106,.11); color: var(--green); }
-.dm-pip.anchor { border-color: var(--amber)!important; }
-.dm-pip.in-mute { opacity: .7; }
+.dm-pip:hover     { border-color: #44475a; color: var(--text); }
+.dm-pip.ok        { color: #4a7a4a; }
+.dm-pip.on        { border-color: var(--blue)!important; background: rgba(78,140,199,.15); color: var(--blue); }
+.dm-pip.on.loading { border-color: var(--amber)!important; color: var(--amber); }
 
-.dm-mute-row { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; min-height: 18px; }
-.dm-mute { background: none; border: 1px solid; color: var(--text); font: 10px/1 inherit; padding: 1px 5px; border-radius: 2px; cursor: pointer; }
-.dm-mute:hover { opacity: .65; }
-.dm-hint { color: var(--dim); font-size: 10px; }
+/* bar */
+.dm-bar { display: flex; align-items: center; gap: 6px; }
+.dm-mode {
+    background: none; border: 1px solid var(--bord); color: var(--dim);
+    padding: 2px 7px; border-radius: 2px; cursor: pointer; font: 11px/1 inherit;
+    transition: all .1s;
+}
+.dm-mode:hover   { border-color: #555; color: var(--text); }
+.dm-mode.on      { border-color: var(--blue); color: var(--blue); background: rgba(78,140,199,.1); }
+.dm-mode:disabled { opacity: .3; cursor: default; }
+.dm-label        { color: var(--dim); font-size: 10px; margin-left: 4px; }
+.dm-label.loading { color: var(--amber); }
+.dm-unpin        { margin-left: auto; background: none; border: 1px solid var(--amber); color: var(--amber); padding: 1px 6px; border-radius: 2px; cursor: pointer; font: 10px/1 inherit; }
 
-/* selection label */
-.dm-sel { display: flex; align-items: center; gap: 6px; font-size: 11px; }
-.dm-sel-l { color: var(--blue); }
-.dm-sel-r { color: var(--green); }
-.dm-arrow { color: #444; }
-.dm-muted { color: var(--amber); }
+/* diff container — position:relative so rows can be absolute */
+.dm-diff {
+    position:   relative;
+    overflow:   hidden;
+    transition: height 0.4s cubic-bezier(.4,0,.2,1);
+    border:     1px solid var(--bord);
+    border-radius: 3px;
+    background: var(--surf);
+}
 
-/* canvas */
-.dm-canvas-wrap { background: var(--surf); border: 1px solid var(--bord); border-radius: 3px; overflow: hidden; }
-.dm-legend { display: flex; gap: 10px; align-items: center; padding: 5px 10px 0; font-size: 10px; }
-.leg-hint  { color: var(--dim); margin-left: auto; }
-.leg::before { content: '●'; margin-right: 3px; }
-.leg.same    { color: #606070; }
-.leg.changed { color: var(--amber); }
-.leg.added   { color: var(--green); }
-.leg.removed { color: var(--red); }
-.dm-canvas   { display: block; width: 100%; cursor: crosshair; }
+/* individual animated row — absolute so spring can move it */
+.dm-row {
+    position:    absolute;
+    left:        0; right: 0;
+    height:      19px;
+    cursor:      pointer;
+    transition:  background .1s;
+    will-change: transform, opacity;
+    user-select: none;
+}
+.dm-row:hover       { background: rgba(255,255,255,.04); }
+.dm-row.pinned      { background: var(--pin)!important; z-index: 2; }
+.dm-row.pinned::before {
+    content:    '📌';
+    position:   absolute; right: 6px; top: 1px;
+    font-size:  10px; opacity: .6;
+}
 
-/* diff */
-.dm-diff { background: var(--surf); border: 1px solid var(--bord); border-radius: 3px; overflow: hidden; }
-.dm-diff-hdr { display: grid; grid-template-columns: 1fr 1fr; padding: 4px 8px; border-bottom: 1px solid var(--bord); font-size: 10px; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; }
-.dm-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; max-height: 500px; overflow-y: auto; }
-.dm-col  { display: flex; flex-direction: column; overflow-x: auto; }
-.dm-cell { padding: 1px 8px; white-space: pre; line-height: 1.5; transition: background .08s; }
-.dm-cell.hi      { background: rgba(255,255,255,.08); outline: 1px solid rgba(255,255,255,.18); }
-.dm-cell.changed { background: rgba(212,168,75,.08); }
-.dm-cell.gone    { background: rgba(200,60,60,.11); color: #d87070; }
-.dm-cell.neu     { background: rgba(85,190,100,.09); color: #60c970; }
+/* two-column layout inside each row */
+.dm-2col { display: grid; grid-template-columns: 1fr 1fr; height: 100%; }
+.dm-side { padding: 0 8px; overflow: hidden; white-space: pre; line-height: 19px; font-size: 11px; }
+.dm-side.changed { background: rgba(212,168,75,.08); }
+.dm-side.gone    { background: rgba(200,55,55,.12); color: #d07070; }
+.dm-side.neu     { background: rgba(80,190,95,.10); color: #5ec870; }
 .dm-gap          { background: rgba(255,255,255,.015); }
-.dm-squish       { padding: 2px 8px; color: var(--dim); font-size: 10px; font-style: italic; }
+
+/* squish */
+.dm-squish { padding: 0 8px; color: var(--dim); font-size: 10px; line-height: 19px; font-style: italic; }
+
+/* hint */
+.dm-hint { color: var(--dim); font-size: 11px; padding: 8px; font-style: italic; }
 
 /* line parts */
 .ind { display: inline-block; }
-.obj { color: #7870a0; margin-right: 2px; }
+.obj { color: #6e6898; margin-right: 2px; }
 .str { color: var(--text); }
 </style>
