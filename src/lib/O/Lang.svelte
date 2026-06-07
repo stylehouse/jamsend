@@ -97,34 +97,36 @@
     //     {Compile:1}
     //       {Output:1, name, source, dige}
     //       {Pending:1}
+    //     {req:'Languish'}        — per-dock mind: text_loaded → compile.
     //
-    //   Bookmarks and compile live on dock, not w, so they can be r()'d per doc.
+    //   Bookmarks, compile, and Languish live on dock, not w, so they can be r()'d per doc.
     //
     // ── Understanding hold ───────────────────────────────────────────────────
     //
-    //   w/{req:'workon'}          — permanent; one per Lang instance.
-    //     /{req:'awaiting'}       — one-shot; satisfied on first src, installs
-    //                               Languinio/%LE hold, then stays finished.
-    //     /{req:'maneuvre'}       — reset on each cursor move; the per-src cluster.
-    //       /{req:'checkout'}     — LE_arm + LE_pull on workon's own /{LE:1}.
-    //       /{req:'furnish'}       — wait for the dock Lies' Furnishing mints.
-    //       /{req:'graft'}        — drive Lang_graft_points_once on the active dock.
-    //       /{req:'encode'}       — LE_encode_compare after graft; sets %State.changey.
-    //     /{LE:1}                 — stable on workon across all cursor moves.
-    //       /%State               — synthesised: armed/changey/stale
-    //       // %push_dirty — fault; present only when push didn't land clean
-    //       /%Seem:origin / /%Seem:working
+    //   w/{LE:1}                  — one Understanding for the Lang instance; stable.
+    //     /%State                 — synthesised: armed/changey/stale
+    //     // %push_dirty          — fault; present only when push didn't land clean
+    //     /%Seem:origin / /%Seem:working
     //
-    //   w/{Languinio:1}           — Lang's one focus object (§3b).
-    //     /{LE:1}                  — same-object hold → workon/{LE:1}.
-    //     /{Interest:1}            — sc.src = working clone root.
-    //                                Recreated per cursor move by req:checkout;
-    //                                the render/edit end of the checkout.
-    //     /{dock:path}             — same-object hold on the active dock (§3d:
-    //                                replaces ave/%active_dock).
-    //   Installed once by req:awaiting on first src arrival.
-    //   Langui reads LE_clones() and %State directly from it without a
-    //   cross-world round-trip.
+    //   w/{req:'workon'}          — permanent; one per Lang instance.
+    //     c.src                   latest cursored TheC (stashed by e_Lang_workon_update)
+    //     /{req:'settle'}         — permanent, open-ended — Lang_settle do_fn
+    //       /%checkout            c.armed_src, sc.what — identity-keyed re-arm gate
+    //       /%furnish             sc.doc_path, sc.have_dock
+    //       /%compile             sc.have_methods
+    //       /%graft               sc.n_pmirrors
+    //     /{req:'push'}           — encode → replace → verify; /%dirty fault child
+    //
+    //   w/{Languinio:1}           — Lang's one focus object (§3b); enrolled in ave.
+    //     c.w                     back-ref to w:Lang
+    //     // ordered by volatility — LE arms rarely, dock on doc-switch, Interest on every checkout
+    //     /{LE:1}                  — same-object hold → w/{LE:1}; installed at plan.
+    //                                Unarmed until first cursor move; readers gate on LE.sc.target.
+    //     /{dock:path}             — same-object hold on the active CM doc (§3d).
+    //                                Re-pointed by Lang_set_active_dock on every doc switch.
+    //     /{Interest:1}            — sc.src = working clone root; c.LE = nav handle.
+    //                                Dropped + recreated by Lang_settle on every checkout.
+    //                                Most volatile: rebuilt whenever the What cursor moves.
     //
     // ── Reactive text sync ───────────────────────────────────────────────────
     //
@@ -292,25 +294,25 @@
 
         // ── %Languinio — Lang's reactive signal particle ────────────
         // Parallel to %examining on w:Lies.  Enrolled in ave so UItime
-        // (Langui, DocMinimap) can read it without a new prop.  Languish
-        // phase handlers oai/drop %spinner children on it; at rest it is
-        // empty.  c.w is a back-ref so a reader can climb to w:Lang.
-        // %LE is inserted as a same-object hold (languinio.i(LE)) each time
-        // e_Lang_workon_update fires — req:awaiting's do_fn does that insertion.
-        // Langui reads it via languinio.o({LE:1})[0] to check %State without
-        // a cross-world round-trip.
+        // (Langui, DocMinimap) can read it without a new prop.  c.w is a
+        // back-ref so a reader can climb to w:Lang.
+        // Holds %LE / %dock / %Interest in volatility order (see comment above).
         const ave = H.oai_enroll(H, { watched: 'ave' })
         const languinio = w.oai({ Languinio: 1 })
         ave.i(languinio)
         languinio.c.w = w
 
-        // ── req:workon — the convergence home ────────────────────────────────────────────
-        // Permanent, open-ended.  /{LE:1} is stable for the Lang instance —
-        //   not inside a replace(), so LE/* and LE.c.* survive every settle.
-        // The same-object hold is installed here so languinio readers never see
-        //   a missing LE; an unarmed LE is harmless — NaviCado gates on target.
-        // req:settle is the permanent convergence loop (Lang_settle do_fn);
-        //   workon's own do_fn is intentionally empty.
+        // ── w/{LE:1} — one Understanding for the Lang instance ───────
+        // Stable: not inside a replace(), so LE/* and LE.c.* survive every settle.
+        // Unarmed until first cursor move; readers gate on LE.sc.target.
+        // Same-object hold in %Languinio installed once here — place() so
+        // re-plan never piles a second %LE.
+        const LE = w.oai({ LE: 1 })
+        await languinio.place({ LE: 1 }, LE)
+
+        // ── req:workon — the convergence home ────────────────────────
+        // Permanent, open-ended.  Drives req:settle (Lang_settle do_fn)
+        // which converges src → LE → dock → graft → encode each think.
         const rq_w = H.reqy(w)
         ;(await rq_w.doai({ req: 'workon' }))?.(async (_workon: TheC) => {
             // open-ended anchor — req:settle does all the work
@@ -320,16 +322,6 @@
         if (workon) {
             workon.sc.following = 1   // track group cursor (default)
             // < following:0 = diverged; thought-balloon on breadcrumb
-
-            // /{LE:1} — stable; oai is idempotent on re-plan.
-            const LE = workon.oai({ LE: 1 })
-
-            // Same-object hold in %Languinio — place() so re-plan never piles a
-            // second %LE; drops any stale hold and inserts this one if not already there.
-            const languinio_now = w.o({ Languinio: 1 })[0] as TheC | undefined
-            if (languinio_now) {
-                await languinio_now.place({ LE: 1 }, LE)
-            }
 
             // req:settle — permanent, open-ended; Lang_settle is its do_fn.
             const wsub = H.reqy(workon)
@@ -531,8 +523,8 @@
         await dock.moai({ Text: 1 }, { dige: new_dige })
         dock.bump_version()
 
-        // find req:Languish for this path and drive text_mutated + compile timing
-        const languish = w.o({ req: 'Languish', path })[0] as TheC | undefined
+        // find req:Languish on the dock (not on w anymore) and drive text_mutated
+        const languish = dock.o({ req: 'Languish' })[0] as TheC | undefined
         if (!languish) return
         const tm = languish.o({ req: 'text_mutated' })[0] as TheC | undefined
         if (tm) this.reqyoncile(tm, { text, ...(machine ? { machine: 1 } : {}) })
@@ -543,7 +535,8 @@
     async req_text_mutated(req: TheC, q: any) {
         const H      = this as House
         const La     = req.c.up as TheC
-        const w      = La.c.up as TheC
+        const dock   = La.c.up as TheC
+        const w      = dock.c.up?.c.up as TheC   // dock → docks → w (c.up wired in e_Lang_open_dock)
         req.sc.eternal = 1
         if (!req.sc.mutated) return
 
@@ -551,7 +544,7 @@
         // normal: wait for a quiet period so rapid typing doesn't re-compile every keystroke.
         const machine    = !!(req.sc.machine as any) || !!H.o_Opt_val(w, 'Langui-machine-texting')
         const delay_ms   = machine ? 30 : 6_000
-        const dock       = La.sc.dock as TheC | undefined
+        // dock is La.c.up (languish lives on dock now)
         if (!dock) return
 
         // coalesce rapid text changes — only the trailing edge triggers compile
@@ -605,15 +598,13 @@
     //   §3i — doc-open is now an RPC.  Lies owns the intent (w:Lies/req:Furnishing)
     //   and couriers the req particle here via i_elvis_req; we drain it with
     //   o_elvis_req.  Each carried req has { path, text, gen_path? }; we mint (or
-    //   refresh) the per-doc req:Languish — Lang's mind for one doc, staging
-    //   text_loaded → compile → grafted so the first graft beats the snap — then
-    //   finish({ path, ready:1 }) once the dock is minted, which pings Lies back
-    //   with e%reqturn:1 so its Furnishing phase resolves.
+    //   refresh) the per-doc req:Languish on the dock — Lang's mind for one doc,
+    //   staging text_loaded → compile — then finish({ path, ready:1 }) once the
+    //   dock is minted, which pings Lies back so its Furnishing phase resolves.
     //
-    //   The doc payload (text, gen_path) rides on the Languish req so text_loaded
-    //   can install it: gen_path on sc (small, snap-visible), text on .c (large,
-    //   kept out of the snap).  A fresher open of the same path overwrites the
-    //   payload — newest source wins.  gen_path absent means soft-compile only.
+    //   Dock is minted here (via docks.oai) so Lang_drive_languish can receive it
+    //   directly; req_text_loaded's reqonce then stamps Text and activates it.
+    //   gen_path on languish.sc (snap-visible); text on languish.c (hidden from snap).
     //
     //   e.sc: { req }  (the Furnishing req, carrying path/text/gen_path)
     async e_Lang_open_dock(A: TheC, w: TheC, e?: TheC) {
@@ -624,42 +615,49 @@
             const text     = (furnishing.c.text as string | undefined) ?? ''   // large, on c
             if (!path) continue
 
-            const dock = await H.Lang_drive_languish(w, path, text, gen_path)
+            // Mint-or-find dock; stamp c.up so reqyoncile's %w walk reaches w:Lang.
+            // reqy sets languish.c.up = dock automatically; dock and docks need
+            // explicit back-refs since oai() doesn't wire them.
+            const docks = w.oai({ docks: 1 })
+            docks.c.up  ??= w
+            const dock  = docks.oai({ dock: path })
+            dock.c.up   ??= docks
+            await H.Lang_drive_languish(w, dock, text, gen_path)
 
-            // Resolve the RPC once the dock particle exists — Lies' req:Furnishing
-            // phase then finds dock-exists on its own re-think.  The remaining
-            // Languish phases (compile, grafted) run on Lang's own thinking; the
-            // maneuvre's furnish phase guards on the same dock-exists, and graft
-            // gates on compile separately.
-            if (dock) finish({ path, ready: 1 })
+            // Resolve the RPC — Lies' req:Furnishing finds dock-exists on re-think.
+            // Remaining Languish phases (compile) run on Lang's own thinking.
+            finish({ path, ready: 1 })
         }
     },
 
     // ── Lang_drive_languish ────────────────────────────────────────────────────
     //
-    //   Mint-or-refresh the per-doc req:Languish and drive one do() pass.
-    //   Returns the dock particle once text_loaded has minted it (may be undefined
-    //   on the very first pass before the dock exists — the caller's RPC stays
-    //   unresolved and re-fires on the next think).
+    //   Mint-or-refresh the per-dock req:Languish and drive one do() pass.
+    //   Returns the dock so callers can resolve their RPC immediately once the
+    //   dock particle exists (which is guaranteed — caller passes it in).
     //
     //   A re-open of an already-finished Languish drops it and its phase subtree,
     //   then remints fresh so every phase re-runs against the newer source.
-    async Lang_drive_languish(w: TheC, path: string, text: string, gen_path?: string): Promise<TheC | undefined> {
+    //
+    //   Languish lives on the dock — `dock.o({req:'Languish'})[0]`.
+    //   dock.c.up = docks, docks.c.up = w (stamped in e_Lang_open_dock) so
+    //   reqyoncile's %w walk and i_req_ttlilt both reach w:Lang correctly.
+    async Lang_drive_languish(w: TheC, dock: TheC, text: string, gen_path?: string): Promise<TheC> {
         const H = this as House
-        const rq = H.reqy(w)
-        let languish = await rq.roai({ req: 'Languish', path })
+        const rq = H.reqy(dock)
+        let languish = await rq.roai({ req: 'Languish' })
         if (languish.sc.finished) {
-            w.drop(languish)
-            languish = await rq.roai({ req: 'Languish', path })
+            dock.drop(languish)
+            languish = await rq.roai({ req: 'Languish' })
         }
         if (gen_path) languish.sc.gen_path = gen_path
         languish.c.open_text = text
 
+        const path = dock.sc.dock as string
         console.log(`📄 Lang open_dock → req:Languish ${path}`)
         await rq.do()
 
-        const docks = w.o({ docks: 1 })[0] as TheC | undefined
-        return docks?.o({ dock: path })[0] as TheC | undefined
+        return dock
     },
 
     // ── e:Lang_workon_update ────────────────────────────────────────────
@@ -691,6 +689,11 @@
     //   each step no-ops when settled.  Gates (furnish, compile) ttlilt +
     //   return until their condition holds; the next poke re-enters past them.
     //
+    //   LE is w/{LE:1} — one stable instance for the Lang lifetime, passed in
+    //   from plan's closure.  LE_arm re-aims it on each new src; %Languinio/%LE
+    //   is a same-object hold installed once at plan time, so consumers always
+    //   see the live sphere without any re-pointing here.
+    //
     //   src changing mid-wait is self-healing: the next pass re-arms at the
     //   newest want — no drop+recreate, no race between Languish and the cursor.
     //   A recompile re-runs only graft + encode; a cursor move re-runs the chain
@@ -714,9 +717,9 @@
             co.sc.what     = (want.sc as any).What ?? (want.sc as any).path ?? '?'
             console.log(`🔗 settle checkout: ${co.sc.what}`)
 
-            // %Interest — the render/edit end (§3b); drop + recreate so it
-            //   never points at a stale clone tree.  c.LE is the nav handle
-            //   LangGraft reads; sc.src is the clone root NaviCado reads.
+            // %Interest (§3b) — drop + recreate; never point at a stale clone tree.
+            //   c.LE is the nav handle LangGraft reads; sc.src is the clone root NaviCado reads.
+            //   %LE and %dock in Languinio are stable — only %Interest rebuilds here.
             const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
             if (languinio) {
                 await languinio.r({ Interest: 1 }, {})
@@ -806,22 +809,19 @@
 
     // ── req:Languish — Lang's per-dock mind
     //
-    //   The do_fn for a /req:Languish.  Stages two maz-ordered phase reqs on the
-    //   Languish particle and runs them; unify_finished finishes Languish when
-    //   both are done.  Multi-maz do() descends through the levels in one pass
-    //   when each fully finishes, so on a fast (soft) compile both can complete
-    //   in a single tick.
+    //   Lives on dock ({dock:$path}/{req:'Languish'}).  Stages two maz-ordered
+    //   phase reqs and runs them; unify_finished finishes Languish when both done.
+    //   Multi-maz do() descends through levels in one pass on a fast (soft) compile.
     //
-    //     req:text_loaded, maz:3   mint dock + install text; wait for CM mount
+    //     req:text_loaded, maz:3   install text + wait for CM mount
     //     req:compile,     maz:2   build the methods index; hold for hard-write
     //
-    //   Grafting is no longer Languish's concern — Lang_settle owns it and
-    //   re-runs whenever the cursor or compile state changes.  Languish builds;
-    //   the settler wires.
+    //   Grafting is no longer Languish's concern — Lang_settle owns it.
+    //   Languish builds; the settler wires.
     //
-    //   Phases hang off the Languish req (c.up = languish), so a ttlilt on a
-    //   phase climbs languish → w:Lang and sets w:Lang.c.has_req_ttlilt — no
-    //   scheme:req extension needed for the phase subtree.
+    //   c.up chain: req.c.up = languish, languish.c.up = dock, dock.c.up = docks,
+    //   docks.c.up = w — wired in e_Lang_open_dock so reqyoncile and i_req_ttlilt
+    //   both climb correctly to w:Lang.
     async req_Languish(req: TheC, q: any) {
         const H = this as House
 
@@ -830,7 +830,7 @@
         await sub.roai({ req: 'text_mutated', maz: 2 })
         await sub.roai({ req: 'compile',     maz: 2 })
         // grafted dropped — Lang_settle owns all grafting; Languish builds the
-        //   dock and the compile index; the settler wires the rest.
+        //   compile index; the settler wires the rest.
 
         await sub.do()
         sub.unify_finished(q)
@@ -838,9 +838,8 @@
 
     // ── req:text_loaded, maz:3 ────────────────────────────────────────────────
     //
-    //   reqonce: mint the dock particle, stamp gen_path, install the source into
-    //   dock/{Text:1} metadata and dock.c.text, set the doc active.  Records
-    //   languish.sc.dock so the later phases find it without re-deriving.
+    //   reqonce: install text into the dock (already minted by e_Lang_open_dock),
+    //   stamp gen_path, seed Text metadata and dock.c.text, set the doc active.
     //
     //   The genuinely-async wait is the CodeMirror round-trip: Lang writes the
     //   dock.c.text → Langui renders → CM mounts → e_Lang_editorBegins stamps
@@ -848,37 +847,31 @@
     //   dock.c.state appears; the feebly_ponder wakes this monitor precisely
     //   when it lands.
     async req_text_loaded(req: TheC, q: any) {
-        const H = this as House
+        const H        = this as House
         const languish = req.c.up as TheC
-        const w        = languish.c.up as TheC
-        const path     = languish.sc.path as string
+        const dock     = languish.c.up as TheC          // set by reqy
+        const w        = dock.c.up?.c.up as TheC        // dock → docks → w (c.up wired in e_Lang_open_dock)
+        const path     = dock.sc.dock as string
 
         if (H.reqonce(req, 'opening')) {
-            // one chance: mint dock + install text.  Replaces the old inline
-            // e_Lang_open_dock body.
-            await H.Langspinner(w,'text_load')
+            // one chance: install text into the dock (already minted by e_Lang_open_dock).
+            await H.Langspinner(w, 'text_load')
 
             const gen_path = languish.sc.gen_path as string | undefined
             const text     = (languish.c.open_text as string) ?? ''
 
-            const docks = w.oai({docks: 1})
-            const dock = docks.oai({dock: path})
             if (gen_path) dock.sc.gen_path = gen_path
-            languish.sc.dock = dock
             dock.c.initial_text = text   // Langui reads this before the Text dige arrives
 
             // seed Text metadata; dock.c.text holds the string silently.
             // Langui reaches dock via ave/Languinio/dock — Lang_set_active_dock
-            // (called below) places this dock into Languinio, and Languinio is
-            // already enrolled in ave.  No separate ave enrollment needed.
-
-            // seed Text metadata; dock.c.text holds the string silently.
+            // (called below) places this dock into Languinio, already in ave.
             const initial_dige = text ? await dig(text) : ''
             dock.c.text = text
             await dock.moai({ Text: 1 }, {
-                dige:     initial_dige,
+                dige:      initial_dige,
                 disk_dige: initial_dige,
-                disk_rev: ((dock.o({ Text: 1 })[0]?.sc.disk_rev as number) ?? 0) + 1,
+                disk_rev:  ((dock.o({ Text: 1 })[0]?.sc.disk_rev as number) ?? 0) + 1,
             })
             dock.bump_version()
 
@@ -890,12 +883,11 @@
         // monitor: CM has mounted and handed us its EditorState.  Until then
         // there is nothing to compile.  e_Lang_editorBegins feebly_ponders when
         // it stamps dock.c.state, which re-enters here.
-        const dock = languish.sc.dock as TheC | undefined
-        if (!dock?.c.state) {
+        if (!dock.c.state) {
             H.i_req_ttlilt(req, 1.5, { waiting: 'cm_mount' })
             return
         }
-        await H.Langspinner(w,'text_load')
+        await H.Langspinner(w, 'text_load')
         q.finish(req)
     },
     async Langspinner(w,spinner:string,not=false) {
@@ -915,10 +907,10 @@
     //   the snap.  Either way %methods — the only thing grafting needs — is
     //   present the instant Lang_compile_dock returns.
     async req_compile(req: TheC, q: any) {
-        const H = this as House
+        const H        = this as House
         const languish = req.c.up as TheC
-        const w        = languish.c.up as TheC
-        const dock     = languish.sc.dock as TheC
+        const dock     = languish.c.up as TheC
+        const w        = dock.c.up?.c.up as TheC   // dock → docks → w (c.up wired in e_Lang_open_dock)
 
         if (H.reqonce(req, 'firing')) {
             // one chance: state is in — build the index.
@@ -1038,17 +1030,25 @@
 
         // ── drive Languish + workon + Furnishing + push ──────────────
         // §3i — drain Furnishing FIRST so languish.c.open_text is set before
-        // rq.do() drives req_text_loaded (whose reqonce fires once; if it fires
-        // before open_text arrives, the CM gets an empty doc and compile fails).
+        // Languish's req_text_loaded reqonce fires (one chance; empty doc if text absent).
         // o_elvis self-declares 'Lang_open_dock' on first call so subsequent
         // Furnishing couriers route to this main method.
         await this.e_Lang_open_dock(A, w)
 
-        // Languish stages text_loaded → compile for each open doc.
-        // req:settle (inside workon) is the permanent convergence loop — driven below.
-        // do() is cheap (skip) once reqs are finished.
+        // Drive w-level reqs (workon anchor, desire, etc.); cheap when settled.
         const rq = H.reqy(w)
         await rq.do()
+
+        // Drive each dock's Languish (text_loaded → compile).
+        // Languish now lives on dock — rq.do() on w no longer reaches it.
+        // i_scheme_req covers dock/* for ttlilt; do() on each dock drives Languish.
+        const docks_C = w.o({ docks: 1 })[0] as TheC | undefined
+        if (docks_C) {
+            for (const d of docks_C.o({ dock: 1 }) as TheC[]) {
+                const languish = d.o({ req: 'Languish' })[0] as TheC | undefined
+                if (languish && !languish.sc.finished) await H.reqy(d).do()
+            }
+        }
 
         // Drive workon: req:settle (permanent, open-ended) re-enters every think
         //   and converges src → LE → dock → graft → encode.  req:push sub-reqs
@@ -1116,8 +1116,8 @@
             delete dock.c.compile_ready
             clearTimeout(dock.c.compile_timer as ReturnType<typeof setTimeout>)
             dock.c.compile_timer = null
-            const path     = dock.sc.dock as string
-            const languish = rq.o({ req: 'Languish', path })[0] as TheC | undefined
+            // Languish lives on dock — no path lookup needed
+            const languish = dock.o({ req: 'Languish' })[0] as TheC | undefined
             const com      = languish?.o({ req: 'compile' })[0] as TheC | undefined
             if (com && languish) {
                 // reset the reqonce so Lang_compile_dock runs again for the new text

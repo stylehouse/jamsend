@@ -260,11 +260,6 @@ attention with particular Points illuminated on the walls.
 ```
 // ── LiesStore / IO tidy-up ──────────────────────────────────────────────────
 
-// < req:Languish on dock — move req:Languish from w-level (keyed by path) onto
-//   dock itself.  w.o({req:'Languish',path}) → dock.o({req:'Languish'})[0].
-//   languish.sc.path → dock.sc.dock, languish.sc.dock → gone.
-//   Lang_drive_languish(w, path, text, gen_path) → Lang_drive_languish(dock, text).
-
 // < compile_pending lifetime — oai'd by path, never dropped; one permanent
 //   particle per Ghost/ doc.  Should be dropped after req_LiesStore_write_done fires
 //   settle signals, or converted to a req with a proper lifecycle.

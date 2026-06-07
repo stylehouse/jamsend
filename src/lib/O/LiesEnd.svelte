@@ -3,7 +3,7 @@
 //
 //   Lies commissions Lang to look at an area of the Waft/%What** graph; an
 //   Understanding (U) is a bounded checkout of one %What's /%Point extent.
-//   Two Seems hang off one %LE (at w/{LE} under w:Lies):
+//   Two Seems hang off one w:Lang/LE:
 //     origin  — reads the remote %What for awareness (when to pull)
 //     working — holds the editable clone tree (clean C**) and its U sphere
 //
@@ -154,9 +154,9 @@ await M.eatfunc({
                 await H.e_Lang_LE_push(A, w, e)
                 return   // no feebly_ponder — push cluster manages its own think
             case 'pull': {
-                const workon = H.reqy(w).o({ req: 'workon' })[0] as TheC | undefined
-                const LE     = (e.sc.LE as TheC | undefined)
-                    ?? workon?.o({ LE: 1 })[0] as TheC | undefined
+                // LE is w/{LE:1}; %Languinio/%LE is the same-object hold pointing there.
+                const LE = (e.sc.LE as TheC | undefined)
+                    ?? (H.ave as TheC).o({ Languinio: 1 })[0]?.o({ LE: 1 })[0] as TheC | undefined
                 if (LE) await H.LE_pull(LE)
                 H.feebly_ponder()
                 return
@@ -261,7 +261,9 @@ await M.eatfunc({
         const rq     = H.reqy(w)
         const workon = rq.o({ req: 'workon' })[0] as TheC | undefined
         if (!workon) return
-        const LE = workon.o({ LE: 1 })[0] as TheC | undefined
+        // LE is w/{LE:1}; %Languinio/%LE is the same-object hold pointing there.
+        const LE = (e.sc.LE as TheC | undefined)
+            ?? (H.ave as TheC).o({ Languinio: 1 })[0]?.o({ LE: 1 })[0] as TheC | undefined
         if (!LE) return
 
         // The push cluster hangs off workon (stable for the Lang instance), one
