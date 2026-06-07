@@ -130,7 +130,7 @@
     //
     // ── future ────────────────────────────────────────────────────────────────
     //   < full close on Doc removal (drop loaded_doc, tell Lang)
-    //   < %pending_write / %surprise_read / diff per loaded_doc
+    //   < %LuxuryLiesStore_write / %surprise_read / diff per loaded_doc
     //   < nested Waft save
     //   < rename Waft: write fresh snap at new path
     let future = `
@@ -144,7 +144,7 @@ Dige tracking — stamp each gen/* write with the dige of the source it came fro
 
 Medium:
 
-Pull-before-push / pending_write / surprise_read — when Lies is about to write a compiled gen file, it first reads the current disk state. If it differs from what it read at load time, that's a surprise_read. Surface it in Liesui with a diff view and a "Push OK" button to unblock. The loaded_doc grows /%pending_write and /%surprise_read children.
+Pull-before-push / LuxuryLiesStore_write / surprise_read — when Lies is about to write a compiled gen file, it first reads the current disk state. If it differs from what it read at load time, that's a surprise_read. Surface it in Liesui with a diff view and a "Push OK" button to unblock. The loaded_doc grows /LuxuryLiesStore_write and /surprise_read children.
 
 Larger/more inventive:
 
@@ -231,13 +231,13 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     // ── e_Lies_source_write ────────────────────────────────────────────
     //
     //   Fired by Langui's auto-save timer (quiet 3s / active 10s).
-    //   Parks the current CM text as a req:pending_write inside req:Store and
-    //   wakes the tick; req_pending_write (in LiesStore) does the actual
+    //   Parks the current CM text as a req:LuxuryLiesStore_write inside req:Store
+    //   and wakes the tick; req_LuxuryLiesStore_write (in LiesStore) does the actual
     //   pull-before-push + disk write, driven by LiesStore_run's rq.do().
     //
     //   The work can't happen inline here: the pull-before-push read settles on
     //   a later think() (Wormhole done → finish → think back to w:Lies), so a
-    //   one-shot elvis can't see /%finished.  A req carries the text across that
+    //   one-shot elvis can't see /finished.  A req carries the text across that
     //   gap and gets re-driven each tick until the write fires.
     //
     //   e.sc: { path: string, text: string }
@@ -257,9 +257,9 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         // still in flight mutates the in-flight req's text rather than racing a
         // second write.  Drop a finished sibling first so roai builds a fresh req,
         // not a mutate-on-a-dead-one that do() would skip.
-        const pwq = await H.Lies_pending_write_reqy(w)
-        pwq.drop_finished({ req: 'pending_write', path })
-        await pwq.roai({ req: 'pending_write', path }, { text, dige: await dig(text) })
+        const pwq = await H.Lies_LuxuryLiesStore_write_reqy(w)
+        pwq.drop_finished({ req: 'LuxuryLiesStore_write', path })
+        await pwq.roai({ req: 'LuxuryLiesStore_write', path }, { text, dige: await dig(text) })
         H.i_elvisto(w, 'think')
     },
 
