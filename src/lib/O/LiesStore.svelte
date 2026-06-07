@@ -238,7 +238,7 @@
     //   the w(/req)+ %ttlilt picker naturally finds them.
     //
     async LiesStore_req(w: TheC): TheC {
-        return this.reqy(w).roai({req:'Store',eterenal:1}) // eterenal means it doesn't finish
+        return this.reqy(w).roai({req:'Store',eternal:1}) // eternal means it doesn't finish
     },
 
     // ── LiesStore_write ───────────────────────────────────────────────────────
@@ -281,16 +281,7 @@
             { rw_data: text, rw_name, rw_op: 'write' },
         )
 
-        // Fire immediately unless another write for this path is already in-flight.
-        // If in-flight: req is queued; do_fn serialises it after the current write.
-        if (!req.sc.finished) {
-            const in_flight = (wq.o({ path }) as TheC[]).find(
-                r => r !== req && r.oa({ req_sent: 1 }) && !r.sc.finished
-            )
-            if (!in_flight) {
-                H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
-            }
-        }
+        H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
 
         return req
     },
@@ -314,9 +305,7 @@
 
         const req = await rq.roai(c, { rw_op: 'read' })
 
-        if (!req.sc.finished) {
-            H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
-        }
+        H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
 
         return req
     },
@@ -340,9 +329,7 @@
         const rq   = H.reqy(host)
         const req  = await rq.roai({ req: 'wlisting', rw_dir }, { rw_op: 'list' })
 
-        if (!req.sc.finished) {
-            H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
-        }
+        H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
 
         return req
     },
