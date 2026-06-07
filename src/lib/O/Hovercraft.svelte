@@ -532,18 +532,21 @@
 
 //#region ttlilt
 
-// %ttlilt is the declarative replacement for demand_time_to_think.
-//   A /req that needs more wall-clock time before Story should snap declares
-//   /req/%ttlilt, usually just one with no extra identifying marks (via sc)
-//   since it hangs off its host req and its identity. Stays there until
-//   req%finished, does not update to add more time.
-//
-//   It does NOT cause think() or reqyoncile() to re-fire at until_ts.
+// /req/%ttlilt wants time before Story snaps
+//   May become %timed_out
+//   Usually vanishes when req%finished, so should be inside one that does
+//   Usually has no extra identifying marks (via sc)
+//    since it hangs off its host req and its identity
+//   Does not update to add more time. DO NOT "re-arm while in-flight":
+//    we want to take a picture of it in progress if it takes longer.
+//   It does NOT cause think() or reqyoncile() to re-fire at until_ts,
+//    it's just for helping Story snap coherent pictures of state, by advising on its timing.
 //   It only tells Story.poll_step "this slice of wall-clock isn't quiescent yet".
 //
 
     // oai req/%ttlilt,until_ts,...sc
-    //   sc any identity
+    //   sc any identity if multiple of these per req? that seems strange tho
+    //    this is whole property of one piece of work (req)
     i_req_ttlilt(req: TheC, secs: number, sc: TheUniversal = {}): TheC {
         const H = this as House
         const until_ts = now_in_seconds_with_ms() + secs

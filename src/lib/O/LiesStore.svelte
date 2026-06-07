@@ -6,13 +6,13 @@
     //   All live inside req:Store (itself in w's reqcons) so the %ttlilt walker
     //   finds them and LiesStore_run's single rq.do() drives them all.
     //
-    //   %req:pending_write,path  — source-file save with pull-before-push.
-    //                              Keyed by path (noserial reqy); one slot per doc.
-    //   %req:wwrite,path,dige    — one stable req per (path, content-hash) pair.
-    //   %req:wread,rw_name       — one stable req per wormhole path (+ optional label).
-    //   %req:wlisting,rw_dir     — one stable req per directory path.
+    //   %req:pending_write,path           — source-file save with pull-before-push.
+    //                                       Keyed by path (noserial reqy); one slot per doc.
+    //   %req:LiesStore_write,path,dige    — one stable req per (path, content-hash) pair.
+    //   %req:LiesStore_read,rw_name       — one stable req per wormhole path (+ optional label).
+    //   %req:LiesStore_listing,rw_dir     — one stable req per directory path.
     //
-    //   %Store:1 holds metadata only (wrote_at timestamps).
+    //   %Store:1 holds metadata only.
     //
     // ── API ───────────────────────────────────────────────────────────────────
     //
@@ -31,18 +31,15 @@
     //
     //   Dige-keyed: same content → same req (natural dedup).  LiesStore_write
     //   drops finished write reqs for the path before roai so stale completions
-    //   never block a fresh write.  Fires immediately unless another write for
-    //   the same path is in-flight — queued writes are serialised by do_fn.
-    //   LiesStore_run Phase 1 stamps wrote_at + base_dige on completion.
-    //
-    //   < throttle (MIN_WRITE_INTERVAL) is a do_fn dead-letter for local wormhole
-    //     (writes are in-flight before do_fn ever runs); kept for remote storage.
+    //   never block a fresh write.  Fires immediately; %ttlilt advises Story
+    //   to wait while in flight.  LiesStore_run Phase 1 stamps base_dige on completion.
     //
     // ── Read behaviour ────────────────────────────────────────────────────────
     //
     //   LiesStore_read fires i_elvis_req immediately (idempotent via req_sent).
-    //   Callers check req.sc.finished; LiesStore_run Phase 2 drops finished reads
-    //   after LiesPersist in the same tick so callers always get to read reply.
+    //   %ttlilt advises Story to wait while in flight.  Callers check
+    //   req.sc.finished; LiesStore_run Phase 2 drops finished reads after
+    //   LiesPersist in the same tick so callers always get to read reply.
     //
     //   Must NOT drop finished reads before roai — that re-dispatches every tick:
     //   finished dropped → roai creates fresh → fires again → Wormhole replies
@@ -51,23 +48,24 @@
     // ── Listing behaviour ─────────────────────────────────────────────────────
     //
     //   LiesStore_listing fires i_elvis_req immediately (same idempotency as read).
-    //   Wormhole replies with { entries: [{name, is_dir}] } or { not_found: true }.
-    //   Callers check req.sc.finished; LiesStore_run drops finished listing reqs
-    //   after the same window as reads (after LiesPersist, so callers see reply).
+    //   %ttlilt advises Story to wait while in flight.  Wormhole replies with
+    //   { entries: [{name, is_dir}] } or { not_found: true }.  Callers check
+    //   req.sc.finished; LiesStore_run drops finished listing reqs after the same
+    //   window as reads (after LiesPersist, so callers see reply).
     //
     // ── req:Store ─────────────────────────────────────────────────────────────
     //
     //   All IO reqs live inside req:Store so the w(/req)+ %ttlilt pickup applies
     //   and LiesStore_run's single rq.do() drives them all.
     //
-    //   %Store:1 holds metadata (wrote_at).
+    //   %Store:1 holds metadata (nothing for now).
     //   w/reqcons/reqcon:Store → w/req:Store is the req:Store particle.
     //   w/req:Store is eternal — born once, never finished by unify_finished.
     //   w/req:Store hosts (via a nested noserial reqy for pending_write):
     //     w/req:Store/req:pending_write,path
-    //     w/req:Store/req:wwrite,path,dige
-    //     w/req:Store/req:wread,rw_name
-    //     w/req:Store/req:wlisting,rw_dir
+    //     w/req:Store/req:LiesStore_write,path,dige
+    //     w/req:Store/req:LiesStore_read,rw_name
+    //     w/req:Store/req:LiesStore_listing,rw_dir
     //
     // ── Waft higher-level ops ─────────────────────────────────────────────────
     //
@@ -80,11 +78,7 @@
     import { Travel }         from "$lib/mostly/Selection.svelte"
     import type { House }     from "$lib/O/Housing.svelte"
     import { dig, throttle }  from "$lib/Y.svelte"
-    import { now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte"
     import { onMount }        from "svelte"
-
-    // < only relevant when remote storage makes the queued-write path actually fire
-    const MIN_WRITE_INTERVAL = 0.4
 
     let { M } = $props()
 
@@ -236,8 +230,9 @@
     // ── LiesStore_req ─────────────────────────────────────────────────────────
     //
     //   Returns (or creates) the w/req:Store particle — the host for all IO
-    //   reqs: wread, wwrite, wlisting, and pending_write.  Routing them through
-    //   req:Store means the w(/req)+ %ttlilt picker naturally finds them all.
+    //   reqs: LiesStore_read, LiesStore_write, LiesStore_listing, and pending_write.
+    //   Routing them through req:Store means the w(/req)+ %ttlilt picker naturally
+    //   finds them all.
     //
     async LiesStore_req(w: TheC): Promise<TheC> {
         return this.reqy(w).roai({req:'Store',eternal:1}) // eternal means it doesn't finish
@@ -250,7 +245,7 @@
     //   noserial: pending_write reqs are keyed by path so auto-numbering would
     //   be wrong; path identity is all we need.
     //   Lives inside req:Store so the %ttlilt walker finds req:pending_write
-    //   reqs naturally alongside wwrite/wread.
+    //   reqs naturally alongside LiesStore_write/LiesStore_read.
     //
     async Lies_pending_write_reqy(w: TheC) {
         const H    = this as House
@@ -261,7 +256,7 @@
     // ── LiesStore_write ───────────────────────────────────────────────────────
     //
     //   Returns null when content matches %loaded_doc.sc.base_dige (already on
-    //   disk).  Returns the %req:wwrite otherwise — check req.sc.finished.
+    //   disk).  Returns the %req:LiesStore_write otherwise — check req.sc.finished.
     //
     //   rw_name defaults to path; pass explicitly for compile writes
     //   (src/lib/gen/…) or any other target that differs from the source path.
@@ -281,7 +276,7 @@
 
         const host = await H.LiesStore_req(w)
         const wq   = H.reqy(host)
-        wq.drop_finished({req: 'wwrite', path}) // < weird? just keep the latest one?
+        wq.drop_finished({req: 'LiesStore_write', path}) // < weird? just keep the latest one?
 
         // < not necessary given req%mutated, which should be how we trigger resends
         //    we are going to fail to 'eventual consistency' I think
@@ -294,19 +289,19 @@
         if (existing) return existing
 
         const req = await wq.roai(
-            { req: 'wwrite', path, dige: new_dige },
+            { req: 'LiesStore_write', path, dige: new_dige },
             { rw_data: text, rw_name, rw_op: 'write' },
         )
 
         H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
+        H.i_req_ttlilt(req, 1.6, { waiting: 'gen_write' })
 
         return req
     },
 
     // ── LiesStore_read ────────────────────────────────────────────────────────
     //
-    //   Fires i_elvis_req immediately (idempotent: req_sent prevents double-fire;
-    //   i_elvis_req on a finished req returns true and does nothing extra).
+    //   Fires i_elvis_req immediately (idempotent via req_sent).
     //   Does NOT drop finished reqs before roai — callers need them to read reply.
     async LiesStore_read(
         w:       TheC,
@@ -317,19 +312,20 @@
         const host = await H.LiesStore_req(w)
         const rq   = H.reqy(host)
         const c = opts.label
-            ? { req: 'wread', rw_name, label: opts.label }
-            : { req: 'wread', rw_name }
+            ? { req: 'LiesStore_read', rw_name, label: opts.label }
+            : { req: 'LiesStore_read', rw_name }
 
         const req = await rq.roai(c, { rw_op: 'read' })
 
         H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
+        if (!req.sc.finished) H.i_req_ttlilt(req, 1.6, { waiting: 'LiesStore_read' })
 
         return req
     },
 
     // ── LiesStore_listing ────────────────────────────────────────────────────
     //
-    //   Returns the %req:wlisting for this directory path.
+    //   Returns the %req:LiesStore_listing for this directory path.
     //   Same idempotency pattern as LiesStore_read — fires i_elvis_req once,
     //   callers check req.sc.finished and read req.sc.reply?.entries.
     //
@@ -344,9 +340,10 @@
         const H    = this as House
         const host = await H.LiesStore_req(w)
         const rq   = H.reqy(host)
-        const req  = await rq.roai({ req: 'wlisting', rw_dir }, { rw_op: 'list' })
+        const req  = await rq.roai({ req: 'LiesStore_listing', rw_dir }, { rw_op: 'list' })
 
         H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
+        if (!req.sc.finished) H.i_req_ttlilt(req, 1.6, { waiting: 'LiesStore_listing' })
 
         return req
     },
@@ -356,14 +353,14 @@
     //   Drives one parked source-file save across ticks.  Lives inside req:Store
     //   so the %ttlilt walker finds it and LiesStore_run's rq.do() drives it.
     //
-    //   req.c.up = req:Store, so w = req.c.up.c.up (same two-hop as req_wwrite).
+    //   req.c.up = req:Store, so w = req.c.up.c.up.
     //
     //   Steps:
     //     1. content gate — dige matches base_dige → already on disk → finish.
     //     2. pull-before-push read.  Not finished yet → ttlilt + stay unfinished.
     //     3. disk dige diverged from base_dige → external edit: stamp
     //        /%surprise_read (stashing text for a future "push anyway") → finish.
-    //     4. clean → LiesStore_write (wwrite sibling in req:Store), clear
+    //     4. clean → LiesStore_write (sibling in req:Store), clear
     //        any /%surprise_read, finish.
     //
     //   < the surprise path blocks the write but doesn't yet resume it; the
@@ -393,7 +390,7 @@
         if (base_dige && dige === base_dige) return q.finish(req)
 
         // Pull-before-push: read disk, compare to what we loaded.
-        // roai on the wread channel finds an existing req with matching identity,
+        // roai on the LiesStore_read channel finds an existing req with matching identity,
         // so a read from a prior tick that hasn't been Phase-2-dropped yet is
         // returned directly — no duplicate Wormhole dispatch.
         const read = await H.LiesStore_read(w, path, { label: 'source_check' })
@@ -421,63 +418,15 @@
         q.finish(req)
     },
 
-    // ── req_wwrite ─────────────────────────────────────────────────
-    //
-    //   Handles write reqs that LiesStore_write left queued (in-flight sibling).
-    //
-    //   (a) Already dispatched — skip entirely; LiesStore_run Phase 1 handles
-    //       the completion scan.
-    //   (b) Throttle — too soon after last write to this path.  Arms ttlilt +
-    //       demand_time_to_think so do_fn retries.  Dead-letter for local wormhole.
-    //   (c) Serialize — another write for this path is still in-flight.
-    //       Arms a short ttlilt + demand_time_to_think and waits.
-    //   (d) Dispatch.
-    async req_wwrite(req: TheC, q: any) {
-        const H     = this as House
-        const w     = req.c.up?.c.up as TheC   // req → req:Store → w
-        const Store = H.LiesStore_store(w)
-        const path  = req.sc.path as string
-
-        // (a) Already dispatched — in-flight or waiting for Wormhole.
-        if (req.oa({ req_sent: 1 })) return
-
-        // (b) Throttle.
-        const last_wrote = Store.sc[`wrote_at:${path}`] as number | undefined
-        if (last_wrote) {
-            const elapsed = now_in_seconds_with_ms() - last_wrote
-            if (elapsed < MIN_WRITE_INTERVAL) {
-                const hold = MIN_WRITE_INTERVAL - elapsed
-                H.i_req_ttlilt(req, hold, { throttle: 1 })
-                H.demand_time_to_think(Math.ceil(hold * 1000) + 50)
-                return
-            }
-        }
-
-        // (c) Serialize: one in-flight write per path.
-        const in_flight = (q.o({ path }) as TheC[]).find(
-            r => r !== req && r.oa({ req_sent: 1 }) && !r.sc.finished
-        )
-        if (in_flight) {
-            H.i_req_ttlilt(req, 0.35, { waiting: 1 })
-            H.demand_time_to_think(400)
-            return
-        }
-
-        // (d) Dispatch.
-        H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
-    },
     // < all compiley stuff should go elsewhere, as a consequence of %finished
-    async req_wwrite_done(w: TheC, req: TheC) {
+    async req_LiesStore_write_done(w: TheC, req: TheC) {
         const H     = this as House
-        const Store = H.LiesStore_store(w)
         const path  = req.sc.path  as string
         const reply = req.sc.reply as any
 
         if (reply?.error) {
             console.error(`💾 LiesStore write error on ${path}:`, reply.error)
         } else {
-            Store.sc[`wrote_at:${path}`] = now_in_seconds_with_ms()
-            
             const ld = w.o({ loaded_doc: 1, path })[0] as TheC | undefined
             if (ld) {
                 ld.sc.base_dige = req.sc.dige as string
@@ -494,7 +443,7 @@
 
             // Deferred settle for gen/ writes: LiesRealised parked write_t0 on
             // the matching %compile_pending and skipped firing Lies_compile_settled.
-            // Now that the wwrite is done the file is on disk — safe to notify
+            // Now that the write is done the file is on disk — safe to notify
             // Pantheate (dynamic import will find the file) and settle Lang.
             const rw_name = req.sc.rw_name as string | undefined
             const pending = rw_name
@@ -526,8 +475,8 @@
     // ── LiesStore_run ─────────────────────────────────────────────────────────
     //
     //   Called from the Lies tick after LiesPersist + LiesCurse.
-    //   rq.do() drives all children of req:Store: wwrite, wread, wlisting,
-    //   and pending_write (which lives here now rather than on w directly).
+    //   rq.do() drives all children of req:Store: LiesStore_write, LiesStore_read,
+    //   LiesStore_listing, and pending_write (which lives here now rather than on w directly).
     //
     async LiesStore_run(A: TheC, w: TheC) {
         const H    = this as House
@@ -535,23 +484,23 @@
         const rq   = H.reqy(host)
         await rq.do()
 
-        // ── Phase 1: wwrite completions ───────────────────────────────────────
-        //   pending_write reqs finish silently (their wwrite sibling carries the
-        //   actual IO); only wwrite reqs need the done callback.
+        // ── Phase 1: LiesStore_write completions ──────────────────────────────
+        //   pending_write reqs finish silently (their LiesStore_write sibling carries
+        //   the actual IO); only LiesStore_write reqs need the done callback.
         for (const req of rq.o() as TheC[]) {
             if (req.sc.finished) {
-                if (req.sc.req == 'wwrite') H.req_wwrite_done(w, req)
+                if (req.sc.req == 'LiesStore_write') H.req_LiesStore_write_done(w, req)
                 host.drop(req)
             }
         }
 
         // ── Phase 2: drop finished reads (after LiesPersist sees them) ────────
-        for (const req of rq.o({ req: 'wread' }) as TheC[]) {
+        for (const req of rq.o({ req: 'LiesStore_read' }) as TheC[]) {
             if (req.sc.finished) host.drop(req)
         }
 
         // ── Phase 3: drop finished listings ───────────────────────────────────
-        for (const req of rq.o({ req: 'wlisting' }) as TheC[]) {
+        for (const req of rq.o({ req: 'LiesStore_listing' }) as TheC[]) {
             if (req.sc.finished) host.drop(req)
         }
     },
