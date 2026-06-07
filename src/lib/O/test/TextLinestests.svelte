@@ -254,24 +254,19 @@
         const done_dirs  = w.c.snap_done_dirs  as Set<string>
         const inflight   = w.c.snap_inflight   as Set<string>
 
-        // ── migrate_lines ─────────────────────────────────────────────────────
+        // ── migrate_lines ─────────────────────────────────────────────────────────────────────────
         //
-        //   Rewrites peel-format stringies in each line with modern depeel.
-        //   Must be stateful across lines to track BQ blocks correctly:
+        //   Protocol flip: old format was obj_part\tstr_part (JSON left of tab).
+        //   New format is str_part\tobj_part (stringies left — the readable part).
+        //   Detection: left side of tab starts with '{' → old format, swap halves.
         //
         //   BQ key line:   exactly 2*d+1 leading spaces, matches /^(\w+):\s*\|$/
         //                  → pass through; enter BQ body mode for this depth
         //   BQ body lines: ≥ 2*d+3 leading spaces while in BQ body mode
-        //                  → pass through verbatim (raw prose, not peel)
-        //   Normal lines:  even spaces, not in BQ body → deL + re-depeel
-        //   JSON-stringies: str_raw starts with '{' → pass through
+        //                  → pass through verbatim
+        //   No-tab lines and already-flipped lines pass through unchanged.
         //
-        //   deL is used for the structural split (handles objecties-tab correctly).
-        //   Old fuzzy coerce rule (/^-?\d+\.?\d*$/) applied to str_raw segments
-        //   to recover what old peel produced, then modern depeel re-emits.
-        //
-        const OLD_NUMERIC = /^-?\d+\.?\d*$/
-        const BQ_KEY      = /^(\w+):\s*\|$/
+        const BQ_KEY = /^(\w+):\s*\|$/
 
         const migrate_lines = (snap: string): string => {
             const lines  = snap.split('\n')
@@ -304,37 +299,16 @@
                     continue
                 }
 
-                let parsed: { d: number, objecties: Record<string,any>, stringies: Record<string,any> } | null
-                try { parsed = H.deL(raw) } catch { out.push(raw); continue }
-                if (!parsed) { out.push(raw); continue }
+                const tab = raw.indexOf('\t')
+                if (tab < 0) { out.push(raw); continue }
 
-                const { d, objecties } = parsed
+                const left = raw.slice(spaces, tab)
+                if (!left.startsWith('{')) { out.push(raw); continue }
 
-                // JSON-stringies: already type-safe
-                const tab     = raw.indexOf('\t')
-                const str_raw = tab >= 0 ? raw.slice(tab + 1) : raw.slice(spaces)
-                if (str_raw.startsWith('{')) { out.push(raw); continue }
-
-                // apply old fuzzy coerce rule to str_raw to recover original types
-                const recovered: Record<string, any> = {}
-                for (const part of str_raw.split(',')) {
-                    const ci = part.indexOf(':')
-                    if (ci < 0) {
-                        const k = part.trim(); if (k) recovered[k] = 1
-                    } else {
-                        const k = part.slice(0, ci)
-                        const v = part.slice(ci + 1)
-                        if (!k) continue
-                        recovered[k] = OLD_NUMERIC.test(v) ? parseFloat(v) : v
-                    }
-                }
-
-                const new_str = depeel(recovered, { modern: true })
-                if (new_str === str_raw) { out.push(raw); continue }
-
-                const ind      = '  '.repeat(d)
-                const obj_part = Object.keys(objecties).length ? JSON.stringify(objecties) : ''
-                out.push(obj_part ? `${ind}${obj_part}\t${new_str}` : `${ind}${new_str}`)
+                // old format — swap halves
+                const ind   = raw.slice(0, spaces)
+                const right = raw.slice(tab + 1)
+                out.push(`${ind}${right}\t${left}`)
             }
 
             return out.join('\n')

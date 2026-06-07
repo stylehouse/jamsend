@@ -1,18 +1,18 @@
 Snap:H
   H:Understandium,Run
     A:Understandium
-      {"mung":["age"]}	self,round=10
+      self,round=10	{"mung":["age"]}
       w:Understandium
         tally,passed=25,failed=0
-        {"ref":{"target":"%What:1, label:second"}}	LE
+        LE	{"ref":{"target":"%What:1, label:second"}}
           State
           {"encode":1,"snap_origin":"Point,method:e_Dock_open_RENAMED\nPoint,method:Lang_doc_from_event\nWhat,label:deeper\n","snap_working":"Point,method:e_Dock_open_RENAMED\nPoint,method:Lang_doc_from_event\nWhat,label:deeper\n","dirty":"0"}
-          {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:second","topD":"%Demonstrations:origin"}}	Seem:origin
+          Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:second","topD":"%Demonstrations:origin"}}
             Demonstrations:origin
               Demonstrations:origin,Point,method:alpha2
               Demonstrations:origin,Point,method:beta
             News:origin,goners=0,neus=0
-          {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:second","topD":"%Demonstrations:working"}}	Seem:working
+          Seem:working	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:second","topD":"%Demonstrations:working"}}
             Demonstrations:working
               Understandable
               Demonstrations:working,Point,method:alpha2
@@ -30,7 +30,7 @@ Snap:H
           What,label:second
             Point,method:alpha2
             Point,method:beta
-        {"mung":["age"]}	self,round=10
+        self,round=10	{"mung":["age"]}
         see:step 10 strict fork
           default_rename,goners=0,neus=0
           {"PASS":1,"t":"default: rename is a survivor (no diff)"}
@@ -39,14 +39,14 @@ Snap:H
             goner:e_Dock_open
             neu:e_Dock_open_v2
           {"PASS":1,"t":"resolve_strict: rename is goner + neu"}
-        {"ref":{"target":"%What:1, label:routing"}}	LE2
-          {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
+        LE2	{"ref":{"target":"%What:1, label:routing"}}
+          Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}
             Demonstrations:origin
               Demonstrations:origin,Point,method:e_Dock_open_v2
               Demonstrations:origin,Point,method:Lang_doc_from_event
               Demonstrations:origin,What,label:deeper
             News:origin,goners,neus
-          {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:working"}}	Seem:working
+          Seem:working	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:working"}}
             Demonstrations:working
               Understandable
               Demonstrations:working,Point,method:e_Dock_open
@@ -63,4 +63,4 @@ Snap:H
             Point,method:Lang_doc_from_event
             What,label:deeper
               Point,method:inner_secret
-    {"mung":["id"]}	mo:main,interval=3.6
+    mo:main,interval=3.6	{"mung":["id"]}

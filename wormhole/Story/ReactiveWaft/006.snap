@@ -1,7 +1,7 @@
 Snap:H
   H:ReactiveWaft,Run
     A:ReactiveWaft
-      {"mung":["age"]}	self,round=6
+      self,round=6	{"mung":["age"]}
       w:ReactiveWaft
         Lies
         Waft:test1
@@ -13,8 +13,8 @@ Snap:H
           Doc,path:q.g
         logger,n
           wafts,n=3
-        {"mung":["age"]}	self,round=6
+        self,round=6	{"mung":["age"]}
     watched:ave
     watched:UIs
-      {"ref":{"component":"Function()"}}	UI:ReactiveWaft
-    {"mung":["id"]}	mo:main,interval=3.6
+      UI:ReactiveWaft	{"ref":{"component":"Function()"}}
+    mo:main,interval=3.6	{"mung":["id"]}

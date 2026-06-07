@@ -1,9 +1,9 @@
 Snap:H
   H:MundaneStation,Run
     A:MundaneStation
-      {"mung":["age"]}	self,round=12
+      self,round=12	{"mung":["age"]}
       w:MundaneStation
-        {"ref":{"sc_has":"Object()"}}	export:Items
+        export:Items	{"ref":{"sc_has":"Object()"}}
         Folder:music
           Item:song_2,mins=4
           Item:song_1,mins=3
@@ -15,24 +15,24 @@ Snap:H
           req:make_item,n=2,maz=2,ttlilt=0,done,finished
           req:make_item,n=3,maz=3,ttlilt=0,done,finished
           req:make_item,n=4,maz=4,ttlilt=0,done,finished
-        {"mung":["age"]}	self,round=12
+        self,round=12	{"mung":["age"]}
         export_for:Items
           openity,v=-11
-          {"ref":{"path":"[music]"}}	export_D,name:music,line:Object()
+          export_D,name:music,line:Object()	{"ref":{"path":"[music]"}}
             openity,v=-11
-            {"ref":{"path":"[music,song_2]"}}	export_D,name:song_2,line:Object()
+            export_D,name:song_2,line:Object()	{"ref":{"path":"[music,song_2]"}}
               openity,v=-11
-            {"ref":{"path":"[music,song_1]"}}	export_D,name:song_1,line:Object()
+            export_D,name:song_1,line:Object()	{"ref":{"path":"[music,song_1]"}}
               openity,v=-11
-          {"ref":{"path":"[videos]"}}	export_D,name:videos,line:Object()
+          export_D,name:videos,line:Object()	{"ref":{"path":"[videos]"}}
             openity,v=-11
-            {"ref":{"path":"[videos,clip_2]"}}	export_D,name:clip_2,line:Object()
+            export_D,name:clip_2,line:Object()	{"ref":{"path":"[videos,clip_2]"}}
               openity,v=-11
-            {"ref":{"path":"[videos,clip_1]"}}	export_D,name:clip_1,line:Object()
+            export_D,name:clip_1,line:Object()	{"ref":{"path":"[videos,clip_1]"}}
               openity,v=-11
     A:MundaneOuter
-      {"mung":["age"]}	self,round=8
+      self,round=8	{"mung":["age"]}
       w:MundaneOuter
-        {"mung":["age"]}	self,round=8
+        self,round=8	{"mung":["age"]}
         {"see":"mirror: ∅"}
-    {"mung":["id"]}	mo:main,interval=3.6
+    mo:main,interval=3.6	{"mung":["id"]}

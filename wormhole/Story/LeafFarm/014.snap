@@ -1,7 +1,7 @@
 Snap:H
   H:LeafFarm,Run
     A:farm
-      {"mung":["age"]}	self,round=14
+      self,round=14	{"mung":["age"]}
       w:farm
         sunshine,dose=0.16421211379320588
         sunny_streak,count=0
@@ -10,21 +10,21 @@ Snap:H
         leaf,leaf_id:leaf_3_0,dose=0.8597192654656817
         leaf,leaf_id:leaf_4_0,dose=0.7046879225128538
         seen:wonder
-        {"mung":["age"]}	self,round=14
+        self,round=14	{"mung":["age"]}
     A:plate
-      {"mung":["age"]}	self,round=14
+      self,round=14	{"mung":["age"]}
       w:plate
         sunshine,dose
         material:basic,amount=2.2083690166711807
         wants_enzyme
         shelf,enzyme,units
         shelf,enzyme,units=5
-        {"mung":["age"]}	self,round=14
+        self,round=14	{"mung":["age"]}
     A:enzymeco
-      {"mung":["age"]}	self,round=14
+      self,round=14	{"mung":["age"]}
       w:enzymeco
-        {"mung":["age"]}	self,round=14
-    {"mung":["id"]}	mo:main,interval=3.6
+        self,round=14	{"mung":["age"]}
+    mo:main,interval=3.6	{"mung":["id"]}
 Snap:cytowave
   upsert,id:cytoid_1_1_1
     style,height=24

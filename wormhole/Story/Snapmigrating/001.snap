@@ -1,16 +1,16 @@
 Snap:H
   H:Snapmigrating,Run
     A:Snapmigrating
-      {"mung":["age"]}	self,round=2
+      self,round=2	{"mung":["age"]}
       w:Snapmigrating
         req:Store
-          {"ref":{"reply":"Object()"}}	req:wlisting,rw_dir:wormhole,rw_op:list,finished:true
+          req:wlisting,rw_dir:wormhole,rw_op:list,finished:true	{"ref":{"reply":"Object()"}}
             req_sent
             ttlilt,until_ts=1780584327.666,waiting:listing
-        {"mung":["age"]}	self,round=2
+        self,round=2	{"mung":["age"]}
         done,see:⏳ scanning… (0 done)
         {"see":"✅ Snapmigrating: 0 migrated, 0 unchanged, 0 errors"}
-    {"mung":["id"]}	mo:main,interval=3.6
+    mo:main,interval=3.6	{"mung":["id"]}
 Snap:cytowave
   upsert,id:cytoid_1_1,label:Snapmigrating,isCompound:true
     style,background-color:#8f3232

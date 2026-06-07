@@ -1,9 +1,9 @@
 Snap:H
   H:Understandity,Run
     A:Understandity
-      {"mung":["age"]}	self,round
+      self,round	{"mung":["age"]}
       w:Understandity
-        {"mung":["age"]}	self,round
+        self,round	{"mung":["age"]}
         source
           What,label:routing
             Point,method:e_Doc_open_RENAMED
@@ -77,4 +77,4 @@ Snap:H
             neu:e_Doc_open_v2
             {"PASS":1,"t":"resolve_strict: the same rename is goner + neu"}
         VERDICT:ALL_GREEN,passed=14
-    {"mung":["id"]}	mo:main,interval=3.6
+    mo:main,interval=3.6	{"mung":["id"]}

@@ -1,9 +1,9 @@
 Snap:H
   H:Snaptesting,Run
     A:Snaptesting
-      {"mung":["age"]}	self,round
+      self,round	{"mung":["age"]}
       w:Snaptesting
-        {"mung":["age"]}	self,round
+        self,round	{"mung":["age"]}
         section:Lines-encoding is explicit about number|string
           three_as_string:3,three_as_number=3
           pass:three_as_string is string
@@ -56,4 +56,4 @@ Snap:H
           pass:flag_str is string
           pass:flag_str value
         see:✅ Snaptesting passed
-    {"mung":["id"]}	mo:main,interval=3.6
+    mo:main,interval=3.6	{"mung":["id"]}

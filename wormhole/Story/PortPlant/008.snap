@@ -1,7 +1,7 @@
 Snap:H
   H:PortPlant,Run
     A:PortPlant
-      {"mung":["age"]}	self,round=12
+      self,round=12	{"mung":["age"]}
       w:PortPlant
         body,hands=2
         shelf
@@ -23,5 +23,5 @@ Snap:H
         req:celebrate,finished
           req:confetti,finished
         thus:🎉 all repotted and shelved!
-        {"mung":["age"]}	self,round=12
-    {"mung":["id"]}	mo:main,interval=3.6
+        self,round=12	{"mung":["age"]}
+    mo:main,interval=3.6	{"mung":["id"]}

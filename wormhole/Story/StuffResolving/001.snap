@@ -1,9 +1,9 @@
 Snap:H
   H:StuffResolving,Run
     A:StuffResolving
-      {"mung":["age"]}	self,round
+      self,round	{"mung":["age"]}
       w:StuffResolving
-        {"mung":["age"]}	self,round
+        self,round	{"mung":["age"]}
         log
           msg:resolved pair,before:n = blah,after:n = blah
           msg:resolved pair,before:etc,after:etc
@@ -14,7 +14,7 @@ Snap:H
           blah,bang
             first
           etc
-    {"mung":["id"]}	mo:main,interval=3.6
+    mo:main,interval=3.6	{"mung":["id"]}
 Snap:cytowave
   upsert,id:cytoid_1_1,label:StuffResolving,isCompound:true
     style,background-color:#8f3232

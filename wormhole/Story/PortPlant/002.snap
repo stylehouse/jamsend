@@ -1,7 +1,7 @@
 Snap:H
   H:PortPlant,Run
     A:PortPlant
-      {"mung":["age"]}	self,round=2
+      self,round=2	{"mung":["age"]}
       w:PortPlant
         body,hands=2
           pot:rose
@@ -21,8 +21,8 @@ Snap:H
           req:repot,maz=2
           req:move_inside
         req:celebrate
-        {"mung":["age"]}	self,round=2
+        self,round=2	{"mung":["age"]}
         log
           msg:carrying rose
           msg:carrying fern
-    {"mung":["id"]}	mo:main,interval=3.6
+    mo:main,interval=3.6	{"mung":["id"]}

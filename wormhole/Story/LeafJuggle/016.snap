@@ -1,7 +1,7 @@
 Snap:H
   H:LeafJuggle,Run
     A:Yin,began
-      {"mung":["age"]}	self,round=16
+      self,round=16	{"mung":["age"]}
       w:Yin
         hand:left
           leaf
@@ -9,14 +9,14 @@ Snap:H
         whatsit
           thing:with,see
         other=3
-        {"mung":["age"]}	self,round=16
+        self,round=16	{"mung":["age"]}
     A:Yang
-      {"mung":["age"]}	self,round=16
+      self,round=16	{"mung":["age"]}
       w:Yang
         hand:left
         hand:right
-        {"mung":["age"]}	self,round=16
-    {"mung":["id"]}	mo:main,interval=3.6
+        self,round=16	{"mung":["age"]}
+    mo:main,interval=3.6	{"mung":["id"]}
 Snap:cytowave
   upsert,id:cytoid_1_1_1_4,label:🌿,parent:cytoid_1_1
     style,background-color:#1a5a2a

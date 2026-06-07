@@ -1,17 +1,17 @@
 Snap:H
   H:Understandium,Run
     A:Understandium
-      {"mung":["age"]}	self,round=5
+      self,round=5	{"mung":["age"]}
       w:Understandium
         tally,passed=13,failed=0
-        {"ref":{"target":"%What:1, label:routing"}}	LE
-          {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
+        LE	{"ref":{"target":"%What:1, label:routing"}}
+          Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}
             Demonstrations:origin
               Demonstrations:origin,Point,method:e_Dock_open
               Demonstrations:origin,Point,method:Lang_doc_from_event
               Demonstrations:origin,What,label:deeper
             News:origin,goners,neus=0
-          {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:working"}}	Seem:working
+          Seem:working	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:working"}}
             Demonstrations:working
               Understandable
               Demonstrations:working,Point,method:e_Dock_open
@@ -28,11 +28,11 @@ Snap:H
             Point,method:Lang_doc_from_event
             What,label:deeper
               Point,method:inner_secret
-        {"mung":["age"]}	self,round=5
+        self,round=5	{"mung":["age"]}
         see:step 5 local meaning
           wrote_unshowing_onto:e_Dock_open
           PASS,t:clone sc stays clean (no unshowing in .sc)
           PASS,t:%unshowing readable on the U node
           PASS,t:U is a separate %Understandable node hung under D
           PASS,t:%unshowing not on source %Point
-    {"mung":["id"]}	mo:main,interval=3.6
+    mo:main,interval=3.6	{"mung":["id"]}

@@ -1,7 +1,7 @@
 Snap:H
   H:PotPlanet,Run
     A:PotPlanet
-      {"mung":["age"]}	self,round=7
+      self,round=7	{"mung":["age"]}
       w:PotPlanet
         orders
           order:rose,dose=5
@@ -17,5 +17,5 @@ Snap:H
           order:rose,dose=5
           order:fern,dose=7
           order:rose_extra,dose=2
-        {"mung":["age"]}	self,round=7
-    {"mung":["id"]}	mo:main,interval=3.6
+        self,round=7	{"mung":["age"]}
+    mo:main,interval=3.6	{"mung":["id"]}

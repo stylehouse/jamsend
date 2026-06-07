@@ -1,10 +1,10 @@
 Snap:H
   H:MundaneStation,Run
     A:MundaneStation
-      {"mung":["age"]}	self,round
+      self,round	{"mung":["age"]}
       w:MundaneStation
-        {"mung":["age"]}	self,round
-        {"ref":{"sc_has":"Object()"}}	export:Items
+        self,round	{"mung":["age"]}
+        export:Items	{"ref":{"sc_has":"Object()"}}
         Folder:music
         Folder:videos
         De:populate
@@ -14,14 +14,14 @@ Snap:H
           req:make_item,n=4,maz=4,ttlilt
         export_for:Items
           openity,v=-11
-          {"ref":{"path":"[music]"}}	export_D,name:music,line:Object()
+          export_D,name:music,line:Object()	{"ref":{"path":"[music]"}}
             openity,v=-11
-          {"ref":{"path":"[videos]"}}	export_D,name:videos,line:Object()
+          export_D,name:videos,line:Object()	{"ref":{"path":"[videos]"}}
             openity,v=-11
         see:ttlilting...
     A:MundaneOuter
-      {"mung":["age"]}	self,round
+      self,round	{"mung":["age"]}
       w:MundaneOuter
-        {"mung":["age"]}	self,round
+        self,round	{"mung":["age"]}
         {"see":"mirror: ∅"}
-    {"mung":["id"]}	mo:main,interval=3.6
+    mo:main,interval=3.6	{"mung":["id"]}

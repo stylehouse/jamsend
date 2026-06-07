@@ -1,7 +1,7 @@
 Snap:H
   H:PotPlant,Run
     A:PotPlant
-      {"mung":["age"]}	self,round=5
+      self,round=5	{"mung":["age"]}
       w:PotPlant
         body,hands=2
         shelf
@@ -26,5 +26,5 @@ Snap:H
           {"msg":"repotted rose (yard soil: 10)"}
           {"msg":"repotted fern (yard soil: 8)"}
           {"msg":"repotted cactus (yard soil: 6)"}
-        {"mung":["age"]}	self,round=5
-    {"mung":["id"]}	mo:main,interval=3.6
+        self,round=5	{"mung":["age"]}
+    mo:main,interval=3.6	{"mung":["id"]}

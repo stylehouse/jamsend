@@ -1,9 +1,9 @@
 Snap:H
   H:TextInca,Run
     A:TextInca
-      {"mung":["age"]}	self,round
+      self,round	{"mung":["age"]}
       w:TextInca
-        {"mung":["age"]}	self,round
+        self,round	{"mung":["age"]}
         enc_test:round_trip,ok,empires=2,roman_emperors=3,mongol_emperors=2,enc_errors=0,dec_errors=0
          snap_output: |
            Civilization
@@ -44,4 +44,4 @@ Snap:H
           lm_thence_propagates
           lm_thence_dedup
         see:📜 TextInca done
-    {"mung":["id"]}	mo:main,interval=3.6
+    mo:main,interval=3.6	{"mung":["id"]}

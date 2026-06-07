@@ -1,11 +1,11 @@
 Snap:H
   H:PortPlan,Run
     A:PortPlan
-      {"mung":["age"]}	self,round=4
+      self,round=4	{"mung":["age"]}
       w:PortPlan
         De:sort,finished
           req:wait,time=123,thing=3,finished
         De:yay,maz=2,finished
         confetti:!!!
-        {"mung":["age"]}	self,round=4
-    {"mung":["id"]}	mo:main,interval=3.6
+        self,round=4	{"mung":["age"]}
+    mo:main,interval=3.6	{"mung":["id"]}

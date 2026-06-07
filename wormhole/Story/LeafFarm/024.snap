@@ -1,7 +1,7 @@
 Snap:H
   H:LeafFarm,Run
     A:farm
-      {"mung":["age"]}	self,round=24
+      self,round=24	{"mung":["age"]}
       w:farm
         sunshine,dose=0.9968339319245763
         sunny_streak,count=4
@@ -9,10 +9,10 @@ Snap:H
         seen:wonder
         leaf,leaf_id:leaf_22_0,dose=0.14884000000000003
         leaf,leaf_id:leaf_23_0,dose=0.12200000000000001
-        {"mung":["age"]}	self,round=24
+        self,round=24	{"mung":["age"]}
         leaf,leaf_id:leaf_24_0,dose=0.1
     A:plate
-      {"mung":["age"]}	self,round=24
+      self,round=24	{"mung":["age"]}
       w:plate
         sunshine,dose
         material:basic,amount=2.4836969586042557
@@ -20,15 +20,15 @@ Snap:H
         leaf,leaf_id:leaf_2_0,dose=0.8216344560677926,tick=20
         leaf,leaf_id:leaf_3_0,dose=1.1316344560677922,tick=21
         leaf,leaf_id:leaf_4_0,dose=1.471634456067793,tick=22
-        {"mung":["age"]}	self,round=24
+        self,round=24	{"mung":["age"]}
         mouthful,mouthful_id:leaf_2_0_m24,dose=0.33,spawning_from:leaf_2_0,ttl=0
         mouthful,mouthful_id:leaf_3_0_m24,dose=0.33,spawning_from:leaf_3_0,ttl=0
         mouthful,mouthful_id:leaf_4_0_m24,dose=0.33,spawning_from:leaf_4_0,ttl=0
     A:enzymeco
-      {"mung":["age"]}	self,round=24
+      self,round=24	{"mung":["age"]}
       w:enzymeco
-        {"mung":["age"]}	self,round=24
-    {"mung":["id"]}	mo:main,interval=3.6
+        self,round=24	{"mung":["age"]}
+    mo:main,interval=3.6	{"mung":["id"]}
 Snap:cytowave
   upsert,id:cytoid_1_1_1
     style,height=37

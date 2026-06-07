@@ -1,7 +1,7 @@
 Snap:H
   H:PotPlant,Run
     A:PotPlant
-      {"mung":["age"]}	self,round=7
+      self,round=7	{"mung":["age"]}
       w:PotPlant
         body,hands=2
           pot:rose
@@ -21,5 +21,5 @@ Snap:H
           req:repot,maz=2,finished
           req:move_inside,maz=3
         De:celebrate,maz=2
-        {"mung":["age"]}	self,round=7
-    {"mung":["id"]}	mo:main,interval=3.6
+        self,round=7	{"mung":["age"]}
+    mo:main,interval=3.6	{"mung":["id"]}

@@ -1,18 +1,18 @@
 Snap:H
   H:Understandium,Run
     A:Understandium
-      {"mung":["age"]}	self,round
+      self,round	{"mung":["age"]}
       w:Understandium
-        {"mung":["age"]}	self,round
+        self,round	{"mung":["age"]}
         tally,passed=5,failed=0
-        {"ref":{"target":"%What:1, label:routing"}}	LE
-          {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}	Seem:origin
+        LE	{"ref":{"target":"%What:1, label:routing"}}
+          Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}
             Demonstrations:origin
               Demonstrations:origin,Point,method:e_Dock_open
               Demonstrations:origin,Point,method:Lang_doc_from_event
               Demonstrations:origin,What,label:deeper
             News:origin,goners=0,neus=3
-          {"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:working"}}	Seem:working
+          Seem:working	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:working"}}
             Demonstrations:working
               Demonstrations:working,Point,method:e_Dock_open
                 Understandable
@@ -39,4 +39,4 @@ Snap:H
           PASS,t:Seem/%News not piling — exactly one per Seem
           {"PASS":1,"t":"origin News: 3 neus"}
           {"PASS":1,"t":"working News: 3 neus"}
-    {"mung":["id"]}	mo:main,interval=3.6
+    mo:main,interval=3.6	{"mung":["id"]}

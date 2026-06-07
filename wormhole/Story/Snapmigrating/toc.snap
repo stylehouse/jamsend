@@ -25,8 +25,6 @@ story:Snapmigrating
     noCyto
   TimeSpool
     TimeTotal:beliefs,avg=0.005
-      sample=0.005,at=1780585635
-      sample=0.002,at=1780626634
       sample=0.005,at=1780626764
       sample=0.003,at=1780626807
       sample=0.003,at=1780626841
@@ -35,4 +33,6 @@ story:Snapmigrating
       sample=0.013,at=1780627357
       sample=0.006,at=1780627390
       sample=0.004,at=1780628789
+      sample=0.002,at=1780805429
+      sample=0.006,at=1780805848
   step,dige:af10f95803df26c3

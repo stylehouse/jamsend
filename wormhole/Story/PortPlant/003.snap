@@ -1,7 +1,7 @@
 Snap:H
   H:PortPlant,Run
     A:PortPlant
-      {"mung":["age"]}	self,round=3
+      self,round=3	{"mung":["age"]}
       w:PortPlant
         body,hands=2
           pot:cactus
@@ -21,9 +21,9 @@ Snap:H
           req:repot,maz=2
           req:move_inside
         req:celebrate
-        {"mung":["age"]}	self,round=3
+        self,round=3	{"mung":["age"]}
         log
           msg:rose in yard
           msg:fern in yard
           msg:carrying cactus
-    {"mung":["id"]}	mo:main,interval=3.6
+    mo:main,interval=3.6	{"mung":["id"]}

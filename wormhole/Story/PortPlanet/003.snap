@@ -1,7 +1,7 @@
 Snap:H
   H:PortPlanet,Run
     A:PortPlanet
-      {"mung":["age"]}	self,round=4
+      self,round=4	{"mung":["age"]}
       w:PortPlanet
         orders
           order:rose,dose=3
@@ -13,5 +13,5 @@ Snap:H
         world
           order:rose,dose=3
           order:fern,dose=7
-        {"mung":["age"]}	self,round=4
-    {"mung":["id"]}	mo:main,interval=3.6
+        self,round=4	{"mung":["age"]}
+    mo:main,interval=3.6	{"mung":["id"]}

@@ -1,7 +1,7 @@
 Snap:H
   H:PortPlanet,Run
     A:PortPlanet
-      {"mung":["age"]}	self,round=10
+      self,round=10	{"mung":["age"]}
       w:PortPlanet
         orders
           order:rose,dose=5
@@ -19,5 +19,5 @@ Snap:H
         req:reportPortPlaneting,things=444,finished
           req:gatherself,maz=2,finished
           req:summarise,finished
-        {"mung":["age"]}	self,round=10
-    {"mung":["id"]}	mo:main,interval=3.6
+        self,round=10	{"mung":["age"]}
+    mo:main,interval=3.6	{"mung":["id"]}

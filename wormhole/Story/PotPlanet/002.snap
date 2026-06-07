@@ -1,7 +1,7 @@
 Snap:H
   H:PotPlanet,Run
     A:PotPlanet
-      {"mung":["age"]}	self,round=2
+      self,round=2	{"mung":["age"]}
       w:PotPlanet
         orders
           order:rose,dose=3
@@ -12,5 +12,5 @@ Snap:H
           req:confirm
             waits:staged
         De:report,maz=2
-        {"mung":["age"]}	self,round=2
-    {"mung":["id"]}	mo:main,interval=3.6
+        self,round=2	{"mung":["age"]}
+    mo:main,interval=3.6	{"mung":["id"]}

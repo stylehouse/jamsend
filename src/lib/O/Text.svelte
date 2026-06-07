@@ -25,15 +25,16 @@
     // ── snap-line format ──────────────────────────────────────────────────────
     //
     //   Each line encodes one C particle:
-    //     "${indent}${obj_part}\t${stringies}"
+    //     "${indent}${stringies}\t${obj_part}"
     //
     //   indent:    2 spaces × depth.
-    //   obj_part:  JSON of objecties metadata (loopy, ks, mung list) when present;
-    //              empty string otherwise.  Tab is the always-present separator
-    //              when obj_part is non-empty; omitted entirely when there are no
-    //              objecties (enL omits the tab — deL handles both forms).
     //   stringies: peel format "k:v  k2:v2" when all keys/values are sayable,
-    //              otherwise JSON (always starts with "{" so deL can detect it).
+    //              otherwise JSON (always starts with "{").
+    //              The important readable part — sits at the front of the line.
+    //   obj_part:  JSON of objecties metadata (loopy, ks, mung list) when present;
+    //              empty string otherwise.  Tab is the separator when obj_part is
+    //              non-empty; omitted entirely when there are none
+    //              (enL omits the tab — deL handles both forms).
     //
     // ── block-quoting (BQ) extension ───────────────────────────────────────────
     //
@@ -212,7 +213,7 @@
                 const ref_id  = ref_seen.get(n)!
                 const src_keys = Object.keys(n.sc ?? {}).slice(0, 8).join(',')
                 const objecties = { loopy: ref_id, ks: src_keys }
-                const stub_line = `${H.ind(d)}${H.enj(objecties)}\t`
+                const stub_line = `${H.ind(d)}\t${H.enj(objecties)}`
                 snap_lines.push(stub_line)
                 n.c.snap_Line = stub_line
                 // Don't set T.sc.not — subtree was already skipped on first encode pass;
@@ -540,7 +541,7 @@
         const obj_part = Object.keys(parsed.objecties||{}).length ? this.enj(parsed.objecties) : ''
         const str_part = this.encode_stringies(parsed.stringies)
         return obj_part
-            ? `${this.ind(parsed.d)}${obj_part}\t${str_part}`
+            ? `${this.ind(parsed.d)}${str_part}\t${obj_part}`
             : `${this.ind(parsed.d)}${str_part}`
     },
 
@@ -548,10 +549,10 @@
     //
     //   Decode one raw snap line → { d, objecties, stringies }.
     //   Handles both forms:
-    //     with objecties:    "  {"mung":["age"]}\tself:1 round:20"
+    //     with objecties:    "  self:1 round:20\t{\"mung\":[\"age\"]}"
     //     without objecties: "  self:1 round:20"
     //
-    //   The tab is the separator between obj_part and str_part only when
+    //   The tab is the separator between str_part and obj_part only when
     //   obj_part is present.  A line with no tab is stringies-only.
     //   stringies: peel format "k:v k2:v2" or JSON (starts with "{").
     //
@@ -562,8 +563,8 @@
         const spaces  = line.match(/^ */)?.[0].length ?? 0
         const d       = Math.floor(spaces / 2)
         const tab     = line.indexOf('\t')
-        const obj_raw = tab >= 0 ? line.slice(spaces, tab) : ''
-        const str_raw = tab >= 0 ? line.slice(tab + 1) : line.slice(spaces)
+        const str_raw = tab >= 0 ? line.slice(spaces, tab) : line.slice(spaces)
+        const obj_raw = tab >= 0 ? line.slice(tab + 1) : ''
         return {
             d,
             objecties: obj_raw ? JSON.parse(obj_raw) : {},
@@ -802,19 +803,19 @@
         if (!text_right) return text_left.split('\n').filter(Boolean)
             .map(line => ({ kind: 'left_only', line: line.trimEnd() }))
 
-        // norm_line: indent + canonical objecties JSON + tab + canonical stringies JSON.
+        // norm_line: indent + canonical stringies JSON + tab + canonical objecties JSON.
         // Both halves included — a line whose stringies are unchanged but objecties changed
         // (e.g. a ref key renamed) must not align as equal.
         const norm_line = (line: string): string => {
             const indent  = line.match(/^ */)?.[0] ?? ''
             const tab     = line.indexOf('\t')
-            const obj_raw = tab >= 0 ? line.slice(indent.length, tab) : ''
-            const str_raw = tab >= 0 ? line.slice(tab + 1).trimEnd() : line.slice(indent.length).trimEnd()
+            const str_raw = tab >= 0 ? line.slice(indent.length, tab).trimEnd() : line.slice(indent.length).trimEnd()
+            const obj_raw = tab >= 0 ? line.slice(tab + 1) : ''
             try {
                 const obj_norm  = obj_raw ? JSON.stringify(JSON.parse(obj_raw)) : ''
                 const stringies = str_raw.startsWith('{') ? JSON.parse(str_raw) : peel(str_raw)
-                return indent + obj_norm + '\t' + JSON.stringify(stringies)
-            } catch { return indent + obj_raw + '\t' + str_raw }
+                return indent + JSON.stringify(stringies) + '\t' + obj_norm
+            } catch { return indent + str_raw + '\t' + obj_raw }
         }
 
         const left_lines  = text_left.split('\n').filter(Boolean)
@@ -956,7 +957,7 @@
     //   dif_depth + 1 + original_snap_depth, preserving the snap hierarchy under
     //   each marker so the output is human-readable and deDif can invert it.
     //
-    //   Tab handling: the tab in objectied lines ({"mung":...}\t...) is not
+    //   Tab handling: the tab in objectied lines (str_part\t{...}) is not
     //   leading whitespace.  re_indent() uses replace(/^ +/, '') which strips
     //   only spaces, so tabs in objectied lines survive intact.
     //

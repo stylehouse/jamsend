@@ -1,9 +1,9 @@
 Snap:H
   H:ReactiveWaft,Run
     A:ReactiveWaft
-      {"mung":["age"]}	self,round
+      self,round	{"mung":["age"]}
       w:ReactiveWaft
-        {"mung":["age"]}	self,round
+        self,round	{"mung":["age"]}
         Lies
         Waft:test1
           Doc,path:a.g
@@ -18,7 +18,7 @@ Snap:H
           form,Waft:test1,open=0
           form,Waft:test2,open=0
           wafts,n=2
-    {"mung":["id"]}	mo:main,interval=3.6
+    mo:main,interval=3.6	{"mung":["id"]}
     watched:ave
     watched:UIs
-      {"ref":{"component":"Function()"}}	UI:ReactiveWaft
+      UI:ReactiveWaft	{"ref":{"component":"Function()"}}
