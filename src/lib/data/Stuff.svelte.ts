@@ -327,6 +327,19 @@ class StuffIO {
     }
     // as above but you want it replaced when these intended C%* change
     async roai(s, c = {}) {
+        return await this.something_oai(s,c,{
+            mutated_fn: async (C,s,c) => this.r(s,c)
+        })
+        
+    }
+    // as above but mutated in place + bumped
+    async moai(s, c = {}) {
+        return await this.something_oai(s,c,{
+            mutated_fn: async (C:TheC,s,c) => C.bump_version()
+        })
+        
+    }
+    async something_oai(s, c = {}, q:{mutated_fn:Function}) {
         const full = { ...s, ...c }
         const existing = this.o(s)[0]
         if (!existing) return this.i(full)
@@ -335,11 +348,28 @@ class StuffIO {
         )
         // copy up to date functions anyway
         ex(existing.sc,full)
-        if (changed) return await this.r(s, full)
+        if (changed) return await q.mutated_fn(existing,s,full)
         return existing
+    }
+    
+
+    // ensure given things are the only ones in a match
+    //  does nothing if the things are already there
+    // good for inserting whole objects, taking over the space
+    async place(pattern_sc: TheUniversal, n: TheC | TheC[]): Promise<void> {
+        const N: TheC[] = n instanceof TheC ? [n] : n as TheC[]
+        const existing = this.o(pattern_sc) as TheC[]
+        for (const e of existing) {
+            if (!N.includes(e)) this.drop(e)
+        }
+        for (const c of N) {
+            if (!existing.includes(c)) this.i(c)
+        }
     }
 
 
+//#endregion
+//#region Stuff askies
     o_query(sc:TheUniversal,q:any) {
         q ||= {}
         q.X ||= this.X
@@ -440,6 +470,8 @@ class StuffIO {
         return n.sc[key] == value;
     }
 
+//#endregion
+//#region Stuff util
     // lematch — generalised rule matcher
     //   { matching_any: [{sc_has:{...}} | {sc_only:{...}}],
     //     means: { skip?, munging?, thence_matching? } }
@@ -541,19 +573,6 @@ abstract class TimeOffice extends StuffIO {
 //#endregion
 //#region Stuff.replace
 export class Stuff extends TimeOffice {
-    // ensure given things are the only ones in a match
-    //  does nothing if the things are already there
-    async place(pattern_sc: TheUniversal, n: TheC | TheC[]): Promise<void> {
-        const N: TheC[] = n instanceof TheC ? [n] : n as TheC[]
-        const existing = this.o(pattern_sc) as TheC[]
-        for (const e of existing) {
-            if (!N.includes(e)) this.drop(e)
-        }
-        for (const c of N) {
-            if (!existing.includes(c)) this.i(c)
-        }
-    }
-
     // replace one thing
     async r(pattern_sc:TheUniversal,sc?:TheUniversal):Promise<TheC> {
         if (!sc) {

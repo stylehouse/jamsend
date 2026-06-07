@@ -595,8 +595,8 @@
         for (const { w } of AwN) {
             if (!w.c.has_req_ttlilt) continue
 
-            const wname = w.sc.w as string
-            // H.trace('ttlilt', `i_Story_o_req_ttlilt: walking w:${wname}`)
+            const of_w = w.sc.w as string
+            // H.trace('ttlilt', `i_Story_o_req_ttlilt: walking w:${of_w}`)
 
             const gathered: Array<{ until_ts: number, t: TheC, req: TheC }> = []
 
@@ -659,14 +659,14 @@
             // soonest first — diagnostic legibility; poll_step only needs any-true
             gathered.sort((a, b) => a.until_ts - b.until_ts)
 
-            await Run.replace({ ttlilt: 1, w: wname }, async () => {
+            await Run.replace({ ttlilt: 1, of_w }, async () => {
                 for (const { until_ts, t, req } of gathered) {
                     const { ttlilt: _ti, until_ts: _u, ...rest } = t.sc
-                    Run.i({ ttlilt: 1, w: wname, until_ts, req, ...rest })
+                    Run.i({ ttlilt: 1, of_w, until_ts, req, ...rest })
                 }
             })
 
-            // H.trace('ttlilt', `i_Story_o_req_ttlilt: published ${gathered.length} for w:${wname}`)
+            // H.trace('ttlilt', `i_Story_o_req_ttlilt: published ${gathered.length} for w:${of_w}`)
 
             if (!gathered.length) delete w.c.has_req_ttlilt
         }
@@ -709,7 +709,7 @@
             const rk = (req?.c?.on?.c?.rq?.k as string) ?? 'req'
             const rv = req?.sc[rk] ?? '?'
             const more = live.length > 1 ? ` +${live.length - 1} more` : ''
-            Run.trace('ttlilt', `Story poll: held by w:${t.sc.w} ${rk}:${rv} +${ms_left}ms${more}`)
+            Run.trace('ttlilt', `Story poll: held by w:${t.sc.of_w} ${rk}:${rv} +${ms_left}ms${more}`)
             return true
         }
 
