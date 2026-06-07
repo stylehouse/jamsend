@@ -867,10 +867,10 @@
             languish.sc.dock = dock
             dock.c.initial_text = text   // Langui reads this before the Text dige arrives
 
-            // Enroll dock in ave so Langui's H.ave.ob({dock:path}) is reactive.
-            // Replaces the old ave/{lang_dock:path} particle.
-            const ave = H.oai_enroll(H, { watched: 'ave' })
-            ave.i(dock)
+            // seed Text metadata; dock.c.text holds the string silently.
+            // Langui reaches dock via ave/Languinio/dock — Lang_set_active_dock
+            // (called below) places this dock into Languinio, and Languinio is
+            // already enrolled in ave.  No separate ave enrollment needed.
 
             // seed Text metadata; dock.c.text holds the string silently.
             const initial_dige = text ? await dig(text) : ''
@@ -983,10 +983,10 @@
         // Text is absent until req_text_loaded's moai resolves — bail rather
         // than blanking Change with empty strings.  The tick will re-run once
         // e_Lang_open_dock lands and populates Text.
-        const text_C    = dock.o({ Text: 1 })[0] as TheC | undefined
-        if (!text_C) return
-        const text_dige  = (text_C.sc.dige as string ?? '').slice(0, 5)
-        const disk_dige  = (text_C.sc.disk_dige as string ?? '').slice(0, 5)
+        const Text      = dock.o({ Text: 1 })[0] as TheC | undefined
+        if (!Text) return
+        const text_dige  = (Text.sc.dige      as string ?? '').slice(0, 5)
+        const disk_dige  = (Text.sc.disk_dige as string ?? '').slice(0, 5)
 
         const job           = dock.o({ Compile: 1 })[0] as TheC | undefined
         const output        = job?.o({ Output: 1 })[0]  as TheC | undefined

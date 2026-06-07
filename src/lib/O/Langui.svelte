@@ -289,21 +289,21 @@
     // ── reactive signals from ave ─────────────────────────────────────────────
     //   lang_actions: action buttons registered by Lang ghost
     //   active_path:  path of the currently-shown doc ($state so template reacts)
-    //   dock:         the dock particle itself (enrolled in ave; Text child + c.text replace lang_dock)
-    //   active_dock:  the actual {dock:path} particle from w:Lang (holds bookmarks).
-    //                 §3d: no longer a separate ave/active_dock signal — read via
-    //                 %Languinio/%dock (same-object hold updated by Lang_set_active_dock).
+    //   dock:         the active dock particle (from ave/Languinio/dock).
+    //                 Text child + c.text live here. Holds bookmarks, state, Pmirrors.
+    //   Text:         dock/{Text:1} — carries dige/disk_dige/disk_rev; $state so
+    //                 the disk-reload effect tracks changes via Text.vers directly.
     let lang_actions: TheC[] = $state([])
     let active_path  = $state('')
-    let dock:       TheC | undefined = $state()   // text-sync particle
-    let active_dock: TheC | undefined = $state()   // {dock: path} particle — has bookmarks
+    let dock:        TheC | undefined = $state()
+    let Text:        TheC | undefined = $state()
 
     // Short filename for the bar header.
     let active_name = $derived(active_path ? (active_path.split('/').pop() ?? active_path) : 'no doc')
 
     let bookmarks: TheC[] = $derived(
-        !active_dock ? []
-            : (active_dock.ob({ bookmark: 1 }) as TheC[]).filter(bm => !bm.sc.graft)
+        !dock ? []
+            : (dock.ob({ bookmark: 1 }) as TheC[]).filter(bm => !bm.sc.graft)
     )
 
     // lang_model: the w:Lang model particle passed to each DocPoint for the eye tree.
@@ -314,7 +314,7 @@
     // we just need the reference. DocPoint subscribes to model.version via ob().
     let lang_model: TheC | undefined = $state()
     $effect(() => {
-        void active_dock   // re-run once active_dock arrives (Lang_plan has run by then)
+        void dock   // re-run once dock arrives (Lang_plan has run by then)
         H.clear(async () => {
             try {
                 lang_model = H.Awo('Lang', 'Lang')?.c?.model as TheC | undefined
@@ -348,31 +348,33 @@
     //   info line prints only when the (path, dock, active_dock) shape changes,
     //   and each "vanished mid-ave" warning fires once on the edge into a hold,
     //   not on every heartbeat — an idle editor stays silent.
-    let _signal_seen    = ''      // last logged (path,dock,active) shape
-    let _holding_active = false   // currently holding a vanished active_dock_C?
+    // ── Languinio $effect — dock from ave/Languinio/dock ─────────────────────
+    //   Reads Languinio from ave (where it's enrolled by Lang setup).
+    //   Languinio/%dock is a same-object hold on the active dock particle —
+    //   Lang_set_active_dock re-points it atomically, so dock and active_dock
+    //   always arrive together with no mid-flush gap.
+    let _signal_seen    = ''
     $effect(() => {
-        const la          = H.ave.ob({ lang_actions: 1 })[0] as TheC | undefined
-        const languinio   = H.ave.ob({ Languinio: 1 })[0] as TheC | undefined
-        languinio?.ob()   // track languinio.version — dock changes bump it
-        const active_dock_C = languinio?.ob({ dock: 1 })[0] as TheC | undefined
-        const path        = (active_dock_C?.sc.dock as string | undefined) ?? ''
-        // dock IS the real dock particle (enrolled in ave by req_text_loaded).
-        // No separate lang_dock text particle — Text child and dock.c.text replace it.
-        const new_dock    = path ? H.ave.ob({ dock: path })[0] as TheC | undefined : undefined
-        const sig = `lang=${!!languinio} path=${path} dock=${!!new_dock} active=${!!active_dock_C}`
-        if (sig !== _signal_seen) { console.log(`🔭 signal $effect: ${sig}`); _signal_seen = sig }
+        const la        = H.ave.ob({ lang_actions: 1 })[0] as TheC | undefined
+        const languinio = H.ave.ob({ Languinio: 1 })[0] as TheC | undefined
+        languinio?.ob()   // track languinio.version
+        const dock_C    = languinio?.ob({ dock: 1 })[0] as TheC | undefined
+        const path      = (dock_C?.sc.dock as string | undefined) ?? ''
+        const sig = `lang=${!!languinio} path=${path} dock=${!!dock_C}`
+        if (sig !== _signal_seen) { console.log(`🔭 Languinio $effect: ${sig}`); _signal_seen = sig }
         H.clear(async () => {
             lang_actions = la ? la.o({ action: 1 }) as TheC[] : []
             if (path) active_path = path
-            if (new_dock)    { dock = new_dock; }
-            if (active_dock_C) { active_dock = active_dock_C; _holding_active = false }
-            else if (active_dock) {
-                // < since Lang re-points %Languinio/%dock atomically this branch
-                //   should no longer fire; kept as a quiet backstop.
-                if (!_holding_active) console.warn(`🔭 active_dock_C vanished mid-ave — holding`)
-                _holding_active = true
-            }
+            if (dock_C) dock = dock_C
         })
+    })
+
+    // ── dock $effect — Text from dock ────────────────────────────────────────
+    //   Runs whenever dock changes.  Extracts the Text child as a $state so
+    //   the disk-reload effect can subscribe to Text.version independently.
+    $effect(() => {
+        const T = dock?.ob({ Text: 1 })[0] as TheC | undefined
+        if (T) Text = T
     })
 
     // ── change strip ─────────────────────────────────────────────────────────────
@@ -383,7 +385,6 @@
     let _storage: TheC | undefined = $state()
     let _compile: TheC | undefined = $state()
     $effect(() => {
-        void dock?.version   // re-fires when Lang_update_change bumps dock
         const languinio = H.ave.ob({ Languinio: 1 })[0] as TheC | undefined
         const change    = languinio?.ob({ Change: 1 })[0] as TheC | undefined
         _backend = change?.ob({ backend: 1 })[0] as TheC | undefined
@@ -438,7 +439,7 @@
                 // synchronously onto the dock particle, available the same tick
                 // Languinio's dock hold arrives — always beats the Text moai.
                 // dock.c.text is the fallback (set alongside the moai).
-                const text = (active_dock?.c.initial_text as string | undefined)
+                const text = (dock?.c.initial_text as string | undefined)
                     ?? (dock?.c.text as string | undefined)
                     ?? ''
                 view!.setState(EditorState.create({ doc: text, extensions: editorExtensions! }))
@@ -470,17 +471,14 @@
     //   changed on disk, not in the editor.
     //   Guards with active_path === prev_path to avoid firing mid-switch.
     //
-    //   disk_rev gate: dock.version bumps on every text write, including the
-    //   echoes of our own keystrokes (e_Lang_texting).  Only disk-origin writes
-    //   (req_text_loaded) advance dock.sc.disk_rev, so gating on a per-path
-    //   disk_rev key means editor echoes hit `key === _applied` and return
-    //   without dispatching back into the view.  The spool below is a second
-    //   line of defence for any text that does reach the dispatch.
+    //   Text $effect (disk-reload): Text.vers fires on every moai — both user
+    //   edits (dige changes) and disk writes (disk_dige + disk_rev change).
+    //   disk_rev only advances on disk-origin writes so the key gates out
+    //   editor echoes without needing to track dock.version at all.
     let _applied_disk_key: string | null = null   // `${path}#${disk_rev}` last applied
     $effect(() => {
-        void dock?.version   // wake on any dock change (Text moai bumps dock)
-        const text_C   = dock?.ob({ Text: 1 })[0] as TheC | undefined
-        const disk_rev = (text_C?.sc.disk_rev as number | undefined) ?? 0
+        void Text?.vers   // subscribe to Text — fires on any moai
+        const disk_rev = (Text?.sc.disk_rev as number | undefined) ?? 0
         const incoming = (dock?.c.text as string | undefined) ?? ''
         if (!view || !incoming) return
         if (active_path !== prev_path) return   // switch in progress
@@ -503,9 +501,9 @@
     //   survive. last_applied_lang is set optimistically; if the async
     //   lang() resolve rejects we revert it so a retry can fire.
     $effect(() => {
-        void active_dock?.version
+        void dock?.version
         if (!view || !active_path) return
-        const want = (active_dock?.sc.lang_override as string)
+        const want = (dock?.sc.lang_override as string)
             ?? lang_for_path(active_path)
         if (want === last_applied_lang) return
         const prev = last_applied_lang
@@ -799,7 +797,7 @@
         // Read dock fresh — text may have arrived during the setTimeout delay.
         // Prefer active_dock.c.initial_text (set synchronously by req_text_loaded
         // reqonce onto the dock particle — arrives with Languinio before the moai).
-        const initial    = (active_dock?.c.initial_text as string | undefined)
+        const initial    = (dock?.c.initial_text as string | undefined)
             ?? (dock?.c.text as string)
             ?? (captured_dock?.c.text as string)
             ?? ''
@@ -968,7 +966,7 @@
         </div>
         {/if}
     </div>
-    {#if active_dock && bookmarks.length}
+    {#if dock && bookmarks.length}
     <!-- Point panel: one DocPoint per bookmark on the active doc -->
     <div class="lte-points">
         {#each bookmarks as bm (bm.sc.bookmark)}
