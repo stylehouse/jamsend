@@ -30,9 +30,7 @@ story:LangTiles
         nowriting:^Ghost
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=0.972
-      sample=1.098,at=1780815477
-      sample=0.905,at=1780816312
+    TimeTotal:beliefs,avg=0.982
       sample=1.094,at=1780816426
       sample=1.268,at=1780817897
       sample=0.735,at=1780818483
@@ -41,11 +39,13 @@ story:LangTiles
       sample=0.898,at=1780818584
       sample=1.038,at=1780818620
       sample=1.001,at=1780818742
-  step,dige:dfbb735af8f7d5d1
-  step=2,dige:1bca3115682929db
-  step=3,dige:82335977c7b105f9
-  step=4,dige:8a75b8f2618a9cd6
+      sample=1.001,at=1780818909
+      sample=1.109,at=1780818925
+  step,dige:90e564b29912849d
+  step=2,dige:b888b9638920902e
+  step=3,dige:979075db2d510f7d
+  step=4,dige:38309e22e2e925b9
     note,bug:Cyto edge problems with Leg/PeelGroup/Leg the other PeelGroup alone
-  step=5,dige:c85c9fbab31312cc
-  step=6,dige:e3b7e9c282a9a39f
-  step=7,dige:8719adcdd3dac234
+  step=5,dige:49b702d4e88b2101
+  step=6,dige:22fe82997c82ad08
+  step=7,dige:327da95750a19d45
