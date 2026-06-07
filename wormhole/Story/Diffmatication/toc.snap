@@ -8,16 +8,17 @@ story:Diffmatication
   Opt
     For
     noCyto
+    trickle
   TimeSpool
-    TimeTotal:beliefs,avg=0.021
-      sample=0.029,at=1780827154
-      sample=0.009,at=1780827203
-      sample=0.011,at=1780829668
-      sample=0.009,at=1780829733
-      sample=0.009,at=1780829773
-      sample=0.012,at=1780829780
+    TimeTotal:beliefs,avg=0.03
       sample=0.009,at=1780832411
       sample=0.009,at=1780832798
       sample=0.052,at=1780834225
       sample=0.061,at=1780834241
+      sample=0.049,at=1780834391
+      sample=0.043,at=1780834598
+      sample=0.026,at=1780834767
+      sample=0.042,at=1780834783
+      sample=0.002,at=1780835020
+      sample=0.003,at=1780838207
   step,dige:c5c6885fda40ce1e
