@@ -1,0 +1,21 @@
+Snap:H
+  H:Diffmatication,Run
+    A:Diffmatication
+      self,round=2	{"mung":["age"]}
+      w:Diffmatication
+        requesty_wh_serial,i=2
+        requesty_wh:1,wh_path:Story/LangTiles,wh_op:read_toc,req_i,finished:true	{"ref":{"reply":"Object()"}}
+          req_sent
+        self,round=2	{"mung":["age"]}
+    watched:ave
+      {"dm_state":1,"loading":0,"step_count":7}
+      dm_step,step_n,dige:05bff2207e364887,ok=0
+      dm_step,step_n=2,dige:a6dc25d01b35ecf9,ok=0
+      dm_step,step_n=3,dige:f0de8f481c8d82c9,ok=0
+      dm_step,step_n=4,dige:3418cc864fcada6e,ok=0
+      dm_step,step_n=5,dige:40eca40b8a6d6d06,ok=0
+      dm_step,step_n=6,dige:8bb9e0c99687f5c3,ok=0
+      dm_step,step_n=7,dige:fe3d4657443e092d,ok=0
+    watched:UIs
+      {"UI":"Diffmatic"}
+    mo:main,interval=3.6	{"mung":["id"]}

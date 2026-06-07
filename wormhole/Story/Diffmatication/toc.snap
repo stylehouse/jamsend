@@ -1,0 +1,23 @@
+story:Diffmatication
+  Styles
+    matstyle:w
+      style:background-color,v:#8f3232
+      meta:is_compound,v
+      meta:label,fmt:%s,keys:w
+  Plan
+  Opt
+    For
+    noCyto
+  TimeSpool
+    TimeTotal:beliefs,avg=0.01
+      sample=0.003,at=1780827016
+      sample=0.005,at=1780827027
+      sample=0.029,at=1780827154
+      sample=0.009,at=1780827203
+      sample=0.011,at=1780829668
+      sample=0.009,at=1780829733
+      sample=0.009,at=1780829773
+      sample=0.012,at=1780829780
+      sample=0.009,at=1780832411
+      sample=0.009,at=1780832798
+  step,dige:c5c6885fda40ce1e

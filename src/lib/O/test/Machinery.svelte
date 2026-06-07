@@ -13,6 +13,7 @@
     import Understandium from "./Understandium.svelte";
     import Understandication from "./Understandication.svelte";
     import TextLinestests from "./TextLinestests.svelte";
+    import Diffmatication from "../D/Diffmatication.svelte";
 
     let {M} = $props()
 
@@ -1452,3 +1453,5 @@ The double-envelopment became the template for every subsequent battle of annihi
 <Understandium {M} />
 <Understandication {M} />
 <TextLinestests {M} />
+
+<Diffmatication {M} />
