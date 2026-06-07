@@ -128,7 +128,8 @@
     //
     // ── Reactive text sync ───────────────────────────────────────────────────
     //
-    //   ave/{lang_dock:path} — one per doc, holds sc.text.
+    //   dock/{Text:1} — one per doc, holds sc.dige, sc.disk_dige, sc.disk_rev.
+    //   dock.c.text holds the source string (hidden from snap).
     //   Lang_plan seeds it with default text on first run.
     //   Langui (keyed by `doc` prop) watches its own particle.
     //
@@ -194,7 +195,7 @@
     //            → finish({path,ready:1}) resolves the Furnishing RPC
     //
     //   Lang_update_change  (each tick, active dock known)
-    //     takes  ave/{lang_dock}, dock/{Compile}/{Output}
+    //     takes  dock/{Text:1}, dock/{Compile}/{Output}
     //     makes  %Languinio/%Change/{backend|storage|compile} (roai → new C ref
     //            → Svelte re-renders Langui's three-leg change strip)
     //
@@ -503,7 +504,7 @@
     //
     //   Text arrived from the UI (80ms throttle) or from e_Lang_i_alterationStation
     //   (machine:true, fires immediately alongside the CM dispatch).
-    //   Updates the ave text particle, then drives the Languish pipeline.
+    //   Updates dock.c.text and dock/{Text:1}, then drives the Languish pipeline.
     //
     //   machine:true → compile_ready fires after 30ms (test / programmatic edits).
     //   machine:false (default) → compile_ready fires after 6s of quiet typing.
@@ -518,13 +519,17 @@
         if (text == null) throw "!text"
         const machine = !!e.sc.machine
 
-        // update the ave text-sync particle for this doc path
-        const ave      = this.oai_enroll(this as House, { watched: 'ave' })
-        const docTextC = ave.oai({ lang_dock: path })
-        if (docTextC.sc.text === text) return
-        docTextC.sc.text = text
-        docTextC.sc.text_dige = await dig(text)
-        docTextC.bump_version()
+        // update the dock's text + Text metadata.  dock.c.text holds the
+        // string silently (hidden from snap); Text child carries the dige so
+        // Langui can track changes without the giant string in the snap.
+        const docks  = w.o({ docks: 1 })[0] as TheC | undefined
+        const dock   = docks?.o({ dock: path })[0] as TheC | undefined
+        if (!dock) return
+        if (dock.c.text === text) return
+        dock.c.text = text
+        const new_dige = await dig(text)
+        await dock.moai({ Text: 1 }, { dige: new_dige })
+        dock.bump_version()
 
         // find req:Languish for this path and drive text_mutated + compile timing
         const languish = w.o({ req: 'Languish', path })[0] as TheC | undefined
@@ -834,11 +839,11 @@
     // ── req:text_loaded, maz:3 ────────────────────────────────────────────────
     //
     //   reqonce: mint the dock particle, stamp gen_path, install the source into
-    //   the ave/{lang_dock:path} text particle, set the doc active.  Records
+    //   dock/{Text:1} metadata and dock.c.text, set the doc active.  Records
     //   languish.sc.dock so the later phases find it without re-deriving.
     //
     //   The genuinely-async wait is the CodeMirror round-trip: Lang writes the
-    //   ave text → Langui renders → CM mounts → e_Lang_editorBegins stamps
+    //   dock.c.text → Langui renders → CM mounts → e_Lang_editorBegins stamps
     //   dock.c.state and feebly_ponders.  We hold Story open with a ttlilt until
     //   dock.c.state appears; the feebly_ponder wakes this monitor precisely
     //   when it lands.
@@ -860,22 +865,22 @@
             const dock = docks.oai({dock: path})
             if (gen_path) dock.sc.gen_path = gen_path
             languish.sc.dock = dock
-            dock.c.initial_text = text   // Langui reads this before the ave flush propagates sc.text
+            dock.c.initial_text = text   // Langui reads this before the Text dige arrives
 
+            // Enroll dock in ave so Langui's H.ave.ob({dock:path}) is reactive.
+            // Replaces the old ave/{lang_dock:path} particle.
             const ave = H.oai_enroll(H, { watched: 'ave' })
-            const docTextC = ave.oai({ lang_dock: path })
-            // disk_dige / text_dige: both start equal to the on-disk content.
-            // They diverge once the user edits (text_dige moves, disk_dige stays
-            // until LiesStore confirms the write).  disk_rev marks disk-origin
-            // installs so Langui's disk-reload $effect can gate on them.
+            ave.i(dock)
+
+            // seed Text metadata; dock.c.text holds the string silently.
             const initial_dige = text ? await dig(text) : ''
-            docTextC.sc.disk_dige = initial_dige
-            docTextC.sc.text_dige = initial_dige
-            if (docTextC.sc.text !== text) {
-                docTextC.sc.text = text
-                docTextC.sc.disk_rev = ((docTextC.sc.disk_rev as number) ?? 0) + 1
-                docTextC.bump_version()
-            }
+            dock.c.text = text
+            await dock.moai({ Text: 1 }, {
+                dige:     initial_dige,
+                disk_dige: initial_dige,
+                disk_rev: ((dock.o({ Text: 1 })[0]?.sc.disk_rev as number) ?? 0) + 1,
+            })
+            dock.bump_version()
 
             // always activate — Lies owns doc order, last open wins for now
             await this.Lang_set_active_dock(w, path)
@@ -957,7 +962,7 @@
     //   Writes the three-leg change strip into w/{Languinio:1}/{Change:1}.
     //   Three child particles, one per leg:
     //
-    //     /{backend:1}  sc.dige — current editor-text dige (from ave/lang_dock)
+    //     /{backend:1}  sc.dige — current editor-text dige (from dock/{Text:1})
     //     /{storage:1}  sc.dige — last dige confirmed written to disk
     //                   sc.dim  — text has moved ahead (unsaved edits exist)
     //     /{compile:1}  sc.dige — source_dige of last Compile/Output
@@ -972,17 +977,16 @@
     //   Called from the Lang tick each time the active dock is known.
     async Lang_update_change(w: TheC, dock: TheC) {
         const H   = this as House
-        const ave = H.oai_enroll(H, { watched: 'ave' })
         const path = dock.sc.dock as string
 
-        // Read current dige values.
-        // lang_dock is absent until req_text_loaded's dig() resolves — bail rather
+        // Read current dige values from dock/Text.
+        // Text is absent until req_text_loaded's moai resolves — bail rather
         // than blanking Change with empty strings.  The tick will re-run once
-        // e_Lang_open_dock lands and populates the text particle.
-        const lang_dock      = ave.o({ lang_dock: path })[0] as TheC | undefined
-        if (!lang_dock) return
-        const text_dige     = (lang_dock.sc.text_dige as string ?? '').slice(0, 5)
-        const disk_dige     = (lang_dock.sc.disk_dige as string ?? '').slice(0, 5)
+        // e_Lang_open_dock lands and populates Text.
+        const text_C    = dock.o({ Text: 1 })[0] as TheC | undefined
+        if (!text_C) return
+        const text_dige  = (text_C.sc.dige as string ?? '').slice(0, 5)
+        const disk_dige  = (text_C.sc.disk_dige as string ?? '').slice(0, 5)
 
         const job           = dock.o({ Compile: 1 })[0] as TheC | undefined
         const output        = job?.o({ Output: 1 })[0]  as TheC | undefined

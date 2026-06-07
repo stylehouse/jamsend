@@ -65,7 +65,7 @@
     //
     // ── Echo guard / text spool (the high-frequency-git seed) ────────────────
     //
-    //   The same ave/%lang_dock particle is used for two flows that look
+    //   dock.c.text + dock/{Text:1} are used for two flows that look
     //   identical from the particle's POV but are not at all the same:
     //     (a) disk/remote pulls — Lies has loaded a new file, or in future a
     //         peer has merged something in.  These should be applied to the view.
@@ -289,7 +289,7 @@
     // ── reactive signals from ave ─────────────────────────────────────────────
     //   lang_actions: action buttons registered by Lang ghost
     //   active_path:  path of the currently-shown doc ($state so template reacts)
-    //   dock:         the ave/{lang_dock:path} particle (text sync, disk-reload)
+    //   dock:         the dock particle itself (enrolled in ave; Text child + c.text replace lang_dock)
     //   active_dock:  the actual {dock:path} particle from w:Lang (holds bookmarks).
     //                 §3d: no longer a separate ave/active_dock signal — read via
     //                 %Languinio/%dock (same-object hold updated by Lang_set_active_dock).
@@ -349,7 +349,6 @@
     //   and each "vanished mid-ave" warning fires once on the edge into a hold,
     //   not on every heartbeat — an idle editor stays silent.
     let _signal_seen    = ''      // last logged (path,dock,active) shape
-    let _holding_dock   = false   // currently holding a vanished lang_dock?
     let _holding_active = false   // currently holding a vanished active_dock_C?
     $effect(() => {
         const la          = H.ave.ob({ lang_actions: 1 })[0] as TheC | undefined
@@ -357,22 +356,15 @@
         languinio?.ob()   // track languinio.version — dock changes bump it
         const active_dock_C = languinio?.ob({ dock: 1 })[0] as TheC | undefined
         const path        = (active_dock_C?.sc.dock as string | undefined) ?? ''
-        const new_dock    = path ? H.ave.ob({ lang_dock: path })[0] as TheC | undefined : undefined
+        // dock IS the real dock particle (enrolled in ave by req_text_loaded).
+        // No separate lang_dock text particle — Text child and dock.c.text replace it.
+        const new_dock    = path ? H.ave.ob({ dock: path })[0] as TheC | undefined : undefined
         const sig = `lang=${!!languinio} path=${path} dock=${!!new_dock} active=${!!active_dock_C}`
         if (sig !== _signal_seen) { console.log(`🔭 signal $effect: ${sig}`); _signal_seen = sig }
         H.clear(async () => {
             lang_actions = la ? la.o({ action: 1 }) as TheC[] : []
-            // never overwrite with a falsy value — a mid-mutation ave flush where
-            // lang_dock:path hasn't arrived yet produces new_dock=undefined; without
-            // this guard {#if dock} collapses, the container is destroyed, and the
-            // construction $effect re-fires before the setTimeout fires, scheduling
-            // a second new EditorView on the re-appeared container.
             if (path) active_path = path
-            if (new_dock)    { dock = new_dock; _holding_dock = false }
-            else if (dock)   {
-                if (!_holding_dock) console.warn(`🔭 lang_dock for '${path || active_path}' vanished mid-ave — holding`)
-                _holding_dock = true
-            }
+            if (new_dock)    { dock = new_dock; }
             if (active_dock_C) { active_dock = active_dock_C; _holding_active = false }
             else if (active_dock) {
                 // < since Lang re-points %Languinio/%dock atomically this branch
@@ -391,7 +383,7 @@
     let _storage: TheC | undefined = $state()
     let _compile: TheC | undefined = $state()
     $effect(() => {
-        void dock?.version   // re-fires when Lang_update_change bumps ave/lang_dock
+        void dock?.version   // re-fires when Lang_update_change bumps dock
         const languinio = H.ave.ob({ Languinio: 1 })[0] as TheC | undefined
         const change    = languinio?.ob({ Change: 1 })[0] as TheC | undefined
         _backend = change?.ob({ backend: 1 })[0] as TheC | undefined
@@ -444,11 +436,10 @@
                 // First visit: build a fresh state.
                 // active_dock.c.initial_text is set by req_text_loaded reqonce
                 // synchronously onto the dock particle, available the same tick
-                // Languinio's dock hold arrives — always beats the ave flush that
-                // propagates dock.sc.text.  dock.sc.text is the fallback for
-                // any code path that bypasses the reqonce.
+                // Languinio's dock hold arrives — always beats the Text moai.
+                // dock.c.text is the fallback (set alongside the moai).
                 const text = (active_dock?.c.initial_text as string | undefined)
-                    ?? (dock?.sc.text as string | undefined)
+                    ?? (dock?.c.text as string | undefined)
                     ?? ''
                 view!.setState(EditorState.create({ doc: text, extensions: editorExtensions! }))
             }
@@ -487,9 +478,10 @@
     //   line of defence for any text that does reach the dispatch.
     let _applied_disk_key: string | null = null   // `${path}#${disk_rev}` last applied
     $effect(() => {
-        void dock?.version   // wake on any text-particle change
-        const disk_rev = (dock?.sc.disk_rev as number | undefined) ?? 0
-        const incoming = (dock?.sc.text as string | undefined) ?? ''
+        void dock?.version   // wake on any dock change (Text moai bumps dock)
+        const text_C   = dock?.ob({ Text: 1 })[0] as TheC | undefined
+        const disk_rev = (text_C?.sc.disk_rev as number | undefined) ?? 0
+        const incoming = (dock?.c.text as string | undefined) ?? ''
         if (!view || !incoming) return
         if (active_path !== prev_path) return   // switch in progress
         const key = `${active_path}#${disk_rev}`
@@ -769,7 +761,7 @@
     // ── EditorView construction ──────────────────────────────────────────────
     //
     //   Deferred until container is bound, which only happens after {#if dock}
-    //   becomes true (first ave/%lang_dock particle arrived).
+    //   becomes true (first dock particle arrived in ave).
     //
     //   editorExtensions is extracted and stored so every subsequent EditorState
     //   created by the switch $effect shares the identical extension set — CM
@@ -806,11 +798,10 @@
     ) {
         // Read dock fresh — text may have arrived during the setTimeout delay.
         // Prefer active_dock.c.initial_text (set synchronously by req_text_loaded
-        // reqonce onto the dock particle — arrives with Languinio before the ave flush).
-        const fresh_dock = H.ave.ob({ lang_dock: captured_path })[0] as TheC | undefined
+        // reqonce onto the dock particle — arrives with Languinio before the moai).
         const initial    = (active_dock?.c.initial_text as string | undefined)
-            ?? (fresh_dock?.sc.text as string)
-            ?? (captured_dock?.sc.text as string)
+            ?? (dock?.c.text as string)
+            ?? (captured_dock?.c.text as string)
             ?? ''
 
         // Pick the initial language by extension. The per-doc override (if
@@ -950,7 +941,7 @@
         {/if}
         <span class="lte-hint">Ctrl+B</span>
         <span class="lte-sel">{sel_from}{sel_from !== sel_to ? `..${sel_to}` : ''}</span>
-        <span class="lte-len">{(dock.sc.text as string ?? '').length}c</span>
+        <span class="lte-len">{((dock.c.text as string) ?? '').length}c</span>
         <!-- "map" button: toggles minimap overlay, active when open -->
         <button class="lte-map-btn" class:active={minimap_open}
                 onclick={() => minimap_open = !minimap_open}

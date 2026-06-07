@@ -481,11 +481,14 @@
             const ld = w.o({ loaded_doc: 1, path })[0] as TheC | undefined
             if (ld) {
                 ld.sc.base_dige = req.sc.dige as string
-                // Mirror the new disk dige into ave/{lang_dock:path} so the DocRow
-                // change strip sees it without an extra cross-world round-trip.
+                // Update disk_dige on the dock's Text child so Langui's change
+                // strip sees it without an extra cross-world round-trip.
                 // Only source files have a loaded_doc; gen/ writes skip this.
-                const ave = H.oai_enroll(H, { watched: 'ave' })
-                await ave.r({ lang_dock: path, disk_dige: req.sc.dige })
+                const dock = w.o({ docks: 1 })[0]?.o({ dock: path })[0] as TheC | undefined
+                if (dock) {
+                    await dock.moai({ Text: 1 }, { disk_dige: req.sc.dige as string })
+                    dock.bump_version()
+                }
             }
             console.log(`💾 LiesStore wrote ${path} (${(req.sc.rw_data as string)?.length ?? 0}c)`)
 
