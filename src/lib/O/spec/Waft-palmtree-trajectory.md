@@ -44,6 +44,11 @@ w:Lies
     /%Waft,key            c.src → locked Waft
   /req:git                Waftlet accumulator; < do_fn pending
   /req:Furnishing,path    doc-open RPC; seeded by wants resolver
+  /req:Store,eternal      all IO reqs live here; LiesStore_run rq.do() drives them
+    /req:pending_write,path  source-file save with pull-before-push (noserial)
+    /req:wwrite,path,dige
+    /req:wread,rw_name
+    /req:wlisting,rw_dir
 
 w:Lang
   /%Languinio
@@ -62,6 +67,10 @@ w:Lang
     /req:push             encode → replace → verify; /%dirty fault child
 
   /docks/%dock:$path
+    /%Text                sc.dige, sc.disk_dige, sc.disk_rev  — text metadata visible in snap
+                          c.text: string  — source string, hidden from snap (moai to update)
+                          // enrolled in ave via Languinio/%dock same-object hold;
+                          // replaces ave/{lang_dock:path}.  Langui reads c.text directly.
     /%Compile → %methods, %Output
     /%Pmirrors
       /%Pmirror,$waft_key,$spec
@@ -139,6 +148,15 @@ any more isolations or interface togetherings we'd like to imagine...
 ---
 
 ## Where we are — what's next
+
+**LiesStore tidy-up done.**  `pending_write` moved inside `req:Store` (all IO
+reqs now under one host, one `rq.do()`).  `ave/{lang_dock:path}` sublated:
+source text lives as `dock.c.text` (hidden from snap), metadata as
+`dock/{Text:1}` with `sc.dige`, `sc.disk_dige`, `sc.disk_rev`; updated via
+`moai` + `dock.bump_version()`.  `active_dock` merged into `dock` in Langui —
+they were always the same particle.  Langui now has three layered `$effect`s:
+Languinio→dock, dock→Text, Text→disk-reload.  `req:compile` event-driven via
+`i_elvistwo` reqturn; no more 0.5s polling gap.  `lang_doc` typo fixed.
 
 **Spotlight-Interest (4b.5) is done.**  The 3a–3j work landed: req:wants,
 Lies_i_Spotlight called only from the resolver, %Interest, waft_key_of,
@@ -244,6 +262,28 @@ attention with particular Points illuminated on the walls.
 ## Open faults
 
 ```
+// ── LiesStore / IO tidy-up ──────────────────────────────────────────────────
+
+// < req:Languish on dock — move req:Languish from w-level (keyed by path) onto
+//   dock itself.  w.o({req:'Languish',path}) → dock.o({req:'Languish'})[0].
+//   languish.sc.path → dock.sc.dock, languish.sc.dock → gone.
+//   Lang_drive_languish(w, path, text, gen_path) → Lang_drive_languish(dock, text).
+
+// < compile_pending lifetime — oai'd by path, never dropped; one permanent
+//   particle per Ghost/ doc.  Should be dropped after req_wwrite_done fires
+//   settle signals, or converted to a req with a proper lifecycle.
+
+// < LiesStore req_wwrite_done cross-world dock lookup — after a source write,
+//   req_wwrite_done tries w.o({docks:1})[0]?.o({dock:path})[0] to moai Text,
+//   but w is w:Lies and dock lives on w:Lang.  Currently the moai is a no-op
+//   (finds nothing).  Fix: carry disk_dige in Lies_compile_settled / a new
+//   event, or have Lang handle the disk_dige update after wwrite.
+
+// < openity push reactivity — Housing's watch_c + pending + flush is the right
+//   primitive for per-particle push.  Refactor: target individual particles
+//   (not whole-channel copies) and deliver via elvis rather than replicate.
+//   o_elvisSe declares permanent subscriptions; Housing's flush loop diffs
+//   versions and pushes only changed particles.
 
 // < created_at session field on clones — stripped by Seem_toString / enWaft;
 //   needs wiring in LE_add_clone and the strip list.
@@ -298,7 +338,7 @@ attention with particular Points illuminated on the walls.
 - One-Doc-per-What: section Whats are pure containers (no Doc, no Points
   directly); leaf Whats have exactly one Doc.  Cursor candidates only surface
   Whats that have direct Points (`Lies_what_has_direct_points`).
-- `oai` sync, `roai` async; `i()` always inserts.
+- `oai` sync, `roai` async; `moai` async in-place mutate + bump (preserves C ref — use when Svelte holds a `$state` ref to the particle); `i()` always inserts.
 - `i_req_ttlilt` holds the snap open (defers finalize); it does not poke a think.
 - Read children-dependent derives with `.ob()`; chain on `vers`, not
   `$derived.by(void …)`.
