@@ -3,13 +3,16 @@
     //
     // ── Channels ─────────────────────────────────────────────────────────────
     //
-    //   %req:wwrite,path,dige   — one stable req per (path, content-hash) pair.
-    //   %req:wread,rw_name      — one stable req per wormhole path (+ optional label).
-    //   %req:wlisting,rw_dir    — one stable req per directory path.
+    //   All live inside req:Store (itself in w's reqcons) so the %ttlilt walker
+    //   finds them and LiesStore_run's single rq.do() drives them all.
     //
-    //   All channels live on w (not %Store:1) so i_Story_o_req_ttlilt's
-    //   reqcons walker finds them — it starts at w and only follows w's direct
-    //   reqcons children.  %Store:1 holds metadata only (wrote_at timestamps).
+    //   %req:pending_write,path  — source-file save with pull-before-push.
+    //                              Keyed by path (noserial reqy); one slot per doc.
+    //   %req:wwrite,path,dige    — one stable req per (path, content-hash) pair.
+    //   %req:wread,rw_name       — one stable req per wormhole path (+ optional label).
+    //   %req:wlisting,rw_dir     — one stable req per directory path.
+    //
+    //   %Store:1 holds metadata only (wrote_at timestamps).
     //
     // ── API ───────────────────────────────────────────────────────────────────
     //
@@ -52,17 +55,16 @@
     //   Callers check req.sc.finished; LiesStore_run drops finished listing reqs
     //   after the same window as reads (after LiesPersist, so callers see reply).
     //
-    //   Listing reqs also live on w (not %Store:1) so the %ttlilt walker finds them.
-    //
     // ── req:Store ─────────────────────────────────────────────────────────────
     //
-    //   wread, wwrite, and wlisting all live inside req:Store so the w(/req)+
-    //   %ttlilt pickup applies naturally.
+    //   All IO reqs live inside req:Store so the w(/req)+ %ttlilt pickup applies
+    //   and LiesStore_run's single rq.do() drives them all.
     //
     //   %Store:1 holds metadata (wrote_at).
     //   w/reqcons/reqcon:Store → w/req:Store is the req:Store particle.
     //   w/req:Store is eternal — born once, never finished by unify_finished.
-    //   w/req:Store is the host for wread, wwrite, wlisting reqs:
+    //   w/req:Store hosts (via a nested noserial reqy for pending_write):
+    //     w/req:Store/req:pending_write,path
     //     w/req:Store/req:wwrite,path,dige
     //     w/req:Store/req:wread,rw_name
     //     w/req:Store/req:wlisting,rw_dir
@@ -233,12 +235,27 @@
 
     // ── LiesStore_req ─────────────────────────────────────────────────────────
     //
-    //   Returns (or creates) the w/req:Store particle — the host for all
-    //   wread, wwrite, wlisting reqs.  Routing them through req:Store means
-    //   the w(/req)+ %ttlilt picker naturally finds them.
+    //   Returns (or creates) the w/req:Store particle — the host for all IO
+    //   reqs: wread, wwrite, wlisting, and pending_write.  Routing them through
+    //   req:Store means the w(/req)+ %ttlilt picker naturally finds them all.
     //
-    async LiesStore_req(w: TheC): TheC {
+    async LiesStore_req(w: TheC): Promise<TheC> {
         return this.reqy(w).roai({req:'Store',eternal:1}) // eternal means it doesn't finish
+    },
+
+    // ── Lies_pending_write_reqy ───────────────────────────────────────────────
+    //
+    //   Returns a noserial reqy on req:Store — shared by e_Lies_source_write
+    //   (the parker) and LiesStore_run (which drives it via rq.do()).
+    //   noserial: pending_write reqs are keyed by path so auto-numbering would
+    //   be wrong; path identity is all we need.
+    //   Lives inside req:Store so the %ttlilt walker finds req:pending_write
+    //   reqs naturally alongside wwrite/wread.
+    //
+    async Lies_pending_write_reqy(w: TheC) {
+        const H    = this as House
+        const host = await H.LiesStore_req(w)
+        return H.reqy(host, { noserial: 1 })
     },
 
     // ── LiesStore_write ───────────────────────────────────────────────────────
@@ -334,6 +351,76 @@
         return req
     },
 
+    // ── req_pending_write ─────────────────────────────────────────────────────
+    //
+    //   Drives one parked source-file save across ticks.  Lives inside req:Store
+    //   so the %ttlilt walker finds it and LiesStore_run's rq.do() drives it.
+    //
+    //   req.c.up = req:Store, so w = req.c.up.c.up (same two-hop as req_wwrite).
+    //
+    //   Steps:
+    //     1. content gate — dige matches base_dige → already on disk → finish.
+    //     2. pull-before-push read.  Not finished yet → ttlilt + stay unfinished.
+    //     3. disk dige diverged from base_dige → external edit: stamp
+    //        /%surprise_read (stashing text for a future "push anyway") → finish.
+    //     4. clean → LiesStore_write (wwrite sibling in req:Store), clear
+    //        any /%surprise_read, finish.
+    //
+    //   < the surprise path blocks the write but doesn't yet resume it; the
+    //     "push anyway" affordance lives in Liesui's future and reads sr.sc.text.
+    async req_pending_write(req: TheC, q: any) {
+        const H    = this as House
+        const w    = req.c.up?.c.up as TheC   // req → req:Store → w
+        const path = req.sc.path as string
+        const text = req.sc.text as string
+        const dige = req.sc.dige as string
+
+        const ld = w.o({ loaded_doc: 1, path })[0] as TheC | undefined
+        if (!ld) {
+            console.warn(`🗂 pending_write: no loaded_doc for ${path} — dropping`)
+            return q.finish(req)
+        }
+
+        // nowriting opt: log write intent; source never goes to disk.
+        // Skip the pull-before-push machinery — the base_dige surprise-check is
+        // meaningless in tests where there is no disk to diverge from.
+        if (H.Lies_nowriting(w, path)) {
+            await H.Lies_log_want(w, 'source_write', path, text)
+            return q.finish(req)
+        }
+
+        const base_dige = ld.sc.base_dige as string | undefined
+        if (base_dige && dige === base_dige) return q.finish(req)
+
+        // Pull-before-push: read disk, compare to what we loaded.
+        // roai on the wread channel finds an existing req with matching identity,
+        // so a read from a prior tick that hasn't been Phase-2-dropped yet is
+        // returned directly — no duplicate Wormhole dispatch.
+        const read = await H.LiesStore_read(w, path, { label: 'source_check' })
+        if (!read.sc.finished) {
+            H.i_req_ttlilt(req, 0.5, { waiting: 'source_check' })
+            return   // stay unfinished — the read's reply re-fires think
+        }
+
+        const disk_text = read.sc.reply?.content as string | undefined
+        const disk_dige = disk_text ? await dig(disk_text) : ''
+
+        if (base_dige && disk_dige && disk_dige !== base_dige) {
+            const sr = ld.oai({ surprise_read: 1 })
+            sr.sc.disk_dige = disk_dige
+            sr.sc.text      = text   // stash so a future "push anyway" can re-issue
+            sr.sc.dige      = dige
+            ld.bump_version()
+            console.warn(`🗂 surprise_read on ${path}: disk dige ${disk_dige.slice(0, 5)} ≠ base ${base_dige.slice(0, 5)}`)
+            return q.finish(req)
+        }
+
+        console.log(`🖊 Lies_source_write: ${path} (${text.length}c)`)
+        await H.LiesStore_write(w, path, text)
+        for (const sr of ld.o({ surprise_read: 1 }) as TheC[]) ld.drop(sr)
+        q.finish(req)
+    },
+
     // ── req_wwrite ─────────────────────────────────────────────────
     //
     //   Handles write reqs that LiesStore_write left queued (in-flight sibling).
@@ -345,8 +432,6 @@
     //   (c) Serialize — another write for this path is still in-flight.
     //       Arms a short ttlilt + demand_time_to_think and waits.
     //   (d) Dispatch.
-    // < merge with req:pending_write, make it an option to
-    //    check to-be-overwritten data is what we expect, reasonable timeframes, etc
     async req_wwrite(req: TheC, q: any) {
         const H     = this as House
         const w     = req.c.up?.c.up as TheC   // req → req:Store → w
@@ -396,13 +481,11 @@
             const ld = w.o({ loaded_doc: 1, path })[0] as TheC | undefined
             if (ld) {
                 ld.sc.base_dige = req.sc.dige as string
-                // Mirror the new disk dige into ave/lang_doc so the DocRow
+                // Mirror the new disk dige into ave/{lang_dock:path} so the DocRow
                 // change strip sees it without an extra cross-world round-trip.
                 // Only source files have a loaded_doc; gen/ writes skip this.
                 const ave = H.oai_enroll(H, { watched: 'ave' })
-                const docTextC = ave.oai({ lang_doc: path })
-                docTextC.sc.disk_dige = req.sc.dige as string
-                docTextC.bump_version()
+                await ave.r({ lang_dock: path, disk_dige: req.sc.dige })
             }
             console.log(`💾 LiesStore wrote ${path} (${(req.sc.rw_data as string)?.length ?? 0}c)`)
 
@@ -440,15 +523,18 @@
     // ── LiesStore_run ─────────────────────────────────────────────────────────
     //
     //   Called from the Lies tick after LiesPersist + LiesCurse.
+    //   rq.do() drives all children of req:Store: wwrite, wread, wlisting,
+    //   and pending_write (which lives here now rather than on w directly).
     //
     async LiesStore_run(A: TheC, w: TheC) {
         const H    = this as House
         const host = await H.LiesStore_req(w)
         const rq   = H.reqy(host)
-        // call their methods req_wwrite() etc
         await rq.do()
 
         // ── Phase 1: wwrite completions ───────────────────────────────────────
+        //   pending_write reqs finish silently (their wwrite sibling carries the
+        //   actual IO); only wwrite reqs need the done callback.
         for (const req of rq.o() as TheC[]) {
             if (req.sc.finished) {
                 if (req.sc.req == 'wwrite') H.req_wwrite_done(w, req)

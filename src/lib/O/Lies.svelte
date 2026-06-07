@@ -231,8 +231,9 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     // ── e_Lies_source_write ────────────────────────────────────────────
     //
     //   Fired by Langui's auto-save timer (quiet 3s / active 10s).
-    //   Parks the current CM text as a req:pending_write and wakes the tick;
-    //   req_pending_write does the actual pull-before-push + disk write.
+    //   Parks the current CM text as a req:pending_write inside req:Store and
+    //   wakes the tick; req_pending_write (in LiesStore) does the actual
+    //   pull-before-push + disk write, driven by LiesStore_run's rq.do().
     //
     //   The work can't happen inline here: the pull-before-push read settles on
     //   a later think() (Wormhole done → finish → think back to w:Lies), so a
@@ -252,94 +253,14 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             return
         }
 
-        // Park the save.  Keyed by path: a re-save while one is still in flight
-        // mutates the in-flight req's text rather than racing a second write.
-        // Drop a finished sibling first so roai builds a fresh req, not a
-        // mutate-on-a-dead-one that do() would skip.
-        const pwq = H.Lies_pending_write_reqy(w)
-        for (const old of pwq.o({ req: 'pending_write', path }) as TheC[]) if (old.sc.finished) w.drop(old)
+        // Park the save inside req:Store.  Keyed by path: a re-save while one is
+        // still in flight mutates the in-flight req's text rather than racing a
+        // second write.  Drop a finished sibling first so roai builds a fresh req,
+        // not a mutate-on-a-dead-one that do() would skip.
+        const pwq = await H.Lies_pending_write_reqy(w)
+        pwq.drop_finished({ req: 'pending_write', path })
         await pwq.roai({ req: 'pending_write', path }, { text, dige: await dig(text) })
         H.i_elvisto(w, 'think')
-    },
-
-    // ── pending_write channel ──────────────────────────────────────────────
-    //
-    //   One reqy handle, shared by the parker (e_Lies_source_write) and the
-    //   driver (LiesStore_run Phase 1.5) so both attach to the same reqcon.
-    //   do_one finds req_pending_write by name — no explicit do_fn needed.
-    Lies_pending_write_reqy(w: TheC) {
-        const H = this as House
-        return H.reqy(w, { noserial: 1 })
-    },
-
-    // ── req_pending_write ─────────────────────────────────────────────────────
-    //
-    //   Drives one parked save across ticks:
-    //     1. content gate — text already on disk (echo, or a sibling write
-    //        landed and Phase 1 advanced base_dige to match) → finish.
-    //     2. pull-before-push read of the source path.  Not finished yet →
-    //        arm a ttlilt and stay unfinished; the read's reply re-fires think
-    //        → tick → here again, this time with the reply in hand.
-    //     3. disk dige diverged from base_dige → external edit: stamp
-    //        /%surprise_read (stashing the pending text for a future push) and
-    //        finish without clobbering.
-    //     4. clean → LiesStore_write (Phase 1 stamps base_dige on completion),
-    //        clear any /%surprise_read, finish.
-    //
-    //   < the surprise path blocks the write but doesn't yet resume it; the
-    //     "push anyway" affordance lives in Liesui's future and reads sr.sc.text.
-    async req_pending_write(req: TheC, q: any) {
-        const H    = this as House
-        const w    = req.c.up as TheC
-        const path = req.sc.path as string
-        const text = req.sc.text as string
-        const dige = req.sc.dige as string
-
-        const ld = w.o({ loaded_doc: 1, path })[0] as TheC | undefined
-        if (!ld) {
-            console.warn(`🗂 pending_write: no loaded_doc for ${path} — dropping`)
-            return q.finish(req)
-        }
-
-        // nowriting opt: log write intent; source never goes to disk.
-        // Skip the pull-before-push machinery — the base_dige surprise-check is
-        // meaningless in tests where there is no disk to diverge from.
-        if (H.Lies_nowriting(w, path)) {
-            await H.Lies_log_want(w, 'source_write', path, text)
-            return q.finish(req)
-        }
-
-        const base_dige = ld.sc.base_dige as string | undefined
-        if (base_dige && dige === base_dige) return q.finish(req)
-
-        // Pull-before-push: read disk, compare to what we loaded.
-        // roai on the wread channel finds an existing req with matching {wread:1,rw_name,label}
-        // identity, so a read from a prior tick that hasn't been Phase-2-dropped yet is
-        // returned directly — no duplicate Wormhole dispatch.  The 0.5s ttlilt only fires
-        // on a genuinely fresh req whose reply hasn't landed yet.
-        const read = await H.LiesStore_read(w, path, { label: 'source_check' })
-        if (!read.sc.finished) {
-            H.i_req_ttlilt(req, 0.5, { waiting: 'source_check' })
-            return   // stay unfinished — the read's reply re-fires think
-        }
-
-        const disk_text = read.sc.reply?.content as string | undefined
-        const disk_dige = disk_text ? await dig(disk_text) : ''
-
-        if (base_dige && disk_dige && disk_dige !== base_dige) {
-            const sr = ld.oai({ surprise_read: 1 })
-            sr.sc.disk_dige = disk_dige
-            sr.sc.text      = text   // stash so a future "push anyway" can re-issue
-            sr.sc.dige      = dige
-            ld.bump_version()
-            console.warn(`🗂 surprise_read on ${path}: disk dige ${disk_dige.slice(0, 5)} ≠ base ${base_dige.slice(0, 5)}`)
-            return q.finish(req)
-        }
-
-        console.log(`🖊 Lies_source_write: ${path} (${text.length}c)`)
-        await H.LiesStore_write(w, path, text)
-        for (const sr of ld.o({ surprise_read: 1 }) as TheC[]) ld.drop(sr)
-        q.finish(req)
     },
 
     // ── e_Lies_compiled ────────────────────────────────────────────────
