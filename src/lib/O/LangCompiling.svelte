@@ -389,7 +389,9 @@
         // e_Lies_compiled parks req:Cortex; req_Cortex fires Lies_compile_settled
         // back once the write (if any) lands; Lang_compile_step consumes it.
         H.i_elvisto('Lies/Lies', 'Lies_compiled', {
-            path: dock.sc.dock, gen_path, source, dige: gen_path ? await dig(source) : '', source_dige,
+            path: dock.sc.dock, gen_path, source,
+            dige: gen_path ? await dig(source) : '', source_dige,
+            run_method: dock.sc.run_method,
         })
         H.i_elvisto(w, 'think')
     },
@@ -427,20 +429,9 @@
                 time.sc.all   = +(all_ms   / 1000).toFixed(3)
                 if (write_ms != null) time.sc.write = +(write_ms / 1000).toFixed(3)
             }
-            // run_method: snap-persisted on dock — every compile on this dock
-            // re-runs the method once the module's ghostmeta confirms the right
-            // version is live.
-            const run_method = targetDock?.sc.run_method as string | undefined
-            if (run_method) {
-                const output       = targetDock?.o({ Compile: 1 })[0]?.o({ Output: 1 })[0] as TheC | undefined
-                const source_dige  = output?.sc.source_dige as string | undefined
-                const ghostmeta_name = H.Lang_ghostmeta_name(settled_path)
-                H.i_elvisto('Pantheate/Pantheate', 'Pantheate_run_method', {
-                    method: run_method,
-                    source_dige,
-                    ghostmeta_name,
-                })
-            }
+            // run_method now fires from req:Rundown beside the Codebits (LiesCortex),
+            // gated on all gen writes landing — not from here, where it could race
+            // ahead of a still-writing ghost.
             w.i({ see: `✅ compiled ${settled_path}` })
         }
     },

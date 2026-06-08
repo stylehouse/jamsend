@@ -229,14 +229,6 @@
         return this.reqy(w).roai({ req: 'Store', eternal: 1, maz: 7 })
     },
 
-    // ── LiesStore_store ───────────────────────────────────────────────────────
-    //
-    //   Returns req:Store — the home for known:path impression particles.
-    //   Callers treat the return value as an opaque impression container;
-    //   they oai({known:path}) on it and read sc.dige / sc.kind / sc.at.
-    async LiesStore_store(w: TheC): Promise<TheC> {
-        return (this as House).LiesStore_req(w)
-    },
 
     // ── req_Store ─────────────────────────────────────────────────────────────
     //
@@ -405,7 +397,11 @@
         const req = await rq.roai(c, { rw_op: 'read' })
 
         H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
-        if (!req.sc.finished) H.i_req_ttlilt(req, 1.6, { waiting: 'LiesStore_read' })
+        // a finished read handed to the caller is consumed now — mark seen so
+        //  Phase 2 drops it next pass; dropping before the caller reads the reply
+        //   would re-dispatch a fresh read every tick.
+        if (req.sc.finished) req.sc.seen = 1
+        else H.i_req_ttlilt(req, 1.6, { waiting: 'LiesStore_read' })
 
         return req
     },

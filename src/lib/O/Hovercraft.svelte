@@ -296,6 +296,14 @@
                         for (const k of diffs) mutated[k] = req.sc[k]
                         Object.assign(req.sc, sc)
                         req.sc.mutated = mutated
+                        // a permanent req gone quiescent wakes on mutation —
+                        //  un-finish so do() picks it up again with a fresh
+                        //   initialdo|onceler lease, since finish() already
+                        //    yoinked the old oncelers and a re-run wants clean.
+                        if (req.sc.permanent && req.sc.finished) {
+                            delete req.sc.finished
+                            delete req.c._had_initialdo
+                        }
                         req.bump_version()
                     }
                 }
