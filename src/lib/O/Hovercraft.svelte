@@ -457,8 +457,7 @@
         if (req.sc.finished) {
             await rq.do()
             rq.unify_finished()
-            // < maybe?
-            // H.feebly_ponder()
+            // they or the above probably did rq.finish(req), which does H.feebly_ponder()
         }
     },
  

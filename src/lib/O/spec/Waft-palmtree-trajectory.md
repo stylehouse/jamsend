@@ -35,7 +35,6 @@ Waft,Ghost/LakeNets
 w:Lies
   /%examining
     /%Spotlight           sc.src ($C → %What | %Doc)
-                          // < sc.accepted_entries / sc.accepted_push_id — pre-NaviCado; not yet
     /req:timemachine      sc.playing:0|1 — playback engine; seeded by req:acquire
   /req:wants              cursor-intent accumulator
     /%want,$ts            c.src → wanted C; sc.kind: click|drag|step|next|cold
@@ -44,12 +43,19 @@ w:Lies
     /%Waft,key            c.src → locked Waft
   /req:git                Waftlet accumulator; < do_fn pending
   /req:Furnishing,path    doc-open RPC; seeded by wants resolver
+  /req:Cortex,path        compile-and-settle workforce (LiesCortex)
+                          sc.gen_path, sc.source_dige; c.write_t0 (transient)
+                          parks on e_Lies_compiled; settles when LiesStore_write finishes
   /req:Store,eternal      all IO reqs live here; LiesStore_run rq.do() drives them
     /req:LuxuryLiesStore_write,path  source-file save with pull-before-push (noserial)
     /req:LiesStore_write,path,dige
     /req:LiesStore_read,rw_name
     /req:LiesStore_listing,rw_dir
-    /known:path           last-known dige + kind (read|write) + at — Store/* impression
+    /known:path           last-known dige + kind (read|write) + at — Store impression
+  /%Store:1               < known:path to move inside req:Store (deferred)
+  /%Opt:1
+    /%nogen:1             skip write + Pantheate notify entirely
+    /%softgen:1           render %Output, don't write gen/ to disk
 
 w:Lang
   /%Languinio
@@ -57,7 +63,6 @@ w:Lang
                           //   installed at Lang_plan; unarmed until first cursor move
     /%Interest            sc.src = working clone root
     /%dock:$path           same-object hold → /docks/%dock:$path
-    // /%spinner,stale / /%spinner,grafted
   /req:workon
     c.src                 latest cursored TheC (stashed by e_Lang_workon_update)
     /req:settle           permanent, open-ended — Lang_settle do_fn
@@ -70,7 +75,8 @@ w:Lang
   /docks/%dock:$path
     /%Text                sc.dige, sc.disk_dige, sc.disk_rev  — text metadata visible in snap
                           c.text: string  — source string, hidden from snap (moai to update)
-    /%Compile → %methods, %Output
+    /%Compile             c.pending (transient) — in-flight flag; replaces old %Pending:1
+                          → %methods, %Output (sc.gen_path, sc.source, sc.source_dige)
     /%Pmirrors
       /%Pmirror,$waft_key,$spec
           c.src_clone   → governing clone (for req:Showing to reach c.U)
@@ -148,7 +154,17 @@ any more isolations or interface togetherings we'd like to imagine...
 
 ## Where we are — what's next
 
-**LiesStore tidy-up done.**  `pending_write` → `LuxuryLiesStore_write`; `wwrite`/`wread`/`wlisting` → `LiesStore_write`/`LiesStore_read`/`LiesStore_listing`.  `req_wwrite` handler deleted — dispatch happens in the helpers directly.  Throttle machinery (`MIN_WRITE_INTERVAL`, `wrote_at`, `now_in_seconds_with_ms`) gone.  All three IO reqs now arm a 1.6s `%ttlilt` at dispatch so Story sees them as in-flight rather than snapping mid-write.  `LuxuryLiesStore_write` gains a cavalier skip: if `Store/known:path` is < 4s old and dige matches `base_dige`, the pull-before-push Wormhole read is skipped.  `Store/known:path` is stamped on every read completion (Phase 2 of `LiesStore_run`) and every write completion (`req_LiesStore_write_done`), carrying `dige`, `kind` (read|write), and `at` (epoch seconds).  `LUXURY_WRITE_SKIP_CHECK_SECS = 4` lives outside `eatfunc`.
+**LiesCortex extracted.**  `compile_pending` replaced by `req:Cortex,path` with a proper req lifecycle.  `e_Lies_compiled` moved to LiesCortex — it decides write vs `softgen` vs `nogen` vs `nowriting` and parks `req:Cortex` when writing.  `req_Cortex` waits for the matching `LiesStore_write` to finish (tick-ordering guarantee: Store runs before Cortex) then fires `Ghost_update_notify` + `Lies_compile_settled`.  `req_LiesStore_write_done` now Store-only: stamps `base_dige` + `known`, drops the req; no compile knowledge.  `LiesCortex_run` called from the Lies tick after `LiesStore_run`.  `Lies_LuxuryLiesStore_write_reqy` helper inlined into its one call site.  `LiesStore` now has `LiesStore_read_waft` — folds `deWaft` into the read result so callers don't repeat that boilerplate.
+
+**`softgen` opt added.**  `nogen` skips write entirely; `softgen` renders `%Output` visible in snap but doesn't write gen/ to disk.  Useful for dev/test flows where file content matters but disk writes are noise.  Distinguished from `nowriting` (which blocks all writes including Waft snaps and source files).
+
+**`gen_path` carrier chain collapsed.**  Previously threaded from Lies through `Lang_open_dock` → languish.sc → `req_text_loaded` → `dock.sc.gen_path`.  Now derived once, at the earliest moment it matters: `LangCompiling.Lang_compile_dock` calls `H.Lies_gen_path(dock.sc.dock)` directly.  Nothing upstream of compile time carries it.  `loaded_doc` mainkey loses `gen_path`.
+
+**`job.c.pending` replaces `%Pending:1`.**  The old snap particle caused a "arrives slightly earlier in step time" race — Story could snap `req:compile,firing` + `Compile/Pending` mid-flight.  `job.c.pending` is transient (never in snap); `req_compile` and `Lang_update_change` both check it; `Lang_compile_step` clears it when `Lies_compile_settled` arrives.  The Lang tick's compile_step gate narrows from `dock?.oa({Compile:1})` to `job?.c.pending`.
+
+**`moai` bumps parent.**  `something_oai` already calls `this.bump_version()` + `existing.bump_version()` before the `mutated_fn`.  The redundant `dock.bump_version()` calls after `moai` in Lang and LiesStore removed.  Pattern: anywhere `moai` is followed by an explicit bump on the same parent, that bump is dead code.
+
+**LiesStore tidy-up done.**  `pending_write` → `LuxuryLiesStore_write`; `wwrite`/`wread`/`wlisting` → `LiesStore_write`/`LiesStore_read`/`LiesStore_listing`.  `req_wwrite` handler deleted — dispatch happens in the helpers directly.  Throttle machinery gone.  All three IO reqs arm a 1.6s `%ttlilt` at dispatch.  `LuxuryLiesStore_write` gains a cavalier skip: if `Store/known:path` is < 4s old and dige matches `base_dige`, the pull-before-push Wormhole read is skipped.  `LUXURY_WRITE_SKIP_CHECK_SECS = 4` lives outside `eatfunc`.
 
 **Liesui Waft reactivity fixed.**  After the "layer effects, Languinio/dock" commit added `languinio?.ob()` to Langui's `$effect`, Liesui's parallel `$effect` was missing the corresponding `ex.ob()`.  Without it, `examining.bump_version()` (fired by `watch_c(w:Lies)` when `w` changes) didn't re-trigger Liesui's `$effect` — `all_wafts` stayed stale.  One-line fix: `ex.ob()` after the null-guard, mirroring Langui exactly.
 
@@ -258,14 +274,12 @@ attention with particular Points illuminated on the walls.
 ## Open faults
 
 ```
-// ── LiesStore / IO tidy-up ──────────────────────────────────────────────────
+// ── LiesStore / IO ──────────────────────────────────────────────────────────
 
-// < compile_pending lifetime — oai'd by path, never dropped; one permanent
-//   particle per Ghost/ doc.  Should be dropped after req_LiesStore_write_done fires
-//   settle signals, or converted to a req with a proper lifecycle.
+// < %Store:1/known:path should move inside req:Store (deferred — small rename pass).
 
 // < req_LiesStore_write_done cross-world dock lookup — after a source write,
-//   req_LiesStore_write_done tries w.o({docks:1})[0]?.o({dock:path})[0] to moai Text,
+//   tries w.o({docks:1})[0]?.o({dock:path})[0] to moai Text,
 //   but w is w:Lies and dock lives on w:Lang.  Currently the moai is a no-op
 //   (finds nothing).  Fix: carry disk_dige in Lies_compile_settled / a new
 //   event, or have Lang handle the disk_dige update after wwrite.
@@ -273,26 +287,24 @@ attention with particular Points illuminated on the walls.
 // < openity push reactivity — Housing's watch_c + pending + flush is the right
 //   primitive for per-particle push.  Refactor: target individual particles
 //   (not whole-channel copies) and deliver via elvis rather than replicate.
-//   o_elvisSe declares permanent subscriptions; Housing's flush loop diffs
-//   versions and pushes only changed particles.
+
+// ── LiesCortex ──────────────────────────────────────────────────────────────
+
+// < req:Cortex write_finished ordering — currently guaranteed by LiesStore_run
+//   running before LiesCortex_run in the tick.  If that ordering shifts, have
+//   Phase 1 stamp cortex.sc.write_finished directly instead.
+
+// < push_dirty not yet wired to a req fault particle in the reqy system.
+
+// ── Lang / compile ──────────────────────────────────────────────────────────
 
 // < created_at session field on clones — stripped by Seem_toString / enWaft;
 //   needs wiring in LE_add_clone and the strip list.
 
-// < req:push/%dirty not yet surfaced in the reqy fault UI.
-
-// < clone.c.waft is one scalar on the clone root; LE.sc.target.c.waft is the
-//   fallback for any clone landing unstamped.
-
-// < req:wants never prunes; history grows unbounded until a sweep exists.
-
-// < req:timemachine is a reqy particle under %examining (an ave signal);
-//   tolerated — precedent: %Spotlight child + c.w back-ref.
-
 // < U-edit encode gate: clone.c.U mutations (unaccepted/unshowing) don't bump
-//   Seem:working.version, so settle's encode gate (last_encode_ver !== wv) never
-//   fires after e_Lang_LE_drop / e_Lang_LE_edit.  Fix: stamp LE.c.u_edit_serial++
-//   in those handlers; encode_key = `${wv}:${u_edit_serial}`.
+//   Seem:working.version, so settle's encode gate never fires after e_Lang_LE_drop
+//   / e_Lang_LE_edit.  Fix: stamp LE.c.u_edit_serial++ in those handlers;
+//   encode_key = `${wv}:${u_edit_serial}`.
 //   Until fixed, %State.changey doesn't update after minimap × demote.
 
 // < req:Showing has no req particle yet — Lang_show_pmirrors is the body but
@@ -314,6 +326,11 @@ attention with particular Points illuminated on the walls.
 // < req:git do_fn — flush Waftlets to disk/remote.
 
 // < Se_o as standing watch — call-driven for now.
+
+// < req:wants never prunes; history grows unbounded until a sweep exists.
+
+// < req:timemachine is a reqy particle under %examining (an ave signal);
+//   tolerated — precedent: %Spotlight child + c.w back-ref.
 ```
 
 ---
@@ -329,7 +346,7 @@ attention with particular Points illuminated on the walls.
 - One-Doc-per-What: section Whats are pure containers (no Doc, no Points
   directly); leaf Whats have exactly one Doc.  Cursor candidates only surface
   Whats that have direct Points (`Lies_what_has_direct_points`).
-- `oai` sync, `roai` async; `moai` async in-place mutate + bump (preserves C ref — use when Svelte holds a `$state` ref to the particle); `i()` always inserts.
+- `oai` sync, `roai` async; `moai` async in-place mutate + bump (preserves C ref — use when Svelte holds a `$state` ref to the particle); `i()` always inserts.  `moai` bumps both the particle and its parent (`this`) when changed — a `bump_version()` on the parent immediately after `moai` is redundant.
 - `i_req_ttlilt` holds the snap open (defers finalize); it does not poke a think.
 - Read children-dependent derives with `.ob()`; chain on `vers`, not
   `$derived.by(void …)`.

@@ -258,6 +258,40 @@
         return req
     },
 
+    // ── LiesStore_read_waft ───────────────────────────────────────────────────
+    //
+    //   Read a snap file and run deWaft on it in one step.
+    //   Returns { waft_C, errors, not_found } once the read finishes.
+    //   Callers still need to check req.sc.finished before calling this —
+    //   the pattern is the same as LiesStore_read; this just folds the deWaft
+    //   step in so callers don't repeat that boilerplate.
+    //
+    //   not_found: true when the file is absent — caller decides whether that
+    //   means start empty or surface an error.
+    //
+    //   waft_path: the logical Waft key (e.g. 'Ghost/Tour') — passed to deWaft
+    //   as the path context it uses for error messages.
+    //
+    //   Usage:
+    //     const req = await H.LiesStore_read(w, snap_path)
+    //     if (!req.sc.finished) return   // ttlilt already armed
+    //     const { waft_C, errors, not_found } = H.LiesStore_read_waft(req, waft_path)
+    //     if (not_found) { /* start empty */ }
+    //     if (errors.length) { /* surface */ }
+    //     // use waft_C
+    //
+    LiesStore_read_waft(
+        req:       TheC,
+        waft_path: string,
+    ): { waft_C: TheC | undefined, errors: string[], not_found: boolean } {
+        if (req.sc.reply?.not_found) {
+            return { waft_C: undefined, errors: [], not_found: true }
+        }
+        const snap = req.sc.reply?.content as string ?? ''
+        const { waft_C, errors } = (this as House).deWaft(snap, waft_path)
+        return { waft_C, errors, not_found: false }
+    },
+
     // ── LiesStore_listing ────────────────────────────────────────────────────
     //
     //   reply.entries: Array<{ name: string, is_dir: boolean }>
