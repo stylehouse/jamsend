@@ -38,16 +38,20 @@
     //     sc.gen_path, sc.source_dige, sc.dige, permanent:1; c.write_t0 (transient)
     //
     //   w/req:Cortex/req:Rundown      — beside the Codebits, there from the start.
-    //     maz:1, eternal                Ambient: ticks when Lies does.  Idles on
-    //                                   /%waits:!run_method until a compile sets one.
-    //                                   Hashes sibling Codebit diges + %leashi into a
-    //                                   moment id and fires Pantheate_run_method only
-    //                                   on a moment it hasn't run.
-    //     sc.run_method?, sc.leashi; %ran:moment_id children record what's been run
+    //     maz:1, eternal                Idles on /%waits:!run_method until a compile sets one.
+    //                                   Hashes sibling Codebit diges + %leashi into a moment id;
+    //                                   mints req:BlatDo for each new moment and waits on it.
+    //                                   Oks when BlatDo finishes and records %ran:moment.
+    //     sc.run_method?, sc.leashi; one %ran:moment child records the last run
+    //     /req:BlatDo,moment           — one run instance per moment.  Fires
+    //                                   e:Pantheate_run_method carrying %req for
+    //                                   reqyoncile return.  Holds %ttlilt,waiting:run
+    //                                   so Story stays open; e_reqyonciliation from
+    //                                   req_run_method finishes it in-step with BlastPit.
+    //                                   Dropped by Rundown as soon as ran:moment is recorded.
     //
     //   maz ordering keeps any runner from firing while a ghost is still writing —
     //   do() won't fall to maz:1 while a maz:2 Codebit is unfinished.
-    //
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     //
     //   e_Lies_compiled
@@ -62,8 +66,8 @@
     //       maz:2 req:Codebit — waits for write_finished; on land: fires
     //                           Ghost_update_notify + Lies_compile_settled; finishes
     //                           (permanent — stays put, un-finishes on re-compile)
-    //       maz:1 req:Rundown — ambient; idles or fires Pantheate_run_method when
-    //                           inputs are ready and moment is new; sets ok
+    //       maz:1 req:Rundown — ambient; idles or mints req:BlatDo when inputs are
+    //                           ready and moment is new; waits on BlatDo, then ok
     //     maz:* lower reqs   — desire, wants, Furnish, Curse
     //
     // ── nogen / softgen / nowriting ──────────────────────────────────────────
@@ -261,23 +265,24 @@
     // ── req_Rundown ───────────────────────────────────────────────────────────
     //
     //   do_fn for req:Rundown (maz:1, eternal child of req:Cortex).
-    //   There from the start.  Ambient: ticks when Lies does, sets ok each pass.
+    //   There from the start.  Ambient: ticks when Lies does.
     //
     //   Idles on /%waits:!run_method until a compile carrying a Pantheate_method
     //   configures one.  Once set, hashes the sibling Codebit diges + %leashi
-    //   into a moment id and fires Pantheate_run_method only on a moment that
-    //   hasn't been run — so the same compiled inputs run once, a new dige makes
-    //   a new moment on its own, and an e_Rundown_leash i++ runs the same inputs
-    //   one more time.
+    //   into a moment id.  For each new moment, mints req:BlatDo and drives it.
+    //   BlatDo fires the run command and holds a %ttlilt so Story stays open;
+    //   Rundown oks only after BlatDo finishes — then records %ran:moment,
+    //   drops BlatDo, and prunes old ran:* so only the current marker remains.
+    //
+    //   A stale in-flight BlatDo (re-compile arriving mid-run) is dropped; the
+    //   orphaned run on Pantheate completes harmlessly and its reqyoncile return
+    //   is a no-op on the already-dropped particle.
     //
     //   maz ordering means do() only reaches maz:1 when all maz:2 Codebits are
     //   finished — no runner fires while a ghost is still writing.
     //
     //   < one-runner-for-all-Codebits; selecting an input set per runner is the
     //     multiple-ghosts-per-runner generalisation.
-    //   < spawn a req:BlastPit here to drive the sim across ticks, finishing when
-    //     it runs out and ambiently stepping when Lies happens; the run is one-shot
-    //     on the Pantheate side for now (req:run_method calls the method once).
     //
     //   req.c.up = req:Cortex
     async req_Rundown(req: TheC, q: any) {
@@ -307,20 +312,64 @@
         const diges  = codebits.map((c: TheC) => c.sc.dige as string).sort()
         const moment = `${diges.join(',')}#leash:${leashi}`
 
+        const rq = H.reqy(req)
+
+        // drop a BlatDo whose moment is stale (re-compile or leash bump)
+        const existing = rq.o({ req: 'BlatDo' })[0] as TheC | undefined
+        if (existing && existing.sc.moment !== moment) req.drop(existing)
+
+        // already ran this moment
         if (req.oa({ ran: moment })) { req.sc.ok = 1; return }
 
-        // the ghost carrying the runner — single input for now; its source_dige
-        //  and ghostmeta gate req:run_method on the right version being live.
-        const lead = codebits[0]
-        H.i_elvisto('Pantheate/Pantheate', 'Pantheate_run_method', {
-            method:         req.sc.run_method,
-            source_dige:    lead.sc.source_dige,
-            ghostmeta_name: H.Lang_ghostmeta_name(lead.sc.path as string),
-        })
-        req.oai({ ran: moment })
-        console.log(`🏃 Rundown step: ${req.sc.run_method} @ ${moment}`)
+        // mint BlatDo for this moment (idempotent if already in-flight)
+        await rq.roai({ req: 'BlatDo' }, { moment, run_method: req.sc.run_method })
+        await rq.do()
 
-        req.sc.ok = 1
+        // if BlatDo finished this tick: record the moment, then clean up
+        const blatdo = rq.o({ req: 'BlatDo' })[0] as TheC | undefined
+        if (blatdo?.sc.finished) {
+            req.oai({ ran: moment })
+            // BlatDo's job is done; drop it now rather than waiting for the next compile.
+            // Prune ran:* from older moments — only the current one is needed for the gate.
+            req.drop(blatdo)
+            for (const old of req.o({ ran: 1 }) as TheC[]) {
+                if (old.sc.ran !== moment) req.drop(old)
+            }
+            req.sc.ok = 1
+            console.log(`🏃 Rundown: ${req.sc.run_method} @ ${moment}`)
+            return
+        }
+        // BlatDo in-flight — its %ttlilt holds Story open; Rundown stays needs_work
+    },
+
+    // ── req_BlatDo ────────────────────────────────────────────────────────────
+    //
+    //   do_fn for /req:BlatDo,moment (child of req:Rundown, one per moment).
+    //   Fires e:Pantheate_run_method carrying %req (itself) once — req_sent guards
+    //   re-entry.  Holds %ttlilt,waiting:run so Story stays open while Pantheate
+    //   confirms includes and runs the method.
+    //   Finished by e_reqyonciliation when req_run_method calls
+    //    reqyoncile(req, {finished:1}) — dropping the %ttlilt in-step with BlastPit.
+    //
+    //   req.c.up = req:Rundown
+    //   req.c.up.c.up = req:Cortex
+    //   req.c.up.c.up.c.up = w:Lies
+    async req_BlatDo(req: TheC, q: any) {
+        const H = this as House
+
+        // fire the run command once — req_sent guards re-entry
+        if (!req.oa({ req_sent: 1 })) {
+            req.i({ req_sent: 1 })
+            H.i_elvisto('Pantheate/Pantheate', 'Pantheate_run_method', {
+                method: req.sc.run_method as string,
+                req,
+            })
+        }
+        // hold Story open while Pantheate confirms includes and runs the method.
+        //  reqyoncile(req, {finished:1}) from req_run_method finishes us properly —
+        //   e_reqyonciliation drops the %ttlilt and feebly_ponders,
+        //    waking Rundown to record %ran and go ok in the same Story step.
+        H.i_req_ttlilt(req, 0.5, { waiting: 'run' })
     },
 
     // ── e_Rundown_leash ────────────────────────────────────────────────────────
