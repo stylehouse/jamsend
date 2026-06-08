@@ -1,5 +1,7 @@
 # Reactivity, H.ave, and the Stuff/Housing system — working notes
 
+Check out `Langui` for layered `$effect()` and `Lies` for void ex.ob() ... food for thought.
+
 ## the frontier
 
 Atime and UItime are basically the same thing, both share an H** global mutex lock.
@@ -130,7 +132,7 @@ The outer `$state()` on `H.ave` etc. is defensive; those fields are never reassi
 The safe pattern — `vers` is always ≥ 1 (truthy), use it as a chain link:
 
 ```ts
-let target = $derived(LE && LE.vers && LE.sc.target)
+let target = $derived(LE?.vers && LE.sc.target)
 ```
 
 `LE.vers` never breaks the chain, but Svelte still registers the read. Prefer this over `$derived.by` — it puts pressure on keeping UI-facing interfaces simple and inline. `$derived.by` is a last resort for genuinely multi-step logic that can't be factored out.
