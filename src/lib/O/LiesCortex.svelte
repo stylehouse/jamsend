@@ -26,40 +26,59 @@
 
     // ── Particle layout ───────────────────────────────────────────────────────
     //
-    //   w/req:Cortex,maz:5,eternal    — one foreman; drives its children via
-    //                                   handler_of_last_resort each tick.
-    //                                   maz:5 runs below req:Store (maz:7) —
-    //                                   Store pumps IO and sets ok first.
-    //                                   No explicit LiesCortex_run call needed.
+    //   w/req:Cortex,maz:5,eternal    — one foreman; handler_of_last_resort drives
+    //                                   its children each tick.  Never finishes.
+    //                                   maz:5 runs after req:Store (maz:7) sets ok.
     //
-    //   w/req:Cortex/req:Codebit,path — one per in-flight gen/ compile; oai so
-    //                                   a re-compile for the same path overwrites.
-    //     maz:2   — write-wait phase; returns until write_finished stamp arrives
-    //               from req_Store Phase 1, then parks its Rundown and finishes.
+    //   w/req:Cortex/req:Codebit,path — one per in-flight gen/ compile.
+    //     maz:2   — write-wait phase.  Parks when e_Lies_compiled fires.
+    //               Returns each tick until req_Store Phase 1 stamps write_finished.
+    //               When stamped: parks a req:Rundown sibling, then finishes+drops.
     //     sc.gen_path, sc.source_dige, c.write_t0
     //
-    //   w/req:Cortex/req:Rundown,path — one per settled compile; maz:1.
-    //     maz:1   — notify phase; fires Ghost_update_notify → Pantheate,
-    //               Lies_compile_settled → Lang, then finishes.
-    //     Created by req_Codebit when the write lands.
-    //     < JS import-check path (import without running, fake H) — future.
+    //   w/req:Cortex/req:Rundown,path — one per settled compile.
+    //     maz:1   — notify phase.  Parked by req_Codebit once write has landed.
+    //               Fires Ghost_update_notify → Pantheate (dynamic import) and
+    //               Lies_compile_settled → Lang (clears job.c.pending, closes %time,
+    //               fires Pantheate_run_method if dock.sc.run_method is set).
+    //               Then finishes and drops itself + its Codebit sibling.
+    //     sc.gen_path, sc.source_dige, sc.write_ms, sc.run_method?
+    //
+    //   Codebit and Rundown are ephemeral: finish and drop after one compile cycle.
+    //   Cortex itself is eternal — it accumulates no state between cycles.
+    //
+    // ── The run_method path ────────────────────────────────────────────────────
+    //
+    //   When e_Lang_compile is called with Pantheate_method:'theCompiledStuff',
+    //   Lang_compile_dock stamps dock.sc.run_method = 'theCompiledStuff' before
+    //   handing off to e_Lies_compiled.  e_Lies_compiled forwards run_method into
+    //   the Codebit's sc, which carries it through to req:Rundown.  After firing
+    //   Lies_compile_settled, Rundown also fires Pantheate_run_method (< to add)
+    //   directly, rather than relying on Lang_compile_step to pick it up.
+    //   This makes the intent visible in the snap: req:Rundown,run_method:foo.
+    //   < wire run_method into Rundown firing path — currently handled by
+    //     Lang_compile_step reading dock.sc.run_method after Lies_compile_settled.
     //
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     //
     //   e_Lies_compiled
-    //     → LiesStore_write(gen_path, source)
-    //     → LiesCortex_arm: ensure req:Cortex eternal on w
-    //     → park req:Codebit,path inside req:Cortex  (oai — re-compile overwrites)
+    //     → LiesStore_write(gen_path, source)      — parks IO, returns immediately
+    //     → LiesCortex_arm(w)                      — ensure req:Cortex exists
+    //     → roai req:Codebit,path inside req:Cortex — oai: re-compile overwrites
     //
-    //   H.reqy(w).do() in the Lies tick
-    //     → maz:7 req:Store pumps IO, sets ok
-    //     → maz:5 req:Cortex (handler_of_last_resort drives its children)
-    //       → maz:2 req:Codebit — waits for write_finished stamp, then parks Rundown
-    //       → maz:1 req:Rundown — fires Ghost_update_notify + Lies_compile_settled
+    //   H.reqy(w).do() each tick
+    //     maz:7 req:Store      — pump IO; sets ok when done
+    //     maz:5 req:Cortex     — handler_of_last_resort drives:
+    //       maz:2 req:Codebit  — waits for write_finished stamp from Phase 1
+    //                            when stamped: parks req:Rundown, finishes
+    //       maz:1 req:Rundown  — fires Ghost_update_notify + Lies_compile_settled
+    //                            finishes, drops Codebit + itself
+    //     maz:* lower reqs     — desire, wants, Furnish, Curse
     //
-    // ── nogen / softgen / nowriting paths ────────────────────────────────────
+    // ── nogen / softgen / nowriting ──────────────────────────────────────────
     //
-    //   No write → e_Lies_compiled settles immediately; no Codebit/Rundown parked.
+    //   No write → e_Lies_compiled fires Lies_compile_settled immediately.
+    //   No Codebit or Rundown parked; Cortex never sees these compiles.
 
     // File extensions that produce gen/ output.
     // Everything else is soft-compile only regardless of Ghost/ location.
@@ -92,13 +111,17 @@
     //   nowriting  — regex-gated suppression; logs intent via Lies_log_want.
     //   (default)  — write gen_path to disk, park req:Codebit to await completion.
     //
-    //   e.sc: { path, gen_path, source, source_dige }
+    //   e.sc: { path, gen_path, source, source_dige, run_method? }
+    //   run_method is forwarded into Codebit → Rundown → Pantheate_run_method.
+    //   < Lang_compile_dock must include run_method (dock.sc.run_method) in its
+    //     i_elvisto(Lies_compiled) call for this chain to fire.
     async e_Lies_compiled(A: TheC, w: TheC, e: TheC) {
         const H           = this as House
         const path        = e.sc.path        as string
         const gen_path    = e.sc.gen_path    as string
         const source      = e.sc.source      as string
         const source_dige = e.sc.source_dige as string | undefined
+        const run_method  = e.sc.run_method  as string | undefined
         if (!path || !gen_path) throw 'e_Lies_compiled: needs path + gen_path'
 
         const nowriting = H.Lies_nowriting(w, gen_path)
@@ -127,7 +150,7 @@
         // Codebit is oai — re-compile for the same path overwrites payload cleanly.
         const cortex  = await H.LiesCortex_arm(w)
         const codebit = H.reqy(cortex).o({ req: 'Codebit', path })[0] as TheC | undefined
-            ?? await H.reqy(cortex).roai({ req: 'Codebit', path, maz: 2 }, { gen_path, source_dige })
+            ?? await H.reqy(cortex).roai({ req: 'Codebit', path, maz: 2 }, { gen_path, source_dige, run_method })
         codebit.c.write_t0 = Date.now()
 
         H.i_elvisto(w, 'think')
@@ -172,6 +195,7 @@
         await rq.roai({ req: 'Rundown', path }, {
             gen_path,
             source_dige: req.sc.source_dige,
+            run_method:  req.sc.run_method,
             write_ms:    write_ms != null ? +(write_ms / 1000).toFixed(3) : undefined,
         })
 
@@ -184,24 +208,24 @@
     // ── req_Rundown ───────────────────────────────────────────────────────────
     //
     //   do_fn for req:Rundown,path (maz:1 child of req:Cortex).
-    //   Fires Ghost_update_notify → Pantheate and Lies_compile_settled → Lang,
-    //   then finishes and drops its finished Codebit sibling.
+    //   Fires Ghost_update_notify → Pantheate and Lies_compile_settled → Lang.
+    //   If sc.run_method is set, also fires Pantheate_run_method so the compiled
+    //   function runs in a BlastPit once the Ghostmeta confirms the module is live.
+    //   Then finishes and drops Codebit + itself from req:Cortex.
+    //
     //   Pantheate notify goes first — dynamic import needs the file on disk;
     //   source_dige lets req:include confirm the right version.
     //
-    //   Lang_compile_step (on w:Lang) consumes Lies_compile_settled and fires
-    //   Pantheate_run_method if dock.sc.run_method is set — no change needed here.
-    //
-    //   < JS import-check: import without running using a fake H that doesn't
-    //     distribute methods — validates the gen file compiles before notifying.
+    //   < JS import-check before notifying — future.
     //
     //   req.c.up = req:Cortex
     async req_Rundown(req: TheC, q: any) {
         const H     = this as House
-        const cortex    = req.c.up as TheC         // req:Rundown → req:Cortex
-        const path      = req.sc.path       as string
-        const gen_path  = req.sc.gen_path   as string
-        const write_ms  = req.sc.write_ms   as number | undefined
+        const cortex     = req.c.up as TheC         // req:Rundown → req:Cortex
+        const path       = req.sc.path       as string
+        const gen_path   = req.sc.gen_path   as string
+        const write_ms   = req.sc.write_ms   as number | undefined
+        const run_method = req.sc.run_method as string | undefined
 
         if (req.sc.source_dige) {
             H.i_elvisto('Pantheate/Pantheate', 'Ghost_update_notify', {
@@ -214,12 +238,22 @@
             path,
             write_ms,
         })
+
+        // Fire Pantheate_run_method when the compile was triggered with one.
+        // ghostmeta_name lets req:run_method poll until the right version is live.
+        if (run_method) {
+            H.i_elvisto('Pantheate/Pantheate', 'Pantheate_run_method', {
+                method:         run_method,
+                source_dige:    req.sc.source_dige,
+                ghostmeta_name: H.Lang_ghostmeta_name(path),
+            })
+        }
+
         console.log(`🔪 Lies compile settled: ${path} [write+run] write=${write_ms != null ? Math.round(write_ms * 1000) : '?'}ms`)
 
         q.finish(req)
 
         // Drop finished Codebit and Rundown siblings to keep req:Cortex tidy.
-        // (This Rundown is finished; the matching Codebit finished before it was parked.)
         const crq = H.reqy(cortex)
         crq.drop_finished({ req: 'Codebit', path })
         crq.drop_finished({ req: 'Rundown', path })

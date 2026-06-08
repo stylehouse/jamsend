@@ -3,14 +3,14 @@
     //
     // ── What this is ─────────────────────────────────────────────────────────
     //
-    //   LiesStore is the IO protocol for Lies.  It owns one eternal req — req:Store
-    //   — that sits on w and drives itself.  Nothing outside calls LiesStore_run
-    //   or processes write completions manually; req:Store's do_fn is the pump.
+    //   LiesStore is the IO protocol for Lies.  One eternal req — req:Store,maz:7
+    //   — sits on w and pumps itself each tick via req_Store.  Nothing outside
+    //   calls a pump method manually; req:Store's do_fn is the pump.
     //
-    //   Because req:Store is an eternal reqy child of w, the w(/req)+ %ttlilt
-    //   walker finds all IO reqs naturally, and H.reqy(w).do() in the Lies tick
-    //   enters req_Store without any special wiring.  The four "unhandled req"
-    //   trace lines that appeared before req_Store existed are gone.
+    //   Because req:Store is an eternal reqy child of w at maz:7, H.reqy(w).do()
+    //   in the Lies tick runs it before anything else on w (desire, wants, Cortex…).
+    //   req:Store sets sc.ok when its pump cycle is done; lower-maz reqs then
+    //   proceed in the same do() pass knowing IO has been processed.
     //
     // ── Channels (children of req:Store) ─────────────────────────────────────
     //
@@ -20,76 +20,77 @@
     //   req:LiesStore_read,rw_name      — one stable req per wormhole path (+ optional label).
     //   req:LiesStore_listing,rw_dir    — one stable req per directory path.
     //   known:path                      — last known dige + kind (read|write) + at timestamp.
-    //                                    Lives inside req:Store (not on w) — Store's private
-    //                                    memory of disk state belongs with the Store's reqs.
+    //                                    Store's private memory of disk state; used by
+    //                                    LuxuryLiesStore_write's cavalier skip.
     //
-    // ── API ───────────────────────────────────────────────────────────────────
+    // ── API synopsis ──────────────────────────────────────────────────────────
     //
-    //   const req  = await H.LiesStore_read(w, rw_name, {label?})
-    //   const req2 = await H.LiesStore_write(w, path, text, {rw_name?})
-    //   const req3 = await H.LiesStore_listing(w, rw_dir)
-    //   if (!req.sc.finished)   { w.i({see:'⏳ …'}); return false }
-    //   if (!req2?.sc.finished) { w.i({see:'⏳ …'}); return false }
-    //   if (!req3.sc.finished)  { w.i({see:'⏳ …'}); return false }
+    //   Write:
+    //     const req = await H.LiesStore_write(w, path, text, {rw_name?})
+    //     // req is null if content matches base_dige (already on disk)
+    //     // otherwise req parks inside req:Store; req_Store Phase 1 processes
+    //     // completion, stamps known, signals Cortex, then drops the req.
+    //     // Caller doesn't need to hold req — fire and forget.
     //
-    // ── req:Store do_fn — the pump ────────────────────────────────────────────
+    //   Read:
+    //     const req = await H.LiesStore_read(w, rw_name, {label?})
+    //     if (!req.sc.finished) return   // ttlilt already armed; come back next tick
+    //     const text = req.sc.reply?.content as string  // read reply while req lives
+    //     // req:Store Phase 2 drops the req on the pass AFTER it became finished,
+    //     // giving callers one full do() cycle to read reply.  The caller holds a
+    //     // direct ref to req and reads reply.content — no second lookup needed.
+    //     // roai returns the same finished req on repeated calls until Phase 2 drops it;
+    //     // after that, the next call creates a fresh req and re-dispatches to Wormhole.
+    //     // Callers must NOT hold req across ticks expecting it to persist —
+    //     // check req.sc.finished every tick; if the ref is gone, re-call LiesStore_read.
     //
-    //   req_Store drives all IO children, then processes completions:
+    //   Listing:
+    //     const req = await H.LiesStore_listing(w, rw_dir)
+    //     if (!req.sc.finished) return
+    //     const entries = req.sc.reply?.entries  // Array<{name,is_dir}>
+    //
+    // ── req:Store pump — what happens each tick ───────────────────────────────
+    //
+    //   1. rq.do() drives all IO children (sends to Wormhole, advances in-flight reqs).
     //
     //   Phase 1 — write completions:
-    //     For each finished req:LiesStore_write — stamp base_dige on loaded_doc
-    //     (source files), record known impression, signal Cortex if a matching
-    //     req:Cortex is waiting (write_finished stamp), then drop the req.
-    //     Only LiesStore_write reqs need this; LuxuryLiesStore_write finishes
-    //     silently — its inner LiesStore_write sibling carries the actual IO.
+    //     For each finished req:LiesStore_write:
+    //       - stamp base_dige on loaded_doc (source files only; gen/ skips this)
+    //       - record known impression (dige + kind:'write' + at)
+    //       - find the matching req:Codebit inside req:Cortex by sc.gen_path and
+    //         stamp sc.write_finished=1 — that's the handoff signal to LiesCortex
+    //       - drop the req (rw_data lives in sc, so oncelers would help here;
+    //         < rw_data and req_sent as oncelers — snap bloat for now, deferred)
     //
-    //   Phase 2 — read completions:
-    //     For each finished req:LiesStore_read — record known impression on first
-    //     pass (stamp sc.seen); drop on second pass (next req_Store entry).
-    //     Two passes because req_Store runs inside H.reqy(w).do() which LiesPersist
-    //     also calls — a same-pass drop removes the req before LiesPersist reads
-    //     reply, causing a tailspin re-dispatch.  Never drop before roai returns.
+    //   Phase 2 — read completions (two-pass drop):
+    //     First pass: record known impression, stamp sc.seen=1 on the req.
+    //     Second pass (next req_Store entry): drop.
+    //     Two passes because req_Store runs inside the same H.reqy(w).do() call
+    //     as LiesPersist — a same-pass drop removes the req before LiesPersist
+    //     reads req.sc.finished, causing a tailspin re-dispatch every tick.
+    //     sc.seen is the handoff: "I've processed this; caller has one more cycle."
     //
     //   Phase 3 — listing completions:
     //     Drop finished req:LiesStore_listing reqs.
     //
-    //   req:Store never finishes (eternal:1) — it keeps running each tick.
-    //
-    // ── Write behaviour ───────────────────────────────────────────────────────
-    //
-    //   Dige-keyed: same content → same req (natural dedup).  LiesStore_write
-    //   drops finished write reqs for the path before roai so stale completions
-    //   never block a fresh write.  %ttlilt advises Story to wait while in flight.
-    //   Phase 1 of req_Store handles completions.
-    //
-    // ── Read behaviour ────────────────────────────────────────────────────────
-    //
-    //   LiesStore_read fires i_elvis_req immediately (idempotent via req_sent).
-    //   %ttlilt advises Story to wait while in flight.  Callers check
-    //   req.sc.finished; Phase 2 drops finished reads after LiesPersist in the
-    //   same tick so callers always get to read reply.
-    //
-    //   Must NOT drop finished reads before roai — that re-dispatches every tick.
-    //
-    // ── Listing behaviour ─────────────────────────────────────────────────────
-    //
-    //   LiesStore_listing fires i_elvis_req immediately (same idempotency as read).
-    //   %ttlilt advises Story to wait while in flight.
+    //   2. Set req.sc.ok = 1 — tick-local satisfied signal.
+    //     do() treats ok the same as finished for maz gating: lower-maz reqs
+    //     proceed in this pass.  do_one clears ok at entry next tick so req:Store
+    //     re-runs fresh.  req:Store never permanently finishes (eternal:1).
     //
     // ── known impressions ─────────────────────────────────────────────────────
     //
     //   req:Store/known:path carries dige + kind (read|write) + at (unix seconds).
-    //   req_LuxuryLiesStore_write uses it for the cavalier skip: if the impression
-    //   is recent enough and its dige matches base_dige, skip the Wormhole read.
-    //   LiesStore_store(w) returns req:Store — the one place to find known:path.
+    //   LuxuryLiesStore_write's cavalier skip: if the impression for this path is
+    //   recent enough (< LUXURY_WRITE_SKIP_CHECK_SECS) and dige matches base_dige,
+    //   skip the Wormhole disk-check read.  LiesStore_store(w) returns req:Store.
     //
     // ── Cortex handoff ────────────────────────────────────────────────────────
     //
-    //   When Phase 1 processes a finished write, it checks whether a req:Cortex
-    //   with matching gen_path is waiting.  If so, it stamps req:Cortex with
-    //   sc.write_finished=1 before dropping the write req.  req_Cortex checks
-    //   that stamp rather than scanning req:Store's children — the tick-ordering
-    //   dependency is replaced by an explicit handoff.
+    //   When Phase 1 drops a finished write req, it looks for a req:Codebit inside
+    //   req:Cortex whose sc.gen_path matches the write's sc.path, and stamps
+    //   sc.write_finished=1 on it.  req_Codebit checks that flag — no scanning
+    //   of req:Store needed, no tick-ordering dependency.
     //
     // ── Waft higher-level ops ─────────────────────────────────────────────────
     //
