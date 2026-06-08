@@ -265,7 +265,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
         // ── LiesCurse — cursor wiring (runs every post-settle tick) ──────────
         await this.LiesCurse(A, w)
-
+        // req:Store (maz:7) and req:Cortex (maz:5) drive themselves via
+        // H.reqy(w).do() inside LiesPersist — no explicit pump calls needed.
         const loaded = (w.o({ loaded_doc: 1 }) as TheC[]).length
         const wafts  = w.o({ Waft: 1 }).length
         w.i({ see: `🗂 ${loaded} doc${loaded === 1 ? '' : 's'}${wafts ? ` · ${wafts} Waft${wafts === 1 ? '' : 's'}` : ''}` })

@@ -283,17 +283,20 @@
                 known.sc.kind = 'write'
                 known.sc.at   = Date.now() / 1000
 
-                // Cortex handoff: if a req:Cortex is waiting for this gen_path write,
-                // stamp it so req_Cortex checks the flag rather than scanning
-                // req:Store's children (which we're about to drop).
+                // Cortex handoff: find the req:Codebit inside req:Cortex that is
+                // waiting for this write, and stamp sc.write_finished so req_Codebit
+                // can proceed on the next do() pass.
                 //
-                // req:Cortex is keyed by source path (sc.path = 'Ghost/Foo.g') and
-                // carries sc.gen_path = 'gen/Foo.go' separately.  The write req's
-                // sc.path IS gen_path — so match Cortex by sc.gen_path, not sc.path.
+                // req:Codebit lives as a child of req:Cortex (not directly on w),
+                // keyed by source path with gen_path as a separate sc field.
+                // The write req's own sc.path IS gen_path — match by that.
                 const write_gen_path = wr.sc.path as string
-                const cortex = (H.reqy(w).o({ req: 'Cortex' }) as TheC[])
-                    .find(r => r.sc.gen_path === write_gen_path && !r.sc.finished && !r.sc.write_finished)
-                if (cortex) cortex.sc.write_finished = 1
+                const cortex = H.reqy(w).o({ req: 'Cortex' })[0] as TheC | undefined
+                if (cortex) {
+                    const codebit = (H.reqy(cortex).o({ req: 'Codebit' }) as TheC[])
+                        .find(r => r.sc.gen_path === write_gen_path && !r.sc.finished && !r.sc.write_finished)
+                    if (codebit) codebit.sc.write_finished = 1
+                }
             }
             req.drop(wr)
         }

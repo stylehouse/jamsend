@@ -149,14 +149,14 @@
     // ── req_Codebit ───────────────────────────────────────────────────────────
     //
     //   do_fn for req:Codebit,path (maz:2 child of req:Cortex).
-    //   Waits for req_Store Phase 1 to stamp sc.write_finished, then parks
-    //   req:Rundown (maz:1) and finishes.
+    //   Waits for req_Store Phase 1 to stamp sc.write_finished on this req,
+    //   then parks req:Rundown (maz:1) as a sibling and finishes.
     //
-    //   req.c.up = req:Cortex; w = req.c.up.c.up
+    //   req.c.up = req:Cortex  (set by reqy(cortex).roai in e_Lies_compiled)
+    //   cortex.c.up = w:Lies   (set by reqy(w).roai in LiesCortex_arm)
     async req_Codebit(req: TheC, q: any) {
-        const H    = this as House
-        const cortex = req.c.up as TheC
-        const w      = cortex.c.up as TheC
+        const H      = this as House
+        const cortex = req.c.up as TheC        // req:Codebit → req:Cortex
         const path     = req.sc.path     as string
         const gen_path = req.sc.gen_path as string
 
@@ -166,8 +166,8 @@
             ? Date.now() - (req.c.write_t0 as number)
             : undefined
 
-        // Park req:Rundown to fire the notify signals.
-        // Rundown is maz:1 so it runs after any remaining maz:2 Codebits this tick.
+        // Park req:Rundown as a sibling inside req:Cortex.
+        // maz:1 so it runs after any remaining maz:2 Codebits in the same do() pass.
         const rq = H.reqy(cortex)
         await rq.roai({ req: 'Rundown', path }, {
             gen_path,
@@ -185,15 +185,20 @@
     //
     //   do_fn for req:Rundown,path (maz:1 child of req:Cortex).
     //   Fires Ghost_update_notify → Pantheate and Lies_compile_settled → Lang,
-    //   then finishes.  Pantheate notify goes first — dynamic import needs the
-    //   file on disk; source_dige lets req:include confirm the right version.
+    //   then finishes and drops its finished Codebit sibling.
+    //   Pantheate notify goes first — dynamic import needs the file on disk;
+    //   source_dige lets req:include confirm the right version.
+    //
+    //   Lang_compile_step (on w:Lang) consumes Lies_compile_settled and fires
+    //   Pantheate_run_method if dock.sc.run_method is set — no change needed here.
     //
     //   < JS import-check: import without running using a fake H that doesn't
     //     distribute methods — validates the gen file compiles before notifying.
     //
-    //   req.c.up = req:Cortex; w = req.c.up.c.up
+    //   req.c.up = req:Cortex
     async req_Rundown(req: TheC, q: any) {
-        const H    = this as House
+        const H     = this as House
+        const cortex    = req.c.up as TheC         // req:Rundown → req:Cortex
         const path      = req.sc.path       as string
         const gen_path  = req.sc.gen_path   as string
         const write_ms  = req.sc.write_ms   as number | undefined
@@ -209,8 +214,15 @@
             path,
             write_ms,
         })
-        console.log(`🔪 Lies compile settled: ${path} [write+run] write=${write_ms != null ? write_ms * 1000 : '?'}ms`)
+        console.log(`🔪 Lies compile settled: ${path} [write+run] write=${write_ms != null ? Math.round(write_ms * 1000) : '?'}ms`)
+
         q.finish(req)
+
+        // Drop finished Codebit and Rundown siblings to keep req:Cortex tidy.
+        // (This Rundown is finished; the matching Codebit finished before it was parked.)
+        const crq = H.reqy(cortex)
+        crq.drop_finished({ req: 'Codebit', path })
+        crq.drop_finished({ req: 'Rundown', path })
     },
 
 //#endregion
