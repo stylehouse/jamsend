@@ -18,8 +18,7 @@
     //   Lang_compile_step(A, w)
     //     Called from Lang(A,w) each tick while job.c.pending is set.
     //     Drains Lies_compile_settled elvises, clears job.c.pending,
-    //     closes %time, and stamps dock/%Text.disk_dige from the settled
-    //     source_dige — so the unsaved indicator clears without a disk read.
+    //     closes %time, and fires Pantheate_run_method.
     //
     //   All compile state (%Compile, compile_error) lives on dock — not on w.
     //   compile_write has moved to Lies's w (keyed by path).
@@ -125,9 +124,16 @@
     //   req:include (driven below via rq.do()) polls this[ghostmeta_name]() each
     //   think.  It finishes when the live dige matches the expected source_dige,
     //   so the snap records exactly when each include became live.
+    //
+    //   Cleanup: each tick drops stale plain particles (elvises, transient state)
+    //   while keeping sc.req particles — req:include and req:run_method live here
+    //   across ticks and must not be swept.
     async Pantheate(A: TheC, w: TheC) {
         const H = this
-        w.o().filter(n => !n.sc.self && !n.sc.include && !n.sc.BlastPit).map(n => n.drop(n))
+        // keep: sc.self (own identity), sc.include (import marker), sc.BlastPit
+        //  (blast output), sc.req (reqy particles: req:include, req:run_method, …).
+        // drop: everything else — stale elvises, transient state from prior ticks.
+        w.o().filter(n => !n.sc.self && !n.sc.include && !n.sc.BlastPit && !n.sc.req).map(n => n.drop(n))
 
         for (let me of this.o_elvis(w,'Ghost_update_notify')) {
             if (!me.sc.include) throw "!Gun"
@@ -277,6 +283,7 @@
                 Pantheate_method: e.sc.Pantheate_method,
             })
         }
+        debugger
         const dock = this.Lang_active_dock(w)
         // Drop the compile when one is already in-flight for this doc.
         // < should be in req:Languish
@@ -389,6 +396,10 @@
         // Hand off to Lies — Lies decides write vs softgen vs nogen.
         // e_Lies_compiled parks req:Cortex; req_Cortex fires Lies_compile_settled
         // back once the write (if any) lands; Lang_compile_step consumes it.
+        // run_method: staging value only — once set on Rundown it stays there.
+        //  re-compiles from text_mutated carry the same dock.sc.run_method so
+        //  Rundown gets a no-op bump_version (same value); if somehow absent,
+        //  Rundown keeps whatever it already has.
         H.i_elvisto('Lies/Lies', 'Lies_compiled', {
             path: dock.sc.dock, gen_path, source,
             dige: gen_path ? await dig(source) : '', source_dige,
@@ -415,8 +426,7 @@
         if (!job.c.pending) return
 
         for (const ev of this.o_elvis(w, 'Lies_compile_settled')) {
-            const settled_path = ev.sc.path        as string
-            const source_dige  = ev.sc.source_dige as string | undefined
+            const settled_path = ev.sc.path as string
             const docks        = w.o({ docks: 1 })[0] as TheC | undefined
             const targetDock   = docks?.o({ dock: settled_path })[0] as TheC | undefined
             if (!targetDock) continue
@@ -430,14 +440,6 @@
                 const time = targetJob.oai({ time: 1 })
                 time.sc.all   = +(all_ms   / 1000).toFixed(3)
                 if (write_ms != null) time.sc.write = +(write_ms / 1000).toFixed(3)
-            }
-            // stamp disk_dige on %Text so the editor's unsaved indicator clears
-            //  without a read-back from disk.  source_dige is the dige of the
-            //  raw source text that was compiled — after a gen write that matches
-            //  the current editor content, text_dige === disk_dige → no unsaved dim.
-            if (source_dige) {
-                const Text = targetDock.o({ Text: 1 })[0] as TheC | undefined
-                if (Text) Text.sc.disk_dige = source_dige
             }
             // run_method now fires from req:Rundown beside the Codebits (LiesCortex),
             // gated on all gen writes landing — not from here, where it could race

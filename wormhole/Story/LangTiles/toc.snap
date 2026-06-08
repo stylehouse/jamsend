@@ -30,8 +30,7 @@ story:LangTiles
         nowriting:^Ghost
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=2.406
-      sample=0.916,at=1780899673
+    TimeTotal:beliefs,avg=7.119
       sample=1.102,at=1780899700
       sample=1.605,at=1780903082
       sample=0.633,at=1780906881
@@ -41,6 +40,7 @@ story:LangTiles
       sample=15.642,at=1780909520
       sample=1.022,at=1780909565
       sample=1.251,at=1780911080
+      sample=48.048,at=1780911358
   step,dige:4f6df66687180bb1
   step=2,dige:dfa24d2d6ee23a87
   step=3,dige:cae07f7fadbb2156
