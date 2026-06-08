@@ -124,16 +124,9 @@
     //   req:include (driven below via rq.do()) polls this[ghostmeta_name]() each
     //   think.  It finishes when the live dige matches the expected source_dige,
     //   so the snap records exactly when each include became live.
-    //
-    //   Cleanup: each tick drops stale plain particles (elvises, transient state)
-    //   while keeping sc.req particles — req:include and req:run_method live here
-    //   across ticks and must not be swept.
     async Pantheate(A: TheC, w: TheC) {
         const H = this
-        // keep: sc.self (own identity), sc.include (import marker), sc.BlastPit
-        //  (blast output), sc.req (reqy particles: req:include, req:run_method, …).
-        // drop: everything else — stale elvises, transient state from prior ticks.
-        w.o().filter(n => !n.sc.self && !n.sc.include && !n.sc.BlastPit && !n.sc.req).map(n => n.drop(n))
+        w.o().filter(n => !n.sc.self && !n.sc.include && !n.sc.BlastPit).map(n => n.drop(n))
 
         for (let me of this.o_elvis(w,'Ghost_update_notify')) {
             if (!me.sc.include) throw "!Gun"
@@ -283,16 +276,16 @@
                 Pantheate_method: e.sc.Pantheate_method,
             })
         }
-        debugger
         const dock = this.Lang_active_dock(w)
-        // Drop the compile when one is already in-flight for this doc.
-        // < should be in req:Languish
-        if (dock?.o({ Compile: 1 })[0]?.c.pending) {
-            console.log(`⏭ Lang_compile: skipped — in-flight for ${dock.sc.dock}`)
-            return
-        }
         if (e.sc.Pantheate_method && dock) {
             dock.sc.run_method = e.sc.Pantheate_method as string
+        }
+        
+        // Drop the compile when one is already in-flight for this doc.
+        // < should be in req:Languish
+        if (dock?.o({ Compile: 1 })[0]?.sc.pending) {
+            console.log(`⏭ Lang_compile: skipped — in-flight for ${dock.sc.dock}`)
+            return
         }
         await this.Lang_compile(A, w)
     },
@@ -339,9 +332,10 @@
         // Park the job; large source stays in .c to keep sc clean.
         const job = dock.oai({ Compile: 1 })
         job.empty()
-        // c.pending: transient in-flight flag — not in snap.
-        job.c.pending    = true
-        // c.compile_t0: wall-clock start for %time accounting.
+        // sc.pending: snapped in-flight flag — visible in the snap so it's
+        //  clear when a compile is hanging around waiting for the write to land.
+        job.sc.pending   = 1
+        // c.compile_t0: wall-clock start for %time accounting (transient).
         job.c.compile_t0 = Date.now()
 
         await dock.r({ compile_error: 1 }, {})
@@ -381,7 +375,7 @@
             source = this.Lang_compile_render_module(body, ghost)
         } catch (err: any) {
             dock.i({ compile_error: 1, msg: String(err?.message ?? err), stack: err?.stack ?? '' })
-            delete job.c.pending
+            delete job.sc.pending
             return
         }
 
@@ -396,10 +390,6 @@
         // Hand off to Lies — Lies decides write vs softgen vs nogen.
         // e_Lies_compiled parks req:Cortex; req_Cortex fires Lies_compile_settled
         // back once the write (if any) lands; Lang_compile_step consumes it.
-        // run_method: staging value only — once set on Rundown it stays there.
-        //  re-compiles from text_mutated carry the same dock.sc.run_method so
-        //  Rundown gets a no-op bump_version (same value); if somehow absent,
-        //  Rundown keeps whatever it already has.
         H.i_elvisto('Lies/Lies', 'Lies_compiled', {
             path: dock.sc.dock, gen_path, source,
             dige: gen_path ? await dig(source) : '', source_dige,
@@ -423,7 +413,7 @@
 
         const job = dock.o({ Compile: 1 })[0] as TheC | undefined
         if (!job) throw "!job"
-        if (!job.c.pending) return
+        if (!job.sc.pending) return
 
         for (const ev of this.o_elvis(w, 'Lies_compile_settled')) {
             const settled_path = ev.sc.path as string
@@ -433,7 +423,7 @@
             const targetJob = targetDock.o({ Compile: 1 })[0] as TheC | undefined
             if (targetJob) {
                 // clear in-flight flag — req_compile's ttlilt gate releases
-                delete targetJob.c.pending
+                delete targetJob.sc.pending
                 // close %time: all = wall time from job-park to settle
                 const all_ms   = Date.now() - (targetJob.c.compile_t0 ?? Date.now())
                 const write_ms = ev.sc.write_ms as number | undefined

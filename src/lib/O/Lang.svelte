@@ -758,7 +758,7 @@
         if (!cp.sc.have_methods && !err) {
             // compile_error is terminal — fall through so graft mints unresolved
             //   Pmirrors the minimap can surface; otherwise hold for the index.
-            H.i_req_ttlilt(settle, 0.5, { waiting: 'methods' })
+            H.i_req_ttlilt(settle, 1.5, { waiting: 'methods' })
             return
         }
 
@@ -898,7 +898,7 @@
     //
     //   %Compile/%methods is populated synchronously by Lang_compile_dock, so a
     //   soft-compile finishes this phase immediately.  For a hard-compile,
-    //   job.c.pending stays set while Lies writes the gen file; we hold Story
+    //   %Compile/sc.pending stays set while Lies writes the gen file; we hold Story
     //   open with a ttlilt until it clears, so the gen file exists before the snap.
     //   Either way %methods — the only thing grafting needs — is present the
     //   instant Lang_compile_dock returns.
@@ -931,9 +931,16 @@
             H.i_req_ttlilt(req, 0.5, { waiting: 'methods' })
             return
         }
-        if (job.c.pending) {
-            // methods ready but gen-file write still in flight (transient — not
-            // in snap, avoiding the snap-mid-flight race %Pending:1 had).
+        // run_method: push to Lies/Rundown whenever it's set on the dock —
+        //  fires every pass so it arrives even when the compile bails on pending.
+        //  Rundown's same-value guard makes this idempotent.
+        if (dock.sc.run_method) {
+            H.i_elvisto('Lies/Lies', 'Lies_run_method', { run_method: dock.sc.run_method })
+        }
+        if (job.sc.pending) {
+            // methods ready but gen-file write still in flight — hold Story open
+            // so the gen file exists before the snap; %Compile/sc.pending is now
+            // snapped so the wait is visible.
             H.i_req_ttlilt(req, 0.5, { waiting: 'gen_write' })
             return
         }
@@ -980,7 +987,7 @@
         const compiled_dige = ((output?.sc.source_dige as string) ?? '').slice(0, 5)
         // sc.compile from %time is the synchronous cost — what the compiler actually spent.
         const compile_cost  = (job?.o({ time: 1 })[0] as TheC | undefined)?.sc.compile as number ?? 0
-        const pending       = !!job?.c.pending
+        const pending       = !!job?.sc.pending
 
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
         if (!languinio) return
@@ -1015,7 +1022,7 @@
 
         // compile reply polling — drives Lang_compile_step while job.c.pending
         // is set (transient); when Lies_compile_settled lands, step clears it.
-        if (dock?.o({ Compile: 1 })[0]?.c.pending) {
+        if (dock?.o({ Compile: 1 })[0]?.sc.pending) {
             await this.Lang_compile_step(A, w)
         }
 
