@@ -1,7 +1,7 @@
 Snap:H
   H:LangTiles,Run
     A:Lies
-      self,round=59	{"mung":["age"]}
+      self,round=57	{"mung":["age"]}
       w:Lies
         examining	{"loopy":2}
           req:timemachine,playing=0
@@ -13,9 +13,9 @@ Snap:H
           Waft:Story/LangTiles/Waftily	{"ref":{"src":"%Waft:Story/LangTiles/Waftily"}}
         req:git
         req:wants
-          want=1780883468443,kind:cold
-          want=1780883468494,kind:cold
-          want=1780883468595,kind:cold,resolved
+          want=1780886206744,kind:cold
+          want=1780886206794,kind:cold
+          want=1780886206905,kind:cold,resolved
         req:Store,eternal
         open_waft_req,path:Story/LangTiles/Waftily,done
         Waft:Story/LangTiles/Waftily
@@ -30,10 +30,10 @@ Snap:H
           req_sent
         loaded_doc,path:Ghost/test/LangTiles.g,base_dige:1f738455c057ebe2
         Store
-          known:gen/test/LangTiles.go,dige:2f569f83db26815b,kind:write,at=1780883475.143
-        self,round=59	{"mung":["age"]}
+          known:gen/test/LangTiles.go,dige:2f569f83db26815b,kind:write,at=1780886213.492
+        self,round=57	{"mung":["age"]}
     A:Lang
-      self,round=43	{"mung":["age"]}
+      self,round=42	{"mung":["age"]}
       w:Lang
         model,cyto_dir
           Line=5,line_from=74,line_to=98,str:    let la = i hut/$toot,the_bm_bm_98_132
@@ -114,7 +114,7 @@ Snap:H
                 def,method:severally,from=1964,to=1974,line=70	{"ref":{"region_path":"[]"}}
                 call,method:laterally,from=2116,to=2128,line=76,via:severally	{"ref":{"region_path":"[]"}}
                 def,method:laterally,from=2140,to=2150,line=78	{"ref":{"region_path":"[]"}}
-              time,compile=0.009,all=0.575,write=0
+              time,compile=0.009,all=0.648,write=0
               Output,gen_path:gen/test/LangTiles.go,dige:2f569f83db26815b,source_dige:f4528947e09ff4e0
                source: |
                  <script lang="ts">
@@ -265,7 +265,7 @@ Snap:H
         received,doc_opened,doc:Ghost/test/LangTiles.g
         received,editorBegins,doc:Ghost/test/LangTiles.g
         o_elvis:Lies_compile_settled
-        self,round=43	{"mung":["age"]}
+        self,round=42	{"mung":["age"]}
         see:🟦 tiles 1 bookmarks
     A:Pantheate
       self,round=22	{"mung":["age"]}
@@ -321,5 +321,6 @@ Snap:H
       action,role:lang_pick,kind:dropdown,label:language,icon:✎,value:stho	{"ref":{"options":"[Object(),Object()]","on_pick":"Function()"}}
       action,role:gen_parser,label:gen,icon:⚙,disabled:true	{"ref":{"fn":"Function()"}}
       action,role:nogen,label:nogen,icon:nogen,cls:toggle-off	{"ref":{"fn":"Function()"}}
+      action,role:softgen,label:softgen,icon:softgen,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:compo,label:compo,icon:compo ✓,cls:toggle-on	{"ref":{"fn":"Function()"}}
     mo:main,interval=3.6	{"mung":["id"]}

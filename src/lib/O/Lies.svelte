@@ -58,7 +58,9 @@
     // ── Opt particles ─────────────────────────────────────────────────────────
     //
     //   w/{Opt:1}               — always seeded in setup
-    //     /{nogen:1}              nogen: skip write and Pantheate notify
+    //     /{nogen:1}              skip write + Pantheate notify entirely
+    //     /{softgen:1}            render Output, don't write gen/ to disk
+    //                             (nowriting blocks all writes; softgen blocks only gen/)
     //
     // ── Particle layout ───────────────────────────────────────────────────────
     //
@@ -250,7 +252,10 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
         // ── opts — every tick ─────────────────────────────────────────────────
         const Opt = w.o({ Opt: 1 })[0] as TheC
-        await this.i_actions_to_C(Opt, 'nogen', { label: 'nogen' })
+        await this.i_actions_to_C(Opt, 'nogen',   { label: 'nogen' })
+        await this.i_actions_to_C(Opt, 'softgen',  { label: 'softgen' })
+        // nogen:   skip write + Pantheate notify entirely (soft-compile only)
+        // softgen: render Output but don't write gen/ to disk — for dev/test flows
 
         // ── LiesPersist — all disk IO; must settle before LiesRealised runs ────
         const settled = await this.LiesPersist(A, w)

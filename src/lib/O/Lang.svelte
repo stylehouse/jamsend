@@ -192,7 +192,7 @@
     //            → feebly_ponder wakes req:text_loaded monitor in Languish
     //
     //   e:Lang_open_dock  ← Lies req:Furnishing RPC courier
-    //     takes  furnishing.sc.path, .c.text, .sc.gen_path
+    //     takes  furnishing.sc.path, .c.text
     //     makes  req:Languish (text_loaded → compile phases)
     //            → finish({path,ready:1}) resolves the Furnishing RPC
     //
@@ -521,7 +521,6 @@
         dock.c.text = text
         const new_dige = await dig(text)
         await dock.moai({ Text: 1 }, { dige: new_dige })
-        dock.bump_version()
 
         // find req:Languish on the dock (not on w anymore) and drive text_mutated
         const languish = dock.o({ req: 'Languish' })[0] as TheC | undefined
@@ -606,7 +605,7 @@
     //   directly; req_text_loaded's reqonce then stamps Text and activates it.
     //   text on languish.c (hidden from snap); gen_path derived at compile time.
     //
-    //   e.sc: { req }  (the Furnishing req, carrying path/text/gen_path)
+    //   e.sc: { req }  (the Furnishing req, carrying path/text)
     async e_Lang_open_dock(A: TheC, w: TheC, e?: TheC) {
         const H = this as House
         for (const { req: furnishing, finish } of H.o_elvis_req(w, 'Lang_open_dock')) {
@@ -837,7 +836,8 @@
     // ── req:text_loaded, maz:3 ────────────────────────────────────────────────
     //
     //   reqonce: install text into the dock (already minted by e_Lang_open_dock),
-    //   stamp gen_path, seed Text metadata and dock.c.text, set the doc active.
+    //   seed Text metadata and dock.c.text, set the doc active.
+    //   gen_path derived at compile time — not stamped here.
     //
     //   The genuinely-async wait is the CodeMirror round-trip: Lang writes the
     //   dock.c.text → Langui renders → CM mounts → e_Lang_editorBegins stamps
@@ -855,10 +855,9 @@
             // one chance: install text into the dock (already minted by e_Lang_open_dock).
             await H.Langspinner(w, 'text_load')
 
-            const gen_path = languish.sc.gen_path as string | undefined
-            const text     = (languish.c.open_text as string) ?? ''
+            const text = (languish.c.open_text as string) ?? ''
 
-            if (gen_path) dock.sc.gen_path = gen_path
+            // gen_path derived at compile time — not stamped here.
             dock.c.initial_text = text   // Langui reads this before the Text dige arrives
 
             // seed Text metadata; dock.c.text holds the string silently.
@@ -871,7 +870,6 @@
                 disk_dige: initial_dige,
                 disk_rev:  ((dock.o({ Text: 1 })[0]?.sc.disk_rev as number) ?? 0) + 1,
             })
-            dock.bump_version()
 
             // always activate — Lies owns doc order, last open wins for now
             await this.Lang_set_active_dock(w, path)
@@ -899,11 +897,11 @@
     //   multi-maz do(), this fires in the same tick text_loaded finishes.
     //
     //   %Compile/%methods is populated synchronously by Lang_compile_dock, so a
-    //   soft-compile finishes this phase immediately.  For a hard-compile the
-    //   %Pending flag stays set while Lies writes the gen file; we hold Story
-    //   open with a ttlilt until %Pending clears, so the gen file exists before
-    //   the snap.  Either way %methods — the only thing grafting needs — is
-    //   present the instant Lang_compile_dock returns.
+    //   soft-compile finishes this phase immediately.  For a hard-compile,
+    //   job.c.pending stays set while Lies writes the gen file; we hold Story
+    //   open with a ttlilt until it clears, so the gen file exists before the snap.
+    //   Either way %methods — the only thing grafting needs — is present the
+    //   instant Lang_compile_dock returns.
     async req_compile(req: TheC, q: any) {
         const H        = this as House
         const languish = req.c.up as TheC
@@ -933,10 +931,9 @@
             H.i_req_ttlilt(req, 0.5, { waiting: 'methods' })
             return
         }
-        if (job.oa({ Pending: 1 })) {
-            // methods are ready (grafting could proceed) but the hard-compile
-            // gen-file write is still in flight — hold Story so the file lands
-            // before the snap, then re-check next think.
+        if (job.c.pending) {
+            // methods ready but gen-file write still in flight (transient — not
+            // in snap, avoiding the snap-mid-flight race %Pending:1 had).
             H.i_req_ttlilt(req, 0.5, { waiting: 'gen_write' })
             return
         }
@@ -983,7 +980,7 @@
         const compiled_dige = ((output?.sc.source_dige as string) ?? '').slice(0, 5)
         // sc.compile from %time is the synchronous cost — what the compiler actually spent.
         const compile_cost  = (job?.o({ time: 1 })[0] as TheC | undefined)?.sc.compile as number ?? 0
-        const pending       = !!job?.oa({ Pending: 1 })
+        const pending       = !!job?.c.pending
 
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
         if (!languinio) return
@@ -1016,9 +1013,9 @@
 
         const dock = this.Lang_active_dock(w)
 
-        // compile reply polling — re-polls i_elvis_req while w/{dock}/Compile/Pending
-        // is set; when the Wormhole reply lands, notifies Pantheate.
-        if (dock?.oa({ Compile: 1 })) {
+        // compile reply polling — drives Lang_compile_step while job.c.pending
+        // is set (transient); when Lies_compile_settled lands, step clears it.
+        if (dock?.o({ Compile: 1 })[0]?.c.pending) {
             await this.Lang_compile_step(A, w)
         }
 

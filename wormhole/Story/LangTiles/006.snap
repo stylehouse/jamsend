@@ -1,7 +1,7 @@
 Snap:H
   H:LangTiles,Run
     A:Lies
-      self,round=78	{"mung":["age"]}
+      self,round=77	{"mung":["age"]}
       w:Lies
         examining	{"loopy":2}
           req:timemachine,playing=0
@@ -13,9 +13,9 @@ Snap:H
           Waft:Story/LangTiles/Waftily	{"ref":{"src":"%Waft:Story/LangTiles/Waftily"}}
         req:git
         req:wants
-          want=1780883468443,kind:cold
-          want=1780883468494,kind:cold
-          want=1780883468595,kind:cold,resolved
+          want=1780886206744,kind:cold
+          want=1780886206794,kind:cold
+          want=1780886206905,kind:cold,resolved
         req:Store,eternal
         open_waft_req,path:Story/LangTiles/Waftily,done
         Waft:Story/LangTiles/Waftily
@@ -30,9 +30,9 @@ Snap:H
           req_sent
         loaded_doc,path:Ghost/test/LangTiles.g,base_dige:1f738455c057ebe2
         Store
-          known:gen/test/LangTiles.go,dige:91e020ceb0dfe3cd,kind:write,at=1780883478.311
+          known:gen/test/LangTiles.go,dige:91e020ceb0dfe3cd,kind:write,at=1780886216.872
         log:source_write,path:Ghost/test/LangTiles.g,dige:2234b12f
-        self,round=78	{"mung":["age"]}
+        self,round=77	{"mung":["age"]}
     A:Lang
       self,round=60	{"mung":["age"]}
       w:Lang
@@ -115,7 +115,7 @@ Snap:H
                 def,method:severally,from=1969,to=1979,line=70	{"ref":{"region_path":"[]"}}
                 call,method:laterally,from=2121,to=2133,line=76,via:severally	{"ref":{"region_path":"[]"}}
                 def,method:laterally,from=2145,to=2155,line=78	{"ref":{"region_path":"[]"}}
-              time,compile=0.007,all=0.603,write=0
+              time,compile=0.032,all=0.904,write=0
               Output,gen_path:gen/test/LangTiles.go,dige:91e020ceb0dfe3cd,source_dige:2234b12f5e4b756e
                source: |
                  <script lang="ts">
@@ -233,7 +233,7 @@ Snap:H
           Change
             storage,dige:1f738,dim:true
             backend,dige:2234b
-            compile,dige:2234b,dim:true,secs=0.007
+            compile,dige:2234b,dim:true,secs=0.032
         {"loopy":0,"ks":"%LE:1, target:%What"}	
           Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:labelofaWhat","topD":"%Demonstrations:origin"}}
             Demonstrations:origin
@@ -322,5 +322,6 @@ Snap:H
       action,role:lang_pick,kind:dropdown,label:language,icon:✎,value:stho	{"ref":{"options":"[Object(),Object()]","on_pick":"Function()"}}
       action,role:gen_parser,label:gen,icon:⚙,disabled:true	{"ref":{"fn":"Function()"}}
       action,role:nogen,label:nogen,icon:nogen,cls:toggle-off	{"ref":{"fn":"Function()"}}
+      action,role:softgen,label:softgen,icon:softgen,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:compo,label:compo,icon:compo ✓,cls:toggle-on	{"ref":{"fn":"Function()"}}
     mo:main,interval=3.6	{"mung":["id"]}

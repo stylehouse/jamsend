@@ -118,46 +118,58 @@
 
     // ── e_Lies_compiled ───────────────────────────────────────────────────────
     //
-    //   Fired by LangCompiling after a hard-compile succeeds (gen_path present).
-    //   Parks req:Cortex,path — replaces compile_pending with a proper req.
+    //   Fired by LangCompiling for every compile that has a gen_path.
+    //   Decides how the output lands — write, softgen, nogen, or nowriting —
+    //   then either settles immediately or parks req:Cortex to wait for the write.
     //
-    //   nogen / nowriting: settle fires immediately here; no Cortex parked.
-    //   The write airlock logic (do_write decision) now lives in one place
-    //   rather than split across e_Lies_compiled and LiesRealised.
+    //   ── Opt decisions ────────────────────────────────────────────────────────
+    //   nogen      — skip write + Pantheate notify; settle immediately.
+    //                The %Output is visible in the snap but gen/ file never written.
+    //   softgen    — same settle-immediately behaviour as nogen, but signals intent:
+    //                "this is a gen-able file and I'd like to see Output, just don't
+    //                write it yet."  Useful in tests and dev flows where the file
+    //                content matters but disk writes are noise.
+    //   nowriting  — regex-gated suppression (any path matching the pattern);
+    //                logs the write intent via Lies_log_want for test assertions.
+    //                Different from softgen: nowriting also blocks Waft + source
+    //                writes; softgen only affects gen/ writes.
+    //   (default)  — write gen_path to disk via LiesStore_write, park req:Cortex.
     //
-    //   e.sc: { path, gen_path, source, dige, source_dige }
+    //   e.sc: { path, gen_path, source, source_dige }
+    //   (dige not needed here — LiesStore_write diges internally)
     async e_Lies_compiled(A: TheC, w: TheC, e: TheC) {
-        const H        = this as House
-        const path     = e.sc.path        as string
-        const gen_path = e.sc.gen_path    as string
-        const source   = e.sc.source      as string
-        const dige     = e.sc.dige        as string
+        const H           = this as House
+        const path        = e.sc.path        as string
+        const gen_path    = e.sc.gen_path    as string
+        const source      = e.sc.source      as string
         const source_dige = e.sc.source_dige as string | undefined
         if (!path || !gen_path) throw 'e_Lies_compiled: needs path + gen_path'
 
         const nowriting = H.Lies_nowriting(w, gen_path)
-        const do_write  = !H.o_Opt_val(w, 'nogen') && !nowriting
+        const nogen     = !!H.o_Opt_val(w, 'nogen')
+        const softgen   = !!H.o_Opt_val(w, 'softgen')
+        const do_write  = !nogen && !softgen && !nowriting
 
         if (!do_write) {
-            // nogen / nowriting: no file written, no Pantheate notify — settle now.
+            // immediate settle — no write, no Pantheate notify.
             if (nowriting) await H.Lies_log_want(w, 'gen_write', gen_path, source)
+            const reason = nowriting ? 'nowriting' : nogen ? 'nogen' : 'softgen'
             H.i_elvisto('Lang/Lang', 'Lies_compile_settled', { path })
-            console.log(`🔪 Lies compile settled: ${path} [${nowriting ? 'nowriting' : 'nogen'}]`)
+            console.log(`🔪 Lies compile settled: ${path} [${reason}]`)
             return
         }
 
         // Key the write on gen_path, not the source path.  The source has a
         // loaded_doc whose base_dige tracks source-on-disk for the surprise_read
-        // check; keying by path made Phase 1 stamp that base_dige with the gen
-        // output dige, which read as an external change and blocked the next source
-        // write.  gen_path has no loaded_doc so its namespace stays the gen target's own.
+        // check; keying by path stamped that base_dige with the gen output dige,
+        // which read as an external change and blocked the next source write.
+        // gen_path has no loaded_doc so its namespace stays the gen target's own.
         await H.LiesStore_write(w, gen_path, source, { rw_name: `src/lib/${gen_path}` })
         // < surface write errors when reply carries one.
 
-        // Park the Cortex req — oai so a re-compile for the same path overwrites.
-        const rq     = H.reqy(w)
-        const cortex = await rq.roai({ req: 'Cortex', path }, { gen_path, source_dige })
+        // Park req:Cortex — oai so a re-compile for the same path overwrites payload.
         // write_t0 on .c: transient, not in snap.  req_Cortex uses it for write_ms.
+        const cortex = await H.reqy(w).roai({ req: 'Cortex', path }, { gen_path, source_dige })
         cortex.c.write_t0 = Date.now()
 
         H.i_elvisto(w, 'think')

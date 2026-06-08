@@ -16,17 +16,18 @@
     //     write and optional Pantheate notify.  Stashes dock/Compile/Output.
     //
     //   Lang_compile_step(A, w)
-    //     Called from Lang(A,w) on every tick while dock/Compile/Pending is set.
-    //     Waits for e:Lies_compile_settled {path} fired back by Lies,
-    //     then clears dock/Compile/Pending so Story sees Lang settle.
+    //     Called from Lang(A,w) each tick while job.c.pending is set.
+    //     Drains Lies_compile_settled elvises, clears job.c.pending,
+    //     closes %time, and fires Pantheate_run_method.
     //
-    //   All compile state (Compile, compile_error) lives on
-    //   dock — not on w — so it can be r()'d independently per document and
-    //   multiple open docs don't share compile state.
+    //   All compile state (%Compile, compile_error) lives on dock — not on w.
     //   compile_write has moved to Lies's w (keyed by path).
     //
-    //   Compile timing: job.c.compile_t0 is set at job-park (transient, not in snap).
-    //   job/%time.sc.{compile,write,all} are the finished deltas, visible in the snap.
+    //   job.c.pending (transient) replaces %Pending:1 — avoids snap-mid-flight race
+    //   where Story could snap req:compile,firing + Compile/Pending ahead of settle.
+    //
+    //   Compile timing: job.c.compile_t0 set at job-park (transient, not in snap).
+    //   job/%time.sc.{compile,write,all} are the finished deltas, visible in snap.
     //
     //   Translation:
     //     Lang_compile_collect(state)    → per-Line  {kind:'translated'|'raw', text}
@@ -254,11 +255,15 @@
 //#endregion
 //#region entry
 
-    // Beliefs-time entry for the compile action button.
-    // Fired via i_elvisto so Story can detect Lang settling after a compile.
-    // misdirectioner: bounce once so Story wraps the compile in a proper tick;
-    // on the second pass, gate on %Pending so N queued Esc presses collapse
-    // to one compile cycle rather than N sequential ones.
+    // ── e_Lang_compile ────────────────────────────────────────────────────────
+    //
+    //   Beliefs-time entry for the compile action button.
+    //   misdirectioner: bounce once so Story wraps the compile in a proper tick;
+    //   on the second pass, gate on job.c.pending so N queued Esc presses collapse
+    //   to one compile cycle rather than N sequential ones.
+    //
+    //   job.c.pending is transient (not in snap) — avoids the "arrives slightly
+    //   earlier in step time" snap-mid-flight problem %Pending:1 had.
     async e_Lang_compile(A: TheC, w: TheC, e: TheC) {
         if (!e.sc.misdirectioner) {
             // Stamp the live CM state onto dock before bouncing — the second pass
@@ -268,55 +273,54 @@
             this.Lang_dock_from_event(w, e)
             return this.i_elvisto(w,'Lang_compile',{
                 misdirectioner:   1,
-                Pantheate_method: e.sc.Pantheate_method,   // carry through bounce
+                Pantheate_method: e.sc.Pantheate_method,
             })
         }
         const dock = this.Lang_active_dock(w)
         // Drop the compile when one is already in-flight for this doc.
         // < should be in req:Languish
-        if (dock?.o({ Compile: 1 })[0]?.oa({ Pending: 1 })) {
+        if (dock?.o({ Compile: 1 })[0]?.c.pending) {
             console.log(`⏭ Lang_compile: skipped — in-flight for ${dock.sc.dock}`)
             return
         }
-        // Stash run_method on dock.sc (snap-visible, persists across compiles).
-        // A new Pantheate_method on the esc overwrites; absent esc keeps existing.
-        // Every compile on this dock re-runs the method after the module lands.
         if (e.sc.Pantheate_method && dock) {
             dock.sc.run_method = e.sc.Pantheate_method as string
         }
         await this.Lang_compile(A, w)
     },
 
-    // Fired by the "compile" action button in Lang_plan.  Resolves the active
-    // doc and hands off to Lang_compile_dock.  The split lets a req:compile
-    // phase (Languish) drive the compile for a specific dock rather than
-    // "whatever happens to be active".
+    // ── Lang_compile ──────────────────────────────────────────────────────────
+    //   Resolves the active dock and hands off to Lang_compile_dock.
+    //   The split lets req:compile (in Languish) drive a specific dock
+    //   rather than "whatever happens to be active".
     async Lang_compile(A: TheC, w: TheC) {
         const dock = this.Lang_active_dock(w)
         if (!dock) { w.i({ see: '⚠ Lang_compile: no active doc' }); return }
         await this.Lang_compile_dock(w, dock)
     },
 
-    // Synchronously builds the module source (so the user gets immediate
-    // {result:1} chunks to inspect even if the disk write is slow).
+    // ── Lang_compile_dock ─────────────────────────────────────────────────────
     //
-    // For hard-compiles (gen_path present): fires e:Lies_compiled and
-    // leaves Compile/Pending set.  Lies is the airlock: it decides
-    // whether to write to disk (opt_write) and/or notify Pantheate (opt_run),
-    // then fires back e:Lies_compile_settled {path, write_ms} to clear Pending.
+    //   Pure translation: collect → render → dig → stamp %Output.
+    //   Does not decide whether to write; hands off to Lies via e:Lies_compiled
+    //   for all airlock concerns (write, softgen, Pantheate notify, settle).
     //
-    // For soft-compiles (no gen_path): clears Pending immediately — nothing
-    // to write or run.  Lies is not involved.
+    //   gen_path derived here — the earliest it is needed.  Absent means no
+    //   gen/ target for this path; the module is still rendered (for Output
+    //   inspection) but Lies settles immediately without writing.
     //
-    // %Compile/%time is populated in stages:
-    //   compile — synchronous cost (collect + render + dig), stamped here.
-    //   write   — gen/ Wormhole round-trip, carried on the settle elvis.
-    //   all     — wall time from job-park to Pending clear, stamped in step.
+    //   job.c.pending (transient) replaces %Pending:1 (snapped).
+    //   req_compile checks job.c.pending to hold Languish; Lang_compile_step
+    //   (e_Lies_compile_settled handler) clears it once Lies settles.
     //
-    // %Compile/%methods is fully populated by the time this returns, in both
-    // cases — %Pending tracks only the hard-compile disk write, never the
-    // index build.  A resolver that needs %methods can rely on it the instant
-    // this resolves; only the gen-file write outlives it.
+    //   %Compile/%time stages:
+    //     compile — synchronous cost (collect + render + dig), stamped here.
+    //     write   — gen/ Wormhole round-trip, carried on the settle elvis.
+    //     all     — wall time from job-park to settle, stamped in step.
+    //
+    //   %Compile/%methods — fully populated before this returns, in both paths.
+    //   A resolver needing %methods can rely on it the instant this resolves;
+    //   only the gen-file write (if any) outlives it.
     async Lang_compile_dock(w: TheC, dock: TheC) {
         const H = this
 
@@ -324,25 +328,21 @@
         if (!state) { w.i({ see: '⚠ Lang_compile: no editorState yet' }); return }
         if (state.doc.length === 0) return
 
-        // Park the job as a particle so Lang_compile_step (and Story) can
-        // observe it properly.  Large source stays in .c to keep sc clean.
+        // Park the job; large source stays in .c to keep sc clean.
         const job = dock.oai({ Compile: 1 })
         job.empty()
-        job.oai({Pending: 1})
-        // compile_t0 on .c: transient, not in snap.  %time child closes the legs.
+        // c.pending: transient in-flight flag — not in snap.
+        job.c.pending    = true
+        // c.compile_t0: wall-clock start for %time accounting.
         job.c.compile_t0 = Date.now()
 
-        // clear previous outputs / errors so a fresh compile is visible
         await dock.r({ compile_error: 1 }, {})
 
         // gen_path derived here — the earliest it is needed.
-        // Absent (non-Ghost/ or non-gen-able codetype) means soft-compile only.
-        // < softgen: a future Opt flag to show Output without writing to gen/
-        //   would let do_write=false pass through even with gen_path present.
         const gen_path = H.Lies_gen_path(dock.sc.dock as string)
 
         let source: string
-        let source_dige = ''   // dige of the raw source text; populated for hard-compiles
+        let source_dige = ''
         try {
             const lines = this.Lang_compile_collect(state, job, this.Lang_stho_parser(state))
 
@@ -368,46 +368,40 @@
                 // version is live after mount.  Computed before render so it's independent
                 // of the generated wrapper boilerplate.
                 source_dige = await dig(state.doc.sliceString(0))
-                ghost = { ghostmeta_name: this.Lang_ghostmeta_name(dock.sc.dock as string), source_dige }
+                ghost = { ghostmeta_name: H.Lang_ghostmeta_name(dock.sc.dock as string), source_dige }
             }
             source = this.Lang_compile_render_module(body, ghost)
         } catch (err: any) {
             dock.i({ compile_error: 1, msg: String(err?.message ?? err), stack: err?.stack ?? '' })
+            delete job.c.pending
             return
         }
 
-        if (!gen_path) {
-            await job.r({Pending:1},{})   // no write step — soft compile done
-            // %time/compile: synchronous cost (collect + render).  No write leg.
-            const compile_ms = Date.now() - (job.c.compile_t0 ?? Date.now())
-            job.oai({ time: 1 }, { compile: +(compile_ms / 1000).toFixed(3) })
-            w.i({ see: `🔍 soft-compiled ${dock.sc.dock}` })
-            return
-        }
-
-        const dige = await dig(source)
-        // %time/compile: synchronous work done — collect + render + dig(source).
-        // write and all legs land later in Lang_compile_step when Pending clears.
         const compile_ms = Date.now() - (job.c.compile_t0 ?? Date.now())
         job.oai({ time: 1 }, { compile: +(compile_ms / 1000).toFixed(3) })
-        job.oai({Output:1, gen_path, source, dige, source_dige})
 
-        // Hand off to Lies as the compile airlock.
-        // Lies checks opt_write and opt_run, does the Wormhole write
-        // and/or notifies Pantheate, then fires e:Lies_compile_settled
-        // back to w so Lang_compile_step can clear Pending.
+        if (gen_path) {
+            const dige = await dig(source)
+            job.oai({ Output: 1, gen_path, source, dige, source_dige })
+        }
+
+        // Hand off to Lies — Lies decides write vs softgen vs nogen.
+        // e_Lies_compiled parks req:Cortex; req_Cortex fires Lies_compile_settled
+        // back once the write (if any) lands; Lang_compile_step consumes it.
         H.i_elvisto('Lies/Lies', 'Lies_compiled', {
-            path: dock.sc.dock, gen_path, source, dige, source_dige,
+            path: dock.sc.dock, gen_path, source, dige: gen_path ? await dig(source) : '', source_dige,
         })
         H.i_elvisto(w, 'think')
     },
 
-    // Called from Lang(A,w) while dock/Compile/Pending is set.
-    // Waits for e:Lies_compile_settled {path, write_ms} fired back by Lies,
-    // then clears dock/Compile/Pending and closes %time with all + write legs.
-    // If dock.c.run_method is set (from e_Lang_compile's Pantheate_method esc),
-    // fires e_Pantheate_run_method cross-world so the method runs once the
-    // module is live on disk.
+    // ── Lang_compile_step — Lies_compile_settled consumer ────────────────────
+    //
+    //   Called from Lang(A,w) each tick while any dock has job.c.pending.
+    //   Drains Lies_compile_settled elvises, clears job.c.pending, closes %time,
+    //   and fires Pantheate_run_method if dock.sc.run_method is set.
+    //
+    //   Multi-doc: one settled elvis per doc may arrive in the same tick.
+    //   settle drives from req:Cortex (LiesCortex) — fires after LiesStore_run.
     async Lang_compile_step(A: TheC, w: TheC) {
         const H = this
         const dock = this.Lang_active_dock(w)
@@ -415,35 +409,34 @@
 
         const job = dock.o({ Compile: 1 })[0] as TheC | undefined
         if (!job) throw "!job"
-        if (!job.oa({Pending:1})) return
+        if (!job.c.pending) return
 
-        // Consume any Lies_compile_settled elvises that landed on w.\n        // There may be one per recently-settled doc (multi-doc scenario).
         for (const ev of this.o_elvis(w, 'Lies_compile_settled')) {
             const settled_path = ev.sc.path as string
-            const docks = w.o({docks: 1})[0] as TheC | undefined
-            const targetDocC = docks?.o({dock: settled_path})[0] as TheC | undefined
-            if (!targetDocC) continue
-            const targetJob = targetDocC.o({ Compile: 1 })[0] as TheC | undefined
+            const docks        = w.o({ docks: 1 })[0] as TheC | undefined
+            const targetDock   = docks?.o({ dock: settled_path })[0] as TheC | undefined
+            if (!targetDock) continue
+            const targetJob = targetDock.o({ Compile: 1 })[0] as TheC | undefined
             if (targetJob) {
-                await targetJob.r({ Pending: 1 }, {})                // Close %time: all = wall time from job-park to Pending clear.
-                // write = Wormhole round-trip for the gen/ file (from e_Lies_compiled
-                // dispatching the wwrite to LiesStore_run Phase 1 completing it).
+                // clear in-flight flag — req_compile's ttlilt gate releases
+                delete targetJob.c.pending
+                // close %time: all = wall time from job-park to settle
                 const all_ms   = Date.now() - (targetJob.c.compile_t0 ?? Date.now())
                 const write_ms = ev.sc.write_ms as number | undefined
                 const time = targetJob.oai({ time: 1 })
                 time.sc.all   = +(all_ms   / 1000).toFixed(3)
                 if (write_ms != null) time.sc.write = +(write_ms / 1000).toFixed(3)
             }
-            // If a run_method is set on the dock (snap-persisted), ask Pantheate
-            // to run it once the module's ghostmeta confirms the right version is live.
-            // Not deleted — every compile on this dock re-runs the method.
-            const run_method = targetDocC?.sc.run_method as string | undefined
+            // run_method: snap-persisted on dock — every compile on this dock
+            // re-runs the method once the module's ghostmeta confirms the right
+            // version is live.
+            const run_method = targetDock?.sc.run_method as string | undefined
             if (run_method) {
-                const output = targetDocC?.o({ Compile: 1 })[0]?.o({ Output: 1 })[0] as TheC | undefined
-                const source_dige = output?.sc.source_dige as string | undefined
+                const output       = targetDock?.o({ Compile: 1 })[0]?.o({ Output: 1 })[0] as TheC | undefined
+                const source_dige  = output?.sc.source_dige as string | undefined
                 const ghostmeta_name = H.Lang_ghostmeta_name(settled_path)
                 H.i_elvisto('Pantheate/Pantheate', 'Pantheate_run_method', {
-                    method:          run_method,
+                    method: run_method,
                     source_dige,
                     ghostmeta_name,
                 })

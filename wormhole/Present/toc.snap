@@ -2,19 +2,19 @@ Library
   Book:LeafJuggle,ok_pct,last_run_ms=1779622781.774,done=4,last_pct_change=1776741166.033
   Book:LeafFarm,ok_pct,last_run_ms=1779622753.198,done=6,last_pct_change=1778378075.558
   Book:StuffFlipping,ok_pct=0,last_run_ms=1779622717.748,done,last_pct_change=1779622702.753
-  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1780884081.529
+  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1780886738.559,active
     TimeSpool
-      TimeTotal:beliefs,avg=1.761
-        sample=1.761,at=1780884049
-        sample=1.761,at=1780884052
-        sample=1.761,at=1780884056
-        sample=1.761,at=1780884059
-        sample=1.761,at=1780884063
-        sample=1.761,at=1780884067
-        sample=1.761,at=1780884070
-        sample=1.761,at=1780884074
-        sample=1.761,at=1780884077
-        sample=1.761,at=1780884081
+      TimeTotal:beliefs,avg=1.991
+        sample=1.991,at=1780886734
+        sample=1.991,at=1780886734
+        sample=1.991,at=1780886735
+        sample=1.991,at=1780886735
+        sample=1.991,at=1780886736
+        sample=1.991,at=1780886736
+        sample=1.991,at=1780886737
+        sample=1.991,at=1780886737
+        sample=1.991,at=1780886738
+        sample=1.991,at=1780886738
   Book:LakeSurfer,ok_pct=0,last_pct_change=1779607681.571,done=2,last_run_ms=1780805903.457
     TimeSpool
       TimeTotal:beliefs,avg=0.741
@@ -178,16 +178,16 @@ Library
         sample=0.006,at=1780805871
         sample=0.006,at=1780805881
         sample=0.006,at=1780805881
-  Book:Diffmatication,ok_pct=0,done,last_run_ms=1780884385.245,active
+  Book:Diffmatication,ok_pct=0,done,last_run_ms=1780886201.652
     TimeSpool
-      TimeTotal:beliefs,avg=0.476
-        sample=0.476,at=1780884381
-        sample=0.476,at=1780884382
-        sample=0.476,at=1780884382
-        sample=0.476,at=1780884382
-        sample=0.476,at=1780884383
-        sample=0.476,at=1780884383
-        sample=0.476,at=1780884384
-        sample=0.476,at=1780884384
-        sample=0.476,at=1780884384
-        sample=0.476,at=1780884385
+      TimeTotal:beliefs,avg=0.044
+        sample=0.044,at=1780886169
+        sample=0.044,at=1780886172
+        sample=0.044,at=1780886176
+        sample=0.044,at=1780886180
+        sample=0.044,at=1780886183
+        sample=0.044,at=1780886187
+        sample=0.044,at=1780886190
+        sample=0.044,at=1780886194
+        sample=0.044,at=1780886198
+        sample=0.044,at=1780886201

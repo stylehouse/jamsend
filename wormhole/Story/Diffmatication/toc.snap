@@ -10,15 +10,15 @@ story:Diffmatication
     noCyto
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=0.028
-      sample=0.061,at=1780834241
-      sample=0.049,at=1780834391
-      sample=0.043,at=1780834598
-      sample=0.026,at=1780834767
-      sample=0.042,at=1780834783
-      sample=0.002,at=1780835020
-      sample=0.003,at=1780838207
-      sample=0.008,at=1780884085
+    TimeTotal:beliefs,avg=0.037
       sample=0.036,at=1780884144
       sample=0.006,at=1780884204
+      sample=0.013,at=1780885310
+      sample=0.052,at=1780885327
+      sample=0.057,at=1780885355
+      sample=0.064,at=1780885372
+      sample=0.011,at=1780885467
+      sample=0.008,at=1780885497
+      sample=0.075,at=1780885523
+      sample=0.044,at=1780885628
   step,dige:c5c6885fda40ce1e

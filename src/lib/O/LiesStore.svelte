@@ -375,7 +375,6 @@
                 const dock = w.o({ docks: 1 })[0]?.o({ dock: path })[0] as TheC | undefined
                 if (dock) {
                     await dock.moai({ Text: 1 }, { disk_dige: req.sc.dige as string })
-                    dock.bump_version()
                 }
             }
             console.log(`💾 LiesStore wrote ${path} (${(req.sc.rw_data as string)?.length ?? 0}c)`)
