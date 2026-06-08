@@ -22,17 +22,13 @@
     //   if (!req.sc.finished)   { w.i({see:'⏳ …'}); return false }
     //   if (!req2?.sc.finished) { w.i({see:'⏳ …'}); return false }
     //   if (!req3.sc.finished)  { w.i({see:'⏳ …'}); return false }
-    //   // use req.sc.reply?.content / req2.sc.reply?.error
-    //   // use req3.sc.reply?.entries (array of {name,is_dir})
-    //
-    //   Neither helper exposes i_elvis_req to callers.
     //
     // ── Write behaviour ───────────────────────────────────────────────────────
     //
     //   Dige-keyed: same content → same req (natural dedup).  LiesStore_write
     //   drops finished write reqs for the path before roai so stale completions
-    //   never block a fresh write.  Fires immediately; %ttlilt advises Story
-    //   to wait while in flight.  LiesStore_run Phase 1 stamps base_dige on completion.
+    //   never block a fresh write.  %ttlilt advises Story to wait while in flight.
+    //   LiesStore_run Phase 1 handles completions via req_LiesStore_write_done.
     //
     // ── Read behaviour ────────────────────────────────────────────────────────
     //
@@ -41,17 +37,12 @@
     //   req.sc.finished; LiesStore_run Phase 2 drops finished reads after
     //   LiesPersist in the same tick so callers always get to read reply.
     //
-    //   Must NOT drop finished reads before roai — that re-dispatches every tick:
-    //   finished dropped → roai creates fresh → fires again → Wormhole replies
-    //   → think → loop.
+    //   Must NOT drop finished reads before roai — that re-dispatches every tick.
     //
     // ── Listing behaviour ─────────────────────────────────────────────────────
     //
     //   LiesStore_listing fires i_elvis_req immediately (same idempotency as read).
-    //   %ttlilt advises Story to wait while in flight.  Wormhole replies with
-    //   { entries: [{name, is_dir}] } or { not_found: true }.  Callers check
-    //   req.sc.finished; LiesStore_run drops finished listing reqs after the same
-    //   window as reads (after LiesPersist, so callers see reply).
+    //   %ttlilt advises Story to wait while in flight.
     //
     // ── req:Store ─────────────────────────────────────────────────────────────
     //
@@ -59,13 +50,7 @@
     //   and LiesStore_run's single rq.do() drives them all.
     //
     //   %Store:1 holds w/Store/known:path for each path we've read|written.
-    //   w/reqcons/reqcon:Store → w/req:Store is the req:Store particle.
     //   w/req:Store is eternal — born once, never finished by unify_finished.
-    //   w/req:Store hosts (via a nested noserial reqy for LuxuryLiesStore_write):
-    //     w/req:Store/req:LuxuryLiesStore_write,path
-    //     w/req:Store/req:LiesStore_write,path,dige
-    //     w/req:Store/req:LiesStore_read,rw_name
-    //     w/req:Store/req:LiesStore_listing,rw_dir
     //
     // ── Waft higher-level ops ─────────────────────────────────────────────────
     //
@@ -94,24 +79,16 @@
     // ── Waft_link_up ──────────────────────────────────────────────────────────
     //
     //   Walk a Waft subtree with Travel and stamp C.c.up / C.c.waft on every
-    //   child.  Travel handles loop detection; we stop early when a node's
-    //   c.up already points to the right parent — the subtree below is assumed
-    //   already linked.
-    //
-    //   Call with the Waft itself as top; top gets no c.up (there is no above).
-    //   Also callable from LE_pull's done_fn after a push lands fresh children.
-    //
+    //   child.  Stops early when a node's c.up already points to the right parent.
     //   Security: the chain terminates at the Waft particle (sc.Waft defined).
-    //   NaviCado detects the ceiling via node.sc.Waft !== undefined.
     async Waft_link_up(top: TheC, waft: TheC) {
         await new Travel().dive({
             n: top,
             match_sc: {},
             each_fn: async (n: TheC, T: Travel) => {
                 const parent_n = T.sc.up?.sc.n as TheC | undefined
-                if (!parent_n) return   // top node — no c.up to set
+                if (!parent_n) return
                 if (n.c.up === parent_n && n.c.waft === waft) {
-                    // subtree already linked from a prior call — stop early
                     T.sc.no_further = 'already linked'
                     return
                 }
@@ -130,15 +107,13 @@
     // ── Lies_sync_waft_docs ───────────────────────────────────────────────────
     //
     //   Trim req:Open particles for Docs removed from this Waft (CRUD removal).
-    //   Doc loading is demand-driven via Lies_roai_Open — this function no
-    //   longer mints load requests.  Already-loaded docs are left open.
+    //   Doc loading is demand-driven via Lies_roai_Open.
     //   < full close on Doc removal: future work.
     Lies_sync_waft_docs(w: TheC, waft: TheC) {
         const wpath = waft.sc.Waft as string
         const live_paths = new Set(
             (waft.o({ Doc: 1 }) as TheC[]).map(d => d.sc.Doc as string)
         )
-        // Drop unfinished req:Open that lost their Doc from this Waft.
         const rq = (this as House).reqy(w)
         for (const req of rq.o({ req: 'Open', waft_key: wpath }) as TheC[]) {
             if (req.sc.finished) continue
@@ -151,8 +126,7 @@
     // ── Lies_spawn_look_waft ──────────────────────────────────────────────────
     //
     //   Spawn or reuse the Waft:Look/YMD/HH slot for this hour.
-    //   One per hour — oai is idempotent, so rapid clicks reuse the same Waft.
-    //   Returns the (possibly pre-existing) Waft TheC.
+    //   One per hour — oai is idempotent.
     Lies_spawn_look_waft(w: TheC): TheC {
         const now = new Date()
         const ymd = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`
@@ -163,20 +137,6 @@
         return waft
     },
 
-    // ── Lies_log_want ─────────────────────────────────────────────────────────
-    //
-    //   Record a save that was intercepted by the nowriting opt.
-    //     kind — 'waft_save' | 'source_write' | 'gen_write'
-    //     path — the target path that would have gone to disk
-    //     content — the full content string; hashed so identical successive saves
-    //               collapse onto the same oai particle rather than piling.
-    //
-    //   Produces: w/%log:$kind,path:$path,dige:$hash
-    async Lies_log_want(w: TheC, kind: string, path: string, content: string) {
-        const dige = (await dig(content)).slice(0, 8)
-        w.oai({ log: kind, path, dige })
-    },
-
     // ── Lies_waft_save ────────────────────────────────────────────────────────
     //
     //   Throttled write of a Waft container back to its wormhole snap path.
@@ -185,11 +145,6 @@
     //
     //   The encode root is always {Waft:path} — sc.active and other session
     //   fields on the waft particle are never included in the snap.
-    //   Saves: Doc children, Points grandchildren.
-    //
-    //   With Opt nowriting active the snap is encoded but logged to
-    //   w/%log:waft_save rather than going to LiesStore_write — the test
-    //   reads the log particle's presence as the save-would-have-happened assertion.
     Lies_waft_save(w: TheC, waft: TheC) {
         const H    = this as House
         const path = waft.sc.Waft as string
@@ -207,15 +162,12 @@
                         console.error(`Waft:${path} encode errors (save aborted):`, errors)
                         return
                     }
-                    // nowriting opt: log intent rather than writing disk
                     if (H.Lies_nowriting(w, path)) {
                         await H.Lies_log_want(w, 'waft_save', path, snap)
                         return
                     }
                     const snap_path = H.Lies_waft_snap_path(path)
                     await H.LiesStore_write(w, snap_path, snap)
-                    // LiesStore_run dispatches; Waft snap writes don't have a loaded_doc so
-                    // base_dige gate never fires — every distinct snap content goes through.
                 }, { see: `waft_save_${path}` })
             }, 800)
         }
@@ -233,37 +185,17 @@
 
     // ── LiesStore_req ─────────────────────────────────────────────────────────
     //
-    //   Returns (or creates) the w/req:Store particle — the host for all IO
-    //   reqs: LiesStore_read, LiesStore_write, LiesStore_listing, and LuxuryLiesStore_write.
+    //   Returns (or creates) the w/req:Store particle — the host for all IO reqs.
     //   Routing them through req:Store means the w(/req)+ %ttlilt picker naturally
     //   finds them all.
-    //
     async LiesStore_req(w: TheC): Promise<TheC> {
         return this.reqy(w).roai({req:'Store',eternal:1}) // eternal means it doesn't finish
     },
 
-    // ── Lies_LuxuryLiesStore_write_reqy ──────────────────────────────────────
-    //
-    //   Returns a noserial reqy on req:Store — shared by e_Lies_source_write
-    //   (the parker) and LiesStore_run (which drives it via rq.do()).
-    //   noserial: LuxuryLiesStore_write reqs are keyed by path so auto-numbering
-    //   would be wrong; path identity is all we need.
-    //   Lives inside req:Store so the %ttlilt walker finds req:LuxuryLiesStore_write
-    //   reqs naturally alongside LiesStore_write/LiesStore_read.
-    //
-    async Lies_LuxuryLiesStore_write_reqy(w: TheC) {
-        const H    = this as House
-        const host = await H.LiesStore_req(w)
-        return H.reqy(host, { noserial: 1 })
-    },
-
     // ── LiesStore_write ───────────────────────────────────────────────────────
     //
-    //   Returns null when content matches %loaded_doc.sc.base_dige (already on
-    //   disk).  Returns the %req:LiesStore_write otherwise — check req.sc.finished.
-    //
-    //   rw_name defaults to path; pass explicitly for compile writes
-    //   (src/lib/gen/…) or any other target that differs from the source path.
+    //   Returns null when content matches %loaded_doc.sc.base_dige (already on disk).
+    //   rw_name defaults to path; pass explicitly for compile writes (src/lib/gen/…).
     async LiesStore_write(
         w:    TheC,
         path: string,
@@ -280,13 +212,12 @@
 
         const host = await H.LiesStore_req(w)
         const wq   = H.reqy(host)
-        wq.drop_finished({req: 'LiesStore_write', path}) // < weird? just keep the latest one?
+        wq.drop_finished({req: 'LiesStore_write', path})
 
         // < not necessary given req%mutated, which should be how we trigger resends
         //    we are going to fail to 'eventual consistency' I think
         //     ie write the latest version of a stampede of versions
-        // Dige-dedup: reuse an in-flight req for the same content rather than
-        // creating a second one that would just write identical bytes.
+        // Dige-dedup: reuse an in-flight req for the same content.
         const existing = (wq.o({ path }) as TheC[]).find(
             r => r.sc.dige === new_dige && !r.sc.finished
         )
@@ -329,14 +260,8 @@
 
     // ── LiesStore_listing ────────────────────────────────────────────────────
     //
-    //   Returns the %req:LiesStore_listing for this directory path.
-    //   Same idempotency pattern as LiesStore_read — fires i_elvis_req once,
-    //   callers check req.sc.finished and read req.sc.reply?.entries.
-    //
     //   reply.entries: Array<{ name: string, is_dir: boolean }>
     //   reply.not_found: true when the directory doesn't exist.
-    //
-    //   LiesStore_run Phase 3 drops finished listing reqs (same window as reads).
     async LiesStore_listing(
         w:      TheC,
         rw_dir: string,
@@ -368,8 +293,7 @@
     //     4. clean → LiesStore_write (sibling in req:Store), clear
     //        any /surprise_read, finish.
     //
-    //   < the surprise path blocks the write but doesn't yet resume it; the
-    //     "push anyway" affordance lives in Liesui's future and reads sr.sc.text.
+    //   < the surprise path blocks the write but doesn't yet resume it.
     async req_LuxuryLiesStore_write(req: TheC, q: any) {
         const H    = this as House
         const w    = req.c.up?.c.up as TheC   // req → req:Store → w
@@ -384,8 +308,6 @@
         }
 
         // nowriting opt: log write intent; source never goes to disk.
-        // Skip the pull-before-push machinery — the base_dige surprise-check is
-        // meaningless in tests where there is no disk to diverge from.
         if (H.Lies_nowriting(w, path)) {
             await H.Lies_log_want(w, 'source_write', path, text)
             return q.finish(req)
@@ -404,13 +326,10 @@
             && known.sc.dige === base_dige
 
         if (!skip_check) {
-            // roai on the LiesStore_read channel finds an existing req with matching
-            // identity, so a read from a prior tick that hasn't been Phase-2-dropped
-            // yet is returned directly — no duplicate Wormhole dispatch.
             const read = await H.LiesStore_read(w, path, { label: 'source_check' })
             if (!read.sc.finished) {
                 H.i_req_ttlilt(req, 0.5, { waiting: 'source_check' })
-                return   // stay unfinished — the read's reply re-fires think
+                return
             }
 
             const disk_text = read.sc.reply?.content as string | undefined
@@ -419,7 +338,7 @@
             if (base_dige && disk_dige && disk_dige !== base_dige) {
                 const sr = ld.oai({ surprise_read: 1 })
                 sr.sc.disk_dige = disk_dige
-                sr.sc.text      = text   // stash so a future "push anyway" can re-issue
+                sr.sc.text      = text
                 sr.sc.dige      = dige
                 ld.bump_version()
                 console.warn(`🗂 surprise_read on ${path}: disk dige ${disk_dige.slice(0, 5)} ≠ base ${base_dige.slice(0, 5)}`)
@@ -433,7 +352,12 @@
         q.finish(req)
     },
 
-    // < all compiley stuff should go elsewhere, as a consequence of %finished
+    // ── req_LiesStore_write_done — Store concerns only ────────────────────────
+    //
+    //   Stamps base_dige on loaded_doc (source files only), records the known
+    //   impression in %Store:1/known:path, drops the finished req.
+    //   Compile-settle (Ghost_update_notify / Lies_compile_settled) moved to
+    //   req_Cortex in LiesCortex — Store no longer knows about compiles.
     async req_LiesStore_write_done(w: TheC, req: TheC) {
         const H     = this as House
         const path  = req.sc.path  as string
@@ -462,33 +386,6 @@
             known.sc.dige = req.sc.dige as string
             known.sc.kind = 'write'
             known.sc.at   = Date.now() / 1000
-
-            // Deferred settle for gen/ writes: LiesRealised parked write_t0 on
-            // the matching %compile_pending and skipped firing Lies_compile_settled.
-            // Now that the write is done the file is on disk — safe to notify
-            // Pantheate (dynamic import will find the file) and settle Lang.
-            const rw_name = req.sc.rw_name as string | undefined
-            const pending = rw_name
-                ? (w.o({ compile_pending: 1 }) as TheC[]).find(p => p.sc.gen_path === path && p.c.write_t0)
-                : undefined
-            if (pending) {
-                const write_ms = pending.c.write_t0 ? Date.now() - (pending.c.write_t0 as number) : undefined
-                // Notify Pantheate only after the file is on disk — dynamic import
-                // needs the file to exist.  source_dige was parked on compile_pending
-                // by e_Lies_compiled for exactly this moment.
-                if (pending.sc.source_dige) {
-                    H.i_elvisto('Pantheate/Pantheate', 'Ghost_update_notify', {
-                        include:     pending.sc.gen_path as string,
-                        path:        pending.sc.path     as string,
-                        source_dige: pending.sc.source_dige,
-                    })
-                }
-                H.i_elvisto('Lang/Lang', 'Lies_compile_settled', {
-                    path:     pending.sc.path as string,
-                    write_ms: write_ms != null ? +(write_ms / 1000).toFixed(3) : undefined,
-                })
-                console.log(`🔪 Lies compile settled: ${pending.sc.path} [write+run] write=${write_ms}ms`)
-            }
         }
         const host = await H.LiesStore_req(w)
         host.drop(req)
@@ -497,9 +394,9 @@
     // ── LiesStore_run ─────────────────────────────────────────────────────────
     //
     //   Called from the Lies tick after LiesPersist + LiesCurse.
-    //   rq.do() drives all children of req:Store: LiesStore_write, LiesStore_read,
-    //   LiesStore_listing, and LuxuryLiesStore_write.
-    //
+    //   rq.do() drives all children of req:Store.
+    //   LiesCortex_run runs after this — ordering matters: writes processed first,
+    //   then req:Cortex inspects finished writes.
     async LiesStore_run(A: TheC, w: TheC) {
         const H    = this as House
         const host = await H.LiesStore_req(w)
@@ -507,8 +404,8 @@
         await rq.do()
 
         // ── Phase 1: LiesStore_write completions ──────────────────────────────
-        //   LuxuryLiesStore_write reqs finish silently (their LiesStore_write sibling
-        //   carries the actual IO); only LiesStore_write reqs need the done callback.
+        //   Only LiesStore_write reqs need the done callback (LuxuryLiesStore_write
+        //   finishes silently — its LiesStore_write sibling carries the actual IO).
         for (const req of rq.o() as TheC[]) {
             if (req.sc.finished) {
                 if (req.sc.req == 'LiesStore_write') H.req_LiesStore_write_done(w, req)

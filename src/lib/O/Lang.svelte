@@ -597,22 +597,21 @@
     //
     //   §3i — doc-open is now an RPC.  Lies owns the intent (w:Lies/req:Furnishing)
     //   and couriers the req particle here via i_elvis_req; we drain it with
-    //   o_elvis_req.  Each carried req has { path, text, gen_path? }; we mint (or
+    //   o_elvis_req.  Each carried req has { path, text }; we mint (or
     //   refresh) the per-doc req:Languish on the dock — Lang's mind for one doc,
     //   staging text_loaded → compile — then finish({ path, ready:1 }) once the
     //   dock is minted, which pings Lies back so its Furnishing phase resolves.
     //
     //   Dock is minted here (via docks.oai) so Lang_drive_languish can receive it
     //   directly; req_text_loaded's reqonce then stamps Text and activates it.
-    //   gen_path on languish.sc (snap-visible); text on languish.c (hidden from snap).
+    //   text on languish.c (hidden from snap); gen_path derived at compile time.
     //
     //   e.sc: { req }  (the Furnishing req, carrying path/text/gen_path)
     async e_Lang_open_dock(A: TheC, w: TheC, e?: TheC) {
         const H = this as House
         for (const { req: furnishing, finish } of H.o_elvis_req(w, 'Lang_open_dock')) {
             const path     = furnishing.sc.path as string
-            const gen_path = furnishing.sc.gen_path as string | undefined   // optional
-            const text     = (furnishing.c.text as string | undefined) ?? ''   // large, on c
+            const text = (furnishing.c.text as string | undefined) ?? ''   // large, on c
             if (!path) continue
 
             // Mint-or-find dock; stamp c.up so reqyoncile's %w walk reaches w:Lang.
@@ -622,7 +621,7 @@
             docks.c.up  ??= w
             const dock  = docks.oai({ dock: path })
             dock.c.up   ??= docks
-            await H.Lang_drive_languish(w, dock, text, gen_path)
+            await H.Lang_drive_languish(w, dock, text)
 
             // Resolve the RPC — Lies' req:Furnishing finds dock-exists on re-think.
             // Remaining Languish phases (compile) run on Lang's own thinking.
@@ -642,7 +641,7 @@
     //   Languish lives on the dock — `dock.o({req:'Languish'})[0]`.
     //   dock.c.up = docks, docks.c.up = w (stamped in e_Lang_open_dock) so
     //   reqyoncile's %w walk and i_req_ttlilt both reach w:Lang correctly.
-    async Lang_drive_languish(w: TheC, dock: TheC, text: string, gen_path?: string): Promise<TheC> {
+    async Lang_drive_languish(w: TheC, dock: TheC, text: string): Promise<TheC> {
         const H = this as House
         const rq = H.reqy(dock)
         let languish = await rq.roai({ req: 'Languish' })
@@ -650,7 +649,6 @@
             dock.drop(languish)
             languish = await rq.roai({ req: 'Languish' })
         }
-        if (gen_path) languish.sc.gen_path = gen_path
         languish.c.open_text = text
 
         const path = dock.sc.dock as string

@@ -335,13 +335,11 @@
         // clear previous outputs / errors so a fresh compile is visible
         await dock.r({ compile_error: 1 }, {})
 
-        // gen_path comes from dock (set by e_Lang_open_dock via Lies).
-        // Absent gen_path means soft-compile only — methods/calls are indexed
-        // but the eatfunc-wrapped source is meaningless for a non-stho file,
-        // so Output is suppressed.  Only gen_path docs get an Output particle.
+        // gen_path derived here — the earliest it is needed.
+        // Absent (non-Ghost/ or non-gen-able codetype) means soft-compile only.
         // < softgen: a future Opt flag to show Output without writing to gen/
-        //   would set gen_path on the doc but let do_write=false pass through.
-        const gen_path = dock.sc.gen_path as string | undefined
+        //   would let do_write=false pass through even with gen_path present.
+        const gen_path = H.Lies_gen_path(dock.sc.dock as string)
 
         let source: string
         let source_dige = ''   // dige of the raw source text; populated for hard-compiles
