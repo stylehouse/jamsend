@@ -311,13 +311,18 @@
 
             // do them all
             //
-            //   sc.ok — tick-local satisfied signal for eternal reqs.
-            //   A req that sets sc.ok is treated as satisfied for this do() pass
-            //   so lower maz levels proceed, without being permanently finished.
-            //   do_one clears ok at entry each cycle so the req re-runs next tick.
+            //   sc.ok — pass-local satisfied signal for eternal reqs.
+            //   A req that sets sc.ok is treated as satisfied for the rest of
+            //   this do() pass so lower maz levels proceed, without the req
+            //   being permanently finished.  Each fresh do() (once per tick)
+            //   clears ok on entry so the req re-runs next tick — the clear can
+            //   not live in do_one, since needs_work gates an ok req out before
+            //   do_one would ever see it (the flag would close its own reset).
             //   req:Store,maz:7 uses this: it pumps IO, sets ok when done for the
             //   tick, and lower reqs see a settled Store before their own turn.
             async do(fn?: Function) {
+                // re-arm: a req only stays ok within one pass, never across ticks.
+                for (const req of q.o()) if (req.sc.ok) delete req.sc.ok
                 while (true) {
                     const needs_work = (req: TheC) => !req.sc.finished && !req.sc.ok
                     const N = q.o().filter(needs_work)
@@ -339,7 +344,7 @@
             async do_one(req: TheC, fn?: Function) {
                 if (req.sc.finished) throw "do_one req%finished"
                 delete req.sc.initialdo
-                delete req.sc.ok               // reset tick-local satisfied signal
+                delete req.sc.ok               // belt-and-braces; do() already re-armed this pass
                 await H.w_noproblemo(req)      // drop %waits, %error, %see
  
                 // if eg req:Foo, you might want H.req_Foo(req)

@@ -23,11 +23,51 @@
     //   All compile state (%Compile, compile_error) lives on dock — not on w.
     //   compile_write has moved to Lies's w (keyed by path).
     //
-    //   job.c.pending (transient) replaces %Pending:1 — avoids snap-mid-flight race
-    //   where Story could snap req:compile,firing + Compile/Pending ahead of settle.
+    //   %Compile/sc.pending is the in-flight flag — snapped, so a hanging compile
+    //   is visible in the snap (req:compile,firing + Compile,pending ahead of settle).
     //
     //   Compile timing: job.c.compile_t0 set at job-park (transient, not in snap).
     //   job/%time.sc.{compile,write,all} are the finished deltas, visible in snap.
+    //
+    //   ── Lies | Lang demarcation, and the road ahead ──────────────────────
+    //
+    //   Lang is the editor brain; Lies is its road manager.  Everything Lang
+    //   needs from the world — read a source doc, write a gen file, learn that
+    //   a write landed — it asks of Lies and gets answered (one day with line
+    //   numbers on errors).  Compilation itself unpacks here in LangCompiling
+    //   because this is where the editor state and the parser live; the moment
+    //   a compile produces an artifact, ownership crosses to Lies/Cortex.
+    //
+    //   The seam is content identity, not file intent.  A Codebit is not 'a
+    //   write to perform' — it is the pure identity of one compiled ghost:
+    //     of_dock (source path = dock key) -> e:Lies_compiled%source_dige -> %dige
+    //   Once that identity exists, the editor side (Lang+Lies) and the runner
+    //   side (Lies+Story) can be different Lies instances entirely — many test
+    //   routines compiling|running in parallel workers, each keyed by the same
+    //   path:dige identity.  Nothing here may assume editor and runner share a w.
+    //
+    //   Runner shape (intended):
+    //     req:Rundown enabled by a run_method, owning a /req:Includes which
+    //       includes the compiled file (UI side), then calls the Ghost version
+    //       probe (eg Ghostmeta_Ghost_test_LangTiles()) to confirm the live
+    //       module matches source_dige.  When Codebit and Includes are aligned,
+    //       req:Rundown mints req:BlastPit — the running instance of one
+    //       canonical Codebit situation (a serialised path:dige array).  BlastPit
+    //       could later retain its run memory for inspection|callback.
+    //     Determinism: re-check versions after a run; if anything bumped, re-run
+    //       to regenerate the canonical exp.
+    //
+    //   Open question (deferred): does req:settle/compile become the whole
+    //     editor-side story, with the runner a separate req:workon/req:instance
+    //     that req:Rundown pushes back to once includes are bumped?  There is
+    //     misunderstanding-code around this seam to untangle.
+    //
+    // < REMOTE EXECUTION (deferred, hard-wired for now): Pantheate + the runner
+    //   side are close to being able to run a Ghost on a remote instance — the
+    //   path:dige identity is already location-free.  The full version wants
+    //   data exploration with exfiltration, debugger controls, probing (modulating
+    //   the compile), etc.  Not building that now; keeping the seam clean enough
+    //   that wiring a remote BlastPit later is a transport swap, not a rewrite.
     //
     //   Translation:
     //     Lang_compile_collect(state)    → per-Line  {kind:'translated'|'raw', text}
@@ -280,7 +320,6 @@
         if (e.sc.Pantheate_method && dock) {
             dock.sc.run_method = e.sc.Pantheate_method as string
         }
-        
         // Drop the compile when one is already in-flight for this doc.
         // < should be in req:Languish
         if (dock?.o({ Compile: 1 })[0]?.sc.pending) {
