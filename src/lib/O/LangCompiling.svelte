@@ -18,7 +18,8 @@
     //   Lang_compile_step(A, w)
     //     Called from Lang(A,w) each tick while job.c.pending is set.
     //     Drains Lies_compile_settled elvises, clears job.c.pending,
-    //     closes %time, and fires Pantheate_run_method.
+    //     closes %time, and stamps dock/%Text.disk_dige from the settled
+    //     source_dige — so the unsaved indicator clears without a disk read.
     //
     //   All compile state (%Compile, compile_error) lives on dock — not on w.
     //   compile_write has moved to Lies's w (keyed by path).
@@ -414,7 +415,8 @@
         if (!job.c.pending) return
 
         for (const ev of this.o_elvis(w, 'Lies_compile_settled')) {
-            const settled_path = ev.sc.path as string
+            const settled_path = ev.sc.path        as string
+            const source_dige  = ev.sc.source_dige as string | undefined
             const docks        = w.o({ docks: 1 })[0] as TheC | undefined
             const targetDock   = docks?.o({ dock: settled_path })[0] as TheC | undefined
             if (!targetDock) continue
@@ -428,6 +430,14 @@
                 const time = targetJob.oai({ time: 1 })
                 time.sc.all   = +(all_ms   / 1000).toFixed(3)
                 if (write_ms != null) time.sc.write = +(write_ms / 1000).toFixed(3)
+            }
+            // stamp disk_dige on %Text so the editor's unsaved indicator clears
+            //  without a read-back from disk.  source_dige is the dige of the
+            //  raw source text that was compiled — after a gen write that matches
+            //  the current editor content, text_dige === disk_dige → no unsaved dim.
+            if (source_dige) {
+                const Text = targetDock.o({ Text: 1 })[0] as TheC | undefined
+                if (Text) Text.sc.disk_dige = source_dige
             }
             // run_method now fires from req:Rundown beside the Codebits (LiesCortex),
             // gated on all gen writes landing — not from here, where it could race

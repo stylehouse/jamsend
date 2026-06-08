@@ -35,7 +35,10 @@
     //                                   on the next re-compile (req%mutated + permanent).
     //                                   Fires Ghost_update_notify + Lies_compile_settled
     //                                   on landing.  Carries %dige so Rundown can hash.
-    //     sc.gen_path, sc.source_dige, sc.dige, permanent:1; c.write_t0 (transient)
+    //                                   Carries of_dock (= path = dock.sc.dock key) so
+    //                                   Lang can close the loop on its dock after a write.
+    //     sc.gen_path, sc.source_dige, sc.dige, sc.of_dock, permanent:1
+    //     c.write_t0 (transient)
     //
     //   w/req:Cortex/req:Rundown      — beside the Codebits, there from the start.
     //     maz:1, eternal                Ambient: ticks when Lies does.  Idles on
@@ -136,7 +139,9 @@
             // immediate settle — no write, no Pantheate notify.
             if (nowriting) await H.Lies_log_want(w, 'gen_write', gen_path, source)
             const reason = nowriting ? 'nowriting' : nogen ? 'nogen' : 'softgen'
-            H.i_elvisto('Lang/Lang', 'Lies_compile_settled', { path })
+            // source_dige here: no write happened, but lang still wants it to
+            //  close the disk_dige/unsaved gap if text was already on disk.
+            H.i_elvisto('Lang/Lang', 'Lies_compile_settled', { path, source_dige })
             console.log(`🔪 Lies compile settled: ${path} [${reason}]`)
             H.i_elvisto(w, 'think')
             return
@@ -153,11 +158,18 @@
         // roai with no .o-first — a re-compile mutates %dige, req%mutated fires,
         //  the permanent Codebit un-finishes and re-waits the fresh write.
         //  %dige rides on sc so Rundown can hash its inputs into a moment id.
-        //  write_t0 on .c: transient, for write_ms accounting.
+        //  of_dock = path = source path = dock.sc.dock key; stable string so
+        //   Lang can look up its dock after the write, without a cross-world ref.
+        //  meta.existed tells us this is a re-arm: clear the old write_finished so
+        //  the Codebit waits for the fresh write rather than coasting on the
+        //  previous landing.  write_t0 on .c: transient, for write_ms accounting.
+        const cb_meta: { existed?: boolean } = {}
         const cb = await H.reqy(cortex).roai(
             { req: 'Codebit', path, maz: 2 },
-            { gen_path, source_dige, dige, permanent: 1 },
+            { gen_path, source_dige, dige, of_dock: path, permanent: 1 },
+            cb_meta,
         )
+        if (cb_meta.existed) delete cb.sc.write_finished
         cb.c.write_t0 = Date.now()
 
         H.i_elvisto(w, 'think')
@@ -192,8 +204,9 @@
     //
     //   Permanent: finishes when the gen write lands, stays put (not dropped),
     //   and un-finishes when a re-compile mutates %dige via req%mutated.
-    //   A fresh arming (initial or un-finish) clears write_finished via initialdo
-    //   so it waits for the new write rather than coasting on the previous landing.
+    //   A fresh arming (initial or un-finish) clears write_finished in
+    //   e_Lies_compiled (meta.existed path) before roai returns, so the Codebit
+    //   waits for the fresh write on the next Phase 1, not the previous landing.
     //
     //   req.c.up = req:Cortex
     async req_Codebit(req: TheC, q: any) {
@@ -201,9 +214,10 @@
         const path     = req.sc.path     as string
         const gen_path = req.sc.gen_path as string
 
-        // a fresh arming must wait for the new write — clear any stamp from
-        //  the previous cycle; initialdo fires once per un-finish.
-        if (req.sc.initialdo) delete req.sc.write_finished
+        // write_finished is cleared in e_Lies_compiled on re-arm (meta.existed),
+        //  not here — clearing it on initialdo raced Phase 1 in the same do() pass:
+        //   Phase 1 stamped write_finished at maz:7, then this handler ran at maz:2
+        //    with fresh initialdo and immediately cleared it, so the landing never fired.
         if (!req.sc.write_finished) return
 
         const write_ms = req.c.write_t0
@@ -213,15 +227,17 @@
         // import goes first — the dynamic import needs the file on disk;
         //  source_dige lets req:include confirm the right version mounted.
         if (req.sc.source_dige) {
-            debugger
             H.i_elvisto('Pantheate/Pantheate', 'Ghost_update_notify', {
                 include:     gen_path,
                 path,
                 source_dige: req.sc.source_dige,
             })
         }
+        // source_dige lets Lang stamp %Text.disk_dige so the editor's
+        //  unsaved indicator clears without a separate read-back from disk.
         H.i_elvisto('Lang/Lang', 'Lies_compile_settled', {
             path,
+            source_dige: req.sc.source_dige,
             write_ms: write_ms != null ? +(write_ms / 1000).toFixed(3) : undefined,
         })
         console.log(`🔪 Codebit landed: ${path} write=${write_ms ?? '?'}ms`)

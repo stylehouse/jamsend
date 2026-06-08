@@ -264,9 +264,9 @@
                 const ld = w.o({ loaded_doc: 1, path })[0] as TheC | undefined
                 if (ld) {
                     ld.sc.base_dige = wr.sc.dige as string
-                    // < disk_dige on the dock's %Text lives on w:Lang, not w:Lies.
-                    //   carry it via Lies_compile_settled or a thin event — the
-                    //   cross-world lookup here would be a no-op.
+                    // disk_dige on the dock's %Text lives on w:Lang — stamped there
+                    //  by Lang_compile_step when Lies_compile_settled arrives with
+                    //  source_dige.  No cross-world lookup needed here.
                 }
                 console.log(`💾 LiesStore wrote ${path} (${(wr.sc.rw_data as string)?.length ?? 0}c)`)
 
