@@ -219,11 +219,13 @@
     // ── LiesStore_req ─────────────────────────────────────────────────────────
     //
     //   Returns (or creates) w/req:Store — the host for all IO reqs and known
-    //   impressions.  eternal:1 means reqy never finishes it via unify_finished.
-    //   All IO reqs are children here so the w(/req)+ %ttlilt picker finds them,
-    //   and H.reqy(w).do() enters req_Store naturally each tick.
+    //   impressions.  maz:7 puts it above all other Lies reqs so H.reqy(w).do()
+    //   always pumps IO before desire/wants/Furnish/Curse run.  eternal:1 means
+    //   reqy never finishes it via unify_finished.  req_Store sets sc.ok at the
+    //   end of each pump cycle — lower reqs see a settled Store without it being
+    //   permanently finished; do_one clears ok at entry each tick.
     async LiesStore_req(w: TheC): Promise<TheC> {
-        return this.reqy(w).roai({ req: 'Store', eternal: 1 })
+        return this.reqy(w).roai({ req: 'Store', eternal: 1, maz: 7 })
     },
 
     // ── LiesStore_store ───────────────────────────────────────────────────────
@@ -282,11 +284,15 @@
                 known.sc.at   = Date.now() / 1000
 
                 // Cortex handoff: if a req:Cortex is waiting for this gen_path write,
-                // stamp it now so req_Cortex can check the flag rather than scanning
+                // stamp it so req_Cortex checks the flag rather than scanning
                 // req:Store's children (which we're about to drop).
-                const gen_path = wr.sc.path as string
-                const cortex = (H.reqy(w).o({ req: 'Cortex', path: gen_path }) as TheC[])
-                    .find(r => !r.sc.finished && !r.sc.write_finished)
+                //
+                // req:Cortex is keyed by source path (sc.path = 'Ghost/Foo.g') and
+                // carries sc.gen_path = 'gen/Foo.go' separately.  The write req's
+                // sc.path IS gen_path — so match Cortex by sc.gen_path, not sc.path.
+                const write_gen_path = wr.sc.path as string
+                const cortex = (H.reqy(w).o({ req: 'Cortex' }) as TheC[])
+                    .find(r => r.sc.gen_path === write_gen_path && !r.sc.finished && !r.sc.write_finished)
                 if (cortex) cortex.sc.write_finished = 1
             }
             req.drop(wr)
@@ -324,6 +330,11 @@
         for (const ls of rq.o({ req: 'LiesStore_listing' }) as TheC[]) {
             if (ls.sc.finished) req.drop(ls)
         }
+
+        // Signal tick-local completion: lower-maz reqs (Cortex, desire, wants…)
+        // see a settled Store without req:Store being permanently finished.
+        // do_one clears sc.ok at entry next tick so we pump again fresh.
+        req.sc.ok = 1
     },
 
 //#endregion

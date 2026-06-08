@@ -22,7 +22,6 @@
     //
     //   LiesPersist — Waft snap IO + drives req:Open (doc reads, async).
     //   LiesRealised — cursor wiring, desire, git, wants, Furnishing.
-    //   LiesCortex_run — compile-and-settle workforce; runs after LiesStore_run.
     //
     // ── Waft — wormhole-backed document sets ──────────────────────────────────
     //
@@ -266,8 +265,6 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
         // ── LiesCurse — cursor wiring (runs every post-settle tick) ──────────
         await this.LiesCurse(A, w)
-        // ── LiesCortex — compile-and-settle; after Store so writes are processed
-        await this.LiesCortex_run(A, w)
 
         const loaded = (w.o({ loaded_doc: 1 }) as TheC[]).length
         const wafts  = w.o({ Waft: 1 }).length

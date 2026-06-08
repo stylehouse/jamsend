@@ -302,12 +302,17 @@
             },
 
             // do them all
+            //
+            //   sc.ok — tick-local satisfied signal for eternal reqs.
+            //   A req that sets sc.ok is treated as satisfied for this do() pass
+            //   so lower maz levels proceed, without being permanently finished.
+            //   do_one clears ok at entry each cycle so the req re-runs next tick.
+            //   req:Store,maz:7 uses this: it pumps IO, sets ok when done for the
+            //   tick, and lower reqs see a settled Store before their own turn.
             async do(fn?: Function) {
                 while (true) {
-                    // < WIP. possibly want to do() eg req:Store all the time?
-                    //    having %ok when it is client-readable
-                    let has_needs = (req) => req.sc.finished || req.sc.ok
-                    const N = q.o().filter((req: TheC) => !has_needs(req))
+                    const needs_work = (req: TheC) => !req.sc.finished && !req.sc.ok
+                    const N = q.o().filter(needs_work)
                     if (!N.length) return
 
                     const maz_high = Math.max(...N.map((req: TheC) => req.sc.maz || 1))
@@ -316,8 +321,8 @@
                     for (const req of level) await q.do_one(req, fn)
 
                     // someone armed a ttlilt and bowed out — Story waits, we stop here.
-                    if (level.some((req: TheC) => !req.sc.finished)) return
-                    // whole level finished — fall to the next maz down.
+                    if (level.some(needs_work)) return
+                    // whole level satisfied (finished or ok) — fall to next maz down.
                 }
             },
 
@@ -326,6 +331,7 @@
             async do_one(req: TheC, fn?: Function) {
                 if (req.sc.finished) throw "do_one req%finished"
                 delete req.sc.initialdo
+                delete req.sc.ok               // reset tick-local satisfied signal
                 await H.w_noproblemo(req)      // drop %waits, %error, %see
  
                 // if eg req:Foo, you might want H.req_Foo(req)
@@ -401,8 +407,6 @@
                         // have its protocol
                         const rq = H.reqy(req, {k})
                         // jumps into the many req/*req here
-                        // < less difficult to analyse? it's similar but less than feebly_ponder()...
-                        H.trace('reqy',`unhandled req (${keyser(req.sc)}), will do() them all`)
                         await rq.do()
                         // becomes req%finished when they are
                         rq.unify_finished(q)
@@ -462,7 +466,8 @@
         if (req.sc.finished) {
             await rq.do()
             rq.unify_finished()
-            // they or the above probably did rq.finish(req), which does H.feebly_ponder()
+            // < maybe?
+            // H.feebly_ponder()
         }
     },
  

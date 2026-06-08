@@ -22,73 +22,44 @@
      the Cortex is the foreman —
       not doing the hauling,
        but watching the dock and saying who goes where when what arrives.
-
-    clusters of req:Cortex/** that could grow here:
-      req:compile_settle    — write landed, tell Lang done
-      req:import_confirm    — Pantheate saw the new module
-      req:origin_refresh    — remote moved, pull working
-      req:push_verify       — push landed, re-encode confirms
-      req:carry_forward     — +time seeds next What's clones
-      req:surprise_surface  — disk diverged, await decision
-      req:ghost_evict       — ghost timer elapsed, drop clone
-      req:waft_seal         — throttle done, snap write ready
-      req:doc_reconcile     — loaded doc lost its Waft home
-      req:cursor_settle     — wants resolved, workon armed
     `
 
-    // ── What lives here (moved from Lies.svelte and LiesStore.svelte) ─────────
-    //
-    //   e_Lies_compiled      — receives a hard-compile result, parks req:Cortex
-    //   req_Cortex           — do_fn: waits for LiesStore_write to finish,
-    //                          then fires Ghost_update_notify + Lies_compile_settled
-    //   LiesCortex_run       — called from the Lies tick; drives req:Cortex reqs
-    //   o_Opt_val            — read a named opt from w/{Opt:1}/{k:1}
-    //   Lies_nowriting       — gate: is a write suppressed for this path?
-    //   Lies_gen_path        — Ghost/Foo.g → gen/Foo.go (gen-able codetypes only)
-    //   Lies_codetype        — extract effective extension (incl. compound .svelte.ts)
-    //   Lies_log_want        — record a suppressed write intent for test assertions
-    //
-    // ── What req:Cortex replaces ──────────────────────────────────────────────
-    //
-    //   compile_pending      — was w.oai({compile_pending:1,path}); now req:Cortex,path
-    //                          same idempotent shape, proper req lifecycle, no Store coupling.
-    //   write_t0 on pending  — now cortex.c.write_t0 (transient, same semantics)
-    //   Ghost_update_notify / Lies_compile_settled in req_LiesStore_write_done
-    //                        — those fire from req_Cortex now; Store is unaware of compiles.
-    //
     // ── Particle layout ───────────────────────────────────────────────────────
     //
-    //   w/{req:'Cortex',path}     — one per in-flight gen/ compile; oai so
-    //                               re-compile for same path overwrites payload.
-    //     sc.gen_path             — gen/ write target (e.g. gen/test/Foo.go)
-    //     sc.source_dige          — threads through to Ghost_update_notify
-    //     c.write_t0              — Date.now() at park; for write_ms accounting
+    //   w/req:Cortex,maz:5,eternal    — one foreman; drives its children via
+    //                                   handler_of_last_resort each tick.
+    //                                   maz:5 runs below req:Store (maz:7) —
+    //                                   Store pumps IO and sets ok first.
+    //                                   No explicit LiesCortex_run call needed.
     //
-    // ── req:Cortex lifecycle ──────────────────────────────────────────────────
+    //   w/req:Cortex/req:Codebit,path — one per in-flight gen/ compile; oai so
+    //                                   a re-compile for the same path overwrites.
+    //     maz:2   — write-wait phase; returns until write_finished stamp arrives
+    //               from req_Store Phase 1, then parks its Rundown and finishes.
+    //     sc.gen_path, sc.source_dige, c.write_t0
     //
-    //   e_Lies_compiled parks it with gen_path + source_dige, sets c.write_t0.
-    //   LiesCortex_run drives rq.do() each tick after LiesStore_run completes —
-    //   so req:Cortex always runs after writes have been processed.
-    //   req_Cortex checks whether the LiesStore_write for gen_path has finished.
-    //   When it has, fire the two settle signals and finish.
-    //   nogen / nowriting: settle fires immediately in e_Lies_compiled, no Cortex parked.
+    //   w/req:Cortex/req:Rundown,path — one per settled compile; maz:1.
+    //     maz:1   — notify phase; fires Ghost_update_notify → Pantheate,
+    //               Lies_compile_settled → Lang, then finishes.
+    //     Created by req_Codebit when the write lands.
+    //     < JS import-check path (import without running, fake H) — future.
     //
-    // ── The state change Cortex sees ──────────────────────────────────────────
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
     //
-    //   Cortex doesn't need an explicit signal from the Store.
-    //   LiesStore_run Phase 1 processes finished writes and drops them.
-    //   After that, LiesCortex_run fires, rq.do() re-checks all open Cortex reqs.
-    //   req_Cortex scans req:Store's children for a finished write matching gen_path.
-    //   The write still exists in req:Store at that point because Phase 1 drops
-    //   it only after req_LiesStore_write_done returns — and LiesCortex_run runs
-    //   after LiesStore_run in the same tick.  No signal needed: the reqy heartbeat
-    //   is the signal.
+    //   e_Lies_compiled
+    //     → LiesStore_write(gen_path, source)
+    //     → LiesCortex_arm: ensure req:Cortex eternal on w
+    //     → park req:Codebit,path inside req:Cortex  (oai — re-compile overwrites)
     //
-    // ── Soft-compile path ─────────────────────────────────────────────────────
+    //   H.reqy(w).do() in the Lies tick
+    //     → maz:7 req:Store pumps IO, sets ok
+    //     → maz:5 req:Cortex (handler_of_last_resort drives its children)
+    //       → maz:2 req:Codebit — waits for write_finished stamp, then parks Rundown
+    //       → maz:1 req:Rundown — fires Ghost_update_notify + Lies_compile_settled
     //
-    //   No gen_path → Lang_compile_dock settles immediately (no write needed).
-    //   e_Lies_compiled is only fired for hard-compiles (LangCompiling gates on gen_path).
-    //   Cortex never sees soft-compiles.
+    // ── nogen / softgen / nowriting paths ────────────────────────────────────
+    //
+    //   No write → e_Lies_compiled settles immediately; no Codebit/Rundown parked.
 
     // File extensions that produce gen/ output.
     // Everything else is soft-compile only regardless of Ghost/ location.
@@ -114,23 +85,14 @@
     //
     //   Fired by LangCompiling for every compile that has a gen_path.
     //   Decides how the output lands — write, softgen, nogen, or nowriting —
-    //   then either settles immediately or parks req:Cortex to wait for the write.
+    //   then either settles immediately or parks req:Codebit inside req:Cortex.
     //
-    //   ── Opt decisions ────────────────────────────────────────────────────────
     //   nogen      — skip write + Pantheate notify; settle immediately.
-    //                The %Output is visible in the snap but gen/ file never written.
-    //   softgen    — same settle-immediately behaviour as nogen, but signals intent:
-    //                "this is a gen-able file and I'd like to see Output, just don't
-    //                write it yet."  Useful in tests and dev flows where the file
-    //                content matters but disk writes are noise.
-    //   nowriting  — regex-gated suppression (any path matching the pattern);
-    //                logs the write intent via Lies_log_want for test assertions.
-    //                Different from softgen: nowriting also blocks Waft + source
-    //                writes; softgen only affects gen/ writes.
-    //   (default)  — write gen_path to disk via LiesStore_write, park req:Cortex.
+    //   softgen    — same settle-immediately; signals intent without writing gen/.
+    //   nowriting  — regex-gated suppression; logs intent via Lies_log_want.
+    //   (default)  — write gen_path to disk, park req:Codebit to await completion.
     //
     //   e.sc: { path, gen_path, source, source_dige }
-    //   (dige not needed here — LiesStore_write diges internally)
     async e_Lies_compiled(A: TheC, w: TheC, e: TheC) {
         const H           = this as House
         const path        = e.sc.path        as string
@@ -161,44 +123,81 @@
         await H.LiesStore_write(w, gen_path, source, { rw_name: `src/lib/${gen_path}` })
         // < surface write errors when reply carries one.
 
-        // Park req:Cortex — oai so a re-compile for the same path overwrites payload.
-        // write_t0 on .c: transient, not in snap.  req_Cortex uses it for write_ms.
-        const cortex = await H.reqy(w).roai({ req: 'Cortex', path }, { gen_path, source_dige })
-        cortex.c.write_t0 = Date.now()
+        // Ensure req:Cortex foreman exists, then park a Codebit for this path.
+        // Codebit is oai — re-compile for the same path overwrites payload cleanly.
+        const cortex  = await H.LiesCortex_arm(w)
+        const codebit = H.reqy(cortex).o({ req: 'Codebit', path })[0] as TheC | undefined
+            ?? await H.reqy(cortex).roai({ req: 'Codebit', path, maz: 2 }, { gen_path, source_dige })
+        codebit.c.write_t0 = Date.now()
 
         H.i_elvisto(w, 'think')
     },
 
-//#endregion
-//#region req_Cortex
+    // ── LiesCortex_arm ────────────────────────────────────────────────────────
+    //
+    //   Ensure req:Cortex exists on w — the eternal foreman for all compile jobs.
+    //   maz:5 puts it below req:Store (maz:7) in the tick's do() pass.
+    //   handler_of_last_resort drives its req:Codebit/** + req:Rundown/** children
+    //   without needing an explicit req_Cortex do_fn.
+    async LiesCortex_arm(w: TheC): Promise<TheC> {
+        return (this as House).reqy(w).roai({ req: 'Cortex', eternal: 1, maz: 5 })
+    },
 
-    // ── req_Cortex — compile-and-settle do_fn ─────────────────────────────────
+//#endregion
+//#region req_Codebit — write-wait phase
+
+    // ── req_Codebit ───────────────────────────────────────────────────────────
     //
-    //   Drives one parked Cortex req across ticks.
-    //   Waits for the LiesStore_write for gen_path to appear as finished in
-    //   req:Store's children, then fires the two settle signals and finishes.
+    //   do_fn for req:Codebit,path (maz:2 child of req:Cortex).
+    //   Waits for req_Store Phase 1 to stamp sc.write_finished, then parks
+    //   req:Rundown (maz:1) and finishes.
     //
-    //   req.c.up = w (Cortex reqs live directly on w, not inside req:Store).
-    //
-    //   The write req is still present in req:Store when we check — LiesStore_run
-    //   Phase 1 drops it only after req_LiesStore_write_done returns, and
-    //   LiesCortex_run runs after LiesStore_run in the same tick.
-    async req_Cortex(req: TheC, q: any) {
-        const H        = this as House
-        const w        = req.c.up  as TheC
+    //   req.c.up = req:Cortex; w = req.c.up.c.up
+    async req_Codebit(req: TheC, q: any) {
+        const H    = this as House
+        const cortex = req.c.up as TheC
+        const w      = cortex.c.up as TheC
         const path     = req.sc.path     as string
         const gen_path = req.sc.gen_path as string
 
-        // find the matching finished LiesStore_write inside req:Store
-        if (!req.sc.write_finished) return   // Phase 1 of req_Store stamps this when the write lands
-
+        if (!req.sc.write_finished) return   // req_Store Phase 1 stamps this when write lands
 
         const write_ms = req.c.write_t0
             ? Date.now() - (req.c.write_t0 as number)
             : undefined
 
-        // Notify Pantheate first — dynamic import needs the file on disk.
-        // source_dige lets req:include confirm the right version is live.
+        // Park req:Rundown to fire the notify signals.
+        // Rundown is maz:1 so it runs after any remaining maz:2 Codebits this tick.
+        const rq = H.reqy(cortex)
+        await rq.roai({ req: 'Rundown', path }, {
+            gen_path,
+            source_dige: req.sc.source_dige,
+            write_ms:    write_ms != null ? +(write_ms / 1000).toFixed(3) : undefined,
+        })
+
+        q.finish(req)
+    },
+
+//#endregion
+//#region req_Rundown — notify phase
+
+    // ── req_Rundown ───────────────────────────────────────────────────────────
+    //
+    //   do_fn for req:Rundown,path (maz:1 child of req:Cortex).
+    //   Fires Ghost_update_notify → Pantheate and Lies_compile_settled → Lang,
+    //   then finishes.  Pantheate notify goes first — dynamic import needs the
+    //   file on disk; source_dige lets req:include confirm the right version.
+    //
+    //   < JS import-check: import without running using a fake H that doesn't
+    //     distribute methods — validates the gen file compiles before notifying.
+    //
+    //   req.c.up = req:Cortex; w = req.c.up.c.up
+    async req_Rundown(req: TheC, q: any) {
+        const H    = this as House
+        const path      = req.sc.path       as string
+        const gen_path  = req.sc.gen_path   as string
+        const write_ms  = req.sc.write_ms   as number | undefined
+
         if (req.sc.source_dige) {
             H.i_elvisto('Pantheate/Pantheate', 'Ghost_update_notify', {
                 include:     gen_path,
@@ -208,30 +207,10 @@
         }
         H.i_elvisto('Lang/Lang', 'Lies_compile_settled', {
             path,
-            write_ms: write_ms != null ? +(write_ms / 1000).toFixed(3) : undefined,
+            write_ms,
         })
-        console.log(`🔪 Lies compile settled: ${path} [write+run] write=${write_ms}ms`)
+        console.log(`🔪 Lies compile settled: ${path} [write+run] write=${write_ms != null ? write_ms * 1000 : '?'}ms`)
         q.finish(req)
-    },
-
-//#endregion
-//#region LiesCortex_run
-
-    // ── LiesCortex_run ────────────────────────────────────────────────────────
-    //
-    //   Called from the Lies tick, after LiesStore_run completes.
-    //   req_Store Phase 1 stamps req:Cortex.sc.write_finished when a write lands,
-    //   so req_Cortex can run in any order relative to req_Store — the stamp is
-    //   the handoff, not the tick position.
-    async LiesCortex_run(A: TheC, w: TheC) {
-        const H  = this as House
-        const rq = H.reqy(w)
-        await rq.do()
-
-        // drop finished Cortex reqs (they've fired their settle signals)
-        for (const req of rq.o({ req: 'Cortex' }) as TheC[]) {
-            if (req.sc.finished) w.drop(req)
-        }
     },
 
 //#endregion
@@ -310,89 +289,3 @@
     })
     })
 </script>
-
-<!--
-── Changes elsewhere once LiesCortex is wired ───────────────────────────────
-
-── Lies.svelte: main tick ───────────────────────────────────────────────────
-
-    async Lies(A: TheC, w: TheC) {
-        ...
-        const settled = await this.LiesPersist(A, w)
-        if (!settled) return
-
-        // LiesRealised no longer touches compile_pending.
-        // It holds: desire/acquire/timemachine, git, wants, Furnishing.
-        await this.LiesRealised(A, w)
-
-        await this.LiesCurse(A, w)
-        await this.LiesStore_run(A, w)
-
-        // Cortex runs after Store — write reqs processed before Cortex inspects them.
-        await this.LiesCortex_run(A, w)
-        ...
-    }
-
-── Lies.svelte: LiesRealised — airlock loop removed ─────────────────────────
-
-    async LiesRealised(A: TheC, w: TheC) {
-        const H = this as House
-
-        // < write airlock (compile_pending loop) gone — moved to e_Lies_compiled
-        //   and req_Cortex in LiesCortex.  req:Cortex,path replaces compile_pending.
-
-        // ── req:desire — the Waft lock + the timemachine seed (§3f) ──────────
-        ... (unchanged)
-
-        // ── req:git — Waftlet accumulator ────────────────────────────────────
-        ... (unchanged)
-
-        // ── req:wants — cursor-intent accumulator (§3e) ──────────────────────
-        ... (unchanged)
-
-        // ── req:Furnishing — doc-open as an RPC (§3i) ────────────────────────
-        ... (unchanged)
-
-        await H.reqy(w).do()
-    }
-
-── Lies.svelte: methods removed ─────────────────────────────────────────────
-
-    o_Opt_val       → LiesCortex.svelte
-    Lies_nowriting  → LiesCortex.svelte
-    Lies_gen_path   → LiesCortex.svelte
-    Lies_codetype   → LiesCortex.svelte
-    e_Lies_compiled → LiesCortex.svelte  (replaces compile_pending park + LiesStore_write call)
-
-    GEN_ABLE_CODETYPES    → LiesCortex.svelte
-    SECOND_LEVEL_FILETYPES → LiesCortex.svelte
-
-── LiesStore.svelte: req_LiesStore_write_done — compile block removed ────────
-
-    async req_LiesStore_write_done(w: TheC, req: TheC) {
-        ...
-        // stamp base_dige on loaded_doc — unchanged
-        // stamp Store/known:path — unchanged
-        // console.log write — unchanged
-
-        // < compile_pending lookup + Ghost_update_notify + Lies_compile_settled
-        //   gone — those fire from req_Cortex in LiesCortex.  Store no longer
-        //   knows about compiles.
-
-        const host = await H.LiesStore_req(w)
-        host.drop(req)
-    }
-
-── LiesStore.svelte: Lies_log_want removed ───────────────────────────────────
-
-    Lies_log_want → LiesCortex.svelte
-    // LiesStore.svelte still calls H.Lies_log_want for waft_save and source_write
-    // paths — those calls are unchanged; the method just lives elsewhere.
-
-── Housing.svelte (or Lies component list): wire LiesCortex ─────────────────
-
-    // Add LiesCortex alongside the other Lies* ghosts so its eatfunc methods
-    // are available on H before the first Lies tick runs.
-    <LiesCortex {M} />
--->
-
