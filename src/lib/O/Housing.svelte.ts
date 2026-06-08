@@ -667,6 +667,28 @@ export class House extends StorableHousing {
         this.main(true)
     }
 
+    // each_keys: a guard for keyed {#each}.  Svelte's each_key_duplicate names the
+    //   key and two indexes but not the rows behind them, leaving a human to count —
+    //   this throws with both colliding rows attached, so the clash is a glance.
+    //   ids with keyser, never JSON.stringify — a C can hold src:%dock and friends,
+    //   which JSON either chokes on or splays out; keyser bounds it the way a snap does.
+    //   No keyer given ids each item by keyser, so H.each_keys(someCs) just works;
+    //   else wrap the source: {#each H.each_keys(rows, r => r.key) as r (r.key)}
+    //   Returns the list untouched when every key is one-to-one.
+    each_keys<T>(list: T[], key?: (item: T, i: number) => unknown, label = 'each'): T[] {
+        const id    = (x: any) => x == null || typeof x !== 'object' ? String(x) : keyser(x)
+        const keyer = key ?? ((item: any) => item instanceof TheC ? keyser(item) : item)
+        const seen  = new Map<unknown, { i: number, item: T }>()
+        list.forEach((item, i) => {
+            const k   = keyer(item, i)
+            const had = seen.get(k)
+            if (had) throw `${label}: duplicate key ${id(k)} at ${had.i} and ${i}\n`
+                + `  a: ${id(had.item)}\n  b: ${id(item)}`
+            seen.set(k, { i, item })
+        })
+        return list
+    }
+
     // -------------------------------------------------------------------------
     // _expand_Aw: convert e.sc.Aw string into e/%Aw_path segments.
     // -------------------------------------------------------------------------
