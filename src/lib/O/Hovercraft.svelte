@@ -398,6 +398,8 @@
                         // have its protocol
                         const rq = H.reqy(req, {k})
                         // jumps into the many req/*req here
+                        // < less difficult to analyse? it's similar but less than feebly_ponder()...
+                        H.trace('reqy',`unhandled req (${keyser(req.sc)}), will do() them all`)
                         await rq.do()
                         // becomes req%finished when they are
                         rq.unify_finished(q)
