@@ -304,7 +304,10 @@
             // do them all
             async do(fn?: Function) {
                 while (true) {
-                    const N = q.o().filter((req: TheC) => !req.sc.finished)
+                    // < WIP. possibly want to do() eg req:Store all the time?
+                    //    having %ok when it is client-readable
+                    let has_needs = (req) => req.sc.finished || req.sc.ok
+                    const N = q.o().filter((req: TheC) => !has_needs(req))
                     if (!N.length) return
 
                     const maz_high = Math.max(...N.map((req: TheC) => req.sc.maz || 1))

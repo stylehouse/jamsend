@@ -1,18 +1,27 @@
 <script lang="ts">
     // LiesStore.svelte — reqy-backed IO for w:Lies.
     //
-    // ── Channels ─────────────────────────────────────────────────────────────
+    // ── What this is ─────────────────────────────────────────────────────────
     //
-    //   All live inside req:Store (itself in w's reqcons) so the %ttlilt walker
-    //   finds them and LiesStore_run's single rq.do() drives them all.
+    //   LiesStore is the IO protocol for Lies.  It owns one eternal req — req:Store
+    //   — that sits on w and drives itself.  Nothing outside calls LiesStore_run
+    //   or processes write completions manually; req:Store's do_fn is the pump.
     //
-    //   %req:LuxuryLiesStore_write,path   — source-file save with pull-before-push.
-    //                                       Keyed by path (noserial reqy); one slot per doc.
-    //   %req:LiesStore_write,path,dige    — one stable req per (path, content-hash) pair.
-    //   %req:LiesStore_read,rw_name       — one stable req per wormhole path (+ optional label).
-    //   %req:LiesStore_listing,rw_dir     — one stable req per directory path.
+    //   Because req:Store is an eternal reqy child of w, the w(/req)+ %ttlilt
+    //   walker finds all IO reqs naturally, and H.reqy(w).do() in the Lies tick
+    //   enters req_Store without any special wiring.  The four "unhandled req"
+    //   trace lines that appeared before req_Store existed are gone.
     //
-    //   %Store:1 holds w/Store/known:path — last known dige + kind (read|write) + at timestamp.
+    // ── Channels (children of req:Store) ─────────────────────────────────────
+    //
+    //   req:LuxuryLiesStore_write,path  — source-file save with pull-before-push.
+    //                                    Keyed by path (noserial reqy); one slot per doc.
+    //   req:LiesStore_write,path,dige   — one stable req per (path, content-hash) pair.
+    //   req:LiesStore_read,rw_name      — one stable req per wormhole path (+ optional label).
+    //   req:LiesStore_listing,rw_dir    — one stable req per directory path.
+    //   known:path                      — last known dige + kind (read|write) + at timestamp.
+    //                                    Lives inside req:Store (not on w) — Store's private
+    //                                    memory of disk state belongs with the Store's reqs.
     //
     // ── API ───────────────────────────────────────────────────────────────────
     //
@@ -23,19 +32,42 @@
     //   if (!req2?.sc.finished) { w.i({see:'⏳ …'}); return false }
     //   if (!req3.sc.finished)  { w.i({see:'⏳ …'}); return false }
     //
+    // ── req:Store do_fn — the pump ────────────────────────────────────────────
+    //
+    //   req_Store drives all IO children, then processes completions:
+    //
+    //   Phase 1 — write completions:
+    //     For each finished req:LiesStore_write — stamp base_dige on loaded_doc
+    //     (source files), record known impression, signal Cortex if a matching
+    //     req:Cortex is waiting (write_finished stamp), then drop the req.
+    //     Only LiesStore_write reqs need this; LuxuryLiesStore_write finishes
+    //     silently — its inner LiesStore_write sibling carries the actual IO.
+    //
+    //   Phase 2 — read completions:
+    //     For each finished req:LiesStore_read — record known impression on first
+    //     pass (stamp sc.seen); drop on second pass (next req_Store entry).
+    //     Two passes because req_Store runs inside H.reqy(w).do() which LiesPersist
+    //     also calls — a same-pass drop removes the req before LiesPersist reads
+    //     reply, causing a tailspin re-dispatch.  Never drop before roai returns.
+    //
+    //   Phase 3 — listing completions:
+    //     Drop finished req:LiesStore_listing reqs.
+    //
+    //   req:Store never finishes (eternal:1) — it keeps running each tick.
+    //
     // ── Write behaviour ───────────────────────────────────────────────────────
     //
     //   Dige-keyed: same content → same req (natural dedup).  LiesStore_write
     //   drops finished write reqs for the path before roai so stale completions
     //   never block a fresh write.  %ttlilt advises Story to wait while in flight.
-    //   LiesStore_run Phase 1 handles completions via req_LiesStore_write_done.
+    //   Phase 1 of req_Store handles completions.
     //
     // ── Read behaviour ────────────────────────────────────────────────────────
     //
     //   LiesStore_read fires i_elvis_req immediately (idempotent via req_sent).
     //   %ttlilt advises Story to wait while in flight.  Callers check
-    //   req.sc.finished; LiesStore_run Phase 2 drops finished reads after
-    //   LiesPersist in the same tick so callers always get to read reply.
+    //   req.sc.finished; Phase 2 drops finished reads after LiesPersist in the
+    //   same tick so callers always get to read reply.
     //
     //   Must NOT drop finished reads before roai — that re-dispatches every tick.
     //
@@ -44,13 +76,20 @@
     //   LiesStore_listing fires i_elvis_req immediately (same idempotency as read).
     //   %ttlilt advises Story to wait while in flight.
     //
-    // ── req:Store ─────────────────────────────────────────────────────────────
+    // ── known impressions ─────────────────────────────────────────────────────
     //
-    //   All IO reqs live inside req:Store so the w(/req)+ %ttlilt pickup applies
-    //   and LiesStore_run's single rq.do() drives them all.
+    //   req:Store/known:path carries dige + kind (read|write) + at (unix seconds).
+    //   req_LuxuryLiesStore_write uses it for the cavalier skip: if the impression
+    //   is recent enough and its dige matches base_dige, skip the Wormhole read.
+    //   LiesStore_store(w) returns req:Store — the one place to find known:path.
     //
-    //   %Store:1 holds w/Store/known:path for each path we've read|written.
-    //   w/req:Store is eternal — born once, never finished by unify_finished.
+    // ── Cortex handoff ────────────────────────────────────────────────────────
+    //
+    //   When Phase 1 processes a finished write, it checks whether a req:Cortex
+    //   with matching gen_path is waiting.  If so, it stamps req:Cortex with
+    //   sc.write_finished=1 before dropping the write req.  req_Cortex checks
+    //   that stamp rather than scanning req:Store's children — the tick-ordering
+    //   dependency is replaced by an explicit handoff.
     //
     // ── Waft higher-level ops ─────────────────────────────────────────────────
     //
@@ -175,22 +214,120 @@
     },
 
 //#endregion
-//#region LiesStore
-
-    LiesStore_store(w: TheC): TheC {
-        const store = w.oai({ Store: 1 })
-        store.c.up ||= w
-        return store
-    },
+//#region req:Store — the IO pump
 
     // ── LiesStore_req ─────────────────────────────────────────────────────────
     //
-    //   Returns (or creates) the w/req:Store particle — the host for all IO reqs.
-    //   Routing them through req:Store means the w(/req)+ %ttlilt picker naturally
-    //   finds them all.
+    //   Returns (or creates) w/req:Store — the host for all IO reqs and known
+    //   impressions.  eternal:1 means reqy never finishes it via unify_finished.
+    //   All IO reqs are children here so the w(/req)+ %ttlilt picker finds them,
+    //   and H.reqy(w).do() enters req_Store naturally each tick.
     async LiesStore_req(w: TheC): Promise<TheC> {
-        return this.reqy(w).roai({req:'Store',eternal:1}) // eternal means it doesn't finish
+        return this.reqy(w).roai({ req: 'Store', eternal: 1 })
     },
+
+    // ── LiesStore_store ───────────────────────────────────────────────────────
+    //
+    //   Returns req:Store — the home for known:path impression particles.
+    //   Callers treat the return value as an opaque impression container;
+    //   they oai({known:path}) on it and read sc.dige / sc.kind / sc.at.
+    async LiesStore_store(w: TheC): Promise<TheC> {
+        return (this as House).LiesStore_req(w)
+    },
+
+    // ── req_Store ─────────────────────────────────────────────────────────────
+    //
+    //   do_fn for req:Store.  Drives all IO children, then processes completions.
+    //   Runs each tick via H.reqy(w).do() in the Lies tick — no manual pump call.
+    //
+    //   Ordering: req_Store processes writes before returning.  req:Cortex reqs
+    //   that wait on a write handoff read req:Cortex.sc.write_finished, stamped
+    //   here in Phase 1, so LiesCortex_run (which follows) can run in any order.
+    //
+    //   req:Store never finishes (eternal:1) — it keeps running each tick.
+    async req_Store(req: TheC, q: any) {
+        const H = this as House
+        const w = req.c.up as TheC   // req:Store → w
+        const rq = H.reqy(req)
+        await rq.do()
+
+        // ── Phase 1: LiesStore_write completions ──────────────────────────────
+        //   Stamp base_dige + known impression, hand off to Cortex if waiting,
+        //   then drop the req.
+        //   LuxuryLiesStore_write finishes silently — its inner LiesStore_write
+        //   sibling carries the actual IO and is the one that lands here.
+        for (const wr of rq.o({ req: 'LiesStore_write' }) as TheC[]) {
+            if (!wr.sc.finished) continue
+            const path  = wr.sc.path  as string
+            const reply = wr.sc.reply as any
+
+            if (reply?.error) {
+                console.error(`💾 LiesStore write error on ${path}:`, reply.error)
+            } else {
+                // Stamp base_dige on the loaded_doc so the source-write gate works.
+                // Only source files have a loaded_doc; gen/ writes skip the stamp.
+                const ld = w.o({ loaded_doc: 1, path })[0] as TheC | undefined
+                if (ld) {
+                    ld.sc.base_dige = wr.sc.dige as string
+                    // < disk_dige on the dock's %Text lives on w:Lang, not w:Lies.
+                    //   carry it via Lies_compile_settled or a thin event — the
+                    //   cross-world lookup here would be a no-op.
+                }
+                console.log(`💾 LiesStore wrote ${path} (${(wr.sc.rw_data as string)?.length ?? 0}c)`)
+
+                // Record a lasting impression for the cavalier skip in LuxuryLiesStore_write.
+                const known = req.oai({ known: path })
+                known.sc.dige = wr.sc.dige as string
+                known.sc.kind = 'write'
+                known.sc.at   = Date.now() / 1000
+
+                // Cortex handoff: if a req:Cortex is waiting for this gen_path write,
+                // stamp it now so req_Cortex can check the flag rather than scanning
+                // req:Store's children (which we're about to drop).
+                const gen_path = wr.sc.path as string
+                const cortex = (H.reqy(w).o({ req: 'Cortex', path: gen_path }) as TheC[])
+                    .find(r => !r.sc.finished && !r.sc.write_finished)
+                if (cortex) cortex.sc.write_finished = 1
+            }
+            req.drop(wr)
+        }
+
+        // ── Phase 2: LiesStore_read completions ───────────────────────────────
+        //   Two-pass drop: first pass stamps sc.seen + records the known impression;
+        //   second pass (next req_Store entry) drops.
+        //
+        //   Why two passes: req_Store runs as a do_fn inside H.reqy(w).do(), which
+        //   LiesPersist calls.  A read dropped immediately in Phase 2 is gone before
+        //   LiesPersist checks req.sc.finished — causing a re-dispatch every tick
+        //   (the tailspin).  The seen stamp gives callers one full rq.do() cycle
+        //   to read reply before the req disappears.
+        //
+        //   Must NOT drop before roai returns — that re-dispatches every tick.
+        for (const rd of rq.o({ req: 'LiesStore_read' }) as TheC[]) {
+            if (!rd.sc.finished) continue
+            if (rd.sc.seen) {
+                req.drop(rd)
+                continue
+            }
+            // first pass: stamp impression and mark seen; drop next cycle
+            const content = rd.sc.reply?.content as string | undefined
+            if (content != null) {
+                const known = req.oai({ known: rd.sc.rw_name as string })
+                known.sc.dige = await dig(content)
+                known.sc.kind = 'read'
+                known.sc.at   = Date.now() / 1000
+            }
+            rd.sc.seen = 1
+        }
+
+        // ── Phase 3: LiesStore_listing completions ────────────────────────────
+        for (const ls of rq.o({ req: 'LiesStore_listing' }) as TheC[]) {
+            if (ls.sc.finished) req.drop(ls)
+        }
+    },
+
+//#endregion
+//#region IO API — write / read / listing
 
     // ── LiesStore_write ───────────────────────────────────────────────────────
     //
@@ -212,7 +349,7 @@
 
         const host = await H.LiesStore_req(w)
         const wq   = H.reqy(host)
-        wq.drop_finished({req: 'LiesStore_write', path})
+        wq.drop_finished({ req: 'LiesStore_write', path })
 
         // < not necessary given req%mutated, which should be how we trigger resends
         //    we are going to fail to 'eventual consistency' I think
@@ -292,7 +429,7 @@
         return { waft_C, errors, not_found: false }
     },
 
-    // ── LiesStore_listing ────────────────────────────────────────────────────
+    // ── LiesStore_listing ─────────────────────────────────────────────────────
     //
     //   reply.entries: Array<{ name: string, is_dir: boolean }>
     //   reply.not_found: true when the directory doesn't exist.
@@ -311,16 +448,19 @@
         return req
     },
 
+//#endregion
+//#region req_LuxuryLiesStore_write
+
     // ── req_LuxuryLiesStore_write ─────────────────────────────────────────────
     //
     //   Drives one parked source-file save across ticks.  Lives inside req:Store
-    //   so the %ttlilt walker finds it and LiesStore_run's rq.do() drives it.
+    //   so the %ttlilt walker finds it and req_Store's rq.do() drives it.
     //
     //   req.c.up = req:Store, so w = req.c.up.c.up.
     //
     //   Steps:
     //     1. content gate — dige matches base_dige → already on disk → finish.
-    //     2. pull-before-push read.  Cavalier skip: if Store/known:path is recent
+    //     2. pull-before-push read.  Cavalier skip: if known:path is recent
     //        (< LUXURY_WRITE_SKIP_CHECK_SECS) and dige matches, trust it, skip read.
     //     3. disk dige diverged from base_dige → external edit: stamp
     //        /surprise_read (stashing text for a future "push anyway") → finish.
@@ -330,7 +470,8 @@
     //   < the surprise path blocks the write but doesn't yet resume it.
     async req_LuxuryLiesStore_write(req: TheC, q: any) {
         const H    = this as House
-        const w    = req.c.up?.c.up as TheC   // req → req:Store → w
+        const host = req.c.up as TheC              // req → req:Store
+        const w    = host.c.up as TheC             // req:Store → w
         const path = req.sc.path as string
         const text = req.sc.text as string
         const dige = req.sc.dige as string
@@ -351,10 +492,9 @@
         if (base_dige && dige === base_dige) return q.finish(req)
 
         // Pull-before-push: read disk, compare to what we loaded.
-        // Cavalier skip: if Store/known:path is recent enough and its dige matches
+        // Cavalier skip: if known:path is recent enough and its dige matches
         // base_dige, trust our last impression — skip the Wormhole read.
-        const Store = H.LiesStore_store(w)
-        const known = Store.o({ known: path })[0] as TheC | undefined
+        const known     = host.o({ known: path })[0] as TheC | undefined
         const known_age = known ? (Date.now() / 1000) - (known.sc.at as number) : Infinity
         const skip_check = !!known && known_age < LUXURY_WRITE_SKIP_CHECK_SECS
             && known.sc.dige === base_dige
@@ -384,88 +524,6 @@
         await H.LiesStore_write(w, path, text)
         for (const sr of ld.o({ surprise_read: 1 }) as TheC[]) ld.drop(sr)
         q.finish(req)
-    },
-
-    // ── req_LiesStore_write_done — Store concerns only ────────────────────────
-    //
-    //   Stamps base_dige on loaded_doc (source files only), records the known
-    //   impression in %Store:1/known:path, drops the finished req.
-    //   Compile-settle (Ghost_update_notify / Lies_compile_settled) moved to
-    //   req_Cortex in LiesCortex — Store no longer knows about compiles.
-    async req_LiesStore_write_done(w: TheC, req: TheC) {
-        const H     = this as House
-        const path  = req.sc.path  as string
-        const reply = req.sc.reply as any
-
-        if (reply?.error) {
-            console.error(`💾 LiesStore write error on ${path}:`, reply.error)
-        } else {
-            const ld = w.o({ loaded_doc: 1, path })[0] as TheC | undefined
-            if (ld) {
-                ld.sc.base_dige = req.sc.dige as string
-                // Update disk_dige on the dock's Text child so Langui's change
-                // strip sees it without an extra cross-world round-trip.
-                // Only source files have a loaded_doc; gen/ writes skip this.
-                const dock = w.o({ docks: 1 })[0]?.o({ dock: path })[0] as TheC | undefined
-                if (dock) {
-                    await dock.moai({ Text: 1 }, { disk_dige: req.sc.dige as string })
-                }
-            }
-            console.log(`💾 LiesStore wrote ${path} (${(req.sc.rw_data as string)?.length ?? 0}c)`)
-
-            // Keep a lasting impression of what's on disk for this path.
-            const Store = H.LiesStore_store(w)
-            const known = Store.oai({ known: path })
-            known.sc.dige = req.sc.dige as string
-            known.sc.kind = 'write'
-            known.sc.at   = Date.now() / 1000
-        }
-        const host = await H.LiesStore_req(w)
-        host.drop(req)
-    },
-
-    // ── LiesStore_run ─────────────────────────────────────────────────────────
-    //
-    //   Called from the Lies tick after LiesPersist + LiesCurse.
-    //   rq.do() drives all children of req:Store.
-    //   LiesCortex_run runs after this — ordering matters: writes processed first,
-    //   then req:Cortex inspects finished writes.
-    async LiesStore_run(A: TheC, w: TheC) {
-        const H    = this as House
-        const host = await H.LiesStore_req(w)
-        const rq   = H.reqy(host)
-        await rq.do()
-
-        // ── Phase 1: LiesStore_write completions ──────────────────────────────
-        //   Only LiesStore_write reqs need the done callback (LuxuryLiesStore_write
-        //   finishes silently — its LiesStore_write sibling carries the actual IO).
-        for (const req of rq.o() as TheC[]) {
-            if (req.sc.finished) {
-                if (req.sc.req == 'LiesStore_write') H.req_LiesStore_write_done(w, req)
-                host.drop(req)
-            }
-        }
-
-        // ── Phase 2: drop finished reads (after LiesPersist sees them) ────────
-        //   Stamp Store/known:path so LuxuryLiesStore_write can skip its disk check.
-        for (const req of rq.o({ req: 'LiesStore_read' }) as TheC[]) {
-            if (req.sc.finished) {
-                const content = req.sc.reply?.content as string | undefined
-                if (content != null) {
-                    const Store = H.LiesStore_store(w)
-                    const known = Store.oai({ known: req.sc.rw_name as string })
-                    known.sc.dige = await dig(content)
-                    known.sc.kind = 'read'
-                    known.sc.at   = Date.now() / 1000
-                }
-                host.drop(req)
-            }
-        }
-
-        // ── Phase 3: drop finished listings ───────────────────────────────────
-        for (const req of rq.o({ req: 'LiesStore_listing' }) as TheC[]) {
-            if (req.sc.finished) host.drop(req)
-        }
     },
 
 //#endregion

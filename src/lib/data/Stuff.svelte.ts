@@ -326,6 +326,7 @@ class StuffIO {
         return this.o(s)[0] || this.i({...s,...c})
     }
     // as above but you want it replaced when these intended C%* change
+    //  similar to and see also: reqy().roai() which informs of req%mutated
     async roai(s, c = {}) {
         return await this.something_oai(s,c,{
             mutated_fn: async (C,s,c) => this.r(s,c)

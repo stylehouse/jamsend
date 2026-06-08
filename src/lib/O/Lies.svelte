@@ -257,7 +257,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         // nogen:   skip write + Pantheate notify entirely (soft-compile only)
         // softgen: render Output but don't write gen/ to disk — for dev/test flows
 
-        // ── LiesPersist — all disk IO; must settle before LiesRealised runs ────
+        // ── req:Store — all disk IO; must settle before LiesRealised runs ────
         const settled = await this.LiesPersist(A, w)
         if (!settled) return
 
@@ -266,8 +266,6 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
         // ── LiesCurse — cursor wiring (runs every post-settle tick) ──────────
         await this.LiesCurse(A, w)
-        // ── LiesStore — drive write/read IO reqs ─────────────────────────────
-        await this.LiesStore_run(A, w)
         // ── LiesCortex — compile-and-settle; after Store so writes are processed
         await this.LiesCortex_run(A, w)
 

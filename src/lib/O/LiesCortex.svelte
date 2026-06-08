@@ -84,12 +84,6 @@
     //   after LiesStore_run in the same tick.  No signal needed: the reqy heartbeat
     //   is the signal.
     //
-    // ── Why not stamp cortex.sc.write_finished from Phase 1? ─────────────────
-    //
-    //   We could — and if the ordering ever shifts it would be the safer gate.
-    //   For now: tick ordering (LiesStore_run → LiesCortex_run) is the guarantee.
-    //   < if that ordering becomes fragile, have Phase 1 stamp cortex directly.
-    //
     // ── Soft-compile path ─────────────────────────────────────────────────────
     //
     //   No gen_path → Lang_compile_dock settles immediately (no write needed).
@@ -196,10 +190,8 @@
         const gen_path = req.sc.gen_path as string
 
         // find the matching finished LiesStore_write inside req:Store
-        const host  = await H.LiesStore_req(w)
-        const write = (H.reqy(host).o({ req: 'LiesStore_write', path: gen_path }) as TheC[])
-            .find(r => r.sc.finished)
-        if (!write) return   // not yet — re-driven next tick by LiesCortex_run
+        if (!req.sc.write_finished) return   // Phase 1 of req_Store stamps this when the write lands
+
 
         const write_ms = req.c.write_t0
             ? Date.now() - (req.c.write_t0 as number)
@@ -228,8 +220,9 @@
     // ── LiesCortex_run ────────────────────────────────────────────────────────
     //
     //   Called from the Lies tick, after LiesStore_run completes.
-    //   rq.do() drives all req:Cortex children of w.
-    //   Ordering matters: Store processes writes first, then Cortex inspects results.
+    //   req_Store Phase 1 stamps req:Cortex.sc.write_finished when a write lands,
+    //   so req_Cortex can run in any order relative to req_Store — the stamp is
+    //   the handoff, not the tick position.
     async LiesCortex_run(A: TheC, w: TheC) {
         const H  = this as House
         const rq = H.reqy(w)
