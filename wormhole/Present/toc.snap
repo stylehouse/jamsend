@@ -2,19 +2,19 @@ Library
   Book:LeafJuggle,ok_pct,last_run_ms=1779622781.774,done=4,last_pct_change=1776741166.033
   Book:LeafFarm,ok_pct,last_run_ms=1779622753.198,done=6,last_pct_change=1778378075.558
   Book:StuffFlipping,ok_pct=0,last_run_ms=1779622717.748,done,last_pct_change=1779622702.753
-  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1780984367.251
+  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1781002297.224,active
     TimeSpool
-      TimeTotal:beliefs,avg=2.012
-        sample=2.012,at=1780984334
-        sample=2.012,at=1780984338
-        sample=2.012,at=1780984342
-        sample=2.012,at=1780984345
-        sample=2.012,at=1780984349
-        sample=2.012,at=1780984352
-        sample=2.012,at=1780984356
-        sample=2.012,at=1780984360
-        sample=2.012,at=1780984363
-        sample=2.012,at=1780984367
+      TimeTotal:beliefs,avg=26.468
+        sample=26.468,at=1781002294
+        sample=26.468,at=1781002294
+        sample=26.468,at=1781002294
+        sample=26.468,at=1781002294
+        sample=26.468,at=1781002295
+        sample=26.468,at=1781002295
+        sample=26.468,at=1781002296
+        sample=26.468,at=1781002296
+        sample=26.468,at=1781002296
+        sample=26.468,at=1781002297
   Book:LakeSurfer,ok_pct=0,last_pct_change=1779607681.571,done=2,last_run_ms=1780966352.623
     TimeSpool
       TimeTotal:beliefs,avg=0.321
@@ -178,16 +178,16 @@ Library
         sample=0.006,at=1780805871
         sample=0.006,at=1780805881
         sample=0.006,at=1780805881
-  Book:Diffmatication,ok_pct=0,done,last_run_ms=1780986096.17,active
+  Book:Diffmatication,ok_pct=0,done,last_run_ms=1780987542.103
     TimeSpool
       TimeTotal:beliefs,avg=0.039
-        sample=0.039,at=1780986093
-        sample=0.039,at=1780986093
-        sample=0.039,at=1780986093
-        sample=0.039,at=1780986093
-        sample=0.039,at=1780986094
-        sample=0.039,at=1780986094
-        sample=0.039,at=1780986095
-        sample=0.039,at=1780986095
-        sample=0.039,at=1780986095
-        sample=0.039,at=1780986096
+        sample=0.039,at=1780987509
+        sample=0.039,at=1780987513
+        sample=0.039,at=1780987516
+        sample=0.039,at=1780987520
+        sample=0.039,at=1780987524
+        sample=0.039,at=1780987527
+        sample=0.039,at=1780987531
+        sample=0.039,at=1780987534
+        sample=0.039,at=1780987538
+        sample=0.039,at=1780987542

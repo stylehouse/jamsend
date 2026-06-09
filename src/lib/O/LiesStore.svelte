@@ -18,11 +18,10 @@
     //                                    Keyed by path (noserial reqy); one slot per doc.
     //   req:LiesStore_write,path,dige   — one stable req per (path, content-hash) pair.
     //   req:LiesStore_read,rw_name      — one stable req per wormhole path (+ optional label).
-    //                                    Used by LuxuryLiesStore_write's source_check read
-    //                                    and any caller that doesn't need a Good carrier.
-    //   req:Good,type,path              — named, idempotent IO req mirroring the Good carrier;
-    //                                    used by LiesStore_read_good. keyed same as %Good.
     //   req:LiesStore_listing,rw_dir    — one stable req per directory path.
+    //   req:Open,path                   — demand-load a source file; provisions
+    //                                    Good,type:'text/Doc' then dispatches to Lang.
+    //                                    Kept finished — re-visits are idempotent.
     //   known:path                      — last known dige + kind (read|write) + at timestamp.
     //                                    Store's private memory of disk state; used by
     //                                    LuxuryLiesStore_write's cavalier skip.
@@ -59,25 +58,20 @@
     //
     //   Phase 1 — write completions:
     //     For each finished req:LiesStore_write:
-    //       - stamp base_dige on loaded_doc (source files only; gen/ skips this)
+    //       - stamp Good,type:'text/Doc'/known dige (source files only; gen/ skips this)
     //       - record known impression (dige + kind:'write' + at)
     //       - find the matching req:Codebit inside req:Cortex by sc.gen_path and
     //         stamp sc.write_finished=1 — that's the handoff signal to LiesCortex
     //       - drop the req (rw_data lives in sc, so oncelers would help here;
     //         < rw_data and req_sent as oncelers — snap bloat for now, deferred)
     //
-    //   Phase 2 — req:LiesStore_read completions (two-pass drop):
-    //     First pass: record known impression on req:Store, stamp sc.seen=1.
+    //   Phase 2 — read completions (two-pass drop):
+    //     First pass: record known impression, stamp sc.seen=1 on the req.
     //     Second pass (next req_Store entry): drop.
     //     Two passes because req_Store runs inside the same H.reqy(w).do() call
     //     as LiesPersist — a same-pass drop removes the req before LiesPersist
     //     reads req.sc.finished, causing a tailspin re-dispatch every tick.
     //     sc.seen is the handoff: "I've processed this; caller has one more cycle."
-    //
-    //   Phase 2b — req:Good completions (drop-only):
-    //     Good stamping happens inside LiesStore_read_good itself; Phase 2b
-    //     just drops req:Good once LiesStore_read_good has marked sc.seen.
-    //     No known impression on req:Store — the impression lives on good/known.
     //
     //   Phase 3 — listing completions:
     //     Drop finished req:LiesStore_listing reqs.
@@ -155,20 +149,24 @@
 
     // ── Lies_sync_waft_docs ───────────────────────────────────────────────────
     //
-    //   Trim req:Open particles for Docs removed from this Waft (CRUD removal).
+    //   Trim unfinished req:Open particles under req:Store for Docs no longer
+    //   wanted by any loaded Waft (CRUD removal).  Checks all wafts — a path
+    //   might appear in more than one, so we only drop when gone from all.
     //   Doc loading is demand-driven via Lies_roai_Open.
     //   < full close on Doc removal: future work.
-    Lies_sync_waft_docs(w: TheC, waft: TheC) {
-        const wpath = waft.sc.Waft as string
-        const live_paths = new Set(
-            (waft.o({ Doc: 1 }) as TheC[]).map(d => d.sc.Doc as string)
+    Lies_sync_waft_docs(w: TheC, _waft: TheC) {
+        const H     = this as House
+        const store = H.reqy(w).o({ req: 'Store' })[0] as TheC | undefined
+        if (!store) return
+        // gather all doc paths across all loaded wafts
+        const all_live = new Set(
+            (w.o({ Waft: 1 }) as TheC[])
+                .flatMap(wf => (wf.o({ Doc: 1 }) as TheC[]).map(d => d.sc.Doc as string))
         )
-        const rq = (this as House).reqy(w)
-        for (const req of rq.o({ req: 'Open', waft_key: wpath }) as TheC[]) {
+        for (const req of H.reqy(store).o({ req: 'Open' }) as TheC[]) {
             if (req.sc.finished) continue
-            const src  = req.sc.src as TheC | undefined
-            const path = (src?.sc as any)?.Doc as string | undefined
-            if (path && !live_paths.has(path)) w.drop(req)
+            const path = req.sc.path as string | undefined
+            if (path && !all_live.has(path)) store.drop(req)
         }
     },
 
@@ -256,8 +254,8 @@
         await rq.do()
 
         // ── Phase 1: LiesStore_write completions ──────────────────────────────
-        //   Stamp base_dige + known impression, hand off to Cortex if waiting,
-        //   then drop the req.
+        //   Stamp Good,type:'text/Doc'/known dige + known impression,
+        //   hand off to Cortex if waiting, then drop the req.
         //   LuxuryLiesStore_write finishes silently — its inner LiesStore_write
         //   sibling carries the actual IO and is the one that lands here.
         for (const wr of rq.o({ req: 'LiesStore_write' }) as TheC[]) {
@@ -268,11 +266,15 @@
             if (reply?.error) {
                 console.error(`💾 LiesStore write error on ${path}:`, reply.error)
             } else {
-                // Stamp base_dige on the loaded_doc so the source-write gate works.
-                // Only source files have a loaded_doc; gen/ writes skip the stamp.
-                const ld = w.o({ loaded_doc: 1, path })[0] as TheC | undefined
-                if (ld) {
-                    ld.sc.base_dige = wr.sc.dige as string
+                // Stamp the write dige onto Good,type:'text/Doc'/known so
+                //  LuxuryLiesStore_write's base_dige gate and DocRow see it.
+                // Only source files have a Good provisioned; gen/ writes skip this.
+                const good = w.o({ Good: 1, type: 'text/Doc', path })[0] as TheC | undefined
+                if (good) {
+                    const known = good.oai({ known: 1 })
+                    known.sc.dige = wr.sc.dige as string
+                    known.sc.kind = 'write'
+                    known.sc.at   = Date.now() / 1000
                     // disk_dige on the dock's %Text lives on w:Lang — stamped there
                     //  by Lang_compile_step when Lies_compile_settled arrives with
                     //  source_dige.  No cross-world lookup needed here.
@@ -331,13 +333,6 @@
             rd.sc.seen = 1
         }
 
-        // ── Phase 2b: req:Good completions — drop once seen ──────────────────
-        //   Good stamping happens inside LiesStore_read_good (on good.c.content
-        //    and good/known) before seen is set; Phase 2b just cleans up.
-        for (const grd of rq.o({ req: 'Good' }) as TheC[]) {
-            if (grd.sc.seen) req.drop(grd)
-        }
-
         // ── Phase 3: LiesStore_listing completions ────────────────────────────
         for (const ls of rq.o({ req: 'LiesStore_listing' }) as TheC[]) {
             if (ls.sc.finished) req.drop(ls)
@@ -354,7 +349,7 @@
 
     // ── LiesStore_write ───────────────────────────────────────────────────────
     //
-    //   Returns null when content matches %loaded_doc.sc.base_dige (already on disk).
+    //   Returns null when content matches Good,type:'text/Doc'/known.dige (already on disk).
     //   rw_name defaults to path; pass explicitly for compile writes (src/lib/gen/…).
     async LiesStore_write(
         w:    TheC,
@@ -366,9 +361,11 @@
         const rw_name = opts.rw_name ?? path
         const new_dige = await dig(text)
 
-        // Content-equality gate — no loaded_doc means no gate (Waft snaps, gen writes).
-        const ld = w.o({ loaded_doc: 1, path })[0] as TheC | undefined
-        if (ld?.sc.base_dige && ld.sc.base_dige === new_dige) return null
+        // Content-equality gate — Good not yet provisioned means no gate
+        //  (Waft snaps and gen/ writes have no Good on w).
+        const good      = w.o({ Good: 1, type: 'text/Doc', path })[0] as TheC | undefined
+        const base_dige = good?.o({ known: 1 })[0]?.sc.dige as string | undefined
+        if (base_dige && base_dige === new_dige) return null
 
         const host = await H.LiesStore_req(w)
         const wq   = H.reqy(host)
@@ -422,34 +419,38 @@
         return req
     },
 
-    // ── LiesStore_read_waft_good ──────────────────────────────────────────────
+    // ── LiesStore_read_waft ───────────────────────────────────────────────────
     //
-    //   Provision a Good,type:text/Waft and deWaft it in one step.
-    //   Takes just the logical waft_path — the snap path is derived internally.
-    //   Call every tick until good.c.content is set; returns immediately with
-    //    the loading state if not yet landed.
+    //   Read a snap file and run deWaft on it in one step.
+    //   Returns { waft_C, errors, not_found } once the read finishes.
+    //   Callers still need to check req.sc.finished before calling this —
+    //   the pattern is the same as LiesStore_read; this just folds the deWaft
+    //   step in so callers don't repeat that boilerplate.
     //
-    //   Returns { good, Waft?, errors, not_found }.
-    //   good.c.content states drive the caller:
-    //     undefined → still loading (check good.c.content === undefined and return)
-    //     null      → not_found: true, Waft: undefined
-    //     string    → deWaft ran; Waft is set on success, errors on failure
+    //   not_found: true when the file is absent — caller decides whether that
+    //   means start empty or surface an error.
     //
-    async LiesStore_read_waft_good(
-        w:         TheC,
+    //   waft_path: the logical Waft key (e.g. 'Ghost/Tour') — passed to deWaft
+    //   as the path context it uses for error messages.
+    //
+    //   Usage:
+    //     const req = await H.LiesStore_read(w, snap_path)
+    //     if (!req.sc.finished) return   // ttlilt already armed
+    //     const { waft_C, errors, not_found } = H.LiesStore_read_waft(req, waft_path)
+    //     if (not_found) { /* start empty */ }
+    //     if (errors.length) { /* surface */ }
+    //     // use waft_C
+    //
+    LiesStore_read_waft(
+        req:       TheC,
         waft_path: string,
-    ): Promise<{ good: TheC, Waft: TheC | undefined, errors: string[], not_found: boolean }> {
-        const H         = this as House
-        const snap_path = H.Lies_waft_snap_path(waft_path)
-        const good      = await H.LiesStore_read_good(w, 'text/Waft', snap_path)
-
-        if (good.c.content === undefined)
-            return { good, Waft: undefined, errors: [], not_found: false }
-        if (good.c.content === null)
-            return { good, Waft: undefined, errors: [], not_found: true }
-
-        const { waft_C: Waft, errors } = H.deWaft(good.c.content as string, waft_path)
-        return { good, Waft, errors, not_found: false }
+    ): { waft_C: TheC | undefined, errors: string[], not_found: boolean } {
+        if (req.sc.reply?.not_found) {
+            return { waft_C: undefined, errors: [], not_found: true }
+        }
+        const snap = req.sc.reply?.content as string ?? ''
+        const { waft_C, errors } = (this as House).deWaft(snap, waft_path)
+        return { waft_C, errors, not_found: false }
     },
 
     // ── LiesStore_listing ─────────────────────────────────────────────────────
@@ -499,9 +500,9 @@
         const text = req.sc.text as string
         const dige = req.sc.dige as string
 
-        const ld = w.o({ loaded_doc: 1, path })[0] as TheC | undefined
-        if (!ld) {
-            console.warn(`🗂 LuxuryLiesStore_write: no loaded_doc for ${path} — dropping`)
+        const good = w.o({ Good: 1, type: 'text/Doc', path })[0] as TheC | undefined
+        if (!good) {
+            console.warn(`🗂 LuxuryLiesStore_write: no Good for ${path} — dropping`)
             return q.finish(req)
         }
 
@@ -511,16 +512,17 @@
             return q.finish(req)
         }
 
-        const base_dige = ld.sc.base_dige as string | undefined
+        const known     = good.o({ known: 1 })[0] as TheC | undefined
+        const base_dige = known?.sc.dige as string | undefined
         if (base_dige && dige === base_dige) return q.finish(req)
 
         // Pull-before-push: read disk, compare to what we loaded.
         // Cavalier skip: if known:path is recent enough and its dige matches
         // base_dige, trust our last impression — skip the Wormhole read.
-        const known     = host.o({ known: path })[0] as TheC | undefined
-        const known_age = known ? (Date.now() / 1000) - (known.sc.at as number) : Infinity
-        const skip_check = !!known && known_age < LUXURY_WRITE_SKIP_CHECK_SECS
-            && known.sc.dige === base_dige
+        const store_known = host.o({ known: path })[0] as TheC | undefined
+        const known_age   = store_known ? (Date.now() / 1000) - (store_known.sc.at as number) : Infinity
+        const skip_check  = !!store_known && known_age < LUXURY_WRITE_SKIP_CHECK_SECS
+            && store_known.sc.dige === base_dige
 
         if (!skip_check) {
             const read = await H.LiesStore_read(w, path, { label: 'source_check' })
@@ -533,11 +535,11 @@
             const disk_dige = disk_text ? await dig(disk_text) : ''
 
             if (base_dige && disk_dige && disk_dige !== base_dige) {
-                const sr = ld.oai({ surprise_read: 1 })
+                const sr = good.oai({ surprise_read: 1 })
                 sr.sc.disk_dige = disk_dige
                 sr.sc.text      = text
                 sr.sc.dige      = dige
-                ld.bump_version()
+                good.bump_version()
                 console.warn(`🗂 surprise_read on ${path}: disk dige ${disk_dige.slice(0, 5)} ≠ base ${base_dige.slice(0, 5)}`)
                 return q.finish(req)
             }
@@ -545,7 +547,7 @@
 
         console.log(`🖊 Lies_source_write: ${path} (${text.length}c)${skip_check ? ' [luxury skip]' : ''}`)
         await H.LiesStore_write(w, path, text)
-        for (const sr of ld.o({ surprise_read: 1 }) as TheC[]) ld.drop(sr)
+        for (const sr of good.o({ surprise_read: 1 }) as TheC[]) good.drop(sr)
         q.finish(req)
     },
 
@@ -559,7 +561,7 @@
     //   drops after one cycle).  Clients hold a Good ref, watch it, and read
     //   good.c.content.
     //
-    //   w/Good,type:'text/Waft',path:...
+    //   w/Good,type:'text/Waft'|'text/Doc'|'text/plain',path:...
     //     c.content          — the content (string now, buffer later); OFF-SNAP,
     //                          since it may be large|binary.  Three states:
     //                            undefined → not read yet (still loading)
@@ -567,18 +569,16 @@
     //                            string    → the content
     //     known              — dige + kind:read|write + at  (the snapped fingerprint)
     //     not_found:1        — snapped flag mirroring c.content===null
+    //     subscribe,of_req   — one-shot waker: c.of_req = req; drained by reqyoncile
+    //                          when content lands.  req_Open uses this instead of ttlilt.
     //     // < req:refresh   — TTL-based re-read (not yet)
     //
-    //   type is a media|semantic tag: 'text/Waft', 'text/plain', 'text/Doc', …
+    //   type is a media|semantic tag: 'text/Waft', 'text/Doc', 'text/plain', …
     //   The dige in /known is what the snap records; the bytes live off-snap on .c
     //   so a snap reload re-hydrates content from disk (c.content gone → re-read).
     //
-    //   The IO driver for a Good is req:Store/req:Good,type,path — named and keyed
-    //    same as the carrier; roai'd by LiesStore_read_good, dropped by Phase 2b.
-    //
-    //   req:Open and req:Furnishing are both "provision a Good,type:text/Doc and
-    //   dispatch its content to a consumer" — they converge here once
-    //   a dispatch hook lands (see handoff).
+    //   req:Open under req:Store provisions Good,type:'text/Doc' then dispatches
+    //   to Lang — req:Open and req:Furnishing have converged here.
     //
     // ── LiesStore_good ────────────────────────────────────────────────────────
     //   Find-or-create the %Good slot.  Idempotent across ticks.
@@ -589,11 +589,8 @@
     // ── LiesStore_read_good ───────────────────────────────────────────────────
     //
     //   Provision a %Good with content from disk and return it.  Call every tick
-    //   until good.c.content is set; a ttlilt keeps Story awake while in flight.
-    //
-    //   Internally roai's req:Good,type,path under req:Store — named and keyed
-    //    same as the content carrier, idempotent across ticks and callers.
-    //   req:Store Phase 2b drops it once content is stamped and seen=1 is set.
+    //   until good.c.content is set; the underlying LiesStore_read arms a ttlilt
+    //   while in flight so Story stays awake.
     //
     //   Read good.c.content:
     //     undefined → still loading — caller returns/waits
@@ -613,24 +610,13 @@
         // already provisioned this session
         if (good.c.content !== undefined) return good
 
-        const host = await H.LiesStore_req(w)
-        // req:Good,type,path — named IO req matching the content carrier; idempotent
-        const req  = await H.reqy(host).roai(
-            { req: 'Good', type, path },
-            { rw_op: 'read', rw_name: path },
-        )
-        H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
-        if (!req.sc.finished) {
-            H.i_req_ttlilt(req, 1.6, { waiting: 'Good' })
-            return good   // c.content still undefined → caller waits
-        }
+        const req = await H.LiesStore_read(w, path)
+        if (!req.sc.finished) return good   // c.content still undefined → caller waits
 
-        req.sc.seen = 1   // signal Phase 2b to drop next pass
         const content   = req.sc.reply?.content as string | undefined
         const not_found = !!req.sc.reply?.not_found
 
         good.c.content = not_found ? null : (content ?? '')
-        H.trace('Good', `${type}  ${path}  →  ${not_found ? 'not_found' : `${(good.c.content as string).length}c`}`)
         if (not_found) {
             good.sc.not_found = 1
         } else {
@@ -641,6 +627,14 @@
             known.sc.at   = Date.now() / 1000
         }
         good.bump_version()
+
+        // drain subscribers — reqyoncile wakes waiting reqs directly rather than
+        //  relying on the next world-think; each subscribe is one-shot.
+        for (const sub of good.o({ subscribe: 1 }) as TheC[]) {
+            const target = sub.c.of_req as TheC | undefined
+            if (target) H.reqyoncile(target)
+            good.drop(sub)
+        }
 
         return good
     },

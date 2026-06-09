@@ -18,8 +18,7 @@
     //         Ghost/Tour          →  cursor at end (no extension)
     //
     // Props:
-    //   w         — Lies's w particle (compile_pending live here;
-    //               loaded_doc → Good,type:'text/Doc' once req:Furnishing is sublated)
+    //   w         — Lies's w particle (Good,type:'text/Doc' and compile_pending live here)
     //   doc       — Doc TheC (sc.path, sc.new?, sc.not_found?)
     //   waft      — parent Waft particle; null in the flat loaded-docs list
     //   examining — from Liesui; carries examining.sc.active_path (Lang's active doc).
@@ -52,11 +51,11 @@
     let codetype  = $derived(ls_codetype(path))
 
     // Look up loaded / pending state from w every time w or the Good changes.
-    // < once req:Furnishing provisions Good,type:'text/Doc', becomes:
-    //     const good = (w.ob({Good:1,type:'text/Doc',path}) as TheC[])[0] as TheC|undefined
-    //     void good?.version   // react when content lands off-snap
-    //     return !!good && good.c.content !== undefined
-    let is_loaded  = $derived(!!(w.ob({ loaded_doc: 1, path }) as object[])[0])
+    let is_loaded = $derived((() => {
+        const good = (w.ob({ Good: 1, type: 'text/Doc', path }) as TheC[])[0] as TheC | undefined
+        void good?.vers   // react when content lands off-snap
+        return !!good && good.c.content !== undefined
+    })())
     let is_pending = $derived(!!(w.ob({ compile_pending: 1, path }) as TheC[]).some(p => !p.sc.done))
     // Glow when this doc is the one currently open in Lang.
     // examining.sc.active_path mirrors ave/{active_dock:1}.sc.path and bumps when
@@ -178,7 +177,7 @@
     }
     .ls-doc-open-btn:hover { color: #c8dff0; text-decoration: underline; }
     /* Active doc in Lang — title glows blue-white.
-       Works for both loaded_doc flat list and Waft/Doc entries. */
+       Works for both the Good flat list and Waft/Doc entries. */
     .ls-doc-examining { color: #d4eeff !important; text-shadow: 0 0 7px #4488cc99; }
     .ls-badge {
         font-size: 0.68rem; background: #1c1c28;
