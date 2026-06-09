@@ -7,12 +7,16 @@
     //   — sits on w and pumps itself each tick via req_Store.  Nothing outside
     //   calls a pump method manually; req:Store's do_fn is the pump.
     //
+    //   The whole LiesStore footprint is that one req:Store subtree: the IO reqs,
+    //   the known impressions, AND the %Good content slots all live under it.  To
+    //   reason about Lies' storage you look in exactly one place on w.
+    //
     //   Because req:Store is an eternal reqy child of w at maz:7, H.reqy(w).do()
     //   in the Lies tick runs it before anything else on w (desire, wants, Cortex…).
     //   req:Store sets sc.ok when its pump cycle is done; lower-maz reqs then
     //   proceed in the same do() pass knowing IO has been processed.
     //
-    // ── Channels (children of req:Store) ─────────────────────────────────────
+    // ── Children of req:Store ─────────────────────────────────────────────────
     //
     //   req:LuxuryLiesStore_write,path  — source-file save with pull-before-push.
     //                                    Keyed by path (noserial reqy); one slot per doc.
@@ -22,30 +26,67 @@
     //   req:Open,path                   — demand-load a source file; provisions
     //                                    Good,type:'text/Doc' then dispatches to Lang.
     //                                    Kept finished — re-visits are idempotent.
+    //   Good,type,path                  — one resource slot (see the Good region).
+    //                                    c.content off-snap; /known the dige record.
     //   known:path                      — last known dige + kind (read|write) + at timestamp.
     //                                    Store's private memory of disk state; used by
     //                                    LuxuryLiesStore_write's cavalier skip.
+    //
+    // ── Lifecycle: who picks up a finished req ────────────────────────────────
+    //
+    //   Every child req is owned by an accessor — the do_fn or method that drives
+    //   it across ticks and decides when it is done with it.  A finished req is
+    //   never garbage on its own; it waits to be picked up.  Two contracts:
+    //
+    //   1. Consume-then-drop  (req:LiesStore_read)
+    //      The reply lives on the req only briefly.  The accessor reads
+    //      req.sc.reply within the one do() cycle Phase 2 grants, then Store sweeps
+    //      it.  So callers must NOT hold a read req across ticks — re-call
+    //      LiesStore_read each tick and read reply while the ref is live.  When a
+    //      value must outlive that one cycle, copy it onto a %Good (the durable
+    //      carrier) — that is exactly what LiesStore_read_good does.
+    //
+    //   2. Kept-by-design + explicit sweep  (req:Open, LuxuryLiesStore_write, Good)
+    //      These finish and linger on purpose: a finished req:Open is a cache hit
+    //      that lets a re-visit skip the load; a finished write is the record of
+    //      what last went to disk.  Each has a named sweep, not a Phase-2 auto-drop:
+    //        - req:Open            — Lies_sync_waft_docs trims it when its path
+    //                                leaves every Waft.
+    //        - LuxuryLiesStore_write — drop_finished before the next save of the path.
+    //        - Good                — delete good.c.content forces a re-read; a stale
+    //                                Good is reclaimed by the same future req:refresh
+    //                                that the roai-corpse audit will own.
+    //      A lingering finished req here means "still useful," not "unpicked-up."
+    //
+    //   How a consumer waits without touching Store's reqs: it does not poll the
+    //   read req — it holds a %Good ref and reads good.c.content (undefined→loading,
+    //   null→absent, string→content), or drops a Good/subscribe,of_req to be woken
+    //   by reqyoncile when content lands.  w:Lang's req:settle is the same shape on
+    //   the far side: it holds its own gate particles (%furnish/%compile) and
+    //   re-checks have_dock / have_methods each pass, arming a ttlilt while a gate
+    //   is open, rather than reaching across into Store.  The producer (Store) and
+    //   the consumer (settle) never share a req — they meet at the Good and the dock.
     //
     // ── API synopsis ──────────────────────────────────────────────────────────
     //
     //   Write:
     //     const req = await H.LiesStore_write(w, path, text, {rw_name?})
-    //     // req is null if content matches base_dige (already on disk)
+    //     // req is null if content matches Good/known.dige (already on disk)
     //     // otherwise req parks inside req:Store; req_Store Phase 1 processes
     //     // completion, stamps known, signals Cortex, then drops the req.
     //     // Caller doesn't need to hold req — fire and forget.
     //
-    //   Read:
+    //   Read (raw — consume-then-drop, contract 1 above):
     //     const req = await H.LiesStore_read(w, rw_name, {label?})
     //     if (!req.sc.finished) return   // ttlilt already armed; come back next tick
     //     const text = req.sc.reply?.content as string  // read reply while req lives
-    //     // req:Store Phase 2 drops the req on the pass AFTER it became finished,
-    //     // giving callers one full do() cycle to read reply.  The caller holds a
-    //     // direct ref to req and reads reply.content — no second lookup needed.
-    //     // roai returns the same finished req on repeated calls until Phase 2 drops it;
-    //     // after that, the next call creates a fresh req and re-dispatches to Wormhole.
-    //     // Callers must NOT hold req across ticks expecting it to persist —
-    //     // check req.sc.finished every tick; if the ref is gone, re-call LiesStore_read.
+    //     // Phase 2 drops the req the pass AFTER it finished — one cycle to read.
+    //     // Don't hold it across ticks; re-call if the ref is gone.
+    //
+    //   Read (durable — prefer this):
+    //     const good = await H.LiesStore_read_good(w, type, path)
+    //     // read good.c.content: undefined→loading, null→absent, string→content.
+    //     // The Good survives across ticks; the read req underneath is contract 1.
     //
     //   Listing:
     //     const req = await H.LiesStore_listing(w, rw_dir)
@@ -269,7 +310,8 @@
                 // Stamp the write dige onto Good,type:'text/Doc'/known so
                 //  LuxuryLiesStore_write's base_dige gate and DocRow see it.
                 // Only source files have a Good provisioned; gen/ writes skip this.
-                const good = w.o({ Good: 1, type: 'text/Doc', path })[0] as TheC | undefined
+                // Goods live under req:Store, which is `req` here.
+                const good = req.o({ Good: 1, type: 'text/Doc', path })[0] as TheC | undefined
                 if (good) {
                     const known = good.oai({ known: 1 })
                     known.sc.dige = wr.sc.dige as string
@@ -360,15 +402,15 @@
         const H       = this as House
         const rw_name = opts.rw_name ?? path
         const new_dige = await dig(text)
+        const host    = await H.LiesStore_req(w)
 
         // Content-equality gate — Good not yet provisioned means no gate
-        //  (Waft snaps and gen/ writes have no Good on w).
-        const good      = w.o({ Good: 1, type: 'text/Doc', path })[0] as TheC | undefined
+        //  (Waft snaps and gen/ writes have no Good under req:Store).
+        const good      = host.o({ Good: 1, type: 'text/Doc', path })[0] as TheC | undefined
         const base_dige = good?.o({ known: 1 })[0]?.sc.dige as string | undefined
         if (base_dige && base_dige === new_dige) return null
 
-        const host = await H.LiesStore_req(w)
-        const wq   = H.reqy(host)
+        const wq = H.reqy(host)
         wq.drop_finished({ req: 'LiesStore_write', path })
 
         // < not necessary given req%mutated, which should be how we trigger resends
@@ -500,7 +542,7 @@
         const text = req.sc.text as string
         const dige = req.sc.dige as string
 
-        const good = w.o({ Good: 1, type: 'text/Doc', path })[0] as TheC | undefined
+        const good = host.o({ Good: 1, type: 'text/Doc', path })[0] as TheC | undefined
         if (!good) {
             console.warn(`🗂 LuxuryLiesStore_write: no Good for ${path} — dropping`)
             return q.finish(req)
@@ -561,7 +603,7 @@
     //   drops after one cycle).  Clients hold a Good ref, watch it, and read
     //   good.c.content.
     //
-    //   w/Good,type:'text/Waft'|'text/Doc'|'text/plain',path:...
+    //   req:Store/Good,type:'text/Waft'|'text/Doc'|'text/plain',path:...
     //     c.content          — the content (string now, buffer later); OFF-SNAP,
     //                          since it may be large|binary.  Three states:
     //                            undefined → not read yet (still loading)
@@ -577,13 +619,28 @@
     //   The dige in /known is what the snap records; the bytes live off-snap on .c
     //   so a snap reload re-hydrates content from disk (c.content gone → re-read).
     //
-    //   req:Open under req:Store provisions Good,type:'text/Doc' then dispatches
-    //   to Lang — req:Open and req:Furnishing have converged here.
+    //   Goods live UNDER req:Store, beside the IO reqs and known impressions — so
+    //   the whole LiesStore footprint is the one req:Store subtree.  Children of
+    //   Store (req_Open, req_LuxuryLiesStore_write, req_Store) already hold the
+    //   store ref; outside readers find it via reqy(w).o({req:'Store'}) — see
+    //   LiesStore_good_of.
+    //
+    //   req:Open provisions Good,type:'text/Doc' then dispatches to Lang —
+    //   req:Open and req:Furnishing have converged here.
     //
     // ── LiesStore_good ────────────────────────────────────────────────────────
-    //   Find-or-create the %Good slot.  Idempotent across ticks.
-    LiesStore_good(w: TheC, type: string, path: string): TheC {
-        return w.oai({ Good: 1, type, path })
+    //   Find-or-create the %Good slot under req:Store.  Idempotent across ticks.
+    async LiesStore_good(w: TheC, type: string, path: string): Promise<TheC> {
+        const store = await (this as House).LiesStore_req(w)
+        return store.oai({ Good: 1, type, path })
+    },
+
+    // ── LiesStore_good_of ──────────────────────────────────────────────────────
+    //   Find (never create) a %Good under req:Store; undefined if absent or if
+    //   Store isn't up yet.  For read-only callers outside Store's own children.
+    LiesStore_good_of(w: TheC, type: string, path: string): TheC | undefined {
+        const store = (this as House).reqy(w).o({ req: 'Store' })[0] as TheC | undefined
+        return store?.o({ Good: 1, type, path })[0] as TheC | undefined
     },
 
     // ── LiesStore_read_good ───────────────────────────────────────────────────
@@ -604,8 +661,9 @@
         type: string,
         path: string,
     ): Promise<TheC> {
-        const H    = this as House
-        const good = H.LiesStore_good(w, type, path)
+        const H     = this as House
+        const store = await H.LiesStore_req(w)
+        const good  = store.oai({ Good: 1, type, path })
 
         // already provisioned this session
         if (good.c.content !== undefined) return good

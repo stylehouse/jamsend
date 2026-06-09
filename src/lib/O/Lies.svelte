@@ -77,10 +77,6 @@
     //                                         c.content (off-snap) holds the snap text;
     //                                         /known carries the dige.  Replaces open_waft_req.
     //                                         queued by e_Lies_open_Waft; LiesPersist provisions.
-    //   w/{Good:1,type:'text/Doc',path}      — source file content slot; provisioned by
-    //                                          req:Open.  c.content (off-snap): string|null.
-    //                                          /known carries dige + kind:read|write + at.
-    //                                          /surprise_read when disk diverged from base.
     //   w/{Waft:'Ghost/Tour'}                  — loaded Waft container
     //     /{Doc:path}                          — persisted doc entry
     //       /{Point:1,method}                  — individual point
@@ -90,11 +86,14 @@
     //   w/{waft_rename_job:1,old_path,new_path} — in-progress waft rename (crash-safe)
     //   w/{Opt:1}                              — options container
     //
-    //   w/{req:'Store',eternal,maz:7}          — all IO; runs before everything else
+    //   w/{req:'Store',eternal,maz:7}          — all IO + content slots; first each tick
     //     /{req:'Open',path}                     demand-load a source doc into Lang.
     //                                            Provisions Good,type:'text/Doc'; kept
     //                                            finished so re-visits are idempotent.
     //                                            Seeded by Lies_roai_Open(w, path).
+    //     /{Good:1,type,path}                    one resource slot; c.content off-snap.
+    //                                            /known dige + kind:read|write + at.
+    //                                            /surprise_read when disk diverged.
     //   w/{req:'desire'}                       — the Waft lock (§3f; thinned)
     //     /{req:'acquire',maz:9}                 one-shot lock; inserts desire/{Waft:$waftpath}
     //     /{Waft:$waftpath}                      correlates to w/{Waft:$waftpath}; set by acquire
@@ -153,15 +152,15 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
     // ── e_Lies_open_Waft ───────────────────────────────────────────────
     //
-    //   Entry point from Plan Preps or Liesui.  Creates a Good,type:Waft slot
-    //   keyed by the snap_path; LiesPersist provisions it via LiesStore_read_good.
-    //   Idempotent: same path only ever oai's one Good.
+    //   Entry point from Plan Preps or Liesui.  Creates a Good,type:'text/Waft'
+    //   slot under req:Store keyed by the snap_path; LiesPersist provisions it via
+    //   LiesStore_read_good.  Idempotent: same path only ever oai's one Good.
     async e_Lies_open_Waft(A: TheC, w: TheC, e: TheC) {
         const H    = this as House
         const path = e.sc.path as string | undefined
         if (!path) throw 'e_Lies_open_Waft: needs path'
         const snap_path = H.Lies_waft_snap_path(path)
-        const good = H.LiesStore_good(w, 'text/Waft', snap_path)
+        const good = await H.LiesStore_good(w, 'text/Waft', snap_path)
         if (!good.sc.waft_path) good.sc.waft_path = path   // logical path annotation
         this.i_elvisto(w, 'think')
     },
@@ -211,7 +210,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const text = e.sc.text as string
         if (!path || text === undefined) throw 'e_Lies_source_write: needs path + text'
 
-        const good = w.o({ Good: 1, type: 'text/Doc', path })[0] as TheC | undefined
+        const good = H.LiesStore_good_of(w, 'text/Doc', path)
         if (!good) {
             console.warn(`🗂 Lies_source_write: no Good for ${path} — ignoring`)
             return
@@ -269,7 +268,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         // req:Store (maz:7) and req:Cortex (maz:5) drive themselves via
         // rq.do() inside LiesRealised.  The final rq.do() at the end of
         // LiesRealised also pumps any req:Open just seeded by the wants resolver.
-        const loaded = (w.o({ Good: 1, type: 'text/Doc' }) as TheC[])
+        const store  = H.reqy(w).o({ req: 'Store' })[0] as TheC | undefined
+        const loaded = ((store?.o({ Good: 1, type: 'text/Doc' }) ?? []) as TheC[])
             .filter(g => g.c.content !== undefined).length
         const wafts  = w.o({ Waft: 1 }).length
         w.i({ see: `🗂 ${loaded} doc${loaded === 1 ? '' : 's'}${wafts ? ` · ${wafts} Waft${wafts === 1 ? '' : 's'}` : ''}` })
@@ -287,8 +287,9 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         // ── provision Waft containers from wormhole ───────────────────────────
         //   Good,type:text/Waft (keyed by snap_path) replaces the old open_waft_req
         //   marker.  good.c.content !== undefined means "already loaded" — the same
-        //   gate the old sc.done flag gave, now on a standard %Good slot.
-        for (const good of w.o({ Good: 1, type: 'text/Waft' }) as TheC[]) {
+        //   gate the old sc.done flag gave, now on a standard %Good slot under Store.
+        const store = await H.LiesStore_req(w)
+        for (const good of store.o({ Good: 1, type: 'text/Waft' }) as TheC[]) {
             const path      = good.sc.waft_path as string
             const snap_path = good.sc.path      as string
 

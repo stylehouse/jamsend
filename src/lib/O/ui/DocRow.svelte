@@ -51,9 +51,14 @@
     let codetype  = $derived(ls_codetype(path))
 
     // Look up loaded / pending state from w every time w or the Good changes.
+    // The Good lives under req:Store; track both the Store subtree and the Good's
+    //  off-snap content version (good.vers) so the row reacts when content lands.
     let is_loaded = $derived((() => {
-        const good = (w.ob({ Good: 1, type: 'text/Doc', path }) as TheC[])[0] as TheC | undefined
-        void good?.vers   // react when content lands off-snap
+        const store = (w.ob({ req: 'Store' }) as TheC[])[0] as TheC | undefined
+        const good  = store
+            ? (store.ob({ Good: 1, type: 'text/Doc', path }) as TheC[])[0] as TheC | undefined
+            : undefined
+        void good?.vers
         return !!good && good.c.content !== undefined
     })())
     let is_pending = $derived(!!(w.ob({ compile_pending: 1, path }) as TheC[]).some(p => !p.sc.done))
