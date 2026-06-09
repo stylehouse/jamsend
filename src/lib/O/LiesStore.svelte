@@ -538,6 +538,73 @@
     },
 
 //#endregion
+//#region Good
+
+    // ── Good ─────────────────────────────────────────────────────────────────
+    //
+    //   A %Good is a per-client slot for one resource — the stable carrier that
+    //   survives across ticks unlike the raw LiesStore_read req (which Phase 2
+    //   drops after one cycle).  Clients hold a Good ref, watch it, and read
+    //   Good.sc.content.  The Good's /known child records freshness.
+    //
+    //   w/Good,type:Doc,path:...
+    //     known              — dige + kind:read|write + at
+    //     // < req:refresh   — TTL-based re-read (not yet)
+    //
+    //   req:Open and req:Furnishing are both "provision a Good,type:Doc and
+    //   dispatch its content to a consumer" — they converge here once
+    //   req:refresh and a dispatch hook land.
+    //
+    // ── LiesStore_good ────────────────────────────────────────────────────────
+    //   Find-or-create the %Good slot.  Idempotent across ticks.
+    LiesStore_good(w: TheC, type: string, path: string): TheC {
+        return w.oai({ Good: 1, type, path })
+    },
+
+    // ── LiesStore_read_good ───────────────────────────────────────────────────
+    //
+    //   Provision a %Good with content from disk.  Same tick-by-tick call
+    //   pattern as LiesStore_read: call every tick until {finished:true}.
+    //
+    //   Once finished:
+    //     good.sc.content   — file text ('' for empty), or null when not_found
+    //     good.sc.not_found — 1 when absent
+    //     good/known        — dige + kind:read + at
+    //
+    //   Re-calling on an already-provisioned Good returns {finished:true}
+    //   immediately.  To trigger a fresh read: `delete good.sc.content`.
+    async LiesStore_read_good(
+        w:    TheC,
+        type: string,
+        path: string,
+    ): Promise<{ good: TheC, finished: boolean }> {
+        const H    = this as House
+        const good = H.LiesStore_good(w, type, path)
+
+        // already provisioned this Good
+        if (good.sc.content !== undefined) return { good, finished: true }
+
+        const req = await H.LiesStore_read(w, path)
+        if (!req.sc.finished) return { good, finished: false }
+
+        const content   = req.sc.reply?.content as string | undefined
+        const not_found = !!req.sc.reply?.not_found
+
+        good.sc.content = not_found ? null : (content ?? '')
+        if (not_found) good.sc.not_found = 1
+
+        if (!not_found && content != null) {
+            const known   = good.oai({ known: 1 })
+            known.sc.dige = await dig(content)
+            known.sc.kind = 'read'
+            known.sc.at   = Date.now() / 1000
+        }
+        good.bump_version()
+
+        return { good, finished: true }
+    },
+
+//#endregion
 
     })
     })

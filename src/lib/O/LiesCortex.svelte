@@ -1,7 +1,9 @@
 <script lang="ts">
-    // LiesCortex.svelte — the compile-and-settle workforce for w:Lies.
+    // LiesCortex.svelte — the compile-and-settle workforce for w:Lies,
+    //                     and the Pantheate runner for w:Pantheate.
     //
-    // Wires: A:Lies / w:Lies
+    // Wires: A:Lies / w:Lies  (Cortex, Codebit, Rundown, BlatDo)
+    //        A:Pantheate / w:Pantheate  (include confirmation, BlastPit execution)
     //
     // ── What a Cortex is ──────────────────────────────────────────────────────
     //
@@ -260,6 +262,144 @@
     },
 
 //#endregion
+//#region Pantheate — compiled code receiver, on the runner side
+
+    // ── Pantheate — compiled code receiver ───────────────────────────────────
+    //
+    //   On Ghost_update_notify: dynamically imports the fresh module, registers
+    //   its component, and mints a permanent req:include to monitor that the
+    //   module mounted and deposited its Ghostmeta method.  On re-compile,
+    //   the source_dige mutation un-finishes the permanent req to re-confirm.
+    //
+    //   req:include and req:run_method (driven below via rq.do()) poll each tick.
+    async Pantheate(A: TheC, w: TheC) {
+        const H = this
+        // keep %include (dynamic-import markers), %BlastPit (run output), %self,
+        //  and all req particles (req:include, req:run_method) — drop everything else.
+        w.o().filter(n => !n.sc.self && !n.sc.include && !n.sc.BlastPit && !n.sc.req).map(n => n.drop(n))
+
+        for (let me of this.o_elvis(w,'Ghost_update_notify')) {
+            if (!me.sc.include) throw "!Gun"
+            // once required, Vite's HMR re-runs eatfunc on every hot update
+            if (!w.oa({include: me.sc.include})) {
+                const module = await import(`../../lib/${me.sc.include}`)
+                const component = module.default
+                const uis = this.oai_enroll(this, { watched: 'UIs' })
+                uis.oai({ UI: 'Pantheate-include' }, { component })
+                w.i({ include: me.sc.include })
+            }
+            // permanent req:include monitors this gen_path's Ghostmeta.
+            //  a re-compile mutates source_dige → maybe_mutate_sc un-finishes the permanent req
+            //   so it re-confirms the new version without being dropped and re-minted.
+            const gen_path       = me.sc.include     as string
+            const path           = me.sc.path        as string
+            const source_dige    = me.sc.source_dige as string
+            const ghostmeta_name = H.Lang_ghostmeta_name(path)
+            await H.reqy(w).roai({ req: 'include', gen_path }, { path, source_dige, ghostmeta_name, permanent: 1 })
+        }
+
+        // drive req:include + req:run_method each tick
+        await H.reqy(w).do()
+    },
+
+    // ── req:include — monitor a compiled module's Ghostmeta ──────────────────
+    //
+    //   Polls this[ghostmeta_name]() — the method injected at the top of every
+    //   compiled eatfunc — against the expected source_dige.  When they match
+    //   the module has mounted and deposited its methods; finish.
+    //
+    //   A 2s ttlilt (one-only) gives the initial mount window.  After it expires
+    //   the ambient heartbeat re-checks periodically.  Permanent: a re-compile
+    //   mutates source_dige → req%mutated + permanent → un-finishes and re-confirms
+    //    the new version without being dropped.  Finishes as soon as dige matches.
+    async req_include(req: TheC, q: any) {
+        const H            = this as House
+        const ghostmeta_name = req.sc.ghostmeta_name as string
+        const source_dige    = req.sc.source_dige    as string
+
+        const live = (H as any)[ghostmeta_name]?.() as string | undefined
+        if (live !== source_dige) {
+            // module not mounted yet or wrong version — hold briefly for first mount
+            H.i_req_ttlilt(req, 2, { waiting: 'ghostmeta' })
+            return
+        }
+        // Ghostmeta confirmed: the right version of this compiled module is live
+        req.sc.live_dige = live
+        q.finish(req)
+        console.log(`👻 include live: ${ghostmeta_name} = ${live}`)
+    },
+
+    // ── e_Pantheate_run_method ────────────────────────────────────────────────
+    //
+    //   Fired by req:BlatDo (w:Lies/req:Rundown) once all Codebits for a moment
+    //   are finished.  Parks req:run_method, stores the BlatDo req ref so
+    //   req_run_method can reqyoncile it finished when the run completes.
+    //   The ambient H.reqy(w).do() in Pantheate() drives req:run_method each tick.
+    //
+    //   e.sc: { method: string, req: TheC }  — req is the BlatDo particle on w:Lies
+    async e_Pantheate_run_method(A: TheC, w: TheC, e: TheC) {
+        const H      = this as House
+        const method = e.sc.method as string | undefined
+        const blatdo = e.sc.req    as TheC  | undefined
+        if (!method || !blatdo) return
+
+        const rq = H.reqy(w)
+        for (const old of rq.o({ req: 'run_method', method }) as TheC[]) {
+            if (old.sc.finished) w.drop(old)
+        }
+        const runReq = await rq.roai({ req: 'run_method', method })
+        // BlatDo ref on .c — out of snap; req_run_method calls reqyoncile on it.
+        if (!runReq.c.blatdo) runReq.c.blatdo = blatdo
+        await rq.do()
+    },
+
+    // ── req:run_method ────────────────────────────────────────────────────────
+    //
+    //   do_fn for /req:run_method,method (child of w:Pantheate).
+    //   Waits until all permanent req:include on w confirm their versions — no
+    //   ghostmeta polling here, that lives in req_include.
+    //   When all are confirmed: mints a fresh BlastPit, calls H[method](A,w:blast),
+    //   then reqyoncile-finishes the BlatDo req on w:Lies so Story lands in-step.
+    //
+    //   BlastPit at w:Pantheate/BlastPit/A:blast/w:blast — wiped + re-seeded
+    //    each run so the method's output lands in clean visible scratch.
+    async req_run_method(req: TheC, q: any) {
+        const H      = this as House
+        const method = req.sc.method as string
+        const pw     = req.c.up as TheC   // w:Pantheate
+
+        // wait for all permanent req:include to confirm their versions
+        const includes = H.reqy(pw).o({ req: 'include' }) as TheC[]
+        if (!includes.length || includes.some((r: TheC) => !r.sc.finished)) {
+            H.i_req_ttlilt(req, 0.5, { waiting: 'include' })
+            return
+        }
+
+        const fn = (H as any)[method] as ((...args: any[]) => any) | undefined
+        if (!fn) {
+            console.warn(`👻 run_method: '${method}' not found on H`)
+        } else {
+            // BlastPit: stable container on w:Pantheate, wiped + re-seeded each run.
+            // blastA and blastW are plain TheC particles — their sc children hold
+            // the compiled method's i()/o() output, visible in the snap.
+            const pit    = pw.oai({ BlastPit: 1 })
+            await pit.r({ A: 1 }, {})
+            const blastA = pit.i({ A: 'blast' })
+            const blastW = blastA.i({ w: 'blast' })
+            console.log(`👻 run_method: calling ${method}(A,w:blast)`)
+            await fn.call(H, blastA, blastW)
+        }
+
+        // signal BlatDo (on w:Lies) that the run completed —
+        //  e_reqyonciliation properly finishes the req, dropping its %ttlilt
+        //   so Story snaps with BlastPit in the same step.
+        const blatdo = req.c.blatdo as TheC | undefined
+        if (blatdo) H.reqyoncile(blatdo, { finished: 1, see: `run:${method}` })
+        q.finish(req)
+    },
+
+//#endregion
+
 //#region req_Rundown — the runner, beside the Codebits
 
     // ── req_Rundown ───────────────────────────────────────────────────────────
