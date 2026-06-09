@@ -1,7 +1,7 @@
 Snap:H
   H:LangTiles,Run
     A:Lies
-      self,round=37	{"mung":["age"]}
+      self,round=35	{"mung":["age"]}
       w:Lies
         examining	{"loopy":2}
           req:timemachine,playing=0
@@ -13,13 +13,13 @@ Snap:H
           Waft:Story/LangTiles/Waftily	{"ref":{"src":"%Waft:Story/LangTiles/Waftily"}}
         req:git
         req:wants
-          want=1780962413317,kind:cold
-          want=1780962413369,kind:cold
-          want=1780962413476,kind:cold,resolved
+          want=1780965176096,kind:cold
+          want=1780965176147,kind:cold
+          want=1780965176250,kind:cold,resolved
         open_waft_req,path:Story/LangTiles/Waftily,done
         req:Store,eternal,maz=7,ok
-          known:Ghost/test/LangTiles.g,dige:1f738455c057ebe2,kind:read,at=1780962413.586
-          known:gen/test/LangTiles.go,dige:4fa187d4727e35e9,kind:write,at=1780962417.229
+          known:Ghost/test/LangTiles.g,dige:1f738455c057ebe2,kind:read,at=1780965176.354
+          known:gen/test/LangTiles.go,dige:4fa187d4727e35e9,kind:write,at=1780965177.176
         Waft:Story/LangTiles/Waftily
           What:labelofaWhat
             Doc:Ghost/test/LangTiles.g
@@ -32,12 +32,12 @@ Snap:H
           req_sent
         loaded_doc,path:Ghost/test/LangTiles.g,base_dige:1f738455c057ebe2
         req:Cortex,eternal,maz=5
+          req:Codebit,path:Ghost/test/LangTiles.g,maz=2,gen_path:gen/test/LangTiles.go,source_dige:1f738455c057ebe2,dige:4fa187d4727e35e9,permanent,write_finished,finished
           req:Rundown,eternal,run_method:theCompiledStuff,ok
             {"ran":"4fa187d4727e35e9#leash:0"}
-          req:Codebit,path:Ghost/test/LangTiles.g,maz=2,gen_path:gen/test/LangTiles.go,source_dige:1f738455c057ebe2,dige:4fa187d4727e35e9,permanent,finished
-        self,round=37	{"mung":["age"]}
+        self,round=35	{"mung":["age"]}
     A:Lang
-      self,round=23	{"mung":["age"]}
+      self,round=20	{"mung":["age"]}
       w:Lang
         model,cyto_dir
           Line=5,line_from=74,line_to=98,str:    let la = i hut/$toot,the_bm_bm_98_132
@@ -94,13 +94,13 @@ Snap:H
                       PeelKey,from=132,to=137,str:mixed
                         Name,from=132,to=137,str:mixed
         docks
-          dock:Ghost/test/LangTiles.g,active,run_method:theCompiledStuff	{"loopy":1}
+          dock:Ghost/test/LangTiles.g,active	{"loopy":1}
             req:Languish
               req:text_loaded,maz=3,finished
               req:text_mutated,maz=2,eternal
               req:compile,maz=2,finished
             Text,dige:1f738455c057ebe2,disk_dige:1f738455c057ebe2,disk_rev
-            Compile,pending
+            Compile
               methods
                 def,method:theCompiledStuff,from=17,to=34,line=2	{"ref":{"region_path":"[]"}}
                 call,method:nothinging,from=1105,to=1124,line=35,via:theCompiledStuff	{"ref":{"region_path":"[]"}}
@@ -117,7 +117,7 @@ Snap:H
                 def,method:severally,from=1964,to=1974,line=70	{"ref":{"region_path":"[]"}}
                 call,method:laterally,from=2116,to=2128,line=76,via:severally	{"ref":{"region_path":"[]"}}
                 def,method:laterally,from=2140,to=2150,line=78	{"ref":{"region_path":"[]"}}
-              time,compile=0.018
+              time,compile=0.009,all=0.614,write=0
               Output,gen_path:gen/test/LangTiles.go,dige:4fa187d4727e35e9,source_dige:1f738455c057ebe2
                source: |
                  <script lang="ts">
@@ -230,12 +230,12 @@ Snap:H
             lematch	{"ref":{"sc_has":"Object()"}}
         Languinio	{"loopy":3}
           LE	{"loopy":0,"ref":{"target":"%What:labelofaWhat"}}
-          {"loopy":1,"ks":"%dock:Ghost/test/LangTiles.g, active:1, run_method:theCompiledStuff"}	
+          {"loopy":1,"ks":"%dock:Ghost/test/LangTiles.g, active:1"}	
           Interest	{"ref":{"src":"%What:labelofaWhat"}}
           Change
             backend,dige:1f738
             storage,dige:1f738,dim:false
-            compile,dige:1f738,dim:true,secs=0.018
+            compile,dige:1f738,dim:false,secs=0.009
         {"loopy":0,"ks":"%LE:1, target:%What"}	
           Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:labelofaWhat","topD":"%Demonstrations:origin"}}
             Demonstrations:origin
@@ -268,7 +268,7 @@ Snap:H
         received,doc_opened,doc:Ghost/test/LangTiles.g
         received,editorBegins,doc:Ghost/test/LangTiles.g
         o_elvis:Lies_compile_settled
-        self,round=23	{"mung":["age"]}
+        self,round=20	{"mung":["age"]}
         see:🟦 tiles 1 bookmarks
     A:Pantheate
       self,round=12	{"mung":["age"]}

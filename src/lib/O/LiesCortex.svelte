@@ -39,12 +39,11 @@
     //                                   on landing.  Carries %dige so Rundown can hash.
     //     sc.gen_path, sc.source_dige, sc.dige, permanent:1; c.write_t0 (transient)
     //
-    //   w/req:Cortex/req:Rundown      — beside the Codebits, there from the start.
-    //     maz:1, eternal                Idles on /%waits:!run_method until a compile sets one.
-    //                                   Hashes sibling Codebit diges + %leashi into a moment id;
-    //                                   mints req:BlatDo for each new moment and waits on it.
-    //                                   Oks when BlatDo finishes and records %ran:moment.
-    //     sc.run_method?, sc.leashi; one %ran:moment child records the last run
+    //   w/req:Cortex/req:Rundown      — beside the Codebits; only from e_Rundown_arm,
+    //     maz:1, eternal                not compilation.  Arrives with run_method set.
+    //                                   Waits on all Codebits finishing, mints
+    //                                   req:BlatDo per moment, oks when BlatDo finishes.
+    //     sc.run_method, sc.leashi; one %ran:moment child records the last run
     //     /req:BlatDo,moment           — one run instance per moment.  Fires
     //                                   e:Pantheate_run_method carrying %req for
     //                                   reqyoncile return.  Holds %ttlilt,waiting:run
@@ -58,9 +57,11 @@
     //
     //   e_Lies_compiled
     //     → LiesStore_write(gen_path, source)   — parks IO, returns immediately
-    //     → LiesCortex_arm(w)                   — ensure req:Cortex + req:Rundown exist
-    //     → if run_method: set rundown.sc.run_method
+    //     → LiesCortex_arm(w)                   — ensure req:Cortex exists
     //     → roai req:Codebit,path               — permanent; re-compile mutates %dige
+    //
+    //   e_Rundown_arm  (fired from Prep/test script)
+    //     → LiesCortex_arm(w) + roai req:Rundown — creates the runner with run_method
     //
     //   H.reqy(w).do() each tick
     //     maz:7 req:Store    — pump IO; sets ok when done; Phase 1 stamps write_finished
@@ -68,16 +69,14 @@
     //       maz:2 req:Codebit — waits for write_finished; on land: fires
     //                           Ghost_update_notify + Lies_compile_settled; finishes
     //                           (permanent — stays put, un-finishes on re-compile)
-    //       maz:1 req:Rundown — ambient; idles or mints req:BlatDo when inputs are
-    //                           ready and moment is new; waits on BlatDo, then ok
+    //       maz:1 req:Rundown — present only if e_Rundown_arm fired; idles or
+    //                           mints req:BlatDo when inputs are ready; waits on BlatDo
     //     maz:* lower reqs   — desire, wants, Furnish, Curse
     //
     // ── nogen / softgen / nowriting ──────────────────────────────────────────
     //
     //   No write → e_Lies_compiled fires Lies_compile_settled immediately.
-    //   No Codebit parked; Rundown sits with its existing inputs (if any).
-    //   run_method still set on Rundown when present — a future leash bump can
-    //   re-run even from a softgen|nogen flow if Codebits already exist.
+    //   No Codebit parked; Rundown idles with its existing Codebit set (if any).
 
     // File extensions that produce gen/ output.
     // Everything else is soft-compile only regardless of Ghost/ location.
@@ -110,10 +109,7 @@
     //   nowriting  — regex-gated suppression; logs intent via Lies_log_want.
     //   (default)  — write gen_path to disk, park|re-arm req:Codebit.
     //
-    //   run_method, when present, goes on Rundown — not on the Codebit.
-    //   Rundown is beside the Codebits; the run is its job.
-    //
-    //   e.sc: { path, gen_path, source, dige, source_dige, run_method? }
+    //   e.sc: { path, gen_path, source, dige, source_dige }
     async e_Lies_compiled(A: TheC, w: TheC, e: TheC) {
         const H           = this as House
         const path        = e.sc.path        as string
@@ -121,7 +117,6 @@
         const source      = e.sc.source      as string
         const dige        = e.sc.dige        as string | undefined
         const source_dige = e.sc.source_dige as string | undefined
-        const run_method  = e.sc.run_method  as string | undefined
         if (!path || !gen_path) throw 'e_Lies_compiled: needs path + gen_path'
 
         const nowriting = H.Lies_nowriting(w, gen_path)
@@ -129,14 +124,8 @@
         const softgen   = !!H.o_Opt_val(w, 'softgen')
         const do_write  = !nogen && !softgen && !nowriting
 
-        // Cortex foreman + its standing Rundown both exist from here on.
-        // run_method, when this compile carries one, configures the Rundown —
-        //  set even for no-write compiles; a leash bump can re-run if Codebits exist.
-        const { cortex, rundown } = await H.LiesCortex_arm(w)
-        if (run_method && rundown.sc.run_method !== run_method) {
-            rundown.sc.run_method = run_method
-            rundown.bump_version()
-        }
+        // Cortex foreman exists from here on; Rundown is separate (e_Rundown_arm).
+        const { cortex } = await H.LiesCortex_arm(w)
 
         if (!do_write) {
             // immediate settle — no write, no Pantheate notify.
@@ -174,39 +163,15 @@
         H.i_elvisto(w, 'think')
     },
 
-    // ── e_Lies_run_method ─────────────────────────────────────────────────────
-    //
-    //   Thin event: dock.sc.run_method arrived or changed — arm Cortex|Rundown
-    //   and stamp the method without triggering a write or Codebit cycle.
-    //   Fired by Languish (req_compile) whenever dock.sc.run_method is set and
-    //   differs from what Rundown already knows.
-    //
-    //   e.sc: { run_method: string }
-    async e_Lies_run_method(A: TheC, w: TheC, e: TheC) {
-        const H          = this as House
-        const run_method = e.sc.run_method as string | undefined
-        if (!run_method) return
-        const { rundown } = await H.LiesCortex_arm(w)
-        if (rundown.sc.run_method !== run_method) {
-            rundown.sc.run_method = run_method
-            rundown.bump_version()
-        }
-        H.i_elvisto(w, 'think')
-    },
-
     // ── LiesCortex_arm ────────────────────────────────────────────────────────
     //
-    //   Ensure req:Cortex exists on w (the eternal foreman) and that it has its
-    //   standing req:Rundown.  Both are roai — idempotent across ticks.
-    //   maz:5 puts Cortex below req:Store (maz:7); handler_of_last_resort drives
-    //   its Codebit|Rundown children without needing an explicit req_Cortex do_fn.
-    async LiesCortex_arm(w: TheC): Promise<{ cortex: TheC, rundown: TheC }> {
-        const H       = this as House
-        const cortex  = await H.reqy(w).roai({ req: 'Cortex', eternal: 1, maz: 5 })
-        // Rundown is eternal and beside the Codebits from the start — it idles on
-        //  /%waits:!run_method until a compile carrying a Pantheate_method sets one.
-        const rundown = await H.reqy(cortex).roai({ req: 'Rundown', eternal: 1 })
-        return { cortex, rundown }
+    //   Ensure req:Cortex exists on w — the eternal foreman whose children are
+    //   driven by handler_of_last_resort each tick.  maz:5 puts it below
+    //   req:Store (maz:7).  Rundown is created separately by e_Rundown_arm.
+    async LiesCortex_arm(w: TheC): Promise<{ cortex: TheC }> {
+        const H      = this as House
+        const cortex = await H.reqy(w).roai({ req: 'Cortex', eternal: 1, maz: 5 })
+        return { cortex }
     },
 
 //#endregion
@@ -510,6 +475,28 @@
         //   e_reqyonciliation drops the %ttlilt and feebly_ponders,
         //    waking Rundown to record %ran and go ok in the same Story step.
         H.i_req_ttlilt(req, 0.5, { waiting: 'run' })
+    },
+
+    // ── e_Rundown_arm ─────────────────────────────────────────────────────────
+    //
+    //   Explicitly creates req:Rundown on w:Lies and sets its run_method.
+    //   Fired from the Prep/test script rather than as a compile side-effect:
+    //   the Prep step says "run theCompiledStuff when Codebits are ready"
+    //   rather than "compile and also implicitly configure a runner."
+    //   Rundown then sits beside whatever Codebits arrive and fires when they land.
+    //
+    //   e.sc: { run_method: string }
+    async e_Rundown_arm(A: TheC, w: TheC, e: TheC) {
+        const H          = this as House
+        const run_method = e.sc.run_method as string | undefined
+        if (!run_method) return
+        const { cortex } = await H.LiesCortex_arm(w)
+        const rundown = await H.reqy(cortex).roai({ req: 'Rundown', eternal: 1 })
+        if (rundown.sc.run_method !== run_method) {
+            rundown.sc.run_method = run_method
+            rundown.bump_version()
+        }
+        H.i_elvisto(w, 'think')
     },
 
     // ── e_Rundown_leash ────────────────────────────────────────────────────────

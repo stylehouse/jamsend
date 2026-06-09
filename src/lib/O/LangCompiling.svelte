@@ -157,14 +157,10 @@
             // stale), making every Esc compile one push behind the current text.
             this.Lang_dock_from_event(w, e)
             return this.i_elvisto(w,'Lang_compile',{
-                misdirectioner:   1,
-                Pantheate_method: e.sc.Pantheate_method,
+                misdirectioner: 1,
             })
         }
         const dock = this.Lang_active_dock(w)
-        if (e.sc.Pantheate_method && dock) {
-            dock.sc.run_method = e.sc.Pantheate_method as string
-        }
         // Drop the compile when one is already in-flight for this doc.
         // < should be in req:Languish
         if (dock?.o({ Compile: 1 })[0]?.sc.pending) {
@@ -272,12 +268,10 @@
         }
 
         // Hand off to Lies — Lies decides write vs softgen vs nogen.
-        // e_Lies_compiled parks req:Cortex; req_Cortex fires Lies_compile_settled
-        // back once the write (if any) lands; Lang_compile_step consumes it.
+        // e_Lies_compiled parks req:Cortex + req:Codebit; Rundown is separate.
         H.i_elvisto('Lies/Lies', 'Lies_compiled', {
             path: dock.sc.dock, gen_path, source,
             dige: gen_path ? await dig(source) : '', source_dige,
-            run_method: dock.sc.run_method,
         })
         H.i_elvisto(w, 'think')
     },
@@ -285,8 +279,7 @@
     // ── Lang_compile_step — Lies_compile_settled consumer ────────────────────
     //
     //   Called from Lang(A,w) each tick while any dock has job.c.pending.
-    //   Drains Lies_compile_settled elvises, clears job.c.pending, closes %time,
-    //   and fires Pantheate_run_method if dock.sc.run_method is set.
+    //   Drains Lies_compile_settled elvises, clears job.c.pending, closes %time.
     //
     //   Multi-doc: one settled elvis per doc may arrive in the same tick.
     //   settle drives from req:Cortex (LiesCortex) — fires after LiesStore_run.
@@ -315,9 +308,6 @@
                 time.sc.all   = +(all_ms   / 1000).toFixed(3)
                 if (write_ms != null) time.sc.write = +(write_ms / 1000).toFixed(3)
             }
-            // run_method now fires from req:Rundown beside the Codebits (LiesCortex),
-            // gated on all gen writes landing — not from here, where it could race
-            // ahead of a still-writing ghost.
             w.i({ see: `✅ compiled ${settled_path}` })
         }
     },

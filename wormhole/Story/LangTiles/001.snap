@@ -13,13 +13,13 @@ Snap:H
           Waft:Story/LangTiles/Waftily	{"ref":{"src":"%Waft:Story/LangTiles/Waftily"}}
         req:git
         req:wants
-          want=1780962413317,kind:cold
-          want=1780962413369,kind:cold
-          want=1780962413476,kind:cold,resolved
+          want=1780965176096,kind:cold
+          want=1780965176147,kind:cold
+          want=1780965176250,kind:cold,resolved
         open_waft_req,path:Story/LangTiles/Waftily,done
         req:Store,eternal,maz=7,ok
-          known:Ghost/test/LangTiles.g,dige:1f738455c057ebe2,kind:read,at=1780962413.586
-          known:gen/test/LangTiles.go,dige:4fa187d4727e35e9,kind:write,at=1780962414.666
+          known:Ghost/test/LangTiles.g,dige:1f738455c057ebe2,kind:read,at=1780965176.354
+          known:gen/test/LangTiles.go,dige:4fa187d4727e35e9,kind:write,at=1780965177.176
         Waft:Story/LangTiles/Waftily
           What:labelofaWhat
             Doc:Ghost/test/LangTiles.g
@@ -32,8 +32,6 @@ Snap:H
           req_sent
         loaded_doc,path:Ghost/test/LangTiles.g,base_dige:1f738455c057ebe2
         req:Cortex,eternal,maz=5
-          req:Rundown,eternal,ok
-            waits:!run_method
           req:Codebit,path:Ghost/test/LangTiles.g,maz=2,gen_path:gen/test/LangTiles.go,source_dige:1f738455c057ebe2,dige:4fa187d4727e35e9,permanent,write_finished,finished
         self,round=24	{"mung":["age"]}
     A:Lang
@@ -64,7 +62,7 @@ Snap:H
                 def,method:severally,from=1964,to=1974,line=70	{"ref":{"region_path":"[]"}}
                 call,method:laterally,from=2116,to=2128,line=76,via:severally	{"ref":{"region_path":"[]"}}
                 def,method:laterally,from=2140,to=2150,line=78	{"ref":{"region_path":"[]"}}
-              time,compile=0.012,all=0.799,write=0.001
+              time,compile=0.009,all=0.614,write=0
               Output,gen_path:gen/test/LangTiles.go,dige:4fa187d4727e35e9,source_dige:1f738455c057ebe2
                source: |
                  <script lang="ts">
@@ -181,7 +179,7 @@ Snap:H
           Change
             backend,dige:1f738
             storage,dige:1f738,dim:false
-            compile,dige:1f738,dim:false,secs=0.012
+            compile,dige:1f738,dim:false,secs=0.009
         {"loopy":0,"ks":"%LE:1, target:%What"}	
           Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:labelofaWhat","topD":"%Demonstrations:origin"}}
             Demonstrations:origin
@@ -206,7 +204,7 @@ Snap:H
             checkout,what:labelofaWhat
             furnish,doc_path:Ghost/test/LangTiles.g,have_dock
             compile,have_methods
-            ttlilt,until_ts=1780962415.146,waiting:methods
+            ttlilt,until_ts=1780965177.908,waiting:methods
             graft,n_pmirrors=2
         o_elvis:Lang_open_dock
         Opt
@@ -239,5 +237,5 @@ Snap:H
       action,role:nogen,label:nogen,icon:nogen,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:softgen,label:softgen,icon:softgen,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:compo,label:compo,icon:compo ✓,cls:toggle-on	{"ref":{"fn":"Function()"}}
-    ttlilt,of_w:Lang,until_ts=1780962415.146,waiting:methods	{"ref":{"req":"%req:settle"}}
+    ttlilt,of_w:Lang,until_ts=1780965177.908,waiting:methods	{"ref":{"req":"%req:settle"}}
     mo:main,interval=3.6	{"mung":["id"]}

@@ -931,12 +931,6 @@
             H.i_req_ttlilt(req, 0.5, { waiting: 'methods' })
             return
         }
-        // run_method: push to Lies/Rundown whenever it's set on the dock —
-        //  fires every pass so it arrives even when the compile bails on pending.
-        //  Rundown's same-value guard makes this idempotent.
-        if (dock.sc.run_method) {
-            H.i_elvisto('Lies/Lies', 'Lies_run_method', { run_method: dock.sc.run_method })
-        }
         if (job.sc.pending) {
             // methods ready but gen-file write still in flight — hold Story open
             // so the gen file exists before the snap; %Compile/sc.pending is now

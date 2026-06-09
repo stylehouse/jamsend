@@ -9,8 +9,8 @@ story:LangTiles
         esc:from,v=98
         esc:to,v=132
     Prep=3
-      i_elvisto:Lang,e:Lang_compile
-        esc:Pantheate_method,v:theCompiledStuff
+      i_elvisto:Lies,e:Rundown_arm
+        esc:run_method,v:theCompiledStuff
     Prep=4
       i_elvisto:Lang,e:Lang_i_alterationStation
         esc:line_n,v=6
@@ -30,22 +30,22 @@ story:LangTiles
         nowriting:^Ghost
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=80.372
-      sample=789.275,at=1780921525
-      sample=1.286,at=1780922482
-      sample=2.14,at=1780925180
-      sample=2.418,at=1780959048
-      sample=2.418,at=1780959665
+    TimeTotal:beliefs,avg=1.09
       sample=1.625,at=1780959687
       sample=1.255,at=1780960534
       sample=1.099,at=1780962423
       sample=1.099,at=1780962481
       sample=1.103,at=1780964005
-  step,dige:b3949747c75af6a5
-  step=2,dige:ae0f08d2ce73936f
-  step=3,dige:407e29670c4c0048
-  step=4,dige:e26dc69915e6e099
+      sample=0.873,at=1780964954
+      sample=1.238,at=1780965043
+      sample=0.834,at=1780965067
+      sample=0.888,at=1780965186
+      sample=0.888,at=1780965553
+  step,dige:6b342850723d36c7
+  step=2,dige:60c7186ea61b84fe
+  step=3,dige:80f7b71fa19873f3
+  step=4,dige:5995eee30de06d77
     note,bug:Cyto edge problems with Leg/PeelGroup/Leg the other PeelGroup alone
-  step=5,dige:a6fcad3570c5c4f6
-  step=6,dige:f7add3fb7a53ba86
-  step=7,dige:37cf994fb22a42fb
+  step=5,dige:22ef83583710b4bf
+  step=6,dige:9958bafa0ed0b606
+  step=7,dige:da1954962be10abb

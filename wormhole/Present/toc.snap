@@ -2,19 +2,19 @@ Library
   Book:LeafJuggle,ok_pct,last_run_ms=1779622781.774,done=4,last_pct_change=1776741166.033
   Book:LeafFarm,ok_pct,last_run_ms=1779622753.198,done=6,last_pct_change=1778378075.558
   Book:StuffFlipping,ok_pct=0,last_run_ms=1779622717.748,done,last_pct_change=1779622702.753
-  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1780964027.505,active
+  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1780965189.228,active
     TimeSpool
-      TimeTotal:beliefs,avg=1.103
-        sample=1.099,at=1780963990
-        sample=1.103,at=1780964005
-        sample=1.103,at=1780964005
-        sample=1.103,at=1780964006
-        sample=1.103,at=1780964015
-        sample=1.103,at=1780964016
-        sample=1.103,at=1780964019
-        sample=1.103,at=1780964023
-        sample=1.103,at=1780964023
-        sample=1.103,at=1780964027
+      TimeTotal:beliefs,avg=0.888
+        sample=0.888,at=1780965186
+        sample=0.888,at=1780965186
+        sample=0.888,at=1780965186
+        sample=0.888,at=1780965187
+        sample=0.888,at=1780965187
+        sample=0.888,at=1780965187
+        sample=0.888,at=1780965188
+        sample=0.888,at=1780965188
+        sample=0.888,at=1780965188
+        sample=0.888,at=1780965189
   Book:LakeSurfer,ok_pct=0,last_pct_change=1779607681.571,done=2,last_run_ms=1780805903.457
     TimeSpool
       TimeTotal:beliefs,avg=0.741
