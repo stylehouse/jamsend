@@ -134,6 +134,7 @@
         const Li = w.o({ Library: 1 })[0] as TheC | undefined
         if (!Li) return w.i({ see: '⏳ Library...' })
         let picks_a_book = (bname) => {
+            H.auto_spool_book_sample(Li)   // one %sample for the run being replaced
             H.auto_reset_story(bname)
             w.c.ave.roai({activeBook:1},{Book:bname})
         }
@@ -237,9 +238,10 @@
 //#region Story stats sync
 
     auto_sync_story_stats(Li: TheC) {
-        // Read ok_pct, last_run_ms, and beliefs time from the live Story house
-        // (if any) and write them back into the matching Book particle.
-        // Fires every Auto tick — cheap, no I/O.
+        // Sync ok_pct, done, and last_run_ms from the live Story house
+        //   into the matching %Book each Auto tick — cheap, no I/O.
+        // For timing %sample spooling see auto_spool_book_sample,
+        //   called from picks_a_book once per activation.
         const H     = this as House
         const story = H.o({ H: 'Story' })[0] as House | undefined
         if (!story) return
@@ -274,13 +276,31 @@
             Li.bump_version()
         }
         book.sc.last_run_ms = last_run_ms
+    },
 
-        // ── timing history ────────────────────────────────────────────────────
-        // Same gather as collect_time_sample: sum beliefs-mutex time across
-        // every step in This that has a Run_trace.  Then spool one sample into
-        // a per-book {TimeTotal:'beliefs'} particle that persists in toc.snap,
-        // giving LibraryRun 10 sessions of history to rank bubbles by.
-        const ranSteps = all_steps
+//#region Story spool
+
+    auto_spool_book_sample(Li: TheC) {
+        // Capture the beliefs-mutex time of whichever book is currently running,
+        //   spooling one %sample into book/TimeSpool/TimeTotal,'beliefs'
+        //   so each picks_a_book call (activateBook | resetStory) contributes
+        //   exactly one data point — whether the story finished or not.
+        // Returns early if Story isn't running yet or has no stepped steps.
+        const H = this as House
+        const story = H.o({ H: 'Story' })[0] as House | undefined
+        if (!story) return
+
+        const stA = story.o({ A: 'Story' })[0] as TheC | undefined
+        const stW = stA?.o({ w: 'Story' })[0] as TheC | undefined
+        if (!stW) return
+
+        const book_name = stW.sc.Book as string | undefined
+        if (!book_name) return
+
+        const thisC = stW.c.This as TheC | undefined
+        if (!thisC) return
+
+        const ranSteps = (thisC.o({ Step: 1 }) as TheC[])
             .filter(s => Array.isArray(s.sc.Run_trace) && s.sc.Run_trace.length)
         if (!ranSteps.length) return
 
@@ -288,8 +308,11 @@
         for (const step of ranSteps)
             run_total_seconds += H.sum_beliefs_time(step.sc.Run_trace as any[])
 
-        // find-or-create the per-book spool particle (not under The — lives
-        // directly on the Book so it round-trips through toc.snap / toc.wh)
+        const book = Li.o({ Book: book_name })[0] as TheC | undefined
+        if (!book) return
+
+        // find-or-create the per-book spool (lives on %Book so it
+        //   round-trips through toc.snap — not under The)
         const book_spool = (book.o({ TimeSpool: 1 })[0] as TheC) ?? book.i({ TimeSpool: 1 })
         const book_tt    = (book_spool.o({ TimeTotal: 'beliefs' })[0] as TheC)
                         ?? book_spool.i({ TimeTotal: 'beliefs', avg: 0 })

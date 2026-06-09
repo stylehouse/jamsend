@@ -4,10 +4,13 @@
     // Mounted by Otro via H/{watched:UIs}/{UI:'Library'}.
     // Receives H (the root Mundo house).
     //
-    // Shows each Book particle from Li = H.ave.ob({Library:1}) as a bubble.
-    // Bubble size = relative rank by average beliefs-mutex time across the
-    // last-10 samples stored in book.sc.time_samples[].  All sizes are
-    // relative to each other so the pile stays meaningful across sessions.
+    // Shows each %Book under Li = H.ave/Library as a bubble.
+    // Bubble size = relative rank by a recency-weighted beliefs-mutex time,
+    //   folding each %sample under book/TimeSpool/TimeTotal,'beliefs'
+    //   newest-first with a geometric weight,
+    //   so one very-recent run outweighs many semi-recent ones.
+    // Sizes stay relative to each other, so the pile reads the same
+    //   regardless of absolute timings, across sessions.
     //
     // Mung errors are shown as red banners at the top — fatal, user must fix code.
     // < more reactive UI - last run etc values don't update
@@ -97,30 +100,65 @@
         H.i_elvisto('Auto/Auto', 'resetStory', {})
     }
 
-    // ── relative rank sizing ──────────────────────────────────────────────
-    // Read time_avg from book/{TimeSpool:1}/{TimeTotal:'beliefs'}.avg —
-    // the per-book spool particle written by auto_sync_story_stats via
-    // spool_time_sample.  Sort descending, map rank to tier so the pile
-    // always fills all four sizes regardless of absolute values.
-    // Books with no samples sit at the end and share 'sm'.
+    // ── recency-weighted rank sizing ──────────────────────────────────────
+    // The pile sorts by book_rank_score, descending,
+    //   then maps each book's rank to a tier,
+    //   so all four sizes stay filled regardless of absolute timings.
+    // The score reads every %sample under book/TimeSpool/TimeTotal,'beliefs',
+    //   spooled each run by auto_sync_story_stats -> spool_time_sample,
+    //   and folds them newest-first with a geometric recency weight:
+    //     weight_i = DECAY^i,   i:0 the newest
+    //     score    = sum(weight_i * sample_i) over sum(weight_i)
+    // DECAY below 0.5 makes the newest single sample outweigh all the older
+    //   ones combined, so one very-recent activation ranks a book above
+    //   another book carrying many semi-recent ones.
+    // Books with no %sample score -1, sit at the end, and share 'sm'.
     const TIERS = ['xl', 'lg', 'md', 'sm'] as const
     type Tier = typeof TIERS[number]
+    const DECAY = 0.45
 
-    function book_time_avg(book: TheC): number {
+    function book_tt(book: TheC): TheC | undefined {
         const spool = book.o({ TimeSpool: 1 })[0] as TheC | undefined
-        const tt    = spool?.o({ TimeTotal: 'beliefs' })[0] as TheC | undefined
-        return (tt?.sc.avg as number) ?? -1
+        return spool?.o({ TimeTotal: 'beliefs' })[0] as TheC | undefined
+    }
+
+    function book_samples(book: TheC): TheC[] {
+        const tt = book_tt(book)
+        return tt ? (tt.o({ sample: 1 }) as TheC[]) : []
+    }
+
+    // displayed ⏱ value — the honest flat mean spooled into %TimeTotal,'beliefs'
+    function book_time_avg(book: TheC): number {
+        return (book_tt(book)?.sc.avg as number) ?? -1
     }
 
     function book_sample_count(book: TheC): number {
-        const spool = book.o({ TimeSpool: 1 })[0] as TheC | undefined
-        const tt    = spool?.o({ TimeTotal: 'beliefs' })[0] as TheC | undefined
-        return tt ? (tt.o({ sample: 1 }) as TheC[]).length : 0
+        return book_samples(book).length
+    }
+
+    function book_rank_score(book: TheC): number {
+        const samples = book_samples(book)
+        if (!samples.length) return -1
+        // newest first — %sample/at is wall-clock seconds when present,
+        //   else fall back to stored order,
+        //   where the spool evicts oldest so the last entry is newest.
+        const ordered = samples.every(s => typeof s.sc.at === 'number')
+            ? [...samples].sort((a, b) => (b.sc.at as number) - (a.sc.at as number))
+            : [...samples].reverse()
+        let vsum = 0, wsum = 0, w = 1
+        for (const s of ordered) {
+            const v = s.sc.sample as number
+            if (typeof v !== 'number') continue
+            vsum += w * v
+            wsum += w
+            w    *= DECAY
+        }
+        return wsum ? vsum / wsum : -1
     }
 
     let ranked_books = $derived.by(() => {
         const bs = [...books] as TheC[]
-        bs.sort((a, b) => book_time_avg(b) - book_time_avg(a))
+        bs.sort((a, b) => book_rank_score(b) - book_rank_score(a))
         const n = bs.length
         return bs.map((book, i) => {
             // quarter-based: top 25% → xl, next → lg, next → md, rest → sm

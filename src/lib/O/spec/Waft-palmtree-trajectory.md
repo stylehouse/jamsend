@@ -150,49 +150,9 @@ There's also w:Lies's req:timemachine and req:wants we need to keep in mind when
 any more isolations or interface togetherings we'd like to imagine...
 
 
----
+# Future
 
-## Where we are — what's next
-
-**LiesCortex extracted.**  `compile_pending` replaced by `req:Cortex,path` with a proper req lifecycle.  `e_Lies_compiled` moved to LiesCortex — it decides write vs `softgen` vs `nogen` vs `nowriting` and parks `req:Cortex` when writing.  `req_Cortex` waits for the matching `LiesStore_write` to finish (tick-ordering guarantee: Store runs before Cortex) then fires `Ghost_update_notify` + `Lies_compile_settled`.  `req_LiesStore_write_done` now Store-only: stamps `base_dige` + `known`, drops the req; no compile knowledge.  `LiesCortex_run` called from the Lies tick after `LiesStore_run`.  `Lies_LuxuryLiesStore_write_reqy` helper inlined into its one call site.  `LiesStore` now has `LiesStore_read_waft` — folds `deWaft` into the read result so callers don't repeat that boilerplate.
-
-**`softgen` opt added.**  `nogen` skips write entirely; `softgen` renders `%Output` visible in snap but doesn't write gen/ to disk.  Useful for dev/test flows where file content matters but disk writes are noise.  Distinguished from `nowriting` (which blocks all writes including Waft snaps and source files).
-
-**`gen_path` carrier chain collapsed.**  Previously threaded from Lies through `Lang_open_dock` → languish.sc → `req_text_loaded` → `dock.sc.gen_path`.  Now derived once, at the earliest moment it matters: `LangCompiling.Lang_compile_dock` calls `H.Lies_gen_path(dock.sc.dock)` directly.  Nothing upstream of compile time carries it.  `loaded_doc` mainkey loses `gen_path`.
-
-**`job.c.pending` replaces `%Pending:1`.**  The old snap particle caused a "arrives slightly earlier in step time" race — Story could snap `req:compile,firing` + `Compile/Pending` mid-flight.  `job.c.pending` is transient (never in snap); `req_compile` and `Lang_update_change` both check it; `Lang_compile_step` clears it when `Lies_compile_settled` arrives.  The Lang tick's compile_step gate narrows from `dock?.oa({Compile:1})` to `job?.c.pending`.
-
-**`moai` bumps parent.**  `something_oai` already calls `this.bump_version()` + `existing.bump_version()` before the `mutated_fn`.  The redundant `dock.bump_version()` calls after `moai` in Lang and LiesStore removed.  Pattern: anywhere `moai` is followed by an explicit bump on the same parent, that bump is dead code.
-
-**LiesStore tidy-up done.**  `pending_write` → `LuxuryLiesStore_write`; `wwrite`/`wread`/`wlisting` → `LiesStore_write`/`LiesStore_read`/`LiesStore_listing`.  `req_wwrite` handler deleted — dispatch happens in the helpers directly.  Throttle machinery gone.  All three IO reqs arm a 1.6s `%ttlilt` at dispatch.  `LuxuryLiesStore_write` gains a cavalier skip: if `Store/known:path` is < 4s old and dige matches `base_dige`, the pull-before-push Wormhole read is skipped.  `LUXURY_WRITE_SKIP_CHECK_SECS = 4` lives outside `eatfunc`.
-
-**Liesui Waft reactivity fixed.**  After the "layer effects, Languinio/dock" commit added `languinio?.ob()` to Langui's `$effect`, Liesui's parallel `$effect` was missing the corresponding `ex.ob()`.  Without it, `examining.bump_version()` (fired by `watch_c(w:Lies)` when `w` changes) didn't re-trigger Liesui's `$effect` — `all_wafts` stayed stale.  One-line fix: `ex.ob()` after the null-guard, mirroring Langui exactly.
-
-**`ave/{lang_dock:path}` sublated.**  Source text lives as `dock.c.text` (hidden from snap), metadata as `dock/{Text:1}` with `sc.dige`, `sc.disk_dige`, `sc.disk_rev`; updated via `moai` + `dock.bump_version()`.  `active_dock` merged into `dock` in Langui.  Langui now has three layered `$effect`s: Languinio→dock, dock→Text, Text→disk-reload.  `req:compile` event-driven via `i_elvistwo` reqturn; no more 0.5s polling gap.  `lang_doc` typo fixed.
-
-**Spotlight-Interest (4b.5) is done.**  The 3a–3j work landed: req:wants,
-Lies_i_Spotlight called only from the resolver, %Interest, waft_key_of,
-req:timemachine on %examining, req:desire as just the Waft lock, req:Showing,
-pmirror.c.src_clone, req:push three-phase cluster, req:Furnishing RPC,
-breadcrumb removed.  Known open faults remain (listed below) — none are
-blockers for 4c.
-
-**The pending integration: two systems for acceptance.**
-
-The U sphere (`U%unshowing`, `U%unaccepted`) is that.
-
-The consolidation: move the capsule strip and its state management from
-DocMinimap into NaviCado, making the U sphere the single truth for
-showing|accepted-ness and expressed in the negative.  DocMinimap keeps:
-regions, def chips, scroll sync, nav history,
-fold toggle.  NaviCado gains: the capsule `{#each}`, `in_group`/`showing`,
-`push_what_point`, `reset_what_point`, `receive_what_point_from_lies`,
-`collect_le_membership`.  The unsent bar goes with them.
-
-This matters before 4c because 4c's carry-over seeding reads `clone.c.U?.sc.unshowing`
-to decide what to copy forward, and stamps `class:'ghost'` via the U sphere.
-Having two competing truths about showing/accepted would confuse that read.
-
+It may slightly be here already.
 
 ---
 
@@ -273,21 +233,9 @@ attention with particular Points illuminated on the walls.
 
 ## Open faults
 
+### important, check these out
+
 ```
-// ── LiesStore / IO ──────────────────────────────────────────────────────────
-
-// < %Store:1/known:path should move inside req:Store (deferred — small rename pass).
-
-// < req_LiesStore_write_done cross-world dock lookup — after a source write,
-//   tries w.o({docks:1})[0]?.o({dock:path})[0] to moai Text,
-//   but w is w:Lies and dock lives on w:Lang.  Currently the moai is a no-op
-//   (finds nothing).  Fix: carry disk_dige in Lies_compile_settled / a new
-//   event, or have Lang handle the disk_dige update after wwrite.
-
-// < openity push reactivity — Housing's watch_c + pending + flush is the right
-//   primitive for per-particle push.  Refactor: target individual particles
-//   (not whole-channel copies) and deliver via elvis rather than replicate.
-
 // ── LiesCortex ──────────────────────────────────────────────────────────────
 
 // < req:Cortex write_finished ordering — currently guaranteed by LiesStore_run
@@ -298,14 +246,60 @@ attention with particular Points illuminated on the walls.
 
 // ── Lang / compile ──────────────────────────────────────────────────────────
 
-// < created_at session field on clones — stripped by Seem_toString / enWaft;
-//   needs wiring in LE_add_clone and the strip list.
+// < typing into the codemirror can overwhelm the backend with elvises
+//    is it a reqyoncile() before the 400ms-batches-of-streams-of-typing enforcer?
+//    There is also no guaranteed write every 9s when this queue of stuff is happening...
 
-// < U-edit encode gate: clone.c.U mutations (unaccepted/unshowing) don't bump
+// < U%created_at session field needs wiring in LE_add_clone and the strip list.
+
+// < C|U-edit should cause encode: U mutations (unaccepted/unshowing) don't bump
 //   Seem:working.version, so settle's encode gate never fires after e_Lang_LE_drop
-//   / e_Lang_LE_edit.  Fix: stamp LE.c.u_edit_serial++ in those handlers;
-//   encode_key = `${wv}:${u_edit_serial}`.
-//   Until fixed, %State.changey doesn't update after minimap × demote.
+//   / e_Lang_LE_edit, etc. To this end... hakd() shall be used by something used for
+//   D/changelog,sphere:C|U,... which may be able to track value tweaks over time soon
+//   but we shall just use it to know if anything changed, and for individual C revert,
+//   as opposed to taking the LE_pull again to reset the C.
+
+// < react to UI:Waft** mutations, via LiesPersist's:
+            H.watch_c(waft, async () => {
+                H.Lies_sync_waft_docs(w, waft)
+                H.Lies_waft_save(w, waft)
+                await H.Waft_link_up(waft, waft)
+            })
+     or maybe call a method to notify of such changes...
+      So OC change may want pulling.
+        It's a bit hairy... Incoming changing OC** might intersect the targeted OC**
+          either way some refs have to change... we have to Selection.process seamlessly when
+          new decodes of Waft emerge.
+        Check our target.up chain is still valid... C.c.up.o().includes(C)
+          Wind up|backward somehow? Our spot might suddenly be unpointable.
+          TODO this, we'll just have to navigate ourselves...
+        So OC** can spontaneously change via Waft reload, it becomes pullable...
+        If C is cleanly pulled from the previous-OC, the new-OC is automatically pullable,
+          even though it has a difference to it.
+      So OC change may want pulling into C immediately, showing up into Pmirrors etc.
+
+// < does LiesPersist / LiesStore_read_good etc etc seem perfect? seems guts-hanging-out.
+      It has to handle the above re-read shunt (might be an echo: a push then a pull)
+       and how Store/Good is always there now, not just when loading...
+       Actually LiesPersist looks like it was imagining the waits-for-req:Store,maz:7 we
+       have now, so should we move to using that... with some kind of push-able end to it?
+      and in Diffmatication / LiesStore_read_waft_good does not exist 
+
+// < retargeting the LE away and back to mutated C** should resume as it was, not pull|reset.
+     LE would need to target various perhaps unconnected bits of D** to resume, by path...
+      Waft:$path (/namey-as-id)* is the whole locator of C**
+       it needs the Se to decide how much is needed to be namey-as amongst its peers
+        see also Stuffing
+     so resuming C you tweaked while surfing around... have reset button.
+      reset them if we reset all of Waft...
+     having a generic read|writable with resettable client... indeed.
+
+```
+
+### others
+
+```
+// < survey the fictional worth of these concepts and playthings
 
 // < req:Showing has no req particle yet — Lang_show_pmirrors is the body but
 //   is called directly from the tick.  As a proper open-ended req it survives
