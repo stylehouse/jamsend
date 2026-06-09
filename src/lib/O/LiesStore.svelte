@@ -18,6 +18,10 @@
     //                                    Keyed by path (noserial reqy); one slot per doc.
     //   req:LiesStore_write,path,dige   — one stable req per (path, content-hash) pair.
     //   req:LiesStore_read,rw_name      — one stable req per wormhole path (+ optional label).
+    //                                    Used by LuxuryLiesStore_write's source_check read
+    //                                    and any caller that doesn't need a Good carrier.
+    //   req:Good,type,path              — named, idempotent IO req mirroring the Good carrier;
+    //                                    used by LiesStore_read_good. keyed same as %Good.
     //   req:LiesStore_listing,rw_dir    — one stable req per directory path.
     //   known:path                      — last known dige + kind (read|write) + at timestamp.
     //                                    Store's private memory of disk state; used by
@@ -62,13 +66,18 @@
     //       - drop the req (rw_data lives in sc, so oncelers would help here;
     //         < rw_data and req_sent as oncelers — snap bloat for now, deferred)
     //
-    //   Phase 2 — read completions (two-pass drop):
-    //     First pass: record known impression, stamp sc.seen=1 on the req.
+    //   Phase 2 — req:LiesStore_read completions (two-pass drop):
+    //     First pass: record known impression on req:Store, stamp sc.seen=1.
     //     Second pass (next req_Store entry): drop.
     //     Two passes because req_Store runs inside the same H.reqy(w).do() call
     //     as LiesPersist — a same-pass drop removes the req before LiesPersist
     //     reads req.sc.finished, causing a tailspin re-dispatch every tick.
     //     sc.seen is the handoff: "I've processed this; caller has one more cycle."
+    //
+    //   Phase 2b — req:Good completions (drop-only):
+    //     Good stamping happens inside LiesStore_read_good itself; Phase 2b
+    //     just drops req:Good once LiesStore_read_good has marked sc.seen.
+    //     No known impression on req:Store — the impression lives on good/known.
     //
     //   Phase 3 — listing completions:
     //     Drop finished req:LiesStore_listing reqs.
@@ -322,6 +331,13 @@
             rd.sc.seen = 1
         }
 
+        // ── Phase 2b: req:Good completions — drop once seen ──────────────────
+        //   Good stamping happens inside LiesStore_read_good (on good.c.content
+        //    and good/known) before seen is set; Phase 2b just cleans up.
+        for (const grd of rq.o({ req: 'Good' }) as TheC[]) {
+            if (grd.sc.seen) req.drop(grd)
+        }
+
         // ── Phase 3: LiesStore_listing completions ────────────────────────────
         for (const ls of rq.o({ req: 'LiesStore_listing' }) as TheC[]) {
             if (ls.sc.finished) req.drop(ls)
@@ -406,38 +422,34 @@
         return req
     },
 
-    // ── LiesStore_read_waft ───────────────────────────────────────────────────
+    // ── LiesStore_read_waft_good ──────────────────────────────────────────────
     //
-    //   Read a snap file and run deWaft on it in one step.
-    //   Returns { waft_C, errors, not_found } once the read finishes.
-    //   Callers still need to check req.sc.finished before calling this —
-    //   the pattern is the same as LiesStore_read; this just folds the deWaft
-    //   step in so callers don't repeat that boilerplate.
+    //   Provision a Good,type:text/Waft and deWaft it in one step.
+    //   Takes just the logical waft_path — the snap path is derived internally.
+    //   Call every tick until good.c.content is set; returns immediately with
+    //    the loading state if not yet landed.
     //
-    //   not_found: true when the file is absent — caller decides whether that
-    //   means start empty or surface an error.
+    //   Returns { good, waft_C?, errors, not_found }.
+    //   good.c.content states drive the caller:
+    //     undefined → still loading (check good.c.content === undefined and return)
+    //     null      → not_found: true, waft_C: undefined
+    //     string    → deWaft ran; waft_C is set on success, errors on failure
     //
-    //   waft_path: the logical Waft key (e.g. 'Ghost/Tour') — passed to deWaft
-    //   as the path context it uses for error messages.
-    //
-    //   Usage:
-    //     const req = await H.LiesStore_read(w, snap_path)
-    //     if (!req.sc.finished) return   // ttlilt already armed
-    //     const { waft_C, errors, not_found } = H.LiesStore_read_waft(req, waft_path)
-    //     if (not_found) { /* start empty */ }
-    //     if (errors.length) { /* surface */ }
-    //     // use waft_C
-    //
-    LiesStore_read_waft(
-        req:       TheC,
+    async LiesStore_read_waft_good(
+        w:         TheC,
         waft_path: string,
-    ): { waft_C: TheC | undefined, errors: string[], not_found: boolean } {
-        if (req.sc.reply?.not_found) {
-            return { waft_C: undefined, errors: [], not_found: true }
-        }
-        const snap = req.sc.reply?.content as string ?? ''
-        const { waft_C, errors } = (this as House).deWaft(snap, waft_path)
-        return { waft_C, errors, not_found: false }
+    ): Promise<{ good: TheC, waft_C: TheC | undefined, errors: string[], not_found: boolean }> {
+        const H         = this as House
+        const snap_path = H.Lies_waft_snap_path(waft_path)
+        const good      = await H.LiesStore_read_good(w, 'text/Waft', snap_path)
+
+        if (good.c.content === undefined)
+            return { good, waft_C: undefined, errors: [], not_found: false }
+        if (good.c.content === null)
+            return { good, waft_C: undefined, errors: [], not_found: true }
+
+        const { waft_C, errors } = H.deWaft(good.c.content as string, waft_path)
+        return { good, waft_C, errors, not_found: false }
     },
 
     // ── LiesStore_listing ─────────────────────────────────────────────────────
@@ -561,6 +573,9 @@
     //   The dige in /known is what the snap records; the bytes live off-snap on .c
     //   so a snap reload re-hydrates content from disk (c.content gone → re-read).
     //
+    //   The IO driver for a Good is req:Store/req:Good,type,path — named and keyed
+    //    same as the carrier; roai'd by LiesStore_read_good, dropped by Phase 2b.
+    //
     //   req:Open and req:Furnishing are both "provision a Good,type:text/Doc and
     //   dispatch its content to a consumer" — they converge here once
     //   a dispatch hook lands (see handoff).
@@ -574,8 +589,11 @@
     // ── LiesStore_read_good ───────────────────────────────────────────────────
     //
     //   Provision a %Good with content from disk and return it.  Call every tick
-    //   until good.c.content is set; the underlying LiesStore_read arms a ttlilt
-    //   while in flight so Story stays awake.
+    //   until good.c.content is set; a ttlilt keeps Story awake while in flight.
+    //
+    //   Internally roai's req:Good,type,path under req:Store — named and keyed
+    //    same as the content carrier, idempotent across ticks and callers.
+    //   req:Store Phase 2b drops it once content is stamped and seen=1 is set.
     //
     //   Read good.c.content:
     //     undefined → still loading — caller returns/waits
@@ -595,9 +613,19 @@
         // already provisioned this session
         if (good.c.content !== undefined) return good
 
-        const req = await H.LiesStore_read(w, path)
-        if (!req.sc.finished) return good   // c.content still undefined → caller waits
+        const host = await H.LiesStore_req(w)
+        // req:Good,type,path — named IO req matching the content carrier; idempotent
+        const req  = await H.reqy(host).roai(
+            { req: 'Good', type, path },
+            { rw_op: 'read', rw_name: path },
+        )
+        H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
+        if (!req.sc.finished) {
+            H.i_req_ttlilt(req, 1.6, { waiting: 'Good' })
+            return good   // c.content still undefined → caller waits
+        }
 
+        req.sc.seen = 1   // signal Phase 2b to drop next pass
         const content   = req.sc.reply?.content as string | undefined
         const not_found = !!req.sc.reply?.not_found
 

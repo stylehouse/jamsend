@@ -3,14 +3,15 @@
 //
 // ── IO via LiesStore Goods ───────────────────────────────────────────────────
 //
-//   All disk reads go through LiesStore_read_good — no direct Wormhole wiring.
+//   All disk reads go through LiesStore_read_good (steps) or
+//    LiesStore_read_waft_good (toc) — no direct Wormhole wiring.
 //   Each read provisions a %Good (toc → type:text/Waft, step → type:text/plain);
 //   read good.c.content (undefined→loading, null→absent, string→content).
 //   LiesStore handles the req lifecycle, ttlilt, and the /known dige for free.
 //   One Good persists per path read, so re-visiting a step is a cache hit.
 //
 //   Paths on disk:
-//     toc  → wormhole/Story/LangTiles/toc.snap   (a Waft snap; deWaft gives steps)
+//     toc  → wormhole/Story/LangTiles/toc.snap   (derived by Lies_waft_snap_path)
 //     step → wormhole/Story/LangTiles/NNN.snap   (a raw snap string per step)
 //
 // ── Structure ─────────────────────────────────────────────────────────────────
@@ -21,7 +22,6 @@
 //     /%Step:N             — uppercase Step = This (live, carries got|exp snap).\
 //       sc.got_snap        — raw snap text, hackable by the UI.
 //       sc.exp_snap        — expected snap text; absence is never a failure.
-//   w.c.toc_waft_path     — logical Waft key, the deWaft path context.
 //
 // ── %Diffmatic — the one container enrolled in ave ────────────────────────────
 //
@@ -39,7 +39,7 @@
 //
 //   w/%req:cursor,step_n:N
 //     %req:demand,step_n:N           doai subroutine on %cursor.
-//       %req:Step,step_n:N           loads got_snap once via LiesStore_read.
+//       %req:Step,step_n:N           loads got_snap once via Good,type:text/plain.
 //     %req:demand,step_n:N-1         pre-warm prev.
 //     %req:demand,step_n:N+1         pre-warm next.
 //     %req:showing                   builds diffs once the centre demand is done.
@@ -53,7 +53,6 @@ import Diffmatic      from "./Diffmatic.svelte"
 let { M } = $props()
 
 const WH_PATH      = 'Story/LangTiles'
-const TOC_SNAP     = `wormhole/${WH_PATH}/toc.snap`
 
 // ── dm_step_path ─────────────────────────────────────────────────────────────
 //   Zero-padded snap path for a given step number.
@@ -75,7 +74,6 @@ await M.eatfunc({
         // ── one-time setup ────────────────────────────────────────────────
         if (!w.c.dm_setup) {
             w.c.dm_setup       = true
-            w.c.toc_waft_path  = WH_PATH
             w.c.The            = w.i({ The: 1 })
 
             const dm = w.oai({ Diffmatic: 1 })
@@ -93,16 +91,15 @@ await M.eatfunc({
 
         // ── toc load (once) ───────────────────────────────────────────────
         //
-        //   LiesStore_read_good provisions a Good,type:text/Waft and returns it;
-        //   read good.c.content — undefined while loading (ttlilt armed inside),
-        //   null when absent, else the snap text to deWaft.
+        //   LiesStore_read_waft_good provisions a Good,type:text/Waft and runs
+        //   deWaft in one step — snap path derived internally from WH_PATH.
+        //   Read good.c.content: undefined while loading, null when absent.
         if (!w.c.toc_loaded) {
-            const good = await H.LiesStore_read_good(w, 'text/Waft', TOC_SNAP)
+            const { good, waft_C, errors, not_found } =
+                await H.LiesStore_read_waft_good(w, WH_PATH)
             if (good.c.content === undefined) return w.i({ see: '⏳ dm toc…' })
-            if (good.c.content === null)      return w.i({ see: '⚠ no toc' })
-
-            const { waft_C, errors } = H.deWaft(good.c.content as string, WH_PATH)
-            if (!waft_C) return w.i({ see: `⚠ deWaft: ${errors[0]}` })
+            if (not_found)  return w.i({ see: '⚠ no toc' })
+            if (!waft_C)    return w.i({ see: `⚠ deWaft: ${errors[0]}` })
 
             // stamp step particles into w.c.The
             const The = w.c.The as TheC
