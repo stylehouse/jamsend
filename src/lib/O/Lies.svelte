@@ -73,7 +73,9 @@
     //                                              seeded by req:desire/req:acquire (§3f)
     //   w/{req:'wants'}                         — cursor-intent accumulator (§3e)
     //     /{want:$ts}                              c.src → wanted C; sc.kind: click|drag|step|next|cold
-    //   w/{open_waft_req:1,path}               — queued by e_Lies_open_Waft
+    //   w/{Good:1,type:Waft,path:snap_path} — Waft load slot; sc.waft_path = logical path.
+    //                                         Content stamps when loaded (replaces open_waft_req).
+    //                                         queued by e_Lies_open_Waft; LiesPersist provisions.
     //   w/{Waft:'Ghost/Tour'}                  — loaded Waft container
     //     /{Doc:path}                          — persisted doc entry
     //       /{Point:1,method}                  — individual point
@@ -156,15 +158,16 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
     // ── e_Lies_open_Waft ───────────────────────────────────────────────
     //
-    //   Entry point from Plan Preps or Liesui.  Queues an open_waft_req;
-    //   LiesPersist loads wormhole/PATH/toc.snap, creates the Waft container,
-    //   and reflects Doc children into open_req.
-    //
-    //   Idempotent: same path only ever creates one open_waft_req.
+    //   Entry point from Plan Preps or Liesui.  Creates a Good,type:Waft slot
+    //   keyed by the snap_path; LiesPersist provisions it via LiesStore_read_good.
+    //   Idempotent: same path only ever oai's one Good.
     async e_Lies_open_Waft(A: TheC, w: TheC, e: TheC) {
+        const H    = this as House
         const path = e.sc.path as string | undefined
         if (!path) throw 'e_Lies_open_Waft: needs path'
-        w.oai({ open_waft_req: 1, path })
+        const snap_path = H.Lies_waft_snap_path(path)
+        const good = H.LiesStore_good(w, 'Waft', snap_path)
+        if (!good.sc.waft_path) good.sc.waft_path = path   // logical path annotation
         this.i_elvisto(w, 'think')
     },
 
@@ -281,29 +284,34 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     async LiesPersist(A: TheC, w: TheC): Promise<boolean> {
         const H = this as House
 
-        // ── load Waft containers from wormhole ────────────────────────────────
-        for (const waft_req of w.o({ open_waft_req: 1 }) as TheC[]) {
-            const path = waft_req.sc.path as string
-            if (waft_req.sc.done) {
-                // Already loaded — trim orphaned req:Open if CRUD removed a Doc.
+        // ── provision Waft containers from wormhole ───────────────────────────
+        //   Good,type:Waft (keyed by snap_path) replaces the old open_waft_req marker.
+        //   good.sc.content !== undefined means "already loaded" — same gate as the
+        //   old sc.done flag, but it lives on a standard %Good slot.
+        for (const good of w.o({ Good: 1, type: 'Waft' }) as TheC[]) {
+            const path      = good.sc.waft_path as string
+            const snap_path = good.sc.path      as string
+
+            if (good.sc.content !== undefined) {
+                // already loaded — trim orphaned req:Open if CRUD removed a Doc
                 const waft = w.o({ Waft: path })[0] as TheC | undefined
                 if (waft) H.Lies_sync_waft_docs(w, waft)
                 continue
             }
 
-            const snap_path = H.Lies_waft_snap_path(path)
-            const req = await H.LiesStore_read(w, snap_path)
-            if (!req.sc.finished) {
+            const { finished } = await H.LiesStore_read_good(w, 'Waft', snap_path)
+            if (!finished) {
                 w.i({ see: `⏳ loading Waft:${path}…` })
                 return false
             }
 
+            const content = good.sc.content as string | null
             const waft: TheC = (() => {
-                if (req.sc.reply?.not_found) {
+                if (content === null) {
                     console.log(`🗂 Waft:${path} not found — starting empty`)
                     return _C({ Waft: path })
                 }
-                const { waft_C: C, errors } = H.deWaft(req.sc.reply?.content ?? '', path)
+                const { waft_C: C, errors } = H.deWaft(content, path)
                 if (errors.length || !C) {
                     console.error(`Waft:${path} decode errors:`, errors)
                     const empty = _C({ Waft: path })
@@ -322,7 +330,6 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 await H.Waft_link_up(waft, waft)
             })
 
-            waft_req.sc.done = 1
             w.bump_version()
             console.log(`🗂 Waft:${path} opened (${waft.o({ Doc: 1 }).length} docs)`)
         }

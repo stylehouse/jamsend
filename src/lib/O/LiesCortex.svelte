@@ -485,11 +485,19 @@
     //   rather than "compile and also implicitly configure a runner."
     //   Rundown then sits beside whatever Codebits arrive and fires when they land.
     //
+    //   Complains (but still proceeds) if req:Cortex isn't present yet —
+    //   that usually means the event fired at the wrong world.  Cortex is
+    //   created by the compile path (e_Lies_compiled); Rundown arms after.
+    //
     //   e.sc: { run_method: string }
     async e_Rundown_arm(A: TheC, w: TheC, e: TheC) {
         const H          = this as House
         const run_method = e.sc.run_method as string | undefined
         if (!run_method) return
+        if (!H.reqy(w).o({ req: 'Cortex' }).length) {
+            console.warn(`⚠ e_Rundown_arm on w:${w.sc.w ?? '?'}: no req:Cortex yet`
+                + ` — compile first, or check the target world`)
+        }
         const { cortex } = await H.LiesCortex_arm(w)
         const rundown = await H.reqy(cortex).roai({ req: 'Rundown', eternal: 1 })
         if (rundown.sc.run_method !== run_method) {
