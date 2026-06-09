@@ -168,12 +168,18 @@ $effect(() => {
 
     let ty = 0
     const next_ars: AnimRow[] = []
+    const seen_ids = new Map<string, number>()
 
     for (let i = 0; i < next.length; i++) {
         const row = next[i]
-        const id  = row.kind !== 'squish'
+        let id = row.kind !== 'squish'
             ? (H.dm_identity(row_line(row)) ?? `idx:${i}`)
             : `sq:${i}`
+        // same identity at different depths → different particles; suffix to stay unique.
+        //  the common case: a %Waft:path appears as a req:desire ref AND as a container.
+        const n = (seen_ids.get(id) ?? 0) + 1
+        seen_ids.set(id, n)
+        if (n > 1) id = `${id}:${n}`
         const is_pinned = pin != null && id === pin
         const old = prev_by_key.get(id)
         next_ars.push({
@@ -307,7 +313,7 @@ function handle_key(e: KeyboardEvent) {
     <!-- animated diff — spinner:diff until rows land ───────────────────── -->
     {#if rendered_rows.length > 0}
         <div class="dm-diff" style="height:{list_h}px">
-            {#each rendered_rows as ar (ar.key)}
+        {#each H.each_keys(rendered_rows, ar => ar.key, 'anim') as ar (ar.key)}
                 {@const row = ar.row}
                 <div class="dm-row {row.kind}"
                      class:pinned={ar.pinned}

@@ -138,9 +138,18 @@ await M.eatfunc({
             }
             The.bump_version()
 
+            // place the parsed Waft at req:Twisto/Waft:WH_PATH — persistent home
+            //  for the toc parse result.  Notes live here so dm_intro_text can
+            //   read them from the snap on reload without re-parsing the Good.
+            const toc_waft = req.oai({ Waft: WH_PATH })
+            for (const note of (Waft.o({ note: 1 }) as TheC[])) {
+                const nc = toc_waft.oai({ note: 1 })
+                Object.assign(nc.sc, note.sc)
+            }
+
             const steps = (The.o({ step: 1 }) as TheC[]).sort((a, b) => a.sc.step - b.sc.step)
             toc.sc.step_count = steps.length
-            toc.sc.intro      = H.dm_intro_text(steps, Waft)
+            toc.sc.intro      = H.dm_intro_text(steps, toc_waft)
 
             H.trace('Twisto', `toc OK — ${steps.length} steps`)
             for (const s of dm.o({ spinner: 'toc' }) as TheC[]) dm.drop(s)
