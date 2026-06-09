@@ -1,12 +1,13 @@
 <script lang="ts">
 // Diffmatication.svelte — Diffmatic test worker.
 //
-// ── IO via LiesStore ─────────────────────────────────────────────────────────
+// ── IO via LiesStore Goods ───────────────────────────────────────────────────
 //
-//   All disk reads go through LiesStore_read / LiesStore_read_waft — no direct
-//   Wormhole wiring here.  The old wh_op:'read_toc' / wh_op:'read_snap' custom
-//   protocol is gone; LiesStore handles the req lifecycle, ttlilt, and known
-//   impression tracking for free.
+//   All disk reads go through LiesStore_read_good — no direct Wormhole wiring.
+//   Each read provisions a %Good (toc → type:text/Waft, step → type:text/plain);
+//   read good.c.content (undefined→loading, null→absent, string→content).
+//   LiesStore handles the req lifecycle, ttlilt, and the /known dige for free.
+//   One Good persists per path read, so re-visiting a step is a cache hit.
 //
 //   Paths on disk:
 //     toc  → wormhole/Story/LangTiles/toc.snap   (a Waft snap; deWaft gives steps)
@@ -20,7 +21,7 @@
 //     /%Step:N             — uppercase Step = This (live, carries got|exp snap).\
 //       sc.got_snap        — raw snap text, hackable by the UI.
 //       sc.exp_snap        — expected snap text; absence is never a failure.
-//   w.c.toc_waft_path     — logical Waft key, for LiesStore_read_waft.
+//   w.c.toc_waft_path     — logical Waft key, the deWaft path context.
 //
 // ── %Diffmatic — the one container enrolled in ave ────────────────────────────
 //
@@ -92,16 +93,16 @@ await M.eatfunc({
 
         // ── toc load (once) ───────────────────────────────────────────────
         //
-        //   LiesStore_read fires immediately (idempotent via req_sent) and arms
-        //   ttlilt while in flight — no manual i_req_ttlilt needed here.
-        //   LiesStore_read_waft folds the deWaft step in once it's finished.
+        //   LiesStore_read_good provisions a Good,type:text/Waft and returns it;
+        //   read good.c.content — undefined while loading (ttlilt armed inside),
+        //   null when absent, else the snap text to deWaft.
         if (!w.c.toc_loaded) {
-            const req = await H.LiesStore_read(w, TOC_SNAP)
-            if (!req.sc.finished) return w.i({ see: '⏳ dm toc…' })
+            const good = await H.LiesStore_read_good(w, 'text/Waft', TOC_SNAP)
+            if (good.c.content === undefined) return w.i({ see: '⏳ dm toc…' })
+            if (good.c.content === null)      return w.i({ see: '⚠ no toc' })
 
-            const { waft_C, errors, not_found } = H.LiesStore_read_waft(req, WH_PATH)
-            if (not_found) return w.i({ see: '⚠ no toc' })
-            if (!waft_C)   return w.i({ see: `⚠ deWaft: ${errors[0]}` })
+            const { waft_C, errors } = H.deWaft(good.c.content as string, WH_PATH)
+            if (!waft_C) return w.i({ see: `⚠ deWaft: ${errors[0]}` })
 
             // stamp step particles into w.c.The
             const The = w.c.The as TheC
@@ -159,19 +160,20 @@ await M.eatfunc({
 
     // ── req_Step ──────────────────────────────────────────────────────────────
     //
-    //   Loads one step's snap via LiesStore_read and writes got_snap onto the
-    //   live %Step particle.  No custom wh_op wiring — LiesStore handles ttlilt
-    //   and the Wormhole round-trip exactly as it does for source files.
+    //   Provisions a Good,type:text/plain for the step's snap and writes got_snap
+    //   onto the live %Step particle once loaded.  good.c.content: undefined while
+    //   loading (ttlilt armed inside LiesStore_read), null if the step isn't on
+    //   disk yet, else the snap text.
     async req_Step(req: TheC, q: any) {
         const H    = this as House
         const w    = req.c.up?.c.up?.c.up as TheC   // %Step → %demand → %cursor → w
         const n    = req.sc.step_n as number
         const This = w.c.This as TheC
 
-        const read = await H.LiesStore_read(w, dm_step_path(n))
-        if (!read.sc.finished) return   // ttlilt already armed by LiesStore_read
+        const good = await H.LiesStore_read_good(w, 'text/plain', dm_step_path(n))
+        if (good.c.content === undefined) return   // loading; ttlilt armed inside
 
-        const snap = read.sc.reply?.content as string ?? ''
+        const snap = (good.c.content as string | null) ?? ''   // null → not written yet
 
         const Step = This.o({ Step: n })[0] as TheC ?? This.i({ Step: n })
         Step.sc.got_snap = snap

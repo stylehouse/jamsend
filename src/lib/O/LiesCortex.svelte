@@ -55,13 +55,14 @@
     //   do() won't fall to maz:1 while a maz:2 Codebit is unfinished.
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     //
+    //   Lies startup → LiesCortex_arm(w)        — req:Cortex exists from the start
+    //
     //   e_Lies_compiled
     //     → LiesStore_write(gen_path, source)   — parks IO, returns immediately
-    //     → LiesCortex_arm(w)                   — ensure req:Cortex exists
     //     → roai req:Codebit,path               — permanent; re-compile mutates %dige
     //
     //   e_Rundown_arm  (fired from Prep/test script)
-    //     → LiesCortex_arm(w) + roai req:Rundown — creates the runner with run_method
+    //     → roai req:Rundown under Cortex        — creates the runner with run_method
     //
     //   H.reqy(w).do() each tick
     //     maz:7 req:Store    — pump IO; sets ok when done; Phase 1 stamps write_finished
@@ -167,10 +168,11 @@
     //
     //   Ensure req:Cortex exists on w — the eternal foreman whose children are
     //   driven by handler_of_last_resort each tick.  maz:5 puts it below
-    //   req:Store (maz:7).  Rundown is created separately by e_Rundown_arm.
+    //   req:Store (maz:7).  Called at Lies startup so Cortex is foundational;
+    //   idempotent everywhere else.  Rundown is created separately by e_Rundown_arm.
     async LiesCortex_arm(w: TheC): Promise<{ cortex: TheC }> {
         const H      = this as House
-        const cortex = await H.reqy(w).roai({ req: 'Cortex', eternal: 1, maz: 5 })
+        const cortex = await H.reqy(w).roai({ req: 'Cortex', eternal: 1 })
         return { cortex }
     },
 
@@ -485,9 +487,9 @@
     //   rather than "compile and also implicitly configure a runner."
     //   Rundown then sits beside whatever Codebits arrive and fires when they land.
     //
-    //   Complains (but still proceeds) if req:Cortex isn't present yet —
-    //   that usually means the event fired at the wrong world.  Cortex is
-    //   created by the compile path (e_Lies_compiled); Rundown arms after.
+    //   Complains (but still proceeds) if req:Cortex isn't present — Cortex is
+    //   armed at Lies startup, so its absence means this event reached the wrong
+    //   world (a w that isn't w:Lies).
     //
     //   e.sc: { run_method: string }
     async e_Rundown_arm(A: TheC, w: TheC, e: TheC) {
@@ -495,8 +497,8 @@
         const run_method = e.sc.run_method as string | undefined
         if (!run_method) return
         if (!H.reqy(w).o({ req: 'Cortex' }).length) {
-            console.warn(`⚠ e_Rundown_arm on w:${w.sc.w ?? '?'}: no req:Cortex yet`
-                + ` — compile first, or check the target world`)
+            console.warn(`⚠ e_Rundown_arm on w:${w.sc.w ?? '?'}: no req:Cortex`
+                + ` — Cortex is armed at Lies startup, so this likely reached the wrong world`)
         }
         const { cortex } = await H.LiesCortex_arm(w)
         const rundown = await H.reqy(cortex).roai({ req: 'Rundown', eternal: 1 })

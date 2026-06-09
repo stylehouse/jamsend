@@ -545,15 +545,25 @@
     //   A %Good is a per-client slot for one resource — the stable carrier that
     //   survives across ticks unlike the raw LiesStore_read req (which Phase 2
     //   drops after one cycle).  Clients hold a Good ref, watch it, and read
-    //   Good.sc.content.  The Good's /known child records freshness.
+    //   good.c.content.
     //
-    //   w/Good,type:Doc,path:...
-    //     known              — dige + kind:read|write + at
+    //   w/Good,type:'text/Waft',path:...
+    //     c.content          — the content (string now, buffer later); OFF-SNAP,
+    //                          since it may be large|binary.  Three states:
+    //                            undefined → not read yet (still loading)
+    //                            null      → confirmed not_found
+    //                            string    → the content
+    //     known              — dige + kind:read|write + at  (the snapped fingerprint)
+    //     not_found:1        — snapped flag mirroring c.content===null
     //     // < req:refresh   — TTL-based re-read (not yet)
     //
-    //   req:Open and req:Furnishing are both "provision a Good,type:Doc and
+    //   type is a media|semantic tag: 'text/Waft', 'text/plain', 'text/Doc', …
+    //   The dige in /known is what the snap records; the bytes live off-snap on .c
+    //   so a snap reload re-hydrates content from disk (c.content gone → re-read).
+    //
+    //   req:Open and req:Furnishing are both "provision a Good,type:text/Doc and
     //   dispatch its content to a consumer" — they converge here once
-    //   req:refresh and a dispatch hook land.
+    //   a dispatch hook lands (see handoff).
     //
     // ── LiesStore_good ────────────────────────────────────────────────────────
     //   Find-or-create the %Good slot.  Idempotent across ticks.
@@ -563,45 +573,47 @@
 
     // ── LiesStore_read_good ───────────────────────────────────────────────────
     //
-    //   Provision a %Good with content from disk.  Same tick-by-tick call
-    //   pattern as LiesStore_read: call every tick until {finished:true}.
+    //   Provision a %Good with content from disk and return it.  Call every tick
+    //   until good.c.content is set; the underlying LiesStore_read arms a ttlilt
+    //   while in flight so Story stays awake.
     //
-    //   Once finished:
-    //     good.sc.content   — file text ('' for empty), or null when not_found
-    //     good.sc.not_found — 1 when absent
-    //     good/known        — dige + kind:read + at
+    //   Read good.c.content:
+    //     undefined → still loading — caller returns/waits
+    //     null      → confirmed not_found
+    //     string    → the content
     //
-    //   Re-calling on an already-provisioned Good returns {finished:true}
-    //   immediately.  To trigger a fresh read: `delete good.sc.content`.
+    //   On a fresh read it stamps /known (dige + kind:read + at).  To force a
+    //   re-read: `delete good.c.content`.
     async LiesStore_read_good(
         w:    TheC,
         type: string,
         path: string,
-    ): Promise<{ good: TheC, finished: boolean }> {
+    ): Promise<TheC> {
         const H    = this as House
         const good = H.LiesStore_good(w, type, path)
 
-        // already provisioned this Good
-        if (good.sc.content !== undefined) return { good, finished: true }
+        // already provisioned this session
+        if (good.c.content !== undefined) return good
 
         const req = await H.LiesStore_read(w, path)
-        if (!req.sc.finished) return { good, finished: false }
+        if (!req.sc.finished) return good   // c.content still undefined → caller waits
 
         const content   = req.sc.reply?.content as string | undefined
         const not_found = !!req.sc.reply?.not_found
 
-        good.sc.content = not_found ? null : (content ?? '')
-        if (not_found) good.sc.not_found = 1
-
-        if (!not_found && content != null) {
+        good.c.content = not_found ? null : (content ?? '')
+        if (not_found) {
+            good.sc.not_found = 1
+        } else {
+            delete good.sc.not_found
             const known   = good.oai({ known: 1 })
-            known.sc.dige = await dig(content)
+            known.sc.dige = await dig(good.c.content as string)
             known.sc.kind = 'read'
             known.sc.at   = Date.now() / 1000
         }
         good.bump_version()
 
-        return { good, finished: true }
+        return good
     },
 
 //#endregion

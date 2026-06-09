@@ -73,8 +73,9 @@
     //                                              seeded by req:desire/req:acquire (§3f)
     //   w/{req:'wants'}                         — cursor-intent accumulator (§3e)
     //     /{want:$ts}                              c.src → wanted C; sc.kind: click|drag|step|next|cold
-    //   w/{Good:1,type:Waft,path:snap_path} — Waft load slot; sc.waft_path = logical path.
-    //                                         Content stamps when loaded (replaces open_waft_req).
+    //   w/{Good:1,type:'text/Waft',path:snap_path} — Waft load slot; sc.waft_path = logical.
+    //                                         c.content (off-snap) holds the snap text;
+    //                                         /known carries the dige.  Replaces open_waft_req.
     //                                         queued by e_Lies_open_Waft; LiesPersist provisions.
     //   w/{Waft:'Ghost/Tour'}                  — loaded Waft container
     //     /{Doc:path}                          — persisted doc entry
@@ -166,7 +167,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const path = e.sc.path as string | undefined
         if (!path) throw 'e_Lies_open_Waft: needs path'
         const snap_path = H.Lies_waft_snap_path(path)
-        const good = H.LiesStore_good(w, 'Waft', snap_path)
+        const good = H.LiesStore_good(w, 'text/Waft', snap_path)
         if (!good.sc.waft_path) good.sc.waft_path = path   // logical path annotation
         this.i_elvisto(w, 'think')
     },
@@ -245,6 +246,9 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             ave.i(examining)
             examining.c.w = w
             w.oai({ Opt: 1 })
+            // Cortex is foundational — it exists from the start, ready to hold
+            //  Codebits.  Only Rundown waits for an explicit e_Rundown_arm.
+            await H.LiesCortex_arm(w)
             const uis = H.oai_enroll(H, { watched: 'UIs' })
             uis.oai({ UI: 'Lies' }, { component: Liesui })
             H.watch_c(w, () => {
@@ -285,27 +289,27 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const H = this as House
 
         // ── provision Waft containers from wormhole ───────────────────────────
-        //   Good,type:Waft (keyed by snap_path) replaces the old open_waft_req marker.
-        //   good.sc.content !== undefined means "already loaded" — same gate as the
-        //   old sc.done flag, but it lives on a standard %Good slot.
-        for (const good of w.o({ Good: 1, type: 'Waft' }) as TheC[]) {
+        //   Good,type:text/Waft (keyed by snap_path) replaces the old open_waft_req
+        //   marker.  good.c.content !== undefined means "already loaded" — the same
+        //   gate the old sc.done flag gave, now on a standard %Good slot.
+        for (const good of w.o({ Good: 1, type: 'text/Waft' }) as TheC[]) {
             const path      = good.sc.waft_path as string
             const snap_path = good.sc.path      as string
 
-            if (good.sc.content !== undefined) {
+            if (good.c.content !== undefined) {
                 // already loaded — trim orphaned req:Open if CRUD removed a Doc
                 const waft = w.o({ Waft: path })[0] as TheC | undefined
                 if (waft) H.Lies_sync_waft_docs(w, waft)
                 continue
             }
 
-            const { finished } = await H.LiesStore_read_good(w, 'Waft', snap_path)
-            if (!finished) {
+            await H.LiesStore_read_good(w, 'text/Waft', snap_path)
+            if (good.c.content === undefined) {
                 w.i({ see: `⏳ loading Waft:${path}…` })
                 return false
             }
 
-            const content = good.sc.content as string | null
+            const content = good.c.content as string | null
             const waft: TheC = (() => {
                 if (content === null) {
                     console.log(`🗂 Waft:${path} not found — starting empty`)
