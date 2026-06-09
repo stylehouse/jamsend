@@ -608,10 +608,9 @@
     //   e.sc: { req }  (the Furnishing req, carrying path/text)
     async e_Lang_open_dock(A: TheC, w: TheC, e?: TheC) {
         const H = this as House
-        for (const { req: furnishing, finish } of H.o_elvis_req(w, 'Lang_open_dock')) {
-            const path     = furnishing.sc.path as string
-            const text = (furnishing.c.text as string | undefined) ?? ''   // large, on c
-            if (!path) continue
+        for (const e of H.o_elvis(w, 'Lang_open_dock')) {
+            const path = e.sc.path as string
+            const text = (e.sc.text as string | undefined) ?? ''
 
             // Mint-or-find dock; stamp c.up so reqyoncile's %w walk reaches w:Lang.
             // reqy sets languish.c.up = dock automatically; dock and docks need
@@ -621,10 +620,6 @@
             const dock  = docks.oai({ dock: path })
             dock.c.up   ??= docks
             await H.Lang_drive_languish(w, dock, text)
-
-            // Resolve the RPC — Lies' req:Furnishing finds dock-exists on re-think.
-            // Remaining Languish phases (compile) run on Lang's own thinking.
-            finish({ path, ready: 1 })
         }
     },
 

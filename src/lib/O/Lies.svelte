@@ -267,7 +267,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         // ── LiesCurse — cursor wiring (runs every post-settle tick) ──────────
         await this.LiesCurse(A, w)
         // req:Store (maz:7) and req:Cortex (maz:5) drive themselves via
-        // H.reqy(w).do() inside LiesPersist — no explicit pump calls needed.
+        // rq.do() inside LiesRealised.  The final rq.do() at the end of
+        // LiesRealised also pumps any req:Open just seeded by the wants resolver.
         const loaded = (w.o({ Good: 1, type: 'text/Doc' }) as TheC[])
             .filter(g => g.c.content !== undefined).length
         const wafts  = w.o({ Waft: 1 }).length
@@ -455,6 +456,12 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         //     undo, "where was I" read them later.  Today: kept, never pruned.
         ;(await H.reqy(w).doai({ req: 'wants' }))?.(async (_wants: TheC) => { /* open-ended */ })
         await H.Lies_resolve_wants(w)
+
+        // pump once more: Lies_resolve_wants may have just seeded a req:Open
+        //  inside req:Store, but Store already ran earlier this tick (maz:7).
+        //  Re-driving here lets req:Open start its Wormhole read in the same tick
+        //  — matching the timing the old Furnishing pump provided.
+        await H.reqy(w).do()
     },
 
     // ── Lies_resolve_wants ──────────────────────────────────────────────────────
