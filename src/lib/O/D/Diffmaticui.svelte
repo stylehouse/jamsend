@@ -4,13 +4,15 @@
 //   Reads from H.ave — same pattern as Storui.  One $effect drains ave
 //   each beliefs cycle.  Live step particles are read from dm_This directly
 //   (not from serialised copies), so snap arrivals update the UI automatically
-//   via watch_c → ave.bump_version in Diffmatication.
+//   via watch_c → dm.bump_version in Diffmatication.
 //
-//   ave particles:
-//     {dm_This:1}               — live This container; .o({Step:1}) = loaded steps
-//     {dm_toc:1}                — sc.step_count, sc.intro
-//     {dm_cursor:1}             — sc.step_n, sc.loading
-//     {dm_diff:1, side}         — sc.rows, sc.label_l, sc.label_r
+//   %Diffmatic is enrolled directly in ave; its children carry display state:
+//     /{This:1}               — live This container; .o({Step:1}) = loaded steps
+//     /{toc:1}                — sc.step_count, sc.intro
+//     /{cursor:1}             — sc.step_n, sc.loading
+//     /{diff:1, side}         — sc.rows, sc.label_l, sc.label_r
+//     /{spinner:'toc'}        — present while toc is loading; dropped by Twisto
+//     /{spinner:'diff'}       — present while diffs are computing; dropped by showing
 //
 //   Step particle sc: { Step: N, got_snap: string, exp_snap: string }
 //   Steps not yet loaded are absent from dm_This — UI shows them as hollow.
@@ -34,29 +36,36 @@ type DmDiff   = { rows: DiffRow[], label_l: string, label_r: string }
 type ViewMode = 'prev' | 'exp' | 'next'
 
 // ── reactive state from H.ave ─────────────────────────────────────────────
+//
+//   %Diffmatic is enrolled in ave; its children carry all display state.
+//   void dm?.version makes the effect reactive to dm.bump_version() calls.
 
-let intro      = $state('')
-let step_count = $state(0)
-let cursor_n   = $state<number | null>(null)
-let loading    = $state(true)
-let diffs      = $state<Record<string, DmDiff>>({})
-let dm_This    = $state<TheC | undefined>()
+let intro       = $state('')
+let step_count  = $state(0)
+let cursor_n    = $state<number | null>(null)
+let loading     = $state(true)
+let toc_loading = $state(true)
+let diff_loading= $state(false)
+let diffs       = $state<Record<string, DmDiff>>({})
+let dm_This     = $state<TheC | undefined>()
 
 $effect(() => {
-    // ob() reads H.ave.version — fires once per settled beliefs cycle
-    const this_p   = H.ave.ob({ dm_This:  1 })[0] as TheC | undefined
-    const toc_p    = H.ave.ob({ dm_toc:   1 })[0] as TheC | undefined
-    const cursor_p = H.ave.ob({ dm_cursor:1 })[0] as TheC | undefined
-    const diff_ps  = H.ave.ob({ dm_diff:  1 })    as TheC[]
+    const dm       = H.ave.ob({ Diffmatic: 1 })[0] as TheC | undefined
+    void dm?.version   // re-run when toc lands, steps arrive, diffs update
 
-    // track This version so $derived can re-derive when steps arrive
-    void this_p?.version
+    const this_p   = dm?.o({ This:    1 })[0] as TheC | undefined
+    const toc_p    = dm?.o({ toc:     1 })[0] as TheC | undefined
+    const cursor_p = dm?.o({ cursor:  1 })[0] as TheC | undefined
+    const diff_ps  = (dm?.o({ diff:   1 }) ?? []) as TheC[]
+    const spin_ps  = (dm?.o({ spinner: 1 }) ?? []) as TheC[]
 
-    dm_This    = this_p
-    intro      = (toc_p?.sc.intro      as string)  ?? ''
-    step_count = (toc_p?.sc.step_count as number)  ?? 0
-    cursor_n   = (cursor_p?.sc.step_n  as number | undefined) ?? null
-    loading    = !!(cursor_p?.sc.loading ?? true)
+    dm_This      = this_p
+    intro        = (toc_p?.sc.intro      as string)  ?? ''
+    step_count   = (toc_p?.sc.step_count as number)  ?? 0
+    cursor_n     = (cursor_p?.sc.step_n  as number | undefined) ?? null
+    loading      = !!(cursor_p?.sc.loading ?? true)
+    toc_loading  = spin_ps.some(s => s.sc.spinner === 'toc')
+    diff_loading = spin_ps.some(s => s.sc.spinner === 'diff')
 
     const next_diffs: Record<string, DmDiff> = {}
     for (const p of diff_ps) {
@@ -222,7 +231,7 @@ let list_h = $derived(
 function dm_w(): TheC | undefined {
     for (const A of H.o({ A: 1 }) as TheC[])
         for (const w of A.o({ w: 1 }) as TheC[])
-            if (w.c.toc_loaded) return w
+            if (w.o({ toc_loaded: 1 }).length) return w
     return undefined
 }
 
@@ -250,10 +259,12 @@ function handle_key(e: KeyboardEvent) {
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <div class="dm" tabindex="0" onkeydown={handle_key}>
 
-    <!-- intro ──────────────────────────────────────────────────────────── -->
-    <div class="dm-intro" class:loading={!intro}>{intro || 'loading story…'}</div>
+    <!-- intro — shows spinner:toc until toc lands ──────────────────────── -->
+    <div class="dm-intro" class:loading={toc_loading}>
+        {#if toc_loading}⏳ loading story…{:else}{intro}{/if}
+    </div>
 
-    <!-- step strip ─────────────────────────────────────────────────────── -->
+    <!-- step strip — appears as soon as toc lands ──────────────────────── -->
     {#if step_entries.length > 0}
         <div class="dm-strip">
             {#each step_entries as s (s.n)}
@@ -264,7 +275,7 @@ function handle_key(e: KeyboardEvent) {
                         class:ok
                         class:on
                         class:hollow={!s.loaded}
-                        class:busy={on && loading}
+                        class:busy={on && diff_loading}
                         onclick={() => go_to(s.n)}
                         title="step {s.n}{s.loaded ? '' : ' (hollow)'}">
                     {s.loaded ? (ok ? '·' : '○') : '○'}
@@ -282,7 +293,7 @@ function handle_key(e: KeyboardEvent) {
                     disabled={!diffs['next']}>next</button>
             {#if active_diff}
                 <span class="dm-label">{active_diff.label_l} → {active_diff.label_r}</span>
-            {:else if loading}
+            {:else if diff_loading}
                 <span class="dm-label loading">computing…</span>
             {/if}
             {#if pinned_id}
@@ -293,7 +304,7 @@ function handle_key(e: KeyboardEvent) {
         </div>
     {/if}
 
-    <!-- animated diff ──────────────────────────────────────────────────── -->
+    <!-- animated diff — spinner:diff until rows land ───────────────────── -->
     {#if rendered_rows.length > 0}
         <div class="dm-diff" style="height:{list_h}px">
             {#each rendered_rows as ar (ar.key)}
@@ -316,13 +327,11 @@ function handle_key(e: KeyboardEvent) {
                 </div>
             {/each}
         </div>
-    {:else if loading && cursor_n != null}
-        <div class="dm-hint">loading snaps…</div>
+    {:else if diff_loading && cursor_n != null}
+        <div class="dm-hint loading">⏳ loading diff…</div>
     {:else if cursor_n != null}
         <div class="dm-hint">no diff — snaps identical</div>
-    {:else if !intro}
-        <div class="dm-hint">loading…</div>
-    {:else}
+    {:else if !toc_loading}
         <div class="dm-hint">← → to navigate  ·  p to change mode  ·  click a line to pin it</div>
     {/if}
 
@@ -426,6 +435,7 @@ function handle_key(e: KeyboardEvent) {
 .dm-squish     { padding: 0 8px; color: var(--dim); font-size: 10px; line-height: 19px; font-style: italic; }
 
 .dm-hint { color: var(--dim); font-size: 11px; padding: 6px; font-style: italic; }
+.dm-hint.loading { color: var(--amber); }
 
 .ind { display: inline-block; }
 .obj { color: #6e6898; margin-right: 2px; }

@@ -429,27 +429,27 @@
     //   Call every tick until good.c.content is set; returns immediately with
     //    the loading state if not yet landed.
     //
-    //   Returns { good, waft_C?, errors, not_found }.
+    //   Returns { good, Waft?, errors, not_found }.
     //   good.c.content states drive the caller:
     //     undefined → still loading (check good.c.content === undefined and return)
-    //     null      → not_found: true, waft_C: undefined
-    //     string    → deWaft ran; waft_C is set on success, errors on failure
+    //     null      → not_found: true, Waft: undefined
+    //     string    → deWaft ran; Waft is set on success, errors on failure
     //
     async LiesStore_read_waft_good(
         w:         TheC,
         waft_path: string,
-    ): Promise<{ good: TheC, waft_C: TheC | undefined, errors: string[], not_found: boolean }> {
+    ): Promise<{ good: TheC, Waft: TheC | undefined, errors: string[], not_found: boolean }> {
         const H         = this as House
         const snap_path = H.Lies_waft_snap_path(waft_path)
         const good      = await H.LiesStore_read_good(w, 'text/Waft', snap_path)
 
         if (good.c.content === undefined)
-            return { good, waft_C: undefined, errors: [], not_found: false }
+            return { good, Waft: undefined, errors: [], not_found: false }
         if (good.c.content === null)
-            return { good, waft_C: undefined, errors: [], not_found: true }
+            return { good, Waft: undefined, errors: [], not_found: true }
 
-        const { waft_C, errors } = H.deWaft(good.c.content as string, waft_path)
-        return { good, waft_C, errors, not_found: false }
+        const { waft_C: Waft, errors } = H.deWaft(good.c.content as string, waft_path)
+        return { good, Waft, errors, not_found: false }
     },
 
     // ── LiesStore_listing ─────────────────────────────────────────────────────
@@ -630,6 +630,7 @@
         const not_found = !!req.sc.reply?.not_found
 
         good.c.content = not_found ? null : (content ?? '')
+        H.trace('Good', `${type}  ${path}  →  ${not_found ? 'not_found' : `${(good.c.content as string).length}c`}`)
         if (not_found) {
             good.sc.not_found = 1
         } else {

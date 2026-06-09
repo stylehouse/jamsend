@@ -22,6 +22,7 @@
 //     /%Step:N             — uppercase Step = This (live, carries got|exp snap).\
 //       sc.got_snap        — raw snap text, hackable by the UI.
 //       sc.exp_snap        — expected snap text; absence is never a failure.
+//   w/{toc_loaded:1}       — snapped once the toc lands and The is stamped.
 //
 // ── %Diffmatic — the one container enrolled in ave ────────────────────────────
 //
@@ -37,6 +38,7 @@
 //
 // ── req** pile ────────────────────────────────────────────────────────────────
 //
+//   w/%req:Twisto,eternal,maz:3    foreman; toc load then ok; gates cursor.
 //   w/%req:cursor,step_n:N
 //     %req:demand,step_n:N           doai subroutine on %cursor.
 //       %req:Step,step_n:N           loads got_snap once via Good,type:text/plain.
@@ -73,8 +75,8 @@ await M.eatfunc({
 
         // ── one-time setup ────────────────────────────────────────────────
         if (!w.c.dm_setup) {
-            w.c.dm_setup       = true
-            w.c.The            = w.i({ The: 1 })
+            w.c.dm_setup = true
+            w.c.The      = w.i({ The: 1 })
 
             const dm = w.oai({ Diffmatic: 1 })
             ave.i(dm)
@@ -83,27 +85,52 @@ await M.eatfunc({
             w.c.This = dm.oai({ This: 1 })
             dm.oai({ toc: 1 })
             dm.oai({ cursor: 1 }, { loading: 1 })
+            dm.oai({ spinner: 'toc' })   // dropped by req_Twisto once toc lands
 
-            H.watch_c(w.c.This, () => { dm.bump_version(); ave.bump_version() })
+            H.watch_c(w.c.This, () => { dm.bump_version() })
         }
 
-        const dm = w.o({ Diffmatic: 1 })[0] as TheC
+        // Twisto (maz:3) loads the toc then goes ok, gating cursor (maz:1)
+        //  until %toc_loaded is snapped.  After that both run each pass.
+        await H.reqy(w).roai({ req: 'Twisto', eternal: 1, maz: 3 })
+        await H.reqy(w).do()
+    },
 
-        // ── toc load (once) ───────────────────────────────────────────────
-        //
-        //   LiesStore_read_waft_good provisions a Good,type:text/Waft and runs
-        //   deWaft in one step — snap path derived internally from WH_PATH.
-        //   Read good.c.content: undefined while loading, null when absent.
-        if (!w.c.toc_loaded) {
-            const { good, waft_C, errors, not_found } =
+    // ── req_Twisto ────────────────────────────────────────────────────────────
+    //
+    //   Foreman for Diffmatication's loading sequence — the play pit here.
+    //   Eternal at maz:3 so it runs after Store (maz:7) but gates cursor (maz:1)
+    //    until the toc is in hand.  Goes ok every pass once %toc_loaded exists.
+    //   More loading steps will slot in here as the story complicates.
+    async req_Twisto(req: TheC, q: any) {
+        const H   = this as House
+        const w   = req.c.up as TheC
+        const dm  = w.o({ Diffmatic: 1 })[0] as TheC
+
+        if (!w.o({ toc_loaded: 1 }).length) {
+            const { good, Waft, errors, not_found } =
                 await H.LiesStore_read_waft_good(w, WH_PATH)
-            if (good.c.content === undefined) return w.i({ see: '⏳ dm toc…' })
-            if (not_found)  return w.i({ see: '⚠ no toc' })
-            if (!waft_C)    return w.i({ see: `⚠ deWaft: ${errors[0]}` })
+            if (good.c.content === undefined) {
+                w.i({ see: '⏳ dm toc…' })
+                return   // ttlilt from LiesStore keeps Story awake
+            }
+
+            const toc = dm.oai({ toc: 1 })
+            if (not_found || !Waft) {
+                const msg = not_found ? '⚠ toc not_found' : `⚠ toc deWaft: ${errors[0]}`
+                H.trace('Twisto', msg)
+                toc.sc.error = msg
+                for (const s of dm.o({ spinner: 'toc' }) as TheC[]) dm.drop(s)
+                w.oai({ toc_loaded: 1 })
+                req.sc.ok = 1
+                return
+            }
+
+            H.trace('Twisto', 'toc landed — stamping steps…')
 
             // stamp step particles into w.c.The
             const The = w.c.The as TheC
-            for (const s of waft_C.o({ step: 1 }) as TheC[]) {
+            for (const s of Waft.o({ step: 1 }) as TheC[]) {
                 const n = s.sc.step as number
                 const existing = The.o({ step: n })[0] as TheC | undefined
                 if (existing) Object.assign(existing.sc, s.sc)
@@ -111,20 +138,19 @@ await M.eatfunc({
             }
             The.bump_version()
 
-            w.c.toc_loaded = true
-
             const steps = (The.o({ step: 1 }) as TheC[]).sort((a, b) => a.sc.step - b.sc.step)
-            const toc   = dm.oai({ toc: 1 })
             toc.sc.step_count = steps.length
-            toc.sc.intro      = H.dm_intro_text(steps, waft_C)
-            dm.bump_version(); ave.bump_version()
+            toc.sc.intro      = H.dm_intro_text(steps, Waft)
 
+            H.trace('Twisto', `toc OK — ${steps.length} steps`)
+            for (const s of dm.o({ spinner: 'toc' }) as TheC[]) dm.drop(s)
+            w.oai({ toc_loaded: 1 })
+            dm.bump_version()
             await H.dm_set_cursor(w, 1)
-            return
+            // fall through — toc just landed, let cursor run this same pass
         }
 
-        // ── reqy loop ─────────────────────────────────────────────────────
-        await H.reqy(w).do()
+        req.sc.ok = 1
     },
 
     // ── req_cursor ────────────────────────────────────────────────────────────
@@ -180,13 +206,12 @@ await M.eatfunc({
     },
 
     // ── req_showing ───────────────────────────────────────────────────────────
-    //   (unchanged from original — pure diff logic, no IO)
+    //   Builds diffs from loaded step snaps; drops spinner:diff when done.
     async req_showing(req: TheC, q: any) {
         const H      = this as House
         const cursor = req.c.up as TheC
         const w      = cursor.c.up as TheC
-        const ave    = H.oai_enroll(H, { watched: 'ave' })
-        const dm     = ave.o({ Diffmatic: 1 })[0] as TheC
+        const dm     = w.o({ Diffmatic: 1 })[0] as TheC
 
         const n      = cursor.sc.step_n as number
         const demand = cursor.o({ req: 'demand', step_n: n })[0] as TheC | undefined
@@ -231,33 +256,37 @@ await M.eatfunc({
             next.sc.label_r = `step ${n + 1}`
         }
 
-        dm.bump_version(); ave.bump_version()
-
         const have_prev = n === 1          || !!got_nm1
         const have_next = n === step_count || !!got_np1
-        if (have_prev && have_next) q.finish(req)
-        else H.i_req_ttlilt(req, 0.5, { waiting: 'neighbours' })
+        if (have_prev && have_next) {
+            for (const s of dm.o({ spinner: 'diff' }) as TheC[]) dm.drop(s)
+            dm.bump_version()
+            q.finish(req)
+        } else {
+            dm.bump_version()
+            H.i_req_ttlilt(req, 0.5, { waiting: 'neighbours' })
+        }
     },
 
     // ── dm_set_cursor ─────────────────────────────────────────────────────────
     async dm_set_cursor(w: TheC, n: number) {
-        const H   = this as House
-        const ave = H.oai_enroll(H, { watched: 'ave' })
-        const dm  = ave.o({ Diffmatic: 1 })[0] as TheC
+        const H  = this as House
+        const dm = w.o({ Diffmatic: 1 })[0] as TheC
         const cursor = dm.oai({ cursor: 1 })
         cursor.sc.step_n  = n
         cursor.sc.loading = 1
         for (const d of dm.o({ diff: 1 }) as TheC[]) dm.drop(d)
-        dm.bump_version(); ave.bump_version()
+        dm.oai({ spinner: 'diff' })   // dropped by req_showing when diffs land
+        dm.bump_version()
         await H.reqy(w).roai({ req: 'cursor' }, { step_n: n })
         H.feebly_ponder()
     },
 
     // ── dm_intro_text ─────────────────────────────────────────────────────────
-    dm_intro_text(steps: TheC[], waft_C: TheC): string {
+    dm_intro_text(steps: TheC[], Waft: TheC): string {
         const total    = steps.length
         const frontier = steps.find(s => s.o({ note: 1, frontier: 1 }).length)?.sc.step as number | undefined
-        const notes    = (waft_C.o({ note: 1 }) as TheC[]).length
+        const notes    = (Waft.o({ note: 1 }) as TheC[]).length
         const parts: string[] = [`${total} step${total !== 1 ? 's' : ''}`]
         if (frontier != null) parts.push(`frontier at step ${frontier}`)
         if (notes > 0)        parts.push(`${notes} note${notes !== 1 ? 's' : ''}`)
