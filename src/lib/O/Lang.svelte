@@ -770,40 +770,17 @@
         }
         if (!co.c.armed_src) return   // nothing cursored yet
 
-        const armed    = co.c.armed_src as TheC
-        const doc_path = H.Lang_src_doc_path(armed)
+        const armed = co.c.armed_src as TheC
 
-        // furnish — a title-page %What with no %Doc child needs no CM dock.
-        const fu = settle.oai({ furnish: 1 }); fu.sc.doc_path = doc_path ?? null
-        if (!doc_path) { fu.sc.have_dock = 1; return }
-
-        const docks = w.o({ docks: 1 })[0] as TheC | undefined
-        const dock  = docks?.o({ dock: doc_path })[0] as TheC | undefined
-        if (!dock) {
-            // dock not open yet — req:Open in Lies will mint it via i_elvisto
-            fu.sc.have_dock = 0
-            H.i_req_ttlilt(settle, 0.5, { waiting: 'dock' })
-            return
-        }
-        fu.sc.have_dock = 1
-        await H.Lang_set_active_dock(w, doc_path)
-
-        // compile — Languish builds %Compile/%methods; the graft needs the index.
-        const cp  = settle.oai({ compile: 1 })
-        const job = dock.o({ Compile: 1 })[0] as TheC | undefined
-        const err = dock.oa({ compile_error: 1 }) || job?.oa({ compile_error: 1 })
-        cp.sc.have_methods = job?.oa({ methods: 1 }) ? 1 : 0
-        if (!cp.sc.have_methods && !err) {
-            // compile_error is terminal — fall through so graft mints unresolved
-            //   Pmirrors the minimap can surface; otherwise hold for the index.
-            H.i_req_ttlilt(settle, 1.5, { waiting: 'methods' })
-            return
-        }
-
-        // graft — self-caching via dock.c.graft_cache_key; cheap every pass.
-        await H.Lang_graft_points_once(w, dock)
-        settle.oai({ graft: 1 }).sc.n_pmirrors =
-            (dock.o({ Pmirrors: 1 })[0]?.o({ Pmirror: 1 }) as TheC[] ?? []).length
+        // ── flush, both directions ──────────────────────────────────────────
+        //   Runs here, before the dock gate, because the Understanding's clone
+        //   trees (Seem:origin / Seem:working) and the OC target exist the moment
+        //   the LE is armed — none of encode / push / pull touch the CM dock or
+        //   the compile index.  Gating flush behind furnish coupled it to the
+        //   editor opening, so a slow or stuck dock silently blocked the flush;
+        //   keeping it up here makes push|pull independent of editor readiness.
+        //   (A docless container %What flushes too now — its working tree is its
+        //   sub-Whats, which is exactly the restructure-the-Waft case.)
 
         // origin drift — the Waft OC changed under us (e:Lies_waft_mutated stamped
         // LE.c.origin_dirty).  Re-pull origin to learn whether the change touched
@@ -836,15 +813,56 @@
             settle.c.last_encode_key = encode_key
 
             // working drift, origin stable — auto-push: flush the clone tree back
-            // into the Waft OC (and on to Lies/disk).  Gated on !stale so an
-            // origin edit (which sets both stale and changey) is resolved by the
-            // pull above, never clobbered by pushing our now-superseded working.
-            // LE_push runs encode→replace→pull→encode inline; its verify re-encode
-            // clears %State.changey when the push lands clean.
+            // into the Waft OC.  Gated on !stale so an origin edit (which sets both
+            // stale and changey) is resolved by the pull above, never clobbered by
+            // pushing our now-superseded working.  LE_push runs encode→replace→
+            // pull→encode inline; its verify re-encode clears %State.changey when
+            // the push lands clean.
             if (dirty && !LE.o({ State: 1 })[0]?.sc.stale) {
                 await H.LE_push(LE)
             }
         }
+
+        // ── editor side ─────────────────────────────────────────────────────
+        const doc_path = H.Lang_src_doc_path(armed)
+
+        // furnish — a title-page %What with no %Doc child needs no CM dock.
+        const fu = settle.oai({ furnish: 1 }); fu.sc.doc_path = doc_path ?? null
+        if (!doc_path) {
+            fu.sc.have_dock = 1
+            H.drop_req_ttlilt(settle, { waiting: 'dock' })
+            return
+        }
+
+        const docks = w.o({ docks: 1 })[0] as TheC | undefined
+        const dock  = docks?.o({ dock: doc_path })[0] as TheC | undefined
+        if (!dock) {
+            // dock not open yet — req:Open in Lies will mint it via i_elvisto
+            fu.sc.have_dock = 0
+            H.i_req_ttlilt(settle, 2.5, { waiting: 'dock' })
+            return
+        }
+        fu.sc.have_dock = 1
+        H.drop_req_ttlilt(settle, { waiting: 'dock' })   // gate passed — no dangler
+        await H.Lang_set_active_dock(w, doc_path)
+
+        // compile — Languish builds %Compile/%methods; the graft needs the index.
+        const cp  = settle.oai({ compile: 1 })
+        const job = dock.o({ Compile: 1 })[0] as TheC | undefined
+        const err = dock.oa({ compile_error: 1 }) || job?.oa({ compile_error: 1 })
+        cp.sc.have_methods = job?.oa({ methods: 1 }) ? 1 : 0
+        if (!cp.sc.have_methods && !err) {
+            // compile_error is terminal — fall through so graft mints unresolved
+            //   Pmirrors the minimap can surface; otherwise hold for the index.
+            H.i_req_ttlilt(settle, 3.0, { waiting: 'methods' })
+            return
+        }
+        H.drop_req_ttlilt(settle, { waiting: 'methods' })   // gate passed — no dangler
+
+        // graft — self-caching via dock.c.graft_cache_key; cheap every pass.
+        await H.Lang_graft_points_once(w, dock)
+        settle.oai({ graft: 1 }).sc.n_pmirrors =
+            (dock.o({ Pmirrors: 1 })[0]?.o({ Pmirror: 1 }) as TheC[] ?? []).length
     },
 
     // ── Lang_src_doc_path ─────────────────────────────────────────────────────
@@ -947,7 +965,7 @@
         // there is nothing to compile.  e_Lang_editorBegins feebly_ponders when
         // it stamps dock.c.state, which re-enters here.
         if (!dock.c.state) {
-            H.i_req_ttlilt(req, 1.5, { waiting: 'cm_mount' })
+            H.i_req_ttlilt(req, 3.0, { waiting: 'cm_mount' })
             return
         }
         await H.Langspinner(w, 'text_load')
