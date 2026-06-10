@@ -70,8 +70,8 @@
     //                                              Lies_i_Spotlight (the one seam).
     //                                              sc.src     : $C  the %What or %Doc particle
     //     /req:timemachine                        — the playback engine (sc.playing:0|1);
-    //                                              seeded by req:desire/req:acquire (§3f)
-    //   w/{req:'wants'}                         — cursor-intent accumulator (§3e)
+    //                                              seeded by req:desire/req:acquire
+    //   w/{req:'wants'}                         — cursor-intent accumulator
     //     /{want:$ts}                              c.src → wanted C; sc.kind: click|drag|step|next|cold
     //   w/{Good:1,type:'text/Waft',path:snap_path} — Waft load slot; sc.waft_path = logical.
     //                                         c.content (off-snap) holds the snap text;
@@ -94,7 +94,7 @@
     //     /{Good:1,type,path}                    one resource slot; c.content off-snap.
     //                                            /known dige + kind:read|write + at.
     //                                            /surprise_read when disk diverged.
-    //   w/{req:'desire'}                       — the Waft lock (§3f; thinned)
+    //   w/{req:'desire'}                       — the Waft lock (thinned)
     //     /{req:'acquire',maz:9}                 one-shot lock; inserts desire/{Waft:$waftpath}
     //     /{Waft:$waftpath}                      correlates to w/{Waft:$waftpath}; set by acquire
     //     /{req:'git'}                           Waftlet accumulator; commits patches
@@ -393,7 +393,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     async LiesRealised(A: TheC, w: TheC) {
         const H = this as House
 
-        // ── req:desire — the Waft lock + the timemachine seed (§3f) ───────────
+        // ── req:desire — the Waft lock + the timemachine seed ────────────────
         //
         //   desire has thinned: it holds the Waft lock and seeds the playback
         //   engine, nothing more.  The engine itself (req:timemachine) moved onto
@@ -439,11 +439,11 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
         if (examining) await H.reqy(examining).do()
 
-        // req:git — Waftlet accumulator; lives at w:Lies/req:git (§3h).
+        // req:git — Waftlet accumulator; lives at w:Lies/req:git.
         // < do_fn: flush committed Waftlets to disk/remote; drop flushed.
         await H.reqy(w).doai({ req: 'git' })
 
-        // ── req:wants — the cursor-intent accumulator (§3e) ───────────────────
+        // ── req:wants — the cursor-intent accumulator ──────────────────────────────────────
         //
         //   Every gesture (click, doc-change, step, cold-start) is appended here
         //   as a %want,$ts via e_Lies_want.  The resolver picks the newest and
@@ -464,7 +464,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
     // ── Lies_resolve_wants ──────────────────────────────────────────────────────
     //
-    //   The wants resolver (§3e): newest %want wins.  Resolves it onto the
+    //   The wants resolver: newest %want wins.  Resolves it onto the
     //   Spotlight via the single Lies_i_Spotlight seam, opens its doc through
     //   Lies_roai_Open, and marks it resolved so a re-think is idempotent.
     async Lies_resolve_wants(w: TheC) {
@@ -506,7 +506,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
     // ── Lies_timemachine_do ────────────────────────────────────────────────────
     //
-    //   do_fn for %examining/req:timemachine (§3f).  Drains play/pause/step
+    //   do_fn for %examining/req:timemachine.  Drains play/pause/step
     //   gestures and auto-advances when playing.  Auto-advance emits a %want
     //   (kind:'step') rather than stepping the cursor directly.
     async Lies_timemachine_do(w: TheC, desire: TheC, tm: TheC) {
@@ -594,7 +594,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
     // ── e_Lies_want ───────────────────────────────────────────────────────────
     //
-    //   The gesture sink (§3e).  Appends a %want,$ts under req:wants.
+    //   The gesture sink — appends a %want,$ts under req:wants.
     //   e.sc: { src: TheC, kind?: string }   kind ∈ click|drag|step|next|cold
     async e_Lies_want(A: TheC, w: TheC, e: TheC) {
         const H   = this as House

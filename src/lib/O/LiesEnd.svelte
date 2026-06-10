@@ -238,8 +238,8 @@ await M.eatfunc({
 
     // ── e:Lang_LE_push ───────────────────────────────────────────────────────────
     //
-    //   The push machine — a coherent, resumable, desire-independent cluster
-    //   (Spotlight-Interest-trajectory §3h).  maz bottoms at 1, three phases:
+    //   The push machine — a coherent, resumable, desire-independent cluster.
+    //     maz bottoms at 1, three phases:
     //     maz:3  encode   — LE_encode_compare; clean → finish (nothing to push)
     //     maz:2  replace   — LE_replace_back, skipping U%unaccepted (the
     //                        irreversible step; reqonce-gated so a re-entry on

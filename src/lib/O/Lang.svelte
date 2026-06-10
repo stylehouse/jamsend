@@ -117,12 +117,12 @@
     //       /%graft               sc.n_pmirrors
     //     /{req:'push'}           — encode → replace → verify; /%dirty fault child
     //
-    //   w/{Languinio:1}           — Lang's one focus object (§3b); enrolled in ave.
+    //   w/{Languinio:1}           — Lang's one focus object enrolled in ave.
     //     c.w                     back-ref to w:Lang
     //     // ordered by volatility — LE arms rarely, dock on doc-switch, Interest on every checkout
     //     /{LE:1}                  — same-object hold → w/{LE:1}; installed at plan.
     //                                Unarmed until first cursor move; readers gate on LE.sc.target.
-    //     /{dock:path}             — same-object hold on the active CM doc (§3d).
+    //     /{dock:path}             — same-object hold  on the active CM doc.
     //                                Re-pointed by Lang_set_active_dock on every doc switch.
     //     /{Interest:1}            — sc.src = working clone root; c.LE = nav handle.
     //                                Dropped + recreated by Lang_settle on every checkout.
@@ -374,8 +374,8 @@
     //   every Languinio reader (Langui, DocMinimap) reaches the live dock, and
     //   tells w:Lies the foreground changed.
     //
-    //   §3d: ave/%active_dock is gone — %Languinio/%dock is the single
-    //   foreground-doc truth, and Langui watches %Languinio (already in ave).
+    //   ave/%active_dock is gone — %Languinio/%dock is the single foreground-doc
+    //   truth; Langui watches %Languinio (already in ave).
     //   w.c.active_dock_path stays as a cheap routing string.
     async Lang_set_active_dock(w: TheC, path: string) {
         const H = this as House
@@ -439,7 +439,7 @@
         if (!w.c.active_dock_path && e.sc.dock) {
             await this.Lang_set_active_dock(w, e.sc.dock as string)
         }
-        // §3d — the dock hold lives on %Languinio.  On the first open the hold
+        // The dock hold lives on %Languinio.  On the first open the hold
         // may have been re-pointed before the dock particle existed;
         // Lang_set_active_dock above (when it fired) already installs the real
         // particle, so re-point here only if active and the hold is missing or stale.
@@ -704,7 +704,7 @@
             co.sc.what     = (want.sc as any).What ?? (want.sc as any).path ?? '?'
             console.log(`🔗 settle checkout: ${co.sc.what}`)
 
-            // %Interest (§3b) — drop + recreate; never point at a stale clone tree.
+            // %Interest — drop + recreate; never point at a stale clone tree.
             //   c.LE is the nav handle LangGraft reads; sc.src is the clone root NaviCado reads.
             //   %LE and %dock in Languinio are stable — only %Interest rebuilds here.
             const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
@@ -1043,7 +1043,7 @@
             if (push && !push.sc.finished) await H.reqy(push).do()
         }
 
-        // §3g — re-decorate from the U sphere after graft has minted Pmirrors.
+        // re-decorate from the U sphere after graft has minted Pmirrors.
         // Cache-key-independent: a fold-toggle or class change repaints here
         // without a re-graft (Lang_show_pmirrors short-circuits on no change).
         if (dock?.o({ Pmirrors: 1 })[0]) this.Lang_show_pmirrors(w, dock)
