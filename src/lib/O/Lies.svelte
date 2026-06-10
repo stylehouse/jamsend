@@ -218,10 +218,10 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
         // Park the save inside req:Store.  Keyed by path: a re-save while one is
         // still in flight mutates the in-flight req's text rather than racing a
-        // second write.  Drop a finished sibling first so roai builds a fresh req.
+        // second write.  A finished one was already swept by req_Store Phase 4, so
+        // roai here always finds an in-flight req to mutate or builds a fresh one.
         const host = await H.LiesStore_req(w)
         const pwq  = H.reqy(host)
-        pwq.drop_finished({ req: 'LiesStore_writeCarefully', path })
         await pwq.roai({ req: 'LiesStore_writeCarefully', path }, { text, dige: await dig(text) })
         H.i_elvisto(w, 'think')
     },

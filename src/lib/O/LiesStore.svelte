@@ -3,18 +3,20 @@
     //
     // ── What this is ─────────────────────────────────────────────────────────
     //
-    //   LiesStore is the IO protocol for Lies.  One eternal req — req:Store,maz:7
-    //   — sits on w and pumps itself each tick via req_Store.  Nothing outside
-    //   calls a pump method manually; req:Store's do_fn is the pump.
+    //   LiesStore is Lies' IO, and it is one particle: req:Store,maz:7,eternal,
+    //   sitting on w and pumping itself each tick through req_Store — nothing
+    //   outside calls a pump, req:Store's do_fn IS the pump.  The whole storage
+    //   footprint is that one subtree: the IO reqs, the %Good content slots, the
+    //   /known impressions stamped on them — one place on w to read Lies' disk
+    //   picture.
     //
-    //   The whole LiesStore footprint is that one req:Store subtree: the IO reqs,
-    //   the known impressions, AND the %Good content slots all live under it.  To
-    //   reason about Lies' storage you look in exactly one place on w.
-    //
-    //   Because req:Store is an eternal reqy child of w at maz:7, H.reqy(w).do()
-    //   in the Lies tick runs it before anything else on w (desire, wants, Cortex…).
-    //   req:Store sets sc.ok when its pump cycle is done; lower-maz reqs then
-    //   proceed in the same do() pass knowing IO has been processed.
+    //   sc.ok comes and goes, and that is the point.  maz:7 makes H.reqy(w).do()
+    //   drive req:Store first; at the end of its pump it sets sc.ok, which do()
+    //   treats like finished for the rest of this pass — so a lower-maz req that
+    //   needs IO as sorted as it is going to get this tick proceeds only after
+    //   Store has oked.  req:Cortex (maz:5) is that dependent.  do_one clears ok
+    //   at entry next tick, re-arming the gate; req:Store, being eternal, never
+    //   finishes — it just controls the awakeability of whatever waits on it.
     //
     // ── Children of req:Store ─────────────────────────────────────────────────
     //
@@ -38,24 +40,25 @@
     //   it across ticks and decides when it is done with it.  A finished req is
     //   never garbage on its own; it waits to be picked up.  Two contracts:
     //
-    //   1. Consume-then-drop  (req:LiesStore_read)
-    //      The reply lives on the req only briefly.  The accessor reads
-    //      req.sc.reply within the one do() cycle Phase 2 grants, then Store sweeps
-    //      it.  So callers must NOT hold a read req across ticks — re-call
-    //      LiesStore_read each tick and read reply while the ref is live.  When a
-    //      value must outlive that one cycle, copy it onto a %Good (the durable
-    //      carrier) — that is exactly what LiesStore_read_good does.
+    //   1. Finish-and-sweep  (req:LiesStore_read, req:LiesStore_writeCarefully)
+    //      The req keeps no lasting state of its own, so Store drops it once done.
+    //      A read is consume-then-drop: its reply lives only briefly — the accessor
+    //      reads req.sc.reply within the one do() cycle Phase 2 grants (re-call each
+    //      tick, do not hold a read across ticks), and when a value must outlive that
+    //      cycle it is copied onto a %Good (the durable carrier — see
+    //      LiesStore_read_good).  A writeCarefully has no accessor at all: it drives
+    //      the save across ticks, finishes, and Store sweeps it next pass.  What it
+    //      put on disk is remembered on the %Good's /known, not on the req — so the
+    //      finished req holds nothing worth keeping.
     //
-    //   2. Kept-by-design + explicit sweep  (req:Open, LiesStore_writeCarefully, Good)
+    //   2. Kept-by-design + explicit sweep  (req:Open, Good)
     //      These finish and linger on purpose: a finished req:Open is a cache hit
-    //      that lets a re-visit skip the load; a finished write is the record of
-    //      what last went to disk.  Each has a named sweep, not a Phase-2 auto-drop:
-    //        - req:Open            — Lies_sync_waft_docs trims it when its path
-    //                                leaves every Waft.
-    //        - LiesStore_writeCarefully — drop_finished before the next save of the path.
-    //        - Good                — delete good.c.content forces a re-read; a stale
-    //                                Good is reclaimed by the same future req:refresh
-    //                                that the roai-corpse audit will own.
+    //      that lets a re-visit skip the load.  Each has a named sweep, not a
+    //      Phase-2 auto-drop:
+    //        - req:Open  — Lies_sync_waft_docs trims it when its path leaves every Waft.
+    //        - Good      — delete good.c.content forces a re-read; a stale Good is
+    //                      reclaimed by the same future req:refresh that the
+    //                      roai-corpse audit will own.
     //      A lingering finished req here means "still useful," not "unpicked-up."
     //
     //   How a consumer waits without touching Store's reqs: it does not poll the
@@ -372,8 +375,17 @@
             if (ls.sc.finished) req.drop(ls)
         }
 
-        // Signal tick-local completion: lower-maz reqs (Cortex, desire, wants…)
-        // see a settled Store without req:Store being permanently finished.
+        // ── Phase 4: LiesStore_writeCarefully completions ─────────────────────
+        //   Single-pass drop, no two-pass seen dance: nobody holds a writeCarefully
+        //    across ticks (e_Lies_source_write fires and forgets), and what it put
+        //     on disk lives on the %Good's /known.  An in-flight one (ttlilt armed
+        //      for a source_check) isn't finished, so it stays.
+        for (const wc of rq.o({ req: 'LiesStore_writeCarefully' }) as TheC[]) {
+            if (wc.sc.finished) req.drop(wc)
+        }
+
+        // Signal tick-local completion: lower-maz reqs (req:Cortex) see a settled
+        // Store without req:Store being permanently finished.
         // do_one clears sc.ok at entry next tick so we pump again fresh.
         req.sc.ok = 1
     },

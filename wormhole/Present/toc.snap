@@ -2,7 +2,7 @@ Library
   Book:LeafJuggle,ok_pct,last_run_ms=1779622781.774,done=4,last_pct_change=1776741166.033
   Book:LeafFarm,ok_pct,last_run_ms=1779622753.198,done=6,last_pct_change=1778378075.558
   Book:StuffFlipping,ok_pct=0,last_run_ms=1779622717.748,done,last_pct_change=1779622702.753
-  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1781053757.542
+  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1781053757.542,active
     TimeSpool
       TimeTotal:beliefs,avg=1.716
         sample=1.945,at=1781006991
@@ -178,10 +178,9 @@ Library
         sample=0.006,at=1780805871
         sample=0.006,at=1780805881
         sample=0.006,at=1780805881
-  Book:Diffmatication,ok_pct=0,done,last_run_ms=1781006972.813,active
+  Book:Diffmatication,ok_pct=0,done,last_run_ms=1781054782.687
     TimeSpool
       TimeTotal:beliefs,avg=0.316
-        sample=0.039,at=1780987520
         sample=0.039,at=1780987524
         sample=0.039,at=1780987527
         sample=0.039,at=1780987531
@@ -191,3 +190,4 @@ Library
         sample=0.963,at=1781006971
         sample=0.963,at=1781006971
         sample=0.963,at=1781006972
+        sample=0.032,at=1781054782
