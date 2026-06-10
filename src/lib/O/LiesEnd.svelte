@@ -42,10 +42,12 @@ await M.eatfunc({
 //     On w:Lies: cursor moves (up | prev | next | branch | dive | next_doc).
 //     On w:Lang: LE cluster triggers (push | pull).
 //
-//   e:mark — U-sphere mutations on the working clone tree (w:Lang only).
+//   e:mark — working-tree mutations on the clone tree (w:Lang only).
 //     Ops: add | edit | drop | undrop | unshow | show
-//     U-mutating ops bump LE.c.U_serial so Lang_settle's encode_key
-//     changes without a cursor move (serial on .c, never .sc).
+//     Every op that changes the working tree bumps LE.c.U_serial so
+//     Lang_settle's encode_key changes without a cursor move (serial on .c,
+//     never .sc).  add/drop change structure, edit changes a clone's sc,
+//     show|unshow|undrop change a clone's U meanings — all re-encode.
 //
 //   e:LE_operate / e:LE_mark are the direct implementations.
 //   e_Lang_LE_push is the durable push cluster (req:push|encode|replace|verify).
@@ -170,8 +172,9 @@ await M.eatfunc({
     //
     //   Direct write-path for clone contents and U meanings.  The caller
     //   passes e.sc.LE — the %LE particle from languinio (or resolved by e_mark).
-    //   U-mutating ops bump LE.c.U_serial so Lang_settle's encode_key changes
-    //   without waiting for a cursor move (serial on .c, never .sc).
+    //   Every op that changes the working tree bumps LE.c.U_serial so
+    //   Lang_settle's encode_key changes without waiting for a cursor move
+    //   (serial on .c, never .sc).
     //
     //   e.sc: { LE: TheC, op: string, spec?, sc?, patch? }
     //     add    — append a new clone (e.sc.sc is the raw sc)
@@ -198,13 +201,13 @@ await M.eatfunc({
         switch (op) {
             case 'add': {
                 const sc = e.sc.sc as Record<string, any> | undefined
-                if (sc) H.LE_add_clone(LE, sc)
+                if (sc) { H.LE_add_clone(LE, sc); U_mutated = true }
                 break
             }
             case 'edit': {
                 const clone = find(e.sc.spec)
                 const patch = e.sc.patch as Record<string, any> | undefined
-                if (clone && patch) Object.assign(clone.sc, patch)
+                if (clone && patch) { Object.assign(clone.sc, patch); U_mutated = true }
                 break
             }
             case 'drop': {
@@ -229,8 +232,10 @@ await M.eatfunc({
             }
         }
 
-        // U_serial — lets Lang_settle's encode_key see U-sphere changes without
-        // waiting for a cursor move (which would bump Seem:working.version).
+        // U_serial — lets Lang_settle's encode_key see any working-tree change
+        // (structure, clone sc, or U meanings) without waiting for a cursor move.
+        // A cursor move bumps Seem:working.version; these ops don't, so the serial
+        // on .c is the lever that makes encode_key move for them.
         if (U_mutated) LE.c.U_serial = ((LE.c.U_serial as number) ?? 0) + 1
 
         H.feebly_ponder()

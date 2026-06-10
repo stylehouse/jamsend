@@ -109,6 +109,26 @@
 //#endregion
 
 
+//#region LakeFlush
+    // altering Waft, push|pull through LE
+
+
+    Run_A_LakeFlush(this: House) {
+        const H = this
+        H.i({ A: 'Lies' }).i({ w: 'Lies' })
+        H.i({ A: 'Lang'       }).i({ w: 'Lang' })
+        H.i({ A: 'Pantheate'  }).i({ w: 'Pantheate' })
+        console.log(`🟦 ${H.name} LakeFlush wired`)
+    },
+
+
+
+
+
+
+//#endregion
+
+
 
 
 

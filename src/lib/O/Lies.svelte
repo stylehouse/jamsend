@@ -329,6 +329,12 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 H.Lies_sync_waft_docs(w, waft)
                 H.Lies_waft_save(w, waft)
                 await H.Waft_link_up(waft, waft)
+                // Waft OC mutated — an armed LE over this Waft has a stale
+                // Seem:origin.  Tell Lang so Lang_settle re-pulls origin and
+                // auto-flushes any in-scope drift into the working clone tree.
+                // Cross-ghost, so it goes by elvis; Lang gates on whether its
+                // armed target lives in this Waft.
+                H.i_elvisto('Lang/Lang', 'Lies_waft_mutated', { waft_key: waft.sc.Waft })
             })
 
             w.bump_version()
@@ -609,6 +615,84 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         want.c.src = src
         wants.bump_version()
         this.i_elvisto(w, 'think')
+    },
+
+    // ── Lies_find_what_by_path ──────────────────────────────────────────────────
+    //
+    //   Resolve a slash-joined %What label path within a loaded Waft to the live
+    //   %What particle.  "foundations/peer" walks Waft → What:foundations →
+    //   What:peer.  Used by the test wrappers below to address a What without a
+    //   live particle ref — the snap only carries strings.
+    Lies_find_what_by_path(waft: TheC, path: string): TheC | undefined {
+        const parts = path.split('/').filter(Boolean)
+        let node: TheC | undefined = waft
+        for (const label of parts) {
+            if (!node) return undefined
+            node = (node.o({ What: 1 }) as TheC[])
+                .find(wt => String((wt.sc as any).What) === label)
+        }
+        return node
+    },
+
+    // ── e_Lies_test_cursor ──────────────────────────────────────────────────────
+    //
+    //   Test-only: land the cursor on a named %What deterministically, so a Story
+    //   Prep can arm the LE over a known target before exercising marks.  Resolves
+    //   the string what_path to the live %What, then fires e:Lies_want (the normal
+    //   gesture sink) with it — same path a UI click takes.  Gated on H.sc.Run.
+    //
+    //   e.sc: { waft_key: string, what_path: string }
+    async e_Lies_test_cursor(A: TheC, w: TheC, e: TheC) {
+        const H = this as House
+        if (!H.sc.Run) throw '!testrun — Lies_test_cursor only valid inside a Story Run'
+        const waft = w.o({ Waft: e.sc.waft_key })[0] as TheC | undefined
+        if (!waft) throw `Lies_test_cursor: no Waft:${e.sc.waft_key}`
+        const what = H.Lies_find_what_by_path(waft, e.sc.what_path as string)
+        if (!what) throw `Lies_test_cursor: no What at ${e.sc.what_path}`
+        H.i_elvisto(w, 'Lies_want', { src: what, kind: 'test' })
+        H.i_elvisto(w, 'think')
+    },
+
+    // ── e_Lies_test_waft_edit ─────────────────────────────────────────────────────
+    //
+    //   Test-only: mutate the Waft OC the way the Waft.svelte CRUD handlers do —
+    //   oai/drop a %Point under a named %What, then bump the Waft so watch_c(waft)
+    //   fires.  That is the real signal path: the watcher's e:Lies_waft_mutated
+    //   reaches Lang, which re-pulls Seem:origin.  The wrapper only supplies a
+    //   deterministic, snap-addressable trigger; the mechanism under test is the
+    //   watcher, not this handler.  Gated on H.sc.Run.
+    //
+    //   e.sc: { waft_key, what_path, op: 'add_point'|'edit_point'|'drop_point',
+    //           method?, patch? }
+    async e_Lies_test_waft_edit(A: TheC, w: TheC, e: TheC) {
+        const H = this as House
+        if (!H.sc.Run) throw '!testrun — Lies_test_waft_edit only valid inside a Story Run'
+        const waft = w.o({ Waft: e.sc.waft_key })[0] as TheC | undefined
+        if (!waft) throw `Lies_test_waft_edit: no Waft:${e.sc.waft_key}`
+        const what = H.Lies_find_what_by_path(waft, e.sc.what_path as string)
+        if (!what) throw `Lies_test_waft_edit: no What at ${e.sc.what_path}`
+        const op     = e.sc.op     as string
+        const method = e.sc.method as string | undefined
+        const find_point = () =>
+            (what.o({ Point: 1 }) as TheC[]).find(p => (p.sc as any).method === method)
+
+        if (op === 'add_point') {
+            if (!method) throw 'Lies_test_waft_edit add_point: needs method'
+            what.oai({ Point: 1, method })
+        } else if (op === 'edit_point') {
+            const p = find_point()
+            const patch = e.sc.patch as Record<string, any> | undefined
+            if (p && patch) Object.assign(p.sc, patch)
+        } else if (op === 'drop_point') {
+            const p = find_point()
+            if (p) what.drop(p)
+        } else throw `Lies_test_waft_edit: unknown op '${op}'`
+
+        // Bump the way the Waft UI does on every CRUD — this is what watch_c(waft)
+        // listens on, so the signal to Lang only fires when the OC really changed.
+        what.bump_version()
+        waft.bump_version()
+        H.i_elvisto(w, 'think')
     },
 
     // ── e_Lies_roai_Open_req ──────────────────────────────────────────────────

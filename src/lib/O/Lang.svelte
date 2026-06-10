@@ -180,8 +180,16 @@
     //
     //   e:mark / e:LE_mark  ← NaviCado, test snaps
     //     takes  e%LE (particle or sentinel 1), op, spec
-    //     makes  C.c.U.sc.unshowing | unaccepted; LE.c.U_serial++
-    //            → Lang_settle encode_key = wv:U_serial changes → re-encode
+    //     makes  C.c.U.sc.unshowing | unaccepted (or clone.sc for add|edit);
+    //            LE.c.U_serial++
+    //            → Lang_settle encode_key = wv:U_serial changes → re-encode →
+    //              %State.changey → auto-push (LE_push flushes clone tree → OC)
+    //
+    //   e:Lies_waft_mutated  ← Lies watch_c(waft), on any Waft OC change
+    //     takes  e%waft_key
+    //     makes  LE.c.origin_dirty when our target lives in that Waft
+    //            → Lang_settle re-pulls origin; in-scope drift (%State.stale)
+    //              auto-pulls (re-arm + re-clone working off the new origin)
     //
     //   e:LE_operate%op=push  ← NaviCado / DocMinimap
     //     makes  req:push|encode|replace|verify cluster under workon/%LE
@@ -669,6 +677,35 @@
         H.i_elvisto(w, 'think')
     },
 
+    // ── e:Lies_waft_mutated ──────────────────────────────────────────────
+    //
+    //   Fired by Lies' watch_c(waft) whenever a loaded Waft OC changes (a UI
+    //   CRUD, a rename, or a test edit).  If our armed target lives in that
+    //   Waft, Seem:origin is now stale — stamp LE.c.origin_dirty (off-snap) and
+    //   poke a think.  Lang_settle reads the flag, re-pulls origin, and (when
+    //   the drift falls inside the checked-out extent) auto-pulls the change
+    //   into the working clone tree.
+    //
+    //   Gated on target membership: an edit elsewhere in the same Waft still
+    //   fires the watcher, but the re-pull then finds no origin drift and is a
+    //   cheap no-op — which is exactly the out-of-scope case.
+    //
+    //   e.sc: { waft_key: string }
+    async e_Lies_waft_mutated(A: TheC, w: TheC, e: TheC) {
+        const H        = this as House
+        const waft_key = e.sc.waft_key as string | undefined
+        if (!waft_key) return
+        const LE     = w.o({ LE: 1 })[0] as TheC | undefined
+        const target = LE?.sc.target as TheC | undefined
+        if (!LE || !target) return
+        if (H.waft_key_of(target) !== waft_key) return
+        // < orphan case (target's c.up no longer reaches the Waft — deleted out
+        //   from under us) is not handled here; it is the natural home for the
+        //   Merge UI, which picks up an edit that lands inside something dropped.
+        LE.c.origin_dirty = 1
+        H.feebly_ponder()
+    },
+
     // ── Lang_settle — the one convergence loop ───────────────────────────
     //
     //   workon.c.src is the latest want (stashed by e_Lang_workon_update).
@@ -685,6 +722,17 @@
     //   newest want — no drop+recreate, no race between Languish and the cursor.
     //   A recompile re-runs only graft + encode; a cursor move re-runs the chain
     //   from checkout; U-edit decoration is handled by the tick's show pass.
+    //
+    //   Two auto-flush directions converge here, both "detect drift on a Seem,
+    //   resolve it":
+    //     working drift  — an e:mark op bumped U_serial → encode goes changey →
+    //                      auto-push (LE_push) flushes the clone tree into the OC.
+    //     origin drift   — the Waft OC mutated (e:Lies_waft_mutated set
+    //                      origin_dirty) → re-pull → if it touched our extent
+    //                      (%State.stale) auto-pull re-clones working off origin.
+    //   They are mutually exclusive in a pass: an origin edit sets both stale and
+    //   changey, and the pull (stale branch) runs first, so the auto-push gate
+    //   (!stale) never fires on it.
     //
     //   Snap visibility: each step records its settled state on a child particle
     //   (%checkout/%furnish/%compile/%graft) so the snap shows convergence at a glance.
@@ -757,16 +805,45 @@
         settle.oai({ graft: 1 }).sc.n_pmirrors =
             (dock.o({ Pmirrors: 1 })[0]?.o({ Pmirror: 1 }) as TheC[] ?? []).length
 
+        // origin drift — the Waft OC changed under us (e:Lies_waft_mutated stamped
+        // LE.c.origin_dirty).  Re-pull origin to learn whether the change touched
+        // our checked-out extent.  When it did (%State.stale), auto-pull: re-arm
+        // working off the new origin so the change flushes into the clone tree.
+        // When it didn't, the re-pull leaves stale unset and we fall through —
+        // that is the out-of-scope edit, a cheap no-op.
+        //   < re-arm wipes working edits + U meanings; the resume snapshot (the
+        //     retarget-resume work) is what will make this lossless when both
+        //     sides drifted.  Today origin drift wins and working is re-cloned.
+        if (LE.c.origin_dirty) {
+            delete LE.c.origin_dirty
+            await H.LE_pull(LE)
+            if (LE.o({ State: 1 })[0]?.sc.stale) {
+                H.LE_arm(LE, armed)
+                await H.LE_pull(LE)
+                settle.c.last_encode_key = undefined   // force the re-encode below
+            }
+        }
+
         // encode — gated on working.version + U_serial so enWaft is not called
-        // every pass.  U-sphere ops (drop/undrop/unshow/show) don't touch
-        // Seem:working.version, so e_LE_mark increments LE.c.U_serial; the
-        // combined key ensures a re-encode fires after any U mutation too.
+        // every pass.  A cursor move bumps Seem:working.version; the e:mark ops
+        // don't, so e_LE_mark increments LE.c.U_serial — the combined key ensures
+        // a re-encode fires after any working-tree change too.
         const wv         = LE.o({ Seem: 'working' })[0]?.version
         const u_serial   = (LE.c.U_serial as number | undefined) ?? 0
         const encode_key = `${wv}:${u_serial}`
         if (settle.c.last_encode_key !== encode_key) {
-            await H.LE_encode_compare(LE)   // stamps %State.changey
+            const { dirty } = await H.LE_encode_compare(LE)   // stamps %State.changey
             settle.c.last_encode_key = encode_key
+
+            // working drift, origin stable — auto-push: flush the clone tree back
+            // into the Waft OC (and on to Lies/disk).  Gated on !stale so an
+            // origin edit (which sets both stale and changey) is resolved by the
+            // pull above, never clobbered by pushing our now-superseded working.
+            // LE_push runs encode→replace→pull→encode inline; its verify re-encode
+            // clears %State.changey when the push lands clean.
+            if (dirty && !LE.o({ State: 1 })[0]?.sc.stale) {
+                await H.LE_push(LE)
+            }
         }
     },
 
