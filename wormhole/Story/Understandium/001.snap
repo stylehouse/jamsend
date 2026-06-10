@@ -30,7 +30,7 @@ Snap:H
             What,label:deeper
               Point,method:inner_secret
         see:step 1 arm pull
-          goners=0,neus=3
+          goners:0,neus:3
           neu:e_Dock_open
           neu:Lang_doc_from_event
           {"neu":"What:deeper"}

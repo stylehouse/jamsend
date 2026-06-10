@@ -42,7 +42,7 @@ Snap:H
               Point,method:write_gen
               Point,method:notify_Pantheate
         see:step 1 arm routing pull
-          goners=0,neus=4
+          goners:0,neus:4
           neu:e_Dock_open
           neu:Lang_doc_from_event
           neu:path_guard

@@ -30,7 +30,7 @@ Snap:H
               Point,method:inner_secret
         self,round=6	{"mung":["age"]}
         see:step 6 repull with unshowing
-          goners=0,neus=0
+          goners:0,neus:0
           PASS,t:re-pull no-diff with %unshowing present
           PASS,t:%unshowing survived re-pull on the U node
           PASS,t:U re-found under the freshly-traced D node (resume_X)

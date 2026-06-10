@@ -130,9 +130,12 @@
 //
 // Repeated C refs (C === C, same object appearing at multiple locations) are
 // encoded as a loopy pair rather than an error:
-//   first appearance:      objecties.loopy:N  (plus normal sc)
-//   subsequent appearances: objecties.loopy:N, objecties.ks:keyser(C)
-//                           with no sc at all — decoder must understand ref or throw.
+//   shallowest appearance: objecties.loopy:N  (plus normal sc) — the original
+//                          Travel.dive() descends into its children there.
+//   all other appearances: objecties.loopy:N, stringies keys all set to 1
+//                          (munged shadow — reads like the object, loopy signals ref).
+//   forward() visits shallow-first (stack order); pass 1 records min depth
+//   per C so pass 2 can stub deeper occurrences before the original is seen.
 // Errors are FATAL — mung keys, unknown types (all_knowing).
 // Caller should refuse to save when errors.length > 0.
     async encode_wh_lines(
@@ -158,10 +161,18 @@
             : null
 
         // ── pass 1: collect all C refs ────────────────────────────────────────
-        // Walk the tree once with a minimal each_fn that just tallies how many
-        // times each C identity appears.  No encoding yet.
-        // ref_count: C → how many times it appears in the tree.
+        // Walk the tree once to tally appearances and track the shallowest depth
+        // each C reaches.  No encoding yet.
+        // ref_count:  C → how many times it appears in the tree.
+        // ref_min_d:  C → shallowest depth at which it appears.
+        //   The shallowest occurrence is the full-encode "original" — Travel.dive()
+        //   will descend into its children there.  Deeper occurrences are stubs.
+        //   forward() visits in stack order (shallow-first), so without this
+        //   pre-pass the first visit would already win — but when the same C
+        //   appears at equal depth in sibling subtrees, ref_min_d breaks the tie
+        //   consistently, and makes the intent explicit.
         const ref_count = new Map<TheC, number>()
+        const ref_min_d = new Map<TheC, number>()
 
         const Tr = new Travel()
         await Tr.dive({
@@ -174,12 +185,15 @@
                     return
                 }
                 ref_count.set(n, (ref_count.get(n) ?? 0) + 1)
+                if (d < (ref_min_d.get(n) ?? Infinity)) ref_min_d.set(n, d)
             },
         })
 
         // ── pass 2: encode, now knowing which C are repeated ─────────────────
-        // ref_seen: C → assigned loopy integer (set on first encode of that C).
-        // ref_encoded: C → true once the first appearance line has been written.
+        // ref_seen:    C → assigned loopy integer (set on first encode of that C).
+        // ref_encoded: C → true once the full-encode "original" line has been written.
+        //   A repeated C encodes fully only at its shallowest depth (ref_min_d);
+        //   deeper occurrences are stubs — decoder Travel.dive()s into the original.
         let ref_i = 0
         const ref_seen    = new Map<TheC, number>()
         const ref_encoded = new Set<TheC>()
@@ -201,19 +215,22 @@
                 return
             }
 
-            // Repeated C: assign a ref id on first encounter.
+            // Repeated C: assign a ref id on first encounter (any depth).
             const is_repeated = (ref_count.get(n) ?? 1) > 1
             if (is_repeated && !ref_seen.has(n)) {
                 ref_seen.set(n, ref_i++)
             }
 
-            if (is_repeated && ref_encoded.has(n)) {
-                // Subsequent appearance — emit stub line: ref back-pointer + ks thumbnail.
-                // No sc at all; decoder must understand the ref protocol or throw.
-                const ref_id  = ref_seen.get(n)!
-                const src_keys = Object.keys(n.sc ?? {}).slice(0, 8).join(',')
-                const objecties = { loopy: ref_id, ks: src_keys }
-                const stub_line = `${H.ind(d)}\t${H.enj(objecties)}`
+            // Stub if already fully encoded, or if a shallower occurrence exists
+            // that should be the original (deeper occurrences are always stubs).
+            const is_stub = is_repeated && (ref_encoded.has(n) || d > (ref_min_d.get(n) ?? d))
+
+            if (is_stub) {
+                // Stub: munged shadow — every key shown as :1 so it reads like the object.
+                // hid:1 marks this as the shadow; the original carries loopy:N only.
+                const ref_id = ref_seen.get(n)!
+                const shadow = Object.fromEntries(Object.keys(n.sc ?? {}).map(k => [k, 1]))
+                const stub_line = H.enL({ d, stringies: shadow, objecties: { loopy: ref_id, hid: 1 } })
                 snap_lines.push(stub_line)
                 n.c.snap_Line = stub_line
                 // Don't set T.sc.not — subtree was already skipped on first encode pass;
@@ -607,7 +624,7 @@
     enLine(n: TheC, q: {
         d: number
         rules?: Array<any>
-        loopy?: number              // integer serial set by encode_wh_lines when this C appears elsewhere
+        loopy?: number              // integer serial — this is the shallowest/original appearance of a repeated C
         // outputs written back:
         snap_line?: string
         stringies?: Record<string, any>
@@ -678,7 +695,7 @@
         }
 
         const objecties: Record<string, any> = {}
-        if (q.loopy !== undefined) objecties.loopy = q.loopy   // first appearance of a repeated C
+        if (q.loopy !== undefined) objecties.loopy = q.loopy   // shallowest/original appearance of a repeated C
         if (Object.keys(ref).length) objecties.ref = ref
         if (mung.length) objecties.mung = mung
 

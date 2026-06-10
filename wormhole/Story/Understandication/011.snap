@@ -27,6 +27,7 @@ Snap:H
               Demonstrations:working,Point,method:pipeline_start
                 Understandable
             News:working,goners=0,neus=0
+          {"encode":1,"snap_origin":"Point,method:e_Dock_open\nPoint,method:Lang_doc_from_event\nWhat,label:routing_detail\nPoint,method:pipeline_start\n","snap_working":"Point,method:e_Dock_open\nPoint,method:Lang_doc_from_event\nWhat,label:routing_detail\nPoint,method:pipeline_start\n","dirty":"0"}
         src
           What,label:routing
             Point,method:e_Dock_open

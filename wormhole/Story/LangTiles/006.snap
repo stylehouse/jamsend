@@ -1,7 +1,7 @@
 Snap:H
   H:LangTiles,Run
     A:Lies
-      self,round=82	{"mung":["age"]}
+      self,round=84	{"mung":["age"]}
       w:Lies
         examining	{"loopy":2}
           req:timemachine,playing=0
@@ -14,18 +14,18 @@ Snap:H
             {"ran":"91e020ceb0dfe3cd#leash:0"}
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/LangTiles/Waftily/toc.snap,waft_path:Story/LangTiles/Waftily
-            known,dige:ae431c78129a7b9e,kind:read,at=1781054784.375
+            known,dige:ae431c78129a7b9e,kind:read,at=1781079184.98
           Good,type:text/Doc,path:Ghost/test/LangTiles.g
-            known,dige:1f738455c057ebe2,kind:read,at=1781054784.699
+            known,dige:1f738455c057ebe2,kind:read,at=1781079185.282
           req:Open,path:Ghost/test/LangTiles.g,finished
         req:desire
           req:acquire,maz=9,finished
           Waft:Story/LangTiles/Waftily	{"ref":{"src":"%Waft:Story/LangTiles/Waftily"}}
         req:git
         req:wants
-          want=1781054784425,kind:cold
-          want=1781054784475,kind:cold
-          want=1781054784584,kind:cold,resolved
+          want=1781079185022,kind:cold
+          want=1781079185073,kind:cold
+          want=1781079185176,kind:cold,resolved
         Waft:Story/LangTiles/Waftily
           What:labelofaWhat
             Doc:Ghost/test/LangTiles.g
@@ -36,9 +36,9 @@ Snap:H
         o_elvis:Lies_desire_pause
         o_elvis:Lies_desire_step
         log:source_write,path:Ghost/test/LangTiles.g,dige:2234b12f
-        self,round=82	{"mung":["age"]}
+        self,round=84	{"mung":["age"]}
     A:Lang
-      self,round=60	{"mung":["age"]}
+      self,round=59	{"mung":["age"]}
       w:Lang
         model,cyto_dir
           Line=5,line_from=74,line_to=98,str:    let la = i hut/$toot,the_bm_bm_98_132
@@ -119,7 +119,7 @@ Snap:H
                 def,method:severally,from=1969,to=1979,line=70	{"ref":{"region_path":"[]"}}
                 call,method:laterally,from=2121,to=2133,line=76,via:severally	{"ref":{"region_path":"[]"}}
                 def,method:laterally,from=2145,to=2155,line=78	{"ref":{"region_path":"[]"}}
-              time,compile=0.012,all=0.553,write=0
+              time,compile=0.005,all=0.7,write=0
               Output,gen_path:gen/test/LangTiles.go,dige:91e020ceb0dfe3cd,source_dige:2234b12f5e4b756e
                source: |
                  <script lang="ts">
@@ -232,14 +232,14 @@ Snap:H
           lematch	{"ref":{"sc_has":"Object()"}}
             lematch	{"ref":{"sc_has":"Object()"}}
         Languinio	{"loopy":3}
-          LE	{"loopy":0,"ref":{"target":"%What:labelofaWhat"}}
+          LE,target	{"loopy":0,"hid":1}
           Interest	{"ref":{"src":"%What:labelofaWhat"}}
-          {"loopy":1,"ks":"%dock:Ghost/test/LangTiles.g, active:1"}	
+          dock,active	{"loopy":1,"hid":1}
           Change
             storage,dige:1f738,dim:true
             backend,dige:2234b
-            compile,dige:2234b,dim:true,secs=0.012
-        {"loopy":0,"ks":"%LE:1, target:%What"}	
+            compile,dige:2234b,dim:true,secs=0.005
+        LE	{"loopy":0,"ref":{"target":"%What:labelofaWhat"}}
           Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:labelofaWhat","topD":"%Demonstrations:origin"}}
             Demonstrations:origin
               Demonstrations:origin,Doc:Ghost/test/LangTiles.g
@@ -275,7 +275,7 @@ Snap:H
         received,doc_opened,doc:Ghost/test/LangTiles.g
         received,editorBegins,doc:Ghost/test/LangTiles.g
         o_elvis:Lies_compile_settled
-        self,round=60	{"mung":["age"]}
+        self,round=59	{"mung":["age"]}
         see:🟦 tiles 1 bookmarks
     A:Pantheate
       self,round=32	{"mung":["age"]}
@@ -320,8 +320,8 @@ Snap:H
         self,round=32	{"mung":["age"]}
         o_elvis:Ghost_update_notify
     watched:ave
-      {"loopy":2,"ks":"%examining:1"}	
-      {"loopy":3,"ks":"%Languinio:1"}	
+      examining	{"loopy":2,"hid":1}
+      Languinio	{"loopy":3,"hid":1}
     watched:UIs
       UI:Lies	{"ref":{"component":"Function()"}}
       UI:Langui	{"ref":{"component":"Function()"}}

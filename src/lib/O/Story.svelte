@@ -114,7 +114,7 @@
     
     `
 
-    import { objectify, keyser, TheC }     from "$lib/data/Stuff.svelte"
+    import { objectify, TheC }             from "$lib/data/Stuff.svelte"
     import type { TheD }                  from "$lib/mostly/Selection.svelte"
     import { Selection, Travel }          from "$lib/mostly/Selection.svelte"
     import { depeel, peel, dig, exactly, ex }               from "$lib/Y.svelte"
@@ -854,7 +854,7 @@
         const q: any = {
             d:      T.c.path.length - 1,
             rules:  active,
-            loopy:  T.sc.loopy,   // integer serial set by snap_H ref-pass when this C appears elsewhere
+            loopy:  T.sc.loopy,   // integer serial — this is the shallowest/original appearance
         }
         const lines = this.enLine(n, q)
 
@@ -916,35 +916,38 @@
             },
         })
 
-        // ── ref pass: stamp ref_def on first appearances, stub subsequent ones ──
-        // Travel's loop_but_no_further let loopy C** reach each_fn with T.sc.loopy.
-        // loopy_Cs collects every C that appeared more than once.
-        // forward() replays all Ts in walk order — first and loopy appearances
-        // both have T.sc.D via trace_fn/est_D_T, so snap_line lands in order.
+        // ── ref pass: stamp loopy:N on originals, hid:1 stubs on revisits ────────
+        // loop_but_no_further lets revisited C** reach each_fn with T.sc.loopy set
+        // and T.sc.no_further set.  loopy_Cs collects those C**.
+        // forward() replays all Ts; T.sc.no_further is the stub signal — the first
+        // DFS encounter (no no_further) is always the structural home/original.
         // Idempotent: story_process_node fully rebuilds D.sc.snap_line each call.
+        //
+        // Stub format: stringies with every key set to 1 (a munged shadow —
+        // reads like the object, hid:1 in objecties marks it as the shadow).
         if (loopy_Cs.size > 0) {
             let loopy_i = 0
             const loopy_ids = new Map<TheC, number>()
             for (const n of loopy_Cs) loopy_ids.set(n, loopy_i++)
 
-            // re-encode first appearances (now knowing they're shared) and
-            // write stub lines for subsequent appearances, in walk order
-            const first_seen = new Set<TheC>()
+            // encode pass: T.sc.no_further marks every revisit (set by loop_but_no_further
+            // in dive_start when a C is seen for the second+ time).  That T is the stub;
+            // the earlier T without no_further is the original.  No pre-scan needed.
             await Se.c.T!.forward(async (T: Travel) => {
                 const n  = T.sc.n as TheC
                 const id = loopy_ids.get(n)
                 if (id === undefined) return
 
-                if (!first_seen.has(n)) {
-                    first_seen.add(n)
-                    // first appearance — re-encode with loopy integer in objecties
+                if (!T.sc.no_further) {
+                    // first DFS encounter — the structural home; re-encode with loopy integer
                     T.sc.loopy = id
                     this.story_process_node(n, T, T.sc.D)
                 } else {
-                    // subsequent appearance — stub only: loopy id + ks thumbnail, no sc
-                    const d   = T.c.path.length - 1
-                    const ks  = keyser(n)
-                    T.sc.D.sc.snap_line = `${this.ind(d)}${this.enj({ loopy: id, ks })}\t`
+                    // revisit — stub: munged shadow, every key shown as :1
+                    // hid:1 marks this as the shadow; the original carries loopy:N only
+                    const d      = T.c.path.length - 1
+                    const shadow = Object.fromEntries(Object.keys(n.sc ?? {}).map(k => [k, 1]))
+                    T.sc.D.sc.snap_line = this.enL({ d, stringies: shadow, objecties: { loopy: id, hid: 1 } })
                 }
             })
 

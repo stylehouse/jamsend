@@ -6,6 +6,7 @@ Snap:H
         tally,passed=41,failed=0
         LE	{"ref":{"target":"%What:1, label:routing"}}
           State
+          {"encode":1,"snap_origin":"Point,method:Lang_compile\nPoint,method:LangCompiling_run\nPoint,method:emit_go\nWhat,label:compilation_detail\nPoint,method:codegen_pass\n","snap_working":"Point,method:Lang_compile\nPoint,method:LangCompiling_run\nPoint,method:emit_go\nWhat,label:compilation_detail\nPoint,method:codegen_pass\n","dirty":"0"}
           Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}
             Demonstrations:origin
               Demonstrations:origin,Point,method:e_Dock_open
@@ -43,9 +44,9 @@ Snap:H
             Point,method:codegen_pass
         self,round=13	{"mung":["age"]}
         see:step 13 accepted_clones helper
-          total_clones=4
-          accepted_after_drops=2
+          total_clones:4
+          accepted_after_drops:2
           PASS,t:accepted_clones excludes both dropped
-          accepted_restored=4
+          accepted_restored:4
           PASS,t:accepted_clones restores after clearing unaccepted
     mo:main,interval=3.6	{"mung":["id"]}

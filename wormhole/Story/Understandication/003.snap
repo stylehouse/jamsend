@@ -45,7 +45,7 @@ Snap:H
           clone_method:Lang_compile
           clone_method:LangCompiling_run
           clone_method:emit_go
-          goners=0,neus=4
+          goners:0,neus:4
           {"PASS":1,"t":"compilation: 4 neus after re-arm"}
           PASS,t:Lang_compile present
           PASS,t:routing Points gone — different What

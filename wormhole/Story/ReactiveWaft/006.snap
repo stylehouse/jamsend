@@ -3,18 +3,22 @@ Snap:H
     A:ReactiveWaft
       self,round=6	{"mung":["age"]}
       w:ReactiveWaft
-        Lies
-        Waft:test1
+        Lies	{"loopy":0}
+        Waft:test1	{"loopy":1}
           Doc,path:b.g
           Doc,path:aa.g
-        Waft:test2
+        Waft:test2	{"loopy":2}
           Doc,path:x.g
-        Waft:test3
+        Waft:test3	{"loopy":3}
           Doc,path:q.g
         logger,n
           wafts,n=3
         self,round=6	{"mung":["age"]}
     watched:ave
+      Lies	{"loopy":0,"hid":1}
+      Waft	{"loopy":1,"hid":1}
+      Waft	{"loopy":2,"hid":1}
+      Waft	{"loopy":3,"hid":1}
     watched:UIs
       UI:ReactiveWaft	{"ref":{"component":"Function()"}}
     mo:main,interval=3.6	{"mung":["id"]}

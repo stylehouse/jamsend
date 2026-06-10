@@ -42,7 +42,7 @@ Snap:H
               Point,method:notify_Pantheate
         self,round=4	{"mung":["age"]}
         see:step 4 wander back routing
-          goners=0,neus=4
+          goners:0,neus:4
           {"PASS":1,"t":"routing: 4 neus after re-arm (fresh sphere)"}
           PASS,t:no unshowing bled from compilation U
           PASS,t:e_Dock_open back in clones

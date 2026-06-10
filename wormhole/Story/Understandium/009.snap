@@ -28,7 +28,7 @@ Snap:H
               Point,method:inner_secret
         self,round=9	{"mung":["age"]}
         see:step 9 rearm
-          goners=0,neus=2
+          goners:0,neus:2
           neu:alpha
           neu:beta
           now_holding:alpha

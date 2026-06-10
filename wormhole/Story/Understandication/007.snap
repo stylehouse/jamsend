@@ -28,6 +28,7 @@ Snap:H
               Demonstrations:working,Point,method:new_route_handler
                 Understandable
             News:working,goners=0,neus=0
+          {"encode":1,"snap_origin":"Point,method:e_Dock_open\nPoint,method:Lang_doc_from_event\nPoint,method:path_guard\nWhat,label:routing_detail\nPoint,method:new_route_handler\n","snap_working":"Point,method:e_Dock_open\nPoint,method:Lang_doc_from_event\nPoint,method:path_guard\nWhat,label:routing_detail\nPoint,method:new_route_handler\n","dirty":"0"}
         src
           What,label:routing
             Point,method:e_Dock_open
@@ -47,7 +48,7 @@ Snap:H
         self,round=7	{"mung":["age"]}
         see:step 7 drop clone (unaccepted)
           dropped:path_guard
-          unaccepted_on_U
+          unaccepted_on_U:1
           PASS,t:U%unaccepted set on the dropped clone
           PASS,t:clone sc stays clean (no unaccepted in .sc)
           PASS,t:LE_clones still includes unaccepted

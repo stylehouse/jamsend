@@ -64,9 +64,7 @@ story:LeafFarm
     For
     waitCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.247
-      sample=0.251,at=1778378035
-      sample=0.251,at=1778378052
+    TimeTotal:beliefs,avg=0.24
       sample=0.251,at=1778378056
       sample=0.234,at=1778378089
       sample=0.223,at=1778378110
@@ -75,35 +73,37 @@ story:LeafFarm
       sample=0.253,at=1778413662
       sample=0.221,at=1779063019
       sample=0.278,at=1779622749
-  step,dige:16af8162fcae6222
-  step=2,dige:de8ea36813915842
-  step=3,dige:09f230e0ef6e7be9
-  step=4,dige:bd2debd2450b924f
-  step=5,dige:64fbf6e9443e8ec4
-  step=6,dige:3fb862be265ee0fd
-  step=7,dige:daae29c13761801f
-  step=8,dige:044a6c6797eca344
-  step=9,dige:0cc7b5c411b41f17
-  step=10,dige:14ec1cdc56f352a9
-  step=11,dige:792d7f18ccbf0d7d
-  step=12,dige:d809587678025d52
-  step=13,dige:0addbfd95e5cccd5
-  step=14,dige:d122d490c2409db3
-  step=15,dige:0b6de2ffa139205e
-  step=16,dige:ab038d246ba48ff0
-  step=17,dige:144545d158f4060e
-  step=18,dige:4e33c2e9f58499f1
-  step=19,dige:1bd63eb39ca36f70
+      sample=0.217,at=1781080396
+      sample=0.217,at=1781080426
+  step,dige:83a1a308e9d2f3c5
+  step=2,dige:dc022c8db6e135ef
+  step=3,dige:eaecfb59df683b37
+  step=4,dige:47e90341c2a2b9f1
+  step=5,dige:104950390697b0d9
+  step=6,dige:91bb79c30a02d2db
+  step=7,dige:02ae6dddf22e84bc
+  step=8,dige:5d6c2ea7b02d6939
+  step=9,dige:06ccc29aeca3af7b
+  step=10,dige:91cb9637acbd3b26
+  step=11,dige:7b244a286f041857
+  step=12,dige:65154fc13a21e39c
+  step=13,dige:93d9d2d63ca1934f
+  step=14,dige:4063ca226b1c4665
+  step=15,dige:06da399dfbd14bd6
+  step=16,dige:a71178864864531c
+  step=17,dige:29aa970ade3ef19e
+  step=18,dige:631eb5e0d570a605
+  step=19,dige:f739c3edc5fe2df1
     note,that:leaf_2_0 is about to get harvested
-  step=20,dige:cf378eac7715c370
+  step=20,dige:a315b266b7087e69
     note,that:leaf_2_0 emerges again
-  step=21,dige:9a153bba3b5bac66
-  step=22,dige:1b3f3a54323f4216
-  step=23,dige:f738324971edfe4f
-  step=24,dige:2933c31dbfcf19f0
-  step=25,dige:7d5dbe35826f6b28
-  step=26,dige:ee72258b306dc140
-  step=27,dige:6f8eba6df9c1e935
-  step=28,dige:658cf6e1ba4ba836
-  step=29,dige:733a86973e0cf932
-  step=30,dige:0e055868a11d8fa0
+  step=21,dige:ff7b3f9ac654390e
+  step=22,dige:1a12d4d3472cf665
+  step=23,dige:0da503106b184cf3
+  step=24,dige:9d7ad27bd6c456c0
+  step=25,dige:6f715299da05567a
+  step=26,dige:abcbd6e733bfe2d0
+  step=27,dige:6f08e01b484d851a
+  step=28,dige:a9dd61b41b8067a5
+  step=29,dige:cb9691962fa17dcf
+  step=30,dige:e09766aa49aab642

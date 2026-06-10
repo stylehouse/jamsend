@@ -32,7 +32,7 @@ Snap:H
             Point,method:fresh_point
         self,round=3	{"mung":["age"]}
         see:step 3 source add
-          goners=0,neus
+          goners:0,neus:1
           neu:fresh_point
           PASS,t:1 neu on source add
     mo:main,interval=3.6	{"mung":["id"]}

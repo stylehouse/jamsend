@@ -30,7 +30,7 @@ Snap:H
               Point,method:inner_secret
         self,round=4	{"mung":["age"]}
         see:step 4 source drop
-          goners,neus=0
+          goners:1,neus:0
           goner:fresh_point
           PASS,t:1 goner on source drop
     mo:main,interval=3.6	{"mung":["id"]}

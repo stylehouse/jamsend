@@ -27,6 +27,7 @@ Snap:H
               Demonstrations:working,Point,method:pipeline_start
                 Understandable
             News:working,goners=0,neus=0
+          {"encode":1,"snap_origin":"Point,method:e_Dock_open\nPoint,method:Lang_doc_from_event\nWhat,label:routing_detail\nPoint,method:pipeline_start\n","snap_working":"Point,method:e_Dock_open\nPoint,method:Lang_doc_from_event\nWhat,label:routing_detail\nPoint,method:pipeline_start\n","dirty":"0"}
         src
           What,label:routing
             Point,method:e_Dock_open
@@ -44,11 +45,11 @@ Snap:H
               Point,method:notify_Pantheate
         self,round=10	{"mung":["age"]}
         see:step 10 compound edit push
-          clones_before=4
-          dirty_before_push
+          clones_before:4
+          dirty_before_push:1
           {"PASS":1,"t":"compound edit: dirty before push"}
-          pipeline_on_source
-          new_route_on_source=0
+          pipeline_on_source:1
+          new_route_on_source:0
           PASS,t:pipeline_start landed on source
           PASS,t:new_route_handler gone from source
           PASS,t:encode-compare reflects compound push outcome

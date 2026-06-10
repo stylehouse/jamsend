@@ -30,7 +30,7 @@ Snap:H
               Point,method:inner_secret
         self,round=2	{"mung":["age"]}
         see:step 2 repull unchanged
-          goners=0,neus=0
+          goners:0,neus:0
           {"PASS":1,"t":"unchanged source: no-diff"}
           PASS,t:Seem/%News still singular after re-pull
     mo:main,interval=3.6	{"mung":["id"]}

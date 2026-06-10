@@ -6,6 +6,7 @@ Snap:H
         tally,passed=39,failed=0
         LE	{"ref":{"target":"%What:1, label:routing"}}
           State
+          {"encode":1,"snap_origin":"Point,method:Lang_compile\nPoint,method:LangCompiling_run\nPoint,method:emit_go\nWhat,label:compilation_detail\nPoint,method:codegen_pass\n","snap_working":"Point,method:Lang_compile\nPoint,method:LangCompiling_run\nPoint,method:emit_go\nWhat,label:compilation_detail\nPoint,method:codegen_pass\n","dirty":"0"}
           Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}
             Demonstrations:origin
               Demonstrations:origin,Point,method:e_Dock_open
@@ -43,7 +44,7 @@ Snap:H
             Point,method:codegen_pass
         self,round=12	{"mung":["age"]}
         see:step 12 wander compile add push back
-          codegen_on_compilation
+          codegen_on_compilation:1
           PASS,t:codegen_pass landed on compilation
           routing_clone:e_Dock_open
           routing_clone:Lang_doc_from_event

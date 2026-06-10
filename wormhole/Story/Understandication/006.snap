@@ -28,6 +28,7 @@ Snap:H
               Demonstrations:working,Point,method:new_route_handler
                 Understandable
             News:working,goners=0,neus=0
+          {"encode":1,"snap_origin":"Point,method:e_Dock_open\nPoint,method:Lang_doc_from_event\nPoint,method:path_guard\nWhat,label:routing_detail\nPoint,method:new_route_handler\n","snap_working":"Point,method:e_Dock_open\nPoint,method:Lang_doc_from_event\nPoint,method:path_guard\nWhat,label:routing_detail\nPoint,method:new_route_handler\n","dirty":"0"}
         src
           What,label:routing
             Point,method:e_Dock_open
@@ -46,8 +47,8 @@ Snap:H
               Point,method:notify_Pantheate
         self,round=6	{"mung":["age"]}
         see:step 6 push addition
-          found_on_source
-          dirty_after_push=0
+          found_on_source:1
+          dirty_after_push:0
           see:origin,via_toString
            string: |
              Point,method:e_Dock_open

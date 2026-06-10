@@ -32,10 +32,10 @@ Snap:H
             Point,method:beta
         self,round=10	{"mung":["age"]}
         see:step 10 strict fork
-          default_rename,goners=0,neus=0
+          default_rename,goners:0,neus:0
           {"PASS":1,"t":"default: rename is a survivor (no diff)"}
           strict_rename
-            goners,neus
+            goners:1,neus:1
             goner:e_Dock_open
             neu:e_Dock_open_v2
           {"PASS":1,"t":"resolve_strict: rename is goner + neu"}

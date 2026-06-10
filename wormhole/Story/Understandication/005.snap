@@ -27,6 +27,7 @@ Snap:H
               Demonstrations:working,Point,method:new_route_handler
                 Understandable
             News:working,goners=0,neus
+          {"encode":1,"snap_origin":"Point,method:e_Dock_open\nPoint,method:Lang_doc_from_event\nPoint,method:path_guard\nWhat,label:routing_detail\n","snap_working":"Point,method:e_Dock_open\nPoint,method:Lang_doc_from_event\nPoint,method:path_guard\nWhat,label:routing_detail\nPoint,method:new_route_handler\n","dirty":"1"}
         src
           What,label:routing
             Point,method:e_Dock_open
@@ -45,7 +46,7 @@ Snap:H
         self,round=5	{"mung":["age"]}
         see:step 5 add clone
           added:new_route_handler
-          dirty
+          dirty:1
           PASS,t:added clone in working snap
           PASS,t:added clone absent from origin snap
           PASS,t:encode-compare dirty after add

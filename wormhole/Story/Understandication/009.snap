@@ -27,6 +27,7 @@ Snap:H
               Demonstrations:working,Point,method:new_route_handler
                 Understandable
             News:working,goners=0,neus=0
+          {"encode":1,"snap_origin":"Point,method:e_Dock_open\nPoint,method:Lang_doc_from_event\nWhat,label:routing_detail\nPoint,method:new_route_handler\n","snap_working":"Point,method:e_Dock_open\nPoint,method:Lang_doc_from_event\nWhat,label:routing_detail\nPoint,method:new_route_handler\n","dirty":"0"}
         src
           What,label:routing
             Point,method:e_Dock_open
@@ -44,8 +45,8 @@ Snap:H
               Point,method:notify_Pantheate
         self,round=9	{"mung":["age"]}
         see:step 9 push deletion
-          path_guard_on_source=0
-          push_dirty_fires=0
+          path_guard_on_source:0
+          push_dirty_fires:0
           PASS,t:path_guard gone from source
           PASS,t:no push_dirty after clean deletion push
     mo:main,interval=3.6	{"mung":["id"]}

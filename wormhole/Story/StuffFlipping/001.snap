@@ -13,12 +13,12 @@ Snap:H
         test:C.resolve() leaf test suite
           {"resolve_test":"leaf vanishes, self,est arrives"}
             C
-              tracing,self,est=1775527585
+              tracing,self,est:1775527585
               tracing,hand:left
               tracing,hand:right
               tracing,whatsit
-              tracing,other=3
-              tracing,self,round=6,age=5
+              tracing,other:3
+              tracing,self,round:6,age:5
             pairs
               {"before":"tracing:1, hand:left"}
               {"after":"tracing:1, hand:left"}
@@ -49,12 +49,12 @@ Snap:H
               {"gone":"%tracing:1, leaf:1"}
           {"resolve_test":"leaf vanishes, self,est arrives - no tracing noise"}
             C
-              self,est=1775527585
+              self,est:1775527585
               hand:left
               hand:right
               whatsit
-              other=3
-              self,round=6,age=5
+              other:3
+              self,round:6,age:5
             pairs
               {"before":"self:1, round:5, age:5"}
               {"after":"self:1, round:6, age:5"}
@@ -97,7 +97,7 @@ Snap:H
             C
               tracing,hand:left
               tracing,hand:right
-              tracing,other=4
+              tracing,other:4
             pairs
               {"before":"tracing:1, hand:left"}
               {"after":"tracing:1, hand:left"}
@@ -107,10 +107,10 @@ Snap:H
               {"after":"tracing:1, other:4"}
           resolve_test:pattern_sc empty — no tracing key noise
             C
-              self,est=1775527585
+              self,est:1775527585
               hand:left
               hand:right
-              self,round=6,age=5
+              self,round:6,age:5
             pairs
               {"before":"self:1, round:6, age:5"}
               {"after":"self:1, round:6, age:5"}

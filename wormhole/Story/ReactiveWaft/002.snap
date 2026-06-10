@@ -3,17 +3,20 @@ Snap:H
     A:ReactiveWaft
       self,round=2	{"mung":["age"]}
       w:ReactiveWaft
-        Lies
-        Waft:test1
+        Lies	{"loopy":0}
+        Waft:test1	{"loopy":1}
           Doc,path:a.g
           Doc,path:b.g
-        Waft:test2
+        Waft:test2	{"loopy":2}
           Doc,path:x.g
         self,round=2	{"mung":["age"]}
         logger,n=2
           add doc to test1,inA
           wafts,n=2
     watched:ave
+      Lies	{"loopy":0,"hid":1}
+      Waft	{"loopy":1,"hid":1}
+      Waft	{"loopy":2,"hid":1}
     watched:UIs
       UI:ReactiveWaft	{"ref":{"component":"Function()"}}
     mo:main,interval=3.6	{"mung":["id"]}

@@ -42,7 +42,7 @@ Snap:H
               Point,method:notify_Pantheate
         self,round=2	{"mung":["age"]}
         see:step 2 repull unchanged
-          goners=0,neus=0
+          goners:0,neus:0
           {"PASS":1,"t":"routing unchanged: no-diff"}
           PASS,t:still 4 clones after re-pull
     mo:main,interval=3.6	{"mung":["id"]}

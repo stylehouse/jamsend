@@ -7,8 +7,9 @@ Snap:H
           leaf
         hand:right
         whatsit
-          thing:with,see
+          thing:with,see	{"loopy":0}
         other=3
+          thing,see	{"loopy":0,"hid":1}
         self,round=6	{"mung":["age"]}
     A:Yang
       self,round=6	{"mung":["age"]}

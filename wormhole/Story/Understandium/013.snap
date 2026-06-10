@@ -56,5 +56,5 @@ Snap:H
           PASS,t:clean after push
           PASS,t:snaps equal after push
           PASS,t:no push_dirty on LE3
-        VERDICT:ALL_GREEN,passed=35
+        VERDICT:ALL_GREEN,passed:35
     mo:main,interval=3.6	{"mung":["id"]}

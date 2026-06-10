@@ -4,10 +4,10 @@ Snap:H
       self,round	{"mung":["age"]}
       w:ReactiveWaft
         self,round	{"mung":["age"]}
-        Lies
-        Waft:test1
+        Lies	{"loopy":0}
+        Waft:test1	{"loopy":1}
           Doc,path:a.g
-        Waft:test2
+        Waft:test2	{"loopy":2}
           Doc,path:x.g
         logger,n=8
           mount,Waft:test1,inA
@@ -20,5 +20,8 @@ Snap:H
           wafts,n=2
     mo:main,interval=3.6	{"mung":["id"]}
     watched:ave
+      Lies	{"loopy":0,"hid":1}
+      Waft	{"loopy":1,"hid":1}
+      Waft	{"loopy":2,"hid":1}
     watched:UIs
       UI:ReactiveWaft	{"ref":{"component":"Function()"}}

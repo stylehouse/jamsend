@@ -6,6 +6,7 @@ Snap:H
         tally,passed=43,failed=0
         LE	{"ref":{"target":"%What:1, label:routing"}}
           State
+          {"encode":1,"snap_origin":"Point,method:Lang_compile\nPoint,method:LangCompiling_run\nPoint,method:emit_go\nWhat,label:compilation_detail\nPoint,method:codegen_pass\n","snap_working":"Point,method:Lang_compile\nPoint,method:LangCompiling_run\nPoint,method:emit_go\nWhat,label:compilation_detail\nPoint,method:codegen_pass\n","dirty":"0"}
           Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}
             Demonstrations:origin
               Demonstrations:origin,Point,method:e_Dock_open
@@ -45,5 +46,5 @@ Snap:H
         see:step 14 unshowing wander hygiene
           PASS,t:no unshowing on fresh routing clones after re-arm wander
           PASS,t:Lang_compile unshowing never in routing sphere
-        VERDICT:ALL_GREEN,passed=43
+        VERDICT:ALL_GREEN,passed:43
     mo:main,interval=3.6	{"mung":["id"]}
