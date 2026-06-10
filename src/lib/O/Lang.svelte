@@ -191,10 +191,9 @@
     //     makes  dock.c.view, dock.c.state; reconciles %bookmark from/to
     //            → feebly_ponder wakes req:text_loaded monitor in Languish
     //
-    //   e:Lang_open_dock  ← Lies req:Furnishing RPC courier
-    //     takes  furnishing.sc.path, .c.text
+    //   e:Lang_open_dock  ← req:Open in Lies, once the doc has loaded
+    //     takes  e%path, e%text
     //     makes  req:Languish (text_loaded → compile phases)
-    //            → finish({path,ready:1}) resolves the Furnishing RPC
     //
     //   Lang_update_change  (each tick, active dock known)
     //     takes  dock/{Text:1}, dock/{Compile}/{Output}
@@ -594,18 +593,14 @@
 
     // ── e:Lang_open_dock ─────────────────────────────────────────────────────────
     //
-    //   §3i — doc-open is now an RPC.  Lies owns the intent (w:Lies/req:Furnishing)
-    //   and couriers the req particle here via i_elvis_req; we drain it with
-    //   o_elvis_req.  Each carried req has { path, text }; we mint (or
-    //   refresh) the per-doc req:Languish on the dock — Lang's mind for one doc,
-    //   staging text_loaded → compile — then finish({ path, ready:1 }) once the
-    //   dock is minted, which pings Lies back so its Furnishing phase resolves.
+    //   Called by req:Open in Lies once a doc has loaded.  Drains i_elvisto
+    //   carries via o_elvis; each carry has { path, text }.  Mints (or refreshes)
+    //   the per-doc req:Languish on the dock — Lang's mind for one doc, staging
+    //   text_loaded → compile.
     //
     //   Dock is minted here (via docks.oai) so Lang_drive_languish can receive it
     //   directly; req_text_loaded's reqonce then stamps Text and activates it.
     //   text on languish.c (hidden from snap); gen_path derived at compile time.
-    //
-    //   e.sc: { req }  (the Furnishing req, carrying path/text)
     async e_Lang_open_dock(A: TheC, w: TheC, e?: TheC) {
         const H = this as House
         for (const e of H.o_elvis(w, 'Lang_open_dock')) {
@@ -737,7 +732,7 @@
         const docks = w.o({ docks: 1 })[0] as TheC | undefined
         const dock  = docks?.o({ dock: doc_path })[0] as TheC | undefined
         if (!dock) {
-            // Lies' req:Furnishing RPC mints it; its completion feebly_ponders us.
+            // dock not open yet — req:Open in Lies will mint it via i_elvisto
             fu.sc.have_dock = 0
             H.i_req_ttlilt(settle, 0.5, { waiting: 'dock' })
             return
@@ -1019,11 +1014,7 @@
         // dropdown reflects the active doc's current language override.
         await this.LangLang_tick(A, w)
 
-        // ── drive Languish + workon + Furnishing + push ──────────────
-        // §3i — drain Furnishing FIRST so languish.c.open_text is set before
-        // Languish's req_text_loaded reqonce fires (one chance; empty doc if text absent).
-        // o_elvis self-declares 'Lang_open_dock' on first call so subsequent
-        // Furnishing couriers route to this main method.
+        // ── drive Languish + workon + push ───────────────────────────────────
         await this.e_Lang_open_dock(A, w)
 
         // Drive w-level reqs (workon anchor, desire, etc.); cheap when settled.

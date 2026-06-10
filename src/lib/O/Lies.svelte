@@ -340,11 +340,9 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
     // ── req_Open — demand-load one source file, provision Good,type:'text/Doc', open in Lang ──
     //
-    //   do_fn for req:Store/req:Open,path.  Merges the old req:Open (src-keyed)
-    //   and req:Furnishing (courier) — both did the same job.
+    //   do_fn for req:Store/req:Open,path.
     //
     //   req.c.up = req:Store; w = req.c.up.c.up.
-    //   The Good is created on w (not under req:Store) so Liesui can find it directly.
     //
     //   Stays finished — re-visits find the existing finished req and skip the load.
     //   Genuine re-opens (source text changed) go through e_Lies_source_write →
@@ -373,8 +371,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     // ── Lies_roai_Open ────────────────────────────────────────────────────────
     //
     //   Find-or-create a req:Open for path under req:Store.  Kept finished —
-    //   the dock already exists in Lang, so re-arming would restart Languish
-    //   and wipe the compile result.  Genuine re-opens go through
+    //   the dock already exists in Lang, so re-arming would drop and restart
+    //   req:Languish, wiping the compile result.  Genuine re-opens go through
     //   e_Lies_source_write → e_Lang_open_dock directly.
     async Lies_roai_Open(w: TheC, path: string): Promise<TheC> {
         const H     = this as House
@@ -460,8 +458,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
         // pump once more: Lies_resolve_wants may have just seeded a req:Open
         //  inside req:Store, but Store already ran earlier this tick (maz:7).
-        //  Re-driving here lets req:Open start its Wormhole read in the same tick
-        //  — matching the timing the old Furnishing pump provided.
+        //  Re-driving here lets req:Open start its Wormhole read in the same tick.
         await H.reqy(w).do()
     },
 

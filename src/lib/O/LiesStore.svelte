@@ -274,7 +274,7 @@
     //
     //   Returns (or creates) w/req:Store — the host for all IO reqs and known
     //   impressions.  maz:7 puts it above all other Lies reqs so H.reqy(w).do()
-    //   always pumps IO before desire/wants/Furnish/Curse run.  eternal:1 means
+    //   always pumps IO before desire/wants/Cortex run.  eternal:1 means
     //   reqy never finishes it via unify_finished.  req_Store sets sc.ok at the
     //   end of each pump cycle — lower reqs see a settled Store without it being
     //   permanently finished; do_one clears ok at entry each tick.
@@ -636,8 +636,7 @@
     //   store ref; outside readers find it via reqy(w).o({req:'Store'}) — see
     //   LiesStore_good_of.
     //
-    //   req:Open provisions Good,type:'text/Doc' then dispatches to Lang —
-    //   req:Open and req:Furnishing have converged here.
+    //   req:Open provisions Good,type:'text/Doc' then dispatches to Lang.
     //
     // ── LiesStore_good ────────────────────────────────────────────────────────
     //   Find-or-create the %Good slot under req:Store.  Idempotent across ticks.

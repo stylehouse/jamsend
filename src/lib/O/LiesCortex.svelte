@@ -72,7 +72,7 @@
     //                           (permanent — stays put, un-finishes on re-compile)
     //       maz:1 req:Rundown — present only if e_Rundown_arm fired; idles or
     //                           mints req:BlatDo when inputs are ready; waits on BlatDo
-    //     maz:* lower reqs   — desire, wants, Furnish, Curse
+    //     maz:* lower reqs   — desire, wants
     //
     // ── nogen / softgen / nowriting ──────────────────────────────────────────
     //
