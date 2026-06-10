@@ -82,13 +82,13 @@
     //   treats any incoming text already in the spool as an echo and skips it.
     //   Genuine remote changes (text we've never been at) still apply.
     //
-    // ── Push throttle ────────────────────────────────────────────────────────
+    // ── Push batcher (debounce + max-wait) ──────────────────────────────────
     //
-    //   Lang_texting is throttled (80ms) so the elvis queue isn't fed faster
-    //   than it can drain.  When the trailing call fires we read the LIVE view
-    //   text, not whatever was current when we scheduled — so the backend
-    //   always lands on the freshest snapshot.  Doc switch flushes any pending
-    //   push for the departing path before saving its state.
+    //   Lang_texting fires 400ms after the last keystroke (trailing debounce),
+    //   but never later than 5s into a continuous burst (max-wait cap).
+    //   The flush reads the LIVE view text at fire time so the backend always
+    //   lands on the freshest snapshot.  Doc switch flushes any pending push
+    //   for the departing path before saving its state.
 
     import { onDestroy, untrack } from "svelte"
     import { EditorView, basicSetup } from "codemirror"
@@ -103,6 +103,7 @@
     import Actions from "$lib/O/ui/Actions.svelte"   // doc-picker dropdown + any other Lang actions
     import DocMinimap from "./ui/DocMinimap.svelte"
     import DocPoint   from "./ui/DocPoint.svelte"
+    import { now_in_seconds_with_ms } from "./Peerily.svelte";
 
     let { H }: { H: House } = $props()
 
@@ -229,40 +230,46 @@
         return text_spool.get(path)?.includes(text) ?? false
     }
 
-    // ── push-text throttle ───────────────────────────────────────────────────
-    //   Coalesce keystrokes into one Lang_texting per 80ms window.  The flush
-    //   reads the LIVE view text rather than a captured snapshot, so the
-    //   backend always lands on the freshest text the editor has.
-    //   push_pending_path tracks which doc the pending push belongs to — doc
-    //   switch flushes it for the departing path before swapping.
-    const PUSH_TEXT_THROTTLE_MS = 80   // flush before Esc/switch ensures compile always sees current text
-    let push_timer: ReturnType<typeof setTimeout> | null = null
+    // ── push-text batcher ────────────────────────────────────────────────────
+    //   Trailing debounce: fire 400ms after the last keystroke.
+    //   Max-wait cap: fire anyway after 5s of continuous typing so a long
+    //     session doesn't build up unbounded lag in the elvis queue.
+    //   flush reads the LIVE view text at fire time — always the freshest snapshot.
+    //   push_pending_path tracks which doc the pending push belongs to —
+    //     doc switch flushes it for the departing path before swapping.
+    //   pin dock to `path`, not active_path: the switch $effect fires after
+    //     active_path has already advanced; without pinning the departing text
+    //     would land as a Lang_texting on the arriving dock and silently
+    //     overwrite it on disk via the disk-reload $effect.
+    const PUSH_QUIET_MS  = 400
+    const PUSH_ACTIVE_MS = 5_000
+    let push_quiet_timer:  ReturnType<typeof setTimeout> | null = null
+    let push_active_timer: ReturnType<typeof setTimeout> | null = null
     let push_pending_path: string | null = null
-    function flush_push_text() {
-        push_timer = null
+    function flush_push_text(label='???') {
+        if (push_quiet_timer)  { clearTimeout(push_quiet_timer);  push_quiet_timer  = null }
+        if (push_active_timer) { clearTimeout(push_active_timer); push_active_timer = null }
         const path = push_pending_path
         push_pending_path = null
         if (!view || !path) return
         const text = view.state.doc.toString()
-        // Already remembered in spool by the updateListener that scheduled us;
-        // re-remember here in case a programmatic dispatch slipped through.
+        // re-remember here in case a programmatic dispatch slipped through
         spool_remember(path, text)
-        // pin the dock to `path`, not active_path.  A doc switch flushes this
-        //   from the switch $effect, which fires after active_path has already
-        //   advanced to the arriving doc while the view still holds the departing
-        //   text.  Lang_i_elvis defaults dock to active_path, so without this the
-        //   departing text lands as a Lang_texting on the arriving dock — the
-        //   disk-reload $effect then paints it back over the freshly switched view
-        //   and the arriving doc is silently overwritten on disk.
         Lang_i_elvis(view, 'Lang_texting', { dock_path: path, text })
+        // console.log(`       Langui pushtext: ${label} ${now_in_seconds_with_ms()}`)
     }
     function schedule_push_text(path: string) {
+        // console.log(`       Langui pushtext!`)
         push_pending_path = path
-        if (push_timer) return
-        push_timer = setTimeout(flush_push_text, PUSH_TEXT_THROTTLE_MS)
+        // trailing debounce — reset the quiet window on every keystroke
+        if (push_quiet_timer) clearTimeout(push_quiet_timer)
+        push_quiet_timer = setTimeout(() => flush_push_text('quiet'), PUSH_QUIET_MS)
+        // max-wait cap — arm once per burst; not reset by keystrokes
+        if (!push_active_timer)
+            push_active_timer = setTimeout(() => flush_push_text('max-wait'), PUSH_ACTIVE_MS)
     }
     function flush_push_text_now() {
-        if (push_timer) { clearTimeout(push_timer); flush_push_text() }
+        if (push_quiet_timer || push_active_timer) flush_push_text('now')
     }
 
     // ── bookmark-position flush ───────────────────────────────────────────────
@@ -906,7 +913,8 @@
 
     onDestroy(() => {
         if (update_timer)       clearTimeout(update_timer)
-        if (push_timer)         clearTimeout(push_timer)
+        if (push_quiet_timer)   clearTimeout(push_quiet_timer)
+        if (push_active_timer)  clearTimeout(push_active_timer)
         if (_autosave_interval) clearInterval(_autosave_interval)
         container_ro?.disconnect()
         view?.destroy()

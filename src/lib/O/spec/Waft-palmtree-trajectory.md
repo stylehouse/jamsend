@@ -231,26 +231,12 @@ attention with particular Points illuminated on the walls.
 
 ---
 
-## Open faults
+# Open faults
 
-### important, check these out
+# important todo
 
 ```
-// ── LiesCortex ──────────────────────────────────────────────────────────────
-
-// < req:Cortex write_finished ordering — currently guaranteed by LiesStore_run
-//   running before LiesCortex_run in the tick.  If that ordering shifts, have
-//   Phase 1 stamp cortex.sc.write_finished directly instead.
-
-// < push_dirty not yet wired to a req fault particle in the reqy system.
-
 // ── Lang / compile ──────────────────────────────────────────────────────────
-
-// < typing into the codemirror can overwhelm the backend with elvises
-//    is it a reqyoncile() before the 400ms-batches-of-streams-of-typing enforcer?
-//    There is also no guaranteed write every 9s when this queue of stuff is happening...
-
-// < U%created_at session field needs wiring in LE_add_clone and the strip list.
 
 // < C|U-edit should cause encode: U mutations (unaccepted/unshowing) don't bump
 //   Seem:working.version, so settle's encode gate never fires after e_Lang_LE_drop
@@ -278,13 +264,6 @@ attention with particular Points illuminated on the walls.
           even though it has a difference to it.
       So OC change may want pulling into C immediately, showing up into Pmirrors etc.
 
-// < does LiesPersist / LiesStore_read_good etc etc seem perfect? seems guts-hanging-out.
-      It has to handle the above re-read shunt (might be an echo: a push then a pull)
-       and how Store/Good is always there now, not just when loading...
-       Actually LiesPersist looks like it was imagining the waits-for-req:Store,maz:7 we
-       have now, so should we move to using that... with some kind of push-able end to it?
-      and in Diffmatication / LiesStore_read_waft_good does not exist 
-
 // < retargeting the LE away and back to mutated C** should resume as it was, not pull|reset.
      LE would need to target various perhaps unconnected bits of D** to resume, by path...
       Waft:$path (/namey-as-id)* is the whole locator of C**
@@ -296,36 +275,254 @@ attention with particular Points illuminated on the walls.
 
 ```
 
-### others
+# Open faults / futures — Lies · Lang · LiesStore · LiesCortex · LiesEnd
 
-```
-// < survey the fictional worth of these concepts and playthings
+probably won't resolve these before moving on with other work.
 
-// < req:Showing has no req particle yet — Lang_show_pmirrors is the body but
-//   is called directly from the tick.  As a proper open-ended req it survives
-//   cursor-absent ticks (U-edit fold toggles while settle returns early).
+Ordered roughly by severity and actionability.  The `< ` annotations in the source are the primary map; this document traces each one to its consequence and the minimal fix.
 
-// < pre-pull fallback in Lang_graft_points_once (interest.c.LE absent path)
-//   reads live Points off src_C directly — should be eliminated; ensure
-//   interest.c.LE is always set before graft runs.
+---
 
-// < src_clone on Pmirrors should eventually become workingC — the whole
-//   Seem:working C** — so Showing's path is unambiguous for all clone shapes.
+## Active faults — wrong behaviour today
 
-// < e_Lang_LE_drop demote round-trip takes a full cursor-move cycle.
+### 1. surprise_read blocks the write but never resumes it  *(LiesStore:547)*
 
-// < stale spinner: req:encode should also clear spinner:stale after a clean
-//   encode-compare, in case stale lingers past checkout.
+`req_LiesStore_writeCarefully` detects an external edit (disk dige ≠ base dige), stamps `good/%surprise_read` with the stashed text+dige, and finishes.  Nothing ever reads that stash.  The user's auto-save silently disappears.
 
-// < req:git do_fn — flush Waftlets to disk/remote.
+The data is all present:
+- `sr.sc.text` = the text we wanted to write
+- `sr.sc.dige` = its dige
+- `sr.sc.disk_dige` = what's on disk right now
 
-// < Se_o as standing watch — call-driven for now.
+What's missing: a UI seam (DocRow / Langui) that shows the conflict and a "push anyway" button that calls `LiesStore_write` directly with `sr.sc.text`, then drops `%surprise_read`.  The surprise detection path is solid; only the resume leg is absent.
 
-// < req:wants never prunes; history grows unbounded until a sweep exists.
+---
 
-// < req:timemachine is a reqy particle under %examining (an ave signal);
-//   tolerated — precedent: %Spotlight child + c.w back-ref.
-```
+### 2. push verify false-positives when clones were dropped  *(LiesEnd:308, 574)*
+
+`e_Lang_LE_push` verify phase: after `LE_replace_back`, it re-pulls and re-encodes.  An unaccepted clone's absence looks like a goner on the origin walk and `LE_encode_compare` calls the push dirty.  `req:push/%dirty` stays open forever for a push that actually landed.
+
+The fix the comment names: before `LE_replace_back`, iterate clones with `U%unaccepted` and stamp `bD/was_disincluded:1` on each of their D nodes.  Then in `resolved_fn` (inside `o_Seem` → `Se.process`) recognize a `was_disincluded` goner as expected and suppress it from the dirty count.
+
+`LE_push` (the inline version used by test snaps) has the same hole at line 574.
+
+---
+
+### 3. snap bloat: rw_data and req_sent on sc  *(LiesStore:110)*
+
+`LiesStore_write` parks `rw_data` (the full file content) and `rw_op` on `sc` of the write req, meaning every in-flight write carries its source text in the snap.  For large Ghost files this is significant.  The comment names the fix: make them oncelers (off-snap, on `.c`).  The req already uses `rw_data` only to send to Wormhole; once sent, holding it on `.c` is fine.
+
+---
+
+### 4. write errors silently discarded in e_Lies_compiled  *(LiesCortex:147)*
+
+`e_Lies_compiled` calls `LiesStore_write` but never checks whether `reply.error` arrived on the finished write req.  Phase 1 in `req_Store` does check and `console.error`s, but `e_Lies_compiled` returns before that runs and has no recovery path.  A gen/ write failure leaves `req:Codebit` waiting on `write_finished` that never arrives — the Codebit stalls permanently.
+
+Minimal fix: after `LiesStore_write` returns a req (not null), park a check in e_Lies_compiled that reads `req.sc.reply?.error` — though since Phase 1 handles it, the real gap is that `req_Codebit` should detect a write error and finish-with-error rather than waiting forever.
+
+---
+
+## Stubs with a clear next step
+
+### 5. Doc close is incomplete  *(Lies:112, LiesStore:202)*
+
+`Lies_sync_waft_docs` drops unfinished `req:Open` for Docs no longer in any Waft.  It does not:
+- drop the `Good,type:'text/Doc'` slot
+- fire anything to Lang to close the dock (the Languish req, the CM view, the %dock particle)
+
+A removed Doc stays loaded in Lang, compile-able, and editable.  The watcher wired in `LiesPersist` fires `Lies_sync_waft_docs` on every Waft change — the hook is right, the body is incomplete.
+
+Sequence needed: find the Good → drop it → if a dock is open in Lang, fire `e_Lang_close_dock` (not yet written) that drops the dock particle, dispatches CM destroy, and clears active_dock if it was that doc.
+
+---
+
+### 6. Waft and Doc rename are stubs  *(Lies:115,191-197)*
+
+`e_Lies_rename_waft` and `e_Lies_rename_doc` both `console.warn` and return.  The spec particle shape is already in Lies' header (`%waft_rename_job`, `%doc_rename_job`), so the crash-safe job concept is designed.  The implementation path for Waft:
+
+1. `oai` the job particle (so a crash mid-rename can resume)
+2. write the snap at the new path via `LiesStore_write`
+3. move all `%Doc` children to the new Waft particle
+4. delete the old snap (a new rw_op:'delete', or write '' and rely on the file system convention)
+5. drop the job particle
+
+Doc rename additionally needs a gen/ rename (delete old gen path, write new one) and a Lang dock re-path.
+
+---
+
+### 7. LE_available_ops not wired to req:checkout  *(LiesEnd:879)*
+
+`LE_available_ops(what)` computes the full reachable-move set from the current cursor position, with destinations and labels.  NaviCado falls back to static ↑←→ buttons because the result is never stamped onto `%LE/%moves.sc.ops`.
+
+Wire in `Lang_settle` after the graft step: call `LE_available_ops`, write the result to `settle.oai({ moves: 1 }).sc.ops`, bump LE.version.  NaviCado then replaces static buttons with the computed chip set.
+
+---
+
+### 8. bookmark_vanished is a pure stub  *(Lang:1511)*
+
+`Lang_bookmark_vanished` warns and stamps `%vanished`.  The re-anchor intent:
+
+- scan the current parse tree for the nearest surviving node with the same `Line:N` or same `label` text
+- re-dispatch `addBookmarkMark.of({ id, from: recovered_from, to: recovered_to })`
+- update `bm.sc.from / bm.sc.to`
+
+Copy+paste recovery (Lang:1516) is a second pass: compare paste-inserted text chunks against `bm.sc.label` of vanished bookmarks and re-anchor any match.  Both are feasible with `syntaxTree(state)` already imported; the hard part is the scoring function.
+
+---
+
+## Design directions — no behaviour change, cleaner code
+
+### 9. req:desire wrapper could collapse  *(Lies:410)*
+
+`req:desire` now holds only the Waft lock (`%acquire`) and seeds the timemachine.  The comment notes acquire could move to `w:Lies` directly, dropping the wrapper.  The snap benefit is a shallower tree; the main reason to do it is that desire's current shape makes it look like it does more than it does.  Leave until the timemachine and git slots are settled — they'll clarify the right home.
+
+### 10. LiesStore_write dige-dedup dance → req%mutated  *(LiesStore:420)*
+
+The existing approach: `drop_finished` on the old write req, scan in-flight for same dige, spawn fresh if needed.  The comment marks this as workable but not the right model.  `req%mutated` would let a stampede of writes land on one req that always carries the latest `rw_data`; Phase 1 would see only the final content.  Needs `req%mutated` to be implemented first.
+
+### 11. e_Lang_workon_update → e:operate  *(Lang:656)*
+
+The comment proposes merging this into `e:operate{ LE, op:'pull', src }`.  Low priority — the dedicated handler is 5 lines and `Lang_settle`'s `armed_src` identity check already makes re-entrant pulls cheap.  Worth doing only when the operate dispatch table gets a broader audit.
+
+---
+
+## Larger features
+
+### 12. surprise_read diff view  *(Lies:113, LiesStore:547)*
+
+The full pull-before-push story: detection works (fault 1 above covers the resume), but the intended UI is a diff view in DocRow/Langui showing `sr.sc.text` vs `disk_text`, a "keep mine" button (calls writeCarefully's inner write directly), and a "take theirs" button (`delete good.c.content` to force a re-read).  This wants a diff widget component.
+
+### 13. Full doc-level Good lifecycle  *(Lies:113)*
+
+The comment groups `%LiesStore_writeCarefully / %surprise_read / diff per Good,type:'text/Doc'`.  This is the whole per-file disk-awareness story: Good is the single carrier of disk state, and the missing pieces are (a) re-read on external change (TTL or watch), (b) the surprise diff UI above, and (c) the full close path (stub 5 above).
+
+### 14. Good TTL re-read (req:refresh)  *(LiesStore:627)*
+
+`Good` has `// < req:refresh — TTL-based re-read (not yet)`.  Currently the only way to force a re-read is `delete good.c.content`.  A `req:refresh,ttl:N` child would re-zero content after N seconds, triggering the read path again.  The `roai-corpse audit` is a prerequisite: you need to know a Good is still needed before refreshing it.
+
+### 15. Multiple-ghosts-per-runner  *(LiesCortex:391)*
+
+`req_Rundown` uses all Codebits as its input set.  The generalisation: each Rundown carries a filter (by path glob or explicit list) and computes its moment from only those Codebits.  Multiple Rundowns could then run different test methods over different ghost subsets.  The moment-id hash already uses sorted diges; the filter just changes which diges go in.
+
+### 16. next_doc hierarchy traversal  *(LiesEnd:142)*
+
+`e_LE_operate op:next_doc` steps flat `Waft_cursor_candidates`.  When a `%What` has children expanded via branch/dive, `next_doc` should descend into them.  The candidates generator would need a DFS walk of the What tree rather than a flat list.
+
+### 17. Push on req:git / Waftlet commit path  *(LiesEnd:255)*
+
+The spec intent: a push is a Waftlet commit on `w:Lies/req:git`, which then flushes via the git do_fn to disk/remote.  Currently push lives on `w:Lang` where the %LE and clone tree are.  The bridge (Lies reading Lang's clones without reaching into Lang's reqs) is the missing piece.
+
+### 18. nested Waft save  *(Lies:114)*
+
+A Waft can hold `%What` nodes which can be other Wafts logically.  The snap format and `enWaft/deWaft` protocol for a Waft-within-a-Waft is not designed.  Deferred until there's a concrete use case.
+
+### 19. Lang compiler: async await injection, .$ capture, block verbs  *(Lang:56,70,87)*
+
+Three deferred compiler features:
+- **async/await injection** — `async` stamped on def entries but `await` never injected at call sites.
+- **`.$ tight value-capture`** — parses as an error node; the grammar token + PeelItem tail rule needed first.
+- **block verbs** — `r / roai / oai` with a trailing `{}` block; unresolved value-semantics for bareword args.
+
+### 20. Graft mark vanishing  *(Lang:1494)*
+
+When a full-span edit wipes a graft mark from CM's `graftMarkField`, `Lang_update_grafts` receives an empty update for that id and the Pmirror becomes unresolved.  Relies on a future re-anchor scan, same shape as bookmark_vanished (stub 8 above) but for Pmirrors.
+
+### 21. workon.following diverged state  *(Lang:323)*
+
+`workon.sc.following = 1` (track group cursor) is set at plan time and never cleared.  When a user manually navigates away from the group cursor, `following:0` should trigger a thought-balloon on the breadcrumb.  Needs a comparison between `workon.c.src` and the group cursor's current position, and a UI read of `following` in NaviCado/breadcrumb.
+
+---
+
+## Cross-cutting: req%mutated
+
+Several faults and directions converge on `req%mutated` not yet being fully leveraged:
+- LiesStore_write resend (direction 10)
+- Codebit re-arm on re-compile (already works — this is the good example)
+- req:include re-confirm on re-compile (also works)
+- A future %want dedup (a second want for the same src could mutate the existing unresolved one rather than piling)
+
+The pattern is established and working in the Codebit case; the remaining uses need the mutation to be cheap (no `.c` fields that are content-significant) and the do_fn to be idempotent on re-entry.
+
+---
+
+# Other todo
+
+Probably won't resolve these before moving on with other work.
+
+## req:Cortex write_finished ordering
+
+Currently guaranteed by `LiesStore_run` running before `LiesCortex_run` in the tick.
+If that ordering shifts, Phase 1 should stamp `cortex.sc.write_finished` directly
+instead of relying on call order.
+
+## push_dirty not yet wired to req fault particle
+
+`push.oai({ dirty: 1 })` exists in the push cluster; nothing reads it for display or
+surfaces it in the reqy fault UI.
+
+## req:Showing has no req particle yet
+
+`Lang_show_pmirrors` is the body but is called directly from the Lang tick.  As a
+proper open-ended req it would survive cursor-absent ticks — fold-toggle / class
+changes from a U-edit need a repaint even when `Lang_settle` returns early because
+there's no armed src.
+
+## pre-pull fallback in Lang_graft_points_once
+
+The `interest.c.LE` absent path reads live Points off `src_C` directly — a pre-LE
+fallback that should be eliminated.  `interest.c.LE` should always be set before graft
+runs; ensure `Lang_settle` wires it before calling `Lang_graft_points_once`.
+
+## src_clone on Pmirrors → workingC
+
+`src_clone` on Pmirror particles should eventually become the whole `Seem:working C**`
+so `Showing`'s decoration path is unambiguous for all clone shapes, not just the
+single-clone case.
+
+## e_Lang_LE_drop demote round-trip
+
+Demoting a clone (drop → unaccepted) currently takes a full cursor-move cycle before
+the encode re-runs and the UI reflects the change.  Should be immediate on the next
+think after `e_LE_mark op:drop` — which the U_serial fix (important todo 3) also
+addresses; these are the same gate.
+
+## stale spinner: req:encode should clear spinner:stale
+
+`spinner:stale` is set in `Lang_settle` checkout when `%State.stale` is present.  It's
+cleared on the next checkout (cursor move), but if no cursor move happens after an
+encode-compare that comes back clean, the spinner lingers.  `LE_encode_compare` (or
+the encode gate in `Lang_settle`) should also drop `spinner:stale` when `!dirty`.
+
+## req:git do_fn
+
+The particle exists; `doai` is called; the do_fn that flushes committed Waftlets to
+disk/remote is missing.
+
+## Se_o as standing watch
+
+`Se.process` (and the `o_Seem` wrapper) is call-driven — invoked explicitly by `LE_pull`
+and `LE_encode_compare`.  A standing-watch form would re-run automatically when its
+input C** changes, without needing a fresh pull.  Design not yet settled.
+
+## req:wants never prunes
+
+Wants accumulate indefinitely.  A sweep keeping the newest resolved + a bounded ring
+of recent unresolved is the eventual shape; nothing reads the full history yet so the
+accumulation is harmless but will eventually need a bound.
+
+## req:timemachine placement
+
+`req:timemachine` is a reqy particle under `%examining` — an ave signal.  This is
+tolerated (precedent: `%Spotlight` child + `c.w` back-ref) but unusual; a particle
+that drives time-stepped playback arguably belongs on `w:Lies` directly rather than
+nested inside an ave-enrolled signal particle.
+
+## survey fictional worth
+
+`caving()`, `assail()`, `regroup()` in Lang.svelte are vision documents for
+diving into expanding code spaces (Cyto-within-Cyto), sauntering into a codebase
+(lexing/stemming/threads of inquiry), and the Map (Selection.process over function
+calls + io expressions).  Worth reading when scoping what comes after the current phase.
 
 ---
 

@@ -1,65 +1,5 @@
 story:LakeNets
   Styles
-    matstyle:w
-      style:background-color,v:#8f3232
-      meta:is_compound,v
-      meta:label,fmt:%s,keys:w
-    matstyle:model
-      style:background-color,v:#2fb155
-    matstyle:docs
-      style:background-color,v:#8e29d6
-    matstyle:see
-      style:background-color,v:#c5b759
-    matstyle:error
-      style:background-color,v:#298699
-    matstyle:Opt
-      style:background-color,v:#bc2476
-    matstyle:open_req
-      style:background-color,v:#61bd42
-    matstyle:requesty_rw_queue_serial
-      style:background-color,v:#534ed0
-    matstyle:requesty_rw_queue
-      style:background-color,v:#a34b1f
-    matstyle:req_sent
-      style:background-color,v:#3aa67e
-    matstyle:loaded_doc
-      style:background-color,v:#bd36c9
-    matstyle:doc
-      style:background-color,v:#bbdb43
-    matstyle:received
-      style:background-color,v:#32618f
-    matstyle:open_Waft_req
-      style:background-color,v:#8259c5
-    matstyle:Waft
-      style:background-color,v:#997429
-    matstyle:Doc
-      style:background-color,v:#24bcb6
-    matstyle:Points
-      style:background-color,v:#bd429e
-    matstyle:Point
-      style:background-color,v:#89d04e
-    matstyle:open_waft_req
-      style:background-color,v:#bd429e
-    matstyle:lang_actions
-      style:background-color,v:#89d04e
-    matstyle:examining
-      style:background-color,v:#1f35a3
-    matstyle:Compile
-      style:background-color,v:#a6483a
-    matstyle:methods
-      style:background-color,v:#36c974
-    matstyle:Output
-      style:background-color,v:#af43db
-    matstyle:cyto_cons
-      style:background-color,v:#8f8f32
-    matstyle:cyto_edge
-      style:background-color,v:#2f8bb1
-    matstyle:Pending
-      style:background-color,v:#d62970
-    matstyle:compile_error
-      style:background-color,v:#66c559
-    matstyle:nogen
-      style:background-color,v:#3c2999
   Plan
     Prep
       i_elvisto:Lies,e:Lies_open_Waft
@@ -126,28 +66,27 @@ story:LakeNets
     noCyto
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=578.629
-      sample=642.757,at=1780645844
-      sample=642.757,at=1780645848
-      sample=642.757,at=1780645849
-      sample=642.757,at=1780645852
+    TimeTotal:beliefs,avg=321.933
       sample=642.757,at=1780645853
       sample=642.757,at=1780646277
       sample=642.757,at=1780646280
       sample=642.757,at=1780646283
       sample=642.757,at=1780646287
       sample=1.481,at=1780646317
-  step,dige:f4f52af5cfc601f8
-    note,frontier
-  step=2,dige:95c962cd09d081f0
-  step=3,dige:74cfca6bdca0a74c
-  step=4,dige:6faa165fe96a5ab1
-  step=5,dige:9ac4f48dff147390
-  step=6,dige:55ebc70ba308f27b
-  step=7,dige:0f2c9d5a24a7d57b
-  step=8,dige:e57b37aa6c5bbd2b
-  step=9,dige:9315f8626a8d6594
-  step=10,dige:4f3a1e3716ac21a4
-  step=11,dige:52d1bb743ee2042f
-  step=12,dige:13b2fdcb6c59fdfe
-  step=13,dige:fc63ed6daa87836f
+      sample=1.014,at=1781068717
+      sample=0.979,at=1781070414
+      sample=0.979,at=1781070948
+      sample=1.091,at=1781071272
+  step,dige:6092bb778589061b
+  step=2,dige:bdec975a40da4792
+  step=3,dige:e086572fc547abdb
+  step=4,dige:1c6524051e398d1d
+  step=5,dige:b0bb2951849d2073
+  step=6,dige:000986fa08a1d08d
+  step=7,dige:622756e1ed1da328
+  step=8,dige:3214fd75f3a09cda
+  step=9,dige:fcdaba78ff674073
+  step=10,dige:f6d83171a97473fe
+  step=11,dige:8963db8493242605
+  step=12,dige:b58eba639adefb41
+  step=13,dige:f2e5f745850d2ea7
