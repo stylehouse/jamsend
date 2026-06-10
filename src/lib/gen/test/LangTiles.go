@@ -8,9 +8,9 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_test_LangTiles(): string { return 'e1a47e8309887540' },
+    Ghostmeta_Ghost_test_LangTiles(): string { return 'f4528947e09ff4e0' },
 
-// yeti etc!!!!!!!!!!
+// yeti etc!!!!!
 theCompiledStuff(A,w) {
     this._i_drill(w, [{sc: {hut: 1}}, {sc: {toot: 3}}])
     let toot = this._o_drill1(w, [{sc: {hut: 1}}, {sc: {toot: 1}}])

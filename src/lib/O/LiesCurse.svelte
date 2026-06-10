@@ -128,8 +128,8 @@
         const H      = this as House
         const parent = (what.c.up as TheC | undefined) ?? (what.c.waft as TheC | undefined)
         if (!parent) return
-        const waft_C = H.LE_what_waft(what)
-        if (!waft_C) return
+        const Waft = H.LE_what_waft(what)
+        if (!Waft) return
 
         const carry  = H.Lies_what_carry_over(what)
         const sibs   = parent.o({ What: 1 }) as TheC[]
@@ -143,9 +143,9 @@
         // stamp back-refs so navigation helpers work before the next LE_pull re-links;
         // Waft_link_up stamps the new What's children at checkout time
         new_what.c.up   = parent
-        new_what.c.waft = waft_C
+        new_what.c.waft = Waft
 
-        H.Lies_waft_save(w, waft_C)
+        H.Lies_waft_save(w, Waft)
         H.i_elvisto(w, 'Lies_want', { src: new_what, kind: op })
     },
 
@@ -160,8 +160,8 @@
     //   always seeds from the last accepted+showing Points.
     async Lies_dive_what(w: TheC, what: TheC, op: string) {
         const H      = this as House
-        const waft_C = H.LE_what_waft(what)
-        if (!waft_C) return
+        const Waft = H.LE_what_waft(what)
+        if (!Waft) return
 
         const carry    = H.Lies_what_carry_over(what)
         const new_what = what.i({ What: 1 })
@@ -169,9 +169,9 @@
         // stamp back-refs immediately; Waft_link_up fills in the new What's
         // children at the next LE_pull
         new_what.c.up   = what
-        new_what.c.waft = waft_C
+        new_what.c.waft = Waft
 
-        H.Lies_waft_save(w, waft_C)
+        H.Lies_waft_save(w, Waft)
         H.i_elvisto(w, 'Lies_want', { src: new_what, kind: op })
     },
 

@@ -3,8 +3,8 @@
 //
 // ── IO via LiesStore Goods ───────────────────────────────────────────────────
 //
-//   All disk reads go through LiesStore_read_good (steps) or
-//    LiesStore_read_waft_good (toc) — no direct Wormhole wiring.
+//   All disk reads go through LiesStore_read_good — steps read it raw, the toc
+//    pairs it with LiesStore_read_waft to decode the snap — no Wormhole wiring.
 //   Each read provisions a %Good (toc → type:text/Waft, step → type:text/plain);
 //   read good.c.content (undefined→loading, null→absent, string→content).
 //   LiesStore handles the req lifecycle, ttlilt, and the /known dige for free.
@@ -108,12 +108,15 @@ await M.eatfunc({
         const dm  = w.o({ Diffmatic: 1 })[0] as TheC
 
         if (!w.o({ toc_loaded: 1 }).length) {
-            const { good, Waft, errors, not_found } =
-                await H.LiesStore_read_waft_good(w, WH_PATH)
+            // download then decode: read_good fills the durable %Good off-snap,
+            //  read_waft runs deWaft on good.c.content once it has landed.
+            const snap_path = H.Lies_waft_snap_path(WH_PATH)
+            const good = await H.LiesStore_read_good(w, 'text/Waft', snap_path)
             if (good.c.content === undefined) {
                 w.i({ see: '⏳ dm toc…' })
                 return   // ttlilt from LiesStore keeps Story awake
             }
+            const { Waft, errors, not_found } = H.LiesStore_read_waft(good, WH_PATH)
 
             const toc = dm.oai({ toc: 1 })
             if (not_found || !Waft) {

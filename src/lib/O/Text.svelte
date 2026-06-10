@@ -305,14 +305,14 @@
     //     what the snap root line encoded (snap root is informational only).
     //     Means you can copy and rename the files and they'll get the new path.
     //
-    // Returns { waft_C, errors }.  waft_C is null on fatal parse error.
-    deWaft(snap: string, path: string): { waft_C: TheC | null, errors: string[] } {
+    // Returns { Waft, errors }.  Waft is null on fatal parse error.
+    deWaft(snap: string, path: string): { Waft: TheC | null, errors: string[] } {
         const { C, errors } = (this as any).decode_wh_lines(snap)
-        if (!C) return { waft_C: null, errors }
+        if (!C) return { Waft: null, errors }
 
         C.sc.Waft = path  
 
-        return { waft_C: C, errors }
+        return { Waft: C, errors }
     },
 
     // ── decode_wh_lines ────────────────────────────────────────────────────

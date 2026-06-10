@@ -110,7 +110,7 @@
     //
     // ── future ────────────────────────────────────────────────────────────────
     //   < full close on Doc removal (drop Good, tell Lang)
-    //   < %LuxuryLiesStore_write / %surprise_read / diff per Good,type:'text/Doc'
+    //   < %LiesStore_writeCarefully / %surprise_read / diff per Good,type:'text/Doc'
     //   < nested Waft save
     //   < rename Waft: write fresh snap at new path
     let future = `
@@ -124,7 +124,7 @@ Dige tracking — stamp each gen/* write with the dige of the source it came fro
 
 Medium:
 
-Pull-before-push / LuxuryLiesStore_write / surprise_read — when Lies is about to write a compiled gen file, it first reads the current disk state. If it differs from what it read at load time, that's a surprise_read. Surface it in Liesui with a diff view and a "Push OK" button to unblock. The loaded_doc grows /LuxuryLiesStore_write and /surprise_read children.
+Pull-before-push / LiesStore_writeCarefully / surprise_read — when Lies is about to write a compiled gen file, it first reads the current disk state. If it differs from what it read at load time, that's a surprise_read. Surface it in Liesui with a diff view and a "Push OK" button to unblock. The loaded_doc grows /LiesStore_writeCarefully and /surprise_read children.
 
 Larger/more inventive:
 
@@ -199,8 +199,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     // ── e_Lies_source_write ────────────────────────────────────────────
     //
     //   Fired by Langui's auto-save timer (quiet 3s / active 10s).
-    //   Parks the current CM text as a req:LuxuryLiesStore_write inside req:Store
-    //   and wakes the tick; req_LuxuryLiesStore_write (in LiesStore) does the actual
+    //   Parks the current CM text as a req:LiesStore_writeCarefully inside req:Store
+    //   and wakes the tick; req_LiesStore_writeCarefully (in LiesStore) does the actual
     //   pull-before-push + disk write, driven by LiesStore_run's rq.do().
     //
     //   e.sc: { path: string, text: string }
@@ -220,9 +220,9 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         // still in flight mutates the in-flight req's text rather than racing a
         // second write.  Drop a finished sibling first so roai builds a fresh req.
         const host = await H.LiesStore_req(w)
-        const pwq  = H.reqy(host, { noserial: 1 })
-        pwq.drop_finished({ req: 'LuxuryLiesStore_write', path })
-        await pwq.roai({ req: 'LuxuryLiesStore_write', path }, { text, dige: await dig(text) })
+        const pwq  = H.reqy(host)
+        pwq.drop_finished({ req: 'LiesStore_writeCarefully', path })
+        await pwq.roai({ req: 'LiesStore_writeCarefully', path }, { text, dige: await dig(text) })
         H.i_elvisto(w, 'think')
     },
 
@@ -312,14 +312,14 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                     console.log(`🗂 Waft:${path} not found — starting empty`)
                     return _C({ Waft: path })
                 }
-                const { waft_C: C, errors } = H.deWaft(content, path)
-                if (errors.length || !C) {
+                const { Waft, errors } = H.deWaft(content, path)
+                if (errors.length || !Waft) {
                     console.error(`Waft:${path} decode errors:`, errors)
                     const empty = _C({ Waft: path })
                     for (const msg of errors) empty.i({ mung_error: 1, msg })
                     return empty
                 }
-                return C
+                return Waft
             })()
 
             await w.place({ Waft: path }, waft)
@@ -379,7 +379,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     async Lies_roai_Open(w: TheC, path: string): Promise<TheC> {
         const H     = this as House
         const store = await H.LiesStore_req(w)
-        const rq    = H.reqy(store, { noserial: 1 })
+        const rq    = H.reqy(store)
         const existing = rq.o({ req: 'Open', path })[0] as TheC | undefined
         if (existing) return existing   // finished or in-flight — both idempotent
         return rq.roai({ req: 'Open', path })

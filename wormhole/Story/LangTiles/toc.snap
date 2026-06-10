@@ -35,24 +35,24 @@ story:LangTiles
         nowriting:^Ghost
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=4.674
-      sample=2.012,at=1780982928
-      sample=2.012,at=1780983060
-      sample=2.499,at=1780987563
-      sample=3.048,at=1780999802
+    TimeTotal:beliefs,avg=4.033
       sample=26.468,at=1781002294
       sample=2.239,at=1781004503
       sample=2.137,at=1781004609
       sample=2.434,at=1781004949
       sample=1.945,at=1781006991
       sample=1.945,at=1781007360
-  step,dige:d85eef20e153db57
-  step=2,dige:addbb47ee4c0bc9c
-  step=3,dige:a17e57adda566ecd
-  step=4,dige:aa31097db861595a
+      sample=0.137,at=1781052918
+      sample=0.167,at=1781052942
+      sample=1.428,at=1781053261
+      sample=1.428,at=1781053756
+  step,dige:85c8d90c09e09894
+  step=2,dige:313d96bd8bd2a61c
+  step=3,dige:2724b027aea16fac
+  step=4,dige:c27220ea72ba971a
     note,bug:Cyto edge problems with Leg/PeelGroup/Leg the other PeelGroup alone
-  step=5,dige:8cb469218a4b290c
-  step=6,dige:bf2612d5f23b5526
-  step=7,dige:77ddde9367e5eb4d
-  step=8,dige:2645bb35d077d88e
-  step=9,dige:5567c0bf73641139
+  step=5,dige:fa349c8c68333035
+  step=6,dige:670c8c26a179acf0
+  step=7,dige:8c7160daf12e956d
+  step=8,dige:6c3b04a0a79826bd
+  step=9,dige:319a1c7e9d89308c

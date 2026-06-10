@@ -18,8 +18,8 @@
     //
     // ── Children of req:Store ─────────────────────────────────────────────────
     //
-    //   req:LuxuryLiesStore_write,path  — source-file save with pull-before-push.
-    //                                    Keyed by path (noserial reqy); one slot per doc.
+    //   req:LiesStore_writeCarefully,path — source-file save with pull-before-push.
+    //                                    Keyed by path; one slot per doc.
     //   req:LiesStore_write,path,dige   — one stable req per (path, content-hash) pair.
     //   req:LiesStore_read,rw_name      — one stable req per wormhole path (+ optional label).
     //   req:LiesStore_listing,rw_dir    — one stable req per directory path.
@@ -27,10 +27,10 @@
     //                                    Good,type:'text/Doc' then dispatches to Lang.
     //                                    Kept finished — re-visits are idempotent.
     //   Good,type,path                  — one resource slot (see the Good region).
-    //                                    c.content off-snap; /known the dige record.
-    //   known:path                      — last known dige + kind (read|write) + at timestamp.
-    //                                    Store's private memory of disk state; used by
-    //                                    LuxuryLiesStore_write's cavalier skip.
+    //                                    c.content off-snap; /known the dige record —
+    //                                     dige + kind (read|write) + at, the single
+    //                                      memory of disk state, read by writeCarefully's
+    //                                       cavalier skip.
     //
     // ── Lifecycle: who picks up a finished req ────────────────────────────────
     //
@@ -46,13 +46,13 @@
     //      value must outlive that one cycle, copy it onto a %Good (the durable
     //      carrier) — that is exactly what LiesStore_read_good does.
     //
-    //   2. Kept-by-design + explicit sweep  (req:Open, LuxuryLiesStore_write, Good)
+    //   2. Kept-by-design + explicit sweep  (req:Open, LiesStore_writeCarefully, Good)
     //      These finish and linger on purpose: a finished req:Open is a cache hit
     //      that lets a re-visit skip the load; a finished write is the record of
     //      what last went to disk.  Each has a named sweep, not a Phase-2 auto-drop:
     //        - req:Open            — Lies_sync_waft_docs trims it when its path
     //                                leaves every Waft.
-    //        - LuxuryLiesStore_write — drop_finished before the next save of the path.
+    //        - LiesStore_writeCarefully — drop_finished before the next save of the path.
     //        - Good                — delete good.c.content forces a re-read; a stale
     //                                Good is reclaimed by the same future req:refresh
     //                                that the roai-corpse audit will own.
@@ -124,10 +124,12 @@
     //
     // ── known impressions ─────────────────────────────────────────────────────
     //
-    //   req:Store/known:path carries dige + kind (read|write) + at (unix seconds).
-    //   LuxuryLiesStore_write's cavalier skip: if the impression for this path is
-    //   recent enough (< LUXURY_WRITE_SKIP_CHECK_SECS) and dige matches base_dige,
-    //   skip the Wormhole disk-check read.  LiesStore_store(w) returns req:Store.
+    //   req:Store/Good/known carries dige + kind (read|write) + at (unix seconds)
+    //    — the one impression of disk state, stamped on each read and each write.
+    //   writeCarefully's cavalier skip: when the Good's /known is recent enough
+    //    (< LUXURY_WRITE_SKIP_CHECK_SECS) we trust it as base_dige and skip the
+    //     Wormhole disk-check read.  There is no separate store-level known:path
+    //      any more — the Good is the only place disk state is remembered.
     //
     // ── Cortex handoff ────────────────────────────────────────────────────────
     //
@@ -151,7 +153,7 @@
 
     let { M } = $props()
 
-    // LuxuryLiesStore_write skips the pull-before-push disk check when we
+    // writeCarefully skips the pull-before-push disk check when we
     // already know the disk state for this path from a recent read|write.
     const LUXURY_WRITE_SKIP_CHECK_SECS = 4
 
@@ -295,9 +297,10 @@
         await rq.do()
 
         // ── Phase 1: LiesStore_write completions ──────────────────────────────
-        //   Stamp Good,type:'text/Doc'/known dige + known impression,
-        //   hand off to Cortex if waiting, then drop the req.
-        //   LuxuryLiesStore_write finishes silently — its inner LiesStore_write
+        //   Stamp Good,type:'text/Doc'/known with the write dige — that is the
+        //    one impression of disk state — hand off to Cortex if waiting,
+        //     then drop the req.
+        //   writeCarefully finishes silently — its inner LiesStore_write
         //   sibling carries the actual IO and is the one that lands here.
         for (const wr of rq.o({ req: 'LiesStore_write' }) as TheC[]) {
             if (!wr.sc.finished) continue
@@ -308,7 +311,7 @@
                 console.error(`💾 LiesStore write error on ${path}:`, reply.error)
             } else {
                 // Stamp the write dige onto Good,type:'text/Doc'/known so
-                //  LuxuryLiesStore_write's base_dige gate and DocRow see it.
+                //  writeCarefully's base_dige gate and DocRow see it.
                 // Only source files have a Good provisioned; gen/ writes skip this.
                 // Goods live under req:Store, which is `req` here.
                 const good = req.o({ Good: 1, type: 'text/Doc', path })[0] as TheC | undefined
@@ -322,12 +325,6 @@
                     //  source_dige.  No cross-world lookup needed here.
                 }
                 console.log(`💾 LiesStore wrote ${path} (${(wr.sc.rw_data as string)?.length ?? 0}c)`)
-
-                // Record a lasting impression for the cavalier skip in LuxuryLiesStore_write.
-                const known = req.oai({ known: path })
-                known.sc.dige = wr.sc.dige as string
-                known.sc.kind = 'write'
-                known.sc.at   = Date.now() / 1000
 
                 // Cortex handoff: find the req:Codebit inside req:Cortex that is
                 // waiting for this write, and stamp sc.write_finished so req_Codebit
@@ -348,8 +345,11 @@
         }
 
         // ── Phase 2: LiesStore_read completions ───────────────────────────────
-        //   Two-pass drop: first pass stamps sc.seen + records the known impression;
-        //   second pass (next req_Store entry) drops.
+        //   Two-pass drop: first pass stamps sc.seen; second pass (next req_Store
+        //    entry) drops.  The dige impression is not recorded here — it lives on
+        //     the %Good, stamped by LiesStore_read_good as content lands; a raw read
+        //      with no Good (a source_check probe) leaves no lasting trace, which is
+        //       what we want.
         //
         //   Why two passes: req_Store runs as a do_fn inside H.reqy(w).do(), which
         //   LiesPersist calls.  A read dropped immediately in Phase 2 is gone before
@@ -364,15 +364,7 @@
                 req.drop(rd)
                 continue
             }
-            // first pass: stamp impression and mark seen; drop next cycle
-            const content = rd.sc.reply?.content as string | undefined
-            if (content != null) {
-                const known = req.oai({ known: rd.sc.rw_name as string })
-                known.sc.dige = await dig(content)
-                known.sc.kind = 'read'
-                known.sc.at   = Date.now() / 1000
-            }
-            rd.sc.seen = 1
+            rd.sc.seen = 1   // caller has one more cycle to read reply, then we drop
         }
 
         // ── Phase 3: LiesStore_listing completions ────────────────────────────
@@ -463,36 +455,41 @@
 
     // ── LiesStore_read_waft ───────────────────────────────────────────────────
     //
-    //   Read a snap file and run deWaft on it in one step.
-    //   Returns { waft_C, errors, not_found } once the read finishes.
-    //   Callers still need to check req.sc.finished before calling this —
-    //   the pattern is the same as LiesStore_read; this just folds the deWaft
-    //   step in so callers don't repeat that boilerplate.
+    //   The decode half of a download-then-decode pair.  LiesStore_read_good is
+    //    the download — it provisions the durable %Good and fills good.c.content
+    //     off-snap; this then runs deWaft on that content.  Splitting them keeps
+    //      the async, ttlilt-driven fetch separate from the pure parse, and lets
+    //       the %Good cache the bytes across ticks (re-visit is a hit).
     //
-    //   not_found: true when the file is absent — caller decides whether that
-    //   means start empty or surface an error.
+    //   Takes the %Good the download returned — the same read-result carrier the
+    //    raw req was before, now the durable one.  Caller must have already gated
+    //     good.c.content !== undefined (still loading); this reads:
+    //      good.c.content === null → not_found; string → deWaft.
     //
-    //   waft_path: the logical Waft key (e.g. 'Ghost/Tour') — passed to deWaft
-    //   as the path context it uses for error messages.
+    //   Returns { Waft, errors, not_found }.  not_found true when the file is
+    //    absent — caller decides whether that means start empty or surface an error.
     //
-    //   Usage:
-    //     const req = await H.LiesStore_read(w, snap_path)
-    //     if (!req.sc.finished) return   // ttlilt already armed
-    //     const { waft_C, errors, not_found } = H.LiesStore_read_waft(req, waft_path)
+    //   waft_path: the logical Waft key (e.g. 'Story/LangTiles') — passed to deWaft
+    //    as the path context it uses for error messages.
+    //
+    //   Usage (see Diffmatication req_Twisto):
+    //     const good = await H.LiesStore_read_good(w, 'text/Waft', snap_path)  // download
+    //     if (good.c.content === undefined) return   // loading; ttlilt armed inside
+    //     const { Waft, errors, not_found } = H.LiesStore_read_waft(good, waft_path)  // decode
     //     if (not_found) { /* start empty */ }
     //     if (errors.length) { /* surface */ }
-    //     // use waft_C
+    //     // use Waft
     //
     LiesStore_read_waft(
-        req:       TheC,
+        good:      TheC,
         waft_path: string,
-    ): { waft_C: TheC | undefined, errors: string[], not_found: boolean } {
-        if (req.sc.reply?.not_found) {
-            return { waft_C: undefined, errors: [], not_found: true }
+    ): { Waft: TheC | undefined, errors: string[], not_found: boolean } {
+        if (good.c.content === null) {
+            return { Waft: undefined, errors: [], not_found: true }
         }
-        const snap = req.sc.reply?.content as string ?? ''
-        const { waft_C, errors } = (this as House).deWaft(snap, waft_path)
-        return { waft_C, errors, not_found: false }
+        const snap = good.c.content as string ?? ''
+        const { Waft, errors } = (this as House).deWaft(snap, waft_path)
+        return { Waft, errors, not_found: false }
     },
 
     // ── LiesStore_listing ─────────────────────────────────────────────────────
@@ -515,9 +512,9 @@
     },
 
 //#endregion
-//#region req_LuxuryLiesStore_write
+//#region req_LiesStore_writeCarefully
 
-    // ── req_LuxuryLiesStore_write ─────────────────────────────────────────────
+    // ── req_LiesStore_writeCarefully ──────────────────────────────────────────
     //
     //   Drives one parked source-file save across ticks.  Lives inside req:Store
     //   so the %ttlilt walker finds it and req_Store's rq.do() drives it.
@@ -526,15 +523,17 @@
     //
     //   Steps:
     //     1. content gate — dige matches base_dige → already on disk → finish.
-    //     2. pull-before-push read.  Cavalier skip: if known:path is recent
-    //        (< LUXURY_WRITE_SKIP_CHECK_SECS) and dige matches, trust it, skip read.
+    //     2. pull-before-push read.  Cavalier skip: when the %Good's /known is
+    //        recent (< LUXURY_WRITE_SKIP_CHECK_SECS) trust it and skip the read —
+    //        base_dige already IS that /known dige, so a fresh /known means we
+    //        saw disk just now (via a write|load).
     //     3. disk dige diverged from base_dige → external edit: stamp
     //        /surprise_read (stashing text for a future "push anyway") → finish.
     //     4. clean → LiesStore_write (sibling in req:Store), clear
     //        any /surprise_read, finish.
     //
     //   < the surprise path blocks the write but doesn't yet resume it.
-    async req_LuxuryLiesStore_write(req: TheC, q: any) {
+    async req_LiesStore_writeCarefully(req: TheC, q: any) {
         const H    = this as House
         const host = req.c.up as TheC              // req → req:Store
         const w    = host.c.up as TheC             // req:Store → w
@@ -544,7 +543,7 @@
 
         const good = host.o({ Good: 1, type: 'text/Doc', path })[0] as TheC | undefined
         if (!good) {
-            console.warn(`🗂 LuxuryLiesStore_write: no Good for ${path} — dropping`)
+            console.warn(`🗂 writeCarefully: no Good for ${path} — dropping`)
             return q.finish(req)
         }
 
@@ -559,12 +558,12 @@
         if (base_dige && dige === base_dige) return q.finish(req)
 
         // Pull-before-push: read disk, compare to what we loaded.
-        // Cavalier skip: if known:path is recent enough and its dige matches
-        // base_dige, trust our last impression — skip the Wormhole read.
-        const store_known = host.o({ known: path })[0] as TheC | undefined
-        const known_age   = store_known ? (Date.now() / 1000) - (store_known.sc.at as number) : Infinity
-        const skip_check  = !!store_known && known_age < LUXURY_WRITE_SKIP_CHECK_SECS
-            && store_known.sc.dige === base_dige
+        // Cavalier skip: when the %Good's /known is recent enough, trust it as our
+        //  last impression of disk and skip the Wormhole read — base_dige is that
+        //   /known dige, so a fresh /known (a recent write|load) is current enough
+        //    to write over without re-checking.
+        const known_age  = known ? (Date.now() / 1000) - (known.sc.at as number) : Infinity
+        const skip_check = !!known && known_age < LUXURY_WRITE_SKIP_CHECK_SECS
 
         if (!skip_check) {
             const read = await H.LiesStore_read(w, path, { label: 'source_check' })
@@ -621,7 +620,7 @@
     //
     //   Goods live UNDER req:Store, beside the IO reqs and known impressions — so
     //   the whole LiesStore footprint is the one req:Store subtree.  Children of
-    //   Store (req_Open, req_LuxuryLiesStore_write, req_Store) already hold the
+    //   Store (req_Open, req_LiesStore_writeCarefully, req_Store) already hold the
     //   store ref; outside readers find it via reqy(w).o({req:'Store'}) — see
     //   LiesStore_good_of.
     //

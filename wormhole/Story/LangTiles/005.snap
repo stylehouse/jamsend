@@ -1,7 +1,7 @@
 Snap:H
   H:LangTiles,Run
     A:Lies
-      self,round=63	{"mung":["age"]}
+      self,round=62	{"mung":["age"]}
       w:Lies
         examining	{"loopy":2}
           req:timemachine,playing=0
@@ -14,21 +14,19 @@ Snap:H
             {"ran":"2f569f83db26815b#leash:0"}
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/LangTiles/Waftily/toc.snap,waft_path:Story/LangTiles/Waftily
-            known,dige:ae431c78129a7b9e,kind:read,at=1781006974.54
+            known,dige:ae431c78129a7b9e,kind:read,at=1781053247.236
           Good,type:text/Doc,path:Ghost/test/LangTiles.g
-            known,dige:1f738455c057ebe2,kind:read,at=1781006974.856
-          known:Ghost/test/LangTiles.g,dige:1f738455c057ebe2,kind:read,at=1781006974.852
+            known,dige:1f738455c057ebe2,kind:read,at=1781053247.56
           req:Open,path:Ghost/test/LangTiles.g,finished
-          known:gen/test/LangTiles.go,dige:2f569f83db26815b,kind:write,at=1781006981.986
-          {"req":"LuxuryLiesStore_write","path":"Ghost/test/LangTiles.g","text":"// yeti etc!!!!!\ntheCompiledStuff(A,w) {\n    i hut/toot:3\n    o hut/toot$\n    let la = i hut/$toot\n    o hut/although:1/they,can,be,mixed\n    i $la/something\n    i thung/wither/etc\n    i yeses/because,it:2\n    i yeses/because:five,it:5\n    A i %prefixy:'stuffule sivi'\n    A i %prefixy:`i th/re/e = ${1 + 2}`\n    A i %prefixy:stuff,wither:angles\n\n    A o %wither$\n    A o yeses$\n    // should be wither:1, and let vish = it (the C%prefixy,wither)\n    //A o wither$:vish\n\n    // since . binds|associates tighly, it grabs the %wither value\n    //  and wants to assign|tuple it  amongst other stuff\n    A o prefixy,wither.$:ang\n    // uses that assigned ang variable,\n    //  assigns so, grabs the %so value\n    //   so is auto-named. if we grabbed it as C (.../so:ont$) it's still named so.\n    //w i angles/are:$ang,etc:3/so:ont.$\n    // this is what we're avoiding wither doing .$:othername above\n    \n    // you can declare let variables like this:\n    $its = 'ferv'\n    // should be strings 'stuff', 'levels', 'its', but then sits='ferv'\n    A i %prefixy:stuff/wither:levels,its:its,sits:$its\n    \n\n    &nothinging,A,w,555\n    &nothinging,A,w,{figuira:'out', all_these:3}\n    if (&nothinging,A,w,{figuira:'out', all_these:3}) 3+2+4\n    if &nothinging,A,w,{figuira:'out', all_these:3}\n        && 6\n        3 + 3\n    // we should prefer no semicolon on the end of control structures\n    //  just continuating expr and indent indicate:\n    if &nothinging,A,w,{figuira:'out', all_these:3}\n        && 6\n        3+2+4\n        3 + 2\n\n    // loosely binding if block maker. right of and is a block so can contain ;\n    !0 and w i wibble_andily\n\n    [3]\n    S o yeses/because\n        let val = because.sc.it\n        i figiura/datch:$val\n    if 3\n        i know\n    if 0\n        i dont/know\n    elsif 1 && 0\n        && 50\n        i never/knew\n    elsif 50 > 5\n            && 3 > 2\n        i helped\n    i yep\n    &severally,A,w,555\n},\nnothinging():\n    return true && true\nseverally(A,w,thing):\n    i miles,of,words\n    i miles,of,wordings\n    i thingure:thing,of,wordings\n    i thingure:$thing,of,wording\n    thing += 6\n    H.laterally(A,w,thing)\n\nlaterally(A,w,thing):\n    i thingure:$thing,of,word:$thing/really\n","dige":"f4528947e09ff4e0","finished":1}
+          {"req":"LiesStore_writeCarefully","path":"Ghost/test/LangTiles.g","text":"// yeti etc!!!!!\ntheCompiledStuff(A,w) {\n    i hut/toot:3\n    o hut/toot$\n    let la = i hut/$toot\n    o hut/although:1/they,can,be,mixed\n    i $la/something\n    i thung/wither/etc\n    i yeses/because,it:2\n    i yeses/because:five,it:5\n    A i %prefixy:'stuffule sivi'\n    A i %prefixy:`i th/re/e = ${1 + 2}`\n    A i %prefixy:stuff,wither:angles\n\n    A o %wither$\n    A o yeses$\n    // should be wither:1, and let vish = it (the C%prefixy,wither)\n    //A o wither$:vish\n\n    // since . binds|associates tighly, it grabs the %wither value\n    //  and wants to assign|tuple it  amongst other stuff\n    A o prefixy,wither.$:ang\n    // uses that assigned ang variable,\n    //  assigns so, grabs the %so value\n    //   so is auto-named. if we grabbed it as C (.../so:ont$) it's still named so.\n    //w i angles/are:$ang,etc:3/so:ont.$\n    // this is what we're avoiding wither doing .$:othername above\n    \n    // you can declare let variables like this:\n    $its = 'ferv'\n    // should be strings 'stuff', 'levels', 'its', but then sits='ferv'\n    A i %prefixy:stuff/wither:levels,its:its,sits:$its\n    \n\n    &nothinging,A,w,555\n    &nothinging,A,w,{figuira:'out', all_these:3}\n    if (&nothinging,A,w,{figuira:'out', all_these:3}) 3+2+4\n    if &nothinging,A,w,{figuira:'out', all_these:3}\n        && 6\n        3 + 3\n    // we should prefer no semicolon on the end of control structures\n    //  just continuating expr and indent indicate:\n    if &nothinging,A,w,{figuira:'out', all_these:3}\n        && 6\n        3+2+4\n        3 + 2\n\n    // loosely binding if block maker. right of and is a block so can contain ;\n    !0 and w i wibble_andily\n\n    [3]\n    S o yeses/because\n        let val = because.sc.it\n        i figiura/datch:$val\n    if 3\n        i know\n    if 0\n        i dont/know\n    elsif 1 && 0\n        && 50\n        i never/knew\n    elsif 50 > 5\n            && 3 > 2\n        i helped\n    i yep\n    &severally,A,w,555\n},\nnothinging():\n    return true && true\nseverally(A,w,thing):\n    i miles,of,words\n    i miles,of,wordings\n    i thingure:thing,of,wordings\n    i thingure:$thing,of,wording\n    thing += 6\n    H.laterally(A,w,thing)\n\nlaterally(A,w,thing):\n    i thingure:$thing,of,word:$thing/really\n","dige":"f4528947e09ff4e0","finished":1}
         req:desire
           req:acquire,maz=9,finished
           Waft:Story/LangTiles/Waftily	{"ref":{"src":"%Waft:Story/LangTiles/Waftily"}}
         req:git
         req:wants
-          want=1781006974589,kind:cold
-          want=1781006974640,kind:cold
-          want=1781006974746,kind:cold,resolved
+          want=1781053247286,kind:cold
+          want=1781053247337,kind:cold
+          want=1781053247437,kind:cold,resolved
         Waft:Story/LangTiles/Waftily
           What:labelofaWhat
             Doc:Ghost/test/LangTiles.g
@@ -38,9 +36,9 @@ Snap:H
         o_elvis:Lies_desire_play
         o_elvis:Lies_desire_pause
         o_elvis:Lies_desire_step
-        self,round=63	{"mung":["age"]}
+        self,round=62	{"mung":["age"]}
     A:Lang
-      self,round=43	{"mung":["age"]}
+      self,round=42	{"mung":["age"]}
       w:Lang
         model,cyto_dir
           Line=5,line_from=74,line_to=98,str:    let la = i hut/$toot,the_bm_bm_98_132
@@ -121,7 +119,7 @@ Snap:H
                 def,method:severally,from=1964,to=1974,line=70	{"ref":{"region_path":"[]"}}
                 call,method:laterally,from=2116,to=2128,line=76,via:severally	{"ref":{"region_path":"[]"}}
                 def,method:laterally,from=2140,to=2150,line=78	{"ref":{"region_path":"[]"}}
-              time,compile=0.007,all=1.467,write=0.001
+              time,compile=0.009,all=0.638,write=0
               Output,gen_path:gen/test/LangTiles.go,dige:2f569f83db26815b,source_dige:f4528947e09ff4e0
                source: |
                  <script lang="ts">
@@ -240,7 +238,7 @@ Snap:H
           Change
             backend,dige:f4528
             storage,dige:1f738,dim:true
-            compile,dige:f4528,dim:true,secs=0.007
+            compile,dige:f4528,dim:true,secs=0.009
         {"loopy":0,"ks":"%LE:1, target:%What"}	
           Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:labelofaWhat","topD":"%Demonstrations:origin"}}
             Demonstrations:origin
@@ -277,7 +275,7 @@ Snap:H
         received,doc_opened,doc:Ghost/test/LangTiles.g
         received,editorBegins,doc:Ghost/test/LangTiles.g
         o_elvis:Lies_compile_settled
-        self,round=43	{"mung":["age"]}
+        self,round=42	{"mung":["age"]}
         see:🟦 tiles 1 bookmarks
     A:Pantheate
       self,round=24	{"mung":["age"]}
