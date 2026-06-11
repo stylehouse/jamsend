@@ -547,14 +547,19 @@
         if (dock.c.show_fp === fp) return   // U-state unchanged since last paint
         dock.c.show_fp = fp
 
-        // Dispatch through whatever Langui has wired.  Both are full-replace
-        // effects (Waft_spec: setPointDecorationsEffect / a fold effect), so we
-        // hand the complete current set each time.
+        // setPointDecorations — StateEffect: full-replace the glow|enlarge decorations.
+        //   Passes the showing set; the field sorts by line and builds Decoration.line().
         if (dock.c.setPointDecorations && dock.c.view) {
             dock.c.view.dispatch({ effects: dock.c.setPointDecorations.of(decos) })
         }
+
+        // setPointFolds — function(view, showing, hiding): dispatches foldEffect|
+        //   unfoldEffect for the full current fold intent.  showing = unfold these
+        //   ranges so they stay open; hiding = fold these ranges (unshowing Points).
+        //   Passing both lets fire_point_folds unfold first then fold — correct even
+        //   after a checkout that changes which Points are unshowing.
         if (dock.c.setPointFolds && dock.c.view) {
-            dock.c.view.dispatch({ effects: dock.c.setPointFolds.of(folds) })
+            (dock.c.setPointFolds as Function)(dock.c.view, decos, folds)
         }
     },
 

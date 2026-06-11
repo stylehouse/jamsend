@@ -462,6 +462,12 @@
         dock.c.addGraftMark       = e.sc.addGraftMark
         dock.c.removeGraftMark    = e.sc.removeGraftMark
         dock.c.clearAllGrafts     = e.sc.clearAllGrafts
+        // Point decoration + fold handles — Lang_show_pmirrors dispatches through
+        //   these.  setPointDecorations is the StateEffect for the glow|enlarge field;
+        //   setPointFolds is a function(view, showing, hiding) that dispatches
+        //   foldEffect|unfoldEffect for the unshowing set.
+        dock.c.setPointDecorations = e.sc.setPointDecorations
+        dock.c.setPointFolds       = e.sc.setPointFolds
 
         // Only activate if we have a real path — empty string means the dock
         // isn't known yet and Lies hasn't handed back the dock %Good yet.

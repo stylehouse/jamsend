@@ -234,7 +234,11 @@ await M.eatfunc({
             }
             case 'accept': {
                 const clone = find(e.sc.spec)
-                if (clone?.c.U) { delete clone.c.U.sc.unaccepted; U_mutated = true }
+                if (clone?.c.U) {
+                    delete clone.c.U.sc.unaccepted
+                    delete clone.c.U.sc.unshowing   // full restore — re-show with accept
+                    U_mutated = true
+                }
                 break
             }
             case 'unshow': {

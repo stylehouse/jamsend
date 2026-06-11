@@ -211,10 +211,9 @@ Library
         sample=0.963,at=1781006972
         sample=0.032,at=1781054782
         sample=0.026,at=1781056411
-  Book:LakeFlush,ok_pct=0,done,last_run_ms=1781180714.275,active
+  Book:LakeFlush,ok_pct=0,done,last_run_ms=1781182345.322,active
     TimeSpool
-      TimeTotal:beliefs,avg=58.445
-        sample=0.841,at=1781146632
+      TimeTotal:beliefs,avg=58.616
         sample=0.89,at=1781146918
         sample=0.951,at=1781156531
         sample=572.667,at=1781170776
@@ -224,3 +223,4 @@ Library
         sample=0.857,at=1781174156
         sample=0.922,at=1781179529
         sample=4.246,at=1781180717
+        sample=2.547,at=1781182346

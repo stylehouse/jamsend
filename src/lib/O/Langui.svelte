@@ -95,6 +95,7 @@
     import { EditorState, StateField, StateEffect, Compartment, type Extension } from "@codemirror/state"
     import { Decoration, type DecorationSet, keymap, ViewUpdate, drawSelection } from "@codemirror/view"
     import { indentService, indentUnit } from "@codemirror/language";
+    import { foldEffect, unfoldEffect }  from "@codemirror/language";
     import { defaultKeymap, indentWithTab } from "@codemirror/commands";
 
     import { lang, simpleLezerLinter, lang_for_path } from "$lib/O/lang/lang"
@@ -467,6 +468,9 @@
             Lang_i_elvis(view!, 'Lang_editorBegins',
                 { addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect,
                   addGraftMark, removeGraftMark, clearAllGrafts,
+                  setPointDecorations: setPointDecorationsEffect,
+                  setPointFolds:       (v: EditorView, showing: any[], hiding: any[]) =>
+                                           fire_point_folds(v, showing, hiding),
                   updates: readBookmarks(view!), graft_updates: readGrafts(view!) })
         })
     })
@@ -684,6 +688,86 @@
     }
     //#endregion
     
+    // ── pointDecorationField — Point glow|enlarge decorations ────────────────
+    //
+    //   Holds a DecorationSet of Decoration.line() instances, one per showing
+    //   Point.  The class on each line drives font-size enlarge and the lavender
+    //   glow via static CSS (see bottom of this file).  A full-replace StateEffect
+    //   keeps the set atomic — no partial adds.  Remaps on every doc change so
+    //   line positions track edits.
+    //
+    //   Lang_show_pmirrors drives this via dock.c.setPointDecorations (see
+    //   e_Lang_editorBegins wiring below).  The effect carries the full current
+    //   set; no per-line add/remove book-keeping.
+
+    const setPointDecorationsEffect = StateEffect.define<
+        Array<{ id: string, from: number, to: number, cls: string }>
+    >()
+
+    const pointDecorationField = StateField.define<DecorationSet>({
+        create: () => Decoration.none,
+        update(decos, tr) {
+            decos = decos.map(tr.changes)
+            for (const e of tr.effects) {
+                if (!e.is(setPointDecorationsEffect)) continue
+                const marks: ReturnType<typeof Decoration.line>[] = []
+                for (const { from, cls } of e.value) {
+                    // Decoration.line() needs a line-start offset.
+                    const line = tr.state.doc.lineAt(from)
+                    const deco = Decoration.line({
+                        class: `cm-point-engaged${cls ? ` cm-point-${cls}` : ''}`,
+                    })
+                    marks.push(deco.range(line.from))
+                }
+                // sort ascending — RangeSet requires it
+                marks.sort((a, b) => a.from - b.from)
+                decos = Decoration.set(marks, true)
+            }
+            return decos
+        },
+        provide: f => EditorView.decorations.from(f),
+    })
+
+    // ── pointFoldsField — fold/unfold dispatch for unshowing Points ───────────
+    //
+    //   When Lang_show_pmirrors finds an unshowing Pmirror it puts it in the folds
+    //   list; showing Pmirrors go to decos.  On each Lang_show_pmirrors call we:
+    //     1. Unfold everything in the decos list (they should be visible).
+    //     2. Fold the ranges in the folds list via foldEffect.
+    //
+    //   There is no actual StateField here — fold state lives inside CM's own
+    //   fold extension (part of basicSetup).  We just dispatch foldEffect /
+    //   unfoldEffect to set the per-range fold state.  dock.c.setPointFolds
+    //   is a plain function so Lang_show_pmirrors can call it without importing CM.
+
+    // ── fire_point_folds — dispatch fold|unfold for the full Point set ────────
+    //
+    //   Called by Lang_show_pmirrors via dock.c.setPointFolds.
+    //   showing_ranges — from|to of Points that should be visible (unfold their line).
+    //   hiding_ranges  — from|to of Points whose region body should be folded.
+    //   Uses foldEffect|unfoldEffect on the line range: from = end of method header
+    //   line, to = end of the function body (Pmirror graft.to).  If the graft range
+    //   is a single line (short method), folding is a no-op — foldEffect ignores
+    //   single-line ranges, which is the right behaviour.
+    function fire_point_folds(
+        v: EditorView,
+        showing: Array<{ id: string, from: number, to: number }>,
+        hiding:  Array<{ id: string, from: number, to: number }>,
+    ) {
+        const effects: ReturnType<typeof foldEffect.of | typeof unfoldEffect.of>[] = []
+        for (const { from, to } of showing) {
+            if (from >= to) continue
+            effects.push(unfoldEffect.of({ from, to }))
+        }
+        for (const { from, to } of hiding) {
+            if (from >= to) continue
+            effects.push(foldEffect.of({ from, to }))
+        }
+        if (effects.length) v.dispatch({ effects })
+    }
+
+    //#endregion graft / point decorations
+
     // ── fire_update_bookmarks ────────────────────────────────────────────────
     // Core send: read live bookmark positions from CM and elvis them to the backend.
     // Called directly for an instant flush (saveEffect path) or via the debounce wrapper.
@@ -825,6 +909,7 @@
             langCompartment.of(initial_lang_exts),
             bookmarkField,
             graftMarkField,
+            pointDecorationField,
             Keys,
             EditorView.updateListener.of((v: ViewUpdate) => {
                 const sel = v.state.selection.main
@@ -885,6 +970,9 @@
         Lang_i_elvis(view, 'Lang_editorBegins',
             { addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect,
               addGraftMark, removeGraftMark, clearAllGrafts,
+              setPointDecorations: setPointDecorationsEffect,
+              setPointFolds:       (v: EditorView, showing: any[], hiding: any[]) =>
+                                       fire_point_folds(v, showing, hiding),
               updates: readBookmarks(view), graft_updates: readGrafts(view) })
     }
 
@@ -1162,6 +1250,35 @@
         background: rgba(229, 192, 123, 0.12);
         border-bottom: 1px solid rgba(229, 192, 123, 0.6);
         border-radius: 1px;
+    }
+
+    /* Point decoration — line-level glow|enlarge applied by pointDecorationField.
+       cm-point-engaged is the base class (default and named classes extend it).
+       A fixed static set: focus, caution, dim, ghost.  No runtime CSS variables —
+       classes are stamped by the StateField from clone//U%class. */
+    .lte-cm :global(.cm-point-engaged) {
+        box-shadow:  inset 0 0 12px #c4aaee33;
+        font-size:   1.4em;
+        line-height: 1.96em;
+        transition:  font-size 0.15s, line-height 0.15s, box-shadow 0.15s;
+    }
+    .lte-cm :global(.cm-point-focus) {
+        box-shadow:  inset 0 0 20px #c4aaee66;
+        font-size:   2em;
+        line-height: 2.8em;
+    }
+    .lte-cm :global(.cm-point-caution) {
+        box-shadow: inset 0 0 12px rgba(229, 192, 100, 0.25);
+    }
+    .lte-cm :global(.cm-point-dim) {
+        font-size:   1em;
+        line-height: 1.4em;
+        box-shadow:  inset 0 0 6px #c4aaee1a;
+    }
+    .lte-cm :global(.cm-point-ghost) {
+        opacity:    0.18;
+        transform:  scaleY(0.4);
+        transition: opacity 1s, transform 1s;
     }
 
     /* Point panel — compact list of bookmarks below the editor */
