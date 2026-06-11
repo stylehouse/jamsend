@@ -18,11 +18,11 @@ a simple flat list of What/* to manipulate...
 Waft,Ghost/LakeNets
   What:foundations
     What:story
-      Doc:Ghost/Story/Peeroleum.g
+      Doc:Ghost/test/Story/Peeroleum.g
       Point,method:LakeNetherland
       Point,method:Something
     What:peer
-      Doc:Ghost/Peeroleum.g
+      Doc:Ghost/test/Peeroleum.g
       Point,method:Peeroleum
 ```
 

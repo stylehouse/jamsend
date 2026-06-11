@@ -3,10 +3,10 @@ story:LakeFlush
   Plan
     Prep
       i_elvisto:Lies,e:Lies_open_Waft
-        esc:path,v:Ghost/LakeFlush
+        esc:path,v:Story/LakeFlush/Waftily
     Prep=2
       i_elvisto:Lies,e:Lies_test_cursor
-        esc:waft_key,v:Ghost/LakeFlush
+        esc:waft_key,v:Story/LakeFlush/Waftily
         esc:what_path,v:foundations/peer
     Prep=3
       i_elvisto:Lang,e:mark
@@ -21,13 +21,13 @@ story:LakeFlush
         {"esc":"patch","v":{"class":"focus"}}
     Prep=5
       i_elvisto:Lies,e:Lies_test_waft_edit
-        esc:waft_key,v:Ghost/LakeFlush
+        esc:waft_key,v:Story/LakeFlush/Waftily
         esc:what_path,v:foundations/peer
         esc:op,v:add_point
         esc:method,v:STUNbeam
     Prep=6
       i_elvisto:Lies,e:Lies_test_waft_edit
-        esc:waft_key,v:Ghost/LakeFlush
+        esc:waft_key,v:Story/LakeFlush/Waftily
         esc:what_path,v:transport/reliability
         esc:op,v:add_point
         esc:method,v:OUTOFSCOPE
@@ -42,8 +42,7 @@ story:LakeFlush
     noCyto
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=0.822
-      sample=1.265,at=1781083807
+    TimeTotal:beliefs,avg=0.791
       sample=0.731,at=1781083980
       sample=0.731,at=1781085924
       sample=0.643,at=1781085969
@@ -53,6 +52,7 @@ story:LakeFlush
       sample=1.011,at=1781109083
       sample=0.915,at=1781143463
       sample=0.807,at=1781145458
+      sample=0.951,at=1781156047
   step,dige:c2516364c57e7603
   step=2,dige:3b081f7d60334a4f
   step=3,dige:a6bed6f3f733feb1

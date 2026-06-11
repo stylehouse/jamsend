@@ -58,14 +58,14 @@ Because `What` is polymorph it means different things at different depths:
 Waft:Ghost/LakeNets,Ghost/LakeNets
   What:foundationss
     What:story
-      Doc:Ghost/Story/Peeroleum.g
+      Doc:Ghost/test/Story/Peeroleum.g
       Point,method:LakeNetherland
     What:peer
-      Doc:Ghost/Peeroleum.g
+      Doc:Ghost/test/Peeroleum.g
       Point,method:Peeroleum
   What:transport
     What:first look
-      Doc:Ghost/Peeroleum.g
+      Doc:Ghost/test/Peeroleum.g
       Point,method:transport
       Point,method:PeerJS
 ```

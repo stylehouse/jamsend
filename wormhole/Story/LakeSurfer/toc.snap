@@ -1,69 +1,9 @@
 story:LakeSurfer
   Styles
-    matstyle:w
-      style:background-color,v:#8f3232
-      meta:is_compound,v
-      meta:label,fmt:%s,keys:w
-    matstyle:model
-      style:background-color,v:#2fb155
-    matstyle:docs
-      style:background-color,v:#8e29d6
-    matstyle:see
-      style:background-color,v:#c5b759
-    matstyle:error
-      style:background-color,v:#298699
-    matstyle:Opt
-      style:background-color,v:#bc2476
-    matstyle:open_req
-      style:background-color,v:#61bd42
-    matstyle:requesty_rw_queue_serial
-      style:background-color,v:#534ed0
-    matstyle:requesty_rw_queue
-      style:background-color,v:#a34b1f
-    matstyle:req_sent
-      style:background-color,v:#3aa67e
-    matstyle:loaded_doc
-      style:background-color,v:#bd36c9
-    matstyle:doc
-      style:background-color,v:#bbdb43
-    matstyle:received
-      style:background-color,v:#32618f
-    matstyle:open_Waft_req
-      style:background-color,v:#8259c5
-    matstyle:Waft
-      style:background-color,v:#997429
-    matstyle:Doc
-      style:background-color,v:#24bcb6
-    matstyle:Points
-      style:background-color,v:#bd429e
-    matstyle:Point
-      style:background-color,v:#89d04e
-    matstyle:open_waft_req
-      style:background-color,v:#bd429e
-    matstyle:lang_actions
-      style:background-color,v:#89d04e
-    matstyle:examining
-      style:background-color,v:#1f35a3
-    matstyle:Compile
-      style:background-color,v:#a6483a
-    matstyle:methods
-      style:background-color,v:#36c974
-    matstyle:Output
-      style:background-color,v:#af43db
-    matstyle:cyto_cons
-      style:background-color,v:#8f8f32
-    matstyle:cyto_edge
-      style:background-color,v:#2f8bb1
-    matstyle:Pending
-      style:background-color,v:#d62970
-    matstyle:compile_error
-      style:background-color,v:#66c559
-    matstyle:nogen
-      style:background-color,v:#3c2999
   Plan
     Prep
       i_elvisto:Lies,e:Lies_open_Waft
-        esc:path,v:Ghost/Tour
+        esc:path,v:Story/LakeSurfer/Waftily
   Opt
     For
       w:Lang
@@ -72,16 +12,16 @@ story:LakeSurfer
     quiesce_snap_time=0.4
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.577
-      sample=0.563,at=1780421691
-      sample=0.535,at=1780422145
-      sample=0.937,at=1780642786
-      sample=1.106,at=1780805890
+    TimeTotal:beliefs,avg=0.528
       sample=0.498,at=1780805901
       sample=0.321,at=1780966287
       sample=0.426,at=1781068697
       sample=0.544,at=1781079672
       sample=0.422,at=1781079759
       sample=0.422,at=1781079848
-  step,dige:37b82e7de2dc6f4a
-  step=2,dige:ceb5cab1546a4c59
+      sample=0.961,at=1781156536
+      sample=0.961,at=1781156550
+      sample=0.299,at=1781156559
+      sample=0.425,at=1781157319
+  step,dige:eabc174a75c78b46
+  step=2,dige:17954c539408faee

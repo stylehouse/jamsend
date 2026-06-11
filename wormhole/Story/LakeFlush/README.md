@@ -6,7 +6,7 @@ sequence, in and out of the Seem:origin extent.  No TimeSpool / step dige block,
 so the runner respawns it and records fresh diges on first green run.
 
 Target throughout is `What:peer` under `What:foundations` — it carries
-`Doc:Ghost/Peeroleum.g` and `Point,method:Peeroleum`.  The flush (encode /
+`Doc:Ghost/test/Peeroleum.g` and `Point,method:Peeroleum`.  The flush (encode /
 push / pull) runs as soon as the LE is armed on it; it does NOT wait for the CM
 dock, since none of encode / replace_back / pull touch the editor or the compile
 index.
@@ -19,7 +19,7 @@ Loads `Waft:Ghost/LakeFlush` from the snap.  Nothing armed yet; LE.sc.target abs
 wants resolver lands the Spotlight on it, req:understanding checks it out:
 - `%LE.sc.target` -> `%What:peer`
 - `Seem:origin.C` and `Seem:working.C` both `%What:peer`
-- working clones = [`Doc:Ghost/Peeroleum.g`, `Point,method:Peeroleum`]
+- working clones = [`Doc:Ghost/test/Peeroleum.g`, `Point,method:Peeroleum`]
 - `%LE/%encode` dirty:"0"; `%State` empty (no changey, no stale)
 This is the clean baseline — origin == working.
 
