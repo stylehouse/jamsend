@@ -832,16 +832,19 @@
         }
 
         // encode — gated on working.version + U_serial so enWaft is not called
-        //   every wake.  Working drift with origin stable auto-pushes the clone
-        //   tree back into the Waft OC; !stale guards an origin edit (both stale
-        //   and changey) from being clobbered by a now-superseded push.
+        //   every wake.  LE_encode_compare stamps %State.changey and bumps LE.version
+        //   on the edge so NaviCado's ~ bar wakes.
+        //   auto_push: when workon.sc.auto_push is set, working drift with stable origin
+        //   immediately pushes back to the Waft OC.  Off by default — edits are staged
+        //   for explicit push via the ~ bar.  The !stale guard remains so an origin edit
+        //   never gets clobbered by a now-superseded auto-push even when the flag is on.
         const wv         = LE.o({ Seem: 'working' })[0]?.version
         const u_serial   = (LE.c.U_serial as number | undefined) ?? 0
         const encode_key = `${wv}:${u_serial}`
         if (req.c.last_encode_key !== encode_key) {
             const { dirty } = await H.LE_encode_compare(LE)   // stamps %State.changey
             req.c.last_encode_key = encode_key
-            if (dirty && !LE.o({ State: 1 })[0]?.sc.stale) {
+            if (dirty && workon.sc.auto_push && !LE.o({ State: 1 })[0]?.sc.stale) {
                 await H.LE_push(LE)
             }
         }

@@ -193,7 +193,9 @@
                     spec,
                     resolved:   !!graft,
                     line:       (graft?.sc.line as number) ?? 0,
-                    unaccepted: false,
+                    // read from clone//U — may flip unaccepted before graft removes the Pmirror,
+                    // so the struck-through style lands the same tick as e_LE_mark fires
+                    unaccepted: !!u?.sc.unaccepted,
                     unshowing:  !!u?.sc.unshowing,
                     cls:        (u?.sc.class as string | undefined)
                                 ?? (pm.sc.class as string | undefined) ?? '',
