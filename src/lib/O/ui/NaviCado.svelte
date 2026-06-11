@@ -238,22 +238,25 @@
         H.i_elvisto('Lang/Lang', 'mark',    { LE, op: kind, ...extra })
 
     // push|reset are LE cluster triggers, routed to w:Lang's e_LE_operate.
-    //   push — e_Lang_LE_push: encode|replace|verify, clean → no-op.
-    //   pull — discard working edits, re-pull origin (destructive; two-tap).
+    //   push  — e_Lang_LE_push: encode|replace|verify, clean → no-op.
+    //   reset — re-arm at the same target + re-pull: discards working edits.
+    //           Two-tap because it's destructive.
     let reset_confirm = $state(false)
     const push  = () => { op('push'); reset_confirm = false }
     const reset = () => {
         if (!reset_confirm) { reset_confirm = true; return }
-        op('pull')
+        op('reset')
         reset_confirm = false
     }
 
     // orb — show|unshow toggle on the clone's U node.
+    //   show also clears unaccepted (re-showing fully accepts — see e_LE_mark).
     const toggle_show = (cap: Capsule) =>
         mark(cap.unshowing ? 'show' : 'unshow', { spec: cap.spec })
-    // × — drop|undrop (virtual deletion) on the clone's U node.
-    const drop = (cap: Capsule) =>
-        mark(cap.unaccepted ? 'undrop' : 'drop', { spec: cap.spec })
+    // × (unaccept) — virtual deletion; only available once the Point is unshowing.
+    //   Clicking it on an already-unaccepted capsule does accept (undo deletion).
+    const unaccept = (cap: Capsule) =>
+        mark(cap.unaccepted ? 'accept' : 'unaccept', { spec: cap.spec })
 
     // ── PeelItem — inject a Point into the working C** ────────────────────────
     //
@@ -368,7 +371,9 @@
 {/if}
 
 <!-- Capsule strip — one capsule per Point of the Understanding.
-     Orb = show|unshow toggle.  × = drop|undrop (struck through when unaccepted). -->
+     Orb = show|unshow toggle (show also accepts).  × = unaccept (virtual deletion);
+     only appears once the Point is already unshowing — further downgrade only.
+     An unaccepted capsule shows ↺ to restore (accept). -->
 {#if capsules.length > 0}
     <div class="lmm-inbox"
          onmouseleave={() => { reset_confirm = false }}>
@@ -378,9 +383,9 @@
                  class:lmm-capsule-dormant={cap.unshowing}
                  class:lmm-capsule-unaccepted={cap.unaccepted}>
                 <button class="lmm-capsule-orb"
-                        class:lmm-capsule-orb-show={!cap.unshowing}
+                        class:lmm-capsule-orb-show={!cap.unshowing && !cap.unaccepted}
                         class:lmm-capsule-orb-unshowing={cap.unshowing}
-                        title={cap.unshowing ? 'Hidden — click to show' : 'Showing — click to hide'}
+                        title={cap.unshowing ? 'Hidden — click to show & accept' : 'Showing — click to hide'}
                         disabled={cap.unaccepted}
                         onclick={() => toggle_show(cap)}>
                 </button>
@@ -392,10 +397,17 @@
                         }}>
                     {cap.spec}
                 </button>
-                <!-- × drop|undrop on the clone's U node (virtual deletion) -->
-                <button class="lmm-capsule-demote"
-                        title={cap.unaccepted ? 'Restore Point' : 'Drop Point'}
-                        onclick={() => drop(cap)}>{cap.unaccepted ? '↺' : '×'}</button>
+                {#if cap.unaccepted}
+                    <!-- ↺ accept — restore a virtually-deleted Point -->
+                    <button class="lmm-capsule-demote"
+                            title="Restore Point (accept)"
+                            onclick={() => unaccept(cap)}>↺</button>
+                {:else if cap.unshowing}
+                    <!-- × unaccept — virtual deletion; only available once unshowing -->
+                    <button class="lmm-capsule-demote"
+                            title="Remove from Understanding (unaccept)"
+                            onclick={() => unaccept(cap)}>×</button>
+                {/if}
             </div>
         {/each}
         <button class="lmm-cursor-next" title="Next What in Waft" onclick={() => op('next_doc')}>→</button>

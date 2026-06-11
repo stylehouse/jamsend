@@ -170,20 +170,20 @@
             const clone_map              = new Map<TheC, TheC>()
 
             for (const clone of clones) {
-                if (clone.c.U?.sc.unaccepted) continue   // virtual deletion
+                if (clone.c.U?.sc.unaccepted) continue   // virtual deletion — no Pmirror
                 const cs = clone.sc as any
 
                 if (cs.method !== undefined || cs.Point !== undefined) {
-                    // Direct %Point on %What — no Doc wrapper (e.g. "loose ends").
-                    // Include regardless of dock; the resolve step will find or miss.
-                    if (!clone.c.U?.sc.unshowing) {
-                        live_pts.push(clone)
-                        clone_map.set(clone, clone)   // src_clone = itself
-                    }
+                    // Direct %Point on %What — no Doc wrapper.  Include regardless of
+                    // dock; the resolve step will find or miss.  unshowing keeps its
+                    // Pmirror so the graft mark and position stay live — Lang_show_pmirrors
+                    // dispatches the CM fold|squish when it sees U%unshowing.
+                    live_pts.push(clone)
+                    clone_map.set(clone, clone)   // src_clone = itself
                 } else if (cs.Doc === dock_path) {
                     // %Doc clone matching the active dock — descend into the live %What
                     // to find the %Points for this doc (clones are too shallow).
-                    if (clone.c.U?.sc.unshowing) continue
+                    // Same rule: unshowing keeps the Pmirror; show_pmirrors folds.
                     const live_doc = (target.o({ Doc: 1 }) as TheC[])
                         .find(d => d.sc.Doc === dock_path)
                     if (live_doc) {

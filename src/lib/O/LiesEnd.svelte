@@ -43,11 +43,11 @@ await M.eatfunc({
 //     On w:Lang: LE cluster triggers (push | pull).
 //
 //   e:mark — working-tree mutations on the clone tree (w:Lang only).
-//     Ops: add | edit | drop | undrop | unshow | show
+//   Ops: add | edit | unaccept | accept | unshow | show
 //     Every op that changes the working tree bumps LE.c.U_serial so
 //     Lang_settle's encode_key changes without a cursor move (serial on .c,
-//     never .sc).  add/drop change structure, edit changes a clone's sc,
-//     show|unshow|undrop change a clone's U meanings — all re-encode.
+//     never .sc).  add/unaccept change structure, edit changes a clone's sc,
+//     show|unshow|accept change a clone's U meanings — all re-encode.
 //
 //   e:LE_operate / e:LE_mark are the direct implementations.
 //   e_Lang_LE_push is the durable push cluster (req:push|encode|replace|verify).
@@ -163,6 +163,23 @@ await M.eatfunc({
                 H.feebly_ponder()
                 return
             }
+            case 'reset': {
+                // Discard all working edits — re-arm at the same target so the Seems
+                // drop their D/U spheres and Seem_clone_C re-clones a fresh working tree
+                // on the next pull.  Bumps LE.version so the UItime strip re-derives and
+                // instrumentation re-grafts immediately.
+                const LE = (e.sc.LE as TheC | undefined)
+                    ?? (H.ave as TheC).o({ Languinio: 1 })[0]?.o({ LE: 1 })[0] as TheC | undefined
+                if (LE) {
+                    const target = LE.sc.target as TheC | undefined
+                    if (target) {
+                        H.LE_arm(LE, target)
+                        await H.LE_pull(LE)
+                    }
+                }
+                H.feebly_ponder()
+                return
+            }
             default:
                 throw `e_LE_operate: unknown op '${op}'`
         }
@@ -177,12 +194,12 @@ await M.eatfunc({
     //   (serial on .c, never .sc).
     //
     //   e.sc: { LE: TheC, op: string, spec?, sc?, patch? }
-    //     add    — append a new clone (e.sc.sc is the raw sc)
-    //     edit   — patch an existing clone's sc (e.sc.patch merged in)
-    //     drop   — set U%unaccepted; virtual deletion, omitted from push + encode
-    //     undrop — clear U%unaccepted; restore a dropped clone
-    //     unshow — set U%unshowing; Lang-UI hide, no effect on push or encode
-    //     show   — clear U%unshowing; restore to visible
+    //     add      — append a new clone (e.sc.sc is the raw sc)
+    //     edit     — patch an existing clone's sc (e.sc.patch merged in)
+    //     unaccept — set U%unaccepted; virtual deletion, omitted from push + encode
+    //     accept   — clear U%unaccepted; restore a virtually-deleted clone
+    //     unshow   — set U%unshowing; folds the region in CM, no effect on push or encode
+    //     show     — clear U%unshowing (and U%unaccepted if set — re-showing fully accepts)
     async e_LE_mark(A: TheC, w: TheC, e: TheC) {
         const H      = this as House
         const LE: TheC = e.sc.LE as TheC
@@ -210,12 +227,12 @@ await M.eatfunc({
                 if (clone && patch) { Object.assign(clone.sc, patch); U_mutated = true }
                 break
             }
-            case 'drop': {
+            case 'unaccept': {
                 const clone = find(e.sc.spec)
                 if (clone) { H.LE_drop_clone(LE, clone); U_mutated = true }
                 break
             }
-            case 'undrop': {
+            case 'accept': {
                 const clone = find(e.sc.spec)
                 if (clone?.c.U) { delete clone.c.U.sc.unaccepted; U_mutated = true }
                 break
@@ -227,7 +244,11 @@ await M.eatfunc({
             }
             case 'show': {
                 const clone = find(e.sc.spec)
-                if (clone?.c.U) { delete clone.c.U.sc.unshowing; U_mutated = true }
+                if (clone?.c.U) {
+                    delete clone.c.U.sc.unshowing
+                    delete clone.c.U.sc.unaccepted   // re-showing fully accepts
+                    U_mutated = true
+                }
                 break
             }
         }
@@ -236,11 +257,9 @@ await M.eatfunc({
         // (structure, clone sc, or U meanings) without waiting for a cursor move.
         // A cursor move bumps Seem:working.version; these ops don't, so the serial
         // on .c is the lever that makes encode_key move for them.
-        //   U_serial rides on .c — invisible to vers, so it wakes the Atime
-        //   encode_key but nothing reactive.  LE.bump_version() is the companion
-        //   on the vers side: it wakes the UItime strip (NaviCado voids LE.vers)
+        //   LE.bump_version() wakes the UItime strip (NaviCado voids LE.vers)
         //   and, via LE.version in req_workon's instrumentation sig, re-grafts the
-        //   Pmirrors same-tick instead of waiting for a trickle think.
+        //   Pmirrors same-tick — both levers together, not just U_serial alone.
         if (U_mutated) {
             LE.c.U_serial = ((LE.c.U_serial as number) ?? 0) + 1
             LE.bump_version()
@@ -486,6 +505,7 @@ await M.eatfunc({
         //   wakes the UItime strip and drifts req_workon's instrumentation sig
         //   (LE.version) to re-graft — the lever for the case sc-serials missed.
         LE.bump_version()
+    },
 
     // ── LE_pull ─────────────────────────────────────────────────────────────
     // Orchestration:
@@ -659,10 +679,10 @@ await M.eatfunc({
     },
 
     // ── LE_drop_clone ────────────────────────────────────────────────────────
-    // Mark a clone as a virtual deletion by setting U%unaccepted.
+    // Mark a clone as virtually unaccepted by setting U%unaccepted.
     // The clone stays in the working tree so LE_accepted_clones can filter it;
     // LE_push skips it. encode-compare omits it from working's snap via Seem_toString.
-    // Requires C.c.U — call LE_pull at least once after LE_arm before dropping.
+    // Requires C.c.U — call LE_pull at least once after LE_arm before unaccepting.
     LE_drop_clone(LE: TheC, clone: TheC) {
         if (!clone.c.U) throw 'LE_drop_clone: clone has no U node — has LE_pull been called?'
         clone.c.U.sc.unaccepted = 1
@@ -752,10 +772,8 @@ await M.eatfunc({
         })
 
         // Merge changey into the existing %State without replacing stale/armed.
-        //   changey rides on State.sc (direct assign — no bump), so flip LE.version
-        //   when it transitions, else the UItime unsent bar (is_changey, keyed on
-        //   LE.vers) never learns the encode settled.  Gated on a real edge so a
-        //   re-encode that finds the same answer stays quiet.
+        //   Bump LE.version on the edge so the UItime unsent bar (is_changey,
+        //   keyed on LE.vers) wakes when the encode settles — gated on a real edge.
         const state = LE.oai({ State: 1 })
         const was_changey = !!state.sc.changey
         if (changey) state.sc.changey = 1
