@@ -355,17 +355,14 @@ class StuffIO {
     
 
     // ensure given things are the only ones in a match
-    //  does nothing if the things are already there
+    //  does nothing if the things are already there, reactivity etc
     // good for inserting whole objects, taking over the space
+    // Each incoming C gets .is() so replace() skips resume_X — the C owns /* elsewhere.
     async place(pattern_sc: TheUniversal, n: TheC | TheC[]): Promise<void> {
         const N: TheC[] = n instanceof TheC ? [n] : n as TheC[]
         const existing = this.o(pattern_sc) as TheC[]
-        for (const e of existing) {
-            if (!N.includes(e)) this.drop(e)
-        }
-        for (const c of N) {
-            if (!existing.includes(c)) this.i(c)
-        }
+        if (N.length === existing.length && N.every((c, i) => existing[i] === c)) return
+        await this.replace(pattern_sc, () => { for (const c of N) { c.is(); this.i(c) } })
     }
 
 

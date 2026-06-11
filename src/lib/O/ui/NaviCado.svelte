@@ -40,7 +40,7 @@
     //   Auto-promoted on first Pmirror arrival; pushed_snapshot syncs so the
     //   unsent bar stays hidden until the user actually changes something.
     //
-    //   Capsule label click — < fires Lang_navigate_to; needs handler on Lang side.
+    //   Capsule label click — fires Dock_open%{path,point:spec} → e_Dock_open → Lang_point_navigate.
     //   × fires mark('drop', ...) when LE is armed at a %What; else
     //   local demote() for bare %Doc sessions.
     //   Push fires Lies_accept_What_Point; Reset reverts to pushed_snapshot (two-tap).
@@ -141,18 +141,33 @@
 
     let is_dirty = $derived(pushed_snapshot !== '' && current_what_point_json() !== pushed_snapshot)
 
-    // ── doc switch ────────────────────────────────────────────────────────────
+    // ── Understanding switch — reset the strip when the checkout moves ─────────
+    //
+    //   Keyed on %Interest's in_What|in_Doc, not active_path.  A What hop on the
+    //   same Doc leaves active_path untouched yet checks out a different Point
+    //   set, so an active_path-only reset left the prior What's specs lingering
+    //     as spurious capsules — and with no live %Pmirror behind them (pm
+    //     undefined) they rendered as resolved.
+    //   The Understanding identity moves on every checkout, so this shakes the
+    //     strip clean on a same-Doc hop too.
+    let understanding_key = $derived.by(() => {
+        const interest = languinio?.ob({ Interest: 1 })[0] as TheC | undefined
+        void interest?.vers
+        const in_What = (interest?.sc.in_What as string | undefined) ?? ''
+        const in_Doc  = (interest?.sc.in_Doc  as string | undefined) ?? ''
+        return `${in_What}|${in_Doc}`
+    })
 
-    let _last_path = ''
+    let _last_uk = ''
     $effect(() => {
-        if (active_path !== _last_path) {
+        if (understanding_key !== _last_uk) {
             in_group        = new Set()
             showing         = new Set()
             pushed_snapshot = ''
             reset_confirm   = false
             _auto_promoted  = new Set()
             _user_demoted   = new Set()
-            _last_path      = active_path
+            _last_uk        = understanding_key
         }
     })
 
@@ -338,7 +353,7 @@
     // ── PeelItem — inject a Point into the working C** ────────────────────────
     //
     //   Type a method name and press Enter.  Fires LE_operate{op:'add'} so the
-    //   working clone tree gains the new Point immediately; req:settle re-encodes
+    //   working clone tree gains the new Point immediately; req:understanding re-encodes
     //   on the next think and changey updates.
     //
     //   Only active when LE is armed at a %What target.
@@ -472,8 +487,8 @@
                 <button class="lmm-capsule-label"
                         title="{spec}{pm?.unresolved ? ' (unresolved)' : pm ? ` → line ${pm.line}` : ''}"
                         onclick={() => {
-                            // < fire Lang_navigate_to once wired on Lang side
-                            if (pm) H.i_elvisto('Lang/Lang', 'Lang_navigate_to', { from: pm.from, to: pm.to, spec })
+                            // Dock_open with point:spec → e_Dock_open → Lang_point_navigate
+                            H.i_elvisto('Lang/Lang', 'Dock_open', { path: active_path, point: spec })
                         }}>
                     {spec}
                 </button>

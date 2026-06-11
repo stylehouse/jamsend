@@ -110,7 +110,7 @@
     //
     //   w/{req:'workon'}          — open-ended; one per Lang instance.
     //     c.src                   latest cursored TheC (stashed by e_Lang_workon_update)
-    //     do_fn = Lang_workon_drive — the thin per-tick driver: roai's each stage
+    //     do_fn = req_workon — the thin per-tick driver: roai's each stage
     //       with its input signature (un-finishing a %permanent stage on drift),
     //       then pumps the pipeline.  Invalidation cascades forward through keys.
     //     /{req:'understanding',maz:3,permanent}  — re-arm LE + flush; sets %Interest
@@ -177,7 +177,7 @@
     //     takes  e%src (cursored %What or %Doc from Spotlight)
     //     makes  workon.c.src; pokes think → the driver re-keys req:understanding
     //
-    //   Lang_workon_drive (req:workon do_fn, the per-tick driver)
+    //   req_workon (req:workon do_fn, the per-tick driver)
     //     takes  workon.c.src, %LE working version + U_serial, active dock + dige
     //     makes  a signature per stage; roai's it (un-finishes %permanent on drift)
     //            then pumps understanding → ingredients → instrumentation
@@ -334,7 +334,7 @@
         await languinio.place({ LE: 1 }, LE)
 
         // ── req:workon — the convergence home ────────────────────────
-        // Open-ended anchor.  Its do_fn (Lang_workon_drive) is the thin per-tick
+        // Open-ended anchor.  Its do_fn (req_workon) is the thin per-tick
         // driver: it computes each stage's input signature, roai's any stage
         // whose signature drifted (→ %permanent de-finish), then pumps the stage
         // pipeline.  The three stages are keyed (mutated-on) volatility lanes:
@@ -345,7 +345,7 @@
         // lives elsewhere (%LE/%Seem, %Good, the dock) so de-finishing loses nothing.
         const rq_w = H.reqy(w)
         ;(await rq_w.doai({ req: 'workon' }))?.(async (workon: TheC) =>
-            H.Lang_workon_drive(w, workon, LE))
+            H.req_workon(w, workon, LE))
 
         const workon = rq_w.o({ req: 'workon' })[0] as TheC | undefined
         if (workon) {
@@ -708,7 +708,7 @@
         H.feebly_ponder()
     },
 
-    // ── Lang_workon_drive — the thin per-tick driver ─────────────────────────
+    // ── req_workon — the thin per-tick driver ─────────────────────────
     //
     //   do_fn for req:workon.  Holds no work itself: it computes each stage's
     //   input signature, roai's any stage whose signature drifted (which
@@ -722,7 +722,7 @@
     //   A signature is a short string on stage%sig.  maybe_mutate_sc fires its
     //   %mutated (and the %permanent un-finish) only when sig actually changes,
     //   so a settled tick re-drives nothing — every stage sits finished.
-    async Lang_workon_drive(w: TheC, workon: TheC, LE: TheC) {
+    async req_workon(w: TheC, workon: TheC, LE: TheC) {
         const H    = this as House
         const wsub = H.reqy(workon)
 
@@ -1271,7 +1271,7 @@
             }
         }
 
-        // Drive w-level reqs.  req:workon is open-ended; its do_fn (Lang_workon_drive)
+        // Drive w-level reqs.  req:workon is open-ended; its do_fn (req_workon)
         //  is the per-tick driver — it re-keys the three stages and pumps them via
         //  its own reqy(workon).do().  No separate settle|push driving here: the LE
         //  flush (push) runs inside Lang_understanding, the dock pipeline inside the
