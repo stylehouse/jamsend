@@ -204,7 +204,7 @@
     //
     //   e:dock_content  ← Lies drain (push) | dock_askies (pull), with the %Good
     //     takes  e%Good (bytes off-snap, dige on /known)
-    //     makes  the dock (Lang_drive_languish), dock.c.content_dige; pokes think
+    //     makes  the dock (Lang_open_dock), dock.c.content_dige; pokes think
     //            → the waiting req:furnishing finishes; driver re-keys instrumentation
     //
     //   e:LE_operate%op=push  ← NaviCado / DocMinimap
@@ -344,8 +344,8 @@
         // Each stage holds wants + convergence-markers only; its durable output
         // lives elsewhere (%LE/%Seem, %Good, the dock) so de-finishing loses nothing.
         const rq_w = H.reqy(w)
-        ;(await rq_w.doai({ req: 'workon' }))?.(async (workon: TheC) =>
-            H.req_workon(w, workon, LE))
+        ;(await rq_w.doai({ req: 'workon' }, { LE }))?.(async (workon: TheC) =>
+            H.req_workon(w, workon))
 
         const workon = rq_w.o({ req: 'workon' })[0] as TheC | undefined
         if (workon) {
@@ -358,11 +358,11 @@
             // ttlilt stops do() at its level, gating the lanes below it.
             const wsub = H.reqy(workon)
             ;(await wsub.doai({ req: 'understanding',  maz: 3, permanent: 1 }))?.(
-                async (u: TheC, q: any) => H.Lang_understanding(w, u, LE, q))
+                async (u: TheC, q: any) => H.req_understanding(w, u, q))
             ;(await wsub.doai({ req: 'ingredients',    maz: 2, permanent: 1 }))?.(
-                async (g: TheC, q: any) => H.Lang_ingredients(w, g, LE, q))
+                async (g: TheC, q: any) => H.req_ingredients(w, g, q))
             ;(await wsub.doai({ req: 'instrumentation', maz: 1, permanent: 1 }))?.(
-                async (n: TheC, q: any) => H.Lang_instrumentation(w, n, LE, q))
+                async (n: TheC, q: any) => H.req_instrumentation(w, n, q))
         }
 
         w.c.plan_done = true
@@ -628,7 +628,7 @@
         this.i_elvisto(w, 'think')
     },
 
-    // ── Lang_drive_languish ────────────────────────────────────────────────────
+    // ── Lang_open_dock ────────────────────────────────────────────────────
     //
     //   Mint-or-refresh the per-dock req:Languish and drive one do() pass.
     //   Returns the dock so callers can resolve their RPC immediately once the
@@ -640,7 +640,7 @@
     //   Languish lives on the dock — `dock.o({req:'Languish'})[0]`.
     //   dock.c.up = docks, docks.c.up = w (stamped where the dock is minted) so
     //   reqyoncile's %w walk and i_req_ttlilt both reach w:Lang correctly.
-    async Lang_drive_languish(w: TheC, dock: TheC, text: string): Promise<TheC> {
+    async Lang_open_dock(w: TheC, dock: TheC, text: string): Promise<TheC> {
         const H = this as House
         const rq = H.reqy(dock)
         let languish = await rq.roai({ req: 'Languish' })
@@ -722,8 +722,9 @@
     //   A signature is a short string on stage%sig.  maybe_mutate_sc fires its
     //   %mutated (and the %permanent un-finish) only when sig actually changes,
     //   so a settled tick re-drives nothing — every stage sits finished.
-    async req_workon(w: TheC, workon: TheC, LE: TheC) {
+    async req_workon(w: TheC, workon: TheC) {
         const H    = this as House
+        const LE   = workon.sc.LE as TheC
         const wsub = H.reqy(workon)
 
         // understanding — re-arm + flush whenever src, the working tree, or origin
@@ -778,7 +779,7 @@
         return (workon.c.src_serial as number | undefined) ?? 0
     },
 
-    // ── Lang_understanding — the %Waft|%LE boundary stage ─────────────────────
+    // ── req_understanding — the %Waft|%LE boundary stage ─────────────────────
     //
     //   %permanent; woken by the driver when src, the working tree, or origin
     //   drift moves.  Owns checkout (re-arm the Understanding on src change) and
@@ -786,9 +787,10 @@
     //   Sets %Interest (in_What, in_Doc, in_Point) — the C-side address the rest
     //   of the pipeline keys off.  Touches no dock and no compile index, so it
     //   converges independently of editor readiness.
-    async Lang_understanding(w: TheC, req: TheC, LE: TheC, q: any) {
+    async req_understanding(w: TheC, req: TheC, q: any) {
         const H      = this as House
         const workon = req.c.up as TheC         // understanding.c.up = workon
+        const LE     = workon.sc.LE as TheC
         const want   = workon?.c.src as TheC | undefined
 
         // checkout — re-arm when the cursored src changes (identity memoised).
@@ -869,7 +871,7 @@
         else       languinio.o({ spinner: 'stale' }).forEach((s: TheC) => languinio.drop(s))
     },
 
-    // ── Lang_ingredients — the raw %Goods we need ─────────────────────────────
+    // ── req_ingredients — the raw %Goods we need ─────────────────────────────
     //
     //   %permanent; woken when %Interest's in_Doc moves.  Ensures one
     //   req:furnishing per wanted %Doc and drives them; finished when every
@@ -877,7 +879,7 @@
     //   holds more, so a look-ahead furnishing further along the Waft trail drops
     //   in here later with no instrumentation churn (in_Doc, not "ingredients
     //   changed", is what keys instrumentation).
-    async Lang_ingredients(w: TheC, req: TheC, _LE: TheC, q: any) {
+    async req_ingredients(w: TheC, req: TheC, q: any) {
         const H        = this as House
         const interest = w.o({ Languinio: 1 })[0]?.o({ Interest: 1 })[0] as TheC | undefined
         const want_doc = interest?.sc.in_Doc as string | undefined
@@ -892,13 +894,13 @@
             if (f.sc.path !== want_doc) req.drop(f)
         }
         ;(await rq.doai({ req: 'furnishing', path: want_doc, permanent: 1 }))?.(
-            async (f: TheC, fq: any) => H.Lang_furnishing(w, f, fq))
+            async (f: TheC, fq: any) => H.req_furnishing(w, f, fq))
 
         await rq.do()
         rq.unify_finished()   // ← finished when every furnishing is
     },
 
-    // ── Lang_furnishing — bring one dock %Good into being ─────────────────────
+    // ── req_furnishing — bring one dock %Good into being ─────────────────────
     //
     //   %permanent; pure gate + ttlilt + pull-trigger.  Never carries content:
     //   the dock is minted solely by e_Lang_dock_content (the one content-writer).
@@ -912,7 +914,7 @@
     //   The %Good arriving (push or pull) de-finishes us via the dock_content
     //   handler; on a later inotify re-land it would wake us again — the dock as a
     //   standing push|pull boundary.
-    async Lang_furnishing(w: TheC, req: TheC, q: any) {
+    async req_furnishing(w: TheC, req: TheC, q: any) {
         const H    = this as House
         const path = req.sc.path as string
         if (!path) { q.finish(req); return }
@@ -958,7 +960,7 @@
             docks.c.up  ??= w
             const dock  = docks.oai({ dock: path })
             dock.c.up   ??= docks
-            await H.Lang_drive_languish(w, dock, text)
+            await H.Lang_open_dock(w, dock, text)
             dock.c.content_dige = dige ?? ''
 
             // first dock furnished becomes the active one (MVP: active = wanted Doc).
@@ -974,14 +976,14 @@
         }
     },
 
-    // ── Lang_instrumentation — compile + graft on the active dock ─────────────
+    // ── req_instrumentation — compile + graft on the active dock ─────────────
     //
     //   %permanent; woken when the active dock or its content dige moves.  The
     //   things-we-build-on-the-dock: the compile %methods index and the grafted
     //   %Pmirrors.  Holds convergence-markers only — the index and Pmirrors live
     //   on the dock — so de-finishing it loses nothing; it re-checks and no-ops
     //   when the dock is already current at this dige.
-    async Lang_instrumentation(w: TheC, req: TheC, _LE: TheC, q: any) {
+    async req_instrumentation(w: TheC, req: TheC, q: any) {
         const H      = this as House
         const active = w.c.active_dock_path as string | undefined
         if (!active) { q.finish(req); return }   // no active dock yet (docless What)
@@ -1274,7 +1276,7 @@
         // Drive w-level reqs.  req:workon is open-ended; its do_fn (req_workon)
         //  is the per-tick driver — it re-keys the three stages and pumps them via
         //  its own reqy(workon).do().  No separate settle|push driving here: the LE
-        //  flush (push) runs inside Lang_understanding, the dock pipeline inside the
+        //  flush (push) runs inside req_understanding, the dock pipeline inside the
         //  stages.  Cheap when settled — every stage sits finished, no key drifts.
         const rq = H.reqy(w)
         await rq.do()

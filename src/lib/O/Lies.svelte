@@ -405,7 +405,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 if (examining) {
                     const eq = H.reqy(examining)
                     ;(await eq.doai({ req: 'timemachine' }, { playing: 0 }))?.(
-                        async (tm: TheC) => H.Lies_timemachine_do(w, desire, tm))
+                        async (tm: TheC) => H.req_timemachine(w, tm))
                 }
                 rq.finish(acquire)
             })
@@ -490,14 +490,16 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         return doc?.sc.Doc as string | undefined
     },
 
-    // ── Lies_timemachine_do ────────────────────────────────────────────────────
+    // ── req_timemachine ────────────────────────────────────────────────────
     //
     //   do_fn for %examining/req:timemachine.  Drains play/pause/step
     //   gestures and auto-advances when playing.  Auto-advance emits a %want
     //   (kind:'step') rather than stepping the cursor directly.
-    async Lies_timemachine_do(w: TheC, desire: TheC, tm: TheC) {
+    async req_timemachine(w: TheC, tm: TheC) {
         const H = this as House
-        const waft_node = desire.o({ Waft: 1 })[0] as TheC | undefined
+        // waft comes from req:desire which lives on w, not from tm.c.up (= examining)
+        const desire    = w.o({ req: 'desire' })[0] as TheC | undefined
+        const waft_node = desire?.o({ Waft: 1 })[0] as TheC | undefined
         if (!waft_node) return
 
         const waft     = waft_node.sc.src  as TheC
