@@ -343,27 +343,19 @@
         //   req:instrumentation — active dock + dige → compile + graft + decorate
         // Each stage holds wants + convergence-markers only; its durable output
         // lives elsewhere (%LE/%Seem, %Good, the dock) so de-finishing loses nothing.
-        const rq_w = H.reqy(w)
-        ;(await rq_w.doai({ req: 'workon' }, { LE }))?.(async (workon: TheC) =>
-            H.req_workon(w, workon))
+        const rq_w   = H.reqy(w)
+        const workon = await rq_w.roai({ req: 'workon' }, { LE, w })
+        workon.sc.following = 1   // track group cursor (default)
+        // < following:0 = diverged; thought-balloon on breadcrumb
 
-        const workon = rq_w.o({ req: 'workon' })[0] as TheC | undefined
-        if (workon) {
-            workon.sc.following = 1   // track group cursor (default)
-            // < following:0 = diverged; thought-balloon on breadcrumb
-
-            // Stage reqs — %permanent so a signature roai un-finishes them with a
-            // fresh lease.  maz orders the pipeline: understanding (3) before
-            // ingredients (2) before instrumentation (1); a stage that bows out on a
-            // ttlilt stops do() at its level, gating the lanes below it.
-            const wsub = H.reqy(workon)
-            ;(await wsub.doai({ req: 'understanding',  maz: 3, permanent: 1 }))?.(
-                async (u: TheC, q: any) => H.req_understanding(w, u, q))
-            ;(await wsub.doai({ req: 'ingredients',    maz: 2, permanent: 1 }))?.(
-                async (g: TheC, q: any) => H.req_ingredients(w, g, q))
-            ;(await wsub.doai({ req: 'instrumentation', maz: 1, permanent: 1 }))?.(
-                async (n: TheC, q: any) => H.req_instrumentation(w, n, q))
-        }
+        // Stage reqs — %permanent so a signature roai un-finishes them with a
+        // fresh lease.  maz orders the pipeline: understanding (3) before
+        // ingredients (2) before instrumentation (1); a stage that bows out on a
+        // ttlilt stops do() at its level, gating the lanes below it.
+        const wsub = H.reqy(workon)
+        await wsub.roai({ req: 'understanding',  maz: 3, permanent: 1 })
+        await wsub.roai({ req: 'ingredients',    maz: 2, permanent: 1 })
+        await wsub.roai({ req: 'instrumentation', maz: 1, permanent: 1 })
 
         w.c.plan_done = true
     },
@@ -708,6 +700,15 @@
         H.feebly_ponder()
     },
 
+    // climb req.c.up until a node has %w on its sc, return that w.
+    //   workon carries %w directly; stages above carry it one|two hops up.
+    upto_w(req: TheC): TheC {
+        let node: TheC = req
+        while (node && !node.sc.w) node = node.c.up as TheC
+        if (!node?.sc.w) throw "upto_w: no %w in c.up chain"
+        return node.sc.w as TheC
+    },
+
     // ── req_workon — the thin per-tick driver ─────────────────────────
     //
     //   do_fn for req:workon.  Holds no work itself: it computes each stage's
@@ -722,10 +723,12 @@
     //   A signature is a short string on stage%sig.  maybe_mutate_sc fires its
     //   %mutated (and the %permanent un-finish) only when sig actually changes,
     //   so a settled tick re-drives nothing — every stage sits finished.
-    async req_workon(w: TheC, workon: TheC) {
-        const H    = this as House
-        const LE   = workon.sc.LE as TheC
-        const wsub = H.reqy(workon)
+    async req_workon(req: TheC, q: any) {
+        const H      = this as House
+        const workon = req
+        const w      = H.upto_w(req)
+        const LE     = workon.sc.LE as TheC
+        const wsub   = H.reqy(workon)
 
         // understanding — re-arm + flush whenever src, the working tree, or origin
         //   drift moves.  src identity rides as a stable serial bumped on change;
@@ -787,9 +790,10 @@
     //   Sets %Interest (in_What, in_Doc, in_Point) — the C-side address the rest
     //   of the pipeline keys off.  Touches no dock and no compile index, so it
     //   converges independently of editor readiness.
-    async req_understanding(w: TheC, req: TheC, q: any) {
+    async req_understanding(req: TheC, q: any) {
         const H      = this as House
         const workon = req.c.up as TheC         // understanding.c.up = workon
+        const w      = H.upto_w(req)
         const LE     = workon.sc.LE as TheC
         const want   = workon?.c.src as TheC | undefined
 
@@ -879,8 +883,9 @@
     //   holds more, so a look-ahead furnishing further along the Waft trail drops
     //   in here later with no instrumentation churn (in_Doc, not "ingredients
     //   changed", is what keys instrumentation).
-    async req_ingredients(w: TheC, req: TheC, q: any) {
+    async req_ingredients(req: TheC, q: any) {
         const H        = this as House
+        const w        = H.upto_w(req)
         const interest = w.o({ Languinio: 1 })[0]?.o({ Interest: 1 })[0] as TheC | undefined
         const want_doc = interest?.sc.in_Doc as string | undefined
 
@@ -893,8 +898,7 @@
         for (const f of rq.o({ req: 'furnishing' }) as TheC[]) {
             if (f.sc.path !== want_doc) req.drop(f)
         }
-        ;(await rq.doai({ req: 'furnishing', path: want_doc, permanent: 1 }))?.(
-            async (f: TheC, fq: any) => H.req_furnishing(w, f, fq))
+        await rq.roai({ req: 'furnishing', path: want_doc, permanent: 1 })
 
         await rq.do()
         rq.unify_finished()   // ← finished when every furnishing is
@@ -914,8 +918,9 @@
     //   The %Good arriving (push or pull) de-finishes us via the dock_content
     //   handler; on a later inotify re-land it would wake us again — the dock as a
     //   standing push|pull boundary.
-    async req_furnishing(w: TheC, req: TheC, q: any) {
+    async req_furnishing(req: TheC, q: any) {
         const H    = this as House
+        const w    = H.upto_w(req)   // furnishing → ingredients → workon
         const path = req.sc.path as string
         if (!path) { q.finish(req); return }
 
@@ -983,8 +988,9 @@
     //   %Pmirrors.  Holds convergence-markers only — the index and Pmirrors live
     //   on the dock — so de-finishing it loses nothing; it re-checks and no-ops
     //   when the dock is already current at this dige.
-    async req_instrumentation(w: TheC, req: TheC, q: any) {
+    async req_instrumentation(req: TheC, q: any) {
         const H      = this as House
+        const w      = H.upto_w(req)
         const active = w.c.active_dock_path as string | undefined
         if (!active) { q.finish(req); return }   // no active dock yet (docless What)
         const dock = w.o({ docks: 1 })[0]?.o({ dock: active })[0] as TheC | undefined

@@ -404,8 +404,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
                 if (examining) {
                     const eq = H.reqy(examining)
-                    ;(await eq.doai({ req: 'timemachine' }, { playing: 0 }))?.(
-                        async (tm: TheC) => H.req_timemachine(w, tm))
+                    await eq.roai({ req: 'timemachine' }, { playing: 0, w })
                 }
                 rq.finish(acquire)
             })
@@ -495,8 +494,9 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //   do_fn for %examining/req:timemachine.  Drains play/pause/step
     //   gestures and auto-advances when playing.  Auto-advance emits a %want
     //   (kind:'step') rather than stepping the cursor directly.
-    async req_timemachine(w: TheC, tm: TheC) {
+    async req_timemachine(tm: TheC, q: any) {
         const H = this as House
+        const w = tm.sc.w as TheC
         // waft comes from req:desire which lives on w, not from tm.c.up (= examining)
         const desire    = w.o({ req: 'desire' })[0] as TheC | undefined
         const waft_node = desire?.o({ Waft: 1 })[0] as TheC | undefined

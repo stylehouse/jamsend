@@ -483,7 +483,29 @@
             // H.feebly_ponder()
         }
     },
- 
+
+    // climb req.c.up until a node has %w on its sc, return that w.
+    //   workon carries %w directly; stages above carry it one|two hops up.
+    upto_w(req: TheC): TheC {
+        let node: TheC = req
+        while (node && !node.sc.w) node = node.c.up as TheC
+        if (!node?.sc.w) throw "upto_w: no %w in c.up chain"
+        return node.sc.w as TheC
+    },
+
+    // one-shot flag helper — stamps %name on req.sc and req.c.oncelers.
+    //   rq.finish() yoinks both; snap shows only %finished after completion.
+    // doesn't create another req, a sub-req or so,
+    //  it just sets eg req%grafted and returns true if it wasn't already there
+    //   so you can gate a one-time block.
+    reqonce(req: TheC, name: string): boolean {
+        req.c.oncelers ||= {}
+        if (req.c.oncelers[name]) return false
+        req.c.oncelers[name] = 1
+        req.sc[name] = 1
+        return true
+    },
+
     // uniform req diagnostic string: "req:N   see   (~urgency:old→new)   finished:1,path:foo"
     //   mix_sc shows which keys changed, with old→new when old value is known from %mutated.
     req_diag(req: TheC, sc: { see?: string, mix_sc?: Record<string,any> } = {}): string {
@@ -508,20 +530,7 @@
         if (rest) parts.push(rest)
         return parts.join('   ')
     },
- 
-    // one-shot flag helper — stamps %name on req.sc and req.c.oncelers.
-    //   rq.finish() yoinks both; snap shows only %finished after completion.
-    // doesn't create another req, a sub-req or so,
-    //  it just sets eg req%grafted and returns true if it wasn't already there
-    //   so you can gate a one-time block.
-    reqonce(req: TheC, name: string): boolean {
-        req.c.oncelers ||= {}
-        if (req.c.oncelers[name]) return false
-        req.c.oncelers[name] = 1
-        req.sc[name] = 1
-        return true
-    },
- 
+
     // upon new Story step, forget per-step noise on all req** under w
     async Runstepped_reqy_pageturning(w: TheC) {
         await this.reqy_recurse(w, { each_fn: async (req: TheC) => {
@@ -529,6 +538,7 @@
         }})
     },
  
+    // < doesn't need to be this complicated since all req and %req
     // Travel through w/** of reqy stuff by following /%reqcons leads.
     //   each_fn(req) is called for every req found at any depth.
     async reqy_recurse(w: TheC, q: { each_fn?: (req: TheC) => Promise<void> } = {}) {
