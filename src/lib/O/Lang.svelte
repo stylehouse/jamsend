@@ -628,28 +628,6 @@
         this.i_elvisto(w, 'think')
     },
 
-    // ── e:Lang_open_dock — retired ────────────────────────────────────────────
-    //
-    //   Superseded by e_Lang_dock_content.  The dock is no longer minted from a
-    //   { path, text } carry pushed by req:Open in Lies; it is minted from the
-    //   %Good handed back over the dock_content seam (Lies_provide_dock → drain),
-    //   which carries the durable %Good (bytes off-snap, dige on /known) rather
-    //   than a transient text copy.  e_Lang_dock_content is the one content-writer.
-    //   //< kept as a stub for any hold-over caller; remove once none remain.
-    async e_Lang_open_dock(A: TheC, w: TheC, _e?: TheC) {
-        const H = this as House
-        for (const e of H.o_elvis(w, 'Lang_open_dock')) {
-            const path = e.sc.path as string
-            const text = (e.sc.text as string | undefined) ?? ''
-            const docks = w.oai({ docks: 1 })
-            docks.c.up  ??= w
-            const dock  = docks.oai({ dock: path })
-            dock.c.up   ??= docks
-            await H.Lang_drive_languish(w, dock, text)
-            dock.c.content_dige ??= ''   // mark minted so a furnishing can finish
-        }
-    },
-
     // ── Lang_drive_languish ────────────────────────────────────────────────────
     //
     //   Mint-or-refresh the per-dock req:Languish and drive one do() pass.
@@ -759,7 +737,8 @@
         const wv         = LE.o({ Seem: 'working' })[0]?.version ?? 0
         const u_serial   = (LE.c.U_serial as number | undefined) ?? 0
         const od         = LE.c.origin_dirty ? 1 : 0
-        const u_sig      = `${H.Lang_src_serial(workon, src)}:${wv}:${u_serial}:${od}`
+        const src_serial = H.Lang_src_serial(workon, src)   // bumps on every What move
+        const u_sig      = `${src_serial}:${wv}:${u_serial}:${od}`
         await wsub.roai({ req: 'understanding' }, { sig: u_sig })
 
         // ingredients — the wanted-%Doc set, from %Interest.  in_Doc is the only
@@ -769,14 +748,18 @@
         const g_sig    = (interest?.sc.in_Doc as string | undefined) ?? ''
         await wsub.roai({ req: 'ingredients' }, { sig: g_sig })
 
-        // instrumentation — the active dock and its content dige.  Only the active
-        //   dock's content drives compile|graft; a look-ahead furnishing warming
-        //   another dock leaves this untouched.
+        // instrumentation — the active dock, its content dige, the cursor identity,
+        //   and the working version.  Compile keys on dige; graft keys on the
+        //   working clone, so it must re-run on any cursor move (a different What,
+        //   even on the SAME Doc → different Points) and on in-What working edits.
+        //   src_serial catches the cross-What-same-Doc move (wv resets on re-clone
+        //   and can collide, so wv alone misses it); wv catches the in-What edit.
+        //   graft's own fingerprint then decides whether to actually rebuild.
         const active = w.c.active_dock_path as string | undefined
         const dock   = active
             ? (w.o({ docks: 1 })[0]?.o({ dock: active })[0] as TheC | undefined)
             : undefined
-        const n_sig  = `${active ?? ''}:${(dock?.c.content_dige as string | undefined) ?? ''}`
+        const n_sig  = `${active ?? ''}:${(dock?.c.content_dige as string | undefined) ?? ''}:${src_serial}:${wv}`
         await wsub.roai({ req: 'instrumentation' }, { sig: n_sig })
 
         // pump the pipeline — maz orders understanding → ingredients → instrumentation.
@@ -909,7 +892,7 @@
             if (f.sc.path !== want_doc) req.drop(f)
         }
         ;(await rq.doai({ req: 'furnishing', path: want_doc, permanent: 1 }))?.(
-            async (f: TheC) => H.Lang_furnishing(w, f))
+            async (f: TheC, fq: any) => H.Lang_furnishing(w, f, fq))
 
         await rq.do()
         rq.unify_finished()   // ← finished when every furnishing is
@@ -929,14 +912,14 @@
     //   The %Good arriving (push or pull) de-finishes us via the dock_content
     //   handler; on a later inotify re-land it would wake us again — the dock as a
     //   standing push|pull boundary.
-    async Lang_furnishing(w: TheC, req: TheC) {
+    async Lang_furnishing(w: TheC, req: TheC, q: any) {
         const H    = this as House
         const path = req.sc.path as string
-        if (!path) { req.sc.finished = 1; return }
+        if (!path) { q.finish(req); return }
 
         const dock = w.o({ docks: 1 })[0]?.o({ dock: path })[0] as TheC | undefined
         if (dock && dock.c.content_dige !== undefined) {
-            req.sc.finished = 1
+            q.finish(req)   // finish() drops the waiting:dock ttlilt — no dangler
             return
         }
 
@@ -1015,6 +998,9 @@
             H.i_req_ttlilt(req, 3.0, { waiting: 'methods' })
             return
         }
+        // the waiting:methods ttlilt is dropped by q.finish below (finish() clears
+        //  all ttlilts on the req) — we always finish in this same pass once methods
+        //   are ready, so no separate drop is needed.
 
         // graft — self-caching via dock.c.graft_cache_key; cheap every wake.
         await H.Lang_graft_points_once(w, dock)

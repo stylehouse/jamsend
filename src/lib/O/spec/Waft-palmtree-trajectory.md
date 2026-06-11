@@ -61,15 +61,21 @@ w:Lang
   /%Languinio
     /%LE                  same-object hold → /docks/%dock:$path/%LE
                           //   installed at Lang_plan; unarmed until first cursor move
-    /%Interest            sc.src = working clone root
+    /%Interest            sc.src = working clone root; sc.in_What, in_Doc, in_Point
+                          //   in_Doc keys req:ingredients; in_Point keys decoration
     /%dock:$path           same-object hold → /docks/%dock:$path
   /req:workon
     c.src                 latest cursored TheC (stashed by e_Lang_workon_update)
-    /req:settle           permanent, open-ended — Lang_settle do_fn
-      /%checkout          c.armed_src, sc.what — identity-keyed re-arm gate
-      /%furnish           sc.doc_path, sc.have_dock
-      /%compile           sc.have_methods
-      /%graft             sc.n_pmirrors
+    //  do_fn = Lang_workon_drive — thin per-tick driver; roai's each stage with its
+    //  input signature (un-finishes %permanent on drift), then pumps the pipeline.
+    /req:understanding,maz:3,permanent   re-arm LE + flush; sets %Interest
+      c.armed_src         identity-keyed re-arm gate (memoised)
+      sc.what             cursored What|path label for the snap
+    /req:ingredients,maz:2,permanent     the wanted %Goods, from %Interest.in_Doc
+      /req:furnishing,path,permanent     one per wanted dock; gate + ttlilt +
+                          //   dock_askies pull.  Finished when dock has content_dige.
+    /req:instrumentation,maz:1,permanent compile + graft on the active dock
+      sc.have_methods, sc.n_pmirrors     convergence markers (results live on dock)
     /req:push             encode → replace → verify; /%dirty fault child
 
   /docks/%dock:$path
@@ -326,13 +332,22 @@ Minimal fix: after `LiesStore_write` returns a req (not null), park a check in e
 
 ### 5. Doc close is incomplete  *(Lies:112, LiesStore:202)*
 
-`Lies_sync_waft_docs` drops unfinished `req:Open` for Docs no longer in any Waft.  It does not:
-- drop the `Good,type:'text/Doc'` slot
-- fire anything to Lang to close the dock (the Languish req, the CM view, the %dock particle)
+`Lies_sync_waft_docs` is the `%Good` GC hook — when a Doc path leaves every
+Waft it should drop the `Good,type:'text/Doc'` slot.  It does not yet:
+- drop the `%Good` (body is a no-op stub)
+- fire anything to Lang to close the dock (the Languish req, the CM view, the
+  `%dock` particle)
 
-A removed Doc stays loaded in Lang, compile-able, and editable.  The watcher wired in `LiesPersist` fires `Lies_sync_waft_docs` on every Waft change — the hook is right, the body is incomplete.
+A removed Doc stays loaded in Lang, compile-able, and editable.  The watcher
+wired in `LiesPersist` fires `Lies_sync_waft_docs` on every Waft change — the
+hook is right, the body is incomplete.
 
-Sequence needed: find the Good → drop it → if a dock is open in Lang, fire `e_Lang_close_dock` (not yet written) that drops the dock particle, dispatches CM destroy, and clears active_dock if it was that doc.
+Sequence needed: find the Good → drop it → if a dock is open in Lang, fire
+`e_Lang_close_dock` (not yet written) that drops the dock particle, dispatches
+CM destroy, and clears active_dock if it was that doc.
+
+Note: `req:Open` no longer exists — Doc provisioning is now content-keyed on
+`%Good` with the `dock_askies`|`dock_content` seam; no per-doc req to sweep.
 
 ---
 
