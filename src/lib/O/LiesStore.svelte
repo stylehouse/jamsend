@@ -25,14 +25,13 @@
     //   req:LiesStore_write,path,dige   — one stable req per (path, content-hash) pair.
     //   req:LiesStore_read,rw_name      — one stable req per wormhole path (+ optional label).
     //   req:LiesStore_listing,rw_dir    — one stable req per directory path.
-    //   req:Open,path                   — demand-load a source file; provisions
-    //                                    Good,type:'text/Doc' then dispatches to Lang.
-    //                                    Kept finished — re-visits are idempotent.
     //   Good,type,path                  — one resource slot (see the Good region).
     //                                    c.content off-snap; /known the dige record —
     //                                     dige + kind (read|write) + at, the single
     //                                      memory of disk state, read by writeCarefully's
-    //                                       cavalier skip.
+    //                                       cavalier skip.  A %Good/%subscribe,Aw,wake
+    //                                        records where to hand the %Good back when
+    //                                         content lands — the dock seam to Lang.
     //
     // ── Lifecycle: who picks up a finished req ────────────────────────────────
     //
@@ -45,30 +44,31 @@
     //      A read is consume-then-drop: its reply lives only briefly — the accessor
     //      reads req.sc.reply within the one do() cycle Phase 2 grants (re-call each
     //      tick, do not hold a read across ticks), and when a value must outlive that
-    //      cycle it is copied onto a %Good (the durable carrier — see
-    //      LiesStore_read_good).  A writeCarefully has no accessor at all: it drives
+    //      cycle it is landed onto a %Good (the durable carrier — see
+    //      LiesStore_land_good).  A writeCarefully has no accessor at all: it drives
     //      the save across ticks, finishes, and Store sweeps it next pass.  What it
     //      put on disk is remembered on the %Good's /known, not on the req — so the
     //      finished req holds nothing worth keeping.
     //
-    //   2. Kept-by-design + explicit sweep  (req:Open, Good)
-    //      These finish and linger on purpose: a finished req:Open is a cache hit
-    //      that lets a re-visit skip the load.  Each has a named sweep, not a
-    //      Phase-2 auto-drop:
-    //        - req:Open  — Lies_sync_waft_docs trims it when its path leaves every Waft.
-    //        - Good      — delete good.c.content forces a re-read; a stale Good is
-    //                      reclaimed by the same future req:refresh that the
-    //                      roai-corpse audit will own.
-    //      A lingering finished req here means "still useful," not "unpicked-up."
+    //   2. Kept-by-design + explicit sweep  (Good)
+    //      A %Good finishes-equivalent (content landed) and lingers on purpose: it
+    //      is the durable carrier a re-visit reads instead of re-loading.  Its sweep
+    //      is named, not a Phase-2 auto-drop:
+    //        - Good — delete good.c.content forces a re-read; a stale Good is
+    //                 reclaimed by the same future req:refresh that the
+    //                 roai-corpse audit will own.
+    //      A lingering %Good means "still useful," not "unpicked-up."
     //
     //   How a consumer waits without touching Store's reqs: it does not poll the
-    //   read req — it holds a %Good ref and reads good.c.content (undefined→loading,
-    //   null→absent, string→content), or drops a Good/subscribe,of_req to be woken
-    //   by reqyoncile when content lands.  w:Lang's req:settle is the same shape on
-    //   the far side: it holds its own gate particles (%furnish/%compile) and
+    //   read req — it registers a %Good/%subscribe,Aw,wake and is handed the %Good
+    //   by an elvis when content lands (the producer-side drain in Phase 2 |
+    //   LiesStore_drain_good).  w:Lang's req:furnishing is the same shape on the
     //   re-checks have_dock / have_methods each pass, arming a ttlilt while a gate
     //   is open, rather than reaching across into Store.  The producer (Store) and
-    //   the consumer (settle) never share a req — they meet at the Good and the dock.
+    //   far side: it holds its own gate state and re-checks the dock each pass,
+    //   arming a ttlilt while waiting, rather than reaching across into Store.  The
+    //   producer (Store) and the consumer (req:furnishing) never share a req —
+    //   they meet at the Good and the dock.
     //
     // ── API synopsis ──────────────────────────────────────────────────────────
     //
@@ -195,25 +195,51 @@
 
     // ── Lies_sync_waft_docs ───────────────────────────────────────────────────
     //
-    //   Trim unfinished req:Open particles under req:Store for Docs no longer
-    //   wanted by any loaded Waft (CRUD removal).  Checks all wafts — a path
-    //   might appear in more than one, so we only drop when gone from all.
-    //   Doc loading is demand-driven via Lies_roai_Open.
-    //   < full close on Doc removal: future work.
-    Lies_sync_waft_docs(w: TheC, _waft: TheC) {
-        const H     = this as House
-        const store = H.reqy(w).o({ req: 'Store' })[0] as TheC | undefined
-        if (!store) return
-        // gather all doc paths across all loaded wafts
-        const all_live = new Set(
-            (w.o({ Waft: 1 }) as TheC[])
-                .flatMap(wf => (wf.o({ Doc: 1 }) as TheC[]).map(d => d.sc.Doc as string))
-        )
-        for (const req of H.reqy(store).o({ req: 'Open' }) as TheC[]) {
-            if (req.sc.finished) continue
-            const path = req.sc.path as string | undefined
-            if (path && !all_live.has(path)) store.drop(req)
+    //   Hook for trimming dock %Good no longer wanted by any loaded Waft (CRUD
+    //   removal).  Doc provisioning is now content-keyed on %Good and woken via
+    //   %subscribe — there is no per-doc req to sweep.  %Good GC (delete a stale
+    //   %Good when its path leaves every Waft) is the natural home here.
+    //   //< %Good GC on Doc removal — future work; a stale %Good is harmless but
+    //   //< holds content off-snap until the session ends.
+    Lies_sync_waft_docs(_w: TheC, _waft: TheC) {
+        // < no-op until %Good GC lands; kept as the wired call site for it.
+    },
+
+    // ── Lies_provide_dock ─────────────────────────────────────────────────────
+    //
+    //   Producer entry for a dock's content — shared by the speculative push
+    //   (Lies_resolve_wants, off the cursor) and the pull (e_Lies_dock_askies,
+    //   when Lang finds itself wanting a %Good it hasn't got).  Both converge on
+    //   one idempotent gesture: ensure the %Good is being read, and record a
+    //   %subscribe that hands it to Lang/Lang when warm.
+    //
+    //   LiesStore_read_good warms (or finds already-warm) the %Good; if content
+    //   is already in hand it lands+drains synchronously, so an already-warm path
+    //   fires dock_content immediately.  A cold path leaves the %subscribe for
+    //   req:Store Phase 2 to drain when the read lands.
+    async Lies_provide_dock(w: TheC, path: string): Promise<void> {
+        const H    = this as House
+        const good = await H.LiesStore_read_good(w, 'text/Doc', path)
+        if (good.c.content === undefined) {
+            // cold — register where to push when the read lands (Aw + wake, not
+            //  a held ref); oai keeps it single across repeated provides.
+            const sub = good.oai({ subscribe: 1, Aw: 'Lang/Lang', wake: 'dock_content' })
+            void sub
+            return
         }
+        // already warm — hand it straight back so a re-point lands the dock now.
+        H.LiesStore_drain_good_now(w, good)
+    },
+
+    // ── LiesStore_drain_good_now ──────────────────────────────────────────────
+    //   Push an already-warm %Good to Lang without waiting for a read-land drain.
+    //   Used by Lies_provide_dock on the warm path; mirrors the Phase-2 drain but
+    //   fires a single handback for the standing Lang/Lang dock_content seam.
+    LiesStore_drain_good_now(_w: TheC, good: TheC): void {
+        const H = this as House
+        // drop any pending cold subscribe (we are about to satisfy it), then push.
+        for (const sub of good.o({ subscribe: 1 }) as TheC[]) good.drop(sub)
+        H.i_elvisto('Lang/Lang', 'dock_content', { Good: good })
     },
 
     // ── Lies_spawn_look_waft ──────────────────────────────────────────────────
@@ -366,6 +392,20 @@
             if (rd.sc.seen) {
                 req.drop(rd)
                 continue
+            }
+            // First sight of a finished read — land its content onto any %Good
+            //  waiting on this path, and hand the %Good to whoever subscribed.
+            //  A subscriber registers where-to-notify (Aw + wake), never re-polls,
+            //   so the landing must happen here on the producer side; this is the
+            //    push half of the dock %Good push|pull, and it is the only place a
+            //     read-land reaches a waiting %Good.
+            const path = rd.sc.rw_name as string | undefined
+            if (path) {
+                for (const good of req.o({ Good: 1, path }) as TheC[]) {
+                    if (good.c.content !== undefined) continue   // already landed
+                    await H.LiesStore_land_good(good, rd.sc.reply)
+                    H.LiesStore_drain_good(good)
+                }
             }
             rd.sc.seen = 1   // caller has one more cycle to read reply, then we drop
         }
@@ -622,9 +662,12 @@
     //                            string    → the content
     //     known              — dige + kind:read|write + at  (the snapped fingerprint)
     //     not_found:1        — snapped flag mirroring c.content===null
-    //     subscribe,of_req   — one-shot waker: c.of_req = req; drained by reqyoncile
-    //                          when content lands.  req_Open uses this instead of ttlilt.
-    //     // < req:refresh   — TTL-based re-read (not yet)
+    //     subscribe,Aw,wake  — one-shot handback registration: when content lands,
+    //                          the drain fires Aw <- e:wake%Good, handing the whole
+    //                          %Good to the consumer (it matches by Good%path).
+    //                          Lang's req:furnishing registers this instead of a req.
+    //     // < req:refresh   — TTL-based re-read (not yet); a re-land would re-drain
+    //     //                   the same subscribe — the dock as a standing push|pull.
     //
     //   type is a media|semantic tag: 'text/Waft', 'text/Doc', 'text/plain', …
     //   The dige in /known is what the snap records; the bytes live off-snap on .c
@@ -632,11 +675,11 @@
     //
     //   Goods live UNDER req:Store, beside the IO reqs and known impressions — so
     //   the whole LiesStore footprint is the one req:Store subtree.  Children of
-    //   Store (req_Open, req_LiesStore_writeCarefully, req_Store) already hold the
-    //   store ref; outside readers find it via reqy(w).o({req:'Store'}) — see
-    //   LiesStore_good_of.
+    //   Store (req_LiesStore_writeCarefully, req_Store) already hold the store ref;
+    //   outside readers find it via reqy(w).o({req:'Store'}) — see LiesStore_good_of.
     //
-    //   req:Open provisions Good,type:'text/Doc' then dispatches to Lang.
+    //   Lies_provide_dock warms a Good,type:'text/Doc' and registers the handback;
+    //   the drain hands the %Good to Lang.  No demand-load req lives on either side.
     //
     // ── LiesStore_good ────────────────────────────────────────────────────────
     //   Find-or-create the %Good slot under req:Store.  Idempotent across ticks.
@@ -660,12 +703,13 @@
     //   while in flight so Story stays awake.
     //
     //   Read good.c.content:
-    //     undefined → still loading — caller returns/waits
+    //     undefined → still loading — caller returns|waits
     //     null      → confirmed not_found
     //     string    → the content
     //
     //   On a fresh read it stamps /known (dige + kind:read + at).  To force a
-    //   re-read: `delete good.c.content`.
+    //   re-read: `delete good.c.content`.  The land|drain pair below is shared
+    //   with req:Store Phase 2 so a read that finishes there lands identically.
     async LiesStore_read_good(
         w:    TheC,
         type: string,
@@ -681,8 +725,20 @@
         const req = await H.LiesStore_read(w, path)
         if (!req.sc.finished) return good   // c.content still undefined → caller waits
 
-        const content   = req.sc.reply?.content as string | undefined
-        const not_found = !!req.sc.reply?.not_found
+        await H.LiesStore_land_good(good, req.sc.reply)
+        H.LiesStore_drain_good(good)
+        return good
+    },
+
+    // ── LiesStore_land_good ───────────────────────────────────────────────────
+    //
+    //   Settle a read reply onto a %Good: content off-snap on c.content, the
+    //   fingerprint on /known.  The dige is awaited so it is in place before any
+    //   subscriber reads the %Good.  Idempotent — a %Good already landed is left
+    //   alone (caller guards on c.content !== undefined, but double-call is safe).
+    async LiesStore_land_good(good: TheC, reply: any): Promise<void> {
+        const content   = reply?.content as string | undefined
+        const not_found = !!reply?.not_found
 
         good.c.content = not_found ? null : (content ?? '')
         if (not_found) {
@@ -695,16 +751,28 @@
             known.sc.at   = Date.now() / 1000
         }
         good.bump_version()
+    },
 
-        // drain subscribers — reqyoncile wakes waiting reqs directly rather than
-        //  relying on the next world-think; each subscribe is one-shot.
+    // ── LiesStore_drain_good ──────────────────────────────────────────────────
+    //
+    //   Hand a freshly-landed %Good to everyone subscribed.  A %subscribe records
+    //   where to notify (Aw + wake), not who — so the %Good itself rides back as
+    //   the whole vocabulary, and the subscriber matches it by Good%path.  This
+    //   is what supplants req:Open: no demand-load req on the consumer side, just
+    //   a one-shot wake carrying the durable %Good.
+    //
+    //   A subscribe is one-shot for a cold read; a future inotify backend would
+    //   re-land the %Good and re-drain, re-pushing to the same Aw — the dock as a
+    //   standing push|pull boundary, no re-subscribe needed.  For now the read is
+    //   the only trigger, so we drop each subscribe after firing.
+    LiesStore_drain_good(good: TheC): void {
+        const H = this as House
         for (const sub of good.o({ subscribe: 1 }) as TheC[]) {
-            const target = sub.c.of_req as TheC | undefined
-            if (target) H.reqyoncile(target)
+            const Aw   = sub.sc.Aw   as string | undefined
+            const wake = sub.sc.wake as string | undefined
+            if (Aw && wake) H.i_elvisto(Aw, wake, { Good: good })
             good.drop(sub)
         }
-
-        return good
     },
 
 //#endregion
