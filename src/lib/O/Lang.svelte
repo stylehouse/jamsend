@@ -753,17 +753,19 @@
         await wsub.roai({ req: 'ingredients' }, { sig: g_sig })
 
         // instrumentation — the active dock, its content dige, the cursor identity,
-        //   and the working version.  Compile keys on dige; graft keys on the
-        //   working clone, so it must re-run on any cursor move (a different What,
-        //   even on the SAME Doc → different Points) and on in-What working edits.
-        //   src_serial catches the cross-What-same-Doc move (wv resets on re-clone
-        //   and can collide, so wv alone misses it); wv catches the in-What edit.
-        //   graft's own fingerprint then decides whether to actually rebuild.
+        //   and the Understanding's own version.  Compile keys on dige; graft keys
+        //   on the working clone, so it must re-run on any cursor move (a different
+        //   What, even on the SAME Doc → different Points) and on in-What working
+        //   edits.  src_serial catches the cross-What-same-Doc move; LE.version is
+        //   bumped by LE_arm (re-aim) and e_LE_mark (in-What edit), so it subsumes
+        //   the in-What case the old wv term missed (a clone-root child-add never
+        //   bumps the Seem's wv).  The graft's own fingerprint then decides whether
+        //   to actually rebuild — a redundant wake is a cheap no-op.
         const active = w.c.active_dock_path as string | undefined
         const dock   = active
             ? (w.o({ docks: 1 })[0]?.o({ dock: active })[0] as TheC | undefined)
             : undefined
-        const n_sig  = `${active ?? ''}:${(dock?.c.content_dige as string | undefined) ?? ''}:${src_serial}:${wv}`
+        const n_sig  = `${active ?? ''}:${(dock?.c.content_dige as string | undefined) ?? ''}:${src_serial}:${LE.version}`
         await wsub.roai({ req: 'instrumentation' }, { sig: n_sig })
 
         // pump the pipeline — maz orders understanding → ingredients → instrumentation.

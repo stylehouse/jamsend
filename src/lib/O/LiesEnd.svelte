@@ -236,7 +236,15 @@ await M.eatfunc({
         // (structure, clone sc, or U meanings) without waiting for a cursor move.
         // A cursor move bumps Seem:working.version; these ops don't, so the serial
         // on .c is the lever that makes encode_key move for them.
-        if (U_mutated) LE.c.U_serial = ((LE.c.U_serial as number) ?? 0) + 1
+        //   U_serial rides on .c — invisible to vers, so it wakes the Atime
+        //   encode_key but nothing reactive.  LE.bump_version() is the companion
+        //   on the vers side: it wakes the UItime strip (NaviCado voids LE.vers)
+        //   and, via LE.version in req_workon's instrumentation sig, re-grafts the
+        //   Pmirrors same-tick instead of waiting for a trickle think.
+        if (U_mutated) {
+            LE.c.U_serial = ((LE.c.U_serial as number) ?? 0) + 1
+            LE.bump_version()
+        }
 
         H.feebly_ponder()
     },
@@ -473,7 +481,11 @@ await M.eatfunc({
         state.sc = { State: 1, armed: 1 }
         // The push fault now lives at req:push/%dirty (the push cluster owns it),
         // not on %LE — nothing to clear here.
-    },
+        //   A re-aim is a total redo of the Understanding: bump LE.version so a
+        //   same-Doc-different-What hop (which moves no dock and no dige) still
+        //   wakes the UItime strip and drifts req_workon's instrumentation sig
+        //   (LE.version) to re-graft — the lever for the case sc-serials missed.
+        LE.bump_version()
 
     // ── LE_pull ─────────────────────────────────────────────────────────────
     // Orchestration:
@@ -740,9 +752,15 @@ await M.eatfunc({
         })
 
         // Merge changey into the existing %State without replacing stale/armed.
+        //   changey rides on State.sc (direct assign — no bump), so flip LE.version
+        //   when it transitions, else the UItime unsent bar (is_changey, keyed on
+        //   LE.vers) never learns the encode settled.  Gated on a real edge so a
+        //   re-encode that finds the same answer stays quiet.
         const state = LE.oai({ State: 1 })
+        const was_changey = !!state.sc.changey
         if (changey) state.sc.changey = 1
         else delete state.sc.changey
+        if (changey !== was_changey) LE.bump_version()
 
         return { snap_origin: o.snap, snap_working: wk.snap, dirty: changey, encode_errors }
     },

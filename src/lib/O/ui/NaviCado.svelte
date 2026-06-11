@@ -4,22 +4,30 @@
     // ── What this is ─────────────────────────────────────────────────────────
     //
     //   Toolbar for the active Understanding (%LE) plus the tools row for
-    //   branch/dive gestures, Point injection, and req:desire transport.
-    //   Owns the Pmirror capsule strip and the unsent bar.
+    //   branch|dive gestures, Point injection, and req:desire transport.
+    //   Owns the capsule strip and the unsent bar.
+    //
+    //   The strip is a pure renderer of %LE: it holds no parallel model.  Each
+    //   capsule is one Point of the Understanding, read by joining the working
+    //   clone tree (membership + clone//U meanings) to dock/%Pmirrors (the live
+    //   CM position + resolved-vs-unresolved state).  Push|reset are op('push')
+    //   |op('pull') on %LE; show|drop are e:mark ops on the clone's U node.  No
+    //   Lies_accept_What_Point round-trip, no in_group|showing|pushed_snapshot —
+    //   %LE is the single source, LE_arm resets it atomically so there is no
+    //   coexistence window where a prior What's Points linger.
     //
     // ── Particle sources ──────────────────────────────────────────────────────
     //
     //   H.ave/%Languinio — same-object hold; carries:
     //     /%LE           — the live Understanding
-    //     /%dock,path    — the foregrounded %Dock (active:1)
-    //   H.ave/%examining/%Spotlight,1 — sc.accepted_push_id / sc.accepted_entries
-    //     echoed back from Lies_accept_What_Point round-trip.
+    //     /%dock,active  — the foregrounded %Dock (carries %Pmirrors, %Compile)
+    //   H.ave/%examining/%Spotlight,1 — the live cursor (nav-bar target).
     //
     // ── Nav buttons (top row) ─────────────────────────────────────────────────
     //
-    //   ↑  ←  →  — emit op(kind) → i_elvisto(Lies, 'operate', { LE, op }) where op is
-    //   'up'/'prev'/'next'.  Handler (LiesCurse) reads the live cursor from
-    //   %examining/%Spotlight and drives movement from there.
+    //   ↑  ←  →  — emit op(kind) → i_elvisto(Lies, 'operate', { LE, op }) where op
+    //   is 'up'|'prev'|'next'.  Handler (LiesEnd e_LE_operate) reads the live
+    //   cursor from %examining/%Spotlight and drives movement from there.
     //
     //   < once LE_available_ops is wired into req:checkout, %LE/%moves.sc.ops
     //     replaces the static ↑←→ set with one chip per reachable move,
@@ -27,38 +35,36 @@
     //
     // ── Tools row (second row, always when LE armed) ──────────────────────────
     //
-    //   ↘ dive / ↓ branch — moved here from the nav bar.
+    //   ↘ dive | ↓ branch — +time gestures.
     //   PeelItem — type a method name, Enter → mark('add', ...).
-    //   req:desire transport (‖/▶, →step) — only when req:timemachine exists.
-    //   Unsent bar (~↑↩) — absolute overlay when in_group state has drifted.
+    //   req:desire transport (‖|▶, →step) — only when req:timemachine exists.
+    //   Unsent bar (~↑↩) — overlay shown while %State%changey holds (working has
+    //   diverged from origin).  ↑ = op('push'); ↩ = op('pull') (two-tap).
     //
     // ── Capsule strip ────────────────────────────────────────────────────────
     //
-    //   in_group — specs currently in the strip (session only).
-    //   showing  — subset of in_group whose fold/glow is active (session only).
-    //   Orb = showing toggle.  × = demote; never re-auto-promotes.
-    //   Auto-promoted on first Pmirror arrival; pushed_snapshot syncs so the
-    //   unsent bar stays hidden until the user actually changes something.
-    //
-    //   Capsule label click — fires Dock_open%{path,point:spec} → e_Dock_open → Lang_point_navigate.
-    //   × fires mark('drop', ...) when LE is armed at a %What; else
-    //   local demote() for bare %Doc sessions.
-    //   Push fires Lies_accept_What_Point; Reset reverts to pushed_snapshot (two-tap).
+    //   One capsule per Point of the Understanding.  Orb = show|unshow toggle
+    //   (clone//U%unshowing).  × = drop|undrop (clone//U%unaccepted — virtual
+    //   deletion, struck through).  Label click — fires Dock_open%{path,point:spec}
+    //   → e_Dock_open → Lang_point_navigate.
 
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import type { Snippet } from "svelte"
 
-    // A Point becomes a PointMark once its graft fields have been stamped by
-    // Lang_graft_points.  unresolved:true means LangGraft hasn't found the
-    // method in the compile index yet (pre-compile, or name changed).
-    type PointMark = {
+    // A capsule is one Point of the Understanding, after the clone⨝Pmirror join.
+    //   resolved:false — LangGraft has no def in the compile index for this spec
+    //     yet (pre-compile, or a rename); rendered dim-red, strikethrough.
+    //   unaccepted — clone//U%unaccepted: a virtual deletion, struck through,
+    //     undroppable via the × (which toggles back to undrop).
+    //   unshowing — clone//U%unshowing: folded out of the CM view; the orb dims.
+    type Capsule = {
         spec:       string
-        method:     string
+        resolved:   boolean
         line:       number
-        from:       number
-        to:         number
-        unresolved: boolean
+        unaccepted: boolean
+        unshowing:  boolean
+        cls:        string
     }
 
     let { H, slot_up, slot_prev, slot_next }: {
@@ -77,19 +83,29 @@
 
     // active_path: which dock is currently foregrounded.
     let active_path = $derived(
-        (languinio?.ob({ dock:1,active: 1 })[0]?.sc.dock as string | undefined) ?? ''
+        (languinio?.ob({ dock: 1, active: 1 })[0]?.sc.dock as string | undefined) ?? ''
     )
 
-    // lang_dock: the actual %Dock particle (carries Compile, Pmirrors etc.).
-    let lang_dock: TheC | undefined = $state()
-    $effect(() => {
-        lang_dock = active_path
+    // lang_dock: the actual %Dock particle (carries %Compile, %Pmirrors).
+    //   .ob so a %Pmirrors rebuild (graft bumps dock.version) re-derives.
+    let lang_dock = $derived(
+        active_path
             ? languinio?.ob({ dock: active_path })[0] as TheC | undefined
             : undefined
-    })
+    )
+
+    // %LE — the live Understanding.  .ob so a re-aim (languinio.i(LE)) re-derives.
     let LE: TheC | undefined = $derived(
         languinio?.ob({ LE: 1 })[0] as TheC | undefined
     )
+
+    // working — the %Seem:working particle; clone_root is its C** root.  Both are
+    //   tracked as join inputs: a cursor move bumps working; a clone add|drop on
+    //   the root bumps clone_root.  LE_arm + e_LE_mark also bump LE.version, so
+    //   void LE?.vers alone covers most, but tracking all three keeps the join
+    //   live regardless of which lever moved.
+    let working   = $derived(LE?.vers && (LE.o({ Seem: 'working' })[0] as TheC | undefined))
+    let clone_root = $derived(working ? (working.sc.C as TheC | undefined) : undefined)
 
     // ── nav bar reactive derivation ───────────────────────────────────────────
 
@@ -115,248 +131,135 @@
     let has_up     = $derived(depth > 0)
     let has_prev   = $derived(target ? !!(H as any).LE_what_dfs_prev(target) : false)
     let has_next   = $derived(target ? !!(H as any).LE_what_dfs_next(target) : false)
-    // branch/dive always possible when a target is set
+    // branch|dive always possible when a target is set
     let has_target = $derived(!!target)
 
-    // ── capsule state ─────────────────────────────────────────────────────────
+    // ── changey — the unsent-bar signal ───────────────────────────────────────
+    //
+    //   %State%changey, set by LE_encode_compare when working has diverged from
+    //   origin.  LE_encode_compare bumps LE.version on the changey edge, so the
+    //   LE?.vers chain link wakes this derive when the encode settles.
+    let is_changey = $derived(!!(LE?.vers && (LE.ob({ State: 1 })[0]?.sc.changey)))
 
-    let in_group:        Set<string> = $state(new Set())
-    let showing:         Set<string> = $state(new Set())
-    // '' means nothing synced yet — unsent bar stays hidden.
-    let pushed_snapshot: string      = $state('')
-    let reset_confirm:   boolean     = $state(false)
+    // ── capsule join — LE_clones ⨝ %Pmirrors ───────────────────────────────────
+    //
+    //   The strip is a join, not a function call: LE_clones / the Pmirror walk
+    //   are .o()-internal (no version tracking), so the subscription comes from
+    //   voiding the input versions here, not from the calls.  We then re-read the
+    //   particle trees inside H.clear (UItime) so a mid-Atime replace() — LE_arm's
+    //   Seem drop, Seem_clone_C, Pmirrors.replace, LE_replace_back — is never
+    //   caught transacting (which for replace() reads momentarily empty).
+    //
+    //   Rows are driven by %Pmirrors (the doc-scoped, position-resolved Point
+    //   projection); each Pmirror's c.src_clone//U supplies the meanings.  Dropped
+    //   Points (clone//U%unaccepted) are excluded from %Pmirrors by LangGraft, so
+    //   the direct-%Point residue is appended struck-through from LE_clones.
+    //
+    //   < capsule identity is sc.method for now — fragile across a method rename.
+    //     the durable key is c.Dip: a unique id a Se assigns to every Waft OC at
+    //     the Lies end, threaded OC→C through LE so the working clone carries it.
+    //     key both the capsule row and %Pmirror,$spec on c.Dip once it exists,
+    //     leaving sc.method purely cosmetic.
+    let capsules: Capsule[] = $state([])
 
-    // Non-reactive; reset on path switch alongside the reactive state.
-    let _auto_promoted: Set<string> = new Set()
-    let _user_demoted:  Set<string> = new Set()
-    let _our_last_push_id = 0
-
-    let all_marks:    PointMark[]                                               = $state([])
-    let le_membership: Map<string, { unaccepted: boolean, unshowing: boolean }> = $state(new Map())
-
-    function current_what_point_json(): string {
-        const entries = [...in_group].map(spec => ({ spec, showing: showing.has(spec) }))
-        return JSON.stringify(entries)
+    const clone_spec = (c: TheC): string | null => {
+        const sc = c.sc as any
+        const v  = sc.method ?? sc.label ?? sc.Point
+        if (v == null || v === 1 || v === true) return null
+        return String(v)
     }
-
-    let is_dirty = $derived(pushed_snapshot !== '' && current_what_point_json() !== pushed_snapshot)
-
-    // ── Understanding switch — reset the strip when the checkout moves ─────────
-    //
-    //   Keyed on %Interest's in_What|in_Doc, not active_path.  A What hop on the
-    //   same Doc leaves active_path untouched yet checks out a different Point
-    //   set, so an active_path-only reset left the prior What's specs lingering
-    //     as spurious capsules — and with no live %Pmirror behind them (pm
-    //     undefined) they rendered as resolved.
-    //   The Understanding identity moves on every checkout, so this shakes the
-    //     strip clean on a same-Doc hop too.
-    let understanding_key = $derived.by(() => {
-        const interest = languinio?.ob({ Interest: 1 })[0] as TheC | undefined
-        void interest?.vers
-        const in_What = (interest?.sc.in_What as string | undefined) ?? ''
-        const in_Doc  = (interest?.sc.in_Doc  as string | undefined) ?? ''
-        return `${in_What}|${in_Doc}`
-    })
-
-    let _last_uk = ''
-    $effect(() => {
-        if (understanding_key !== _last_uk) {
-            in_group        = new Set()
-            showing         = new Set()
-            pushed_snapshot = ''
-            reset_confirm   = false
-            _auto_promoted  = new Set()
-            _user_demoted   = new Set()
-            _last_uk        = understanding_key
-        }
-    })
-
-    // ── collect_graft_marks ───────────────────────────────────────────────────
-    //
-    //   Walk lang_dock/%Pmirrors,1/%Pmirror,N.  A Pmirror with %graft,1 has been
-    //   resolved (live position from compile index); one without is unresolved.
-    function collect_graft_marks(): PointMark[] {
-        const out: PointMark[] = []
-        if (!lang_dock) return out
-        const Pmirrors = lang_dock.o({ Pmirrors: 1 })[0] as TheC | undefined
-        if (!Pmirrors) return out
-        for (const pm of Pmirrors.o({ Pmirror: 1 }) as TheC[]) {
-            const spec = (pm.sc.spec as string) || ''
-            if (!spec) continue
-            const graft = pm.o({ graft: 1 })[0] as TheC | undefined
-            if (!graft) {
-                out.push({ spec, method: spec, line: 1, from: 0, to: 0, unresolved: true })
-                continue
-            }
-            out.push({
-                spec,
-                method:     spec,
-                line:       graft.sc.line as number,
-                from:       graft.sc.from as number,
-                to:         graft.sc.to   as number,
-                unresolved: false,
-            })
-        }
-        return out
-    }
-
-    // ── collect_le_membership ─────────────────────────────────────────────────
-    //
-    //   Walk LE's working clones and return a Map of spec to membership flags.
-    //   Membership (unaccepted, unshowing) is OF the Point within the Understanding,
-    //   not IN the Point — it lives on clone.c.U.sc.
-    //   class lives on clone.sc directly (not U).
-    //
-    //   Spec resolution mirrors Lang_point_spec: method ?? label ?? Point-value.
-    //   Gate: LE must be armed at a %What src; empty Map for bare %Doc sessions.
-    function collect_le_membership(): Map<string, { unaccepted: boolean, unshowing: boolean }> {
-        const out = new Map<string, { unaccepted: boolean, unshowing: boolean }>()
-        if (!LE?.oa({ Seem: 'working' })) return out   // don't oai() — not ready to insert
-        const target_c = LE.sc.target as TheC | undefined
-        if (!target_c || (target_c.sc as any).What === undefined) return out
-        const clones = (H as any).LE_clones(LE) as TheC[]
-        for (const c of clones) {
-            const sc  = c.sc as any
-            const raw = sc.method ?? sc.label ?? sc.Point
-            if (raw == null || raw === 1 || raw === true) continue
-            const spec = String(raw)
-            out.set(spec, {
-                unaccepted: !!(c.c?.U?.sc?.unaccepted),
-                unshowing:  !!(c.c?.U?.sc?.unshowing),
-            })
-        }
-        return out
-    }
-
-    // ── rebuild marks when Pmirrors or LE change ──────────────────────────────
 
     $effect(() => {
-        void lang_dock?.vers
+        // subscribe to every join input — standalone `void X?.vers` reads then
+        //   discards (reactive); the `&&` form would short-circuit before the read.
         void LE?.vers
-        if (!LE?.oa({ Seem: 'working' })) return   // don't oai() create this accidentally!
-        const marks      = collect_graft_marks()
-        const membership = collect_le_membership()
+        void (working as TheC | undefined)?.vers
+        void clone_root?.vers
+        void lang_dock?.vers
+        const le_now   = LE
+        const dock_now = lang_dock
+        H.clear(async () => {
+            const out:  Capsule[] = []
+            const seen = new Set<string>()
 
-        // Auto-promote newly arrived specs into in_group + showing.
-        // Skips specs the user has explicitly demoted this session.
-        // After promotion, syncs pushed_snapshot so the bar doesn't appear yet.
-        const auto_ig = new Set(in_group)
-        const auto_sh = new Set(showing)
-        let did_promote = false
-        for (const mark of marks) {
-            if (_user_demoted.has(mark.spec))  continue
-            if (_auto_promoted.has(mark.spec)) continue
-            _auto_promoted.add(mark.spec)
-            auto_ig.add(mark.spec)
-            auto_sh.add(mark.spec)
-            did_promote = true
-        }
-        if (did_promote) {
-            in_group        = auto_ig
-            showing         = auto_sh
-            pushed_snapshot = JSON.stringify([...auto_ig].map(s => ({ spec: s, showing: auto_sh.has(s) })))
-            reset_confirm   = false
-        }
+            // Pmirror rows — accepted Points of the active doc, resolved or not.
+            const Pmirrors = dock_now?.o({ Pmirrors: 1 })[0] as TheC | undefined
+            for (const pm of (Pmirrors?.o({ Pmirror: 1 }) ?? []) as TheC[]) {
+                const spec = (pm.sc.spec as string) || ''
+                if (!spec) continue
+                const graft = pm.o({ graft: 1 })[0] as TheC | undefined
+                const u     = (pm.c.src_clone as TheC | undefined)?.c.U as TheC | undefined
+                out.push({
+                    spec,
+                    resolved:   !!graft,
+                    line:       (graft?.sc.line as number) ?? 0,
+                    unaccepted: false,
+                    unshowing:  !!u?.sc.unshowing,
+                    cls:        (u?.sc.class as string | undefined)
+                                ?? (pm.sc.class as string | undefined) ?? '',
+                })
+                seen.add(spec)
+            }
 
-        all_marks     = marks
-        le_membership = membership
-    })
-
-    // ── Spotlight echo — receive pushed state from Lies ───────────────────────
-    //
-    //   Fires on e_Lies_accept_What_Point round-trip.
-    //   Our own push is identified by _our_last_push_id — ignore to avoid loop.
-    $effect(() => {
-        void examining?.vers
-        const spot    = examining?.o?.({ Spotlight: 1 })?.[0] as TheC | undefined
-        const push_id = spot?.sc.accepted_push_id as number | undefined
-        const entries = spot?.sc.accepted_entries as { spec: string, showing: boolean }[] | undefined
-        if (!push_id || !entries) return
-        if (push_id === _our_last_push_id) return
-        receive_what_point_from_lies(entries)
-    })
-
-    // ── capsule actions ───────────────────────────────────────────────────────
-
-    function receive_what_point_from_lies(entries: { spec: string, showing: boolean }[]) {
-        _auto_promoted  = new Set(entries.map(e => e.spec))
-        _user_demoted   = new Set()
-        in_group        = new Set(entries.map(e => e.spec))
-        showing         = new Set(entries.filter(e => e.showing).map(e => e.spec))
-        pushed_snapshot = JSON.stringify(entries)
-        reset_confirm   = false
-    }
-
-    // Demote: remove from in_group+showing and prevent future auto-promotion.
-    // Used for bare %Doc sessions; armed %What sessions go through LE_operate.
-    function demote(spec: string) {
-        _user_demoted.add(spec)
-        const ig = new Set(in_group); ig.delete(spec)
-        const sh = new Set(showing);  sh.delete(spec)
-        in_group      = ig
-        showing       = sh
-        reset_confirm = false
-    }
-
-    // Toggle showing for an in-group spec (active vs dormant).
-    // Local showing set controls the CM fold/glow (session-only view state).
-    // U%unshowing on the clone is the Understanding-level persistence — both
-    // are toggled here so the UI strip and the U sphere stay in agreement.
-    function toggle_showing(spec: string) {
-        const is_unshowing = le_membership.get(spec)?.unshowing
-        const sh = new Set(showing)
-        if (sh.has(spec)) sh.delete(spec)
-        else              sh.add(spec)
-        showing       = sh
-        reset_confirm = false
-        // fire U-sphere mutation when LE is armed at a %What
-        if (LE && (LE.sc.target as any)?.sc?.What !== undefined)
-            mark(is_unshowing ? 'show' : 'unshow', { spec })
-    }
-
-    function push_what_point() {
-        const snap = current_what_point_json()
-        _our_last_push_id = Date.now()
-        H.i_elvisto('Lies/Lies', 'Lies_accept_What_Point', {
-            dock_path:  active_path,
-            what_point: JSON.parse(snap),
+            // Dropped-Point residue — direct %Point clones LangGraft skipped for
+            //   being U%unaccepted; shown struck-through so they can be undropped.
+            //   (Doc-nested Points have no clone of their own, so per-Point drop is
+            //    only representable for direct %Point clones at this granularity.)
+            if (le_now) {
+                for (const c of (H as any).LE_clones(le_now) as TheC[]) {
+                    const spec = clone_spec(c)
+                    if (!spec || seen.has(spec)) continue
+                    const u = c.c?.U as TheC | undefined
+                    if (!u?.sc.unaccepted) continue
+                    out.push({
+                        spec,
+                        resolved:   false,
+                        line:       0,
+                        unaccepted: true,
+                        unshowing:  !!u?.sc.unshowing,
+                        cls:        (u?.sc.class as string | undefined) ?? '',
+                    })
+                }
+            }
+            capsules = out
         })
-        pushed_snapshot = snap
-        reset_confirm   = false
-    }
+    })
 
-    // Two-tap: first tap arms; second tap executes.
-    function reset_what_point() {
-        if (!reset_confirm) { reset_confirm = true; return }
-        if (pushed_snapshot) {
-            const entries: { spec: string, showing: boolean }[] = JSON.parse(pushed_snapshot)
-            in_group = new Set(entries.map(e => e.spec))
-            showing  = new Set(entries.filter(e => e.showing).map(e => e.spec))
-        } else {
-            in_group = new Set()
-            showing  = new Set()
-        }
-        reset_confirm = false
-    }
-
-    // ── nav actions ───────────────────────────────────────────────────────────
+    // ── nav | mark actions ──────────────────────────────────────────────────────
     //
-    //   op()  — structural cursor move to w:Lies (e_operate → e_LE_operate in LiesCurse).
-    //   mark() — U-sphere mutation to w:Lang  (e_mark   → e_LE_mark  in Lang).
-    //   Both pass LE as a particle so the handlers need no ave round-trip.
-    //   op flows through as the %want kind — chatty in the resolver log.
+    //   op()  — structural cursor move | LE cluster trigger.  To w:Lies for moves
+    //     (up|prev|next|branch|dive|next_doc), to w:Lang for push|pull — both land
+    //     in e_LE_operate, which dispatches on the op.  Passes %LE as a particle so
+    //     handlers need no ave round-trip.
+    //   mark() — clone-tree | U mutation (e_LE_mark on w:Lang).
     const op   = (kind: string, extra?: Partial<TheUniversal>) =>
         H.i_elvisto('Lies/Lies', 'operate', { LE, op: kind, ...extra })
     const mark = (kind: string, extra?: Partial<TheUniversal>) =>
         H.i_elvisto('Lang/Lang', 'mark',    { LE, op: kind, ...extra })
 
+    // push|reset are LE cluster triggers, routed to w:Lang's e_LE_operate.
+    //   push — e_Lang_LE_push: encode|replace|verify, clean → no-op.
+    //   pull — discard working edits, re-pull origin (destructive; two-tap).
+    let reset_confirm = $state(false)
+    const push  = () => { op('push'); reset_confirm = false }
+    const reset = () => {
+        if (!reset_confirm) { reset_confirm = true; return }
+        op('pull')
+        reset_confirm = false
+    }
+
+    // orb — show|unshow toggle on the clone's U node.
+    const toggle_show = (cap: Capsule) =>
+        mark(cap.unshowing ? 'show' : 'unshow', { spec: cap.spec })
+    // × — drop|undrop (virtual deletion) on the clone's U node.
+    const drop = (cap: Capsule) =>
+        mark(cap.unaccepted ? 'undrop' : 'drop', { spec: cap.spec })
+
     // ── PeelItem — inject a Point into the working C** ────────────────────────
     //
-    //   Type a method name and press Enter.  Fires LE_operate{op:'add'} so the
-    //   working clone tree gains the new Point immediately; req:understanding re-encodes
-    //   on the next think and changey updates.
-    //
-    //   Only active when LE is armed at a %What target.
+    //   Type a method name and press Enter → mark('add') so the working clone tree
+    //   gains the new Point; e_LE_mark bumps LE.version, the strip re-derives and
+    //   req_workon re-grafts on the next think.  Only when armed at a %What target.
     let peel_text: string = $state('')
 
     function peel_commit() {
@@ -368,7 +271,7 @@
     }
 
     // Label for the current What — shown in the middle of the toolbar.
-    // What:story → sc.What = 'story'; sc.label is a legacy/explicit override.
+    // What:story → sc.What = 'story'; sc.label is a legacy|explicit override.
     let what_label = $derived.by(() => {
         void target?.vers
         if (!target) return ''
@@ -417,7 +320,7 @@
 </div>
 
 <!-- Tools row — always visible when LE armed.
-     ↘↓ branch/dive; PeelItem to inject Points; transport when req:desire active.
+     ↘↓ branch|dive; PeelItem to inject Points; transport when req:desire active.
      Unsent bar overlays the right side absolutely — adds no row height. -->
 <div class="nvc-transport">
 
@@ -447,15 +350,15 @@
            onkeydown={(ev) => { if (ev.key === 'Enter') { ev.preventDefault(); peel_commit() } }}
     />
 
-    {#if is_dirty}
+    {#if is_changey}
         <div class="lmm-wp-bar"
              onmouseleave={() => { reset_confirm = false }}>
             <span class="lmm-wp-tilde">~</span>
             {#if !reset_confirm}
-                <button class="lmm-wp-arrow" onclick={push_what_point} title="Push">↑</button>
-                <button class="lmm-wp-arrow" onclick={reset_what_point} title="Reset">↩</button>
+                <button class="lmm-wp-arrow" onclick={push} title="Push">↑</button>
+                <button class="lmm-wp-arrow" onclick={reset} title="Reset (discard working edits)">↩</button>
             {:else}
-                <button class="lmm-wp-arrow lmm-wp-confirm" onclick={reset_what_point}>sure?</button>
+                <button class="lmm-wp-arrow lmm-wp-confirm" onclick={reset}>sure?</button>
             {/if}
         </div>
     {/if}
@@ -464,45 +367,35 @@
 
 {/if}
 
-<!-- In-group capsule strip.
-     All Pmirrors auto-promote here on arrival.
-     Orb = showing toggle.  × = demote (always visible). -->
-{#if in_group.size > 0}
+<!-- Capsule strip — one capsule per Point of the Understanding.
+     Orb = show|unshow toggle.  × = drop|undrop (struck through when unaccepted). -->
+{#if capsules.length > 0}
     <div class="lmm-inbox"
          onmouseleave={() => { reset_confirm = false }}>
-        {#each [...in_group] as spec (spec)}
-            {@const pm   = all_marks.find(p => p.spec === spec)}
-            {@const is_sh = showing.has(spec)}
-            {@const mem  = le_membership.get(spec)}
+        {#each capsules as cap (cap.spec)}
             <div class="lmm-capsule"
-                 class:lmm-capsule-bad={pm?.unresolved}
-                 class:lmm-capsule-dormant={!is_sh}
-                 class:lmm-capsule-unaccepted={mem?.unaccepted}>
+                 class:lmm-capsule-bad={cap.resolved === false && !cap.unaccepted}
+                 class:lmm-capsule-dormant={cap.unshowing}
+                 class:lmm-capsule-unaccepted={cap.unaccepted}>
                 <button class="lmm-capsule-orb"
-                        class:lmm-capsule-orb-show={is_sh && !mem?.unshowing}
-                        class:lmm-capsule-orb-unshowing={mem?.unshowing}
-                        title={is_sh ? 'Showing — click to make dormant' : 'Dormant — click to show'}
-                        onclick={() => toggle_showing(spec)}>
+                        class:lmm-capsule-orb-show={!cap.unshowing}
+                        class:lmm-capsule-orb-unshowing={cap.unshowing}
+                        title={cap.unshowing ? 'Hidden — click to show' : 'Showing — click to hide'}
+                        disabled={cap.unaccepted}
+                        onclick={() => toggle_show(cap)}>
                 </button>
                 <button class="lmm-capsule-label"
-                        title="{spec}{pm?.unresolved ? ' (unresolved)' : pm ? ` → line ${pm.line}` : ''}"
+                        title="{cap.spec}{!cap.resolved && !cap.unaccepted ? ' (unresolved)' : cap.resolved ? ` → line ${cap.line}` : ''}"
                         onclick={() => {
                             // Dock_open with point:spec → e_Dock_open → Lang_point_navigate
-                            H.i_elvisto('Lang/Lang', 'Dock_open', { path: active_path, point: spec })
+                            H.i_elvisto('Lang/Lang', 'Dock_open', { path: active_path, point: cap.spec })
                         }}>
-                    {spec}
+                    {cap.spec}
                 </button>
-                {#if !is_sh}
-                    <!-- × fires mark('drop') when LE is armed at a %What;
-                         falls back to local demote() for bare %Doc sessions. -->
-                    <button class="lmm-capsule-demote" title="Remove Point" onclick={() => {
-                        if (LE && (LE.sc.target as any)?.sc?.What !== undefined) {
-                            mark('drop', { spec })
-                        } else {
-                            demote(spec)
-                        }
-                    }}>×</button>
-                {/if}
+                <!-- × drop|undrop on the clone's U node (virtual deletion) -->
+                <button class="lmm-capsule-demote"
+                        title={cap.unaccepted ? 'Restore Point' : 'Drop Point'}
+                        onclick={() => drop(cap)}>{cap.unaccepted ? '↺' : '×'}</button>
             </div>
         {/each}
         <button class="lmm-cursor-next" title="Next What in Waft" onclick={() => op('next_doc')}>→</button>

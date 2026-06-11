@@ -51,6 +51,29 @@ Anyway.
 
 ---
 
+### a modern case study
+
+
+Confirmed — I've got both, and they sit cleanly on the reactivity doc. Let me play it back so you can see I'm not bluffing.
+
+**The `LE.bump_version()` lever.** Right now `e_LE_mark` does `LE.c.U_serial++` — and `.c` is invisible to `vers`; only `i | r | replace | drop` bump version. So a same-Doc-different-What checkout, or an in-place add|drop|rename, mutates the working tree (or the clone root) without ever moving `LE.vers`. Two consumers go starved by that:
+
+- the **UItime** side — NaviCado's strip `$effect` voids `LE?.vers | lang_dock?.vers`, neither of which an add touches, so the strip never re-derives until an unrelated bump trickles through;
+- the **Atime** side — the driver's instrumentation sig is `active:dige:src_serial:wv`, and `U_serial`/clone-root child-adds move none of those, so the graft doesn't re-run.
+
+A `LE.bump_version()` in the handlers that mean "redo the whole req** for this Understanding" (the `e_LE_mark` ops, and the same-Doc-What re-arm in checkout) feeds both at once — provided we also let the instrumentation sig read `LE.version` instead of the fragile `wv`/`u_serial` pair. That consolidation is the "nice up": one volatility signal on `%LE` rather than three serials (`src_serial | wv | u_serial`) every consumer has to remember to include. Same fix as the `u_serial`-in-`n_sig` patch I found earlier, but tidier — bump the particle, key everyone on the particle.
+
+**The strip as a reactive join, not a function call.** Yes — `LE_clones` is a plain method, and internally it's `working.sc.C.o({})`, so `.o()` with no version tracking; calling it subscribes to nothing. So the strip has to *be* a `$effect` (or `$derived.by`, justified here since it's a genuine multi-step join) that explicitly voids the signals: `LE?.vers`, the `%Seem:working` particle's `vers`, the clone-root's `vers` (a clone add bumps the root, not the Seem), and `lang_dock?.vers` for the `%Pmirrors` side. The strip is `LE_clones` (membership + `clone//U%unaccepted | unshowing` + `clone.sc.class`) ⨝ `dock/%Pmirrors` (graft `from|to|line`, resolved-vs-unresolved), joined on spec — `c.Dip` once it exists. `%Pmirrors` stays the render-bridge it is; the strip just reads its resolution state alongside the clones rather than treating it *as* the model.
+
+And the bits of the doc that will bite the wiring, so you know I'm holding them:
+
+- `.o()` vs `.ob()` — NaviCado's `LE` and `lang_dock` derives already use `.ob({…})`, good, so they re-fire on children changes; but the join `$effect` reads through `LE_clones`/`collect_graft_marks`, which are `.o()` inside, so the subscription must come from the voided `vers` reads, not the calls.
+- the Atime|UItime mutex and `replace()`-starts-empty — `LE_replace_back`, `Seem_clone_C`, and `Pmirrors.replace` all `empty()` then refill mid-Atime, so a UItime strip read can catch a transacting (momentarily empty) tree. The pattern: subscribe by reading `vers` in the `$effect`, then re-read the actual clones|pmirrors inside `H.UItime()/clear()` to get a settled snapshot — same shape Langui uses (and the throttling question you flagged, which I'll leave alone unless it bites).
+- sub-particle vers gating — `%LE` is reached through `H.ave/%Languinio/%LE`, a same-object hold, so a direct Atime `LE.bump_version()` is seen by UItime immediately, bypassing the flush gate. That's *why* the lever works, and also the exact thing the doc flags as a possible mid-cycle transacting-read source — so the UItime re-read isn't optional decoration, it's what keeps the bypass safe.
+- the `void X &&` short-circuit trap — for any inline derive I add I'll use the `LE?.vers && …` chain-link form (vers is always ≥1, truthy), never a bare `void X &&` that swallows the rest.
+
+So nothing dissolves: `%LE` stays the Understanding, `%Pmirrors` stays the CM bridge, the strip becomes a reactive join of the two driven by a single `LE.version` bump. I won't cut yet — you said confirm. Ready when you want me to.
+
 ## Reactivity basics
 
 `C.bump_version()` — which `C.i|r|replace|drop` all do — makes anyone reading `C.vers` react. In Atime that means `C.ob()` (observe); in UItime it means `$derived` and `$effect` via the watched flush. Worker methods manipulate C trees directly with no Svelte involvement; Svelte only ever sees the version signals.
