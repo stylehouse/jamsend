@@ -131,8 +131,9 @@
     //     /{dock:path}             — same-object hold  on the active CM doc.
     //                                Re-pointed by Lang_set_active_dock on every doc switch.
     //     /{Interest:1}            — sc.src = working clone root; c.LE = nav handle.
-    //                                sc.in_What|in_Doc|in_Point — the C-side address
-    //                                mirroring Lies' %Spotlight; in_Doc keys ingredients.
+    //                                c.What = live %What object; sc.in_Doc|in_Point —
+    //                                the C-side address mirroring Lies' %Spotlight.
+    //                                in_Doc keys ingredients AND selects the active dock.
     //                                Dropped + recreated by Lang_set_interest on each checkout.
     //
     // ── Reactive text sync ───────────────────────────────────────────────────
@@ -766,20 +767,26 @@
         const g_sig    = (interest?.sc.in_Doc as string | undefined) ?? ''
         await wsub.roai({ req: 'ingredients' }, { sig: g_sig })
 
-        // instrumentation — the active dock, its content dige, the cursor identity,
-        //   and the Understanding's own version.  Compile keys on dige; graft keys
-        //   on the working clone, so it must re-run on any cursor move (a different
-        //   What, even on the SAME Doc → different Points) and on in-What working
-        //   edits.  src_serial catches the cross-What-same-Doc move; LE.version is
-        //   bumped by LE_arm (re-aim) and e_LE_mark (in-What edit), so it subsumes
-        //   the in-What case the old wv term missed (a clone-root child-add never
-        //   bumps the Seem's wv).  The graft's own fingerprint then decides whether
-        //   to actually rebuild — a redundant wake is a cheap no-op.
-        const active = w.c.active_dock_path as string | undefined
-        const dock   = active
-            ? (w.o({ docks: 1 })[0]?.o({ dock: active })[0] as TheC | undefined)
+        // instrumentation — the doc the CURSOR wants (interest.in_Doc), its content
+        //   dige, the cursor identity, and the Understanding's own version.  Keying
+        //   on the wanted doc rather than the foregrounded one is what lets a hop
+        //   back to an already-furnished doc re-run the stage and re-point the active
+        //   dock — the furnish/open path only ever activated a doc once.  Compile keys
+        //   on dige; graft keys on the working clone, so the stage re-runs on any
+        //   cursor move (a different What, even on the SAME Doc → different Points)
+        //   and on in-What working edits.  src_serial catches the cross-What-same-Doc
+        //   move; LE.version is bumped by LE_arm (re-aim) and e_LE_mark (in-What edit),
+        //   so it subsumes the in-What case the old wv term missed (a clone-root
+        //   child-add never bumps the Seem's wv).  The wanted dock's content_dige
+        //   rides along so a not-yet-furnished doc re-wakes us the moment its content
+        //   lands — no waiting ttlilt of instrumentation's own.  The graft's own
+        //   fingerprint then decides whether to actually rebuild — a redundant wake
+        //   is a cheap no-op.
+        const want_doc  = interest?.sc.in_Doc as string | undefined
+        const want_dock = want_doc
+            ? (w.o({ docks: 1 })[0]?.o({ dock: want_doc })[0] as TheC | undefined)
             : undefined
-        const n_sig  = `${active ?? ''}:${(dock?.c.content_dige as string | undefined) ?? ''}:${src_serial}:${LE.version}`
+        const n_sig  = `${want_doc ?? ''}:${(want_dock?.c.content_dige as string | undefined) ?? ''}:${src_serial}:${LE.version}`
         await wsub.roai({ req: 'instrumentation' }, { sig: n_sig })
 
         // pump the pipeline — maz orders understanding → ingredients → instrumentation.
@@ -803,7 +810,7 @@
     //   %permanent; woken by the driver when src, the working tree, or origin
     //   drift moves.  Owns checkout (re-arm the Understanding on src change) and
     //   the two-direction flush (origin drift → re-pull; working drift → push).
-    //   Sets %Interest (in_What, in_Doc, in_Point) — the C-side address the rest
+    //   Sets %Interest (c.What, in_Doc, in_Point) — the C-side address the rest
     //   of the pipeline keys off.  Touches no dock and no compile index, so it
     //   converges independently of editor readiness.
     async req_understanding(req: TheC, q: any) {
@@ -865,10 +872,11 @@
 
     // ── Lang_set_interest — publish the C-side address ────────────────────────
     //
-    //   %Interest carries (in_What, in_Doc, in_Point) — the clone-side mirror of
-    //   Lies' %Spotlight.  Dropped + rebuilt so it never points at a stale clone.
-    //   c.LE is the nav handle LangGraft reads; sc.src is the clone root NaviCado
-    //   reads; in_Doc is ingredients' key; in_Point is instrumentation's focus.
+    //   %Interest mirrors Lies' %Spotlight on the Lang side.  Dropped + rebuilt so
+    //   it never points at a stale clone.  c.LE is the nav handle LangGraft reads;
+    //   sc.src is the clone root NaviCado reads; c.What is the live %What object;
+    //   in_Doc is ingredients' key and the active-dock selector; in_Point is the
+    //   focus spec.
     async Lang_set_interest(w: TheC, LE: TheC, armed: TheC) {
         const H         = this as House
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
@@ -880,12 +888,13 @@
         interest.sc.src = working_C
         interest.c.LE   = LE
 
-        // address triple — from the armed OC src; in_Doc is the dock we want.
+        // the live %What rides as the object on c.What — readers reach the real
+        //   particle (its Points, their c.Doc) without a name lookup.  in_Doc stays
+        //   a string: it is the dock-map key, and docks are keyed by path.
         const sc = armed.sc as any
-        const in_What  = sc.What  as string | undefined
+        interest.c.What = armed
         const in_Doc   = H.Lang_src_doc_path(armed)
         const in_Point = sc.method as string | undefined
-        if (in_What  != null) interest.sc.in_What  = in_What
         if (in_Doc   != null) interest.sc.in_Doc   = in_Doc
         if (in_Point != null) interest.sc.in_Point = in_Point
 
@@ -1003,20 +1012,38 @@
         }
     },
 
-    // ── req_instrumentation — compile + graft on the active dock ─────────────
+    // ── req_instrumentation — foreground + compile + graft the cursor's doc ───
     //
-    //   %permanent; woken when the active dock or its content dige moves.  The
-    //   things-we-build-on-the-dock: the compile %methods index and the grafted
-    //   %Pmirrors.  Holds convergence-markers only — the index and Pmirrors live
-    //   on the dock — so de-finishing it loses nothing; it re-checks and no-ops
+    //   %permanent; woken when the cursor's wanted doc, its content dige, the
+    //   cursor identity, or the Understanding version moves.  Owns the ONE place a
+    //   cursor move re-points the active dock — reading it from %Interest/in_Doc
+    //   rather than letting it ride the furnish/open side-effect, which only ever
+    //   activated a doc once and so left a hop back to an already-furnished doc
+    //   stuck on the old one (the minimap painting the wrong Points).
+    //
+    //   Then the things-we-build-on-the-dock: the compile %methods index and the
+    //   grafted %Pmirrors.  Holds convergence-markers only — the index and Pmirrors
+    //   live on the dock — so de-finishing loses nothing; it re-checks and no-ops
     //   when the dock is already current at this dige.
     async req_instrumentation(req: TheC, q: any) {
-        const H      = this as House
-        const w      = H.upto_w(req)
-        const active = w.c.active_dock_path as string | undefined
-        if (!active) { q.finish(req); return }   // no active dock yet (docless What)
-        const dock = w.o({ docks: 1 })[0]?.o({ dock: active })[0] as TheC | undefined
-        if (!dock) { q.finish(req); return }     // ingredients hasn't landed it yet
+        const H        = this as House
+        const w        = H.upto_w(req)
+        const interest = w.o({ Languinio: 1 })[0]?.o({ Interest: 1 })[0] as TheC | undefined
+        const want     = interest?.sc.in_Doc as string | undefined
+        if (!want) { q.finish(req); return }     // docless What — nothing to instrument
+
+        const dock = w.o({ docks: 1 })[0]?.o({ dock: want })[0] as TheC | undefined
+        if (!dock || dock.c.content_dige === undefined) {
+            // ingredients is still furnishing the wanted dock.  Finish — the
+            //   content_dige term in our sig (req_workon) re-wakes us the instant
+            //   e_Lang_dock_content lands it, so no waiting ttlilt of our own.
+            q.finish(req)
+            return
+        }
+
+        // foreground the doc the cursor wants.  e_Lies_active_doc_changed early-
+        //   returns while the cursor sits on a %What, so this drives no feedback.
+        if (w.c.active_dock_path !== want) await H.Lang_set_active_dock(w, want)
 
         // compile — Languish builds %Compile/%methods; the graft needs the index.
         //   compile_error is terminal — fall through so graft mints unresolved

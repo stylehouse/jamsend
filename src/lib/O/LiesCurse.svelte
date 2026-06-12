@@ -550,6 +550,24 @@
             match_sc:   {},
             loop_but_no_further: 1,
             trace_sc:   { dipping: 1 },
+            // Doc-association — stamp each %Point's governing %Doc onto C.c.Doc as
+            //   we walk, so anyone (LangGraft) reads "which Doc serves this Point"
+            //   as a direct ref rather than re-deriving it by descending the live
+            //   %What.  A running slot on the top Travel holds the last %Doc seen;
+            //   entering a %What resets it, so a docless time-slice What yields
+            //   c.Doc:undefined (a title page, no dock) instead of inheriting a
+            //   prior sibling's Doc.  Relies on the Waft grammar writing a Doc
+            //   before the Points it serves — which enWaft always does.
+            //   each_fn runs pre-order, parent before child, which is what makes
+            //   the single slot correct: a %Point's Doc is either its parent (Point
+            //   nested under a Doc) or the Doc sibling visited just before it.
+            each_fn:    async (_D: TheC, C: TheC, T: TheC) => {
+                const sc = C.sc as any
+                if (sc.What !== undefined)      T.c.top.sc.last_Doc = undefined
+                else if (sc.Doc !== undefined)  { T.c.top.sc.last_Doc = C; C.c.Doc = C }
+                else if (sc.Point !== undefined || sc.method !== undefined)
+                    C.c.Doc = T.c.top.sc.last_Doc as TheC | undefined
+            },
             trace_fn:   async (uD: TheC, C: TheC) => uD.i({ dipping: 1, ...C.sc }),
             traced_fn:  async (D: TheC, _bD: TheC, C: TheC) => {
                 C.c.Dip = H.Dip_assign('waftid', D)

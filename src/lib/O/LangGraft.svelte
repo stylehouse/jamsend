@@ -146,18 +146,22 @@
         // ── Point collection from the Understanding ──────────────────────────
         //
         //   LE clones are the IMMEDIATE children of %What (one shallow level):
-        //     %Doc clone  — U sphere gates the whole doc; Points live in the LIVE
-        //                   %What tree (clone is too shallow to carry them).
+        //     %Doc clone  — U sphere gates the whole doc; its Points live in the LIVE
+        //                   %What tree (the clone is too shallow to carry them), and
+        //                   they reach this Doc via c.Doc (stamped by the Waft Se,
+        //                   Waft_dip).  Walking the live tree by c.Doc — not the
+        //                   clone — lets Points nested deeper than one What still
+        //                   graft; the clone stays shallow and only governs the U
+        //                   sphere at Doc granularity.
         //     %Point clone — direct Point on %What (no Doc wrapper, e.g. "loose ends");
-        //                   clone itself is the Point; use it directly.
+        //                   the clone itself is the Point with its own U; use it.
         //
-        //   We only graft Points that belong to the active dock's doc.  Points
-        //   from other Docs in the same %What are resolved on those docks when
-        //   those docks are active.
+        //   We only graft Points that belong to the active dock's doc.  Points from
+        //   other Docs in the same %What are resolved on those docks when active.
         //
         //   src_clone on each Pmirror is the DOC clone (not the live Point) so
-        //   req:Showing can reach the Doc-level U sphere (unshowing/class).
-        //   For direct %Point clones the clone IS the C with U; src_clone = itself.
+        //   req:Showing can reach the Doc-level U sphere (unshowing/class).  For
+        //   direct %Point clones the clone IS the C with U; src_clone = itself.
         //
         //   Pre-pull fallback (no LE yet): read live Points off src_C directly.
         const clones: TheC[] | undefined = LE ? (H.LE_accepted_clones(LE) as TheC[]) : undefined
@@ -165,36 +169,47 @@
         let point_to_clone: Map<TheC, TheC>   // live Point → its governing Doc clone
 
         if (clones && dock_path) {
-            const target = LE!.sc.target as TheC   // live %What
-            const live_pts: TheC[]       = []
-            const clone_map              = new Map<TheC, TheC>()
+            const target   = LE!.sc.target as TheC   // live %What
+            const live_pts: TheC[]        = []
+            const clone_map               = new Map<TheC, TheC>()
 
+            // direct %Point clones (no Doc wrapper) — the clone is the C with U.
+            //   unshowing keeps its Pmirror so the graft mark and position stay live;
+            //   Lang_show_pmirrors dispatches the CM fold|squish when it sees
+            //   U%unshowing.  Included regardless of dock — the resolve step finds
+            //   or misses.
             for (const clone of clones) {
                 if (clone.c.U?.sc.unaccepted) continue   // virtual deletion — no Pmirror
                 const cs = clone.sc as any
-
                 if (cs.method !== undefined || cs.Point !== undefined) {
-                    // Direct %Point on %What — no Doc wrapper.  Include regardless of
-                    // dock; the resolve step will find or miss.  unshowing keeps its
-                    // Pmirror so the graft mark and position stay live — Lang_show_pmirrors
-                    // dispatches the CM fold|squish when it sees U%unshowing.
                     live_pts.push(clone)
                     clone_map.set(clone, clone)   // src_clone = itself
-                } else if (cs.Doc === dock_path) {
-                    // %Doc clone matching the active dock — descend into the live %What
-                    // to find the %Points for this doc (clones are too shallow).
-                    // Same rule: unshowing keeps the Pmirror; show_pmirrors folds.
-                    const live_doc = (target.o({ Doc: 1 }) as TheC[])
-                        .find(d => d.sc.Doc === dock_path)
-                    if (live_doc) {
-                        for (const pt of live_doc.o({ Point: 1 }) as TheC[]) {
-                            live_pts.push(pt)
-                            clone_map.set(pt, clone)   // src_clone = the Doc clone (has U)
-                        }
-                    }
                 }
-                // %Doc clones for other paths are irrelevant to this dock — skip.
             }
+
+            // the shallow %Doc clone governing this dock — its U node is the U sphere
+            //   for every live Point whose c.Doc serves this dock.
+            const doc_clone = clones.find(c =>
+                !c.c.U?.sc.unaccepted && (c.sc as any).Doc === dock_path)
+
+            // live Points (any depth under the %What) whose c.Doc serves this dock.
+            //   c.Doc carries the %Doc particle; match its path against the dock.
+            //   We skip the target %What's IMMEDIATE direct Points (pt.c.up === target):
+            //   those are the shallow direct %Point clones already collected above —
+            //   collecting them again here (a What-direct Point that has a Doc sibling
+            //   carries that Doc on c.Doc) would double the Pmirror.  Points reached
+            //   through a %Doc, or living in a nested sub-%What, are the served set.
+            if (doc_clone) {
+                H.Lang_walk_points(target, (pt: TheC) => {
+                    if (pt.c.up === target) return   // immediate direct Point — clone path owns it
+                    const served = (pt.c.Doc as TheC | undefined)?.sc.Doc as string | undefined
+                    if (served === dock_path) {
+                        live_pts.push(pt)
+                        clone_map.set(pt, doc_clone)   // src_clone = the Doc clone (has U)
+                    }
+                })
+            }
+
             points       = live_pts
             point_to_clone = clone_map
         } else {
@@ -309,6 +324,19 @@
         // Child mutations (Pmirrors, graft children) don't propagate up
         // automatically, so we bump dock explicitly here to wake it.
         dock.bump_version()
+    },
+
+    // ── Lang_walk_points ───────────────────────────────────────────────────
+    //
+    //   Depth-first visit of every %Point under a container (%What or %Doc),
+    //   descending %What and %Doc children at any depth.  The visitor decides
+    //   what to keep; we just reach them all so a Point nested deeper than one
+    //   %What still grafts.  Each live Point carries c.Doc (Waft_dip) telling the
+    //   visitor which dock it serves, so no path-matching lives here.
+    Lang_walk_points(container: TheC, visit: (pt: TheC) => void) {
+        for (const pt of container.o({ Point: 1 }) as TheC[]) visit(pt)
+        for (const doc of container.o({ Doc: 1 })  as TheC[]) this.Lang_walk_points(doc, visit)
+        for (const sub of container.o({ What: 1 }) as TheC[]) this.Lang_walk_points(sub, visit)
     },
 
     // ── Lang_src_doc_path ──────────────────────────────────────────────────
