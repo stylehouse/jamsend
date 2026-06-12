@@ -242,6 +242,7 @@
     import LangLang from "./LangLang.svelte";
     import LangGraft from "./LangGraft.svelte";
     import LiesEnd  from "$lib/O/LiesEnd.svelte";
+    import LiesWorkup from "./LiesWorkup.svelte";
 
     let { M } = $props()
 
@@ -806,9 +807,11 @@
         const want   = workon?.c.src as TheC | undefined
 
         // checkout — re-arm when the cursored src changes (identity memoised).
+        //   LE_retarget (LiesWorkup) wraps LE_arm + LE_pull with the workup
+        //   protocol: park the outgoing changey tree, commit a presented leg |
+        //   present one on ascent, resume a parked tree waiting at want.
         if (want && req.c.armed_src !== want) {
-            H.LE_arm(LE, want)
-            await H.LE_pull(LE)
+            await H.LE_retarget(LE, want)
             req.c.armed_src = want
             req.sc.what     = (want.sc as any).What ?? (want.sc as any).path ?? '?'
             console.log(`🔗 understanding checkout: ${req.sc.what}`)
@@ -819,13 +822,17 @@
 
         // origin drift — the Waft OC moved under us (e:Lies_waft_mutated stamped
         //   LE.c.origin_dirty).  Re-pull origin; if it touched our extent
-        //   (%State.stale) auto-pull re-clones working off the new origin.
+        //   (%State.stale) re-baseline on the new origin via LE_retarget — the
+        //   park-through means working edits survive the re-arm in %workup and
+        //   resume onto the fresh checkout.  Resume wins over the moved origin:
+        //   %State carries stale ∧ changey and the encode shows what a push
+        //   would clobber.
+        //   < merge of resumed edits against a moved origin — resume-wins for now.
         if (LE.c.origin_dirty) {
             delete LE.c.origin_dirty
             await H.LE_pull(LE)
             if (LE.o({ State: 1 })[0]?.sc.stale) {
-                H.LE_arm(LE, armed)
-                await H.LE_pull(LE)
+                await H.LE_retarget(LE, armed)
                 req.c.last_encode_key = undefined   // force the re-encode below
             }
             H.Lang_set_interest(w, LE, armed)        // re-point %Interest at fresh clone
@@ -1895,3 +1902,4 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
 <LangLang {M} />
 <LangGraft {M} />
 <LiesEnd    {M} />
+<LiesWorkup    {M} />

@@ -322,11 +322,13 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
             await w.place({ Waft: path }, waft)
             await H.Waft_link_up(waft, waft)
+            await H.Waft_dip(waft)
 
             H.watch_c(waft, async () => {
                 H.Lies_sync_waft_docs(w, waft)
                 H.Lies_waft_save(w, waft)
                 await H.Waft_link_up(waft, waft)
+                await H.Waft_dip(waft)
                 // Waft OC mutated — an armed LE over this Waft has a stale
                 // Seem:origin.  Tell Lang so Lang_settle re-pulls origin and
                 // auto-flushes any in-scope drift into the working clone tree.

@@ -4,72 +4,69 @@
     // ── What this is ─────────────────────────────────────────────────────────
     //
     //   Toolbar for the active Understanding (%LE) plus the tools row for
-    //   branch|dive gestures, Point injection, and req:desire transport.
-    //   Owns the capsule strip and the unsent bar.
-    //
-    //   The strip is a pure renderer of %LE: it holds no parallel model.  Each
-    //   capsule is one Point of the Understanding, read by joining the working
-    //   clone tree (membership + clone//U meanings) to dock/%Pmirrors (the live
-    //   CM position + resolved-vs-unresolved state).  Push|reset are op('push')
-    //   |op('pull') on %LE; show|drop are e:mark ops on the clone's U node.  No
-    //   Lies_accept_What_Point round-trip, no in_group|showing|pushed_snapshot —
-    //   %LE is the single source, LE_arm resets it atomically so there is no
-    //   coexistence window where a prior What's Points linger.
+    //   branch/dive gestures, Point injection, and req:desire transport.
+    //   Owns the capsule strip and the ~ bar.
     //
     // ── Particle sources ──────────────────────────────────────────────────────
     //
     //   H.ave/%Languinio — same-object hold; carries:
     //     /%LE           — the live Understanding
-    //     /%dock,active  — the foregrounded %Dock (carries %Pmirrors, %Compile)
-    //   H.ave/%examining/%Spotlight,1 — the live cursor (nav-bar target).
+    //     /%dock,path    — the foregrounded %Dock (active:1)
+    //   H.ave/%examining/%Spotlight — the cursored %What (nav buttons)
     //
     // ── Nav buttons (top row) ─────────────────────────────────────────────────
     //
-    //   ↑  ←  →  — emit op(kind) → i_elvisto(Lies, 'operate', { LE, op }) where op
-    //   is 'up'|'prev'|'next'.  Handler (LiesEnd e_LE_operate) reads the live
-    //   cursor from %examining/%Spotlight and drives movement from there.
+    //   ↑ ← label →  — emit op(kind) → i_elvisto(Lies, 'operate', { LE, op })
+    //   Handler (LiesCurse) reads the live cursor from %examining/%Spotlight.
     //
     //   < once LE_available_ops is wired into req:checkout, %LE/%moves.sc.ops
-    //     replaces the static ↑←→ set with one chip per reachable move,
-    //     deduplicated (e.g. ↑ suppressed when it resolves to the same What as ←).
+    //     replaces the static ↑←→ set with one chip per reachable move.
     //
     // ── Tools row (second row, always when LE armed) ──────────────────────────
     //
-    //   ↘ dive | ↓ branch — +time gestures.
+    //   ↘ dive / ↓ branch — splice in new What.
     //   PeelItem — type a method name, Enter → mark('add', ...).
-    //   req:desire transport (‖|▶, →step) — only when req:timemachine exists.
-    //   Unsent bar (~↑↩) — overlay shown while %State%changey holds (working has
-    //   diverged from origin).  ↑ = op('push'); ↩ = op('pull') (two-tap).
+    //   req:desire transport (‖/▶, →step) — only when req:timemachine exists.
+    //   ~ bar — absolute overlay when %State%changey; push (↑) or reset (↩).
     //
     // ── Capsule strip ────────────────────────────────────────────────────────
     //
-    //   One capsule per Point of the Understanding.  Orb = show|unshow toggle
-    //   (clone//U%unshowing).  × = drop|undrop (clone//U%unaccepted — virtual
-    //   deletion, struck through).  Label click — fires Dock_open%{path,point:spec}
-    //   → e_Dock_open → Lang_point_navigate.
+    //   Pure renderer of LE_clones().  No parallel in_group|showing Set — the
+    //   clone IS the truth; U%unshowing|unaccepted and sc.class ride on it.
+    //
+    //   Keyed on clone.c.Dip (minted by Waft_dip, session-stable, rename-proof).
+    //   Fallback key: spec_N so two same-method Points stay distinct even before
+    //   Waft_dip has run on this waft.  each_keys() guards at construction time
+    //   and throws with both colliding rows attached if a key clash slips through.
+    //
+    //   Orb = U%unshowing toggle → mark('unshow'|'show').
+    //   × = appears when unshowing; fires mark('drop') → U%unaccepted.
+    //   ↺ = appears when unaccepted; fires mark('accept') → clears both.
+    //   Capsule label click → Dock_open → Lang_point_navigate.
 
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import type { Snippet } from "svelte"
 
-    // A capsule is one Point of the Understanding, after the clone⨝Pmirror join.
-    //   resolved:false — LangGraft has no def in the compile index for this spec
-    //     yet (pre-compile, or a rename); rendered dim-red, strikethrough.
-    //   unaccepted — clone//U%unaccepted: a virtual deletion, struck through,
-    //     undroppable via the × (which toggles back to undrop).
-    //   unshowing — clone//U%unshowing: folded out of the CM view; the orb dims.
-    type Capsule = {
+    // CapsuleRow — one entry in the strip per clone.
+    //   key is what the {#each} keys on — unique even for same-method Points.
+    //   body is what LE_capsule_body returns: kind:'name' today; kind:'patch'
+    //   when a text-search hit or encode diff arrives on clone.c.body.
+    type CapsuleRow = {
+        clone:      TheC
+        key:        string
         spec:       string
-        resolved:   boolean
-        line:       number
-        unaccepted: boolean
+        body:       { kind: string, raw: string }
         unshowing:  boolean
-        cls:        string
+        unaccepted: boolean
+        cls:        string | undefined   // focus|caution|dim|ghost from sc.class
+        line:       number | undefined
+        unresolved: boolean
     }
 
     let { H, slot_up, slot_prev, slot_next }: {
-        H:         House
-        slot_up?:  Snippet<[{ ghosted: boolean, onclick: () => void }]>
+        H:          House
+        slot_up?:   Snippet<[{ ghosted: boolean, onclick: () => void }]>
         slot_prev?: Snippet<[{ ghosted: boolean, onclick: () => void }]>
         slot_next?: Snippet<[{ ghosted: boolean, onclick: () => void }]>
     } = $props()
@@ -81,45 +78,34 @@
         languinio = H.ave.ob({ Languinio: 1 })[0] as TheC | undefined
     })
 
-    // active_path: which dock is currently foregrounded.
     let active_path = $derived(
         (languinio?.ob({ dock: 1, active: 1 })[0]?.sc.dock as string | undefined) ?? ''
     )
 
-    // lang_dock: the actual %Dock particle (carries %Compile, %Pmirrors).
-    //   .ob so a %Pmirrors rebuild (graft bumps dock.version) re-derives.
-    let lang_dock = $derived(
-        active_path
+    let lang_dock: TheC | undefined = $state()
+    $effect(() => {
+        lang_dock = active_path
             ? languinio?.ob({ dock: active_path })[0] as TheC | undefined
             : undefined
-    )
+    })
 
-    // %LE — the live Understanding.  .ob so a re-aim (languinio.i(LE)) re-derives.
     let LE: TheC | undefined = $derived(
         languinio?.ob({ LE: 1 })[0] as TheC | undefined
     )
 
-    // working — the %Seem:working particle; clone_root is its C** root.  Both are
-    //   tracked as join inputs: a cursor move bumps working; a clone add|drop on
-    //   the root bumps clone_root.  LE_arm + e_LE_mark also bump LE.version, so
-    //   void LE?.vers alone covers most, but tracking all three keeps the join
-    //   live regardless of which lever moved.
-    let working   = $derived(LE?.vers && (LE.o({ Seem: 'working' })[0] as TheC | undefined))
-    let clone_root = $derived(working ? (working.sc.C as TheC | undefined) : undefined)
+    // ── nav bar derivation ────────────────────────────────────────────────────
+    //
+    //   examining/Spotlight.sc.src is stamped synchronously in Lies_i_Spotlight
+    //   so the nav bar updates immediately without waiting for a languinio round-trip.
 
-    // ── nav bar reactive derivation ───────────────────────────────────────────
-
-    // examining first — target derives from it, not LE.sc.target.
-    // LE.sc.target lags by one LE_arm + languinio round-trip; examining.Spotlight.sc.src
-    // is stamped synchronously in Lies_i_Spotlight so the nav bar updates immediately.
     let examining   = $derived(H.ave.ob({ examining: 1 })[0] as TheC | undefined)
     let timemachine = $derived(examining && examining.vers
         && examining.o({ req: 'timemachine' })[0] as TheC | undefined)
     let is_playing  = $derived(!!(timemachine && timemachine.vers && timemachine.sc.playing))
     let has_desire  = $derived(!!timemachine)
 
-    // target — the currently cursored %What, from examining/Spotlight.
-    // Only set when src is a %What (not a bare %Doc).
+    // target — the currently cursored %What.
+    // Only set when src carries .What (not a bare %Doc).
     let target = $derived((() => {
         void examining?.vers
         const spot = examining?.ob?.({ Spotlight: 1 })?.[0] as TheC | undefined
@@ -131,152 +117,111 @@
     let has_up     = $derived(depth > 0)
     let has_prev   = $derived(target ? !!(H as any).LE_what_dfs_prev(target) : false)
     let has_next   = $derived(target ? !!(H as any).LE_what_dfs_next(target) : false)
-    // branch|dive always possible when a target is set
     let has_target = $derived(!!target)
 
-    // ── changey — the unsent-bar signal ───────────────────────────────────────
+    // ── ~ bar — changey state from %LE/%State ────────────────────────────────
     //
-    //   %State%changey, set by LE_encode_compare when working has diverged from
-    //   origin.  LE_encode_compare bumps LE.version on the changey edge, so the
-    //   LE?.vers chain link wakes this derive when the encode settles.
-    let is_changey = $derived(!!(LE?.vers && (LE.ob({ State: 1 })[0]?.sc.changey)))
+    //   is_changey reads %State directly so it wakes on the same bump
+    //   LE_encode_compare fires.  reset_confirm is the two-tap gate on ↩.
 
-    // ── capsule join — LE_clones ⨝ %Pmirrors ───────────────────────────────────
-    //
-    //   The strip is a join, not a function call: LE_clones / the Pmirror walk
-    //   are .o()-internal (no version tracking), so the subscription comes from
-    //   voiding the input versions here, not from the calls.  We then re-read the
-    //   particle trees inside H.clear (UItime) so a mid-Atime replace() — LE_arm's
-    //   Seem drop, Seem_clone_C, Pmirrors.replace, LE_replace_back — is never
-    //   caught transacting (which for replace() reads momentarily empty).
-    //
-    //   Rows are driven by %Pmirrors (the doc-scoped, position-resolved Point
-    //   projection); each Pmirror's c.src_clone//U supplies the meanings.  Dropped
-    //   Points (clone//U%unaccepted) are excluded from %Pmirrors by LangGraft, so
-    //   the direct-%Point residue is appended struck-through from LE_clones.
-    //
-    //   < capsule identity is sc.method for now — fragile across a method rename.
-    //     the durable key is c.Dip: a unique id a Se assigns to every Waft OC at
-    //     the Lies end, threaded OC→C through LE so the working clone carries it.
-    //     key both the capsule row and %Pmirror,$spec on c.Dip once it exists,
-    //     leaving sc.method purely cosmetic.
-    let capsules: Capsule[] = $state([])
+    let is_changey  = $derived(
+        !!(LE?.vers && LE.ob({ State: 1 })[0]?.sc.changey)
+    )
+    let reset_confirm: boolean = $state(false)
 
-    const clone_spec = (c: TheC): string | null => {
-        const sc = c.sc as any
-        const v  = sc.method ?? sc.label ?? sc.Point
-        if (v == null || v === 1 || v === true) return null
-        return String(v)
+    // ── collect_pmirror_map ───────────────────────────────────────────────────
+    //
+    //   Map spec → graft annotation from lang_dock/%Pmirrors.
+    //   Two same-method Points share one Pmirror (Pmirrors are still keyed by
+    //   spec — the Dip-keyed LangGraft patch is a separate TODO).  Both capsule
+    //   rows find the same annotation; both navigate correctly.
+
+    function collect_pmirror_map(): Map<string, { line: number, from: number, to: number } | null> {
+        const out = new Map<string, { line: number, from: number, to: number } | null>()
+        if (!lang_dock) return out
+        const Pmirrors = lang_dock.o({ Pmirrors: 1 })[0] as TheC | undefined
+        if (!Pmirrors) return out
+        for (const pm of Pmirrors.o({ Pmirror: 1 }) as TheC[]) {
+            const spec = (pm.sc.spec as string) || ''
+            if (!spec) continue
+            const graft = pm.o({ graft: 1 })[0] as TheC | undefined
+            out.set(spec, graft
+                ? { line: graft.sc.line as number, from: graft.sc.from as number, to: graft.sc.to as number }
+                : null)
+        }
+        return out
     }
 
-    $effect(() => {
-        // subscribe to every join input — standalone `void X?.vers` reads then
-        //   discards (reactive); the `&&` form would short-circuit before the read.
+    // ── capsule derivation ────────────────────────────────────────────────────
+    //
+    //   One CapsuleRow per clone in LE_clones().  Clones that have no legible
+    //   spec (Doc clones, bare {What:1} stubs) are skipped — they appear as
+    //   nav moves, not capsules.
+    //
+    //   Key: clone.c.Dip is the stable address minted by Waft_dip; the
+    //   spec_N fallback covers the window before Waft_dip has run on this waft.
+    //   each_keys() throws at construction time with both colliding rows if a
+    //   clash slips through — faster than reading a Svelte index error.
+
+    let capsules: CapsuleRow[] = $derived.by(() => {
         void LE?.vers
-        void (working as TheC | undefined)?.vers
-        void clone_root?.vers
         void lang_dock?.vers
-        const le_now   = LE
-        const dock_now = lang_dock
-        H.clear(async () => {
-            const out:  Capsule[] = []
-            const seen = new Set<string>()
-
-            // Pmirror rows — accepted Points of the active doc, resolved or not.
-            const Pmirrors = dock_now?.o({ Pmirrors: 1 })[0] as TheC | undefined
-            for (const pm of (Pmirrors?.o({ Pmirror: 1 }) ?? []) as TheC[]) {
-                const spec = (pm.sc.spec as string) || ''
-                if (!spec) continue
-                const graft = pm.o({ graft: 1 })[0] as TheC | undefined
-                const u     = (pm.c.src_clone as TheC | undefined)?.c.U as TheC | undefined
-                out.push({
-                    spec,
-                    resolved:   !!graft,
-                    line:       (graft?.sc.line as number) ?? 0,
-                    // read from clone//U — may flip unaccepted before graft removes the Pmirror,
-                    // so the struck-through style lands the same tick as e_LE_mark fires
-                    unaccepted: !!u?.sc.unaccepted,
-                    unshowing:  !!u?.sc.unshowing,
-                    cls:        (u?.sc.class as string | undefined)
-                                ?? (pm.sc.class as string | undefined) ?? '',
-                })
-                seen.add(spec)
-            }
-
-            // Dropped-Point residue — direct %Point clones LangGraft skipped for
-            //   being U%unaccepted; shown struck-through so they can be undropped.
-            //   (Doc-nested Points have no clone of their own, so per-Point drop is
-            //    only representable for direct %Point clones at this granularity.)
-            if (le_now) {
-                for (const c of (H as any).LE_clones(le_now) as TheC[]) {
-                    const spec = clone_spec(c)
-                    if (!spec || seen.has(spec)) continue
-                    const u = c.c?.U as TheC | undefined
-                    if (!u?.sc.unaccepted) continue
-                    out.push({
-                        spec,
-                        resolved:   false,
-                        line:       0,
-                        unaccepted: true,
-                        unshowing:  !!u?.sc.unshowing,
-                        cls:        (u?.sc.class as string | undefined) ?? '',
-                    })
-                }
-            }
-            capsules = out
-        })
+        if (!LE?.oa({ Seem: 'working' })) return []
+        const clones  = (H as any).LE_clones(LE) as TheC[]
+        const pmMap   = collect_pmirror_map()
+        const rows: CapsuleRow[] = []
+        for (let i = 0; i < clones.length; i++) {
+            const clone = clones[i]
+            const body  = (H as any).LE_capsule_body(clone) as { spec: string, kind: string, raw: string }
+            if (!body.spec || body.spec === '?') continue
+            const { spec } = body
+            const key  = (clone.c.Dip as string | undefined) ?? `${spec}_${i}`
+            const U    = clone.c?.U as any
+            const pm   = pmMap.get(spec)
+            rows.push({
+                clone,
+                key,
+                spec,
+                body,
+                unshowing:  !!U?.sc?.unshowing,
+                unaccepted: !!U?.sc?.unaccepted,
+                cls:        (clone.sc as any).class as string | undefined,
+                line:       pm?.line,
+                unresolved: pm === undefined,   // absent from Pmirror map → unresolved
+            })
+        }
+        return (H as any).each_keys(rows, (r: CapsuleRow) => r.key, 'capsules')
     })
 
-    // ── nav | mark actions ──────────────────────────────────────────────────────
+    // ── nav actions ───────────────────────────────────────────────────────────
     //
-    //   op()  — structural cursor move | LE cluster trigger.  To w:Lies for moves
-    //     (up|prev|next|branch|dive|next_doc), to w:Lang for push|pull — both land
-    //     in e_LE_operate, which dispatches on the op.  Passes %LE as a particle so
-    //     handlers need no ave round-trip.
-    //   mark() — clone-tree | U mutation (e_LE_mark on w:Lang).
-    const op   = (kind: string, extra?: Partial<TheUniversal>) =>
+    //   op()  — structural cursor move to w:Lies (e_operate → e_LE_operate).
+    //   mark() — U-sphere mutation to w:Lang  (e_mark   → e_LE_mark).
+    //   Both pass LE as a particle so the handlers need no ave round-trip.
+
+    const op   = (kind: string, extra?: object) =>
         H.i_elvisto('Lies/Lies', 'operate', { LE, op: kind, ...extra })
-    const mark = (kind: string, extra?: Partial<TheUniversal>) =>
+    const mark = (kind: string, extra?: object) =>
         H.i_elvisto('Lang/Lang', 'mark',    { LE, op: kind, ...extra })
 
-    // push|reset are LE cluster triggers, routed to w:Lang's e_LE_operate.
-    //   push  — e_Lang_LE_push: encode|replace|verify, clean → no-op.
-    //   reset — re-arm at the same target + re-pull: discards working edits.
-    //           Two-tap because it's destructive.
-    let reset_confirm = $state(false)
-    const push  = () => { op('push'); reset_confirm = false }
-    const reset = () => {
-        if (!reset_confirm) { reset_confirm = true; return }
-        op('reset')
-        reset_confirm = false
-    }
-
-    // orb — show|unshow toggle on the clone's U node.
-    //   show also clears unaccepted (re-showing fully accepts — see e_LE_mark).
-    const toggle_show = (cap: Capsule) =>
-        mark(cap.unshowing ? 'show' : 'unshow', { spec: cap.spec })
-    // × (unaccept) — virtual deletion; only available once the Point is unshowing.
-    //   Clicking it on an already-unaccepted capsule does accept (undo deletion).
-    const unaccept = (cap: Capsule) =>
-        mark(cap.unaccepted ? 'accept' : 'unaccept', { spec: cap.spec })
-
-    // ── PeelItem — inject a Point into the working C** ────────────────────────
+    // ── PeelItem ──────────────────────────────────────────────────────────────
     //
-    //   Type a method name and press Enter → mark('add') so the working clone tree
-    //   gains the new Point; e_LE_mark bumps LE.version, the strip re-derives and
-    //   req_workon re-grafts on the next think.  Only when armed at a %What target.
+    //   Type a method name, Enter → mark('add') → clone appended to working C**
+    //   → req:understanding re-encodes → %State%changey updates.
+    //   Active only when LE is armed at a %What (or %Waft) target.
+
     let peel_text: string = $state('')
 
     function peel_commit() {
         const method = peel_text.trim()
-        if (method && LE && (LE.sc.target as any)?.sc?.What !== undefined) {
-            mark('add', { sc: { Point: 1, method } })
-        }
+        const sc = LE?.sc.target ? (LE.sc.target as TheC).sc as any : undefined
+        const at_what = sc?.What !== undefined || sc?.Waft !== undefined
+        if (method && LE && at_what) mark('add', { sc: { Point: 1, method } })
         peel_text = ''
     }
 
-    // Label for the current What — shown in the middle of the toolbar.
-    // What:story → sc.What = 'story'; sc.label is a legacy|explicit override.
+    // ── What label ────────────────────────────────────────────────────────────
+
     let what_label = $derived.by(() => {
         void target?.vers
         if (!target) return ''
@@ -325,8 +270,8 @@
 </div>
 
 <!-- Tools row — always visible when LE armed.
-     ↘↓ branch|dive; PeelItem to inject Points; transport when req:desire active.
-     Unsent bar overlays the right side absolutely — adds no row height. -->
+     ↘↓ branch/dive; PeelItem to inject Points; transport when req:desire active.
+     ~ bar overlays the right side absolutely — adds no row height. -->
 <div class="nvc-transport">
 
     {#if has_desire}
@@ -360,10 +305,10 @@
              onmouseleave={() => { reset_confirm = false }}>
             <span class="lmm-wp-tilde">~</span>
             {#if !reset_confirm}
-                <button class="lmm-wp-arrow" onclick={push} title="Push">↑</button>
-                <button class="lmm-wp-arrow" onclick={reset} title="Reset (discard working edits)">↩</button>
+                <button class="lmm-wp-arrow" onclick={() => op('push')}  title="Push">↑</button>
+                <button class="lmm-wp-arrow" onclick={() => { if (!reset_confirm) { reset_confirm = true } else { op('reset'); reset_confirm = false } }} title="Reset">↩</button>
             {:else}
-                <button class="lmm-wp-arrow lmm-wp-confirm" onclick={reset}>sure?</button>
+                <button class="lmm-wp-arrow lmm-wp-confirm" onclick={() => { op('reset'); reset_confirm = false }}>sure?</button>
             {/if}
         </div>
     {/if}
@@ -372,43 +317,43 @@
 
 {/if}
 
-<!-- Capsule strip — one capsule per Point of the Understanding.
-     Orb = show|unshow toggle (show also accepts).  × = unaccept (virtual deletion);
-     only appears once the Point is already unshowing — further downgrade only.
-     An unaccepted capsule shows ↺ to restore (accept). -->
+<!-- Capsule strip — pure renderer of LE_clones() keyed on c.Dip.
+     Orb = U%unshowing toggle.  × = mark('drop') when unshowing.  ↺ = mark('accept').
+     Capsule label click → Dock_open → Lang_point_navigate. -->
 {#if capsules.length > 0}
-    <div class="lmm-inbox"
-         onmouseleave={() => { reset_confirm = false }}>
-        {#each capsules as cap (cap.spec)}
+    <div class="lmm-inbox">
+        {#each capsules as row (row.key)}
             <div class="lmm-capsule"
-                 class:lmm-capsule-bad={cap.resolved === false && !cap.unaccepted}
-                 class:lmm-capsule-dormant={cap.unshowing}
-                 class:lmm-capsule-unaccepted={cap.unaccepted}>
+                 class:lmm-capsule-bad={row.unresolved}
+                 class:lmm-capsule-dormant={row.unshowing}
+                 class:lmm-capsule-unaccepted={row.unaccepted}
+                 class:lmm-capsule-ghost={row.cls === 'ghost'}
+                 class:lmm-capsule-dim={row.cls === 'dim'}>
+                <!-- Orb — the showing toggle -->
                 <button class="lmm-capsule-orb"
-                        class:lmm-capsule-orb-show={!cap.unshowing && !cap.unaccepted}
-                        class:lmm-capsule-orb-unshowing={cap.unshowing}
-                        title={cap.unshowing ? 'Hidden — click to show & accept' : 'Showing — click to hide'}
-                        disabled={cap.unaccepted}
-                        onclick={() => toggle_show(cap)}>
+                        class:lmm-capsule-orb-show={!row.unshowing}
+                        class:lmm-capsule-orb-unshowing={row.unshowing}
+                        title={row.unshowing ? 'Hidden — click to show' : 'Showing — click to hide'}
+                        onclick={() => mark(row.unshowing ? 'show' : 'unshow', { spec: row.spec })}>
                 </button>
+                <!-- Label — navigates CM to the Point -->
                 <button class="lmm-capsule-label"
-                        title="{cap.spec}{!cap.resolved && !cap.unaccepted ? ' (unresolved)' : cap.resolved ? ` → line ${cap.line}` : ''}"
-                        onclick={() => {
-                            // Dock_open with point:spec → e_Dock_open → Lang_point_navigate
-                            H.i_elvisto('Lang/Lang', 'Dock_open', { path: active_path, point: cap.spec })
-                        }}>
-                    {cap.spec}
+                        title="{row.spec}{row.unresolved ? ' (unresolved)' : row.line != null ? ` → line ${row.line}` : ''}"
+                        onclick={() => H.i_elvisto('Lang/Lang', 'Dock_open', { path: active_path, point: row.spec })}>
+                    {#if row.body.kind === 'name'}
+                        {row.spec}
+                    {:else}
+                        <!-- < coherently folded patch renderer goes here -->
+                        <pre class="lmm-capsule-body">{row.body.raw}</pre>
+                    {/if}
                 </button>
-                {#if cap.unaccepted}
-                    <!-- ↺ accept — restore a virtually-deleted Point -->
-                    <button class="lmm-capsule-demote"
-                            title="Restore Point (accept)"
-                            onclick={() => unaccept(cap)}>↺</button>
-                {:else if cap.unshowing}
-                    <!-- × unaccept — virtual deletion; only available once unshowing -->
-                    <button class="lmm-capsule-demote"
-                            title="Remove from Understanding (unaccept)"
-                            onclick={() => unaccept(cap)}>×</button>
+                <!-- × — demote to unaccepted (only when already unshowing) -->
+                {#if row.unshowing && !row.unaccepted}
+                    <button class="lmm-capsule-demote" title="Mark for removal" onclick={() => mark('drop', { spec: row.spec })}>×</button>
+                {/if}
+                <!-- ↺ — restore from unaccepted -->
+                {#if row.unaccepted}
+                    <button class="lmm-capsule-accept" title="Restore" onclick={() => mark('accept', { spec: row.spec })}>↺</button>
                 {/if}
             </div>
         {/each}
@@ -469,8 +414,8 @@
         letter-spacing: 0.02em;
     }
 
-    /* Tools row — transport, ↘↓, PeelItem, unsent bar.
-       position:relative anchors the unsent bar overlay. */
+    /* Tools row — transport, ↘↓, PeelItem, ~ bar.
+       position:relative anchors the ~ bar overlay. */
     .nvc-transport {
         display:       flex;
         align-items:   center;
@@ -497,7 +442,7 @@
     .nvc-t-btn:hover          { color: #9aa5b4; border-color: rgba(255,255,255,0.25); }
     .nvc-t-btn.nvc-t-playing  { color: #7ab0c0; border-color: rgba(122,176,192,0.4); }
 
-    /* ↘↓ in the tools row — same weight as transport buttons */
+    /* ↘↓ in the tools row */
     .nvc-t-op {
         background:    transparent;
         border:        1px solid rgba(255,255,255,0.1);
@@ -517,7 +462,7 @@
         cursor:       default;
     }
 
-    /* PeelItem — inline Point injection input. */
+    /* PeelItem */
     .nvc-peel {
         background:    transparent;
         border:        1px solid rgba(255,255,255,0.08);
@@ -538,7 +483,7 @@
     .nvc-peel::placeholder { color: rgba(90, 110, 130, 0.55); }
     .nvc-peel:disabled     { opacity: 0.3; }
 
-    /* Unsent bar — absolute overlay on the right of the tools row. */
+    /* ~ bar — absolute overlay on the right of the tools row. */
     .lmm-wp-bar {
         position:       absolute;
         right:          0;
@@ -571,7 +516,7 @@
     .lmm-wp-confirm       { color: rgba(224, 108, 117, 0.7) !important; font-size: 10px !important; }
     .lmm-wp-confirm:hover { color: #e06c75 !important; }
 
-    /* In-group capsule strip. */
+    /* Capsule strip. */
     .lmm-inbox {
         display:       flex;
         flex-wrap:     wrap;
@@ -598,7 +543,9 @@
         background:   rgba(80, 90, 100, 0.12);
         border-color: rgba(80, 100, 120, 0.25);
     }
-    .lmm-capsule-bad { border-color: rgba(224, 108, 117, 0.35); }
+    .lmm-capsule-bad      { border-color: rgba(224, 108, 117, 0.35); }
+    .lmm-capsule-ghost    { opacity: 0.35; }
+    .lmm-capsule-dim      { opacity: 0.6; }
     /* U%unaccepted — virtual deletion */
     .lmm-capsule-unaccepted {
         background:   rgba(224, 108, 117, 0.06);
@@ -626,15 +573,15 @@
         border-color: #e5c07b;
         box-shadow:   0 0 4px #e5c07b88;
     }
-    .lmm-capsule-bad .lmm-capsule-orb       { border-color: rgba(224, 108, 117, 0.5); }
-    .lmm-capsule-bad .lmm-capsule-orb-show  { background: #e06c75; border-color: #e06c75; box-shadow: 0 0 4px #e06c7588; }
-    /* U%unshowing — dim ring */
+    .lmm-capsule-bad .lmm-capsule-orb      { border-color: rgba(224, 108, 117, 0.5); }
+    .lmm-capsule-bad .lmm-capsule-orb-show { background: #e06c75; border-color: #e06c75; box-shadow: 0 0 4px #e06c7588; }
     .lmm-capsule-orb.lmm-capsule-orb-unshowing {
         background:   transparent;
         border-color: rgba(229, 192, 123, 0.2);
         box-shadow:   none;
     }
     .lmm-capsule-orb:hover { opacity: 0.75; }
+    /* Label */
     .lmm-capsule-label {
         background:    none;
         border:        none;
@@ -649,9 +596,19 @@
         text-overflow: ellipsis;
         white-space:   nowrap;
     }
-    .lmm-capsule-label:hover               { color: #fff; }
+    .lmm-capsule-label:hover                { color: #fff; }
     .lmm-capsule-dormant .lmm-capsule-label { color: #4a6070; }
     .lmm-capsule-bad     .lmm-capsule-label { color: #e06c75; text-decoration: line-through; }
+    /* patch body — the slot for search hits and encode diffs */
+    .lmm-capsule-body {
+        font-size:   9px;
+        line-height: 1.3;
+        margin:      0;
+        white-space: pre-wrap;
+        word-break:  break-all;
+        max-width:   180px;
+        color:       #8a98a8;
+    }
     /* × demote */
     .lmm-capsule-demote {
         background:  none;
@@ -664,6 +621,18 @@
         line-height: 1;
     }
     .lmm-capsule-demote:hover { color: #e06c75; }
+    /* ↺ accept */
+    .lmm-capsule-accept {
+        background:  none;
+        border:      none;
+        cursor:      pointer;
+        color:       #4a7060;
+        font-family: inherit;
+        font-size:   10px;
+        padding:     0 1px;
+        line-height: 1;
+    }
+    .lmm-capsule-accept:hover { color: #89c06b; }
     /* → next What */
     .lmm-cursor-next {
         background:  none;

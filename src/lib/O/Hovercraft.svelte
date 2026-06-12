@@ -928,7 +928,7 @@
     // Stores result on T.sc.Dip_${scheme} for easy later access.
     // Sets T.sc.Dip_${scheme}_is_new = true when freshly created (neu detection).
 
-    Dip_assign(scheme: 'scanid' | 'cytoid', D: TheD): string {
+    Dip_assign(scheme: 'scanid' | 'cytoid' | 'waftid', D: TheD): string {
         const T          = D.c.T as Travel
         const tsc_key    = `Dip_${scheme}` as const
         const tsc_is_new = `Dip_${scheme}_is_new` as const
