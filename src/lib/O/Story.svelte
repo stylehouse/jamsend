@@ -1277,7 +1277,7 @@
 
         if (!run.c.driving && !run.sc.paused) H.story_drive(Run, w, run)
         await H.story_ui(Run, w, run)
-        if (this.The_Opt_val(w, 'trickle')) Run.main(true)
+        if (this.The_Opt_val(w, 'trickle') && run.c.settled_off) Run.main(true)
         // < be more a part of requesty_serial
         wh.o({finished:1}).map(n => n.drop(n))
 

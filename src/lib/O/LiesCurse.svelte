@@ -30,7 +30,8 @@
     //     the single truth for accepted/showing and NaviCado pushes via
     //     e_Lang_LE_push.
 
-    import type { TheC } from "$lib/data/Stuff.svelte"
+    import { _C, type TheC } from "$lib/data/Stuff.svelte"
+    import { Selection } from "$lib/mostly/Selection.svelte";
     import type { House } from "$lib/O/Housing.svelte"
     import { onMount } from "svelte"
 
@@ -523,6 +524,37 @@
                 for (const sc of pt_scs) new_what.i(sc)
             }
         }
+    },
+
+//#endregion
+//#region Waft_dip
+
+    async Waft_dip(waft: TheC | undefined) {
+        const H = this as House
+        if (!waft) return
+        const Se: Selection = waft.c.dip_Se ??= new Selection()
+        Se.sc.topD ??= (() => {
+            const topD = _C({ Dipping: waft.sc.Waft })
+            // Dip must begin on the topD — children claim slots from the
+            // nearest ancestor Dip, and without this seed every depth-1 child
+            // would mint the same first slot.
+            topD.i({ Dip: 'waftid', value: 'w', i: 0 })
+            return topD
+        })()
+        // fresh Travel each pass; D|** (the %Dip particles) resume via resume_X
+        Se.sc.topD.c.T = undefined
+ 
+        await Se.process({
+            n:          waft,
+            process_D:  Se.sc.topD,
+            match_sc:   {},
+            loop_but_no_further: 1,
+            trace_sc:   { dipping: 1 },
+            trace_fn:   async (uD: TheC, C: TheC) => uD.i({ dipping: 1, ...C.sc }),
+            traced_fn:  async (D: TheC, _bD: TheC, C: TheC) => {
+                C.c.Dip = H.Dip_assign('waftid', D)
+            },
+        })
     },
 
 //#endregion

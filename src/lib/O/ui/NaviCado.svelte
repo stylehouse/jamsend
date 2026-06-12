@@ -41,7 +41,7 @@
     //
     //   Orb = U%unshowing toggle → mark('unshow'|'show').
     //   × = appears when unshowing; fires mark('drop') → U%unaccepted.
-    //   ↺ = appears when unaccepted; fires mark('accept') → clears both.
+    //   ↺ = appears when unaccepted; fires mark('undrop') → clears unaccepted.
     //   Capsule label click → Dock_open → Lang_point_navigate.
 
     import type { TheC } from "$lib/data/Stuff.svelte"
@@ -50,13 +50,10 @@
 
     // CapsuleRow — one entry in the strip per clone.
     //   key is what the {#each} keys on — unique even for same-method Points.
-    //   body is what LE_capsule_body returns: kind:'name' today; kind:'patch'
-    //   when a text-search hit or encode diff arrives on clone.c.body.
     type CapsuleRow = {
         clone:      TheC
         key:        string
         spec:       string
-        body:       { kind: string, raw: string }
         unshowing:  boolean
         unaccepted: boolean
         cls:        string | undefined   // focus|caution|dim|ghost from sc.class
@@ -124,9 +121,7 @@
     //   is_changey reads %State directly so it wakes on the same bump
     //   LE_encode_compare fires.  reset_confirm is the two-tap gate on ↩.
 
-    let is_changey  = $derived(
-        !!(LE?.vers && LE.ob({ State: 1 })[0]?.sc.changey)
-    )
+    let is_changey    = $derived(!!(LE?.vers && LE.ob({ State: 1 })[0]?.sc.changey))
     let reset_confirm: boolean = $state(false)
 
     // ── collect_pmirror_map ───────────────────────────────────────────────────
@@ -167,14 +162,15 @@
         void LE?.vers
         void lang_dock?.vers
         if (!LE?.oa({ Seem: 'working' })) return []
-        const clones  = (H as any).LE_clones(LE) as TheC[]
-        const pmMap   = collect_pmirror_map()
+        const clones = (H as any).LE_clones(LE) as TheC[]
+        const pmMap  = collect_pmirror_map()
         const rows: CapsuleRow[] = []
         for (let i = 0; i < clones.length; i++) {
             const clone = clones[i]
-            const body  = (H as any).LE_capsule_body(clone) as { spec: string, kind: string, raw: string }
-            if (!body.spec || body.spec === '?') continue
-            const { spec } = body
+            const sc    = clone.sc as any
+            const raw   = sc.method ?? sc.label ?? sc.Point
+            if (raw == null || raw === 1 || raw === true) continue
+            const spec = String(raw)
             const key  = (clone.c.Dip as string | undefined) ?? `${spec}_${i}`
             const U    = clone.c?.U as any
             const pm   = pmMap.get(spec)
@@ -182,12 +178,11 @@
                 clone,
                 key,
                 spec,
-                body,
                 unshowing:  !!U?.sc?.unshowing,
                 unaccepted: !!U?.sc?.unaccepted,
-                cls:        (clone.sc as any).class as string | undefined,
+                cls:        sc.class as string | undefined,
                 line:       pm?.line,
-                unresolved: pm === undefined,   // absent from Pmirror map → unresolved
+                unresolved: pm === undefined,
             })
         }
         return (H as any).each_keys(rows, (r: CapsuleRow) => r.key, 'capsules')
@@ -318,7 +313,7 @@
 {/if}
 
 <!-- Capsule strip — pure renderer of LE_clones() keyed on c.Dip.
-     Orb = U%unshowing toggle.  × = mark('drop') when unshowing.  ↺ = mark('accept').
+     Orb = U%unshowing toggle.  × = mark('drop') when unshowing.  ↺ = mark('undrop').
      Capsule label click → Dock_open → Lang_point_navigate. -->
 {#if capsules.length > 0}
     <div class="lmm-inbox">
@@ -340,12 +335,7 @@
                 <button class="lmm-capsule-label"
                         title="{row.spec}{row.unresolved ? ' (unresolved)' : row.line != null ? ` → line ${row.line}` : ''}"
                         onclick={() => H.i_elvisto('Lang/Lang', 'Dock_open', { path: active_path, point: row.spec })}>
-                    {#if row.body.kind === 'name'}
-                        {row.spec}
-                    {:else}
-                        <!-- < coherently folded patch renderer goes here -->
-                        <pre class="lmm-capsule-body">{row.body.raw}</pre>
-                    {/if}
+                    {row.spec}
                 </button>
                 <!-- × — demote to unaccepted (only when already unshowing) -->
                 {#if row.unshowing && !row.unaccepted}
@@ -353,7 +343,7 @@
                 {/if}
                 <!-- ↺ — restore from unaccepted -->
                 {#if row.unaccepted}
-                    <button class="lmm-capsule-accept" title="Restore" onclick={() => mark('accept', { spec: row.spec })}>↺</button>
+                    <button class="lmm-capsule-accept" title="Restore" onclick={() => mark('undrop', { spec: row.spec })}>↺</button>
                 {/if}
             </div>
         {/each}
@@ -543,9 +533,9 @@
         background:   rgba(80, 90, 100, 0.12);
         border-color: rgba(80, 100, 120, 0.25);
     }
-    .lmm-capsule-bad      { border-color: rgba(224, 108, 117, 0.35); }
-    .lmm-capsule-ghost    { opacity: 0.35; }
-    .lmm-capsule-dim      { opacity: 0.6; }
+    .lmm-capsule-bad   { border-color: rgba(224, 108, 117, 0.35); }
+    .lmm-capsule-ghost { opacity: 0.35; }
+    .lmm-capsule-dim   { opacity: 0.6; }
     /* U%unaccepted — virtual deletion */
     .lmm-capsule-unaccepted {
         background:   rgba(224, 108, 117, 0.06);
@@ -599,16 +589,6 @@
     .lmm-capsule-label:hover                { color: #fff; }
     .lmm-capsule-dormant .lmm-capsule-label { color: #4a6070; }
     .lmm-capsule-bad     .lmm-capsule-label { color: #e06c75; text-decoration: line-through; }
-    /* patch body — the slot for search hits and encode diffs */
-    .lmm-capsule-body {
-        font-size:   9px;
-        line-height: 1.3;
-        margin:      0;
-        white-space: pre-wrap;
-        word-break:  break-all;
-        max-width:   180px;
-        color:       #8a98a8;
-    }
     /* × demote */
     .lmm-capsule-demote {
         background:  none;
@@ -621,7 +601,7 @@
         line-height: 1;
     }
     .lmm-capsule-demote:hover { color: #e06c75; }
-    /* ↺ accept */
+    /* ↺ restore */
     .lmm-capsule-accept {
         background:  none;
         border:      none;
