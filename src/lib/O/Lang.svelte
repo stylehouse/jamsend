@@ -925,9 +925,14 @@
 
         const rq = H.reqy(req)
         // ensure a furnishing for each wanted path; MVP set is just want_doc.
-        //   drop furnishings whose path is no longer wanted (path moved on).
+        //   drop furnishings whose path is no longer wanted (path moved on) —
+        //   and clear the furnish spinner they may have left spinning; the fresh
+        //   furnishing re-sets it if the new dock also needs loading.
         for (const f of rq.o({ req: 'furnishing' }) as TheC[]) {
-            if (f.sc.path !== want_doc) req.drop(f)
+            if (f.sc.path !== want_doc) {
+                req.drop(f)
+                H.Langspinner(w, 'furnish', true)
+            }
         }
         await rq.roai({ req: 'furnishing', path: want_doc, permanent: 1 })
 
@@ -957,9 +962,15 @@
 
         const dock = w.o({ docks: 1 })[0]?.o({ dock: path })[0] as TheC | undefined
         if (dock && dock.c.content_dige !== undefined) {
+            H.Langspinner(w, 'furnish', true)   // dock landed — loading is over
             q.finish(req)   // finish() drops the waiting:dock ttlilt — no dangler
             return
         }
+
+        // dock loading — the spinner Liesui|DocMinimap show while content is in
+        //   flight; cleared above when the %Good lands (or by ingredients when the
+        //   cursor moves on and this furnishing is dropped).
+        H.Langspinner(w, 'furnish')
 
         // not furnished — ask once (pull), then hold on a ttlilt.  The ask is
         //   idempotent against the speculative push: both land on the one %Good.
@@ -1030,13 +1041,21 @@
         const w        = H.upto_w(req)
         const interest = w.o({ Languinio: 1 })[0]?.o({ Interest: 1 })[0] as TheC | undefined
         const want     = interest?.sc.in_Doc as string | undefined
-        if (!want) { q.finish(req); return }     // docless What — nothing to instrument
+        if (!want) {
+            // docless What — nothing to instrument; also drop a grafted spinner a
+            //   prior What's methods-wait may have left spinning.
+            H.Langspinner(w, 'grafted', true)
+            q.finish(req)
+            return
+        }
 
         const dock = w.o({ docks: 1 })[0]?.o({ dock: want })[0] as TheC | undefined
         if (!dock || dock.c.content_dige === undefined) {
             // ingredients is still furnishing the wanted dock.  Finish — the
             //   content_dige term in our sig (req_workon) re-wakes us the instant
             //   e_Lang_dock_content lands it, so no waiting ttlilt of our own.
+            //   (furnish, not grafted, is the spinner for this window.)
+            H.Langspinner(w, 'grafted', true)
             q.finish(req)
             return
         }
@@ -1048,10 +1067,14 @@
         // compile — Languish builds %Compile/%methods; the graft needs the index.
         //   compile_error is terminal — fall through so graft mints unresolved
         //   Pmirrors the minimap can surface; otherwise hold for the index.
+        //   The grafted spinner (DocMinimap's gold ⟳) spins across this hold —
+        //   set here, cleared on finish; when methods are already in, set+clear
+        //   land within one tick and the UI correctly never sees it.
         const job = dock.o({ Compile: 1 })[0] as TheC | undefined
         const err = dock.oa({ compile_error: 1 }) || job?.oa({ compile_error: 1 })
         req.sc.have_methods = job?.oa({ methods: 1 }) ? 1 : 0
         if (!req.sc.have_methods && !err) {
+            H.Langspinner(w, 'grafted')
             H.i_req_ttlilt(req, 3.0, { waiting: 'methods' })
             return
         }
@@ -1064,6 +1087,7 @@
         req.sc.n_pmirrors =
             (dock.o({ Pmirrors: 1 })[0]?.o({ Pmirror: 1 }) as TheC[] ?? []).length
 
+        H.Langspinner(w, 'grafted', true)
         q.finish(req)
     },
 
@@ -1140,7 +1164,7 @@
 
         if (H.reqonce(req, 'opening')) {
             // one chance: install text into the dock (already minted by e_Lang_dock_content).
-            await H.Langspinner(w, 'text_load')
+            H.Langspinner(w, 'text_load')
 
             const text = (languish.c.open_text as string) ?? ''
 
@@ -1170,12 +1194,27 @@
             H.i_req_ttlilt(req, 3.0, { waiting: 'cm_mount' })
             return
         }
-        await H.Langspinner(w, 'text_load')
+        // CM mounted — the text_load phase is over; clear its spinner.
+        H.Langspinner(w, 'text_load', true)
         q.finish(req)
     },
-    async Langspinner(w,spinner:string,not=false) {
+    // ── Langspinner — one named spinner under %Languinio ──────────────────────
+    //
+    //   Each {spinner:$name} particle is an independent in-flight indicator —
+    //   set|clear touches only the named one, so text_load + furnish + compile
+    //   can all spin at once.  oai|drop is the same per-name model the %stale
+    //   spinner uses in Lang_set_interest.
+    //   (The previous r({spinner:name}) form collapsed its pattern to the
+    //    {spinner:1} has-key wildcard, so setting any spinner replaced ALL of
+    //    them and clearing one cleared all — every overlapping phase broke.)
+    //
+    //   DocMinimap renders the live set; unknown names get the default style.
+    Langspinner(w: TheC, spinner: string, not = false) {
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
-        await languinio.r({spinner}, not ? {} : undefined)
+        if (!languinio) return
+        if (not) for (const s of languinio.o({ spinner }) as TheC[]) languinio.drop(s)
+        else     languinio.oai({ spinner })
+        languinio.bump_version()
     },
 
     // ── req:compile, maz:2 ────────────────────────────────────────────────────
@@ -1197,7 +1236,7 @@
 
         if (H.reqonce(req, 'firing')) {
             // one chance: state is in — build the index.
-            await H.Langspinner(w,'compile')
+            H.Langspinner(w,'compile')
             await this.Lang_compile_dock(w, dock)
         }
 
@@ -1207,7 +1246,7 @@
         // never clears, so don't ttlilt forever — finish and let grafting find
         // nothing (the minimap surfaces unresolved Pmirrors).
         if (dock.oa({ compile_error: 1 }) || job?.oa({ compile_error: 1 })) {
-            await H.Langspinner(w,'compile',true)
+            H.Langspinner(w,'compile',true)
             q.finish(req)
             return
         }
@@ -1225,7 +1264,7 @@
             H.i_req_ttlilt(req, 0.5, { waiting: 'gen_write' })
             return
         }
-        await H.Langspinner(w,'compile',true)
+        H.Langspinner(w,'compile',true)
         q.finish(req)
     },
 

@@ -651,12 +651,20 @@
                     marks = marks.update({
                         filter: (_f, _t, value) => (value.spec as any).graft_id !== target,
                     })
-                    const deco = Decoration.mark({
-                        class: 'cm-graft',
-                        attributes: { 'data-graft-id': e.value.id },
-                        graft_id: e.value.id,
-                    } as any).range(e.value.from, e.value.to)
-                    marks = marks.update({ add: [deco] })
+                    // empty (from==to) or out-of-doc marks are skipped: a mark
+                    //   decoration needs content to ride or it never draws and
+                    //   never tracks; the Pmirror's %graft child still carries
+                    //   the def's position for navigation either way.
+                    if (e.value.from < e.value.to
+                        && e.value.from >= 0
+                        && e.value.to <= tr.state.doc.length) {
+                        const deco = Decoration.mark({
+                            class: 'cm-graft',
+                            attributes: { 'data-graft-id': e.value.id },
+                            graft_id: e.value.id,
+                        } as any).range(e.value.from, e.value.to)
+                        marks = marks.update({ add: [deco] })
+                    }
                 }
                 if (e.is(removeGraftMark)) {
                     const target = e.value.id
@@ -710,10 +718,23 @@
             decos = decos.map(tr.changes)
             for (const e of tr.effects) {
                 if (!e.is(setPointDecorationsEffect)) continue
+                const len   = tr.state.doc.length
                 const marks: ReturnType<typeof Decoration.line>[] = []
+                const lined = new Set<number>()
                 for (const { from, cls } of e.value) {
+                    // Skip offsets outside the live doc rather than letting
+                    // lineAt() throw — a throw inside a StateField update fails
+                    // the WHOLE transaction, so one stale Point would both keep
+                    // the previous decoration set painted and block every other
+                    // Point from decorating.  Skipping degrades just the one.
+                    if (typeof from !== 'number' || from < 0 || from > len) continue
                     // Decoration.line() needs a line-start offset.
                     const line = tr.state.doc.lineAt(from)
+                    // one line decoration per line — RangeSet tolerates equal
+                    // positions but stacking classes double-applies the enlarge.
+                    // < merge classes when two Points share a line (focus wins?)
+                    if (lined.has(line.from)) continue
+                    lined.add(line.from)
                     const deco = Decoration.line({
                         class: `cm-point-engaged${cls ? ` cm-point-${cls}` : ''}`,
                     })
@@ -754,13 +775,20 @@
         showing: Array<{ id: string, from: number, to: number }>,
         hiding:  Array<{ id: string, from: number, to: number }>,
     ) {
+        // skip degenerate and out-of-doc ranges — a stale graft offset past the
+        //   doc end must degrade to "that one Point doesn't fold", never to a
+        //   failed dispatch that drops every other Point's fold state with it.
+        const len = v.state.doc.length
+        const ok  = (from: number, to: number) =>
+            typeof from === 'number' && typeof to === 'number'
+            && from >= 0 && from < to && to <= len
         const effects: ReturnType<typeof foldEffect.of | typeof unfoldEffect.of>[] = []
         for (const { from, to } of showing) {
-            if (from >= to) continue
+            if (!ok(from, to)) continue
             effects.push(unfoldEffect.of({ from, to }))
         }
         for (const { from, to } of hiding) {
-            if (from >= to) continue
+            if (!ok(from, to)) continue
             effects.push(foldEffect.of({ from, to }))
         }
         if (effects.length) v.dispatch({ effects })

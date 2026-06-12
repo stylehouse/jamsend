@@ -156,16 +156,25 @@
         // ob() tracks languinio.vers so this re-derives when LE_arm fires.
         return languinio?.ob({ LE: 1 })[0] as TheC | undefined
     })
-    // ── grafted / stale spinners ──────────────────────────────────────────────
+    // ── spinners — the %Languinio in-flight set ───────────────────────────────
+    //   Each {spinner:$name} particle under %Languinio is one indicator; this
+    //   renders them ALL, so a new phase spinner (Langspinner) shows up here with
+    //   zero UI work.  Known names keep their colours via .lmm-spin-$name rules;
+    //   unknown names fall back to the default grey.
     //   333ms floor on the graft spinner so a fast graft doesn't strobe a frame.
     let _graft_spin = $state(false)
     let _stale_spin = $state(false)
+    let _spinners: string[] = $state([])
     $effect(() => {
         void languinio?.vers
         const grafting = !!languinio?.ob({ spinner: 'grafted' }).length
         if (grafting) { _graft_spin = true }
         else          { setTimeout(() => { _graft_spin = false }, 333) }
         _stale_spin = !!languinio?.ob({ spinner: 'stale' }).length
+        // everything else, generically — grafted|stale keep their bespoke spots.
+        _spinners = ((languinio?.ob({ spinner: 1 }) ?? []) as TheC[])
+            .map(s => s.sc.spinner as string)
+            .filter(name => name !== 'grafted' && name !== 'stale')
     })
 
     let total_lines = $derived.by(() => {
@@ -430,6 +439,9 @@
         <span class="lmm-title" title="{regions.length} region{regions.length === 1 ? '' : 's'}">
             {nav_pos >= 0 ? nav_hist[nav_pos].label : `${regions.length}r`}
         </span>
+        {#each _spinners as name (name)}
+            <span class="lmm-spin lmm-spin-{name}" title={name}>⟳</span>
+        {/each}
         {#if _graft_spin}<span class="lmm-graft-spin" title="grafting Points">⟳</span>{/if}
         {#if _stale_spin}<span class="lmm-stale-spin" title="Understanding stale — remote moved">↻</span>{/if}
     </div>
@@ -545,6 +557,19 @@
         animation: lmm-graft-spin 0.3s linear infinite;
     }
     @keyframes lmm-graft-spin { to { transform: rotate(360deg); } }
+
+    /* generic phase spinners — one per %Languinio/{spinner:$name}.
+       Default grey; named tints below for the phases we know about. */
+    .lmm-spin {
+        color: rgb(110, 125, 140);
+        font-size: 12px; line-height: 1;
+        flex-shrink: 0;
+        display: inline-block;
+        animation: lmm-graft-spin 0.5s linear infinite;
+    }
+    .lmm-spin-furnish   { color: rgb(90, 150, 200); }   /* dock content in flight */
+    .lmm-spin-text_load { color: rgb(90, 170, 170); }   /* waiting on CM mount */
+    .lmm-spin-compile   { color: rgb(150, 130, 200); }  /* methods index building */
 
     /* stale-phase spinner — amber; Understanding remote has drifted */
     .lmm-stale-spin {

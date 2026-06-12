@@ -303,6 +303,19 @@
             const def = this.Lang_resolve_spec(spec, defs, regions)
             if (!def) {
                 unresolved_specs.push(spec)
+                // A once-resolved Pmirror keeps no stale graft: drop the child and
+                //   its CM mark, so "no %graft,1 child" stays the single structural
+                //   meaning of unresolved (the minimap's red state), and a dead
+                //   from|to never reaches the decoration|fold dispatch — a stale
+                //   offset past the doc end fails the whole CM transaction and
+                //   freezes every other Point's decoration with it.
+                const stale = pmirror.o({ graft: 1 })[0] as TheC | undefined
+                if (stale) {
+                    const bm_id = stale.sc.bookmark_id as string | undefined
+                    if (bm_id) this.Lang_remove_graft_mark(dock, bm_id)
+                    pmirror.drop(stale)
+                    pmirror.bump_version()
+                }
                 continue
             }
             this.Lang_ensure_graft(pmirror, def, dock)
@@ -567,7 +580,11 @@
             const unshowing = !!u?.sc.unshowing
             const cls       = (u?.sc.class as string | undefined) ?? ''
 
-            fp += `${id}:${unshowing ? 'x' : cls || '·'};`
+            // fp carries position too — a recompile that moves a def refreshes
+            //   graft.sc.from|to without changing ids or U-state, and the painted
+            //   line must follow it (the CM-side remap only tracks live edits,
+            //   not a re-resolve jump).
+            fp += `${id}@${from}-${to}:${unshowing ? 'x' : cls || '·'};`
             if (unshowing) folds.push({ id, from, to })
             else           decos.push({ id, from, to, cls })
         }
