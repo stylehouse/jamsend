@@ -67,27 +67,27 @@ story:LakeNets
     noCyto
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=1.378
-      sample=1.318,at=1781236596
-      sample=1.386,at=1781237423
-      sample=1.246,at=1781237457
-      sample=1.374,at=1781237578
+    TimeTotal:beliefs,avg=1.46
       sample=1.347,at=1781238502
       sample=1.48,at=1781238664
       sample=1.624,at=1781239212
       sample=1.401,at=1781244426
       sample=1.234,at=1781244974
       sample=1.367,at=1781250888
-  step,dige:f3b8268b7544acb6
-  step=2,dige:3ff1a778f3c12250
-  step=3,dige:c6cb7d35dee14685
-  step=4,dige:4af0f626ec84460c
-  step=5,dige:6414d2ef6c74f139
-  step=6,dige:02c3c9103dc2a229
-  step=7,dige:a357881630361f53
-  step=8,dige:054e687098b3d622
-  step=9,dige:ad697507e0fb62d0
-  step=10,dige:3589fbec41978430
-  step=11,dige:4d6144fe100ffe9c
-  step=12,dige:f4770b409ae21a0d
-  step=13,dige:ba8b3bb9fd12f8fb
+      sample=1.301,at=1781256143
+      sample=1.301,at=1781256185
+      sample=1.819,at=1781262049
+      sample=1.726,at=1781262117
+  step,dige:7ae7bc034aae79bb
+  step=2,dige:cf83a282d7679c83
+  step=3,dige:34c562f5e1c8fcf5
+  step=4,dige:4c7b0f99aba21b06
+  step=5,dige:da7bf78f8b917d21
+  step=6,dige:34c7b6ba3e1f792b
+  step=7,dige:9e50c28cf5d7c34f
+  step=8,dige:1174cf10c47d5bf8
+  step=9,dige:1cf4807faf4dcf8f
+  step=10,dige:e0b8ac7507596299
+  step=11,dige:8eaa54aff2b04e46
+  step=12,dige:58fae991888ab953
+  step=13,dige:cc389599598a1f51

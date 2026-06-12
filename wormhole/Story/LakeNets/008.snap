@@ -1,28 +1,19 @@
 Snap:H
   H:LakeNets,Run
     A:Lies
-      self,round=33	{"mung":["age"]}
+      self,round=32	{"mung":["age"]}
       w:Lies
+        Opt
+          nowriting
+        req:Store,eternal,maz=7,ok
+          Good,type:text/Waft,path:wormhole/Story/LakeNets/Waftily/toc.snap,waft_path:Story/LakeNets/Waftily
+            known,dige:8033a5f07c152bb9,kind:read,at=1781256125.645
+          Good,type:text/Doc,path:Ghost/test/Story/Peregrination.g
+            known,dige:5243d16758eb710b,kind:read,at=1781256125.99
         examining	{"loopy":2}
           req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
           Spotlight	{"ref":{"src":"%What:story"}}
-        Opt
-          nowriting
         req:Cortex,eternal
-        req:Store,eternal,maz=7,ok
-          Good,type:text/Waft,path:wormhole/Story/LakeNets/Waftily/toc.snap,waft_path:Story/LakeNets/Waftily
-            known,dige:8033a5f07c152bb9,kind:read,at=1781232817.941
-          Good,type:text/Doc,path:Ghost/test/Story/Peregrination.g
-            known,dige:5243d16758eb710b,kind:read,at=1781232818.251
-        req:desire
-          req:acquire,maz=9,finished
-          Waft:Story/LakeNets/Waftily	{"ref":{"src":"%Waft:Story/LakeNets/Waftily"}}
-        req:git
-        req:wants
-          want=1781232817992,kind:cold
-          want=1781232818046,kind:cold
-          want=1781232818144,kind:cold,resolved
-        o_elvis:dock_askies
         Waft:Story/LakeNets/Waftily
           What:foundations
             What:story
@@ -49,14 +40,27 @@ Snap:H
               Doc:Ghost/test/Peeroleum.g
               Point,method:Peeroleum
               Point,method:Harbour
+        req:desire
+          req:acquire,maz=9,finished
+          Waft:Story/LakeNets/Waftily	{"ref":{"src":"%Waft:Story/LakeNets/Waftily"}}
         o_elvis:Lies_desire_play
         o_elvis:Lies_desire_pause
         o_elvis:Lies_desire_step
-        self,round=33	{"mung":["age"]}
+        req:git
+        req:wants
+          want=1781256125718,kind:cold
+          want=1781256125769,kind:cold
+          want=1781256125885,kind:cold,resolved
+        o_elvis:dock_askies
+        self,round=32	{"mung":["age"]}
         see:🗂 1 doc · 1 Waft
     A:Lang
       self,round=39	{"mung":["age"]}
       w:Lang
+        Opt
+          txtsyntaxdump
+          nogen
+          nopush
         model,cyto_dir
         docks
           dock:Ghost/test/Story/Peregrination.g,active	{"loopy":1}
@@ -68,7 +72,7 @@ Snap:H
             Compile
               methods
                 def,method:LakeNetherland,from,to=16,line=2	{"ref":{"region_path":"[]"}}
-              time,compile=0.001,all=0.148
+              time,compile=0.003,all=0.162
               Output,gen_path:gen/test/Story/Peregrination.go,dige:132bbb4fbdc68238,source_dige:5243d16758eb710b
                source: |
                  <script lang="ts">
@@ -108,9 +112,8 @@ Snap:H
           Change
             backend,dige:5243d
             storage,dige:5243d,dim:false
-            compile,dige:5243d,dim:false,secs=0.001
+            compile,dige:5243d,dim:false,secs=0.003
         LE	{"loopy":0,"ref":{"target":"%What:story"}}
-          workup
           Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:story","topD":"%Demonstrations:origin"}}
             Demonstrations:origin
               Demonstrations:origin,Doc:Ghost/test/Story/Peregrination.g
@@ -129,19 +132,16 @@ Snap:H
             News:working,goners=0,neus
           State,stale
           {"encode":1,"snap_origin":"Doc:Ghost/test/Story/Peregrination.g\nPoint,method:LakeNetherland,class:caution\nPoint,method:LakeNetherland,class:focus\n","snap_working":"Doc:Ghost/test/Story/Peregrination.g\nPoint,method:LakeNetherland,class:caution\nPoint,method:LakeNetherland,class:focus\n","dirty":"0"}
-        req:workon,following	{"ref":{"LE":"%LE:1, target:%What","w":"%w:Lang"}}
+        req:workon,following,auto_push=0	{"ref":{"LE":"%LE:1, target:%What","w":"%w:Lang"}}
           {"req":"understanding","maz":3,"permanent":1,"sig":"1:29:4:0","what":"story","finished":1}
           req:ingredients,maz=2,permanent,sig:Ghost/test/Story/Peregrination.g,finished
             req:furnishing,path:Ghost/test/Story/Peregrination.g,permanent,finished
-          {"req":"instrumentation","permanent":1,"sig":"Ghost/test/Story/Peregrination.g:5243d16758eb710b:1:206","have_methods":1,"n_pmirrors":2,"finished":1}
+          {"req":"instrumentation","permanent":1,"sig":"Ghost/test/Story/Peregrination.g:5243d16758eb710b:1:187","have_methods":1,"n_pmirrors":2,"finished":1}
           req:push,finished
             req:encode,maz=3,finished
             req:replace,maz=2,finished
             req:verify,finished
         o_elvis:dock_content
-        Opt
-          txtsyntaxdump
-          nogen
         received,doc_opened,doc:Ghost/test/Story/Peregrination.g
         received,editorBegins,doc:Ghost/test/Story/Peregrination.g
         o_elvis:Lies_compile_settled

@@ -5,9 +5,6 @@ Waft:Story/LakeSurfer/Waftily
       Point:Idzeuganise
       Point:Idvoyage_verify
   What:itis
-    Doc:src/lib/ghost/Radios.svelte
-      Point:reset
-  What:itis
     Doc:Ghost/test/LangTiles.g
   What:itis
     Doc:src/lib/p2p/Peerily.svelte.ts
