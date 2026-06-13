@@ -167,7 +167,7 @@
         //   Pre-pull fallback (no LE yet): read live Points off src_C directly.
         const clones: TheC[] | undefined = LE ? (H.LE_accepted_clones(LE) as TheC[]) : undefined
         let points:   TheC[]
-        let point_to_clone: Map<TheC, TheC>   // live Point → its governing Doc clone
+        let point_to_clone: Map<TheC, TheC>   // live Point → its governing clone (U carrier)
 
         if (clones && dock_path) {
             const target   = LE!.sc.target as TheC   // live %What
@@ -188,28 +188,44 @@
                 }
             }
 
-            // the shallow %Doc clone governing this dock — its U node is the U sphere
-            //   for every live Point whose c.Doc serves this dock.
-            const doc_clone = clones.find(c =>
-                !c.c.U?.sc.unaccepted && (c.sc as any).Doc === dock_path)
+            // clone lookup by mainkey — Seem_clone_C copies sc only (no live
+            //   link), so a live immediate child of target matches its clone by
+            //   sc identity.  The clone is the U carrier for everything inside
+            //   that child: a sub-%What clone gates its own Points, a %Doc clone
+            //   gates Points under that Doc — more precise than routing every
+            //   deep Point through one Doc clone.
+            // < c.Dip threading in Seem_clone_C would make this exact when two
+            //   siblings share a label.
+            const ckey = (sc: any) =>
+                sc.What !== undefined ? `W:${sc.What}:${sc.label ?? ''}`
+              : sc.Doc  !== undefined ? `D:${sc.Doc}`
+              : `P:${sc.method ?? sc.label ?? ''}`
+            const clone_by_key = new Map<string, TheC>()
+            for (const clone of clones)
+                if (!clone.c.U?.sc.unaccepted) clone_by_key.set(ckey(clone.sc), clone)
 
-            // live Points (any depth under the %What) whose c.Doc serves this dock.
-            //   c.Doc carries the %Doc particle; match its path against the dock.
-            //   We skip the target %What's IMMEDIATE direct Points (pt.c.up === target):
-            //   those are the shallow direct %Point clones already collected above —
-            //   collecting them again here (a What-direct Point that has a Doc sibling
-            //   carries that Doc on c.Doc) would double the Pmirror.  Points reached
-            //   through a %Doc, or living in a nested sub-%What, are the served set.
-            if (doc_clone) {
-                H.Lang_walk_points(target, (pt: TheC) => {
-                    if (pt.c.up === target) return   // immediate direct Point — clone path owns it
-                    const served = (pt.c.Doc as TheC | undefined)?.sc.Doc as string | undefined
-                    if (served === dock_path) {
-                        live_pts.push(pt)
-                        clone_map.set(pt, doc_clone)   // src_clone = the Doc clone (has U)
-                    }
-                })
-            }
+            // live Points at any depth under the %What that this dock serves.
+            //   c.Doc (Waft_dip's preceding-context stamp) names the Point's doc;
+            //   a bare Point with NO context defaults to the What's own resolved
+            //   doc — which is this dock (the doc-match guard above ensured it),
+            //   so a What:[What:a[Points], Doc:X] serves a's Points with X
+            //   regardless of snap-line order.
+            //   We skip the target's IMMEDIATE direct Points (pt.c.up === target):
+            //   those are the direct %Point clones already collected above.
+            H.Lang_walk_points(target, (pt: TheC) => {
+                if (pt.c.up === target) return   // immediate direct Point — clone path owns it
+                const served = (pt.c.Doc as TheC | undefined)?.sc.Doc as string | undefined
+                    ?? dock_path
+                if (served !== dock_path) return
+                // the immediate child of target on this Point's ancestor chain
+                //   is the clone level — its clone carries the U sphere.
+                let anc: TheC = pt
+                while (anc.c.up && anc.c.up !== target) anc = anc.c.up as TheC
+                const carrier = clone_by_key.get(ckey(anc.sc))
+                if (!carrier) return   // unaccepted ancestor (or unmatched) — its Points go with it
+                live_pts.push(pt)
+                clone_map.set(pt, carrier)
+            })
 
             points       = live_pts
             point_to_clone = clone_map
@@ -418,6 +434,62 @@
     //   Bookmark id is a fresh serial each time a graft is born, so a
     //   reborn Pmirror (different identity → goner+new) gets a new id and
     //   the old mark can be unambiguously removed by its id.
+    // ── Lang_view_on ───────────────────────────────────────────────────────
+    //
+    //   There is ONE EditorView shared by all docks; Langui swaps EditorState
+    //   per doc and stamps lte_dock_path on the view at create|switch.  Every
+    //   Atime dispatch into dock.c.view must check this first: Atime foregrounds
+    //   a dock and grafts before Langui's switch $effect (UItime) has swapped
+    //   the state in, and an unguarded dispatch writes marks into whatever doc
+    //   is still installed — gold underlines on random text in another doc.
+    //   Misses self-heal: e_Lang_editorBegins re-registers on every switch and
+    //   calls Lang_reassert_graft_marks for the arriving dock.
+    Lang_view_on(dock: TheC): boolean {
+        return !!dock.c.view
+            && (dock.c.view as any).lte_dock_path === dock.sc.dock
+    },
+
+    // ── Lang_reassert_graft_marks ───────────────────────────────────────────
+    //
+    //   Called by e_Lang_editorBegins when the shared view arrives on this dock:
+    //   clear ALL graft marks in the installed state (orphans from grafts that
+    //   were dispatched while another dock was being instrumented — pre-gating
+    //   leftovers, or any miss), then install this dock's own set fresh from
+    //   the Pmirror grafts.  addGraftMark is idempotent-replace on id, so a
+    //   reassert over healthy marks is a clean no-op in effect.
+    Lang_reassert_graft_marks(dock: TheC) {
+        if (!this.Lang_view_on(dock)) return
+        const view = dock.c.view as any
+        if (dock.c.clearAllGrafts)
+            view.dispatch({ effects: (dock.c.clearAllGrafts as any).of(null) })
+        if (!dock.c.addGraftMark) return
+        const Pmirrors = dock.o({ Pmirrors: 1 })[0] as TheC | undefined
+        for (const pm of (Pmirrors?.o({ Pmirror: 1 }) ?? []) as TheC[]) {
+            const graft = pm.o({ graft: 1 })[0] as TheC | undefined
+            if (!graft) continue
+            view.dispatch({ effects: (dock.c.addGraftMark as any).of({
+                id:   graft.sc.bookmark_id,
+                from: graft.sc.from,
+                to:   this.Lang_graft_mark_to(graft.sc.from as number,
+                                              graft.sc.to   as number,
+                                              pm.sc.spec    as string | undefined),
+            }) })
+        }
+        // decorations + folds repaint on the next tick's show — force it.
+        dock.c.show_fp = null
+    },
+
+    // ── Lang_graft_mark_to ──────────────────────────────────────────────────
+    //
+    //   The CM mark underlines the NAME, not the def's full extent — the
+    //   compile's def.to runs past the identifier (it swallowed the '(' after
+    //   a MethodLike).  Clamp the mark's end to from + name-length; the graft
+    //   sc keeps the def's true from|to for navigation and fold extents.
+    Lang_graft_mark_to(from: number, to: number, spec: string | undefined): number {
+        const name_end = spec ? from + spec.length : to
+        return Math.max(from, Math.min(to > from ? to : name_end, name_end))
+    },
+
     Lang_ensure_graft(pmirror: TheC, def: TheC, dock: TheC) {
         const def_from = def.sc.from as number
         const def_to   = def.sc.to   as number
@@ -440,9 +512,16 @@
         const serial = (dock.c.graft_serial = (dock.c.graft_serial ?? 0) + 1)
         const bm_id  = `g_${serial}`
 
-        if (dock.c.addGraftMark && dock.c.view) {
+        // mark only when the shared view is actually showing this dock —
+        //   see Lang_view_on.  A skipped mark self-heals on the next switch's
+        //   Lang_reassert_graft_marks.
+        if (dock.c.addGraftMark && this.Lang_view_on(dock)) {
             dock.c.view.dispatch({
-                effects: dock.c.addGraftMark.of({ id: bm_id, from: def_from, to: def_to })
+                effects: dock.c.addGraftMark.of({
+                    id: bm_id, from: def_from,
+                    to: this.Lang_graft_mark_to(def_from, def_to,
+                                                pmirror.sc.spec as string | undefined),
+                })
             })
         }
 
@@ -461,7 +540,9 @@
 
     // ── Lang_remove_graft_mark ───────────────────────────────────────────
     Lang_remove_graft_mark(dock: TheC, bm_id: string) {
-        if (dock.c.removeGraftMark && dock.c.view) {
+        // aligned-view gate (Lang_view_on) — removing by id from another doc's
+        //   state is a no-op at best; the reassert wipes any true orphans.
+        if (dock.c.removeGraftMark && this.Lang_view_on(dock)) {
             dock.c.view.dispatch({
                 effects: dock.c.removeGraftMark.of({ id: bm_id })
             })
@@ -492,7 +573,7 @@
         //   so this also lifts manual gutter folds — acceptable: the cursor has
         //   left this context entirely).  show_fp resets so the next show paints
         //   fresh instead of matching a fingerprint from before the wipe.
-        if (dock.c.view) {
+        if (this.Lang_view_on(dock)) {
             if (dock.c.setPointDecorations)
                 (dock.c.view as any).dispatch({ effects: (dock.c.setPointDecorations as any).of([]) })
             if (dock.c.unfoldAllFolds) (dock.c.unfoldAllFolds as Function)(dock.c.view)
@@ -623,6 +704,8 @@
         }
         fp += `|c${crunch ? 1 : 0}:${methods?.version ?? 0}`
 
+        if (!this.Lang_view_on(dock)) return   // view not on this doc yet — do NOT
+                                               //   cache fp; repaint once aligned
         if (dock.c.show_fp === fp) return   // U-state unchanged since last paint
         dock.c.show_fp = fp
 

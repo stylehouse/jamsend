@@ -230,7 +230,9 @@
 
 {#if LE && target}
 
-<!-- Nav bar — structural cursor movement: ↑ ← label → -->
+<!-- Nav bar — structural cursor movement: ↑ ← → label.
+     prev|next sit adjacent so wobbling back and forth between sibling Whats
+     is a one-spot affair; the label takes the remaining width. -->
 <div class="nvc-bar">
 
     <div class="nvc-seed" class:nvc-ghost={!has_up}>
@@ -251,8 +253,6 @@
         {/if}
     </div>
 
-    <div class="nvc-label" title="Current What: {what_label}">{what_label}</div>
-
     <div class="nvc-seed" class:nvc-ghost={!has_next}>
         {#if slot_next}
             {@render slot_next({ ghosted: !has_next, onclick: () => op('next') })}
@@ -261,6 +261,8 @@
                     disabled={!has_next} onclick={() => op('next')} title="Next What">→</button>
         {/if}
     </div>
+
+    <div class="nvc-label" title="Current What: {what_label}">{what_label}</div>
 
 </div>
 

@@ -500,6 +500,12 @@
 
         w.i({ received: 1, editorBegins: 1, doc: dock.sc.dock })
 
+        // The shared view has just arrived on this dock (Langui re-registers on
+        //   every switch): clear orphan graft marks left in this state by other
+        //   docks' pre-gating grafts and install this dock's own set; also
+        //   forces a decoration|fold repaint (show_fp reset inside).
+        this.Lang_reassert_graft_marks(dock)
+
         // ── Bookmark position sync ────────────────────────────────────────────
         //
         // Langui passes `updates` (live CM positions) on every editorBegins,
@@ -762,14 +768,21 @@
         const u_sig      = `${src_serial}:${wv}:${u_serial}:${od}`
         await wsub.roai({ req: 'understanding' }, { sig: u_sig })
 
-        // ingredients — the wanted-%Doc set, from %Interest.  in_Doc is the only
-        //   field that changes which %Goods we want; a Point-only move within the
-        //   same Doc leaves it untouched, so the dock isn't re-fetched.
-        const interest = w.o({ Languinio: 1 })[0]?.o({ Interest: 1 })[0] as TheC | undefined
-        const g_sig    = (interest?.sc.in_Doc as string | undefined) ?? ''
+        // ingredients — the wanted-%Doc set.  want_doc derives DIRECTLY from the
+        //   live src via Waft_src_doc_path — the same resolution Lang_set_interest
+        //   publishes onto %Interest/in_Doc, but computed here from the source of
+        //   truth.  Reading %Interest instead lagged one tick: these sigs are
+        //   built before understanding (which updates Interest) runs in this same
+        //   pump, so a doc move keyed the stages stale and the new doc only loaded
+        //   on the NEXT tick — visible as "poised until one more trickle".
+        //   in_Doc is the only field that changes which %Goods we want; a
+        //   Point-only move within the same Doc leaves it untouched, so the dock
+        //   isn't re-fetched.
+        const want_doc = src ? H.Waft_src_doc_path(src) : undefined
+        const g_sig    = want_doc ?? ''
         await wsub.roai({ req: 'ingredients' }, { sig: g_sig })
 
-        // instrumentation — the doc the CURSOR wants (interest.in_Doc), its content
+        // instrumentation — the doc the CURSOR wants (want_doc above), its content
         //   dige, the cursor identity, and the Understanding's own version.  Keying
         //   on the wanted doc rather than the foregrounded one is what lets a hop
         //   back to an already-furnished doc re-run the stage and re-point the active
@@ -784,7 +797,6 @@
         //   lands — no waiting ttlilt of instrumentation's own.  The graft's own
         //   fingerprint then decides whether to actually rebuild — a redundant wake
         //   is a cheap no-op.
-        const want_doc  = interest?.sc.in_Doc as string | undefined
         const want_dock = want_doc
             ? (w.o({ docks: 1 })[0]?.o({ dock: want_doc })[0] as TheC | undefined)
             : undefined
@@ -919,8 +931,12 @@
     async req_ingredients(req: TheC, q: any) {
         const H        = this as House
         const w        = H.upto_w(req)
-        const interest = w.o({ Languinio: 1 })[0]?.o({ Interest: 1 })[0] as TheC | undefined
-        const want_doc = interest?.sc.in_Doc as string | undefined
+        // want derives from the live src (workon.c.src is this stage's parent's
+        //   cursor hold), same as the driver's sig — NOT from %Interest, which
+        //   only refreshes when understanding re-runs and so can trail a Waft
+        //   edit (a Doc added to the cursored What) by a tick.
+        const src      = (req.c.up as TheC | undefined)?.c.src as TheC | undefined
+        const want_doc = src ? H.Waft_src_doc_path(src) : undefined
 
         // a title-page %What with no %Doc needs no dock — nothing to furnish.
         if (!want_doc) { q.finish(req); return }
@@ -1041,8 +1057,10 @@
     async req_instrumentation(req: TheC, q: any) {
         const H        = this as House
         const w        = H.upto_w(req)
-        const interest = w.o({ Languinio: 1 })[0]?.o({ Interest: 1 })[0] as TheC | undefined
-        const want     = interest?.sc.in_Doc as string | undefined
+        // want derives from the live src, like ingredients above — %Interest is
+        //   the published address for UI readers, not the pipeline key.
+        const src       = (req.c.up as TheC | undefined)?.c.src as TheC | undefined
+        const want      = src ? H.Waft_src_doc_path(src) : undefined
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
         if (!want) {
             // docless What — a title page.  Wipe the previously foregrounded

@@ -461,6 +461,14 @@
                 view!.setState(EditorState.create({ doc: text, extensions: editorExtensions! }))
             }
 
+            // Which doc this view's live state belongs to — the alignment key
+            //   the Atime graft|decoration dispatchers check (Lang_view_on)
+            //   before mutating, since they would otherwise write marks into
+            //   whatever doc happened to be installed (the cross-doc underline
+            //   leak: Atime foregrounds a dock and grafts before this effect
+            //   has swapped the state in).
+            ;(view as any).lte_dock_path = arriving
+
             spool_remember(arriving, view!.state.doc.toString())
             prev_path = arriving
 
@@ -977,6 +985,8 @@
             parent: captured_container,
             state: EditorState.create({ doc: initial, extensions: editorExtensions }),
         })
+        // alignment key for Atime dispatchers — see the switch $effect's stamp.
+        ;(view as any).lte_dock_path = captured_path
         last_applied_lang = initial_lang_name
         console.log(`🏗 EditorView created: dom.clientHeight=${view.dom.clientHeight} scrollDOM.clientHeight=${view.scrollDOM.clientHeight}`)
 

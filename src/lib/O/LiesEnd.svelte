@@ -679,7 +679,13 @@ await M.eatfunc({
         const working = LE.oai({ Seem: 'working' })
         const root    = working.sc.C as TheC | undefined
         if (!root) throw 'LE_add_clone: no working C — call LE_pull first'
-        return root.i({ ...sc })
+        const clone = root.i({ ...sc })
+        // session-only birth stamp — Autofork's "recently created" signal.  On
+        //   c, not sc and not U: c never encodes or pushes, and U doesn't exist
+        //   until the next pull wires it.  Fork-time reads clone.c.created_at
+        //   to decide whether a departing set is "just this fresh Point".
+        clone.c.created_at = Date.now()
+        return clone
     },
 
     // ── LE_drop_clone ────────────────────────────────────────────────────────
@@ -827,13 +833,17 @@ await M.eatfunc({
     //   1. src is a %Doc                → itself.
     //   2. first %Doc descendant in document order — a container %What presents
     //        the first Doc it leads to; o({}) preserves insertion order, which
-    //        is exactly snap-line order.  Wins over (3) so a What that
+    //        is exactly snap-line order.  Wins over (3|4) so a What that
     //        introduces its own Doc isn't captured by an outer context.
     //   3. src.c.Doc — the governing-Doc context stamped by Waft_dip's Se:
     //        the enclosing ancestor %Doc (time-slice What|Point inside a Doc)
-    //        or the nearest preceding sibling %Doc within the same parent
-    //        (snap-order Doc-before-its-Points).
-    //   4. undefined — a pure title-page %What; no dock to open.
+    //        or the nearest preceding sibling %Doc within the same parent.
+    //   4. ancestor climb — each enclosing %What's first DIRECT %Doc child,
+    //        nearest enclosure first.  This is what frees the Waft from line
+    //        ordering: a What:[What:a[Points], Doc:X] serves a's Points with X
+    //        even though X is written after a.  A sibling What's INTERIOR doc
+    //        never leaks this way — only direct children of enclosures count.
+    //   5. undefined — a pure title-page %What; no dock to open.
     Waft_src_doc(src: TheC): TheC | undefined {
         if (!src) return undefined
         if ((src.sc as any).Doc !== undefined) return src
@@ -846,6 +856,12 @@ await M.eatfunc({
             }
         }
         if (src.c.Doc) return src.c.Doc as TheC
+        let up = src.c.up as TheC | undefined
+        while (up && (up.sc as any).Waft === undefined) {
+            const doc = up.o({ Doc: 1 })[0] as TheC | undefined
+            if (doc) return doc
+            up = up.c.up as TheC | undefined
+        }
         return undefined
     },
     Waft_src_doc_path(src: TheC): string | undefined {
