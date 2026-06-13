@@ -176,10 +176,6 @@
     let active_path = $derived(
         (languinio?.ob({ active: 1 })[0]?.sc.dock as string | undefined) ?? ''
     )
-    let LE: TheC | undefined = $derived.by(() => {
-        // ob() tracks languinio.vers so this re-derives when LE_arm fires.
-        return languinio?.ob({ LE: 1 })[0] as TheC | undefined
-    })
     // ── spinners — the %Languinio in-flight set ───────────────────────────────
     //   Each {spinner:$name} particle under %Languinio is one indicator; this
     //   renders them ALL, so a new phase spinner (Langspinner) shows up here with
@@ -210,21 +206,6 @@
         return n
     })
 
-    // ── crunch — text-space warp control ──────────────────────────────────────
-    //   Reads sc.crunch off the LE's live target %What (e_Lies_what_crunch bumps
-    //   LE so this re-derives).  The button offers itself when the doc is big
-    //   enough that engaged labels drown in context — or whenever crunch is
-    //   already on, so it can always be turned back off.
-    const CRUNCH_OFFER_LINES = 400
-    let crunch_on = $derived.by(() => {
-        void LE?.vers
-        const target = LE?.sc.target as TheC | undefined
-        return !!(target?.sc as any)?.crunch
-    })
-    let crunch_offer = $derived(!!LE && (crunch_on || total_lines > CRUNCH_OFFER_LINES))
-    function toggle_crunch() {
-        H.i_elvisto('Lies/Lies', 'Lies_what_crunch', {})
-    }
 
 
     // ── throttled rebuild ─────────────────────────────────────────────────────
@@ -277,6 +258,23 @@
             }))
 
             const text = (lang_dock.c.text as string) ?? ''
+
+            // De-facto head region: the span before the first //#region is a
+            // region in its own right (the file head — <script…> and the bare
+            // top-level methods), so it gets a band like everything else instead
+            // of floating above the structure.  patch_region_extents closes it at
+            // the first real region.  Labelled by the first non-blank line.
+            const first_real = list.reduce((m, r) => Math.min(m, r.from_line), Infinity)
+            let defacto: Region | undefined
+            if (first_real > 1) {
+                const head = (text.split('\n').find(l => l.trim()) ?? 'head').trim().slice(0, 40)
+                defacto = {
+                    label: head, depth: 0, from_line: 1, to_line: total_lines,
+                    from_char: 0, to_char: text.length, defs: [], path: [head],
+                }
+                list.unshift(defacto)
+            }
+
             patch_region_extents(list, text, total_lines)
 
             // index regions by their exact path for O(1) def nesting.  region_path
@@ -295,11 +293,15 @@
                     to:     d.sc.to     as number,
                     path:   (d.c.region_path as string[] | undefined) ?? [],
                 }
-                // exact path match first|fall back to line geometry for any entry
-                // an older compile left without a region_path.
+                // path-bearing defs match their region exactly (line geometry is
+                // the fallback for older path-less compiles).  A path-less def in
+                // the head falls into the de-facto region|otherwise it is genuinely
+                // top-level (a rare def sitting after the last region).
                 const owner = def.path.length
                     ? (by_path.get(path_key(def.path)) ?? innermost_region_for_line(list, def.line))
-                    : innermost_region_for_line(list, def.line)
+                    : (defacto && def.line <= defacto.to_line
+                        ? defacto
+                        : innermost_region_for_line(list, def.line))
                 if (owner) owner.defs.push(def)
                 else top_defs.push(def)
             }
@@ -397,6 +399,19 @@
 
     // ── interactions ──────────────────────────────────────────────────────────
 
+    // < ATTENTION LAYER (the lightest Point activity) — not built yet.
+    //    A separate Waft layer recording where attention actually went, distinct
+    //    from the structural %Points|its sources, lightest to heaviest:
+    //      what line is visible on screen, where the cursor clicks around (a
+    //      teacher tapping the board), a manual goto (this go_to), and certainly
+    //      any edit.  Each lands a faint timestamped Point on the layer.
+    //    The trail draws back as a heatmap streak careening over the MiniMap —
+    //      pull up history and watch it move.  Edits batch against it so a session
+    //      of changes replays as one pleasing sweep rather than scattered diffs.
+    //    Manual gotos and edits weigh heaviest|mere on-screen visibility weighs
+    //      least and decays.  All of it resolves through %Map by name, never by
+    //      stored absolute offset — same crawl-to-method identity as %Points.
+
     function go_to(from: number, to: number, label: string) {
         _navigating = true
         clearTimeout(_nav_timer)
@@ -490,13 +505,8 @@
             <button class="lmm-nav" onclick={go_forward} disabled={!can_forward}
                     title="Forward" aria-label="Forward">▸</button>
         {/if}
-        <span class="lmm-title" title="{regions.length} region{regions.length === 1 ? '' : 's'}">
-            {nav_pos >= 0 ? nav_hist[nav_pos].label : `${regions.length}r`}
-        </span>
-        {#if crunch_offer}
-        <button class="lmm-crunch" class:on={crunch_on} onclick={toggle_crunch}
-                title="{crunch_on ? 'unwarp — show full text' : `crunch — fold all but engaged labels (${total_lines} lines)`}">
-            {crunch_on ? '▣' : '▢'}</button>
+        {#if nav_pos >= 0}
+            <span class="lmm-title" title={nav_hist[nav_pos].label}>{nav_hist[nav_pos].label}</span>
         {/if}
         {#each _spinners as name (name)}
             <span class="lmm-spin lmm-spin-{name}" title={name}>⟳</span>
@@ -616,14 +626,6 @@
         animation: lmm-graft-spin 0.3s linear infinite;
     }
     @keyframes lmm-graft-spin { to { transform: rotate(360deg); } }
-
-    /* crunch — the text-space warp toggle; filled square while warping */
-    .lmm-crunch {
-        background: none; border: none; cursor: pointer; padding: 0 2px;
-        color: rgb(110, 125, 140); font-size: 12px; line-height: 1;
-        flex-shrink: 0;
-    }
-    .lmm-crunch.on { color: rgb(180, 160, 40); }
 
     /* generic phase spinners — one per %Languinio/{spinner:$name}.
        Default grey; named tints below for the phases we know about. */

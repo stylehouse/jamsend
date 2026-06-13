@@ -211,7 +211,10 @@
         const method = peel_text.trim()
         const sc = LE?.sc.target ? (LE.sc.target as TheC).sc as any : undefined
         const at_what = sc?.What !== undefined || sc?.Waft !== undefined
-        if (method && LE && at_what) mark('add', { sc: { Point: 1, method } })
+        // {Point: name} — the spec is the Point value itself, no separate %method.
+        // Resolution crawls %Map by this name, so the Point never stores an
+        // absolute offset, just the identity to re-resolve against the live doc.
+        if (method && LE && at_what) mark('add', { sc: { Point: method } })
         peel_text = ''
     }
 
