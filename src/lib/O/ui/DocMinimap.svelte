@@ -125,14 +125,11 @@
     })
 
     // ── data sources ──────────────────────────────────────────────────────────
-    let dock: TheC | undefined = $state()
+    //   lang_dock: the %Dock particle from Languinio — carries Compile, Pmirrors,
+    //   sc.text, and everything else.  The old `dock` read from ave.ob({lang_dock:path})
+    //   which is no longer set; lang_dock via languinio.ob({dock:path}) is the one path.
     let lang_dock: TheC | undefined = $state()
     $effect(() => {
-        dock = active_path
-            ? H.ave.ob({ lang_dock: active_path })[0] as TheC | undefined
-            : undefined
-        // lang_dock is the actual %Dock particle (carries Compile, Pmirrors etc.).
-        // Same derivation as NaviCado — both read from Languinio directly.
         lang_dock = active_path
             ? languinio?.ob({ dock: active_path })[0] as TheC | undefined
             : undefined
@@ -178,8 +175,8 @@
     })
 
     let total_lines = $derived.by(() => {
-        void dock?.version
-        const text = (dock?.sc.text as string) ?? ''
+        void lang_dock?.version
+        const text = (lang_dock?.sc.text as string) ?? ''
         if (!text) return 1
         let n = 1
         for (const ch of text) if (ch === '\n') n++
@@ -220,27 +217,26 @@
     }
 
     $effect(() => {
-        void dock?.vers
         void lang_dock?.vers
         void active_path
         schedule_rebuild()
     })
 
     function rebuild() {
-        if (!dock) {
+        if (!lang_dock) {
             _structure = { regions: [], top_level_defs: [] }
             return
         }
 
-        // Compile output lives on the Lang-side lang_dock, not the ave text particle.
-        // %methods is a direct child of %Compile regardless of whether %Output exists.
+        // Compile output and sc.text both live on lang_dock (%Dock from Languinio).
+        // %Map is a direct child of %Compile regardless of whether %Output exists.
         // %Output is only present for hard-compiled gen_path docs.
-        const job     = lang_dock?.o({ Compile: 1 })[0]  as TheC | undefined
-        const methods = job?.o({ methods: 1 })[0]        as TheC | undefined
+        const job   = lang_dock.o({ Compile: 1 })[0]  as TheC | undefined
+        const Map_C = job?.o({ Map: 1 })[0]           as TheC | undefined
 
-        if (methods) {
-            const region_entries = methods.o({ region: 1 }) as TheC[]
-            const def_entries    = methods.o({ def:    1 }) as TheC[]
+        if (Map_C) {
+            const region_entries = Map_C.o({ region: 1 }) as TheC[]
+            const def_entries    = Map_C.o({ def:    1 }) as TheC[]
 
             const list: Region[] = region_entries.map(r => ({
                 label:     r.sc.label as string,
@@ -252,7 +248,7 @@
                 defs:      [],
             }))
 
-            const text = (dock.sc.text as string) ?? ''
+            const text = (lang_dock.sc.text as string) ?? ''
             patch_region_extents(list, text, total_lines)
 
             const top_defs: Def[] = []
@@ -279,7 +275,7 @@
         }
 
         // Fallback: no compile index yet.  Scan regions from text.
-        const fallback_regions = scan_regions_from_text((dock.sc.text as string) ?? '')
+        const fallback_regions = scan_regions_from_text((lang_dock.sc.text as string) ?? '')
         const summary = `${fallback_regions.length}r 0d (no compile)`
         if (summary !== last_log_summary) {
             console.log(`🗺 minimap rebuild ${active_path} (no compile yet): regions=${fallback_regions.length}`)

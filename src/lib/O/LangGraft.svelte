@@ -239,13 +239,13 @@
         // (Seem_clone_C) or the c.up chain on the original (Waft_link_up).
         const waft_key = H.waft_key_of(interest?.sc.src ?? src_C) ?? '?'
 
-        // compile output for resolution — %methods lives directly on %Compile,
+        // compile output for resolution — %Map lives directly on %Compile,
         // whether or not an %Output child exists (soft-compiled docs never get Output).
         const job     = dock.o({ Compile: 1 })[0]       as TheC | undefined
-        const methods = job?.o({ methods: 1 })[0]       as TheC | undefined
+        const Map_C = job?.o({ Map: 1 })[0]       as TheC | undefined
         // defs: method functions; regions: //#region blocks — both are valid targets
-        const defs    = (methods?.o({ def: 1 })    ?? []) as TheC[]
-        const regions = (methods?.o({ region: 1 }) ?? []) as TheC[]
+        const defs    = (Map_C?.o({ def: 1 })    ?? []) as TheC[]
+        const regions = (Map_C?.o({ region: 1 }) ?? []) as TheC[]
         // calls are for navigation, not for graft anchoring
         // < could graft to first call-site if no def|region matches in future
 
@@ -344,7 +344,7 @@
             const def_names     = defs.map(d => d.sc.method as string)
             console.warn(
                 `🔩 unresolved Pmirrors: [${unresolved_specs.join(', ')}]`,
-                `\n  job=${!!job} methods=${!!methods}`,
+                `\n  job=${!!job} Map=${!!Map_C}`,
                 `\n  defs(${defs.length}): ${def_names.slice(0,5).join(', ')}`,
                 `\n  regions(${regions.length}): ${region_labels.slice(0,8).join(', ')}`,
             )
@@ -688,10 +688,10 @@
         const target = (w.o({ Languinio: 1 })[0]?.o({ Interest: 1 })[0]
                           ?.c.LE as TheC | undefined)?.sc.target as TheC | undefined
         const crunch = !!(target?.sc as any)?.crunch
-        const methods = dock.o({ Compile: 1 })[0]?.o({ methods: 1 })[0] as TheC | undefined
-        if (methods && dock.c.view) {
+        const Map_C = dock.o({ Compile: 1 })[0]?.o({ Map: 1 })[0] as TheC | undefined
+        if (Map_C && dock.c.view) {
             const doc = (dock.c.view as any).state.doc
-            for (const r of (methods.o({ region: 1 }) ?? []) as TheC[]) {
+            for (const r of (Map_C.o({ region: 1 }) ?? []) as TheC[]) {
                 const rf = r.sc.from as number, rt = r.sc.to as number
                 if (typeof rf !== 'number' || typeof rt !== 'number') continue
                 if (rf < 0 || rt <= rf || rt > doc.length) continue
@@ -702,7 +702,7 @@
                 else                    opens.push({ id: `crunch_${rf}`, from: header_end, to: rt })
             }
         }
-        fp += `|c${crunch ? 1 : 0}:${methods?.version ?? 0}`
+        fp += `|c${crunch ? 1 : 0}:${Map_C?.version ?? 0}`
 
         if (!this.Lang_view_on(dock)) return   // view not on this doc yet — do NOT
                                                //   cache fp; repaint once aligned

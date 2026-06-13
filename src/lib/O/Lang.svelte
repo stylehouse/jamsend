@@ -121,7 +121,7 @@
     //                                                + dock_askies pull.  Finished when
     //                                                its dock has content_dige.
     //     /{req:'instrumentation',maz:1,permanent} — compile + graft on the active dock
-    //       sc.have_methods, sc.n_pmirrors          convergence markers (results on dock)
+    //       sc.have_Map, sc.n_pmirrors          convergence markers (results on dock)
     //
     //   w/{Languinio:1}           — Lang's one focus object enrolled in ave.
     //     c.w                     back-ref to w:Lang
@@ -1050,7 +1050,7 @@
     //   activated a doc once and so left a hop back to an already-furnished doc
     //   stuck on the old one (the minimap painting the wrong Points).
     //
-    //   Then the things-we-build-on-the-dock: the compile %methods index and the
+    //   Then the things-we-build-on-the-dock: the compile %Map index and the
     //   grafted %Pmirrors.  Holds convergence-markers only — the index and Pmirrors
     //   live on the dock — so de-finishing loses nothing; it re-checks and no-ops
     //   when the dock is already current at this dige.
@@ -1101,7 +1101,7 @@
         //   returns while the cursor sits on a %What, so this drives no feedback.
         if (w.c.active_dock_path !== want) await H.Lang_set_active_dock(w, want)
 
-        // compile — Languish builds %Compile/%methods; the graft needs the index.
+        // compile — Languish builds %Compile/%Map; the graft needs the index.
         //   compile_error is terminal — fall through so graft mints unresolved
         //   Pmirrors the minimap can surface; otherwise hold for the index.
         //   The grafted spinner (DocMinimap's gold ⟳) spins across this hold —
@@ -1109,8 +1109,8 @@
         //   land within one tick and the UI correctly never sees it.
         const job = dock.o({ Compile: 1 })[0] as TheC | undefined
         const err = dock.oa({ compile_error: 1 }) || job?.oa({ compile_error: 1 })
-        req.sc.have_methods = job?.oa({ methods: 1 }) ? 1 : 0
-        if (!req.sc.have_methods && !err) {
+        req.sc.have_Map = job?.oa({ Map: 1 }) ? 1 : 0
+        if (!req.sc.have_Map && !err) {
             H.Langspinner(w, 'grafted')
             H.i_req_ttlilt(req, 3.0, { waiting: 'methods' })
             return
@@ -1124,8 +1124,70 @@
         req.sc.n_pmirrors =
             (dock.o({ Pmirrors: 1 })[0]?.o({ Pmirror: 1 }) as TheC[] ?? []).length
 
+        // settle %Compile/%Map into %Interest/%MapReport for the minimap —
+        // content-gated, so an edit that recompiles to the same structure leaves
+        // the report (and the minimap) untouched.
+        await H.Lang_Map_report(w, dock)
+
         H.Langspinner(w, 'grafted', true)
         q.finish(req)
+    },
+
+    // ── Lang_Map_report — %Compile/%Map → %Interest/%MapReport ────────────────
+    //
+    //   The minimap reads a settled summary here instead of re-deriving it from
+    //   the raw index on every wake.  Lives on %Interest (Lang side, per-checkout|
+    //   Lang_set_interest drops + rebuilds %Interest each checkout, so the report
+    //   is naturally scoped to the current working clone).
+    //
+    //   Content-gated by a digest of the Map's entries.  %Map's version bumps on
+    //   every recompile even when the source structure is unchanged (the common
+    //   edit→recompile case), so a version gate would rebuild the report need-
+    //   lessly|the digest is stable across those, and only moves when defs,
+    //   calls, controlflows or regions actually change.
+    //
+    //   The digest is NOT an enWaft.  enWaft speaks only Waft vocabulary
+    //   (%What|%Doc|%Point) and faults on the def|call|region|controlflow main-
+    //   keys the Map holds, so we serialise the entries deterministically and
+    //   dig that.  If enWaft ever learns the Map vocabulary this can become
+    //   dig(enWaft(Map).snap) with no change to the gate.
+    //   < stored on report.c (off-snap identity, like dock.c.content_dige), so
+    //     the digest never rides the snap.
+    async Lang_Map_report(w: TheC, dock: TheC) {
+        const H         = this as House
+        const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
+        const interest  = languinio?.o({ Interest: 1 })[0] as TheC | undefined
+        if (!interest) return
+        const Map_C = dock.o({ Compile: 1 })[0]?.o({ Map: 1 })[0] as TheC | undefined
+        if (!Map_C) return
+
+        // serialise every entry as line|kind|key|via|class|title, sorted by line
+        // then kind then key so a reordered-but-equal index still digests equal.
+        const rows = (Map_C.o({}) as TheC[]).map(e => {
+            const s    = e.sc
+            const kind = s.def ? 'def' : s.call ? 'call'
+                       : s.region ? 'region' : s.controlflow ? 'cf' : '?'
+            const key  = (s.method ?? s.label ?? s.keyword ?? '') as string
+            return { line: (s.line as number) ?? 0, kind, key,
+                     via:   (s.via   ?? '') as string,
+                     cls:   (s.class ?? '') as string,
+                     title: (s.title ?? '') as string }
+        })
+        rows.sort((a, b) => a.line - b.line
+            || a.kind.localeCompare(b.kind) || a.key.localeCompare(b.key))
+        const serial = rows.map(r =>
+            `${r.line}|${r.kind}|${r.key}|${r.via}|${r.cls}|${r.title}`).join('\n')
+        const dige = await dig(serial)
+
+        const report = interest.oai({ MapReport: 1 })
+        if (report.c.Map_dige === dige) return   // same structure — leave it
+
+        report.c.Map_dige  = dige
+        report.sc.n_def    = rows.filter(r => r.kind === 'def').length
+        report.sc.n_call   = rows.filter(r => r.kind === 'call').length
+        report.sc.n_region = rows.filter(r => r.kind === 'region').length
+        report.sc.n_cf     = rows.filter(r => r.kind === 'cf').length
+        report.bump_version()
     },
 
     // Doc-from-src resolution lives in LiesEnd as Waft_src_doc_path — one body
@@ -1245,11 +1307,11 @@
     //   reqonce: run the synchronous index build (Lang_compile_dock) once.  With
     //   multi-maz do(), this fires in the same tick text_loaded finishes.
     //
-    //   %Compile/%methods is populated synchronously by Lang_compile_dock, so a
+    //   %Compile/%Map is populated synchronously by Lang_compile_dock, so a
     //   soft-compile finishes this phase immediately.  For a hard-compile,
     //   %Compile/sc.pending stays set while Lies writes the gen file; we hold Story
     //   open with a ttlilt until it clears, so the gen file exists before the snap.
-    //   Either way %methods — the only thing grafting needs — is present the
+    //   Either way %Map — the only thing grafting needs — is present the
     //   instant Lang_compile_dock returns.
     async req_compile(req: TheC, q: any) {
         const H        = this as House
@@ -1276,7 +1338,7 @@
 
         // index missing → compile hasn't run yet; methods present is the graft
         // gate.  hold until it appears.
-        if (!job || !job.oa({ methods: 1 })) {
+        if (!job || !job.oa({ Map: 1 })) {
             H.i_req_ttlilt(req, 0.5, { waiting: 'methods' })
             return
         }
@@ -1379,7 +1441,7 @@
         await this.e_Lang_dock_content(A, w)
 
         // Drive each dock's Languish (text_loaded → compile) BEFORE the workon
-        //  driver, so a dock minted this tick has its %methods ready when
+        //  driver, so a dock minted this tick has its %Map ready when
         //  instrumentation re-keys — same-tick convergence, no extra round-trip.
         //  Languish lives on dock — rq.do() on w no longer reaches it.
         const docks_C = w.o({ docks: 1 })[0] as TheC | undefined

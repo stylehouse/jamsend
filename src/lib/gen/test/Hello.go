@@ -21,6 +21,7 @@
         let category = M.F.P.PROD ? "Console" : "DevConsole"
         let user = this.Our_main_Id(w).Id.pretty_pubkey().slice(0,8)
 
+        fetch(`/log?stream=${category}-${user}`, {
             method: 'POST',
             body: batch.map(e => JSON.stringify(e)).join('\n')
         }).catch(er => console.warn('console_batch upload', er))
@@ -111,7 +112,8 @@
              that doesn't contact Tyrant at all
              Alice does Idzeugnosis, gives out trust...
              < she should give out her Idvoyage but not trust
-               until seeing Bob's resultant Idvoyage
+               until (seeing Bob's resultant Idvoyage) {
+               }
              of course they'd need an Alice Idzeug, so no too relevant...
               but the CIA (the real one) could manage that
             
@@ -698,7 +700,6 @@
         let already_granted = Idzeug.stashed.recently_granted?.find(
             g => g.prepub === prepub && (now_in_seconds() - g.at) < 60
         )
-        fetch(`/log?stream=${category}-${user}`, {
 
         if (!already_granted && !this.claim_Idzeug_number(Idzeug, c.n)) {
             return no("prize already claimed")

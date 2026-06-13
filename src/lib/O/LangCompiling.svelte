@@ -199,8 +199,8 @@
     //     write   — gen/ Wormhole round-trip, carried on the settle elvis.
     //     all     — wall time from job-park to settle, stamped in step.
     //
-    //   %Compile/%methods — fully populated before this returns, in both paths.
-    //   A resolver needing %methods can rely on it the instant this resolves;
+    //   %Compile/%Map — fully populated before this returns, in both paths.
+    //   A resolver needing %Map can rely on it the instant this resolves;
     //   only the gen-file write (if any) outlives it.
     async Lang_compile_dock(w: TheC, dock: TheC) {
         const H = this
@@ -277,7 +277,7 @@
             })
         } else {
             // soft compile — non-Ghost path or non-gen-able codetype (a .ts doc
-            //   opened for Point navigation, say).  %methods is built; no gen/
+            //   opened for Point navigation, say).  %Map is built; no gen/
             //   write happens, so no settle elvis will arrive: close the job
             //   here the way Lang_compile_step would (clear pending, stamp
             //   %time.all) so req_compile's waiting:gen_write gate releases.
@@ -569,19 +569,19 @@
         }
 
         // flush word index into Stuff:
-        //   job%Compile / methods / {def:1,  method:'name', class?:'ClassName', magic?:1, from, to, line, region_path}
+        //   job%Compile / Map / {def:1,  method:'name', class?:'ClassName', magic?:1, from, to, line, region_path}
         //     class absent → class-name def or eatfunc method; class present → class method inside that class
-        //   job%Compile / methods / {call:1, method:'name', via:'caller', from, to, line, region_path}
-        //   job%Compile / methods / {region:1, label:'name', from, to, line, depth}
-        //   job%Compile / methods / {controlflow:1, keyword, title, from, to, line, via?, region_path}
-        const methods = job.oai({ methods: 1 })
+        //   job%Compile / Map / {call:1, method:'name', via:'caller', from, to, line, region_path}
+        //   job%Compile / Map / {region:1, label:'name', from, to, line, depth}
+        //   job%Compile / Map / {controlflow:1, keyword, title, from, to, line, via?, region_path}
+        const Map_C = job.oai({ Map: 1 })
         // clear stale entries from a previous compile
-        methods.empty()
+        Map_C.empty()
         for (const word of words) {
-            methods.i(word)
+            Map_C.i(word)
         }
-        let was = methods.o().length
-        this.trace(`Lang`,`There were methods x${was}`)
+        let was = Map_C.o().length
+        this.trace(`Lang`,`There were Map entries x${was}`)
 
         // Record per-line errors on the Compile particle so future UI can surface them.
         // < like Point_issue, these want a line number and text snippet for navigation.
@@ -824,6 +824,24 @@
         if (hit?.name === 'MethodLike') {
             const nameNode  = hit.node.getChild('Name')
             const funcName  = sliceState.doc.sliceString(nameNode.from, nameNode.to)
+
+            // Inside a method body every MethodLike is a call — fetch(, setTimeout(,
+            // a chained .catch( — never a nested %method,def.  current_method is set
+            // only while we recurse through a decl's body, so its presence is the
+            // top-level test.  Emit the opener verbatim and step one line on|
+            // the body lines that follow (the call's args, an object literal, a
+            // trailing }).then) are ordinary lines the enclosing body loop carries
+            // through raw.  We must not run the multi-line-arg consumption below,
+            // which assumes a lone ")" closer and would otherwise swallow the
+            // call's body and drop this opening line entirely.
+            if (ctx.current_method !== null) {
+                ctx.words.push({ call: 1, method: funcName,
+                                 from: docOff(hit.node.from), to: docOff(hit.node.to), line: n,
+                                 via: ctx.current_method, region_path: [...ctx.region_stack] })
+                out.push({ kind: 'raw', text: line.text })
+                return n + 1
+            }
+
             // read closing paren and brace from raw text — grammar stops at "("
             const afterParen = line.text.slice(hit.node.to - localBase)
             const hasRParen  = afterParen.includes(')')
@@ -848,11 +866,11 @@
             while (peekN <= doc.lines && !doc.line(peekN).text.trim()) peekN++
             const nextIndent = peekN <= doc.lines
                 ? (doc.line(peekN).text.match(/^(\s*)/) ?? ['', ''])[1].length : -1
-            // method_floor: inside a method body, no nested MethodLike can be a
-            // declaration — only the top-level eatfunc methods qualify.
-            // This stops fetch(, setTimeout( etc. from eating their indented args
-            // as a body when they sit inside an already-declared method.
-            const isDecl = nextIndent > decl_indent && decl_indent > ctx.method_floor
+            // We only reach here at top level (the nested-call short-circuit above
+            // handled everything inside a body), so the sole question left is decl
+            // versus a bare top-level call: a %method,def has an indented body, a
+            // call does not.  Only top-level eatfunc methods are %method,def.
+            const isDecl = nextIndent > decl_indent
 
             if (isDecl) {
                 // record definition with position info.  async:1 records whether
