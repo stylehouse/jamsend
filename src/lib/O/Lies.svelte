@@ -476,19 +476,10 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             else delete wnt.sc.resolved
         }
 
-        const doc_path = H.Lies_src_doc_path(src)
+        const doc_path = H.Waft_src_doc_path(src)
         if (doc_path) await H.Lies_provide_dock(w, doc_path)   // speculative push — warm the %Good
 
         await H.Lies_i_Spotlight(examining, src, waft_key)
-    },
-
-    // ── Lies_src_doc_path ─────────────────────────────────────────────────────
-    //   Derive the doc path from a src that may be a %What or %Doc.
-    Lies_src_doc_path(src: TheC): string | undefined {
-        const sc = src.sc as any
-        if (typeof sc.Doc === 'string') return sc.Doc
-        const doc = (src.o({ Doc: 1 }) as TheC[])[0]
-        return doc?.sc.Doc as string | undefined
     },
 
     // ── req_timemachine ────────────────────────────────────────────────────

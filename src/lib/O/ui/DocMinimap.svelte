@@ -186,6 +186,23 @@
         return n
     })
 
+    // ── crunch — text-space warp control ──────────────────────────────────────
+    //   Reads sc.crunch off the LE's live target %What (e_Lies_what_crunch bumps
+    //   LE so this re-derives).  The button offers itself when the doc is big
+    //   enough that engaged labels drown in context — or whenever crunch is
+    //   already on, so it can always be turned back off.
+    const CRUNCH_OFFER_LINES = 400
+    let crunch_on = $derived.by(() => {
+        void LE?.vers
+        const target = LE?.sc.target as TheC | undefined
+        return !!(target?.sc as any)?.crunch
+    })
+    let crunch_offer = $derived(!!LE && (crunch_on || total_lines > CRUNCH_OFFER_LINES))
+    function toggle_crunch() {
+        H.i_elvisto('Lies/Lies', 'Lies_what_crunch', {})
+    }
+
+
     // ── throttled rebuild ─────────────────────────────────────────────────────
     let _raf = 0
 
@@ -439,6 +456,11 @@
         <span class="lmm-title" title="{regions.length} region{regions.length === 1 ? '' : 's'}">
             {nav_pos >= 0 ? nav_hist[nav_pos].label : `${regions.length}r`}
         </span>
+        {#if crunch_offer}
+        <button class="lmm-crunch" class:on={crunch_on} onclick={toggle_crunch}
+                title="{crunch_on ? 'unwarp — show full text' : `crunch — fold all but engaged labels (${total_lines} lines)`}">
+            {crunch_on ? '▣' : '▢'}</button>
+        {/if}
         {#each _spinners as name (name)}
             <span class="lmm-spin lmm-spin-{name}" title={name}>⟳</span>
         {/each}
@@ -557,6 +579,14 @@
         animation: lmm-graft-spin 0.3s linear infinite;
     }
     @keyframes lmm-graft-spin { to { transform: rotate(360deg); } }
+
+    /* crunch — the text-space warp toggle; filled square while warping */
+    .lmm-crunch {
+        background: none; border: none; cursor: pointer; padding: 0 2px;
+        color: rgb(110, 125, 140); font-size: 12px; line-height: 1;
+        flex-shrink: 0;
+    }
+    .lmm-crunch.on { color: rgb(180, 160, 40); }
 
     /* generic phase spinners — one per %Languinio/{spinner:$name}.
        Default grey; named tints below for the phases we know about. */

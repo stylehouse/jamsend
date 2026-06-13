@@ -42,8 +42,7 @@ story:LakeFlush
     noCyto
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=0.952
-      sample=0.857,at=1781173823
+    TimeTotal:beliefs,avg=0.965
       sample=0.922,at=1781174168
       sample=0.903,at=1781179541
       sample=0.897,at=1781180729
@@ -53,6 +52,7 @@ story:LakeFlush
       sample=0.88,at=1781268142
       sample=1.192,at=1781270444
       sample=1.148,at=1781296723
+      sample=0.988,at=1781306718
   step,dige:46452acb873b04c8
   step=2,dige:6c02b334aaed8c25
   step=3,dige:0ef01062d7b6c545

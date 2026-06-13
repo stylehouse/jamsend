@@ -265,14 +265,26 @@
         if (gen_path) {
             const dige = await dig(source)
             job.oai({ Output: 1, gen_path, source, dige, source_dige })
-        }
 
-        // Hand off to Lies — Lies decides write vs softgen vs nogen.
-        // e_Lies_compiled parks req:Cortex + req:Codebit; Rundown is separate.
-        H.i_elvisto('Lies/Lies', 'Lies_compiled', {
-            path: dock.sc.dock, gen_path, source,
-            dige: gen_path ? await dig(source) : '', source_dige,
-        })
+            // Hand off to Lies — Lies decides write vs softgen vs nogen.
+            // e_Lies_compiled parks req:Cortex + req:Codebit; Rundown is separate.
+            // Only hard compiles go through the airlock: e_Lies_compiled throws
+            // without a gen_path, by design — there is nothing for it to write
+            // or settle.
+            H.i_elvisto('Lies/Lies', 'Lies_compiled', {
+                path: dock.sc.dock, gen_path, source,
+                dige, source_dige,
+            })
+        } else {
+            // soft compile — non-Ghost path or non-gen-able codetype (a .ts doc
+            //   opened for Point navigation, say).  %methods is built; no gen/
+            //   write happens, so no settle elvis will arrive: close the job
+            //   here the way Lang_compile_step would (clear pending, stamp
+            //   %time.all) so req_compile's waiting:gen_write gate releases.
+            delete job.sc.pending
+            const all_ms = Date.now() - (job.c.compile_t0 ?? Date.now())
+            job.oai({ time: 1 }).sc.all = +(all_ms / 1000).toFixed(3)
+        }
         H.i_elvisto(w, 'think')
     },
 

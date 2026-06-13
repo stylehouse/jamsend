@@ -133,10 +133,11 @@
         }
 
         // The cursor's doc must match the active CM dock.
-        // src_path comes from the live %What via Lang_src_doc_path (first %Doc child);
-        // dock_path is dock.sc.dock.  If they diverge, wipe and wait.
+        // src_path comes from the live %What via Waft_src_doc_path (LiesEnd — the
+        // shared finder: descendant Doc in document order, else the c.Doc context
+        // stamped by Waft_dip).  dock_path is dock.sc.dock; diverged → wipe and wait.
         const dock_path   = dock.sc.dock as string | undefined
-        const src_path    = LE ? this.Lang_src_doc_path(LE.sc.target as TheC)
+        const src_path    = LE ? (this as House).Waft_src_doc_path(LE.sc.target as TheC)
                                : (src_C.sc as any).Doc as string | undefined
         if (src_path && dock_path && src_path !== dock_path) {
             await this.Lang_wipe_pmirrors(dock)
@@ -352,22 +353,10 @@
         for (const sub of container.o({ What: 1 }) as TheC[]) this.Lang_walk_points(sub, visit)
     },
 
-    // ── Lang_src_doc_path ──────────────────────────────────────────────────
-    //
-    //   Derive the doc path from a src that may be a %What or %Doc — the Lang-
-    //   side twin of Lies_src_doc_path (the Waft tree shape is the same on both
-    //   sides; each world keeps its own copy so neither reaches across).
-    //
-    //   %Doc carries sc.Doc directly; a %What exposes the path of its first %Doc
-    //   child.  Returns undefined for a pure time-slice %What with no Doc — the
-    //   graft's doc-match guard reads that as "this src has no doc to anchor on".
-    Lang_src_doc_path(src: TheC): string | undefined {
-        if (!src) return undefined
-        const sc = src.sc as any
-        if (typeof sc.Doc === 'string') return sc.Doc
-        const doc = (src.o({ Doc: 1 }) as TheC[])[0]
-        return doc?.sc.Doc as string | undefined
-    },
+    // Doc-from-src resolution lives in LiesEnd as Waft_src_doc_path — the old
+    //   "each world keeps its own copy" stance let the copies drift (none of
+    //   them saw a Doc nested deeper than one level); LiesEnd is dual-mounted,
+    //   so one body serves both worlds without reaching across.
 
     // ── Lang_point_spec ──────────────────────────────────────────────────
     //
@@ -489,14 +478,26 @@
         const Pmirrors = dock.o({ Pmirrors: 1 })[0] as TheC | undefined
         if (!Pmirrors) return
         const existing = Pmirrors.o({ Pmirror: 1 }) as TheC[]
-        if (!existing.length) return
-        for (const pm of existing) {
-            const bm_id = pm.o({ graft: 1 })[0]?.sc.bookmark_id as string | undefined
-            if (bm_id) this.Lang_remove_graft_mark(dock, bm_id)
+        if (existing.length) {
+            for (const pm of existing) {
+                const bm_id = pm.o({ graft: 1 })[0]?.sc.bookmark_id as string | undefined
+                if (bm_id) this.Lang_remove_graft_mark(dock, bm_id)
+            }
+            await Pmirrors.replace({ Pmirror: 1 }, async () => {
+                // intentionally empty
+            })
         }
-        await Pmirrors.replace({ Pmirror: 1 }, async () => {
-            // intentionally empty
-        })
+        // No Points govern this view now — clear what they painted: the glow
+        //   decorations and every fold (CM's fold field has no per-cause memory,
+        //   so this also lifts manual gutter folds — acceptable: the cursor has
+        //   left this context entirely).  show_fp resets so the next show paints
+        //   fresh instead of matching a fingerprint from before the wipe.
+        if (dock.c.view) {
+            if (dock.c.setPointDecorations)
+                (dock.c.view as any).dispatch({ effects: (dock.c.setPointDecorations as any).of([]) })
+            if (dock.c.unfoldAllFolds) (dock.c.unfoldAllFolds as Function)(dock.c.view)
+        }
+        dock.c.show_fp         = null
         dock.c.graft_cache_key = null
     },
 
@@ -589,6 +590,39 @@
             else           decos.push({ id, from, to, cls })
         }
 
+        // crunch — %What sc.crunch warps the rest of the doc away: every compile
+        //   region that doesn't contain a showing Point folds from the end of its
+        //   header line, so the engaged labels stand alone among region headers.
+        //   A Point's ancestor regions all contain it, so its whole chain stays
+        //   open without ancestor bookkeeping.  Set by e_Lies_what_crunch from
+        //   DocMinimap's warp button; read off the live target via %Interest.
+        //   Every region lands in exactly one of folds|opens with its precise
+        //   header_end..rt extent — CM unfolds only exact folded ranges, so the
+        //   unfold side must name the same extents the fold side used (crunch
+        //   off, or a Point engaging inside a folded region, unfolds via opens;
+        //   unfoldEffect on a not-folded range is a no-op).
+        // < graded squish (2-line crumbs via codeFolding placeholderDOM) is the
+        //   Waft_spec variant of this — one fold extent per region for now.
+        const opens: Array<{ id: string, from: number, to: number }> = []
+        const target = (w.o({ Languinio: 1 })[0]?.o({ Interest: 1 })[0]
+                          ?.c.LE as TheC | undefined)?.sc.target as TheC | undefined
+        const crunch = !!(target?.sc as any)?.crunch
+        const methods = dock.o({ Compile: 1 })[0]?.o({ methods: 1 })[0] as TheC | undefined
+        if (methods && dock.c.view) {
+            const doc = (dock.c.view as any).state.doc
+            for (const r of (methods.o({ region: 1 }) ?? []) as TheC[]) {
+                const rf = r.sc.from as number, rt = r.sc.to as number
+                if (typeof rf !== 'number' || typeof rt !== 'number') continue
+                if (rf < 0 || rt <= rf || rt > doc.length) continue
+                const header_end = doc.lineAt(rf).to   // keep the region label visible
+                if (header_end >= rt) continue
+                const engaged = decos.some(d => d.from >= rf && d.from <= rt)
+                if (crunch && !engaged) folds.push({ id: `crunch_${rf}`, from: header_end, to: rt })
+                else                    opens.push({ id: `crunch_${rf}`, from: header_end, to: rt })
+            }
+        }
+        fp += `|c${crunch ? 1 : 0}:${methods?.version ?? 0}`
+
         if (dock.c.show_fp === fp) return   // U-state unchanged since last paint
         dock.c.show_fp = fp
 
@@ -598,13 +632,23 @@
             dock.c.view.dispatch({ effects: dock.c.setPointDecorations.of(decos) })
         }
 
+        // No Points govern the view (the cursor's What went empty of Points, or
+        //   everything de-resolved): lift every fold the Point system made so the
+        //   doc reads whole again, instead of leaving the last What's squishes.
+        if (!decos.length && !folds.length) {
+            if (dock.c.unfoldAllFolds && dock.c.view)
+                (dock.c.unfoldAllFolds as Function)(dock.c.view)
+            return
+        }
+
         // setPointFolds — function(view, showing, hiding): dispatches foldEffect|
         //   unfoldEffect for the full current fold intent.  showing = unfold these
-        //   ranges so they stay open; hiding = fold these ranges (unshowing Points).
-        //   Passing both lets fire_point_folds unfold first then fold — correct even
-        //   after a checkout that changes which Points are unshowing.
+        //   ranges (engaged Point ranges + opens, the crunch-region extents that
+        //   must read open); hiding = fold these (unshowing Points + crunch
+        //   regions).  Unfolds dispatch before folds — correct even after a
+        //   checkout that changes which Points are unshowing.
         if (dock.c.setPointFolds && dock.c.view) {
-            (dock.c.setPointFolds as Function)(dock.c.view, decos, folds)
+            (dock.c.setPointFolds as Function)(dock.c.view, [...decos, ...opens], folds)
         }
     },
 

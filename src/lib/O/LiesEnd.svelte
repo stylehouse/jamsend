@@ -817,6 +817,41 @@ await M.eatfunc({
         return undefined
     },
 
+    // ── Waft_src_doc / Waft_src_doc_path ──────────────────────────────────
+    // THE Doc-from-src resolution, shared by Lies (want→dock warm-up), Lang
+    //   (%Interest/in_Doc) and LangGraft (doc-match guard) — one body so the
+    //   three worlds can't drift, which they had: each copy only looked at
+    //   direct %Doc children, so container Whats (foundations) and time-slice
+    //   Whats nested inside a Doc both read as docless title pages.
+    // Resolution order:
+    //   1. src is a %Doc                → itself.
+    //   2. first %Doc descendant in document order — a container %What presents
+    //        the first Doc it leads to; o({}) preserves insertion order, which
+    //        is exactly snap-line order.  Wins over (3) so a What that
+    //        introduces its own Doc isn't captured by an outer context.
+    //   3. src.c.Doc — the governing-Doc context stamped by Waft_dip's Se:
+    //        the enclosing ancestor %Doc (time-slice What|Point inside a Doc)
+    //        or the nearest preceding sibling %Doc within the same parent
+    //        (snap-order Doc-before-its-Points).
+    //   4. undefined — a pure title-page %What; no dock to open.
+    Waft_src_doc(src: TheC): TheC | undefined {
+        if (!src) return undefined
+        if ((src.sc as any).Doc !== undefined) return src
+        for (const child of src.o({}) as TheC[]) {
+            const sc = child.sc as any
+            if (sc.Doc !== undefined) return child
+            if (sc.What !== undefined) {
+                const found = this.Waft_src_doc(child)
+                if (found) return found
+            }
+        }
+        if (src.c.Doc) return src.c.Doc as TheC
+        return undefined
+    },
+    Waft_src_doc_path(src: TheC): string | undefined {
+        return (this.Waft_src_doc(src)?.sc as any)?.Doc as string | undefined
+    },
+
     // ── LE_what_depth ──────────────────────────────────────────────────────
     // Depth of a %What in its Waft tree.  0 = direct child of Waft.
     // Used by NaviCado to ghost the ↑ button at depth 0 (already at the top).

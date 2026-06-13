@@ -474,9 +474,11 @@
         // Point decoration + fold handles — Lang_show_pmirrors dispatches through
         //   these.  setPointDecorations is the StateEffect for the glow|enlarge field;
         //   setPointFolds is a function(view, showing, hiding) that dispatches
-        //   foldEffect|unfoldEffect for the unshowing set.
+        //   foldEffect|unfoldEffect for the unshowing + crunch set; unfoldAllFolds
+        //   lifts every fold (used when no Points govern the view, and on wipe).
         dock.c.setPointDecorations = e.sc.setPointDecorations
         dock.c.setPointFolds       = e.sc.setPointFolds
+        dock.c.unfoldAllFolds      = e.sc.unfoldAllFolds
 
         // Only activate if we have a real path — empty string means the dock
         // isn't known yet and Lies hasn't handed back the dock %Good yet.
@@ -893,7 +895,7 @@
         //   a string: it is the dock-map key, and docks are keyed by path.
         const sc = armed.sc as any
         interest.c.What = armed
-        const in_Doc   = H.Lang_src_doc_path(armed)
+        const in_Doc   = H.Waft_src_doc_path(armed)
         const in_Point = sc.method as string | undefined
         if (in_Doc   != null) interest.sc.in_Doc   = in_Doc
         if (in_Point != null) interest.sc.in_Point = in_Point
@@ -1041,9 +1043,19 @@
         const w        = H.upto_w(req)
         const interest = w.o({ Languinio: 1 })[0]?.o({ Interest: 1 })[0] as TheC | undefined
         const want     = interest?.sc.in_Doc as string | undefined
+        const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
         if (!want) {
-            // docless What — nothing to instrument; also drop a grafted spinner a
-            //   prior What's methods-wait may have left spinning.
+            // docless What — a title page.  Wipe the previously foregrounded
+            //   dock's Pmirrors (drops graft marks, clears decorations, unfolds —
+            //   Lang_wipe_pmirrors) and stamp %Languinio sc.no_doc so Langui
+            //   blanks the editor behind the no-doc shell.  Also drop a grafted
+            //   spinner a prior What's methods-wait may have left spinning.
+            const prev = H.Lang_active_dock(w)
+            if (prev) await H.Lang_wipe_pmirrors(prev)
+            if (languinio && !languinio.sc.no_doc) {
+                languinio.sc.no_doc = 1
+                languinio.bump_version()
+            }
             H.Langspinner(w, 'grafted', true)
             q.finish(req)
             return
@@ -1054,10 +1066,17 @@
             // ingredients is still furnishing the wanted dock.  Finish — the
             //   content_dige term in our sig (req_workon) re-wakes us the instant
             //   e_Lang_dock_content lands it, so no waiting ttlilt of our own.
-            //   (furnish, not grafted, is the spinner for this window.)
+            //   (furnish, not grafted, is the spinner for this window; no_doc
+            //   stays as-is so a title page keeps its blank while loading.)
             H.Langspinner(w, 'grafted', true)
             q.finish(req)
             return
+        }
+
+        // a doc is wanted and furnished — the editor shows it; lift the blank.
+        if (languinio?.sc.no_doc) {
+            delete languinio.sc.no_doc
+            languinio.bump_version()
         }
 
         // foreground the doc the cursor wants.  e_Lies_active_doc_changed early-
@@ -1091,25 +1110,11 @@
         q.finish(req)
     },
 
-    // ── Lang_src_doc_path ─────────────────────────────────────────────────────
-    //
-    //   Derive the CM doc path from a src that may be a %What or a %Doc.
-    //     %Doc src: sc.path directly.
-    //     %What src: first %Doc child's sc.path (Lies_what_first_doc_path logic).
-    //     Pure time-slice %What with only direct %Points and no %Doc child:
-    //       returns undefined — no CM doc to open; valid title-page state.
-    Lang_src_doc_path(src: TheC): string | undefined {
-        const sc = src.sc as any
-        // %Doc has sc.path set (by Waft convention)
-        if (sc.path) return sc.path as string
-        // %What may hold %Doc children
-        const doc = (src.o({ Doc: 1 }) as TheC[])[0]
-        if (doc?.sc.path) throw "Doc,path should be just Doc"
-        return doc?.sc.Doc as string | undefined
-    },
+    // Doc-from-src resolution lives in LiesEnd as Waft_src_doc_path — one body
+    //   shared with Lies and LangGraft so the three can't drift.
 
 
-    
+
 //#region Languish
 
 

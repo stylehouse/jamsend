@@ -178,14 +178,14 @@
 
     // ── e_Lies_cursor_what ────────────────────────────────────────────────────
     //
-    //   Fired by Waft.svelte's What label click.  This path is separate from
-    //   e_LE_operate because it carries dive:true — auto-dive to the first DFS
-    //   descendant with direct Points.  Lets the user click a container What
-    //   (`foundations`) and land somewhere useful rather than on an empty strip.
-    //   NaviCado's structural nav buttons (↑/←/→) go through e_LE_operate and
-    //   do NOT pass dive:true — they should land exactly where requested.
+    //   Fired by Waft.svelte's What label click.  Lands EXACTLY on the clicked
+    //   %What — even a pointless container or a fresh title page — matching
+    //   NaviCado's structural nav buttons (e_LE_operate), which always land
+    //   where asked.  e.sc.dive is accepted and ignored: the auto-descend-to-
+    //   first-Points it used to trigger moved the cursor away from the clicked
+    //   What, which made docless|pointless Whats unreachable by click.
     //
-    //   e.sc: { what: TheC, dive?: true }
+    //   e.sc: { what: TheC, dive?: true (inert) }
     async e_Lies_cursor_what(A: TheC, w: TheC, e: TheC) {
         const H         = this as House
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
@@ -193,11 +193,37 @@
         const what = e.sc.what as TheC | undefined
         if (!what) return
 
-        const effective = e.sc.dive
-            ? (H.Lies_first_what_with_direct_points(what) ?? what)
-            : what
+        H.i_elvisto(w, 'Lies_want', { src: what, kind: 'next' })
+    },
 
-        H.i_elvisto(w, 'Lies_want', { src: effective, kind: 'next' })
+    // ── e_Lies_what_crunch ─────────────────────────────────────────────────────
+    //
+    //   DocMinimap's text-space warp toggle.  Flips sc.crunch on the cursored
+    //   %What — persisted in the snap, so each slice remembers its warp — and
+    //   bumps the Waft so watch_c saves it.  While crunch is on,
+    //   Lang_show_pmirrors folds every compile region that doesn't contain a
+    //   showing Point, leaving the engaged labels standing alone in the doc.
+    //   sc.crunch lives on the What, not the Doc: the warp is a property of
+    //   this moment's attention, and rwnd|+time slices keep their own.
+    async e_Lies_what_crunch(A: TheC, w: TheC, e: TheC) {
+        const H         = this as House
+        const examining = w.o({ examining: 1 })[0] as TheC | undefined
+        const what      = examining?.o({ Spotlight: 1 })[0]?.sc.src as TheC | undefined
+        if (!what || (what.sc as any).What === undefined) return
+
+        if ((what.sc as any).crunch) delete (what.sc as any).crunch
+        else                         (what.sc as any).crunch = 1
+        what.bump_version()
+
+        // bump the Waft — watch_c(waft) carries the save and the Lang notify.
+        const waft = H.LE_what_waft(what)
+        waft?.bump_version()
+
+        // wake the UI readers: the minimap button derives off these.
+        examining?.bump_version()
+        const LE = (H.ave as TheC).o({ Languinio: 1 })[0]?.o({ LE: 1 })[0] as TheC | undefined
+        LE?.bump_version()
+        H.i_elvisto(w, 'think')
     },
 
 //#endregion
@@ -250,7 +276,7 @@
     //   If the Doc lives inside a %What (c.up points to a particle without
     //   sc.Waft), arm the Understanding at the parent %What rather than the
     //   bare Doc — so NaviCado and LE_clones see the full What extent.
-    //   The Doc path is still what gets loaded; Lang_src_doc_path handles both.
+    //   The Doc path is still what gets loaded; Waft_src_doc_path handles both.
     async e_Lies_set_cursor(A: TheC, w: TheC, e: TheC) {
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
         if (!examining) return
@@ -363,32 +389,6 @@
         return false
     },
 
-    // ── Lies_first_what_with_direct_points ────────────────────────────────────
-    //
-    //   DFS-first What in a subtree that has_direct_points.  Returns `what`
-    //   itself when it qualifies, otherwise dives into sub-Whats in order.
-    //   Used by e_Lies_cursor_what (dive:true path) so clicking a container
-    //   What label auto-lands on the first useful leaf inside it.
-    Lies_first_what_with_direct_points(what: TheC): TheC | undefined {
-        const H = this as House
-        if (H.Lies_what_has_direct_points(what)) return what
-        for (const sub of what.o({ What: 1 }) as TheC[]) {
-            const found = H.Lies_first_what_with_direct_points(sub)
-            if (found) return found
-        }
-        return undefined
-    },
-
-    // ── Lies_what_first_doc_path ──────────────────────────────────────────────
-    //
-    //   Return the path of the first %Doc child of a %What, or undefined when
-    //   the %What holds direct %Point children with no %Doc container (the pure
-    //   time-slice case — doc is implied by the Points' methods).
-    Lies_what_first_doc_path(what: TheC): string | undefined {
-        const doc = what.o({ Doc: 1 })[0] as TheC | undefined
-        return doc?.sc.Doc as string | undefined
-    },
-
 //#endregion
 //#region stepping — Waft-level cursor stepping (timemachine / acquire)
 
@@ -428,8 +428,15 @@
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
         if (!examining) return
         const cur_src  = examining.o({ Spotlight: 1 })[0]?.sc.src as TheC | undefined
-        const cur_waft = cur_src ? H.waft_key_of(cur_src) : undefined
-        if (cur_waft === waft_key) return
+        // An existing cursor holds unless it verifiably sits in ANOTHER Waft.
+        //   A fresh src whose c.waft isn't stamped yet (Waft_link_up runs async
+        //   after the UI's CRUD bump) reads as waft-unknown — stealing the cursor
+        //   from it flicked every newly created What back to the first leaf in
+        //   the Waft on the next timemachine tick.
+        if (cur_src) {
+            const cur_waft = H.waft_key_of(cur_src)
+            if (cur_waft === waft_key || cur_waft === undefined) return
+        }
 
         // Prefer a leaf What with direct Points; fall back to bare Doc on fresh Waft.
         const candidates: Array<TheC> = []
@@ -550,23 +557,32 @@
             match_sc:   {},
             loop_but_no_further: 1,
             trace_sc:   { dipping: 1 },
-            // Doc-association — stamp each %Point's governing %Doc onto C.c.Doc as
-            //   we walk, so anyone (LangGraft) reads "which Doc serves this Point"
-            //   as a direct ref rather than re-deriving it by descending the live
-            //   %What.  A running slot on the top Travel holds the last %Doc seen;
-            //   entering a %What resets it, so a docless time-slice What yields
-            //   c.Doc:undefined (a title page, no dock) instead of inheriting a
-            //   prior sibling's Doc.  Relies on the Waft grammar writing a Doc
-            //   before the Points it serves — which enWaft always does.
+            // Doc-association — stamp each particle's governing %Doc onto C.c.Doc
+            //   as we walk, so anyone (LangGraft, Waft_src_doc) reads "which Doc
+            //   serves this" as a direct ref instead of re-deriving it.
+            //   The context is per-parent: each Travel carries sc.cur_Doc, seeded
+            //   from its parent's slot, and a %Doc child updates its parent's slot
+            //   for the siblings after it.  That gives both grammar cases at once:
+            //     Doc → What → Point   inherits the enclosing ancestor Doc, and
+            //     What:[Doc:X, Point]  the Point takes the preceding sibling Doc
+            //   (snap-line order — Doc written before the Points it serves, which
+            //   enWaft always honours), while a Doc inside one What never leaks to
+            //   that What's siblings.  A particle with no context in scope gets
+            //   c.Doc:undefined — a title page.
             //   each_fn runs pre-order, parent before child, which is what makes
-            //   the single slot correct: a %Point's Doc is either its parent (Point
-            //   nested under a Doc) or the Doc sibling visited just before it.
-            each_fn:    async (_D: TheC, C: TheC, T: TheC) => {
+            //   the slot seeding correct.
+            each_fn:    async (_D: TheC, C: TheC, T: any) => {
+                const uT = T.sc.up
                 const sc = C.sc as any
-                if (sc.What !== undefined)      T.c.top.sc.last_Doc = undefined
-                else if (sc.Doc !== undefined)  { T.c.top.sc.last_Doc = C; C.c.Doc = C }
-                else if (sc.Point !== undefined || sc.method !== undefined)
-                    C.c.Doc = T.c.top.sc.last_Doc as TheC | undefined
+                if (sc.Doc !== undefined) {
+                    C.c.Doc      = C
+                    T.sc.cur_Doc = C
+                    if (uT) uT.sc.cur_Doc = C   // serves the siblings after us
+                } else {
+                    const ctx    = uT?.sc.cur_Doc as TheC | undefined
+                    T.sc.cur_Doc = ctx
+                    C.c.Doc      = ctx
+                }
             },
             trace_fn:   async (uD: TheC, C: TheC) => uD.i({ dipping: 1, ...C.sc }),
             traced_fn:  async (D: TheC, _bD: TheC, C: TheC) => {

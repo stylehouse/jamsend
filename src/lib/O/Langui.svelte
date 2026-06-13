@@ -95,7 +95,7 @@
     import { EditorState, StateField, StateEffect, Compartment, type Extension } from "@codemirror/state"
     import { Decoration, type DecorationSet, keymap, ViewUpdate, drawSelection } from "@codemirror/view"
     import { indentService, indentUnit } from "@codemirror/language";
-    import { foldEffect, unfoldEffect }  from "@codemirror/language";
+    import { foldEffect, unfoldEffect, unfoldAll } from "@codemirror/language";
     import { defaultKeymap, indentWithTab } from "@codemirror/commands";
 
     import { lang, simpleLezerLinter, lang_for_path } from "$lib/O/lang/lang"
@@ -303,6 +303,7 @@
     //                 the disk-reload effect tracks changes via Text.vers directly.
     let lang_actions: TheC[] = $state([])
     let active_path  = $state('')
+    let no_doc       = $state(false)
     let dock:        TheC | undefined = $state()
     let Text:        TheC | undefined = $state()
 
@@ -370,10 +371,17 @@
         const path      = (dock_C?.sc.dock as string | undefined) ?? ''
         const sig = `lang=${!!languinio} path=${path} dock=${!!dock_C}`
         if (sig !== _signal_seen) { console.log(`🔭 Languinio $effect: ${sig}`); _signal_seen = sig }
+        const nd = !!languinio?.sc.no_doc
         H.clear(async () => {
             lang_actions = la ? la.o({ action: 1 }) as TheC[] : []
             if (path) active_path = path
             if (dock_C) dock = dock_C
+            // no_doc is a deliberate flag (req_instrumentation stamps it for a
+            //   title-page %What), not a transient flush — so no sticky guard:
+            //   it follows the backend both ways.  The editor view is HIDDEN,
+            //   never torn down — recreating EditorView per blank was the wave
+            //   bug the sticky path|dock guards above exist to prevent.
+            no_doc = nd
         })
     })
 
@@ -471,6 +479,7 @@
                   setPointDecorations: setPointDecorationsEffect,
                   setPointFolds:       (v: EditorView, showing: any[], hiding: any[]) =>
                                            fire_point_folds(v, showing, hiding),
+                  unfoldAllFolds:      (v: EditorView) => unfoldAll(v),
                   updates: readBookmarks(view!), graft_updates: readGrafts(view!) })
         })
     })
@@ -1001,6 +1010,7 @@
               setPointDecorations: setPointDecorationsEffect,
               setPointFolds:       (v: EditorView, showing: any[], hiding: any[]) =>
                                        fire_point_folds(v, showing, hiding),
+              unfoldAllFolds:      (v: EditorView) => unfoldAll(v),
               updates: readBookmarks(view), graft_updates: readGrafts(view) })
     }
 
@@ -1075,8 +1085,12 @@
                 title="{expanded ? 'collapse editor' : 'expand editor'}">V</button>
     </div>
     {/if}
+    {#if no_doc}
+    <!-- title-page %What — the cursor has no doc; CM stays alive but hidden -->
+    <div class="lte-nodoc">— no doc — this What is a title page</div>
+    {/if}
     <!-- Always present: destroying this div destroys the EditorView -->
-    <div class="lte-cm" bind:this={container}>
+    <div class="lte-cm" class:lte-cm-hidden={no_doc} bind:this={container}>
         <!-- Horizontal V chevron — always at the minimap/scrollbar junction.
              Stays in place whether or not minimap is open.
              Points left (<) when closed, right (>) when open — same V char, ±90°. -->
@@ -1175,6 +1189,14 @@
     /* scroller directly keeps CM's measure loop correct and leaves          */
     /* scrollSnapshot()/dispatch restoration working without any JS changes. */
     /* wrapper: position:relative makes it the containing block for lte-mm-host */
+    /* title-page shell — shown while %Languinio sc.no_doc; the editor div is
+       display:none'd rather than removed so the EditorView survives the blank */
+    .lte-nodoc {
+        padding: 28px 16px;
+        color: #678; font-size: 12px; font-style: italic;
+        text-align: center;
+    }
+    .lte-cm-hidden { display: none; }
     .lte-cm    { position: relative; }
     .lte-cm :global(.cm-editor)  { /* auto height — driven by cm-scroller */ }
     .lte-cm :global(.cm-content) { font-size: 12px; }
