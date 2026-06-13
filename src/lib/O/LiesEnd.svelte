@@ -207,10 +207,20 @@ await M.eatfunc({
         const op = e.sc.op as string | undefined
         if (!op) throw `e_LE_mark: no op`
 
-        // spec→clone for ops that target an existing clone
+        // spec→clone for ops that target an existing clone.
+        // The spec is resolved the same way NaviCado derives a capsule's spec:
+        // method, else label, else the Point value itself.  A Point written
+        // {Point:1, method:X} carries the spec on sc.method|one written {Point:X}
+        // carries it on sc.Point.  Matching only sc.method missed the latter, so
+        // every non-method Point capsule (the 2nd, 3rd…) could not be toggled.
+        const clone_spec = (c: TheC): string | undefined => {
+            const sc  = c.sc as any
+            const raw = sc.method ?? sc.label ?? sc.Point
+            return (raw == null || raw === 1 || raw === true) ? undefined : String(raw)
+        }
         const find = (spec?: unknown) =>
             typeof spec === 'string'
-                ? (H.LE_clones(LE) as TheC[]).find(c => (c.sc as any).method === spec)
+                ? (H.LE_clones(LE) as TheC[]).find(c => clone_spec(c) === spec)
                 : undefined
 
         let U_mutated = false

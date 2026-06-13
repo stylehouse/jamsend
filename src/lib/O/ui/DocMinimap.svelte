@@ -39,9 +39,14 @@
         from_char: number
         to_char:   number
         defs:      Def[]
+        // path: the open-region stack at this region, itself included as the last
+        // element (the compiler stamps it on every %Map entry).  Two regions are
+        // the same container iff their paths are equal|defs nest by exact match.
+        path:      string[]
         // < points: PointMark[] lived here for capsule nav lookup — now in NaviCado
     }
-    type Def = { method: string, class?: string, line: number, from: number, to: number }
+    type Def = { method: string, class?: string, line: number, from: number, to: number, path: string[] }
+    const path_key = (p: string[]) => (p ?? []).join('\u0000')
 
     let { H, view }: {
         H:    House
@@ -176,7 +181,7 @@
 
     let total_lines = $derived.by(() => {
         void lang_dock?.version
-        const text = (lang_dock?.sc.text as string) ?? ''
+        const text = (lang_dock?.c.text as string) ?? ''
         if (!text) return 1
         let n = 1
         for (const ch of text) if (ch === '\n') n++
@@ -246,10 +251,17 @@
                 from_char: r.sc.from  as number,
                 to_char:   r.sc.to    as number,
                 defs:      [],
+                path:      (r.c.region_path as string[] | undefined) ?? [],
             }))
 
-            const text = (lang_dock.sc.text as string) ?? ''
+            const text = (lang_dock.c.text as string) ?? ''
             patch_region_extents(list, text, total_lines)
+
+            // index regions by their exact path for O(1) def nesting.  region_path
+            // is the compiler's authoritative containment record (a def's path
+            // equals its direct region's path), so this needs no text geometry.
+            const by_path = new Map<string, Region>()
+            for (const r of list) by_path.set(path_key(r.path), r)
 
             const top_defs: Def[] = []
             for (const d of def_entries) {
@@ -259,8 +271,13 @@
                     line:   d.sc.line   as number,
                     from:   d.sc.from   as number,
                     to:     d.sc.to     as number,
+                    path:   (d.c.region_path as string[] | undefined) ?? [],
                 }
-                const owner = innermost_region_for_line(list, def.line)
+                // exact path match first|fall back to line geometry for any entry
+                // an older compile left without a region_path.
+                const owner = def.path.length
+                    ? (by_path.get(path_key(def.path)) ?? innermost_region_for_line(list, def.line))
+                    : innermost_region_for_line(list, def.line)
                 if (owner) owner.defs.push(def)
                 else top_defs.push(def)
             }
@@ -275,7 +292,7 @@
         }
 
         // Fallback: no compile index yet.  Scan regions from text.
-        const fallback_regions = scan_regions_from_text((lang_dock.sc.text as string) ?? '')
+        const fallback_regions = scan_regions_from_text((lang_dock.c.text as string) ?? '')
         const summary = `${fallback_regions.length}r 0d (no compile)`
         if (summary !== last_log_summary) {
             console.log(`🗺 minimap rebuild ${active_path} (no compile yet): regions=${fallback_regions.length}`)
@@ -309,6 +326,7 @@
                     from_line: line_num, to_line: lines.length,
                     from_char: line_from, to_char: text.length,
                     defs: [],
+                    path: [...stack.map(s => s.label), m[1].trim()],
                 }
                 all.push(r); stack.push(r)
             } else if (ENDREGION_RE.test(line_text) && stack.length) {
