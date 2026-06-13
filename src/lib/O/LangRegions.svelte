@@ -11,8 +11,8 @@
     //     Used by Lang_apply_openness to know which char spans to fold/unfold.
     //
     //   Lang_resolve_point(state, dock, method_spec)
-    //     Parses `method_spec` and matches against the compiled methods index
-    //     (dock / Compile / Output / methods / {def|call|region|controlflow:1, …}).
+    //     Parses `method_spec` and matches against the compiled Map index
+    //     (dock / Compile / Map / {def|call|region|controlflow:1, …}).
     //     Returns { from, to, line, kind, issues[] } or null (no index yet).
     //
     //     Spec forms (tried in order):
@@ -147,12 +147,12 @@
 //#endregion
 //#region Lang_resolve_point
 
-    // Resolve a Point method_spec against dock's compiled methods index.
+    // Resolve a Point method_spec against dock's compiled Map index.
     //
     // Returns null when there is no compiled index yet — the caller should
     // show a hint and ask the user to run compile first.
     //
-    // The methods index lives at: dock / Compile / Output / methods
+    // The Map index lives at: dock / Compile / Map
     //   {def:1, method, from, to, line, region_path}
     //   {call:1, method, via?, from, to, line, region_path}
     //   {region:1, label, from, to, line, depth}
@@ -163,15 +163,15 @@
         method_spec: string,
     ): { from: number, to: number, line: number, kind: string, issues: string[] } | null {
         const job     = dock.o({ Compile: 1 })[0]  as TheC | undefined
-        // methods is a direct child of Compile, not nested under Output.
-        // (Output holds source/dige; methods is a sibling.)
-        const methods = job?.o({ methods: 1 })[0]  as TheC | undefined
-        if (!methods) return null   // no compiled index yet
+        // Map is a direct child of Compile, not nested under Output.
+        // (Output holds source/dige; Map is a sibling.)
+        const Map_C = job?.o({ Map: 1 })[0]  as TheC | undefined
+        if (!Map_C) return null   // no compiled index yet
 
-        const defs    = methods.o({ def:         1 }) as TheC[]
-        const calls   = methods.o({ call:        1 }) as TheC[]
-        const regions = methods.o({ region:      1 }) as TheC[]
-        const flows   = methods.o({ controlflow: 1 }) as TheC[]
+        const defs    = Map_C.o({ def:         1 }) as TheC[]
+        const calls   = Map_C.o({ call:        1 }) as TheC[]
+        const regions = Map_C.o({ region:      1 }) as TheC[]
+        const flows   = Map_C.o({ controlflow: 1 }) as TheC[]
 
         const issues: string[] = []
         const spec = method_spec.trim()
@@ -414,22 +414,44 @@
     //   Used by e_Lang_point_fuzzify to upgrade a positional bookmark to a
     //   named method pointer without requiring the user to type a name.
     Lang_def_at_offset(dock: TheC, offset: number): string | undefined {
-        // methods is a direct child of Compile (sibling of Output)
-        const job     = dock.o({ Compile: 1 })[0] as TheC | undefined
-        const methods = job?.o({ methods: 1 })[0]  as TheC | undefined
-        if (!methods) return undefined
+        // Map is a direct child of Compile (sibling of Output)
+        const job   = dock.o({ Compile: 1 })[0] as TheC | undefined
+        const Map_C = job?.o({ Map: 1 })[0]      as TheC | undefined
+        if (!Map_C) return undefined
 
-        const defs = methods.o({ def: 1 }) as TheC[]
-        const containing = defs.filter(d =>
+        const defs = Map_C.o({ def: 1 }) as TheC[]
+
+        // 1) a def whose own name-span contains the offset — the cursor sat right
+        //    on the method name.  Innermost (smallest span) wins, so a helper
+        //    nested in a larger function resolves to the helper.
+        const onName = defs.filter(d =>
             (d.sc.from as number) <= offset && (d.sc.to as number) >= offset
         )
-        if (!containing.length) return undefined
-        // smallest span = innermost def
-        containing.sort((a, b) =>
-            ((a.sc.to as number) - (a.sc.from as number)) -
-            ((b.sc.to as number) - (b.sc.from as number))
-        )
-        return containing[0].sc.method as string
+        if (onName.length) {
+            onName.sort((a, b) =>
+                ((a.sc.to as number) - (a.sc.from as number)) -
+                ((b.sc.to as number) - (b.sc.from as number)))
+            return onName[0].sc.method as string
+        }
+
+        // 2) a def declared on the same line — the MethodLike-on-the-line reducer.
+        //    A bookmark dropped anywhere on `async o_elvis_Idzeugnosis(A,w) {`
+        //    names the Point o_elvis_Idzeugnosis without landing on the name|
+        //    the line carries one MethodLike so this is unambiguous now.  Richer
+        //    cases (a call we'd rather name, nested arrows) come later.
+        const state = dock.c.state as EditorState | undefined
+        if (state) {
+            const at = Math.max(0, Math.min(offset, state.doc.length))
+            const ln = state.doc.lineAt(at).number
+            const onLine = defs.filter(d => (d.sc.line as number) === ln)
+            if (onLine.length) {
+                onLine.sort((a, b) =>
+                    ((a.sc.to as number) - (a.sc.from as number)) -
+                    ((b.sc.to as number) - (b.sc.from as number)))
+                return onLine[0].sc.method as string
+            }
+        }
+        return undefined
     },
 
 //#endregion
@@ -486,7 +508,7 @@
     //   directly from Liesui when a Point row is clicked.
     //
     //   Flow:
-    //     1. Check that we have a compiled methods index (needs Lang_compile first).
+    //     1. Check that we have a compiled Map index (needs Lang_compile first).
     //     2. Resolve the Point spec (exact / stack / fuzzy / comment).
     //     3. Build the region tree and apply fold/unfold so only the ancestor
     //        chain is visible.

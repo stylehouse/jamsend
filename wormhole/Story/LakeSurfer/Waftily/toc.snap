@@ -1,4 +1,4 @@
-Waft:Story/LakeSurfer/Waftily
+Waft:Story/LakeSurfer/Waftily,active
   What:itis
     Doc:Ghost/test/Hello.g
     Point,method:Idzeugnosis
@@ -13,3 +13,9 @@ Waft:Story/LakeSurfer/Waftily
     Doc:src/lib/p2p/Peerily.svelte.ts
     Point:Pier
     Point:emit
+  Doc:Ghost/test/Hello.g
+    Point,method:bm_21417,label:,from=21417,to=21453,serial=1781335799032
+  Doc:src/lib/ghost/Radios.svelte
+    Point,method:close_nowPlaying,label:,from=25988,to=26021,serial=1781335799033
+    Point,method:transmit_record,label:,from=30739,to=30788,serial=1781335799034
+    Point,method:bm_30958,label:,from=30958,to=30995,serial=1781335799035

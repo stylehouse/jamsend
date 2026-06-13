@@ -1859,7 +1859,17 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
         });
 
         dock.i({ bookmark: id, from, to, label });
-        console.log(`🔖 add_bookmark id=${id} [${from}..${to}] ${label}`);
+
+        // Name it after the MethodLike on this line, if the compile index is in|
+        // a bookmark on `async o_elvis_Idzeugnosis(A,w) {` becomes that Point.
+        // No index yet → stays positional; e:Lang_point_fuzzify upgrades it later.
+        const method = this.Lang_def_at_offset(dock, from)
+        if (method) {
+            const bm = dock.o({ bookmark: id })[0] as TheC | undefined
+            if (bm) { bm.sc.method = method; bm.bump_version() }
+        }
+
+        console.log(`🔖 add_bookmark id=${id} [${from}..${to}] ${method ? `method:${method}` : label}`);
         this.i_elvisto(w, 'think', {});
     },
 

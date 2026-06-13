@@ -124,6 +124,28 @@
         return () => cm_scroll.removeEventListener('scroll', sync_scroll)
     })
 
+    // CM mounts its search / find toolbar as .cm-panels-bottom inside the editor;
+    // it overlays the strip's foot since the minimap is an absolute sibling, not
+    // a CM panel.  Measure the bottom panel stack and inset the strip above it so
+    // nothing is hidden.  No panel → inset 0 → flush to the bottom as before.
+    let _bottom_inset = $state(0)
+    $effect(() => {
+        if (!view) { _bottom_inset = 0; return }
+        const root = view.dom
+        const measure = () => {
+            const panel = root.querySelector('.cm-panels-bottom') as HTMLElement | null
+            const h = panel ? panel.offsetHeight : 0
+            if (h !== _bottom_inset) _bottom_inset = h
+        }
+        measure()
+        // panels appear|vanish via DOM mutation; their height can also reflow
+        const mo = new MutationObserver(measure)
+        mo.observe(root, { childList: true, subtree: true })
+        const ro = new ResizeObserver(measure)
+        ro.observe(root)
+        return () => { mo.disconnect(); ro.disconnect() }
+    })
+
     $effect(() => {
         void _structure
         requestAnimationFrame(sync_scroll)
@@ -454,6 +476,7 @@
 <!-- _hovering suppresses scroll sync while user reads the strip.
      mouseleave also clears reset_confirm so it doesn't linger. -->
 <div class="lmm"
+     style="bottom: {_bottom_inset}px"
      onmouseenter={() => _hovering = true}
      onmouseleave={() => { _hovering = false }}
      onwheel={on_wheel}>
