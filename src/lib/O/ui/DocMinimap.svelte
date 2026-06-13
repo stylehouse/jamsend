@@ -486,6 +486,16 @@
         const hue = (210 + depth * 40) % 360
         return `hsla(${hue}, 60%, 60%, 0.5)`
     }
+
+    // ── Q-factor — fold intensity, 1 (open) … 5 (only method names) ────────────
+    //   The dial just asks Lang to climb; LangPoint owns the fold/font waves and
+    //   the gallop between levels.  Per active doc, so switching docs shows that
+    //   doc's intensity (LangPoint reads dock.c.Q).
+    let q_factor = $state(1)
+    function set_q(q: number) {
+        q_factor = q
+        H.i_elvisto('Lang/Lang', 'Lang_climb', { Q: q })
+    }
 </script>
 
 <!-- _hovering suppresses scroll sync while user reads the strip.
@@ -508,6 +518,10 @@
         {#if nav_pos >= 0}
             <span class="lmm-title" title={nav_hist[nav_pos].label}>{nav_hist[nav_pos].label}</span>
         {/if}
+        <select class="lmm-q" bind:value={q_factor} onchange={() => set_q(q_factor)}
+                title="fold intensity — Q1 open … Q5 only method names">
+            {#each [1, 2, 3, 4, 5] as q}<option value={q}>Q{q}</option>{/each}
+        </select>
         {#each _spinners as name (name)}
             <span class="lmm-spin lmm-spin-{name}" title={name}>⟳</span>
         {/each}
@@ -617,6 +631,14 @@
         flex: 1; min-width: 0;
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
+    /* Q-factor dial — fold intensity */
+    .lmm-q {
+        margin-left: auto; flex-shrink: 0;
+        background: rgba(0, 0, 0, 0.3); color: #8aa; border: 1px solid #223;
+        font-family: inherit; font-size: 10px; line-height: 1;
+        padding: 0 2px; border-radius: 3px; cursor: pointer;
+    }
+    .lmm-q:hover { color: #cde; border-color: #345; }
     /* grafted-phase spinner — gold, parallel to Langui's blue/amber spinners */
     .lmm-graft-spin {
         color: rgb(180, 160, 40);

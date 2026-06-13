@@ -242,7 +242,7 @@
     import LangRegions from "./LangRegions.svelte";
     import LangLang from "./LangLang.svelte";
     import LangGraft from "./LangGraft.svelte";
-    import LiesEnd  from "$lib/O/LiesEnd.svelte";
+    import LangPoint from "./LangPoint.svelte";
 
     let { M } = $props()
 
@@ -2066,4 +2066,4 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
 <LangRegions {M} />
 <LangLang {M} />
 <LangGraft {M} />
-<LiesEnd    {M} />
+<LangPoint    {M} />
