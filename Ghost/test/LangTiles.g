@@ -23,7 +23,8 @@ theCompiledStuff(A,w) {
     // uses that assigned ang variable,
     //  assigns so, grabs the %so value which is incidentally the supplied string 'ont'
     //   so is auto-named. if we grabbed it as C (.../so:ont$) it's still named so.
-    w i angles/are:$ang,etc:3/so:ont$
+    w i angles/are:$ang,etc:3/so:ont.$sooo,module.$tv,etc.$
+    w i angles/are:$ang,etc:3/so:ont.$sooo,module.$tv,etc$year
     // this is what we're avoiding wither doing .$:othername above
     
     // you can declare let variables like this:

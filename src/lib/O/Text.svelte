@@ -129,14 +129,16 @@
 //   Informational: does not block saving.
 //
 // Repeated C refs (C === C, same object appearing at multiple locations) are
-// encoded as a loopy pair rather than an error:
+// complained about — refs belong in .c, not the snap tree.  The loopy pair is
+// still emitted so the snap reads sensibly:
 //   shallowest appearance: objecties.loopy:N  (plus normal sc) — the original
 //                          Travel.dive() descends into its children there.
 //   all other appearances: objecties.loopy:N, stringies keys all set to 1
 //                          (munged shadow — reads like the object, loopy signals ref).
 //   forward() visits shallow-first (stack order); pass 1 records min depth
 //   per C so pass 2 can stub deeper occurrences before the original is seen.
-// Errors are FATAL — mung keys, unknown types (all_knowing).
+// Errors are FATAL — mung keys, refs.  (The all_knowing vocabulary gate is parked|
+//   the encoder is relaxed about mainkeys so any tree, eg a Ting log, encodes.)
 // Caller should refuse to save when errors.length > 0.
     async encode_wh_lines(
         C:   TheC,
@@ -151,14 +153,17 @@
         const errors: string[] = []
         const snap_lines: string[] = []
 
-        // Derive the set of accepted mainkeys from rules that carry entry.mk.
-        // Only active when all_knowing is set — otherwise any particle encodes.
-        const known_mainkeys: Set<string> | null = opt?.all_knowing
-            ? new Set(
-                (opt.matching ?? [])
-                    .flatMap((r: any) => (r.matching_any ?? []).map((e: any) => e.mk).filter(Boolean))
-              )
-            : null
+        // The encoder is relaxed about its type situatings — any mainkey encodes,
+        //   so a Ting log of taps (mainkeys like tap|reveal|fly, not the Waft
+        //   vocabulary) rides the same format.  The vocabulary check below is parked
+        //   as an interesting relic|re-arm it by uncommenting both halves if a
+        //   strict-protocol Waft ever wants its unknown mainkeys to be fatal again.
+        // const known_mainkeys: Set<string> | null = opt?.all_knowing
+        //     ? new Set(
+        //         (opt.matching ?? [])
+        //             .flatMap((r: any) => (r.matching_any ?? []).map((e: any) => e.mk).filter(Boolean))
+        //       )
+        //     : null
 
         // ── pass 1: collect all C refs ────────────────────────────────────────
         // Walk the tree once to tally appearances and track the shallowest depth
@@ -204,21 +209,30 @@
 
             const d = T.c.path.length - 1
 
-            // all_knowing: mainkey not in protocol = fatal, skip subtree.
+            // mainkey of this particle — still read for the muted_log below.
             const mk = Object.keys(n.sc ?? {})[0]
-            if (known_mainkeys && mk && !known_mainkeys.has(mk)) {
-                const path_str = T.c.path
-                    .map((pt: Travel) => (pt.sc.n as TheC)?.c?.snap_Line ?? '?')
-                    .join(' → ')
-                errors.push(`unknown particle "${mk}" at depth ${d} — not in protocol — path: ${path_str}`)
-                T.sc.not = 1
-                return
-            }
+            // all_knowing vocabulary gate — parked with known_mainkeys above.  When
+            //   armed it made a mainkey outside the protocol fatal|relaxed now so any
+            //   mainkey encodes (the Ting format).
+            // if (known_mainkeys && mk && !known_mainkeys.has(mk)) {
+            //     const path_str = T.c.path
+            //         .map((pt: Travel) => (pt.sc.n as TheC)?.c?.snap_Line ?? '?')
+            //         .join(' → ')
+            //     errors.push(`unknown particle "${mk}" at depth ${d} — not in protocol — path: ${path_str}`)
+            //     T.sc.not = 1
+            //     return
+            // }
 
             // Repeated C: assign a ref id on first encounter (any depth).
             const is_repeated = (ref_count.get(n) ?? 1) > 1
             if (is_repeated && !ref_seen.has(n)) {
                 ref_seen.set(n, ref_i++)
+                // Refs belong in .c, not the snap tree — a C reachable from more than
+                //   one place is complained about.  The loopy pair below still forms a
+                //   readable shadow so the snap stays inspectable, but the complaint is
+                //   fatal, so a real Waft refuses to save a ref graph|a Ting is never
+                //   saved, so for it this only surfaces in the splatter panel.
+                errors.push(`repeated C ref (loopy ${ref_seen.get(n)}) at depth ${d} — refs belong in .c, not the snap tree`)
             }
 
             // Stub if already fully encoded, or if a shallower occurrence exists
@@ -274,10 +288,13 @@
     // Protocol front-end for encode_wh_lines: sets up the Waft matching rules
     // and calls encode_wh_lines(C, opt).
     //
-    // opt.all_knowing defaults to true — particles whose mainkey is not in
-    //   (Waft | What | Doc | Point) are fatal encoding errors.
+    // opt.all_knowing — vocabulary gate is parked (see encode_wh_lines)|the encoder
+    //   is relaxed about mainkeys so any tree encodes.  The flag is kept for the day
+    //   the gate is re-armed.
     // opt.matching defaults to WAFT_PROTOCOL — the inline rules that attach
     //   omit_sc:{session keys} to every known mainkey via entry.mk matching.
+    // opt.max_child_depth — depth limiting for the format: children deeper than this
+    //   are silently cut, so a sprawling Ting encodes to a bounded snap.
     //
     // The SESSION_KEYS stripped silently are: active, created_at, new, not_found.
     // All other scalar keys on known particles encode normally.
@@ -289,9 +306,10 @@
     async enWaft(
         C:   TheC,
         opt: {
-            all_knowing?: boolean
-            matching?:    Array<any>
-            muted_log?:   Array<{ depth: number, mainkey: string, omitted: string[] }>
+            all_knowing?:     boolean
+            matching?:        Array<any>
+            muted_log?:       Array<{ depth: number, mainkey: string, omitted: string[] }>
+            max_child_depth?: number
         } = {}
     ): Promise<{ snap: string, errors: string[], muted_log: Array<{ depth: number, mainkey: string, omitted: string[] }> }> {
         // Session-only sc fields: expected absences from every snap.
@@ -306,7 +324,7 @@
             means: { omit_sc: SESSION_KEYS },
         }))
 
-        opt.all_knowing ??= true
+        opt.all_knowing ??= true   // parked — the vocabulary gate is commented out in encode_wh_lines
         opt.muted_log   ??= []
         opt.matching    ??= WAFT_PROTOCOL
 

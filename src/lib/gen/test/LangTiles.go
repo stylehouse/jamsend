@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_test_LangTiles(): string { return 'e1732a1d2357ab33' },
+    Ghostmeta_Ghost_test_LangTiles(): string { return '73c42547cbc991bd' },
 
 // yeti etc!!!!!
 theCompiledStuff(A,w) {
@@ -35,7 +35,8 @@ theCompiledStuff(A,w) {
     // uses that assigned ang variable,
     //  assigns so, grabs the %so value which is incidentally the supplied string 'ont'
     //   so is auto-named. if we grabbed it as C (.../so:ont$) it's still named so.
-    this._i_drill(w, [{sc: {angles: 1}}, {sc: {are: ang, etc: 3}}, {sc: {so: ont}}])
+    this._i_drill(w, [{sc: {angles: 1}}, {sc: {are: ang, etc: 3}}, {sc: {so: "ont"}}]).$sooo,module.$tv,etc.$
+    this._i_drill(w, [{sc: {angles: 1}}, {sc: {are: ang, etc: 3}}, {sc: {so: "ont"}}]).$sooo,module.$tv,etc$year
     // this is what we're avoiding wither doing .$:othername above
     
     // you can declare let variables like this:

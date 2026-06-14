@@ -488,6 +488,106 @@ await M.eatfunc({
 
 //#endregion
 //#region LE_*
+    // ── LE reasons — multiply the LE, one name per reason it exists ───────────
+    //
+    //   One LE was one Understanding.  Now an LE exists for each reason, named:
+    //     Interest    — two-way.  The checkout that pulls a %What and deals with
+    //                   what comes OUT of it (the %Map report, the Points).  This
+    //                   is the original LE|it KEEPS the {LE:1} encoding so every
+    //                   existing o({LE:1})[0] reader still reaches it unchanged.
+    //     Undertaking — one-way.  Mostly UI flavour, so we know where we've been —
+    //                   an animal's mind overlaid on the visual language.  Its
+    //                   working data is the Ting (the attention trail)|it never
+    //                   pulls|pushes, it accumulates.
+    //   Named reasons encode as {LE:name} (eg {LE:'Undertaking'}), which an
+    //   o({LE:1}) query does not match — so the multiply is additive, not a rename.
+    //
+    //   Resolve|spawn an LE by reason.  reason undefined|'Interest' is the {LE:1}
+    //   original; any other name is a {LE:name} sibling.
+    LE_for(reason?: string): TheC | undefined {
+        const H   = this as House
+        const lng = (H.ave as TheC).o({ Languinio: 1 })[0] as TheC | undefined
+        if (!lng) return undefined
+        return (!reason || reason === 'Interest')
+            ? lng.o({ LE: 1 })[0]      as TheC | undefined
+            : lng.o({ LE: reason })[0] as TheC | undefined
+    },
+    LE_spawn(reason?: string): TheC {
+        const H   = this as House
+        const lng = (H.ave as TheC).oai({ Languinio: 1 })
+        const LE  = (!reason || reason === 'Interest')
+            ? lng.oai({ LE: 1 })
+            : lng.oai({ LE: reason })
+        // tag the reason for inspection even on the {LE:1} original (additive — the
+        //  bare {LE:1} key still matches, the reason just rides alongside).
+        LE.sc.reason ??= reason ?? 'Interest'
+        return LE
+    },
+
+    // ── LE_undertaking ────────────────────────────────────────────────────────
+    //   Get|spawn the one-way Undertaking LE and point it at the Ting, whose taps
+    //   are the trail it flavours from.  No arm, no Seems-for-pull — the Ting is
+    //   already the working data|the Undertaking just names the reason and gives the
+    //   Funkcion-req somewhere to hang.
+    LE_undertaking(w: TheC): TheC {
+        const H  = this as House
+        const LE = H.LE_spawn('Undertaking')
+        const ting = w.o({ Waft: 1, takes: 1 })[0] as TheC | undefined
+        if (ting) LE.c.ting = ting   // off-snap ref — the trail it reads
+
+        // The trail Funkcion rides a Seem:workon|LE_host_funkcion finds it there.
+        //  Its behaviour is the off-snap c.run (rebuilt here so it's never stale):
+        //  from the Ting globules it derives a decayed heat per $region/$method and
+        //  a normalised brightness — recent attention glows, old fades, the animal's
+        //  mind overlaid on the visual language.  Long taps glow a touch more.
+        const seem = LE.oai({ Seem: 'workon' })
+        const funk = seem.oai({ Funkcion: 'trail' })
+        funk.sc.halflife_ms ??= 60000
+        funk.c.run = (le: TheC) => {
+            const t = le.c.ting as TheC | undefined
+            if (!t) return
+            const now = Date.now()
+            const half = (funk.sc.halflife_ms as number) ?? 60000
+            const globs = t.o().filter((c: TheC) => 'Point' in c.sc) as TheC[]
+            let max = 0
+            for (const g of globs) {
+                const last   = (g.sc.last   as number) ?? now
+                const weight = (g.sc.weight as number) ?? 1
+                const decay  = Math.pow(0.5, Math.max(0, now - last) / half)
+                const heat   = weight * decay + (g.sc.held ? 0.5 : 0)
+                g.sc.heat = +heat.toFixed(3)
+                if (heat > max) max = heat
+            }
+            for (const g of globs) g.sc.bright = max > 0 ? +((g.sc.heat as number) / max).toFixed(3) : 0
+            t.bump_version()
+        }
+        return LE
+    },
+
+    // ── LE_host_funkcion ──────────────────────────────────────────────────────
+    //   Brighten an LE up: if a %Funkcion rides its workon Seem, host a req derived
+    //   from it.  The Funkcion C carries its behaviour on c.run (an off-snap closure,
+    //   same pattern as seek|compost), so the req stays declarative on the snap side
+    //   and live on the .c side.  Defensive — a no-op until a Funkcion is around, so
+    //   it's safe to call every think while the shape is still settling.
+    //   < confirm where the Funkcion rides — a Seem literally named 'workon', or the
+    //     working Seem carrying %Funkcion.  Reads both for now, workon first.
+    async LE_host_funkcion(LE: TheC) {
+        const H    = this as House
+        const seem = (LE.o({ Seem: 'workon' })[0]
+                   ?? LE.o({ Seem: 'working' })[0]) as TheC | undefined
+        const funk = seem?.o({ Funkcion: 1 })[0] as TheC | undefined
+        if (!funk) return                       // nothing to brighten yet
+        const fq = H.reqy(LE)
+        ;(await fq.doai({ req: 'funkcion' }))?.(async (req: TheC) => {
+            const run = funk.c.run as ((LE: TheC, funk: TheC) => void | Promise<void>) | undefined
+            if (run) await run(LE, funk)
+            // finish per tick so the hosted req re-arms next think while the Funkcion
+            //  is around, keeping the flavour live without piling clusters.
+            fq.finish(req)
+        })
+    },
+
     // ── LE_arm ──────────────────────────────────────────────────────────────
     // Aim (or re-aim) LE at a source %What.  Sets up both Seems: origin reads
     // the remote for awareness; working holds the editable clones (Seem.sc.C

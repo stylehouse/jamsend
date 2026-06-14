@@ -207,7 +207,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //   tap articulates — held counts and the Point is marked long, the meaningful
     //   grain of the tactile feed.
     //   e.sc: { method?, region?, long?, weight? }
-    e_Lies_take_point(A: TheC, w: TheC, e: TheC) {
+    async e_Lies_take_point(A: TheC, w: TheC, e: TheC) {
         const H      = this as House
         const method = e.sc.method as string | undefined
         const region = e.sc.region as string | undefined
@@ -232,6 +232,14 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             // < a long tap is meaningful — attach an articulation child here ({say:…})
             //   so the Ting reads like a feed of deliberate Points, not just counts.
         }
+
+        // brighten the Undertaking trail from this fresh globule — ensure the named
+        //  one-way LE points at the Ting, then host its Funkcion (req:funkcion runs
+        //  c.run, recomputing heat|bright across the globules so recent attention
+        //  glows).  < also pump this from Lang's settle so the trail decays over time
+        //  even when no tap lands, not only on a take.
+        const LE = H.LE_undertaking(w)
+        await H.LE_host_funkcion(LE)
         w.bump_version()
     },
 
