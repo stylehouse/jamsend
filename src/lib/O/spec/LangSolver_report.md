@@ -38,14 +38,14 @@ map of where the current system is heading. The reusable ones:
 | `iooia` shape | what it is | where it sits now |
 | --- | --- | --- |
 | `parsetalk(talk,params,d)` | parse a talk string into a `d` descriptor (`d.path`, `d.is`, `d.plumb`) | the stho grammar + `Lang_compile_Leg`/`PeelItem` build the same `d` as syntax-tree-derived leg objects |
-| `rowing` — travel `d.path` for i/o hooks | the per-leg walk, binding params, doing upstream `plumb` first | the drills (`_i_drill`/`_o_drill`) are `rowing` with one C per leg, no plumb |
+| `rowing` — travel `d.path` for i/o hooks | the per-leg walk; the rowmuddler stitches one obtain's rows into another's path, so resultsets are available to each other | the drills are `rowing` with one C per leg, no plumb; the shared-resultset rowmuddler is the fan-out frontier (arks below) |
 | `nz(d)` → `t`, `t.more()` | turn a result into a cursor you pull a row at a time | `_io_cursor` (built here, single-row); `_o_iter` is the drained-in-one form |
-| `parkar()` ark-grouping read-ahead | fold a fanned leg into `ar[k]=[v+]` columns — "basically a database" | **not built**; the capture doc's fan-out future; gated on the taxonomy seam |
+| `parkar()` ark-grouping read-ahead | fold a fanned leg into `ar[k]=[v+]` columns — "basically a database" | **the database tier**; a capture name advertises an ark (a named column), `@name` reuses it multi-row; gated on the taxonomy seam |
 | `forS` — domes that iterate | a standing cursor (`1s&forSing`, `in_progress`), Babz-set params from `T` | `Sunpit` → `_o_iter` today; the slow-motion version is `_io_cursor` here |
-| `not:1` compile-time mode | `io.i(talk,params,{not:1})` hands back `sjson(d)` — the call as data, the smart work done before now | **a separate dream**; see the sleeping-optimiser note below — not a `LangSion` helper |
-| `doof`/`separation` | a function mid-path; cloning through it | **not built**; a `_io_plan` flag throws on it |
+| `not:1` compile-time mode | `io.i(talk,params,{not:1})` hands back `sjson(d)` — the call as data, the smart work done before now | **already the everyday case**: the inlined leg array `[{sc:…}, …]` in each emitted drill call *is* the compile-time-built data the drill takes each run; the future is planning those args in concert (below) |
+| `doof`/`separation` | a function mid-path; cloning through it | **downplaying** as the language integrates — a `_io_plan` flag still throws on it, but it is less wanted than it was |
 | `gref`/`parsegref`/`codegref` | attribute/fuzzy matching | **not built**; out of scope per the Waft spec (decoration before fuzzy) |
-| `knowables` / via-T | "understand this name, then look it up" — late resolution | the verb-family throw points here; `Selection.process` is the Map-building cousin |
+| `knowables` / via-T | `io.knowing(d,v)` — understand a name, then resolve how it behaves as data: its index mode (`tv`/`tw`/`z`), whether it is a column or iterator, how duplicates merge | **the handy database engine**: the schema intelligence a compile-time planner consults; the taxonomy seam ("which legs are plural") is one knowable |
 | J6ing — dome consciousness | the overmind that decides when work happens, savepoints | the "overmind driving an elvis through an extent" — `_io_cursor.more()` is the pull it drives |
 
 `Index.coffee` is the indexing cousin (`brackX`, `X_t`/`X_s` columns-by-value).
@@ -113,20 +113,34 @@ stepping an extent. tier 0 is inlined here too, so a plan alone can run any
 IOing. The value-grab is applied at this boundary so a caller sees the value
 for `.$`, the row C for a bare `$`.
 
-### The big-datastructure / sleeping-optimiser dream — left unbuilt
+### Sion as a compile-time query planner — the horizon
 
-There was a passing suggestion to "freeze" a plan to JSON — the `iooia` `not:1`
-shape, the call as data. On reflection that was over-suggested: rendering a plan
-to JSON is trivial (`legs` are already plain data), so a tiny `_io_freeze` would
-be busywork that earns little on its own. The thing it was reaching at is bigger
-and far less settled — something that would *sleep whole chunks of the compile
-system* for optimisation, inlining big datastructures where it's safe to, and
-that would only be able to do so because it knows where entanglements exist.
-That is scarcely sketched anywhere yet. It seems to be mostly about
-`Selection.process()` sublating into whatever it is really trying to become —
-which looks like it goes in and out in several places, woven through the rest of
-the apptivity — and not about `%Seem` at all. It wants its own dream-up before
-any of it is named in code. Noted here as an open horizon, not a helper.
+The "JSON args" idea, said properly: the compiler *already* does it. The inlined
+leg array in every emitted `this._i_drill(w, [{sc:{hut:1}}, {sc:{toot:3}}])` is
+data built at compile time and parked right there in the call for the drill to
+take each run — a JSON encode, just not one worth naming a `_io_freeze` around.
+So the freeze helper was dropped; the everyday emit is the thing it was reaching
+at.
+
+The horizon is what `Sion` becomes once it stops planning one IOing at a time.
+Picture the database engine very handy at compile time — `knowables` telling it
+how each name behaves as data, which legs are plural, how duplicates merge — and
+a whole *flock* of IOings in a method handed to it at once. Then `Sion` plans
+them like a query planner plans a batch: each IOing in the community still comes
+out the far side as a drill plus the data it takes, exactly as now — but the
+plans are made in concert. A capture name advertises an ark (a named column); a
+sibling IOing reads it back with `@name`, multi-row, so one obtain's resultset is
+available to the next (the `rowing` rowmuddler, stitched at plan time rather than
+run time). Where a leg fans to N rows the captures below it widen into columns,
+and `let {a, b} = …` is quietly destructuring a table.
+
+This is where the optimiser lives that would *sleep whole chunks of the compile
+system* — inlining the big shared datastructures where it can prove it is safe,
+which it can only do because, having planned the flock together, it knows where
+the entanglements are. It looks mostly like `Selection.process()` sublating into
+whatever it is really becoming, woven in and out across the apptivity — not about
+`%Seem`. It is scarcely sketched, and it wants its own dream-up before any of it
+is named in code. Noted as the horizon `Sion` is walking toward, not a helper.
 
 ### `_io_cursor(C, legs)` — slow-motion S
 
@@ -191,22 +205,28 @@ The deferred work, smallest-first, with which ones leave the cordon:
 - the oai-verb (and the rest of the IOness|IOness2 family): their own last-leg
   drills. In cordon — `LangSion` drills + `Lang_compile_IOness` in `LangCompiling`.
 - the fan-out / database escalation: a mid-path leg matching N rows turns the
-  captures below it into N-wide columns (`parkar` ark-grouping). `_io_cursor` is
-  single-row until this lands. Beyond cordon — it needs the taxonomy seam,
-  "which legs are plural", which is either an stho annotation (the collector
-  decides locally) |a Lies/Understanding fact (the compiler consults Lies at
-  compile time, a producer/consumer seam across the cordon). Resolve the seam
-  first; it gates the fan-out drill design.
+  captures below it into N-wide columns (`parkar` ark-grouping). A capture name
+  advertises the ark; `@name` reuses that column multi-row in a sibling IOing, so
+  resultsets are available to each other. `_io_cursor` is single-row until this
+  lands. Beyond cordon — it needs the taxonomy seam, "which legs are plural",
+  which is either an stho annotation (the collector decides locally) |a
+  Lies/Understanding fact (the compiler consults Lies at compile time, a
+  producer/consumer seam across the cordon). Resolve the seam first; it gates the
+  fan-out drill design.
 - the `->` flow form (split obtain from insert) + `@s`|`@are` frontier refs.
   The grammar already allows two IOpaths on one IOness2 (the inline form);
   neither `->` nor `@`-resolution is built. Beyond cordon — grammar + compile.
-- `doof` mid-path (a function in the path) + `separation` cloning. Beyond cordon.
+- `doof` mid-path (a function in the path) + `separation` cloning. Downplaying
+  as the language integrates — kept as a throw, less wanted than it was. Beyond cordon.
 - `gref` fuzzy matching + the Map-building phase (`Selection.process`, the Dexie
   index, `Index.coffee`'s `brackX`). Out of scope per the Waft spec — decoration
   powers before fuzzy-matching powers. Beyond cordon.
-- the sleeping-optimiser / big-datastructure-inlining dream that knows where
-  entanglements exist. Scarcely sketched; mostly about `Selection.process`
-  sublating, not `%Seem`. Wants its own dream-up. Beyond cordon.
+- `Sion` as a compile-time query planner over the whole flock of IOings: plan
+  the community together with the database engine (`knowables`) handy, share
+  resultsets via arks, and let the sleeping optimiser inline the big shared
+  datastructures where the planned-together entanglements prove it safe. Scarcely
+  sketched; mostly `Selection.process` sublating, not `%Seem`. Its own dream-up.
+  Beyond cordon.
 - adopt `_io_plan` as `LangCompiling`'s tier source: today `LangCompiling`
   carries its own copy of the ladder; the mirror confirms they agree, so the
   compile side could call `_io_plan(flags-from-tree)` and drop the duplicate.

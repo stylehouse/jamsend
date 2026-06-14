@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_test_LangTiles(): string { return '60d0c6b1e95f2fe4' },
+    Ghostmeta_Ghost_test_LangTiles(): string { return '85e657870f616282' },
 
 // yeti etc!!!!!
 theCompiledStuff(A,w) {
@@ -91,6 +91,28 @@ severally(A,w,thing) {
 },
 laterally(A,w,thing) {
     this._i_drill(w, [{sc: {thingure: thing, of: 1, word: thing}}, {sc: {really: 1}}])
+
+},
+moreTiles(A,w) {
+    // newer capture coverage the corpus hadn't exercised yet.
+    //  (a trailing capture names its own let — no manual let prefix needed.)
+    // value capture on a multi-leg o — tval = the %toot value, not the row C
+    let tval = this._o_drill1(w, [{sc: {hut: 1}}, {sc: {toot: 1}}])?.sc.toot
+    // single leg, two value captures → tier0-multi takes the caps drill
+    let {angle, itsval} = this._o_drill_caps(A, [{sc: {prefixy: 1, wither: 1, its: 1}, caps: [{as: "angle", key: "wither", val: true}, {as: "itsval", key: "its", val: true}]}])
+    // a multi-leg i whose freshly-inserted leaf we keep — no capture, so the
+    //  let is manual, binding the drill's return (the leaf C)
+    let leaf = this._i_drill(w, [{sc: {deep: 1}}, {sc: {nest: 1}}, {sc: {leaf: 1}}])
+    // ── frontier — commented; documents the path syntax still to come ──
+    // @ark: a capture name advertises a column (an ark); @name reuses it,
+    //   multi-row.  $ang above named a column, a sibling IOing reads it back:
+    //  o angles/are:@ang/module$
+    // fan-out: a mid leg matching N rows makes the captures below it N-wide
+    //   (columns — basically a database); wants the taxonomy seam first:
+    //  w o angles/are:$ang,etc:3/so:ont.$sooo
+    // the -> flow form splits the obtain from the insert across @are:
+    //  w o angles/are:$ang,etc:3
+    //  -> i @are/so:ont.$sooo,module.$tv,etc.$
 
 },
 

@@ -76,3 +76,24 @@ severally(A,w,thing):
 
 laterally(A,w,thing):
     i thingure:$thing,of,word:$thing/really
+
+moreTiles(A,w):
+    // newer capture coverage the corpus hadn't exercised yet.
+    //  (a trailing capture names its own let — no manual let prefix needed.)
+    // value capture on a multi-leg o — tval = the %toot value, not the row C
+    o hut/toot.$tval
+    // single leg, two value captures → tier0-multi takes the caps drill
+    A o prefixy,wither.$angle,its.$itsval
+    // a multi-leg i whose freshly-inserted leaf we keep — no capture, so the
+    //  let is manual, binding the drill's return (the leaf C)
+    let leaf = i deep/nest/leaf
+    // ── frontier — commented; documents the path syntax still to come ──
+    // @ark: a capture name advertises a column (an ark); @name reuses it,
+    //   multi-row.  $ang above named a column, a sibling IOing reads it back:
+    //  o angles/are:@ang/module$
+    // fan-out: a mid leg matching N rows makes the captures below it N-wide
+    //   (columns — basically a database); wants the taxonomy seam first:
+    //  w o angles/are:$ang,etc:3/so:ont.$sooo
+    // the -> flow form splits the obtain from the insert across @are:
+    //  w o angles/are:$ang,etc:3
+    //  -> i @are/so:ont.$sooo,module.$tv,etc.$

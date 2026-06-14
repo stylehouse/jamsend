@@ -560,6 +560,7 @@ await M.eatfunc({
             }
             for (const g of globs) g.sc.bright = max > 0 ? +((g.sc.heat as number) / max).toFixed(3) : 0
             t.bump_version()
+            le.bump_version()   // wake the minimap's brights derivation (sensitised on LE.vers)
         }
         return LE
     },

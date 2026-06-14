@@ -1301,6 +1301,13 @@
                 if (view && dock.c.seek) (dock.c.seek as Function)(view, from, to)
             }
             m.c.is_pointedat = (specs: Set<string>) => specs.has(key)
+            // bright(brights) — this entry's trail heat, 0..1.  Keyed by $region/$method
+            //   (region = region_path tail) to match how the Ting globulates a tap, so
+            //   the same rail as is_pointedat carries the heatmap without re-Langing the
+            //   minimap.  The UI sensitises brights on the Undertaking LE.vers.
+            const rpath  = (e.c.region_path as string[] | undefined) ?? []
+            const region = rpath.length ? rpath[rpath.length - 1] : ''
+            m.c.bright = (brights: Map<string, number>) => brights.get(`${region}\u0000${key}`) ?? 0
 
             if (kind === 'region') {
                 // body span for the fold and the band extent — header line stays
@@ -1337,6 +1344,28 @@
             specs.add(String(raw))
         }
         return specs
+    },
+
+    // ── Lang_trail_brights — the heatmap the minimap draws ─────────────────────
+    //
+    //   $region/$method → brightness (0..1), read off the Undertaking's Ting
+    //   globules (the trail Funkcion keeps bright fresh, decaying on each trickle).
+    //   Keyed exactly as a Mapule's bright(brights) looks itself up, so a band|chip
+    //   lights to the heat of the attention that's pooled on it.  Same shape as
+    //   Lang_pointed_specs|the minimap sensitises on the Undertaking LE.vers.
+    Lang_trail_brights(): Map<string, number> {
+        const H       = this as House
+        const brights = new Map<string, number>()
+        const LE      = H.LE_for('Undertaking')
+        const ting    = LE?.c.ting as TheC | undefined
+        if (!ting) return brights
+        for (const g of (ting.o() as TheC[])) {
+            if (!('Point' in g.sc)) continue
+            const region = (g.sc.region as string | undefined) ?? ''
+            const key    = String(g.sc.Point)
+            brights.set(`${region}\u0000${key}`, (g.sc.bright as number) ?? 0)
+        }
+        return brights
     },
 
     // Doc-from-src resolution lives in LiesEnd as Waft_src_doc_path — one body

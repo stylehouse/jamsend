@@ -233,6 +233,24 @@
         return m ? !!(m.c.is_pointedat as ((s: Set<string>) => boolean) | undefined)?.(pointed_specs) : false
     }
 
+    // ── trail heat ──────────────────────────────────────────────────────────
+    //   The Undertaking LE's trail (where we've been) painted over the map.  Same
+    //   rail as pointed_specs: a Lang-side map ($region/$method → 0..1), sensitised
+    //   on the Undertaking LE.vers (the trail Funkcion bumps it each tap + trickle),
+    //   read per entry through Mapule.c.bright.  An amber glow blazes on recent
+    //   attention and cools on its own as the trickle decays it — the animal's mind
+    //   overlaid on the visual language, no Lang vocabulary in the minimap.
+    let undertaking = $derived(languinio?.ob({ LE: 'Undertaking' })[0] as TheC | undefined)
+    let brights = $derived.by(() => {
+        void undertaking?.vers
+        return ((H as any).Lang_trail_brights?.() as Map<string, number> | undefined) ?? new Map<string, number>()
+    })
+    function heat_style(m: TheC | undefined): string {
+        const b = m ? ((m.c.bright as ((br: Map<string, number>) => number) | undefined)?.(brights) ?? 0) : 0
+        if (b <= 0.02) return ''
+        return `box-shadow: 0 0 ${(b * 10).toFixed(1)}px rgba(255,190,80,${(b * 0.85).toFixed(2)}); border-radius: 3px;`
+    }
+
 
 
     // ── throttled rebuild ─────────────────────────────────────────────────────
@@ -540,6 +558,7 @@
                         <button class="lmm-def-chip lmm-def-chip-top"
                                 class:lmm-def-chip-class={!d.class}
                                 class:lmm-pointedat={pointedat_m(d.mapule)}
+                                style={heat_style(d.mapule)}
                                 title="{d.method} (line {d.line})"
                                 onclick={() => record_goto(d.mapule)}>{d.method}</button>
                     {/each}
@@ -549,6 +568,7 @@
                         <button class="lmm-def-chip lmm-def-chip-top"
                                 class:lmm-def-chip-class={!d.class}
                                 class:lmm-pointedat={pointedat_m(d.mapule)}
+                                style={heat_style(d.mapule)}
                                 title="{d.method} (line {d.line})"
                                 onclick={() => record_goto(d.mapule)}>{d.method}</button>
                     {/each}
@@ -567,6 +587,7 @@
                             aria-label="Toggle band">{is_collapsed(r) ? '▸' : '▾'}</button>
                     <button class="lmm-label"
                             class:lmm-pointedat={pointedat_m(r.mapule)}
+                            style={heat_style(r.mapule)}
                             onclick={() => record_goto(r.mapule, { from: r.from_char, label: r.label })}
                             title="{r.label} (line {r.from_line}–{r.to_line})">{r.label}</button>
                     <button class="lmm-fold"
@@ -581,6 +602,7 @@
                             <button class="lmm-def-chip"
                                     class:lmm-def-chip-class={!d.class}
                                     class:lmm-pointedat={pointedat_m(d.mapule)}
+                                    style={heat_style(d.mapule)}
                                     title="{d.method} (line {d.line})"
                                     onclick={() => record_goto(d.mapule)}>{d.method}</button>
                         {/each}
@@ -590,6 +612,7 @@
                             <button class="lmm-def-chip"
                                     class:lmm-def-chip-class={!d.class}
                                     class:lmm-pointedat={pointedat_m(d.mapule)}
+                                    style={heat_style(d.mapule)}
                                     title="{d.method} (line {d.line})"
                                     onclick={() => record_goto(d.mapule)}>{d.method}</button>
                         {/each}
