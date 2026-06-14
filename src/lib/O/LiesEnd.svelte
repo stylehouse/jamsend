@@ -557,6 +557,11 @@ await M.eatfunc({
                 const heat   = weight * decay + (g.sc.held ? 0.5 : 0)
                 g.sc.heat = +heat.toFixed(3)
                 if (heat > max) max = heat
+                // warmth = the held|long share of this globule's taps — the
+                //  deliberateness the minimap tints the glow by (lingered vs grazed).
+                const held = (g.sc.held as number) ?? 0
+                const n    = (g.sc.n    as number) ?? 1
+                g.sc.warm = +Math.min(1, held / Math.max(1, n)).toFixed(3)
             }
             for (const g of globs) g.sc.bright = max > 0 ? +((g.sc.heat as number) / max).toFixed(3) : 0
             t.bump_version()

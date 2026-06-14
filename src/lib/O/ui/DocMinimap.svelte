@@ -245,10 +245,21 @@
         void undertaking?.vers
         return ((H as any).Lang_trail_brights?.() as Map<string, number> | undefined) ?? new Map<string, number>()
     })
+    // warms — same rail, the deliberateness 0..1 (held|long share vs graze) the glow
+    //   tints by.  Sensitised on the same LE.vers so it re-reads in lock-step.
+    let warms = $derived.by(() => {
+        void undertaking?.vers
+        return ((H as any).Lang_trail_warm?.() as Map<string, number> | undefined) ?? new Map<string, number>()
+    })
     function heat_style(m: TheC | undefined): string {
         const b = m ? ((m.c.bright as ((br: Map<string, number>) => number) | undefined)?.(brights) ?? 0) : 0
         if (b <= 0.02) return ''
-        return `box-shadow: 0 0 ${(b * 10).toFixed(1)}px rgba(255,190,80,${(b * 0.85).toFixed(2)}); border-radius: 3px;`
+        // hue by deliberateness: amber where attention only grazed, warming toward
+        //   pink where it lingered (held|long taps) — the glow says where AND how.
+        const w  = m ? ((m.c.warm as ((wr: Map<string, number>) => number) | undefined)?.(warms) ?? 0) : 0
+        const gg = Math.round(190 - 70 * w)
+        const bb = Math.round(80 + 120 * w)
+        return `box-shadow: 0 0 ${(b * 10).toFixed(1)}px rgba(255,${gg},${bb},${(b * 0.85).toFixed(2)}); border-radius: 3px;`
     }
 
 

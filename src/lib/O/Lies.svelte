@@ -221,6 +221,10 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const key_sc: any = { Point: id }
         if (region) key_sc.region = region         // same name in two regions = two globules
         const point = ting.oai(key_sc)
+        // region path (scalar, shallow→deep) lets the trail roll a nested method's
+        //  heat up to its ancestor region bands.  A string, not an array — an object
+        //  in sc is an encode fatal and the Ting does encode for the wander-trail.
+        if (e.sc.region_path) point.sc.region_path = e.sc.region_path as string
 
         point.sc.n      = ((point.sc.n      as number) ?? 0) + 1
         point.sc.weight = ((point.sc.weight as number) ?? 0) + weight
@@ -229,8 +233,11 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         if (long) {
             point.sc.held = ((point.sc.held as number) ?? 0) + 1
             point.sc.long = 1
-            // < a long tap is meaningful — attach an articulation child here ({say:…})
-            //   so the Ting reads like a feed of deliberate Points, not just counts.
+            // a long tap is articulated — file the line it lingered on under the Point
+            //  as a {say} child so the Ting reads like a feed of deliberate Points, not
+            //  just counts.  Scalar child with no Point key, so heat|brights ignore it.
+            const say = e.sc.say as string | undefined
+            if (say) point.i({ say, at: now })
         }
 
         // brighten the Undertaking trail from this fresh globule — ensure the named

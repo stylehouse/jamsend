@@ -1309,6 +1309,12 @@
             const region = rpath.length ? rpath[rpath.length - 1] : ''
             m.c.bright = (brights: Map<string, number>) => brights.get(`${region}\u0000${key}`) ?? 0
 
+            // warm(warms) — same rail, the deliberateness hue: held|long taps pool a
+            //   warmth 0..1 (Lang_trail_warm) the minimap tints the glow by, so the
+            //   heatmap says not just where attention went but how — lingered vs grazed.
+            m.c.warm = (warms: Map<string, number>) =>
+                warms.get(region + String.fromCharCode(0) + key) ?? 0
+
             if (kind === 'region') {
                 // body span for the fold and the band extent — header line stays
                 // visible, the body below folds (matches Lang_apply_openness).
@@ -1370,21 +1376,53 @@
             const region = (g.sc.region as string | undefined) ?? ''
             const key    = String(g.sc.Point)
             const bright = (g.sc.bright as number) ?? 0
-            if (region) region_max.set(region, Math.max(region_max.get(region) ?? 0, bright))
+            // roll this globule's heat up to every region band in its path (tail =
+            //  the direct region, then its ancestors) so a parent band warms from a
+            //  nested method.  Falls back to the direct region when no path was stored.
+            const path  = g.sc.region_path as string | undefined
+            const bands = path ? path.split('/') : (region ? [region] : [])
+            for (const r of bands) region_max.set(r, Math.max(region_max.get(r) ?? 0, bright))
             brights.set(`${region}\u0000${key}`, (g.sc.bright as number) ?? 0)
         }
         // light each region band to the hottest thing pooled in it, keyed the same
         //  way a region-kind Mapule looks itself up.  max(), not sum: bright is already
         //  0..1, so a band glows as warm as its hottest member rather than saturating
-        //  with how many defs it happens to hold.
-        //  < a globule carries only its direct (tail) region, so heat doesn't roll up
-        //    to ancestor bands; the full region_path on the globule would let a parent
-        //    band warm from a deeply-nested method too.
+        //  with how many defs it happens to hold.  Heat rolls up the path above, so a
+        //  parent band already carries its nested methods' warmth, deepest included.
         for (const [region, bright] of region_max) {
             const key = region + NUL + region
             brights.set(key, Math.max(brights.get(key) ?? 0, bright))
         }
         return brights
+    },
+
+    // ── Lang_trail_warm — the deliberateness hue, the brights' twin rail ───────
+    //
+    //   $region/$method → warmth (0..1): how much of the attention pooled there was a
+    //   held|long tap rather than a graze, read off each globule's sc.warm (the trail
+    //   Funkcion keeps it fresh).  Same keys + ancestor roll-up as Lang_trail_brights,
+    //   so a band warms to its most-deliberate member.  The minimap tints the heat glow
+    //   by this — where you lingered reads a different hue from where you only glanced.
+    Lang_trail_warm(): Map<string, number> {
+        const H     = this as House
+        const warms = new Map<string, number>()
+        const LE    = H.LE_for('Undertaking')
+        const ting  = LE?.c.ting as TheC | undefined
+        if (!ting) return warms
+        const NUL = String.fromCharCode(0)
+        const region_max = new Map<string, number>()
+        for (const g of (ting.o() as TheC[])) {
+            if (!('Point' in g.sc)) continue
+            const region = (g.sc.region as string | undefined) ?? ''
+            const key    = String(g.sc.Point)
+            const warm   = (g.sc.warm as number) ?? 0
+            warms.set(region + NUL + key, warm)
+            const path  = g.sc.region_path as string | undefined
+            const bands = path ? path.split('/') : (region ? [region] : [])
+            for (const r of bands) region_max.set(r, Math.max(region_max.get(r) ?? 0, warm))
+        }
+        for (const [r, w] of region_max) warms.set(r + NUL + r, Math.max(warms.get(r + NUL + r) ?? 0, w))
+        return warms
     },
 
     // Doc-from-src resolution lives in LiesEnd as Waft_src_doc_path — one body

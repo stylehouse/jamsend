@@ -740,7 +740,7 @@
             for (const e of tr.effects) {
                 if (!e.is(setPointDecorationsEffect)) continue
                 const len   = tr.state.doc.length
-                const marks: ReturnType<typeof Decoration.line>[] = []
+                const marks: Array<ReturnType<typeof Decoration.line>> = []
                 const lined = new Set<number>()
                 for (const { from, cls } of e.value) {
                     // Skip offsets outside the live doc rather than letting
@@ -751,18 +751,31 @@
                     if (typeof from !== 'number' || from < 0 || from > len) continue
                     // Decoration.line() needs a line-start offset.
                     const line = tr.state.doc.lineAt(from)
-                    // one line decoration per line — RangeSet tolerates equal
+                    // one decoration pair per line — RangeSet tolerates equal
                     // positions but stacking classes double-applies the enlarge.
                     // < merge classes when two Points share a line (focus wins?)
                     if (lined.has(line.from)) continue
                     lined.add(line.from)
-                    const deco = Decoration.line({
+                    // The line decoration carries the GLOW only (whole-line box-shadow).
+                    marks.push(Decoration.line({
                         class: `cm-point-engaged${cls ? ` cm-point-${cls}` : ''}`,
-                    })
-                    marks.push(deco.range(line.from))
+                    }).range(line.from))
+                    // The font ENLARGE rides a mark over the content AFTER the indent,
+                    // so the leading whitespace stays body-size and the name keeps the
+                    // same indent column as the lines around it — a whole-line font-size
+                    // would swell the indent too and lift the line off the grid (hover).
+                    const indent       = line.text.length - line.text.trimStart().length
+                    const content_from = line.from + indent
+                    if (content_from < line.to) {
+                        marks.push(Decoration.mark({
+                            class: `cm-point-text${cls ? ` cm-point-text-${cls}` : ''}`,
+                        }).range(content_from, line.to))
+                    }
                 }
-                // sort ascending — RangeSet requires it
-                marks.sort((a, b) => a.from - b.from)
+                // line decos and content marks share one set — sort by position, then
+                // startSide so a line decoration sorts before a mark at the same offset
+                // (a header with no indent), as RangeSet requires.
+                marks.sort((a, b) => a.from - b.from || a.value.startSide - b.value.startSide)
                 decos = Decoration.set(marks, true)
             }
             return decos
@@ -1557,23 +1570,27 @@
        classes are stamped by the StateField from clone//U%class. */
     .lte-cm :global(.cm-point-engaged) {
         box-shadow:  inset 0 0 12px #c4aaee33;
-        font-size:   1.4em;
         line-height: 1.96em;
-        transition:  font-size 0.15s, line-height 0.15s, box-shadow 0.15s;
+        transition:  line-height 0.15s, box-shadow 0.15s;
     }
     .lte-cm :global(.cm-point-focus) {
         box-shadow:  inset 0 0 20px #c4aaee66;
-        font-size:   2em;
         line-height: 2.8em;
     }
     .lte-cm :global(.cm-point-caution) {
         box-shadow: inset 0 0 12px rgba(229, 192, 100, 0.25);
     }
     .lte-cm :global(.cm-point-dim) {
-        font-size:   1em;
         line-height: 1.4em;
         box-shadow:  inset 0 0 6px #c4aaee1a;
     }
+    /* font enlarge rides the content span (after the indent), not the whole line, so
+       the leading whitespace stays body-size and the name keeps its indent column.
+       The content (≤1.4–2em) fits inside the line-height set on the line above, so the
+       header sits on the grid instead of hovering. */
+    .lte-cm :global(.cm-point-text)       { font-size: 1.4em; transition: font-size 0.15s; }
+    .lte-cm :global(.cm-point-text-focus) { font-size: 2em; }
+    .lte-cm :global(.cm-point-text-dim)   { font-size: 1em; }
     .lte-cm :global(.cm-point-ghost) {
         opacity:    0.18;
         transform:  scaleY(0.4);

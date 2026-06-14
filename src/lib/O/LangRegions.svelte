@@ -509,17 +509,25 @@
             if (!owner || ln > (owner.sc.line as number)) owner = d
         }
 
-        // region rides the def's own region_path tail so the globule keys exactly as
-        //  the def chip's Mapule does; a method-less tap keys on reg's label so it
-        //  pools on the region band's own globule.
+        // region path for this tap, shallow→deep: a def carries its own (the region
+        //  stack at its header); a method-less tap takes the chain of regions that
+        //  contain it.  The tail is the direct region (the chip|band key the globule
+        //  keys on, exactly as the Mapule does); the rest are ancestors the heat rolls
+        //  up to, so a parent band warms from a nested method too.  A held tap also
+        //  carries the line it lingered on, filed under the Point as articulation.
         const method = owner?.sc.method as string | undefined
-        const rp     = owner?.c.region_path as string[] | undefined
-        const region = owner
-            ? (rp && rp.length ? rp[rp.length - 1] : reg?.label)
-            : reg?.label
+        const path: string[] = owner
+            ? ((owner.c.region_path as string[] | undefined) ?? [])
+            : regions.filter(r => r.from_char <= at && at <= r.to_char)
+                     .sort((a, b) => a.depth - b.depth).map(r => r.label)
+        const region = path.length ? path[path.length - 1] : undefined
+        const say    = opt.long ? state.doc.lineAt(at).text.trim() : undefined
 
         H.i_elvisto('Lies/Lies', 'Lies_take_point', {
-            method, region, long: !!opt.long, weight: opt.weight ?? 1,
+            method, region,
+            region_path: path.length ? path.join('/') : undefined,
+            long: !!opt.long, weight: opt.weight ?? 1,
+            ...(say ? { say } : {}),
         })
     },
 

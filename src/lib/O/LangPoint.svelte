@@ -124,17 +124,25 @@
 
     // The OUTERMOST blocks crossing fold_depth that are also worth folding — the set
     // we actually fold.  Folding a parent already hides its children (a child would
-    // only re-strand on the climb back down), a run shorter than MIN_FOLD_LINES isn't
-    // worth collapsing — a 3-line if saves nothing and just litters the overview with
-    // fold markers — and a //#region marker is navigational, never a fold target:
-    // folding it would swallow the method names and region structure the climb exists
-    // to surface.  Region blocks stay counted for depth (their methods nest under
-    // them) but are skipped here.  Shared by the fold-range and header-font builders.
+    // only re-strand on the climb back down), so granularity is mostly the Q depth's
+    // job: at Q5 (fold_depth 0) only top-level methods are direct targets and their
+    // inner if|for blocks fold away *inside* them; an inner block becomes a direct
+    // target only at a deeper Q that keeps its method open and dives.
+    // The size floor is depth-aware: a top-level method body (depth 0) folds even at
+    // 2 lines so the Q5 method list is complete, but a block INSIDE a method (depth ≥ 1)
+    // must be substantial (MIN_INNER) to earn its own marker — a 3-line if saves nothing
+    // and just litters the dive.  A //#region marker is navigational, never a fold
+    // target — folding it would swallow the method names and region structure the climb
+    // exists to surface — so region blocks stay counted for depth (their methods nest
+    // under them) but are skipped here.  Shared by the fold-range and header-font builders.
     Lang_folded_blocks(blocks: Block[], fold_depth: number): Block[] {
         if (!isFinite(fold_depth)) return []
-        const MIN_FOLD_LINES = 8   // header through last body line, inclusive
-        const crossing = blocks.filter(b => !b.is_region
-            && b.depth >= fold_depth && (b.end - b.header + 1) >= MIN_FOLD_LINES)
+        const MIN_METHOD = 2   // depth 0: header + one body line — fold even a tiny method
+        const MIN_INNER  = 8   // depth ≥ 1: header through last body line, inclusive
+        const long_enough = (b: Block) =>
+            (b.end - b.header + 1) >= (b.depth === 0 ? MIN_METHOD : MIN_INNER)
+        const crossing = blocks.filter(b =>
+            !b.is_region && b.depth >= fold_depth && long_enough(b))
         return crossing.filter(b =>
             !crossing.some(a => a !== b && a.header < b.header && a.end >= b.end))
     },
