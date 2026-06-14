@@ -103,6 +103,7 @@
     import type { House } from "$lib/O/Housing.svelte"
     import Actions from "$lib/O/ui/Actions.svelte"   // doc-picker dropdown + any other Lang actions
     import DocMinimap from "./ui/DocMinimap.svelte"
+    import DocCompost from "./ui/DocCompost.svelte"  // frozen-frame overlay; arms dock.c.compost for fly-in gotos
     import DocPoint   from "./ui/DocPoint.svelte"
     import { now_in_seconds_with_ms } from "./Peerily.svelte";
 
@@ -1345,6 +1346,13 @@
         </div>
         {/if}
     </div>
+    {#if dock}
+    <!-- Frozen-frame overlay, sibling to the minimap.  position:fixed, so its DOM
+         home here is cosmetic; it self-derives lang_dock via languinio and keeps an
+         empty host mounted so grab() always has somewhere to clone.  Mounting it
+         arms dock.c.compost, which turns minimap gotos into fly-ins. -->
+    <DocCompost {H} {view} />
+    {/if}
     {#if dock && bookmarks.length}
     <!-- Point panel: one DocPoint per bookmark on the active doc -->
     <div class="lte-points">

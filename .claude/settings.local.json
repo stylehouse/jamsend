@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l src/lib/data/Stuff.svelte.ts src/lib/O/Hovercraft.svelte src/lib/O/LiesEnd.svelte)",
+      "Bash(ls -la src/lib/data/Stuff*)"
+    ]
+  }
+}

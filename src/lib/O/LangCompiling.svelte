@@ -579,7 +579,17 @@
         // clear stale entries from a previous compile
         Map_C.empty()
         for (const word of words) {
-            Map_C.i(word)
+            const wc = Map_C.i(word)
+            // region_path is an array — it belongs in .c, never .sc (an object in
+            //  sc is an encode fatal, and the readers — the Mapule build's m.c.path
+            //  and m.c.bright key, Lang_tap's region resolution — all read it off
+            //  .c).  i() lands it in sc with the rest of the word, so relocate it
+            //  here; without this the read is always undefined and every $region
+            //  collapses to '', leaving the heatmap's region dimension dormant.
+            if (Array.isArray(wc.sc.region_path)) {
+                wc.c.region_path = wc.sc.region_path
+                delete wc.sc.region_path
+            }
         }
         let was = Map_C.o().length
         this.trace(`Lang`,`There were Map entries x${was}`)

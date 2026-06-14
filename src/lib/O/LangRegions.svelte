@@ -460,12 +460,16 @@
     //   $region/$method identity — by name, through %Map, never by stored offset —
     //   and is handed to the taker Ting (e_Lies_take_point), which globulates it.
     //
-    //   %Map stores name-spans, not method bodies, and a reveal-tap lands in a body,
-    //   so the owning method is the def whose header line most recently precedes the
-    //   tap line|that is the cheap, correct-enough bound until body extents are at
-    //   hand.  region rides on the def's region_path (its tail is the direct region).
-    //   < precise body containment via the indent-block decomposition|the Mapule
-    //     region extents — would also let a method-less tap globulate to its region.
+    //   %Map stores name-spans, not method|region bodies, so the owning method is the
+    //   def whose header line most recently precedes the tap line — bounded to the
+    //   region that actually contains the tap (its body span, from Lang_build_regions,
+    //   the fold source of truth) so a def in an earlier region can't claim it.
+    //   region rides the def's own region_path tail (the direct region it sits in); a
+    //   tap with no def above it inside its region is method-less and lands on the
+    //   region band itself, so a look at a region's header|preamble glows the band.
+    //   < precise per-def body containment — a tap in a parent's body after a child
+    //     region should read the parent, not the child's last def — needs def body
+    //     extents %Map doesn't carry; the indent-block decomposition would give them.
     //   opt: { long?, weight? }
     Lang_tap(w: TheC, from: number, opt: { long?: boolean, weight?: number } = {}) {
         const H     = this as House
@@ -478,16 +482,41 @@
 
         const at       = Math.max(0, Math.min(from, state.doc.length))
         const tap_line = state.doc.lineAt(at).number
-        const defs     = Map_C.o({ def: 1 }) as TheC[]
 
+        // innermost region whose body span contains the tap — %Map's region entries
+        //  carry only the header line, so containment comes from the from_char|to_char
+        //  Lang_build_regions computes (with a proper open-region stack).  Regions
+        //  nest, so the deepest containing one wins.
+        const { regions } = this.Lang_build_regions(state)
+        let reg: RegionEntry | undefined
+        for (const r of regions) {
+            if (r.from_char <= at && at <= r.to_char && (!reg || r.depth > reg.depth)) reg = r
+        }
+
+        // owning def — nearest def header at|above the tap, bounded to reg so an
+        //  earlier region's def can't claim a tap that fell in this one (the def's
+        //  name offset must sit inside reg's body span).  None above within reg →
+        //  owner stays undefined: a method-less tap, landing on the region.
+        const defs = Map_C.o({ def: 1 }) as TheC[]
         let owner: TheC | undefined
         for (const d of defs) {
             const ln = d.sc.line as number
-            if (ln <= tap_line && (!owner || ln > (owner.sc.line as number))) owner = d
+            if (ln > tap_line) continue
+            if (reg) {
+                const df = d.sc.from as number
+                if (df < reg.from_char || df > reg.to_char) continue
+            }
+            if (!owner || ln > (owner.sc.line as number)) owner = d
         }
+
+        // region rides the def's own region_path tail so the globule keys exactly as
+        //  the def chip's Mapule does; a method-less tap keys on reg's label so it
+        //  pools on the region band's own globule.
         const method = owner?.sc.method as string | undefined
         const rp     = owner?.c.region_path as string[] | undefined
-        const region = rp && rp.length ? rp[rp.length - 1] : undefined
+        const region = owner
+            ? (rp && rp.length ? rp[rp.length - 1] : reg?.label)
+            : reg?.label
 
         H.i_elvisto('Lies/Lies', 'Lies_take_point', {
             method, region, long: !!opt.long, weight: opt.weight ?? 1,
