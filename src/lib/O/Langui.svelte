@@ -93,9 +93,9 @@
     import { onDestroy, untrack } from "svelte"
     import { EditorView, basicSetup } from "codemirror"
     import { EditorState, StateField, StateEffect, Compartment, type Extension } from "@codemirror/state"
-    import { Decoration, type DecorationSet, keymap, ViewUpdate, drawSelection } from "@codemirror/view"
+    import { Decoration, type DecorationSet, keymap, ViewUpdate, ViewPlugin, WidgetType, drawSelection } from "@codemirror/view"
     import { indentService, indentUnit } from "@codemirror/language";
-    import { foldEffect, unfoldEffect, unfoldAll, foldedRanges } from "@codemirror/language";
+    import { foldEffect, unfoldEffect, unfoldAll, foldedRanges, codeFolding } from "@codemirror/language";
     import { defaultKeymap, indentWithTab } from "@codemirror/commands";
 
     import { lang, simpleLezerLinter, lang_for_path } from "$lib/O/lang/lang"
@@ -487,6 +487,7 @@
                   setPointDecorations: setPointDecorationsEffect,
                   setPointFonts:       setPointFontsEffect,
                   seek:                (v: EditorView, from: number, to: number) => fire_seek(v, from, to),
+                  foldToggle:          (v: EditorView, from: number, to: number) => fire_fold_toggle(v, from, to),
                   setPointFolds:       (v: EditorView, showing: any[], hiding: any[]) =>
                                            fire_point_folds(v, showing, hiding),
                   unfoldAllFolds:      (v: EditorView) => unfoldAll(v),
@@ -815,6 +816,131 @@
         provide: f => EditorView.decorations.from(f),
     })
 
+    // ── Fold markers — marked region folds vs invisible Q|Point folds ──────────
+    //
+    //   Two kinds of fold share CM's one fold state:
+    //     • MARKED folds — a region body the user folded from the minimap.  Folded,
+    //       they show a clickable ↤Nlines↦ placeholder; unfolded, a small green ↦
+    //       sits where the marker was, to fold it up again.
+    //     • INVISIBLE folds — the Q climb's body folds and the Point unshowing folds.
+    //       They're driven by the dial|the Points, not clicked, so they show only a
+    //       faint stub and carry no re-fold handle — the overview (shrunk bodies,
+    //       grown names) is the signal, not a row of "…".
+    //   What tells them apart is markedRegions: a region enters it the first time it's
+    //   foldToggled, and stays (mapped through edits) so its identity as markable
+    //   survives fold|unfold.  Nothing else is marked, so everything else is invisible.
+
+    const markFoldEffect = StateEffect.define<{ from: number, to: number }>()
+
+    // markedRegions: from → to for every region the user has foldToggled.  A plain
+    //   remapped map (a RangeSet would do, but the from→to lookup the placeholder and
+    //   the handle both want is one step here).  mapPos with bias keeps a marked span
+    //   anchored as text around it changes|a span that collapses to nothing is dropped.
+    const markedRegions = StateField.define<Map<number, number>>({
+        create: () => new Map(),
+        update(marks, tr) {
+            let next = marks
+            if (tr.docChanged) {
+                next = new Map()
+                for (const [from, to] of marks) {
+                    const f = tr.changes.mapPos(from, 1)
+                    const t = tr.changes.mapPos(to, -1)
+                    if (f < t) next.set(f, t)
+                }
+            }
+            for (const e of tr.effects) {
+                if (!e.is(markFoldEffect)) continue
+                if (next === marks) next = new Map(marks)
+                next.set(e.value.from, e.value.to)
+            }
+            return next
+        },
+    })
+
+    // line count a folded range hides — header line through the last body line.
+    const folded_lines = (state: EditorState, from: number, to: number) =>
+        state.doc.lineAt(to).number - state.doc.lineAt(from).number
+
+    // codeFolding with our placeholder.  preparePlaceholder runs per fold and decides
+    //   marked|invisible from markedRegions; placeholderDOM renders accordingly.  This
+    //   shares basicSetup's fold state (same singleton field) and only supplies the
+    //   placeholder — combineConfig takes the first DEFINED placeholderDOM, which is
+    //   ours (basicSetup's codeFolding leaves it null).
+    const foldMarkers = codeFolding({
+        preparePlaceholder: (state, range) => ({
+            marked: state.field(markedRegions, false)?.has(range.from) ?? false,
+            lines:  folded_lines(state, range.from, range.to),
+        }),
+        placeholderDOM: (view, onclick, prepared: { marked: boolean, lines: number }) => {
+            const el = document.createElement('span')
+            if (prepared.marked) {
+                el.className = 'cm-fold-marked'
+                el.textContent = `↤${prepared.lines}↦`
+                el.title = `unfold ${prepared.lines} lines`
+                el.onclick = onclick               // CM's unfold handler
+            } else {
+                el.className = 'cm-fold-invisible'
+                el.textContent = '⋯'               // a faint stub, not a loud "…"
+                el.onclick = onclick
+            }
+            return el
+        },
+    })
+
+    // ── re-fold handle ────────────────────────────────────────────────────────
+    //   For every marked region that is currently UNFOLDED, a small green ↦ at the
+    //   end of its header line that folds it back up.  This is the affordance that
+    //   sits "where the fold marker was" once you've opened a region|CM leaves nothing
+    //   behind on unfold, so it's a widget we place ourselves.
+    class RefoldWidget extends WidgetType {
+        constructor(readonly from: number, readonly to: number) { super() }
+        eq(o: RefoldWidget) { return o.from === this.from && o.to === this.to }
+        toDOM(view: EditorView) {
+            const b = document.createElement('span')
+            b.className = 'cm-refold-handle'
+            b.textContent = '↦'
+            b.title = 'fold this region'
+            b.onmousedown = (e) => {
+                e.preventDefault()             // keep the editor selection put
+                view.dispatch({ effects: [
+                    foldEffect.of({ from: this.from, to: this.to }),
+                    markFoldEffect.of({ from: this.from, to: this.to }),
+                ] })
+            }
+            return b
+        }
+        ignoreEvent() { return false }
+    }
+
+    const refoldHandles = ViewPlugin.fromClass(class {
+        decorations: DecorationSet
+        constructor(view: EditorView) { this.decorations = this.build(view) }
+        update(u: ViewUpdate) {
+            // fold state changes arrive as transactions|cheap to rebuild on any change
+            if (u.docChanged || u.viewportChanged || u.transactions.length)
+                this.decorations = this.build(u.view)
+        }
+        build(view: EditorView): DecorationSet {
+            const marks = view.state.field(markedRegions, false)
+            if (!marks || !marks.size) return Decoration.none
+            const folds = foldedRanges(view.state)
+            const out: Array<ReturnType<typeof Decoration.widget>> = []
+            for (const [from, to] of marks) {
+                if (from < 0 || to > view.state.doc.length || from >= to) continue
+                // skip if this region is currently folded (the ↤N↦ placeholder shows)
+                let folded = false
+                folds.between(from, from, () => { folded = true })
+                if (folded) continue
+                out.push(Decoration.widget({
+                    widget: new RefoldWidget(from, to),
+                    side: 1,                       // after the header-line content
+                }).range(from))
+            }
+            out.sort((a, b) => a.from - b.from)
+            return Decoration.set(out, true)
+        }
+    }, { decorations: v => v.decorations })
+
     // ── pointFoldsField — fold/unfold dispatch for unshowing Points ───────────
     //
     //   When Lang_show_pmirrors finds an unshowing Pmirror it puts it in the folds
@@ -826,6 +952,25 @@
     //   fold extension (part of basicSetup).  We just dispatch foldEffect /
     //   unfoldEffect to set the per-range fold state.  dock.c.setPointFolds
     //   is a plain function so Lang_show_pmirrors can call it without importing CM.
+    //   These are INVISIBLE folds (never entered into markedRegions).
+
+    // ── fire_fold_toggle — toggle one fold range (a region body) ──────────────
+    //
+    //   Provided as dock.c.foldToggle so a Mapule.c.fold() can fold|unfold a region
+    //   without importing CM.  Folded already (a fold starts at from) → unfold, else
+    //   fold.  Body-only: the caller passes [end of header line, end of body], so the
+    //   header stays visible — same shape as the Point folds.  Either way the range is
+    //   entered into markedRegions, so it reads as a MARKED fold (↤N↦ + ↦ handle).
+    function fire_fold_toggle(v: EditorView, from: number, to: number) {
+        if (from >= to) return
+        let folded = false
+        const cursor = foldedRanges(v.state).iter()
+        while (cursor.value !== null) { if (cursor.from === from) { folded = true; break } cursor.next() }
+        v.dispatch({ effects: [
+            folded ? unfoldEffect.of({ from, to }) : foldEffect.of({ from, to }),
+            markFoldEffect.of({ from, to }),
+        ] })
+    }
 
     // ── fire_seek — look at a span: unfold what hides it, select + centre it ───
     //
@@ -1033,6 +1178,9 @@
             graftMarkField,
             pointDecorationField,
             pointFontField,
+            markedRegions,
+            foldMarkers,
+            refoldHandles,
             Keys,
             EditorView.updateListener.of((v: ViewUpdate) => {
                 const sel = v.state.selection.main
@@ -1098,6 +1246,7 @@
               setPointDecorations: setPointDecorationsEffect,
               setPointFonts:       setPointFontsEffect,
               seek:                (v: EditorView, from: number, to: number) => fire_seek(v, from, to),
+              foldToggle:          (v: EditorView, from: number, to: number) => fire_fold_toggle(v, from, to),
               setPointFolds:       (v: EditorView, showing: any[], hiding: any[]) =>
                                        fire_point_folds(v, showing, hiding),
               unfoldAllFolds:      (v: EditorView) => unfoldAll(v),
@@ -1429,4 +1578,35 @@
         max-height: 19em; overflow-y: auto;
         background: #080810;
     }
+    /* ── Fold markers ──────────────────────────────────────────────────────
+       MARKED region folds: ↤N↦ placeholder (purple arrows, dim count) that
+       unfolds on click.  INVISIBLE Q|Point folds: a faint ⋯ stub only.  The
+       re-fold ↦ handle sits at the header-line end of an unfolded marked region,
+       green, and folds it back up. */
+    .lte-cm :global(.cm-fold-marked) {
+        color: #8F82FF;
+        cursor: pointer;
+        padding: 0 0.3em;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+    .lte-cm :global(.cm-fold-marked:hover) { color: #b3a9ff; }
+
+    .lte-cm :global(.cm-fold-invisible) {
+        color: rgba(160, 170, 200, 0.22);
+        cursor: pointer;
+        font-size: 0.8em;
+        padding: 0 0.2em;
+    }
+    .lte-cm :global(.cm-fold-invisible:hover) { color: rgba(160, 170, 200, 0.5); }
+
+    .lte-cm :global(.cm-refold-handle) {
+        color: rgb(119, 204, 153);
+        cursor: pointer;
+        margin-left: 0.4em;
+        opacity: 0.45;
+        transition: opacity 0.12s, color 0.12s;
+        user-select: none;
+    }
+    .lte-cm :global(.cm-refold-handle:hover) { opacity: 1; color: rgb(150, 230, 180); }
 </style>

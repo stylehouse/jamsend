@@ -11,28 +11,28 @@
     //
     // ── Data ─────────────────────────────────────────────────────────────────
     //
-    //   Reads the compiled index that LangCompiling deposits at
-    //     w:Lang/{docks}/{dock:path}/{Compile:1}/{Map:1}  (via lang_dock).
-    //   %Map is a direct child of %Compile; %Output only appears for hard-compiled
-    //   (gen_path) docs.  Soft compiles have no %Output.
-    //
-    //   The Points are lit from the generic overview layer, dock/%Navicade — one
-    //   Mapule per Map entry, each carrying is_pointedat.  pointedat() routes through
-    //   it so the membership rule stays Lang-side|the minimap only asks.
+    //   Reads ONLY the generic overview layer: dock/%Navicade, the Mapulen Lang
+    //   builds next to %Compile (one %kind,key,path,depth tuple per Map entry, with
+    //   the finished band geometry and the goto|fold|is_pointedat closures on .c).
+    //   The minimap reads no %Map, parses no //#region, knows nothing Lang — it lays
+    //   out bands and chips from the Mapulen and drives every action through their
+    //   closures.  The only other reads are generic: lang_dock.c.text for the line
+    //   count, and %Languinio/%LE for the spinners and the working-Point set.
     //
     //   Points (Pmirrors) are owned by NaviCado — not rendered in the region body.
-    //   The region/def body (lmm-strip) shows only region headers and def chips.
+    //   The region/def body (lmm-strip) shows only region bands and def chips, with
+    //   the working Points lit bigger+yellow (Mapule.c.is_pointedat).
     //
     // ── Scroll sync ──────────────────────────────────────────────────────────
     //
     //   _hovering: true while mouse is over the strip.
-    //   _navigating: true for 200ms after go_to() — suppresses the scroll event
-    //     our own CM dispatch fires before it can fight the new position.
+    //   _navigating: true for 200ms after a nav move (begin_nav) — suppresses the
+    //     scroll event our own CM dispatch fires before it can fight the new position.
 
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import { EditorView } from "@codemirror/view"
-    import { foldEffect, unfoldEffect, foldedRanges } from "@codemirror/language"
+    import { unfoldEffect, foldedRanges } from "@codemirror/language"
     import NaviCado from "$lib/O/ui/NaviCado.svelte"
 
     type Region = {
@@ -44,12 +44,14 @@
         to_char:   number
         defs:      Def[]
         // path: the open-region stack at this region, itself included as the last
-        // element (the compiler stamps it on every %Map entry).  Two regions are
-        // the same container iff their paths are equal|defs nest by exact match.
+        // element (Lang stamps it on every Mapule).  Two regions are the same
+        // container iff their paths are equal|defs nest by exact match.
         path:      string[]
-        // < points: PointMark[] lived here for capsule nav lookup — now in NaviCado
+        // the Mapule this band came from — navigation, fold and pointedat all ride
+        // it, so the minimap holds no Lang.  The de-facto head band has none.
+        mapule?:   TheC
     }
-    type Def = { method: string, class?: string, line: number, from: number, to: number, path: string[] }
+    type Def = { method: string, class?: string, line: number, from: number, to: number, path: string[], mapule: TheC }
     const path_key = (p: string[]) => (p ?? []).join('\u0000')
 
     let { H, view }: {
@@ -212,13 +214,11 @@
 
     // ── Mapulen — the generic overview layer (dock/%Navicade) ──────────────────
     //
-    //   Lang builds one Mapule per Map entry next to %Compile; here we read them
-    //   only to light up the Points.  Keyed by kind+key so a def chip and a region
-    //   band each find their own Mapule.  is_pointedat lives on the Mapule (it tests
-    //   the working-Point spec set), so a Point toggle re-derives here off LE.vers
-    //   without Lang rebuilding the Mapulen.
-    //   < the region/def layout above still reads %Map directly|when it reads Mapulen
-    //     too the minimap holds nothing Lang and this lookup is the whole data source.
+    //   Lang builds one Mapule per Map entry next to %Compile; the minimap renders
+    //   ENTIRELY from these — bands, chips, nesting, navigation, fold and pointedat —
+    //   and reads no %Map, parses no //#region, knows nothing Lang.  Each band|chip
+    //   carries its Mapule, so a click is just mapule.c.goto()|mapule.c.fold(), and
+    //   pointedat is mapule.c.is_pointedat against the working-Point set.
     let LE = $derived(languinio?.ob({ LE: 1 })[0] as TheC | undefined)
 
     let pointed_specs = $derived.by(() => {
@@ -226,23 +226,11 @@
         return ((H as any).Lang_pointed_specs?.(LE) as Set<string> | undefined) ?? new Set<string>()
     })
 
-    let mapule_by_key = $derived.by(() => {
-        void lang_dock?.vers
-        const out = new Map<string, TheC>()
-        const navicade = lang_dock?.o({ Navicade: 1 })[0] as TheC | undefined
-        if (!navicade) return out
-        for (const m of navicade.o({ Mapule: 1 }) as TheC[])
-            out.set(`${m.sc.kind}\u0000${m.sc.key}`, m)
-        return out
-    })
-
-    // pointedat(kind, key) — does this row's Mapule test as a working Point.
-    //   Routes through Mapule.c.is_pointedat so the membership rule stays on the
-    //   Mapule, not duplicated in the UI.  Both inputs are reactive (pointed_specs
-    //   on LE.vers, mapule_by_key on the dock), so the styling tracks Point toggles.
-    function pointedat(kind: string, key: string): boolean {
-        const m = mapule_by_key.get(`${kind}\u0000${key}`)
-        return m ? !!(m.c.is_pointedat as (s: Set<string>) => boolean)(pointed_specs) : false
+    // pointedat_m(mapule) — does this entry test as a working Point.  Routes through
+    //   Mapule.c.is_pointedat so the membership rule stays Lang-side|reactive on
+    //   pointed_specs (LE.vers), so the styling tracks Point toggles.
+    function pointedat_m(m: TheC | undefined): boolean {
+        return m ? !!(m.c.is_pointedat as ((s: Set<string>) => boolean) | undefined)?.(pointed_specs) : false
     }
 
 
@@ -270,161 +258,87 @@
     })
 
     function rebuild() {
-        if (!lang_dock) {
+        // The whole structure comes from dock/%Navicade now — the Mapulen Lang builds
+        // next to %Compile.  No %Map read, no //#region scan|each band and chip keeps
+        // its Mapule for goto, fold and pointedat.  Before the first compile there are
+        // no Mapulen and the strip is simply empty until one lands.
+        const navicade = lang_dock?.o({ Navicade: 1 })[0] as TheC | undefined
+        if (!navicade) {
             _structure = { regions: [], top_level_defs: [] }
+            last_log_summary = ''
             return
         }
+        const mapules   = navicade.o({ Mapule: 1 }) as TheC[]
+        const region_ms = mapules.filter(m => m.sc.kind === 'region')
+        const def_ms    = mapules.filter(m => m.sc.kind === 'def')
+        const text      = (lang_dock!.c.text as string) ?? ''
 
-        // Compile output and sc.text both live on lang_dock (%Dock from Languinio).
-        // %Map is a direct child of %Compile regardless of whether %Output exists.
-        // %Output is only present for hard-compiled gen_path docs.
-        const job   = lang_dock.o({ Compile: 1 })[0]  as TheC | undefined
-        const Map_C = job?.o({ Map: 1 })[0]           as TheC | undefined
+        const list: Region[] = region_ms.map(m => ({
+            label:     m.sc.key as string,
+            depth:     (m.sc.depth as number) ?? 0,
+            from_line: (m.sc.line as number) ?? 1,
+            to_line:   (m.sc.end_line as number) ?? total_lines,
+            from_char: (m.sc.from as number) ?? 0,
+            to_char:   (m.c.body_to as number) ?? text.length,
+            defs:      [],
+            path:      (m.c.path as string[] | undefined) ?? [],
+            mapule:    m,
+        }))
 
-        if (Map_C) {
-            const region_entries = Map_C.o({ region: 1 }) as TheC[]
-            const def_entries    = Map_C.o({ def:    1 }) as TheC[]
-
-            const list: Region[] = region_entries.map(r => ({
-                label:     r.sc.label as string,
-                depth:     r.sc.depth as number,
-                from_line: r.sc.line  as number,
-                to_line:   total_lines,
-                from_char: r.sc.from  as number,
-                to_char:   r.sc.to    as number,
-                defs:      [],
-                path:      (r.c.region_path as string[] | undefined) ?? [],
-            }))
-
-            const text = (lang_dock.c.text as string) ?? ''
-
-            // De-facto head region: the span before the first //#region is a
-            // region in its own right (the file head — <script…> and the bare
-            // top-level methods), so it gets a band like everything else instead
-            // of floating above the structure.  patch_region_extents closes it at
-            // the first real region.  Labelled by the first non-blank line.
-            const first_real = list.reduce((m, r) => Math.min(m, r.from_line), Infinity)
-            let defacto: Region | undefined
-            if (first_real > 1) {
-                const head = (text.split('\n').find(l => l.trim()) ?? 'head').trim().slice(0, 40)
-                defacto = {
-                    label: head, depth: 0, from_line: 1, to_line: total_lines,
-                    from_char: 0, to_char: text.length, defs: [], path: [head],
-                }
-                list.unshift(defacto)
+        // De-facto head band: the span before the first region (the file head) gets a
+        // band like the rest, labelled by the first non-blank line.  Presentation only
+        // — line numbers and a label, no Lang.  It has no Mapule|clicking its label
+        // seeks to the file top.
+        const first_real = list.reduce((m, r) => Math.min(m, r.from_line), Infinity)
+        let defacto: Region | undefined
+        if (first_real > 1) {
+            const head = (text.split('\n').find(l => l.trim()) ?? 'head').trim().slice(0, 40)
+            defacto = {
+                label: head, depth: 0, from_line: 1,
+                to_line: isFinite(first_real) ? first_real - 1 : total_lines,
+                from_char: 0, to_char: text.length, defs: [], path: [head],
             }
-
-            patch_region_extents(list, text, total_lines)
-
-            // index regions by their exact path for O(1) def nesting.  region_path
-            // is the compiler's authoritative containment record (a def's path
-            // equals its direct region's path), so this needs no text geometry.
-            const by_path = new Map<string, Region>()
-            for (const r of list) by_path.set(path_key(r.path), r)
-
-            const top_defs: Def[] = []
-            for (const d of def_entries) {
-                const def: Def = {
-                    method: d.sc.method as string,
-                    class:  d.sc.class  as string | undefined,
-                    line:   d.sc.line   as number,
-                    from:   d.sc.from   as number,
-                    to:     d.sc.to     as number,
-                    path:   (d.c.region_path as string[] | undefined) ?? [],
-                }
-                // path-bearing defs match their region exactly (line geometry is
-                // the fallback for older path-less compiles).  A path-less def in
-                // the head falls into the de-facto region|otherwise it is genuinely
-                // top-level (a rare def sitting after the last region).
-                const owner = def.path.length
-                    ? (by_path.get(path_key(def.path)) ?? innermost_region_for_line(list, def.line))
-                    : (defacto && def.line <= defacto.to_line
-                        ? defacto
-                        : innermost_region_for_line(list, def.line))
-                if (owner) owner.defs.push(def)
-                else top_defs.push(def)
-            }
-
-            const summary = `${list.length}r ${def_entries.length}d`
-            if (summary !== last_log_summary) {
-                console.log(`🗺 minimap rebuild ${active_path}: regions=${list.length} defs=${def_entries.length}`)
-                last_log_summary = summary
-            }
-            _structure = { regions: list, top_level_defs: top_defs }
-            return
+            list.unshift(defacto)
         }
 
-        // Fallback: no compile index yet.  Scan regions from text.
-        const fallback_regions = scan_regions_from_text((lang_dock.c.text as string) ?? '')
-        const summary = `${fallback_regions.length}r 0d (no compile)`
+        // index regions by their exact path for O(1) def nesting.  path is Lang's
+        // authoritative containment record (a def's path equals its region's path),
+        // so this needs no text geometry.
+        const by_path = new Map<string, Region>()
+        for (const r of list) by_path.set(path_key(r.path), r)
+
+        const top_defs: Def[] = []
+        for (const m of def_ms) {
+            const def: Def = {
+                method: m.sc.key as string,
+                class:  m.sc.cls as string | undefined,
+                line:   (m.sc.line as number) ?? 0,
+                from:   (m.sc.from as number) ?? 0,
+                to:     (m.sc.to   as number) ?? 0,
+                path:   (m.c.path as string[] | undefined) ?? [],
+                mapule: m,
+            }
+            // path-bearing defs match their region exactly|a path-less def in the head
+            // falls into the de-facto band, otherwise it is genuinely top-level (a rare
+            // def after the last region).
+            const owner = def.path.length
+                ? (by_path.get(path_key(def.path)) ?? innermost_region_for_line(list, def.line))
+                : (defacto && def.line <= defacto.to_line
+                    ? defacto
+                    : innermost_region_for_line(list, def.line))
+            if (owner) owner.defs.push(def)
+            else top_defs.push(def)
+        }
+
+        const summary = `${list.length}r ${def_ms.length}d`
         if (summary !== last_log_summary) {
-            console.log(`🗺 minimap rebuild ${active_path} (no compile yet): regions=${fallback_regions.length}`)
+            console.log(`🗺 minimap rebuild ${active_path}: regions=${list.length} defs=${def_ms.length} (mapulen)`)
             last_log_summary = summary
         }
-        _structure = { regions: fallback_regions, top_level_defs: [] }
+        _structure = { regions: list, top_level_defs: top_defs }
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
-
-    function scan_regions_from_text(text: string): Region[] {
-        const REGION_RE    = /^[\t ]*\/\/#region\s+(.+)$/
-        const ENDREGION_RE = /^[\t ]*\/\/#endregion\b/
-        const lines = text.split('\n')
-        const all:   Region[] = []
-        const stack: Region[] = []
-        let char_offset = 0
-        for (let i = 0; i < lines.length; i++) {
-            const line_text = lines[i]
-            const line_num  = i + 1
-            const line_from = char_offset
-            const line_to   = char_offset + line_text.length
-            const m = line_text.match(REGION_RE)
-            if (m) {
-                const depth = stack.length
-                while (stack.length > depth) {
-                    const c = stack.pop()!; c.to_line = line_num - 1; c.to_char = line_from
-                }
-                const r: Region = {
-                    label: m[1].trim(), depth,
-                    from_line: line_num, to_line: lines.length,
-                    from_char: line_from, to_char: text.length,
-                    defs: [],
-                    path: [...stack.map(s => s.label), m[1].trim()],
-                }
-                all.push(r); stack.push(r)
-            } else if (ENDREGION_RE.test(line_text) && stack.length) {
-                const c = stack.pop()!; c.to_line = line_num; c.to_char = line_to
-            }
-            char_offset = line_to + 1   // +1 for the \n we split on
-        }
-        return all
-    }
-
-    // Patch to_line / to_char on regions whose close was not recorded by the
-    // compiler.
-    function patch_region_extents(list: Region[], text: string, total: number) {
-        if (!list.length) return
-        const ENDREGION_RE = /^[\t ]*\/\/#endregion\b/
-        const lines  = text.split('\n')
-        const sorted = [...list].sort((a, b) => a.from_line - b.from_line)
-        const stack: Region[] = []
-        let next = 0, char_offset = 0
-        for (let i = 0; i < lines.length; i++) {
-            const line_num = i + 1
-            const line_to  = char_offset + lines[i].length
-            while (next < sorted.length && sorted[next].from_line === line_num) {
-                while (stack.length && stack[stack.length - 1].depth >= sorted[next].depth) {
-                    const c = stack.pop()!
-                    if (c.to_line === total) { c.to_line = line_num - 1; c.to_char = char_offset > 0 ? char_offset - 1 : 0 }
-                }
-                stack.push(sorted[next++])
-            }
-            if (ENDREGION_RE.test(lines[i]) && stack.length) {
-                const c = stack.pop()!; c.to_line = line_num; c.to_char = line_to
-            }
-            char_offset = line_to + 1
-        }
-    }
 
     function innermost_region_for_line(list: Region[], line: number): Region | undefined {
         let winner: Region | undefined
@@ -442,7 +356,7 @@
     //    A separate Waft layer recording where attention actually went, distinct
     //    from the structural %Points|its sources, lightest to heaviest:
     //      what line is visible on screen, where the cursor clicks around (a
-    //      teacher tapping the board), a manual goto (this go_to), and certainly
+    //      teacher tapping the board), a manual goto (record_goto), and certainly
     //      any edit.  Each lands a faint timestamped Point on the layer.
     //    The trail draws back as a heatmap streak careening over the MiniMap —
     //      pull up history and watch it move.  Edits batch against it so a session
@@ -480,28 +394,46 @@
         view.focus()
     }
 
-    function go_to(from: number, to: number, label: string) {
+    // _navigating guards the scroll-sync for a beat after we move the editor, so our
+    // own dispatch doesn't bounce back through sync_scroll and fight the new position.
+    function begin_nav() {
         _navigating = true
         clearTimeout(_nav_timer)
         _nav_timer = setTimeout(() => { _navigating = false }, 200) as any
-        console.log(`🗺 minimap go_to('${label}' [${from}..${to}])`)
-        seek(from, to)
+    }
+    function push_nav(from: number, to: number, label: string) {
         const truncated = nav_hist.slice(0, nav_pos + 1)
         truncated.push({ path: active_path, from, to, label })
         nav_hist = truncated
         nav_pos  = truncated.length - 1
     }
 
+    // Look at an entry through its Mapule (mapule.c.goto), recording the move so the
+    // breadcrumb + back/forward keep working.  The de-facto head band has no Mapule|
+    // its fallback seeks to the file top.
+    function record_goto(m: TheC | undefined, fallback?: { from: number, label: string }) {
+        begin_nav()
+        if (m) {
+            push_nav((m.sc.from as number) ?? 0, (m.sc.to as number) ?? 0, String(m.sc.key))
+            ;(m.c.goto as (() => void) | undefined)?.()
+        } else if (fallback) {
+            push_nav(fallback.from, fallback.from, fallback.label)
+            seek(fallback.from, fallback.from)
+        }
+    }
+
     function go_back() {
         if (!can_back || !view) return
         nav_pos = nav_pos - 1
         const e = nav_hist[nav_pos]
+        begin_nav()
         seek(e.from, e.to)
     }
     function go_forward() {
         if (!can_forward || !view) return
         nav_pos = nav_pos + 1
         const e = nav_hist[nav_pos]
+        begin_nav()
         seek(e.from, e.to)
     }
 
@@ -515,27 +447,11 @@
         return collapsed.get(`${region.from_line}:${region.label}`) ?? false
     }
 
-    // Fold / unfold this region in CM.  Body-only fold: header line stays
-    // visible (matches Lang_apply_openness semantics).
+    // Fold / unfold this region's body in CM — through the Mapule, so the minimap
+    // computes no fold range itself.  The de-facto head band has no Mapule|nothing
+    // to fold there.
     function toggle_fold(region: Region) {
-        if (!view) return
-        const state       = view.state
-        const header_line = state.doc.line(region.from_line)
-        const fold_from   = header_line.to
-        const fold_to     = Math.min(region.to_char, state.doc.length)
-        if (fold_from >= fold_to) return
-        const folds = foldedRanges(state)
-        let is_folded = false
-        const cursor  = folds.iter()
-        while (cursor.value !== null) {
-            if (cursor.from === fold_from) { is_folded = true; break }
-            cursor.next()
-        }
-        view.dispatch({
-            effects: is_folded
-                ? unfoldEffect.of({ from: fold_from, to: fold_to })
-                : foldEffect.of({ from: fold_from, to: fold_to })
-        })
+        ;(region.mapule?.c.fold as (() => void) | undefined)?.()
     }
 
     // ── layout maths ─────────────────────────────────────────────────────────
@@ -614,18 +530,18 @@
                     {#each top_level_defs.slice(0, half) as d (d.from)}
                         <button class="lmm-def-chip lmm-def-chip-top"
                                 class:lmm-def-chip-class={!d.class}
-                                class:lmm-pointedat={pointedat('def', d.method)}
+                                class:lmm-pointedat={pointedat_m(d.mapule)}
                                 title="{d.method} (line {d.line})"
-                                onclick={() => go_to(d.from, d.to, d.method)}>{d.method}</button>
+                                onclick={() => record_goto(d.mapule)}>{d.method}</button>
                     {/each}
                 </div>
                 <div class="lmm-def-col">
                     {#each top_level_defs.slice(half) as d (d.from)}
                         <button class="lmm-def-chip lmm-def-chip-top"
                                 class:lmm-def-chip-class={!d.class}
-                                class:lmm-pointedat={pointedat('def', d.method)}
+                                class:lmm-pointedat={pointedat_m(d.mapule)}
                                 title="{d.method} (line {d.line})"
-                                onclick={() => go_to(d.from, d.to, d.method)}>{d.method}</button>
+                                onclick={() => record_goto(d.mapule)}>{d.method}</button>
                     {/each}
                 </div>
             {/if}
@@ -641,8 +557,8 @@
                             onclick={() => toggle_collapse(r)}
                             aria-label="Toggle band">{is_collapsed(r) ? '▸' : '▾'}</button>
                     <button class="lmm-label"
-                            class:lmm-pointedat={pointedat('region', r.label)}
-                            onclick={() => go_to(r.from_char, r.from_char, r.label)}
+                            class:lmm-pointedat={pointedat_m(r.mapule)}
+                            onclick={() => record_goto(r.mapule, { from: r.from_char, label: r.label })}
                             title="{r.label} (line {r.from_line}–{r.to_line})">{r.label}</button>
                     <button class="lmm-fold"
                             onclick={() => toggle_fold(r)}
@@ -655,18 +571,18 @@
                         {#each r.defs.slice(0, half) as d (d.from)}
                             <button class="lmm-def-chip"
                                     class:lmm-def-chip-class={!d.class}
-                                    class:lmm-pointedat={pointedat('def', d.method)}
+                                    class:lmm-pointedat={pointedat_m(d.mapule)}
                                     title="{d.method} (line {d.line})"
-                                    onclick={() => go_to(d.from, d.to, d.method)}>{d.method}</button>
+                                    onclick={() => record_goto(d.mapule)}>{d.method}</button>
                         {/each}
                     </div>
                     <div class="lmm-def-col" style="padding-left: 2px;">
                         {#each r.defs.slice(half) as d (d.from)}
                             <button class="lmm-def-chip"
                                     class:lmm-def-chip-class={!d.class}
-                                    class:lmm-pointedat={pointedat('def', d.method)}
+                                    class:lmm-pointedat={pointedat_m(d.mapule)}
                                     title="{d.method} (line {d.line})"
-                                    onclick={() => go_to(d.from, d.to, d.method)}>{d.method}</button>
+                                    onclick={() => record_goto(d.mapule)}>{d.method}</button>
                         {/each}
                     </div>
                 {/if}

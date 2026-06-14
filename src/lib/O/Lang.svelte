@@ -485,6 +485,8 @@
         // seek(view, from, to) — unfold what hides the span, select + centre it.
         // Mapule.c.goto rides this so navigation needs no CM imports outside Langui.
         dock.c.seek                = e.sc.seek
+        // foldToggle(view, from, to) — fold|unfold one body range; Mapule.c.fold rides it.
+        dock.c.foldToggle          = e.sc.foldToggle
 
         // Only activate if we have a real path — empty string means the dock
         // isn't known yet and Lies hasn't handed back the dock %Good yet.
@@ -1216,12 +1218,58 @@
     //                               so a Point change re-derives in the Mapulen without
     //                               rebuilding them — the Mapulen stay put across Point
     //                               toggles, only the derive re-runs.
-    //   < m.c.fold() and a thus-crunchy goto fold-policy ride here when item E lands.
+    //   Region Mapulen additionally carry the finished band geometry so the minimap
+    //   parses no //#region and maps no lines to chars itself:
+    //     sc.end_line             — last line of the region body (extent for the band).
+    //     m.c.fold()              — toggle-fold the region body in the editor.
     Lang_build_mapules(w: TheC, dock: TheC) {
         const Map_C    = dock.o({ Compile: 1 })[0]?.o({ Map: 1 })[0] as TheC | undefined
         const navicade = dock.oai({ Navicade: 1 })
         navicade.empty()
         if (!Map_C) { navicade.bump_version(); return }
+
+        // doc geometry — char offset of each line's end, and the line count.  The
+        // minimap holds none of this Lang-side|the Mapulen carry the finished spans
+        // so the UI never parses //#region or maps lines to chars itself.
+        const text  = (dock.c.text as string) ?? ''
+        const lines = text.split('\n')
+        const total = lines.length || 1
+        const line_end = new Array<number>(total + 2)   // 1-indexed; [n] = end char of line n
+        {
+            let off = 0
+            for (let i = 0; i < lines.length; i++) { off += lines[i].length; line_end[i + 1] = off; off += 1 }
+        }
+
+        // region extents — a region's last line.  Honours //#endregion (a nested
+        // region can close back to its parent before any sibling opens, which pure
+        // depth+line ordering would miss), falling back to "next region at depth ≤
+        // mine, else EOF" for regions left implicitly open.  Lang owns the //#region
+        // syntax|the minimap just reads sc.end_line.
+        const region_entries = (Map_C.o({ region: 1 }) as TheC[])
+            .map(r => ({ depth: (r.sc.depth as number) ?? 0, line: (r.sc.line as number) ?? 1 }))
+            .sort((a, b) => a.line - b.line)
+        const end_of = new Map<number, number>()
+        for (const r of region_entries) end_of.set(r.line, total)
+        {
+            const ENDREGION_RE = /^[\t ]*\/\/#endregion\b/
+            const stack: typeof region_entries = []
+            let next = 0
+            for (let i = 0; i < lines.length; i++) {
+                const line_num = i + 1
+                while (next < region_entries.length && region_entries[next].line === line_num) {
+                    // a new region at depth ≤ an open one closes that open one here
+                    while (stack.length && stack[stack.length - 1].depth >= region_entries[next].depth) {
+                        const c = stack.pop()!
+                        if (end_of.get(c.line) === total) end_of.set(c.line, line_num - 1)
+                    }
+                    stack.push(region_entries[next++])
+                }
+                if (ENDREGION_RE.test(lines[i]) && stack.length) {
+                    const c = stack.pop()!
+                    end_of.set(c.line, line_num)   // body includes the //#endregion line
+                }
+            }
+        }
 
         for (const e of Map_C.o({}) as TheC[]) {
             const s    = e.sc
@@ -1230,13 +1278,13 @@
             const key  = String(s.method ?? s.label ?? s.keyword ?? '')
             if (!key) continue
             // capture per-Mapule so the goto closure carries this entry's own span
-            const from = (s.from as number) ?? 0
-            const to   = (s.to   as number) ?? from
+            const from  = (s.from as number) ?? 0
+            const to    = (s.to   as number) ?? from
+            const depth = (s.depth as number) ?? 0
+            const line  = (s.line  as number) ?? 0
             const m = navicade.i({
-                Mapule: 1, kind, key,
-                depth: (s.depth as number) ?? 0,
-                line:  (s.line  as number) ?? 0,
-                from, to,
+                Mapule: 1, kind, key, depth, line, from, to,
+                ...(s.class ? { cls: s.class as string } : {}),
             })
             m.c.path = (e.c.region_path as string[] | undefined) ?? []
             m.c.goto = () => {
@@ -1244,6 +1292,22 @@
                 if (view && dock.c.seek) (dock.c.seek as Function)(view, from, to)
             }
             m.c.is_pointedat = (specs: Set<string>) => specs.has(key)
+
+            if (kind === 'region') {
+                // body span for the fold and the band extent — header line stays
+                // visible, the body below folds (matches Lang_apply_openness).
+                const end_line  = end_of.get(line) ?? total
+                const body_from = line_end[line] ?? text.length
+                const body_to   = line_end[end_line] ?? text.length
+                m.sc.end_line   = end_line
+                m.c.body_from   = body_from
+                m.c.body_to     = body_to
+                m.c.fold = () => {
+                    const view = dock.c.view
+                    if (view && dock.c.foldToggle && body_from < body_to)
+                        (dock.c.foldToggle as Function)(view, body_from, body_to)
+                }
+            }
         }
         navicade.bump_version()
     },
