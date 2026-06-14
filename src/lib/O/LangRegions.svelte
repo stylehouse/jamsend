@@ -454,6 +454,46 @@
         return undefined
     },
 
+    // ── Lang_tap ───────────────────────────────────────────────────────────
+    //
+    //   The giver side of the Point traffic.  A tap at char `from` resolves to its
+    //   $region/$method identity — by name, through %Map, never by stored offset —
+    //   and is handed to the taker Ting (e_Lies_take_point), which globulates it.
+    //
+    //   %Map stores name-spans, not method bodies, and a reveal-tap lands in a body,
+    //   so the owning method is the def whose header line most recently precedes the
+    //   tap line|that is the cheap, correct-enough bound until body extents are at
+    //   hand.  region rides on the def's region_path (its tail is the direct region).
+    //   < precise body containment via the indent-block decomposition|the Mapule
+    //     region extents — would also let a method-less tap globulate to its region.
+    //   opt: { long?, weight? }
+    Lang_tap(w: TheC, from: number, opt: { long?: boolean, weight?: number } = {}) {
+        const H     = this as House
+        const dock  = this.Lang_active_dock(w)
+        if (!dock) return
+        const job   = dock.o({ Compile: 1 })[0] as TheC | undefined
+        const Map_C = job?.o({ Map: 1 })[0]      as TheC | undefined
+        const state = dock.c.state as EditorState | undefined
+        if (!Map_C || !state) return
+
+        const at       = Math.max(0, Math.min(from, state.doc.length))
+        const tap_line = state.doc.lineAt(at).number
+        const defs     = Map_C.o({ def: 1 }) as TheC[]
+
+        let owner: TheC | undefined
+        for (const d of defs) {
+            const ln = d.sc.line as number
+            if (ln <= tap_line && (!owner || ln > (owner.sc.line as number))) owner = d
+        }
+        const method = owner?.sc.method as string | undefined
+        const rp     = owner?.c.region_path as string[] | undefined
+        const region = rp && rp.length ? rp[rp.length - 1] : undefined
+
+        H.i_elvisto('Lies/Lies', 'Lies_take_point', {
+            method, region, long: !!opt.long, weight: opt.weight ?? 1,
+        })
+    },
+
 //#endregion
 //#region Lang_apply_openness
 

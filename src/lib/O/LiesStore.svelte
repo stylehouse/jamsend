@@ -256,6 +256,30 @@
         return waft
     },
 
+    // ── Lies_spawn_ting_waft ──────────────────────────────────────────────────
+    //
+    //   Spawn or reuse the transient Ting for this page load — the taker Waft that
+    //   takes Points (globulated taps on $region/$method) rather than giving them.
+    //   One per load: the key is captured on w.c.ting_key the first time and reused,
+    //   so every taker write in this load oai's the same Ting.
+    //   Marked sc.takes — a taker is a session-only sink, never written to snap
+    //   (Lies_waft_save short-circuits on it).  It does NOT take sc.active|it runs
+    //   alongside the giver What, found by its mark, not by focus.
+    Lies_spawn_ting_waft(w: TheC): TheC {
+        let key = w.c.ting_key as string | undefined
+        if (!key) {
+            const n = new Date()
+            const p = (x: number) => String(x).padStart(2, '0')
+            key = `Ting/${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())}/`
+                + `${p(n.getHours())}${p(n.getMinutes())}${p(n.getSeconds())}`
+            w.c.ting_key = key
+            console.log(`🫧 Ting waft: ${key}`)
+        }
+        const ting = w.oai({ Waft: key })
+        ting.sc.takes = 1   // a taker — receives globulated Points, never persisted
+        return ting
+    },
+
     // ── Lies_waft_save ────────────────────────────────────────────────────────
     //
     //   Throttled write of a Waft container back to its wormhole snap path.
@@ -266,6 +290,10 @@
     //   fields on the waft particle are never included in the snap.
     Lies_waft_save(w: TheC, waft: TheC) {
         const H    = this as House
+        // Takers are transient sinks — they take Points, they don't persist them.
+        //  Givers (the Whats) persist as usual.  This is the one place the giver|
+        //  taker distinction touches IO, so it lives here next to the write.
+        if (waft.sc.takes) return
         const path = waft.sc.Waft as string
 
         const throttle_key = `waft_save_throttle_${path}`

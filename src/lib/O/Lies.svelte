@@ -185,6 +185,56 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         w.bump_version()
     },
 
+    // ── e_Lies_now_Ting ────────────────────────────────────────────────
+    //
+    //   Open the transient Ting for this page load — the taker Waft.  The one-liner
+    //   entry (i_elvisto:Lies,e:Lies_now_Ting); also reached lazily by the first
+    //   take_point so attention is captured even without an explicit open.
+    //   Unlike +Now, a Ting does NOT steal active — it runs alongside the giver What.
+    //   < open it eagerly on page load by calling Lies_spawn_ting_waft from the load
+    //     pipeline once w exists, if an empty Ting from the very first frame matters.
+    e_Lies_now_Ting(A: TheC, w: TheC) {
+        ;(this as House).Lies_spawn_ting_waft(w)
+        w.bump_version()
+    },
+
+    // ── e_Lies_take_point ──────────────────────────────────────────────
+    //
+    //   The taker side of the Point traffic.  Lang resolves a tap to its
+    //   $region/$method identity (by name, through %Map) and hands it here|the Ting
+    //   globulates it: one %Point per $region/$method, accumulating taps rather than
+    //   piling a particle per tap.  Quick taps stay ambient (just n + weight); a long
+    //   tap articulates — held counts and the Point is marked long, the meaningful
+    //   grain of the tactile feed.
+    //   e.sc: { method?, region?, long?, weight? }
+    e_Lies_take_point(A: TheC, w: TheC, e: TheC) {
+        const H      = this as House
+        const method = e.sc.method as string | undefined
+        const region = e.sc.region as string | undefined
+        const id     = method ?? region            // talk about $region/$method, method-first
+        if (!id) return                            // off-structure ambient tap makes no Point
+        const long   = !!e.sc.long
+        const weight = (e.sc.weight as number) ?? 1
+        const now    = Date.now()
+
+        const ting = H.Lies_spawn_ting_waft(w)     // lazy — the Ting exists by first take
+        const key_sc: any = { Point: id }
+        if (region) key_sc.region = region         // same name in two regions = two globules
+        const point = ting.oai(key_sc)
+
+        point.sc.n      = ((point.sc.n      as number) ?? 0) + 1
+        point.sc.weight = ((point.sc.weight as number) ?? 0) + weight
+        point.sc.last   = now
+        if (point.sc.first === undefined) point.sc.first = now
+        if (long) {
+            point.sc.held = ((point.sc.held as number) ?? 0) + 1
+            point.sc.long = 1
+            // < a long tap is meaningful — attach an articulation child here ({say:…})
+            //   so the Ting reads like a feed of deliberate Points, not just counts.
+        }
+        w.bump_version()
+    },
+
     // ── e_Lies_rename_doc ──────────────────────────────────────────────
     async e_Lies_rename_doc(A: TheC, w: TheC, e: TheC) {
         console.warn(`🔪 Lies_rename_doc: stubbed — ${e.sc.old_path} → ${e.sc.new_path}`)

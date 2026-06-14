@@ -15,15 +15,15 @@ theCompiledStuff(A,w) {
     A o %wither$
     A o yeses$
     // should be wither:1, and let vish = it (the C%prefixy,wither)
-    //A o wither$:vish
+    A o wither$vish
 
     // since . binds|associates tighly, it grabs the %wither value
     //  and wants to assign|tuple it  amongst other stuff
-    A o prefixy,wither.$:ang
+    A o prefixy,wither.$ang
     // uses that assigned ang variable,
-    //  assigns so, grabs the %so value
+    //  assigns so, grabs the %so value which is incidentally the supplied string 'ont'
     //   so is auto-named. if we grabbed it as C (.../so:ont$) it's still named so.
-    //w i angles/are:$ang,etc:3/so:ont.$
+    w i angles/are:$ang,etc:3/so:ont$
     // this is what we're avoiding wither doing .$:othername above
     
     // you can declare let variables like this:

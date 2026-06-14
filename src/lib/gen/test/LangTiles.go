@@ -8,14 +8,14 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_test_LangTiles(): string { return '513f1022eb46bd48' },
+    Ghostmeta_Ghost_test_LangTiles(): string { return 'e1732a1d2357ab33' },
 
 // yeti etc!!!!!
 theCompiledStuff(A,w) {
     this._i_drill(w, [{sc: {hut: 1}}, {sc: {toot: 3}}])
     let toot = this._o_drill1(w, [{sc: {hut: 1}}, {sc: {toot: 1}}])
     let la = this._i_drill(w, [{sc: {hut: 1}}, {sc: {toot}}])
-    this._o_drill(w, [{sc: {hut: 1}}, {sc: {although: 1, they: 1, can: 1, be: 1, mixed: 1}, exactly: {although: true}}])
+    this._o_drill(w, [{sc: {hut: 1}}, {sc: {although: 1}, exactly: {although: true}}, {sc: {they: 1, can: 1, be: 1, mixed: 1}}])
     la.i({something: 1})
     this._i_drill(w, [{sc: {thung: 1}}, {sc: {wither: 1}}, {sc: {etc: 1}}])
     this._i_drill(w, [{sc: {yeses: 1}}, {sc: {because: 1, it: 2}}])
@@ -27,15 +27,15 @@ theCompiledStuff(A,w) {
     let wither = A.o({wither: 1})[0]
     let yeses = A.o({yeses: 1})[0]
     // should be wither:1, and let vish = it (the C%prefixy,wither)
-    //A o wither$:vish
+    let wither = A.o({wither: 1})[0]vish
 
     // since . binds|associates tighly, it grabs the %wither value
     //  and wants to assign|tuple it  amongst other stuff
-    A.o({prefixy: 1, wither: 1}).$:ang
+    A.o({prefixy: 1, wither: 1}).$ang
     // uses that assigned ang variable,
-    //  assigns so, grabs the %so value
+    //  assigns so, grabs the %so value which is incidentally the supplied string 'ont'
     //   so is auto-named. if we grabbed it as C (.../so:ont$) it's still named so.
-    //w i angles/are:$ang,etc:3/so:ont.$
+    this._i_drill(w, [{sc: {angles: 1}}, {sc: {are: ang, etc: 3}}, {sc: {so: ont}}])
     // this is what we're avoiding wither doing .$:othername above
     
     // you can declare let variables like this:

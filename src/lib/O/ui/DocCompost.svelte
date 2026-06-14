@@ -145,8 +145,12 @@
 
     // A click on the frame — turn the frame-local point into the live editor's
     // client coords (transform-proof, see header) and ask CM what's there, then
-    // reveal it: a heavy tap, seek through the dock's own seek closure (fold-aware),
-    // and dismiss the frame so you're back in the real code at that spot.
+    // reveal it: a tap (long when the press was held, the articulated grain), seek
+    // through the dock's own seek closure (fold-aware), and dismiss the frame so
+    // you're back in the real code at that spot.  The tap goes two ways: the local
+    // ring for suggest_Q, and Lang_tap, which globulates it onto $region/$method in
+    // the taker Ting.
+    let _down_at = 0
     function reveal(ev: MouseEvent) {
         if (!view) { clear(); return }
         const x = live_origin.left + ev.offsetX
@@ -154,7 +158,9 @@
         const pos = view.posAtCoords({ x, y })
         if (pos == null) { clear(); return }
         const from = view.state.doc.lineAt(pos).from
-        record_tap('reveal', from, 3)
+        const long = _down_at ? (Date.now() - _down_at) > 400 : false
+        record_tap(long ? 'hold' : 'reveal', from, long ? 4 : 3)
+        ;(H as any).i_elvisto?.('Lang/Lang', 'Lang_tap', { from, long, weight: long ? 4 : 3 })
         ;(lang_dock?.c.seek as ((v: EditorView, a: number, b: number) => void) | undefined)
             ?.(view, from, from)
         clear()
@@ -202,6 +208,7 @@
     async function fly(from: number, { auto_q = true } = {}) {
         if (!view) return
         record_tap('fly', from, 2)
+        ;(H as any).i_elvisto?.('Lang/Lang', 'Lang_tap', { from, long: false, weight: 2 })
         if (auto_q) {
             const line = view.state.doc.lineAt(from).number
             const Q = suggest_Q(line)
@@ -311,6 +318,7 @@
             width:{box.width}px; height:{box.height}px;
             transform:{pose_css(pose)}; opacity:{pose.opacity};"
         onclick={reveal}
+        onpointerdown={() => { _down_at = Date.now() }}
         onkeydown={(e) => { if (e.key === 'Escape') clear() }}>
     </div>
 {:else}
