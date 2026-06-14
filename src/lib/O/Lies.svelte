@@ -30,7 +30,8 @@
     //
     //   Snap format (wormhole/Ghost/Tour/toc.snap):
     //     Waft:Ghost/Tour
-    //       Doc:Ghost/test/Hello.g
+    //       What:invite verification
+    //         Doc:Ghost/test/Idzeuzia.g
     //         Point:1,method:Idzeugnosis
     //
     //   codetype is derived from path extension — never stored on the particle.

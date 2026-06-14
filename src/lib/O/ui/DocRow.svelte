@@ -14,8 +14,8 @@
     //   The input opens with the cursor placed just before the first '.' that
     //   is to the right of the last '/' — i.e. at the stem boundary — so the
     //   stem can be immediately edited, suffixed, or deleted with shift+backspace.
-    //   e.g.  Ghost/test/Hello.g  →  cursor before '.g',  selection = 'Hello'
-    //         Ghost/Tour          →  cursor at end (no extension)
+    //   e.g.  Ghost/test/Idzeuzia.g  →  cursor before '.g',  selection = 'Hello'
+    //         Ghost/Tour             →  cursor at end (no extension)
     //
     // Props:
     //   w         — Lies's w particle (Good,type:'text/Doc' and compile_pending live here)
@@ -148,9 +148,9 @@
     //   Places the cursor just before the first '.' to the right of the last '/',
     //   so the file stem is selected and the extension is preserved.
     //
-    //   e.g.  Ghost/test/Hello.g    → selects 'Hello', cursor before '.g'
+    //   e.g.  Ghost/test/Idzeuzia.g    → selects 'Hello', cursor before '.g'
     //         Ghost/test/Foo.svelte.ts → selects 'Foo', cursor before '.svelte.ts'
-    //         Ghost/Tour              → cursor at end (no extension)
+    //         Ghost/Tour                → cursor at end (no extension)
     //
     //   Called once on mount (the input is inside {#if renaming !== null}).
     export function place_cursor_at_stem(node: HTMLInputElement) {

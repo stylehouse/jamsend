@@ -559,10 +559,11 @@
 
         while (n <= doc.lines) {
             try {
-                n = this._collect_line(n, tree, doc, state, out, { words, current_method: null, method_floor: -1, region_stack, lineHits })
+                n = this._collect_line(n, tree, doc, state, out, { words, current_method: null, method_floor: -1, region_stack, lineHits, sthoParser })
             } catch (err: any) {
-                const text = n <= doc.lines ? doc.line(n).text : ''
-                line_errors.push({ n, text, msg: String(err?.message ?? err) })
+                const en   = err?.line ?? n
+                const text = err?.text ?? (en <= doc.lines ? doc.line(en).text : '')
+                line_errors.push({ n: en, text, msg: String(err?.message ?? err) })
                 // Stop — output beyond a mis-parsed line is unreliable.
                 break
             }
@@ -584,14 +585,15 @@
         this.trace(`Lang`,`There were Map entries x${was}`)
 
         // Record per-line errors on the Compile particle so future UI can surface them.
-        // < like Point_issue, these want a line number and text snippet for navigation.
+        // < like Point_issue, these want a line number and text snippet for navigation,
+        //   and markers|squiggles plus a refuse-to-run gate driven off these.
         if (line_errors.length) {
             for (const e of line_errors) {
-                job.i({ compile_error: 1, line: e.n, msg: e.msg,
-                        text: e.text.trim().slice(0, 80) })
+                job.i({ compile_error: 1, line: e.n, msg: e.msg, text: e.text })
             }
-            const { n: en, msg } = line_errors[0]
-            throw new Error(`line ${en}: ${msg}`)
+            const { n: en, msg, text } = line_errors[0]
+            const more = line_errors.length > 1 ? ` (+${line_errors.length - 1} more)` : ''
+            throw new Error(`line ${en}: ${msg}${more}\n  ${text.trim()}`)
         }
 
         return out
@@ -614,6 +616,7 @@
         region_stack: string[],
         lineHits: Map<number, { name: string, node: SyntaxNode }>,
     }): number {
+      try {
         const line = doc.line(n)
 
         // ── Region markers ────────────────────────────────────────────────────
@@ -751,12 +754,34 @@
                 region_path: [...ctx.region_stack],
             })
 
+            // Capture-in-condition → declare and test on one line (";"), so a
+            // source line stays one compiled line:
+            //   if $x = &call,w   →  let x = this.call(w); if (x) {
+            //   if o foo$         →  let foo = w.o({foo:1})[0]; if (foo) {
+            // Continuations (&& …) then append to the test var, not the obtain.
+            let cap_prefix = ''
+            {
+                const declM = condition.match(/^\$(\w+)\s*=(?!=)\s*(.+)$/)
+                if (declM) {
+                    const rhs = this.Lang_amp_calls_in_text(
+                        this.Lang_io_in_text(declM[2], { sthoParser: ctx.sthoParser }))
+                    cap_prefix = `let ${declM[1]} = ${rhs}; `
+                    condition  = declM[1]
+                } else if (/^(?:i|o|oa|oai|ob|o1|oa1|bo|boa|r|roai|moai|doai)\s+\S*\$/.test(condition)) {
+                    const compiled = this.Lang_io_in_text(condition, { sthoParser: ctx.sthoParser })
+                    const m2 = compiled.match(/^\s*let\s+(\w+)\s*=/)
+                    if (m2) { cap_prefix = compiled.replace(/\s*$/, '') + '; '; condition = m2[1] }
+                }
+            }
+
             // bail to verbatim — user wrote their own brackets, or condition
             // contains a // comment (which would eat our closing ") {").
-            // We still convert any &method,args calls inside, but inject no
-            // braces of our own (the user manages those, plus any inline body).
-            if (condition.startsWith('(') || condition.includes('//') || line.text.trimEnd().endsWith('{')) {
-                out.push({ kind: 'raw', text: this.Lang_amp_calls_in_text(line.text) })
+            // We still convert &method,args and embedded IO atoms inside, but
+            // inject no braces of our own (the user manages those + any body).
+            if (!cap_prefix && (condition.startsWith('(') || condition.includes('//') || line.text.trimEnd().endsWith('{'))) {
+                const bc = /^(?:if|while|until|else if|elsif)$/.test(keyword)
+                out.push({ kind: 'raw', text: this.Lang_amp_calls_in_text(
+                    this.Lang_io_in_text(line.text, { sthoParser: ctx.sthoParser, bool_ctx: bc })) })
                 return n + 1
             }
 
@@ -777,18 +802,22 @@
                 n++
             }
 
-            // &method,args inside the condition → this.method(args)
-            condition = this.Lang_amp_calls_in_text(condition)
+            // &method,args and embedded IO atoms inside the condition →
+            // this.method(args) / w.o(…). bool_ctx makes a bare obtain a presence
+            // check (oa), since a condition is asking "is there one?".
+            condition = this.Lang_amp_calls_in_text(
+                this.Lang_io_in_text(condition, { sthoParser: ctx.sthoParser, bool_ctx: true }))
 
-            // emit header — ") {" lands on this line, after the full condition
+            // emit header — ") {" lands on this line, after the full condition.
+            // cap_prefix (if any) declares the captured var first, on this line.
             let header: string
             if (keyword === 'else') {
                 header = `${before}} else {`
             } else if (keyword === 'else if' || keyword === 'elsif') {
-                header = `${before}} else if (${condition}) {`
+                header = `${before}${cap_prefix}} else if (${condition}) {`
             } else {
                 // if, for, while, until
-                header = `${before}${keyword} (${condition}) {`
+                header = `${before}${cap_prefix}${keyword} (${condition}) {`
             }
             out.push({ kind: 'translated', text: header })
 
@@ -936,7 +965,9 @@
 
         if (hit?.name === 'IOing') {
             const raw_before = line.text.slice(0, hit.node.from - localBase)
-            const after       = line.text.slice(hit.node.to - localBase)
+            // a further chained IOing (i %A o %B) lives in the after-text
+            const after       = this.Lang_io_in_text(
+                line.text.slice(hit.node.to - localBase), { sthoParser: ctx.sthoParser })
             const split       = this.Lang_io_before_split(raw_before)
             const translated  = this.Lang_compile_IOing(hit.node, sliceState,
                 split.receiver ? { receiver: split.receiver } : {})
@@ -953,6 +984,13 @@
             out.push({ kind: 'raw', text: line.text })
         }
         return n + 1
+      } catch (err: any) {
+        // Stamp the line that actually failed.  The deepest _collect_line — the
+        // one sitting directly on the bad line — sets this first, so a nested
+        // body reports itself rather than its enclosing block header|method.
+        if (err && err.line == null) { err.line = n; err.text = doc.line(n)?.text ?? '' }
+        throw err
+      }
     },
 
 //#endregion
@@ -1007,7 +1045,47 @@
         return out
     },
 
-    // ── Lang_io_before_split ─────────────────────────────────────────────────
+    // ── Lang_io_in_text ──────────────────────────────────────────────────────
+    //
+    //   Substitute every IOing span embedded in a stretch of text with its
+    //   compiled TS, leaving the rest verbatim — the IO analogue of
+    //   Lang_amp_calls_in_text, for IO atoms that sit inside host JS:
+    //     if (o this/Thing)   → if (w.oa({this:1}…))
+    //     f(o %Foo, b)        → f(w.o({Foo:1}), b)
+    //   ctx.bool_ctx flows into each compile so a bare o reads as oa (presence).
+    //   Needs ctx.sthoParser (the per-line stho parser)|without it (the tsstho
+    //   whole-doc path) the text returns unchanged.  IOings wrapped in a Sunpit
+    //   are left to the Sunpit branch, so only top-level spans are taken here.
+    Lang_io_in_text(text: string, ctx: any = {}): string {
+        const parser = ctx.sthoParser
+        if (!parser || !/(?:^|[^\w.])[io]\s+[%$A-Za-z_]/.test(text)) return text
+        let tree: any
+        try { tree = parser.parse(text + '\n') } catch { return text }
+        const slice = { doc: { sliceString: (a: number, b: number) => text.slice(a, b) } } as unknown as EditorState
+
+        const spans: { from: number, to: number, node: any }[] = []
+        const cur = tree.cursor()
+        do {
+            if (cur.name === 'IOing') {
+                const p = cur.node.parent
+                if (!p || (p.name !== 'Sunpit' && p.name !== 'IOing')) {
+                    spans.push({ from: cur.from, to: cur.to, node: cur.node })
+                }
+            }
+        } while (cur.next())
+
+        // splice back-to-front so earlier offsets stay valid
+        let out = text
+        for (let s = spans.length - 1; s >= 0; s--) {
+            const { from, to, node } = spans[s]
+            const split = this.Lang_io_before_split(text.slice(0, from))
+            const io_ctx: any = { bool_ctx: ctx.bool_ctx, sthoParser: parser }
+            if (split.receiver) io_ctx.receiver = split.receiver
+            const translated = this.Lang_compile_IOing(node, slice, io_ctx)
+            out = out.slice(0, from) + translated + out.slice(to)
+        }
+        return out
+    },
     //
     //   Split the text that sits on a line before an i/o verb into:
     //     receiver  — a leading bareword acting as the call receiver
@@ -1091,12 +1169,15 @@
             if (ness === 'i') {
                 return `${prefix}${receiver}.i(${only.sc_src})`
             }
-            // o
+            // o — in a boolean context (ctx.bool_ctx, set when the IO sits in an
+            // if|while|until condition) a bare obtain becomes a presence check,
+            // so `if (o %Foo)` tests existence rather than yielding the array.
+            const obtain = ctx.bool_ctx && ness === 'o' ? 'oa' : ness
             const q = only.exactly_src ? `, { exactly: ${only.exactly_src} }` : ''
             if (only.capture_var) {
-                return `${prefix}${receiver}.o(${only.sc_src}${q})[0]`
+                return `${prefix}${receiver}.${ness}(${only.sc_src}${q})[0]`
             }
-            return `${prefix}${receiver}.o(${only.sc_src}${q})`
+            return `${prefix}${receiver}.${obtain}(${only.sc_src}${q})`
         }
 
         // ── tier 1: multi-leg → backend function on H ───────────────
@@ -1276,12 +1357,13 @@
         const doc = state.doc
         const numNode = val.getChild('Number')
         if (numNode) return doc.sliceString(numNode.from, numNode.to)
-        // StringVal: a quoted TS string puddle — emit verbatim, quotes and all.
-        // The grammar accepts 'single', "double", and `backtick` forms.
-        const strNode = val.getChild('StringVal')
+        // A quoted TS string puddle — emit verbatim, quotes and all.  StringVal
+        // is the 'single'|"double" form; TemplateVal is the `backtick` form,
+        // whose ${…} interpolations and any /-bearing text pass straight through.
+        const strNode = val.getChild('StringVal') ?? val.getChild('TemplateVal')
         if (strNode) return doc.sliceString(strNode.from, strNode.to)
         const nameNode = val.getChild('Name')
-        if (!nameNode) throw new Error('PeelVal: no Number, StringVal, or Name')
+        if (!nameNode) throw new Error('PeelVal: no Number, StringVal, TemplateVal, or Name')
         // $name → variable reference; bare name → quoted string literal.
         // key:$var means use the variable `var`; key:word means the string "word".
         const hasSigil = !!val.getChild('Sigil')

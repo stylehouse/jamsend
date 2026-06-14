@@ -30,7 +30,11 @@ export function makePathSep(terms: {
             default: return
         }
         if (!stack.canShift(term)) return            // not mid-path → leave it to JS
-        const after = input.peek(1)
+        // tight on BOTH sides: whitespace before means the path already ended
+        // (skip ate the gap), so a trailing "// comment" keeps its slashes|
+        // whitespace after likewise lets the separator fall through to JS.
+        const before = input.peek(-1), after = input.peek(1)
+        if (before === SPACE || before === TAB) return
         if (after === SPACE || after === TAB || after === NL || after === EOF) return
         input.advance()
         input.acceptToken(term)

@@ -27,7 +27,7 @@ Leg    { PeelGroup }
 PeelGroup { PeelItem (PathComma PeelItem)* }
 PeelItem  { PuddleSigil? PeelKey (PathColon PeelVal)? }
 PeelKey   { Sigil? Name (!sigilsuffix Sigil)? }
-PeelVal   { Sigil? Name (!sigilsuffix Sigil)? | Number | StringVal }
+PeelVal   { Sigil? Name (!sigilsuffix Sigil)? | Number | StringVal | TemplateVal }
 
 AmpCall { AmpCallTok }
 
