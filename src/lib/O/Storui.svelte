@@ -1204,27 +1204,26 @@
 {/snippet}
 
 <!-- snap_line: full line block used in naive/tree single-column pre.
-     Snap line format: "${indent}${obj_part}\t${stringies}" when objecties present,
+     Snap line format: "${indent}${stringies}\t${objecties}" when objecties present,
      or "${indent}${stringies}" when not (enL omits the tab).
-     tab > indent.length guards: a tab that IS the first non-space char (empty
-     obj_part) would give obj='', which is correct.  A missing tab gives -1
-     which fails the guard cleanly. -->
+     stringies sit on the left; objecties are the blue coherent keys on the right.
+     A missing tab gives -1, so everything after the indent is stringies. -->
 {#snippet snap_line(line: string, tag: string)}
     {@const indent = line.match(/^ */)?.[0] ?? ''}
     {@const tab    = line.indexOf('\t')}
-    {@const obj    = tab > indent.length ? line.slice(indent.length, tab) : ''}
-    {@const str    = tab >= 0 ? line.slice(tab + 1) : line.trimStart()}
-    <span class="sr-line {tag}"><span class="sr-ind">{indent}</span>{#if obj}<span class="sr-obj">{obj}</span>  {/if}<span class="sr-str">{str}</span>&#10;</span>
+    {@const str    = tab >= 0 ? line.slice(indent.length, tab) : line.slice(indent.length)}
+    {@const obj    = tab >= 0 ? line.slice(tab + 1) : ''}
+    <span class="sr-line {tag}"><span class="sr-ind">{indent}</span><span class="sr-str">{str}</span>{#if obj}  <span class="sr-obj">{obj}</span>{/if}&#10;</span>
 {/snippet}
 
 <!-- line_content: inline content for two-column diff cells.
-     Same codec as snap_line, no block wrapper. -->
+     Same codec as snap_line — stringies left, blue objecties on the right. -->
 {#snippet line_content(line: string)}
     {@const indent = line.match(/^ */)?.[0] ?? ''}
     {@const tab    = line.indexOf('\t')}
-    {@const obj    = tab > indent.length ? line.slice(indent.length, tab) : ''}
-    {@const str    = tab >= 0 ? line.slice(tab + 1) : line.trimStart()}
-    <span class="sr-ind">{indent}</span>{#if obj}<span class="sr-obj">{obj}</span>  {/if}<span class="sr-str">{str}</span>
+    {@const str    = tab >= 0 ? line.slice(indent.length, tab) : line.slice(indent.length)}
+    {@const obj    = tab >= 0 ? line.slice(tab + 1) : ''}
+    <span class="sr-ind">{indent}</span><span class="sr-str">{str}</span>{#if obj}  <span class="sr-obj">{obj}</span>{/if}
 {/snippet}
 
 <!-- intra_line: changed diff cell with per-character highlights.
