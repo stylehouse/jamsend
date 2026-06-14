@@ -1,111 +1,63 @@
-@tokens {
-    IOness { "i " | "o " }
-    Sunpitness { "S " }
-    Title { nonnl+ }
-    Name { (@asciiLetter | "_")+ (@asciiLetter | "_" | @digit)* }
-    Number { @digit+ }
-    nonnl { ![\n] }
-    nl { "\n" }
-    Sigil { "@" | "#" | "$" }
-    // Puddle sigil: % before a PeelKey means the colon-value is a raw TS
-    // expression (string literal, template, etc.) rather than a bareword or
-    // number.  The compiler emits it verbatim into the sc object.
-    PuddleSigil { "%" }
-    // Ampersand-call sigil: & before a Name turns the line into
-    // this.Name(args…).  Parsed as AmpCall so the collector can emit
-    // the right JS without the MethodLike open-paren heuristic.
-    AmpSigil { "&" }
-    Comma { "," }
-    Colon { ":" }
-    space  { @whitespace }
+@top Program { Line* }
+@skip { space }
+Line { lineItem* newline }
 
-    // StringVal: single-quoted, double-quoted, or backtick string.
-    // Backtick strings may span lines; single/double are kept line-local here
-    // (nonnl) — for multi-line strings fall through to a TS puddle block.
-    // < backtick template strings with embedded ${…} are not yet decomposed;
-    //   the whole span is emitted verbatim by the compiler.
-    StringVal { "'" !['\n]* "'" | '"' !["\n]* '"' | "`" ![\`]* "`" }
+@precedence { callparen @left, sigilsuffix @left, pathext @left, ioverb @left }
 
-    // Pythonic control-flow keywords.  Trailing space is part of the token so
-    // bare words ("iffy", "foreach") still fall through to Name.
-    // "else if"/"elsif" must beat plain "else" in precedence — listed first.
-    // The condition is whatever remains on the line (Title); the compiler bails
-    // to verbatim when it starts with "(" (raw JS with user-managed brackets).
-    // Continuation lines starting with &&, ||, ?, :, . are detected by the
-    // collector, not here.
-    ElseIfKeyword { "else if " | "elsif " }
-    ElseKeyword   { "else" }
-    ControlKeyword { "if " | "for " | "while " | "until " }
-
-    // Method declarations and calls: [async] name( ...
-    // The grammar marks the opening — the collector reads the rest from raw
-    // line text (closing ")", optional "{", multi-line args by indent).
-    AsyncKeyword { "async " }
-    LParen { "(" }
-
-    // TypeScript import/export: match the whole line as one token so the GLR
-    // parser never explores IOing via error-recovery insertion on these lines.
-    // Longest-match wins over IOness/Name at the same position.
-    ImportLine { "import" ![\n]* }
-    ExportLine { "export" ![\n]* }
-
-    @precedence {ImportLine, ExportLine, AsyncKeyword, ElseIfKeyword, ElseKeyword, IOness, Sunpitness, ControlKeyword, StringVal, Number, Comma, Colon, Title, Name}
-    @precedence {nl, space}
+lineItem {
+  Comment | LineComment |
+  ControlFlow | Sunpit | IOing | IOness | IOness2 | AmpCall | AmpAmp |
+  MethodLike |
+  Name | Number | StringVal | TemplateVal | Regex |
+  LParen | LBrack | RBrack | Comma | Colon | PathSep | PuddleSigil | Sigil | Punct
 }
 
-@top Program { Line* }
-Line { space* inline? nl }
-
-inline { Comment | expression }
-
-Comment { "#" nonnl+ }
-
-//#region TypeScript pass-through constructs
-// Consumed as single tokens above so the GLR never sees them as IOing.
-// < extend this region if other TS constructs cause IOing mis-parses.
-Import { ImportLine }
-Export { ExportLine }
-//#endregion
-
-expression { Import | Export | Name | Number | IOing | Sunpit | ControlFlow | MethodLike | Flug | AmpCall }
-
-// Method declaration or call: [async] name( ...
-// Grammar marks the opening paren only; the collector inspects raw line text
-// for the closing ")", optional "{", and multi-line args (by indentation).
-MethodLike { AsyncKeyword? Name LParen }
-
-// Ampersand-call: &method,arg,arg,…  on one line.
-// Compiles to this.method(arg,arg,…).  The arg list is raw text after the
-// comma following the name; the compiler reads it from the raw line.
-// Works bare (&method,A,w) or as a condition head (if &method,A,w:).
-AmpCall { AmpSigil Name AmpArgs? }
-AmpArgs { Comma nonnl* }
-
-// Pythonic if/else/for/while/until block header.
-// Body is indented lines consumed by the collector (_collect_line), same as Sunpit.
-// "else"/"else if"/"elsif" can chain as the next same-indent line after a block.
-// ControlFlowHead tells the collector which keyword it's dealing with.
-ControlFlow { ControlFlowHead Title? }
+ControlFlow { ControlFlowHead }
 ControlFlowHead { ElseIfKeyword | ControlKeyword | ElseKeyword }
 
-// testing https://lezer.codemirror.net/docs/guide/#allowing-ambiguity
-Flug { Flugenzoid | Flugamata }
-Flugenzoid { "[" Flugenzoidia "]" }
-Flugenzoidia { IOness ~flugal }
-Flugamata[@dynamicPrecedence=9] { "[" Flugamatatola "]" }
-Flugamatatola { Name ~flugal }
+Sunpit { Sunpitness IOing }
+IOing  { IOness !ioverb IOpath | IOness2 !ioverb IOpath (!ioverb IOpath)? }
+IOpath { Leg (!pathext PathSep Leg)* }
+Leg    { PeelGroup }
+PeelGroup { PeelItem (!pathext Comma PeelItem)* }
+PeelItem  { PuddleSigil? PeelKey (!pathext Colon PeelVal)? }
+PeelKey   { Sigil? Name (!sigilsuffix Sigil)? }
+PeelVal   { Sigil? Name (!sigilsuffix Sigil)? | Number | StringVal }
 
-Sunpit { Sunpitness (IOing) }
-    IOing { IOness IOpath  }
-    IOpath { Leg ("/" Leg)* }
-    Leg { PeelGroup }
-    PeelGroup { PeelItem (Comma PeelItem)* }
-    PeelItem { PuddleSigil? PeelKey (Colon PeelVal)? }
-    PeelKey { Sigil? Name Sigil? }
-    // PeelVal: bareword/sigiled name, number, or a quoted TS string puddle.
-    // % on the enclosing PeelItem signals the compiler to emit PeelVal verbatim.
-    // < arithmetic expressions and unquoted TS blobs need a puddle block form.
-    PeelVal { Sigil? Name Sigil? | Number | StringVal }
-    // < could be Sunpitness (IOing | SunpitHead) much later...
-    //SunpitHead { Number | Number Heading | Heading }
-    //Heading { Title  }
+MethodLike { AsyncKeyword? Name !callparen LParen }
+
+@tokens {
+  space { (" " | "\t")+ }
+  newline { "\n" }
+  ControlKeyword { "if " | "for " | "while " | "until " }
+  ElseIfKeyword  { "else if " | "elsif " }
+  ElseKeyword    { "else " | "else" }
+  Sunpitness     { "S " }
+  IOness  { ("i" | "o" | "oa" | "ob" | "o1" | "oa1" | "bo" | "boa" | "bo1" | "boa1" | "drop" | "empty") " " }
+  IOness2 { ("oai" | "roai" | "moai" | "doai" | "r") " " }
+  AsyncKeyword   { "async " }
+  Name   { (@asciiLetter | "_" | "$") (@asciiLetter | "_" | @digit | "$")* }
+  Number { (@digit+ ("." @digit+)?) | ("0x" (@digit | $[a-fA-F])+) }
+  StringVal   { "'" ("\\" _ | !['\\\n])* "'" | '"' ("\\" _ | !["\\\n])* '"' }
+  TemplateVal { "`" ("\\" _ | ![`\\])* "`" }
+  LineComment { "//" ![\n]* }
+  Comment     { "#" ![\n]* }
+  Regex { "/" ("\\" ![\n] | ![/\\\n])+ "/" (@asciiLetter)* }
+  LParen { "(" }
+  LBrack { "[" }
+  RBrack { "]" }
+  PathSep { "/" }
+  Comma { "," }
+  Colon { ":" }
+  PuddleSigil { "%" }
+  AmpAmp { "&&" }
+  AmpCall { "&" (@asciiLetter | "_") (@asciiLetter | "_" | @digit)* }
+  Sigil { "@" | "$" }
+  Punct { ( "=" | "<" | ">" | "!" | "+" | "-" | "*" | "%" | "&" | "|" | "?" | "~" | "^" | ")" | "{" | "}" | "." | ";" )+ }
+  @precedence {
+    LineComment, Regex,
+    ElseIfKeyword, ElseKeyword, ControlKeyword, Sunpitness, IOness, IOness2, AsyncKeyword,
+    Number, Name, StringVal, TemplateVal, Comment,
+    LParen, LBrack, RBrack, Comma, Colon, AmpCall, AmpAmp, PuddleSigil, Sigil, PathSep, Punct
+  }
+}
