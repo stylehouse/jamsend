@@ -1351,19 +1351,38 @@
     //   $region/$method → brightness (0..1), read off the Undertaking's Ting
     //   globules (the trail Funkcion keeps bright fresh, decaying on each trickle).
     //   Keyed exactly as a Mapule's bright(brights) looks itself up, so a band|chip
-    //   lights to the heat of the attention that's pooled on it.  Same shape as
-    //   Lang_pointed_specs|the minimap sensitises on the Undertaking LE.vers.
+    //   lights to the heat of the attention that's pooled on it.  A region band also
+    //   aggregates the hottest globule anywhere in it (its own preamble globule or any
+    //   method within), so a region you worked through its methods reads warm even
+    //   with no tap on its header.  Same shape as Lang_pointed_specs|the minimap
+    //   sensitises on the Undertaking LE.vers.
     Lang_trail_brights(): Map<string, number> {
         const H       = this as House
         const brights = new Map<string, number>()
+        const NUL     = String.fromCharCode(0)   // key separator — same null join as below
         const LE      = H.LE_for('Undertaking')
         const ting    = LE?.c.ting as TheC | undefined
         if (!ting) return brights
+        // per-globule brightness, and the hottest globule pooled in each region
+        const region_max = new Map<string, number>()
         for (const g of (ting.o() as TheC[])) {
             if (!('Point' in g.sc)) continue
             const region = (g.sc.region as string | undefined) ?? ''
             const key    = String(g.sc.Point)
+            const bright = (g.sc.bright as number) ?? 0
+            if (region) region_max.set(region, Math.max(region_max.get(region) ?? 0, bright))
             brights.set(`${region}\u0000${key}`, (g.sc.bright as number) ?? 0)
+        }
+        // light each region band to the hottest thing pooled in it, keyed the same
+        //  way a region-kind Mapule looks itself up.  max(), not sum: bright is already
+        //  0..1, so a band glows as warm as its hottest member rather than saturating
+        //  with how many defs it happens to hold.
+        //  < a globule carries only its direct (tail) region, so heat doesn't roll up
+        //    to ancestor bands; the full region_path on the globule would let a parent
+        //    band warm from a deeply-nested method too.
+        for (const [region, bright] of region_max) {
+            const key = region + NUL + region
+            brights.set(key, Math.max(brights.get(key) ?? 0, bright))
         }
         return brights
     },
