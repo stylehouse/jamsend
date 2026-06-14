@@ -23,7 +23,7 @@ theCompiledStuff(A,w) {
     //  grab a value out — so auto-names so, the others name sooo|tv|etc|year.
     //   .$ takes the value (?.sc,key); a bare $ would take the row C instead.
     w i angles/are:$ang,etc:3/so:ont.$sooo,module.$tv,etc.$
-    w i angles/are:$ang,etc:3/so:ont.$sooo,module.$tv,etc$year
+    w i angles/are:$ang,etc:3/so:ont.$soow,module.$tw,etc$yeaw
     
     // you can declare let variables like this:
     $its = 'ferv'

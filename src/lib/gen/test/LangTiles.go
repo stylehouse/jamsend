@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_test_LangTiles(): string { return '677bb43ddb59c284' },
+    Ghostmeta_Ghost_test_LangTiles(): string { return '60d0c6b1e95f2fe4' },
 
 // yeti etc!!!!!
 theCompiledStuff(A,w) {
@@ -26,17 +26,16 @@ theCompiledStuff(A,w) {
 
     let wither = A.o({wither: 1})[0]
     let yeses = A.o({yeses: 1})[0]
-    // should be wither:1, and let vish = it (the C%prefixy,wither)
-    //A o wither$:vish
+    // row capture: wither:1 filters, vish = the row C (%prefixy,wither)
+    let vish = A.o({wither: 1})[0]
 
-    // since . binds|associates tighly, it grabs the %wither value
-    //  and wants to assign|tuple it  amongst other stuff
-    A.o({prefixy: 1, wither: 1}).$:ang
-    // uses that assigned ang variable,
-    //  assigns so, grabs the %so value
-    //   so is auto-named. if we grabbed it as C (.../so:ont$) it's still named so.
-    //w i angles/are:$ang,etc:3/so:ont.$
-    // this is what we're avoiding wither doing .$:othername above
+    // . binds tight and grabs the %wither value to tuple amongst other stuff
+    let ang = A.o({prefixy: 1, wither: 1})[0]?.sc.wither
+    // multi-capture destructure: ang flows in on %are, then so|module|etc each
+    //  grab a value out — so auto-names so, the others name sooo|tv|etc|year.
+    //   .$ takes the value (?.sc,key); a bare $ would take the row C instead.
+    let {sooo, tv, etc} = this._i_drill_caps(w, [{sc: {angles: 1}}, {sc: {are: ang, etc: 3}}, {sc: {so: "ont", module: 1, etc: 1}, caps: [{as: "sooo", key: "so", val: true}, {as: "tv", key: "module", val: true}, {as: "etc", key: "etc", val: true}]}])
+    let {soow, tw, yeaw} = this._i_drill_caps(w, [{sc: {angles: 1}}, {sc: {are: ang, etc: 3}}, {sc: {so: "ont", module: 1, etc: 1}, caps: [{as: "soow", key: "so", val: true}, {as: "tw", key: "module", val: true}, {as: "yeaw", key: "etc", val: false}]}])
     
     // you can declare let variables like this:
     let its = 'ferv'
@@ -75,24 +74,6 @@ theCompiledStuff(A,w) {
     } else if (50 > 5 && 3 > 2) {
         w.i({helped: 1})
     }
-    // ── capture-in-condition: declare + test on ONE line (source→compiled 1:1)
-    //   if o something$  →  let something = w.o({something:1})[0]; if (something) {
-    if (o something$) {
-        this._i_drill(w, [{sc: {got: 1}}, {sc: {it: 1}}])
-    }
-    //   if $maybe = &theCall,w  →  let maybe = this.theCall(w); if (maybe) {
-    let maybe = this.theCall(w); if (maybe) {
-        this._i_drill(w, [{sc: {used: 1}}, {sc: {maybe: 1}}])
-    }
-    // ── boolean context: a bare obtain in a condition becomes oa (presence).
-    //   a trailing // comment must survive, re-appended after the brace.
-    if (o %Ready) { // presence check
-        this._i_drill(w, [{sc: {go: 1}}, {sc: {ahead: 1}}])
-    }
-    // ── user's own parens bail to verbatim; a single-leg obtain still auto-oa
-    if (o %Thing) i inside
-    // ── IO atom embedded in a host-JS arg list (stops at ", w")
-    this.consume(o %Foo, w)
     w.i({yep: 1})
     this.severally(A,w,555)
 },

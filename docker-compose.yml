@@ -46,6 +46,65 @@ services:
       nproc: 100               # Max 100 processes total
       nofile: 1024             # Max 1024 open files
 
+
+  # Claude Code session.  Bind-mounts the same working tree as app, so its
+  #  edits land straight on the host where you review them.
+  #  Reach the running app over the compose network at http://app:9091.
+  claude:
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM node:22-bookworm-slim
+        RUN apt-get update \
+            && apt-get install -y --no-install-recommends git ca-certificates less \
+            && rm -rf /var/lib/apt/lists/*
+        RUN npm install -g @anthropic-ai/claude-code
+        # the named auth volume mounts onto this dir at runtime.
+        #  an empty named volume inherits the dir's ownership from the image,
+        #   so the dir must exist owned by node before the volume attaches,
+        #    else node cannot write its credentials there.
+        RUN mkdir -p /home/node/.claude && chown -R node:node /home/node/.claude
+    container_name: jamsend-claude
+    working_dir: /app
+    user: "node"               # node is uid 1000, so files it writes are yours on the host
+    volumes:
+      - .:/app
+      - *music-volume
+      - claude-auth:/home/node/.claude
+      # Mask the two secret env files with an empty file. The broad .:/app would
+      #  otherwise expose them; the more specific mount wins, so claude reads
+      #   them as empty. The host files are untouched; the app container,
+      #    which carries no such overlay, still reads the real values.
+      #  A regular empty file is used, not /dev/null: a char-device source makes
+      #   runc create the target as a directory, which then cannot take the mount.
+      #   Create the blank once with: touch .blank   (it is safe to commit).
+      #  To hide all of ty/ instead, replace these two with: - /app/ty
+      - ./.claude/.blank:/app/ty/.env.chrome-profiles:ro
+      - ./.claude/.blank:/app/ty/droidlounge/.env.chrome-profiles:ro
+    environment:
+      - CLAUDE_CONFIG_DIR=/home/node/.claude
+    tty: true
+    stdin_open: true
+    command: sleep infinity     # stays up; you attach a session with docker compose exec
+    restart: 'unless-stopped'
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G            # roomier than app, since claude spawns rg, node, subagents
+          # cap processes per container via cgroup, the limit we actually want.
+          #  nproc is avoided on purpose: it is a per-UID limit counted across
+          #   the whole host, so since this runs as node (uid 1000, your own
+          #    busy uid) a small nproc starves exec with EAGAIN
+          #     "resource temporarily unavailable".
+          pids: 512
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    ulimits:
+      nofile: 4096
+
+
   # peerjs:
   #   image: peerjs/peerjs-server
   #   container_name: jamsend-peerjs
@@ -73,3 +132,8 @@ services:
   #     - MOJO_LOG_LEVEL=info
   #     - MOJO_MODE=production
   #   restart: 'always'
+
+
+volumes:
+  # Holds credentials, settings, and session history across rebuilds.
+  claude-auth:
