@@ -72,10 +72,10 @@
     //     Lang_compile_collect(state)    → per-Line  {kind:'translated'|'raw', text}
     //     Lang_compile_IOing(node,…)     → one TS expression
     //     Lang_compile_Sunpit(node,…)    → one TS for-of header
-    //     Lang_compile_Leg(node,…)       → {sc_src, exactly_src, receiver_hint?, capture_var?}
-    //     Lang_compile_PeelItem(node,…)  → one property in the sc (+exactly flag)
+    //     Lang_compile_Leg(node,…)       → {sc_src, exactly_src, receiver_hint?, captures}
+    //     Lang_compile_PeelItem(node,…)  → one property in the sc (+exactly flag, +capture)
     //     Lang_compile_PeelVal(node,…)   → value expression (literal number or identifier)
-    //     Lang_compile_leg_obj_src(leg)  → {sc:…, exactly:…}  — the JSON-ish
+    //     Lang_compile_leg_obj_src(leg)  → {sc:…, exactly:…, caps:…}  — the JSON-ish
     //                                       shape backend helpers receive
     //
     // Translation rules (from the regroup() spec, in summary):
@@ -1174,51 +1174,78 @@
         }
 
         // remaining path after any receiver hint — this is the "real" path
-        // the tiers branch on.  (.at(-1) because JS destructuring doesn't
-        // allow [...rest, tail] — rest elements must be last.)
+        // the tiers branch on.
         const path = legs.slice(startIdx)
-        const tail = path.at(-1)
-
-        let prefix = ''
-        if (tail?.capture_var) {
-            prefix = `let ${tail.capture_var} = `
-        }
 
         if (!path.length) {
             // pathological: only a receiver hint, no real legs
-            return `${prefix}${receiver}`
+            return `${receiver}`
         }
 
-        // ── tier 0: single-leg, inline ──────────────────────────────
+        // captures aggregated across the whole path.  $ hands back the row (the
+        // C); .$ hands back the value (?.sc.<key>).  Zero → plain; one → a lean
+        // inline|drill1 with a `let name = …` prefix; two-plus → a single
+        // capture-bag drill the generated code destructures.
+        const caps = path.flatMap(l => l.captures)
+        const include_exactly = ness === 'o'
+
+        if (caps.length >= 2) {
+            const names = caps.map(c => c.var).join(', ')
+            const helper = ness === 'i' ? '_i_drill_caps' : '_o_drill_caps'
+            const legs_src = path
+                .map(l => this.Lang_compile_leg_obj_src(l, { include_exactly, with_caps: true }))
+                .join(', ')
+            return `let {${names}} = this.${helper}(${receiver}, [${legs_src}])`
+        }
+
+        if (caps.length === 1) {
+            const c = caps[0]
+            const grab = c.value ? `?.sc.${c.key}` : ''   // .$ → value, else the row
+            // tier 0: single inline leg.  .i returns the leaf directly; .o yields
+            // an array so we pick [0].  A capture always takes the real row, so
+            // it ignores the bool_ctx oa-rewrite.
+            if (path.length === 1) {
+                const only = path[0]
+                if (ness === 'i') {
+                    return `let ${c.var} = ${receiver}.i(${only.sc_src})${grab}`
+                }
+                const q = only.exactly_src ? `, { exactly: ${only.exactly_src} }` : ''
+                return `let ${c.var} = ${receiver}.${ness}(${only.sc_src}${q})[0]${grab}`
+            }
+            // tier 1: drill.  _i_drill returns the leaf; _o_drill1 the first hit.
+            const legs_src = path
+                .map(l => this.Lang_compile_leg_obj_src(l, { include_exactly }))
+                .join(', ')
+            const helper = ness === 'i' ? '_i_drill' : '_o_drill1'
+            return `let ${c.var} = this.${helper}(${receiver}, [${legs_src}])${grab}`
+        }
+
+        // ── no capture ──────────────────────────────────────────────
+        // tier 0: single-leg, inline
         if (path.length === 1) {
-            const only = tail!
+            const only = path[0]
             if (ness === 'i') {
-                return `${prefix}${receiver}.i(${only.sc_src})`
+                return `${receiver}.i(${only.sc_src})`
             }
             // o — in a boolean context (ctx.bool_ctx, set when the IO sits in an
             // if|while|until condition) a bare obtain becomes a presence check,
             // so `if (o %Foo)` tests existence rather than yielding the array.
             const obtain = ctx.bool_ctx && ness === 'o' ? 'oa' : ness
             const q = only.exactly_src ? `, { exactly: ${only.exactly_src} }` : ''
-            if (only.capture_var) {
-                return `${prefix}${receiver}.${ness}(${only.sc_src}${q})[0]`
-            }
-            return `${prefix}${receiver}.${obtain}(${only.sc_src}${q})`
+            return `${receiver}.${obtain}(${only.sc_src}${q})`
         }
 
-        // ── tier 1: multi-leg → backend function on H ───────────────
-        // .i ignores `exactly` so don't bother emitting it in the leg objects;
-        // .o / Sunpit keep it so the helper can forward it to C.o().
-        const include_exactly = ness === 'o'
+        // tier 1: multi-leg → backend function on H.  .i ignores `exactly` so
+        // don't bother emitting it in the leg objects; .o / Sunpit keep it so
+        // the helper can forward it to C.o().
         const legs_src = path
             .map(l => this.Lang_compile_leg_obj_src(l, { include_exactly }))
             .join(', ')
 
         if (ness === 'i') {
-            return `${prefix}this._i_drill(${receiver}, [${legs_src}])`
+            return `this._i_drill(${receiver}, [${legs_src}])`
         }
-        const helper = tail!.capture_var ? '_o_drill1' : '_o_drill'
-        return `${prefix}this.${helper}(${receiver}, [${legs_src}])`
+        return `this._o_drill(${receiver}, [${legs_src}])`
     },
 
 //#endregion
@@ -1274,36 +1301,37 @@
     // One Leg = one PeelGroup = comma-separated PeelItems = a single sc {…}
     // plus an optional exactly:{…} for keys that carry an explicit value.
     //
-    // A Leg with exactly one PeelItem can also surface a receiver_hint (leg 0)
-    // or a capture_var (last leg) — picked up by IOing/Sunpit.
+    // A Leg with exactly one PeelItem can surface a receiver_hint (leg 0).  Any
+    // item in any leg can carry a capture; they're gathered into `captures` and
+    // resolved by IOing/Sunpit (a value capture still filters on its key).
     Lang_compile_Leg(leg: SyntaxNode, state: EditorState, ctx: any): {
         sc_src: string,
         exactly_src: string,
         receiver_hint?: string,
-        capture_var?: string,
+        captures: { var: string, key: string, value: boolean }[],
     } {
         const group = leg.getChild('PeelGroup')
         if (!group) throw new Error('Leg: no PeelGroup')
         const items = group.getChildren('PeelItem')
         if (!items.length) throw new Error('Leg: empty PeelGroup')
 
-        // probe for receiver / capture on a single-item leg
+        // probe for a receiver hint on a single bare "$name" leg
         let receiver_hint: string | undefined
-        let capture_var: string | undefined
         if (items.length === 1) {
             const probe = this.Lang_compile_PeelItem(
                 items[0], state, { ...ctx, probe: true })
             if (probe.receiver_hint) receiver_hint = probe.receiver_hint
-            if (probe.capture_var)   capture_var   = probe.capture_var
         }
 
         // normal rendering
         const parts: string[] = []
         const exactly_keys: string[] = []
+        const captures: { var: string, key: string, value: boolean }[] = []
         for (const it of items) {
             const info = this.Lang_compile_PeelItem(it, state, ctx)
             if (info.sc_part) parts.push(info.sc_part)
             if (info.exactly_for) exactly_keys.push(info.exactly_for)
+            if (info.capture) captures.push(info.capture)
         }
 
         const sc_src = `{${parts.join(', ')}}`
@@ -1311,26 +1339,29 @@
             ? `{${exactly_keys.map(k => `${k}: true`).join(', ')}}`
             : ''
 
-        return { sc_src, exactly_src, receiver_hint, capture_var }
+        return { sc_src, exactly_src, receiver_hint, captures }
     },
 
-    // One PeelItem → {sc_part, exactly_for?} plus probe flags.
+    // One PeelItem → {sc_part, exactly_for?, capture?} plus probe flags.
     //
     //   name           →  name: 1              (wildcard, no exactly)
     //   $name          →  name                 (ES6 shorthand; var `name` in scope)
     //                     or receiver_hint=name when probe=true and no value
-    //   name$          →  capture_var=name; sc_part still "name: 1" so the
-    //                     final .o({name:1})[0] can pick the row out
     //   name:3         →  name: 3              (+ exactly_for:'name')
     //   name:$v        →  name: v              (+ exactly_for:'name')
     //   name:other     →  name: "other"        (+ exactly_for:'name')
     //   %name:'str'    →  name: 'str'          (puddle — value is verbatim TS;
     //                                           no exactly_for since it's an expression)
+    // A trailing Capture rides on top of any of the above; the key still filters,
+    // so sc_part is unchanged.  capture = {var, key, value}:
+    //   name$ | name$v  →  row   capture (the C)     into name | v
+    //   name.$ | name.$v →  value capture (?.sc.name) into name | v
+    // No CaptureName auto-names from the key.
     Lang_compile_PeelItem(item: SyntaxNode, state: EditorState, ctx: any): {
         sc_part: string,
         exactly_for?: string,
         receiver_hint?: string,
-        capture_var?: string,
+        capture?: { var: string, key: string, value: boolean },
     } {
         const doc = state.doc
         // PuddleSigil (%) marks a verbatim-TS value — value emitted as-is,
@@ -1344,39 +1375,43 @@
         if (!keyNameNode) throw new Error('PeelKey: no Name')
         const name = doc.sliceString(keyNameNode.from, keyNameNode.to)
 
-        // sigils on PeelKey: may appear before and/or after Name
-        const sigils = keyNode.getChildren('Sigil')
-        const before = sigils.find((s: SyntaxNode) => s.to <= keyNameNode.from)
-        const after  = sigils.find((s: SyntaxNode) => s.from >= keyNameNode.to)
+        // leading sigil only ($name = receiver hint | shorthand value-in); a
+        // trailing capture is its own Capture node now, not a PeelKey sigil.
+        const before = keyNode.getChild('Sigil')
 
-        // capture:  name$  (no value)         → capture row into `name`
-        //           name$:var (named target)  → capture row into `var`
-        // The trailing $ marks a capture; a colon-value, when present, names
-        // the target variable rather than filtering.
-        if (after) {
-            const cap = valNode ? this.Lang_compile_PeelVal(valNode, state) : name
-            return { sc_part: `${name}: 1`, capture_var: cap }
+        // capture rides in its own node: CaptureDot? CaptureDollar CaptureName?
+        //   CaptureDot present → value (?.sc.key);  absent → row (the C).
+        //   CaptureName present → that let-name;     absent → auto from the key.
+        let capture: { var: string, key: string, value: boolean } | undefined
+        const capNode = item.getChild('Capture')
+        if (capNode) {
+            const capName = capNode.getChild('CaptureName')
+            capture = {
+                var:   capName ? doc.sliceString(capName.from, capName.to) : name,
+                key:   name,
+                value: !!capNode.getChild('CaptureDot'),
+            }
         }
 
         // receiver hint / shorthand:  $name  with no value
         if (before && !valNode) {
-            if (ctx.probe) return { sc_part: '', receiver_hint: name }
+            if (ctx.probe && !capture) return { sc_part: '', receiver_hint: name }
             // ES6 shorthand — uses the variable `name` as both key and value
-            return { sc_part: name }
+            return { sc_part: name, capture }
         }
 
         if (!valNode) {
             // bare name — wildcard
-            return { sc_part: `${name}: 1` }
+            return { sc_part: `${name}: 1`, capture }
         }
 
         // has a colon-value → value comes from PeelVal
         const val_src = this.Lang_compile_PeelVal(valNode, state)
         if (isPuddle) {
             // puddle: emit verbatim, no exactly filter
-            return { sc_part: `${name}: ${val_src}` }
+            return { sc_part: `${name}: ${val_src}`, capture }
         }
-        return { sc_part: `${name}: ${val_src}`, exactly_for: name }
+        return { sc_part: `${name}: ${val_src}`, exactly_for: name, capture }
     },
 
     Lang_compile_PeelVal(val: SyntaxNode, state: EditorState): string {
@@ -1410,15 +1445,23 @@
     // Serialise a Leg into the JSON-ish shape the backend helpers receive:
     //   {sc: <sc_src>}                              — default
     //   {sc: <sc_src>, exactly: <exactly_src>}      — when exactly is set & requested
-    // For .i calls we drop exactly entirely since insertion doesn't filter.
+    //   {sc: …, caps: [{as, key, val}, …]}          — when with_caps & the leg captures
+    // For .i calls we drop exactly entirely since insertion doesn't filter.  caps
+    // ride only on the *_caps drills (two-plus captures), so with_caps gates them.
     Lang_compile_leg_obj_src(leg: {
         sc_src: string, exactly_src: string,
-    }, opt: { include_exactly?: boolean } = {}): string {
+        captures?: { var: string, key: string, value: boolean }[],
+    }, opt: { include_exactly?: boolean, with_caps?: boolean } = {}): string {
         const include = opt.include_exactly ?? true
-        if (include && leg.exactly_src) {
-            return `{sc: ${leg.sc_src}, exactly: ${leg.exactly_src}}`
+        const parts = [`sc: ${leg.sc_src}`]
+        if (include && leg.exactly_src) parts.push(`exactly: ${leg.exactly_src}`)
+        if (opt.with_caps && leg.captures?.length) {
+            const caps = leg.captures
+                .map(c => `{as: ${JSON.stringify(c.var)}, key: ${JSON.stringify(c.key)}, val: ${c.value}}`)
+                .join(', ')
+            parts.push(`caps: [${caps}]`)
         }
-        return `{sc: ${leg.sc_src}}`
+        return `{${parts.join(', ')}}`
     },
 
 //#endregion

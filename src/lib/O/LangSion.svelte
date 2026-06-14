@@ -38,10 +38,17 @@
     //              Missing intermediate collapses to [].
     //
     //   _o_drill1 — as _o_drill but returns the first hit or undefined.
-    //               Used when the trailing leg has a "name$" capture so the
-    //               generated `let name = …` binds a single value.
+    //               Used when the trailing leg has a single "name$" capture so
+    //               the generated `let name = …` binds a single value.
     //
-    //   _i_drill — insert through, chaining C.i() down each leg; returns the
+    //   _o_drill_caps / _i_drill_caps — as above but the legs carry `caps`
+    //               (trailing capture targets); they return a bag keyed by each
+    //               capture's let-name, which the generated code destructures
+    //               (`let {a, b} = this._i_drill_caps(…)`).  Used when one IOing
+    //               has two or more captures.
+    //
+    //   _i_drill — oai (find-or-create) every leg above the last, then a plain
+    //              i on the last (so the leaf is a fresh insert); returns the
     //              last inserted C.  `exactly` is ignored (insert doesn't
     //              filter, so LangCompiling doesn't bother emitting it for .i).
     //
@@ -51,7 +58,8 @@
     import type { TheC } from "$lib/data/Stuff.svelte"
     import { onMount } from "svelte"
 
-    type Leg = { sc: any, exactly?: any }
+    type Cap = { as: string, key: string, val: boolean }
+    type Leg = { sc: any, exactly?: any, caps?: Cap[] }
 
     let { M } = $props()
 
@@ -84,17 +92,62 @@
         return hits[0]
     },
 
+    // As _o_drill, but legs may carry `caps`.  Drills picking [0] at each step
+    // (intermediate caps read that picked C; final-leg caps read the first hit),
+    // recording each cap into a bag keyed by `as`.  A `val` cap takes the C's sc
+    // value for `key`, otherwise the C itself.  A missing step leaves later caps
+    // undefined (the bag still has the keys).  Generated code destructures it.
+    _o_drill_caps(C: TheC | null | undefined, legs: Leg[]): Record<string, any> {
+        const bag: Record<string, any> = {}
+        const record = (leg: Leg, hit: TheC | undefined) => {
+            for (const c of leg.caps ?? []) bag[c.as] = c.val ? hit?.sc[c.key] : hit
+        }
+        if (!C || !legs.length) { for (const leg of legs) record(leg, undefined); return bag }
+        let cur: TheC | undefined = C
+        for (let i = 0; i < legs.length - 1; i++) {
+            const leg = legs[i]
+            const q = leg.exactly ? { exactly: leg.exactly } : undefined
+            const hits = (cur ? cur.o(leg.sc, q) : []) as TheC[]
+            cur = hits[0]
+            record(leg, cur)
+        }
+        const last = legs[legs.length - 1]
+        const q = last.exactly ? { exactly: last.exactly } : undefined
+        const hits = (cur ? cur.o(last.sc, q) : []) as TheC[]
+        record(last, hits[0])
+        return bag
+    },
+
 //#endregion
 //#region _i_drill
 
-    // Multi-leg .i:  insert through each leg, returning the last-inserted C.
-    // exactly is ignored (insert doesn't filter).
+    // Multi-leg .i:  oai (find-or-create) every leg above the last, then a
+    // plain i on the last so the leaf is always a fresh insert.  Returns the
+    // last-inserted C.  exactly is ignored (insert doesn't filter).
     _i_drill(C: TheC, legs: Leg[]): TheC {
         let cur: TheC = C
-        for (const leg of legs) {
-            cur = cur.i(leg.sc)
+        const last = legs.length - 1
+        for (let i = 0; i < legs.length; i++) {
+            cur = i < last ? cur.oai(legs[i].sc) : cur.i(legs[i].sc)
         }
         return cur
+    },
+
+    // As _i_drill, but legs may carry `caps` — trailing capture targets.  After
+    // each leg lands, every cap on it records into a bag keyed by `as`; a `val`
+    // cap takes the leaf's sc value for `key`, otherwise the leaf C itself.
+    // The generated code destructures the bag: `let {a, b} = this._i_drill_caps(…)`.
+    _i_drill_caps(C: TheC, legs: Leg[]): Record<string, any> {
+        let cur: TheC = C
+        const bag: Record<string, any> = {}
+        const last = legs.length - 1
+        for (let i = 0; i < legs.length; i++) {
+            cur = i < last ? cur.oai(legs[i].sc) : cur.i(legs[i].sc)
+            for (const c of legs[i].caps ?? []) {
+                bag[c.as] = c.val ? cur?.sc[c.key] : cur
+            }
+        }
+        return bag
     },
 
 //#endregion

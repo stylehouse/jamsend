@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_test_LangTiles(): string { return '73c42547cbc991bd' },
+    Ghostmeta_Ghost_test_LangTiles(): string { return '677bb43ddb59c284' },
 
 // yeti etc!!!!!
 theCompiledStuff(A,w) {
@@ -27,16 +27,15 @@ theCompiledStuff(A,w) {
     let wither = A.o({wither: 1})[0]
     let yeses = A.o({yeses: 1})[0]
     // should be wither:1, and let vish = it (the C%prefixy,wither)
-    let wither = A.o({wither: 1})[0]vish
+    //A o wither$:vish
 
     // since . binds|associates tighly, it grabs the %wither value
     //  and wants to assign|tuple it  amongst other stuff
-    A.o({prefixy: 1, wither: 1}).$ang
+    A.o({prefixy: 1, wither: 1}).$:ang
     // uses that assigned ang variable,
-    //  assigns so, grabs the %so value which is incidentally the supplied string 'ont'
+    //  assigns so, grabs the %so value
     //   so is auto-named. if we grabbed it as C (.../so:ont$) it's still named so.
-    this._i_drill(w, [{sc: {angles: 1}}, {sc: {are: ang, etc: 3}}, {sc: {so: "ont"}}]).$sooo,module.$tv,etc.$
-    this._i_drill(w, [{sc: {angles: 1}}, {sc: {are: ang, etc: 3}}, {sc: {so: "ont"}}]).$sooo,module.$tv,etc$year
+    //w i angles/are:$ang,etc:3/so:ont.$
     // this is what we're avoiding wither doing .$:othername above
     
     // you can declare let variables like this:

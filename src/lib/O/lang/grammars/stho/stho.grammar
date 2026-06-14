@@ -6,9 +6,9 @@
 @skip { space }
 Line { lineItem* newline }
 
-@precedence { callparen @left, sigilsuffix @left, ioverb @left }
+@precedence { callparen @left, ioverb @left }
 
-@external tokens pathSep from "./io_tokens" { PathSep, PathComma, PathColon }
+@external tokens pathSep from "./io_tokens" { PathSep, PathComma, PathColon, CaptureDot, CaptureDollar, CaptureName }
 
 lineItem {
   Comment | LineComment |
@@ -25,9 +25,15 @@ IOing  { IOness !ioverb IOpath | IOness2 !ioverb IOpath (!ioverb IOpath)? }
 IOpath { Leg (PathSep Leg)* }
 Leg    { PeelGroup }
 PeelGroup { PeelItem (PathComma PeelItem)* }
-PeelItem  { PuddleSigil? PeelKey (PathColon PeelVal)? }
-PeelKey   { Sigil? Name (!sigilsuffix Sigil)? }
-PeelVal   { Sigil? Name (!sigilsuffix Sigil)? | Number | StringVal | TemplateVal }
+PeelItem  { PuddleSigil? PeelKey (PathColon PeelVal)? Capture? }
+PeelKey   { Sigil? Name }
+PeelVal   { Sigil? Name | Number | StringVal | TemplateVal }
+// Capture rides on a PeelItem: "$" hands back the row (the C), ".$" hands back
+// the value (?.sc.<key>), an attached CaptureName is the let-name, and its
+// absence auto-names from the item's key. The "$"|"."|name are external tokens
+// (io_tokens) so they're claimed only tight mid-path and never collide with a
+// loose Sigil|host-JS dot.
+Capture   { CaptureDot? CaptureDollar CaptureName? }
 
 AmpCall { AmpCallTok }
 MethodLike { Name !callparen LParen }

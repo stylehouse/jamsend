@@ -42,6 +42,7 @@ export const sthoTags = {
     comment:     Tag.define(),   // "#…" and "//…" line comments
     controlHead: Tag.define(),   // "if ", "for ", "while ", "else"
     methodName:  Tag.define(),   // Name inside a MethodLike
+    captureName: Tag.define(),   // capture let-name ($x | .$x) — the var a row|value flows out into
     punct:       Tag.define(),   // host-JS operators / punctuation
 }
 
@@ -58,6 +59,10 @@ export const highlightStyle = HighlightStyle.define([
     { tag: sthoTags.comment,     color: '#5c6370', fontStyle: 'italic' },  // grey — comments
     { tag: sthoTags.controlHead, color: '#c678dd' },                       // purple — if/for/else
     { tag: sthoTags.methodName,  color: '#61afef', fontWeight: 'bold' },   // blue — method names
+    // capture targets read like arguments — blue, but their own squarish face
+    // so a let flowing out of a path is distinct from a key|param at a glance.
+    // Swap the family for whatever futurist face is loaded; the binding stays.
+    { tag: sthoTags.captureName, color: '#61afef', fontFamily: '"Azeret Mono", ui-monospace, monospace' },
     { tag: sthoTags.punct,       color: '#828997' },                       // dim — operators
 ])
 
@@ -105,6 +110,9 @@ function configure(parser: any) {
                 ElseKeyword:       sthoTags.controlHead,
                 ElseIfKeyword:     sthoTags.controlHead,
                 "MethodLike/Name": sthoTags.methodName,
+                "Capture/CaptureName": sthoTags.captureName,
+                CaptureDollar:     sthoTags.sigil,
+                CaptureDot:        sthoTags.sigil,
             }),
         ],
     })

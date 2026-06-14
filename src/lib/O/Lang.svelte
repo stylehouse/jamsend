@@ -813,6 +813,15 @@
 
         // pump the pipeline — maz orders understanding → ingredients → instrumentation.
         await wsub.do()
+
+        // trail decay — the Undertaking's Funkcion re-runs each trickle so the trail
+        //   brightness cools over time, not only when a tap lands.  Cheap + defensive:
+        //   a no-op until the Undertaking LE and its Funkcion exist (first tap), and
+        //   wrapped so a trail hiccup never breaks the per-tick driver.
+        try {
+            const undertaking = H.LE_for('Undertaking')
+            if (undertaking) await H.LE_host_funkcion(undertaking)
+        } catch (e) { console.warn('🫧 trail decay skipped', e) }
     },
 
     // ── Lang_src_serial — stable per-src identity for the understanding sig ────

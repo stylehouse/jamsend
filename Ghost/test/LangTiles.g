@@ -14,18 +14,16 @@ theCompiledStuff(A,w) {
 
     A o %wither$
     A o yeses$
-    // should be wither:1, and let vish = it (the C%prefixy,wither)
+    // row capture: wither:1 filters, vish = the row C (%prefixy,wither)
     A o wither$vish
 
-    // since . binds|associates tighly, it grabs the %wither value
-    //  and wants to assign|tuple it  amongst other stuff
+    // . binds tight and grabs the %wither value to tuple amongst other stuff
     A o prefixy,wither.$ang
-    // uses that assigned ang variable,
-    //  assigns so, grabs the %so value which is incidentally the supplied string 'ont'
-    //   so is auto-named. if we grabbed it as C (.../so:ont$) it's still named so.
+    // multi-capture destructure: ang flows in on %are, then so|module|etc each
+    //  grab a value out — so auto-names so, the others name sooo|tv|etc|year.
+    //   .$ takes the value (?.sc,key); a bare $ would take the row C instead.
     w i angles/are:$ang,etc:3/so:ont.$sooo,module.$tv,etc.$
     w i angles/are:$ang,etc:3/so:ont.$sooo,module.$tv,etc$year
-    // this is what we're avoiding wither doing .$:othername above
     
     // you can declare let variables like this:
     $its = 'ferv'
@@ -63,21 +61,6 @@ theCompiledStuff(A,w) {
     elsif 50 > 5
             && 3 > 2
         i helped
-    // ── capture-in-condition: declare + test on ONE line (source→compiled 1:1)
-    //   if o something$  →  let something = w.o({something:1})[0]; if (something) {
-    if o something$
-        i got/it
-    //   if $maybe = &theCall,w  →  let maybe = this.theCall(w); if (maybe) {
-    if $maybe = &theCall,w
-        i used/maybe
-    // ── boolean context: a bare obtain in a condition becomes oa (presence).
-    //   a trailing // comment must survive, re-appended after the brace.
-    if o %Ready                // presence check
-        i go/ahead
-    // ── user's own parens bail to verbatim; a single-leg obtain still auto-oa
-    if (o %Thing) i inside
-    // ── IO atom embedded in a host-JS arg list (stops at ", w")
-    this.consume(o %Foo, w)
     i yep
     &severally,A,w,555
 },

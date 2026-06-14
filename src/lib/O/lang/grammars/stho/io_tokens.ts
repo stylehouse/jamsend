@@ -10,25 +10,65 @@
 //     parser is mid-path), so JS keeps its regex|divide|colon untouched|
 //   - keep the path whitespace-tight: a separator followed by space|tab|EOL ends
 //     the path, so an IO atom can sit inside a JS list|args (f(o %Foo, b)).
+//
+// The same canShift|tight discipline carries the capture suffix tokens, so a
+// trailing capture rides only inside a path:
+//   - CaptureDot    "." the value-grab lead-in, claimed only when a "$" follows.
+//   - CaptureDollar "$" the capture marker, claimed only tight after a key|val|
+//     dot (a leading "$var" stays an ordinary Sigil flowing in).
+//   - CaptureName    the let-name, claimed only straight after a CaptureDollar,
+//     so it never collides with a bare Name lineItem.
 import { ExternalTokenizer, type Stack, type InputStream } from "@lezer/lr"
 
-const SLASH = 47, COMMA = 44, COLON = 58
+const SLASH = 47, COMMA = 44, COLON = 58, DOT = 46, DOLLAR = 36, USCORE = 95
 const SPACE = 32, TAB = 9, NL = 10, EOF = -1
+
+const isWord  = (c: number) =>
+    (c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c === USCORE
+const isStart = (c: number) =>
+    (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c === USCORE
 
 // Built against a terms record so it serves both the live buildParser (terms
 // supplied via the externalTokenizer option) and a generated parser (terms
 // imported from the generated *.terms artifact and passed in by its wiring).
 export function makePathSep(terms: {
     PathSep: number, PathComma: number, PathColon: number,
+    CaptureDot: number, CaptureDollar: number, CaptureName: number,
 }): ExternalTokenizer {
+    const SEP: Record<number, number> = {
+        [SLASH]: terms.PathSep, [COMMA]: terms.PathComma, [COLON]: terms.PathColon,
+    }
     return new ExternalTokenizer((input: InputStream, stack: Stack) => {
-        let term: number
-        switch (input.next) {
-            case SLASH: term = terms.PathSep;   break
-            case COMMA: term = terms.PathComma; break
-            case COLON: term = terms.PathColon; break
-            default: return
+        // Capture let-name — only reachable straight after a CaptureDollar, so a
+        // plain Name lineItem never gets misclaimed.
+        if (isStart(input.next) && stack.canShift(terms.CaptureName)) {
+            do { input.advance() } while (isWord(input.next))
+            input.acceptToken(terms.CaptureName)
+            return
         }
+        // "." value-grab lead-in — only mid-path, tight, and only before a "$"
+        // so host-JS "a.b" and "3.0" keep their dots.
+        if (input.next === DOT) {
+            if (!stack.canShift(terms.CaptureDot)) return
+            const before = input.peek(-1)
+            if (before === SPACE || before === TAB) return
+            if (input.peek(1) !== DOLLAR) return
+            input.advance()
+            input.acceptToken(terms.CaptureDot)
+            return
+        }
+        // "$" capture marker — only tight after a key|val|dot; a leading "$var"
+        // (before is a separator|space) stays an ordinary Sigil that flows in.
+        if (input.next === DOLLAR) {
+            if (!stack.canShift(terms.CaptureDollar)) return
+            const before = input.peek(-1)
+            if (!(isWord(before) || before === DOT)) return
+            input.advance()
+            input.acceptToken(terms.CaptureDollar)
+            return
+        }
+        const term = SEP[input.next]
+        if (term === undefined) return
         if (!stack.canShift(term)) return            // not mid-path → leave it to JS
         // tight on BOTH sides: whitespace before means the path already ended
         // (skip ate the gap), so a trailing "// comment" keeps its slashes|
