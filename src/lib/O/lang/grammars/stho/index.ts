@@ -4,6 +4,11 @@
 // indent/fold props, languageData, and the resolve() that picks between a
 // generated parser artifact and a live buildParser() of the .grammar.
 //
+// The .grammar declares an external tokenizer for the IO path (see io_tokens),
+// so both build paths must supply it: the live build passes it through the
+// buildParser externalTokenizer option|a generated artifact bakes it in at gen
+// time (its wiring imports io_tokens against the generated *.terms).
+//
 // Generated-vs-live policy:
 //   - Hash the live .grammar text (sha-256, hex).
 //   - import.meta.glob() for ./stho.grammar.ts. If present, await it; check
@@ -20,47 +25,53 @@ import { buildParser } from "@lezer/generator"
 
 import grammar from "./stho.grammar?raw"
 import { capture_warnings, sha_hex } from "../../lang"
+import { makePathSep } from "./io_tokens"
 import type { LangResolve } from "../../registry"
 
 // Semantic tags — our own, so themes stay predictable across CM versions
 // and independent of any global highlight style in scope.
 export const sthoTags = {
-    ioMarker:    Tag.define(),   // IOness:  "i " | "o "
+    ioMarker:    Tag.define(),   // IOness / IOness2:  the o|oa|oai|roai|… verbs
     iterMarker:  Tag.define(),   // Sunpitness: "S "
     name:        Tag.define(),   // variable / key identifiers
     number:      Tag.define(),   // number literals
-    string:      Tag.define(),   // StringVal puddle literals
-    sigil:       Tag.define(),   // "$", "@", "#" prefix/suffix
+    string:      Tag.define(),   // string + template puddle literals
+    sigil:       Tag.define(),   // "$", "@" prefix/suffix, path separators
     puddleSigil: Tag.define(),   // "%" — marks verbatim-TS value
-    ampSigil:    Tag.define(),   // "&" — this.method() call head
-    comment:     Tag.define(),   // "#..." line comments
+    ampSigil:    Tag.define(),   // "&method" call head
+    comment:     Tag.define(),   // "#…" and "//…" line comments
     controlHead: Tag.define(),   // "if ", "for ", "while ", "else"
-    title:       Tag.define(),   // condition text after a control keyword
     methodName:  Tag.define(),   // Name inside a MethodLike
-    flugBracket: Tag.define(),   // "[" / "]" around Flug markers
+    punct:       Tag.define(),   // host-JS operators / punctuation
 }
 
 // One-dark-ish palette preserved from the old monolithic stho.ts.
 export const highlightStyle = HighlightStyle.define([
-    { tag: sthoTags.ioMarker,    color: '#56b6c2', fontWeight: 'bold' },   // cyan — i/o
+    { tag: sthoTags.ioMarker,    color: '#56b6c2', fontWeight: 'bold' },   // cyan — verbs
     { tag: sthoTags.iterMarker,  color: '#c678dd', fontWeight: 'bold' },   // purple — S
     { tag: sthoTags.name,        color: '#abb2bf' },                       // soft white — keys
     { tag: sthoTags.number,      color: '#d19a66' },                       // amber — numbers
-    { tag: sthoTags.string,      color: '#98c379' },                       // green — string puddles
-    { tag: sthoTags.sigil,       color: '#e06c75' },                       // red — $ @ #
+    { tag: sthoTags.string,      color: '#98c379' },                       // green — strings
+    { tag: sthoTags.sigil,       color: '#e06c75' },                       // red — $ @ /
     { tag: sthoTags.puddleSigil, color: '#56b6c2', fontWeight: 'bold' },  // cyan — %
-    { tag: sthoTags.ampSigil,    color: '#c678dd', fontWeight: 'bold' },  // purple — &
+    { tag: sthoTags.ampSigil,    color: '#c678dd', fontWeight: 'bold' },  // purple — &method
     { tag: sthoTags.comment,     color: '#5c6370', fontStyle: 'italic' },  // grey — comments
     { tag: sthoTags.controlHead, color: '#c678dd' },                       // purple — if/for/else
-    { tag: sthoTags.title,       color: '#e5c07b' },                       // gold — conditions
     { tag: sthoTags.methodName,  color: '#61afef', fontWeight: 'bold' },   // blue — method names
-    { tag: sthoTags.flugBracket, color: '#56b6c2' },                       // cyan — [ ]
+    { tag: sthoTags.punct,       color: '#828997' },                       // dim — operators
 ])
 
 const languageData = {
     commentTokens: { line: "#", block: { open: "/*", close: "*/" } },
     closeBrackets: { brackets: ["(", "[", "{", "'", '"', "`"] },
     indentOnInput: /^\s*(?:case |default:|\{|\}|<\/)$/,
+}
+
+// External tokenizer resolver — buildParser calls this for each @external
+// tokens group by name, handing us the term ids it just assigned.
+function externalTokenizer(name: string, terms: Record<string, number>) {
+    if (name === 'pathSep') return makePathSep(terms as any)
+    return undefined as any
 }
 
 // Configure a freshly-supplied parser with stho's indent/fold/styleTag props.
@@ -75,23 +86,25 @@ function configure(parser: any) {
                 Sunpit: foldInside,
             }),
             styleTags({
-                IOness:                sthoTags.ioMarker,
-                Sunpitness:            sthoTags.iterMarker,
-                Name:                  sthoTags.name,
-                Number:                sthoTags.number,
-                StringVal:             sthoTags.string,
-                Sigil:                 sthoTags.sigil,
-                PuddleSigil:           sthoTags.puddleSigil,
-                AmpSigil:              sthoTags.ampSigil,
-                Comment:               sthoTags.comment,
-                ControlKeyword:        sthoTags.controlHead,
-                ElseKeyword:           sthoTags.controlHead,
-                ElseIfKeyword:         sthoTags.controlHead,
-                Title:                 sthoTags.title,
-                "MethodLike/Name":     sthoTags.methodName,
-                "AmpCall/Name":        sthoTags.methodName,
-                "Flugenzoid/( )":      sthoTags.flugBracket,
-                "Flugamata/( )":       sthoTags.flugBracket,
+                IOness:            sthoTags.ioMarker,
+                IOness2:           sthoTags.ioMarker,
+                Sunpitness:        sthoTags.iterMarker,
+                Name:              sthoTags.name,
+                Number:            sthoTags.number,
+                StringVal:         sthoTags.string,
+                TemplateVal:       sthoTags.string,
+                Sigil:             sthoTags.sigil,
+                PathSep:           sthoTags.sigil,
+                PuddleSigil:       sthoTags.puddleSigil,
+                AmpCall:           sthoTags.ampSigil,
+                AmpAmp:            sthoTags.punct,
+                Punct:             sthoTags.punct,
+                Comment:           sthoTags.comment,
+                LineComment:       sthoTags.comment,
+                ControlKeyword:    sthoTags.controlHead,
+                ElseKeyword:       sthoTags.controlHead,
+                ElseIfKeyword:     sthoTags.controlHead,
+                "MethodLike/Name": sthoTags.methodName,
             }),
         ],
     })
@@ -127,8 +140,11 @@ export async function resolve(): Promise<LangResolve> {
     }
 
     // Live build — slower but always honest about the current .grammar text.
+    // The external tokenizer is supplied here so "/" inside an IO path reads as
+    // a leg separator while host-JS regex|divide stay intact.
     let live_parser: any
-    const warnings = capture_warnings(() => live_parser = buildParser(grammar))
+    const warnings = capture_warnings(
+        () => live_parser = buildParser(grammar, { externalTokenizer }))
 
     if (!live_parser) {
         return {

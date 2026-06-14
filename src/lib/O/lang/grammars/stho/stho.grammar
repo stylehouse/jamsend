@@ -1,15 +1,20 @@
+// stho — JS soup + stho atoms, with an external tokenizer for the IO path so
+// "/" reads as a leg separator inside a path but stays a regex|divide in JS,
+// and a path stays whitespace-tight (a separator followed by a space ends it,
+// letting IO atoms sit inside JS lists|args).
 @top Program { Line* }
 @skip { space }
 Line { lineItem* newline }
 
-@precedence { callparen @left, sigilsuffix @left, pathext @left, ioverb @left }
+@precedence { callparen @left, sigilsuffix @left, ioverb @left }
+
+@external tokens pathSep from "./io_tokens" { PathSep, PathComma, PathColon }
 
 lineItem {
   Comment | LineComment |
   ControlFlow | Sunpit | IOing | IOness | IOness2 | AmpCall | AmpAmp |
-  MethodLike |
   Name | Number | StringVal | TemplateVal | Regex |
-  LParen | LBrack | RBrack | Comma | Colon | PathSep | PuddleSigil | Sigil | Punct
+  LParen | LBrack | RBrack | Comma | Colon | PuddleSigil | Sigil | Punct
 }
 
 ControlFlow { ControlFlowHead }
@@ -17,14 +22,14 @@ ControlFlowHead { ElseIfKeyword | ControlKeyword | ElseKeyword }
 
 Sunpit { Sunpitness IOing }
 IOing  { IOness !ioverb IOpath | IOness2 !ioverb IOpath (!ioverb IOpath)? }
-IOpath { Leg (!pathext PathSep Leg)* }
+IOpath { Leg (PathSep Leg)* }
 Leg    { PeelGroup }
-PeelGroup { PeelItem (!pathext Comma PeelItem)* }
-PeelItem  { PuddleSigil? PeelKey (!pathext Colon PeelVal)? }
+PeelGroup { PeelItem (PathComma PeelItem)* }
+PeelItem  { PuddleSigil? PeelKey (PathColon PeelVal)? }
 PeelKey   { Sigil? Name (!sigilsuffix Sigil)? }
 PeelVal   { Sigil? Name (!sigilsuffix Sigil)? | Number | StringVal }
 
-MethodLike { AsyncKeyword? Name !callparen LParen }
+AmpCall { AmpCallTok }
 
 @tokens {
   space { (" " | "\t")+ }
@@ -35,29 +40,31 @@ MethodLike { AsyncKeyword? Name !callparen LParen }
   Sunpitness     { "S " }
   IOness  { ("i" | "o" | "oa" | "ob" | "o1" | "oa1" | "bo" | "boa" | "bo1" | "boa1" | "drop" | "empty") " " }
   IOness2 { ("oai" | "roai" | "moai" | "doai" | "r") " " }
-  AsyncKeyword   { "async " }
+
   Name   { (@asciiLetter | "_" | "$") (@asciiLetter | "_" | @digit | "$")* }
   Number { (@digit+ ("." @digit+)?) | ("0x" (@digit | $[a-fA-F])+) }
   StringVal   { "'" ("\\" _ | !['\\\n])* "'" | '"' ("\\" _ | !["\\\n])* '"' }
   TemplateVal { "`" ("\\" _ | ![`\\])* "`" }
   LineComment { "//" ![\n]* }
   Comment     { "#" ![\n]* }
-  Regex { "/" ("\\" ![\n] | ![/\\\n])+ "/" (@asciiLetter)* }
+  Regex { "/" ![/*=\n \t] ("\\" ![\n] | ![/\\\n])* "/" (@asciiLetter)* }
+
+  AmpCallTok { "&" (@asciiLetter | "_") (@asciiLetter | "_" | @digit)* }
+  AmpAmp { "&&" }
+
   LParen { "(" }
   LBrack { "[" }
   RBrack { "]" }
-  PathSep { "/" }
   Comma { "," }
   Colon { ":" }
   PuddleSigil { "%" }
-  AmpAmp { "&&" }
-  AmpCall { "&" (@asciiLetter | "_") (@asciiLetter | "_" | @digit)* }
   Sigil { "@" | "$" }
-  Punct { ( "=" | "<" | ">" | "!" | "+" | "-" | "*" | "%" | "&" | "|" | "?" | "~" | "^" | ")" | "{" | "}" | "." | ";" )+ }
+  Punct { ( "=" | "<" | ">" | "!" | "+" | "-" | "*" | "/" | "%" | "&" | "|" | "?" | "~" | "^" | ")" | "{" | "}" | "." | ";" )+ }
+
   @precedence {
     LineComment, Regex,
-    ElseIfKeyword, ElseKeyword, ControlKeyword, Sunpitness, IOness, IOness2, AsyncKeyword,
+    ElseIfKeyword, ElseKeyword, ControlKeyword, Sunpitness, IOness, IOness2,
     Number, Name, StringVal, TemplateVal, Comment,
-    LParen, LBrack, RBrack, Comma, Colon, AmpCall, AmpAmp, PuddleSigil, Sigil, PathSep, Punct
+    AmpCallTok, AmpAmp, LParen, LBrack, RBrack, Comma, Colon, PuddleSigil, Sigil, Punct
   }
 }

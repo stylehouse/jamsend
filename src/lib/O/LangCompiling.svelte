@@ -684,10 +684,8 @@
             // &method,arg,arg,… → this.method(arg,arg,…)
             // Lang_amp_calls_in_text does the bracket/string-aware conversion;
             // it leaves any non-& text on the line untouched.
-            const nameNode = hit.node.getChild('Name')
-            const method   = nameNode
-                ? sliceState.doc.sliceString(nameNode.from, nameNode.to)
-                : '__unknown'
+            // AmpCall is one "&name" token now — the method is its text past the &.
+            const method = sliceState.doc.sliceString(hit.node.from, hit.node.to).replace(/^&/, '')
             out.push({ kind: 'translated', text: this.Lang_amp_calls_in_text(line.text) })
             // record as a call in the word index
             const entry: any = { call: 1, method, from: docOff(hit.node.from), to: docOff(hit.node.to), line: n,
@@ -731,12 +729,12 @@
 
         if (hit?.name === 'ControlFlow') {
             const headNode  = hit.node.getChild('ControlFlowHead')
-            const titleNode = hit.node.getChild('Title')
             // keyword is "if", "for", "while", "until", "else if", "elsif", or "else"
             const keyword   = sliceState.doc.sliceString(headNode.from, headNode.to).trim()
-            let condition   = titleNode
-                ? sliceState.doc.sliceString(titleNode.from, titleNode.to).trim()
-                : ''
+            // The grammar marks only the head now — the condition is whatever the
+            // raw line carries after it (a "(" opener bails to verbatim just below,
+            // a pythonic bracket-less condition becomes our "(…) {" header).
+            let condition   = line.text.slice(headNode.to - localBase).trim()
             const before     = line.text.slice(0, hit.node.from - localBase)
             const cf_indent  = (line.text.match(/^(\s*)/) ?? ['', ''])[1].length
 
