@@ -95,7 +95,7 @@
     import { EditorState, StateField, StateEffect, Compartment, type Extension } from "@codemirror/state"
     import { Decoration, type DecorationSet, keymap, ViewUpdate, drawSelection } from "@codemirror/view"
     import { indentService, indentUnit } from "@codemirror/language";
-    import { foldEffect, unfoldEffect, unfoldAll } from "@codemirror/language";
+    import { foldEffect, unfoldEffect, unfoldAll, foldedRanges } from "@codemirror/language";
     import { defaultKeymap, indentWithTab } from "@codemirror/commands";
 
     import { lang, simpleLezerLinter, lang_for_path } from "$lib/O/lang/lang"
@@ -486,6 +486,7 @@
                   addGraftMark, removeGraftMark, clearAllGrafts,
                   setPointDecorations: setPointDecorationsEffect,
                   setPointFonts:       setPointFontsEffect,
+                  seek:                (v: EditorView, from: number, to: number) => fire_seek(v, from, to),
                   setPointFolds:       (v: EditorView, showing: any[], hiding: any[]) =>
                                            fire_point_folds(v, showing, hiding),
                   unfoldAllFolds:      (v: EditorView) => unfoldAll(v),
@@ -826,6 +827,34 @@
     //   unfoldEffect to set the per-range fold state.  dock.c.setPointFolds
     //   is a plain function so Lang_show_pmirrors can call it without importing CM.
 
+    // ── fire_seek — look at a span: unfold what hides it, select + centre it ───
+    //
+    //   Provided to the dock as dock.c.seek so Mapule.c.goto (and any other nav)
+    //   can navigate without importing CM.  At a high Q the target's body is folded
+    //   and an outer block may fold over it too|we open both in the same transaction
+    //   as the scroll, so the goto lands on real code, not a fold placeholder, and
+    //   the scroll measures against the unfolded geometry.
+    function fire_seek(v: EditorView, from: number, to: number) {
+        const doc = v.state.doc
+        if (from < 0 || to > doc.length) return
+        const line  = doc.lineAt(from)
+        const opens: Array<{ from: number, to: number }> = []
+        foldedRanges(v.state).between(0, doc.length, (f, t) => {
+            // a fold starting on the target's header line is the target's own body|
+            // a fold spanning the target is an ancestor hiding it — open either.
+            if ((f >= line.from && f <= line.to) || (f <= from && t >= from))
+                opens.push({ from: f, to: t })
+        })
+        v.dispatch({
+            selection: { anchor: from, head: to },
+            effects: [
+                ...opens.map(r => unfoldEffect.of(r)),
+                EditorView.scrollIntoView(from, { y: 'center' }),
+            ],
+        })
+        v.focus()
+    }
+
     // ── fire_point_folds — dispatch fold|unfold for the full Point set ────────
     //
     //   Called by Lang_show_pmirrors via dock.c.setPointFolds.
@@ -1068,6 +1097,7 @@
               addGraftMark, removeGraftMark, clearAllGrafts,
               setPointDecorations: setPointDecorationsEffect,
               setPointFonts:       setPointFontsEffect,
+              seek:                (v: EditorView, from: number, to: number) => fire_seek(v, from, to),
               setPointFolds:       (v: EditorView, showing: any[], hiding: any[]) =>
                                        fire_point_folds(v, showing, hiding),
               unfoldAllFolds:      (v: EditorView) => unfoldAll(v),

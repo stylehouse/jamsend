@@ -11,10 +11,14 @@
     //
     // ── Data ─────────────────────────────────────────────────────────────────
     //
-    //   Reads the compiled methods index that LangCompiling deposits at
-    //     w:Lang/{docks}/{dock:path}/{Compile:1}/{methods:1}  (via lang_dock).
-    //   %methods is a direct child of %Compile; %Output only appears for
-    //   hard-compiled (gen_path) docs.  Soft compiles have no %Output.
+    //   Reads the compiled index that LangCompiling deposits at
+    //     w:Lang/{docks}/{dock:path}/{Compile:1}/{Map:1}  (via lang_dock).
+    //   %Map is a direct child of %Compile; %Output only appears for hard-compiled
+    //   (gen_path) docs.  Soft compiles have no %Output.
+    //
+    //   The Points are lit from the generic overview layer, dock/%Navicade — one
+    //   Mapule per Map entry, each carrying is_pointedat.  pointedat() routes through
+    //   it so the membership rule stays Lang-side|the minimap only asks.
     //
     //   Points (Pmirrors) are owned by NaviCado — not rendered in the region body.
     //   The region/def body (lmm-strip) shows only region headers and def chips.
@@ -205,6 +209,41 @@
         for (const ch of text) if (ch === '\n') n++
         return n
     })
+
+    // ── Mapulen — the generic overview layer (dock/%Navicade) ──────────────────
+    //
+    //   Lang builds one Mapule per Map entry next to %Compile; here we read them
+    //   only to light up the Points.  Keyed by kind+key so a def chip and a region
+    //   band each find their own Mapule.  is_pointedat lives on the Mapule (it tests
+    //   the working-Point spec set), so a Point toggle re-derives here off LE.vers
+    //   without Lang rebuilding the Mapulen.
+    //   < the region/def layout above still reads %Map directly|when it reads Mapulen
+    //     too the minimap holds nothing Lang and this lookup is the whole data source.
+    let LE = $derived(languinio?.ob({ LE: 1 })[0] as TheC | undefined)
+
+    let pointed_specs = $derived.by(() => {
+        void LE?.vers
+        return ((H as any).Lang_pointed_specs?.(LE) as Set<string> | undefined) ?? new Set<string>()
+    })
+
+    let mapule_by_key = $derived.by(() => {
+        void lang_dock?.vers
+        const out = new Map<string, TheC>()
+        const navicade = lang_dock?.o({ Navicade: 1 })[0] as TheC | undefined
+        if (!navicade) return out
+        for (const m of navicade.o({ Mapule: 1 }) as TheC[])
+            out.set(`${m.sc.kind}\u0000${m.sc.key}`, m)
+        return out
+    })
+
+    // pointedat(kind, key) — does this row's Mapule test as a working Point.
+    //   Routes through Mapule.c.is_pointedat so the membership rule stays on the
+    //   Mapule, not duplicated in the UI.  Both inputs are reactive (pointed_specs
+    //   on LE.vers, mapule_by_key on the dock), so the styling tracks Point toggles.
+    function pointedat(kind: string, key: string): boolean {
+        const m = mapule_by_key.get(`${kind}\u0000${key}`)
+        return m ? !!(m.c.is_pointedat as (s: Set<string>) => boolean)(pointed_specs) : false
+    }
 
 
 
@@ -575,6 +614,7 @@
                     {#each top_level_defs.slice(0, half) as d (d.from)}
                         <button class="lmm-def-chip lmm-def-chip-top"
                                 class:lmm-def-chip-class={!d.class}
+                                class:lmm-pointedat={pointedat('def', d.method)}
                                 title="{d.method} (line {d.line})"
                                 onclick={() => go_to(d.from, d.to, d.method)}>{d.method}</button>
                     {/each}
@@ -583,6 +623,7 @@
                     {#each top_level_defs.slice(half) as d (d.from)}
                         <button class="lmm-def-chip lmm-def-chip-top"
                                 class:lmm-def-chip-class={!d.class}
+                                class:lmm-pointedat={pointedat('def', d.method)}
                                 title="{d.method} (line {d.line})"
                                 onclick={() => go_to(d.from, d.to, d.method)}>{d.method}</button>
                     {/each}
@@ -600,6 +641,7 @@
                             onclick={() => toggle_collapse(r)}
                             aria-label="Toggle band">{is_collapsed(r) ? '▸' : '▾'}</button>
                     <button class="lmm-label"
+                            class:lmm-pointedat={pointedat('region', r.label)}
                             onclick={() => go_to(r.from_char, r.from_char, r.label)}
                             title="{r.label} (line {r.from_line}–{r.to_line})">{r.label}</button>
                     <button class="lmm-fold"
@@ -613,6 +655,7 @@
                         {#each r.defs.slice(0, half) as d (d.from)}
                             <button class="lmm-def-chip"
                                     class:lmm-def-chip-class={!d.class}
+                                    class:lmm-pointedat={pointedat('def', d.method)}
                                     title="{d.method} (line {d.line})"
                                     onclick={() => go_to(d.from, d.to, d.method)}>{d.method}</button>
                         {/each}
@@ -621,6 +664,7 @@
                         {#each r.defs.slice(half) as d (d.from)}
                             <button class="lmm-def-chip"
                                     class:lmm-def-chip-class={!d.class}
+                                    class:lmm-pointedat={pointedat('def', d.method)}
                                     title="{d.method} (line {d.line})"
                                     onclick={() => go_to(d.from, d.to, d.method)}>{d.method}</button>
                         {/each}
@@ -776,4 +820,14 @@
     /* Top-level chips — warmer tint. */
     .lmm-def-chip-top       { color: rgba(220, 200, 140, 0.45); }
     .lmm-def-chip-top:hover { color: #e5c07b; }
+
+    /* Pointed-at — this entry is one of the working Points (Mapule.c.is_pointedat).
+       Bigger and yellow so the Points stand out of the overview at a glance.
+       Wins the colour over the chip-class|top tints above by following them. */
+    .lmm-pointedat {
+        color: #e8d24a !important;
+        font-size: 1.25em;
+        font-weight: 600;
+    }
+    .lmm-pointedat:hover { color: #f4e26a !important; }
 </style>

@@ -482,6 +482,9 @@
         dock.c.setPointFonts       = e.sc.setPointFonts
         dock.c.setPointFolds       = e.sc.setPointFolds
         dock.c.unfoldAllFolds      = e.sc.unfoldAllFolds
+        // seek(view, from, to) — unfold what hides the span, select + centre it.
+        // Mapule.c.goto rides this so navigation needs no CM imports outside Langui.
+        dock.c.seek                = e.sc.seek
 
         // Only activate if we have a real path — empty string means the dock
         // isn't known yet and Lies hasn't handed back the dock %Good yet.
@@ -1132,6 +1135,11 @@
         // the report (and the minimap) untouched.
         await H.Lang_Map_report(w, dock)
 
+        // build the generic overview layer next to %Compile — the minimap and the
+        // capsule strip navigate Mapulen, not %Map.  Rebuilt every compile so its
+        // goto offsets track the latest text.
+        H.Lang_build_mapules(w, dock)
+
         H.Langspinner(w, 'grafted', true)
         q.finish(req)
     },
@@ -1193,8 +1201,74 @@
         report.bump_version()
     },
 
+    // ── Lang_build_mapules — %Compile/%Map → dock/%Navicade (the Mapulen) ──────
+    //
+    //   The generic overview layer.  One Mapule per Map entry — a %kind,key,path,depth
+    //   tuple (path on .c, it's an array) plus off-snap closures — so a UI can render
+    //   and navigate the doc knowing nothing Lang: the minimap and the capsule strip
+    //   both read Mapulen, never %Map.  Sits next to %Compile on the dock and is
+    //   rebuilt each compile (offsets move every edit), so the closures it carries on
+    //   .c are never stale.
+    //     m.c.goto()              — look at this entry: unfold + select + centre, via
+    //                               dock.c.seek (Langui owns the CM dispatch).
+    //     m.c.is_pointedat(specs) — is this entry one of the working Points.  The UI
+    //                               passes the pointed-spec set it derived from LE.vers,
+    //                               so a Point change re-derives in the Mapulen without
+    //                               rebuilding them — the Mapulen stay put across Point
+    //                               toggles, only the derive re-runs.
+    //   < m.c.fold() and a thus-crunchy goto fold-policy ride here when item E lands.
+    Lang_build_mapules(w: TheC, dock: TheC) {
+        const Map_C    = dock.o({ Compile: 1 })[0]?.o({ Map: 1 })[0] as TheC | undefined
+        const navicade = dock.oai({ Navicade: 1 })
+        navicade.empty()
+        if (!Map_C) { navicade.bump_version(); return }
+
+        for (const e of Map_C.o({}) as TheC[]) {
+            const s    = e.sc
+            const kind = s.def ? 'def' : s.call ? 'call'
+                       : s.region ? 'region' : s.controlflow ? 'cf' : '?'
+            const key  = String(s.method ?? s.label ?? s.keyword ?? '')
+            if (!key) continue
+            // capture per-Mapule so the goto closure carries this entry's own span
+            const from = (s.from as number) ?? 0
+            const to   = (s.to   as number) ?? from
+            const m = navicade.i({
+                Mapule: 1, kind, key,
+                depth: (s.depth as number) ?? 0,
+                line:  (s.line  as number) ?? 0,
+                from, to,
+            })
+            m.c.path = (e.c.region_path as string[] | undefined) ?? []
+            m.c.goto = () => {
+                const view = dock.c.view
+                if (view && dock.c.seek) (dock.c.seek as Function)(view, from, to)
+            }
+            m.c.is_pointedat = (specs: Set<string>) => specs.has(key)
+        }
+        navicade.bump_version()
+    },
+
+    // ── Lang_pointed_specs — the set of working-Point specs ────────────────────
+    //
+    //   The specs of the Points in the current working checkout, the membership a
+    //   Mapule's is_pointedat tests against.  Same spec read as NaviCado's capsules
+    //   (method ?? label ?? Point) so the strip and the minimap agree on what's a
+    //   Point.  Derives from LE — the caller sensitises on LE.vers so it re-runs as
+    //   Points toggle.
+    Lang_pointed_specs(LE: TheC | undefined): Set<string> {
+        const specs = new Set<string>()
+        if (!LE || !LE.oa({ Seem: 'working' })) return specs
+        for (const clone of (this.LE_clones(LE) as TheC[])) {
+            const raw = clone.sc.method ?? clone.sc.label ?? clone.sc.Point
+            if (raw == null) continue
+            specs.add(String(raw))
+        }
+        return specs
+    },
+
     // Doc-from-src resolution lives in LiesEnd as Waft_src_doc_path — one body
     //   shared with Lies and LangGraft so the three can't drift.
+
 
 
 
