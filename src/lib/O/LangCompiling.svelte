@@ -734,10 +734,15 @@
             const headNode  = hit.node.getChild('ControlFlowHead')
             // keyword is "if", "for", "while", "until", "else if", "elsif", or "else"
             const keyword   = sliceState.doc.sliceString(headNode.from, headNode.to).trim()
-            // The grammar marks only the head now — the condition is whatever the
-            // raw line carries after it (a "(" opener bails to verbatim just below,
-            // a pythonic bracket-less condition becomes our "(…) {" header).
-            let condition   = line.text.slice(headNode.to - localBase).trim()
+            // The grammar marks only the head — the condition is whatever the raw
+            // line carries after it.  Peel a trailing // line-comment off first so
+            // it can't swallow our ") {"; it rides back onto the header after the
+            // brace.  A "(" opener or a trailing "{" bails to verbatim below|
+            // a pythonic bracket-less condition becomes our "(…) {" header.
+            const raw_condition = line.text.slice(headNode.to - localBase)
+            const { code: cf_cond_code, comment: cf_comment } = this.Lang_strip_line_comment(raw_condition)
+            let condition    = cf_cond_code.trim()
+            const cf_tail    = cf_comment ? ' ' + cf_comment : ''
             const before     = line.text.slice(0, hit.node.from - localBase)
             const cf_indent  = (line.text.match(/^(\s*)/) ?? ['', ''])[1].length
 
@@ -774,11 +779,11 @@
                 }
             }
 
-            // bail to verbatim — user wrote their own brackets, or condition
-            // contains a // comment (which would eat our closing ") {").
-            // We still convert &method,args and embedded IO atoms inside, but
-            // inject no braces of our own (the user manages those + any body).
-            if (!cap_prefix && (condition.startsWith('(') || condition.includes('//') || line.text.trimEnd().endsWith('{'))) {
+            // bail to verbatim — user wrote their own brackets.  We still convert
+            // &method,args and embedded IO atoms inside, but inject no braces of
+            // our own (the user manages those + any body).  The comment, still in
+            // line.text, rides through untouched after the substituted code.
+            if (!cap_prefix && (condition.startsWith('(') || condition.endsWith('{'))) {
                 const bc = /^(?:if|while|until|else if|elsif)$/.test(keyword)
                 out.push({ kind: 'raw', text: this.Lang_amp_calls_in_text(
                     this.Lang_io_in_text(line.text, { sthoParser: ctx.sthoParser, bool_ctx: bc })) })
@@ -809,15 +814,16 @@
                 this.Lang_io_in_text(condition, { sthoParser: ctx.sthoParser, bool_ctx: true }))
 
             // emit header — ") {" lands on this line, after the full condition.
-            // cap_prefix (if any) declares the captured var first, on this line.
+            // cap_prefix (if any) declares the captured var first, on this line|
+            // cf_tail re-appends a condition comment after the brace.
             let header: string
             if (keyword === 'else') {
-                header = `${before}} else {`
+                header = `${before}} else {${cf_tail}`
             } else if (keyword === 'else if' || keyword === 'elsif') {
-                header = `${before}${cap_prefix}} else if (${condition}) {`
+                header = `${before}${cap_prefix}} else if (${condition}) {${cf_tail}`
             } else {
                 // if, for, while, until
-                header = `${before}${cap_prefix}${keyword} (${condition}) {`
+                header = `${before}${cap_prefix}${keyword} (${condition}) {${cf_tail}`
             }
             out.push({ kind: 'translated', text: header })
 
@@ -865,7 +871,10 @@
                 ctx.words.push({ call: 1, method: funcName,
                                  from: docOff(hit.node.from), to: docOff(hit.node.to), line: n,
                                  via: ctx.current_method, region_path: [...ctx.region_stack] })
-                out.push({ kind: 'raw', text: line.text })
+                // the call may carry IO atoms in its args (consume(o %Foo, w)) —
+                // translate those, leave the rest of the call verbatim.
+                out.push({ kind: 'raw', text: this.Lang_amp_calls_in_text(
+                    this.Lang_io_in_text(line.text, { sthoParser: ctx.sthoParser })) })
                 return n + 1
             }
 
@@ -900,10 +909,11 @@
             const isDecl = nextIndent > decl_indent
 
             if (isDecl) {
-                // record definition with position info.  async:1 records whether
-                // the decl was written `async name(…)` — a future pass can use
-                // this to decide whether a matching &call / bare call needs await.
-                const isAsync = !!hit.node.getChild('AsyncKeyword')
+                // async:1 records whether the decl was written `async name(…)`
+                // (read from the line — the grammar leaves `async` as a bare Name).
+                // A future pass can use this to decide whether a matching &call /
+                // bare call needs await.
+                const isAsync = /^\s*async\s/.test(line.text)
                 ctx.words.push({ def: 1, method: funcName, from: docOff(hit.node.from), to: docOff(hit.node.to), line: n - 1,
                                  ...(isAsync ? { async: 1 } : {}),
                                  region_path: [...ctx.region_stack] })
@@ -995,6 +1005,22 @@
 
 //#endregion
 //#region IOing
+
+    // Split a trailing // line-comment off a stretch of code, string-aware so a
+    // // inside a quote stays put.  Returns the code (right-trimmed) and the
+    // comment (with its // and everything after)|comment is '' when there is none.
+    Lang_strip_line_comment(s: string): { code: string, comment: string } {
+        let str: string | null = null
+        for (let i = 0; i < s.length; i++) {
+            const c = s[i]
+            if (str) { if (c === str && s[i - 1] !== '\\') str = null; continue }
+            if (c === '"' || c === "'" || c === '`') { str = c; continue }
+            if (c === '/' && s[i + 1] === '/') {
+                return { code: s.slice(0, i).replace(/\s+$/, ''), comment: s.slice(i) }
+            }
+        }
+        return { code: s, comment: '' }
+    },
 
     // ── Lang_amp_calls_in_text ───────────────────────────────────────────────
     //

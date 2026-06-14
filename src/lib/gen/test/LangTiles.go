@@ -8,15 +8,15 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_test_LangTiles(): string { return '1ba5e278fac3bd78' },
+    Ghostmeta_Ghost_test_LangTiles(): string { return '513f1022eb46bd48' },
 
 // yeti etc!!!!!
 theCompiledStuff(A,w) {
     this._i_drill(w, [{sc: {hut: 1}}, {sc: {toot: 3}}])
-    this._o_drill(w, [{sc: {hut: 1}}, {sc: {toot$: 1}}])
-    let la = this._i_drill(w, [{sc: {hut: 1}}, {sc: {$toot: 1}}])
+    let toot = this._o_drill1(w, [{sc: {hut: 1}}, {sc: {toot: 1}}])
+    let la = this._i_drill(w, [{sc: {hut: 1}}, {sc: {toot}}])
     this._o_drill(w, [{sc: {hut: 1}}, {sc: {although: 1, they: 1, can: 1, be: 1, mixed: 1}, exactly: {although: true}}])
-    this._i_drill(w, [{sc: {$la: 1}}, {sc: {something: 1}}])
+    la.i({something: 1})
     this._i_drill(w, [{sc: {thung: 1}}, {sc: {wither: 1}}, {sc: {etc: 1}}])
     this._i_drill(w, [{sc: {yeses: 1}}, {sc: {because: 1, it: 2}}])
     this._i_drill(w, [{sc: {yeses: 1}}, {sc: {because: "five", it: 5}}])
@@ -24,8 +24,8 @@ theCompiledStuff(A,w) {
     A.i({prefixy: `i th/re/e = ${1 + 2}`})
     A.i({prefixy: "stuff", wither: "angles"})
 
-    A.o({wither$: 1})
-    A.o({yeses$: 1})
+    let wither = A.o({wither: 1})[0]
+    let yeses = A.o({yeses: 1})[0]
     // should be wither:1, and let vish = it (the C%prefixy,wither)
     //A o wither$:vish
 
@@ -41,7 +41,7 @@ theCompiledStuff(A,w) {
     // you can declare let variables like this:
     let its = 'ferv'
     // should be strings 'stuff', 'levels', 'its', but then sits='ferv'
-    this._i_drill(A, [{sc: {prefixy: "stuff"}}, {sc: {wither: "levels", its: "its", sits: "$its"}}])
+    this._i_drill(A, [{sc: {prefixy: "stuff"}}, {sc: {wither: "levels", its: "its", sits: its}}])
     
 
     this.nothinging(A,w,555)
@@ -63,7 +63,7 @@ theCompiledStuff(A,w) {
     [3]
     for (const because of this._o_iter(w, [{sc: {yeses: 1}}, {sc: {because: 1}}])) {
         let val = because.sc.it
-        this._i_drill(w, [{sc: {figiura: 1}}, {sc: {datch: "$val"}}])
+        this._i_drill(w, [{sc: {figiura: 1}}, {sc: {datch: val}}])
     }
     if (3) {
         w.i({know: 1})
@@ -76,34 +76,42 @@ theCompiledStuff(A,w) {
         w.i({helped: 1})
     }
     // ── capture-in-condition: declare + test on ONE line (source→compiled 1:1)
-    if w.oa({something$: 1})            // let something = w.o({something:1})[0]; if (something) {
+    //   if o something$  →  let something = w.o({something:1})[0]; if (something) {
+    if (o something$) {
         this._i_drill(w, [{sc: {got: 1}}, {sc: {it: 1}}])
-    let maybe = this.theCall(w     // let maybe = this.theCall(w); if (maybe) {); if (maybe) {
+    }
+    //   if $maybe = &theCall,w  →  let maybe = this.theCall(w); if (maybe) {
+    let maybe = this.theCall(w); if (maybe) {
         this._i_drill(w, [{sc: {used: 1}}, {sc: {maybe: 1}}])
     }
-    // ── boolean context: a bare obtain in a condition becomes oa (presence)
-    if w.oa({Ready: 1})                // if (w.oa({Ready:1})) {
+    // ── boolean context: a bare obtain in a condition becomes oa (presence).
+    //   a trailing // comment must survive, re-appended after the brace.
+    if (o %Ready) { // presence check
         this._i_drill(w, [{sc: {go: 1}}, {sc: {ahead: 1}}])
-    if (this._o_drill(w, [{sc: {this: 1}}, {sc: {Thing: 1}}])) w.i({inside: 1}) // user's own parens, inline body, still auto-oa
-    // ── IO atom embedded in host JS: arg list (stops at ", w") and chaining
-    this.consume(w.o({Foo: 1}), w)
-    w.i({A: 1}) w.o({B: 1})                  // two IOings, one line
+    }
+    // ── user's own parens bail to verbatim; a single-leg obtain still auto-oa
+    if (o %Thing) i inside
+    // ── IO atom embedded in a host-JS arg list (stops at ", w")
+    this.consume(o %Foo, w)
     w.i({yep: 1})
     this.severally(A,w,555)
 },
-nothinging():
+nothinging() {
     return true && true
-severally(A,w,thing):
+},
+severally(A,w,thing) {
     w.i({miles: 1, of: 1, words: 1})
     w.i({miles: 1, of: 1, wordings: 1})
     w.i({thingure: "thing", of: 1, wordings: 1})
-    w.i({thingure: "$thing", of: 1, wording: 1})
+    w.i({thingure: thing, of: 1, wording: 1})
     thing += 6
     H.laterally(A,w,thing)
 
-laterally(A,w,thing):
-    this._i_drill(w, [{sc: {thingure: "$thing", of: 1, word: "$thing"}}, {sc: {really: 1}}])
+},
+laterally(A,w,thing) {
+    this._i_drill(w, [{sc: {thingure: thing, of: 1, word: thing}}, {sc: {really: 1}}])
 
+},
 
     })
     })

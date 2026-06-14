@@ -12,7 +12,7 @@ Line { lineItem* newline }
 
 lineItem {
   Comment | LineComment |
-  ControlFlow | Sunpit | IOing | IOness | IOness2 | AmpCall | AmpAmp |
+  ControlFlow | Sunpit | IOing | IOness | IOness2 | MethodLike | AmpCall | AmpAmp |
   Name | Number | StringVal | TemplateVal | Regex |
   LParen | LBrack | RBrack | Comma | Colon | PuddleSigil | Sigil | Punct
 }
@@ -30,6 +30,7 @@ PeelKey   { Sigil? Name (!sigilsuffix Sigil)? }
 PeelVal   { Sigil? Name (!sigilsuffix Sigil)? | Number | StringVal | TemplateVal }
 
 AmpCall { AmpCallTok }
+MethodLike { Name !callparen LParen }
 
 @tokens {
   space { (" " | "\t")+ }
@@ -41,7 +42,7 @@ AmpCall { AmpCallTok }
   IOness  { ("i" | "o" | "oa" | "ob" | "o1" | "oa1" | "bo" | "boa" | "bo1" | "boa1" | "drop" | "empty") " " }
   IOness2 { ("oai" | "roai" | "moai" | "doai" | "r") " " }
 
-  Name   { (@asciiLetter | "_" | "$") (@asciiLetter | "_" | @digit | "$")* }
+  Name   { (@asciiLetter | "_") (@asciiLetter | "_" | @digit)* }
   Number { (@digit+ ("." @digit+)?) | ("0x" (@digit | $[a-fA-F])+) }
   StringVal   { "'" ("\\" _ | !['\\\n])* "'" | '"' ("\\" _ | !["\\\n])* '"' }
   TemplateVal { "`" ("\\" _ | ![`\\])* "`" }

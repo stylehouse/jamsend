@@ -63,17 +63,20 @@ theCompiledStuff(A,w) {
             && 3 > 2
         i helped
     // ── capture-in-condition: declare + test on ONE line (source→compiled 1:1)
-    if o something$            // let something = w.o({something:1})[0]; if (something) {
+    //   if o something$  →  let something = w.o({something:1})[0]; if (something) {
+    if o something$
         i got/it
-    if $maybe = &theCall,w     // let maybe = this.theCall(w); if (maybe) {
+    //   if $maybe = &theCall,w  →  let maybe = this.theCall(w); if (maybe) {
+    if $maybe = &theCall,w
         i used/maybe
-    // ── boolean context: a bare obtain in a condition becomes oa (presence)
-    if o %Ready                // if (w.oa({Ready:1})) {
+    // ── boolean context: a bare obtain in a condition becomes oa (presence).
+    //   a trailing // comment must survive, re-appended after the brace.
+    if o %Ready                // presence check
         i go/ahead
-    if (o this/Thing) i inside // user's own parens, inline body, still auto-oa
-    // ── IO atom embedded in host JS: arg list (stops at ", w") and chaining
+    // ── user's own parens bail to verbatim; a single-leg obtain still auto-oa
+    if (o %Thing) i inside
+    // ── IO atom embedded in a host-JS arg list (stops at ", w")
     this.consume(o %Foo, w)
-    i %A o %B                  // two IOings, one line
     i yep
     &severally,A,w,555
 },

@@ -411,14 +411,23 @@
     // Look at an entry through its Mapule (mapule.c.goto), recording the move so the
     // breadcrumb + back/forward keep working.  The de-facto head band has no Mapule|
     // its fallback seeks to the file top.
+    //   When DocCompost has armed dock.c.compost, a goto becomes a fly-in: a frozen
+    //   frame zooms toward the spot while the editor auto-crunches to the Q the
+    //   tap-log suggests for it, then lands.  Without compost it's the plain goto|
+    //   seek, so the minimap holds no Lang and works either way.
     function record_goto(m: TheC | undefined, fallback?: { from: number, label: string }) {
         begin_nav()
+        const compost = lang_dock?.c.compost as
+            { fly: (from: number) => void } | undefined
         if (m) {
-            push_nav((m.sc.from as number) ?? 0, (m.sc.to as number) ?? 0, String(m.sc.key))
-            ;(m.c.goto as (() => void) | undefined)?.()
+            const from = (m.sc.from as number) ?? 0
+            push_nav(from, (m.sc.to as number) ?? 0, String(m.sc.key))
+            if (compost) compost.fly(from)
+            else (m.c.goto as (() => void) | undefined)?.()
         } else if (fallback) {
             push_nav(fallback.from, fallback.from, fallback.label)
-            seek(fallback.from, fallback.from)
+            if (compost) compost.fly(fallback.from)
+            else seek(fallback.from, fallback.from)
         }
     }
 

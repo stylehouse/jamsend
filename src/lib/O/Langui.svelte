@@ -893,7 +893,9 @@
     //   sits "where the fold marker was" once you've opened a region|CM leaves nothing
     //   behind on unfold, so it's a widget we place ourselves.
     class RefoldWidget extends WidgetType {
-        constructor(readonly from: number, readonly to: number) { super() }
+        from: number
+        to:   number
+        constructor(from: number, to: number) { super(); this.from = from; this.to = to }
         eq(o: RefoldWidget) { return o.from === this.from && o.to === this.to }
         toDOM(view: EditorView) {
             const b = document.createElement('span')
