@@ -767,20 +767,22 @@
         provide: f => EditorView.decorations.from(f),
     })
 
-    // ── pointFontField — per-line font-size so surviving headers grow ─────────
+    // ── pointFontField — per-token font-size so surviving names grow ──────────
     //
     //   The Q climb shrinks the whole contentDOM as bodies fold away|this field
-    //   pushes back on the lines that survive: a folded method's name line and a
+    //   pushes back on the names that survive: a folded method's name and a
     //   //#region title get an absolute px font-size that overrides the inherited
     //   shrink, so the more we fold the more the overview's headings stand out.
-    //   Same full-replace-effect + remap shape as pointDecorationField, and LangPoint
-    //   drives it through dock.c.setPointFonts in the same dispatch as its folds, so
-    //   font and fold land in one transaction and never flicker apart.
+    //   Mark-decorations over the name SPAN only — not the whole line — so the
+    //   leading indent, an async|static keyword and the arg list stay body-size and
+    //   just the identifier swells.  Same full-replace-effect + remap shape as
+    //   pointDecorationField, and LangPoint drives it through dock.c.setPointFonts in
+    //   the same dispatch as its folds, so font and fold land in one transaction.
     //     px is absolute (not em) on purpose — em would inherit the body shrink and
     //     cancel the emphasis|absolute px is measured from the dock's cached base.
 
     const setPointFontsEffect = StateEffect.define<
-        Array<{ from: number, px: number }>
+        Array<{ from: number, to: number, px: number }>
     >()
 
     const pointFontField = StateField.define<DecorationSet>({
@@ -790,21 +792,21 @@
             for (const e of tr.effects) {
                 if (!e.is(setPointFontsEffect)) continue
                 const len   = tr.state.doc.length
-                const marks: ReturnType<typeof Decoration.line>[] = []
-                const lined = new Set<number>()
-                for (const { from, px } of e.value) {
-                    // Skip stale offsets rather than letting lineAt() throw — a throw
-                    // here fails the whole transaction, see pointDecorationField.
-                    if (typeof from !== 'number' || from < 0 || from > len) continue
-                    const line = tr.state.doc.lineAt(from)
-                    if (lined.has(line.from)) continue
-                    lined.add(line.from)
-                    const deco = Decoration.line({
+                const marks: ReturnType<typeof Decoration.mark>[] = []
+                const placed = new Set<number>()
+                for (const { from, to, px } of e.value) {
+                    // Skip stale|empty spans rather than letting the RangeSet throw —
+                    // a throw here fails the whole transaction, see pointDecorationField.
+                    if (typeof from !== 'number' || typeof to !== 'number') continue
+                    if (from < 0 || to > len || from >= to) continue
+                    if (placed.has(from)) continue
+                    placed.add(from)
+                    const deco = Decoration.mark({
                         attributes: { style: `font-size:${px.toFixed(2)}px` },
                     })
-                    marks.push(deco.range(line.from))
+                    marks.push(deco.range(from, to))
                 }
-                marks.sort((a, b) => a.from - b.from)
+                marks.sort((a, b) => a.from - b.from || a.to - b.to)
                 decos = Decoration.set(marks, true)
             }
             return decos

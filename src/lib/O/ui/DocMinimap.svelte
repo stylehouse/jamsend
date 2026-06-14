@@ -412,17 +412,41 @@
     //      least and decays.  All of it resolves through %Map by name, never by
     //      stored absolute offset — same crawl-to-method identity as %Points.
 
+    // Land on a target: open whatever fold hides it, select its name span, and
+    // centre it — all in one transaction so the scroll measures against the
+    // already-unfolded geometry instead of a fold placeholder.  At a high Q the
+    // target method's body is folded (its fold begins on the target's own header
+    // line) and an outer block may fold over it too|we open both so a goto reveals
+    // real code, not a crunched stub.  LangPoint still owns the overall Q set; this
+    // only lifts the folds in the way of this one target, and the next climb
+    // reconciles the rest.
+    function seek(from: number, to: number) {
+        if (!view) return
+        const doc  = view.state.doc
+        const line = doc.lineAt(from)
+        const opens: Array<{ from: number, to: number }> = []
+        foldedRanges(view.state).between(0, doc.length, (f, t) => {
+            // a fold starting on the target's header line is the target's own body|
+            // a fold spanning the target is an ancestor hiding it — open either.
+            if ((f >= line.from && f <= line.to) || (f <= from && t >= from))
+                opens.push({ from: f, to: t })
+        })
+        view.dispatch({
+            selection: { anchor: from, head: to },
+            effects: [
+                ...opens.map(r => unfoldEffect.of(r)),
+                EditorView.scrollIntoView(from, { y: 'center' }),
+            ],
+        })
+        view.focus()
+    }
+
     function go_to(from: number, to: number, label: string) {
         _navigating = true
         clearTimeout(_nav_timer)
         _nav_timer = setTimeout(() => { _navigating = false }, 200) as any
         console.log(`🗺 minimap go_to('${label}' [${from}..${to}])`)
-        if (!view) return
-        view.dispatch({
-            selection: { anchor: from, head: to },
-            effects:   EditorView.scrollIntoView(from, { y: 'center' }),
-        })
-        view.focus()
+        seek(from, to)
         const truncated = nav_hist.slice(0, nav_pos + 1)
         truncated.push({ path: active_path, from, to, label })
         nav_hist = truncated
@@ -433,15 +457,13 @@
         if (!can_back || !view) return
         nav_pos = nav_pos - 1
         const e = nav_hist[nav_pos]
-        view.dispatch({ selection: { anchor: e.from, head: e.to }, effects: EditorView.scrollIntoView(e.from, { y: 'center' }) })
-        view.focus()
+        seek(e.from, e.to)
     }
     function go_forward() {
         if (!can_forward || !view) return
         nav_pos = nav_pos + 1
         const e = nav_hist[nav_pos]
-        view.dispatch({ selection: { anchor: e.from, head: e.to }, effects: EditorView.scrollIntoView(e.from, { y: 'center' }) })
-        view.focus()
+        seek(e.from, e.to)
     }
 
     function toggle_collapse(region: Region) {

@@ -41,11 +41,12 @@
     //   reflows (line heights, scroll maths stay honest) — not a transform, which
     //   would lie about geometry and break scroll-sync.  base_font_px is read once
     //   and cached on dock.c so repeated climbs scale from the same origin.
-    //     The surviving headers move the opposite way: as bodies fold and shrink,
-    //     the method-name lines and //#region titles GROW, via a per-line absolute-px
-    //     decoration (dock.c.setPointFonts, the pointFontField in Langui).  Absolute
-    //     px so it overrides the inherited body shrink rather than scaling with it,
-    //     turning a deep crunch into a table-of-contents view.
+    //     The surviving names move the opposite way: as bodies fold and shrink, the
+    //     method names and //#region titles GROW, via a per-name absolute-px mark
+    //     decoration (dock.c.setPointFonts, the pointFontField in Langui) — only the
+    //     identifier swells, the indent and any async|static keyword and the args
+    //     stay body-size.  Absolute px so it overrides the inherited body shrink
+    //     rather than scaling with it, turning a deep crunch into a contents view.
     //   < a font Compartment in Langui would isolate the body scale in a theme
     //     extension instead of touching contentDOM.style|swap Lang_set_font_scale's
     //     body to dispatch fontCompartment.reconfigure when that's wired.
@@ -65,8 +66,9 @@
     import { onMount } from "svelte"
 
     // A foldable indent block: header line, the last body line, the header's
-    // leading-whitespace width, and structural nesting depth (0 = top level).
-    type Block = { header: number, end: number, indent: number, depth: number }
+    // leading-whitespace width, structural nesting depth (0 = top level), and
+    // whether the header is a //#region marker (those never fold — see below).
+    type Block = { header: number, end: number, indent: number, depth: number, is_region: boolean }
 
     let { M } = $props()
 
@@ -104,24 +106,35 @@
                     if (ind[k] < 0) { k++; continue }
                     if (ind[k] > ind[i]) { end = k; k++ } else break
                 }
-                blocks.push({ header: i, end, indent: ind[i], depth: 0 })
+                const is_region = /^\s*\/\/#region\b/.test(doc.line(i).text)
+                blocks.push({ header: i, end, indent: ind[i], depth: 0, is_region })
             }
         }
-        // depth = number of blocks that strictly contain this block's header span
+        // depth = blocks that strictly contain this block's header span.  A //#region
+        // marker is organizational, not structural nesting, so it doesn't count as a
+        // container — otherwise a method wrapped in a region would read one level
+        // deeper than the same method outside one, and the Q scale would jump a step
+        // just for being inside a region.
         for (const b of blocks) {
-            b.depth = blocks.filter(o => o !== b
+            b.depth = blocks.filter(o => o !== b && !o.is_region
                 && o.header < b.header && o.end >= b.end && o.indent < b.indent).length
         }
         return blocks
     },
 
-    // The OUTERMOST blocks crossing fold_depth — the set we actually fold, since
-    // folding a parent already hides its children (a child would only re-strand on
-    // the climb back down).  Shared by the fold-range builder and the header-font
-    // builder so both speak of exactly the same survivors.
+    // The OUTERMOST blocks crossing fold_depth that are also worth folding — the set
+    // we actually fold.  Folding a parent already hides its children (a child would
+    // only re-strand on the climb back down), a run shorter than MIN_FOLD_LINES isn't
+    // worth collapsing — a 3-line if saves nothing and just litters the overview with
+    // fold markers — and a //#region marker is navigational, never a fold target:
+    // folding it would swallow the method names and region structure the climb exists
+    // to surface.  Region blocks stay counted for depth (their methods nest under
+    // them) but are skipped here.  Shared by the fold-range and header-font builders.
     Lang_folded_blocks(blocks: Block[], fold_depth: number): Block[] {
         if (!isFinite(fold_depth)) return []
-        const crossing = blocks.filter(b => b.depth >= fold_depth)
+        const MIN_FOLD_LINES = 8   // header through last body line, inclusive
+        const crossing = blocks.filter(b => !b.is_region
+            && b.depth >= fold_depth && (b.end - b.header + 1) >= MIN_FOLD_LINES)
         return crossing.filter(b =>
             !crossing.some(a => a !== b && a.header < b.header && a.end >= b.end))
     },
@@ -186,25 +199,52 @@
         view.requestMeasure()
     },
 
-    // The header lines whose font grows against the body shrink: the name line of
-    // every folded block (method headers) and every //#region title.  Each carries
-    // an absolute px that overrides the inherited body shrink|region titles get the
-    // extra bump since they're the overview's backbone, and are pushed first so
-    // dedup keeps their larger size when a region line also heads a block.
-    // Empty at Q=1 — nothing's folded, so nothing earns emphasis.
+    // The name token on a header line — the slice the font field swells, so the
+    // indent, any leading async|static|const keyword and the arg list all stay at
+    // body size and only the identifier grows.  Two shapes:
+    //   //#region <title>  → the title slice
+    //   <indent><keywords><name>(…)  → the name identifier
+    // Control-flow heads (if|for|while|…) carry no name worth promoting, so they
+    // return null and stay body-size even when their block folds.  Offsets are
+    // absolute (lineFrom + the match index) for the mark range.
+    Lang_header_name_span(text: string, lineFrom: number): { from: number, to: number } | null {
+        const region = text.match(/^(\s*\/\/#region\s+)(\S.*?)\s*$/)
+        if (region) {
+            const from = lineFrom + region[1].length
+            return { from, to: from + region[2].length }
+        }
+        const m = text.match(
+            /^(\s*(?:(?:export|default|async|static|public|private|protected|readonly|get|set|function|const|let|var)\s+)*)([A-Za-z_$][\w$]*)/)
+        if (!m) return null
+        const name = m[2]
+        const control = new Set([
+            'if', 'for', 'while', 'switch', 'case', 'catch', 'do',
+            'else', 'try', 'return', 'with', 'throw',
+        ])
+        if (control.has(name)) return null
+        const from = lineFrom + m[1].length
+        return { from, to: from + name.length }
+    },
+
+    // The names whose font grows against the body shrink: the name of every folded
+    // block (method heads) and every //#region title.  Each carries an absolute px
+    // over its name span|region titles get the extra bump since they're the overview's
+    // backbone, and are pushed first so dedup keeps their larger size when a region
+    // line also heads a block.  Empty at Q=1 — nothing's folded, so nothing earns it.
     Lang_point_fonts(state: EditorState, blocks: Block[], Q: number, base: number)
-        : Array<{ from: number, px: number }> {
+        : Array<{ from: number, to: number, px: number }> {
         if (Q <= 1) return []
         const doc   = state.doc
         const hs    = this.Lang_Q_header_scale(Q)
         const rs    = +(hs * 1.18).toFixed(3)
-        const fonts: Array<{ from: number, px: number }> = []
+        const fonts: Array<{ from: number, to: number, px: number }> = []
         const seen  = new Set<number>()
         const push  = (lineNo: number, scale: number) => {
-            const ln = doc.line(lineNo)
-            if (seen.has(ln.from)) return
-            seen.add(ln.from)
-            fonts.push({ from: ln.from, px: base * scale })
+            const ln   = doc.line(lineNo)
+            const span = this.Lang_header_name_span(ln.text, ln.from)
+            if (!span || seen.has(span.from)) return
+            seen.add(span.from)
+            fonts.push({ from: span.from, to: span.to, px: base * scale })
         }
         for (let i = 1; i <= doc.lines; i++)
             if (/^\s*\/\/#region\b/.test(doc.line(i).text)) push(i, rs)
