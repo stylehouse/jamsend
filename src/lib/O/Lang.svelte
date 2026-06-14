@@ -473,10 +473,13 @@
         dock.c.clearAllGrafts     = e.sc.clearAllGrafts
         // Point decoration + fold handles — Lang_show_pmirrors dispatches through
         //   these.  setPointDecorations is the StateEffect for the glow|enlarge field;
-        //   setPointFolds is a function(view, showing, hiding) that dispatches
-        //   foldEffect|unfoldEffect for the unshowing + crunch set; unfoldAllFolds
-        //   lifts every fold (used when no Points govern the view, and on wipe).
+        //   setPointFonts is the StateEffect for the per-line font field LangPoint
+        //   uses to grow surviving headers as bodies fold; setPointFolds is a
+        //   function(view, showing, hiding) that dispatches foldEffect|unfoldEffect
+        //   for the unshowing + crunch set; unfoldAllFolds lifts every fold (used
+        //   when no Points govern the view, and on wipe).
         dock.c.setPointDecorations = e.sc.setPointDecorations
+        dock.c.setPointFonts       = e.sc.setPointFonts
         dock.c.setPointFolds       = e.sc.setPointFolds
         dock.c.unfoldAllFolds      = e.sc.unfoldAllFolds
 

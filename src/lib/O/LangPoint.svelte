@@ -16,8 +16,9 @@
     //
     //   Lang_apply_Q(dock, Q)
     //     Reconcile the editor to intensity Q (1–5): fold the target set (un-
-    //     folding our previous set first), and scale the font.  Idempotent toward
-    //     Q, so it serves both the climb up and the climb down.
+    //     folding our previous set first), shrink the body font, and grow the
+    //     surviving headers.  Idempotent toward Q, so it serves both the climb up
+    //     and the climb down.
     //       Q=1  everything open, full size
     //       Q=2  fold the deepest nests
     //       …    each step folds one shallower indent level + shrinks a notch
@@ -36,13 +37,18 @@
     //
     // ── Font scale ─────────────────────────────────────────────────────────────
     //
-    //   Scaling is real font-size on %contentDOM + requestMeasure, so CM reflows
-    //   (line heights, scroll maths stay honest) — not a transform, which would
-    //   lie about geometry and break scroll-sync.  base_font_px is read once and
-    //   cached on dock.c so repeated climbs scale from the same origin.
-    //   < a font Compartment in Langui would isolate this in a theme extension
-    //     instead of touching contentDOM.style|swap Lang_set_font_scale's body to
-    //     dispatch fontCompartment.reconfigure when that's wired.
+    //   The body scales by real font-size on %contentDOM + requestMeasure, so CM
+    //   reflows (line heights, scroll maths stay honest) — not a transform, which
+    //   would lie about geometry and break scroll-sync.  base_font_px is read once
+    //   and cached on dock.c so repeated climbs scale from the same origin.
+    //     The surviving headers move the opposite way: as bodies fold and shrink,
+    //     the method-name lines and //#region titles GROW, via a per-line absolute-px
+    //     decoration (dock.c.setPointFonts, the pointFontField in Langui).  Absolute
+    //     px so it overrides the inherited body shrink rather than scaling with it,
+    //     turning a deep crunch into a table-of-contents view.
+    //   < a font Compartment in Langui would isolate the body scale in a theme
+    //     extension instead of touching contentDOM.style|swap Lang_set_font_scale's
+    //     body to dispatch fontCompartment.reconfigure when that's wired.
     //
     // ── Fold animation ───────────────────────────────────────────────────────
     //
@@ -109,19 +115,24 @@
         return blocks
     },
 
-    // Char ranges to fold for a given fold_depth — the OUTERMOST blocks crossing
-    // the threshold (folding a parent already hides its children, so we never
-    // dispatch a fold inside an already-folded span).  Fold range is body-only:
+    // The OUTERMOST blocks crossing fold_depth — the set we actually fold, since
+    // folding a parent already hides its children (a child would only re-strand on
+    // the climb back down).  Shared by the fold-range builder and the header-font
+    // builder so both speak of exactly the same survivors.
+    Lang_folded_blocks(blocks: Block[], fold_depth: number): Block[] {
+        if (!isFinite(fold_depth)) return []
+        const crossing = blocks.filter(b => b.depth >= fold_depth)
+        return crossing.filter(b =>
+            !crossing.some(a => a !== b && a.header < b.header && a.end >= b.end))
+    },
+
+    // Char ranges to fold for a given fold_depth.  Fold range is body-only:
     // [end of the header line, end of the block] so the header stays readable.
     Lang_fold_targets(state: EditorState, blocks: Block[], fold_depth: number)
         : Array<{ from: number, to: number }> {
-        if (!isFinite(fold_depth)) return []
         const doc = state.doc
-        const crossing = blocks.filter(b => b.depth >= fold_depth)
-        const outermost = crossing.filter(b =>
-            !crossing.some(a => a !== b && a.header < b.header && a.end >= b.end))
         const ranges: Array<{ from: number, to: number }> = []
-        for (const b of outermost) {
+        for (const b of this.Lang_folded_blocks(blocks, fold_depth)) {
             const from = doc.line(b.header).to
             const to   = doc.line(Math.min(b.end, doc.lines)).to
             if (from < to) ranges.push({ from, to })
@@ -138,30 +149,75 @@
     Lang_Q_scale(Q: number): number {
         return +(1 - (Math.max(1, Math.min(5, Q)) - 1) * 0.09).toFixed(3)
     },
+    // Q → font scale for the SURVIVING headers, the inverse intent of Lang_Q_scale|
+    // as detail folds away the lines that remain (method names, region titles) grow
+    // so the overview reads as a table of contents.  1.0 at Q=1 (nothing folded, no
+    // emphasis) up to ~1.34 at Q=5.  Absolute, not relative to the body shrink — a
+    // header at Q=5 is ~1.34·base while bodies are ~0.64·base.
+    Lang_Q_header_scale(Q: number): number {
+        return +(1 + (Math.max(1, Math.min(5, Q)) - 1) * 0.085).toFixed(3)
+    },
 
 //#endregion
 //#region apply
 
-    // Set the editor font to base·scale and let CM remeasure so it reflows.
+    // The dock's unscaled font px, read once from the live computed style and
+    // cached so every climb scales from the same origin (re-reading after a climb
+    // would read the already-shrunk size and the base would creep).
+    Lang_base_font_px(dock: TheC): number {
+        let base = dock.c.base_font_px as number | undefined
+        if (base == null) {
+            const view = dock.c.view as EditorView | undefined
+            const content = view?.contentDOM as HTMLElement | undefined
+            const px = content ? parseFloat(getComputedStyle(content).fontSize) : NaN
+            base = isFinite(px) && px > 0 ? px : 13
+            dock.c.base_font_px = base
+        }
+        return base
+    },
+
+    // Set the editor body font to base·scale and let CM remeasure so it reflows.
     Lang_set_font_scale(dock: TheC, scale: number) {
         const view = dock.c.view as EditorView | undefined
         if (!view) return
         const content = view.contentDOM as HTMLElement
-        // cache the unscaled size once, from the live computed style
-        let base = dock.c.base_font_px as number | undefined
-        if (base == null) {
-            const px = parseFloat(getComputedStyle(content).fontSize)
-            base = isFinite(px) && px > 0 ? px : 13
-            dock.c.base_font_px = base
-        }
+        const base = this.Lang_base_font_px(dock)
         content.style.fontSize = `${(base * scale).toFixed(2)}px`
         view.requestMeasure()
     },
 
+    // The header lines whose font grows against the body shrink: the name line of
+    // every folded block (method headers) and every //#region title.  Each carries
+    // an absolute px that overrides the inherited body shrink|region titles get the
+    // extra bump since they're the overview's backbone, and are pushed first so
+    // dedup keeps their larger size when a region line also heads a block.
+    // Empty at Q=1 — nothing's folded, so nothing earns emphasis.
+    Lang_point_fonts(state: EditorState, blocks: Block[], Q: number, base: number)
+        : Array<{ from: number, px: number }> {
+        if (Q <= 1) return []
+        const doc   = state.doc
+        const hs    = this.Lang_Q_header_scale(Q)
+        const rs    = +(hs * 1.18).toFixed(3)
+        const fonts: Array<{ from: number, px: number }> = []
+        const seen  = new Set<number>()
+        const push  = (lineNo: number, scale: number) => {
+            const ln = doc.line(lineNo)
+            if (seen.has(ln.from)) return
+            seen.add(ln.from)
+            fonts.push({ from: ln.from, px: base * scale })
+        }
+        for (let i = 1; i <= doc.lines; i++)
+            if (/^\s*\/\/#region\b/.test(doc.line(i).text)) push(i, rs)
+        for (const b of this.Lang_folded_blocks(blocks, this.Lang_Q_fold_depth(Q)))
+            push(b.header, hs)
+        return fonts
+    },
+
     // Reconcile the editor to intensity Q: unfold whatever WE folded last time,
-    // fold the new target set, scale the font.  Tracking our own folds on
-    // dock.c.q_folds keeps the climb from fighting the user's manual region folds
-    // (we only ever unfold ranges we put down).
+    // fold the new target set, shrink the body font and grow the surviving headers
+    // (all in one transaction).  Tracking our own folds on dock.c.q_folds keeps the
+    // climb from fighting the user's manual region folds (we only ever unfold ranges
+    // we put down).
     Lang_apply_Q(dock: TheC, Q: number) {
         const view  = dock.c.view  as EditorView | undefined
         const state = dock.c.state as EditorState | undefined
@@ -169,12 +225,18 @@
 
         const blocks  = this.Lang_indent_blocks(state)
         const targets = this.Lang_fold_targets(state, blocks, this.Lang_Q_fold_depth(Q))
+        const base    = this.Lang_base_font_px(dock)
+        const fonts   = this.Lang_point_fonts(state, blocks, Q, base)
 
         const prev = (dock.c.q_folds as Array<{ from: number, to: number }>) ?? []
         const effects = [
             ...prev.map(r => unfoldEffect.of(r)),
             ...targets.map(r => foldEffect.of(r)),
         ]
+        // header fonts ride the same transaction as the folds so the name lines
+        // grow in lock-step with the bodies vanishing — no flicker between them.
+        const setFonts = dock.c.setPointFonts as { of: (v: any) => any } | undefined
+        if (setFonts) effects.push(setFonts.of(fonts))
         if (effects.length) view.dispatch({ effects })
 
         this.Lang_set_font_scale(dock, this.Lang_Q_scale(Q))

@@ -496,6 +496,15 @@
         q_factor = q
         H.i_elvisto('Lang/Lang', 'Lang_climb', { Q: q })
     }
+    // Native <select> doesn't wheel-change, and a wheel here would otherwise
+    // bubble to the strip's on_wheel and scroll the map|so we own the event:
+    // nudge Q one notch per detent (wheel-down climbs toward folded), clamp 1..5.
+    function q_wheel(e: WheelEvent) {
+        e.preventDefault()
+        e.stopPropagation()
+        const next = Math.max(1, Math.min(5, q_factor + (e.deltaY > 0 ? 1 : -1)))
+        if (next !== q_factor) set_q(next)
+    }
 </script>
 
 <!-- _hovering suppresses scroll sync while user reads the strip.
@@ -519,6 +528,7 @@
             <span class="lmm-title" title={nav_hist[nav_pos].label}>{nav_hist[nav_pos].label}</span>
         {/if}
         <select class="lmm-q" bind:value={q_factor} onchange={() => set_q(q_factor)}
+                onwheel={q_wheel}
                 title="fold intensity — Q1 open … Q5 only method names">
             {#each [1, 2, 3, 4, 5] as q}<option value={q}>Q{q}</option>{/each}
         </select>

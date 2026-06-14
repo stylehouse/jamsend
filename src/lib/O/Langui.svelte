@@ -485,6 +485,7 @@
                 { addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect,
                   addGraftMark, removeGraftMark, clearAllGrafts,
                   setPointDecorations: setPointDecorationsEffect,
+                  setPointFonts:       setPointFontsEffect,
                   setPointFolds:       (v: EditorView, showing: any[], hiding: any[]) =>
                                            fire_point_folds(v, showing, hiding),
                   unfoldAllFolds:      (v: EditorView) => unfoldAll(v),
@@ -766,6 +767,51 @@
         provide: f => EditorView.decorations.from(f),
     })
 
+    // ── pointFontField — per-line font-size so surviving headers grow ─────────
+    //
+    //   The Q climb shrinks the whole contentDOM as bodies fold away|this field
+    //   pushes back on the lines that survive: a folded method's name line and a
+    //   //#region title get an absolute px font-size that overrides the inherited
+    //   shrink, so the more we fold the more the overview's headings stand out.
+    //   Same full-replace-effect + remap shape as pointDecorationField, and LangPoint
+    //   drives it through dock.c.setPointFonts in the same dispatch as its folds, so
+    //   font and fold land in one transaction and never flicker apart.
+    //     px is absolute (not em) on purpose — em would inherit the body shrink and
+    //     cancel the emphasis|absolute px is measured from the dock's cached base.
+
+    const setPointFontsEffect = StateEffect.define<
+        Array<{ from: number, px: number }>
+    >()
+
+    const pointFontField = StateField.define<DecorationSet>({
+        create: () => Decoration.none,
+        update(decos, tr) {
+            decos = decos.map(tr.changes)
+            for (const e of tr.effects) {
+                if (!e.is(setPointFontsEffect)) continue
+                const len   = tr.state.doc.length
+                const marks: ReturnType<typeof Decoration.line>[] = []
+                const lined = new Set<number>()
+                for (const { from, px } of e.value) {
+                    // Skip stale offsets rather than letting lineAt() throw — a throw
+                    // here fails the whole transaction, see pointDecorationField.
+                    if (typeof from !== 'number' || from < 0 || from > len) continue
+                    const line = tr.state.doc.lineAt(from)
+                    if (lined.has(line.from)) continue
+                    lined.add(line.from)
+                    const deco = Decoration.line({
+                        attributes: { style: `font-size:${px.toFixed(2)}px` },
+                    })
+                    marks.push(deco.range(line.from))
+                }
+                marks.sort((a, b) => a.from - b.from)
+                decos = Decoration.set(marks, true)
+            }
+            return decos
+        },
+        provide: f => EditorView.decorations.from(f),
+    })
+
     // ── pointFoldsField — fold/unfold dispatch for unshowing Points ───────────
     //
     //   When Lang_show_pmirrors finds an unshowing Pmirror it puts it in the folds
@@ -955,6 +1001,7 @@
             bookmarkField,
             graftMarkField,
             pointDecorationField,
+            pointFontField,
             Keys,
             EditorView.updateListener.of((v: ViewUpdate) => {
                 const sel = v.state.selection.main
@@ -1018,6 +1065,7 @@
             { addBookmarkMark, removeBookmarkMark, clearAllBookmarks, saveEffect,
               addGraftMark, removeGraftMark, clearAllGrafts,
               setPointDecorations: setPointDecorationsEffect,
+              setPointFonts:       setPointFontsEffect,
               setPointFolds:       (v: EditorView, showing: any[], hiding: any[]) =>
                                        fire_point_folds(v, showing, hiding),
               unfoldAllFolds:      (v: EditorView) => unfoldAll(v),
