@@ -34,6 +34,7 @@
     import { EditorView } from "@codemirror/view"
     import { unfoldEffect, foldedRanges } from "@codemirror/language"
     import NaviCado from "$lib/O/ui/NaviCado.svelte"
+    import StemHive from "$lib/O/ui/StemHive.svelte"
 
     type Region = {
         label:     string
@@ -280,6 +281,36 @@
 
     let regions        = $derived(_structure.regions)
     let top_level_defs = $derived(_structure.top_level_defs)
+
+    // ── stem-hive feed ─────────────────────────────────────────────────────────
+    //   The hive is grouped by region — one StemHive per region (plus a top-level
+    //   group), so a region's methods cluster only against their own siblings, never
+    //   across the whole file.  A def Mapule flattens to a plain { id, label } the
+    //   StemHive can cluster without knowing anything Lang; id is the char offset
+    //   (unique, and what record_goto already keys navigation by).
+    //
+    //   The id→Mapule map, the pointed set and the heat-style map are built ONCE over
+    //   all defs and shared across every per-region hive (each looks up only its own
+    //   ids).  pointed and styles are derived apart from the items so a Point toggle
+    //   or a trail-heat tick re-lights buttons without re-clustering any hive.
+    let all_defs = $derived([...top_level_defs, ...regions.flatMap(r => r.defs)])
+    let hive_map = $derived(new Map(all_defs.map(d => [String(d.from), d.mapule] as const)))
+    let hive_pointed = $derived(
+        new Set(all_defs.filter(d => pointedat_m(d.mapule)).map(d => String(d.from)))
+    )
+    // heat box-shadow per id — re-derives on the trail's LE.vers (via heat_style →
+    // brights/warms) so the amber gutter on the hive tracks the strip in lock-step.
+    let hive_styles = $derived.by(() => {
+        const m = new Map<string, string>()
+        for (const d of all_defs) {
+            const s = heat_style(d.mapule)
+            if (s) m.set(String(d.from), s)
+        }
+        return m
+    })
+    // a region's (or the top-level's) defs → the plain items a StemHive clusters.
+    const items_of = (defs: Def[]) => defs.map(d => ({ id: String(d.from), label: d.method }))
+    function hive_pick(id: string) { record_goto(hive_map.get(id)) }
 
     function schedule_rebuild() {
         cancelAnimationFrame(_raf)
@@ -647,10 +678,57 @@
                 {/if}
             {/each}
         </div>
+
+        <!-- second representation: the same methods, factored by shared stems into a
+             button-hive so the word-overlap (the Venn-ness) reads at a glance.  Grouped
+             by region — one StemHive per region — so methods cluster only against their
+             own siblings.  Generic StemHive — fed plain {id,label}; navigation, the
+             working-Point amber and the trail-heat glow all route back through the
+             shared maps, so the hive behaves exactly like the strip above. -->
+        {#if all_defs.length}
+            <div class="lmm-hive-sep"></div>
+            <div class="lmm-hives">
+                {#if top_level_defs.length}
+                    <StemHive items={items_of(top_level_defs)}
+                              pointed={hive_pointed} styles={hive_styles} onpick={hive_pick} />
+                {/if}
+                {#each regions as r (r.from_line + ':' + r.label)}
+                    {#if r.defs.length}
+                        <div class="lmm-hive-region"
+                             style="padding-left: {r.depth * 5 + 2}px;
+                                    border-left: 3px solid {band_border(r.depth)};
+                                    background: {band_color(r.depth)};">{r.label}</div>
+                        <StemHive items={items_of(r.defs)}
+                                  pointed={hive_pointed} styles={hive_styles} onpick={hive_pick} />
+                    {/if}
+                {/each}
+            </div>
+        {/if}
     </div>
 </div>
 
 <style>
+    /* divider between the band/chip strip and the stem-hives below it */
+    .lmm-hive-sep {
+        height: 1px;
+        margin: 8px 6px 2px;
+        background: linear-gradient(90deg, transparent, hsla(210, 40%, 60%, 0.4), transparent);
+    }
+    .lmm-hives {
+        display: flex;
+        flex-direction: column;
+    }
+    /* per-region heading above its hive — same band tint as the strip's bands so the
+       grouping reads as the same regions, just factored. */
+    .lmm-hive-region {
+        font-family: 'Berkeley Mono', 'Fira Code', ui-monospace, monospace;
+        font-size: 9px;
+        font-weight: 600;
+        color: #c0d0e0;
+        padding: 2px 4px;
+        margin-top: 4px;
+    }
+
     .lmm {
         position: absolute; top: 0; right: 0; bottom: 0;
         /* anchored to lte-mm-host (position:absolute), which is the containing block */
