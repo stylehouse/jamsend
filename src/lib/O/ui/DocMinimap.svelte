@@ -107,6 +107,7 @@
     // ── scroll sync ───────────────────────────────────────────────────────────
     let strip_el: HTMLDivElement | undefined = $state()
     let scroll_container_el: HTMLDivElement | undefined = $state()
+    let lmm_el: HTMLDivElement | undefined = $state()   // puck offset parent (the whole minimap)
 
     function sync_scroll() {
         if (_hovering || _navigating) return
@@ -252,7 +253,9 @@
         void undertaking?.vers
         return ((H as any).Lang_trail_warm?.() as Map<string, number> | undefined) ?? new Map<string, number>()
     })
-    function heat_style(m: TheC | undefined): string {
+    //   wide=true is the hive variant: a soft halo a touch WIDER than the button
+    //   (positive spread, centred) instead of the strip's right-side gutter streak.
+    function heat_style(m: TheC | undefined, wide = false): string {
         const b = m ? ((m.c.bright as ((br: Map<string, number>) => number) | undefined)?.(brights) ?? 0) : 0
         if (b <= 0.02) return ''
         // hue by deliberateness: amber where attention only grazed, warming toward
@@ -260,6 +263,12 @@
         const w  = m ? ((m.c.warm as ((wr: Map<string, number>) => number) | undefined)?.(warms) ?? 0) : 0
         const gg = Math.round(190 - 70 * w)
         const bb = Math.round(80 + 120 * w)
+        if (wide) {
+            // centred halo that spreads a couple px beyond the button on every side
+            const blur   = (b * 10 + 3).toFixed(1)
+            const spread = (b * 2 + 1.5).toFixed(1)
+            return `box-shadow: 0 0 ${blur}px ${spread}px rgba(255,${gg},${bb},${(b * 0.85).toFixed(2)}); border-radius: 4px;`
+        }
         // glow only on the RIGHT of each thing: offset the shadow right and flatten it
         //   vertically (negative spread) so it streaks off the right edge instead of
         //   haloing the whole chip — a heat gutter down the strip's right side.
@@ -303,7 +312,7 @@
     let hive_styles = $derived.by(() => {
         const m = new Map<string, string>()
         for (const d of all_defs) {
-            const s = heat_style(d.mapule)
+            const s = heat_style(d.mapule, true)   // wide halo for the hive
             if (s) m.set(String(d.from), s)
         }
         return m
@@ -558,37 +567,82 @@
         if (next !== q_factor) set_q(next)
     }
 
-    // Viewport indicator — a glowing block on the minimap's left edge tracking what's
-    //  in the CM viewport.  Measured in px relative to .lmm; the block lives OUTSIDE the
-    //  scroll container so it doesn't scroll with the strip — its top is the scroller's
-    //  offsetTop plus the CM scroll fraction across the scroller's visible height.
+    // Viewport indicator — a glowing margin puck sitting EXACTLY over the method
+    //  buttons whose header line is currently on screen, plus the key of the region the
+    //  viewport top is in (for the zoom-up).  The old scroll-fraction puck can't align
+    //  with the hive (its vertical layout no longer maps 1:1 to source lines), so we
+    //  read the editor's visible line range, find the on-screen methods, and span the
+    //  puck across their measured DOM rects (clamped to the scroll window).  The puck
+    //  lives OUTSIDE the scroll container, so its top is measured relative to .lmm.
     let vp = $state({ top: 0, height: 0, has: false })
+    let current_region_key = $state('')
     $effect(() => {
-        const v  = view
-        const sc = scroll_container_el
-        if (!v || !sc) { vp = { top: 0, height: 0, has: false }; return }
+        const v     = view
+        const sc    = scroll_container_el
+        const strip = strip_el
+        const lmm   = lmm_el
+        void _structure   // re-measure once the hive rebuilds
+        if (!v || !sc || !strip || !lmm) { vp = { top: 0, height: 0, has: false }; return }
         const sd = v.scrollDOM
-        const update = () => {
-            const sh = sd.scrollHeight, ch = sd.clientHeight
-            if (sh <= 0 || ch >= sh - 1) { vp = { top: 0, height: 0, has: false }; return }
-            const region = sc.clientHeight
-            vp = {
-                top:    sc.offsetTop + (sd.scrollTop / sh) * region,
-                height: Math.max(10, (ch / sh) * region),
-                has:    true,
+        let raf = 0
+        const measure = () => {
+            raf = 0
+            // precise visible char range from the editor's scroll geometry
+            let fromPos: number, toPos: number
+            try {
+                fromPos = v.lineBlockAtHeight(sd.scrollTop).from
+                toPos   = v.lineBlockAtHeight(sd.scrollTop + sd.clientHeight).to
+            } catch { vp = { top: 0, height: 0, has: false }; return }
+
+            // current region — deepest whose line span holds the top visible line
+            const doc     = v.state.doc
+            const topLine = doc.lineAt(Math.max(0, Math.min(fromPos, doc.length))).number
+            let curKey = '', curDepth = -1
+            for (const r of regions) {
+                if (topLine >= r.from_line && topLine <= r.to_line && r.depth >= curDepth) {
+                    curKey = `${r.from_line}:${r.label}`; curDepth = r.depth
+                }
             }
+            if (curKey !== current_region_key) current_region_key = curKey
+
+            // puck — span the DOM rects of the methods whose header is on screen
+            const lmmTop = lmm.getBoundingClientRect().top
+            const scRect = sc.getBoundingClientRect()
+            let top = Infinity, bot = -Infinity
+            for (const d of all_defs) {
+                if (d.from < fromPos || d.from > toPos) continue
+                const el = strip.querySelector(`[data-mid="${d.from}"]`) as HTMLElement | null
+                if (!el) continue
+                const r = el.getBoundingClientRect()
+                if (r.top    < top) top = r.top
+                if (r.bottom > bot) bot = r.bottom
+            }
+            if (!isFinite(top)) { vp = { top: 0, height: 0, has: false }; return }
+            // clamp to the visible scroll window so the puck never floats off the strip
+            const visTop = Math.max(top, scRect.top)
+            const visBot = Math.min(bot, scRect.bottom)
+            if (visBot <= visTop) { vp = { top: 0, height: 0, has: false }; return }
+            vp = { top: visTop - lmmTop, height: visBot - visTop, has: true }
         }
-        update()
-        sd.addEventListener('scroll', update, { passive: true })
-        const ro = new ResizeObserver(update)
-        ro.observe(sd); ro.observe(sc)
-        return () => { sd.removeEventListener('scroll', update); ro.disconnect() }
+        const schedule = () => { if (!raf) raf = requestAnimationFrame(measure) }
+        schedule()
+        sd.addEventListener('scroll', schedule, { passive: true })
+        sc.addEventListener('scroll', schedule, { passive: true })
+        const ro = new ResizeObserver(schedule)
+        ro.observe(sd); ro.observe(sc); ro.observe(strip)
+        return () => {
+            if (raf) cancelAnimationFrame(raf)
+            sd.removeEventListener('scroll', schedule)
+            sc.removeEventListener('scroll', schedule)
+            ro.disconnect()
+        }
     })
 </script>
 
 <!-- _hovering suppresses scroll sync while user reads the strip.
      mouseleave also clears reset_confirm so it doesn't linger. -->
 <div class="lmm"
+     bind:this={lmm_el}
      style="bottom: {_bottom_inset}px"
      onmouseenter={() => _hovering = true}
      onmouseleave={() => { _hovering = false }}
@@ -627,107 +681,51 @@
 
     <div class="lmm-scroll" bind:this={scroll_container_el}>
         <div class="lmm-strip" bind:this={strip_el}>
-            <!-- Single column: region headers span the strip, def chips pile under
-                 them in source order.  Points are NOT rendered here — they live only
-                 in the capsule strip above. -->
+            <!-- Region+methods overview.  Each region is a band header (collapse / goto /
+                 fold-in-editor); its methods show beneath as a stem-hive, factored by the
+                 words they share.  Top-level defs get a hive with no band.  Navigation,
+                 the working-Point amber and the trail-heat glow all route through the
+                 shared maps.  Points live only in the capsule strip above. -->
 
             {#if top_level_defs.length}
-                <div class="lmm-def-col">
-                    {#each top_level_defs as d (d.from)}
-                        <button class="lmm-def-chip lmm-def-chip-top"
-                                class:lmm-def-chip-class={!d.class}
-                                class:lmm-pointedat={pointedat_m(d.mapule)}
-                                style={heat_style(d.mapule)}
-                                title="{d.method} (line {d.line})"
-                                onclick={() => record_goto(d.mapule)}>{d.method}</button>
-                    {/each}
-                </div>
+                <StemHive items={items_of(top_level_defs)}
+                          pointed={hive_pointed} styles={hive_styles} onpick={hive_pick} />
             {/if}
 
             {#each regions as r (r.from_line + ':' + r.label)}
-                <div class="lmm-col-span lmm-row"
-                     style="padding-left: {r.depth * 5 + 4}px;
-                            font-size: {Math.max(11 - r.depth, 8)}px;
-                            opacity: {Math.max(1 - r.depth * 0.12, 0.6)};
-                            background: {band_color(r.depth)};
-                            border-left: 3px solid {band_border(r.depth)};">
-                    <button class="lmm-chev"
-                            onclick={() => toggle_collapse(r)}
-                            aria-label="Toggle band">{is_collapsed(r) ? '▸' : '▾'}</button>
-                    <button class="lmm-label"
-                            class:lmm-pointedat={pointedat_m(r.mapule)}
-                            style={heat_style(r.mapule)}
-                            onclick={() => record_goto(r.mapule, { from: r.from_char, label: r.label })}
-                            title="{r.label} (line {r.from_line}–{r.to_line})">{r.label}</button>
-                    <button class="lmm-fold"
-                            onclick={() => toggle_fold(r)}
-                            title="Fold/unfold in editor">f</button>
-                </div>
-
-                {#if !is_collapsed(r) && r.defs.length}
-                    <div class="lmm-def-col" style="padding-left: {r.depth * 5 + 4}px;">
-                        {#each r.defs as d (d.from)}
-                            <button class="lmm-def-chip"
-                                    class:lmm-def-chip-class={!d.class}
-                                    class:lmm-pointedat={pointedat_m(d.mapule)}
-                                    style={heat_style(d.mapule)}
-                                    title="{d.method} (line {d.line})"
-                                    onclick={() => record_goto(d.mapule)}>{d.method}</button>
-                        {/each}
+                <!-- the region we're viewing zooms up, like the Waft Ting chips -->
+                <div class="lmm-region-group"
+                     class:lmm-region-current={current_region_key === (r.from_line + ':' + r.label)}>
+                    <div class="lmm-col-span lmm-row"
+                         style="padding-left: {r.depth * 5 + 4}px;
+                                font-size: {Math.max(11 - r.depth, 8)}px;
+                                opacity: {Math.max(1 - r.depth * 0.12, 0.6)};
+                                background: {band_color(r.depth)};
+                                border-left: 3px solid {band_border(r.depth)};">
+                        <button class="lmm-chev"
+                                onclick={() => toggle_collapse(r)}
+                                aria-label="Toggle band">{is_collapsed(r) ? '▸' : '▾'}</button>
+                        <button class="lmm-label"
+                                class:lmm-pointedat={pointedat_m(r.mapule)}
+                                style={heat_style(r.mapule)}
+                                onclick={() => record_goto(r.mapule, { from: r.from_char, label: r.label })}
+                                title="{r.label} (line {r.from_line}–{r.to_line})">{r.label}</button>
+                        <button class="lmm-fold"
+                                onclick={() => toggle_fold(r)}
+                                title="Fold/unfold in editor">f</button>
                     </div>
-                {/if}
-            {/each}
-        </div>
 
-        <!-- second representation: the same methods, factored by shared stems into a
-             button-hive so the word-overlap (the Venn-ness) reads at a glance.  Grouped
-             by region — one StemHive per region — so methods cluster only against their
-             own siblings.  Generic StemHive — fed plain {id,label}; navigation, the
-             working-Point amber and the trail-heat glow all route back through the
-             shared maps, so the hive behaves exactly like the strip above. -->
-        {#if all_defs.length}
-            <div class="lmm-hive-sep"></div>
-            <div class="lmm-hives">
-                {#if top_level_defs.length}
-                    <StemHive items={items_of(top_level_defs)}
-                              pointed={hive_pointed} styles={hive_styles} onpick={hive_pick} />
-                {/if}
-                {#each regions as r (r.from_line + ':' + r.label)}
-                    {#if r.defs.length}
-                        <div class="lmm-hive-region"
-                             style="padding-left: {r.depth * 5 + 2}px;
-                                    border-left: 3px solid {band_border(r.depth)};
-                                    background: {band_color(r.depth)};">{r.label}</div>
+                    {#if !is_collapsed(r) && r.defs.length}
                         <StemHive items={items_of(r.defs)}
                                   pointed={hive_pointed} styles={hive_styles} onpick={hive_pick} />
                     {/if}
-                {/each}
-            </div>
-        {/if}
+                </div>
+            {/each}
+        </div>
     </div>
 </div>
 
 <style>
-    /* divider between the band/chip strip and the stem-hives below it */
-    .lmm-hive-sep {
-        height: 1px;
-        margin: 8px 6px 2px;
-        background: linear-gradient(90deg, transparent, hsla(210, 40%, 60%, 0.4), transparent);
-    }
-    .lmm-hives {
-        display: flex;
-        flex-direction: column;
-    }
-    /* per-region heading above its hive — same band tint as the strip's bands so the
-       grouping reads as the same regions, just factored. */
-    .lmm-hive-region {
-        font-family: 'Berkeley Mono', 'Fira Code', ui-monospace, monospace;
-        font-size: 9px;
-        font-weight: 600;
-        color: #c0d0e0;
-        padding: 2px 4px;
-        margin-top: 4px;
-    }
 
     .lmm {
         position: absolute; top: 0; right: 0; bottom: 0;
@@ -803,9 +801,8 @@
 
     /* Strip:
          .lmm-scroll     — overflow:hidden scroll container (invisible bar)
-         .lmm-strip      — two-column grid; all children are direct grid items
-         .lmm-col-span   — full-width row (region headers)
-         .lmm-def-col    — one half of a method pair */
+         .lmm-strip      — single column; region band headers + per-region stem-hives
+         .lmm-col-span   — full-width row (region headers) */
     .lmm-scroll {
         flex: 1;
         overflow: hidden;        /* bar invisible; JS drives scrollTop */
@@ -828,12 +825,24 @@
     }
     .lmm-col-span { grid-column: 1 / -1; }
 
+    /* the region the viewport is in zooms up, like the Waft Ting chips on hover —
+       grows from its left edge so it stays anchored, riding above its neighbours */
+    .lmm-region-group {
+        transform-origin: left center;
+        transition: transform 0.12s ease;
+    }
+    .lmm-region-current {
+        position: relative;
+        z-index: 6;
+        transform: scale(1.07);
+    }
+
     .lmm-stripe { display: none; }
     .lmm-region-block { display: contents; }
 
     .lmm-row {
         display: flex; align-items: center; gap: 2px;
-        height: 16px;
+        height: 12px;
         background: rgba(0, 0, 0, 0.55);
         border-top: 1px solid rgba(120, 140, 170, 0.25);
         padding-right: 4px;
@@ -856,36 +865,8 @@
     }
     .lmm-label:hover { color: #fff; }
 
-    .lmm-def-col {
-        display: flex; flex-direction: column;
-        min-width: 0;
-        background: rgba(0, 0, 0, 0.18);
-        padding: 1px 2px 2px;
-    }
-
-    .lmm-def-pile { display: contents; }
-
-    .lmm-def-chip {
-        background: none; border: none; cursor: pointer;
-        font-size: 8px; color: rgba(180, 200, 220, 0.45);
-        padding: 0; white-space: nowrap;
-        overflow: hidden; text-overflow: ellipsis;
-        font-family: inherit; line-height: 1.4; text-align: left;
-        transition: color 0.1s;
-    }
-    .lmm-def-chip:hover { color: #c0d0e0; }
-
-    /* Class name def (no %class on sc — it IS the class): bold, brighter. */
-    .lmm-def-chip-class       { color: rgba(220, 200, 255, 0.7); font-weight: bold; }
-    .lmm-def-chip-class:hover { color: #e0d0ff; }
-
-    /* Top-level chips — warmer tint. */
-    .lmm-def-chip-top       { color: rgba(220, 200, 140, 0.45); }
-    .lmm-def-chip-top:hover { color: #e5c07b; }
-
-    /* Pointed-at — this entry is one of the working Points (Mapule.c.is_pointedat).
-       Bigger and yellow so the Points stand out of the overview at a glance.
-       Wins the colour over the chip-class|top tints above by following them. */
+    /* Pointed-at — this region label is one of the working Points (Mapule.c.is_pointedat).
+       Bigger and yellow so the Points stand out of the overview at a glance. */
     .lmm-pointedat {
         color: #e8d24a !important;
         font-size: 1.25em;

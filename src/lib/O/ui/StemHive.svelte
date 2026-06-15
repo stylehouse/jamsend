@@ -242,6 +242,7 @@
 {#snippet leaf(m: Member, text: string, cls: string)}
     <button class="hive-btn {cls}"
             class:hive-pointed={pointed.has(m.id)}
+            data-mid={m.id}
             style={styles.get(m.id) ?? ''}
             title={m.label}
             onclick={() => pick(m.id)}>{text}</button>
@@ -253,6 +254,7 @@
     {#if bm}
         <button class="hive-anchor hive-anchor-real"
                 class:hive-pointed={pointed.has(bm.id)}
+                data-mid={bm.id}
                 style={styles.get(bm.id) ?? ''}
                 title={bm.label}
                 onclick={() => pick(bm.id)}>{c.anchor}</button>
@@ -323,8 +325,8 @@
         display: flex;
         flex-direction: column;
         align-items: flex-start;          /* cells size to their content, not full width */
-        gap: 2px;
-        padding: 3px 4px 5px;
+        gap: 1px;
+        padding: 1px 4px 4px;
         font-family: 'Berkeley Mono', 'Fira Code', ui-monospace, monospace;
         font-size: 11px;                  /* slightly bigger than the strip's 8px chips */
         line-height: 1.1;                 /* tight — vertical space is at a premium */
@@ -348,7 +350,8 @@
         min-width: 184px;
         border: 1px solid hsla(210, 45%, 58%, 0.30);
         border-radius: 9px;
-        padding: 0 8px 1px 6px;
+        padding: 0 8px 0 6px;
+        margin-right: 10px;   /* mirror the left breathing room; also room for the heat halo */
     }
     .hive-row { display: flex; gap: 6px; }
     .hive-col { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; }
