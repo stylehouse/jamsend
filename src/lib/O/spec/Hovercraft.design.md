@@ -21,12 +21,12 @@ Good naming earns its keep at runtime:
 Most decisions in here are a position on one axis: how transient a node is.
 
     stable ─────────────────────────────────── transient
-    H          A           w        r|req
+    H          A           w        r           req
 
 A slope into the minute and mundane. One big unfoldment, with some shunting when
 White hole permanence to black hole vanishing mess.
 
-It's a bit under construction, its name|key %req may become simply %r
+It's a bit under construction, its name|key %req may become simply %raaaaaaa
 
 The point of the axis is that it is one axis, not many.
  Knowing how transient a node is settles several of its treatments at once —

@@ -541,22 +541,15 @@
             await this.w_noproblemo(req, { log: 1 })  // drop %log now it's in the snap
         }})
     },
- 
-    // < doesn't need to be this complicated since all req and %req
-    // Travel through w/** of reqy stuff by following /%reqcons leads.
-    //   each_fn(req) is called for every req found at any depth.
+
+    // Travel through w/req** — every %req child, recursing req/*req.  Scans %req
+    //   directly (not via reqcons), so one pass covers both the old reqy reqs and
+    //   the new self-contained ones at the same time.  each_fn(req) per req.
     async reqy_recurse(w: TheC, q: { each_fn?: (req: TheC) => Promise<void> } = {}) {
         const visit = async (host: TheC) => {
-            for (const reqcons of host.o({ reqcons: 1 }) as TheC[]) {
-                for (const reqcon of reqcons.o({ reqcon: 1 }) as TheC[]) {
-                    const k = reqcon.sc.reqcon as string
-                    if (!k) continue
-                    for (const req of host.o({ [k]: 1 }) as TheC[]) {
-                        await q.each_fn?.(req)
-                        // recurse into req/*req if it has its own reqcons
-                        if (req.oa({ reqcons: 1 })) await visit(req)
-                    }
-                }
+            for (const req of host.o({ req: 1 }) as TheC[]) {
+                await q.each_fn?.(req)
+                await visit(req)   // recurse req/*req
             }
         }
         await visit(w)
@@ -621,10 +614,11 @@
     },
 
     // Worker-side publisher. Call at end of think to gather and publish ttilts.
-    //   For each w with has_req_ttlilt set, walks all req** via their reqcons,
-    //   recursing into nested req/reqcons/req**. Gathers active ttilts and
-    //   hygiene-drops stale ones from finished reqs. Publishes per-w-scoped to
-    //   /Run via replace() so each w only churns its own slice.
+    //   For each w with has_req_ttlilt set, scans its %req children directly,
+    //   recursing req/*req (so both old reqy and new self-contained reqs are
+    //   covered). Gathers active ttilts and hygiene-drops stale ones from
+    //   finished reqs. Publishes per-w-scoped to /Run via replace() so each w
+    //   only churns its own slice.
     async i_Story_o_req_ttlilt(AwN: Array<{ A: TheC, w: TheC }>) {
         const H = this as House
         const Run = H
@@ -639,34 +633,28 @@
 
             const gathered: Array<{ until_ts: number, t: TheC, req: TheC }> = []
 
+            // scan %req children directly (not via reqcons), recursing req/*req,
+            //  so one pass gathers ttlilts from both old reqy reqs and new
+            //  self-contained ones.
             const visit = (host: TheC) => {
-                for (const reqcons of host.o({ reqcons: 1 }) as TheC[]) {
-                    for (const reqcon of reqcons.o({ reqcon: 1 }) as TheC[]) {
-                        const k = reqcon.sc.reqcon as string
-                        if (!k) continue
-                        for (const req of host.o({ [k]: 1 }) as TheC[]) {
-                            if (req.sc.finished) {
-                                // cleanup: drop ttilts from finished reqs
-                                for (const t of req.o({ ttlilt: 1 }) as TheC[]) req.drop(t)
-                                continue
-                            }
-                            for (const t of req.o({ ttlilt: 1 }) as TheC[]) {
-                                if (t.sc.timed_out) continue   // already marked; nothing to gather
-                                const until_ts = t.sc.until_ts as number
-                                const ms_left = Math.round((until_ts - now) * 1000)
-                                if (until_ts > now) {
-                                    // H.trace('ttlilt', `  found: ${keyser(req.sc)} +${ms_left}ms`, { ...t.sc })
-                                    gathered.push({ until_ts, t, req })
-                                } else {
-                                    // H.trace('ttlilt', `  expired: ${keyser(req.sc)} ${ms_left}ms ago`)
-                                    delete t.sc.until_ts
-                                    t.sc.timed_out = 1
-                                    t.bump_version()
-                                }
-                            }
-                            visit(req)
+                for (const req of host.o({ req: 1 }) as TheC[]) {
+                    if (req.sc.finished) {
+                        // cleanup: drop ttilts from finished reqs
+                        for (const t of req.o({ ttlilt: 1 }) as TheC[]) req.drop(t)
+                        continue
+                    }
+                    for (const t of req.o({ ttlilt: 1 }) as TheC[]) {
+                        if (t.sc.timed_out) continue   // already marked; nothing to gather
+                        const until_ts = t.sc.until_ts as number
+                        if (until_ts > now) {
+                            gathered.push({ until_ts, t, req })
+                        } else {
+                            delete t.sc.until_ts
+                            t.sc.timed_out = 1
+                            t.bump_version()
                         }
                     }
+                    visit(req)
                 }
             }
             visit(w)

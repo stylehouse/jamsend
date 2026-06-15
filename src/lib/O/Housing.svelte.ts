@@ -1220,7 +1220,7 @@ export class House extends StorableHousing {
     }
 
     // every req the walk reached this beat: T** filtered to the transient level.
-    //  the basis for replacing the reqcons climb — gather ttlilts from here.
+    //  the walk's view of the reqs, to verify it matches the %req-children scan.
     async req_T_legs(): Promise<TheC[]> {
         const reqs: TheC[] = []
         await this.Se.c.T?.forward((T: Travel) => {
@@ -1229,19 +1229,17 @@ export class House extends StorableHousing {
         return reqs
     }
 
-    // migration assertion: the walk's req set should equal the reqcons climb's.
-    //  Runs while both paths live (V.req_legs on); once it stays clean for a
-    //  while the reqy_recurse climb (and the ttlilt visit+follow) can be deleted.
+    // migration assertion: when the walk lays req** (V.req_legs on), it should
+    //  reach the same live reqs as the direct %req-children scan (reqy_recurse).
+    //  Once it stays clean the consumers can move from the scan onto the walk.
+    //   Scheme-hosted reqs (Lang docks) are walk-only — the scan doesn't descend
+    //   those subtrees — so expect those as a known walk-only difference.
     async assert_req_legs(): Promise<void> {
         if (!V.req_legs) return
         try {
             // self-announce once, so a silent beat doesn't read as "not wired".
             if (!V._req_legs_armed) { V._req_legs_armed = 1; console.log(`req_legs assertion armed`) }
-            // the climb (reqy_recurse) only reaches reqcon-hosted reqs — the
-            //  antiquated ones.  New self-contained C reqs have no reqcon, so the
-            //  climb can't see them and they would always look like a gap.  Keep
-            //  the walk set to antiquated only, so both sides hold the same reqs.
-            const viaWalk = new Set<TheC>((await this.req_T_legs()).filter(r => r.c.antiquated))
+            const viaWalk = new Set<TheC>(await this.req_T_legs())
             const viaClimb = new Set<TheC>()
             const ws: TheC[] = []
             await this.Se.c.T?.forward((T: Travel) => {

@@ -1,7 +1,7 @@
 Snap:H
   H:PortPlant,Run
     A:PortPlant
-      self,round=7	{"mung":["age"]}
+      self,round=5	{"mung":["age"]}
       w:PortPlant
         body,hands=2
           pot:cactus
@@ -21,8 +21,8 @@ Snap:H
           req:repot,maz=2,finished
           req:move_inside
         req:celebrate
+        self,round=5	{"mung":["age"]}
         log
           msg:rose back on shelf
           msg:fern back on shelf
-        self,round=7	{"mung":["age"]}
     mo:main,interval=3.6	{"mung":["id"]}

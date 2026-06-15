@@ -1,7 +1,7 @@
 Snap:H
   H:PortPlant,Run
     A:PortPlant
-      self,round=9	{"mung":["age"]}
+      self,round=6	{"mung":["age"]}
       w:PortPlant
         body,hands=2
         shelf
@@ -22,8 +22,8 @@ Snap:H
           req:move_inside,finished
         req:celebrate,finished
           req:confetti,finished
+        self,round=6	{"mung":["age"]}
         log
           msg:cactus back on shelf
         thus:🎉 all repotted and shelved!
-        self,round=9	{"mung":["age"]}
     mo:main,interval=3.6	{"mung":["id"]}

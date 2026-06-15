@@ -1210,6 +1210,9 @@ export class TheC extends Stuff {
         let req = this.o({ req: 1, ...exactly(c) })[0] as TheC | undefined
         if (req) return req
         const mix: TheUniversal = { req: 1, ...c }
+        // an anonymous %req:1 wants serial numbering — and the serial IS the %req
+        //  value (%req:$i++), assigned here at birth off the host counter.  A
+        //  named req keeps its name as identity; no number, nothing extra to snap.
         if (mix.req === 1) mix.req = this.c.req_serial = ((this.c.req_serial as number) ?? 1) + 1
         req = this.i(mix) as TheC
         req.c.up = this
