@@ -531,9 +531,10 @@
                      .sort((a, b) => a.depth - b.depth).map(r => r.label)
         const region = path.length ? path[path.length - 1] : undefined
         const say    = opt.long ? state.doc.lineAt(at).text.trim() : undefined
+        const doc    = dock.sc.dock as string | undefined   // which Doc this attention is in
 
         H.i_elvisto('Lies/Lies', 'Lies_take_point', {
-            method, region,
+            method, region, doc,
             region_path: path.length ? path.join('/') : undefined,
             long: !!opt.long, weight: opt.weight ?? 1,
             ...(say ? { say } : {}),

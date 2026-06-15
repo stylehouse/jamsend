@@ -1433,7 +1433,7 @@
     //   a ranking of where attention has gone.  The UI sensitises on the Undertaking
     //   LE.vers (the Funkcion bumps it each tap + trickle), same rail as the brights.
     Lang_ting_globules(): Array<{
-        spec: string, region: string, n: number, weight: number,
+        spec: string, region: string, doc: string, n: number, weight: number,
         heat: number, bright: number, warm: number, last: number, held: number,
     }> {
         const H    = this as House
@@ -1444,6 +1444,7 @@
             .map(g => ({
                 spec:   String(g.sc.Point),
                 region: (g.sc.region as string) ?? '',
+                doc:    (g.sc.doc    as string) ?? '',
                 n:      (g.sc.n      as number) ?? 0,
                 weight: (g.sc.weight as number) ?? 0,
                 heat:   (g.sc.heat   as number) ?? 0,
@@ -1458,22 +1459,53 @@
     // ── e:Lang_goto_point — jump into a Point by name, resuming there ────────────
     //
     //   Fired by the Ting histogram: a bar carries its $region/$method spec, this
-    //   resolves it back to a doc location through %Map (Lang_resolve_point — by name,
-    //   the same index Lang_tap reads) and seeks.  seek opens the target (unfolds its
-    //   covering folds + centres), so the jump lands on open code — attention resumes
-    //   from where the trail pooled.
-    //   e.sc: { spec }
+    //   resolves it back to a doc location and seeks.  seek opens the target (unfolds
+    //   its covering folds + centres), so the jump lands on open code — attention
+    //   resumes from where the trail pooled.
+    //
+    //   Region-disambiguated: when e.sc.region is given, a method named `spec` is first
+    //   sought among the %Map defs whose region_path TAIL is that region — so two
+    //   same-named methods in different regions jump to the RIGHT one (the bars are
+    //   distinct, the jump should be too).  Falls back to the by-name resolver
+    //   (Lang_resolve_point) when there's no region match — region-globules (Point ==
+    //   region label) resolve to the region header that way.
+    //   e.sc: { spec, region? }
     async e_Lang_goto_point(A: TheC, w: TheC, e: TheC) {
-        const dock  = this.Lang_active_dock(w)
+        const spec   = e.sc.spec   as string | undefined
+        const region = e.sc.region as string | undefined
+        const doc    = e.sc.doc    as string | undefined
+        if (!spec) return
+        const dock   = this.Lang_active_dock(w)
+        // cross-Doc: the Point lives in another doc — open it there (Dock_open switches
+        //  the active doc and navigates to the point by name), then we're done.
+        if (doc && doc !== (dock?.sc.dock as string | undefined)) {
+            this.i_elvisto('Lang/Lang', 'Dock_open', { path: doc, point: spec })
+            return
+        }
         if (!dock) return
-        const state = dock.c.state as EditorState | undefined
-        const view  = dock.c.view  as EditorView | undefined
-        const spec  = e.sc.spec as string | undefined
-        if (!state || !view || !spec) return
-        const hit = this.Lang_resolve_point(state, dock, spec)
-        if (!hit) return
+        const state  = dock.c.state as EditorState | undefined
+        const view   = dock.c.view  as EditorView | undefined
+        if (!state || !view) return
+
+        let from: number | undefined
+        if (region) {
+            const job   = dock.o({ Compile: 1 })[0] as TheC | undefined
+            const Map_C = job?.o({ Map: 1 })[0]      as TheC | undefined
+            const defs  = (Map_C?.o({ def: 1 }) ?? []) as TheC[]
+            const tail  = (d: TheC) => {
+                const rp = d.c.region_path as string[] | undefined
+                return rp && rp.length ? rp[rp.length - 1] : undefined
+            }
+            const hit = defs.find(d => d.sc.method === spec && tail(d) === region)
+            if (hit) from = hit.sc.from as number
+        }
+        if (from == null) {
+            const r = this.Lang_resolve_point(state, dock, spec)
+            if (!r) return
+            from = r.from
+        }
         ;(dock.c.seek as ((v: EditorView, a: number, b: number) => void) | undefined)
-            ?.(view, hit.from, hit.from)
+            ?.(view, from, from)
     },
 
     // Doc-from-src resolution lives in LiesEnd as Waft_src_doc_path — one body

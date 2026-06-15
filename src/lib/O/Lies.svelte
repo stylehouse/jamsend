@@ -219,7 +219,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
         const ting = H.Lies_spawn_ting_waft(w)     // lazy — the Ting exists by first take
         const key_sc: any = { Point: id }
-        if (region) key_sc.region = region         // same name in two regions = two globules
+        if (region)   key_sc.region = region       // same name in two regions = two globules
+        if (e.sc.doc) key_sc.doc    = e.sc.doc     // and per-Doc — same method in two docs = two
         const point = ting.oai(key_sc)
         // region path (scalar, shallow→deep) lets the trail roll a nested method's
         //  heat up to its ancestor region bands.  A string, not an array — an object

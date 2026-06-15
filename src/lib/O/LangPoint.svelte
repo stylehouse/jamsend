@@ -75,6 +75,29 @@
     onMount(async () => {
     await M.eatfunc({
 
+//#region < TODO: the canonical Pointer (region / method / if-keyword)
+//
+//   A Pointer addresses a place in code by NAME along a path:
+//     "Cyto / cyto_scan"            region → method
+//     "story_save / if runH"        method → control-flow head
+//     "Cyto / cyto_scan / for node" the full stack
+//   We build these (the Ting bars, NaviCado capsules, bookmarks) and resolve them
+//   back to offsets (e_Lang_goto_point, seek).  The resolver — Lang_resolve_point /
+//   Lang_resolve_stack_path — lives in LangRegions and works by name.  Two jobs to do
+//   here, where the Point/Pointer model belongs:
+//     1. A Pointer BUILDER: given an offset (or a tap's region_path + method), emit the
+//        shortest unambiguous Pointer string.  e_Lang_tap already has the pieces
+//        (region_path tail + method); generalise to the full stack incl. if-keywords.
+//     2. Fix region-scoped resolution: Lang_resolve_stack_path narrows by a region's
+//        %Map from/to, but %Map regions carry only the HEADER-LINE span, so "region /
+//        method" narrows to the header and the method lookup fails.  It needs region
+//        BODY extents (Lang_build_regions' from_char/to_char) to narrow into the body.
+//        Until then, region-disambiguated jumps match a def by its stored region_path
+//        tail (e_Lang_goto_point) rather than via the stack-path resolver.
+//   < decide what moves here from LangRegions (resolve_point/stack_path/find_within_range)
+//     vs stays — and how much LiesCurse's branch/dive/stepping should ride this same
+//     Pointer model rather than its own cursor walk.
+
 //#region parts
 
     // Leading-whitespace width of a line, tabs counted as 4|−1 for a blank line

@@ -105,7 +105,6 @@
     import DocMinimap from "./ui/DocMinimap.svelte"
     import DocCompost from "./ui/DocCompost.svelte"  // frozen-frame overlay; arms dock.c.compost for fly-in gotos
     import DocPoint   from "./ui/DocPoint.svelte"
-    import DocTing    from "./ui/DocTing.svelte"   // attention Ting, minimised to a click-to-resume histogram
     import { now_in_seconds_with_ms } from "./Peerily.svelte";
 
     let { H }: { H: House } = $props()
@@ -190,9 +189,11 @@
     let sel_from = $state(0)
     let sel_to   = $state(0)
     // where-you-look tap throttle: a light tap at the cursor when it settles on a NEW
-    //  line, so the attention Ting fills as you navigate, not only on minimap gotos.
-    let _tap_line  = -1
-    let _tap_timer: ReturnType<typeof setTimeout> | null = null
+    //  line (the "look"), then a HELD tap if you linger there (the "dwell"), which
+    //  warms the globule's bar amber→pink.  Both reset when the cursor changes line.
+    let _tap_line    = -1
+    let _tap_timer:   ReturnType<typeof setTimeout> | null = null
+    let _dwell_timer: ReturnType<typeof setTimeout> | null = null
 
     // ── per-doc state cache ──────────────────────────────────────────────────
     //   One EditorState per path, saved on departure and restored on arrival.
@@ -1223,10 +1224,19 @@
                     const line = v.state.doc.lineAt(sel.head).number
                     if (line !== _tap_line) {
                         _tap_line = line
-                        if (_tap_timer) clearTimeout(_tap_timer)
+                        const head = sel.head
+                        if (_tap_timer)   clearTimeout(_tap_timer)
+                        if (_dwell_timer) clearTimeout(_dwell_timer)
+                        // look: a light tap once the cursor settles on the line.
                         _tap_timer = setTimeout(() => {
-                            if (view) Lang_i_elvis(view, 'Lang_tap', { from: sel.head, long: false, weight: 1 })
+                            if (view) Lang_i_elvis(view, 'Lang_tap', { from: head, long: false, weight: 1 })
                         }, 500)
+                        // dwell: linger and it becomes a HELD tap — counts toward the
+                        //  globule's held share, warming its bar amber→pink, and carries
+                        //  the line as articulation (e_Lang_tap reads `say` on a long tap).
+                        _dwell_timer = setTimeout(() => {
+                            if (view) Lang_i_elvis(view, 'Lang_tap', { from: head, long: true, weight: 3 })
+                        }, 2500)
                     }
                 }
                 // saveEffect: flush bookmark positions immediately, cancel debounce
@@ -1404,11 +1414,6 @@
         {/each}
     </div>
     {/if}
-    {#if dock}
-    <!-- Attention Ting, minimised to a histogram — one bar per $region/$method the
-         trail pooled on, click to resume there (e:Lang_goto_point).  Reads H only. -->
-    <DocTing {H} />
-    {/if}
 </div>
 {/if}
 
@@ -1422,7 +1427,7 @@
 
         /* knob these two to move both scrollbar gutter and minimap together */
         --lte-scrollbar-w: 2em;
-        --lte-minimap-w:   25%;
+        --lte-minimap-w:   20%;   /* half-size, then 50% wider, one method column */
     }
     .lte-bar {
         display: flex; align-items: center; gap: 8px;

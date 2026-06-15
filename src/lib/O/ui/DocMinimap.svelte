@@ -259,7 +259,13 @@
         const w  = m ? ((m.c.warm as ((wr: Map<string, number>) => number) | undefined)?.(warms) ?? 0) : 0
         const gg = Math.round(190 - 70 * w)
         const bb = Math.round(80 + 120 * w)
-        return `box-shadow: 0 0 ${(b * 10).toFixed(1)}px rgba(255,${gg},${bb},${(b * 0.85).toFixed(2)}); border-radius: 3px;`
+        // glow only on the RIGHT of each thing: offset the shadow right and flatten it
+        //   vertically (negative spread) so it streaks off the right edge instead of
+        //   haloing the whole chip — a heat gutter down the strip's right side.
+        const off    = (b * 6).toFixed(1)
+        const blur   = (b * 11).toFixed(1)
+        const spread = (-(b * 4 + 1)).toFixed(1)
+        return `box-shadow: ${off}px 0 ${blur}px ${spread}px rgba(255,${gg},${bb},${(b * 0.9).toFixed(2)}); border-radius: 3px;`
     }
 
 
@@ -558,24 +564,13 @@
 
     <div class="lmm-scroll" bind:this={scroll_container_el}>
         <div class="lmm-strip" bind:this={strip_el}>
-            <!-- Flat two-column flow: region headers span both columns, def chips
-                 pile between them in column-major order.  Points are NOT rendered
-                 here — they live only in the capsule strip above. -->
+            <!-- Single column: region headers span the strip, def chips pile under
+                 them in source order.  Points are NOT rendered here — they live only
+                 in the capsule strip above. -->
 
             {#if top_level_defs.length}
-                {@const half = Math.ceil(top_level_defs.length / 2)}
                 <div class="lmm-def-col">
-                    {#each top_level_defs.slice(0, half) as d (d.from)}
-                        <button class="lmm-def-chip lmm-def-chip-top"
-                                class:lmm-def-chip-class={!d.class}
-                                class:lmm-pointedat={pointedat_m(d.mapule)}
-                                style={heat_style(d.mapule)}
-                                title="{d.method} (line {d.line})"
-                                onclick={() => record_goto(d.mapule)}>{d.method}</button>
-                    {/each}
-                </div>
-                <div class="lmm-def-col">
-                    {#each top_level_defs.slice(half) as d (d.from)}
+                    {#each top_level_defs as d (d.from)}
                         <button class="lmm-def-chip lmm-def-chip-top"
                                 class:lmm-def-chip-class={!d.class}
                                 class:lmm-pointedat={pointedat_m(d.mapule)}
@@ -607,19 +602,8 @@
                 </div>
 
                 {#if !is_collapsed(r) && r.defs.length}
-                    {@const half = Math.ceil(r.defs.length / 2)}
                     <div class="lmm-def-col" style="padding-left: {r.depth * 5 + 4}px;">
-                        {#each r.defs.slice(0, half) as d (d.from)}
-                            <button class="lmm-def-chip"
-                                    class:lmm-def-chip-class={!d.class}
-                                    class:lmm-pointedat={pointedat_m(d.mapule)}
-                                    style={heat_style(d.mapule)}
-                                    title="{d.method} (line {d.line})"
-                                    onclick={() => record_goto(d.mapule)}>{d.method}</button>
-                        {/each}
-                    </div>
-                    <div class="lmm-def-col" style="padding-left: 2px;">
-                        {#each r.defs.slice(half) as d (d.from)}
+                        {#each r.defs as d (d.from)}
                             <button class="lmm-def-chip"
                                     class:lmm-def-chip-class={!d.class}
                                     class:lmm-pointedat={pointedat_m(d.mapule)}
@@ -719,7 +703,7 @@
     }
     .lmm-strip {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr;   /* one column of methods */
         align-items: start;
         min-height: 100%;
     }
