@@ -1012,15 +1012,41 @@
             if ((f >= line.from && f <= line.to) || (f <= from && t >= from))
                 opens.push({ from: f, to: t })
         })
+        // For a big target (its indent-block runs > 8 lines), don't just centre the
+        //  header — scroll it ~a quarter down so the body fills the view below it.
+        //  Small targets centre as before.
+        const span   = block_lines(doc, line.number)
+        const scroll = span > 8
+            ? EditorView.scrollIntoView(from, { y: 'start', yMargin: Math.round(v.scrollDOM.clientHeight * 0.25) })
+            : EditorView.scrollIntoView(from, { y: 'center' })
         v.dispatch({
             selection: { anchor: from, head: to },
-            effects: [
-                ...opens.map(r => unfoldEffect.of(r)),
-                EditorView.scrollIntoView(from, { y: 'center' }),
-            ],
+            effects: [ ...opens.map(r => unfoldEffect.of(r)), scroll ],
         })
         v.focus()
         bloom_at(v, from)
+    }
+
+    // Line-count of the indent block headed by startLine (header + deeper-indented body
+    //  until indentation returns to the header's level).  Cheap; used to decide how to
+    //  scroll a goto target.  Regions (not indentation-nested) read as ~1 and centre —
+    //  < a region's true body extent would need Lang_build_regions.
+    function block_lines(doc: import('@codemirror/state').Text, startLine: number): number {
+        const indent_of = (n: number): number => {
+            const t = doc.line(n).text
+            if (!t.trim()) return -1
+            return t.match(/^[\t ]*/)![0].replace(/\t/g, '    ').length
+        }
+        const base = indent_of(startLine)
+        if (base < 0) return 1
+        let end = startLine
+        for (let n = startLine + 1; n <= doc.lines; n++) {
+            const ind = indent_of(n)
+            if (ind < 0) continue          // blank — belongs to whatever encloses it
+            if (ind > base) end = n         // deeper → inside the block
+            else break                      // back to base or shallower → block ended
+        }
+        return end - startLine + 1
     }
 
     // A glowing bloom at the goto target, over the line-number gutter — measure the
