@@ -35,6 +35,8 @@
                 await ison()
                 let req = await w.r(exactly({...reqc,...c}),{...c,...sc})
                 req.sc.req_i ||= req_serial.sc.i++
+                // old requesty_serial system — antiquated, so the walk-pump skips it
+                req.c.antiquated = 1
                 // this becomes req/*%aim,category, with others (work pieces) of this reqy
                 //  so they can hoist up to w, from here.
                 //  we can drop our %aim (we tend not to) or get req%finished and they'll vanish
@@ -263,6 +265,10 @@
                 req = w.oai(mix)
                 req.c.up = w
                 req.c.on = reqcon
+                // issued by the old reqy pump — tag so the walk-based pump skips
+                //  it (it is still walked, for ttlilt capture).  Cleared per host
+                //  as each reqy() call site upgrades off antiquated.
+                req.c.antiquated = 1
                 if (req.sc.maz == 1) delete req.sc.maz  // maz:1 is implied
                 if (meta) meta.existed = false
                 return req

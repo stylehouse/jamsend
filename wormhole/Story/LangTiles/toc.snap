@@ -34,17 +34,17 @@ story:LangTiles
       w:Lies
         nowriting:^Ghost
   TimeSpool
-    TimeTotal:beliefs,avg=1.62
-      sample=1.397,at=1781437299
-      sample=1.768,at=1781441091
-      sample=1.427,at=1781444363
-      sample=1.427,at=1781444607
-      sample=1.595,at=1781444625
-      sample=1.286,at=1781444652
-      sample=1.942,at=1781511707
-      sample=1.972,at=1781522765
-      sample=1.795,at=1781523666
-      sample=1.594,at=1781524092
+    TimeTotal:beliefs,avg=1.417
+      sample=1.267,at=1781530037
+      sample=1.439,at=1781530077
+      sample=1.199,at=1781530429
+      sample=1.413,at=1781531392
+      sample=1.337,at=1781531417
+      sample=1.812,at=1781531865
+      sample=1.607,at=1781531898
+      sample=1.388,at=1781532015
+      sample=1.498,at=1781532047
+      sample=1.207,at=1781532236
   step,dige:4e35c462d9849942
   step=2,dige:c1cd3b83de96d211
   step=3,dige:7b104ff79fc01cb1

@@ -1197,6 +1197,82 @@ export class TheC extends Stuff {
         this.c ||= {}
         if (!this.sc) throw "!C.sc"
     }
+
+    // ── reqs, addressed on the C itself (the keyworking family, no reqy()) ───
+    //  this C is the host.  doai seeds a %req child and wires its do_fn (the
+    //  body); do() pumps this host's live reqs in maz order; finish(child)
+    //  settles one; all_finished() is the roll-up.  Reqs are plain %req
+    //  children, their handlers ride req.c.do_fn — no reqcon, no House.
+
+    //  find-or-create a %req child.  An anonymous %req:1 is given a serial off
+    //   the host (c.req_serial), so a unique {…c} identity becomes %req:$i.
+    _req_oai(c: TheUniversal): TheC {
+        let req = this.o({ req: 1, ...exactly(c) })[0] as TheC | undefined
+        if (req) return req
+        const mix: TheUniversal = { req: 1, ...c }
+        if (mix.req === 1) mix.req = this.c.req_serial = ((this.c.req_serial as number) ?? 1) + 1
+        req = this.i(mix) as TheC
+        req.c.up = this
+        if (req.sc.maz === 1) delete req.sc.maz   // maz:1 is implied
+        return req
+    }
+
+    //  seed a req and return a one-shot do_fn setter (?.(body)), or null once
+    //   wired — so re-entry never re-wires; only do() re-runs the body.
+    async doai(c: TheUniversal, sc: TheUniversal = {}): Promise<((fn: Function) => void) | null> {
+        const req = this._req_oai(c)
+        if (req.c.do_fn) return null
+        Object.assign(req.sc, sc)
+        return (fn: Function) => { req.c.do_fn = fn }
+    }
+
+    //  pump this host's reqs, highest maz first.  %ok is a pass-local satisfied
+    //   signal for eternal reqs — re-armed each pass, cleared on entry.  A req
+    //   that arms a ttlilt and bows out (stays needs_work) halts the descent.
+    async do(fn?: Function): Promise<void> {
+        for (const req of this.o({ req: 1 }) as TheC[]) if (req.sc.ok) delete req.sc.ok
+        while (true) {
+            const needs_work = (r: TheC) => !r.sc.finished && !r.sc.ok
+            const N = (this.o({ req: 1 }) as TheC[]).filter(needs_work)
+            if (!N.length) return
+            const maz_high = Math.max(...N.map(r => (r.sc.maz as number) || 1))
+            const level = N.filter(r => ((r.sc.maz as number) || 1) === maz_high)
+            for (const req of level) await this._req_do_one(req, fn)
+            if (level.some(needs_work)) return
+        }
+    }
+
+    async _req_do_one(req: TheC, fn?: Function): Promise<void> {
+        if (req.sc.finished) throw "do req%finished"
+        delete req.sc.initialdo
+        delete req.sc.ok
+        // forget last pass's transient problems before re-running
+        await req.r({ waits: 1 }, {}); await req.r({ error: 1 }, {}); await req.r({ see: 1 }, {})
+        const handler = fn || (req.c.do_fn as Function | undefined)
+        if (handler) {
+            // %initialdo marks the first run, until the next
+            if (!req.c._had_initialdo) { req.c._had_initialdo = true; req.sc.initialdo = 1 }
+            await handler(req)
+            delete req.sc.initialdo
+        }
+        delete req.sc.mutated   // after the handler — a mutated_fn reads it
+    }
+
+    //  host settles a child req: yoink its oncelers + their sc keys, drop its
+    //   ttlilts, mark %finished (reactive via the bump).
+    finish(child: TheC): void {
+        if (child.sc.finished) return
+        for (const k of Object.keys(child.c.oncelers ?? {})) delete child.sc[k]
+        delete child.c.oncelers
+        ;(child.o({ ttlilt: 1 }) as TheC[]).map(t => child.drop(t))
+        child.sc.finished = 1
+        child.bump_version()
+    }
+
+    all_finished(): boolean {
+        const all = this.o({ req: 1 }) as TheC[]
+        return all.length > 0 && all.every(r => r.sc.finished)
+    }
 }
 // ensures v={data:3} becomes C.sc={data:3}
 //  as long as you never use the key=sc

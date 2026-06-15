@@ -9,6 +9,7 @@ import { Dexie, liveQuery, type EntityTable } from 'dexie';
 const V: Record<string, any> = {}
 V.organise =  0  // set >0 to enable answer_calls/beliefs/organise logs
 V.beliefs = 0
+V.req_legs = 1   // set >0 to walk req** as the transient level (more-legs); see assert_req_legs
 
 export const ANSWER_CALLS_TICK_MS = 50
 export const AMBIENT_MAIN_TICK_MS = 200
@@ -47,7 +48,7 @@ db.version(2).stores({
 //   depth 0: House itself  (is_inst — House is its own instance)
 //   depth 1: A particles   -> find {A:1}
 //   depth 2: w particles   -> find {w:1}  scheme_haver: may host %scheme/%lematch
-//   depth 3: r particles   -> find {r:1}
+//   depth 3: req particles -> find {req:1}  (the transient level; self-recursive)
 // Beyond depth 2, w/%scheme/%lematch particles extend the walk.
 // Any other node that wants to host sub-schemes can stamp scheme_haver:1 on its
 //   returned level descriptor (or carry it in a %lematch's sc).
@@ -62,7 +63,9 @@ const organise_scheme = [
     { ark: 'H', is_inst: true },
     { ark: 'A', sc_has: { A: 1 } },
     { ark: 'w', sc_has: { w: 1 }, scheme_haver: 1 },
-    { ark: 'r', sc_has: { r: 1 } },
+    // the loose fourth level is req — the transient level under a w (was 'r',
+    //  always a placeholder for req; named req now for identifiability).
+    { ark: 'req', sc_has: { req: 1 } },
 ]
 
 //#endregion
@@ -862,6 +865,7 @@ export class House extends StorableHousing {
         V.organise && console.log(`beliefs() e%${e ? keyser(e.sc) : 'none'}`)
 
         await this.organise(e)
+        await this.assert_req_legs()
         await this.attend(e)
     }
 
@@ -884,7 +888,17 @@ export class House extends StorableHousing {
                 this.apply_scheme(T)
                 if (!T.sc.level) { T.sc.not = 1; return }
                 const nextles = this.get_next_levels(T)
-                T.sc.more = nextles.flatMap(lv => lv.sc_has ? n.o(lv.sc_has) as TheC[] : [])
+                T.sc.more = nextles.flatMap(lv => {
+                    if (!lv.sc_has) return []
+                    let kids = n.o(lv.sc_has) as TheC[]
+                    // req** are the transient level, opt-in for now; when on,
+                    //  skip %finished reqs so the walk stays on live work.
+                    if (lv.ark === 'req') {
+                        if (!V.req_legs) return []
+                        kids = kids.filter(r => !r.sc.finished)
+                    }
+                    return kids
+                })
                 V.organise && console.log(`  organise each depth:${T.c.path.length-1} n%${keyser(n.sc)} level:${T.sc.level?.ark} more:${T.sc.more?.length} inst:${!!T.sc.inst}`)
             },
 
@@ -1153,6 +1167,9 @@ export class House extends StorableHousing {
         const parent_T  = T.c.path[depth - 1] as any
         const parent_lv = parent_T?.sc?.level as Record<string, any> | undefined
         const cur_n     = T.sc.n as TheC | undefined
+        // a %req node is the transient level wherever it sits — identified by the
+        //  %req mark itself, so it classifies as req at any depth (req/*req).
+        if (V.req_legs && cur_n?.sc.req != null) return { ark: 'req', sc_has: { req: 1 } }
         let pan = parent_T?.sc?.n
         if (cur_n && parent_lv) {
             if (parent_lv.next_lematches?.length) {
@@ -1180,18 +1197,77 @@ export class House extends StorableHousing {
     get_next_levels(T: Travel): Array<Record<string, any>> {
         const level = T.sc.level as Record<string, any> | undefined
         const cur_n = T.sc.n as TheC | undefined
+        const out: Array<Record<string, any>> = []
         if (level) {
             if (level.next_lematches?.length) {
-                return (level.next_lematches as TheC[]).map(p => this.unwrap_lematch(p))
-            }
-            if (level.scheme_haver && cur_n) {
+                out.push(...(level.next_lematches as TheC[]).map(p => this.unwrap_lematch(p)))
+            } else if (level.scheme_haver && cur_n) {
                 const sps = cur_n.o({ scheme: 1 }) as TheC[]
                 const all_lm = sps.flatMap(sp => sp.o({ lematch: 1 }) as TheC[])
-                if (all_lm.length) return all_lm.map(p => this.unwrap_lematch(p))
+                if (all_lm.length) out.push(...all_lm.map(p => this.unwrap_lematch(p)))
+            }
+            // req** hang under a w and nest under each other, so inject the req
+            //  level alongside the scheme children (additive — a w can have both)
+            //  and again at every req so the walk recurses req/*req.  each_fn
+            //  drops %finished from the legs.
+            if (V.req_legs && (level.ark === 'w' || level.ark === 'req')) {
+                out.push({ ark: 'req', sc_has: { req: 1 } })
             }
         }
+        if (out.length) return out
         const next = organise_scheme[T.c.path.length]
         return next ? [next] : []
+    }
+
+    // every req the walk reached this beat: T** filtered to the transient level.
+    //  the basis for replacing the reqcons climb — gather ttlilts from here.
+    async req_T_legs(): Promise<TheC[]> {
+        const reqs: TheC[] = []
+        await this.Se.c.T?.forward((T: Travel) => {
+            if (T.sc.level?.ark === 'req') reqs.push(T.sc.n as TheC)
+        })
+        return reqs
+    }
+
+    // migration assertion: the walk's req set should equal the reqcons climb's.
+    //  Runs while both paths live (V.req_legs on); once it stays clean for a
+    //  while the reqy_recurse climb (and the ttlilt visit+follow) can be deleted.
+    async assert_req_legs(): Promise<void> {
+        if (!V.req_legs) return
+        try {
+            // self-announce once, so a silent beat doesn't read as "not wired".
+            if (!V._req_legs_armed) { V._req_legs_armed = 1; console.log(`req_legs assertion armed`) }
+            // the climb (reqy_recurse) only reaches reqcon-hosted reqs — the
+            //  antiquated ones.  New self-contained C reqs have no reqcon, so the
+            //  climb can't see them and they would always look like a gap.  Keep
+            //  the walk set to antiquated only, so both sides hold the same reqs.
+            const viaWalk = new Set<TheC>((await this.req_T_legs()).filter(r => r.c.antiquated))
+            const viaClimb = new Set<TheC>()
+            const ws: TheC[] = []
+            await this.Se.c.T?.forward((T: Travel) => {
+                if (T.sc.level?.ark === 'w') ws.push(T.sc.n as TheC)
+            })
+            for (const w of ws) {
+                await (this as any).reqy_recurse(w, { each_fn: async (req: TheC) => {
+                    if (!req.sc.finished) viaClimb.add(req)
+                }})
+            }
+            const onlyClimb = [...viaClimb].filter(r => !viaWalk.has(r))
+            const onlyWalk  = [...viaWalk].filter(r => !viaClimb.has(r))
+            if (onlyClimb.length || onlyWalk.length) {
+                console.warn(`req_legs mismatch — climb-only:${onlyClimb.length} walk-only:${onlyWalk.length}`, {
+                    onlyClimb: onlyClimb.map(r => keyser(r.sc)),
+                    onlyWalk:  onlyWalk.map(r => keyser(r.sc)),
+                })
+            } else if (viaWalk.size !== V._req_legs_last) {
+                // quiet confirmation: log only when the count moves, so the walk is
+                //  visibly reaching reqs without spamming every beat.
+                V._req_legs_last = viaWalk.size
+                console.log(`req_legs ✓ ${viaWalk.size} reqs match the climb`)
+            }
+        } catch (err) {
+            console.warn(`req_legs assertion errored (non-fatal):`, err)
+        }
     }
 
     // -------------------------------------------------------------------------

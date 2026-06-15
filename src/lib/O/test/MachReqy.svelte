@@ -289,18 +289,13 @@
         const yard  = w.oai({ yard:  1 })
         const body  = w.oai({ body:  1 })
 
-        const dq = this.reqy(w)
-
         // ── req:repot ──────────────────────────────────────────────────────────
-        const dRepot = await dq.roai({req:'repot', maz:2})
-        dRepot.c.do_fn ||= async (De: TheC) => {
-            const rq = this.reqy(De)
+        ;(await w.doai({req:'repot', maz:2}))?.(async (De: TheC) => {
 
             // req:move_outside,maz:3
             //   body pots on entry = loaded last step and snapped → safe to unload now
             //   is_there_yet: set by Runstepped callback (runtime=false, so no spurious wake)
-            const rMoveOut = await rq.roai({req:'move_outside', maz:3})
-            rMoveOut.c.do_fn ||= async (req: TheC, rq: any) => {
+            ;(await De.doai({req:'move_outside', maz:3}))?.(async (req: TheC) => {
                 if (w.o({ arrival: 1 }).length) { req.i({ waits: 'arrival' }); return }
 
                 if (body.c.is_there_yet) {
@@ -315,7 +310,7 @@
                 const capacity = (body.sc.hands as number) - body.o({ pot: 1 }).length
 
                 if (!shelf.o({ pot: 1 }).length && !body.o({ pot: 1 }).length) {
-                    rq.finish(req)
+                    De.finish(req)
                     return
                 }
 
@@ -332,11 +327,10 @@
                         this.feebly_ponder()
                     })
                 }
-            }
+            })
 
             // req:repot,maz:2 — draws 2 doses per pot from yard supply
-            const rRepot = await rq.roai({req:'repot', maz:2})
-            rRepot.c.do_fn ||= async (req: TheC, rq: any) => {
+            ;(await De.doai({req:'repot', maz:2}))?.(async (req: TheC) => {
                 const ysoil = yard.o({ soil: 1 })[0]
                 if (!ysoil) return
                 for (const pot of yard.o({ pot: 1 }) as TheC[]) {
@@ -346,12 +340,11 @@
                     if (psoil) psoil.sc.dose = (psoil.sc.dose as number) + 2   // 3→5
                     w.oai({ log: 1 }).i({ msg: `repotted ${pot.sc.pot} (yard soil: ${ysoil.sc.dose})` })
                 }
-                rq.finish(req)
-            }
+                De.finish(req)
+            })
 
             // req:move_inside — mirror of move_outside
-            const rMoveIn = await rq.roai({req:'move_inside'})
-            rMoveIn.c.do_fn ||= async (req: TheC, rq: any) => {
+            ;(await De.doai({req:'move_inside'}))?.(async (req: TheC) => {
                 if (body.c.is_there_yet) {
                     body.c.is_there_yet = false
                     for (const pot of body.o({ pot: 1 }) as TheC[]) {
@@ -364,7 +357,7 @@
                 const capacity = (body.sc.hands as number) - body.o({ pot: 1 }).length
 
                 if (!yard.o({ pot: 1 }).length && !body.o({ pot: 1 }).length) {
-                    rq.finish(req)
+                    De.finish(req)
                     return
                 }
 
@@ -379,28 +372,25 @@
                         this.feebly_ponder()
                     })
                 }
-            }
+            })
 
-            await rq.do()
-            if (rq.all_finished() && !De.sc.finished) dq.finish(De)
-        }
+            await De.do()
+            if (De.all_finished() && !De.sc.finished) w.finish(De)
+        })
 
         // ── req:celebrate ─────────────────────────────────────────────────────
-        const dCelebrate = await dq.roai({req:'celebrate'})
-        dCelebrate.c.do_fn ||= async (De: TheC) => {
-            const rq = this.reqy(De)
+        ;(await w.doai({req:'celebrate'}))?.(async (De: TheC) => {
 
-            const rConfetti = await rq.roai({req:'confetti'})
-            rConfetti.c.do_fn ||= async (req: TheC, rq: any) => {
+            ;(await De.doai({req:'confetti'}))?.(async (req: TheC) => {
                 w.i({ thus: '🎉 all repotted and shelved!' })
-                rq.finish(req)
-            }
+                De.finish(req)
+            })
 
-            await rq.do()
-            if (rq.all_finished() && !De.sc.finished) dq.finish(De)
-        }
+            await De.do()
+            if (De.all_finished() && !De.sc.finished) w.finish(De)
+        })
 
-        await dq.do()
+        await w.do()
     },
 
 //#endregion

@@ -987,6 +987,88 @@
         ] })
     }
 
+    // ── fold_q — Ctrl+Q: toggle the block at the cursor ────────────────────────
+    //
+    //   Folds the innermost indent-block the cursor sits in; Ctrl+Q again unfolds it.
+    //   A tiny innermost block (under ~6 lines) is skipped for its enclosing block, so
+    //   a one-liner method folds its whole region — but it stays a toggle, not a climb:
+    //   the second press unfolds what the first folded.
+    //   Routes through fire_fold_toggle, so the fold is marked: an opened fold keeps
+    //   its ↦ handle and folds up again, same as any other.
+    function fold_q(v: EditorView): boolean {
+        const doc = v.state.doc
+        const cursorLine = doc.lineAt(v.state.selection.main.head).number
+        const indent_of = (n: number): number => {
+            const t = doc.line(n).text
+            if (!t.trim()) return -1
+            return t.match(/^[\t ]*/)![0].replace(/\t/g, '    ').length
+        }
+        const body_end = (h: number, ind: number): number => {
+            let end = h
+            for (let n = h + 1; n <= doc.lines; n++) {
+                const i2 = indent_of(n)
+                if (i2 < 0) continue
+                if (i2 > ind) end = n
+                else break
+            }
+            return end
+        }
+        // enclosing blocks, innermost first
+        const chain: Array<{ h: number, end: number }> = []
+        const cind = indent_of(cursorLine)
+        if (cind >= 0) {
+            const end = body_end(cursorLine, cind)        // cursor line itself heads a block?
+            if (end > cursorLine) chain.push({ h: cursorLine, end })
+        }
+        let baseLine = cursorLine
+        while (baseLine >= 1 && indent_of(baseLine) < 0) baseLine--
+        let need = baseLine >= 1 ? indent_of(baseLine) : 0
+        for (let h = baseLine - 1; h >= 1; h--) {
+            const ind = indent_of(h)
+            if (ind < 0) continue
+            if (ind < need) {
+                chain.push({ h, end: body_end(h, ind) })
+                need = ind
+                if (ind === 0) break
+            }
+        }
+        if (!chain.length) return false
+
+        // Toggle the innermost block at the cursor: fold it, Ctrl+Q again unfolds it
+        // (fire_fold_toggle flips on the fold-start).  But a tiny innermost block (under
+        // ~6 lines — a one- or two-line method) isn't worth folding on its own, so we go
+        // up to the enclosing block instead.  Once that block is folded, the cursor sits
+        // on its header (no longer inside the tiny child), so the next Ctrl+Q toggles it
+        // straight back open.
+        const FOLD_UP_UNDER = 6
+        let target = chain[0]
+        if (chain[1] && (target.end - target.h + 1) < FOLD_UP_UNDER) target = chain[1]
+        const from = doc.line(target.h).to
+        const to   = doc.line(target.end).to
+        if (from >= to) return false
+        fire_fold_toggle(v, from, to)
+        return true
+    }
+
+    // ── copy_clean — copy/cut the document text, never the fold markers ────────
+    //
+    //   A folded range copies as its full underlying text (folding is display-only),
+    //   and the ↤N↦ / ↦ marker widgets aren't document text — so slicing the doc for
+    //   the selection yields clean code with no markers.  Done explicitly here so it's
+    //   guaranteed regardless of any browser-native copy path.  Single-range only;
+    //   multi-cursor and empty selections fall back to CM's default.
+    //   < a copy that spans a fold expands it silently for now — when the warnings
+    //     surface lands, fire one here offering to copy the collapsed form instead.
+    function copy_clean(event: ClipboardEvent, v: EditorView, is_cut: boolean): boolean {
+        const ranges = v.state.selection.ranges
+        if (ranges.length !== 1 || ranges[0].empty) return false
+        const { from, to } = ranges[0]
+        event.clipboardData?.setData('text/plain', v.state.sliceDoc(from, to))
+        event.preventDefault()
+        if (is_cut) v.dispatch({ changes: { from, to }, selection: { anchor: from } })
+        return true
+    }
+
     // ── fire_seek — look at a span: unfold what hides it, select + centre it ───
     //
     //   Provided to the dock as dock.c.seek so Mapule.c.goto (and any other nav)
@@ -1187,6 +1269,13 @@
             });
             return true;
         },
+    },
+        // ── Ctrl+Q: toggle the fold of the innermost block at the cursor (again to
+        //   unfold).  Ctrl (not Mod) so Mac's Cmd-Q quit isn't shadowed.
+        {
+        key: 'Ctrl-q',
+        preventDefault: true,
+        run: (view) => fold_q(view),
     }])
 
     // ── EditorView construction ──────────────────────────────────────────────
@@ -1256,6 +1345,10 @@
             markedRegions,
             foldMarkers,
             refoldHandles,
+            EditorView.domEventHandlers({
+                copy: (e, v) => copy_clean(e, v, false),
+                cut:  (e, v) => copy_clean(e, v, true),
+            }),
             Keys,
             EditorView.updateListener.of((v: ViewUpdate) => {
                 const sel = v.state.selection.main
@@ -1723,6 +1816,7 @@
         display: inline-block;
         transform: scale(1.6);
         transform-origin: left center;
+        user-select: none;   /* the marker glyph must never land in a copy */
     }
     .lte-cm :global(.cm-fold-marked:hover) { color: #b3a9ff; }
 
