@@ -1358,14 +1358,17 @@
             <DocMinimap {H} {view} />
         </div>
         {/if}
+        {#if dock}
+        <!-- Frozen-frame overlay — MUST live INSIDE .lte-cm.  The editor's whole
+             appearance comes from Langui's `.lte-cm :global(.cm-*)` rules (there is no
+             CM theme extension), so a cloned editor only paints when it is itself a
+             descendant of .lte-cm.  Mounted as a sibling it rendered blank — the green
+             outline with the live editor showing through.  position:fixed still floats
+             the frame over the viewport; the DOM home is purely what carries the scoped
+             CSS onto the clone.  Mounting it arms dock.c.compost (gotos → fly-ins). -->
+        <DocCompost {H} {view} />
+        {/if}
     </div>
-    {#if dock}
-    <!-- Frozen-frame overlay, sibling to the minimap.  position:fixed, so its DOM
-         home here is cosmetic; it self-derives lang_dock via languinio and keeps an
-         empty host mounted so grab() always has somewhere to clone.  Mounting it
-         arms dock.c.compost, which turns minimap gotos into fly-ins. -->
-    <DocCompost {H} {view} />
-    {/if}
     {#if dock && bookmarks.length}
     <!-- Point panel: one DocPoint per bookmark on the active doc -->
     <div class="lte-points">

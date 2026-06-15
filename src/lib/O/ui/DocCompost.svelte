@@ -73,13 +73,17 @@
     //     is mounted, swap the rAF for H.Lang_wave_enqueue so Compost, the Q gallop
     //     and Cytui's graph all drain one queue.  Local rAF until that's wired so
     //     the frame works whether or not the ghost mixins loaded.
+    // DEBUG: global slow-mo so the frame's motion is inspectable.  1 = production
+    //  speed; bump it to crawl every morph (fly, peel, the gallop's step).  One knob,
+    //  set back to 1 once the overlay's confirmed.
+    const MORPH_SCALE = 3
     let _raf = 0
     function morph(to: Partial<Pose>, dur = 0.4): Promise<void> {
         cancelAnimationFrame(_raf)
         const from = { ...pose }
         const goal: Pose = { ...from, ...to }
         const t0 = performance.now()
-        const ms = Math.max(1, dur * 1000)
+        const ms = Math.max(1, dur * 1000 * MORPH_SCALE)
         return new Promise(resolve => {
             const tick = (now: number) => {
                 const u = Math.min(1, (now - t0) / ms)
@@ -123,17 +127,31 @@
         live_origin = { left: rect.left, top: rect.top }
 
         host_el.replaceChildren()
-        const clone = scroll.cloneNode(true) as HTMLElement
-        clone.style.width  = `${rect.width}px`
-        clone.style.height = `${rect.height}px`
-        clone.style.overflow = 'hidden'
+        // Clone the EDITOR root (view.dom = .cm-editor), not just the scroller — CM's
+        //  theme + base styles are scoped under a generated class on .cm-editor, so a
+        //  bare .cm-scroller clone is detached from that scope and renders blank (the
+        //  green-bordered-but-empty frame).  Cloning the editor carries the scope, so
+        //  the frame paints with the real fonts|colours.  Still a one-shot DOM
+        //  cloneNode — no SVG, no re-render — cheap to throw around the viewport.
+        const clone = view.dom.cloneNode(true) as HTMLElement
+        clone.style.width   = `${rect.width}px`
+        clone.style.height  = `${rect.height}px`
+        clone.style.margin  = '0'
         clone.style.pointerEvents = 'none'   // clicks land on the host, not the clone
         host_el.appendChild(clone)
-        clone.scrollTop  = scroll.scrollTop  // replay the visible window
-        clone.scrollLeft = scroll.scrollLeft
+        // replay the visible window onto the cloned scroller (it's inside the editor)
+        const cloned_scroll = (clone.classList.contains('cm-scroller')
+            ? clone : clone.querySelector('.cm-scroller')) as HTMLElement | null
+        if (cloned_scroll) {
+            cloned_scroll.scrollTop  = scroll.scrollTop
+            cloned_scroll.scrollLeft = scroll.scrollLeft
+        }
 
         pose = { ...REST }
         visible = true
+        // (the screen-capture upgrade that used to run here was removed — the
+        //  getDisplayMedia path lagged the machine and is disabled; see the capture
+        //  region's note below.)
         return true
     }
 
@@ -201,10 +219,11 @@
     //#endregion
     //#region fly
 
-    // Fly into a target: a frozen frame zooms toward the spot while the editor (if
-    // LangPoint is mounted) climbs to the Q the tap-log suggests for it, then we land
-    // — seek + dismiss.  This is the auto-Q-on-fly-in the attention log exists for|
-    // with no taps it lands at the resting crunch, which is the honest default.
+    // Fly into a target: records the tap, climbs the editor to the Q the tap-log
+    // suggests, then lands (seek).  The frozen-frame zoom is SUPPRESSED while capture
+    // is disabled — the clone paints blank, so grab()+morph only flashed an empty green
+    // box on every goto.  So a goto is now instant: tap-log + auto-Q + seek, no frame.
+    //   < restore the grab()+morph zoom here once the frame can show real content.
     async function fly(from: number, { auto_q = true } = {}) {
         if (!view) return
         record_tap('fly', from, 2)
@@ -215,15 +234,25 @@
             // e:Lang_climb is LangPoint's|guarded so a fly still works before it mounts.
             ;(H as any).i_elvisto?.('Lang/Lang', 'Lang_climb', { Q })
         }
-        if (!grab()) { revealAt(from); return }
-        await morph({ scale: 1.08, opacity: 0.92 }, 0.18)
-        await morph({ scale: 1, opacity: 1 }, 0.22)
-        revealAt(from)
+        revealAt(from)   // straight to the seek — no blank frozen frame in between
     }
     function revealAt(from: number) {
         ;(lang_dock?.c.seek as ((v: EditorView, a: number, b: number) => void) | undefined)
             ?.(view!, from, from)
         clear()
+    }
+
+    // Peel the frozen sheet open or closed from a corner hinge — a page-turn feel
+    //  that swings the snapshot away to reveal the live editor beneath, then lets it
+    //  settle back.  A true paper curl wants 3D|clip-path; this is the affine tease of
+    //  it (corner-anchored rotate + lift + fade), cheap and on the same morph tween.
+    //   < deepen to a real curl with perspective()+rotateY on a wrapper, or a clip-path
+    //     wedge that grows from the corner, once the affine version reads right.
+    async function peel(open = true, corner = 'top left') {
+        if (!visible) { if (open) grab(); else return }
+        if (host_el) host_el.style.transformOrigin = corner
+        if (open) await morph({ rotate: -20, x: 16, y: -8, scale: 0.97, opacity: 0.3 }, 0.5)
+        else      { await morph({ ...REST }, 0.4); if (host_el) host_el.style.transformOrigin = 'center center' }
     }
 
     //#endregion
@@ -292,6 +321,142 @@
     }
 
     //#endregion
+    //#region capture — DISABLED (it all sucked)
+    //
+    //   Three ways to picture the editor, three dead ends — parked below, not deleted:
+    //     • cloneNode of the editor renders BLANK — its whole look is .lte-cm-scoped
+    //       component CSS, so a clone detached from that subtree inherits none of it.
+    //     • toPNG via SVG <foreignObject> WON'T RASTERISE under software rendering, and
+    //       even where it does it DROPS scoped CSS and web-fonts — a foreignObject is a
+    //       fresh styling context, so only inlined computed styles survive and fonts
+    //       usually don't embed, leaving the result unstyled|blank.
+    //     • getDisplayMedia DID capture real pixels, but a live capture stream lags the
+    //       machine hard (the browser composites + encodes the whole tab continuously)
+    //       and it's an awkward per-session screen-share prompt.  Not worth it.
+    //   Capture is off.  The surface methods + Shift+Alt+S/D keys are kept as no-ops so
+    //   the UI stays put.  For a real screenshot one day, use an offscreen rasteriser
+    //   (html2canvas) or a headed-browser shot — none of the parked approaches.
+
+    // no-ops so dock.c.compost.{shoot,shoot_into_frame,snap,stop_capture} and the keys
+    //  still resolve; nothing runs, nothing lags.
+    async function shoot(_t?: HTMLElement | string): Promise<string | null> {
+        console.warn('🪻 compost capture disabled (it sucked)'); return null }
+    async function shoot_into_frame(_t?: HTMLElement | string): Promise<boolean> {
+        console.warn('🪻 compost capture disabled (it sucked)'); return false }
+    async function snap(_name = 'compost', _t?: HTMLElement | string): Promise<boolean> {
+        console.warn('🪻 compost capture disabled (it sucked)'); return false }
+    function stop_capture() { /* nothing live to stop while disabled */ }
+
+    // Shift+Alt+S/D kept wired to the no-ops so the UI's there; they just warn now.
+    $effect(() => {
+        const onkey = (e: KeyboardEvent) => {
+            if (!(e.shiftKey && e.altKey)) return
+            const k = e.key.toLowerCase()
+            if (k === 's') { e.preventDefault(); void shoot_into_frame() }
+            if (k === 'd') { e.preventDefault(); void snap() }
+        }
+        window.addEventListener('keydown', onkey)
+        return () => window.removeEventListener('keydown', onkey)
+    })
+
+    /* ── parked: the original capture implementation (it sucked, see note above) ─────
+    let _cap_stream: MediaStream | null = null
+    let _cap_video:  HTMLVideoElement | null = null
+    let _cap_idle:   ReturnType<typeof setTimeout> | null = null
+
+    // A live getDisplayMedia stream makes the browser composite + encode the whole tab
+    //  every frame, continuously — THAT is the lag (a screen recorder left running).
+    //  So we keep it only in short bursts: each shot re-arms an idle timer that tears
+    //  the stream down a few seconds after the last capture.  Bursts stay instant; idle
+    //  costs nothing.  frameRate is floored too — we only ever read single frames.
+    function stop_capture() {
+        if (_cap_idle) { clearTimeout(_cap_idle); _cap_idle = null }
+        _cap_stream?.getTracks().forEach(t => t.stop())
+        _cap_stream = null; _cap_video = null
+    }
+    function _cap_keepalive() {
+        if (_cap_idle) clearTimeout(_cap_idle)
+        _cap_idle = setTimeout(stop_capture, 4000)
+    }
+
+    async function ensure_capture(): Promise<HTMLVideoElement | null> {
+        if (_cap_idle) { clearTimeout(_cap_idle); _cap_idle = null }
+        if (_cap_video && _cap_stream?.active) return _cap_video
+        try {
+            _cap_stream = await (navigator.mediaDevices as any).getDisplayMedia(
+                { video: { frameRate: 5 }, audio: false, preferCurrentTab: true } as any)
+            const v = document.createElement('video')
+            v.srcObject = _cap_stream; v.muted = true
+            await v.play()
+            await new Promise(r => requestAnimationFrame(() => r(null)))  // let dims populate
+            _cap_stream.getVideoTracks()[0].addEventListener('ended',
+                () => { _cap_stream = null; _cap_video = null })
+            _cap_video = v
+            return v
+        } catch (e) { console.warn('🪻 compost capture denied|failed', e); return null }
+    }
+
+    // Resolve a target: an element, a CSS selector, or default to the live editor.
+    function _target_el(t?: HTMLElement | string): HTMLElement | null {
+        if (typeof t === 'string') return document.querySelector(t)
+        return t ?? view?.dom ?? null
+    }
+
+    // Capture el to a PNG data URL by cropping the live tab-capture video to its rect.
+    async function shoot(t?: HTMLElement | string): Promise<string | null> {
+        const el = _target_el(t)
+        if (!el) return null
+        const v = await ensure_capture()
+        if (!v || !v.videoWidth) return null
+        const rect = el.getBoundingClientRect()
+        const sx = v.videoWidth  / window.innerWidth      // CSS px → captured px
+        const sy = v.videoHeight / window.innerHeight
+        const canvas = document.createElement('canvas')
+        canvas.width  = Math.max(1, Math.round(rect.width  * sx))
+        canvas.height = Math.max(1, Math.round(rect.height * sy))
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return null
+        ctx.drawImage(v, rect.left * sx, rect.top * sy, rect.width * sx, rect.height * sy,
+                      0, 0, canvas.width, canvas.height)
+        _cap_keepalive()   // stream tears down a few seconds after the last shot
+        try { return canvas.toDataURL('image/png') } catch (e) { console.warn('🪻 shoot toDataURL', e); return null }
+    }
+
+    // Fill the frozen frame with a real screenshot instead of the blank clone — the
+    //  awkward-but-true path you can actually see.  Lands over the editor like grab().
+    async function shoot_into_frame(t?: HTMLElement | string): Promise<boolean> {
+        const el = _target_el(t)
+        if (!el || !host_el) return false
+        const url = await shoot(el)
+        if (!url) return false
+        const rect = el.getBoundingClientRect()
+        box = { left: rect.left, top: rect.top, width: rect.width, height: rect.height }
+        live_origin = { left: rect.left, top: rect.top }
+        host_el.replaceChildren()
+        const img = document.createElement('img')
+        img.src = url
+        img.style.width = `${rect.width}px`; img.style.height = `${rect.height}px`
+        img.style.display = 'block'; img.style.pointerEvents = 'none'
+        host_el.appendChild(img)
+        pose = { ...REST }
+        visible = true
+        return true
+    }
+
+    // Shoot + download as a PNG file — for archiving before|after UI states so a change
+    //  can be eyeballed (or diffed) across edits.  name gets a .png if it lacks one.
+    async function snap(name = 'compost', t?: HTMLElement | string): Promise<boolean> {
+        const url = await shoot(t)
+        if (!url) return false
+        const a = document.createElement('a')
+        a.href = url; a.download = /\.png$/i.test(name) ? name : `${name}.png`
+        a.click()
+        return true
+    }
+
+    ──────────────────────────────────────────────────────────────────────────── */
+
+    //#endregion
     //#region surface
 
     // Stash the compost controls on the dock so the gallop|gotos|any nav can drive
@@ -300,11 +465,18 @@
     $effect(() => {
         const dock = lang_dock
         if (!dock) return
-        dock.c.compost = { grab, morph, clear, reveal, fly, toPNG, suggest_Q,
+        dock.c.compost = { grab, morph, clear, reveal, fly, peel, toPNG, suggest_Q,
+            // real-pixel capture (getDisplayMedia): shoot(target?)→dataURL,
+            //  shoot_into_frame(target?) to see it in the frame, snap(name,target?) to
+            //  download a PNG.  target = element | CSS selector | default editor.  Call
+            //  shoot() once from a click to grant the share, then it's silent.  Capture
+            //  the minimap with shoot('.lmm-strip') etc.; snap() before|after a UI change
+            //  to eyeball the diff.
+            shoot, shoot_into_frame, snap, stop_capture,
             // step(prevQ,nextQ): grab a pre-fold frame so a Q climb can fold under a
             // held snapshot|LangPoint calls this just before it dispatches its folds.
             step: (_prevQ: number, _nextQ: number) => { grab() } }
-        return () => { if (dock.c.compost) dock.c.compost = undefined }
+        return () => { stop_capture(); if (dock.c.compost) dock.c.compost = undefined }
     })
 
     //#endregion
@@ -333,11 +505,20 @@
         transform-origin: center center;
         cursor: zoom-in;
         will-change: transform, opacity;
-        /* the clone carries its own backdrop|a faint frame edge reads as "frozen" */
-        box-shadow: 0 0 0 1px rgba(143, 130, 255, 0.25),
-                    0 8px 40px rgba(0, 0, 0, 0.45);
+        /* DEBUG: bright-green outline so the frozen frame is unmistakable while we
+           verify the overlay fires (independent of toPNG, which software rendering
+           can defeat).  outline (not border) so it adds no layout box.  Dial back to
+           the faint lavender edge once the mechanism is confirmed.
+             box-shadow: 0 0 0 1px rgba(143,130,255,0.25), 0 8px 40px rgba(0,0,0,0.45); */
+        outline: 2px solid #00ff66;
+        outline-offset: -2px;
+        box-shadow: 0 0 24px rgba(0, 255, 102, 0.55), 0 8px 40px rgba(0, 0, 0, 0.45);
         border-radius: 2px;
         overflow: hidden;
+        /* DEBUG: hue-shift + slight blur so the frozen sheet reads as a distinct
+           ghosted layer floating over the live editor, not mistaken for the real one.
+           Dial out (with the green outline) once the overlay's confirmed. */
+        filter: blur(0.5px) hue-rotate(35deg) saturate(1.3);
     }
     .compost.gone {
         position: fixed;
