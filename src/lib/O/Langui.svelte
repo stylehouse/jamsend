@@ -105,6 +105,7 @@
     import DocMinimap from "./ui/DocMinimap.svelte"
     import DocCompost from "./ui/DocCompost.svelte"  // frozen-frame overlay; arms dock.c.compost for fly-in gotos
     import DocPoint   from "./ui/DocPoint.svelte"
+    import DocTing    from "./ui/DocTing.svelte"   // attention Ting, minimised to a click-to-resume histogram
     import { now_in_seconds_with_ms } from "./Peerily.svelte";
 
     let { H }: { H: House } = $props()
@@ -188,6 +189,10 @@
     // update the header readout immediately).
     let sel_from = $state(0)
     let sel_to   = $state(0)
+    // where-you-look tap throttle: a light tap at the cursor when it settles on a NEW
+    //  line, so the attention Ting fills as you navigate, not only on minimap gotos.
+    let _tap_line  = -1
+    let _tap_timer: ReturnType<typeof setTimeout> | null = null
 
     // ── per-doc state cache ──────────────────────────────────────────────────
     //   One EditorState per path, saved on departure and restored on arrival.
@@ -1210,6 +1215,20 @@
                 const sel = v.state.selection.main
                 sel_from = sel.from
                 sel_to   = sel.to
+                // where-you-look tap: when the cursor lands on a new line, fire the
+                //  lightest tap (weight 1) at it after a short settle, so the Ting
+                //  accumulates where attention actually goes — line-gated + debounced so
+                //  typing within a line doesn't flood it.
+                if (v.selectionSet || v.docChanged) {
+                    const line = v.state.doc.lineAt(sel.head).number
+                    if (line !== _tap_line) {
+                        _tap_line = line
+                        if (_tap_timer) clearTimeout(_tap_timer)
+                        _tap_timer = setTimeout(() => {
+                            if (view) Lang_i_elvis(view, 'Lang_tap', { from: sel.head, long: false, weight: 1 })
+                        }, 500)
+                    }
+                }
                 // saveEffect: flush bookmark positions immediately, cancel debounce
                 if (v.transactions.some(tr => tr.effects.some(e => e.is(saveEffect)))) {
                     if (update_timer) { clearTimeout(update_timer); update_timer = null }
@@ -1384,6 +1403,11 @@
             <DocPoint {H} {bm} dock_path={active_path} {lang_model} />
         {/each}
     </div>
+    {/if}
+    {#if dock}
+    <!-- Attention Ting, minimised to a histogram — one bar per $region/$method the
+         trail pooled on, click to resume there (e:Lang_goto_point).  Reads H only. -->
+    <DocTing {H} />
     {/if}
 </div>
 {/if}

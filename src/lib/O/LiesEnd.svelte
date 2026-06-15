@@ -584,14 +584,17 @@ await M.eatfunc({
                    ?? LE.o({ Seem: 'working' })[0]) as TheC | undefined
         const funk = seem?.o({ Funkcion: 1 })[0] as TheC | undefined
         if (!funk) return                       // nothing to brighten yet
-        const fq = H.reqy(LE)
-        ;(await fq.doai({ req: 'funkcion' }))?.(async (req: TheC) => {
-            const run = funk.c.run as ((LE: TheC, funk: TheC) => void | Promise<void>) | undefined
-            if (run) await run(LE, funk)
-            // finish per tick so the hosted req re-arms next think while the Funkcion
-            //  is around, keeping the flavour live without piling clusters.
-            fq.finish(req)
-        })
+        // Run the Funkcion directly.  It used to be wrapped in a reqy hosted on the LE,
+        //  but that never actually ran (doai() only WIRES the do_fn; nothing called
+        //  fq.do()), and even with the do() it churned: finish-per-tick left the finished
+        //  req lingering one cycle with its do_fn still set, blocking re-creation, so it
+        //  would run only every other tap.  A plain closure call is reliable — heat|
+        //  bright|warm get computed and the LE bumps on EVERY tap + trickle, which is
+        //  the lever that makes the trail histogram react.
+        //   < re-introduce an inspectable req:funkcion if wanted, but gate it per-tick
+        //     with sc.ok (re-armed each do() pass), NOT finish() — finish fights re-arm.
+        const run = funk.c.run as ((LE: TheC, funk: TheC) => void | Promise<void>) | undefined
+        if (run) await run(LE, funk)
     },
 
     // ── LE_arm ──────────────────────────────────────────────────────────────

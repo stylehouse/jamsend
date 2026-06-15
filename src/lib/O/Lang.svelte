@@ -1425,6 +1425,57 @@
         return warms
     },
 
+    // ── Lang_ting_globules — the attention histogram's bars ─────────────────────
+    //
+    //   The Undertaking Ting's %Point globules, each the pooled attention on a
+    //   $region/$method: n taps, total weight, decayed heat|bright (recency), warm
+    //   (the held|long share), region.  Sorted hottest-first so the histogram reads as
+    //   a ranking of where attention has gone.  The UI sensitises on the Undertaking
+    //   LE.vers (the Funkcion bumps it each tap + trickle), same rail as the brights.
+    Lang_ting_globules(): Array<{
+        spec: string, region: string, n: number, weight: number,
+        heat: number, bright: number, warm: number, last: number, held: number,
+    }> {
+        const H    = this as House
+        const ting = (H.LE_for('Undertaking')?.c.ting) as TheC | undefined
+        if (!ting) return []
+        return (ting.o() as TheC[])
+            .filter(g => 'Point' in g.sc)
+            .map(g => ({
+                spec:   String(g.sc.Point),
+                region: (g.sc.region as string) ?? '',
+                n:      (g.sc.n      as number) ?? 0,
+                weight: (g.sc.weight as number) ?? 0,
+                heat:   (g.sc.heat   as number) ?? 0,
+                bright: (g.sc.bright as number) ?? 0,
+                warm:   (g.sc.warm   as number) ?? 0,
+                last:   (g.sc.last   as number) ?? 0,
+                held:   (g.sc.held   as number) ?? 0,
+            }))
+            .sort((a, b) => b.heat - a.heat)
+    },
+
+    // ── e:Lang_goto_point — jump into a Point by name, resuming there ────────────
+    //
+    //   Fired by the Ting histogram: a bar carries its $region/$method spec, this
+    //   resolves it back to a doc location through %Map (Lang_resolve_point — by name,
+    //   the same index Lang_tap reads) and seeks.  seek opens the target (unfolds its
+    //   covering folds + centres), so the jump lands on open code — attention resumes
+    //   from where the trail pooled.
+    //   e.sc: { spec }
+    async e_Lang_goto_point(A: TheC, w: TheC, e: TheC) {
+        const dock  = this.Lang_active_dock(w)
+        if (!dock) return
+        const state = dock.c.state as EditorState | undefined
+        const view  = dock.c.view  as EditorView | undefined
+        const spec  = e.sc.spec as string | undefined
+        if (!state || !view || !spec) return
+        const hit = this.Lang_resolve_point(state, dock, spec)
+        if (!hit) return
+        ;(dock.c.seek as ((v: EditorView, a: number, b: number) => void) | undefined)
+            ?.(view, hit.from, hit.from)
+    },
+
     // Doc-from-src resolution lives in LiesEnd as Waft_src_doc_path — one body
     //   shared with Lies and LangGraft so the three can't drift.
 
