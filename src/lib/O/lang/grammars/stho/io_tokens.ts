@@ -34,6 +34,7 @@ const isStart = (c: number) =>
 export function makePathSep(terms: {
     PathSep: number, PathComma: number, PathColon: number,
     CaptureDot: number, CaptureDollar: number, CaptureName: number,
+    FlowSep: number,
 }): ExternalTokenizer {
     const SEP: Record<number, number> = {
         [SLASH]: terms.PathSep, [COMMA]: terms.PathComma, [COLON]: terms.PathColon,
@@ -44,6 +45,18 @@ export function makePathSep(terms: {
         if (isStart(input.next) && stack.canShift(terms.CaptureName)) {
             do { input.advance() } while (isWord(input.next))
             input.acceptToken(terms.CaptureName)
+            return
+        }
+        // "..." FlowSep — the r/rm pattern→replacement separator.  Only emitted
+        // when the parser is mid-IOing and can shift it (after the first IOpath
+        // of an IOness2 verb), so host-JS spread {...x}/[...a]/f(...args) stays
+        // Punct everywhere else.  Deliberately NOT whitespace-tight: spaces
+        // around it are fine (`r %a ... %b` and `r %a...%b` both read).
+        if (input.next === DOT
+            && input.peek(1) === DOT && input.peek(2) === DOT
+            && stack.canShift(terms.FlowSep)) {
+            input.advance(); input.advance(); input.advance()
+            input.acceptToken(terms.FlowSep)
             return
         }
         // "." value-grab lead-in — only mid-path, tight, and only before a "$"

@@ -983,6 +983,42 @@
             })
         }
 
+        // ── r-with-a-block → replace(pattern, async () => { body }) ───────────
+        //   An `r` IOing whose pattern is followed by a pythonic-indented body
+        //   (and which carries no inline `...` replacement) compiles to
+        //   replace(): the body is the async fn() that re-fills the cleared
+        //   pattern.  Same body-consumption as Sunpit.  `rm` and the inline
+        //   r()/two-arg forms (no deeper body) fall through to the IOing branch.
+        if (hit?.name === 'IOing') {
+            const v2     = hit.node.getChild('IOness2')
+            const verb   = v2 ? sliceState.doc.sliceString(v2.from, v2.to).trim() : ''
+            const ipaths = hit.node.getChildren('IOpath')
+            const r_indent = (line.text.match(/^(\s*)/) ?? ['', ''])[1].length
+            // first non-blank line after this one — deeper means a body follows
+            let look = n + 1
+            while (look <= doc.lines && doc.line(look).text.trim() === '') look++
+            const body_follows = look <= doc.lines
+                && ((doc.line(look).text.match(/^(\s*)/) ?? ['', ''])[1].length > r_indent)
+            if (verb === 'r' && ipaths.length === 1 && body_follows) {
+                const split    = this.Lang_io_before_split(line.text.slice(0, hit.node.from - localBase))
+                const receiver = split.receiver ?? 'w'
+                const pattern  = this.Lang_replace_arg_src(ipaths[0], sliceState,
+                    split.receiver ? { receiver: split.receiver } : {})
+                out.push({ kind: 'translated',
+                    text: `${' '.repeat(r_indent)}await ${receiver}.replace(${pattern}, async () => {` })
+                n++
+                while (n <= doc.lines) {
+                    const peek = doc.line(n)
+                    if (peek.text.trim() === '') { out.push({ kind: 'raw', text: peek.text }); n++; continue }
+                    const peek_indent = (peek.text.match(/^(\s*)/) ?? ['', ''])[1].length
+                    if (peek_indent <= r_indent) break
+                    n = this._collect_line(n, tree, doc, state, out, ctx)
+                }
+                out.push({ kind: 'raw', text: ' '.repeat(r_indent) + '})' })
+                return n
+            }
+        }
+
         if (hit?.name === 'IOing') {
             const raw_before = line.text.slice(0, hit.node.from - localBase)
             // a further chained IOing (i %A o %B) lives in the after-text
@@ -1167,6 +1203,9 @@
     // [0]-style first-pick, whichever form the tier uses.
     Lang_compile_IOing(node: SyntaxNode, state: EditorState, ctx: any): string {
         const ness = this.Lang_compile_IOness(node, state)
+        // the replace-family routes to its own emitter — it carries up to two
+        //   IOpaths (pattern ... replacement) and is an await-expression.
+        if (ness === 'r' || ness === 'rm') return this.Lang_compile_replace(node, state, ctx, ness)
         const pathNode = node.getChild('IOpath')
         if (!pathNode) throw new Error('IOing: no IOpath')
         const legNodes = pathNode.getChildren('Leg')
@@ -1256,6 +1295,61 @@
             return `this._i_drill(${receiver}, [${legs_src}])`
         }
         return `this._o_drill(${receiver}, [${legs_src}])`
+    },
+
+    // ── Lang_compile_replace — the r / rm replace-family ─────────────────────
+    //
+    //   r/rm are IOness2 verbs compiling to async TheC methods, so the result is
+    //   an `await` expression — the enclosing method must be `async`.
+    //
+    //     r %A               → await w.r({A: 1})                 re-assert
+    //     r %buffers...%ok    → await w.r({buffers: 1}, {ok: 1})  replace-with
+    //     rm %A              → await w.rm({A: 1})                removal (= r(.,{}))
+    //     A r %foo            → await A.r({foo: 1})               receiver-before-verb
+    //
+    //   Either side may be a lone `$var` instead of a peeled path — the variable
+    //   IS the pattern|replacement object (r() takes a C|sc directly):
+    //     r $c...$fuller      → await w.r(c, fuller)
+    //     rm $c              → await w.rm(c)
+    //
+    //   The replace-WITH-A-BLOCK form (r + a pythonic-indented body → replace())
+    //   is handled in _collect_line, not here — this emits the inline calls only.
+    Lang_compile_replace(node: SyntaxNode, state: EditorState, ctx: any, ness: 'r' | 'rm'): string {
+        const paths = node.getChildren('IOpath')
+        if (!paths.length) throw new Error(`${ness}: no IOpath`)
+        const receiver = ctx.receiver ?? 'w'
+        const pattern  = this.Lang_replace_arg_src(paths[0], state, ctx)
+        if (ness === 'rm') {
+            // rm ignores any second path — it's r(pattern, {}) under the hood
+            return `await ${receiver}.rm(${pattern})`
+        }
+        if (paths.length >= 2) {
+            const replacement = this.Lang_replace_arg_src(paths[1], state, ctx)
+            return `await ${receiver}.r(${pattern}, ${replacement})`
+        }
+        return `await ${receiver}.r(${pattern})`
+    },
+
+    // One r/rm argument → TS source.  A lone `$var` path is the object itself
+    //   (the var holds a C|sc); anything else is a peeled match object built
+    //   from the path's single leg (r matches structurally, so no `exactly`).
+    Lang_replace_arg_src(pathNode: SyntaxNode, state: EditorState, ctx: any): string {
+        const legs = pathNode.getChildren('Leg')
+        if (!legs.length) throw new Error('r/rm: empty IOpath')
+        if (legs.length > 1)
+            throw new Error('r/rm takes a single match object, not a drilled a/b/c path')
+        // lone $var → the variable holds the pattern|replacement object itself
+        const items = legs[0].getChild('PeelGroup')?.getChildren('PeelItem') ?? []
+        if (items.length === 1) {
+            const it      = items[0]
+            const keyNode = it.getChild('PeelKey')
+            const sigil   = keyNode?.getChild('Sigil')
+            const nameN   = keyNode?.getChild('Name')
+            if (sigil && nameN && !it.getChild('PeelVal') && !it.getChild('PuddleSigil')) {
+                return state.doc.sliceString(nameN.from, nameN.to)
+            }
+        }
+        return this.Lang_compile_Leg(legs[0], state, ctx).sc_src
     },
 
 //#endregion
@@ -1443,12 +1537,17 @@
     },
 
     // IOness is "i " | "o " — trim to one of the two
-    Lang_compile_IOness(node: SyntaxNode, state: EditorState): 'i' | 'o' {
-        const ness = node.getChild('IOness')
+    Lang_compile_IOness(node: SyntaxNode, state: EditorState): 'i' | 'o' | 'r' | 'rm' {
+        // i|o ride IOness; the replace-family (r|rm) rides IOness2.  The other
+        //   IOness2 verbs (oai|roai|moai|doai) parse but have no drill yet, so
+        //   they fall through to the throw.
+        const ness = node.getChild('IOness') ?? node.getChild('IOness2')
         if (!ness) throw new Error('no IOness')
         const s = state.doc.sliceString(ness.from, ness.to).trim()
-        if (s === 'i') return 'i'
-        if (s === 'o') return 'o'
+        if (s === 'i')  return 'i'
+        if (s === 'o')  return 'o'
+        if (s === 'r')  return 'r'
+        if (s === 'rm') return 'rm'
         throw new Error(`IOness unknown: "${s}"`)
     },
 

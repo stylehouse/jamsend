@@ -97,3 +97,40 @@ moreTiles(A,w):
     // the -> flow form splits the obtain from the insert across @are:
     //  w o angles/are:$ang,etc:3
     //  -> i @are/so:ont.$sooo,module.$tv,etc.$
+
+// the r / rm / replace family.  r and rm are IOness2 verbs compiling to async
+//  TheC methods, so they emit `await` — the method is async.  `...` (FlowSep) is
+//  the pattern→replacement separator; an external token so JS spread {...x} is
+//  untouched.  Either side can be a $var (the object itself) or a peeled path.
+async replaceTiles(A,w):
+    // (1) re-assert — one path → await w.r({solved: 1})
+    r %solved
+    // receiver before the verb → await A.r({io: "radiostock"})
+    A r %io:radiostock
+    // multi-key pattern → await w.r({journey: 1, oaims: 1})
+    r %journey,oaims
+
+    // (2) two-arg r(pattern, replacement), split by ...  (the dominant usage)
+    //  await w.r({buffers: 1}, {ok: 1})
+    r %buffers...%ok
+    //  await w.r({wear: enid}, {is_nowPlaying: 1, started, re})
+    r %wear:$enid...%is_nowPlaying,$started,$re
+
+    // (3) whole-object args — a $var is the pattern|replacement object itself
+    //  await w.r(c, fuller)
+    r $c...$fuller
+
+    // (4) rm — removal sugar, r(pattern, {}) underneath
+    //  await w.rm({stream: 1})
+    rm %stream
+    //  await w.rm(c)
+    rm $c
+
+    // (5) replace-with-a-block — pattern + a pythonic body (like S) becomes the
+    //  async fn() that re-fills the cleared pattern:
+    //   await A.replace({journey: 1, oaims: 1}, async () => {
+    //       w.i({path: 1}); A.i({oaim: j})
+    //   })
+    A r %journey,oaims
+        i %path
+        A i %oaim:$j

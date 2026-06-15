@@ -8,7 +8,7 @@ Line { lineItem* newline }
 
 @precedence { callparen @left, ioverb @left }
 
-@external tokens pathSep from "./io_tokens" { PathSep, PathComma, PathColon, CaptureDot, CaptureDollar, CaptureName }
+@external tokens pathSep from "./io_tokens" { PathSep, PathComma, PathColon, CaptureDot, CaptureDollar, CaptureName, FlowSep }
 
 lineItem {
   Comment | LineComment |
@@ -21,7 +21,10 @@ ControlFlow { ControlFlowHead }
 ControlFlowHead { ElseIfKeyword | ControlKeyword | ElseKeyword }
 
 Sunpit { Sunpitness IOing }
-IOing  { IOness !ioverb IOpath | IOness2 !ioverb IOpath (!ioverb IOpath)? }
+// IOness2 verbs (r, rm, …) may carry a second IOpath after a FlowSep "..." —
+// the replacement to r(pattern, replacement).  FlowSep is an external token so
+// it only fires mid-IOing and never collides with host-JS spread "...".
+IOing  { IOness !ioverb IOpath | IOness2 !ioverb IOpath (FlowSep IOpath)? }
 IOpath { Leg (PathSep Leg)* }
 Leg    { PeelGroup }
 PeelGroup { PeelItem (PathComma PeelItem)* }
@@ -46,7 +49,7 @@ MethodLike { Name !callparen LParen }
   ElseKeyword    { "else " | "else" }
   Sunpitness     { "S " }
   IOness  { ("i" | "o" | "oa" | "ob" | "o1" | "oa1" | "bo" | "boa" | "bo1" | "boa1" | "drop" | "empty") " " }
-  IOness2 { ("oai" | "roai" | "moai" | "doai" | "r") " " }
+  IOness2 { ("oai" | "roai" | "moai" | "doai" | "r" | "rm") " " }
 
   Name   { (@asciiLetter | "_") (@asciiLetter | "_" | @digit)* }
   Number { (@digit+ ("." @digit+)?) | ("0x" (@digit | $[a-fA-F])+) }

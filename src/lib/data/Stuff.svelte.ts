@@ -606,6 +606,15 @@ export class Stuff extends TimeOffice {
         return C!
     }
 
+    // rm(pattern_sc) — remove: replace the matching %pattern children with
+    //  nothing.  Sugar for r(pattern_sc, {}) — the empty sc makes replace()
+    //  insert nothing, so the matches are cleared.  Reads less cryptically than
+    //  the r(c,{}) idiom it wraps.  See also drop(), which hides a C from o()
+    //  without removing it.
+    async rm(pattern_sc:TheUniversal) {
+        return this.r(pattern_sc, {})
+    }
+
     // resolved C usually resume C/*
     resume_X(a,b) {
         if (!b.c.Isness) {
