@@ -1046,7 +1046,15 @@
             if (!ok(from, to)) continue
             effects.push(foldEffect.of({ from, to }))
         }
-        if (effects.length) v.dispatch({ effects })
+        if (effects.length) {
+            // Anchor the focus across these folds — they land from a background Point/
+            //  graft settle while you're reading or navigating, so unanchored they shift
+            //  the doc height above you and bump the view off what you're looking at.
+            const keep = (H as any).Lang_keep_focal as
+                ((view: EditorView, fn: () => void) => void) | undefined
+            if (keep) keep.call(H, v, () => v.dispatch({ effects }))
+            else v.dispatch({ effects })
+        }
     }
 
     //#endregion graft / point decorations

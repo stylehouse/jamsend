@@ -26,11 +26,9 @@ Library
         sample=1.427,at=1781444610
         sample=1.595,at=1781444639
         sample=1.286,at=1781444654
-  Book:LakeSurfer,ok_pct=0,last_pct_change=1779607681.571,done=2,last_run_ms=1781489982.042,active
+  Book:LakeSurfer,ok_pct=0,last_pct_change=1779607681.571,done=2,last_run_ms=1781491454.943,active
     TimeSpool
-      TimeTotal:beliefs,avg=0.758
-        sample=1.209,at=1781417812
-        sample=0.319,at=1781418729
+      TimeTotal:beliefs,avg=0.72
         sample=0.272,at=1781418856
         sample=0.379,at=1781418884
         sample=0.861,at=1781421695
@@ -39,6 +37,8 @@ Library
         sample=1.447,at=1781486538
         sample=0.376,at=1781487514
         sample=0.346,at=1781489982
+        sample=0.447,at=1781491415
+        sample=0.702,at=1781491456
   Book:Peeringinst,ok_pct=0.5,last_pct_change=1779063073.279,done=2,last_run_ms=1779063093.816
   Book:PeeringLive,ok_pct=0.17,last_pct_change=1780023433.073,done=6,last_run_ms=1780418711.44
     TimeSpool

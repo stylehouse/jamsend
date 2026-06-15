@@ -454,11 +454,17 @@
         return undefined
     },
 
-    // ── Lang_tap ───────────────────────────────────────────────────────────
+    // ── e:Lang_tap ─────────────────────────────────────────────────────────
     //
-    //   The giver side of the Point traffic.  A tap at char `from` resolves to its
-    //   $region/$method identity — by name, through %Map, never by stored offset —
-    //   and is handed to the taker Ting (e_Lies_take_point), which globulates it.
+    //   The giver side of the Point traffic — the elvis DocCompost's reveal|fly fire:
+    //   i_elvisto('Lang/Lang', 'Lang_tap', { from, long?, weight? }).  It MUST be named
+    //   e_Lang_tap (the e_ prefix is how i_elvisto resolves a handler) and take the
+    //   (A, w, e) elvis shape — as a plain Lang_tap(w, from, opt) the dispatch logged
+    //   "!method: e_Lang_tap" and the whole tap→globulate→trail pipeline never ran.
+    //
+    //   A tap at char `from` resolves to its $region/$method identity — by name, through
+    //   %Map, never by stored offset — handed to the taker Ting (e_Lies_take_point),
+    //   which globulates it.
     //
     //   %Map stores name-spans, not method|region bodies, so the owning method is the
     //   def whose header line most recently precedes the tap line — bounded to the
@@ -470,14 +476,17 @@
     //   < precise per-def body containment — a tap in a parent's body after a child
     //     region should read the parent, not the child's last def — needs def body
     //     extents %Map doesn't carry; the indent-block decomposition would give them.
-    //   opt: { long?, weight? }
-    Lang_tap(w: TheC, from: number, opt: { long?: boolean, weight?: number } = {}) {
-        const H     = this as House
-        const dock  = this.Lang_active_dock(w)
+    //   e.sc: { from, long?, weight? }
+    async e_Lang_tap(A: TheC, w: TheC, e: TheC) {
+        const H      = this as House
+        const from   = e.sc.from as number | undefined
+        if (typeof from !== 'number') return
+        const opt    = { long: !!e.sc.long, weight: (e.sc.weight as number) ?? 1 }
+        const dock   = this.Lang_active_dock(w)
         if (!dock) return
-        const job   = dock.o({ Compile: 1 })[0] as TheC | undefined
-        const Map_C = job?.o({ Map: 1 })[0]      as TheC | undefined
-        const state = dock.c.state as EditorState | undefined
+        const job    = dock.o({ Compile: 1 })[0] as TheC | undefined
+        const Map_C  = job?.o({ Map: 1 })[0]      as TheC | undefined
+        const state  = dock.c.state as EditorState | undefined
         if (!Map_C || !state) return
 
         const at       = Math.max(0, Math.min(from, state.doc.length))

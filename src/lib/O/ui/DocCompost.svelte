@@ -219,22 +219,20 @@
     //#endregion
     //#region fly
 
-    // Fly into a target: records the tap, climbs the editor to the Q the tap-log
-    // suggests, then lands (seek).  The frozen-frame zoom is SUPPRESSED while capture
-    // is disabled — the clone paints blank, so grab()+morph only flashed an empty green
-    // box on every goto.  So a goto is now instant: tap-log + auto-Q + seek, no frame.
-    //   < restore the grab()+morph zoom here once the frame can show real content.
-    async function fly(from: number, { auto_q = true } = {}) {
+    // Fly into a target: record the tap, then land (seek).  A goto OPENS where it lands
+    // — it does NOT crunch.  The old auto-Q climb folded a pile of methods around the
+    // target on arrival, which both bumped the view and left the target buried under
+    // folds; a goto should do the opposite.  revealAt → fire_seek already unfolds the
+    // target's own body fold AND any ancestor fold covering it, then centres it, so you
+    // land on open code.  (The frozen-frame zoom stays suppressed — the clone paints
+    // blank while capture's disabled.)
+    //   < a crunch-on-arrive could come back as an explicit opt-in; suggest_Q (still on
+    //     the surface) is here to drive it if so, but it must never be the goto default.
+    async function fly(from: number, _opts: { auto_q?: boolean } = {}) {
         if (!view) return
         record_tap('fly', from, 2)
         ;(H as any).i_elvisto?.('Lang/Lang', 'Lang_tap', { from, long: false, weight: 2 })
-        if (auto_q) {
-            const line = view.state.doc.lineAt(from).number
-            const Q = suggest_Q(line)
-            // e:Lang_climb is LangPoint's|guarded so a fly still works before it mounts.
-            ;(H as any).i_elvisto?.('Lang/Lang', 'Lang_climb', { Q })
-        }
-        revealAt(from)   // straight to the seek — no blank frozen frame in between
+        revealAt(from)
     }
     function revealAt(from: number) {
         ;(lang_dock?.c.seek as ((v: EditorView, a: number, b: number) => void) | undefined)

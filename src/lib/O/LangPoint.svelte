@@ -273,23 +273,38 @@
         return pos ?? vp.from
     },
 
-    // Reconcile the editor to intensity Q: unfold whatever WE folded last time,
-    // fold the new target set, shrink the body font and grow the surviving headers
-    // (all in one transaction).  Tracking our own folds on dock.c.q_folds keeps the
-    // climb from fighting the user's manual region folds (we only ever unfold ranges
-    // we put down).
-    //   A focal anchor keeps the point you're looking at pinned: we note its screen y
-    //   before the reflow and, once CM remeasures the new font + folds, scroll so it
-    //   lands back there.  Without it the whole doc slides as the font shrinks and the
-    //   crunch floods off the screen; with it everything recedes AROUND the focus,
-    //   which holds still — the code puddles where you're reading.
+    // Run a fold|layout mutation while keeping the focal point pinned on screen: note
+    // where the focus sits now, let `mutate` reflow the doc, then (once CM remeasures)
+    // scroll so the focus lands back at the same y.  This is what stops a fold ELSEWHERE
+    // — a Q climb, or a background Point-fold settle landing while you read — from
+    // bumping you off what you're looking at.  A deliberate goto's seek stays OUTSIDE
+    // this (the seek is meant to move you).
+    //   < the per-step wave gives the climb its rhythm; a CSS font-size transition would
+    //     smooth between steps but CM's discrete remeasure fights the anchor mid-tween.
+    Lang_keep_focal(view: EditorView, mutate: () => void) {
+        const focal    = this.Lang_focal_pos(view)
+        const anchor_y = focal != null ? (view.coordsAtPos(focal)?.top ?? null) : null
+        mutate()
+        if (focal != null && anchor_y != null) {
+            view.requestMeasure({
+                read:  () => view.coordsAtPos(focal)?.top ?? null,
+                write: (now_top: number | null) => {
+                    if (now_top != null) view.scrollDOM.scrollTop += (now_top - anchor_y)
+                },
+            })
+        }
+    },
+
+    // Reconcile the editor to intensity Q: unfold whatever WE folded last time, fold the
+    // new target set, shrink the body font and grow the surviving headers (one
+    // transaction, under Lang_keep_focal so the crunch recedes AROUND the point you're
+    // reading instead of sliding the doc off-screen).  Tracking our own folds on
+    // dock.c.q_folds keeps the climb from fighting the user's manual region folds (we
+    // only ever unfold ranges we put down).
     Lang_apply_Q(dock: TheC, Q: number) {
         const view  = dock.c.view  as EditorView | undefined
         const state = dock.c.state as EditorState | undefined
         if (!view || !state) return
-
-        const focal    = this.Lang_focal_pos(view)
-        const anchor_y = focal != null ? (view.coordsAtPos(focal)?.top ?? null) : null
 
         const blocks  = this.Lang_indent_blocks(state)
         const targets = this.Lang_fold_targets(state, blocks, this.Lang_Q_fold_depth(Q))
@@ -305,22 +320,11 @@
         // grow in lock-step with the bodies vanishing — no flicker between them.
         const setFonts = dock.c.setPointFonts as { of: (v: any) => any } | undefined
         if (setFonts) effects.push(setFonts.of(fonts))
-        if (effects.length) view.dispatch({ effects })
 
-        this.Lang_set_font_scale(dock, this.Lang_Q_scale(Q))
-
-        // re-pin the focus once the new font + folds have laid out (read runs after
-        //  CM's measure phase, write nudges the scroller).  < the per-Q wave gives the
-        //  step rhythm; a CSS font-size transition would smooth between steps but CM's
-        //  discrete remeasure fights the anchor mid-tween, so it's left to the wave.
-        if (focal != null && anchor_y != null) {
-            view.requestMeasure({
-                read:  () => view.coordsAtPos(focal)?.top ?? null,
-                write: (now_top: number | null) => {
-                    if (now_top != null) view.scrollDOM.scrollTop += (now_top - anchor_y)
-                },
-            })
-        }
+        this.Lang_keep_focal(view, () => {
+            if (effects.length) view.dispatch({ effects })
+            this.Lang_set_font_scale(dock, this.Lang_Q_scale(Q))
+        })
 
         dock.c.q_folds = targets
         dock.c.Q       = Q
