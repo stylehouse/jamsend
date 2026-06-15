@@ -1020,6 +1020,32 @@
             ],
         })
         v.focus()
+        bloom_at(v, from)
+    }
+
+    // A glowing bloom at the goto target, over the line-number gutter — measure the
+    //  target's screen y AFTER the scroll lands (requestMeasure read runs post-layout),
+    //  drop a fixed overlay across the gutter there, and let CSS bloom + fade it over
+    //  ~1s before removing.  Pure overlay, no CM decoration to churn.
+    function bloom_at(v: EditorView, pos: number) {
+        // Measure AFTER the scrollIntoView lands.  A requestMeasure read can run in the
+        //  same cycle as the scroll → pre-goto coords (the line hasn't moved yet); two
+        //  rAFs put us past the new scroll's paint, so coordsAtPos is the real spot.
+        const place = () => {
+            const c = v.coordsAtPos(pos)
+            const g = (v.dom.querySelector('.cm-gutters') as HTMLElement | null)?.getBoundingClientRect()
+            if (!c || !g) return
+            const lh = Math.max(14, c.bottom - c.top)
+            const el = document.createElement('div')
+            el.className = 'cm-goto-bloom'
+            el.style.left   = `${g.left}px`
+            el.style.width  = `${Math.max(20, g.width)}px`
+            el.style.top    = `${c.top - lh}px`     // one line above → centred, ~3× tall
+            el.style.height = `${lh * 3}px`
+            document.body.appendChild(el)
+            setTimeout(() => el.remove(), 1000)
+        }
+        requestAnimationFrame(() => requestAnimationFrame(place))
     }
 
     // ── fire_point_folds — dispatch fold|unfold for the full Point set ────────
@@ -1631,6 +1657,22 @@
     .lte-cm :global(.cm-point-text)       { font-size: 1.4em; transition: font-size 0.15s; }
     .lte-cm :global(.cm-point-text-focus) { font-size: 2em; }
     .lte-cm :global(.cm-point-text-dim)   { font-size: 1em; }
+
+    /* goto bloom — a transient glow over the line-number gutter at a seek target.
+       Appended to document.body (fixed), so it's :global with a -global- keyframe. */
+    :global(.cm-goto-bloom) {
+        position: fixed; pointer-events: none; z-index: 60; border-radius: 6px;
+        background: radial-gradient(ellipse at center,
+            rgba(255, 200, 90, 0.55), rgba(255, 190, 80, 0) 70%);
+        box-shadow: 0 0 18px 6px rgba(255, 190, 80, 0.45);
+        transform-origin: center center;
+        animation: cm-goto-bloom-kf 1s ease-out forwards;
+    }
+    @keyframes -global-cm-goto-bloom-kf {
+        0%   { opacity: 0;    transform: scale(0.4); }
+        18%  { opacity: 0.95; transform: scale(1); }
+        100% { opacity: 0;    transform: scale(1.5); }
+    }
     .lte-cm :global(.cm-point-ghost) {
         opacity:    0.18;
         transform:  scaleY(0.4);

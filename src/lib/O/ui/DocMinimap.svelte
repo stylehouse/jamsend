@@ -526,6 +526,33 @@
         const next = Math.max(1, Math.min(5, q_factor + (e.deltaY > 0 ? 1 : -1)))
         if (next !== q_factor) set_q(next)
     }
+
+    // Viewport indicator — a glowing block on the minimap's left edge tracking what's
+    //  in the CM viewport.  Measured in px relative to .lmm; the block lives OUTSIDE the
+    //  scroll container so it doesn't scroll with the strip — its top is the scroller's
+    //  offsetTop plus the CM scroll fraction across the scroller's visible height.
+    let vp = $state({ top: 0, height: 0, has: false })
+    $effect(() => {
+        const v  = view
+        const sc = scroll_container_el
+        if (!v || !sc) { vp = { top: 0, height: 0, has: false }; return }
+        const sd = v.scrollDOM
+        const update = () => {
+            const sh = sd.scrollHeight, ch = sd.clientHeight
+            if (sh <= 0 || ch >= sh - 1) { vp = { top: 0, height: 0, has: false }; return }
+            const region = sc.clientHeight
+            vp = {
+                top:    sc.offsetTop + (sd.scrollTop / sh) * region,
+                height: Math.max(10, (ch / sh) * region),
+                has:    true,
+            }
+        }
+        update()
+        sd.addEventListener('scroll', update, { passive: true })
+        const ro = new ResizeObserver(update)
+        ro.observe(sd); ro.observe(sc)
+        return () => { sd.removeEventListener('scroll', update); ro.disconnect() }
+    })
 </script>
 
 <!-- _hovering suppresses scroll sync while user reads the strip.
@@ -535,6 +562,11 @@
      onmouseenter={() => _hovering = true}
      onmouseleave={() => { _hovering = false }}
      onwheel={on_wheel}>
+
+    {#if vp.has}
+    <!-- viewport block: what's currently in the editor, gliding the left edge -->
+    <div class="lmm-vp" style="top: {vp.top.toFixed(1)}px; height: {vp.height.toFixed(1)}px;"></div>
+    {/if}
 
     <div class="lmm-head">
         <!-- nav history — only shown once there's something to navigate; before
@@ -700,6 +732,15 @@
         flex: 1;
         overflow: hidden;        /* bar invisible; JS drives scrollTop */
         position: relative;
+    }
+    /* viewport block — glides the left edge, showing what's in the editor */
+    .lmm-vp {
+        position: absolute; left: 0; width: 3px; z-index: 12;
+        background: rgba(140, 180, 255, 0.55);
+        box-shadow: 0 0 8px 2px rgba(120, 170, 255, 0.6);
+        border-radius: 0 2px 2px 0;
+        pointer-events: none;
+        transition: top 0.08s linear, height 0.12s linear;
     }
     .lmm-strip {
         display: grid;
