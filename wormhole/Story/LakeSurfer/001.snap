@@ -1,86 +1,257 @@
 Snap:H
   H:LakeSurfer,Run
     A:Lies
-      self,round=14	{"mung":["age"]}
+      self,round=16	{"mung":["age"]}
       w:Lies
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/LakeSurfer/Waftily/toc.snap,waft_path:Story/LakeSurfer/Waftily
-            known,dige:732027c7adf365b7,kind:read,at=1781256318.751
-          Good,type:text/Doc,path:Ghost/test/Hello.g
-            known,dige:f894a5ff10d26203,kind:read,at=1781256319.131
+            known,dige:194ecbd2c531d08c,kind:read,at=1781511043.019
+          Good,type:text/Doc,path:Ghost/test/Idzeuzia.g
+            known,dige:f894a5ff10d26203,kind:read,at=1781511043.391
         examining	{"loopy":2}
           req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
           Spotlight	{"ref":{"src":"%What:itis"}}
         Opt
         req:Cortex,eternal
-          req:Codebit,path:Ghost/test/Hello.g,maz=2,gen_path:gen/test/Hello.go,source_dige:f894a5ff10d26203,dige:97c7e5f5bf9edddc,permanent,write_finished,finished
-        Waft:Story/LakeSurfer/Waftily
+          req:Codebit,path:Ghost/test/Idzeuzia.g,maz=2,gen_path:gen/test/Idzeuzia.go,source_dige:f894a5ff10d26203,dige:a66bfcce15c2d272,permanent,write_finished,finished
+        Waft:Story/LakeSurfer/Waftily,active
           What:itis
-            Doc:Ghost/test/Hello.g
-              Point,method:Idzeugnosis
-              Point:Idzeuganise
-              Point:Idvoyage_verify
+            Doc:Ghost/test/Idzeuzia.g
+            Point,method:Idzeugnosis
+            Point:Idzeuganise
+            Point:Idvoyage_verify
           What:itis
             Doc:src/lib/ghost/Radios.svelte
-              Point:reset
+            Point:reset
           What:itis
             Doc:Ghost/test/LangTiles.g
           What:itis
             Doc:src/lib/p2p/Peerily.svelte.ts
-              Point:Pier
-              Point:emit
+            Point:Pier
+            Point:emit
+          Doc:Ghost/test/Idzeuzia.g
+            Point,method:bm_21417,label:,from=21417,to=21453,serial=1781335799032
+          Doc:src/lib/ghost/Radios.svelte
+            Point,method:close_nowPlaying,label:,from=25988,to=26021,serial=1781335799033
+            Point,method:transmit_record,label:,from=30739,to=30788,serial=1781335799034
+            Point,method:bm_30958,label:,from=30958,to=30995,serial=1781335799035
         req:desire
           req:acquire,maz=9,finished
-          Waft:Story/LakeSurfer/Waftily	{"ref":{"src":"%Waft:Story/LakeSurfer/Waftily"}}
+          Waft:Story/LakeSurfer/Waftily	{"ref":{"src":"%Waft:Story/LakeSurfer/Waftily, active:1"}}
         o_elvis:Lies_desire_play
         o_elvis:Lies_desire_pause
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781256318800,kind:cold
-          want=1781256318864,kind:cold
-          want=1781256318964,kind:cold,resolved
+          want=1781511043132,kind:cold
+          want=1781511043182,kind:cold
+          want=1781511043283,kind:cold,resolved
         o_elvis:dock_askies
-        self,round=14	{"mung":["age"]}
+        self,round=16	{"mung":["age"]}
         see:🗂 1 doc · 1 Waft
     A:Lang
-      self,round=13	{"mung":["age"]}
+      self,round=16	{"mung":["age"]}
       w:Lang
         Opt
           txtsyntaxdump
         model,cyto_dir
         docks
-          dock:Ghost/test/Hello.g,active	{"loopy":1}
+          dock:Ghost/test/Idzeuzia.g,active	{"loopy":1}
             req:Languish
               req:text_loaded,maz=3,finished
               req:text_mutated,maz=2,eternal
               req:compile,maz=2,finished
             Text,dige:f894a5ff10d26203,disk_dige:f894a5ff10d26203,disk_rev
             Compile
-              methods
-                region,label:uploadConsoleLogs(),depth=0,from=0,to=29,line	{"ref":{"region_path":"[uploadConsoleLogs()]"}}
-                def,method:log_Console,from=34,to=46,line=2	{"ref":{"region_path":"[uploadConsoleLogs()]"}}
-                controlflow,keyword:if,title:(!batch) return,from=99,to=117,line=4,via:log_Console	{"ref":{"region_path":"[uploadConsoleLogs()]"}}
-                controlflow,keyword:if,title:(M.log_Console_not) return,from=157,to=186,line=6,via:log_Console	{"ref":{"region_path":"[uploadConsoleLogs()]"}}
-                controlflow,keyword:if,title:(!batch?.length) return,from=195,to=221,line=7,via:log_Console	{"ref":{"region_path":"[uploadConsoleLogs()]"}}
-                call,method:Our_main_Id,from=303,to=320,line=10,via:log_Console	{"ref":{"region_path":"[uploadConsoleLogs()]"}}
-                call,method:fetch,from=362,to=368,line=689,via:log_Console	{"ref":{"region_path":"[uploadConsoleLogs()]"}}
-                {"controlflow":1,"keyword":"if","title":"(!already_granted && !this.claim_Idzeug_number(Idzeug, c.n)) {","from":24216,"to":24281,"line":691,"via":"log_Console"}	{"ref":{"region_path":"[uploadConsoleLogs()]"}}
-                controlflow,keyword:if,title:(!already_granted) {,from=24347,to=24370,line=694,via:log_Console	{"ref":{"region_path":"[uploadConsoleLogs()]"}}
-                call,method:ex,from=24782,to=24785,line=705,via:log_Console	{"ref":{"region_path":"[uploadConsoleLogs()]"}}
-                controlflow,keyword:if,title:(Pier.stashed.introduced_at) {,from=24916,to=24949,line=708,via:log_Console	{"ref":{"region_path":"[uploadConsoleLogs()]"}}
-                controlflow,keyword:else,title:{,from=25004,to=25010,line=711,via:log_Console	{"ref":{"region_path":"[uploadConsoleLogs()]"}}
-                call,method:Idzeug_apply_trust,from=25124,to=25148,line=715,via:log_Console	{"ref":{"region_path":"[uploadConsoleLogs()]"}}
-                def,method:Idzeug_apply_trust,from=25464,to=25489,line=727,async	{"ref":{"region_path":"[uploadConsoleLogs()]"}}
-                controlflow,keyword:if,title:(!I.sc.name) throw "!name",from=25539,to=25568,line=729,via:Idzeug_apply_trust	{"ref":{"region_path":"[uploadConsoleLogs()]"}}
-                controlflow,keyword:for,title:(let to of give_them_trust) {,from=25664,to=25697,line=733,via:Idzeug_apply_trust	{"ref":{"region_path":"[uploadConsoleLogs()]"}}
-                def,method:claim_Idzeug_number,from=26123,to=26143,line=746	{"ref":{"region_path":"[uploadConsoleLogs()]"}}
-                controlflow,keyword:if,title:(n == null || n != n*1) throw "!number",from=26180,to=26222,line=747,via:claim_Idzeug_number	{"ref":{"region_path":"[uploadConsoleLogs()]"}}
-                controlflow,keyword:if,title:(Idzeug.stashed.nRepeating) {,from=26278,to=26310,line=750,via:claim_Idzeug_number	{"ref":{"region_path":"[uploadConsoleLogs()]"}}
-                controlflow,keyword:if,title:(N.includes(n)) return false,from=26399,to=26430,line=755,via:claim_Idzeug_number	{"ref":{"region_path":"[uploadConsoleLogs()]"}}
-                def,method:ier_is_Good,from=26656,to=26668,line=763	{"ref":{"region_path":"[uploadConsoleLogs()]"}}
-              time,compile=0.028,all=0.842,write=0
-              Output,gen_path:gen/test/Hello.go,dige:97c7e5f5bf9edddc,source_dige:f894a5ff10d26203
+              Map
+                region,label:uploadConsoleLogs(),depth=0,from=0,to=29,line
+                def,method:log_Console,from=34,to=46,line=2
+                controlflow,keyword:if,title:(!batch) return,from=99,to=102,line=4,via:log_Console
+                controlflow,keyword:if,title:(M.log_Console_not) return,from=157,to=160,line=6,via:log_Console
+                controlflow,keyword:if,title:(!batch?.length) return,from=195,to=198,line=7,via:log_Console
+                call,method:Our_main_Id,from=303,to=320,line=10,via:log_Console
+                call,method:fetch,from=362,to=368,line=12,via:log_Console
+                def,method:install_console_capture,from=572,to=596,line=17
+                controlflow,keyword:if,title:(!M.F.P.PROD) return,from=608,to=611,line=18,via:install_console_capture
+                controlflow,keyword:if,title:(M.F.P.ConsoleLogs) return,from=640,to=643,line=19,via:install_console_capture
+                {"controlflow":1,"keyword":"for","title":"(const level of ['log','warn','error'] as const) {","from":709,"to":713,"line":21,"via":"install_console_capture"}
+                call,method:orig,from=878,to=883,line=24,via:install_console_capture
+                controlflow,keyword:if,title:(v === null || typeof v !== 'object') return String(v),from=956,to=959,line=26,via:install_console_capture
+                {"controlflow":1,"keyword":"if","title":"(typeof v == 'object') return \"ob: \"+objectify(v,undefined,true)","from":1034,"to":1037,"line":27,"via":"install_console_capture"}
+                controlflow,keyword:if,title:(msg.includes('console_batch')) return,from=1280,to=1283,line=31,via:install_console_capture
+                region,label:Tyranny,depth=0,from=1451,to=1468,line=39
+                def,method:Tyranny,from=1480,to=1488,line=41,async
+                {"controlflow":1,"keyword":"if","title":"(!eer) return w.i({waits:'instantiate ourselves...'})","from":1578,"to":1581,"line":44,"via":"Tyranny"}
+                controlflow,keyword:if,title:(M.log_Idvoyage_testspam) {,from=1686,to=1689,line=48,via:Tyranny
+                call,method:log_Idvoyage,from=1729,to=1747,line=49,via:Tyranny
+                call,method:Tyranny_of_Idvoyage,from=1806,to=1831,line=51,via:Tyranny
+                {"controlflow":1,"keyword":"for","title":"(let e of this.o_elvis(w,'Periodically')) {","from":1850,"to":1854,"line":54,"via":"Tyranny"}
+                def,method:log_Idvoyage,from=2129,to=2142,line=61
+                controlflow,keyword:if,title:(M.log_Idvoyage_not) return console.log(`would log Idvoyage.`),from=2248,to=2251,line=65,via:log_Idvoyage
+                controlflow,keyword:while,title:(1) {,from=2451,to=2457,line=69,via:log_Idvoyage
+                controlflow,keyword:if,title:(!sc) break,from=2518,to=2521,line=71,via:log_Idvoyage
+                call,method:fetch,from=2694,to=2700,line=74,via:log_Idvoyage
+                call,method:go,from=3120,to=3123,line=84,via:log_Idvoyage
+                def,method:Tyranny_of_Idvoyage,from=3169,to=3189,line=88,async
+                controlflow,keyword:until,title:seeing Bob's resultant Idvoyage,from=3888,to=3894,line=103,via:Tyranny_of_Idvoyage
+                controlflow,keyword:if,title:(!eer.stashed.Idvoyage) {,from=4555,to=4558,line=120,via:Tyranny_of_Idvoyage
+                call,method:Idvoyage_generate,from=4789,to=4812,line=124,via:Tyranny_of_Idvoyage
+                {"controlflow":1,"keyword":"for","title":"(let e of this.o_elvis(w,'i Idvoyage')) {","from":5077,"to":5081,"line":133,"via":"Tyranny_of_Idvoyage"}
+                call,method:Idvoyage_verify,from=5914,to=5935,line=150,via:Tyranny_of_Idvoyage
+                controlflow,keyword:if,title:(problem) {,from=5985,to=5988,line=151,via:Tyranny_of_Idvoyage
+                call,method:bad,from=6016,to=6020,line=152,via:Tyranny_of_Idvoyage
+                controlflow,keyword:if,title:(delta < -35 || delta > 35) {,from=6130,to=6133,line=156,via:Tyranny_of_Idvoyage
+                call,method:bad,from=6179,to=6183,line=157,via:Tyranny_of_Idvoyage
+                call,method:Idvoyage_generate,from=6352,to=6375,line=163,via:Tyranny_of_Idvoyage
+                controlflow,keyword:if,title:(!Now.sign) throw `no signed`,from=6392,to=6395,line=164,via:Tyranny_of_Idvoyage
+                call,method:log_Idvoyage,from=6542,to=6560,line=169,via:Tyranny_of_Idvoyage
+                def,method:Idvoyage_verify,from=6689,to=6705,line=174,async
+                def,method:Idvoyage_generate,from=6983,to=7001,line=182,async
+                controlflow,keyword:if,title:(c.sign) throw `already signed`,from=7057,to=7060,line=184,via:Idvoyage_generate
+                def,method:Idvoyage_arrange,from=7313,to=7330,line=193,async
+                controlflow,keyword:if,title:(ago < 9 || ago == Infinity) {,from=7410,to=7413,line=195,via:Idvoyage_arrange
+                {"controlflow":1,"keyword":"if","title":"(await this.RingUp(A,w,M.OurTyrant,\"Idvoyage\",I)) {","from":7512,"to":7515,"line":197,"via":"Idvoyage_arrange"}
+                controlflow,keyword:if,title:(!Idvoyage) throw "Alice!Idvoyage",from=8029,to=8032,line=209,via:Idvoyage_arrange
+                {"controlflow":1,"keyword":"for","title":"(let e of this.o_elvis(this.w,'i Idvoyage')) {","from":8358,"to":8362,"line":218,"via":"Idvoyage_arrange"}
+                controlflow,keyword:if,title:(!await this.Idvoyage_verify(Idvoyage)) throw `tyrant brainmelt`,from=8462,to=8465,line=220,via:Idvoyage_arrange
+                region,label:Idzeug,depth=0,from=8840,to=8856,line=237
+                def,method:Idzeuging,from=8867,to=8877,line=238,async
+                {"controlflow":1,"keyword":"for","title":"(let Our of w.o({Idzeug:1,Our:1})) {","from":8928,"to":8932,"line":240,"via":"Idzeuging"}
+                controlflow,keyword:if,title:(!s.Serial) {,from=9128,to=9131,line=244,via:Idzeuging
+                call,method:Idzeugmance,from=9419,to=9436,line=253,via:Idzeuging
+                call,method:Idzeuganise,from=9476,to=9493,line=255,via:Idzeuging
+                def,method:ourIdzeug,from=9509,to=9519,line=257
+                call,method:Our_main_Id,from=9610,to=9627,line=260,via:ourIdzeug
+                def,method:Idzeugnate,from=9874,to=9885,line=269,async
+                call,method:Idzeug_i_Idzeugi,from=9916,to=9938,line=270,via:Idzeugnate
+                call,method:ourIdzeug,from=9945,to=9960,line=270,via:Idzeugnate
+                def,method:IdzeugNumberLeap,from=10076,to=10093,line=274,async
+                call,method:ourIdzeug,from=10124,to=10139,line=275,via:IdzeugNumberLeap
+                def,method:Idzeug_i_Idzeugi,from=10500,to=10517,line=287,async
+                controlflow,keyword:for,title:(let i = 1; i <= many; i++) {,from=10639,to=10643,line=291,via:Idzeug_i_Idzeugi
+                call,method:Our_main_Id,from=10721,to=10738,line=293,via:Idzeug_i_Idzeugi
+                call,method:encode_Idzeugi_advice,from=10890,to=10917,line=300,via:Idzeug_i_Idzeugi
+                {"controlflow":1,"keyword":"if","title":"(this.USE_PRESIGS) sign = sign.slice(0,16)","from":11285,"to":11288,"line":308,"via":"Idzeug_i_Idzeugi"}
+                def,method:reset_location_hash,from=11708,to=11728,line=323
+                def,method:encode_Idzeugi_advice,from=11830,to=11852,line=327
+                {"controlflow":1,"keyword":"if","title":"(advice.match(/[^\\w+ \\.~-]/)) throw \"illegal char, depeel: \"+advice","from":12018,"to":12021,"line":333,"via":"encode_Idzeugi_advice"}
+                def,method:decode_Idzeugi_advice,from=12164,to=12186,line=337
+                {"controlflow":1,"keyword":"if","title":"(advice.includes(',') && advice.includes(':')) {","from":12261,"to":12264,"line":340,"via":"decode_Idzeugi_advice"}
+                controlflow,keyword:else,title:{,from=12458,to=12463,line=344,via:decode_Idzeugi_advice
+                def,method:Idzeugmance,from=12664,to=12676,line=353,async
+                controlflow,keyword:if,title:(m) {,from=12759,to=12762,line=355,via:Idzeugmance
+                call,method:decode_Idzeugi_advice,from=12848,to=12875,line=357,via:Idzeugmance
+                call,method:i_Idzeugsomething,from=12911,to=12934,line=358,via:Idzeugmance
+                {"controlflow":1,"keyword":"if","title":"(neu) this.UIsay(w,`${name} ${prepub}`)","from":12990,"to":12993,"line":359,"via":"Idzeugmance"}
+                controlflow,keyword:else,title:{,from=13051,to=13056,line=361,via:Idzeugmance
+                controlflow,keyword:if,title:(!this.said_no_Idzeug) {,from=13070,to=13073,line=362,via:Idzeugmance
+                def,method:i_Idzeugsomething,from=13396,to=13414,line=373,async
+                call,method:ex,from=13496,to=13499,line=376,via:i_Idzeugsomething
+                def,method:Idzeuverify,from=13652,to=13664,line=383,async
+                call,method:Our_main_Id,from=13747,to=13764,line=385,via:Idzeuverify
+                controlflow,keyword:if,title:(!Id) throw "!Id!?",from=13775,to=13778,line=386,via:Idzeuverify
+                controlflow,keyword:if,title:(this.USE_PRESIGS) {,from=13834,to=13837,line=389,via:Idzeuverify
+                region,label:Idzeuganise,depth=0,from=14288,to=14309,line=405
+                def,method:UIsay,from=14314,to=14320,line=406
+                def,method:Idzeuganise,from=14496,to=14508,line=412,async
+                call,method:w_forgets_problems,from=14576,to=14600,line=414,via:Idzeuganise
+                controlflow,keyword:if,title:(I.sc.dead) {,from=14615,to=14618,line=415,via:Idzeuganise
+                controlflow,keyword:if,title:(I.sc.dead++ > 3) {,from=14648,to=14651,line=416,via:Idzeuganise
+                {"controlflow":1,"keyword":"if","title":"(!I.sc.dead) this.UIsay(w,say)","from":14813,"to":14816,"line":422,"via":"Idzeuganise"}
+                {"controlflow":1,"keyword":"for","title":"(let I of w.o({Idzeugnation:1})) {","from":15007,"to":15011,"line":430,"via":"Idzeuganise"}
+                call,method:Idzeugnation,from=15143,to=15161,line=433,via:Idzeuganise
+                {"controlflow":1,"keyword":"for","title":"(let wa of I.o1({waits:1})) {","from":15263,"to":15267,"line":435,"via":"Idzeuganise"}
+                call,method:UIsay,from=15313,to=15324,line=436,via:Idzeuganise
+                {"controlflow":1,"keyword":"for","title":"(let e of this.o_elvis(w,'o Idzeugnosis')) {","from":15533,"to":15537,"line":443,"via":"Idzeuganise"}
+                {"controlflow":1,"keyword":"for","title":"(let e of this.o_elvis(w,'i Idvoyage')) {","from":15600,"to":15604,"line":445,"via":"Idzeuganise"}
+                call,method:o_elvis_Idzeugnosis,from=15680,to=15705,line=449,via:Idzeuganise
+                {"controlflow":1,"keyword":"for","title":"(let I of w.o({Idzeugnosis:1})) {","from":15718,"to":15722,"line":450,"via":"Idzeuganise"}
+                call,method:Idzeugnosis,from=15860,to=15877,line=453,via:Idzeuganise
+                def,method:Idzeugnation,from=15916,to=15929,line=458,async
+                controlflow,keyword:if,title:(!nonfatal) this.reset_location_hash(),from=16126,to=16129,line=462,via:Idzeugnation
+                call,method:_no,from=16180,to=16184,line=463,via:Idzeugnation
+                controlflow,keyword:if,title:(!(I.o(c).length <threshold)) {,from=16522,to=16525,line=472,via:Idzeugnation
+                controlflow,keyword:if,title:(I.o(c).length == threshold) {,from=16573,to=16576,line=473,via:Idzeugnation
+                call,method:UIsay,from=16627,to=16638,line=474,via:Idzeugnation
+                controlflow,keyword:if,title:(I.sc.finished) {,from=16833,to=16836,line=480,via:Idzeugnation
+                controlflow,keyword:if,title:(I.i_wasLast("finished") > 22) {,from=16932,to=16935,line=482,via:Idzeugnation
+                controlflow,keyword:if,title:('not yourself') {,from=17082,to=17085,line=488,via:Idzeugnation
+                call,method:Our_main_Id,from=17127,to=17144,line=489,via:Idzeugnation
+                controlflow,keyword:if,title:(Id+'' == prepub) return no("invited yourself"),from=17159,to=17162,line=490,via:Idzeugnation
+                call,method:simply_i_Pier_Our,from=17269,to=17292,line=493,via:Idzeugnation
+                {"controlflow":1,"keyword":"if","title":"(!Our) return I.i({waits:\"Our\"}).i(I)","from":17308,"to":17311,"line":494,"via":"Idzeugnation"}
+                controlflow,keyword:if,title:(!Pier) throw "never",from=17399,to=17402,line=496,via:Idzeugnation
+                call,method:RingUp,from=17479,to=17491,line=498,via:Idzeugnation
+                call,method:RingUp,from=17647,to=17659,line=502,via:Idzeugnation
+                controlflow,keyword:if,title:(!Pier_ok) {,from=17706,to=17709,line=504,via:Idzeugnation
+                call,method:dont_get_stuck_waiting_for_k,from=17819,to=17848,line=506,via:Idzeugnation
+                call,method:ensure_Our_Id,from=17957,to=17976,line=511,via:Idzeugnation
+                controlflow,keyword:if,title:(!Id) {,from=17989,to=17992,line=512,via:Idzeugnation
+                call,method:dont_get_stuck_waiting_for_k,from=18012,to=18041,line=513,via:Idzeugnation
+                controlflow,keyword:if,title:(prepub != Id+'') throw `thought...`,from=18111,to=18114,line=516,via:Idzeugnation
+                controlflow,keyword:if,title:(!Tyrant_ok) {,from=18193,to=18196,line=518,via:Idzeugnation
+                controlflow,keyword:if,title:(I.ago('waiting_on_Tyrant_at') > REQUESTS_MAX_LIFETIME) {,from=18430,to=18433,line=522,via:Idzeugnation
+                controlflow,keyword:if,title:(!TId) {,from=18842,to=18845,line=531,via:Idzeugnation
+                call,method:dont_get_stuck_waiting_for_k,from=18866,to=18895,line=532,via:Idzeugnation
+                controlflow,keyword:if,title:(!I.sc.success && await I.i_wasLast('asked') > 9) {,from=18982,to=18985,line=537,via:Idzeugnation
+                call,method:UIsay,from=19093,to=19104,line=539,via:Idzeugnation
+                {"controlflow":1,"keyword":"for","title":"(let e of this.o_elvis(w,'o Idzeugnosis')) {","from":19548,"to":19552,"line":550,"via":"Idzeugnation"}
+                call,method:sex,from=19659,to=19663,line=552,via:Idzeugnation
+                controlflow,keyword:if,title:(I.sc.failed) {,from=19719,to=19722,line=555,via:Idzeugnation
+                call,method:no,from=19795,to=19798,line=557,via:Idzeugnation
+                controlflow,keyword:if,title:(!I.sc.success) {,from=19879,to=19882,line=560,via:Idzeugnation
+                call,method:Idvoyage_verify,from=20087,to=20108,line=567,via:Idzeugnation
+                controlflow,keyword:if,title:(!is_trusted) {,from=20131,to=20134,line=568,via:Idzeugnation
+                controlflow,keyword:if,title:(I.ago('arranged_at') > REQUESTS_MAX_LIFETIME) {,from=20423,to=20426,line=576,via:Idzeugnation
+                {"controlflow":1,"keyword":"if","title":"(await this.Idvoyage_arrange(A,w,I)) return","from":20678,"to":20681,"line":582,"via":"Idzeugnation"}
+                call,method:Idzeug_apply_trust,from=20820,to=20844,line=586,via:Idzeugnation
+                call,method:reset_location_hash,from=20963,to=20988,line=589,via:Idzeugnation
+                call,method:UIsay,from=21110,to=21121,line=593,via:Idzeugnation
+                call,method:i_elvis,from=21199,to=21212,line=595,via:Idzeugnation
+                call,method:setTimeout,from=21231,to=21242,line=596,via:Idzeugnation
+                call,method:setTimeout,from=21286,to=21297,line=597,via:Idzeugnation
+                def,method:o_elvis_Idzeugnosis,from=21427,to=21447,line=601,async
+                {"controlflow":1,"keyword":"for","title":"(let e of this.o_elvis(w,'i Idzeugnosis')) {","from":21462,"to":21466,"line":602,"via":"o_elvis_Idzeugnosis"}
+                call,method:i_Idzeugsomething,from=21529,to=21552,line=603,via:o_elvis_Idzeugnosis
+                def,method:unemitIntro,from=21658,to=21670,line=607,async
+                controlflow,keyword:if,title:(data.Idvoyage && !data.success) {,from=21738,to=21741,line=609,via:unemitIntro
+                controlflow,keyword:if,title:(this.recent_Idvoyage_signs.includes(sign)) {,from=21881,to=21884,line=613,via:unemitIntro
+                call,method:log,from=21954,to=21958,line=614,via:unemitIntro
+                call,method:setTimeout,from=22086,to=22097,line=618,via:unemitIntro
+                call,method:grop,from=22121,to=22126,line=619,via:unemitIntro
+                call,method:i_elvis,from=22210,to=22218,line=622,via:unemitIntro
+                controlflow,keyword:if,title:(!data.answer) {,from=22337,to=22340,line=626,via:unemitIntro
+                call,method:i_elvis,from=22401,to=22409,line=628,via:unemitIntro
+                controlflow,keyword:else,title:{,from=22481,to=22486,line=630,via:unemitIntro
+                call,method:i_elvis,from=22540,to=22548,line=632,via:unemitIntro
+                region,label:Idzeugnosis,depth=0,from=22651,to=22672,line=643
+                def,method:Idzeugnosis,from=22770,to=22782,line=647,async
+                call,method:_no,from=23115,to=23119,line=654,via:Idzeugnosis
+                call,method:o_Pier_Our,from=23227,to=23243,line=660,via:Idzeugnosis
+                {"controlflow":1,"keyword":"if","title":"(ier != Pier.instance) throw `Pier ${prepub} not %Our,Pier.instance`","from":23292,"to":23295,"line":662,"via":"Idzeugnosis"}
+                controlflow,keyword:if,title:(I.sc.success) {,from=23373,to=23376,line=664,via:Idzeugnosis
+                controlflow,keyword:if,title:(!Pier.stashed.Good) throw "howd",from=23430,to=23433,line=666,via:Idzeugnosis
+                controlflow,keyword:if,title:(await I.i_wasLast("finished") > 22) {,from=23479,to=23482,line=667,via:Idzeugnosis
+                {"controlflow":1,"keyword":"if","title":"(!I.sc.sign_ok) await this.Idzeuverify(A,w,I)","from":23603,"to":23606,"line":673,"via":"Idzeugnosis"}
+                controlflow,keyword:if,title:(!I.sc.sign_ok) {,from=23660,to=23663,line=674,via:Idzeugnosis
+                call,method:decode_Idzeugi_advice,from=23741,to=23768,line=678,via:Idzeugnosis
+                controlflow,keyword:if,title:(!Idzeug) {,from=23907,to=23910,line=682,via:Idzeugnosis
+                {"controlflow":1,"keyword":"if","title":"(!already_granted && !this.claim_Idzeug_number(Idzeug, c.n)) {","from":24216,"to":24219,"line":691,"via":"Idzeugnosis"}
+                controlflow,keyword:if,title:(!already_granted) {,from=24347,to=24350,line=694,via:Idzeugnosis
+                call,method:ex,from=24782,to=24785,line=705,via:Idzeugnosis
+                controlflow,keyword:if,title:(Pier.stashed.introduced_at) {,from=24916,to=24919,line=708,via:Idzeugnosis
+                controlflow,keyword:else,title:{,from=25004,to=25009,line=711,via:Idzeugnosis
+                call,method:Idzeug_apply_trust,from=25124,to=25148,line=715,via:Idzeugnosis
+                def,method:Idzeug_apply_trust,from=25470,to=25489,line=727,async
+                controlflow,keyword:if,title:(!I.sc.name) throw "!name",from=25539,to=25542,line=729,via:Idzeug_apply_trust
+                controlflow,keyword:for,title:(let to of give_them_trust) {,from=25664,to=25668,line=733,via:Idzeug_apply_trust
+                def,method:claim_Idzeug_number,from=26123,to=26143,line=746
+                controlflow,keyword:if,title:(n == null || n != n*1) throw "!number",from=26180,to=26183,line=747,via:claim_Idzeug_number
+                controlflow,keyword:if,title:(Idzeug.stashed.nRepeating) {,from=26278,to=26281,line=750,via:claim_Idzeug_number
+                controlflow,keyword:if,title:(N.includes(n)) return false,from=26399,to=26402,line=755,via:claim_Idzeug_number
+                def,method:ier_is_Good,from=26656,to=26668,line=763
+              time,compile=0.032,all=0.59,write=0
+              Output,gen_path:gen/test/Idzeuzia.go,dige:a66bfcce15c2d272,source_dige:f894a5ff10d26203
                source: |
                  <script lang="ts">
                      // GENERATED by Lang compile — do not edit by hand.
@@ -92,7 +263,7 @@ Snap:H
                      onMount(async () => {
                      await H.eatfunc({
                  
-                     Ghostmeta_Ghost_test_Hello(): string { return 'f894a5ff10d26203' },
+                     Ghostmeta_Ghost_test_Idzeuzia(): string { return 'f894a5ff10d26203' },
                  
                  //#region uploadConsoleLogs()
                      log_Console(A,w) {
@@ -105,6 +276,7 @@ Snap:H
                          let category = M.F.P.PROD ? "Console" : "DevConsole"
                          let user = this.Our_main_Id(w).Id.pretty_pubkey().slice(0,8)
                  
+                         fetch(`/log?stream=${category}-${user}`, {
                              method: 'POST',
                              body: batch.map(e => JSON.stringify(e)).join('\n')
                          }).catch(er => console.warn('console_batch upload', er))
@@ -195,7 +367,8 @@ Snap:H
                               that doesn't contact Tyrant at all
                               Alice does Idzeugnosis, gives out trust...
                               < she should give out her Idvoyage but not trust
-                                until seeing Bob's resultant Idvoyage
+                                until (seeing Bob's resultant Idvoyage) {
+                                }
                               of course they'd need an Alice Idzeug, so no too relevant...
                                but the CIA (the real one) could manage that
                              
@@ -782,7 +955,6 @@ Snap:H
                          let already_granted = Idzeug.stashed.recently_granted?.find(
                              g => g.prepub === prepub && (now_in_seconds() - g.at) < 60
                          )
-                         fetch(`/log?stream=${category}-${user}`, {
                  
                          if (!already_granted && !this.claim_Idzeug_number(Idzeug, c.n)) {
                              return no("prize already claimed")
@@ -917,47 +1089,249 @@ Snap:H
                  </script>
             Pmirrors
               Pmirror,src_Waft:Story/LakeSurfer/Waftily,spec:Idzeugnosis	{"ref":{"src_Point":"%Point:1, method:Idzeugnosis"}}
+                graft,bookmark_id:g_1,from=22770,to=22782,line=647
               Pmirror,src_Waft:Story/LakeSurfer/Waftily,spec:Idzeuganise	{"ref":{"src_Point":"%Point:Idzeuganise"}}
+                graft,bookmark_id:g_2,from=14496,to=14508,line=412
               Pmirror,src_Waft:Story/LakeSurfer/Waftily,spec:Idvoyage_verify	{"ref":{"src_Point":"%Point:Idvoyage_verify"}}
+                graft,bookmark_id:g_3,from=6689,to=6705,line=174
+            Navicade
+              Mapule,kind:region,key:uploadConsoleLogs(),depth=0,line,from=0,to=29,end_line=38
+              Mapule,kind:def,key:log_Console,depth=0,line=2,from=34,to=46
+              Mapule,kind:cf,key:if,depth=0,line=4,from=99,to=102
+              Mapule,kind:cf,key:if,depth=0,line=6,from=157,to=160
+              Mapule,kind:cf,key:if,depth=0,line=7,from=195,to=198
+              Mapule,kind:call,key:Our_main_Id,depth=0,line=10,from=303,to=320
+              Mapule,kind:call,key:fetch,depth=0,line=12,from=362,to=368
+              Mapule,kind:def,key:install_console_capture,depth=0,line=17,from=572,to=596
+              Mapule,kind:cf,key:if,depth=0,line=18,from=608,to=611
+              Mapule,kind:cf,key:if,depth=0,line=19,from=640,to=643
+              Mapule,kind:cf,key:for,depth=0,line=21,from=709,to=713
+              Mapule,kind:call,key:orig,depth=0,line=24,from=878,to=883
+              Mapule,kind:cf,key:if,depth=0,line=26,from=956,to=959
+              Mapule,kind:cf,key:if,depth=0,line=27,from=1034,to=1037
+              Mapule,kind:cf,key:if,depth=0,line=31,from=1280,to=1283
+              Mapule,kind:region,key:Tyranny,depth=0,line=39,from=1451,to=1468,end_line=236
+              Mapule,kind:def,key:Tyranny,depth=0,line=41,from=1480,to=1488
+              Mapule,kind:cf,key:if,depth=0,line=44,from=1578,to=1581
+              Mapule,kind:cf,key:if,depth=0,line=48,from=1686,to=1689
+              Mapule,kind:call,key:log_Idvoyage,depth=0,line=49,from=1729,to=1747
+              Mapule,kind:call,key:Tyranny_of_Idvoyage,depth=0,line=51,from=1806,to=1831
+              Mapule,kind:cf,key:for,depth=0,line=54,from=1850,to=1854
+              Mapule,kind:def,key:log_Idvoyage,depth=0,line=61,from=2129,to=2142
+              Mapule,kind:cf,key:if,depth=0,line=65,from=2248,to=2251
+              Mapule,kind:cf,key:while,depth=0,line=69,from=2451,to=2457
+              Mapule,kind:cf,key:if,depth=0,line=71,from=2518,to=2521
+              Mapule,kind:call,key:fetch,depth=0,line=74,from=2694,to=2700
+              Mapule,kind:call,key:go,depth=0,line=84,from=3120,to=3123
+              Mapule,kind:def,key:Tyranny_of_Idvoyage,depth=0,line=88,from=3169,to=3189
+              Mapule,kind:cf,key:until,depth=0,line=103,from=3888,to=3894
+              Mapule,kind:cf,key:if,depth=0,line=120,from=4555,to=4558
+              Mapule,kind:call,key:Idvoyage_generate,depth=0,line=124,from=4789,to=4812
+              Mapule,kind:cf,key:for,depth=0,line=133,from=5077,to=5081
+              Mapule,kind:call,key:Idvoyage_verify,depth=0,line=150,from=5914,to=5935
+              Mapule,kind:cf,key:if,depth=0,line=151,from=5985,to=5988
+              Mapule,kind:call,key:bad,depth=0,line=152,from=6016,to=6020
+              Mapule,kind:cf,key:if,depth=0,line=156,from=6130,to=6133
+              Mapule,kind:call,key:bad,depth=0,line=157,from=6179,to=6183
+              Mapule,kind:call,key:Idvoyage_generate,depth=0,line=163,from=6352,to=6375
+              Mapule,kind:cf,key:if,depth=0,line=164,from=6392,to=6395
+              Mapule,kind:call,key:log_Idvoyage,depth=0,line=169,from=6542,to=6560
+              Mapule,kind:def,key:Idvoyage_verify,depth=0,line=174,from=6689,to=6705
+              Mapule,kind:def,key:Idvoyage_generate,depth=0,line=182,from=6983,to=7001
+              Mapule,kind:cf,key:if,depth=0,line=184,from=7057,to=7060
+              Mapule,kind:def,key:Idvoyage_arrange,depth=0,line=193,from=7313,to=7330
+              Mapule,kind:cf,key:if,depth=0,line=195,from=7410,to=7413
+              Mapule,kind:cf,key:if,depth=0,line=197,from=7512,to=7515
+              Mapule,kind:cf,key:if,depth=0,line=209,from=8029,to=8032
+              Mapule,kind:cf,key:for,depth=0,line=218,from=8358,to=8362
+              Mapule,kind:cf,key:if,depth=0,line=220,from=8462,to=8465
+              Mapule,kind:region,key:Idzeug,depth=0,line=237,from=8840,to=8856,end_line=404
+              Mapule,kind:def,key:Idzeuging,depth=0,line=238,from=8867,to=8877
+              Mapule,kind:cf,key:for,depth=0,line=240,from=8928,to=8932
+              Mapule,kind:cf,key:if,depth=0,line=244,from=9128,to=9131
+              Mapule,kind:call,key:Idzeugmance,depth=0,line=253,from=9419,to=9436
+              Mapule,kind:call,key:Idzeuganise,depth=0,line=255,from=9476,to=9493
+              Mapule,kind:def,key:ourIdzeug,depth=0,line=257,from=9509,to=9519
+              Mapule,kind:call,key:Our_main_Id,depth=0,line=260,from=9610,to=9627
+              Mapule,kind:def,key:Idzeugnate,depth=0,line=269,from=9874,to=9885
+              Mapule,kind:call,key:Idzeug_i_Idzeugi,depth=0,line=270,from=9916,to=9938
+              Mapule,kind:call,key:ourIdzeug,depth=0,line=270,from=9945,to=9960
+              Mapule,kind:def,key:IdzeugNumberLeap,depth=0,line=274,from=10076,to=10093
+              Mapule,kind:call,key:ourIdzeug,depth=0,line=275,from=10124,to=10139
+              Mapule,kind:def,key:Idzeug_i_Idzeugi,depth=0,line=287,from=10500,to=10517
+              Mapule,kind:cf,key:for,depth=0,line=291,from=10639,to=10643
+              Mapule,kind:call,key:Our_main_Id,depth=0,line=293,from=10721,to=10738
+              Mapule,kind:call,key:encode_Idzeugi_advice,depth=0,line=300,from=10890,to=10917
+              Mapule,kind:cf,key:if,depth=0,line=308,from=11285,to=11288
+              Mapule,kind:def,key:reset_location_hash,depth=0,line=323,from=11708,to=11728
+              Mapule,kind:def,key:encode_Idzeugi_advice,depth=0,line=327,from=11830,to=11852
+              Mapule,kind:cf,key:if,depth=0,line=333,from=12018,to=12021
+              Mapule,kind:def,key:decode_Idzeugi_advice,depth=0,line=337,from=12164,to=12186
+              Mapule,kind:cf,key:if,depth=0,line=340,from=12261,to=12264
+              Mapule,kind:cf,key:else,depth=0,line=344,from=12458,to=12463
+              Mapule,kind:def,key:Idzeugmance,depth=0,line=353,from=12664,to=12676
+              Mapule,kind:cf,key:if,depth=0,line=355,from=12759,to=12762
+              Mapule,kind:call,key:decode_Idzeugi_advice,depth=0,line=357,from=12848,to=12875
+              Mapule,kind:call,key:i_Idzeugsomething,depth=0,line=358,from=12911,to=12934
+              Mapule,kind:cf,key:if,depth=0,line=359,from=12990,to=12993
+              Mapule,kind:cf,key:else,depth=0,line=361,from=13051,to=13056
+              Mapule,kind:cf,key:if,depth=0,line=362,from=13070,to=13073
+              Mapule,kind:def,key:i_Idzeugsomething,depth=0,line=373,from=13396,to=13414
+              Mapule,kind:call,key:ex,depth=0,line=376,from=13496,to=13499
+              Mapule,kind:def,key:Idzeuverify,depth=0,line=383,from=13652,to=13664
+              Mapule,kind:call,key:Our_main_Id,depth=0,line=385,from=13747,to=13764
+              Mapule,kind:cf,key:if,depth=0,line=386,from=13775,to=13778
+              Mapule,kind:cf,key:if,depth=0,line=389,from=13834,to=13837
+              Mapule,kind:region,key:Idzeuganise,depth=0,line=405,from=14288,to=14309,end_line=642
+              Mapule,kind:def,key:UIsay,depth=0,line=406,from=14314,to=14320
+              Mapule,kind:def,key:Idzeuganise,depth=0,line=412,from=14496,to=14508
+              Mapule,kind:call,key:w_forgets_problems,depth=0,line=414,from=14576,to=14600
+              Mapule,kind:cf,key:if,depth=0,line=415,from=14615,to=14618
+              Mapule,kind:cf,key:if,depth=0,line=416,from=14648,to=14651
+              Mapule,kind:cf,key:if,depth=0,line=422,from=14813,to=14816
+              Mapule,kind:cf,key:for,depth=0,line=430,from=15007,to=15011
+              Mapule,kind:call,key:Idzeugnation,depth=0,line=433,from=15143,to=15161
+              Mapule,kind:cf,key:for,depth=0,line=435,from=15263,to=15267
+              Mapule,kind:call,key:UIsay,depth=0,line=436,from=15313,to=15324
+              Mapule,kind:cf,key:for,depth=0,line=443,from=15533,to=15537
+              Mapule,kind:cf,key:for,depth=0,line=445,from=15600,to=15604
+              Mapule,kind:call,key:o_elvis_Idzeugnosis,depth=0,line=449,from=15680,to=15705
+              Mapule,kind:cf,key:for,depth=0,line=450,from=15718,to=15722
+              Mapule,kind:call,key:Idzeugnosis,depth=0,line=453,from=15860,to=15877
+              Mapule,kind:def,key:Idzeugnation,depth=0,line=458,from=15916,to=15929
+              Mapule,kind:cf,key:if,depth=0,line=462,from=16126,to=16129
+              Mapule,kind:call,key:_no,depth=0,line=463,from=16180,to=16184
+              Mapule,kind:cf,key:if,depth=0,line=472,from=16522,to=16525
+              Mapule,kind:cf,key:if,depth=0,line=473,from=16573,to=16576
+              Mapule,kind:call,key:UIsay,depth=0,line=474,from=16627,to=16638
+              Mapule,kind:cf,key:if,depth=0,line=480,from=16833,to=16836
+              Mapule,kind:cf,key:if,depth=0,line=482,from=16932,to=16935
+              Mapule,kind:cf,key:if,depth=0,line=488,from=17082,to=17085
+              Mapule,kind:call,key:Our_main_Id,depth=0,line=489,from=17127,to=17144
+              Mapule,kind:cf,key:if,depth=0,line=490,from=17159,to=17162
+              Mapule,kind:call,key:simply_i_Pier_Our,depth=0,line=493,from=17269,to=17292
+              Mapule,kind:cf,key:if,depth=0,line=494,from=17308,to=17311
+              Mapule,kind:cf,key:if,depth=0,line=496,from=17399,to=17402
+              Mapule,kind:call,key:RingUp,depth=0,line=498,from=17479,to=17491
+              Mapule,kind:call,key:RingUp,depth=0,line=502,from=17647,to=17659
+              Mapule,kind:cf,key:if,depth=0,line=504,from=17706,to=17709
+              Mapule,kind:call,key:dont_get_stuck_waiting_for_k,depth=0,line=506,from=17819,to=17848
+              Mapule,kind:call,key:ensure_Our_Id,depth=0,line=511,from=17957,to=17976
+              Mapule,kind:cf,key:if,depth=0,line=512,from=17989,to=17992
+              Mapule,kind:call,key:dont_get_stuck_waiting_for_k,depth=0,line=513,from=18012,to=18041
+              Mapule,kind:cf,key:if,depth=0,line=516,from=18111,to=18114
+              Mapule,kind:cf,key:if,depth=0,line=518,from=18193,to=18196
+              Mapule,kind:cf,key:if,depth=0,line=522,from=18430,to=18433
+              Mapule,kind:cf,key:if,depth=0,line=531,from=18842,to=18845
+              Mapule,kind:call,key:dont_get_stuck_waiting_for_k,depth=0,line=532,from=18866,to=18895
+              Mapule,kind:cf,key:if,depth=0,line=537,from=18982,to=18985
+              Mapule,kind:call,key:UIsay,depth=0,line=539,from=19093,to=19104
+              Mapule,kind:cf,key:for,depth=0,line=550,from=19548,to=19552
+              Mapule,kind:call,key:sex,depth=0,line=552,from=19659,to=19663
+              Mapule,kind:cf,key:if,depth=0,line=555,from=19719,to=19722
+              Mapule,kind:call,key:no,depth=0,line=557,from=19795,to=19798
+              Mapule,kind:cf,key:if,depth=0,line=560,from=19879,to=19882
+              Mapule,kind:call,key:Idvoyage_verify,depth=0,line=567,from=20087,to=20108
+              Mapule,kind:cf,key:if,depth=0,line=568,from=20131,to=20134
+              Mapule,kind:cf,key:if,depth=0,line=576,from=20423,to=20426
+              Mapule,kind:cf,key:if,depth=0,line=582,from=20678,to=20681
+              Mapule,kind:call,key:Idzeug_apply_trust,depth=0,line=586,from=20820,to=20844
+              Mapule,kind:call,key:reset_location_hash,depth=0,line=589,from=20963,to=20988
+              Mapule,kind:call,key:UIsay,depth=0,line=593,from=21110,to=21121
+              Mapule,kind:call,key:i_elvis,depth=0,line=595,from=21199,to=21212
+              Mapule,kind:call,key:setTimeout,depth=0,line=596,from=21231,to=21242
+              Mapule,kind:call,key:setTimeout,depth=0,line=597,from=21286,to=21297
+              Mapule,kind:def,key:o_elvis_Idzeugnosis,depth=0,line=601,from=21427,to=21447
+              Mapule,kind:cf,key:for,depth=0,line=602,from=21462,to=21466
+              Mapule,kind:call,key:i_Idzeugsomething,depth=0,line=603,from=21529,to=21552
+              Mapule,kind:def,key:unemitIntro,depth=0,line=607,from=21658,to=21670
+              Mapule,kind:cf,key:if,depth=0,line=609,from=21738,to=21741
+              Mapule,kind:cf,key:if,depth=0,line=613,from=21881,to=21884
+              Mapule,kind:call,key:log,depth=0,line=614,from=21954,to=21958
+              Mapule,kind:call,key:setTimeout,depth=0,line=618,from=22086,to=22097
+              Mapule,kind:call,key:grop,depth=0,line=619,from=22121,to=22126
+              Mapule,kind:call,key:i_elvis,depth=0,line=622,from=22210,to=22218
+              Mapule,kind:cf,key:if,depth=0,line=626,from=22337,to=22340
+              Mapule,kind:call,key:i_elvis,depth=0,line=628,from=22401,to=22409
+              Mapule,kind:cf,key:else,depth=0,line=630,from=22481,to=22486
+              Mapule,kind:call,key:i_elvis,depth=0,line=632,from=22540,to=22548
+              Mapule,kind:region,key:Idzeugnosis,depth=0,line=643,from=22651,to=22672,end_line=817
+              Mapule,kind:def,key:Idzeugnosis,depth=0,line=647,from=22770,to=22782
+              Mapule,kind:call,key:_no,depth=0,line=654,from=23115,to=23119
+              Mapule,kind:call,key:o_Pier_Our,depth=0,line=660,from=23227,to=23243
+              Mapule,kind:cf,key:if,depth=0,line=662,from=23292,to=23295
+              Mapule,kind:cf,key:if,depth=0,line=664,from=23373,to=23376
+              Mapule,kind:cf,key:if,depth=0,line=666,from=23430,to=23433
+              Mapule,kind:cf,key:if,depth=0,line=667,from=23479,to=23482
+              Mapule,kind:cf,key:if,depth=0,line=673,from=23603,to=23606
+              Mapule,kind:cf,key:if,depth=0,line=674,from=23660,to=23663
+              Mapule,kind:call,key:decode_Idzeugi_advice,depth=0,line=678,from=23741,to=23768
+              Mapule,kind:cf,key:if,depth=0,line=682,from=23907,to=23910
+              Mapule,kind:cf,key:if,depth=0,line=691,from=24216,to=24219
+              Mapule,kind:cf,key:if,depth=0,line=694,from=24347,to=24350
+              Mapule,kind:call,key:ex,depth=0,line=705,from=24782,to=24785
+              Mapule,kind:cf,key:if,depth=0,line=708,from=24916,to=24919
+              Mapule,kind:cf,key:else,depth=0,line=711,from=25004,to=25009
+              Mapule,kind:call,key:Idzeug_apply_trust,depth=0,line=715,from=25124,to=25148
+              Mapule,kind:def,key:Idzeug_apply_trust,depth=0,line=727,from=25470,to=25489
+              Mapule,kind:cf,key:if,depth=0,line=729,from=25539,to=25542
+              Mapule,kind:cf,key:for,depth=0,line=733,from=25664,to=25668
+              Mapule,kind:def,key:claim_Idzeug_number,depth=0,line=746,from=26123,to=26143
+              Mapule,kind:cf,key:if,depth=0,line=747,from=26180,to=26183
+              Mapule,kind:cf,key:if,depth=0,line=750,from=26278,to=26281
+              Mapule,kind:cf,key:if,depth=0,line=755,from=26399,to=26402
+              Mapule,kind:def,key:ier_is_Good,depth=0,line=763,from=26656,to=26668
         scheme:req
           lematch	{"ref":{"sc_has":"Object()"}}
             lematch	{"ref":{"sc_has":"Object()"}}
         Languinio	{"loopy":3}
           LE,target	{"loopy":0,"hid":1}
           dock,active	{"loopy":1,"hid":1}
-          Interest,in_What:itis,in_Doc:Ghost/test/Hello.g	{"ref":{"src":"%What:itis"}}
           Change
             backend,dige:f894a
             storage,dige:f894a,dim:false
-            compile,dige:f894a,dim:false,secs=0.028
+            compile,dige:f894a,dim:false,secs=0.032
+          Interest,in_Doc:Ghost/test/Idzeuzia.g	{"ref":{"src":"%What:itis"}}
+            MapReport,n_def=28,n_call=62,n_region=5,n_cf=91
         LE	{"loopy":0,"ref":{"target":"%What:itis"}}
+          State
+          {"encode":1,"snap_origin":"Point,method:bm_21417,label:,from=21417,to=21453,serial=1781335799032\n","snap_working":"Point,method:bm_21417,label:,from=21417,to=21453,serial=1781335799032\n","dirty":"0"}
           Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:itis","topD":"%Demonstrations:origin"}}
             Demonstrations:origin
-              Demonstrations:origin,Doc:Ghost/test/Hello.g
-            News:origin,goners=0,neus
+              Demonstrations:origin,Doc:Ghost/test/Idzeuzia.g
+              Demonstrations:origin,Point,method:Idzeugnosis
+              Demonstrations:origin,Point:Idzeuganise
+              Demonstrations:origin,Point:Idvoyage_verify
+            News:origin,goners=0,neus=4
           Seem:working	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:itis","topD":"%Demonstrations:working"}}
             Demonstrations:working
-              Demonstrations:working,Doc:Ghost/test/Hello.g
+              Demonstrations:working,Doc:Ghost/test/Idzeuzia.g
+                Understandable
+              Demonstrations:working,Point,method:Idzeugnosis
+                Understandable
+              Demonstrations:working,Point:Idzeuganise
+                Understandable
+              Demonstrations:working,Point:Idvoyage_verify
                 Understandable
               Understandable
-            News:working,goners=0,neus
-          State
-          {"encode":1,"snap_origin":"Doc:Ghost/test/Hello.g\n","snap_working":"Doc:Ghost/test/Hello.g\n","dirty":"0"}
+            News:working,goners=0,neus=4
         req:workon,following,auto_push	{"ref":{"LE":"%LE:1, target:%What","w":"%w:Lang"}}
-          {"req":"understanding","maz":3,"permanent":1,"sig":"1:13:0:0","what":"itis","finished":1}
-          req:ingredients,maz=2,permanent,sig:Ghost/test/Hello.g,finished
-            req:furnishing,path:Ghost/test/Hello.g,permanent,finished
-          {"req":"instrumentation","permanent":1,"sig":"Ghost/test/Hello.g:f894a5ff10d26203:1:29","have_methods":1,"n_pmirrors":3,"finished":1}
+          {"req":"understanding","maz":3,"permanent":1,"sig":"2:13:0:0","what":"itis","finished":1}
+          req:ingredients,maz=2,permanent,sig:Ghost/test/Idzeuzia.g,finished
+            req:furnishing,path:Ghost/test/Idzeuzia.g,permanent,finished
+          {"req":"instrumentation","permanent":1,"sig":"Ghost/test/Idzeuzia.g:f894a5ff10d26203:2:36","have_Map":1,"n_pmirrors":3,"finished":1}
         o_elvis:dock_content
-        received,doc_opened,doc:Ghost/test/Hello.g
-        received,editorBegins,doc:Ghost/test/Hello.g
+        received,doc_opened,doc:Ghost/test/Idzeuzia.g
+        received,editorBegins,doc:Ghost/test/Idzeuzia.g
         o_elvis:Lies_compile_settled
-        self,round=13	{"mung":["age"]}
+        self,round=16	{"mung":["age"]}
         see:🟦 tiles 0 bookmarks
     A:Pantheate
-      self,round=6	{"mung":["age"]}
+      self,round=8	{"mung":["age"]}
       w:Pantheate
-        self,round=6	{"mung":["age"]}
+        include:gen/test/Idzeuzia.go
+        req:include,gen_path:gen/test/Idzeuzia.go,path:Ghost/test/Idzeuzia.g,source_dige:f894a5ff10d26203,ghostmeta_name:Ghostmeta_Ghost_test_Idzeuzia,permanent,live_dige:f894a5ff10d26203,finished
+        self,round=8	{"mung":["age"]}
         o_elvis:Ghost_update_notify
     watched:ave
       examining	{"loopy":2,"hid":1}
@@ -965,6 +1339,7 @@ Snap:H
     watched:UIs
       UI:Lies	{"ref":{"component":"Function()"}}
       UI:Langui	{"ref":{"component":"Function()"}}
+      UI:Pantheate-include	{"ref":{"component":"Function()"}}
     watched:actions
       action,role:debookmark,label:-marks	{"ref":{"fn":"Function()"}}
       action,role:enbookmark,label:+marks	{"ref":{"fn":"Function()"}}

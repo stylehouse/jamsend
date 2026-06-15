@@ -93,6 +93,22 @@
         return m
     })
 
+    // char span of the contiguous token-run `key` (len tokens long) within ts, or null
+    const RUN_SEP = ''
+    // The run must sit at the name's START or END so the split is a clean prefix or
+    // suffix, never an awkward interior stem (…trustclaim_Idzeug_number…).  start is
+    // preferred, then end; an interior-only occurrence returns null (name won't join).
+    function key_of(ts: Tok[], i: number, len: number): string {
+        return ts.slice(i, i + len).map(t => t.text.toLowerCase()).join(RUN_SEP)
+    }
+    function run_span(ts: Tok[], key: string, len: number): { start: number, end: number } | null {
+        if (len > ts.length) return null
+        if (key_of(ts, 0, len) === key)          return { start: ts[0].start, end: ts[len - 1].end }
+        const e = ts.length - len
+        if (e > 0 && key_of(ts, e, len) === key) return { start: ts[e].start, end: ts[ts.length - 1].end }
+        return null
+    }
+
     let clusters = $derived.by<Cluster[]>(() => {
         const toks = new Map<string, Tok[]>()
         items.forEach(it => toks.set(it.id, tokenise(it.label)))
@@ -103,23 +119,37 @@
         const out: Cluster[] = []
 
         while (remaining.length) {
-            // frequency of each stem across the remaining names, counted once per name
-            const freq = new Map<string, number>()
+            // Every CONTIGUOUS token-run (n-gram) across the remaining names, counted
+            // once per name, tracking how many names carry it and how long it is.  We
+            // anchor on the LONGEST shared run — Idzeugi_advice beats bare Idzeugi
+            // (bigger stem better) — breaking ties toward the run more names share.
+            const grams = new Map<string, { names: number, tokens: number }>()
             for (const it of remaining) {
+                const ts = toks.get(it.id)!
                 const seen = new Set<string>()
-                for (const t of toks.get(it.id)!) {
-                    const k = t.text.toLowerCase()
-                    if (seen.has(k)) continue
-                    seen.add(k)
-                    freq.set(k, (freq.get(k) ?? 0) + 1)
+                for (let i = 0; i < ts.length; i++) {
+                    for (let j = i; j < ts.length; j++) {
+                        // only runs anchored at the name's start or end count — an
+                        // interior run would split into an awkward both-sided stem
+                        if (i !== 0 && j !== ts.length - 1) continue
+                        const key = ts.slice(i, j + 1).map(t => t.text.toLowerCase()).join(RUN_SEP)
+                        if (seen.has(key)) continue
+                        seen.add(key)
+                        const g = grams.get(key)
+                        if (g) g.names++
+                        else grams.set(key, { names: 1, tokens: j - i + 1 })
+                    }
                 }
             }
-            // most-shared stem; ties break toward the earliest-appearing stem so the
-            // pick is deterministic (Map iteration is insertion order).
-            let best = '', bestN = 1
-            for (const [k, n] of freq) if (n > bestN) { best = k; bestN = n }
+            let bestKey = '', bestTokens = 0, bestNames = 1
+            for (const [key, g] of grams) {
+                if (g.names < 2) continue
+                if (g.tokens > bestTokens || (g.tokens === bestTokens && g.names > bestNames)) {
+                    bestKey = key; bestTokens = g.tokens; bestNames = g.names
+                }
+            }
 
-            if (!best) {
+            if (!bestKey) {
                 // nothing shared left — each remaining name is its own bare cluster
                 for (const it of remaining) {
                     out.push({
@@ -133,17 +163,17 @@
 
             const members: Member[] = []
             const rest: typeof remaining = []
-            let anchor_text = best
+            let anchor_text = ''
             let order = Infinity
             for (const it of remaining) {
-                const ts  = toks.get(it.id)!
-                const idx = ts.findIndex(t => t.text.toLowerCase() === best)
-                if (idx < 0) { rest.push(it); continue }
-                const t = ts[idx]
-                anchor_text = t.text          // adopt a member's actual casing
+                const ts   = toks.get(it.id)!
+                const span = run_span(ts, bestKey, bestTokens)
+                if (!span) { rest.push(it); continue }
                 order = Math.min(order, index.get(it.id)!)
-                const prefix = it.label.slice(0, t.start)
-                const suffix = it.label.slice(t.end)
+                const prefix = it.label.slice(0, span.start)
+                const suffix = it.label.slice(span.end)
+                // first member's slice keeps the anchor's real casing + inner separators
+                if (!anchor_text) anchor_text = it.label.slice(span.start, span.end)
                 members.push({
                     id: it.id, label: it.label, prefix, suffix,
                     bare: prefix === '' && suffix === '',
@@ -154,6 +184,27 @@
         }
 
         out.sort((a, b) => a.order - b.order)
+        return out
+    })
+
+    // Walk the clusters in source order and bucket runs of consecutive singletons
+    // (lone names, nothing shared) into one compact wrap each — so a singleton keeps
+    // its place in the list rather than being dragged to the end, while still
+    // stacking tightly instead of spawning a padded cluster box.
+    type Row = { kind: 'cluster', cluster: Cluster } | { kind: 'singles', items: Member[] }
+    function is_single(c: Cluster) { return c.members.length === 1 && c.members[0].bare }
+    let rows = $derived.by<Row[]>(() => {
+        const out: Row[] = []
+        let bucket: Member[] | null = null
+        for (const c of clusters) {
+            if (is_single(c)) {
+                if (!bucket) { bucket = []; out.push({ kind: 'singles', items: bucket }) }
+                bucket.push(c.members[0])
+            } else {
+                bucket = null
+                out.push({ kind: 'cluster', cluster: c })
+            }
+        }
         return out
     })
 
@@ -178,69 +229,92 @@
 
     function pick(id: string) { onpick?.(id) }
 
-    // The left-hanging list holds every member with a prefix — prefix-only members
-    // show just their prefix (log_), members that vary on BOTH sides show their whole
-    // name (claim_Idzeug_number) rather than a split [claim_]Idzeug[_number] bit.
-    // Suffix-only members fan inline to the right of the stem.  The bare member (the
-    // method that IS the anchor) makes the stem itself clickable.
+    // With edge-only runs a member is cleanly one-sided: a prefix member clings on the
+    // LEFT (its distinctive part precedes the stem), a suffix member clings on the RIGHT.
+    // The bare member (the name that IS the stem) makes the stem itself clickable.
     function left_members(c: Cluster)   { return c.members.filter(m => m.prefix) }
     function suffix_members(c: Cluster)  { return c.members.filter(m => m.suffix && !m.prefix) }
     function bare_member(c: Cluster)     { return c.members.find(m => m.bare) }
-    function left_text(m: Member): string { return m.suffix ? m.label : m.prefix }
 </script>
+
+<!-- one leaf button — plain text (no nested sub-buttons inside a leaf; a sub-stem that
+     is itself a name shows as its own standalone single instead) -->
+{#snippet leaf(m: Member, text: string, cls: string)}
+    <button class="hive-btn {cls}"
+            class:hive-pointed={pointed.has(m.id)}
+            style={styles.get(m.id) ?? ''}
+            title={m.label}
+            onclick={() => pick(m.id)}>{text}</button>
+{/snippet}
+
+<!-- the shared stem, written once; clickable when a name IS it, else a span whose
+     sub-stems still link out when they are names themselves -->
+{#snippet stem(c: Cluster, bm: Member | undefined)}
+    {#if bm}
+        <button class="hive-anchor hive-anchor-real"
+                class:hive-pointed={pointed.has(bm.id)}
+                style={styles.get(bm.id) ?? ''}
+                title={bm.label}
+                onclick={() => pick(bm.id)}>{c.anchor}</button>
+    {:else}
+        <span class="hive-anchor">{#each parts(c.anchor, '') as p}{#if p.linkId}<span
+                    class="hive-nest" role="button" tabindex="0"
+                    title={p.text}
+                    onclick={(e) => { e.stopPropagation(); pick(p.linkId!) }}>{p.text}</span>{:else}{p.text}{/if}{/each}</span>
+    {/if}
+{/snippet}
 
 <div class="hive">
     {#if title}<div class="hive-title">{title}</div>{/if}
 
-    {#each clusters as c (c.anchor + ':' + c.order)}
-        <div class="hive-cluster">
-            <!-- prefixes as a short list hanging above-and-left of the stem, so they
-                 read as folded in over it -->
-            {#if left_members(c).length}
-                <div class="hive-prefixes">
-                    {#each left_members(c) as m (m.id)}
-                        <button class="hive-btn hive-pre"
-                                class:hive-pointed={pointed.has(m.id)}
-                                style={styles.get(m.id) ?? ''}
-                                title={m.label}
-                                onclick={() => pick(m.id)}>{#each parts(left_text(m), m.id) as p}{#if p.linkId}<span
-                                        class="hive-nest" role="button" tabindex="0"
-                                        title={p.text}
-                                        onclick={(e) => { e.stopPropagation(); pick(p.linkId!) }}>{p.text}</span>{:else}{p.text}{/if}{/each}</button>
-                    {/each}
-                </div>
-            {/if}
-
-            <div class="hive-spine">
-                <!-- the shared stem, written once; clickable when a method IS it -->
-                {#if bare_member(c)}
-                    {@const bm = bare_member(c)}
-                    <button class="hive-anchor hive-anchor-real"
-                            class:hive-pointed={pointed.has(bm!.id)}
-                            style={styles.get(bm!.id) ?? ''}
-                            title={bm!.label}
-                            onclick={() => pick(bm!.id)}>{c.anchor}</button>
-                {:else}
-                    <span class="hive-anchor">{c.anchor}</span>
-                {/if}
-
-                <!-- suffixes fan inline to the right of the stem -->
-                {#if suffix_members(c).length}
-                    <div class="hive-suffixes">
-                        {#each suffix_members(c) as m (m.id)}
-                            <button class="hive-btn hive-suf"
-                                    class:hive-pointed={pointed.has(m.id)}
-                                    style={styles.get(m.id) ?? ''}
-                                    title={m.label}
-                                    onclick={() => pick(m.id)}>{#each parts(m.suffix, m.id) as p}{#if p.linkId}<span
-                                            class="hive-nest" role="button" tabindex="0"
-                                            title={p.text}
-                                            onclick={(e) => { e.stopPropagation(); pick(p.linkId!) }}>{p.text}</span>{:else}{p.text}{/if}{/each}</button>
-                        {/each}
+    {#each rows as row, ri (ri)}
+        {#if row.kind === 'cluster'}
+            {@const c     = row.cluster}
+            {@const lefts = left_members(c)}
+            {@const sufs  = suffix_members(c)}
+            {@const bm    = bare_member(c)}
+            <div class="hive-cluster">
+                {#if lefts.length && sufs.length}
+                    <!-- both sides cling → left-leaning prefixes up-left; the stem is
+                         absolutely anchored to the right column's left edge (the spot just
+                         left of the right leaves) and positioned rightward from there, low
+                         near the bottom leaf — so its place is set by the right leaves, not
+                         by how wide the left column happens to be. -->
+                    <div class="hive-row hive-both">
+                        <div class="hive-col hive-leftcol">
+                            {#each lefts as m (m.id)}{@render leaf(m, m.prefix, 'hive-pre')}{/each}
+                        </div>
+                        <div class="hive-col hive-rightcol">
+                            {@render stem(c, bm)}
+                            {#each sufs as m (m.id)}{@render leaf(m, m.suffix, 'hive-suf')}{/each}
+                        </div>
                     </div>
+                {:else if lefts.length}
+                    <!-- leaves only on the left → stem beside them on the right -->
+                    <div class="hive-row hive-leftonly">
+                        <div class="hive-col hive-leftcol">
+                            {#each lefts as m (m.id)}{@render leaf(m, m.prefix, 'hive-pre')}{/each}
+                        </div>
+                        {@render stem(c, bm)}
+                    </div>
+                {:else if sufs.length}
+                    <!-- leaves only on the right → stem beside them on the left -->
+                    <div class="hive-row hive-rightonly">
+                        {@render stem(c, bm)}
+                        <div class="hive-col hive-rightcol">
+                            {#each sufs as m (m.id)}{@render leaf(m, m.suffix, 'hive-suf')}{/each}
+                        </div>
+                    </div>
+                {:else}
+                    {@render stem(c, bm)}
                 {/if}
             </div>
-        </div>
+        {:else}
+            <!-- a run of lone names: no cluster box, just a tight wrapped stack in place -->
+            <div class="hive-singles">
+                {#each row.items as m (m.id)}{@render leaf(m, m.label, 'hive-single')}{/each}
+            </div>
+        {/if}
     {/each}
 </div>
 
@@ -248,10 +322,12 @@
     .hive {
         display: flex;
         flex-direction: column;
-        gap: 6px;
-        padding: 4px 4px 10px;
+        align-items: flex-start;          /* cells size to their content, not full width */
+        gap: 2px;
+        padding: 3px 4px 5px;
         font-family: 'Berkeley Mono', 'Fira Code', ui-monospace, monospace;
         font-size: 11px;                  /* slightly bigger than the strip's 8px chips */
+        line-height: 1.1;                 /* tight — vertical space is at a premium */
         color: #aab;
     }
     .hive-title {
@@ -262,38 +338,52 @@
         padding-left: 2px;
     }
 
-    /* one cluster: a short prefix list hanging above, then the stem spine */
+    /* one cluster: a flex spine.  The stem's horizontal place signals where leaves
+       cling — prefixes-only put it on the right of them, suffixes-only on the left,
+       both put it in the middle.  Columns auto-size, so no pixel maths or overlap. */
+    /* the rounded cell around a stemmed cluster.  A min-width keeps a narrow cluster
+       (1 left, 2 right) from reading as a skinny sliver; a short left leaf just leaves
+       slack inside, never overlapping. */
     .hive-cluster {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        border-left: 2px solid hsla(210, 50%, 55%, 0.25);
-        padding: 3px 0 3px 4px;
-        margin-bottom: 2px;
+        min-width: 184px;
+        border: 1px solid hsla(210, 45%, 58%, 0.30);
+        border-radius: 9px;
+        padding: 0 8px 1px 6px;
+    }
+    .hive-row { display: flex; gap: 6px; }
+    .hive-col { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; }
+
+    /* both-sided spines get a wider channel between the columns so the stem reads as a
+       centred spine rather than crowding the right leaves */
+    .hive-both { gap: 20px; }
+
+    /* both sides: prefixes left-leaning up-left.  The right column is the positioning
+       context; the stem is absolutely anchored to its LEFT edge (the spot just left of
+       the right leaves) via right:100%, then dialled rightward from there by STEM_NUDGE,
+       and dropped to near the bottom leaf by STEM_RISE.  Its horizontal place is thus set
+       by the right leaves, independent of the left column's width. */
+    .hive-both { align-items: flex-start; }
+    /* a standard-width left zone: pushes the right leaves across to a consistent x and
+       leaves room for the one or two short left leaves to sit left of the indented stem */
+    .hive-both .hive-leftcol { min-width: 82px; }
+    .hive-both .hive-rightcol { position: relative; }
+    .hive-both .hive-rightcol .hive-anchor {
+        position: absolute;
+        right: calc(100% + 5px);   /* 100% = the right leaves' left edge; +5px sits in the channel just left of it */
+        bottom: 3px;               /* near, but a touch above, the bottom leaf */
+        white-space: nowrap;
     }
 
-    /* the short left-side list — stacked, sitting up-and-left of the stem so the
-       variants read as folded in over it.  The spine's left indent puts the stem
-       to the lower-right of this list. */
-    .hive-prefixes {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 2px;
-        margin-bottom: 1px;
-    }
+    /* one-sided: the stem sits centred beside the single stack */
+    .hive-leftonly  { align-items: center; }
+    .hive-rightonly { align-items: center; }
 
-    /* the stem spine: ANCHOR with suffixes fanning inline to its right */
-    .hive-spine {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        padding-left: 12px;               /* indent so the prefix list hangs to its left */
-    }
-    .hive-suffixes {
+    /* lone names — a tight wrapped stack, no cluster chrome or padding */
+    .hive-singles {
         display: flex;
         flex-wrap: wrap;
-        gap: 3px;
+        gap: 1px 4px;
+        padding: 1px 0 1px 4px;
     }
 
     .hive-anchor {
@@ -305,20 +395,23 @@
 
     .hive-btn, .hive-anchor-real {
         font: inherit;
+        line-height: 1.15;
         background: rgba(120, 140, 180, 0.10);
-        color: #b9c4d4;
+        color: #d7e2f0;
         border: 1px solid hsla(210, 40%, 60%, 0.22);
         border-radius: 3px;
-        padding: 1px 3px;
+        padding: 0 3px;
         cursor: pointer;
         white-space: nowrap;
         transition: background 0.1s, color 0.1s, border-color 0.1s;
     }
     .hive-btn:hover, .hive-anchor-real:hover {
         background: rgba(150, 180, 230, 0.22);
-        color: #eef3fa;
         border-color: hsla(210, 60%, 70%, 0.5);
     }
+    /* the method text wears the legacy minimap's pink; the stem/spine stays neutral */
+    .hive-btn       { color: rgba(225, 195, 245, 0.88); }
+    .hive-btn:hover { color: #efdcff; }
     .hive-anchor-real { border-style: dashed; }
 
     /* nested name-button living inside an affix (a sub-stem that is itself a method) */
