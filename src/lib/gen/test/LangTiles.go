@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_test_LangTiles(): string { return '85e657870f616282' },
+    Ghostmeta_Ghost_test_LangTiles(): string { return '27bfa3fe440bc8b0' },
 
 // yeti etc!!!!!
 theCompiledStuff(A,w) {
@@ -114,6 +114,54 @@ moreTiles(A,w) {
     //  w o angles/are:$ang,etc:3
     //  -> i @are/so:ont.$sooo,module.$tv,etc.$
 
+},
+// the r / rm / replace family.  r and rm are IOness2 verbs compiling to async
+//  TheC methods, so they emit `await` — the method is async.  `...` (FlowSep) is
+//  the pattern→replacement separator; an external token so JS spread {...x} is
+//  untouched.  Either side can be a $var (the object itself) or a peeled path.
+async replaceTiles(A,w) {
+    // (1) re-assert — one path → await w.r({solved: 1})
+    await w.r({solved: 1})
+    // receiver before the verb → await A.r({io: "radiostock"})
+    await A.r({io: "radiostock"})
+    // multi-key pattern → await w.r({journey: 1, oaims: 1})
+    await w.r({journey: 1, oaims: 1})
+
+    // (2) two-arg r(pattern, replacement), split by ...  (the dominant usage)
+    //  await w.r({buffers: 1}, {ok: 1})
+    await w.r({buffers: 1}, {ok: 1})
+    //  await w.r({wear: enid}, {is_nowPlaying: 1, started, re})
+    await w.r({wear: enid}, {is_nowPlaying: 1, started, re})
+
+    // (3) whole-object args — a $var is the pattern|replacement object itself
+    //  await w.r(c, fuller)
+    await w.r(c, fuller)
+
+    // (4) rm — removal sugar, r(pattern, {}) underneath
+    //  await w.rm({stream: 1})
+    await w.rm({stream: 1})
+    //  await w.rm(c)
+    await w.rm(c)
+
+    // (5) the rest of the two-arg IOness2 family — same match...props shape.
+    //  oai is sync (find-or-create, no await); roai/moai are async.
+    //   let seat = oai %seat:3...%taken    → let seat = w.oai({seat: 3}, {taken: 1})
+    let seat = w.oai({seat: 3}, {taken: 1})
+    //   await w.roai({aim: 1}, {category: cat})
+    await w.roai({aim: 1}, {category: cat})
+    //   await A.moai({mo: "main"}, {interval: 1})
+    await A.moai({mo: "main"}, {interval: 1})
+
+    // (6) replace-with-a-block — pattern + a pythonic body (like S) becomes the
+    //  async fn() that re-fills the cleared pattern:
+    //   await A.replace({journey: 1, oaims: 1}, async () => {
+    //       w.i({path: 1}); A.i({oaim: j})
+    //   })
+    await A.replace({journey: 1, oaims: 1}, async () => {
+        w.i({path: 1})
+        A.i({oaim: j})
+
+    })
 },
 
     })

@@ -605,12 +605,20 @@
             }
             if (curKey !== current_region_key) current_region_key = curKey
 
+            // folded-away ranges don't count as viewed: a method whose header offset
+            //  sits inside a fold is hidden in the editor even though its char offset
+            //  falls within the visible span, so skip it for the puck.
+            const folds: Array<{ from: number, to: number }> = []
+            foldedRanges(v.state).between(0, doc.length, (f, t) => { folds.push({ from: f, to: t }) })
+            const in_fold = (pos: number) => folds.some(fr => pos > fr.from && pos < fr.to)
+
             // puck — span the DOM rects of the methods whose header is on screen
             const lmmTop = lmm.getBoundingClientRect().top
             const scRect = sc.getBoundingClientRect()
             let top = Infinity, bot = -Infinity
             for (const d of all_defs) {
                 if (d.from < fromPos || d.from > toPos) continue
+                if (in_fold(d.from)) continue
                 const el = strip.querySelector(`[data-mid="${d.from}"]`) as HTMLElement | null
                 if (!el) continue
                 const r = el.getBoundingClientRect()
@@ -630,6 +638,7 @@
         sc.addEventListener('scroll', schedule, { passive: true })
         const ro = new ResizeObserver(schedule)
         ro.observe(sd); ro.observe(sc); ro.observe(strip)
+        ro.observe(v.contentDOM)   // its height changes on fold/unfold → re-measure
         return () => {
             if (raf) cancelAnimationFrame(raf)
             sd.removeEventListener('scroll', schedule)
@@ -825,17 +834,13 @@
     }
     .lmm-col-span { grid-column: 1 / -1; }
 
-    /* the region the viewport is in zooms up, like the Waft Ting chips on hover —
-       grows from its left edge so it stays anchored, riding above its neighbours */
-    .lmm-region-group {
+    /* the region the viewport is in: just its heading text enlarges a touch, growing
+       from the left so it stays anchored — like the Waft Ting chips */
+    .lmm-region-group .lmm-label {
         transform-origin: left center;
         transition: transform 0.12s ease;
     }
-    .lmm-region-current {
-        position: relative;
-        z-index: 6;
-        transform: scale(1.07);
-    }
+    .lmm-region-current .lmm-label { transform: scale(1.16); }
 
     .lmm-stripe { display: none; }
     .lmm-region-block { display: contents; }

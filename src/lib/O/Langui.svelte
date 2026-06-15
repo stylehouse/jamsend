@@ -881,28 +881,21 @@
     const folded_lines = (state: EditorState, from: number, to: number) =>
         state.doc.lineAt(to).number - state.doc.lineAt(from).number
 
-    // codeFolding with our placeholder.  preparePlaceholder runs per fold and decides
-    //   marked|invisible from markedRegions; placeholderDOM renders accordingly.  This
-    //   shares basicSetup's fold state (same singleton field) and only supplies the
+    // codeFolding with our placeholder.  One type of fold: every folded range shows
+    //   the same ↤Nlines↦ count arrows (no marked|invisible split).  This shares
+    //   basicSetup's fold state (same singleton field) and only supplies the
     //   placeholder — combineConfig takes the first DEFINED placeholderDOM, which is
     //   ours (basicSetup's codeFolding leaves it null).
     const foldMarkers = codeFolding({
         preparePlaceholder: (state, range) => ({
-            marked: state.field(markedRegions, false)?.has(range.from) ?? false,
-            lines:  folded_lines(state, range.from, range.to),
+            lines: folded_lines(state, range.from, range.to),
         }),
-        placeholderDOM: (view, onclick, prepared: { marked: boolean, lines: number }) => {
+        placeholderDOM: (view, onclick, prepared: { lines: number }) => {
             const el = document.createElement('span')
-            if (prepared.marked) {
-                el.className = 'cm-fold-marked'
-                el.textContent = `↤${prepared.lines}↦`
-                el.title = `unfold ${prepared.lines} lines`
-                el.onclick = onclick               // CM's unfold handler
-            } else {
-                el.className = 'cm-fold-invisible'
-                el.textContent = '⋯'               // a faint stub, not a loud "…"
-                el.onclick = onclick
-            }
+            el.className = 'cm-fold-marked'
+            el.textContent = `↤${prepared.lines}↦`
+            el.title = `unfold ${prepared.lines} lines`
+            el.onclick = onclick               // CM's unfold handler
             return el
         },
     })
@@ -1718,30 +1711,31 @@
        unfolds on click.  INVISIBLE Q|Point folds: a faint ⋯ stub only.  The
        re-fold ↦ handle sits at the header-line end of an unfolded marked region,
        green, and folds it back up. */
+    /* One type of fold.  Both markers scaled up (transform, not font-size, so they
+       don't lift the header line's height) and always shown — the ↤N↦ count arrows
+       when folded, the ↦ handle when open. */
     .lte-cm :global(.cm-fold-marked) {
         color: #8F82FF;
         cursor: pointer;
         padding: 0 0.3em;
         font-weight: 600;
         letter-spacing: 0.02em;
+        display: inline-block;
+        transform: scale(1.6);
+        transform-origin: left center;
     }
     .lte-cm :global(.cm-fold-marked:hover) { color: #b3a9ff; }
-
-    .lte-cm :global(.cm-fold-invisible) {
-        color: rgba(160, 170, 200, 0.22);
-        cursor: pointer;
-        font-size: 0.8em;
-        padding: 0 0.2em;
-    }
-    .lte-cm :global(.cm-fold-invisible:hover) { color: rgba(160, 170, 200, 0.5); }
 
     .lte-cm :global(.cm-refold-handle) {
         color: rgb(119, 204, 153);
         cursor: pointer;
-        margin-left: 0.4em;
-        opacity: 0.45;
+        margin-left: 0.6em;
+        opacity: 0.85;          /* always show, not a faint hint */
         transition: opacity 0.12s, color 0.12s;
         user-select: none;
+        display: inline-block;
+        transform: scale(2);
+        transform-origin: left center;
     }
     .lte-cm :global(.cm-refold-handle:hover) { opacity: 1; color: rgb(150, 230, 180); }
 </style>

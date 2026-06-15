@@ -126,7 +126,16 @@ async replaceTiles(A,w):
     //  await w.rm(c)
     rm $c
 
-    // (5) replace-with-a-block — pattern + a pythonic body (like S) becomes the
+    // (5) the rest of the two-arg IOness2 family — same match...props shape.
+    //  oai is sync (find-or-create, no await); roai/moai are async.
+    //   let seat = oai %seat:3...%taken    → let seat = w.oai({seat: 3}, {taken: 1})
+    let seat = oai %seat:3...%taken
+    //   await w.roai({aim: 1}, {category: cat})
+    roai %aim...%category:$cat
+    //   await A.moai({mo: "main"}, {interval: 1})
+    A moai %mo:main...%interval
+
+    // (6) replace-with-a-block — pattern + a pythonic body (like S) becomes the
     //  async fn() that re-fills the cleared pattern:
     //   await A.replace({journey: 1, oaims: 1}, async () => {
     //       w.i({path: 1}); A.i({oaim: j})

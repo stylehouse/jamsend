@@ -453,6 +453,7 @@
         if (sthoParser) {
             const CAND = [
                 /(?:^|[^\w.])[ioS]\s+[%$A-Za-z_]/,          // IOing / Sunpit verb, anywhere on the line
+                /(?:^|[^\w.])(?:roai|moai|oai|rm|r)\s+[%$A-Za-z_]/,  // IOness2 verb (r/rm/oai/roai/moai)
                 /^\s*(?:if|for|while|until|elsif|else)\b/,  // ControlFlow head
                 /^\s*(?:async\s+)?[A-Za-z_]\w*\s*\(/,       // MethodLike decl/call
                 /&[A-Za-z_]/,                               // AmpCall
@@ -1002,7 +1003,7 @@
             if (verb === 'r' && ipaths.length === 1 && body_follows) {
                 const split    = this.Lang_io_before_split(line.text.slice(0, hit.node.from - localBase))
                 const receiver = split.receiver ?? 'w'
-                const pattern  = this.Lang_replace_arg_src(ipaths[0], sliceState,
+                const pattern  = this.Lang_ioness2_arg_src(ipaths[0], sliceState,
                     split.receiver ? { receiver: split.receiver } : {})
                 out.push({ kind: 'translated',
                     text: `${' '.repeat(r_indent)}await ${receiver}.replace(${pattern}, async () => {` })
@@ -1203,9 +1204,10 @@
     // [0]-style first-pick, whichever form the tier uses.
     Lang_compile_IOing(node: SyntaxNode, state: EditorState, ctx: any): string {
         const ness = this.Lang_compile_IOness(node, state)
-        // the replace-family routes to its own emitter — it carries up to two
-        //   IOpaths (pattern ... replacement) and is an await-expression.
-        if (ness === 'r' || ness === 'rm') return this.Lang_compile_replace(node, state, ctx, ness)
+        // the IOness2 family (r|rm|oai|roai|moai) routes to its own emitter — it
+        //   carries up to two IOpaths (match ... props/replacement) and, bar the
+        //   sync oai, is an await-expression.
+        if (ness !== 'i' && ness !== 'o') return this.Lang_compile_ioness2(node, state, ctx, ness)
         const pathNode = node.getChild('IOpath')
         if (!pathNode) throw new Error('IOing: no IOpath')
         const legNodes = pathNode.getChildren('Leg')
@@ -1297,47 +1299,53 @@
         return `this._o_drill(${receiver}, [${legs_src}])`
     },
 
-    // ── Lang_compile_replace — the r / rm replace-family ─────────────────────
+    // ── Lang_compile_ioness2 — the two-arg IOness2 family ────────────────────
     //
-    //   r/rm are IOness2 verbs compiling to async TheC methods, so the result is
-    //   an `await` expression — the enclosing method must be `async`.
+    //   r | rm | oai | roai | moai all take (match_sc, props_sc) — the FlowSep
+    //   "..." splits the two paths.  All but oai are async, so they emit an
+    //   `await` expression (the enclosing method must be `async`).
     //
     //     r %A               → await w.r({A: 1})                 re-assert
     //     r %buffers...%ok    → await w.r({buffers: 1}, {ok: 1})  replace-with
     //     rm %A              → await w.rm({A: 1})                removal (= r(.,{}))
+    //     oai %a...%b         → w.oai({a: 1}, {b: 1})             find-or-create (sync)
+    //     roai %a...%b        → await w.roai({a: 1}, {b: 1})      foc + replace-if-changed
+    //     moai %a...%b        → await w.moai({a: 1}, {b: 1})      foc + mutate-in-place
     //     A r %foo            → await A.r({foo: 1})               receiver-before-verb
     //
     //   Either side may be a lone `$var` instead of a peeled path — the variable
-    //   IS the pattern|replacement object (r() takes a C|sc directly):
+    //   IS the match|props object (these all take a C|sc directly):
     //     r $c...$fuller      → await w.r(c, fuller)
     //     rm $c              → await w.rm(c)
     //
-    //   The replace-WITH-A-BLOCK form (r + a pythonic-indented body → replace())
-    //   is handled in _collect_line, not here — this emits the inline calls only.
-    Lang_compile_replace(node: SyntaxNode, state: EditorState, ctx: any, ness: 'r' | 'rm'): string {
+    //   The r-WITH-A-BLOCK form (r + a pythonic-indented body → replace()) is
+    //   handled in _collect_line, not here — this emits the inline calls only.
+    Lang_compile_ioness2(node: SyntaxNode, state: EditorState, ctx: any,
+                         ness: 'r' | 'rm' | 'oai' | 'roai' | 'moai'): string {
         const paths = node.getChildren('IOpath')
         if (!paths.length) throw new Error(`${ness}: no IOpath`)
         const receiver = ctx.receiver ?? 'w'
-        const pattern  = this.Lang_replace_arg_src(paths[0], state, ctx)
+        const aw = ness === 'oai' ? '' : 'await '   // oai is the only sync verb
+        const a1 = this.Lang_ioness2_arg_src(paths[0], state, ctx)
         if (ness === 'rm') {
             // rm ignores any second path — it's r(pattern, {}) under the hood
-            return `await ${receiver}.rm(${pattern})`
+            return `${aw}${receiver}.rm(${a1})`
         }
         if (paths.length >= 2) {
-            const replacement = this.Lang_replace_arg_src(paths[1], state, ctx)
-            return `await ${receiver}.r(${pattern}, ${replacement})`
+            const a2 = this.Lang_ioness2_arg_src(paths[1], state, ctx)
+            return `${aw}${receiver}.${ness}(${a1}, ${a2})`
         }
-        return `await ${receiver}.r(${pattern})`
+        return `${aw}${receiver}.${ness}(${a1})`
     },
 
-    // One r/rm argument → TS source.  A lone `$var` path is the object itself
+    // One IOness2 argument → TS source.  A lone `$var` path is the object itself
     //   (the var holds a C|sc); anything else is a peeled match object built
-    //   from the path's single leg (r matches structurally, so no `exactly`).
-    Lang_replace_arg_src(pathNode: SyntaxNode, state: EditorState, ctx: any): string {
+    //   from the path's single leg (these match structurally, so no `exactly`).
+    Lang_ioness2_arg_src(pathNode: SyntaxNode, state: EditorState, ctx: any): string {
         const legs = pathNode.getChildren('Leg')
-        if (!legs.length) throw new Error('r/rm: empty IOpath')
+        if (!legs.length) throw new Error('IOness2 arg: empty IOpath')
         if (legs.length > 1)
-            throw new Error('r/rm takes a single match object, not a drilled a/b/c path')
+            throw new Error('r|rm|oai|roai|moai take a single match object, not a drilled a/b/c path')
         // lone $var → the variable holds the pattern|replacement object itself
         const items = legs[0].getChild('PeelGroup')?.getChildren('PeelItem') ?? []
         if (items.length === 1) {
@@ -1537,18 +1545,21 @@
     },
 
     // IOness is "i " | "o " — trim to one of the two
-    Lang_compile_IOness(node: SyntaxNode, state: EditorState): 'i' | 'o' | 'r' | 'rm' {
-        // i|o ride IOness; the replace-family (r|rm) rides IOness2.  The other
-        //   IOness2 verbs (oai|roai|moai|doai) parse but have no drill yet, so
-        //   they fall through to the throw.
+    Lang_compile_IOness(node: SyntaxNode, state: EditorState): 'i' | 'o' | 'r' | 'rm' | 'oai' | 'roai' | 'moai' {
+        // i|o ride IOness; the two-arg family (r|rm|oai|roai|moai) rides IOness2.
+        //   doai also parses but has no runtime method yet, so it falls through
+        //   to the throw.
         const ness = node.getChild('IOness') ?? node.getChild('IOness2')
         if (!ness) throw new Error('no IOness')
         const s = state.doc.sliceString(ness.from, ness.to).trim()
-        if (s === 'i')  return 'i'
-        if (s === 'o')  return 'o'
-        if (s === 'r')  return 'r'
-        if (s === 'rm') return 'rm'
-        throw new Error(`IOness unknown: "${s}"`)
+        if (s === 'i')    return 'i'
+        if (s === 'o')    return 'o'
+        if (s === 'r')    return 'r'
+        if (s === 'rm')   return 'rm'
+        if (s === 'oai')  return 'oai'
+        if (s === 'roai') return 'roai'
+        if (s === 'moai') return 'moai'
+        throw new Error(`IOness unknown|unbuilt: "${s}"`)
     },
 
     // Serialise a Leg into the JSON-ish shape the backend helpers receive:
