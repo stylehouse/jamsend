@@ -13,10 +13,9 @@ Library
     TimeSpool
       TimeTotal:beliefs,avg=0.077
         sample=0.077,at=1781080326
-  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1781524045.92,active
+  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1781524740.684
     TimeSpool
-      TimeTotal:beliefs,avg=1.589
-        sample=1.368,at=1781436209
+      TimeTotal:beliefs,avg=1.611
         sample=1.442,at=1781436239
         sample=1.337,at=1781437286
         sample=1.768,at=1781444348
@@ -26,6 +25,7 @@ Library
         sample=1.942,at=1781511962
         sample=1.926,at=1781522931
         sample=1.795,at=1781524047
+        sample=1.594,at=1781524740
   Book:LakeSurfer,ok_pct=0,last_pct_change=1779607681.571,done=2,last_run_ms=1781524078.494
     TimeSpool
       TimeTotal:beliefs,avg=0.575
@@ -93,7 +93,7 @@ Library
         sample=0.063,at=1780417642
         sample=0.063,at=1780417642
         sample=0.051,at=1781080120
-  Book:PortPlant,ok_pct=0,last_pct_change=1779532868.769,done=8,last_run_ms=1781080102.391
+  Book:PortPlant,ok_pct,last_pct_change=1779532868.769,done=9,last_run_ms=1781527916.454,active
     TimeSpool
       TimeTotal:beliefs,avg=0.066
         sample=0.066,at=1780417591
@@ -120,11 +120,9 @@ Library
         sample=0.049,at=1780418651
         sample=0.049,at=1780418655
         sample=0.039,at=1781080138
-  Book:LakeNets,ok_pct=0,last_pct_change=1779979876.845,done=3,last_run_ms=1781511690.918,time_avg=0.173
+  Book:LakeNets,ok_pct=0,last_pct_change=1779979876.845,done=3,last_run_ms=1781527908.496,time_avg=0.173
     TimeSpool
-      TimeTotal:beliefs,avg=3.876
-        sample=1.234,at=1781250869
-        sample=1.367,at=1781256123
+      TimeTotal:beliefs,avg=3.97
         sample=1.301,at=1781256191
         sample=1.819,at=1781262097
         sample=2.635,at=1781265429
@@ -133,6 +131,8 @@ Library
         sample=1.461,at=1781330005
         sample=1.374,at=1781450936
         sample=1.39,at=1781511693
+        sample=1.929,at=1781526592
+        sample=1.614,at=1781527911
   Book:Understandity,ok_pct,done,last_run_ms=1780138366.519
     TimeSpool
       TimeTotal:beliefs,avg=0.013

@@ -1,7 +1,7 @@
 import { now_in_seconds, PeeringFeature } from "$lib/p2p/Peerily.svelte";
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
 import type { Travel } from "$lib/mostly/Selection.svelte";
-import { armap, ex, exactly, isar, map, tex, throttle } from "$lib/Y.svelte";
+import { armap, ex, exactly, hakd, isar, map, tex, throttle } from "$lib/Y.svelte";
 import type { Matchy } from "$lib/mostly/Structure.svelte";
 
 const OPTIMISE_FOR_DX = true
@@ -325,31 +325,40 @@ class StuffIO {
     oai(s,c={}):TheC {
         return this.o(s)[0] || this.i({...s,...c})
     }
-    // as above but you want it replaced when these intended C%* change
-    //  similar to and see also: reqy().roai() which informs of req%mutated
+    // find-or-create; when the C already exists but its supplied sc differs,
+    //  replace it via this.r() — a new ref, /* re-resolved.  For where a keyed
+    //  render watches the ref identity.  cf reqy().roai (which informs req%mutated).
     async roai(s, c = {}) {
         return await this.something_oai(s,c,{
-            mutated_fn: async (C,s,c) => this.r(s,c)
+            on_change: async (C,s,c) => this.r(s,c)
         })
-        
+
     }
-    // as above but mutated in place + bumped
+    // find-or-create; when the C already exists but its supplied sc differs,
+    //  bump_version in place — same ref, /* untouched.  For where a watcher
+    //  keys on %version rather than on the ref identity.
     async moai(s, c = {}) {
         return await this.something_oai(s,c,{
-            mutated_fn: async (C:TheC,s,c) => C.bump_version()
+            on_change: async (C:TheC,s,c) => C.bump_version()
         })
-        
+
     }
-    async something_oai(s, c = {}, q:{mutated_fn:Function}) {
+    // shared find-or-create with a reaction on change — roai and moai differ
+    //  only in the on_change they hand in.  Change is detected with hakd (差):
+    //  it is symmetric, so it also sees a goner (a key already on the C but
+    //  absent from the supplied sc), not only changed values.  ex() is
+    //  merge-only though — it copies the supplied keys over and never deletes,
+    //  so an omitted key persists.  A function never counts as a difference,
+    //  yet ex() copies it through so the freshest closure always wins.
+    async something_oai(s, c = {}, q:{on_change:Function}) {
         const full = { ...s, ...c }
         const existing = this.o(s)[0]
         if (!existing) return this.i(full)
-        const changed = Object.entries(full).some(([k, v]) => 
-            typeof v !== 'function' && existing.sc[k] !== v
-        )
-        // copy up to date functions anyway
-        ex(existing.sc,full)
-        if (changed) return await q.mutated_fn(existing,s,full)
+        const diffs = hakd(existing.sc, full)
+            .filter(k => typeof existing.sc[k] !== 'function'
+                      && typeof full[k]        !== 'function')
+        ex(existing.sc, full)
+        if (diffs.length) return await q.on_change(existing, s, full)
         return existing
     }
     

@@ -981,25 +981,58 @@ export class House extends StorableHousing {
 //#region think
 
     // -------------------------------------------------------------------------
-    // _Aw_think: dispatch to the Work instance's method (or H.* fallback).
+    // do_fn_for — the one place a node's handler is resolved.  Both legs of the
+    //   walk call here: the w-walk (_Aw_think) and the req pump (do_one, via
+    //   H.do_fn_for).  Returns the bound handler and the method|name it picked,
+    //   for the trace and the no-handler warn.
     //
-    // inst is optional — if T.sc.inst is set, look up method there first.
-    // If not found on inst (or no inst), fall back to this.* (ghost-injected methods).
+    //   ark picks the leg, 'w' (default, read off T.sc.level) or 'req'.  The two
+    //   legs still differ in body; they converge once req targeting moves onto
+    //   refs and the last_resort recursion moves onto H:
+    //    - 'w'  : targeting → method (o_elvis | e_ prefix | w.sc.method), then
+    //             a w-instance method before an H.* one.
+    //    - 'req': %mutated→mutated_fn, then do_fn, then the H.req_$name naming
+    //             convention, then the caller's last_resort (req/*req recursion).
     // -------------------------------------------------------------------------
-    private async _Aw_think(AT: Travel, wT: Travel, e?: TheC) {
-        const A = AT.sc.n as TheC
-        const w = wT.sc.n as TheC
-        const w_inst = wT.sc.inst as Work | undefined
+    do_fn_for(n: TheC, opt: {
+        ark?: string
+        T?: Travel
+        e?: TheC
+        inst?: any
+        last_resort?: (n: TheC) => Function | null | undefined
+    } = {}): { handler?: Function, method?: string } {
+        const con = n.c.on as TheC | undefined
+        // a node is a req by carrying %req itself, not by any container —
+        //  reqcon is going away; resolution is then req_$name or doai's n.c.do_fn.
+        const is_req = n.sc.req != null
+        const ark = opt.ark ?? (is_req ? 'req' : 'w')
 
-        const targeting = e ? this._e_targets_T(e, wT) : 0
+        if (ark === 'req') {
+            const name = typeof n.sc.req === 'string' ? n.sc.req : undefined
+            const handler: Function | undefined =
+                   n.sc.mutated && (n.c.mutated_fn || con?.c.mutated_fn)  // con?.c: deprecated reqcon path
+                || n.c.do_fn || con?.c.do_fn                              // doai sets n.c.do_fn
+                // the %req-only rungs: name convention (H.req_$name) and the
+                //  req/*req last_resort — gated on n%req so a non-req never hits them.
+                || (is_req && name && (this as any)['req_' + name]?.bind(this))
+                || (is_req && opt.last_resort?.(n))
+                || undefined
+            return { handler, method: name }
+        }
+
+        // ark === 'w' (and any non-req level): the old _Aw_think resolution.
+        const w = n
+        const e = opt.e
+        const w_inst = opt.inst
+        const targeting = e && opt.T ? this._e_targets_T(e, opt.T) : 0
 
         let method: string
         if (targeting === 2) {
             const elvis_type = e!.sc.elvis as string
-            let handled_by_w_method = 
+            let handled_by_w_method =
                 elvis_type == 'think' // asking for the main method
                     // e type is one it opens inside the main method
-                    || w.oa({ o_elvis: elvis_type }) 
+                    || w.oa({ o_elvis: elvis_type })
             method =
                 handled_by_w_method ? w.sc.w
                     : 'e_'+elvis_type
@@ -1018,6 +1051,23 @@ export class House extends StorableHousing {
                 : typeof (this as any)[method] === 'function'
                     ? (this as any)[method].bind(this)
                     : undefined
+
+        return { handler, method }
+    }
+
+    // -------------------------------------------------------------------------
+    // _Aw_think: dispatch to the w's resolved handler (do_fn_for, ark:'w').
+    //   Resolution moved to do_fn_for; this keeps the per-think wrapping —
+    //   w.c.e, w_forgets_problems, the trace label, try|catch|finally.
+    // -------------------------------------------------------------------------
+    private async _Aw_think(AT: Travel, wT: Travel, e?: TheC) {
+        const A = AT.sc.n as TheC
+        const w = wT.sc.n as TheC
+        const w_inst = wT.sc.inst as Work | undefined
+
+        const targeting = e ? this._e_targets_T(e, wT) : 0
+
+        const { handler, method } = this.do_fn_for(w, { ark: 'w', T: wT, e, inst: w_inst })
 
         if (handler) {
             w.c.e = e

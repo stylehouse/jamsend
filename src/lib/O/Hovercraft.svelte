@@ -346,17 +346,15 @@
                 delete req.sc.initialdo
                 delete req.sc.ok               // belt-and-braces; do() already re-armed this pass
                 await H.w_noproblemo(req)      // drop %waits, %error, %see
- 
-                // if eg req:Foo, you might want H.req_Foo(req)
-                let name = req.sc[q.k] as string | undefined
-                name = typeof name == 'number' ? undefined : name
-                const handler = fn
-                    || req.sc.mutated && (req.c.mutated_fn || reqcon.c.mutated_fn)
-                    || req.c.do_fn    || reqcon.c.do_fn
-                    // H.req_Foo for %req:Foo
-                    || name && (H as any)[q.k + '_' + name]?.bind(H)
-                    || q.handler_of_last_resort(req, q)
- 
+
+                // one ladder resolves the handler now; an ad-hoc do(fn) still
+                //  pre-empts it.  last_resort stays the reqy q's
+                //  handler_of_last_resort until that moves onto H.
+                const handler = fn || H.do_fn_for(req, {
+                    ark: 'req',
+                    last_resort: (n: TheC) => q.handler_of_last_resort(n, q),
+                }).handler
+
                 if (handler) {
                     // %initialdo until the next (second) do_one()
                     if (!req.c._had_initialdo) {
