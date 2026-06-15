@@ -19,6 +19,7 @@
     import { tick }         from "svelte"
     import EncodingSplatter from "$lib/O/ui/EncodingSplatter.svelte"
     import PeelInput        from "$lib/O/ui/PeelInput.svelte"
+    import DocTing          from "$lib/O/ui/DocTing.svelte"   // taker-Waft switcheroo: histogram, not raw globules
 
     let { H, w, waft, depth = 0, on_active, on_delete, examining }: {
         H:         House
@@ -206,6 +207,10 @@
     let waft_children = $derived((() => { void waft.version; return waft.o().filter((c: TheC) => !c.sc.Waft) as TheC[] })())
     let sub_wafts     = $derived((() => { void waft.version; return waft.o({ Waft: 1 }) as TheC[] })())
     let waft_mungs    = $derived((() => { void waft.version; return waft.o({ mung_error: 1 }) as TheC[] })())
+    // taker Waft (the attention Ting) renders as a histogram by default; toggle to peek
+    //  at the raw %Point globule tree.
+    let is_taker      = $derived(!!waft.sc.takes)
+    let raw           = $state(false)
 
     // ── unified item-edit form state ──────────────────────────────────
     //
@@ -479,7 +484,33 @@
     }
 </script>
 
-<div class="ls-waft" style="margin-left: {depth * 14}px" class:ls-waft-active={is_active}>
+<div class="ls-waft" style="margin-left: {depth * 14}px"
+     class:ls-waft-active={is_active} class:ls-waft-ting={is_taker}>
+
+    {#if is_taker}
+        <!-- Switcheroo: a taker Waft (the attention Ting) is all machine-y %Point
+             globule data raw, so instead of dumping the tree it engages DocTing and
+             "looks such" — the gold-bar histogram.  The header toggles to the raw
+             data when you want to inspect the gross C**. -->
+        <button class="ls-ting-switch" onclick={() => raw = !raw}
+                title="{raw ? 'show the histogram' : 'show the raw Ting data'}">
+            <span class="ls-ting-glyph">{raw ? '⤺' : '▦'}</span>
+            <span class="ls-ting-key">{wkey}</span>
+            <span class="ls-ting-mode">{raw ? 'data' : 'bars'}</span>
+        </button>
+        {#if raw}
+            {#if waft_mungs.length || waft.oa({ encode_error: 1 })}
+                <EncodingSplatter {waft} />
+            {/if}
+            {@render waftitem(waft, waft)}
+            {#each sub_wafts as sw (sw.sc.Waft)}
+                <svelte:self {H} {w} waft={sw} depth={depth + 1} {examining}
+                    {on_active} {on_delete} />
+            {/each}
+        {:else}
+            <DocTing {H} />
+        {/if}
+    {:else}
 
     <!-- Waft header row — waft C rendered as a waftitem like any other -->
     {#if waft_mungs.length || waft.oa({ encode_error: 1 })}
@@ -487,16 +518,13 @@
     {/if}
     {@render waftitem(waft, waft)}
 
-    <!-- children — all types rendered through waftitem -->
-    <!-- {#each waft_children as child (child)}
-        {@render waftitem(child, waft)}
-    {/each} -->
-
     <!-- sub-Wafts (recursive) -->
     {#each sub_wafts as sw (sw.sc.Waft)}
         <svelte:self {H} {w} waft={sw} depth={depth + 1} {examining}
             {on_active} {on_delete} />
     {/each}
+
+    {/if}
 
 </div>
 
@@ -587,6 +615,19 @@
         font-size: 0.83rem; color: #ccc;
     }
     .ls-waft-active { border-color: #446 }
+
+    /* taker Waft (the Ting) — the histogram switcheroo + its toggle */
+    .ls-waft-ting { border-color: #4a3a2a; }
+    .ls-ting-switch {
+        display: flex; align-items: center; gap: 0.35rem; width: 100%;
+        background: none; border: none; cursor: pointer; padding: 0 0 0.2rem 0;
+        color: #b89a6a; font-family: monospace; font-size: 0.8rem; text-align: left;
+    }
+    .ls-ting-switch:hover { color: #e0c088; }
+    .ls-ting-glyph { width: 0.9rem; }
+    .ls-ting-key   { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+                     white-space: nowrap; font-weight: bold; }
+    .ls-ting-mode  { color: rgba(180, 150, 100, 0.5); font-size: 0.7rem; }
 
     /* Waft header row — styled like a What but with active-glow on the key */
     .ls-item-waft {
