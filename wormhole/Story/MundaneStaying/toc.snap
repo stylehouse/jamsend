@@ -21,8 +21,7 @@ story:MundaneStaying
     For
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.051
-      sample=0.049,at=1780417949
+    TimeTotal:beliefs,avg=0.052
       sample=0.039,at=1781080124
       sample=0.039,at=1781080134
       sample=0.061,at=1781594530
@@ -32,6 +31,7 @@ story:MundaneStaying
       sample=0.064,at=1781595079
       sample=0.047,at=1781595785
       sample=0.047,at=1781595803
+      sample=0.059,at=1781608053
   step,dige:0475f0b3ad7e662a
   step=2,dige:c46028f8646dd507
   step=3,dige:6115e31b01213aa5

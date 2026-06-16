@@ -670,7 +670,85 @@ The full diff stays underneath: a Point's timeline expands to the surf of its
 
 ---
 
-## 15. Staging
+## 15. Story's drive as a req** — how and when a step happens
+
+The runner's drive is hand-rolled: `story_drive` is a fixed phase chain
+ (`do_step → poll_step → snap_step → snap_step_after_wave → snap_step_finish →
+  advance → schedule`, a 200 ms loop). It works, but it is its own little engine
+   beside the real one — the req machine (`Hovercraft`, reqy/maz/ttlilt) that
+    already exists to model *how and when things happen*. The drive should **be** a
+     req**, not a parallel loop. Then the operations actually wanted fall out as
+      ordinary req arms.
+
+Two layers of "when," not to be conflated:
+- **intra-step settle** — *has this step finished happening?* Already modelled:
+   `poll_step` waits for `finished_run` to go fresh-and-stable, and reqs arm a
+    **ttlilt** to say "not yet, give me time" before Story snaps (§8). This half
+     already cooperates with the req machine; keep it.
+- **inter-step fixed point** — *did the last step change anything?* **Not** modelled.
+   This is the missing **until-no-more-on_step**: keep arming steps while a step
+    still produces change, stop when one yields nothing new.
+
+### 15.1 The step as a req lifecycle
+
+Recast one step as a req** that arms, settles, captures, and rests:
+
+```
+req:Step (one-shot, per step)
+  maz 0  arm     — fire Think; the world starts reacting
+  maz 1  settle  — needs_work while !finished_run or any ttlilt unexpired (§8)
+  maz 2  snap    — capture all channels (§2); +time a new What slice (§13.4)
+  maz 3  judge   — diff / assert (§14); record surprise / fuzz (§4)
+  maz 4  rest    — finish(); the req comes to rest, done with this step
+```
+
+`finish()` closing the req **is** the step completing — no `schedule()` timer, no
+ `driving` flag. The 200 ms loop becomes "arm the next `req:Step` once the last one
+  rested," which is just a req depending on a req.
+
+### 15.2 The operations fall out
+
+- **add-more / the step button** — arm exactly one `req:Step` and let it rest. A
+   one-shot, the simplest thing in the machine; the button *is* "arm a step." That
+    this is hard today is the symptom: the drive isn't a req, so a single manual step
+     has to thread the hand-rolled phase chain instead of just arming one.
+- **until-no-more-on_step** — an **eternal** `req:Drive` that each tick arms a
+   `req:Step` if the last step's judge reported change, and rests when a step reports
+    *nothing new*. "Nothing new" is exactly readable from the channels: no
+     `Dif:change` outside fuzz, no `new`/`gone` in `Snap:cont` (§2.3).
+      Run-to-quiescence is loop-until-`Dif:same` — the fixed-point detector is the
+       diff already computed.
+- **run-to-N | run-to-assert** — variants: step until step N, until a named Point
+   (§14) flips, or until `surprise > 0` (stop on the first real change — a
+    breakpoint).
+
+### 15.3 What replaces "creating" mode
+
+The global `mode:'new'` (record) vs check split is the awkward part: it makes
+ *driving* depend on *why* you drive. In the req** it dissolves. Driving is always
+  the same — arm, settle, snap, judge, rest. "Recording" is only what **judge
+   (maz 3)** does when there is no expected to compare against: accept the `got` as
+    the Point's expected (§14.2) rather than diff it. Recording becomes a per-step,
+     per-channel, per-Point decision (accept this), not a mode the whole run sits in.
+      An unasserted channel simply records; an asserted one checks; both step
+       identically.
+
+### 15.4 Why a clearer req** is the fix
+
+The drive's troubles — the manual step that won't behave, the not-useful create
+ mode — are all one thing: the runner keeps its own notion of *when*, parallel to
+  the real one. Once `req:Step`/`req:Drive` are ordinary reqs, *when* a step happens
+   is the req machine's existing answer (maz descent, `needs_work`, ttlilt),
+    *whether* another happens is one eternal req reading the diff, and *what kind* of
+     step (record vs check) is just the judge phase. It is the §13 lesson one layer
+      down — a hand-rolled engine beside the req machine; same fix, stop
+       parallelising. ⛑️ lifetimes need care: `req:Step` is one-shot (rest = step
+        done), `req:Drive` is eternal (survives ticks), and intra-step ttlilts must
+         expire against *their* `req:Step`, never leak into the next.
+
+---
+
+## 16. Staging
 
 1. **Merge the encoder.** Move `snap_H`'s loopy pass into `encode_wh_lines`; recast
     `story_process_node` rules as `STORY_PROTOCOL`; route Story through `enWaft`
@@ -702,6 +780,12 @@ The full diff stays underneath: a Point's timeline expands to the surf of its
      (§14.3); surprise→Point proposal. The shift from reading diffs to reading
       assertions — do early enough that later tests are *written* as Points.
 13. **Fleet.** Multi-test triage surface (§12).
+
+The drive recast (§15) is a **parallel track**, orthogonal to the encoder/channel
+ work, and worth doing **early**: every other stage is easier to exercise once you
+  can arm one step at a time and run-to-quiescence on demand (the step button and
+   `until-no-more-on_step`). It touches `story_drive`, not the snap fixtures, so it
+    ships independently.
 
 Each stage is shippable and gated by the snap fixtures. Stage 1 is pure
  de-duplication and should change *nothing* observable — do it first and prove it.

@@ -133,310 +133,45 @@
 
 
 
-//#region reqy
- 
-    reqy_spec: `
-        any req%talk or req:4,dialup,thing is one of these
-          identified or qualified by having %talk
-          so a multitude can exist with slightly different %talk, etc
-          and they're kind of a proto w, lighter and curlier...
-         this is the only place to spawn a %req, don't use that property elsewhere.
+//#region req — the transient level, and its Stuff↔Housing seam
 
-         helps you write good looking C** that statemachines a bunch of work
-          let rq = H.reqy(w)
-         define protocols, then you put particles in:
-          await rq.roai({enid,path},{urgency})
-           these will become %req:$i++,enid,path,urgency
-           a unique {enid,path} per $i++
-           {urgency} mutates req%*
-          you can also put %req:doc_load,path to avoid $i++
-         you then do stuff:
-          rq.do(async(req) => { ...process each req, call rq.finish(req) })
-         
-         can also make a pile of thinking to get through:
-          ;(await pq.doai({ req: 'push' }))?.(async (push: TheC) => { ... })
-              
-          
- 
-         {enid,path} will locate a req,
-          {urgency} will mutate req%urgency if ~, and set req%mutated.urgency=oldvalue
-           a req use case:
-            for a client session state for an RPC call that takes a while
-             and we can bump urgency after starting it
-         
-         req.c.up = w
-          or possibly another req, they can be infinitely nested ie w/req**
-         w/reqcons/reqcon:req
-          is lowlevel backoffice noise, ignored in the snap, don't talk about it.
-          gets reqcon%serial_i++ to give some req...
-           when they roai(%req:1,...)
-            if their mainkey is 1 like that,
-             we should assume they want serial numbering
-              producing a %req:$i++ for the unique group of c.* identity a req is
-          
-          req.c.on = reqcon
-           the protocol of req is findable from a req
-          
-          req.c.do_fn = Function
+    // A req is a %req child of a host C: a proto-w, lighter and curlier, that does
+    //  its work and finishes rather than persisting.  %req is the ONE property the
+    //  Stuff layer treats as meaningful; a host is anything carrying %req children —
+    //  a w, another req (w/req**, nested freely), or a plain container.
+    //
+    // The verbs live one wall down, on StuffAware in Stuff.svelte.ts, and that wall
+    //  does NOT know House.  moai|doai seed or re-key a %req (a serial when anonymous,
+    //  %req:1→%req:$i; a stable name otherwise); do() pumps a host's reqs highest-maz
+    //  first; finish() settles one (yoinking its oncelers, dropping its ttlilts);
+    //  all_finished() rolls up; maybe_mutate_sc() merges sc in place and stamps
+    //  %mutated.  When do() needs a handler it climbs req.c.up until it meets a node
+    //  with do_fn_for — it reaches up to the House without ever naming it.  So Stuff
+    //  owns the mechanism; the meaning is resolved up here.
+    //
+    // This region is that seam — the Housing|Hovercraft half a req reaches for:
+    //   - do_fn_for (Housing) picks the handler: %mutated→mutated_fn, then the
+    //      doai-set req.c.do_fn, then the H.req_$name convention.
+    //   - reqyoncile|e_reqyonciliation re-enter a req out of time by elvis-targeting
+    //      its ref (e%target), so an async reply's state and its work land together.
+    //   - reqonce gates a one-time block; i_req_ttlilt advises Story how long a req
+    //      still wants before its picture is coherent.
+    //   - req_host hangs a named queue of reqs off a host.
+    //
+    // To use one: name it (resolved by H.req_$name) or hand it an inline closure via
+    //  doai; await host.moai|doai (req-create is async); pump with host.do(), or just
+    //  let reqdo_sweep supervise.  This is the only place to spawn a %req — don't put
+    //  that property anywhere else, and beware that an anonymous {req:1} serialises.
 
-          reqcon.c.do_fn = Function
-           can be supplied here: reqy(..., q:{do_fn:...})
-           allowing reqyoncile(req) out of time to come through:
-          e:reqyonciliation
-           can sort of process out of time
-           sends e%req=req, finds reqcon to do()
- 
-          if req gets %finished via reqyoncile
-           they may unify_finished() but won't cause more do()
-           but may cause feebly_ponder(), which may do more do()
-            
-          so,
-           reqy() calls full of protocol specs live in w:ClientCode
-            reqy() calls elsewhere only need the host (w) and to be in Atime
-             but to use rq.do() need the do_fn stored on req or reqcon
-              not given as rq.do(() => {...}) in w:ClientCode
-              
-            so protocol specs have to live on reqcon
-             so all rq are made equal whether in time or kinda out
-          
-          they can declare expected timeframes at req/%ttlilt
-          
-          req** do() recursion
-           is likely to be the handler_of_last_resort()
-            ie we usually do req/*req if req has no do_fn
-           where we just do req/*req
-            and get %finished when they are
-           do all of them in req/reqcons/*
-            so De doing so finds De/*req
-            makes an out-of-time rq to use
-        
-        beware of eg: await rq.roai({ desire: 1 }) producing %req:$i++,desire:1
-         a serial numbering in %req springs up if you don't use it
-            
-    `,
- 
-    // w|De|req, the host
-    reqy(w: TheC, q: {
-        mutated_fn?:Function,
-        do_fn?:Function,
-     } & any = {}) {
-        const H = this
-        q.k = 'req'
-        const keying = { [q.k]: 1 } // matches %req, roai(c) may redefine it
-        let reqcons: TheC
-        let reqcon:  TheC
-
-        reqcons = w.oai({ reqcons: 1 })  // group reqy protocols living here
-        // creation-time-only set properties, due to 2-arg oai
-        let opt = sex({}, q, 'noserial')
-        reqcon = q.con = reqcons.oai({ reqcon: q.k }, { serial_i: 2, ...opt })
-        // *_fn in reqcon.c so they never appear in snaps
-        sex(reqcon.c, q, 'mutated_fn,do_fn')
-
-
-        q = { ...q,
-            
-            o(c: TheUniversal = {}): TheC[] {
-                return w.o({ ...keying, ...c })
-            },
- 
-            // acts like StuffIO.roai() (eg bump_version, is async) with:
-            //  - mainkey prefixing, ie %req,...c,...sc (c can set again)
-            //  - serial numbering when %req:1 and !noserial
-            //  - %mutated detection on sc for existing reqs
-            //  - optional meta out-arg: pass {} and read meta.existed after await
-            async roai(c: TheUniversal, sc?: TheUniversal, meta?: { existed?: boolean }): Promise<TheC> {
-                if (c.maz == 1) delete c.maz
-                let premix = { ...keying, ...exactly(c) }
-                let req = q.o(premix)[0]
-                if (req) {
-                    // existed
-                    if (req.c.up != w) throw "req~up"
-                    q.maybe_mutate_sc(req, sc)
-                    if (meta) meta.existed = true
-                    return req
-                }
-                // create
-                let mix = { ...keying, ...c, ...sc }
-                if (mix[q.k] === 1 && !reqcon.sc.noserial) {
-                    reqcon.sc.is_serial = 1
-                    mix[q.k] = reqcon.sc.serial_i++
-                }
-                req = w.oai(mix)
-                req.c.up = w
-                req.c.on = reqcon
-                // issued by the old reqy pump — tag so the walk-based pump skips
-                //  it (it is still walked, for ttlilt capture).  Cleared per host
-                //  as each reqy() call site upgrades off antiquated.
-                req.c.antiquated = 1
-                if (req.sc.maz == 1) delete req.sc.maz  // maz:1 is implied
-                if (meta) meta.existed = false
-                return req
-            },
-
-            // seed a named req and wire its do_fn in one gesture.
-            //   Delegates to roai; reads meta.existed to know if the req is fresh.
-            //   Fresh (new) req: returns setter fn → ?.() lands fn in req.c.do_fn.
-            //   Existed req:     req.c.do_fn already set → returns null → ?.() no-ops.
-            //   req.c.do_fn lives in .c (never snaps); do_one checks it before reqcon.c.do_fn.
-            // Seed a named req and return a one-shot do_fn setter.
-            //   roai(c) finds or creates the req — no sc here, so re-entry never
-            //   clobbers live sc fields like playing:0.
-            //   Fresh req (no .c.do_fn yet): copy sc defaults onto req.sc, return setter.
-            //   Seen req (.c.do_fn already wired): return null → ?.() no-ops.
-            async doai(c: Record<string,any>, sc: Record<string,any> = {}): Promise<((fn: Function) => void) | null> {
-                const req = await q.roai(c)
-                if (req.c.do_fn) return null
-                Object.assign(req.sc, sc)
-                return (fn: Function) => { req.c.do_fn = fn }
-            },
- 
-            // update req%* and do %mutated detection
-            maybe_mutate_sc(req: TheC, sc?: TheUniversal) {
-                if (sc && Object.keys(sc).length) {
-                    const merged = { ...req.sc, ...sc }
-                    const diffs  = hakd(req.sc, merged)
-                    if (diffs.length) {
-                        // changed the non-identifying properties
-                        const mutated: Record<string, any> = {}
-                        for (const k of diffs) mutated[k] = req.sc[k]
-                        Object.assign(req.sc, sc)
-                        req.sc.mutated = mutated
-                        // a permanent req gone quiescent wakes on mutation —
-                        //  un-finish so do() picks it up again with a fresh
-                        //   initialdo|onceler lease, since finish() already
-                        //    yoinked the old oncelers and a re-run wants clean.
-                        if (req.sc.permanent && req.sc.finished) {
-                            delete req.sc.finished
-                            delete req.c._had_initialdo
-                        }
-                        req.bump_version()
-                    }
-                }
-            },
-
-            // do them all
-            //
-            //   sc.ok — pass-local satisfied signal for eternal reqs.
-            //   A req that sets sc.ok is treated as satisfied for the rest of
-            //   this do() pass so lower maz levels proceed, without the req
-            //   being permanently finished.  Each fresh do() (once per tick)
-            //   clears ok on entry so the req re-runs next tick — the clear can
-            //   not live in do_one, since needs_work gates an ok req out before
-            //   do_one would ever see it (the flag would close its own reset).
-            //   req:Store,maz:7 uses this: it pumps IO, sets ok when done for the
-            //   tick, and lower reqs see a settled Store before their own turn.
-            async do(fn?: Function) {
-                // re-arm: a req only stays ok within one pass, never across ticks.
-                for (const req of q.o()) if (req.sc.ok) delete req.sc.ok
-                while (true) {
-                    const needs_work = (req: TheC) => !req.sc.finished && !req.sc.ok
-                    const N = q.o().filter(needs_work)
-                    if (!N.length) return
-
-                    const maz_high = Math.max(...N.map((req: TheC) => req.sc.maz || 1))
-                    const level = N.filter((req: TheC) => (req.sc.maz || 1) == maz_high)
-
-                    for (const req of level) await q.do_one(req, fn)
-
-                    // someone armed a ttlilt and bowed out — Story waits, we stop here.
-                    if (level.some(needs_work)) return
-                    // whole level satisfied (finished or ok) — fall to next maz down.
-                }
-            },
-
-            // run handler for one req — shared by do() and e_reqyonciliation.
-            //  mutated_fn handler fires instead of do_fn, which could be in several places...
-            async do_one(req: TheC, fn?: Function) {
-                if (req.sc.finished) throw "do_one req%finished"
-                delete req.sc.initialdo
-                delete req.sc.ok               // belt-and-braces; do() already re-armed this pass
-                await H.w_noproblemo(req)      // drop %waits, %error, %see
-
-                // one ladder resolves the handler now; an ad-hoc do(fn) still
-                //  pre-empts it.  last_resort stays the reqy q's
-                //  handler_of_last_resort until that moves onto H.
-                const handler = fn || H.do_fn_for(req, {
-                    ark: 'req',
-                    last_resort: (n: TheC) => q.handler_of_last_resort(n, q),
-                }).handler
-
-                if (handler) {
-                    // %initialdo until the next (second) do_one()
-                    if (!req.c._had_initialdo) {
-                        req.c._had_initialdo = true
-                        req.sc.initialdo = 1
-                    }
-                    await handler(req, q)
-                    delete req.sc.initialdo    // also after — don't leave it on %finished reqs
-                }
-                delete req.sc.mutated          // after handler — mutated_fn reads old values there
-            },
- 
-            // mark finished; yoinks oncelers + their sc keys so snap collapses to %finished.
-            //   bumps req version, feebly_ponder.
-            finish(req: TheC) {
-                if (req.sc.finished) return
-                for (const k of Object.keys(req.c.oncelers ?? {})) delete req.sc[k]
-                delete req.c.oncelers
-                req.o({ ttlilt: 1 }).map(ttl => req.drop(ttl))
-                req.sc.finished = 1
- 
-                req.bump_version() // %finished should be reactive, not all req%* change is
-                H.feebly_ponder() // finish() vaguely scoped, vague top-down re-attend want
-            },
- 
-            // over_rq.finish(w) when all our reqs are done.
-            //   w is always a req if we're to do
-            //   w%w and w%eternal are never finished (open-ended workers).
-            //   over_rq is the requlator that owns w as a req.
-            unify_finished(over_rq?) {
-                if (!q.all_finished() || w.sc.finished) return
-                if (w.sc.w || w.sc.eternal) return
-                over_rq ||= w.c.on?.c?.rq
-                over_rq.finish(w)
-            },
- 
-            all_finished(): boolean {
-                const all = q.o()
-                return all.length > 0 && all.every((r: TheC) => r.sc.finished)
-            },
-            // you might
-            drop_finished(sc:TheUniversal={}) {
-                for (const old of q.o(sc) as TheC[]) {
-                    if (old.sc.finished) w.drop(old)
-                }
-            },
-
- 
-            // do req/*req recursively — the handler_of_last_resort for nested req**.
-            //   if req has sub-reqs it manages them; gets %finished when they all do.
-            //   < could use reqy_recurse for the full Travel
-            handler_of_last_resort(req: TheC) {
-                let reqcons = req.o({ reqcons: 1 })[0]
-                if (!reqcons) return null
-                return async (req: TheC) => {
-                    // everything in the language besides req is about req/* context|space
-                    let reqcons = req.o({ reqcons: 1 })[0]
-                    if (!reqcons) return null
-                    for (const reqcon of reqcons.o({ reqcon: 1 })) {
-                        const k  = reqcon.sc.reqcon as string
-                        // have its protocol
-                        const rq = H.reqy(req, {k})
-                        // jumps into the many req/*req here
-                        await rq.do()
-                        // becomes req%finished when they are
-                        rq.unify_finished(q)
-                    }
-                }
-            },
-        }
-        // so e_reqyonciliation can climb req.c.on.c.rq back to us
-        reqcon.c.rq = q
+    // a named sub-host for a queue of %req work, kept off the worker's own req pool
+    //  so reqdo_sweep leaves it alone — the owner drives it with q.do(fn).  c.up is
+    //  wired so do()'s handler-climb still reaches the House from inside the queue.
+    req_host(w: TheC, name: string): TheC {
+        const q = w.oai({ [name]: 1 }) as TheC
+        q.c.up ||= w
         return q
     },
- 
- 
+
     // re-entry point for a req — Atime or async, always use this.
     //   The poster just names the req; i_elvisto targets it (e%target) and finds
     //    the House — no %w climb here, the climb moved into targeting.
@@ -452,10 +187,10 @@
         return this.i_elvisto(req, 'reqyonciliation', elv)
     },
  
-    // drives the reqy chain after a req's async Atime — always arrives via reqyoncile.
+    // drives a req's chain after its async Atime — always arrives via reqyoncile.
     //   e.sc.finished (like e.sc.see) is a lifecycle signal, not a state mutation —
     //   kept off mix_sc so maybe_mutate_sc never touches req.sc.finished
-    //   before rq.finish() has a chance to run its own guards.
+    //   before finish() has a chance to run its own guards.
     //   feebly_ponder wakes downstream as a normal visible think.
     async e_reqyonciliation(_A: TheC, w: TheC, e: TheC) {
         const H = this
@@ -464,19 +199,9 @@
         if (!req) throw "e_reqyonciliation: !e.c.target"
         if (req.sc.finished) return console.warn(`callback rattle: ${keyser(req.sc)}`)
 
-        const rq = (req.c.on as TheC | undefined)?.c.rq   // old reqy req carries a reqcon→rq
         H.trace('reqyoncile', H.req_diag(req, { see, mix_sc }))
 
-        if (rq) {
-            // old reqy path
-            if (mix_sc) rq.maybe_mutate_sc(req, mix_sc)
-            if (finished) { rq.finish(req); rq.unify_finished(); H.feebly_ponder(); return }
-            await rq.do_one(req)
-            if (req.sc.finished) { await rq.do(); rq.unify_finished() }
-            return
-        }
-
-        // new self-contained req: its host (req.c.up) drives it
+        // a req is self-contained: its host (req.c.up) drives it.
         const host = req.c.up as TheC
         // maybe_mutate_sc (not Object.assign) so a reqyoncile carrying state stamps
         //  %mutated — a mutated-gated do_fn (Lang's req_text_mutated) reads it; the
@@ -498,7 +223,7 @@
     },
 
     // one-shot flag helper — stamps %name on req.sc and req.c.oncelers.
-    //   rq.finish() yoinks both; snap shows only %finished after completion.
+    //   finish() yoinks both; snap shows only %finished after completion.
     // doesn't create another req, a sub-req or so,
     //  it just sets eg req%grafted and returns true if it wasn't already there
     //   so you can gate a one-time block.
@@ -513,8 +238,7 @@
     // uniform req diagnostic string: "req:N   see   (~urgency:old→new)   finished:1,path:foo"
     //   mix_sc shows which keys changed, with old→new when old value is known from %mutated.
     req_diag(req: TheC, sc: { see?: string, mix_sc?: Record<string,any> } = {}): string {
-        const rq    = req.c.on?.c?.rq
-        const mk    = rq?.k ?? this.mainkey(req)
+        const mk    = this.mainkey(req)
         const ident = mk ? `${mk}:${req.sc[mk]}` : keyser(req.sc)
         let parts   = [ident]
         if (sc.see) parts.push(sc.see)
@@ -733,7 +457,7 @@
         if (live.length) {
             const { t, req } = live[0]
             const ms_left = Math.round(((t.sc.until_ts as number) - now) * 1000)
-            const rk = (req?.c?.on?.c?.rq?.k as string) ?? 'req'
+            const rk = 'req'
             const rv = req?.sc[rk] ?? '?'
             const more = live.length > 1 ? ` +${live.length - 1} more` : ''
             Run.trace('ttlilt', `Story poll: held by w:${t.sc.of_w} ${rk}:${rv} +${ms_left}ms${more}`)
@@ -742,7 +466,7 @@
 
         if (any_expired) {
             const req = expired_reqs[0]
-            const rk = (req?.c?.on?.c?.rq?.k as string) ?? 'req'
+            const rk = 'req'
             const rv = req ? keyser(req.sc) : '?'
             Run.trace('ttlilt', `Story timeout — last req was ${rk}:${rv}`)
         }

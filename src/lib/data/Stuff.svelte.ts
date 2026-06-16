@@ -510,6 +510,10 @@ abstract class StuffAware extends StuffIO {
     //       real sc change, for watchers keyed on %version.
     async moai(s, c = {}) {
         if ('req' in s) {
+            // maz:1 is implied, never identifying — strip it from the identity match
+            //  (a created req drops it below) so a later moai({…,maz:1}) re-finds the
+            //   same req instead of minting a duplicate that carries no maz.
+            if (s.maz === 1) delete s.maz
             let req = this.o({ req: 1, ...exactly(s) })[0] as TheC | undefined
             if (req) { this.maybe_mutate_sc(req, c); return req }
             const mix: TheUniversal = { req: 1, ...s }
@@ -533,9 +537,13 @@ abstract class StuffAware extends StuffIO {
     }
 
     // seed a req and return a one-shot do_fn setter (?.(body)), or null once wired —
-    //  re-entry never re-wires; only do() re-runs the body.  doai is moai (the req
-    //   re-merge) plus that setter.
+    //  re-entry never re-wires; only do() re-runs the body.  doai is the req-with-
+    //   handler verb: a do_fn only belongs on a req, so an anonymous c (no %req key)
+    //    gets the serial preset {req:1,...} — same autofill the old reqy().roai gave.
+    //     (moai stays overloaded — req when 'req' in c, else bump-version — but doai
+    //      always means a req.)
     async doai(c: TheUniversal, sc: TheUniversal = {}): Promise<((fn: Function) => void) | null> {
+        if (!('req' in c)) c = { req: 1, ...c }
         const req = await this.moai(c, sc)
         if (req.c.do_fn) return null
         return (fn: Function) => { req.c.do_fn = fn }

@@ -1,27 +1,25 @@
 Snap:H
   H:Interesting,Run
     A:InterLies
-      self,round=2	{"mung":["age"]}
+      self,round=3	{"mung":["age"]}
       w:InterLies
         Waft:Look,active
         Waft:GhostList,lists
         Waft:Ting,takes
-        o_elvis:waft_roster
-        self,round=2	{"mung":["age"]}
-        see:roster[3] handed back
+        o_elvis:subscribe
+        o_elvis:roster_change
+        o_elvis:open_sidetrack
+        self,round=3	{"mung":["age"]}
     A:InterLang
       self,round=2	{"mung":["age"]}
       w:InterLang
         Languinio
-          req:waft_roster,finished,reconciled	{"ref":{"reply":"[Object(),Object(),Object()]"}}
-            req_sent
-            ttlilt,until_ts=1781603554.539
-          Interest:Trail,waft:Look,lens:NaviCado,state:pending
+          Interest:Trail,waft:Look,lens:NaviCado,presence:active,state:pending
             cursor,what:Look,doc:Look/doc0,depth=0
-          Interest:GhostList,waft:GhostList,lens:DocGhostList,state:pending
+          Interest:GhostList,waft:GhostList,lens:DocGhostList,presence:active,state:pending
             cursor,doc:GhostList/doc0
-          Interest:Ting,waft:Ting,lens:DocTing,state:pending
+          Interest:Ting,waft:Ting,lens:DocTing,presence:always,state:live
             cursor,what:Ting,latest
+        req:waft_roster,eternal,subscribed
         self,round=2	{"mung":["age"]}
-        see:reconciled 3 Interests
     mo:main,interval=3.6	{"mung":["id"]}

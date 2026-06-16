@@ -180,9 +180,9 @@ export const grammar_hash = ${JSON.stringify(hash)}
         }
 
         const job = w.o({ Gen: 1, path: entry.generated_path })[0] as TheC
-        const rw  = await H.requesty_serial(w, 'rw_queue')
-        const req = await rw.oai(
-            { gen_parser_write: 1, name, path: entry.generated_path },
+        const rw  = H.req_host(w, 'rw_queue')
+        const req = await rw.moai(
+            { req: 'gen_parser_write', name, path: entry.generated_path },
             { rw_op: 'write', rw_name: entry.generated_path, rw_data: job.sc.body as string },
         )
         if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })) {

@@ -401,8 +401,13 @@ A req is just a %req child of its host C; everything is methods on the StuffAwar
                               %mutated never clears (the driver freezes; bit Lang).
                               Non-req moai is unchanged (bump_version on a sc change).
                               (Was the sync req_oai; folded into moai, so callers await.)
- - w.doai(c, sc)?.(do_fn)  — moai plus a one-shot do_fn setter; returns null once
-                              wired, so re-entry never re-wires, only do() re-runs.
+ - w.doai(c, sc)?.(do_fn)  — the req-with-handler verb: moai plus a one-shot do_fn
+                              setter; returns null once wired, so re-entry never
+                              re-wires, only do() re-runs.  A do_fn only belongs on a
+                              req, so doai ALWAYS makes one — an anonymous c (no %req
+                              key) gets the serial preset {req:1,...}, the autofill the
+                              old reqy().roai gave (PortPlanet's order reqs rely on it).
+                              moai stays overloaded (req vs bump-version); doai does not.
                               Use for closure handlers; use moai when the handler is a
                               named req_$name or you just need the ref.
  - w.do(fn?)               — the maz-priority pump over w's !finished|!ok reqs.
@@ -541,11 +546,22 @@ reqy()/reqcon/handler_of_last_resort are DELETED (the reqy_spec doc + the reqy(w
 
  - requesty_serial(w,t) — a SEPARATE, older queue engine (NOT reqy): reqs carry a
     `requesty_$t` mainkey (not %req), a `requesty_$t_serial` counter, req%req_i, and
-    %aim hoisting.  Used across Radios, Story (the Wormhole wh_queue: requesty_serial
-    (w,'wh')), Pirating, Pirate, Auto.go, Housing (fs_op/rw_queue), LangLang, and
-    Agency keeps its own copy.  Migrating it to moai/do is its own pass and touches
-    snaps (requesty_wh_serial / requesty_wh appear in toc.snaps).  Independent of the
-    reqy() work — its antiquated mark no longer gates anything.
+    %aim hoisting.  The lib/O/ users are DONE — Story (wh), LangLang + Auto (rw_queue),
+    and Housing's Wormhole server (fs_op + rw_queue) all moved to %req via the new
+    req_host(w,name) sub-host helper (a named queue C off the worker, c.up-wired, kept
+    out of the worker's own req pool so reqdo_sweep won't pump it; the owner drives it
+    with q.do(fn)).  Mapping: requesty_serial(w,t) → req_host(w,t); .oai(c,sc) → a
+    NAMED req moai (a stable %req:$name so it re-finds — an anonymous {req:1} won't,
+    since moai's serial value never matches the {req:1} sentinel on re-find); .i(c) for
+    fire-and-forget writes → moai({req:1,…}) (fresh serial each call); server wrappers
+    hold the elvis req + finish in .c (.c.for/.c.finish), dedup by ref, and the queue
+    is swept of finished reqs after do() (do() never drops).  Client/server are
+    decoupled only by the elvis req's sc (wh_op/rw_op/… + reply), so the mainkey change
+    is invisible across the wire — LiesStore (already %req) and the old requesty clients
+    interoperate with the same Wormhole server.  This DOES churn snaps (requesty_wh →
+    wh/req in toc/NNN.snaps) — regenerate via a Story Accept, do NOT hand-edit.
+    STILL on requesty_serial (ghost/mostly, deferred): Radios, Pirating, Pirate, and
+    Agency's own copy.  Independent of reqy() — the antiquated mark no longer gates.
 
  skip: shelved/LiesWorkup.svelte (inactive; still references the deleted reqy() — make
     it compile or stays shelved).

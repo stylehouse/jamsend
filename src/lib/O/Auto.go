@@ -88,8 +88,8 @@
 
         // ── load Library from disk once ───────────────────────────────────────
         if (!w.c.Li_loaded) {
-            const rw  = await H.requesty_serial(w, 'rw_queue')
-            const req = await rw.oai({ rw_name: H.get_Library_path(), rw_op: 'read' })
+            const rw  = H.req_host(w, 'rw_queue')
+            const req = await rw.moai({ req: 'lib_read', rw_name: H.get_Library_path(), rw_op: 'read' })
             if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req }))
                 return w.i({ see: '⏳ Library...' })
 
@@ -196,8 +196,8 @@
                 return
             }
  
-            const rw  = await H.requesty_serial(w, 'rw_queue')
-            const req = await rw.i({ rw_name: H.get_Library_path(), rw_op: 'write', rw_data: snap })
+            const rw  = H.req_host(w, 'rw_queue')
+            const req = await rw.moai({ req: 1, rw_name: H.get_Library_path(), rw_op: 'write', rw_data: snap })
             H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
             console.log(`💾 Library saved (${(Li.o({ Book: 1 }) as TheC[]).length} books)`)
         }, { see: 'save_library' })

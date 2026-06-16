@@ -1709,17 +1709,20 @@ export class House extends StorableHousing {
 
 
         // v1. all operations restricted to ./wormhole/
-        const fs = await H.requesty_serial(w, 'fs_op')
-    
+        //   fs_op is a sub-host queue: one %req wrapper per incoming elvis req
+        //   (the elvis req + its finish live in .c, not sc).  fs.do(fn) pumps them.
+        const fs = H.req_host(w, 'fs_op')
+
         for (const { req, finish } of H.o_elvis_req(w, 'wh_op')) {
-            if (!fs.o({ req }).length) {
-                const fs_req = await fs.i({ req })
+            if (!(fs.o({ req: 1 }) as TheC[]).some(fr => fr.c.for === req)) {
+                const fs_req = await fs.moai({ req: 1 })
+                fs_req.c.for    = req
                 fs_req.c.finish = finish
             }
         }
-    
+
         await fs.do(async (fs_req: TheC) => {
-            const req    = fs_req.sc.req as TheC
+            const req    = fs_req.c.for as TheC
             const finish = fs_req.c.finish as Function | undefined
             if (!finish) return
     
@@ -1760,21 +1763,24 @@ export class House extends StorableHousing {
                 done({ error: String(err) })
             }
         })
+        // drop settled wrappers so the queue doesn't accrete (do() never drops)
+        ;(fs.o({ req: 1, finished: 1 }) as TheC[]).forEach(fr => fs.drop(fr))
 
 //#endregion
 //#region v2
 
-        const rw = await H.requesty_serial(w, 'rw_queue')
+        const rw = H.req_host(w, 'rw_queue')
 
         for (const { req, finish } of H.o_elvis_req(w, 'rw_op')) {
-            if (!rw.o({ req }).length) {
-                const rw_req = await rw.i({ req })
+            if (!(rw.o({ req: 1 }) as TheC[]).some(rr => rr.c.for === req)) {
+                const rw_req = await rw.moai({ req: 1 })
+                rw_req.c.for    = req
                 rw_req.c.finish = finish
             }
         }
 
         await rw.do(async (rw_req: TheC) => {
-            const req    = rw_req.sc.req as TheC
+            const req    = rw_req.c.for as TheC
             const finish = rw_req.c.finish as Function | undefined
             if (!finish) return
 
@@ -1820,9 +1826,8 @@ export class House extends StorableHousing {
                 done({ error: String(err) })
             }
         })
+        ;(rw.o({ req: 1, finished: 1 }) as TheC[]).forEach(rr => rw.drop(rr))
 
-
-    
         const DL = A.c.DL
         DL ? w.i({ see: `📂 ${DL.name}` }) : w.i({ see: '📭 no directory' })
     }
