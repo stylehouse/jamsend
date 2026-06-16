@@ -512,6 +512,7 @@ Everything above is parts. Here is the whole they assemble into, and it is not n
 | step nav ←/→                  | the **`rwnd | pause | +time`** transport        |
 | the pip strip                 | the **sibling-`What` list** / minimap dots      |
 | recording a step              | **+time** (cell-division): a new sibling `What` |
+| an **assertion** — what to check (§14) | a **Point** — `method|label|class`, a cursored claim |
 | a surfed/pinned object (§3.2) | an **engaged Point** (minimap engagement, soft cap 3) |
 | a surprise row                | a `focus` Point (enlarge, glow, context bar)    |
 | a fuzz / noisy-but-ok row     | a `caution` / `dim` Point                       |
@@ -605,7 +606,71 @@ The win is *deletion*. Diffmatication stops being a bespoke tool and becomes the
 
 ---
 
-## 14. Staging
+## 14. Points are Assertions — author what matters, on clean timelines
+
+The whole-snap dige is all-or-nothing: it asserts *everything* and so expresses
+ *nothing* — you cannot read it to learn what a test is *for*, and it flips on every
+  acknowledged non-determinism the fuzz pass hasn't yet caught. The complement is a
+   **Point**. In Waft a Point is a cursored leaf (`method | label | class`); in a
+    test it is an **Assertion** — a named claim about the subject that must hold,
+     anchored by the cursor (§13.3) to exactly the thing it checks.
+
+Two layers, both wanted:
+- **dige** — the safety net: "nothing changed that I didn't expect." Catches
+   regressions no one thought to name; fragile to fuzz (that is what §4 wrangles).
+- **Points** — the intent: "*these* facts are correct." Few, named, load-bearing,
+   and noise-immune by construction — a Point on a non-fuzz value stays green when
+    the dige flips on a timestamp. A mature test reads as a handful of Points, not a
+     wall of diff.
+
+### 14.1 What a Point can assert
+
+A Point names a channel (§2) and an expectation; the cursor anchors it:
+
+- **value** — this object/field equals X (a dige, a number, a string).
+- **continuity** — this object appears at step N | survives to the end | never
+   appears (`new`/`gone`/`cont`, §2.3).
+- **stability** — `.vers` churns no more than K; a subtree stays `same`-or-`fuzz`
+   (no `surprise`) across the run.
+- **order | trace** — on `Snap:trace` (§2.4): this elvis fires before that; this
+   sequence of attends/thinks/beliefs occurs.
+- **shape** — a subtree matches a pattern or count (the squish already counts
+   children — "exactly 36").
+
+`class` decorates it: `focus` = critical, `dim` = secondary, `caution` = known-soft.
+
+### 14.2 Making them
+
+Authoring is a click on the surf, not hand-edited snap. While surfing an object
+ (§3.2) or hovering a row, **assert this** mints a `Point` on the test Waft anchored
+  to that object's D-identity, snapshotting the current value as expected — granular
+   Resnapture, per-object instead of whole-snap. Assert on any channel: continuity
+    on `Snap:cont`, ordering on `Snap:trace`. Points persist in the test Waft (they
+     ride the snap as `Waft/**/Point` particles — declaration, like a Funkcion
+      embed, not behaviour).
+
+The surprise detector (§4, §12) **proposes** them: a `Dif:change` no fuzz class
+ covers is offered two resolutions — *acknowledge as fuzz* (a rule) or *assert as a
+  Point* (a claim). Every surprise thus exits as either named noise or a named
+   check; nothing stays merely surprising.
+
+### 14.3 Uncluttered timelines
+
+The primary test view is the **Points, not the diff**. Each Point draws its own
+ clean timeline across steps — a strip of pips/thumbnails (§10), green where it
+  holds, red where it breaks — free of snap noise. *That* is "the main things to
+   check, ascertained and perceived": you read the test's claims and their status at
+    a glance, one uncluttered line each, without parsing a snap.
+
+The full diff stays underneath: a Point's timeline expands to the surf of its
+ anchored object (§3.2); a broken Point auto-engages and unfolds the fern garden to
+  it (the ttlilt-reveal move, §8). Engagement (soft cap 3) chooses which timelines
+   are on stage; the rest fold away. A test's health is then a few horizontal strips
+    — the assertions — over a folded garden of everything else.
+
+---
+
+## 15. Staging
 
 1. **Merge the encoder.** Move `snap_H`'s loopy pass into `encode_wh_lines`; recast
     `story_process_node` rules as `STORY_PROTOCOL`; route Story through `enWaft`
@@ -633,7 +698,10 @@ The win is *deletion*. Diffmatication stops being a bespoke tool and becomes the
      ttlilt unfold-to-reveal lands for free.
 11. **Islands + thumbnails.** Macro map (§9) and pip contact sheet (§10), both
      rollups of the §10 fold predicate.
-12. **Fleet.** Multi-test triage surface (§12).
+12. **Points/Assertions.** Author Points from the surf (§14.2); per-Point timelines
+     (§14.3); surprise→Point proposal. The shift from reading diffs to reading
+      assertions — do early enough that later tests are *written* as Points.
+13. **Fleet.** Multi-test triage surface (§12).
 
 Each stage is shippable and gated by the snap fixtures. Stage 1 is pure
  de-duplication and should change *nothing* observable — do it first and prove it.

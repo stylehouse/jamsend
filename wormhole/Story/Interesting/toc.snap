@@ -1,49 +1,22 @@
 story:Interesting
   Styles
-    matstyle:w
-      style:background-color,v:#8f3232
-      meta:is_compound,v
-      meta:label,fmt:%s,keys:w
-    matstyle:Waft
-      style:background-color,v:#2fb155
-    matstyle:see
-      style:background-color,v:#8e29d6
-    matstyle:Languinio
-      style:background-color,v:#c5b759
-    matstyle:req
-      style:background-color,v:#298699
-    matstyle:req_sent
-      style:background-color,v:#bc2476
-    matstyle:ttlilt
-      style:background-color,v:#61bd42
-    matstyle:Interest
-      style:background-color,v:#534ed0
-    matstyle:cursor
-      style:background-color,v:#a34b1f
-    matstyle:LE
-      style:background-color,v:#3aa67e
-    matstyle:ActiveInterest
-      style:background-color,v:#bd36c9
   Plan
   Opt
     For
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.053
-      sample=0.041,at=1781603513
-      sample=0.041,at=1781603516
-      sample=0.041,at=1781603517
-      sample=0.049,at=1781603519
-      sample=0.056,at=1781603523
-      sample=0.062,at=1781603526
-      sample=0.062,at=1781603546
-      sample=0.054,at=1781603556
-      sample=0.054,at=1781603560
-      sample=0.07,at=1781603566
+    TimeTotal:beliefs,avg=0.157
+      sample=0.181,at=1781605822
+      sample=0.2,at=1781605865
+      sample=0.277,at=1781605910
+      sample=0.132,at=1781606021
+      sample=0.179,at=1781606116
+      sample=0.09,at=1781606166
+      sample=0.193,at=1781607230
+      sample=0.144,at=1781607248
+      sample=0.103,at=1781607255
+      sample=0.07,at=1781607399
   step,dige:039bb2108d5f2c88
   step=2,dige:59b5ee9cbcd19bb7
   step=3,dige:6a06ffb335566809
   step=4,dige:c0b55953c15fcd4d
-  step=5,dige:8a03cd0f9fea2685
-  step=6,dige:48bdf92754c865ee
-  step=7,dige:e33d2181e87f393a

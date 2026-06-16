@@ -413,11 +413,14 @@ A req is just a %req child of its host C; everything is methods on the StuffAwar
                               can't pump reqs think hasn't minted — hence post-attend,
                               NOT the walk's finito_fn as §4 imagined).  reqdo gates
                               per host on antiquated: pumps only where the host has no
-                              antiquated reqs; while any remain the old reqy().do()
-                              pumps inline.  A targeted re-entry skips the sweep.
- - reqyoncile(req, sc) → e_reqyonciliation — out-of-time re-entry.  e_reqyonciliation
-                              now has two paths: reqcon→rq (old) and, for a new req,
-                              the host (req.c.up) drives it via _req_do_one / do().
+                              antiquated reqs.  With reqy() now deleted, the only
+                              antiquated reqs left are requesty_serial's — and those
+                              aren't %req children, so reqdo never sees them anyway;
+                              the gate is now effectively always-open.  A targeted
+                              re-entry (reqyoncile) skips the sweep.
+ - reqyoncile(req, sc) → e_reqyonciliation — out-of-time re-entry.  One path now:
+                              the host (req.c.up) drives the req via _req_do_one / do()
+                              (the old reqcon→rq branch went with reqy()).
 
 Resolution is one ladder, H.do_fn_for(req,{ark:'req'}): %mutated→mutated_fn, then
  req.c.do_fn, then the req_$name convention.  _req_do_one climbs c.up to reach H
@@ -433,8 +436,15 @@ Diverged from the plan, deliberately:
  - e%target (§6): delivered by direct ref-dispatch in attend (_deliver_targeted),
     NOT by descending T into req nodes.  So it needs no V.req_legs and no attend
     rework; the _e_targets_T ref-branch was removed as dead.  Gated to req targets.
- - antiquated: req.c.antiquated=1 stamped by the OLD reqy().roai + requesty_serial
-    only; new engine reqs are never antiquated.  That mark is the migration fence.
+ - antiquated: req.c.antiquated=1 now stamped by requesty_serial only (reqy() is
+    gone); new engine reqs are never antiquated.  requesty_serial reqs aren't %req
+    children, so the mark no longer gates anything — it survives only until
+    requesty_serial itself migrates.
+ - moai identity + maz:1: maz:1 is implied and never identifying.  moai now strips
+    maz:1 from the identity match (mirroring old roai), so a later moai({…,maz:1})
+    re-finds the same req instead of minting a duplicate (the created req drops maz:1,
+    so an un-stripped match would miss it).  Reqs roai'd|moai'd with maz:1 (eg
+    MachPeerily watch_error, binary received) depend on this.
 
 ### Verification track (still gated, not the live pump)
 
@@ -509,19 +519,38 @@ V.req_legs (Housing) makes organise lay req** as walk more-legs and runs
     + w:Pantheate are now antiquated-free → Lies.svelte's two reqy(w).do() and
     LiesCortex's Pantheate reqy(w).do() all dropped to w.do() (kept inline; the tick
     reads results).
+ - MachPeerily.svelte — the LAST host on reqy(), now off it.  Every reqy(w)/reqy(De)
+    host became the C itself: roai→moai, roai+do_fn||=→doai closure, rq.do()→host.do(),
+    rq.finish→host.finish, rq.unify_finished()→the inlined `if (host.all_finished() &&
+    !host.sc.finished) (host.c.up).finish(host)`.  The dq/drq params were dropped from
+    every PL_*/De_* helper (the host is w or De, already in hand or via De.c.up).
+    eternal req:emit_corruption never unifies (as before).  No req_$name handlers —
+    every De_* stays an inline closure wired via doai, matching the existing shape.
+    reqyoncile untouched (new reqs carry no reqcon, so the host=req.c.up path runs).
+    The w-level pumps stay inline w.do() where the tick reads results (manager step
+    wiring; _PeeringLive_main listen/handshake); reqdo_sweep also supervises now that
+    the host is antiquated-free.  Surfaced + fixed the moai maz:1 identity gap (above).
 
-### Remaining — migrate the rest of O/, then delete the old engine
+### Remaining — migrate requesty_serial, then the Agency deletes
 
- - MachPeerily.svelte(18)— biggest: 32 roai/do_fn, 11 reqyoncile, 13 unify.  The LAST
-    host on the old engine; once done, delete reqy()/reqcon/reqy_recurse/
-    handler_of_last_resort.
+reqy()/reqcon/handler_of_last_resort are DELETED (the reqy_spec doc + the reqy(w,q)
+ factory went; e_reqyonciliation collapsed to its single host-drives path; req_diag /
+ the ttlilt-poll trace dropped their req.c.on.c.rq reads).  reqy_recurse is KEPT — it
+ scans %req children directly and still serves Runstepped_reqy_pageturning +
+ i_Story_o_req_ttlilt for the live (new-engine) reqs.
 
- skip: shelved/LiesWorkup.svelte (inactive).
- delete LAST: Hovercraft.svelte's reqy() / reqcon / reqy_recurse /
-  handler_of_last_resort — the old engine.  Goes once every host's antiquated
-  count is zero (then reqdo_sweep takes over and the inline reqy(w).do() calls drop).
-  Also then the Agency-migration deletes from the old plan (agency_think, Aw_think,
-  procure_ways, the setTimeout i_elvis routers, requesty_serial).
+ - requesty_serial(w,t) — a SEPARATE, older queue engine (NOT reqy): reqs carry a
+    `requesty_$t` mainkey (not %req), a `requesty_$t_serial` counter, req%req_i, and
+    %aim hoisting.  Used across Radios, Story (the Wormhole wh_queue: requesty_serial
+    (w,'wh')), Pirating, Pirate, Auto.go, Housing (fs_op/rw_queue), LangLang, and
+    Agency keeps its own copy.  Migrating it to moai/do is its own pass and touches
+    snaps (requesty_wh_serial / requesty_wh appear in toc.snaps).  Independent of the
+    reqy() work — its antiquated mark no longer gates anything.
+
+ skip: shelved/LiesWorkup.svelte (inactive; still references the deleted reqy() — make
+    it compile or stays shelved).
+ then: the Agency-migration deletes from the old plan (agency_think, Aw_think,
+  procure_ways, the setTimeout i_elvis routers) — fold in with requesty_serial.
 
 ### Migration recipe
 
@@ -535,26 +564,35 @@ V.req_legs (Housing) makes organise lay req** as walk more-legs and runs
  - mutated_fn          → fold into the do_fn checking req.sc.mutated (PortPlanet)
  - handler_of_last_resort  → an explicit do_fn that pumps its children (host.do())
  - reqonce             → unchanged (works on any req)
- - drop a host's inline top-level w.do() ONLY once ALL its reqs are antiquated-free;
-    until then keep the inline reqy(w).do() (it pumps old + new via do_fn_for).
+ - inline top-level w.do() — keep it where the same tick reads the pump's results;
+    otherwise reqdo_sweep supervises.  (With reqy() gone there is no reqy(w).do()
+    fallback left; every host's pump is now plain w.do().)
 
 ### Watch-items
 
- - per-host flip: w:Lies (LiesStore/LiesEnd/Lies/LiesCortex) and w:Lang (Lang +
-    LiesEnd's push cluster) and w:Pantheate (LiesCortex) are ALL antiquated-free now —
-    every pump is plain w.do(), kept inline where the tick reads results.  The only
-    host still on the old engine is MachPeerily; once it migrates the inline reqy(w)
-    .do() calls are all gone and reqdo_sweep can supervise everywhere.
+ - per-host flip: COMPLETE.  Every reqy() host (w:Lies, w:Lang, w:Pantheate, and
+    finally MachPeerily's w:PeeringLive/Bearing/Nearing/Tearing) is antiquated-free;
+    every pump is plain w.do(), kept inline where the tick reads results, with
+    reqdo_sweep supervising the rest.  reqy() itself is deleted.
  - %initialdo / %mutated must stay within-beat (in .c or set+cleared inside _req_do_one);
     never let them persist into a snap (that churns the diff — bitten twice already).
  - e_reqyonciliation's new-req path now does host.maybe_mutate_sc for mix_sc (was
     Object.assign) so a reqyoncile carrying state stamps %mutated → a mutated-gated
     do_fn fires.  Landed with the Lang migration (req_text_mutated needs it).
+ - async req-create: folding req_oai into moai made req-create async (await host.moai).
+    The microtask gap is benign under the Atime mutex (Svelte effects are macrotasks) —
+    confirmed by a Story run after the Lang/LiesCortex/StuffAware work (testing OK).
+    Still, when migrating MachPeerily, watch any spot that read a just-created req
+    synchronously — it now needs the await before the read.
  - svelte-check's total drifts run-to-run (incremental cache re-attributing the
     ~2900 ghost-method-on-House false positives); judge by per-region diffs, not the total.
+    Note Stuff.svelte.ts is checked via two import paths (data/ + O/) so its errors
+    double-count in a per-file grep.
  - the maz gate (§3) — keep the pump per-host priority; lexical walk order ≠ maz.
  - snap-id churn (§1) — a transient appearing/finishing each beat churns the diff;
     decide deliberately whether one earns a scan-id or is summarised.
+ - deferred (not a req-migration blocker): Lang doesn't surface unresolved Pmirrors in
+    the UI — it only warns.  Left as-is pending a major Pmirror refactor.
 
 ### Not started
 
