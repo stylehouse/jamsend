@@ -221,14 +221,25 @@ The Aw string-path is the legibility|routing half for the named top levels —
 reqyoncile collapses to a plain elvis at the req:
 
     // re-entry for a req — Atime or out-of-time, always this.
-    //  the mix rides the e and is applied at delivery, so state and work arrive together.
-    async reqyoncile(req, mix = {}) {
-        return this.i_elvisto(req, 'reqyonciliation', { mix })
+    //  sc splits into a state-mix (folded at delivery) and the lifecycle signals
+    //   see|finished, kept apart so the settle never rides through %mutated —
+    //    state and work then arrive together.
+    async reqyoncile(req, sc = {}) {
+        const { see, finished, ...mix_sc } = sc
+        return this.i_elvisto(req, 'reqyonciliation', { see, finished, mix_sc })
     }
 
 No %w climb in the poster, no e/%req smuggling, no special unpack at the w.
  The climb to find the w moves into targeting, where it belongs;
   the poster just names the req.
+
+e_reqyonciliation is the delivery body — the handler the elvis lands in, at the
+ targeted req (e.c.target).  It applies the e, then drives the req from its host
+  (req.c.up): the state-mix folds into req.sc through the %mutated path (so a
+   mutated_fn sees it), finished settles the req through the host, and otherwise
+    the host re-drives it — state first, then work, in one delivery.  This is the
+     push dual of i_elvis_req's pull (§7): both are e's landing at a req with a
+      c.up chain, both captured by one walk and settled by one finito_fn.
 
 e%mix is a general verb, not req machinery:
  an e carrying %mix mutates its target's sc through the %mutated path.
@@ -367,7 +378,12 @@ A req is just a %req child of its host C; everything is methods on TheC + House.
  - w.req_oai(c, sc)        — find-or-create a %req child, return the ref.  On an
                               existing one it moai-re-merges sc (差/hakd → %mutated
                               = {key:old}); on a fresh one it applies sc.  This is
-                              the ref-returning verb (cf the old reqy().roai).
+                              the ref-returning verb (cf the old reqy().roai).  A
+                              re-merge that drifts a %permanent+%finished stage
+                              un-finishes it (+ fresh initialdo) so do() re-runs it —
+                              without that a re-keyed permanent stage stays finished,
+                              do() skips it, and %mutated never clears (the driver
+                              freezes after its first pass; bit the Lang migration).
  - w.doai(c, sc)?.(do_fn)  — req_oai plus a one-shot do_fn setter; returns null
                               once wired, so re-entry never re-wires, only do() re-runs.
  - w.do(fn?)               — the maz-priority pump over w's !finished|!ok reqs.
@@ -446,23 +462,40 @@ V.req_legs (Housing) makes organise lay req** as walk more-legs and runs
     no reqcon, so e_reqyonciliation takes its host=req.c.up branch (Mundane only
     passes finished:1).  ALL test ghosts are now off reqy (MachReqy was already done;
     the rest never used reqs).
+ - Lang.svelte — req:workon + its three stages (understanding/ingredients/
+    instrumentation) and the per-dock req:Languish (text_loaded/text_mutated/compile)
+    plus req:furnishing.  workon via w.req_oai; stages via workon.req_oai; the driver
+    req_workon re-keys stages with workon.req_oai(sig) then pumps workon.do().  Nested
+    hosts: ingredients hosts furnishing (req.req_oai + req.do(), unify inlined),
+    Languish hosts its phases (dock.finish on unify; text_mutated is eternal so
+    Languish stays open — same as before).  All req_$name handlers dropped their q
+    arg; host derives from req.c.up; q.finish→host.finish.  reqyoncile unchanged.
+    Lang() w-level pump kept inline as w.do() (the same tick reads Pmirrors + the
+    change strip, so it can't wait for reqdo_sweep).  w:Lang is now antiquated-free
+    → e_Lang_LE_push (LiesEnd) dropped reqy(workon).do() to workon.do().  The
+    e_reqyonciliation new-req mix_sc fix (Object.assign → host.maybe_mutate_sc) landed
+    here, since Lang is the first to pass mix_sc through reqyoncile (req_text_mutated
+    gates on %mutated).  ALSO surfaced + fixed the engine gap that froze the driver:
+    TheC.maybe_mutate_sc now un-finishes a %permanent+%finished stage on a drifting
+    re-merge (reqy().maybe_mutate_sc always did; the C-native one didn't, and Lang is
+    the first C-native %permanent user) — see the req_oai note above.
+ - LiesCortex.svelte — req:Cortex (w:Lies foreman, the HARD one), Codebit, Rundown,
+    BlatDo; req:include, run_method (w:Pantheate).  handler_of_last_resort became an
+    explicit do_fn: req_Cortex (resolved by the req_$name convention) pumps its
+    children with req.do() then sets %ok — the eternal-foreman shape (cf req_Twisto/
+    req_Store).  Gave Cortex its documented maz:5 (the old roai omitted maz → it ran
+    at maz:1; §3 always specified 5).  Codebit re-arm detected by pre-checking
+    existence (no meta.existed in the C-native req_oai).  All handlers dropped q;
+    host = req.c.up; q.finish→host.finish (cortex/pw).  reqyoncile unchanged.  w:Lies
+    + w:Pantheate are now antiquated-free → Lies.svelte's two reqy(w).do() and
+    LiesCortex's Pantheate reqy(w).do() all dropped to w.do() (kept inline; the tick
+    reads results).
 
 ### Remaining — migrate the rest of O/, then delete the old engine
 
-Order (easiest → hardest), one host's reqs at a time:
-
- 1. Lang.svelte      (9)  — volume: 16 roai, 11 reqyoncile, 7 ttlilt, 6 reqonce.
-                             (req:workon + its stages; once done, e_Lang_LE_push's
-                              workon-level pump can drop to workon.do().)  ALSO fold
-                              in the e_reqyonciliation new-req-path fix (watch-item
-                              below): Lang is the first migration to pass mix_sc
-                              through reqyoncile, so Object.assign → maybe_mutate_sc
-                              actually matters there (Mundane only passed finished:1).
- 2. LiesCortex.svelte(14) — HARD: handler_of_last_resort (implicit req/*req
-                             recursion) must become explicit child-pumping do_fns.
-                             (once done, w:Lies goes antiquated-free → Lies.svelte's
-                              reqy(w).do() pumps drop to w.do() / reqdo supervision.)
- 3. MachPeerily.svelte(18)— biggest: 32 roai/do_fn, 11 reqyoncile, 13 unify.
+ - MachPeerily.svelte(18)— biggest: 32 roai/do_fn, 11 reqyoncile, 13 unify.  The LAST
+    host on the old engine; once done, delete reqy()/reqcon/reqy_recurse/
+    handler_of_last_resort.
 
  skip: shelved/LiesWorkup.svelte (inactive).
  delete LAST: Hovercraft.svelte's reqy() / reqcon / reqy_recurse /
@@ -488,16 +521,16 @@ Order (easiest → hardest), one host's reqs at a time:
 
 ### Watch-items
 
- - per-host flip: w:Lies is shared by LiesStore (done), LiesEnd (done — its Funkcion
-    reqs), Lies (done), LiesCortex (pending) — req:Cortex is the last antiquated req
-    on w:Lies, so w:Lies stays reqy(w).do()-pumped until LiesCortex migrates.  w:Lang
-    is shared by Lang + LiesEnd's push cluster; LiesEnd's push is migrated but workon
-    (Lang's) is not, so w:Lang stays reqy-pumped.
+ - per-host flip: w:Lies (LiesStore/LiesEnd/Lies/LiesCortex) and w:Lang (Lang +
+    LiesEnd's push cluster) and w:Pantheate (LiesCortex) are ALL antiquated-free now —
+    every pump is plain w.do(), kept inline where the tick reads results.  The only
+    host still on the old engine is MachPeerily; once it migrates the inline reqy(w)
+    .do() calls are all gone and reqdo_sweep can supervise everywhere.
  - %initialdo / %mutated must stay within-beat (in .c or set+cleared inside _req_do_one);
     never let them persist into a snap (that churns the diff — bitten twice already).
- - e_reqyonciliation's new-req path currently does Object.assign for mix_sc; switch it
-    to host.maybe_mutate_sc so a reqyoncile meant to trigger %mutated→mutated_fn works.
-    Fold this into the first reqyoncile-heavy migration (Mundane/Lang).
+ - e_reqyonciliation's new-req path now does host.maybe_mutate_sc for mix_sc (was
+    Object.assign) so a reqyoncile carrying state stamps %mutated → a mutated-gated
+    do_fn fires.  Landed with the Lang migration (req_text_mutated needs it).
  - svelte-check's total drifts run-to-run (incremental cache re-attributing the
     ~2900 ghost-method-on-House false positives); judge by per-region diffs, not the total.
  - the maz gate (§3) — keep the pump per-host priority; lexical walk order ≠ maz.

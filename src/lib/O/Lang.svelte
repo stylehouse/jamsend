@@ -344,8 +344,7 @@
         //   req:instrumentation — active dock + dige → compile + graft + decorate
         // Each stage holds wants + convergence-markers only; its durable output
         // lives elsewhere (%LE/%Seem, %Good, the dock) so de-finishing loses nothing.
-        const rq_w   = H.reqy(w)
-        const workon = await rq_w.roai({ req: 'workon' }, { LE, w })
+        const workon = w.req_oai({ req: 'workon' }, { LE, w })
         workon.sc.following = 1   // track group cursor (default)
         // < following:0 = diverged; thought-balloon on breadcrumb
 
@@ -361,10 +360,9 @@
         // fresh lease.  maz orders the pipeline: understanding (3) before
         // ingredients (2) before instrumentation (1); a stage that bows out on a
         // ttlilt stops do() at its level, gating the lanes below it.
-        const wsub = H.reqy(workon)
-        await wsub.roai({ req: 'understanding',  maz: 3, permanent: 1 })
-        await wsub.roai({ req: 'ingredients',    maz: 2, permanent: 1 })
-        await wsub.roai({ req: 'instrumentation', maz: 1, permanent: 1 })
+        workon.req_oai({ req: 'understanding',  maz: 3, permanent: 1 })
+        workon.req_oai({ req: 'ingredients',    maz: 2, permanent: 1 })
+        workon.req_oai({ req: 'instrumentation', maz: 1, permanent: 1 })
 
         w.c.plan_done = true
     },
@@ -586,11 +584,11 @@
         if (!languish) return
         const tm = languish.o({ req: 'text_mutated' })[0] as TheC | undefined
         if (tm) this.reqyoncile(tm, { text, ...(machine ? { machine: 1 } : {}) })
-        // reqyoncile Languish itself so sub.do() runs in this same pass,
+        // reqyoncile Languish itself so its req.do() runs in this same pass,
         //   driving text_mutated without needing a separate Lang think()
         this.reqyoncile(languish, {})
     },
-    async req_text_mutated(req: TheC, q: any) {
+    async req_text_mutated(req: TheC) {
         const H      = this as House
         const La     = req.c.up as TheC
         const dock   = La.c.up as TheC
@@ -664,18 +662,16 @@
     //   dock.c.up = docks, docks.c.up = w (stamped where the dock is minted) so
     //   reqyoncile's %w walk and i_req_ttlilt both reach w:Lang correctly.
     async Lang_open_dock(w: TheC, dock: TheC, text: string): Promise<TheC> {
-        const H = this as House
-        const rq = H.reqy(dock)
-        let languish = await rq.roai({ req: 'Languish' })
+        let languish = dock.req_oai({ req: 'Languish' })
         if (languish.sc.finished) {
             dock.drop(languish)
-            languish = await rq.roai({ req: 'Languish' })
+            languish = dock.req_oai({ req: 'Languish' })
         }
         languish.c.open_text = text
 
         const path = dock.sc.dock as string
         console.log(`📄 Lang open_dock → req:Languish ${path}`)
-        await rq.do()
+        await dock.do()
 
         return dock
     },
@@ -696,7 +692,7 @@
         const H      = this as House
         const src    = e.sc.src as TheC | undefined
         if (!src) return
-        const workon = H.reqy(w).o({ req: 'workon' })[0] as TheC | undefined
+        const workon = w.o({ req: 'workon' })[0] as TheC | undefined
         if (!workon) return
         workon.c.src = src
         H.i_elvisto(w, 'think')
@@ -754,12 +750,11 @@
     //   A signature is a short string on stage%sig.  maybe_mutate_sc fires its
     //   %mutated (and the %permanent un-finish) only when sig actually changes,
     //   so a settled tick re-drives nothing — every stage sits finished.
-    async req_workon(req: TheC, q: any) {
+    async req_workon(req: TheC) {
         const H      = this as House
         const workon = req
         const w      = H.upto_w(req)
         const LE     = workon.sc.LE as TheC
-        const wsub   = H.reqy(workon)
 
         // understanding — re-arm + flush whenever src, the working tree, or origin
         //   drift moves.  src identity rides as a stable serial bumped on change;
@@ -774,7 +769,7 @@
         const od         = LE.c.origin_dirty ? 1 : 0
         const src_serial = H.Lang_src_serial(workon, src)   // bumps on every What move
         const u_sig      = `${src_serial}:${wv}:${u_serial}:${od}`
-        await wsub.roai({ req: 'understanding' }, { sig: u_sig })
+        workon.req_oai({ req: 'understanding' }, { sig: u_sig })
 
         // ingredients — the wanted-%Doc set.  want_doc derives DIRECTLY from the
         //   live src via Waft_src_doc_path — the same resolution Lang_set_interest
@@ -788,7 +783,7 @@
         //   isn't re-fetched.
         const want_doc = src ? H.Waft_src_doc_path(src) : undefined
         const g_sig    = want_doc ?? ''
-        await wsub.roai({ req: 'ingredients' }, { sig: g_sig })
+        workon.req_oai({ req: 'ingredients' }, { sig: g_sig })
 
         // instrumentation — the doc the CURSOR wants (want_doc above), its content
         //   dige, the cursor identity, and the Understanding's own version.  Keying
@@ -809,10 +804,10 @@
             ? (w.o({ docks: 1 })[0]?.o({ dock: want_doc })[0] as TheC | undefined)
             : undefined
         const n_sig  = `${want_doc ?? ''}:${(want_dock?.c.content_dige as string | undefined) ?? ''}:${src_serial}:${LE.version}`
-        await wsub.roai({ req: 'instrumentation' }, { sig: n_sig })
+        workon.req_oai({ req: 'instrumentation' }, { sig: n_sig })
 
         // pump the pipeline — maz orders understanding → ingredients → instrumentation.
-        await wsub.do()
+        await workon.do()
 
         // trail decay — the Undertaking's Funkcion re-runs each trickle so the trail
         //   brightness cools over time, not only when a tap lands.  Cheap + defensive:
@@ -844,9 +839,9 @@
     //   Sets %Interest (c.What, in_Doc, in_Point) — the C-side address the rest
     //   of the pipeline keys off.  Touches no dock and no compile index, so it
     //   converges independently of editor readiness.
-    async req_understanding(req: TheC, q: any) {
+    async req_understanding(req: TheC) {
         const H      = this as House
-        const workon = req.c.up as TheC         // understanding.c.up = workon
+        const workon = req.c.up as TheC         // understanding.c.up = workon (the host)
         const w      = H.upto_w(req)
         const LE     = workon.sc.LE as TheC
         const want   = workon?.c.src as TheC | undefined
@@ -860,7 +855,7 @@
             console.log(`🔗 understanding checkout: ${req.sc.what}`)
             H.Lang_set_interest(w, LE, want)
         }
-        if (!req.c.armed_src) { q.finish(req); return }   // nothing cursored yet
+        if (!req.c.armed_src) { workon.finish(req); return }   // nothing cursored yet
         const armed = req.c.armed_src as TheC
 
         // origin drift — the Waft OC moved under us (e:Lies_waft_mutated stamped
@@ -898,7 +893,7 @@
             }
         }
 
-        q.finish(req)   // converged for this signature; driver wakes on drift
+        workon.finish(req)   // converged for this signature; driver wakes on drift
     },
 
     // ── Lang_set_interest — publish the C-side address ────────────────────────
@@ -945,34 +940,36 @@
     //   holds more, so a look-ahead furnishing further along the Waft trail drops
     //   in here later with no instrumentation churn (in_Doc, not "ingredients
     //   changed", is what keys instrumentation).
-    async req_ingredients(req: TheC, q: any) {
+    async req_ingredients(req: TheC) {
         const H        = this as House
         const w        = H.upto_w(req)
+        const workon   = req.c.up as TheC   // ingredients → workon (the host, for unify)
         // want derives from the live src (workon.c.src is this stage's parent's
         //   cursor hold), same as the driver's sig — NOT from %Interest, which
         //   only refreshes when understanding re-runs and so can trail a Waft
         //   edit (a Doc added to the cursored What) by a tick.
-        const src      = (req.c.up as TheC | undefined)?.c.src as TheC | undefined
+        const src      = workon?.c.src as TheC | undefined
         const want_doc = src ? H.Waft_src_doc_path(src) : undefined
 
         // a title-page %What with no %Doc needs no dock — nothing to furnish.
-        if (!want_doc) { q.finish(req); return }
+        if (!want_doc) { workon.finish(req); return }
 
-        const rq = H.reqy(req)
         // ensure a furnishing for each wanted path; MVP set is just want_doc.
+        //   furnishings are %req children of THIS req (ingredients is their host).
         //   drop furnishings whose path is no longer wanted (path moved on) —
         //   and clear the furnish spinner they may have left spinning; the fresh
         //   furnishing re-sets it if the new dock also needs loading.
-        for (const f of rq.o({ req: 'furnishing' }) as TheC[]) {
+        for (const f of req.o({ req: 'furnishing' }) as TheC[]) {
             if (f.sc.path !== want_doc) {
                 req.drop(f)
                 H.Langspinner(w, 'furnish', true)
             }
         }
-        await rq.roai({ req: 'furnishing', path: want_doc, permanent: 1 })
+        req.req_oai({ req: 'furnishing', path: want_doc, permanent: 1 })
 
-        await rq.do()
-        rq.unify_finished()   // ← finished when every furnishing is
+        await req.do()
+        // unify: finished when every furnishing is — settle ingredients under workon.
+        if (req.all_finished() && !req.sc.finished) workon.finish(req)
     },
 
     // ── req_furnishing — bring one dock %Good into being ─────────────────────
@@ -989,16 +986,17 @@
     //   The %Good arriving (push or pull) de-finishes us via the dock_content
     //   handler; on a later inotify re-land it would wake us again — the dock as a
     //   standing push|pull boundary.
-    async req_furnishing(req: TheC, q: any) {
-        const H    = this as House
-        const w    = H.upto_w(req)   // furnishing → ingredients → workon
+    async req_furnishing(req: TheC) {
+        const H        = this as House
+        const w        = H.upto_w(req)   // furnishing → ingredients → workon
+        const ingredients = req.c.up as TheC   // the host that settles this furnishing
         const path = req.sc.path as string
-        if (!path) { q.finish(req); return }
+        if (!path) { ingredients.finish(req); return }
 
         const dock = w.o({ docks: 1 })[0]?.o({ dock: path })[0] as TheC | undefined
         if (dock && dock.c.content_dige !== undefined) {
             H.Langspinner(w, 'furnish', true)   // dock landed — loading is over
-            q.finish(req)   // finish() drops the waiting:dock ttlilt — no dangler
+            ingredients.finish(req)   // finish() drops the waiting:dock ttlilt — no dangler
             return
         }
 
@@ -1071,12 +1069,13 @@
     //   grafted %Pmirrors.  Holds convergence-markers only — the index and Pmirrors
     //   live on the dock — so de-finishing loses nothing; it re-checks and no-ops
     //   when the dock is already current at this dige.
-    async req_instrumentation(req: TheC, q: any) {
+    async req_instrumentation(req: TheC) {
         const H        = this as House
         const w        = H.upto_w(req)
+        const workon   = req.c.up as TheC   // instrumentation → workon (the host)
         // want derives from the live src, like ingredients above — %Interest is
         //   the published address for UI readers, not the pipeline key.
-        const src       = (req.c.up as TheC | undefined)?.c.src as TheC | undefined
+        const src       = workon?.c.src as TheC | undefined
         const want      = src ? H.Waft_src_doc_path(src) : undefined
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
         if (!want) {
@@ -1092,7 +1091,7 @@
                 languinio.bump_version()
             }
             H.Langspinner(w, 'grafted', true)
-            q.finish(req)
+            workon.finish(req)
             return
         }
 
@@ -1104,7 +1103,7 @@
             //   (furnish, not grafted, is the spinner for this window; no_doc
             //   stays as-is so a title page keeps its blank while loading.)
             H.Langspinner(w, 'grafted', true)
-            q.finish(req)
+            workon.finish(req)
             return
         }
 
@@ -1132,9 +1131,9 @@
             H.i_req_ttlilt(req, 3.0, { waiting: 'methods' })
             return
         }
-        // the waiting:methods ttlilt is dropped by q.finish below (finish() clears
-        //  all ttlilts on the req) — we always finish in this same pass once methods
-        //   are ready, so no separate drop is needed.
+        // the waiting:methods ttlilt is dropped by the workon.finish below (finish()
+        //  clears all ttlilts on the req) — we always finish in this same pass once
+        //   methods are ready, so no separate drop is needed.
 
         // graft — self-caching via dock.c.graft_cache_key; cheap every wake.
         await H.Lang_graft_points_once(w, dock)
@@ -1152,7 +1151,7 @@
         H.Lang_build_mapules(w, dock)
 
         H.Langspinner(w, 'grafted', true)
-        q.finish(req)
+        workon.finish(req)
     },
 
     // ── Lang_Map_report — %Compile/%Map → %Interest/%MapReport ────────────────
@@ -1521,9 +1520,10 @@
 
     // ── req:Languish — Lang's per-dock mind
     //
-    //   Lives on dock ({dock:$path}/{req:'Languish'}).  Stages two maz-ordered
-    //   phase reqs and runs them; unify_finished finishes Languish when both done.
-    //   Multi-maz do() descends through levels in one pass on a fast (soft) compile.
+    //   Lives on dock ({dock:$path}/{req:'Languish'}).  Stages maz-ordered phase
+    //   reqs and pumps them with req.do(); the dock settles Languish (all_finished)
+    //   once its phases are.  Multi-maz do() descends through levels in one pass on
+    //   a fast (soft) compile.
     //
     //     req:text_loaded, maz:3   install text + wait for CM mount
     //     req:compile,     maz:2   build the methods index; hold for hard-write
@@ -1534,18 +1534,20 @@
     //   c.up chain: req.c.up = languish, languish.c.up = dock, dock.c.up = docks,
     //   docks.c.up = w — wired where the dock is minted so reqyoncile and i_req_ttlilt
     //   both climb correctly to w:Lang.
-    async req_Languish(req: TheC, q: any) {
-        const H = this as House
+    async req_Languish(req: TheC) {
+        const dock = req.c.up as TheC   // Languish → dock (the owner that settles it)
 
-        const sub = H.reqy(req)
-        await sub.roai({ req: 'text_loaded', maz: 3 })
-        await sub.roai({ req: 'text_mutated', maz: 2 })
-        await sub.roai({ req: 'compile',     maz: 2 })
+        req.req_oai({ req: 'text_loaded', maz: 3 })
+        req.req_oai({ req: 'text_mutated', maz: 2 })
+        req.req_oai({ req: 'compile',     maz: 2 })
         // grafted dropped — req:instrumentation owns all grafting; Languish builds the
         //   compile index; the settler wires the rest.
 
-        await sub.do()
-        sub.unify_finished(q)
+        await req.do()
+        // unify under the dock when every phase is finished.  text_mutated is eternal
+        //   (it never finishes), so Languish stays open as the per-dock mind — same as
+        //   before; all_finished() simply never trips while text_mutated lives.
+        if (req.all_finished() && !req.sc.finished) dock.finish(req)
     },
 
     // ── req:text_loaded, maz:3 ────────────────────────────────────────────────
@@ -1559,9 +1561,9 @@
     //   dock.c.state and feebly_ponders.  We hold Story open with a ttlilt until
     //   dock.c.state appears; the feebly_ponder wakes this monitor precisely
     //   when it lands.
-    async req_text_loaded(req: TheC, q: any) {
+    async req_text_loaded(req: TheC) {
         const H        = this as House
-        const languish = req.c.up as TheC
+        const languish = req.c.up as TheC   // text_loaded → Languish (the host)
         const dock     = languish.c.up as TheC          // set by reqy
         const w        = dock.c.up?.c.up as TheC        // dock → docks → w (c.up wired where the dock is minted)
         const path     = dock.sc.dock as string
@@ -1600,7 +1602,7 @@
         }
         // CM mounted — the text_load phase is over; clear its spinner.
         H.Langspinner(w, 'text_load', true)
-        q.finish(req)
+        languish.finish(req)
     },
     // ── Langspinner — one named spinner under %Languinio ──────────────────────
     //
@@ -1632,9 +1634,9 @@
     //   open with a ttlilt until it clears, so the gen file exists before the snap.
     //   Either way %Map — the only thing grafting needs — is present the
     //   instant Lang_compile_dock returns.
-    async req_compile(req: TheC, q: any) {
+    async req_compile(req: TheC) {
         const H        = this as House
-        const languish = req.c.up as TheC
+        const languish = req.c.up as TheC   // compile → Languish (the host)
         const dock     = languish.c.up as TheC
         const w        = dock.c.up?.c.up as TheC   // dock → docks → w (c.up wired where the dock is minted)
 
@@ -1651,7 +1653,7 @@
         // nothing (the minimap surfaces unresolved Pmirrors).
         if (dock.oa({ compile_error: 1 }) || job?.oa({ compile_error: 1 })) {
             H.Langspinner(w,'compile',true)
-            q.finish(req)
+            languish.finish(req)
             return
         }
 
@@ -1669,7 +1671,7 @@
             return
         }
         H.Langspinner(w,'compile',true)
-        q.finish(req)
+        languish.finish(req)
     },
 
 
@@ -1762,22 +1764,23 @@
         // Drive each dock's Languish (text_loaded → compile) BEFORE the workon
         //  driver, so a dock minted this tick has its %Map ready when
         //  instrumentation re-keys — same-tick convergence, no extra round-trip.
-        //  Languish lives on dock — rq.do() on w no longer reaches it.
+        //  Languish lives on dock — w.do() no longer reaches it.
         const docks_C = w.o({ docks: 1 })[0] as TheC | undefined
         if (docks_C) {
             for (const d of docks_C.o({ dock: 1 }) as TheC[]) {
                 const languish = d.o({ req: 'Languish' })[0] as TheC | undefined
-                if (languish && !languish.sc.finished) await H.reqy(d).do()
+                if (languish && !languish.sc.finished) await d.do()
             }
         }
 
         // Drive w-level reqs.  req:workon is open-ended; its do_fn (req_workon)
         //  is the per-tick driver — it re-keys the three stages and pumps them via
-        //  its own reqy(workon).do().  No separate settle|push driving here: the LE
-        //  flush (push) runs inside req_understanding, the dock pipeline inside the
-        //  stages.  Cheap when settled — every stage sits finished, no key drifts.
-        const rq = H.reqy(w)
-        await rq.do()
+        //  its own workon.do().  No separate settle|push driving here: the LE flush
+        //  (push) runs inside req_understanding, the dock pipeline inside the stages.
+        //  Cheap when settled — every stage sits finished, no key drifts.  Kept inline
+        //  (not left to reqdo_sweep) because the rest of this tick reads the pump's
+        //  results — Pmirrors, the change strip — and must see them this same beat.
+        await w.do()
 
         // re-decorate from the U sphere after graft has minted Pmirrors.
         // Cache-key-independent: a fold-toggle or class change repaints here
@@ -1842,7 +1845,7 @@
                 delete com.sc.firing
                 if (com.c.oncelers) delete (com.c.oncelers as any).firing
                 delete com.sc.finished
-                // re-drive Languish so sub.do() picks up the un-finished compile
+                // re-drive Languish so its req.do() picks up the un-finished compile
                 this.reqyoncile(languish, {})
             }
         }

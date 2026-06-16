@@ -478,7 +478,10 @@
 
         // new self-contained req: its host (req.c.up) drives it
         const host = req.c.up as TheC
-        if (mix_sc) Object.assign(req.sc, mix_sc)
+        // maybe_mutate_sc (not Object.assign) so a reqyoncile carrying state stamps
+        //  %mutated — a mutated-gated do_fn (Lang's req_text_mutated) reads it; the
+        //  first _req_do_one clears it, so it stays a within-beat signal.
+        if (mix_sc) host.maybe_mutate_sc(req, mix_sc)
         if (finished) { host.finish(req); H.feebly_ponder(); return }
         await host._req_do_one(req)
         if (req.sc.finished) await host.do()

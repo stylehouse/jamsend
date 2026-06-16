@@ -9,13 +9,17 @@ handovers were chat pastes and have faded; their durable content is folded into 
 - `Hovercraft.design.md` — the reqy machine (req / maz / sc.ok / ttlilt / do_fn).
 - `LiesEnd_spec.md` — the LE / Seem / Understanding checkout model.
 - `Waft_spec.md` + `Waft-palmtree-trajectory.md` — the Waft → What → Doc → Point model
-  and What transport.
+  and What transport. **Its top section now holds the Lang↔Lies channel design**: the
+  `%Interest` family (Trail|Sidetrack|Ting|GhostList|Testing), the shared cursor, the
+  Waft/Funkcion embed model, and the Waft-roster subscription. Read it before touching
+  the i|o traffic.
 - `reactivity_docs.md` — `H.ave`, versioning, the Stuff/Housing reactivity.
 - `NOTATION.md` — the `%Point` / `dock/%Map` / `// <` conventions.
 - `StemHive_handover.md` — the stem-cluster methodmap + editor fold UX (the hive the
   GhostList render reuses).
-- `Lang_Ting_handover.md` — **fading archive**: the Ting trail, DocCompost (shelved),
-  minimap heatmap, and carried items C/E/F/G/H. Its own session-1/2 references are dead.
+
+(The old `Lang_Ting_handover.md` — the session-3 archive — has been folded into the
+Backlog and Gotchas below and removed.)
 
 This session reworked **how Funkcions are hosted** and built the **GhostList** (a
 self-listing, persisted ghost-index Waft) on top of it.
@@ -113,27 +117,70 @@ stem-clustered, navigable tree in the Liesui Waft list.
   (`e_Lies_delete_waft` dropping the container *and* the snap via rw_op) is unbuilt.
 
 ## Open threads / next builds (this area)
-- **Clicks → fork the What + add this Doc.** Today a file pick only `Dock_open`s. The
-  intent: GhostList does a bit of **`o Doc`** over the top of Lang's usual **`o What`** —
-  needs the i|o channels Lang is growing with Lies. Likely lands with a **`%Waft,tentative`**:
-  a lighter exploration Waft the cursor flies into for these trips (peer of the Ting), and
-  when an exploration settles you bring this-and-that back into the main `%Waft` you cursor
-  through. "A natural thing to do when you fly off to investigate a method."
+- **Lang↔Lies channels + the `%Interest` family — designed (`Waft_spec`), unbuilt.** The
+  old "clicks → fork the What" thread resolved into the design: a GhostList/Sidetrack pick
+  is an `o Doc` (often `off_what`) over Lang's usual `o What`; flying off opens a
+  `%Waft,tentative` whose `Interest:Sidetrack` you cursor into and graft back from. First
+  build is the **`Lies_waft_roster` subscription** (the standing req Lies re-delivers to by
+  ref — never `finish`ed), then per-Interest lock. See Waft_spec's Interest section.
+  **[warm · designed]**
+- **Waft taxonomy — folded shut (`Waft_spec`).** The giver/taker/lister flags
+  (`active|takes|lists`) stop being the typing; the `%Interest` *kind* is the typing and the
+  flag is just the stance it locks onto. Nothing left to design. **[resolved]**
 - **All method def|call index** — a global, queryable index of every method definition and
-  call site, likely in **IndexedDB**. Feeds goto / fork-the-What / the hive.
-- **Waft taxonomy (design — but it's all Lies, no need to be too elegant).** Kinds are
-  ad-hoc marks now: giver (`Waft:Look`, persisted, `sc.active`), taker (`Waft:Ting`,
-  `sc.takes`), lister (`Waft:GhostList`, `sc.lists`). Cleaner shape? Mark the *one* primary
-  navigation-sourcing/creative-control Waft and let the rest be non-sourcing by default;
-  and maybe a kind is a relation not a flag (e.g. the Ting saying `%takesAwarenessFrom:Lang`).
+  call site, likely **IndexedDB**. Feeds goto / fork-the-What / the hive. **[mid · cold]**
 - **GhostList polish** — prune goners; cascade-collapse deeper opened dirs when a parent
   collapses; a faster `ttlilt` for GhostList listings (the ~1.6s beat before a newly-opened
-  dir fills in is the wormhole re-check interval).
+  dir fills in is the wormhole re-check interval). **[low · cold]**
+- **Pmirror non-resolution is silent.** Lang doesn't notice or surface that some Pmirrors
+  fail to resolve — they only emit console warnings. Give it a noticing/UI. **Check once the
+  current channel refactoring settles.** **[bug · deferred]**
 
-## Carried from session 3 (see `Lang_Ting_handover.md`)
-- Trail polish: region bands glow from their own aggregate (not the sum of defs), tint by
-  recency vs frequency. Long-tap `{say}` articulation. Method-less taps → region.
-- DocCompost / PNG capture **shelved** (capture is whack under software rendering). Items
-  C (active Pmirror), E (fold-around-target), F (bookmarks → Seem:working), G (edit-source
-  taps + replay), H (Cytui onto the Waver), scribble-ball.
-- Snap What/Doc/Point nesting migration still open.
+## Backlog — carried items (folded from session 3)
+Tagged **[weight · intensity]**: weight = how much it matters; intensity = how live it is.
+Scrapped lines (multiplied-LE / the `Undertaking`) are gone, not carried.
+
+- **Trail Funkcion + heatmap — legacy, working.** Taps globulate onto `%Point:method` in
+  the taker Ting; a Funkcion derives decayed `heat`/`bright`; the minimap glows amber where
+  you've been. Still on the *old LE-hosted path* (`LE_host_funkcion`, pumped from Lang's
+  `req_workon`), not the central `req:Funkcion` — migrating it is optional cleanup.
+  **Load-bearing**: `Mapule.c.bright` and `Lang_trail_brights` must key the same
+  `${region} ${key}` template or the heatmap silently goes dark. **[mid · stable-legacy]**
+- **Trail polish.** Region bands should glow from their own region-level globule, not the
+  *sum* of their defs; tint by recency vs frequency (held/long a different hue). Long-tap
+  `{say}` articulation (mark exists, no note child). Method-less taps don't reach a region
+  yet (`%Map` has name-spans, not bodies). **[low · warm]**
+- **E. Goto fold-policy "thus-crunchy" (remainder).** Unfold the target's ancestors (done)
+  AND fold the rest per Q (not done) — the fold-around-target half. Overlaps Waft_spec's
+  `depth`→`%openity` story. **[mid · warm]**
+- **C. Active Pmirror + What recentre.** Double-click a Pmirror → primary/active (Points lay
+  out evenly); click the What title to recentre; the active NaviCado pops a controls cluster
+  (PeelInput, the generic add/edit form). Drive through the Waver. **[mid · cold]**
+- **A. LangPoint must be mounted** for `e:Lang_climb` / auto-Q to fire. **[mid · cold]**
+- **H. Cytui onto the Waver.** Map Cytui's `cyto_graph.sc.waves` drain/apply/rush onto
+  LangPoint's `Lang_wave_enqueue/_step/_rush`; extract the kernel. The Cyto float above the
+  Interest switcher (Waft_spec) is a fresh reason to want this. **[low · cold]**
+- **F. Bookmarks → Seem:working.** A named bookmark should drop its `%Point:name` into
+  Seem:working as NaviCado's `peel_commit` does ("old code over there"). Relates to the snap
+  nesting migration below. **[low · cold]**
+- **G. Attention heatmap — data + minimap render DONE.** Left: on-screen line visibility as
+  a lightest decaying tap source; edits as the heaviest source batched into one sweep;
+  history as a replayable streak (the Ting is the record; replay unbuilt). **[low · cold]**
+- **DocCompost / PNG capture — shelved.** The frozen-frame clone + scribblespace was good,
+  but PNG/screenshot is whack under software rendering (foreignObject won't rasterise, drops
+  scoped CSS + web-fonts). Parked, off every critical path; may roar back (scribbles later).
+  **[low · dormant]**
+- **Scribble-ball.** Replace folded guts with a scribbley-ball graphic promoting a few key
+  expressions out (needs invisible folds + `%Map` call/def entries). Pairs with PNG overlay.
+  **[low · dormant]**
+
+## Gotchas (still live)
+- **Snap What/Doc/Point nesting migration — open.** Persisted snap is Waft→What→{Doc,Point};
+  some in-memory code still nests Point under Doc (Lies.svelte ~546/698 vs ~606/652).
+  Resolve before relying on the snap round-trip for Points; relates to bookmarks (F).
+- **enWaft is relaxed; refs are fatal.** The vocabulary gate (mainkey ∉ Waft|What|Doc|Point)
+  is parked as a re-armable commented relic — any mainkey encodes now. But a C reachable from
+  >1 place pushes a fatal complaint (refs belong in `.c`, not the snap tree). Keep tap/Ting
+  data scalar.
+- **`%Map` has name-spans, not bodies.** Tap→method resolution uses "nearest header at/above
+  the tap line" as the body bound — good enough for globulation; precise containment is a gap.

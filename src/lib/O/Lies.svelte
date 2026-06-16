@@ -494,8 +494,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         //     (acquire moves to w:Lies, the wrapper drops).  Left as a wrapper so
         //     the Waft lock has a visible home in the snap.
         // desire/acquire are C-native: desire via w.doai, acquire via desire.doai.
-        //  desire.do() pumps its own (antiquated-free) children, but w still hosts
-        //  antiquated req:Cortex, so the w-level pump below stays reqy(w).do().
+        //  desire.do() pumps its own children; w:Lies is now antiquated-free (Store,
+        //  Cortex, desire, git, wants all C-native), so the w-level pump is w.do().
         ;(await w.doai({ req: 'desire' }))?.(async (desire: TheC) => {
 
             ;(await desire.doai({ req: 'acquire', maz: 9 }))?.(async (acquire: TheC) => {
@@ -514,8 +514,11 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
             await desire.do()
         })
-        // w still hosts antiquated req:Cortex — keep the reqy pump (drives old + new).
-        await H.reqy(w).do()
+        // w:Lies is antiquated-free — C-native pump.  Drives req:Store (maz:7),
+        //  req:Cortex (maz:5, its foreman do_fn pumps Codebit/Rundown), then desire/
+        //  git/wants (maz:1).  Kept inline (not left to reqdo_sweep) because the rest
+        //  of this tick reads the pump's results.
+        await w.do()
 
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
         if (examining) await examining.do()
@@ -547,7 +550,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         //  %Good via Lies_provide_dock, but req:Store already ran earlier this tick
         //   (maz:7).  Re-driving lets the read start its Wormhole IO in the same
         //    tick, so the dock_content handback can land a tick sooner.
-        await H.reqy(w).do()
+        await w.do()
     },
 
     // ── Lies_resolve_wants ──────────────────────────────────────────────────────

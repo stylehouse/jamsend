@@ -1249,6 +1249,14 @@ export class TheC extends Stuff {
         for (const k of diffs) mutated[k] = req.sc[k]
         Object.assign(req.sc, sc)
         req.sc.mutated = mutated
+        // a permanent req gone quiescent wakes on mutation — un-finish so do()
+        //  re-runs it with a fresh initial-do lease (finish() yoinked the oncelers).
+        //  Without this a re-keyed %permanent stage stays finished, do() skips it,
+        //  and %mutated never clears — the driver freezes after its first pass.
+        if (req.sc.permanent && req.sc.finished) {
+            delete req.sc.finished
+            req.c.initialdo = 1
+        }
         req.bump_version()
     }
 

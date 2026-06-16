@@ -315,9 +315,9 @@ await M.eatfunc({
         // per attempt.  Durable + inspectable: phases collapse to %finished, the
         // fault lands as req:push/%dirty.  push is a C-native host: its
         // encode|replace|verify phases are seeded with push.doai, pumped by
-        // push.do() and settled by push.finish().  workon itself is still reqy-
-        // hosted (its understanding|ingredients|instrumentation stages are
-        // antiquated), so the workon-level pump below stays reqy(workon).do().
+        // push.do() and settled by push.finish().  workon is now C-native too (its
+        // understanding|ingredients|instrumentation stages migrated off reqy), so the
+        // workon-level pump below is plain workon.do().
         ;(await workon.doai({ req: 'push' }))?.(async (push: TheC) => {
 
             ;(await push.doai({ req: 'encode', maz: 3 }))?.(async (encode: TheC) => {
@@ -366,9 +366,10 @@ await M.eatfunc({
             if (push.all_finished() && !push.sc.finished) workon.finish(push)
         })
 
-        // workon still carries antiquated stages, so keep the reqy pump — it drives
-        //  old + new alike (do_fn_for resolves the C-native push.c.do_fn too).
-        await H.reqy(workon).do()
+        // pump workon's reqs — req_workon (the driver) re-keys its stages and the
+        //  push cluster lands its phases; do_fn_for resolves both the req_$name
+        //  stages and push.c.do_fn.
+        await workon.do()
         H.i_elvisto(w, 'think')
     },
 

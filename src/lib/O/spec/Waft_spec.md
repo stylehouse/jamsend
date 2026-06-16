@@ -130,6 +130,13 @@ By default a freshly-noticed Waft is a **`Trail`** — the writing/authoring sta
 one we keep good and readable and document things in — unless its properties say
 otherwise (`takes`→Ting, `lists`→GhostList, `tentative`→Sidetrack).
 
+The arrow runs backwards too: Lang can sprout an Interest *before* its Waft exists.  A
+`Sidetrack` starts Lang-side and asks Lies to open a fresh **`tentative`** Waft — a
+throwaway exploration Waft, often time-division-named, peer of the Ting — which returns
+through the roster and the pending Interest binds to.  The **main** Waft, conversely, is
+handed into Lang by the test suite via elvis, like an argument, not discovered.  Either
+way `pending` covers the gap.
+
 ### Waft vs Interest — the border
 
 The two must not blur.  Sort every property by which side of the wire owns it:
@@ -147,7 +154,10 @@ owns:
 - `c.waft` — which Waft;
 - `%cursor` — where *this* attention points;
 - lens + presence + `pending|locked`;
-- `c.LE` — *Trail only*; nobody else checks out.
+- `c.LE` — the LE-bearing kinds only.  The LE *and its working `/C` clone tree* are
+  Lang-side **on the Interest**; the Waft's `C**` stays Lies-side and the origin `Seem`
+  reads across to it.  (So a `Sidetrack`'s second LE sits on its own Interest — only the
+  read reaches the Lies Waft.)
 
 Rule of thumb: **if it would still be true with no one looking, it's on the Waft; if it
 only means anything to Lang looking now, it's on the Interest.**
@@ -207,12 +217,15 @@ for `dirlist`).  The embed persists; the runtime is re-bound on each load.  ⛑�
 *generalise instantiation so any Waft's Funkcions auto-bind on load — today only
 GhostList's is wired by hand.*
 
-A Funkcion declares **when it runs** — a `%run_when` property on the embed.  `loaded`:
-runs whenever its Waft is loaded (GhostList's `dirlist`, keeping the list warm even
-off-stage; its cursor can sit backgrounded the way Ting's does).  `locked`: comes alive
-only while an Interest holds the Waft — the right default for a heavy applet (a live test
-runner), paused when no one is attending, exactly as a browser paused an off-screen
-plugin.  ⛑️ *property unbuilt; today everything is effectively `loaded`.*
+**Who turns an applet on.**  `%run_when` on the embed sets a floor — `loaded` (run
+whenever the Waft is loaded; GhostList's `dirlist`, warm even off-stage) or `locked`
+(only while attended) — but the live control is the Interest: it reads the Funkcions in
+its **cursored region** (as `Seem:origin` reads that region) and fires a further
+`i_elvis_req` to Lies to set their runstate — start, pause, poke.  Runstate stays
+Lies-side; the Interest drives it from across the wire, never mirrored onto the Waft.  A
+Funkcion may **reply with UI**, popping a panel over the lens — so an Interest becomes a
+control surface for whatever runs in its cursor.  ⛑️ *unbuilt and large; first slice =
+one Funkcion with start/pause/reply-UI.*
 
 Why central, not under the Waft's own `C**`?  Because behaviour is off-snap and
 `w`-spine-less; one host keeps the pump in one place and the snap clean — and keeps the
@@ -227,11 +240,20 @@ NaviCado is simply `Trail`'s lens; foreground a `Testing` Interest and its panel
 the stage instead.  `presence:always` Interests (the `Ting` heat) render in their own
 persistent slot regardless — ambient, never stealing the stage.
 
+**The canonical cursor** — what NaviCado and `%openity` read — is whichever of `Trail` |
+`Sidetrack` is foregrounded; those two are the *social* Interests, wired deep into Lang
+where the human works Points.  `Ting` and `GhostList` are less social — they pop UI over
+from Lies and stay out of the Point-play.  But both decks can show NaviCados **at once**:
+stumble around a `Sidetrack` while keeping the `Trail` you came in on in view — a ropeway
+through dense bush, the way back always strung up.
+
 The switch is a **horizontal strip of Interest buttons atop the MiniMap**, above the
 current Point and the NaviCado breadcrumb — one button per Interest, click to foreground.
 `%ActiveInterest` drives it.  The strip also carries an **add button** → a dropdown to
 bring an Interest into being or dismiss one (whether a `GhostList` exists at all, say) —
-the user's hand on the roster, beside the subscription's automatic notices.  ⛑️ *unbuilt.*
+the user's hand on the roster.  Dismiss acts Lies-side — drop `Lies/Waft` — and lets the
+Lang startup req that opened it come to rest, *done with it*, so nothing re-uptakes it
+next tick: no suppress-list to keep.  ⛑️ *unbuilt.*
 
 Rendering needs no bespoke subscription: an Interest hands its lens a `C` (the Waft, the
 cursor's `doc`, the Ting roster…) and **object-ref change is the signal** — when the C is
@@ -240,8 +262,9 @@ remote change arrives the same way: the `%LE`'s origin `Seem` *is* the Waft's
 subscription-to-the-remote — its goners/neus pull hands back a changed C.
 
 Switching between the two LE-bearing decks (`Trail` ↔ `Sidetrack`) is a **crossfade** —
-like a DJ choosing where to jam sound from and to.  Both can be armed; the foreground
-blends from one to the other.  A `Cyto` graph may float above the strip *temporarily* to
+like a DJ choosing where to jam sound from and to.  Both can be armed, but **only the
+foreground LE pushes** — a simple write-mutex; no clobber-merge or rebase to handle (two
+decks editing one region at once just won't happen).  A `Cyto` graph may float above to
 make the movement legible — the elvis arrows firing, the `/C` clone trees spawning under
 an `LE_arm` — then dismiss.
 

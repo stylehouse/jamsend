@@ -28,9 +28,11 @@
 
     // ── Particle layout ───────────────────────────────────────────────────────
     //
-    //   w/req:Cortex,maz:5,eternal    — one foreman; handler_of_last_resort drives
-    //                                   its children each tick.  Never finishes.
-    //                                   maz:5 runs after req:Store (maz:7) sets ok.
+    //   w/req:Cortex,maz:5,eternal    — one foreman; its do_fn (req_Cortex) pumps
+    //                                   its children each tick, then goes ok.  Never
+    //                                   finishes.  maz:5 runs after req:Store (maz:7)
+    //                                   sets ok, and oks itself so desire/git/wants
+    //                                   (maz:1) proceed.
     //
     //   w/req:Cortex/req:Codebit,path — one per compiled ghost.  Permanent: finishes
     //     maz:2                         when the gen write lands, stays put, un-finishes
@@ -62,11 +64,11 @@
     //     → roai req:Codebit,path               — permanent; re-compile mutates %dige
     //
     //   e_Rundown_arm  (fired from Prep/test script)
-    //     → roai req:Rundown under Cortex        — creates the runner with run_method
+    //     → req_oai req:Rundown under Cortex     — creates the runner with run_method
     //
-    //   H.reqy(w).do() each tick
+    //   w.do() each tick
     //     maz:7 req:Store    — pump IO; sets ok when done; Phase 1 stamps write_finished
-    //     maz:5 req:Cortex   — handler_of_last_resort drives:
+    //     maz:5 req:Cortex   — req_Cortex pumps its children, then oks:
     //       maz:2 req:Codebit — waits for write_finished; on land: fires
     //                           Ghost_update_notify + Lies_compile_settled; finishes
     //                           (permanent — stays put, un-finishes on re-compile)
@@ -146,19 +148,19 @@
         await H.LiesStore_write(w, gen_path, source, { rw_name: `src/lib/${gen_path}` })
         // < surface write errors when reply carries one.
 
-        // roai with no .o-first — a re-compile mutates %dige, req%mutated fires,
-        //  the permanent Codebit un-finishes and re-waits the fresh write.
-        //  %dige rides on sc so Rundown can hash its inputs into a moment id.
-        //  meta.existed tells us this is a re-arm: clear the old write_finished so
-        //  the Codebit waits for the fresh write rather than coasting on the
-        //  previous landing.  write_t0 on .c: transient, for write_ms accounting.
-        const cb_meta: { existed?: boolean } = {}
-        const cb = await H.reqy(cortex).roai(
+        // req_oai re-merges on an existing Codebit — a re-compile mutates %dige,
+        //  maybe_mutate_sc fires req%mutated and (permanent+finished) un-finishes it
+        //  so it re-waits the fresh write.  %dige rides on sc so Rundown can hash its
+        //  inputs into a moment id.  An existing Codebit is a re-arm: clear the old
+        //  write_finished so it waits for the fresh write rather than coasting on the
+        //  previous landing (a no-op when the dige was unchanged → still finished).
+        //  write_t0 on .c: transient, for write_ms accounting.
+        const had_cb = cortex.o({ req: 'Codebit', path })[0] as TheC | undefined
+        const cb = cortex.req_oai(
             { req: 'Codebit', path, maz: 2 },
             { gen_path, source_dige, dige, permanent: 1 },
-            cb_meta,
         )
-        if (cb_meta.existed) delete cb.sc.write_finished
+        if (had_cb) delete cb.sc.write_finished
         cb.c.write_t0 = Date.now()
 
         H.i_elvisto(w, 'think')
@@ -167,13 +169,26 @@
     // ── LiesCortex_arm ────────────────────────────────────────────────────────
     //
     //   Ensure req:Cortex exists on w — the eternal foreman whose children are
-    //   driven by handler_of_last_resort each tick.  maz:5 puts it below
+    //   pumped by its do_fn (req_Cortex) each tick.  maz:5 puts it below
     //   req:Store (maz:7).  Called at Lies startup so Cortex is foundational;
     //   idempotent everywhere else.  Rundown is created separately by e_Rundown_arm.
     async LiesCortex_arm(w: TheC): Promise<{ cortex: TheC }> {
-        const H      = this as House
-        const cortex = await H.reqy(w).roai({ req: 'Cortex', eternal: 1 })
+        const cortex = w.req_oai({ req: 'Cortex', eternal: 1, maz: 5 })
         return { cortex }
+    },
+
+    // ── req_Cortex — the foreman do_fn ────────────────────────────────────────
+    //
+    //   do_fn for req:Cortex (maz:5, eternal child of w:Lies), resolved by the
+    //   req_$name convention.  Replaces the old handler_of_last_resort recursion:
+    //   it explicitly pumps Cortex's children (req:Codebit maz:2, req:Rundown maz:1)
+    //   in maz order, then goes ok for the pass so lower-maz w:Lies reqs (desire,
+    //   git, wants) proceed — the same eternal-foreman shape as req:Store (maz:7)
+    //   and req:Twisto.  Never finishes (eternal); a child's unfinished state or
+    //   ttlilt keeps Story open on its own, independent of Cortex's ok.
+    async req_Cortex(req: TheC) {
+        await req.do()      // Codebit (maz:2) then Rundown (maz:1)
+        req.sc.ok = 1
     },
 
 //#endregion
@@ -195,8 +210,9 @@
     //   waits for the fresh write on the next Phase 1, not the previous landing.
     //
     //   req.c.up = req:Cortex
-    async req_Codebit(req: TheC, q: any) {
+    async req_Codebit(req: TheC) {
         const H        = this as House
+        const cortex   = req.c.up as TheC   // Codebit → Cortex (the host)
         const path     = req.sc.path     as string
         const gen_path = req.sc.gen_path as string
 
@@ -225,7 +241,7 @@
         })
         console.log(`🔪 Codebit landed: ${path} write=${write_ms ?? '?'}ms`)
 
-        q.finish(req)   // permanent — stays put, un-finishes on re-compile via req%mutated
+        cortex.finish(req)   // permanent — stays put, un-finishes on re-compile via req%mutated
     },
 
 //#endregion
@@ -262,11 +278,11 @@
             const path           = me.sc.path        as string
             const source_dige    = me.sc.source_dige as string
             const ghostmeta_name = H.Lang_ghostmeta_name(path)
-            await H.reqy(w).roai({ req: 'include', gen_path }, { path, source_dige, ghostmeta_name, permanent: 1 })
+            w.req_oai({ req: 'include', gen_path }, { path, source_dige, ghostmeta_name, permanent: 1 })
         }
 
         // drive req:include + req:run_method each tick
-        await H.reqy(w).do()
+        await w.do()
     },
 
     // ── req:include — monitor a compiled module's Ghostmeta ──────────────────
@@ -279,8 +295,9 @@
     //   the ambient heartbeat re-checks periodically.  Permanent: a re-compile
     //   mutates source_dige → req%mutated + permanent → un-finishes and re-confirms
     //    the new version without being dropped.  Finishes as soon as dige matches.
-    async req_include(req: TheC, q: any) {
+    async req_include(req: TheC) {
         const H            = this as House
+        const pw           = req.c.up as TheC   // include → w:Pantheate (the host)
         const ghostmeta_name = req.sc.ghostmeta_name as string
         const source_dige    = req.sc.source_dige    as string
 
@@ -292,7 +309,7 @@
         }
         // Ghostmeta confirmed: the right version of this compiled module is live
         req.sc.live_dige = live
-        q.finish(req)
+        pw.finish(req)
         console.log(`👻 include live: ${ghostmeta_name} = ${live}`)
     },
 
@@ -301,23 +318,21 @@
     //   Fired by req:BlatDo (w:Lies/req:Rundown) once all Codebits for a moment
     //   are finished.  Parks req:run_method, stores the BlatDo req ref so
     //   req_run_method can reqyoncile it finished when the run completes.
-    //   The ambient H.reqy(w).do() in Pantheate() drives req:run_method each tick.
+    //   The ambient w.do() in Pantheate() drives req:run_method each tick.
     //
     //   e.sc: { method: string, req: TheC }  — req is the BlatDo particle on w:Lies
     async e_Pantheate_run_method(A: TheC, w: TheC, e: TheC) {
-        const H      = this as House
         const method = e.sc.method as string | undefined
         const blatdo = e.sc.req    as TheC  | undefined
         if (!method || !blatdo) return
 
-        const rq = H.reqy(w)
-        for (const old of rq.o({ req: 'run_method', method }) as TheC[]) {
+        for (const old of w.o({ req: 'run_method', method }) as TheC[]) {
             if (old.sc.finished) w.drop(old)
         }
-        const runReq = await rq.roai({ req: 'run_method', method })
+        const runReq = w.req_oai({ req: 'run_method', method })
         // BlatDo ref on .c — out of snap; req_run_method calls reqyoncile on it.
         if (!runReq.c.blatdo) runReq.c.blatdo = blatdo
-        await rq.do()
+        await w.do()
     },
 
     // ── req:run_method ────────────────────────────────────────────────────────
@@ -330,13 +345,13 @@
     //
     //   BlastPit at w:Pantheate/BlastPit/A:blast/w:blast — wiped + re-seeded
     //    each run so the method's output lands in clean visible scratch.
-    async req_run_method(req: TheC, q: any) {
+    async req_run_method(req: TheC) {
         const H      = this as House
         const method = req.sc.method as string
-        const pw     = req.c.up as TheC   // w:Pantheate
+        const pw     = req.c.up as TheC   // w:Pantheate (the host)
 
         // wait for all permanent req:include to confirm their versions
-        const includes = H.reqy(pw).o({ req: 'include' }) as TheC[]
+        const includes = pw.o({ req: 'include' }) as TheC[]
         if (!includes.length || includes.some((r: TheC) => !r.sc.finished)) {
             H.i_req_ttlilt(req, 0.5, { waiting: 'include' })
             return
@@ -362,7 +377,7 @@
         //   so Story snaps with BlastPit in the same step.
         const blatdo = req.c.blatdo as TheC | undefined
         if (blatdo) H.reqyoncile(blatdo, { finished: 1, see: `run:${method}` })
-        q.finish(req)
+        pw.finish(req)
     },
 
 //#endregion
@@ -392,9 +407,8 @@
     //     multiple-ghosts-per-runner generalisation.
     //
     //   req.c.up = req:Cortex
-    async req_Rundown(req: TheC, q: any) {
-        const H      = this as House
-        const cortex = req.c.up as TheC
+    async req_Rundown(req: TheC) {
+        const cortex = req.c.up as TheC   // Rundown → Cortex (the host)
 
         if (!req.sc.run_method) {
             if (!req.oa({ waits: '!run_method' })) req.oai({ waits: '!run_method' })
@@ -406,7 +420,7 @@
         // inputs — the sibling %Codebit diges.  maz ordering already keeps us
         //  from running while any Codebit is mid-write; check finished + dige
         //   anyway so a stale or partial input set never makes a bad moment id.
-        const codebits = H.reqy(cortex).o({ req: 'Codebit' }) as TheC[]
+        const codebits = cortex.o({ req: 'Codebit' }) as TheC[]
         if (!codebits.length || codebits.some((c: TheC) => !c.sc.finished || !c.sc.dige)) {
             req.sc.ok = 1
             return
@@ -419,21 +433,20 @@
         const diges  = codebits.map((c: TheC) => c.sc.dige as string).sort()
         const moment = `${diges.join(',')}#leash:${leashi}`
 
-        const rq = H.reqy(req)
-
+        // BlatDo is a %req child of this Rundown (req is its host).
         // drop a BlatDo whose moment is stale (re-compile or leash bump)
-        const existing = rq.o({ req: 'BlatDo' })[0] as TheC | undefined
+        const existing = req.o({ req: 'BlatDo' })[0] as TheC | undefined
         if (existing && existing.sc.moment !== moment) req.drop(existing)
 
         // already ran this moment
         if (req.oa({ ran: moment })) { req.sc.ok = 1; return }
 
         // mint BlatDo for this moment (idempotent if already in-flight)
-        await rq.roai({ req: 'BlatDo' }, { moment, run_method: req.sc.run_method })
-        await rq.do()
+        req.req_oai({ req: 'BlatDo' }, { moment, run_method: req.sc.run_method })
+        await req.do()
 
         // if BlatDo finished this tick: record the moment, then clean up
-        const blatdo = rq.o({ req: 'BlatDo' })[0] as TheC | undefined
+        const blatdo = req.o({ req: 'BlatDo' })[0] as TheC | undefined
         if (blatdo?.sc.finished) {
             req.oai({ ran: moment })
             // BlatDo's job is done; drop it now rather than waiting for the next compile.
@@ -461,7 +474,7 @@
     //   req.c.up = req:Rundown
     //   req.c.up.c.up = req:Cortex
     //   req.c.up.c.up.c.up = w:Lies
-    async req_BlatDo(req: TheC, q: any) {
+    async req_BlatDo(req: TheC) {
         const H = this as House
 
         // fire the run command once — req_sent guards re-entry
@@ -496,12 +509,12 @@
         const H          = this as House
         const run_method = e.sc.run_method as string | undefined
         if (!run_method) return
-        if (!H.reqy(w).o({ req: 'Cortex' }).length) {
+        if (!w.o({ req: 'Cortex' }).length) {
             console.warn(`⚠ e_Rundown_arm on w:${w.sc.w ?? '?'}: no req:Cortex`
                 + ` — Cortex is armed at Lies startup, so this likely reached the wrong world`)
         }
         const { cortex } = await H.LiesCortex_arm(w)
-        const rundown = await H.reqy(cortex).roai({ req: 'Rundown', eternal: 1 })
+        const rundown = cortex.req_oai({ req: 'Rundown', eternal: 1 })
         if (rundown.sc.run_method !== run_method) {
             rundown.sc.run_method = run_method
             rundown.bump_version()
@@ -518,8 +531,8 @@
     //   e.sc: {} (no payload needed)
     async e_Rundown_leash(A: TheC, w: TheC) {
         const H       = this as House
-        const cortex  = H.reqy(w).o({ req: 'Cortex' })[0] as TheC | undefined
-        const rundown = cortex && (H.reqy(cortex).o({ req: 'Rundown' })[0] as TheC | undefined)
+        const cortex  = w.o({ req: 'Cortex' })[0] as TheC | undefined
+        const rundown = cortex && (cortex.o({ req: 'Rundown' })[0] as TheC | undefined)
         if (!rundown) return
         rundown.sc.leashi = ((rundown.sc.leashi as number) ?? 0) + 1
         rundown.bump_version()

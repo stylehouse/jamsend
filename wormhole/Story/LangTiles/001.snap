@@ -1,26 +1,29 @@
 Snap:H
   H:LangTiles,Run
     A:Lies
-      self,round=15	{"mung":["age"]}
+      self,round=17	{"mung":["age"]}
       w:Lies
         Opt
           nowriting:^Ghost
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/LangTiles/Waftily/toc.snap,waft_path:Story/LangTiles/Waftily
-            known,dige:ae431c78129a7b9e,kind:read,at=1781444350.033
+            known,dige:ae7dc27a85992c99,kind:read,at=1781599952.105
+          Good,type:text/Waft,path:wormhole/GhostList/toc.snap,waft_path:GhostList,not_found
           Good,type:text/Doc,path:Ghost/test/LangTiles.g
-            known,dige:39549f14cdad2a91,kind:read,at=1781444350.39
+            known,dige:688b831b844ff028,kind:read,at=1781599952.691
         examining	{"loopy":2}
           req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
           Spotlight	{"ref":{"src":"%What:labelofaWhat"}}
         req:Cortex,eternal
-          req:Codebit,path:Ghost/test/LangTiles.g,maz=2,gen_path:gen/test/LangTiles.go,source_dige:39549f14cdad2a91,dige:b1c5ef5d997e1bfc,permanent,write_finished,finished
+          req:Codebit,path:Ghost/test/LangTiles.g,maz=2,gen_path:gen/test/LangTiles.go,source_dige:688b831b844ff028,dige:e25b26e29cb147cb,permanent,write_finished,finished
         Waft:Story/LangTiles/Waftily
           What:labelofaWhat
             Doc:Ghost/test/LangTiles.g
             Point:nothings
             Point:nothinging
             Point:Blaga
+          What:Thoroughly
+            Doc:Ghost/test/Idzeuzia.g,new
         req:desire
           req:acquire,maz=9,finished
           Waft:Story/LangTiles/Waftily	{"ref":{"src":"%Waft:Story/LangTiles/Waftily"}}
@@ -29,12 +32,66 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781444350113,kind:cold
-          want=1781444350171,kind:cold
-          want=1781444350273,kind:cold,resolved
+          want=1781599952215,kind:cold
+          want=1781599952278,kind:cold
+          want=1781599952530,kind:cold,resolved
         o_elvis:dock_askies
-        self,round=15	{"mung":["age"]}
-        see:🗂 1 doc · 1 Waft
+        Waft:GhostList,lists,seeded=1781599952692
+          Funkcion:dirlist,interval_ms=8000,walked_at=1781599952692
+          group:src/lib,dir:src/lib
+            sub:src/lib/O,name:O
+            sub:src/lib/data,name:data
+            sub:src/lib/gen,name:gen
+            sub:src/lib/ghost,name:ghost
+            sub:src/lib/mostly,name:mostly
+            sub:src/lib/p2p,name:p2p
+            Doc:src/lib/FTrusting.svelte,name:FTrusting
+            Doc:src/lib/MTrusting.svelte,name:MTrusting
+            Doc:src/lib/Trust.svelte.ts,name:Trust
+            Doc:src/lib/Y.svelte.ts,name:Y
+          group:src/lib/O,dir:src/lib/O
+            sub:src/lib/O/D,name:D
+            sub:src/lib/O/lang,name:lang
+            sub:src/lib/O/shelved,name:shelved
+            sub:src/lib/O/spec,name:spec
+            sub:src/lib/O/test,name:test
+            sub:src/lib/O/ui,name:ui
+            Doc:src/lib/O/Cyto.svelte,name:Cyto
+            Doc:src/lib/O/Cytui.svelte,name:Cytui
+            Doc:src/lib/O/Ghost.svelte,name:Ghost
+            Doc:src/lib/O/Housing.svelte.ts,name:Housing
+            Doc:src/lib/O/Hovercraft.svelte,name:Hovercraft
+            Doc:src/lib/O/Lang.svelte,name:Lang
+            Doc:src/lib/O/LangCompiling.svelte,name:LangCompiling
+            Doc:src/lib/O/LangGraft.svelte,name:LangGraft
+            Doc:src/lib/O/LangLang.svelte,name:LangLang
+            Doc:src/lib/O/LangPoint.svelte,name:LangPoint
+            Doc:src/lib/O/LangRegions.svelte,name:LangRegions
+            Doc:src/lib/O/LangSion.svelte,name:LangSion
+            Doc:src/lib/O/LangWhatwhere.svelte,name:LangWhatwhere
+            Doc:src/lib/O/Langui.svelte,name:Langui
+            Doc:src/lib/O/Lies.svelte,name:Lies
+            Doc:src/lib/O/LiesCortex.svelte,name:LiesCortex
+            Doc:src/lib/O/LiesCurse.svelte,name:LiesCurse
+            Doc:src/lib/O/LiesEnd.svelte,name:LiesEnd
+            Doc:src/lib/O/LiesStore.svelte,name:LiesStore
+            Doc:src/lib/O/Liesui.svelte,name:Liesui
+            Doc:src/lib/O/MachPeerily.svelte,name:MachPeerily
+            Doc:src/lib/O/Matstyle.svelte,name:Matstyle
+            Doc:src/lib/O/Otro.svelte,name:Otro
+            Doc:src/lib/O/Storui.svelte,name:Storui
+            Doc:src/lib/O/Story.svelte,name:Story
+            Doc:src/lib/O/Text.svelte,name:Text
+            Doc:src/lib/O/Thang.svelte,name:Thang
+            Doc:src/lib/O/ThangShelf.svelte,name:ThangShelf
+            Doc:src/lib/O/Thangs.svelte,name:Thangs
+            Doc:src/lib/O/stho.ts,name:stho
+        Funkcions
+          req:Funkcion,funk_id:GhostList/dirlist,eternal,ok
+        log:waft_save,path:GhostList,dige:11139ed5
+        log:waft_save,path:GhostList,dige:dbd656d7
+        self,round=17	{"mung":["age"]}
+        see:🗂 1 doc · 2 Wafts
     A:Lang
       self,round=15	{"mung":["age"]}
       w:Lang
@@ -47,27 +104,28 @@ Snap:H
               req:text_loaded,maz=3,finished
               req:text_mutated,maz=2,eternal
               req:compile,maz=2,finished
-            Text,dige:39549f14cdad2a91,disk_dige:39549f14cdad2a91,disk_rev
+            Text,dige:688b831b844ff028,disk_dige:688b831b844ff028,disk_rev
             Compile
               Map
-                def,method:theCompiledStuff,from=17,to=34,line=2	{"ref":{"region_path":"[]"}}
-                call,method:nothinging,from=1148,to=1159,line=34,via:theCompiledStuff	{"ref":{"region_path":"[]"}}
-                call,method:nothinging,from=1172,to=1183,line=35,via:theCompiledStuff	{"ref":{"region_path":"[]"}}
-                {"controlflow":1,"keyword":"if","title":"(&nothinging,A,w,{figuira:'out', all_these:3}) 3+2+4","from":1221,"to":1224,"line":36,"via":"theCompiledStuff"}	{"ref":{"region_path":"[]"}}
-                {"controlflow":1,"keyword":"if","title":"&nothinging,A,w,{figuira:'out', all_these:3}","from":1281,"to":1284,"line":37,"via":"theCompiledStuff"}	{"ref":{"region_path":"[]"}}
-                {"controlflow":1,"keyword":"if","title":"&nothinging,A,w,{figuira:'out', all_these:3}","from":1482,"to":1485,"line":42,"via":"theCompiledStuff"}	{"ref":{"region_path":"[]"}}
-                controlflow,keyword:if,title:3,from=1777,to=1780,line=54,via:theCompiledStuff	{"ref":{"region_path":"[]"}}
-                controlflow,keyword:if,title:0,from=1801,to=1804,line=56,via:theCompiledStuff	{"ref":{"region_path":"[]"}}
-                controlflow,keyword:elsif,title:1 && 0,from=1830,to=1836,line=58,via:theCompiledStuff	{"ref":{"region_path":"[]"}}
-                controlflow,keyword:elsif,title:50 > 5,from=1882,to=1888,line=61,via:theCompiledStuff	{"ref":{"region_path":"[]"}}
-                call,method:severally,from=1947,to=1957,line=65,via:theCompiledStuff	{"ref":{"region_path":"[]"}}
-                def,method:nothinging,from=1969,to=1980,line=67	{"ref":{"region_path":"[]"}}
-                def,method:severally,from=2007,to=2017,line=69	{"ref":{"region_path":"[]"}}
-                call,method:laterally,from=2159,to=2171,line=75,via:severally	{"ref":{"region_path":"[]"}}
-                def,method:laterally,from=2183,to=2193,line=77	{"ref":{"region_path":"[]"}}
-                def,method:moreTiles,from=2250,to=2260,line=80	{"ref":{"region_path":"[]"}}
-              time,compile=0.015,all=0.579,write=0
-              Output,gen_path:gen/test/LangTiles.go,dige:b1c5ef5d997e1bfc,source_dige:39549f14cdad2a91
+                def,method:theCompiledStuff,from=17,to=34,line=2
+                call,method:nothinging,from=1148,to=1159,line=34,via:theCompiledStuff
+                call,method:nothinging,from=1172,to=1183,line=35,via:theCompiledStuff
+                {"controlflow":1,"keyword":"if","title":"(&nothinging,A,w,{figuira:'out', all_these:3}) 3+2+4","from":1221,"to":1224,"line":36,"via":"theCompiledStuff"}
+                {"controlflow":1,"keyword":"if","title":"&nothinging,A,w,{figuira:'out', all_these:3}","from":1281,"to":1284,"line":37,"via":"theCompiledStuff"}
+                {"controlflow":1,"keyword":"if","title":"&nothinging,A,w,{figuira:'out', all_these:3}","from":1482,"to":1485,"line":42,"via":"theCompiledStuff"}
+                controlflow,keyword:if,title:3,from=1777,to=1780,line=54,via:theCompiledStuff
+                controlflow,keyword:if,title:0,from=1801,to=1804,line=56,via:theCompiledStuff
+                controlflow,keyword:elsif,title:1 && 0,from=1830,to=1836,line=58,via:theCompiledStuff
+                controlflow,keyword:elsif,title:50 > 5,from=1882,to=1888,line=61,via:theCompiledStuff
+                call,method:severally,from=1947,to=1957,line=65,via:theCompiledStuff
+                def,method:nothinging,from=1969,to=1980,line=67
+                def,method:severally,from=2007,to=2017,line=69
+                call,method:laterally,from=2159,to=2171,line=75,via:severally
+                def,method:laterally,from=2183,to=2193,line=77
+                def,method:moreTiles,from=2250,to=2260,line=80
+                def,method:replaceTiles,from=3736,to=3749,line=105,async
+              time,compile=0.032,all=1.037,write=0
+              Output,gen_path:gen/test/LangTiles.go,dige:e25b26e29cb147cb,source_dige:688b831b844ff028
                source: |
                  <script lang="ts">
                      // GENERATED by Lang compile — do not edit by hand.
@@ -79,7 +137,7 @@ Snap:H
                      onMount(async () => {
                      await H.eatfunc({
                  
-                     Ghostmeta_Ghost_test_LangTiles(): string { return '39549f14cdad2a91' },
+                     Ghostmeta_Ghost_test_LangTiles(): string { return '688b831b844ff028' },
                  
                  // yeti etc!!!!!
                  theCompiledStuff(A,w) {
@@ -186,6 +244,54 @@ Snap:H
                      //  -> i @are/so:ont.$sooo,module.$tv,etc.$
                  
                  },
+                 // the r / rm / replace family.  r and rm are IOness2 verbs compiling to async
+                 //  TheC methods, so they emit `await` — the method is async.  `...` (FlowSep) is
+                 //  the pattern→replacement separator; an external token so JS spread {...x} is
+                 //  untouched.  Either side can be a $var (the object itself) or a peeled path.
+                 async replaceTiles(A,w) {
+                     // (1) re-assert — one path → await w.r({solved: 1})
+                     await w.r({solved: 1})
+                     // receiver before the verb → await A.r({io: "radiostock"})
+                     await A.r({io: "radiostock"})
+                     // multi-key pattern → await w.r({journey: 1, oaims: 1})
+                     await w.r({journey: 1, oaims: 1})
+                 
+                     // (2) two-arg r(pattern, replacement), split by ...  (the dominant usage)
+                     //  await w.r({buffers: 1}, {ok: 1})
+                     await w.r({buffers: 1}, {ok: 1})
+                     //  await w.r({wear: enid}, {is_nowPlaying: 1, started, re})
+                     await w.r({wear: enid}, {is_nowPlaying: 1, started, re})
+                 
+                     // (3) whole-object args — a $var is the pattern|replacement object itself
+                     //  await w.r(c, fuller)
+                     await w.r(c, fuller)
+                 
+                     // (4) rm — removal sugar, r(pattern, {}) underneath
+                     //  await w.rm({stream: 1})
+                     await w.rm({stream: 1})
+                     //  await w.rm(c)
+                     await w.rm(c)
+                 
+                     // (5) the rest of the two-arg IOness2 family — same match...props shape.
+                     //  oai is sync (find-or-create, no await); roai/moai are async.
+                     //   let seat = oai %seat:3...%taken    → let seat = w.oai({seat: 3}, {taken: 1})
+                     let seat = w.oai({seat: 3}, {taken: 1})
+                     //   await w.roai({aim: 1}, {category: cat})
+                     await w.roai({aim: 1}, {category: cat})
+                     //   await A.moai({mo: "main"}, {interval: 1})
+                     await A.moai({mo: "main"}, {interval: 1})
+                 
+                     // (6) replace-with-a-block — pattern + a pythonic body (like S) becomes the
+                     //  async fn() that re-fills the cleared pattern:
+                     //   await A.replace({journey: 1, oaims: 1}, async () => {
+                     //       w.i({path: 1}); A.i({oaim: j})
+                     //   })
+                     await A.replace({journey: 1, oaims: 1}, async () => {
+                         w.i({path: 1})
+                         A.i({oaim: j})
+                 
+                     })
+                 },
                  
                      })
                      })
@@ -212,18 +318,19 @@ Snap:H
               Mapule,kind:call,key:laterally,depth=0,line=75,from=2159,to=2171
               Mapule,kind:def,key:laterally,depth=0,line=77,from=2183,to=2193
               Mapule,kind:def,key:moreTiles,depth=0,line=80,from=2250,to=2260
+              Mapule,kind:def,key:replaceTiles,depth=0,line=105,from=3736,to=3749
         scheme:req
           lematch	{"ref":{"sc_has":"Object()"}}
             lematch	{"ref":{"sc_has":"Object()"}}
         Languinio	{"loopy":3}
           LE,target	{"loopy":0,"hid":1}
-          dock,active	{"loopy":1,"hid":1}
           Interest,in_Doc:Ghost/test/LangTiles.g	{"ref":{"src":"%What:labelofaWhat"}}
-            MapReport,n_def=5,n_call=4,n_region=0,n_cf=7
+            MapReport,n_def=6,n_call=4,n_region=0,n_cf=7
+          dock,active	{"loopy":1,"hid":1}
           Change
-            backend,dige:39549
-            storage,dige:39549,dim:false
-            compile,dige:39549,dim:false,secs=0.015
+            backend,dige:688b8
+            storage,dige:688b8,dim:false
+            compile,dige:688b8,dim:false,secs=0.032
         LE	{"loopy":0,"ref":{"target":"%What:labelofaWhat"}}
           Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:labelofaWhat","topD":"%Demonstrations:origin"}}
             Demonstrations:origin
@@ -249,22 +356,23 @@ Snap:H
         req:workon,following,auto_push	{"ref":{"LE":"%LE:1, target:%What","w":"%w:Lang"}}
           {"req":"understanding","maz":3,"permanent":1,"sig":"1:13:0:0","what":"labelofaWhat","finished":1}
           req:ingredients,maz=2,permanent,sig:Ghost/test/LangTiles.g,finished
-            req:furnishing,path:Ghost/test/LangTiles.g,permanent,finished
-          {"req":"instrumentation","permanent":1,"sig":"Ghost/test/LangTiles.g:39549f14cdad2a91:1:29","have_Map":1,"n_pmirrors":3,"finished":1}
+            req:furnishing,path:Ghost/test/LangTiles.g,permanent,asked,finished
+          {"req":"instrumentation","permanent":1,"sig":"Ghost/test/LangTiles.g:688b831b844ff028:1:29","have_Map":1,"n_pmirrors":3,"finished":1}
         o_elvis:dock_content
         received,doc_opened,doc:Ghost/test/LangTiles.g
         received,editorBegins,doc:Ghost/test/LangTiles.g
         o_elvis:Lies_compile_settled
         self,round=15	{"mung":["age"]}
+        see:✅ compiled Ghost/test/LangTiles.g
         see:🟦 tiles 0 bookmarks
     A:Pantheate
-      self,round=7	{"mung":["age"]}
+      self,round=4	{"mung":["age"]}
       w:Pantheate
-        include:gen/test/LangTiles.go
-        req:include,gen_path:gen/test/LangTiles.go,path:Ghost/test/LangTiles.g,source_dige:39549f14cdad2a91,ghostmeta_name:Ghostmeta_Ghost_test_LangTiles,permanent
-          ttlilt,until_ts=1781444353.478,waiting:ghostmeta
-        self,round=7	{"mung":["age"]}
+        self,round=4	{"mung":["age"]}
         o_elvis:Ghost_update_notify
+        include:gen/test/LangTiles.go
+        req:include,gen_path:gen/test/LangTiles.go,path:Ghost/test/LangTiles.g,source_dige:688b831b844ff028,ghostmeta_name:Ghostmeta_Ghost_test_LangTiles,permanent
+          ttlilt,until_ts=1781599956.323,waiting:ghostmeta
     watched:ave
       examining	{"loopy":2,"hid":1}
       Languinio	{"loopy":3,"hid":1}
@@ -281,5 +389,5 @@ Snap:H
       action,role:nogen,label:nogen,icon:nogen,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:softgen,label:softgen,icon:softgen,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:compo,label:compo,icon:compo ✓,cls:toggle-on	{"ref":{"fn":"Function()"}}
+    ttlilt,of_w:Pantheate,until_ts=1781599956.323,waiting:ghostmeta	{"ref":{"req":"%req:include, gen_path:gen/test/LangTiles.go, path:Ghost/test/LangTiles.g, so...86"}}
     mo:main,interval=3.6	{"mung":["id"]}
-    ttlilt,of_w:Pantheate,until_ts=1781444353.478,waiting:ghostmeta	{"ref":{"req":"%req:include, gen_path:gen/test/LangTiles.go, path:Ghost/test/LangTiles.g, so...86"}}

@@ -10,7 +10,7 @@
     //   /known impressions stamped on them — one place on w to read Lies' disk
     //   picture.
     //
-    //   sc.ok comes and goes, and that is the point.  maz:7 makes H.reqy(w).do()
+    //   sc.ok comes and goes, and that is the point.  maz:7 makes w.do()
     //   drive req:Store first; at the end of its pump it sets sc.ok, which do()
     //   treats like finished for the rest of this pass — so a lower-maz req that
     //   needs IO as sorted as it is going to get this tick proceeds only after
@@ -112,7 +112,7 @@
     //   Phase 2 — read completions (two-pass drop):
     //     First pass: record known impression, stamp sc.seen=1 on the req.
     //     Second pass (next req_Store entry): drop.
-    //     Two passes because req_Store runs inside the same H.reqy(w).do() call
+    //     Two passes because req_Store runs inside the same w.do() call
     //     as LiesPersist — a same-pass drop removes the req before LiesPersist
     //     reads req.sc.finished, causing a tailspin re-dispatch every tick.
     //     sc.seen is the handoff: "I've processed this; caller has one more cycle."
@@ -409,7 +409,7 @@
     // ── LiesStore_req ─────────────────────────────────────────────────────────
     //
     //   Returns (or creates) w/req:Store — the host for all IO reqs and known
-    //   impressions.  maz:7 puts it above all other Lies reqs so H.reqy(w).do()
+    //   impressions.  maz:7 puts it above all other Lies reqs so w.do()
     //   always pumps IO before desire/wants/Cortex run.  eternal:1 means
     //   reqy never finishes it via unify_finished.  req_Store sets sc.ok at the
     //   end of each pump cycle — lower reqs see a settled Store without it being
@@ -422,7 +422,7 @@
     // ── req_Store ─────────────────────────────────────────────────────────────
     //
     //   do_fn for req:Store.  Drives all IO children, then processes completions.
-    //   Runs each tick via H.reqy(w).do() in the Lies tick — no manual pump call.
+    //   Runs each tick via w.do() in the Lies tick — no manual pump call.
     //
     //   Ordering: req_Store processes writes before returning.  req:Cortex reqs
     //   that wait on a write handoff read req:Cortex.sc.write_finished, stamped
@@ -489,7 +489,7 @@
         //      with no Good (a source_check probe) leaves no lasting trace, which is
         //       what we want.
         //
-        //   Why two passes: req_Store runs as a do_fn inside H.reqy(w).do(), which
+        //   Why two passes: req_Store runs as a do_fn inside w.do(), which
         //   LiesPersist calls.  A read dropped immediately in Phase 2 is gone before
         //   LiesPersist checks req.sc.finished — causing a re-dispatch every tick
         //   (the tailspin).  The seen stamp gives callers one full rq.do() cycle
@@ -799,7 +799,7 @@
     //   Goods live UNDER req:Store, beside the IO reqs and known impressions — so
     //   the whole LiesStore footprint is the one req:Store subtree.  Children of
     //   Store (req_LiesStore_writeCarefully, req_Store) already hold the store ref;
-    //   outside readers find it via reqy(w).o({req:'Store'}) — see LiesStore_good_of.
+    //   outside readers find it via w.o({req:Store}) — see LiesStore_good_of.
     //
     //   Lies_provide_dock warms a Good,type:'text/Doc' and registers the handback;
     //   the drain hands the %Good to Lang.  No demand-load req lives on either side.
