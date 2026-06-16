@@ -1206,9 +1206,10 @@ export class TheC extends Stuff {
 
     //  find-or-create a %req child.  An anonymous %req:1 is given a serial off
     //   the host (c.req_serial), so a unique {…c} identity becomes %req:$i.
-    _req_oai(c: TheUniversal): TheC {
+    _req_oai(c: TheUniversal, meta: { existed?: boolean } = {}): TheC {
         let req = this.o({ req: 1, ...exactly(c) })[0] as TheC | undefined
-        if (req) return req
+        if (req) { meta.existed = true; return req }
+        meta.existed = false
         const mix: TheUniversal = { req: 1, ...c }
         // an anonymous %req:1 wants serial numbering — and the serial IS the %req
         //  value (%req:$i++), assigned here at birth off the host counter.  A
@@ -1216,6 +1217,10 @@ export class TheC extends Stuff {
         if (mix.req === 1) mix.req = this.c.req_serial = ((this.c.req_serial as number) ?? 1) + 1
         req = this.i(mix) as TheC
         req.c.up = this
+        // initial-do pending, stamped at birth (doai) — in .c so it never snaps.
+        //  The first do() exposes it as %initialdo for the handler, then clears
+        //  it, so %initialdo is a within-do signal, never persistent snap state.
+        req.c.initialdo = 1
         if (req.sc.maz === 1) delete req.sc.maz   // maz:1 is implied
         return req
     }
@@ -1223,10 +1228,29 @@ export class TheC extends Stuff {
     //  seed a req and return a one-shot do_fn setter (?.(body)), or null once
     //   wired — so re-entry never re-wires; only do() re-runs the body.
     async doai(c: TheUniversal, sc: TheUniversal = {}): Promise<((fn: Function) => void) | null> {
-        const req = this._req_oai(c)
+        const meta: { existed?: boolean } = {}
+        const req = this._req_oai(c, meta)
+        // doai is moai with a do_fn-setter: re-merge sc with %mutated detection on
+        //  an existing req, plain apply on a fresh one.
+        if (meta.existed) this.maybe_mutate_sc(req, sc)
+        else Object.assign(req.sc, sc)
         if (req.c.do_fn) return null
-        Object.assign(req.sc, sc)
         return (fn: Function) => { req.c.do_fn = fn }
+    }
+
+    // moai semantics for a req: merge sc in place, flagging %mutated = {key: old}
+    //  for the changed keys (差, hakd), so a do_fn (or mutated_fn) can react.  The
+    //  first do() clears %mutated, so it stays a within-beat signal — never snaps.
+    maybe_mutate_sc(req: TheC, sc: TheUniversal): void {
+        if (!sc || !Object.keys(sc).length) return
+        const merged = { ...req.sc, ...sc }
+        const diffs = hakd(req.sc, merged)
+        if (!diffs.length) return
+        const mutated: TheUniversal = {}
+        for (const k of diffs) mutated[k] = req.sc[k]
+        Object.assign(req.sc, sc)
+        req.sc.mutated = mutated
+        req.bump_version()
     }
 
     //  pump this host's reqs, highest maz first.  %ok is a pass-local satisfied
@@ -1247,16 +1271,20 @@ export class TheC extends Stuff {
 
     async _req_do_one(req: TheC, fn?: Function): Promise<void> {
         if (req.sc.finished) throw "do req%finished"
-        delete req.sc.initialdo
         delete req.sc.ok
         // forget last pass's transient problems before re-running
         await req.r({ waits: 1 }, {}); await req.r({ error: 1 }, {}); await req.r({ see: 1 }, {})
-        const handler = fn || (req.c.do_fn as Function | undefined)
+        // resolve the handler the way the walk does — climb c.up to the House for
+        //  do_fn_for (req.c.do_fn, the req_$name convention, and mutated_fn).  At
+        //  do-time the tree is wired, so the House is always up the chain.
+        let H: any = this
+        while (H && typeof H.do_fn_for !== 'function') H = H.c?.up
+        const handler = fn || H?.do_fn_for(req, { ark: 'req' })?.handler
         if (handler) {
-            // %initialdo marks the first run, until the next
-            if (!req.c._had_initialdo) { req.c._had_initialdo = true; req.sc.initialdo = 1 }
+            // first do(): expose the birth-stamped initial-do as %initialdo
+            if (req.c.initialdo) { delete req.c.initialdo; req.sc.initialdo = 1 }
             await handler(req)
-            delete req.sc.initialdo
+            delete req.sc.initialdo   // comes off again after the do() — never snaps
         }
         delete req.sc.mutated   // after the handler — a mutated_fn reads it
     }

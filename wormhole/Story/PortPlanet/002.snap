@@ -13,8 +13,8 @@ Snap:H
         logger,n
           driver[2],dispatch,inA
         req:transport
-          req,van:rose,dose=3
+          req:van_rose,van:rose,dose=3
             waits:in transit
-          req,van:fern,dose=7
+          req:van_fern,van:fern,dose=7
             waits:in transit
     mo:main,interval=3.6	{"mung":["id"]}

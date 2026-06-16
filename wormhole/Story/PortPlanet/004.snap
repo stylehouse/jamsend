@@ -1,7 +1,7 @@
 Snap:H
   H:PortPlanet,Run
     A:PortPlanet
-      self,round=6	{"mung":["age"]}
+      self,round=4	{"mung":["age"]}
       w:PortPlanet
         orders
           order:rose,dose=5
@@ -12,12 +12,12 @@ Snap:H
           req=3,order:fern,dose=7,out
           req=4,order:rose_extra,dose=2
         req:transport
-          req,van:rose_extra,dose=2
+          req:van_rose_extra,van:rose_extra,dose=2
             waits:in transit
         world
           order:rose,dose=3
           order:fern,dose=7
-        self,round=6	{"mung":["age"]}
+        self,round=4	{"mung":["age"]}
         logger,n=2
           driver[3],order:rose,dose=5,inA
           extra_order,order:rose,gap=2,inA

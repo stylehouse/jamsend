@@ -1,7 +1,7 @@
 Snap:H
   H:PortPlanet,Run
     A:PortPlanet
-      self,round=8	{"mung":["age"]}
+      self,round=5	{"mung":["age"]}
       w:PortPlanet
         orders
           order:rose,dose=5
@@ -12,16 +12,16 @@ Snap:H
           req=3,order:fern,dose=7,out
           req=4,order:rose_extra,dose=2,out
         req:transport
+          req:van_rose_extra,van:rose_extra,dose=2,finished
         world
           order:rose,dose=3
           order:fern,dose=7
           order:rose_extra,dose=2
-        logger,n=2
+        self,round=5	{"mung":["age"]}
+        logger,n
           driver[4],report,inA
-          report_final,total=12,inA
-        req:reportPortPlaneting,things=444,finished
-          req:gatherself,maz=2,finished
-          req:summarise,finished
-        self,round=8	{"mung":["age"]}
-        {"see":"📋 world total: 12 doses"}
+        req:reportPortPlaneting,things=444
+          req:gatherself,maz=2
+            waits:finding a pen
+          req:summarise
     mo:main,interval=3.6	{"mung":["id"]}

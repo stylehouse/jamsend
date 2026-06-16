@@ -438,20 +438,18 @@
  
  
     // re-entry point for a req — Atime or async, always use this.
+    //   The poster just names the req; i_elvisto targets it (e%target) and finds
+    //    the House — no %w climb here, the climb moved into targeting.
     //   sc is queued to apply at e_reqyonciliation (Atime), not now —
     //    so state change (action) and work (reaction) arrive together.
     //   see is for trace only; finish() is the caller's job.
     async reqyoncile(req: TheC, sc: Record<string, any> = {}) {
-        const H = this
-        let node = req as TheC
-        while (node.c.up && !node.sc.w) node = node.c.up as TheC
-        if (!node.sc.w) throw "reqyoncile: !%w"
         const { see, finished, ...mix_sc } = sc
-        const elv: Record<string, any> = { req }
+        const elv: Record<string, any> = {}
         if (see)                        elv.see      = see
         if (finished)                   elv.finished = 1
         if (Object.keys(mix_sc).length) elv.mix_sc   = mix_sc
-        return H.i_elvisto(node, 'reqyonciliation', elv)
+        return this.i_elvisto(req, 'reqyonciliation', elv)
     },
  
     // drives the reqy chain after a req's async Atime — always arrives via reqyoncile.
@@ -461,31 +459,30 @@
     //   feebly_ponder wakes downstream as a normal visible think.
     async e_reqyonciliation(_A: TheC, w: TheC, e: TheC) {
         const H = this
-        const { req, see, mix_sc, finished } = e.sc
-        if (!req) throw "!req"
-        const reqcon = req.c.on as TheC
-        if (!reqcon) throw "!reqcon"
-        let rq = reqcon.c.rq
-        if (!rq) throw "!rq"
+        const req = e.c.target as TheC          // the ref the e was targeted at
+        const { see, mix_sc, finished } = e.sc
+        if (!req) throw "e_reqyonciliation: !e.c.target"
         if (req.sc.finished) return console.warn(`callback rattle: ${keyser(req.sc)}`)
 
-        if (mix_sc) rq.maybe_mutate_sc(req, mix_sc)
+        const rq = (req.c.on as TheC | undefined)?.c.rq   // old reqy req carries a reqcon→rq
         H.trace('reqyoncile', H.req_diag(req, { see, mix_sc }))
 
-        if (finished) {
-            rq.finish(req)
-            rq.unify_finished()
-            H.feebly_ponder()
+        if (rq) {
+            // old reqy path
+            if (mix_sc) rq.maybe_mutate_sc(req, mix_sc)
+            if (finished) { rq.finish(req); rq.unify_finished(); H.feebly_ponder(); return }
+            await rq.do_one(req)
+            if (req.sc.finished) { await rq.do(); rq.unify_finished() }
             return
         }
 
-        await rq.do_one(req)
-        if (req.sc.finished) {
-            await rq.do()
-            rq.unify_finished()
-            // < maybe?
-            // H.feebly_ponder()
-        }
+        // new self-contained req: its host (req.c.up) drives it
+        const host = req.c.up as TheC
+        if (mix_sc) Object.assign(req.sc, mix_sc)
+        if (finished) { host.finish(req); H.feebly_ponder(); return }
+        await host._req_do_one(req)
+        if (req.sc.finished) await host.do()
+        H.feebly_ponder()
     },
 
     // climb req.c.up until a node has %w on its sc, return that w.

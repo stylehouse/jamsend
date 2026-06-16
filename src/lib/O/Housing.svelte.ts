@@ -529,6 +529,12 @@ export class House extends StorableHousing {
         // but e is not yet in any todo queue.
         const e = new TheC({ c: {}, sc: { elvis: method, Aw, ...extra } })
 
+        // ref targeting (e%target): a req is reached by its object handle below w,
+        //  not by the Aw string.  Only reqs get this — w/A targets stay Aw-routed,
+        //  so existing elvis is unchanged.  attend delivers a targeted e straight
+        //  to the ref (see _deliver_targeted).
+        if (target instanceof TheC && (target as TheC).sc.req != null) e.c.target = target
+
         // targeting: deferred to UItime so it never races a beliefs cycle.
         // The promise is stored on e.c so callers who need sequencing can await it.
         e.c.targeting = this.clear(async () => {
@@ -709,6 +715,9 @@ export class House extends StorableHousing {
     // Returns 0 (no), 1 (on the path toward target), 2 (exact match).
     // Empty Aw = ambience, targets everything.
     // -------------------------------------------------------------------------
+    //   A ref-targeted e (e%target, a req) never reaches here — attend delivers
+    //   it straight to the ref (_deliver_targeted), since below w the ref is the
+    //   handle.  This is only the Aw string-path, for the named top levels.
     _e_targets_T(e: TheC, T: Travel): 0 | 1 | 2 {
         if (!e.sc.Aw) return 2
 
@@ -930,6 +939,10 @@ export class House extends StorableHousing {
     // so it receives the same signature as the original Modus version.
     // -------------------------------------------------------------------------
     private async attend(e?: TheC) {
+        // a ref-targeted e (e%target, a req) is delivered straight to its handle,
+        //  not by walking T down to it — the ref is the truth below w.
+        if (e?.c.target) return this._deliver_targeted(e)
+
         // collect A-level T nodes
         let ATN: Travel[] = []
         await this.Se.c.T.forward(T => {
@@ -988,6 +1001,31 @@ export class House extends StorableHousing {
         // unwrap to plain {A,w} for agency_officing — same shape as old Modus version
         const AN = ATN.map(AT => AT.sc.n as TheC)
         await this.agency_officing(AwN.map(({ A, w }) => ({ A, w })), AN)
+    }
+
+    // -------------------------------------------------------------------------
+    // _deliver_targeted: run a ref-targeted e (e%target) at its target directly.
+    //   The handler is e_<elvis> (so reqyoncile is just elvis:'reqyonciliation').
+    //   Audible when the ref landed nowhere — a since-reminted req is dropped from
+    //   the tree, so we warn rather than fail in silence.
+    // -------------------------------------------------------------------------
+    private async _deliver_targeted(e: TheC) {
+        const tgt   = e.c.target as TheC
+        const elvis = e.sc.elvis as string
+        if (tgt.c.drop) {
+            console.warn(`targeted e:${elvis} landed nowhere — target reminted|dropped`)
+            return
+        }
+        const handler = (this as any)['e_' + elvis]
+        if (typeof handler !== 'function') {
+            console.warn(`targeted e:${elvis} — no handler e_${elvis}`)
+            return
+        }
+        try {
+            await handler.call(this, undefined, undefined, e)
+        } catch (err) {
+            console.warn(`targeted e:${elvis} errored:`, err)
+        }
     }
 
 

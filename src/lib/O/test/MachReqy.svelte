@@ -29,22 +29,17 @@
     // demand_time_to_think is manual here — may move into the wall
 
     async PortPlan(A, w) {
-        const dq = this.reqy(w)
-
-        const dSort = await dq.roai({req:'sort', maz:2})
-        dSort.c.do_fn ||= async (De: TheC) => {
+        ;(await w.doai({req:'sort', maz:2}))?.(async (De: TheC) => {
             this.trace("req:sort")
-            const rq = this.reqy(De)
 
             // req:wait,time:123
             //   armed guard: one timer only; reqyoncile brings re-entry
             //   re-entry: thing set → finish; want_savepoint holds story open
-            const rWait = await rq.roai({req:'wait', time:123})
-            rWait.c.do_fn ||= async (req: TheC, rq: any) => {
+            ;(await De.doai({req:'wait', time:123}))?.(async (req: TheC) => {
                 if (req.sc.thing) {
                     this.trace("req:sort -> finito")
                     this.want_savepoint()
-                    rq.finish(req); return
+                    De.finish(req); return
                 }
                 if (req.c.armed) return
                 req.c.armed = true
@@ -53,20 +48,19 @@
                     this.trace("req:sort -> reqyoncile")
                     this.reqyoncile(req, {see:'sorted out', thing:3})
                 }, req.sc.time)
-            }
+            })
 
-            await rq.do()
-            rq.unify_finished()
-        }
+            await De.do()
+            if (De.all_finished() && !De.sc.finished) w.finish(De)
+        })
 
-        const dYay = await dq.roai({req:'yay'})
-        dYay.c.do_fn ||= async (De: TheC) => {
+        ;(await w.doai({req:'yay'}))?.(async (De: TheC) => {
             this.trace("req:yay")
             w.i({confetti:"!!!"})
-            dq.finish(De); return
-        }
+            w.finish(De); return
+        })
 
-        await dq.do()
+        await w.do()
     },
 
 //#endregion
@@ -112,16 +106,14 @@
         this.logger(w)
         const li = this.c.loggeri
 
-        const dq = this.reqy(w)
-
         // ── test driver ───────────────────────────────────────────────────────
         // step 2: dispatch → creates req:transport
-        // step 3: mutate rose dose → propagates via roai → mutated_fn → rogue
-        // step 4: creates req:reportPortPlaneting (can't wait on Dere%finished)
+        // step 4: mutate rose dose → doai's moai re-merge flags %mutated → rogue
+        // step 5: creates req:reportPortPlaneting (named handler)
         await this.on_step({
             2: async () => {
                 li('driver[2]', { dispatch: 1 })
-                await dq.roai({req:'transport'})
+                await w.doai({req:'transport'})
             },
             4: async () => {
                 li('driver[3]', { order: 'rose', dose: 5 })
@@ -129,89 +121,77 @@
             },
             5: async () => {
                 li('driver[4]', { report: 1 })
-                let like = await dq.roai({req:'reportPortPlaneting'})
-                like.sc.things = 444
+                await w.doai({req:'reportPortPlaneting'}, { things: 444 })
             },
         })
 
         // ── business logic ────────────────────────────────────────────────────
 
         // ── req:receive ────────────────────────────────────────────────────────
-        // req.c.up = De set by roai; reqyoncile climbs De.c.up = w to reach %w
-        const dReceive = await dq.roai({req:'receive'})
-        dReceive.c.do_fn ||= async (De: TheC) => {
-            // order_update — mutated_fn; fires for any req carrying %mutated
-            //   req.sc.mutated.dose is the pre-merge value; gap = delta only
-            //   rogue seeded directly into rq — not from w/orders pipeline
-            const rq = this.reqy(De, {mutated_fn: async (req: TheC, rq: any) => {
-                const old_dose = req.sc.mutated?.dose as number || 0
-                const new_dose = req.sc.dose as number || 0
-                const gap      = new_dose - old_dose
-                if (gap <= 0) return
-                req.i({already_sent:1,dose:old_dose})
-                await rq.roai(
-                    { order: `${req.sc.order as string}_extra` },
-                    { dose: gap }
-                )
-                li('extra_order', { order: req.sc.order as string, gap })
-            }})
-
-            // flow w/orders into serial reqs via roai(c,sc):
-            //   c = identity (order name); sc = data (dose)
-            //   same particle found each tick by order; maybe_mutate_sc detects changes → %mutated
+        ;(await w.doai({req:'receive'}))?.(async (De: TheC) => {
+            // flow w/orders into order reqs.  doai is moai with a setter: the
+            //  re-merge flags %mutated on a dose change, and the order req's own
+            //  do_fn reacts — seeding the rogue extra order for the delta.
             for (const order of w.oai({ orders: 1 }).o({ order: 1 }) as TheC[]) {
-                await rq.roai(
+                ;(await De.doai(
                     { order: order.sc.order },
                     { dose: order.sc.dose as number || 0 }
-                )
+                ))?.(async (req: TheC) => {
+                    const mutated = req.sc.mutated as Record<string, any> | undefined
+                    if (!mutated) return
+                    const old_dose = mutated.dose as number || 0     // pre-merge value
+                    const new_dose = req.sc.dose as number || 0
+                    const gap      = new_dose - old_dose
+                    if (gap <= 0) return
+                    req.i({ already_sent: 1, dose: old_dose })
+                    await De.doai({ order: `${req.sc.order as string}_extra` }, { dose: gap })
+                    li('extra_order', { order: req.sc.order as string, gap })
+                })
             }
-
-            await rq.do()
-        }
+            await De.do()
+        })
 
         // ── req:transport ──────────────────────────────────────────────────────
-        // created by driver dispatch (on_step:2); not present before then
-        const dTransport = w.o({ req: 'transport' })[0] as TheC | undefined
-        if (dTransport) {
-            dTransport.c.do_fn ||= async (De: TheC) => {
-                const rq = this.reqy(De, { noserial: 1 })
-
+        // created by the driver (step 2); wire its do_fn here when present
+        if (w.o({ req: 'transport' }).length) {
+            ;(await w.doai({req:'transport'}))?.(async (De: TheC) => {
                 // drop finished vans — visible in the last do() of steptime, then gone
-                for (const van of rq.o({}) as TheC[]) {
+                for (const van of De.o({ req: 1 }) as TheC[]) {
                     if (van.sc.finished) De.drop(van)
                 }
 
-                // van each undelivered order (and rogue) in req:receive
-                for (const or of dReceive.o({ req: 1, order: 1 }) as TheC[]) {
+                // a named van per undelivered order (and rogue) in req:receive.
+                //   named (req:van_<order>) so it keeps a stable identity across the
+                //   drop/recreate cycle — no serial churn (the old noserial intent).
+                const dReceive = w.o({ req: 'receive' })[0] as TheC | undefined
+                for (const or of (dReceive?.o({ req: 1, order: 1 }) ?? []) as TheC[]) {
                     if (or.sc.out) continue
-                    const van = await rq.roai(
-                        { van: or.sc.order as string,
-                          dose: or.sc.dose as number || 0 }
-                    )
-                    van.c.do_fn ||= async (req: TheC, rq: any) => {
+                    ;(await De.doai(
+                        { req: `van_${or.sc.order as string}`, van: or.sc.order as string },
+                        { dose: or.sc.dose as number || 0 }
+                    ))?.(async (req: TheC) => {
                         // initialdo: one snap in transit before delivery
                         if (req.sc.initialdo) { req.i({ waits: 'in transit' }); return }
                         w.oai({ world: 1 }).oai({ order: req.sc.van as string }).sc.dose = req.sc.dose as number || 0
                         or.sc.out = 1
-                        rq.finish(req)
-                    }
+                        De.finish(req)
+                    })
                 }
 
-                await rq.do()
-            }
+                await De.do()
+            })
         }
 
-        await dq.do()
+        await w.do()
     },
 
-    // named handler req:reportPortPlaneting will find if no .c.do_fn
-    //   w reached via De.c.up (set by dq.roai); li via this.c.loggeri
-    //   created from on_step:4 — waits for all req:receive orders to have %out
-    async req_reportPortPlaneting(De: TheC, dq: any) {
+    // named handler for req:reportPortPlaneting — resolved by do_fn_for (req_$name).
+    //   De is the req; w = De.c.up; li via this.c.loggeri.  Created from on_step:5;
+    //   waits for all req:receive orders (incl rogues) to have %out.
+    async req_reportPortPlaneting(De: TheC) {
         const w  = De.c.up as TheC
         const li = this.c.loggeri
 
-        // wait for all orders (including rogues) in req:receive to be delivered
         const dReceive = w.o({ req: 'receive' })[0] as TheC | undefined
         const orders = (dReceive?.o({ req: 1, order: 1 }) ?? []) as TheC[]
         if (!orders.length || !orders.every((or: TheC) => or.sc.out)) {
@@ -219,28 +199,25 @@
             return
         }
 
-        // do_fn on reqcon.c: fallback for any req with no c.do_fn — carries req:summarise
-        const rq = this.reqy(De, {do_fn: async (req: TheC, rq: any) => {
+        // both children carry their own do_fn now — no reqcon fallback.
+        // req:gatherself — initialdo: one snap waits:'finding a pen' before real work
+        ;(await De.doai({req:'gatherself', maz:2}))?.(async (req: TheC) => {
+            if (req.sc.initialdo) { req.i({ waits: 'finding a pen' }); return }
+            De.finish(req)
+        })
+
+        // req:summarise — the final report (was the reqcon fallback do_fn)
+        ;(await De.doai({req:'summarise'}))?.(async (req: TheC) => {
             const world = w.oai({ world: 1 })
             const total = (world.o({ order: 1 }) as TheC[])
                 .reduce((s, o) => s + (o.sc.dose as number || 0), 0)
             li('report_final', { total })
             w.i({ see: `📋 world total: ${total} doses` })
-            rq.finish(req)
-        }})
+            De.finish(req)
+        })
 
-        // req:gatherself — initialdo: one snap waits:'finding a pen' before any real work
-        //   req%initialdo is transient sc; visible for exactly the one snap it stalls
-        //   own do_fn so it doesn't fall through to reqcon.c.do_fn (req:summarise's path)
-        const rGather = await rq.roai({req:'gatherself', maz:2})
-        rGather.c.do_fn ||= async (req: TheC, rq: any) => {
-            if (req.sc.initialdo) { req.i({ waits: 'finding a pen' }); return }
-            rq.finish(req)
-        }
-
-        await rq.roai({req:'summarise'})
-        await rq.do()
-        if (rq.all_finished() && !De.sc.finished) dq.finish(De)
+        await De.do()
+        if (De.all_finished() && !De.sc.finished) w.finish(De)
     },
 
 //#endregion
