@@ -84,10 +84,9 @@ Library
         sample=0.013,at=1781573507
         sample=0.015,at=1781576007
         sample=0.023,at=1781578899
-  Book:PortPlanet,ok_pct,last_pct_change=1779622894.947,done=6,last_run_ms=1781610173.627,active
+  Book:PortPlanet,ok_pct,last_pct_change=1779622894.947,done=6,last_run_ms=1781615444.95
     TimeSpool
-      TimeTotal:beliefs,avg=0.071
-        sample=0.063,at=1780417642
+      TimeTotal:beliefs,avg=0.078
         sample=0.051,at=1781080120
         sample=0.053,at=1781572152
         sample=0.073,at=1781573874
@@ -97,6 +96,7 @@ Library
         sample=0.044,at=1781608200
         sample=0.101,at=1781609408
         sample=0.118,at=1781610173
+        sample=0.132,at=1781615445
   Book:PortPlant,ok_pct,last_pct_change=1779532868.769,done=9,last_run_ms=1781612766.258
     TimeSpool
       TimeTotal:beliefs,avg=0.062
@@ -228,7 +228,7 @@ Library
         sample=1.469,at=1781602789
         sample=1.497,at=1781603768
         sample=1.181,at=1781609211
-  Book:Interesting,ok_pct,done=7,last_run_ms=1781612738.528
+  Book:Interesting,ok_pct,done=7,last_run_ms=1781612738.528,active
     TimeSpool
       TimeTotal:beliefs,avg=0.185
         sample=0.191,at=1781607892

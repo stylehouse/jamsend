@@ -6,23 +6,28 @@
     //
     // ── ghost load order ─────────────────────────────────────────────────────
     //
+    //   Notable ghosts (the full, ordered mount list is the template at the bottom):
     //   Agency    — w:officing, self-timekeeping, Aw_satisfied, i_unemits_o_Aw
-    //   Machinery — general w:* methods (prandle, requesty_serial, etc.)
+    //   Hovercraft — the req/hover hooks: reqyoncile/e_reqyonciliation, reqonce,
+    //               Runstepped, req_diag (the req engine proper is on StuffAware, in Stuff)
+    //   Machinery — the test-suite aggregator (all AI): mounts the test-case games
+    //               (MachReqy, Mundane, Interesting, Diffmatication, the Understand*
+    //               suite, MachPeerily…) and hosts its own (LangTiles, Lake*, Leaf*,
+    //               Stuff*)
     //   Story     — w:Story, snap/toc codec, story_drive, story_save, Run wiring
     //   Cyto      — w:Cyto, cyto_scan, grawave, e_story_cyto_step handshake
     //   Text      — pure text/diff functions: depth_of, char_diff_ops,
     //               compute_diff, squish_context, positional_diff, enDif, deDif
+    //   (Matstyle, Interest, Auto, Lang and Lies also mount — see the template, which
+    //               carries its own inline notes and is the authority on order.)
     //
     //   All ghosts call M.eatfunc(hash) in onMount.  eatfunc merges hash into
     //   H.ghosts and calls H.ghostsHaunt() which Object.assigns onto every H
     //   instance reachable from root.  Later ghosts can therefore call methods
     //   deposited by earlier ones (e.g. Story calls this._resolve_runstepped
-    //   which Hovercraft deposited).
-    //
-    //   Textures is last because it has no dependencies on the other ghosts
-    //   and the other ghosts have no dependency on it — order doesn't matter
-    //   for Textures, but last keeps the list logically grouped: infra (Agency,
-    //   Machinery), features (Story, Cyto), utilities (Textures).
+    //   which Hovercraft deposited) — so deposit order (the mount order below) is the
+    //   call order.  Mostly free to reorder, except Lang must stay put: moving it up
+    //   triggers the elvis-$this weirdness (see the inline note at its mount below).
 
     import Agency    from "$lib/ghost/Agency.svelte"
     import Machinery from "$lib/O/test/Machinery.svelte"
@@ -34,6 +39,7 @@
     import Lang from "$lib/O/Lang.svelte";
     import Hovercraft from "./Hovercraft.svelte";
     import Lies from "./Lies.svelte";
+    import Interest from "./Interest.svelte";
 
     let { H } = $props()   // H = H:Mundo (the real House)
 
@@ -55,6 +61,8 @@
 <Story     {M} />
 <Cyto      {M} />
 <Matstyle  {M} />
+<!-- %Interest cluster + Lang↔Lies channel reducers (pure logic; no elvis handlers) -->
+<Interest  {M} />
 <!-- pure text/diff utilities — depth_of, compute_diff, squish_context, enDif, deDif, etc. -->
 <Text  {M} />
 <!-- what are we working on, and memories drifting away -->

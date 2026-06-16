@@ -21,18 +21,60 @@ Good naming earns its keep at runtime:
 reqy() is fully sublated; what is left of the migration is small and stays in this
  doc because it is Hovercraft's, not the domain's. The leftover **Agency** pieces in
  particular read like app logic but are really hovering-hook plumbing: Pirating,
- Pirate, and Agency's own copy still ride the older **requesty_serial** queue engine,
- and the Agency-migration deletes (agency_think, Aw_think, procure_ways, the setTimeout
- i_elvis routers) are a hand-rolled out-of-time re-entry layer — both superseded by
- %req + reqyoncile. Folding them in is the last of the req consolidation; details are
- under "Remaining — migrate requesty_serial, then the Agency deletes" at the end.
- (TODO 7 subscriptions is likewise Hovercraft's own — it stays too.)
+ Pirate, and Agency itself still ride the older **requesty_serial** queue engine (its
+ duplicate copy in Hovercraft is now dropped — lib/O and Radios are migrated — leaving
+ Agency.svelte's original as the only one, serving these pilferers), and the
+ Agency-migration deletes (agency_think, Aw_think, procure_ways, the setTimeout i_elvis
+ routers) are a hand-rolled out-of-time re-entry layer — both superseded by %req +
+ reqyoncile. Folding them in is the last of the req consolidation; details are under
+ "Remaining — migrate requesty_serial, then the Agency deletes" at the end. (The one
+ future direction, §7 subscriptions, sits just above in Future Directions — Hovercraft's
+ own too, but ahead of the code rather than behind it.)
 
 Two leftovers that are NOT Hovercraft's moved out, so this doc can settle to its
  permanent §1–9 plus this thinning tail: the compiler-facing data language (the
  `req:X {…}` block → doai lowering) went to **LangCompiler_TODO.md** now that doai has
  a runtime, and the Pmirror UI-non-resolution deferral lives in
  **Lang_session4_handover.md** (Open threads).
+
+
+## Future Directions
+
+One designed-but-unbuilt direction, kept up here (and kept numbered §7) because it is
+ ahead of the code rather than an account of it — promoted out of the permanent §1–9.
+
+
+## 7. Subscriptions — the push dual of pull
+
+i_elvis_req is pull: a req with a reply, one shot, it finishes.
+ The push dual is a standing subscription:
+  register interest in a C's changes, get a wake.
+
+Three of these already exist, differing only in target-spec and wake-shape:
+
+ - Stuffing      — targets a %C by path, wakes a handler,
+                    version-diff sampled after each cycle plus a heartbeat.
+                    This is the scanner that maps the backend a few times a second;
+                     it is already the subscribe half, in service of the UI.
+ - watched       — targets by channel name,
+                    replicates Atime -> UItime on %version bump, debounced.
+ - %Good/%subscribe,Aw,wake
+                 — targets by address, wakes via elvis when content lands.
+
+They are three spellings of one primitive.
+ Unify them as one %subscribe,target,on,wake:
+  target is C-ref | path | address,
+   on is the change predicate (version | matrix | content-landed),
+    wake is handler | elvis | channel-replicate.
+The settle pass (finito_fn) that already detects changed|finished nodes
+ is where subscribers' wakes fire —
+  a tick-bounded cascade, not a storm,
+   with req/%ttlilt as the backpressure a slow consumer arms.
+
+So pull and push are the same delivery once reqs are elvisable:
+ pull is a req with a reply, push is a subscribe with a wake,
+  both are e's landing at a node with a c.up chain,
+   both mutate via %mix, both captured by one walk and settled by one finito_fn.
 
 
 ## 1. Stable and transient
@@ -312,39 +354,6 @@ First-sight does double duty on the Se.
      so both stay independent of whether a req is ever given one.
 
 
-## 7. Subscriptions — the push dual of pull
-
-i_elvis_req is pull: a req with a reply, one shot, it finishes.
- The push dual is a standing subscription:
-  register interest in a C's changes, get a wake.
-
-Three of these already exist, differing only in target-spec and wake-shape:
-
- - Stuffing      — targets a %C by path, wakes a handler,
-                    version-diff sampled after each cycle plus a heartbeat.
-                    This is the scanner that maps the backend a few times a second;
-                     it is already the subscribe half, in service of the UI.
- - watched       — targets by channel name,
-                    replicates Atime -> UItime on %version bump, debounced.
- - %Good/%subscribe,Aw,wake
-                 — targets by address, wakes via elvis when content lands.
-
-They are three spellings of one primitive.
- Unify them as one %subscribe,target,on,wake:
-  target is C-ref | path | address,
-   on is the change predicate (version | matrix | content-landed),
-    wake is handler | elvis | channel-replicate.
-The settle pass (finito_fn) that already detects changed|finished nodes
- is where subscribers' wakes fire —
-  a tick-bounded cascade, not a storm,
-   with req/%ttlilt as the backpressure a slow consumer arms.
-
-So pull and push are the same delivery once reqs are elvisable:
- pull is a req with a reply, push is a subscribe with a wake,
-  both are e's landing at a node with a c.up chain,
-   both mutate via %mix, both captured by one walk and settled by one finito_fn.
-
-
 ## 8. Where code lives — the spine, the hover, the domain
 
 There are three homes and one test that sorts every system.
@@ -584,14 +593,19 @@ reqy()/reqcon/handler_of_last_resort are DELETED (the reqy_spec doc + the reqy(w
     interoperate with the same Wormhole server.  This DOES churn snaps (requesty_wh →
     wh/req in toc/NNN.snaps) — regenerate via a Story Accept, do NOT hand-edit.
     Radios also migrated to a plain off-pump queue (its two load queues never pumped via
-    do() — pure iterate-and-retire, payload C moved to .c).  STILL on requesty_serial
-    (ghost/mostly, deferred): Pirating, Pirate, and Agency's own copy.  Independent of
-    reqy() — the antiquated mark no longer gates.
+    do() — pure iterate-and-retire, payload C moved to .c).  With lib/O + Radios done,
+    the duplicate requesty_serial() copy in Hovercraft.svelte (the "shown to AI" mirror)
+    is DROPPED; Agency.svelte's original remains the only definition, still serving the
+    ghost/mostly pilferers.  STILL on requesty_serial (deferred — the "Agency-pilfering"
+    TODO): Pirating + Pirate (this|M.requesty_serial), and Agency's own internal use.
+    Independent of reqy() — the antiquated mark no longer gates (only the dropped
+    Hovercraft copy stamped req.c.antiquated; Agency's never did, harmlessly, since reqdo
+    only scans %req children and a requesty_$t req is not one).
 
  skip: shelved/LiesWorkup.svelte (inactive; still references the deleted reqy() — make
     it compile or stays shelved).
  then: the Agency-migration deletes from the old plan (agency_think, Aw_think,
-  procure_ways, the setTimeout i_elvis routers) — fold in with requesty_serial.
+  procure_ways, the setTimeout i_elvis routers) — fold in with the Agency-pilfering TODO.
 
 ### Migration recipe
 
@@ -634,11 +648,3 @@ reqy()/reqcon/handler_of_last_resort are DELETED (the reqy_spec doc + the reqy(w
     decide deliberately whether one earns a scan-id or is summarised.
  - deferred (not a req-migration blocker): the Pmirror UI-non-resolution item moved to
     Lang_session4_handover.md (Open threads, "Pmirror non-resolution is silent").
-
-### Not started
-
- - TODO 7 subscriptions (§7): unify Stuffing | watched | %Good into
-    %subscribe,target,on,wake, firing wakes from finito_fn.  Independent of the rest.
-    A Hovercraft/Housing piece — stays here.
- - the data language (compile w roai req:X {…body…} → doai) moved to LangCompiler_TODO.md
-    now that doai has a runtime — it is compiler work, unblocked, its own piece.

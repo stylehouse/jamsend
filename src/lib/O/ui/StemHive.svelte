@@ -40,6 +40,7 @@
         items,
         pointed = new Set<string>(),
         styles  = new Map<string, string>(),
+        tips    = new Map<string, string>(),
         onpick,
         title = '',
     }: {
@@ -49,6 +50,10 @@
         // button so the hive carries the same trail glow as the strip.  Kept apart
         // from items so a heat tick never re-clusters.
         styles?:  Map<string, string>
+        // id → hover-tooltip text (native title, so \n splits lines).  Falls back
+        // to the label when an id has no tip.  Like styles, kept out of items so a
+        // tip change never re-clusters.
+        tips?:    Map<string, string>
         onpick?:  (id: string) => void
         title?:   string
     } = $props()
@@ -244,7 +249,7 @@
             class:hive-pointed={pointed.has(m.id)}
             data-mid={m.id}
             style={styles.get(m.id) ?? ''}
-            title={m.label}
+            title={tips.get(m.id) ?? m.label}
             onclick={() => pick(m.id)}>{text}</button>
 {/snippet}
 
@@ -256,7 +261,7 @@
                 class:hive-pointed={pointed.has(bm.id)}
                 data-mid={bm.id}
                 style={styles.get(bm.id) ?? ''}
-                title={bm.label}
+                title={tips.get(bm.id) ?? bm.label}
                 onclick={() => pick(bm.id)}>{c.anchor}</button>
     {:else}
         <span class="hive-anchor">{#each parts(c.anchor, '') as p}{#if p.linkId}<span

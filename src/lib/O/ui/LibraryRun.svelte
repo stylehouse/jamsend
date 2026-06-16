@@ -1,24 +1,32 @@
 <script lang="ts">
-    // LibraryRun.svelte — reactive Library UI.
+    // LibraryRun.svelte — reactive Library UI: a StemHive of the books.
     //
-    // Mounted by Otro via H/{watched:UIs}/{UI:'Library'}.
-    // Receives H (the root Mundo house).
+    // Mounted by Otro via H/{watched:UIs}/{UI:'Library'}.  Receives H (root Mundo).
     //
-    // Shows each %Book under Li = H.ave/Library as a bubble.
-    // Bubble size = relative rank by a recency-weighted beliefs-mutex time,
-    //   folding each %sample under book/TimeSpool/TimeTotal,'beliefs'
-    //   newest-first with a geometric weight,
-    //   so one very-recent run outweighs many semi-recent ones.
-    // Sizes stay relative to each other, so the pile reads the same
-    //   regardless of absolute timings, across sessions.
+    // Each %Book under Li = H.ave/Library is one hive button, so the family of
+    //   names reads at a glance — LeafJuggle|LeafFarm cluster on their shared stem
+    //   (StemHive does the clustering; it knows nothing of books).
+    // Two heat channels ride StemHive's per-item `styles` map, so StemHive needs
+    //   no change — each book's id maps to one inline-style string carrying both:
+    //   glow  — DocMinimap's amber→pink halo, brightness by how recently the book
+    //           was lit (last_run_ms, exponential decay over GLOW_HALFLIFE_S).  The
+    //           active book's last_run_ms is restamped every Auto tick, so it stays
+    //           brightest; the rest fade.  Hue warms toward pink as ok_pct falls,
+    //           so a breaking book glows hot.
+    //   size  — font-size by relative rank on book_rank_score (the recency-weighted
+    //           beliefs-mutex time), so a book that's been heavy across recent runs
+    //           reads bigger.  Same score the old bubble-pile sized by.
+    // Clicking a book activates it (e:activateBook).  The active book gets a detail
+    //   strip below the hive — age, ok%, timing, the editable peel field, remove.
     //
-    // Mung errors are shown as red banners at the top — fatal, user must fix code.
-    // < more reactive UI - last run etc values don't update
-    // < mode where it's a test runner listening for pushes
+    // Mung errors show as a red banner — fatal, user must fix code.
+    // < a now_s tick (1s) re-derives the glow so it fades live between Auto bumps.
 
     import type { House }   from "$lib/O/Housing.svelte"
     import type { TheC }    from "$lib/data/Stuff.svelte"
     import { depeel, peel } from "$lib/Y.svelte"
+    import StemHive         from "./StemHive.svelte"
+    import { onDestroy }    from "svelte"
 
     let { H }: { H: House } = $props()
 
@@ -31,7 +39,13 @@
     // activeBook lives at the ave level (w.c.ave.roai({activeBook:1},...)),
     // not inside Li — so query H.ave directly.
     let activeBook  = $derived(H.ave.ob({activeBook:1})[0]?.sc.Book ?? null)
-    let isActive = (book) => book.sc.Book == activeBook
+    let active_book = $derived((books as TheC[]).find(b => b.sc.Book === activeBook))
+
+    // wall-clock seconds, ticked so the recency glow + age fade live between the
+    //   Library's own version bumps (which only fire on a pct/avg change).
+    let now_s = $state(Date.now() / 1000)
+    const tick = setInterval(() => { now_s = Date.now() / 1000 }, 1000)
+    onDestroy(() => clearInterval(tick))
 
     // ── add book ──────────────────────────────────────────────────────────
     let add_book_text = $state('')
@@ -100,21 +114,15 @@
         H.i_elvisto('Auto/Auto', 'resetStory', {})
     }
 
-    // ── recency-weighted rank sizing ──────────────────────────────────────
-    // The pile sorts by book_rank_score, descending,
-    //   then maps each book's rank to a tier,
-    //   so all four sizes stay filled regardless of absolute timings.
-    // The score reads every %sample under book/TimeSpool/TimeTotal,'beliefs',
-    //   spooled each run by auto_sync_story_stats -> spool_time_sample,
-    //   and folds them newest-first with a geometric recency weight:
+    // ── recency-weighted rank score ───────────────────────────────────────
+    // Reads every %sample under book/TimeSpool/TimeTotal,'beliefs', spooled each
+    //   run by auto_sync_story_stats -> spool_time_sample, and folds them
+    //   newest-first with a geometric recency weight:
     //     weight_i = DECAY^i,   i:0 the newest
     //     score    = sum(weight_i * sample_i) over sum(weight_i)
-    // DECAY below 0.5 makes the newest single sample outweigh all the older
-    //   ones combined, so one very-recent activation ranks a book above
-    //   another book carrying many semi-recent ones.
-    // Books with no %sample score -1, sit at the end, and share 'sm'.
-    const TIERS = ['xl', 'lg', 'md', 'sm'] as const
-    type Tier = typeof TIERS[number]
+    // DECAY below 0.5 makes the newest single sample outweigh all the older ones
+    //   combined, so one very-recent activation ranks a book above another book
+    //   carrying many semi-recent ones.  Books with no %sample score -1.
     const DECAY = 0.45
 
     function book_tt(book: TheC): TheC | undefined {
@@ -156,26 +164,96 @@
         return wsum ? vsum / wsum : -1
     }
 
-    let ranked_books = $derived.by(() => {
-        const bs = [...books] as TheC[]
-        bs.sort((a, b) => book_rank_score(b) - book_rank_score(a))
-        const n = bs.length
-        return bs.map((book, i) => {
-            // quarter-based: top 25% → xl, next → lg, next → md, rest → sm
-            const tier_i = n <= 1 ? 0 : Math.min(3, Math.floor((i / n) * 4))
-            return { book, tier: TIERS[tier_i] as Tier }
-        })
+    // ── the two heat channels, both ridden into StemHive's `styles` map ───
+    // glow brightness 0..1 — how recently this book was lit, decayed from
+    //   last_run_ms over GLOW_HALFLIFE_S.  The active book's last_run_ms is
+    //   restamped each Auto tick, so it sits at ~1 while it runs.
+    const GLOW_HALFLIFE_S = 60
+    function book_bright(book: TheC): number {
+        const t = book.sc.last_run_ms as number | null | undefined
+        if (!t) return 0
+        const age = Math.max(0, now_s - t)
+        return Math.pow(0.5, age / GLOW_HALFLIFE_S)
+    }
+
+    // warmth 0..1 — amber (passing) → pink (breaking), matching the minimap's
+    //   warm hue.  ok_pct 1 → amber, 0 → pink; unknown → amber.
+    function book_warm(book: TheC): number {
+        const p = book.sc.ok_pct as number | null | undefined
+        if (p == null) return 0
+        return Math.min(1, Math.max(0, 1 - p))
+    }
+
+    // font-size by relative rank — the busiest recent book reads biggest, books
+    //   with no samples sit at the floor.
+    const SIZE_MIN = 10, SIZE_MAX = 22
+    let rank_max = $derived.by(() => {
+        let m = 0
+        for (const b of books as TheC[]) m = Math.max(m, book_rank_score(b))
+        return m
+    })
+    function book_size(book: TheC): number {
+        const s = book_rank_score(book)
+        if (s <= 0 || rank_max <= 0) return SIZE_MIN
+        return SIZE_MIN + (s / rank_max) * (SIZE_MAX - SIZE_MIN)
+    }
+
+    // one inline-style string per book: font-size (importance) + the minimap's
+    //   wide centred halo (recency·warmth).  Below 0.02 bright we skip the halo
+    //   so a cold book is just sized, no glow.
+    function book_style(book: TheC): string {
+        const fs = `font-size:${book_size(book).toFixed(1)}px;`
+        const b  = book_bright(book)
+        if (b <= 0.02) return fs
+        const w  = book_warm(book)
+        const gg = Math.round(190 - 70 * w)
+        const bb = Math.round(80 + 120 * w)
+        const blur   = (b * 10 + 3).toFixed(1)
+        const spread = (b * 2 + 1.5).toFixed(1)
+        return `${fs}box-shadow:0 0 ${blur}px ${spread}px rgba(255,${gg},${bb},${(b * 0.85).toFixed(2)});border-radius:4px;`
+    }
+
+    let hive_items = $derived((books as TheC[]).map(b => ({
+        id: b.sc.Book as string, label: b.sc.Book as string,
+    })))
+    let hive_pointed = $derived(new Set(activeBook ? [activeBook] : []))
+    let hive_styles = $derived.by(() => {
+        const m = new Map<string, string>()
+        for (const b of books as TheC[]) m.set(b.sc.Book as string, book_style(b))
+        return m
+    })
+    // everything-about-this-book on hover (native title; \n splits lines).
+    let hive_tips = $derived.by(() => {
+        const m = new Map<string, string>()
+        for (const b of books as TheC[]) m.set(b.sc.Book as string, book_tip(b))
+        return m
     })
 
+    function book_tip(book: TheC): string {
+        const lines = [book.sc.Book as string]
+        if (book.sc.Book === activeBook) lines[0] += '  ▶ active'
+        lines.push(`lit ${fmt_age(book)}`)
+        if (book.sc.ok_pct != null)
+            lines.push(`ok ${fmt_pct(book.sc.ok_pct)}${book.sc.done ? ` · ${book.sc.done} steps` : ''}`)
+        const n = book_sample_count(book)
+        if (n) lines.push(`⏱ ${fmt_avg(book)} · ${n} sample${n > 1 ? 's' : ''}`)
+        const extra = extra_sc(book)
+        if (Object.keys(extra).length) lines.push(depeel(extra))
+        return lines.join('\n')
+    }
+    function hive_pick(id: string) {
+        const book = (books as TheC[]).find(b => b.sc.Book === id)
+        if (book) activate(book)
+    }
+
     // ── human-readable age ────────────────────────────────────────────────
-    const NOW_S = Date.now() / 1000
     const HR    = 3600
     const DAY   = HR * 24
 
     function fmt_age(book: TheC): string {
         const t = book.sc.last_run_ms as number | null | undefined
         if (!t) return 'never'
-        const age = NOW_S - t
+        const age = now_s - t
         if (age < 60)       return 'just now'
         if (age < HR)       return `${Math.floor(age / 60)}m ago`
         if (age < DAY)      return `${Math.floor(age / HR)}h ago`
@@ -226,25 +304,24 @@
     {#if !Li}
         <div class="lr-empty">loading…</div>
     {:else}
-        <!-- flex-wrap pile: books size themselves by relative rank -->
-        <div class="lr-pile">
-            {#each ranked_books as { book, tier } (book.sc.Book)}
-                {@const active = isActive(book)}
-                <div
-                    class="lr-book tier-{tier}"
-                    class:lr-active={active}
-                    title={book.sc.Book}
-                >
-                    <div class="lr-book-top">
-                        <span class="lr-name">{book.sc.Book}</span>
-                        <button
-                            class="lr-remove"
-                            onclick={() => do_remove_book(book)}
-                            title="remove">×</button>
-                    </div>
+        <!-- the hive: books clustered by name, glow=recency, size=importance -->
+        <div class="lr-hive">
+            <StemHive
+                items={hive_items}
+                pointed={hive_pointed}
+                styles={hive_styles}
+                tips={hive_tips}
+                onpick={hive_pick}
+            />
+        </div>
 
-                    <!-- age + ok% always shown; timing only if we have samples -->
-                    <div class="lr-stats">
+        <!-- detail strip for whichever book is active (clicking a name activates) -->
+        {#if active_book}
+            {@const book = active_book as TheC}
+            <div class="lr-detail">
+                <div class="lr-detail-top">
+                    <span class="lr-name">{book.sc.Book}</span>
+                    <span class="lr-stats">
                         <span class="lr-age">{fmt_age(book)}</span>
                         {#if book.sc.ok_pct != null}
                             <span class="lr-pct">{fmt_pct(book.sc.ok_pct)}</span>
@@ -254,34 +331,29 @@
                                 ⏱{fmt_avg(book)}
                             </span>
                         {/if}
-                    </div>
-
-                    <!-- extra sc — click to edit, hidden when empty -->
-                    {#if Object.keys(extra_sc(book)).length || editing[book.sc.Book] != null}
-                        <div class="lr-extra">
-                            {#if editing[book.sc.Book] != null}
-                                <input
-                                    class="lr-peel-input"
-                                    type="text"
-                                    bind:value={editing[book.sc.Book]}
-                                    onblur={() => commit_edit(book)}
-                                    onkeydown={e => { if (e.key === 'Enter') commit_edit(book) }}
-                                />
-                            {:else}
-                                <span class="lr-peel-view" onclick={() => start_edit(book)}>
-                                    {depeel(extra_sc(book))}
-                                </span>
-                            {/if}
-                        </div>
-                    {/if}
-
-                    <button
-                        class="lr-activate {active ? 'is-active' : 'is-idle'}"
-                        onclick={() => activate(book)}
-                    >{active ? '▶ active' : 'activate'}</button>
+                    </span>
+                    <button class="lr-remove" onclick={() => do_remove_book(book)} title="remove">×</button>
                 </div>
-            {/each}
-        </div>
+
+                {#if Object.keys(extra_sc(book)).length || editing[book.sc.Book] != null}
+                    <div class="lr-extra">
+                        {#if editing[book.sc.Book] != null}
+                            <input
+                                class="lr-peel-input"
+                                type="text"
+                                bind:value={editing[book.sc.Book]}
+                                onblur={() => commit_edit(book)}
+                                onkeydown={e => { if (e.key === 'Enter') commit_edit(book) }}
+                            />
+                        {:else}
+                            <span class="lr-peel-view" onclick={() => start_edit(book)}>
+                                {depeel(extra_sc(book))}
+                            </span>
+                        {/if}
+                    </div>
+                {/if}
+            </div>
+        {/if}
     {/if}
 </div>
 
@@ -315,49 +387,27 @@
     }
     .lr-mung-msg { font-size: 0.75rem; margin-top: 0.15rem; }
 
-    /* ── bubble pile ─────────────────────────────────────────────────────── */
-    /* flex-wrap lets the bigger cards naturally crowd out smaller ones */
-    .lr-pile {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.4rem;
-        align-items: flex-start;
-    }
+    /* ── the hive ────────────────────────────────────────────────────────── */
+    /* breathing room around the buttons so the glow halos aren't clipped */
+    .lr-hive { padding: 4px 2px; }
 
-    .lr-book {
+    /* ── active-book detail strip ────────────────────────────────────────── */
+    .lr-detail {
+        margin-top: 0.5rem;
+        padding-top: 0.4rem;
+        border-top: 1px solid #333;
         display: flex;
         flex-direction: column;
         gap: 0.2rem;
-        background: #1a1a1a;
-        border: 1px solid #333;
-        border-radius: 5px;
-        padding: 0.35rem 0.45rem;
-        transition: border-color 0.15s, background 0.15s;
     }
-    .lr-book:hover { border-color: #555; background: #1f1f1f; }
-    .lr-book.lr-active {
-        border-color: #3a7a3a;
-        background: #111e11;
-    }
-
-    /* ── relative rank tiers ─────────────────────────────────────────────── */
-    /* font-size carries the size; min-width keeps the card readable at each tier */
-    .tier-xl { font-size: 1.35rem; min-width: 170px; }
-    .tier-lg { font-size: 1.00rem; min-width: 130px; }
-    .tier-md { font-size: 0.78rem; min-width: 96px;  }
-    .tier-sm { font-size: 0.65rem; min-width: 72px;  }
-
-    /* ── internals ───────────────────────────────────────────────────────── */
-    .lr-book-top {
+    .lr-detail-top {
         display: flex;
-        align-items: flex-start;
-        gap: 0.25rem;
+        align-items: baseline;
+        gap: 0.4rem;
     }
     .lr-name {
         font-weight: 600;
         color: #ddd;
-        flex: 1;
-        word-break: break-word;
         line-height: 1.2;
     }
     .lr-remove {
@@ -368,7 +418,7 @@
         font-size: 0.85em;
         padding: 0;
         line-height: 1;
-        flex-shrink: 0;
+        margin-left: auto;
     }
     .lr-remove:hover { color: #c88; }
 
@@ -402,21 +452,6 @@
         width: 100%;
         box-sizing: border-box;
     }
-
-    .lr-activate {
-        margin-top: 0.25rem;
-        font-size: 0.72em;
-        padding: 0.12rem 0.35rem;
-        border-radius: 3px;
-        cursor: pointer;
-        border: 1px solid #555;
-        background: #222;
-        color: #aaa;
-        align-self: flex-start;
-    }
-    .lr-activate.is-active { background: #1a3a1a; border-color: #4a8; color: #8d8; }
-    .lr-activate.is-idle   { background: #222;    border-color: #555; color: #aaa; }
-    .lr-activate:hover     { filter: brightness(1.3); }
 
     /* ── small shared buttons (header) ───────────────────────────────────── */
     .lr-btn {
