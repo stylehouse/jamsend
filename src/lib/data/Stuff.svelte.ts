@@ -514,7 +514,20 @@ abstract class StuffAware extends StuffIO {
             //  (a created req drops it below) so a later moai({…,maz:1}) re-finds the
             //   same req instead of minting a duplicate that carries no maz.
             if (s.maz === 1) delete s.maz
-            let req = this.o({ req: 1, ...exactly(s) })[0] as TheC | undefined
+            // %req:1 is the serialise-me sentinel — presence-only, never identity.
+            //  exactly() would stringify it to "1" and so miss the assigned serial
+            //   (%req:2…), minting a fresh duplicate each pass. Re-find on the req's
+            //    own identity keys with req left a numeric wildcard; a named req still
+            //     matches its name exactly, and a bare anonymous req (no other keys)
+            //      has no identity to re-find on, so it always mints fresh.
+            const ident = exactly(s)
+            let req: TheC | undefined
+            if (s.req === 1) {
+                delete ident.req
+                if (Object.keys(ident).length) req = this.o({ req: 1, ...ident })[0] as TheC | undefined
+            } else {
+                req = this.o(ident)[0] as TheC | undefined
+            }
             if (req) { this.maybe_mutate_sc(req, c); return req }
             const mix: TheUniversal = { req: 1, ...s }
             // an anonymous %req:1 wants serial numbering — the serial IS the %req

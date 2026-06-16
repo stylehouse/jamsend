@@ -156,21 +156,18 @@
     //      its ref (e%target), so an async reply's state and its work land together.
     //   - reqonce gates a one-time block; i_req_ttlilt advises Story how long a req
     //      still wants before its picture is coherent.
-    //   - req_host hangs a named queue of reqs off a host.
     //
     // To use one: name it (resolved by H.req_$name) or hand it an inline closure via
     //  doai; await host.moai|doai (req-create is async); pump with host.do(), or just
     //  let reqdo_sweep supervise.  This is the only place to spawn a %req — don't put
     //  that property anywhere else, and beware that an anonymous {req:1} serialises.
-
-    // a named sub-host for a queue of %req work, kept off the worker's own req pool
-    //  so reqdo_sweep leaves it alone — the owner drives it with q.do(fn).  c.up is
-    //  wired so do()'s handler-climb still reaches the House from inside the queue.
-    req_host(w: TheC, name: string): TheC {
-        const q = w.oai({ [name]: 1 }) as TheC
-        q.c.up ||= w
-        return q
-    },
+    //
+    // An OFF-PUMP queue (owner-driven IO: wh, rw_queue, fs_op, Radios' load queues) is
+    //  just `w.oai({name:1})` — a container with a non-req mainkey, so its %req items
+    //  sit outside w's supervised pool and reqdo_sweep never touches them; the owner
+    //  drives with q.do(fn) or iterates q.o({req:1}) and retires by hand.  No c.up wire
+    //  is needed while nothing calls a fn-less q.do() or reqyoncile's a queue item
+    //  (handler-climb is the only consumer of it).
 
     // re-entry point for a req — Atime or async, always use this.
     //   The poster just names the req; i_elvisto targets it (e%target) and finds

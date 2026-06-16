@@ -7,8 +7,9 @@ Library
         sample=0.127,at=1781080308
   Book:LeafFarm,ok_pct,last_run_ms=1781607919.249,done=4,last_pct_change=1778378075.558
     TimeSpool
-      TimeTotal:beliefs,avg=0.217
+      TimeTotal:beliefs,avg=0.146
         sample=0.217,at=1781080437
+        sample=0.075,at=1781612745
   Book:StuffFlipping,ok_pct,last_run_ms=1781607913.684,done,last_pct_change=1779622702.753
     TimeSpool
       TimeTotal:beliefs,avg=0.081
@@ -83,11 +84,9 @@ Library
         sample=0.013,at=1781573507
         sample=0.015,at=1781576007
         sample=0.023,at=1781578899
-  Book:PortPlanet,ok_pct=0.17,last_pct_change=1779622894.947,done=6,last_run_ms=1781609216.035,active
+  Book:PortPlanet,ok_pct,last_pct_change=1779622894.947,done=6,last_run_ms=1781610173.627,active
     TimeSpool
-      TimeTotal:beliefs,avg=0.062
-        sample=0.063,at=1780417642
-        sample=0.063,at=1780417642
+      TimeTotal:beliefs,avg=0.071
         sample=0.063,at=1780417642
         sample=0.051,at=1781080120
         sample=0.053,at=1781572152
@@ -96,11 +95,11 @@ Library
         sample=0.062,at=1781608034
         sample=0.094,at=1781608188
         sample=0.044,at=1781608200
-  Book:PortPlant,ok_pct,last_pct_change=1779532868.769,done=9,last_run_ms=1781608081.659
+        sample=0.101,at=1781609408
+        sample=0.118,at=1781610173
+  Book:PortPlant,ok_pct,last_pct_change=1779532868.769,done=9,last_run_ms=1781612766.258
     TimeSpool
-      TimeTotal:beliefs,avg=0.055
-        sample=0.046,at=1781563875
-        sample=0.04,at=1781568847
+      TimeTotal:beliefs,avg=0.062
         sample=0.028,at=1781568955
         sample=0.038,at=1781569532
         sample=0.04,at=1781571959
@@ -109,6 +108,8 @@ Library
         sample=0.057,at=1781587225
         sample=0.127,at=1781608044
         sample=0.069,at=1781608082
+        sample=0.088,at=1781610184
+        sample=0.069,at=1781612768
   Book:MundaneStation,ok_pct=0,last_pct_change=1779845683.836,done=5,last_run_ms=1779949732.752
   Book:MundaneStaying,ok_pct=0.67,last_pct_change=1779949738.82,done=3,last_run_ms=1781608053.848
     TimeSpool
@@ -149,10 +150,9 @@ Library
         sample=0.013,at=1780138365
         sample=0.013,at=1780138366
         sample=0.022,at=1781587296
-  Book:Understandium,ok_pct,done=9,last_run_ms=1781587251.983
+  Book:Understandium,ok_pct,done=9,last_run_ms=1781610192.62
     TimeSpool
-      TimeTotal:beliefs,avg=0.097
-        sample=0.099,at=1780529774
+      TimeTotal:beliefs,avg=0.098
         sample=0.099,at=1780529777
         sample=0.099,at=1780529781
         sample=0.099,at=1780529785
@@ -162,10 +162,10 @@ Library
         sample=0.099,at=1780529799
         sample=0.097,at=1781080065
         sample=0.079,at=1781587252
-  Book:Understandication,ok_pct,done=9,last_run_ms=1781587232.798
+        sample=0.107,at=1781610194
+  Book:Understandication,ok_pct,done=9,last_run_ms=1781612759.978
     TimeSpool
-      TimeTotal:beliefs,avg=0.129
-        sample=0.131,at=1780528474
+      TimeTotal:beliefs,avg=0.132
         sample=0.131,at=1780528474
         sample=0.131,at=1780528474
         sample=0.131,at=1780528475
@@ -175,10 +175,10 @@ Library
         sample=0.131,at=1780528492
         sample=0.123,at=1781080009
         sample=0.12,at=1781587234
-  Book:Snaptesting,ok_pct=0,done,last_run_ms=1781080165.271
+        sample=0.164,at=1781612760
+  Book:Snaptesting,ok_pct,done,last_run_ms=1781610229.495
     TimeSpool
-      TimeTotal:beliefs,avg=0.006
-        sample=0.007,at=1780629004
+      TimeTotal:beliefs,avg=0.007
         sample=0.007,at=1780629007
         sample=0.007,at=1780629007
         sample=0.005,at=1780629009
@@ -188,6 +188,7 @@ Library
         sample=0.005,at=1780629015
         sample=0.005,at=1780629015
         sample=0.009,at=1781080167
+        sample=0.012,at=1781610231
   Book:Snapmigrating,ok_pct=0,done,last_run_ms=1780805881.904
     TimeSpool
       TimeTotal:beliefs,avg=0.006
@@ -227,12 +228,9 @@ Library
         sample=1.469,at=1781602789
         sample=1.497,at=1781603768
         sample=1.181,at=1781609211
-  Book:Interesting,ok_pct,done=7,last_run_ms=1781609171.912
+  Book:Interesting,ok_pct,done=7,last_run_ms=1781612738.528
     TimeSpool
-      TimeTotal:beliefs,avg=0.161
-        sample=0.277,at=1781606016
-        sample=0.179,at=1781606162
-        sample=0.103,at=1781607393
+      TimeTotal:beliefs,avg=0.185
         sample=0.191,at=1781607892
         sample=0.126,at=1781608666
         sample=0.319,at=1781608747
@@ -240,3 +238,6 @@ Library
         sample=0.073,at=1781608770
         sample=0.123,at=1781608994
         sample=0.159,at=1781609171
+        sample=0.217,at=1781609597
+        sample=0.254,at=1781609608
+        sample=0.329,at=1781612738

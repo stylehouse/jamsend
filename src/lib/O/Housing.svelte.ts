@@ -1709,9 +1709,10 @@ export class House extends StorableHousing {
 
 
         // v1. all operations restricted to ./wormhole/
-        //   fs_op is a sub-host queue: one %req wrapper per incoming elvis req
+        //   fs_op is an off-pump queue (its non-req mainkey keeps the wrappers out
+        //   of w's supervised %req pool): one %req wrapper per incoming elvis req
         //   (the elvis req + its finish live in .c, not sc).  fs.do(fn) pumps them.
-        const fs = H.req_host(w, 'fs_op')
+        const fs = w.oai({ fs_op: 1 })
 
         for (const { req, finish } of H.o_elvis_req(w, 'wh_op')) {
             if (!(fs.o({ req: 1 }) as TheC[]).some(fr => fr.c.for === req)) {
@@ -1769,7 +1770,8 @@ export class House extends StorableHousing {
 //#endregion
 //#region v2
 
-        const rw = H.req_host(w, 'rw_queue')
+        // off-pump queue: one %req wrapper per incoming elvis req; rw.do(fn) pumps them
+        const rw = w.oai({ rw_queue: 1 })
 
         for (const { req, finish } of H.o_elvis_req(w, 'rw_op')) {
             if (!(rw.o({ req: 1 }) as TheC[]).some(rr => rr.c.for === req)) {

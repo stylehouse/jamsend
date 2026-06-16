@@ -1207,11 +1207,10 @@
         
         // load some
 
-        let reqy = await this.requesty_serial(w,'load_random_records')
-        // < nothing can delete these?
-        // < it doesn't like elvising this in
-        // await w.r({requesty_load_random_records:1,finished:1},{})
-        let having = had.length + reqy.pending
+        // off-pump queue: serial %req items, iterated and retired by hand below
+        //  (no do() pump, no do_fn, no handler)
+        let q = w.oai({load_random_records:1})
+        let having = had.length + q.o({req:1}).length
         if (having < keep_things * 0.8) {
             let to_load = 5 // not to much work per A
             for await (const re of this.load_random_records(A,stockD, to_load,had)) {
@@ -1220,17 +1219,19 @@
                     console.log(`load_random_records() DUP ${re.sc.enid} (dropped)`)
                     continue
                 }
-                // put it through checking that the source still exists
-                await reqy.i({re})
+                // put it through checking that the source still exists.  re is a C,
+                //  so it rides in .c (an object in .sc is fatal at encode); the bare
+                //  {req:1} always mints a fresh serial (dedup is done above by enid).
+                let req = await q.moai({req:1}); req.c.re = re
             }
         }
 
-        for (let req of reqy.o()) {
+        for (let req of q.o({req:1})) {
             if (req.sc.finished) {
-                w.drop(req)
+                q.drop(req)
                 continue
             }
-            let re = req.sc.re
+            let re = req.c.re
             let uri = re.sc.uri
             if (!uri) throw "req load !uri"
             // < should this call happen only once...
@@ -1318,7 +1319,7 @@
         await this.Miome(A,{io:'radiopiracy'})
         let radiopiracy = A.o({io:'radiopiracy'})[0]
         if (!radiopiracy) return w.i({waits:"%io:radiopiracy"})
-        let reqy = await this.requesty_serial(w,'rapiracy_descripted')
+        let q = w.oai({rapiracy_descripted:1})
         if (!w.oa({aud:1})) {
             let aud = await this.record_preview(A,w,D,{
                 get_offset: (aud) => aud.duration() - PREVIEW_DURATION,
@@ -1329,7 +1330,7 @@
             await w.r({buffers:1},{ok:1})
 
             let uri = this.Se.D_to_uri(D)
-            await reqy.i({uri})
+            await q.moai({req:1}, {uri})   // uri is a string → fine in .sc
 
             // react to new chunks
             w.c.on_recording = async (re,pr) => {
@@ -1348,9 +1349,9 @@
         }
 
         // the trips to rapiracy
-        for (let req of reqy.o()) {
+        for (let req of q.o({req:1})) {
             if (req.sc.finished) {
-                w.drop(req)
+                q.drop(req)
                 continue
             }
             let uri = req.sc.uri

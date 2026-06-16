@@ -1195,7 +1195,7 @@
 
         const fs_safe  = (s: string) => s.replace(/[:/\\?*"|<>]/g, '-')
         const run_path = `Story/${fs_safe(book)}`
-        const wh       = H.req_host(w, 'wh')
+        const wh       = w.oai({ wh: 1 })   // off-pump queue: serial %req items, owner-driven
 
         if (!run.c.toc_loaded) {
             // ── load toc.snap ──────────────────────────────────────────────

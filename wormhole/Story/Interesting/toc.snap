@@ -5,17 +5,17 @@ story:Interesting
     For
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.141
-      sample=0.191,at=1781607465
-      sample=0.085,at=1781608203
-      sample=0.142,at=1781608313
-      sample=0.131,at=1781608351
-      sample=0.126,at=1781608381
-      sample=0.319,at=1781608670
-      sample=0.062,at=1781608750
-      sample=0.073,at=1781608755
+    TimeTotal:beliefs,avg=0.209
       sample=0.123,at=1781608774
       sample=0.159,at=1781608999
+      sample=0.146,at=1781609412
+      sample=0.313,at=1781609468
+      sample=0.217,at=1781609583
+      sample=0.254,at=1781609603
+      sample=0.168,at=1781610237
+      sample=0.238,at=1781611675
+      sample=0.147,at=1781612445
+      sample=0.329,at=1781612594
   step,dige:eda29a72a26fc18b
   step=2,dige:62c85889bd9cc566
   step=3,dige:be8ed4dcb04900d0

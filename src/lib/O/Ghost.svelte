@@ -16,8 +16,8 @@
     //   All ghosts call M.eatfunc(hash) in onMount.  eatfunc merges hash into
     //   H.ghosts and calls H.ghostsHaunt() which Object.assigns onto every H
     //   instance reachable from root.  Later ghosts can therefore call methods
-    //   deposited by earlier ones (e.g. Story calls this.req_host which
-    //   Hovercraft deposited).
+    //   deposited by earlier ones (e.g. Story calls this._resolve_runstepped
+    //   which Hovercraft deposited).
     //
     //   Textures is last because it has no dependencies on the other ghosts
     //   and the other ghosts have no dependency on it — order doesn't matter

@@ -29,11 +29,20 @@ breaking the loop and rendered amber (Liesui + the `simpleLezerLinter` could
 emit `severity:'warning'` instead of `'error'`). This is the same "continue past
 the first error" UI path the collector already wishes for at line ~400.
 
-## doai has no runtime
+## the data language — `req:X {…}` block → doai (unblocked)
 
-`doai` is in the grammar's `IOness2` token but there is no `doai()` method on
-`TheC` (only `oai`/`roai`/`moai`), it is waiting for Hovercraft.design.md, when
-req becomes generally available on any C, though only served if inside a w|req.
+`doai` now HAS a runtime: the Hovercraft req engine landed, so `doai()` exists on
+`TheC` (alongside `oai`/`roai`/`moai`) and req is generally available on any C —
+served when inside a w|req. So the grammar's `IOness2` `doai` token is no longer
+stranded, and the **data language** it was waiting on is unblocked (forwarded here
+from `Hovercraft.design.md`, which is now down to its own engine tail).
+
+The piece: compile a `w roai req:X { …body… }` block into a `doai` call whose body
+becomes the one-shot `do_fn` — i.e. `(await w.doai({req:'X'}))?.(async (req) => { …body… })`.
+Spec the lowering: capture of the host `w` and the `req` param, and the fact that a
+`doai` body is **async by construction** (so it ties into the async-verb warning
+above — a method that compiles a `req:X {…}` block must be `async`). Its own piece;
+sequence it after the in-flight req migrations settle.
 
 ## whole-doc parse vs. the per-line fast path
 

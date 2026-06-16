@@ -748,7 +748,103 @@ The drive's troubles — the manual step that won't behave, the not-useful creat
 
 ---
 
-## 16. Staging
+## 16. Running it headless — the agent as test driver
+
+Today a test runs only inside the live browser machine: `Otro` constructs `H:Mundo`,
+ calls `may_begin`, wires the child Houses, and `go_busily → think`, all in `$effect`s
+  with the UI mounted alongside, served by the Vite dev server in a secure context
+   (WebRTC, `/music`). To let **you** — the agent, or CI — *write a test, run it, read
+    the result, iterate* — the machine needs a programmatic entry that boots and
+     drives without the UI, and a runtime it can execute outside the dev server. Three
+      pieces, and the order matters.
+
+1. **A programmatic Otro.** Otro is just the app shell. A headless form keeps the
+    House construction and the `think` pump and drops the Svelte mounting and the
+     reactive `houses` list — boot, run, emit, exit. The machine is already
+      UI-agnostic (ghosts are logic modules; the UI only *watches* via `watch_c`/
+       `$effect`), so what has to come loose is the `$effect`-driven boot and the
+        assumption of a live document and secure context a pure Story run never needs.
+         This is *"a new or other, more programmatic form of Otro."*
+
+2. **A runtime bundle from Compile.** The ghost methods already run through the
+    compile pipeline — Lies/Lang compile, Pantheate dynamic-imports the compiled
+     module, `BlastPit` lands the call in-step, and `e_Rundown_arm` already fires
+      *"from Prep/test script."* Turn that into a **standard runtime bundling**:
+       Compile emits a self-contained artifact — compiled ghost methods + the House
+        runtime — that node executes directly, no Vite, no browser. The pipeline that
+         exists for live editable docks doubles as the build step for a runnable test
+          artifact, and it pins versions for free: `Rundown` already hashes Codebits
+           into a `path:dige` moment id, so the bundle *is* that moment, frozen.
+
+3. **The drive, scripted.** This is why §15 is the keystone. With the drive a req**
+    (`req:Step`/`req:Drive`), a headless run is a script: hand in the test Waft, run
+     `until-no-more-on_step`, read the channels (§2) as text, check the Points (§14).
+      No UI, no timers — the req machine settles each step and the script reads
+       `Snap:H` / `Snap:cont` / `Snap:trace` and the assertion verdicts straight off
+        the C tree. The true-text principle (§2) pays off precisely here: the agent
+         reads the *same clean channels a human reads*.
+
+What it enables: the agent writes a Story test as a script, runs the bundle headless,
+ reads pass/fail plus the failing Point's surf (§14.3) and the diff (§3) as text, and
+  iterates — the authoring loop with no human at the browser. CI runs the same bundle.
+   ⛑️ the headless boot needs context shims (no WebRTC, no `/music`, no secure
+    context); scope the bundle to the ghosts a Story run actually touches.
+
+---
+
+## 17. The realisations, and the order they imply
+
+Step back from Story. The same few shapes recur across the whole machine — Lang,
+ Lies, Cyto, Story — and the next level is less "build features" than **collapse the
+  hand-rolled copies onto the primitives that already exist.**
+
+**Four primitives, found over and over:**
+
+1. **One walk-and-select.** `Selection.process()` / the cursor / `LiesCurse` /
+    `beliefs()` / the encode walk / Cyto's `make_wave` / the planned `regroup()` Map
+     pass are all *"walk a `C**`, select chunks."* This spec keeps rediscovering it
+      (§1, §2, §13.3). There should be one walker; the rest are calls with a
+       different `each_fn` / lens.
+2. **One delta.** `bD`-resolution is the single diff under Cyto (§7), continuity
+    (§2.3), Diffmatication (§3), and quiescence (§15 — `until-no-more` is
+     loop-until-`Dif:same`). Compute it once; render it as a wave, rows, marks, or a
+      fixed-point test.
+3. **One control engine.** The req** (`Hovercraft` — maz, ttlilt, lifetimes) is *how
+    and when things happen.* Story's drive (§15), Lies' compile/run (Cortex/Rundown),
+     and channel capture (Interest `pending|locked`, §13.2) all want to be reqs.
+4. **One container.** Waft / What / Doc / Point + Interest (§13) holds docs, tests,
+    channels, steps (time-slice Whats), and assertions (Points). One grammar, many
+     readings.
+
+**The recurring anti-pattern** is the thread tying every section together: each
+ trouble is *a second engine built beside one that already exists* — two encoders
+  (§1), three identity-derivations (§2.3), Story's drive beside the reqs (§15), the
+   whole test machine beside the Waft machine (§13). So the next level is mostly
+    **deletion**. The measure of a good change here is how much bespoke machinery it
+     *removes*.
+
+**The order this implies** — the dependency *logic*, distinct from the shippable
+ Staging list:
+
+- **Control first.** The drive as a req** (§15) is the keystone: it makes the machine
+   *scriptable* → *headless-runnable* (§16) → *agent-testable*. That loop is what lets
+    every later change be verified cheaply, so nothing precedes it.
+- **Substrate next.** One walker, one encoder, channels as true text (§1, §2), with
+   the delta (§2.3, §7) riding on top.
+- **Container then.** The Waft/Interest/cursor unification (§13) and Points/Assertions
+   (§14) — once a scriptable run emits text channels, expressing it as Wafts-over-time
+    with asserted Points is the *payoff*, not the prerequisite.
+- **Views last.** Diffmatication, fern gardens, islands, thumbnails, fleet (§3, §6,
+   §9–§12) are renderings of the above; none blocks correctness.
+
+The Staging list below is ordered for *shippability* (encoder merge first, as a
+ provable no-op). The logic above runs **control → substrate → container → views**,
+  with **headless agent-running (§16) as the early payoff that pays for everything
+   after it.**
+
+---
+
+## 18. Staging
 
 1. **Merge the encoder.** Move `snap_H`'s loopy pass into `encode_wh_lines`; recast
     `story_process_node` rules as `STORY_PROTOCOL`; route Story through `enWaft`
@@ -782,10 +878,13 @@ The drive's troubles — the manual step that won't behave, the not-useful creat
 13. **Fleet.** Multi-test triage surface (§12).
 
 The drive recast (§15) is a **parallel track**, orthogonal to the encoder/channel
- work, and worth doing **early**: every other stage is easier to exercise once you
-  can arm one step at a time and run-to-quiescence on demand (the step button and
-   `until-no-more-on_step`). It touches `story_drive`, not the snap fixtures, so it
-    ships independently.
+ work, and the keystone of the dependency order (§17) — worth doing **first**, not
+  just early. Once the drive is a req** you can arm one step at a time and
+   run-to-quiescence on demand (the step button, `until-no-more-on_step`); the
+    headless boot + Compile bundle (§16) follow directly, and *that* loop — agent
+     writes a test, runs it, reads text, iterates — is what makes every stage below
+      cheap to verify. This track touches `story_drive` / `Otro` / the compile
+       pipeline, not the snap fixtures, so it ships independently of the merge.
 
 Each stage is shippable and gated by the snap fixtures. Stage 1 is pure
  de-duplication and should change *nothing* observable — do it first and prove it.

@@ -4,8 +4,8 @@ This is the permanent account of why w/req** folds into beliefs(),
  why reqy() sublates,
   and where the hovering systems live.
 Sections 1–9 are meant to stay here forever;
- the TODO and the how-from-now migration are at the very end,
-  and those are the only parts expected to age out.
+ the migration tail — summarised right below, detailed in the Handover at the very
+  end — is the only part expected to age out.
 
 Notation is the house notation throughout:
  %req means {req:1}, Text%dige means the %dige on a %Text,
@@ -14,6 +14,25 @@ Notation is the house notation throughout:
 Good naming earns its keep at runtime:
  the structure materialises as it runs,
   and the notation is how you climb into what is there, when it is there.
+
+
+## The migration tail (transient — will age out)
+
+reqy() is fully sublated; what is left of the migration is small and stays in this
+ doc because it is Hovercraft's, not the domain's. The leftover **Agency** pieces in
+ particular read like app logic but are really hovering-hook plumbing: Pirating,
+ Pirate, and Agency's own copy still ride the older **requesty_serial** queue engine,
+ and the Agency-migration deletes (agency_think, Aw_think, procure_ways, the setTimeout
+ i_elvis routers) are a hand-rolled out-of-time re-entry layer — both superseded by
+ %req + reqyoncile. Folding them in is the last of the req consolidation; details are
+ under "Remaining — migrate requesty_serial, then the Agency deletes" at the end.
+ (TODO 7 subscriptions is likewise Hovercraft's own — it stays too.)
+
+Two leftovers that are NOT Hovercraft's moved out, so this doc can settle to its
+ permanent §1–9 plus this thinning tail: the compiler-facing data language (the
+ `req:X {…}` block → doai lowering) went to **LangCompiler_TODO.md** now that doai has
+ a runtime, and the Pmirror UI-non-resolution deferral lives in
+ **Lang_session4_handover.md** (Open threads).
 
 
 ## 1. Stable and transient
@@ -547,21 +566,27 @@ reqy()/reqcon/handler_of_last_resort are DELETED (the reqy_spec doc + the reqy(w
  - requesty_serial(w,t) — a SEPARATE, older queue engine (NOT reqy): reqs carry a
     `requesty_$t` mainkey (not %req), a `requesty_$t_serial` counter, req%req_i, and
     %aim hoisting.  The lib/O/ users are DONE — Story (wh), LangLang + Auto (rw_queue),
-    and Housing's Wormhole server (fs_op + rw_queue) all moved to %req via the new
-    req_host(w,name) sub-host helper (a named queue C off the worker, c.up-wired, kept
-    out of the worker's own req pool so reqdo_sweep won't pump it; the owner drives it
-    with q.do(fn)).  Mapping: requesty_serial(w,t) → req_host(w,t); .oai(c,sc) → a
-    NAMED req moai (a stable %req:$name so it re-finds — an anonymous {req:1} won't,
-    since moai's serial value never matches the {req:1} sentinel on re-find); .i(c) for
-    fire-and-forget writes → moai({req:1,…}) (fresh serial each call); server wrappers
+    and Housing's Wormhole server (fs_op + rw_queue) all moved to %req on a plain
+    OFF-PUMP queue container — `w.oai({name:1})`, a non-req mainkey that keeps its %req
+    items out of the worker's supervised pool so reqdo_sweep won't pump them; the owner
+    drives with q.do(fn) or iterates q.o({req:1}) and retires by hand.  (An earlier
+    req_host(w,name) helper also wired q.c.up=w, but that wire is consumed only by a
+    fn-less q.do() handler-climb or a reqyoncile'd queue item — which no caller does —
+    so it was dropped; the container alone gives the isolation.)  Mapping:
+    requesty_serial(w,t) → w.oai({t:1}); .oai(c,sc) → a NAMED req moai (%req:$name) or an
+    anonymous moai({req:1, …identity}) — BOTH re-find now (moai leaves the %req:1 sentinel
+    a numeric wildcard rather than exactly()-pinning it to "1"); a bare moai({req:1}) with
+    no other identity keys mints a fresh serial each call (fire-and-forget writes); server wrappers
     hold the elvis req + finish in .c (.c.for/.c.finish), dedup by ref, and the queue
     is swept of finished reqs after do() (do() never drops).  Client/server are
     decoupled only by the elvis req's sc (wh_op/rw_op/… + reply), so the mainkey change
     is invisible across the wire — LiesStore (already %req) and the old requesty clients
     interoperate with the same Wormhole server.  This DOES churn snaps (requesty_wh →
     wh/req in toc/NNN.snaps) — regenerate via a Story Accept, do NOT hand-edit.
-    STILL on requesty_serial (ghost/mostly, deferred): Radios, Pirating, Pirate, and
-    Agency's own copy.  Independent of reqy() — the antiquated mark no longer gates.
+    Radios also migrated to a plain off-pump queue (its two load queues never pumped via
+    do() — pure iterate-and-retire, payload C moved to .c).  STILL on requesty_serial
+    (ghost/mostly, deferred): Pirating, Pirate, and Agency's own copy.  Independent of
+    reqy() — the antiquated mark no longer gates.
 
  skip: shelved/LiesWorkup.svelte (inactive; still references the deleted reqy() — make
     it compile or stays shelved).
@@ -607,12 +632,13 @@ reqy()/reqcon/handler_of_last_resort are DELETED (the reqy_spec doc + the reqy(w
  - the maz gate (§3) — keep the pump per-host priority; lexical walk order ≠ maz.
  - snap-id churn (§1) — a transient appearing/finishing each beat churns the diff;
     decide deliberately whether one earns a scan-id or is summarised.
- - deferred (not a req-migration blocker): Lang doesn't surface unresolved Pmirrors in
-    the UI — it only warns.  Left as-is pending a major Pmirror refactor.
+ - deferred (not a req-migration blocker): the Pmirror UI-non-resolution item moved to
+    Lang_session4_handover.md (Open threads, "Pmirror non-resolution is silent").
 
 ### Not started
 
  - TODO 7 subscriptions (§7): unify Stuffing | watched | %Good into
     %subscribe,target,on,wake, firing wakes from finito_fn.  Independent of the rest.
- - the data language (compile w roai req:X {…body…} → doai): the basis it waited on
-    is now in, so it is unblocked — but it is its own piece, after the migrations.
+    A Hovercraft/Housing piece — stays here.
+ - the data language (compile w roai req:X {…body…} → doai) moved to LangCompiler_TODO.md
+    now that doai has a runtime — it is compiler work, unblocked, its own piece.
