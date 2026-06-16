@@ -29,7 +29,7 @@ breaking the loop and rendered amber (Liesui + the `simpleLezerLinter` could
 emit `severity:'warning'` instead of `'error'`). This is the same "continue past
 the first error" UI path the collector already wishes for at line ~400.
 
-## the data language — `req:X {…}` block → doai (unblocked)
+## the data language — `doai %req:X` block → do_fn (DONE)
 
 `doai` now HAS a runtime: the Hovercraft req engine landed, so `doai()` exists on
 `TheC` (alongside `oai`/`roai`/`moai`) and req is generally available on any C —
@@ -37,12 +37,31 @@ served when inside a w|req. So the grammar's `IOness2` `doai` token is no longer
 stranded, and the **data language** it was waiting on is unblocked (forwarded here
 from `Hovercraft.design.md`, which is now down to its own engine tail).
 
-The piece: compile a `w roai req:X { …body… }` block into a `doai` call whose body
-becomes the one-shot `do_fn` — i.e. `(await w.doai({req:'X'}))?.(async (req) => { …body… })`.
-Spec the lowering: capture of the host `w` and the `req` param, and the fact that a
-`doai` body is **async by construction** (so it ties into the async-verb warning
-above — a method that compiles a `req:X {…}` block must be `async`). Its own piece;
-sequence it after the in-flight req migrations settle.
+Lowered (LangCompiling `_collect_line`, alongside the r-with-a-block branch): a
+`doai` verb whose path is followed by a pythonic-indented body seeds the `%req`
+and wires that body as its one-shot `do_fn`:
+
+    doai %req:X,eternal          ;(await w.doai({req: "X", eternal: 1}))?.(async (req) => {
+        i %roster          →          w.i({roster: 1})
+        req i %seen                    req.i({seen: 1})
+                                   })
+
+Notes on the shape that landed:
+  - the verb is `doai` itself (not the spec's earlier musing of `roai req:X {…}`),
+    matching the runtime's `w.doai({…})?.(fn)` shape and the existing r-block path.
+  - the body's implied arg is always named **`req`** — the seeded req handed back.
+    Nested `doai` blocks shadow it per-block (the runtime names them desire/acquire;
+    the compiler's convention is the fixed `req`).
+  - host capture is the receiver: bare → `w`, a leading bareword (`A doai …`) → `A`.
+  - the call leads with `;` — doai emits a call expression and the compiled lines
+    above carry no trailing `;`, so the `(` would otherwise glue to the line above.
+  - the body is **async by construction**, so its own await-verbs are fine; the
+    enclosing method must still be `async` (ties into the async-verb warning above).
+  - a bare inline `doai` (no block) has no handler to wire, so `Lang_compile_IOness`
+    throws "doai needs an indented block — its do_fn body".
+
+Corpus: `Ghost/test/LangTiles.g` `reqTiles` exercises moai + the doai block forms
+(plain, receiver-before-verb with a maz level, and nested).
 
 ## whole-doc parse vs. the per-line fast path
 

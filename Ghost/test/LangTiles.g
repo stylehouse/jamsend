@@ -143,3 +143,40 @@ async replaceTiles(A,w):
     A r %journey,oaims
         i %path
         A i %oaim:$j
+
+// the req family — moai seeds|mutates a %req in place; doai seeds one and wires
+//  its do_fn from a block.  Both are async IOness2 verbs, so this method awaits.
+async reqTiles(A,w):
+    // moai — find-or-create a %req, mutate-in-place.  Two-arg match...props like
+    //  the rest of the family; sync-looking but async (await).
+    //   let workon = await w.moai({req: "workon"})
+    let workon = moai %req:workon
+    //   receiver before the verb, a level on the seed, props after the ... :
+    //    await workon.moai({req: "understanding", maz: 3}, {permanent: 1})
+    workon moai %req:understanding,maz:3...%permanent
+    //   await A.moai({req: "step", seq: 2}, {demand: 800})
+    A moai %req:step,seq:2...%demand:800
+
+    // doai-with-a-block — seed the %req, then the indented body becomes its
+    //  one-shot do_fn.  doai returns a setter (or null once wired), so the call
+    //   leads with ";" and the body is handed the req as its implied arg `req`.
+    //    ;(await w.doai({req: "waft_roster", eternal: 1}))?.(async (req) => {
+    //        w.i({roster: 1}); req.i({seen: 1})
+    //    })
+    doai %req:waft_roster,eternal
+        i %roster
+        req i %seen
+
+    // receiver before the verb, and a maz level on the seeded req:
+    //   ;(await A.doai({req: "init", maz: 3}))?.(async (req) => { … })
+    A doai %req:init,maz:3
+        A i %started
+        req moai %ok
+
+    // nested — a child req wired inside the parent's do_fn.  The implied arg is
+    //  always named `req`, so the inner block's `req` shadows the outer one (the
+    //   name is per-block; mirrors the runtime's w.doai(desire) → desire.doai(acquire)).
+    doai %req:desire
+        i %wanting
+        req doai %req:acquire,maz:9
+            req i %got

@@ -40,6 +40,10 @@ Find-or-create on a container:
   `C.i(sc)` creates.
   `C.oa(sc)` is a boolean probe only; retrieve with `o(sc)[0]`, not oa.
   `C.oai(...)` is find-or-create.
+In a query, a numeric `1` is a **presence wildcard** (`{k:1}` = has key `k`, any value);
+ a string or other value matches that value literally. `exactly(sc)` / `{exactly}`
+  stringifies, so it forces a literal match — and turns a `{k:1}` marker into `k:"1"`,
+   which no longer wildcards (the footgun behind moai's serial re-find).
 Creation bumps version; watchers ($effect) react off that.
 
 **Travel** is the tree-walk primitive over the C tree, depth-first.
