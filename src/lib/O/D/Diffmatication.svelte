@@ -92,8 +92,9 @@ await M.eatfunc({
 
         // Twisto (maz:3) loads the toc then goes ok, gating cursor (maz:1)
         //  until %toc_loaded is snapped.  After that both run each pass.
-        await H.reqy(w).roai({ req: 'Twisto', eternal: 1, maz: 3 })
-        await H.reqy(w).do()
+        //  w is antiquated-free (Twisto/cursor C-native, req:Store from LiesStore),
+        //  so reqdo_sweep supervises the w-level pump — no inline w.do() here.
+        w.req_oai({ req: 'Twisto', eternal: 1, maz: 3 })
     },
 
     // ── req_Twisto ────────────────────────────────────────────────────────────
@@ -102,7 +103,7 @@ await M.eatfunc({
     //   Eternal at maz:3 so it runs after Store (maz:7) but gates cursor (maz:1)
     //    until the toc is in hand.  Goes ok every pass once %toc_loaded exists.
     //   More loading steps will slot in here as the story complicates.
-    async req_Twisto(req: TheC, q: any) {
+    async req_Twisto(req: TheC) {
         const H   = this as House
         const w   = req.c.up as TheC
         const dm  = w.o({ Diffmatic: 1 })[0] as TheC
@@ -166,31 +167,29 @@ await M.eatfunc({
     },
 
     // ── req_cursor ────────────────────────────────────────────────────────────
-    async req_cursor(req: TheC, q: any) {
-        const H  = this as House
+    async req_cursor(req: TheC) {
         const w  = req.c.up as TheC
         const n  = req.sc.step_n as number
-        const rq = H.reqy(req)
 
         if (req.sc.mutated?.step_n != null)
-            for (const old of rq.o()) req.drop(old)
+            for (const old of req.o({ req: 1 }) as TheC[]) req.drop(old)
 
         const step_count = (w.c.The as TheC).o({ step: 1 }).length
 
         const demand = async (sn: number) =>
-            (await rq.doai({ req: 'demand', step_n: sn }))?.(async (dmd: TheC) => {
-                const sub = H.reqy(dmd)
-                await sub.roai({ req: 'Step', step_n: sn })
-                await sub.do()
-                sub.unify_finished()
+            (await req.doai({ req: 'demand', step_n: sn }))?.(async (dmd: TheC) => {
+                dmd.req_oai({ req: 'Step', step_n: sn })
+                await dmd.do()
+                // unify: Step finished → settle dmd under its host (req:cursor).
+                if (dmd.all_finished() && !dmd.sc.finished) req.finish(dmd)
             })
 
         await demand(n)
         if (n > 1)          await demand(n - 1)
         if (n < step_count) await demand(n + 1)
 
-        await rq.roai({ req: 'showing' })
-        await rq.do()
+        req.req_oai({ req: 'showing' })
+        await req.do()
     },
 
     // ── req_Step ──────────────────────────────────────────────────────────────
@@ -199,11 +198,12 @@ await M.eatfunc({
     //   onto the live %Step particle once loaded.  good.c.content: undefined while
     //   loading (ttlilt armed inside LiesStore_read), null if the step isn't on
     //   disk yet, else the snap text.
-    async req_Step(req: TheC, q: any) {
-        const H    = this as House
-        const w    = req.c.up?.c.up?.c.up as TheC   // %Step → %demand → %cursor → w
-        const n    = req.sc.step_n as number
-        const This = w.c.This as TheC
+    async req_Step(req: TheC) {
+        const H      = this as House
+        const demand = req.c.up as TheC             // %Step → %demand (the host)
+        const w      = demand.c.up?.c.up as TheC    // %demand → %cursor → w
+        const n      = req.sc.step_n as number
+        const This   = w.c.This as TheC
 
         const good = await H.LiesStore_read_good(w, 'text/plain', dm_step_path(n))
         if (good.c.content === undefined) return   // loading; ttlilt armed inside
@@ -214,14 +214,14 @@ await M.eatfunc({
         Step.sc.got_snap = snap
         Step.bump_version()
 
-        q.finish(req)
+        demand.finish(req)
     },
 
     // ── req_showing ───────────────────────────────────────────────────────────
     //   Builds diffs from loaded step snaps; drops spinner:diff when done.
-    async req_showing(req: TheC, q: any) {
+    async req_showing(req: TheC) {
         const H      = this as House
-        const cursor = req.c.up as TheC
+        const cursor = req.c.up as TheC   // %showing → %cursor (the host)
         const w      = cursor.c.up as TheC
         const dm     = w.o({ Diffmatic: 1 })[0] as TheC
 
@@ -273,7 +273,7 @@ await M.eatfunc({
         if (have_prev && have_next) {
             for (const s of dm.o({ spinner: 'diff' }) as TheC[]) dm.drop(s)
             dm.bump_version()
-            q.finish(req)
+            cursor.finish(req)
         } else {
             dm.bump_version()
             H.i_req_ttlilt(req, 0.5, { waiting: 'neighbours' })
@@ -290,7 +290,7 @@ await M.eatfunc({
         for (const d of dm.o({ diff: 1 }) as TheC[]) dm.drop(d)
         dm.oai({ spinner: 'diff' })   // dropped by req_showing when diffs land
         dm.bump_version()
-        await H.reqy(w).roai({ req: 'cursor' }, { step_n: n })
+        w.req_oai({ req: 'cursor' }, { step_n: n })   // moai re-merge → %mutated.step_n on a re-aim
         H.feebly_ponder()
     },
 

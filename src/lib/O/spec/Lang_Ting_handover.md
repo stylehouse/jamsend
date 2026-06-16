@@ -1,5 +1,9 @@
 # Lang / Point / Minimap — session 3 handover
 
+> ARCHIVE. The entry point is now `Lang_session4_handover.md` (with the Foundations
+> primer + live state). This is kept for the trail / DocCompost / minimap history and the
+> carried items C/E/F/G/H. The session-1/2 docs it references no longer exist.
+
 Successor to sessions 1 and 2. Those stand; this records what session 3 changed and
 what's still open. On reset, hand the assistant the **session-1** doc (data model +
 the pieces table) and **this** one (current state + the next builds). The session-2
@@ -50,11 +54,11 @@ What was built stands as a record below, but the direction has moved on:
 
 A **Lies `Waft:GhostList`-hosted Funkcion that dirlists the ghost pile.** As built:
 
-- **`Lies_spawn_ghostlist_waft(w)`** (LiesStore) — a singleton `Waft:GhostList`, marked
-  **`sc.lists`** (the lister mark): a transient UI index, never persisted (`Lies_waft_save`
-  short-circuits on `takes || lists`). It **dirlists itself into existence** each load, so
-  there is nothing to save. (Nothing to do with LE — LE is only the main giver Waft being
-  checked out to Lang; the GhostList just resides in its own Waft in Lies.)
+- **`Lies_ghostlist(w)`** (LiesStore) — the singleton `Waft:GhostList`, marked **`sc.lists`**
+  (the lister mark). It **loads+saves like any Waft** (see Persistence below) — `Lies_ghostlist`
+  kicks `e_Lies_open_Waft('GhostList')` and returns the loaded container. Nothing to do with
+  LE — LE is only the main giver Waft checked out to Lang; the GhostList resides in its own
+  Waft in Lies.
 - **`GhostList_funkcion(gl, w)`** (LiesStore) — installs `Waft/Funkcion:dirlist` (no Seem)
   whose behaviour rides **`funk.c.run`** (off-snap closure) and registers its central
   `req:Funkcion` (`Lies_register_funkcion`). The walker lists

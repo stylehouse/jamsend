@@ -519,14 +519,14 @@
             rd.sc.seen = 1   // caller has one more cycle to read reply, then we drop
         }
 
-        // ── Phase 2b: Funkcions ───────────────────────────────────────────────
-        //   Make sure the GhostList + its Funkcion exist (it registers its own
-        //    central req:Funkcion), then run the central Lies/Funkcions pump — before
-        //     Phase 3 drops the finished listing reqs, so the walker reads their
-        //      replies first; the drop re-arms the next walk.
+        // ── Phase 2b: run this w's Funkcions ──────────────────────────────────
+        //   Here, before Phase 3 drops the finished listing reqs, so a walker reads
+        //    its replies first; the drop re-arms the next walk.  Presence-gated, not
+        //     w-gated: Lies_pump_funkcions no-ops on any w with no Funkcions
+        //      container — and only w:Lies provisions one (in LiesPersist, the
+        //       w:Lies-only phase).  So the w-agnostic Store pump that other w's
+        //        (e.g. w:Diffmatication) share for IO never grows a Funkcion here.
         try {
-            const gl = H.Lies_ghostlist(w)                 // undefined while it loads
-            if (gl) await H.GhostList_funkcion(gl, w)
             await H.Lies_pump_funkcions(w)
         } catch (err) {
             // a Funkcion must never stall the Store pump — it gates all the IO below.

@@ -311,8 +311,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         // second write.  A finished one was already swept by req_Store Phase 4, so
         // roai here always finds an in-flight req to mutate or builds a fresh one.
         const host = await H.LiesStore_req(w)
-        const pwq  = H.reqy(host)
-        await pwq.roai({ req: 'LiesStore_writeCarefully', path }, { text, dige: await dig(text) })
+        host.req_oai({ req: 'LiesStore_writeCarefully', path }, { text, dige: await dig(text) })
         H.i_elvisto(w, 'think')
     },
 
@@ -328,6 +327,10 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             w.c.Lies_setup = true
             ave.i(examining)
             examining.c.w = w
+            // examining hosts req:timemachine; c.up=w lets examining.do()'s
+            //  _req_do_one climb to the House to resolve req_timemachine by name
+            //  (examining → w → A → House).  The A/w-spine wiring never reaches it.
+            examining.c.up = w
             w.oai({ Opt: 1 })
             // Cortex is foundational — it exists from the start, ready to hold
             //  Codebits.  Only Rundown waits for an explicit e_Rundown_arm.
@@ -358,7 +361,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         // req:Store (maz:7) and req:Cortex (maz:5) drive themselves via
         // rq.do() inside LiesRealised.  The final rq.do() at the end of
         // LiesRealised also pumps a dock read just warmed by the wants resolver.
-        const store  = H.reqy(w).o({ req: 'Store' })[0] as TheC | undefined
+        const store  = w.o({ req: 'Store' })[0] as TheC | undefined
         const loaded = ((store?.o({ Good: 1, type: 'text/Doc' }) ?? []) as TheC[])
             .filter(g => g.c.content !== undefined).length
         const wafts  = w.o({ Waft: 1 }).length
@@ -433,6 +436,14 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             console.log(`🗂 Waft:${path} opened (${waft.o({ Doc: 1 }).length} docs)`)
         }
 
+        // ── GhostList — w:Lies's self-listing ghost index ─────────────────────
+        //   Provision the Waft + register its dirlist Funkcion (both idempotent);
+        //    the per-tick run is req_Store's Phase 2b Funkcion pump.  Lives here, in
+        //     the w:Lies-only persist phase, NOT in req_Store: that pump is
+        //      w-agnostic (w:Diffmatication shares it for IO) and must not spawn a Waft.
+        const gl = H.Lies_ghostlist(w)                 // undefined while it loads
+        if (gl) await H.GhostList_funkcion(gl, w)
+
         return true   // Waft layer settled — LiesRealised may proceed
     },
 
@@ -482,11 +493,12 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         //   < desire is now just the lock + seed; it could collapse further
         //     (acquire moves to w:Lies, the wrapper drops).  Left as a wrapper so
         //     the Waft lock has a visible home in the snap.
-        const rq = H.reqy(w)
-        ;(await rq.doai({ req: 'desire' }))?.(async (desire: TheC) => {
-            const rq = H.reqy(desire)
+        // desire/acquire are C-native: desire via w.doai, acquire via desire.doai.
+        //  desire.do() pumps its own (antiquated-free) children, but w still hosts
+        //  antiquated req:Cortex, so the w-level pump below stays reqy(w).do().
+        ;(await w.doai({ req: 'desire' }))?.(async (desire: TheC) => {
 
-            ;(await rq.doai({ req: 'acquire', maz: 9 }))?.(async (acquire: TheC) => {
+            ;(await desire.doai({ req: 'acquire', maz: 9 }))?.(async (acquire: TheC) => {
                 const examining = w.o({ examining: 1 })[0] as TheC | undefined
                 const cur_src   = examining?.o({ Spotlight: 1 })[0]?.sc.src as TheC | undefined
                 const cur_waft  = cur_src ? H.waft_key_of(cur_src) : undefined
@@ -496,23 +508,21 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 if (!waft) return
                 desire.oai({ Waft: waft.sc.Waft as string }, { src: waft })
 
-                if (examining) {
-                    const eq = H.reqy(examining)
-                    await eq.roai({ req: 'timemachine' }, { playing: 0, w })
-                }
-                rq.finish(acquire)
+                if (examining) examining.req_oai({ req: 'timemachine' }, { playing: 0, w })
+                desire.finish(acquire)
             })
 
-            await rq.do()
+            await desire.do()
         })
-        await rq.do()
+        // w still hosts antiquated req:Cortex — keep the reqy pump (drives old + new).
+        await H.reqy(w).do()
 
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
-        if (examining) await H.reqy(examining).do()
+        if (examining) await examining.do()
 
         // req:git — Waftlet accumulator; lives at w:Lies/req:git.
         // < do_fn: flush committed Waftlets to disk/remote; drop flushed.
-        await H.reqy(w).doai({ req: 'git' })
+        await w.doai({ req: 'git' })
 
         // ── req:wants — the cursor-intent accumulator ──────────────────────────────────────
         //
@@ -524,7 +534,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         //
         //   < older %want pile up as history — drag-drop reorder, multi-select,
         //     undo, "where was I" read them later.  Today: kept, never pruned.
-        ;(await H.reqy(w).doai({ req: 'wants' }))?.(async (_wants: TheC) => { /* open-ended */ })
+        ;(await w.doai({ req: 'wants' }))?.(async (_wants: TheC) => { /* open-ended */ })
 
         // drain Lang's dock pulls (the pull half) — a furnishing that lacked its
         //  %Good asked us; provide it before resolving wants so a warm path hands
@@ -550,7 +560,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const H = this as House
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
         if (!examining) return
-        const wants = H.reqy(w).o({ req: 'wants' })[0] as TheC | undefined
+        const wants = w.o({ req: 'wants' })[0] as TheC | undefined
         if (!wants) return
 
         const all = wants.o({ want: 1 }) as TheC[]
@@ -579,7 +589,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //   do_fn for %examining/req:timemachine.  Drains play/pause/step
     //   gestures and auto-advances when playing.  Auto-advance emits a %want
     //   (kind:'step') rather than stepping the cursor directly.
-    async req_timemachine(tm: TheC, q: any) {
+    async req_timemachine(tm: TheC) {
         const H = this as House
         const w = tm.sc.w as TheC
         // waft comes from req:desire which lives on w, not from tm.c.up (= examining)
@@ -675,8 +685,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         if (!src) return
         const kind = (e.sc.kind as string | undefined) ?? 'click'
 
-        const wants = H.reqy(w).o({ req: 'wants' })[0] as TheC | undefined
-            ?? await H.reqy(w).roai({ req: 'wants' })
+        const wants = w.o({ req: 'wants' })[0] as TheC | undefined
+            ?? w.req_oai({ req: 'wants' })
         const ts = Date.now()
         const want = wants.i({ want: ts, kind })
         want.c.src = src

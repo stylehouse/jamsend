@@ -7,22 +7,22 @@ Snap:H
         enc_test:round_trip,ok,empires=2,roman_emperors=3,mongol_emperors=2,enc_errors=0,dec_errors=0
          snap_output: |
            Civilization
-             Empire:Roman,founded:-753,fell:476,capital:Rome
-               Emperor,name:Augustus,reign_start:-27,reign_end:14
-               Emperor,name:Trajan,reign_start:98,reign_end:117,note:Optimus
-               Emperor,name:Hadrian,reign_start:117,reign_end:138
-               Event,year:79,label:Vesuvius
+             Empire:Roman,founded=-753,fell=476,capital:Rome
+               Emperor,name:Augustus,reign_start=-27,reign_end=14
+               Emperor,name:Trajan,reign_start=98,reign_end=117,note:Optimus
+               Emperor,name:Hadrian,reign_start=117,reign_end=138
+               Event,year=79,label:Vesuvius
                {"Event":1,"year":476,"label":"Romulus Augustulus deposed: end of Western Empire"}
-             Empire:Mongol,founded:1206,fell:1368,capital:Karakorum
-               Emperor,name:GenghisKhan,reign_start:1206,reign_end:1227
-               Emperor,name:KublaiKhan,reign_start:1260,reign_end:1294
+             Empire:Mongol,founded=1206,fell=1368,capital:Karakorum
+               Emperor,name:GenghisKhan,reign_start=1206,reign_end=1227
+               Emperor,name:KublaiKhan,reign_start=1260,reign_end=1294
                {"Event":1,"year":1258,"label":"Sack of Baghdad: House of Wisdom destroyed"}
         enc_test:peel_vs_json,ok,thermo_json,mara_json,hast_peel,enc_errors=0
          snap_output: |
            BattleLog
              {"Battle":"Thermopylae","year":-480,"desc":"Leonidas: 300 Spartans vs Xerxes"}
              {"Battle":"Marathon","year":-490,"desc":"Athenians, Plataeans vs Persians"}
-             Battle:Hastings,year:1066,victor:Norman
+             Battle:Hastings,year=1066,victor:Norman
         enc_test:bq_encode,ok,line_count=5,bq_key,bq_body,parent_clean
          snap_output: |
              Output,name:Cannae.txt,dige:abc123

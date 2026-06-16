@@ -29,6 +29,227 @@ remain out of scope.  Everything here is achievable in a single-Doc codemirror s
 
 ---
 
+## Interests — Lang's locks onto Wafts
+
+Everything below this section — the `What` tree, the squish/decoration layer, the
+`pause | rwnd | +time` transport — is the **interior of one Interest**.  This section is
+the frame around it: how Lang comes to be looking at a Waft at all, and how more than
+one Waft can hold Lang's attention at once.
+
+### The duality
+
+A Waft lives on `w:Lies`.  Lang lives in `w:Lang`.  Between them runs one wire:
+`i_elvis_req`.  An **Interest** is Lang's end of that wire — the standing lock that
+says *"I am attending this Waft, in this way, through this lens."*
+
+```
+   w:Lies                         wire                     w:Lang
+   ──────                         ────                     ──────
+   Waft + cursor    ── i_elvis_req (o What | o Doc) ──▶    %Interest + lens
+   (the subject)    ◀─ i_elvis_req (openity verdict) ──    (the lock)
+        ▲                                                       │
+        └────────── i  (everything you do)  ◀── Ting ──────────┘
+```
+
+The subject (a Waft + where its cursor sits) is Lies-side.  The lock (`%Interest`, its
+cursor, its lens, its presence) is Lang-side.  Neither half is the Interest alone — the
+Interest **is the channel**, named from Lang's end because Lang is who renders it.
+
+**Most of `%Interest` is shared.**  Every kind has a `c.waft` subject, a `%cursor` into
+it, a lens, a presence, and a `pending|locked` state.  Only the LE-bearing kinds
+(`Trail`, `Sidetrack`) add the heavy organ — an `%LE` checkout, armed only on
+foreground.  The point of the family is *sameness*: a `Ting` and a `Trail`
+differ in a few fields, not in kind-of-thing.  Even `Ting` has a cursor — it just points
+at the latest thing.
+
+Today there is exactly one Interest, `w/{Languinio:1}/{Interest:1}` (Lang.svelte), and
+it is the navigation+edit checkout: `sc.src` clone root, `c.LE` handle, `c.What`,
+`sc.in_Doc|in_Point` mirroring Lies' `%Spotlight`.  We promote it from *the* Interest to
+**one kind**, `%Interest,Trail`.  The value moves from `1` to the kind, so
+`o({Interest:1})` still wildcards them all and `o({Interest:'Ting'})` picks one.
+
+### The family
+
+`%Interest,<kind>` — kind is the value (the `%Spotlight,src` form).  Each kind fixes a
+subject-stance, a lens, and a presence; the two heavy kinds carry an `%LE`.
+
+| `%Interest`   | subject Waft (stance)        | wire carries                     | lens                   | presence          | LE? |
+| ------------- | ---------------------------- | -------------------------------- | ---------------------- | ----------------- | --- |
+| `Trail`       | the giver (`active`)         | `o What` (anchored, depth grows) | NaviCado + this spec   | active            | on fg¹ |
+| `Sidetrack`   | a spawned `Waft,tentative`   | `o Doc` (`off_what`)             | light NaviCado         | active            | on fg¹ |
+| `Ting`        | the taker (`takes`)          | `i` — everything you do          | DocTing (heat)         | always            | —      |
+| `GhostList`   | the lister (`lists`)         | `o Doc` (`off_what`)             | DocGhostList           | active            | —      |
+| `Testing`     | a Story Waft                 | (its own)                        | a test panel           | active or always  | —      |
+
+¹ The LE-bearing kinds arm only when **foregrounded** — `Trail` first (it foregrounds at
+start), a `Sidetrack` when you switch to it.  Live LEs are bounded by the decks you've
+crossfaded into, never by roster size.  A `Sidetrack` keeps its LE until it settles and
+grafts back into `Trail` (a time-domain concern).
+
+The three Waft flags `active | takes | lists` stop being the typing — **the Interest
+kind is the typing**, and the flag is just the Waft-stance a kind locks onto.  (This
+folds the Waft-taxonomy open thread shut: a kind is a relation, not a flag.)
+
+`Trail` and `Sidetrack` are the heavy locks.  Their `%LE` (armed/clean/changey/stale/
+dirty — see `LiesEnd_spec`) is the *interior state* of an LE-bearing Interest.  The light
+kinds lock with no clone and no push — they only ferry a cursor and mount a lens.
+
+### How an Interest comes to be — the Lies/Waft subscription
+
+The duality leaves a gap an earlier draft hand-waved: *how does Lang learn what Wafts
+exist, and come to hold an Interest in each?*  Not by reaching into Lies' pile through
+`languinio` — a Waft roster is Lies' to know; Lang reading it across the world is a
+domain leak (does Lies even put Wafts into `languinio`?  unclear, and we shouldn't
+depend on it).  Lang **subscribes**:
+
+1.  **Subscribe.**  Lang holds one standing, eternal `i_elvis_req` — `Lies_waft_roster`.
+    It never `finish`es (that would set `finished:1` and close it).  Instead Lies
+    **re-delivers to the held req by ref** each time the set changes — the `e.c.target`
+    ref-targeting that only reqs get (`i_elvisto(req, …)`, Housing.svelte:536), so a fresh
+    roster lands on the *same* req without closing it.  ⛑️ *unbuilt — the first thing to
+    lay down.*
+
+2.  **Take up — `pending`.**  Each Waft in the roster mints a Lang-side
+    `%Interest,<kind>` carrying `sc.pending` — kind inferred from the Waft's own stance
+    properties (below).  Pending = known, lens chosen, *no traffic yet*.
+
+3.  **Lock — lazily, on foreground.**  `sc.pending` clears when the Interest is engaged.
+    The light kinds engage cheaply: start the cursor traffic, mount the lens.  The
+    LE-bearing kinds (`Trail`, `Sidetrack`) `LE_arm` + `LE_pull` only when **foregrounded**
+    — so noticing N giver Wafts arms *zero* LEs; you pay one only for a deck you actually
+    crossfade into.
+
+4.  **Remove.**  A Waft leaving the roster drops its Interest (and, for `Trail`, releases
+    the `%LE`).
+
+```
+roster announces Waft → %Interest,kind +pending → lock → live → (Waft gone) → removed
+```
+
+By default a freshly-noticed Waft is a **`Trail`** — the writing/authoring stance, the
+one we keep good and readable and document things in — unless its properties say
+otherwise (`takes`→Ting, `lists`→GhostList, `tentative`→Sidetrack).
+
+### Waft vs Interest — the border
+
+The two must not blur.  Sort every property by which side of the wire owns it:
+
+**The Waft** is a thing in the world — it exists on `w:Lies` whether or not anyone
+attends it.  It owns:
+- its identity and content — `Waft:<path>`, the `What/Doc/Point` tree;
+- its **stance properties** — how it wants to be attended (`takes | lists | tentative`,
+  else Trail).  Durable `%`-properties *on the Waft*, the source of an Interest's kind —
+  not the kind itself;
+- its **embedded Funkcions** — behaviour hosted *in* the document (next section).
+
+**The Interest** is Lang's stance toward that Waft — ephemeral, one per attender.  It
+owns:
+- `c.waft` — which Waft;
+- `%cursor` — where *this* attention points;
+- lens + presence + `pending|locked`;
+- `c.LE` — *Trail only*; nobody else checks out.
+
+Rule of thumb: **if it would still be true with no one looking, it's on the Waft; if it
+only means anything to Lang looking now, it's on the Interest.**
+
+### The cursor the wire carries
+
+Every Interest carries a `%cursor` — a small particle saying where this attention points:
+
+```
+%cursor
+  what:     <What ref>     the anchor — head of the What/What/What path
+  doc:      <Doc ref>      where the cursor sits (may be off the anchor)
+  depth:    <n>            how deep in the path
+  off_what: 1              doc ∉ what
+```
+
+The kinds populate it differently — and that *is* their character:
+
+| kind        | `%cursor`                                          | driven by                       |
+| ----------- | -------------------------------------------------- | ------------------------------- |
+| `Trail`     | `what` + `doc` + `depth`, anchored                 | the user (the old `%Spotlight`) |
+| `Sidetrack` | `what`s like Ting, but `off_what` and **no heat**  | the user, flying off            |
+| `Ting`      | points at the **latest** thing; `what`s + heatmap  | the `i` push — even backgrounded |
+| `GhostList` | `doc` only, **no `what`**                          | the pick                        |
+
+`Trail`'s cursor is the successor to the single Lies-side `%Spotlight` — **the Spotlight
+goes**, replaced by one cursor per Interest.  Moving any of them is the *same* operation:
+walk the Waft's `C**`, select a chunk.  That walk-and-select engine — today **LiesCurse**
+— is general: it is the way to walk any `C**` and select chunks of it, not `Trail`'s
+alone and arguably not Lies' alone.  ⛑️ *its name and home want reconsidering once a
+second kind drives a cursor through it.*  `depth` is what an over-deep cursor spends
+against Se's `%openity` — left to the time-domain section; here it is only **carried**.
+
+`Ting`'s cursor binds to whatever was last entered into it: the `i` push mutates it, and
+that push keeps arriving across a *backgrounded* `Interest:Ting`, so the cursor stays
+current with no foreground.  Clicking back through Ting's heat or a prior `What` is not a
+back-channel and not travelling back in time on ourselves — the time dimension you click
+through is just *accessing space*, reading stored `What`s, never an `o` out of the taker.
+`Ting` stays purely `i`.
+
+### Funkcions — the Waft's embedded applets
+
+A Waft is a document; a **Funkcion is an applet embedded in it** — the way old HTML
+embedded an SWF with `<object>` / `<embed>`.  Two halves, like any plugin:
+
+- **The embed** — `Waft/Funkcion:<name>` — a persisted mount-point in the document's
+  `C**`.  It rides in the snap; it is *declaration*, not behaviour (an `<embed src>` tag,
+  not the binary).
+- **The runtime** — the behaviour on `funk.c.run`, off-snap, hosted **centrally** in
+  `Lies/Funkcions` as an eternal `req:Funkcion` (one per Funkcion), pumped once a tick.
+  The plugin host — separate from the page, like the browser's Flash runtime was separate
+  from the HTML.
+
+Loading a Waft **instantiates** its embeds: each `Waft/Funkcion:<name>` is bound to a
+`run` and registered into the central host (today `GhostList_funkcion` does exactly this
+for `dirlist`).  The embed persists; the runtime is re-bound on each load.  ⛑️
+*generalise instantiation so any Waft's Funkcions auto-bind on load — today only
+GhostList's is wired by hand.*
+
+A Funkcion declares **when it runs** — a `%run_when` property on the embed.  `loaded`:
+runs whenever its Waft is loaded (GhostList's `dirlist`, keeping the list warm even
+off-stage; its cursor can sit backgrounded the way Ting's does).  `locked`: comes alive
+only while an Interest holds the Waft — the right default for a heavy applet (a live test
+runner), paused when no one is attending, exactly as a browser paused an off-screen
+plugin.  ⛑️ *property unbuilt; today everything is effectively `loaded`.*
+
+Why central, not under the Waft's own `C**`?  Because behaviour is off-snap and
+`w`-spine-less; one host keeps the pump in one place and the snap clean — and keeps the
+w-agnostic IO pump from growing Waft-specific applets (the GhostList-in-`req_Store` fix).
+
+### Presence — which lens is on stage, and the switcher
+
+`presence:active` Interests compete for one **foreground**, `ave/{ActiveInterest}`
+(session state, beside `active_what`).  The foreground Interest's lens holds the primary
+stage — *that* is "NaviCado switches to whatever Interest is active," generalised:
+NaviCado is simply `Trail`'s lens; foreground a `Testing` Interest and its panel takes
+the stage instead.  `presence:always` Interests (the `Ting` heat) render in their own
+persistent slot regardless — ambient, never stealing the stage.
+
+The switch is a **horizontal strip of Interest buttons atop the MiniMap**, above the
+current Point and the NaviCado breadcrumb — one button per Interest, click to foreground.
+`%ActiveInterest` drives it.  The strip also carries an **add button** → a dropdown to
+bring an Interest into being or dismiss one (whether a `GhostList` exists at all, say) —
+the user's hand on the roster, beside the subscription's automatic notices.  ⛑️ *unbuilt.*
+
+Rendering needs no bespoke subscription: an Interest hands its lens a `C` (the Waft, the
+cursor's `doc`, the Ting roster…) and **object-ref change is the signal** — when the C is
+replaced the `$effect`/`watch_c` reactivity re-renders, and we do the rest.  For `Trail`,
+remote change arrives the same way: the `%LE`'s origin `Seem` *is* the Waft's
+subscription-to-the-remote — its goners/neus pull hands back a changed C.
+
+Switching between the two LE-bearing decks (`Trail` ↔ `Sidetrack`) is a **crossfade** —
+like a DJ choosing where to jam sound from and to.  Both can be armed; the foreground
+blends from one to the other.  A `Cyto` graph may float above the strip *temporarily* to
+make the movement legible — the elvis arrows firing, the `/C` clone trees spawning under
+an `LE_arm` — then dismiss.
+
+(How the foreground arbitrates, how `depth` debits `%openity`, and how a `Sidetrack`
+settles and grafts back into `Trail`, are time-domain concerns — the next sections.)
+
+---
+
 ## What — the universal container
 
 `What` replaces both the old section-heading `What` and the old `Flock`.  It is a

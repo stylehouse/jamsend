@@ -59,9 +59,10 @@ await M.eatfunc({
             reason == 'timeout' && w.i({see:'Step ending with a timeout'})
         }
 
-        const rq = H.reqy(w)
-        // Set up the reqy protocol once. All reqs in this test use this do_fn.
-        rq.con.c.do_fn = async (req: TheC) => {
+        // One shared do_fn for every req in this test.  No reqcon protocol do_fn
+        //  any more — wire it per-req with doai (the reqs are C-native %req children
+        //  of w; doai no-ops on re-entry so the closure is wired once each).
+        const armed = async (req: TheC) => {
             if (!H.reqonce(req, 'armed')) return
 
             const ttl_ms   = req.sc.ttl   as number
@@ -85,8 +86,8 @@ await M.eatfunc({
         await H.on_step({
             1: async () => {
                 H.trace('ttlilt', 'step 1: starting')
-                await rq.roai({ req: 'one_shot', ttl: 600, timer: 400 })
-                await rq.do()
+                ;(await w.doai({ req: 'one_shot', ttl: 600, timer: 400 }))?.(armed)
+                await w.do()
             },
 
             2: async () => {
@@ -94,9 +95,9 @@ await M.eatfunc({
                 // Both reqs created and armed in the same cycle.
                 // slow: no timer, ttlilt holds until ~1200ms.
                 // fast: timer at 400ms, finishes before slow's ttlilt expires.
-                await rq.roai({ req: 'slow', ttl: 1200 })
-                await rq.roai({ req: 'fast', ttl: 600, timer: 400 })
-                await rq.do()
+                ;(await w.doai({ req: 'slow', ttl: 1200 }))?.(armed)
+                ;(await w.doai({ req: 'fast', ttl: 600, timer: 400 }))?.(armed)
+                await w.do()
             }
         })
 
@@ -249,10 +250,12 @@ await M.eatfunc({
             { in: 'videos', name: 'clip_2', mins: 5 },
         ]
 
-        const rq = H.reqy(w)
-        rq.con.c.do_fn = async (req: TheC) => {
+        // One shared do_fn for every make_item req — wired per-req with doai
+        //  (C-native; no reqcon protocol do_fn).  done is unused legacy; reqyoncile
+        //  (finished:1) is what settles a req via its host (w).
+        const make = async (req: TheC) => {
             if (req.sc.done) {
-                rq.finish(req)
+                w.finish(req)
                 return
             }
 
@@ -268,15 +271,16 @@ await M.eatfunc({
         }
 
         for (let i = 0; i < items.length; i++) {
-            await rq.roai({ req: 'make_item', item_i: i })
+            ;(await w.doai({ req: 'make_item', item_i: i }))?.(make)
         }
-        await rq.do()
+        await w.do()
         await H.i_Story_o_req_ttlilt([{ A, w }])
 
         const K = await H.process_export(w, 'Items')
         const n_entries = (K.o({ entry: 1 }) as TheC[]).length
         if (n_entries) {
-            ;(H.c._mundane_K_q as TheC[] ??= []).push(K)
+            H.c._mundane_K_q ??= []
+            ;(H.c._mundane_K_q as TheC[]).push(K)
             w.i({ see: `K[${n_entries}] queued` })
             H.feebly_ponder()
         }

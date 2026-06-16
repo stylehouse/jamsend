@@ -1,11 +1,11 @@
 Snap:H
   H:MundaneStaying,Run
     A:MundaneStaying
-      self,round=9	{"mung":["age"]}
+      self,round=5	{"mung":["age"]}
       w:MundaneStaying
         req:one_shot,ttl=600,timer=400,finished
         req:slow,ttl=1200,armed
           ttlilt,timed_out
         req:fast,ttl=600,timer=400,finished
-        self,round=9	{"mung":["age"]}
+        self,round=5	{"mung":["age"]}
     mo:main,interval=3.6	{"mung":["id"]}

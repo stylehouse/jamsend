@@ -8,7 +8,7 @@ import { Dexie, liveQuery, type EntityTable } from 'dexie';
 
 const V: Record<string, any> = {}
 V.organise =  0  // set >0 to enable answer_calls/beliefs/organise logs
-V.beliefs = 0
+V.beliefs = 1
 V.req_legs = 1   // set >0 to walk req** as the transient level (more-legs); see assert_req_legs
 
 export const ANSWER_CALLS_TICK_MS = 50

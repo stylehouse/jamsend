@@ -304,8 +304,7 @@ await M.eatfunc({
     //     clone tree actually are — wired to this elvis from DocMinimap's push.
     async e_Lang_LE_push(A: TheC, w: TheC, e: TheC) {
         const H      = this as House
-        const rq     = H.reqy(w)
-        const workon = rq.o({ req: 'workon' })[0] as TheC | undefined
+        const workon = w.o({ req: 'workon' })[0] as TheC | undefined
         if (!workon) return
         // LE is w/{LE:1}; %Languinio/%LE is the same-object hold pointing there.
         const LE = (e.sc.LE as TheC | undefined)
@@ -314,32 +313,34 @@ await M.eatfunc({
 
         // The push cluster hangs off workon (stable for the Lang instance), one
         // per attempt.  Durable + inspectable: phases collapse to %finished, the
-        // fault lands as req:push/%dirty.
-        const pq = H.reqy(workon)
-        ;(await pq.doai({ req: 'push' }))?.(async (push: TheC) => {
-            const psub = H.reqy(push)
+        // fault lands as req:push/%dirty.  push is a C-native host: its
+        // encode|replace|verify phases are seeded with push.doai, pumped by
+        // push.do() and settled by push.finish().  workon itself is still reqy-
+        // hosted (its understanding|ingredients|instrumentation stages are
+        // antiquated), so the workon-level pump below stays reqy(workon).do().
+        ;(await workon.doai({ req: 'push' }))?.(async (push: TheC) => {
 
-            ;(await psub.doai({ req: 'encode', maz: 3 }))?.(async (encode: TheC) => {
+            ;(await push.doai({ req: 'encode', maz: 3 }))?.(async (encode: TheC) => {
                 const { dirty } = await H.LE_encode_compare(LE)
                 if (!dirty) {
                     // nothing to push — finish the whole cluster cleanly.
-                    psub.finish(encode)
+                    push.finish(encode)
                     push.sc.clean = 1
                 }
-                else psub.finish(encode)
+                else push.finish(encode)
             })
 
-            ;(await psub.doai({ req: 'replace', maz: 2 }))?.(async (replace: TheC) => {
+            ;(await push.doai({ req: 'replace', maz: 2 }))?.(async (replace: TheC) => {
                 // skip the replace when encode found nothing — clean attempt.
-                if (push.sc.clean) { psub.finish(replace); return }
+                if (push.sc.clean) { push.finish(replace); return }
                 if (H.reqonce(replace, 'replaced')) {
                     await H.LE_replace_back(LE)
                 }
-                psub.finish(replace)
+                push.finish(replace)
             })
 
-            ;(await psub.doai({ req: 'verify', maz: 1 }))?.(async (verify: TheC) => {
-                if (push.sc.clean) { psub.finish(verify); return }
+            ;(await push.doai({ req: 'verify', maz: 1 }))?.(async (verify: TheC) => {
+                if (push.sc.clean) { push.finish(verify); return }
                 // Post-push: re-pull and re-encode.  The structural goners/neus
                 // diff would false-positive on what we just pushed (additions land
                 // as neus, unaccepted deletions as goners), so encode-compare is
@@ -350,21 +351,24 @@ await M.eatfunc({
                     // fault: push didn't land clean.  Stamp the fault child and
                     // leave verify OPEN so a "push anyway" re-enters here.
                     push.oai({ dirty: 1 })
-                    // < req:push/%dirty not yet surfaced in the reqy fault UI.
+                    // < req:push/%dirty not yet surfaced in the req fault UI.
                     // < vanish: an unaccepted clone's absence lands as a goner on
                     //   this re-pull and reads as dirty.  The pending fix stamps
                     //   bD/was_disincluded:1 before LE_replace_back so resolved_fn
                     //   recognises the expected goner and suppresses it.
                     return   // no finish — stays open
                 }
-                psub.finish(verify)
+                push.finish(verify)
             })
 
-            await psub.do()
-            psub.unify_finished(pq)
+            await push.do()
+            // unify: every phase finished → settle push under workon.
+            if (push.all_finished() && !push.sc.finished) workon.finish(push)
         })
 
-        await pq.do()
+        // workon still carries antiquated stages, so keep the reqy pump — it drives
+        //  old + new alike (do_fn_for resolves the C-native push.c.do_fn too).
+        await H.reqy(workon).do()
         H.i_elvisto(w, 'think')
     },
 
@@ -602,33 +606,39 @@ await M.eatfunc({
     //   (Waft/Funkcion:$name — no Seem, no req inside the Waft).  Its hosting req
     //   lives centrally in Lies/Funkcions as req:Funkcion (one per Funkcion); the
     //   Funkcion spawns|knows its own req via Lies_register_funkcion.  Lies_pump_-
-    //   funkcions runs them all once per tick (reqy(Funkcions).do()); req_Funkcion
-    //   (resolved by the req_$name convention) runs one Funkcion and sets sc.ok, so
-    //   it re-runs every tick but stays inspectable.  run is (host, funk, ...args)
-    //   — host is the Waft, args carry through (e.g. the w a walker lists against).
+    //   funkcions runs them all once per tick (funks.do()).  A Funkcion isn't really
+    //   req-like — it's behaviour hung on a req host — so the per-tick driver is wired
+    //   as an explicit do_fn (doai), NOT the req_$name convention: it runs funk.c.run
+    //   and sets sc.ok, re-running every tick but staying inspectable.  run is
+    //   (host, funk, ...args) — host is the Waft, args carry through (e.g. the w a
+    //   walker lists against), all read off req.c so a re-register refreshes them.
     async Lies_register_funkcion(w: TheC, host: TheC, funk: TheC, ...args: any[]): Promise<TheC> {
         const funks = w.oai({ Funkcions: 1 })
+        // funks is a plain container, so the A/w-spine c.up wiring never reaches it;
+        //  point it at w so funks.do()'s _req_do_one can climb to the House to reach
+        //  do_fn_for, which returns the req's wired do_fn (funks → w → A → House).
+        funks.c.up = w
         // funk_id keys the req — a plain scalar, NOT the Waft|Funkcion mainkeys (those
         //  are type-tags a tree-walk reads to detect wafts|funkcions; using them as req
         //  sc keys makes the walk misread this req).  The waft|funk are .c refs.
         const funk_id = `${host.sc.Waft}/${funk.sc.Funkcion}`
-        const fr = await (this as House).reqy(funks).roai({ req: 'Funkcion', funk_id, eternal: 1 })
+        const fr = funks.req_oai({ req: 'Funkcion', funk_id, eternal: 1 })
         fr.c.host = host
         fr.c.funk = funk
         fr.c.run_args = args
+        // wire the behaviour as a do_fn (one-shot; doai no-ops on re-register, but the
+        //  .c refs above are refreshed each call so the wired closure reads current).
+        ;(await funks.doai({ req: 'Funkcion', funk_id, eternal: 1 }))?.(async (req: TheC) => {
+            const run = (req.c.funk as TheC | undefined)?.c.run as
+                ((host: TheC, funk: TheC, ...a: any[]) => void | Promise<void>) | undefined
+            if (run && req.c.host) await run(req.c.host as TheC, req.c.funk as TheC, ...((req.c.run_args as any[]) ?? []))
+            req.sc.ok = 1   // pass-local; eternal req re-arms next tick
+        })
         return fr
     },
     async Lies_pump_funkcions(w: TheC) {
         const funks = w.o({ Funkcions: 1 })[0] as TheC | undefined
-        if (funks) await (this as House).reqy(funks).do()
-    },
-    async req_Funkcion(req: TheC, _q: any) {
-        const host = req.c.host as TheC | undefined
-        const funk = req.c.funk as TheC | undefined
-        const args = (req.c.run_args as any[]) ?? []
-        const run  = funk?.c.run as ((host: TheC, funk: TheC, ...a: any[]) => void | Promise<void>) | undefined
-        if (run && host) await run(host, funk!, ...args)
-        req.sc.ok = 1   // pass-local; eternal req re-arms next tick
+        if (funks) await funks.do()
     },
 
     // ── LE_arm ──────────────────────────────────────────────────────────────

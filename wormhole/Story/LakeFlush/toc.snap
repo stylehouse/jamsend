@@ -42,21 +42,21 @@ story:LakeFlush
     noCyto
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=1.084
-      sample=1.192,at=1781270444
-      sample=1.148,at=1781296723
-      sample=0.988,at=1781306718
-      sample=0.995,at=1781444666
+    TimeTotal:beliefs,avg=1.188
       sample=0.989,at=1781511446
       sample=0.989,at=1781511497
       sample=1.208,at=1781511974
       sample=0.897,at=1781522943
       sample=1.217,at=1781580306
       sample=1.217,at=1781580351
-  step,dige:c6450d9c917767bb
-  step=2,dige:ad25e0e4b0c797cf
-  step=3,dige:aee4f5e06eb07f9b
-  step=4,dige:6380901d44f3a126
-  step=5,dige:115eaa523160d553
-  step=6,dige:550e4bbce1014169
-  step=7,dige:839d888c4b9795bc
+      sample=1.441,at=1781588158
+      sample=1.265,at=1781589659
+      sample=1.265,at=1781589671
+      sample=1.396,at=1781596223
+  step,dige:2f9223559352c131
+  step=2,dige:4d7312f8effcfb0e
+  step=3,dige:10db0a2e59813050
+  step=4,dige:8fc13d4c984f71e8
+  step=5,dige:60c5624a92a0ad65
+  step=6,dige:2953817f7c817944
+  step=7,dige:1542f75515a3742d
