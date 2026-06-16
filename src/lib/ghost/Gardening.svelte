@@ -684,7 +684,10 @@
         }
         else if (pong_ago > 9) {
             await Ping.r({failed:1},{timing_out:1})
-            Ping.oai({latency_timeouting:1},{since:now_in_seconds()})
+            // seed %since once, at the start of the timeout — oai now merges in
+            //  place, so set it by hand only when absent (else it'd reset each tick).
+            const lt = Ping.oai({latency_timeouting:1})
+            lt.sc.since ??= now_in_seconds()
         }
         else {
             await Ping.r({failed:1},{})

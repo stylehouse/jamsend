@@ -156,7 +156,7 @@
         //  previous landing (a no-op when the dige was unchanged → still finished).
         //  write_t0 on .c: transient, for write_ms accounting.
         const had_cb = cortex.o({ req: 'Codebit', path })[0] as TheC | undefined
-        const cb = await cortex.moai(
+        const cb = await cortex.oai(
             { req: 'Codebit', path, maz: 2 },
             { gen_path, source_dige, dige, permanent: 1 },
         )
@@ -173,7 +173,7 @@
     //   req:Store (maz:7).  Called at Lies startup so Cortex is foundational;
     //   idempotent everywhere else.  Rundown is created separately by e_Rundown_arm.
     async LiesCortex_arm(w: TheC): Promise<{ cortex: TheC }> {
-        const cortex = await w.moai({ req: 'Cortex', eternal: 1, maz: 5 })
+        const cortex = await w.oai({ req: 'Cortex', eternal: 1, maz: 5 })
         return { cortex }
     },
 
@@ -278,7 +278,7 @@
             const path           = me.sc.path        as string
             const source_dige    = me.sc.source_dige as string
             const ghostmeta_name = H.Lang_ghostmeta_name(path)
-            await w.moai({ req: 'include', gen_path }, { path, source_dige, ghostmeta_name, permanent: 1 })
+            await w.oai({ req: 'include', gen_path }, { path, source_dige, ghostmeta_name, permanent: 1 })
         }
 
         // drive req:include + req:run_method each tick
@@ -329,7 +329,7 @@
         for (const old of w.o({ req: 'run_method', method }) as TheC[]) {
             if (old.sc.finished) w.drop(old)
         }
-        const runReq = await w.moai({ req: 'run_method', method })
+        const runReq = await w.oai({ req: 'run_method', method })
         // BlatDo ref on .c — out of snap; req_run_method calls reqyoncile on it.
         if (!runReq.c.blatdo) runReq.c.blatdo = blatdo
         await w.do()
@@ -442,7 +442,7 @@
         if (req.oa({ ran: moment })) { req.sc.ok = 1; return }
 
         // mint BlatDo for this moment (idempotent if already in-flight)
-        await req.moai({ req: 'BlatDo' }, { moment, run_method: req.sc.run_method })
+        await req.oai({ req: 'BlatDo' }, { moment, run_method: req.sc.run_method })
         await req.do()
 
         // if BlatDo finished this tick: record the moment, then clean up
@@ -514,7 +514,7 @@
                 + ` — Cortex is armed at Lies startup, so this likely reached the wrong world`)
         }
         const { cortex } = await H.LiesCortex_arm(w)
-        const rundown = await cortex.moai({ req: 'Rundown', eternal: 1 })
+        const rundown = await cortex.oai({ req: 'Rundown', eternal: 1 })
         if (rundown.sc.run_method !== run_method) {
             rundown.sc.run_method = run_method
             rundown.bump_version()

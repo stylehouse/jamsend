@@ -21,7 +21,7 @@
     //  a w, another req (w/req**, nested freely), or a plain container.
     //
     // The verbs live one wall down, on StuffAware in Stuff.svelte.ts, and that wall
-    //  does NOT know House.  moai|doai seed or re-key a %req (a serial when anonymous,
+    //  does NOT know House.  oai|doai seed or re-key a %req (a serial when anonymous,
     //  %req:1→%req:$i; a stable name otherwise); do() pumps a host's reqs highest-maz
     //  first; finish() settles one (yoinking its oncelers, dropping its ttlilts);
     //  all_finished() rolls up; maybe_mutate_sc() merges sc in place and stamps
@@ -38,7 +38,7 @@
     //      still wants before its picture is coherent.
     //
     // To use one: name it (resolved by H.req_$name) or hand it an inline closure via
-    //  doai; await host.moai|doai (req-create is async); pump with host.do(), or just
+    //  doai; host.oai|doai seed a req (sync now); pump with host.do(), or just
     //  let reqdo_sweep supervise.  This is the only place to spawn a %req — don't put
     //  that property anywhere else, and beware that an anonymous {req:1} serialises.
     //

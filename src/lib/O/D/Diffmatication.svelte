@@ -94,7 +94,7 @@ await M.eatfunc({
         //  until %toc_loaded is snapped.  After that both run each pass.
         //  w is antiquated-free (Twisto/cursor C-native, req:Store from LiesStore),
         //  so reqdo_sweep supervises the w-level pump — no inline w.do() here.
-        await w.moai({ req: 'Twisto', eternal: 1, maz: 3 })
+        await w.oai({ req: 'Twisto', eternal: 1, maz: 3 })
     },
 
     // ── req_Twisto ────────────────────────────────────────────────────────────
@@ -178,7 +178,7 @@ await M.eatfunc({
 
         const demand = async (sn: number) =>
             (await req.doai({ req: 'demand', step_n: sn }))?.(async (dmd: TheC) => {
-                await dmd.moai({ req: 'Step', step_n: sn })
+                await dmd.oai({ req: 'Step', step_n: sn })
                 await dmd.do()
                 // unify: Step finished → settle dmd under its host (req:cursor).
                 if (dmd.all_finished() && !dmd.sc.finished) req.finish(dmd)
@@ -188,7 +188,7 @@ await M.eatfunc({
         if (n > 1)          await demand(n - 1)
         if (n < step_count) await demand(n + 1)
 
-        await req.moai({ req: 'showing' })
+        await req.oai({ req: 'showing' })
         await req.do()
     },
 
@@ -290,7 +290,7 @@ await M.eatfunc({
         for (const d of dm.o({ diff: 1 }) as TheC[]) dm.drop(d)
         dm.oai({ spinner: 'diff' })   // dropped by req_showing when diffs land
         dm.bump_version()
-        await w.moai({ req: 'cursor' }, { step_n: n })   // moai re-merge → %mutated.step_n on a re-aim
+        await w.oai({ req: 'cursor' }, { step_n: n })   // moai re-merge → %mutated.step_n on a re-aim
         H.feebly_ponder()
     },
 

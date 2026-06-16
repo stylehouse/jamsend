@@ -623,7 +623,7 @@ await M.eatfunc({
         //  are type-tags a tree-walk reads to detect wafts|funkcions; using them as req
         //  sc keys makes the walk misread this req).  The waft|funk are .c refs.
         const funk_id = `${host.sc.Waft}/${funk.sc.Funkcion}`
-        const fr = await funks.moai({ req: 'Funkcion', funk_id, eternal: 1 })
+        const fr = await funks.oai({ req: 'Funkcion', funk_id, eternal: 1 })
         fr.c.host = host
         fr.c.funk = funk
         fr.c.run_args = args

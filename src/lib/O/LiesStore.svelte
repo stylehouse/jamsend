@@ -415,7 +415,7 @@
     //   end of each pump cycle — lower reqs see a settled Store without it being
     //   permanently finished; do_one clears ok at entry each tick.
     async LiesStore_req(w: TheC): Promise<TheC> {
-        return await w.moai({ req: 'Store', eternal: 1, maz: 7 })
+        return await w.oai({ req: 'Store', eternal: 1, maz: 7 })
     },
 
 
@@ -596,7 +596,7 @@
         )
         if (existing) return existing
 
-        const req = await host.moai(
+        const req = await host.oai(
             { req: 'LiesStore_write', path, dige: new_dige },
             { rw_data: text, rw_name, rw_op: 'write' },
         )
@@ -622,7 +622,7 @@
             ? { req: 'LiesStore_read', rw_name, label: opts.label }
             : { req: 'LiesStore_read', rw_name }
 
-        const req = await host.moai(c, { rw_op: 'read' })
+        const req = await host.oai(c, { rw_op: 'read' })
 
         H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
         // a finished read handed to the caller is consumed now — mark seen so
@@ -683,7 +683,7 @@
     ): Promise<TheC> {
         const H    = this as House
         const host = await H.LiesStore_req(w)
-        const req  = await host.moai({ req: 'LiesStore_listing', rw_dir }, { rw_op: 'list' })
+        const req  = await host.oai({ req: 'LiesStore_listing', rw_dir }, { rw_op: 'list' })
 
         H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
         if (!req.sc.finished) H.i_req_ttlilt(req, 1.6, { waiting: 'LiesStore_listing' })

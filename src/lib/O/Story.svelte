@@ -1201,7 +1201,7 @@
             // ── load toc.snap ──────────────────────────────────────────────
             // Wormhole.read_toc handles toc.json → toc.snap migration transparently
             // (reads toc.json if toc.snap absent, converts, writes toc.snap, returns).
-            const toc_req = await wh.moai({ req: 'read_toc', wh_path: run_path, wh_op: 'read_toc' })
+            const toc_req = await wh.oai({ req: 'read_toc', wh_path: run_path, wh_op: 'read_toc' })
             if (!H.i_elvis_req(w, 'Wormhole', 'wh_op', { req: toc_req }))
                 return w.i({ see: '⏳ toc...' })
 
@@ -1223,7 +1223,7 @@
             // Dige verification is always handled by the check_snap block below —
             // we queue it here so it runs in the same beliefs round.
             const n        = run.sc.fetch_snap as number
-            const snap_req = await wh.moai({ req: 'read_snap', wh_path: run_path, wh_op: 'read_snap', wh_step: n })
+            const snap_req = await wh.oai({ req: 'read_snap', wh_path: run_path, wh_op: 'read_snap', wh_step: n })
             if (!H.i_elvis_req(w, 'Wormhole', 'wh_op', { req: snap_req }))
                 return w.i({ see: `⏳ snap ${H.pad(n)}...` })
 
@@ -1247,7 +1247,7 @@
             // clearing it here unblocks poll_check in that path; for mismatches it
             // was never set so clearing is a no-op.
             const n        = run.sc.check_snap as number
-            const snap_req = await wh.moai({ req: 'read_snap', wh_path: run_path, wh_op: 'read_snap', wh_step: n })
+            const snap_req = await wh.oai({ req: 'read_snap', wh_path: run_path, wh_op: 'read_snap', wh_step: n })
             if (!H.i_elvis_req(w, 'Wormhole', 'wh_op', { req: snap_req }))
                 return w.i({ see: `⏳ verify ${H.pad(n)}...` })
 
@@ -1728,7 +1728,7 @@
         // go async to let story drive forward first
         setTimeout(() => {
         storyH.post_do(async () => {
-            const toc_req = await wh.moai({ req: 1, wh_path: run_path, wh_op: 'write_toc', wh_data: snap })
+            const toc_req = await wh.oai({ req: 1, wh_path: run_path, wh_op: 'write_toc', wh_data: snap })
             storyH.i_elvis_req(w, 'Wormhole', 'wh_op', { req: toc_req })
 
             for (const step of all_steps) {
@@ -1736,7 +1736,7 @@
                 if (!step.sc.got_snap || !step.sc.accepted) continue
                 const n = step.sc.Step as number
                 ;V.Story && console.log(`💾 writing snap n=${n}`)
-                const snap_req = await wh.moai({
+                const snap_req = await wh.oai({
                     req: 1, wh_path: run_path, wh_op: 'write_snap',
                     wh_step: n, wh_data: step.sc.got_snap,
                 })

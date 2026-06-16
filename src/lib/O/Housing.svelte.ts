@@ -1716,7 +1716,7 @@ export class House extends StorableHousing {
 
         for (const { req, finish } of H.o_elvis_req(w, 'wh_op')) {
             if (!(fs.o({ req: 1 }) as TheC[]).some(fr => fr.c.for === req)) {
-                const fs_req = await fs.moai({ req: 1 })
+                const fs_req = fs.oai({ req: 1 })   // anonymous %req → always mints a fresh serial
                 fs_req.c.for    = req
                 fs_req.c.finish = finish
             }
@@ -1775,7 +1775,7 @@ export class House extends StorableHousing {
 
         for (const { req, finish } of H.o_elvis_req(w, 'rw_op')) {
             if (!(rw.o({ req: 1 }) as TheC[]).some(rr => rr.c.for === req)) {
-                const rw_req = await rw.moai({ req: 1 })
+                const rw_req = rw.oai({ req: 1 })   // anonymous %req → always mints a fresh serial
                 rw_req.c.for    = req
                 rw_req.c.finish = finish
             }

@@ -149,8 +149,8 @@ async replaceTiles(A,w) {
     let seat = w.oai({seat: 3}, {taken: 1})
     //   await w.roai({aim: 1}, {category: cat})
     await w.roai({aim: 1}, {category: cat})
-    //   await A.moai({mo: "main"}, {interval: 1})
-    await A.moai({mo: "main"}, {interval: 1})
+    //   await A.oai({mo: "main"}, {interval: 1})
+    await A.oai({mo: "main"}, {interval: 1})
 
     // (6) replace-with-a-block — pattern + a pythonic body (like S) becomes the
     //  async fn() that re-fills the cleared pattern:
@@ -170,25 +170,25 @@ async reqTiles(A,w) {
     // ── moai: the canonical shape ─────────────────────────────────────────────
     // receiver, a named req with identity keys, props after the "..." that merge
     //  in on every pass — find-or-create-or-mutate:
-    //   await A.moai({req: "step", seq: 2}, {demand: 800})
-    await A.moai({req: "step", seq: 2}, {demand: 800})
+    //   await A.oai({req: "step", seq: 2}, {demand: 800})
+    await A.oai({req: "step", seq: 2}, {demand: 800})
     // re-run with a drifted prop: same identity (req+seq) so it mutates the SAME
     //  req in place, flagging %mutated so a do_fn re-reacts — no new ref:
-    //   await A.moai({req: "step", seq: 2}, {demand: 1600})
-    await A.moai({req: "step", seq: 2}, {demand: 1600})
+    //   await A.oai({req: "step", seq: 2}, {demand: 1600})
+    await A.oai({req: "step", seq: 2}, {demand: 1600})
 
     // named req, no props — pure find-or-create on the name:
-    //   let workon = await w.moai({req: "workon"})
-    let workon = await w.moai({req: "workon"})
+    //   let workon = await w.oai({req: "workon"})
+    let workon = await w.oai({req: "workon"})
     // a maz level + a seed prop after the ...; maz:1 is implied so it never
     //  identifies, but maz:3 here is part of how the stage is seeded:
-    //   await workon.moai({req: "understanding", maz: 3}, {permanent: 1})
-    await workon.moai({req: "understanding", maz: 3}, {permanent: 1})
+    //   await workon.oai({req: "understanding", maz: 3}, {permanent: 1})
+    await workon.oai({req: "understanding", maz: 3}, {permanent: 1})
 
     // anonymous req — %req with no value is the serialise-me sentinel, handed a
     //  serial (%req:2, 3, …) off the host counter:
-    //   await w.moai({req: 1})
-    await w.moai({req: 1})
+    //   await w.oai({req: 1})
+    await w.oai({req: 1})
 
     // ── doai: same seed, the block becomes the do_fn ──────────────────────────
     // doai seeds the %req then takes the indented body as its one-shot do_fn,
@@ -196,11 +196,11 @@ async reqTiles(A,w) {
     //   wired), so the call leads with ";".  The seed reads exactly like moai —
     //    identity path, optional "..." props path, both forwarded to doai():
     //   ;(await A.doai({req: "step", seq: 2}, {demand: 800}))?.(async (req) => {
-    //       A.i({started: 1}); await req.moai({ok: 1})
+    //       A.i({started: 1}); await req.oai({ok: 1})
     //   })
     ;(await A.doai({req: "step", seq: 2}, {demand: 800}))?.(async (req) => {
         A.i({started: 1})
-        await req.moai({ok: 1})
+        await req.oai({ok: 1})
 
     })
     // a level folded into the identity path instead of a separate props path:

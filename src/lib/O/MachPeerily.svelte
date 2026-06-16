@@ -725,7 +725,7 @@
     async PL_i_emit_corruption(w: TheC, target: string, id_sc: { corruption: string }, payload_sc: { meddle_fn: Function }) {
         const H   = this as House
 
-        const De = await w.moai({ req: 'emit_corruption', target, eternal: 1 })
+        const De = await w.oai({ req: 'emit_corruption', target, eternal: 1 })
         if (!De.c.do_fn) {
             // first call — De_emit_meddling seeds wrap + the first meddle req
             De.c.do_fn = async (De: TheC) => {

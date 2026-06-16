@@ -311,7 +311,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         // second write.  A finished one was already swept by req_Store Phase 4, so
         // roai here always finds an in-flight req to mutate or builds a fresh one.
         const host = await H.LiesStore_req(w)
-        await host.moai({ req: 'LiesStore_writeCarefully', path }, { text, dige: await dig(text) })
+        await host.oai({ req: 'LiesStore_writeCarefully', path }, { text, dige: await dig(text) })
         H.i_elvisto(w, 'think')
     },
 
@@ -544,7 +544,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 if (!waft) return
                 desire.oai({ Waft: waft.sc.Waft as string }, { src: waft })
 
-                if (examining) await examining.moai({ req: 'timemachine' }, { playing: 0, w })
+                if (examining) await examining.oai({ req: 'timemachine' }, { playing: 0, w })
                 desire.finish(acquire)
             })
 
@@ -725,7 +725,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const kind = (e.sc.kind as string | undefined) ?? 'click'
 
         const wants = w.o({ req: 'wants' })[0] as TheC | undefined
-            ?? await w.moai({ req: 'wants' })
+            ?? await w.oai({ req: 'wants' })
         const ts = Date.now()
         const want = wants.i({ want: ts, kind })
         want.c.src = src

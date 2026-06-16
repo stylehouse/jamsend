@@ -181,7 +181,7 @@ export const grammar_hash = ${JSON.stringify(hash)}
 
         const job = w.o({ Gen: 1, path: entry.generated_path })[0] as TheC
         const rw  = w.oai({ rw_queue: 1 })   // off-pump queue: serial %req items, owner-driven
-        const req = await rw.moai(
+        const req = await rw.oai(
             { req: 'gen_parser_write', name, path: entry.generated_path },
             { rw_op: 'write', rw_name: entry.generated_path, rw_data: job.sc.body as string },
         )

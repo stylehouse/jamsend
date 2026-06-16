@@ -316,18 +316,9 @@ class StuffIO {
         return nonemptyArray_or_null(this.bo1(c,q))
     }
 
-    // select one or insert but not update
-    //  warning: not for 'select one' if you're not ready to insert it, use C.o({...})[0]
-    //  when you want .r(), but preserving the first version of the C once matching s
-    //  oai(match_sc,props_sc) doesn't merge props onto the found particle, only if created
-    //   otherwise see roai()
-    // < could upsert, index-safely?
-    oai(s,c={}):TheC {
-        return this.o(s)[0] || this.i({...s,...c})
-    }
-    // roai | moai | something_oai | place — the async find-or-create keyworkings —
-    //  moved down to StuffAware (the layer that also knows the %req protocol), so
-    //  the asyncs and the req machinery sit together one wall above Stuff.
+    // oai | roai | _foc | place — the find-or-create keyworkings — live on
+    //  StuffAware (the layer that also knows the %req protocol), so oai's req
+    //   branch and roai's async replace sit together one wall above Stuff.
 
 
 //#endregion
@@ -473,9 +464,9 @@ class StuffIO {
 }
 
 // the async keyworking wall, and the one protocol Stuff knows: %req.
-//  StuffAware holds the find-or-create verbs whose on-change reaction is async
-//   (roai replaces → new ref; moai merges in place) plus place, and the req
-//    machinery (do | finish | all_finished | doai | maybe_mutate_sc).  %req is the
+//  StuffAware holds the find-or-create verbs (oai merges in place, sync, %req-aware;
+//   roai replaces → new ref, async, no %req) plus place, and the req machinery
+//    (do | finish | all_finished | doai | maybe_mutate_sc).  %req is the
 //     ONLY property Stuff.svelte.ts treats as meaningful — a %req child is a unit
 //      of work this layer can pump, settle and re-key; everything else is opaque sc
 //       (bar the splash in TheUniversal).  These verbs call this.r() | this.replace()
@@ -491,28 +482,42 @@ abstract class StuffAware extends StuffIO {
     declare r: (pattern_sc: TheUniversal, sc?: TheUniversal) => Promise<TheC>
     declare replace: (pattern_sc: TheUniversal, fn: Function, q?: any) => Promise<any>
 
-    // find-or-create; when the C already exists but its supplied sc differs,
-    //  replace it via this.r() — a new ref, /* re-resolved.  For where a keyed
-    //  render watches the ref identity.  NOT for a %req (a new ref would orphan its
-    //  c.up | do_fn | oncelers | child reqs) — moai is the req verb.
-    async roai(s, c = {}) {
-        return await this.something_oai(s,c,{
-            // js subtlety: arrow adopts the promise it returns, so this.r() is awaited
-            on_change: async (C,s,c) => this.r(s,c)
-        })
+    // _foc — the sync find-or-create + merge skeleton shared by oai and roai.
+    //  The ONE thing that differs between them is the on-change reaction
+    //   (bump_version, sync → oai; r(), async → roai), so that lives in the
+    //    caller, not here.  Reports {made} when freshly inserted, else
+    //     {existing, changed, full} — changed iff a non-function sc key drifted.
+    //  Change is detected with hakd (差): symmetric, so it also sees a goner (a
+    //   key on the C but absent from the supplied sc), not only changed values.
+    //    ex() is merge-only though — it copies the supplied keys over and never
+    //     deletes, so an omitted key persists.  A function never counts as a
+    //      difference, yet ex() copies it through so the freshest closure wins.
+    _foc(s: TheUniversal, c: TheUniversal = {}): {
+        made?: TheC, existing?: TheC, changed?: boolean, full?: TheUniversal,
+    } {
+        const full = { ...s, ...c }
+        const existing = this.o(s)[0] as TheC | undefined
+        if (!existing) return { made: this.i(full) as TheC }
+        const changed = hakd(existing.sc, full)
+            .some(k => typeof existing.sc[k] !== 'function' && typeof full[k] !== 'function')
+        ex(existing.sc, full)
+        return { existing, changed, full }
     }
 
-    // find-or-create with merge-in-place — same ref, /* untouched.
+    // oai — THE everyday data verb: find-or-create with merge-in-place.  Same
+    //  ref, /* untouched; when the found C's sc drifts the change is merged in
+    //   place and %version bumps (watchers keyed on %version re-render).  Sync —
+    //    nothing here awaits.  (Was `moai`; the old birth-only oai is gone — to
+    //     seed a value once and never refresh it, do it by hand: `x.sc.k ??= …`.)
     //  %req is special: a req child is found-or-created with the req preset — a
     //   serial when anonymous (%req:1 → %req:$i), c.up wiring, and on re-key its sc
     //    merges with %mutated:{key:old} (差/hakd); a drifted %permanent+%finished
     //     stage un-finishes so do() re-runs it.  A req is never replaced, only
-    //      mutated, because its identity rides the ref.  Non-req: bump_version on a
-    //       real sc change, for watchers keyed on %version.
-    async moai(s, c = {}) {
+    //      mutated, because its identity rides the ref.
+    oai(s, c = {}): TheC {
         if ('req' in s) {
             // maz:1 is implied, never identifying — strip it from the identity match
-            //  (a created req drops it below) so a later moai({…,maz:1}) re-finds the
+            //  (a created req drops it below) so a later oai({…,maz:1}) re-finds the
             //   same req instead of minting a duplicate that carries no maz.
             if (s.maz === 1) delete s.maz
             // %req:1 is the serialise-me sentinel — presence-only, never identity.
@@ -545,25 +550,36 @@ abstract class StuffAware extends StuffIO {
             if (req.sc.maz === 1) delete req.sc.maz   // maz:1 is implied
             return req
         }
-        return await this.something_oai(s,c,{
-            on_change: async (C:TheC,s,c) => C.bump_version()
-        })
+        const r = this._foc(s, c)
+        if (r.made) return r.made
+        if (r.changed) r.existing!.bump_version()
+        return r.existing!
     }
 
-    // seed a req and return a one-shot do_fn setter (?.(body)), or null once wired —
-    //  re-entry never re-wires; only do() re-runs the body.  doai is the req-with-
-    //   handler verb: a do_fn only belongs on a req, so an anonymous c (no %req key)
-    //    gets the serial preset {req:1,...} — same autofill the old reqy().roai gave.
-    //     (moai stays overloaded — req when 'req' in c, else bump-version — but doai
-    //      always means a req.)
-    async doai(c: TheUniversal, sc: TheUniversal = {}): Promise<((fn: Function) => void) | null> {
+    // roai — replacey oai: find-or-create, but on a drift replace the C via
+    //  this.r() — a new ref, /* re-resolved, for where a keyed render watches the
+    //   ref identity.  Async (r is async).  NO %req awareness (a new ref would
+    //    orphan a req's c.up | do_fn | oncelers | child reqs — use oai for reqs).
+    async roai(s, c = {}) {
+        const r = this._foc(s, c)
+        if (r.made) return r.made
+        if (r.changed) return await this.r(s, r.full)
+        return r.existing
+    }
+
+    // doai — seed a req and return a one-shot do_fn setter (?.(body)), or null
+    //  once wired — re-entry never re-wires; only do() re-runs the body.  This is
+    //   the runtime the compiler lowers `oai …` + a BLOCK into.  A do_fn only
+    //    belongs on a req, so an anonymous c (no %req key) gets the serial preset
+    //     {req:1,...}.  Sync — oai is sync.
+    doai(c: TheUniversal, sc: TheUniversal = {}): ((fn: Function) => void) | null {
         if (!('req' in c)) c = { req: 1, ...c }
-        const req = await this.moai(c, sc)
+        const req = this.oai(c, sc)
         if (req.c.do_fn) return null
         return (fn: Function) => { req.c.do_fn = fn }
     }
 
-    // moai's %req re-merge: merge sc in place, flagging %mutated = {key: old} for the
+    // oai's %req re-merge: merge sc in place, flagging %mutated = {key: old} for the
     //  changed keys (差, hakd) so a do_fn (or mutated_fn) can react.  A %permanent
     //   stage gone quiescent un-finishes on a real change so do() re-runs it with a
     //    fresh initial-do lease.  The first do() clears %mutated, so it stays a
@@ -636,24 +652,6 @@ abstract class StuffAware extends StuffIO {
         return all.length > 0 && all.every(r => r.sc.finished)
     }
 
-    // shared find-or-create with a reaction on change — roai and moai differ only
-    //  in the on_change they hand in.  Change is detected with hakd (差): it is
-    //  symmetric, so it also sees a goner (a key already on the C but absent from
-    //  the supplied sc), not only changed values.  ex() is merge-only though — it
-    //  copies the supplied keys over and never deletes, so an omitted key persists.
-    //  A function never counts as a difference, yet ex() copies it through so the
-    //  freshest closure always wins.
-    async something_oai(s, c = {}, q:{on_change:Function}) {
-        const full = { ...s, ...c }
-        const existing = this.o(s)[0]
-        if (!existing) return this.i(full)
-        const diffs = hakd(existing.sc, full)
-            .filter(k => typeof existing.sc[k] !== 'function'
-                      && typeof full[k]        !== 'function')
-        ex(existing.sc, full)
-        if (diffs.length) return await q.on_change(existing, s, full)
-        return existing
-    }
 
     // ensure given things are the only ones in a match
     //  does nothing if the things are already there, reactivity etc
@@ -1348,7 +1346,7 @@ export class TheC extends Stuff {
         if (!this.sc) throw "!C.sc"
     }
 
-    // The %req machinery (moai's req preset, doai, do, finish, all_finished,
+    // The %req machinery (oai's req preset, doai, do, finish, all_finished,
     //  maybe_mutate_sc, _req_do_one) lives one wall up, on StuffAware — %req is the
     //  one protocol Stuff.svelte.ts knows.  TheC just adds the .c/.sc typing.
 }

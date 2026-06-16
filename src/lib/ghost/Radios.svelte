@@ -1222,7 +1222,7 @@
                 // put it through checking that the source still exists.  re is a C,
                 //  so it rides in .c (an object in .sc is fatal at encode); the bare
                 //  {req:1} always mints a fresh serial (dedup is done above by enid).
-                let req = await q.moai({req:1}); req.c.re = re
+                let req = await q.oai({req:1}); req.c.re = re
             }
         }
 
@@ -1330,7 +1330,7 @@
             await w.r({buffers:1},{ok:1})
 
             let uri = this.Se.D_to_uri(D)
-            await q.moai({req:1}, {uri})   // uri is a string → fine in .sc
+            await q.oai({req:1}, {uri})   // uri is a string → fine in .sc
 
             // react to new chunks
             w.c.on_recording = async (re,pr) => {
