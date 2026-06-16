@@ -49,7 +49,7 @@ MethodLike { Name !callparen LParen }
   ElseKeyword    { "else " | "else" }
   Sunpitness     { "S " }
   IOness  { ("i" | "o" | "oa" | "ob" | "o1" | "oa1" | "bo" | "boa" | "bo1" | "boa1" | "drop" | "empty") " " }
-  IOness2 { ("oai" | "roai" | "moai" | "doai" | "r" | "rm") " " }
+  IOness2 { ("oai" | "roai" | "r" | "rm") " " }
 
   Name   { (@asciiLetter | "_") (@asciiLetter | "_" | @digit)* }
   Number { (@digit+ ("." @digit+)?) | ("0x" (@digit | $[a-fA-F])+) }

@@ -689,8 +689,10 @@ await M.eatfunc({
     // origin diff is non-empty.  changey is set by LE_encode_compare, not here.
     async LE_pull(LE: TheC, strict = 0) {
         const H = this as House
-        const origin  = LE.oai({ Seem: 'origin' })
-        const working = LE.oai({ Seem: 'working' })
+        // consumers, not the creator (LE_arm i_Seems these) — read, don't oai.
+        const origin  = LE.o({ Seem: 'origin' })[0] as TheC | undefined
+        const working = LE.o({ Seem: 'working' })[0] as TheC | undefined
+        if (!origin || !working) return   // not armed — nothing to pull
 
         const od = await H.o_Seem(origin, strict)
 
@@ -725,8 +727,10 @@ await M.eatfunc({
     // All editable working clones (clean C**).  Meanings live on C.c.U.
     // Callers that push or encode filter out U%unaccepted themselves.
     LE_clones(LE: TheC): TheC[] {
-        const working = LE.oai({ Seem: 'working' })
-        return working.sc.C ? (working.sc.C as TheC).o({}) : []
+        // pure read — called from a $derived (NaviCado capsules), so it must not
+        //  create|bump: o()[0], never oai.  No working Seem yet → no clones.
+        const working = LE.o({ Seem: 'working' })[0] as TheC | undefined
+        return working?.sc.C ? (working.sc.C as TheC).o({}) : []
     },
 
     // ── LE_replace_back ───────────────────────────────────────────────────────
@@ -840,8 +844,8 @@ await M.eatfunc({
     // needed.  The next LE_pull wires C.c.D and C.c.U for the new child.
     LE_add_clone(LE: TheC, sc: Record<string, unknown>): TheC {
         const H = this as House
-        const working = LE.oai({ Seem: 'working' })
-        const root    = working.sc.C as TheC | undefined
+        const working = LE.o({ Seem: 'working' })[0] as TheC | undefined
+        const root    = working?.sc.C as TheC | undefined
         if (!root) throw 'LE_add_clone: no working C — call LE_pull first'
         const clone = root.i({ ...sc })
         // session-only birth stamp — Autofork's "recently created" signal.  On

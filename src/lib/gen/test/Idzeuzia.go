@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_test_Idzeuzia(): string { return '96dd76f34f3fad47' },
+    Ghostmeta_Ghost_test_Idzeuzia(): string { return 'f894a5ff10d26203' },
 
 //#region uploadConsoleLogs()
     log_Console(A,w) {
@@ -48,7 +48,7 @@
 
 
 //#endregion
-//#region Tyranny !!!!!!!!!
+//#region Tyranny
 
     async Tyranny(A,w) {
         w.oai({instanceTyrant:1})

@@ -127,13 +127,13 @@ async replaceTiles(A,w):
     rm $c
 
     // (5) the rest of the two-arg IOness2 family — same match...props shape.
-    //  oai is sync (find-or-create, no await); roai/moai are async.
+    //  oai is sync (find-or-create-or-mutate, no await); roai is async.
     //   let seat = oai %seat:3...%taken    → let seat = w.oai({seat: 3}, {taken: 1})
     let seat = oai %seat:3...%taken
     //   await w.roai({aim: 1}, {category: cat})
     roai %aim...%category:$cat
-    //   await A.moai({mo: "main"}, {interval: 1})
-    A moai %mo:main...%interval
+    //   A.oai({mo: "main"}, {interval: 1})   — sync, no await
+    A oai %mo:main...%interval
 
     // (6) replace-with-a-block — pattern + a pythonic body (like S) becomes the
     //  async fn() that re-fills the cleared pattern:
@@ -144,55 +144,57 @@ async replaceTiles(A,w):
         i %path
         A i %oaim:$j
 
-// the req family — the heart of the data language.  moai seeds-or-mutates a
-//  %req in place (same ref, %mutated flagged on drift); doai seeds one and wires
-//   its do_fn from a block.  Both are async IOness2 verbs, so this method awaits.
-async reqTiles(A,w)
-    // ── moai: the canonical shape ─────────────────────────────────────────────
+// the req family — the heart of the data language.  oai seeds-or-mutates a %req
+//  in place (same ref, %mutated flagged on drift); oai + a BLOCK wires that req's
+//   do_fn (compiles to doai()).  oai is sync, so — note — this method needs no
+//    `async`: the only async thing is each do_fn body, which is its own arrow.
+reqTiles(A,w)
+    // ── oai: the canonical shape ──────────────────────────────────────────────
     // receiver, a named req with identity keys, props after the "..." that merge
-    //  in on every pass — find-or-create-or-mutate:
-    //   await A.moai({req: "step", seq: 2}, {demand: 800})
-    A moai %req:step,seq:2...%demand:800
+    //  in on every pass — find-or-create-or-mutate.  Sync, no await:
+    //   A.oai({req: "step", seq: 2}, {demand: 800})
+    A oai %req:step,seq:2...%demand:800
     // re-run with a drifted prop: same identity (req+seq) so it mutates the SAME
     //  req in place, flagging %mutated so a do_fn re-reacts — no new ref:
-    //   await A.moai({req: "step", seq: 2}, {demand: 1600})
-    A moai %req:step,seq:2...%demand:1600
+    //   A.oai({req: "step", seq: 2}, {demand: 1600})
+    A oai %req:step,seq:2...%demand:1600
 
     // named req, no props — pure find-or-create on the name:
-    //   let workon = await w.moai({req: "workon"})
-    let workon = moai %req:workon
+    //   let workon = w.oai({req: "workon"})
+    let workon = oai %req:workon
     // a maz level + a seed prop after the ...; maz:1 is implied so it never
     //  identifies, but maz:3 here is part of how the stage is seeded:
-    //   await workon.moai({req: "understanding", maz: 3}, {permanent: 1})
-    workon moai %req:understanding,maz:3...%permanent
+    //   workon.oai({req: "understanding", maz: 3}, {permanent: 1})
+    workon oai %req:understanding,maz:3...%permanent
 
     // anonymous req — %req with no value is the serialise-me sentinel, handed a
     //  serial (%req:2, 3, …) off the host counter:
-    //   await w.moai({req: 1})
-    moai %req
+    //   w.oai({req: 1})
+    oai %req
 
-    // ── doai: same seed, the block becomes the do_fn ──────────────────────────
-    // doai seeds the %req then takes the indented body as its one-shot do_fn,
-    //  handed the req as its implied arg `req`.  It returns a setter (or null once
-    //   wired), so the call leads with ";".  The seed reads exactly like moai —
-    //    identity path, optional "..." props path, both forwarded to doai():
-    //   ;(await A.doai({req: "step", seq: 2}, {demand: 800}))?.(async (req) => {
-    //       A.i({started: 1}); await req.moai({ok: 1})
+    // ── oai + a BLOCK: the body becomes the req's do_fn ───────────────────────
+    // the same seed, but a BLOCK after it lowers to doai(): seed the %req, then
+    //  take the indented body as its one-shot do_fn, handed the req as its implied
+    //   arg `req`.  doai is sync and returns a setter (or null once wired), so the
+    //    call leads with ";".  The seed reads exactly like a plain oai — identity
+    //     path, optional "..." props path, both forwarded to doai():
+    //   ;(A.doai({req: "step", seq: 2}, {demand: 800}))?.(async (req) => {
+    //       A.i({started: 1}); await req.r({ok: 1})
     //   })
-    A doai %req:step,seq:2...%demand:800
+    A oai %req:step,seq:2...%demand:800
         A i %started
-        req moai %ok
+        req r %ok
 
     // a level folded into the identity path instead of a separate props path:
-    //   ;(await w.doai({req: "waft_roster", eternal: 1}))?.(async (req) => { … })
-    doai %req:waft_roster,eternal
+    //   ;(w.doai({req: "waft_roster", eternal: 1}))?.(async (req) => { … })
+    oai %req:waft_roster,eternal
         i %roster
         req i %seen
 
     // nested — a child req wired inside the parent's do_fn.  The implied arg is
     //  always named `req`, so the inner block's `req` shadows the outer one (the
     //   name is per-block; mirrors the runtime's w.doai(desire) → desire.doai(acquire)).
-    doai %req:desire
+    oai %req:desire
         i %wanting
-        req doai %req:acquire,maz:9
+        req oai %req:acquire,maz:9
             req i %got

@@ -453,7 +453,7 @@
         if (sthoParser) {
             const CAND = [
                 /(?:^|[^\w.])[ioS]\s+[%$A-Za-z_]/,          // IOing / Sunpit verb, anywhere on the line
-                /(?:^|[^\w.])(?:doai|roai|moai|oai|rm|r)\s+[%$A-Za-z_]/,  // IOness2 verb (r/rm/oai/roai/moai/doai)
+                /(?:^|[^\w.])(?:roai|oai|rm|r)\s+[%$A-Za-z_]/,  // IOness2 verb (r/rm/oai/roai)
                 /^\s*(?:if|for|while|until|elsif|else)\b/,  // ControlFlow head
                 /^\s*(?:async\s+)?[A-Za-z_]\w*\s*\(/,       // MethodLike decl/call
                 /&[A-Za-z_]/,                               // AmpCall
@@ -783,7 +783,7 @@
                         this.Lang_io_in_text(declM[2], { sthoParser: ctx.sthoParser }))
                     cap_prefix = `let ${declM[1]} = ${rhs}; `
                     condition  = declM[1]
-                } else if (/^(?:i|o|oa|oai|ob|o1|oa1|bo|boa|r|roai|moai|doai)\s+\S*\$/.test(condition)) {
+                } else if (/^(?:i|o|oa|oai|ob|o1|oa1|bo|boa|r|roai)\s+\S*\$/.test(condition)) {
                     const compiled = this.Lang_io_in_text(condition, { sthoParser: ctx.sthoParser })
                     const m2 = compiled.match(/^\s*let\s+(\w+)\s*=/)
                     if (m2) { cap_prefix = compiled.replace(/\s*$/, '') + '; '; condition = m2[1] }
@@ -984,22 +984,22 @@
             })
         }
 
-        // ── IOness2-with-a-block: r → replace(), doai → wire a do_fn ──────────
-        //   An IOness2 verb whose path is followed by a pythonic-indented body
-        //   (and no inline `...` replacement) takes the body as an async fn():
-        //     r    %pat        → await w.replace({pat}, async () => { …body… })
+        // ── IOness2 + a BLOCK: r → replace(), oai → wire a do_fn (doai) ───────
+        //   An IOness2 verb whose path is followed by a pythonic-indented BLOCK
+        //   (and no inline `...` replacement, for r) takes the body as an async fn:
+        //     r   %pat         → await w.replace({pat}, async () => { …body… })
         //                        the body re-fills the cleared pattern.
-        //     doai %req:X      → ;(await w.doai({req:'X'}))?.(async (req) => { …body… })
-        //                        doai seeds the %req and returns a one-shot setter;
-        //                        the body becomes its do_fn, run later by do().  The
-        //                        body is handed the req itself as `req` (the do_fn's
-        //                        implied arg), and is async by construction so its
-        //                        own IOness2 verbs may await.  Leads with ";" — doai
-        //                        emits a call expression and the compiled lines above
-        //                        carry no trailing semicolon, so the "(" would
-        //                        otherwise glue onto the previous statement.
-        //   Same body-consumption as Sunpit.  `rm`, `moai`, and the inline
-        //   r()/two-arg forms (no deeper body) fall through to the IOing branch.
+        //     oai %req:X       → w.doai({req:'X'})?.(async (req) => { …body… })
+        //                        oai + a BLOCK lowers to doai(): it seeds the %req and
+        //                        returns a one-shot setter (or null once wired), the
+        //                        body becoming its do_fn (run later by do()).  The body
+        //                        is handed the req as `req` and is async by construction
+        //                        so its own await-verbs are fine.  doai is sync, so the
+        //                        setter is optional-called directly — no `await`, no
+        //                        wrapping parens, and the line opens on an identifier so
+        //                        no ";" ASI guard is needed.
+        //   Same body-consumption as Sunpit.  `rm`, `roai`, plain `oai` (no BLOCK),
+        //   and the inline r()/two-arg forms fall through to the IOing branch.
         if (hit?.name === 'IOing') {
             const v2     = hit.node.getChild('IOness2')
             const verb   = v2 ? sliceState.doc.sliceString(v2.from, v2.to).trim() : ''
@@ -1011,11 +1011,11 @@
             const body_follows = look <= doc.lines
                 && ((doc.line(look).text.match(/^(\s*)/) ?? ['', ''])[1].length > r_indent)
             //   r takes exactly the one pattern path (an inline `...` replacement
-            //    would contradict the block); doai takes the seed — its identity
-            //     path and an optional `...` props path, both forwarded to doai().
+            //    would contradict the BLOCK); oai takes the seed — its identity path
+            //     and an optional `...` props path, both forwarded to doai().
             const block_ok = body_follows && (
-                (verb === 'r'    && ipaths.length === 1) ||
-                (verb === 'doai' && ipaths.length >= 1 && ipaths.length <= 2))
+                (verb === 'r'   && ipaths.length === 1) ||
+                (verb === 'oai' && ipaths.length >= 1 && ipaths.length <= 2))
             if (block_ok) {
                 const split    = this.Lang_io_before_split(line.text.slice(0, hit.node.from - localBase))
                 const receiver = split.receiver ?? 'w'
@@ -1023,7 +1023,7 @@
                 const args     = ipaths.map(p => this.Lang_ioness2_arg_src(p, sliceState, recv_ctx))
                 const open = verb === 'r'
                     ? `${' '.repeat(r_indent)}await ${receiver}.replace(${args[0]}, async () => {`
-                    : `${' '.repeat(r_indent)};(await ${receiver}.doai(${args.join(', ')}))?.(async (req) => {`
+                    : `${' '.repeat(r_indent)}${receiver}.doai(${args.join(', ')})?.(async (req) => {`
                 out.push({ kind: 'translated', text: open })
                 n++
                 while (n <= doc.lines) {
@@ -1222,7 +1222,7 @@
     // [0]-style first-pick, whichever form the tier uses.
     Lang_compile_IOing(node: SyntaxNode, state: EditorState, ctx: any): string {
         const ness = this.Lang_compile_IOness(node, state)
-        // the IOness2 family (r|rm|oai|roai|moai) routes to its own emitter — it
+        // the IOness2 family (r|rm|oai|roai) routes to its own emitter — it
         //   carries up to two IOpaths (match ... props/replacement) and, bar the
         //   sync oai, is an await-expression.
         if (ness !== 'i' && ness !== 'o') return this.Lang_compile_ioness2(node, state, ctx, ness)
@@ -1319,16 +1319,15 @@
 
     // ── Lang_compile_ioness2 — the two-arg IOness2 family ────────────────────
     //
-    //   r | rm | oai | roai | moai all take (match_sc, props_sc) — the FlowSep
-    //   "..." splits the two paths.  All but oai are async, so they emit an
-    //   `await` expression (the enclosing method must be `async`).
+    //   r | rm | oai | roai all take (match_sc, props_sc) — the FlowSep "..."
+    //   splits the two paths.  oai is sync (find-or-create-or-mutate); r/rm/roai
+    //   are async, so they emit an `await` expression (the method must be `async`).
     //
     //     r %A               → await w.r({A: 1})                 re-assert
     //     r %buffers...%ok    → await w.r({buffers: 1}, {ok: 1})  replace-with
     //     rm %A              → await w.rm({A: 1})                removal (= r(.,{}))
-    //     oai %a...%b         → w.oai({a: 1}, {b: 1})             find-or-create (sync)
+    //     oai %a...%b         → w.oai({a: 1}, {b: 1})             foc + mutate-in-place (sync)
     //     roai %a...%b        → await w.roai({a: 1}, {b: 1})      foc + replace-if-changed
-    //     moai %a...%b        → await w.moai({a: 1}, {b: 1})      foc + mutate-in-place
     //     A r %foo            → await A.r({foo: 1})               receiver-before-verb
     //
     //   Either side may be a lone `$var` instead of a peeled path — the variable
@@ -1336,10 +1335,10 @@
     //     r $c...$fuller      → await w.r(c, fuller)
     //     rm $c              → await w.rm(c)
     //
-    //   The r-WITH-A-BLOCK form (r + a pythonic-indented body → replace()) is
-    //   handled in _collect_line, not here — this emits the inline calls only.
+    //   The BLOCK forms (r + body → replace(); oai + body → doai()) are handled in
+    //   _collect_line, not here — this emits the inline calls only.
     Lang_compile_ioness2(node: SyntaxNode, state: EditorState, ctx: any,
-                         ness: 'r' | 'rm' | 'oai' | 'roai' | 'moai'): string {
+                         ness: 'r' | 'rm' | 'oai' | 'roai'): string {
         const paths = node.getChildren('IOpath')
         if (!paths.length) throw new Error(`${ness}: no IOpath`)
         const receiver = ctx.receiver ?? 'w'
@@ -1363,7 +1362,7 @@
         const legs = pathNode.getChildren('Leg')
         if (!legs.length) throw new Error('IOness2 arg: empty IOpath')
         if (legs.length > 1)
-            throw new Error('r|rm|oai|roai|moai take a single match object, not a drilled a/b/c path')
+            throw new Error('r|rm|oai|roai take a single match object, not a drilled a/b/c path')
         // lone $var → the variable holds the pattern|replacement object itself
         const items = legs[0].getChild('PeelGroup')?.getChildren('PeelItem') ?? []
         if (items.length === 1) {
@@ -1563,12 +1562,10 @@
     },
 
     // IOness is "i " | "o " — trim to one of the two
-    Lang_compile_IOness(node: SyntaxNode, state: EditorState): 'i' | 'o' | 'r' | 'rm' | 'oai' | 'roai' | 'moai' {
-        // i|o ride IOness; the two-arg family (r|rm|oai|roai|moai) rides IOness2.
-        //   doai also rides IOness2 but never reaches this expression emitter: it
-        //   only means anything WITH a block (its do_fn body), which _collect_line
-        //   intercepts before this runs.  A bare inline doai has no handler to
-        //   wire, so it lands here as an explicit "needs a block" error.
+    Lang_compile_IOness(node: SyntaxNode, state: EditorState): 'i' | 'o' | 'r' | 'rm' | 'oai' | 'roai' {
+        // i|o ride IOness; the two-arg family (r|rm|oai|roai) rides IOness2.  An
+        //   `oai` + a BLOCK lowers to doai() in _collect_line before this runs;
+        //   `oai` without a BLOCK lands here and emits the plain sync oai() call.
         const ness = node.getChild('IOness') ?? node.getChild('IOness2')
         if (!ness) throw new Error('no IOness')
         const s = state.doc.sliceString(ness.from, ness.to).trim()
@@ -1578,8 +1575,6 @@
         if (s === 'rm')   return 'rm'
         if (s === 'oai')  return 'oai'
         if (s === 'roai') return 'roai'
-        if (s === 'moai') return 'moai'
-        if (s === 'doai') throw new Error('doai needs an indented block — its do_fn body')
         throw new Error(`IOness unknown|unbuilt: "${s}"`)
     },
 

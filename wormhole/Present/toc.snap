@@ -15,11 +15,9 @@ Library
       TimeTotal:beliefs,avg=0.081
         sample=0.077,at=1781080326
         sample=0.085,at=1781607913
-  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1781621764.941
+  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1781631102.411
     TimeSpool
-      TimeTotal:beliefs,avg=2.294
-        sample=1.458,at=1781533425
-        sample=1.395,at=1781569516
+      TimeTotal:beliefs,avg=2.426
         sample=2.091,at=1781575993
         sample=2.396,at=1781596209
         sample=3.056,at=1781600376
@@ -28,11 +26,11 @@ Library
         sample=3.343,at=1781619651
         sample=2.429,at=1781620297
         sample=2.248,at=1781621768
-  Book:LakeSurfer,ok_pct=0,last_pct_change=1779607681.571,done=2,last_run_ms=1781623484.365,active
+        sample=2.287,at=1781631054
+        sample=1.885,at=1781631104
+  Book:LakeSurfer,ok_pct=0,last_pct_change=1779607681.571,done=2,last_run_ms=1781631165.253
     TimeSpool
-      TimeTotal:beliefs,avg=0.711
-        sample=0.98,at=1781524079
-        sample=0.412,at=1781571857
+      TimeTotal:beliefs,avg=0.78
         sample=0.77,at=1781572113
         sample=0.777,at=1781573422
         sample=0.292,at=1781573493
@@ -41,6 +39,8 @@ Library
         sample=0.924,at=1781621232
         sample=0.531,at=1781621334
         sample=1.01,at=1781623486
+        sample=0.62,at=1781630446
+        sample=1.456,at=1781631165
   Book:Peeringinst,ok_pct=0.5,last_pct_change=1779063073.279,done=2,last_run_ms=1779063093.816
   Book:PeeringLive,ok_pct=0.17,last_pct_change=1780023433.073,done=6,last_run_ms=1780418711.44
     TimeSpool
@@ -124,7 +124,7 @@ Library
         sample=0.064,at=1781595781
         sample=0.047,at=1781596162
         sample=0.018,at=1781608069
-  Book:LakeNets,ok_pct=0,last_pct_change=1779979876.845,done=3,last_run_ms=1781603812.788,time_avg=0.173
+  Book:LakeNets,ok_pct=0,last_pct_change=1779979876.845,done=3,last_run_ms=1781603812.788,time_avg=0.173,active
     TimeSpool
       TimeTotal:beliefs,avg=1.715
         sample=1.339,at=1781329806
