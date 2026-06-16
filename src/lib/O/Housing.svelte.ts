@@ -1790,6 +1790,7 @@ export class House extends StorableHousing {
             const name   = (req.sc.rw_dir || req.sc.rw_name) as string
             const op     = req.sc.rw_op   as string
             const done   = (reply: any) => { finish(reply); rw_req.sc.finished = 1 }
+            if (name.includes("Idzeuzia")) debugger
 
             if (!nav) { done({ error: '📭 nav not ready' }); return }
 

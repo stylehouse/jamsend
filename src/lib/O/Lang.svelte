@@ -1766,11 +1766,7 @@
         if (languinio) {
             ;(await w.doai({ req: 'waft_roster', eternal: 1 }))?.((req: TheC) => {
                 const roster = req.c.roster as Array<{ path: string, stance: string, from?: string }> | undefined
-                if (!roster) return
-                H.interest_reconcile(languinio, roster)
-                // observe-only breadcrumb (logged when the set changes, not every tick)
-                const sig = roster.map(r => r.path).join(',')
-                if (req.c.last_log !== sig) { req.c.last_log = sig; console.log(`🪧 Lang waft_roster ← [${sig}]`) }
+                if (roster) H.interest_reconcile(languinio, roster)
             })
             const sub = w.o({ req: 'waft_roster' })[0] as TheC | undefined
             if (sub && !sub.sc.subscribed) {

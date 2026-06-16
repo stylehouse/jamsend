@@ -585,8 +585,13 @@
         // < not necessary given req%mutated, which should be how we trigger resends
         //    we are going to fail to 'eventual consistency' I think
         //     ie write the latest version of a stampede of versions
-        // Dige-dedup: reuse an in-flight req for the same content.
-        const existing = (host.o({ req: 1, path }) as TheC[]).find(
+        // Dige-dedup: reuse an in-flight WRITE for the same content.  Scoped to
+        //  {req:'LiesStore_write'} — a bare {req:1} wildcard also matches the
+        //   req:LiesStore_writeCarefully that calls us (it carries the same path +
+        //    dige), so it would dedup the write against its own parent and never
+        //     dispatch the rw_op (source writes silently vanished; gen writes, with
+        //      no writeCarefully on their path, slipped through).
+        const existing = (host.o({ req: 'LiesStore_write', path }) as TheC[]).find(
             r => r.sc.dige === new_dige && !r.sc.finished
         )
         if (existing) return existing

@@ -497,6 +497,7 @@ abstract class StuffAware extends StuffIO {
     //  c.up | do_fn | oncelers | child reqs) — moai is the req verb.
     async roai(s, c = {}) {
         return await this.something_oai(s,c,{
+            // js subtlety: arrow adopts the promise it returns, so this.r() is awaited
             on_change: async (C,s,c) => this.r(s,c)
         })
     }
