@@ -876,6 +876,34 @@ export class House extends StorableHousing {
         await this.organise(e)
         await this.assert_req_legs()
         await this.attend(e)
+        // supervise the pump on a think beat — tug along this beat's reqs for any
+        //  host that has migrated off reqy (no antiquated reqs).  A targeted
+        //  re-entry (reqyoncile) pumps its own host, so it skips the sweep.
+        if (!e || e.sc.elvis === 'think') await this.reqdo_sweep()
+    }
+
+    // -------------------------------------------------------------------------
+    // reqdo: the supervisory pump for a host's reqs — the maz-priority do(), run
+    //   after attend so a req minted this beat is tugged along the same beat.
+    //   Phased per host: only takes over once the host has no antiquated (old
+    //   reqy) reqs left; while any remain, the old reqy().do() pumps them inline,
+    //   so the two never double-pump.  (think() may still pre-empt with its own
+    //   inline do() — nested do_fns pump their children that way.)
+    // -------------------------------------------------------------------------
+    async reqdo(w: TheC): Promise<void> {
+        const reqs = w.o({ req: 1 }) as TheC[]
+        if (!reqs.length) return
+        if (reqs.some(r => r.c.antiquated)) return   // Phase A: leave to inline reqy().do()
+        await w.do()                                  // Phase B: supervise the pump
+    }
+
+    // sweep every w, supervising the pump where the host has migrated off reqy.
+    async reqdo_sweep(): Promise<void> {
+        for (const A of this.o({ A: 1 }) as TheC[]) {
+            for (const w of A.o({ w: 1 }) as TheC[]) {
+                await this.reqdo(w)
+            }
+        }
     }
 
     // -------------------------------------------------------------------------

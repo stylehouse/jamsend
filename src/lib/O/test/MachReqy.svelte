@@ -60,7 +60,7 @@
             w.finish(De); return
         })
 
-        await w.do()
+        // reqdo_sweep supervises the top-level pump now (no inline w.do())
     },
 
 //#endregion
@@ -182,7 +182,7 @@
             })
         }
 
-        await w.do()
+        // reqdo_sweep supervises the top-level pump now (no inline w.do())
     },
 
     // named handler for req:reportPortPlaneting — resolved by do_fn_for (req_$name).
@@ -367,7 +367,7 @@
             if (De.all_finished() && !De.sc.finished) w.finish(De)
         })
 
-        await w.do()
+        // reqdo_sweep supervises the top-level pump now (no inline w.do())
     },
 
 //#endregion
