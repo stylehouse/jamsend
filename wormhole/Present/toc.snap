@@ -15,12 +15,9 @@ Library
       TimeTotal:beliefs,avg=0.081
         sample=0.077,at=1781080326
         sample=0.085,at=1781607913
-  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1781603831.345
+  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1781621764.941
     TimeSpool
-      TimeTotal:beliefs,avg=2.024
-        sample=1.926,at=1781522931
-        sample=1.795,at=1781524047
-        sample=1.594,at=1781524740
+      TimeTotal:beliefs,avg=2.294
         sample=1.458,at=1781533425
         sample=1.395,at=1781569516
         sample=2.091,at=1781575993
@@ -28,12 +25,12 @@ Library
         sample=3.056,at=1781600376
         sample=2.264,at=1781602822
         sample=2.262,at=1781603837
-  Book:LakeSurfer,ok_pct=0,last_pct_change=1779607681.571,done=2,last_run_ms=1781604766.565
+        sample=3.343,at=1781619651
+        sample=2.429,at=1781620297
+        sample=2.248,at=1781621768
+  Book:LakeSurfer,ok_pct=0,last_pct_change=1779607681.571,done=2,last_run_ms=1781621331.946,active
     TimeSpool
-      TimeTotal:beliefs,avg=0.565
-        sample=0.396,at=1781511433
-        sample=0.427,at=1781512719
-        sample=0.592,at=1781522751
+      TimeTotal:beliefs,avg=0.656
         sample=0.457,at=1781523643
         sample=0.98,at=1781524079
         sample=0.412,at=1781571857
@@ -41,6 +38,9 @@ Library
         sample=0.777,at=1781573422
         sample=0.292,at=1781573493
         sample=0.547,at=1781604769
+        sample=0.868,at=1781620407
+        sample=0.924,at=1781621232
+        sample=0.531,at=1781621334
   Book:Peeringinst,ok_pct=0.5,last_pct_change=1779063073.279,done=2,last_run_ms=1779063093.816
   Book:PeeringLive,ok_pct=0.17,last_pct_change=1780023433.073,done=6,last_run_ms=1780418711.44
     TimeSpool
@@ -71,10 +71,9 @@ Library
       TimeTotal:beliefs,avg=0.011
         sample=0.01,at=1781150336
         sample=0.012,at=1781588145
-  Book:PortPlan,ok_pct,last_pct_change=1779622885.154,done=2,last_run_ms=1781578898.24
+  Book:PortPlan,ok_pct,last_pct_change=1779622885.154,done=2,last_run_ms=1781616658.437
     TimeSpool
       TimeTotal:beliefs,avg=0.014
-        sample=0.016,at=1780417637
         sample=0.016,at=1780417638
         sample=0.02,at=1781080153
         sample=0.01,at=1781569951
@@ -84,6 +83,7 @@ Library
         sample=0.013,at=1781573507
         sample=0.015,at=1781576007
         sample=0.023,at=1781578899
+        sample=0.008,at=1781616659
   Book:PortPlanet,ok_pct,last_pct_change=1779622894.947,done=6,last_run_ms=1781615444.95
     TimeSpool
       TimeTotal:beliefs,avg=0.078
@@ -215,25 +215,22 @@ Library
         sample=0.093,at=1781594131
         sample=0.108,at=1781594165
         sample=0.123,at=1781594526
-  Book:LakeFlush,ok_pct=0,done,last_run_ms=1781609209.718
+  Book:LakeFlush,ok_pct=0,done,last_run_ms=1781618890.789
     TimeSpool
-      TimeTotal:beliefs,avg=1.328
-        sample=0.897,at=1781522947
-        sample=1.217,at=1781580615
-        sample=1.441,at=1781589644
-        sample=1.265,at=1781589687
-        sample=1.525,at=1781599586
-        sample=1.336,at=1781599907
-        sample=1.456,at=1781601520
-        sample=1.469,at=1781602789
+      TimeTotal:beliefs,avg=1.212
         sample=1.497,at=1781603768
         sample=1.181,at=1781609211
-  Book:Interesting,ok_pct,done=7,last_run_ms=1781612738.528,active
+        sample=1.661,at=1781617363
+        sample=1.111,at=1781617379
+        sample=1.244,at=1781617490
+        sample=0.952,at=1781617504
+        sample=0.98,at=1781617616
+        sample=1.028,at=1781617793
+        sample=1.223,at=1781617807
+        sample=1.246,at=1781618894
+  Book:Interesting,ok_pct,done=7,last_run_ms=1781621269.94
     TimeSpool
-      TimeTotal:beliefs,avg=0.185
-        sample=0.191,at=1781607892
-        sample=0.126,at=1781608666
-        sample=0.319,at=1781608747
+      TimeTotal:beliefs,avg=0.156
         sample=0.062,at=1781608752
         sample=0.073,at=1781608770
         sample=0.123,at=1781608994
@@ -241,3 +238,6 @@ Library
         sample=0.217,at=1781609597
         sample=0.254,at=1781609608
         sample=0.329,at=1781612738
+        sample=0.062,at=1781616482
+        sample=0.176,at=1781620308
+        sample=0.101,at=1781621271

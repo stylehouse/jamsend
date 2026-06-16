@@ -153,6 +153,12 @@ export const CHUNK_SIZE = 16 * 1024;          // 16KB chunks for file transfer e
 
 
 
+// stringify every value of sc, for a value-exact match.  FOOTGUN: this also turns a
+//  {k:1} presence-marker into a literal {k:"1"}, which DEFEATS o()'s numeric-1 wildcard
+//  (n_matches_kv treats only a *number* 1 as "any value").  So o({...exactly(s)}) is a
+//  literal match, never a presence one — the bug behind moai's serial re-find, where a
+//  {req:1} sentinel pinned to "1" never matched an assigned serial (req:2…).  Strip or
+//  re-set such sentinels to a numeric 1 after exactly() if you want them to stay wildcards.
 export function exactly(sc) {
     return map(v=>String(v),tex({}, sc))
 }

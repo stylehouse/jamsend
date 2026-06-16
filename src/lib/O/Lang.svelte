@@ -898,8 +898,10 @@
 
     // ── Lang_set_interest — publish the C-side address ────────────────────────
     //
-    //   %Interest mirrors Lies' %Spotlight on the Lang side.  Dropped + rebuilt so
-    //   it never points at a stale clone.  c.LE is the nav handle LangGraft reads;
+    //   %Interest,Trail mirrors Lies' %Spotlight on the Lang side.  Attached
+    //   NON-destructively onto the foreground Trail (sc.src overwritten each call,
+    //   so never stale) — preserving the roster-set lens/cursor/state.  c.LE is the
+    //   nav handle LangGraft reads;
     //   sc.src is the clone root NaviCado reads; c.What is the live %What object;
     //   in_Doc is ingredients' key and the active-dock selector; in_Point is the
     //   focus spec.
@@ -908,11 +910,21 @@
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
         if (!languinio) return
 
-        await languinio.r({ Interest: 1 }, {})
-        const interest  = languinio.oai({ Interest: 1 })
+        // The editing checkout IS the foreground Trail (Waft_spec promotes the one
+        //  old %Interest to %Interest,Trail).  Find the Trail already bearing our LE;
+        //   else adopt the giver's roster Trail (oai matches {Interest:'Trail'} and
+        //    unifies the checkout onto it); else mint a bare Trail the roster binds to
+        //     its giver next reconcile.  Never drop — the roster-set fields survive.
+        const interest  = ((languinio.o({ Interest: 'Trail' }) ?? []) as TheC[]).find(t => t.c.LE)
+                        ?? languinio.oai({ Interest: 'Trail' })
         const working_C = LE.o({ Seem: 'working' })[0]?.sc.C as TheC | undefined
         interest.sc.src = working_C
         interest.c.LE   = LE
+        // checking out IS foregrounding: lock the Trail and make it the ActiveInterest
+        //  (the editing checkout, not merely a noticed giver).  reconcile leaves state
+        //   alone once lens is set, so this sticks across roster pushes.
+        interest.sc.state = 'locked'
+        languinio.oai({ ActiveInterest: 1 }).sc.kind = 'Trail'
 
         // the live %What rides as the object on c.What — readers reach the real
         //   particle (its Points, their c.Doc) without a name lookup.  in_Doc stays
@@ -921,8 +933,9 @@
         interest.c.What = armed
         const in_Doc   = H.Waft_src_doc_path(armed)
         const in_Point = sc.method as string | undefined
-        if (in_Doc   != null) interest.sc.in_Doc   = in_Doc
-        if (in_Point != null) interest.sc.in_Point = in_Point
+        // set|clear — no longer a drop+recreate, so an absent value must be cleared
+        if (in_Doc   != null) interest.sc.in_Doc   = in_Doc;   else delete interest.sc.in_Doc
+        if (in_Point != null) interest.sc.in_Point = in_Point; else delete interest.sc.in_Point
 
         interest.bump_version()
 
@@ -1177,7 +1190,7 @@
     async Lang_Map_report(w: TheC, dock: TheC) {
         const H         = this as House
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
-        const interest  = languinio?.o({ Interest: 1 })[0] as TheC | undefined
+        const interest  = ((languinio?.o({ Interest: 'Trail' }) ?? []) as TheC[]).find(t => t.c.LE)
         if (!interest) return
         const Map_C = dock.o({ Compile: 1 })[0]?.o({ Map: 1 })[0] as TheC | undefined
         if (!Map_C) return
@@ -1739,6 +1752,33 @@
         const H = this
 
         if (!w.c.plan_done) await this.Lang_plan(A, w)
+
+        // ── Waft roster subscription — Lang's standing lock-feed from Lies ──────
+        //   A standing eternal req Lies pushes the roster onto (req.c.roster) +
+        //   reqyoncile; its do_fn reconciles the %Interest family directly into
+        //   Languinio.  The editing checkout is unified onto its giver's Trail —
+        //   Lang_set_interest attaches c.LE to it — and the o({Interest:'Trail'})
+        //   readers find that editing Trail by c.LE, while reconcile's gone-loop
+        //   spares any c.LE-bearing Interest.  So the family and the editor coexist
+        //   as direct %Interest children of Languinio (Waft_spec §"How an Interest
+        //   comes to be"; %Spotlight's successor is Trail's cursor).
+        const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
+        if (languinio) {
+            ;(await w.doai({ req: 'waft_roster', eternal: 1 }))?.((req: TheC) => {
+                const roster = req.c.roster as Array<{ path: string, stance: string, from?: string }> | undefined
+                if (!roster) return
+                H.interest_reconcile(languinio, roster)
+                // observe-only breadcrumb (logged when the set changes, not every tick)
+                const sig = roster.map(r => r.path).join(',')
+                if (req.c.last_log !== sig) { req.c.last_log = sig; console.log(`🪧 Lang waft_roster ← [${sig}]`) }
+            })
+            const sub = w.o({ req: 'waft_roster' })[0] as TheC | undefined
+            if (sub && !sub.sc.subscribed) {
+                sub.sc.subscribed = 1
+                H.i_elvisto('Lies/Lies', 'Lies_subscribe_waft_roster', { req: sub })   // hand Lies the req
+            }
+        }
+
         // these go every time so their toggle state can visually change
         let on_change = () => this.main()
         // whether Lang-Cyto does compound_nodes

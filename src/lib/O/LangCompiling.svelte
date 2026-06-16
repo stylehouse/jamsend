@@ -1010,14 +1010,20 @@
             while (look <= doc.lines && doc.line(look).text.trim() === '') look++
             const body_follows = look <= doc.lines
                 && ((doc.line(look).text.match(/^(\s*)/) ?? ['', ''])[1].length > r_indent)
-            if ((verb === 'r' || verb === 'doai') && ipaths.length === 1 && body_follows) {
+            //   r takes exactly the one pattern path (an inline `...` replacement
+            //    would contradict the block); doai takes the seed — its identity
+            //     path and an optional `...` props path, both forwarded to doai().
+            const block_ok = body_follows && (
+                (verb === 'r'    && ipaths.length === 1) ||
+                (verb === 'doai' && ipaths.length >= 1 && ipaths.length <= 2))
+            if (block_ok) {
                 const split    = this.Lang_io_before_split(line.text.slice(0, hit.node.from - localBase))
                 const receiver = split.receiver ?? 'w'
-                const arg      = this.Lang_ioness2_arg_src(ipaths[0], sliceState,
-                    split.receiver ? { receiver: split.receiver } : {})
+                const recv_ctx = split.receiver ? { receiver: split.receiver } : {}
+                const args     = ipaths.map(p => this.Lang_ioness2_arg_src(p, sliceState, recv_ctx))
                 const open = verb === 'r'
-                    ? `${' '.repeat(r_indent)}await ${receiver}.replace(${arg}, async () => {`
-                    : `${' '.repeat(r_indent)};(await ${receiver}.doai(${arg}))?.(async (req) => {`
+                    ? `${' '.repeat(r_indent)}await ${receiver}.replace(${args[0]}, async () => {`
+                    : `${' '.repeat(r_indent)};(await ${receiver}.doai(${args.join(', ')}))?.(async (req) => {`
                 out.push({ kind: 'translated', text: open })
                 n++
                 while (n <= doc.lines) {

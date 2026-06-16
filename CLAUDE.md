@@ -117,3 +117,11 @@ Never stage, commit, or push. Leave every change in the working tree.
 The human reviews the diff on the host and writes the commit message.
 When you think a commit point has been reached, say so; do not run git
  to record it.
+
+## The ~3k svelte-check warnings are baseline noise
+
+`npm run check` reports ~3000 pre-existing errors|warnings — mostly implicit-`any`
+ on untyped params and "Property X does not exist on type 'House'" (eatfunc|ghost-
+  injected methods the House type doesn't declare). Don't worry about the total; it
+   even drifts run-to-run from the incremental cache. To judge whether an edit
+    regressed, grep the check output for the *edited file's* line range, not the sum.

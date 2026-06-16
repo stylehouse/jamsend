@@ -117,7 +117,7 @@
         // is read only as a pre-pull fallback, before the first LE_pull mints
         // the clones (§3c).
         const languinio = w.o({ Languinio: 1 })[0]      as TheC | undefined
-        const interest  = languinio?.o({ Interest: 1 })[0] as TheC | undefined
+        const interest  = ((languinio?.o({ Interest: 'Trail' }) ?? []) as TheC[]).find(t => t.c.LE)
         const LE         = interest?.c.LE as TheC | undefined
 
         // src_C: the live source — Interest.src (clone root) when armed, else the
@@ -685,8 +685,8 @@
         // < graded squish (2-line crumbs via codeFolding placeholderDOM) is the
         //   Waft_spec variant of this — one fold extent per region for now.
         const opens: Array<{ id: string, from: number, to: number }> = []
-        const target = (w.o({ Languinio: 1 })[0]?.o({ Interest: 1 })[0]
-                          ?.c.LE as TheC | undefined)?.sc.target as TheC | undefined
+        const editing = ((w.o({ Languinio: 1 })[0]?.o({ Interest: 'Trail' }) ?? []) as TheC[]).find(t => t.c.LE)
+        const target = (editing?.c.LE as TheC | undefined)?.sc.target as TheC | undefined
         const crunch = !!(target?.sc as any)?.crunch
         const Map_C = dock.o({ Compile: 1 })[0]?.o({ Map: 1 })[0] as TheC | undefined
         if (Map_C && dock.c.view) {

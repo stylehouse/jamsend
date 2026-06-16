@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925
-  Funkcion:dirlist,interval_ms=8000,walked_at=1781603839925
+  Funkcion:dirlist,interval_ms=8000,walked_at=1781620310582
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -48,3 +48,4 @@ Waft:GhostList,lists,seeded=1781603839925
     Doc:src/lib/O/ThangShelf.svelte,name:ThangShelf
     Doc:src/lib/O/Thangs.svelte,name:Thangs
     Doc:src/lib/O/stho.ts,name:stho
+    Doc:src/lib/O/Interest.svelte,name:Interest,noticed_at=1781620310582

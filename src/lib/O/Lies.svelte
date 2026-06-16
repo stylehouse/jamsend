@@ -358,6 +358,9 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
         // ── LiesCurse — cursor wiring (runs every post-settle tick) ──────────
         await this.LiesCurse(A, w)
+
+        // ── Waft roster — the §7 push end of the Lang↔Lies channel ───────────
+        await this.Lies_waft_roster_pump(A, w)
         // req:Store (maz:7) and req:Cortex (maz:5) drive themselves via
         // rq.do() inside LiesRealised.  The final rq.do() at the end of
         // LiesRealised also pumps a dock read just warmed by the wants resolver.
@@ -366,6 +369,39 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             .filter(g => g.c.content !== undefined).length
         const wafts  = w.o({ Waft: 1 }).length
         w.i({ see: `🗂 ${loaded} doc${loaded === 1 ? '' : 's'}${wafts ? ` · ${wafts} Waft${wafts === 1 ? '' : 's'}` : ''}` })
+    },
+
+    // ── e_Lies_subscribe_waft_roster — Lang hands us its standing req ─────────
+    //
+    //   The §7 push end of the Lang↔Lies channel.  Lang holds the eternal
+    //   req:waft_roster and hands it to us once; we keep it in w.c._waft_subs and
+    //   PUSH the roster onto it (req.c.roster off-snap + reqyoncile to wake Lang's
+    //   re-drive) — here at registration, and thereafter on every Waft-set change
+    //   via Lies_waft_roster_pump.  An auto-dispatched e_ handler (not o_elvis
+    //   draining): the subscribe is a one-shot, so it must route without depending
+    //   on the worker having pre-stamped {o_elvis:…} (Housing do_fn_for).
+    async e_Lies_subscribe_waft_roster(A: TheC, w: TheC, e: TheC) {
+        const H   = this as House
+        const req = e.sc.req as TheC | undefined
+        if (!req) throw 'e_Lies_subscribe_waft_roster: needs req'
+        ;(w.c._waft_subs ??= new Set<TheC>()).add(req)
+        H.interest_push(w, req)                         // the current roster, at once
+        w.c._roster_sig = H.interest_roster_sig(w)      // pump re-pushes only when this moves
+    },
+
+    // ── Lies_waft_roster_pump — re-push when the Waft set changes ─────────────
+    //   Per-tick from the worker.  A cheap interest_roster_sig poll catches add|
+    //   drop|stance-flip and re-pushes to every subscriber.  Dormant (early return)
+    //   until something has subscribed, so it is harmless to the live pipeline.
+    async Lies_waft_roster_pump(A: TheC, w: TheC) {
+        const H = this as House
+        const subs = w.c._waft_subs as Set<TheC> | undefined
+        if (!subs?.size) return
+        const sig = H.interest_roster_sig(w)
+        if (sig !== w.c._roster_sig) {
+            w.c._roster_sig = sig
+            for (const req of subs) H.interest_push(w, req)
+        }
     },
 
 //#region LiesPersist — disk IO phase
