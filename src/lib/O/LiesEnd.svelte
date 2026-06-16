@@ -597,6 +597,40 @@ await M.eatfunc({
         if (run) await run(LE, funk)
     },
 
+    // ── Funkcions — Lies-side, no LE ──────────────────────────────────────────
+    //   A Funkcion is behaviour on funk.c.run riding a Waft directly
+    //   (Waft/Funkcion:$name — no Seem, no req inside the Waft).  Its hosting req
+    //   lives centrally in Lies/Funkcions as req:Funkcion (one per Funkcion); the
+    //   Funkcion spawns|knows its own req via Lies_register_funkcion.  Lies_pump_-
+    //   funkcions runs them all once per tick (reqy(Funkcions).do()); req_Funkcion
+    //   (resolved by the req_$name convention) runs one Funkcion and sets sc.ok, so
+    //   it re-runs every tick but stays inspectable.  run is (host, funk, ...args)
+    //   — host is the Waft, args carry through (e.g. the w a walker lists against).
+    async Lies_register_funkcion(w: TheC, host: TheC, funk: TheC, ...args: any[]): Promise<TheC> {
+        const funks = w.oai({ Funkcions: 1 })
+        // funk_id keys the req — a plain scalar, NOT the Waft|Funkcion mainkeys (those
+        //  are type-tags a tree-walk reads to detect wafts|funkcions; using them as req
+        //  sc keys makes the walk misread this req).  The waft|funk are .c refs.
+        const funk_id = `${host.sc.Waft}/${funk.sc.Funkcion}`
+        const fr = await (this as House).reqy(funks).roai({ req: 'Funkcion', funk_id, eternal: 1 })
+        fr.c.host = host
+        fr.c.funk = funk
+        fr.c.run_args = args
+        return fr
+    },
+    async Lies_pump_funkcions(w: TheC) {
+        const funks = w.o({ Funkcions: 1 })[0] as TheC | undefined
+        if (funks) await (this as House).reqy(funks).do()
+    },
+    async req_Funkcion(req: TheC, _q: any) {
+        const host = req.c.host as TheC | undefined
+        const funk = req.c.funk as TheC | undefined
+        const args = (req.c.run_args as any[]) ?? []
+        const run  = funk?.c.run as ((host: TheC, funk: TheC, ...a: any[]) => void | Promise<void>) | undefined
+        if (run && host) await run(host, funk!, ...args)
+        req.sc.ok = 1   // pass-local; eternal req re-arms next tick
+    },
+
     // ── LE_arm ──────────────────────────────────────────────────────────────
     // Aim (or re-aim) LE at a source %What.  Sets up both Seems: origin reads
     // the remote for awareness; working holds the editable clones (Seem.sc.C

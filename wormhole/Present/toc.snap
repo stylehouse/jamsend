@@ -13,10 +13,9 @@ Library
     TimeSpool
       TimeTotal:beliefs,avg=0.077
         sample=0.077,at=1781080326
-  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1781569513.362,active
+  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1781575992.237
     TimeSpool
-      TimeTotal:beliefs,avg=1.619
-        sample=1.768,at=1781444348
+      TimeTotal:beliefs,avg=1.651
         sample=1.427,at=1781444610
         sample=1.595,at=1781444639
         sample=1.286,at=1781444654
@@ -26,6 +25,7 @@ Library
         sample=1.594,at=1781524740
         sample=1.458,at=1781533425
         sample=1.395,at=1781569516
+        sample=2.091,at=1781575993
   Book:LakeSurfer,ok_pct=0,last_pct_change=1779607681.571,done=2,last_run_ms=1781573489.718
     TimeSpool
       TimeTotal:beliefs,avg=0.557
@@ -67,11 +67,9 @@ Library
     TimeSpool
       TimeTotal:beliefs,avg=0.01
         sample=0.01,at=1781150336
-  Book:PortPlan,ok_pct,last_pct_change=1779622885.154,done=2,last_run_ms=1781573506.967
+  Book:PortPlan,ok_pct,last_pct_change=1779622885.154,done=2,last_run_ms=1781578898.24
     TimeSpool
       TimeTotal:beliefs,avg=0.014
-        sample=0.016,at=1780417637
-        sample=0.016,at=1780417637
         sample=0.016,at=1780417637
         sample=0.016,at=1780417638
         sample=0.02,at=1781080153
@@ -80,10 +78,11 @@ Library
         sample=0.012,at=1781570403
         sample=0.01,at=1781573396
         sample=0.013,at=1781573507
-  Book:PortPlanet,ok_pct=0.17,last_pct_change=1779622894.947,done=6,last_run_ms=1781573873.036
+        sample=0.015,at=1781576007
+        sample=0.023,at=1781578899
+  Book:PortPlanet,ok_pct,last_pct_change=1779622894.947,done=6,last_run_ms=1781576011.165
     TimeSpool
-      TimeTotal:beliefs,avg=0.071
-        sample=0.087,at=1780417629
+      TimeTotal:beliefs,avg=0.068
         sample=0.087,at=1780417630
         sample=0.087,at=1780417630
         sample=0.087,at=1780417634
@@ -93,10 +92,10 @@ Library
         sample=0.051,at=1781080120
         sample=0.053,at=1781572152
         sample=0.073,at=1781573874
-  Book:PortPlant,ok_pct,last_pct_change=1779532868.769,done=9,last_run_ms=1781573534.242
+        sample=0.054,at=1781576013
+  Book:PortPlant,ok_pct,last_pct_change=1779532868.769,done=9,last_run_ms=1781576039.432
     TimeSpool
       TimeTotal:beliefs,avg=0.049
-        sample=0.063,at=1781080103
         sample=0.073,at=1781528501
         sample=0.089,at=1781534601
         sample=0.027,at=1781534640
@@ -106,6 +105,7 @@ Library
         sample=0.038,at=1781569532
         sample=0.04,at=1781571959
         sample=0.05,at=1781573536
+        sample=0.055,at=1781576041
   Book:MundaneStation,ok_pct=0,last_pct_change=1779845683.836,done=5,last_run_ms=1779949732.752
   Book:MundaneStaying,ok_pct=0,last_pct_change=1779949738.82,done=3,last_run_ms=1781080135.708
     TimeSpool
@@ -120,10 +120,9 @@ Library
         sample=0.049,at=1780418651
         sample=0.049,at=1780418655
         sample=0.039,at=1781080138
-  Book:LakeNets,ok_pct=0,last_pct_change=1779979876.845,done=3,last_run_ms=1781527908.496,time_avg=0.173
+  Book:LakeNets,ok_pct=0,last_pct_change=1779979876.845,done=3,last_run_ms=1781580288.601,time_avg=0.173
     TimeSpool
-      TimeTotal:beliefs,avg=3.97
-        sample=1.301,at=1781256191
+      TimeTotal:beliefs,avg=4.059
         sample=1.819,at=1781262097
         sample=2.635,at=1781265429
         sample=24.84,at=1781268096
@@ -133,6 +132,7 @@ Library
         sample=1.39,at=1781511693
         sample=1.929,at=1781526592
         sample=1.614,at=1781527911
+        sample=2.192,at=1781580293
   Book:Understandity,ok_pct,done,last_run_ms=1780138366.519
     TimeSpool
       TimeTotal:beliefs,avg=0.013
@@ -211,7 +211,7 @@ Library
         sample=0.963,at=1781006972
         sample=0.032,at=1781054782
         sample=0.026,at=1781056411
-  Book:LakeFlush,ok_pct=0,done,last_run_ms=1781522943.428
+  Book:LakeFlush,ok_pct=0,done,last_run_ms=1781522943.428,active
     TimeSpool
       TimeTotal:beliefs,avg=1.809
         sample=0.849,at=1781229494

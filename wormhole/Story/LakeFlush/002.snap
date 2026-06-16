@@ -1,17 +1,18 @@
 Snap:H
   H:LakeFlush,Run
     A:Lies
-      self,round=23	{"mung":["age"]}
+      self,round=27	{"mung":["age"]}
       w:Lies
         Opt
           nowriting
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/LakeFlush/Waftily/toc.snap,waft_path:Story/LakeFlush/Waftily
-            known,dige:64e3393587d20dab,kind:read,at=1781511435.398
+            known,dige:64e3393587d20dab,kind:read,at=1781580295.085
+          Good,type:text/Waft,path:wormhole/GhostList/toc.snap,waft_path:GhostList,not_found
           Good,type:text/Doc,path:Ghost/test/Story/Peregrination.g
-            known,dige:5243d16758eb710b,kind:read,at=1781511435.735
+            known,dige:5243d16758eb710b,kind:read,at=1781580295.715
           Good,type:text/Doc,path:Ghost/test/Peeroleum.g
-            known,dige:69f9fd8539393ad7,kind:read,at=1781511437.732
+            known,dige:69f9fd8539393ad7,kind:read,at=1781580298.087
         examining	{"loopy":2}
           req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
           Spotlight	{"ref":{"src":"%What:peer"}}
@@ -48,16 +49,68 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781511435468,kind:cold
-          want=1781511435520,kind:cold
-          want=1781511435627,kind:cold
-          want=1781511437499,kind:test,resolved
+          want=1781580295191,kind:cold
+          want=1781580295292,kind:cold
+          want=1781580295504,kind:cold
+          want=1781580297874,kind:test,resolved
         o_elvis:dock_askies
+        Waft:GhostList,lists,seeded=1781580295716
+          Funkcion:dirlist,interval_ms=8000,walked_at=1781580295716
+          group:src/lib,dir:src/lib
+            sub:src/lib/O,name:O
+            sub:src/lib/data,name:data
+            sub:src/lib/gen,name:gen
+            sub:src/lib/ghost,name:ghost
+            sub:src/lib/mostly,name:mostly
+            sub:src/lib/p2p,name:p2p
+            Doc:src/lib/FTrusting.svelte,name:FTrusting
+            Doc:src/lib/MTrusting.svelte,name:MTrusting
+            Doc:src/lib/Trust.svelte.ts,name:Trust
+            Doc:src/lib/Y.svelte.ts,name:Y
+          group:src/lib/O,dir:src/lib/O
+            sub:src/lib/O/D,name:D
+            sub:src/lib/O/lang,name:lang
+            sub:src/lib/O/shelved,name:shelved
+            sub:src/lib/O/spec,name:spec
+            sub:src/lib/O/test,name:test
+            sub:src/lib/O/ui,name:ui
+            Doc:src/lib/O/Cyto.svelte,name:Cyto
+            Doc:src/lib/O/Cytui.svelte,name:Cytui
+            Doc:src/lib/O/Ghost.svelte,name:Ghost
+            Doc:src/lib/O/Housing.svelte.ts,name:Housing
+            Doc:src/lib/O/Hovercraft.svelte,name:Hovercraft
+            Doc:src/lib/O/Lang.svelte,name:Lang
+            Doc:src/lib/O/LangCompiling.svelte,name:LangCompiling
+            Doc:src/lib/O/LangGraft.svelte,name:LangGraft
+            Doc:src/lib/O/LangLang.svelte,name:LangLang
+            Doc:src/lib/O/LangPoint.svelte,name:LangPoint
+            Doc:src/lib/O/LangRegions.svelte,name:LangRegions
+            Doc:src/lib/O/LangSion.svelte,name:LangSion
+            Doc:src/lib/O/LangWhatwhere.svelte,name:LangWhatwhere
+            Doc:src/lib/O/Langui.svelte,name:Langui
+            Doc:src/lib/O/Lies.svelte,name:Lies
+            Doc:src/lib/O/LiesCortex.svelte,name:LiesCortex
+            Doc:src/lib/O/LiesCurse.svelte,name:LiesCurse
+            Doc:src/lib/O/LiesEnd.svelte,name:LiesEnd
+            Doc:src/lib/O/LiesStore.svelte,name:LiesStore
+            Doc:src/lib/O/Liesui.svelte,name:Liesui
+            Doc:src/lib/O/MachPeerily.svelte,name:MachPeerily
+            Doc:src/lib/O/Matstyle.svelte,name:Matstyle
+            Doc:src/lib/O/Otro.svelte,name:Otro
+            Doc:src/lib/O/Storui.svelte,name:Storui
+            Doc:src/lib/O/Story.svelte,name:Story
+            Doc:src/lib/O/Text.svelte,name:Text
+            Doc:src/lib/O/Thang.svelte,name:Thang
+            Doc:src/lib/O/ThangShelf.svelte,name:ThangShelf
+            Doc:src/lib/O/Thangs.svelte,name:Thangs
+            Doc:src/lib/O/stho.ts,name:stho
+        Funkcions
+          req:Funkcion,funk_id:GhostList/dirlist,eternal,ok
         log:gen_write,path:gen/test/Peeroleum.go,dige:b84b8d8c
-        self,round=23	{"mung":["age"]}
-        see:🗂 2 docs · 1 Waft
+        self,round=27	{"mung":["age"]}
+        see:🗂 2 docs · 2 Wafts
     A:Lang
-      self,round=25	{"mung":["age"]}
+      self,round=28	{"mung":["age"]}
       w:Lang
         Opt
           txtsyntaxdump
@@ -73,7 +126,7 @@ Snap:H
             Compile
               Map
                 def,method:LakeNetherland,from,to=16,line=2
-              time,compile=0.002,all=0.145
+              time,compile=0.002,all=0.256
               Output,gen_path:gen/test/Story/Peregrination.go,dige:132bbb4fbdc68238,source_dige:5243d16758eb710b
                source: |
                  <script lang="ts">
@@ -115,7 +168,7 @@ Snap:H
                 def,method:transport,from=65,to=75,line=5
                 def,method:PeerJS,from=108,to=115,line=7
                 def,method:Socket,from=145,to=152,line=9
-              time,compile=0.001,all=0.15
+              time,compile=0.001,all=0.156
               Output,gen_path:gen/test/Peeroleum.go,dige:b84b8d8cc1c85f2b,source_dige:69f9fd8539393ad7
                source: |
                  <script lang="ts">
@@ -196,7 +249,8 @@ Snap:H
         o_elvis:Lies_compile_settled
         received,doc_opened,doc:Ghost/test/Peeroleum.g
         received,editorBegins,doc:Ghost/test/Peeroleum.g
-        self,round=25	{"mung":["age"]}
+        self,round=28	{"mung":["age"]}
+        see:✅ compiled Ghost/test/Peeroleum.g
         see:🟦 tiles 0 bookmarks
     A:Pantheate
       self,round=7	{"mung":["age"]}
@@ -215,7 +269,7 @@ Snap:H
       action,role:compile,label:compile	{"ref":{"fn":"Function()"}}
       action,role:lang_pick,kind:dropdown,label:language,icon:✎,value:stho	{"ref":{"options":"[Object(),Object()]","on_pick":"Function()"}}
       action,role:gen_parser,label:gen,icon:⚙,disabled:true	{"ref":{"fn":"Function()"}}
+      action,role:compo,label:compo,icon:compo,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:nogen,label:nogen,icon:nogen,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:softgen,label:softgen,icon:softgen,cls:toggle-off	{"ref":{"fn":"Function()"}}
-      action,role:compo,label:compo,icon:compo,cls:toggle-off	{"ref":{"fn":"Function()"}}
     mo:main,interval=3.6	{"mung":["id"]}

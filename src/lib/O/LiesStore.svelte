@@ -280,6 +280,86 @@
         return ting
     },
 
+    // ── Lies_ghostlist ───────────────────────────────────────────────────────
+    //   The GhostList — a singleton Waft that dirlists the ghost pile into itself
+    //   (GhostList_funkcion) and shows it in the Lies UI.  It loads+saves like any
+    //   Waft: this returns the loaded container (marking sc.lists so the switcheroo
+    //   renders it as the index), or kicks the load and returns undefined while it
+    //   provisions.  Letting the Waft pipeline own the container is what gives it
+    //   persistence — and its watch_c auto-saves on every change.
+    Lies_ghostlist(w: TheC): TheC | undefined {
+        const gl = w.o({ Waft: 'GhostList' })[0] as TheC | undefined
+        if (gl) {
+            if (!gl.sc.lists) gl.sc.lists = 1
+            return gl
+        }
+        ;(this as House).i_elvisto(w, 'Lies_open_Waft', { path: 'GhostList' })  // load (idempotent)
+        return undefined
+    },
+
+    // ── GhostList_funkcion ──────────────────────────────────────────────────────
+    //   Install the GhostList's dirlist behaviour on funk.c.run (off-snap), riding the
+    //   Waft directly (Waft/Funkcion:dirlist — no Seem), and register its central
+    //   req:Funkcion in Lies/Funkcions.  Idempotent — installs|registers once.
+    async GhostList_funkcion(gl: TheC, w: TheC): Promise<TheC> {
+        const funk = gl.oai({ Funkcion: 'dirlist' })
+        funk.sc.interval_ms ??= 8000
+        if (funk.c.run) return funk
+        delete funk.sc.walked_at   // a fresh install (incl. after a load) walks at once
+        const H = this as House
+
+        // the roots are always listed; the user opens deeper dirs by clicking (each
+        //  becomes an %open_dir child), and those get listed too — a navigable tree.
+        const ROOTS = ['src/lib', 'src/lib/O']
+        const SRC   = /\.(svelte|svelte\.ts|ts)$/
+        // the hive clusters on the filename minus its source suffix, so Lang*|Lies*
+        //  fold onto shared stems rather than all sharing `.svelte`.
+        const stem  = (name: string) => name.replace(/\.(svelte\.ts|svelte|ts)$/, '')
+
+        funk.c.run = async (host: TheC, _fk: TheC, ww: TheC) => {
+            const now = Date.now()
+            const interval = (funk.sc.interval_ms as number) ?? 8000
+            // throttle re-walks; a finished walk goes quiet until the interval lapses
+            if (funk.sc.walked_at && now - (funk.sc.walked_at as number) < interval) return
+
+            const seeded = !!host.sc.seeded   // a baseline walk has happened → newer files glow
+            const opened = (host.o({ open_dir: 1 }) as TheC[]).map(o => o.sc.open_dir as string)
+            const dirs   = [...new Set([...ROOTS, ...opened])]
+
+            let pending = false, changed = false
+            for (const dir of dirs) {
+                const lreq = await H.LiesStore_listing(ww, dir)
+                if (!lreq.sc.finished) { pending = true; continue }   // come back next tick
+                const reply   = lreq.sc.reply as { entries?: { name: string, is_dir: boolean }[] } | undefined
+                const entries = reply?.entries ?? []
+                const group   = host.oai({ group: dir })             // GhostList/<dir>/…
+                group.sc.dir  = dir
+                for (const e of entries) {
+                    const path = `${dir}/${e.name}`
+                    if (e.is_dir) {                                  // a subdir — click opens it
+                        if (!group.oa({ sub: path })) changed = true
+                        group.oai({ sub: path }).sc.name = e.name
+                    } else if (SRC.test(e.name)) {                   // a ghost file — click gotos it
+                        const fresh = !group.oa({ Doc: path })
+                        const d = group.oai({ Doc: path })
+                        d.sc.name = stem(e.name)
+                        // noticed_at = first seen AFTER the baseline; the UI glows it for 24h.
+                        //  (not created_at — that's a stripped SESSION_KEY, never persists.)
+                        if (fresh) { changed = true; if (seeded) d.sc.noticed_at = now }
+                    }
+                }
+                // < prune sub|Doc entries whose dir|file vanished; oai-only is fine for now.
+            }
+            if (!pending) {
+                funk.sc.walked_at = now
+                if (!host.sc.seeded) host.sc.seeded = now   // first full walk = baseline; nothing glows
+                if (changed) host.bump_version()            // bump|render only on real change
+            }
+        }
+        await H.Lies_register_funkcion(w, gl, funk, w)   // the Funkcion spawns its central req
+        return funk
+    },
+
     // ── Lies_waft_save ────────────────────────────────────────────────────────
     //
     //   Throttled write of a Waft container back to its wormhole snap path.
@@ -293,6 +373,8 @@
         // Takers are transient sinks — they take Points, they don't persist them.
         //  Givers (the Whats) persist as usual.  This is the one place the giver|
         //  taker distinction touches IO, so it lives here next to the write.
+        //  The lister (GhostList) DOES persist — it loads+saves like any Waft, so its
+        //  open-dir tree, seeded baseline and noticed_at marks survive a reload.
         if (waft.sc.takes) return
         const path = waft.sc.Waft as string
 
@@ -333,7 +415,7 @@
     //   end of each pump cycle — lower reqs see a settled Store without it being
     //   permanently finished; do_one clears ok at entry each tick.
     async LiesStore_req(w: TheC): Promise<TheC> {
-        return this.reqy(w).roai({ req: 'Store', eternal: 1, maz: 7 })
+        return w.req_oai({ req: 'Store', eternal: 1, maz: 7 })
     },
 
 
@@ -347,11 +429,10 @@
     //   here in Phase 1, so LiesCortex_run (which follows) can run in any order.
     //
     //   req:Store never finishes (eternal:1) — it keeps running each tick.
-    async req_Store(req: TheC, q: any) {
+    async req_Store(req: TheC) {
         const H = this as House
         const w = req.c.up as TheC   // req:Store → w
-        const rq = H.reqy(req)
-        await rq.do()
+        await req.do()               // pump req:Store's IO children
 
         // ── Phase 1: LiesStore_write completions ──────────────────────────────
         //   Stamp Good,type:'text/Doc'/known with the write dige — that is the
@@ -359,7 +440,7 @@
         //     then drop the req.
         //   writeCarefully finishes silently — its inner LiesStore_write
         //   sibling carries the actual IO and is the one that lands here.
-        for (const wr of rq.o({ req: 'LiesStore_write' }) as TheC[]) {
+        for (const wr of req.o({ req: 'LiesStore_write' }) as TheC[]) {
             if (!wr.sc.finished) continue
             const path  = wr.sc.path  as string
             const reply = wr.sc.reply as any
@@ -391,9 +472,9 @@
                 // keyed by source path with gen_path as a separate sc field.
                 // The write req's own sc.path IS gen_path — match by that.
                 const write_gen_path = wr.sc.path as string
-                const cortex = H.reqy(w).o({ req: 'Cortex' })[0] as TheC | undefined
+                const cortex = w.o({ req: 'Cortex' })[0] as TheC | undefined
                 if (cortex) {
-                    const codebit = (H.reqy(cortex).o({ req: 'Codebit' }) as TheC[])
+                    const codebit = (cortex.o({ req: 'Codebit' }) as TheC[])
                         .find(r => r.sc.gen_path === write_gen_path && !r.sc.finished && !r.sc.write_finished)
                     if (codebit) codebit.sc.write_finished = 1
                 }
@@ -415,7 +496,7 @@
         //   to read reply before the req disappears.
         //
         //   Must NOT drop before roai returns — that re-dispatches every tick.
-        for (const rd of rq.o({ req: 'LiesStore_read' }) as TheC[]) {
+        for (const rd of req.o({ req: 'LiesStore_read' }) as TheC[]) {
             if (!rd.sc.finished) continue
             if (rd.sc.seen) {
                 req.drop(rd)
@@ -438,8 +519,22 @@
             rd.sc.seen = 1   // caller has one more cycle to read reply, then we drop
         }
 
+        // ── Phase 2b: Funkcions ───────────────────────────────────────────────
+        //   Make sure the GhostList + its Funkcion exist (it registers its own
+        //    central req:Funkcion), then run the central Lies/Funkcions pump — before
+        //     Phase 3 drops the finished listing reqs, so the walker reads their
+        //      replies first; the drop re-arms the next walk.
+        try {
+            const gl = H.Lies_ghostlist(w)                 // undefined while it loads
+            if (gl) await H.GhostList_funkcion(gl, w)
+            await H.Lies_pump_funkcions(w)
+        } catch (err) {
+            // a Funkcion must never stall the Store pump — it gates all the IO below.
+            console.error('👻 Funkcions pump error:', err)
+        }
+
         // ── Phase 3: LiesStore_listing completions ────────────────────────────
-        for (const ls of rq.o({ req: 'LiesStore_listing' }) as TheC[]) {
+        for (const ls of req.o({ req: 'LiesStore_listing' }) as TheC[]) {
             if (ls.sc.finished) req.drop(ls)
         }
 
@@ -448,7 +543,7 @@
         //    across ticks (e_Lies_source_write fires and forgets), and what it put
         //     on disk lives on the %Good's /known.  An in-flight one (ttlilt armed
         //      for a source_check) isn't finished, so it stays.
-        for (const wc of rq.o({ req: 'LiesStore_writeCarefully' }) as TheC[]) {
+        for (const wc of req.o({ req: 'LiesStore_writeCarefully' }) as TheC[]) {
             if (wc.sc.finished) req.drop(wc)
         }
 
@@ -482,19 +577,21 @@
         const base_dige = good?.o({ known: 1 })[0]?.sc.dige as string | undefined
         if (base_dige && base_dige === new_dige) return null
 
-        const wq = H.reqy(host)
-        wq.drop_finished({ req: 'LiesStore_write', path })
+        // drop finished writes for this path before re-issuing
+        for (const old of host.o({ req: 'LiesStore_write', path }) as TheC[]) {
+            if (old.sc.finished) host.drop(old)
+        }
 
         // < not necessary given req%mutated, which should be how we trigger resends
         //    we are going to fail to 'eventual consistency' I think
         //     ie write the latest version of a stampede of versions
         // Dige-dedup: reuse an in-flight req for the same content.
-        const existing = (wq.o({ path }) as TheC[]).find(
+        const existing = (host.o({ req: 1, path }) as TheC[]).find(
             r => r.sc.dige === new_dige && !r.sc.finished
         )
         if (existing) return existing
 
-        const req = await wq.roai(
+        const req = host.req_oai(
             { req: 'LiesStore_write', path, dige: new_dige },
             { rw_data: text, rw_name, rw_op: 'write' },
         )
@@ -516,12 +613,11 @@
     ): Promise<TheC> {
         const H    = this as House
         const host = await H.LiesStore_req(w)
-        const rq   = H.reqy(host)
         const c = opts.label
             ? { req: 'LiesStore_read', rw_name, label: opts.label }
             : { req: 'LiesStore_read', rw_name }
 
-        const req = await rq.roai(c, { rw_op: 'read' })
+        const req = host.req_oai(c, { rw_op: 'read' })
 
         H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
         // a finished read handed to the caller is consumed now — mark seen so
@@ -582,8 +678,7 @@
     ): Promise<TheC> {
         const H    = this as House
         const host = await H.LiesStore_req(w)
-        const rq   = H.reqy(host)
-        const req  = await rq.roai({ req: 'LiesStore_listing', rw_dir }, { rw_op: 'list' })
+        const req  = host.req_oai({ req: 'LiesStore_listing', rw_dir }, { rw_op: 'list' })
 
         H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
         if (!req.sc.finished) H.i_req_ttlilt(req, 1.6, { waiting: 'LiesStore_listing' })
@@ -613,7 +708,7 @@
     //        any /surprise_read, finish.
     //
     //   < the surprise path blocks the write but doesn't yet resume it.
-    async req_LiesStore_writeCarefully(req: TheC, q: any) {
+    async req_LiesStore_writeCarefully(req: TheC) {
         const H    = this as House
         const host = req.c.up as TheC              // req → req:Store
         const w    = host.c.up as TheC             // req:Store → w
@@ -624,18 +719,18 @@
         const good = host.o({ Good: 1, type: 'text/Doc', path })[0] as TheC | undefined
         if (!good) {
             console.warn(`🗂 writeCarefully: no Good for ${path} — dropping`)
-            return q.finish(req)
+            return host.finish(req)
         }
 
         // nowriting opt: log write intent; source never goes to disk.
         if (H.Lies_nowriting(w, path)) {
             await H.Lies_log_want(w, 'source_write', path, text)
-            return q.finish(req)
+            return host.finish(req)
         }
 
         const known     = good.o({ known: 1 })[0] as TheC | undefined
         const base_dige = known?.sc.dige as string | undefined
-        if (base_dige && dige === base_dige) return q.finish(req)
+        if (base_dige && dige === base_dige) return host.finish(req)
 
         // Pull-before-push: read disk, compare to what we loaded.
         // Cavalier skip: when the %Good's /known is recent enough, trust it as our
@@ -662,14 +757,14 @@
                 sr.sc.dige      = dige
                 good.bump_version()
                 console.warn(`🗂 surprise_read on ${path}: disk dige ${disk_dige.slice(0, 5)} ≠ base ${base_dige.slice(0, 5)}`)
-                return q.finish(req)
+                return host.finish(req)
             }
         }
 
         console.log(`🖊 Lies_source_write: ${path} (${text.length}c)${skip_check ? ' [luxury skip]' : ''}`)
         await H.LiesStore_write(w, path, text)
         for (const sr of good.o({ surprise_read: 1 }) as TheC[]) good.drop(sr)
-        q.finish(req)
+        host.finish(req)
     },
 
 //#endregion
@@ -720,7 +815,7 @@
     //   Find (never create) a %Good under req:Store; undefined if absent or if
     //   Store isn't up yet.  For read-only callers outside Store's own children.
     LiesStore_good_of(w: TheC, type: string, path: string): TheC | undefined {
-        const store = (this as House).reqy(w).o({ req: 'Store' })[0] as TheC | undefined
+        const store = w.o({ req: 'Store' })[0] as TheC | undefined
         return store?.o({ Good: 1, type, path })[0] as TheC | undefined
     },
 

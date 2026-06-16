@@ -1206,10 +1206,12 @@ export class TheC extends Stuff {
 
     //  find-or-create a %req child.  An anonymous %req:1 is given a serial off
     //   the host (c.req_serial), so a unique {…c} identity becomes %req:$i.
-    _req_oai(c: TheUniversal, meta: { existed?: boolean } = {}): TheC {
+    //  find-or-create a %req child and return it.  On an existing req, re-merge
+    //   sc with %mutated (moai); on a fresh one, apply sc plainly.  This is the
+    //   ref-returning req verb (cf reqy().roai) — doai is this plus a do_fn setter.
+    req_oai(c: TheUniversal, sc: TheUniversal = {}): TheC {
         let req = this.o({ req: 1, ...exactly(c) })[0] as TheC | undefined
-        if (req) { meta.existed = true; return req }
-        meta.existed = false
+        if (req) { this.maybe_mutate_sc(req, sc); return req }
         const mix: TheUniversal = { req: 1, ...c }
         // an anonymous %req:1 wants serial numbering — and the serial IS the %req
         //  value (%req:$i++), assigned here at birth off the host counter.  A
@@ -1221,19 +1223,16 @@ export class TheC extends Stuff {
         //  The first do() exposes it as %initialdo for the handler, then clears
         //  it, so %initialdo is a within-do signal, never persistent snap state.
         req.c.initialdo = 1
+        Object.assign(req.sc, sc)
         if (req.sc.maz === 1) delete req.sc.maz   // maz:1 is implied
         return req
     }
 
     //  seed a req and return a one-shot do_fn setter (?.(body)), or null once
-    //   wired — so re-entry never re-wires; only do() re-runs the body.
+    //   wired — so re-entry never re-wires; only do() re-runs the body.  doai is
+    //   moai (req_oai's re-merge) with that setter.
     async doai(c: TheUniversal, sc: TheUniversal = {}): Promise<((fn: Function) => void) | null> {
-        const meta: { existed?: boolean } = {}
-        const req = this._req_oai(c, meta)
-        // doai is moai with a do_fn-setter: re-merge sc with %mutated detection on
-        //  an existing req, plain apply on a fresh one.
-        if (meta.existed) this.maybe_mutate_sc(req, sc)
-        else Object.assign(req.sc, sc)
+        const req = this.req_oai(c, sc)
         if (req.c.do_fn) return null
         return (fn: Function) => { req.c.do_fn = fn }
     }

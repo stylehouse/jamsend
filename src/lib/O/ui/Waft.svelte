@@ -20,6 +20,7 @@
     import EncodingSplatter from "$lib/O/ui/EncodingSplatter.svelte"
     import PeelInput        from "$lib/O/ui/PeelInput.svelte"
     import DocTing          from "$lib/O/ui/DocTing.svelte"   // taker-Waft switcheroo: histogram, not raw globules
+    import DocGhostList      from "$lib/O/ui/DocGhostList.svelte"   // lister-Waft switcheroo: the stem-clustered ghost index
 
     let { H, w, waft, depth = 0, on_active, on_delete, examining }: {
         H:         House
@@ -210,6 +211,9 @@
     // taker Waft (the attention Ting) renders as a histogram by default; toggle to peek
     //  at the raw %Point globule tree.
     let is_taker      = $derived(!!waft.sc.takes)
+    // lister Waft (the GhostList) renders as the stem-clustered ghost index, not its
+    //  raw group/Doc tree — the same switcheroo idea as the taker Ting.
+    let is_lister     = $derived(!!waft.sc.lists)
     let raw           = $state(false)
 
     // ── unified item-edit form state ──────────────────────────────────
@@ -485,7 +489,7 @@
 </script>
 
 <div class="ls-waft" style="margin-left: {depth * 14}px"
-     class:ls-waft-active={is_active} class:ls-waft-ting={is_taker}>
+     class:ls-waft-active={is_active} class:ls-waft-ting={is_taker} class:ls-waft-ghl={is_lister}>
 
     {#if is_taker}
         <!-- Switcheroo: a taker Waft (the attention Ting) is all machine-y %Point
@@ -509,6 +513,27 @@
             {/each}
         {:else}
             <DocTing {H} />
+        {/if}
+    {:else if is_lister}
+        <!-- a lister Waft (GhostList) shows DocGhostList — the stem-clustered ghost
+             index — not its raw group/Doc tree.  Toggle to inspect the raw data. -->
+        <button class="ls-ting-switch" onclick={() => raw = !raw}
+                title="{raw ? 'show the ghost index' : 'show the raw GhostList data'}">
+            <span class="ls-ting-glyph">{raw ? '⤺' : '👻'}</span>
+            <span class="ls-ting-key">{wkey}</span>
+            <span class="ls-ting-mode">{raw ? 'data' : 'ghosts'}</span>
+        </button>
+        {#if raw}
+            {#if waft_mungs.length || waft.oa({ encode_error: 1 })}
+                <EncodingSplatter {waft} />
+            {/if}
+            {@render waftitem(waft, waft)}
+            {#each sub_wafts as sw (sw.sc.Waft)}
+                <svelte:self {H} {w} waft={sw} depth={depth + 1} {examining}
+                    {on_active} {on_delete} />
+            {/each}
+        {:else}
+            <DocGhostList {H} {waft} />
         {/if}
     {:else}
 

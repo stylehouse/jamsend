@@ -1,17 +1,18 @@
 Snap:H
   H:LakeNets,Run
     A:Lies
-      self,round=52	{"mung":["age"]}
+      self,round=59	{"mung":["age"]}
       w:Lies
         Opt
           nowriting
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/LakeNets/Waftily/toc.snap,waft_path:Story/LakeNets/Waftily
-            known,dige:8033a5f07c152bb9,kind:read,at=1781511508.088
+            known,dige:8033a5f07c152bb9,kind:read,at=1781578900.771
+          Good,type:text/Waft,path:wormhole/GhostList/toc.snap,waft_path:GhostList,not_found
           Good,type:text/Doc,path:Ghost/test/Story/Peregrination.g
-            known,dige:5243d16758eb710b,kind:read,at=1781511508.508
+            known,dige:5243d16758eb710b,kind:read,at=1781578901.353
           Good,type:text/Doc,path:Ghost/test/Peeroleum.g
-            known,dige:69f9fd8539393ad7,kind:read,at=1781511519.329
+            known,dige:69f9fd8539393ad7,kind:read,at=1781578913.417
         examining	{"loopy":2}
           req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
           Spotlight	{"ref":{"src":"%What:peer"}}
@@ -51,17 +52,69 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781511508181,kind:cold
-          want=1781511508231,kind:cold
-          want=1781511508336,kind:cold
-          want=1781511519164,kind:next
-          want=1781511521129,kind:branch
-          want=1781511522672,kind:prev,resolved
+          want=1781578900886,kind:cold
+          want=1781578900987,kind:cold
+          want=1781578901194,kind:cold
+          want=1781578912805,kind:next
+          want=1781578915676,kind:branch
+          want=1781578917141,kind:prev,resolved
         o_elvis:dock_askies
-        self,round=52	{"mung":["age"]}
-        see:🗂 2 docs · 1 Waft
+        Waft:GhostList,lists,seeded=1781578901354
+          Funkcion:dirlist,interval_ms=8000,walked_at=1781578910333
+          group:src/lib,dir:src/lib
+            sub:src/lib/O,name:O
+            sub:src/lib/data,name:data
+            sub:src/lib/gen,name:gen
+            sub:src/lib/ghost,name:ghost
+            sub:src/lib/mostly,name:mostly
+            sub:src/lib/p2p,name:p2p
+            Doc:src/lib/FTrusting.svelte,name:FTrusting
+            Doc:src/lib/MTrusting.svelte,name:MTrusting
+            Doc:src/lib/Trust.svelte.ts,name:Trust
+            Doc:src/lib/Y.svelte.ts,name:Y
+          group:src/lib/O,dir:src/lib/O
+            sub:src/lib/O/D,name:D
+            sub:src/lib/O/lang,name:lang
+            sub:src/lib/O/shelved,name:shelved
+            sub:src/lib/O/spec,name:spec
+            sub:src/lib/O/test,name:test
+            sub:src/lib/O/ui,name:ui
+            Doc:src/lib/O/Cyto.svelte,name:Cyto
+            Doc:src/lib/O/Cytui.svelte,name:Cytui
+            Doc:src/lib/O/Ghost.svelte,name:Ghost
+            Doc:src/lib/O/Housing.svelte.ts,name:Housing
+            Doc:src/lib/O/Hovercraft.svelte,name:Hovercraft
+            Doc:src/lib/O/Lang.svelte,name:Lang
+            Doc:src/lib/O/LangCompiling.svelte,name:LangCompiling
+            Doc:src/lib/O/LangGraft.svelte,name:LangGraft
+            Doc:src/lib/O/LangLang.svelte,name:LangLang
+            Doc:src/lib/O/LangPoint.svelte,name:LangPoint
+            Doc:src/lib/O/LangRegions.svelte,name:LangRegions
+            Doc:src/lib/O/LangSion.svelte,name:LangSion
+            Doc:src/lib/O/LangWhatwhere.svelte,name:LangWhatwhere
+            Doc:src/lib/O/Langui.svelte,name:Langui
+            Doc:src/lib/O/Lies.svelte,name:Lies
+            Doc:src/lib/O/LiesCortex.svelte,name:LiesCortex
+            Doc:src/lib/O/LiesCurse.svelte,name:LiesCurse
+            Doc:src/lib/O/LiesEnd.svelte,name:LiesEnd
+            Doc:src/lib/O/LiesStore.svelte,name:LiesStore
+            Doc:src/lib/O/Liesui.svelte,name:Liesui
+            Doc:src/lib/O/MachPeerily.svelte,name:MachPeerily
+            Doc:src/lib/O/Matstyle.svelte,name:Matstyle
+            Doc:src/lib/O/Otro.svelte,name:Otro
+            Doc:src/lib/O/Storui.svelte,name:Storui
+            Doc:src/lib/O/Story.svelte,name:Story
+            Doc:src/lib/O/Text.svelte,name:Text
+            Doc:src/lib/O/Thang.svelte,name:Thang
+            Doc:src/lib/O/ThangShelf.svelte,name:ThangShelf
+            Doc:src/lib/O/Thangs.svelte,name:Thangs
+            Doc:src/lib/O/stho.ts,name:stho
+        Funkcions
+          req:Funkcion,funk_id:GhostList/dirlist,eternal,ok
+        self,round=59	{"mung":["age"]}
+        see:🗂 2 docs · 2 Wafts
     A:Lang
-      self,round=58	{"mung":["age"]}
+      self,round=65	{"mung":["age"]}
       w:Lang
         Opt
           txtsyntaxdump
@@ -78,7 +131,7 @@ Snap:H
             Compile
               Map
                 def,method:LakeNetherland,from,to=16,line=2
-              time,compile=0.002,all=0.178
+              time,compile=0.004,all=0.269
               Output,gen_path:gen/test/Story/Peregrination.go,dige:132bbb4fbdc68238,source_dige:5243d16758eb710b
                source: |
                  <script lang="ts">
@@ -122,7 +175,7 @@ Snap:H
                 def,method:transport,from=65,to=75,line=5
                 def,method:PeerJS,from=108,to=115,line=7
                 def,method:Socket,from=145,to=152,line=9
-              time,compile=0.002,all=0.157
+              time,compile=0.002,all=0.17
               Output,gen_path:gen/test/Peeroleum.go,dige:b84b8d8cc1c85f2b,source_dige:69f9fd8539393ad7
                source: |
                  <script lang="ts">
@@ -195,7 +248,7 @@ Snap:H
         req:workon,following,auto_push=0	{"ref":{"LE":"%LE:1, target:%What","w":"%w:Lang"}}
           {"req":"understanding","maz":3,"permanent":1,"sig":"4:13:4:0","what":"peer","finished":1}
           req:ingredients,maz=2,permanent,sig:Ghost/test/Peeroleum.g,finished
-            req:furnishing,path:Ghost/test/Peeroleum.g,permanent,finished
+            req:furnishing,path:Ghost/test/Peeroleum.g,permanent,asked,finished
           {"req":"instrumentation","permanent":1,"sig":"Ghost/test/Peeroleum.g:69f9fd8539393ad7:4:229","have_Map":1,"n_pmirrors":1,"finished":1}
           req:push,finished
             req:encode,maz=3,finished
@@ -207,12 +260,12 @@ Snap:H
         o_elvis:Lies_compile_settled
         received,doc_opened,doc:Ghost/test/Peeroleum.g
         received,editorBegins,doc:Ghost/test/Peeroleum.g
-        self,round=58	{"mung":["age"]}
+        self,round=65	{"mung":["age"]}
         see:🟦 tiles 0 bookmarks
     A:Pantheate
-      self,round=30	{"mung":["age"]}
+      self,round=32	{"mung":["age"]}
       w:Pantheate
-        self,round=30	{"mung":["age"]}
+        self,round=32	{"mung":["age"]}
         o_elvis:Ghost_update_notify
     watched:ave
       examining	{"loopy":2,"hid":1}

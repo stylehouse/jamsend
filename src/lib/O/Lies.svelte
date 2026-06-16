@@ -198,6 +198,31 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         w.bump_version()
     },
 
+    // ── e_Lies_toggle_dir ──────────────────────────────────────────────
+    //   Open (or collapse) a directory in the GhostList tree.  An %open_dir child
+    //   tells the dirlist Funkcion to also list that dir; collapsing drops it and
+    //   its group.  Clears walked_at so the re-walk happens promptly, not after the
+    //   throttle.  < collapsing a parent leaves deeper opened dirs' groups lingering.
+    e_Lies_toggle_dir(A: TheC, w: TheC, e: TheC) {
+        const H   = this as House
+        const dir = e.sc.dir as string | undefined
+        if (!dir) return
+        const gl  = H.Lies_ghostlist(w)
+        if (!gl) return
+        const open = gl.o({ open_dir: dir })[0] as TheC | undefined
+        if (open) {
+            gl.drop(open)
+            const grp = gl.o({ group: dir })[0] as TheC | undefined
+            if (grp) gl.drop(grp)
+        } else {
+            gl.oai({ open_dir: dir })
+        }
+        const funk = gl.o({ Funkcion: 1 })[0] as TheC | undefined
+        if (funk) delete funk.sc.walked_at   // re-walk now, not after the throttle
+        gl.bump_version()
+        H.i_elvisto(w, 'think')              // kick the tick so the walk runs promptly
+    },
+
     // ── e_Lies_take_point ──────────────────────────────────────────────
     //
     //   The taker side of the Point traffic.  Lang resolves a tap to its
