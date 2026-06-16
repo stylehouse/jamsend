@@ -154,19 +154,28 @@ something_oai takes the on-change as a parameter,
                        Wanted where a watcher keys on %version
                        (eg Text moai, dock/%Text gets a new dige in place).
  - mutate+stamp+run — mutate sc in place, stamp %mutated, un-finish a permanent stage,
-                       bump, and schedule the handler.
+                       bump, and (re-)arm the handler.
                        This is the req preset, and it is what reqy()'s roai was.
 
-reqy()'s roai sublates into this preset.
- There is nothing special left in reqy once on-change is a parameter:
-  a req is roai with the mutate+stamp+run preset,
-   which is the whole reason for folding reqy into the keyworkings.
+Realised: this preset IS moai, overloaded on the %req mainkey.
+ moai(c) with 'req' in c takes the req preset (serial + c.up + %mutated/un-finish);
+  moai(c) on anything else keeps its bump-version-in-place meaning.  So there is no
+   separate req verb — the family stays i | o | oai | r | roai | moai | place, and
+    %req is just the one mainkey moai treats specially.  doai is moai-plus-a-do_fn.
+ The two-verb rule for reqs: moai when you want the ref (named req_$name handler, or
+  to read|finish it), doai when the handler is an inline closure.  oai|roai are NOT
+   req verbs — oai ignores a re-key (drops driver invalidation), and roai's replace
+    would orphan the req.
 
 Decision, fixed: the req side uses moai semantics — mutate-in-place + %mutated,
  merge-only, and it forgoes deletes.
 A req must never be replaced, because a req carries c.up|on|do_fn|oncelers,
  and a new ref would orphan all of it;
   that is exactly why the req preset mutates rather than r()s.
+
+These verbs + the req machinery (do | finish | all_finished | doai | maybe_mutate_sc)
+ live on the StuffAware wall of Stuff.svelte.ts (StuffIO → StuffAware → … → TheC):
+  the asyncs in one place, with %req the one property the Stuff layer knows.
 
 ### 5a. The change-detection, and the delete it deliberately can't see
 
@@ -373,19 +382,29 @@ Where reality diverged from the plan it is noted; trust this over the old plan.
 
 ### The new req engine (self-contained on the C — no reqy(), no reqcon)
 
-A req is just a %req child of its host C; everything is methods on TheC + House.
+A req is just a %req child of its host C; everything is methods on the StuffAware
+ wall of Stuff.svelte.ts (StuffIO → StuffAware → TimeOffice → Stuff → TheC).
+ StuffAware holds the async keyworkings (roai | moai | something_oai | place) AND
+ the req machinery, and %req is the ONE property Stuff.svelte.ts treats as
+ meaningful — a %req child is a unit of work this wall can pump | settle | re-key.
+ There are two req verbs (oai/roai add nothing safe: oai ignores a re-key, roai's
+ replace would orphan c.up | do_fn | oncelers | child reqs):
 
- - w.req_oai(c, sc)        — find-or-create a %req child, return the ref.  On an
-                              existing one it moai-re-merges sc (差/hakd → %mutated
-                              = {key:old}); on a fresh one it applies sc.  This is
-                              the ref-returning verb (cf the old reqy().roai).  A
-                              re-merge that drifts a %permanent+%finished stage
-                              un-finishes it (+ fresh initialdo) so do() re-runs it —
-                              without that a re-keyed permanent stage stays finished,
-                              do() skips it, and %mutated never clears (the driver
-                              freezes after its first pass; bit the Lang migration).
- - w.doai(c, sc)?.(do_fn)  — req_oai plus a one-shot do_fn setter; returns null
-                              once wired, so re-entry never re-wires, only do() re-runs.
+ - w.moai(c, sc)           — THE req verb (overloaded: 'req' in c → the req preset).
+                              Find-or-create a %req child, return the ref.  Async.
+                              Fresh: serial when anonymous (%req:1 → %req:$i), c.up
+                              wiring, %initialdo at birth.  Existing: moai-re-merge sc
+                              (差/hakd → %mutated = {key:old}); a re-merge that drifts a
+                              %permanent+%finished stage un-finishes it (+ fresh
+                              initialdo) so do() re-runs it — without that a re-keyed
+                              permanent stage stays finished, do() skips it, and
+                              %mutated never clears (the driver freezes; bit Lang).
+                              Non-req moai is unchanged (bump_version on a sc change).
+                              (Was the sync req_oai; folded into moai, so callers await.)
+ - w.doai(c, sc)?.(do_fn)  — moai plus a one-shot do_fn setter; returns null once
+                              wired, so re-entry never re-wires, only do() re-runs.
+                              Use for closure handlers; use moai when the handler is a
+                              named req_$name or you just need the ref.
  - w.do(fn?)               — the maz-priority pump over w's !finished|!ok reqs.
  - w.finish(child)         — settle a child req (yoinks oncelers, drops ttlilts, bump).
  - w.all_finished()        — roll-up.
@@ -506,7 +525,7 @@ V.req_legs (Housing) makes organise lay req** as walk more-legs and runs
 
 ### Migration recipe
 
- - reqy(w).roai(c,sc)  → returns ref      → w.req_oai(c,sc)
+ - reqy(w).roai(c,sc)  → returns ref      → await w.moai(c,sc)   (moai is async now)
  - reqy(w).roai + .c.do_fn ||= fn         → (await w.doai(c,sc))?.(fn)
  - rq.do()             → host.do() ; rq.finish(req) → host.finish(req)
  - rq.all_finished()   → host.all_finished()

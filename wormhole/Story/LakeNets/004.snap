@@ -1,20 +1,20 @@
 Snap:H
   H:LakeNets,Run
     A:Lies
-      self,round=18	{"mung":["age"]}
+      self,round=20	{"mung":["age"]}
       w:Lies
         Opt
           nowriting
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/LakeNets/Waftily/toc.snap,waft_path:Story/LakeNets/Waftily
-            known,dige:8033a5f07c152bb9,kind:read,at=1781599908.806
+            known,dige:8033a5f07c152bb9,kind:read,at=1781603769.91
           Good,type:text/Waft,path:wormhole/GhostList/toc.snap,waft_path:GhostList,not_found
           Good,type:text/Doc,path:Ghost/test/Story/Peregrination.g
-            known,dige:5243d16758eb710b,kind:read,at=1781599909.728
+            known,dige:5243d16758eb710b,kind:read,at=1781603770.536
         examining	{"loopy":2}
           req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
           Spotlight	{"ref":{"src":"%What:story"}}
-        req:Cortex,eternal
+        req:Cortex,eternal,maz=5,ok
         Waft:Story/LakeNets/Waftily
           What:foundations
             What:story
@@ -48,12 +48,12 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781599908985,kind:cold
-          want=1781599909042,kind:cold
-          want=1781599909459,kind:cold,resolved
+          want=1781603770076,kind:cold
+          want=1781603770123,kind:cold
+          want=1781603770328,kind:cold,resolved
         o_elvis:dock_askies
-        Waft:GhostList,lists,seeded=1781599909728
-          Funkcion:dirlist,interval_ms=8000,walked_at=1781599909728
+        Waft:GhostList,lists,seeded=1781603770536
+          Funkcion:dirlist,interval_ms=8000,walked_at=1781603770536
           group:src/lib,dir:src/lib
             sub:src/lib/O,name:O
             sub:src/lib/data,name:data
@@ -104,7 +104,7 @@ Snap:H
             Doc:src/lib/O/stho.ts,name:stho
         Funkcions
           req:Funkcion,funk_id:GhostList/dirlist,eternal,ok
-        self,round=18	{"mung":["age"]}
+        self,round=20	{"mung":["age"]}
         see:🗂 1 doc · 2 Wafts
     A:Lang
       self,round=22	{"mung":["age"]}
@@ -124,7 +124,7 @@ Snap:H
             Compile
               Map
                 def,method:LakeNetherland,from,to=16,line=2
-              time,compile=0.002,all=0.358
+              time,compile=0.002,all=0.302
               Output,gen_path:gen/test/Story/Peregrination.go,dige:132bbb4fbdc68238,source_dige:5243d16758eb710b
                source: |
                  <script lang="ts">
@@ -196,9 +196,9 @@ Snap:H
         self,round=22	{"mung":["age"]}
         see:🟦 tiles 0 bookmarks
     A:Pantheate
-      self,round=6	{"mung":["age"]}
+      self,round=7	{"mung":["age"]}
       w:Pantheate
-        self,round=6	{"mung":["age"]}
+        self,round=7	{"mung":["age"]}
         o_elvis:Ghost_update_notify
     watched:ave
       examining	{"loopy":2,"hid":1}

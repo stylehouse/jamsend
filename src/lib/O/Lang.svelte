@@ -344,7 +344,7 @@
         //   req:instrumentation — active dock + dige → compile + graft + decorate
         // Each stage holds wants + convergence-markers only; its durable output
         // lives elsewhere (%LE/%Seem, %Good, the dock) so de-finishing loses nothing.
-        const workon = w.req_oai({ req: 'workon' }, { LE, w })
+        const workon = await w.moai({ req: 'workon' }, { LE, w })
         workon.sc.following = 1   // track group cursor (default)
         // < following:0 = diverged; thought-balloon on breadcrumb
 
@@ -360,9 +360,9 @@
         // fresh lease.  maz orders the pipeline: understanding (3) before
         // ingredients (2) before instrumentation (1); a stage that bows out on a
         // ttlilt stops do() at its level, gating the lanes below it.
-        workon.req_oai({ req: 'understanding',  maz: 3, permanent: 1 })
-        workon.req_oai({ req: 'ingredients',    maz: 2, permanent: 1 })
-        workon.req_oai({ req: 'instrumentation', maz: 1, permanent: 1 })
+        await workon.moai({ req: 'understanding',  maz: 3, permanent: 1 })
+        await workon.moai({ req: 'ingredients',    maz: 2, permanent: 1 })
+        await workon.moai({ req: 'instrumentation', maz: 1, permanent: 1 })
 
         w.c.plan_done = true
     },
@@ -662,10 +662,10 @@
     //   dock.c.up = docks, docks.c.up = w (stamped where the dock is minted) so
     //   reqyoncile's %w walk and i_req_ttlilt both reach w:Lang correctly.
     async Lang_open_dock(w: TheC, dock: TheC, text: string): Promise<TheC> {
-        let languish = dock.req_oai({ req: 'Languish' })
+        let languish = await dock.moai({ req: 'Languish' })
         if (languish.sc.finished) {
             dock.drop(languish)
-            languish = dock.req_oai({ req: 'Languish' })
+            languish = await dock.moai({ req: 'Languish' })
         }
         languish.c.open_text = text
 
@@ -769,7 +769,7 @@
         const od         = LE.c.origin_dirty ? 1 : 0
         const src_serial = H.Lang_src_serial(workon, src)   // bumps on every What move
         const u_sig      = `${src_serial}:${wv}:${u_serial}:${od}`
-        workon.req_oai({ req: 'understanding' }, { sig: u_sig })
+        await workon.moai({ req: 'understanding' }, { sig: u_sig })
 
         // ingredients — the wanted-%Doc set.  want_doc derives DIRECTLY from the
         //   live src via Waft_src_doc_path — the same resolution Lang_set_interest
@@ -783,7 +783,7 @@
         //   isn't re-fetched.
         const want_doc = src ? H.Waft_src_doc_path(src) : undefined
         const g_sig    = want_doc ?? ''
-        workon.req_oai({ req: 'ingredients' }, { sig: g_sig })
+        await workon.moai({ req: 'ingredients' }, { sig: g_sig })
 
         // instrumentation — the doc the CURSOR wants (want_doc above), its content
         //   dige, the cursor identity, and the Understanding's own version.  Keying
@@ -804,7 +804,7 @@
             ? (w.o({ docks: 1 })[0]?.o({ dock: want_doc })[0] as TheC | undefined)
             : undefined
         const n_sig  = `${want_doc ?? ''}:${(want_dock?.c.content_dige as string | undefined) ?? ''}:${src_serial}:${LE.version}`
-        workon.req_oai({ req: 'instrumentation' }, { sig: n_sig })
+        await workon.moai({ req: 'instrumentation' }, { sig: n_sig })
 
         // pump the pipeline — maz orders understanding → ingredients → instrumentation.
         await workon.do()
@@ -965,7 +965,7 @@
                 H.Langspinner(w, 'furnish', true)
             }
         }
-        req.req_oai({ req: 'furnishing', path: want_doc, permanent: 1 })
+        await req.moai({ req: 'furnishing', path: want_doc, permanent: 1 })
 
         await req.do()
         // unify: finished when every furnishing is — settle ingredients under workon.
@@ -1537,9 +1537,9 @@
     async req_Languish(req: TheC) {
         const dock = req.c.up as TheC   // Languish → dock (the owner that settles it)
 
-        req.req_oai({ req: 'text_loaded', maz: 3 })
-        req.req_oai({ req: 'text_mutated', maz: 2 })
-        req.req_oai({ req: 'compile',     maz: 2 })
+        await req.moai({ req: 'text_loaded', maz: 3 })
+        await req.moai({ req: 'text_mutated', maz: 2 })
+        await req.moai({ req: 'compile',     maz: 2 })
         // grafted dropped — req:instrumentation owns all grafting; Languish builds the
         //   compile index; the settler wires the rest.
 

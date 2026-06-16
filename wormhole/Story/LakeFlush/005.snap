@@ -1,22 +1,22 @@
 Snap:H
   H:LakeFlush,Run
     A:Lies
-      self,round=30	{"mung":["age"]}
+      self,round=28	{"mung":["age"]}
       w:Lies
         Opt
           nowriting
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/LakeFlush/Waftily/toc.snap,waft_path:Story/LakeFlush/Waftily
-            known,dige:64e3393587d20dab,kind:read,at=1781599822.366
+            known,dige:64e3393587d20dab,kind:read,at=1781603735.484
           Good,type:text/Waft,path:wormhole/GhostList/toc.snap,waft_path:GhostList,not_found
           Good,type:text/Doc,path:Ghost/test/Story/Peregrination.g
-            known,dige:5243d16758eb710b,kind:read,at=1781599823.138
+            known,dige:5243d16758eb710b,kind:read,at=1781603736.264
           Good,type:text/Doc,path:Ghost/test/Peeroleum.g
-            known,dige:69f9fd8539393ad7,kind:read,at=1781599825.615
+            known,dige:69f9fd8539393ad7,kind:read,at=1781603738.782
         examining	{"loopy":2}
           req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
           Spotlight	{"ref":{"src":"%What:peer"}}
-        req:Cortex,eternal
+        req:Cortex,eternal,maz=5,ok
         Waft:Story/LakeFlush/Waftily
           What:foundations
             What:story
@@ -51,13 +51,13 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781599822517,kind:cold
-          want=1781599822596,kind:cold
-          want=1781599822980,kind:cold
-          want=1781599825408,kind:test,resolved
+          want=1781603735606,kind:cold
+          want=1781603735661,kind:cold
+          want=1781603736049,kind:cold
+          want=1781603738614,kind:test,resolved
         o_elvis:dock_askies
-        Waft:GhostList,lists,seeded=1781599823139
-          Funkcion:dirlist,interval_ms=8000,walked_at=1781599823139
+        Waft:GhostList,lists,seeded=1781603736265
+          Funkcion:dirlist,interval_ms=8000,walked_at=1781603736265
           group:src/lib,dir:src/lib
             sub:src/lib/O,name:O
             sub:src/lib/data,name:data
@@ -109,7 +109,7 @@ Snap:H
         Funkcions
           req:Funkcion,funk_id:GhostList/dirlist,eternal,ok
         log:waft_save,path:Story/LakeFlush/Waftily,dige:7f077474
-        self,round=30	{"mung":["age"]}
+        self,round=28	{"mung":["age"]}
         see:🗂 2 docs · 2 Wafts
     A:Lang
       self,round=33	{"mung":["age"]}
@@ -128,7 +128,7 @@ Snap:H
             Compile
               Map
                 def,method:LakeNetherland,from,to=16,line=2
-              time,compile=0.005,all=0.306
+              time,compile=0.012,all=0.402
               Output,gen_path:gen/test/Story/Peregrination.go,dige:132bbb4fbdc68238,source_dige:5243d16758eb710b
                source: |
                  <script lang="ts">
@@ -170,7 +170,7 @@ Snap:H
                 def,method:transport,from=65,to=75,line=5
                 def,method:PeerJS,from=108,to=115,line=7
                 def,method:Socket,from=145,to=152,line=9
-              time,compile=0.005,all=0.149
+              time,compile=0.003,all=0.165
               Output,gen_path:gen/test/Peeroleum.go,dige:b84b8d8cc1c85f2b,source_dige:69f9fd8539393ad7
                source: |
                  <script lang="ts">
@@ -222,7 +222,7 @@ Snap:H
           Change
             backend,dige:69f9f
             storage,dige:69f9f,dim:false
-            compile,dige:69f9f,dim:false,secs=0.005
+            compile,dige:69f9f,dim:false,secs=0.003
           dock,active	{"loopy":1,"hid":1}
           Interest,in_Doc:Ghost/test/Peeroleum.g	{"ref":{"src":"%What:peer"}}
             MapReport,n_def=4,n_call=0,n_region=0,n_cf=0

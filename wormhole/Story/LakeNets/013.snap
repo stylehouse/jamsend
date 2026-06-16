@@ -1,22 +1,22 @@
 Snap:H
   H:LakeNets,Run
     A:Lies
-      self,round=46	{"mung":["age"]}
+      self,round=56	{"mung":["age"]}
       w:Lies
         Opt
           nowriting
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/LakeNets/Waftily/toc.snap,waft_path:Story/LakeNets/Waftily
-            known,dige:8033a5f07c152bb9,kind:read,at=1781599908.806
+            known,dige:8033a5f07c152bb9,kind:read,at=1781603769.91
           Good,type:text/Waft,path:wormhole/GhostList/toc.snap,waft_path:GhostList,not_found
           Good,type:text/Doc,path:Ghost/test/Story/Peregrination.g
-            known,dige:5243d16758eb710b,kind:read,at=1781599909.728
+            known,dige:5243d16758eb710b,kind:read,at=1781603770.536
           Good,type:text/Doc,path:Ghost/test/Peeroleum.g
-            known,dige:69f9fd8539393ad7,kind:read,at=1781599919.72
+            known,dige:69f9fd8539393ad7,kind:read,at=1781603782.264
         examining	{"loopy":2}
           req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
           Spotlight	{"ref":{"src":"%What:foundations"}}
-        req:Cortex,eternal
+        req:Cortex,eternal,maz=5,ok
         Waft:Story/LakeNets/Waftily
           What:foundations
             What:story
@@ -52,16 +52,16 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781599908985,kind:cold
-          want=1781599909042,kind:cold
-          want=1781599909459,kind:cold
-          want=1781599919504,kind:next
-          want=1781599921466,kind:branch
-          want=1781599922790,kind:prev
-          want=1781599924153,kind:up,resolved
+          want=1781603770076,kind:cold
+          want=1781603770123,kind:cold
+          want=1781603770328,kind:cold
+          want=1781603782034,kind:next
+          want=1781603784156,kind:branch
+          want=1781603785511,kind:prev
+          want=1781603787265,kind:up,resolved
         o_elvis:dock_askies
-        Waft:GhostList,lists,seeded=1781599909728
-          Funkcion:dirlist,interval_ms=8000,walked_at=1781599918258
+        Waft:GhostList,lists,seeded=1781603770536
+          Funkcion:dirlist,interval_ms=8000,walked_at=1781603786984
           group:src/lib,dir:src/lib
             sub:src/lib/O,name:O
             sub:src/lib/data,name:data
@@ -112,10 +112,10 @@ Snap:H
             Doc:src/lib/O/stho.ts,name:stho
         Funkcions
           req:Funkcion,funk_id:GhostList/dirlist,eternal,ok
-        self,round=46	{"mung":["age"]}
+        self,round=56	{"mung":["age"]}
         see:🗂 2 docs · 2 Wafts
     A:Lang
-      self,round=56	{"mung":["age"]}
+      self,round=64	{"mung":["age"]}
       w:Lang
         Opt
           txtsyntaxdump
@@ -132,7 +132,7 @@ Snap:H
             Compile
               Map
                 def,method:LakeNetherland,from,to=16,line=2
-              time,compile=0.002,all=0.358
+              time,compile=0.002,all=0.302
               Output,gen_path:gen/test/Story/Peregrination.go,dige:132bbb4fbdc68238,source_dige:5243d16758eb710b
                source: |
                  <script lang="ts">
@@ -176,7 +176,7 @@ Snap:H
                 def,method:transport,from=65,to=75,line=5
                 def,method:PeerJS,from=108,to=115,line=7
                 def,method:Socket,from=145,to=152,line=9
-              time,compile=0.003,all=0.163
+              time,compile=0.002,all=0.159
               Output,gen_path:gen/test/Peeroleum.go,dige:b84b8d8cc1c85f2b,source_dige:69f9fd8539393ad7
                source: |
                  <script lang="ts">
@@ -265,12 +265,12 @@ Snap:H
         received,doc_opened,doc:Ghost/test/Peeroleum.g
         received,editorBegins,doc:Ghost/test/Peeroleum.g
         received,editorBegins,doc:Ghost/test/Story/Peregrination.g
-        self,round=56	{"mung":["age"]}
+        self,round=64	{"mung":["age"]}
         see:🟦 tiles 0 bookmarks
     A:Pantheate
-      self,round=15	{"mung":["age"]}
+      self,round=24	{"mung":["age"]}
       w:Pantheate
-        self,round=15	{"mung":["age"]}
+        self,round=24	{"mung":["age"]}
         o_elvis:Ghost_update_notify
     watched:ave
       examining	{"loopy":2,"hid":1}

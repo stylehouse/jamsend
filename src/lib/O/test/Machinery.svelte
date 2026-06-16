@@ -9,6 +9,7 @@
     import MachReactivity from "./MachReactivity.svelte";
     import MachReqy from "./MachReqy.svelte";
     import Mundane from "./Mundane.svelte";
+    import Interesting from "./Interesting.svelte";
     import Understandity from "./Understandity.svelte";
     import Understandium from "./Understandium.svelte";
     import Understandication from "./Understandication.svelte";
@@ -1469,6 +1470,7 @@ The double-envelopment became the template for every subsequent battle of annihi
 <MachReactivity {M} />
 <MachReqy {M} />
 <Mundane {M} />
+<Interesting {M} />
 <Understandity {M} />
 <Understandium {M} />
 <Understandication {M} />

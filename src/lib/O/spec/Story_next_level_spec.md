@@ -106,6 +106,14 @@ Why split: **a true text representation that isn't full of noise matters.** The
     the side, where it can be as noisy as it needs without wrecking the one
      representation a human reads and diffs.
 
+And a channel is not merely a stream. Waft_spec says *"the Interest **is** the
+ channel."* Read that literally and the whole test machine collapses into the Waft
+  machine: a test **is** a Waft, each channel is an **Interest** locking onto it
+   through a lens, and the cursor that Lang drives through a Doc is the same cursor
+    that traces an expected snap through time. That unification is the spine under
+     everything here — laid out in §13; the sections between build the parts it
+      assembles.
+
 ### 2.1 The channel set
 
 - `Snap:H` — the canonical **clean** House text. The thing you read.
@@ -486,7 +494,118 @@ This is the "somewhat explore" part: the spool + the channels are the substrate;
 
 ---
 
-## 13. Staging
+## 13. A test is a Waft — channels are Interests, the cursor traces
+
+Everything above is parts. Here is the whole they assemble into, and it is not new
+ machinery — it is the Waft machine (`Waft_spec.md`) pointed at time instead of at a
+  source doc. The Story run already half-admits this: its snap rides at a
+   `waft_path` (`Story/LakeFlush/Waftily` in the example). Make it true.
+
+### 13.1 The mapping
+
+| Story / Diffmatication        | Waft                                            |
+| ----------------------------- | ----------------------------------------------- |
+| a test                        | a **Waft** (`%Interest,Testing` already exists) |
+| an output channel (§2)        | an **Interest** — *"the Interest is the channel"* |
+| a channel's snap text         | a **Doc** in the Waft (`Doc:Snap:H`, `Doc:Snap:trace`) |
+| a step (`%Step`)              | a **time-slice `What`** under that Doc — "successive moments" |
+| step nav ←/→                  | the **`rwnd | pause | +time`** transport        |
+| the pip strip                 | the **sibling-`What` list** / minimap dots      |
+| recording a step              | **+time** (cell-division): a new sibling `What` |
+| a surfed/pinned object (§3.2) | an **engaged Point** (minimap engagement, soft cap 3) |
+| a surprise row                | a `focus` Point (enlarge, glow, context bar)    |
+| a fuzz / noisy-but-ok row     | a `caution` / `dim` Point                       |
+| a gone ref (§5)               | a `ghost` Point — auto-shrinks, 10 s decay      |
+| the fern fold (§6)            | the **squish `·····`** convention + `Lang_apply_openness` |
+| ttlilt unfold-to-reveal (§8)  | `Lang_apply_openness` opening around an engaged Point |
+| the e/r/f channel switch      | the **NaviCado switcher strip** (foreground an Interest) |
+
+None of the right column is hypothetical — it is specced in `Waft_spec.md`. The
+ test runner has been re-deriving, separately and worse, machinery that already
+  exists for navigating a document. Stop.
+
+### 13.2 Channels are Interests
+
+`%Interest,<kind>` is a family — `Trail`, `Sidetrack`, `Ting`, `GhostList`,
+ `Testing` — each a standing lock onto a subject Waft with a `%cursor`, a lens, a
+  presence, and a `pending|locked` state. A test's channels are exactly this:
+
+- `Snap:H` is the foreground lens — the clean tree you read (`presence:active`, the
+   NaviCado stage).
+- `Snap:trace` and the probe channels (§2.5) are `presence:always` ambient slots,
+   like the `Ting` heat — rendering in their own slot, never stealing the stage,
+    until you foreground one.
+- **`pending|locked` is the capture switch.** A declared-but-unattended channel is
+   `pending` — known, lens chosen, *no traffic yet*; it `locks` (starts capturing)
+    only on foreground. So a test declaring ten high-frequency probes arms **zero**
+     capture until you foreground one — the same LE-on-foreground discipline that
+      keeps `Trail` from arming every giver Waft's checkout. High-frequency probes
+       cost nothing until watched.
+
+The e/r/f keys (§3.1) are then not a bespoke mode toggle — they foreground a
+ different channel Interest, exactly as the switcher strip does.
+
+### 13.3 The cursor traces the expected snap
+
+This is the reuse the whole frame turns on. Every Interest carries a `%cursor`
+ (`what`/`doc`/`depth`/`off_what`), and moving it is *"the same operation: walk the
+  Waft's `C**`, select a chunk"* — today **LiesCurse**, which `Waft_spec` already
+   flags as general, its *"name and home want reconsidering once a second kind
+    drives a cursor through it."* `Testing` is that second kind.
+
+A `Testing` Interest's cursor traces the channel's **expected** snap:
+
+- its position along the time-slice `What`s **is** the current step. `rwnd`/`+time`
+   step it; that is Diffmatication's ←/→.
+- at a step, the cursor selects the moment's chunk of the expected snap; the diff
+   (Diffmatication's lens) is that selection against the live `got`. exp-mode is
+    cursor-vs-live; prev-mode is slice N−1 vs slice N — *which `What`s the cursor
+     spans*, nothing more.
+- **surfing one object (§3.2)** is anchoring the cursor's `what`/`doc` to one object
+   and stepping the time-slice `What`s: the cursor re-selects that object at each
+    moment, `depth` walking into its subtree. The continuity channel (§2.3) is what
+     lets the cursor *find* the same object in the next slice.
+
+So "trace through expected snaps of various channels" is precisely: one cursor per
+ channel-Interest, each walking its Doc's time-slice `What`s, each comparing its
+  selection to the live run. The test passes when every channel's cursor traces its
+   expected snap without surprise.
+
+### 13.4 +time *is* continuity
+
+The carry-over heuristic (`Waft_spec`) and the continuity map (§2.3) are the same
+ operation seen twice. When **+time** mints a new sibling `What`:
+
+- engaged Points **carry forward** into the new slice — these are the objects whose
+   continuity holds (`cont`);
+- recently-added Points **move** rather than copy — `new` refs;
+- everything else **ghosts** in the prior slice — `gone` refs, the §5 ghost rows,
+   decaying on the same 10 s timer.
+
+Recording a test step and advancing a Waft's time are one act. The snapper's `bD`
+ resolution (§2.3) decides carry-vs-ghost; the Waft's +time renders it. A test that
+  grows more non-deterministic (§4.3) is, in this light, a Waft whose +time ghosts
+   more each pass — the fern garden visibly fraying.
+
+### 13.5 What it buys, and the forcing function
+
+The win is *deletion*. Diffmatication stops being a bespoke tool and becomes the
+ `Testing` Interest's lens; the surf is a cursor walk; the folds are squish; the
+  transport, the switcher, the decoration classes, the engagement model all already
+   exist for Lang. Story stops being a parallel universe and becomes *Wafts over
+    time*. And it resolves the open `Waft_spec` thread — LiesCurse's home — by
+     supplying the second cursor-driver that forces the question.
+
+> ⛑️ Tension to resolve: `Waft_spec` scoped time-slice `What`s as a Lang
+>  doc-annotation feature (moments of attention on a source doc). Here they host
+>   recorded channel snaps. The "moment" semantics match; confirm a time-slice
+>    `What` can host a `Doc` whose body *is* a channel snap, and that the cursor
+>     walks snap particles the way it walks source lines. If they diverge, the
+>      shared engine is the cursor/`Selection.process()`, not the `What` schema.
+
+---
+
+## 14. Staging
 
 1. **Merge the encoder.** Move `snap_H`'s loopy pass into `encode_wh_lines`; recast
     `story_process_node` rules as `STORY_PROTOCOL`; route Story through `enWaft`
@@ -519,6 +638,15 @@ This is the "somewhat explore" part: the spool + the channels are the substrate;
 Each stage is shippable and gated by the snap fixtures. Stage 1 is pure
  de-duplication and should change *nothing* observable — do it first and prove it.
   Stage 2 only *removes* noise from `Snap:H`; every later channel is additive.
+
+The Waft unification (§13) is not a stage so much as the *direction* every stage
+ points: build each part (channel, cursor-surf, fold, transport, switcher) so it
+  drops cleanly into the `Testing` Interest later, rather than as Diffmatication-only
+   code that has to be re-merged. Concretely — surf reuses the cursor (§13.3), not a
+    new walker; the fold is squish (§6/§13.1), not a bespoke collapser; the e/r/f
+     switch foregrounds a channel (§13.2), not an ad-hoc enum. Whether to formally
+      reparent Story under `%Interest,Testing` can come last; building *toward* it
+       costs nothing extra and saves the re-merge.
 
 ---
 

@@ -1,0 +1,27 @@
+Snap:H
+  H:Interesting,Run
+    A:InterLies
+      self,round=8	{"mung":["age"]}
+      w:InterLies
+        Waft:Look,active
+        Waft:GhostList,lists
+        Waft:Ting,takes
+        o_elvis:waft_roster
+        self,round=8	{"mung":["age"]}
+    A:InterLang
+      self,round=8	{"mung":["age"]}
+      w:InterLang
+        Languinio
+          req:waft_roster,finished,reconciled	{"ref":{"reply":"[Object(),Object(),Object()]"}}
+            req_sent
+            ttlilt,until_ts=1781603554.539
+          Interest:Trail,waft:Look,lens:NaviCado,state:locked
+            cursor,what:Look,doc:Look/doc0,depth=0
+            LE:armed
+          Interest:GhostList,waft:GhostList,lens:DocGhostList,state:pending
+            cursor,doc:GhostList/doc0
+          Interest:Ting,waft:Ting,lens:DocTing,state:pending
+            cursor,what:Ting,latest
+          ActiveInterest,kind:Trail
+        self,round=8	{"mung":["age"]}
+    mo:main,interval=3.6	{"mung":["id"]}

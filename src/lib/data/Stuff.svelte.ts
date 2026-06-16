@@ -325,54 +325,9 @@ class StuffIO {
     oai(s,c={}):TheC {
         return this.o(s)[0] || this.i({...s,...c})
     }
-    // find-or-create; when the C already exists but its supplied sc differs,
-    //  replace it via this.r() — a new ref, /* re-resolved.  For where a keyed
-    //  render watches the ref identity.  cf reqy().roai (which informs req%mutated).
-    async roai(s, c = {}) {
-        return await this.something_oai(s,c,{
-            on_change: async (C,s,c) => this.r(s,c)
-        })
-
-    }
-    // find-or-create; when the C already exists but its supplied sc differs,
-    //  bump_version in place — same ref, /* untouched.  For where a watcher
-    //  keys on %version rather than on the ref identity.
-    async moai(s, c = {}) {
-        return await this.something_oai(s,c,{
-            on_change: async (C:TheC,s,c) => C.bump_version()
-        })
-
-    }
-    // shared find-or-create with a reaction on change — roai and moai differ
-    //  only in the on_change they hand in.  Change is detected with hakd (差):
-    //  it is symmetric, so it also sees a goner (a key already on the C but
-    //  absent from the supplied sc), not only changed values.  ex() is
-    //  merge-only though — it copies the supplied keys over and never deletes,
-    //  so an omitted key persists.  A function never counts as a difference,
-    //  yet ex() copies it through so the freshest closure always wins.
-    async something_oai(s, c = {}, q:{on_change:Function}) {
-        const full = { ...s, ...c }
-        const existing = this.o(s)[0]
-        if (!existing) return this.i(full)
-        const diffs = hakd(existing.sc, full)
-            .filter(k => typeof existing.sc[k] !== 'function'
-                      && typeof full[k]        !== 'function')
-        ex(existing.sc, full)
-        if (diffs.length) return await q.on_change(existing, s, full)
-        return existing
-    }
-    
-
-    // ensure given things are the only ones in a match
-    //  does nothing if the things are already there, reactivity etc
-    // good for inserting whole objects, taking over the space
-    // Each incoming C gets .is() so replace() skips resume_X — the C owns /* elsewhere.
-    async place(pattern_sc: TheUniversal, n: TheC | TheC[]): Promise<void> {
-        const N: TheC[] = n instanceof TheC ? [n] : n as TheC[]
-        const existing = this.o(pattern_sc) as TheC[]
-        if (N.length === existing.length && N.every((c, i) => existing[i] === c)) return
-        await this.replace(pattern_sc, () => { for (const c of N) { c.is(); this.i(c) } })
-    }
+    // roai | moai | something_oai | place — the async find-or-create keyworkings —
+    //  moved down to StuffAware (the layer that also knows the %req protocol), so
+    //  the asyncs and the req machinery sit together one wall above Stuff.
 
 
 //#endregion
@@ -517,9 +472,182 @@ class StuffIO {
     }
 }
 
+// the async keyworking wall, and the one protocol Stuff knows: %req.
+//  StuffAware holds the find-or-create verbs whose on-change reaction is async
+//   (roai replaces → new ref; moai merges in place) plus place, and the req
+//    machinery (do | finish | all_finished | doai | maybe_mutate_sc).  %req is the
+//     ONLY property Stuff.svelte.ts treats as meaningful — a %req child is a unit
+//      of work this layer can pump, settle and re-key; everything else is opaque sc
+//       (bar the splash in TheUniversal).  These verbs call this.r() | this.replace()
+//        which land in Stuff (a subclass): the wall order is io → aware → … → Stuff,
+//         so the reaction verbs sit just above the replace they invoke — fine at
+//          runtime, where `this` is always a TheC carrying the lot.
+abstract class StuffAware extends StuffIO {
+    // these ride the concrete TheC (c | sc) and Stuff (r | replace) below; declared
+    //  here so the %req verbs + place that lean on them typecheck on this wall.
+    //  `this` is always a TheC at runtime — the abstract bases are never minted.
+    declare c: TheEmpirical
+    declare sc: TheUniversal
+    declare r: (pattern_sc: TheUniversal, sc?: TheUniversal) => Promise<TheC>
+    declare replace: (pattern_sc: TheUniversal, fn: Function, q?: any) => Promise<any>
+
+    // find-or-create; when the C already exists but its supplied sc differs,
+    //  replace it via this.r() — a new ref, /* re-resolved.  For where a keyed
+    //  render watches the ref identity.  NOT for a %req (a new ref would orphan its
+    //  c.up | do_fn | oncelers | child reqs) — moai is the req verb.
+    async roai(s, c = {}) {
+        return await this.something_oai(s,c,{
+            on_change: async (C,s,c) => this.r(s,c)
+        })
+    }
+
+    // find-or-create with merge-in-place — same ref, /* untouched.
+    //  %req is special: a req child is found-or-created with the req preset — a
+    //   serial when anonymous (%req:1 → %req:$i), c.up wiring, and on re-key its sc
+    //    merges with %mutated:{key:old} (差/hakd); a drifted %permanent+%finished
+    //     stage un-finishes so do() re-runs it.  A req is never replaced, only
+    //      mutated, because its identity rides the ref.  Non-req: bump_version on a
+    //       real sc change, for watchers keyed on %version.
+    async moai(s, c = {}) {
+        if ('req' in s) {
+            let req = this.o({ req: 1, ...exactly(s) })[0] as TheC | undefined
+            if (req) { this.maybe_mutate_sc(req, c); return req }
+            const mix: TheUniversal = { req: 1, ...s }
+            // an anonymous %req:1 wants serial numbering — the serial IS the %req
+            //  value (%req:$i), off the host counter.  A named req keeps its name.
+            //  Serials start at %req:2 ((??1)+1) so they never collide with the
+            //   %req:1 "please-serialise" sentinel; next is 3, 4, …
+            if (mix.req === 1) mix.req = this.c.req_serial = ((this.c.req_serial as number) ?? 1) + 1
+            req = this.i(mix) as TheC
+            req.c.up = this
+            // initial-do pending, stamped at birth — in .c so it never snaps; do()
+            //  exposes it as %initialdo for the handler then clears it.
+            req.c.initialdo = 1
+            Object.assign(req.sc, c)
+            if (req.sc.maz === 1) delete req.sc.maz   // maz:1 is implied
+            return req
+        }
+        return await this.something_oai(s,c,{
+            on_change: async (C:TheC,s,c) => C.bump_version()
+        })
+    }
+
+    // seed a req and return a one-shot do_fn setter (?.(body)), or null once wired —
+    //  re-entry never re-wires; only do() re-runs the body.  doai is moai (the req
+    //   re-merge) plus that setter.
+    async doai(c: TheUniversal, sc: TheUniversal = {}): Promise<((fn: Function) => void) | null> {
+        const req = await this.moai(c, sc)
+        if (req.c.do_fn) return null
+        return (fn: Function) => { req.c.do_fn = fn }
+    }
+
+    // moai's %req re-merge: merge sc in place, flagging %mutated = {key: old} for the
+    //  changed keys (差, hakd) so a do_fn (or mutated_fn) can react.  A %permanent
+    //   stage gone quiescent un-finishes on a real change so do() re-runs it with a
+    //    fresh initial-do lease.  The first do() clears %mutated, so it stays a
+    //     within-beat signal — never snaps.
+    maybe_mutate_sc(req: TheC, sc: TheUniversal): void {
+        if (!sc || !Object.keys(sc).length) return
+        const merged = { ...req.sc, ...sc }
+        const diffs = hakd(req.sc, merged)
+        if (!diffs.length) return
+        const mutated: TheUniversal = {}
+        for (const k of diffs) mutated[k] = req.sc[k]
+        Object.assign(req.sc, sc)
+        req.sc.mutated = mutated
+        if (req.sc.permanent && req.sc.finished) {
+            delete req.sc.finished
+            req.c.initialdo = 1
+        }
+        req.bump_version()
+    }
+
+    //  pump this host's reqs, highest maz first.  %ok is a pass-local satisfied
+    //   signal for eternal reqs — re-armed each pass, cleared on entry.  A req that
+    //    arms a ttlilt and bows out (stays needs_work) halts the descent.
+    async do(fn?: Function): Promise<void> {
+        for (const req of this.o({ req: 1 }) as TheC[]) if (req.sc.ok) delete req.sc.ok
+        while (true) {
+            const needs_work = (r: TheC) => !r.sc.finished && !r.sc.ok
+            const N = (this.o({ req: 1 }) as TheC[]).filter(needs_work)
+            if (!N.length) return
+            const maz_high = Math.max(...N.map(r => (r.sc.maz as number) || 1))
+            const level = N.filter(r => ((r.sc.maz as number) || 1) === maz_high)
+            for (const req of level) await this._req_do_one(req, fn)
+            if (level.some(needs_work)) return
+        }
+    }
+
+    async _req_do_one(req: TheC, fn?: Function): Promise<void> {
+        if (req.sc.finished) throw "do req%finished"
+        delete req.sc.ok
+        // forget last pass's transient problems before re-running
+        await req.r({ waits: 1 }, {}); await req.r({ error: 1 }, {}); await req.r({ see: 1 }, {})
+        // resolve the handler the way the walk does — climb c.up to the House for
+        //  do_fn_for (req.c.do_fn, the req_$name convention, and mutated_fn).  At
+        //  do-time the tree is wired, so the House is always up the chain.
+        let H: any = this
+        while (H && typeof H.do_fn_for !== 'function') H = H.c?.up
+        const handler = fn || H?.do_fn_for(req, { ark: 'req' })?.handler
+        if (handler) {
+            // first do(): expose the birth-stamped initial-do as %initialdo
+            if (req.c.initialdo) { delete req.c.initialdo; req.sc.initialdo = 1 }
+            await handler(req)
+            delete req.sc.initialdo   // comes off again after the do() — never snaps
+        }
+        delete req.sc.mutated   // after the handler — a mutated_fn reads it
+    }
+
+    //  host settles a child req: yoink its oncelers + their sc keys, drop its
+    //   ttlilts, mark %finished (reactive via the bump).
+    finish(child: TheC): void {
+        if (child.sc.finished) return
+        for (const k of Object.keys(child.c.oncelers ?? {})) delete child.sc[k]
+        delete child.c.oncelers
+        ;(child.o({ ttlilt: 1 }) as TheC[]).map(t => child.drop(t))
+        child.sc.finished = 1
+        child.bump_version()
+    }
+
+    all_finished(): boolean {
+        const all = this.o({ req: 1 }) as TheC[]
+        return all.length > 0 && all.every(r => r.sc.finished)
+    }
+
+    // shared find-or-create with a reaction on change — roai and moai differ only
+    //  in the on_change they hand in.  Change is detected with hakd (差): it is
+    //  symmetric, so it also sees a goner (a key already on the C but absent from
+    //  the supplied sc), not only changed values.  ex() is merge-only though — it
+    //  copies the supplied keys over and never deletes, so an omitted key persists.
+    //  A function never counts as a difference, yet ex() copies it through so the
+    //  freshest closure always wins.
+    async something_oai(s, c = {}, q:{on_change:Function}) {
+        const full = { ...s, ...c }
+        const existing = this.o(s)[0]
+        if (!existing) return this.i(full)
+        const diffs = hakd(existing.sc, full)
+            .filter(k => typeof existing.sc[k] !== 'function'
+                      && typeof full[k]        !== 'function')
+        ex(existing.sc, full)
+        if (diffs.length) return await q.on_change(existing, s, full)
+        return existing
+    }
+
+    // ensure given things are the only ones in a match
+    //  does nothing if the things are already there, reactivity etc
+    // good for inserting whole objects, taking over the space
+    // Each incoming C gets .is() so replace() skips resume_X — the C owns /* elsewhere.
+    async place(pattern_sc: TheUniversal, n: TheC | TheC[]): Promise<void> {
+        const N: TheC[] = n instanceof TheC ? [n] : n as TheC[]
+        const existing = this.o(pattern_sc) as TheC[]
+        if (N.length === existing.length && N.every((c, i) => existing[i] === c)) return
+        await this.replace(pattern_sc, () => { for (const c of N) { c.is(); this.i(c) } })
+    }
+}
+
 // a culture of io
 // trivial n/%stuctures and their games
-abstract class TimeOffice extends StuffIO {
+abstract class TimeOffice extends StuffAware {
     // keep a value next to a key
     //  need some other id in the tuple
     //   just eg %openity=$v won't resolve to itself when it changes
@@ -1198,119 +1326,9 @@ export class TheC extends Stuff {
         if (!this.sc) throw "!C.sc"
     }
 
-    // ── reqs, addressed on the C itself (the keyworking family, no reqy()) ───
-    //  this C is the host.  doai seeds a %req child and wires its do_fn (the
-    //  body); do() pumps this host's live reqs in maz order; finish(child)
-    //  settles one; all_finished() is the roll-up.  Reqs are plain %req
-    //  children, their handlers ride req.c.do_fn — no reqcon, no House.
-
-    //  find-or-create a %req child.  An anonymous %req:1 is given a serial off
-    //   the host (c.req_serial), so a unique {…c} identity becomes %req:$i.
-    //  find-or-create a %req child and return it.  On an existing req, re-merge
-    //   sc with %mutated (moai); on a fresh one, apply sc plainly.  This is the
-    //   ref-returning req verb (cf reqy().roai) — doai is this plus a do_fn setter.
-    req_oai(c: TheUniversal, sc: TheUniversal = {}): TheC {
-        let req = this.o({ req: 1, ...exactly(c) })[0] as TheC | undefined
-        if (req) { this.maybe_mutate_sc(req, sc); return req }
-        const mix: TheUniversal = { req: 1, ...c }
-        // an anonymous %req:1 wants serial numbering — and the serial IS the %req
-        //  value (%req:$i++), assigned here at birth off the host counter.  A
-        //  named req keeps its name as identity; no number, nothing extra to snap.
-        if (mix.req === 1) mix.req = this.c.req_serial = ((this.c.req_serial as number) ?? 1) + 1
-        req = this.i(mix) as TheC
-        req.c.up = this
-        // initial-do pending, stamped at birth (doai) — in .c so it never snaps.
-        //  The first do() exposes it as %initialdo for the handler, then clears
-        //  it, so %initialdo is a within-do signal, never persistent snap state.
-        req.c.initialdo = 1
-        Object.assign(req.sc, sc)
-        if (req.sc.maz === 1) delete req.sc.maz   // maz:1 is implied
-        return req
-    }
-
-    //  seed a req and return a one-shot do_fn setter (?.(body)), or null once
-    //   wired — so re-entry never re-wires; only do() re-runs the body.  doai is
-    //   moai (req_oai's re-merge) with that setter.
-    async doai(c: TheUniversal, sc: TheUniversal = {}): Promise<((fn: Function) => void) | null> {
-        const req = this.req_oai(c, sc)
-        if (req.c.do_fn) return null
-        return (fn: Function) => { req.c.do_fn = fn }
-    }
-
-    // moai semantics for a req: merge sc in place, flagging %mutated = {key: old}
-    //  for the changed keys (差, hakd), so a do_fn (or mutated_fn) can react.  The
-    //  first do() clears %mutated, so it stays a within-beat signal — never snaps.
-    maybe_mutate_sc(req: TheC, sc: TheUniversal): void {
-        if (!sc || !Object.keys(sc).length) return
-        const merged = { ...req.sc, ...sc }
-        const diffs = hakd(req.sc, merged)
-        if (!diffs.length) return
-        const mutated: TheUniversal = {}
-        for (const k of diffs) mutated[k] = req.sc[k]
-        Object.assign(req.sc, sc)
-        req.sc.mutated = mutated
-        // a permanent req gone quiescent wakes on mutation — un-finish so do()
-        //  re-runs it with a fresh initial-do lease (finish() yoinked the oncelers).
-        //  Without this a re-keyed %permanent stage stays finished, do() skips it,
-        //  and %mutated never clears — the driver freezes after its first pass.
-        if (req.sc.permanent && req.sc.finished) {
-            delete req.sc.finished
-            req.c.initialdo = 1
-        }
-        req.bump_version()
-    }
-
-    //  pump this host's reqs, highest maz first.  %ok is a pass-local satisfied
-    //   signal for eternal reqs — re-armed each pass, cleared on entry.  A req
-    //   that arms a ttlilt and bows out (stays needs_work) halts the descent.
-    async do(fn?: Function): Promise<void> {
-        for (const req of this.o({ req: 1 }) as TheC[]) if (req.sc.ok) delete req.sc.ok
-        while (true) {
-            const needs_work = (r: TheC) => !r.sc.finished && !r.sc.ok
-            const N = (this.o({ req: 1 }) as TheC[]).filter(needs_work)
-            if (!N.length) return
-            const maz_high = Math.max(...N.map(r => (r.sc.maz as number) || 1))
-            const level = N.filter(r => ((r.sc.maz as number) || 1) === maz_high)
-            for (const req of level) await this._req_do_one(req, fn)
-            if (level.some(needs_work)) return
-        }
-    }
-
-    async _req_do_one(req: TheC, fn?: Function): Promise<void> {
-        if (req.sc.finished) throw "do req%finished"
-        delete req.sc.ok
-        // forget last pass's transient problems before re-running
-        await req.r({ waits: 1 }, {}); await req.r({ error: 1 }, {}); await req.r({ see: 1 }, {})
-        // resolve the handler the way the walk does — climb c.up to the House for
-        //  do_fn_for (req.c.do_fn, the req_$name convention, and mutated_fn).  At
-        //  do-time the tree is wired, so the House is always up the chain.
-        let H: any = this
-        while (H && typeof H.do_fn_for !== 'function') H = H.c?.up
-        const handler = fn || H?.do_fn_for(req, { ark: 'req' })?.handler
-        if (handler) {
-            // first do(): expose the birth-stamped initial-do as %initialdo
-            if (req.c.initialdo) { delete req.c.initialdo; req.sc.initialdo = 1 }
-            await handler(req)
-            delete req.sc.initialdo   // comes off again after the do() — never snaps
-        }
-        delete req.sc.mutated   // after the handler — a mutated_fn reads it
-    }
-
-    //  host settles a child req: yoink its oncelers + their sc keys, drop its
-    //   ttlilts, mark %finished (reactive via the bump).
-    finish(child: TheC): void {
-        if (child.sc.finished) return
-        for (const k of Object.keys(child.c.oncelers ?? {})) delete child.sc[k]
-        delete child.c.oncelers
-        ;(child.o({ ttlilt: 1 }) as TheC[]).map(t => child.drop(t))
-        child.sc.finished = 1
-        child.bump_version()
-    }
-
-    all_finished(): boolean {
-        const all = this.o({ req: 1 }) as TheC[]
-        return all.length > 0 && all.every(r => r.sc.finished)
-    }
+    // The %req machinery (moai's req preset, doai, do, finish, all_finished,
+    //  maybe_mutate_sc, _req_do_one) lives one wall up, on StuffAware — %req is the
+    //  one protocol Stuff.svelte.ts knows.  TheC just adds the .c/.sc typing.
 }
 // ensures v={data:3} becomes C.sc={data:3}
 //  as long as you never use the key=sc
