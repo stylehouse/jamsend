@@ -179,6 +179,12 @@ class StuffIO {
         this.Xify()
         this.X.bump_version()
     }
+    // bump() — the civilised short name; bump_version is migrating onto it.  The
+    //  `recv&bump` stho call form lowers to recv.bump(), so reach for bump() in
+    //  the app layer and let bump_version age out.
+    bump() {
+        this.bump_version()
+    }
     get version() {
         return this.X?.serial_i || 0
     }

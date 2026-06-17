@@ -18,6 +18,14 @@ import type { EditorState } from "@codemirror/state"
 import type { SyntaxNode } from "@lezer/common"
 import type { TheC } from "$lib/data/Stuff.svelte"   // type-only: keeps this module data-layer-free (CLI-loadable)
 
+// The House-receiver alias fabricated at the top of every compiled method body, so
+//  raw-JS House calls (H.foo(), H.c.x) resolve without hand-writing `const H = this`.
+//  Parameterised here: `name` is the alias, `inject:false` turns the whole thing off.
+//  Per-method it is skipped when the alias is a param (would shadow), when the body
+//   already declares it (would redeclare — so an existing hand-written `const H = this`
+//    keeps working untouched), or when the body never mentions it (nothing to bind).
+const RECEIVER_ALIAS = { name: 'H', inject: true }
+
 export const LANG_COMPILE = {
 //#region collect
 
@@ -631,11 +639,43 @@ export const LANG_COMPILE = {
                     out.push({ kind: 'translated', text: line.text.trimEnd().replace(/:$/, '') + ' {' })
                 }
 
+                // fabricate the House-receiver alias (const H = this) at the body top
+                //  so raw-JS House calls resolve.  Reserve a slot now and fill it after
+                //   the body is translated: inject only if the COMPILED body still
+                //    carries a bare `H` — an stho receiver (`H i …`, `H o %A`) lowers to
+                //     `this` and leaves none, so it needs no const.  Skipped when the
+                //      alias is a param (shadow) or the body already declares it (a
+                //       hand-written `const H = this` is left untouched).
+                let aliasSlot = -1
+                if (RECEIVER_ALIAS.inject) {
+                    const A = RECEIVER_ALIAS.name
+                    const params   = (line.text.match(/\(([^)]*)\)/) ?? ['', ''])[1]
+                    const isParam  = new RegExp(`\\b${A}\\b`).test(params)
+                    const declRe   = new RegExp(`^\\s*(?:const|let|var)\\s+${A}\\b`)
+                    let declares = false
+                    for (let p = n; p <= doc.lines; p++) {
+                        const pl = doc.line(p)
+                        if (pl.text.trim() === '') continue
+                        const pind = (pl.text.match(/^(\s*)/) ?? ['', ''])[1].length
+                        if (pind <= decl_indent) break
+                        if (declRe.test(pl.text)) { declares = true; break }
+                    }
+                    if (!isParam && !declares) {
+                        out.push({ kind: 'translated', text: '' })   // reserved — resolved below
+                        aliasSlot = out.length - 1
+                    }
+                }
+
                 // recurse into body with current_method set, for both brace and pythonic styles,
                 // so that via tracking works for H./this. calls inside the body
                 const inner_ctx = { words: ctx.words, current_method: funcName,
                                     method_floor: decl_indent,
-                                    region_stack: ctx.region_stack, lineHits: ctx.lineHits }
+                                    region_stack: ctx.region_stack, lineHits: ctx.lineHits,
+                                    // carry the per-line parser into the body so io atoms
+                                    //  embedded in a control-flow condition|inline body
+                                    //  (if (n===4) i %x) translate — Lang_io_in_text is a
+                                    //   no-op without it, which silently left them raw.
+                                    sthoParser: ctx.sthoParser }
                 while (n <= doc.lines) {
                     const peek = doc.line(n)
                     if (peek.text.trim() === '') {
@@ -646,6 +686,18 @@ export const LANG_COMPILE = {
                     const peek_indent = (peek.text.match(/^(\s*)/) ?? ['', ''])[1].length
                     if (peek_indent <= decl_indent) break
                     n = this._collect_line(n, tree, doc, state, out, inner_ctx)
+                }
+
+                // resolve the reserved alias slot — fill with `const H = this` only if
+                //  the translated body kept a bare `H` (ignoring comment lines), else
+                //   drop the slot so nothing unused is emitted.
+                if (aliasSlot >= 0) {
+                    const A = RECEIVER_ALIAS.name
+                    const useRe = new RegExp(`\\b${A}\\b`)
+                    const used = out.slice(aliasSlot + 1).some(o =>
+                        !/^\s*\/\//.test(o.text) && useRe.test(o.text))
+                    if (used) out[aliasSlot].text = ' '.repeat(decl_indent + 4) + `const ${A} = this`
+                    else out.splice(aliasSlot, 1)
                 }
 
                 // pythonic style needs an injected closing "}," — brace style has its own
@@ -803,6 +855,16 @@ export const LANG_COMPILE = {
         const isStart = (c: string) => !!c && /[A-Za-z_]/.test(c)
         while (i < text.length) {
             if (text[i] === '&' && text[i + 1] !== '&' && isStart(text[i + 1])) {
+                // a tight identifier before "&" is the receiver: pier&do → pier.do(),
+                //  req&bump → req.bump().  Absent|loose (space, "(", line start) → this.
+                //   Spaced "x & y" never enters (isStart fails on the space), so bitwise
+                //    "&" is untouched — the tight-vs-spaced rule mirrors "%" for sc.
+                let recv = 'this'
+                const before = text[i - 1]
+                if (before === '.' || before === '$' || isWord(before)) {
+                    const m = out.match(/[A-Za-z_$][\w.$]*$/)
+                    if (m) { recv = m[0]; out = out.slice(0, out.length - recv.length) }
+                }
                 let j = i + 1
                 while (j < text.length && isWord(text[j])) j++
                 const name = text.slice(i + 1, j)
@@ -818,13 +880,13 @@ export const LANG_COMPILE = {
                         else if (depth === 0 && (text.startsWith('&&', k) || text.startsWith('||', k))) break
                         k++
                     }
-                    out += `this.${name}(${text.slice(j + 1, k).trimEnd()})`
+                    out += `${recv}.${name}(${text.slice(j + 1, k).trimEnd()})`
                     // keep a separating space before a following && / || operator
                     if (text.startsWith('&&', k) || text.startsWith('||', k)) out += ' '
                     i = k
                     continue
                 }
-                out += `this.${name}()`
+                out += `${recv}.${name}()`
                 i = j
                 continue
             }

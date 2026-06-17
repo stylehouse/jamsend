@@ -225,3 +225,32 @@ looseScTiles(A,w):
     let m = idx % len
     // string-safe — a "%" inside quotes is left alone:  let s = "50%off"
     let s = "50%off"
+
+// receiver-amp, the fabricated House alias, and inline IO in a control body — the
+//  three seams that used to force raw JS, now tiles.
+ampTiles(A,w):
+    // (1) recv&method → recv.method(args): a tight identifier before "&" is the
+    //  receiver, the way a leading bareword is for i/o.  pier.do(), req.bump():
+    pier&do
+    req&bump
+    // args ride after the method, like &-calls:  pier.emit('hello', 3)
+    pier&emit,'hello',3
+    // await flows through untouched:  await pier.settle()
+    await pier&settle
+    // a bare "&" with no receiver still means this.method(...):
+    &severally,A,w,5
+    // spaced "&" is left as bitwise-and — tight-vs-spaced, exactly like "%":
+    //  let m = a & b
+    let m = a & b
+
+    // (2) the House alias is fabricated: every method body that keeps a bare H gets
+    //  a "const H = this" at its top (parameterised in compile.ts — skipped when H is
+    //   a param or already declared), so a raw House call resolves even inline in a
+    //    control structure:  if (a > b) H.laterally(A,w,1)
+    if (a > b) H.laterally(A,w,1)
+
+    // (3) IO atoms translate inside a control body now (the per-line parser is
+    //  threaded into method-body recursion) — both pythonic and parenthesised:
+    if a > b
+        i %reached:here
+    if (a > b) i %reached:also

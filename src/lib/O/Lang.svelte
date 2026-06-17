@@ -1181,6 +1181,23 @@
             await H.Lang_open_dock(w, dock, text)
             dock.c.content_dige = dige ?? ''
 
+            // Re-provide of an already-open dock (e.g. surprise_read "take theirs"):
+            //  req:Languish never finishes (its eternal req:text_mutated child keeps
+            //  all_finished() from tripping), so Lang_open_dock's recreate-on-finish
+            //  never fires and the text_loaded install that normally installs the text
+            //  and advances %Text.disk_rev didn't re-run.  Push it here — this is the one
+            //  dock content-writer — so Langui's disk-reload $effect (gated on disk_rev)
+            //  reseats the open editor with the incoming text.
+            const Text = dock.o({ Text: 1 })[0] as TheC | undefined
+            if (Text && dock.c.text !== text) {
+                const d = await dig(text)
+                dock.c.text       = text
+                Text.sc.dige      = d
+                Text.sc.disk_dige = d
+                Text.sc.disk_rev  = ((Text.sc.disk_rev as number) ?? 0) + 1
+                Text.bump_version()
+            }
+
             // first dock furnished becomes the active one (MVP: active = wanted Doc).
             if (!w.c.active_dock_path) await H.Lang_set_active_dock(w, path)
 

@@ -59,7 +59,29 @@ The popover is now in the tree:
     `think()` while the `What**` it sits in is engaged / not folded away (Lang openness +
     Scrollability) — instead of only firing on a manual strike.
 
+Push-to-open-editor (DONE — the "take theirs actually changes the dock text" loop):
+- `e_Lies_surprise_take_theirs` lands `sr.c.disk_text` as `good.c.content` (+ steps `/known`
+  to `disk_dige`) and drains — so theirs becomes the dock text and the compile source.
+- The Lang side couldn't reseat an *open* editor: `req:Languish` never finishes (eternal
+  `req:text_mutated` child → `all_finished()` never trips), so `Lang_open_dock`'s recreate-
+  on-finish never fires and the `text_loaded` install (which sets `dock.c.text` + bumps
+  `%Text.disk_rev`) never re-runs.  Fixed in `e_Lang_dock_content` (the one dock content-
+  writer): on a re-provide where `dock.c.text !== text`, push the text + advance `disk_rev`
+  there, which trips Langui's disk-reload `$effect`.  That effect now dispatches a **minimal
+  diff** (`diff_to_changes`) so cursor/folds/scroll map through.
+
+Follow-up — **auto-pull when there's no local divergence** (handover):
+- If the editor buffer's dige still equals the Good's `/known` dige (the user hasn't edited
+  since load — nothing local to lose), a disk change can be pulled **silently**, no popover.
+  Only raise the surprise_read when there IS local divergence (buffer dige ≠ known dige).
+  Likely gate the stamp in `req_LiesStore_writeCarefully` (LiesStore.svelte) / make a
+  read-refresh path that just pulls.  Make an exception for Doc; the general "push any Good"
+  is the §7 Subscriptions unification (Hovercraft.design.md), still unbuilt.
+
 Still open from the original plan:
+- **Langui/CodeMirror `min-height: 40`** — never started.  Add a min-height to the editor
+  near where Langui decides it has e.g. a GhostList, so the whole thing can be picked up on
+  its own later (the user flagged: "you'd have to know LiesStore").  Separate from the popup.
 - **Move InterestStrip's `×` into PeelInput** — left as a follow-up; it's a distinct UX
   refactor (the strip caps would re-render through PeelInput's CRUD irow, which already has
   a `pi-irow-del` ×).  The popover itself already has no kill button.

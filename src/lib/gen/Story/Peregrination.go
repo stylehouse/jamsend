@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Peregrination(): string { return '5361f7d5ff05fbc7' },
+    Ghostmeta_Ghost_Story_Peregrination(): string { return '988026d763a84e9c' },
 
 
 // LakeNetherland — the Peeroleum test-case wrangler (the outer test layer).
@@ -33,9 +33,8 @@
 //    Lake_drive keeps a req-local `did_step` instead, immune to any other caller.
 LakeNetherland(A,w) {
     w.i({see: 'y LakeNetherland — apparatus ready, Peregrination has the conn'})
-    const H = this
     w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
-        await H.Lake_drive(w, req)
+        await this.Lake_drive(w,req)
         req.sc.ok = 1
 
     })
@@ -44,29 +43,32 @@ LakeNetherland(A,w) {
 //  first pass it sees a new run step_n (read the same way on_step does), tracked
 //   on req.c.did_step (runtime, unsnapped). Witness polls every pass after.
 async Lake_drive(w, req) {
-    const H = this
-    let n = (H.c.run)?.c.step_n
+    let n = (this.c.run)?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
-        if (n === 2) H.Lake_sides_up(w)
-        else if (n === 3) await H.Lake_handshake(w)
-        else if (n === 4) w.i({reached: 'step_4'})
-        else if (n === 5) w.i({reached: 'step_5'})
+        if (n === 2) {
+            this.Lake_sides_up(w)
+        } else if (n === 3) {
+            await this.Lake_handshake(w)
+        } else if (n === 4) {
+            w.i({reached: "step_4"})
+        } else if (n === 5) {
+            w.i({reached: "step_5"})
+        }
     }
-    H.Lake_witness(w)
-    await H.Lake_order(w)
+    this.Lake_witness(w)
+    await this.Lake_order(w)
 
 },
 // Lake_order — float the peers (A:Bearing/A:Nearing, the subject under test) above
 //  the apparatus actors so the snap reads peers-first. place() re-enters the same A
 //   C's in the chosen order (identity/data untouched) and no-ops once already ordered.
 async Lake_order(w) {
-    const H = this
-    let As = H.o({A: 1})
+    let As = this.o({A: 1})
     if (As.length < 2) return
     let peer = (a) => (a.sc.A === 'Bearing' || a.sc.A === 'Nearing') ? 0 : 1
     let sorted = [...As].sort((a, b) => peer(a) - peer(b))
-    await H.place({A: 1}, sorted)
+    await this.place({A:1},sorted)
 
 },
 // Lake_sides_up — step 2: stand up both sides directly (the wrangler lays them,
@@ -97,22 +99,20 @@ Lake_sides_up(w) {
 //   aren't swept by reqdo. The leaf do_fns (say/hear) are heading 3, so the tree
 //    stands up but does not yet reach finished: an honest scaffold for now.
 async Lake_handshake(w) {
-    const H = this
     for (const side of ['Bearing', 'Nearing']) {
-        let pier = H.o({A: side})[0]?.o({w: 'Peeroleum'})[0]?.o({Peering: 1})[0]?.o({Pier: 1})[0]
+        let pier = this.o({A: side})[0]?.o({w: 'Peeroleum'})[0]?.o({Peering: 1})[0]?.o({Pier: 1})[0]
         if (!pier) continue
-        pier.oai({req: 'handshake'})
+        pier.oai({req: "handshake"})
         await pier.do()
     }
-    w.i({reached: 'step_3'})
+    w.i({reached: "step_3"})
 
 },
 // Lake_witness — the readable assertion, polled each pass: once Nearing's inbox
 //  shows the delivered frame, stamp %witnessed:step_2 (the step rides in the value
 //   — `step` is the Story mainkey, so it can't be a key). Idempotent via the probe.
 Lake_witness(w) {
-    const H = this
-    let npier = H.o({A: 'Nearing'})[0]?.o({w: 'Peeroleum'})[0]?.o({Peering: 1})[0]?.o({Pier: 1})[0]
+    let npier = this.o({A: 'Nearing'})[0]?.o({w: 'Peeroleum'})[0]?.o({Peering: 1})[0]?.o({Pier: 1})[0]
     let landed = npier?.o({inbox: 1})[0]?.o({unemit: 1})[0]?.sc.delivered
     if (landed && !w.oa({witnessed: 'step_2'})) w.i({witnessed: 'step_2'})
 

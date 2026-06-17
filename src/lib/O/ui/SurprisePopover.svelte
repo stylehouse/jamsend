@@ -26,13 +26,14 @@
 
     let { H }: { H: House } = $props()
 
-    const GAP = 26   // px between the box's corner and the Interest cap — the connector run
+    const GAP = 26      // px the box sits left of the cap — the tail's reach
+    const TAIL_H = 18   // px height of the speech-bubble tail base on the box edge
 
     // portal — relocate the box to <body>.  It's rendered under .lmm (the minimap),
     //  whose backdrop-filter establishes a containing block for fixed descendants;
     //  without this the box would anchor to the minimap rect, not the viewport, so its
     //  position:fixed coords wouldn't match the cap's getBoundingClientRect.
-    function portal(node: HTMLElement) {
+    function portal(node: HTMLElement | SVGElement) {
         document.body.appendChild(node)
         return { destroy() { node.remove() } }
     }
@@ -88,33 +89,54 @@
         const found = H.Lies_find_doc_in_wafts(w, conflict.path) as { waft_key?: string } | undefined
         return found?.waft_key
     })
-    let anchor = $state<{ rightPx: number; topY: number; tail: boolean } | null>(null)
+    function owner_cap_el(): HTMLElement | null {
+        return ((owner_waft && document.querySelector(`.isx-cap[data-waft="${CSS.escape(owner_waft)}"]`))
+             ?? document.querySelector('.isx-active')
+             ?? document.querySelector('.isx')) as HTMLElement | null
+    }
+
+    let box_el = $state<HTMLElement>()
+    // Box placement: rough — clientWidth (not innerWidth, which counts the scrollbar)
+    //  so the box's right edge lands ~GAP left of the cap.  Exactness is the beam's job.
+    //  Keep the last anchor when the cap is momentarily absent (a strip re-render) rather
+    //  than dislodging the box to the fallback corner.
+    let anchor = $state<{ rightPx: number; topY: number } | null>(null)
     function measure() {
-        const cap = ((owner_waft && document.querySelector(`.isx-cap[data-waft="${CSS.escape(owner_waft)}"]`))
-                  ?? document.querySelector('.isx-active')
-                  ?? document.querySelector('.isx')) as HTMLElement | null
-        if (!cap) { anchor = null; return }
+        const cap = owner_cap_el()
+        if (!cap) return
         const r = cap.getBoundingClientRect()
-        anchor = { rightPx: window.innerWidth - r.left, topY: r.top + r.height / 2, tail: true }
+        anchor = { rightPx: document.documentElement.clientWidth - r.left, topY: r.top + r.height / 2 }
+    }
+
+    // The connector beam: drawn between the box's ACTUAL right edge and the cap's ACTUAL
+    //  left edge (both measured), so it lands on the Interest exactly regardless of any
+    //  drift in the box's CSS placement.  Re-measured after the box lays out.
+    let beam = $state<{ left: number; top: number; width: number } | null>(null)
+    function reflow_beam() {
+        const cap = owner_cap_el()
+        if (!cap || !box_el) return   // keep last beam — don't drop the tail on a re-render
+        const cr = cap.getBoundingClientRect()
+        const br = box_el.getBoundingClientRect()
+        beam = { left: br.right, top: cr.top + cr.height / 2, width: Math.max(0, cr.left - br.right) }
     }
     $effect(() => {
         if (!open) return
-        void conflict?.path; void owner_waft   // re-measure when the conflict / owner cap changes
-        measure()
-        const on = () => measure()
-        window.addEventListener('resize', on)
-        window.addEventListener('scroll', on, true)
-        const id = requestAnimationFrame(measure)   // strip may reflow as the box opens
+        void conflict?.path; void owner_waft; void expanded   // re-sync on conflict / owner / size
+        const sync = () => { measure(); reflow_beam() }
+        sync()
+        const id = requestAnimationFrame(sync)   // after the box lays out at the new anchor
+        window.addEventListener('resize', sync)
+        window.addEventListener('scroll', sync, true)
         return () => {
-            window.removeEventListener('resize', on)
-            window.removeEventListener('scroll', on, true)
+            window.removeEventListener('resize', sync)
+            window.removeEventListener('scroll', sync, true)
             cancelAnimationFrame(id)
         }
     })
 
-    let box_style = $derived(`--srp-gap:${GAP}px; ` + (anchor
+    let box_style = $derived(anchor
         ? `top:${Math.max(8, anchor.topY)}px; right:${anchor.rightPx + GAP}px;`
-        : `top:56px; right:calc(var(--lte-minimap-w, 320px) + ${GAP}px);`))
+        : `top:56px; right:calc(var(--lte-minimap-w, 320px) + ${GAP}px);`)
 
     // Esc tucks it away to un-clutter without losing it: first Esc collapses the body
     //  to the slim header (quick "get this out of my way while I work"), a second Esc
@@ -147,7 +169,20 @@
 </script>
 
 {#if open && conflict}
-    <div class="srp" class:srp-tail={anchor?.tail} style={box_style} use:portal>
+    <!-- One portaled overlay holds both the box and the tail.  Portaling a SINGLE node
+         (not two Svelte-managed siblings) keeps the strip/minimap DOM Svelte owns intact
+         — appending two separate nodes to <body> corrupted it on the next re-render. -->
+    <div class="srp-overlay" use:portal>
+        {#if beam}
+            <!-- speech-bubble tail: filled triangle from the box's right edge to the cap,
+                 same fill/stroke as the box, behind it so the base tucks under. -->
+            <svg class="srp-beam" aria-hidden="true"
+                 style="left:{beam.left - 1}px; top:{beam.top - TAIL_H / 2}px; width:{beam.width + 1}px; height:{TAIL_H}px;">
+                <path d="M0,0 L{beam.width + 1},{TAIL_H / 2} L0,{TAIL_H}"
+                      fill="#160f06" stroke="#5a3010" stroke-width="1" stroke-linejoin="round" />
+            </svg>
+        {/if}
+        <div class="srp" bind:this={box_el} style={box_style}>
         <div class="srp-hdr">
             <span class="srp-warn" title="this file changed on disk while you were editing — your save is held">
                 ⚠ disk changed under your edit
@@ -170,6 +205,7 @@
                 {/if}
             </div>
         {/if}
+        </div>
     </div>
 {/if}
 
@@ -178,9 +214,16 @@
        overflow:visible so the connector stub (::after) and the offset explosion plate
        (::before), which both sit outside the box, aren't clipped.  The body scrolls
        internally (DocDiff has its own max-height). */
+    /* portaled overlay — full viewport, click-through; holds box + tail in one node. */
+    .srp-overlay {
+        position: fixed; inset: 0;
+        z-index: 600;
+        pointer-events: none;
+    }
     .srp {
         position: fixed;
-        z-index: 600;
+        z-index: 1;            /* above the tail within the overlay */
+        pointer-events: auto;  /* the box is interactive; the overlay is not */
         width: clamp(360px, 44vw, 60vw);
         overflow: visible;
         display: flex; flex-direction: column;
@@ -191,22 +234,13 @@
         font-family: 'Berkeley Mono', 'Fira Code', ui-monospace, monospace;
         font-size: 11px; color: #ccc;
     }
-    /* the "explosion" — a second faint bordered plate behind, offset toward the cap
-       corner, so the box reads as a label blasted off the Interest on the diagram. */
-    .srp::before {
-        content: ''; position: absolute; inset: 0;
-        border: 1px solid #3a2400; border-radius: 4px;
-        transform: translate(7px, -7px);
-        z-index: -1; pointer-events: none;
-        background: rgba(40, 26, 4, 0.45);
-    }
-    /* connector — a flat line from the box's top-right corner back to the Interest cap
-       (GAP px to the right at the same y), ending in a node on the cap. */
-    .srp-tail::after {
-        content: ''; position: absolute;
-        top: 0; right: calc(-1 * var(--srp-gap, 26px)); width: var(--srp-gap, 26px); height: 0;
-        border-top: 2px dotted #c89a3a;
+    /* speech-bubble tail — portaled sibling, sits just behind the box (lower z-index)
+       so its base tucks under the box's right border into one continuous bubble. */
+    .srp-beam {
+        position: fixed;
+        z-index: 0;            /* behind the box within the overlay — base tucks under */
         pointer-events: none;
+        overflow: visible;
     }
 
     .srp-hdr {
