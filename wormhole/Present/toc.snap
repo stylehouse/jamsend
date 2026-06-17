@@ -241,29 +241,29 @@ Library
         sample=0.101,at=1781621271
         sample=0.163,at=1781656675
         sample=0.171,at=1781660709
-  Book:InterestLive,ok_pct=0,done=4,last_run_ms=1781691276.083,active
+  Book:InterestLive,ok_pct=0,done=4,last_run_ms=1781696532.507,active
     TimeSpool
-      TimeTotal:beliefs,avg=0.978
-        sample=0.827,at=1781681355
-        sample=0.776,at=1781683683
-        sample=0.546,at=1781683912
-        sample=1.972,at=1781684356
-        sample=0.831,at=1781685871
-        sample=0.732,at=1781685891
+      TimeTotal:beliefs,avg=1.183
         sample=0.701,at=1781687409
         sample=0.862,at=1781689631
         sample=1.364,at=1781690766
         sample=1.17,at=1781691277
-  Book:Peregrination,ok_pct=0,done,last_run_ms=1781690607.938
+        sample=1.716,at=1781691347
+        sample=0.808,at=1781694566
+        sample=0.89,at=1781695236
+        sample=0.966,at=1781696023
+        sample=2.002,at=1781696225
+        sample=1.35,at=1781696532
+  Book:Peregrination,ok_pct,done=5,last_run_ms=1781696861.255
     TimeSpool
-      TimeTotal:beliefs,avg=0.763
-        sample=0.521,at=1781683113
-        sample=0.214,at=1781683241
-        sample=0.451,at=1781683582
-        sample=0.863,at=1781687025
-        sample=0.578,at=1781688253
-        sample=0.321,at=1781688346
-        sample=1.537,at=1781689820
+      TimeTotal:beliefs,avg=0.851
         sample=0.443,at=1781689831
         sample=1.507,at=1781689849
         sample=1.192,at=1781690609
+        sample=0.561,at=1781691443
+        sample=1.008,at=1781691803
+        sample=0.713,at=1781694944
+        sample=0.772,at=1781695079
+        sample=0.256,at=1781695086
+        sample=0.84,at=1781695766
+        sample=1.22,at=1781696862

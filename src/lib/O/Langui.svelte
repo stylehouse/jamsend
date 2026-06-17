@@ -97,6 +97,7 @@
     import { indentService, indentUnit } from "@codemirror/language";
     import { foldEffect, unfoldEffect, unfoldAll, foldedRanges, codeFolding } from "@codemirror/language";
     import { defaultKeymap, indentWithTab } from "@codemirror/commands";
+    import { diff_match_patch } from "diff-match-patch"
 
     import { lang, simpleLezerLinter, lang_for_path } from "$lib/O/lang/lang"
     import type { TheC } from "$lib/data/Stuff.svelte"
@@ -502,6 +503,24 @@
         })
     })
 
+    // diff_to_changes — minimal CM ChangeSpec[] turning oldText into neu, so a
+    //   disk-origin reload dispatches only the actual edits.  CM then maps the
+    //   selection and fold ranges through them (and keeps the viewport), instead of
+    //   the blunt full-document replace that would jump the cursor and drop folds.
+    function diff_to_changes(oldText: string, neu: string): { from: number, to: number, insert: string }[] {
+        const dmp = new diff_match_patch()
+        const diffs = dmp.diff_main(oldText, neu)
+        dmp.diff_cleanupSemantic(diffs)
+        const changes: { from: number, to: number, insert: string }[] = []
+        let pos = 0   // cursor into oldText
+        for (const [op, text] of diffs as [number, string][]) {
+            if (op === 0)       pos += text.length                                          // equal — skip
+            else if (op === -1) { changes.push({ from: pos, to: pos + text.length, insert: '' }); pos += text.length }  // delete
+            else                changes.push({ from: pos, to: pos, insert: text })          // insert
+        }
+        return changes
+    }
+
     // ── disk-reload $effect ───────────────────────────────────────────────────
     //   When the active doc is reloaded from disk (dock text installed by a
     //   disk-origin write — open or external reload), push the new content into
@@ -525,10 +544,15 @@
         _applied_disk_key = key
         const live = view.state.doc.toString()
         if (incoming === live) return           // switch effect already set this text
-        // Genuine disk change.  Apply and remember so the resulting updateListener
+        // Genuine disk change.  Apply as a MINIMAL diff (not a blunt from:0/to:end
+        // replace) so CM maps the selection and fold ranges through the edits and the
+        // viewport stays put — cursor, folds and scroll come back in just right for
+        // the common near-identical case.  Replacing history is still fine: the file
+        // changed on disk, not in the editor.  Remember so the resulting updateListener
         // push doesn't immediately come back through here as new.
         spool_remember(active_path, incoming)
-        view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: incoming } })
+        const changes = diff_to_changes(live, incoming)
+        if (changes.length) view.dispatch({ changes })
     })
 
     // ── language reconfigure $effect ─────────────────────────────────────────

@@ -99,6 +99,7 @@ export function makePathSep(terms: {
                     c === LP || c === RP || c === LB || c === RB || c === LC || c === RC
                 let i = 0, sawExtra = false, c = input.peek(0)
                 while (!isTerm(c)) {
+                    if (c === DOLLAR) break                               // "$" row capture ends the value
                     if (c === DOT && input.peek(i + 1) === DOLLAR) break  // ".$" capture ends the value
                     if (c === DOT && input.peek(i + 1) === DOT && input.peek(i + 2) === DOT) break  // "..." FlowSep
                     if (!isWord(c) && c !== DOT) sawExtra = true          // "." kept for Number-safety

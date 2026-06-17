@@ -923,17 +923,31 @@ export const LANG_COMPILE = {
             'new', 'throw', 'typeof', 'void', 'delete', 'do', 'else',
             'if', 'for', 'while', 'until'])
 
+        // The House receiver: `H i %A:..` lays a sibling actor on the House, but the
+        //  generated eatfunc method has no `H` in scope — it is `this`.  So `H` as a
+        //  receiver normalises to `this` (the actor-laying form, heading L).
+        const norm = (r: string) => r === 'H' ? 'this' : r
+
         // "<LHS> and <receiver?> "
         let m = core.match(/^(.+?)\s+and\s+(\w*)\s*$/)
         if (m) {
-            const recv = m[2] && !KEYWORDS.has(m[2]) ? m[2] : undefined
+            const recv = m[2] && !KEYWORDS.has(m[2]) ? norm(m[2]) : undefined
             return { indent, keep_before: indent, receiver: recv, and_lhs: m[1] }
         }
 
         // bare receiver: the prefix is exactly one identifier
         m = core.match(/^(\w+)\s+$/)
         if (m && !KEYWORDS.has(m[1])) {
-            return { indent, keep_before: indent, receiver: m[1] }
+            return { indent, keep_before: indent, receiver: norm(m[1]) }
+        }
+
+        // assignment with a receiver: "let bA = H i %A:Bearing" → keep "let bA = ",
+        //  receiver H.  Only fires when a lone bareword sits between "=" and the verb
+        //  (the no-receiver form "let la = i …" has nothing there, so it stays
+        //   verbatim with the default receiver).  JS keywords never count.
+        m = core.match(/^(.*=\s*)(\w+)\s+$/)
+        if (m && !KEYWORDS.has(m[2])) {
+            return { indent, keep_before: indent + m[1], receiver: norm(m[2]) }
         }
 
         // assignment / anything else — keep the whole prefix verbatim

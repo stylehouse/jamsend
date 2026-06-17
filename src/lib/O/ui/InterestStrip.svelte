@@ -86,6 +86,7 @@
 <div class="isx">
     {#each rows as r (r.key)}
         <div class="isx-cap"
+             data-waft={r.waft ?? ''}
              class:isx-active={r.active}
              class:isx-pending={r.state === 'pending'}
              class:isx-ghostlist={r.kind === 'GhostList'}>

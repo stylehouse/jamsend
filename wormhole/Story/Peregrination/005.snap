@@ -1,43 +1,12 @@
 Snap:H
   H:Peregrination,Run
-    A:Peregrination
-      self,round=6	{"mung":["age"]}
-      w:Peregrination
-        req:ensure_compiled,path:Ghost/N/Peeroleum.g,finished
-        req:ensure_compiled,path:Ghost/Story/Peregrination.g,finished
-        compiled,path:Ghost/N/Peeroleum.g
-        compiled,path:Ghost/Story/Peregrination.g
-        req:wrangle,eternal,ok
-        reached:step_2
-        witnessed:step_2
-        reached:step_3
-        reached:step_4
-        self,round=6	{"mung":["age"]}
-        reached:step_5
-    A:Lies
-      self,round=16	{"mung":["age"]}
-      w:Lies,dontSnap
-    A:Lang
-      self,round=10	{"mung":["age"]}
-      w:Lang,dontSnap
-    A:Pantheate
-      self,round=8	{"mung":["age"]}
-      w:Pantheate
-        include:gen/N/Peeroleum.go
-        req:include,gen_path:gen/N/Peeroleum.go,path:Ghost/N/Peeroleum.g,source_dige:3ebb6053102cf12d,ghostmeta_name:Ghostmeta_Ghost_N_Peeroleum,permanent,live_dige:3ebb6053102cf12d,finished
-        include:gen/Story/Peregrination.go
-        req:include,gen_path:gen/Story/Peregrination.go,path:Ghost/Story/Peregrination.g,source_dige:47e44a4d82a5abf7,ghostmeta_name:Ghostmeta_Ghost_Story_Peregrination,permanent,live_dige:47e44a4d82a5abf7,finished
-        self,round=8	{"mung":["age"]}
-        o_elvis:Ghost_update_notify
     watched:ave
       examining
-        req:timemachine,playing=0	{"ref":{"w":"%w:Lies, dontSnap:1"}}
-      Languinio,no_doc
-        Interest:GhostList,waft:GhostList,lens:DocGhostList,presence:active,state:pending
-          cursor,doc:GhostList/doc0
+        req:timemachine,playing=0	{"ref":{"w":"%w:Lies, runner:1, dontSnap:1"}}
+        Spotlight	{"ref":{"src":"%What:the test"}}
+      Languinio,dontSnap
     watched:UIs
       UI:Lies	{"ref":{"component":"Function()"}}
-      UI:Ballistics	{"ref":{"component":"Function()"}}
       UI:Langui	{"ref":{"component":"Function()"}}
       UI:Pantheate-include,gen_path:gen/N/Peeroleum.go	{"ref":{"component":"Function()"}}
       UI:Pantheate-include,gen_path:gen/Story/Peregrination.go	{"ref":{"component":"Function()"}}
@@ -45,7 +14,7 @@ Snap:H
       action,role:debookmark,label:-marks	{"ref":{"fn":"Function()"}}
       action,role:enbookmark,label:+marks	{"ref":{"fn":"Function()"}}
       action,role:compile,label:compile	{"ref":{"fn":"Function()"}}
-      action,role:lang_pick,kind:dropdown,label:language,icon:✎,value:stho	{"ref":{"options":"[Object(),Object()]","on_pick":"Function()"}}
+      action,role:lang_pick,kind:dropdown,label:language,icon:✎,value:tsstho	{"ref":{"options":"[Object(),Object()]","on_pick":"Function()"}}
       action,role:gen_parser,label:gen,icon:⚙,disabled:true	{"ref":{"fn":"Function()"}}
       action,role:nogen,label:nogen,icon:nogen,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:softgen,label:softgen,icon:softgen,cls:toggle-off	{"ref":{"fn":"Function()"}}
@@ -74,4 +43,33 @@ Snap:H
         transport,type:mock
         active_transport,type:mock,open
         self,round=4	{"mung":["age"]}
+    A:Peregrination
+      self,round=8	{"mung":["age"]}
+      w:Peregrination
+        req:ensure_compiled,path:Ghost/N/Peeroleum.g,finished
+        req:ensure_compiled,path:Ghost/Story/Peregrination.g,finished
+        compiled,path:Ghost/N/Peeroleum.g
+        compiled,path:Ghost/Story/Peregrination.g
+        req:wrangle,eternal,ok
+        reached:step_2
+        witnessed:step_2
+        reached:step_3
+        reached:step_4
+        self,round=8	{"mung":["age"]}
+        reached:step_5
+    A:Lies
+      self,round=19	{"mung":["age"]}
+      w:Lies,runner,dontSnap
+    A:Lang
+      self,round=20	{"mung":["age"]}
+      w:Lang,runner,dontSnap
+    A:Pantheate
+      self,round=10	{"mung":["age"]}
+      w:Pantheate
+        include:gen/N/Peeroleum.go
+        req:include,gen_path:gen/N/Peeroleum.go,path:Ghost/N/Peeroleum.g,source_dige:3ebb6053102cf12d,ghostmeta_name:Ghostmeta_Ghost_N_Peeroleum,permanent,live_dige:3ebb6053102cf12d,finished
+        include:gen/Story/Peregrination.go
+        req:include,gen_path:gen/Story/Peregrination.go,path:Ghost/Story/Peregrination.g,source_dige:5361f7d5ff05fbc7,ghostmeta_name:Ghostmeta_Ghost_Story_Peregrination,permanent,live_dige:5361f7d5ff05fbc7,finished
+        self,round=10	{"mung":["age"]}
+        o_elvis:Ghost_update_notify
     mo:main,interval=3.6	{"mung":["id"]}

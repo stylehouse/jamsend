@@ -19,7 +19,14 @@ lands `%inbox/%unemit,…,delivered`, witnessed at step 2 (see heading 2 for the
 is step-driven now (inner steps start at 2, via `Lake_drive`'s own step dispatch), and the compile
 scaffolding folds out of the snap with `%dontSnap` once the apparatus is ready. **Next real work:
 heading 3** — the hello/trust handshake leaf do_fns to `%req:handshake,finished` (the four-leaf tree
-already stands up at step 3). Check every `.g` edit with `npm run lang-compile -- <file>`.
+already stands up at step 3).
+
+**Write the spine in the DSL, not raw JS** (the human's standing ask): heading L now covers a lot —
+`%` optional on peels (`i A:Bearing`), `H` receiver for actor-laying, `let {AB,wB} = H i
+A:Bearing$AB/w:Peeroleum$wB` (multi-assign two-leg row-capture), `&name,a,b` calls. `Lake_sides_up` is
+the worked example; only object/`.c` seams (the mock-port pairing) stay raw. Reach for a LangTiles
+extension before dropping to raw JS. Check every `.g` edit with `npm run lang-compile -- <file>`; the
+working tree is left uncommitted for the human.
 
 ## How the loop works (heading 0)
 
@@ -182,13 +189,17 @@ age-line too, stamp the `A:` instead of the `w:`.
 still walked `/src` every 8s. So the loader now stamps `w:Lies.sc.runner` + `w:Lang.sc.runner` at Run
 wiring, and `Lies.svelte` (the Waft-settle phase, ~line 704) skips provisioning GhostList when
 `w%runner` — the index never seeds, the Funkcion never walks, the `Interest:GhostList` never appears.
-A runner's commission to Lies is read→compile→include only. **Open clutter (not yet folded):** the
-Prep's `Lies_open_Waft Ghost/Net/Easy` opens the overlay *in the editor*, which pulls the navigation
-apparatus (`Interest:Trail`, an active `dock:…Peregrination.svelte`, `Navicade`/`Pmirrors`) into
-`watched:ave` — and `%dontSnap` on `w:Lies/w:Lang` doesn't cover `ave`. With warm (cached) compile this
-also makes step 1 race, so its snap is timing-sensitive. Options: drop the Prep's Waft-open (the loader
-reads docks via the hardcoded `DOCKS`, not the Waft — heading W unbuilt), or extend the runner-flavour
-so opening a Waft engages no editor Trail. `UI:Ballistics` in the snap is unrelated parallel work.
+A runner's commission to Lies is read→compile→include only. The Prep's `Lies_open_Waft Ghost/Net/Easy`
+opens the overlay *in the editor*, which pulls the navigation apparatus (`Interest:Trail`, an active
+`dock:…Peregrination.svelte`, `Navicade`/`Pmirrors`) into `watched:ave` — and `%dontSnap` on
+`w:Lies/w:Lang` doesn't reach `ave`. **Folded:** the `Languinio` (Lang's ave-enrolled focus object that
+holds all that) gets `%dontSnap` stamped on creation when `w:Lang%runner` (`Lang.svelte:332`), so it
+collapses to one line. (Snap-only — the editor still runs; a true runner that opens no editor Trail is
+the deeper version, when wanted.) `UI:Ballistics` in the snap is unrelated parallel work.
+
+**Peers-first ordering:** `Lake_order` floats `A:Bearing`/`A:Nearing` (the subject under test) above the
+apparatus actors via `H.place({A:1}, sorted)` (the `Lies_order_wafts` idiom — re-enters the same C's in
+order, no-ops once sorted). Called each pass from `Lake_drive`, so the snap reads peers-first.
 
 **NB:** the committed `gen/N/Peeroleum.go` + `gen/Story/Peregrination.go` track the `.g`; the loader's
 dige gate recompiles + rewrites them on the next in-app run if they drift — no hand-edit needed.
@@ -254,17 +265,28 @@ Done so far (all verified with `npm run lang-compile`, corpus output unchanged):
   (word before, letter after) only, so spaced modulo `a % b` and a leading `%Foo` PuddleSigil are
   untouched; chains fold (`n%a%b → n.sc.a.sc.b`). Convention: tight `%` is sc-access, modulo needs
   spaces.
+- **`H`-receiver actor-laying** — `H i A:Bearing` lays a sibling actor on the House. `H` normalises to
+  `this` (the gen method has no `H` in scope) in `Lang_io_before_split` (`compile.ts`). The same split now
+  also captures a receiver in the **assignment form** `let bw = bA i w:Peeroleum` (a lone bareword between
+  `=` and the verb) — previously it fell to verbatim and dropped to the default `w`. So a method whose
+  every `H` is a DSL form needs no `const H = this` (but raw-JS `H.x` and closures like `transport()`'s
+  mock-port still do).
+- **`$` row-capture on a valued leg** — `A:Nearing$AN` captures that leg's C into `AN`; two legs →
+  `let {AB, wB} = this._i_drill_caps(this, […])`, a one-line **multi-assigning two-leg**. Fix was one
+  char: the `PathVal` value token now breaks on `$` (`io_tokens.ts`), so the trailing `$cap` is left for
+  the capture token instead of being swallowed into the value. `%` is now optional on peels — `i A:Bearing`
+  works, prefer it.
 - **NB regen:** editing `stho.grammar` makes the generated `stho.grammar.ts` artifact stale — the
   registry `resolve()` falls back to a live `buildParser` (correct, just flagged stale). Regen the
-  artifact via the in-app gen action when convenient.
+  artifact via the in-app gen action when convenient. (Editing `io_tokens.ts` needs no regen — the
+  generated parser imports it at runtime.)
 
 Still open — each a place the spine dropped to raw JS:
 - auto-`async` on a method whose body has a bare `await`-verb (`r/rm/roai`/`await x.do()`).
 - `drop`/`empty`/`oa` verbs; deep/wildcard `drop Pier/protocol/**`.
 - drilled paths on `oai/r/rm` (seed a `%req` under a nested host without pre-resolving it).
-- an `H`-receiver actor-laying form (`H i %A:..` laying a sibling actor).
 - object/`.c` payloads (`c.connection`, `stashed:{…}`).
-- list fan-out / column capture (one `%req:dial` per peer over a thang list).
+- list fan-out (one `%req:dial` per peer over a thang list).
 Corpus + compiler: `Ghost/test/LangTiles.g`, `src/lib/O/LangCompiling.svelte`, `LangCompiler_TODO.md`.
 
 ### W — Hide compilation behind Waft architecture  `[ ]`

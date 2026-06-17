@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Peregrination(): string { return '47e44a4d82a5abf7' },
+    Ghostmeta_Ghost_Story_Peregrination(): string { return '5361f7d5ff05fbc7' },
 
 
 // LakeNetherland — the Peeroleum test-case wrangler (the outer test layer).
@@ -54,27 +54,42 @@ async Lake_drive(w, req) {
         else if (n === 5) w.i({reached: 'step_5'})
     }
     H.Lake_witness(w)
+    await H.Lake_order(w)
+
+},
+// Lake_order — float the peers (A:Bearing/A:Nearing, the subject under test) above
+//  the apparatus actors so the snap reads peers-first. place() re-enters the same A
+//   C's in the chosen order (identity/data untouched) and no-ops once already ordered.
+async Lake_order(w) {
+    const H = this
+    let As = H.o({A: 1})
+    if (As.length < 2) return
+    let peer = (a) => (a.sc.A === 'Bearing' || a.sc.A === 'Nearing') ? 0 : 1
+    let sorted = [...As].sort((a, b) => peer(a) - peer(b))
+    await H.place({A: 1}, sorted)
 
 },
 // Lake_sides_up — step 2: stand up both sides directly (the wrangler lays them,
 //  spec §15), pair their mock-ports, and push one frame B→N. H-receiver actor-
 //   laying + objects-on-.c are LangTiles seams, so raw JS. Fired once at step 2.
 Lake_sides_up(w) {
-    const H = this
-    w.i({reached: 'step_2'})
-    let bA = H.i({A: 'Bearing'}); let bw = bA.i({w: 'Peeroleum'})
-    let nA = H.i({A: 'Nearing'}); let nw = nA.i({w: 'Peeroleum'})
-    // each side: a %Peering and a %Pier named by the *peer's* identity (whom this
-    //  Pier is a Pier to), plus a mock transport on the Peering's active_transport.
-    bw.i({Peering: 1, name: 'bearing'}).i({Pier: 1, pub: 'nearing'})
-    nw.i({Peering: 1, name: 'nearing'}).i({Pier: 1, pub: 'bearing'})
-    H.transport(bA, bw)
-    H.transport(nA, nw)
-    // pair the two mock-ports so each side delivers into the other (spec §15).
-    let bport = bw.o({active_transport: 1})[0].c.connection
-    let nport = nw.o({active_transport: 1})[0].c.connection
+    w.i({reached: "step_2"})
+    // stand up both sides: `H i A:..$cap/w:..$cap` lays the actor and its w on the
+    //  House in one multi-assigning two-leg, capturing each leg's C (heading L).
+    let {AB, wB} = this._i_drill_caps(this, [{sc: {A: "Bearing"}, caps: [{as: "AB", key: "A", val: false}]}, {sc: {w: "Peeroleum"}, caps: [{as: "wB", key: "w", val: false}]}])
+    let {AN, wN} = this._i_drill_caps(this, [{sc: {A: "Nearing"}, caps: [{as: "AN", key: "A", val: false}]}, {sc: {w: "Peeroleum"}, caps: [{as: "wN", key: "w", val: false}]}])
+    // each side: a Peering and a Pier named by the peer's identity (whom this Pier
+    //  is a Pier to), plus a mock transport on the Peering's active_transport.
+    this._i_drill(wB, [{sc: {Peering: 1, name: "bearing"}}, {sc: {Pier: 1, pub: "nearing"}}])
+    this._i_drill(wN, [{sc: {Peering: 1, name: "nearing"}}, {sc: {Pier: 1, pub: "bearing"}}])
+    this.transport(AB,wB)
+    this.transport(AN,wN)
+    // pair the two mock-ports so each side delivers into the other (spec §15) —
+    //  objects-on-.c stay raw JS.
+    let bport = wB.o({active_transport: 1})[0].c.connection
+    let nport = wN.o({active_transport: 1})[0].c.connection
     bport.partner = nport; nport.partner = bport
-    H.Peeroleum_send(bw, {header: {type: 'hello', from: 'bearing', to: 'nearing', seq: 1}})
+    this.Peeroleum_send(wB,{header:{type:'hello', from:'bearing', to:'nearing', seq:1}})
 
 },
 // Lake_handshake — step 3: seed %req:handshake on each Pier (the spine's

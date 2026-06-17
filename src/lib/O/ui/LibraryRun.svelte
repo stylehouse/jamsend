@@ -9,10 +9,12 @@
     // Two heat channels ride StemHive's per-item `styles` map, so StemHive needs
     //   no change — each book's id maps to one inline-style string carrying both:
     //   glow  — DocMinimap's amber→pink halo, brightness by how recently the book
-    //           was lit (last_run_ms, exponential decay over GLOW_HALFLIFE_S).  The
-    //           active book's last_run_ms is restamped every Auto tick, so it stays
-    //           brightest; the rest fade.  Hue warms toward pink as ok_pct falls,
-    //           so a breaking book glows hot.
+    //           was lit: a 60s live pulse (last_run_ms decayed over GLOW_HALFLIFE_S)
+    //           maxed with a tiered recency floor (brightest for this session, then
+    //           6h/12h/24h/48h bands, dark beyond).  The active book's last_run_ms is
+    //           restamped every Auto tick, so it stays brightest; others settle onto
+    //           their band then fade.  Hue warms toward pink as ok_pct falls, so a
+    //           breaking book glows hot.
     //   size  — font-size by relative rank on book_rank_score (the recency-weighted
     //           beliefs-mutex time), so a book that's been heavy across recent runs
     //           reads bigger.  Same score the old bubble-pile sized by.
@@ -46,6 +48,10 @@
     let now_s = $state(Date.now() / 1000)
     const tick = setInterval(() => { now_s = Date.now() / 1000 }, 1000)
     onDestroy(() => clearInterval(tick))
+
+    // captured once at mount — a book whose last_run_ms is at/after this counts as
+    //   run "this session", the brightest recency tier (see book_recency_floor).
+    const SESSION_START_S = Date.now() / 1000
 
     // ── add book ──────────────────────────────────────────────────────────
     let add_book_text = $state('')
@@ -176,6 +182,28 @@
         return Math.pow(0.5, age / GLOW_HALFLIFE_S)
     }
 
+    // tiered recency floor — a longer memory than the 60s live pulse above, which
+    //   is gone within minutes.  Keeps a stepped baseline glow for a book whose
+    //   test ran recently: brightest for this session, then dimming by band at
+    //   6h / 12h / 24h / 48h, dark beyond.  book_style takes max(pulse, floor), so
+    //   the active book pulses bright then settles onto its band as the pulse fades.
+    //   last_run_ms is wall-clock seconds (now_in_seconds_with_ms), so bands are too.
+    const RECENCY_BANDS: [number, number][] = [
+        [6  * 3600, 0.42],   // ran < 6h ago
+        [12 * 3600, 0.30],   //       < 12h
+        [24 * 3600, 0.20],   //       < 24h
+        [48 * 3600, 0.12],   //       < 48h
+    ]
+    const SESSION_FLOOR = 0.55
+    function book_recency_floor(book: TheC): number {
+        const t = book.sc.last_run_ms as number | null | undefined
+        if (!t) return 0
+        if (t >= SESSION_START_S) return SESSION_FLOOR   // ran this session
+        const age = now_s - t
+        for (const [secs, floor] of RECENCY_BANDS) if (age < secs) return floor
+        return 0
+    }
+
     // warmth 0..1 — amber (passing) → pink (breaking), matching the minimap's
     //   warm hue.  ok_pct 1 → amber, 0 → pink; unknown → amber.
     function book_warm(book: TheC): number {
@@ -203,7 +231,7 @@
     //   so a cold book is just sized, no glow.
     function book_style(book: TheC): string {
         const fs = `font-size:${book_size(book).toFixed(1)}px;`
-        const b  = book_bright(book)
+        const b  = Math.max(book_bright(book), book_recency_floor(book))
         if (b <= 0.02) return fs
         const w  = book_warm(book)
         const gg = Math.round(190 - 70 * w)

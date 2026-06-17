@@ -330,6 +330,10 @@
         // Holds %LE / %dock / %Interest in volatility order (see comment above).
         const ave = H.oai_enroll(H, { watched: 'ave' })
         const languinio = w.oai({ Languinio: 1 })
+        // runner-flavoured Lang: fold the editor-nav apparatus (Interest/Trail/dock)
+        //  out of the snap. Languinio is enrolled in ave, so the w:Lang %dontSnap fold
+        //  doesn't reach it — stamp the Languinio itself. (Snap-only; editor still runs.)
+        if (w.sc.runner) languinio.sc.dontSnap = 1
         ave.i(languinio)
         languinio.c.w = w
 

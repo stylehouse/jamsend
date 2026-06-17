@@ -423,11 +423,16 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
     // ── e_Lies_surprise_take_theirs ─────────────────────────────────────
     //
-    //   Resume a parked surprise_read by discarding the user's stashed text and
-    //   re-reading what's on disk ("take theirs").  Drops the stash, zeroes the
-    //   Good's off-snap content to force a fresh read, then re-provides the dock so
-    //   the disk text lands back in the open editor — overwriting the stale CM
-    //   buffer whose save triggered the conflict.
+    //   Resume a parked surprise_read by taking the divergent disk version ("take
+    //   theirs").  We already hold theirs on sr.c.disk_text (read at conflict time),
+    //   so land it straight as the Good's content — it becomes what the editor shows
+    //   AND what we compile — and step /known to its dige so the next auto-save sees
+    //   no divergence.  Hand it to Lang via drain (no disk re-read): a fabricated /
+    //   in-memory theirs isn't on disk, and even a real one is the snapshot we took.
+    //   Lang_open_dock bumps the dock %Text disk_rev, so Langui's disk-reload effect
+    //   reseats the open CM view (preserving cursor/folds/scroll via a minimal diff).
+    //   Only if theirs was lost (page reloaded — off-snap gone) do we fall back to a
+    //   fresh disk read.
     //
     //   e.sc: { path: string }
     async e_Lies_surprise_take_theirs(A: TheC, w: TheC, e: TheC) {
@@ -442,10 +447,20 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             return
         }
 
+        const theirs      = sr.c.disk_text  as string | undefined
+        const theirs_dige = sr.sc.disk_dige as string | undefined
         good.drop(sr)
-        delete good.c.content                 // force a fresh disk read
-        good.bump_version()
-        await H.Lies_provide_dock(w, path)    // re-land disk text into the open dock
+
+        if (theirs !== undefined) {
+            good.c.content = theirs
+            if (theirs_dige) good.oai({ known: 1 }).sc.dige = theirs_dige
+            good.bump_version()
+            H.LiesStore_drain_good_now(w, good)   // hand theirs to Lang — no disk re-read
+        } else {
+            delete good.c.content                 // theirs lost on reload — fresh disk read
+            good.bump_version()
+            await H.Lies_provide_dock(w, path)
+        }
         H.i_elvisto(w, 'think')
     },
 

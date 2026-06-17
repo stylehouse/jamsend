@@ -140,7 +140,19 @@
             {/each}
         </div>
     {:else}
-        <div class="ls-empty">no wafts</div>
+        <!-- gap filler: a runner-flavoured Lies (w%runner) has no GhostList index and
+             opens no editor Wafts, so the list is legitimately empty — say so with the
+             w's quality flags instead of a bare "no wafts". -->
+        {@const quals = ['runner', 'dontSnap'].filter(k => Lies?.sc?.[k])}
+        {#if quals.length}
+            <div class="ls-empty ls-quals"
+                 title="runner-flavoured Lies — read · compile · include only; no editor index, no Wafts">
+                {#each quals as q}<span class="ls-qual">{q}</span>{/each}
+                <span class="ls-qnote">read · compile · include</span>
+            </div>
+        {:else}
+            <div class="ls-empty">no wafts</div>
+        {/if}
     {/if}
 
     {/if}
@@ -162,5 +174,13 @@
     .ls-error-msg { width: 100%; font-size: 0.76rem; font-family: monospace }
     .ls-loaded-section { margin-bottom: 0.4rem }
     .ls-empty  { color: #666; padding: 0.2rem 0; font-style: italic }
+    .ls-quals  { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; font-style: normal }
+    .ls-qual   {
+        font-size: 0.7rem; color: #c4aaee;
+        background: rgba(196, 170, 238, 0.1);
+        border: 1px solid rgba(196, 170, 238, 0.35); border-radius: 3px;
+        padding: 0 0.35rem; line-height: 1.5;
+    }
+    .ls-qnote  { color: #667; font-size: 0.72rem; font-style: italic }
     .ls-waft-section { margin-top: 0.2rem }
 </style>
