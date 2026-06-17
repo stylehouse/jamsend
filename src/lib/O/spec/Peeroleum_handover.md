@@ -17,9 +17,16 @@ seeds its `%req:wrangle`. Heading 0 ✓, the CLI compiler 1a ✓, two LangTiles 
 **Heading 2 (mock transport spine) is PROVEN in-app:** one frame crosses the mock transport B→N and
 lands `%inbox/%unemit,…,delivered`, witnessed at step 2 (see heading 2 for the snap shape). The runner
 is step-driven now (inner steps start at 2, via `Lake_drive`'s own step dispatch), and the compile
-scaffolding folds out of the snap with `%dontSnap` once the apparatus is ready. **Next real work:
-heading 3** — the hello/trust handshake leaf do_fns to `%req:handshake,finished` (the four-leaf tree
-already stands up at step 3).
+scaffolding folds out of the snap with `%dontSnap` once the apparatus is ready.
+
+**Heading 3 (hello+trust handshake) is BUILT, awaiting in-app proof at step 3.** The four leaf do_fns
++ the say/hear exchange + the inbound-frame dispatch are written (compile clean via `lang-compile`);
+both sides should drive `%req:handshake` to `finished` and stamp `%witnessed:step_3`. **Next real work:
+run the Peregrination Story on :9091 and confirm step 3 (snap shape + the bomb under heading 3), then
+record the true step-3 dige.** NB headless `Story_cli` (see `Story_cli_handover.md`) does NOT yet boot
+this Book — it mounts only `<Ghost>`, not the `Peregrination.svelte` bootstrap loader, so the wrangler
+methods never compile in; wiring the loader into `Story_cli.svelte` is heading 1b's payoff, and would
+finally make this verifiable headlessly. Until then, heading-3 proof is in-app.
 
 **Write the spine in the DSL, not raw JS** (the human's standing ask): heading L now covers a lot —
 `%` optional on peels (`i A:Bearing`), `H` receiver for actor-laying, `let {AB,wB} = H i
@@ -204,13 +211,53 @@ order, no-ops once sorted). Called each pass from `Lake_drive`, so the snap read
 **NB:** the committed `gen/N/Peeroleum.go` + `gen/Story/Peregrination.go` track the `.g`; the loader's
 dige gate recompiles + rewrites them on the next in-app run if they drift — no hand-edit needed.
 
-### 3 — hello+trust under mock → `%req:handshake,finished`  `[~]`  (rung 2)
-Scaffold up: `on_step{3}` (`Lake_handshake`) seeds + pumps `%req:handshake` on each Pier, so the
-spine's `req_handshake` stands the four maz leaves up (said/heard hello, said/heard trust) — but they
-don't yet finish. **Next: the leaf do_fns** — each finishes when its protocol particle exists
-(`Pier/protocol/hello/%said` …); `say_*`/`hear_*` write those particles and push `e:hello`/`e:trust`
-frames through `%active_transport` (now a live mock-port, heading 2). Cross-side short-circuit (spec
-§8). Then `Lake_witness` asserts `%req:handshake,finished` both sides → `%witnessed:step_3`.
+### 3 — hello+trust under mock → `%req:handshake,finished`  `[~]`  BUILT, awaiting in-app proof  (rung 2)
+The four leaf do_fns + the say/hear exchange + frame dispatch are written (`Ghost/N/Peeroleum.g`),
+plus the wrangler's per-pass re-pump + step-3 witness (`Ghost/Story/Peregrination.g`). Both `.g`
+compile clean. Not yet run (Peregrination has no headless path — see Status). The shape:
+
+**Spine (`Peeroleum.g`):**
+- `req_said_hello/heard_hello/said_trust/heard_trust` — each finishes the instant its protocol
+   particle exists (`pier o protocol/hello/said` … via a drilled-`o` capture, clean DSL). The
+   `said_*` leaves also *perform* the say (idempotent on the protocol particle); the `heard_*` are
+   pure existence checks, fed by the far side. maz 4→3→2→1 with the `do()` `some(needs_work)` gate
+   means trust never precedes hello.
+- `say_hello/say_trust(w,pier)` — write `Pier/protocol/<kind>/%said,seq` (DSL) and emit one
+   `e:hello`/`e:trust` frame via `Peeroleum_send` (frame object stays raw — JS off the wire).
+   Identity in the mock: Peering `%name` = our address, Pier `%pub` = the peer it faces, `publicKey`
+   we send IS our name → `hear_*` verifies `startsWith(pub)`.
+- `hear_hello/hear_trust(w,pier,frame)` — raw (frame is a JS object, writes carry dynamic values):
+   verify, write `%heard,publicKey` + set `%Ud` (their identity, survives resets — §6); `hear_hello`
+   says back if `!said` (the single-init path; a no-op under the symmetric dual-init).
+- `Peeroleum_deliver` now dispatches the inbound frame to `hear_hello`/`hear_trust` by `header.type`.
+
+**Wrangler (`Peregrination.g`):** `Lake_pump_handshakes(w)` re-pumps each Pier's `%req:handshake`
+every pass (called from `Lake_drive` before the witness); `Lake_witness` stamps `%witnessed:step_3`
+once both Piers' `%req:handshake` are `finished`.
+
+**The bombs (what detonates if the next reader doesn't have it):**
+- **Re-pump lives in the wrangler, NOT reqdo_sweep.** The handshake is nested (`Pier/Peering/w`),
+   below reqdo_sweep's w-level reach, so nothing auto-pumps it. `Lake_pump_handshakes` (each pass)
+   is the driver; delete it and the leaves freeze after step-3 seeding. (Production will pump via the
+   spine's per-Pier worker once `req_p2paddy` seeds the handshake — §11.2/§11.3 — but the test
+   wrangler lays sides directly and drives them itself.)
+- **The step holds open via the `post_do`/`feebly_ponder` chain — no ttlilt needed.** Each
+   `Peeroleum_send` `post_do`s a delivery (keeps `Run.todo` non-empty → `poll_step` not quiescent);
+   each `Peeroleum_deliver` `feebly_ponder`s (→ `think` → `reqdo_sweep` → `Lake_drive` →
+   `Lake_pump_handshakes` → `pier.do()`), so the say→hear→say_trust→hear_trust round-trip self-drives
+   to completion inside one step, exactly as heading 2's single delivery did. If an in-app run snaps
+   mid-handshake, the spec-aligned fix is a waiting ttlilt on the handshake req (`H.i_req_ttlilt`)
+   **plus** `H.i_scheme_req(w,[{Peering:1},{Pier:1}])` so `i_Story_o_req_ttlilt` can reach the nested
+   req — but bet on the chain first.
+- **Symmetric dual-init.** Both sides run all four leaves, so both `say_hello` immediately and both
+   `say_trust` once they've heard hello; the `say_*` idempotency + the `if !said` guard in `hear_hello`
+   make the cross-side short-circuit (§8) fall out — a corrupt/never-arriving hello just leaves the
+   far `heard_*` unfinished, which is the test passing (heading 6).
+
+**Expected step-3 snap (to record the true dige):** each side's `Pier/%protocol/{hello,trust}/%said,seq`
++ `%heard[,publicKey]`, `Pier/%Ud,publicKey`, the `%outbox/%emit` (hello + trust) and `%inbox/%unemit`
+(hello + trust) pairs, both `%req:handshake,finished` (four leaves gone, rolled up), and
+`w:Peregrination/%witnessed:step_3`. The `toc.snap` step-3 dige is still a lie until this run records it.
 
 ### 4 — outbox/inbox lifecycle + acks + whittle  `[ ]`  (rung 3)
 `%outbox/emit:N` states (sent/acked), `%inbox/unemit:N` serial handling (queued/handling/verified/

@@ -230,6 +230,15 @@
     function havoc_raw(c: TheC): string {
         return Object.entries(c.sc).map(([k, v]) => v === 1 ? k : `${k}:${v}`).join(', ')
     }
+    // a %havoc,arm pad self-arms: it strikes itself whenever its containing What is
+    //  engaged (Lies_arm_engaged).  Glow it when that What holds the spotlight, so the
+    //  auto-fire is legible — the pad lights the same moment the limb runs.
+    function havoc_armed_engaged(c: TheC): boolean {
+        if (!c.sc.arm) return false
+        let what: any = c
+        while (what && what.sc?.What === undefined) what = what.c?.up
+        return what ? is_spotlight(what) : false
+    }
 
     // ── unified item-edit form state ──────────────────────────────────
     //
@@ -606,10 +615,13 @@
         {:else}
             <div class="ls-havoc">
                 <button class="ls-havoc-pad" class:ls-havoc-hit={struck === C}
-                        title={(C.sc.hint as string) ?? `strike havoc: ${hav}`}
+                        class:ls-havoc-armed={!!C.sc.arm}
+                        class:ls-havoc-engaged={havoc_armed_engaged(C)}
+                        title={(C.sc.hint as string) ?? (C.sc.arm ? `self-arming havoc: ${hav} (also strikeable)` : `strike havoc: ${hav}`)}
                         onclick={() => strike_havoc(C)}>
                     <span class="ls-havoc-glyph">{(C.sc.emoji as string) ?? '💥'}</span>
                     <span class="ls-havoc-label">{hav}</span>
+                    {#if C.sc.arm}<span class="ls-havoc-arm" title="self-arms when its What is looked at">⟳</span>{/if}
                 </button>
             </div>
         {/if}
@@ -787,6 +799,17 @@
     }
     .ls-havoc-glyph { font-size: 0.95rem; line-height: 1; }
     .ls-havoc-label { font-family: monospace; font-size: 0.74rem; }
+    /* self-arming pad (%havoc,arm): a cooler cast + a ⟳ mark; it lights warm
+       (.ls-havoc-engaged) the moment its What holds the spotlight and the limb
+       self-fires, the same glow a manual hit gives. */
+    .ls-havoc-armed { border-color: #2c3a4a; }
+    .ls-havoc-armed:hover { border-color: #44627e; }
+    .ls-havoc-arm { font-size: 0.7rem; color: #6a86a8; line-height: 1; }
+    .ls-havoc-engaged {
+        background: #14283a; border-color: #4a86c8;
+        box-shadow: 0 0 9px rgba(74, 134, 200, 0.55); color: #cfe4ff;
+    }
+    .ls-havoc-engaged .ls-havoc-arm { color: #9cc4ee; }
     /* raw mode (switcheroo Waft): show the bare particle, not the pad */
     .ls-havoc-raw {
         font-family: monospace; font-size: 0.74rem; color: #8a7a5a;

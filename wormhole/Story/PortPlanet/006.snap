@@ -19,8 +19,8 @@ Snap:H
         req:reportPortPlaneting,things=444,finished
           req:gatherself,maz=2,finished
           req:summarise,finished
+          surprise=42
         self,round=6	{"mung":["age"]}
         logger,n
           report_final,total=12,inA
         {"see":"📋 world total: 12 doses"}
-    mo:main,interval=3.6	{"mung":["id"]}

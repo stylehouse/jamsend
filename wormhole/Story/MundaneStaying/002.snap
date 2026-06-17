@@ -5,9 +5,8 @@ Snap:H
       w:MundaneStaying
         req:one_shot,ttl=600,timer=400,finished
         req:slow,ttl=1200,armed
-          ttlilt,until_ts=1781595784.7840002
+          ttlilt	{"mung":["until_ts"]}
         req:fast,ttl=600,timer=400,finished
         self,round=4	{"mung":["age"]}
         see:Step ending with a timeout
-    mo:main,interval=3.6	{"mung":["id"]}
-    ttlilt,of_w:MundaneStaying,until_ts=1781595784.7840002	{"ref":{"req":"%req:slow, ttl:1200, armed:1"}}
+    ttlilt,of_w:MundaneStaying	{"ref":{"req":"%req:slow, ttl:1200, armed:1"},"mung":["until_ts"]}

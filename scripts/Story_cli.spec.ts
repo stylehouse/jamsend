@@ -4,6 +4,9 @@
 //
 //   BOOK=PortPlanet node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs scripts/Story_cli.spec.ts
 //
+// Set ACCEPT=1 to re-record: the got snaps become the new fixtures (toc.snap +
+//  NNN.snap rewritten in wormhole/Story/<Book>/ via the machine's own story_save).
+//
 // Writes /tmp/Story_cli/<Book>/ :
 //   NNN.got.snap   the produced Snap:H for step N (mo:main already dropped by story_matching)
 //   NNN.exp.snap   the recorded fixture for step N, mo:main-normalized (for clean diff)
@@ -21,9 +24,10 @@ import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs'
 import path from 'node:path'
 import Story_cli from './Story_cli.svelte'
 
-const ROOT = process.cwd()
-const BOOK = process.env.BOOK || 'PortPlanet'
-const OUT  = path.join('/tmp/Story_cli', BOOK)
+const ROOT   = process.cwd()
+const BOOK   = process.env.BOOK || 'PortPlanet'
+const ACCEPT = !!process.env.ACCEPT   // re-record: accept the got snaps as the new fixtures
+const OUT    = path.join('/tmp/Story_cli', BOOK)
 
 const nodeNav = {
     async read_file(dir: string, file: string): Promise<string | null> {
@@ -65,6 +69,7 @@ test(`Story_cli: run + dump Book:${BOOK}`, async () => {
             if (o && !h._noc) { h._noc = true; h.The_Opt_val = (ww: any, k: string) => k === 'noCyto' ? true : o(ww, k) }
         }
         if (w && !w.c.lenient) w.c.lenient = true                  // walk all steps; never pause on a mismatch
+        if (ACCEPT && w && !w.c.keep_snaps) w.c.keep_snaps = true   // disable the 5-step got_snap trim so every step survives to be re-recorded
         if (!run?.c?.driving) { S.i_elvisto(S, 'think'); H.i_elvisto(H, 'think') }   // kick only until the drive owns the clock
         await drain(H); await sleep(60)
         w ||= find_w(); run ||= w?.o({ run: 1 })[0]
@@ -74,6 +79,31 @@ test(`Story_cli: run + dump Book:${BOOK}`, async () => {
                 got[n] = { snap: String(st.sc.got_snap), ok: !!st.sc.ok, trace: st.sc.Run_trace ?? [] }
         }
         if (run && run.c.driving === false && Object.keys(got).length) break
+    }
+
+    // ── accept: promote the captured got snaps into the new fixtures ─────────
+    // The check pass already set each live Step's got_snap + dige (= got_dige).
+    // Promote them — accepted=true so story_save writes NNN.snap, and push the
+    //  got dige into The so encode_toc_snap stamps the matching toc.snap.  The
+    //   machine's own Wormhole→nav write path (story_save) lands the files in
+    //    /app/wormhole/Story/<Book>/, exactly where the check side reads them.
+    const accepted: number[] = []
+    if (ACCEPT && w) {
+        for (const st of (w.c.This?.o({ Step: 1 }) ?? []) as any[]) {
+            if (!st.sc.got_snap) continue
+            const n = st.sc.Step as number
+            st.sc.accepted = true; st.sc.ok = true; st.sc.saved = false
+            S.The_step(w, n).sc.dige = st.sc.dige
+            accepted.push(n)
+        }
+        run && (run.sc.frontier = 0); S.The_set_frontier(w, 0)
+        S.story_analysis(w)
+        await S.story_save()
+        // story_save defers its writes (setTimeout → post_do → Wormhole reqs);
+        //  keep cranking so those reqs flush through nav before we read back.
+        for (let i = 0; i < 30; i++) { await drain(H); await sleep(40) }
+        accepted.sort((a, b) => a - b)
+        console.log(`[Story_cli] ACCEPT ${BOOK}: rewrote ${accepted.length} snaps [${accepted.join(',')}] + toc.snap`)
     }
 
     // ── serialise the pile ───────────────────────────────────────────────────

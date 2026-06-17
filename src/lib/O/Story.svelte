@@ -823,6 +823,16 @@
             ] },
         },
         {
+            // ttlilt timers carry until_ts — an absolute wall-clock deadline (now + ttl,
+            //  set in Hovercraft when a req arms a timed pause).  It is non-deterministic
+            //   every run, like %mo: a snap should diff on the presence/shape of the pause,
+            //    not on WHEN it would expire.  The stable ttl rides in the ref string, so
+            //     munging the value loses no test signal.  Catches both the req-nested and
+            //      the w-level (of_w) ttlilt particles.
+            matching_any: [{ sc_has: { ttlilt: 1 } }],
+            means: { munging: [{ these_sc: { until_ts: 1 }, type: 'time' }] },
+        },
+        {
             // Story work particle itself — any object ref on w that wasn't caught
             // by the rules above (The, toc_loaded, wh, run_path, etc.) is left to
             // the objectify() fallback in story_process_node, which puts it into

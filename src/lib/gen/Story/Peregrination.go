@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Peregrination(): string { return '097c21c0cb601189' },
+    Ghostmeta_Ghost_Story_Peregrination(): string { return 'a49f89686d1cd7fc' },
 
 
 // LakeNetherland — the Peeroleum test-case wrangler (the outer test layer).
@@ -56,19 +56,25 @@ async Lake_drive(w, req) {
             w.i({reached: "step_5"})
         }
     }
+    await this.Lake_pump_handshakes(w)
     this.Lake_witness(w)
     await this.Lake_order(w)
 
 },
-// Lake_order — float the peers (A:Bearing/A:Nearing, the subject under test) above
-//  the apparatus actors so the snap reads peers-first. place() re-enters the same A
-//   C's in the chosen order (identity/data untouched) and no-ops once already ordered.
+// Lake_order — float all the A actors to the front of H/* (peers A:Bearing/A:Nearing
+//  before the apparatus actors), the rest of H/* after, so the Run snap reads
+//   actors-first, peers-first. A whole-/* place({},…): every child is re-entered
+//    .is()'d (identity|data|/* untouched), and it no-ops once already in order. A
+//     plain place({A:1},…) can't do this — replace() lands the matched set LAST, so
+//      it'd sink the A's to the bottom; reordering the whole /* is the only way up.
 async Lake_order(w) {
+    const H = this
     let As = this.o({A: 1})
     if (As.length < 2) return
     let peer = (a) => (a.sc.A === 'Bearing' || a.sc.A === 'Nearing') ? 0 : 1
     let sorted = [...As].sort((a, b) => peer(a) - peer(b))
-    await this.place({A:1},sorted)
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({},ordered)
 
 },
 // Lake_sides_up — step 2: stand up both sides directly (the wrangler lays them,
@@ -109,6 +115,19 @@ async Lake_handshake(w) {
     w.i({reached: "step_3"})
 
 },
+// Lake_pump_handshakes — re-pump each Pier's %req:handshake every pass. The
+//  handshake is nested (Pier/Peering/w), below reqdo_sweep's w-level reach, so the
+//   wrangler drives it; each inbound frame's feebly_ponder brings the run back
+//    here, advancing the maz leaves as their protocol particles land (say→hear→
+//     say_trust→hear_trust). No-op before step 3 — no Piers stand up yet.
+async Lake_pump_handshakes(w) {
+    for (const side of ['Bearing', 'Nearing']) {
+        let pier = this._o_drill1(this, [{sc: {A: side}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
+        if (!pier) continue
+        await pier.do()
+    }
+
+},
 // Lake_witness — the readable assertion, polled each pass: once Nearing's inbox
 //  shows the delivered frame, stamp %witnessed:step_2 (the step rides in the value
 //   — `step` is the Story mainkey, so it can't be a key). Idempotent via the probe.
@@ -116,6 +135,11 @@ Lake_witness(w) {
     let npier = this._o_drill1(this, [{sc: {A: "Nearing"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
     let landed = this._o_drill1(npier, [{sc: {inbox: 1}}, {sc: {unemit: 1}}])?.sc.delivered
     if (landed && !(w.oa({witnessed: "step_2"}))) w.i({witnessed: "step_2"})
+    // step 3: both Piers' %req:handshake reached finished (all four leaves done).
+    let bpier = this._o_drill1(this, [{sc: {A: "Bearing"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
+    let bh = bpier?.o({req:'handshake'})[0]
+    let nh = npier?.o({req:'handshake'})[0]
+    if (bh?.sc.finished && nh?.sc.finished && !(w.oa({witnessed: "step_3"}))) w.i({witnessed: "step_3"})
 
 },
 

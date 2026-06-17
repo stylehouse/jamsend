@@ -13,7 +13,20 @@ This is the §16 ("running it headless") payoff from `Story_next_level_spec.md`,
 ```
 node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs scripts/Story_cli.spec.ts
 BOOK=Mundane node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs scripts/Story_cli.spec.ts
+ACCEPT=1 BOOK=PortPlanet node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs scripts/Story_cli.spec.ts
 ```
+
+`ACCEPT=1` **re-records**: the got snaps become the new fixtures (see "Re-recording" below).
+
+Sweep every Book and aggregate a fleet verdict (green/amber/red):
+```
+node scripts/Story_cli_sweep.mjs                # all Books under wormhole/Story/
+node scripts/Story_cli_sweep.mjs PortPlanet Mundane*    # a list (simple * globs ok)
+ACCEPT=1 node scripts/Story_cli_sweep.mjs       # re-record sweep (rewrites fixtures)
+```
+Each Book runs in its OWN fresh vitest process (clean House singletons); the per-Book
+ `run.json` is read back into a fleet table + `/tmp/Story_cli/_fleet.json`. green = every
+  step matches, amber = ran but surprises, red = no `run.json` (boot/drive failure).
 
 Cold run ≈ 40s (≈99% is vite transforming the 500+ ghost graph + codemirror/cytoscape/
  peerjs). `vitest --watch` keeps a warm parent so re-runs are ~1s; `pool:'forks'` gives
@@ -64,7 +77,32 @@ grep -rn surprise /tmp/Story_cli/PortPlanet/
 - **The runner owns its verdict:** it does its own mo:main-normalized diff of each got vs the
    fixture rather than trusting Story's internal dige.
 
-## PortPlanet result (the proof)
+## Re-recording — `ACCEPT=1` (the regenerate-from-CLI path)
+
+`ACCEPT=1` makes the runner accept its own got snaps as the new fixtures, through the
+ machine's real write path — no special node-only file poking. It rides on the fact that
+  **`story_save` already runs headless** (the Wormhole→`A.c.nav` write path is live; in a plain
+   check run it just has `to_write=0`).
+
+The flow, after the normal check pass completes:
+- **`w.c.keep_snaps = true`** is set during the run, disabling the 5-step `got_snap` trim so
+   *every* step still carries its produced snap at the end (not just the last five).
+- Each live `This/Step` with a `got_snap` is **promoted**: `accepted=true`, and its got dige
+   (already on `step.sc.dige` from the check pass) is pushed into `The` via `The_step(w,n).sc.dige`
+    so `encode_toc_snap` stamps a matching `toc.snap`.
+- `story_save()` then writes `toc.snap` + every `NNN.snap` through `nav` into
+   `wormhole/Story/<Book>/`. The runner cranks ~30 extra drain ticks so those deferred
+    (`setTimeout`→`post_do`→Wormhole-req) writes flush before it reads back.
+
+Because the got snaps are already `mo:main`-free (the `story_matching` `%mo` skip drops it from
+ snap *and* dige), a re-record is the repo-wide `mo:main` cleanup: **every** step's dige changes
+  (the old toc diges were computed with `mo:main`), so all `NNN.snap` lose the `mo:main` line and
+   `toc.snap` gets fresh diges. Genuine content (e.g. `surprise=42`) is baked in at the same time.
+
+PortPlanet, re-recorded then re-checked, is now **6/6 `match` *and* `story_ok`** (was 4/6). The
+ diff is reviewable/revertible — fixtures are git-tracked; the human reviews before commit.
+
+## PortPlanet result (the original proof — now resolved by re-record)
 
 Steps **1–4 byte-match** the fixtures. Steps **5–6 surprise**: a literal `surprise=42`
  particle the got has but the fixtures don't — and it's *real code* (`MachReqy.svelte:220`,
@@ -93,18 +131,31 @@ The `app` compose service ran as **root** (alpine, no `user:`), writing root-own
 ## Files
 
 - `scripts/Story_cli.svelte` — the Otro-type shell (constructs H, mounts Ghost)
-- `scripts/Story_cli.spec.ts` — the driver + pile serialiser (the runner proper)
+- `scripts/Story_cli.spec.ts` — the driver + pile serialiser (the runner proper; `ACCEPT=1` re-records)
+- `scripts/Story_cli_sweep.mjs` — fleet sweep: run every Book in its own process, aggregate green/amber/red
 - `scripts/Story_cli.vitest.config.mjs` — vitest harness (jsdom, browser condition, forks)
 - `scripts/Story_cli.setup.ts` — globals (indexedDB stub, raf, tolerate late rejections)
 - `scripts/Story_cli_boot.spec.ts` — minimal boot proof (House constructs, ghosts deposit)
 
 ## Open / next
 
-- **Re-record fixtures** for the mo:main drop (repo-wide) and PortPlanet 005/006 (the
-   `surprise=42`). The runner can write fixtures through `WA.c.nav.write_file` — wire an
-    Accept path (run in mode:'new' / accept got) to regenerate from the CLI.
-- **Multi-book sweep** — loop the Books (PortPlanet, Mundane, the Lake*/Stuff*/Leaf* games)
-   and write a fleet `run.json` (green/amber/red per Book) — `Story_next_level` §12.
+- **Re-record fixtures** — DONE for PortPlanet via `ACCEPT=1` (see "Re-recording" above). Still
+   to do: run the same accept across the *rest* of the Books to land the `mo:main` drop repo-wide
+    (every book's fixtures still carry `mo:main` until re-recorded). Best done as an accept sweep
+     once the read-only sweep below confirms each book runs clean first.
+- **Multi-book sweep** — DONE: `scripts/Story_cli_sweep.mjs` loops the Books and writes a
+   fleet report (`/tmp/Story_cli/_fleet.json`, green/amber/red per Book) — `Story_next_level`
+    §12. Findings so far:
+   - `ttlilt,until_ts` was an un-munged absolute wall-clock deadline (now + ttl), so every
+      ttlilt Book diffed on a timestamp that changes each run — pure noise, like `mo:main`.
+       Fixed: a `story_matching` mung rule on `ttlilt`'s `until_ts` (Story.svelte, beside the
+        other `type:'time'` rules). Like the `mo:main` drop it invalidates on-disk fixtures, so
+         every ttlilt Book needs a re-record (`MundaneStaying` done: 2/3 → 3/3).
+   - **`MundaneStation` drains past a ttlilt pause** (open): the headless run completes the
+      `De:populate` items + exports and shows `round=3`, where the fixture captured a *mid*-
+       ttlilt `see:ttlilting...` paused state. Not a normalization gap — the node clock lets the
+        drive walk through a timed pause the browser honoured. This is the next real
+         investigation: the ttlilt hold needs to gate the headless drive the way it gates UItime.
 - **Emission frequencies** — the dump is "everything-at-once"; add a "pause-as-soon-as-wobble"
    mode (stop + dump at the first non-fuzz surprise).
 - **Diff channels** — the pile is `Snap:H` + trace; add `Snap:cont`/`Snap:refs` once the

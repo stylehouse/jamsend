@@ -151,7 +151,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //  particle authored in a Waft is the per-test config; this is the shared behaviour
     //  the strike runs.  Add a limb by adding an entry — the inline pad (Waft.svelte) and
     //  e_Lies_strike both dispatch by kind, so nothing else needs touching.
-    const HAVOC_LIMBS: Record<string, { run: (H: House, w: TheC) => Promise<void> }> = {
+    const HAVOC_LIMBS: Record<string, { run: (H: House, w: TheC, c?: TheC) => Promise<void> }> = {
         // 💥 fabricate a surprise_read (disk diverged under the open edit) on the active
         //  doc.  Active-doc truth is w:Lang.c.active_dock_path (set by Lang_set_active_dock).
         surprise_read: {
@@ -163,6 +163,16 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                     console.warn(`🥁 surprise_read on ${path}`)
             },
         },
+    }
+
+    // Run one havoc limb by kind against w:Lies, optionally carrying the authored
+    //  %havoc particle c (its params).  Shared by the manual strike (e_Lies_strike)
+    //  and the self-arming scan (Lies_arm_engaged).  Returns whether a limb ran.
+    async function run_limb(H: House, w: TheC, kind: string, c?: TheC): Promise<boolean> {
+        const limb = HAVOC_LIMBS[kind]
+        if (!limb) { console.warn(`🥁 no havoc limb '${kind}'`); return false }
+        await limb.run(H, w, c)
+        return true
     }
 
     onMount(async () => {
@@ -521,20 +531,46 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //  by kind — so the drum-machine is reusable while each test authors which limbs it
     //  carries.  Struck via e_Lies_strike (not auto-pumped like w:Lies/Funkcions).
     //
-    //  < future: a limb could arm itself — receive think() while the What** it sits in
-    //    is engaged / not folded away (Lang openness + Scrollability) — rather than only
-    //    firing on a manual strike.  For now a pad is struck by hand.
+    //  A pad is struck by hand (e_Lies_strike).  A pad authored with `arm:1` also
+    //   *self-arms*: Lies_arm_engaged strikes it the moment its What is looked at.
 
     // ── e_Lies_strike ────────────────────────────────────────────────────
     //   Strike a havoc pad: run the HAVOC_LIMBS behaviour for e.sc.kind, then wake a
     //   tick so whatever state it touched settles.  e.sc: { kind: string }
     async e_Lies_strike(A: TheC, w: TheC, e: TheC) {
-        const H    = this as House
-        const kind = e.sc.kind as string
-        const limb = HAVOC_LIMBS[kind]
-        if (!limb) { console.warn(`🥁 no havoc limb '${kind}'`); return }
-        await limb.run(H, w)
-        H.i_elvisto(w, 'think')
+        const H = this as House
+        if (await run_limb(H, w, e.sc.kind as string)) H.i_elvisto(w, 'think')
+    },
+
+    // ── Lies_arm_engaged ─────────────────────────────────────────────────
+    //   Self-arming limbs.  Called from Lies_i_Spotlight on every cursor move.
+    //   When the *engaged What* changes, strike every %havoc,arm limb authored
+    //   in that What's subtree — the test runs itself the moment its What is
+    //   looked at.  Engagement rides the Spotlight cursor, which Lang opens and
+    //   scrolls the What's region into view, so "engaged" already means "not
+    //   folded away" (Lang openness + Scrollability) without a second signal.
+    //   Edge-triggered on the What via examining.c.engaged_what: moving the
+    //   cursor within one What does not re-fire; leaving and returning re-arms.
+    async Lies_arm_engaged(examining: TheC, src: TheC) {
+        const H = this as House
+        const w = examining.c.w as TheC | undefined
+        if (!w || !src) return
+        // climb src → its containing What (or src itself if it is the What)
+        let what: TheC | undefined = src
+        while (what && (what.sc as any).What === undefined) what = what.c?.up as TheC | undefined
+        if (what === examining.c.engaged_what) return   // same What — already armed
+        examining.c.engaged_what = what
+        if (!what) return
+        const limbs: TheC[] = []
+        await new Travel().dive({
+            n: what,
+            match_sc: {},
+            each_fn: async (n: TheC) => { if (n.sc.havoc !== undefined && n.sc.arm) limbs.push(n) },
+        })
+        let fired = false
+        for (const c of limbs)
+            if (await run_limb(H, w, c.sc.havoc as string, c)) fired = true
+        if (fired) H.i_elvisto(w, 'think')
     },
 
 //#region w:Lies — main tick

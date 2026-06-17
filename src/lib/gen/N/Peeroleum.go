@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return '3ebb6053102cf12d' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return 'a00b545ead970146' },
 
 
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -56,17 +56,99 @@ async req_p2paddy(req) {
 // ── the handshake (hello + trust) as %req (spec §8) ───────────────────────────
 // Four maz-ordered leaves under a %Pier: highest maz runs first, lower gated behind.
 //  Each leaf finishes when its protocol particle exists; the parent rolls up when
-//  all four are done. Leaf do_fns (the say/hear writes) are headings 2-3.
+//  all four are done. The leaf do_fns + say/hear exchange are just below.
 async req_handshake(req) {
     req.oai({req: "said_hello", maz: 4})
     req.oai({req: "heard_hello", maz: 3})
     req.oai({req: "said_trust", maz: 2})
     req.oai({req: "heard_trust"})
     await req.do()
-    // < leaf do_fns: said_hello finishes when Pier/protocol/hello/%said exists, etc.
-    //    Drilled existence checks + the e:hello/e:trust frame writes are raw JS the
-    //     spine adds next; the cross-side short-circuit (spec §8) preserved there.
+    // parent rolls up once all four leaves finish (heard_trust last → handshake done).
     if (req.all_finished() && !req.sc.finished) (req.c.up).finish(req)
+
+},
+// ── handshake leaf do_fns (spec §8) — existence checks, not bool polls ─────────
+// A leaf is `%Pier/%req:handshake/%req:<leaf>`, so its Pier is req.c.up.c.up and
+//  its w is two hops above that (Pier→Peering→w). Each finishes the moment its
+//   protocol particle exists. The said_* leaves also *perform* the say (idempotent
+//    on their protocol particle); the heard_* leaves are pure existence checks, fed
+//     by the far side's say landing through hear_* (Peeroleum_deliver dispatches the
+//      inbound hello/trust frame). Symmetric: both sides run all four, so both
+//       initiate and the round-trip converges. maz orders them: said_hello (4) then
+//        heard_hello (3) then said_trust (2) then heard_trust (1), each gated behind
+//         the last by the do() level's some(needs_work) — trust never precedes hello.
+async req_said_hello(req) {
+    let pier = req.c.up.c.up
+    let w = pier.c.up.c.up
+    this.say_hello(w,pier)
+    let said = this._o_drill1(pier, [{sc: {protocol: 1}}, {sc: {hello: 1}}, {sc: {said: 1}}])
+    if (said) (req.c.up).finish(req)
+
+},
+async req_heard_hello(req) {
+    let pier = req.c.up.c.up
+    let heard = this._o_drill1(pier, [{sc: {protocol: 1}}, {sc: {hello: 1}}, {sc: {heard: 1}}])
+    if (heard) (req.c.up).finish(req)
+
+},
+async req_said_trust(req) {
+    let pier = req.c.up.c.up
+    let w = pier.c.up.c.up
+    this.say_trust(w,pier)
+    let said = this._o_drill1(pier, [{sc: {protocol: 1}}, {sc: {trust: 1}}, {sc: {said: 1}}])
+    if (said) (req.c.up).finish(req)
+
+},
+async req_heard_trust(req) {
+    let pier = req.c.up.c.up
+    let heard = this._o_drill1(pier, [{sc: {protocol: 1}}, {sc: {trust: 1}}, {sc: {heard: 1}}])
+    if (heard) (req.c.up).finish(req)
+
+},
+// ── say / hear — the hello+trust exchange (spec §8) ───────────────────────────
+// say_* write our half of the protocol and emit one frame to the peer; idempotent
+//  on the protocol particle so a re-pump never double-sends. hear_* read the
+//   inbound frame (raw — it's a JS object off the wire), verify, and write the
+//    far half. identity in the mock: a Peering's %name is our address, a Pier's
+//     %pub is the peer it faces, and the publicKey we send IS our name (verify is
+//      then startsWith(pub)). seq: hello=1, trust=2 (per-type, heading-3 minimal;
+//       the monotone per-Pier counter + acks are heading 4).
+say_hello(w, pier) {
+    let proto = pier.oai({protocol: 1})
+    let hello = proto.oai({hello: 1})
+    if (hello.oa({said:1})) return
+    hello.i({said: 1, seq: 1})
+    let me = pier.c.up.sc.name
+    this.Peeroleum_send(w,{header:{type:'hello', from:me, to:pier.sc.pub, seq:1, publicKey:me}})
+
+},
+say_trust(w, pier) {
+    let proto = pier.oai({protocol: 1})
+    let trust = proto.oai({trust: 1})
+    if (trust.oa({said:1})) return
+    trust.i({said: 1, seq: 2})
+    let me = pier.c.up.sc.name
+    this.Peeroleum_send(w,{header:{type:'trust', from:me, to:pier.sc.pub, seq:2}})
+
+},
+// hear_hello — verify their key starts-with the pub we expect, record %heard +
+//  the proven publicKey, set %Ud (their identity, survives resets — spec §6), and
+//   if we have not said yet, say now (the single-initiator path; a no-op under the
+//    symmetric dual-init). A failed verify writes nothing — the gap is the result
+//     (spec §8: a corrupt hello that never arrives is the test passing).
+hear_hello(w, pier, frame) {
+    const H = this
+    let h = frame.header
+    if (!String(h.publicKey).startsWith(pier.sc.pub)) return
+    let hello = pier.oai({protocol: 1}).oai({hello: 1})
+    hello.i({heard: 1, publicKey: h.publicKey})
+    pier.oai({Ud: 1, publicKey: h.publicKey})
+    if (!hello.oa({said: 1})) H.say_hello(w, pier)
+
+},
+// hear_trust — verify their grants (trivial under the mock) and record %heard.
+hear_trust(w, pier, frame) {
+    pier.oai({protocol: 1}).oai({trust: 1}).i({heard: 1})
 
 },
 // ── transports (spec §4) — one envelope, swappable carrier ────────────────────
@@ -135,6 +217,9 @@ Peeroleum_deliver(w, frame) {
     let pier = w.o({Peering:1})[0]?.o({Pier:1})[0]
     if (!pier) return
     pier.oai({inbox: 1}).i({unemit: h.seq, type: h.type, seq: h.seq, delivered: 1})
+    // dispatch the protocol frame to its hear_* handler (acks are heading 4).
+    if (h.type === 'hello') H.hear_hello(w, pier, frame)
+    else if (h.type === 'trust') H.hear_trust(w, pier, frame)
     H.feebly_ponder()
 
 },

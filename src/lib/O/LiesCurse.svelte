@@ -105,6 +105,9 @@
         examining.bump_version()   // Waft snippet reads void examining?.version for glow reactivity
         console.log(`👁 cursor → Waft:${waft_key} ${(src.sc as any).What !== undefined ? 'What:' + (src.sc as any).What : 'doc:' + ((src.sc as any).Doc ?? '?')}`)
 
+        // self-arming havoc: any %havoc,arm limb in the now-engaged What strikes itself
+        await H.Lies_arm_engaged(examining, src)
+
         H.i_elvisto('Lang/Lang', 'Lang_workon_update', { src })
     },
 

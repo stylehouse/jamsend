@@ -24,4 +24,4 @@ Snap:H
           req:gatherself,maz=2
             waits:finding a pen
           req:summarise
-    mo:main,interval=3.6	{"mung":["id"]}
+          surprise=42

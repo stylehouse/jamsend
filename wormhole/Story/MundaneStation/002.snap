@@ -1,33 +1,36 @@
 Snap:H
   H:MundaneStation,Run
     A:MundaneStation
-      self,round=5	{"mung":["age"]}
+      self,round=4	{"mung":["age"]}
       w:MundaneStation
         export:Items	{"ref":{"sc_has":"Object()"}}
         Folder:music
+          Item:song_1,mins=3
+          Item:song_2,mins=4
         Folder:videos
-          Item:clip_2,mins=5
           Item:clip_1,mins=2
-        De:populate
-          req:make_item,n
-          req:make_item,n=2,maz=2,ttlilt
-          req:make_item,n=3,maz=3,ttlilt=0,done,finished
-          req:make_item,n=4,maz=4,ttlilt=0,done,finished
-        self,round=5	{"mung":["age"]}
+          Item:clip_2,mins=5
+        req:make_item,item_i=0,finished
+        req:make_item,item_i,finished
+        req:make_item,item_i=2,finished
+        req:make_item,item_i=3,finished
+        self,round=4	{"mung":["age"]}
         export_for:Items
           openity,v=-11
           export_D,name:music,line:Object()	{"ref":{"path":"[music]"}}
             openity,v=-11
+            export_D,name:song_1,line:Object()	{"ref":{"path":"[music,song_1]"}}
+              openity,v=-11
+            export_D,name:song_2,line:Object()	{"ref":{"path":"[music,song_2]"}}
+              openity,v=-11
           export_D,name:videos,line:Object()	{"ref":{"path":"[videos]"}}
             openity,v=-11
-            export_D,name:clip_2,line:Object()	{"ref":{"path":"[videos,clip_2]"}}
-              openity,v=-11
             export_D,name:clip_1,line:Object()	{"ref":{"path":"[videos,clip_1]"}}
               openity,v=-11
-        see:ttlilting...
+            export_D,name:clip_2,line:Object()	{"ref":{"path":"[videos,clip_2]"}}
+              openity,v=-11
     A:MundaneOuter
-      self,round=3	{"mung":["age"]}
+      self,round=4	{"mung":["age"]}
       w:MundaneOuter
-        self,round=3	{"mung":["age"]}
+        self,round=4	{"mung":["age"]}
         {"see":"mirror: ∅"}
-    mo:main,interval=3.6	{"mung":["id"]}

@@ -8,4 +8,3 @@ Snap:H
           ttlilt,timed_out
         req:fast,ttl=600,timer=400,finished
         self,round=5	{"mung":["age"]}
-    mo:main,interval=3.6	{"mung":["id"]}

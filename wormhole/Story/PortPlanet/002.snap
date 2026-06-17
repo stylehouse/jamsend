@@ -17,4 +17,3 @@ Snap:H
             waits:in transit
           req:van_fern,van:fern,dose=7
             waits:in transit
-    mo:main,interval=3.6	{"mung":["id"]}

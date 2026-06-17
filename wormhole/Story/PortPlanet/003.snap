@@ -16,4 +16,3 @@ Snap:H
         world
           order:rose,dose=3
           order:fern,dose=7
-    mo:main,interval=3.6	{"mung":["id"]}

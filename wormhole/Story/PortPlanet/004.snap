@@ -21,4 +21,3 @@ Snap:H
         logger,n=2
           driver[3],order:rose,dose=5,inA
           extra_order,order:rose,gap=2,inA
-    mo:main,interval=3.6	{"mung":["id"]}

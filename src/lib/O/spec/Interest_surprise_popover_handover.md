@@ -93,9 +93,22 @@ The popover is now in the tree:
   `Lies_fabricate_surprise_on(w, path)` on the **active doc** (`H.Awo('Lang').c.active_dock_path`;
   `examining.sc.active_path` is dead — nothing writes it).  Author `havoc:surprise_read` in a
   test Waft, tap it → conflict on the open doc → popover pops.
-  - **Deferred** (user's "another whole concept"): a limb that *arms itself* — receives
-    `think()` while the `What**` it sits in is engaged / not folded away (Lang openness +
-    Scrollability) — instead of only firing on a manual strike.
+  - **Self-arming limbs — BUILT (this session).** A pad authored with `arm:1`
+    (`%havoc,surprise_read/arm:1`) now strikes *itself* the moment its `What**` is looked at,
+    not only on a manual tap (manual still works).  Wiring:
+    - `Lies/Lies_arm_engaged(examining, src)` — climbs `src → containing What`, edge-triggers
+      on `examining.c.engaged_what` (cursor moving *within* one What does not re-fire; leaving
+      and returning re-arms), Travel-scans that What's subtree for `%havoc,arm` particles and
+      runs each limb via the shared `run_limb(H,w,kind,c)` (now also used by `e_Lies_strike`).
+    - Called from `Lies_i_Spotlight` (the one cursor seam) every cursor move.  Engagement
+      rides the Spotlight, which Lang already opens + scrolls the region into view — so
+      "engaged" transitively means "not folded away"; no separate openness/Scrollability poll.
+    - `HAVOC_LIMBS[kind].run` gained an optional 3rd arg `c` (the authored particle, for params).
+    - UI: `Waft.svelte` marks `%havoc,arm` pads with a cooler cast + `⟳`, and glows them warm
+      (`.ls-havoc-engaged` via `havoc_armed_engaged`) while their What holds the spotlight — the
+      pad lights the same instant the limb self-fires.
+    - **The drum-machine (sequencing armed limbs in a fixed order on engage) is the remaining
+      step** — today all armed limbs in a What fire together on entry, unordered.
 
 Push-to-open-editor (DONE — the "take theirs actually changes the dock text" loop):
 - `e_Lies_surprise_take_theirs` lands `sr.c.disk_text` as `good.c.content` (+ steps `/known`

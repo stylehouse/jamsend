@@ -40,6 +40,7 @@ async Lake_drive(w, req):
             i %reached:step_4
         else if n === 5
             i %reached:step_5
+    await &Lake_pump_handshakes,w
     &Lake_witness,w
     await &Lake_order,w
 
@@ -93,6 +94,18 @@ async Lake_handshake(w):
     }
     w i %reached:step_3
 
+// Lake_pump_handshakes — re-pump each Pier's %req:handshake every pass. The
+//  handshake is nested (Pier/Peering/w), below reqdo_sweep's w-level reach, so the
+//   wrangler drives it; each inbound frame's feebly_ponder brings the run back
+//    here, advancing the maz leaves as their protocol particles land (say→hear→
+//     say_trust→hear_trust). No-op before step 3 — no Piers stand up yet.
+async Lake_pump_handshakes(w):
+    for (const side of ['Bearing', 'Nearing']) {
+        H o A:$side/w:Peeroleum/Peering/Pier$:pier
+        if (!pier) continue
+        await pier&do
+    }
+
 // Lake_witness — the readable assertion, polled each pass: once Nearing's inbox
 //  shows the delivered frame, stamp %witnessed:step_2 (the step rides in the value
 //   — `step` is the Story mainkey, so it can't be a key). Idempotent via the probe.
@@ -100,3 +113,8 @@ Lake_witness(w):
     H o A:Nearing/w:Peeroleum/Peering/Pier$:npier
     npier o inbox/unemit$:landed?.sc.delivered
     if (landed && !(oa %witnessed:step_2)) i %witnessed:step_2
+    // step 3: both Piers' %req:handshake reached finished (all four leaves done).
+    H o A:Bearing/w:Peeroleum/Peering/Pier$:bpier
+    let bh = bpier?.o({req:'handshake'})[0]
+    let nh = npier?.o({req:'handshake'})[0]
+    if (bh?.sc.finished && nh?.sc.finished && !(oa %witnessed:step_3)) i %witnessed:step_3

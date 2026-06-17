@@ -5,4 +5,3 @@ Snap:H
       w:MundaneStaying
         req:one_shot,ttl=600,timer=400,finished
         self,round=2	{"mung":["age"]}
-    mo:main,interval=3.6	{"mung":["id"]}

@@ -8,8 +8,7 @@ story:Peregrination
     noCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.865
-      sample=0.603,at=1781698455
+    TimeTotal:beliefs,avg=0.834
       sample=0.544,at=1781698466
       sample=0.819,at=1781704567
       sample=0.834,at=1781707454
@@ -19,6 +18,7 @@ story:Peregrination
       sample=0.852,at=1781708468
       sample=1.599,at=1781708610
       sample=1.648,at=1781708957
+      sample=0.294,at=1781711670
   step,dige:2f65d3a49a331ca4
   step=2,dige:e4a9f117ce61f900
   step=3,dige:1d47a4051a972baf
