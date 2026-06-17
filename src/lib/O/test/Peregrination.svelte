@@ -28,9 +28,25 @@
 //  source_dige currency gate and a headless CLI runner are heading 1 there.
 import { TheC } from "$lib/data/Stuff.svelte"
 import { type House } from "$lib/O/Housing.svelte"
+import { EditorState } from "@codemirror/state"
+import { lang, lang_for_path } from "$lib/O/lang/lang"
 import { onMount } from "svelte"
 
 let { M } = $props()
+
+// Headless EditorState language extensions, resolved via the lang registry
+//  (src/lib/O/lang/lang.ts — the same path Langui uses, so our state matches the
+//  editor's; `.g` → 'stho'). Compilation reads the parser out of the EditorState
+//  facet line-by-line (LangCompiling Lang_stho_parser), so no CodeMirror *view* is
+//  needed — only a state carrying the language. Cached per language name (the
+//  Promise, so concurrent docks share one resolve).
+const lang_exts = new Map<string, Promise<any[]>>()
+const exts_for = (path: string) => {
+    const name = lang_for_path(path)
+    let p = lang_exts.get(name)
+    if (!p) { p = lang(name); lang_exts.set(name, p) }
+    return p
+}
 
 // The .g docks whose compiled methods this test calls through to. These are
 //  exactly the Docs of the Ghost/Net/Easy Waft overlay; when the "hide
@@ -68,9 +84,12 @@ await M.eatfunc({
         const included = (path: string) =>
             typeof (H as any)[H.Lang_ghostmeta_name(path)] === 'function'
 
-        // One do_fn for every ensure_compiled req: kick the Languish compile once,
-        //  hold Story open with a ttlilt, re-poll each beat, finish self when the
-        //  module lands (stamping w/%compiled,path so the gate shows in the snap).
+        // w:Lang in this Run — where docks are minted and Languish compiles.
+        const wlang = () => H.o({ A: 'Lang' })[0]?.o({ w: 'Lang' })[0] as TheC | undefined
+
+        // One do_fn for every ensure_compiled req: furnish + headless-compile the
+        //  dock, hold Story open with a ttlilt, re-poll each beat, finish self when
+        //  the module lands (stamping w/%compiled,path so the gate shows in the snap).
         const ensure = async (req: TheC) => {
             const path = req.sc.path as string
             if (included(path)) {
@@ -78,11 +97,26 @@ await M.eatfunc({
                 w.finish(req)
                 return
             }
-            // Fire the compile exactly once; Dock_open → Lang_open_dock → req:Languish.
+            // 1) furnish the dock (the pull), once. Lies reads the file and
+            //    e_Lang_dock_content mints w:Lang/docks/dock:path + starts req:Languish.
+            //    (Dock_open only re-points an *already-furnished* dock — a no-op here;
+            //     dock_askies is the trigger that actually mints one.)
             if (H.reqonce(req, 'asked'))
-                H.i_elvisto('Lang/Lang', 'Dock_open', { path })
-            H.i_req_ttlilt(req, 1.5, { waiting: 'compile' })
-            // Re-drive a tick so this do_fn re-polls; compile lands out-of-beat.
+                H.i_elvisto('Lies/Lies', 'dock_askies', { path })
+
+            // 2) headless compile. req:text_loaded waits for dock.c.state — a CodeMirror
+            //    EditorState normally stamped by a *mounted editor* (e_Lang_editorBegins).
+            //    A Story run has no editor, so stamp it ourselves from the furnished text
+            //    + the stho language. The seed of the headless CLI compiler (heading 1).
+            const dock = wlang()?.o({ docks: 1 })[0]?.o({ dock: path })[0] as TheC | undefined
+            if (dock && !dock.c.state && typeof dock.c.text === 'string') {
+                const exts = await exts_for(path)
+                if (!dock.c.state)   // re-check: another beat may have stamped it across the await
+                    dock.c.state = EditorState.create({ doc: dock.c.text as string, extensions: exts })
+            }
+
+            H.i_req_ttlilt(req, 2.5, { waiting: 'compile' })
+            // Re-drive a tick so this do_fn re-polls; furnish + compile land out-of-beat.
             setTimeout(() => { if (!req.sc.finished) H.feebly_ponder() }, 250)
         }
 

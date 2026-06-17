@@ -1,7 +1,7 @@
 Snap:H
   H:InterestLive,Run
     A:Lies
-      self,round=39	{"mung":["age"]}
+      self,round=38	{"mung":["age"]}
       w:Lies
         Opt
           nowriting
@@ -33,9 +33,9 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781674850865,kind:cold
-          want=1781674854672,kind:cold
-          want=1781674856239,kind:cold,resolved
+          want=1781675569280,kind:cold
+          want=1781675572935,kind:cold
+          want=1781675574546,kind:cold,resolved
         o_elvis:dock_askies
         Waft:GhostList,lists	{"mung":["seeded"]}
           Funkcion:dirlist,interval_ms=8000	{"mung":["walked_at"]}
@@ -95,10 +95,10 @@ Snap:H
             Doc:Ghost/test/Story/Peregrination.g
             Point,method:LakeNetherland
         Waft:Story/InterestLive/Interestily/side,tentative,from:Story/InterestLive/Interestily
-        self,round=39	{"mung":["age"]}
+        self,round=38	{"mung":["age"]}
         see:🗂 2 docs · 5 Wafts
     A:Lang
-      self,round=39	{"mung":["age"]}
+      self,round=38	{"mung":["age"]}
       w:Lang
         Opt
           txtsyntaxdump
@@ -118,7 +118,7 @@ Snap:H
                 def,method:transport,from=65,to=75,line=5
                 def,method:PeerJS,from=108,to=115,line=7
                 def,method:Socket,from=145,to=152,line=9
-              time,compile=0.005,all=0.202
+              time,compile=0.008,all=0.224
               Output,gen_path:gen/test/Peeroleum.go,dige:b84b8d8cc1c85f2b,source_dige:69f9fd8539393ad7
                source: |
                  <script lang="ts">
@@ -169,7 +169,7 @@ Snap:H
             Compile
               Map
                 def,method:LakeNetherland,from,to=16,line=2
-              time,compile=0.001,all=0.154
+              time,compile=0.002,all=0.163
               Output,gen_path:gen/test/Story/Peregrination.go,dige:132bbb4fbdc68238,source_dige:5243d16758eb710b
                source: |
                  <script lang="ts">
@@ -212,7 +212,7 @@ Snap:H
           Change
             backend,dige:69f9f
             storage,dige:69f9f,dim:false
-            compile,dige:69f9f,dim:false,secs=0.005
+            compile,dige:69f9f,dim:false,secs=0.008
           Interest:Trail,waft:Story/InterestLive/Interestily2,lens:NaviCado,presence:active,state:pending,in_Doc:Ghost/test/Story/Peregrination.g	{"ref":{"src":"%What:second"}}
             cursor,what:Story/InterestLive/Interestily2,doc:Story/InterestLive/Interestily2/doc0,depth=0
             MapReport,n_def,n_call=0,n_region=0,n_cf=0
@@ -264,12 +264,12 @@ Snap:H
         received,doc_opened,doc:Ghost/test/Story/Peregrination.g
         received,editorBegins,doc:Ghost/test/Story/Peregrination.g
         received,editorBegins,doc:Ghost/test/Peeroleum.g
-        self,round=39	{"mung":["age"]}
+        self,round=38	{"mung":["age"]}
         see:🟦 tiles 0 bookmarks
     A:Pantheate
-      self,round=11	{"mung":["age"]}
+      self,round=10	{"mung":["age"]}
       w:Pantheate
-        self,round=11	{"mung":["age"]}
+        self,round=10	{"mung":["age"]}
         o_elvis:Ghost_update_notify
     watched:ave
       examining	{"loopy":1,"hid":1}

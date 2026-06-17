@@ -420,6 +420,9 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
         // ── Waft roster — the §7 push end of the Lang↔Lies channel ───────────
         await this.Lies_waft_roster_pump(A, w)
+        // keep the ambient Ting at the bottom of the on-screen Waft list (cheap no-op
+        //  once ordered; only churns when a Waft opens|closes).
+        await this.Lies_order_wafts(w)
         // req:Store (maz:7) and req:Cortex (maz:5) drive themselves via
         // rq.do() inside LiesRealised.  The final rq.do() at the end of
         // LiesRealised also pumps a dock read just warmed by the wants resolver.
@@ -461,6 +464,20 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             w.c._roster_sig = sig
             for (const req of subs) H.interest_push(w, req)
         }
+    },
+
+    // ── Lies_order_wafts — keep the ambient Ting at the bottom of the Waft list ───
+    //   Liesui renders the Wafts in child order, so the order in w:Lies IS the on-screen
+    //   order.  The taker Ting is the ambient "where I've been" footer — it sinks below
+    //   the giver|lister Wafts so a giver and its Ting read top-then-bottom in one
+    //   viewport.  place() re-enters the SAME Waft C's in the chosen order (identity and
+    //   data untouched) and no-ops when already ordered, so this is cheap per tick and
+    //   only churns when a Waft is opened|closed.  Stable: non-takers keep their order.
+    async Lies_order_wafts(w: TheC) {
+        const wafts = w.o({ Waft: 1 }) as TheC[]
+        if (wafts.length < 2) return
+        const sorted = [...wafts].sort((a, b) => (a.sc.takes ? 1 : 0) - (b.sc.takes ? 1 : 0))
+        await w.place({ Waft: 1 }, sorted)
     },
 
 //#region LiesPersist — disk IO phase

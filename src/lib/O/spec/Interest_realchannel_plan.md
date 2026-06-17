@@ -275,9 +275,17 @@ to `InterestLive`. Keep the reducer reshape note in `Interest.svelte` (the reduc
 
 # Next phases (post items 1–3) — handover for a fresh session
 
-Items 1–3 are done and verified live; the InterestLive 10-Prep gate covers the whole `%Interest`
-lifecycle. **Phase A (dual-LE crossfade) is now implemented but NOT yet recorded in-app** (see its
-section below — the human must re-record the rippled snaps). Phase B + the minor polish remain.
+Items 1–3 done+verified live. **Phase A (dual-LE crossfade)** — done + verified live (re-recorded).
+**Phase C (polish)** — done + verified live (re-recorded). **Phase B** — reframed on live
+feedback: lenses stay **Lies-side** (the Lang-side `InterestLens` mount was reverted); shipped
+`Lies_order_wafts` (Ting sinks to the bottom) instead, and jotted the future Interest-UI extension
+protocol. The InterestLive gate is now **11 Preps**. **Pmirror resolution display** — FIXED (NaviCado capsule
+strip): the three states (resolved=`{from,to}`, unresolved=`null` Pmirror-no-graft, pending=`undefined`
+no-Pmirror-yet) were mis-read as `unresolved: pm === undefined`, so a failed graft looked resolved
+and a pre-graft capsule flashed red; now `pm === null` (UI-only, not snap-visible). Remaining:
+**item 5** (surprise_read resume/diff UI), the future **Lens generalissimo** (UI-pluggability router,
+§Phase B), and the bookkeeping **stand-in retirement** (delete InterLies/InterLang + the Interesting
+snaps now that InterestLive is the live gate — §5).
 This section is the warm-context map so the next session executes rather than re-investigates.
 
 ## Phase A — dual-LE crossfade (the headliner) — VERIFIED LIVE 2026-06-17
@@ -366,17 +374,51 @@ of its own yet) and the true **simultaneous dual-LE push-mutex** (today exactly 
 ActiveInterest's, so "only the foreground pushes" holds trivially; arming *both* a Trail and a
 Sidetrack at once is the unbuilt part). Both are the Sidetrack half of Waft_spec §Presence.
 
-## Phase B — item 4: lenses render on the Lang side
+## Phase B — item 4: lenses on the Lang side — REFRAMED 2026-06-17 (live feedback)
 
-DocTing/DocGhostList already render on the **Lies** side (Liesui → `<WaftComp>` switches by waft
-stance, ui/Waft.svelte:494–536). The gap is the **Lang** side: the `%Interest` family in
-`Languinio` holds only *paths* (the roster crossed the wire as JSON), not the Waft `C`, so a
-Lang-side lens has no data. Needs a **data channel**: either (a) the lens reads the Lies Waft `C`
-by ref (Interest hands its lens a C, Waft_spec §Presence "object-ref change is the signal") — which
-means piping the relevant Lies-side C across, or (b) the Ting heat / GhostList entries ride the
-roster push so Lang holds renderable data. The `InterestStrip` (the switcher) is the Lang-side
-foreground control already built; item 4 is making the *engaged* lens actually paint. Decide the
-data-channel shape first — that's the design crux.
+**The handover premise was wrong, confirmed live.** A first cut mounted the lenses Lang-side in the
+MiniMap (`ui/InterestLens.svelte` — a `<WaftComp>` mirror switching on `%Interest.sc.lens`, with
+DocTing wired and a DocGhostList stub). Seeing it: the Ting cloud in the minimap was "cool but not
+what I wanted," the GhostList stub read "data pending" permanently, and the owner's model is:
+**lenses live on the LIES side, with their Wafts; the Lang side only switches them (InterestStrip).**
+So `InterestLens` was **reverted/deleted** (and its DocMinimap mount removed) — the minimap-embed is
+deferred to the future extension protocol (below), not built now.
+
+**What shipped instead — Lies Waft ordering (DONE).** `Lies_order_wafts(w)` (Lies.svelte, called each
+tick after `Lies_waft_roster_pump`): the ambient taker **Ting sinks to the bottom** of the Waft list
+(Liesui renders Wafts in child order), so a giver and its Ting read top-then-bottom in one viewport.
+Uses `w.place({Waft:1}, sorted)` — re-enters the SAME Waft C's in order (identity/data untouched),
+no-ops when already ordered (cheap per tick; only churns on Waft open|close). Stable: non-takers keep
+their order. **Snap ripple:** Waft order under `w:Lies` changes (Ting last) — deterministic, re-record.
+
+### Future — the Lens as UI-pluggability "generalissimo" (owner's vision, 2026-06-17)
+Jot for a later session — **NOT built**. The reverted `InterestLens` was too small a thing (one slot
+below the strip); the real concept is bigger:
+
+- **A Lens is optional UI pluggability** — a way to host the *meaning* of an Interest at Lang (or
+  wherever), used only if something wants it. Like all Waft behaviour, it's **driven by a property/
+  setting on the Waft** (`sc.lens` is the seed of that). Lies grows **full UIs** for things that
+  strip back to the "unillusioned Waft" underneath; via an Interest a thing can offer a **tiny UI**.
+- **Generalize the Lens into the placement router ("the generalissimo").** There are **many
+  locations** UI could land — multiple slots in the MiniMap, inline, elsewhere. The Lens system is
+  the registry/router: an Interest declares *which slot* + *which tiny UI*, the Lens host mounts it
+  there. (The reverted `InterestLens` is the seed — revive it as a multi-slot host, not a single
+  mount. The data-channel question returns then: ref-pipe vs ride-the-roster — see this file's git
+  history for the worked options.)
+- **Interaction:** **double-click an Interest or a Point → opens its menu.** Build on (and extend as
+  needed) **`PeelInput`** (`ui/PeelInput.svelte` — the controlled inline add/edit form for any keyed
+  particle: mainkey + sc inputs + a CRUD orb; already the editor in the Waft tree). Interest buttons
+  read as **`i`/`o`**, positioned near a sibling; touch/double-click explodes the little menu.
+- **Per-kind menus** (get widgetty later — the near-term goal is just "a DJ mixer for spraying notes
+  around," not widgets):
+  - **GhostList:** a cluster of recent ghosts (joined to Ting for recency) + a **name search** whose
+    placeholders are **prefix boxes** for the current context — in `Ghost/N/` you search at
+    `[Ghost/][N/][ ]`, typed text appended to the prefix, so you escape the default context easily.
+  - **Ting:** a huge **time-trail**, sorted into **strata** (already by Doc) — the metromap.
+  - A **Pantheate controller**: the BlastPit run operation — try the code, get a result — as an
+    embeddable widget.
+- For now: lenses sit at the **bottom of Lies**, both visible in one viewport (what
+  `Lies_order_wafts` gives). The minimap-embed waits for the generalissimo.
 
 ## Phase C — minor polish — IMPLEMENTED 2026-06-17 (needs in-app record)
 - **Distinct doc per giver** — DONE. `wormhole/Story/InterestLive/Interestily2/toc.snap` now points
@@ -384,13 +426,22 @@ data-channel shape first — that's the design crux.
   so foregrounding Interestily2 (Prep4) visibly switches the active dock. Re-record: Prep4+ show the
   Peregrination dock/compile + `in_Doc:…Peregrination.g` on Interestily2's Trail and its LE.
 - **Drop a gone Interest a step later** (the ghost row) — DONE, **Lang-side** (the frozen
-  `interest_reconcile` is untouched). In the `req:waft_roster` do_fn (Lang.svelte), before reconcile:
-  an Interest already `state:gone` and still absent from the incoming roster is `languinio.drop(it)`'d —
-  so reconcile marks a departed giver gone on push N, and push N+1 (still absent) retires the row. It
-  lingers exactly one beat. Witnessed by **InterestLive Prep=11** (`e:Lies_close_Waft` on the
-  sidetrack `…/Interestily/side`): that second roster push drops the already-gone Interestily2 row
-  (it disappears) and marks the now-closed Sidetrack gone. Plan is now **11 Preps** (added
-  `step=11,dige:` placeholder — runner records the real dige).
+  `interest_reconcile` is untouched). In the `req:waft_roster` do_fn (Lang.svelte). **Gated on a
+  roster EPOCH, not on do_fn invocation** — the do_fn re-drives on every settle tick with the same
+  roster, so a naive "drop if already gone" collapses mark+drop into one Story step (and `gone` is
+  never witnessed). Instead: bump `languinio.c.roster_epoch` only when the roster sig changes (a real
+  push); after reconcile stamp `it.c.gone_epoch ??= epoch` on freshly-gone rows; before reconcile
+  drop a row whose `gone_epoch < epoch`. So a departed giver shows `state:gone` for exactly one push,
+  then drops on the next. All off-snap (`.c`), so steps 1–9 snaps don't move.
+  - Verified live (re-record): **Prep10** (close Interestily2) → Interestily2 `state:gone`, its
+    `LE:…Interestily2` retired; **Prep11** (`e:Lies_close_Waft` on sidetrack `…/Interestily/side`)
+    → Interestily2 dropped (absent), the now-closed Sidetrack `state:gone` (lingering, so
+    `ActiveInterest,kind:Sidetrack` still resolves — no dangle). Plan is **11 Preps** (`step=11`
+    placeholder dige — runner records the real one).
+  - First attempt (invocation-gated) collapsed mark+drop into one step AND left `ActiveInterest`
+    dangling when the foreground Sidetrack was dropped; the epoch gate fixes both. **Distinct doc
+    per giver verified live**: foregrounding Interestily2 loads/compiles Peregrination.g and switches
+    the active dock (back to Peeroleum.g on switch-away).
 
 ## Where the real-channel hooks live (quick index)
 `e_Lang_foreground` / `e_Lang_sprout_sidetrack` (Lang.svelte); `e_Lies_foreground_waft` /

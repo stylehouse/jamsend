@@ -46,7 +46,7 @@ export const sthoTags = {
     punct:       Tag.define(),   // host-JS operators / punctuation
 }
 
-// One-dark-ish palette preserved from the old monolithic stho.ts.
+// One-dark-ish palette lifted from a CodeMirror v5 theme called 'midnight' iirc
 export const highlightStyle = HighlightStyle.define([
     { tag: sthoTags.ioMarker,    color: '#56b6c2', fontWeight: 'bold' },   // cyan — verbs
     { tag: sthoTags.iterMarker,  color: '#c678dd', fontWeight: 'bold' },   // purple — S

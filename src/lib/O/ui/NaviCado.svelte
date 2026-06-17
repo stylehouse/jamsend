@@ -186,7 +186,12 @@
                 unaccepted: !!U?.sc?.unaccepted,
                 cls:        sc.class as string | undefined,
                 line:       pm?.line,
-                unresolved: pm === undefined,
+                // collect_pmirror_map encodes three states: {from,to}=resolved, null=Pmirror
+                //  minted but didn't graft (genuinely unresolved — the spec is not in the Map),
+                //   undefined=no Pmirror yet (graft hasn't run — pending, not a failure).  Only
+                //    null is the red "unresolved" state; undefined stays neutral so a capsule
+                //     doesn't flash red in the pre-graft window then read as fine once it fails.
+                unresolved: pm === null,
             })
         }
         return (H as any).each_keys(rows, (r: CapsuleRow) => r.key, 'capsules')

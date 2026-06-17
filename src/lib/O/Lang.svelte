@@ -1896,21 +1896,33 @@
                 //      guard so reconcile marks the Interest state:gone, and the dropped LE
                 //       leaves the snap.  (Spares mid-bind Trails — they carry no sc.waft yet.)
                 const open = new Set(roster.map(e => e.path))
+                // Roster epoch — a counter bumped ONLY when the Waft set/stances actually
+                //  change (a real push), not on the settle re-runs that re-drive this do_fn
+                //   each tick with the same roster.  It lets a departed row linger exactly one
+                //    push (the UI's beat to animate it out) before it drops.  All off-snap (.c).
+                const sig = roster.map(e => `${e.path}:${e.stance}`).sort().join('|')
+                if (languinio.c.roster_sig !== sig) {
+                    languinio.c.roster_sig   = sig
+                    languinio.c.roster_epoch = ((languinio.c.roster_epoch as number) ?? 0) + 1
+                }
+                const epoch = (languinio.c.roster_epoch as number) ?? 0
                 for (const it of languinio.o({ Interest: 1 }) as TheC[]) {
-                    const waft = it.sc.waft as string | undefined
-                    // Drop the ghost row a push later: reconcile marks a departed giver
-                    //  state:gone; the NEXT push with it still absent retires the row, so it
-                    //   lingers exactly one beat (the UI's window to animate it out) then goes.
-                    if (it.sc.state === 'gone' && (waft == null || !open.has(waft))) {
+                    const waft   = it.sc.waft as string | undefined
+                    const absent = waft == null || !open.has(waft)
+                    // Drop the ghost row a push later: reconcile (below) marks a departed giver
+                    //  state:gone and we stamp gone_epoch (after reconcile); a LATER epoch with
+                    //   it still gone+absent retires it.  So it shows gone for one push, then goes.
+                    if (it.sc.state === 'gone' && absent
+                        && it.c.gone_epoch != null && (it.c.gone_epoch as number) < epoch) {
                         languinio.drop(it); continue
                     }
-                    // Retire a closed giver's per-Interest %LE before reconcile.  Each open
-                    //  giver keeps its own LE (the crossfade), and reconcile's gone-loop spares
-                    //   any c.LE-bearing Interest ("alive by virtue of being checked out") — but
-                    //    a giver whose Waft has LEFT the roster is truly gone (you cannot switch
-                    //     back to a closed Waft), so drop its clone + c.LE here.  That clears the
-                    //      guard so reconcile marks the Interest state:gone, and the dropped LE
-                    //       leaves the snap.  (Spares mid-bind Trails — they carry no sc.waft yet.)
+                    // Retire a closed giver's per-Interest %LE before reconcile.  Each open giver
+                    //  keeps its own LE (the crossfade), and reconcile's gone-loop spares any
+                    //   c.LE-bearing Interest ("alive by virtue of being checked out") — but a
+                    //    giver whose Waft has LEFT the roster is truly gone (you cannot switch back
+                    //     to a closed Waft), so drop its clone + c.LE here.  That clears the guard
+                    //      so reconcile marks it state:gone, and the dropped LE leaves the snap.
+                    //       (Spares mid-bind Trails — they carry no sc.waft yet.)
                     const le = it.c.LE as TheC | undefined
                     if (le && waft && !open.has(waft)) {
                         delete it.c.LE
@@ -1919,6 +1931,13 @@
                     }
                 }
                 H.interest_reconcile(languinio, roster)
+                // Stamp gone_epoch on freshly-gone rows (linger from this epoch); clear it on any
+                //  row reconcile kept|resurrected.  Stamped AFTER reconcile so it captures the
+                //   epoch the row actually went gone — the drop above then fires a later epoch.
+                for (const it of languinio.o({ Interest: 1 }) as TheC[]) {
+                    if (it.sc.state === 'gone') it.c.gone_epoch ??= epoch
+                    else delete it.c.gone_epoch
+                }
             })
             const sub = w.o({ req: 'waft_roster' })[0] as TheC | undefined
             if (sub && !sub.sc.subscribed) {

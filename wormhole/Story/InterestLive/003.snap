@@ -31,7 +31,7 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781674850865,kind:cold,resolved
+          want=1781675569280,kind:cold,resolved
         o_elvis:dock_askies
         Waft:GhostList,lists	{"mung":["seeded"]}
           Funkcion:dirlist,interval_ms=8000	{"mung":["walked_at"]}
@@ -113,7 +113,7 @@ Snap:H
                 def,method:transport,from=65,to=75,line=5
                 def,method:PeerJS,from=108,to=115,line=7
                 def,method:Socket,from=145,to=152,line=9
-              time,compile=0.005,all=0.202
+              time,compile=0.008,all=0.224
               Output,gen_path:gen/test/Peeroleum.go,dige:b84b8d8cc1c85f2b,source_dige:69f9fd8539393ad7
                source: |
                  <script lang="ts">
@@ -171,7 +171,7 @@ Snap:H
           Change
             backend,dige:69f9f
             storage,dige:69f9f,dim:false
-            compile,dige:69f9f,dim:false,secs=0.005
+            compile,dige:69f9f,dim:false,secs=0.008
           Interest:Trail,waft:Story/InterestLive/Interestily2,lens:NaviCado,presence:active,state:pending
             cursor,what:Story/InterestLive/Interestily2,doc:Story/InterestLive/Interestily2/doc0,depth=0
         req:workon,following,auto_push=0	{"ref":{"w":"%w:Lang"}}

@@ -1,13 +1,128 @@
 Snap:H
   H:Peregrination,Run
     A:Peregrination
-      self,round=8	{"mung":["age"]}
+      self,round=4	{"mung":["age"]}
       w:Peregrination
         req:ensure_compiled,path:Ghost/N/Peeroleum.g,asked
-          ttlilt,until_ts=1781674848.201,waiting:compile
+          ttlilt,until_ts=1781675089.732,waiting:compile
         req:ensure_compiled,path:Ghost/Story/Peregrination.g,asked
-          ttlilt,until_ts=1781674848.201,waiting:compile
+          ttlilt,until_ts=1781675089.732,waiting:compile
+        self,round=4	{"mung":["age"]}
+    A:Lies
+      self,round=12	{"mung":["age"]}
+      w:Lies
+        req:Store,eternal,maz=7,ok
+          Good,type:text/Waft,path:wormhole/Ghost/Net/Easy/toc.snap,waft_path:Ghost/Net/Easy
+            known,dige:c150398290be293d,kind:read	{"mung":["at"]}
+          Good,type:text/Waft,path:wormhole/GhostList/toc.snap,waft_path:GhostList
+            known,dige:d3d7d22dd688afee,kind:read	{"mung":["at"]}
+        examining	{"loopy":0}
+          req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
+        Opt
+        req:Cortex,eternal,maz=5,ok
+        req:desire
+          req:acquire,maz=9,finished
+          Waft:GhostList	{"ref":{"src":"%Waft:GhostList, lists:1, seeded:1781603839925"}}
+        req:git
+        req:wants
+        o_elvis:dock_askies
+        Waft:GhostList,lists	{"mung":["seeded"]}
+          Funkcion:dirlist,interval_ms=8000	{"mung":["walked_at"]}
+          group:src/lib,dir:src/lib
+            sub:src/lib/O,name:O
+            sub:src/lib/data,name:data
+            sub:src/lib/gen,name:gen
+            sub:src/lib/ghost,name:ghost
+            sub:src/lib/mostly,name:mostly
+            sub:src/lib/p2p,name:p2p
+            Doc:src/lib/FTrusting.svelte,name:FTrusting
+            Doc:src/lib/MTrusting.svelte,name:MTrusting
+            Doc:src/lib/Trust.svelte.ts,name:Trust
+            Doc:src/lib/Y.svelte.ts,name:Y
+          group:src/lib/O,dir:src/lib/O
+            sub:src/lib/O/D,name:D
+            sub:src/lib/O/lang,name:lang
+            sub:src/lib/O/shelved,name:shelved
+            sub:src/lib/O/spec,name:spec
+            sub:src/lib/O/test,name:test
+            sub:src/lib/O/ui,name:ui
+            Doc:src/lib/O/Cyto.svelte,name:Cyto
+            Doc:src/lib/O/Cytui.svelte,name:Cytui
+            Doc:src/lib/O/Ghost.svelte,name:Ghost
+            Doc:src/lib/O/Housing.svelte.ts,name:Housing
+            Doc:src/lib/O/Hovercraft.svelte,name:Hovercraft
+            Doc:src/lib/O/Lang.svelte,name:Lang
+            Doc:src/lib/O/LangCompiling.svelte,name:LangCompiling
+            Doc:src/lib/O/LangGraft.svelte,name:LangGraft
+            Doc:src/lib/O/LangLang.svelte,name:LangLang
+            Doc:src/lib/O/LangPoint.svelte,name:LangPoint
+            Doc:src/lib/O/LangRegions.svelte,name:LangRegions
+            Doc:src/lib/O/LangSion.svelte,name:LangSion
+            Doc:src/lib/O/LangWhatwhere.svelte,name:LangWhatwhere
+            Doc:src/lib/O/Langui.svelte,name:Langui
+            Doc:src/lib/O/Lies.svelte,name:Lies
+            Doc:src/lib/O/LiesCortex.svelte,name:LiesCortex
+            Doc:src/lib/O/LiesCurse.svelte,name:LiesCurse
+            Doc:src/lib/O/LiesEnd.svelte,name:LiesEnd
+            Doc:src/lib/O/LiesStore.svelte,name:LiesStore
+            Doc:src/lib/O/Liesui.svelte,name:Liesui
+            Doc:src/lib/O/MachPeerily.svelte,name:MachPeerily
+            Doc:src/lib/O/Matstyle.svelte,name:Matstyle
+            Doc:src/lib/O/Otro.svelte,name:Otro
+            Doc:src/lib/O/Storui.svelte,name:Storui
+            Doc:src/lib/O/Story.svelte,name:Story
+            Doc:src/lib/O/Text.svelte,name:Text
+            Doc:src/lib/O/Thang.svelte,name:Thang
+            Doc:src/lib/O/ThangShelf.svelte,name:ThangShelf
+            Doc:src/lib/O/Thangs.svelte,name:Thangs
+            Doc:src/lib/O/stho.ts,name:stho
+            Doc:src/lib/O/Interest.svelte,name:Interest	{"mung":["noticed_at"]}
+        Funkcions
+          req:Funkcion,funk_id:GhostList/dirlist,eternal,ok
+        o_elvis:Lies_desire_play
+        o_elvis:Lies_desire_pause
+        o_elvis:Lies_desire_step
+        self,round=12	{"mung":["age"]}
+        see:🗂 0 docs · 1 Waft
+    A:Lang
+      self,round=8	{"mung":["age"]}
+      w:Lang
+        model,cyto_dir
+        docks
+        scheme:req
+          lematch	{"ref":{"sc_has":"Object()"}}
+            lematch	{"ref":{"sc_has":"Object()"}}
+        Languinio,no_doc	{"loopy":1}
+          Interest:GhostList,waft:GhostList,lens:DocGhostList,presence:active,state:pending
+            cursor,doc:GhostList/doc0
+        req:workon,following,auto_push	{"ref":{"w":"%w:Lang"}}
+          {"req":"understanding","maz":3,"permanent":1,"sig":"0:0:0:0","finished":1}
+          req:ingredients,maz=2,permanent,sig:,finished
+          {"req":"instrumentation","permanent":1,"sig":"::0:0","finished":1}
+        req:waft_roster,eternal,subscribed
+        o_elvis:dock_content
         self,round=8	{"mung":["age"]}
+        see:🟦 tiles 0 bookmarks
+    A:Pantheate
+      self,round=4	{"mung":["age"]}
+      w:Pantheate
+        self,round=4	{"mung":["age"]}
+        o_elvis:Ghost_update_notify
+    watched:ave
+      examining	{"loopy":0,"hid":1}
+      Languinio,no_doc	{"loopy":1,"hid":1}
+    watched:UIs
+      UI:Lies	{"ref":{"component":"Function()"}}
+      UI:Langui	{"ref":{"component":"Function()"}}
+    watched:actions
+      action,role:debookmark,label:-marks	{"ref":{"fn":"Function()"}}
+      action,role:enbookmark,label:+marks	{"ref":{"fn":"Function()"}}
+      action,role:compile,label:compile	{"ref":{"fn":"Function()"}}
+      action,role:lang_pick,kind:dropdown,label:language,icon:✎,value:stho	{"ref":{"options":"[Object(),Object()]","on_pick":"Function()"}}
+      action,role:gen_parser,label:gen,icon:⚙,disabled:true	{"ref":{"fn":"Function()"}}
+      action,role:nogen,label:nogen,icon:nogen,cls:toggle-off	{"ref":{"fn":"Function()"}}
+      action,role:softgen,label:softgen,icon:softgen,cls:toggle-off	{"ref":{"fn":"Function()"}}
+      action,role:compo,label:compo,icon:compo,cls:toggle-off	{"ref":{"fn":"Function()"}}
     mo:main,interval=3.6	{"mung":["id"]}
-    ttlilt,of_w:Peregrination,until_ts=1781674848.201,waiting:compile	{"ref":{"req":"%req:ensure_compiled, path:Ghost/N/Peeroleum.g, asked:1"}}
-    ttlilt,of_w:Peregrination,until_ts=1781674848.201,waiting:compile	{"ref":{"req":"%req:ensure_compiled, path:Ghost/Story/Peregrination.g, asked:1"}}
+    ttlilt,of_w:Peregrination,until_ts=1781675089.732,waiting:compile	{"ref":{"req":"%req:ensure_compiled, path:Ghost/N/Peeroleum.g, asked:1"}}
+    ttlilt,of_w:Peregrination,until_ts=1781675089.732,waiting:compile	{"ref":{"req":"%req:ensure_compiled, path:Ghost/Story/Peregrination.g, asked:1"}}

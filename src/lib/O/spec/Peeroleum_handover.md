@@ -59,26 +59,61 @@ own `%see` in the snap. That green pass = the bootstrap loop proven.
 
 ## Headings
 
-### 0 — Bootstrap loader  `[x]` (this pass)
-Hand-written `src/lib/O/test/Peregrination.svelte` compiles + includes the `.g` docks and calls
-through to `H.LakeNetherland`. Mounted in `Machinery.svelte`. Story + overlay scaffolded.
-Next: the strict currency gate — `included()` currently accepts any prior compile; the rigorous
-check is `H[ghostmeta]() === source_dige` (`LiesCortex.svelte:304`). Wire it (read the dock source,
-`dig()` it) so edits to a `.g` are picked up without a stale-version false-positive.
+### 0 — Bootstrap loader  `[~]` (this pass)
+Hand-written `src/lib/O/test/Peregrination.svelte` furnishes + compiles + includes the `.g` docks
+and calls through to `H.LakeNetherland`. Mounted in `Machinery.svelte`. Story + overlay scaffolded.
+
+What the first run taught us (the GUI-coupling of compile — the heart of heading 1):
+- **Trigger**: `Dock_open` only re-points an *already-furnished* dock (`Lang_set_active_dock`,
+  `Lang.svelte:452`) — a no-op for a never-opened path. The pull `i_elvisto('Lies/Lies','dock_askies',
+  {path})` is what mints `w:Lang/docks/dock:path` (via `e_Lang_dock_content`). Loader now uses it.
+- **EditorState gate**: `req:text_loaded`/`Lang_compile_dock` wait on `dock.c.state`, a CodeMirror
+  `EditorState` normally stamped only when a *mounted editor* fires `e_Lang_editorBegins`
+  (`Lang.svelte:399,1733`). A Story run has no editor → it would hang on `waiting:cm_mount`. The
+  loader now stamps a **headless** `EditorState.create({doc, extensions: await lang(lang_for_path(
+  path))})` itself — via the lang registry (`src/lib/O/lang/lang.ts`, the same path Langui uses,
+  `Langui.svelte:1330`; `.g` → 'stho'). The compiler reads the parser from the facet line-by-line
+  (`LangCompiling.svelte:339,478`), no view required. First real piece of the headless compiler.
+  (NB: use `lang/lang.ts`, not the legacy hardcoded `O/stho.ts`.)
+- **Include still renders**: a `.g`'s methods land on `H` only when its gen component's `onMount`
+  runs `H.eatfunc` — and that mount happens when **Otro renders** the `UIs` bucket
+  (`Otro.svelte:109`). So `included()` flipping still depends on the app rendering. Fully-headless
+  include (mount the gen module without Otro) is heading 1.
+
+Next: re-run and confirm `%compiled,path` flips; then the strict currency gate — `included()`
+accepts any prior compile; rigorous is `H[ghostmeta]() === source_dige` (`LiesCortex.svelte:304`).
 
 ### 0b — Net/Easy Waft overlay  `[x]`
 `wormhole/Ghost/Net/Easy/toc.snap` — the annotation-overlay on-ramp; `What→Doc→Point` situating the
 test / peer / transport / spec. Its `.g` Docs double as the loader's compile manifest.
 Next: when heading W lands, the loader reads this list instead of the hardcoded `DOCKS`.
 
-### 1 — CLI compiler + headless Story-runner  `[ ]`  (major infra — lets the agent measure itself)
-There is no CLI compiler today; compilation is the in-app Lies pipeline, and the Story runner is
-driven by `story_drive` via `setTimeout` chains + the GUI (`Story.svelte:1366`+). Goal: a headless
-entry that (a) compiles a `.g` by path and (b) runs a Book to completion, emitting the per-step snap,
-so changes can be verified outside the browser. Surface to assemble from: `story_drive`/`do_step`/
-`snap_step`/`advance` (`Story.svelte:1366-1680`), `Run.main()`/`beliefs`/`all_clear`
-(`Housing.svelte.ts:811-860`), `Story_subHouse` (`Story.svelte:1034`). GUI-bound bits to stub: Cyto
-waves, Storui buttons. Until this lands, verification is in-app on :9091.
+### 1a — CLI compiler  `[x]`  (lets the agent self-check `.g` files)
+DONE. The pure translator was extracted verbatim from `LangCompiling.svelte` into
+`src/lib/O/lang/compile.ts` (`export const LANG_COMPILE`, `@ts-nocheck` — it leans on a loose
+`this`=House). The ghost now `import`s it and spreads `...LANG_COMPILE` into its eatfunc, so the
+in-app path is **behaviour-identical** (verified: 23 methods conserved, type-check clean bar one
+pre-existing implicit-any). Orchestration (active dock, `e:Lies_compiled` write-handoff, `dig`) stays
+in the `.svelte`.
+The CLI `scripts/lang-compile.ts` (run `npm run lang-compile -- <file.g>`, needs vite-node for the
+registry's `?raw`/`import.meta.glob`/external tokenizer) builds the real stho parser via
+`lang(lang_for_path(path))`, runs the extracted translator over a tiny C-shaped stub job, and prints
+the generated module or the first compile error. Validated against the corpus (its output matches
+`gen/test/LangTiles.go` save the ghostmeta dige — and flagged that committed `.go` as stale) and
+already caught a real bug (a hyphen in a bareword peel value). Use it to check every `.g` edit.
+NB: this also means the loader's headless `dock.c.state` stamp (heading 0) could instead call this
+extracted compile directly — but the in-app **include** still needs the render (1b), so the loader
+keeps driving the real pipeline for now.
+
+### 1b — headless Story-runner + include  `[ ]`  (the bigger half)
+Still GUI-coupled: **include needs Otro to render** the `UIs` bucket so the gen component's `onMount`
+runs `eatfunc` (`Otro.svelte:109`); and the Story runner is driven by `story_drive` via `setTimeout`
++ GUI (`Story.svelte:1366`+). Goal: run a Book to completion headlessly, emitting the per-step snap.
+Headless include = evaluate the gen module's `eatfunc` without the render (or drive a minimal Otro
+over the Run's `UIs`). Surface: `story_drive`/`do_step`/`snap_step`/`advance` (`Story.svelte:1366-1680`),
+`Run.main()`/`beliefs`/`all_clear` (`Housing.svelte.ts:811-860`), `Story_subHouse`
+(`Story.svelte:1034`); stub Cyto waves + Storui buttons. Until this lands, Story verification is
+in-app on :9091.
 
 ### 2 — Mock transport spine  `[~]`  (spec rung 1)
 `Ghost/N/Peeroleum.g` `transport()` declares `%transport,type:mock` + `%active_transport,type:mock`.
