@@ -291,16 +291,17 @@ Ordered roughly by severity and actionability.  The `< ` annotations in the sour
 
 ## Active faults — wrong behaviour today
 
-### 1. surprise_read blocks the write but never resumes it  *(LiesStore:547)*
+### 1. surprise_read blocks the write but never resumes it  *(LiesStore:547)*  — RESOLVED
 
-`req_LiesStore_writeCarefully` detects an external edit (disk dige ≠ base dige), stamps `good/%surprise_read` with the stashed text+dige, and finishes.  Nothing ever reads that stash.  The user's auto-save silently disappears.
+`req_LiesStore_writeCarefully` detects an external edit (disk dige ≠ base dige), stamps `good/%surprise_read` with the stashed text+dige, and finishes.  It now *also* stashes the disk text off-snap (`sr.c.disk_text`) for the diff.
 
-The data is all present:
-- `sr.sc.text` = the text we wanted to write
+The data on the stash:
+- `sr.sc.text` = the text we wanted to write (mine; on-snap — survives reload)
 - `sr.sc.dige` = its dige
 - `sr.sc.disk_dige` = what's on disk right now
+- `sr.c.disk_text` = the disk content itself (theirs; off-snap — re-fetched on reload)
 
-What's missing: a UI seam (DocRow / Langui) that shows the conflict and a "push anyway" button that calls `LiesStore_write` directly with `sr.sc.text`, then drops `%surprise_read`.  The surprise detection path is solid; only the resume leg is absent.
+Resume legs (DocRow conflict row): **keep mine** → `e_Lies_surprise_keep_mine` writes `sr.sc.text` via `LiesStore_write` and drops the stash; **take theirs** → `e_Lies_surprise_take_theirs` drops the stash, `delete good.c.content`, and re-provides the dock so disk text re-lands in the editor.  See fault 12 below for the diff widget.
 
 ---
 
@@ -403,9 +404,9 @@ The comment proposes merging this into `e:operate{ LE, op:'pull', src }`.  Low p
 
 ## Larger features
 
-### 12. surprise_read diff view  *(Lies:113, LiesStore:547)*
+### 12. surprise_read diff view  *(Lies:113, LiesStore:547)*  — DONE
 
-The full pull-before-push story: detection works (fault 1 above covers the resume), but the intended UI is a diff view in DocRow/Langui showing `sr.sc.text` vs `disk_text`, a "keep mine" button (calls writeCarefully's inner write directly), and a "take theirs" button (`delete good.c.content` to force a re-read).  This wants a diff widget component.
+The full pull-before-push story: detection + resume (fault 1) and the diff view now exist.  `ui/DocDiff.svelte` is the diff widget — a plain DMP line diff (theirs → mine, with context-elision), unlike `H.compute_diff` which is snap-specialised.  DocRow renders it under the conflict row behind a "diff" toggle, with the "keep mine" / "take theirs" buttons.  Remaining of fault 13's trio: (a) re-read on external change (TTL/watch, fault 14) and (c) the full close path (stub 5).
 
 ### 13. Full doc-level Good lifecycle  *(Lies:113)*
 

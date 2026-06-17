@@ -16,15 +16,10 @@ Snap:H
             known,dige:ac1bdc99550c344b,kind:read	{"mung":["at"]}
           Good,type:text/Doc,path:Ghost/test/Story/Peregrination.g
             known,dige:5243d16758eb710b,kind:read	{"mung":["at"]}
-        Waft:Ting/test,takes
         examining	{"loopy":1}
           req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
           Spotlight	{"ref":{"src":"%What:second"}}
         req:Cortex,eternal,maz=5,ok
-        Waft:Story/InterestLive/Interestily
-          What:landing
-            Doc:Ghost/test/Peeroleum.g
-            Point,method:InterestLanding
         req:desire
           req:acquire,maz=9,finished
           Waft:Ting/test	{"ref":{"src":"%Waft:Ting/test, takes:1"}}
@@ -33,9 +28,15 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781675569280,kind:cold
-          want=1781675572935,kind:cold,resolved
+          want=1781685873272,kind:cold
+          want=1781685876379,kind:cold,resolved
         o_elvis:dock_askies
+        Funkcions
+          req:Funkcion,funk_id:GhostList/dirlist,eternal,ok
+        Waft:Story/InterestLive/Interestily
+          What:landing
+            Doc:Ghost/test/Peeroleum.g
+            Point,method:InterestLanding
         Waft:GhostList,lists	{"mung":["seeded"]}
           Funkcion:dirlist,interval_ms=8000	{"mung":["walked_at"]}
           group:src/lib,dir:src/lib
@@ -87,12 +88,11 @@ Snap:H
             Doc:src/lib/O/Thangs.svelte,name:Thangs
             Doc:src/lib/O/stho.ts,name:stho
             Doc:src/lib/O/Interest.svelte,name:Interest	{"mung":["noticed_at"]}
-        Funkcions
-          req:Funkcion,funk_id:GhostList/dirlist,eternal,ok
         Waft:Story/InterestLive/Interestily2
           What:second
             Doc:Ghost/test/Story/Peregrination.g
             Point,method:LakeNetherland
+        Waft:Ting/test,takes
         log:gen_write,path:gen/test/Story/Peregrination.go,dige:132bbb4f
         self,round=28	{"mung":["age"]}
         see:🗂 2 docs · 4 Wafts
@@ -117,7 +117,7 @@ Snap:H
                 def,method:transport,from=65,to=75,line=5
                 def,method:PeerJS,from=108,to=115,line=7
                 def,method:Socket,from=145,to=152,line=9
-              time,compile=0.008,all=0.224
+              time,compile=0.001,all=0.2
               Output,gen_path:gen/test/Peeroleum.go,dige:b84b8d8cc1c85f2b,source_dige:69f9fd8539393ad7
                source: |
                  <script lang="ts">
@@ -168,7 +168,7 @@ Snap:H
             Compile
               Map
                 def,method:LakeNetherland,from,to=16,line=2
-              time,compile=0.002,all=0.163
+              time,compile=0.001,all=0.15
               Output,gen_path:gen/test/Story/Peregrination.go,dige:132bbb4fbdc68238,source_dige:5243d16758eb710b
                source: |
                  <script lang="ts">
@@ -213,7 +213,7 @@ Snap:H
           Change
             backend,dige:5243d
             storage,dige:5243d,dim:false
-            compile,dige:5243d,dim:false,secs=0.002
+            compile,dige:5243d,dim:false,secs=0.001
           Interest:Trail,waft:Story/InterestLive/Interestily2,lens:NaviCado,presence:active,state:locked,in_Doc:Ghost/test/Story/Peregrination.g	{"ref":{"src":"%What:second"}}
             cursor,what:Story/InterestLive/Interestily2,doc:Story/InterestLive/Interestily2/doc0,depth=0
             MapReport,n_def,n_call=0,n_region=0,n_cf=0

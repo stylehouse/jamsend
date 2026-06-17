@@ -27,6 +27,7 @@
 // Tracked in src/lib/O/spec/Peeroleum_handover.md (heading 0). The strict
 //  source_dige currency gate and a headless CLI runner are heading 1 there.
 import { TheC } from "$lib/data/Stuff.svelte"
+import { dig } from "$lib/Y.svelte"
 import { type House } from "$lib/O/Housing.svelte"
 import { EditorState } from "@codemirror/state"
 import { lang, lang_for_path } from "$lib/O/lang/lang"
@@ -59,10 +60,10 @@ await M.eatfunc({
 
     // Story_subHouse calls this once to lay the Book's actors + workers.
     //  w:Peregrination resolves the per-tick handler to H.Peregrination below.
-    //  Lies/Lang/Pantheate are plonked in alongside it: the loader's Dock_open
-    //  reaches Lang via i_elvisto, but the compile reqs (Languish/Cortex/include)
-    //  only progress when the *Run's own* think/reqdo_sweep pumps those workers —
-    //  so the Run needs them, same as Run_A_LangTiles. (Early design; plonked.)
+    //  Lies/Lang/Pantheate are plonked in alongside it: the loader reads + compiles
+    //  via H.LiesStore_read_good / H.Lang_compile_dock, and the settle chain (Cortex/
+    //  Codebit/Pantheate/include) only progresses when the *Run's own* think/
+    //  reqdo_sweep pumps those workers — so the Run needs them, like Run_A_LangTiles.
     Run_A_Peregrination(this: House) {
         const H = this
         H.i({ A: 'Peregrination' }).i({ w: 'Peregrination' })
@@ -76,48 +77,63 @@ await M.eatfunc({
     async Peregrination(A: TheC, w: TheC) {
         const H = this as House
 
-        // included(path): is this dock's compiled module live on H right now?
-        //  Pantheate's req:include confirms *currency* via H[ghostmeta]() ===
-        //  source_dige (LiesCortex req_include). For the getting-started loop we
-        //  gate on the ghostmeta resolving at all; the source_dige compare that
-        //  also catches a stale prior compile is handover heading 1.
-        const included = (path: string) =>
-            typeof (H as any)[H.Lang_ghostmeta_name(path)] === 'function'
+        // The Ghostmeta method a compiled .g injects: H.Ghostmeta_<name>() returns the
+        //  source_dige it was compiled from. Present + matching THIS source ⇒ the live
+        //  module is current (LiesCortex bakes it in, req_include confirms on it).
+        const ghostmeta = (path: string) =>
+            (H as any)[H.Lang_ghostmeta_name(path)] as (() => string) | undefined
 
-        // w:Lang in this Run — where docks are minted and Languish compiles.
+        // w:Lang / w:Lies in this Run — where docks are minted/compiled and files read.
         const wlang = () => H.o({ A: 'Lang' })[0]?.o({ w: 'Lang' })[0] as TheC | undefined
+        const wlies = () => H.o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] as TheC | undefined
+        // hold Story open + re-drive a tick so this do_fn re-polls (compile lands out-of-beat).
+        const repoke = (req: TheC, waiting: string) => {
+            H.i_req_ttlilt(req, 2.5, { waiting })
+            setTimeout(() => { if (!req.sc.finished) H.feebly_ponder() }, 250)
+        }
 
-        // One do_fn for every ensure_compiled req: furnish + headless-compile the
-        //  dock, hold Story open with a ttlilt, re-poll each beat, finish self when
-        //  the module lands (stamping w/%compiled,path so the gate shows in the snap).
+        // One do_fn per ensure_compiled req. We compile HEADLESSLY rather than via the
+        //  editor: dock-minting is cursor-driven (Lies only pushes dock_content for the
+        //  doc the Interest cursor is parked on), so a bare dock_askies reads the file
+        //  but never mints a dock. Instead we read the source, mint+wire the dock
+        //  ourselves (same shape e_Lang_dock_content makes), stamp the EditorState the
+        //  compiler needs, and call Lang_compile_dock — the real collect→render→write→
+        //  Codebit→Pantheate→include chain, no cursor. Then poll until the module is on H.
         const ensure = async (req: TheC) => {
             const path = req.sc.path as string
-            if (included(path)) {
-                w.i({ compiled: 1, path })
-                w.finish(req)
-                return
-            }
-            // 1) furnish the dock (the pull), once. Lies reads the file and
-            //    e_Lang_dock_content mints w:Lang/docks/dock:path + starts req:Languish.
-            //    (Dock_open only re-points an *already-furnished* dock — a no-op here;
-            //     dock_askies is the trigger that actually mints one.)
-            if (H.reqonce(req, 'asked'))
-                H.i_elvisto('Lies/Lies', 'dock_askies', { path })
 
-            // 2) headless compile. req:text_loaded waits for dock.c.state — a CodeMirror
-            //    EditorState normally stamped by a *mounted editor* (e_Lang_editorBegins).
-            //    A Story run has no editor, so stamp it ourselves from the furnished text
-            //    + the stho language. The seed of the headless CLI compiler (heading 1).
-            const dock = wlang()?.o({ docks: 1 })[0]?.o({ dock: path })[0] as TheC | undefined
-            if (dock && !dock.c.state && typeof dock.c.text === 'string') {
-                const exts = await exts_for(path)
-                if (!dock.c.state)   // re-check: another beat may have stamped it across the await
-                    dock.c.state = EditorState.create({ doc: dock.c.text as string, extensions: exts })
+            const wL = wlang(), wI = wlies()
+            if (!wL || !wI) { repoke(req, 'workers'); return }
+
+            // 1) read the source (warms the %Good; cheap on re-reads).
+            const good = await H.LiesStore_read_good(wI, 'text/Doc', path)
+            const text = good?.c.content as string | null | undefined
+            if (text === undefined) { repoke(req, 'read'); return }            // still loading
+            if (text === null) { w.i({ compile_error: 1, path, msg: 'not found' }); w.finish(req); return }
+
+            // 2) already compiled AND current? If the live module's baked-in dige matches
+            //    THIS source, we're done — skip the recompile (it may already be on H from
+            //    a prior test reset). A drifted dige (the .g was edited) falls through and
+            //    recompiles, so an edit is never masked by a stale prior compile.
+            const source_dige = await dig(text)
+            const gm = ghostmeta(path)
+            if (gm?.() === source_dige) { w.i({ compiled: 1, path }); w.finish(req); return }
+
+            // 3) mint + wire the dock, stamp the headless EditorState (stho language).
+            const docks = wL.oai({ docks: 1 }); docks.c.up ??= wL
+            const dock  = docks.oai({ dock: path }); dock.c.up ??= docks
+            if (!dock.c.state) {
+                dock.c.text = text; dock.c.initial_text = text
+                dock.c.state = EditorState.create({ doc: text, extensions: await exts_for(path) })
             }
 
-            H.i_req_ttlilt(req, 2.5, { waiting: 'compile' })
-            // Re-drive a tick so this do_fn re-polls; furnish + compile land out-of-beat.
-            setTimeout(() => { if (!req.sc.finished) H.feebly_ponder() }, 250)
+            // 4) compile directly, once. The gen write + Pantheate include settle over
+            //    later beats; the dige check in (2) passes once the new module lands on H.
+            const job = dock.o({ Compile: 1 })[0] as TheC | undefined
+            if (!job?.sc.pending && H.reqonce(req, 'compiled_once'))
+                await H.Lang_compile_dock(wL, dock)
+
+            repoke(req, 'compile')
         }
 
         await H.on_step({

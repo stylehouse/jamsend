@@ -714,7 +714,9 @@
     //     4. clean → LiesStore_write (sibling in req:Store), clear
     //        any /surprise_read, finish.
     //
-    //   < the surprise path blocks the write but doesn't yet resume it.
+    //   The surprise path blocks the write and stashes mine (sc.text) + theirs
+    //    (c.disk_text); the resume legs are e_Lies_surprise_keep_mine /
+    //     e_Lies_surprise_take_theirs (Lies.svelte), surfaced by DocRow's conflict row.
     async req_LiesStore_writeCarefully(req: TheC) {
         const H    = this as House
         const host = req.c.up as TheC              // req → req:Store
@@ -762,6 +764,11 @@
                 sr.sc.disk_dige = disk_dige
                 sr.sc.text      = text
                 sr.sc.dige      = dige
+                // theirs rides off-snap: the diff UI reads it without a second read,
+                //  and a snap reload re-fetches it from disk rather than hauling a
+                //   whole file through the snap (mine, on sc.text, can't be re-derived
+                //    so it must persist; disk_text always can).
+                sr.c.disk_text  = disk_text
                 good.bump_version()
                 console.warn(`🗂 surprise_read on ${path}: disk dige ${disk_dige.slice(0, 5)} ≠ base ${base_dige.slice(0, 5)}`)
                 return host.finish(req)

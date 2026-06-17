@@ -374,6 +374,62 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         H.i_elvisto(w, 'think')
     },
 
+    // ── e_Lies_surprise_keep_mine ──────────────────────────────────────
+    //
+    //   Resume a parked surprise_read by pushing the user's stashed text over the
+    //   externally-changed disk ("keep mine").  writeCarefully halted the auto-save
+    //   when disk diverged and stashed the text on good/%surprise_read; this writes
+    //   it through unconditionally and clears the stash.  The write's completion
+    //   (req_Store Phase 1) re-stamps the Good's /known to the pushed dige, so the
+    //   next auto-save of the same text sees no divergence.
+    //
+    //   e.sc: { path: string }
+    async e_Lies_surprise_keep_mine(A: TheC, w: TheC, e: TheC) {
+        const H    = this as House
+        const path = e.sc.path as string
+        if (!path) throw 'e_Lies_surprise_keep_mine: needs path'
+
+        const good = H.LiesStore_good_of(w, 'text/Doc', path)
+        const sr   = good?.o({ surprise_read: 1 })[0] as TheC | undefined
+        if (!good || !sr) {
+            console.warn(`🗂 keep_mine: no surprise_read for ${path} — ignoring`)
+            return
+        }
+
+        await H.LiesStore_write(w, path, sr.sc.text as string)
+        good.drop(sr)
+        good.bump_version()
+        H.i_elvisto(w, 'think')
+    },
+
+    // ── e_Lies_surprise_take_theirs ─────────────────────────────────────
+    //
+    //   Resume a parked surprise_read by discarding the user's stashed text and
+    //   re-reading what's on disk ("take theirs").  Drops the stash, zeroes the
+    //   Good's off-snap content to force a fresh read, then re-provides the dock so
+    //   the disk text lands back in the open editor — overwriting the stale CM
+    //   buffer whose save triggered the conflict.
+    //
+    //   e.sc: { path: string }
+    async e_Lies_surprise_take_theirs(A: TheC, w: TheC, e: TheC) {
+        const H    = this as House
+        const path = e.sc.path as string
+        if (!path) throw 'e_Lies_surprise_take_theirs: needs path'
+
+        const good = H.LiesStore_good_of(w, 'text/Doc', path)
+        const sr   = good?.o({ surprise_read: 1 })[0] as TheC | undefined
+        if (!good || !sr) {
+            console.warn(`🗂 take_theirs: no surprise_read for ${path} — ignoring`)
+            return
+        }
+
+        good.drop(sr)
+        delete good.c.content                 // force a fresh disk read
+        good.bump_version()
+        await H.Lies_provide_dock(w, path)    // re-land disk text into the open dock
+        H.i_elvisto(w, 'think')
+    },
+
 //#region w:Lies — main tick
 
     async Lies(A: TheC, w: TheC) {

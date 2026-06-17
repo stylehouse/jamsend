@@ -268,7 +268,10 @@
                 const module = await import(`../../lib/${me.sc.include}`)
                 const component = module.default
                 const uis = this.oai_enroll(this, { watched: 'UIs' })
-                uis.oai({ UI: 'Pantheate-include' }, { component })
+                // key the UI slot by gen_path so multiple simultaneous includes each
+                //  get their own mount — a fixed key collides (only the last component
+                //  renders, so only one gen module's eatfunc runs / Ghostmeta confirms).
+                uis.oai({ UI: 'Pantheate-include', gen_path: me.sc.include }, { component })
                 w.i({ include: me.sc.include })
             }
             // permanent req:include monitors this gen_path's Ghostmeta.

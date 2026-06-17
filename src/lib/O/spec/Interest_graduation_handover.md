@@ -41,9 +41,15 @@ verified live; this note is mostly about **what's next**.
    `GhostList` are reconciled into `Languinio` but their lenses (DocTing, DocGhostList)
    need to mount and render — the family is only useful past Trail once they do.
 
-5. **surprise_read resume / diff UI.**  Pull-before-push *detects* an external-edit
-   conflict and stashes (`good/%surprise_read`) but nothing resumes it — needs a diff
-   widget + "keep mine" / "take theirs" (see `Waft-palmtree-trajectory.md`).
+5. ~~**surprise_read resume / diff UI.**~~  *Done.*  `writeCarefully` now also stashes
+   the disk text off-snap (`good/%surprise_read.c.disk_text`).  DocRow shows a conflict
+   row when a `%surprise_read` is present, with **keep mine** / **take theirs** buttons
+   and a collapsible line diff (`ui/DocDiff.svelte`).  The buttons fire
+   `e_Lies_surprise_keep_mine` (push the stash over disk, clear it) and
+   `e_Lies_surprise_take_theirs` (drop the stash, force a re-read, re-land disk text in
+   the editor).  **Being extended** into an Interest-channel *popover* (FaceSucker hoist +
+   Vexpandy, Storui-style escalate-to-Lies + scroll-into-view, a fabricate trigger) —
+   see `Interest_surprise_popover_handover.md`.
 
 ## Gotchas (durable, bit us this run)
 - **`o({k:1})` wildcards on value** — numeric `1` matches ANY value for key `k`

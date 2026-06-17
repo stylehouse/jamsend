@@ -22,13 +22,16 @@ Notation is the house notation: `%subscribe` is `{subscribe:1}`, `source -> e:ty
 An `i_elvisto(target, method, sc)` (Housing) already carries the two halves the whole
  design turns on, it just throws one away after a single use:
 
-- **where it goes** — `target` resolves to `e.c.target` (a ref, gated to reqs today)
-   or an `e.sc.Aw` path the beliefs walk follows depth-by-depth (`_e_targets_T` →
-    `2` at the node, `1` on its `c.up` chain, `0` elsewhere). This is the **vector of
-     where the wire runs**.
-- **what travels** — `e.sc.elvis` names the handler (`e_<method>` / the `w` method via
-   `do_fn_for`), `sc` is the payload. This is the **pulse** — the electricity on the
-    wire.
+- **where it goes** — two targetings, not one. A **path** target (`e.sc.Aw`) is
+   *walked*: the beliefs walk follows it depth-by-depth, `_e_targets_T` returning `2`
+    at the node, `1` on its `c.up` chain, `0` elsewhere. A **ref** target (`e.c.target`,
+     gated to reqs today) is *not* walked — it is delivered straight by
+      `_deliver_targeted` (the `_e_targets_T` ref-branch was removed as dead, per
+       `Hovercraft.design` migration). Either way: this is the **vector of where the
+        wire runs**.
+- **what travels** — `e.sc.elvis` selects the handler via `do_fn_for` (`e_<method>` at
+   the House, or the `w`'s own method when it has declared the receptor — §10), `sc` is
+    the payload. This is the **pulse** — the electricity on the wire.
 
 Today the two are minted together and die together: one `e` is pushed to `H.todo`,
  dispatched once in `beliefs()`, and gone. **The wire is built and torn down for a
@@ -100,7 +103,11 @@ A wire's wake can **lay more wires.** In both regimes this is already the native
    `T.sc.more`, and `process()` descends into them the same beat (`Hovercraft.design`
     §2, "req** are extra legs, self-recursive because req** nest"). Finished legs are
      captured as leaves but never expanded (§4 there) — the walk re-lays live legs each
-      beat, so the leg-tree prunes itself.
+      beat, so the leg-tree prunes itself. (Accuracy: req-as-more-legs is §2's *design*;
+       today it rides the **`V.req_legs`** verification track — `assert_req_legs` checks
+        the walk's set against the live scan — while the live pump is `reqdo_sweep`,
+         post-attend, not the walk's `finito_fn`. The walk-carrier is the target, not yet
+          the sole live path.)
 - **UItime** — a parent `$effect`, when it runs, constructs child `$effect`s. Svelte
    tears the children down and rebuilds them when the parent re-runs. The effect-tree
     prunes itself.
@@ -271,8 +278,185 @@ Stages 1–3 are re-platforming (provable no-ops / single-panel swaps). 4 is the
  visible change and the payoff. 5–6 are the affordability and the unification.
 
 
+## 10. Give and take — the synapse, desire, and the Se as versioner of want
+
+The wire/pulse pair reads, from the other side, as a **synapse**. `i_elvis(w, type)`
+ fires *from `w`'s own A/w address* outward (`Housing.svelte.ts:555`) — the axon, the
+  presynaptic **give**. The **take** has a detail worth getting exactly right, because
+   it has two postsynaptic forms, not one:
+
+- an **expressed receptor** — `o_elvis(w, type)` stamps `w/{o_elvis:type}`
+   (`Housing.svelte.ts:585`); `do_fn_for` then routes a matching pulse into `w`'s *own*
+    method, where `o_elvis(w, type)` returns the `e` to consume. A receptor the dendrite
+     *grows* for this transmitter, per-`w`, per-tick.
+- a **standing handler** — `H.e_<elvis>`, resolved by the `e_` prefix in `do_fn_for`
+   (`Housing.svelte.ts:1072`, the `o_elvis` branch at `:1115`). A receptor always present
+    at the House membrane, needing no per-`w` stamp.
+
+So the rule is *no receptor of **either** kind, no delivery* — but the receptor need
+ not be the `o_elvis` stamp; a named `e_<elvis>` handler is an equally valid postsynapse.
+  The round-trip is already built: `o_elvis_req(w, type)` returns `{e, req, finish}`, and
+   `finish(reply)` writes `req.sc.reply`, sets `finished`, and fires a `think` back to
+    the source with `reqturn:1` (`Housing.svelte.ts:604`). The pull is take → do →
+     fire-back; the push (a wire) is the same `e` without the teardown.
+
+**Desire already flows as elvis.** The `%want` path is the working proof: a LiesCurse
+ gesture fires `i_elvisto(w,'Lies_want',{src, kind})` (`LiesCurse.svelte:66,150`), wants
+  accumulate in `w/{req:'wants'}` (`Lies.svelte:75`), and `req:desire` holds the Waft
+   lock (`Lies.svelte:96`). The `kind` (`cold|doc|click|next`) is *which* desire. So every
+    `i_elvis` is the expression of a want; every receptor is a declared appetite for a
+     kind of want. The three desires the runner cares about are the three on-change
+      presets of `Hovercraft.design` §5 — i.e. three **wakes**:
+
+| desire | preset (`Hovercraft.design` §5) | the wake |
+|--------|----------------------------------|----------|
+| **revisioning** | `moai`-on-change (bump in place) / `r`-on-change (new ref) | `vers++` → the snap diffs, watchers re-render |
+| **operation** | the req preset (mutate+stamp+run) / the pull | arm a req, do work, `finish(reply)` |
+| **iteration** | re-arm another pass | `main()` (`Housing:653`) posts a `think`; `demand_time_to_think` keeps the beat |
+
+In wire terms (§1) the **desire-kind *is* the `wake:` field** — `wake:bump | req | think`.
+
+**The Se versions the want.** A want is not born numbered. The Selection's first-sight
+ confers identity: `i_visit(C)` → `i_refer(v,T,'visit_v')` (`Selection.svelte.ts:107,176`),
+  with `refx.z.length > 1` ⇒ already-seen ⇒ a loopy stub (`:108`). `Hovercraft.design`
+   §6a says it plainly — a marked `%req` earns its serial `req%req_i` *on the Se's first
+    sight*, stamped `%initialdo`, "one neu-detection, both consequences." The neu-ness
+     (`Se.c.neu_scan_ids`, `Cyto.svelte:526`) is the Se declaring "new this beat." Then
+      the outcome is lifted: **hoist** is the upward leg — `finito_fn` settling into
+       `H%Run`, Otro's pile-up of `H**` (`Housing.svelte.ts:1362`), the `%aims`-like
+        "hoist out of them" you flagged (`Hovercraft.svelte:393`); **export** is the
+         persistent hoist — `e_Lies_export_point` lifting a Point into a Waft Doc
+          (`Lies.svelte:894`), as `+time`/assert mint Points. Give is down, hoist is up.
+
+The payoff closes the loop with the re-mint ⛑️ above: because identity is conferred *on
+ first-sight*, desire is **diffable across iterations** — a recurring want is matched,
+  a fresh one is `neu`, a vanished one a `goner`. That is `Story_next_level` §2.3's
+   continuity map applied to *wants*, and it is what re-confers a standing wire's identity
+    across re-mint (the Se re-identifies the target each walk; the wire need not track it).
+
+> Staging: §9 stage 1 (the worker-side wire) is where `wake:bump|req|think` and the
+>  receptor unification land; the Se-versioning of want rides `Story_next_level`'s
+>   continuity channel, not this track.
+
+
+## 11. The time-compass — out, up, across, down
+
+ttlilt is the seed, and getting its hoist exact fixes the whole compass.
+ `i_req_ttlilt(req, secs, sc)` sets `until_ts = now + secs` and — the load-bearing
+  detail — **`until_ts is not in the identity**; the identity is the *concern*
+   (`{ttlilt:1, ...sc}`), `until_ts` is only what updates" (`Hovercraft.svelte:180,184`),
+    so a re-arm *slides the deadline forward on a stable concern*. It sets
+     `node.c.has_req_ttlilt = 1` (`:195`), the descend-here gate. `i_Story_o_req_ttlilt`
+      (`:223`) walks only gated `w`s, gathers live ttlilts (`until_ts > now`; expired ones
+       lose `until_ts`, `:250`), sorts soonest-first (`:288`), and `Run.replace({ttlilt:1,
+        of_w}, …)` republishes them **onto Run** (`:290`); Story polls and holds the snap
+         (`:340`). Crucially it "does **NOT** re-fire at `until_ts`" (`:172`) — **a held
+          breath, not an alarm.** That is **time-out**: the deep concern's deadline,
+           hoisted to where the snapper waits on it.
+
+Four directions, two axes:
+
+```
+                 up  ── hoist the outcome to who needs it
+                      (finito/gather; ttlilt→Run; a %see/%log held by needer-watermark)
+                      │
+   out ── hold the    │    ── across   relate the same thing beat-to-beat
+   present beat's     │                (Se first-sight §10; bD↔D; the ruler watermarks ride)
+   clock open ────────┼────────────
+   (ttlilt deadline,  │
+   an edge AHEAD)     │
+                      │
+                down  ── plant the demand into the next descent
+                       (each_fn/give; %initialdo, re-arm, has_req gate, demand_time)
+```
+
+- **time-out** — wall-clock of the *present* beat; waits on an edge *ahead* (a future
+   clock-tick, `until_ts`); expires when wall-clock catches up. `demand_time_to_think`
+    pushes `leave_running_until` out, never back (`Hovercraft.svelte:397`).
+- **time-up** — hoist a captured `%see`/`%log` to its needer, held by a *consumption
+   watermark*, not a clock; waits on an edge *behind* (the slowest needer's position).
+    **Retention rule:** live from capture until `min` over needers of "have you passed
+     this point"; once the slowest has gone by, drop. `has_req_ttlilt` / `pending|locked`
+      (§6) is the needer flag — *no needer, no capture* (the §13.2 zero-overhead rule).
+       Where out looks *forward* to a clock-edge, up looks *backward* to a consumer-edge.
+- **time-across** — the same node/desire *recurring* across beats, re-identified by the
+   Se's first-sight (§10): `bD↔D↔next-D`, `.vers` churn, `neu`/`goner`, the TimeSpool
+    last-10. It is the **ruler** the watermarks ride on — "since some point in our
+     passages of time" is a coordinate *on across*. Out stretches one beat; across
+      relates the beats.
+- **time-down** — the dual of up: plant a *demand* into the next descent (`%initialdo`,
+   a re-armed req, the `has_req` descend-gate at `:195`, `demand_time_to_think` arming the
+    next think). Down arms for later; up surfaces what's done.
+
+So **down arms, up retains, out holds, across measures.** `up`/`down` are the walk's two
+ legs (hoist / give) read as time; `out`/`across` are wall-clock-within-a-beat vs the
+  sequence-of-beats. A probe channel (`Story_next_level` §2.5) is all four at once: **down**
+   plants the capture-want so every future beat produces it, **up** retains each line by
+    watermark, **across** is its ruler, **out** holds a beat if the capture isn't ready.
+     The move: let a `%see`/`%log`/`%subscribe` *declare its time-directions* rather than
+      each re-deriving a lifetime — the temporal half of the §6 capture switch. It also
+       maps onto §10's desire: **down** = a want planted forward, **up** = its outcome
+        hoisted to the needer, **out** = backpressure of an unmet want on the now,
+         **across** = the Se keeping it the same want so its satisfaction is diffable.
+
+
+## 12. Diffing the diffs — fold covariance, not just invariance
+
+A fern garden (`Story_next_level` §6) folds **invariance**: a subtree where nothing
+ changed curls to one `·····` line. Its dual is folding **covariance**: a set of changes
+  that are all *the same change*. Both are low-information once named; the eye should land
+   only on the **residue** — change that is neither invariant nor covariant.
+
+A delta has a **shape**: `(kind: add|drop|value-change, key, old→new pattern)`. Story
+ already half-computes this — it munges deltas (`mung:["age"]`) and Diffmatication derives
+  `Dif:change` rows. **Diff the diffs** is the second-order pass: group a step's deltas by
+   shape; if one shape dominates, it is *one cause* — report it once (`△ round +3 ×52`),
+    not as 52 rows. Two readings, one per temporal axis (§11):
+
+- **spatial covariance** (one beat, across the tree) — the same shape in many *places*:
+   one thing changing everywhere this beat. A global counter, a propagated rename, a
+    `.vers` bump that rippled. This is the *across-the-tree* coincidence at a single time.
+- **temporal covariance** (across steps, §11 across) — the same shape recurring every
+   *step*: steady churn (a clock, a heartbeat). If every step's diff is the same diff and
+    step K's suddenly differs in shape, *that* is the surprise. So covariance-over-time
+     detects fuzz by **delta-shape coincidence** rather than a hand-authored rule —
+      `Story_next_level` §4's auto-acknowledge, found mechanically: a dominant repeated
+       shape is a fuzz-rule candidate.
+
+It is the same primitive at second order. The first diff is `bD`-resolution (one delta,
+ `Story_next_level` §7); diffing the diffs is `bD`-resolution applied to the *delta-set*
+  — the deltas are just another C-set to walk, group, and diff. "One walk-and-select"
+   (`Story_next_level` §17) over the deltas. The renderings then split three ways like the
+    deltas themselves: invariance folds to `·····` (§6 fern), covariance folds to one
+     labelled frond (`△ shape ×N`), and the **residue stays open** — the genuinely
+      independent change, which is exactly `surprise` (`Story_next_level` §4). A step whose
+       *entire* diff is one covariant shape is as foldable as an unchanged one, and more
+        informative: it *names its single cause* on the fold line.
+
+> Staging: a view-layer addition atop `Story_next_level` stage 4 (Diffmatication on
+>  channels) and stage 5 (fuzz classes) — the covariant fold is the fern predicate (§6
+>   there) run over deltas instead of nodes.
+
+
 ## Open / ⛑️
 
+- ⛑️ **One Se-versioning of want.** §10 leans on first-sight identity, but it exists as
+   *four* numberings today — the req serial (`req%req_i`, §6a), the Dip scan-id (Cyto),
+    the D-identity (Story), and the `%want` `kind`. `Story_next_level` §17's "one
+     walk-and-select" wants these to be one identity a desire carries, whatever lens reads
+      it; until then the continuity (§10, time-across §11) is only as good as the weakest
+       of the four.
+- ⛑️ **`o_elvis` sums only the current tick.** `_o_elvis` returns just this tick's `e`
+   ("Maybe many at once in the future", `Housing.svelte.ts:578`). A real dendrite *sums*
+    — temporal/spatial summation of pulses before it fires. The `wants` accumulator
+     (`Lies.svelte:75`) already does this for cursor intent; generalising `o_elvis` to
+      drain all pending of a kind is that accumulator made into the take primitive.
+- ⛑️ **Delta-shape equivalence (§12).** "Same change" is an equivalence relation, and it
+   *is* the whole design: too loose (any value-change of key K) folds real divergence
+    together; too tight (exact `old→new`) folds nothing, since counters differ by run. The
+     likely shape is a small ladder — exact, then patterned (`+N` counter, monotonic age,
+      same rename `X→Y`), then key-only — the same `%fuzz,kind` ladder `Story_next_level`
+       §4.2 already proposes, reused as the covariance key.
 - ⛑️ **The carrier boundary.** A wire crosses Atime↔UItime by *which carrier* embodies
    it, but a single wire may want to wake *both* (a worker handler *and* a render). Decide
     whether one wire fans to two carriers or whether a render wire always sits downstream

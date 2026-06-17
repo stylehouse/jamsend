@@ -31,6 +31,7 @@
 
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
+    import DocDiff from "$lib/O/ui/DocDiff.svelte"
 
     let { H, w, doc, waft = null, on_del, on_rename, on_focus, examining }: {
         H:          House
@@ -50,17 +51,27 @@
     let thang     = $derived((() => { void doc.version; return doc.sc.thang })())
     let codetype  = $derived(ls_codetype(path))
 
-    // Look up loaded / pending state from w every time w or the Good changes.
+    // Look up the Good for this path from w every time w or the Good changes.
     // The Good lives under req:Store; track both the Store subtree and the Good's
-    //  off-snap content version (good.vers) so the row reacts when content lands.
-    let is_loaded = $derived((() => {
+    //  off-snap content version (good.vers) so the row reacts when content lands or
+    //  a surprise_read is stamped|cleared.
+    let good = $derived((() => {
         const store = (w.ob({ req: 'Store' }) as TheC[])[0] as TheC | undefined
-        const good  = store
+        const g = store
             ? (store.ob({ Good: 1, type: 'text/Doc', path }) as TheC[])[0] as TheC | undefined
             : undefined
-        void good?.vers
-        return !!good && good.c.content !== undefined
+        void g?.vers
+        return g
     })())
+    let is_loaded = $derived(!!good && good.c.content !== undefined)
+    // Pull-before-push parked the auto-save: disk changed under the open edit and
+    //  the text is stashed on good/%surprise_read.  Present → show the conflict row.
+    let surprise = $derived((() => {
+        void good?.vers
+        return good ? (good.o({ surprise_read: 1 }) as TheC[])[0] as TheC | undefined : undefined
+    })())
+    let mine_text   = $derived((() => { void surprise?.version; return surprise?.sc.text as string | undefined })())
+    let theirs_text = $derived((() => { void surprise?.version; return surprise?.c.disk_text as string | undefined })())
     let is_pending = $derived(!!(w.ob({ compile_pending: 1, path }) as TheC[]).some(p => !p.sc.done))
     // Glow when this doc is the one currently open in Lang.
     // examining.sc.active_path mirrors ave/{active_dock:1}.sc.path and bumps when
@@ -79,6 +90,13 @@
         if (prev && SECOND_LEVEL_FILETYPES.includes(prev)) return `${prev}.${ext}`
         return ext
     }
+
+    // ── surprise_read conflict resume ─────────────────────────────────
+    let show_diff = $state(false)
+    // keep mine: push the stashed text over disk.  take theirs: drop the stash and
+    //  re-read disk into the editor.  Both run in Lies (see e_Lies_surprise_*).
+    function keep_mine()   { H.i_elvisto('Lies/Lies', 'Lies_surprise_keep_mine',   { path }) }
+    function take_theirs() { H.i_elvisto('Lies/Lies', 'Lies_surprise_take_theirs', { path }) }
 
     // ── rename state ──────────────────────────────────────────────────
     let renaming = $state<string | null>(null)
@@ -141,6 +159,31 @@
         {/if}
     {/if}
 </div>
+
+{#if surprise}
+    <!-- pull-before-push found disk changed under the open edit; the auto-save is
+         parked on good/%surprise_read.  Resume it: keep mine (push over disk) or
+         take theirs (re-read disk into the editor). -->
+    <div class="ls-conflict">
+        <div class="ls-conflict-hdr">
+            <span class="ls-conflict-warn"
+                  title="this file changed on disk while you were editing — your save is held">⚠ disk changed under your edit</span>
+            <button class="ls-conflict-btn ls-keep"  onclick={keep_mine}
+                    title="overwrite disk with your edit">keep mine</button>
+            <button class="ls-conflict-btn ls-take"  onclick={take_theirs}
+                    title="discard your edit and reload from disk">take theirs</button>
+            <button class="ls-conflict-toggle" onclick={() => show_diff = !show_diff}>
+                {show_diff ? 'hide diff' : 'diff'}</button>
+        </div>
+        {#if show_diff}
+            {#if theirs_text !== undefined}
+                <DocDiff mine={mine_text ?? ''} theirs={theirs_text} />
+            {:else}
+                <div class="ls-conflict-note">disk version not loaded (page reloaded) — “take theirs” to fetch it.</div>
+            {/if}
+        {/if}
+    </div>
+{/if}
 
 <script module>
     // place_cursor_at_stem — Svelte use: action for rename inputs.
@@ -214,4 +257,30 @@
     }
     .ls-cancel-btn:hover { color: #999 }
     /* ls-icon-btn / ls-del-btn declared :global in Waft.svelte */
+
+    /* surprise_read conflict row */
+    .ls-conflict {
+        border: 1px solid #5a3010; border-left-width: 3px;
+        background: #1a1008; border-radius: 3px;
+        padding: 0.25rem 0.4rem; margin: 0.15rem 0;
+    }
+    .ls-conflict-hdr {
+        display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;
+    }
+    .ls-conflict-warn { font-size: 0.72rem; color: #d39; flex: 1; white-space: nowrap; }
+    .ls-conflict-btn {
+        font-size: 0.72rem; border-radius: 3px; cursor: pointer;
+        padding: 0.1rem 0.4rem; white-space: nowrap; flex-shrink: 0;
+    }
+    .ls-keep { background: #15301a; border: 1px solid #2a5a2a; color: #7c9; }
+    .ls-keep:hover { background: #1c3e22; color: #9eb; }
+    .ls-take { background: #301512; border: 1px solid #5a2a24; color: #c87; }
+    .ls-take:hover { background: #3e1c18; color: #e9a; }
+    .ls-conflict-toggle {
+        background: none; border: none; color: #888; cursor: pointer;
+        font-size: 0.72rem; padding: 0.1rem 0.3rem; flex-shrink: 0;
+        text-decoration: underline;
+    }
+    .ls-conflict-toggle:hover { color: #bbc; }
+    .ls-conflict-note { font-size: 0.7rem; color: #976; margin-top: 0.25rem; }
 </style>
