@@ -1,0 +1,7 @@
+Snap:H
+  H:Peregrination,Run
+    A:Peregrination
+      self,round	{"mung":["age"]}
+      w:Peregrination
+        self,round	{"mung":["age"]}
+    mo:main,interval=3.6	{"mung":["id"]}

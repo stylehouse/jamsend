@@ -86,9 +86,13 @@
             : undefined
     })
 
-    let LE: TheC | undefined = $derived(
-        languinio?.ob({ LE: 1 })[0] as TheC | undefined
-    )
+    // The foreground giver's Understanding (per-Interest %LE, resolved via %ActiveInterest).
+    //  languinio.vers bumps on every foreground switch (Lang_set_interest/e_Lang_foreground),
+    //   so this re-derives to the giver now on stage — its preserved working clone and all.
+    let LE: TheC | undefined = $derived.by(() => {
+        void languinio?.vers
+        return languinio ? (H.Lang_active_LE(languinio) as TheC | undefined) : undefined
+    })
 
     // ── nav bar derivation ────────────────────────────────────────────────────
     //

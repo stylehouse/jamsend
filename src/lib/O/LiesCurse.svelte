@@ -221,7 +221,7 @@
 
         // wake the UI readers: the minimap button derives off these.
         examining?.bump_version()
-        const LE = (H.ave as TheC).o({ Languinio: 1 })[0]?.o({ LE: 1 })[0] as TheC | undefined
+        const LE = H.LE_for()   // the foreground giver's LE (per-Interest, via %ActiveInterest)
         LE?.bump_version()
         H.i_elvisto(w, 'think')
     },

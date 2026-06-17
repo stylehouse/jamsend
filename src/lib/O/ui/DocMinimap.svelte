@@ -222,7 +222,12 @@
     //   and reads no %Map, parses no //#region, knows nothing Lang.  Each band|chip
     //   carries its Mapule, so a click is just mapule.c.goto()|mapule.c.fold(), and
     //   pointedat is mapule.c.is_pointedat against the working-Point set.
-    let LE = $derived(languinio?.ob({ LE: 1 })[0] as TheC | undefined)
+    // The foreground giver's Understanding (per-Interest %LE, via %ActiveInterest); re-derives
+    //  on each foreground switch (languinio.vers bump) to the giver now on stage.
+    let LE = $derived.by(() => {
+        void languinio?.vers
+        return languinio ? (H.Lang_active_LE(languinio) as TheC | undefined) : undefined
+    })
 
     let pointed_specs = $derived.by(() => {
         void LE?.vers

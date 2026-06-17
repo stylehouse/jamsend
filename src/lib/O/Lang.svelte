@@ -103,7 +103,12 @@
     //
     // ── Understanding hold ───────────────────────────────────────────────────
     //
-    //   w/{LE:1}                  — one Understanding for the Lang instance; stable.
+    //   w/{LE:<waft>}             — one Understanding PER open giver (per-Interest), keyed
+    //                               by its giver Waft so several coexist; stable (here,
+    //                               outside replace()).  Held on its Interest's c.LE; the
+    //                               foreground is resolved via %ActiveInterest, not a
+    //                               singleton (Lang_active_LE).  Switching foreground reuses
+    //                               a giver's preserved working clone — the crossfade.
     //     /%State                 — synthesised: armed/changey/stale
     //     // %push_dirty          — fault; present only when push didn't land clean
     //     /%Seem:origin / /%Seem:working
@@ -125,12 +130,14 @@
     //
     //   w/{Languinio:1}           — Lang's one focus object enrolled in ave.
     //     c.w                     back-ref to w:Lang
-    //     // ordered by volatility — LE arms rarely, dock on doc-switch, Interest on every checkout
-    //     /{LE:1}                  — same-object hold → w/{LE:1}; installed at plan.
-    //                                Unarmed until first cursor move; readers gate on LE.sc.target.
+    //     // ordered by volatility — dock on doc-switch, Interest on every checkout
+    //     c.active_LE              — off-snap handle to the foreground giver's w/{LE:<waft>}
+    //                                (the readers' "the LE driving now"); repointed each
+    //                                checkout|foreground.  No singleton {LE:1} hold anymore.
+    //     /{ActiveInterest:1}      — kind + waft of the foreground LE-bearing Interest.
     //     /{dock:path}             — same-object hold  on the active CM doc.
     //                                Re-pointed by Lang_set_active_dock on every doc switch.
-    //     /{Interest:1}            — sc.src = working clone root; c.LE = nav handle.
+    //     /{Interest:1}            — sc.src = working clone root; c.LE = its own %LE.
     //                                c.What = live %What object; sc.in_Doc|in_Point —
     //                                the C-side address mirroring Lies' %Spotlight.
     //                                in_Doc keys ingredients AND selects the active dock.
@@ -326,13 +333,14 @@
         ave.i(languinio)
         languinio.c.w = w
 
-        // ── w/{LE:1} — one Understanding for the Lang instance ───────
-        // Stable: not inside a replace(), so LE/* and LE.c.* survive every checkout.
-        // Unarmed until first cursor move; readers gate on LE.sc.target.
-        // Same-object hold in %Languinio installed once here — place() so
-        // re-plan never piles a second %LE.
-        const LE = w.oai({ LE: 1 })
-        await languinio.place({ LE: 1 }, LE)
+        // ── per-Interest Understandings ──────────────────────────────
+        // No singleton LE: each open giver carries its OWN %LE, minted on checkout
+        // in Lang_set_interest and held on interest.c.LE — parented under w (here,
+        // outside any replace()) so LE/* and LE.c.* survive every checkout, keyed
+        // {LE:<waft>} so several coexist.  Readers resolve the foreground via
+        // %ActiveInterest (Lang_active_LE); languinio.c.active_LE caches the last
+        // bound LE for them.  Switching foreground reuses the giver's preserved
+        // working clone instead of re-pulling — the dual-LE crossfade.
 
         // ── req:workon — the convergence home ────────────────────────
         // Open-ended anchor.  Its do_fn (req_workon) is the thin per-tick
@@ -344,7 +352,7 @@
         //   req:instrumentation — active dock + dige → compile + graft + decorate
         // Each stage holds wants + convergence-markers only; its durable output
         // lives elsewhere (%LE/%Seem, %Good, the dock) so de-finishing loses nothing.
-        const workon = await w.oai({ req: 'workon' }, { LE, w })
+        const workon = await w.oai({ req: 'workon' }, { w })
         workon.sc.following = 1   // track group cursor (default)
         // < following:0 = diverged; thought-balloon on breadcrumb
 
@@ -401,6 +409,34 @@
         if (!path) return undefined
         const docks = w.o({docks: 1})[0] as TheC | undefined
         return docks?.o({dock: path})[0] as TheC | undefined
+    },
+
+    // ── Lang_active_interest / Lang_active_LE — the foreground resolvers ───────
+    //
+    //   Each open giver now keeps its OWN Understanding (per-Interest %LE held on
+    //   interest.c.LE), so several {Interest:'Trail'} bear an LE at once — the
+    //   crossfade.  The foreground is the one %ActiveInterest names (kind + waft),
+    //   not "the first c.LE".  Lang_active_interest resolves that Interest; matching
+    //   on waft picks the right giver, then it falls back to any LE-bearing one,
+    //   then the first of its kind.
+    Lang_active_interest(languinio: TheC | undefined): TheC | undefined {
+        if (!languinio) return undefined
+        const ai   = languinio.o({ ActiveInterest: 1 })[0] as TheC | undefined
+        const kind = ai?.sc.kind as string | undefined
+        const waft = ai?.sc.waft as string | undefined
+        if (!kind) return undefined
+        const pool = (languinio.o({ Interest: kind }) ?? []) as TheC[]
+        return (waft != null ? pool.find(t => t.sc.waft === waft) : undefined)
+            ?? pool.find(t => t.c.LE)
+            ?? pool[0]
+    },
+    // The %LE currently driving the editor.  Normally the foreground Interest's own
+    //  LE; a light or not-yet-armed foreground (GhostList, or a Sidetrack with no
+    //   clone of its own yet) leaves the last LE-bearing Trail driving, so fall back
+    //    to languinio.c.active_LE — the last LE Lang_set_interest bound (off-snap).
+    Lang_active_LE(languinio: TheC | undefined): TheC | undefined {
+        const it = this.Lang_active_interest(languinio)
+        return (it?.c.LE as TheC | undefined) ?? (languinio?.c.active_LE as TheC | undefined)
     },
 
     // ── Lang_set_active_dock ──────────────────────────────────────────────────
@@ -716,15 +752,21 @@
         const H        = this as House
         const waft_key = e.sc.waft_key as string | undefined
         if (!waft_key) return
-        const LE     = w.o({ LE: 1 })[0] as TheC | undefined
-        const target = LE?.sc.target as TheC | undefined
-        if (!LE || !target) return
-        if (H.waft_key_of(target) !== waft_key) return
-        // < orphan case (target's c.up no longer reaches the Waft — deleted out
-        //   from under us) is not handled here; it is the natural home for the
-        //   Merge UI, which picks up an edit that lands inside something dropped.
-        LE.c.origin_dirty = 1
-        H.feebly_ponder()
+        // Per-Interest LEs: every giver has its own w/{LE:<waft>}; an edit to one giver's
+        //  Waft must stale only the LE(s) checked out into THAT Waft, even when another
+        //   giver is foreground.  w.o({LE:1}) wildcards over them all (matcher: numeric 1
+        //    matches any value of the key); stamp each whose armed target lives in this Waft.
+        let any = false
+        for (const LE of w.o({ LE: 1 }) as TheC[]) {
+            const target = LE.sc.target as TheC | undefined
+            if (!target || H.waft_key_of(target) !== waft_key) continue
+            // < orphan case (target's c.up no longer reaches the Waft — deleted out
+            //   from under us) is not handled here; it is the natural home for the
+            //   Merge UI, which picks up an edit that lands inside something dropped.
+            LE.c.origin_dirty = 1
+            any = true
+        }
+        if (any) H.feebly_ponder()
     },
 
     // climb req.c.up until a node has %w on its sc, return that w.
@@ -754,7 +796,8 @@
         const H      = this as House
         const workon = req
         const w      = H.upto_w(req)
-        const LE     = workon.sc.LE as TheC
+        const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
+        const LE     = H.Lang_active_LE(languinio)   // the foreground giver's LE, undefined until first checkout
 
         // understanding — re-arm + flush whenever src, the working tree, or origin
         //   drift moves.  src identity rides as a stable serial bumped on change;
@@ -764,9 +807,9 @@
         //   which un-finishes a quiescent %permanent stage on a real sig change and
         //   no-ops when unchanged — reqyoncile bails on already-finished reqs.
         const src        = workon.c.src as TheC | undefined
-        const wv         = LE.o({ Seem: 'working' })[0]?.version ?? 0
-        const u_serial   = (LE.c.U_serial as number | undefined) ?? 0
-        const od         = LE.c.origin_dirty ? 1 : 0
+        const wv         = LE?.o({ Seem: 'working' })[0]?.version ?? 0
+        const u_serial   = (LE?.c.U_serial as number | undefined) ?? 0
+        const od         = LE?.c.origin_dirty ? 1 : 0
         const src_serial = H.Lang_src_serial(workon, src)   // bumps on every What move
         const u_sig      = `${src_serial}:${wv}:${u_serial}:${od}`
         await workon.oai({ req: 'understanding' }, { sig: u_sig })
@@ -803,7 +846,7 @@
         const want_dock = want_doc
             ? (w.o({ docks: 1 })[0]?.o({ dock: want_doc })[0] as TheC | undefined)
             : undefined
-        const n_sig  = `${want_doc ?? ''}:${(want_dock?.c.content_dige as string | undefined) ?? ''}:${src_serial}:${LE.version}`
+        const n_sig  = `${want_doc ?? ''}:${(want_dock?.c.content_dige as string | undefined) ?? ''}:${src_serial}:${LE?.version ?? 0}`
         await workon.oai({ req: 'instrumentation' }, { sig: n_sig })
 
         // pump the pipeline — maz orders understanding → ingredients → instrumentation.
@@ -843,20 +886,33 @@
         const H      = this as House
         const workon = req.c.up as TheC         // understanding.c.up = workon (the host)
         const w      = H.upto_w(req)
-        const LE     = workon.sc.LE as TheC
+        const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
         const want   = workon?.c.src as TheC | undefined
 
-        // checkout — re-arm when the cursored src changes (identity memoised).
+        // checkout — the cursor moved to a (possibly different) giver's What.
         if (want && req.c.armed_src !== want) {
-            H.LE_arm(LE, want)
-            await H.LE_pull(LE)
-            req.c.armed_src = want
-            req.sc.what     = (want.sc as any).What ?? (want.sc as any).path ?? '?'
+            // Foreground that giver: find|create its Trail and its OWN %LE (per-Interest),
+            //  set %ActiveInterest, stash languinio.c.active_LE.  Returns the giver's LE.
+            const LE = H.Lang_set_interest(w, want)
+            // Arm ONLY a never-armed-here LE.  Switching back to a giver we already edited
+            //  reuses its preserved working clone — the dual-LE crossfade: no re-pull, the
+            //   in-flight Seem:working drift survives the switch.  (LE_arm drops the Seems.)
+            //  A fresh LE has no working clone until LE_pull mints it, so re-bind afterward
+            //   to publish interest.sc.src off the new clone root (set_interest read it empty).
+            if (LE && LE.sc.target !== want) {
+                H.LE_arm(LE, want)
+                await H.LE_pull(LE)
+                H.Lang_set_interest(w, want)
+            }
+            req.c.armed_src       = want
+            req.c.last_encode_key = undefined   // re-encode the now-active LE below
+            req.sc.what           = (want.sc as any).What ?? (want.sc as any).path ?? '?'
             console.log(`🔗 understanding checkout: ${req.sc.what}`)
-            H.Lang_set_interest(w, LE, want)
         }
         if (!req.c.armed_src) { workon.finish(req); return }   // nothing cursored yet
         const armed = req.c.armed_src as TheC
+        const LE    = H.Lang_active_LE(languinio)
+        if (!LE) { workon.finish(req); return }                // no foreground Understanding yet
 
         // origin drift — the Waft OC moved under us (e:Lies_waft_mutated stamped
         //   LE.c.origin_dirty).  Re-pull origin; if it touched our extent
@@ -872,7 +928,7 @@
                 await H.LE_pull(LE)
                 req.c.last_encode_key = undefined   // force the re-encode below
             }
-            H.Lang_set_interest(w, LE, armed)        // re-point %Interest at fresh clone
+            H.Lang_set_interest(w, armed)            // re-point %Interest at fresh clone
         }
 
         // encode — gated on working.version + U_serial so enWaft is not called
@@ -905,32 +961,33 @@
     //   sc.src is the clone root NaviCado reads; c.What is the live %What object;
     //   in_Doc is ingredients' key and the active-dock selector; in_Point is the
     //   focus spec.
-    async Lang_set_interest(w: TheC, LE: TheC, armed: TheC) {
+    Lang_set_interest(w: TheC, armed: TheC): TheC | undefined {
         const H         = this as House
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
-        if (!languinio) return
+        if (!languinio) return undefined
 
         // Multi-giver foreground arbitration (Waft_spec §"Presence").  With several
         //  giver Wafts open there are several {Interest:'Trail'}; bind to the one whose
         //   Waft we are actually checking out — matched by waft_key — so each giver
-        //    foregrounds its OWN Trail, not whichever happened to hold the LE last.
-        //     Fall back to the current editing Trail (re-checkout of the same giver),
-        //      then to a fresh Trail the roster binds to its giver next reconcile.
+        //    foregrounds its OWN Trail.  Fall back to a fresh checkout Trail awaiting
+        //     bind, then to a new Trail the roster binds to its giver next reconcile.
         const waft_key = H.waft_key_of(armed)
         const trails   = (languinio.o({ Interest: 'Trail' }) ?? []) as TheC[]
         const interest = (waft_key != null ? trails.find(t => t.sc.waft === waft_key) : undefined)
-                       ?? trails.find(t => t.c.LE)
+                       ?? trails.find(t => t.c.LE && !t.sc.waft)
                        ?? languinio.oai({ Interest: 'Trail' })
-        // The single LE bears exactly one foreground.  Release it from any other Trail
-        //  so the find(c.LE) readers (NaviCado, graft, Map report) keep picking this one,
-        //   and the giver we just left drops back to a noticed-but-pending Trail.
-        for (const t of trails) if (t !== interest && t.c.LE) {
-            delete t.c.LE
-            if (t.sc.state === 'locked') t.sc.state = 'pending'
-        }
+
+        // Per-Interest %LE: this giver keeps its OWN Understanding (held on c.LE, parented
+        //  under w outside any replace() so it survives checkouts), keyed {LE:<waft>} so
+        //   several coexist.  Get-or-create it — do NOT strip LEs off the other Trails;
+        //    their working clones persist for the crossfade.  Only demote the ones we left
+        //     from locked to pending (noticed-but-not-foreground).
+        let LE = interest.c.LE as TheC | undefined
+        if (!LE) { LE = w.oai({ LE: waft_key ?? 'checkout' }); interest.c.LE = LE }
+        for (const t of trails) if (t !== interest && t.sc.state === 'locked') t.sc.state = 'pending'
+
         const working_C = LE.o({ Seem: 'working' })[0]?.sc.C as TheC | undefined
         interest.sc.src = working_C
-        interest.c.LE   = LE
         if (waft_key != null) interest.sc.waft = waft_key          // bind the giver subject
         // checking out IS foregrounding: lock the Trail and make it the ActiveInterest
         //  (the editing checkout, not merely a noticed giver).  reconcile leaves state
@@ -938,7 +995,8 @@
         interest.sc.state = 'locked'
         const ai = languinio.oai({ ActiveInterest: 1 })
         ai.sc.kind = 'Trail'
-        if (waft_key != null) ai.sc.waft = waft_key                // which giver is foreground
+        if (waft_key != null) ai.sc.waft = waft_key; else delete ai.sc.waft   // which giver is foreground
+        languinio.c.active_LE = LE                                 // the readers' foreground-LE handle (off-snap)
 
         // the live %What rides as the object on c.What — readers reach the real
         //   particle (its Points, their c.Doc) without a name lookup.  in_Doc stays
@@ -952,11 +1010,13 @@
         if (in_Point != null) interest.sc.in_Point = in_Point; else delete interest.sc.in_Point
 
         interest.bump_version()
+        languinio.bump_version()   // the foreground moved — wake NaviCado/DocMinimap's active-LE derive
 
         // stale spinner — origin pull drifted; cleared once encode is clean.
         const stale = LE.o({ State: 1 })[0]?.sc.stale
         if (stale) languinio.oai({ spinner: 'stale' })
         else       languinio.o({ spinner: 'stale' }).forEach((s: TheC) => languinio.drop(s))
+        return LE
     },
 
     // ── e_Lang_foreground — the Interest-switcher's click ─────────────────────
@@ -979,6 +1039,7 @@
             const ai = languinio.oai({ ActiveInterest: 1 })
             ai.sc.kind = kind
             if (waft != null) ai.sc.waft = waft
+            languinio.bump_version()   // strip + NaviCado re-derive the foreground at once
             if (waft) H.i_elvisto('Lies/Lies', 'Lies_foreground_waft', { path: waft })
         } else {
             // A Sidetrack's cursor is off_what — there is no What to check out — so it
@@ -1250,7 +1311,7 @@
     async Lang_Map_report(w: TheC, dock: TheC) {
         const H         = this as House
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
-        const interest  = ((languinio?.o({ Interest: 'Trail' }) ?? []) as TheC[]).find(t => t.c.LE)
+        const interest  = H.Lang_active_interest(languinio)   // the foreground giver-Trail
         if (!interest) return
         const Map_C = dock.o({ Compile: 1 })[0]?.o({ Map: 1 })[0] as TheC | undefined
         if (!Map_C) return
@@ -1826,7 +1887,25 @@
         if (languinio) {
             ;(await w.doai({ req: 'waft_roster', eternal: 1 }))?.((req: TheC) => {
                 const roster = req.c.roster as Array<{ path: string, stance: string, from?: string }> | undefined
-                if (roster) H.interest_reconcile(languinio, roster)
+                if (!roster) return
+                // Retire a closed giver's per-Interest %LE before reconcile.  Each open
+                //  giver keeps its own LE (the crossfade), and reconcile's gone-loop spares
+                //   any c.LE-bearing Interest ("alive by virtue of being checked out") — but
+                //    a giver whose Waft has LEFT the roster is truly gone (you cannot switch
+                //     back to a closed Waft), so drop its clone + c.LE here.  That clears the
+                //      guard so reconcile marks the Interest state:gone, and the dropped LE
+                //       leaves the snap.  (Spares mid-bind Trails — they carry no sc.waft yet.)
+                const open = new Set(roster.map(e => e.path))
+                for (const it of languinio.o({ Interest: 1 }) as TheC[]) {
+                    const le = it.c.LE as TheC | undefined
+                    const waft = it.sc.waft as string | undefined
+                    if (le && waft && !open.has(waft)) {
+                        delete it.c.LE
+                        if (languinio.c.active_LE === le) delete languinio.c.active_LE
+                        w.drop(le)
+                    }
+                }
+                H.interest_reconcile(languinio, roster)
             })
             const sub = w.o({ req: 'waft_roster' })[0] as TheC | undefined
             if (sub && !sub.sc.subscribed) {

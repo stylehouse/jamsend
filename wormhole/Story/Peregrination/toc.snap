@@ -1,0 +1,20 @@
+story:Peregrination
+  Styles
+    matstyle:w
+      style:background-color,v:#8f3232
+      meta:is_compound,v
+      meta:label,fmt:%s,keys:w
+  Plan
+  Opt
+    For
+    noCyto
+  TimeSpool
+    TimeTotal:beliefs,avg=0.012
+      sample=0.003,at=1781673677
+      sample=0.006,at=1781673691
+      sample=0.01,at=1781673703
+      sample=0.01,at=1781673713
+      sample=0.032,at=1781673717
+      sample=0.009,at=1781673773
+  step,dige:f508450b9364e561
+  step=2,dige:1f9d4d594d9c9aa5

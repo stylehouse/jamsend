@@ -270,3 +270,131 @@ to `InterestLive`. Keep the reducer reshape note in `Interest.svelte` (the reduc
 - Source files round-trip through the codec (NUL-normalized template separators); anchor Edits
   on NUL-free lines.
 - `o({k:1})` wildcards on value — use `exactly()` for a literal `1` when auditing roster readers.
+
+---
+
+# Next phases (post items 1–3) — handover for a fresh session
+
+Items 1–3 are done and verified live; the InterestLive 10-Prep gate covers the whole `%Interest`
+lifecycle. **Phase A (dual-LE crossfade) is now implemented but NOT yet recorded in-app** (see its
+section below — the human must re-record the rippled snaps). Phase B + the minor polish remain.
+This section is the warm-context map so the next session executes rather than re-investigates.
+
+## Phase A — dual-LE crossfade (the headliner) — VERIFIED LIVE 2026-06-17
+
+**Confirmed in-app** (InterestLive run, all 10 steps): at Prep4 (foreground Interestily2)
+`LE:…Interestily` keeps its `Seem:working` with `Point,…InterestLanding,class:focus` + `dirty:1`
+while `LE:…Interestily2` arms clean (`dirty:0`); at Prep5 (switch back) that focus drift is **still
+present, not re-pulled clean**, and the Pmirror graft re-renders it. The crossfade holds. The rest
+of the snap diff was the predicted re-record ripple (per-`LE:<waft>` subtrees replacing the
+singleton, `Languinio/LE,target` stub gone → `Languinio` loopy 3→2, `req:workon` LE-ref gone, timing
+noise). The human re-records InterestLive/LakeNets/LakeFlush.
+
+**One regression caught + fixed (close → gone).** Prep10 (close Interestily2) left the Trail
+`state:pending` instead of `state:gone`: the crossfade keeps every once-edited Trail's `c.LE`, and
+`interest_reconcile`'s gone-loop spares any `c.LE`-bearing Interest. Fixed **on the Lang side**
+(the `req:waft_roster` do_fn, before reconcile — NOT in the frozen reducer): a giver whose Waft has
+left the roster has its per-Interest LE retired (drop the clone + `c.LE`, clear `active_LE` if it
+pointed there), which clears the guard so reconcile marks it `gone` and the LE leaves the snap.
+Mid-bind Trails (no `sc.waft` yet) and still-open demoted givers are spared.
+
+
+**Problem (was).** Exactly **one** Understanding: `w/{LE:1}`, created in `Lang_plan`, held on
+`workon.sc.LE`. `req_understanding` re-armed *that one LE* whenever the cursored src changed
+(`LE_arm` drops all Seems). So foreground-switching between givers **re-armed the single LE onto
+the new target and discarded the previous working clone** — giver1's in-flight `class:focus` edit
+vanished on switch to giver2 and was re-pulled fresh (lost) on switching back.
+
+**What landed.** The LE is now **per-Interest**: each open giver carries its own
+`w/{LE:<waft_key>}` (keyed by the giver Waft so several coexist; parented under `w`, outside any
+replace(), so it survives checkouts), held on its Interest's `c.LE`. The foreground LE is resolved
+via `%ActiveInterest`, not a singleton. Switching foreground **reuses the giver's preserved
+`Seem:working` clone** instead of re-pulling — the crossfade. Verified by reasoning through the
+InterestLive Plan (Prep4 switch away → Prep5 switch back reuses LE1's clone with the Prep2 focus
+edit intact); **not yet recorded in-app** (browser-only runner).
+
+**The mechanism — two-level arm gate.** `req.c.armed_src` gates "did the cursor move"; the
+per-LE `LE.sc.target` gates "does *this* LE need arming". On a switch, `req_understanding` calls
+`Lang_set_interest(w, want)` (find|create the giver's Trail + its own LE, set `%ActiveInterest`,
+stash `languinio.c.active_LE`) and **arms only if `LE.sc.target !== want`** — so switching back to
+an already-edited giver skips `LE_arm`/`LE_pull` and the working clone (with its drift) survives.
+(A fresh LE has no clone until `LE_pull`, so the checkout re-binds `Lang_set_interest` after the
+pull to publish `interest.sc.src` off the new clone root.)
+
+**Code map (all in this change):**
+- `Lang_plan` (Lang.svelte): singleton `w/{LE:1}` + `place` **removed**; workon no longer carries `LE`.
+- `Lang_active_interest(languinio)` / `Lang_active_LE(languinio)` (Lang.svelte, by `Lang_active_dock`):
+  the foreground resolvers. `active_interest` matches `%ActiveInterest` kind+waft; `active_LE` is its
+  `c.LE`, falling back to `languinio.c.active_LE` (so a light/LE-less foreground — GhostList, or a
+  Sidetrack with no clone yet — leaves the last Trail's LE driving, as today).
+- `Lang_set_interest(w, armed)` (Lang.svelte): **signature changed** (no LE param; returns the LE).
+  Get-or-creates `interest.c.LE = w.oai({LE: waft_key})`; **does NOT strip other Trails' c.LE** (their
+  clones persist) — only demotes the ones we left from `locked`→`pending`; sets `languinio.c.active_LE`
+  and `languinio.bump_version()` (wakes the UI active-LE derive). Now **sync** (oai is sync).
+- `req_understanding` / `req_workon` (Lang.svelte): drive `H.Lang_active_LE(languinio)`, guarded for
+  "nothing foregrounded yet" (undefined LE → finish/zero-sig).
+- `e_Lies_waft_mutated` (Lang.svelte): iterates **all** per-Interest LEs (`w.o({LE:1})` wildcards over
+  them — matcher: numeric `1` matches any value) and stales each whose target is in the mutated Waft,
+  so an edit to a non-foreground giver's Waft still marks its LE dirty.
+- `e_Lang_foreground` (Lang.svelte): `languinio.bump_version()` on the eager switch.
+- Readers → active resolution: `LangGraft.svelte:120/688`, `Lang_Map_report`, `NaviCado.svelte` &
+  `DocMinimap.svelte` LE derives (now `$derived.by` on `languinio.vers` → `Lang_active_LE`).
+- `LE_for()` (LiesEnd.svelte): bare/`'Interest'` reason now returns the active LE (`Lang_active_LE`);
+  named reasons (Undertaking) unchanged. The `e%LE=1` sentinels (`e_operate`/`e_mark`), the
+  `e_LE_operate` pull/reset fallbacks, `e_Lang_LE_push` fallback, and `LiesCurse` crunch-toggle wake
+  all route through `LE_for()` instead of `languinio.o({LE:1})[0]`.
+
+**Untouched on purpose:** the `Interest.svelte` reducers (the frozen `Interesting` stand-in
+contract) and `LE_arm/LE_pull/LE_push/Seem` mechanics. The `Understandication/Understandium` tests
+build their own LE in a synthetic `w` and are unaffected.
+
+**`npm run check`:** zero non-baseline errors in every edited file; total within documented drift.
+
+**SNAP RIPPLE — the human must re-record (browser runner only).** The w:Lang snap now shows **one
+`LE:<waft>` subtree per open giver** (each with its own Seem:origin/working/State) instead of a
+single `LE`; the `Languinio/LE,target` hid stub and `req:workon`'s `LE` ref are **gone**;
+`%ActiveInterest` carries `waft`. This ripples to **every real-Lang Book** — `InterestLive`,
+`LakeNets`, `LakeFlush` (their recorded `*.snap` were already flagged stale). All deterministic
+(LE keyed by stable waft string; DFS order fixed by the Plan). **To verify the crossfade itself**:
+after recording, confirm the InterestLive snap keeps both `LE:…Interestily` and `LE:…Interestily2`
+subtrees across Prep4/5, and that `LE:…Interestily`'s `Seem:working` still carries the Prep2
+`class:focus` drift after the Prep5 switch-back (it must NOT be re-pulled clean).
+
+**Still future (the remaining slice of the goal):** real **per-deck Sidetrack** LEs (a Sidetrack
+foreground still falls back to the last Trail's LE via `active_LE` — it has no off-anchor edit clone
+of its own yet) and the true **simultaneous dual-LE push-mutex** (today exactly one LE is ever the
+ActiveInterest's, so "only the foreground pushes" holds trivially; arming *both* a Trail and a
+Sidetrack at once is the unbuilt part). Both are the Sidetrack half of Waft_spec §Presence.
+
+## Phase B — item 4: lenses render on the Lang side
+
+DocTing/DocGhostList already render on the **Lies** side (Liesui → `<WaftComp>` switches by waft
+stance, ui/Waft.svelte:494–536). The gap is the **Lang** side: the `%Interest` family in
+`Languinio` holds only *paths* (the roster crossed the wire as JSON), not the Waft `C`, so a
+Lang-side lens has no data. Needs a **data channel**: either (a) the lens reads the Lies Waft `C`
+by ref (Interest hands its lens a C, Waft_spec §Presence "object-ref change is the signal") — which
+means piping the relevant Lies-side C across, or (b) the Ting heat / GhostList entries ride the
+roster push so Lang holds renderable data. The `InterestStrip` (the switcher) is the Lang-side
+foreground control already built; item 4 is making the *engaged* lens actually paint. Decide the
+data-channel shape first — that's the design crux.
+
+## Phase C — minor polish (quick, snap-verifiable)
+- **Drop a gone Interest a step later** (the ghost row): `interest_reconcile`'s gone-loop
+  (Interest.svelte) marks `state:gone` but never drops. Change it to `lang.drop(it)` when an
+  Interest is *already* gone and still absent (mark first pass, drop next). Needs a second roster
+  push to witness in the gate.
+- **Distinct doc per giver**: Interestily2's fixture shares `Ghost/test/Peeroleum.g` with
+  Interestily, so foreground-switch moves the cursor/What but not the active dock. Point
+  Interestily2 at `Ghost/test/Story/Peregrination.g` (method `LakeNetherland`, as LakeFlush uses)
+  so the dock visibly switches.
+
+## Where the real-channel hooks live (quick index)
+`e_Lang_foreground` / `e_Lang_sprout_sidetrack` (Lang.svelte); `e_Lies_foreground_waft` /
+`e_Lies_open_sidetrack` / `e_Lies_close_Waft` (Lies.svelte); `interest_*` reducers
+(Interest.svelte); switcher `ui/InterestStrip.svelte` (mounted in `ui/DocMinimap.svelte`).
+Per-Interest LE (Phase A): `Lang_active_interest` / `Lang_active_LE` (Lang.svelte) are the
+foreground resolvers everything reads through; `Lang_set_interest` owns each giver's `c.LE`;
+`LE_for()` (LiesEnd) returns the active LE for the bare reason.
+Gate Book: `wormhole/Story/InterestLive/` (10 Preps + 10 `step=` lines; fixtures Interestily{,2}).
+Elvis names must match handlers verbatim ([[elvis-handler-name-verbatim]]); step lines drive steps
+([[story-step-lines-drive-steps]]).

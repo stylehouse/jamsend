@@ -71,9 +71,8 @@ await M.eatfunc({
         const H = this as House
         if (e.sc.LE === 1) {
             if (!H.sc.Run) throw '!testrun — e%LE=1 sentinel only valid inside a Story Run'
-            const languinio = (H.ave as TheC).o({ Languinio: 1 })[0] as TheC | undefined
-            const live_LE   = languinio?.o({ LE: 1 })[0] as TheC | undefined
-            if (!live_LE) throw 'e_operate: LE=1 sentinel but no live LE in ave/%Languinio'
+            const live_LE = H.LE_for()   // the foreground giver's LE (per-Interest, via %ActiveInterest)
+            if (!live_LE) throw 'e_operate: LE=1 sentinel but no live foreground LE'
             e.sc.LE = live_LE
         }
         await H.e_LE_operate(A, w, e)
@@ -88,9 +87,8 @@ await M.eatfunc({
         const H = this as House
         if (e.sc.LE === 1) {
             if (!H.sc.Run) throw '!testrun — e%LE=1 sentinel only valid inside a Story Run'
-            const languinio = (H.ave as TheC).o({ Languinio: 1 })[0] as TheC | undefined
-            const live_LE   = languinio?.o({ LE: 1 })[0] as TheC | undefined
-            if (!live_LE) throw 'e_mark: LE=1 sentinel but no live LE in ave/%Languinio'
+            const live_LE = H.LE_for()   // the foreground giver's LE (per-Interest, via %ActiveInterest)
+            if (!live_LE) throw 'e_mark: LE=1 sentinel but no live foreground LE'
             e.sc.LE = live_LE
         }
         await H.e_LE_mark(A, w, e)
@@ -156,9 +154,8 @@ await M.eatfunc({
                 await H.e_Lang_LE_push(A, w, e)
                 return   // no feebly_ponder — push cluster manages its own think
             case 'pull': {
-                // LE is w/{LE:1}; %Languinio/%LE is the same-object hold pointing there.
-                const LE = (e.sc.LE as TheC | undefined)
-                    ?? (H.ave as TheC).o({ Languinio: 1 })[0]?.o({ LE: 1 })[0] as TheC | undefined
+                // No singleton LE — default to the foreground giver's LE (via %ActiveInterest).
+                const LE = (e.sc.LE as TheC | undefined) ?? H.LE_for()
                 if (LE) await H.LE_pull(LE)
                 H.feebly_ponder()
                 return
@@ -168,8 +165,7 @@ await M.eatfunc({
                 // drop their D/U spheres and Seem_clone_C re-clones a fresh working tree
                 // on the next pull.  Bumps LE.version so the UItime strip re-derives and
                 // instrumentation re-grafts immediately.
-                const LE = (e.sc.LE as TheC | undefined)
-                    ?? (H.ave as TheC).o({ Languinio: 1 })[0]?.o({ LE: 1 })[0] as TheC | undefined
+                const LE = (e.sc.LE as TheC | undefined) ?? H.LE_for()
                 if (LE) {
                     const target = LE.sc.target as TheC | undefined
                     if (target) {
@@ -306,9 +302,8 @@ await M.eatfunc({
         const H      = this as House
         const workon = w.o({ req: 'workon' })[0] as TheC | undefined
         if (!workon) return
-        // LE is w/{LE:1}; %Languinio/%LE is the same-object hold pointing there.
-        const LE = (e.sc.LE as TheC | undefined)
-            ?? (H.ave as TheC).o({ Languinio: 1 })[0]?.o({ LE: 1 })[0] as TheC | undefined
+        // No singleton LE — default to the foreground giver's LE (via %ActiveInterest).
+        const LE = (e.sc.LE as TheC | undefined) ?? H.LE_for()
         if (!LE) return
 
         // The push cluster hangs off workon (stable for the Lang instance), one
@@ -513,8 +508,11 @@ await M.eatfunc({
         const H   = this as House
         const lng = (H.ave as TheC).o({ Languinio: 1 })[0] as TheC | undefined
         if (!lng) return undefined
+        // The bare 'Interest' LE is no longer a singleton — it is the foreground giver's
+        //  own LE, resolved via %ActiveInterest (Lang_active_LE).  Named reasons (eg
+        //   'Undertaking') stay their own {LE:<reason>} child of %Languinio.
         return (!reason || reason === 'Interest')
-            ? lng.o({ LE: 1 })[0]      as TheC | undefined
+            ? H.Lang_active_LE(lng)
             : lng.o({ LE: reason })[0] as TheC | undefined
     },
     LE_spawn(reason?: string): TheC {

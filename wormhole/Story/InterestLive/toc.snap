@@ -49,24 +49,24 @@ story:InterestLive
         nopush
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg=1.242
-      sample=0.9,at=1781666598
-      sample=0.777,at=1781666754
-      sample=1.594,at=1781666851
-      sample=0.899,at=1781667351
-      sample=1.46,at=1781668730
-      sample=1.039,at=1781669007
-      sample=1.619,at=1781670027
+    TimeTotal:beliefs,avg=1.51
       sample=1.447,at=1781670434
       sample=1.447,at=1781670441
       sample=1.234,at=1781670576
-  step,dige:eb2640c83ceeeb86
-  step=2,dige:136861eeb094d870
-  step=3,dige:74b1414e86818cc0
-  step=4,dige:3813d7cc3b513f26
-  step=5,dige:b88b21e4f2af3229
-  step=6,dige:befcc670cee64666
-  step=7,dige:137c0e656c0ba5da
-  step=8,dige:3c50b6ff89b97bd2
-  step=9,dige:03e0c6a8d872f6b8
-  step=10,dige:fbe9ee86a46b2023
+      sample=1.204,at=1781670641
+      sample=2.473,at=1781671986
+      sample=1.411,at=1781672020
+      sample=1.443,at=1781672231
+      sample=1.303,at=1781673531
+      sample=1.569,at=1781673862
+      sample=1.569,at=1781673874
+  step,dige:cb769d3b2f3eca18
+  step=2,dige:12324abff69308fe
+  step=3,dige:9f0a885618bd64a4
+  step=4,dige:2641941aed078ed2
+  step=5,dige:21902f3266774fdb
+  step=6,dige:81524faaff674696
+  step=7,dige:049b8f88381e6b63
+  step=8,dige:864351b5f67bbd47
+  step=9,dige:70c2fc12af5c7496
+  step=10,dige:db247ec6de47e7ac
