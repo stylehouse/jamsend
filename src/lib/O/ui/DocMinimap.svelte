@@ -34,6 +34,7 @@
     import { EditorView } from "@codemirror/view"
     import { unfoldEffect, foldedRanges } from "@codemirror/language"
     import NaviCado from "$lib/O/ui/NaviCado.svelte"
+    import InterestStrip from "$lib/O/ui/InterestStrip.svelte"
     import StemHive from "$lib/O/ui/StemHive.svelte"
 
     type Region = {
@@ -685,6 +686,10 @@
         {#if _graft_spin}<span class="lmm-graft-spin" title="grafting Points">⟳</span>{/if}
         {#if _stale_spin}<span class="lmm-stale-spin" title="Understanding stale — remote moved">↻</span>{/if}
     </div>
+
+    <!-- Interest switcher — one button per presence:active Interest, click to
+         foreground; atop the MiniMap, above the NaviCado breadcrumb (Waft_spec §Presence). -->
+    <InterestStrip {H} />
 
     <NaviCado {H} />
 

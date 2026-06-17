@@ -114,6 +114,73 @@ opening a giver auto-foregrounds it. Reflect this in the gate's expectations rat
 it: step 1 = giver locked + others pending; step 2 = edit/mark the focused doc (working drift);
 step 3 = +add a second giver → pending Trail. (This is what the live run already shows.)
 
+## Item 1 — multi-giver foreground arbitration + the switcher — IMPLEMENTED (2026-06-17)
+
+The headline feature, built on top of the verified real channel:
+
+- **Arbitration** (`Lang_set_interest`, Lang.svelte): on checkout it now binds the giver-Trail
+  whose Waft matches `waft_key_of(armed)` — each giver foregrounds its OWN Trail, not whichever
+  held the LE last. It moves the single LE off any other Trail (so exactly one bears `c.LE` = the
+  foreground; the `find(c.LE)` readers in NaviCado/graft/Map-report stay correct), demotes the
+  giver you left to `state:pending`, and records the foreground giver on `ActiveInterest.waft`.
+- **`interest_foreground(lang, kind, waft?)`** (Interest.svelte): gained an optional `waft` to
+  disambiguate several same-kind Interests; backward-compatible (no waft → first), so the stand-in
+  gate is unmoved.
+- **`e_Lang_foreground({kind, waft})`** (Lang.svelte): the switcher's click entry. Heavy kinds
+  (Trail|Sidetrack) set `ActiveInterest` eagerly then route to Lies `foreground_waft` to
+  re-checkout (the real lock lands via the arbitration above). Light kinds (GhostList) are a pure
+  lens swap via `interest_foreground`.
+- **`e_Lies_foreground_waft({path})`** (Lies.svelte): lands the cursor on the Waft's first What
+  (`Lies_desire_land_cursor`) → Spotlight → Lang checkout → arbitration arms the LE there.
+- **`InterestStrip.svelte`** (the switcher): a horizontal strip atop the MiniMap (mounted in
+  `DocMinimap` above `NaviCado`). One button per **presence:active** Interest (Trail per giver,
+  Sidetrack, GhostList — Ting/presence:always is ambient and excluded), highlights the
+  `ActiveInterest` (by kind+waft), click foregrounds (`e_Lang_foreground`), `×` dismisses (drops
+  the Lies Waft via `close_Waft` → gone). Add-Interest dropdown is still ⛑️ unbuilt.
+
+Driven by **InterestLive Prep=4/5/6**: Prep4 foregrounds Interestily2 (`ActiveInterest.waft`
+moves, its Trail locks, Interestily demotes to pending); Prep5 foregrounds Interestily again
+(arbitration the other way); Prep6 engages the GhostList (the light-kind path — it locks/mounts
+its lens but **does NOT become the `ActiveInterest`**: only the social decks Trail|Sidetrack take
+the stage and drive the canonical cursor; Ting/GhostList stay out of the Point-play —
+Waft_spec §"Presence"). So after Prep6, GhostList is `state:locked` while `ActiveInterest` stays
+`kind:Trail,waft:…Interestily`.
+
+Still open from the spec's Presence section (future): a true **dual-LE crossfade** (both
+Trail+Sidetrack armed at once — today one LE, so switching re-arms); the add-Interest Waft picker;
+stage-swapping the lens (NaviCado ↔ DocGhostList) on foreground is item 4 territory.
+
+## Item 3 — real Sidetrack origination (the reverse arrow) — IMPLEMENTED (2026-06-17)
+
+The channel ran forward only (roster → Interests); the reverse arrow (Lang sprouts an Interest
+*before* its Waft) was stand-in-only. Now wired to the real wire — the reducers
+(`interest_sprout_sidetrack`, reconcile's bind-by-`%from`) were already there; this adds the
+drivers:
+
+- **`e_Lang_sprout_sidetrack({from})`** (Lang.svelte): sprouts the pending, unbound Sidetrack
+  Lang-side (lens chosen, cursor off-anchor, `%from` = anchor, no `%waft` yet).
+- **`e_Lies_open_sidetrack({from})`** (Lies.svelte): mints the throwaway **tentative** Waft
+  `<from>/side` — an in-memory, session-only Waft modelled on the Ting (no Good slot, not loaded),
+  tagged `tentative` + `from`. The roster sig moves → `Lies_waft_roster_pump` re-pushes →
+  `interest_reconcile` binds the pending sprout to it by `%from` (no duplicate).
+- **`Lies_waft_save`** (LiesStore.svelte): now save-exempt for `tentative` too (was `takes`-only) —
+  a tentative Waft has no disk home until it settles and grafts back.
+- **`InterestStrip` ↳ button**: sprouts a Sidetrack off the foreground Trail in one gesture (fires
+  both `sprout_sidetrack` + `open_sidetrack`), shown only while a Trail is foreground.
+
+Driven by **InterestLive Prep=7** (sprout, Lang) → **Prep=8** (open_sidetrack, Lies → bind): the
+snap should show an unbound `Interest:Sidetrack,from:…,state:pending` after Prep7 (the gap the
+stand-in witnesses), then `…,waft:…/side` filled in after Prep8. (Prep9 closes Interestily2 → gone.)
+
+The full Plan is 9 Preps: open+Ting · mark · +giver2 · fg giver2 · fg giver1 · fg GhostList ·
+sprout · bind · close. **A step only runs if there is a `step=N,dige:` line for it in the toc** —
+those lines (not the Preps alone) drive how many steps execute; a Prep fires at its numbered step.
+So when adding Preps, add a matching `step=N,dige:<placeholder>` line per new step (the numbering
+matters; the dige is a lie until the runner records the real one on the next run).
+
+Still future: **foregrounding** a Sidetrack (the crossfade onto its off_what cursor) — it shares
+the dual-LE crossfade work above; the lifecycle (sprout → bind) is what lands here.
+
 ---
 
 ## Proposed replacement: Book `InterestLive`

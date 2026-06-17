@@ -1,17 +1,17 @@
 Snap:H
   H:LangTiles,Run
     A:Lies
-      self,round=47	{"mung":["age"]}
+      self,round=48	{"mung":["age"]}
       w:Lies
         Opt
           nowriting:^Ghost
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/LangTiles/Waftily/toc.snap,waft_path:Story/LangTiles/Waftily
-            known,dige:ae7dc27a85992c99,kind:read,at=1781631056.326
+            known,dige:ae7dc27a85992c99,kind:read	{"mung":["at"]}
           Good,type:text/Waft,path:wormhole/GhostList/toc.snap,waft_path:GhostList
-            known,dige:d3d7d22dd688afee,kind:read,at=1781631056.715
+            known,dige:d3d7d22dd688afee,kind:read	{"mung":["at"]}
           Good,type:text/Doc,path:Ghost/test/LangTiles.g
-            known,dige:956f100c2f3c8384,kind:read,at=1781631057.107
+            known,dige:956f100c2f3c8384,kind:read	{"mung":["at"]}
         examining	{"loopy":2}
           req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
           Spotlight	{"ref":{"src":"%What:labelofaWhat"}}
@@ -35,12 +35,12 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781631056425,kind:cold
-          want=1781631056475,kind:cold
-          want=1781631056951,kind:cold,resolved
+          want=1781664841595,kind:cold
+          want=1781664841650,kind:cold
+          want=1781664842077,kind:cold,resolved
         o_elvis:dock_askies
-        Waft:GhostList,lists,seeded=1781603839925
-          Funkcion:dirlist,interval_ms=8000,walked_at=1781631067408
+        Waft:GhostList,lists	{"mung":["seeded"]}
+          Funkcion:dirlist,interval_ms=8000	{"mung":["walked_at"]}
           group:src/lib,dir:src/lib
             sub:src/lib/O,name:O
             sub:src/lib/data,name:data
@@ -89,17 +89,17 @@ Snap:H
             Doc:src/lib/O/ThangShelf.svelte,name:ThangShelf
             Doc:src/lib/O/Thangs.svelte,name:Thangs
             Doc:src/lib/O/stho.ts,name:stho
-            Doc:src/lib/O/Interest.svelte,name:Interest,noticed_at=1781620310582
+            Doc:src/lib/O/Interest.svelte,name:Interest	{"mung":["noticed_at"]}
         Funkcions
           req:Funkcion,funk_id:GhostList/dirlist,eternal,ok
-        Waft:Ting/2026-06-17/053101,takes
-          Point:theCompiledStuff,doc:Ghost/test/LangTiles.g,n=2,weight=4,last=1781631064294,first=1781631061671,heat=4.096,warm=0.5,bright,held,long
-            {"say":"o hut/although:1/they,can,be,mixed","at":1781631064294}
+        Waft:Ting/2026-06-17/145407,takes
+          Point:theCompiledStuff,doc:Ghost/test/LangTiles.g,n=2,weight=4,last=1781664849908,first=1781664847594,heat=4.155,warm=0.5,bright,held,long
+            {"say":"o hut/although:1/they,can,be,mixed","at":1781664849908}
         log:source_write,path:Ghost/test/LangTiles.g,dige:7a646944
-        self,round=47	{"mung":["age"]}
+        self,round=48	{"mung":["age"]}
         see:🗂 1 doc · 3 Wafts
     A:Lang
-      self,round=57	{"mung":["age"]}
+      self,round=59	{"mung":["age"]}
       w:Lang
         Opt
           txtsyntaxdump
@@ -186,7 +186,7 @@ Snap:H
                 def,method:moreTiles,from=2250,to=2260,line=80
                 def,method:replaceTiles,from=3736,to=3749,line=105,async
                 def,method:reqTiles,from=5603,to=5612,line=151
-              time,compile=0.01,all=0.557,write=0
+              time,compile=0.011,all=0.612,write=0
               Output,gen_path:gen/test/LangTiles.go,dige:3c10bc07eed005f3,source_dige:7a646944680fcf2f
                source: |
                  <script lang="ts">
@@ -453,17 +453,17 @@ Snap:H
             MapReport,n_def=7,n_call=4,n_region=0,n_cf=7
           Interest:GhostList,waft:GhostList,lens:DocGhostList,presence:active,state:pending
             cursor,doc:GhostList/doc0
-          ActiveInterest,kind:Trail
+          ActiveInterest,kind:Trail,waft:Story/LangTiles/Waftily
           dock,active	{"loopy":1,"hid":1}
           Change
             storage,dige:956f1,dim:true
             backend,dige:7a646
-            compile,dige:7a646,dim:true,secs=0.01
+            compile,dige:7a646,dim:true,secs=0.011
           LE:Undertaking,reason:Undertaking
             Seem:workon
               Funkcion:trail,halflife_ms=60000
-          Interest:Ting,waft:Ting/2026-06-17/053101,lens:DocTing,presence:always,state:live
-            cursor,what:Ting/2026-06-17/053101,latest
+          Interest:Ting,waft:Ting/2026-06-17/145407,lens:DocTing,presence:always,state:live
+            cursor,what:Ting/2026-06-17/145407,latest
         LE	{"loopy":0,"ref":{"target":"%What:labelofaWhat"}}
           Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:labelofaWhat","topD":"%Demonstrations:origin"}}
             Demonstrations:origin
@@ -496,10 +496,10 @@ Snap:H
         received,doc_opened,doc:Ghost/test/LangTiles.g
         received,editorBegins,doc:Ghost/test/LangTiles.g
         o_elvis:Lies_compile_settled
-        self,round=57	{"mung":["age"]}
+        self,round=59	{"mung":["age"]}
         see:🟦 tiles 1 bookmarks
     A:Pantheate
-      self,round=26	{"mung":["age"]}
+      self,round=27	{"mung":["age"]}
       w:Pantheate
         include:gen/test/LangTiles.go
         req:include,gen_path:gen/test/LangTiles.go,path:Ghost/test/LangTiles.g,source_dige:7a646944680fcf2f,ghostmeta_name:Ghostmeta_Ghost_test_LangTiles,permanent,live_dige:7a646944680fcf2f,finished
@@ -538,7 +538,7 @@ Snap:H
             prefixy:stuff,wither:angles
               wither:levels,its:its,sits:ferv
         req:run_method,method:theCompiledStuff,finished
-        self,round=26	{"mung":["age"]}
+        self,round=27	{"mung":["age"]}
         o_elvis:Ghost_update_notify
     watched:ave
       examining	{"loopy":2,"hid":1}

@@ -7,11 +7,11 @@ Snap:H
           nowriting:^Ghost
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/LangTiles/Waftily/toc.snap,waft_path:Story/LangTiles/Waftily
-            known,dige:ae7dc27a85992c99,kind:read,at=1781631056.326
+            known,dige:ae7dc27a85992c99,kind:read	{"mung":["at"]}
           Good,type:text/Waft,path:wormhole/GhostList/toc.snap,waft_path:GhostList
-            known,dige:d3d7d22dd688afee,kind:read,at=1781631056.715
+            known,dige:d3d7d22dd688afee,kind:read	{"mung":["at"]}
           Good,type:text/Doc,path:Ghost/test/LangTiles.g
-            known,dige:956f100c2f3c8384,kind:read,at=1781631057.107
+            known,dige:956f100c2f3c8384,kind:read	{"mung":["at"]}
         examining	{"loopy":2}
           req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
           Spotlight	{"ref":{"src":"%What:labelofaWhat"}}
@@ -35,12 +35,12 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781631056425,kind:cold
-          want=1781631056475,kind:cold
-          want=1781631056951,kind:cold,resolved
+          want=1781664841595,kind:cold
+          want=1781664841650,kind:cold
+          want=1781664842077,kind:cold,resolved
         o_elvis:dock_askies
-        Waft:GhostList,lists,seeded=1781603839925
-          Funkcion:dirlist,interval_ms=8000,walked_at=1781631057108
+        Waft:GhostList,lists	{"mung":["seeded"]}
+          Funkcion:dirlist,interval_ms=8000	{"mung":["walked_at"]}
           group:src/lib,dir:src/lib
             sub:src/lib/O,name:O
             sub:src/lib/data,name:data
@@ -89,11 +89,11 @@ Snap:H
             Doc:src/lib/O/ThangShelf.svelte,name:ThangShelf
             Doc:src/lib/O/Thangs.svelte,name:Thangs
             Doc:src/lib/O/stho.ts,name:stho
-            Doc:src/lib/O/Interest.svelte,name:Interest,noticed_at=1781620310582
+            Doc:src/lib/O/Interest.svelte,name:Interest	{"mung":["noticed_at"]}
         Funkcions
           req:Funkcion,funk_id:GhostList/dirlist,eternal,ok
-        Waft:Ting/2026-06-17/053101,takes
-          Point:theCompiledStuff,doc:Ghost/test/LangTiles.g,n,weight,last=1781631061671,first=1781631061671,heat=0.994,warm=0,bright
+        Waft:Ting/2026-06-17/145407,takes
+          Point:theCompiledStuff,doc:Ghost/test/LangTiles.g,n,weight,last=1781664847594,first=1781664847594,heat=0.991,warm=0,bright
         self,round=22	{"mung":["age"]}
         see:🗂 1 doc · 3 Wafts
     A:Lang
@@ -182,7 +182,7 @@ Snap:H
                 def,method:moreTiles,from=2250,to=2260,line=80
                 def,method:replaceTiles,from=3736,to=3749,line=105,async
                 def,method:reqTiles,from=5603,to=5612,line=151
-              time,compile=0.025,all=0.664,write=0
+              time,compile=0.017,all=1.188,write=0
               Output,gen_path:gen/test/LangTiles.go,dige:b4ae2e16ad242a57,source_dige:956f100c2f3c8384
                source: |
                  <script lang="ts">
@@ -449,17 +449,17 @@ Snap:H
             MapReport,n_def=7,n_call=4,n_region=0,n_cf=7
           Interest:GhostList,waft:GhostList,lens:DocGhostList,presence:active,state:pending
             cursor,doc:GhostList/doc0
-          ActiveInterest,kind:Trail
+          ActiveInterest,kind:Trail,waft:Story/LangTiles/Waftily
           dock,active	{"loopy":1,"hid":1}
           Change
             backend,dige:956f1
             storage,dige:956f1,dim:false
-            compile,dige:956f1,dim:false,secs=0.025
+            compile,dige:956f1,dim:false,secs=0.017
           LE:Undertaking,reason:Undertaking
             Seem:workon
               Funkcion:trail,halflife_ms=60000
-          Interest:Ting,waft:Ting/2026-06-17/053101,lens:DocTing,presence:always,state:live
-            cursor,what:Ting/2026-06-17/053101,latest
+          Interest:Ting,waft:Ting/2026-06-17/145407,lens:DocTing,presence:always,state:live
+            cursor,what:Ting/2026-06-17/145407,latest
         LE	{"loopy":0,"ref":{"target":"%What:labelofaWhat"}}
           Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:labelofaWhat","topD":"%Demonstrations:origin"}}
             Demonstrations:origin

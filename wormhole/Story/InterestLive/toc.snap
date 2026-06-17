@@ -15,6 +15,24 @@ story:InterestLive
       i_elvisto:Lies,e:Lies_open_Waft
         esc:path,v:Story/InterestLive/Interestily2
     Prep=4
+      i_elvisto:Lang,e:Lang_foreground
+        esc:kind,v:Trail
+        esc:waft,v:Story/InterestLive/Interestily2
+    Prep=5
+      i_elvisto:Lang,e:Lang_foreground
+        esc:kind,v:Trail
+        esc:waft,v:Story/InterestLive/Interestily
+    Prep=6
+      i_elvisto:Lang,e:Lang_foreground
+        esc:kind,v:GhostList
+        esc:waft,v:GhostList
+    Prep=7
+      i_elvisto:Lang,e:Lang_sprout_sidetrack
+        esc:from,v:Story/InterestLive/Interestily
+    Prep=8
+      i_elvisto:Lies,e:Lies_open_sidetrack
+        esc:from,v:Story/InterestLive/Interestily
+    Prep=9
       i_elvisto:Lies,e:Lies_close_Waft
         esc:path,v:Story/InterestLive/Interestily2
   Opt
@@ -27,18 +45,23 @@ story:InterestLive
         nopush
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.877
-      sample=0.609,at=1781656742
-      sample=1.15,at=1781657682
-      sample=0.729,at=1781657822
-      sample=1.058,at=1781657857
-      sample=0.953,at=1781657984
-      sample=0.953,at=1781660323
-      sample=1.042,at=1781660350
-      sample=0.937,at=1781660377
-      sample=0.836,at=1781660441
-      sample=0.5,at=1781660715
-  step,dige:31a68fe899cc599e
-  step=2,dige:9caed5f23a7d5c05
-  step=3,dige:ccd700c7b6a12f9c
-  step=4,dige:67579eefdffea943
+    TimeTotal:beliefs,avg=0.98
+      sample=0.642,at=1781664743
+      sample=0.642,at=1781664757
+      sample=0.944,at=1781664771
+      sample=0.9,at=1781666557
+      sample=0.9,at=1781666598
+      sample=0.777,at=1781666754
+      sample=1.594,at=1781666851
+      sample=0.899,at=1781667351
+      sample=1.46,at=1781668730
+      sample=1.039,at=1781669007
+  step,dige:90fad84b48fe9d34
+  step=2,dige:616bb78f858a0645
+  step=3,dige:c0c41c6de32d1452
+  step=4,dige:696e509a98298090
+  step=5,dige:3c0f4f245fede730
+  step=6,dige:df38b219d478b149
+  step=7,dige:38dfc1607017ef1d
+  step=8,dige:1ae36a6922ddb747
+  step=9,dige:834e4116bb8d60c1

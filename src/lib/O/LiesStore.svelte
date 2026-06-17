@@ -375,7 +375,9 @@
         //  taker distinction touches IO, so it lives here next to the write.
         //  The lister (GhostList) DOES persist — it loads+saves like any Waft, so its
         //  open-dir tree, seeded baseline and noticed_at marks survive a reload.
-        if (waft.sc.takes) return
+        //  A tentative Waft (a sprouted Sidetrack's throwaway, peer of the Ting) is
+        //  likewise session-only — it has no disk home until it settles and grafts back.
+        if (waft.sc.takes || waft.sc.tentative) return
         const path = waft.sc.Waft as string
 
         const throttle_key = `waft_save_throttle_${path}`

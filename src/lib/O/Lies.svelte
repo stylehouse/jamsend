@@ -182,6 +182,42 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         this.i_elvisto(w, 'think')
     },
 
+    // ── e_Lies_foreground_waft ─────────────────────────────────────────────
+    //
+    //   The Interest-switcher foregrounding a giver/Sidetrack from Lang.  Land the
+    //   cursor on this Waft's first navigable What — that moves %Spotlight, which
+    //   flows to Lang's checkout (req_understanding → Lang_set_interest), arming the
+    //   single LE on this giver's own Trail (the multi-giver arbitration).  No-op when
+    //   the cursor already sits in this Waft.
+    async e_Lies_foreground_waft(A: TheC, w: TheC, e: TheC) {
+        const H    = this as House
+        const path = e.sc.path as string | undefined
+        if (!path) throw 'e_Lies_foreground_waft: needs path'
+        const waft = w.o({ Waft: path })[0] as TheC | undefined
+        if (waft) await H.Lies_desire_land_cursor(w, waft, path)
+    },
+
+    // ── e_Lies_open_sidetrack ──────────────────────────────────────────────
+    //
+    //   The reverse arrow's far end (Waft_spec §"How an Interest comes to be"): Lang
+    //   sprouted a Sidetrack before any Waft existed; here Lies opens the throwaway
+    //   tentative Waft it asked for, tagged with the anchor it flew off (%from).
+    //   Modelled on the taker (Ting): an in-memory, session-only Waft (Lies_waft_save
+    //   is exempt) with no disk home and no Good slot — born here, not loaded.  The
+    //   roster sig then moves, Lies_waft_roster_pump re-pushes, and interest_reconcile
+    //   binds the pending sprout to this Waft by %from (no duplicate minted).
+    //   Deterministic name here; real Lies may time-division-name it — Lang binds by
+    //   %from precisely so the name need not be predicted.
+    async e_Lies_open_sidetrack(A: TheC, w: TheC, e: TheC) {
+        const from = e.sc.from as string | undefined
+        if (!from) throw 'e_Lies_open_sidetrack: needs from'
+        const waft = w.oai({ Waft: `${from}/side` })
+        waft.sc.tentative = 1
+        waft.sc.from      = from
+        w.bump_version()
+        this.i_elvisto(w, 'think')
+    },
+
     // ── Lies_desire_land_cursor ───────────────────────────────────────────────
     //   Land cursor on the first navigable What in `waft`.
     //   No-op when the cursor is already inside this Waft.

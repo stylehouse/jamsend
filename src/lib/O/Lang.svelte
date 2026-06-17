@@ -910,21 +910,35 @@
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
         if (!languinio) return
 
-        // The editing checkout IS the foreground Trail (Waft_spec promotes the one
-        //  old %Interest to %Interest,Trail).  Find the Trail already bearing our LE;
-        //   else adopt the giver's roster Trail (oai matches {Interest:'Trail'} and
-        //    unifies the checkout onto it); else mint a bare Trail the roster binds to
-        //     its giver next reconcile.  Never drop — the roster-set fields survive.
-        const interest  = ((languinio.o({ Interest: 'Trail' }) ?? []) as TheC[]).find(t => t.c.LE)
-                        ?? languinio.oai({ Interest: 'Trail' })
+        // Multi-giver foreground arbitration (Waft_spec §"Presence").  With several
+        //  giver Wafts open there are several {Interest:'Trail'}; bind to the one whose
+        //   Waft we are actually checking out — matched by waft_key — so each giver
+        //    foregrounds its OWN Trail, not whichever happened to hold the LE last.
+        //     Fall back to the current editing Trail (re-checkout of the same giver),
+        //      then to a fresh Trail the roster binds to its giver next reconcile.
+        const waft_key = H.waft_key_of(armed)
+        const trails   = (languinio.o({ Interest: 'Trail' }) ?? []) as TheC[]
+        const interest = (waft_key != null ? trails.find(t => t.sc.waft === waft_key) : undefined)
+                       ?? trails.find(t => t.c.LE)
+                       ?? languinio.oai({ Interest: 'Trail' })
+        // The single LE bears exactly one foreground.  Release it from any other Trail
+        //  so the find(c.LE) readers (NaviCado, graft, Map report) keep picking this one,
+        //   and the giver we just left drops back to a noticed-but-pending Trail.
+        for (const t of trails) if (t !== interest && t.c.LE) {
+            delete t.c.LE
+            if (t.sc.state === 'locked') t.sc.state = 'pending'
+        }
         const working_C = LE.o({ Seem: 'working' })[0]?.sc.C as TheC | undefined
         interest.sc.src = working_C
         interest.c.LE   = LE
+        if (waft_key != null) interest.sc.waft = waft_key          // bind the giver subject
         // checking out IS foregrounding: lock the Trail and make it the ActiveInterest
         //  (the editing checkout, not merely a noticed giver).  reconcile leaves state
         //   alone once lens is set, so this sticks across roster pushes.
         interest.sc.state = 'locked'
-        languinio.oai({ ActiveInterest: 1 }).sc.kind = 'Trail'
+        const ai = languinio.oai({ ActiveInterest: 1 })
+        ai.sc.kind = 'Trail'
+        if (waft_key != null) ai.sc.waft = waft_key                // which giver is foreground
 
         // the live %What rides as the object on c.What — readers reach the real
         //   particle (its Points, their c.Doc) without a name lookup.  in_Doc stays
@@ -943,6 +957,44 @@
         const stale = LE.o({ State: 1 })[0]?.sc.stale
         if (stale) languinio.oai({ spinner: 'stale' })
         else       languinio.o({ spinner: 'stale' }).forEach((s: TheC) => languinio.drop(s))
+    },
+
+    // ── e_Lang_foreground — the Interest-switcher's click ─────────────────────
+    //   Foreground one Interest (Waft_spec §"Presence … the switcher").  Heavy kinds
+    //    (Trail|Sidetrack) foreground by re-checkout: set %ActiveInterest eagerly for
+    //     instant strip feedback, then land the Lies cursor on the Waft so
+    //      req_understanding re-arms the single LE and Lang_set_interest binds that
+    //       giver's own Trail (the arbitration above).  Light kinds (GhostList) are a
+    //        pure lens swap — no checkout, no LE.
+    async e_Lang_foreground(A: TheC, w: TheC, e: TheC) {
+        const H         = this as House
+        const kind      = e.sc.kind as string | undefined
+        const waft      = e.sc.waft as string | undefined
+        const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
+        if (!languinio || !kind) return
+        if (kind === 'Trail' || kind === 'Sidetrack') {
+            const ai = languinio.oai({ ActiveInterest: 1 })
+            ai.sc.kind = kind
+            if (waft != null) ai.sc.waft = waft
+            if (waft) H.i_elvisto('Lies/Lies', 'Lies_foreground_waft', { path: waft })
+        } else {
+            H.interest_foreground(languinio, kind, waft)
+        }
+    },
+
+    // ── e_Lang_sprout_sidetrack — the reverse arrow's near end ────────────────
+    //   Sprout a Sidetrack Lang-side BEFORE its Waft exists (Waft_spec §"How an
+    //    Interest comes to be"): pending, lens chosen, cursor off-anchor, %from = the
+    //     anchor it flew off, no subject yet.  Pair with Lies e:Lies_open_sidetrack — Lies
+    //      opens the tentative Waft, the roster re-push binds this sprout to it by
+    //       %from (interest_reconcile).  The switcher fires both in one gesture; a Story
+    //        Plan may split them across Preps to witness the unbound gap.
+    async e_Lang_sprout_sidetrack(A: TheC, w: TheC, e: TheC) {
+        const H         = this as House
+        const from      = e.sc.from as string | undefined
+        const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
+        if (!languinio || !from) return
+        H.interest_sprout_sidetrack(languinio, from)
     },
 
     // ── req_ingredients — the raw %Goods we need ─────────────────────────────
