@@ -127,10 +127,9 @@ Library
         sample=0.064,at=1781595781
         sample=0.047,at=1781596162
         sample=0.018,at=1781608069
-  Book:LakeNets,ok_pct=0,last_pct_change=1779979876.845,done=3,last_run_ms=1781666529.732,time_avg=0.173,active
+  Book:LakeNets,ok_pct=0,last_pct_change=1779979876.845,done=3,last_run_ms=1781713433.497,time_avg=0.173
     TimeSpool
-      TimeTotal:beliefs,avg=1.829
-        sample=1.39,at=1781511693
+      TimeTotal:beliefs,avg=1.869
         sample=1.929,at=1781526592
         sample=1.614,at=1781527911
         sample=2.192,at=1781580293
@@ -140,6 +139,7 @@ Library
         sample=1.633,at=1781656526
         sample=1.747,at=1781660646
         sample=1.932,at=1781666532
+        sample=1.793,at=1781713433
   Book:Understandity,ok_pct=0,done,last_run_ms=1781587295.823
     TimeSpool
       TimeTotal:beliefs,avg=0.014
@@ -244,12 +244,9 @@ Library
         sample=0.101,at=1781621271
         sample=0.163,at=1781656675
         sample=0.171,at=1781660709
-  Book:InterestLive,ok_pct=0,done=4,last_run_ms=1781711924.417
+  Book:InterestLive,ok_pct=0,done=4,last_run_ms=1781715007.343
     TimeSpool
-      TimeTotal:beliefs,avg=1.302
-        sample=1.35,at=1781696532
-        sample=1.578,at=1781697595
-        sample=1.599,at=1781697661
+      TimeTotal:beliefs,avg=1.255
         sample=1.727,at=1781697731
         sample=1.15,at=1781697771
         sample=1.425,at=1781697856
@@ -257,16 +254,19 @@ Library
         sample=0.905,at=1781704642
         sample=1.48,at=1781707342
         sample=0.914,at=1781711927
-  Book:Peregrination,ok_pct=0,done=5,last_run_ms=1781711795.707
+        sample=1.272,at=1781714096
+        sample=1.446,at=1781714321
+        sample=1.336,at=1781715010
+  Book:Peregrination,ok_pct=0,done=5,last_run_ms=1781714781.011,active
     TimeSpool
-      TimeTotal:beliefs,avg=0.658
-        sample=0.256,at=1781695086
-        sample=0.84,at=1781695766
-        sample=1.22,at=1781696862
-        sample=0.544,at=1781698467
-        sample=0.819,at=1781704603
-        sample=0.834,at=1781707773
+      TimeTotal:beliefs,avg=0.652
         sample=0.675,at=1781707885
         sample=0.447,at=1781708264
         sample=0.65,at=1781711395
         sample=0.294,at=1781711799
+        sample=1.209,at=1781713495
+        sample=0.643,at=1781713620
+        sample=0.613,at=1781714145
+        sample=0.599,at=1781714173
+        sample=0.849,at=1781714188
+        sample=0.542,at=1781714782

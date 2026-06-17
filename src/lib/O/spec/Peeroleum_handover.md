@@ -19,11 +19,14 @@ lands `%inbox/%unemit,…,delivered`, witnessed at step 2 (see heading 2 for the
 is step-driven now (inner steps start at 2, via `Lake_drive`'s own step dispatch), and the compile
 scaffolding folds out of the snap with `%dontSnap` once the apparatus is ready.
 
-**Heading 3 (hello+trust handshake) is BUILT, awaiting in-app proof at step 3.** The four leaf do_fns
-+ the say/hear exchange + the inbound-frame dispatch are written (compile clean via `lang-compile`);
-both sides should drive `%req:handshake` to `finished` and stamp `%witnessed:step_3`. **Next real work:
-run the Peregrination Story on :9091 and confirm step 3 (snap shape + the bomb under heading 3), then
-record the true step-3 dige.** NB headless `Story_cli` (see `Story_cli_handover.md`) does NOT yet boot
+**Heading 3 (hello+trust handshake) is PROVEN in-app at step 3.** Both Piers reach
+`%req:handshake,finished` (all four leaves finished), with `protocol/hello/{said,heard:publicKey}` +
+`protocol/trust/{said,heard}`, `%Ud,publicKey`, inbox/outbox emit+unemit pairs, and
+`w:Peregrination/%witnessed:step_3`. The `c.up`-below-`w` bug (handshake standing up with no leaves)
+was found+fixed in the same session (`Peering.c.up=w; Pier.c.up=Peering` in `Lake_sides_up`). **Next
+real work: record the true step-3 dige (the toc step-3 dige is still a lie — Accept/Resnapture the
+run), tidy the duplicate hello (see heading 3), then heading 4 (outbox/inbox lifecycle + acks +
+whittle).** NB headless `Story_cli` (see `Story_cli_handover.md`) does NOT yet boot
 this Book — it mounts only `<Ghost>`, not the `Peregrination.svelte` bootstrap loader, so the wrangler
 methods never compile in; wiring the loader into `Story_cli.svelte` is heading 1b's payoff, and would
 finally make this verifiable headlessly. Until then, heading-3 proof is in-app.
@@ -211,10 +214,21 @@ order, no-ops once sorted). Called each pass from `Lake_drive`, so the snap read
 **NB:** the committed `gen/N/Peeroleum.go` + `gen/Story/Peregrination.go` track the `.g`; the loader's
 dige gate recompiles + rewrites them on the next in-app run if they drift — no hand-edit needed.
 
-### 3 — hello+trust under mock → `%req:handshake,finished`  `[~]`  BUILT, awaiting in-app proof  (rung 2)
-The four leaf do_fns + the say/hear exchange + frame dispatch are written (`Ghost/N/Peeroleum.g`),
-plus the wrangler's per-pass re-pump + step-3 witness (`Ghost/Story/Peregrination.g`). Both `.g`
-compile clean. Not yet run (Peregrination has no headless path — see Status). The shape:
+### 3 — hello+trust under mock → `%req:handshake,finished`  `[x]`  PROVEN in-app at step 3  (rung 2)
+The four leaf do_fns + the say/hear exchange + frame dispatch (`Ghost/N/Peeroleum.g`), plus the
+wrangler's per-pass re-pump + step-3 witness (`Ghost/Story/Peregrination.g`). Confirmed at step 3:
+both Piers `%req:handshake,finished`, full `protocol/{hello,trust}/{said,heard}`, `%Ud,publicKey`,
+inbox/outbox pairs, `%witnessed:step_3`. The shape:
+
+**Open cosmetic — duplicate B→N hello.** The step-3 snap shows TWO `outbox/emit,type:hello` on Bearing
+(and two matching `inbox/unemit,type:hello` on Nearing): one from step 2's scaffold frame
+(`Lake_sides_up`'s `Peeroleum_send(wB,{type:hello})`, the heading-2 transport proof) and one from
+step 3's real `say_hello`. The N→B direction has no dup (Nearing only sends at step 3). Harmless — the
+handshake completes — but it muddies the snap. Cleanest tidy: make step 2's scaffold frame a
+`type:noop` (a pure transport ping; spec §7.3 sanctions `noop` pre-Ud, and `Peeroleum_deliver` won't
+dispatch it to a hear_*), so step 2 still proves the carrier and `%witnessed:step_2` still stamps, but
+the hello is sent exactly once (at step 3). Defer to heading 4 if you'd rather let acks/whittle reshape
+the outbox first. (Touches the heading-2 narrative, so left for a deliberate call.)
 
 **Spine (`Peeroleum.g`):**
 - `req_said_hello/heard_hello/said_trust/heard_trust` — each finishes the instant its protocol
@@ -236,6 +250,18 @@ every pass (called from `Lake_drive` before the witness); `Lake_witness` stamps 
 once both Piers' `%req:handshake` are `finished`.
 
 **The bombs (what detonates if the next reader doesn't have it):**
+- **Nested reqs below `w` need `c.up` stamped by hand — the walk only wires `A`/`w`.** First
+   in-app run of step 3 showed `req:handshake` standing up on both Piers but with *no leaves, no
+   error* — the classic silent no-handler. Cause: the belief walk wires `A.c.up` (Housing ~992) and
+   `w.c.up` (~1021) but nothing wires domain particles under `w` (`Peering`/`Pier`), so `pier.do()` →
+   `_req_do_one` climbs `pier.c.up` (undefined) and never reaches the House to resolve `req_handshake`
+   — the req just stays `needs_work` and is skipped, no throw. Fix (in `Lake_sides_up`): stamp
+   `Peering.c.up=w; Pier.c.up=Peering` (the migration idiom — cf `examining.c.up=w`, `funks.c.up=w`).
+   Heading 2 never hit this — it only ever walked *down* (`w.o({Peering})…o({Pier})`); heading 3 is
+   the first to pump a Pier-hosted req. **In production the spine must do the same when `req_p2paddy`
+   ensures a `%Pier`** (§11.2): a Pier built without a `c.up` to its w is a Pier whose handshake never
+   pumps. (`req.oai/doai` DO set `req.c.up=host` — line 551 — so the req tree itself is fine; it's the
+   non-req host chain `Pier→Peering→w` that the walk leaves unwired.)
 - **Re-pump lives in the wrangler, NOT reqdo_sweep.** The handshake is nested (`Pier/Peering/w`),
    below reqdo_sweep's w-level reach, so nothing auto-pumps it. `Lake_pump_handshakes` (each pass)
    is the driver; delete it and the leaves freeze after step-3 seeding. (Production will pump via the

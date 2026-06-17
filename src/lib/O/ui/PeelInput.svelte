@@ -153,13 +153,31 @@
     </div>
 
     <!-- irow — abs-positioned overlay, no layout shift.
-         Two rows:
-           row 1 (sibling level): [C after input]  cancel  ×
-           row 2 (child level, margin-top gap): [C in input]  type buttons
-         The visual gap between rows signals the indent difference. -->
+         Two rows, top-to-bottom in document order — an inner child lands before a
+         later sibling, so the child row reads first:
+           row 1 (child level, stepped in): [C in input]  ↳type buttons
+           row 2 (sibling level):           [C after input]  type buttons  cancel  ×
+         The visual indent on the child row signals the level difference. -->
     {#if on_crud?.orb_open}
         <div class="pi-irow">
-            <!-- row 1: sibling-level operations -->
+            <!-- row 1: child-level operations — visually stepped in -->
+            {#if on_crud.on_start_in || on_crud.on_pick_in_type}
+                <div class="pi-irow-row pi-irow-row-in">
+                    <input class="pi-input pi-irow-nano"
+                           placeholder="C"
+                           title="type to add a child inside this"
+                           oninput={(ev) => irow_input(ev as InputEvent, on_crud!.on_start_in)} />
+                    {#if on_crud.add_types?.length && on_crud.on_pick_in_type}
+                        {#each on_crud.add_types as t (t)}
+                            <button class="pi-irow-type pi-irow-type-in"
+                                    title="add {t} inside"
+                                    onclick={() => on_crud!.on_pick_in_type!(t)}>↳{t}</button>
+                        {/each}
+                    {/if}
+                </div>
+            {/if}
+
+            <!-- row 2: sibling-level operations — also carries cancel + delete -->
             <div class="pi-irow-row">
                 {#if on_crud.on_start_after || on_crud.on_pick_after_type}
                     <input class="pi-input pi-irow-nano"
@@ -177,23 +195,6 @@
                 <button class="pi-irow-cancel" onclick={on_crud.on_cancel_orb}>cancel</button>
                 <button class="pi-irow-del" title="delete" onclick={on_crud.on_del}>×</button>
             </div>
-
-            <!-- row 2: child-level operations — visually stepped in -->
-            {#if on_crud.on_start_in || on_crud.on_pick_in_type}
-                <div class="pi-irow-row pi-irow-row-in">
-                    <input class="pi-input pi-irow-nano"
-                           placeholder="C"
-                           title="type to add a child inside this"
-                           oninput={(ev) => irow_input(ev as InputEvent, on_crud!.on_start_in)} />
-                    {#if on_crud.add_types?.length && on_crud.on_pick_in_type}
-                        {#each on_crud.add_types as t (t)}
-                            <button class="pi-irow-type pi-irow-type-in"
-                                    title="add {t} inside"
-                                    onclick={() => on_crud!.on_pick_in_type!(t)}>↳{t}</button>
-                        {/each}
-                    {/if}
-                </div>
-            {/if}
         </div>
     {/if}
 </div>
@@ -287,10 +288,14 @@
     .pi-irow-row {
         display: flex; align-items: center; gap: 0.2rem;
     }
-    /* child row: margin-top creates the visual gap that reads as indent */
+    /* child row sits first now (document order); its padding-left reads as indent */
     .pi-irow-row-in {
-        margin-top: 0.2em;
         padding-left: 0.5rem;   /* echo the .ls-items indent */
+    }
+    /* the gap that reads as the level step belongs between child row and the
+       sibling row that follows it */
+    .pi-irow-row-in + .pi-irow-row {
+        margin-top: 0.2em;
     }
 
     /* nano inputs — 2ch wide, real inputs */

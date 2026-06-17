@@ -543,14 +543,26 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     },
 
     // ── Lies_arm_engaged ─────────────────────────────────────────────────
-    //   Self-arming limbs.  Called from Lies_i_Spotlight on every cursor move.
-    //   When the *engaged What* changes, strike every %havoc,arm limb authored
-    //   in that What's subtree — the test runs itself the moment its What is
-    //   looked at.  Engagement rides the Spotlight cursor, which Lang opens and
-    //   scrolls the What's region into view, so "engaged" already means "not
-    //   folded away" (Lang openness + Scrollability) without a second signal.
-    //   Edge-triggered on the What via examining.c.engaged_what: moving the
-    //   cursor within one What does not re-fire; leaving and returning re-arms.
+    //   Self-arming limbs (parked first cut — dormant until a pad opts in with
+    //   arm:1).  Called from Lies_i_Spotlight on every cursor move.  When the
+    //   *engaged What* changes, strike every %havoc,arm limb authored in that
+    //   What's subtree — the test runs itself the moment its What is looked at.
+    //   Engagement rides the Spotlight cursor, which Lang opens and scrolls the
+    //   What's region into view, so "engaged" already means "not folded away"
+    //   (Lang openness + Scrollability) without a second signal.  Edge-triggered
+    //   on the What via examining.c.engaged_what: moving the cursor within one
+    //   What does not re-fire; leaving and returning re-arms.
+    //
+    //   < KNOWN RACE / deferred: firing synchronously here races a cold dock
+    //     open — the cursor move that engages the What also kicks the dock open
+    //     (Lang_workon_update → Dock_open), which settles over later req:Store
+    //     ticks, so a limb that reads the active doc (surprise_read) can fire
+    //     before the %Good has content and silently no-op with no retry.  The
+    //     proper home is the tick pump at a run-level: the Funkcion pump runs in
+    //     req:Store Phase 2b, AFTER dock reads land, and re-runs every tick — so
+    //     an armed limb hosted there self-gates on readiness and retries until
+    //     the dock is up.  Build that (with maz-leveled sequencing = the drum
+    //     machine) when self-arming is picked back up; Funkcions come later.
     async Lies_arm_engaged(examining: TheC, src: TheC) {
         const H = this as House
         const w = examining.c.w as TheC | undefined

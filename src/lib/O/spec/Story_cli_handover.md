@@ -28,6 +28,23 @@ Each Book runs in its OWN fresh vitest process (clean House singletons); the per
  `run.json` is read back into a fleet table + `/tmp/Story_cli/_fleet.json`. green = every
   step matches, amber = ran but surprises, red = no `run.json` (boot/drive failure).
 
+Include a throwaway test shim with `-I` (detective work without touching Machinery):
+```
+node scripts/Story_cli_run.mjs -I SuchATest           # mount the shim, Book defaults to SuchATest
+node scripts/Story_cli_run.mjs -I SuchATest -b Probe  # shim, run Book:Probe
+node scripts/Story_cli_run.mjs MundaneStation         # no shim, just run a Book
+node scripts/Story_cli_run.mjs -I SuchATest --accept  # record a fixture for the shim Book
+```
+The real test-case games (Mundane, MachReqy, the Understand* suite…) attach by being
+ rendered `<X {M}/>` in **Machinery.svelte's template**, depositing a worker via `M.eatfunc`
+  on mount.  `-I` does the same for one extra component without editing that template: the
+   runner mounts it alongside `<Ghost>` with the same `M={eatfunc}` shim.  A Book with no
+    `toc.snap` runs in `mode:'new'` (total=1) — one recorded step at
+     `/tmp/Story_cli/<Book>/001.got.snap`.  The shim's worker is `<w-name>(A,w)` (Agency
+      dispatches `this[w.sc.w](A,w)`); for a default actor that is the Book name.  Edit
+       `scripts/SuchATest.svelte`, re-run, read the snap. Mechanism under the hood is the
+        `INCLUDE=<name>` env the spec reads; `-I` is the ergonomic front for it.
+
 Cold run ≈ 40s (≈99% is vite transforming the 500+ ghost graph + codemirror/cytoscape/
  peerjs). `vitest --watch` keeps a warm parent so re-runs are ~1s; `pool:'forks'` gives
   each run a fresh child (a precise, un-mutated copy — the "fork a non-HMR child per run").
@@ -71,9 +88,12 @@ grep -rn surprise /tmp/Story_cli/PortPlanet/
 - **noCyto + lenient:** patch `The_Opt_val('noCyto')→true` (else the tick-1 Cyto commission
    throws "no House has A:Cyto") and set `w.c.lenient=true` (so `check` mode walks all steps
     instead of pausing on the first dige mismatch).
-- **Wormhole:** skip the browser DirectoryOpener; wire `A:Wormhole`/`w:Wormhole` and set
-   `WA.c.nav` to a node-fs object with `read_file(dir,file)`/`write_file`/`dir` — the worker
-    funnels all I/O through `A.c.nav`.
+- **Wormhole:** skip the browser DirectoryOpener; the runner injects a node backend at the
+   `WA.c.nav` seam — `scripts/NodeWormholeNav.ts`, an overlay that reads repo→`/tmp` sandbox and
+    writes to the sandbox (so compile-pipeline Books don't mutate the tree), letting `wormhole/`
+     fixture writes pass through to the repo only under `ACCEPT`. The worker funnels all I/O
+      through `A.c.nav`'s three methods (`read_file`/`write_file`/`dir`). The backend abstraction
+       and where it's going (OPFS-from-GitHub, Identities) is its own brief: **`Wormhole_backends_handover.md`**.
 - **The runner owns its verdict:** it does its own mo:main-normalized diff of each got vs the
    fixture rather than trusting Story's internal dige.
 
@@ -130,9 +150,12 @@ The `app` compose service ran as **root** (alpine, no `user:`), writing root-own
 
 ## Files
 
-- `scripts/Story_cli.svelte` — the Otro-type shell (constructs H, mounts Ghost)
-- `scripts/Story_cli.spec.ts` — the driver + pile serialiser (the runner proper; `ACCEPT=1` re-records)
+- `scripts/Story_cli.svelte` — the Otro-type shell (constructs H, mounts Ghost; `include` prop mounts the `-I` shim with an M-shim)
+- `scripts/Story_cli.spec.ts` — the driver + pile serialiser (the runner proper; `ACCEPT=1` re-records; reads `INCLUDE` for `-I`)
+- `scripts/NodeWormholeNav.ts` — node backend for `w:Wormhole` (overlay; see `Wormhole_backends_handover.md`)
 - `scripts/Story_cli_sweep.mjs` — fleet sweep: run every Book in its own process, aggregate green/amber/red
+- `scripts/Story_cli_run.mjs` — single-Book runner with `-I <shim>` / `-b <Book>` / `--accept`
+- `scripts/SuchATest.svelte` — the `-I` detective shim: one `SuchATest(A,w)` worker, an editable canvas
 - `scripts/Story_cli.vitest.config.mjs` — vitest harness (jsdom, browser condition, forks)
 - `scripts/Story_cli.setup.ts` — globals (indexedDB stub, raf, tolerate late rejections)
 - `scripts/Story_cli_boot.spec.ts` — minimal boot proof (House constructs, ghosts deposit)

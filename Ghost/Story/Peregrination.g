@@ -70,8 +70,14 @@ Lake_sides_up(w):
     H i A:Nearing$:AN/w:Peeroleum$:wN
     // each side: a Peering and a Pier named by the peer's identity (whom this Pier
     //  is a Pier to), plus a mock transport on the Peering's active_transport.
-    wB i Peering,name:bearing/Pier,pub:nearing
-    wN i Peering,name:nearing/Pier,pub:bearing
+    wB i Peering,name:bearing$:peerB/Pier,pub:nearing$:pierB
+    wN i Peering,name:nearing$:peerN/Pier,pub:bearing$:pierN
+    // wire c.up below w: the belief walk wires A.c.up and w.c.up but NOT the
+    //  domain particles under w (Peering/Pier), so a nested req's pump (pier.do())
+    //   can't climb to the House to resolve its do_fn. Stamp the chain — the
+    //    migration idiom (cf examining.c.up=w, funks.c.up=w). Objects-on-.c → raw JS.
+    peerB.c.up = wB; pierB.c.up = peerB
+    peerN.c.up = wN; pierN.c.up = peerN
     &transport,AB,wB
     &transport,AN,wN
     // pair the two mock-ports so each side delivers into the other (spec §15) —

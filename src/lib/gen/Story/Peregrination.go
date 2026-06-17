@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Peregrination(): string { return 'a49f89686d1cd7fc' },
+    Ghostmeta_Ghost_Story_Peregrination(): string { return '96a0d5dcf282ed39' },
 
 
 // LakeNetherland — the Peeroleum test-case wrangler (the outer test layer).
@@ -89,8 +89,14 @@ Lake_sides_up(w) {
     let {AN, wN} = this._i_drill_caps(this, [{sc: {A: "Nearing"}, caps: [{as: "AN", key: "A", val: false}]}, {sc: {w: "Peeroleum"}, caps: [{as: "wN", key: "w", val: false}]}])
     // each side: a Peering and a Pier named by the peer's identity (whom this Pier
     //  is a Pier to), plus a mock transport on the Peering's active_transport.
-    this._i_drill(wB, [{sc: {Peering: 1, name: "bearing"}}, {sc: {Pier: 1, pub: "nearing"}}])
-    this._i_drill(wN, [{sc: {Peering: 1, name: "nearing"}}, {sc: {Pier: 1, pub: "bearing"}}])
+    let {peerB, pierB} = this._i_drill_caps(wB, [{sc: {Peering: 1, name: "bearing"}, caps: [{as: "peerB", key: "name", val: false}]}, {sc: {Pier: 1, pub: "nearing"}, caps: [{as: "pierB", key: "pub", val: false}]}])
+    let {peerN, pierN} = this._i_drill_caps(wN, [{sc: {Peering: 1, name: "nearing"}, caps: [{as: "peerN", key: "name", val: false}]}, {sc: {Pier: 1, pub: "bearing"}, caps: [{as: "pierN", key: "pub", val: false}]}])
+    // wire c.up below w: the belief walk wires A.c.up and w.c.up but NOT the
+    //  domain particles under w (Peering/Pier), so a nested req's pump (pier.do())
+    //   can't climb to the House to resolve its do_fn. Stamp the chain — the
+    //    migration idiom (cf examining.c.up=w, funks.c.up=w). Objects-on-.c → raw JS.
+    peerB.c.up = wB; pierB.c.up = peerB
+    peerN.c.up = wN; pierN.c.up = peerN
     this.transport(AB,wB)
     this.transport(AN,wN)
     // pair the two mock-ports so each side delivers into the other (spec §15) —

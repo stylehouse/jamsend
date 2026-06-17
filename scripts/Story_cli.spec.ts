@@ -23,21 +23,20 @@ import { mount } from 'svelte'
 import { readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs'
 import path from 'node:path'
 import Story_cli from './Story_cli.svelte'
+import { NodeWormholeNav } from './NodeWormholeNav'
 
 const ROOT   = process.cwd()
 const BOOK   = process.env.BOOK || 'PortPlanet'
 const ACCEPT = !!process.env.ACCEPT   // re-record: accept the got snaps as the new fixtures
 const OUT    = path.join('/tmp/Story_cli', BOOK)
 
-const nodeNav = {
-    async read_file(dir: string, file: string): Promise<string | null> {
-        try { return readFileSync(path.join(ROOT, dir, file), 'utf8') } catch { return null }
-    },
-    async write_file(dir: string, file: string, data: string) {
-        mkdirSync(path.join(ROOT, dir), { recursive: true }); writeFileSync(path.join(ROOT, dir, file), data)
-    },
-    async dir() { return null },
-}
+// node backend for w:Wormhole — an overlay: reads fall through repo→sandbox, writes land
+//  in the sandbox so compile-pipeline Books (Peregrination et al.) write their gen/+Ghost/
+//   output without touching the tree.  Fixture writes under wormhole/ pass through to the
+//    real repo only when recording (ACCEPT).  Fresh overlay per run.
+const OVERLAY = '/tmp/Story_cli_fs'
+try { rmSync(OVERLAY, { recursive: true, force: true }) } catch {}
+const nodeNav = new NodeWormholeNav(ROOT, OVERLAY, ACCEPT)
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 const allHouses = (H: any): any[] => { const out=[H]; const w=(h:any)=>{for(const s of (h.o?.({H:1})??[])) if(!out.includes(s)){out.push(s);w(s)}}; w(H); return out }
 const hide = (s: string) => s.split('\n').filter(l => !/\bmo:main\b/.test(l)).join('\n')   // mo:main lives only in stale fixtures now
@@ -47,8 +46,15 @@ const dumpC = (n: any, d = 0): any =>
     d > 12 ? '…' : { sc: { ...n.sc }, kids: (n.o?.({}) ?? []).map((k: any) => dumpC(k, d + 1)) }
 
 test(`Story_cli: run + dump Book:${BOOK}`, async () => {
+    // -I shim: INCLUDE=SuchATest (or a .svelte path) mounts an extra ghost alongside Ghost,
+    //  depositing its worker onto H — lets a tiny detective Book run without touching Machinery.
+    let include: any = undefined
+    if (process.env.INCLUDE) {
+        const name = process.env.INCLUDE.replace(/\.svelte$/, '').replace(/^\.?\//, '')
+        include = (await import(`./${name}.svelte`)).default
+    }
     let H: any
-    mount(Story_cli, { target: document.body, props: { onhouse: (h: any) => { H = h } } })
+    mount(Story_cli, { target: document.body, props: { onhouse: (h: any) => { H = h }, include } })
     for (let i = 0; i < 40 && !(H && typeof H.story_drive === 'function'); i++) await sleep(50)
     expect(typeof H?.story_drive, 'ghosts deposited').toBe('function')
 

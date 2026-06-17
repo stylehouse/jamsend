@@ -19,9 +19,9 @@ Snap:H
       self,round=5	{"mung":["age"]}
       w:Pantheate
         include:gen/N/Peeroleum.go
-        req:include,gen_path:gen/N/Peeroleum.go,path:Ghost/N/Peeroleum.g,source_dige:3ebb6053102cf12d,ghostmeta_name:Ghostmeta_Ghost_N_Peeroleum,permanent,live_dige:3ebb6053102cf12d,finished
+        req:include,gen_path:gen/N/Peeroleum.go,path:Ghost/N/Peeroleum.g,source_dige:a00b545ead970146,ghostmeta_name:Ghostmeta_Ghost_N_Peeroleum,permanent,live_dige:a00b545ead970146,finished
         include:gen/Story/Peregrination.go
-        req:include,gen_path:gen/Story/Peregrination.go,path:Ghost/Story/Peregrination.g,source_dige:5361f7d5ff05fbc7,ghostmeta_name:Ghostmeta_Ghost_Story_Peregrination,permanent,live_dige:5361f7d5ff05fbc7,finished
+        req:include,gen_path:gen/Story/Peregrination.go,path:Ghost/Story/Peregrination.g,source_dige:96a0d5dcf282ed39,ghostmeta_name:Ghostmeta_Ghost_Story_Peregrination,permanent,live_dige:96a0d5dcf282ed39,finished
         self,round=5	{"mung":["age"]}
         o_elvis:Ghost_update_notify
     watched:ave
@@ -43,4 +43,3 @@ Snap:H
       action,role:nogen,label:nogen,icon:nogen,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:softgen,label:softgen,icon:softgen,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:compo,label:compo,icon:compo,cls:toggle-off	{"ref":{"fn":"Function()"}}
-    mo:main,interval=3.6	{"mung":["id"]}

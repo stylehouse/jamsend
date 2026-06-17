@@ -52,10 +52,7 @@ story:InterestLive
         nopush
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg=1.093
-      sample=0.987,at=1781698508
-      sample=0.95,at=1781702481
-      sample=0.892,at=1781702502
+    TimeTotal:beliefs,avg=1.216
       sample=0.905,at=1781704615
       sample=1.194,at=1781705337
       sample=1.194,at=1781705353
@@ -63,6 +60,9 @@ story:InterestLive
       sample=1.48,at=1781707260
       sample=0.951,at=1781711811
       sample=0.914,at=1781711895
+      sample=1.272,at=1781713633
+      sample=1.446,at=1781714201
+      sample=1.336,at=1781714794
   step,dige:da8b45a3d27c352f
   step=2,dige:ca0e6e58560dbba2
   step=3,dige:3459d2d8ba85efe0

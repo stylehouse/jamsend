@@ -254,6 +254,10 @@
     let draft_focus_sc = $state(false)   // focus sc field instead of mainkey on open
     const draft_type = new WeakMap<TheC, ItemType>()
     const add_type_C   = new WeakMap<TheC, ItemType>()
+    // containers whose pending add is a *raw* C — the plain "C" box, no imposed
+    //  mainkey: the typed text is peel()'d straight into the sc, so the mainkey is
+    //  whatever you type (a %havoc, or anything), not a forced ItemType.
+    const add_raw_C    = new WeakSet<TheC>()
     const orb_trigger  = new WeakMap<TheC, TheC>()    // container → item whose orb opened this add
 
     // ── add-item form ─────────────────────────────────────────────────
@@ -263,20 +267,22 @@
     //     after_item is stored in a WeakMap so submit_add_after knows where to splice.
     const after_item_C = new WeakMap<TheC, TheC>()   // container → insert-after target
 
-    function pick_and_open(container: TheC, t: ItemType, seed = '') {
+    //   raw=true is the plain "C" box: no ItemType, the typed text is peel()'d into
+    //   the sc (mainkey is whatever you type — a %havoc, anything).  t is ignored then.
+    function pick_and_open(container: TheC, t: ItemType | undefined, seed = '', raw = false) {
         editing.clear()
         editing.add(container)
-        add_type_C.set(container, t)
+        if (raw) add_raw_C.add(container); else add_type_C.set(container, t!)
         draft_mk = seed
         draft_sc = ''
         // add forms always focus mainkey — user sets the name first, refines sc after
         // < Point :1 shortcut: user can just submit blank mainkey, sc will auto-focus next
         draft_focus_sc = false
     }
-    function pick_and_open_after(container: TheC, after: TheC, t: ItemType, seed = '') {
+    function pick_and_open_after(container: TheC, after: TheC, t: ItemType | undefined, seed = '', raw = false) {
         editing.clear()
         editing.add(container)
-        add_type_C.set(container, t)
+        if (raw) add_raw_C.add(container); else add_type_C.set(container, t!)
         after_item_C.set(container, after)
         draft_mk = seed
         draft_sc = ''
@@ -284,19 +290,30 @@
     }
     function cancel_add(container: TheC) {
         editing.delete(container)
+        add_type_C.delete(container)
+        add_raw_C.delete(container)
         after_item_C.delete(container)
         orb_trigger.delete(container)
     }
     function submit_add(container: TheC) {
-        const t    = add_type_C.get(container)!
-        const val  = draft_mk.trim()
-        const sc_s = draft_sc.trim()
-        if (!val && t !== 'Point') return
-        const td   = ITEM_TYPES[t]
-        const sc   = td.make_sc(val, sc_s)
-        if (t === 'Doc' && !(sc as any).Doc) return
+        const raw = add_raw_C.has(container)
+        let sc: Record<string, any>
+        if (raw) {
+            // plain "C" box: peel the whole typed text — mainkey is whatever you typed.
+            //  Both fields fold into one peel input, comma-joined.
+            const text = [draft_mk.trim(), draft_sc.trim()].filter(Boolean).join(',')
+            sc = peel(text)
+            if (!Object.keys(sc).length) return
+        } else {
+            const t    = add_type_C.get(container)!
+            const val  = draft_mk.trim()
+            const sc_s = draft_sc.trim()
+            if (!val && t !== 'Point') return
+            sc = ITEM_TYPES[t].make_sc(val, sc_s)
+            if (t === 'Doc' && !(sc as any).Doc) return
+        }
         const child = container.oai(sc)
-        if (t === 'Doc') child.sc.new = 1
+        if (!raw && add_type_C.get(container) === 'Doc') child.sc.new = 1
 
         // if after_item_C is set, splice child just after the target in X.z
         const after = after_item_C.get(container)
@@ -422,6 +439,19 @@
             orb_trigger.set(item, item)
             pick_and_open(item, typ, seed)
         }
+        // raw variants — the plain "C" box: no imposed mainkey, peel()'d on submit
+        function open_after_raw(seed = '') {
+            close_orb()
+            cancel_edit(item)
+            orb_trigger.set(container, item)
+            pick_and_open_after(container, item, undefined, seed, true)
+        }
+        function open_in_raw(seed = '') {
+            close_orb()
+            cancel_edit(item)
+            orb_trigger.set(item, item)
+            pick_and_open(item, undefined, seed, true)
+        }
         // add_types: union of after_types and child_types, deduplicated
         const add_types_set = new Set<string>([
             ...(after_types ?? []),
@@ -463,18 +493,13 @@
                 },
                 on_cancel_orb: () => { close_orb(); cancel_edit(item) },
                 on_del: is_waft ? () => on_delete(waft) : () => delete_item(item, container),
-                // C inputs: first typed char opens the appropriate add form seeded with it
+                // C box: first typed char opens a RAW add form (peel — any mainkey,
+                //  including a %havoc).  Gated by where an add is structurally allowed.
                 on_start_after: after_types?.length
-                    ? (char: string) => {
-                        // default to first after_type when no type has been picked yet
-                        open_after(after_types[0], char)
-                    }
+                    ? (char: string) => open_after_raw(char)
                     : undefined,
                 on_start_in: td.can_add
-                    ? (char: string) => {
-                        const child_types = td.child_types!
-                        open_in(child_types[0], char)
-                    }
+                    ? (char: string) => open_in_raw(char)
                     : undefined,
                 // type buttons: open without seeding mainkey
                 on_pick_after_type: after_types?.length
@@ -492,19 +517,20 @@
     //   orb_item: the item whose orb triggered this add (to close it on cancel).
     //   Always open=true, submit_label='+', no on_crud.
     //   focus_sc only for Point (mainkey is :1 in that case).
+    //   raw ("C" box): no ItemType — label 'C', placeholders hint a free particle.
     function add_item_props(container: TheC, orb_item: TheC): PiProps {
-        const t  = add_type_C.get(container)!
-        const td = ITEM_TYPES[t]
+        const raw = add_raw_C.has(container)
+        const td  = raw ? undefined : ITEM_TYPES[add_type_C.get(container)!]
         return {
-            label:        t,
+            label:        raw ? 'C' : add_type_C.get(container)!,
             open:         true,
-            mk_ph:        td.mk_ph,
-            sc_ph:        td.sc_ph,
+            mk_ph:        raw ? 'havoc:kind' : td!.mk_ph,
+            sc_ph:        raw ? 'emoji:💥,arm:1' : td!.sc_ph,
             mainkey:      draft_mk,
             on_mk:        (v: string) => { draft_mk = v },
             sc_str:       draft_sc,
             on_sc:        (v: string) => { draft_sc = v },
-            focus_sc:     draft_focus_sc,
+            focus_sc:     raw ? false : draft_focus_sc,
             submit_label: '+',
             on_submit:    () => submit_add(container),
             on_cancel:    () => { cancel_add(container); orb_open_C.delete(orb_item) },
@@ -637,7 +663,7 @@
                 {@render pi(item_props(C, upC, t, dpath))}
             </div>
             {#if td.child_types}
-                {#if editing.has(C) && add_type_C.has(C)}
+                {#if editing.has(C) && (add_type_C.has(C) || add_raw_C.has(C))}
                     <div class="ls-add-row">{@render pi(add_item_props(C, orb_trigger.get(C) ?? C))}</div>
                 {/if}
                 {#if items.length}
