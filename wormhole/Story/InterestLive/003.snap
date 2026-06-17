@@ -13,7 +13,7 @@ Snap:H
           Good,type:text/Doc,path:Ghost/test/Peeroleum.g
             known,dige:69f9fd8539393ad7,kind:read	{"mung":["at"]}
           Good,type:text/Waft,path:wormhole/Story/InterestLive/Interestily2/toc.snap,waft_path:Story/InterestLive/Interestily2
-            known,dige:85d32c2f6caf01d8,kind:read	{"mung":["at"]}
+            known,dige:ac1bdc99550c344b,kind:read	{"mung":["at"]}
         Waft:Ting/test,takes
         examining	{"loopy":1}
           req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
@@ -31,7 +31,7 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781673852287,kind:cold,resolved
+          want=1781674850865,kind:cold,resolved
         o_elvis:dock_askies
         Waft:GhostList,lists	{"mung":["seeded"]}
           Funkcion:dirlist,interval_ms=8000	{"mung":["walked_at"]}
@@ -88,8 +88,8 @@ Snap:H
           req:Funkcion,funk_id:GhostList/dirlist,eternal,ok
         Waft:Story/InterestLive/Interestily2
           What:second
-            Doc:Ghost/test/Peeroleum.g
-            Point,method:InterestSecond
+            Doc:Ghost/test/Story/Peregrination.g
+            Point,method:LakeNetherland
         self,round=20	{"mung":["age"]}
         see:🗂 1 doc · 4 Wafts
     A:Lang
@@ -113,7 +113,7 @@ Snap:H
                 def,method:transport,from=65,to=75,line=5
                 def,method:PeerJS,from=108,to=115,line=7
                 def,method:Socket,from=145,to=152,line=9
-              time,compile=0.005,all=0.201
+              time,compile=0.005,all=0.202
               Output,gen_path:gen/test/Peeroleum.go,dige:b84b8d8cc1c85f2b,source_dige:69f9fd8539393ad7
                source: |
                  <script lang="ts">

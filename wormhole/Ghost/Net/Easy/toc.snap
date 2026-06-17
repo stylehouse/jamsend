@@ -1,0 +1,26 @@
+Waft:Ghost/Net/Easy
+  What:the test
+    Doc:src/lib/O/test/Peregrination.svelte
+      Point,method:Peregrination
+      Point,method:Run_A_Peregrination
+    Doc:Ghost/Story/Peregrination.g
+      Point,method:LakeNetherland
+  What:the peer
+    Doc:Ghost/N/Peeroleum.g
+      Point,method:Peeroleum
+      Point,method:req_p2pman
+      Point,method:req_p2paddy
+      Point,method:req_handshake
+  What:transport
+    What:mock
+      Doc:Ghost/N/Peeroleum.g
+        Point,method:transport
+    What:webrtc-sucks
+      What:reliability
+        Doc:Ghost/N/Peeroleum.g
+          Point,method:PeerJS
+          Point,method:Socket
+          Point,method:req_transport_select
+  What:the spec
+    Doc:src/lib/O/spec/Peeroleum_spec.md
+    Doc:src/lib/O/spec/Peeroleum_handover.md

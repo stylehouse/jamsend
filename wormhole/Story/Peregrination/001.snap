@@ -1,7 +1,13 @@
 Snap:H
   H:Peregrination,Run
     A:Peregrination
-      self,round	{"mung":["age"]}
+      self,round=8	{"mung":["age"]}
       w:Peregrination
-        self,round	{"mung":["age"]}
+        req:ensure_compiled,path:Ghost/N/Peeroleum.g,asked
+          ttlilt,until_ts=1781674848.201,waiting:compile
+        req:ensure_compiled,path:Ghost/Story/Peregrination.g,asked
+          ttlilt,until_ts=1781674848.201,waiting:compile
+        self,round=8	{"mung":["age"]}
     mo:main,interval=3.6	{"mung":["id"]}
+    ttlilt,of_w:Peregrination,until_ts=1781674848.201,waiting:compile	{"ref":{"req":"%req:ensure_compiled, path:Ghost/N/Peeroleum.g, asked:1"}}
+    ttlilt,of_w:Peregrination,until_ts=1781674848.201,waiting:compile	{"ref":{"req":"%req:ensure_compiled, path:Ghost/Story/Peregrination.g, asked:1"}}

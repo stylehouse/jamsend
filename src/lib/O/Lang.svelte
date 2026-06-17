@@ -1897,8 +1897,21 @@
                 //       leaves the snap.  (Spares mid-bind Trails — they carry no sc.waft yet.)
                 const open = new Set(roster.map(e => e.path))
                 for (const it of languinio.o({ Interest: 1 }) as TheC[]) {
-                    const le = it.c.LE as TheC | undefined
                     const waft = it.sc.waft as string | undefined
+                    // Drop the ghost row a push later: reconcile marks a departed giver
+                    //  state:gone; the NEXT push with it still absent retires the row, so it
+                    //   lingers exactly one beat (the UI's window to animate it out) then goes.
+                    if (it.sc.state === 'gone' && (waft == null || !open.has(waft))) {
+                        languinio.drop(it); continue
+                    }
+                    // Retire a closed giver's per-Interest %LE before reconcile.  Each open
+                    //  giver keeps its own LE (the crossfade), and reconcile's gone-loop spares
+                    //   any c.LE-bearing Interest ("alive by virtue of being checked out") — but
+                    //    a giver whose Waft has LEFT the roster is truly gone (you cannot switch
+                    //     back to a closed Waft), so drop its clone + c.LE here.  That clears the
+                    //      guard so reconcile marks the Interest state:gone, and the dropped LE
+                    //       leaves the snap.  (Spares mid-bind Trails — they carry no sc.waft yet.)
+                    const le = it.c.LE as TheC | undefined
                     if (le && waft && !open.has(waft)) {
                         delete it.c.LE
                         if (languinio.c.active_LE === le) delete languinio.c.active_LE

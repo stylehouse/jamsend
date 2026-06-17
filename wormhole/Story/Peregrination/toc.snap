@@ -1,20 +1,14 @@
 story:Peregrination
   Styles
-    matstyle:w
-      style:background-color,v:#8f3232
-      meta:is_compound,v
-      meta:label,fmt:%s,keys:w
   Plan
+    Prep
+      i_elvisto:Lies,e:Lies_open_Waft
+        esc:path,v:Ghost/Net/Easy
   Opt
-    For
     noCyto
+    For
   TimeSpool
-    TimeTotal:beliefs,avg=0.012
-      sample=0.003,at=1781673677
-      sample=0.006,at=1781673691
-      sample=0.01,at=1781673703
-      sample=0.01,at=1781673713
-      sample=0.032,at=1781673717
-      sample=0.009,at=1781673773
-  step,dige:f508450b9364e561
-  step=2,dige:1f9d4d594d9c9aa5
+    TimeTotal:beliefs,avg=0.247
+      sample=0.086,at=1781674848
+      sample=0.407,at=1781675090
+  step,dige:885fcd64dd2550ec

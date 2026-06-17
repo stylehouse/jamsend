@@ -378,15 +378,19 @@ roster push so Lang holds renderable data. The `InterestStrip` (the switcher) is
 foreground control already built; item 4 is making the *engaged* lens actually paint. Decide the
 data-channel shape first — that's the design crux.
 
-## Phase C — minor polish (quick, snap-verifiable)
-- **Drop a gone Interest a step later** (the ghost row): `interest_reconcile`'s gone-loop
-  (Interest.svelte) marks `state:gone` but never drops. Change it to `lang.drop(it)` when an
-  Interest is *already* gone and still absent (mark first pass, drop next). Needs a second roster
-  push to witness in the gate.
-- **Distinct doc per giver**: Interestily2's fixture shares `Ghost/test/Peeroleum.g` with
-  Interestily, so foreground-switch moves the cursor/What but not the active dock. Point
-  Interestily2 at `Ghost/test/Story/Peregrination.g` (method `LakeNetherland`, as LakeFlush uses)
-  so the dock visibly switches.
+## Phase C — minor polish — IMPLEMENTED 2026-06-17 (needs in-app record)
+- **Distinct doc per giver** — DONE. `wormhole/Story/InterestLive/Interestily2/toc.snap` now points
+  at `Ghost/test/Story/Peregrination.g` / `Point,method:LakeNetherland` (was Peeroleum.g/InterestSecond),
+  so foregrounding Interestily2 (Prep4) visibly switches the active dock. Re-record: Prep4+ show the
+  Peregrination dock/compile + `in_Doc:…Peregrination.g` on Interestily2's Trail and its LE.
+- **Drop a gone Interest a step later** (the ghost row) — DONE, **Lang-side** (the frozen
+  `interest_reconcile` is untouched). In the `req:waft_roster` do_fn (Lang.svelte), before reconcile:
+  an Interest already `state:gone` and still absent from the incoming roster is `languinio.drop(it)`'d —
+  so reconcile marks a departed giver gone on push N, and push N+1 (still absent) retires the row. It
+  lingers exactly one beat. Witnessed by **InterestLive Prep=11** (`e:Lies_close_Waft` on the
+  sidetrack `…/Interestily/side`): that second roster push drops the already-gone Interestily2 row
+  (it disappears) and marks the now-closed Sidetrack gone. Plan is now **11 Preps** (added
+  `step=11,dige:` placeholder — runner records the real dige).
 
 ## Where the real-channel hooks live (quick index)
 `e_Lang_foreground` / `e_Lang_sprout_sidetrack` (Lang.svelte); `e_Lies_foreground_waft` /
@@ -395,6 +399,7 @@ data-channel shape first — that's the design crux.
 Per-Interest LE (Phase A): `Lang_active_interest` / `Lang_active_LE` (Lang.svelte) are the
 foreground resolvers everything reads through; `Lang_set_interest` owns each giver's `c.LE`;
 `LE_for()` (LiesEnd) returns the active LE for the bare reason.
-Gate Book: `wormhole/Story/InterestLive/` (10 Preps + 10 `step=` lines; fixtures Interestily{,2}).
+Gate Book: `wormhole/Story/InterestLive/` (11 Preps + `step=` lines; fixtures Interestily{,2} —
+Interestily→Peeroleum.g, Interestily2→Peregrination.g for a visible dock switch).
 Elvis names must match handlers verbatim ([[elvis-handler-name-verbatim]]); step lines drive steps
 ([[story-step-lines-drive-steps]]).
