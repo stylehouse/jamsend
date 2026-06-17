@@ -972,12 +972,20 @@
         const waft      = e.sc.waft as string | undefined
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
         if (!languinio || !kind) return
-        if (kind === 'Trail' || kind === 'Sidetrack') {
+        if (kind === 'Trail') {
+            // A giver Trail foregrounds by real checkout: set ActiveInterest eagerly for
+            //  instant strip feedback, then land the Lies cursor on the Waft's What so
+            //   req_understanding re-arms the single LE there (Lang_set_interest arbitration).
             const ai = languinio.oai({ ActiveInterest: 1 })
             ai.sc.kind = kind
             if (waft != null) ai.sc.waft = waft
             if (waft) H.i_elvisto('Lies/Lies', 'Lies_foreground_waft', { path: waft })
         } else {
+            // A Sidetrack's cursor is off_what — there is no What to check out — so it
+            //  foregrounds in place, not via a Lies cursor-landing.  The light kinds
+            //   (GhostList) likewise.  interest_foreground sets ActiveInterest for the social
+            //    decks (Trail|Sidetrack) and engages the lens for the rest.  A real Sidetrack's
+            //     own LE + off-anchor edit traffic is the dual-LE crossfade — still future.
             H.interest_foreground(languinio, kind, waft)
         }
     },

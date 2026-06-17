@@ -1,7 +1,7 @@
 Snap:H
   H:InterestLive,Run
     A:Lies
-      self,round=31	{"mung":["age"]}
+      self,round=34	{"mung":["age"]}
       w:Lies
         Opt
           nowriting
@@ -31,7 +31,9 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781666544945,kind:cold,resolved
+          want=1781670424749,kind:cold
+          want=1781670428962,kind:cold
+          want=1781670429919,kind:cold,resolved
         o_elvis:dock_askies
         Waft:GhostList,lists	{"mung":["seeded"]}
           Funkcion:dirlist,interval_ms=8000	{"mung":["walked_at"]}
@@ -86,10 +88,15 @@ Snap:H
             Doc:src/lib/O/Interest.svelte,name:Interest	{"mung":["noticed_at"]}
         Funkcions
           req:Funkcion,funk_id:GhostList/dirlist,eternal,ok
-        self,round=31	{"mung":["age"]}
-        see:🗂 1 doc · 3 Wafts
+        Waft:Story/InterestLive/Interestily2
+          What:second
+            Doc:Ghost/test/Peeroleum.g
+            Point,method:InterestSecond
+        Waft:Story/InterestLive/Interestily/side,tentative,from:Story/InterestLive/Interestily
+        self,round=34	{"mung":["age"]}
+        see:🗂 1 doc · 5 Wafts
     A:Lang
-      self,round=24	{"mung":["age"]}
+      self,round=31	{"mung":["age"]}
       w:Lang
         Opt
           txtsyntaxdump
@@ -109,7 +116,7 @@ Snap:H
                 def,method:transport,from=65,to=75,line=5
                 def,method:PeerJS,from=108,to=115,line=7
                 def,method:Socket,from=145,to=152,line=9
-              time,compile=0.003,all=0.198
+              time,compile=0.004,all=0.209
               Output,gen_path:gen/test/Peeroleum.go,dige:b84b8d8cc1c85f2b,source_dige:69f9fd8539393ad7
                source: |
                  <script lang="ts">
@@ -145,7 +152,6 @@ Snap:H
                  </script>
             Pmirrors
               Pmirror,src_Waft:Story/InterestLive/Interestily,spec:InterestLanding	{"ref":{"src_Point":"%Point:1, method:InterestLanding"}}
-              Pmirror,src_Waft:Story/InterestLive/Interestily,spec:InterestLanding	{"ref":{"src_Point":"%Point:1, method:InterestLanding, class:focus"}}
             Navicade
               Mapule,kind:def,key:Peeroleum,depth=0,line=2,from,to=11
               Mapule,kind:def,key:transport,depth=0,line=5,from=65,to=75
@@ -161,17 +167,23 @@ Snap:H
           Interest:Trail,waft:Story/InterestLive/Interestily,lens:NaviCado,presence:active,state:locked,in_Doc:Ghost/test/Peeroleum.g	{"ref":{"src":"%What:landing"}}
             cursor,what:Story/InterestLive/Interestily,doc:Story/InterestLive/Interestily/doc0,depth=0
             MapReport,n_def=4,n_call=0,n_region=0,n_cf=0
-          Interest:GhostList,waft:GhostList,lens:DocGhostList,presence:active,state:pending
+          Interest:GhostList,waft:GhostList,lens:DocGhostList,presence:active,state:locked
             cursor,doc:GhostList/doc0
-          ActiveInterest,kind:Trail,waft:Story/InterestLive/Interestily
+          ActiveInterest,kind:Sidetrack,waft:Story/InterestLive/Interestily/side
           dock,active	{"loopy":1,"hid":1}
           Change
             backend,dige:69f9f
             storage,dige:69f9f,dim:false
-            compile,dige:69f9f,dim:false,secs=0.003
-          Interest:Trail,waft:Story/InterestLive/Interestily2,lens:NaviCado,presence:active,state:gone
+            compile,dige:69f9f,dim:false,secs=0.004
+          Interest:Trail,waft:Story/InterestLive/Interestily2,lens:NaviCado,presence:active,state:pending,in_Doc:Ghost/test/Peeroleum.g	{"ref":{"src":"%What:second"}}
             cursor,what:Story/InterestLive/Interestily2,doc:Story/InterestLive/Interestily2/doc0,depth=0
+            MapReport,n_def=4,n_call=0,n_region=0,n_cf=0
+          Interest:Sidetrack,from:Story/InterestLive/Interestily,lens:NaviCado-light,presence:active,state:locked,waft:Story/InterestLive/Interestily/side
+            cursor,off_what,what:Story/InterestLive/Interestily/side
+            LE:armed
         LE	{"loopy":0,"ref":{"target":"%What:landing"}}
+          State
+          {"encode":1,"snap_origin":"Doc:Ghost/test/Peeroleum.g\nPoint,method:InterestLanding\n","snap_working":"Doc:Ghost/test/Peeroleum.g\nPoint,method:InterestLanding\nPoint,method:InterestLanding,class:focus\n","dirty":"1"}
           Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:landing","topD":"%Demonstrations:origin"}}
             Demonstrations:origin
               Demonstrations:origin,Doc:Ghost/test/Peeroleum.g
@@ -185,19 +197,17 @@ Snap:H
                 Understandable
               Understandable
             News:working,goners=0,neus=2
-          State,changey
-          {"encode":1,"snap_origin":"Doc:Ghost/test/Peeroleum.g\nPoint,method:InterestLanding\n","snap_working":"Doc:Ghost/test/Peeroleum.g\nPoint,method:InterestLanding\nPoint,method:InterestLanding,class:focus\n","dirty":"1"}
         req:workon,following,auto_push=0	{"ref":{"LE":"%LE:1, target:%What","w":"%w:Lang"}}
-          {"req":"understanding","maz":3,"permanent":1,"sig":"1:13:1:0","what":"landing","finished":1}
+          {"req":"understanding","maz":3,"permanent":1,"sig":"3:13:1:0","what":"landing","finished":1}
           req:ingredients,maz=2,permanent,sig:Ghost/test/Peeroleum.g,finished
             req:furnishing,path:Ghost/test/Peeroleum.g,permanent,asked,finished
-          {"req":"instrumentation","permanent":1,"sig":"Ghost/test/Peeroleum.g:69f9fd8539393ad7:1:52","have_Map":1,"n_pmirrors":2,"finished":1}
+          {"req":"instrumentation","permanent":1,"sig":"Ghost/test/Peeroleum.g:69f9fd8539393ad7:3:66","have_Map":1,"n_pmirrors":1,"finished":1}
         req:waft_roster,eternal,subscribed
         o_elvis:dock_content
         received,doc_opened,doc:Ghost/test/Peeroleum.g
         received,editorBegins,doc:Ghost/test/Peeroleum.g
         o_elvis:Lies_compile_settled
-        self,round=24	{"mung":["age"]}
+        self,round=31	{"mung":["age"]}
         see:🟦 tiles 0 bookmarks
     A:Pantheate
       self,round=12	{"mung":["age"]}

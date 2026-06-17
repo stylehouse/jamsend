@@ -178,8 +178,17 @@ those lines (not the Preps alone) drive how many steps execute; a Prep fires at 
 So when adding Preps, add a matching `step=N,dige:<placeholder>` line per new step (the numbering
 matters; the dige is a lie until the runner records the real one on the next run).
 
-Still future: **foregrounding** a Sidetrack (the crossfade onto its off_what cursor) — it shares
-the dual-LE crossfade work above; the lifecycle (sprout → bind) is what lands here.
+**Foregrounding** a Sidetrack now works in place (Prep=9): since its cursor is `off_what` (no What
+to check out), `e_Lang_foreground` routes it through `interest_foreground` rather than a Lies
+cursor-landing — it becomes the `ActiveInterest` and locks. So the full stand-in lifecycle
+(sprout → bind → foreground) is now covered on the real wire.
+
+Still future (the **dual-LE crossfade**): the single `w/{LE:1}` stays armed on the foreground
+*Trail* even when the Sidetrack is the ActiveInterest — so the Sidetrack foregrounds as an
+indicator (ActiveInterest + locked) but doesn't yet carry its own off-anchor edit clone. Real
+per-deck LEs (both armed, only the foreground pushing) is the remaining work, shared with item 1's
+deferred crossfade. The InterestLive Plan is now 10 Preps (… sprout · bind · **fg sidetrack** ·
+close).
 
 ---
 

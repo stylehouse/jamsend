@@ -33,6 +33,10 @@ story:InterestLive
       i_elvisto:Lies,e:Lies_open_sidetrack
         esc:from,v:Story/InterestLive/Interestily
     Prep=9
+      i_elvisto:Lang,e:Lang_foreground
+        esc:kind,v:Sidetrack
+        esc:waft,v:Story/InterestLive/Interestily/side
+    Prep=10
       i_elvisto:Lies,e:Lies_close_Waft
         esc:path,v:Story/InterestLive/Interestily2
   Opt
@@ -45,23 +49,24 @@ story:InterestLive
         nopush
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.98
-      sample=0.642,at=1781664743
-      sample=0.642,at=1781664757
-      sample=0.944,at=1781664771
-      sample=0.9,at=1781666557
+    TimeTotal:beliefs,avg=1.242
       sample=0.9,at=1781666598
       sample=0.777,at=1781666754
       sample=1.594,at=1781666851
       sample=0.899,at=1781667351
       sample=1.46,at=1781668730
       sample=1.039,at=1781669007
-  step,dige:90fad84b48fe9d34
-  step=2,dige:616bb78f858a0645
-  step=3,dige:c0c41c6de32d1452
-  step=4,dige:696e509a98298090
-  step=5,dige:3c0f4f245fede730
-  step=6,dige:df38b219d478b149
-  step=7,dige:38dfc1607017ef1d
-  step=8,dige:1ae36a6922ddb747
-  step=9,dige:834e4116bb8d60c1
+      sample=1.619,at=1781670027
+      sample=1.447,at=1781670434
+      sample=1.447,at=1781670441
+      sample=1.234,at=1781670576
+  step,dige:eb2640c83ceeeb86
+  step=2,dige:136861eeb094d870
+  step=3,dige:74b1414e86818cc0
+  step=4,dige:3813d7cc3b513f26
+  step=5,dige:b88b21e4f2af3229
+  step=6,dige:befcc670cee64666
+  step=7,dige:137c0e656c0ba5da
+  step=8,dige:3c50b6ff89b97bd2
+  step=9,dige:03e0c6a8d872f6b8
+  step=10,dige:fbe9ee86a46b2023
