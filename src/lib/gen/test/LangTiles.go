@@ -8,14 +8,14 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_test_LangTiles(): string { return '51b9005fb5407325' },
+    Ghostmeta_Ghost_test_LangTiles(): string { return 'e293669d534d431d' },
 
 // yeti etc!!!!!
 theCompiledStuff(A,w) {
     this._i_drill(w, [{sc: {hut: 1}}, {sc: {toot: 3}}])
     let toot = this._o_drill1(w, [{sc: {hut: 1}}, {sc: {toot: 1}}])
     let la = this._i_drill(w, [{sc: {hut: 1}}, {sc: {toot}}])
-    this._o_drill(w, [{sc: {hut: 1}}, {sc: {although: 1, they: 1, can: 1, be: 1, mixed: 1}, exactly: {although: true}}])
+    this._o_drill(w, [{sc: {hut: 1}}, {sc: {although: 1}, exactly: {although: true}}, {sc: {they: 1, can: 1, be: 1, mixed: 1}}])
     la.i({something: 1})
     this._i_drill(w, [{sc: {thung: 1}}, {sc: {wither: 1}}, {sc: {etc: 1}}])
     this._i_drill(w, [{sc: {yeses: 1}}, {sc: {because: 1, it: 2}}])
@@ -97,7 +97,8 @@ laterally(A,w,thing) {
 moreTiles(A,w) {
     // newer capture coverage the corpus hadn't exercised yet.
     //  (a trailing capture names its own let — no manual let prefix needed.)
-    // value capture on a multi-leg o — tval = the %toot value, not the row C
+    // value capture on a multi-leg o — tval = the %toot value, not the row C.
+    //  .$:name is the value-OUT spelling (mirror of :$ value-in); .$name still reads.
     let tval = this._o_drill1(w, [{sc: {hut: 1}}, {sc: {toot: 1}}])?.sc.toot
     // single leg, two value captures → tier0-multi takes the caps drill
     let {angle, itsval} = this._o_drill_caps(A, [{sc: {prefixy: 1, wither: 1, its: 1}, caps: [{as: "angle", key: "wither", val: true}, {as: "itsval", key: "its", val: true}]}])

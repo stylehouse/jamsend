@@ -43,15 +43,19 @@ async Lake_drive(w, req):
     &Lake_witness,w
     await &Lake_order,w
 
-// Lake_order — float the peers (A:Bearing/A:Nearing, the subject under test) above
-//  the apparatus actors so the snap reads peers-first. place() re-enters the same A
-//   C's in the chosen order (identity/data untouched) and no-ops once already ordered.
+// Lake_order — float all the A actors to the front of H/* (peers A:Bearing/A:Nearing
+//  before the apparatus actors), the rest of H/* after, so the Run snap reads
+//   actors-first, peers-first. A whole-/* place({},…): every child is re-entered
+//    .is()'d (identity|data|/* untouched), and it no-ops once already in order. A
+//     plain place({A:1},…) can't do this — replace() lands the matched set LAST, so
+//      it'd sink the A's to the bottom; reordering the whole /* is the only way up.
 async Lake_order(w):
     let As = H o %A
     if (As.length < 2) return
     let peer = (a) => (a%A === 'Bearing' || a%A === 'Nearing') ? 0 : 1
     let sorted = [...As].sort((a, b) => peer(a) - peer(b))
-    await &place,{A:1},sorted
+    let ordered = [...sorted, ...H.o().filter(c => !c%A)]
+    await &place,{},ordered
 
 // Lake_sides_up — step 2: stand up both sides directly (the wrangler lays them,
 //  spec §15), pair their mock-ports, and push one frame B→N. The H-receiver actor-

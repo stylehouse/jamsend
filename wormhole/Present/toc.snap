@@ -15,10 +15,9 @@ Library
       TimeTotal:beliefs,avg=0.081
         sample=0.077,at=1781080326
         sample=0.085,at=1781607913
-  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1781705321.676
+  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1781707445.993
     TimeSpool
-      TimeTotal:beliefs,avg=1.914
-        sample=1.885,at=1781631104
+      TimeTotal:beliefs,avg=1.992
         sample=2.793,at=1781665168
         sample=1.932,at=1781680195
         sample=1.387,at=1781680223
@@ -28,6 +27,7 @@ Library
         sample=1.182,at=1781681894
         sample=1.497,at=1781704670
         sample=2.25,at=1781705324
+        sample=2.662,at=1781707448
   Book:LakeSurfer,ok_pct=0,last_pct_change=1779607681.571,done=2,last_run_ms=1781664694.333
     TimeSpool
       TimeTotal:beliefs,avg=0.836
@@ -241,10 +241,9 @@ Library
         sample=0.101,at=1781621271
         sample=0.163,at=1781656675
         sample=0.171,at=1781660709
-  Book:InterestLive,ok_pct=0,done=4,last_run_ms=1781704640.919,active
+  Book:InterestLive,ok_pct=0,done=4,last_run_ms=1781707339.446
     TimeSpool
-      TimeTotal:beliefs,avg=1.359
-        sample=0.966,at=1781696023
+      TimeTotal:beliefs,avg=1.411
         sample=2.002,at=1781696225
         sample=1.35,at=1781696532
         sample=1.578,at=1781697595
@@ -254,12 +253,10 @@ Library
         sample=1.425,at=1781697856
         sample=0.892,at=1781702535
         sample=0.905,at=1781704642
-  Book:Peregrination,ok_pct=0,done=5,last_run_ms=1781704601.289
+        sample=1.48,at=1781707342
+  Book:Peregrination,ok_pct=0,done=5,last_run_ms=1781708262.296,active
     TimeSpool
-      TimeTotal:beliefs,avg=0.793
-        sample=1.192,at=1781690609
-        sample=0.561,at=1781691443
-        sample=1.008,at=1781691803
+      TimeTotal:beliefs,avg=0.712
         sample=0.713,at=1781694944
         sample=0.772,at=1781695079
         sample=0.256,at=1781695086
@@ -267,3 +264,6 @@ Library
         sample=1.22,at=1781696862
         sample=0.544,at=1781698467
         sample=0.819,at=1781704603
+        sample=0.834,at=1781707773
+        sample=0.675,at=1781707885
+        sample=0.447,at=1781708264

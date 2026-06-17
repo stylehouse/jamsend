@@ -80,10 +80,11 @@ laterally(A,w,thing):
 moreTiles(A,w):
     // newer capture coverage the corpus hadn't exercised yet.
     //  (a trailing capture names its own let — no manual let prefix needed.)
-    // value capture on a multi-leg o — tval = the %toot value, not the row C
-    o hut/toot.$tval
+    // value capture on a multi-leg o — tval = the %toot value, not the row C.
+    //  .$:name is the value-OUT spelling (mirror of :$ value-in); .$name still reads.
+    o hut/toot.$:tval
     // single leg, two value captures → tier0-multi takes the caps drill
-    A o prefixy,wither.$angle,its.$itsval
+    A o prefixy,wither.$:angle,its.$:itsval
     // a multi-leg i whose freshly-inserted leaf we keep — no capture, so the
     //  let is manual, binding the drill's return (the leaf C)
     let leaf = i deep/nest/leaf

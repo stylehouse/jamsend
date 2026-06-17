@@ -118,6 +118,14 @@ The human reviews the diff on the host and writes the commit message.
 When you think a commit point has been reached, say so; do not run git
  to record it.
 
+## "handover" really means "handoff doc" or even "continuation brief."
+
+At resting points similar to commit points, but for context management, we jot down and restart the session.
+A handover that's a changelog (what I did) is the weakest, most disposable part.
+The load-bearing part is `destination + the knowledge that detonates the bomb if the next person doesn't have it + the next move`.
+Show the arc, not just the diff.
+
+
 ## The ~3k svelte-check warnings are baseline noise
 
 `npm run check` reports ~3000 pre-existing errors|warnings — mostly implicit-`any`

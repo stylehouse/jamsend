@@ -11,14 +11,14 @@ Snap:H
           Good,type:text/Waft,path:wormhole/GhostList/toc.snap,waft_path:GhostList
             known,dige:d3d7d22dd688afee,kind:read	{"mung":["at"]}
           Good,type:text/Doc,path:Ghost/test/LangTiles.g
-            known,dige:51b9005fb5407325,kind:read	{"mung":["at"]}
+            known,dige:e633c97628b42c32,kind:read	{"mung":["at"]}
         examining	{"loopy":1}
           req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
           Spotlight	{"ref":{"src":"%What:labelofaWhat"}}
         req:Cortex,eternal,maz=5,ok
-          req:Codebit,path:Ghost/test/LangTiles.g,maz=2,gen_path:gen/test/LangTiles.go,source_dige:51b9005fb5407325,dige:ccd18b098da74eca,permanent,write_finished,finished
+          req:Codebit,path:Ghost/test/LangTiles.g,maz=2,gen_path:gen/test/LangTiles.go,source_dige:e633c97628b42c32,dige:98cc8a771813fd6d,permanent,write_finished,finished
           req:Rundown,eternal,run_method:theCompiledStuff,ok
-            {"ran":"ccd18b098da74eca#leash:0"}
+            {"ran":"98cc8a771813fd6d#leash:0"}
         Waft:Story/LangTiles/Waftily
           What:labelofaWhat
             Doc:Ghost/test/LangTiles.g
@@ -35,9 +35,9 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781705037526,kind:cold
-          want=1781705037576,kind:cold
-          want=1781705038105,kind:cold,resolved
+          want=1781707344360,kind:cold
+          want=1781707344420,kind:cold
+          want=1781707345047,kind:cold,resolved
         o_elvis:dock_askies
         Waft:GhostList,lists	{"mung":["seeded"]}
           Funkcion:dirlist,interval_ms=8000	{"mung":["walked_at"]}
@@ -92,12 +92,12 @@ Snap:H
             Doc:src/lib/O/Interest.svelte,name:Interest	{"mung":["noticed_at"]}
         Funkcions
           req:Funkcion,funk_id:GhostList/dirlist,eternal,ok
-        Waft:Ting/2026-06-18/020402,takes
-          Point:theCompiledStuff,doc:Ghost/test/LangTiles.g,n,weight,last=1781705042947,first=1781705042947,heat=0.994,warm=0,bright
+        Waft:Ting/2026-06-18/024230,takes
+          Point:theCompiledStuff,doc:Ghost/test/LangTiles.g,n,weight,last=1781707350174,first=1781707350174,heat=0.992,warm=0,bright
         self,round=22	{"mung":["age"]}
         see:🗂 1 doc · 3 Wafts
     A:Lang
-      self,round=21	{"mung":["age"]}
+      self,round=20	{"mung":["age"]}
       w:Lang
         Opt
           txtsyntaxdump
@@ -161,7 +161,7 @@ Snap:H
               req:text_loaded,maz=3,finished
               req:text_mutated,maz=2,eternal
               req:compile,maz=2,finished
-            Text,dige:51b9005fb5407325,disk_dige:51b9005fb5407325,disk_rev
+            Text,dige:e633c97628b42c32,disk_dige:e633c97628b42c32,disk_rev
             Compile
               Map
                 def,method:theCompiledStuff,from=17,to=34,line=2
@@ -180,24 +180,24 @@ Snap:H
                 call,method:laterally,from=2159,to=2171,line=75,via:severally
                 def,method:laterally,from=2183,to=2193,line=77
                 def,method:moreTiles,from=2250,to=2260,line=80
-                def,method:replaceTiles,from=3736,to=3749,line=105,async
-                def,method:reqTiles,from=5603,to=5612,line=151
-                def,method:looseScTiles,from=8283,to=8296,line=205
-                controlflow,keyword:if,title:req%demand,from=9092,to=9095,line=222,via:looseScTiles
-                def,method:ampTiles,from=9443,to=9452,line=231,async
-                call,method:do,from=9628,to=9631,line=234,via:ampTiles
-                call,method:bump,from=9639,to=9644,line=235,via:ampTiles
-                call,method:emit,from=9725,to=9730,line=237,via:ampTiles
-                call,method:settle,from=9814,to=9821,line=239,via:ampTiles
-                call,method:severally,from=9891,to=9901,line=241,via:ampTiles
-                {"controlflow":1,"keyword":"if","title":"(a > b) H.laterally(A,w,1)","from":10348,"to":10351,"line":250,"via":"ampTiles"}
-                controlflow,keyword:if,title:a > b,from=10543,to=10546,line=254,via:ampTiles
-                {"controlflow":1,"keyword":"if","title":"(a > b) i %reached:also","from":10580,"to":10583,"line":256,"via":"ampTiles"}
-                def,method:obtainTiles,from=10671,to=10683,line=259
-                {"controlflow":1,"keyword":"if","title":"(s && !(oa %taken)) i %seat:free","from":11104,"to":11107,"line":268,"via":"obtainTiles"}
-                def,method:captureOutTiles,from=11302,to=11318,line=272
-              time,compile=0.024,all=0.744,write=0
-              Output,gen_path:gen/test/LangTiles.go,dige:ccd18b098da74eca,source_dige:51b9005fb5407325
+                def,method:replaceTiles,from=3827,to=3840,line=106,async
+                def,method:reqTiles,from=5694,to=5703,line=152
+                def,method:looseScTiles,from=8374,to=8387,line=206
+                controlflow,keyword:if,title:req%demand,from=9183,to=9186,line=223,via:looseScTiles
+                def,method:ampTiles,from=9534,to=9543,line=232,async
+                call,method:do,from=9719,to=9722,line=235,via:ampTiles
+                call,method:bump,from=9730,to=9735,line=236,via:ampTiles
+                call,method:emit,from=9816,to=9821,line=238,via:ampTiles
+                call,method:settle,from=9905,to=9912,line=240,via:ampTiles
+                call,method:severally,from=9982,to=9992,line=242,via:ampTiles
+                {"controlflow":1,"keyword":"if","title":"(a > b) H.laterally(A,w,1)","from":10439,"to":10442,"line":251,"via":"ampTiles"}
+                controlflow,keyword:if,title:a > b,from=10634,to=10637,line=255,via:ampTiles
+                {"controlflow":1,"keyword":"if","title":"(a > b) i %reached:also","from":10671,"to":10674,"line":257,"via":"ampTiles"}
+                def,method:obtainTiles,from=10762,to=10774,line=260
+                {"controlflow":1,"keyword":"if","title":"(s && !(oa %taken)) i %seat:free","from":11195,"to":11198,"line":269,"via":"obtainTiles"}
+                def,method:captureOutTiles,from=11393,to=11409,line=273
+              time,compile=0.028,all=1.079,write=0
+              Output,gen_path:gen/test/LangTiles.go,dige:98cc8a771813fd6d,source_dige:e633c97628b42c32
                source: |
                  <script lang="ts">
                      // GENERATED by Lang compile — do not edit by hand.
@@ -209,7 +209,7 @@ Snap:H
                      onMount(async () => {
                      await H.eatfunc({
                  
-                     Ghostmeta_Ghost_test_LangTiles(): string { return '51b9005fb5407325' },
+                     Ghostmeta_Ghost_test_LangTiles(): string { return 'e633c97628b42c32' },
                  
                  // yeti etc!!!!!
                  theCompiledStuff(A,w) {
@@ -298,7 +298,8 @@ Snap:H
                  moreTiles(A,w) {
                      // newer capture coverage the corpus hadn't exercised yet.
                      //  (a trailing capture names its own let — no manual let prefix needed.)
-                     // value capture on a multi-leg o — tval = the %toot value, not the row C
+                     // value capture on a multi-leg o — tval = the %toot value, not the row C.
+                     //  .$:name is the value-OUT spelling (mirror of :$ value-in); .$name still reads.
                      let tval = this._o_drill1(w, [{sc: {hut: 1}}, {sc: {toot: 1}}])?.sc.toot
                      // single leg, two value captures → tier0-multi takes the caps drill
                      let {angle, itsval} = this._o_drill_caps(A, [{sc: {prefixy: 1, wither: 1, its: 1}, caps: [{as: "angle", key: "wither", val: true}, {as: "itsval", key: "its", val: true}]}])
@@ -539,22 +540,22 @@ Snap:H
               Mapule,kind:call,key:laterally,depth=0,line=75,from=2159,to=2171
               Mapule,kind:def,key:laterally,depth=0,line=77,from=2183,to=2193
               Mapule,kind:def,key:moreTiles,depth=0,line=80,from=2250,to=2260
-              Mapule,kind:def,key:replaceTiles,depth=0,line=105,from=3736,to=3749
-              Mapule,kind:def,key:reqTiles,depth=0,line=151,from=5603,to=5612
-              Mapule,kind:def,key:looseScTiles,depth=0,line=205,from=8283,to=8296
-              Mapule,kind:cf,key:if,depth=0,line=222,from=9092,to=9095
-              Mapule,kind:def,key:ampTiles,depth=0,line=231,from=9443,to=9452
-              Mapule,kind:call,key:do,depth=0,line=234,from=9628,to=9631
-              Mapule,kind:call,key:bump,depth=0,line=235,from=9639,to=9644
-              Mapule,kind:call,key:emit,depth=0,line=237,from=9725,to=9730
-              Mapule,kind:call,key:settle,depth=0,line=239,from=9814,to=9821
-              Mapule,kind:call,key:severally,depth=0,line=241,from=9891,to=9901
-              Mapule,kind:cf,key:if,depth=0,line=250,from=10348,to=10351
-              Mapule,kind:cf,key:if,depth=0,line=254,from=10543,to=10546
-              Mapule,kind:cf,key:if,depth=0,line=256,from=10580,to=10583
-              Mapule,kind:def,key:obtainTiles,depth=0,line=259,from=10671,to=10683
-              Mapule,kind:cf,key:if,depth=0,line=268,from=11104,to=11107
-              Mapule,kind:def,key:captureOutTiles,depth=0,line=272,from=11302,to=11318
+              Mapule,kind:def,key:replaceTiles,depth=0,line=106,from=3827,to=3840
+              Mapule,kind:def,key:reqTiles,depth=0,line=152,from=5694,to=5703
+              Mapule,kind:def,key:looseScTiles,depth=0,line=206,from=8374,to=8387
+              Mapule,kind:cf,key:if,depth=0,line=223,from=9183,to=9186
+              Mapule,kind:def,key:ampTiles,depth=0,line=232,from=9534,to=9543
+              Mapule,kind:call,key:do,depth=0,line=235,from=9719,to=9722
+              Mapule,kind:call,key:bump,depth=0,line=236,from=9730,to=9735
+              Mapule,kind:call,key:emit,depth=0,line=238,from=9816,to=9821
+              Mapule,kind:call,key:settle,depth=0,line=240,from=9905,to=9912
+              Mapule,kind:call,key:severally,depth=0,line=242,from=9982,to=9992
+              Mapule,kind:cf,key:if,depth=0,line=251,from=10439,to=10442
+              Mapule,kind:cf,key:if,depth=0,line=255,from=10634,to=10637
+              Mapule,kind:cf,key:if,depth=0,line=257,from=10671,to=10674
+              Mapule,kind:def,key:obtainTiles,depth=0,line=260,from=10762,to=10774
+              Mapule,kind:cf,key:if,depth=0,line=269,from=11195,to=11198
+              Mapule,kind:def,key:captureOutTiles,depth=0,line=273,from=11393,to=11409
             {"bookmark":"bm_98_132","from":98,"to":132,"label":" o hut/although:1,th"}
         scheme:req
           lematch	{"ref":{"sc_has":"Object()"}}
@@ -568,19 +569,19 @@ Snap:H
           ActiveInterest,kind:Trail,waft:Story/LangTiles/Waftily
           dock,active	{"loopy":0,"hid":1}
           Change
-            backend,dige:51b90
-            storage,dige:51b90,dim:false
-            compile,dige:51b90,dim:false,secs=0.024
+            backend,dige:e633c
+            storage,dige:e633c,dim:false
+            compile,dige:e633c,dim:false,secs=0.028
           LE:Undertaking,reason:Undertaking
             Seem:workon
               Funkcion:trail,halflife_ms=60000
-          Interest:Ting,waft:Ting/2026-06-18/020402,lens:DocTing,presence:always,state:live
-            cursor,what:Ting/2026-06-18/020402,latest
+          Interest:Ting,waft:Ting/2026-06-18/024230,lens:DocTing,presence:always,state:live
+            cursor,what:Ting/2026-06-18/024230,latest
         req:workon,following,auto_push	{"ref":{"w":"%w:Lang"}}
           {"req":"understanding","maz":3,"permanent":1,"sig":"1:13:0:0","what":"labelofaWhat","finished":1}
           req:ingredients,maz=2,permanent,sig:Ghost/test/LangTiles.g,finished
             req:furnishing,path:Ghost/test/LangTiles.g,permanent,asked,finished
-          {"req":"instrumentation","permanent":1,"sig":"Ghost/test/LangTiles.g:51b9005fb5407325:1:29","have_Map":1,"n_pmirrors":3,"finished":1}
+          {"req":"instrumentation","permanent":1,"sig":"Ghost/test/LangTiles.g:e633c97628b42c32:1:29","have_Map":1,"n_pmirrors":3,"finished":1}
         req:waft_roster,eternal,subscribed
         o_elvis:dock_content
         LE:Story/LangTiles/Waftily	{"ref":{"target":"%What:labelofaWhat"}}
@@ -608,13 +609,13 @@ Snap:H
         received,doc_opened,doc:Ghost/test/LangTiles.g
         received,editorBegins,doc:Ghost/test/LangTiles.g
         o_elvis:Lies_compile_settled
-        self,round=21	{"mung":["age"]}
+        self,round=20	{"mung":["age"]}
         see:🟦 tiles 1 bookmarks
     A:Pantheate
-      self,round=9	{"mung":["age"]}
+      self,round=8	{"mung":["age"]}
       w:Pantheate
         include:gen/test/LangTiles.go
-        req:include,gen_path:gen/test/LangTiles.go,path:Ghost/test/LangTiles.g,source_dige:51b9005fb5407325,ghostmeta_name:Ghostmeta_Ghost_test_LangTiles,permanent,live_dige:51b9005fb5407325,finished
+        req:include,gen_path:gen/test/LangTiles.go,path:Ghost/test/LangTiles.g,source_dige:e633c97628b42c32,ghostmeta_name:Ghostmeta_Ghost_test_LangTiles,permanent,live_dige:e633c97628b42c32,finished
         req:run_method,method:theCompiledStuff,finished
         BlastPit
           A:blast
@@ -650,7 +651,7 @@ Snap:H
             prefixy:i th/re/e = 3
             prefixy:stuff,wither:angles
               wither:levels,its:its,sits:ferv
-        self,round=9	{"mung":["age"]}
+        self,round=8	{"mung":["age"]}
         o_elvis:Ghost_update_notify
     watched:ave
       examining	{"loopy":1,"hid":1}

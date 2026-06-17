@@ -171,6 +171,7 @@ export const LANG_COMPILE = {
                 /^\s*(?:if|for|while|until|elsif|else)\b/,  // ControlFlow head
                 /^\s*(?:async\s+)?[A-Za-z_]\w*\s*\(/,       // MethodLike decl/call
                 /&[A-Za-z_]/,                               // AmpCall
+                /(?:^|[^\w.])(?:drop|empty)\s+\S/,          // unbuilt path-verbs → guided error
             ]
             for (let ln = 1; ln <= doc.lines; ln++) {
                 const line = doc.line(ln)
@@ -639,10 +640,12 @@ export const LANG_COMPILE = {
                 // A future pass can use this to decide whether a matching &call /
                 // bare call needs await.
                 const isAsync = /^\s*async\s/.test(line.text)
-                ctx.words.push({ def: 1, method: funcName, from: docOff(hit.node.from), to: docOff(hit.node.to), line: n - 1,
+                const defWord: any = { def: 1, method: funcName, from: docOff(hit.node.from), to: docOff(hit.node.to), line: n - 1,
                                  ...(isAsync ? { async: 1 } : {}),
-                                 region_path: [...ctx.region_stack] })
+                                 region_path: [...ctx.region_stack] }
+                ctx.words.push(defWord)
 
+                const headerIdx = out.length
                 if (hasBrace) {
                     // user wrote their own "{" — they'll write the closing "}," too.
                     out.push({ kind: 'raw', text: line.text })
@@ -680,6 +683,9 @@ export const LANG_COMPILE = {
 
                 // recurse into body with current_method set, for both brace and pythonic styles,
                 // so that via tracking works for H./this. calls inside the body
+                // arrowRanges collects the out-index spans of nested async-arrow bodies
+                //  (oai|r BLOCK do_fns) so the auto-async scan below can exclude them.
+                const arrowRanges: Array<{ from: number, to: number }> = []
                 const inner_ctx = { words: ctx.words, current_method: funcName,
                                     method_floor: decl_indent,
                                     region_stack: ctx.region_stack, lineHits: ctx.lineHits,
@@ -687,7 +693,8 @@ export const LANG_COMPILE = {
                                     //  embedded in a control-flow condition|inline body
                                     //  (if (n===4) i %x) translate — Lang_io_in_text is a
                                     //   no-op without it, which silently left them raw.
-                                    sthoParser: ctx.sthoParser }
+                                    sthoParser: ctx.sthoParser,
+                                    arrowRanges }
                 while (n <= doc.lines) {
                     const peek = doc.line(n)
                     if (peek.text.trim() === '') {
@@ -698,6 +705,29 @@ export const LANG_COMPILE = {
                     const peek_indent = (peek.text.match(/^(\s*)/) ?? ['', ''])[1].length
                     if (peek_indent <= decl_indent) break
                     n = this._collect_line(n, tree, doc, state, out, inner_ctx)
+                }
+
+                // auto-async — if the translated body carries a method-level `await` but
+                //  the decl wasn't written async, mark it async.  Otherwise that `await`
+                //   (a user one like `await pier&do`, or an r|roai the compiler emits)
+                //    sits in a sync fn: invalid JS the translation alone can't catch (a
+                //     PASS that fails at import).  Awaits inside a nested async arrow (an
+                //      oai|r BLOCK's do_fn) are the arrow's, not the method's, so the
+                //       arrowRanges spans exclude them — reqTiles|LakeNetherland stay sync.
+                //        Runs before the alias splice below, while arrow indices hold.
+                if (!isAsync) {
+                    const inArrow = (i: number) => arrowRanges.some(r => i >= r.from && i < r.to)
+                    let bodyAwait = false
+                    for (let i = headerIdx + 1; i < out.length; i++) {
+                        // skip comment lines — a commented `// … await …` (eg reqTiles's
+                        //  doc lines) isn't real code and must not force async.
+                        if (/^\s*\/\//.test(out[i].text)) continue
+                        if (!inArrow(i) && /\bawait\b/.test(out[i].text)) { bodyAwait = true; break }
+                    }
+                    if (bodyAwait) {
+                        out[headerIdx].text = out[headerIdx].text.replace(/^(\s*)/, '$1async ')
+                        defWord.async = 1
+                    }
                 }
 
                 // resolve the reserved alias slot — fill with `const H = this` only if
@@ -783,6 +813,10 @@ export const LANG_COMPILE = {
                     ? `${' '.repeat(r_indent)}await ${receiver}.replace(${args[0]}, async () => {`
                     : `${' '.repeat(r_indent)}${receiver}.doai(${args.join(', ')})?.(async (req) => {`
                 out.push({ kind: 'translated', text: open })
+                // the do_fn arrow is its own async scope — record its body span so the
+                //  enclosing method's auto-async scan doesn't count these awaits as its
+                //   own (the `open` line's await, for r, is method-level and excluded).
+                const arrowFrom = out.length
                 n++
                 while (n <= doc.lines) {
                     const peek = doc.line(n)
@@ -791,6 +825,7 @@ export const LANG_COMPILE = {
                     if (peek_indent <= r_indent) break
                     n = this._collect_line(n, tree, doc, state, out, ctx)
                 }
+                ctx.arrowRanges?.push({ from: arrowFrom, to: out.length })
                 out.push({ kind: 'raw', text: ' '.repeat(r_indent) + '})' })
                 return n
             }
@@ -970,7 +1005,11 @@ export const LANG_COMPILE = {
             const io_ctx: any = { bool_ctx: ctx.bool_ctx, sthoParser: parser }
             if (split.receiver) io_ctx.receiver = split.receiver
             const translated = this.Lang_compile_IOing(node, slice, io_ctx)
-            out = out.slice(0, from) + translated + out.slice(to)
+            // use keep_before, NOT the raw prefix: when a receiver is detected it's
+            //  baked into `translated` (recv.o(…)), so keeping the literal `recv ` in
+            //   the prefix would emit it twice (the inline `if (a && !(w oa %x))` bug).
+            //    keep_before == the raw prefix when no receiver, so the rest is intact.
+            out = split.keep_before + translated + out.slice(to)
         }
         return out
     },
@@ -1020,6 +1059,16 @@ export const LANG_COMPILE = {
         //  (the no-receiver form "let la = i …" has nothing there, so it stays
         //   verbatim with the default receiver).  JS keywords never count.
         m = core.match(/^(.*=\s*)(\w+)\s+$/)
+        if (m && !KEYWORDS.has(m[2])) {
+            return { indent, keep_before: indent + m[1], receiver: norm(m[2]) }
+        }
+
+        // receiver buried in an expression: "…!(w " | "…&& (w " — a bareword tight
+        //  before the verb, preceded by an opener|operator (the "[^\w.$]" guard, so a
+        //   ".prop" access is never mistaken for a receiver).  Keeps everything up to
+        //    that boundary; the word is the receiver.  This is what lets an inline io
+        //     atom carry an explicit receiver mid-condition (if (a && !(w oa %x)) …).
+        m = core.match(/^(.*[^\w.$])(\w+)\s+$/)
         if (m && !KEYWORDS.has(m[2])) {
             return { indent, keep_before: indent + m[1], receiver: norm(m[2]) }
         }
@@ -1393,6 +1442,11 @@ export const LANG_COMPILE = {
         if (!ness) throw new Error('no IOness')
         const s = state.doc.sliceString(ness.from, ness.to).trim()
         if (s === 'i' || OBTAIN_VERBS.has(s) || IONESS2_VERBS.has(s)) return s
+        // drop|empty tokenise as IOness but aren't sc-path shaped (a C arg | no arg);
+        //  the receiver-amp call form covers them — point there rather than leave a
+        //   bare "unbuilt".
+        if (s === 'drop' || s === 'empty')
+            throw new Error(`stho: '${s}' isn't a path-verb — use the call form: recv&${s}${s === 'drop' ? ',c' : ''}`)
         throw new Error(`IOness unknown|unbuilt: "${s}"`)
     },
 

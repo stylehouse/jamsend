@@ -1,10 +1,48 @@
-# Interest — surprise_read popover + the channel-as-big-attention idea (handover)
+# Interest — surprise_read popover + the channel-as-big-attention idea (handoff)
+
+## Trajectory — where this is going (read this first)
+
+The through-line across these threads is one idea: **Interests are attention channels,
+and the IDE escalates state *through* them.** Three strands of it:
+
+1. **Push a changed Good back onto its open consumer, non-destructively.** surprise_read →
+   Vexplosion → editor-reseat is the *first concrete proof* of this, for the Doc/dock
+   consumer only. The destination is **Hovercraft §7 (Subscriptions — the push dual of
+   pull)**: one `%subscribe{target,on,wake}` primitive unifying Stuffing / watched /
+   `%Good/%subscribe`. Vexplosion's visual destination is the **Interest/Point metromap**.
+2. **Ballistics havoc drum-machine.** `%havoc:<kind>` particles authored in the doc tree,
+   behaviour in `HAVOC_LIMBS`, struck by hand today. Destination: **self-arming limbs** —
+   a limb that receives `think()` while the `What**` it sits in is engaged / not folded
+   away (Lang openness + Scrollability), so a test runs itself when looked at; "drum
+   machine" = sequencing those.
+3. **Posture:** dev server is **localhost-only by default** now; phase out public exposure,
+   auth at the edge (Caddy). Incidental to the above but settled this session.
+
+**The bomb — know this or you'll silently break it:**
+- The **reseat chain** is fragile/non-obvious: Good → `LiesStore_drain_good_now` →
+  `e:dock_content` → `Lang_open_dock` → **`req:Languish` never finishes** (eternal
+  `req:text_mutated`) so it's never recreated → `e_Lang_dock_content` must *manually* bump
+  `%Text.disk_rev` → Langui's disk-reload `$effect` → minimal-diff dispatch. Break any link
+  and the open editor stops updating with no error.
+- **`examining.sc.active_path` is DEAD** — active-doc truth is `H.Awo('Lang').c.active_dock_path`.
+- **A re-deliverable push exists only for Doc.** Any other Good re-delivery is §7, unbuilt.
+- **Floating UI off the minimap MUST portal a single node** — `.lte-mm-host` (overflow:hidden)
+  + `.lmm` (backdrop-filter) are containing blocks that clip/anchor `position:fixed`;
+  portaling two Svelte-owned nodes corrupts the strip/minimap DOM.
+- **Havoc = config particle + code behaviour** (kind → `HAVOC_LIMBS`); snap vocab gate is
+  parked so unknown mainkeys snap fine.
+- **Two agents share this tree** — commit in passes, never blanket `commit -a`.
+
+**The next move (my pick):** build **self-arming havoc limbs** — it delivers the testing-
+regime vision *and* forces the openness/Scrollability "is this What engaged?" signal that
+the metromap will also need. §7 is bigger but more speculative; Caddy auth is quick insurance.
+(Correct me where I've inferred your vision: metromap shape, drum sequencing, priority.)
+
+---
 
 Picking up from the graduated `%Interest` channel.  Item 5 (surprise_read resume/diff)
-got an **inline** first leg; this note is the **next** leg — lift it into a *popover that
-pops out of the Interest channel*, and seed the larger "Interest = big-attention
-channel" idea behind it.  Fresh session recommended: the work is exploratory (UI infra
-study) and the prior session's context was mostly the inline build + a test-diff triage.
+got an **inline** first leg; this note's leg lifted it into a *popover that pops out of the
+Interest channel*, then closed the push-to-open-editor loop and the auto-pull.
 
 ## Done — the foundation (in the working tree, keep it)
 

@@ -80,7 +80,7 @@ services:
         RUN mkdir -p /home/node/.claude && chown -R node:node /home/node/.claude
     container_name: jamsend-claude
     working_dir: /app
-    user: "node"               # node is uid 1000, so files it writes are yours on the host
+    user: "1000:1000" # is uid 1000, so files it writes are yours on the host
     volumes:
       - .:/app
       - *music-volume
