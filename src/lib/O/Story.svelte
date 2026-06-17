@@ -800,6 +800,25 @@
             }
         },
         {
+            // Lies real-IO epoch stamps — volatile `at`/`seeded`/`walked_at`/`noticed_at`
+            //  on otherwise stable particles.  Mung them so a real w:Lies snap diffs on
+            //   structure, not on WHEN a read/walk/seed/notice happened.  The content
+            //    dige beside each stays, so a real change still shows.  Needed for the
+            //     real Lang↔Lies channel (Book:InterestLive et al.) to settle as a gate.
+            matching_any: [
+                { sc_has: { known: 1, at: 1 } },          // Good/known,dige,kind:read,at
+                { sc_has: { Waft: 1, seeded: 1 } },       // Waft:GhostList,lists,seeded
+                { sc_has: { Funkcion: 1, walked_at: 1 } },// Funkcion:dirlist,…,walked_at
+                { sc_has: { Doc: 1, noticed_at: 1 } },    // GhostList Doc rows,…,noticed_at
+            ],
+            means: { munging: [
+                { these_sc: { at: 1 },         type: 'time' },
+                { these_sc: { seeded: 1 },     type: 'time' },
+                { these_sc: { walked_at: 1 },  type: 'time' },
+                { these_sc: { noticed_at: 1 }, type: 'time' },
+            ] },
+        },
+        {
             // Story work particle itself — any object ref on w that wasn't caught
             // by the rules above (The, toc_loaded, wh, run_path, etc.) is left to
             // the objectify() fallback in story_process_node, which puts it into

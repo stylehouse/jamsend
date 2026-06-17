@@ -103,6 +103,20 @@
     },
 
 
+    // the %Interest channel on the REAL wire — successor to Book:Interesting's
+    //  InterLies/InterLang stand-ins (see spec/Interest_realchannel_plan.md).
+    //  No worker body: the real Lies/Lang/Pantheate ghosts run; the scenario is
+    //   driven from the Story Plan's Preps (Lies_open_Waft, now_Ting, Lang mark)
+    //    and recorded as the regression gate.
+    Run_A_InterestLive(this: House) {
+        const H = this
+        H.i({ A: 'Lies' }).i({ w: 'Lies' })
+        H.i({ A: 'Lang'       }).i({ w: 'Lang' })
+        H.i({ A: 'Pantheate'  }).i({ w: 'Pantheate' })
+        console.log(`🟪 ${H.name} InterestLive wired`)
+    },
+
+
 
 
 

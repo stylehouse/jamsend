@@ -164,6 +164,24 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         this.i_elvisto(w, 'think')
     },
 
+    // ── e_Lies_close_Waft ──────────────────────────────────────────────
+    //
+    //   Drop a loaded Waft from the roster — the giver/lister leaves.  The
+    //   roster sig (interest_roster_sig) then moves, Lies_waft_roster_pump
+    //   re-pushes, and interest_reconcile's gone-loop marks the matching
+    //   %Interest state:gone on Lang.  Minimal close: the matching
+    //   Good,type:'text/Waft' slot under req:Store is left loaded-but-orphaned —
+    //   LiesPersist's already-loaded branch only re-syncs `if (waft)`, so it does
+    //   not re-create the dropped Waft (a full close that GCs the Good slot, to
+    //   let a later re-open reload fresh, is a separate follow-up).
+    async e_Lies_close_Waft(A: TheC, w: TheC, e: TheC) {
+        const path = e.sc.path as string | undefined
+        if (!path) throw 'e_Lies_close_Waft: needs path'
+        const waft = w.o({ Waft: path })[0] as TheC | undefined
+        if (waft) { w.drop(waft); w.bump_version() }
+        this.i_elvisto(w, 'think')
+    },
+
     // ── Lies_desire_land_cursor ───────────────────────────────────────────────
     //   Land cursor on the first navigable What in `waft`.
     //   No-op when the cursor is already inside this Waft.
@@ -193,7 +211,12 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //   Unlike +Now, a Ting does NOT steal active — it runs alongside the giver What.
     //   < open it eagerly on page load by calling Lies_spawn_ting_waft from the load
     //     pipeline once w exists, if an empty Ting from the very first frame matters.
-    e_Lies_now_Ting(A: TheC, w: TheC) {
+    //   A test seam: an esc:key pins the Ting's name (its name is otherwise time-based,
+    //    which makes any Story gate that opens a Ting non-deterministic).  Live +Now
+    //     passes no key, so its per-load time name is unchanged.
+    e_Lies_now_Ting(A: TheC, w: TheC, e?: TheC) {
+        const key = e?.sc?.key as string | undefined
+        if (key && !w.c.ting_key) w.c.ting_key = key   // deterministic name under the runner
         ;(this as House).Lies_spawn_ting_waft(w)
         w.bump_version()
     },

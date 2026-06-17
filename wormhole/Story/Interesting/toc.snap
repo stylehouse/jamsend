@@ -5,10 +5,7 @@ story:Interesting
     For
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.157
-      sample=0.238,at=1781611675
-      sample=0.147,at=1781612445
-      sample=0.329,at=1781612594
+    TimeTotal:beliefs,avg=0.128
       sample=0.108,at=1781615450
       sample=0.223,at=1781616350
       sample=0.08,at=1781616394
@@ -16,6 +13,9 @@ story:Interesting
       sample=0.062,at=1781616473
       sample=0.176,at=1781620302
       sample=0.101,at=1781621237
+      sample=0.098,at=1781656588
+      sample=0.163,at=1781656628
+      sample=0.171,at=1781660708
   step,dige:eda29a72a26fc18b
   step=2,dige:62c85889bd9cc566
   step=3,dige:be8ed4dcb04900d0
