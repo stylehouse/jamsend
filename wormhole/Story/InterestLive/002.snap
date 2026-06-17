@@ -7,7 +7,7 @@ Snap:H
           nowriting
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/InterestLive/Interestily/toc.snap,waft_path:Story/InterestLive/Interestily
-            known,dige:49a7938e3b4295bf,kind:read	{"mung":["at"]}
+            known,dige:be0726378d3ad561,kind:read	{"mung":["at"]}
           Good,type:text/Waft,path:wormhole/GhostList/toc.snap,waft_path:GhostList
             known,dige:d3d7d22dd688afee,kind:read	{"mung":["at"]}
           Good,type:text/Doc,path:Ghost/test/Peeroleum.g
@@ -24,7 +24,7 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781685873272,kind:cold,resolved
+          want=1781690768168,kind:cold,resolved
         o_elvis:dock_askies
         Funkcions
           req:Funkcion,funk_id:GhostList/dirlist,eternal,ok
@@ -32,6 +32,7 @@ Snap:H
           What:landing
             Doc:Ghost/test/Peeroleum.g
             Point,method:InterestLanding
+            havoc:surprise_read
         Waft:GhostList,lists	{"mung":["seeded"]}
           Funkcion:dirlist,interval_ms=8000	{"mung":["walked_at"]}
           group:src/lib,dir:src/lib
@@ -107,7 +108,7 @@ Snap:H
                 def,method:transport,from=65,to=75,line=5
                 def,method:PeerJS,from=108,to=115,line=7
                 def,method:Socket,from=145,to=152,line=9
-              time,compile=0.001,all=0.2
+              time,compile=0.001,all=0.202
               Output,gen_path:gen/test/Peeroleum.go,dige:b84b8d8cc1c85f2b,source_dige:69f9fd8539393ad7
                source: |
                  <script lang="ts">
@@ -178,17 +179,20 @@ Snap:H
             Demonstrations:origin
               Demonstrations:origin,Doc:Ghost/test/Peeroleum.g
               Demonstrations:origin,Point,method:InterestLanding
-            News:origin,goners=0,neus=2
+              Demonstrations:origin,havoc:surprise_read
+            News:origin,goners=0,neus=3
           Seem:working	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:landing","topD":"%Demonstrations:working"}}
             Demonstrations:working
               Demonstrations:working,Doc:Ghost/test/Peeroleum.g
                 Understandable
               Demonstrations:working,Point,method:InterestLanding
                 Understandable
+              Demonstrations:working,havoc:surprise_read
+                Understandable
               Understandable
-            News:working,goners=0,neus=2
+            News:working,goners=0,neus=3
           State,changey
-          {"encode":1,"snap_origin":"Doc:Ghost/test/Peeroleum.g\nPoint,method:InterestLanding\n","snap_working":"Doc:Ghost/test/Peeroleum.g\nPoint,method:InterestLanding\nPoint,method:InterestLanding,class:focus\n","dirty":"1"}
+          {"encode":1,"snap_origin":"Doc:Ghost/test/Peeroleum.g\nPoint,method:InterestLanding\nhavoc:surprise_read\n","snap_working":"Doc:Ghost/test/Peeroleum.g\nPoint,method:InterestLanding\nhavoc:surprise_read\nPoint,method:InterestLanding,class:focus\n","dirty":"1"}
         received,doc_opened,doc:Ghost/test/Peeroleum.g
         received,editorBegins,doc:Ghost/test/Peeroleum.g
         o_elvis:Lies_compile_settled

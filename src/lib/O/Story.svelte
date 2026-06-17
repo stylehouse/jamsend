@@ -919,6 +919,11 @@
                 if (T.c.path.length === 1) {
                     T.sc.more = (n.o({})).filter(c => !c.sc.snap_root)
                 }
+                // fold: a %dontSnap node emits its own line but hides its subtree.
+                //  Snap-only — the node keeps pumping; orthogonal to inclusion. Used
+                //  to retire compile scaffolding (w:Lies/w:Lang) from a runner snap
+                //  once the apparatus is ready, leaving the run state legible.
+                if (n.sc.dontSnap) T.sc.more = []
                 lines.push(D)
             },
 

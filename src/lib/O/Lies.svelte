@@ -146,6 +146,25 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
     let { M } = $props()
 
+    // HAVOC_LIMBS — the havoc drum-machine's reusable behaviours, keyed by %havoc kind.
+    //  Each limb pops a different part of the Lies/Store plumbing.  A %havoc:<kind>
+    //  particle authored in a Waft is the per-test config; this is the shared behaviour
+    //  the strike runs.  Add a limb by adding an entry — the inline pad (Waft.svelte) and
+    //  e_Lies_strike both dispatch by kind, so nothing else needs touching.
+    const HAVOC_LIMBS: Record<string, { run: (H: House, w: TheC) => Promise<void> }> = {
+        // 💥 fabricate a surprise_read (disk diverged under the open edit) on the active
+        //  doc.  Active-doc truth is w:Lang.c.active_dock_path (set by Lang_set_active_dock).
+        surprise_read: {
+            run: async (H, w) => {
+                let path: string | undefined
+                try { path = H.Awo('Lang').c.active_dock_path as string | undefined } catch { /* no w:Lang yet */ }
+                if (!path) { console.warn('🥁 surprise_read: no active doc open'); return }
+                if (await H.Lies_fabricate_surprise_on(w, path))
+                    console.warn(`🥁 surprise_read on ${path}`)
+            },
+        },
+    }
+
     onMount(async () => {
     await M.eatfunc({
 
@@ -430,6 +449,79 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         H.i_elvisto(w, 'think')
     },
 
+    // ── Lies_fabricate_surprise_on ──────────────────────────────────────
+    //
+    //   Inject a synthetic surprise_read on a Doc so the popover / keep-mine /
+    //   take-theirs / escalate loop is exercisable without a second editor racing
+    //   the file on disk.  Stamps the same shape req_LiesStore_writeCarefully would
+    //   (mine on sc.text + sc.dige, theirs' dige on sc.disk_dige, theirs off-snap on
+    //   c.disk_text), so the UI and both resume legs treat it identically to a real
+    //   conflict.  "mine" is the Good's current loaded content; "theirs" is disk_text
+    //   if supplied, else mine with a marker line appended so the diff shows something.
+    //
+    //   Shared by the e_Lies_fabricate_surprise elvis and the fabricate ballistic.
+    //   Returns true if a conflict was stamped.
+    async Lies_fabricate_surprise_on(w: TheC, path: string, disk_text?: string): Promise<boolean> {
+        const H    = this as House
+        const good = H.LiesStore_good_of(w, 'text/Doc', path)
+        if (!good) {
+            console.warn(`🗂 fabricate_surprise: no Good for ${path} — ignoring`)
+            return false
+        }
+
+        const mine   = (good.c.content as string | null) ?? ''
+        const theirs = disk_text
+            ?? `${mine}\n// ← someone else changed this on disk (fabricated surprise_read)\n`
+
+        const sr = good.oai({ surprise_read: 1 })
+        sr.sc.text      = mine
+        sr.sc.dige      = await dig(mine)
+        sr.sc.disk_dige = await dig(theirs)
+        sr.c.disk_text  = theirs
+        good.bump_version()
+        return true
+    },
+
+    // ── e_Lies_fabricate_surprise ───────────────────────────────────────
+    //   Path-driven entry point for the fabricate dev affordance.
+    //   e.sc: { path: string, disk_text?: string }
+    async e_Lies_fabricate_surprise(A: TheC, w: TheC, e: TheC) {
+        const H    = this as House
+        const path = e.sc.path as string
+        if (!path) throw 'e_Lies_fabricate_surprise: needs path'
+        if (await H.Lies_fabricate_surprise_on(w, path, e.sc.disk_text as string | undefined)) {
+            console.warn(`🗂 fabricated surprise_read on ${path}`)
+            H.i_elvisto(w, 'think')
+        }
+    },
+
+//#region Ballistics — the havoc drum-machine
+
+    // Ballistics is the testing regime's reusable "havoc drum-machine": a way to pop a
+    //  limb out of the Lies/Store plumbing on demand and wreak a configured bit of
+    //  havoc.  A "limb" is authored as content — a %havoc particle dropped anywhere in
+    //  a Waft tree (Waft.svelte renders it inline as a strikeable pad; a switcheroo Waft
+    //  in raw mode shows the bare particle instead).  The particle is pure config
+    //  (havoc:<kind>, + any params); the *behaviour* lives here, in HAVOC_LIMBS, keyed
+    //  by kind — so the drum-machine is reusable while each test authors which limbs it
+    //  carries.  Struck via e_Lies_strike (not auto-pumped like w:Lies/Funkcions).
+    //
+    //  < future: a limb could arm itself — receive think() while the What** it sits in
+    //    is engaged / not folded away (Lang openness + Scrollability) — rather than only
+    //    firing on a manual strike.  For now a pad is struck by hand.
+
+    // ── e_Lies_strike ────────────────────────────────────────────────────
+    //   Strike a havoc pad: run the HAVOC_LIMBS behaviour for e.sc.kind, then wake a
+    //   tick so whatever state it touched settles.  e.sc: { kind: string }
+    async e_Lies_strike(A: TheC, w: TheC, e: TheC) {
+        const H    = this as House
+        const kind = e.sc.kind as string
+        const limb = HAVOC_LIMBS[kind]
+        if (!limb) { console.warn(`🥁 no havoc limb '${kind}'`); return }
+        await limb.run(H, w)
+        H.i_elvisto(w, 'think')
+    },
+
 //#region w:Lies — main tick
 
     async Lies(A: TheC, w: TheC) {
@@ -609,8 +701,14 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         //    the per-tick run is req_Store's Phase 2b Funkcion pump.  Lives here, in
         //     the w:Lies-only persist phase, NOT in req_Store: that pump is
         //      w-agnostic (w:Diffmatication shares it for IO) and must not spawn a Waft.
-        const gl = H.Lies_ghostlist(w)                 // undefined while it loads
-        if (gl) await H.GhostList_funkcion(gl, w)
+        // GhostList is developer chrome — the editor's self-listing file index. A
+        //  runner-flavoured Lies (w%runner, stamped by a test's Run wiring) skips it
+        //   entirely: the dirlist Funkcion never walks /src every 8s and the index
+        //    never seeds. (%dontSnap only hides it from the snap; this stops the work.)
+        if (!w.sc.runner) {
+            const gl = H.Lies_ghostlist(w)             // undefined while it loads
+            if (gl) await H.GhostList_funkcion(gl, w)
+        }
 
         return true   // Waft layer settled — LiesRealised may proceed
     },

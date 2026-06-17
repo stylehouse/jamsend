@@ -121,7 +121,9 @@
     {#if loaded_docs.length}
         <div class="ls-loaded-section">
             {#each loaded_docs as ld (ld.sc.path)}
+            Yeah!
                 <DocRow {H} w={Lies} doc={ld} {examining} />
+            Yeah!111111
             {/each}
         </div>
     {/if}

@@ -29,7 +29,46 @@ The resume/diff *mechanism* is real and wired; the popover reuses all of it.
 
 The inline row is the fallback / proof.  The popover below supersedes it as the primary surface.
 
-## Next — the popover (what to build)
+## BUILT — the popover (this session)
+
+The popover is now in the tree:
+- `ui/SurprisePopover.svelte` — scans `w:Lies/req:Store` Goods for the first
+  `good/%surprise_read` (reaches w:Lies via `H.ave`'s `%examining`.c.w, the same seam
+  Liesui uses, so it stays live without a parent re-render).  Renders a Storui-flavour
+  `Vexpandy popup={true}` (position:fixed at top of viewport, z-index 500 — FaceSucker
+  wasn't needed): ⚠ + path, keep mine / take theirs (the existing elvis legs), and an
+  **escalate** ("go to Lies ↓") that fires `Dock_open` then `scroll_to_house(H)` after a
+  50ms layout settle (mirrors Storui's `go_to_diff`).  Esc dismisses (the inline DocRow
+  row remains as fallback); resolving the conflict clears `good/%surprise_read`, so
+  `conflict` goes null and the popover closes.  No × kill button.
+- Mounted from `ui/InterestStrip.svelte` (the channel) — rendered unconditionally with
+  its own gate, so it pops regardless of whether any Interest caps are showing.
+- Fabrication moved out of DocRow into **Ballistics — the havoc drum-machine** (the flat
+  loaded-docs list that once hosted the button is gone; the Funkcion/Ballistui/House-UI first
+  cut was scrapped — Funkcions are the auto-pumped Lies behaviours, the wrong model).  A
+  **limb** is authored as content: a `%havoc` particle (`{havoc:<kind>}` + optional
+  `emoji`/`hint`) dropped **anywhere in a Waft tree**.  `Waft.svelte`/`waftitem` renders it
+  **inline as a strike pad** (💥 + kind); a switcheroo Waft in raw mode shows the bare
+  particle instead.  The particle is pure config; behaviour lives in `Lies/HAVOC_LIMBS`
+  (`kind → {run(H,w)}`), and `e_Lies_strike {kind}` runs it + wakes a tick.  Add a limb =
+  add a `HAVOC_LIMBS` entry — pad + dispatch are by kind.  First limb `surprise_read` →
+  `Lies_fabricate_surprise_on(w, path)` on the **active doc** (`H.Awo('Lang').c.active_dock_path`;
+  `examining.sc.active_path` is dead — nothing writes it).  Author `havoc:surprise_read` in a
+  test Waft, tap it → conflict on the open doc → popover pops.
+  - **Deferred** (user's "another whole concept"): a limb that *arms itself* — receives
+    `think()` while the `What**` it sits in is engaged / not folded away (Lang openness +
+    Scrollability) — instead of only firing on a manual strike.
+
+Still open from the original plan:
+- **Move InterestStrip's `×` into PeelInput** — left as a follow-up; it's a distinct UX
+  refactor (the strip caps would re-render through PeelInput's CRUD irow, which already has
+  a `pi-irow-del` ×).  The popover itself already has no kill button.
+- **Escalate target** — `scroll_to_house(H)` lands on the whole Lang/Lies House header,
+  not the Liesui sub-element; could be tightened to target the Liesui content.  And the
+  inline DocRow's diff is a per-row toggle, so escalate doesn't auto-open it — landing on
+  the glowing row (with its own keep/take/diff) is the seam for now.
+
+## Original plan — the popover (what to build)
 
 The conflict should **pop out of the Interest channel**, not just sit in the doc list.
 The thinking: Interests *are channels*; a surprise_read is *this Interest's business* —

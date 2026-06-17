@@ -1,7 +1,7 @@
 Snap:H
   H:Peregrination,Run
     A:Peregrination
-      self,round=3	{"mung":["age"]}
+      self,round=6	{"mung":["age"]}
       w:Peregrination
         req:ensure_compiled,path:Ghost/N/Peeroleum.g,finished
         req:ensure_compiled,path:Ghost/Story/Peregrination.g,finished
@@ -9,22 +9,25 @@ Snap:H
         compiled,path:Ghost/Story/Peregrination.g
         req:wrangle,eternal,ok
         reached:step_2
-        self,round=3	{"mung":["age"]}
         witnessed:step_2
+        reached:step_3
+        reached:step_4
+        self,round=6	{"mung":["age"]}
+        reached:step_5
     A:Lies
-      self,round=13	{"mung":["age"]}
+      self,round=16	{"mung":["age"]}
       w:Lies,dontSnap
     A:Lang
-      self,round=7	{"mung":["age"]}
+      self,round=10	{"mung":["age"]}
       w:Lang,dontSnap
     A:Pantheate
-      self,round=5	{"mung":["age"]}
+      self,round=8	{"mung":["age"]}
       w:Pantheate
         include:gen/N/Peeroleum.go
         req:include,gen_path:gen/N/Peeroleum.go,path:Ghost/N/Peeroleum.g,source_dige:3ebb6053102cf12d,ghostmeta_name:Ghostmeta_Ghost_N_Peeroleum,permanent,live_dige:3ebb6053102cf12d,finished
         include:gen/Story/Peregrination.go
         req:include,gen_path:gen/Story/Peregrination.go,path:Ghost/Story/Peregrination.g,source_dige:47e44a4d82a5abf7,ghostmeta_name:Ghostmeta_Ghost_Story_Peregrination,permanent,live_dige:47e44a4d82a5abf7,finished
-        self,round=5	{"mung":["age"]}
+        self,round=8	{"mung":["age"]}
         o_elvis:Ghost_update_notify
     watched:ave
       examining
@@ -48,25 +51,27 @@ Snap:H
       action,role:softgen,label:softgen,icon:softgen,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:compo,label:compo,icon:compo,cls:toggle-off	{"ref":{"fn":"Function()"}}
     A:Bearing
-      self,round	{"mung":["age"]}
+      self,round=4	{"mung":["age"]}
       w:Peeroleum
         Peering,name:bearing
           Pier,pub:nearing
             outbox
               emit,type:hello,seq,sent
+            req:handshake
           req:p2paddy
         transport,type:mock
         active_transport,type:mock,open
-        self,round	{"mung":["age"]}
+        self,round=4	{"mung":["age"]}
     A:Nearing
-      self,round	{"mung":["age"]}
+      self,round=4	{"mung":["age"]}
       w:Peeroleum
         Peering,name:nearing
           Pier,pub:bearing
             inbox
               unemit,type:hello,seq,delivered
+            req:handshake
           req:p2paddy
         transport,type:mock
         active_transport,type:mock,open
-        self,round	{"mung":["age"]}
+        self,round=4	{"mung":["age"]}
     mo:main,interval=3.6	{"mung":["id"]}

@@ -2,6 +2,7 @@
     // Otro
     import Ghost    from "$lib/O/Ghost.svelte"
     import { House } from "$lib/O/Housing.svelte"
+    import { keyser } from "$lib/data/Stuff.svelte"
     import Actions from "$lib/O/ui/Actions.svelte"
     import Stuffing from "$lib/data/Stuffing.svelte"
     import { onDestroy } from "svelte";
@@ -106,7 +107,7 @@
                     </div>
                 {/if}
             </div>
-            {#each house.UIs.ob({ UI: 1 }) as uiC (uiC.sc.UI)}
+            {#each house.UIs.ob({ UI: 1 }) as uiC (keyser(uiC.sc))}
                 <svelte:component this={uiC.sc.component} H={house} />
             {/each}
             {#if house.stashed}

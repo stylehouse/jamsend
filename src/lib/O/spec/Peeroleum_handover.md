@@ -14,11 +14,12 @@ Notation: `[x]` done · `[~]` started/scaffolded · `[ ]` not begun · `// <` a 
 loader compiles + includes both `.g` docks and calls through to the compiled `LakeNetherland`, which
 seeds its `%req:wrangle`. Heading 0 ✓, the CLI compiler 1a ✓, two LangTiles grammar wins (L) ✓.
 
-**Heading 2 (mock transport spine) is built and compiles — awaiting the in-app proof.** The spine's
-`transport()` now wires a mock-port on `at.c.connection`; the wrangler stands up both sides, pairs the
-ports, and pushes one frame B→N. Run the Peregrination Story on :9091 to confirm the clean quiescent
-snap (see heading 2). **Next real work: heading 3** — the hello/trust handshake leaf do_fns to
-`%req:handshake,finished`. Check every `.g` edit with `npm run lang-compile -- <file>`.
+**Heading 2 (mock transport spine) is PROVEN in-app:** one frame crosses the mock transport B→N and
+lands `%inbox/%unemit,…,delivered`, witnessed at step 2 (see heading 2 for the snap shape). The runner
+is step-driven now (inner steps start at 2, via `Lake_drive`'s own step dispatch), and the compile
+scaffolding folds out of the snap with `%dontSnap` once the apparatus is ready. **Next real work:
+heading 3** — the hello/trust handshake leaf do_fns to `%req:handshake,finished` (the four-leaf tree
+already stands up at step 3). Check every `.g` edit with `npm run lang-compile -- <file>`.
 
 ## How the loop works (heading 0)
 
@@ -138,26 +139,67 @@ frame to the active transport; `Peeroleum_deliver` lands `%inbox/unemit:N,delive
 so a watching do_fn reacts the same run. (Both heading-2 minimal — acks + the rest of the §7 serial
 states are heading 4.)
 
-The wrangler `LakeNetherland` (`Ghost/Story/Peregrination.g`) stands up both sides directly (spec §15):
-`A:Bearing` / `A:Nearing`, each `w:Peeroleum` with a `%Peering`/`%Pier` (named by the *peer's*
-identity) and a mock transport; it pairs `bport.partner = nport` (and back), then `Peeroleum_send`s one
-`{header:{type:hello,from:bearing,to:nearing,seq:1}}` B→N. Its `%req:wrangle,eternal` do_fn witnesses the
-delivery and stamps `%witnessed:step_1` (the step rides in the *value* — `step` is the Story mainkey, so
-it can't be a key). All raw JS: H-receiver actor-laying, objects-on-`.c`, drilled paths — tracked seams.
+**Step-driven now (inner steps start at 2).** Step 1 is the bootstrap (compile+include), owned by the
+loader. `LakeNetherland` (`Ghost/Story/Peregrination.g`) shrank to: install `%req:wrangle,eternal` whose
+do_fn calls `Lake_drive(w, req)` each pass. The work lives in flat helpers: `Lake_sides_up(w)` (step 2 —
+stand up `A:Bearing`/`A:Nearing`, each `w:Peeroleum` with a `%Peering`/`%Pier` named by the *peer's*
+identity + a mock transport; pair the ports; `Peeroleum_send` one B→N frame; stamps `%reached:step_2`),
+`Lake_handshake(w)` (step 3 — seed+pump `%req:handshake` on each Pier; stands the four-leaf tree up but
+not to `finished`, since the leaf do_fns are heading 3), steps 4/5 stamp `%reached:step_N` placeholders.
+`Lake_witness` stamps `%witnessed:step_2` once Nearing's inbox shows the delivered frame (step in the
+*value* — `step` is the Story mainkey, so it can't be a key). All raw JS: H-receiver actor-laying,
+objects-on-`.c`, drilled paths — tracked seams.
 
-**To prove:** dev server :9091 → run the `Peregrination` Story. Clean quiescent snap should show, on
-Nearing, `%Peering/%Pier/%inbox/%unemit:1,type:hello,seq:1,delivered`, the sender's
-`%outbox/emit:1,sent` on Bearing, and `w:Peregrination/%witnessed:step_1`. (`%see` lines sweep at the
-step boundary.) Both `.g` compile clean via `lang-compile`, and their generated modules parse as valid
-JS. **NB:** the committed `gen/N/Peeroleum.go` + `gen/Story/Peregrination.go` are now stale vs the edited
-`.g`; the loader's dige gate recompiles + rewrites them on the next in-app run — no hand-edit needed.
+`wormhole/Story/Peregrination/toc.snap` carries one `step,…` line per inner step (`step,dige:…` =1, then
+`step=2…5,dige:…`); the diges are **lie diges** (real seq, fake hash) until a run records the true ones.
+
+**Why NOT `H.on_step` (a real bug, fixed):** `on_step` keys off one H-global `did_on_step_n`. When the
+cold-compile/include spills into step 2, the loader's step-1 path still runs and claims step 2 (its table
+has no key 2) → the wrangle's step-2 setup is **starved**. The tell was a step-3 snap with `%reached:step_3`
+present but no `A:Bearing`/`A:Nearing` and no `%witnessed:step_2` (step 3 fired, step 2 didn't). Fix:
+`Lake_drive` keeps a **req-local `req.c.did_step`** (read `H.c.run.c.step_n` the way `on_step` does), immune
+to any other caller; and the loader dropped `on_step` entirely, seeding `ensure_compiled` directly
+(idempotent via `doai`). Two-dock include also tripped a latent render crash — `each_key_duplicate` on
+`UI:Pantheate-include` (both includes share that name) — fixed by keying Otro's UI `{#each}` on
+`keyser(uiC.sc)` (full identity incl. `gen_path`), not `uiC.sc.UI` (`Otro.svelte:110`).
+
+**Proven in-app (step 2 ✓):** the step-2 snap shows `A:Bearing/%Peering/%Pier/%outbox/%emit,…,sent`,
+`A:Nearing/%Peering/%Pier/%inbox/%unemit,…,delivered`, and `w:Peregrination/%reached:step_2 +
+%witnessed:step_2`. The frame crossed the mock transport and landed delivered. (`%see` lines sweep at the
+step boundary.) Both `.g` compile clean via `lang-compile`; their generated modules parse as valid JS.
+
+**Runner-snap fold (`%dontSnap`):** step 2's snap was still drowned by the compile apparatus — `A:Lies`
+(the GhostList dirlist of every source file) and `A:Lang` (the *entire* generated `.go` text, twice,
+under `dock/Compile/Output/source`). New snap-only knob: a node carrying `%dontSnap` emits its own line
+but the walk descends no further (`Story.svelte` `snap_H` each_fn sets `T.sc.more = []`; `[]` is truthy so
+it short-circuits the child query in `Selection.dive_middle:142`). It's **orthogonal to pump** — the
+folded w keeps thinking, so an edited `.g` still recompiles. The loader stamps `w:Lies.sc.dontSnap` +
+`w:Lang.sc.dontSnap` at call-through (apparatus ready); **Pantheate stays** (its `%req:include,finished`
+is the runner-state that makes `LakeNetherland`'s methods exist). To fold the `A:Lies` `self,round`
+age-line too, stamp the `A:` instead of the `w:`.
+
+**Runner-flavoured Lies (`w%runner`) — done:** `%dontSnap` only *hid* GhostList; the dirlist Funkcion
+still walked `/src` every 8s. So the loader now stamps `w:Lies.sc.runner` + `w:Lang.sc.runner` at Run
+wiring, and `Lies.svelte` (the Waft-settle phase, ~line 704) skips provisioning GhostList when
+`w%runner` — the index never seeds, the Funkcion never walks, the `Interest:GhostList` never appears.
+A runner's commission to Lies is read→compile→include only. **Open clutter (not yet folded):** the
+Prep's `Lies_open_Waft Ghost/Net/Easy` opens the overlay *in the editor*, which pulls the navigation
+apparatus (`Interest:Trail`, an active `dock:…Peregrination.svelte`, `Navicade`/`Pmirrors`) into
+`watched:ave` — and `%dontSnap` on `w:Lies/w:Lang` doesn't cover `ave`. With warm (cached) compile this
+also makes step 1 race, so its snap is timing-sensitive. Options: drop the Prep's Waft-open (the loader
+reads docks via the hardcoded `DOCKS`, not the Waft — heading W unbuilt), or extend the runner-flavour
+so opening a Waft engages no editor Trail. `UI:Ballistics` in the snap is unrelated parallel work.
+
+**NB:** the committed `gen/N/Peeroleum.go` + `gen/Story/Peregrination.go` track the `.g`; the loader's
+dige gate recompiles + rewrites them on the next in-app run if they drift — no hand-edit needed.
 
 ### 3 — hello+trust under mock → `%req:handshake,finished`  `[~]`  (rung 2)
-`req_handshake` seeds the four maz leaves (said/heard hello, said/heard trust). Next: leaf do_fns —
-each finishes when its protocol particle exists (`Pier/protocol/hello/%said` …); `say_*`/`hear_*`
-write those particles and push `e:hello`/`e:trust` frames through `%active_transport`. Cross-side
-short-circuit (spec §8). Wrangler `LakeNetherland` gets the `on_step{1,2}` table that drives it and
-asserts via existence query + a `%witnessed:step_N` particle (step in the value — `step` is a mainkey).
+Scaffold up: `on_step{3}` (`Lake_handshake`) seeds + pumps `%req:handshake` on each Pier, so the
+spine's `req_handshake` stands the four maz leaves up (said/heard hello, said/heard trust) — but they
+don't yet finish. **Next: the leaf do_fns** — each finishes when its protocol particle exists
+(`Pier/protocol/hello/%said` …); `say_*`/`hear_*` write those particles and push `e:hello`/`e:trust`
+frames through `%active_transport` (now a live mock-port, heading 2). Cross-side short-circuit (spec
+§8). Then `Lake_witness` asserts `%req:handshake,finished` both sides → `%witnessed:step_3`.
 
 ### 4 — outbox/inbox lifecycle + acks + whittle  `[ ]`  (rung 3)
 `%outbox/emit:N` states (sent/acked), `%inbox/unemit:N` serial handling (queued/handling/verified/

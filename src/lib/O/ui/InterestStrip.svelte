@@ -14,6 +14,7 @@
 
     import type { TheC }  from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
+    import SurprisePopover from "$lib/O/ui/SurprisePopover.svelte"
 
     let { H }: { H: House } = $props()
 
@@ -76,6 +77,10 @@
         H.i_elvisto('Lies/Lies', 'Lies_open_sidetrack',   { from })
     }
 </script>
+
+<!-- A surprise_read on any open Doc pops out of the channel as a fixed popover,
+     above the strip itself.  Rendered unconditionally — it has its own gate. -->
+<SurprisePopover {H} />
 
 {#if rows.length}
 <div class="isx">

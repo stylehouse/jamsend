@@ -8,15 +8,19 @@ story:Peregrination
     noCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.442
-      sample=0.372,at=1781682223
-      sample=0.36,at=1781682263
-      sample=0.689,at=1781682340
-      sample=0.339,at=1781682718
-      sample=0.521,at=1781682922
-      sample=0.214,at=1781683116
-      sample=0.158,at=1781683244
-      sample=0.451,at=1781683280
-      sample=0.451,at=1781683577
-      sample=0.863,at=1781685895
-  step,dige:191fed5766bef1c1
+    TimeTotal:beliefs,avg=0.884
+      sample=0.668,at=1781688057
+      sample=0.574,at=1781688079
+      sample=0.578,at=1781688133
+      sample=0.321,at=1781688258
+      sample=1.537,at=1781689639
+      sample=1.537,at=1781689787
+      sample=0.443,at=1781689826
+      sample=1.507,at=1781689840
+      sample=0.483,at=1781689855
+      sample=1.192,at=1781690546
+  step,dige:eff2d583cf5b53be
+  step=2,dige:f772e92f834fe0e2
+  step=3,dige:43a5d7dad0869a08
+  step=4,dige:f6fc71bfc62b4da1
+  step=5,dige:c5aa6b04d0f8ec9f

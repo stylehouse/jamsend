@@ -67,8 +67,10 @@ await M.eatfunc({
     Run_A_Peregrination(this: House) {
         const H = this
         H.i({ A: 'Peregrination' }).i({ w: 'Peregrination' })
-        H.i({ A: 'Lies' }).i({ w: 'Lies' })
-        H.i({ A: 'Lang' }).i({ w: 'Lang' })
+        // runner-flavoured Lies/Lang: read→compile→include only, no developer chrome
+        //  (GhostList file index gated off in Lies.svelte on w%runner).
+        H.i({ A: 'Lies' }).i({ w: 'Lies', runner: 1 })
+        H.i({ A: 'Lang' }).i({ w: 'Lang', runner: 1 })
         H.i({ A: 'Pantheate' }).i({ w: 'Pantheate' })
         console.log(`🟦 ${H.name} Peregrination wired`)
     },
@@ -136,12 +138,15 @@ await M.eatfunc({
             repoke(req, 'compile')
         }
 
-        await H.on_step({
-            1: async () => {
-                for (const path of DOCKS)
-                    (await w.doai({ req: 'ensure_compiled', path }))?.(ensure)
-            },
-        })
+        // Step-1 bootstrap: seed an ensure_compiled per dock (idempotent — doai
+        //  re-wires nothing once the do_fn is set). Deliberately NOT via on_step:
+        //  on_step keys off a single H-global did_on_step_n, and when compile/include
+        //  spills into step 2 a step-1 table here would claim step 2 (it has no key 2)
+        //  and starve the wrangle's step-2 setup. The wrangle owns its own step
+        //  dispatch (Lake_drive), so bootstrap and inner steps stay decoupled.
+        if (!w.c.called_through)
+            for (const path of DOCKS)
+                (await w.doai({ req: 'ensure_compiled', path }))?.(ensure)
 
         // Pump the ensure_compiled reqs every beat.
         await w.do()
@@ -152,6 +157,14 @@ await M.eatfunc({
         if (ensures.length && ensures.every(r => r.sc.finished) && !w.c.called_through) {
             w.c.called_through = true
             w.i({ see: 'compiled + included — calling through to LakeNetherland' })
+            // Apparatus ready: fold the compile scaffolding out of the runner snap.
+            //  %dontSnap is snap-only — w:Lies/w:Lang keep pumping (so an edited .g
+            //  still recompiles), they just stop drowning the run state. Pantheate
+            //  stays: its includes are what make LakeNetherland's methods exist.
+            for (const a of ['Lies', 'Lang']) {
+                const wc = H.o({ A: a })[0]?.o({ w: a })[0] as TheC | undefined
+                if (wc) wc.sc.dontSnap = 1
+            }
             await (H as any).LakeNetherland(A, w)
         }
     },
