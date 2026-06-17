@@ -89,41 +89,57 @@ async req_heard_trust(req):
 //   inbound frame (raw — it's a JS object off the wire), verify, and write the
 //    far half. identity in the mock: a Peering's %name is our address, a Pier's
 //     %pub is the peer it faces, and the publicKey we send IS our name (verify is
-//      then startsWith(pub)). seq: hello=1, trust=2 (per-type, heading-3 minimal;
-//       the monotone per-Pier counter + acks are heading 4).
+//      then startsWith(pub)). seq is the per-Pier monotone outbound counter
+//       (Pier_next_seq, spec §7.1) — each say allocates the next and records it on
+//        the protocol %said so the matching ack can stamp it %acked.
 say_hello(w, pier):
     let proto = pier oai protocol
     let hello = proto oai hello
     if (hello.oa({said:1})) return
-    hello i said,seq:1
     let me = pier.c.up.sc.name
-    &Peeroleum_send,w,{header:{type:'hello', from:me, to:pier.sc.pub, seq:1, publicKey:me}}
+    let seq = this.Pier_next_seq(pier)
+    hello.i({said:1, seq})
+    &Peeroleum_send,w,{header:{type:'hello', from:me, to:pier.sc.pub, seq, publicKey:me}}
 
 say_trust(w, pier):
     let proto = pier oai protocol
     let trust = proto oai trust
     if (trust.oa({said:1})) return
-    trust i said,seq:2
     let me = pier.c.up.sc.name
-    &Peeroleum_send,w,{header:{type:'trust', from:me, to:pier.sc.pub, seq:2}}
+    let seq = this.Pier_next_seq(pier)
+    trust.i({said:1, seq})
+    &Peeroleum_send,w,{header:{type:'trust', from:me, to:pier.sc.pub, seq}}
 
 // hear_hello — verify their key starts-with the pub we expect, record %heard +
 //  the proven publicKey, set %Ud (their identity, survives resets — spec §6), and
 //   if we have not said yet, say now (the single-initiator path; a no-op under the
 //    symmetric dual-init). A failed verify writes nothing — the gap is the result
 //     (spec §8: a corrupt hello that never arrives is the test passing).
+// Returns true on a clean verify, false on reject — the serial inbox handler
+//  (Peeroleum_pump_inbox) stamps %error on a false (the deliver-failure path, spec
+//   §7.3); under the mock with no corruption this is always true (heading 6 arms it).
 hear_hello(w, pier, frame):
     const H = this
     let h = frame.header
-    if (!String(h.publicKey).startsWith(pier.sc.pub)) return
+    if (!String(h.publicKey).startsWith(pier.sc.pub)) return false
     let hello = pier.oai({protocol: 1}).oai({hello: 1})
     hello.i({heard: 1, publicKey: h.publicKey})
     pier.oai({Ud: 1, publicKey: h.publicKey})
     if (!hello.oa({said: 1})) H.say_hello(w, pier)
+    return true
 
 // hear_trust — verify their grants (trivial under the mock) and record %heard.
 hear_trust(w, pier, frame):
     pier.oai({protocol: 1}).oai({trust: 1}).i({heard: 1})
+    return true
+
+// Pier_next_seq — the per-Pier monotone outbound counter (spec §7.1). On .c: it
+//  survives across steps in the live tree and never snaps; the seq it hands out
+//   lands on the %outbox/emit, which is what the snap shows. Acks do NOT consume a
+//    seq (they book no emit), so the counter counts exactly our real outbound frames.
+Pier_next_seq(pier):
+    pier.c.seq = (pier.c.seq || 0) + 1
+    return pier.c.seq
 
 // ── transports (spec §4) — one envelope, swappable carrier ────────────────────
 // The mock: in-process, deterministic, tick-driven. Two mock-ports deliver into
@@ -165,28 +181,143 @@ req_transport_select(req):
     req.sc.ok = 1
 
 // ── send / deliver — the one envelope across the active transport (spec §4.3) ──
-// Peeroleum_send — hand a frame to this side's active transport, stamping a
-//  %outbox/emit,sent on the sender's Pier (spec §7.1). Heading-2 minimal: %sent
-//   only; acks + the rest of the outbox states are heading 4. Objects-on-.c and
-//    drilled paths are LangTiles seams, so the body is raw JS.
+// Peeroleum_send — hand a frame to this side's active transport (spec §4.3). A real
+//  outbound frame books a %outbox/emit (created→sent in one stamp — the mock hands off
+//   instantly) that lives until its ack stamps %acked (spec §7.1). An ack is light: it
+//    ferries but books no emit and is never itself acked (spec §7.2), so the outbox stays
+//     exactly the set of frames awaiting acknowledgement. Objects-on-.c + dynamic-value
+//      writes are LangTiles seams, so the body is raw JS.
 Peeroleum_send(w, frame):
     let h = frame.header
     let pier = w.o({Peering:1})[0]?.o({Pier:1})[0]
-    if (pier) pier.oai({outbox: 1}).i({emit: h.seq, type: h.type, seq: h.seq, sent: 1})
+    if (pier && h.type !== 'ack') pier.oai({outbox: 1}).i({emit: h.seq, type: h.type, seq: h.seq, sent: 1})
     w.o({active_transport:1})[0]?.c.connection?.send(frame)
 
-// Peeroleum_deliver — land an inbound frame in this side's Pier inbox (spec §6,
-//  §7.3). Heading-2 minimal: one %inbox/%unemit:seq,delivered; the full serial
-//   handling (queued→handling→verified→delivered) + acks is heading 4. Runs
-//    inside the carrier's post_do (Runtime asserted), so re-drive a think so a
-//     watching do_fn (the wrangler's witness) reacts this same run.
+// Peeroleum_deliver — the transport handed us an inbound frame (spec §4.3). An ack is
+//  handled here directly (spec §7.2): Peeroleum_take_ack stamps the outbox emit it names
+//   %acked — it never enters the inbox or a hear_* handler. Any other frame lands in the
+//    serial inbox as %unemit,queued (its raw frame stashed on .c for the handler) and
+//     Peeroleum_pump_inbox drains it. feebly_ponder re-drives a think (Runtime asserted —
+//      we run inside the carrier's post_do) so a watching do_fn reacts this same run.
 Peeroleum_deliver(w, frame):
     const H = this
     let h = frame.header
     let pier = w.o({Peering:1})[0]?.o({Pier:1})[0]
     if (!pier) return
-    pier.oai({inbox: 1}).i({unemit: h.seq, type: h.type, seq: h.seq, delivered: 1})
-    // dispatch the protocol frame to its hear_* handler (acks are heading 4).
-    if (h.type === 'hello') H.hear_hello(w, pier, frame)
-    else if (h.type === 'trust') H.hear_trust(w, pier, frame)
+    if (h.type === 'ack') { H.Peeroleum_take_ack(w, pier, h); H.feebly_ponder(); return }
+    let unemit = pier.oai({inbox: 1}).i({unemit: h.seq, type: h.type, seq: h.seq, queued: 1})
+    unemit.c.frame = frame
+    H.Peeroleum_pump_inbox(w, pier)
     H.feebly_ponder()
+
+// Peeroleum_pump_inbox — serial inbox handler (spec §7.3). The guarantee: at most one
+//  %unemit,handling across a Pier's inbox at a time. If one is mid-handle, bow out (the
+//   just-queued frame waits, visible as %queued). Else take the oldest %queued and walk
+//    it queued→handling→verified→done: a pre-%Ud frame may only be hello|noop (spec §7.3);
+//     verify (a real header-sign check is heading 6 — here it passes under the mock); then
+//      deliver to the hear_* for its type (noop carries nothing). On success: stamp %done
+//       +%to, drop the transient %queued|%handling, and ack the sender (spec §7.2). On a
+//        verify/deliver failure: stamp %error (no %done) and roll up to %faulty. Then loop
+//         to drain the next %queued now the lock is free. Raw JS — reads the stashed frame
+//          off .c, mutates flag keys, walks dynamic state (no DSL verb for any of it yet).
+Peeroleum_pump_inbox(w, pier):
+    const H = this
+    let inbox = pier.o({inbox:1})[0]
+    if (!inbox) return
+    if (inbox.o({unemit:1}).some(u => u.sc.handling && !u.sc.done && !u.sc.error)) return
+    let next = inbox.o({unemit:1}).find(u => u.sc.queued && !u.sc.done && !u.sc.error)
+    if (!next) return
+    let frame = next.c.frame
+    let h = (frame && frame.header) || {}
+    next.sc.handling = 1
+    let pre_ud = !pier.oa({Ud:1})
+    let ok = !(pre_ud && h.type !== 'hello' && h.type !== 'noop')
+    if (ok) {
+        next.sc.verified = 1
+        if (h.type === 'hello') ok = H.hear_hello(w, pier, frame) !== false
+        else if (h.type === 'trust') ok = H.hear_trust(w, pier, frame) !== false
+    }
+    if (ok) {
+        next.sc.done = 1
+        next.sc.to = h.type
+        delete next.sc.queued
+        delete next.sc.handling
+        pier.bump()
+        let me = pier.c.up.sc.name
+        H.Peeroleum_send(w, {header:{type:'ack', from:me, to:pier.sc.pub, ack:h.seq}})
+    } else {
+        next.sc.error = pre_ud ? 'pre-Ud' : 'not-them'
+        delete next.sc.queued
+        delete next.sc.handling
+        pier.bump()
+        H.Peeroleum_rollup_faulty(pier)
+    }
+    H.Peeroleum_pump_inbox(w, pier)
+
+// Peeroleum_take_ack — an inbound ack names a seq we sent (spec §7.2): stamp that
+//  %outbox/emit %acked, and the matching protocol %said too (spec §6, so the handshake's
+//   acked-ness is visible). Acks book no inbox item and run no protocol handler.
+Peeroleum_take_ack(w, pier, h):
+    let emit = pier.o({outbox:1})[0]?.o({emit:1}).find(e => e.sc.seq == h.ack)
+    if (emit) { emit.sc.acked = 1; pier.bump() }
+    let proto = pier.o({protocol:1})[0]
+    for (const kind of ['hello','trust']) {
+        let said = proto?.o({[kind]:1})[0]?.o({said:1})[0]
+        if (said && said.sc.seq == h.ack) said.sc.acked = 1
+    }
+
+// Peeroleum_rollup_faulty — rebuild %faulty from the inbox's %error items (spec §9).
+//  A roll-up present only while something is wrong; the detail stays on the unemit. Run
+//   on every fault and at the step boundary, so a cleared inbox drops a stale %faulty.
+Peeroleum_rollup_faulty(pier):
+    let inbox = pier.o({inbox:1})[0]
+    let errs = inbox ? inbox.o({unemit:1}).filter(u => u.sc.error) : []
+    let faulty = pier.o({faulty:1})[0]
+    if (!errs.length) { if (faulty) pier.drop(faulty); return }
+    faulty ||= pier.i({faulty:1})
+    faulty.r({unemit:1}, {})
+    for (const u of errs) faulty.i({unemit:u.sc.seq, error:u.sc.error, seq:u.sc.seq})
+
+// ── step-boundary whittle (spec §7.4, §12.1) ──────────────────────────────────
+// Peeroleum_arm_whittle — register the per-w cull at each step boundary, re-arming
+//  itself each pass (the logger idiom: Runstepped drains its queue every boundary, so a
+//   standing callback must re-push). Guarded so a w arms exactly once. The cull runs in
+//    Atime (clear()), so drop/r/i are safe inside it.
+Peeroleum_arm_whittle(w):
+    const H = this
+    if (w.c._whittle_armed) return
+    w.c._whittle_armed = 1
+    let rearm = () => H.Runstepped(async () => { H.Peeroleum_runstepped(w); rearm() })
+    rearm()
+
+// Peeroleum_runstepped — the cull, per Pier under w (spec §7.4): acked %outbox/emit move
+//  to %outbox/recent (whittled 20); %done %inbox/unemit move to %inbox/recent (whittled
+//   20); %faulty is rebuilt from any remaining inbox errors (faults are kept, not culled).
+//    %recent items carry only their emit|unemit/type/seq — no flags, no time (record order
+//     is the order). This is the one place outbox/inbox items vanish, so the snap taken
+//      *before* this boundary always shows the step's traffic (spec §12.1).
+Peeroleum_runstepped(w):
+    const H = this
+    for (const peering of w.o({Peering:1})) {
+        for (const pier of peering.o({Pier:1})) {
+            let outbox = pier.o({outbox:1})[0]
+            if (outbox) {
+                let recent = outbox.oai({recent:1})
+                for (const e of outbox.o({emit:1}).filter(e => e.sc.acked)) {
+                    recent.i({emit:e.sc.emit, type:e.sc.type, seq:e.sc.seq})
+                    outbox.drop(e)
+                }
+                H.whittle_N(recent.o({emit:1}), 20)
+            }
+            let inbox = pier.o({inbox:1})[0]
+            if (inbox) {
+                let recent = inbox.oai({recent:1})
+                for (const u of inbox.o({unemit:1}).filter(u => u.sc.done)) {
+                    recent.i({unemit:u.sc.unemit, type:u.sc.type, seq:u.sc.seq})
+                    inbox.drop(u)
+                }
+                H.whittle_N(recent.o({unemit:1}), 20)
+            }
+            H.Peeroleum_rollup_faulty(pier)
+        }
+    }

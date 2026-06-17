@@ -46,8 +46,8 @@ const dumpC = (n: any, d = 0): any =>
     d > 12 ? '…' : { sc: { ...n.sc }, kids: (n.o?.({}) ?? []).map((k: any) => dumpC(k, d + 1)) }
 
 test(`Story_cli: run + dump Book:${BOOK}`, async () => {
-    // -I shim: INCLUDE=SuchATest (or a .svelte path) mounts an extra ghost alongside Ghost,
-    //  depositing its worker onto H — lets a tiny detective Book run without touching Machinery.
+    // -I shim: INCLUDE=<name> (a scripts/<name>.svelte, just ghost code) mounts an extra ghost
+    //  alongside Ghost, depositing its worker onto H — runs a Book without touching Machinery.
     let include: any = undefined
     if (process.env.INCLUDE) {
         const name = process.env.INCLUDE.replace(/\.svelte$/, '').replace(/^\.?\//, '')

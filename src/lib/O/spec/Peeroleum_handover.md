@@ -10,33 +10,51 @@ Notation: `[x]` done · `[~]` started/scaffolded · `[ ]` not begun · `// <` a 
 
 ## Status — start here
 
-**The harness is done and proven in-app** (clean quiescent snap, no timeout): the hand-written
-loader compiles + includes both `.g` docks and calls through to the compiled `LakeNetherland`, which
-seeds its `%req:wrangle`. Heading 0 ✓, the CLI compiler 1a ✓, two LangTiles grammar wins (L) ✓.
+**Proven in-app, rungs 0–3 (clean quiescent snap, no timeout):** the loader compiles+includes both
+`.g` docks and calls `LakeNetherland`; the mock transport carries frames B↔N (heading 2); and at
+**step 3 the full hello+trust handshake completes** — both Piers `%req:handshake,finished` (all four
+leaves), `protocol/{hello,trust}/{said,heard}`, `%Ud,publicKey`, inbox/outbox pairs,
+`%witnessed:step_3`. Heading 0/1a/2/3 ✓, LangTiles wins (L) ✓. **Heading 4 (full outbox/inbox
+lifecycle + acks + whittle) is written and compiles clean — awaiting its first in-app run.**
 
-**Heading 2 (mock transport spine) is PROVEN in-app:** one frame crosses the mock transport B→N and
-lands `%inbox/%unemit,…,delivered`, witnessed at step 2 (see heading 2 for the snap shape). The runner
-is step-driven now (inner steps start at 2, via `Lake_drive`'s own step dispatch), and the compile
-scaffolding folds out of the snap with `%dontSnap` once the apparatus is ready.
+### → START HERE: heading 4 is BUILT (compiles clean) — prove it in-app + record true diges
 
-**Heading 3 (hello+trust handshake) is PROVEN in-app at step 3.** Both Piers reach
-`%req:handshake,finished` (all four leaves finished), with `protocol/hello/{said,heard:publicKey}` +
-`protocol/trust/{said,heard}`, `%Ud,publicKey`, inbox/outbox emit+unemit pairs, and
-`w:Peregrination/%witnessed:step_3`. The `c.up`-below-`w` bug (handshake standing up with no leaves)
-was found+fixed in the same session (`Peering.c.up=w; Pier.c.up=Peering` in `Lake_sides_up`). **Next
-real work: record the true step-3 dige (the toc step-3 dige is still a lie — Accept/Resnapture the
-run), tidy the duplicate hello (see heading 3), then heading 4 (outbox/inbox lifecycle + acks +
-whittle).** NB headless `Story_cli` (see `Story_cli_handover.md`) does NOT yet boot
-this Book — it mounts only `<Ghost>`, not the `Peregrination.svelte` bootstrap loader, so the wrangler
-methods never compile in; wiring the loader into `Story_cli.svelte` is heading 1b's payoff, and would
-finally make this verifiable headlessly. Until then, heading-3 proof is in-app.
+Heading 4 — outbox/inbox lifecycle + acks + whittle (spec rung 3, §7 + §12) — is written into the
+spine + wrangler and both `.g` compile clean (`npm run lang-compile`). It is **not yet proven in-app**
+(no headless runner — heading 1b). The next move is a single in-app run on :9091, then recording the
+true diges. What landed (detail + bombs under **heading 4** below):
+- **Per-Pier monotone `seq`** (`Pier_next_seq`, a `Pier.c.seq` counter): each real outbound frame
+   allocates the next; acks consume none. So Bearing's frames are noop=1, hello=2, trust=3; Nearing's
+    hello=1, trust=2 — all distinct emits.
+- **Outbox `created→sent→acked`**: `Peeroleum_send` books a `%outbox/emit,sent` for non-ack frames;
+   an inbound ack (`Peeroleum_take_ack`) stamps the matching `%emit` (and protocol `%said`) `%acked`.
+- **Acks**: every verified non-ack inbound frame triggers `e:ack%ack:<seq>` back; `Peeroleum_deliver`
+   has an `h.type==='ack'` branch distinct from the inbox, and acks are never themselves acked.
+- **Serial inbox** (`Peeroleum_pump_inbox`): `%unemit` walks `queued→handling→verified→done`, at most
+   one `%handling` at a time, pre-`%Ud` gate (hello|noop only), `%error→%faulty` on failure.
+- **Step-boundary whittle** (`Peeroleum_runstepped`, armed via self-re-arming `Runstepped`): acked
+   emits → `%outbox/recent`, done unemits → `%inbox/recent` (both whittle 20), `%faulty` rebuilt.
+- **Duplicate B→N hello dissolved**: step 2's scaffold frame is now `type:noop` (a pure carrier+ack
+   ping that still stamps `%witnessed:step_2`), so the real hello is sent exactly once, at step 3.
 
-**Write the spine in the DSL, not raw JS** (the human's standing ask): heading L now covers a lot —
-`%` optional on peels (`i A:Bearing`), `H` receiver for actor-laying, `let {AB,wB} = H i
-A:Bearing$AB/w:Peeroleum$wB` (multi-assign two-leg row-capture), `&name,a,b` calls. `Lake_sides_up` is
-the worked example; only object/`.c` seams (the mock-port pairing) stay raw. Reach for a LangTiles
-extension before dropping to raw JS. Check every `.g` edit with `npm run lang-compile -- <file>`; the
-working tree is left uncommitted for the human.
+**The in-app run will reshape every step snap** (outbox/inbox now carry the full lifecycle, and the
+boundary culls acked/done items into `%recent` after each step). So the `toc.snap` step diges — already
+lies — are doubly stale now. Run the `Peregrination` Story on :9091, eyeball the lifecycle against
+**heading 4** below, then Accept/Resnapture so the diges become real regression gates. (`Story_cli`
+produces a Peregrination pile too — read `witnessed:*`/`A:Peregrination`, the `A:Lang` AST blob is
+noise on every step; see the `peregrination-pile-reading` memory + `Story_cli_handover.md`.)
+
+### Standing asks (apply to every heading)
+
+- **Write the spine in the DSL, not raw JS.** Heading L covers a lot — `%` optional on peels, `H`
+   receiver for actor-laying, multi-assign two-leg row-capture (`let {AB,wB} = H i A:..$AB/w:..$wB`),
+    drilled-`o` captures (`pier o protocol/hello/said$:said`), `&name,a,b` calls. Reach for a LangTiles
+     extension before dropping to raw JS; only object/`.c` seams (mock-port pairing, frame objects off
+      the wire, dynamic-value writes) stay raw. Check every `.g` edit with `npm run lang-compile -- <file>`.
+- **The c.up rule (bit me in heading 3).** A `%req` hosted below `w` (under Pier/Peering) silently
+   never pumps unless you stamp the host chain's `c.up` — the belief walk wires `A`/`w` only. So
+    heading 4's new reqs (e.g. `%req:send` under a Pier, §11.3) need the same `Pier.c.up=Peering` etc.
+- **Working tree left uncommitted for the human.**
 
 ## How the loop works (heading 0)
 
@@ -152,7 +170,7 @@ The spine's `transport()` (`Ghost/N/Peeroleum.g`) declares `%transport,type:mock
 `.c`): `send(frame)` → `H.post_do(() => this.partner?.recv(frame))`, `recv(frame)` →
 `H.Peeroleum_deliver(w, frame)`. `partner` starts null; the wrangler pairs the two ports. Two new spine
 helpers carry the one envelope (spec §4.3): `Peeroleum_send` stamps `%outbox/emit:N,sent` then hands the
-frame to the active transport; `Peeroleum_deliver` lands `%inbox/unemit:N,delivered` and `feebly_ponder`s
+frame to the active transport; `Peeroleum_deliver` lands `%inbox/unemit:N,done` and `feebly_ponder`s
 so a watching do_fn reacts the same run. (Both heading-2 minimal — acks + the rest of the §7 serial
 states are heading 4.)
 
@@ -163,7 +181,7 @@ stand up `A:Bearing`/`A:Nearing`, each `w:Peeroleum` with a `%Peering`/`%Pier` n
 identity + a mock transport; pair the ports; `Peeroleum_send` one B→N frame; stamps `%reached:step_2`),
 `Lake_handshake(w)` (step 3 — seed+pump `%req:handshake` on each Pier; stands the four-leaf tree up but
 not to `finished`, since the leaf do_fns are heading 3), steps 4/5 stamp `%reached:step_N` placeholders.
-`Lake_witness` stamps `%witnessed:step_2` once Nearing's inbox shows the delivered frame (step in the
+`Lake_witness` stamps `%witnessed:step_2` once Nearing's inbox shows a handled (`%done`) frame (step in the
 *value* — `step` is the Story mainkey, so it can't be a key). All raw JS: H-receiver actor-laying,
 objects-on-`.c`, drilled paths — tracked seams.
 
@@ -181,8 +199,8 @@ to any other caller; and the loader dropped `on_step` entirely, seeding `ensure_
 `keyser(uiC.sc)` (full identity incl. `gen_path`), not `uiC.sc.UI` (`Otro.svelte:110`).
 
 **Proven in-app (step 2 ✓):** the step-2 snap shows `A:Bearing/%Peering/%Pier/%outbox/%emit,…,sent`,
-`A:Nearing/%Peering/%Pier/%inbox/%unemit,…,delivered`, and `w:Peregrination/%reached:step_2 +
-%witnessed:step_2`. The frame crossed the mock transport and landed delivered. (`%see` lines sweep at the
+`A:Nearing/%Peering/%Pier/%inbox/%unemit,…,done`, and `w:Peregrination/%reached:step_2 +
+%witnessed:step_2`. The frame crossed the mock transport and was handled (`%done`). (`%see` lines sweep at the
 step boundary.) Both `.g` compile clean via `lang-compile`; their generated modules parse as valid JS.
 
 **Runner-snap fold (`%dontSnap`):** step 2's snap was still drowned by the compile apparatus — `A:Lies`
@@ -220,15 +238,11 @@ wrangler's per-pass re-pump + step-3 witness (`Ghost/Story/Peregrination.g`). Co
 both Piers `%req:handshake,finished`, full `protocol/{hello,trust}/{said,heard}`, `%Ud,publicKey`,
 inbox/outbox pairs, `%witnessed:step_3`. The shape:
 
-**Open cosmetic — duplicate B→N hello.** The step-3 snap shows TWO `outbox/emit,type:hello` on Bearing
-(and two matching `inbox/unemit,type:hello` on Nearing): one from step 2's scaffold frame
-(`Lake_sides_up`'s `Peeroleum_send(wB,{type:hello})`, the heading-2 transport proof) and one from
-step 3's real `say_hello`. The N→B direction has no dup (Nearing only sends at step 3). Harmless — the
-handshake completes — but it muddies the snap. Cleanest tidy: make step 2's scaffold frame a
-`type:noop` (a pure transport ping; spec §7.3 sanctions `noop` pre-Ud, and `Peeroleum_deliver` won't
-dispatch it to a hear_*), so step 2 still proves the carrier and `%witnessed:step_2` still stamps, but
-the hello is sent exactly once (at step 3). Defer to heading 4 if you'd rather let acks/whittle reshape
-the outbox first. (Touches the heading-2 narrative, so left for a deliberate call.)
+**Duplicate B→N hello — RESOLVED in heading 4.** The step-3 snap used to show TWO
+`outbox/emit,type:hello` on Bearing: step 2's scaffold frame + step 3's real `say_hello`. Heading 4
+made step 2's scaffold a `type:noop` (a pure carrier+ack ping; spec §7.3 sanctions `noop` pre-Ud and
+`Peeroleum_pump_inbox` dispatches it to no hear_*), so step 2 still proves the carrier and stamps
+`%witnessed:step_2`, and the hello is now sent exactly once (at step 3).
 
 **Spine (`Peeroleum.g`):**
 - `req_said_hello/heard_hello/said_trust/heard_trust` — each finishes the instant its protocol
@@ -285,9 +299,63 @@ once both Piers' `%req:handshake` are `finished`.
 (hello + trust) pairs, both `%req:handshake,finished` (four leaves gone, rolled up), and
 `w:Peregrination/%witnessed:step_3`. The `toc.snap` step-3 dige is still a lie until this run records it.
 
-### 4 — outbox/inbox lifecycle + acks + whittle  `[ ]`  (rung 3)
-`%outbox/emit:N` states (sent/acked), `%inbox/unemit:N` serial handling (queued/handling/verified/
-delivered), acks, step-boundary cull to `%recent` (whittle 20). Spec §7, §12.
+### 4 — outbox/inbox lifecycle + acks + whittle  `[~]`  BUILT, compiles clean, awaiting in-app proof  (rung 3, spec §7 + §12)
+Written into `Ghost/N/Peeroleum.g` + `Ghost/Story/Peregrination.g`; both `lang-compile` clean. NOT yet
+run in-app (no headless runner). What each piece is + where:
+
+- **Outbox `created→sent→acked` (§7.1):** `Pier_next_seq(pier)` is the monotone per-Pier counter on
+   `pier.c.seq` (off-snap; the seq it hands out lands on the `%outbox/emit`, which IS snapped). Acks
+    consume no seq. `Peeroleum_send` books `%outbox/emit:seq,type,seq,sent` for every non-ack frame
+     (created→sent collapsed — the mock hands off instantly); only an ack stamps it `%acked` later.
+- **Acks (§7.2):** `Peeroleum_pump_inbox` sends `e:ack%ack:<their seq>` after every verified non-ack
+   frame. `Peeroleum_deliver` routes `h.type==='ack'` to `Peeroleum_take_ack` — which stamps the
+    `%outbox/emit` (and the matching protocol `%said`, spec §6) `%acked` — *bypassing* the inbox and
+     all hear_* dispatch. Acks are never themselves acked (`Peeroleum_send` books no emit for them).
+- **Inbox serial handling (§7.3):** `Peeroleum_deliver` lands `%unemit:seq,…,queued` (stashing the raw
+   frame on `unemit.c.frame`) and calls `Peeroleum_pump_inbox`, which walks one frame
+    `queued→handling→verified→done`: the serial lock is a query (`some(handling && !done && !error)` →
+     bow out), the pre-`%Ud` gate allows only hello|noop, verify passes under the mock (a real
+      header-sign check is heading 6), deliver calls the hear_* (which now **return false on reject**),
+       then it stamps `%done,to:<type>`, drops the transient `%queued`/`%handling`, acks, and recurses
+        to drain the next `%queued`. A verify/deliver failure stamps `%error` (no `%done`) →
+         `Peeroleum_rollup_faulty`.
+- **Whittle / step boundary (§7.4, §12.1):** `Peeroleum_arm_whittle(w)` registers a **self-re-arming**
+   `Runstepped` callback (the logger idiom — `_runstepped_q` is drained every boundary, so a standing
+    callback must re-push). `Peeroleum_runstepped(w)`, per Pier: acked `%outbox/emit` → `%outbox/recent`
+     (whittle 20), `%done` `%inbox/unemit` → `%inbox/recent` (whittle 20), `%faulty` rebuilt from
+      remaining errors. `%recent` items carry only `emit|unemit/type/seq` — no flags, no time. Armed in
+       `Lake_sides_up` for the test; a production `Peeroleum(A,w)` worker should arm it too.
+
+**To prove (the expected in-app shape):** step 2 — Bearing `%outbox/emit:1,noop,seq,sent,acked`,
+Nearing `%inbox/unemit:1,noop,seq,verified,done,to:noop` (then both culled to `%recent` at the step-2
+boundary); `%witnessed:step_2`. Step 3 — each side's hello+trust `%outbox/emit,sent,acked` +
+`%inbox/unemit,verified,done`, `protocol/{hello,trust}/{said[,acked],heard}`, `%Ud`, the noop in
+`%inbox/recent`/`%outbox/recent`, both `%req:handshake,finished`, `%witnessed:step_3`. After each step
+boundary the live outbox/inbox empty into `%recent`. Record the true diges once this checks out.
+
+**Bombs / things the next reader needs:**
+- **`delete unemit.sc.queued/handling` at `%done` is intentional** — the spec's terminal is a clean
+   `verified,done,to:<type>` (§7.3), and the serial lock query (`handling && !done`) needs the flag
+    gone. `delete`+query is sound: `n_matches_kv` checks `hasOwnProperty` (`Stuff.svelte.ts:422`) and the
+     encoder reads `sc` directly, so the dropped key vanishes from both queries and the snap even though
+      the stale X index still lists it (the post-filter rejects it).
+- **The cull runs AFTER the snap commits** (`_resolve_runstepped`, called by Story `advance`), and the
+   witness (`Lake_witness`) runs DURING the step — so the pre-boundary snap always shows the step's
+    traffic and the witness stamps before anything is culled. Don't move the cull earlier.
+- **monotone seq is per-Pier and on `.c`** (survives across steps in the live tree, never snaps). The
+   noop takes Bearing's seq 1, so the handshake hello/trust are seq 2/3 on Bearing, 1/2 on Nearing.
+- **the serial `%handling` lock is particle state, not a JS flag** — under the mock delivery is
+   synchronous so a frame is `queued→…→done` within one `Peeroleum_deliver`, and backlog rarely
+    survives into a snap; but it's expressed as a query so a real (async-verify) transport gets the
+     same guarantee. That's the whole point of the rewrite.
+- **`%req:send` (§11.3), still unbuilt, is a new Pier-hosted req** — when production adds it, it hits
+   the **c.up rule** (stamp `Pier.c.up=Peering; Peering.c.up=w`, as `Lake_sides_up` does) or its do_fn
+    silently never runs.
+
+Still open in heading 4 (deferred, not blocking the rung): the production wiring of acks/sends through
+`%req:send` + `want_savepoint` (§12.4) — under the mock the post_do chain drives the round-trip without
+a waiting-req, so the snap-visibility guarantee `want_savepoint` buys isn't needed yet. Exports hoisting
+(§12.2) is also deferred — no consumer needs the Peering-level summary until p2pman is real (heading 11).
 
 ### 5 — per-req demand for time  `[ ]`  (rung 4; engine gap vs spec §13)
 Spec §13 wants throwaway `%req:waiting,until:T` + a computed-max global. **Neither exists.** Today's

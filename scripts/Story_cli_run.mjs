@@ -1,9 +1,9 @@
 // Story_cli_run — run one headless Story Book, with -I to include a test shim.
 //
-//   node scripts/Story_cli_run.mjs -I SuchATest          # include shim, Book defaults to SuchATest
-//   node scripts/Story_cli_run.mjs -I SuchATest -b Probe  # include shim, run Book:Probe
-//   node scripts/Story_cli_run.mjs MundaneStation         # no shim, just run a Book
-//   node scripts/Story_cli_run.mjs -I SuchATest --accept  # record fixtures (mode:new)
+//   node scripts/Story_cli_run.mjs -I MyShim           # include scripts/MyShim.svelte, Book defaults to MyShim
+//   node scripts/Story_cli_run.mjs -I MyShim -b Probe  # include shim, run Book:Probe
+//   node scripts/Story_cli_run.mjs MundaneStation      # no shim, just run a Book
+//   node scripts/Story_cli_run.mjs -I MyShim --accept  # record fixtures (mode:new)
 //
 // Thin wrapper over the vitest runner: maps -I/-b/--accept to the INCLUDE/BOOK/ACCEPT
 //  env vars the spec reads (vitest doesn't forward arbitrary flags to a test), then
@@ -21,7 +21,7 @@ for (let i = 0; i < argv.length; i++) {
     else if (a === '--accept') accept = true
     else if (!a.startsWith('-')) book ??= a   // first bare arg is the Book
 }
-book ??= include   // default the Book to the shim name (SuchATest worker → Book:SuchATest)
+book ??= include   // default the Book to the shim name (its worker is the Book's actor method)
 if (!book) { console.error('need a Book: pass one positionally, via -b, or via -I'); process.exit(2) }
 
 const env = { ...process.env, BOOK: book }

@@ -255,7 +255,7 @@ This is the heart — the black-box JS state of old `Pier` becomes leaves.
     %recent                                        whittled tail of the last ~20 acked, see §7.4
       %emit:N,type:hello,seq:N
   %inbox                                           arriving + recently-handled inbound, see §7
-    %unemit:N,type:hello,seq:N[,queued][,handling][,verified][,delivered,to:hello]
+    %unemit:N,type:hello,seq:N[,queued][,handling][,verified][,done,to:hello]
     %recent
       %unemit:N,type:hello,seq:N
   [%faulty]                                        roll-up; present iff any inbox item is faulty
@@ -333,19 +333,23 @@ A `%unemit:N` walks:
   -> verify header_sign with their %Ud (or, pre-Ud, only hello|noop allowed)
 (verified)                %unemit:N,…,verified                     sig good; body_hash checked if body
   -> deliver to protocol handler for type
-(delivered)               %unemit:N,…,verified,delivered,to:hello  handed to hear_hello etc
+(done)                    %unemit:N,…,verified,done,to:hello       handed to hear_hello etc
   -> send ack, drop %queued+%handling
   -> step boundary -> %inbox/recent (whittled 20)
 
   on failure at verify or deliver:
-(faulty)                  %unemit:N,…,error:invalid-signature      no %delivered; rolled up to %faulty
+(faulty)                  %unemit:N,…,error:invalid-signature      no %done; rolled up to %faulty
 ```
+
+(`%done` is the inbox terminal — "we finished handling it, handed up to hear_*".
+ It replaced the old `%delivered`, which read tautological: an inbox item is by
+  definition arrived, so "delivered" said nothing — `%done` says we are through with it.)
 
 The serial guarantee, stated plainly:
 the handler refuses to run handlings in parallel.
 There is never more than one `%unemit:N,handling` under a Pier's inbox.
 A second frame arriving mid-handle sits at `%queued` until the first reaches a
-terminal mark (`%delivered` or `%error`).
+terminal mark (`%done` or `%error`).
 
 `%queued` is the "unhandled-yet" marking the brief asked for — backlog you can
 see in the snap. In mock mode delivery is instant so backlog rarely persists into
@@ -363,7 +367,7 @@ whittle  keep the newest `to` (default 20) of a list N under host;
 
 Runs at the step boundary (§12). For each Pier:
 - `%outbox/emit:N` that are `%acked` move into `%outbox/recent`, whittled to 20.
-- `%inbox/unemit:N` that are `%delivered` move into `%inbox/recent`, whittled to 20.
+- `%inbox/unemit:N` that are `%done` move into `%inbox/recent`, whittled to 20.
 - `%faulty` is rebuilt from whatever `%inbox/**/error:…` remain (faulty items are
   *not* auto-culled — a fault is worth keeping until the handshake resets).
 
@@ -566,7 +570,7 @@ for each A under Run, each w under A:
   w_noproblemo(w, {log:1})                               drop %log (existing)
   for each %Peering under w, each %Pier under it:
     cull  Pier/outbox/emit:* where %acked    -> Pier/outbox/recent (whittle 20)
-    cull  Pier/inbox/unemit:* where %delivered -> Pier/inbox/recent (whittle 20)
+    cull  Pier/inbox/unemit:* where %done -> Pier/inbox/recent (whittle 20)
     rebuild Pier/%faulty from remaining inbox/**/error
     hoist Pier exports (see 12.2)
 ```
@@ -774,7 +778,7 @@ B.send(frame):
 - No timestamps written to particles, so snaps are stable with no munging.
 
 This is the 150-line skeleton the brief asked to open with: push two frames
-through each other in-process and land at `%Pier/inbox/unemit:1,delivered` on each
+through each other in-process and land at `%Pier/inbox/unemit:1,done` on each
 side, then at `%req:handshake,finished` on both.
 
 ---

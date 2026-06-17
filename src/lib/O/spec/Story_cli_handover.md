@@ -28,22 +28,24 @@ Each Book runs in its OWN fresh vitest process (clean House singletons); the per
  `run.json` is read back into a fleet table + `/tmp/Story_cli/_fleet.json`. green = every
   step matches, amber = ran but surprises, red = no `run.json` (boot/drive failure).
 
-Include a throwaway test shim with `-I` (detective work without touching Machinery):
+Include a test-shim component with `-I` (run a Book whose code isn't in the main Ghost bundle):
 ```
-node scripts/Story_cli_run.mjs -I SuchATest           # mount the shim, Book defaults to SuchATest
-node scripts/Story_cli_run.mjs -I SuchATest -b Probe  # shim, run Book:Probe
-node scripts/Story_cli_run.mjs MundaneStation         # no shim, just run a Book
-node scripts/Story_cli_run.mjs -I SuchATest --accept  # record a fixture for the shim Book
+node scripts/Story_cli_run.mjs -I MyShim            # mount scripts/MyShim.svelte, Book defaults to MyShim
+node scripts/Story_cli_run.mjs -I MyShim -b Probe   # shim, run Book:Probe
+node scripts/Story_cli_run.mjs MundaneStation       # no shim, just run a Book
+node scripts/Story_cli_run.mjs -I MyShim --accept   # record a fixture for the shim Book
 ```
 The real test-case games (Mundane, MachReqy, the Understand* suite…) attach by being
  rendered `<X {M}/>` in **Machinery.svelte's template**, depositing a worker via `M.eatfunc`
   on mount.  `-I` does the same for one extra component without editing that template: the
-   runner mounts it alongside `<Ghost>` with the same `M={eatfunc}` shim.  A Book with no
-    `toc.snap` runs in `mode:'new'` (total=1) — one recorded step at
-     `/tmp/Story_cli/<Book>/001.got.snap`.  The shim's worker is `<w-name>(A,w)` (Agency
-      dispatches `this[w.sc.w](A,w)`); for a default actor that is the Book name.  Edit
-       `scripts/SuchATest.svelte`, re-run, read the snap. Mechanism under the hood is the
-        `INCLUDE=<name>` env the spec reads; `-I` is the ergonomic front for it.
+   runner mounts it alongside `<Ghost>` with the same `M={eatfunc}` shim.  Expect `-I` to be
+    common as test code moves out of the bundle — eventually a Book's own Story advice names the
+     shim(s) to include.  Write the shim as a `<script>`-only `.svelte` (see any Machinery child
+      for the shape: `let {M}=$props(); onMount(async()=> await M.eatfunc({ <Worker>(A,w){…} }))`).
+       A Book with no `toc.snap` runs in `mode:'new'` (total=1) — one recorded step at
+        `/tmp/Story_cli/<Book>/001.got.snap`.  The worker is `<w-name>(A,w)` (Agency dispatches
+         `this[w.sc.w](A,w)`); for a default actor that is the Book name.  Mechanism under the
+          hood is the `INCLUDE=<name>` env the spec reads; `-I` is the ergonomic front for it.
 
 Cold run ≈ 40s (≈99% is vite transforming the 500+ ghost graph + codemirror/cytoscape/
  peerjs). `vitest --watch` keeps a warm parent so re-runs are ~1s; `pool:'forks'` gives
@@ -155,7 +157,6 @@ The `app` compose service ran as **root** (alpine, no `user:`), writing root-own
 - `scripts/NodeWormholeNav.ts` — node backend for `w:Wormhole` (overlay; see `Wormhole_backends_handover.md`)
 - `scripts/Story_cli_sweep.mjs` — fleet sweep: run every Book in its own process, aggregate green/amber/red
 - `scripts/Story_cli_run.mjs` — single-Book runner with `-I <shim>` / `-b <Book>` / `--accept`
-- `scripts/SuchATest.svelte` — the `-I` detective shim: one `SuchATest(A,w)` worker, an editable canvas
 - `scripts/Story_cli.vitest.config.mjs` — vitest harness (jsdom, browser condition, forks)
 - `scripts/Story_cli.setup.ts` — globals (indexedDB stub, raf, tolerate late rejections)
 - `scripts/Story_cli_boot.spec.ts` — minimal boot proof (House constructs, ghosts deposit)

@@ -4,6 +4,7 @@ import { Selection, type TheD, type Travel } from "$lib/mostly/Selection.svelte.
 import { DirectoryListing, FileSystemHandler } from "$lib/p2p/ftp/Directory.svelte";
 import { now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte";
 import { grap, grep, tex, throttle } from "$lib/Y.svelte"
+import { mount_opfs_github_nav, opfs_github_seeded, JAMSEND_SOURCE } from "./WormholeOpfs.svelte.ts";
 import { Dexie, liveQuery, type EntityTable } from 'dexie';
 
 const V: Record<string, any> = {}
@@ -1624,6 +1625,14 @@ export class House extends StorableHousing {
     async DirectoryOpener(A, w, e, AT, wT) {
         const key = `${(this as House).name}`
 
+        // already on the cloud backend (OPFS seeded from github): just report it.
+        //  Set directly on A.c.nav, it pre-empts the WormholeNav(DL) the Wormhole
+        //   worker would otherwise build, so production never learns which backend.
+        if ((A.c.nav as any)?.is_opfs_github) {
+            w.i({ see: `☁️ ${(A.c.nav as any).label}` })
+            return
+        }
+
         // init FileSystemHandler on A
         if (!A.c.fsh) {
             const fsh = new FileSystemHandler({
@@ -1664,7 +1673,18 @@ export class House extends StorableHousing {
             return
         }
 
-        // ── not open: surface one action to pick the directory ───────────
+        // ── web fallback: if OPFS was seeded on a prior visit, remount with no
+        //     click and no network (the marker skips re-hydration).  Probe once.
+        if (!w.oa({ opfs_probed: 1 })) {
+            w.i({ opfs_probed: 1 })
+            if (await opfs_github_seeded(JAMSEND_SOURCE)) {
+                A.c.nav = await mount_opfs_github_nav(JAMSEND_SOURCE)
+                ;(this as House).i_elvisto(this as House, 'think')
+                return
+            }
+        }
+
+        // ── not open: surface the ways in — a local directory, or the cloud ──
         if (w.oa({ wants_directory: 1 })) return
         w.i({ wants_directory: 1 })
 
@@ -1676,6 +1696,23 @@ export class House extends StorableHousing {
                 await fsh.requestDirectoryAccess()
                 await w.r({ wants_directory: 1 }, {})
                 ;(this as House).i_elvisto(this as House, 'think')
+            },
+        })
+        wa.oai({ action: 1, role: 'use_cloud' }, {
+            label: 'Use cloud (GitHub→OPFS)', icon: '☁️', cls: 'big',
+            fn: async () => {
+                w.i({ see: '⏳ seeding from github…' })
+                try {
+                    A.c.nav = await mount_opfs_github_nav(JAMSEND_SOURCE, {
+                        onProgress: (done, total) => {
+                            if (done % 25 === 0 || done === total) w.i({ see: `⏳ ${done}/${total} files` })
+                        },
+                    })
+                    await w.r({ wants_directory: 1 }, {})
+                    ;(this as House).i_elvisto(this as House, 'think')
+                } catch (err) {
+                    w.i({ see: `📭 cloud failed: ${err}` })
+                }
             },
         })
     }

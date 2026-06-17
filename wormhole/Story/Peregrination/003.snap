@@ -1,7 +1,7 @@
 Snap:H
   H:Peregrination,Run
     A:Bearing
-      self,round=5	{"mung":["age"]}
+      self,round=4	{"mung":["age"]}
       w:Peeroleum
         Peering,name:bearing
           Pier,pub:nearing
@@ -22,22 +22,22 @@ Snap:H
                 said,seq=2
                 heard
             inbox
-              unemit,type:hello,seq,delivered
-              unemit=2,type:trust,seq=2,delivered
+              unemit,type:hello,seq,done
+              unemit=2,type:trust,seq=2,done
             Ud,publicKey:nearing
           req:p2paddy
         transport,type:mock
         active_transport,type:mock,open
-        self,round=5	{"mung":["age"]}
+        self,round=4	{"mung":["age"]}
     A:Nearing
-      self,round=5	{"mung":["age"]}
+      self,round=4	{"mung":["age"]}
       w:Peeroleum
         Peering,name:nearing
           Pier,pub:bearing
             inbox
-              unemit,type:hello,seq,delivered
-              unemit,type:hello,seq,delivered
-              unemit=2,type:trust,seq=2,delivered
+              unemit,type:hello,seq,done
+              unemit,type:hello,seq,done
+              unemit=2,type:trust,seq=2,done
             req:handshake,finished
               req:said_hello,maz=4,finished
               req:heard_hello,maz=3,finished
@@ -57,9 +57,9 @@ Snap:H
           req:p2paddy
         transport,type:mock
         active_transport,type:mock,open
-        self,round=5	{"mung":["age"]}
+        self,round=4	{"mung":["age"]}
     A:Peregrination
-      self,round=9	{"mung":["age"]}
+      self,round=7	{"mung":["age"]}
       w:Peregrination
         req:ensure_compiled,path:Ghost/N/Peeroleum.g,finished
         req:ensure_compiled,path:Ghost/Story/Peregrination.g,finished
@@ -69,28 +69,26 @@ Snap:H
         reached:step_2
         witnessed:step_2
         reached:step_3
+        self,round=7	{"mung":["age"]}
         witnessed:step_3
-        self,round=9	{"mung":["age"]}
     A:Lies
-      self,round=20	{"mung":["age"]}
+      self,round=13	{"mung":["age"]}
       w:Lies,runner,dontSnap
     A:Lang
-      self,round=21	{"mung":["age"]}
+      self,round=11	{"mung":["age"]}
       w:Lang,runner,dontSnap
     A:Pantheate
-      self,round=11	{"mung":["age"]}
+      self,round=9	{"mung":["age"]}
       w:Pantheate
         include:gen/N/Peeroleum.go
-        req:include,gen_path:gen/N/Peeroleum.go,path:Ghost/N/Peeroleum.g,source_dige:a00b545ead970146,ghostmeta_name:Ghostmeta_Ghost_N_Peeroleum,permanent,live_dige:a00b545ead970146,finished
+        req:include,gen_path:gen/N/Peeroleum.go,path:Ghost/N/Peeroleum.g,source_dige:2f9e39897b3561ec,ghostmeta_name:Ghostmeta_Ghost_N_Peeroleum,permanent,live_dige:2f9e39897b3561ec,finished
         include:gen/Story/Peregrination.go
-        req:include,gen_path:gen/Story/Peregrination.go,path:Ghost/Story/Peregrination.g,source_dige:96a0d5dcf282ed39,ghostmeta_name:Ghostmeta_Ghost_Story_Peregrination,permanent,live_dige:96a0d5dcf282ed39,finished
-        self,round=11	{"mung":["age"]}
+        req:include,gen_path:gen/Story/Peregrination.go,path:Ghost/Story/Peregrination.g,source_dige:20afc666688c92bb,ghostmeta_name:Ghostmeta_Ghost_Story_Peregrination,permanent,live_dige:20afc666688c92bb,finished
+        self,round=9	{"mung":["age"]}
         o_elvis:Ghost_update_notify
     watched:ave
       examining
-        req:timemachine,playing=0	{"ref":{"w":"%w:Lies, runner:1, dontSnap:1"}}
-        Spotlight	{"ref":{"src":"%What:the test"}}
-      Languinio,dontSnap
+      Languinio,dontSnap,no_doc
     watched:UIs
       UI:Lies	{"ref":{"component":"Function()"}}
       UI:Langui	{"ref":{"component":"Function()"}}
@@ -100,7 +98,7 @@ Snap:H
       action,role:debookmark,label:-marks	{"ref":{"fn":"Function()"}}
       action,role:enbookmark,label:+marks	{"ref":{"fn":"Function()"}}
       action,role:compile,label:compile	{"ref":{"fn":"Function()"}}
-      action,role:lang_pick,kind:dropdown,label:language,icon:✎,value:tsstho	{"ref":{"options":"[Object(),Object()]","on_pick":"Function()"}}
+      action,role:lang_pick,kind:dropdown,label:language,icon:✎,value:stho	{"ref":{"options":"[Object(),Object()]","on_pick":"Function()"}}
       action,role:gen_parser,label:gen,icon:⚙,disabled:true	{"ref":{"fn":"Function()"}}
       action,role:nogen,label:nogen,icon:nogen,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:softgen,label:softgen,icon:softgen,cls:toggle-off	{"ref":{"fn":"Function()"}}

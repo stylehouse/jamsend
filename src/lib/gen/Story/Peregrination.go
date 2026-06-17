@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Peregrination(): string { return '96a0d5dcf282ed39' },
+    Ghostmeta_Ghost_Story_Peregrination(): string { return '09f8db8af0361018' },
 
 
 // LakeNetherland — the Peeroleum test-case wrangler (the outer test layer).
@@ -22,10 +22,14 @@
 //   whose do_fn drives the *inner* steps, starting at 2. The toc.snap carries one
 //    `step,…` line per inner step (real seq, lie diges till a run records them).
 //
-//   step 2  two sides up under one mock transport; one frame B→N delivered
-//   step 3  %req:handshake stands up on both Piers (leaf do_fns are heading 3)
-//   step 4  outbox/inbox lifecycle + acks (heading 4) — placeholder
+//   step 2  two sides up under one mock transport; a noop B→N proves carrier + ack
+//   step 3  %req:handshake completes on both Piers; full outbox/inbox lifecycle + acks
+//   step 4  per-req demand / waiting-reqs (heading 5) — placeholder
 //   step 5  corruption tests (heading 6) — placeholder
+//
+// The heading-4 message lifecycle (outbox created→sent→acked, serial inbox
+//  queued→handling→verified→done, acks, %recent whittle at the step boundary) is not
+//   its own step — it rides the traffic of steps 2 and 3, in the Peeroleum spine.
 //
 // We do NOT use H.on_step: it keys off one H-global `did_on_step_n`, which the
 //  bootstrap's step-1 table claims when compile/include spills into step 2 — that
@@ -78,9 +82,14 @@ async Lake_order(w) {
 
 },
 // Lake_sides_up — step 2: stand up both sides directly (the wrangler lays them,
-//  spec §15), pair their mock-ports, and push one frame B→N. The H-receiver actor-
-//   laying is stho (H i A:..$cap, heading L); only the objects-on-.c mock-port
-//    wiring stays raw JS. Fired once at step 2.
+//  spec §15), pair their mock-ports, arm each w's step-boundary whittle, and push one
+//   B→N frame. That frame is a `type:noop` (spec §4.2, §7.3) — a pure transport ping:
+//    it proves the carrier (its %unemit reaches %done, stamping %witnessed:step_2) and
+//     the ack path (its %outbox/emit comes back %acked), without sending a premature
+//      hello — so the real hello is sent exactly once, at step 3 (this dissolves the old
+//       duplicate-B→N-hello the heading-3 scaffold left). The H-receiver actor-laying is
+//        stho (H i A:..$cap, heading L); only the objects-on-.c mock-port wiring stays
+//         raw JS. Fired once at step 2.
 Lake_sides_up(w) {
     w.i({reached: "step_2"})
     // stand up both sides: `H i A:..$cap/w:..$cap` lays the actor and its w on the
@@ -99,12 +108,18 @@ Lake_sides_up(w) {
     peerN.c.up = wN; pierN.c.up = peerN
     this.transport(AB,wB)
     this.transport(AN,wN)
+    // each w culls its Piers' acked outbox / done inbox into %recent at the step
+    //  boundary (spec §7.4, §12.1) — arm it once per side here.
+    this.Peeroleum_arm_whittle(wB)
+    this.Peeroleum_arm_whittle(wN)
     // pair the two mock-ports so each side delivers into the other (spec §15) —
     //  objects-on-.c stay raw JS.
     let bport = wB.o({active_transport: 1})[0].c.connection
     let nport = wN.o({active_transport: 1})[0].c.connection
     bport.partner = nport; nport.partner = bport
-    this.Peeroleum_send(wB,{header:{type:'hello', from:'bearing', to:'nearing', seq:1}})
+    // one noop B→N off the per-Pier counter (seq 1): carrier + ack proof, no hello.
+    let s = this.Pier_next_seq(pierB)
+    this.Peeroleum_send(wB,{header:{type:'noop', from:'bearing', to:'nearing', seq:s}})
 
 },
 // Lake_handshake — step 3: seed %req:handshake on each Pier (the spine's
@@ -135,11 +150,11 @@ async Lake_pump_handshakes(w) {
 
 },
 // Lake_witness — the readable assertion, polled each pass: once Nearing's inbox
-//  shows the delivered frame, stamp %witnessed:step_2 (the step rides in the value
-//   — `step` is the Story mainkey, so it can't be a key). Idempotent via the probe.
+//  shows a handled (%done) frame, stamp %witnessed:step_2 (the step rides in the
+//   value — `step` is the Story mainkey, so it can't be a key). Idempotent via the probe.
 Lake_witness(w) {
     let npier = this._o_drill1(this, [{sc: {A: "Nearing"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
-    let landed = this._o_drill1(npier, [{sc: {inbox: 1}}, {sc: {unemit: 1}}])?.sc.delivered
+    let landed = this._o_drill1(npier, [{sc: {inbox: 1}}, {sc: {unemit: 1}}])?.sc.done
     if (landed && !(w.oa({witnessed: "step_2"}))) w.i({witnessed: "step_2"})
     // step 3: both Piers' %req:handshake reached finished (all four leaves done).
     let bpier = this._o_drill1(this, [{sc: {A: "Bearing"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])

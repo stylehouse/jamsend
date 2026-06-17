@@ -4,7 +4,7 @@
     //  their methods onto H. (The House's own $effect.root — the todo→beliefs pump —
     //  does NOT flush under node, so the driver cranks Atime by hand; see Story_cli.spec.ts.)
     //
-    // `include` is an optional extra ghost component (the `-I` shim, e.g. SuchATest.svelte).
+    // `include` is an optional extra ghost component (the `-I` shim — just ghost code to add).
     //  It is mounted with the same M-shape M={eatfunc} the real ghosts get in Ghost.svelte,
     //   so its onMount eatfunc deposits onto the same H — the attach path Machinery uses for
     //    its test-case children, but injected at the CLI instead of wired into the template.
