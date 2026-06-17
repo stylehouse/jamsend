@@ -258,10 +258,13 @@ carry the exact `method` the `e:mark` payload targets — they must match for th
   Lies opener that mints `Waft:<from>/side,tentative,from`. Do that under item 3, then extend
   this Plan with Prep=4..6.
 
-### 5. Retire the stand-ins (last, after green)
-Delete `InterLies`/`InterLang` from `test/Interesting.svelte` and the `Interesting` wormhole
-snaps; repoint `Interest.svelte`'s "Regression gate" header and the handover from `Interesting`
-to `InterestLive`. Keep the reducer reshape note in `Interest.svelte` (the reducers don't move).
+### 5. Retire the stand-ins — DONE 2026-06-17
+Deleted `test/Interesting.svelte` (the Book + the `InterLies`/`InterLang` stand-in actors) and the
+`wormhole/Story/Interesting/` snaps; removed the import + `<Interesting/>` mount from
+`test/Machinery.svelte`; repointed `Interest.svelte`'s gate header and the `Ghost.svelte`/Machinery
+test-list comments from `Interesting` → `InterestLive`. The reducers stayed put. `npm run check`
+clean (total dropped as the Book's files left the tree). InterestLive is now the sole channel gate;
+the frozen-reducer constraint is lifted (reducers are still gated, by the real wire).
 
 ---
 
@@ -282,10 +285,10 @@ feedback: lenses stay **Lies-side** (the Lang-side `InterestLens` mount was reve
 protocol. The InterestLive gate is now **11 Preps**. **Pmirror resolution display** — FIXED (NaviCado capsule
 strip): the three states (resolved=`{from,to}`, unresolved=`null` Pmirror-no-graft, pending=`undefined`
 no-Pmirror-yet) were mis-read as `unresolved: pm === undefined`, so a failed graft looked resolved
-and a pre-graft capsule flashed red; now `pm === null` (UI-only, not snap-visible). Remaining:
-**item 5** (surprise_read resume/diff UI), the future **Lens generalissimo** (UI-pluggability router,
-§Phase B), and the bookkeeping **stand-in retirement** (delete InterLies/InterLang + the Interesting
-snaps now that InterestLive is the live gate — §5).
+and a pre-graft capsule flashed red; now `pm === null` (UI-only, not snap-visible). **Stand-in retirement** — DONE (§5: Book:Interesting + InterLies/InterLang
++ its snaps deleted; InterestLive is the sole gate). Remaining:
+**item 5** (surprise_read resume/diff UI) and the future **Lens generalissimo** (UI-pluggability
+router, §Phase B).
 This section is the warm-context map so the next session executes rather than re-investigates.
 
 ## Phase A — dual-LE crossfade (the headliner) — VERIFIED LIVE 2026-06-17

@@ -98,6 +98,7 @@ function configure(parser: any) {
                 Number:            sthoTags.number,
                 StringVal:         sthoTags.string,
                 TemplateVal:       sthoTags.string,
+                PathVal:           sthoTags.string,
                 Sigil:             sthoTags.sigil,
                 PathSep:           sthoTags.sigil,
                 PuddleSigil:       sthoTags.puddleSigil,

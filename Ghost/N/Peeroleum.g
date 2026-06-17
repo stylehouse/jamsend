@@ -65,7 +65,7 @@ transport(A,w):
 //  selection falls through to the websocket relay — models "WebRTC is sucking"
 //  deterministically under the mock. The real DataChannel path is heading 9.
 PeerJS(A,w):
-    w i %transport,type:webrtc,faulty,reason:'no-direct-route'
+    w i %transport,type:webrtc,faulty,reason:no-direct-route
 
 // The websocket relay — proxy every frame via the webserver's websocket when
 //  WebRTC is being oppressed. Modeled this pass: c.connection rides the same

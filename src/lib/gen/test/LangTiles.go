@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_test_LangTiles(): string { return '7a646944680fcf2f' },
+    Ghostmeta_Ghost_test_LangTiles(): string { return '260f66808721f697' },
 
 // yeti etc!!!!!
 theCompiledStuff(A,w) {
@@ -222,6 +222,35 @@ reqTiles(A,w) {
 
         })
     })
+},
+// loose peel values + the n%such scalar-child accessor — the two human-friendly
+//  tiles.  Bare values may now carry dashes etc; "%" tight between a word and a
+//  word-start reads a scalar child (n%such → n.sc.such).
+looseScTiles(A,w) {
+    // (1) loose values — a bare value carrying a non-word char (external PathVal):
+    //  w.i({transport: 1, type: "webrtc", reason: "no-direct-route"})
+    w.i({transport: 1, type: "webrtc", reason: "no-direct-route"})
+    // word-only stays a string, numeric stays a number — no regression:
+    //  w.i({slug: "web-socket", n: 3, f: 3.6, type: "mock"})
+    w.i({slug: "web-socket", n: 3, f: 3.6, type: "mock"})
+    // spaces|commas still need quoting:
+    //  w.i({label: 'two words'})
+    w.i({label: 'two words'})
+
+    // (2) n%such → n.sc.such — the "%" scalar-child accessor (tight "%" only).
+    //  let v = n.sc.such
+    let v = n.sc.such.slice(0,12)
+    // chains fold left-to-right:  let c = n.sc.a.sc.b
+    let c = n.sc.a.sc.b
+    // works in a condition too — pythonic if:  if (req.sc.demand) { w.i({go: 1}) }
+    if (req.sc.demand) {
+        w.i({go: 1})
+    }
+    // spaced "%" stays modulo, untouched:  let m = idx % len
+    let m = idx % len
+    // string-safe — a "%" inside quotes is left alone:  let s = "50%off"
+    let s = "50%off"
+
 },
 
     })

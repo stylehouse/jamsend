@@ -22,6 +22,8 @@ import { ExternalTokenizer, type Stack, type InputStream } from "@lezer/lr"
 
 const SLASH = 47, COMMA = 44, COLON = 58, DOT = 46, DOLLAR = 36, USCORE = 95
 const SPACE = 32, TAB = 9, NL = 10, EOF = -1
+const SEMI = 59, LP = 40, RP = 41, LB = 91, RB = 93, LC = 123, RC = 125
+const SQUOTE = 39, DQUOTE = 34, BTICK = 96, PERCENT = 37
 
 const isWord  = (c: number) =>
     (c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c === USCORE
@@ -34,7 +36,7 @@ const isStart = (c: number) =>
 export function makePathSep(terms: {
     PathSep: number, PathComma: number, PathColon: number,
     CaptureDot: number, CaptureDollar: number, CaptureName: number,
-    FlowSep: number,
+    FlowSep: number, PathVal: number,
 }): ExternalTokenizer {
     const SEP: Record<number, number> = {
         [SLASH]: terms.PathSep, [COMMA]: terms.PathComma, [COLON]: terms.PathColon,
@@ -80,6 +82,36 @@ export function makePathSep(terms: {
             input.acceptToken(terms.CaptureDollar)
             return
         }
+        // loose peel value — a bare value carrying a non-word char (e.g.
+        //  "no-direct-route").  Only in PeelVal position (canShift), tight right
+        //  after the value colon, and only claimed when the run holds a char a plain
+        //  Name|Number wouldn't: word-only ("mock") falls through to Name and numeric
+        //  ("3", "3.6") to Number, so their string|number semantics are untouched.
+        //  A space|comma|colon ends it (those still need quoting); a trailing ".$"
+        //  capture is left for the capture tokens.  Stops at JS structure so it can
+        //  never run away off the path.
+        if (stack.canShift(terms.PathVal) && input.peek(-1) === COLON) {
+            const c0 = input.next
+            if (c0 !== SQUOTE && c0 !== DQUOTE && c0 !== BTICK && c0 !== DOLLAR) {
+                const isTerm = (c: number) =>
+                    c === SPACE || c === TAB || c === NL || c === EOF ||
+                    c === COMMA || c === SLASH || c === COLON || c === SEMI || c === PERCENT ||
+                    c === LP || c === RP || c === LB || c === RB || c === LC || c === RC
+                let i = 0, sawExtra = false, c = input.peek(0)
+                while (!isTerm(c)) {
+                    if (c === DOT && input.peek(i + 1) === DOLLAR) break  // ".$" capture ends the value
+                    if (c === DOT && input.peek(i + 1) === DOT && input.peek(i + 2) === DOT) break  // "..." FlowSep
+                    if (!isWord(c) && c !== DOT) sawExtra = true          // "." kept for Number-safety
+                    i++; c = input.peek(i)
+                }
+                if (i > 0 && sawExtra) {
+                    for (let k = 0; k < i; k++) input.advance()
+                    input.acceptToken(terms.PathVal)
+                    return
+                }
+            }
+        }
+
         const term = SEP[input.next]
         if (term === undefined) return
         if (!stack.canShift(term)) return            // not mid-path → leave it to JS

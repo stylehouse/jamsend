@@ -169,8 +169,23 @@ parsing `body`; client `c.connection` → real WS. Spec §4.1, §11.2, §17.
 Move Otro onto Peeroleum; delete `Peerily.svelte.ts` + `MachPeerily.svelte`; rename Peeroleum →
 Peerily. Spec §16.
 
-### L — LangTiles gaps to close  `[ ]`  (so more of this lives in `.g`, not raw JS)
-Each is a place the spine dropped to raw JS:
+### L — LangTiles gaps to close  `[~]`  (so more of this lives in `.g`, not raw JS)
+Done so far (all verified with `npm run lang-compile`, corpus output unchanged):
+- **Loose peel values** — a bare value may now hold non-word chars (`reason:no-direct-route`),
+  via an external `PathVal` token (`io_tokens.ts`) that fires only in value position and only when
+  the run carries a non-word, non-dot char (so `mock` stays Name, `3.6` stays Number — no regression;
+  stops at `,` `/` `:` `%` `...` whitespace; quote for spaces/commas). The reserved set is just
+  `, : =` (`peel()`, `Y.svelte.ts:660`) plus path `/` and whitespace.
+- **`n%such → n.sc.such`** — the `%` scalar-child accessor (CLAUDE.md's `Text%dige`), a string-aware
+  text transform `Lang_sc_in_text` folded into the inline-atom pass + the raw fallthrough. Tight `%`
+  (word before, letter after) only, so spaced modulo `a % b` and a leading `%Foo` PuddleSigil are
+  untouched; chains fold (`n%a%b → n.sc.a.sc.b`). Convention: tight `%` is sc-access, modulo needs
+  spaces.
+- **NB regen:** editing `stho.grammar` makes the generated `stho.grammar.ts` artifact stale — the
+  registry `resolve()` falls back to a live `buildParser` (correct, just flagged stale). Regen the
+  artifact via the in-app gen action when convenient.
+
+Still open — each a place the spine dropped to raw JS:
 - auto-`async` on a method whose body has a bare `await`-verb (`r/rm/roai`/`await x.do()`).
 - `drop`/`empty`/`oa` verbs; deep/wildcard `drop Pier/protocol/**`.
 - drilled paths on `oai/r/rm` (seed a `%req` under a nested host without pre-resolving it).

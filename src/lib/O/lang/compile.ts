@@ -658,7 +658,7 @@ export const LANG_COMPILE = {
                                      region_path: [...ctx.region_stack] }
                 if (ctx.current_method) entry.via = ctx.current_method
                 ctx.words.push(entry)
-                out.push({ kind: 'raw', text: line.text })
+                out.push({ kind: 'raw', text: this.Lang_sc_in_text(line.text) })
             }
             return n
         }
@@ -750,7 +750,10 @@ export const LANG_COMPILE = {
                 out.push({ kind: 'translated', text: split.keep_before + translated + after })
             }
         } else {
-            out.push({ kind: 'raw', text: line.text })
+            // untranslatable / no stho atom — verbatim, but still fold n%such →
+            //  n.sc.such (string-aware, tight-% only) so the accessor works in plain
+            //  raw JS lines (let v = n%such, return x%y) just as it does in conditions.
+            out.push({ kind: 'raw', text: this.Lang_sc_in_text(line.text) })
         }
         return n + 1
       } catch (err: any) {
@@ -826,6 +829,32 @@ export const LANG_COMPILE = {
                 continue
             }
             out += text[i++]
+        }
+        // fold the other tight inline atom: n%such → n.sc.such (see Lang_sc_in_text).
+        //  Done here because every inline-translation site (raw lines, control-flow
+        //  conditions, decl RHS) routes through this pass.
+        return this.Lang_sc_in_text(out)
+    },
+
+    // ── Lang_sc_in_text ───────────────────────────────────────────────────────
+    //
+    //   n%such → n.sc.such — the "%" scalar-child accessor (CLAUDE.md's Text%dige).
+    //   A "%" is rewritten to ".sc." only when TIGHT between a word char and a
+    //   word-start, so spaced modulo "a % b" is left alone (the convention: tight %
+    //   is sc-access, modulo needs spaces) and a separator-led "%Foo" never matches.
+    //   String/template-aware (skips a % inside quotes), like Lang_amp_calls_in_text.
+    //   Chains fold left-to-right: n%a%b → n.sc.a.sc.b.
+    Lang_sc_in_text(text: string): string {
+        let out = ''
+        let str: string | null = null
+        const isWord  = (c: string) => !!c && /\w/.test(c)
+        const isStart = (c: string) => !!c && /[A-Za-z_]/.test(c)
+        for (let i = 0; i < text.length; i++) {
+            const c = text[i]
+            if (str) { out += c; if (c === str && text[i - 1] !== '\\') str = null; continue }
+            if (c === '"' || c === "'" || c === '`') { str = c; out += c; continue }
+            if (c === '%' && isWord(text[i - 1]) && isStart(text[i + 1])) { out += '.sc.'; continue }
+            out += c
         }
         return out
     },
@@ -1246,6 +1275,10 @@ export const LANG_COMPILE = {
         // whose ${…} interpolations and any /-bearing text pass straight through.
         const strNode = val.getChild('StringVal') ?? val.getChild('TemplateVal')
         if (strNode) return doc.sliceString(strNode.from, strNode.to)
+        // PathVal — the loose unquoted value (no-direct-route, slug-ish, etc.).
+        //  Always a string literal; it never carries a Sigil (that path is Name).
+        const pathValNode = val.getChild('PathVal')
+        if (pathValNode) return JSON.stringify(doc.sliceString(pathValNode.from, pathValNode.to))
         const nameNode = val.getChild('Name')
         if (!nameNode) throw new Error('PeelVal: no Number, StringVal, TemplateVal, or Name')
         // $name → variable reference; bare name → quoted string literal.

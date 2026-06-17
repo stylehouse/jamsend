@@ -8,7 +8,7 @@ Line { lineItem* newline }
 
 @precedence { callparen @left, ioverb @left }
 
-@external tokens pathSep from "./io_tokens" { PathSep, PathComma, PathColon, CaptureDot, CaptureDollar, CaptureName, FlowSep }
+@external tokens pathSep from "./io_tokens" { PathSep, PathComma, PathColon, CaptureDot, CaptureDollar, CaptureName, FlowSep, PathVal }
 
 lineItem {
   Comment | LineComment |
@@ -30,7 +30,11 @@ Leg    { PeelGroup }
 PeelGroup { PeelItem (PathComma PeelItem)* }
 PeelItem  { PuddleSigil? PeelKey (PathColon PeelVal)? Capture? }
 PeelKey   { Sigil? Name }
-PeelVal   { Sigil? Name | Number | StringVal | TemplateVal }
+// PathVal (external) is the loose unquoted value — fires only when the bare value
+//  holds a non-word, non-dot char (e.g. no-direct-route); word-only stays Name and
+//  numeric stays Number, so string|number semantics are untouched. Anything with a
+//  space|comma|colon still needs quoting (StringVal).
+PeelVal   { Sigil? Name | Number | StringVal | TemplateVal | PathVal }
 // Capture rides on a PeelItem: "$" hands back the row (the C), ".$" hands back
 // the value (?.sc.<key>), an attached CaptureName is the let-name, and its
 // absence auto-names from the item's key. The "$"|"."|name are external tokens

@@ -11,7 +11,7 @@
     //   Hovercraft — the req/hover hooks: reqyoncile/e_reqyonciliation, reqonce,
     //               Runstepped, req_diag (the req engine proper is on StuffAware, in Stuff)
     //   Machinery — the test-suite aggregator (all AI): mounts the test-case games
-    //               (MachReqy, Mundane, Interesting, Diffmatication, the Understand*
+    //               (MachReqy, Mundane, InterestLive, Diffmatication, the Understand*
     //               suite, MachPeerily…) and hosts its own (LangTiles, Lake*, Leaf*,
     //               Stuff*)
     //   Story     — w:Story, snap/toc codec, story_drive, story_save, Run wiring
