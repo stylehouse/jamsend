@@ -24,7 +24,7 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781690768168,kind:cold,resolved
+          want=1781705326498,kind:cold,resolved
         o_elvis:dock_askies
         Funkcions
           req:Funkcion,funk_id:GhostList/dirlist,eternal,ok
@@ -108,7 +108,7 @@ Snap:H
                 def,method:transport,from=65,to=75,line=5
                 def,method:PeerJS,from=108,to=115,line=7
                 def,method:Socket,from=145,to=152,line=9
-              time,compile=0.001,all=0.202
+              time,compile=0.003,all=0.199
               Output,gen_path:gen/test/Peeroleum.go,dige:b84b8d8cc1c85f2b,source_dige:69f9fd8539393ad7
                source: |
                  <script lang="ts">
@@ -166,7 +166,7 @@ Snap:H
           Change
             backend,dige:69f9f
             storage,dige:69f9f,dim:false
-            compile,dige:69f9f,dim:false,secs=0.001
+            compile,dige:69f9f,dim:false,secs=0.003
         req:workon,following,auto_push=0	{"ref":{"w":"%w:Lang"}}
           {"req":"understanding","maz":3,"permanent":1,"sig":"1:13:1:0","what":"landing","finished":1}
           req:ingredients,maz=2,permanent,sig:Ghost/test/Peeroleum.g,finished
@@ -218,4 +218,3 @@ Snap:H
       action,role:nogen,label:nogen,icon:nogen,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:softgen,label:softgen,icon:softgen,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:compo,label:compo,icon:compo,cls:toggle-off	{"ref":{"fn":"Function()"}}
-    mo:main,interval=3.6	{"mung":["id"]}

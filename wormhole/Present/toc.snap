@@ -15,11 +15,9 @@ Library
       TimeTotal:beliefs,avg=0.081
         sample=0.077,at=1781080326
         sample=0.085,at=1781607913
-  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1781681891.779
+  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1781705321.676
     TimeSpool
-      TimeTotal:beliefs,avg=1.993
-        sample=2.248,at=1781621768
-        sample=2.287,at=1781631054
+      TimeTotal:beliefs,avg=1.914
         sample=1.885,at=1781631104
         sample=2.793,at=1781665168
         sample=1.932,at=1781680195
@@ -28,6 +26,8 @@ Library
         sample=2.221,at=1781681507
         sample=2.163,at=1781681608
         sample=1.182,at=1781681894
+        sample=1.497,at=1781704670
+        sample=2.25,at=1781705324
   Book:LakeSurfer,ok_pct=0,last_pct_change=1779607681.571,done=2,last_run_ms=1781664694.333
     TimeSpool
       TimeTotal:beliefs,avg=0.836
@@ -84,10 +84,9 @@ Library
         sample=0.015,at=1781576007
         sample=0.023,at=1781578899
         sample=0.008,at=1781616659
-  Book:PortPlanet,ok_pct,last_pct_change=1779622894.947,done=6,last_run_ms=1781615444.95
+  Book:PortPlanet,ok_pct=0,last_pct_change=1779622894.947,done=6,last_run_ms=1781704560.232
     TimeSpool
-      TimeTotal:beliefs,avg=0.078
-        sample=0.051,at=1781080120
+      TimeTotal:beliefs,avg=0.08
         sample=0.053,at=1781572152
         sample=0.073,at=1781573874
         sample=0.054,at=1781576013
@@ -97,6 +96,7 @@ Library
         sample=0.101,at=1781609408
         sample=0.118,at=1781610173
         sample=0.132,at=1781615445
+        sample=0.066,at=1781704562
   Book:PortPlant,ok_pct,last_pct_change=1779532868.769,done=9,last_run_ms=1781612766.258
     TimeSpool
       TimeTotal:beliefs,avg=0.062
@@ -241,11 +241,9 @@ Library
         sample=0.101,at=1781621271
         sample=0.163,at=1781656675
         sample=0.171,at=1781660709
-  Book:InterestLive,ok_pct=0,done=4,last_run_ms=1781697852.653,active
+  Book:InterestLive,ok_pct=0,done=4,last_run_ms=1781704640.919,active
     TimeSpool
-      TimeTotal:beliefs,avg=1.35
-        sample=0.808,at=1781694566
-        sample=0.89,at=1781695236
+      TimeTotal:beliefs,avg=1.359
         sample=0.966,at=1781696023
         sample=2.002,at=1781696225
         sample=1.35,at=1781696532
@@ -254,10 +252,11 @@ Library
         sample=1.727,at=1781697731
         sample=1.15,at=1781697771
         sample=1.425,at=1781697856
-  Book:Peregrination,ok_pct=0,done=5,last_run_ms=1781698466.531
+        sample=0.892,at=1781702535
+        sample=0.905,at=1781704642
+  Book:Peregrination,ok_pct=0,done=5,last_run_ms=1781704601.289
     TimeSpool
-      TimeTotal:beliefs,avg=0.861
-        sample=1.507,at=1781689849
+      TimeTotal:beliefs,avg=0.793
         sample=1.192,at=1781690609
         sample=0.561,at=1781691443
         sample=1.008,at=1781691803
@@ -267,3 +266,4 @@ Library
         sample=0.84,at=1781695766
         sample=1.22,at=1781696862
         sample=0.544,at=1781698467
+        sample=0.819,at=1781704603

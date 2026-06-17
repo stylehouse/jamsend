@@ -265,7 +265,7 @@
             if (!me.sc.include) throw "!Gun"
             // once required, Vite's HMR re-runs eatfunc on every hot update
             if (!w.oa({include: me.sc.include})) {
-                const module = await import(`../../lib/${me.sc.include}`)
+                const module = await import/* @vite-ignore */(`../../lib/${me.sc.include}`)
                 const component = module.default
                 const uis = this.oai_enroll(this, { watched: 'UIs' })
                 // key the UI slot by gen_path so multiple simultaneous includes each

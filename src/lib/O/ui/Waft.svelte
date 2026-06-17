@@ -641,7 +641,7 @@
     {/if}
 {/snippet}
 
-<script module>
+<script module lang="ts">
     // place_cursor_at_stem — positions cursor before the stem's first dot,
     // selecting just the stem portion so it can be edited or suffixed.
     export function place_cursor_at_stem(node: HTMLInputElement) {

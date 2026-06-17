@@ -35,7 +35,7 @@ const isStart = (c: number) =>
 // imported from the generated *.terms artifact and passed in by its wiring).
 export function makePathSep(terms: {
     PathSep: number, PathComma: number, PathColon: number,
-    CaptureDot: number, CaptureDollar: number, CaptureName: number,
+    CaptureDot: number, CaptureDollar: number, CaptureColon: number, CaptureName: number,
     FlowSep: number, PathVal: number,
 }): ExternalTokenizer {
     const SEP: Record<number, number> = {
@@ -80,6 +80,15 @@ export function makePathSep(terms: {
             if (!(isWord(before) || before === DOT)) return
             input.advance()
             input.acceptToken(terms.CaptureDollar)
+            return
+        }
+        // ":" capture-out lead-in — the explicit-name marker straight after a "$"
+        //  (key$:name), the mirror of value-in key:$var.  Only where the grammar
+        //   can shift it (right after CaptureDollar), so a path|JS colon is untouched.
+        //    The name itself is claimed by the CaptureName branch on the next pass.
+        if (input.next === COLON && stack.canShift(terms.CaptureColon)) {
+            input.advance()
+            input.acceptToken(terms.CaptureColon)
             return
         }
         // loose peel value — a bare value carrying a non-word char (e.g.

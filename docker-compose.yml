@@ -27,9 +27,23 @@ services:
       # - "9091:9091"
       - "172.17.0.1:9091:9091"
     command: npm run dev -- --host 0.0.0.0 --port 9091
+    # Vite reads ALLOWED_HOSTS (public-host allowlist) from here — see .env.example.
+    #  .env.local is gitignored; it must exist (cp .env.example .env.local) or `up` errors.
+    env_file:
+      - .env.local
     tty: true
     stdin_open: true
     restart: 'always'
+
+    # Cap the dev log so a chatty Vite/HMR run can't fill the disk.  Docker's
+    #  json-file driver bounds by SIZE, not line count: ~5MB per file, 2 files
+    #  kept (≈10MB rolling).  Takes effect on container recreate (up -d), not a
+    #  plain restart.  For a quick view limit instead: docker compose logs --tail 5000 app
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
 
 
     # Resource limits to prevent runaway processes

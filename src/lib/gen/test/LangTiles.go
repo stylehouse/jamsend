@@ -8,14 +8,14 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_test_LangTiles(): string { return '260f66808721f697' },
+    Ghostmeta_Ghost_test_LangTiles(): string { return '51b9005fb5407325' },
 
 // yeti etc!!!!!
 theCompiledStuff(A,w) {
     this._i_drill(w, [{sc: {hut: 1}}, {sc: {toot: 3}}])
     let toot = this._o_drill1(w, [{sc: {hut: 1}}, {sc: {toot: 1}}])
     let la = this._i_drill(w, [{sc: {hut: 1}}, {sc: {toot}}])
-    this._o_drill(w, [{sc: {hut: 1}}, {sc: {although: 1}, exactly: {although: true}}, {sc: {they: 1, can: 1, be: 1, mixed: 1}}])
+    this._o_drill(w, [{sc: {hut: 1}}, {sc: {although: 1, they: 1, can: 1, be: 1, mixed: 1}, exactly: {although: true}}])
     la.i({something: 1})
     this._i_drill(w, [{sc: {thung: 1}}, {sc: {wither: 1}}, {sc: {etc: 1}}])
     this._i_drill(w, [{sc: {yeses: 1}}, {sc: {because: 1, it: 2}}])
@@ -81,6 +81,7 @@ nothinging() {
     return true && true
 },
 severally(A,w,thing) {
+    const H = this
     w.i({miles: 1, of: 1, words: 1})
     w.i({miles: 1, of: 1, wordings: 1})
     w.i({thingure: "thing", of: 1, wordings: 1})
@@ -250,6 +251,65 @@ looseScTiles(A,w) {
     let m = idx % len
     // string-safe — a "%" inside quotes is left alone:  let s = "50%off"
     let s = "50%off"
+
+},
+// receiver-amp, the fabricated House alias, and inline IO in a control body — the
+//  three seams that used to force raw JS, now tiles.
+async ampTiles(A,w) {
+    const H = this
+    // (1) recv&method → recv.method(args): a tight identifier before "&" is the
+    //  receiver, the way a leading bareword is for i/o.  pier.do(), req.bump():
+    pier.do()
+    req.bump()
+    // args ride after the method, like &-calls:  pier.emit('hello', 3)
+    pier.emit('hello',3)
+    // await flows through untouched:  await pier.settle()
+    await pier.settle()
+    // a bare "&" with no receiver still means this.method(...):
+    this.severally(A,w,5)
+    // spaced "&" is left as bitwise-and — tight-vs-spaced, exactly like "%":
+    //  let m = a & b
+    let m = a & b
+
+    // (2) the House alias is fabricated: every method body that keeps a bare H gets
+    //  a "const H = this" at its top (parameterised in compile.ts — skipped when H is
+    //   a param or already declared), so a raw House call resolves even inline in a
+    //    control structure:  if (a > b) H.laterally(A,w,1)
+    if (a > b) H.laterally(A,w,1)
+
+    // (3) IO atoms translate inside a control body now (the per-line parser is
+    //  threaded into method-body recursion) — both pythonic and parenthesised:
+    if (a > b) {
+        w.i({reached: "here"})
+    }
+    if (a > b) w.i({reached: "also"})
+
+},
+// the obtain verb family and the $:name capture-out spelling.
+obtainTiles(A,w) {
+    // the full IOness obtain family (not just i|o) compiles — each shares o's
+    //  (sc, q) signature: a single-leg recv.verb(sc).  oa is the presence probe:
+    //   let s = w.oa({seat: 3})
+    let s = w.oa({seat: 3})
+    // ob | bo | o1 | oa1 | bo1 | boa | boa1 likewise:
+    let one = w.o1({req: "step"})
+    let any = A.oa1({mo: "main"})
+    // they translate inside a condition too (a bare o there already reads as oa):
+    if (s && !(w.oa({taken: 1}))) w.i({seat: "free"})
+
+},
+// $:name — the capture-OUT spelling.  "$:" reads "out comes name", the mirror of
+//  ":$" (value-IN).  Both name the let; the ":" is sugar, dropped at compile.
+captureOutTiles(A,w) {
+    // value IN on A (the var ang flows in) and row OUT into AB on one line:
+    //  let {AB} = this._i_drill_caps(this, [{sc:{A:"Bearing"}, caps:[{as:"AB",…}]}])
+    let AB = this.i({A: "Bearing"})
+    // the in|out symmetry, side by side: A:$side is value-in, Pier$:pier is row-out
+    let pier = this._o_drill1(w, [{sc: {A: side}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Pier: 1}}])
+    // value-out keeps the dot:  .$:name  →  let ang = …?.sc.wither
+    let ang = A.o({prefixy: 1, wither: 1})[0]?.sc.wither
+    // the older bare spelling stays valid (additive): name$ , name$var , name.$var
+    let tval = this._o_drill1(w, [{sc: {hut: 1}}, {sc: {toot: 1}}])
 
 },
 

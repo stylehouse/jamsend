@@ -739,17 +739,21 @@
 
         const known     = good.o({ known: 1 })[0] as TheC | undefined
         const base_dige = known?.sc.dige as string | undefined
-        if (base_dige && dige === base_dige) return host.finish(req)
+        // no_local_edits: the buffer we'd write still matches what we loaded — the user
+        //  has nothing of their own at stake on this path.
+        const no_local_edits = !!base_dige && dige === base_dige
 
-        // Pull-before-push: read disk, compare to what we loaded.
-        // Cavalier skip: when the %Good's /known is recent enough, trust it as our
-        //  last impression of disk and skip the Wormhole read — base_dige is that
-        //   /known dige, so a fresh /known (a recent write|load) is current enough
-        //    to write over without re-checking.
+        // Cavalier skip: when the %Good's /known is recent enough, trust it as our last
+        //  impression of disk and skip the Wormhole read — a fresh /known (recent write|
+        //  load) is current enough to write over (or, with no edits, to leave alone).
         const known_age  = known ? (Date.now() / 1000) - (known.sc.at as number) : Infinity
         const skip_check = !!known && known_age < LUXURY_WRITE_SKIP_CHECK_SECS
 
-        if (!skip_check) {
+        if (skip_check) {
+            if (no_local_edits) return host.finish(req)   // nothing changed, /known fresh
+            // local edits + fresh /known → write straight through below
+        } else {
+            // Pull-before-push: read disk, compare to what we loaded.
             const read = await H.LiesStore_read(w, path, { label: 'source_check' })
             if (!read.sc.finished) {
                 H.i_req_ttlilt(req, 0.5, { waiting: 'source_check' })
@@ -760,6 +764,21 @@
             const disk_dige = disk_text ? await dig(disk_text) : ''
 
             if (base_dige && disk_dige && disk_dige !== base_dige) {
+                if (no_local_edits) {
+                    // Disk diverged, but our buffer still equals what we loaded — there is
+                    //  nothing of the user's to lose, so PULL theirs silently rather than
+                    //  raising a surprise_read.  Land disk as the Good's content, step
+                    //  /known to the disk dige, drop any stale stash, and drain so Lang
+                    //  reseats the open editor (e_Lang_dock_content → disk_rev bump).
+                    good.c.content = disk_text as string
+                    if (known) { known.sc.dige = disk_dige; known.sc.kind = 'read'; known.sc.at = Date.now() / 1000 }
+                    for (const sr of good.o({ surprise_read: 1 }) as TheC[]) good.drop(sr)
+                    good.bump_version()
+                    H.LiesStore_drain_good_now(w, good)
+                    console.log(`🗂 auto-pull ${path}: disk diverged, no local edits — pulled silently`)
+                    return host.finish(req)
+                }
+                // Local edits AND disk diverged — a real conflict; park it for the popover.
                 const sr = good.oai({ surprise_read: 1 })
                 sr.sc.disk_dige = disk_dige
                 sr.sc.text      = text
@@ -773,6 +792,9 @@
                 console.warn(`🗂 surprise_read on ${path}: disk dige ${disk_dige.slice(0, 5)} ≠ base ${base_dige.slice(0, 5)}`)
                 return host.finish(req)
             }
+            // disk matches base (or unreadable) — no divergence.  Nothing to write if the
+            //  buffer also matches base.
+            if (no_local_edits) return host.finish(req)
         }
 
         console.log(`🖊 Lies_source_write: ${path} (${text.length}c)${skip_check ? ' [luxury skip]' : ''}`)

@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return 'ad896d8e9bdf1ec0' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return '3ebb6053102cf12d' },
 
 
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -63,7 +63,6 @@ async req_handshake(req) {
     req.oai({req: "said_trust", maz: 2})
     req.oai({req: "heard_trust"})
     await req.do()
-    r
     // < leaf do_fns: said_hello finishes when Pier/protocol/hello/%said exists, etc.
     //    Drilled existence checks + the e:hello/e:trust frame writes are raw JS the
     //     spine adds next; the cross-side short-circuit (spec §8) preserved there.

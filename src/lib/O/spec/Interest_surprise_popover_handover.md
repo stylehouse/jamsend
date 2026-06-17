@@ -70,18 +70,24 @@ Push-to-open-editor (DONE — the "take theirs actually changes the dock text" l
   there, which trips Langui's disk-reload `$effect`.  That effect now dispatches a **minimal
   diff** (`diff_to_changes`) so cursor/folds/scroll map through.
 
-Follow-up — **auto-pull when there's no local divergence** (handover):
-- If the editor buffer's dige still equals the Good's `/known` dige (the user hasn't edited
-  since load — nothing local to lose), a disk change can be pulled **silently**, no popover.
-  Only raise the surprise_read when there IS local divergence (buffer dige ≠ known dige).
-  Likely gate the stamp in `req_LiesStore_writeCarefully` (LiesStore.svelte) / make a
-  read-refresh path that just pulls.  Make an exception for Doc; the general "push any Good"
-  is the §7 Subscriptions unification (Hovercraft.design.md), still unbuilt.
+**Auto-pull when there's no local divergence** (DONE):
+- `req_LiesStore_writeCarefully` (LiesStore.svelte): on pull-before-push, if disk diverged
+  but the buffer being written still equals the baseline (`dige === base_dige` — no local
+  edits), it now **pulls theirs silently** (lands disk as `good.c.content`, steps `/known`
+  to the disk dige, drops any stash, drains → reseat) instead of stamping a surprise_read.
+  The popover is only raised when there ARE local edits.  Caveat: this fires on a *save*,
+  so it catches the diverged-disk + no-local-edits race; a standalone disk-refresh poll
+  (to notice divergence with no save pending) would be the fuller version — still a Doc-
+  only exception, vs the §7 Subscriptions general push (Hovercraft.design.md), unbuilt.
+
+Done: **Langui/CodeMirror `min-height: 40`** — `.lte-cm` (the always-present editor
+  container) now has `min-height: 40px` so the block never collapses to nothing and stays
+  grabbable when picked up on its own.  NOTE: there's no explicit GhostList decision *in
+  Langui* — the GhostList switcheroo lives in Waft/DocMinimap off `waft.sc.lists` (the
+  LiesStore side); if the floor should instead gate on a GhostList-lens state, that decision
+  needs to exist in Langui first.
 
 Still open from the original plan:
-- **Langui/CodeMirror `min-height: 40`** — never started.  Add a min-height to the editor
-  near where Langui decides it has e.g. a GhostList, so the whole thing can be picked up on
-  its own later (the user flagged: "you'd have to know LiesStore").  Separate from the popup.
 - **Move InterestStrip's `×` into PeelInput** — left as a follow-up; it's a distinct UX
   refactor (the strip caps would re-render through PeelInput's CRUD irow, which already has
   a `pi-irow-del` ×).  The popover itself already has no kill button.

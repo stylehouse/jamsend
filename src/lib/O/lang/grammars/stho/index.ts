@@ -113,6 +113,7 @@ function configure(parser: any) {
                 "MethodLike/Name": sthoTags.methodName,
                 "Capture/CaptureName": sthoTags.captureName,
                 CaptureDollar:     sthoTags.sigil,
+                CaptureColon:      sthoTags.sigil,
                 CaptureDot:        sthoTags.sigil,
             }),
         ],

@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Peregrination(): string { return '988026d763a84e9c' },
+    Ghostmeta_Ghost_Story_Peregrination(): string { return '097c21c0cb601189' },
 
 
 // LakeNetherland — the Peeroleum test-case wrangler (the outer test layer).
@@ -72,8 +72,9 @@ async Lake_order(w) {
 
 },
 // Lake_sides_up — step 2: stand up both sides directly (the wrangler lays them,
-//  spec §15), pair their mock-ports, and push one frame B→N. H-receiver actor-
-//   laying + objects-on-.c are LangTiles seams, so raw JS. Fired once at step 2.
+//  spec §15), pair their mock-ports, and push one frame B→N. The H-receiver actor-
+//   laying is stho (H i A:..$cap, heading L); only the objects-on-.c mock-port
+//    wiring stays raw JS. Fired once at step 2.
 Lake_sides_up(w) {
     w.i({reached: "step_2"})
     // stand up both sides: `H i A:..$cap/w:..$cap` lays the actor and its w on the
@@ -100,7 +101,7 @@ Lake_sides_up(w) {
 //    stands up but does not yet reach finished: an honest scaffold for now.
 async Lake_handshake(w) {
     for (const side of ['Bearing', 'Nearing']) {
-        let pier = this.o({A: side})[0]?.o({w: 'Peeroleum'})[0]?.o({Peering: 1})[0]?.o({Pier: 1})[0]
+        let pier = this._o_drill1(this, [{sc: {A: side}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
         if (!pier) continue
         pier.oai({req: "handshake"})
         await pier.do()
@@ -112,9 +113,9 @@ async Lake_handshake(w) {
 //  shows the delivered frame, stamp %witnessed:step_2 (the step rides in the value
 //   — `step` is the Story mainkey, so it can't be a key). Idempotent via the probe.
 Lake_witness(w) {
-    let npier = this.o({A: 'Nearing'})[0]?.o({w: 'Peeroleum'})[0]?.o({Peering: 1})[0]?.o({Pier: 1})[0]
-    let landed = npier?.o({inbox: 1})[0]?.o({unemit: 1})[0]?.sc.delivered
-    if (landed && !w.oa({witnessed: 'step_2'})) w.i({witnessed: 'step_2'})
+    let npier = this._o_drill1(this, [{sc: {A: "Nearing"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
+    let landed = this._o_drill1(npier, [{sc: {inbox: 1}}, {sc: {unemit: 1}}])?.sc.delivered
+    if (landed && !(w.oa({witnessed: "step_2"}))) w.i({witnessed: "step_2"})
 
 },
 

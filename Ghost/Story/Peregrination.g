@@ -61,8 +61,8 @@ Lake_sides_up(w):
     w i reached:step_2
     // stand up both sides: `H i A:..$cap/w:..$cap` lays the actor and its w on the
     //  House in one multi-assigning two-leg, capturing each leg's C (heading L).
-    H i A:Bearing$AB/w:Peeroleum$wB
-    H i A:Nearing$AN/w:Peeroleum$wN
+    H i A:Bearing$:AB/w:Peeroleum$:wB
+    H i A:Nearing$:AN/w:Peeroleum$:wN
     // each side: a Peering and a Pier named by the peer's identity (whom this Pier
     //  is a Pier to), plus a mock transport on the Peering's active_transport.
     wB i Peering,name:bearing/Pier,pub:nearing
@@ -71,8 +71,8 @@ Lake_sides_up(w):
     &transport,AN,wN
     // pair the two mock-ports so each side delivers into the other (spec §15) —
     //  objects-on-.c stay raw JS.
-    wB o active_transport$bport.c.connection
-    wN o active_transport$nport.c.connection
+    wB o active_transport$:bport.c.connection
+    wN o active_transport$:nport.c.connection
     bport.partner = nport; nport.partner = bport
     &Peeroleum_send,wB,{header:{type:'hello', from:'bearing', to:'nearing', seq:1}}
 
@@ -82,10 +82,10 @@ Lake_sides_up(w):
 //    stands up but does not yet reach finished: an honest scaffold for now.
 async Lake_handshake(w):
     for (const side of ['Bearing', 'Nearing']) {
-        let pier = this.o({A: side})[0]?.o({w: 'Peeroleum'})[0]?.o({Peering: 1})[0]?.o({Pier: 1})[0]
+        H o A:$side/w:Peeroleum/Peering/Pier$:pier
         if (!pier) continue
         pier oai %req:handshake
-        await pier.do()
+        await pier&do
     }
     w i %reached:step_3
 
@@ -93,6 +93,6 @@ async Lake_handshake(w):
 //  shows the delivered frame, stamp %witnessed:step_2 (the step rides in the value
 //   — `step` is the Story mainkey, so it can't be a key). Idempotent via the probe.
 Lake_witness(w):
-    let npier = this.o({A: 'Nearing'})[0]?.o({w: 'Peeroleum'})[0]?.o({Peering: 1})[0]?.o({Pier: 1})[0]
-    let landed = npier?.o({inbox: 1})[0]?.o({unemit: 1})[0]?.sc.delivered
-    if (landed && !w.oa({witnessed: 'step_2'})) w.i({witnessed: 'step_2'})
+    H o A:Nearing/w:Peeroleum/Peering/Pier$:npier
+    npier o inbox/unemit$:landed?.sc.delivered
+    if (landed && !(oa %witnessed:step_2)) i %witnessed:step_2

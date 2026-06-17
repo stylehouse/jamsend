@@ -185,7 +185,7 @@
     </div>
 {/if}
 
-<script module>
+<script module lang="ts">
     // place_cursor_at_stem — Svelte use: action for rename inputs.
     //
     //   Places the cursor just before the first '.' to the right of the last '/',

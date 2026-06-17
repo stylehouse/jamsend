@@ -1661,7 +1661,11 @@
         text-align: center;
     }
     .lte-cm-hidden { display: none; }
-    .lte-cm    { position: relative; }
+    /* min-height floor so the editor block never collapses to nothing — keeps it
+       grabbable when content is tiny (and when the whole thing is picked up on its own
+       later, e.g. a GhostList lens decided LiesStore-side).  The normal doc view is
+       still governed by the cm-scroller's 200px min below. */
+    .lte-cm    { position: relative; min-height: 40px; }
     .lte-cm :global(.cm-editor)  { /* auto height — driven by cm-scroller */ }
     .lte-cm :global(.cm-content) { font-size: 12px; }
 

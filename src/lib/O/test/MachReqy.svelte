@@ -217,6 +217,7 @@
         })
 
         await De.do()
+        De.oai({surprise:42})
         if (De.all_finished() && !De.sc.finished) w.finish(De)
     },
 

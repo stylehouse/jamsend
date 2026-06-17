@@ -26,6 +26,18 @@ import type { TheC } from "$lib/data/Stuff.svelte"   // type-only: keeps this mo
 //    keeps working untouched), or when the body never mentions it (nothing to bind).
 const RECEIVER_ALIAS = { name: 'H', inject: true }
 
+// The IOness verb families.  OBTAIN_VERBS share o's (sc, q) signature, so they
+//  ride the o-path: a single-leg `recv.verb(sc, {exactly})` (multi-leg drills and
+//   captures stay i|o-only, since the drill helpers are _o_drill/_i_drill).
+//   IONESS2_VERBS take (match, props) and route to Lang_compile_ioness2.  `drop`
+//    (a C arg) and `empty` (no arg) are grammar tokens but not sc-path shaped, so
+//     they stay unbuilt here — using one throws a clear "unknown IOness".
+const OBTAIN_VERBS  = new Set(['o', 'oa', 'ob', 'o1', 'oa1', 'bo', 'boa', 'bo1', 'boa1'])
+const IONESS2_VERBS = new Set(['r', 'rm', 'oai', 'roai'])
+// Alternation for the candidate-line pre-filters.  The trailing `\s+` anchors each
+//  verb to a full match, so order is irrelevant (`oa ` can't match as `o`).
+const IONESS_VERB_RE = 'i|o|oa|ob|o1|oa1|bo|boa|bo1|boa1'
+
 export const LANG_COMPILE = {
 //#region collect
 
@@ -154,7 +166,7 @@ export const LANG_COMPILE = {
         //   the fallback below.
         if (sthoParser) {
             const CAND = [
-                /(?:^|[^\w.])[ioS]\s+[%$A-Za-z_]/,          // IOing / Sunpit verb, anywhere on the line
+                new RegExp(`(?:^|[^\\w.])(?:${IONESS_VERB_RE}|S)\\s+[%$A-Za-z_]`),  // IOness (i|o|oa|ob|…) or Sunpit verb
                 /(?:^|[^\w.])(?:roai|oai|rm|r)\s+[%$A-Za-z_]/,  // IOness2 verb (r/rm/oai/roai)
                 /^\s*(?:if|for|while|until|elsif|else)\b/,  // ControlFlow head
                 /^\s*(?:async\s+)?[A-Za-z_]\w*\s*\(/,       // MethodLike decl/call
@@ -934,7 +946,7 @@ export const LANG_COMPILE = {
     //   are left to the Sunpit branch, so only top-level spans are taken here.
     Lang_io_in_text(text: string, ctx: any = {}): string {
         const parser = ctx.sthoParser
-        if (!parser || !/(?:^|[^\w.])[io]\s+[%$A-Za-z_]/.test(text)) return text
+        if (!parser || !new RegExp(`(?:^|[^\\w.])(?:${IONESS_VERB_RE})\\s+[%$A-Za-z_]`).test(text)) return text
         let tree: any
         try { tree = parser.parse(text + '\n') } catch { return text }
         const slice = { doc: { sliceString: (a: number, b: number) => text.slice(a, b) } } as unknown as EditorState
@@ -1023,8 +1035,9 @@ export const LANG_COMPILE = {
         const ness = this.Lang_compile_IOness(node, state)
         // the IOness2 family (r|rm|oai|roai) routes to its own emitter — it
         //   carries up to two IOpaths (match ... props/replacement) and, bar the
-        //   sync oai, is an await-expression.
-        if (ness !== 'i' && ness !== 'o') return this.Lang_compile_ioness2(node, state, ctx, ness)
+        //   sync oai, is an await-expression.  The obtain family (oa|ob|o1|…) shares
+        //    o's signature, so it stays on this path (handled like o below).
+        if (IONESS2_VERBS.has(ness)) return this.Lang_compile_ioness2(node, state, ctx, ness)
         const pathNode = node.getChild('IOpath')
         if (!pathNode) throw new Error('IOing: no IOpath')
         const legNodes = pathNode.getChildren('Leg')
@@ -1055,7 +1068,13 @@ export const LANG_COMPILE = {
         // inline|drill1 with a `let name = …` prefix; two-plus → a single
         // capture-bag drill the generated code destructures.
         const caps = path.flatMap(l => l.captures)
-        const include_exactly = ness === 'o'
+        // every obtain verb filters (so forwards `exactly`); only `i` (insert) drops it.
+        const include_exactly = ness !== 'i'
+        // drills and captures are i|o-only — their helpers (_o_drill/_i_drill) end in
+        //  .o/.i, so they can't carry a sibling obtain verb (oa/ob/o1/…).  A single
+        //   leg with no capture is all those verbs support; anything more is an error.
+        if (ness !== 'i' && ness !== 'o' && (caps.length || path.length > 1))
+            throw new Error(`stho: '${ness}' takes a single leg with no capture (drills|captures are i|o only)`)
 
         if (caps.length >= 2) {
             const names = caps.map(c => c.var).join(', ')
@@ -1364,20 +1383,16 @@ export const LANG_COMPILE = {
         return hasSigil ? text : JSON.stringify(text)
     },
 
-    // IOness is "i " | "o " — trim to one of the two
-    Lang_compile_IOness(node: SyntaxNode, state: EditorState): 'i' | 'o' | 'r' | 'rm' | 'oai' | 'roai' {
-        // i|o ride IOness; the two-arg family (r|rm|oai|roai) rides IOness2.  An
-        //   `oai` + a BLOCK lowers to doai() in _collect_line before this runs;
-        //   `oai` without a BLOCK lands here and emits the plain sync oai() call.
+    // IOness → the verb string.  `i` inserts; the obtain family (o|oa|ob|o1|oa1|
+    //   bo|boa|bo1|boa1) shares o's signature; the two-arg family (r|rm|oai|roai)
+    //    rides IOness2 (an `oai` + a BLOCK lowers to doai() in _collect_line before
+    //     this runs; bare `oai` lands here as the plain sync oai() call).  `drop`/
+    //      `empty` are grammar tokens but not sc-path shaped, so they stay unbuilt.
+    Lang_compile_IOness(node: SyntaxNode, state: EditorState): string {
         const ness = node.getChild('IOness') ?? node.getChild('IOness2')
         if (!ness) throw new Error('no IOness')
         const s = state.doc.sliceString(ness.from, ness.to).trim()
-        if (s === 'i')    return 'i'
-        if (s === 'o')    return 'o'
-        if (s === 'r')    return 'r'
-        if (s === 'rm')   return 'rm'
-        if (s === 'oai')  return 'oai'
-        if (s === 'roai') return 'roai'
+        if (s === 'i' || OBTAIN_VERBS.has(s) || IONESS2_VERBS.has(s)) return s
         throw new Error(`IOness unknown|unbuilt: "${s}"`)
     },
 

@@ -774,12 +774,16 @@
     // see lematch
     story_matching: [
         {
-            // House-level particles: mung timer ids (they change every run)
+            // House-level particles: skip timers entirely. A %mo (mo:main — the
+            //  interval pump) is runtime plumbing, not test signal, and its handle
+            //  renders differently per host (a browser timer id vs a node Timeout),
+            //  so it is pure snap noise. Skipping beats munging: the line never
+            //  appears, in any channel or dige.
             matching_any: [{ sc_has: { H: 1 } }],
             means: {
                 thence_matching: [
-                    { matching_any: [{ sc_only: { mo: 1, interval: 1, id: 1 } }],
-                      means: { munging: [{ these_sc: { id: 1 }, type: 'timer_id' }] } },
+                    { matching_any: [{ sc_has: { mo: 1 } }],
+                      means: { skip: true } },
                 ]
             }
         },

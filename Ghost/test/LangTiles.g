@@ -228,7 +228,7 @@ looseScTiles(A,w):
 
 // receiver-amp, the fabricated House alias, and inline IO in a control body — the
 //  three seams that used to force raw JS, now tiles.
-ampTiles(A,w):
+async ampTiles(A,w):
     // (1) recv&method → recv.method(args): a tight identifier before "&" is the
     //  receiver, the way a leading bareword is for i/o.  pier.do(), req.bump():
     pier&do
@@ -254,3 +254,28 @@ ampTiles(A,w):
     if a > b
         i %reached:here
     if (a > b) i %reached:also
+
+// the obtain verb family and the $:name capture-out spelling.
+obtainTiles(A,w):
+    // the full IOness obtain family (not just i|o) compiles — each shares o's
+    //  (sc, q) signature: a single-leg recv.verb(sc).  oa is the presence probe:
+    //   let s = w.oa({seat: 3})
+    let s = oa %seat:3
+    // ob | bo | o1 | oa1 | bo1 | boa | boa1 likewise:
+    let one = o1 %req:step
+    let any = A oa1 %mo:main
+    // they translate inside a condition too (a bare o there already reads as oa):
+    if (s && !(oa %taken)) i %seat:free
+
+// $:name — the capture-OUT spelling.  "$:" reads "out comes name", the mirror of
+//  ":$" (value-IN).  Both name the let; the ":" is sugar, dropped at compile.
+captureOutTiles(A,w):
+    // value IN on A (the var ang flows in) and row OUT into AB on one line:
+    //  let {AB} = this._i_drill_caps(this, [{sc:{A:"Bearing"}, caps:[{as:"AB",…}]}])
+    H i A:Bearing$:AB
+    // the in|out symmetry, side by side: A:$side is value-in, Pier$:pier is row-out
+    o A:$side/w:Peeroleum/Pier$:pier
+    // value-out keeps the dot:  .$:name  →  let ang = …?.sc.wither
+    A o prefixy,wither.$:ang
+    // the older bare spelling stays valid (additive): name$ , name$var , name.$var
+    o hut/toot$tval

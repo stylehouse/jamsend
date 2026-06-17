@@ -1,6 +1,16 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
+// Hosts Vite will serve to beyond localhost (which is always allowed).  Sourced from the
+//  ALLOWED_HOSTS env var — comma-separated, injected by docker-compose's env_file
+//  (.env.local) — so the public domains live in an untracked .env, not in this tracked
+//  file, and can be phased out by editing one line with no code change.  Empty default =
+//  localhost-only, the secure posture: a stray public hostname is refused, not served.
+//  (Read straight off process.env, not Vite's loadEnv, because /app/.env is a directory
+//   here and loadEnv would trip over it.)
+const allowedHosts = (process.env.ALLOWED_HOSTS ?? '')
+	.split(',').map(h => h.trim()).filter(Boolean);
+
 export default defineConfig({
 	plugins: [sveltekit()],
 	
@@ -20,7 +30,7 @@ export default defineConfig({
 	
 
 	server: {
-		allowedHosts: ["jamsend.duckdns.org","djamsend.duckdns.org","jamdense.duckdns.org","voulais.duckdns.org"]
+		allowedHosts
 	}
 	// test: {
 	// 	workspace: [
