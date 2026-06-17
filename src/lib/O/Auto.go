@@ -93,10 +93,23 @@
             if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req }))
                 return w.i({ see: '⏳ Library...' })
 
-            const { C: Li_new, errors } = 
-                req.sc.reply.not_found
+            const reply = req.sc.reply
+            // Storage not ready (no share open, or the cloud nav still seeding): the
+            //  worker replies {error} rather than content.  That is NOT a decode
+            //   failure — drop the finished req so a fresh read re-issues next think,
+            //    and wait.  Without this the empty content fell through to decode and
+            //     fatal'd as 'empty snap' every tick until a backend appeared.
+            if (reply?.error) {
+                rw.drop(req)
+                return w.i({ see: '⏳ Library (waiting for storage)…' })
+            }
+
+            // not_found, or present-but-empty, both mean "no library yet" → defaults.
+            const empty = !(reply?.content ?? '').trim()
+            const { C: Li_new, errors } =
+                (reply?.not_found || empty)
                     ? {C: this.autovivify_Library(),errors:[]}
-                : H.decode_wh_lines(req.sc.reply?.content ?? '')
+                : H.decode_wh_lines(reply.content)
 
             if (errors.length || !Li_new) {
                 console.error('Library decode errors (fatal):', errors)

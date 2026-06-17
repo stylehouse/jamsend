@@ -4,7 +4,7 @@ import { Selection, type TheD, type Travel } from "$lib/mostly/Selection.svelte.
 import { DirectoryListing, FileSystemHandler } from "$lib/p2p/ftp/Directory.svelte";
 import { now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte";
 import { grap, grep, tex, throttle } from "$lib/Y.svelte"
-import { mount_opfs_github_nav, opfs_github_seeded, JAMSEND_SOURCE } from "./WormholeOpfs.svelte.ts";
+import { mount_opfs_github_nav, JAMSEND_SOURCE } from "./WormholeOpfs.svelte.ts";
 import { Dexie, liveQuery, type EntityTable } from 'dexie';
 
 const V: Record<string, any> = {}
@@ -1624,14 +1624,7 @@ export class House extends StorableHousing {
 //#region w:Wormhole
     async DirectoryOpener(A, w, e, AT, wT) {
         const key = `${(this as House).name}`
-
-        // already on the cloud backend (OPFS seeded from github): just report it.
-        //  Set directly on A.c.nav, it pre-empts the WormholeNav(DL) the Wormhole
-        //   worker would otherwise build, so production never learns which backend.
-        if ((A.c.nav as any)?.is_opfs_github) {
-            w.i({ see: `☁️ ${(A.c.nav as any).label}` })
-            return
-        }
+        const H = this as House
 
         // init FileSystemHandler on A
         if (!A.c.fsh) {
@@ -1673,48 +1666,56 @@ export class House extends StorableHousing {
             return
         }
 
-        // ── web fallback: if OPFS was seeded on a prior visit, remount with no
-        //     click and no network (the marker skips re-hydration).  Probe once.
-        if (!w.oa({ opfs_probed: 1 })) {
-            w.i({ opfs_probed: 1 })
-            if (await opfs_github_seeded(JAMSEND_SOURCE)) {
-                A.c.nav = await mount_opfs_github_nav(JAMSEND_SOURCE)
-                ;(this as House).i_elvisto(this as House, 'think')
-                return
-            }
+        // ── no local share → fall back to the cloud (OPFS seeded from github),
+        //     which is what lets Story run out on the web with no directory picker.
+
+        // Always offer a local directory as an override (idempotent enroll); granting
+        //  one clears A.c.nav so the worker rebuilds WormholeNav(DL) over it.
+        const wa = H.oai({ watched: 'actions' })
+        if (!(wa.o({ action: 1, role: 'open_dir' }) as TheC[]).length) {
+            H.enroll_watched()
+            wa.oai({ action: 1, role: 'open_dir' }, {
+                label: 'Open directory', icon: '📂', cls: 'big',
+                fn: async () => {
+                    await fsh.requestDirectoryAccess()
+                    A.c.nav = null                 // a granted local dir overrides the cloud
+                    await w.r({ wants_directory: 1 }, {})
+                    H.i_elvisto(H, 'think')
+                },
+            })
         }
 
-        // ── not open: surface the ways in — a local directory, or the cloud ──
-        if (w.oa({ wants_directory: 1 })) return
-        w.i({ wants_directory: 1 })
+        // already on the cloud backend: report and stop.  A.c.nav set directly
+        //  pre-empts the WormholeNav(DL) the Wormhole worker would build, so
+        //   production never learns which backend it reads through.
+        if ((A.c.nav as any)?.is_opfs_github) return w.i({ see: `☁️ ${(A.c.nav as any).label}` })
 
-        const wa = (this as House).oai({ watched: 'actions' })
-        ;(this as House).enroll_watched()
-        wa.oai({ action: 1, role: 'open_dir' }, {
-            label: 'Open directory', icon: '📂', cls: 'big',
-            fn: async () => {
-                await fsh.requestDirectoryAccess()
-                await w.r({ wants_directory: 1 }, {})
-                ;(this as House).i_elvisto(this as House, 'think')
-            },
-        })
-        wa.oai({ action: 1, role: 'use_cloud' }, {
-            label: 'Use cloud (GitHub→OPFS)', icon: '☁️', cls: 'big',
-            fn: async () => {
-                w.i({ see: '⏳ seeding from github…' })
-                try {
-                    A.c.nav = await mount_opfs_github_nav(JAMSEND_SOURCE, {
-                        onProgress: (done, total) => {
-                            if (done % 25 === 0 || done === total) w.i({ see: `⏳ ${done}/${total} files` })
-                        },
-                    })
-                    await w.r({ wants_directory: 1 }, {})
-                    ;(this as House).i_elvisto(this as House, 'think')
-                } catch (err) {
-                    w.i({ see: `📭 cloud failed: ${err}` })
-                }
-            },
-        })
+        // Mount the cloud nav fire-and-forget, OFF the tick mutex: a fresh seed is
+        //  hundreds of github fetches and awaiting it here would freeze ticks (and a
+        //   marker-skipped remount on a return visit is near-instant).  Progress and
+        //    outcome ride A.c.* — runtime refs, never snapped, so mutating them from
+        //     the promise outside the mutex is safe; we only re-enter via H.main().
+        if (!A.c.nav && !A.c.cloud_mounting && !A.c.cloud_error) {
+            A.c.cloud_mounting = true
+            mount_opfs_github_nav(JAMSEND_SOURCE, {
+                onProgress: (done, total) => { A.c.cloud_progress = `${done}/${total}`; H.main(true) },
+            })
+                .then(nav => { A.c.nav = nav; A.c.cloud_mounting = false; H.main(true) })
+                .catch(err => { A.c.cloud_mounting = false; A.c.cloud_error = String(err); H.main(true) })
+        }
+        if (A.c.cloud_mounting) return w.i({ see: `☁️ seeding ${A.c.cloud_progress ?? '…'}` })
+
+        // cloud fell over (offline / private repo / no OPFS): say so and offer a retry;
+        //  the Open-directory action above remains the way in meanwhile.
+        if (A.c.cloud_error) {
+            if (!(wa.o({ action: 1, role: 'retry_cloud' }) as TheC[]).length) {
+                wa.oai({ action: 1, role: 'retry_cloud' }, {
+                    label: 'Retry cloud', icon: '☁️', cls: 'big',
+                    fn: async () => { A.c.cloud_error = null; A.c.cloud_progress = null; H.i_elvisto(H, 'think') },
+                })
+            }
+            return w.i({ see: `📭 cloud failed (or Open directory): ${A.c.cloud_error}` })
+        }
     }
     // ── Wormhole ─────────────────────────────────────────────────────────────────
     // Generic file-backed toc store.  Any House/work that wires up a directory
