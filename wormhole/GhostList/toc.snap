@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted
-  Funkcion:dirlist,interval_ms=8000,walked_at=1781771909101
+  Funkcion:dirlist,interval_ms=8000,walked_at=1781773795057
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -53,6 +53,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted
     Doc:src/lib/O/Interest.svelte,name:Interest,noticed_at=1781620310582
     Doc:src/lib/O/Editron.svelte,name:Editron,noticed_at=1781760628629
     Doc:src/lib/O/WormholeOpfs.svelte.ts,name:WormholeOpfs,noticed_at=1781760628629
+    Doc:src/lib/O/Auto.svelte,name:Auto,noticed_at=1781773795057
   open_dir:src/lib/O
   group:Ghost,dir:Ghost
     sub:Ghost/N,name:N

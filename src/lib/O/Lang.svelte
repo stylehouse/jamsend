@@ -1801,6 +1801,18 @@
         const dock     = languish.c.up as TheC
         const w        = dock.c.up?.c.up as TheC   // dock → docks → w (c.up wired where the dock is minted)
 
+        // Wait for the language PARSER, not just the state.  The editor (Langui) mints the
+        //  EditorState and arms this req, but editorExtensions is built via `await lang(...)`,
+        //   so there is a window where the state exists with no parser on its `language` facet.
+        //    Compiling then emits every line as raw `.g` passthrough (compile.ts: "not found →
+        //     raw") — Lang_compile_dock now refuses that as a compile_error, but a compile_error
+        //      is TERMINAL below, so the dock would never compile.  Hold here instead (the reqonce
+        //       is not consumed), so it fires exactly once, cleanly, the moment the parser lands.
+        if (dock.c.state && !H.Lang_has_lang_parser(dock.c.state)) {
+            H.i_req_ttlilt(req, 0.5, { waiting: 'parser' })
+            return
+        }
+
         if (H.reqonce(req, 'firing')) {
             // one chance: state is in — build the index.
             H.Langspinner(w,'compile')

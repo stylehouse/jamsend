@@ -1,0 +1,248 @@
+Snap:H
+  H:Editron,Run
+    A:Editron
+      self,round=3	{"mung":["age"]}
+      w:Editron
+        self,round=3	{"mung":["age"]}
+    A:Lies
+      self,round=15	{"mung":["age"]}
+      w:Lies,editor
+        examining	{"loopy":1}
+          req:timemachine,playing=0	{"ref":{"w":"%w:Lies, editor:1"}}
+          Spotlight	{"ref":{"src":"%What:the test"}}
+        Opt
+        req:Cortex,eternal,maz=5,ok
+        req:Store,eternal,maz=7,ok
+          Good,type:text/Waft,path:wormhole/Ghost/Net/Easy/toc.snap,waft_path:Ghost/Net/Easy
+            known,dige:807c2db36b31fae9,kind:read	{"mung":["at"]}
+          Good,type:text/Waft,path:wormhole/GhostList/toc.snap,waft_path:GhostList
+            known,dige:7f57f8fc0b1f5d85,kind:read	{"mung":["at"]}
+          Good,type:text/Doc,path:src/lib/O/test/Peregrination.svelte
+            known,dige:7cfea5e3a0f6a6dd,kind:read	{"mung":["at"]}
+        req:desire
+          req:acquire,maz=9,finished
+          Waft:Ghost/Net/Easy	{"ref":{"src":"%Waft:Ghost/Net/Easy"}}
+        req:git
+        req:wants
+          want=1781774496775,kind:cold
+          want=1781774496827,kind:cold
+          want=1781774496979,kind:cold,resolved
+        o_elvis:dock_askies
+        Waft:Ghost/Net/Easy
+          What:the test
+            Doc:src/lib/O/test/Peregrination.svelte
+              Point,method:Peregrination
+              Point,method:Run_A_Peregrination
+            Doc:Ghost/Story/Peregrination.g
+              Point,method:LakeNetherland
+          What:the peer
+            Doc:Ghost/N/Peeroleum.g
+              Point,method:Peeroleum
+              Point,method:req_p2pman
+              Point,method:req_p2paddy
+              Point,method:req_handshake
+          What:transport
+            What:mock
+              Doc:Ghost/N/Peeroleum.g
+                Point,method:transport
+            What:webrtc-sucks
+              What:reliability
+                Doc:Ghost/N/Tribunal.g
+                  Point,method:PeerJS
+                  Point,method:Socket
+                  Point,method:Tribunal_hand_to_webrtc
+                  Point,method:Tribunal_pair_websocket
+                  Point,method:Tribunal_fall_to_websocket
+                  Point,method:Tribunal_reputation_good
+              What:the trial
+                Doc:Ghost/Story/Peregrination.g
+                  Point,method:Lake_trial_arm
+                  Point,method:Lake_trial_fallback
+                  Point,method:Lake_trial_confirm
+          What:the spec
+            Doc:src/lib/O/spec/Peeroleum_spec.md
+            Doc:src/lib/O/spec/Peeroleum_handover.md
+        Waft:GhostList,lists,O_defaulted	{"mung":["seeded"]}
+          Funkcion:dirlist,interval_ms=8000	{"mung":["walked_at"]}
+          group:src/lib,dir:src/lib
+            sub:src/lib/O,name:O
+            sub:src/lib/data,name:data
+            sub:src/lib/gen,name:gen
+            sub:src/lib/ghost,name:ghost
+            sub:src/lib/mostly,name:mostly
+            sub:src/lib/p2p,name:p2p
+            Doc:src/lib/FTrusting.svelte,name:FTrusting
+            Doc:src/lib/MTrusting.svelte,name:MTrusting
+            Doc:src/lib/Trust.svelte.ts,name:Trust
+            Doc:src/lib/Y.svelte.ts,name:Y
+            Doc:src/lib/boot.ts,name:boot	{"mung":["noticed_at"]}
+            sub:src/lib/server,name:server
+          group:src/lib/O,dir:src/lib/O
+            sub:src/lib/O/D,name:D
+            sub:src/lib/O/lang,name:lang
+            sub:src/lib/O/shelved,name:shelved
+            sub:src/lib/O/spec,name:spec
+            sub:src/lib/O/test,name:test
+            sub:src/lib/O/ui,name:ui
+            Doc:src/lib/O/Cyto.svelte,name:Cyto
+            Doc:src/lib/O/Cytui.svelte,name:Cytui
+            Doc:src/lib/O/Ghost.svelte,name:Ghost
+            Doc:src/lib/O/Housing.svelte.ts,name:Housing
+            Doc:src/lib/O/Hovercraft.svelte,name:Hovercraft
+            Doc:src/lib/O/Lang.svelte,name:Lang
+            Doc:src/lib/O/LangCompiling.svelte,name:LangCompiling
+            Doc:src/lib/O/LangGraft.svelte,name:LangGraft
+            Doc:src/lib/O/LangLang.svelte,name:LangLang
+            Doc:src/lib/O/LangPoint.svelte,name:LangPoint
+            Doc:src/lib/O/LangRegions.svelte,name:LangRegions
+            Doc:src/lib/O/LangSion.svelte,name:LangSion
+            Doc:src/lib/O/LangWhatwhere.svelte,name:LangWhatwhere
+            Doc:src/lib/O/Langui.svelte,name:Langui
+            Doc:src/lib/O/Lies.svelte,name:Lies
+            Doc:src/lib/O/LiesCortex.svelte,name:LiesCortex
+            Doc:src/lib/O/LiesCurse.svelte,name:LiesCurse
+            Doc:src/lib/O/LiesEnd.svelte,name:LiesEnd
+            Doc:src/lib/O/LiesStore.svelte,name:LiesStore
+            Doc:src/lib/O/Liesui.svelte,name:Liesui
+            Doc:src/lib/O/MachPeerily.svelte,name:MachPeerily
+            Doc:src/lib/O/Matstyle.svelte,name:Matstyle
+            Doc:src/lib/O/Otro.svelte,name:Otro
+            Doc:src/lib/O/Storui.svelte,name:Storui
+            Doc:src/lib/O/Story.svelte,name:Story
+            Doc:src/lib/O/Text.svelte,name:Text
+            Doc:src/lib/O/Thang.svelte,name:Thang
+            Doc:src/lib/O/ThangShelf.svelte,name:ThangShelf
+            Doc:src/lib/O/Thangs.svelte,name:Thangs
+            Doc:src/lib/O/stho.ts,name:stho
+            Doc:src/lib/O/Interest.svelte,name:Interest	{"mung":["noticed_at"]}
+            Doc:src/lib/O/Editron.svelte,name:Editron	{"mung":["noticed_at"]}
+            Doc:src/lib/O/WormholeOpfs.svelte.ts,name:WormholeOpfs	{"mung":["noticed_at"]}
+            Doc:src/lib/O/Auto.svelte,name:Auto	{"mung":["noticed_at"]}
+          open_dir:src/lib/O
+          group:Ghost,dir:Ghost
+            sub:Ghost/N,name:N
+            sub:Ghost/Story,name:Story
+            sub:Ghost/test,name:test
+          open_dir:Ghost/N
+          group:Ghost/N,dir:Ghost/N
+            Doc:Ghost/N/Peeroleum.g,name:Peeroleum	{"mung":["noticed_at"]}
+            Doc:Ghost/N/Tribunal.g,name:Tribunal	{"mung":["noticed_at"]}
+          open_dir:Ghost/Story
+          group:Ghost/Story,dir:Ghost/Story
+            Doc:Ghost/Story/Peregrination.g,name:Peregrination	{"mung":["noticed_at"]}
+        Funkcions
+          req:Funkcion,funk_id:GhostList/dirlist,eternal,ok
+        o_elvis:Lies_desire_play
+        o_elvis:Lies_desire_pause
+        o_elvis:Lies_desire_step
+        self,round=15	{"mung":["age"]}
+        see:🗂 1 doc · 2 Wafts
+    A:Lang
+      self,round=11	{"mung":["age"]}
+      w:Lang,editor
+        model,cyto_dir
+        docks
+          dock:src/lib/O/test/Peregrination.svelte,active	{"loopy":0}
+            req:Languish
+              req:text_loaded,maz=3,finished
+              req:text_mutated,maz=2,eternal
+              req:compile,maz=2,finished
+            Text,dige:7cfea5e3a0f6a6dd,disk_dige:7cfea5e3a0f6a6dd,disk_rev
+            Compile
+              Map
+                region,label:Peregrination,depth=0,from=19,to=42,line=2
+                call,method:i,from=3770,to=3774,line=69
+                call,method:i,from=3991,to=3995,line=72
+                call,method:i,from=4046,to=4050,line=73
+                call,method:i,from=4101,to=4105,line=74
+                call,method:Lang_ghostmeta_name,from=4694,to=4716,line=86
+                call,method:o,from=4871,to=4875,line=89
+                call,method:o,from=4962,to=4966,line=90
+                call,method:i_req_ttlilt,from=5191,to=5206,line=93
+                call,method:feebly_ponder,from=5282,to=5298,line=94
+                call,method:LiesStore_read_good,from=6241,to=6263,line=111
+                call,method:reqonce,from=7823,to=7833,line=135
+                call,method:Lang_compile_dock,from=7878,to=7898,line=136
+                call,method:o,from=9507,to=9511,line=165
+              time,compile=0.005,all=0.005
+            Pmirrors
+              Pmirror,src_Waft:Ghost/Net/Easy,spec:Peregrination	{"ref":{"src_Point":"%Point:1, method:Peregrination"}}
+                graft,bookmark_id:g_1,from=19,to=42,line=2
+              Pmirror,src_Waft:Ghost/Net/Easy,spec:Run_A_Peregrination	{"ref":{"src_Point":"%Point:1, method:Run_A_Peregrination"}}
+            Navicade
+              Mapule,kind:region,key:Peregrination,depth=0,line=2,from=19,to=42,end_line=174
+              Mapule,kind:call,key:i,depth=0,line=69,from=3770,to=3774
+              Mapule,kind:call,key:i,depth=0,line=72,from=3991,to=3995
+              Mapule,kind:call,key:i,depth=0,line=73,from=4046,to=4050
+              Mapule,kind:call,key:i,depth=0,line=74,from=4101,to=4105
+              Mapule,kind:call,key:Lang_ghostmeta_name,depth=0,line=86,from=4694,to=4716
+              Mapule,kind:call,key:o,depth=0,line=89,from=4871,to=4875
+              Mapule,kind:call,key:o,depth=0,line=90,from=4962,to=4966
+              Mapule,kind:call,key:i_req_ttlilt,depth=0,line=93,from=5191,to=5206
+              Mapule,kind:call,key:feebly_ponder,depth=0,line=94,from=5282,to=5298
+              Mapule,kind:call,key:LiesStore_read_good,depth=0,line=111,from=6241,to=6263
+              Mapule,kind:call,key:reqonce,depth=0,line=135,from=7823,to=7833
+              Mapule,kind:call,key:Lang_compile_dock,depth=0,line=136,from=7878,to=7898
+              Mapule,kind:call,key:o,depth=0,line=165,from=9507,to=9511
+        scheme:req
+          lematch	{"ref":{"sc_has":"Object()"}}
+            lematch	{"ref":{"sc_has":"Object()"}}
+        Languinio	{"loopy":2}
+          Interest:Trail,waft:Ghost/Net/Easy,lens:NaviCado,presence:active,state:locked,in_Doc:src/lib/O/test/Peregrination.svelte	{"ref":{"src":"%What:the test"}}
+            cursor,what:Ghost/Net/Easy,doc:Ghost/Net/Easy/doc0,depth=0
+            MapReport,n_def=0,n_call=13,n_region,n_cf=0
+          Interest:GhostList,waft:GhostList,lens:DocGhostList,presence:active,state:pending
+            cursor,doc:GhostList/doc0
+          ActiveInterest,kind:Trail,waft:Ghost/Net/Easy
+          dock,active	{"loopy":0,"hid":1}
+          Change
+            backend,dige:7cfea
+            storage,dige:7cfea,dim:false
+        req:workon,following,auto_push	{"ref":{"w":"%w:Lang, editor:1"}}
+          {"req":"understanding","maz":3,"permanent":1,"sig":"1:13:0:0","what":"the test","finished":1}
+          req:ingredients,maz=2,permanent,sig:src/lib/O/test/Peregrination.svelte,finished
+            req:furnishing,path:src/lib/O/test/Peregrination.svelte,permanent,asked,finished
+          {"req":"instrumentation","permanent":1,"sig":"src/lib/O/test/Peregrination.svelte:7cfea5e3a0f6a6dd:1:29","have_Map":1,"n_pmirrors":2,"finished":1}
+        req:waft_roster,eternal,subscribed
+        o_elvis:Lies_compile_settled
+        o_elvis:dock_content
+        LE:Ghost/Net/Easy	{"ref":{"target":"%What:the test"}}
+          Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:the test","topD":"%Demonstrations:origin"}}
+            Demonstrations:origin
+              Demonstrations:origin,Doc:src/lib/O/test/Peregrination.svelte
+              Demonstrations:origin,Doc:Ghost/Story/Peregrination.g
+            News:origin,goners=0,neus=2
+          Seem:working	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:the test","topD":"%Demonstrations:working"}}
+            Demonstrations:working
+              Demonstrations:working,Doc:src/lib/O/test/Peregrination.svelte
+                Understandable
+              Demonstrations:working,Doc:Ghost/Story/Peregrination.g
+                Understandable
+              Understandable
+            News:working,goners=0,neus=2
+          State
+          {"encode":1,"snap_origin":"Doc:src/lib/O/test/Peregrination.svelte\nDoc:Ghost/Story/Peregrination.g\n","snap_working":"Doc:src/lib/O/test/Peregrination.svelte\nDoc:Ghost/Story/Peregrination.g\n","dirty":"0"}
+        received,doc_opened,doc:src/lib/O/test/Peregrination.svelte
+        received,editorBegins,doc:src/lib/O/test/Peregrination.svelte
+        self,round=11	{"mung":["age"]}
+        see:🟦 tiles 0 bookmarks
+    A:Pantheate
+      self,round=3	{"mung":["age"]}
+      w:Pantheate
+        self,round=3	{"mung":["age"]}
+        o_elvis:Ghost_update_notify
+    watched:ave
+      examining	{"loopy":1,"hid":1}
+      Languinio	{"loopy":2,"hid":1}
+    watched:UIs
+      UI:Lies	{"ref":{"component":"Function()"}}
+      UI:Langui	{"ref":{"component":"Function()"}}
+    watched:actions
+      action,role:debookmark,label:-marks	{"ref":{"fn":"Function()"}}
+      action,role:enbookmark,label:+marks	{"ref":{"fn":"Function()"}}
+      action,role:compile,label:compile	{"ref":{"fn":"Function()"}}
+      action,role:lang_pick,kind:dropdown,label:language,icon:✎,value:tsstho	{"ref":{"options":"[Object(),Object()]","on_pick":"Function()"}}
+      action,role:gen_parser,label:gen,icon:⚙,disabled:true	{"ref":{"fn":"Function()"}}
+      action,role:nogen,label:nogen,icon:nogen,cls:toggle-off	{"ref":{"fn":"Function()"}}
+      action,role:softgen,label:softgen,icon:softgen,cls:toggle-off	{"ref":{"fn":"Function()"}}
+      action,role:compo,label:compo,icon:compo,cls:toggle-off	{"ref":{"fn":"Function()"}}

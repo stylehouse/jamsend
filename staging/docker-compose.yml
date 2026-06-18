@@ -2,12 +2,12 @@
 #  dev container's HMR/build so running an IDE here can't disturb dev (and vice-versa).
 #  It's "staging" only in that it's a more stable place to keep a tab open than dev.
 #
-# How you use it: open  http://localhost:9092/Otro?A=Editron  — the app lives at the
-#  /Otro route (/ is the p2p Intro page).  The ?A URL param (parsed in Otro) makes
-#  may_begin boot w:Editron (a full Lies/Lang IDE) instead of w:Auto, so the Library never
-#  loads and you land in the editor; the companion ?W=<Waft> picks the Waft it opens on.
-#  Plain http://localhost:9092/Otro still boots Auto as normal.  No build/env flag needed —
-#  the param picks the world per-tab.
+# How you use it: open  http://localhost:9092/Otro?B=Editron  — the app lives at the
+#  /Otro route (/ is the p2p Intro page).  The ?B URL param (parsed in Otro) tells the default
+#  Auto to activate the Editron Story Book — a full Lies/Lang IDE that comes up as a one-step
+#  "watch itself start up" Story, then is used live; the companion ?W=<Waft> picks the Waft it
+#  opens on.  Plain http://localhost:9092/Otro still boots Auto's Library as normal.  No
+#  build/env flag needed — the param picks the Book per-tab.
 #
 # Isolation = a separate git worktree.  The worktree is its own checkout with its own
 #  node_modules / .vite / .svelte-kit, so two SvelteKit dev servers never share a build
@@ -42,8 +42,8 @@ services:
     ports:
       - "127.0.0.1:9092:9092"    # localhost only — no LAN, no proxy
     command: npm run dev -- --host 0.0.0.0 --port 9092
-    # No boot env var: which top-level world loads is chosen per-tab by the ?A URL
-    #  param (default Auto; ?A=Editron = the IDE).  See the header note.
+    # No boot env var: which Book loads is chosen per-tab by the ?B URL param
+    #  (default Auto's Library; ?B=Editron = the IDE Book).  See the header note.
     tty: true
     stdin_open: true
     restart: 'unless-stopped'

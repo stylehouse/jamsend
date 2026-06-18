@@ -183,8 +183,22 @@
         }
 
         // ── start Story from active book (first time only) ────────────────────
+        //   ?B=<Book> (boot_param, stamped on H.c.book by Otro) overrides which book boots —
+        //    e.g. ?B=Editron brings up the editor as a Book.  We mark it active in the Library
+        //     (mirroring the activateBook elvis) so the UI agrees, then pick it; a B-book absent
+        //      from the Library still boots — picks_a_book → auto_reset_story stands up H:Story
+        //       with it, and Story_subHouse resolves its Run_A_<Book>.  No B → the active book.
         if (!w.c.story_started) {
-            if (active) {
+            const boot_book = (H.c.book as string) || undefined
+            if (boot_book) {
+                w.c.story_started = true
+                for (const b of Li.o({ Book: 1 }) as TheC[]) {
+                    if (b.sc.Book === boot_book) b.sc.active = 1
+                    else delete b.sc.active
+                }
+                Li.bump_version()
+                picks_a_book(boot_book)
+            } else if (active) {
                 w.c.story_started = true
                 picks_a_book(active.sc.Book as string)
             }

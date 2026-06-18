@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return 'cf8234d4ba27c3a9' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return '151f815dce7a5444' },
 
 
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -21,6 +21,7 @@
 // ── manager: appear online ────────────────────────────────────────────────────
 // A:Peerologist/w:Peerologist — no identity, no transport; it only wants Peerings.
 async Peerologist(A,w) {
+    w.i({see: `ya later`})
     w.oai({req: "p2pman", eternal: 1})
     await w.do()
 

@@ -229,6 +229,14 @@ import { LANG_COMPILE } from "./lang/compile"
         let source: string
         let source_dige = ''
         try {
+            // Refuse to compile with no language parser wired on this dock's EditorState:
+            //  every line would pass through verbatim (compile.ts: "not found → raw"), so the
+            //   rendered module would be uncompiled `.g` source written straight to the .go
+            //    (and, on the editor↔runner channel, pushed to a runner that trusts it). A
+            //     caught compile_error here writes NOTHING and the job re-arms next pass once
+            //      the async lang() resolve has landed — self-healing, instead of silent garbage.
+            if (!this.Lang_has_lang_parser(state))
+                throw 'no language parser wired on this dock (lang() not resolved onto its EditorState yet) — refusing to emit raw .g passthrough'
             const lines = this.Lang_compile_collect(state, job, this.Lang_stho_parser(state))
 
             // < maybe pile up interesting objects...

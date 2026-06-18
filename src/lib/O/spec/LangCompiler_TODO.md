@@ -78,3 +78,60 @@ string/comment hazard structurally. Gated on confirming the in-editor cost.
 `Lang_ioness2_arg_src` takes a single leg per arg and throws on a drilled
 `a/b/c` path. If a drilled match ever makes sense for these verbs, it needs the
 drill treatment; for now the throw is the spec.
+
+## validating the compile output — "nothing checked it" (the silent-passthrough class)
+
+Two real bugs, same disease: the compiler emitted text that **was never validated** before
+it was written/trusted, so a `.go` of garbage landed on disk (and svelte's parser is the first
+thing to notice, far too late — and on the editor↔runner channel it would be PUSHED to a runner
+that trusts it). See `Editron_runner_channel.md` for the channel half.
+
+**Failure A — compile with no parser (FIXED).** `Lang_compile_collect`'s contract is "a line the
+grammar doesn't recognise passes through verbatim (`kind:'raw'`)" — correct per line. But if the
+WHOLE `language` facet is empty (the async `lang()` resolve hasn't landed on the dock's
+`EditorState` yet, or no/wrong extension was wired), then EVERY line is unrecognised, so the
+collector emits the entire `.g` as raw and `Lang_compile_render_module` wraps **uncompiled source**.
+Nothing distinguished that from a legitimately all-raw-JS file, so `e_Lies_compiled` wrote it
+(`LiesCortex.svelte:148`, `LiesStore_write(w, gen_path, source)`). Symptom: a `.go` whose body is
+`Foo(A,w):` / `w i %see:…` (the DSL forms), a svelte `js_parse_error`, then self-correction on a
+later pass once the parser was ready — i.e. an intermittent corruption window.
+- **Fix:** `Lang_has_lang_parser(state)` (`compile.ts`) — is ANY grammar parser wired on the facet?
+   (Deliberately weaker than `Lang_stho_parser`: stho OR tsstho both count; the guard is against
+    "no grammar at all", the lang-not-ready race, not "wrong grammar".) `Lang_compile_dock`
+     (`LangCompiling.svelte`) throws when it is false, inside the existing `try`, so it becomes a
+      caught `compile_error` that deletes `job.sc.pending` and writes NOTHING. The job re-arms next
+       pass once `lang()` has resolved — self-healing instead of silent garbage. Verified: bare
+        `EditorState` → false (refuse), lang-wired → true (compiles).
+- **The trigger (CONFIRMED): the editor, via `req_compile` — not the CLI.** `lang-compile.ts` and the
+   bootstrap loader (`Peregrination.svelte`) both `await lang(lang_for_path(path))` before
+    `Lang_compile_dock`, so they are innocent. The editor is not: Langui builds `editorExtensions` via
+     `await lang(...)` (`Langui.svelte:1355`) and mints the dock's `EditorState`, but `req_compile`
+      (`Lang.svelte`) fires `Lang_compile_dock` on a `reqonce` the moment the *state* is in — which can
+       precede the parser landing on its `language` facet. And a `compile_error` is **terminal** in
+        `req_compile`, so the parser-guard ALONE would make a raced dock never compile.
+- **Fix (done): wait for the parser in `req_compile`.** Before the `reqonce`, if `dock.c.state` exists
+   but `Lang_has_lang_parser(dock.c.state)` is false, arm `i_req_ttlilt(req,0.5,{waiting:'parser'})` and
+    return (reqonce NOT consumed). The editor then compiles exactly once, cleanly, the moment the parser
+     lands — which is what gives the line-by-line translation view real (not passthrough) output. The
+      `Lang_compile_dock` guard is then pure belt-and-suspenders for any other caller.
+- **Still separate (NOT this bug): the editor should compile but NOT write.** Wanting the translation
+   view means the editor SHOULD compile; suppressing the `.go` write/push is the `w%editor` gate
+    (`Editron_handover.md` "Pantheate split" + `Editron_runner_channel.md`), orthogonal to parser
+     readiness. The translation display itself (`LangCompiling.svelte:238`, the disabled
+      `if (0 && ln.kind === 'translated')` block) is still a TODO to wire up.
+
+**Failure B — translated but invalid JS (CLI gate done; in-app twin proposed).** A raw-JS seam can
+emit syntactically-broken JS even WITH a parser — e.g. a bare multi-line `else` mangled by the
+indentation→brace logic into `} else {}` (bit `Socket_real`). The parser-guard does NOT catch this.
+- **Done (author-time):** `scripts/lang-compile.ts` now runs the rendered module through esbuild
+   (`transform`, `loader:'ts'`, no type-checking — the loosest syntax gate); `✓ PASS` means "module
+    parses". Catches B before commit. See the `lang-compile-cli` memory.
+- **Proposed (run-time twin):** the in-app compile has no such gate — a `.g` committed without
+   running `lang-compile` could still write broken JS. Add a parse check of the rendered module
+    before `e_Lies_compiled` writes/fires (and before a `dock_push` over the channel). esbuild is
+     build-time only; in-browser, reuse the registry's Lezer JS parser and reject on error nodes,
+      or `svelte.parse`. Gated on in-app verification.
+
+**The general principle:** the compiler must not hand downstream (disk, Pantheate, the runner over
+the WS) any output it hasn't proven is real compiled JS. The parser-guard (A) + the two output
+gates (B) are that contract; A is in, B is half in (CLI), the in-app half is the next move.

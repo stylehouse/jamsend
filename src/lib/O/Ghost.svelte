@@ -34,7 +34,7 @@
     import Story     from "$lib/O/Story.svelte"
     import Cyto      from "./Cyto.svelte"
     import Text  from "$lib/O/Text.svelte"
-    import Auto from "./Auto.go";
+    import Auto from "./Auto.svelte";
     import Matstyle from "./Matstyle.svelte";
     import Lang from "$lib/O/Lang.svelte";
     import Hovercraft from "./Hovercraft.svelte";
@@ -71,5 +71,5 @@
 <!-- < js weirdness: if you move this up below Matstyle, the elvis handlers receive $this as a first argument... -->
 <Lang      {M} />
 <Lies {M} />
-<!-- IDE top-level world (only stands up when booted via ?A=Editron) -->
+<!-- Editron Book recipe (Run_A_Editron) + per-beat handler; booted via ?B=Editron -->
 <Editron {M} />

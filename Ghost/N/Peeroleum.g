@@ -9,6 +9,7 @@
 // ── manager: appear online ────────────────────────────────────────────────────
 // A:Peerologist/w:Peerologist — no identity, no transport; it only wants Peerings.
 async Peerologist(A,w):
+    i see:`ya later`
     w oai %req:p2pman,eternal
     await w.do()
 

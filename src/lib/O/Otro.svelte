@@ -13,18 +13,25 @@
     // ── all House construction inside $effect ─────────────────────────────────
     let H: House = $state(null!)
     let R
-    // ?A=<World> chooses which top-level world boots (default Auto; may_begin stands up
-    //  A:<A>/w:<A>, so ?A=Editron brings up the Lies/Lang IDE).  Its companion ?W=<Waft>
-    //  names the Waft to open — read by the world itself (see Editron's boot_param('W')).
+    // ?A=<World> chooses which top-level world boots (default Auto, the Library/Story owner;
+    //  may_begin stands up A:<A>/w:<A>).  The editor and test runner are Story Books, NOT their
+    //  own top-level worlds — they boot via ?B=<Book> (below) under the default Auto.
     //  boot_param abstracts the source: URL query in the browser, env var (A=) in node.
     //  Computed ONCE out here, and set on the LOCAL `h` below — NEVER as `H.c.x = …` inside
     //  the $effect: reading the $state H there makes the effect depend on H, which it also
     //  reassigns (`H = new House()`), so it self-retriggers forever, allocating a House every
     //  tick → the tab OOMs to multi-GB.  (Svelte 5: an effect re-runs on any $state it reads.)
     const toplevel = boot_param('A') || 'Auto'
+    // ?B=<Book> auto-activates a Story Book under the default A=Auto (the Library/Story owner) —
+    //  ?B=Editron boots the editor as a Book, ?B=Peregrination the test runner, etc.  Auto reads
+    //   H.c.book on first boot and activates it (see Auto.svelte).  ?W=<Waft> rides alongside for
+    //    the Book that opens one.  Stamped on the LOCAL `h`, never inside the $effect — same
+    //     self-retrigger trap as toplevel above.
+    const book = boot_param('B')
     $effect(() => {
         const h = new House({ name: 'Mundo' })
         h.c.toplevel = toplevel
+        if (book) h.c.book = book
         H = h
         setTimeout(() => {
             houses = [H]

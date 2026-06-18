@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Peregrination(): string { return 'a2cc543abfe7f5cb' },
+    Ghostmeta_Ghost_Story_Peregrination(): string { return 'fe4c4e69c837fa9c' },
 
 
 // LakeNetherland — the Peeroleum test-case wrangler (the outer test layer).
@@ -208,8 +208,11 @@ async Lake_trial_fallback(w) {
 
 },
 // Lake_trial_confirm -- step 6: the relay probe came back acked => the websocket carries.
-//  Bless both carriers %reputation:good. The acked %emit may have whittled to
-//   %outbox/recent at the step-5 boundary, so look in both. Idempotent.
+//  Bless both carriers %reputation:good. The acked %emit was whittled to %outbox/recent at the
+//   step-5 boundary (the cull runs before step 6) and %recent STRIPS the %acked flag — so
+//    re-checking probe.sc.acked there can never pass. But the cull moves ONLY acked emits to
+//     %recent, so the probe's mere PRESENCE in %recent is itself the proof of ack; a still-live
+//      emit (not yet culled) must still carry %acked. Idempotent.
 async Lake_trial_confirm(w) {
     w.i({reached: "step_6"})
     let wB = this._o_drill1(this, [{sc: {A: "Bearing"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}])
@@ -217,8 +220,10 @@ async Lake_trial_confirm(w) {
     if (!wB || !wN) return
     let bpier = this._o_drill1(this, [{sc: {A: "Bearing"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
     let ob = bpier?.o({outbox:1})[0]
-    let probe = ob?.o({emit: bpier.c.ws_probe_seq})[0] || ob?.o({recent:1})[0]?.o({emit: bpier.c.ws_probe_seq})[0]
-    if (!probe?.sc.acked) return
+    let live = ob?.o({emit: bpier.c.ws_probe_seq})[0]
+    let recent = ob?.o({recent:1})[0]?.o({emit: bpier.c.ws_probe_seq})[0]
+    let acked = (live && live.sc.acked) || !!recent
+    if (!acked) return
     this.Tribunal_reputation_good(wB)
     this.Tribunal_reputation_good(wN)
 

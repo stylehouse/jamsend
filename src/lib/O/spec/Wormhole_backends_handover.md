@@ -75,9 +75,9 @@ Express **seeding** as a read-only lower layer, and **records** (Identities) as 
    books plus the top-level ghost source Lies compiles. Widen `subpaths` to carry more of the tree,
     but the recursive Trees call can `truncated`-clip on a huge repo (we log it) — seed narrower then.
 - **No backend → reads reply `{error}`, NOT `{not_found}` — and a naive reader fatals on it.**
-   `Auto.go` loads `wormhole/Present/toc.snap` on boot; with no share open (and the cloud not yet
+   `Auto.svelte` loads `wormhole/Present/toc.snap` on boot; with no share open (and the cloud not yet
     mounted) the worker replies `{error:'📭 nav not ready'}`, whose absent `.content` decoded as the
-     fatal `['empty snap']` every tick (`Auto.go:102`). Fixed there: an `{error}` reply now drops the
+     fatal `['empty snap']` every tick (`Auto.svelte:102`). Fixed there: an `{error}` reply now drops the
       finished req and re-issues next think (wait, don't decode); `not_found` OR empty content both
        mean "no library yet" → seed defaults. Any reader of `rw_op`/`wh_op` must treat `{error}` as
         not-ready, not as content — Story/LiesStore already gate on the req, this was the one that didn't.
@@ -130,7 +130,7 @@ Then the browser counterpart: realised OPFS hands back a `FileSystemDirectoryHan
     `DirectoryOpener` actor (~1625) auto-mounts the cloud nav when there's no local share (fire-and-
      forget, state on `A.c.cloud_*`), keeping "Open directory" as a dev override. Both `w:DirectoryOpener`
       and `w:Wormhole` live under the same `A:Wormhole` (~1603), so `A.c.nav` set by one is read by the other.
-- `src/lib/O/Auto.go` — Library loader (`wormhole/Present/toc.snap`); now treats an `{error}` reply as
+- `src/lib/O/Auto.svelte` — Library loader (`wormhole/Present/toc.snap`); now treats an `{error}` reply as
    not-ready (re-issues) and empty content as defaults, instead of fatalling on `['empty snap']`.
 - `src/lib/O/WormholeOpfs.svelte.ts` — the OPFS-from-GitHub backend: `OpfsOverlayNav` (read/write/dir
    over two `FileSystemDirectoryHandle`s), `seed_from_github` (Trees API → raw CDN, marker-guarded),
@@ -146,7 +146,7 @@ Then the browser counterpart: realised OPFS hands back a `FileSystemDirectoryHan
 ## Working-tree state at handoff (uncommitted)
 
 Mine, ready to commit: `src/lib/O/WormholeOpfs.svelte.ts` (new); `src/lib/O/Housing.svelte.ts`
- (DirectoryOpener auto-mounts cloud when no share + import), `src/lib/O/Auto.go` (no-nav reply no
+ (DirectoryOpener auto-mounts cloud when no share + import), `src/lib/O/Auto.svelte` (no-nav reply no
   longer fatals), this file (modified). One batch: the OPFS-from-GitHub backend + its auto-engage.
    Typechecks clean — the only `npm run check` hits in the edited range are pre-existing baseline
     noise (`trace`/`mutex`/implicit-any on `House`/worker params), none in the new code. Not yet

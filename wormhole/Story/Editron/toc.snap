@@ -1,0 +1,11 @@
+story:Editron
+  Styles
+  Plan
+  Opt
+    noCyto
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.744
+      sample=0.488,at=1781774526
+      sample=1.001,at=1781775213
+  step,dige:ef7fcf31921356e1

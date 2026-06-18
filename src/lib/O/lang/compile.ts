@@ -60,6 +60,29 @@ export const LANG_COMPILE = {
         return undefined
     },
 
+    // Is ANY real language parser wired onto this EditorState's `language` facet?
+    //
+    //   The collector's contract is "a line the grammar doesn't recognise passes
+    //   through verbatim (kind:'raw')".  That is correct per-line — but if the
+    //   WHOLE facet is empty (the async lang() resolve hasn't landed on this state
+    //   yet, or the wrong/no extension was wired), then EVERY line is unrecognised,
+    //   so the collector emits the entire `.g` as raw and the rendered module is
+    //   uncompiled source.  Nothing downstream can tell that apart from a file that
+    //   is legitimately all raw-JS, so the garbage gets written to the .go (and, on
+    //   the editor↔runner channel, pushed to a runner that trusts it).
+    //
+    //   This is the cheap pre-check Lang_compile_dock uses to REFUSE that compile
+    //   loudly (a caught compile_error, no write) rather than emit passthrough.  It
+    //   is deliberately weaker than Lang_stho_parser: a parser of ANY grammar (stho
+    //   OR the tsstho TS grammar) counts as wired — the failure we guard is "no
+    //   grammar at all", which is the lang-not-ready race, not "wrong grammar".
+    Lang_has_lang_parser(state: EditorState): boolean {
+        try {
+            const lang: any = state.facet(language as any)
+            return !!lang?.parser
+        } catch { return false }
+    },
+
     // Walk the document line-by-line (via doc.line(n), independent of the
     // syntax tree's own Line recovery).  For each doc-line we look into the
     // syntax tree for the first IOing or Sunpit node strictly within the

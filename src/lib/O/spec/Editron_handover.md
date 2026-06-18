@@ -1,21 +1,38 @@
-# Editron — the IDE top-level world (handover)
+# Editron — the IDE, run as a Story Book (handover)
 
 ## What's built (this session)
 
-`?A=Editron` (parsed in Otro via `boot_param` → also `A=` env in node) makes
- `may_begin` stand up `A:Editron/w:Editron` **instead of** `A:Auto`, so the Library never
-  loads. `Editron(A,w)` (src/lib/O/Editron.svelte) stands up `Lies%editor` + `Lang%editor`
-   (+ Pantheate) and opens the Waft named by `?W=<Waft>` (env `W=`, default `Ghost/Net/Easy`,
-    the overlay carrying the Peeroleum/Peregrination `.g` docks). `editor:1` is the explicit, queryable counterpart to the test
-     runner's `runner:1` — today the code branches on `!w.sc.runner`, so a plain Lies already
-      behaves as the editor; the flag is for future `w%editor`-specific behaviour.
+**The editor is now a Story Book, not a top-level world.** `?B=Editron` (parsed in Otro via
+ `boot_param` → also `B=` env in node) stamps `H.c.book`; the default `A=Auto` (the Library/Story
+  owner) reads it on first boot and **activates the Editron Book** (`Auto.svelte`, the "start Story
+   from active book" block). `Story_subHouse` then stands up the Book's Run by calling
+    **`Run_A_Editron`** (the `Run_A_<Book>` recipe, mirroring `Run_A_Peregrination`), which lays
+     `A:Editron/w:Editron` + `Lies%editor` + `Lang%editor` (+ Pantheate) INTO the Run. The per-beat
+      handler `Editron(A,w)` (both in `src/lib/O/Editron.svelte`) opens the Waft named by `?W=<Waft>`
+       (env `W=`, default `Ghost/Net/Easy`, the overlay carrying the Peeroleum/Peregrination `.g`
+        docks). The Book itself is `wormhole/Story/Editron/toc.snap` (one step + `Opt/noCyto`).
+ `editor:1` is the explicit counterpart to the runner's `runner:1` — today the code branches on
+  `!w.sc.runner`, so a plain Lies behaves as the editor; the flag is for future `w%editor` behaviour.
 
-The bare stand-up is freshly testable in a browser (the OOM that blocked it was the Otro
- construction-`$effect` self-retrigger loop — never read the `$state H` inside the effect that
-  reassigns it, or it loops allocating Houses → multi-GB; now fixed, NOT Editron). Run it on
-   the dev instance: `/Otro?A=Editron` (add `&W=<Waft>` to open a different Waft). Staging
-   (staging/docker-compose.yml, port 9092, a git worktree) is only for an isolated source
-    checkout that dev's HMR can't disturb — not needed to exercise the feature.
+**Why a Book:** running the editor's own startup AS a Story makes it one observable, re-runnable
+ step — if the editor breaks, re-run the Book and read the step snap to see how far boot got. This
+  is the first of the "runtime stories"; diagnostics are Story-based.
+
+Boot it on the dev instance: `/Otro?B=Editron` (add `&W=<Waft>` for a different Waft). Staging
+ (staging/docker-compose.yml, port 9092, a git worktree) is only for an isolated source checkout
+  that dev's HMR can't disturb — not needed to exercise the feature.
+
+**Still to verify in-app (browser-only, can't be headless-checked):**
+ - **boot-yield / "then we use it".** After the one boot step the Run must stay live and
+    interactive. The Run House + its Lies/Lang workers persist (nothing tears them down — `Story`
+     only drops H:Story on a *new* activation). Open question: does the editor stay responsive on
+      `Run.c.no_ambient=true` via interaction-poked think, or does a "boot story → re-enable ambient
+       tick, stop story_drive" mode need adding to `story_drive`? Verify on :9091 first.
+ - **step count / mode.** `toc.snap` has one `step,dige` (a lie dige). Confirm it runs exactly the
+    one step then settles; Accept/Resnapture to record the real dige.
+ - **re-activation landmine (pre-existing, not ours):** `Auto.svelte` `auto_reset_story` has
+    `throw "forgot A"` in the existing-H:Story teardown loop — switching Books after one is up will
+     throw. First boot (no existing Story) is fine; fix before relying on Book-switching.
 
 ## Next: editor compiles, runner runs — the Pantheate split
 

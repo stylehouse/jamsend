@@ -52,8 +52,21 @@ isn't Story-snapped at all, so it self-drives on `feebly_ponder`; the ttlilt is 
        plan in the session handoff. **The committed `gen/**.go` are stale vs the new `.g`; the loader's dige
         gate regenerates them on the next in-app run (do not hand-edit gen).**
 
-**Deferred behind that (was the prior next move):** eyeball step 6, Accept/Resnapture steps 2–6 to make
-the diges regression gates, then heading 6 (corruption tests). Still worth doing; just not the active front.
+**Test status (transport trial, steps 2–6):** steps 2–5 proven in-app; **step 6 was BROKEN, now FIXED.**
+`Lake_trial_confirm` re-checked `probe.sc.acked` on the relay-probe emit, but the step-5→6 boundary cull
+had moved it to `%outbox/recent`, which STRIPS `%acked` — so it bailed and never stamped
+`%reputation:good`/`%witnessed:step_6`. Fix (`Ghost/Story/Peregrination.g`): presence in `%recent` IS the
+ack proof (the cull moves ONLY acked emits there); a still-live emit must still carry `%acked`. `lang-compile`
+clean. **Re-run to confirm step 6 goes green, then Accept/Resnapture steps 2–6** to make the diges real
+regression gates. Then heading 6 (corruption tests).
+
+**Prerequisite unblocked (compiler robustness — why the editor wrote uncompiled `.go`):** task (4) needs
+the editor to compile cleanly, and that was gated by a real bug — a compile firing before the language
+parser landed on the dock's `EditorState` emitted raw `.g` passthrough and WROTE it as the `.go`, with
+nothing validating. Fixed: `req_compile` now waits for the parser (`waiting:'parser'` ttlilt) + a
+`Lang_has_lang_parser` guard in `Lang_compile_dock`; `lang-compile` now syntax-gates its output (esbuild).
+Full write-up in `LangCompiler_TODO.md` ("validating the compile output"). Both in-app fixes still want a
+browser re-run to confirm.
 
 **The webrtc→websocket transport trial (steps 4–6) works in-app** — mocked, step-paced, in
 `Ghost/N/Tribunal.g` (details under **heading 9/10** below). Proven on :9091 through step 5: step 4 hands
