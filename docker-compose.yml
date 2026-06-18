@@ -22,9 +22,15 @@ services:
       # - "./testsounds:/music:ro"
       - *music-volume
     ports:
-      # this would bind to LAN address as well
-      #  but WebRTC requires a secure context (can be localhost)
+      # a bare "9091:9091" binds ALL interfaces (LAN-exposed) — avoid.  Publish to
+      #  two explicit addresses instead:
       # - "9091:9091"
+      # 127.0.0.1 — reachable as http://localhost:9091 on the host: WebRTC needs a
+      #  secure context and localhost counts; it's also where a browser opens the editor
+      #   and where the relay endpoint lives.  Not LAN-exposed.
+      - "127.0.0.1:9091:9091"
+      # 172.17.0.1 — the docker bridge gateway, so a sibling container (the staging
+      #  runner) can reach this editor's relay at ws://172.17.0.1:9091/relay over the bridge.
       - "172.17.0.1:9091:9091"
     command: npm run dev -- --host 0.0.0.0 --port 9091
     # Vite reads ALLOWED_HOSTS (public-host allowlist) from here — see .env.example.

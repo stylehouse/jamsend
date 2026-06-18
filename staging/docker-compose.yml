@@ -52,9 +52,16 @@ services:
         limits:
           cpus: '2.0'
           memory: 1G
+          # Cap processes per CONTAINER via cgroup, NOT per-UID.  This service runs as
+          #  uid 1000 (your own busy host uid), and ulimits.nproc is a per-UID limit
+          #   counted across the WHOLE host — so a small nproc here starves npm's exec
+          #    with EAGAIN ("exec /usr/bin/npm: resource temporarily unavailable") because
+          #     uid 1000 already has plenty of processes hostwide.  (The dev `app` only
+          #      dodges this by running as root, which is exempt from RLIMIT_NPROC.)
+          #       pids is the limit we actually want — same fix as the `claude` service.
+          pids: 512
         reservations:
           cpus: '0.5'
           memory: 256M
     ulimits:
-      nproc: 100
       nofile: 1024
