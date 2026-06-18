@@ -129,6 +129,126 @@
             console.log(`🔪 runner arm-run → ${path} [${mode}]`)
         },
 
+        // ── the editor↔runner channel — Lies as a Peeroleum consumer ──────────
+        //
+        //   The transport is already built and proven: the `/relay` ws endpoint
+        //    (src/lib/server/relay.ts, node-tested by scripts/relay-test.ts), the
+        //     real ws client (`Socket_real` in Tribunal.g), and the spine's consumer
+        //      seam (`Peeroleum_on` / `Peeroleum_send_consumer` / `Peeroleum_deliver`,
+        //       Ghost/N/Peeroleum.g).  What was missing — and is wired here — is the
+        //        Lies CONSUMER: stand the channel up on a Peering, register the two
+        //         app frame types, and bridge them to the compile/run pipeline.
+        //
+        //   Two frame types, plain-text bodies (Editron_runner_channel.md):
+        //     dock_push   editor → runner   { path, source, dige }
+        //     run_result  runner → editor   { path, dige, ok, errors, snap_dige }
+        //
+        //   v1 scope (deferred items spelled out in the channel doc): one editor,
+        //    one runner, trust-everything (the hello/trust handshake is skipped — we
+        //     stamp %Ud so the inbox's pre-Ud gate passes app frames), no auto-
+        //      reconnect.  Hosting the Peering on w:Lies keeps the consumer and its
+        //       channel in one actor; a dedicated transport w (beside Wormhole) is a
+        //        clean future move if Peeroleum particles on w:Lies get noisy.
+        //
+        //   LIVE verification is two-origin / browser-only: one relay is set-once
+        //    role, so editor and runner cannot both run under a single dev server —
+        //     exercise it with the editor on :9091 and a runner on staging :9092.
+
+        // Lies_channel_up — idempotent, role-gated standup.  Lays the Peering/Pier,
+        //  opens the real ws (own-origin /relay?addr=<role>), commands the relay role
+        //   (`become`, piggy-backed on the ws `open` event so it doesn't clobber
+        //    Socket_real's onopen flush), points the active transport at it, and
+        //     registers the inbound frame handler for this role.  No-op unless the
+        //      Run is an explicit editor|runner AND the transport ghosts compiled in.
+        Lies_channel_up(w: TheC) {
+            const H = this as House
+            const role = H.Lies_role(w)
+            if (role !== 'editor' && role !== 'runner') return        // bare: no channel
+            if (w.c.channel_up) return                                 // once
+            if (typeof (H as any).Socket_real !== 'function') return   // transport ghosts absent
+            if (typeof WebSocket === 'undefined') return               // not a browser (tests/node)
+            const peer = role === 'editor' ? 'runner' : 'editor'
+
+            // Peering named by our own addr; Pier keyed by the peer (header.to routing).
+            //  c.up stamped both levels — a Pier-hosted req silently never pumps otherwise.
+            const peering = w.oai({ Peering: 1, name: role })
+            peering.c.up = w
+            const pier = peering.oai({ Pier: 1, pub: peer })
+            pier.c.up = peering
+            pier.oai({ Ud: 1 })   // trust-everything v1: satisfy the inbox pre-Ud gate
+
+            ;(H as any).Socket_real(w)
+            const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
+            const ws = port?.ws as WebSocket | undefined
+            if (ws) {
+                const become = () => { try { ws.send(JSON.stringify({ control: 'become', role })) } catch { /* relay down — the no-ack ttlilt retries */ } }
+                if (ws.readyState === WebSocket.OPEN) become()
+                else ws.addEventListener('open', become)   // additive — Socket_real owns ws.onopen
+            }
+            ;(H as any).Tribunal_activate_websocket(w)
+
+            // Inbound: the runner receives pushed source; the editor receives results.
+            if (role === 'runner') (H as any).Peeroleum_on(w, 'dock_push',  (cw: TheC, _p: TheC, fr: any) => H.Lies_dock_push_recv(cw, fr))
+            else                   (H as any).Peeroleum_on(w, 'run_result', (cw: TheC, _p: TheC, fr: any) => H.Lies_run_result_recv(cw, fr))
+
+            w.c.channel_up = true
+            console.log(`🔌 Lies channel up [${role}] addr=${role} → ${peer}`)
+        },
+
+        // Lies_push_dock — editor emit (called from the compile-write path, where the
+        //  source is in hand).  Drops silently until the runner is connected + ready;
+        //   a "push the current docks on connect" warm-up is a future nicety.
+        Lies_push_dock(w: TheC, sc: { path?: string, source?: string, dige?: string }) {
+            const H = this as House
+            if (!H.Lies_is_editor(w)) return
+            const pier = (w.o({ Peering: 1 })[0] as TheC | undefined)?.o({ Pier: 1 })[0] as TheC | undefined
+            if (!pier || !(H as any).Peeroleum_peer_ready?.(pier)) return
+            ;(H as any).Peeroleum_send_consumer(w, 'dock_push', { path: sc.path, source: sc.source, dige: sc.dige })
+            console.log(`📤 dock_push → runner: ${sc.path}`)
+        },
+
+        // Lies_dock_push_recv — runner receives the editor's source.  These are the
+        //  three lines the in-instance write already names as its "inotify backend":
+        //   re-land the Good off the frame (NOT disk — cross-origin has no shared OPFS),
+        //    then drain so Lang's furnishing subscriber re-fires → recompile → (runner
+        //     role) mount + run.  fn-return false ⇒ the spine marks the frame %faulty.
+        async Lies_dock_push_recv(w: TheC, frame: any): Promise<boolean> {
+            const H = this as House
+            const path   = frame?.path   as string | undefined
+            const source = frame?.source as string | undefined
+            if (!path || source == null) return false
+            const good = await H.LiesStore_good(w, 'text/Doc', path)
+            await H.LiesStore_land_good(good, { content: source })
+            H.LiesStore_drain_good(good)
+            console.log(`📥 dock_push landed: ${path}`)
+            return true
+        },
+
+        // Lies_report_result — runner emit, after a run settles.  The editor's handler
+        //  re-attaches it so the staging chrome lights up.
+        Lies_report_result(w: TheC, sc: { path?: string, dige?: string, ok?: boolean, errors?: any[], snap_dige?: string }) {
+            const H = this as House
+            if (!H.Lies_is_runner(w)) return
+            const pier = (w.o({ Peering: 1 })[0] as TheC | undefined)?.o({ Pier: 1 })[0] as TheC | undefined
+            if (!pier || !(H as any).Peeroleum_peer_ready?.(pier)) return
+            ;(H as any).Peeroleum_send_consumer(w, 'run_result', { path: sc.path, dige: sc.dige, ok: sc.ok, errors: sc.errors, snap_dige: sc.snap_dige })
+            console.log(`📤 run_result → editor: ${sc.path} ${sc.ok ? 'green' : 'red'}`)
+        },
+
+        // Lies_run_result_recv — editor receives the runner's outcome and stamps it on
+        //  the dock so the staging chrome can read ok/errors/snap_dige off the snap.
+        Lies_run_result_recv(w: TheC, frame: any): boolean {
+            const path = frame?.path as string | undefined
+            if (!path) return false
+            w.oai({ run_result: 1, path }, {
+                ok: frame.ok ? 1 : 0,
+                errors: Array.isArray(frame.errors) ? frame.errors.length : 0,
+                snap_dige: frame.snap_dige, dige: frame.dige,
+            })
+            console.log(`📥 run_result: ${path} ${frame.ok ? 'green' : 'red'}`)
+            return true
+        },
+
     })
     })
 </script>

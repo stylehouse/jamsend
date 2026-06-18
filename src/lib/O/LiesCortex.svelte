@@ -148,6 +148,14 @@
         await H.LiesStore_write(w, gen_path, source, { rw_name: `src/lib/${gen_path}` })
         // < surface write errors when reply carries one.
 
+        // Editor: also push the edited .g source to the runner over the channel.  The
+        //  editor compiles + writes locally but never runs it (the Pantheate split);
+        //   the runner — a different origin, no shared disk — gets the bytes, re-lands,
+        //    recompiles, and runs.  No-op until a runner is connected (Lies_push_dock
+        //     drops silently when the peer isn't ready).
+        if (e.sc.dock_source != null && H.Lies_is_editor(w))
+            H.Lies_push_dock(w, { path, source: e.sc.dock_source as string, dige: source_dige })
+
         // req_oai re-merges on an existing Codebit — a re-compile mutates %dige,
         //  maybe_mutate_sc fires req%mutated and (permanent+finished) un-finishes it
         //  so it re-waits the fresh write.  %dige rides on sc so Rundown can hash its

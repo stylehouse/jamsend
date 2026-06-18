@@ -775,6 +775,11 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             if (gl) await H.GhostList_funkcion(gl, w)
         }
 
+        // Editor↔runner channel: stand up the Peeroleum consumer once, for explicit
+        //  editor|runner Runs only.  Bare Lies (plain app, Machinery tests) open no
+        //   socket — Lies_channel_up returns early on role/transport/browser guards.
+        if (H.Lies_is_editor(w) || H.Lies_is_runner(w)) H.Lies_channel_up(w)
+
         return true   // Waft layer settled — LiesRealised may proceed
     },
 

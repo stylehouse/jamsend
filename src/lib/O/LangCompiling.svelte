@@ -308,6 +308,11 @@ import { LANG_COMPILE } from "./lang/compile"
             H.i_elvisto('Lies/Lies', 'Lies_compiled', {
                 path: dock.sc.dock, gen_path, source,
                 dige, source_dige,
+                // dock_source: the raw .g text (editor only) — what the runner re-lands
+                //  and recompiles over the channel; the cross-origin runner has no shared
+                //   disk, so the frame must carry the source, not poke a re-read.  Only the
+                //    editor pays the carry; other roles never push, so it's omitted there.
+                ...(H.Lies_is_editor(w) ? { dock_source: state.doc.sliceString(0) } : {}),
             })
         } else {
             // soft compile — non-Ghost path or non-gen-able codetype (a .ts doc
