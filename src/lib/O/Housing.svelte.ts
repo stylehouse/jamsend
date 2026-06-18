@@ -1603,8 +1603,12 @@ export class House extends StorableHousing {
         let lds = H.i({A:'Wormhole'})
         lds.i({w:'DirectoryOpener'})
         lds.i({w:'Wormhole'})
-        // Auto agency — Library manager; starts H:Story when a book is activated
-        H.i({ A: 'Auto' }).i({ w: 'Auto' })
+        // The top-level world.  Default Auto (the Library manager; starts H:Story when a
+        //  book is activated).  ?toplevel=<World> (parsed in Otro onto H.c.toplevel) swaps it
+        //  — e.g. Editron stands up the Lies/Lang IDE and Auto never happens.  The chosen
+        //  world's own handler stands up whatever it needs.
+        const toplevel = (H.c.toplevel as string) || 'Auto'
+        H.i({ A: toplevel }).i({ w: toplevel })
 
         // let S = H.subHouse('Story')
         // // S.i({ A: 'Story' }).i({ w: 'Story', Book: 'LeafFarm' })

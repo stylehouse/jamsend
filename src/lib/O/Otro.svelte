@@ -14,6 +14,10 @@
     let R
     $effect(() => {
         H = new House({ name: 'Mundo' })
+        // ?toplevel=<World> chooses which top-level world boots (default Auto).  may_begin
+        //  stands up A:<toplevel>/w:<toplevel> instead of hardcoding Auto — so ?toplevel=Editron
+        //  brings up the Lies/Lang IDE (the Editron world) and Auto's Library never loads.
+        H.c.toplevel = (typeof location !== 'undefined' && new URLSearchParams(location.search).get('toplevel')) || 'Auto'
         setTimeout(() => {
             houses = [H]
         },1)

@@ -1,0 +1,59 @@
+# staging/docker-compose.yml — a second, localhost-only app instance, isolated from the
+#  dev container's HMR/build so running an IDE here can't disturb dev (and vice-versa).
+#  It's "staging" only in that it's a more stable place to keep a tab open than dev.
+#
+# How you use it: open  http://localhost:9092/Otro?toplevel=Editron  — the app lives at the
+#  /Otro route (/ is the p2p Intro page).  The ?toplevel URL param (parsed in Otro) makes
+#  may_begin boot w:Editron (a full Lies/Lang IDE) instead of w:Auto, so the Library never
+#  loads and you land in the editor.  Plain http://localhost:9092/Otro still boots Auto as
+#  normal.  No build/env flag needed — the param picks the world per-tab.
+#
+# Isolation = a separate git worktree.  The worktree is its own checkout with its own
+#  node_modules / .vite / .svelte-kit, so two SvelteKit dev servers never share a build
+#  cache.  Set it up once on the host:
+#
+#     git worktree add ../jamsend-staging        # a sibling checkout (own working files)
+#     cd ../jamsend-staging && npm install        # its OWN node_modules (isolated .vite cache)
+#     docker compose -f staging/docker-compose.yml up
+#
+# Relative paths below resolve against THIS file's dir (staging/), so `..` is the worktree
+#  root — run it from anywhere.  No proxy / DuckDNS / tunnel: bound to 127.0.0.1 only.
+#  No WebRTC, no /music mount: this instance reaches the dev repo's content at runtime via
+#   Wormhole + the Directory API (the browser picks the dev repo dir), not a bind mount.
+#  No env_file: ALLOWED_HOSTS stays empty → vite serves localhost only (the secure default).
+
+services:
+  staging:
+    build:
+      context: ..
+      dockerfile_inline: |
+        FROM alpine:3.19
+        WORKDIR /app
+        RUN apk add --no-cache nodejs npm
+        COPY package*.json ./
+        RUN npm install
+        COPY . .
+    container_name: jamsend-staging
+    working_dir: /app
+    user: "1000:1000"            # uid 1000 — files it writes are yours on the host
+    volumes:
+      - ..:/app                  # the worktree root (this file lives in staging/)
+    ports:
+      - "127.0.0.1:9092:9092"    # localhost only — no LAN, no proxy
+    command: npm run dev -- --host 0.0.0.0 --port 9092
+    # No boot env var: which top-level world loads is chosen per-tab by the ?toplevel URL
+    #  param (default Auto; ?toplevel=Editron = the IDE).  See the header note.
+    tty: true
+    stdin_open: true
+    restart: 'unless-stopped'
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    ulimits:
+      nproc: 100
+      nofile: 1024

@@ -12,7 +12,7 @@
 //
 //   step 2  two sides up under one mock transport; a noop B→N proves carrier + ack
 //   step 3  %req:handshake completes on both Piers; full outbox/inbox lifecycle + acks
-//   step 4  per-req demand / waiting-reqs (heading 5) — placeholder
+//   step 4  transport trial: webrtc carrier tried, no-ack, falls to websocket relay
 //   step 5  corruption tests (heading 6) — placeholder
 //
 // The heading-4 message lifecycle (outbox created→sent→acked, serial inbox
@@ -41,10 +41,11 @@ async Lake_drive(w, req):
         else if n === 3
             await &Lake_handshake,w
         else if n === 4
-            i %reached:step_4
+            await &Lake_trial,w
         else if n === 5
             i %reached:step_5
     await &Lake_pump_handshakes,w
+    await &Lake_pump_trial,w
     &Lake_witness,w
     await &Lake_order,w
 
@@ -127,6 +128,43 @@ async Lake_pump_handshakes(w):
         await pier&do
     }
 
+// Lake_trial — step 4: put the carrier on trial (spec §4.1, §11.2; flavour in
+//  Tribunal.g). Install the webrtc + websocket carriers on both sides, pair the relay
+//   ports, hand each live %active_transport to webrtc, then seed + pump each Peering's
+//    %req:transport_select. webrtc is a black hole (Tribunal.PeerJS), so the probe goes
+//     un-acked, the no-ack window elapses, and the trial falls the carrier to the
+//      websocket relay — provable as particles (webrtc %faulty,reason:no-ack +
+//       %active_transport,type:websocket, the relay's %reputation:good once a frame
+//        crosses it acked). Real wall-clock window: proven in-app on :9091.
+async Lake_trial(w):
+    w i %reached:step_4
+    H i A:Bearing$:AB/w:Peeroleum$:wB
+    H i A:Nearing$:AN/w:Peeroleum$:wN
+    &PeerJS,AB,wB
+    &PeerJS,AN,wN
+    &Socket,AB,wB
+    &Socket,AN,wN
+    &Tribunal_pair_websocket,wB,wN
+    &Tribunal_hand_to_webrtc,wB
+    &Tribunal_hand_to_webrtc,wN
+    for (const side of ['Bearing', 'Nearing']) {
+        H o A:$side/w:Peeroleum/Peering$:peering
+        if (!peering) continue
+        peering oai %req:transport_select
+        await peering&do
+    }
+
+// Lake_pump_trial — re-pump each Peering's %req:transport_select every pass. The
+//  select req is nested (Peering/w), below reqdo_sweep's reach, so the wrangler drives
+//   it; the trial's re-drive timer (feebly_ponder) brings the run back here when the
+//    no-ack window elapses, advancing the demotion + relay re-probe. No-op before step 4.
+async Lake_pump_trial(w):
+    for (const side of ['Bearing', 'Nearing']) {
+        H o A:$side/w:Peeroleum/Peering$:peering
+        if (!peering) continue
+        if (peering.o({req:'transport_select'})[0]) await peering&do
+    }
+
 // Lake_witness — the readable assertion, polled each pass: once Nearing's inbox
 //  shows a handled (%done) frame, stamp %witnessed:step_2 (the step rides in the
 //   value — `step` is the Story mainkey, so it can't be a key). Idempotent via the probe.
@@ -139,3 +177,11 @@ Lake_witness(w):
     let bh = bpier?.o({req:'handshake'})[0]
     let nh = npier?.o({req:'handshake'})[0]
     if (bh?.sc.finished && nh?.sc.finished && !(oa %witnessed:step_3)) i %witnessed:step_3
+    // step 4: the carrier fell from webrtc to the websocket relay (no-ack) and the
+    //  relay carries — both sides' websocket %transport earned %reputation:good (set
+    //   when its re-probe came back acked, which only happens over the live relay).
+    H o A:Bearing/w:Peeroleum$:wB4
+    H o A:Nearing/w:Peeroleum$:wN4
+    let bws = wB4?.o({transport:1, type:'websocket'})[0]
+    let nws = wN4?.o({transport:1, type:'websocket'})[0]
+    if (bws?.oa({reputation:'good'}) && nws?.oa({reputation:'good'}) && !(oa %witnessed:step_4)) i %witnessed:step_4

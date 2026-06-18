@@ -790,6 +790,25 @@ What it enables: the agent writes a Story test as a script, runs the bundle head
    ⛑️ the headless boot needs context shims (no WebRTC, no `/music`, no secure
     context); scope the bundle to the ghosts a Story run actually touches.
 
+### 16.1 Refinements, once the runner exists
+
+The runner is built (`scripts/Story_cli.*`, via vitest's transform instead of the
+ Compile bundle — see `Story_cli_docs.md`); it dumps a pile of files per Book. Two
+  refinements remain, both about *what* and *when* the pile emits:
+
+- **Emission frequencies — a "pause-as-soon-as-wobble" mode.** Today the dump is
+   everything-at-once: drive the whole Book, then serialise every step. Add a mode that
+    stops and dumps at the **first non-fuzz surprise** (§4.2's classifier decides
+     fuzz vs genuine), so a long Book under investigation halts on the interesting frame
+      instead of burying it. This is the headless analogue of a debugger breakpoint, with
+       the fuzz classifier as the condition.
+
+- **Diff channels in the pile.** The pile is currently `Snap:H` + the trace channel. Once
+   the encoder merge (§1–2) lands its plural channels, the pile should grow
+    `Snap:cont`/`Snap:refs` files beside `Snap:H`, so "grep a *kind* of diff" works offline
+     — continuity goners (§2.3, §5) and shared-ref structure each get their own greppable
+      file, not just the merged main snap.
+
 ---
 
 ## 17. The realisations, and the order they imply

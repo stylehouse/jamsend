@@ -17,9 +17,11 @@ Waft:Ghost/Net/Easy
         Point,method:transport
     What:webrtc-sucks
       What:reliability
-        Doc:Ghost/N/Peeroleum.g
+        Doc:Ghost/N/Tribunal.g
           Point,method:PeerJS
           Point,method:Socket
+          Point,method:Tribunal_hand_to_webrtc
+          Point,method:Tribunal_pair_websocket
           Point,method:req_transport_select
   What:the spec
     Doc:src/lib/O/spec/Peeroleum_spec.md

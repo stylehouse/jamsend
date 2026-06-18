@@ -53,7 +53,7 @@ const exts_for = (path: string) => {
 //  exactly the Docs of the Ghost/Net/Easy Waft overlay; when the "hide
 //  compilation behind Waft architecture" heading lands, this list is read from
 //  the open Waft instead of named here.
-const DOCKS = ['Ghost/N/Peeroleum.g', 'Ghost/Story/Peregrination.g']
+const DOCKS = ['Ghost/N/Peeroleum.g', 'Ghost/N/Tribunal.g', 'Ghost/Story/Peregrination.g']
 
 onMount(async () => {
 await M.eatfunc({

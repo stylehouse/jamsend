@@ -40,6 +40,7 @@
     import Hovercraft from "./Hovercraft.svelte";
     import Lies from "./Lies.svelte";
     import Interest from "./Interest.svelte";
+    import Editron from "./Editron.svelte";
 
     let { H } = $props()   // H = H:Mundo (the real House)
 
@@ -70,3 +71,5 @@
 <!-- < js weirdness: if you move this up below Matstyle, the elvis handlers receive $this as a first argument... -->
 <Lang      {M} />
 <Lies {M} />
+<!-- IDE top-level world (only stands up when booted via ?toplevel=Editron) -->
+<Editron {M} />

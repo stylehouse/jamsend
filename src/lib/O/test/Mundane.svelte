@@ -262,7 +262,11 @@ await M.eatfunc({
             if (!H.reqonce(req, 'armed')) return
 
             const spec = items[req.sc.item_i as number]
-            H.i_req_ttlilt(req, 0.2, { item: spec.name })
+            // ttl 0.6 with a 200ms timer leaves ~400ms of slack: the populate
+            //  always lands well inside the held window, so Story deterministically
+            //  snaps the FULL folder — even on a host with ~0.2s scheduling lag, which
+            //  a tight 0.2s ttl (== the timer) would race against. See Story_cli_docs.md.
+            H.i_req_ttlilt(req, 0.6, { item: spec.name })
             setTimeout(() => {
                 const folder = w.o({ Folder: spec.in })[0] as TheC | undefined
                 if (folder) folder.i({ Item: spec.name, mins: spec.mins })

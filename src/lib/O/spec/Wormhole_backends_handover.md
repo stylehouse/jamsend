@@ -67,9 +67,10 @@ Express **seeding** as a read-only lower layer, and **records** (Identities) as 
    call lists the repo (CORS-enabled, but unauthenticated = 60/hr — so we spend exactly one); every
     blob then comes from `raw.githubusercontent.com` (a CDN, also CORS-enabled, no API budget). Don't
      "optimise" blob fetches back onto the contents API — that would burn the 60/hr on the first seed.
-- **Idempotency rides a marker file**, `seed/.seed_ref`, holding `<ref> :: <subpaths>`. A return
-   visit with a matching marker skips the network entirely and remounts silently (DirectoryOpener's
-    `opfs_probed` one-shot). Change `ref` or the subpath set and it re-hydrates; pass `force` to redo.
+- **Idempotency rides a marker file**, `seed/.seed_ref`, holding `<ref> :: <subpaths>`. The auto-mount
+   calls `mount_opfs_github_nav` unconditionally; `seed_from_github` reads the marker and, on a match,
+    returns without a single fetch — so a return visit remounts near-instantly. Change `ref` or the
+     subpath set and it re-hydrates; pass `force` to redo.
 - **Seeded subpaths are bounded on purpose** — default `['wormhole','Ghost']` (~239 files): the Story
    books plus the top-level ghost source Lies compiles. Widen `subpaths` to carry more of the tree,
     but the recursive Trees call can `truncated`-clip on a huge repo (we log it) — seed narrower then.
@@ -140,7 +141,7 @@ Then the browser counterpart: realised OPFS hands back a `FileSystemDirectoryHan
 - Related (the `-I` include that prompted running Peregrination): `scripts/Story_cli_run.mjs`
    (`-I <shim>` / `-b <Book>` / `--accept`) and `scripts/Story_cli.svelte` (the `include` prop +
     M-shim). An `-I` shim is just ghost code to add — a `<script>`-only `.svelte` that deposits a
-     worker via `M.eatfunc`. See `Story_cli_handover.md` for the runner proper.
+     worker via `M.eatfunc`. See `Story_cli_docs.md` + the `scripts/Story_cli.spec.ts` header for the runner proper.
 
 ## Working-tree state at handoff (uncommitted)
 

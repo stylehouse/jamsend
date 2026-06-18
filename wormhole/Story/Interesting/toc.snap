@@ -1,0 +1,13 @@
+story:Interesting
+  Styles
+    matstyle:w
+      style:background-color,v:#8f3232
+      meta:is_compound,v
+      meta:label,fmt:%s,keys:w
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.002
+      sample=0.002,at=1781750526
+  step,dige:b6fbf4859e4bec30

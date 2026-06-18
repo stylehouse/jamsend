@@ -1,29 +1,29 @@
 Snap:H
   H:Peregrination,Run
     A:Bearing
-      self,round	{"mung":["age"]}
+      self,round=2	{"mung":["age"]}
       w:Peeroleum
         Peering,name:bearing
           Pier,pub:nearing
             outbox
-              emit,type:hello,seq,sent
+              emit,type:noop,seq,sent,acked
           req:p2paddy
         transport,type:mock
         active_transport,type:mock,open
-        self,round	{"mung":["age"]}
+        self,round=2	{"mung":["age"]}
     A:Nearing
-      self,round	{"mung":["age"]}
+      self,round=2	{"mung":["age"]}
       w:Peeroleum
         Peering,name:nearing
           Pier,pub:bearing
             inbox
-              unemit,type:hello,seq,done
+              unemit,type:noop,seq,verified,done,to:noop
           req:p2paddy
         transport,type:mock
         active_transport,type:mock,open
-        self,round	{"mung":["age"]}
+        self,round=2	{"mung":["age"]}
     A:Peregrination
-      self,round=4	{"mung":["age"]}
+      self,round=6	{"mung":["age"]}
       w:Peregrination
         req:ensure_compiled,path:Ghost/N/Peeroleum.g,finished
         req:ensure_compiled,path:Ghost/Story/Peregrination.g,finished
@@ -31,22 +31,22 @@ Snap:H
         compiled,path:Ghost/Story/Peregrination.g
         req:wrangle,eternal,ok
         reached:step_2
-        self,round=4	{"mung":["age"]}
         witnessed:step_2
+        self,round=6	{"mung":["age"]}
     A:Lies
-      self,round=10	{"mung":["age"]}
+      self,round=12	{"mung":["age"]}
       w:Lies,runner,dontSnap
     A:Lang
-      self,round=8	{"mung":["age"]}
+      self,round=10	{"mung":["age"]}
       w:Lang,runner,dontSnap
     A:Pantheate
-      self,round=6	{"mung":["age"]}
+      self,round=8	{"mung":["age"]}
       w:Pantheate
         include:gen/N/Peeroleum.go
-        req:include,gen_path:gen/N/Peeroleum.go,path:Ghost/N/Peeroleum.g,source_dige:2f9e39897b3561ec,ghostmeta_name:Ghostmeta_Ghost_N_Peeroleum,permanent,live_dige:2f9e39897b3561ec,finished
+        req:include,gen_path:gen/N/Peeroleum.go,path:Ghost/N/Peeroleum.g,source_dige:121b765c6ae1235f,ghostmeta_name:Ghostmeta_Ghost_N_Peeroleum,permanent,live_dige:121b765c6ae1235f,finished
         include:gen/Story/Peregrination.go
-        req:include,gen_path:gen/Story/Peregrination.go,path:Ghost/Story/Peregrination.g,source_dige:20afc666688c92bb,ghostmeta_name:Ghostmeta_Ghost_Story_Peregrination,permanent,live_dige:20afc666688c92bb,finished
-        self,round=6	{"mung":["age"]}
+        req:include,gen_path:gen/Story/Peregrination.go,path:Ghost/Story/Peregrination.g,source_dige:09f8db8af0361018,ghostmeta_name:Ghostmeta_Ghost_Story_Peregrination,permanent,live_dige:09f8db8af0361018,finished
+        self,round=8	{"mung":["age"]}
         o_elvis:Ghost_update_notify
     watched:ave
       examining

@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return '121b765c6ae1235f' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return '22d820f127e68056' },
 
 
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -187,30 +187,11 @@ transport(A,w) {
     }
 
 },
-// PeerJS DataChannel: present, and in the spine immediately marked faulty so
-//  selection falls through to the websocket relay — models "WebRTC is sucking"
-//  deterministically under the mock. The real DataChannel path is heading 9.
-PeerJS(A,w) {
-    w.i({transport: 1, type: "webrtc", faulty: 1, reason: "no-direct-route"})
+// The webrtc + websocket carriers and the carrier-selection trial (try webrtc,
+//  fall to websocket on no-ack) live in their own flavour now — Ghost/N/Tribunal.g
+//   (PeerJS, Socket, Tribunal_hand_to_webrtc, req_transport_select). This spine keeps
+//    only the mock carrier + the envelope; the trial repoints %active_transport.
 
-},
-// The websocket relay — proxy every frame via the webserver's websocket when
-//  WebRTC is being oppressed. Modeled this pass: c.connection rides the same
-//  in-process shared queue as the mock, so the fallback is provable with no relay
-//  server. The real /relay endpoint on the dev server is heading 10.
-Socket(A,w) {
-    w.i({transport: 1, type: "websocket"})
-    // < c.connection = the shared-queue mock-port (raw JS), same as transport()
-
-},
-// %req:transport_select — try webrtc, fall through to websocket on faulty, point
-//  %active_transport at it and leave webrtc present-and-faulty (spec §4.1, §11.2).
-req_transport_select(req) {
-    let peering = req.c.up
-    if (peering.o({transport:1, type:'webrtc'})[0]?.sc.faulty) peering.i({active_transport:1, type:'websocket', open:1})
-    req.sc.ok = 1
-
-},
 // ── send / deliver — the one envelope across the active transport (spec §4.3) ──
 // Peeroleum_send — hand a frame to this side's active transport (spec §4.3). A real
 //  outbound frame books a %outbox/emit (created→sent in one stamp — the mock hands off

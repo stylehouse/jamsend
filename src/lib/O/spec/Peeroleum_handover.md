@@ -14,15 +14,29 @@ Notation: `[x]` done · `[~]` started/scaffolded · `[ ]` not begun · `// <` a 
 `.g` docks and calls `LakeNetherland`; the mock transport carries frames B↔N (heading 2); and at
 **step 3 the full hello+trust handshake completes** — both Piers `%req:handshake,finished` (all four
 leaves), `protocol/{hello,trust}/{said,heard}`, `%Ud,publicKey`, inbox/outbox pairs,
-`%witnessed:step_3`. Heading 0/1a/2/3 ✓, LangTiles wins (L) ✓. **Heading 4 (full outbox/inbox
-lifecycle + acks + whittle) is written and compiles clean — awaiting its first in-app run.**
+`%witnessed:step_3`. Heading 0/1a/2/3/4 ✓, LangTiles wins (L) ✓. **Heading 4 (full outbox/inbox
+lifecycle + acks + whittle) is PROVEN in-app at step 3** — monotone seq (noop=1/hello=2/trust=3 on
+Bearing, hello=1/trust=2 on Nearing), every `%outbox/emit,sent,acked` + `protocol/%said,acked`, inbox
+`%unemit,verified,done,to:<type>`, the step-2 noop culled to `%inbox/recent`/`%outbox/recent`, no
+`%faulty`. Record the diges (Accept/Resnapture) to make it a regression gate.
 
-### → START HERE: heading 4 is BUILT (compiles clean) — prove it in-app + record true diges
+### → START HERE: verify step 4 (transport trial) on :9091, then record diges
 
-Heading 4 — outbox/inbox lifecycle + acks + whittle (spec rung 3, §7 + §12) — is written into the
-spine + wrangler and both `.g` compile clean (`npm run lang-compile`). It is **not yet proven in-app**
-(no headless runner — heading 1b). The next move is a single in-app run on :9091, then recording the
-true diges. What landed (detail + bombs under **heading 4** below):
+**Newest, unverified: step 4 — the webrtc→websocket transport trial** (mocked, compile-clean, in
+`Ghost/N/Tribunal.g`; details + bombs under **heading 9/10** below). Run the `Peregrination` Story on
+:9091 and watch step 4: webrtc carrier tried → black-holed → `%transport,type:webrtc,faulty,reason:no-ack`
+→ `%active_transport,type:websocket` → both sides' websocket `%reputation:good` → `%witnessed:step_4`.
+This is the first rung built without an in-app run behind it, so verify before trusting. (Headless
+`Story_cli` likely times out at step 4 — the 3s ttlilt window is real wall-clock.)
+
+Heading 4 — outbox/inbox lifecycle + acks + whittle (spec rung 3, §7 + §12) — ran clean in-app at
+step 3 (the diff matched the expected shape below exactly; the loader regenerated both `.go`). The only
+loose end is **recording the true diges**: Accept/Resnapture so steps 2–5 become regression gates (every
+step snap reshaped — step 2 shows the noop live pre-cull, step 3 the full handshake lifecycle, the
+boundary empties outbox/inbox into `%recent`, step 4 the transport trial). After that, **heading 6**
+(corruption tests) — heading 5 (per-req demand) is CLOSED: `ttlilt` is the waiting-req, tune its seconds
+if it ever times out, don't build §13 (see heading 5 below). What landed in heading 4 (detail + bombs
+under **heading 4** below):
 - **Per-Pier monotone `seq`** (`Pier_next_seq`, a `Pier.c.seq` counter): each real outbound frame
    allocates the next; acks consume none. So Bearing's frames are noop=1, hello=2, trust=3; Nearing's
     hello=1, trust=2 — all distinct emits.
@@ -42,7 +56,7 @@ boundary culls acked/done items into `%recent` after each step). So the `toc.sna
 lies — are doubly stale now. Run the `Peregrination` Story on :9091, eyeball the lifecycle against
 **heading 4** below, then Accept/Resnapture so the diges become real regression gates. (`Story_cli`
 produces a Peregrination pile too — read `witnessed:*`/`A:Peregrination`, the `A:Lang` AST blob is
-noise on every step; see the `peregrination-pile-reading` memory + `Story_cli_handover.md`.)
+noise on every step; see the `peregrination-pile-reading` memory + `Story_cli_docs.md`.)
 
 ### Standing asks (apply to every heading)
 
@@ -299,9 +313,9 @@ once both Piers' `%req:handshake` are `finished`.
 (hello + trust) pairs, both `%req:handshake,finished` (four leaves gone, rolled up), and
 `w:Peregrination/%witnessed:step_3`. The `toc.snap` step-3 dige is still a lie until this run records it.
 
-### 4 — outbox/inbox lifecycle + acks + whittle  `[~]`  BUILT, compiles clean, awaiting in-app proof  (rung 3, spec §7 + §12)
-Written into `Ghost/N/Peeroleum.g` + `Ghost/Story/Peregrination.g`; both `lang-compile` clean. NOT yet
-run in-app (no headless runner). What each piece is + where:
+### 4 — outbox/inbox lifecycle + acks + whittle  `[x]`  PROVEN in-app at step 3  (rung 3, spec §7 + §12)
+Written into `Ghost/N/Peeroleum.g` + `Ghost/Story/Peregrination.g`; both `lang-compile` clean and the
+in-app step-3 diff matched the expected shape (below) exactly. What each piece is + where:
 
 - **Outbox `created→sent→acked` (§7.1):** `Pier_next_seq(pier)` is the monotone per-Pier counter on
    `pier.c.seq` (off-snap; the seq it hands out lands on the `%outbox/emit`, which IS snapped). Acks
@@ -326,7 +340,7 @@ run in-app (no headless runner). What each piece is + where:
       remaining errors. `%recent` items carry only `emit|unemit/type/seq` — no flags, no time. Armed in
        `Lake_sides_up` for the test; a production `Peeroleum(A,w)` worker should arm it too.
 
-**To prove (the expected in-app shape):** step 2 — Bearing `%outbox/emit:1,noop,seq,sent,acked`,
+**Confirmed in-app (the step-3 diff matched this):** step 2 — Bearing `%outbox/emit:1,noop,seq,sent,acked`,
 Nearing `%inbox/unemit:1,noop,seq,verified,done,to:noop` (then both culled to `%recent` at the step-2
 boundary); `%witnessed:step_2`. Step 3 — each side's hello+trust `%outbox/emit,sent,acked` +
 `%inbox/unemit,verified,done`, `protocol/{hello,trust}/{said[,acked],heard}`, `%Ud`, the noop in
@@ -357,11 +371,15 @@ Still open in heading 4 (deferred, not blocking the rung): the production wiring
 a waiting-req, so the snap-visibility guarantee `want_savepoint` buys isn't needed yet. Exports hoisting
 (§12.2) is also deferred — no consumer needs the Peering-level summary until p2pman is real (heading 11).
 
-### 5 — per-req demand for time  `[ ]`  (rung 4; engine gap vs spec §13)
-Spec §13 wants throwaway `%req:waiting,until:T` + a computed-max global. **Neither exists.** Today's
-closest is the particle `%ttlilt` (`Hovercraft.svelte:163-352`) + extend-only global
-`leave_running_until`. Decide: build §13 for real, or keep `ttlilt` and rewrite §13 prose. The
-bootstrap loader already leans on `ttlilt`.
+### 5 — per-req demand for time  `[x]`  CLOSED — `ttlilt` is the realised waiting-req
+Decided: keep `%ttlilt` (`Hovercraft.svelte:163-352`); it already IS §13's per-req owned demand
+(dropped on `finish()`, polled-not-mutated, so no write-write race) and the live system runs on it
+(LiesStore/Lang/LiesCortex/Diffmatication + this bootstrap). Spec §13's `%req:waiting` + computed-max
+global exist in **no** code; the old `demand_time_to_think`/`leave_running_until` global is
+MachPeerily-only and retires with it (heading 12). Don't build §13 — it'd churn every step snap for no
+p2p gain. The only thing that ever bites is a ttlilt expiring before its work finishes; the fix is the
+seconds knob, e.g. `Peregrination.svelte:93` `i_req_ttlilt(req, 2.5, …)` — bump it if headless compile
+times out. Don't re-open this rabbit hole.
 
 ### 6 — corruption tests  `[ ]`  (rung 5)
 `meddle_fn` on an eternal `%req:emit_corruption`, wrap installed on `%active_transport` (not
@@ -376,15 +394,37 @@ identical to a tweaked hello-sign. Spec §4.2, §15.
 `%active_transport e:close` → `o_elvis:reset_handshake` on the Pier: drop protocol/outbox/inbox/
 faulty, keep `%Ud`; p2paddy re-dials. Spec §9.
 
-### 9 — webrtc transport alongside mock  `[ ]`  (rung 8)
-`PeerJS()` currently stamps `%faulty` immediately to force fall-through. Replace with the real PeerJS
-DataChannel (relocated from old Peerily), which tries and may go `%faulty,reason` visibly. Spec §4.1.
+### 9/10 — transport trial: webrtc → websocket fallback (mocked)  `[~]`  COMPILE-CLEAN, awaiting :9091
+The mocked selection logic landed in its own flavour dock **`Ghost/N/Tribunal.g`** ("a peer
+connection's reputation, constantly on trial") — `PeerJS`/`Socket`/`req_transport_select` moved out of
+`Peeroleum.g` (which now keeps only the mock carrier + envelope). It runs as **step 4** of the
+Peregrination wrangler (`Lake_trial` + `Lake_pump_trial`, the step-4 placeholder repurposed now that
+heading 5 is closed):
+- **webrtc mock = black hole**: its `.c.port.send` drops the frame (no partner, no recv) → no ack ever.
+   **websocket mock = working**: rides the shared in-process queue, ports paired across sides by
+    `Tribunal_pair_websocket` (cf the mock-port pairing in `Lake_sides_up`).
+- **The trial** (`req:transport_select`, eternal): probe the carrier (starts webrtc) → arm a
+   `ttlilt(3,{waiting,for:carrier_ack})` to hold the snap open + a single `setTimeout(feebly_ponder)`
+    re-drive (the ttlilt alone never re-fires think — heading 5 / MachPeerily's pattern). No ack inside
+     the window = no-ack-then-give-up → stamp `%transport,type:webrtc,faulty,reason:no-ack`, repoint
+      `%active_transport` to websocket, re-probe over the relay → its ack stamps `%reputation:good`.
+- **Witness**: `%witnessed:step_4` when both sides' websocket `%transport` carry `%reputation:good`
+   (i.e. a frame crossed the relay acked — proves the fallback *carries*, not just that we switched).
+- **The one real wall-clock window** is the 3s ttlilt. In-app on :9091 it should snap clean; **headless
+   `Story_cli` will likely time out** at step 4 (real wait — the `peregrination-pile-reading` caveat).
+- **Bombs to check on the first :9091 run**: (1) symmetric convergence — Bearing's relay re-probe only
+   gets acked once Nearing is *also* on websocket (its ack rides Nearing's active_transport); both fall
+    back on the same ~3s window, so it should converge over a pump or two via `feebly_ponder`, but watch
+     for a side stuck un-acked. (2) The acked probe emit is whittled to `%outbox/recent` at the step
+      boundary; `req.c.settled` short-circuits the trial so step 5 doesn't re-fire it.
 
-### 10 — websocket fallback (the WebRTC-sucks proxy)  `[~]`  (rung 9)
-`Socket()` declares `%transport,type:websocket`; `req_transport_select` switches `%active_transport`
-to websocket when webrtc is faulty. Modeled on the mock queue this pass. Next: a real `/relay`
-websocket endpoint on the dev server (:9091) that forwards a signed frame by `header.to` without
-parsing `body`; client `c.connection` → real WS. Spec §4.1, §11.2, §17.
+**Remaining = the real transports** (still `[ ]`):
+- **9 — real webrtc**: replace the black-hole port with the real PeerJS DataChannel (relocated from old
+   Peerily); it tries and may go `%faulty,reason` visibly. Note the app-level no-ack timeout built here
+    stays needed — PeerJS reports connection-level errors for free, not a channel that opens then goes
+     silent. Spec §4.1.
+- **10 — real websocket**: a `/relay` WS endpoint on the dev server (:9091) that forwards a signed frame
+   by `header.to` without parsing `body`; client `.c.port` → real WS. Spec §4.1, §11.2, §17.
 
 ### 11 — Thangs persistence  `[ ]`  (rung 10)
 `w:Thangs,thangs:peerings` / `thangs:identities` (Dexie) drive `req:p2pman` (online identities) and
