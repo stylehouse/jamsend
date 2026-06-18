@@ -20,14 +20,16 @@ Bearing, hello=1/trust=2 on Nearing), every `%outbox/emit,sent,acked` + `protoco
 `%unemit,verified,done,to:<type>`, the step-2 noop culled to `%inbox/recent`/`%outbox/recent`, no
 `%faulty`. Record the diges (Accept/Resnapture) to make it a regression gate.
 
-### → START HERE: verify step 4 (transport trial) on :9091, then record diges
+### → START HERE: record step 4/5/6 diges (transport trial PROVEN thru step 5), then heading 6
 
-**Newest, unverified: step 4 — the webrtc→websocket transport trial** (mocked, compile-clean, in
-`Ghost/N/Tribunal.g`; details + bombs under **heading 9/10** below). Run the `Peregrination` Story on
-:9091 and watch step 4: webrtc carrier tried → black-holed → `%transport,type:webrtc,faulty,reason:no-ack`
-→ `%active_transport,type:websocket` → both sides' websocket `%reputation:good` → `%witnessed:step_4`.
-This is the first rung built without an in-app run behind it, so verify before trusting. (Headless
-`Story_cli` likely times out at step 4 — the 3s ttlilt window is real wall-clock.)
+**The webrtc→websocket transport trial (steps 4–6) works in-app** — mocked, step-paced, in
+`Ghost/N/Tribunal.g` (details under **heading 9/10** below). Proven on :9091 through step 5: step 4 hands
+the carrier to webrtc and probes it (black-holed, un-acked); step 5 is no-ack-then-give-up — both fall to
+`%transport,type:webrtc,faulty,reason:no-ack` + `%active_transport,type:websocket` and the relay *carries*
+(`emit=5,…,acked` / `unemit=5,…,verified,done`); step 6 stamps `%reputation:good`. `witnessed:step_4/5`
+seen. **Next: eyeball step 6, then Accept/Resnapture steps 2–6** so the diges become regression gates
+(every step reshaped — step 4/5/6 are brand new). Then **heading 6** (corruption tests). No wall-clock /
+`ttlilt` in the trial anymore — it's paced by steps, so headless `Story_cli` should no longer time out on it.
 
 Heading 4 — outbox/inbox lifecycle + acks + whittle (spec rung 3, §7 + §12) — ran clean in-app at
 step 3 (the diff matched the expected shape below exactly; the loader regenerated both `.go`). The only
@@ -394,29 +396,30 @@ identical to a tweaked hello-sign. Spec §4.2, §15.
 `%active_transport e:close` → `o_elvis:reset_handshake` on the Pier: drop protocol/outbox/inbox/
 faulty, keep `%Ud`; p2paddy re-dials. Spec §9.
 
-### 9/10 — transport trial: webrtc → websocket fallback (mocked)  `[~]`  COMPILE-CLEAN, awaiting :9091
-The mocked selection logic landed in its own flavour dock **`Ghost/N/Tribunal.g`** ("a peer
-connection's reputation, constantly on trial") — `PeerJS`/`Socket`/`req_transport_select` moved out of
-`Peeroleum.g` (which now keeps only the mock carrier + envelope). It runs as **step 4** of the
-Peregrination wrangler (`Lake_trial` + `Lake_pump_trial`, the step-4 placeholder repurposed now that
-heading 5 is closed):
-- **webrtc mock = black hole**: its `.c.port.send` drops the frame (no partner, no recv) → no ack ever.
-   **websocket mock = working**: rides the shared in-process queue, ports paired across sides by
-    `Tribunal_pair_websocket` (cf the mock-port pairing in `Lake_sides_up`).
-- **The trial** (`req:transport_select`, eternal): probe the carrier (starts webrtc) → arm a
-   `ttlilt(3,{waiting,for:carrier_ack})` to hold the snap open + a single `setTimeout(feebly_ponder)`
-    re-drive (the ttlilt alone never re-fires think — heading 5 / MachPeerily's pattern). No ack inside
-     the window = no-ack-then-give-up → stamp `%transport,type:webrtc,faulty,reason:no-ack`, repoint
-      `%active_transport` to websocket, re-probe over the relay → its ack stamps `%reputation:good`.
-- **Witness**: `%witnessed:step_4` when both sides' websocket `%transport` carry `%reputation:good`
-   (i.e. a frame crossed the relay acked — proves the fallback *carries*, not just that we switched).
-- **The one real wall-clock window** is the 3s ttlilt. In-app on :9091 it should snap clean; **headless
-   `Story_cli` will likely time out** at step 4 (real wait — the `peregrination-pile-reading` caveat).
-- **Bombs to check on the first :9091 run**: (1) symmetric convergence — Bearing's relay re-probe only
-   gets acked once Nearing is *also* on websocket (its ack rides Nearing's active_transport); both fall
-    back on the same ~3s window, so it should converge over a pump or two via `feebly_ponder`, but watch
-     for a side stuck un-acked. (2) The acked probe emit is whittled to `%outbox/recent` at the step
-      boundary; `req.c.settled` short-circuits the trial so step 5 doesn't re-fire it.
+### 9/10 — transport trial: webrtc → websocket fallback (mocked)  `[~]`  PROVEN in-app thru step 5
+The mocked selection landed in its own flavour dock **`Ghost/N/Tribunal.g`** ("a peer connection's
+reputation, constantly on trial") — the carriers + mechanics moved out of `Peeroleum.g` (now just the
+mock carrier + envelope). It runs as **steps 4–6** of the Peregrination wrangler, paced by Story STEPS,
+not a wall-clock window (the earlier `ttlilt`+`setTimeout` version raced the snap and the demotion lost
+— a step boundary is already a quiescence point, so each phase gets a clean snap):
+- **webrtc mock = black hole**: `.c.port.send` drops the frame (no partner, no recv) → no ack ever.
+   **websocket mock = working**: rides the shared in-process queue, ports paired by `Tribunal_pair_websocket`.
+- **step 4 `Lake_trial_arm`**: install both carriers, hand `%active_transport` to webrtc, probe B→N over
+   it. Black hole → un-acked emit lingers in Bearing's outbox (the visible no-ack). Witness: both
+    `active_transport,type:webrtc`.
+- **step 5 `Lake_trial_fallback`**: the step-4 probe is still un-acked → no-ack-then-give-up. Fall BOTH
+   sides to websocket FIRST (`Tribunal_fall_to_websocket`: `%transport,type:webrtc,faulty,reason:no-ack` +
+    repoint active), THEN probe the relay B→N — so the ack can ride back (demoting both before probing
+     kills the cross-side race). Witness: both webrtc `faulty` + `active_transport,type:websocket`.
+- **step 6 `Lake_trial_confirm`**: the relay probe came back acked → `Tribunal_reputation_good` blesses
+   both websocket carriers `%reputation:good` (the acked emit may be in `%outbox/recent` after the step-5
+    whittle — confirm looks in both). Witness: both `reputation:good`.
+- **Proven on :9091 thru step 5** (the hard part): webrtc faulty, active→websocket, relay carried
+   (`emit=5,…,acked` on Bearing, `unemit=5,…,verified,done` on Nearing), `witnessed:step_4/5`. Step 6
+    (reputation:good) follows from the acked emit. No `ttlilt`/`setTimeout`/race anywhere now. Record the
+     step 4/5/6 diges (Accept/Resnapture) to make it a gate. `req_transport_select` is GONE — the trial is
+      wrangler-driven (the req-as-particle version is for real peers, §11.2). `req_p2paddy` no longer
+       auto-seeds it (that nested it under p2paddy and broke the req.c.up→Peering navigation).
 
 **Remaining = the real transports** (still `[ ]`):
 - **9 — real webrtc**: replace the black-hole port with the real PeerJS DataChannel (relocated from old

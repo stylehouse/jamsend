@@ -71,5 +71,5 @@
 <!-- < js weirdness: if you move this up below Matstyle, the elvis handlers receive $this as a first argument... -->
 <Lang      {M} />
 <Lies {M} />
-<!-- IDE top-level world (only stands up when booted via ?toplevel=Editron) -->
+<!-- IDE top-level world (only stands up when booted via ?A=Editron) -->
 <Editron {M} />

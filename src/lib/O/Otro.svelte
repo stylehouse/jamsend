@@ -7,17 +7,25 @@
     import Stuffing from "$lib/data/Stuffing.svelte"
     import { onDestroy } from "svelte";
     import NaviScroll from "./ui/NaviScroll.svelte";
+    import { boot_param } from "$lib/boot";
 
     //#region H:Mundo
     // ── all House construction inside $effect ─────────────────────────────────
     let H: House = $state(null!)
     let R
+    // ?A=<World> chooses which top-level world boots (default Auto; may_begin stands up
+    //  A:<A>/w:<A>, so ?A=Editron brings up the Lies/Lang IDE).  Its companion ?W=<Waft>
+    //  names the Waft to open — read by the world itself (see Editron's boot_param('W')).
+    //  boot_param abstracts the source: URL query in the browser, env var (A=) in node.
+    //  Computed ONCE out here, and set on the LOCAL `h` below — NEVER as `H.c.x = …` inside
+    //  the $effect: reading the $state H there makes the effect depend on H, which it also
+    //  reassigns (`H = new House()`), so it self-retriggers forever, allocating a House every
+    //  tick → the tab OOMs to multi-GB.  (Svelte 5: an effect re-runs on any $state it reads.)
+    const toplevel = boot_param('A') || 'Auto'
     $effect(() => {
-        H = new House({ name: 'Mundo' })
-        // ?toplevel=<World> chooses which top-level world boots (default Auto).  may_begin
-        //  stands up A:<toplevel>/w:<toplevel> instead of hardcoding Auto — so ?toplevel=Editron
-        //  brings up the Lies/Lang IDE (the Editron world) and Auto's Library never loads.
-        H.c.toplevel = (typeof location !== 'undefined' && new URLSearchParams(location.search).get('toplevel')) || 'Auto'
+        const h = new House({ name: 'Mundo' })
+        h.c.toplevel = toplevel
+        H = h
         setTimeout(() => {
             houses = [H]
         },1)

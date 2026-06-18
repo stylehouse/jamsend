@@ -22,7 +22,13 @@ Waft:Ghost/Net/Easy
           Point,method:Socket
           Point,method:Tribunal_hand_to_webrtc
           Point,method:Tribunal_pair_websocket
-          Point,method:req_transport_select
+          Point,method:Tribunal_fall_to_websocket
+          Point,method:Tribunal_reputation_good
+      What:the trial
+        Doc:Ghost/Story/Peregrination.g
+          Point,method:Lake_trial_arm
+          Point,method:Lake_trial_fallback
+          Point,method:Lake_trial_confirm
   What:the spec
     Doc:src/lib/O/spec/Peeroleum_spec.md
     Doc:src/lib/O/spec/Peeroleum_handover.md

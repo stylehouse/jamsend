@@ -1604,7 +1604,7 @@ export class House extends StorableHousing {
         lds.i({w:'DirectoryOpener'})
         lds.i({w:'Wormhole'})
         // The top-level world.  Default Auto (the Library manager; starts H:Story when a
-        //  book is activated).  ?toplevel=<World> (parsed in Otro onto H.c.toplevel) swaps it
+        //  book is activated).  ?A=<World> (parsed in Otro onto H.c.toplevel) swaps it
         //  — e.g. Editron stands up the Lies/Lang IDE and Auto never happens.  The chosen
         //  world's own handler stands up whatever it needs.
         const toplevel = (H.c.toplevel as string) || 'Auto'

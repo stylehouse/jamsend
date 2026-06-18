@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return '22d820f127e68056' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return '61673572d58848cc' },
 
 
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -46,9 +46,11 @@ async Peeroleum(A,w) {
 },
 // %req:p2paddy — maintain this Peering's Piers + pick a transport.
 async req_p2paddy(req) {
-    req.oai({req: "transport_select"})
-    // < per known peer: seed %req:dial → ensure a %Pier → seed its %req:handshake
-    //    (spec §11.2). Roll-up finishes p2paddy when its children settle.
+    // < transport_select is seeded + driven by the wrangler (Lake_trial) directly on
+    //    the Peering in this test, so req.c.up IS the Peering. Auto-seeding it here
+    //     nests it under p2paddy (req.c.up = p2paddy), which breaks that navigation —
+    //      restore (and walk up to the Peering) when p2paddy drives real peers (§11.2).
+    // < per known peer: seed %req:dial → ensure a %Pier → seed its %req:handshake.
     await req.do()
     req.sc.ok = 1
 
