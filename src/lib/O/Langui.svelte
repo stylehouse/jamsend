@@ -1270,6 +1270,11 @@
                 // the autosave quiet/active thresholds.
                 flush_autosave_now(active_path)
                 Lang_i_elvis(view,'Lang_compile', {})
+                // Esc also means "I'm keen to run it now" — arm a run beside the
+                //  compile.  In the editor this emits the go-run signal toward the
+                //   runner (the Pantheate split: the editor compiles, never runs);
+                //    Lies_run_arm fills in the in-place/from-start mode preference.
+                Lang_i_elvis(view,'Lang_run_now', {})
                 return true;
             },
         },

@@ -62,13 +62,13 @@ Three kinds of House-worker, plus the storage workers.
 A:Peerologist                                    the manager — its own clean A
   w:Peerologist
     %req:p2pman                                  brings Peerings up per our desire to appear online
-    %sides,N:[Bearing,Nearing,Tearing]           (test only) single source of side names
+    %sides,N:[Alice,Bob,Mallory]           (test only) single source of side names
     %witnessed,step:N                            (test only) was the step's expected event seen
     %meddle ...                                  (test only) corruption arming, see §14
 
-A:Bearing                                        one A per identity-presence
+A:Alice                                        one A per identity-presence
   w:Peeroleum
-    %Peering,name:bearing,prepub:7acf…           a listen address (one Idento)
+    %Peering,name:alice,prepub:7acf…           a listen address (one Idento)
       %req:p2paddy                               manages the Piers under this Peering
       Id:Idento,prepri:923f…                     immutable identity of this Peering
       %active_transport,type:mock[,open]         what is carrying right now
@@ -77,9 +77,9 @@ A:Bearing                                        one A per identity-presence
       %Pier,pub:8cbc…                            one per known remote, within this Peering
         ... (see §6)
 
-A:Nearing / A:Tearing                            same shape as Bearing
+A:Bob / A:Mallory                            same shape as Alice
 
-A:Bearing
+A:Alice
   w:Thangs,thangs:peerings                       persisted known-peer list (Dexie), see §10
     %thang,name:<peer-pub>,stashed:{…}
   w:Thangs,thangs:identities                     persisted own-identity list
@@ -97,8 +97,8 @@ clean of management cruft and lets the manager send itself elvises freely
 (`H.i_elvisto('Peerologist/Peerologist', …)`).
 
 Construction: `Peeroleum(A, w)` wires a worker. The A name still matters (Houses
-are named), but one A may carry several `w` — `A:Bearing/w:Peeroleum` for the
-main presence, room for `A:Bearing/w:OtherPresence` later without a second House.
+are named), but one A may carry several `w` — `A:Alice/w:Peeroleum` for the
+main presence, room for `A:Alice/w:OtherPresence` later without a second House.
 
 ---
 
@@ -171,7 +171,7 @@ currently carrying. Selection (try webrtc, fall back to websocket after N second
 of no `/open`) is `%req:p2paddy`'s job and lives as reqs, not hidden timers.
 
 ```
-%Peering,name:bearing,prepub:7acf…
+%Peering,name:alice,prepub:7acf…
   %transport,type:webrtc,faulty,reason:no-direct-route   tried, failed — stays visible
   %transport,type:websocket
   %active_transport,type:websocket,open                  fell back; this is what carries now
@@ -312,10 +312,10 @@ receiver of an ack does not run it through the protocol handlers — it finds
 acked (no ack storm).
 
 ```
-Bearing -> e:hello%seq:7 -> Nearing
-Nearing: verifies, delivers, then
-Nearing -> e:ack%ack:7 -> Bearing
-Bearing: finds %outbox/emit:N,seq:7 -> stamps %acked
+Alice -> e:hello%seq:7 -> Bob
+Bob: verifies, delivers, then
+Bob -> e:ack%ack:7 -> Alice
+Alice: finds %outbox/emit:N,seq:7 -> stamps %acked
 ```
 
 ### 7.3 Inbox states (serial handling)
@@ -423,7 +423,7 @@ never arriving after a corrupt hello is the test passing).
 `%faulty` is a roll-up, present only when there is something to roll up.
 
 ```
-%Pier,pub:tearing…
+%Pier,pub:mallory…
   %faulty
     %unemit:N,error:not-them,seq:3                  the actual failed inbox item, hoisted
     %unemit:M,error:invalid-signature,seq:4[,claim:step_5]
@@ -480,7 +480,7 @@ transport preference — `transport.last_good` seeds the next session's choice.
 w:Thangs,thangs:identities
   %thang,name:<our-prepub>,stashed:{
     keys:         <storableIdento>                 our private+public, persisted
-    friendly:     "bearing"                        display name
+    friendly:     "alice"                        display name
     online_want:  true                             do we want to appear online as this?
   }
 ```
@@ -518,8 +518,8 @@ exists and its transport is open. `%req:bring_up` finishes when the Peering is
 ### 11.2 %req:p2paddy — manage this Peering's Piers
 
 ```
-A:Bearing/w:Peeroleum
-  %Peering,name:bearing,prepub:7acf…
+A:Alice/w:Peeroleum
+  %Peering,name:alice,prepub:7acf…
     %req:p2paddy                                     desire: maintain Piers per known-peers
       %req:dial,target:8cbc…                          one per peer we want connected
         %req:waiting,for:connected,until:T
@@ -535,8 +535,8 @@ waits, and on timeout seeds `%transport,type:websocket` and points
 ### 11.3 per-Pier desires — handshake and sends
 
 ```
-A:Bearing/w:Peeroleum
-  %Peering,name:bearing,prepub:7acf…
+A:Alice/w:Peeroleum
+  %Peering,name:alice,prepub:7acf…
     %Pier,pub:8cbc…
       %req:handshake,target:8cbc…                     §8 — the round-trip
       %req:send,type:data,seq:S                        a thing we want on the wire
@@ -588,7 +588,7 @@ declare `%exports` it wants lifted to its parent for legibility.
 %Pier,pub:8cbc…
   %faulty …                                            present -> export a summary up
 -> at boundary ->
-%Peering,name:bearing
+%Peering,name:alice
   %pier_faulty,pub:8cbc…                               hoisted summary, so Peering shows trouble
 ```
 
@@ -705,8 +705,8 @@ step-witnessing shows up in the snap diff like everything else.
 
 ```
 A:Peerologist/w:Peerologist
-  %req:emit_corruption,target:Tearing,eternal
-    %req:wrap                                        install the meddle hook on Tearing's active_transport
+  %req:emit_corruption,target:Mallory,eternal
+    %req:wrap                                        install the meddle hook on Mallory's active_transport
     %req:N,corruption:publicKey,meddle_fn:Function   the live lie; re-arm latest-onlys it
 ```
 
@@ -717,10 +717,10 @@ corruption test runs under mock, webrtc, or websocket — the meddle perturbs
 whatever is carrying.
 
 ```
-Tearing send path:
+Mallory send path:
   build frame -> sign header -> [meddle_fn(frame)] -> active_transport.send(frame)
                                   ^ reads %req:emit_corruption/%req:N/meddle_fn live
-Bearing inbox:
+Alice inbox:
   %unemit:N,handling -> verify fails -> %unemit:N,error:invalid-signature
                                           -> hoist to %faulty,claim:step_5
 ```
@@ -739,8 +739,8 @@ query.
 ```
 on_step(2): happy-path hello+trust under type:mock
   seed %req:handshake on both sides ; mock delivers instantly ; both reach finished
-on_step(4): Tearing dials Bearing, meddle publicKey -> Bearing %faulty,error:not-them
-on_step(5): meddle sign -> Bearing %faulty,error:invalid-signature
+on_step(4): Mallory dials Alice, meddle publicKey -> Alice %faulty,error:not-them
+on_step(5): meddle sign -> Alice %faulty,error:invalid-signature
 ```
 
 A step opt `transport: mock|webrtc|websocket` lets the same step sequence run
@@ -755,10 +755,10 @@ Deterministic, in-process, tick-driven. Two `%transport,type:mock` particles, on
 per side, whose `c.connection`s share an in-process queue.
 
 ```
-A:Bearing/w:Peeroleum/%Peering/%active_transport,type:mock,open
+A:Alice/w:Peeroleum/%Peering/%active_transport,type:mock,open
    c.connection -> mock-port-B  ──┐
                                   ├─ shared queue (a JS array, plus a partner ref)
-A:Nearing/w:Peeroleum/%Peering/%active_transport,type:mock,open
+A:Bob/w:Peeroleum/%Peering/%active_transport,type:mock,open
    c.connection -> mock-port-N  ──┘
 ```
 
@@ -789,7 +789,7 @@ Strict order; each rung must snap clean before the next.
 
 ```
 1  mock transport spine
-     %transport,type:mock ; shared-queue delivery ; one frame B->N delivered
+     %transport,type:mock ; shared-queue delivery ; one frame A->B delivered
 2  hello+trust under mock
      %req:handshake on both sides ; both reach finished ; clean snap   ← MachPeeroleum on_step(1|2)
 3  outbox/inbox lifecycle + acks + whittle

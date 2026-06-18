@@ -16,6 +16,7 @@
 import { syntaxTree, language } from "@codemirror/language"
 import type { EditorState } from "@codemirror/state"
 import type { SyntaxNode } from "@lezer/common"
+import { parser as jsBaseParser } from "@lezer/javascript"   // in-browser syntax gate (ts dialect) — see Lang_validate_rendered_module
 import type { TheC } from "$lib/data/Stuff.svelte"   // type-only: keeps this module data-layer-free (CLI-loadable)
 
 // The House-receiver alias fabricated at the top of every compiled method body, so
@@ -37,6 +38,38 @@ const IONESS2_VERBS = new Set(['r', 'rm', 'oai', 'roai'])
 // Alternation for the candidate-line pre-filters.  The trailing `\s+` anchors each
 //  verb to a full match, so order is irrelevant (`oa ` can't match as `o`).
 const IONESS_VERB_RE = 'i|o|oa|ob|o1|oa1|bo|boa|bo1|boa1'
+
+// ── in-browser syntax gate (twin of scripts/lang-compile.ts's esbuild gate) ──
+//
+//   esbuild is build-time only, so in the browser we parse the rendered module
+//   with @lezer/javascript and reject on the first error node.  Two non-obvious
+//   musts, both load-bearing:
+//     - dialect "ts": the rendered module is TypeScript (`H: House`, `as TheC`,
+//       `: string`).  The default JS dialect emits an error node on every type
+//       annotation, so it would falsely reject every dock.  This is NOT the
+//       registry's substitute parser (lang.ts: configured {} → JS).
+//     - Lezer is error-recovering: it never throws, always returns a Tree with
+//       `.type.isError` nodes, so detection is a walk, not a try/catch.
+//   `tsParser` is built once and reused.
+let _tsParser: any = null
+function tsParser(): any {
+    if (!_tsParser) _tsParser = jsBaseParser.configure({ dialect: 'ts' })
+    return _tsParser
+}
+
+// Extract the <script> body from a rendered module, padded with the leading
+//  newlines so a parse offset maps to the same line number as the .go module.
+//  Verbatim shape of scripts/lang-compile.ts's scriptOfModule, so the two gates
+//  see the same text and agree on accept/reject.
+function tsScriptOfModule(mod: string): string {
+    const open = mod.match(/<script[^>]*>/)
+    if (!open) return mod   // no wrapper — treat the whole thing as the script
+    const start = open.index! + open[0].length
+    const end   = mod.indexOf('</script>', start)
+    const body  = mod.slice(start, end < 0 ? undefined : end)
+    const linesBefore = mod.slice(0, start).split('\n').length - 1
+    return '\n'.repeat(linesBefore) + body
+}
 
 export const LANG_COMPILE = {
 //#region collect
@@ -1545,5 +1578,41 @@ ${meta}${body}
 ${CLOSE}
 `
         )
+    },
+
+    // ── Lang_validate_rendered_module — in-browser output syntax gate ─────────
+    //
+    //   The translator emitting a module string is NOT proof the JS parses: a
+    //   raw-JS passthrough can mangle a brace (a bare multi-line `else` becomes
+    //   `} else {}`), and Svelte's parser is the first thing to notice — far too
+    //   late, and on the editor↔runner channel it would already be a `.go` of
+    //   garbage pushed to a runner that trusts it.  scripts/lang-compile.ts gates
+    //   this at author time with esbuild; this is the run-time twin so the in-app
+    //   compile never hands disk/Pantheate output it hasn't proven is real JS.
+    //
+    //   Returns a one-line diagnostic (line-aligned to the .go module) on the
+    //   first syntax error, or null when the module parses.  Lang_compile_dock
+    //   throws the diagnostic into its existing compile_error path (writes nothing).
+    Lang_validate_rendered_module(module: string): string | null {
+        const script = tsScriptOfModule(module)
+        let tree: any
+        try {
+            tree = tsParser().parse(script)
+        } catch (e: any) {
+            // The parser itself should never throw on recoverable input, but a
+            //  malformed call is still a refuse-to-write, not a crash.
+            return `generated JS parser threw: ${String(e?.message ?? e)}`
+        }
+        let pos: number | null = null
+        tree.iterate({ enter: (n: any) => {
+            if (pos == null && n.type.isError) { pos = n.from; return false }
+        }})
+        if (pos == null) return null
+        const before   = script.slice(0, pos)
+        const line     = before.split('\n').length
+        const col      = pos - (before.lastIndexOf('\n') + 1)
+        const lineText = script.slice(pos - col).split('\n')[0].trim()
+        const src      = lineText ? `\n    ${lineText}` : ''
+        return `generated JS does not parse @ module line ${line}:${col}${src}`
     },
 }

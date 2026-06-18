@@ -1,21 +1,21 @@
 Snap:H
   H:Peregrination,Run
-    A:Bearing
+    A:Alice
       self,round=2	{"mung":["age"]}
       w:Peeroleum
-        Peering,name:bearing
-          Pier,pub:nearing
+        Peering,name:alice
+          Pier,pub:bob
             outbox
               emit,type:noop,seq,sent,acked
           req:p2paddy
         transport,type:mock
         active_transport,type:mock,open
         self,round=2	{"mung":["age"]}
-    A:Nearing
+    A:Bob
       self,round=2	{"mung":["age"]}
       w:Peeroleum
-        Peering,name:nearing
-          Pier,pub:bearing
+        Peering,name:bob
+          Pier,pub:alice
             inbox
               unemit,type:noop,seq,verified,done,to:noop
           req:p2paddy

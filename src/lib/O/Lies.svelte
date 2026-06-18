@@ -143,6 +143,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     import LiesStore        from "./LiesStore.svelte"
     import LiesEnd          from "./LiesEnd.svelte"
     import LiesCortex       from "./LiesCortex.svelte"
+    import LiesLies         from "./LiesLies.svelte"
 
     let { M } = $props()
 
@@ -765,10 +766,11 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         //     the w:Lies-only persist phase, NOT in req_Store: that pump is
         //      w-agnostic (w:Diffmatication shares it for IO) and must not spawn a Waft.
         // GhostList is developer chrome — the editor's self-listing file index. A
-        //  runner-flavoured Lies (w%runner, stamped by a test's Run wiring) skips it
-        //   entirely: the dirlist Funkcion never walks /src every 8s and the index
-        //    never seeds. (%dontSnap only hides it from the snap; this stops the work.)
-        if (!w.sc.runner) {
+        //  runner-flavoured Lies skips it entirely: the dirlist Funkcion never walks
+        //   /src every 8s and the index never seeds. (%dontSnap only hides it from the
+        //    snap; this stops the work.)  Gated on the runner role specifically, so a
+        //     bare Lies (the plain app) keeps the chrome — see Lies_role's three states.
+        if (!H.Lies_is_runner(w)) {
             const gl = H.Lies_ghostlist(w)             // undefined while it loads
             if (gl) await H.GhostList_funkcion(gl, w)
         }
@@ -1151,6 +1153,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     })
 </script>
 
+<LiesLies {M} />
 <LiesCurse {M} />
 <LiesStore {M} />
 <LiesEnd {M} />

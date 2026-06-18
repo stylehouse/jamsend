@@ -339,7 +339,9 @@
         // runner-flavoured Lang: fold the editor-nav apparatus (Interest/Trail/dock)
         //  out of the snap. Languinio is enrolled in ave, so the w:Lang %dontSnap fold
         //  doesn't reach it — stamp the Languinio itself. (Snap-only; editor still runs.)
-        if (w.sc.runner) languinio.sc.dontSnap = 1
+        //  Routed through Lies_role (H.c.role authoritative) so editor|runner|bare is
+        //   decided in one place — see LiesLies.svelte.
+        if (H.Lies_is_runner(w)) languinio.sc.dontSnap = 1
         ave.i(languinio)
         languinio.c.w = w
 

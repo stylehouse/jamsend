@@ -63,10 +63,20 @@ Boot it on the dev instance: `/Otro?B=Editron` (add `&W=<Waft>` for a different 
      **server-to-server**, no CORS: editor's node server → "new `.go` at <path>" → runner's
       node server → runner re-pulls + re-includes.
 
-**Next move.** (1) Gate `Ghost_update_notify`/`req:include` on `!w%editor` so `Lies%editor`
- compiles-without-mounting. (2) Make the runner pick up a fresh `.go` — file-poll first, the
-  node-server websocket signal once those sockets land. (3) The headless-include fix is the
-   prerequisite for the runner side actually executing it.
+**Next move.** (1) ✅ DONE — `Ghost_update_notify` is gated so `Lies%editor` compiles-and-writes
+ without mounting. The gate is NOT on the per-`w` flag (Pantheate's own `w` carries neither flag);
+  it reads the **Run's role**: `Run_A_Editron`/`Run_A_Peregrination` now stamp `H.c.role =
+   'editor'|'runner'`, and the predicate lives in one place — `LiesLies.svelte`
+    (`Lies_role`/`Lies_is_editor`/`Lies_is_runner`, three-state so a *bare* Lies — the plain app,
+     the Machinery test Runs — still mounts). `req_Codebit` fires the notify only when
+      `!H.Lies_is_editor()`. The scattered `w.sc.runner` reads (Lies.svelte GhostList, Lang.svelte
+       Languinio `dontSnap`) now route through `Lies_is_runner`. (2) Make the runner pick up a fresh
+        `.go` — file-poll first, the node-server websocket signal once those sockets land. The editor
+         side of that signal exists now: Esc arms a run (`Lies_run_arm`, in `LiesLies`), stamping the
+          go-run intent (`w%run_arm{path,mode}`) editor-side and, on a runner, invalidating the dock's
+           Good + resuming (in-place) or resetting (from-start, the `Story_reset` path); the cross-
+            instance transport (Peeroleum heading 10) is what still has to carry it. (3) The headless-
+             include fix is the prerequisite for the runner side actually executing it.
 
 ## The channel is Peeroleum's heading 10 (settled — see Peeroleum_handover.md)
 

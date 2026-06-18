@@ -66,6 +66,9 @@ await M.eatfunc({
     //  reqdo_sweep pumps those workers — so the Run needs them, like Run_A_LangTiles.
     Run_A_Peregrination(this: House) {
         const H = this
+        // The Run's authoritative role (read by every actor via Lies_role, incl.
+        //  Pantheate) — runner: headless, mounts + runs the editor's compiled docks.
+        H.c.role = 'runner'
         H.i({ A: 'Peregrination' }).i({ w: 'Peregrination' })
         // runner-flavoured Lies/Lang: read→compile→include only, no developer chrome
         //  (GhostList file index gated off in Lies.svelte on w%runner).

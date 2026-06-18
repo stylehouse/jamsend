@@ -228,7 +228,14 @@
 
         // import goes first — the dynamic import needs the file on disk;
         //  source_dige lets req:include confirm the right version mounted.
-        if (req.sc.source_dige) {
+        // The Pantheate split: an editor-flavoured Run compiles + writes the .go
+        //  but must NOT take it up — mounting would make the editor run the very
+        //   code it is only meant to edit.  So the mount-notify is gated off when
+        //    the Run's role is editor (H.c.role); a runner Run and a bare Lies (the
+        //     plain app, the Machinery tests) both still mount.  The .go is already
+        //      on disk for the runner to pick up; the settle below still fires so the
+        //       editor's compile job closes and its lint/translation view updates.
+        if (req.sc.source_dige && !H.Lies_is_editor()) {
             H.i_elvisto('Pantheate/Pantheate', 'Ghost_update_notify', {
                 include:     gen_path,
                 path,

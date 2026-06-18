@@ -1,0 +1,134 @@
+<script lang="ts">
+    // LiesLies.svelte — the editor|runner role of a Lies, in one place.
+    //
+    // The two ends of the one Waft are an editor (full chrome, edits & compiles,
+    //  writes the .go, does NOT mount/run it) and a runner (read → compile →
+    //   include → run the docks the editor compiled).  Before this module that
+    //    split was scattered as ad-hoc `w.sc.runner` / `w.sc.editor` reads and one
+    //     ungated mount-notify; here it is one predicate that everything routes
+    //      through, so the role lives in a single readable spot.
+    //
+    // ── One source of truth: H.c.role ─────────────────────────────────────────
+    //
+    //   The split is per-Run, not per-w: the editor and runner are each a Story
+    //    Book's Run (Run_A_Editron / Run_A_Peregrination), and a Run owns several
+    //     actors.  Pantheate is its OWN actor (A:Pantheate/w:Pantheate) — its w
+    //      carries neither flag — yet the load-bearing gate (suppress the mount on
+    //       the editor) lives in its handler.  So the authoritative role is stamped
+    //        ONCE on the Run House as H.c.role by the Run_A_<Book> recipe, and every
+    //         actor in that Run reads the same H.c.role.  No sibling-hunting.
+    //
+    //   The per-w flags (w%editor / w%runner, still stamped by the recipes) remain
+    //    a valid fallback for a w handed in directly, and for the badge in Liesui.
+    //
+    // ── Three states, deliberately ────────────────────────────────────────────
+    //
+    //   editor — explicit (H.c.role='editor' or w%editor): full chrome, compiles +
+    //            writes, but suppresses the mount (the Pantheate split).
+    //   runner — explicit (H.c.role='runner' or w%runner): headless, mounts + runs,
+    //            folds the editor-nav apparatus out of its snap.
+    //   bare   — neither stamped (the plain app, the Machinery test Runs): the
+    //            legacy all-in-one — runs the editor chrome AND mounts/runs.  This
+    //             is why the predicate is three-state and not a boolean: GhostList
+    //              skips iff runner (bare keeps it), the mount skips iff editor
+    //               (bare keeps it).  Collapsing bare into either end regresses the
+    //                other behaviour.
+
+    import type { TheC } from "$lib/data/Stuff.svelte"
+    import type { House } from "$lib/O/Housing.svelte"
+    import { onMount } from "svelte"
+
+    let { M } = $props()
+
+    onMount(async () => {
+    await M.eatfunc({
+
+        // ── Lies_role — the authoritative editor|runner role, or undefined ────
+        //
+        //   H.c.role (stamped on the Run House by Run_A_<Book>) wins; a passed-in
+        //    w's own %editor/%runner flag is the fallback; bare → undefined.
+        Lies_role(w?: TheC): 'editor' | 'runner' | undefined {
+            const role = (this as House).c.role
+            if (role === 'editor' || role === 'runner') return role
+            if (w?.sc?.editor) return 'editor'
+            if (w?.sc?.runner) return 'runner'
+            return undefined
+        },
+
+        // Explicit-runner / explicit-editor.  Both false for a bare Lies — callers
+        //  pick the side that matters: GhostList gates on !is_runner (bare runs it),
+        //   the mount-notify gates on !is_editor (bare mounts).
+        Lies_is_runner(w?: TheC): boolean { return (this as House).Lies_role(w) === 'runner' },
+        Lies_is_editor(w?: TheC): boolean { return (this as House).Lies_role(w) === 'editor' },
+
+        // ── run-mode control: in-place vs from-start ──────────────────────────
+        //
+        //   The editor's preference for what "run it now" (Esc) means:
+        //     in_place   — resume the runner's Story where it is (story_drive, no
+        //                   reset): safe, keeps accumulated world state.
+        //     from_start — restart from step 0 — the Story_reset button's path
+        //                   (Auto/resetStory → auto_reset_story tears down + rebuilds).
+        //   Stored on the Run House (H.c.run_mode); defaults to in_place (the safe one).
+        Lies_run_mode(): 'in_place' | 'from_start' {
+            return ((this as House).c.run_mode as any) === 'from_start' ? 'from_start' : 'in_place'
+        },
+        e_Lies_set_run_mode(A: TheC, w: TheC, e: TheC) {
+            const mode = e.sc.mode === 'from_start' ? 'from_start' : 'in_place'
+            ;(this as House).c.run_mode = mode
+            console.log(`🔪 Lies run-mode → ${mode}`)
+        },
+
+        // ── e_Lies_run_arm — the "run it now" signal (Esc in the editor) ──────
+        //
+        //   Esc means "I'm keen to run this now."  The editor compiles + writes the
+        //    .go (it never runs the code itself — the Pantheate split), then arms a
+        //     run on the runner that shares the Waft.  This is the local-first half
+        //      of the editor↔runner channel: the same {path, mode} the Peeroleum
+        //       dock_push frame will carry over the wire later (heading 10).
+        //
+        //   By role:
+        //     editor — emit the go-run intent outward.  Locally there is usually no
+        //              co-resident runner Run, so this stamps the intent (snapped as
+        //               w%run_arm) + logs; the websocket transport (deferred) is what
+        //                delivers it cross-instance.  The editor never drives a run.
+        //     runner — invalidate the dock's Good so the recompile reads the fresh
+        //              source (the good.c.content short-circuit otherwise serves
+        //               stale bytes — see LiesStore_read_good's "force a re-read:
+        //                delete good.c.content"), then resume (in_place) or, for an
+        //                 explicit runner, reset (from_start, the Story_reset path).
+        //
+        //   e.sc: { path, mode? }   mode falls back to the stored editor preference.
+        async e_Lies_run_arm(A: TheC, w: TheC, e: TheC) {
+            const H    = this as House
+            const path = e.sc.path as string | undefined
+            const mode = (e.sc.mode as string) ?? H.Lies_run_mode()
+
+            if (H.Lies_is_editor(w)) {
+                // The seam: outward "run <path> [mode]" toward the runner.  Snap the
+                //  last arm; the channel send lands here once the transport is up.
+                w.oai({ run_arm: 1 }, { path, mode })
+                console.log(`🔪 editor arm-run → ${path} [${mode}] (awaiting channel)`)
+                return
+            }
+
+            // runner (or a bare dev Lies): make the fresh source authoritative.
+            if (path) {
+                const good = H.LiesStore_good_of(w, 'text/Doc', path)
+                if (good) delete good.c.content   // force the next read off disk
+            }
+            // from_start is destructive (full teardown), so only an explicit runner
+            //  honours it; a bare Lies always takes the gentle in-place re-run.
+            if (mode === 'from_start' && H.Lies_is_runner(w)) {
+                // identical to the Story_reset button — Auto rebuilds H:Story cleanly.
+                const book = (H.o({ A: 'Story' })[0] as TheC | undefined)
+                    ?.o({ w: 'Story' })[0]?.sc.Book as string | undefined
+                H.top_House().i_elvisto('Auto/Auto', 'resetStory', book ? { Book: book } : {})
+            } else {
+                H.i_elvisto(w, 'think')   // wake the req-stack to recompile + re-run
+            }
+            console.log(`🔪 runner arm-run → ${path} [${mode}]`)
+        },
+
+    })
+    })
+</script>

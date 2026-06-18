@@ -242,11 +242,14 @@
         // stop + drop existing H:Story if present
         const existing = H.o({ H: 'Story' })[0] as House | undefined
         if (existing) {
-            // stop all drives
-            for (const w2 of existing.o({ w: 1 }) as TheC[]) {
-                throw "forgot A"
-                for (const run of w2.o({ run: 1 }) as TheC[]) run.c.driving = false
-            }
+            // Stop every drive before teardown.  run particles live under w under A
+            //  (S.i({A}).i({w}).i({run})), so the walk must go through the actor
+            //   level — the old loop iterated existing.o({w:1}) directly and so found
+            //    no w (the `throw "forgot A"` flagged that skipped A:), throwing on
+            //     every re-activation (Book-switch / Story_reset from-start).
+            for (const A of existing.o({ A: 1 }) as TheC[])
+                for (const w2 of A.o({ w: 1 }) as TheC[])
+                    for (const run of w2.o({ run: 1 }) as TheC[]) run.c.driving = false
             existing.stop()
             H.drop(existing)
         }

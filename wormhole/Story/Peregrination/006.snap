@@ -1,10 +1,10 @@
 Snap:H
   H:Peregrination,Run
-    A:Bearing
+    A:Alice
       self,round=12	{"mung":["age"]}
       w:Peeroleum
-        Peering,name:bearing
-          Pier,pub:nearing
+        Peering,name:alice
+          Pier,pub:bob
             outbox
               recent
                 emit,type:noop,seq
@@ -20,7 +20,7 @@ Snap:H
             protocol
               hello
                 said,seq=2,acked
-                heard,publicKey:nearing
+                heard,publicKey:bob
               trust
                 said,seq=3,acked
                 heard
@@ -28,7 +28,7 @@ Snap:H
               recent
                 unemit,type:hello,seq
                 unemit=2,type:trust,seq=2
-            Ud,publicKey:nearing
+            Ud,publicKey:bob
           req:p2paddy
         transport,type:mock
         active_transport,type:websocket,open
@@ -36,11 +36,11 @@ Snap:H
         transport,type:websocket
           reputation:good
         self,round=12	{"mung":["age"]}
-    A:Nearing
+    A:Bob
       self,round=12	{"mung":["age"]}
       w:Peeroleum
-        Peering,name:nearing
-          Pier,pub:bearing
+        Peering,name:bob
+          Pier,pub:alice
             inbox
               recent
                 unemit,type:noop,seq
@@ -55,7 +55,7 @@ Snap:H
             protocol
               hello
                 said,seq,acked
-                heard,publicKey:bearing
+                heard,publicKey:alice
               trust
                 said,seq=2,acked
                 heard
@@ -63,7 +63,7 @@ Snap:H
               recent
                 emit,type:hello,seq
                 emit=2,type:trust,seq=2
-            Ud,publicKey:bearing
+            Ud,publicKey:alice
           req:p2paddy
         transport,type:mock
         active_transport,type:websocket,open

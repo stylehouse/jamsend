@@ -133,6 +133,7 @@
     import type { EditorState } from "@codemirror/state"
     import type { SyntaxNode } from "@lezer/common"
     import { onMount } from "svelte"
+    import type { House } from "$lib/O/Housing.svelte"
 import { LANG_COMPILE } from "./lang/compile"
 
     let { M } = $props()
@@ -170,6 +171,19 @@ import { LANG_COMPILE } from "./lang/compile"
             return
         }
         await this.Lang_compile(A, w)
+    },
+
+    // ── e_Lang_run_now — Esc's "run it now", beside the compile it just fired ──
+    //
+    //   Esc compiles (e_Lang_compile) AND arms a run.  The compile writes the .go;
+    //    this forwards the run intent to Lies, which — per its editor|runner role —
+    //     emits the signal toward the runner or drives a local re-run.  The run mode
+    //      (in-place vs from-start) is Lies's own stored preference, so the editor
+    //       only needs to say "now"; Lies_run_arm fills in the mode.
+    e_Lang_run_now(A: TheC, w: TheC, e: TheC) {
+        const H    = this as House
+        const path = (e.sc.dock as string | undefined) ?? (H.Lang_active_dock(w)?.sc.dock as string | undefined)
+        H.i_elvisto('Lies/Lies', 'Lies_run_arm', { path })
     },
 
     // ── Lang_compile ──────────────────────────────────────────────────────────
@@ -264,6 +278,15 @@ import { LANG_COMPILE } from "./lang/compile"
                 ghost = { ghostmeta_name: H.Lang_ghostmeta_name(dock.sc.dock as string), source_dige }
             }
             source = this.Lang_compile_render_module(body, ghost)
+            // Prove the emitted JS actually parses before anyone trusts it — the
+            //  run-time twin of scripts/lang-compile.ts's esbuild gate.  A raw-JS
+            //   passthrough can mangle a brace into invalid JS even WITH a parser
+            //    wired, which the parser-guard above does not catch; a bad .go on
+            //     disk (or pushed over the editor↔runner channel) is the disease.
+            //      A failure here drops into the compile_error path below — writes
+            //       nothing, surfaces the line to the editor, re-arms next pass.
+            const bad_js = this.Lang_validate_rendered_module(source)
+            if (bad_js) throw bad_js
         } catch (err: any) {
             dock.i({ compile_error: 1, msg: String(err?.message ?? err), stack: err?.stack ?? '' })
             delete job.sc.pending

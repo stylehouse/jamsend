@@ -259,16 +259,16 @@ Library
         sample=1.336,at=1781715010
         sample=0.815,at=1781715794
         sample=0.846,at=1781750525
-  Book:Peregrination,ok_pct=0,done=5,last_run_ms=1781775278.773,active
+  Book:Peregrination,ok_pct=0,done=5,last_run_ms=1781778029.401
     TimeSpool
-      TimeTotal:beliefs,avg=0.96
-        sample=1.238,at=1781749851
-        sample=1.049,at=1781761580
-        sample=1.132,at=1781762337
-        sample=1.217,at=1781763072
+      TimeTotal:beliefs,avg=0.755
         sample=1.378,at=1781769286
         sample=1.365,at=1781771960
         sample=0.354,at=1781772025
         sample=0.017,at=1781774762
         sample=0.334,at=1781774813
         sample=1.512,at=1781775280
+        sample=0.546,at=1781775815
+        sample=0.996,at=1781776936
+        sample=0.496,at=1781777911
+        sample=0.549,at=1781778031

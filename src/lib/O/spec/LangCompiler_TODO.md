@@ -4,30 +4,29 @@ Running list of compile-side work, smallest/most-actionable first. The IOing
 *reduction* (drills, the `_io_plan` oracle, the database horizon) has its own
 list in `LangSolver_report.md` — this file is the surrounding compiler.
 
-## async-verb warning (dev notification)
+## async-verb warning (dev notification) — SUPERSEDED by auto-async (the fix landed)
 
 `r | rm | roai | moai` (and any future async verb) compile to `await …`
-expressions, so the enclosing method must be `async`. The compiler does **not**
-rewrite the method header — a non-async method containing one of these verbs
-emits invalid TS (`await` outside async).
+expressions, so the enclosing method must be `async`. The original worry: the
+compiler did not rewrite the method header, so a non-async method containing one
+of these verbs emitted invalid TS (`await` outside async).
 
-TODO: notify the dev, like a TS warning. When `Lang_compile_collect` emits an
-await-requiring IOness2 verb inside a method whose decl wasn't written `async`,
-surface a line diagnostic (the `words` index already records `{def, method,
-async?}` per method — line 927 — so the check is local: does the enclosing decl
-carry `async:1`?). Decide later whether to also offer an auto-`async` fix
-(rewrite the `MethodLike` decl) vs. warn-only.
+**Resolved — the auto-`async` fix was chosen over the warn-only path.**
+`_collect_line` now scans each translated method body and, if it carries a
+method-level `await` (a user one OR a compiler-emitted `r|rm|roai|moai`) while the
+decl was not written `async`, rewrites the header to add `async` and stamps
+`defWord.async = 1` (`compile.ts`, the "auto-async" block ~line 766). Awaits
+inside a nested async arrow (an `oai|r` BLOCK do_fn) are excluded via
+`arrowRanges`, so they stay the arrow's concern. This covers every IOness2 verb
+the heading worried about — there is no longer an invalid-`await`-in-sync-method
+to warn about, so the `compile_warning` sibling channel is **not built** (the
+silent rewrite is the better outcome).
 
-Where it plugs in — NOT the existing error path. Line-level errors go through
-`line_errors` → `job.i({compile_error:1, line, msg, text})` (line ~603), read by
-Liesui + the graft/minimap path. But that channel is **fatal**: the collector
-`break`s at the first error (line ~568, "output beyond a mis-parsed line is
-unreliable"), and `compile_error` is terminal for the graft. A warning must NOT
-abort the compile, so it wants a **non-fatal sibling channel** — a
-`compile_warning` particle, same `{line, msg, text}` shape, accumulated without
-breaking the loop and rendered amber (Liesui + the `simpleLezerLinter` could
-emit `severity:'warning'` instead of `'error'`). This is the same "continue past
-the first error" UI path the collector already wishes for at line ~400.
+If a non-fatal `compile_warning` channel is wanted later for a DIFFERENT class of
+advisory (it would still want the same shape: a sibling to the fatal
+`compile_error`, accumulated without breaking the collector loop, rendered amber
+by Liesui / `simpleLezerLinter` at `severity:'warning'`), the design above stands
+— but the async case no longer motivates it.
 
 ## the data language — `doai %req:X` block → do_fn (DONE)
 
@@ -120,17 +119,23 @@ later pass once the parser was ready — i.e. an intermittent corruption window.
      readiness. The translation display itself (`LangCompiling.svelte:238`, the disabled
       `if (0 && ln.kind === 'translated')` block) is still a TODO to wire up.
 
-**Failure B — translated but invalid JS (CLI gate done; in-app twin proposed).** A raw-JS seam can
+**Failure B — translated but invalid JS (BOTH gates done).** A raw-JS seam can
 emit syntactically-broken JS even WITH a parser — e.g. a bare multi-line `else` mangled by the
 indentation→brace logic into `} else {}` (bit `Socket_real`). The parser-guard does NOT catch this.
 - **Done (author-time):** `scripts/lang-compile.ts` now runs the rendered module through esbuild
    (`transform`, `loader:'ts'`, no type-checking — the loosest syntax gate); `✓ PASS` means "module
     parses". Catches B before commit. See the `lang-compile-cli` memory.
-- **Proposed (run-time twin):** the in-app compile has no such gate — a `.g` committed without
-   running `lang-compile` could still write broken JS. Add a parse check of the rendered module
-    before `e_Lies_compiled` writes/fires (and before a `dock_push` over the channel). esbuild is
-     build-time only; in-browser, reuse the registry's Lezer JS parser and reject on error nodes,
-      or `svelte.parse`. Gated on in-app verification.
+- **Done (run-time twin):** `Lang_compile_render_module` is now followed by
+   `Lang_validate_rendered_module` (`compile.ts`) inside `Lang_compile_dock`'s `try` — so a failure
+    drops into the existing `compile_error` path (writes NOTHING, re-arms next pass), before
+     `e_Lies_compiled` and before any `dock_push`. It reuses `@lezer/javascript` configured
+      `{ dialect: 'ts' }` (the JS dialect would error-node every `: type` / `as TheC` — do NOT reuse
+       the registry's substitute parser, which is `{}`/JS), walks the tree for the first
+        `n.type.isError`, and aligns the diagnostic to the `.go` module's line numbers (same
+         `scriptOfModule` newline-padding as the CLI). The CLI now runs BOTH gates and prints a
+          `⚠ gate disagreement` line if esbuild and lezer ever split, so the two stay in lockstep —
+           verified agreeing on the whole `.g` corpus and on the `} else {}` / unclosed-paren / garbage
+            reject cases. esbuild stays the author-time authority; lezer is the in-browser twin.
 
 **The general principle:** the compiler must not hand downstream (disk, Pantheate, the runner over
 the WS) any output it hasn't proven is real compiled JS. The parser-guard (A) + the two output

@@ -1,4 +1,4 @@
-
+//#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
 //  Getting-started scaffold: the req tree (p2pman → p2paddy → handshake) and the
 //  three transports, compile-clean. Bodies range from real LangTiles req-seeds to
@@ -9,7 +9,6 @@
 // ── manager: appear online ────────────────────────────────────────────────────
 // A:Peerologist/w:Peerologist — no identity, no transport; it only wants Peerings.
 async Peerologist(A,w):
-    i see:`ya later`
     w oai %req:p2pman,eternal
     await w.do()
 
@@ -21,9 +20,11 @@ async req_p2pman(req):
     await req.do()
     req.sc.ok = 1
 
+//#region oleum
 // ── per-identity worker ───────────────────────────────────────────────────────
-// A:Bearing/w:Peeroleum — one per identity-presence; owns this address's Piers.
+// A:Alice/w:Peeroleum — one per identity-presence; owns this address's Piers.
 async Peeroleum(A,w):
+    oai seemingly:`ya lateringly`
     // each installed %Peering manages its own Piers via %req:p2paddy
     S o Peering
         Peering oai %req:p2paddy

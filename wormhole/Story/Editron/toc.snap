@@ -5,7 +5,15 @@ story:Editron
     noCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.744
-      sample=0.488,at=1781774526
-      sample=1.001,at=1781775213
+    TimeTotal:beliefs,avg=0.452
+      sample=0.324,at=1781776604
+      sample=0.699,at=1781778189
+      sample=0.285,at=1781778219
+      sample=0.521,at=1781778240
+      sample=0.454,at=1781778735
+      sample=0.349,at=1781778854
+      sample=0.403,at=1781778892
+      sample=0.518,at=1781778934
+      sample=0.396,at=1781779103
+      sample=0.573,at=1781779539
   step,dige:ef7fcf31921356e1

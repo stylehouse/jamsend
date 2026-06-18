@@ -86,6 +86,19 @@ async function compileOne(file: string, quiet: boolean): Promise<boolean> {
 
         // The translator ran clean — now prove the JS it emitted actually parses.
         const syn = await syntaxError(module)
+
+        // Cross-check the in-app twin (Lang_validate_rendered_module, @lezer/javascript
+        //  ts dialect) against esbuild — they gate the SAME class (a passthrough brace
+        //   break), so a `.g` that one accepts and the other rejects is a miserable
+        //    debug.  esbuild stays authoritative for PASS/FAIL; a disagreement is a loud
+        //     author-time warning so the two gates never silently drift apart.
+        const twin = C.Lang_validate_rendered_module(module)
+        if (!!syn !== !!twin) {
+            console.error(`  ⚠ gate disagreement ${file}: esbuild=${syn ? 'FAIL' : 'pass'} lezer=${twin ? 'FAIL' : 'pass'}`)
+            if (syn)  console.error('    esbuild: ' + syn.split('\n').join('\n      '))
+            if (twin) console.error('    lezer:   ' + twin.split('\n').join('\n      '))
+        }
+
         if (syn) {
             console.error(`✗ FAIL  ${file}  (generated JS does not parse)`)
             console.error('  ' + syn.split('\n').join('\n  '))
