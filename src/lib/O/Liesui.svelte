@@ -30,6 +30,11 @@
     let errors:      TheC[]           = $state([])
     let all_wafts:   TheC[]           = $state([])
 
+    // channel peer — %channel_peer stamped by Lies_pong_recv (sc: role + rtt + last-pong ms).
+    //  `now` is re-read each tick so peer_live can age out a peer that stopped ponging.
+    let peer: TheC | undefined = $state()
+    let now = $state(0)
+
     // examining — the %examining particle from Lies's w, placed in watched:ave.
     // Passed down to Waft and DocRow; DocRow derives is_examining from it.
     // examining.sc.active_path mirrors Lang's active_doc so DocRow glows without
@@ -48,6 +53,8 @@
             errors      = lies_w.o({ compile_error: 1 }) as TheC[]
             all_wafts   = lies_w.o({ Waft: 1 })          as TheC[]
             examining   = ex
+            peer        = lies_w.o({ channel_peer: 1 })[0] as TheC | undefined
+            now         = Date.now()
         })
     })
 
@@ -64,6 +71,9 @@
         editor: 'editor — edits & compiles docks; hosts the relay that runners dial in to',
         lies:   'lies — editor/runner role not yet stamped on this w',
     }
+    // the peer this instance faces, and whether it ponged recently (channel proven live).
+    let expect_peer = $derived(role === 'editor' ? 'runner' : role === 'runner' ? 'editor' : '')
+    let peer_live   = $derived(!!(peer?.sc?.last && now - (peer.sc.last as number) < 7000))
 
     // ── + Waft form ──────────────────────────────────────────────────
     let waft_form_open = $state(false)
@@ -104,6 +114,14 @@
     <div class="ls-header">
         {#if role}
             <span class="ls-role ls-role-{role}" title={ROLE_TITLE[role]}>{role}</span>
+        {/if}
+        {#if expect_peer}
+            <span class="ls-peer" class:ls-peer-live={peer_live}
+                  title={peer_live
+                      ? `${expect_peer} connected — RTT ${peer?.sc?.rtt}ms (channel carries)`
+                      : `${expect_peer} not connected — no pong yet`}>
+                {peer_live ? `● ${expect_peer} ${peer?.sc?.rtt}ms` : `○ ${expect_peer}`}
+            </span>
         {/if}
         <PeelInput
             label="Waft"
@@ -189,6 +207,11 @@
     .ls-role-runner { color: #c4aaee; background: rgba(196, 170, 238, 0.12) }
     .ls-role-editor { color: #6ad0c0; background: rgba(106, 208, 192, 0.12) }
     .ls-role-lies   { color: #888;    background: rgba(136, 136, 136, 0.12) }
+    .ls-peer {
+        font-size: 0.75em; padding: 1px 6px; border-radius: 6px; align-self: center;
+        color: #888; background: rgba(136, 136, 136, 0.12);
+    }
+    .ls-peer-live { color: #6ad0c0; background: rgba(106, 208, 192, 0.16) }
     .ls-errors {
         background: #300; border: 1px solid #c44; border-radius: 3px;
         padding: 0.3rem 0.5rem; margin-bottom: 0.4rem;

@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Tribunal(): string { return '465fd97c57793af1' },
+    Ghostmeta_Ghost_N_Tribunal(): string { return '638295dccc7c404d' },
 
 
 // Tribunal — a peer connection's reputation, constantly on trial (spec §4.1, §11.2).
@@ -115,9 +115,13 @@ Socket_real(w) {
 //   editor↔runner channel the relay is the chosen carrier from the start, so there is no webrtc
 //    probe to demote — just open the relay and carry. Called by the consumer after Socket_real.
 Tribunal_activate_websocket(w) {
-    let at = w.o({ active_transport: 1 })[0]
+    // oai not o: the mock wrangler pre-creates %active_transport (its step 2), but the
+    //  editor↔runner channel has no such step — activate IS where the slot is born, so
+    //   create-or-find it.  Absent, Peeroleum_send found no .c.connection and dropped
+    //    every envelope (hello, dock_push) while only direct-ws control frames crossed.
+    let at = w.oai({ active_transport: 1 })
     let ws = w.o({ transport: 1, type: 'websocket' })[0]
-    if (!at || !ws) return
+    if (!ws) return
     at.sc.type = 'websocket'
     at.sc.open = 1
     at.c.connection = ws.c.port       // < .c port handoff (transport seam)

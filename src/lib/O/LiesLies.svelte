@@ -203,6 +203,10 @@
             // Inbound: the runner receives pushed source; the editor receives results.
             if (role === 'runner') (H as any).Peeroleum_on(w, 'dock_push',  (cw: TheC, _p: TheC, fr: any) => H.Lies_dock_push_recv(cw, fr))
             else                   (H as any).Peeroleum_on(w, 'run_result', (cw: TheC, _p: TheC, fr: any) => H.Lies_run_result_recv(cw, fr))
+            // ping/pong heartbeat — both roles echo a ping and record a pong, so the real
+            //  envelope path is provable (and shown by the badge), not just relay control.
+            ;(H as any).Peeroleum_on(w, 'ping', (cw: TheC, _p: TheC, fr: any) => { H.Lies_pong(cw, fr);      return true })
+            ;(H as any).Peeroleum_on(w, 'pong', (cw: TheC, _p: TheC, fr: any) => { H.Lies_pong_recv(cw, fr); return true })
 
             w.c.channel_up = true
             console.log(`🔌 Lies channel up [${role}] addr=${role} → ${peer}`)
@@ -286,6 +290,37 @@
             })
             console.log(`📥 run_result: ${path} ${frame.ok ? 'green' : 'red'}`)
             return true
+        },
+
+        // ── ping / pong — the channel heartbeat (proves the envelope path carries) ──
+        //
+        //   Lies_heartbeat fires a ping at most every 3s while the channel is live; the
+        //    peer's 'ping' handler echoes a 'pong' carrying our send-time; our 'pong'
+        //     handler stamps %channel_peer (role + RTT + last) on w:Lies, which the badge
+        //      reads.  No pong ⇒ the slot stays absent|stale and the badge shows no peer —
+        //       which is the honest signal we lacked while only control frames crossed.
+        Lies_heartbeat(w: TheC) {
+            const H = this as House
+            if (!H.Lies_channel_live(w)) return
+            const now = Date.now()
+            if (w.c.last_ping && now - (w.c.last_ping as number) < 3000) return
+            w.c.last_ping = now
+            H.Lies_ping(w)
+        },
+        Lies_ping(w: TheC) {
+            const H = this as House
+            if (!H.Lies_channel_live(w)) return
+            ;(H as any).Peeroleum_send_consumer(w, 'ping', { t: Date.now() })
+        },
+        Lies_pong(w: TheC, fr: any) {   // echo a received ping straight back
+            ;(this as any).Peeroleum_send_consumer(w, 'pong', { t: fr?.t })
+        },
+        Lies_pong_recv(w: TheC, fr: any) {   // our ping came home — the channel is proven
+            const H = this as House
+            const rtt = Date.now() - (fr?.t ?? Date.now())
+            const peer = H.Lies_role(w) === 'editor' ? 'runner' : 'editor'
+            w.oai({ channel_peer: peer }, { rtt, last: Date.now() })
+            console.log(`🛰 channel VERIFIED — pong from ${peer} RTT ${rtt}ms`)
         },
 
     })

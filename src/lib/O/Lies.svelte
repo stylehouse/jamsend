@@ -783,6 +783,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         if (H.Lies_is_editor(w) || H.Lies_is_runner(w)) {
             H.Lies_transport_up(w)
             H.Lies_channel_up(w)
+            H.Lies_heartbeat(w)   // periodic ping → pong proves the channel carries
         }
 
         return true   // Waft layer settled — LiesRealised may proceed
