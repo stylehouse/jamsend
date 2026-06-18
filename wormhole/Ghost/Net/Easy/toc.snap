@@ -15,6 +15,7 @@ Waft:Ghost/Net/Easy
     What:mock
       Doc:Ghost/N/Peeroleum.g
         Point,method:transport
+      Point:seemingly
     What:webrtc-or-not
       What:reliability
         Doc:Ghost/N/Tribunal.g

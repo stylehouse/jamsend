@@ -777,8 +777,13 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
         // Editor↔runner channel: stand up the Peeroleum consumer once, for explicit
         //  editor|runner Runs only.  Bare Lies (plain app, Machinery tests) open no
-        //   socket — Lies_channel_up returns early on role/transport/browser guards.
-        if (H.Lies_is_editor(w) || H.Lies_is_runner(w)) H.Lies_channel_up(w)
+        //   socket — the standups return early on role/transport/browser guards.
+        //  transport_up includes the transport ghosts' .go so Socket_real lands on H;
+        //   channel_up then opens the ws on a following tick (it no-ops until then).
+        if (H.Lies_is_editor(w) || H.Lies_is_runner(w)) {
+            H.Lies_transport_up(w)
+            H.Lies_channel_up(w)
+        }
 
         return true   // Waft layer settled — LiesRealised may proceed
     },

@@ -396,7 +396,9 @@ Pull the `bD`-diff into one primitive all three consume. Then **cross-drive** th
 >    learns to wave off a decoded snap. The latter lets Cyto replay *saved* history,
 >     not just the live run — a big win for surfing.
 
-## 8. ttlilt — seeing what held the step up
+## 8. ttlilt — the wait/wake primitive, and seeing it
+
+### 8.1 Seeing what held the step up
 
 A req arms `req/%ttlilt,until_ts` to ask for time before Story snaps;
  `i_Story_o_req_ttlilt` gathers them onto `Run.o({ttlilt:1})` carrying `of_w` +
@@ -420,6 +422,89 @@ This ties timing to structure: "this step took 6s — these three ttlilts; here 
  are in the tree; here's what each was waiting to write." The TimeSpool slope (§4.3)
   says *whether* a step is getting slower; the ttlilt links say *what* is making it
    slow and *where* it lives.
+
+### 8.2 ttlilt owns the wake — one impulse, not two
+
+§8.1 surfaces ttlilt; this is the deeper move that makes the surfacing total. ttlilt
+ today is **half a timer**. `i_req_ttlilt` (`Hovercraft.svelte:180`) arms
+  `req/%ttlilt,until_ts`, and the header is explicit (lines 172-174): it *"does NOT
+   cause think()/reqyoncile() to re-fire at until_ts — it only tells Story.poll_step
+    this slice of wall-clock isn't quiescent yet."* So ttlilt is the **snap-coherence
+     half**: "don't snap me, I'm waiting until T."
+
+The **wake half** — "ping me at T to re-check" — is *not* ttlilt. It is the scattered
+ raw `setTimeout(() => { req.c.recheck_pending = false; H.feebly_ponder() }, …)`
+  pattern, hand-rolled in every waiting do_fn (Peeroleum's `recheck`, the loader's
+   `repoke`, story_drive's poll loop), each with its own `recheck_pending` dedup flag.
+    So **a waiting do_fn arms two things** — a ttlilt for the snap *and* a
+     setTimeout→feebly_ponder for the wake — saying the same thing twice. That
+      redundancy is the smell.
+
+Fold the wake into ttlilt. `i_req_ttlilt(req, secs)` becomes arm-wait-**and**-wake:
+ the engine keeps **one coalesced timer** at the soonest `until_ts` across all live
+  ttlilts (the publisher `i_Story_o_req_ttlilt` already gathers and sorts soonest-first,
+   line 288 — the soonest is in hand). On expiry it `feebly_ponder`s the owning `w`
+    (→ think → reqdo_sweep → the req's do_fn re-runs) and marks expired ttlilts
+     `timed_out`, as it already does. The do_fn re-checks and either `finish()`es or
+      arms a fresh window. Every `setTimeout(…recheck_pending…feebly_ponder)` and its
+       flag is deleted — one impulse, one particle.
+
+This is what "req-requiring" means: the **wake becomes a property of the req** (carried
+ by its ttlilt), not a free closure capturing it. The req — *a piece of work amongst
+  pieces of work* — owns its own demand for time, fully.
+
+### 8.3 Why this draws a control panel together (and fixes a class of leak)
+
+Two concrete properties fall out of making a timing impulse a particle instead of a
+ closure:
+
+- **Inspectable.** Every pending impulse is a `%req/%ttlilt,until_ts` in the tree, so
+   *the snap is the control panel* of every timing impulse in the machine — which is
+    exactly what §8.1 reads. A `setTimeout` closure is invisible: you cannot snap it,
+     diff it, surf it (§3.2), or reason about it.
+- **Structurally torn down.** Drop the req subtree → its ttlilt (and its share of the
+   coalesced timer) die with it. This is precisely the bug that bit `auto_reset_story`:
+    a story drive leaked because its wake was a free `setTimeout` gated on a bare
+     `.c.driving` flag, not a req-owned ttlilt — so "stop the drive" was a hand-walk
+      that silently no-op'd (it queried `w` one level too high, found nothing, and
+       never set `driving=false`). Make the drive's wake a ttlilt and "stop" becomes
+        "drop the req," which cannot silently fail.
+
+### 8.4 Three timer families — fold the second into the first
+
+1. **ttlilt** — work demanding time / snap-advisory (`Hovercraft`). Already
+    req-attached. ← *gains the wake.*
+2. **recheck `setTimeout`s** — the scattered wake + `recheck_pending` dance. ←
+    *deleted; absorbed into (1).*
+3. **story_drive's poll/do chain** (`Story.svelte`) — the runner's *clock* and the
+    *consumer* of ttlilts (`poll_step → o_Story_req_ttlilt`). ← *stays*: a timer that
+     reads the ttlilts to decide *when to snap* can't itself be a ttlilt without
+      circularity. §15 recasts the *steps it drives* as reqs — whose intra-step waits
+       are then family (1).
+
+Don't over-unify (3) into (1): the snap clock is the one timer that legitimately sits
+ outside the req tree, because it is the thing *watching* the tree.
+
+### 8.5 Tensions to keep coherent
+
+- **Polled-not-mutated** (heading 5's race-freedom): the ttlilt particle stays polled,
+   never mutated in flight. The engine wake re-enters through `feebly_ponder` (think →
+    mutex) — the same path the scattered setTimeouts already take, so it is no *more*
+     racy, just centralized. The only new mutable state is the engine's coalesced timer
+      handle, a `Run.c` ref (off-snap).
+- **Don't re-arm in flight** (line 170): "take a picture of slow work, don't extend"
+   stays. Expiry marks `timed_out` and the snap captures the held-up picture; a re-arm
+    is a *new* slice the do_fn chooses, never a silent extension of the same ttlilt.
+- **Coalesce** to one `Run.c` timer at the soonest `until_ts`, recomputed each publish
+   — falls out of the existing sort, not N timers.
+- **Lifetime against the owning req** (cf §15.4): a ttlilt expires against *its* req and
+   vanishes on that req's `finish()`/drop, never leaking into the next step. The
+    publisher's drop-on-finished-req (lines 242-244) is half of this; the coalesced
+     timer must re-derive from live ttlilts each pass, so a dropped req's wake stops
+      being scheduled.
+
+This is the §15 drive recast seen from the timer side, and a direct instance of §17's
+ "one control engine": the wake is a second timer built beside ttlilt; collapse it in.
 
 ## 9. Islands — the macro map
 
@@ -744,7 +829,9 @@ The drive's troubles — the manual step that won't behave, the not-useful creat
       down — a hand-rolled engine beside the req machine; same fix, stop
        parallelising. ⛑️ lifetimes need care: `req:Step` is one-shot (rest = step
         done), `req:Drive` is eternal (survives ticks), and intra-step ttlilts must
-         expire against *their* `req:Step`, never leak into the next.
+         expire against *their* `req:Step`, never leak into the next — the wake-owning
+          ttlilt (§8.2) makes that lifetime structural: drop `req:Step` and its
+           ttlilt's share of the coalesced timer dies with it.
 
 ---
 
@@ -885,8 +972,10 @@ The Staging list below is ordered for *shippability* (encoder merge first, as a
     ordering; dige it. Then focused probe channels (§2.5).
 8. **Cyto symmetry.** Factor the `bD`-diff into one primitive (§7); cross-drive
     row↔node. Cheap after stage 4, since both read `Snap:cont`/`Snap:refs`.
-9. **ttlilt surfacing.** List held-by ttlilts per step from `Run_trace`; link to
-    req rows (§8).
+9. **ttlilt surfacing + wake.** List held-by ttlilts per step from `Run_trace`; link
+    to req rows (§8.1). Companion: fold the wake into ttlilt (§8.2) — one coalesced
+     engine timer, delete the scattered `recheck`/`setTimeout` sites — so every timing
+      impulse is a particle, droppable with its req. Pairs with the §15 drive recast.
 10. **Fern garden.** Continuity-driven fold predicate + the curl widget; then
      ttlilt unfold-to-reveal lands for free.
 11. **Islands + thumbnails.** Macro map (§9) and pip contact sheet (§10), both

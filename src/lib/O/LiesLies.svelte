@@ -181,7 +181,7 @@
             const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
             const ws = port?.ws as WebSocket | undefined
             if (ws) {
-                const become = () => { try { ws.send(JSON.stringify({ control: 'become', role })) } catch { /* relay down — the no-ack ttlilt retries */ } }
+                const become = () => { try { console.log(`⚡ ws SEND control:become role=${role}`); ws.send(JSON.stringify({ control: 'become', role })) } catch { /* relay down — the no-ack ttlilt retries */ } }
                 if (ws.readyState === WebSocket.OPEN) become()
                 else ws.addEventListener('open', become)   // additive — Socket_real owns ws.onopen
             }
@@ -193,6 +193,32 @@
 
             w.c.channel_up = true
             console.log(`🔌 Lies channel up [${role}] addr=${role} → ${peer}`)
+        },
+
+        // Lies_transport_up — put the transport ghosts on H so Lies_channel_up's
+        //  `typeof Socket_real` guard can pass.  The spine (Peeroleum.g) + carriers
+        //   (Tribunal.g) are not app-under-edit; both editor and runner open the same
+        //    Ghost/N Waft, so we include their compiled .go DIRECTLY — no compile/
+        //     Codebit/Ghostmeta chain — by enrolling each generated component in
+        //      H/{watched:UIs}, exactly as a Pantheate include does.  Otro mounts it,
+        //       its onMount eatfunc deposits Socket_real/Peeroleum_deliver/… onto every
+        //        House.  Idempotent; browser + editor|runner only.  Channel_up no-ops
+        //         until the deposit lands, then opens the ws on a following tick.
+        async Lies_transport_up(w: TheC) {
+            const H = this as House
+            if (w.c.transport_up) return
+            const role = H.Lies_role(w)
+            if (role !== 'editor' && role !== 'runner') return        // bare: no transport
+            if (typeof WebSocket === 'undefined') return               // not a browser
+            w.c.transport_up = true
+
+            const uis = H.oai_enroll(H, { watched: 'UIs' })
+            for (const gen of ['gen/N/Peeroleum.go', 'gen/N/Tribunal.go']) {
+                if (uis.oa({ UI: 'Pantheate-include', gen_path: gen })) continue   // already mounted
+                const module = await import(/* @vite-ignore */ `../../lib/${gen}`)
+                uis.oai({ UI: 'Pantheate-include', gen_path: gen }, { component: module.default })
+            }
+            H.main()   // wake a tick: channel_up re-runs once eatfunc has deposited Socket_real
         },
 
         // Lies_push_dock — editor emit (called from the compile-write path, where the

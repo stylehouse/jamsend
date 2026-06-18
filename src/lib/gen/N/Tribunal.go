@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Tribunal(): string { return '629863cbce4ca045' },
+    Ghostmeta_Ghost_N_Tribunal(): string { return 'cc3cd874c21ffac0' },
 
 
 // Tribunal — a peer connection's reputation, constantly on trial (spec §4.1, §11.2).
@@ -80,16 +80,31 @@ Socket_real(w) {
     let port = {
         type: 'websocket', real: 1, ws,
         send(frame) {
-            if (ws.readyState !== WebSocket.OPEN) { pending.push(frame); return }
+            let h = frame && frame.header
+            if (ws.readyState !== WebSocket.OPEN) { pending.push(frame); console.log(`⚡ ws SEND buffered (socket not open): ${h && h.type}`); return }
+            console.log(`⚡ ws SEND ${h ? h.type + ' seq=' + h.seq + ' → ' + h.to : '(control)'}`)
             ws.send(JSON.stringify(frame))
         },
         recv(frame) { H.Peeroleum_deliver(w, frame) },
         close() { try { ws.close() } catch (e) {} },
     }
-    ws.onopen = () => { let q = pending.splice(0); for (const f of q) ws.send(JSON.stringify(f)) }
+    ws.onopen = () => { console.log(`⚡ ws OPEN ${url} — flushing ${pending.length} buffered`); let q = pending.splice(0); for (const f of q) ws.send(JSON.stringify(f)) }
+    ws.onclose = (ev) => console.log(`⚡ ws CLOSE code=${ev.code} clean=${ev.wasClean}`)
+    ws.onerror = () => console.log(`⚡ ws ERROR (relay down? wrong origin?)`)
     ws.onmessage = (ev) => H.post_do(async () => {
         let frame
         try { frame = JSON.parse(ev.data) } catch (e) { return }
+        // The relay speaks two things over this one socket: Peeroleum envelopes (carry a
+        //  %header, routed by header.to) and its own control frames (role-confirm, error —
+        //   no header).  Only envelopes belong in the deliver path; a control frame has
+        //    nothing to deliver, so route it aside rather than dereference a missing header.
+        if (frame && frame.control) {
+            console.log(`⚡ ws RECV control:${frame.control}${frame.role ? ' role=' + frame.role : ''}`)
+            if (frame.control === 'error') console.warn('relay refused:', frame.error)
+            return
+        }
+        let h = frame && frame.header
+        console.log(`⚡ ws RECV ${h ? h.type + ' seq=' + h.seq + ' ← ' + h.from : '(headerless, dropped)'}`)
         port.recv(frame)
     })
     w.o({ transport: 1, type: 'websocket' })[0].c.port = port

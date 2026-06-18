@@ -4,9 +4,9 @@ story:Editron
   Opt
     noCyto
     For
+    trickle
   TimeSpool
-    TimeTotal:beliefs,avg=0.506
-      sample=0.285,at=1781778219
+    TimeTotal:beliefs,avg=0.566
       sample=0.521,at=1781778240
       sample=0.454,at=1781778735
       sample=0.349,at=1781778854
@@ -16,4 +16,7 @@ story:Editron
       sample=0.573,at=1781779539
       sample=0.931,at=1781780228
       sample=0.635,at=1781780258
-  step,dige:ef7fcf31921356e1
+      sample=0.879,at=1781785451
+  step,dige:e76f953f44c75036
+    note,frontier
+  step=2,dige:82c00a420cd3d70b

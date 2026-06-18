@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return '522080a83967aded' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return 'c7e32b2e79709784' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -38,7 +38,7 @@ async req_p2pman(req) {
 // ── per-identity worker ───────────────────────────────────────────────────────
 // A:Alice/w:Peeroleum — one per identity-presence; owns this address's Piers.
 async Peeroleum(A,w) {
-    w.oai({seemingly: `ya lateringly`})
+    w.oai({seemingly: `ya aooooolly`}, {figaro: "oooolie"})
     // each installed %Peering manages its own Piers via %req:p2paddy
     for (const Peering of this._o_iter(w, [{sc: {Peering: 1}}])) {
         Peering.oai({req: "p2paddy"})
@@ -244,7 +244,9 @@ Peeroleum_send(w, frame) {
     let h = frame.header
     let pier = w.o({Peering:1})[0]?.o({Pier:1})[0]
     if (pier && h.type !== 'ack') pier.oai({outbox: 1}).i({emit: h.seq, type: h.type, seq: h.seq, sent: 1})
-    w.o({active_transport:1})[0]?.c.connection?.send(frame)
+    let conn = w.o({active_transport:1})[0]?.c.connection
+    console.log(`⚡ Peeroleum_send ${h.type} seq=${h.seq} → ${h.to} (transport ${conn ? 'live' : 'MISSING — frame dropped'})`)
+    conn?.send(frame)
 
 },
 // Peeroleum_deliver — the transport handed us an inbound frame (spec §4.3). An ack is

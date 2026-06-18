@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Peregrination(): string { return '1af23cf6a967b2cc' },
+    Ghostmeta_Ghost_Story_Peregrination(): string { return '8c7f93a7168b8124' },
 
 
 // LakeNetherland — the Peeroleum test-case wrangler (the outer test layer).
@@ -98,32 +98,32 @@ Lake_sides_up(w) {
     w.i({reached: "step_2"})
     // stand up both sides: `H i A:..$cap/w:..$cap` lays the actor and its w on the
     //  House in one multi-assigning two-leg, capturing each leg's C (heading L).
-    let {AB, wB} = this._i_drill_caps(this, [{sc: {A: "Alice"}, caps: [{as: "AB", key: "A", val: false}]}, {sc: {w: "Peeroleum"}, caps: [{as: "wB", key: "w", val: false}]}])
-    let {AN, wN} = this._i_drill_caps(this, [{sc: {A: "Bob"}, caps: [{as: "AN", key: "A", val: false}]}, {sc: {w: "Peeroleum"}, caps: [{as: "wN", key: "w", val: false}]}])
+    let {AliceA, Alicew} = this._i_drill_caps(this, [{sc: {A: "Alice"}, caps: [{as: "AliceA", key: "A", val: false}]}, {sc: {w: "Peeroleum"}, caps: [{as: "Alicew", key: "w", val: false}]}])
+    let {BobA, Bobw} = this._i_drill_caps(this, [{sc: {A: "Bob"}, caps: [{as: "BobA", key: "A", val: false}]}, {sc: {w: "Peeroleum"}, caps: [{as: "Bobw", key: "w", val: false}]}])
     // each side: a Peering and a Pier named by the peer's identity (whom this Pier
     //  is a Pier to), plus a mock transport on the Peering's active_transport.
-    let {peerB, pierB} = this._i_drill_caps(wB, [{sc: {Peering: 1, name: "alice"}, caps: [{as: "peerB", key: "name", val: false}]}, {sc: {Pier: 1, pub: "bob"}, caps: [{as: "pierB", key: "pub", val: false}]}])
-    let {peerN, pierN} = this._i_drill_caps(wN, [{sc: {Peering: 1, name: "bob"}, caps: [{as: "peerN", key: "name", val: false}]}, {sc: {Pier: 1, pub: "alice"}, caps: [{as: "pierN", key: "pub", val: false}]}])
+    let {AlicePeering, AlicePier} = this._i_drill_caps(Alicew, [{sc: {Peering: 1, name: "alice"}, caps: [{as: "AlicePeering", key: "name", val: false}]}, {sc: {Pier: 1, pub: "bob"}, caps: [{as: "AlicePier", key: "pub", val: false}]}])
+    let {BobPeering, BobPier} = this._i_drill_caps(Bobw, [{sc: {Peering: 1, name: "bob"}, caps: [{as: "BobPeering", key: "name", val: false}]}, {sc: {Pier: 1, pub: "alice"}, caps: [{as: "BobPier", key: "pub", val: false}]}])
     // wire c.up below w: the belief walk wires A.c.up and w.c.up but NOT the
     //  domain particles under w (Peering/Pier), so a nested req's pump (pier.do())
     //   can't climb to the House to resolve its do_fn. Stamp the chain — the
     //    migration idiom (cf examining.c.up=w, funks.c.up=w). Objects-on-.c → raw JS.
-    peerB.c.up = wB; pierB.c.up = peerB
-    peerN.c.up = wN; pierN.c.up = peerN
-    this.transport(AB,wB)
-    this.transport(AN,wN)
+    AlicePeering.c.up = Alicew; AlicePier.c.up = AlicePeering
+    BobPeering.c.up = Bobw; BobPier.c.up = BobPeering
+    this.transport(AliceA,Alicew)
+    this.transport(BobA,Bobw)
     // each w culls its Piers' acked outbox / done inbox into %recent at the step
     //  boundary (spec §7.4, §12.1) — arm it once per side here.
-    this.Peeroleum_arm_whittle(wB)
-    this.Peeroleum_arm_whittle(wN)
+    this.Peeroleum_arm_whittle(Alicew)
+    this.Peeroleum_arm_whittle(Bobw)
     // pair the two mock-ports so each side delivers into the other (spec §15) —
     //  objects-on-.c stay raw JS.
-    let bport = wB.o({active_transport: 1})[0].c.connection
-    let nport = wN.o({active_transport: 1})[0].c.connection
-    bport.partner = nport; nport.partner = bport
+    let Aliceport = Alicew.o({active_transport: 1})[0].c.connection
+    let Bobport = Bobw.o({active_transport: 1})[0].c.connection
+    Aliceport.partner = Bobport; Bobport.partner = Aliceport
     // one noop A→B off the per-Pier counter (seq 1): carrier + ack proof, no hello.
-    let s = this.Pier_next_seq(pierB)
-    this.Peeroleum_send(wB,{header:{type:'noop', from:'alice', to:'bob', seq:s}})
+    let s = this.Pier_next_seq(AlicePier)
+    this.Peeroleum_send(Alicew,{header:{type:'noop', from:'alice', to:'bob', seq:s}})
 
 },
 // Lake_handshake — step 3: seed %req:handshake on each Pier (the spine's
@@ -169,21 +169,21 @@ async Lake_trial_arm(w) {
     //    carriers, hand the live carrier to webrtc, then probe it A->B. Webrtc is a black
     //     hole (Tribunal.PeerJS), so Bob never hears it and no ack returns -- the
     //      no-ack step 5 gives up on. Park the probe seq on the Pier .c for step 5 to read.
-    let wB = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}])
-    let wN = this._o_drill1(this, [{sc: {A: "Bob"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}])
-    if (!wB || !wN) return
-    this.PeerJS(wB)
-    this.PeerJS(wN)
-    this.Socket(wB)
-    this.Socket(wN)
-    this.Tribunal_pair_websocket(wB,wN)
-    this.Tribunal_hand_to_webrtc(wB)
-    this.Tribunal_hand_to_webrtc(wN)
-    let bpier = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
-    if (!bpier) return
-    let s = this.Pier_next_seq(bpier)
-    bpier.c.webrtc_probe_seq = s
-    this.Peeroleum_send(wB,{header:{type:'noop', from:'alice', to:'bob', seq:s}})
+    let Alicew = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}])
+    let Bobw = this._o_drill1(this, [{sc: {A: "Bob"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}])
+    if (!Alicew || !Bobw) return
+    this.PeerJS(Alicew)
+    this.PeerJS(Bobw)
+    this.Socket(Alicew)
+    this.Socket(Bobw)
+    this.Tribunal_pair_websocket(Alicew,Bobw)
+    this.Tribunal_hand_to_webrtc(Alicew)
+    this.Tribunal_hand_to_webrtc(Bobw)
+    let AlicePier = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
+    if (!AlicePier) return
+    let s = this.Pier_next_seq(AlicePier)
+    AlicePier.c.webrtc_probe_seq = s
+    this.Peeroleum_send(Alicew,{header:{type:'noop', from:'alice', to:'bob', seq:s}})
 
 },
 // Lake_trial_fallback -- step 5: no-ack-then-give-up. The step-4 webrtc probe is still
@@ -193,18 +193,18 @@ async Lake_trial_arm(w) {
 //     paired at step 4), so Bob hears it and acks over its own now-websocket carrier.
 async Lake_trial_fallback(w) {
     w.i({reached: "step_5"})
-    let wB = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}])
-    let wN = this._o_drill1(this, [{sc: {A: "Bob"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}])
-    if (!wB || !wN) return
-    let bpier = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
-    if (!bpier) return
-    let probe = bpier.o({outbox:1})[0]?.o({emit: bpier.c.webrtc_probe_seq})[0]
+    let Alicew = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}])
+    let Bobw = this._o_drill1(this, [{sc: {A: "Bob"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}])
+    if (!Alicew || !Bobw) return
+    let AlicePier = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
+    if (!AlicePier) return
+    let probe = AlicePier.o({outbox:1})[0]?.o({emit: AlicePier.c.webrtc_probe_seq})[0]
     if (probe?.sc.acked) return   // webrtc carried after all -- no fall-back needed
-    this.Tribunal_fall_to_websocket(wB)
-    this.Tribunal_fall_to_websocket(wN)
-    let s = this.Pier_next_seq(bpier)
-    bpier.c.ws_probe_seq = s
-    this.Peeroleum_send(wB,{header:{type:'noop', from:'alice', to:'bob', seq:s}})
+    this.Tribunal_fall_to_websocket(Alicew)
+    this.Tribunal_fall_to_websocket(Bobw)
+    let s = this.Pier_next_seq(AlicePier)
+    AlicePier.c.ws_probe_seq = s
+    this.Peeroleum_send(Alicew,{header:{type:'noop', from:'alice', to:'bob', seq:s}})
 
 },
 // Lake_trial_confirm -- step 6: the relay probe came back acked => the websocket carries.
@@ -215,45 +215,45 @@ async Lake_trial_fallback(w) {
 //      emit (not yet culled) must still carry %acked. Idempotent.
 async Lake_trial_confirm(w) {
     w.i({reached: "step_6"})
-    let wB = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}])
-    let wN = this._o_drill1(this, [{sc: {A: "Bob"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}])
-    if (!wB || !wN) return
-    let bpier = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
-    let ob = bpier?.o({outbox:1})[0]
-    let live = ob?.o({emit: bpier.c.ws_probe_seq})[0]
-    let recent = ob?.o({recent:1})[0]?.o({emit: bpier.c.ws_probe_seq})[0]
+    let Alicew = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}])
+    let Bobw = this._o_drill1(this, [{sc: {A: "Bob"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}])
+    if (!Alicew || !Bobw) return
+    let AlicePier = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
+    let ob = AlicePier?.o({outbox:1})[0]
+    let live = ob?.o({emit: AlicePier.c.ws_probe_seq})[0]
+    let recent = ob?.o({recent:1})[0]?.o({emit: AlicePier.c.ws_probe_seq})[0]
     let acked = (live && live.sc.acked) || !!recent
     if (!acked) return
-    this.Tribunal_reputation_good(wB)
-    this.Tribunal_reputation_good(wN)
+    this.Tribunal_reputation_good(Alicew)
+    this.Tribunal_reputation_good(Bobw)
 
 },
 // Lake_witness — the readable assertion, polled each pass: once Bob's inbox
 //  shows a handled (%done) frame, stamp %witnessed:step_2 (the step rides in the
 //   value — `step` is the Story mainkey, so it can't be a key). Idempotent via the probe.
 Lake_witness(w) {
-    let npier = this._o_drill1(this, [{sc: {A: "Bob"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
-    let landed = this._o_drill1(npier, [{sc: {inbox: 1}}, {sc: {unemit: 1}}])?.sc.done
+    let BobPier = this._o_drill1(this, [{sc: {A: "Bob"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
+    let landed = this._o_drill1(BobPier, [{sc: {inbox: 1}}, {sc: {unemit: 1}}])?.sc.done
     if (landed && !(w.oa({witnessed: "step_2"}))) w.i({witnessed: "step_2"})
     // step 3: both Piers' %req:handshake reached finished (all four leaves done).
-    let bpier = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
-    let bh = bpier?.o({req:'handshake'})[0]
-    let nh = npier?.o({req:'handshake'})[0]
-    if (bh?.sc.finished && nh?.sc.finished && !(w.oa({witnessed: "step_3"}))) w.i({witnessed: "step_3"})
+    let AlicePier = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
+    let Alicehandshake = AlicePier?.o({req:'handshake'})[0]
+    let Bobhandshake = BobPier?.o({req:'handshake'})[0]
+    if (Alicehandshake?.sc.finished && Bobhandshake?.sc.finished && !(w.oa({witnessed: "step_3"}))) w.i({witnessed: "step_3"})
     // step 4: both carriers handed to webrtc, probe sent (still un-acked -- black hole).
-    let wB4 = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}])
-    let wN4 = this._o_drill1(this, [{sc: {A: "Bob"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}])
-    let bat = wB4?.o({active_transport:1})[0]
-    let nat = wN4?.o({active_transport:1})[0]
-    if (bat?.sc.type === 'webrtc' && nat?.sc.type === 'webrtc' && !(w.oa({witnessed: "step_4"}))) w.i({witnessed: "step_4"})
+    let Alicew = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}])
+    let Bobw = this._o_drill1(this, [{sc: {A: "Bob"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}])
+    let Aliceactive = Alicew?.o({active_transport:1})[0]
+    let Bobactive = Bobw?.o({active_transport:1})[0]
+    if (Aliceactive?.sc.type === 'webrtc' && Bobactive?.sc.type === 'webrtc' && !(w.oa({witnessed: "step_4"}))) w.i({witnessed: "step_4"})
     // step 5: webrtc gave no ack -> both fell to the websocket relay (faulty, active ws).
-    let bwr = wB4?.o({transport:1, type:'webrtc'})[0]
-    let nwr = wN4?.o({transport:1, type:'webrtc'})[0]
-    if (bwr?.sc.faulty && nwr?.sc.faulty && bat?.sc.type === 'websocket' && nat?.sc.type === 'websocket' && !(w.oa({witnessed: "step_5"}))) w.i({witnessed: "step_5"})
+    let Alicewr = Alicew?.o({transport:1, type:'webrtc'})[0]
+    let Bobwr = Bobw?.o({transport:1, type:'webrtc'})[0]
+    if (Alicewr?.sc.faulty && Bobwr?.sc.faulty && Aliceactive?.sc.type === 'websocket' && Bobactive?.sc.type === 'websocket' && !(w.oa({witnessed: "step_5"}))) w.i({witnessed: "step_5"})
     // step 6: the relay carries -- both websocket carriers blessed %reputation:good.
-    let bws = wB4?.o({transport:1, type:'websocket'})[0]
-    let nws = wN4?.o({transport:1, type:'websocket'})[0]
-    if (bws?.oa({reputation:'good'}) && nws?.oa({reputation:'good'}) && !(w.oa({witnessed: "step_6"}))) w.i({witnessed: "step_6"})
+    let Alicews = Alicew?.o({transport:1, type:'websocket'})[0]
+    let Bobws = Bobw?.o({transport:1, type:'websocket'})[0]
+    if (Alicews?.oa({reputation:'good'}) && Bobws?.oa({reputation:'good'}) && !(w.oa({witnessed: "step_6"}))) w.i({witnessed: "step_6"})
 
 },
 
