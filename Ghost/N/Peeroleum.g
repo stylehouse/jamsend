@@ -24,7 +24,7 @@ async req_p2pman(req):
 // ── per-identity worker ───────────────────────────────────────────────────────
 // A:Alice/w:Peeroleum — one per identity-presence; owns this address's Piers.
 async Peeroleum(A,w):
-    oai seemingly:`ya aooooolly`...figaro:oooolie
+    oai seemingly:`ya aooooolly`...figaro:11116
     // each installed %Peering manages its own Piers via %req:p2paddy
     S o Peering
         Peering oai %req:p2paddy
@@ -214,7 +214,7 @@ Peeroleum_send(w, frame):
     let pier = w.o({Peering:1})[0]?.o({Pier:1})[0]
     if (pier && h.type !== 'ack') pier.oai({outbox: 1}).i({emit: h.seq, type: h.type, seq: h.seq, sent: 1})
     let conn = w.o({active_transport:1})[0]?.c.connection
-    console.log(`⚡ Peeroleum_send ${h.type} seq=${h.seq} → ${h.to} (transport ${conn ? 'live' : 'MISSING — frame dropped'})`)
+    console.log(`🛰 Peeroleum_send ${h.type} seq=${h.seq} → ${h.to} (transport ${conn ? 'live' : 'MISSING — frame dropped'})`)
     conn?.send(frame)
 
 // Peeroleum_deliver — the transport handed us an inbound frame (spec §4.3). An ack is

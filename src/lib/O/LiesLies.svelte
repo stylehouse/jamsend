@@ -61,6 +61,17 @@
         Lies_is_runner(w?: TheC): boolean { return (this as House).Lies_role(w) === 'runner' },
         Lies_is_editor(w?: TheC): boolean { return (this as House).Lies_role(w) === 'editor' },
 
+        // Lies_channel_live — v1 send-readiness: the channel stood up and a transport
+        //  carrier is wired.  Stands in for Peeroleum_peer_ready while this consumer is
+        //   trust-everything (Lies_channel_up stamps Ud, drives no handshake): we address
+        //    frames to the peer by role and let the relay route-or-drop, rather than gate on
+        //     a handshake the v1 standup never seeds.  Swap back to peer_ready once the real
+        //      hello/trust is driven on the Pier.
+        Lies_channel_live(w: TheC): boolean {
+            const at = w.o({ active_transport: 1 })[0] as TheC | undefined
+            return !!(w.c.channel_up && at?.c.connection)
+        },
+
         // ── run-mode control: in-place vs from-start ──────────────────────────
         //
         //   The editor's preference for what "run it now" (Esc) means:
@@ -104,10 +115,12 @@
             const mode = (e.sc.mode as string) ?? H.Lies_run_mode()
 
             if (H.Lies_is_editor(w)) {
-                // The seam: outward "run <path> [mode]" toward the runner.  Snap the
-                //  last arm; the channel send lands here once the transport is up.
+                // Snap the last arm.  The runner re-runs off the dock_push the compile-
+                //  write emits (Lies_push_dock), so once the channel is live the arm is a
+                //   record, not a wait — only call it "awaiting" when the channel is down.
                 w.oai({ run_arm: 1 }, { path, mode })
-                console.log(`🔪 editor arm-run → ${path} [${mode}] (awaiting channel)`)
+                const live = H.Lies_channel_live(w)
+                console.log(`🔪 editor arm-run → ${path} [${mode}] ${live ? '(channel live — runner runs on dock_push)' : '(awaiting channel)'}`)
                 return
             }
 
@@ -181,7 +194,7 @@
             const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
             const ws = port?.ws as WebSocket | undefined
             if (ws) {
-                const become = () => { try { console.log(`⚡ ws SEND control:become role=${role}`); ws.send(JSON.stringify({ control: 'become', role })) } catch { /* relay down — the no-ack ttlilt retries */ } }
+                const become = () => { try { console.log(`🛰 ws SEND control:become role=${role}`); ws.send(JSON.stringify({ control: 'become', role })) } catch { /* relay down — the no-ack ttlilt retries */ } }
                 if (ws.readyState === WebSocket.OPEN) become()
                 else ws.addEventListener('open', become)   // additive — Socket_real owns ws.onopen
             }
@@ -228,7 +241,7 @@
             const H = this as House
             if (!H.Lies_is_editor(w)) return
             const pier = (w.o({ Peering: 1 })[0] as TheC | undefined)?.o({ Pier: 1 })[0] as TheC | undefined
-            if (!pier || !(H as any).Peeroleum_peer_ready?.(pier)) return
+            if (!pier || !H.Lies_channel_live(w)) return
             ;(H as any).Peeroleum_send_consumer(w, 'dock_push', { path: sc.path, source: sc.source, dige: sc.dige })
             console.log(`📤 dock_push → runner: ${sc.path}`)
         },
@@ -256,7 +269,7 @@
             const H = this as House
             if (!H.Lies_is_runner(w)) return
             const pier = (w.o({ Peering: 1 })[0] as TheC | undefined)?.o({ Pier: 1 })[0] as TheC | undefined
-            if (!pier || !(H as any).Peeroleum_peer_ready?.(pier)) return
+            if (!pier || !H.Lies_channel_live(w)) return
             ;(H as any).Peeroleum_send_consumer(w, 'run_result', { path: sc.path, dige: sc.dige, ok: sc.ok, errors: sc.errors, snap_dige: sc.snap_dige })
             console.log(`📤 run_result → editor: ${sc.path} ${sc.ok ? 'green' : 'red'}`)
         },

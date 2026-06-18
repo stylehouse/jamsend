@@ -1324,12 +1324,10 @@ export class House extends StorableHousing {
                     onlyClimb: onlyClimb.map(r => keyser(r.sc)),
                     onlyWalk:  onlyWalk.map(r => keyser(r.sc)),
                 })
-            } else if (viaWalk.size !== V._req_legs_last) {
-                // quiet confirmation: log only when the count moves, so the walk is
-                //  visibly reaching reqs without spamming every beat.
-                V._req_legs_last = viaWalk.size
-                console.log(`req_legs ✓ ${viaWalk.size} reqs match the climb`)
             }
+            // success is silent: the count oscillates 0↔N every beat, so a "✓ N" line
+            //  per change just floods the console.  The assertion still runs (the walk
+            //   lays req** regardless of logging) — only a climb/walk mismatch is worth a line.
         } catch (err) {
             console.warn(`req_legs assertion errored (non-fatal):`, err)
         }
