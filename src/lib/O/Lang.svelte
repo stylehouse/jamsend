@@ -2,7 +2,7 @@
     // Lang.svelte — ghost for Language / CodeMirror / Lezer integration.
     //
     // This is the high-level "join" ghost.  Most of the compilation guts live
-    // in LangCompiling.svelte (Lang_compile / Lang_compile_step / …); Lang.svelte
+    // in LangCompiling.svelte (Lang_compile / Lang_drain_compile_settles / …); Lang.svelte
     // keeps the per-doc lifecycle (plan / whatsthis / bookmark actions) and
     // threads the compile trigger + reply-polling into that lifecycle.
     //
@@ -295,16 +295,22 @@
         // Declare req spaces so i_Story_o_req_ttlilt finds reqs on %dock particles.
         H.i_scheme_req(w, [{docks: 1}, {dock: 1}])
 
-        // ── reach across to Story's Styles ──────────────────────────
-        // Story persists Styles under its w.c.The/{Styles:1}.
-        // We call The_Styles(storyw) so we get the same TheC.
+        // ── Styles bucket for Cyto ──────────────────────────────────
+        // Prefer Story's shared bucket (w.c.The/{Styles:1}) when the full machine is up, so the
+        //  graph uses the same swatches Story persists. Standalone — the Editron editor or a
+        //   runner — there is NO H:Story, so own our own {Styles:1} on w:Lang: The_Styles' contract
+        //    sanctions a client bringing its own bucket, and Cyto then gets real, autovivifying
+        //     swatches instead of a palette-fallback (a runner folds it via w:Lang %dontSnap).
         const topH    = H.top_House()
         let stylesC: TheC | null = null
-        try {
-            const storyw = topH.o({H:'Story'})[0].Awo('Story', 'Story')
-            stylesC = H.The_Styles(storyw)
-        } catch {
-            console.warn(`Lang: H:Story not present yet — Cyto will palette-fallback`)
+        const storyH = topH.o({ H: 'Story' })[0] as TheC | undefined
+        if (storyH) {
+            // Full machine: share Story's. A throw here is the transient "Story up but its
+            //  .c.The not stamped yet" race — leave null so Cyto palette-falls-back this pass.
+            try { stylesC = H.The_Styles((storyH as any).Awo('Story', 'Story')) }
+            catch { console.warn(`Lang: H:Story present but no The yet — Cyto palette-fallback`) }
+        } else {
+            stylesC = w.oai({ Styles: 1 }) as TheC
         }
 
         // ── commission our own Cyto ─────────────────────────────────
@@ -1974,11 +1980,11 @@
 
         const dock = this.Lang_active_dock(w)
 
-        // compile reply polling — drives Lang_compile_step while job.c.pending
-        // is set (transient); when Lies_compile_settled lands, step clears it.
-        if (dock?.o({ Compile: 1 })[0]?.sc.pending) {
-            await this.Lang_compile_step(A, w)
-        }
+        // Drain compile settles unconditionally — not gated on the active dock, so
+        // a cursorless/headless compile clears its own pending too (the settle names
+        // its dock %path).  This also keeps the o_elvis declaration present every
+        // tick, so a settle always routes here rather than to a missing e_ handler.
+        this.Lang_drain_compile_settles(A, w)
 
         // language picker + gen button — registered fresh each tick so the
         // dropdown reflects the active doc's current language override.

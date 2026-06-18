@@ -20,7 +20,40 @@ Bearing, hello=1/trust=2 on Nearing), every `%outbox/emit,sent,acked` + `protoco
 `%unemit,verified,done,to:<type>`, the step-2 noop culled to `%inbox/recent`/`%outbox/recent`, no
 `%faulty`. Record the diges (Accept/Resnapture) to make it a regression gate.
 
-### → START HERE: record step 4/5/6 diges (transport trial PROVEN thru step 5), then heading 6
+### → START HERE: real websocket transport (heading 10) — editor↔runner is its first customer
+
+**Active direction (settled with the human).** The editor↔runner channel is NOT new construction — it is
+the first real customer of heading 10's websocket transport, so the music-app peers and Lies (editor/runner)
+become two consumers of ONE envelope/transport/ack/faulty machinery. Full settled design under **heading 10**
+below. The determinism worry is moot: a cross-socket wait wraps in a `%req` with `i_req_ttlilt(req,secs,
+{waiting})`, so the step holds open until the ack lands (req finishes) or it times out — the waiting-req is
+the quiescence gate, the in-process `post_do` shortcut is not load-bearing. (The *live* editor↔runner channel
+isn't Story-snapped at all, so it self-drives on `feebly_ponder`; the ttlilt is just the no-ack give-up timer.)
+
+**Build progress (this session):**
+- **[x] (1) Real `/relay` WS server — PROVEN.** `src/lib/server/relay.ts` (`attachRelay`) + a `configureServer`
+   vite plugin in `vite.config.ts`. Two-AP routing, structural loop-safety, set-once browser-commanded role
+    (errorific), single r2r bridge. Proven node-side by `scripts/relay-test.ts` (10/10: same-origin, cross-relay
+     both ways, set-once conflict errors, unknown-addr drop, no loopback) AND live on `vite dev :9091`
+      (`/relay` routed a frame, HTTP 200, HMR intact). `ws` 8.18.2 = vite's existing dep, no new package.
+- **[x] (2) Real WS carrier port — COMPILES.** `Socket_real(w)` + `Tribunal_activate_websocket(w)` in
+   `Ghost/N/Tribunal.g`: a native `WebSocket` to own-origin `/relay?addr=<Peering name>`, send-buffered-until-open,
+    inbound delivery wrapped in `post_do` → `Peeroleum_deliver`. The mock `Socket`/pairing is UNTOUCHED so the
+     Peregrination test keeps its determinism; this is the production path. `lang-compile` clean; not yet run in-app.
+- **[x] (3) Consumer dispatch seam — COMPILES.** `Peeroleum_on(w,type,fn)` (per-w `w.c.on` registry),
+   `Peeroleum_send_consumer(w,type,body)`, `Peeroleum_peer_ready(pier)` in `Ghost/N/Peeroleum.g`;
+    `Peeroleum_pump_inbox` now dispatches non-hello/trust types to the registered handler inside the same
+     inbox/ack/faulty lifecycle. `lang-compile` clean; not yet run in-app.
+- **[ ] (4) Lies as first consumer — NEXT, needs in-app.** Editor emits `dock_push` (the `.go` bytes) on
+   `write_finished`+`w%editor`; runner registers `Peeroleum_on(w,'dock_push',…)` landing via
+    `LiesStore_land_good→drain_good`; `run_result` flows back. Depends on the Editron compile-without-mounting
+     split (gate `Ghost_update_notify` on `!w%editor`). Deliberately NOT written blind — the full House/Story
+      machine has no headless runner yet (heading 1b), so this must be built against a live browser. Precise
+       plan in the session handoff. **The committed `gen/**.go` are stale vs the new `.g`; the loader's dige
+        gate regenerates them on the next in-app run (do not hand-edit gen).**
+
+**Deferred behind that (was the prior next move):** eyeball step 6, Accept/Resnapture steps 2–6 to make
+the diges regression gates, then heading 6 (corruption tests). Still worth doing; just not the active front.
 
 **The webrtc→websocket transport trial (steps 4–6) works in-app** — mocked, step-paced, in
 `Ghost/N/Tribunal.g` (details under **heading 9/10** below). Proven on :9091 through step 5: step 4 hands
@@ -426,8 +459,64 @@ not a wall-clock window (the earlier `ttlilt`+`setTimeout` version raced the sna
    Peerily); it tries and may go `%faulty,reason` visibly. Note the app-level no-ack timeout built here
     stays needed — PeerJS reports connection-level errors for free, not a channel that opens then goes
      silent. Spec §4.1.
-- **10 — real websocket**: a `/relay` WS endpoint on the dev server (:9091) that forwards a signed frame
-   by `header.to` without parsing `body`; client `.c.port` → real WS. Spec §4.1, §11.2, §17.
+- **10 — real websocket** `[~]` ACTIVE: a `/relay` WS endpoint that forwards a signed frame by
+   `header.to` without parsing `body`; client `.c.port` → real WS. Spec §4.1, §11.2, §17. Full settled
+    design ↓.
+
+#### Heading 10 settled design — the editor↔runner channel as Peeroleum's first real customer
+
+**Topology (both servers on localhost, two ports).** Browsers talk only to their **own-origin** `/relay`
+(same-origin WS — sidesteps CORS, mixed-content, Origin checks). The two node relays **bridge each other
+server-to-server** (no CORS at that layer) over **plain ws** to the one with a reachable domain — that is
+the **editor**. One relay dials the other at a **hardcoded** editor endpoint; not a mesh, just a pair.
+
+```
+editor browser ──ws──▶ editor /relay ◀──relay↔relay (plain ws)──▶ staging /relay ◀──ws── staging browser
+   (same origin)         (node)              (no CORS)                (node)         (same origin)
+```
+
+**Routing = two-AP, no ARP / no discovery / no clue-queue.** The 802.11g picture: your relay is the
+**AP**, `header.to` is the **destination address**. A relay reads `header.to`; local socket → deliver;
+else hand it **once** to the peer relay. With exactly two APs, "not local → the other one" is the whole
+routing table. **No-local-socket → drop** (the sender's no-ack `ttlilt` retries); the 5s "ask for clues"
+hold died with ARP.
+
+**Loop-safety is structural, not a flag.** A frame arriving from a **browser** socket may be forwarded
+once to the peer relay; a frame arriving over the **relay↔relay** link is **deliver-local-or-drop, never
+re-forwarded**. Two relays, single hop, asymmetric rule ⇒ a frame cannot go around.
+
+**Role is runtime, browser-commanded, set-once — NO docker/env role config.** `Lies%runner` sends a
+control frame to *its own* server: *become runner-server.* The server locks `role=runner` and opens
+**exactly one** r2r ws-client to the editor's hardcoded domain. The editor is the dial target; `Lies%editor`
+locks it `editor`. A second, conflicting role assignment **throws** (errorific). Decided once, immutable.
+The whole flow is **initiated from the browser by Lies** — the servers are dumb pipes that wake on browser
+traffic, and the r2r link comes up lazily on the first remote-bound frame.
+
+**The four asks to Peeroleum (this spine):**
+1. **App-frame dispatch seam (`Peeroleum_on`)** — generalize `Peeroleum_pump_inbox` so non-protocol
+   `header.type`s route to a per-`w` registered consumer handler (`Peeroleum_on(w,type,fn)` → `w.c.on[type]`,
+    a `.c` seam), keeping the inbox/ack/faulty lifecycle + pre-Ud gate. This is what lets Lies own
+     `dock_push`/`run_result` without editing the spine.
+2. **Consumer emit via `Peeroleum_send` / `%req:send`** — already books the outbox emit + seq for any
+   non-ack frame; a consumer just calls it. If promoted to a Pier-hosted `%req:send`, it hits the **c.up
+    rule** (stamp `Pier.c.up=Peering; Peering.c.up=w` or it silently never pumps).
+3. **Peer-ready signal** — already present: both Piers' `%req:handshake,finished` / `%Ud`. Surface a thin
+   `Peeroleum_peer_ready(pier)` for Lies to `$effect` off; app frames are gated behind it anyway (pre-Ud
+    inbox gate rejects non-hello/noop until handshake completes).
+4. **Real WS on the editor's server** — attach via a `configureServer` vite plugin on the dev `httpServer`
+   (`ws` 8.18.2 is already vite's transitive dep, no new package). **AVOID the phantom**: `vite.config.server.js`
+    points at a `server.ts` that does NOT exist and lists `socket.io` external — half-removed scaffold; do
+     not build on it.
+
+**Where frames originate/land (the Lies side):** editor emit hook = `write_finished` + `w%editor`; runner
+receiver = `LiesStore_good → land_good → drain_good` (the "inotify backend" the comments anticipate). No
+shared OPFS across origins, so the channel carries the `.go` bytes.
+
+**Security / v1 reality.** The runner HAS an Id (it is a peer; `%Peering`/`%Pier` are keyed by it) — identity
+is present, trust *enforcement* is deferred. v1 = **trust-everything**: accept the one runner that connects,
+handshake completes implicitly; hardcoded editor+runner Ids so there is *some* identity to tighten later.
+`%Ud` verification, per-runner authorization, Thangs persistence = future. Runner = a **dev browser tab**
+for v1 (a headless runner still can't mount a fresh `.go` — heading 1b).
 
 ### 11 — Thangs persistence  `[ ]`  (rung 10)
 `w:Thangs,thangs:peerings` / `thangs:identities` (Dexie) drive `req:p2pman` (online identities) and

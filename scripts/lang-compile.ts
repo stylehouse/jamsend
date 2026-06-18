@@ -5,6 +5,11 @@
 //  so a `.g` can be checked without the browser, the Lies pipeline, or a Story
 //  runner. Prints the generated module, or the first compile error + exit 1.
 //
+// It also SYNTAX-CHECKS the generated module (esbuild, loader:'ts', no type-checking)
+//  — because the translator running clean is not proof the JS parses: raw-JS passthrough
+//   can emit a broken brace (a bare multi-line `else` → `} else {}`) that this catches
+//    before it reaches the in-app svelte compile.  PASS now means "module parses".
+//
 // Run:
 //   npm run lang-compile -- Ghost/N/Peeroleum.g          # print the module
 //   npm run lang-compile -- Ghost/N/Peeroleum.g --quiet  # PASS/FAIL + errors only
@@ -15,8 +20,40 @@
 //  free (TheC is type-only there), so no House / $lib runtime is pulled in.
 import { readFileSync } from 'node:fs'
 import { EditorState } from '@codemirror/state'
+import { transform } from 'esbuild'
 import { lang, lang_for_path } from '../src/lib/O/lang/lang'
 import { LANG_COMPILE } from '../src/lib/O/lang/compile'
+
+// The translator emitting a module string is NOT proof the JS parses: raw-JS passthrough can
+//  mangle (a bare multi-line `else` becomes `} else {}`, an unbalanced brace), and the in-app
+//   svelte compile then rejects it with a js_parse_error. So run the generated <script> body
+//    through esbuild — loader:'ts', no type-checking, the loosest possible syntax gate — which
+//     catches exactly that class of break before it ever reaches the browser.  Returns the first
+//      error (with a line number aligned to the .go module), or null when the JS parses.
+function scriptOfModule(mod: string): string {
+	const open = mod.match(/<script[^>]*>/)
+	if (!open) return mod // no wrapper — treat the whole thing as the script
+	const start = open.index! + open[0].length
+	const end = mod.indexOf('</script>', start)
+	const body = mod.slice(start, end < 0 ? undefined : end)
+	const linesBefore = mod.slice(0, start).split('\n').length - 1
+	return '\n'.repeat(linesBefore) + body // pad so esbuild line numbers match the .go module
+}
+
+async function syntaxError(mod: string): Promise<string | null> {
+	try {
+		await transform(scriptOfModule(mod), { loader: 'ts' })
+		return null
+	} catch (e: any) {
+		const errs = e?.errors ?? []
+		if (!errs.length) return String(e?.message ?? e)
+		const m = errs[0]
+		const loc = m.location
+		const where = loc ? ` @ module line ${loc.line}:${loc.column}` : ''
+		const src = loc?.lineText ? `\n    ${loc.lineText.trim()}` : ''
+		return `${m.text}${where}${src}`
+	}
+}
 
 // A throwaway stand-in for the %Compile/%Map TheC the in-app collector writes its
 //  navigation index into. The CLI discards that index — it only wants the
@@ -46,8 +83,17 @@ async function compileOne(file: string, quiet: boolean): Promise<boolean> {
         const body   = lines.map((l: any) => l.text).join('\n')
         const ghost  = { ghostmeta_name: C.Lang_ghostmeta_name(file), source_dige: 'cli' }
         const module = C.Lang_compile_render_module(body, ghost)
+
+        // The translator ran clean — now prove the JS it emitted actually parses.
+        const syn = await syntaxError(module)
+        if (syn) {
+            console.error(`✗ FAIL  ${file}  (generated JS does not parse)`)
+            console.error('  ' + syn.split('\n').join('\n  '))
+            return false
+        }
+
         if (!quiet) { process.stdout.write(module + '\n') }
-        console.error(`✓ PASS  ${file}  (${lines.length} src lines → module ok)`)
+        console.error(`✓ PASS  ${file}  (${lines.length} src lines → module parses)`)
         return true
     } catch (err: any) {
         console.error(`✗ FAIL  ${file}`)

@@ -43,6 +43,55 @@ Socket(w):
         recv(frame) { H.Peeroleum_deliver(w, frame) } }
     w.o({ transport: 1, type: 'websocket' })[0].c.port = port
 
+// Socket_real — the REAL websocket carrier (heading 10), for actual peers across two origins
+//  (editor↔runner). Unlike Socket (the in-process mock the deterministic Story test pairs), this
+//   opens a native WebSocket to our OWN-origin /relay?addr=<our id>; the relay routes by header.to
+//    (locally, or once over the relay↔relay bridge to the other origin). addr is our Peering %name.
+//     The mock stays untouched so the Peregrination test keeps its determinism; this is the
+//      production path, installed by the consumer (Lies) for a real channel. Raw JS: WebSocket +
+//       location + objects-on-.c are all transport seams. Delivery is wrapped in post_do so an
+//        inbound frame off the (async, off-tick) socket lands in Atime, exactly as the mock's
+//         partner.recv does — Peeroleum_deliver then feebly_ponders so a watching do_fn reacts.
+Socket_real(w):
+    const H = this
+    w i %transport,type:websocket
+    // < the live port is a real WebSocket on .c (the transport seam). send buffers until OPEN;
+    //    onmessage parses a frame and delivers it through the same Peeroleum_deliver path.
+    let peering = w.o({ Peering: 1 })[0]
+    let addr = (peering && peering.sc.name) || ''
+    let scheme = (location.protocol === 'https:') ? 'wss' : 'ws'
+    let url = scheme + '://' + location.host + '/relay?addr=' + encodeURIComponent(addr)
+    let pending = []
+    let ws = new WebSocket(url)
+    let port = {
+        type: 'websocket', real: 1, ws,
+        send(frame) {
+            if (ws.readyState !== WebSocket.OPEN) { pending.push(frame); return }
+            ws.send(JSON.stringify(frame))
+        },
+        recv(frame) { H.Peeroleum_deliver(w, frame) },
+        close() { try { ws.close() } catch (e) {} },
+    }
+    ws.onopen = () => { let q = pending.splice(0); for (const f of q) ws.send(JSON.stringify(f)) }
+    ws.onmessage = (ev) => H.post_do(async () => {
+        let frame
+        try { frame = JSON.parse(ev.data) } catch (e) { return }
+        port.recv(frame)
+    })
+    w.o({ transport: 1, type: 'websocket' })[0].c.port = port
+
+// Tribunal_activate_websocket — point the live %active_transport at the websocket carrier WITHOUT
+//  the no-ack trial (cf Tribunal_fall_to_websocket, which also stamps webrtc %faulty). For the
+//   editor↔runner channel the relay is the chosen carrier from the start, so there is no webrtc
+//    probe to demote — just open the relay and carry. Called by the consumer after Socket_real.
+Tribunal_activate_websocket(w):
+    let at = w.o({ active_transport: 1 })[0]
+    let ws = w.o({ transport: 1, type: 'websocket' })[0]
+    if (!at || !ws) return
+    at.sc.type = 'websocket'
+    at.sc.open = 1
+    at.c.connection = ws.c.port       // < .c port handoff (transport seam)
+
 // Tribunal_hand_to_webrtc — repoint the single live %active_transport (the mock carrier
 //  from step 2) at the webrtc port, to start its trial. The active_transport slot is
 //   what Peeroleum_send reads, so handing it a new .c.connection is the whole of "switch

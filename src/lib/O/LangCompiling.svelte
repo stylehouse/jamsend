@@ -17,10 +17,11 @@
     //     to Lies via e:Lies_compiled — Lies owns the
     //     write and optional Pantheate notify.  Stashes dock/Compile/Output.
     //
-    //   Lang_compile_step(A, w)
-    //     Called from Lang(A,w) each tick while job.c.pending is set.
-    //     Drains Lies_compile_settled elvises, clears job.c.pending,
-    //     closes %time, and fires Pantheate_run_method.
+    //   Lang_drain_compile_settles(A, w)
+    //     Called from Lang(A,w) every tick, unconditionally.  Drains
+    //     Lies_compile_settled elvises onto a one-shot req:compiled_is_settled
+    //     per path; the req's do_fn clears job.sc.pending and closes %time once
+    //     that dock is resolvable — active dock or not.
     //
     //   All compile state (%Compile, compile_error) lives on dock — not on w.
     //   compile_write has moved to Lies's w (keyed by path).
@@ -191,9 +192,10 @@ import { LANG_COMPILE } from "./lang/compile"
     //   gen/ target for this path; the module is still rendered (for Output
     //   inspection) but Lies settles immediately without writing.
     //
-    //   job.c.pending (transient) replaces %Pending:1 (snapped).
-    //   req_compile checks job.c.pending to hold Languish; Lang_compile_step
-    //   (e_Lies_compile_settled handler) clears it once Lies settles.
+    //   job.sc.pending (snapped) replaces %Pending:1.
+    //   req_compile checks job.sc.pending to hold Languish; the deferred
+    //   req:compiled_is_settled clears it once Lies settles (via
+    //   Lang_drain_compile_settles, not gated on the active dock).
     //
     //   %Compile/%time stages:
     //     compile — synchronous cost (collect + render + dig), stamped here.
@@ -280,7 +282,7 @@ import { LANG_COMPILE } from "./lang/compile"
             // soft compile — non-Ghost path or non-gen-able codetype (a .ts doc
             //   opened for Point navigation, say).  %Map is built; no gen/
             //   write happens, so no settle elvis will arrive: close the job
-            //   here the way Lang_compile_step would (clear pending, stamp
+            //   here the way req:compiled_is_settled would (clear pending, stamp
             //   %time.all) so req_compile's waiting:gen_write gate releases.
             delete job.sc.pending
             const all_ms = Date.now() - (job.c.compile_t0 ?? Date.now())
@@ -289,40 +291,62 @@ import { LANG_COMPILE } from "./lang/compile"
         H.i_elvisto(w, 'think')
     },
 
-    // ── Lang_compile_step — Lies_compile_settled consumer ────────────────────
+    // ── Lang_drain_compile_settles — Lies_compile_settled consumer ───────────
     //
-    //   Called from Lang(A,w) each tick while any dock has job.c.pending.
-    //   Drains Lies_compile_settled elvises, clears job.c.pending, closes %time.
+    //   Called UNCONDITIONALLY from Lang(A,w) every tick — NOT gated on an active
+    //   dock, because the settle names its own dock %path, so a cursorless/headless
+    //   compile (the loader's heading-0 path) clears its pending just the same.
+    //   The first call also stamps w/{o_elvis:'Lies_compile_settled'}; that
+    //   declaration is the whole reason a settle routes to the main Lang method
+    //   instead of the (deliberately absent) e_Lies_compile_settled — so keeping it
+    //   on the unconditional path means it is always present before any settle, no
+    //   longer the lazy stamp that the old active-dock gate could starve.
     //
-    //   Multi-doc: one settled elvis per doc may arrive in the same tick.
-    //   settle drives from req:Cortex (LiesCortex) — fires after LiesStore_run.
-    async Lang_compile_step(A: TheC, w: TheC) {
-        const H = this
-        const dock = this.Lang_active_dock(w)
-        if (!dock) return
+    //   Capture is cheap and on the settle's own Atime: park the %path (and
+    //   write_ms) on a one-shot req:compiled_is_settled.  The clear is deferred to
+    //   that req's do_fn, so a dock not yet minted just retries rather than the
+    //   settle being dropped.  Multi-doc: one req per settled path.
+    Lang_drain_compile_settles(A: TheC, w: TheC) {
+        const H = this as any
+        for (const ev of H.o_elvis(w, 'Lies_compile_settled')) {
+            const path = ev.sc.path as string
+            if (!path) continue
+            const settle = w.oai({ req: 'compiled_is_settled', path })
+            if (ev.sc.write_ms != null) settle.sc.write_ms = ev.sc.write_ms
+            H.main()
+        }
+    },
+
+    // ── req:compiled_is_settled,path — the deferred pending-clear ─────────────
+    //
+    //   do_fn: dock not minted yet → arm a ttlilt and retry.  This is the only
+    //          reason the clear is a req and not inline — but it is rare: the dock
+    //          + job.sc.pending exist before Lang_compile_dock hands off to Lies,
+    //          which only posts the settle afterward, so the dock is normally there
+    //          on the first pump.  The retry covers a snap-reload race.
+    //          dock present → clear job %pending (releases req_compile's gate),
+    //          close %time (all = job-park→settle wall, write = the carried
+    //          write_ms), emit the ✅ see-line, and drop this one-shot req so it
+    //          leaves the tree+snap and a re-compile re-mints a fresh one.
+    async req_compiled_is_settled(req: TheC) {
+        const H    = this as any
+        const w    = req.c.up as TheC
+        const path = req.sc.path as string
+        const dock = w.o({ docks: 1 })[0]?.o({ dock: path })[0] as TheC | undefined
+        if (!dock) { H.i_req_ttlilt(req, 2.5, { waiting: 'dock' }); return }
 
         const job = dock.o({ Compile: 1 })[0] as TheC | undefined
-        if (!job) throw "!job"
-        if (!job.sc.pending) return
-
-        for (const ev of this.o_elvis(w, 'Lies_compile_settled')) {
-            const settled_path = ev.sc.path as string
-            const docks        = w.o({ docks: 1 })[0] as TheC | undefined
-            const targetDock   = docks?.o({ dock: settled_path })[0] as TheC | undefined
-            if (!targetDock) continue
-            const targetJob = targetDock.o({ Compile: 1 })[0] as TheC | undefined
-            if (targetJob) {
-                // clear in-flight flag — req_compile's ttlilt gate releases
-                delete targetJob.sc.pending
-                // close %time: all = wall time from job-park to settle
-                const all_ms   = Date.now() - (targetJob.c.compile_t0 ?? Date.now())
-                const write_ms = ev.sc.write_ms as number | undefined
-                const time = targetJob.oai({ time: 1 })
-                time.sc.all   = +(all_ms   / 1000).toFixed(3)
-                if (write_ms != null) time.sc.write = +(write_ms / 1000).toFixed(3)
-            }
-            w.i({ see: `✅ compiled ${settled_path}` })
+        if (job?.sc.pending) {
+            delete job.sc.pending
+            // close %time: all = wall time from job-park to settle
+            const all_ms = Date.now() - (job.c.compile_t0 ?? Date.now())
+            const time = job.oai({ time: 1 })
+            time.sc.all = +(all_ms / 1000).toFixed(3)
+            const write_ms = req.sc.write_ms as number | undefined
+            if (write_ms != null) time.sc.write = +(write_ms / 1000).toFixed(3)
         }
+        w.i({ see: `✅ compiled ${path}` })
+        w.drop(req)
     },
 
 //#endregion

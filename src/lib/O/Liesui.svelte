@@ -51,6 +51,20 @@
         })
     })
 
+    // ── role badge ────────────────────────────────────────────────────
+    // The instance's Lies flavour, surfaced ALWAYS-ON (not just as empty-state filler) so a
+    //  runner tab is never mistaken for an editor and vice-versa.  w%runner / w%editor are
+    //   stamped at stand-up (Editron lays Lies%editor; the Story loader lays Lies%runner).
+    //    Relay-connected / peer-ready will join this badge once the websocket client wiring lands.
+    let role = $derived(
+        Lies?.sc?.runner ? 'runner' : Lies?.sc?.editor ? 'editor' : Lies ? 'lies' : ''
+    )
+    const ROLE_TITLE: Record<string, string> = {
+        runner: 'runner — read · compile · include; runs the docks the editor compiles',
+        editor: 'editor — edits & compiles docks; hosts the relay that runners dial in to',
+        lies:   'lies — editor/runner role not yet stamped on this w',
+    }
+
     // ── + Waft form ──────────────────────────────────────────────────
     let waft_form_open = $state(false)
     let new_waft_path  = $state('')
@@ -86,8 +100,11 @@
 
 <div class="ls-ui">
 
-    <!-- header — just the + Waft PeelInput row; no title, no + Now -->
+    <!-- header — role badge (always-on, so a runner tab is unmistakable) + the + Waft row -->
     <div class="ls-header">
+        {#if role}
+            <span class="ls-role ls-role-{role}" title={ROLE_TITLE[role]}>{role}</span>
+        {/if}
         <PeelInput
             label="Waft"
             open={waft_form_open}
@@ -121,9 +138,7 @@
     {#if loaded_docs.length}
         <div class="ls-loaded-section">
             {#each loaded_docs as ld (ld.sc.path)}
-            Yeah!
                 <DocRow {H} w={Lies} doc={ld} {examining} />
-            Yeah!111111
             {/each}
         </div>
     {/if}
@@ -164,7 +179,16 @@
         border: 1px solid #444; border-radius: 4px;
         background: #111; color: #ccc; min-width: 360px;
     }
-    .ls-header { margin-bottom: 0.3rem }
+    .ls-header { margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.4rem }
+    .ls-header :global(.peel-input), .ls-header > :last-child { flex: 1 }
+    .ls-role {
+        font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em;
+        border-radius: 3px; padding: 0.05rem 0.4rem; line-height: 1.5;
+        border: 1px solid currentColor; cursor: help; flex: none;
+    }
+    .ls-role-runner { color: #c4aaee; background: rgba(196, 170, 238, 0.12) }
+    .ls-role-editor { color: #6ad0c0; background: rgba(106, 208, 192, 0.12) }
+    .ls-role-lies   { color: #888;    background: rgba(136, 136, 136, 0.12) }
     .ls-errors {
         background: #300; border: 1px solid #c44; border-radius: 3px;
         padding: 0.3rem 0.5rem; margin-bottom: 0.4rem;

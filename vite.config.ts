@@ -1,5 +1,18 @@
 import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vite';
+import { defineConfig, type PluginOption } from 'vite';
+import { attachRelay } from './src/lib/server/relay';
+
+// Peeroleum's real websocket transport (heading 10): attach the /relay endpoint to the dev
+//  server's http server.  configureServer runs only under `vite dev` (not build), so this is
+//   dev-only; production would call attachRelay() on its own http server.  See src/lib/server/relay.ts.
+function relayPlugin(): PluginOption {
+	return {
+		name: 'peeroleum-relay',
+		configureServer(server) {
+			if (server.httpServer) attachRelay(server.httpServer);
+		},
+	};
+}
 
 // Hosts Vite will serve to beyond localhost (which is always allowed).  Sourced from the
 //  ALLOWED_HOSTS env var — comma-separated, injected by docker-compose's env_file
@@ -12,7 +25,7 @@ const allowedHosts = (process.env.ALLOWED_HOSTS ?? '')
 	.split(',').map(h => h.trim()).filter(Boolean);
 
 export default defineConfig({
-	plugins: [sveltekit()],
+	plugins: [sveltekit(), relayPlugin()],
 	
 	build: {
 		// Generate source maps for production debugging

@@ -1,5 +1,5 @@
-Waft:GhostList,lists,seeded=1781603839925
-  Funkcion:dirlist,interval_ms=8000,walked_at=1781760628629
+Waft:GhostList,lists,seeded=1781603839925,O_defaulted
+  Funkcion:dirlist,interval_ms=8000,walked_at=1781771909101
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -12,6 +12,7 @@ Waft:GhostList,lists,seeded=1781603839925
     Doc:src/lib/Trust.svelte.ts,name:Trust
     Doc:src/lib/Y.svelte.ts,name:Y
     Doc:src/lib/boot.ts,name:boot,noticed_at=1781760628629
+    sub:src/lib/server,name:server
   group:src/lib/O,dir:src/lib/O
     sub:src/lib/O/D,name:D
     sub:src/lib/O/lang,name:lang
@@ -52,3 +53,15 @@ Waft:GhostList,lists,seeded=1781603839925
     Doc:src/lib/O/Interest.svelte,name:Interest,noticed_at=1781620310582
     Doc:src/lib/O/Editron.svelte,name:Editron,noticed_at=1781760628629
     Doc:src/lib/O/WormholeOpfs.svelte.ts,name:WormholeOpfs,noticed_at=1781760628629
+  open_dir:src/lib/O
+  group:Ghost,dir:Ghost
+    sub:Ghost/N,name:N
+    sub:Ghost/Story,name:Story
+    sub:Ghost/test,name:test
+  open_dir:Ghost/N
+  group:Ghost/N,dir:Ghost/N
+    Doc:Ghost/N/Peeroleum.g,name:Peeroleum,noticed_at=1781771905413
+    Doc:Ghost/N/Tribunal.g,name:Tribunal,noticed_at=1781771905413
+  open_dir:Ghost/Story
+  group:Ghost/Story,dir:Ghost/Story
+    Doc:Ghost/Story/Peregrination.g,name:Peregrination,noticed_at=1781771909101

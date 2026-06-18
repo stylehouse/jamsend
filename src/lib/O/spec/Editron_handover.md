@@ -50,3 +50,15 @@ The bare stand-up is freshly testable in a browser (the OOM that blocked it was 
  compiles-without-mounting. (2) Make the runner pick up a fresh `.go` — file-poll first, the
   node-server websocket signal once those sockets land. (3) The headless-include fix is the
    prerequisite for the runner side actually executing it.
+
+## The channel is Peeroleum's heading 10 (settled — see Peeroleum_handover.md)
+
+The editor↔runner handoff is NOT a bespoke socket — it is the **first customer of Peeroleum's real
+ websocket transport** (heading 10). The `.go` bytes ride `dock_push` frames editor→runner, run results
+  ride `run_result` runner→editor, over the one envelope/transport/ack machinery. The dispatch seam is
+   `Peeroleum_on(w,type,fn)`; Lies registers `dock_push`/`run_result`, gated on peer-ready (`%Pier`
+    handshake-finished). Topology: both servers on localhost, each browser → own-origin `/relay`, the two
+     relays bridge server-to-server (no CORS) over plain ws to the editor's domain; role is browser-commanded
+      and set-once (`Lies%runner` compels its server to become the runner-server and dials the editor once).
+       The full settled design — topology, two-AP routing, structural loop-safety, the four asks, v1
+        trust-everything — lives under **heading 10** in `Peeroleum_handover.md`.

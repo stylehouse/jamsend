@@ -308,13 +308,19 @@
         delete funk.sc.walked_at   // a fresh install (incl. after a load) walks at once
         const H = this as House
 
-        // the roots are always listed; the user opens deeper dirs by clicking (each
-        //  becomes an %open_dir child), and those get listed too — a navigable tree.
-        const ROOTS = ['src/lib', 'src/lib/O']
-        const SRC   = /\.(svelte|svelte\.ts|ts)$/
-        // the hive clusters on the filename minus its source suffix, so Lang*|Lies*
-        //  fold onto shared stems rather than all sharing `.svelte`.
-        const stem  = (name: string) => name.replace(/\.(svelte\.ts|svelte|ts)$/, '')
+        // src/lib/O is open by default — seed its %open_dir exactly once per list (tracked by
+        //  sc.O_defaulted) so a brand-new OR an already-persisted GhostList shows the O/ ghosts
+        //   without a click, while a later user collapse still sticks (the one-shot never re-seeds).
+        if (!gl.sc.O_defaulted) { gl.oai({ open_dir: 'src/lib/O' }); gl.sc.O_defaulted = 1 }
+
+        // the roots are always listed; the user opens deeper dirs by clicking (each becomes an
+        //  %open_dir child), and those get listed too — a navigable tree. Ghost/ holds the .g
+        //   docks; src/lib/O rides in as the default-open subdir of src/lib (seeded above), not a root.
+        const ROOTS = ['src/lib', 'Ghost']
+        const SRC   = /\.(svelte|svelte\.ts|ts|g)$/
+        // the hive clusters on the filename minus its source suffix, so Lang*|Lies* fold onto
+        //  shared stems rather than all sharing `.svelte` (and Peeroleum.g → Peeroleum).
+        const stem  = (name: string) => name.replace(/\.(svelte\.ts|svelte|ts|g)$/, '')
 
         funk.c.run = async (host: TheC, _fk: TheC, ww: TheC) => {
             const now = Date.now()
@@ -461,7 +467,7 @@
                     known.sc.kind = 'write'
                     known.sc.at   = Date.now() / 1000
                     // disk_dige on the dock's %Text lives on w:Lang — stamped there
-                    //  by Lang_compile_step when Lies_compile_settled arrives with
+                    //  by req:compiled_is_settled when Lies_compile_settled arrives with
                     //  source_dige.  No cross-world lookup needed here.
                 }
                 console.log(`💾 LiesStore wrote ${path} (${(wr.sc.rw_data as string)?.length ?? 0}c)`)

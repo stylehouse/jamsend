@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return '61673572d58848cc' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return 'cf8234d4ba27c3a9' },
 
 
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -170,6 +170,43 @@ Pier_next_seq(pier) {
     return pier.c.seq
 
 },
+// ── consumer seam (spec heading 10, asks 1–3): the editor↔runner channel and any other app
+//     rides the same envelope/inbox/ack/faulty machinery without editing this spine ──────────
+// Peeroleum_on — register an app-frame handler for a non-protocol header.type on this w. The
+//  serial inbox (Peeroleum_pump_inbox) dispatches a verified frame of that type to fn(w,pier,frame)
+//   inside the SAME lifecycle as hello/trust — pre-Ud gate, verified→done→ack, error→faulty — so a
+//    consumer (Lies: dock_push/run_result) owns its frames here. fn returns false to reject (→
+//     %error→%faulty), exactly like hear_*. The registry is an object on .c (a seam), keyed by type.
+Peeroleum_on(w, type, fn) {
+    w.c.on = w.c.on || {}
+    w.c.on[type] = fn
+
+},
+// Peeroleum_send_consumer — the consumer emit (ask 2): allocate this Pier's next monotone seq, fill
+//  from/to from the Pier identity, and hand {header, ...body} to Peeroleum_send (which books the
+//   %outbox/emit and carries it over the active transport). body holds the app payload (e.g. a dock's
+//    path + .go text); it rides the one envelope untouched — the relay routes on header.to only.
+//     Returns the seq so the caller can watch its %outbox/emit go %acked. (The durable form is a
+//      Pier-hosted %req:send — when built it hits the c.up rule: stamp Pier.c.up=Peering; Peering.c.up=w
+//       or its do_fn silently never pumps. Not built for v1 — the direct call drives via feebly_ponder.)
+Peeroleum_send_consumer(w, type, body) {
+    let pier = w.o({Peering:1})[0]?.o({Pier:1})[0]
+    if (!pier) return
+    let me = pier.c.up.sc.name
+    let seq = this.Pier_next_seq(pier)
+    this.Peeroleum_send(w, Object.assign({ header: { type, from: me, to: pier.sc.pub, seq } }, body || {}))
+    return seq
+
+},
+// Peeroleum_peer_ready — the watchable readiness signal (ask 3): true once this Pier's %req:handshake
+//  has finished (hello+trust both ways). A consumer $effects off it before emitting app frames — and
+//   the inbox's pre-Ud gate already refuses non-hello/noop until then, so this is the affirmative side
+//    of the same coupling.
+Peeroleum_peer_ready(pier) {
+    let hs = pier.o({req:'handshake'})[0]
+    return !!(hs && hs.sc.finished)
+
+},
 // ── transports (spec §4) — one envelope, swappable carrier ────────────────────
 // The mock: in-process, deterministic, tick-driven. Two mock-ports deliver into
 //  each other via a partner ref (paired by the wrangler once both sides stand
@@ -250,8 +287,11 @@ Peeroleum_pump_inbox(w, pier) {
     let ok = !(pre_ud && h.type !== 'hello' && h.type !== 'noop')
     if (ok) {
         next.sc.verified = 1
+        let on = w.c.on && w.c.on[h.type]
         if (h.type === 'hello') ok = H.hear_hello(w, pier, frame) !== false
         else if (h.type === 'trust') ok = H.hear_trust(w, pier, frame) !== false
+        else if (on) ok = on(w, pier, frame) !== false
+        // else (noop, or an unregistered type): nothing to deliver — verified+done, then acked.
     }
     if (ok) {
         next.sc.done = 1
