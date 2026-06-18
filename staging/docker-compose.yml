@@ -38,19 +38,12 @@ services:
     working_dir: /app
     user: "1000:1000"            # uid 1000 — files it writes are yours on the host
     volumes:
-      - ..:/app                  # the worktree root (this file lives in staging/)
-      # Share the dev checkout's installed deps instead of a second npm install in this
-      #  worktree: node_modules is identical between the two (same alpine base, so the
-      #   native binaries match) and rarely changes — this drops the duplicate install.
-      #    Path is relative to THIS file's dir (staging/): ../../jamsend = the sibling dev
-      #     checkout.  (Append :ro if you want staging unable to touch the dev repo's deps.)
-      - ../../jamsend/node_modules:/app/node_modules
-      # ...but keep the BUILD CACHE isolated — the whole premise of a separate worktree.
-      #  Vite's optimizeDeps cache lives at node_modules/.vite, which the shared mount above
-      #   would otherwise make common to both dev servers (reload loops / "outdated optimize
-      #    dep").  A named volume gives staging its own writable .vite.  (.svelte-kit is at
-      #     /app root — already this worktree's own via the ..:/app mount.)
-      - staging-node-vite:/app/node_modules/.vite
+      # The worktree root (this file lives in staging/).  node_modules lives HERE, in the
+      #  worktree — copy the dev checkout's alpine-built deps in instead of a second install:
+      #    cp -a ../jamsend/node_modules .          # run from the worktree root, as your uid
+      #  Owned by your uid (1000) so the uid-1000 container can write node_modules/.vite, and
+      #   fully isolated (its own .vite / .svelte-kit) — no shared-volume permission trap.
+      - ..:/app
     ports:
       - "127.0.0.1:9092:9092"    # localhost only — no LAN, no proxy
     command: npm run dev -- --host 0.0.0.0 --port 9092
@@ -77,9 +70,3 @@ services:
           memory: 256M
     ulimits:
       nofile: 1024
-
-volumes:
-  # Staging's own Vite optimizeDeps cache, kept out of the shared node_modules so the
-  #  two dev servers never fight over node_modules/.vite.  Empty on first `up`; Vite
-  #   repopulates it (one slower first load), then it's warm and isolated.
-  staging-node-vite:
