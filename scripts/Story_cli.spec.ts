@@ -108,7 +108,7 @@ test(`Story_cli: run + dump Book:${BOOK}`, async () => {
         //   A live ttlilt below = async work pending, not quiescent yet (a compile read /
         //   Pantheate include waiting on a deferred beat).  While any are live we TRICKLE
         //   think into every House so those deferred beats fire — even after story_drive
-        //   owns the clock.  Without it the headless run over-drives, quiesces, and the
+        //   owns the clock.  Without it the UIless run over-drives, quiesces, and the
         //   work's ttlilt just times out (the stuck-compile blob).  Self-terminating:
         //   ttlilts drop-on-finish, so the trickle stops once the work lands.  Non-extending
         //   is respected — we only pump, never re-arm; a genuine hang still hits timed_out.

@@ -14,7 +14,7 @@
     //    opens the Waft (from ?W=) — that one action is the Book's single "watch itself start up".
     //
     //  Lies%editor is the explicit counterpart to the runner's Lies%runner: the two ends share the
-    //   same Waft — runner running it headless (read→compile→include), editor editing it (full
+    //   same Waft — runner running it UIless (read→compile→include), editor editing it (full
     //    chrome).  editor:1 / runner:1 are the symmetric flags; today the code branches on !w%runner.
     import { type House } from "$lib/O/Housing.svelte"
     import { onMount } from "svelte"

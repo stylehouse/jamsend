@@ -18,7 +18,7 @@ Started on a `💭 !method: e_Lies_compile_settled` log, ended still unable to c
  In between, peeled the onion one layer at a time — each layer looked like the answer and wasn't:
 
 1. **Compile-settle drain** — `Lies_compile_settled` was stranded (its `o_elvis` drain sat behind
-    an active-dock guard, so the declaration stamp was never written headless). Fixed: an
+    an active-dock guard, so the declaration stamp was never written UIless). Fixed: an
      unconditional `Lang_drain_compile_settles` parks a one-shot `req:compiled_is_settled` that
       clears `Compile.pending` by the settle's own `path`. (`LangCompiling.svelte`, `Lang.svelte`.)
 2. **The {control:role} crash** — the relay's `{control:'role'}` reply (no `header`) was reaching
@@ -128,5 +128,5 @@ DONE this session: bridge carries, `active_transport` live, dock_push is version
    `alice/bob` mock handshake demonstrably works, so driving a *real* `req:handshake` on the Pier in
     `Lies_channel_up` is viable later — it'd light up `hello`/`trust` across the relay for real.
 - The stuck-compile blob (`req:compile,firing` + `ttlilt,waiting:gen_write,timed_out` +
-   `Compile,pending`) recurred live, not just headless — confirm the `req:compiled_is_settled` drain
+   `Compile,pending`) recurred live, not just UIless — confirm the `req:compiled_is_settled` drain
     is actually clearing it in the editor; it's a side-show to the channel but it muddies the snap.

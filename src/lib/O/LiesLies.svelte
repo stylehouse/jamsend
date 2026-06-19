@@ -25,7 +25,7 @@
     //
     //   editor — explicit (H.c.role='editor' or w%editor): full chrome, compiles +
     //            writes, but suppresses the mount (the Pantheate split).
-    //   runner — explicit (H.c.role='runner' or w%runner): headless, mounts + runs,
+    //   runner — explicit (H.c.role='runner' or w%runner): UIless, mounts + runs,
     //            folds the editor-nav apparatus out of its snap.
     //   bare   — neither stamped (the plain app, the Machinery test Runs): the
     //            legacy all-in-one — runs the editor chrome AND mounts/runs.  This

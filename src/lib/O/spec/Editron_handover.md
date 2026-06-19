@@ -22,7 +22,7 @@ Boot it on the dev instance: `/Otro?B=Editron` (add `&W=<Waft>` for a different 
  (staging/docker-compose.yml, port 9092, a git worktree) is only for an isolated source checkout
   that dev's HMR can't disturb — not needed to exercise the feature.
 
-**Still to verify in-app (browser-only, can't be headless-checked):**
+**Still to verify in-app (browser-only, can't be UIless-checked):**
  - **boot-yield / "then we use it".** After the one boot step the Run must stay live and
     interactive. The Run House + its Lies/Lang workers persist (nothing tears them down — `Story`
      only drops H:Story on a *new* activation). Open question: does the editor stay responsive on
@@ -48,11 +48,11 @@ Boot it on the dev instance: `/Otro?B=Editron` (add `&W=<Waft>` for a different 
    `UI:'Pantheate-include'` component, and `req:include` polls `H[Ghostmeta_…]()`. To stop the
     editor taking up the code, gate that notify/include on `!w%editor` (only-on-runner) — the
      editor keeps the compile + the error feedback but drops the mount. NOTE the runner end
-      still has the *headless-include* problem found this session: Pantheate mounts the gen as
-       a UI component whose `onMount`→`eatfunc` injects `Ghostmeta`, and headless renders no
-        UIs, so the runner needs the UI-render (the H%Src idea) or a headless-include shim
+      still has the *UIless-include* problem found this session: Pantheate mounts the gen as
+       a UI component whose `onMount`→`eatfunc` injects `Ghostmeta`, and UIless renders no
+        UIs, so the runner needs the UI-render (the H%Src idea) or a UIless-include shim
          before it can actually run a freshly-compiled `.go`. (See Story_cli_handover.md +
-          the headless compile-timeout findings — the runner's `req:include` ttlilt times out
+          the UIless compile-timeout findings — the runner's `req:include` ttlilt times out
            at `waiting:ghostmeta` because the gen UI never mounts.)
 
 **Cross-instance.** Editor and runner are *different servers* — separate Houses, no shared
@@ -75,7 +75,7 @@ Boot it on the dev instance: `/Otro?B=Editron` (add `&W=<Waft>` for a different 
          side of that signal exists now: Esc arms a run (`Lies_run_arm`, in `LiesLies`), stamping the
           go-run intent (`w%run_arm{path,mode}`) editor-side and, on a runner, invalidating the dock's
            Good + resuming (in-place) or resetting (from-start, the `Story_reset` path); the cross-
-            instance transport (Peeroleum heading 10) is what still has to carry it. (3) The headless-
+            instance transport (Peeroleum heading 10) is what still has to carry it. (3) The UIless-
              include fix is the prerequisite for the runner side actually executing it.
 
 ## The channel is Peeroleum's heading 10 (settled — see Peeroleum_handover.md)

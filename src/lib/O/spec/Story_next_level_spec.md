@@ -835,7 +835,7 @@ The drive's troubles — the manual step that won't behave, the not-useful creat
 
 ---
 
-## 16. Running it headless — the agent as test driver
+## 16. Running it UIless — the agent as test driver
 
 Today a test runs only inside the live browser machine: `Otro` constructs `H:Mundo`,
  calls `may_begin`, wires the child Houses, and `go_busily → think`, all in `$effect`s
@@ -845,7 +845,7 @@ Today a test runs only inside the live browser machine: `Otro` constructs `H:Mun
      drives without the UI, and a runtime it can execute outside the dev server. Three
       pieces, and the order matters.
 
-1. **A programmatic Otro.** Otro is just the app shell. A headless form keeps the
+1. **A programmatic Otro.** Otro is just the app shell. A UIless form keeps the
     House construction and the `think` pump and drops the Svelte mounting and the
      reactive `houses` list — boot, run, emit, exit. The machine is already
       UI-agnostic (ghosts are logic modules; the UI only *watches* via `watch_c`/
@@ -864,17 +864,17 @@ Today a test runs only inside the live browser machine: `Otro` constructs `H:Mun
            into a `path:dige` moment id, so the bundle *is* that moment, frozen.
 
 3. **The drive, scripted.** This is why §15 is the keystone. With the drive a req**
-    (`req:Step`/`req:Drive`), a headless run is a script: hand in the test Waft, run
+    (`req:Step`/`req:Drive`), a UIless run is a script: hand in the test Waft, run
      `until-no-more-on_step`, read the channels (§2) as text, check the Points (§14).
       No UI, no timers — the req machine settles each step and the script reads
        `Snap:H` / `Snap:cont` / `Snap:trace` and the assertion verdicts straight off
         the C tree. The true-text principle (§2) pays off precisely here: the agent
          reads the *same clean channels a human reads*.
 
-What it enables: the agent writes a Story test as a script, runs the bundle headless,
+What it enables: the agent writes a Story test as a script, runs the bundle UIless,
  reads pass/fail plus the failing Point's surf (§14.3) and the diff (§3) as text, and
   iterates — the authoring loop with no human at the browser. CI runs the same bundle.
-   ⛑️ the headless boot needs context shims (no WebRTC, no `/music`, no secure
+   ⛑️ the UIless boot needs context shims (no WebRTC, no `/music`, no secure
     context); scope the bundle to the ghosts a Story run actually touches.
 
 ### 16.1 Refinements, once the runner exists
@@ -887,7 +887,7 @@ The runner is built (`scripts/Story_cli.*`, via vitest's transform instead of th
    everything-at-once: drive the whole Book, then serialise every step. Add a mode that
     stops and dumps at the **first non-fuzz surprise** (§4.2's classifier decides
      fuzz vs genuine), so a long Book under investigation halts on the interesting frame
-      instead of burying it. This is the headless analogue of a debugger breakpoint, with
+      instead of burying it. This is the UIless analogue of a debugger breakpoint, with
        the fuzz classifier as the condition.
 
 - **Diff channels in the pile.** The pile is currently `Snap:H` + the trace channel. Once
@@ -933,7 +933,7 @@ Step back from Story. The same few shapes recur across the whole machine — Lan
  Staging list:
 
 - **Control first.** The drive as a req** (§15) is the keystone: it makes the machine
-   *scriptable* → *headless-runnable* (§16) → *agent-testable*. That loop is what lets
+   *scriptable* → *UIless-runnable* (§16) → *agent-testable*. That loop is what lets
     every later change be verified cheaply, so nothing precedes it.
 - **Substrate next.** One walker, one encoder, channels as true text (§1, §2), with
    the delta (§2.3, §7) riding on top.
@@ -945,7 +945,7 @@ Step back from Story. The same few shapes recur across the whole machine — Lan
 
 The Staging list below is ordered for *shippability* (encoder merge first, as a
  provable no-op). The logic above runs **control → substrate → container → views**,
-  with **headless agent-running (§16) as the early payoff that pays for everything
+  with **UIless agent-running (§16) as the early payoff that pays for everything
    after it.**
 
 ---
@@ -989,7 +989,7 @@ The drive recast (§15) is a **parallel track**, orthogonal to the encoder/chann
  work, and the keystone of the dependency order (§17) — worth doing **first**, not
   just early. Once the drive is a req** you can arm one step at a time and
    run-to-quiescence on demand (the step button, `until-no-more-on_step`); the
-    headless boot + Compile bundle (§16) follow directly, and *that* loop — agent
+    UIless boot + Compile bundle (§16) follow directly, and *that* loop — agent
      writes a test, runs it, reads text, iterates — is what makes every stage below
       cheap to verify. This track touches `story_drive` / `Otro` / the compile
        pipeline, not the snap fixtures, so it ships independently of the merge.

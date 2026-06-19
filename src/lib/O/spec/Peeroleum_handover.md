@@ -48,7 +48,7 @@ isn't Story-snapped at all, so it self-drives on `feebly_ponder`; the ttlilt is 
    `write_finished`+`w%editor`; runner registers `Peeroleum_on(w,'dock_push',…)` landing via
     `LiesStore_land_good→drain_good`; `run_result` flows back. Depends on the Editron compile-without-mounting
      split (gate `Ghost_update_notify` on `!w%editor`). Deliberately NOT written blind — the full House/Story
-      machine has no headless runner yet (heading 1b), so this must be built against a live browser. Precise
+      machine has no UIless runner yet (heading 1b), so this must be built against a live browser. Precise
        plan in the session handoff. **The committed `gen/**.go` are stale vs the new `.g`; the loader's dige
         gate regenerates them on the next in-app run (do not hand-edit gen).**
 
@@ -75,7 +75,7 @@ the carrier to webrtc and probes it (black-holed, un-acked); step 5 is no-ack-th
 (`emit=5,…,acked` / `unemit=5,…,verified,done`); step 6 stamps `%reputation:good`. `witnessed:step_4/5`
 seen. **Next: eyeball step 6, then Accept/Resnapture steps 2–6** so the diges become regression gates
 (every step reshaped — step 4/5/6 are brand new). Then **heading 6** (corruption tests). No wall-clock /
-`ttlilt` in the trial anymore — it's paced by steps, so headless `Story_cli` should no longer time out on it.
+`ttlilt` in the trial anymore — it's paced by steps, so UIless `Story_cli` should no longer time out on it.
 
 Heading 4 — outbox/inbox lifecycle + acks + whittle (spec rung 3, §7 + §12) — ran clean in-app at
 step 3 (the diff matched the expected shape below exactly; the loader regenerated both `.go`). The only
@@ -127,7 +127,7 @@ is hand-written `src/lib/O/test/Peregrination.svelte` (mounted in `Machinery.sve
 (those workers must live in the Run so its own `think`/`reqdo_sweep` pumps the compile chain). Each
 tick `Peregrination(A,w)` runs a `%req:ensure_compiled` per `.g` that:
 1. reads the source — `H.LiesStore_read_good(wLies,'text/Doc',path)`;
-2. mints+wires the dock under `w:Lang/docks` and stamps a **headless** `EditorState.create({doc,
+2. mints+wires the dock under `w:Lang/docks` and stamps a **UIless** `EditorState.create({doc,
    extensions: await lang(lang_for_path(path))})` (lang registry — NOT legacy `O/stho.ts`);
 3. compiles directly — `H.Lang_compile_dock(wLang, dock)` → write → Codebit → Pantheate → include;
 4. polls `H[Lang_ghostmeta_name(path)]`; on confirm stamps `w/%compiled,path` and finishes.
@@ -168,7 +168,7 @@ with a clean quiescent snap: both `req:Codebit`/`req:include` finished, both `%c
 `%req:wrangle` seeded by the compiled wrangler.
 
 The loader, per `.g`: read via `H.LiesStore_read_good(wLies,'text/Doc',path)`, mint+wire the dock
-under `w:Lang/docks`, stamp a **headless** `EditorState.create({doc, extensions: await
+under `w:Lang/docks`, stamp a **UIless** `EditorState.create({doc, extensions: await
 lang(lang_for_path(path))})` (lang registry — `lang/lang.ts`, NOT legacy `O/stho.ts`), then
 `H.Lang_compile_dock(wLang, dock)` — the real collect→render→write→Codebit→Pantheate→include chain,
 **no editor/cursor**.
@@ -178,9 +178,9 @@ Things learned / dead ends:
   Interest cursor is parked on; a bare pull reads the file but mints no dock. The self-sufficient
   path above sidesteps that entirely.
 - The compiler reads the stho parser from the EditorState facet line-by-line
-  (`LangCompiling.svelte:339,478`), so a headless `EditorState` (no view) is enough — the
+  (`LangCompiling.svelte:339,478`), so a UIless `EditorState` (no view) is enough — the
   `e_Lang_editorBegins`/`waiting:cm_mount` editor gate is bypassed.
-- Include does NOT need a special headless step — Pantheate `import()`s the gen module and Otro
+- Include does NOT need a special UIless step — Pantheate `import()`s the gen module and Otro
   mounts it (its `eatfunc` runs, Ghostmeta confirms). **Fixed a real bug**: Pantheate keyed every
   include under one `UI:Pantheate-include` slot (`LiesCortex.svelte:271`), so two simultaneous
   includes collided and only one mounted — now keyed by `gen_path` (`LiesCortex.svelte:271`).
@@ -189,7 +189,7 @@ Currency gate (done): the loader reads the source, computes `dig(text)`, and **s
 when `H.Ghostmeta_<name>() === that dige`** — so a `.g` already compiled+included by a prior test
 reset is reused, while a drifted dige (edited `.g`) recompiles, never masked by a stale prior compile.
 
-Note on "headless": this means **editor-less / cursor-less** compile (no CodeMirror view, no Interest
+Note on "UIless": this means **editor-less / cursor-less** compile (no CodeMirror view, no Interest
 cursor) — but the run is still **in-browser**: Otro must mount the gen components so their `eatfunc`
 runs (= include). A genuinely no-browser run is heading 1b.
 
@@ -211,16 +211,16 @@ registry's `?raw`/`import.meta.glob`/external tokenizer) builds the real stho pa
 the generated module or the first compile error. Validated against the corpus (its output matches
 `gen/test/LangTiles.go` save the ghostmeta dige — and flagged that committed `.go` as stale) and
 already caught a real bug (a hyphen in a bareword peel value). Use it to check every `.g` edit.
-NB: this also means the loader's headless `dock.c.state` stamp (heading 0) could instead call this
+NB: this also means the loader's UIless `dock.c.state` stamp (heading 0) could instead call this
 extracted compile directly — but the in-app **include** still needs the render (1b), so the loader
 keeps driving the real pipeline for now.
 
-### 1b — headless Story-runner  `[ ]`  (the bigger half)
+### 1b — UIless Story-runner  `[ ]`  (the bigger half)
 Include is NOT a blocker — it works in-app (Pantheate import + Otro mount; the slot-collision bug is
-fixed). What remains for a *fully headless* run (no browser) is the Story runner itself, driven by
+fixed). What remains for a *fully UIless* run (no browser) is the Story runner itself, driven by
 `story_drive` via `setTimeout` + GUI (`Story.svelte:1366`+), and the Otro render that mounts gen
-components (a headless run would need to evaluate the gen module's `eatfunc` without a DOM, or drive
-a minimal Otro over the Run's `UIs`). Goal: run a Book to completion headlessly, emitting the
+components (a UIless run would need to evaluate the gen module's `eatfunc` without a DOM, or drive
+a minimal Otro over the Run's `UIs`). Goal: run a Book to completion UIlessly, emitting the
 per-step snap. Surface: `story_drive`/`do_step`/`snap_step`/`advance` (`Story.svelte:1366-1680`),
 `Run.main()`/`beliefs`/`all_clear` (`Housing.svelte.ts:811-860`), `Story_subHouse`
 (`Story.svelte:1034`); stub Cyto waves + Storui buttons. Until this lands, Story verification is
@@ -426,7 +426,7 @@ Decided: keep `%ttlilt` (`Hovercraft.svelte:163-352`); it already IS §13's per-
 global exist in **no** code; the old `demand_time_to_think`/`leave_running_until` global is
 MachPeerily-only and retires with it (heading 12). Don't build §13 — it'd churn every step snap for no
 p2p gain. The only thing that ever bites is a ttlilt expiring before its work finishes; the fix is the
-seconds knob, e.g. `Peregrination.svelte:93` `i_req_ttlilt(req, 2.5, …)` — bump it if headless compile
+seconds knob, e.g. `Peregrination.svelte:93` `i_req_ttlilt(req, 2.5, …)` — bump it if UIless compile
 times out. Don't re-open this rabbit hole.
 
 ### 6 — corruption tests  `[ ]`  (rung 5)
@@ -529,7 +529,7 @@ shared OPFS across origins, so the channel carries the `.go` bytes.
 is present, trust *enforcement* is deferred. v1 = **trust-everything**: accept the one runner that connects,
 handshake completes implicitly; hardcoded editor+runner Ids so there is *some* identity to tighten later.
 `%Ud` verification, per-runner authorization, Thangs persistence = future. Runner = a **dev browser tab**
-for v1 (a headless runner still can't mount a fresh `.go` — heading 1b).
+for v1 (a UIless runner still can't mount a fresh `.go` — heading 1b).
 
 ### 11 — Thangs persistence  `[ ]`  (rung 10)
 `w:Thangs,thangs:peerings` / `thangs:identities` (Dexie) drive `req:p2pman` (online identities) and

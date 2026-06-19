@@ -330,7 +330,7 @@ import { LANG_COMPILE } from "./lang/compile"
     // ── Lang_drain_compile_settles — Lies_compile_settled consumer ───────────
     //
     //   Called UNCONDITIONALLY from Lang(A,w) every tick — NOT gated on an active
-    //   dock, because the settle names its own dock %path, so a cursorless/headless
+    //   dock, because the settle names its own dock %path, so a cursorless/UIless
     //   compile (the loader's heading-0 path) clears its pending just the same.
     //   The first call also stamps w/{o_elvis:'Lies_compile_settled'}; that
     //   declaration is the whole reason a settle routes to the main Lang method

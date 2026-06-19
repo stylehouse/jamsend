@@ -1,6 +1,6 @@
-# Story_cli — notes to self for running Books headless
+# Story_cli — notes to self for running Books UIless
 
-The keeper doc for the headless Story runner. **How to run it + the pile layout live in
+The keeper doc for the UIless Story runner. **How to run it + the pile layout live in
  the header comment of `scripts/Story_cli.spec.ts`** (the `BOOK=…` / `ACCEPT=1` commands,
   the `NNN.got.snap`/`run.json`/`wstory.json` file list, the query examples); the *design*
    it realises is `Story_next_level_spec.md` §16. This file is the **durable gotchas** — the
@@ -15,7 +15,7 @@ The keeper doc for the headless Story runner. **How to run it + the pile layout 
      deposit. And the vitest config is **`.mjs`, not `.ts`** on purpose: a `.ts` config makes
       vite bundle into root-owned `node_modules/.vite-temp` → EACCES under uid 1000. Don't
        "tidy" either of these back.
-- **The House pump is dead headless.** The `$effect.root` (`todo→beliefs` pump, the
+- **The House pump is dead UIless.** The `$effect.root` (`todo→beliefs` pump, the
    `started` flip in `Housing.start`) does NOT flush under node — not even with `flushSync`.
     So the driver cranks Atime by hand: force `h.started = true` and call
      `h._really_answer_calls()` to drain each House's todo, recursing every sub-House (each
@@ -73,7 +73,7 @@ The setTimeout nominally fires at 200ms but actually lands at **~270ms** — ~70
    polls in that window snaps **empty folders**. The browser (busy main thread, timer
     callback delayed further) reliably caught this; node (idle thread, exhaustive `drain()`)
      reliably closed the window first and snapped **full**. Neither is wrong — the test was
-      under-specified, and "headless walked through a pause" was a misread: the trace shows
+      under-specified, and "UIless walked through a pause" was a misread: the trace shows
        the ttlilt *was* honored. The two environments just resolved a coin-flip differently.
 - With `ttl 0.6`: ~400ms of slack. Even with 70ms of jitter the work lands at ~270–318ms,
    far inside the held window, so **both** environments snap the populated state. The req
@@ -86,7 +86,7 @@ The setTimeout nominally fires at 200ms but actually lands at **~270ms** — ~70
   (its comment spells out "snap after until_ts expires, NOT at 150ms"); MundaneStation was
    the one outlier at 0.2 and is now 0.6 (`Mundane.svelte`, `MundaneStation`'s `make`).
     Increasing the ttl is the cheapest determinism lever you have — reach for it before you
-     consider gating the headless drive.
+     consider gating the UIless drive.
 
 Note the populated-snap was always node's behaviour; the on-disk fixtures already match
  (`5/5`). The fix's value is that a **browser** re-run now agrees too — the fixture stops
@@ -108,10 +108,10 @@ Residual: `round=N` (carries `{"mung":["age"]}`) can still drift by ±1 think-pa
    each event positioned by `ms_in_step = ev.t - t0`, kind-coloured (FNV hash → hue), with a
     copy-to-clipboard button. That's the live view when you have the browser.
 
-- **Headless (the pile):** `NNN.trace.txt` now carries the timing too —
+- **UIless (the pile):** `NNN.trace.txt` now carries the timing too —
    `ms-since-step-start | kind | tag`, t0 = first event of the step (same `ms_in_step`
     semantics as Storui). The `traceDump` helper in `Story_cli.spec.ts` emits it. **This
-     column is the headless equivalent of staring at the Storui timeline** — without it you're
+     column is the UIless equivalent of staring at the Storui timeline** — without it you're
       reverse-engineering timing from `+Nms` tags baked into trace messages, which is how the
        MundaneStation race stayed mysterious longer than it should have. When a Book diffs on
         timing, read the trace column first.

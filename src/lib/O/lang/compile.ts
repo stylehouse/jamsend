@@ -2,7 +2,7 @@
 // $lib/O/lang/compile.ts — the pure stho→TS translator.
 //
 // Extracted verbatim from LangCompiling.svelte so it has ONE home and can run
-//  headless (the `lang-compile` CLI, and a future headless Story runner) — not
+//  UIless (the `lang-compile` CLI, and a future UIless Story runner) — not
 //  just inside the in-app Lies pipeline. LangCompiling.svelte imports LANG_COMPILE
 //  and spreads it into its eatfunc, so in-app these run on H exactly as before
 //  (`this === H` at call time: sibling Lang_compile_* calls + this.trace resolve

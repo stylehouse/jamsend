@@ -25,7 +25,7 @@
 //  the snapshot-producing path; this getting-started loop only needs include + call.
 //
 // Tracked in src/lib/O/spec/Peeroleum_handover.md (heading 0). The strict
-//  source_dige currency gate and a headless CLI runner are heading 1 there.
+//  source_dige currency gate and a UIless CLI runner are heading 1 there.
 import { TheC } from "$lib/data/Stuff.svelte"
 import { dig } from "$lib/Y.svelte"
 import { type House } from "$lib/O/Housing.svelte"
@@ -35,7 +35,7 @@ import { onMount } from "svelte"
 
 let { M } = $props()
 
-// Headless EditorState language extensions, resolved via the lang registry
+// UIless EditorState language extensions, resolved via the lang registry
 //  (src/lib/O/lang/lang.ts — the same path Langui uses, so our state matches the
 //  editor's; `.g` → 'stho'). Compilation reads the parser out of the EditorState
 //  facet line-by-line (LangCompiling Lang_stho_parser), so no CodeMirror *view* is
@@ -67,7 +67,7 @@ await M.eatfunc({
     Run_A_Peregrination(this: House) {
         const H = this
         // The Run's authoritative role (read by every actor via Lies_role, incl.
-        //  Pantheate) — runner: headless, mounts + runs the editor's compiled docks.
+        //  Pantheate) — runner: UIless, mounts + runs the editor's compiled docks.
         H.c.role ??= 'runner'   // boot param (?B=) wins; this is the Library-boot fallback
         H.i({ A: 'Peregrination' }).i({ w: 'Peregrination' })
         // runner-flavoured Lies/Lang: read→compile→include only, no developer chrome
@@ -97,7 +97,7 @@ await M.eatfunc({
             setTimeout(() => { if (!req.sc.finished) H.feebly_ponder() }, 250)
         }
 
-        // One do_fn per ensure_compiled req. We compile HEADLESSLY rather than via the
+        // One do_fn per ensure_compiled req. We compile UILESSLY rather than via the
         //  editor: dock-minting is cursor-driven (Lies only pushes dock_content for the
         //  doc the Interest cursor is parked on), so a bare dock_askies reads the file
         //  but never mints a dock. Instead we read the source, mint+wire the dock
@@ -124,7 +124,7 @@ await M.eatfunc({
             const gm = ghostmeta(path)
             if (gm?.() === source_dige) { w.i({ compiled: 1, path }); w.finish(req); return }
 
-            // 3) mint + wire the dock, stamp the headless EditorState (stho language).
+            // 3) mint + wire the dock, stamp the UIless EditorState (stho language).
             const docks = wL.oai({ docks: 1 }); docks.c.up ??= wL
             const dock  = docks.oai({ dock: path }); dock.c.up ??= docks
             if (!dock.c.state) {

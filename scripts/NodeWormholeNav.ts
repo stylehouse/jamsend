@@ -1,4 +1,4 @@
-// NodeWormholeNav — a node-fs nav for w:Wormhole, the headless counterpart to the
+// NodeWormholeNav — a node-fs nav for w:Wormhole, the UIless counterpart to the
 //  browser WormholeNav (which wraps a DirectoryListing from the DirectoryOpener).
 //  Production Housing.svelte.ts can't import node:fs (it's in the browser bundle), so
 //   this lives in the harness and is injected through the A.c.nav seam the Wormhole

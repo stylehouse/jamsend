@@ -28,7 +28,7 @@
     //    the Book that opens one.  Stamped on the LOCAL `h`, never inside the $effect — same
     //     self-retrigger trap as toplevel above.
     // The param LETTER is the authoritative role: ?E=<Book> boots that Book as the EDITOR
-    //  (full Lang chrome — what ?B=Editron did before); ?B=<Book> boots it as a headless RUNNER
+    //  (full Lang chrome — what ?B=Editron did before); ?B=<Book> boots it as a UIless RUNNER
     //   (no w:Lang; Story + the Creduler).  Mundo carries the choice as %book + %boot_role; a Run
     //    House inherits boot_role at Story_subHouse, and a Book recipe only falls back to its own
     //     role when neither param is set (a Library-driven boot).  Computed out here and set on the

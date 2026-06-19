@@ -1,5 +1,5 @@
 // boot_param — read a boot-time parameter, abstracting WHERE it comes from so the same
-//  call works in the browser and in node (the headless Story runner, jsdom or bare):
+//  call works in the browser and in node (the UIless Story runner, jsdom or bare):
 //
 //    • browser:  the URL query string        ?B=Editron&W=Ghost/Net/Easy
 //    • node:     an env var (UPPERCASED name)  B=Editron  W=Ghost/Net/Easy

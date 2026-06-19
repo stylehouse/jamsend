@@ -124,8 +124,8 @@ Two app types, both plain-text bodies:
        allowed (heading 11) are future. One editor, one runner (with its Id), one channel.
 - **Many runners / addressing.** Multi-runner fan-out (a `dock_push` per connected runner over a
    list) waits on the trust/authorisation story above; with one runner, `header.to` is just its Id.
-- **Headless runner.** The runner is a **dev browser tab** for v1, not a no-browser node runner —
-   Peeroleum heading 1b and the Editron handover both note a headless run can't yet mount a fresh
+- **UIless runner.** The runner is a **dev browser tab** for v1, not a no-browser node runner —
+   Peeroleum heading 1b and the Editron handover both note a UIless run can't yet mount a fresh
     `.go` (the gen UI never mounts → include times out). The channel is identical either way; only the
      last hop (which House terminates it) changes when 1b lands.
 

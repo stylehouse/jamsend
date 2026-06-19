@@ -4,7 +4,7 @@
 
 `w:Wormhole` becomes a **layered virtual filesystem with pluggable backends**, so the same
  app code reads/writes the project tree from wherever it lives: a user-picked directory, the
-  node filesystem (headless tests), or — the goal — **OPFS seeded live from github.com**, so
+  node filesystem (UIless tests), or — the goal — **OPFS seeded live from github.com**, so
    the in-browser app carries whatever it wants of the tree with zero setup (no directory
     picker). On top of that, IndexedDB schemas (starting with **Identities**) sync through the
      same contract so you can *switch who you are*; and a user's identity record lives inside
@@ -44,7 +44,7 @@ Express **seeding** as a read-only lower layer, and **records** (Identities) as 
     is why `scripts/NodeWormholeNav.ts` lives in `scripts/` and the runner sets `WA.c.nav`
      before the worker first runs. Do not "tidy" it into `Housing.svelte`.
 - **`story_save` writes `toc.snap` on EVERY run, not just `ACCEPT`** (Story.svelte ~1759). Before
-   the overlay, that meant every plain headless run dirtied `wormhole/Story/<Book>/toc.snap`
+   the overlay, that meant every plain UIless run dirtied `wormhole/Story/<Book>/toc.snap`
     (TimeSpool sample drift). The node overlay sends those writes to the sandbox, so plain runs
      leave the tree pristine; only `ACCEPT` lets `wormhole/` writes pass through to the real repo.
 - **Booting a compile-pipeline Book writes real source.** Lies compiles docks and writes
@@ -108,7 +108,7 @@ Then the browser counterpart: realised OPFS hands back a `FileSystemDirectoryHan
 
 ## Next move
 
-1. **Verify in the real app on :9091.** Browser-only (OPFS + fetch), so it can't be headless-checked
+1. **Verify in the real app on :9091.** Browser-only (OPFS + fetch), so it can't be UIless-checked
     the way the node backend was. With no local dir open, the cloud auto-mounts — confirm the Library
      loads (no more `empty snap` spam), a Story book runs from the seed, and a save survives reload
       (lands in `scratch/`). Watch the one Trees call + raw fetches in devtools; confirm no second API

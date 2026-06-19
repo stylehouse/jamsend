@@ -1,4 +1,4 @@
-// scripts/lang-compile.ts — headless stho→TS compile check.
+// scripts/lang-compile.ts — UIless stho→TS compile check.
 //
 // Builds the REAL stho parser (the lang registry) and runs the REAL translator
 //  (the extracted lang/compile.ts — same code the in-app ghost spreads onto H),

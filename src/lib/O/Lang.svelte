@@ -1995,7 +1995,7 @@
         const dock = this.Lang_active_dock(w)
 
         // Drain compile settles unconditionally — not gated on the active dock, so
-        // a cursorless/headless compile clears its own pending too (the settle names
+        // a cursorless/UIless compile clears its own pending too (the settle names
         // its dock %path).  This also keeps the o_elvis declaration present every
         // tick, so a settle always routes here rather than to a missing e_ handler.
         this.Lang_drain_compile_settles(A, w)
