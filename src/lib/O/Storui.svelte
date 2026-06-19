@@ -194,6 +194,7 @@
 
     let diff_mode   = $state<DiffMode | null>(null)
     let show_trace = $state(false)
+    let copy_trace = $state(false)   // "include trace" — fold each step's Run_trace into the copied diff block
     let sticky_mode = $state<DiffMode | null>(null)
 
     // ── stash: persist open pip, diff mode, and expanded across reloads ──────
@@ -594,6 +595,20 @@
         return () => window.removeEventListener('keydown', handler)
     })
 
+    // trace_lines: serialise a Run_trace to position-indented label lines — the same
+    //  time-scaled shape the per-step ⎘ copy-trace button shows.  `pad` prefixes each
+    //   line so the trace can nest under a Step inside a copied Dif block.
+    function trace_lines(events: TraceEvent[], pad = ''): string[] {
+        if (!events?.length) return []
+        const t0 = events[0].t, span = (events.at(-1)!.t - t0) || 1
+        const COLS = 60
+        return events.map(ev => {
+            const pos   = Math.round((ev.t - t0) / span * (COLS - 1))
+            const label = `${ev.kind}${ev.tag ? ':' + ev.tag : ''}`
+            return pad + ' '.repeat(pos) + label
+        })
+    }
+
     // collect_range: build the multi-step Dif block and copy to clipboard.
     //
     //   All pure diff work delegated to T (Textures methods on H):
@@ -613,6 +628,13 @@
 
             const Step     = live_step(n)
             const got_snap = Step?.sc.got_snap as string | undefined
+
+            // include trace: fold the step's Run_trace in under the Step header — before
+            //  the Snap block, so a no-diff step still carries its trace (the whole point).
+            if (copy_trace) {
+                const tr = Step?.sc.Run_trace as TraceEvent[] | undefined
+                if (tr?.length) { all_lines.push(`  Trace`); all_lines.push(...trace_lines(tr, '    ')) }
+            }
 
             if (!Step) {
                 all_lines.push(`  Snap,not_run`)
@@ -1068,6 +1090,9 @@
                             <button class="sr-diffrange collecting" onclick={cancel_collect}>
                                 pick end ×
                             </button>
+                            <label class="sr-inctrace" title="fold each step's trace into the copied block (the whole content where there's no diff)">
+                                <input type="checkbox" bind:checked={copy_trace} /> trace
+                            </label>
                         {:else}
                             <button class="sr-diffrange" onclick={start_diff_collect}>copy diff</button>
                         {/if}
@@ -1244,12 +1269,7 @@
             <span class="sr-trace-axis-lbl">trace</span>
             <span>{span.toFixed(1)}ms</span>
             <button class="sr-trace-copy" onclick={async () => {
-                const lines = events.map(ev => {
-                    const pos   = scale(ev.t)
-                    const label = `${ev.kind}${ev.tag ? ':' + ev.tag : ''}`
-                    return ' '.repeat(pos) + label
-                })
-                try { await navigator.clipboard.writeText(lines.join('\n') + '\n') } catch {}
+                try { await navigator.clipboard.writeText(trace_lines(events).join('\n') + '\n') } catch {}
             }} title="copy trace">⎘</button>
         </div>
         {#each events as ev, i}
@@ -1581,6 +1601,8 @@
     padding:0 6px; line-height:15px;
 }
 .sr-trace-btn.active { background:#0e1e18; border-color:#2a4a3a; }
+.sr-inctrace { display:inline-flex; align-items:center; gap:3px; font-size:11px; color:#4a7a64; cursor:pointer; user-select:none; }
+.sr-inctrace input { margin:0; accent-color:#2a4a3a; }
 .sr-trace {
     font-family:'Berkeley Mono','Fira Code',ui-monospace,monospace;
     font-size:10px; line-height:1.4; background:#090909;

@@ -174,6 +174,26 @@
             { req: 'Codebit', path, maz: 2 },
             { gen_path, source_dige, dige, permanent: 1 },
         )
+
+        // Unchanged recompile: a permanent+finished Codebit whose {gen_path, source_dige,
+        //  dige} are all identical produces no diff, so maybe_mutate_sc returns before
+        //  touching %finished — the Codebit stays finished, do() skips it, and req_Codebit
+        //  never re-fires its Lies_compile_settled.  Without it, Lang_compile_dock's
+        //  job.sc.pending never clears: req:compile wedges firing, its 150ms trickle burns
+        //  CPU, and e_Lang_compile then skips every later compile on the stuck pending.
+        //  So settle directly here.  The gen is already on disk — written this very pass at
+        //  Lies_send_gen_write / LiesStore_write above, before this oai — so the settle's
+        //  on-disk precondition is guaranteed, not "probably from before".  We deliberately
+        //  skip req_Codebit's other landing (Ghost_update_notify): an unchanged source_dige
+        //  is already the mounted version, so req:include would confirm-not-remount anyway.
+        //  A changed dige un-finishes the Codebit (diff → delete %finished) and takes the
+        //  normal req_Codebit path below — so exactly one settle fires either way.
+        if (had_cb && cb.sc.finished) {
+            H.feebly_elvisto('Lang/Lang', 'Lies_compile_settled', { path, source_dige })
+            H.i_elvisto(w, 'think')
+            return
+        }
+
         if (had_cb) delete cb.sc.write_finished
         cb.c.write_t0 = Date.now()
         // The relay write has no LiesStore_write req for req_Store phase-1 to hand off from, so

@@ -306,21 +306,29 @@
     //   mix_sc shows which keys changed, with old→new when old value is known from %mutated.
     req_diag(req: TheC, sc: { see?: string, mix_sc?: Record<string,any> } = {}): string {
         const mk    = this.mainkey(req)
-        const ident = mk ? `${mk}:${req.sc[mk]}` : keyser(req.sc)
+        // clip: keep the trace legible.  A long scalar — e.g. a whole compiled %text
+        //  payload on a req:text_mutated — was dumped in full (twice: the ~change AND the
+        //   rest), burying entire steps of trace under one value.  Elide to a one-line head
+        //    + char count instead; short values render unchanged.
+        const clip = (v: any) => {
+            const s = typeof v === 'string' ? v : objectify(v, -1)
+            return s.length > 60 ? `${s.slice(0, 40).replace(/\n/g, '⏎')}…(${s.length}c)` : s
+        }
+        const ident = mk ? `${mk}:${clip(req.sc[mk])}` : keyser(req.sc)
         let parts   = [ident]
         if (sc.see) parts.push(sc.see)
         if (sc.mix_sc && Object.keys(sc.mix_sc).length) {
             // show old→new for keys that were mutated
             const mutated = req.sc.mutated as Record<string,any> ?? {}
             const changes = Object.entries(sc.mix_sc)
-                .map(([k, v]) => k in mutated ? `${k}:${mutated[k]}→${v}` : `${k}:${v}`)
+                .map(([k, v]) => k in mutated ? `${k}:${clip(mutated[k])}→${clip(v)}` : `${k}:${clip(v)}`)
                 .join(',')
             parts.push(`(~${changes})`)
         }
         // remaining req.sc keys beyond the mainkey
         const rest = Object.entries(req.sc)
             .filter(([k]) => k !== mk && k !== 'mutated')
-            .map(([k, v]) => `${k}:${objectify(v,-1)}`)
+            .map(([k, v]) => `${k}:${clip(v)}`)
             .join(',')
         if (rest) parts.push(rest)
         return parts.join('   ')
