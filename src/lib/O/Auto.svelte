@@ -233,7 +233,7 @@
                 // …and report the real verdict back to the editor over the channel, for the dock
                 //  the last rungo fired on (the runner's Creduler Lies holds awaiting_verdict).
                 const liesW = H.o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] as TheC | undefined
-                if (liesW) H.Lies_runner_verdict(liesW)
+                if (liesW) H.Lies_runner_verdict(liesW, bname)
             }
             // < future: auto-advance to next book in Library order
         }

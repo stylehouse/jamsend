@@ -224,7 +224,12 @@ This is the big shift from §1's "Pantheate include in the Run". The runner no l
           reads red until they're re-recorded). Caveat unchanged: headless is blocked on the include problem,
            so "remotely" = a second browser tab, not node (v1).
 3. **Phase 2 — in the Waft as Funkcions, red|green.** Spec'd in §5d below. Triggering is solved; the unbuilt
-    bit is the binding (Story step/run-result → Funkcion pass/fail → red|green decoration).
+    bit is the binding (Story step/run-result → Funkcion pass/fail → red|green decoration). **Partial landed:**
+     the editor's `.ls-health` card is now the at-a-glance verdict — step-level `{passed}/{total} {Book}`
+      (e.g. `2/5 Peregrination`), green only when every step passed, open by default (`Liesui.svelte`). This is
+       the reusable cell decoration the Waft Funkcions will wear (§5e "matrix IS a Waft"); the `book` field now
+        rides the `%run_result` wire to label the row. The dock-level all-or-nothing badge that read a misleading
+         `0/1 docks green` for a partial pass is gone — step granularity is the honest read.
 
 Then return to Interest.
 
@@ -292,6 +297,25 @@ The Creduler accrues credibility (Credulate HEAD + Credulation trail) but today 
 **Build order:** (a) Funkcion→Book/dock bind (§5d first slice); (b) editor→runner "become Book" frame +
  `localStorage` persist; (c) the start==end version guard feeding the matrix; (d) the `run_phase` progress
   relay last.
+
+**The matrix IS a Waft — don't build a grid widget.** The instinct to render an HTML `<table>` is the
+ wrong altitude; the matrix is already the Waft you navigate. The minimal honest shape, all in existing
+  particles, ≤20 lines of *display*:
+- **A cell is a `%run_result`.** The verdict wire already lands `%run_result{path}` on the editor's
+   `w:Lies` carrying `ok_pct`/`done`/`dige`/`book` (the `book` field landed with the `.ls-health` step
+    badge — `Lies_report_result`→`Lies_run_result_recv`). Row = `book`, column = `path` (the Doc), value =
+     `{dige, ok_pct, done}`. The grid is `run_results` grouped by `(book, path)` — a `$derived`, not a store.
+- **The cell colour is the `.ls-health` step badge, reused.** `{rr_pass}/{rr_total}` green-when-equal is the
+   cell; the matrix is just that chip laid out `book × path`. One Funkcion per row (§5d first slice) reads
+    its row's `run_result` and colours its embed — the Funkcion IS the cell, so the "grid" is whatever
+     layout the Waft gives its Funkcions. No table.
+- **Nondeterminism / relevancy ride as cell sc, not new structure.** Seen-both-✓-and-✗-at-one-`dige` is a
+   flag on the `%run_result` (set when a second verdict for the same `(book,path,dige)` disagrees — guard
+    with the §6 start==end check so HMR-drift isn't mistaken for it). Relevancy is "this `(book,path)` pair
+     has a `run_result` at all" (observed) ∪ a Funkcion's declared `%of_dock` (so a never-run column shows).
+- **First build = the §5d first slice, unchanged.** One Funkcion, `%of_dock:<path>`, reads that dock's
+   `%run_result` and shows the step badge red|green|working. The matrix is N of those on one `Waft:Credence`;
+    nothing matrix-specific exists until per-row grouping is needed, and even then it's a `$derived` group-by.
 
 ## 6. Creduler — open slices
 

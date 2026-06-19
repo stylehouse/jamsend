@@ -93,13 +93,29 @@
     let peer_clash  = $derived(live_face.length > 1)
     let peer_age_s  = $derived(face?.sc?.last ? Math.round((now - (face.sc.last as number)) / 1000) : null)
 
-    // ── Cred — code credibility at a glance: the runner's green/red per dock ──
+    // ── Cred — code credibility at a glance: is there any verdict to show yet? ──
     let cred_total = $derived(run_results.length)
-    let cred_green = $derived(run_results.filter(r => r.sc?.ok).length)
     const base = (p: any) => String(p ?? '').split('/').pop()
 
+    // ── the verdict, step-level — the honest "this test passes" count ──────
+    //   A dock's %run_result carries done (the Story's step count) + ok_pct (fraction
+    //    of steps that stamped %ok); ok_pct*done is the passing steps, mirroring the
+    //     runner's tlog.  We roll up across docks so the card reads "{passed}/{total}
+    //      {Book}" — a partial pass shows as 4/5, NOT collapsed to a red "0/1 docks
+    //       green" (the per-dock ok is all-or-nothing, which read as failing when one
+    //        step of five was stale).  book rides the frame from storyFinished.
+    const rr_pass  = (rr: TheC) => Math.round(Number(rr.sc?.ok_pct ?? (rr.sc?.ok ? 1 : 0)) * Number(rr.sc?.done ?? 1))
+    const rr_total = (rr: TheC) => Number(rr.sc?.done ?? 1)
+    let steps_pass  = $derived(run_results.reduce((n, rr) => n + rr_pass(rr), 0))
+    let steps_total = $derived(run_results.reduce((n, rr) => n + rr_total(rr), 0))
+    let all_green   = $derived(steps_total > 0 && steps_pass === steps_total)
+    // the Book under test — the latest run_result carrying a book label (one runner, v1).
+    let verdict_book = $derived(run_results.find(r => r.sc?.book)?.sc?.book as string | undefined)
+
     // ── health card expand (Vexpandy block mode) ─────────────────────
-    let health_open = $state(false)
+    //   Opens by default: the channel + verdict glance is the panel's headline, so a
+    //    runner tab reads "does my pushed code pass?" without a click.
+    let health_open = $state(true)
 
     // ── + Waft form ──────────────────────────────────────────────────
     let waft_form_open = $state(false)
@@ -155,15 +171,17 @@
     </div>
 
     <!-- Cred readout — the runner's verdict per dock (%run_result over the channel).  Shows how
-         credible the code you're pushing is: ✓ green / ✗ red(N), plus a pass count.  Empty until a
-         run_result comes home, so it's quiet on a fresh editor / a bare Lies. -->
+         credible the code you're pushing is: step pass-count per dock, green when every step
+         passed.  Step-level (not the all-or-nothing dock ok) so it agrees with the .ls-health
+         headline; the runner's .ls-health card is the at-a-glance home, this is the detail strip.
+         Empty until a run_result comes home, so it's quiet on a fresh editor / a bare Lies. -->
     {#if cred_total}
         <div class="ls-cred" title="code credibility — the runner's verdict on the versions you pushed">
-            <span class="ls-cred-h" class:all-green={cred_green === cred_total}>🧪 {cred_green}/{cred_total}</span>
+            <span class="ls-cred-h" class:all-green={all_green}>🧪 {steps_pass}/{steps_total}</span>
             {#each run_results as rr (rr.sc.path)}
-                <span class="ls-cred-dock" class:ok={rr.sc.ok} class:bad={!rr.sc.ok}
-                      title="{rr.sc.path} @ {String(rr.sc.dige ?? '').slice(0,8)} — {rr.sc.ok ? 'green' : `red (${rr.sc.errors} err)`}">
-                    {rr.sc.ok ? '✓' : '✗'} {base(rr.sc.path)}{#if !rr.sc.ok && rr.sc.errors}&nbsp;{rr.sc.errors}{/if}
+                <span class="ls-cred-dock" class:ok={rr_pass(rr) === rr_total(rr)} class:bad={rr_pass(rr) !== rr_total(rr)}
+                      title="{rr.sc.path} @ {String(rr.sc.dige ?? '').slice(0,8)} — {rr_pass(rr)}/{rr_total(rr)} steps{rr.sc.errors ? `, ${rr.sc.errors} err` : ''}">
+                    {rr_pass(rr) === rr_total(rr) ? '✓' : '✗'} {base(rr.sc.path)}&nbsp;{rr_pass(rr)}/{rr_total(rr)}
                 </span>
             {/each}
         </div>
@@ -227,7 +245,9 @@
          status readout that used to float over the Lang minimap.  It now lives in Lies, its
          more natural home, pinned to the panel's bottom-right with a Vexpandy to tuck it slim
          so it never buries the waft list.  The peer is the faced role — an editor watches its
-         runner, a runner watches its editor; the verdict glance reuses the Cred count. -->
+         runner, a runner watches its editor.  It carries the headline verdict glance — the
+         step-level "this test passes" badge ({passed}/{total} {Book}) — and opens by default so a
+         glance answers "did my pushed code pass?" without a click. -->
     {#if expect_peer}
         <div class="ls-health" class:ls-health-live={peer_live} class:ls-health-open={health_open}>
             <div class="ls-health-line">
@@ -237,6 +257,14 @@
                     <span class="ls-health-rtt" title="bridged round-trip">{peer_rtt}ms</span>
                 {/if}
                 {#if peer_clash}<span class="ls-health-clash" title="{live_face.length} {expect_peer}s live — verdicts may disagree">⚠{live_face.length}</span>{/if}
+                <!-- the verdict glance — the headline.  Steps passed / total, with the Book.
+                     Green only when every step passed; a partial pass reads honestly (4/5). -->
+                {#if steps_total}
+                    <span class="ls-health-pass" class:all-green={all_green}
+                          title="{steps_pass} of {steps_total} steps passed on the runner — green only when all do">
+                        🧪 {steps_pass}/{steps_total}{#if verdict_book}&nbsp;{verdict_book}{/if}
+                    </span>
+                {/if}
                 <Vexpandy bind:expanded={health_open} />
             </div>
             {#if health_open}
@@ -245,11 +273,14 @@
                     {:else if face}silent {peer_age_s}s — no pong
                     {:else}no {expect_peer} has connected{/if}
                 </div>
-                {#if cred_total}
-                    <div class="ls-health-verdict" class:all-green={cred_green === cred_total}>
-                        🧪 {cred_green}/{cred_total} docks green
+                <!-- per-dock breakdown — each pushed dock's step pass count, so a multi-dock
+                     run shows which dock is dragging the roll-up red. -->
+                {#each run_results as rr (rr.sc.path)}
+                    <div class="ls-health-dock" class:all-green={rr_pass(rr) === rr_total(rr)}
+                         title="{rr.sc.path} @ {String(rr.sc.dige ?? '').slice(0,8)}">
+                        {rr_pass(rr) === rr_total(rr) ? '✓' : '✗'} {rr_pass(rr)}/{rr_total(rr)} {base(rr.sc.path)}
                     </div>
-                {/if}
+                {/each}
             {/if}
         </div>
     {/if}
@@ -286,7 +317,7 @@
         color: #678; z-index: 6;
     }
     .ls-health-live  { border-color: rgba(106, 208, 192, 0.3); }
-    .ls-health-line  { display: flex; align-items: center; gap: 0.3rem; }
+    .ls-health-line  { display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap; }
     .ls-health-line :global(.vx-btn) { margin-left: auto; width: 16px; height: 16px; font-size: 13px; }
     .ls-health-dot   { color: #5a4a3a; }
     .ls-health-dot.on{ color: #6ad0c0; }
@@ -294,8 +325,16 @@
     .ls-health-rtt   { color: #6a8; font-variant-numeric: tabular-nums; }
     .ls-health-clash { color: #f0b040; font-weight: bold; }
     .ls-health-sub   { color: #556; font-style: italic; margin-top: 2px; }
-    .ls-health-verdict          { margin-top: 2px; color: #8a9; }
-    .ls-health-verdict.all-green{ color: #6ad0c0; }
+    /* verdict glance — sits on the always-visible line, the panel's headline.  Amber
+       (partial / failing) until every step passes, then green. */
+    .ls-health-pass  {
+        margin-left: 4px; padding: 0 4px; border-radius: 3px;
+        color: #f0b040; background: rgba(240, 176, 64, 0.12);
+        font-variant-numeric: tabular-nums; white-space: nowrap;
+    }
+    .ls-health-pass.all-green { color: #6ad0c0; background: rgba(106, 208, 192, 0.14); }
+    .ls-health-dock           { margin-top: 2px; color: #c98; }
+    .ls-health-dock.all-green { color: #8a9; }
     .ls-cred {
         display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center;
         margin-bottom: 0.4rem; padding: 0.2rem 0.3rem; border-radius: 3px;

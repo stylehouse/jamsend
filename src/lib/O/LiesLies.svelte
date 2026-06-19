@@ -535,12 +535,12 @@
 
         // Lies_report_result — runner emit, after a run settles.  The editor's handler
         //  re-attaches it so the staging chrome lights up.
-        Lies_report_result(w: TheC, sc: { path?: string, dige?: string, ok?: boolean, errors?: any[], snap_dige?: string, ok_pct?: number, done?: number }) {
+        Lies_report_result(w: TheC, sc: { path?: string, dige?: string, ok?: boolean, errors?: any[], snap_dige?: string, ok_pct?: number, done?: number, book?: string }) {
             const H = this as House
             if (!H.Lies_is_runner(w)) return
             const pier = (w.o({ Peering: 1 })[0] as TheC | undefined)?.o({ Pier: 1 })[0] as TheC | undefined
             if (!pier || !H.Lies_channel_live(w)) return
-            ;(H as any).Peeroleum_send_consumer(w, 'run_result', { path: sc.path, dige: sc.dige, ok: sc.ok, errors: sc.errors, snap_dige: sc.snap_dige, ok_pct: sc.ok_pct, done: sc.done })
+            ;(H as any).Peeroleum_send_consumer(w, 'run_result', { path: sc.path, dige: sc.dige, ok: sc.ok, errors: sc.errors, snap_dige: sc.snap_dige, ok_pct: sc.ok_pct, done: sc.done, book: sc.book })
             H.tlog(`📤 run_result → editor: ${sc.path} ${sc.ok ? 'green' : 'red'}${sc.done != null ? ` ${Math.round((sc.ok_pct ?? 0) * sc.done)}/${sc.done}` : ''}`)
         },
 
@@ -550,7 +550,7 @@
         //    fired on (w.c.awaiting_verdict, stashed at FIRE), then clears the slot.  One slot only:
         //     v1 runs are sequential, so the latest FIRE owns the next finish.  A finish with no
         //      awaiting_verdict (the runner's own boot run) reports nothing.
-        Lies_runner_verdict(w: TheC) {
+        Lies_runner_verdict(w: TheC, book?: string) {
             const H = this as House
             if (!H.Lies_is_runner(w)) return
             const aw = w.c.awaiting_verdict as { path: string, dige: string } | undefined
@@ -558,7 +558,7 @@
             const outcome = (H as any).Cred_run_outcome() as { ok: boolean, ok_pct: number, done: number } | null
             if (!outcome) return
             w.c.awaiting_verdict = undefined
-            H.Lies_report_result(w, { path: aw.path, dige: aw.dige, ok: outcome.ok, ok_pct: outcome.ok_pct, done: outcome.done })
+            H.Lies_report_result(w, { path: aw.path, dige: aw.dige, ok: outcome.ok, ok_pct: outcome.ok_pct, done: outcome.done, book })
         },
 
         // Lies_run_result_recv — editor receives the runner's outcome and stamps it on
@@ -575,6 +575,7 @@
                 snap_dige: frame.snap_dige, dige: frame.dige, at: Date.now(),
                 ...(frame.ok_pct != null ? { ok_pct: frame.ok_pct } : {}),
                 ...(frame.done   != null ? { done: frame.done }     : {}),
+                ...(frame.book   != null ? { book: frame.book }     : {}),
             })
             H.tlog(`📥 run_result: ${path} ${frame.ok ? 'green' : 'red'}${frame.done != null ? ` ${Math.round((frame.ok_pct ?? 0) * frame.done)}/${frame.done}` : ''}`)
             return true
