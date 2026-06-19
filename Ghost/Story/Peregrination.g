@@ -31,7 +31,7 @@ Run_A_Peregrination():
 //   symptom: step 3 fires, step 2's sides never lay).  Lake_drive keeps a req-local
 //    `did_step` instead, immune to any other caller.
 Peregrination(A,w):
-    w i %see:'y Peregrination — apparatus ready, peers have the conn'
+    w i %see:'y Peregrination — apparatus ready thoroughlyth!'
     w oai %req:wrangle,eternal
         await &Lake_drive,w,req
         req%ok = 1

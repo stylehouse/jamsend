@@ -167,9 +167,64 @@ Editor emit fires on the save signal (`write_finished`) when `w%editor`. Runner 
            nothing — wake w:Lies ungated for the runner role (scoped, not a blanket ungate; the gate
             protects Story snap-timing). With those, delete the repeating trickle or demote it to a
              single ~1s safety fire.
-  **NEXT MOVE:** add the `LiesStore.svelte:491` wake first (smallest, highest-confidence, directly
-   tests the boomerang); re-capture a timestamped session after the channel freeze; if the boomerang
-    persists it's the write→Codebit handoff. Everything else is queued behind that capture.
+- **Landed since:** the `LiesStore.svelte:491` `write_finished` wake (ungated `i_elvisto(w,'think')` +
+   `tlog`) is in. Both trickles now **shout every 10th spin** (`🔥 … burning CPU` — `req_compile` in
+    `Lang.svelte`, `req_rungo` in `LiesLies.svelte`), so a wedged spin is visible, not silent — grep `🔥`.
+  **NEXT MOVE (the Editron final-stretch fix-first):** if `🔥` still fires after the wake, the spin is the
+   write→Codebit handoff or gap (b) — `Ghost_version_checkin → feebly_ponder` is Runtime-gated, so an idle
+    runner's checkin wakes nothing (wake `w:Lies` ungated for the runner role, scoped). Then delete the
+     repeating trickle or demote it to a single ~1s safety fire. The `🔥` decoration is the instrument;
+      killing the spin is the work.
+
+## 5b. The runner model (current) — Creduler bootstrap; the runner runs the LIVE spine
+
+This is the big shift from §1's "Pantheate include in the Run". The runner no longer compiles or includes
+ inside its Story Run; it **acquires** what the editor shipped, bootstrapped from the top House.
+
+- **`Peregrination.svelte` is deleted.** `Ghost/Story/Peregrination.g` IS the Book now: it defines
+   `Run_A_Peregrination()` (the Run recipe — lays `A:Peregrination/w:Peregrination`) and `Peregrination(A,w)`
+    (the per-beat handler, renamed from `LakeNetherland` — `w:Peregrination` resolves straight to it). No
+     hand-written bootstrap, no call-through.
+- **The Creduler is the bootstrap.** `Auto.svelte` stands up the Mundo runner Lies (`w:Lies{runner,creduler}`,
+   "outside Story"). Its tick drives **`Creduler_ensure()`** (`LiesLies.svelte`): load every `.g` in
+    **`CREDULER_GHOSTS`** (the runner's include manifest — grouped Ghost.svelte-style; add a line to extend)
+     LIVE onto H via **`Lies_ghost_load`** (enrol the gen `.go` in `watched:UIs` → Otro mounts → `onMount`
+      eatfunc deposits methods + `Ghostmeta`), riding **`%Creduler_pending`** on H while it works.
+- **Story kickoff gates on `%Creduler_pending`.** `Story.svelte` top: `if (H.oa({Creduler_pending:1}))
+   return w.i({waits:'loadingcoding'})`. toc may decode; steps don't begin until the ghosts are live and
+    `Run_A_Peregrination` is actually on H. (Grep `Creduler_pending` / `loadingcoding`.)
+- **Two runner primitives** in `LiesLies` (acquire region): `Lies_ghost_live(path)` = the live `source_dige`
+   off `Ghostmeta_<…>()` (presence/currency — `req_rungo` compares it to the demanded dige; the Creduler
+    checks presence); `Lies_ghost_load(path)` = the load half above.
+- **The runner runs the LIVE spine.** `CREDULER_GHOSTS` includes the transport (`Ghost/N/Peeroleum.g`,
+   `Tribunal.g`) as live gen, so the runner tests current code. **`Lies_transport_up` is now EDITOR-ONLY**
+    (`role!=='editor'` bails) — the frozen `p2p/transport/*.go` is the editor's bootstrap alone (it can't
+     ride the spine it's editing). This fixed the "test ran the frozen `figaro:Sausage` copy" bug. The
+      runner's channel flaps on each push — fine, it re-runs. Promote a new spine into the *editor's* channel
+       with **`lang-compile --write`** then `cp gen/N/*.go → p2p/transport/`.
+- **`feebly_elvisto(target,method,extra)`** (`Housing`) — best-effort `i_elvisto`, no-op if no target A is up
+   the tree. The Lies→Lang pokes (`Lang_workon_update`, `dock_content`, `Lies_waft_mutated`,
+    `Lies_compile_settled`) route through it, so a runner with no Lang doesn't throw.
+- **`lang-compile --write`** writes the gen `.go` from the CLI (UIless *compile*) — kills the "recompile in
+   the editor" manual step. Still NOT the UIless *include* (running the `.go`'s eatfunc headless) — that's
+    the open blocker in `Everything_todo.md`; the runner stays a browser tab.
+
+## 5c. The Editron final stretch — the three moves left
+
+1. **Fix the compile boomerang** (§5 fix-first). The `🔥` log is now the instrument; kill the spin, then
+    delete/demote the trickle.
+2. **Phase 1 — assure the editor of whole Story runs remotely** (the live front). Transport is proven; the
+    named moves: the version handshake (acquire-then-poll), confirm the run actually fires and `run_result`
+     returns, wire `mode` onto `dock_push`. Caveats: the `active_transport` keystone was "start here" (not
+      live last anyone looked); headless is blocked on the include problem, so "remotely" = a second browser
+       tab, not node (v1, fine — be explicit headless isn't on this path).
+3. **Phase 2 — in the Waft as Funkcions, red|green.** Triggering is solved (Funkcions are the Waft's embedded
+    applets, Waft_spec §201; the ballistics drum-pad already does struck-on-demand test-trigger Funkcions).
+     The unbuilt bit is the **binding**: Story step/run-result → Funkcion pass/fail → red|green decoration.
+      `run_result` already threads back to light the staging badge, so the data arrives; surfacing it
+       per-Funkcion is new. **Not spec'd anywhere yet — write a short spec note before building.**
+
+Then return to Interest.
 
 ## 6. Creduler — open slices
 

@@ -157,6 +157,28 @@
     //   {call:1, method, via?, from, to, line, region_path}
     //   {region:1, label, from, to, line, depth}
     //   {controlflow:1, keyword, title, from, to, line, via?, region_path}
+    // Absolute [from,to) char span of a %Map entry.  Region entries store from/to
+    //  absolute (the anchor a stack-path narrows within); def/call/controlflow
+    //  store rel_from/rel_to against their enclosing region's from, so a text edit
+    //  outside that region leaves their snapped offsets untouched (that relative
+    //  encoding is what quiets the from=/to= snap churn).  c.abs_* is the live span
+    //  the compile writes every pass; the rel reconstruction (region matched by its
+    //  full region_path) is the fallback for a %Map decoded from a snap, no .c cache.
+    Lang_map_span(regions: TheC[], e: TheC): { from: number, to: number } {
+        if (e.sc.region) return { from: (e.sc.from as number) ?? 0, to: (e.sc.to as number) ?? 0 }
+        if (typeof e.c.abs_from === 'number')
+            return { from: e.c.abs_from as number, to: (e.c.abs_to as number) ?? (e.c.abs_from as number) }
+        const rp = (e.c.region_path as string[] | undefined) ?? []
+        let base = 0
+        if (rp.length) {
+            const key = rp.join(' ')
+            const reg = regions.find(r => ((r.c.region_path as string[] | undefined) ?? []).join(' ') === key)
+            if (reg) base = (reg.sc.from as number) ?? 0
+        }
+        const rf = (e.sc.rel_from as number) ?? 0
+        return { from: base + rf, to: base + ((e.sc.rel_to as number) ?? rf) }
+    },
+
     Lang_resolve_point(
         state:       EditorState,
         dock:        TheC,
@@ -175,6 +197,7 @@
 
         const issues: string[] = []
         const spec = method_spec.trim()
+        const span = (e: TheC) => this.Lang_map_span(regions, e)
 
         // ── stack-path: "a / b" or "a / if cond" ────────────────────────────
         if (spec.includes(' / ')) {
@@ -185,7 +208,7 @@
         // ── exact def ────────────────────────────────────────────────────────
         const exactDef = defs.find(d => d.sc.method === spec)
         if (exactDef) {
-            return { from: exactDef.sc.from as number, to: exactDef.sc.to as number,
+            return { ...span(exactDef),
                      line: exactDef.sc.line as number, kind: 'exact_def', issues }
         }
 
@@ -194,7 +217,7 @@
             (r.sc.label as string)?.toLowerCase() === spec.toLowerCase())
         if (exactRegion) {
             issues.push(`no def '${spec}'; matched region header`)
-            return { from: exactRegion.sc.from as number, to: exactRegion.sc.to as number,
+            return { ...span(exactRegion),
                      line: exactRegion.sc.line as number, kind: 'region', issues }
         }
 
@@ -202,7 +225,7 @@
         const exactCall = calls.find(c => c.sc.method === spec)
         if (exactCall) {
             issues.push(`no def for '${spec}'; found a call (via: ${exactCall.sc.via ?? 'top-level'})`)
-            return { from: exactCall.sc.from as number, to: exactCall.sc.to as number,
+            return { ...span(exactCall),
                      line: exactCall.sc.line as number, kind: 'exact_call', issues }
         }
 
@@ -212,15 +235,13 @@
         if (fuzzyDefs.length === 1) {
             issues.push(`fuzzy match for '${spec}' → '${fuzzyDefs[0].sc.method}'`)
             const d = fuzzyDefs[0]
-            return { from: d.sc.from as number, to: d.sc.to as number,
-                     line: d.sc.line as number, kind: 'fuzzy_def', issues }
+            return { ...span(d), line: d.sc.line as number, kind: 'fuzzy_def', issues }
         }
         if (fuzzyDefs.length > 1) {
             issues.push(`ambiguous: '${spec}' matches ${fuzzyDefs.map(d => d.sc.method).join(', ')}`)
             // Return the first (earliest in doc)
             const d = fuzzyDefs[0]
-            return { from: d.sc.from as number, to: d.sc.to as number,
-                     line: d.sc.line as number, kind: 'fuzzy_def', issues }
+            return { ...span(d), line: d.sc.line as number, kind: 'fuzzy_def', issues }
         }
 
         // ── fuzzy: calls ─────────────────────────────────────────────────────
@@ -228,8 +249,7 @@
         if (fuzzyCalls.length) {
             issues.push(`'${spec}': only call sites found, no def`)
             const c = fuzzyCalls[0]
-            return { from: c.sc.from as number, to: c.sc.to as number,
-                     line: c.sc.line as number, kind: 'fuzzy_call', issues }
+            return { ...span(c), line: c.sc.line as number, kind: 'fuzzy_call', issues }
         }
 
         // ── fuzzy: region labels ──────────────────────────────────────────────
@@ -237,8 +257,7 @@
         if (fuzzyRegions.length) {
             issues.push(`'${spec}': only region headers matched`)
             const r = fuzzyRegions[0]
-            return { from: r.sc.from as number, to: r.sc.to as number,
-                     line: r.sc.line as number, kind: 'region', issues }
+            return { ...span(r), line: r.sc.line as number, kind: 'region', issues }
         }
 
         // ── fuzzy: comment text (last resort) ────────────────────────────────
@@ -303,6 +322,7 @@
         issues:    string[],
     ): { from: number, to: number, line: number } | null {
         const lc = seg.toLowerCase()
+        const span = (e: TheC) => this.Lang_map_span(regions, e)
 
         // Check if seg looks like a control-flow reference: "if X", "for X", etc.
         const CF_RE = /^(if|for|while|until|else)\s+(.*)/i
@@ -315,11 +335,10 @@
             const cfHit = flows.find(f =>
                 (f.sc.keyword as string)?.toLowerCase() === keyword &&
                 (f.sc.title  as string)?.toLowerCase().includes(condition) &&
-                (f.sc.from   as number) >= range_from &&
-                (f.sc.from   as number) <= range_to
+                span(f).from >= range_from &&
+                span(f).from <= range_to
             )
-            if (cfHit) return { from: cfHit.sc.from as number, to: cfHit.sc.to as number,
-                                line: cfHit.sc.line as number }
+            if (cfHit) return { ...span(cfHit), line: cfHit.sc.line as number }
 
             // Fallback: raw doc text scan within range (catches non-indexed cases).
             const doc = state.doc
@@ -338,46 +357,42 @@
         // Exact def within range.
         const inDef = defs.find(d =>
             d.sc.method === seg &&
-            (d.sc.from as number) >= range_from &&
-            (d.sc.to   as number) <= range_to
+            span(d).from >= range_from &&
+            span(d).to   <= range_to
         )
-        if (inDef) return { from: inDef.sc.from as number, to: inDef.sc.to as number,
-                            line: inDef.sc.line as number }
+        if (inDef) return { ...span(inDef), line: inDef.sc.line as number }
 
         // Fuzzy def within range.
         const fuzzyDef = defs.find(d =>
             (d.sc.method as string)?.toLowerCase().includes(lc) &&
-            (d.sc.from as number) >= range_from &&
-            (d.sc.to   as number) <= range_to
+            span(d).from >= range_from &&
+            span(d).to   <= range_to
         )
         if (fuzzyDef) {
             issues.push(`fuzzy matched '${seg}' → '${fuzzyDef.sc.method}'`)
-            return { from: fuzzyDef.sc.from as number, to: fuzzyDef.sc.to as number,
-                     line: fuzzyDef.sc.line as number }
+            return { ...span(fuzzyDef), line: fuzzyDef.sc.line as number }
         }
 
         // Call within range.
         const inCall = calls.find(c =>
             c.sc.method === seg &&
-            (c.sc.from as number) >= range_from &&
-            (c.sc.to   as number) <= range_to
+            span(c).from >= range_from &&
+            span(c).to   <= range_to
         )
         if (inCall) {
             issues.push(`'${seg}' found only as a call site within range`)
-            return { from: inCall.sc.from as number, to: inCall.sc.to as number,
-                     line: inCall.sc.line as number }
+            return { ...span(inCall), line: inCall.sc.line as number }
         }
 
         // Region label within range.
         const inRegion = regions.find(r =>
             (r.sc.label as string)?.toLowerCase().includes(lc) &&
-            (r.sc.from as number) >= range_from &&
-            (r.sc.from as number) <= range_to
+            span(r).from >= range_from &&
+            span(r).from <= range_to
         )
         if (inRegion) {
             issues.push(`'${seg}' matched region label only`)
-            return { from: inRegion.sc.from as number, to: inRegion.sc.to as number,
-                     line: inRegion.sc.line as number }
+            return { ...span(inRegion), line: inRegion.sc.line as number }
         }
 
         return null
@@ -419,18 +434,20 @@
         const Map_C = job?.o({ Map: 1 })[0]      as TheC | undefined
         if (!Map_C) return undefined
 
-        const defs = Map_C.o({ def: 1 }) as TheC[]
+        const defs    = Map_C.o({ def: 1 })    as TheC[]
+        const regions = Map_C.o({ region: 1 }) as TheC[]
+        const span    = (e: TheC) => this.Lang_map_span(regions, e)
 
         // 1) a def whose own name-span contains the offset — the cursor sat right
         //    on the method name.  Innermost (smallest span) wins, so a helper
         //    nested in a larger function resolves to the helper.
-        const onName = defs.filter(d =>
-            (d.sc.from as number) <= offset && (d.sc.to as number) >= offset
-        )
+        const onName = defs.filter(d => {
+            const s = span(d)
+            return s.from <= offset && s.to >= offset
+        })
         if (onName.length) {
             onName.sort((a, b) =>
-                ((a.sc.to as number) - (a.sc.from as number)) -
-                ((b.sc.to as number) - (b.sc.from as number)))
+                (span(a).to - span(a).from) - (span(b).to - span(b).from))
             return onName[0].sc.method as string
         }
 
@@ -446,8 +463,7 @@
             const onLine = defs.filter(d => (d.sc.line as number) === ln)
             if (onLine.length) {
                 onLine.sort((a, b) =>
-                    ((a.sc.to as number) - (a.sc.from as number)) -
-                    ((b.sc.to as number) - (b.sc.from as number)))
+                    (span(a).to - span(a).from) - (span(b).to - span(b).from))
                 return onLine[0].sc.method as string
             }
         }
@@ -506,13 +522,14 @@
         //  earlier region's def can't claim a tap that fell in this one (the def's
         //  name offset must sit inside reg's body span).  None above within reg →
         //  owner stays undefined: a method-less tap, landing on the region.
-        const defs = Map_C.o({ def: 1 }) as TheC[]
+        const defs        = Map_C.o({ def: 1 })    as TheC[]
+        const map_regions = Map_C.o({ region: 1 }) as TheC[]
         let owner: TheC | undefined
         for (const d of defs) {
             const ln = d.sc.line as number
             if (ln > tap_line) continue
             if (reg) {
-                const df = d.sc.from as number
+                const df = this.Lang_map_span(map_regions, d).from
                 if (df < reg.from_char || df > reg.to_char) continue
             }
             if (!owner || ln > (owner.sc.line as number)) owner = d

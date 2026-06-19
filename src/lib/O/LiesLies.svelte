@@ -40,11 +40,18 @@
 
     let { M } = $props()
 
-    // CREDULER_GHOSTS — the runtime-test ghosts the Creduler loads live onto H before any
-    //  Story begins.  The p2p test is the first of a new kind; more pile on here.  NOT the
-    //   transport (Peeroleum/Tribunal) — those ride Lies_transport_up's FROZEN copies, and
-    //    loading the live gen/N/ ones here would put them back in the graph (channel flap).
-    const CREDULER_GHOSTS = ['Ghost/Story/Peregrination.g']
+    // CREDULER_GHOSTS — the runner's include manifest: every .g it runs, loaded LIVE (its
+    //  gen .go) onto H so the runner runs the editor's CURRENT code.  Grouped + ordered like
+    //   Ghost.svelte's O/* mount list — extend it by adding a line (easier than building a way
+    //    for the editor to flush the set to its runners live; the runner owns its own MO).
+    //     These TAKE OVER from the frozen p2p/transport/*.go, which is now only the EDITOR's
+    //      bootstrap — the editor can't ride the spine it's editing, but the runner can and
+    //       should.  The runner's channel flaps on each push; fine, the runner re-runs anyway.
+    const CREDULER_GHOSTS = [
+        'Ghost/N/Peeroleum.g',          // transport spine — envelope, inbox/outbox, handshake
+        'Ghost/N/Tribunal.g',           // carriers — mock / webrtc / websocket relay
+        'Ghost/Story/Peregrination.g',  // the p2p test — first of a new kind; more pile on here
+    ]
 
     onMount(async () => {
     await M.eatfunc({
@@ -271,15 +278,15 @@
         //   compiled .go DIRECTLY — no compile/Codebit/Ghostmeta chain — by enrolling
         //    each generated component in H/{watched:UIs}, exactly as a Pantheate include
         //     does.  Otro mounts it, its onMount eatfunc deposits Socket_real/
-        //      Peeroleum_deliver/… onto every House.  Idempotent; browser + editor|runner
-        //       only.  Channel_up no-ops until the deposit lands, then opens the ws on a
-        //        following tick.  The .go we mount is the FROZEN p2p/transport copy, not the
-        //         live-edited gen/N/ one — see the import below.
+        //      Peeroleum_deliver/… onto every House.  Idempotent; browser + EDITOR only —
+        //       the runner runs the LIVE spine (CREDULER_GHOSTS) so it tests current code, so
+        //        this frozen copy is the editor's bootstrap alone.  Channel_up no-ops until the
+        //         deposit lands, then opens the ws on a following tick.
         async Lies_transport_up(w: TheC) {
             const H = this as House
             if (w.c.transport_up) return
             const role = H.Lies_role(w)
-            if (role !== 'editor' && role !== 'runner') return        // bare: no transport
+            if (role !== 'editor') return   // EDITOR-only: the runner gets the live spine via CREDULER_GHOSTS
             if (typeof WebSocket === 'undefined') return               // not a browser
             w.c.transport_up = true
 
@@ -288,10 +295,11 @@
             //   editor's module graph, so every compile HMR-reloaded the channel out from under
             //    itself (the "channel down / re-establishing" flap, and the settle stalls behind it).
             //   p2p/transport/*.go are a deliberate frozen copy of the working spine+carriers: the
-            //    editor compiles gen/N/Peeroleum.go for the RUNNER to test, while the channel rides
-            //     this stable copy and never reloads.  Re-copy from gen/N/ by hand to promote a new
-            //      spine into the channel.  (One day this is together — dogfooded — but not while the
-            //       spine is under active development.)
+            //    editor's channel rides this stable copy and never reloads.  The RUNNER dogfoods the
+            //     LIVE spine (CREDULER_GHOSTS loads gen/N/*.go), so it tests current code; only the
+            //      editor stays frozen, because it can't ride the spine it's actively editing.  To
+            //       promote a new spine into the EDITOR's channel, re-copy gen/N/ → p2p/transport/ by
+            //        hand (now: lang-compile --write, then cp).
             const uis = H.oai_enroll(H, { watched: 'UIs' })
             for (const gen of ['p2p/transport/Peeroleum.go', 'p2p/transport/Tribunal.go']) {
                 if (uis.oa({ UI: 'Pantheate-include', gen_path: gen })) continue   // already mounted
@@ -475,6 +483,11 @@
             //      fires within a trickle of HMR, not on the next happenstance Runtime re-entry.
             //       One timer at a time; cleared at the top of the next pump and on supersede.
             H.i_req_ttlilt(req, 1, { waiting: 'acquire' })
+            // Spin counter: a healthy acquire lands in a spin or two; a stuck demand spins
+            //  forever at ~7Hz.  Shout every 10th spin so the CPU burn is visible, not silent.
+            req.c.trickle_spins = ((req.c.trickle_spins as number) ?? 0) + 1
+            if ((req.c.trickle_spins as number) % 10 === 0)
+                console.log(`🔥 req:rungo trickle still spinning — ${req.c.trickle_spins} × 150ms (~${Math.round((req.c.trickle_spins as number) * 0.15)}s) burning CPU on unmet demand`)
             req.c.trickle_timer = setTimeout(() => {
                 req.c.trickle_timer = undefined
                 if (!req.sc.finished) H.i_elvisto(w, 'think')

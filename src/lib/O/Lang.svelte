@@ -1440,6 +1440,12 @@
             }
         }
 
+        // map_regions: the anchors def/call/cf entries store their rel_from/rel_to
+        //  against; Lang_map_span turns each entry back into an absolute span (it
+        //  reads c.abs_* the compile just wrote, reconstructing from rel only for a
+        //  Map decoded from a snap).  The Mapulen carry absolute from/to so the
+        //  minimap goto/nav is unchanged by the rel encoding upstream.
+        const map_regions = Map_C.o({ region: 1 }) as TheC[]
         for (const e of Map_C.o({}) as TheC[]) {
             const s    = e.sc
             const kind = s.def ? 'def' : s.call ? 'call'
@@ -1447,8 +1453,9 @@
             const key  = String(s.method ?? s.label ?? s.keyword ?? '')
             if (!key) continue
             // capture per-Mapule so the goto closure carries this entry's own span
-            const from  = (s.from as number) ?? 0
-            const to    = (s.to   as number) ?? from
+            const span  = this.Lang_map_span(map_regions, e)
+            const from  = span.from
+            const to    = span.to
             const depth = (s.depth as number) ?? 0
             const line  = (s.line  as number) ?? 0
             const m = navicade.i({
@@ -1862,6 +1869,11 @@
             //   — leaving req:compile wedged firing with pending stuck (the "boomerang" hang).  Self-
             //    re-check every 150ms until pending clears, then finish.  Cleared at the top of each
             //     pump; guarded by !finished.  Same ungated pattern as the runner's req_rungo.
+            // Spin counter: a healthy compile clears in a spin or two; a wedged pending spins
+            //  forever at ~7Hz.  Shout every 10th spin so the CPU burn is visible, not silent.
+            req.c.trickle_spins = ((req.c.trickle_spins as number) ?? 0) + 1
+            if ((req.c.trickle_spins as number) % 10 === 0)
+                console.log(`🔥 req:compile trickle still spinning — ${req.c.trickle_spins} × 150ms (~${Math.round((req.c.trickle_spins as number) * 0.15)}s) burning CPU on stuck pending`)
             req.c.trickle_timer = setTimeout(() => {
                 req.c.trickle_timer = undefined
                 if (!req.sc.finished) H.i_elvisto(w, 'think')

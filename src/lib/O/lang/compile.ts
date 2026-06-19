@@ -159,12 +159,16 @@ export const LANG_COMPILE = {
         const words: Array<{ def?: 1, call?: 1, region?: 1, controlflow?: 1,
                              method?: string, label?: string, keyword?: string, title?: string,
                              via?: string, class?: string, magic?: 1,
-                             from?: number, to?: number, line?: number,
+                             from?: number, to?: number, rel_from?: number, rel_to?: number, line?: number,
                              region_path?: string[] }> = []
 
         // region_stack persists across all lines — it is the "Indian stack" of open regions.
         // Shared via ctx reference so nested recursive calls in _collect_line see the same stack.
         const region_stack: string[] = []
+        // open_regions mirrors region_stack with the region word objects themselves, so a
+        //  //#endregion can reach back and stamp the region's body extent (its to). Same
+        //  ref-shared lifetime as region_stack.
+        const open_regions: any[] = []
 
         // Per-line compile errors — collected here so each carries line/text context.
         // < future: continue past first error once there's a UI path for line-level
@@ -331,7 +335,7 @@ export const LANG_COMPILE = {
 
         while (n <= doc.lines) {
             try {
-                n = this._collect_line(n, tree, doc, state, out, { words, current_method: null, method_floor: -1, region_stack, lineHits, sthoParser })
+                n = this._collect_line(n, tree, doc, state, out, { words, current_method: null, method_floor: -1, region_stack, open_regions, lineHits, sthoParser })
             } catch (err: any) {
                 const en   = err?.line ?? n
                 const text = err?.text ?? (en <= doc.lines ? doc.line(en).text : '')
@@ -350,7 +354,37 @@ export const LANG_COMPILE = {
         const Map_C = job.oai({ Map: 1 })
         // clear stale entries from a previous compile
         Map_C.empty()
+        // Region anchors: region_path (which ends with the region's own label) →
+        //  the region header's char offset.  A child entry's region_path is the
+        //  same stack, so it keys back to its innermost enclosing region here.
+        const region_from = new Map<string, number>()
+        for (const word of words)
+            if (word.region) region_from.set((word.region_path ?? []).join(' '), word.from as number)
         for (const word of words) {
+            if (!word.region) {
+                // Snap child offsets RELATIVE to the enclosing region's from, so a
+                //  text edit OUTSIDE that region (which shifts every absolute offset
+                //  below it) leaves these rel_from/rel_to byte-identical — the bulk
+                //  of the old from=/to= snap churn was these entries.  The absolute
+                //  span the readers actually seek to rides in .c (never snapped),
+                //  recomputed every compile; a Map decoded from a snap reconstructs
+                //  it from rel + the region anchor (Lang_map_span).
+                const af = word.from as number, at = word.to as number
+                const base = region_from.get((word.region_path ?? []).join(' ')) ?? 0
+                word.rel_from = af - base
+                word.rel_to   = at - base
+                delete word.from; delete word.to
+                const wc = Map_C.i(word)
+                wc.c.abs_from = af
+                wc.c.abs_to   = at
+                if (Array.isArray(wc.sc.region_path)) {
+                    wc.c.region_path = wc.sc.region_path
+                    delete wc.sc.region_path
+                }
+                continue
+            }
+            // region: from/to stay absolute — they are the anchors children resolve
+            //  against and the range a stack-path narrows within.
             const wc = Map_C.i(word)
             // region_path is an array — it belongs in .c, never .sc (an object in
             //  sc is an encode fatal, and the readers — the Mapule build's m.c.path
@@ -396,6 +430,7 @@ export const LANG_COMPILE = {
     _collect_line(n: number, tree, doc, state: EditorState, out, ctx: {
         words: any[], current_method: string | null, method_floor: number,
         region_stack: string[],
+        open_regions: any[],
         lineHits: Map<number, { name: string, node: SyntaxNode }>,
     }): number {
       try {
@@ -415,13 +450,26 @@ export const LANG_COMPILE = {
             const depth = ctx.region_stack.length
             ctx.region_stack.push(label)
             // Record region boundary in words so Lang_resolve_point can search it.
-            ctx.words.push({ region: 1, label, depth, from: line.from, to: line.to, line: n,
-                             region_path: [...ctx.region_stack] })
+            //  from = the //#region header line; to is the region's BODY EXTENT —
+            //  defaulted to doc end here and tightened to the matching //#endregion
+            //  line below.  This body span (not the old header-line-only span) is
+            //  what lets a "region / method" stack-path narrow into the body, and it
+            //  is the absolute anchor every child entry in this region stores its
+            //  rel_from/rel_to against (see the flush below).
+            const rword: any = { region: 1, label, depth, from: line.from,
+                                 to: doc.line(doc.lines).to, line: n,
+                                 region_path: [...ctx.region_stack] }
+            ctx.words.push(rword)
+            ctx.open_regions.push(rword)
             out.push({ kind: 'raw', text: line.text })
             return n + 1
         }
         if (ENDREGION_RE.test(line.text)) {
             if (ctx.region_stack.length) ctx.region_stack.pop()
+            // Close the innermost open region: its body runs through the //#endregion
+            //  line (matching Lang_build_regions, the fold source of truth).
+            const closing = ctx.open_regions.pop()
+            if (closing) closing.to = line.to
             out.push({ kind: 'raw', text: line.text })
             return n + 1
         }

@@ -6,7 +6,6 @@ Waft:Ghost/Net/Easy
     Point,method:req_p2paddy
     Point,method:req_handshake
   What:the test
-    Doc:src/lib/O/test/Peregrination.svelte
     Point,method:Peregrination
     Point,method:Run_A_Peregrination
     Doc:Ghost/Story/Peregrination.g

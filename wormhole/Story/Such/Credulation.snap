@@ -1,5 +1,6 @@
 Credulation
-  run=0,at=1781876047.547,ok=0,ok_pct=0,book:Peregrination,mode:check
-    uses:Ghost_Story_Peregrination,dige:39efdbf68a007dd1
-    uses:Ghost_N_Peeroleum,dige:f466667e4008ca65
+  run=0,at=1781877464.076,ok=0,ok_pct=0,book:Peregrination,mode:check
+  run,at=1781877715.323,ok=0,ok_pct=0,book:Peregrination,mode:check
+    uses:Ghost_N_Peeroleum,dige:9a19e6bfcdead710
     uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
+    uses:Ghost_Story_Peregrination,dige:64dae7180ba6ac59

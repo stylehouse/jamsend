@@ -12,55 +12,55 @@ Snap:H
           Spotlight	{"ref":{"src":"%What:the peer"}}
         Opt
         req:Cortex,eternal,maz=5,ok
-          req:Codebit,path:Ghost/N/Peeroleum.g,maz=2,gen_path:gen/N/Peeroleum.go,source_dige:c176b80d5d645ecf,dige:69b2bc7f831f18d7,permanent,write_finished,finished
+          req:Codebit,path:Ghost/N/Peeroleum.g,maz=2,gen_path:gen/N/Peeroleum.go,source_dige:8f51e79489c29a89,dige:a1152cb42c909665,permanent,write_finished,finished
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Ghost/Net/Easy/toc.snap,waft_path:Ghost/Net/Easy
-            known,dige:5d01cb87450fb038,kind:read	{"mung":["at"]}
+            known,dige:748fb34f98a32ef2,kind:read	{"mung":["at"]}
           Good,type:text/Waft,path:wormhole/GhostList/toc.snap,waft_path:GhostList
             known,dige:49050014ac279775,kind:read	{"mung":["at"]}
           Good,type:text/Doc,path:Ghost/N/Peeroleum.g
-            known,dige:c176b80d5d645ecf,kind:read	{"mung":["at"]}
+            known,dige:8f51e79489c29a89,kind:read	{"mung":["at"]}
         req:desire
           req:acquire,maz=9,finished
           Waft:Ghost/Net/Easy	{"ref":{"src":"%Waft:Ghost/Net/Easy"}}
         req:git
         req:wants
-          want=1781849903763,kind:cold
-          want=1781849903876,kind:cold
-          want=1781849904136,kind:cold,resolved
+          want=1781876408149,kind:cold
+          want=1781876408201,kind:cold
+          want=1781876408453,kind:cold,resolved
         o_elvis:dock_askies
         Waft:Ghost/Net/Easy
           What:the peer
             Doc:Ghost/N/Peeroleum.g
-              Point,method:Peeroleum
-              Point,method:req_p2pman
-              Point,method:req_p2paddy
-              Point,method:req_handshake
+            Point,method:Peeroleum
+            Point,method:req_p2pman
+            Point,method:req_p2paddy
+            Point,method:req_handshake
           What:the test
             Doc:src/lib/O/test/Peregrination.svelte
-              Point,method:Peregrination
-              Point,method:Run_A_Peregrination
+            Point,method:Peregrination
+            Point,method:Run_A_Peregrination
             Doc:Ghost/Story/Peregrination.g
-              Point,method:LakeNetherland
+            Point,method:LakeNetherland
           What:transport
             What:mock
               Doc:Ghost/N/Peeroleum.g
-                Point,method:transport
+              Point,method:transport
               Point:seemingly
             What:webrtc-or-not
               What:reliability
                 Doc:Ghost/N/Tribunal.g
-                  Point,method:PeerJS
-                  Point,method:Socket
-                  Point,method:Tribunal_hand_to_webrtc
-                  Point,method:Tribunal_pair_websocket
-                  Point,method:Tribunal_fall_to_websocket
-                  Point,method:Tribunal_reputation_good
+                Point,method:PeerJS
+                Point,method:Socket
+                Point,method:Tribunal_hand_to_webrtc
+                Point,method:Tribunal_pair_websocket
+                Point,method:Tribunal_fall_to_websocket
+                Point,method:Tribunal_reputation_good
               What:the trial
                 Doc:Ghost/Story/Peregrination.g
-                  Point,method:Lake_trial_arm
-                  Point,method:Lake_trial_fallback
-                  Point,method:Lake_trial_confirm
+                Point,method:Lake_trial_arm
+                Point,method:Lake_trial_fallback
+                Point,method:Lake_trial_confirm
           What:the spec
             Doc:src/lib/O/spec/Peeroleum_spec.md
             Doc:src/lib/O/spec/Peeroleum_handover.md
@@ -96,16 +96,17 @@ Snap:H
           Pier,pub:runner
             Ud
             outbox
-              emit=2,type:dock_push,seq=2,sent
+              emit=2,type:rungo,seq=2,sent,acked
         transport,type:websocket
         active_transport,type:websocket,open
         o_elvis:Lies_desire_play
         o_elvis:Lies_desire_pause
         o_elvis:Lies_desire_step
+        channel_peer:runner,rtt=1434,last=1781876409332
         self,round=17	{"mung":["age"]}
         see:🗂 1 doc · 2 Wafts
     A:Lang
-      self,round=14	{"mung":["age"]}
+      self,round=16	{"mung":["age"]}
       w:Lang,editor
         model,cyto_dir
         docks
@@ -113,9 +114,8 @@ Snap:H
             req:Languish
               req:text_loaded,maz=3,finished
               req:text_mutated,maz=2,eternal
-              req:compile,maz=2,firing
-                ttlilt,waiting:gen_write,timed_out
-            Text,dige:c176b80d5d645ecf,disk_dige:c176b80d5d645ecf,disk_rev
+              req:compile,maz=2,finished
+            Text,dige:8f51e79489c29a89,disk_dige:8f51e79489c29a89,disk_rev
             Compile
               Map
                 region,label:ologist,depth=0,from=0,to=17,line
@@ -123,87 +123,87 @@ Snap:H
                 def,method:req_p2pman,from=885,to=896,line=17,async
                 region,label:oleum,depth,from=1079,to=1094,line=23
                 def,method:Peeroleum,from=1262,to=1272,line=26,async
-                def,method:req_p2paddy,from=1552,to=1564,line=34,async
-                def,method:req_handshake,from=2371,to=2385,line=47,async
-                controlflow,keyword:if,title:(req.all_finished() && !req.sc.finished) (req.c.up).finish(req),from=2634,to=2637,line=54,via:req_handshake
-                def,method:req_said_hello,from=3546,to=3561,line=66,async
-                call,method:say_hello,from=3627,to=3637,line=69,via:req_said_hello
-                controlflow,keyword:if,title:(said) (req.c.up).finish(req),from=3686,to=3689,line=71,via:req_said_hello
-                def,method:req_heard_hello,from=3726,to=3742,line=73,async
-                controlflow,keyword:if,title:(heard) (req.c.up).finish(req),from=3820,to=3823,line=76,via:req_heard_hello
-                def,method:req_said_trust,from=3861,to=3876,line=78,async
-                call,method:say_trust,from=3942,to=3952,line=81,via:req_said_trust
-                controlflow,keyword:if,title:(said) (req.c.up).finish(req),from=4001,to=4004,line=83,via:req_said_trust
-                def,method:req_heard_trust,from=4041,to=4057,line=85,async
-                controlflow,keyword:if,title:(heard) (req.c.up).finish(req),from=4135,to=4138,line=88,via:req_heard_trust
-                def,method:say_hello,from=4888,to=4898,line=99
-                {"controlflow":1,"keyword":"if","title":"(hello.oa({said:1})) return","from":4978,"to":4981,"line":102,"via":"say_hello"}
-                call,method:Pier_next_seq,from=5054,to=5073,line=104,via:say_hello
-                call,method:Peeroleum_send,from=5110,to=5125,line=106,via:say_hello
-                def,method:say_trust,from=5197,to=5207,line=108
-                {"controlflow":1,"keyword":"if","title":"(trust.oa({said:1})) return","from":5287,"to":5290,"line":111,"via":"say_trust"}
-                call,method:Pier_next_seq,from=5363,to=5382,line=113,via:say_trust
-                call,method:Peeroleum_send,from=5419,to=5434,line=115,via:say_trust
-                def,method:hear_hello,from=6145,to=6156,line=125
-                controlflow,keyword:if,title:(!String(h.publicKey).startsWith(pier.sc.pub)) return false,from=6221,to=6224,line=128,via:hear_hello
-                {"controlflow":1,"keyword":"if","title":"(!hello.oa({said: 1})) H.say_hello(w, pier)","from":6438,"to":6441,"line":132,"via":"hear_hello"}
-                def,method:hear_trust,from=6582,to=6593,line=136
-                def,method:Pier_next_seq,from=7018,to=7032,line=144
-                def,method:Peeroleum_on,from=7783,to=7796,line=155
-                def,method:Peeroleum_send_consumer,from=8569,to=8593,line=166
-                controlflow,keyword:if,title:(!pier) return,from=8664,to=8667,line=168,via:Peeroleum_send_consumer
-                call,method:Pier_next_seq,from=8727,to=8746,line=170,via:Peeroleum_send_consumer
-                call,method:Peeroleum_send,from=8756,to=8776,line=171,via:Peeroleum_send_consumer
-                def,method:Peeroleum_peer_ready,from=9213,to=9234,line=178
-                def,method:transport,from=9721,to=9731,line=187
-                call,method:send,from=10157,to=10162,line=196,via:transport
-                call,method:recv,from=10231,to=10236,line=197,via:transport
-                def,method:Peeroleum_send,from=11202,to=11217,line=212
-                {"controlflow":1,"keyword":"if","title":"(pier && !ephemeral) pier.oai({outbox: 1}).i({emit: h.seq, type: h.type, seq: h.seq, sent: 1})","from":11682,"to":11685,"line":219,"via":"Peeroleum_send"}
-                controlflow,keyword:if,title:(!conn) console.log(`🛰 Peeroleum_send ${h.type} seq=${h.seq} → ${h.to} ⚠ DROPPED — no live transport (channel down / re-establishing)`),from=12030,to=12033,line=223,via:Peeroleum_send
-                controlflow,keyword:if,title:(conn && !ephemeral) console.log(`🛰 Peeroleum_send ${h.type} seq=${h.seq} → ${h.to} (transport live)`),from=12174,to=12177,line=224,via:Peeroleum_send
-                def,method:Peeroleum_deliver,from=12836,to=12854,line=233
-                controlflow,keyword:if,title:(!pier) return,from=12964,to=12967,line=237,via:Peeroleum_deliver
-                {"controlflow":1,"keyword":"if","title":"(h.type === 'ack') { H.Peeroleum_take_ack(w, pier, h); H.feebly_ponder(); return }","from":12986,"to":12989,"line":238,"via":"Peeroleum_deliver"}
-                {"controlflow":1,"keyword":"if","title":"(h.type === 'ping' || h.type === 'pong') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, pier, frame); H.feebly_ponder(); return }","from":13367,"to":13370,"line":242,"via":"Peeroleum_deliver"}
-                call,method:Peeroleum_pump_inbox,from=13629,to=13652,line=245,via:Peeroleum_deliver
-                call,method:feebly_ponder,from=13665,to=13681,line=246,via:Peeroleum_deliver
-                def,method:Peeroleum_pump_inbox,from=14590,to=14611,line=258
-                controlflow,keyword:if,title:(!inbox) return,from=14681,to=14684,line=261,via:Peeroleum_pump_inbox
-                {"controlflow":1,"keyword":"if","title":"(inbox.o({unemit:1}).some(u => u.sc.handling && !u.sc.done && !u.sc.error)) return","from":14704,"to":14707,"line":262,"via":"Peeroleum_pump_inbox"}
-                controlflow,keyword:if,title:(!next) return,from=14881,to=14884,line=264,via:Peeroleum_pump_inbox
-                controlflow,keyword:if,title:(ok) {,from=15099,to=15102,line=270,via:Peeroleum_pump_inbox
-                {"controlflow":1,"keyword":"if","title":"(h.type === 'hello') ok = H.hear_hello(w, pier, frame) !== false","from":15188,"to":15191,"line":273,"via":"Peeroleum_pump_inbox"}
-                {"controlflow":1,"keyword":"else if","title":"(h.type === 'trust') ok = H.hear_trust(w, pier, frame) !== false","from":15264,"to":15272,"line":274,"via":"Peeroleum_pump_inbox"}
-                {"controlflow":1,"keyword":"else if","title":"(on) ok = on(w, pier, frame) !== false","from":15345,"to":15353,"line":275,"via":"Peeroleum_pump_inbox"}
-                controlflow,keyword:if,title:(ok) {,from=15499,to=15502,line=278,via:Peeroleum_pump_inbox
-                call,method:Peeroleum_send,from=15687,to=15704,line=285,via:Peeroleum_pump_inbox
-                call,method:Peeroleum_rollup_faulty,from=15924,to=15950,line=291,via:Peeroleum_pump_inbox
-                call,method:Peeroleum_pump_inbox,from=15966,to=15989,line=293,via:Peeroleum_pump_inbox
-                def,method:Peeroleum_take_ack,from=16254,to=16273,line=298
-                controlflow,keyword:if,title:(emit) { emit.sc.acked = 1; pier.bump() },from=16369,to=16372,line=300,via:Peeroleum_take_ack
-                {"controlflow":1,"keyword":"for","title":"(const kind of ['hello','trust']) {","from":16458,"to":16462,"line":302,"via":"Peeroleum_take_ack"}
-                controlflow,keyword:if,title:(said && said.sc.seq == h.ack) said.sc.acked = 1,from=16565,to=16568,line=304,via:Peeroleum_take_ack
-                def,method:Peeroleum_rollup_faulty,from=16887,to=16911,line=310
-                controlflow,keyword:if,title:(!errs.length) { if (faulty) pier.drop(faulty); return },from=17070,to=17073,line=314,via:Peeroleum_rollup_faulty
-                {"controlflow":1,"keyword":"for","title":"(const u of errs) faulty.i({unemit:u.sc.seq, error:u.sc.error, seq:u.sc.seq})","from":17197,"to":17201,"line":317,"via":"Peeroleum_rollup_faulty"}
-                def,method:Peeroleum_arm_whittle,from=17679,to=17701,line=324
-                controlflow,keyword:if,title:(w.c._whittle_armed) return,from=17728,to=17731,line=326,via:Peeroleum_arm_whittle
-                call,method:Runstepped,from=17808,to=17821,line=328,via:Peeroleum_arm_whittle
-                call,method:Peeroleum_runstepped,from=17835,to=17858,line=328,via:Peeroleum_arm_whittle
-                call,method:rearm,from=17877,to=17883,line=329,via:Peeroleum_arm_whittle
-                def,method:Peeroleum_runstepped,from=18415,to=18436,line=337
-                {"controlflow":1,"keyword":"for","title":"(const peering of w.o({Peering:1})) {","from":18463,"to":18467,"line":339,"via":"Peeroleum_runstepped"}
-                {"controlflow":1,"keyword":"for","title":"(const pier of peering.o({Pier:1})) {","from":18513,"to":18517,"line":340,"via":"Peeroleum_runstepped"}
-                controlflow,keyword:if,title:(outbox) {,from=18614,to=18617,line=342,via:Peeroleum_runstepped
-                {"controlflow":1,"keyword":"for","title":"(const e of outbox.o({emit:1}).filter(e => e.sc.acked)) {","from":18696,"to":18700,"line":344,"via":"Peeroleum_runstepped"}
-                call,method:whittle_N,from=18904,to=18916,line=348,via:Peeroleum_runstepped
-                controlflow,keyword:if,title:(inbox) {,from=19011,to=19014,line=351,via:Peeroleum_runstepped
-                {"controlflow":1,"keyword":"for","title":"(const u of inbox.o({unemit:1}).filter(u => u.sc.done)) {","from":19091,"to":19095,"line":353,"via":"Peeroleum_runstepped"}
-                call,method:whittle_N,from=19302,to=19314,line=357,via:Peeroleum_runstepped
-                call,method:Peeroleum_rollup_faulty,from=19366,to=19392,line=359,via:Peeroleum_runstepped
-              time,compile=0.099,all=0.911,write=0.001
-              Output,gen_path:gen/N/Peeroleum.go,dige:69b2bc7f831f18d7,source_dige:c176b80d5d645ecf
+                def,method:req_p2paddy,from=1537,to=1549,line=34,async
+                def,method:req_handshake,from=2356,to=2370,line=47,async
+                controlflow,keyword:if,title:(req.all_finished() && !req.sc.finished) (req.c.up).finish(req),from=2619,to=2622,line=54,via:req_handshake
+                def,method:req_said_hello,from=3531,to=3546,line=66,async
+                call,method:say_hello,from=3612,to=3622,line=69,via:req_said_hello
+                controlflow,keyword:if,title:(said) (req.c.up).finish(req),from=3671,to=3674,line=71,via:req_said_hello
+                def,method:req_heard_hello,from=3711,to=3727,line=73,async
+                controlflow,keyword:if,title:(heard) (req.c.up).finish(req),from=3805,to=3808,line=76,via:req_heard_hello
+                def,method:req_said_trust,from=3846,to=3861,line=78,async
+                call,method:say_trust,from=3927,to=3937,line=81,via:req_said_trust
+                controlflow,keyword:if,title:(said) (req.c.up).finish(req),from=3986,to=3989,line=83,via:req_said_trust
+                def,method:req_heard_trust,from=4026,to=4042,line=85,async
+                controlflow,keyword:if,title:(heard) (req.c.up).finish(req),from=4120,to=4123,line=88,via:req_heard_trust
+                def,method:say_hello,from=4873,to=4883,line=99
+                {"controlflow":1,"keyword":"if","title":"(hello.oa({said:1})) return","from":4963,"to":4966,"line":102,"via":"say_hello"}
+                call,method:Pier_next_seq,from=5039,to=5058,line=104,via:say_hello
+                call,method:Peeroleum_send,from=5095,to=5110,line=106,via:say_hello
+                def,method:say_trust,from=5182,to=5192,line=108
+                {"controlflow":1,"keyword":"if","title":"(trust.oa({said:1})) return","from":5272,"to":5275,"line":111,"via":"say_trust"}
+                call,method:Pier_next_seq,from=5348,to=5367,line=113,via:say_trust
+                call,method:Peeroleum_send,from=5404,to=5419,line=115,via:say_trust
+                def,method:hear_hello,from=6130,to=6141,line=125
+                controlflow,keyword:if,title:(!String(h.publicKey).startsWith(pier.sc.pub)) return false,from=6206,to=6209,line=128,via:hear_hello
+                {"controlflow":1,"keyword":"if","title":"(!hello.oa({said: 1})) H.say_hello(w, pier)","from":6423,"to":6426,"line":132,"via":"hear_hello"}
+                def,method:hear_trust,from=6567,to=6578,line=136
+                def,method:Pier_next_seq,from=7003,to=7017,line=144
+                def,method:Peeroleum_on,from=7768,to=7781,line=155
+                def,method:Peeroleum_send_consumer,from=8554,to=8578,line=166
+                controlflow,keyword:if,title:(!pier) return,from=8649,to=8652,line=168,via:Peeroleum_send_consumer
+                call,method:Pier_next_seq,from=8712,to=8731,line=170,via:Peeroleum_send_consumer
+                call,method:Peeroleum_send,from=8741,to=8761,line=171,via:Peeroleum_send_consumer
+                def,method:Peeroleum_peer_ready,from=9198,to=9219,line=178
+                def,method:transport,from=9706,to=9716,line=187
+                call,method:send,from=10142,to=10147,line=196,via:transport
+                call,method:recv,from=10216,to=10221,line=197,via:transport
+                def,method:Peeroleum_send,from=11187,to=11202,line=212
+                {"controlflow":1,"keyword":"if","title":"(pier && !ephemeral) pier.oai({outbox: 1}).i({emit: h.seq, type: h.type, seq: h.seq, sent: 1})","from":11667,"to":11670,"line":219,"via":"Peeroleum_send"}
+                controlflow,keyword:if,title:(!conn) console.log(`🛰 Peeroleum_send ${h.type} seq=${h.seq} → ${h.to} ⚠ DROPPED — no live transport (channel down / re-establishing)`),from=12015,to=12018,line=223,via:Peeroleum_send
+                controlflow,keyword:if,title:(conn && !ephemeral) console.log(`🛰 Peeroleum_send ${h.type} seq=${h.seq} → ${h.to} (transport live)`),from=12159,to=12162,line=224,via:Peeroleum_send
+                def,method:Peeroleum_deliver,from=12821,to=12839,line=233
+                controlflow,keyword:if,title:(!pier) return,from=12949,to=12952,line=237,via:Peeroleum_deliver
+                {"controlflow":1,"keyword":"if","title":"(h.type === 'ack') { H.Peeroleum_take_ack(w, pier, h); H.feebly_ponder(); return }","from":12971,"to":12974,"line":238,"via":"Peeroleum_deliver"}
+                {"controlflow":1,"keyword":"if","title":"(h.type === 'ping' || h.type === 'pong') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, pier, frame); H.feebly_ponder(); return }","from":13352,"to":13355,"line":242,"via":"Peeroleum_deliver"}
+                call,method:Peeroleum_pump_inbox,from=13614,to=13637,line=245,via:Peeroleum_deliver
+                call,method:feebly_ponder,from=13650,to=13666,line=246,via:Peeroleum_deliver
+                def,method:Peeroleum_pump_inbox,from=14575,to=14596,line=258
+                controlflow,keyword:if,title:(!inbox) return,from=14666,to=14669,line=261,via:Peeroleum_pump_inbox
+                {"controlflow":1,"keyword":"if","title":"(inbox.o({unemit:1}).some(u => u.sc.handling && !u.sc.done && !u.sc.error)) return","from":14689,"to":14692,"line":262,"via":"Peeroleum_pump_inbox"}
+                controlflow,keyword:if,title:(!next) return,from=14866,to=14869,line=264,via:Peeroleum_pump_inbox
+                controlflow,keyword:if,title:(ok) {,from=15084,to=15087,line=270,via:Peeroleum_pump_inbox
+                {"controlflow":1,"keyword":"if","title":"(h.type === 'hello') ok = H.hear_hello(w, pier, frame) !== false","from":15173,"to":15176,"line":273,"via":"Peeroleum_pump_inbox"}
+                {"controlflow":1,"keyword":"else if","title":"(h.type === 'trust') ok = H.hear_trust(w, pier, frame) !== false","from":15249,"to":15257,"line":274,"via":"Peeroleum_pump_inbox"}
+                {"controlflow":1,"keyword":"else if","title":"(on) ok = on(w, pier, frame) !== false","from":15330,"to":15338,"line":275,"via":"Peeroleum_pump_inbox"}
+                controlflow,keyword:if,title:(ok) {,from=15484,to=15487,line=278,via:Peeroleum_pump_inbox
+                call,method:Peeroleum_send,from=15672,to=15689,line=285,via:Peeroleum_pump_inbox
+                call,method:Peeroleum_rollup_faulty,from=15909,to=15935,line=291,via:Peeroleum_pump_inbox
+                call,method:Peeroleum_pump_inbox,from=15951,to=15974,line=293,via:Peeroleum_pump_inbox
+                def,method:Peeroleum_take_ack,from=16239,to=16258,line=298
+                controlflow,keyword:if,title:(emit) { emit.sc.acked = 1; pier.bump() },from=16354,to=16357,line=300,via:Peeroleum_take_ack
+                {"controlflow":1,"keyword":"for","title":"(const kind of ['hello','trust']) {","from":16443,"to":16447,"line":302,"via":"Peeroleum_take_ack"}
+                controlflow,keyword:if,title:(said && said.sc.seq == h.ack) said.sc.acked = 1,from=16550,to=16553,line=304,via:Peeroleum_take_ack
+                def,method:Peeroleum_rollup_faulty,from=16872,to=16896,line=310
+                controlflow,keyword:if,title:(!errs.length) { if (faulty) pier.drop(faulty); return },from=17055,to=17058,line=314,via:Peeroleum_rollup_faulty
+                {"controlflow":1,"keyword":"for","title":"(const u of errs) faulty.i({unemit:u.sc.seq, error:u.sc.error, seq:u.sc.seq})","from":17182,"to":17186,"line":317,"via":"Peeroleum_rollup_faulty"}
+                def,method:Peeroleum_arm_whittle,from=17664,to=17686,line=324
+                controlflow,keyword:if,title:(w.c._whittle_armed) return,from=17713,to=17716,line=326,via:Peeroleum_arm_whittle
+                call,method:Runstepped,from=17793,to=17806,line=328,via:Peeroleum_arm_whittle
+                call,method:Peeroleum_runstepped,from=17820,to=17843,line=328,via:Peeroleum_arm_whittle
+                call,method:rearm,from=17862,to=17868,line=329,via:Peeroleum_arm_whittle
+                def,method:Peeroleum_runstepped,from=18400,to=18421,line=337
+                {"controlflow":1,"keyword":"for","title":"(const peering of w.o({Peering:1})) {","from":18448,"to":18452,"line":339,"via":"Peeroleum_runstepped"}
+                {"controlflow":1,"keyword":"for","title":"(const pier of peering.o({Pier:1})) {","from":18498,"to":18502,"line":340,"via":"Peeroleum_runstepped"}
+                controlflow,keyword:if,title:(outbox) {,from=18599,to=18602,line=342,via:Peeroleum_runstepped
+                {"controlflow":1,"keyword":"for","title":"(const e of outbox.o({emit:1}).filter(e => e.sc.acked)) {","from":18681,"to":18685,"line":344,"via":"Peeroleum_runstepped"}
+                call,method:whittle_N,from=18889,to=18901,line=348,via:Peeroleum_runstepped
+                controlflow,keyword:if,title:(inbox) {,from=18996,to=18999,line=351,via:Peeroleum_runstepped
+                {"controlflow":1,"keyword":"for","title":"(const u of inbox.o({unemit:1}).filter(u => u.sc.done)) {","from":19076,"to":19080,"line":353,"via":"Peeroleum_runstepped"}
+                call,method:whittle_N,from=19287,to=19299,line=357,via:Peeroleum_runstepped
+                call,method:Peeroleum_rollup_faulty,from=19351,to=19377,line=359,via:Peeroleum_runstepped
+              time,compile=0.046,all=0.62,write=0
+              Output,gen_path:gen/N/Peeroleum.go,dige:a1152cb42c909665,source_dige:8f51e79489c29a89
                source: |
                  <script lang="ts">
                      // GENERATED by Lang compile — do not edit by hand.
@@ -215,7 +215,7 @@ Snap:H
                      onMount(async () => {
                      await H.eatfunc({
                  
-                     Ghostmeta_Ghost_N_Peeroleum(): string { return 'c176b80d5d645ecf' },
+                     Ghostmeta_Ghost_N_Peeroleum(): string { return '8f51e79489c29a89' },
                  
                  //#region ologist
                  // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -245,7 +245,7 @@ Snap:H
                  // ── per-identity worker ───────────────────────────────────────────────────────
                  // A:Alice/w:Peeroleum — one per identity-presence; owns this address's Piers.
                  async Peeroleum(A,w) {
-                     w.oai({seemingly: `ya aooooolly`}, {figaro: "Goingtoyyyuuuooo33ee"})
+                     w.oai({seemingly: `ya aooooolly`}, {figaro: "Thing"})
                      // each installed %Peering manages its own Piers via %req:p2paddy
                      for (const Peering of this._o_iter(w, [{sc: {Peering: 1}}])) {
                          Peering.oai({req: "p2paddy"})
@@ -615,94 +615,94 @@ Snap:H
               Pmirror,src_Waft:Ghost/Net/Easy,spec:req_p2pman	{"ref":{"src_Point":"%Point:1, method:req_p2pman"}}
                 graft,bookmark_id:g_2,from=885,to=896,line=17
               Pmirror,src_Waft:Ghost/Net/Easy,spec:req_p2paddy	{"ref":{"src_Point":"%Point:1, method:req_p2paddy"}}
-                graft,bookmark_id:g_3,from=1552,to=1564,line=34
+                graft,bookmark_id:g_3,from=1537,to=1549,line=34
               Pmirror,src_Waft:Ghost/Net/Easy,spec:req_handshake	{"ref":{"src_Point":"%Point:1, method:req_handshake"}}
-                graft,bookmark_id:g_4,from=2371,to=2385,line=47
+                graft,bookmark_id:g_4,from=2356,to=2370,line=47
             Navicade
               Mapule,kind:region,key:ologist,depth=0,line,from=0,to=17,end_line=362
               Mapule,kind:def,key:Peerologist,depth=0,line=11,from=650,to=662
               Mapule,kind:def,key:req_p2pman,depth=0,line=17,from=885,to=896
               Mapule,kind:region,key:oleum,depth,line=23,from=1079,to=1094,end_line=362
               Mapule,kind:def,key:Peeroleum,depth=0,line=26,from=1262,to=1272
-              Mapule,kind:def,key:req_p2paddy,depth=0,line=34,from=1552,to=1564
-              Mapule,kind:def,key:req_handshake,depth=0,line=47,from=2371,to=2385
-              Mapule,kind:cf,key:if,depth=0,line=54,from=2634,to=2637
-              Mapule,kind:def,key:req_said_hello,depth=0,line=66,from=3546,to=3561
-              Mapule,kind:call,key:say_hello,depth=0,line=69,from=3627,to=3637
-              Mapule,kind:cf,key:if,depth=0,line=71,from=3686,to=3689
-              Mapule,kind:def,key:req_heard_hello,depth=0,line=73,from=3726,to=3742
-              Mapule,kind:cf,key:if,depth=0,line=76,from=3820,to=3823
-              Mapule,kind:def,key:req_said_trust,depth=0,line=78,from=3861,to=3876
-              Mapule,kind:call,key:say_trust,depth=0,line=81,from=3942,to=3952
-              Mapule,kind:cf,key:if,depth=0,line=83,from=4001,to=4004
-              Mapule,kind:def,key:req_heard_trust,depth=0,line=85,from=4041,to=4057
-              Mapule,kind:cf,key:if,depth=0,line=88,from=4135,to=4138
-              Mapule,kind:def,key:say_hello,depth=0,line=99,from=4888,to=4898
-              Mapule,kind:cf,key:if,depth=0,line=102,from=4978,to=4981
-              Mapule,kind:call,key:Pier_next_seq,depth=0,line=104,from=5054,to=5073
-              Mapule,kind:call,key:Peeroleum_send,depth=0,line=106,from=5110,to=5125
-              Mapule,kind:def,key:say_trust,depth=0,line=108,from=5197,to=5207
-              Mapule,kind:cf,key:if,depth=0,line=111,from=5287,to=5290
-              Mapule,kind:call,key:Pier_next_seq,depth=0,line=113,from=5363,to=5382
-              Mapule,kind:call,key:Peeroleum_send,depth=0,line=115,from=5419,to=5434
-              Mapule,kind:def,key:hear_hello,depth=0,line=125,from=6145,to=6156
-              Mapule,kind:cf,key:if,depth=0,line=128,from=6221,to=6224
-              Mapule,kind:cf,key:if,depth=0,line=132,from=6438,to=6441
-              Mapule,kind:def,key:hear_trust,depth=0,line=136,from=6582,to=6593
-              Mapule,kind:def,key:Pier_next_seq,depth=0,line=144,from=7018,to=7032
-              Mapule,kind:def,key:Peeroleum_on,depth=0,line=155,from=7783,to=7796
-              Mapule,kind:def,key:Peeroleum_send_consumer,depth=0,line=166,from=8569,to=8593
-              Mapule,kind:cf,key:if,depth=0,line=168,from=8664,to=8667
-              Mapule,kind:call,key:Pier_next_seq,depth=0,line=170,from=8727,to=8746
-              Mapule,kind:call,key:Peeroleum_send,depth=0,line=171,from=8756,to=8776
-              Mapule,kind:def,key:Peeroleum_peer_ready,depth=0,line=178,from=9213,to=9234
-              Mapule,kind:def,key:transport,depth=0,line=187,from=9721,to=9731
-              Mapule,kind:call,key:send,depth=0,line=196,from=10157,to=10162
-              Mapule,kind:call,key:recv,depth=0,line=197,from=10231,to=10236
-              Mapule,kind:def,key:Peeroleum_send,depth=0,line=212,from=11202,to=11217
-              Mapule,kind:cf,key:if,depth=0,line=219,from=11682,to=11685
-              Mapule,kind:cf,key:if,depth=0,line=223,from=12030,to=12033
-              Mapule,kind:cf,key:if,depth=0,line=224,from=12174,to=12177
-              Mapule,kind:def,key:Peeroleum_deliver,depth=0,line=233,from=12836,to=12854
-              Mapule,kind:cf,key:if,depth=0,line=237,from=12964,to=12967
-              Mapule,kind:cf,key:if,depth=0,line=238,from=12986,to=12989
-              Mapule,kind:cf,key:if,depth=0,line=242,from=13367,to=13370
-              Mapule,kind:call,key:Peeroleum_pump_inbox,depth=0,line=245,from=13629,to=13652
-              Mapule,kind:call,key:feebly_ponder,depth=0,line=246,from=13665,to=13681
-              Mapule,kind:def,key:Peeroleum_pump_inbox,depth=0,line=258,from=14590,to=14611
-              Mapule,kind:cf,key:if,depth=0,line=261,from=14681,to=14684
-              Mapule,kind:cf,key:if,depth=0,line=262,from=14704,to=14707
-              Mapule,kind:cf,key:if,depth=0,line=264,from=14881,to=14884
-              Mapule,kind:cf,key:if,depth=0,line=270,from=15099,to=15102
-              Mapule,kind:cf,key:if,depth=0,line=273,from=15188,to=15191
-              Mapule,kind:cf,key:else if,depth=0,line=274,from=15264,to=15272
-              Mapule,kind:cf,key:else if,depth=0,line=275,from=15345,to=15353
-              Mapule,kind:cf,key:if,depth=0,line=278,from=15499,to=15502
-              Mapule,kind:call,key:Peeroleum_send,depth=0,line=285,from=15687,to=15704
-              Mapule,kind:call,key:Peeroleum_rollup_faulty,depth=0,line=291,from=15924,to=15950
-              Mapule,kind:call,key:Peeroleum_pump_inbox,depth=0,line=293,from=15966,to=15989
-              Mapule,kind:def,key:Peeroleum_take_ack,depth=0,line=298,from=16254,to=16273
-              Mapule,kind:cf,key:if,depth=0,line=300,from=16369,to=16372
-              Mapule,kind:cf,key:for,depth=0,line=302,from=16458,to=16462
-              Mapule,kind:cf,key:if,depth=0,line=304,from=16565,to=16568
-              Mapule,kind:def,key:Peeroleum_rollup_faulty,depth=0,line=310,from=16887,to=16911
-              Mapule,kind:cf,key:if,depth=0,line=314,from=17070,to=17073
-              Mapule,kind:cf,key:for,depth=0,line=317,from=17197,to=17201
-              Mapule,kind:def,key:Peeroleum_arm_whittle,depth=0,line=324,from=17679,to=17701
-              Mapule,kind:cf,key:if,depth=0,line=326,from=17728,to=17731
-              Mapule,kind:call,key:Runstepped,depth=0,line=328,from=17808,to=17821
-              Mapule,kind:call,key:Peeroleum_runstepped,depth=0,line=328,from=17835,to=17858
-              Mapule,kind:call,key:rearm,depth=0,line=329,from=17877,to=17883
-              Mapule,kind:def,key:Peeroleum_runstepped,depth=0,line=337,from=18415,to=18436
-              Mapule,kind:cf,key:for,depth=0,line=339,from=18463,to=18467
-              Mapule,kind:cf,key:for,depth=0,line=340,from=18513,to=18517
-              Mapule,kind:cf,key:if,depth=0,line=342,from=18614,to=18617
-              Mapule,kind:cf,key:for,depth=0,line=344,from=18696,to=18700
-              Mapule,kind:call,key:whittle_N,depth=0,line=348,from=18904,to=18916
-              Mapule,kind:cf,key:if,depth=0,line=351,from=19011,to=19014
-              Mapule,kind:cf,key:for,depth=0,line=353,from=19091,to=19095
-              Mapule,kind:call,key:whittle_N,depth=0,line=357,from=19302,to=19314
-              Mapule,kind:call,key:Peeroleum_rollup_faulty,depth=0,line=359,from=19366,to=19392
+              Mapule,kind:def,key:req_p2paddy,depth=0,line=34,from=1537,to=1549
+              Mapule,kind:def,key:req_handshake,depth=0,line=47,from=2356,to=2370
+              Mapule,kind:cf,key:if,depth=0,line=54,from=2619,to=2622
+              Mapule,kind:def,key:req_said_hello,depth=0,line=66,from=3531,to=3546
+              Mapule,kind:call,key:say_hello,depth=0,line=69,from=3612,to=3622
+              Mapule,kind:cf,key:if,depth=0,line=71,from=3671,to=3674
+              Mapule,kind:def,key:req_heard_hello,depth=0,line=73,from=3711,to=3727
+              Mapule,kind:cf,key:if,depth=0,line=76,from=3805,to=3808
+              Mapule,kind:def,key:req_said_trust,depth=0,line=78,from=3846,to=3861
+              Mapule,kind:call,key:say_trust,depth=0,line=81,from=3927,to=3937
+              Mapule,kind:cf,key:if,depth=0,line=83,from=3986,to=3989
+              Mapule,kind:def,key:req_heard_trust,depth=0,line=85,from=4026,to=4042
+              Mapule,kind:cf,key:if,depth=0,line=88,from=4120,to=4123
+              Mapule,kind:def,key:say_hello,depth=0,line=99,from=4873,to=4883
+              Mapule,kind:cf,key:if,depth=0,line=102,from=4963,to=4966
+              Mapule,kind:call,key:Pier_next_seq,depth=0,line=104,from=5039,to=5058
+              Mapule,kind:call,key:Peeroleum_send,depth=0,line=106,from=5095,to=5110
+              Mapule,kind:def,key:say_trust,depth=0,line=108,from=5182,to=5192
+              Mapule,kind:cf,key:if,depth=0,line=111,from=5272,to=5275
+              Mapule,kind:call,key:Pier_next_seq,depth=0,line=113,from=5348,to=5367
+              Mapule,kind:call,key:Peeroleum_send,depth=0,line=115,from=5404,to=5419
+              Mapule,kind:def,key:hear_hello,depth=0,line=125,from=6130,to=6141
+              Mapule,kind:cf,key:if,depth=0,line=128,from=6206,to=6209
+              Mapule,kind:cf,key:if,depth=0,line=132,from=6423,to=6426
+              Mapule,kind:def,key:hear_trust,depth=0,line=136,from=6567,to=6578
+              Mapule,kind:def,key:Pier_next_seq,depth=0,line=144,from=7003,to=7017
+              Mapule,kind:def,key:Peeroleum_on,depth=0,line=155,from=7768,to=7781
+              Mapule,kind:def,key:Peeroleum_send_consumer,depth=0,line=166,from=8554,to=8578
+              Mapule,kind:cf,key:if,depth=0,line=168,from=8649,to=8652
+              Mapule,kind:call,key:Pier_next_seq,depth=0,line=170,from=8712,to=8731
+              Mapule,kind:call,key:Peeroleum_send,depth=0,line=171,from=8741,to=8761
+              Mapule,kind:def,key:Peeroleum_peer_ready,depth=0,line=178,from=9198,to=9219
+              Mapule,kind:def,key:transport,depth=0,line=187,from=9706,to=9716
+              Mapule,kind:call,key:send,depth=0,line=196,from=10142,to=10147
+              Mapule,kind:call,key:recv,depth=0,line=197,from=10216,to=10221
+              Mapule,kind:def,key:Peeroleum_send,depth=0,line=212,from=11187,to=11202
+              Mapule,kind:cf,key:if,depth=0,line=219,from=11667,to=11670
+              Mapule,kind:cf,key:if,depth=0,line=223,from=12015,to=12018
+              Mapule,kind:cf,key:if,depth=0,line=224,from=12159,to=12162
+              Mapule,kind:def,key:Peeroleum_deliver,depth=0,line=233,from=12821,to=12839
+              Mapule,kind:cf,key:if,depth=0,line=237,from=12949,to=12952
+              Mapule,kind:cf,key:if,depth=0,line=238,from=12971,to=12974
+              Mapule,kind:cf,key:if,depth=0,line=242,from=13352,to=13355
+              Mapule,kind:call,key:Peeroleum_pump_inbox,depth=0,line=245,from=13614,to=13637
+              Mapule,kind:call,key:feebly_ponder,depth=0,line=246,from=13650,to=13666
+              Mapule,kind:def,key:Peeroleum_pump_inbox,depth=0,line=258,from=14575,to=14596
+              Mapule,kind:cf,key:if,depth=0,line=261,from=14666,to=14669
+              Mapule,kind:cf,key:if,depth=0,line=262,from=14689,to=14692
+              Mapule,kind:cf,key:if,depth=0,line=264,from=14866,to=14869
+              Mapule,kind:cf,key:if,depth=0,line=270,from=15084,to=15087
+              Mapule,kind:cf,key:if,depth=0,line=273,from=15173,to=15176
+              Mapule,kind:cf,key:else if,depth=0,line=274,from=15249,to=15257
+              Mapule,kind:cf,key:else if,depth=0,line=275,from=15330,to=15338
+              Mapule,kind:cf,key:if,depth=0,line=278,from=15484,to=15487
+              Mapule,kind:call,key:Peeroleum_send,depth=0,line=285,from=15672,to=15689
+              Mapule,kind:call,key:Peeroleum_rollup_faulty,depth=0,line=291,from=15909,to=15935
+              Mapule,kind:call,key:Peeroleum_pump_inbox,depth=0,line=293,from=15951,to=15974
+              Mapule,kind:def,key:Peeroleum_take_ack,depth=0,line=298,from=16239,to=16258
+              Mapule,kind:cf,key:if,depth=0,line=300,from=16354,to=16357
+              Mapule,kind:cf,key:for,depth=0,line=302,from=16443,to=16447
+              Mapule,kind:cf,key:if,depth=0,line=304,from=16550,to=16553
+              Mapule,kind:def,key:Peeroleum_rollup_faulty,depth=0,line=310,from=16872,to=16896
+              Mapule,kind:cf,key:if,depth=0,line=314,from=17055,to=17058
+              Mapule,kind:cf,key:for,depth=0,line=317,from=17182,to=17186
+              Mapule,kind:def,key:Peeroleum_arm_whittle,depth=0,line=324,from=17664,to=17686
+              Mapule,kind:cf,key:if,depth=0,line=326,from=17713,to=17716
+              Mapule,kind:call,key:Runstepped,depth=0,line=328,from=17793,to=17806
+              Mapule,kind:call,key:Peeroleum_runstepped,depth=0,line=328,from=17820,to=17843
+              Mapule,kind:call,key:rearm,depth=0,line=329,from=17862,to=17868
+              Mapule,kind:def,key:Peeroleum_runstepped,depth=0,line=337,from=18400,to=18421
+              Mapule,kind:cf,key:for,depth=0,line=339,from=18448,to=18452
+              Mapule,kind:cf,key:for,depth=0,line=340,from=18498,to=18502
+              Mapule,kind:cf,key:if,depth=0,line=342,from=18599,to=18602
+              Mapule,kind:cf,key:for,depth=0,line=344,from=18681,to=18685
+              Mapule,kind:call,key:whittle_N,depth=0,line=348,from=18889,to=18901
+              Mapule,kind:cf,key:if,depth=0,line=351,from=18996,to=18999
+              Mapule,kind:cf,key:for,depth=0,line=353,from=19076,to=19080
+              Mapule,kind:call,key:whittle_N,depth=0,line=357,from=19287,to=19299
+              Mapule,kind:call,key:Peeroleum_rollup_faulty,depth=0,line=359,from=19351,to=19377
         scheme:req
           lematch	{"ref":{"sc_has":"Object()"}}
             lematch	{"ref":{"sc_has":"Object()"}}
@@ -715,15 +715,14 @@ Snap:H
           ActiveInterest,kind:Trail,waft:Ghost/Net/Easy
           dock,active	{"loopy":0,"hid":1}
           Change
-            backend,dige:c176b
-            storage,dige:c176b,dim:false
-            compile,dige:c176b,dim:false,secs=0.099
-          spinner:compile
-        req:workon,following,auto_push	{"ref":{"w":"%w:Lang, editor:1"}}
+            backend,dige:8f51e
+            storage,dige:8f51e
+            compile,dige:8f51e,secs=0.046,dim,pending
+        req:workon,auto_push	{"ref":{"w":"%w:Lang, editor:1"}}
           {"req":"understanding","maz":3,"permanent":1,"sig":"1:13:0:0","what":"the peer","finished":1}
           req:ingredients,maz=2,permanent,sig:Ghost/N/Peeroleum.g,finished
             req:furnishing,path:Ghost/N/Peeroleum.g,permanent,asked,finished
-          {"req":"instrumentation","permanent":1,"sig":"Ghost/N/Peeroleum.g:c176b80d5d645ecf:1:29","have_Map":1,"n_pmirrors":4,"finished":1}
+          {"req":"instrumentation","permanent":1,"sig":"Ghost/N/Peeroleum.g:8f51e79489c29a89:1:29","have_Map":1,"n_pmirrors":4,"finished":1}
         req:waft_roster,eternal,subscribed
         o_elvis:Lies_compile_settled
         o_elvis:dock_content
@@ -731,19 +730,30 @@ Snap:H
           Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:the peer","topD":"%Demonstrations:origin"}}
             Demonstrations:origin
               Demonstrations:origin,Doc:Ghost/N/Peeroleum.g
-            News:origin,goners=0,neus
+              Demonstrations:origin,Point,method:Peeroleum
+              Demonstrations:origin,Point,method:req_p2pman
+              Demonstrations:origin,Point,method:req_p2paddy
+              Demonstrations:origin,Point,method:req_handshake
+            News:origin,goners=0,neus=5
           Seem:working	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:the peer","topD":"%Demonstrations:working"}}
             Demonstrations:working
               Demonstrations:working,Doc:Ghost/N/Peeroleum.g
                 Understandable
+              Demonstrations:working,Point,method:Peeroleum
+                Understandable
+              Demonstrations:working,Point,method:req_p2pman
+                Understandable
+              Demonstrations:working,Point,method:req_p2paddy
+                Understandable
+              Demonstrations:working,Point,method:req_handshake
+                Understandable
               Understandable
-            News:working,goners=0,neus
+            News:working,goners=0,neus=5
           State
-          {"encode":1,"snap_origin":"Doc:Ghost/N/Peeroleum.g\n","snap_working":"Doc:Ghost/N/Peeroleum.g\n","dirty":"0"}
+          {"encode":1,"snap_origin":"Doc:Ghost/N/Peeroleum.g\nPoint,method:Peeroleum\nPoint,method:req_p2pman\nPoint,method:req_p2paddy\nPoint,method:req_handshake\n","snap_working":"Doc:Ghost/N/Peeroleum.g\nPoint,method:Peeroleum\nPoint,method:req_p2pman\nPoint,method:req_p2paddy\nPoint,method:req_handshake\n","dirty":"0"}
         received,doc_opened,doc:Ghost/N/Peeroleum.g
         received,editorBegins,doc:Ghost/N/Peeroleum.g
-        self,round=14	{"mung":["age"]}
-        see:✅ compiled Ghost/N/Peeroleum.g
+        self,round=16	{"mung":["age"]}
         see:🟦 tiles 0 bookmarks
     A:Pantheate
       self,round=4	{"mung":["age"]}
@@ -756,8 +766,8 @@ Snap:H
     watched:UIs
       UI:Lies	{"ref":{"component":"Function()"}}
       UI:Langui	{"ref":{"component":"Function()"}}
-      UI:Pantheate-include,gen_path:gen/N/Peeroleum.go	{"ref":{"component":"Function()"}}
-      UI:Pantheate-include,gen_path:gen/N/Tribunal.go	{"ref":{"component":"Function()"}}
+      UI:Pantheate-include,gen_path:p2p/transport/Peeroleum.go	{"ref":{"component":"Function()"}}
+      UI:Pantheate-include,gen_path:p2p/transport/Tribunal.go	{"ref":{"component":"Function()"}}
     watched:actions
       action,role:debookmark,label:-marks	{"ref":{"fn":"Function()"}}
       action,role:enbookmark,label:+marks	{"ref":{"fn":"Function()"}}
