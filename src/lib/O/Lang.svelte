@@ -365,8 +365,6 @@
         // Each stage holds wants + convergence-markers only; its durable output
         // lives elsewhere (%LE/%Seem, %Good, the dock) so de-finishing loses nothing.
         const workon = await w.oai({ req: 'workon' }, { w })
-        workon.sc.following = 1   // track group cursor (default)
-        // < following:0 = diverged; thought-balloon on breadcrumb
 
         // auto_push on by default — changey working drift with a stable origin
         //   flushes straight back to the Waft, so the OC is the working set and

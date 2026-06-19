@@ -440,11 +440,22 @@
     })
 
     // runner-facing peers proven live by a recent pong (same 7s window as Liesui).
+    //  The role is the VALUE of %channel_peer ({channel_peer:'runner'}, stamped by
+    //   Lies_pong_recv) — there is no separate `role` key.  Reading p.sc.role never
+    //    matched, so this set stayed empty and the card said "no runner has connected"
+    //     even while a run_result verdict was held.  Match the value, as Liesui does.
     let live_runners = $derived(peers.filter(p =>
-        p.sc?.role === 'runner' && p.sc?.last && now - (p.sc.last as number) < 7000))
+        p.sc?.channel_peer === 'runner' && p.sc?.last && now - (p.sc.last as number) < 7000))
     let runner_rtt   = $derived(live_runners[0]?.sc?.rtt as number | undefined)
     // >1 live runner: the editor can't tell which one's verdict is canonical.
     let runner_clash = $derived(live_runners.length > 1)
+
+    // connection-health card — the editor↔runner relationship at a glance.  runner_peer is
+    //  the last runner we heard a pong from (may be stale); peer_age_s is how long since, so
+    //   a frozen channel reads as a growing silence rather than a stale "connected" lie.
+    let runner_peer = $derived(peers.find(p => p.sc?.channel_peer === 'runner'))
+    let peer_live   = $derived(live_runners.length > 0)
+    let peer_age_s  = $derived(runner_peer?.sc?.last ? Math.round((now - (runner_peer.sc.last as number)) / 1000) : null)
 
     // run_result.dige is the full dige; the compile leg shows a 5-char slice.
     let ran_dige = $derived(String(run_result?.sc?.dige ?? '').slice(0, 5))
@@ -469,11 +480,6 @@
         return live_runners.length ? 'working' : ''
     })
 
-    // ── the pee-dance ──────────────────────────────────────────────────────────
-    //   The strip does its "needs to pee" bob only while real work is in flight —
-    //   a compile is pending, or the runner is still working on the compiled version.
-    //   At rest (compiled + runner confirmed, or nothing pushed) it sits still.
-    let straining = $derived(!!_compile?.sc?.pending || runner_phase === 'working')
 
     // ── switch $effect ────────────────────────────────────────────────────────
     //   Runs whenever active_path changes.  Saves the departing EditorState
@@ -1572,7 +1578,7 @@
         <Actions N={lang_actions} />
         <span class="lte-doc" title={active_path}>{active_name}</span>
         {#if _backend?.sc.dige}
-        <span class="lte-change" class:lte-pee={straining}
+        <span class="lte-change"
               title="version flow: editor → disk → compiled → runner">
             <span class="lte-ch-leg lte-ch-editor" title="editor text">{_backend.sc.dige}</span>
             {#if _storage?.sc.dige}
@@ -1602,6 +1608,12 @@
                     {:else if runner_phase === 'working'}<span class="lte-ch-ico lte-run-spin">◴</span>{_compile?.sc.dige}
                     {:else}<span class="lte-ch-ico">⟳</span>{ran_dige}{/if}
                 </span>
+                <!-- ping: the live bridged round-trip to the runner, on the line beside its
+                     verdict.  Independent of the verdict (it's the channel heartbeat, not the
+                     run), so it shows whenever a runner is ponging — including while red/working. -->
+                {#if runner_rtt != null}
+                    <span class="lte-ch-ping" title="channel round-trip to the runner (bridged)">{runner_rtt}ms</span>
+                {/if}
                 {#if runner_clash}
                     <span class="lte-ch-clash" title="{live_runners.length} runners are live — verdicts may disagree; one may be a stale replacement">⚠{live_runners.length}</span>
                 {/if}
@@ -1640,6 +1652,35 @@
             <DocMinimap {H} {view} />
         </div>
         {/if}
+
+        <!-- connection-health card — the LiesLies editor↔runner relationship.  Lives INSIDE
+             .lte-cm beside the minimap so it pins to the editor viewport's bottom-right: a
+             reflection of the minimap on the ceiling, on the same right offset + width.  Always
+             present (outside the minimap_open gate) so "is the other end there, and what is it
+             saying" is answerable at a glance without reading the console. -->
+        <div class="lte-health" class:lte-health-live={peer_live}>
+            <div class="lte-health-line">
+                <span class="lte-health-dot" class:on={peer_live}>{peer_live ? '●' : '○'}</span>
+                <span class="lte-health-peer">runner</span>
+                {#if peer_live && runner_rtt != null}
+                    <span class="lte-health-rtt" title="bridged round-trip">{runner_rtt}ms</span>
+                {/if}
+                {#if runner_clash}<span class="lte-health-clash" title="{live_runners.length} runners live — verdicts may disagree">⚠{live_runners.length}</span>{/if}
+            </div>
+            <div class="lte-health-sub">
+                {#if peer_live}heard {peer_age_s}s ago
+                {:else if runner_peer}silent {peer_age_s}s — no pong
+                {:else}no runner has connected{/if}
+            </div>
+            {#if runner_phase}
+                <div class="lte-health-verdict lte-run-{runner_phase}">
+                    {#if runner_phase === 'good'}✓ ran {ran_dige} — green
+                    {:else if runner_phase === 'bad'}✗ ran {ran_dige} — red{run_result?.sc.errors ? ` (${run_result.sc.errors})` : ''}
+                    {:else if runner_phase === 'working'}◴ running {_compile?.sc.dige}…
+                    {:else}⟳ stale {ran_dige}{/if}
+                </div>
+            {/if}
+        </div>
         {#if dock}
         <!-- Frozen-frame overlay — MUST live INSIDE .lte-cm.  The editor's whole
              appearance comes from Langui's `.lte-cm :global(.cm-*)` rules (there is no
@@ -1688,8 +1729,8 @@
     /* ── change strip — inline in .lte-bar next to the filename ──
        Four legs of the version flow: editor → disk → compiled → runner.  Each leg
        is a glyph + 5-char dige; brighter than before so the chain reads at a glance,
-       dimming only the stages the editor has run ahead of.  The whole strip does a
-       "needs to pee" bob when work is in flight (see the pee-dance keyframes). */
+       dimming only the stages the editor has run ahead of.  Work-in-flight shows as
+       per-leg state (compile dim/busy colour, runner ◴) — the strip itself stays still. */
     .lte-change {
         display: inline-flex; align-items: center; gap: 0.2rem;
         font-family: monospace; font-size: 0.7rem;
@@ -1717,26 +1758,19 @@
     .lte-run-working { color: #c4a86a; }
     .lte-run-stale   { color: #778; opacity: 0.7; }   /* old verdict — never reads as success */
     .lte-run-spin    { display: inline-block; animation: lte-run-spin-kf 1.1s linear infinite; }
+    /* ping rides beside the runner leg, dimmed like compile's secs — the channel pulse */
+    .lte-ch-ping    { color: #6a8; margin-left: 0.1rem; font-size: 0.62rem; cursor: help; }
     .lte-ch-clash   {
         color: #f0b040; font-size: 0.66rem; cursor: help;
         font-weight: bold; letter-spacing: 0.02em;
     }
 
-    /* ── the pee-dance ──────────────────────────────────────────────────────
-       Only while real work is in flight (compile pending, or runner still working):
-       a "needs to pee" bounce-and-sway.  Sits perfectly still at rest. */
-    .lte-pee { animation: lte-pee-kf 0.5s ease-in-out infinite; }
-    @keyframes -global-lte-pee-kf {
-        0%, 100% { transform: translateY(0)      rotate(0deg); }
-        25%      { transform: translateY(-1.5px) rotate(1.4deg); }
-        75%      { transform: translateY(-1.5px) rotate(-1.4deg); }
-    }
     @keyframes -global-lte-run-spin-kf {
         from { transform: rotate(0deg); }
         to   { transform: rotate(360deg); }
     }
     @media (prefers-reduced-motion: reduce) {
-        .lte-pee, .lte-run-spin { animation: none; }
+        .lte-run-spin { animation: none; }
     }
 
     /* ── "map" button — minimap toggle ─────────────────────────────────── */
@@ -1879,6 +1913,36 @@
         z-index: 1;
     }
     .lte-mm-host > :global(*) { pointer-events: auto; }
+
+    /* ── connection-health card — LiesLies editor↔runner relationship ──────────
+       Absolute inside .lte-cm (its containing block, position:relative — same as
+       .lte-mm-host), so bottom/right track the EDITOR VIEWPORT, not the taller .lte
+       block below the Points panel.  Same right offset + width as the minimap, pinned
+       to the floor: a reflection of the minimap on the ceiling.  z-index above
+       lte-mm-host (1) so it stays legible whether the minimap is open or closed.
+       pointer-events:none so it never steals the minimap's bottom from a click. */
+    .lte-health {
+        position: absolute;
+        bottom: 0.4rem;
+        right:  var(--lte-scrollbar-w);
+        width:  var(--lte-minimap-w);
+        box-sizing: border-box;
+        padding: 4px 7px;
+        background: rgba(9, 11, 13, 0.93);
+        border: 1px solid #1a1a1a;
+        border-radius: 4px 0 0 4px;
+        font-family: monospace; font-size: 0.62rem; line-height: 1.4;
+        color: #678; z-index: 11; pointer-events: none;
+    }
+    .lte-health-live   { border-color: rgba(106, 208, 192, 0.3); }
+    .lte-health-line   { display: flex; align-items: baseline; gap: 0.3rem; }
+    .lte-health-dot    { color: #5a4a3a; }
+    .lte-health-dot.on { color: #6ad0c0; }
+    .lte-health-peer   { color: #9ab0c4; letter-spacing: 0.04em; }
+    .lte-health-rtt    { color: #6a8; margin-left: auto; font-variant-numeric: tabular-nums; }
+    .lte-health-clash  { color: #f0b040; font-weight: bold; }
+    .lte-health-sub    { color: #556; font-style: italic; }
+    .lte-health-verdict{ margin-top: 2px; padding: 1px 4px; border-radius: 2px; display: inline-block; }
 
     /* bookmark Decoration.mark — subtle underline + tinted bg so overlapping
        ranges read clearly. One rule works even when marks overlap because

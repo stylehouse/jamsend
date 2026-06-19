@@ -6,7 +6,6 @@
     import { armap, depeel, Idento, nex, peel, sex } from "$lib/Y.svelte";
     import { onMount } from "svelte";
     import MachPeerily from "../MachPeerily.svelte";
-    import Peregrination from "./Peregrination.svelte";
     import MachReactivity from "./MachReactivity.svelte";
     import MachReqy from "./MachReqy.svelte";
     import Mundane from "./Mundane.svelte";
@@ -1482,7 +1481,6 @@ The double-envelopment became the template for every subsequent battle of annihi
     })
 </script>
 <MachPeerily {M} />
-<Peregrination {M} />
 <MachReactivity {M} />
 <MachReqy {M} />
 <Mundane {M} />

@@ -140,7 +140,7 @@ w:Lang
 probably won't resolve these before moving on with other work.
 
 Ordered roughly by severity and actionability.  Fault numbers are stable; gaps
- (1, 3, 12, 17, 19, 20) are items since resolved or dropped — see git history.
+ (1, 3, 12, 17, 19, 20, 21) are items since resolved or dropped — see git history.
 
 ---
 
@@ -266,10 +266,6 @@ The comment groups `%LiesStore_writeCarefully / %surprise_read / diff per Good,t
 ### 18. nested Waft save  *(Lies:114)*
 
 A Waft can hold `%What` nodes which can be other Wafts logically.  `enWaft`/`deWaft` serialise a single Waft, but the snap format and protocol for a Waft-*within*-a-Waft is not designed.  Deferred until there's a concrete use case.
-
-### 21. workon.following diverged state  *(Lang:323)*
-
-`workon.sc.following = 1` (track group cursor) is set at plan time and never cleared.  When a user manually navigates away from the group cursor, `following:0` should trigger a thought-balloon on the breadcrumb.  Needs a comparison between `workon.c.src` and the group cursor's current position, and a UI read of `following` in NaviCado/breadcrumb.
 
 ---
 

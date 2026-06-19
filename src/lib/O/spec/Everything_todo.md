@@ -194,6 +194,25 @@ The earlier "Point nesting reconciliation" entry was a misread — the snap and
  memory shapes agree (`Waft→What*→(Doc, Point*)`); the real gap was the blind
   bookmark→Point export, now addressed (see Point work below).
 
+## TODO — real UIless includes of `.go` (the runner-side blocker)
+
+A compiled `.g` becomes a `gen/**.go` that is a **Svelte component**: its `eatfunc`
+ (the deposit of the ghost's methods + `Ghostmeta_<name>()`) runs in `onMount`. So
+  "loading" a ghost today = enrol the component in `H/{watched:UIs}` and let Otro
+   **mount** it (`Lies_transport_up` and Pantheate both do exactly this). A UIless run
+    renders no UIs → `onMount` never fires → no `Ghostmeta` → `req:include` / the
+     runner's acquire (`Lies_ghost_live`) park at `waiting:ghostmeta` forever. This is
+      now the load-bearing blocker, not a someday-nicety: it's what stops the
+       runner-Lies bootstrap (`Perebootstrap`) from being headless, and it's the
+        prerequisite for the Creduler running a real verdict off-DOM.
+
+**The ask:** a way to run a `gen/**.go`'s `eatfunc` (deposit methods + `Ghostmeta`)
+ **without a DOM mount** — evaluate the component's deposit path directly, or a headless
+  Svelte-component instantiation that runs `onMount`-equivalent. See `Editron.md` §4
+   ("The UIless-include problem"), `Peeroleum_handover.md` heading 1b, and
+    `Story_next_level_spec.md` §16. Until it lands, the runner is a live browser tab
+     (which is fine for v1 — the channel is identical either way).
+
 ## Parked (Lies / Peeroleum)
 Editor→runner channel (version handshake → acquire-then-poll is "THE next edit";
  `active_transport` keystone reportedly still not live), dual-LE Sidetrack

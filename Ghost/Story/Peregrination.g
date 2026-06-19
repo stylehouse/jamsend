@@ -1,14 +1,11 @@
 
-// LakeNetherland — the Peeroleum test-case wrangler (the outer test layer).
-//  Reached only after Peregrination.svelte (the hand-written bootstrap) has
-//  compiled + included this dock and Ghost/N/Peeroleum.g, so its sibling methods
-//  are live on H. Getting-started: prove we reached compiled code, then seed the
-//  wrangler's root desire so the Peeroleum spine has something to pump.
-//
-// Step 1 was the bootstrap (compile + include) — owned by the loader. From here
-//  A:Peregrination has the conn: LakeNetherland installs the eternal %req:wrangle
-//   whose do_fn drives the *inner* steps, starting at 2. The toc.snap carries one
-//    `step,…` line per inner step (real seq, lie diges till a run records them).
+// Peregrination — the Peeroleum p2p test (the outer test layer), and the first of a
+//  new kind of runtime test.  The Creduler (the runner Lies on H:Mundo) loads this
+//   ghost live BEFORE the Story begins, so its sibling methods are on H; there is no
+//    hand-written bootstrap anymore.  Run_A_Peregrination wires the Run, then the
+//     per-beat Peregrination(A,w) installs the eternal %req:wrangle whose do_fn drives
+//      the *inner* steps, starting at 2. The toc.snap carries one `step,…` line per
+//       inner step (real seq, lie diges till a run records them).
 //
 //   step 2  two sides up under one mock transport; a noop A→B proves carrier + ack
 //   step 3  %req:handshake completes on both Piers; full outbox/inbox lifecycle + acks
@@ -21,12 +18,20 @@
 //  queued→handling→verified→done, acks, %recent whittle at the step boundary) is not
 //   its own step — it rides the traffic of steps 2 and 3, in the Peeroleum spine.
 //
-// We do NOT use H.on_step: it keys off one H-global `did_on_step_n`, which the
-//  bootstrap's step-1 table claims when compile/include spills into step 2 — that
-//   starves step 2's setup (the symptom: step 3 fires, step 2's sides never lay).
-//    Lake_drive keeps a req-local `did_step` instead, immune to any other caller.
-LakeNetherland(A,w):
-    w i %see:'y LakeNetherland — apparatus ready, Peregrination has the conn'
+// Run_A_Peregrination — the Book's Run recipe (Story_subHouse calls it to wire the
+//  Run).  Lives here now that the Creduler loads this ghost before the Story begins;
+//   the hand-written Peregrination.svelte is gone.  Lay the single test actor + its w;
+//    the role is already 'runner' (Auto/boot) — this just guards it.
+Run_A_Peregrination():
+    this.c.role ??= 'runner'
+    H i A:Peregrination/w:Peregrination
+
+// We do NOT use H.on_step: it keys off one H-global `did_on_step_n`, which a step-1
+//  table would claim when setup spills into step 2 — that starves step 2's setup (the
+//   symptom: step 3 fires, step 2's sides never lay).  Lake_drive keeps a req-local
+//    `did_step` instead, immune to any other caller.
+Peregrination(A,w):
+    w i %see:'y Peregrination — apparatus ready, peers have the conn'
     w oai %req:wrangle,eternal
         await &Lake_drive,w,req
         req%ok = 1

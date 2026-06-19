@@ -591,6 +591,10 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     async Lies(A: TheC, w: TheC) {
         const H = this as House
 
+        // Creduler bootstrap: the runner Lies on Mundo loads the runtime ghosts (editor-
+        //  compiled) live onto H, gating Story behind %Creduler_pending until they are.
+        if (w.sc.creduler) await H.Creduler_ensure()
+
         // ── one-time setup ────────────────────────────────────────────────────
         let examining = w.oai({ examining: 1 })
         let ave = H.oai_enroll(H, { watched: 'ave' })
@@ -753,7 +757,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 // auto-flushes any in-scope drift into the working clone tree.
                 // Cross-ghost, so it goes by elvis; Lang gates on whether its
                 // armed target lives in this Waft.
-                H.i_elvisto('Lang/Lang', 'Lies_waft_mutated', { waft_key: waft.sc.Waft })
+                H.feebly_elvisto('Lang/Lang', 'Lies_waft_mutated', { waft_key: waft.sc.Waft })
             })
 
             w.bump_version()

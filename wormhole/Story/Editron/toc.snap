@@ -6,16 +6,15 @@ story:Editron
     For
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=1.352
-      sample=1.758,at=1781860811
-      sample=1.53,at=1781860828
-      sample=2.118,at=1781860904
-      sample=0.956,at=1781861045
-      sample=1.657,at=1781861207
-      sample=1.203,at=1781861699
-      sample=0.676,at=1781861884
-      sample=0.938,at=1781862316
-      sample=1.568,at=1781862458
-      sample=1.118,at=1781864673
+    TimeTotal:beliefs,avg=1.022
+      sample=1.351,at=1781868203
+      sample=0.713,at=1781869110
+      sample=1.214,at=1781869296
+      sample=2.055,at=1781869648
+      sample=2.119,at=1781870621
+      sample=1.225,at=1781872187
+      sample=0.52,at=1781874987
+      sample=0.366,at=1781875008
+      sample=0.302,at=1781875017
+      sample=0.356,at=1781875728
   step,dige:cec6bfba8a71db73
-  step=2,dige:82c00a420cd3d70b

@@ -40,9 +40,16 @@
 
     let { M } = $props()
 
+    // CREDULER_GHOSTS — the runtime-test ghosts the Creduler loads live onto H before any
+    //  Story begins.  The p2p test is the first of a new kind; more pile on here.  NOT the
+    //   transport (Peeroleum/Tribunal) — those ride Lies_transport_up's FROZEN copies, and
+    //    loading the live gen/N/ ones here would put them back in the graph (channel flap).
+    const CREDULER_GHOSTS = ['Ghost/Story/Peregrination.g']
+
     onMount(async () => {
     await M.eatfunc({
 
+        //#region role — editor|runner identity & readiness
         // ── Lies_role — the authoritative editor|runner role, or undefined ────
         //
         //   H.c.role (stamped on the Run House by Run_A_<Book>) wins; a passed-in
@@ -97,6 +104,8 @@
             return !!(w.c.channel_up && at?.c.connection)
         },
 
+        //#endregion
+        //#region run-mode & arm — Esc → run authority
         // ── run-mode control: in-place vs from-start ──────────────────────────
         //
         //   The editor's preference for what "run it now" (Esc) means:
@@ -185,6 +194,8 @@
             }
         },
 
+        //#endregion
+        //#region channel — standup, transport & emit (Peeroleum consumer)
         // ── the editor↔runner channel — Lies as a Peeroleum consumer ──────────
         //
         //   The transport is already built and proven: the `/relay` ws endpoint
@@ -329,6 +340,8 @@
             } catch { return false }
         },
 
+        //#endregion
+        //#region acquire & result — runner receives, acquires Ghostmeta, runs, reports
         // Lies_rungo_recv — runner receives a Rungo: the authority (seq) to run once a set of
         //  ghost DEMANDS are live here.  Keyed by seq — each Rungo is its own authority; a higher
         //   seq SUPERSEDES any still-waiting lower-seq Rungo (the editor moved on).  A Rungo can
@@ -364,6 +377,51 @@
             return true
         },
 
+        // Lies_ghost_live — the runner's ACQUIRE primitive: the live source_dige of a ghost's
+        //  compiled code, or undefined if it isn't loaded.  A compiled .g bakes Ghostmeta_<name>(),
+        //   which ghostsHaunt deposits on every House — so this answers "is path's code on me, and
+        //    at what version".  The runner never compiles; it acquires what the editor shipped.
+        //     req_rungo compares this to a demanded dige (currency); the bootstrap loader checks it
+        //      for presence (loaded at all).  Prototyped in test/Peregrination, it lives here now.
+        Lies_ghost_live(path: string): string | undefined {
+            const H = this as House
+            return (H as any)[H.Lang_ghostmeta_name(path)]?.() as string | undefined
+        },
+
+        // Lies_ghost_load — the runner's LOAD half: enrol a dock's gen .go in watched:UIs so
+        //  Otro mounts it and its onMount eatfunc deposits the ghost's methods + Ghostmeta.
+        //   Mirrors Lies_transport_up (same enrol for the frozen transport).  "Assume compiled"
+        //    still needs "assume loaded" — this is the loaded part.  Browser-tab only for now:
+        //     a UIless run renders nothing, so onMount never fires (Everything_todo TODO).
+        async Lies_ghost_load(path: string) {
+            const H   = this as House
+            const gen = H.Lies_gen_path(path)
+            if (!gen) return
+            const uis = H.oai_enroll(H, { watched: 'UIs' })
+            if (uis.oa({ UI: 'Pantheate-include', gen_path: gen })) return   // already enrolled
+            const module = await import(/* @vite-ignore */ `../../lib/${gen}`)
+            uis.oai({ UI: 'Pantheate-include', gen_path: gen }, { component: module.default })
+        },
+
+        // Creduler_ensure — the runner's bootstrap, driven by the Creduler (the Mundo runner
+        //  Lies, outside Story).  Loads CREDULER_GHOSTS live onto H so the editor's compiled
+        //   code is present before any Story begins, riding %Creduler_pending on H while it
+        //    works — the greppable gate Story stalls on (waits:loadingcoding).  Loads any ghost
+        //     not yet Lies_ghost_live; clears the flag once all are live.  Called on H:Mundo.
+        async Creduler_ensure() {
+            const H = this as House
+            const unmet = CREDULER_GHOSTS.filter(p => !H.Lies_ghost_live(p))
+            if (!unmet.length) {
+                if (H.oa({ Creduler_pending: 1 })) {
+                    for (const c of H.o({ Creduler_pending: 1 }) as TheC[]) H.drop(c)
+                    H.tlog(`🧪 Creduler ready — ${CREDULER_GHOSTS.length} ghost(s) live`)
+                }
+                return
+            }
+            H.oai({ Creduler_pending: 1 })
+            for (const p of unmet) await H.Lies_ghost_load(p)
+        },
+
         // req:rungo,seq — the parked run authority.  do_fn on w:Lies (runner): check every
         //  demand's live Ghostmeta against its wanted dige; fire when ALL match.  The give-up is
         //   WALL-CLOCK (the think loop re-pumps far faster than any ttlilt, so a try-counter
@@ -379,7 +437,7 @@
             if (req.c.trickle_timer) { clearTimeout(req.c.trickle_timer as any); req.c.trickle_timer = undefined }
             const demands = (req.c.demands ?? []) as Array<{ path: string, dige: string }>
             const status = demands.map(d => {
-                const live = (H as any)[H.Lang_ghostmeta_name(d.path)]?.() as string | undefined
+                const live = H.Lies_ghost_live(d.path)
                 return { ...d, live, met: live === d.dige }
             })
             const unmet = status.filter(s => !s.met)
@@ -462,6 +520,8 @@
             return true
         },
 
+        //#endregion
+        //#region heartbeat — ping / pong
         // ── ping / pong — the channel heartbeat (proves the envelope path carries) ──
         //
         //   Lies_heartbeat fires a ping at most every 3s while the channel is live; the
@@ -503,6 +563,7 @@
             await w.roai({ channel_peer: peer }, { rtt, last: Date.now() })
             if (flipped) H.tlog(`🛰 channel live — ${H.Lies_role(w)} ⇄ ${peer} (bridged) — round-trip ${rtt}ms`)
         },
+        //#endregion
 
     })
     })

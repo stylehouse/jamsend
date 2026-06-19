@@ -239,7 +239,8 @@
         const H = this as House
         // drop any pending cold subscribe (we are about to satisfy it), then push.
         for (const sub of good.o({ subscribe: 1 }) as TheC[]) good.drop(sub)
-        H.i_elvisto('Lang/Lang', 'dock_content', { Good: good })
+        // feebly: with no Lang up the tree (runner, no editor) there's no dock to hand to.
+        H.feebly_elvisto('Lang/Lang', 'dock_content', { Good: good })
     },
 
     // ── Lies_spawn_look_waft ──────────────────────────────────────────────────
@@ -488,7 +489,17 @@
                 if (cortex) {
                     const codebit = (cortex.o({ req: 'Codebit' }) as TheC[])
                         .find(r => r.sc.gen_path === write_gen_path && !r.sc.finished && !r.sc.write_finished)
-                    if (codebit) codebit.sc.write_finished = 1
+                    if (codebit) {
+                        codebit.sc.write_finished = 1
+                        // Wake the pump now the write handoff is stamped.  feebly_ponder is
+                        //  Runtime-gated (a no-op on an idle Creduler Run), so the gen write would
+                        //   otherwise sit until the next happenstance tick — which is what the 150ms
+                        //    trickle in req_compile busy-polls for.  An ungated think sweeps the whole
+                        //     Run (reqdo_sweep walks every A/w), re-pumping req_Codebit → clearing
+                        //      %Compile pending → letting req_compile finish, on this write's heels.
+                        H.tlog(`💾 write_finished → think (${write_gen_path})`)
+                        H.i_elvisto(w, 'think')
+                    }
                 }
             }
             req.drop(wr)
@@ -939,7 +950,8 @@
         for (const sub of good.o({ subscribe: 1 }) as TheC[]) {
             const Aw   = sub.sc.Aw   as string | undefined
             const wake = sub.sc.wake as string | undefined
-            if (Aw && wake) H.i_elvisto(Aw, wake, { Good: good })
+            // feebly: a subscriber whose ghost is no longer stood up just isn't notified.
+            if (Aw && wake) H.feebly_elvisto(Aw, wake, { Good: good })
             good.drop(sub)
         }
     },

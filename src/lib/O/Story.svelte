@@ -1224,6 +1224,10 @@
 
     async Story(A: TheC, w: TheC) {
         const H    = this
+        // Stall — visibly, greppably — while the Creduler is still loading the runtime
+        //  ghosts: the editor's compiled code must be live on H before any Story begins
+        //   (Run_A_<Book> itself is one of those loaded methods).
+        if (H.oa({ Creduler_pending: 1 })) return w.i({ waits: 'loadingcoding' })
         const sub  = H.Story_subHouse(A, w)
         if (!sub) return
         const { Run, book } = sub

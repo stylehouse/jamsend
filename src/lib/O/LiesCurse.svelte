@@ -111,7 +111,8 @@
         //  Funkcion pump (req:Store Phase 2b, post dock-read-land) when this is revisited.
         await H.Lies_arm_engaged(examining, src)
 
-        H.i_elvisto('Lang/Lang', 'Lang_workon_update', { src })
+        // feebly: a runner with no editor has no Lang to tell — the cursor still moves.
+        H.feebly_elvisto('Lang/Lang', 'Lang_workon_update', { src })
     },
 
 //#endregion

@@ -30,7 +30,8 @@
     let errors:      TheC[]           = $state([])
     let all_wafts:   TheC[]           = $state([])
 
-    // channel peer — %channel_peer stamped by Lies_pong_recv (sc: role + rtt + last-pong ms).
+    // channel peer — %channel_peer stamped by Lies_pong_recv: the peer role is the VALUE
+    //  ({channel_peer:'runner'|'editor'}), NOT a separate `role` key; rtt + last-pong ms ride as sc.
     //  `now` is re-read each tick so peer_live can age out a peer that stopped ponging.
     let peer: TheC | undefined = $state()
     let now = $state(0)
