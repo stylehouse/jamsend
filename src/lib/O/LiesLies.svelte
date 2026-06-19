@@ -140,12 +140,12 @@
             const mode = (e.sc.mode as string) ?? H.Lies_run_mode()
 
             if (H.Lies_is_editor(w)) {
-                // Snap the last arm.  The runner re-runs off the dock_push the compile-
-                //  write emits (Lies_push_dock), so once the channel is live the arm is a
-                //   record, not a wait — only call it "awaiting" when the channel is down.
+                // Snap the last arm.  The runner re-runs off the Rungo the compile-write
+                //  emits (Lies_send_rungo), so once the channel is live the arm is a record,
+                //   not a wait — only call it "awaiting" when the channel is down.
                 w.oai({ run_arm: 1 }, { path, mode })
                 const live = H.Lies_channel_live(w)
-                console.log(`🔪 editor arm-run → ${path} [${mode}] ${live ? '(channel live — runner runs on dock_push)' : '(awaiting channel)'}`)
+                console.log(`🔪 editor arm-run → ${path} [${mode}] ${live ? '(channel live — runner runs on Rungo)' : '(awaiting channel)'}`)
                 return
             }
 
@@ -195,7 +195,7 @@
         //         app frame types, and bridge them to the compile/run pipeline.
         //
         //   Two frame types, plain-text bodies (Editron_runner_channel.md):
-        //     dock_push   editor → runner   { path, source, dige }
+        //     rungo       editor → runner   { demands: [{path, dige}], header:{seq} }
         //     run_result  runner → editor   { path, dige, ok, errors, snap_dige }
         //
         //   v1 scope (deferred items spelled out in the channel doc): one editor,
@@ -243,7 +243,7 @@
             ;(H as any).Tribunal_activate_websocket(w)
 
             // Inbound: the runner receives pushed source; the editor receives results.
-            if (role === 'runner') (H as any).Peeroleum_on(w, 'dock_push',  (cw: TheC, _p: TheC, fr: any) => H.Lies_dock_push_recv(cw, fr))
+            if (role === 'runner') (H as any).Peeroleum_on(w, 'rungo',      (cw: TheC, _p: TheC, fr: any) => H.Lies_rungo_recv(cw, fr))
             else                   (H as any).Peeroleum_on(w, 'run_result', (cw: TheC, _p: TheC, fr: any) => H.Lies_run_result_recv(cw, fr))
             // ping/pong heartbeat — both roles echo a ping and record a pong, so the real
             //  envelope path is provable (and shown by the badge), not just relay control.
@@ -280,90 +280,124 @@
             H.main()   // wake a tick: channel_up re-runs once eatfunc has deposited Socket_real
         },
 
-        // Lies_push_dock — editor emit (from the compile-write path).  We send only the
-        //  Ghost VERSION (the source_dige the editor's Ghostmeta bakes in), NOT the source:
-        //   both origins share the disk and Vite HMR already delivers the recompiled .go to
-        //    the runner, so shipping 18KB of .g is pointless.  The runner acquires that
-        //     version locally (HMR / re-read) and runs it, or reports "failed to acquire src".
-        Lies_push_dock(w: TheC, sc: { path?: string, source?: string, dige?: string }) {
+        // Lies_send_rungo — editor emit (from the compile-write path).  A **Rungo** is the
+        //  authority to run: it carries a seq (the run-authority token — a fresh seq
+        //   re-authorises a run even of unchanged code) and a list of ghost DEMANDS
+        //    {path, dige} the runner must have live before it runs.  We never ship source —
+        //     both origins share the disk and Vite HMR delivers the recompiled .go, so the
+        //      runner acquires each demanded version locally (or reports failure).
+        //   For now the compile-write path demands the single dock it just compiled; the
+        //    demands LIST is the seam for a multi-ghost run (edit several, run once all land).
+        Lies_send_rungo(w: TheC, sc: { path?: string, dige?: string, demands?: Array<{ path: string, dige: string }> }) {
             const H = this as House
             if (!H.Lies_is_editor(w)) return
             const pier = (w.o({ Peering: 1 })[0] as TheC | undefined)?.o({ Pier: 1 })[0] as TheC | undefined
             if (!pier || !H.Lies_channel_live(w)) return
-            ;(H as any).Peeroleum_send_consumer(w, 'dock_push', { path: sc.path, ghost_version: sc.dige })
-            console.log(`📤 dock_push → runner: ${sc.path} @ ${sc.dige}`)
+            const demands = (sc.demands ?? (sc.path && sc.dige ? [{ path: sc.path, dige: sc.dige }] : []))
+                .filter(d => d?.path && d?.dige)
+            if (!demands.length) return
+            const seq = (H as any).Peeroleum_send_consumer(w, 'rungo', { demands })
+            console.log(`📤 rungo seq=${seq} → runner: ${demands.map(d => `${d.path}@${String(d.dige).slice(0, 8)}`).join(', ')}`)
         },
 
-        // Lies_dock_push_recv — runner receives "I compiled version X; run it".  The frame
-        //  carries only %ghost_version (a source_dige), not source: the runner ACQUIRES that
-        //   version locally — both origins share the disk and Vite HMR delivers the recompiled
-        //    .go + re-runs its eatfunc, so Ghostmeta_<name>() reports the live version.
-        //   The frame can BEAT the code: we hold permission to run `want` a beat before HMR has
-        //    re-run the module, so Ghostmeta still reads the old dige.  Rather than erroring on
-        //     that first miss, PARK the intent in %req:run_intent (holding just the wanted dige —
-        //      cheap to carry over time) and let req_run_intent re-check each tick, running the
-        //       moment the live version matches.  A newer push overwrites %want in place; the
-        //        permanent req un-finishes (maybe_mutate_sc) and re-acquires the new version.
-        async Lies_dock_push_recv(w: TheC, frame: any): Promise<boolean> {
-            const H = this as House
-            const path = frame?.path          as string | undefined
-            const want = frame?.ghost_version as string | undefined
-            if (!path || !want) return false
-            const req = await w.oai({ req: 'run_intent', path }, { want, permanent: 1 }) as TheC
-            delete req.sc.finished     // re-arm even if the same version is re-pushed
-            req.c.await_want = undefined  // restart the wait window (+ one log line) for this push
-            H.i_elvisto(w, 'think')    // wake a tick so w.do() pumps the intent now, not next gesture
+        // Lies_rungo_recv — runner receives a Rungo: the authority (seq) to run once a set of
+        //  ghost DEMANDS are live here.  Keyed by seq — each Rungo is its own authority; a higher
+        //   seq SUPERSEDES any still-waiting lower-seq Rungo (the editor moved on).  A Rungo can
+        //    BEAT the code (HMR re-runs the .go a beat after the editor's write, so Ghostmeta still
+        //     reads the old dige), so we PARK it in %req:rungo,seq and let req_rungo re-check each
+        //      pump, firing the instant every demanded Ghostmeta matches.
+        async Lies_rungo_recv(w: TheC, frame: any): Promise<boolean> {
+            const H   = this as House
+            const seq = frame?.header?.seq as number | undefined
+            // demands: the new shape; fall back to the single {path, ghost_version} form.
+            const demands = (Array.isArray(frame?.demands) ? frame.demands
+                : (frame?.path && frame?.ghost_version ? [{ path: frame.path, dige: frame.ghost_version }] : []))
+                .filter((d: any) => d?.path && d?.dige) as Array<{ path: string, dige: string }>
+            if (seq == null || !demands.length) return false
+            // Clear spent Rungos so they don't accumulate (each seq is one-shot, not permanent):
+            //  a finished one (already fired/failed) is dropped; a still-waiting lower-seq one is
+            //   superseded — the editor has moved past it — then dropped.
+            for (const old of w.o({ req: 'rungo' }) as TheC[]) {
+                if (old.sc.finished) { w.drop(old); continue }
+                if ((old.sc.rungo as number) < seq) {
+                    console.log(`📥 rungo seq=${seq} supersedes still-waiting seq=${old.sc.rungo}`)
+                    ;(old.c.up as TheC).finish(old)
+                    w.drop(old)
+                }
+            }
+            const req = await w.oai({ req: 'rungo', rungo: seq }) as TheC
+            req.c.demands     = demands
+            req.c.await_since = Date.now()
+            req.c.last_sig    = undefined
+            console.log(`📥 rungo seq=${seq} recv: ${demands.map(d => `${d.path}@${String(d.dige).slice(0, 8)}`).join(', ')}`)
+            H.i_elvisto(w, 'think')   // wake a tick so w.do() pumps the rungo now, not next gesture
             return true
         },
 
-        // req:run_intent — the parked "run version `want` of `path` once it's live here" desire.
-        //  do_fn for /req:run_intent,path on w:Lies (runner).  Checks Ghostmeta the way req:include
-        //   does: live==want ⇒ invalidate the Good + think (drives the recompile|re-run) and finish.
-        //    Otherwise WAIT — the code may not have landed yet (HMR re-runs the recompiled module's
-        //     eatfunc a beat after the editor's write; on_code_change re-pumps us the instant it does).
-        //      The give-up is WALL-CLOCK, not a pump count: the runner's think loop re-pumps this req
-        //       far faster than any ttlilt, so a try-counter blows its budget in milliseconds —
-        //        await_since timestamps the wait and only reports red after a real window elapses.
-        async req_run_intent(req: TheC) {
-            const H    = this as House
-            const w    = req.c.up as TheC
-            const path = req.sc.path as string
-            const want = req.sc.want as string
-            const live = (H as any)[H.Lang_ghostmeta_name(path)]?.() as string | undefined
-            if (live === want) {
-                H.Lies_drive_run(w, path)   // invalidate Good + drive the Story Run (H%Run)
-                // Report the verdict home so the editor's Cred readout lights up.  PROVISIONAL: ok
-                //  here means "version acquired + run kicked", not "test passed" — wiring the real
-                //   Story pass/fail (+ nondeterminism) into this is the next Cred data slice.
-                H.Lies_report_result(w, { path, dige: want, ok: true })
-                console.log(`📥 dock_push: ▶ running ${path} @ ${want} (acquired)`)
+        // req:rungo,seq — the parked run authority.  do_fn on w:Lies (runner): check every
+        //  demand's live Ghostmeta against its wanted dige; fire when ALL match.  The give-up is
+        //   WALL-CLOCK (the think loop re-pumps far faster than any ttlilt, so a try-counter
+        //    blows its budget in ms).  Per-pump trace is gated on the live-set CHANGING, so a
+        //     50ms re-pump loop doesn't spam — and a Ghost_version_checkin advancing `live` is
+        //      visible.  NOTE pump still leans on Ghost_version_checkin → feebly_ponder (Runtime-
+        //       gated); the trickle-think strength is the planned fix for the "hangs after checkin".
+        async req_rungo(req: TheC) {
+            const H   = this as House
+            const w   = req.c.up as TheC
+            const seq = req.sc.rungo as number
+            const demands = (req.c.demands ?? []) as Array<{ path: string, dige: string }>
+            const status = demands.map(d => {
+                const live = (H as any)[H.Lang_ghostmeta_name(d.path)]?.() as string | undefined
+                return { ...d, live, met: live === d.dige }
+            })
+            const unmet = status.filter(s => !s.met)
+
+            // trace each pump, but only when the live-set changes (reveals re-pump + acquire).
+            const sig = status.map(s => `${s.path}=${String(s.live ?? 'none').slice(0, 8)}`).join(',')
+            if (req.c.last_sig !== sig) {
+                req.c.last_sig = sig
+                console.log(`↻ rungo seq=${seq}: ${status.map(s => `${s.path} live=${String(s.live ?? 'none').slice(0, 8)} want=${String(s.dige).slice(0, 8)} ${s.met ? '✓' : '⏳'}`).join(' | ')}`)
+            }
+
+            if (!unmet.length) {
+                // every demand live — FIRE.  Drive the Story Run once off the primary demand
+                //  (its Good is invalidated; the others rely on the same HMR that made them live).
+                //   PROVISIONAL ok = "versions acquired + run kicked", not "test passed" — the real
+                //    Story verdict is the next Cred slice.  TODO multi-demand: invalidate every Good.
+                const primary = demands[0]
+                H.Lies_drive_run(w, primary.path)
+                H.Lies_report_result(w, { path: primary.path, dige: primary.dige, ok: true })
+                console.log(`▶ rungo seq=${seq} FIRES @ ${demands.map(d => String(d.dige).slice(0, 8)).join('+')} — ${demands.map(d => d.path).join(', ')} (all ${demands.length} live)`)
                 ;(req.c.up as TheC).finish(req)
                 return
-            }
-            // (re)start the wall-clock wait when the wanted version changes — and log just once
-            //  per version, so a 50ms re-pump loop doesn't spam the console.  On .c: never snaps.
-            if (req.c.await_want !== want) {
-                req.c.await_want  = want
-                req.c.await_since = Date.now()
-                console.log(`📥 dock_push: ⏳ awaiting src ${path} @ ${want} (live ${live ?? 'none'})`)
             }
             if (Date.now() - (req.c.await_since as number) > 20000) {
-                console.log(`📥 dock_push: ✗ failed to acquire src ${path} @ ${want} after 20s (live ${live ?? 'none'})`)
-                H.Lies_report_result(w, { path, dige: want, ok: false, errors: [`failed to acquire src ${want}`] })
+                console.log(`✗ rungo seq=${seq} failed: ${unmet.map(s => `${s.path} live=${String(s.live ?? 'none').slice(0, 8)} ≠ want=${String(s.dige).slice(0, 8)}`).join(', ')} after 20s`)
+                H.Lies_report_result(w, { path: demands[0].path, dige: demands[0].dige, ok: false, errors: [`failed to acquire ${unmet.map(s => s.path).join(', ')}`] })
                 ;(req.c.up as TheC).finish(req)
                 return
             }
-            H.i_req_ttlilt(req, 1, { waiting: 'acquire' })   // bow out; on_code_change/tick re-checks
+            H.i_req_ttlilt(req, 1, { waiting: 'acquire' })   // bow out; Ghost_version_checkin / tick re-checks
         },
 
         // Ghost_version_checkin — called from the core ghostsHaunt on every HMR/haunt.  Fresh code
         //  (and its Ghostmeta dige) is now live, so wake a think on every live House: a parked
-        //   %req:run_intent re-checks Ghostmeta against the just-landed version and carries out the
-        //    run the instant it matches — event-driven, no polling race.  feebly_ponder self-gates
-        //     on Runtime, so the boot mount-wave (pre-Runtime) is a no-op and never storms.
+        //   %req:rungo re-checks Ghostmeta against the just-landed versions and fires the instant
+        //    they all match.  We LOG what each checkin brought in against any waiting Rungo demand,
+        //     so a hung acquire is legible (did `live` actually advance to the demanded dige?).
+        //      feebly_ponder self-gates on Runtime, so the boot mount-wave (pre-Runtime) is a no-op.
         Ghost_version_checkin() {
-            console.log(`Got Ghost_version_checkin`)
-            for (const h of (this as House).all_House) (h as House).feebly_ponder()
+            const H = this as House
+            for (const h of H.all_House as House[]) {
+                for (const req of (h.o({ req: 'rungo' }) as TheC[])) {
+                    if (req.sc.finished) continue
+                    for (const d of (req.c.demands ?? []) as Array<{ path: string, dige: string }>) {
+                        const live = (h as any)[h.Lang_ghostmeta_name(d.path)]?.() as string | undefined
+                        console.log(`🔁 version checkin: ${d.path} live=${String(live ?? 'none').slice(0, 8)} (rungo seq=${req.sc.rungo} wants ${String(d.dige).slice(0, 8)} ${live === d.dige ? '✓ MET' : '⏳'})`)
+                    }
+                }
+                h.feebly_ponder()
+            }
         },
 
         // Lies_report_result — runner emit, after a run settles.  The editor's handler

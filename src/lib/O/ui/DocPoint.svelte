@@ -6,8 +6,8 @@
     //   rename       — edit bm.sc.label and optionally bm.sc.method
     //   fuzzify  (~) — resolve the offset range to the enclosing def name
     //                  via e:Lang_point_fuzzify → stamps bm.sc.method
-    //   export   (↑) — push bookmark up to the active Waft as a proper Point
-    //                  via e:Lies_export_point → stamps bm.sc.point_serial
+    //   export   (↑) — shoot bookmark into the active Interest's LE as a Point
+    //                  via e:Lang_shoot_point → stamps bm.sc.point_serial
     //   delete   (×) — remove from dock and CM via e:Lang_remove_bookmark
     //
     // bm.sc layout:
@@ -69,10 +69,12 @@
         })
     }
 
-    // Export this bookmark as a Point under the active Waft Doc.
-    // Lies will find-or-create the Doc row and assign a serial.
+    // Shoot this bookmark into the active Interest's LE as a Point — landing it
+    // in the What we're at (Trail or Sidetrack).  Lang adds it to the working
+    // clone and the push cluster lands it on the canonical Waft.  Falls back to
+    // a path-keyed export when no Interest is armed (see e:Lang_shoot_point).
     function export_to_doc() {
-        H.i_elvisto('Lies/Lies', 'Lies_export_point', {
+        H.i_elvisto('Lang/Lang', 'Lang_shoot_point', {
             path:        dock_path,
             bookmark_id: bm.sc.bookmark as string,
             from:        bm.sc.from     as number,
@@ -274,7 +276,7 @@
         <!-- ↑ export / serial badge -->
         {#if !exported}
             <button class="dp-btn dp-btn-export" onclick={export_to_doc}
-                    title="export to active Waft Doc as a Point">↑</button>
+                    title="shoot into the active Interest as a Point">↑</button>
         {:else}
             <span class="dp-serial" title="Point serial #{bm.sc.point_serial}">
                 #{bm.sc.point_serial}

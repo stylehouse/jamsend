@@ -416,6 +416,65 @@
         _compile = change?.ob({ compile: 1 })[0] as TheC | undefined
     })
 
+    // ── runner leg ─────────────────────────────────────────────────────────────
+    //   The fourth leg of the change strip: what the RUNNER did with the version we
+    //   pushed.  Read off w:Lies — reached the same way Liesui does, via the shared
+    //   %examining particle's .c.w — so Lang need not own a ref to Lies.  Scoped to
+    //   the active dock's path:
+    //     run_result  — the runner's verdict for THIS dock (%ok / %errors / %dige).
+    //     peers       — %channel_peer per facing runner; >1 runner is the "freak out"
+    //                   case the editor should notice (a stale runner may still be live).
+    //   `now` re-reads each tick (ave bumps) so a peer that stopped ponging ages out.
+    let run_result: TheC | undefined = $state()
+    let peers:      TheC[]           = $state([])
+    let now = $state(0)
+    $effect(() => {
+        const ex = H.ave.ob({ examining: 1 })[0] as TheC | undefined
+        const lw = ex?.c?.w as TheC | undefined
+        if (lw) lw.ob()   // track w:Lies version so run_result lands live
+        now = Date.now()
+        run_result = lw && active_path
+            ? (lw.ob({ run_result: 1, path: active_path })[0] as TheC | undefined)
+            : undefined
+        peers = lw ? (lw.ob({ channel_peer: 1 }) as TheC[]) : []
+    })
+
+    // runner-facing peers proven live by a recent pong (same 7s window as Liesui).
+    let live_runners = $derived(peers.filter(p =>
+        p.sc?.role === 'runner' && p.sc?.last && now - (p.sc.last as number) < 7000))
+    let runner_rtt   = $derived(live_runners[0]?.sc?.rtt as number | undefined)
+    // >1 live runner: the editor can't tell which one's verdict is canonical.
+    let runner_clash = $derived(live_runners.length > 1)
+
+    // run_result.dige is the full dige; the compile leg shows a 5-char slice.
+    let ran_dige = $derived(String(run_result?.sc?.dige ?? '').slice(0, 5))
+    let ran_ok   = $derived(!!run_result?.sc?.ok)
+    // "the runner confirmed the version we compiled" — its verdict's dige matches the
+    //  compile leg.  A verdict for an OLDER dige is stale: it must NOT read as success.
+    let ran_current = $derived(!!ran_dige && ran_dige === (_compile?.sc?.dige ?? ''))
+
+    // ── runner phase, as the editor can see it ─────────────────────────────────
+    //   ''        — no runner live, no verdict: leg hidden.
+    //   'good'    — current verdict, green.
+    //   'bad'     — current verdict, red.
+    //   'working' — a runner is live but hasn't confirmed the compiled dige yet.  The
+    //               editor can't yet split "awaiting src" from "running" — that needs a
+    //               runner progress frame (run_phase over the channel); folded into one
+    //               working phase until then.
+    //   'stale'   — we hold an OLD verdict and nobody's currently running the new dige.
+    let runner_phase = $derived.by(() => {
+        if (run_result && ran_current) return ran_ok ? 'good' : 'bad'
+        if (!!live_runners.length && !!_compile?.sc?.dige && !ran_current) return 'working'
+        if (run_result) return 'stale'
+        return live_runners.length ? 'working' : ''
+    })
+
+    // ── the pee-dance ──────────────────────────────────────────────────────────
+    //   The strip does its "needs to pee" bob only while real work is in flight —
+    //   a compile is pending, or the runner is still working on the compiled version.
+    //   At rest (compiled + runner confirmed, or nothing pushed) it sits still.
+    let straining = $derived(!!_compile?.sc?.pending || runner_phase === 'working')
+
     // ── switch $effect ────────────────────────────────────────────────────────
     //   Runs whenever active_path changes.  Saves the departing EditorState
     //   (after flushing bookmarks and scroll position), then calls
@@ -1513,19 +1572,38 @@
         <Actions N={lang_actions} />
         <span class="lte-doc" title={active_path}>{active_name}</span>
         {#if _backend?.sc.dige}
-        <span class="lte-change">
-            <span class="lte-ch-leg" title="editor text">{_backend.sc.dige}</span>
+        <span class="lte-change" class:lte-pee={straining}
+              title="version flow: editor → disk → compiled → runner">
+            <span class="lte-ch-leg lte-ch-editor" title="editor text"><span class="lte-ch-ico">●</span>{_backend.sc.dige}</span>
             {#if _storage?.sc.dige}
                 <span class="lte-ch-arrow" class:lte-ch-dim={_storage.sc.dim}>→</span>
-                <span class="lte-ch-leg"   class:lte-ch-dim={_storage.sc.dim}
-                      title="on disk">{_storage.sc.dige}</span>
+                <span class="lte-ch-leg lte-ch-disk" class:lte-ch-dim={_storage.sc.dim}
+                      title={_storage.sc.dim ? 'on disk — behind the editor (unsaved edits)' : 'on disk — grounded'}><span class="lte-ch-ico">▾</span>{_storage.sc.dige}</span>
             {/if}
             {#if _compile?.sc.dige}
                 <span class="lte-ch-arrow" class:lte-ch-dim={_compile.sc.dim}>→</span>
-                <span class="lte-ch-leg"   class:lte-ch-dim={_compile.sc.dim}
-                      title="compiled">{_compile.sc.dige}</span>
+                <span class="lte-ch-leg lte-ch-compile" class:lte-ch-dim={_compile.sc.dim} class:lte-ch-busy={_compile.sc.pending}
+                      title={_compile.sc.pending ? 'compiling…' : 'compiled'}><span class="lte-ch-ico">◆</span>{_compile.sc.dige}</span>
                 {#if _compile.sc.secs}
-                    <span class="lte-ch-secs">({_compile.sc.secs}s)</span>
+                    <span class="lte-ch-secs">{_compile.sc.secs}s</span>
+                {/if}
+            {/if}
+            <!-- runner leg — phase of whoever ran what we compiled.  Hidden until a verdict
+                 lands or a runner is live; a stale verdict (older dige) reads grey, never green. -->
+            {#if runner_phase}
+                <span class="lte-ch-arrow" class:lte-ch-dim={runner_phase !== 'good' && runner_phase !== 'bad'}>→</span>
+                <span class="lte-ch-runner lte-run-{runner_phase}"
+                      title={runner_phase === 'good' ? `runner ran ${ran_dige} — green${runner_rtt != null ? ` · ${runner_rtt}ms` : ''}`
+                          : runner_phase === 'bad' ? `runner ran ${ran_dige} — red (${run_result?.sc.errors} err)${runner_rtt != null ? ` · ${runner_rtt}ms` : ''}`
+                          : runner_phase === 'working' ? `runner working on ${_compile?.sc.dige}${runner_rtt != null ? ` · ${runner_rtt}ms` : ''} — awaiting src / running`
+                          : `stale: last verdict was ${ran_dige} (${ran_ok ? 'green' : 'red'}), older than the compiled version — no runner on it`}>
+                    {#if runner_phase === 'good'}<span class="lte-ch-ico">✓</span>{ran_dige}
+                    {:else if runner_phase === 'bad'}<span class="lte-ch-ico">✗</span>{run_result?.sc.errors ?? ''} {ran_dige}
+                    {:else if runner_phase === 'working'}<span class="lte-ch-ico lte-run-spin">◴</span>{_compile?.sc.dige}
+                    {:else}<span class="lte-ch-ico">⟳</span>{ran_dige}{/if}
+                </span>
+                {#if runner_clash}
+                    <span class="lte-ch-clash" title="{live_runners.length} runners are live — verdicts may disagree; one may be a stale replacement">⚠{live_runners.length}</span>
                 {/if}
             {/if}
         </span>
@@ -1607,15 +1685,59 @@
     .lte-sel   { color: #556; font-variant-numeric: tabular-nums; }
     .lte-len   { color: #3a3a3a; }
 
-    /* ── change strip — inline in .lte-bar next to the filename ── */
+    /* ── change strip — inline in .lte-bar next to the filename ──
+       Four legs of the version flow: editor → disk → compiled → runner.  Each leg
+       is a glyph + 5-char dige; brighter than before so the chain reads at a glance,
+       dimming only the stages the editor has run ahead of.  The whole strip does a
+       "needs to pee" bob when work is in flight (see the pee-dance keyframes). */
     .lte-change {
-        display: inline-flex; align-items: center; gap: 0.18rem;
-        font-family: monospace; font-size: 0.67rem;
+        display: inline-flex; align-items: center; gap: 0.2rem;
+        font-family: monospace; font-size: 0.7rem;
+        padding: 0 0.15rem; border-radius: 3px;
+        transform-origin: bottom center;
     }
-    .lte-ch-leg   { color: #4a6a4a; letter-spacing: 0.03em }
-    .lte-ch-arrow { color: #2a2a3a }
-    .lte-ch-dim   { opacity: 0.35 }
-    .lte-ch-secs  { color: #333a55; margin-left: 0.15rem }
+    .lte-ch-leg     { letter-spacing: 0.03em; display: inline-flex; align-items: baseline; gap: 0.16rem; }
+    .lte-ch-ico     { font-size: 0.66rem; opacity: 1; line-height: 1; }   /* the per-stage glyph */
+    .lte-ch-editor  { color: #8fb0d4; }   /* editor text — the live source */
+    .lte-ch-disk    { color: #6a9a8a; transform: translateY(2px); }   /* on disk — sits low, the grounded one */
+    .lte-ch-compile { color: #9a8ac4; }   /* compiled output */
+    .lte-ch-arrow   { color: #3a3a4a; }
+    .lte-ch-dim     { opacity: 0.4; }
+    .lte-ch-secs    { color: #556; margin-left: 0.1rem; font-size: 0.62rem; }
+    .lte-ch-busy    { color: #c4a86a; }   /* a compile is in flight on this leg */
+
+    /* runner leg — phase of whoever ran the compiled version, with colour + glyph */
+    .lte-ch-runner  {
+        letter-spacing: 0.03em; cursor: help;
+        padding: 0 0.2rem; border-radius: 2px;
+        display: inline-flex; align-items: center; gap: 0.12rem;
+    }
+    .lte-run-good    { color: #6ad0a0; background: rgba(106, 208, 160, 0.1); }
+    .lte-run-bad     { color: #f88;    background: rgba(255, 136, 136, 0.12); }
+    .lte-run-working { color: #c4a86a; }
+    .lte-run-stale   { color: #778; opacity: 0.7; }   /* old verdict — never reads as success */
+    .lte-run-spin    { display: inline-block; animation: lte-run-spin-kf 1.1s linear infinite; }
+    .lte-ch-clash   {
+        color: #f0b040; font-size: 0.66rem; cursor: help;
+        font-weight: bold; letter-spacing: 0.02em;
+    }
+
+    /* ── the pee-dance ──────────────────────────────────────────────────────
+       Only while real work is in flight (compile pending, or runner still working):
+       a "needs to pee" bounce-and-sway.  Sits perfectly still at rest. */
+    .lte-pee { animation: lte-pee-kf 0.5s ease-in-out infinite; }
+    @keyframes -global-lte-pee-kf {
+        0%, 100% { transform: translateY(0)      rotate(0deg); }
+        25%      { transform: translateY(-1.5px) rotate(1.4deg); }
+        75%      { transform: translateY(-1.5px) rotate(-1.4deg); }
+    }
+    @keyframes -global-lte-run-spin-kf {
+        from { transform: rotate(0deg); }
+        to   { transform: rotate(360deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .lte-pee, .lte-run-spin { animation: none; }
+    }
 
     /* ── "map" button — minimap toggle ─────────────────────────────────── */
     /* Plain word button; active state is colour, not rotation.             */

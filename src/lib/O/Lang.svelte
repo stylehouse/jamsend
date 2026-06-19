@@ -1902,7 +1902,9 @@
 
         if (output) {
             const compile_dim = pending || (!!compiled_dige && !!disk_dige && compiled_dige !== disk_dige)
-            await change.roai({ compile: 1 }, { dige: compiled_dige, dim: compile_dim, secs: compile_cost })
+            // pending rides as its own flag (not just folded into dim) so the strip can
+            //  tell "actively compiling — strain" from "merely stale — fidget".
+            await change.roai({ compile: 1 }, { dige: compiled_dige, dim: compile_dim, pending: pending || undefined, secs: compile_cost })
         } else {
             for (const old_c of change.o({ compile: 1 }) as TheC[]) change.drop(old_c)
         }
@@ -2580,6 +2582,53 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
         bm.sc.point_serial = e.sc.serial as number
         bm.bump_version()
         this.i_elvisto(w, 'think', {})
+    },
+
+    // ── e:Lang_shoot_point ────────────────────────────────────────────────────
+    //
+    //   The real bookmark→Point path: shoot a ripe bookmark into the active
+    //   Interest's LE.  The Point is added to the working clone of the What we
+    //   are at — Trail or Sidetrack, whichever is foreground — through the
+    //   e:mark op:add seam, and the push cluster lands it back on the canonical
+    //   Waft.  Lang never writes Waft C directly; the LE owns every Waft
+    //   manipulation from this side.  With no armed Interest there is nowhere
+    //   legitimate for the Point to land, so we error rather than fall back to a
+    //   blind path-keyed write — foreground an Interest first.
+    //
+    //   e.sc: { path, bookmark_id, from, to, method, label? }
+    async e_Lang_shoot_point(A: TheC, w: TheC, e: TheC) {
+        const H        = this as House
+        const path     = e.sc.path as string | undefined
+        const method   = ((e.sc.method || e.sc.label || '') as string).trim()
+        if (!method) { w.i({ see: '⚠ shoot: nameless Point — fuzzify (~) first' }); return }
+
+        const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
+        const LE        = H.Lang_active_LE(languinio)
+        if (!LE) {
+            w.i({ see: '⚠ shoot: no active Interest to receive the Point — foreground one first' })
+            return
+        }
+
+        // The bookmark's dock must be the doc this Interest is checked out
+        //  against, or the Point would land in the wrong What.
+        const src_path = H.Waft_src_doc_path(LE.sc.target as TheC)
+        if (src_path && path && src_path !== path) {
+            w.i({ see: `⚠ shoot: bookmark dock '${path}' ≠ Interest dock '${src_path}'` })
+            return
+        }
+
+        // Method only — a label that just repeats the method is redundant noise
+        //  on the Point, so keep it only when it says something different.
+        const sc: Record<string, unknown> = { Point: 1, method }
+        const label = e.sc.label as string | undefined
+        if (label && label !== method) sc.label = label
+        H.i_elvisto('Lang/Lang', 'mark', { LE, op: 'add', sc })
+
+        // Light the bookmark as shot so DocPoint shows the serial badge.
+        w.c.point_serial_next ||= Date.now()
+        H.i_elvisto('Lang/Lang', 'Lang_stamp_bookmark_serial', {
+            bookmark_id: e.sc.bookmark_id, serial: w.c.point_serial_next++,
+        })
     },
 
 

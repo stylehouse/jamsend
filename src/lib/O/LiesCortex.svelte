@@ -140,6 +140,16 @@
             return
         }
 
+        // Editor: send the Rungo to the runner FIRST — permission to run before we even write.
+        //  The authority demands this dock's just-compiled version (source_dige, known the moment
+        //   we compiled) be live on the runner.  The frame crosses the slow relay channel while,
+        //    in parallel, we write the .go below and Vite HMR delivers it to the runner LOCALLY —
+        //     so permission and code arrive together instead of the channel RTT trickling on after
+        //      the write settles.  We ship only the dige (not source); the runner acquires the
+        //       version via that same HMR.  No-op until a runner is connected (drops silently).
+        if (e.sc.dock_source != null && H.Lies_is_editor(w))
+            H.Lies_send_rungo(w, { path, dige: source_dige })
+
         // Key the write on gen_path, not the source path.  The source has a
         // loaded_doc whose base_dige tracks source-on-disk for the surprise_read
         // check; keying by path stamped that base_dige with the gen output dige,
@@ -147,14 +157,6 @@
         // gen_path has no loaded_doc so its namespace stays the gen target's own.
         await H.LiesStore_write(w, gen_path, source, { rw_name: `src/lib/${gen_path}` })
         // < surface write errors when reply carries one.
-
-        // Editor: also push the edited .g source to the runner over the channel.  The
-        //  editor compiles + writes locally but never runs it (the Pantheate split);
-        //   the runner — a different origin, no shared disk — gets the bytes, re-lands,
-        //    recompiles, and runs.  No-op until a runner is connected (Lies_push_dock
-        //     drops silently when the peer isn't ready).
-        if (e.sc.dock_source != null && H.Lies_is_editor(w))
-            H.Lies_push_dock(w, { path, source: e.sc.dock_source as string, dige: source_dige })
 
         // req_oai re-merges on an existing Codebit — a re-compile mutates %dige,
         //  maybe_mutate_sc fires req%mutated and (permanent+finished) un-finishes it
@@ -253,6 +255,10 @@
         H.i_elvisto('Lang/Lang', 'Lies_compile_settled', {
             path,
             write_ms: write_ms != null ? +(write_ms / 1000).toFixed(3) : undefined,
+            // source_dige rides home so req:compiled_is_settled can stamp the dock's
+            //  %Text.disk_dige — the storage leg of the change strip.  Without it the
+            //   disk dige never updated (the strip's middle leg stayed stale forever).
+            source_dige: req.sc.source_dige,
         })
         console.log(`🔪 Codebit landed: ${path} write=${write_ms ?? '?'}ms`)
 

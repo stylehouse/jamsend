@@ -5,6 +5,26 @@ A cross-spec sweep of what is in motion and what is deferred-but-load-bearing,
   at the bottom — this is the everything-*else* picture. Correct anything stale;
    this is a snapshot, not canon.
 
+## Notes for whoever picks this up
+
+- **Verify against code before believing a difficulty.** Every item touched so
+   far shrank on contact: the Stuffing "over-creation" was already solved, the
+    "Point nesting reconciliation" was a misread (snap and memory agree), and the
+     "blind bookmark export" was real but fixed by one elvis through an existing
+      seam (`e:mark` `op:add` → `LE_add_clone`). The doc *overstates*; the real
+       gap is usually narrower and a seam usually already covers it. Read the
+        live code, then size the work.
+- **The decision-list is the spine; the status bullets rot.** Trust "Not nailed
+   down that should be" over the per-subsystem prose, which drifts run-to-run.
+- **Highest-leverage move latent here:** items #2 (where standing things live —
+   `H.ave` vs `Run.c`) and #3 (what counts as "the same change") are the *same*
+    cross-cutting questions asked in three dialects across Story/Wire/palmtree.
+     Answer each once as a shared primitive and three specs partly collapse.
+- **Durable invariant worth a real home:** *the LE owns every Waft C manipulation
+   from Lang* — Lang never writes Waft C directly. It's only in an elvis comment
+    (`e_Lang_shoot_point`) and here; it belongs in `Waft_spec`. Now near
+     exception-free (the pre-LE path errors rather than writing blind).
+
 ## Still moving — by subsystem
 
 ### Story runner
@@ -36,8 +56,33 @@ Three overlapping forward designs:
 - **`Waft-palmtree-trajectory.md`** — the What-cursor + branch/dive (`↓`/`↘`
    +time) model. ~10 "faults" still open; the meaty ones: Doc-close is a no-op
     so removed Docs stay editable (#5); Waft/Doc rename are warn-stubs (#6);
-     `bookmark_vanished` re-anchor unbuilt (#8). **Point round-trip is the
-      load-bearing one** — see "not nailed down" below.
+     `bookmark_vanished` re-anchor unbuilt (#8).
+
+**Point work (bookmark → Point).** *Done:* the ↑ on a ripe bookmark now shoots
+ it into the active Interest's LE as a Point — `DocPoint.export_to_doc` →
+  `e_Lang_shoot_point` (Lang.svelte) resolves `Lang_active_LE`, sanity-checks the
+   dock against `Waft_src_doc_path`, then routes through the existing `e:mark`
+    `op:add` → `LE_add_clone` seam so the Point lands in the What we're at (Trail
+     or Sidetrack) and the push cluster writes it back. The Point comes out
+      method-only (a `label` equal to the method is dropped as redundant). Lang
+       never writes Waft C directly; with no armed Interest it errors (no blind
+        fallback), which orphans the old `e_Lies_export_point` (dead now — it did
+         the wrong `doc.i({Point})` grammar; delete or leave parked).
+   *Also done:* fixed `wormhole/Ghost/Net/Easy/toc.snap` to the `What→(Doc|Point)`
+    grammar (Points were nested inside their Doc; now siblings under the What).
+     The Story recordings that embed this Waft (`Story/Editron/001`,`002`,
+      `Story/Peregrination/toc`) still hold the old shape and will re-record on
+       next run, or want a hand-fix. *TODO cloud:*
+- **LiesCurse cull → LiesPoint** — cull unused LiesCurse, then refactor the
+   locating + waking/activating of Points in Waft\*\* into a `LiesPoint` ghost
+    (the Lies-side sibling of LangPoint), once Interests are fully landed.
+- **Relative locators (canonical Pointer)** — `method() / if something / etc =`
+   name-paths, shortest-unambiguous, to disambiguate two `etc =` inside one
+    method. TODO already squats in `LangPoint.svelte:78-99`; blocked on `%Map`
+     regions carrying only the header-line span (needs region body extents).
+- **Waft\*\* styling** — cohere continuous runs of Whats + present the doc's
+   real name nicely without lying (full path stays copyable). Spun out to
+    `Waft_styling_handover.md`.
 - **`Wire_spec.md`** — generalizes Interest into one `%subscribe,target,on,wake`
    primitive spanning Atime (req/Stuffing/watched) and UItime (`$effect`).
     Staged 1–6; steps 1–3 are no-ops, step 4 ("one recursive boot wire", new
@@ -105,26 +150,27 @@ Resolved (was a rumour): Stuffing no longer over-creates instances. One
 
 The decisions the specs *defer* but that gate real work:
 
-1. **Point nesting reconciliation** — snap nests `What→Doc→What→Point`, memory
-    still nests `What→Doc→Point`. Blocks snap round-trip and bookmarks. Most
-     concrete; smallest unblock.
-2. **"Which legs are plural" taxonomy seam** — stho annotation (collector decides
+1. **"Which legs are plural" taxonomy seam** — stho annotation (collector decides
     locally) vs compile-time Lies/Understanding fact. Gates the entire LangSion
      fan-out / ark design.
-3. **Where standing continuity / wires live** — `H.ave` (session-scoped,
+2. **Where standing continuity / wires live** — `H.ave` (session-scoped,
     graph-clean) vs `Run.c` (per-run). Asked identically in Story §8.5, Wire
      spec, and palmtree. Answer it once.
-4. **Delta-shape equivalence relation** — what counts as "the same change" for
+3. **Delta-shape equivalence relation** — what counts as "the same change" for
     covariance folding (Wire §12) and fuzz classification (Story §4.2). Too loose
      folds real divergence; too tight folds nothing. Likely a `%fuzz,kind` ladder
       but unspecified.
-5. **Ordering non-determinism** — sort it away deterministically in the encoder,
+4. **Ordering non-determinism** — sort it away deterministically in the encoder,
     or label it as fuzz (Story §4.2)? Affects every snap re-record.
-6. **Ting Waft name determinism** — `Ting/<date>/<time>` re-churns every run;
+5. **Ting Waft name determinism** — `Ting/<date>/<time>` re-churns every run;
     recommended fix (teach `Lies_spawn_ting_waft` a fixed name under the Story
      runner) noted but not decided.
-7. **Cyto diff source** — live C vs decoded snap text; both want the same `bD`
+6. **Cyto diff source** — live C vs decoded snap text; both want the same `bD`
     primitive but the spec leaves a wedge.
+
+The earlier "Point nesting reconciliation" entry was a misread — the snap and
+ memory shapes agree (`Waft→What*→(Doc, Point*)`); the real gap was the blind
+  bookmark→Point export, now addressed (see Point work below).
 
 ## Parked (Lies / Peeroleum)
 Editor→runner channel (version handshake → acquire-then-poll is "THE next edit";
@@ -135,7 +181,6 @@ Editor→runner channel (version handshake → acquire-then-poll is "THE next ed
 Cleanest self-contained wins:
 - **Finish the Hovercraft req-migration tail** — delete requesty_serial + Agency bits.
 - **Runtime-verify the OPFS Wormhole backend** (needs the repo public).
-- **Resolve Point nesting reconciliation** — small, unblocks Waft snap round-trip.
 
 Biggest-leverage move: the Story **`req:Step` / `req:Drive` recast**, since it
  unlocks UIless test iteration — but that's a larger commitment.

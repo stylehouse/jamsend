@@ -348,7 +348,8 @@ import { LANG_COMPILE } from "./lang/compile"
             const path = ev.sc.path as string
             if (!path) continue
             const settle = w.oai({ req: 'compiled_is_settled', path })
-            if (ev.sc.write_ms != null) settle.sc.write_ms = ev.sc.write_ms
+            if (ev.sc.write_ms != null)     settle.sc.write_ms     = ev.sc.write_ms
+            if (ev.sc.source_dige != null)  settle.sc.source_dige  = ev.sc.source_dige
             H.main()
         }
     },
@@ -380,6 +381,24 @@ import { LANG_COMPILE } from "./lang/compile"
             time.sc.all = +(all_ms / 1000).toFixed(3)
             const write_ms = req.sc.write_ms as number | undefined
             if (write_ms != null) time.sc.write = +(write_ms / 1000).toFixed(3)
+            // Stamp the dock's %Text.disk_dige = the source dige just written to disk —
+            //  this is the storage leg of the change strip (Lang_update_change reads it).
+            //   bump so Langui's $effect re-derives and the disk dige actually advances.
+            const source_dige = req.sc.source_dige as string | undefined
+            const Text = dock.o({ Text: 1 })[0] as TheC | undefined
+            if (source_dige && Text && Text.sc.disk_dige !== source_dige) {
+                Text.sc.disk_dige = source_dige
+                Text.bump_version()
+            }
+            // Re-pump Languish: req_compile gates on job.sc.pending and holds with a
+            //  waiting:gen_write ttlilt — but that ttlilt is a one-shot snap-timing
+            //   advisor (it neither re-arms nor re-fires think), so once the gen write
+            //    outlives it the only thing that re-runs req_compile is a fresh think.
+            //     If req_compile already ran earlier in THIS do()-pass it saw pending
+            //      still set and returned firing; without this wake it sits firing
+            //       (spinner stuck) until an unrelated tickle. Wake one more pass so it
+            //        re-checks the now-clear gate and finishes the same beat the write lands.
+            H.i_elvisto(w, 'think')
         }
         w.i({ see: `✅ compiled ${path}` })
         w.drop(req)
