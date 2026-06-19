@@ -68,7 +68,7 @@ await M.eatfunc({
         const H = this
         // The Run's authoritative role (read by every actor via Lies_role, incl.
         //  Pantheate) — runner: headless, mounts + runs the editor's compiled docks.
-        H.c.role = 'runner'
+        H.c.role ??= 'runner'   // boot param (?B=) wins; this is the Library-boot fallback
         H.i({ A: 'Peregrination' }).i({ w: 'Peregrination' })
         // runner-flavoured Lies/Lang: read→compile→include only, no developer chrome
         //  (GhostList file index gated off in Lies.svelte on w%runner).

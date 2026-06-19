@@ -48,11 +48,36 @@
         //   H.c.role (stamped on the Run House by Run_A_<Book>) wins; a passed-in
         //    w's own %editor/%runner flag is the fallback; bare → undefined.
         Lies_role(w?: TheC): 'editor' | 'runner' | undefined {
-            const role = (this as House).c.role
+            const H = this as House
+            // Position decides nature: a Lies INSIDE a Story Run is a compiler-under-test (the
+            //  canonical Lies+Lang the tests embed), NOT the channel participant — so it forgoes
+            //   runner|editor (and any Creduler) and stays bare.  The Lies OUTSIDE Story is the
+            //    runner|editor + Creduler.  Gated on "more than one Lies in the tree": when this is
+            //     the ONLY Lies it keeps its role (nothing else to defer to) — which is why this is
+            //      non-breaking until a top-level Creduler Lies is added alongside.
+            if ((H as any).Lies_inside_story() && (H as any).Lies_count_in_top() > 1) return undefined
+            const role = H.c.role
             if (role === 'editor' || role === 'runner') return role
             if (w?.sc?.editor) return 'editor'
             if (w?.sc?.runner) return 'runner'
             return undefined
+        },
+
+        // Lies_inside_story — true if this Lies's House sits within a Story Run (a Run House carries
+        //  %Run / no_ambient).  Walks up the House chain so a Lies nested any depth under the Run
+        //   still reads as inside.  The top-level Creduler Lies (under Mundo) reads false.
+        Lies_inside_story(): boolean {
+            let h: any = this
+            while (h) { if (h.sc?.Run || h.c?.no_ambient) return true; h = h.up }
+            return false
+        },
+
+        // Lies_count_in_top — how many Houses in the whole top_House tree host an A:Lies.  Lets a
+        //  Lies tell "I'm the only one" (keep the role) from "there's a top-level one, I'm the
+        //   inner compiler" (defer).  Cheap: all_House is already materialised.
+        Lies_count_in_top(): number {
+            return (this as House).top_House().all_House
+                .filter(h => ((h as any).o({ A: 'Lies' }) as TheC[]).length > 0).length
         },
 
         // Explicit-runner / explicit-editor.  Both false for a bare Lies — callers

@@ -1060,6 +1060,10 @@
         const Run  = this.subHouse(book)
         Run.sc.Run = 1
         Run.c.no_ambient = true   // story_drive owns the clock; suppress ambient tick
+        // Inherit the boot-param role (?E=editor / ?B=runner) onto the Run House before its recipe
+        //  runs — H.c.role is read here (the Run House), not on Mundo.  ??= so a Book booted from
+        //   the Library (no param) still gets its recipe's own default.
+        Run.c.role ??= (this.top_House() as any).c.boot_role
 
         if (!Run.oa({ A: 1 })) {
             const recipe = (Run as any)[`Run_A_${book}`] as Function | undefined

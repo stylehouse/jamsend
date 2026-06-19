@@ -27,11 +27,19 @@
     //   H.c.book on first boot and activates it (see Auto.svelte).  ?W=<Waft> rides alongside for
     //    the Book that opens one.  Stamped on the LOCAL `h`, never inside the $effect — same
     //     self-retrigger trap as toplevel above.
-    const book = boot_param('B')
+    // The param LETTER is the authoritative role: ?E=<Book> boots that Book as the EDITOR
+    //  (full Lang chrome — what ?B=Editron did before); ?B=<Book> boots it as a headless RUNNER
+    //   (no w:Lang; Story + the Creduler).  Mundo carries the choice as %book + %boot_role; a Run
+    //    House inherits boot_role at Story_subHouse, and a Book recipe only falls back to its own
+    //     role when neither param is set (a Library-driven boot).  Computed out here and set on the
+    //      LOCAL h — never read $state H inside the effect (the self-retrigger OOM trap above).
+    const editor_book = boot_param('E')
+    const book        = boot_param('B')
     $effect(() => {
         const h = new House({ name: 'Mundo' })
         h.c.toplevel = toplevel
-        if (book) h.c.book = book
+        if (editor_book) { h.c.book = editor_book; h.c.boot_role = 'editor' }
+        else if (book)   { h.c.book = book;        h.c.boot_role = 'runner' }
         H = h
         setTimeout(() => {
             houses = [H]

@@ -41,7 +41,7 @@
             // The Run's authoritative role — one source of truth every actor in it
             //  reads via Lies_role (incl. Pantheate, whose w carries no flag).  This
             //   is what makes the editor compile-and-write but NOT mount/run.
-            H.c.role = 'editor'
+            H.c.role ??= 'editor'   // boot param (?E=) wins; this is the Library-boot fallback
             H.i({ A: 'Editron' }).i({ w: 'Editron' })
             // editor-flavoured Lies/Lang: full chrome (NOT runner:1), edits the Waft.
             H.i({ A: 'Lies' }).i({ w: 'Lies', editor: 1 })
