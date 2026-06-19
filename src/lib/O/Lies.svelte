@@ -771,10 +771,14 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         //      w-agnostic (w:Diffmatication shares it for IO) and must not spawn a Waft.
         // GhostList is developer chrome — the editor's self-listing file index. A
         //  runner-flavoured Lies skips it entirely: the dirlist Funkcion never walks
-        //   /src every 8s and the index never seeds. (%dontSnap only hides it from the
-        //    snap; this stops the work.)  Gated on the runner role specifically, so a
-        //     bare Lies (the plain app) keeps the chrome — see Lies_role's three states.
-        if (!H.Lies_is_runner(w)) {
+        //   /src every 8s and the index never seeds.  Gated on the runner role, so a
+        //    bare Lies (the plain app) keeps the chrome — see Lies_role's three states.
+        // Opt/dontSnapGhostList opts a bare Lies out of the WORK too, not just the snap:
+        //  a Story test sets it, and the dirlist's 4 LiesStore_listing round-trips were
+        //   the long pole on those steps (~48 Lies think-spins behind a held listing
+        //    ttlilt).  gl.sc.dontSnap (set in Lies_ghostlist) still folds the already-
+        //     persisted Waft line out of the snap; this stops it walking in the first place.
+        if (!H.Lies_is_runner(w) && !H.o_Opt_val(w, 'dontSnapGhostList')) {
             const gl = H.Lies_ghostlist(w)             // undefined while it loads
             if (gl) await H.GhostList_funkcion(gl, w)
         }
