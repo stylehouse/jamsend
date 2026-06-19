@@ -291,6 +291,10 @@
         const gl = w.o({ Waft: 'GhostList' })[0] as TheC | undefined
         if (gl) {
             if (!gl.sc.lists) gl.sc.lists = 1
+            // a test opts out of snapping the volatile dirlist via
+            //  Opt/For/w:Lies/dontSnapGhostList — the Waft:GhostList line stays,
+            //   its self-listing subtree is folded out of the snap (%dontSnap).
+            if (!gl.sc.dontSnap && (this as House).o_Opt_val(w, 'dontSnapGhostList')) gl.sc.dontSnap = 1
             return gl
         }
         ;(this as House).i_elvisto(w, 'Lies_open_Waft', { path: 'GhostList' })  // load (idempotent)

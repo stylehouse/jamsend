@@ -256,14 +256,14 @@
         },
 
         // Lies_transport_up — put the transport ghosts on H so Lies_channel_up's
-        //  `typeof Socket_real` guard can pass.  The spine (Peeroleum.g) + carriers
-        //   (Tribunal.g) are not app-under-edit; both editor and runner open the same
-        //    Ghost/N Waft, so we include their compiled .go DIRECTLY — no compile/
-        //     Codebit/Ghostmeta chain — by enrolling each generated component in
-        //      H/{watched:UIs}, exactly as a Pantheate include does.  Otro mounts it,
-        //       its onMount eatfunc deposits Socket_real/Peeroleum_deliver/… onto every
-        //        House.  Idempotent; browser + editor|runner only.  Channel_up no-ops
-        //         until the deposit lands, then opens the ws on a following tick.
+        //  `typeof Socket_real` guard can pass.  We include the spine + carriers'
+        //   compiled .go DIRECTLY — no compile/Codebit/Ghostmeta chain — by enrolling
+        //    each generated component in H/{watched:UIs}, exactly as a Pantheate include
+        //     does.  Otro mounts it, its onMount eatfunc deposits Socket_real/
+        //      Peeroleum_deliver/… onto every House.  Idempotent; browser + editor|runner
+        //       only.  Channel_up no-ops until the deposit lands, then opens the ws on a
+        //        following tick.  The .go we mount is the FROZEN p2p/transport copy, not the
+        //         live-edited gen/N/ one — see the import below.
         async Lies_transport_up(w: TheC) {
             const H = this as House
             if (w.c.transport_up) return
@@ -272,8 +272,17 @@
             if (typeof WebSocket === 'undefined') return               // not a browser
             w.c.transport_up = true
 
+            // FROZEN channel transport — NOT gen/N/*.go.  The dev channel must not ride the very
+            //  Peeroleum.go we're actively editing: importing gen/N/Peeroleum.go put it in the
+            //   editor's module graph, so every compile HMR-reloaded the channel out from under
+            //    itself (the "channel down / re-establishing" flap, and the settle stalls behind it).
+            //   p2p/transport/*.go are a deliberate frozen copy of the working spine+carriers: the
+            //    editor compiles gen/N/Peeroleum.go for the RUNNER to test, while the channel rides
+            //     this stable copy and never reloads.  Re-copy from gen/N/ by hand to promote a new
+            //      spine into the channel.  (One day this is together — dogfooded — but not while the
+            //       spine is under active development.)
             const uis = H.oai_enroll(H, { watched: 'UIs' })
-            for (const gen of ['gen/N/Peeroleum.go', 'gen/N/Tribunal.go']) {
+            for (const gen of ['p2p/transport/Peeroleum.go', 'p2p/transport/Tribunal.go']) {
                 if (uis.oa({ UI: 'Pantheate-include', gen_path: gen })) continue   // already mounted
                 const module = await import(/* @vite-ignore */ `../../lib/${gen}`)
                 uis.oai({ UI: 'Pantheate-include', gen_path: gen }, { component: module.default })

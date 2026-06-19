@@ -33,9 +33,9 @@ story:LangTiles
         txtsyntaxdump
       w:Lies
         nowriting:^Ghost
+        dontSnapGhostList
   TimeSpool
-    TimeTotal:beliefs,avg=1.974
-      sample=1.67,at=1781681374
+    TimeTotal:beliefs,avg=2.035
       sample=2.221,at=1781681476
       sample=2.163,at=1781681526
       sample=1.182,at=1781681626
@@ -45,6 +45,7 @@ story:LangTiles
       sample=2.25,at=1781705314
       sample=2.662,at=1781707363
       sample=2.662,at=1781707443
+      sample=2.282,at=1781860460
   step,dige:329f3c0af9c34c8b
   step=2,dige:2218f1f3f5b7ce48
   step=3,dige:5af73cac53506d5d

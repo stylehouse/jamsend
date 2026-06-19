@@ -35,6 +35,7 @@ story:LakeFlush
     For
       w:Lies
         nowriting
+        dontSnapGhostList
       w:Lang
         txtsyntaxdump
         nogen

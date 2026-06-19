@@ -107,3 +107,30 @@ Legacy `Agency.svelte` is untouched and still mounts on the **p2p Modus**
  (`Modus.svelte`), which drives via `Modus.the_main → agency_think` and keeps
   Agency's full versions (ways, journeys, unemits, `requesty_serial`). Pirat\*
    untouched. Typechecks clean over every edited file.
+
+## Open / next (the detonators)
+
+- **Not runtime-verified — only static.** The de-inclusion was checked by grep +
+   svelte-check; `this.<method>` dispatch is dynamic, so the real confirmation is a
+    **Story run on the central House** (boot the island, watch for a thrown
+     "no method / undefined is not a function" from `attend`/`do_fn_for` reaching
+      for an absent Agency method). Do this before trusting it. If something *does*
+       break, the fix is to copy that one method into Hovercraft too — the buckets
+        above say which are GONE-native vs need-copying.
+- **Relics are unexercised here.** `i_journeys_o_aims` / `Aw_satisfied` only run
+   when `%aim` / `%satisfied` particles exist, which is rare-to-none on the central
+    House — so they've never actually fired on this island. `i_journeys_o_aims`
+     also fires `i_elvis(w,'putjourney',{Aw:'Directory'})` on a path change; there
+      is no `A:Directory` on the central House, so that would warn (only on a real
+       journey change, which needs `%aim` first). Watch this if `%aim` ever lands here.
+- **`self_timekeeping` behaviour shifted slightly.** Changed `C.oa(...)[0]` →
+   `C.o(...)[0]` (CLAUDE.md's oa-isn't-for-retrieval rule). Behaviour-equivalent
+    when the `est` particle exists (it's stamped the line above) — but it means
+     `%age` now reliably populates where the legacy `oa[0]` form may have yielded
+      `undefined`. Harmless as far as known; noted in case a snap diff surprises.
+- **`name_A_thing` is dead weight** — copied into relics for completeness but has
+   no caller (only `name_A` is used, by `i_journeys_o_aims`). Drop if you want the
+    relic lean.
+- **Larger Everything_todo items are untouched** — the Story `req:Step`/`req:Drive`
+   recast, Lang/Waft/Wire, etc. remain the "what's still moving" picture; this work
+    was just the Hovercraft req-migration tail / Agency de-inclusion.

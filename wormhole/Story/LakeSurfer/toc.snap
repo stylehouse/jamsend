@@ -8,11 +8,12 @@ story:LakeSurfer
     For
       w:Lang
         txtsyntaxdump
+      w:Lies
+        dontSnapGhostList
     quiesce_snap_time=0.4
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg=1.091
-      sample=0.884,at=1781623494
+    TimeTotal:beliefs,avg=1.139
       sample=0.799,at=1781623596
       sample=1.154,at=1781629712
       sample=0.558,at=1781630133
@@ -22,5 +23,6 @@ story:LakeSurfer
       sample=1.242,at=1781661954
       sample=1.685,at=1781661999
       sample=1.334,at=1781662037
+      sample=1.371,at=1781860797
   step,dige:dcea3b3d3d2abbd1
   step=2,dige:db8921e362a95591
