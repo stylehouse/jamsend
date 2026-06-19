@@ -1671,6 +1671,7 @@ export class House extends StorableHousing {
                 await fsh.list.expand()
                 this.main()
             }
+            H.top_House().c.disk_gated = false   // a real share is open — drop any FaceSucker gate
             w.i({ see: `📁 ${fsh.list.name} (${fsh.list.files.length} files)` })
             return
         }
@@ -1692,6 +1693,17 @@ export class House extends StorableHousing {
                     H.i_elvisto(H, 'think')
                 },
             })
+        }
+
+        // ── developing (?E= editor | ?B= runner): the OPFS-from-github cloud is illegal.
+        //   That cloud is a github-seeded shadow disk — honest for a param-less Auto demo out
+        //    in the world, but a lie under a dev boot, which must read|write the REAL project
+        //     tree.  So we never mount it here: we raise %disk_gated, Otro throws up a fullscreen
+        //      FaceSucker demanding a share, and the open_dir action above (the only way in) is
+        //       what dismisses it.  boot_role is set only for E|B, so a plain demo is unaffected.
+        if (H.top_House().c.boot_role) {
+            H.top_House().c.disk_gated = true
+            return w.i({ see: `📁 open a share — OPFS disabled under ?${H.top_House().c.boot_role === 'editor' ? 'E' : 'B'}=` })
         }
 
         // already on the cloud backend: report and stop.  A.c.nav set directly

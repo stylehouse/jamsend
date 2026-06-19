@@ -154,28 +154,33 @@
             console.log(`🔪 runner arm-run → ${path} [${mode}]`)
         },
 
-        // Lies_drive_run — make the runner ACTUALLY run `path`.  Two halves that a plain
-        //  i_elvisto(w,'think') misses: (1) invalidate the dock's %Good so the recompile reads
-        //   the fresh source off disk; (2) DRIVE the Story Run.  H here IS the Story Run House
-        //    (H.c.role is stamped on it by Run_A_<Book>), and that House is no_ambient —
-        //     story_drive owns its clock — so an ambient think on an actor w never reaches it.
-        //      in_place: main(true) bypasses no_ambient to re-kick story_drive (cf Story's own
-        //       Run.main(true)); from_start: tear down + rebuild via Auto/resetStory (the
-        //        Story_reset button's path), which an explicit runner honours, a bare Lies doesn't.
+        // Lies_drive_run — make the runner ACTUALLY run `path`.  The Story Run House is
+        //  no_ambient (story_drive owns its clock), so an ambient think on an actor w never
+        //   reaches it.  Two cases for "which Run":
+        //    • inner Lies (old test path): H itself IS the Run House (%Run).
+        //    • Creduler (the runner, outside Story): H is Mundo — find the sibling Run House
+        //       (the one carrying %Run) and drive THAT; the dock's %Good lives on the Run's
+        //        inner compiler Lies, not on this Creduler's w, so invalidate it there.
+        //   from_start: tear down + rebuild via Auto/resetStory (no explicit Book → active one).
+        //    in_place: invalidate the inner Good + re-kick the Run (main(true) bypasses no_ambient,
+        //     cf Story's own Run.main(true)) + a think to re-pump its compile req-stack.
         Lies_drive_run(w: TheC, path?: string, mode?: 'in_place' | 'from_start') {
-            const H = this as House
+            const H   = this as House
             mode = mode ?? H.Lies_run_mode()
-            if (path) {
-                const good = H.LiesStore_good_of(w, 'text/Doc', path)
+            const Run = ((H as any).sc?.Run ? H
+                : H.top_House().all_House.find((h: any) => h.sc?.Run)) as House | undefined
+            if (path && Run) {
+                // the Good lives on the Run's inner compiler Lies (or on H itself for the old path)
+                const innerW = ((Run.o({ A: 'Lies' })[0] as TheC | undefined)?.o({ w: 'Lies' })[0]
+                    ?? w) as TheC
+                const good = (Run as any).LiesStore_good_of(innerW, 'text/Doc', path) as TheC | undefined
                 if (good) delete good.c.content   // force the next read off disk
             }
-            if (mode === 'from_start' && H.Lies_is_runner(w)) {
-                const book = (H.o({ A: 'Story' })[0] as TheC | undefined)
-                    ?.o({ w: 'Story' })[0]?.sc.Book as string | undefined
-                H.top_House().i_elvisto('Auto/Auto', 'resetStory', book ? { Book: book } : {})
-            } else {
-                H.i_elvisto(w, 'think')   // wake w:Lies's req-stack (recompile the dock)
-                H.main(true)              // wake the no_ambient Story Run House (re-run the step)
+            if (mode === 'from_start') {
+                H.top_House().i_elvisto('Auto/Auto', 'resetStory', {})
+            } else if (Run) {
+                (Run as any).i_elvisto(Run, 'think')   // wake the inner compile req-stack
+                Run.main(true)                          // re-kick the no_ambient Story Run
             }
         },
 
@@ -327,6 +332,10 @@
             const live = (H as any)[H.Lang_ghostmeta_name(path)]?.() as string | undefined
             if (live === want) {
                 H.Lies_drive_run(w, path)   // invalidate Good + drive the Story Run (H%Run)
+                // Report the verdict home so the editor's Cred readout lights up.  PROVISIONAL: ok
+                //  here means "version acquired + run kicked", not "test passed" — wiring the real
+                //   Story pass/fail (+ nondeterminism) into this is the next Cred data slice.
+                H.Lies_report_result(w, { path, dige: want, ok: true })
                 console.log(`📥 dock_push: ▶ running ${path} @ ${want} (acquired)`)
                 ;(req.c.up as TheC).finish(req)
                 return
@@ -370,13 +379,15 @@
 
         // Lies_run_result_recv — editor receives the runner's outcome and stamps it on
         //  the dock so the staging chrome can read ok/errors/snap_dige off the snap.
-        Lies_run_result_recv(w: TheC, frame: any): boolean {
+        async Lies_run_result_recv(w: TheC, frame: any): Promise<boolean> {
             const path = frame?.path as string | undefined
             if (!path) return false
-            w.oai({ run_result: 1, path }, {
+            // roai (not oai): bump w:Lies so Liesui's Cred readout re-renders — oai would merge
+            //  in place and bump only the %run_result child, which the header $effect doesn't track.
+            await w.roai({ run_result: 1, path }, {
                 ok: frame.ok ? 1 : 0,
                 errors: Array.isArray(frame.errors) ? frame.errors.length : 0,
-                snap_dige: frame.snap_dige, dige: frame.dige,
+                snap_dige: frame.snap_dige, dige: frame.dige, at: Date.now(),
             })
             console.log(`📥 run_result: ${path} ${frame.ok ? 'green' : 'red'}`)
             return true

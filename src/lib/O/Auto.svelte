@@ -146,6 +146,18 @@
         // ── get Li every tick ─────────────────────────────────────────────────
         const Li = w.o({ Library: 1 })[0] as TheC | undefined
         if (!Li) return w.i({ see: '⏳ Library...' })
+
+        // ?B= runner: stand up the Creduler — an outside-Story Lies on the top House.  It lives
+        //  here (ambient) rather than inside the no_ambient Story Run it drives, so its channel
+        //   and %req:run_intent pump on normal ticks (and Ghost_version_checkin's feebly_ponder
+        //    actually fires).  The test's own inner Lies then sees count>1 and goes bare
+        //     (Lies_role), leaving this one the sole runner.  Editor (?E=) needs none — its single
+        //      inside-Story Lies is the editor.  One per instance.
+        if (H.c.boot_role === 'runner' && !H.c.creduler_up) {
+            H.c.creduler_up = true
+            H.i({ A: 'Lies' }).i({ w: 'Lies', runner: 1, creduler: 1 })
+            console.log('🧪 Creduler up — runner Lies outside Story')
+        }
         let picks_a_book = (bname) => {
             H.auto_spool_book_sample(Li)   // one %sample for the run being replaced
             H.auto_reset_story(bname)
@@ -179,6 +191,7 @@
             console.log(`📚 storyFinished: ${bname} [${mode}]`)
             w.i({storyFinished:1,Book:bname,mode})
             H.auto_sync_story_stats(Li)
+            if (H.c.boot_role === 'runner') H.Cred_spool(w, bname, mode as string)  // spool the Creduler soul
             // < future: auto-advance to next book in Library order
         }
 
@@ -306,6 +319,118 @@
             Li.bump_version()
         }
         book.sc.last_run_ms = last_run_ms
+    },
+
+//#region Creduler — the runner's soul (credibility of code over time)
+
+    // The Creduler persists, runner-side, which GHOST VERSIONS ran and whether they passed:
+    //   • Credulate   (HEAD)  — latest dige per ghost + the last-OK run tagged to the exact
+    //                            version-set it used, + each dige's git-commit status.
+    //   • Credulation (trail) — the history of runs (capped), each with its version-set.
+    // Spooled on every storyFinished (runner only).  Persisted as Lines snaps (the toc.snap
+    //  format, via encode_wh_lines) — a credulate is a small Waft corpus, inspectable and
+    //   decodable the same way every other snap is, not an off-protocol JSON blob.  The in-mem
+    //    soul (Mundo.c.cred) stays plain JS; the C tree is built only at persist time.
+    // git-commit status is a dev-server seam (the browser can't run git): recorded null until
+    //  that endpoint lands.
+
+    // Cred_ghost_versions — the live version (baked-in source_dige) of every included ghost.
+    //  Ghostmeta_<name>() is deposited (own-enumerable) on H per compiled dock, so Object.keys
+    //   finds them; the name is the path with separators flattened (cf Lang_ghostmeta_name).
+    Cred_ghost_versions(): { name: string, dige: string }[] {
+        const H = this as any
+        const out: { name: string, dige: string }[] = []
+        for (const k of Object.keys(H)) {
+            if (k.startsWith('Ghostmeta_') && typeof H[k] === 'function') {
+                const dige = H[k]()
+                if (dige) out.push({ name: k.slice('Ghostmeta_'.length), dige })
+            }
+        }
+        return out
+    },
+
+    // Cred_run_outcome — the real pass/fail of the just-finished Story: how many Steps stamped
+    //  %ok out of the total (the same signal auto_sync_story_stats reads).  null if no run yet.
+    Cred_run_outcome(): { ok: boolean, ok_pct: number, done: number } | null {
+        const H = this as House
+        const story = H.o({ H: 'Story' })[0] as House | undefined
+        const stW   = story?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] as TheC | undefined
+        const thisC = stW?.c.This as TheC | undefined
+        if (!thisC) return null
+        const steps = thisC.o({ Step: 1 }) as TheC[]
+        const done  = steps.length
+        if (!done) return null
+        const ok = steps.filter(s => s.sc.ok).length
+        return { ok: ok === done, ok_pct: Math.round((ok / done) * 100) / 100, done }
+    },
+
+    // Cred_spool — record this run into the soul (in-mem on Mundo.c.cred, off-snap) and persist.
+    Cred_spool(w: TheC, book: string, mode: string) {
+        const H = this as House
+        const outcome = (H as any).Cred_run_outcome() as { ok: boolean, ok_pct: number, done: number } | null
+        if (!outcome) return
+        const versions = (H as any).Cred_ghost_versions() as { name: string, dige: string }[]
+        const at = now_in_seconds_with_ms()
+        const cred = ((H.c as any).cred ??= { ghosts: {}, runs: [], last_ok: null }) as any
+        // HEAD: latest dige per ghost (keep any known committed status; git seam fills it later)
+        for (const { name, dige } of versions)
+            cred.ghosts[name] = { dige, committed: cred.ghosts[name]?.committed ?? null }
+        // trail: one run + the exact version-set it used (flattened, capped)
+        const uses = versions.reduce((m: any, v) => (m[v.name] = v.dige, m), {})
+        cred.runs.push({ at, ok: outcome.ok, ok_pct: outcome.ok_pct, book, mode, uses })
+        if (cred.runs.length > 200) cred.runs.splice(0, cred.runs.length - 200)
+        // last-OK tagged to the versions it used (the credible HEAD)
+        if (outcome.ok) cred.last_ok = { at, ok_pct: outcome.ok_pct, book, uses }
+        console.log(`🧪 Cred spool: ${book} ${outcome.ok ? 'OK' : Math.round(outcome.ok_pct * 100) + '%'} — ${versions.length} ghosts, ${cred.runs.length} runs`)
+        H.Cred_persist(w, 'wormhole/Story/Such/Credulate.snap',   H.Cred_head_C(cred))
+        H.Cred_persist(w, 'wormhole/Story/Such/Credulation.snap', H.Cred_trail_C(cred))
+    },
+
+    // Cred_head_C — the HEAD soul (Credulate) as a C tree: a %ghost per included ghost
+    //  (its live dige, plus git-commit status once the seam lands) and, if any run has
+    //   passed, a %last_ok carrying the exact version-set it ran — a %uses per ghost.
+    Cred_head_C(cred: any): TheC {
+        const root = _C({ Credulate: 1 })
+        for (const [name, g] of Object.entries(cred.ghosts) as [string, any][]) {
+            const sc: any = { ghost: name, dige: g.dige }
+            if (g.committed != null) sc.committed = g.committed
+            root.i(sc)
+        }
+        if (cred.last_ok) {
+            const lo = root.i({ last_ok: 1, at: cred.last_ok.at, ok_pct: cred.last_ok.ok_pct, book: cred.last_ok.book })
+            for (const [name, dige] of Object.entries(cred.last_ok.uses) as [string, string][])
+                lo.i({ uses: name, dige })
+        }
+        return root
+    },
+
+    // Cred_trail_C — the trail (Credulation) as a C tree: one %run per recorded run,
+    //  numbered in order, each with its outcome and a %uses child per ghost version it
+    //   exercised.  ok is stored 1|0 (sc scalars are strings; a snap has no bool).
+    Cred_trail_C(cred: any): TheC {
+        const root = _C({ Credulation: 1 })
+        cred.runs.forEach((r: any, i: number) => {
+            const run = root.i({ run: i, at: r.at, ok: r.ok ? 1 : 0, ok_pct: r.ok_pct, book: r.book, mode: r.mode })
+            for (const [name, dige] of Object.entries(r.uses) as [string, string][])
+                run.i({ uses: name, dige })
+        })
+        return root
+    },
+
+    // Cred_persist — encode a cred C tree to snap-line text (the toc.snap Lines format,
+    //  via the shared encode_wh_lines) and write it through the same rw_op path the
+    //   Library uses.  Lines, not JSON: a credulate is a small Waft corpus, decodable
+    //    like every other snap.  Encode errors abort the write (a malformed snap is
+    //     worse than a stale one).
+    Cred_persist(w: TheC, path: string, C: TheC) {
+        const H = this as House
+        H.post_do(async () => {
+            const { snap, errors } = await H.encode_wh_lines(C)
+            if (errors.length) { console.error(`Cred encode errors (save aborted) ${path}:`, errors); return }
+            const rw  = w.oai({ rw_queue: 1 })
+            const req = await rw.oai({ req: 1, rw_name: path, rw_op: 'write', rw_data: snap })
+            H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
+        }, { see: 'cred_persist' })
     },
 
 //#region Story spool

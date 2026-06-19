@@ -35,6 +35,10 @@
     let peer: TheC | undefined = $state()
     let now = $state(0)
 
+    // Cred — the runner's verdict per dock (%run_result, stamped by Lies_run_result_recv on the
+    //  editor's w:Lies): ok/errors/dige.  The header's credibility readout reads these.
+    let run_results: TheC[] = $state([])
+
     // examining — the %examining particle from Lies's w, placed in watched:ave.
     // Passed down to Waft and DocRow; DocRow derives is_examining from it.
     // examining.sc.active_path mirrors Lang's active_doc so DocRow glows without
@@ -54,6 +58,7 @@
             all_wafts   = lies_w.o({ Waft: 1 })          as TheC[]
             examining   = ex
             peer        = lies_w.o({ channel_peer: 1 })[0] as TheC | undefined
+            run_results = lies_w.o({ run_result: 1 })  as TheC[]
             now         = Date.now()
         })
     })
@@ -74,6 +79,11 @@
     // the peer this instance faces, and whether it ponged recently (channel proven live).
     let expect_peer = $derived(role === 'editor' ? 'runner' : role === 'runner' ? 'editor' : '')
     let peer_live   = $derived(!!(peer?.sc?.last && now - (peer.sc.last as number) < 7000))
+
+    // ── Cred — code credibility at a glance: the runner's green/red per dock ──
+    let cred_total = $derived(run_results.length)
+    let cred_green = $derived(run_results.filter(r => r.sc?.ok).length)
+    const base = (p: any) => String(p ?? '').split('/').pop()
 
     // ── + Waft form ──────────────────────────────────────────────────
     let waft_form_open = $state(false)
@@ -135,6 +145,21 @@
             on_submit={submit_new_waft}
             on_cancel={() => { waft_form_open = false; new_waft_path = '' }} />
     </div>
+
+    <!-- Cred readout — the runner's verdict per dock (%run_result over the channel).  Shows how
+         credible the code you're pushing is: ✓ green / ✗ red(N), plus a pass count.  Empty until a
+         run_result comes home, so it's quiet on a fresh editor / a bare Lies. -->
+    {#if cred_total}
+        <div class="ls-cred" title="code credibility — the runner's verdict on the versions you pushed">
+            <span class="ls-cred-h" class:all-green={cred_green === cred_total}>🧪 {cred_green}/{cred_total}</span>
+            {#each run_results as rr (rr.sc.path)}
+                <span class="ls-cred-dock" class:ok={rr.sc.ok} class:bad={!rr.sc.ok}
+                      title="{rr.sc.path} @ {String(rr.sc.dige ?? '').slice(0,8)} — {rr.sc.ok ? 'green' : `red (${rr.sc.errors} err)`}">
+                    {rr.sc.ok ? '✓' : '✗'} {base(rr.sc.path)}{#if !rr.sc.ok && rr.sc.errors}&nbsp;{rr.sc.errors}{/if}
+                </span>
+            {/each}
+        </div>
+    {/if}
 
     {#if !Lies}
         <div class="ls-empty">waiting for Lies…</div>
@@ -212,6 +237,22 @@
         color: #888; background: rgba(136, 136, 136, 0.12);
     }
     .ls-peer-live { color: #6ad0c0; background: rgba(106, 208, 192, 0.16) }
+    .ls-cred {
+        display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center;
+        margin-bottom: 0.4rem; padding: 0.2rem 0.3rem; border-radius: 3px;
+        background: rgba(196, 170, 238, 0.06);
+    }
+    .ls-cred-h {
+        font-size: 0.72rem; letter-spacing: 0.03em; color: #c4aaee;
+        padding: 0.05rem 0.4rem; border-radius: 3px; border: 1px solid currentColor; cursor: help;
+    }
+    .ls-cred-h.all-green { color: #6ad0c0 }
+    .ls-cred-dock {
+        font-size: 0.72rem; font-family: monospace; padding: 0.05rem 0.4rem;
+        border-radius: 3px; cursor: help; white-space: nowrap;
+    }
+    .ls-cred-dock.ok  { color: #6ad0c0; background: rgba(106, 208, 192, 0.12) }
+    .ls-cred-dock.bad { color: #f88;    background: rgba(255, 136, 136, 0.12) }
     .ls-errors {
         background: #300; border: 1px solid #c44; border-radius: 3px;
         padding: 0.3rem 0.5rem; margin-bottom: 0.4rem;

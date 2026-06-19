@@ -5,9 +5,10 @@
     import { keyser } from "$lib/data/Stuff.svelte"
     import Actions from "$lib/O/ui/Actions.svelte"
     import Stuffing from "$lib/data/Stuffing.svelte"
-    import { onDestroy } from "svelte";
+    import { onDestroy, onMount } from "svelte";
     import NaviScroll from "./ui/NaviScroll.svelte";
     import { boot_param } from "$lib/boot";
+    import FaceSucker from "$lib/p2p/ui/FaceSucker.svelte";
 
     //#region H:Mundo
     // ── all House construction inside $effect ─────────────────────────────────
@@ -80,6 +81,35 @@
         H.i_elvisto(H, 'think')
     }
 
+    // ── disk gate ──────────────────────────────────────────────────────────────
+    // Under a dev boot (?E= editor | ?B= runner) the OPFS-from-github cloud is illegal —
+    //  it's a github-seeded shadow disk (fine for a param-less Auto demo out in the world,
+    //   a lie under development).  DirectoryOpener refuses to mount it and raises
+    //    H.c.disk_gated when no real share is open; we throw up a fullscreen FaceSucker until
+    //     the user opens one.  disk_gated lives on a plain .c (not $state), so a slow poll
+    //      samples it — ample for a one-time gate dismiss, and free of House-reactivity guesswork.
+    let disk_poll = $state(0)
+    onMount(() => {
+        const iv = setInterval(() => disk_poll++, 400)
+        return () => clearInterval(iv)
+    })
+    let disk_gated  = $derived.by(() => { disk_poll; return !!H?.c.disk_gated })
+    let disk_role   = $derived(H?.c.boot_role === 'editor' ? 'Editor' : 'Runner')
+    let share_error = $state('')
+    let opening_share = $state(false)
+    // Reuse DirectoryOpener's own open_dir action (requestDirectoryAccess + nav reset + think) —
+    //  the single sanctioned way in, so the gate can't drift from the data layer's wiring.
+    async function open_share() {
+        share_error = ''
+        opening_share = true
+        try {
+            const act = H?.o({ watched: 'actions' })[0]?.o({ action: 1, role: 'open_dir' })[0]
+            if (!act?.sc.fn) { share_error = 'wormhole not ready yet — a moment'; return }
+            await act.sc.fn()
+        } catch (e) { share_error = String(e) }
+        finally { opening_share = false }
+    }
+
     onDestroy(() => {
         H?.stop()
     })
@@ -90,6 +120,22 @@
         H.i_elvisto(H, 'think')
     }
 </script>
+
+{#if disk_gated}
+    <FaceSucker altitude={77} fullscreen={true}>
+        {#snippet content()}
+            <div class="disk-gate">
+                <h2>{disk_role} needs a real folder</h2>
+                <p>OPFS is disabled while developing — open a shared directory so the
+                    machine reads &amp; writes the real project tree.</p>
+                <button class="big" onclick={open_share} disabled={opening_share}>
+                    {opening_share ? 'opening…' : '📂 open share'}
+                </button>
+                {#if share_error}<p class="gate-err">{share_error}</p>{/if}
+            </div>
+        {/snippet}
+    </FaceSucker>
+{/if}
 
 <NaviScroll {H} {houses}>
     {#snippet children({ scrollToHouseIdx, scrollToHouseIp, childrenOf })}
@@ -155,6 +201,29 @@
 
 <style>
     .ungood { color: red; }
+
+    .disk-gate {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        text-align: center;
+        color: #d7edff;
+        padding: 2rem;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+    .disk-gate h2 { margin: 0; font-size: 1.6rem; }
+    .disk-gate p  { max-width: 28rem; opacity: 0.8; }
+    .disk-gate button.big {
+        font-size: 1.4rem;
+        padding: 0.7em 1.2em;
+        cursor: pointer;
+    }
+    .disk-gate button:disabled { opacity: 0.5; cursor: default; }
+    .disk-gate .gate-err { color: #ff8a8a; font-size: 0.9rem; }
 
     .house-header {
         display: flex;
