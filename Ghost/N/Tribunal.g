@@ -63,12 +63,16 @@ Socket_real(w):
     let url = scheme + '://' + location.host + '/relay?addr=' + encodeURIComponent(addr)
     let pending = []
     let ws = new WebSocket(url)
+    // Heartbeat traffic floods the console once the channel is healthy — log everything BUT
+    //  ping/pong/ack, so dock_push/run_result/hello/trust still show. (A buffered send is
+    //   always logged: it only happens before the socket opens, which is worth seeing.)
+    let noisy = (h) => h && (h.type === 'ping' || h.type === 'pong' || h.type === 'ack')
     let port = {
         type: 'websocket', real: 1, ws,
         send(frame) {
             let h = frame && frame.header
             if (ws.readyState !== WebSocket.OPEN) { pending.push(frame); console.log(`🛰 ws SEND buffered (socket not open): ${h && h.type}`); return }
-            console.log(`🛰 ws SEND ${h ? h.type + ' seq=' + h.seq + ' → ' + h.to : '(control)'}`)
+            if (!noisy(h)) console.log(`🛰 ws SEND ${h ? h.type + ' seq=' + h.seq + ' → ' + h.to : '(control)'}`)
             ws.send(JSON.stringify(frame))
         },
         recv(frame) { H.Peeroleum_deliver(w, frame) },
@@ -85,12 +89,22 @@ Socket_real(w):
         //   no header).  Only envelopes belong in the deliver path; a control frame has
         //    nothing to deliver, so route it aside rather than dereference a missing header.
         if (frame && frame.control) {
+            // The relay echoes its own server-side logs here (control:log) and the state of
+            //  the server↔server bridge (control:peer-relay) so both surface in THIS origin's
+            //   browser console — the server's own console.log is otherwise buried in the
+            //    dev-server terminal among svelte-check noise.
+            if (frame.control === 'log') { console.log(frame.line); return }
+            if (frame.control === 'peer-relay') {
+                let m = frame.up ? `🌉 relay bridge UP${frame.target ? ' → ' + frame.target : ''}` : `🌉 relay bridge DOWN — error=${frame.error || '?'}${frame.detail ? ' — ' + frame.detail : ''}`
+                ;(frame.up ? console.log : console.warn)(m)
+                return
+            }
             console.log(`🛰 ws RECV control:${frame.control}${frame.role ? ' role=' + frame.role : ''}`)
             if (frame.control === 'error') console.warn('relay refused:', frame.error)
             return
         }
         let h = frame && frame.header
-        console.log(`🛰 ws RECV ${h ? h.type + ' seq=' + h.seq + ' ← ' + h.from : '(headerless, dropped)'}`)
+        if (!noisy(h)) console.log(`🛰 ws RECV ${h ? h.type + ' seq=' + h.seq + ' ← ' + h.from : '(headerless, dropped)'}`)
         port.recv(frame)
     })
     w.o({ transport: 1, type: 'websocket' })[0].c.port = port

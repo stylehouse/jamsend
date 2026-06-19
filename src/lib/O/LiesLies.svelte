@@ -124,22 +124,34 @@
                 return
             }
 
-            // runner (or a bare dev Lies): make the fresh source authoritative.
+            // runner (or a bare dev Lies): drive the actual run.
+            H.Lies_drive_run(w, path, mode as 'in_place' | 'from_start')
+            console.log(`🔪 runner arm-run → ${path} [${mode}]`)
+        },
+
+        // Lies_drive_run — make the runner ACTUALLY run `path`.  Two halves that a plain
+        //  i_elvisto(w,'think') misses: (1) invalidate the dock's %Good so the recompile reads
+        //   the fresh source off disk; (2) DRIVE the Story Run.  H here IS the Story Run House
+        //    (H.c.role is stamped on it by Run_A_<Book>), and that House is no_ambient —
+        //     story_drive owns its clock — so an ambient think on an actor w never reaches it.
+        //      in_place: main(true) bypasses no_ambient to re-kick story_drive (cf Story's own
+        //       Run.main(true)); from_start: tear down + rebuild via Auto/resetStory (the
+        //        Story_reset button's path), which an explicit runner honours, a bare Lies doesn't.
+        Lies_drive_run(w: TheC, path?: string, mode?: 'in_place' | 'from_start') {
+            const H = this as House
+            mode = mode ?? H.Lies_run_mode()
             if (path) {
                 const good = H.LiesStore_good_of(w, 'text/Doc', path)
                 if (good) delete good.c.content   // force the next read off disk
             }
-            // from_start is destructive (full teardown), so only an explicit runner
-            //  honours it; a bare Lies always takes the gentle in-place re-run.
             if (mode === 'from_start' && H.Lies_is_runner(w)) {
-                // identical to the Story_reset button — Auto rebuilds H:Story cleanly.
                 const book = (H.o({ A: 'Story' })[0] as TheC | undefined)
                     ?.o({ w: 'Story' })[0]?.sc.Book as string | undefined
                 H.top_House().i_elvisto('Auto/Auto', 'resetStory', book ? { Book: book } : {})
             } else {
-                H.i_elvisto(w, 'think')   // wake the req-stack to recompile + re-run
+                H.i_elvisto(w, 'think')   // wake w:Lies's req-stack (recompile the dock)
+                H.main(true)              // wake the no_ambient Story Run House (re-run the step)
             }
-            console.log(`🔪 runner arm-run → ${path} [${mode}]`)
         },
 
         // ── the editor↔runner channel — Lies as a Peeroleum consumer ──────────
@@ -238,33 +250,86 @@
             H.main()   // wake a tick: channel_up re-runs once eatfunc has deposited Socket_real
         },
 
-        // Lies_push_dock — editor emit (called from the compile-write path, where the
-        //  source is in hand).  Drops silently until the runner is connected + ready;
-        //   a "push the current docks on connect" warm-up is a future nicety.
+        // Lies_push_dock — editor emit (from the compile-write path).  We send only the
+        //  Ghost VERSION (the source_dige the editor's Ghostmeta bakes in), NOT the source:
+        //   both origins share the disk and Vite HMR already delivers the recompiled .go to
+        //    the runner, so shipping 18KB of .g is pointless.  The runner acquires that
+        //     version locally (HMR / re-read) and runs it, or reports "failed to acquire src".
         Lies_push_dock(w: TheC, sc: { path?: string, source?: string, dige?: string }) {
             const H = this as House
             if (!H.Lies_is_editor(w)) return
             const pier = (w.o({ Peering: 1 })[0] as TheC | undefined)?.o({ Pier: 1 })[0] as TheC | undefined
             if (!pier || !H.Lies_channel_live(w)) return
-            ;(H as any).Peeroleum_send_consumer(w, 'dock_push', { path: sc.path, source: sc.source, dige: sc.dige })
-            console.log(`📤 dock_push → runner: ${sc.path}`)
+            ;(H as any).Peeroleum_send_consumer(w, 'dock_push', { path: sc.path, ghost_version: sc.dige })
+            console.log(`📤 dock_push → runner: ${sc.path} @ ${sc.dige}`)
         },
 
-        // Lies_dock_push_recv — runner receives the editor's source.  These are the
-        //  three lines the in-instance write already names as its "inotify backend":
-        //   re-land the Good off the frame (NOT disk — cross-origin has no shared OPFS),
-        //    then drain so Lang's furnishing subscriber re-fires → recompile → (runner
-        //     role) mount + run.  fn-return false ⇒ the spine marks the frame %faulty.
+        // Lies_dock_push_recv — runner receives "I compiled version X; run it".  The frame
+        //  carries only %ghost_version (a source_dige), not source: the runner ACQUIRES that
+        //   version locally — both origins share the disk and Vite HMR delivers the recompiled
+        //    .go + re-runs its eatfunc, so Ghostmeta_<name>() reports the live version.
+        //   The frame can BEAT the code: we hold permission to run `want` a beat before HMR has
+        //    re-run the module, so Ghostmeta still reads the old dige.  Rather than erroring on
+        //     that first miss, PARK the intent in %req:run_intent (holding just the wanted dige —
+        //      cheap to carry over time) and let req_run_intent re-check each tick, running the
+        //       moment the live version matches.  A newer push overwrites %want in place; the
+        //        permanent req un-finishes (maybe_mutate_sc) and re-acquires the new version.
         async Lies_dock_push_recv(w: TheC, frame: any): Promise<boolean> {
             const H = this as House
-            const path   = frame?.path   as string | undefined
-            const source = frame?.source as string | undefined
-            if (!path || source == null) return false
-            const good = await H.LiesStore_good(w, 'text/Doc', path)
-            await H.LiesStore_land_good(good, { content: source })
-            H.LiesStore_drain_good(good)
-            console.log(`📥 dock_push landed: ${path}`)
+            const path = frame?.path          as string | undefined
+            const want = frame?.ghost_version as string | undefined
+            if (!path || !want) return false
+            const req = await w.oai({ req: 'run_intent', path }, { want, permanent: 1 }) as TheC
+            delete req.sc.finished     // re-arm even if the same version is re-pushed
+            req.c.await_want = undefined  // restart the wait window (+ one log line) for this push
+            H.i_elvisto(w, 'think')    // wake a tick so w.do() pumps the intent now, not next gesture
             return true
+        },
+
+        // req:run_intent — the parked "run version `want` of `path` once it's live here" desire.
+        //  do_fn for /req:run_intent,path on w:Lies (runner).  Checks Ghostmeta the way req:include
+        //   does: live==want ⇒ invalidate the Good + think (drives the recompile|re-run) and finish.
+        //    Otherwise WAIT — the code may not have landed yet (HMR re-runs the recompiled module's
+        //     eatfunc a beat after the editor's write; on_code_change re-pumps us the instant it does).
+        //      The give-up is WALL-CLOCK, not a pump count: the runner's think loop re-pumps this req
+        //       far faster than any ttlilt, so a try-counter blows its budget in milliseconds —
+        //        await_since timestamps the wait and only reports red after a real window elapses.
+        async req_run_intent(req: TheC) {
+            const H    = this as House
+            const w    = req.c.up as TheC
+            const path = req.sc.path as string
+            const want = req.sc.want as string
+            const live = (H as any)[H.Lang_ghostmeta_name(path)]?.() as string | undefined
+            if (live === want) {
+                H.Lies_drive_run(w, path)   // invalidate Good + drive the Story Run (H%Run)
+                console.log(`📥 dock_push: ▶ running ${path} @ ${want} (acquired)`)
+                ;(req.c.up as TheC).finish(req)
+                return
+            }
+            // (re)start the wall-clock wait when the wanted version changes — and log just once
+            //  per version, so a 50ms re-pump loop doesn't spam the console.  On .c: never snaps.
+            if (req.c.await_want !== want) {
+                req.c.await_want  = want
+                req.c.await_since = Date.now()
+                console.log(`📥 dock_push: ⏳ awaiting src ${path} @ ${want} (live ${live ?? 'none'})`)
+            }
+            if (Date.now() - (req.c.await_since as number) > 20000) {
+                console.log(`📥 dock_push: ✗ failed to acquire src ${path} @ ${want} after 20s (live ${live ?? 'none'})`)
+                H.Lies_report_result(w, { path, dige: want, ok: false, errors: [`failed to acquire src ${want}`] })
+                ;(req.c.up as TheC).finish(req)
+                return
+            }
+            H.i_req_ttlilt(req, 1, { waiting: 'acquire' })   // bow out; on_code_change/tick re-checks
+        },
+
+        // Ghost_version_checkin — called from the core ghostsHaunt on every HMR/haunt.  Fresh code
+        //  (and its Ghostmeta dige) is now live, so wake a think on every live House: a parked
+        //   %req:run_intent re-checks Ghostmeta against the just-landed version and carries out the
+        //    run the instant it matches — event-driven, no polling race.  feebly_ponder self-gates
+        //     on Runtime, so the boot mount-wave (pre-Runtime) is a no-op and never storms.
+        Ghost_version_checkin() {
+            console.log(`Got Ghost_version_checkin`)
+            for (const h of (this as House).all_House) (h as House).feebly_ponder()
         },
 
         // Lies_report_result — runner emit, after a run settles.  The editor's handler
@@ -315,12 +380,23 @@
         Lies_pong(w: TheC, fr: any) {   // echo a received ping straight back
             ;(this as any).Peeroleum_send_consumer(w, 'pong', { t: fr?.t })
         },
-        Lies_pong_recv(w: TheC, fr: any) {   // our ping came home — the channel is proven
+        async Lies_pong_recv(w: TheC, fr: any) {   // our ping came home — the channel is proven
             const H = this as House
             const rtt = Date.now() - (fr?.t ?? Date.now())
             const peer = H.Lies_role(w) === 'editor' ? 'runner' : 'editor'
-            w.oai({ channel_peer: peer }, { rtt, last: Date.now() })
-            console.log(`🛰 channel VERIFIED — pong from ${peer} RTT ${rtt}ms`)
+            // The editor↔runner channel always crosses the relay↔relay bridge, so this round-trip
+            //  is the BRIDGED time — a local-relay delivery would never reach this pong path.
+            // Log only on a state FLIP — first pong, or recovery after a >7s gap (the badge's
+            //  liveness window) — not every 3s heartbeat: the console should show transitions, not
+            //   tick like a metronome.  The live number rides the badge (%channel_peer.rtt).
+            const prev = (w.o({ channel_peer: peer })[0] as TheC | undefined)?.sc.last as number | undefined
+            const flipped = !prev || (Date.now() - prev > 7000)
+            // roai, not oai: oai merges rtt/last in place and bumps only the %channel_peer child's
+            //  own version — which Liesui's badge $effect doesn't track (it keys off w:Lies via
+            //   examining/watch_c).  roai drops+recreates the child, bumping w:Lies, so the $effect
+            //    re-runs and the badge's "● runner 414ms" actually ticks instead of freezing.
+            await w.roai({ channel_peer: peer }, { rtt, last: Date.now() })
+            if (flipped) console.log(`🛰 channel live — ${H.Lies_role(w)} ⇄ ${peer} (bridged) — round-trip ${rtt}ms`)
         },
 
     })

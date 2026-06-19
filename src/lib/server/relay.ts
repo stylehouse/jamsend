@@ -26,11 +26,15 @@ import { WebSocketServer, WebSocket } from 'ws'
 import type { Server } from 'node:http'
 
 // The one hardcoded knob: where the runner-server dials the editor-server for the relay↔relay
-//  bridge. Both servers run on localhost (editor :9091, runner/staging :9092), reachable over
+//  bridge. Both servers run on localhost (runner :9091, editor|staging :9092), reachable over
 //   plain ws without https. Override per-call (tests) or via the EDITOR_RELAY env var.
-const DEFAULT_EDITOR_RELAY = 'ws://localhost:9091/relay?r2r=1'
+const DEFAULT_EDITOR_RELAY = 'ws://172.17.0.1:9092/relay?r2r=1'
 
 const ATTACHED = Symbol.for('peeroleum.relay.attached')
+
+// Heartbeat + acknowledgement frames: high-volume, low-information once the channel is up, so
+//  the routing logs skip them on the success path (drops are still logged — see routeFromBrowser).
+const NOISY = new Set(['ping', 'pong', 'ack'])
 
 export type Role = 'editor' | 'runner'
 type Meta = { addr: string | null; r2r: boolean }
@@ -58,6 +62,24 @@ export function attachRelay(
 	const locals = new Map<string, Set<WebSocket>>() // addr → live browser sockets
 	let role: Role | null = null
 	let peerLink: WebSocket | null = null // the single relay↔relay socket (either end)
+	let selfHost = '' // our own host:port, learned from the first upgrade's Host header
+
+	// The relay runs in the node dev server: its console.log lands in the terminal, drowned
+	//  among svelte-check warnings. relayLog ALSO pushes the line down every local browser
+	//   socket as a {control:'log'} frame, so it surfaces in that origin's browser console
+	//    (Socket_real.onmessage routes control frames aside). One-way, server→browser; a log
+	//     frame carries no header, so it never re-enters the routing/handler path.
+	function relayLog(line: string) {
+		const tag = `🛰 relay${selfHost ? '[' + selfHost + ']' : ''}${role ? '/' + role : ''}`
+		console.log(`${tag} ${line}`)
+		broadcastControl({ control: 'log', line: `${tag} ${line}` })
+	}
+	// Send a control frame to every live local browser socket (NOT the r2r peer link).
+	function broadcastControl(obj: any) {
+		const text = JSON.stringify(obj)
+		for (const set of locals.values())
+			for (const ws of set) if (ws.readyState === WebSocket.OPEN) ws.send(text)
+	}
 
 	function bind(addr: string, ws: WebSocket) {
 		let set = locals.get(addr)
@@ -87,20 +109,58 @@ export function attachRelay(
 		if (role && role !== next) throw new Error(`relay role already '${role}', refusing '${next}'`)
 		if (role === next) return
 		role = next
+		relayLog(`role set → ${role}`)
 		if (role === 'runner') dialEditor()
 	}
 
-	// The runner-server reaches out to the editor ONCE.
+	// The runner-server reaches out to the editor ONCE — the "after the runner says hi, dial
+	//  the other server" step. The single point everything downstream depends on: if this link
+	//   never opens, every editor↔runner envelope is dropped at routeFromBrowser (no local
+	//    addressee, no peer to forward to) and the browsers see only their own SENDs. So it is
+	//     logged loudly: the target, a self-dial guard, open/error(code)/close, and a 5s
+	//      not-connectable callback — all echoed to the browser via {control:'peer-relay'}.
 	function dialEditor() {
 		if (peerLink) return
+		// Self-dial guard: the default editor-relay is hardcoded to :9091, but if THIS server is
+		//  :9091 the runner dials itself — the r2r upgrade then hits the set-once role guard
+		//   (already 'runner'), throws, and closes. Detect it and say so instead of failing mute;
+		//    the fix is to point EDITOR_RELAY at the EDITOR origin's port (the other dev server).
+		const target = (() => { try { return new URL(editorRelayUrl).host } catch { return '' } })()
+		if (target && selfHost && target === selfHost) {
+			const msg = `editor-relay points at SELF (${editorRelayUrl}) — bridge cannot form. Set EDITOR_RELAY to the EDITOR origin's port (the other dev server), not ${selfHost}.`
+			relayLog(`✗ ${msg}`)
+			broadcastControl({ control: 'peer-relay', up: false, error: 'self-dial', detail: msg, target: editorRelayUrl })
+			return
+		}
+		relayLog(`dialing editor relay → ${editorRelayUrl} …`)
 		const link = new WebSocket(editorRelayUrl)
 		peerLink = link
-		link.on('message', (data) => routeFromPeer(asText(data)))
-		link.on('close', () => {
-			if (peerLink === link) peerLink = null
+		// 5s connectability watchdog: if the bridge has not reached OPEN, tell the browser it is
+		//  not connectable, with whatever error code the socket captured. Cleared on open.
+		let lastError = ''
+		const watchdog = setTimeout(() => {
+			if (link.readyState === WebSocket.OPEN) return
+			const msg = `editor relay ${editorRelayUrl} not connectable after 5s (readyState=${link.readyState}${lastError ? ', ' + lastError : ''})`
+			relayLog(`✗ ${msg}`)
+			broadcastControl({ control: 'peer-relay', up: false, error: lastError || 'timeout', detail: msg, target: editorRelayUrl })
+		}, 5000)
+		link.on('open', () => {
+			clearTimeout(watchdog)
+			relayLog(`✓ peer relay LINKED (outbound r2r) → ${editorRelayUrl}`)
+			broadcastControl({ control: 'peer-relay', up: true, target: editorRelayUrl })
 		})
-		link.on('error', () => {
+		link.on('message', (data) => routeFromPeer(asText(data)))
+		link.on('close', (code: number) => {
+			clearTimeout(watchdog)
 			if (peerLink === link) peerLink = null
+			relayLog(`✗ peer relay CLOSED code=${code} → ${editorRelayUrl}`)
+			broadcastControl({ control: 'peer-relay', up: false, error: `close:${code}`, target: editorRelayUrl })
+		})
+		link.on('error', (err: any) => {
+			lastError = (err && (err.code || err.message)) || 'error'
+			if (peerLink === link) peerLink = null
+			relayLog(`✗ peer relay ERROR ${lastError} → ${editorRelayUrl}`)
+			broadcastControl({ control: 'peer-relay', up: false, error: lastError, target: editorRelayUrl })
 		})
 	}
 
@@ -108,15 +168,22 @@ export function attachRelay(
 	function routeFromBrowser(text: string) {
 		const to = headerTo(text)
 		if (!to) return
-		if (deliverLocal(to, text)) return
-		if (peerLink && peerLink.readyState === WebSocket.OPEN) peerLink.send(text)
-		// else: addressee absent — drop; the sender's no-ack ttlilt retries.
+		// Heartbeat traffic (ping/pong/ack) is suppressed on the SUCCESS path — it would flood
+		//  the log once the channel is healthy. A DROP is always logged, even for a ping: a
+		//   dropped heartbeat is the symptom worth seeing (and only happens while unbridged).
+		const loud = !NOISY.has(frameType(text))
+		if (deliverLocal(to, text)) { if (loud) relayLog(`→ ${to} ${frameKind(text)} (local)`); return }
+		if (peerLink && peerLink.readyState === WebSocket.OPEN) { peerLink.send(text); if (loud) relayLog(`→ ${to} ${frameKind(text)} (forwarded over bridge)`); return }
+		relayLog(`→ ${to} ${frameKind(text)} DROPPED (no local socket, ${peerLink ? 'bridge not OPEN' : 'no bridge'})`)
 	}
 
 	// A frame from the PEER relay: deliver local or drop. NEVER re-forwarded (the loop guard).
 	function routeFromPeer(text: string) {
 		const to = headerTo(text)
-		if (to) deliverLocal(to, text)
+		if (!to) return
+		const loud = !NOISY.has(frameType(text))
+		if (deliverLocal(to, text)) { if (loud) relayLog(`← bridge → ${to} ${frameKind(text)} (local)`) }
+		else relayLog(`← bridge → ${to} ${frameKind(text)} DROPPED (no local socket for ${to})`)
 	}
 
 	function handleControl(ws: WebSocket, msg: any) {
@@ -141,17 +208,29 @@ export function attachRelay(
 				return
 			}
 			peerLink = ws
+			relayLog(`✓ peer relay LINKED (inbound r2r) — editor end`)
+			broadcastControl({ control: 'peer-relay', up: true })
 			ws.on('message', (data) => routeFromPeer(asText(data)))
-			ws.on('close', () => {
+			ws.on('close', (code: number) => {
 				if (peerLink === ws) peerLink = null
+				relayLog(`✗ peer relay CLOSED code=${code} (inbound r2r)`)
+				broadcastControl({ control: 'peer-relay', up: false, error: `close:${code}` })
 			})
-			ws.on('error', () => {
+			ws.on('error', (err: any) => {
 				if (peerLink === ws) peerLink = null
+				relayLog(`✗ peer relay ERROR ${(err && (err.code || err.message)) || 'error'} (inbound r2r)`)
 			})
 			return
 		}
 		// Browser socket.
-		if (meta.addr) bind(meta.addr, ws)
+		if (meta.addr) { bind(meta.addr, ws); relayLog(`browser bound addr=${meta.addr} (locals: ${[...locals.keys()].join(',')})`) }
+		// Re-dial the bridge on (re)connect if we are the runner and the link is down. role is
+		//  set-once and persists for the dev server's life, so dialEditor fires only on the FIRST
+		//   become — a failed first dial (editor server not up yet) would otherwise stay dead until
+		//    a SERVER restart, with every reload silently dropping frames. This recovers it on a
+		//     browser reload: the v1 "dial once" becomes "dial whenever a browser arrives and we're
+		//      unbridged" — still no background reconnect timer, but no longer a one-shot dead end.
+		if (role === 'runner' && !peerLink) { relayLog(`browser (re)connected, bridge down — re-dialing`); dialEditor() }
 		ws.on('message', (data) => {
 			const text = asText(data)
 			const msg = parse(text)
@@ -176,6 +255,7 @@ export function attachRelay(
 			return
 		}
 		if (u.pathname !== PATH) return // not ours (vite HMR etc.) — leave it for the next listener
+		selfHost = selfHost || req.headers?.host || '' // learn our own host:port for the self-dial guard
 		const meta: Meta = { addr: u.searchParams.get('addr'), r2r: u.searchParams.get('r2r') === '1' }
 		wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, meta))
 	}
@@ -216,4 +296,15 @@ function parse(text: string): any {
 function headerTo(text: string): string | undefined {
 	const m = parse(text)
 	return m && m.header && m.header.to
+}
+// A short label for a frame, for the routing logs: "<type> seq=<n>" or "(headerless)".
+function frameKind(text: string): string {
+	const m = parse(text)
+	const h = m && m.header
+	return h ? `${h.type}${h.seq != null ? ' seq=' + h.seq : ''}` : '(headerless)'
+}
+// Just the header type (for the NOISY heartbeat filter); '' if headerless.
+function frameType(text: string): string {
+	const m = parse(text)
+	return (m && m.header && m.header.type) || ''
 }

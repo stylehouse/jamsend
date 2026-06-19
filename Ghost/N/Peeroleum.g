@@ -24,7 +24,7 @@ async req_p2pman(req):
 // ── per-identity worker ───────────────────────────────────────────────────────
 // A:Alice/w:Peeroleum — one per identity-presence; owns this address's Piers.
 async Peeroleum(A,w):
-    oai seemingly:`ya aooooolly`...figaro:Soonas
+    oai seemingly:`ya aooooolly`...figaro:Litolgogoleum
     // each installed %Peering manages its own Piers via %req:p2paddy
     S o Peering
         Peering oai %req:p2paddy
@@ -212,9 +212,16 @@ transport(A,w):
 Peeroleum_send(w, frame):
     let h = frame.header
     let pier = w.o({Peering:1})[0]?.o({Pier:1})[0]
-    if (pier && h.type !== 'ack') pier.oai({outbox: 1}).i({emit: h.seq, type: h.type, seq: h.seq, sent: 1})
+    // ack AND the heartbeat (ping/pong) book no outbox emit: an ack is light (spec §7.2), and
+    //  ping/pong are ephemeral liveness probes — booking them would pile %emit rows in the snap
+    //   that nothing reliably culls between Story steps. Only real app/protocol frames are tracked.
+    let ephemeral = (h.type === 'ack' || h.type === 'ping' || h.type === 'pong')
+    if (pier && !ephemeral) pier.oai({outbox: 1}).i({emit: h.seq, type: h.type, seq: h.seq, sent: 1})
     let conn = w.o({active_transport:1})[0]?.c.connection
-    console.log(`🛰 Peeroleum_send ${h.type} seq=${h.seq} → ${h.to} (transport ${conn ? 'live' : 'MISSING — frame dropped'})`)
+    // No transport is a real fault (the frame is lost) — always say so, clearly.  A live+loud
+    //  frame logs normally; a live heartbeat stays quiet so a healthy channel doesn't spam.
+    if (!conn) console.log(`🛰 Peeroleum_send ${h.type} seq=${h.seq} → ${h.to} ⚠ DROPPED — no live transport (channel down / re-establishing)`)
+    if (conn && !ephemeral) console.log(`🛰 Peeroleum_send ${h.type} seq=${h.seq} → ${h.to} (transport live)`)
     conn?.send(frame)
 
 // Peeroleum_deliver — the transport handed us an inbound frame (spec §4.3). An ack is
@@ -229,6 +236,10 @@ Peeroleum_deliver(w, frame):
     let pier = w.o({Peering:1})[0]?.o({Pier:1})[0]
     if (!pier) return
     if (h.type === 'ack') { H.Peeroleum_take_ack(w, pier, h); H.feebly_ponder(); return }
+    // ping/pong are an ephemeral heartbeat: dispatch straight to the registered handler, like an
+    //  ack — NO inbox booking (so they never stack in the snap) and NO ack-back (so the heartbeat
+    //   can't generate the ack-storm whose sends drop as "no transport" right after an HMR).
+    if (h.type === 'ping' || h.type === 'pong') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, pier, frame); H.feebly_ponder(); return }
     let unemit = pier.oai({inbox: 1}).i({unemit: h.seq, type: h.type, seq: h.seq, queued: 1})
     unemit.c.frame = frame
     H.Peeroleum_pump_inbox(w, pier)

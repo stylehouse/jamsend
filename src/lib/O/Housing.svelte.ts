@@ -465,10 +465,10 @@ export class House extends StorableHousing {
         // merge and push to all known Houses
         this.ghostsHaunt(hash)
 
-        // < no use yet? wants to avoid initial ghost component mount-wave
-        // await this.on_code_change?.()
-
-        // if (this.oa()) this.main()
+        // on_code_change — an OPTIONAL per-ghost HMR seam: any ghost may define it to react to
+        //  fresh code landing (none do today).  The guaranteed reactions live in ghostsHaunt;
+        //   this is the open hook for whatever else wants to know.  No-op while undefined.
+        await this.on_code_change?.()
     }
 
     // merge new code into every H.*, from a ghost doing onMount|HMR
@@ -479,6 +479,13 @@ export class House extends StorableHousing {
         for (const h of this.all_House) {
             Object.assign(h, this.ghosts)
         }
+        console.log(`Got ghostsHaunt`)
+        // Every haunt is an HMR (or initial mount): fresh code + its Ghostmeta dige is now live.
+        //  Run the guaranteed reaction here, in the core path, rather than behind the optional
+        //   on_code_change hook — a parked %req:run_intent must re-check the moment its version
+        //    lands.  Deposited by LiesLies; ?.() guards the pre-deposit boot window.  Its work
+        //     goes through feebly_ponder (Runtime-gated), so the initial mount-wave never storms.
+        ;(this as any).Ghost_version_checkin?.()
     }
 
     // -------------------------------------------------------------------------
