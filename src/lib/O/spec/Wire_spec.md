@@ -310,7 +310,7 @@ So the rule is *no receptor of **either** kind, no delivery* — but the recepto
 
 | desire | preset (`Hovercraft.design` §5) | the wake |
 |--------|----------------------------------|----------|
-| **revisioning** | `moai`-on-change (bump in place) / `r`-on-change (new ref) | `vers++` → the snap diffs, watchers re-render |
+| **revisioning** | `oai`-on-change (bump in place) / `r`|`roai`-on-change (new ref) | `vers++` → the snap diffs, watchers re-render |
 | **operation** | the req preset (mutate+stamp+run) / the pull | arm a req, do work, `finish(reply)` |
 | **iteration** | re-arm another pass | `main()` (`Housing:653`) posts a `think`; `demand_time_to_think` keeps the beat |
 

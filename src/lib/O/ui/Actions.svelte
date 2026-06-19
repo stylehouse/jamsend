@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { TheC } from "$lib/data/Stuff.svelte"
 
-    let { N }: { N: TheC } = $props()
+    let { N }: { N: TheC[] } = $props()
 
     let actions = $derived(N)
 
@@ -15,11 +15,14 @@
 </script>
 
 {#each actions as a}
+    <!-- read a.vers so an in-place oai bump (cls/icon/disabled drift on the same
+         ref) re-renders this item — the ref no longer changes per tick. -->
+    {@const cls = (a.vers, a.sc.cls ?? 'default')}
     {#if a.sc.kind === 'dropdown'}
         <label class="dd" title={a.sc.label}>
             {#if a.sc.icon}<span class="dd-icon">{a.sc.icon}</span>{/if}
             <select
-                class="dd-select btn btn-{a.sc.cls ?? 'default'}"
+                class="dd-select btn btn-{cls}"
                 value={a.sc.value ?? ''}
                 onchange={(e) => { try { a.sc.on_pick?.((e.target as HTMLSelectElement).value) } catch (err) { console.warn(`Dropdown "${a.sc.label}" failed:`, err) } }}
                 disabled={a.sc.disabled ?? false}
@@ -32,7 +35,7 @@
     {:else}
         <button
             onclick={() => fire(a)}
-            class="btn btn-{a.sc.cls ?? 'default'}"
+            class="btn btn-{cls}"
             title={a.sc.label}
             disabled={a.sc.disabled ?? false}
         >

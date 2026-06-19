@@ -1,7 +1,7 @@
 Snap:H
   H:LangTiles,Run
     A:Lies
-      self,round=184	{"mung":["age"]}
+      self,round=39	{"mung":["age"]}
       w:Lies
         Opt
           nowriting:^Ghost
@@ -36,21 +36,21 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781881773473,kind:cold
-          want=1781881773523,kind:cold
-          want=1781881773883,kind:cold,resolved
+          want=1781882899519,kind:cold
+          want=1781882899569,kind:cold
+          want=1781882899819,kind:cold,resolved
         o_elvis:dock_askies
         Waft:GhostList,lists,O_defaulted,dontSnap	{"mung":["seeded"]}
         Funkcions
           req:Funkcion,funk_id:GhostList/dirlist,eternal,ok
-        Waft:Ting/2026-06-20/030936,takes
-          Point:theCompiledStuff,doc:Ghost/test/LangTiles.g,n=2,weight=4,last=1781881779150,first=1781881776832,heat=4.002,warm=0.5,bright,held,long
-            {"say":"o hut/although:1/they,can,be,mixed","at":1781881779150}
+        Waft:Ting/2026-06-20/032822,takes
+          Point:theCompiledStuff,doc:Ghost/test/LangTiles.g,n=2,weight=4,last=1781882904776,first=1781882902479,heat=4.36,warm=0.5,bright,held,long
+            {"say":"o hut/although:1/they,can,be,mixed","at":1781882904776}
+        self,round=39	{"mung":["age"]}
         log:source_write,path:Ghost/test/LangTiles.g,dige:34540f96
-        self,round=184	{"mung":["age"]}
         see:🗂 1 doc · 3 Wafts
     A:Lang
-      self,round=51	{"mung":["age"]}
+      self,round=50	{"mung":["age"]}
       w:Lang
         Opt
           txtsyntaxdump
@@ -151,7 +151,7 @@ Snap:H
                 def,method:obtainTiles,line=260,rel_from=10767,rel_to=10779
                 {"controlflow":1,"keyword":"if","title":"(s && !(oa %taken)) i %seat:free","line":269,"via":"obtainTiles","rel_from":11200,"rel_to":11203}
                 def,method:captureOutTiles,line=273,rel_from=11398,rel_to=11414
-              time,compile=0.021,all=0.571,write=0
+              time,compile=0.029,all=0.564,write=0
               Output,gen_path:gen/test/LangTiles.go,dige:a52e5ee77cabe847,source_dige:34540f96526f8cd0
                source: |
                  <script lang="ts">
@@ -525,13 +525,13 @@ Snap:H
           dock,active	{"loopy":0,"hid":1}
           Change
             backend,dige:34540
-            compile,dige:34540,secs=0.021,dim,pending
+            compile,dige:34540,secs=0.029,dim,pending
             storage,dige:34540
           LE:Undertaking,reason:Undertaking
             Seem:workon
               Funkcion:trail,halflife_ms=60000
-          Interest:Ting,waft:Ting/2026-06-20/030936,lens:DocTing,presence:always,state:live
-            cursor,what:Ting/2026-06-20/030936,latest
+          Interest:Ting,waft:Ting/2026-06-20/032822,lens:DocTing,presence:always,state:live
+            cursor,what:Ting/2026-06-20/032822,latest
         req:workon,auto_push	{"ref":{"w":"%w:Lang"}}
           {"req":"understanding","maz":3,"permanent":1,"sig":"1:13:0:0","what":"labelofaWhat","finished":1}
           req:ingredients,maz=2,permanent,sig:Ghost/test/LangTiles.g,finished
@@ -564,10 +564,9 @@ Snap:H
           {"encode":1,"snap_origin":"Doc:Ghost/test/LangTiles.g\nPoint:nothings\nPoint:nothinging\nPoint:Blaga\n","snap_working":"Doc:Ghost/test/LangTiles.g\nPoint:nothings\nPoint:nothinging\nPoint:Blaga\n","dirty":"0"}
         received,doc_opened,doc:Ghost/test/LangTiles.g
         received,editorBegins,doc:Ghost/test/LangTiles.g
-        self,round=51	{"mung":["age"]}
-        see:🟦 tiles 1 bookmarks
+        self,round=50	{"mung":["age"]}
     A:Pantheate
-      self,round=22	{"mung":["age"]}
+      self,round=21	{"mung":["age"]}
       w:Pantheate
         include:gen/test/LangTiles.go
         req:include,gen_path:gen/test/LangTiles.go,path:Ghost/test/LangTiles.g,source_dige:34540f96526f8cd0,ghostmeta_name:Ghostmeta_Ghost_test_LangTiles,permanent,live_dige:34540f96526f8cd0,finished
@@ -606,7 +605,7 @@ Snap:H
             prefixy:stuff,wither:angles
               wither:levels,its:its,sits:ferv
         req:run_method,method:theCompiledStuff,finished
-        self,round=22	{"mung":["age"]}
+        self,round=21	{"mung":["age"]}
         o_elvis:Ghost_update_notify
     watched:ave
       examining	{"loopy":1,"hid":1}

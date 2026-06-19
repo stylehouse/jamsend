@@ -108,7 +108,7 @@
 
         // ── test driver ───────────────────────────────────────────────────────
         // step 2: dispatch → creates req:transport
-        // step 4: mutate rose dose → doai's moai re-merge flags %mutated → rogue
+        // step 4: mutate rose dose → doai's oai re-merge flags %mutated → rogue
         // step 5: creates req:reportPortPlaneting (named handler)
         await this.on_step({
             2: async () => {
@@ -129,7 +129,7 @@
 
         // ── req:receive ────────────────────────────────────────────────────────
         ;(await w.doai({req:'receive'}))?.(async (De: TheC) => {
-            // flow w/orders into order reqs.  doai is moai with a setter: the
+            // flow w/orders into order reqs.  doai is oai with a setter: the
             //  re-merge flags %mutated on a dose change, and the order req's own
             //  do_fn reacts — seeding the rogue extra order for the delta.
             for (const order of w.oai({ orders: 1 }).o({ order: 1 }) as TheC[]) {

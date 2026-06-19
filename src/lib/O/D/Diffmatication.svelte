@@ -290,7 +290,7 @@ await M.eatfunc({
         for (const d of dm.o({ diff: 1 }) as TheC[]) dm.drop(d)
         dm.oai({ spinner: 'diff' })   // dropped by req_showing when diffs land
         dm.bump_version()
-        await w.oai({ req: 'cursor' }, { step_n: n })   // moai re-merge → %mutated.step_n on a re-aim
+        await w.oai({ req: 'cursor' }, { step_n: n })   // oai re-merge → %mutated.step_n on a re-aim
         H.feebly_ponder()
     },
 

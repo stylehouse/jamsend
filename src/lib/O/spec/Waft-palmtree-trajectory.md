@@ -67,7 +67,7 @@ w:Lang
 
   /docks/%dock:$path
     /%Text                sc.dige, sc.disk_dige, sc.disk_rev  — text metadata visible in snap
-                          c.text: string  — source string, hidden from snap (moai to update)
+                          c.text: string  — source string, hidden from snap (oai to update)
     /%Compile             c.pending (transient) — in-flight flag; replaces old %Pending:1
                           → %methods, %Output (sc.gen_path, sc.source, sc.source_dige)
     /%Pmirrors

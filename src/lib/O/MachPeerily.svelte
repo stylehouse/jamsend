@@ -670,7 +670,7 @@
         // req:connect is seeded only from on_step, never here — outbound sides already
         //   have it; inbound Piers don't initiate a connection from their side.
         for (const Pier_n of (w.o({ Pier: 1 }) as TheC[])) {
-            // handshake per-Pier pub — idempotent via moai keyed on target
+            // handshake per-Pier pub — idempotent via oai keyed on target
             ;(await w.doai({ req: 'handshake', target: Pier_n.sc.pub as string }))?.(
                 (Dehs: TheC) => H.De_handshake(Dehs))
         }

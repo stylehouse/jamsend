@@ -4,6 +4,10 @@ Running list of compile-side work, smallest/most-actionable first. The IOing
 *reduction* (drills, the `_io_plan` oracle, the database horizon) has its own
 list in `LangSolver_report.md` — this file is the surrounding compiler.
 
+> Naming note: this doc's `moai` shipped as **`oai`** — `moai` is neither a live
+>  method nor a grammar token (`IOness2` = `oai | roai | r | rm`; `doai` lowers
+>   separately). Read `moai` as today's `oai` throughout.
+
 ## async-verb warning (dev notification) — SUPERSEDED by auto-async (the fix landed)
 
 `r | rm | roai | moai` (and any future async verb) compile to `await …`

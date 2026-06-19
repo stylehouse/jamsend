@@ -1502,12 +1502,15 @@ export class House extends StorableHousing {
     //   subsequent calls from story_ui update the action's cls in place without
     //   re-reading stashed.
     //
-    //   wa.r() replaces the action particle each tick (not oai) so cls always
-    //   reflects the live value when story_ui re-runs.
+    //   wa.oai() finds-or-creates the action and merges cls/icon in place,
+    //   bumping the particle's version only on a real drift — same ref every
+    //   tick, so the snap row doesn't churn (a replace minted a fresh ref each
+    //   pass, showing up as a paired +/- in the diff).  Actions.svelte reads
+    //   a.vers, so the in-place bump re-renders the toggle.
     //
     //   Pattern: delete key from H.stashed when value equals the default so that
     //   stashed omits uninteresting defaults and stays easy to inspect.
-    async i_actions_to_c(w: TheC, key: string, opts: { default?: boolean, stashed?: boolean, label?: string } = {}) {
+    async i_actions_to_c(w: TheC, key: string, opts: { default?: boolean, stashed?: boolean, label?: string, on_change?: (next: boolean) => void } = {}) {
         const H        = this as House
         const def_v    = opts.default  ?? false
         const do_stash = opts.stashed  ?? false
@@ -1521,7 +1524,7 @@ export class House extends StorableHousing {
         }
 
         const current = !!w.c[key]
-        await wa.r({ action: 1, role: key }, {
+        wa.oai({ action: 1, role: key }, {
             label,
             icon:  current ? `${label} ✓` : label,
             cls:   current ? 'toggle-on' : 'toggle-off',
@@ -1546,7 +1549,7 @@ export class House extends StorableHousing {
 
         const current = !!C.oa({ [key]: 1 })
 
-        await wa.r({ action: 1, role: key }, {
+        wa.oai({ action: 1, role: key }, {
             label,
             icon: current ? `${label} ✓` : label,
             cls:  current ? 'toggle-on'  : 'toggle-off',

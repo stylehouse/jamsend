@@ -46,9 +46,9 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781881941336,kind:cold
-          want=1781881941387,kind:cold
-          want=1781881941643,kind:cold,resolved
+          want=1781882811496,kind:cold
+          want=1781882811547,kind:cold
+          want=1781882811799,kind:cold,resolved
         o_elvis:dock_askies
         Waft:GhostList,lists,O_defaulted,dontSnap	{"mung":["seeded"]}
         Funkcions
@@ -256,7 +256,7 @@ Snap:H
                 controlflow,keyword:if,title:(Idzeug.stashed.nRepeating) {,line=750,via:claim_Idzeug_number,rel_from=3627,rel_to=3630
                 controlflow,keyword:if,title:(N.includes(n)) return false,line=755,via:claim_Idzeug_number,rel_from=3748,rel_to=3751
                 def,method:ier_is_Good,line=763,rel_from=4005,rel_to=4017
-              time,compile=0.037,all=0.772,write=0
+              time,compile=0.088,all=1.385,write=0.001
               Output,gen_path:gen/test/Idzeuzia.go,dige:a66bfcce15c2d272,source_dige:f894a5ff10d26203
                source: |
                  <script lang="ts">
@@ -1301,7 +1301,7 @@ Snap:H
           Change
             backend,dige:f894a
             storage,dige:f894a
-            compile,dige:f894a,secs=0.037,dim,pending
+            compile,dige:f894a,secs=0.088,dim,pending
         req:workon,auto_push	{"ref":{"w":"%w:Lang"}}
           {"req":"understanding","maz":3,"permanent":1,"sig":"2:13:0:0","what":"itis","finished":1}
           req:ingredients,maz=2,permanent,sig:Ghost/test/Idzeuzia.g,finished
@@ -1356,7 +1356,7 @@ Snap:H
       action,role:compile,label:compile	{"ref":{"fn":"Function()"}}
       action,role:lang_pick,kind:dropdown,label:language,icon:✎,value:stho	{"ref":{"options":"[Object(),Object()]","on_pick":"Function()"}}
       action,role:gen_parser,label:gen,icon:⚙,disabled:true	{"ref":{"fn":"Function()"}}
+      action,role:compo,label:compo,icon:compo,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:nogen,label:nogen,icon:nogen,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:softgen,label:softgen,icon:softgen,cls:toggle-off	{"ref":{"fn":"Function()"}}
-      action,role:compo,label:compo,icon:compo,cls:toggle-off	{"ref":{"fn":"Function()"}}
     ttlilt,of_w:Pantheate,waiting:ghostmeta	{"ref":{"req":"%req:include, gen_path:gen/test/Idzeuzia.go, path:Ghost/test/Idzeuzia.g, sour...123"},"mung":["until_ts"]}

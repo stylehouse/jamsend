@@ -1913,7 +1913,7 @@
         const path = dock.sc.dock as string
 
         // Read current dige values from dock/Text.
-        // Text is absent until req_text_loaded's moai resolves — bail rather
+        // Text is absent until req_text_loaded's oai resolves — bail rather
         // than blanking Change with empty strings.  The tick will re-run once
         // e_Lang_dock_content lands and populates Text.
         const Text      = dock.o({ Text: 1 })[0] as TheC | undefined

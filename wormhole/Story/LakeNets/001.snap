@@ -50,9 +50,9 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781882012255,kind:cold
-          want=1781882012306,kind:cold
-          want=1781882012562,kind:cold,resolved
+          want=1781882709502,kind:cold
+          want=1781882709554,kind:cold
+          want=1781882709819,kind:cold,resolved
         o_elvis:dock_askies
         Waft:GhostList,lists,O_defaulted,dontSnap	{"mung":["seeded"]}
         Funkcions
@@ -78,7 +78,7 @@ Snap:H
             Compile
               Map
                 def,method:LakeNetherland,line=2,rel_from,rel_to=16
-              time,compile=0.006,all=0.153
+              time,compile=0.004,all=0.165
               Output,gen_path:gen/test/Story/Peregrination.go,dige:132bbb4fbdc68238,source_dige:5243d16758eb710b
                source: |
                  <script lang="ts">
@@ -122,7 +122,7 @@ Snap:H
           Change
             backend,dige:5243d
             storage,dige:5243d
-            compile,dige:5243d,secs=0.006,dim,pending
+            compile,dige:5243d,secs=0.004,dim,pending
         req:workon,auto_push=0	{"ref":{"w":"%w:Lang"}}
           {"req":"understanding","maz":3,"permanent":1,"sig":"1:13:0:0","what":"story","finished":1}
           req:ingredients,maz=2,permanent,sig:Ghost/test/Story/Peregrination.g,finished
@@ -168,6 +168,6 @@ Snap:H
       action,role:compile,label:compile	{"ref":{"fn":"Function()"}}
       action,role:lang_pick,kind:dropdown,label:language,icon:✎,value:stho	{"ref":{"options":"[Object(),Object()]","on_pick":"Function()"}}
       action,role:gen_parser,label:gen,icon:⚙,disabled:true	{"ref":{"fn":"Function()"}}
+      action,role:compo,label:compo,icon:compo,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:nogen,label:nogen,icon:nogen,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:softgen,label:softgen,icon:softgen,cls:toggle-off	{"ref":{"fn":"Function()"}}
-      action,role:compo,label:compo,icon:compo,cls:toggle-off	{"ref":{"fn":"Function()"}}

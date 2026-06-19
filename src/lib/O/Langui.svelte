@@ -526,8 +526,8 @@
                 // First visit: build a fresh state.
                 // active_dock.c.initial_text is set by req_text_loaded reqonce
                 // synchronously onto the dock particle, available the same tick
-                // Languinio's dock hold arrives — always beats the Text moai.
-                // dock.c.text is the fallback (set alongside the moai).
+                // Languinio's dock hold arrives — always beats the Text oai.
+                // dock.c.text is the fallback (set alongside the oai).
                 const text = (dock?.c.initial_text as string | undefined)
                     ?? (dock?.c.text as string | undefined)
                     ?? ''
@@ -593,13 +593,13 @@
     //   changed on disk, not in the editor.
     //   Guards with active_path === prev_path to avoid firing mid-switch.
     //
-    //   Text $effect (disk-reload): Text.vers fires on every moai — both user
+    //   Text $effect (disk-reload): Text.vers fires on every oai — both user
     //   edits (dige changes) and disk writes (disk_dige + disk_rev change).
     //   disk_rev only advances on disk-origin writes so the key gates out
     //   editor echoes without needing to track dock.version at all.
     let _applied_disk_key: string | null = null   // `${path}#${disk_rev}` last applied
     $effect(() => {
-        void Text?.vers   // subscribe to Text — fires on any moai
+        void Text?.vers   // subscribe to Text — fires on any oai
         const disk_rev = (Text?.sc.disk_rev as number | undefined) ?? 0
         const incoming = (dock?.c.text as string | undefined) ?? ''
         if (!view || !incoming) return
@@ -1412,7 +1412,7 @@
     ) {
         // Read dock fresh — text may have arrived during the setTimeout delay.
         // Prefer active_dock.c.initial_text (set synchronously by req_text_loaded
-        // reqonce onto the dock particle — arrives with Languinio before the moai).
+        // reqonce onto the dock particle — arrives with Languinio before the oai).
         const initial    = (dock?.c.initial_text as string | undefined)
             ?? (dock?.c.text as string)
             ?? (captured_dock?.c.text as string)

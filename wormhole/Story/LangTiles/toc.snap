@@ -35,24 +35,24 @@ story:LangTiles
         nowriting:^Ghost
         dontSnapGhostList
   TimeSpool
-    TimeTotal:beliefs,avg=2.743
-      sample=2.341,at=1781862552
-      sample=2.582,at=1781862822
-      sample=2.582,at=1781862868
-      sample=2.529,at=1781880484
-      sample=2.518,at=1781880527
-      sample=2.518,at=1781881532
+    TimeTotal:beliefs,avg=2.47
       sample=2.504,at=1781881747
       sample=3.74,at=1781881793
       sample=3.74,at=1781881902
       sample=2.38,at=1781881935
-  step,dige:96ce6733b8df8e74
-  step=2,dige:b330313eee795b11
-  step=3,dige:e62bb6d415fd7fa4
-  step=4,dige:7c5cac57ed87fa63
+      sample=2.058,at=1781882844
+      sample=2.058,at=1781882892
+      sample=1.21,at=1781882911
+      sample=1.21,at=1781884122
+      sample=4.166,at=1781884148
+      sample=1.632,at=1781884730
+  step,dige:682d1cebde8069b7
+  step=2,dige:211176111ec1d6b4
+  step=3,dige:1fd43d6e1a72a05c
+  step=4,dige:4a8e4e046ff61f42
     note,bug:Cyto edge problems with Leg/PeelGroup/Leg the other PeelGroup alone
-  step=5,dige:aa24865a113782ba
-  step=6,dige:dc6f82410c3c1673
-  step=7,dige:30ee5e4140374b8c
-  step=8,dige:41b36571bb17817a
-  step=9,dige:520902f7947e6750
+  step=5,dige:9b543e5c2ea577aa
+  step=6,dige:20ed4da08fa261df
+  step=7,dige:64bb55b0bef228d9
+  step=8,dige:7f0de0df4984d786
+  step=9,dige:fe85a568cad5eb25

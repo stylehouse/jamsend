@@ -7,6 +7,14 @@ Sections 1–9 are meant to stay here forever;
  the migration tail — summarised right below, detailed in the Handover at the very
   end — is the only part expected to age out.
 
+> Naming note (the verb shipped differently from this doc). The merge-in-place
+>  find-or-create verb this doc calls `moai` shipped as **`oai`** — the old
+>   birth-only `oai` is gone and `moai` is not a live method or a grammar token
+>    (`IOness2` = `oai | roai | r | rm`). So throughout: read this doc's `moai` as
+>     today's `oai`, and its `oai` (the birth-only one it contrasts against `moai`)
+>      as gone. The `%req` overload and `doai` are on `oai` now. See
+>       `reactivity_docs.md` for the live `oai`/`roai`/`doai` semantics.
+
 Notation is the house notation throughout:
  %req means {req:1}, Text%dige means the %dige on a %Text,
   this/written:is when structures, this|that when alone,

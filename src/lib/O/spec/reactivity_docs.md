@@ -80,15 +80,27 @@ So nothing dissolves: `%LE` stays the Understanding, `%Pmirrors` stays the CM br
 
 `vers` is just an accessor for `C.version` plus one, so it can be is the UItime-safe reactive signal ($state); `version` is the raw Atime counter. Use `vers` in UI code, `version` in worker code.
 
-**oai vs roai:**
+**oai vs roai vs doai:**
 
-`oai(s, c)` — select-or-insert synchronously. If the particle is found, it is returned unchanged — the second argument `c` is ignored. Good for idempotent one-time setup: `let exa = w.oai({ examining: 1 })`.
+`oai(s, c)` — find-or-create, synchronous, **merge-in-place**. On a found particle it merges `c` into the existing `sc` and bumps `version` *only* when a non-function value actually drifted (functions copy through — freshest closure wins — but never count as a change). The ref is stable across ticks. This is the everyday data verb. (It was once called `moai`; the old *birth-only* `oai`, which ignored `c` on a found particle, is gone. To seed a value once without ever refreshing it, do it by hand: `x.sc.k ??= …`.)
 
-`roai(s, c)` — async; same select-or-insert, but if found and any non-function value has changed, calls `replace()` to update it in place. Because it goes through replace() this is fast but async. Good for keeping a derived-state particle current across ticks: `wa.roai({ action:1, role:'pause' }, { label, cls, fn })`.
+`roai(s, c)` — async; same find-or-create, but on a drift it calls `replace()` → a **new ref**, re-resolved. Use it only when a consumer keys on ref *identity* (a keyed `{#each … (n)}`, Otro's UIs mount) rather than on `vers`. Going through `replace()` makes it async, and its `empty()`-then-refill window is the transacting-read hazard the mutex notes describe — `oai` (a plain in-place merge) has no such window.
 
-The practical difference: `oai` never changes a found particle; `roai` replaces it when stale. Use `oai` for structure, `roai` for live state.
+`doai(c, sc)?.(fn)` — `oai` plus a one-shot `do_fn`, the verb for reqs (`%req`). See `Hovercraft.design.md`.
 
-Note: passing a second arg to `oai` is a bug waiting to happen — it is silently ignored on a found particle. Use `roai` if the values need to update.
+The practical difference is now about **identity, not whether values update** — both `oai` and `roai` do update a found particle:
+
+- `oai` keeps the same ref and bumps `version` in place. The consumer must subscribe to the bump — read `.vers` in a `$derived`, or `.ob()` in an `$effect` (see "ob()" below). This is the default; a stable ref doesn't churn its row in the snap diff.
+- `roai` mints a new ref, so a consumer reading a stale array of refs re-renders because item identity changed — but every re-find churns the snap and starts `.c` backlinks empty, so reserve it for the identity-keyed case.
+
+Example — the action rack is `oai`, and the renderer (`Actions.svelte`) reads each row's `a.vers` so an in-place `cls`/`icon` drift repaints the button:
+
+```ts
+wa.oai({ action: 1, role: 'pause' }, { label, cls, fn })   // same ref; vers bumps on drift
+// renderer:  {#each actions as a}{@const cls = (a.vers, a.sc.cls ?? 'default')} …
+```
+
+Using `roai`/`r()` there instead mints a fresh action particle every tick — the toggle still works, but the row shows up as a paired `+`/`-` in every snap diff.
 
 ---
 
@@ -179,8 +191,10 @@ let LE = $derived(languinio?.ob({ LE: 1 })[0])
 let exa = w.oai({ examining: 1 })     // stable particle on w
 H.watch('ave').i(exa)                 // hand it to the ave channel; idempotent
 
-// for live state, roai into exa so UItime gets it without subscribing to all of w:
-await exa.roai({ active_path: doc.sc.path, step: current_step })
+// for live state, write into exa so UItime gets it without subscribing to all of w.
+//  oai bumps exa.vers in place (the UItime side below reads exa.vers, so this is the
+//  fit); switch to roai only if a keyed consumer needs the ref identity to change:
+exa.oai({ active_path: doc.sc.path, step: current_step })
 ```
 
 ```ts

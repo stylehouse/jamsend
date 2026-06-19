@@ -14,7 +14,7 @@ called out as going beyond it.
 `IOing` is `IOness IOpath` — a verb (`i`|`o`|…) and a `/`-separated path of legs,
 each leg a comma-joined `PeelGroup` that becomes one match `sc`. The grammar
 already tokenises far more than compiles: the full `IOness` family
-(`i|o|oa|ob|o1|oa1|bo|boa|drop|empty`), the `IOness2` family (`oai|roai|moai|r`),
+(`i|o|oa|ob|o1|oa1|bo|boa|drop|empty`), the `IOness2` family (`oai|roai|r|rm`),
 two `IOpath`s on one `IOness2` (the inline `->` shape), captures, puddles. But
 `Lang_compile_IOness` trims to `i`|`o` and throws on the rest, and
 `Lang_compile_IOing` routes only single-leg-inline |the five drills.

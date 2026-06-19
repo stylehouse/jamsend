@@ -1,7 +1,7 @@
 Snap:H
   H:LangTiles,Run
     A:Lies
-      self,round=17	{"mung":["age"]}
+      self,round=19	{"mung":["age"]}
       w:Lies
         Opt
           nowriting:^Ghost
@@ -34,17 +34,17 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781881773473,kind:cold
-          want=1781881773523,kind:cold
-          want=1781881773883,kind:cold,resolved
+          want=1781882899519,kind:cold
+          want=1781882899569,kind:cold
+          want=1781882899819,kind:cold,resolved
         o_elvis:dock_askies
         Waft:GhostList,lists,O_defaulted,dontSnap	{"mung":["seeded"]}
         Funkcions
           req:Funkcion,funk_id:GhostList/dirlist,eternal,ok
-        self,round=17	{"mung":["age"]}
+        self,round=19	{"mung":["age"]}
         see:🗂 1 doc · 2 Wafts
     A:Lang
-      self,round=19	{"mung":["age"]}
+      self,round=17	{"mung":["age"]}
       w:Lang
         Opt
           txtsyntaxdump
@@ -143,7 +143,7 @@ Snap:H
                 def,method:obtainTiles,line=260,rel_from=10762,rel_to=10774
                 {"controlflow":1,"keyword":"if","title":"(s && !(oa %taken)) i %seat:free","line":269,"via":"obtainTiles","rel_from":11195,"rel_to":11198}
                 def,method:captureOutTiles,line=273,rel_from=11393,rel_to=11409
-              time,compile=0.044,all=0.794,write=0
+              time,compile=0.022,all=0.512,write=0
               Output,gen_path:gen/test/LangTiles.go,dige:98cc8a771813fd6d,source_dige:e633c97628b42c32
                source: |
                  <script lang="ts">
@@ -518,7 +518,7 @@ Snap:H
           Change
             backend,dige:e633c
             storage,dige:e633c
-            compile,dige:e633c,secs=0.044,dim,pending
+            compile,dige:e633c,secs=0.022,dim,pending
         req:workon,auto_push	{"ref":{"w":"%w:Lang"}}
           {"req":"understanding","maz":3,"permanent":1,"sig":"1:13:0:0","what":"labelofaWhat","finished":1}
           req:ingredients,maz=2,permanent,sig:Ghost/test/LangTiles.g,finished
@@ -551,7 +551,7 @@ Snap:H
           {"encode":1,"snap_origin":"Doc:Ghost/test/LangTiles.g\nPoint:nothings\nPoint:nothinging\nPoint:Blaga\n","snap_working":"Doc:Ghost/test/LangTiles.g\nPoint:nothings\nPoint:nothinging\nPoint:Blaga\n","dirty":"0"}
         received,doc_opened,doc:Ghost/test/LangTiles.g
         received,editorBegins,doc:Ghost/test/LangTiles.g
-        self,round=19	{"mung":["age"]}
+        self,round=17	{"mung":["age"]}
         see:🟦 tiles 1 bookmarks
     A:Pantheate
       self,round=5	{"mung":["age"]}
@@ -573,6 +573,6 @@ Snap:H
       action,role:compile,label:compile	{"ref":{"fn":"Function()"}}
       action,role:lang_pick,kind:dropdown,label:language,icon:✎,value:stho	{"ref":{"options":"[Object(),Object()]","on_pick":"Function()"}}
       action,role:gen_parser,label:gen,icon:⚙,disabled:true	{"ref":{"fn":"Function()"}}
+      action,role:compo,label:compo,icon:compo,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:nogen,label:nogen,icon:nogen,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:softgen,label:softgen,icon:softgen,cls:toggle-off	{"ref":{"fn":"Function()"}}
-      action,role:compo,label:compo,icon:compo,cls:toggle-off	{"ref":{"fn":"Function()"}}

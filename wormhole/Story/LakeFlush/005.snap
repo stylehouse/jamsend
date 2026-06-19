@@ -1,7 +1,7 @@
 Snap:H
   H:LakeFlush,Run
     A:Lies
-      self,round=30	{"mung":["age"]}
+      self,round=29	{"mung":["age"]}
       w:Lies
         Opt
           nowriting
@@ -53,19 +53,19 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781882053307,kind:cold
-          want=1781882053358,kind:cold
-          want=1781882053609,kind:cold
-          want=1781882055561,kind:test,resolved
+          want=1781882776397,kind:cold
+          want=1781882776447,kind:cold
+          want=1781882776715,kind:cold
+          want=1781882778800,kind:test,resolved
         o_elvis:dock_askies
         Waft:GhostList,lists,O_defaulted,dontSnap	{"mung":["seeded"]}
         Funkcions
           req:Funkcion,funk_id:GhostList/dirlist,eternal,ok
         log:waft_save,path:Story/LakeFlush/Waftily,dige:7f077474
-        self,round=30	{"mung":["age"]}
+        self,round=29	{"mung":["age"]}
         see:🗂 2 docs · 2 Wafts
     A:Lang
-      self,round=31	{"mung":["age"]}
+      self,round=30	{"mung":["age"]}
       w:Lang
         Opt
           txtsyntaxdump
@@ -81,7 +81,7 @@ Snap:H
             Compile
               Map
                 def,method:LakeNetherland,line=2,rel_from,rel_to=16
-              time,compile=0.003,all=0.149
+              time,compile=0.004,all=0.15
               Output,gen_path:gen/test/Story/Peregrination.go,dige:132bbb4fbdc68238,source_dige:5243d16758eb710b
                source: |
                  <script lang="ts">
@@ -123,7 +123,7 @@ Snap:H
                 def,method:transport,line=5,rel_from=65,rel_to=75
                 def,method:PeerJS,line=7,rel_from=108,rel_to=115
                 def,method:Socket,line=9,rel_from=145,rel_to=152
-              time,compile=0.004,all=0.157
+              time,compile=0.004,all=0.164
               Output,gen_path:gen/test/Peeroleum.go,dige:b84b8d8cc1c85f2b,source_dige:69f9fd8539393ad7
                source: |
                  <script lang="ts">
@@ -216,12 +216,12 @@ Snap:H
         received,editorBegins,doc:Ghost/test/Story/Peregrination.g
         received,doc_opened,doc:Ghost/test/Peeroleum.g
         received,editorBegins,doc:Ghost/test/Peeroleum.g
-        self,round=31	{"mung":["age"]}
+        self,round=30	{"mung":["age"]}
         see:🟦 tiles 0 bookmarks
     A:Pantheate
-      self,round=7	{"mung":["age"]}
+      self,round=6	{"mung":["age"]}
       w:Pantheate
-        self,round=7	{"mung":["age"]}
+        self,round=6	{"mung":["age"]}
         o_elvis:Ghost_update_notify
     watched:ave
       examining	{"loopy":1,"hid":1}
@@ -235,6 +235,6 @@ Snap:H
       action,role:compile,label:compile	{"ref":{"fn":"Function()"}}
       action,role:lang_pick,kind:dropdown,label:language,icon:✎,value:stho	{"ref":{"options":"[Object(),Object()]","on_pick":"Function()"}}
       action,role:gen_parser,label:gen,icon:⚙,disabled:true	{"ref":{"fn":"Function()"}}
+      action,role:compo,label:compo,icon:compo,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:nogen,label:nogen,icon:nogen,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:softgen,label:softgen,icon:softgen,cls:toggle-off	{"ref":{"fn":"Function()"}}
-      action,role:compo,label:compo,icon:compo,cls:toggle-off	{"ref":{"fn":"Function()"}}
