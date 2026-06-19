@@ -195,8 +195,8 @@
             w.c.ave?.roai({ activeBook: 1 }, { Book: bname })
         }
 
-        // ── activateBook / resetStory elvises ─────────────────────────────────
-        //   Both arrive from LibraryRun clicks, so they only ever fire on the library page.
+        // ── activateBook elvis ── library-only: toggles %active on a Library Book, so it
+        //   genuinely needs Li.  Arrives from LibraryRun clicks. ──
         if (Li) {
             for (const ev of this.o_elvis(w, 'activateBook')) {
                 const bname = ev.sc.Book as string
@@ -208,11 +208,16 @@
                 Li.bump_version()
                 picks_a_book(bname)
             }
-            for (const ev of this.o_elvis(w, 'resetStory')) {
-                const bname = (ev.sc.Book as string)
-                    ?? (Li.o({ Book: 1,active:1 }) as TheC[])[0]?.sc.Book
-                if (bname) picks_a_book(bname)
-            }
+        }
+        // ── resetStory elvis ── NOT library-gated: the Story_reset button (Story.svelte)
+        //   fires it on a ?B= runner, which has no Library.  bname comes off the event (the
+        //    button passes it); falls back to the active Library Book (library page) or the
+        //     booted Book (H.c.book) when the event carries none. ──
+        for (const ev of this.o_elvis(w, 'resetStory')) {
+            const bname = (ev.sc.Book as string)
+                ?? (Li ? (Li.o({ Book: 1, active: 1 }) as TheC[])[0]?.sc.Book : undefined)
+                ?? (H.c.book as string | undefined)
+            if (bname) picks_a_book(bname)
         }
 
         const active = Li ? (Li.o({ Book: 1 }) as TheC[]).find(b => b.sc.active) : undefined
@@ -223,7 +228,13 @@
             console.log(`📚 storyFinished: ${bname} [${mode}]`)
             w.i({storyFinished:1,Book:bname,mode})
             if (Li) H.auto_sync_story_stats(Li)   // book stats are library-only
-            if (H.c.boot_role === 'runner') H.Cred_spool(w, bname, mode as string)  // spool the Creduler soul
+            if (H.c.boot_role === 'runner') {
+                H.Cred_spool(w, bname, mode as string)   // spool the Creduler soul
+                // …and report the real verdict back to the editor over the channel, for the dock
+                //  the last rungo fired on (the runner's Creduler Lies holds awaiting_verdict).
+                const liesW = H.o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] as TheC | undefined
+                if (liesW) H.Lies_runner_verdict(liesW)
+            }
             // < future: auto-advance to next book in Library order
         }
 

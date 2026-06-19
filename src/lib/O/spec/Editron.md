@@ -211,20 +211,47 @@ This is the big shift from §1's "Pantheate include in the Run". The runner no l
 
 ## 5c. The Editron final stretch — the three moves left
 
-1. **Fix the compile boomerang** (§5 fix-first). The `🔥` log is now the instrument; kill the spin, then
-    delete/demote the trickle.
-2. **Phase 1 — assure the editor of whole Story runs remotely** (the live front). Transport is proven; the
-    named moves: the version handshake (acquire-then-poll), confirm the run actually fires and `run_result`
-     returns, wire `mode` onto `dock_push`. Caveats: the `active_transport` keystone was "start here" (not
-      live last anyone looked); headless is blocked on the include problem, so "remotely" = a second browser
-       tab, not node (v1, fine — be explicit headless isn't on this path).
-3. **Phase 2 — in the Waft as Funkcions, red|green.** Triggering is solved (Funkcions are the Waft's embedded
-    applets, Waft_spec §201; the ballistics drum-pad already does struck-on-demand test-trigger Funkcions).
-     The unbuilt bit is the **binding**: Story step/run-result → Funkcion pass/fail → red|green decoration.
-      `run_result` already threads back to light the staging badge, so the data arrives; surfacing it
-       per-Funkcion is new. **Not spec'd anywhere yet — write a short spec note before building.**
+1. **Fix the compile boomerang** (§5 fix-first). DONE for the wedge: the `req:compile` in-flight guard that
+    never cleared (trickle spinning on a stuck pending — the `🔥` log) is fixed. Demoting the trickle itself
+     to a reason-driven wake is the remaining tidy.
+2. **Phase 1 — assure the editor of whole Story runs remotely** (the live front). MOSTLY DONE: the
+    `active_transport` keystone is live; the editor↔runner loop crosses both tabs; acquire-then-poll
+     converges across an HMR (`↻ rungo … ⏳→✓`); the run fires and `run_result` returns. The verdict is now
+      REAL — reported from `storyFinished` (`Lies_runner_verdict` → `Cred_run_outcome`), not the old
+       provisional `ok:true` at FIRE (§6). Left: wire `mode` across (still editor-local — `run_arm{mode}`
+        doesn't cross; add it to the Rungo + branch in `req_rungo` → `Lies_drive_run(w,path,mode)`), and
+         re-record the stale `toc.snap`s (Editron/Peregrination mismatch every step, so the now-honest badge
+          reads red until they're re-recorded). Caveat unchanged: headless is blocked on the include problem,
+           so "remotely" = a second browser tab, not node (v1).
+3. **Phase 2 — in the Waft as Funkcions, red|green.** Spec'd in §5d below. Triggering is solved; the unbuilt
+    bit is the binding (Story step/run-result → Funkcion pass/fail → red|green decoration).
 
 Then return to Interest.
+
+## 5d. Phase 2 — Funkcions go red|green (spec note)
+
+Destination: a Waft's embedded Funkcions show a pass/fail colour, so a Waft reads as a board of live test
+ lights. Both ends already exist — a Funkcion can be struck (ballistics drum-pad, [[ballistics-drum-pad]])
+  and a real verdict comes back (Phase 1: `%run_result{path}` carries `ok`/`ok_pct`/`done` on the editor's
+   `w:Lies`; per-step truth is `This/{Step}.sc.ok`, roll-up `Cred_run_outcome`). The unbuilt bit is the
+    binding and its decoration — three seams to decide before code:
+
+1. **Mapping key.** What is one Funkcion's verdict — a dock (`%run_result{path}`) or a step
+    (`This/{Step}.sc.ok`)? The embed `Waft/Funkcion:<name>` has no dock/step link today; add a bind field
+     (e.g. `%of_dock:<path>`, mirroring `Codebit%of_dock`).
+2. **Where the colour comes from.** The verdict particle already bumps `w:Lies`. A display-Funkcion's
+    `funk.c.run` reads its matching verdict and writes the colour. Keep it a separate `%verdict`, NOT the
+     per-tick `req.sc.ok` that `Lies_register_funkcion` stamps (= "the run closure executed" — conflating
+      them loses broken-Funkcion vs failing-test).
+3. **Decoration surface.** §201's "a Funkcion may reply with UI" is the home — a badge over the lens,
+    reusing Langui's good/bad/working idiom (`working` = struck, awaiting verdict).
+
+`%run_when:loaded` so the light shows the last verdict whenever the Waft is loaded, refreshing on the
+ `run_result`/`Step` bump; the Interest still drives start/pause/poke from the cursored region (§201).
+
+First slice (mirrors §201's): one Funkcion bound to one dock via `%of_dock`, reading that dock's
+ `%run_result.ok` and colouring its embed red|green|working. Generalise the bind to every Funkcion on load,
+  and per-step granularity, after the single light works end to end.
 
 ## 6. Creduler — open slices
 
@@ -234,8 +261,10 @@ The Creduler is credibility of code over runs. Its missing half is **a runner th
    thread as the Creduler runner, not a separate Story effort — it is the highest-leverage move
     (`Everything_todo.md`).
 
-- Report the **real storyFinished verdict** as `run_result` (replace the provisional "acquired=ok" in
-   `req_rungo`).
+- **storyFinished verdict → `run_result`: DONE.** `req_rungo` FIRE stashes `awaiting_verdict{path,dige}`;
+   `Lies_runner_verdict` reports `Cred_run_outcome` from the `storyFinished` runner branch (Auto), threading
+    `ok_pct`/`done` to the badge. (The deeper UIless `req:Step`/`req:Drive` recast for a headless verdict is
+     still the open Creduler half.)
 - **git seam:** a relay endpoint (path+dige → committed? + enclosing rev), then group `Credulation` by
    git rev. `Cred*.snap` are Lines-encoded now; commit-status still stubbed null. (The overlay
     write-verdict pattern — write to sandbox every run, commit on acceptance — already exists in the

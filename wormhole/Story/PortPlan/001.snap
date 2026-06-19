@@ -7,4 +7,3 @@ Snap:H
         req:sort,maz=2
           req:wait,time=123
         req:yay
-    mo:main,interval=3.6	{"mung":["id"]}

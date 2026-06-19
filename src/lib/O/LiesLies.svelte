@@ -486,11 +486,13 @@
             if (!unmet.length) {
                 // every demand live — FIRE.  Drive the Story Run once off the primary demand
                 //  (its Good is invalidated; the others rely on the same HMR that made them live).
-                //   PROVISIONAL ok = "versions acquired + run kicked", not "test passed" — the real
-                //    Story verdict is the next Cred slice.  TODO multi-demand: invalidate every Good.
+                //   No verdict here: the run is async (it pumps over many ticks), so the REAL
+                //    pass/fail goes back from storyFinished (Lies_runner_verdict).  We just stash
+                //     what we fired; meanwhile the editor badge reads '◴ working' because its held
+                //      run_result still carries the prior dige.  TODO multi-demand: invalidate every Good.
                 const primary = demands[0]
                 H.Lies_drive_run(w, primary.path)
-                H.Lies_report_result(w, { path: primary.path, dige: primary.dige, ok: true })
+                w.c.awaiting_verdict = { path: primary.path, dige: primary.dige }
                 H.tlog(`▶ rungo seq=${seq} FIRES @ ${demands.map(d => String(d.dige).slice(0, 8)).join('+')} — ${demands.map(d => d.path).join(', ')} (all ${demands.length} live)`)
                 ;(req.c.up as TheC).finish(req)
                 return
@@ -533,13 +535,30 @@
 
         // Lies_report_result — runner emit, after a run settles.  The editor's handler
         //  re-attaches it so the staging chrome lights up.
-        Lies_report_result(w: TheC, sc: { path?: string, dige?: string, ok?: boolean, errors?: any[], snap_dige?: string }) {
+        Lies_report_result(w: TheC, sc: { path?: string, dige?: string, ok?: boolean, errors?: any[], snap_dige?: string, ok_pct?: number, done?: number }) {
             const H = this as House
             if (!H.Lies_is_runner(w)) return
             const pier = (w.o({ Peering: 1 })[0] as TheC | undefined)?.o({ Pier: 1 })[0] as TheC | undefined
             if (!pier || !H.Lies_channel_live(w)) return
-            ;(H as any).Peeroleum_send_consumer(w, 'run_result', { path: sc.path, dige: sc.dige, ok: sc.ok, errors: sc.errors, snap_dige: sc.snap_dige })
-            H.tlog(`📤 run_result → editor: ${sc.path} ${sc.ok ? 'green' : 'red'}`)
+            ;(H as any).Peeroleum_send_consumer(w, 'run_result', { path: sc.path, dige: sc.dige, ok: sc.ok, errors: sc.errors, snap_dige: sc.snap_dige, ok_pct: sc.ok_pct, done: sc.done })
+            H.tlog(`📤 run_result → editor: ${sc.path} ${sc.ok ? 'green' : 'red'}${sc.done != null ? ` ${Math.round((sc.ok_pct ?? 0) * sc.done)}/${sc.done}` : ''}`)
+        },
+
+        // Lies_runner_verdict — the REAL verdict, sent from storyFinished on a runner.  The run
+        //  fired by req_rungo is async, so its outcome isn't known at FIRE; Cred_run_outcome reads
+        //   the just-finished Story's %ok steps / total.  Reports it against the dock the last rungo
+        //    fired on (w.c.awaiting_verdict, stashed at FIRE), then clears the slot.  One slot only:
+        //     v1 runs are sequential, so the latest FIRE owns the next finish.  A finish with no
+        //      awaiting_verdict (the runner's own boot run) reports nothing.
+        Lies_runner_verdict(w: TheC) {
+            const H = this as House
+            if (!H.Lies_is_runner(w)) return
+            const aw = w.c.awaiting_verdict as { path: string, dige: string } | undefined
+            if (!aw) return
+            const outcome = (H as any).Cred_run_outcome() as { ok: boolean, ok_pct: number, done: number } | null
+            if (!outcome) return
+            w.c.awaiting_verdict = undefined
+            H.Lies_report_result(w, { path: aw.path, dige: aw.dige, ok: outcome.ok, ok_pct: outcome.ok_pct, done: outcome.done })
         },
 
         // Lies_run_result_recv — editor receives the runner's outcome and stamps it on
@@ -554,8 +573,10 @@
                 ok: frame.ok ? 1 : 0,
                 errors: Array.isArray(frame.errors) ? frame.errors.length : 0,
                 snap_dige: frame.snap_dige, dige: frame.dige, at: Date.now(),
+                ...(frame.ok_pct != null ? { ok_pct: frame.ok_pct } : {}),
+                ...(frame.done   != null ? { done: frame.done }     : {}),
             })
-            H.tlog(`📥 run_result: ${path} ${frame.ok ? 'green' : 'red'}`)
+            H.tlog(`📥 run_result: ${path} ${frame.ok ? 'green' : 'red'}${frame.done != null ? ` ${Math.round((frame.ok_pct ?? 0) * frame.done)}/${frame.done}` : ''}`)
             return true
         },
 

@@ -1,4 +1,8 @@
 Credulate
-  ghost:Ghost_N_Peeroleum,dige:6452221d10768523
+  ghost:Ghost_N_Peeroleum,dige:9f7f49199da2fc1b
   ghost:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
   ghost:Ghost_Story_Peregrination,dige:6ad01960423b9e20
+  last_ok,at=1781890625.981,ok_pct,book:PortPlan
+    uses:Ghost_N_Peeroleum,dige:9f7f49199da2fc1b
+    uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
+    uses:Ghost_Story_Peregrination,dige:6ad01960423b9e20

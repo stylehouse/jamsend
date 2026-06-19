@@ -1,0 +1,15 @@
+story:PorPlan
+  Styles
+    matstyle:w
+      style:background-color,v:#8f3232
+      meta:is_compound,v
+      meta:label,fmt:%s,keys:w
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.009
+      sample=0.009,at=1781889883
+    TimeTotal:step,avg=0.009
+      sample=0.009,at=1781889883
+  step,dige:07e4c26cc2b508e1

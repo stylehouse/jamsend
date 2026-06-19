@@ -1,0 +1,18 @@
+Snap:H
+  H:PorPlan,Run
+    A:PorPlan
+      self,round	{"mung":["age"]}
+      w:PorPlan
+        self,round	{"mung":["age"]}
+Snap:cytowave
+  upsert,id:cytoid_1_1,label:PorPlan,isCompound:true
+    style,background-color:#8f3232
+    style,background-opacity=0.6
+    style,color:#ccc
+    style,font-size:8px
+    style,font-style:italic
+    style,height=20
+    style,padding:7px
+    style,shape:ellipse
+    style,text-valign:top
+    style,width=20

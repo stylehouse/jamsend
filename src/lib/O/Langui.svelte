@@ -460,6 +460,10 @@
     // run_result.dige is the full dige; the compile leg shows a 5-char slice.
     let ran_dige = $derived(String(run_result?.sc?.dige ?? '').slice(0, 5))
     let ran_ok   = $derived(!!run_result?.sc?.ok)
+    // pass fraction from the runner's Story verdict: done = steps run, ok_pct = fraction ok.
+    //  Absent on an acquire-failure frame (which carries an errors count instead).
+    let ran_done   = $derived(run_result?.sc?.done as number | undefined)
+    let ran_passed = $derived(ran_done != null ? Math.round((run_result?.sc?.ok_pct as number ?? 0) * ran_done) : undefined)
     // "the runner confirmed the version we compiled" — its verdict's dige matches the
     //  compile leg.  A verdict for an OLDER dige is stale: it must NOT read as success.
     let ran_current = $derived(!!ran_dige && ran_dige === (_compile?.sc?.dige ?? ''))
@@ -1600,11 +1604,11 @@
                 <span class="lte-ch-arrow" class:lte-ch-dim={runner_phase !== 'good' && runner_phase !== 'bad'}>→</span>
                 <span class="lte-ch-runner lte-run-{runner_phase}"
                       title={runner_phase === 'good' ? `runner ran ${ran_dige} — green${runner_rtt != null ? ` · ${runner_rtt}ms` : ''}`
-                          : runner_phase === 'bad' ? `runner ran ${ran_dige} — red (${run_result?.sc.errors} err)${runner_rtt != null ? ` · ${runner_rtt}ms` : ''}`
+                          : runner_phase === 'bad' ? `runner ran ${ran_dige} — red (${ran_done != null ? `${ran_passed}/${ran_done} steps ok` : `${run_result?.sc.errors} err`})${runner_rtt != null ? ` · ${runner_rtt}ms` : ''}`
                           : runner_phase === 'working' ? `runner working on ${_compile?.sc.dige}${runner_rtt != null ? ` · ${runner_rtt}ms` : ''} — awaiting src / running`
                           : `stale: last verdict was ${ran_dige} (${ran_ok ? 'green' : 'red'}), older than the compiled version — no runner on it`}>
                     {#if runner_phase === 'good'}<span class="lte-ch-ico">✓</span>{ran_dige}
-                    {:else if runner_phase === 'bad'}<span class="lte-ch-ico">✗</span>{run_result?.sc.errors ?? ''} {ran_dige}
+                    {:else if runner_phase === 'bad'}<span class="lte-ch-ico">✗</span>{ran_done != null ? `${ran_passed}/${ran_done}` : (run_result?.sc.errors ?? '')} {ran_dige}
                     {:else if runner_phase === 'working'}<span class="lte-ch-ico lte-run-spin">◴</span>{_compile?.sc.dige}
                     {:else}<span class="lte-ch-ico">⟳</span>{ran_dige}{/if}
                 </span>
