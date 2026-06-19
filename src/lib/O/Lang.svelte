@@ -1803,6 +1803,9 @@
         const dock     = languish.c.up as TheC
         const w        = dock.c.up?.c.up as TheC   // dock → docks → w (c.up wired where the dock is minted)
 
+        // This pump consumes any pending trickle — re-armed below if we bow out still firing.
+        if (req.c.trickle_timer) { clearTimeout(req.c.trickle_timer as any); req.c.trickle_timer = undefined }
+
         // Wait for the language PARSER, not just the state.  The editor (Langui) mints the
         //  EditorState and arms this req, but editorExtensions is built via `await lang(...)`,
         //   so there is a window where the state exists with no parser on its `language` facet.
@@ -1843,6 +1846,15 @@
             // so the gen file exists before the snap; %Compile/sc.pending is now
             // snapped so the wait is visible.
             H.i_req_ttlilt(req, 0.5, { waiting: 'gen_write' })
+            // Trickle-think: the ttlilt is snap-timing only (it doesn't re-fire think), and the
+            //  settle's re-pump can be missed under fast re-compiles / a Runtime-gated feebly_ponder
+            //   — leaving req:compile wedged firing with pending stuck (the "boomerang" hang).  Self-
+            //    re-check every 150ms until pending clears, then finish.  Cleared at the top of each
+            //     pump; guarded by !finished.  Same ungated pattern as the runner's req_rungo.
+            req.c.trickle_timer = setTimeout(() => {
+                req.c.trickle_timer = undefined
+                if (!req.sc.finished) H.i_elvisto(w, 'think')
+            }, 150)
             return
         }
         H.Langspinner(w,'compile',true)

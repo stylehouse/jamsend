@@ -383,6 +383,18 @@ export class House extends StorableHousing {
     // possibly storable determinism for prandle()
     prng?: number[]
 
+    // prandle: deterministic prng — picks whole numbers 0..(n||1).  The stream
+    //  lives on this.prng, so each House is its own determinism context.
+    prandle(n: number): number {
+        let [a, b, c, d] = this.prng = this.prng || [1, 2, 3, 4]
+        const t = b << 9
+        c ^= a; d ^= b; b ^= c; a ^= d; c ^= t
+        d = (d << 11) | (d >>> 21)
+        this.prng = [a, b, c, d]
+        const r = (Math.imul(b, 5) >>> 0) / 4294967296  // the ** part
+        return Math.floor(r * n)
+    }
+
     // null until Ghost.svelte shim calls eatfunc — gates _really_answer_calls
     ghosts: Record<string, Function> | null = $state(null)
 

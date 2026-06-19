@@ -7,9 +7,12 @@
     // ── ghost load order ─────────────────────────────────────────────────────
     //
     //   Notable ghosts (the full, ordered mount list is the template at the bottom):
-    //   Agency    — w:officing, self-timekeeping, Aw_satisfied, i_unemits_o_Aw
     //   Hovercraft — the req/hover hooks: reqyoncile/e_reqyonciliation, reqonce,
-    //               Runstepped, req_diag (the req engine proper is on StuffAware, in Stuff)
+    //               Runstepped, req_diag (the req engine proper is on StuffAware, in
+    //               Stuff).  Also carries the Agency machine — self_timekeeping,
+    //               reset_interval, agency_officing, w_forgets_problems, whittle_N — and
+    //               the %aim/%satisfied relics, copied off the now-de-included Agency
+    //               ghost.  (prandle moved to the House class in Housing.)
     //   Machinery — the test-suite aggregator (all AI): mounts the test-case games
     //               (MachReqy, Mundane, InterestLive, Diffmatication, the Understand*
     //               suite, MachPeerily…) and hosts its own (LangTiles, Lake*, Leaf*,
@@ -29,7 +32,6 @@
     //   call order.  Mostly free to reorder, except Lang must stay put: moving it up
     //   triggers the elvis-$this weirdness (see the inline note at its mount below).
 
-    import Agency    from "$lib/ghost/Agency.svelte"
     import Machinery from "$lib/O/test/Machinery.svelte"
     import Story     from "$lib/O/Story.svelte"
     import Cyto      from "./Cyto.svelte"
@@ -53,9 +55,11 @@
     }
     // so H can be used for lib/gen/ ghosts.
     // M.eatfunc(M)
-    // < extract what we will keep from Agency, etc...
+    // Agency is de-included: this House is the island going forward, where Modus
+    //  became House.  Agency's hovering machine was copied into Hovercraft (and
+    //   prandle into Housing); legacy Agency still serves the p2p Modus in
+    //    Modus.svelte.
 </script>
-<Agency    {M} />
 <Hovercraft {M} />
 <!-- below are all AI -->
 <Machinery {M} />

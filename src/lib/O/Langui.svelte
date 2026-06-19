@@ -1574,16 +1574,16 @@
         {#if _backend?.sc.dige}
         <span class="lte-change" class:lte-pee={straining}
               title="version flow: editor → disk → compiled → runner">
-            <span class="lte-ch-leg lte-ch-editor" title="editor text"><span class="lte-ch-ico">●</span>{_backend.sc.dige}</span>
+            <span class="lte-ch-leg lte-ch-editor" title="editor text">{_backend.sc.dige}</span>
             {#if _storage?.sc.dige}
                 <span class="lte-ch-arrow" class:lte-ch-dim={_storage.sc.dim}>→</span>
                 <span class="lte-ch-leg lte-ch-disk" class:lte-ch-dim={_storage.sc.dim}
-                      title={_storage.sc.dim ? 'on disk — behind the editor (unsaved edits)' : 'on disk — grounded'}><span class="lte-ch-ico">▾</span>{_storage.sc.dige}</span>
+                      title={_storage.sc.dim ? 'on disk — behind the editor (unsaved edits)' : 'on disk — grounded'}>{_storage.sc.dige}</span>
             {/if}
             {#if _compile?.sc.dige}
                 <span class="lte-ch-arrow" class:lte-ch-dim={_compile.sc.dim}>→</span>
                 <span class="lte-ch-leg lte-ch-compile" class:lte-ch-dim={_compile.sc.dim} class:lte-ch-busy={_compile.sc.pending}
-                      title={_compile.sc.pending ? 'compiling…' : 'compiled'}><span class="lte-ch-ico">◆</span>{_compile.sc.dige}</span>
+                      title={_compile.sc.pending ? 'compiling…' : 'compiled'}>{_compile.sc.dige}</span>
                 {#if _compile.sc.secs}
                     <span class="lte-ch-secs">{_compile.sc.secs}s</span>
                 {/if}

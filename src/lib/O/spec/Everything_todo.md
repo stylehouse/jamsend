@@ -7,6 +7,18 @@ A cross-spec sweep of what is in motion and what is deferred-but-load-bearing,
 
 ## Notes for whoever picks this up
 
+- **Stuff and Housing are the central two.** `data/Stuff.svelte.ts` is the C
+   substrate — the light medium you CRUD with (`TheC`, `sc`/`c`, `o`/`i`/`oai`,
+    the X-indexes, Travel). `O/Housing.svelte.ts` is the House machine built on
+     it — the H/A/w levels, the `beliefs()` think-loop (organise → attend →
+      reqdo_sweep), the `beliefs` mutex, `i_elvisto`/`i_elvis` targeting,
+       Stuffing, Dexie persistence, Wormhole. Everything else orbits these two.
+        **Hovercraft sits between them, negotiating for more Housing with Stuff**
+         — it owns the transient `%req` level (reqyoncile/reqonce/reqy_recurse/
+          ttlilt), i.e. the run-time *work* that asks the stable House for more
+           capacity, spun out of Stuff particles. Read Stuff and Housing first;
+            they're the load-bearing context for almost every item below.
+
 - **Verify against code before believing a difficulty.** Every item touched so
    far shrank on contact: the Stuffing "over-creation" was already solved, the
     "Point nesting reconciliation" was a misread (snap and memory agree), and the
@@ -90,21 +102,29 @@ Three overlapping forward designs:
    (auto-async rewrite, `doai %req:` lowering, esbuild+lezer validate gates).
     What remains: the **LangSion query-planner-over-the-flock horizon** (batch
      IOings, ark-grouping `@name`, shared resultsets, sleeping-optimiser inlining)
-      is barely sketched; gated on the taxonomy seam below. Display translation
-       view (`LangCompiling.svelte:238`) is a leftover wire-up TODO.
+      is barely sketched; gated on the taxonomy seam below. *(The old "display
+       translation view" leftover in `Lang_compile_dock` — a dead `if(0)` emit of
+        per-line `result:1` chunks with no consumer — was removed; the runner
+         verdict strip reads `run_result:1` and the gen/ `.go` is the artifact.)*
 
 ### Hovercraft req-migration
 Nearly landed. reqy() fully sublated; the engine is C-native and self-contained
  on the C. All hosts migrated (MachPeerily was the last off reqy).
 **Tail remaining (reframed 2026-06-19):** not a migrate-in-place — **copy** the
  generic hovering machine out of legacy `Agency.svelte` into Hovercraft (which
-  already owns the `%req` engine), omitting the GONERs (ways, `%aim`/journeys,
-   `requesty_serial`) and rewriting the `setTimeout(…,11)` re-entry onto
-    `reqyoncile`. Legacy Agency, Pirat\*, and `requesty_serial` are left as-is;
-     the new code must contain no `requesty_serial`. Full kept|gone method list +
-      the ★-rework notes + the prandle determinism-channels TODO are in
-       **`Agency_to_Hovercraft_plan.md`**. `LiesWorkup.svelte` is still shelved
-        referencing deleted reqy() (compile-or-stays-shelved).
+  already owns the `%req` engine and, via Housing, the modern think-loop), and
+   rewrite the `setTimeout(…,11)` re-entry onto `i_elvisto`/`reqyoncile`. Legacy
+    Agency, Pirat\*, and `requesty_serial` are left as-is; the new code must
+     contain no `requesty_serial`. Full kept|gone method list + what landed are in
+      **`Agency_to_Hovercraft_plan.md`**.
+       **Done 2026-06-19:** live helpers (self_timekeeping, reset_interval,
+        w_forgets_problems, w_ambiently_sleeping, whittle_N, agency_officing)
+         copied to a `//#region Agency machine` at the top of Hovercraft; the
+          `%aim`/`%satisfied` machinery (i_journeys_o_aims, name_A, Aw_satisfied,
+           out_of_instructions) kept in a quarantined `//#region relics` beside
+            it; `prandle` moved to the House class in Housing; only `i_unemits_o_Aw`
+             left out (Peeroleum rebuild). `LiesWorkup.svelte` is still shelved
+              referencing deleted reqy() (compile-or-stays-shelved).
 
 ### Wormhole backends
 OPFS-from-GitHub backend is coded and **runtime-verified in browser** (Library

@@ -301,6 +301,25 @@
             H.tlog(`📤 rungo seq=${seq} → runner: ${demands.map(d => `${d.path}@${String(d.dige).slice(0, 8)}`).join(', ')}`)
         },
 
+        // Lies_send_gen_write — ship a freshly-compiled .go straight down the editor's relay socket
+        //  for Node to write to src/lib/<gen_path> (the relay has fs; the browser's File-System-Access
+        //   write costs ~0.5s).  A raw control frame — NOT a Peeroleum envelope, NOT routed to the
+        //    runner: the relay writes the file, Vite HMRs it to BOTH origins (shared /app), and the
+        //     runner acquires the version that way.  Returns false (→ caller falls back to the local
+        //      FSA write) when the socket isn't open.  Editor-only; other roles never compile-write.
+        Lies_send_gen_write(w: TheC, gen_path: string, body: string): boolean {
+            const H = this as House
+            if (!H.Lies_is_editor(w)) return false
+            const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
+            const ws   = port?.ws as WebSocket | undefined
+            if (!ws || ws.readyState !== WebSocket.OPEN) return false
+            try {
+                ws.send(JSON.stringify({ control: 'gen_write', path: gen_path, body }))
+                H.tlog(`📤 gen_write → relay: ${gen_path} (${body.length}c)`)
+                return true
+            } catch { return false }
+        },
+
         // Lies_rungo_recv — runner receives a Rungo: the authority (seq) to run once a set of
         //  ghost DEMANDS are live here.  Keyed by seq — each Rungo is its own authority; a higher
         //   seq SUPERSEDES any still-waiting lower-seq Rungo (the editor moved on).  A Rungo can

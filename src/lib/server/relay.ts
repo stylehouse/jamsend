@@ -24,6 +24,18 @@
 
 import { WebSocketServer, WebSocket } from 'ws'
 import type { Server } from 'node:http'
+import { writeFile, mkdir } from 'node:fs/promises'
+import { resolve, dirname, sep } from 'node:path'
+
+// gen_write lands here: the editor compiles a ghost and, rather than pay the browser's
+//  ~0.5s File-System-Access write, ships the .go down its relay socket for Node to write
+//   straight to src/lib/gen/<…>.go — Vite then HMRs it to both origins (shared /app).  The
+//    path is browser-supplied, so it is validated HARD: it must be a gen/**.go under this
+//     resolved root, no traversal, bounded size.  Dev-only, localhost, but a write-to-disk
+//      from a socket message gets a tight gate regardless.
+const GEN_ROOT      = resolve('src/lib/gen')
+const GEN_PATH_RE   = /^gen\/[A-Za-z0-9_][A-Za-z0-9_\-/]*\.go$/
+const GEN_MAX_BYTES = 5_000_000
 
 // The one hardcoded knob: where the runner-server dials the editor-server for the relay↔relay
 //  bridge. Both servers run on localhost (runner :9091, editor|staging :9092), reachable over
@@ -194,6 +206,29 @@ export function attachRelay(
 			} catch (e) {
 				ws.send(JSON.stringify({ control: 'error', error: String((e as Error).message) }))
 			}
+			return
+		}
+		if (msg.control === 'gen_write') { void handleGenWrite(msg); return }
+	}
+
+	// Write a compiled .go to disk on the editor's behalf (see GEN_ROOT note above).  No ack
+	//  frame: the editor settles optimistically (a localhost Node write is ~1ms and reliable);
+	//   a rejection or fs error is surfaced via relayLog, which already echoes to the browser
+	//    console.  Validates the browser-supplied path to gen/**.go under GEN_ROOT, no traversal.
+	async function handleGenWrite(msg: any) {
+		const rel  = String(msg.path ?? '')
+		const body = typeof msg.body === 'string' ? msg.body : ''
+		if (!GEN_PATH_RE.test(rel) || rel.includes('..')) { relayLog(`✗ gen_write REJECTED bad path ${JSON.stringify(rel)}`); return }
+		if (body.length > GEN_MAX_BYTES)                  { relayLog(`✗ gen_write REJECTED ${rel} too large (${body.length}c)`); return }
+		const abs = resolve('src/lib', rel)
+		if (abs !== GEN_ROOT && !abs.startsWith(GEN_ROOT + sep)) { relayLog(`✗ gen_write REJECTED ${rel} escapes gen root`); return }
+		const t0 = Date.now()
+		try {
+			await mkdir(dirname(abs), { recursive: true })
+			await writeFile(abs, body)
+			relayLog(`✍ gen_write ${rel} (${body.length}c, ${Date.now() - t0}ms)`)
+		} catch (e) {
+			relayLog(`✗ gen_write FAILED ${rel}: ${(e as Error).message}`)
 		}
 	}
 

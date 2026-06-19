@@ -253,19 +253,6 @@ import { LANG_COMPILE } from "./lang/compile"
                 throw 'no language parser wired on this dock (lang() not resolved onto its EditorState yet) — refusing to emit raw .g passthrough'
             const lines = this.Lang_compile_collect(state, job, this.Lang_stho_parser(state))
 
-            // < maybe pile up interesting objects...
-            let translated_i = 0
-            for (let i = 0; i < lines.length; i++) {
-                const ln = lines[i]
-                if (0 && ln.kind === 'translated') {
-                    dock.i({
-                        result: 1, chunk_i: translated_i++,
-                        line_number: i + 1,
-                        str: ln.text,
-                    })
-                }
-            }
-
             const body = lines.map(l => l.text).join('\n')
 
             let ghost: { ghostmeta_name: string, source_dige: string } | undefined

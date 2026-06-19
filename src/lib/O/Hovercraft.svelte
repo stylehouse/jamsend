@@ -1,18 +1,208 @@
 <script lang="ts">
     // Hovercraft.svelte — C activities
 
-    import { _C, TheC, type TheUniversal } from "$lib/data/Stuff.svelte"
+    import { _C, TheC, type TheN, type TheUniversal } from "$lib/data/Stuff.svelte"
     import { onMount, tick } from "svelte"
 
     import { exactly, grop, hakd, sex } from "$lib/Y.svelte";
     import { keyser, objectify } from "./Stuff.svelte";
-    import { now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte";
+    import { now_in_seconds, now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte";
 
     let { M } = $props()
 
     onMount(async () => {
     await M.eatfunc({
 
+//#region Agency machine — copied from the legacy Agency ghost
+    // The think-loop is Housing's now (beliefs → organise/attend); these are the
+    //  helpers attend()/answer_calls/the_main still call.  Copied here (not moved)
+    //   so the central House gets them from Hovercraft, not from the legacy Agency
+    //    ghost: eatfunc is last-wins and Hovercraft mounts after Agency in
+    //     Ghost.svelte, so these win on this House while legacy Agency keeps its
+    //      own on the p2p Modus.  i_unemits_o_Aw is NOT copied — being rebuilt
+    //       in Peeroleum.  prandle is a method on the House class in Housing.  The
+    //        %aim and %satisfied machinery is kept but quarantined in the relics
+    //         region below (idle on this House, where those particles are rare).
+
+    async self_timekeeping(C: TheC) {
+        // est timestamp
+        !C.oa({ self: 1, est: 1 })
+            && C.i({ self: 1, est: now_in_seconds() })
+
+        // two senses of time
+        let ro = C.o({ self: 1, round: 1 })[0]
+        let es = C.o({ self: 1, est: 1 })[0]
+        await C.replace({ self: 1, round: 1 }, async () => {
+            let round = Number(ro?.sc.round || 0) + 1
+            let age = es && es.ago('est')
+            C.i({ self: 1, round, age })
+        })
+    },
+
+    // when starting a new time, set the next ambient tick
+    async reset_interval() {
+        // the universal %interval persists through time, may be adjusted
+        let n: TheC
+        let int = this.o({ mo: 'main', interval: 1 })[0]
+        let interval = int?.sc.interval || 3.6
+        let id; id = setTimeout(() => {
+            // if we are still the current callback
+            if (n != this.o({ mo: 'main', interval: 1 })[0]) return
+            if (this.stopped) return
+            if (this.S && !this.S.started) return
+            this.main()
+        }, 1000 * interval)
+
+        await this.replace({ mo: 'main', interval: 1 }, async () => {
+            n = this.i({ mo: 'main', interval, id })
+        })
+    },
+
+    async w_forgets_problems(w: TheC) {
+        await w.r({ waits: 1 }, {})
+        await w.r({ error: 1 }, {})
+        await w.r({ see: 1 }, {})
+    },
+
+    // true when a w can skip this round (every round but the Nth, unless evented)
+    async w_ambiently_sleeping(w: TheC, times: number = 4) {
+        await w.r({ self: 1, sleeping: 1 }, {})
+        // has an event to process
+        if (w.oa({ elvis: 1 })) return false
+        let round = w.o1({ round: 1, self: 1 })
+        if (round == 1) return false
+        if (!(round % times)) return false
+        w.i({ self: 1, sleeping: `not the ${times}-1 time` })
+        return true
+    },
+
+    // garbage collect items from the front (oldest)
+    whittle_N(N: TheN, to: number) {
+        to ||= 20
+        let goners = []
+        while (N.length > to) {
+            let n = N.shift() as TheC
+            n.drop(n)
+            goners.push(n)
+        }
+        return goners
+    },
+
+    // post-think officing, called from attend().  i_unemits_o_Aw dropped
+    //  (Peeroleum); %aims + %satisfied are relics (below) but still wired in.
+    async agency_officing(AwN: Array<{ A: TheC, w: TheC }>, AN: TheC[]) {
+        // percolate w/ai/%path -> j/%path from this A  (relic — %aims)
+        await this.i_journeys_o_aims(AwN)
+        // publish w/req**%ttlilt -> H/%ttlilt,w/req
+        await this.i_Story_o_req_ttlilt(AwN)
+        for (let { A, w } of AwN) {
+            // w can mutate  (relic — %satisfied)
+            for (let sa of w.o({ satisfied: 1 })) {
+                await this.Aw_satisfied(A, w, sa)
+            }
+        }
+        // it's on now! see KEEP_WHOLE_w in comments for dependos
+        const KEEP_WHOLE_w = true
+        for (let A of AN) {
+            // w can mutate sc eg %then — keep writing it down so the Stuffing,
+            //  whose target is every key, doesn't snap shut
+            let ws = A.o({ w: 1 })
+            await A.replace({ w: 1 }, async () => {
+                ws.map((w: TheC) => {
+                    KEEP_WHOLE_w ? A.i(w).is()
+                        : A.i(w.sc)
+                })
+            })
+        }
+    },
+
+//#endregion
+
+//#region relics — %aim + %satisfied machinery
+    // Kept, not live on the central House: these ran the p2p meander/ways
+    //  state-machine, where w/%aim spawns a journey and w/%satisfied advances to
+    //   the next %then method.  On this House those particles are rare-to-none, so
+    //    they idle; legacy Agency owns the live copies on the p2p Modus.  Here so
+    //     the behaviour isn't lost and agency_officing's calls resolve.
+
+//#region %aims — w/%aim -> D/%journey path percolation
+    async i_journeys_o_aims(AwN: Array<{ A: TheC, w: TheC }>) {
+        if (!this.Se?.c.T) return
+        let AwjN: any[] = []
+        let topD = this.Se.c.T.sc.D
+
+        for (let c of AwN) {
+            let { A, w } = c
+            let i = 0
+            for (let ai of w.o({ aim: 1 })) {
+                let jc: any = { ...c, ai }
+                jc.journey = this.name_A(A) + (i++ ? "+" + i : "")
+                AwjN.push(jc)
+
+                jc.path_was = ai.o1({ summary: 1 })[0]
+                await ai.r({ summary: this.Se.j_to_uri(ai), of_where: 'its going' })
+                jc.path_now = ai.o1({ summary: 1 })[0]
+            }
+        }
+        // replace D/*%journey
+        await topD.replace({ journey: 1, oaims: 1 }, async () => {
+            for (let c of AwjN) {
+                c.j = topD.i({ journey: c.journey, oaims: 1 })
+            }
+        })
+
+        // then replace what is in %journey  (i j/* o ai/*%path)
+        for (let c of AwjN) {
+            let { w, j, ai } = c
+            await j.replace({ path: 1 }, async () => {
+                for (let n of ai.o({ path: 1 })) {
+                    j.i(n.sc)
+                }
+            })
+            // a tiny Selection.process() watching path change
+            if (c.path_now != c.path_was) {
+                this.i_elvis(w, 'putjourney', { Aw: 'Directory', reply: w })
+            }
+            await j.r({ gaveup: 1 }, {})
+        }
+    },
+
+    name_A(A: TheC) {
+        return "A:" + A.sc.A
+    },
+
+    name_A_thing(A: TheC, th: TheC) {
+        let thingsay = th.sc.w ? "." + th.sc.w : "?"
+        return this.name_A(A) + thingsay
+    },
+//#endregion
+
+//#region %satisfied — w/%satisfied -> become w/%then (the next method)
+    async Aw_satisfied(A: TheC, w: TheC, sa: TheC) {
+        let next_method = w.sc.then || "out_of_instructions"
+        let c: any = { w: next_method }
+        if (sa.sc.with) c.had = sa.sc.with
+
+        // change what this A is wanting
+        let nu = A.i(c)
+        nu.c.up = A
+        // attend the new w immediately (was i_elvis(w,'noop',{A:nu}); i_elvisto
+        //  targets the new w directly under Housing's addressing)
+        this.i_elvisto(nu, 'think', { way_thenced: 1 })
+        // not resyncing nu/*
+        nu.empty()
+        // take %aim, ie keep pointers for the rest of A
+        for (let ai of w.o({ aim: 1 })) {
+            nu.i(ai)
+        }
+        A.drop(w)
+    },
+
+    out_of_instructions(A: TheC, w: TheC) {
+        console.warn("out_of_instructions!")
+    },
+//#endregion
+//#endregion
 //#region req — the transient level, and its Stuff↔Housing seam
 
     // A req is a %req child of a host C: a proto-w, lighter and curlier, that does

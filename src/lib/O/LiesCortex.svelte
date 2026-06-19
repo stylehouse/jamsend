@@ -150,13 +150,17 @@
         if (e.sc.dock_source != null && H.Lies_is_editor(w))
             H.Lies_send_rungo(w, { path, dige: source_dige })
 
-        // Key the write on gen_path, not the source path.  The source has a
-        // loaded_doc whose base_dige tracks source-on-disk for the surprise_read
-        // check; keying by path stamped that base_dige with the gen output dige,
-        // which read as an external change and blocked the next source write.
-        // gen_path has no loaded_doc so its namespace stays the gen target's own.
-        await H.LiesStore_write(w, gen_path, source, { rw_name: `src/lib/${gen_path}` })
-        // < surface write errors when reply carries one.
+        // Write the .go.  PREFER the relay: ship it down the editor's socket for Node to write to
+        //  disk (~1ms) instead of the browser's ~0.5s File-System-Access write — Vite HMRs the
+        //   relay-written file to both origins (shared /app).  Fall back to the local FSA write when
+        //    no relay socket is up (a bare/offline dev Lies, or a runner's inner compiler-Lies).
+        //   Keying note (FSA path): key the write on gen_path, not the source path — the source has a
+        //    loaded_doc whose base_dige tracks source-on-disk for the surprise_read check, and keying
+        //     by path stamped that base_dige with the gen output dige (read as an external change,
+        //      blocked the next source write).  gen_path has no loaded_doc, so its namespace is clean.
+        const relayed = H.Lies_send_gen_write(w, gen_path, source)
+        if (!relayed)
+            await H.LiesStore_write(w, gen_path, source, { rw_name: `src/lib/${gen_path}` })
 
         // req_oai re-merges on an existing Codebit — a re-compile mutates %dige,
         //  maybe_mutate_sc fires req%mutated and (permanent+finished) un-finishes it
@@ -172,6 +176,11 @@
         )
         if (had_cb) delete cb.sc.write_finished
         cb.c.write_t0 = Date.now()
+        // The relay write has no LiesStore_write req for req_Store phase-1 to hand off from, so
+        //  stamp write_finished here — the compile settles now (spinner off, disk_dige stamped)
+        //   rather than waiting on a write that landed via Node.  Optimistic: a localhost Node
+        //    write is reliable; a failure is surfaced by the relay's ✗ gen_write log.
+        if (relayed) cb.sc.write_finished = 1
 
         H.i_elvisto(w, 'think')
     },
