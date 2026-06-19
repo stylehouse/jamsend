@@ -15,7 +15,7 @@ Library
       TimeTotal:beliefs,avg=0.081
         sample=0.077,at=1781080326
         sample=0.085,at=1781607913
-  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1781888235.427
+  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1781888235.427,active
     TimeSpool
       TimeTotal:beliefs,avg=2.011
         sample=2.38,at=1781881939
@@ -28,10 +28,9 @@ Library
         sample=1.791,at=1781888118
         sample=1.13,at=1781888162
         sample=1.264,at=1781888237
-  Book:LakeSurfer,ok_pct=0,last_pct_change=1779607681.571,done=2,last_run_ms=1781888249.48
+  Book:LakeSurfer,ok_pct=0,last_pct_change=1779607681.571,done=2,last_run_ms=1781888821.61
     TimeSpool
-      TimeTotal:beliefs,avg=0.809
-        sample=0.924,at=1781621232
+      TimeTotal:beliefs,avg=0.8
         sample=0.531,at=1781621334
         sample=1.01,at=1781623486
         sample=0.62,at=1781630446
@@ -41,6 +40,7 @@ Library
         sample=0.511,at=1781882010
         sample=0.665,at=1781882828
         sample=0.501,at=1781888250
+        sample=0.83,at=1781888822
   Book:Peeringinst,ok_pct=0.5,last_pct_change=1779063073.279,done=2,last_run_ms=1779063093.816
   Book:PeeringLive,ok_pct=0.17,last_pct_change=1780023433.073,done=6,last_run_ms=1780418711.44
     TimeSpool
@@ -220,11 +220,9 @@ Library
         sample=0.093,at=1781594131
         sample=0.108,at=1781594165
         sample=0.123,at=1781594526
-  Book:LakeFlush,ok_pct=0,done,last_run_ms=1781882808.429,active
+  Book:LakeFlush,ok_pct=0,done,last_run_ms=1781888810.496
     TimeSpool
-      TimeTotal:beliefs,avg=1.092
-        sample=1.244,at=1781617490
-        sample=0.952,at=1781617504
+      TimeTotal:beliefs,avg
         sample=0.98,at=1781617616
         sample=1.028,at=1781617793
         sample=1.223,at=1781617807
@@ -233,6 +231,8 @@ Library
         sample=1.216,at=1781660703
         sample=1.233,at=1781882249
         sample=0.755,at=1781882810
+        sample=0.762,at=1781888800
+        sample=0.522,at=1781888813
   Book:Interesting,ok_pct,done=7,last_run_ms=1781750530.83
     TimeSpool
       TimeTotal:beliefs,avg=0.163

@@ -62,6 +62,29 @@ Concretely open:
 - Lifetimes in the req-based drive: intra-step ttlilts must expire against
    *their* `req:Step`, never leak into the next (§15.4).
 
+### Step latency — the per-hop pump trickle (good automated-experiment fodder)
+The near-permanent compile boomerang is fixed (unchanged-dige settle-wedge in
+ `LiesCortex.e_Lies_compiled`; GhostList dirlist gated off test Runs via
+  `dontSnapGhostList`). Steps now clear **causally** (the `quiescent:` trace label
+   is not `timeout`), so the residual ~1-2s is *not* a ttlilt ceiling — right-sizing
+    the 1.6s `LiesStore_write` ttlilt buys nothing here. The real cost is the genuine
+     causal chain paid one beliefs-cycle at a time: compile → `Lies_compiled` →
+      settle → (notify ‖ run_method) → `BlatDo`, ~10-15 `beliefs:begin/done` cycles,
+       and `answer_calls` gates **50ms (`ANSWER_CALLS_TICK_MS`) between every todo
+        item** — so a known-causal chain pays `N × 50ms` of pure latency floor.
+ Two experiments, both automatable against the `Run_trace` beliefs-cycle count +
+  the new `TimeSpool/{TimeTotal:'step'}` avg (surfaced in the Storui run bar as
+   `~Xs/step`):
+   1. **Burst-drain causally-chained todo without the 50ms gate** while in-step
+      (Runtime) — collapse an in-step handoff chain toward one/two cycles instead
+       of one-elvis-per-50ms. Closest to "one clean step per compile".
+   2. **Sweep `ANSWER_CALLS_TICK_MS`** as a measurement knob — does halving it
+      ~halve these steps? Confirms the hop-count diagnosis before touching the
+       handoff spine. Blunt/global; a knob, not a fix.
+ Instrument is in hand; the next move is to *count hops per step and see which are
+  removable*, not to fiddle the ttlilt. (cf memory `compile-boomerang-latency`,
+   `ttlilt-not-a-keepalive`.)
+
 ### Lang / Waft / Wire
 Three overlapping forward designs:
 

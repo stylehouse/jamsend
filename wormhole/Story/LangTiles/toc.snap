@@ -35,8 +35,7 @@ story:LangTiles
         nowriting:^Ghost
         dontSnapGhostList
   TimeSpool
-    TimeTotal:beliefs,avg=1.864
-      sample=1.632,at=1781884730
+    TimeTotal:beliefs,avg=1.827
       sample=3.403,at=1781885356
       sample=3.277,at=1781885700
       sample=0.715,at=1781887369
@@ -46,6 +45,9 @@ story:LangTiles
       sample=1.13,at=1781888130
       sample=1.264,at=1781888175
       sample=1.264,at=1781888233
+      sample=1.265,at=1781888835
+    TimeTotal:step,avg=0.141
+      sample=0.141,at=1781888835
   step,dige:85fdfbecdd453056
   step=2,dige:7f5d382fa6a731bb
   step=3,dige:d2e5d68b10b8ad75

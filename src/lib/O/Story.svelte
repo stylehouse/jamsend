@@ -529,7 +529,15 @@
                    ?? spool.i({ TimeTotal: 'beliefs', avg: 0 })
 
         H.spool_time_sample(tt, run_total_seconds)
-        ;V.Story && console.log(`⏱ TimeSpool/beliefs +sample=${run_total_seconds.toFixed(3)}s avg=${tt.sc.avg}s n=${tt.o({ sample: 1 }).length}`)
+
+        // Per-step average: run total / steps that ran, spooled as a sibling TimeTotal
+        //  so it averages across recent runs too — a glanceable "roughly how long each
+        //  step takes" for the run bar (story_analysis surfaces it as avg_step).
+        const st = (spool.o({ TimeTotal: 'step' })[0] as TheC)
+                ?? spool.i({ TimeTotal: 'step', avg: 0 })
+        H.spool_time_sample(st, run_total_seconds / ranSteps.length)
+
+        ;V.Story && console.log(`⏱ TimeSpool/beliefs +sample=${run_total_seconds.toFixed(3)}s avg=${tt.sc.avg}s n=${tt.o({ sample: 1 }).length} step_avg=${st.sc.avg}s`)
     },
 
     parse_snap(s: string) {
@@ -621,6 +629,9 @@
         an.sc.bad_count = bad_count
         an.sc.steps     = the_steps
         an.sc.notes     = notes
+        // avg_step: averaged per-step time from The/TimeSpool (set on run completion by
+        //  collect_time_sample) — null until the first run finishes.  Glanced in the run bar.
+        an.sc.avg_step  = ((The?.o({ TimeSpool: 1 })[0] as TheC)?.o({ TimeTotal: 'step' })[0]?.sc.avg as number) ?? null
         ;V.Story && console.log(`📊 story_analysis: the_steps=${the_steps.length} live=${(w.c.This)?.o({Step:1}).length ?? 0} frontier=${frontier}`)
         ave.bump_version()
     },

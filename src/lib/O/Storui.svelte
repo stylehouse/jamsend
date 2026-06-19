@@ -132,6 +132,7 @@
         bad_count: 0,
         steps:     [] as StepEntry[],
         notes:     {} as Record<number, TheC[]>,
+        avg_step:  null as number | null,   // averaged per-step seconds, set on run completion
     })
 
     // This      = ave/{This:1,Story:book}  — the live step container
@@ -925,6 +926,9 @@
                 <span class="sr-status ok">✓ done</span>
             {:else}
                 <span class="sr-status running">▶</span>
+            {/if}
+            {#if display.avg_step}
+                <span class="sr-mode" title="average per-step time, averaged over recent runs">~{display.avg_step}s/step</span>
             {/if}
             {#if display.bad_count > 1}
                 <button class="sr-accept-all" onclick={accept_all}>Accept All ({display.bad_count})</button>
