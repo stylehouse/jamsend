@@ -442,6 +442,14 @@ export class House extends StorableHousing {
     }
     trace_enable() { this.trace_log ??= [] }
 
+    // tlog: timestamped console.log for the run/compile/channel pipeline.  Prefixes the
+    //   seconds-within-the-current-minute to 3dp (ms) — e.g. "23.456 ▶ rungo…" — so a slow
+    //   "flonk" to runtime is legible in the console at a glance: read down the column and
+    //   the gaps are where the time went.  Performance lines only; not general logging.
+    tlog(msg: string) {
+        console.log(`${((Date.now() % 60000) / 1000).toFixed(3).padStart(6, '0')} ${msg}`)
+    }
+
     // all H** from here down
     get all_House(): House[] {
         let more = (H) => {
@@ -479,7 +487,7 @@ export class House extends StorableHousing {
         for (const h of this.all_House) {
             Object.assign(h, this.ghosts)
         }
-        console.log(`Got ghostsHaunt`)
+        this.tlog(`Got ghostsHaunt`)
         // Every haunt is an HMR (or initial mount): fresh code + its Ghostmeta dige is now live.
         //  Run the guaranteed reaction here, in the core path, rather than behind the optional
         //   on_code_change hook — a parked %req:run_intent must re-check the moment its version

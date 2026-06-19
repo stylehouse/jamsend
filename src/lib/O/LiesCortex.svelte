@@ -135,7 +135,7 @@
             if (nowriting) await H.Lies_log_want(w, 'gen_write', gen_path, source)
             const reason = nowriting ? 'nowriting' : nogen ? 'nogen' : 'softgen'
             H.i_elvisto('Lang/Lang', 'Lies_compile_settled', { path })
-            console.log(`🔪 Lies compile settled: ${path} [${reason}]`)
+            H.tlog(`🔪 Lies compile settled: ${path} [${reason}]`)
             H.i_elvisto(w, 'think')
             return
         }
@@ -260,7 +260,7 @@
             //   disk dige never updated (the strip's middle leg stayed stale forever).
             source_dige: req.sc.source_dige,
         })
-        console.log(`🔪 Codebit landed: ${path} write=${write_ms ?? '?'}ms`)
+        H.tlog(`🔪 Codebit landed: ${path} write=${write_ms ?? '?'}ms`)
 
         cortex.finish(req)   // permanent — stays put, un-finishes on re-compile via req%mutated
     },

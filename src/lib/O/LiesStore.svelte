@@ -470,7 +470,7 @@
                     //  by req:compiled_is_settled when Lies_compile_settled arrives with
                     //  source_dige.  No cross-world lookup needed here.
                 }
-                console.log(`💾 LiesStore wrote ${path} (${(wr.sc.rw_data as string)?.length ?? 0}c)`)
+                H.tlog(`💾 LiesStore wrote ${path} (${(wr.sc.rw_data as string)?.length ?? 0}c)`)
 
                 // Cortex handoff: find the req:Codebit inside req:Cortex that is
                 // waiting for this write, and stamp sc.write_finished so req_Codebit

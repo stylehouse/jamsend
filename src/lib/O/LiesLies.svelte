@@ -109,9 +109,10 @@
             return ((this as House).c.run_mode as any) === 'from_start' ? 'from_start' : 'in_place'
         },
         e_Lies_set_run_mode(A: TheC, w: TheC, e: TheC) {
+            const H = this as House
             const mode = e.sc.mode === 'from_start' ? 'from_start' : 'in_place'
-            ;(this as House).c.run_mode = mode
-            console.log(`🔪 Lies run-mode → ${mode}`)
+            H.c.run_mode = mode
+            H.tlog(`🔪 Lies run-mode → ${mode}`)
         },
 
         // ── e_Lies_run_arm — the "run it now" signal (Esc in the editor) ──────
@@ -145,13 +146,13 @@
                 //   not a wait — only call it "awaiting" when the channel is down.
                 w.oai({ run_arm: 1 }, { path, mode })
                 const live = H.Lies_channel_live(w)
-                console.log(`🔪 editor arm-run → ${path} [${mode}] ${live ? '(channel live — runner runs on Rungo)' : '(awaiting channel)'}`)
+                H.tlog(`🔪 editor arm-run → ${path} [${mode}] ${live ? '(channel live — runner runs on Rungo)' : '(awaiting channel)'}`)
                 return
             }
 
             // runner (or a bare dev Lies): drive the actual run.
             H.Lies_drive_run(w, path, mode as 'in_place' | 'from_start')
-            console.log(`🔪 runner arm-run → ${path} [${mode}]`)
+            H.tlog(`🔪 runner arm-run → ${path} [${mode}]`)
         },
 
         // Lies_drive_run — make the runner ACTUALLY run `path`.  The Story Run House is
@@ -236,7 +237,7 @@
             const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
             const ws = port?.ws as WebSocket | undefined
             if (ws) {
-                const become = () => { try { console.log(`🛰 ws SEND control:become role=${role}`); ws.send(JSON.stringify({ control: 'become', role })) } catch { /* relay down — the no-ack ttlilt retries */ } }
+                const become = () => { try { H.tlog(`🛰 ws SEND control:become role=${role}`); ws.send(JSON.stringify({ control: 'become', role })) } catch { /* relay down — the no-ack ttlilt retries */ } }
                 if (ws.readyState === WebSocket.OPEN) become()
                 else ws.addEventListener('open', become)   // additive — Socket_real owns ws.onopen
             }
@@ -251,7 +252,7 @@
             ;(H as any).Peeroleum_on(w, 'pong', (cw: TheC, _p: TheC, fr: any) => { H.Lies_pong_recv(cw, fr); return true })
 
             w.c.channel_up = true
-            console.log(`🔌 Lies channel up [${role}] addr=${role} → ${peer}`)
+            H.tlog(`🔌 Lies channel up [${role}] addr=${role} → ${peer}`)
         },
 
         // Lies_transport_up — put the transport ghosts on H so Lies_channel_up's
@@ -297,7 +298,7 @@
                 .filter(d => d?.path && d?.dige)
             if (!demands.length) return
             const seq = (H as any).Peeroleum_send_consumer(w, 'rungo', { demands })
-            console.log(`📤 rungo seq=${seq} → runner: ${demands.map(d => `${d.path}@${String(d.dige).slice(0, 8)}`).join(', ')}`)
+            H.tlog(`📤 rungo seq=${seq} → runner: ${demands.map(d => `${d.path}@${String(d.dige).slice(0, 8)}`).join(', ')}`)
         },
 
         // Lies_rungo_recv — runner receives a Rungo: the authority (seq) to run once a set of
@@ -318,9 +319,10 @@
             //  a finished one (already fired/failed) is dropped; a still-waiting lower-seq one is
             //   superseded — the editor has moved past it — then dropped.
             for (const old of w.o({ req: 'rungo' }) as TheC[]) {
+                if (old.c.trickle_timer) { clearTimeout(old.c.trickle_timer as any); old.c.trickle_timer = undefined }
                 if (old.sc.finished) { w.drop(old); continue }
                 if ((old.sc.rungo as number) < seq) {
-                    console.log(`📥 rungo seq=${seq} supersedes still-waiting seq=${old.sc.rungo}`)
+                    H.tlog(`📥 rungo seq=${seq} supersedes still-waiting seq=${old.sc.rungo}`)
                     ;(old.c.up as TheC).finish(old)
                     w.drop(old)
                 }
@@ -329,7 +331,7 @@
             req.c.demands     = demands
             req.c.await_since = Date.now()
             req.c.last_sig    = undefined
-            console.log(`📥 rungo seq=${seq} recv: ${demands.map(d => `${d.path}@${String(d.dige).slice(0, 8)}`).join(', ')}`)
+            H.tlog(`📥 rungo seq=${seq} recv: ${demands.map(d => `${d.path}@${String(d.dige).slice(0, 8)}`).join(', ')}`)
             H.i_elvisto(w, 'think')   // wake a tick so w.do() pumps the rungo now, not next gesture
             return true
         },
@@ -345,6 +347,8 @@
             const H   = this as House
             const w   = req.c.up as TheC
             const seq = req.sc.rungo as number
+            // This pump consumes any pending trickle — re-armed below only if still waiting.
+            if (req.c.trickle_timer) { clearTimeout(req.c.trickle_timer as any); req.c.trickle_timer = undefined }
             const demands = (req.c.demands ?? []) as Array<{ path: string, dige: string }>
             const status = demands.map(d => {
                 const live = (H as any)[H.Lang_ghostmeta_name(d.path)]?.() as string | undefined
@@ -356,7 +360,7 @@
             const sig = status.map(s => `${s.path}=${String(s.live ?? 'none').slice(0, 8)}`).join(',')
             if (req.c.last_sig !== sig) {
                 req.c.last_sig = sig
-                console.log(`↻ rungo seq=${seq}: ${status.map(s => `${s.path} live=${String(s.live ?? 'none').slice(0, 8)} want=${String(s.dige).slice(0, 8)} ${s.met ? '✓' : '⏳'}`).join(' | ')}`)
+                H.tlog(`↻ rungo seq=${seq}: ${status.map(s => `${s.path} live=${String(s.live ?? 'none').slice(0, 8)} want=${String(s.dige).slice(0, 8)} ${s.met ? '✓' : '⏳'}`).join(' | ')}`)
             }
 
             if (!unmet.length) {
@@ -367,37 +371,39 @@
                 const primary = demands[0]
                 H.Lies_drive_run(w, primary.path)
                 H.Lies_report_result(w, { path: primary.path, dige: primary.dige, ok: true })
-                console.log(`▶ rungo seq=${seq} FIRES @ ${demands.map(d => String(d.dige).slice(0, 8)).join('+')} — ${demands.map(d => d.path).join(', ')} (all ${demands.length} live)`)
+                H.tlog(`▶ rungo seq=${seq} FIRES @ ${demands.map(d => String(d.dige).slice(0, 8)).join('+')} — ${demands.map(d => d.path).join(', ')} (all ${demands.length} live)`)
                 ;(req.c.up as TheC).finish(req)
                 return
             }
             if (Date.now() - (req.c.await_since as number) > 20000) {
-                console.log(`✗ rungo seq=${seq} failed: ${unmet.map(s => `${s.path} live=${String(s.live ?? 'none').slice(0, 8)} ≠ want=${String(s.dige).slice(0, 8)}`).join(', ')} after 20s`)
+                H.tlog(`✗ rungo seq=${seq} failed: ${unmet.map(s => `${s.path} live=${String(s.live ?? 'none').slice(0, 8)} ≠ want=${String(s.dige).slice(0, 8)}`).join(', ')} after 20s`)
                 H.Lies_report_result(w, { path: demands[0].path, dige: demands[0].dige, ok: false, errors: [`failed to acquire ${unmet.map(s => s.path).join(', ')}`] })
                 ;(req.c.up as TheC).finish(req)
                 return
             }
-            H.i_req_ttlilt(req, 1, { waiting: 'acquire' })   // bow out; Ghost_version_checkin / tick re-checks
+            // Bow out for the snap (ttlilt is just snap-timing).  Then TRICKLE: an ungated,
+            //  paced self re-check.  Ghost_version_checkin's feebly_ponder is Runtime-gated, so
+            //   on an idle Creduler the just-landed code can sit ~5s before anything re-pumps
+            //    this req (the live capture: code live at 31.027, rungo didn't notice until
+            //     36.204).  i_elvisto(w,'think') is ungated — w.do() re-pumps req_rungo — so it
+            //      fires within a trickle of HMR, not on the next happenstance Runtime re-entry.
+            //       One timer at a time; cleared at the top of the next pump and on supersede.
+            H.i_req_ttlilt(req, 1, { waiting: 'acquire' })
+            req.c.trickle_timer = setTimeout(() => {
+                req.c.trickle_timer = undefined
+                if (!req.sc.finished) H.i_elvisto(w, 'think')
+            }, 150)
         },
 
         // Ghost_version_checkin — called from the core ghostsHaunt on every HMR/haunt.  Fresh code
-        //  (and its Ghostmeta dige) is now live, so wake a think on every live House: a parked
-        //   %req:rungo re-checks Ghostmeta against the just-landed versions and fires the instant
-        //    they all match.  We LOG what each checkin brought in against any waiting Rungo demand,
-        //     so a hung acquire is legible (did `live` actually advance to the demanded dige?).
-        //      feebly_ponder self-gates on Runtime, so the boot mount-wave (pre-Runtime) is a no-op.
+        //  (and its Ghostmeta dige) is now live, so wake a think on every live House so a parked
+        //   %req:rungo re-checks Ghostmeta against the just-landed versions.  feebly_ponder is
+        //    Runtime-gated, so on an idle Creduler this is a no-op — which is exactly why req_rungo
+        //     carries its own ungated trickle (it doesn't depend on this wake landing).  The
+        //      live-set-change `↻ rungo` trace is where you SEE the acquire; a waiting rungo lives
+        //       on w:Lies (not the House), so there is nothing useful to enumerate here.
         Ghost_version_checkin() {
-            const H = this as House
-            for (const h of H.all_House as House[]) {
-                for (const req of (h.o({ req: 'rungo' }) as TheC[])) {
-                    if (req.sc.finished) continue
-                    for (const d of (req.c.demands ?? []) as Array<{ path: string, dige: string }>) {
-                        const live = (h as any)[h.Lang_ghostmeta_name(d.path)]?.() as string | undefined
-                        console.log(`🔁 version checkin: ${d.path} live=${String(live ?? 'none').slice(0, 8)} (rungo seq=${req.sc.rungo} wants ${String(d.dige).slice(0, 8)} ${live === d.dige ? '✓ MET' : '⏳'})`)
-                    }
-                }
-                h.feebly_ponder()
-            }
+            for (const h of (this as House).all_House as House[]) h.feebly_ponder()
         },
 
         // Lies_report_result — runner emit, after a run settles.  The editor's handler
@@ -408,12 +414,13 @@
             const pier = (w.o({ Peering: 1 })[0] as TheC | undefined)?.o({ Pier: 1 })[0] as TheC | undefined
             if (!pier || !H.Lies_channel_live(w)) return
             ;(H as any).Peeroleum_send_consumer(w, 'run_result', { path: sc.path, dige: sc.dige, ok: sc.ok, errors: sc.errors, snap_dige: sc.snap_dige })
-            console.log(`📤 run_result → editor: ${sc.path} ${sc.ok ? 'green' : 'red'}`)
+            H.tlog(`📤 run_result → editor: ${sc.path} ${sc.ok ? 'green' : 'red'}`)
         },
 
         // Lies_run_result_recv — editor receives the runner's outcome and stamps it on
         //  the dock so the staging chrome can read ok/errors/snap_dige off the snap.
         async Lies_run_result_recv(w: TheC, frame: any): Promise<boolean> {
+            const H = this as House
             const path = frame?.path as string | undefined
             if (!path) return false
             // roai (not oai): bump w:Lies so Liesui's Cred readout re-renders — oai would merge
@@ -423,7 +430,7 @@
                 errors: Array.isArray(frame.errors) ? frame.errors.length : 0,
                 snap_dige: frame.snap_dige, dige: frame.dige, at: Date.now(),
             })
-            console.log(`📥 run_result: ${path} ${frame.ok ? 'green' : 'red'}`)
+            H.tlog(`📥 run_result: ${path} ${frame.ok ? 'green' : 'red'}`)
             return true
         },
 
@@ -466,7 +473,7 @@
             //   examining/watch_c).  roai drops+recreates the child, bumping w:Lies, so the $effect
             //    re-runs and the badge's "● runner 414ms" actually ticks instead of freezing.
             await w.roai({ channel_peer: peer }, { rtt, last: Date.now() })
-            if (flipped) console.log(`🛰 channel live — ${H.Lies_role(w)} ⇄ ${peer} (bridged) — round-trip ${rtt}ms`)
+            if (flipped) H.tlog(`🛰 channel live — ${H.Lies_role(w)} ⇄ ${peer} (bridged) — round-trip ${rtt}ms`)
         },
 
     })

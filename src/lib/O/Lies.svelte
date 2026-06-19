@@ -1117,49 +1117,6 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         H.i_elvisto(w, 'think')
     },
 
-    // ── e_Lies_export_point ───────────────────────────────────────────────────
-    //
-    //   Export a Lang bookmark as a Point under a Waft Doc.
-    //   e.sc: { path, bookmark_id, from, to, method, label? }
-    async e_Lies_export_point(A: TheC, w: TheC, e: TheC) {
-        const H           = this as House
-        const path        = e.sc.path        as string | undefined
-        const bookmark_id = e.sc.bookmark_id as string | undefined
-        const from        = e.sc.from        as number
-        const to          = e.sc.to          as number
-        const method      = ((e.sc.method || e.sc.label || `bm_${from}`) as string).trim()
-        const label       = (e.sc.label as string | undefined) ?? ''
-
-        if (!path || !bookmark_id) throw 'e_Lies_export_point: needs path + bookmark_id'
-
-        w.c.point_serial_next ||= Date.now()
-        const serial = w.c.point_serial_next++ as number
-
-        let target_waft = w.o({ Waft: 1 }).find(wf => !!(wf as TheC).sc.active) as TheC | undefined
-        target_waft   ||= w.o({ Waft: 1 })[0] as TheC | undefined
-        if (!target_waft) {
-            target_waft = H.Lies_spawn_look_waft(w)
-            target_waft.sc.active = 1
-        }
-
-        const doc = target_waft.oai({ Doc: path })
-
-        const already = doc.o({ Point: 1, method })[0] as TheC | undefined
-        if (!already) {
-            doc.i({ Point: 1, method, label, from, to, serial })
-            target_waft.bump_version()
-            H.Lies_waft_save(w, target_waft)
-            console.log(`📌 exported Point method='${method}' to Waft:${target_waft.sc.Waft}`)
-        } else {
-            console.log(`📌 Point method='${method}' already in Waft — skipping`)
-        }
-
-        H.i_elvisto('Lang/Lang', 'Lang_stamp_bookmark_serial', {
-            bookmark_id, serial,
-        })
-        this.i_elvisto(w, 'think')
-    },
-
     })
     })
 </script>

@@ -66,8 +66,7 @@ Three overlapping forward designs:
      or Sidetrack) and the push cluster writes it back. The Point comes out
       method-only (a `label` equal to the method is dropped as redundant). Lang
        never writes Waft C directly; with no armed Interest it errors (no blind
-        fallback), which orphans the old `e_Lies_export_point` (dead now — it did
-         the wrong `doc.i({Point})` grammar; delete or leave parked).
+        fallback).
    *Also done:* fixed `wormhole/Ghost/Net/Easy/toc.snap` to the `What→(Doc|Point)`
     grammar (Points were nested inside their Doc; now siblings under the What).
      The Story recordings that embed this Waft (`Story/Editron/001`,`002`,
@@ -97,17 +96,20 @@ Three overlapping forward designs:
 ### Hovercraft req-migration
 Nearly landed. reqy() fully sublated; the engine is C-native and self-contained
  on the C. All hosts migrated (MachPeerily was the last off reqy).
-**Tail remaining:** migrate `requesty_serial` (the *older*, separate queue still
- serving Pirating / Pirate / Agency's own use), then delete Agency's hand-rolled
-  pieces (agency_think, Aw_think, procure_ways, setTimeout i_elvis routers) —
-   "fold in with the Agency-pilfering TODO." `LiesWorkup.svelte` is shelved,
-    still referencing deleted reqy(). Clean, well-scoped finish-the-job.
+**Tail remaining (reframed 2026-06-19):** not a migrate-in-place — **copy** the
+ generic hovering machine out of legacy `Agency.svelte` into Hovercraft (which
+  already owns the `%req` engine), omitting the GONERs (ways, `%aim`/journeys,
+   `requesty_serial`) and rewriting the `setTimeout(…,11)` re-entry onto
+    `reqyoncile`. Legacy Agency, Pirat\*, and `requesty_serial` are left as-is;
+     the new code must contain no `requesty_serial`. Full kept|gone method list +
+      the ★-rework notes + the prandle determinism-channels TODO are in
+       **`Agency_to_Hovercraft_plan.md`**. `LiesWorkup.svelte` is still shelved
+        referencing deleted reqy() (compile-or-stays-shelved).
 
 ### Wormhole backends
-OPFS-from-GitHub backend is coded but **never runtime-verified in browser** —
- needs a :9091 test with no local dir open (Library loads, book runs from seed,
-  save survives reload into scratch/, no second API hit on reload via marker
-   idempotency). **Requires the repo be public** or unauth GitHub API 404s.
+OPFS-from-GitHub backend is coded and **runtime-verified in browser** (Library
+ loads, book runs from seed, save survives reload into scratch/, marker
+  idempotency holds — no second API hit on reload). Done.
 Records-as-files for Identities ("switch who you are" = read a different record)
  is planned-not-started. `WhNav` shared interface still duck-typed across the
   three backends (browser / node / OPFS overlay).
@@ -180,7 +182,6 @@ Editor→runner channel (version handshake → acquire-then-poll is "THE next ed
 ## Where to actually start
 Cleanest self-contained wins:
 - **Finish the Hovercraft req-migration tail** — delete requesty_serial + Agency bits.
-- **Runtime-verify the OPFS Wormhole backend** (needs the repo public).
 
 Biggest-leverage move: the Story **`req:Step` / `req:Drive` recast**, since it
  unlocks UIless test iteration — but that's a larger commitment.

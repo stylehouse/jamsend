@@ -24,7 +24,7 @@ async req_p2pman(req):
 // ── per-identity worker ───────────────────────────────────────────────────────
 // A:Alice/w:Peeroleum — one per identity-presence; owns this address's Piers.
 async Peeroleum(A,w):
-    oai seemingly:`ya aooooolly`...figaro:Gangskt
+    oai seemingly:`ya aooooolly`...figaro:RalativivelywoFallible
     // each installed %Peering manages its own Piers via %req:p2paddy
     S o Peering
         Peering oai %req:p2paddy
