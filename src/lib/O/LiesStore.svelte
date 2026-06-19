@@ -371,6 +371,52 @@
         return funk
     },
 
+    // ── Lies_instantiate_funkcions ────────────────────────────────────────────────
+    //   Generalise GhostList's hand-wired bind (Waft_spec §201's ⛑️): on Waft load —
+    //   and on a later in-place edit — every embedded %Funkcion that declares an
+    //   %of_dock gets its verdict-reader run bound and registered into the central
+    //   host.  Idempotent: a funk already carrying a run (the dirlist, or a prior pass)
+    //   is skipped, so re-calling on every mutation is cheap.  This is the Credence
+    //   cell's instantiation half — the embed rides the snap, the runtime re-binds each
+    //   load.  Walks the whole Waft subtree so a cell can ride anywhere (a row under a
+    //   group, not just a top child).
+    async Lies_instantiate_funkcions(w: TheC, waft: TheC): Promise<void> {
+        const H   = this as House
+        const all: TheC[] = []
+        const walk = (c: TheC) => { for (const k of c.o() as TheC[]) { all.push(k); walk(k) } }
+        walk(waft)
+        for (const funk of all) {
+            if (funk.sc.Funkcion === undefined) continue   // only %Funkcion embeds
+            if (funk.c.run) continue                        // already bound (dirlist / prior load)
+            if (funk.sc.of_dock === undefined) continue     // dock-bound cells only, for now
+            funk.c.run = async (_host: TheC, fk: TheC, ww: TheC) => H.Lies_verdict_read(ww, fk)
+            await H.Lies_register_funkcion(w, waft, funk, w)
+        }
+    },
+
+    // ── Lies_verdict_read ─────────────────────────────────────────────────────────
+    //   A dock-bound Funkcion's per-tick run: read the dock's %run_result (the runner's
+    //   verdict, landed on w:Lies by Lies_run_result_recv) and stamp a *separate*
+    //   %verdict on the funk — NOT req.sc.ok, which only says "the closure ran" (a
+    //   broken Funkcion vs a failing test must stay distinguishable, §5d).  phase mirrors
+    //   the Langui idiom: good (every step passed) / bad (some failed) / working (a
+    //   result is still awaited — no run_result for this dock yet).  Off-snap on funk.c
+    //   so a live verdict never bakes into the document snap; bump only on a real change
+    //   (the pump runs this every tick).
+    Lies_verdict_read(ww: TheC, funk: TheC): void {
+        const path = funk.sc.of_dock as string | undefined
+        if (!path) return
+        const rr    = ww.o({ run_result: 1, path })[0] as TheC | undefined
+        const pass  = rr ? Math.round(Number(rr.sc.ok_pct ?? (rr.sc.ok ? 1 : 0)) * Number(rr.sc.done ?? 1)) : 0
+        const total = rr ? Number(rr.sc.done ?? 1) : 0
+        const phase = !rr ? 'working' : (total > 0 && pass === total) ? 'good' : 'bad'
+        const dige  = rr?.sc.dige as string | undefined
+        const prev  = funk.c.verdict as { phase?: string, pass?: number, total?: number, dige?: string } | undefined
+        if (prev && prev.phase === phase && prev.pass === pass && prev.total === total && prev.dige === dige) return
+        funk.c.verdict = { phase, pass, total, dige }
+        funk.bump_version()
+    },
+
     // ── Lies_waft_save ────────────────────────────────────────────────────────
     //
     //   Throttled write of a Waft container back to its wormhole snap path.

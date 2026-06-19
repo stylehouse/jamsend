@@ -230,6 +230,24 @@
     function havoc_raw(c: TheC): string {
         return Object.entries(c.sc).map(([k, v]) => v === 1 ? k : `${k}:${v}`).join(', ')
     }
+    // a dock-bound %Funkcion is a Credence test-light: its run (Lies_verdict_read) stamps
+    //  funk.c.verdict = {phase,pass,total,dige} off-snap; we read it reactively (void
+    //   version) and colour the cell good|bad|working.  leaf = the dock's leaf name.
+    function funk_verdict(c: TheC): { phase: string, pass?: number, total?: number, dige?: string } {
+        void c.version
+        return (c.c.verdict as any) ?? { phase: 'working' }
+    }
+    const leaf = (p: any) => String(p ?? '').split('/').pop()
+    // click a cell to run its dock — the same "run it now" intent Esc fires (Lies_run_arm),
+    //  targeted at this cell's %of_dock.  On the editor it records the arm; the runner picks
+    //   it up off the Rungo the compile-write emits (the become-Book remote half is §5e).
+    function strike_funk(c: TheC) {
+        const path = c.sc.of_dock as string | undefined
+        if (!path) return
+        H.i_elvisto('Lies/Lies', 'Lies_run_arm', { path })
+        c.c.verdict = { ...(c.c.verdict as any ?? {}), phase: 'working' }   // optimistic
+        c.bump_version()
+    }
     // a %havoc,arm pad self-arms: it strikes itself whenever its containing What is
     //  engaged (Lies_arm_engaged).  Glow it when that What holds the spotlight, so the
     //  auto-fire is legible — the pad lights the same moment the limb runs.
@@ -651,6 +669,22 @@
                 </button>
             </div>
         {/if}
+    {:else if C.sc?.Funkcion !== undefined}
+        <!-- %Funkcion — an embedded applet.  A dock-bound one (carrying %of_dock) renders
+             as a Credence test-light: ✓ green / ✗ red / ◴ working, with the step pass-count
+             and the dock leaf.  Raw mode shows the bare particle. -->
+        {#if raw}
+            <div class="ls-havoc-raw">Funkcion:{C.sc.Funkcion}{C.sc.of_dock ? ` → ${C.sc.of_dock}` : ''}</div>
+        {:else}
+            {@const v = funk_verdict(C)}
+            <button class="ls-funk ls-funk-{v.phase}" onclick={() => strike_funk(C)}
+                 title="Credence cell · click to run · {C.sc.of_dock ?? 'unbound'} — {v.phase === 'good' ? `green, ${v.pass}/${v.total} steps` : v.phase === 'bad' ? `red, ${v.pass}/${v.total} steps` : 'awaiting a run'}{v.dige ? ` @ ${String(v.dige).slice(0,8)}` : ''}">
+                <span class="ls-funk-ico">{v.phase === 'good' ? '✓' : v.phase === 'bad' ? '✗' : '◴'}</span>
+                <span class="ls-funk-name">{C.sc.Funkcion}</span>
+                {#if v.total}<span class="ls-funk-steps">{v.pass}/{v.total}</span>{/if}
+                {#if C.sc.of_dock}<span class="ls-funk-dock">{leaf(C.sc.of_dock)}</span>{/if}
+            </button>
+        {/if}
     {:else}
     {@const t = item_type_of(C)}
     {#if t}
@@ -841,4 +875,24 @@
         font-family: monospace; font-size: 0.74rem; color: #8a7a5a;
         padding: 0.1rem 0.2rem;
     }
+    /* ── Funkcion test-light (the Credence cell) — good|bad|working, reusing the
+         Langui verdict idiom (✓ green / ✗ red / ◴ working). ── */
+    .ls-funk {
+        display: inline-flex; align-items: center; gap: 0.35rem; margin: 0.15rem 0;
+        padding: 0.15rem 0.5rem; border-radius: 5px; cursor: pointer;
+        border: 1px solid #2a2a3a; background: #14141e;
+        font-family: monospace; font-size: 0.74rem; color: #99a;
+        transition: filter 0.1s, transform 0.06s;
+    }
+    .ls-funk:hover  { filter: brightness(1.3); }
+    .ls-funk:active { transform: translateY(1px); }
+    .ls-funk-ico  { font-size: 0.9rem; line-height: 1; }
+    .ls-funk-name { color: #c4c4d4; }
+    .ls-funk-steps{ font-variant-numeric: tabular-nums; }
+    .ls-funk-dock { color: #667; font-size: 0.7rem; }
+    .ls-funk-good    { border-color: rgba(106, 208, 160, 0.4); background: rgba(106, 208, 160, 0.08); color: #6ad0a0; }
+    .ls-funk-good    .ls-funk-name { color: #8fe4c0; }
+    .ls-funk-bad     { border-color: rgba(255, 136, 136, 0.4); background: rgba(255, 136, 136, 0.08); color: #f88; }
+    .ls-funk-bad     .ls-funk-name { color: #f9a; }
+    .ls-funk-working { border-color: #3a3420; color: #c4a86a; }
 </style>

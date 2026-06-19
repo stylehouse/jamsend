@@ -20,7 +20,7 @@ This doc merges the three former Editron handovers into one arc: **architecture 
    recipe, mirroring `Run_A_Peregrination`), which lays `A:Editron/w:Editron` + `Lies%editor` +
     `Lang%editor` (+ Pantheate) INTO the Run. The per-beat handler `Editron(A,w)` (both in
      `src/lib/O/Editron.svelte`) opens the Waft named by `?W=<Waft>` (env `W=`, default
-      `Ghost/Net/Easy`). The Book itself is `wormhole/Story/Editron/toc.snap` (one step + `Opt/noCyto`).
+      `Ghost/Net/Easy`). The Book itself is `wormhole/Story/Editron/toc.snap` (one step; no own Cyto, the default now).
  Boot it: `/Otro?B=Editron` (`&W=<Waft>` for a different Waft).
 
 **Why a Book:** running the editor's own startup AS a Story makes boot one observable, re-runnable
@@ -258,6 +258,21 @@ First slice (mirrors §201's): one Funkcion bound to one dock via `%of_dock`, re
  `%run_result.ok` and colouring its embed red|green|working. Generalise the bind to every Funkcion on load,
   and per-step granularity, after the single light works end to end.
 
+**LANDED — the Credence cell.** All three: (1) generic instantiation (`Lies_instantiate_funkcions`,
+ `LiesStore.svelte`) walks a loaded Waft's subtree and binds a verdict-reader run to every `%Funkcion`
+  carrying `%of_dock` — called from `Lies_open` on load AND from the Waft's `watch_c` so a freshly-authored
+   cell binds too (this is §201's ⛑️ "generalise instantiation", done for dock cells). (2) The reader
+    (`Lies_verdict_read`) reads `w:Lies/{run_result,path}` and stamps a *separate* `funk.c.verdict =
+     {phase,pass,total,dige}` off-snap (NOT `req.sc.ok`) — phase = good (all steps) / bad / working (no
+      result yet); per-step granularity from the start (`round(ok_pct*done)/done`). (3) The decoration
+       (`Waft.svelte` `waftitem`) renders a `%Funkcion` as a clickable test-light reusing the Langui
+        ✓/✗/◴ + good/bad/working colours; click fires `Lies_run_arm{of_dock}` (the Esc intent). Seeded
+         `wormhole/Credence/toc.snap` (`Waft:Credence`, three cells bound to Peregrination/Peeroleum/Tribunal
+          docks) — open it in the editor (Liesui `+Waft → Credence`) to see the board. A fresh cell shows
+           `◴ working` immediately (single-tab visible); it greens/reds when a `run_result` for its dock
+            lands. Still deferred: the per-row group-by into a `book × dock` matrix, and the runner-side
+             become-Book remote control (§5e build-order b).
+
 ## 5e. Credence — the editor-side admirer (the Creduler's opposite)
 
 The Creduler accrues credibility (Credulate HEAD + Credulation trail) but today nothing reads it back —
@@ -294,9 +309,9 @@ The Creduler accrues credibility (Credulate HEAD + Credulation trail) but today 
      returns to the remote-controlled state (the cred ledger is already persisted), so the shared runner
       tab resumes where you left it.
 
-**Build order:** (a) Funkcion→Book/dock bind (§5d first slice); (b) editor→runner "become Book" frame +
- `localStorage` persist; (c) the start==end version guard feeding the matrix; (d) the `run_phase` progress
-  relay last.
+**Build order:** (a) Funkcion→Book/dock bind (§5d first slice) — **DONE** (the Credence cell; see §5d
+ LANDED); (b) editor→runner "become Book" frame + `localStorage` persist; (c) the start==end version guard
+  feeding the matrix; (d) the `run_phase` progress relay last.
 
 **The matrix IS a Waft — don't build a grid widget.** The instinct to render an HTML `<table>` is the
  wrong altitude; the matrix is already the Waft you navigate. The minimal honest shape, all in existing

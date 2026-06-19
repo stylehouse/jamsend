@@ -1,0 +1,5 @@
+Waft:Credence
+  What:the board
+    Funkcion:Peregrination,of_dock:Ghost/Story/Peregrination.g,run_when:loaded
+    Funkcion:Peeroleum,of_dock:Ghost/N/Peeroleum.g,run_when:loaded
+    Funkcion:Tribunal,of_dock:Ghost/N/Tribunal.g,run_when:loaded
