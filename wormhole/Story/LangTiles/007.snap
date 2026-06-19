@@ -1,7 +1,7 @@
 Snap:H
   H:LangTiles,Run
     A:Lies
-      self,round=39	{"mung":["age"]}
+      self,round=184	{"mung":["age"]}
       w:Lies
         Opt
           nowriting:^Ghost
@@ -36,21 +36,21 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781862805882,kind:cold
-          want=1781862805929,kind:cold
-          want=1781862806182,kind:cold,resolved
+          want=1781881773473,kind:cold
+          want=1781881773523,kind:cold
+          want=1781881773883,kind:cold,resolved
         o_elvis:dock_askies
         Waft:GhostList,lists,O_defaulted,dontSnap	{"mung":["seeded"]}
         Funkcions
           req:Funkcion,funk_id:GhostList/dirlist,eternal,ok
-        Waft:Ting/2026-06-19/215328,takes
-          Point:theCompiledStuff,doc:Ghost/test/LangTiles.g,n=2,weight=4,last=1781862811029,first=1781862808862,heat=4.354,warm=0.5,bright,held,long
-            {"say":"o hut/although:1/they,can,be,mixed","at":1781862811029}
-        self,round=39	{"mung":["age"]}
+        Waft:Ting/2026-06-20/030936,takes
+          Point:theCompiledStuff,doc:Ghost/test/LangTiles.g,n=2,weight=4,last=1781881779150,first=1781881776832,heat=4.002,warm=0.5,bright,held,long
+            {"say":"o hut/although:1/they,can,be,mixed","at":1781881779150}
         log:source_write,path:Ghost/test/LangTiles.g,dige:34540f96
+        self,round=184	{"mung":["age"]}
         see:🗂 1 doc · 3 Wafts
     A:Lang
-      self,round=50	{"mung":["age"]}
+      self,round=51	{"mung":["age"]}
       w:Lang
         Opt
           txtsyntaxdump
@@ -119,39 +119,39 @@ Snap:H
             Text,dige:34540f96526f8cd0,disk_dige:34540f96526f8cd0,disk_rev
             Compile
               Map
-                def,method:theCompiledStuff,from=17,to=34,line=2
-                call,method:nothinging,from=1153,to=1164,line=34,via:theCompiledStuff
-                call,method:nothinging,from=1177,to=1188,line=35,via:theCompiledStuff
-                {"controlflow":1,"keyword":"if","title":"(&nothinging,A,w,{figuira:'out', all_these:3}) 3+2+4","from":1226,"to":1229,"line":36,"via":"theCompiledStuff"}
-                {"controlflow":1,"keyword":"if","title":"&nothinging,A,w,{figuira:'out', all_these:3}","from":1286,"to":1289,"line":37,"via":"theCompiledStuff"}
-                {"controlflow":1,"keyword":"if","title":"&nothinging,A,w,{figuira:'out', all_these:3}","from":1487,"to":1490,"line":42,"via":"theCompiledStuff"}
-                controlflow,keyword:if,title:3,from=1782,to=1785,line=54,via:theCompiledStuff
-                controlflow,keyword:if,title:0,from=1806,to=1809,line=56,via:theCompiledStuff
-                controlflow,keyword:elsif,title:1 && 0,from=1835,to=1841,line=58,via:theCompiledStuff
-                controlflow,keyword:elsif,title:50 > 5,from=1887,to=1893,line=61,via:theCompiledStuff
-                call,method:severally,from=1952,to=1962,line=65,via:theCompiledStuff
-                def,method:nothinging,from=1974,to=1985,line=67
-                def,method:severally,from=2012,to=2022,line=69
-                call,method:laterally,from=2164,to=2176,line=75,via:severally
-                def,method:laterally,from=2188,to=2198,line=77
-                def,method:moreTiles,from=2255,to=2265,line=80
-                def,method:replaceTiles,from=3832,to=3845,line=106,async
-                def,method:reqTiles,from=5699,to=5708,line=152
-                def,method:looseScTiles,from=8379,to=8392,line=206
-                controlflow,keyword:if,title:req%demand,from=9188,to=9191,line=223,via:looseScTiles
-                def,method:ampTiles,from=9539,to=9548,line=232,async
-                call,method:do,from=9724,to=9727,line=235,via:ampTiles
-                call,method:bump,from=9735,to=9740,line=236,via:ampTiles
-                call,method:emit,from=9821,to=9826,line=238,via:ampTiles
-                call,method:settle,from=9910,to=9917,line=240,via:ampTiles
-                call,method:severally,from=9987,to=9997,line=242,via:ampTiles
-                {"controlflow":1,"keyword":"if","title":"(a > b) H.laterally(A,w,1)","from":10444,"to":10447,"line":251,"via":"ampTiles"}
-                controlflow,keyword:if,title:a > b,from=10639,to=10642,line=255,via:ampTiles
-                {"controlflow":1,"keyword":"if","title":"(a > b) i %reached:also","from":10676,"to":10679,"line":257,"via":"ampTiles"}
-                def,method:obtainTiles,from=10767,to=10779,line=260
-                {"controlflow":1,"keyword":"if","title":"(s && !(oa %taken)) i %seat:free","from":11200,"to":11203,"line":269,"via":"obtainTiles"}
-                def,method:captureOutTiles,from=11398,to=11414,line=273
-              time,compile=0.027,all=0.522,write=0
+                def,method:theCompiledStuff,line=2,rel_from=17,rel_to=34
+                call,method:nothinging,line=34,via:theCompiledStuff,rel_from=1153,rel_to=1164
+                call,method:nothinging,line=35,via:theCompiledStuff,rel_from=1177,rel_to=1188
+                {"controlflow":1,"keyword":"if","title":"(&nothinging,A,w,{figuira:'out', all_these:3}) 3+2+4","line":36,"via":"theCompiledStuff","rel_from":1226,"rel_to":1229}
+                {"controlflow":1,"keyword":"if","title":"&nothinging,A,w,{figuira:'out', all_these:3}","line":37,"via":"theCompiledStuff","rel_from":1286,"rel_to":1289}
+                {"controlflow":1,"keyword":"if","title":"&nothinging,A,w,{figuira:'out', all_these:3}","line":42,"via":"theCompiledStuff","rel_from":1487,"rel_to":1490}
+                controlflow,keyword:if,title:3,line=54,via:theCompiledStuff,rel_from=1782,rel_to=1785
+                controlflow,keyword:if,title:0,line=56,via:theCompiledStuff,rel_from=1806,rel_to=1809
+                controlflow,keyword:elsif,title:1 && 0,line=58,via:theCompiledStuff,rel_from=1835,rel_to=1841
+                controlflow,keyword:elsif,title:50 > 5,line=61,via:theCompiledStuff,rel_from=1887,rel_to=1893
+                call,method:severally,line=65,via:theCompiledStuff,rel_from=1952,rel_to=1962
+                def,method:nothinging,line=67,rel_from=1974,rel_to=1985
+                def,method:severally,line=69,rel_from=2012,rel_to=2022
+                call,method:laterally,line=75,via:severally,rel_from=2164,rel_to=2176
+                def,method:laterally,line=77,rel_from=2188,rel_to=2198
+                def,method:moreTiles,line=80,rel_from=2255,rel_to=2265
+                def,method:replaceTiles,line=106,async,rel_from=3832,rel_to=3845
+                def,method:reqTiles,line=152,rel_from=5699,rel_to=5708
+                def,method:looseScTiles,line=206,rel_from=8379,rel_to=8392
+                controlflow,keyword:if,title:req%demand,line=223,via:looseScTiles,rel_from=9188,rel_to=9191
+                def,method:ampTiles,line=232,async,rel_from=9539,rel_to=9548
+                call,method:do,line=235,via:ampTiles,rel_from=9724,rel_to=9727
+                call,method:bump,line=236,via:ampTiles,rel_from=9735,rel_to=9740
+                call,method:emit,line=238,via:ampTiles,rel_from=9821,rel_to=9826
+                call,method:settle,line=240,via:ampTiles,rel_from=9910,rel_to=9917
+                call,method:severally,line=242,via:ampTiles,rel_from=9987,rel_to=9997
+                {"controlflow":1,"keyword":"if","title":"(a > b) H.laterally(A,w,1)","line":251,"via":"ampTiles","rel_from":10444,"rel_to":10447}
+                controlflow,keyword:if,title:a > b,line=255,via:ampTiles,rel_from=10639,rel_to=10642
+                {"controlflow":1,"keyword":"if","title":"(a > b) i %reached:also","line":257,"via":"ampTiles","rel_from":10676,"rel_to":10679}
+                def,method:obtainTiles,line=260,rel_from=10767,rel_to=10779
+                {"controlflow":1,"keyword":"if","title":"(s && !(oa %taken)) i %seat:free","line":269,"via":"obtainTiles","rel_from":11200,"rel_to":11203}
+                def,method:captureOutTiles,line=273,rel_from=11398,rel_to=11414
+              time,compile=0.021,all=0.571,write=0
               Output,gen_path:gen/test/LangTiles.go,dige:a52e5ee77cabe847,source_dige:34540f96526f8cd0
                source: |
                  <script lang="ts">
@@ -525,14 +525,14 @@ Snap:H
           dock,active	{"loopy":0,"hid":1}
           Change
             backend,dige:34540
-            compile,dige:34540,secs=0.027,dim,pending
+            compile,dige:34540,secs=0.021,dim,pending
             storage,dige:34540
           LE:Undertaking,reason:Undertaking
             Seem:workon
               Funkcion:trail,halflife_ms=60000
-          Interest:Ting,waft:Ting/2026-06-19/215328,lens:DocTing,presence:always,state:live
-            cursor,what:Ting/2026-06-19/215328,latest
-        req:workon,following,auto_push	{"ref":{"w":"%w:Lang"}}
+          Interest:Ting,waft:Ting/2026-06-20/030936,lens:DocTing,presence:always,state:live
+            cursor,what:Ting/2026-06-20/030936,latest
+        req:workon,auto_push	{"ref":{"w":"%w:Lang"}}
           {"req":"understanding","maz":3,"permanent":1,"sig":"1:13:0:0","what":"labelofaWhat","finished":1}
           req:ingredients,maz=2,permanent,sig:Ghost/test/LangTiles.g,finished
             req:furnishing,path:Ghost/test/LangTiles.g,permanent,asked,finished
@@ -564,7 +564,7 @@ Snap:H
           {"encode":1,"snap_origin":"Doc:Ghost/test/LangTiles.g\nPoint:nothings\nPoint:nothinging\nPoint:Blaga\n","snap_working":"Doc:Ghost/test/LangTiles.g\nPoint:nothings\nPoint:nothinging\nPoint:Blaga\n","dirty":"0"}
         received,doc_opened,doc:Ghost/test/LangTiles.g
         received,editorBegins,doc:Ghost/test/LangTiles.g
-        self,round=50	{"mung":["age"]}
+        self,round=51	{"mung":["age"]}
         see:🟦 tiles 1 bookmarks
     A:Pantheate
       self,round=22	{"mung":["age"]}

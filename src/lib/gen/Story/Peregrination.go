@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Peregrination(): string { return '64dae7180ba6ac59' },
+    Ghostmeta_Ghost_Story_Peregrination(): string { return '6ad01960423b9e20' },
 
 
 // Peregrination — the Peeroleum p2p test (the outer test layer), and the first of a
@@ -44,7 +44,7 @@ Run_A_Peregrination() {
 //   symptom: step 3 fires, step 2's sides never lay).  Lake_drive keeps a req-local
 //    `did_step` instead, immune to any other caller.
 Peregrination(A,w) {
-    w.i({see: 'y Peregrination — apparatus ready thoroughlyth!'})
+    w.i({see: 'y Peregrination — apparatus ready yyy!'})
     w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
         await this.Lake_drive(w,req)
         req.sc.ok = 1

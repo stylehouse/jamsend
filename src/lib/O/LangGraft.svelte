@@ -335,7 +335,7 @@
                 }
                 continue
             }
-            this.Lang_ensure_graft(pmirror, def, dock)
+            this.Lang_ensure_graft(pmirror, def, dock, regions)
         }
 
         // Diagnostic: log what the resolver had available when something failed
@@ -490,9 +490,14 @@
         return Math.max(from, Math.min(to > from ? to : name_end, name_end))
     },
 
-    Lang_ensure_graft(pmirror: TheC, def: TheC, dock: TheC) {
-        const def_from = def.sc.from as number
-        const def_to   = def.sc.to   as number
+    Lang_ensure_graft(pmirror: TheC, def: TheC, dock: TheC, regions: TheC[]) {
+        // def's offsets are stored region-relative now (rel_from/rel_to); resolve
+        //  to absolute doc positions through the map span.  Reading def.sc.from/to
+        //   directly yields undefined post-migration, which both breaks the CM
+        //    anchor and forces the graft sc to a JSON-blob snap line.
+        const span     = this.Lang_map_span(regions, def)
+        const def_from = span.from
+        const def_to   = span.to
         const def_line = def.sc.line as number
 
         const existing = pmirror.o({ graft: 1 })[0] as TheC | undefined

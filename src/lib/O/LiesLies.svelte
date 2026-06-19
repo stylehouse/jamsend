@@ -385,23 +385,24 @@
             return true
         },
 
-        // Lies_ghost_live — the runner's ACQUIRE primitive: the live source_dige of a ghost's
-        //  compiled code, or undefined if it isn't loaded.  A compiled .g bakes Ghostmeta_<name>(),
-        //   which ghostsHaunt deposits on every House — so this answers "is path's code on me, and
-        //    at what version".  The runner never compiles; it acquires what the editor shipped.
-        //     req_rungo compares this to a demanded dige (currency); the bootstrap loader checks it
-        //      for presence (loaded at all).  Prototyped in test/Peregrination, it lives here now.
-        Lies_ghost_live(path: string): string | undefined {
+        // Lies_ghost_get — the GET half of the runner's acquire pair: the live source_dige of a
+        //  ghost's compiled code, or undefined if it isn't loaded.  A compiled .g bakes
+        //   Ghostmeta_<name>(), which ghostsHaunt deposits on every House — so this answers "is
+        //    path's code on me, and at what version".  The runner never compiles; it acquires what
+        //     the editor shipped.  req_rungo compares this to a demanded dige (currency); the
+        //      Creduler checks it for presence (loaded at all) and rides it onto the GhostInclude
+        //       ledger.  Pairs with the SET half Lies_ghost_set.
+        Lies_ghost_get(path: string): string | undefined {
             const H = this as House
             return (H as any)[H.Lang_ghostmeta_name(path)]?.() as string | undefined
         },
 
-        // Lies_ghost_load — the runner's LOAD half: enrol a dock's gen .go in watched:UIs so
-        //  Otro mounts it and its onMount eatfunc deposits the ghost's methods + Ghostmeta.
-        //   Mirrors Lies_transport_up (same enrol for the frozen transport).  "Assume compiled"
-        //    still needs "assume loaded" — this is the loaded part.  Browser-tab only for now:
-        //     a UIless run renders nothing, so onMount never fires (Everything_todo TODO).
-        async Lies_ghost_load(path: string) {
+        // Lies_ghost_set — the SET half: enrol a dock's gen .go in watched:UIs so Otro mounts it
+        //  and its onMount eatfunc deposits the ghost's methods + Ghostmeta (which Lies_ghost_get
+        //   then reads back).  Mirrors Lies_transport_up (same enrol for the frozen transport).
+        //    "Assume compiled" still needs "assume loaded" — this is the loaded part.  Browser-tab
+        //     only for now: a UIless run renders nothing, so onMount never fires (Everything_todo).
+        async Lies_ghost_set(path: string) {
             const H   = this as House
             const gen = H.Lies_gen_path(path)
             if (!gen) return
@@ -415,19 +416,44 @@
         //  Lies, outside Story).  Loads CREDULER_GHOSTS live onto H so the editor's compiled
         //   code is present before any Story begins, riding %Creduler_pending on H while it
         //    works — the greppable gate Story stalls on (waits:loadingcoding).  Loads any ghost
-        //     not yet Lies_ghost_live; clears the flag once all are live.  Called on H:Mundo.
-        async Creduler_ensure() {
+        //     not yet live; clears the flag once all are.  Called on H:Mundo with the runner Lies w.
+        async Creduler_ensure(w: TheC) {
             const H = this as House
-            const unmet = CREDULER_GHOSTS.filter(p => !H.Lies_ghost_live(p))
+            // The GhostInclude ledger — one w/%GhostInclude:<gen>,dige per CREDULER_GHOST, so the
+            //  runner's snap shows exactly what it's running and at what version.  Refreshed every
+            //   tick: a just-acquired dige (the Creduler's own load, or an HMR/rungo push) drifts
+            //    onto the SAME particle (oai merges in place — no duplicate), and an absent dige
+            //     means enrolled-but-not-yet-live.  This is the read-out behind the "method missing
+            //      until rungo pushes a version, then found" symptom.
+            for (const p of CREDULER_GHOSTS) {
+                const gen  = H.Lies_gen_path(p)
+                if (!gen) continue
+                const dige = H.Lies_ghost_get(p)
+                w.oai({ GhostInclude: gen }, dige ? { dige } : {})
+            }
+            const unmet = CREDULER_GHOSTS.filter(p => !H.Lies_ghost_get(p))
             if (!unmet.length) {
                 if (H.oa({ Creduler_pending: 1 })) {
                     for (const c of H.o({ Creduler_pending: 1 }) as TheC[]) H.drop(c)
                     H.tlog(`🧪 Creduler ready — ${CREDULER_GHOSTS.length} ghost(s) live`)
+                    H.main()   // wake the pass so Auto starts the held Story now the spine is live
                 }
+                if (w.c.creduler_trickle) { clearTimeout(w.c.creduler_trickle as any); w.c.creduler_trickle = undefined }
                 return
             }
             H.oai({ Creduler_pending: 1 })
-            for (const p of unmet) await H.Lies_ghost_load(p)
+            for (const p of unmet) await H.Lies_ghost_set(p)
+            // The async mounts deposit Ghostmeta a beat or two later; their own
+            //  Ghost_version_checkin → feebly_ponder is Runtime-gated (a no-op on this idle
+            //   ambient Lies), and the Story heartbeat isn't up yet (Auto is holding it), so
+            //    self-trickle an UNGATED re-check until every ghost reads live.  One timer,
+            //     cleared on ready (cf req_rungo's trickle).
+            if (!w.c.creduler_trickle) {
+                w.c.creduler_trickle = setTimeout(() => {
+                    w.c.creduler_trickle = undefined
+                    H.i_elvisto(w, 'think')
+                }, 150)
+            }
         },
 
         // req:rungo,seq — the parked run authority.  do_fn on w:Lies (runner): check every
@@ -445,7 +471,7 @@
             if (req.c.trickle_timer) { clearTimeout(req.c.trickle_timer as any); req.c.trickle_timer = undefined }
             const demands = (req.c.demands ?? []) as Array<{ path: string, dige: string }>
             const status = demands.map(d => {
-                const live = H.Lies_ghost_live(d.path)
+                const live = H.Lies_ghost_get(d.path)
                 return { ...d, live, met: live === d.dige }
             })
             const unmet = status.filter(s => !s.met)

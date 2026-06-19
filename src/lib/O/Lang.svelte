@@ -1658,13 +1658,16 @@
         if (region) {
             const job   = dock.o({ Compile: 1 })[0] as TheC | undefined
             const Map_C = job?.o({ Map: 1 })[0]      as TheC | undefined
-            const defs  = (Map_C?.o({ def: 1 }) ?? []) as TheC[]
+            const defs    = (Map_C?.o({ def: 1 })    ?? []) as TheC[]
+            const regions = (Map_C?.o({ region: 1 }) ?? []) as TheC[]
             const tail  = (d: TheC) => {
                 const rp = d.c.region_path as string[] | undefined
                 return rp && rp.length ? rp[rp.length - 1] : undefined
             }
             const hit = defs.find(d => d.sc.method === spec && tail(d) === region)
-            if (hit) from = hit.sc.from as number
+            // def offsets are region-relative (rel_from/rel_to); resolve to an
+            //  absolute doc position through the map span, not the dead sc.from.
+            if (hit) from = this.Lang_map_span(regions, hit).from
         }
         if (from == null) {
             const r = this.Lang_resolve_point(state, dock, spec)

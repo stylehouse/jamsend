@@ -1,5 +1,12 @@
 <script lang="ts">
-    // Auto ghost — Library manager and Story lifecycle owner.
+    // Auto ghost — Story lifecycle owner + page resolver.
+    //
+    // Auto resolves the boot to a PAGE and runs as that one case:
+    //   library — editor (?E) + plain app: the disk-backed book browser (this file's
+    //             Library region) + Story lifecycle.
+    //   run     — runner (?B): the Creduler + the single ?B Book, NO Library at all.
+    // The Library is a region here, lit by the library page (like the Creduler region
+    //  is lit by the runner role) — not a separate ghost.
     //
     // Wires: H:Mundo / A:Auto / w:Auto
     //
@@ -76,76 +83,19 @@
     async Auto(A: TheC, w: TheC, e?: TheC) {
         const H = this as House
 
-        // ── one-time setup ────────────────────────────────────────────────────
+        // Auto resolves the boot to a PAGE — the one case it runs as.  A ?B runner is the
+        //  `run` page: the Creduler + the single ?B Book, with NO Library (no book browser,
+        //   no Present/toc.snap riding on the runner).  Editor (?E) and the plain app are the
+        //    `library` page: the disk-backed book browser below.  The Library is just a region
+        //     lit by its page, the same way the Creduler region is lit by the runner role.
+        const page = H.c.boot_role === 'runner' ? 'run' : 'library'
+
+        // ── shared setup (both pages) ─────────────────────────────────────────
         if (!w.c.Auto_setup) {
             w.c.Auto_setup = true
-            const ave = H.oai_enroll(H, { watched: 'ave' })
-            w.c.ave = ave
+            w.c.ave = H.oai_enroll(H, { watched: 'ave' })
             H.oai_enroll(H, { watched: 'actions' })
-            const uis = H.oai_enroll(H, { watched: 'UIs' })
-            uis.oai({ UI: 'Library' }, { component: LibraryRun })
         }
-
-        // ── load Library from disk once ───────────────────────────────────────
-        if (!w.c.Li_loaded) {
-            const rw  = w.oai({ rw_queue: 1 })   // off-pump queue: serial %req items, owner-driven
-            const req = await rw.oai({ req: 'lib_read', rw_name: H.get_Library_path(), rw_op: 'read' })
-            if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req }))
-                return w.i({ see: '⏳ Library...' })
-
-            const reply = req.sc.reply
-            // Storage not ready (no share open, or the cloud nav still seeding): the
-            //  worker replies {error} rather than content.  That is NOT a decode
-            //   failure — drop the finished req so a fresh read re-issues next think,
-            //    and wait.  Without this the empty content fell through to decode and
-            //     fatal'd as 'empty snap' every tick until a backend appeared.
-            if (reply?.error) {
-                rw.drop(req)
-                return w.i({ see: '⏳ Library (waiting for storage)…' })
-            }
-
-            // not_found, or present-but-empty, both mean "no library yet" → defaults.
-            const empty = !(reply?.content ?? '').trim()
-            const { C: Li_new, errors } =
-                (reply?.not_found || empty)
-                    ? {C: this.autovivify_Library(),errors:[]}
-                : H.decode_wh_lines(reply.content)
-
-            if (errors.length || !Li_new) {
-                console.error('Library decode errors (fatal):', errors)
-                // Surface mung errors as children of a placeholder Li so
-                // LibraryRun can show them.
-                const err_Li = _C({ Library: 1 })
-                for (const msg of errors) err_Li.i({ mung_error: 1, msg })
-                w.i(err_Li)
-                w.c.ave.i(err_Li)
-                return w.i({ see: '⛔ Library errors — see UI' })
-            }
-
-            // Seed defaults if the file existed but was empty.
-            if (!Li_new.o({ Book: 1 }).length) {
-                for (const name of DEFAULT_BOOKS)
-                    Li_new.i({ Book: name, ok_pct: null, last_run_ms: null, active: false })
-                const first = Li_new.o({ Book: 1 })[0] as TheC | undefined
-                if (first) first.sc.active = true
-            }
-
-            // Place Li into w and into ave for reactivity.
-            w.i(Li_new)
-            w.c.ave.i(Li_new)
-
-            // Now that setup is complete, watch for subsequent mutations.
-            H.watch_c(Li_new, async () => {
-                w.c.ave?.bump_version()
-                H.auto_save_library(w, Li_new)
-            })
-
-            w.c.Li_loaded = true
-        }
-
-        // ── get Li every tick ─────────────────────────────────────────────────
-        const Li = w.o({ Library: 1 })[0] as TheC | undefined
-        if (!Li) return w.i({ see: '⏳ Library...' })
 
         // ?B= runner: stand up the Creduler — an outside-Story Lies on the top House.  It lives
         //  here (ambient) rather than inside the no_ambient Story Run it drives, so its channel
@@ -156,69 +106,158 @@
         if (H.c.boot_role === 'runner' && !H.c.creduler_up) {
             H.c.creduler_up = true
             H.i({ A: 'Lies' }).i({ w: 'Lies', runner: 1, creduler: 1 })
+            // Raise the Creduler gate NOW — before the just-created Lies has had a tick to
+            //  run Creduler_ensure.  Auto may tick ahead of the new Lies (it's not in this
+            //   pass's attend list), and the first-boot story-start below would otherwise
+            //    stand up the no_ambient Story Run the same beat, grab the clock, and the
+            //     Lies would never tick to load the spine → Story with no Run_A_<Book>.
+            H.oai({ Creduler_pending: 1 })
             console.log('🧪 Creduler up — runner Lies outside Story')
         }
-        let picks_a_book = (bname) => {
-            H.auto_spool_book_sample(Li)   // one %sample for the run being replaced
-            H.auto_reset_story(bname)
-            w.c.ave.roai({activeBook:1},{Book:bname})
-        }
 
-        // ── activateBook elvis ────────────────────────────────────────────────
-        for (const ev of this.o_elvis(w, 'activateBook')) {
-            const bname = ev.sc.Book as string
-            if (!bname) continue
-            for (const b of Li.o({ Book: 1 }) as TheC[]) {
-                if (b.sc.Book === bname) { b.sc.active = 1}
-                else { delete b.sc.active }
+        // ── Library page region (book browser + disk-backed Library) ──────────
+        //   Wholly skipped on the `run` page: a runner has no Library — it runs the one
+        //    Book it was booted with (?B), so there's nothing to browse or persist.
+        let Li: TheC | undefined
+        if (page === 'library') {
+            // register the LibraryRun UI once (Otro mounts it off watched:UIs)
+            if (!w.c.Lib_ui) {
+                w.c.Lib_ui = true
+                const uis = H.oai_enroll(H, { watched: 'UIs' })
+                uis.oai({ UI: 'Library' }, { component: LibraryRun })
             }
-            Li.bump_version()
-            picks_a_book(bname)
+
+            // ── load Library from disk once ───────────────────────────────────
+            if (!w.c.Li_loaded) {
+                const rw  = w.oai({ rw_queue: 1 })   // off-pump queue: serial %req items, owner-driven
+                const req = await rw.oai({ req: 'lib_read', rw_name: H.get_Library_path(), rw_op: 'read' })
+                if (!H.i_elvis_req(w, 'Wormhole', 'rw_op', { req }))
+                    return w.i({ see: '⏳ Library...' })
+
+                const reply = req.sc.reply
+                // Storage not ready (no share open, or the cloud nav still seeding): the
+                //  worker replies {error} rather than content.  That is NOT a decode
+                //   failure — drop the finished req so a fresh read re-issues next think,
+                //    and wait.  Without this the empty content fell through to decode and
+                //     fatal'd as 'empty snap' every tick until a backend appeared.
+                if (reply?.error) {
+                    rw.drop(req)
+                    return w.i({ see: '⏳ Library (waiting for storage)…' })
+                }
+
+                // not_found, or present-but-empty, both mean "no library yet" → defaults.
+                const empty = !(reply?.content ?? '').trim()
+                const { C: Li_new, errors } =
+                    (reply?.not_found || empty)
+                        ? {C: this.autovivify_Library(),errors:[]}
+                    : H.decode_wh_lines(reply.content)
+
+                if (errors.length || !Li_new) {
+                    console.error('Library decode errors (fatal):', errors)
+                    // Surface mung errors as children of a placeholder Li so
+                    // LibraryRun can show them.
+                    const err_Li = _C({ Library: 1 })
+                    for (const msg of errors) err_Li.i({ mung_error: 1, msg })
+                    w.i(err_Li)
+                    w.c.ave.i(err_Li)
+                    return w.i({ see: '⛔ Library errors — see UI' })
+                }
+
+                // Seed defaults if the file existed but was empty.
+                if (!Li_new.o({ Book: 1 }).length) {
+                    for (const name of DEFAULT_BOOKS)
+                        Li_new.i({ Book: name, ok_pct: null, last_run_ms: null, active: false })
+                    const first = Li_new.o({ Book: 1 })[0] as TheC | undefined
+                    if (first) first.sc.active = true
+                }
+
+                // Place Li into w and into ave for reactivity.
+                w.i(Li_new)
+                w.c.ave.i(Li_new)
+
+                // Now that setup is complete, watch for subsequent mutations.
+                H.watch_c(Li_new, async () => {
+                    w.c.ave?.bump_version()
+                    H.auto_save_library(w, Li_new)
+                })
+
+                w.c.Li_loaded = true
+            }
+
+            // ── get Li every tick ─────────────────────────────────────────────
+            Li = w.o({ Library: 1 })[0] as TheC | undefined
+            if (!Li) return w.i({ see: '⏳ Library...' })
         }
 
-        // ── resetStory elvis ──────────────────────────────────────────────────
-        for (const ev of this.o_elvis(w, 'resetStory')) {
-            const bname = (ev.sc.Book as string)
-                ?? (Li.o({ Book: 1,active:1 }) as TheC[])[0]?.sc.Book
-            if (bname) picks_a_book(bname)
+        const picks_a_book = (bname: string) => {
+            if (Li) H.auto_spool_book_sample(Li)   // one %sample for the run being replaced (library only)
+            H.auto_reset_story(bname)
+            w.c.ave?.roai({ activeBook: 1 }, { Book: bname })
         }
 
-        const active = (Li.o({ Book: 1 }) as TheC[]).find(b => b.sc.active)
+        // ── activateBook / resetStory elvises ─────────────────────────────────
+        //   Both arrive from LibraryRun clicks, so they only ever fire on the library page.
+        if (Li) {
+            for (const ev of this.o_elvis(w, 'activateBook')) {
+                const bname = ev.sc.Book as string
+                if (!bname) continue
+                for (const b of Li.o({ Book: 1 }) as TheC[]) {
+                    if (b.sc.Book === bname) { b.sc.active = 1}
+                    else { delete b.sc.active }
+                }
+                Li.bump_version()
+                picks_a_book(bname)
+            }
+            for (const ev of this.o_elvis(w, 'resetStory')) {
+                const bname = (ev.sc.Book as string)
+                    ?? (Li.o({ Book: 1,active:1 }) as TheC[])[0]?.sc.Book
+                if (bname) picks_a_book(bname)
+            }
+        }
+
+        const active = Li ? (Li.o({ Book: 1 }) as TheC[]).find(b => b.sc.active) : undefined
         // ── storyFinished elvis ───────────────────────────────────────────────
         for (const ev of this.o_elvis(w, 'storyFinished')) {
-            const bname = ev.sc.Book ?? active?.sc.Book ?? "Blank"
+            const bname = ev.sc.Book ?? active?.sc.Book ?? (H.c.book as string) ?? "Blank"
             const mode  = ev.sc.mode
             console.log(`📚 storyFinished: ${bname} [${mode}]`)
             w.i({storyFinished:1,Book:bname,mode})
-            H.auto_sync_story_stats(Li)
+            if (Li) H.auto_sync_story_stats(Li)   // book stats are library-only
             if (H.c.boot_role === 'runner') H.Cred_spool(w, bname, mode as string)  // spool the Creduler soul
             // < future: auto-advance to next book in Library order
         }
 
-        // ── start Story from active book (first time only) ────────────────────
-        //   ?B=<Book> (boot_param, stamped on H.c.book by Otro) overrides which book boots —
-        //    e.g. ?B=Editron brings up the editor as a Book.  We mark it active in the Library
-        //     (mirroring the activateBook elvis) so the UI agrees, then pick it; a B-book absent
-        //      from the Library still boots — picks_a_book → auto_reset_story stands up H:Story
-        //       with it, and Story_subHouse resolves its Run_A_<Book>.  No B → the active book.
-        if (!w.c.story_started) {
-            const boot_book = (H.c.book as string) || undefined
-            if (boot_book) {
+        // ── start Story (first boot only) ─────────────────────────────────────
+        //   ?B/?E=<Book> (boot_param, stamped on H.c.book by Otro) is the book to boot; the
+        //    library page falls back to its active book.  A boot_book absent from the Library
+        //     still boots — picks_a_book → auto_reset_story stands up H:Story and Story_subHouse
+        //      resolves its Run_A_<Book>.
+        //   HOLD while the Creduler loads the spine (a runner with %Creduler_pending up): don't
+        //    create w:Story into a half-loaded House; the Creduler wakes Auto (H.main) the moment
+        //     every ghost reads live.  Editor / plain app never stamp pending, so they start at once.
+        if (!w.c.story_started && H.oa({ Creduler_pending: 1 })) {
+            w.i({ see: '⏳ Creduler loading spine…' })
+        } else if (!w.c.story_started) {
+            const start = (H.c.book as string) || (active?.sc.Book as string | undefined)
+            if (start) {
                 w.c.story_started = true
-                for (const b of Li.o({ Book: 1 }) as TheC[]) {
-                    if (b.sc.Book === boot_book) b.sc.active = 1
-                    else delete b.sc.active
+                if (Li) {   // mark it active in the Library so the browser agrees
+                    for (const b of Li.o({ Book: 1 }) as TheC[]) {
+                        if (b.sc.Book === start) b.sc.active = 1
+                        else delete b.sc.active
+                    }
+                    Li.bump_version()
                 }
-                Li.bump_version()
-                picks_a_book(boot_book)
-            } else if (active) {
-                w.c.story_started = true
-                picks_a_book(active.sc.Book as string)
+                picks_a_book(start)
             }
         }
 
-        H.auto_sync_story_stats(Li)
-        w.i({ see: `📚 ${(Li.o({ Book: 1 }) as TheC[]).length} books` })
+        if (Li) {
+            H.auto_sync_story_stats(Li)
+            w.i({ see: `📚 ${(Li.o({ Book: 1 }) as TheC[]).length} books` })
+        } else {
+            w.i({ see: `▶ runner — ${(H.c.book as string) ?? '?'}` })
+        }
     },
 
 //#region Library encode / decode

@@ -593,7 +593,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
         // Creduler bootstrap: the runner Lies on Mundo loads the runtime ghosts (editor-
         //  compiled) live onto H, gating Story behind %Creduler_pending until they are.
-        if (w.sc.creduler) await H.Creduler_ensure()
+        if (w.sc.creduler) await H.Creduler_ensure(w)
 
         // ── one-time setup ────────────────────────────────────────────────────
         let examining = w.oai({ examining: 1 })

@@ -68,9 +68,7 @@ story:LakeNets
     noCyto
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=1.928
-      sample=1.747,at=1781660640
-      sample=2.495,at=1781665201
+    TimeTotal:beliefs,avg=1.895
       sample=2.372,at=1781665239
       sample=1.932,at=1781665283
       sample=1.022,at=1781711944
@@ -79,16 +77,18 @@ story:LakeNets
       sample=1.387,at=1781863070
       sample=1.744,at=1781863420
       sample=1.744,at=1781865121
-  step,dige:141d549ed0f412ad
-  step=2,dige:0108abe7e612a93b
-  step=3,dige:3ee972c1f6c8a6c1
-  step=4,dige:ce1af939d7738c97
-  step=5,dige:8edfc43d0a5e0217
-  step=6,dige:d5fa24cceb2688f3
-  step=7,dige:092312a36e8b15f8
-  step=8,dige:e4c68381464d3ebf
-  step=9,dige:09c96a5696e8ac44
-  step=10,dige:960c5b8e2d4edfe3
-  step=11,dige:1c9a34b2b014e6e6
-  step=12,dige:06afba98d1081435
-  step=13,dige:deb57f4bc839011d
+      sample=1.955,at=1781882033
+      sample=1.955,at=1781882044
+  step,dige:24a36e995e742f29
+  step=2,dige:88b62b05fa120c5f
+  step=3,dige:5d7fd634aa8f149f
+  step=4,dige:bf69e6afb339bd38
+  step=5,dige:90f2e145a0c462c1
+  step=6,dige:a4f9fcda8f64f864
+  step=7,dige:78d2dd4b4efb73f0
+  step=8,dige:953a90a2a83947ad
+  step=9,dige:b636906041bf5dd4
+  step=10,dige:c007db4a5fafdb83
+  step=11,dige:91b8b4fb22f13920
+  step=12,dige:e229086c124d2ac4
+  step=13,dige:9f10963050c742d3
