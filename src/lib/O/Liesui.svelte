@@ -21,6 +21,7 @@
     import WaftComp         from "$lib/O/ui/Waft.svelte"
     import DocRow           from "$lib/O/ui/DocRow.svelte"
     import PeelInput        from "$lib/O/ui/PeelInput.svelte"
+    import Vexpandy         from "$lib/O/ui/Vexpandy.svelte"
 
     let { H }: { H: House } = $props()
 
@@ -30,10 +31,12 @@
     let errors:      TheC[]           = $state([])
     let all_wafts:   TheC[]           = $state([])
 
-    // channel peer — %channel_peer stamped by Lies_pong_recv: the peer role is the VALUE
+    // channel peers — %channel_peer stamped by Lies_pong_recv: the peer role is the VALUE
     //  ({channel_peer:'runner'|'editor'}), NOT a separate `role` key; rtt + last-pong ms ride as sc.
-    //  `now` is re-read each tick so peer_live can age out a peer that stopped ponging.
-    let peer: TheC | undefined = $state()
+    //  We keep the whole set (not just [0]) so the health card can age each out, show rtt, and
+    //   flag a clash when more than one peer of the faced role is live.  `now` is re-read each
+    //    tick so liveness ages out a peer that stopped ponging.
+    let peers: TheC[] = $state([])
     let now = $state(0)
 
     // Cred — the runner's verdict per dock (%run_result, stamped by Lies_run_result_recv on the
@@ -58,7 +61,7 @@
             errors      = lies_w.o({ compile_error: 1 }) as TheC[]
             all_wafts   = lies_w.o({ Waft: 1 })          as TheC[]
             examining   = ex
-            peer        = lies_w.o({ channel_peer: 1 })[0] as TheC | undefined
+            peers       = lies_w.o({ channel_peer: 1 }) as TheC[]
             run_results = lies_w.o({ run_result: 1 })  as TheC[]
             now         = Date.now()
         })
@@ -77,14 +80,26 @@
         editor: 'editor — edits & compiles docks; hosts the relay that runners dial in to',
         lies:   'lies — editor/runner role not yet stamped on this w',
     }
-    // the peer this instance faces, and whether it ponged recently (channel proven live).
+    // the peer this instance faces (the opposite role), and the channel-health it reports.
+    //  `face` is the last peer of that role we heard from (may be stale); `live_face` are the
+    //   ones proven live by a recent pong (7s window, same as Lang's editor side).  peer_age_s
+    //    grows while silent, so a frozen channel reads as growing silence, not a stale "live" lie.
     let expect_peer = $derived(role === 'editor' ? 'runner' : role === 'runner' ? 'editor' : '')
-    let peer_live   = $derived(!!(peer?.sc?.last && now - (peer.sc.last as number) < 7000))
+    let face        = $derived(peers.find(p => p.sc?.channel_peer === expect_peer))
+    let live_face   = $derived(peers.filter(p =>
+        p.sc?.channel_peer === expect_peer && p.sc?.last && now - (p.sc.last as number) < 7000))
+    let peer_live   = $derived(live_face.length > 0)
+    let peer_rtt    = $derived(live_face[0]?.sc?.rtt as number | undefined)
+    let peer_clash  = $derived(live_face.length > 1)
+    let peer_age_s  = $derived(face?.sc?.last ? Math.round((now - (face.sc.last as number)) / 1000) : null)
 
     // ── Cred — code credibility at a glance: the runner's green/red per dock ──
     let cred_total = $derived(run_results.length)
     let cred_green = $derived(run_results.filter(r => r.sc?.ok).length)
     const base = (p: any) => String(p ?? '').split('/').pop()
+
+    // ── health card expand (Vexpandy block mode) ─────────────────────
+    let health_open = $state(false)
 
     // ── + Waft form ──────────────────────────────────────────────────
     let waft_form_open = $state(false)
@@ -125,14 +140,6 @@
     <div class="ls-header">
         {#if role}
             <span class="ls-role ls-role-{role}" title={ROLE_TITLE[role]}>{role}</span>
-        {/if}
-        {#if expect_peer}
-            <span class="ls-peer" class:ls-peer-live={peer_live}
-                  title={peer_live
-                      ? `${expect_peer} connected — RTT ${peer?.sc?.rtt}ms (channel carries)`
-                      : `${expect_peer} not connected — no pong yet`}>
-                {peer_live ? `● ${expect_peer} ${peer?.sc?.rtt}ms` : `○ ${expect_peer}`}
-            </span>
         {/if}
         <PeelInput
             label="Waft"
@@ -215,11 +222,44 @@
     {/if}
 
     {/if}
+
+    <!-- connection-health card — the channel relationship (editor↔runner): the unclickable
+         status readout that used to float over the Lang minimap.  It now lives in Lies, its
+         more natural home, pinned to the panel's bottom-right with a Vexpandy to tuck it slim
+         so it never buries the waft list.  The peer is the faced role — an editor watches its
+         runner, a runner watches its editor; the verdict glance reuses the Cred count. -->
+    {#if expect_peer}
+        <div class="ls-health" class:ls-health-live={peer_live} class:ls-health-open={health_open}>
+            <div class="ls-health-line">
+                <span class="ls-health-dot" class:on={peer_live}>{peer_live ? '●' : '○'}</span>
+                <span class="ls-health-peer">{expect_peer}</span>
+                {#if peer_live && peer_rtt != null}
+                    <span class="ls-health-rtt" title="bridged round-trip">{peer_rtt}ms</span>
+                {/if}
+                {#if peer_clash}<span class="ls-health-clash" title="{live_face.length} {expect_peer}s live — verdicts may disagree">⚠{live_face.length}</span>{/if}
+                <Vexpandy bind:expanded={health_open} />
+            </div>
+            {#if health_open}
+                <div class="ls-health-sub">
+                    {#if peer_live}heard {peer_age_s}s ago
+                    {:else if face}silent {peer_age_s}s — no pong
+                    {:else}no {expect_peer} has connected{/if}
+                </div>
+                {#if cred_total}
+                    <div class="ls-health-verdict" class:all-green={cred_green === cred_total}>
+                        🧪 {cred_green}/{cred_total} docks green
+                    </div>
+                {/if}
+            {/if}
+        </div>
+    {/if}
 </div>
 
 <style>
     .ls-ui {
+        position: relative;     /* anchors the bottom-right .ls-health card */
         font-size: 0.83rem; padding: 0.5rem;
+        padding-bottom: 1.7rem; /* reserve a strip so the collapsed card never sits over a list row */
         border: 1px solid #444; border-radius: 4px;
         background: #111; color: #ccc; min-width: 360px;
     }
@@ -233,11 +273,29 @@
     .ls-role-runner { color: #c4aaee; background: rgba(196, 170, 238, 0.12) }
     .ls-role-editor { color: #6ad0c0; background: rgba(106, 208, 192, 0.12) }
     .ls-role-lies   { color: #888;    background: rgba(136, 136, 136, 0.12) }
-    .ls-peer {
-        font-size: 0.75em; padding: 1px 6px; border-radius: 6px; align-self: center;
-        color: #888; background: rgba(136, 136, 136, 0.12);
+    /* ── connection-health card — bottom-right channel status, ex-Lang minimap floater ── */
+    .ls-health {
+        position: absolute;
+        bottom: 6px; right: 6px;
+        box-sizing: border-box;
+        max-width: calc(100% - 12px);
+        padding: 3px 6px;
+        background: rgba(9, 11, 13, 0.93);
+        border: 1px solid #1a1a1a; border-radius: 4px;
+        font-family: monospace; font-size: 0.62rem; line-height: 1.4;
+        color: #678; z-index: 6;
     }
-    .ls-peer-live { color: #6ad0c0; background: rgba(106, 208, 192, 0.16) }
+    .ls-health-live  { border-color: rgba(106, 208, 192, 0.3); }
+    .ls-health-line  { display: flex; align-items: center; gap: 0.3rem; }
+    .ls-health-line :global(.vx-btn) { margin-left: auto; width: 16px; height: 16px; font-size: 13px; }
+    .ls-health-dot   { color: #5a4a3a; }
+    .ls-health-dot.on{ color: #6ad0c0; }
+    .ls-health-peer  { color: #9ab0c4; letter-spacing: 0.04em; text-transform: uppercase; }
+    .ls-health-rtt   { color: #6a8; font-variant-numeric: tabular-nums; }
+    .ls-health-clash { color: #f0b040; font-weight: bold; }
+    .ls-health-sub   { color: #556; font-style: italic; margin-top: 2px; }
+    .ls-health-verdict          { margin-top: 2px; color: #8a9; }
+    .ls-health-verdict.all-green{ color: #6ad0c0; }
     .ls-cred {
         display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center;
         margin-bottom: 0.4rem; padding: 0.2rem 0.3rem; border-radius: 3px;

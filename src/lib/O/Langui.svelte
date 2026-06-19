@@ -450,13 +450,6 @@
     // >1 live runner: the editor can't tell which one's verdict is canonical.
     let runner_clash = $derived(live_runners.length > 1)
 
-    // connection-health card — the editor↔runner relationship at a glance.  runner_peer is
-    //  the last runner we heard a pong from (may be stale); peer_age_s is how long since, so
-    //   a frozen channel reads as a growing silence rather than a stale "connected" lie.
-    let runner_peer = $derived(peers.find(p => p.sc?.channel_peer === 'runner'))
-    let peer_live   = $derived(live_runners.length > 0)
-    let peer_age_s  = $derived(runner_peer?.sc?.last ? Math.round((now - (runner_peer.sc.last as number)) / 1000) : null)
-
     // run_result.dige is the full dige; the compile leg shows a 5-char slice.
     let ran_dige = $derived(String(run_result?.sc?.dige ?? '').slice(0, 5))
     let ran_ok   = $derived(!!run_result?.sc?.ok)
@@ -1657,34 +1650,6 @@
         </div>
         {/if}
 
-        <!-- connection-health card — the LiesLies editor↔runner relationship.  Lives INSIDE
-             .lte-cm beside the minimap so it pins to the editor viewport's bottom-right: a
-             reflection of the minimap on the ceiling, on the same right offset + width.  Always
-             present (outside the minimap_open gate) so "is the other end there, and what is it
-             saying" is answerable at a glance without reading the console. -->
-        <div class="lte-health" class:lte-health-live={peer_live}>
-            <div class="lte-health-line">
-                <span class="lte-health-dot" class:on={peer_live}>{peer_live ? '●' : '○'}</span>
-                <span class="lte-health-peer">runner</span>
-                {#if peer_live && runner_rtt != null}
-                    <span class="lte-health-rtt" title="bridged round-trip">{runner_rtt}ms</span>
-                {/if}
-                {#if runner_clash}<span class="lte-health-clash" title="{live_runners.length} runners live — verdicts may disagree">⚠{live_runners.length}</span>{/if}
-            </div>
-            <div class="lte-health-sub">
-                {#if peer_live}heard {peer_age_s}s ago
-                {:else if runner_peer}silent {peer_age_s}s — no pong
-                {:else}no runner has connected{/if}
-            </div>
-            {#if runner_phase}
-                <div class="lte-health-verdict lte-run-{runner_phase}">
-                    {#if runner_phase === 'good'}✓ ran {ran_dige} — green
-                    {:else if runner_phase === 'bad'}✗ ran {ran_dige} — red{run_result?.sc.errors ? ` (${run_result.sc.errors})` : ''}
-                    {:else if runner_phase === 'working'}◴ running {_compile?.sc.dige}…
-                    {:else}⟳ stale {ran_dige}{/if}
-                </div>
-            {/if}
-        </div>
         {#if dock}
         <!-- Frozen-frame overlay — MUST live INSIDE .lte-cm.  The editor's whole
              appearance comes from Langui's `.lte-cm :global(.cm-*)` rules (there is no
@@ -1917,36 +1882,6 @@
         z-index: 1;
     }
     .lte-mm-host > :global(*) { pointer-events: auto; }
-
-    /* ── connection-health card — LiesLies editor↔runner relationship ──────────
-       Absolute inside .lte-cm (its containing block, position:relative — same as
-       .lte-mm-host), so bottom/right track the EDITOR VIEWPORT, not the taller .lte
-       block below the Points panel.  Same right offset + width as the minimap, pinned
-       to the floor: a reflection of the minimap on the ceiling.  z-index above
-       lte-mm-host (1) so it stays legible whether the minimap is open or closed.
-       pointer-events:none so it never steals the minimap's bottom from a click. */
-    .lte-health {
-        position: absolute;
-        bottom: 0.4rem;
-        right:  var(--lte-scrollbar-w);
-        width:  var(--lte-minimap-w);
-        box-sizing: border-box;
-        padding: 4px 7px;
-        background: rgba(9, 11, 13, 0.93);
-        border: 1px solid #1a1a1a;
-        border-radius: 4px 0 0 4px;
-        font-family: monospace; font-size: 0.62rem; line-height: 1.4;
-        color: #678; z-index: 11; pointer-events: none;
-    }
-    .lte-health-live   { border-color: rgba(106, 208, 192, 0.3); }
-    .lte-health-line   { display: flex; align-items: baseline; gap: 0.3rem; }
-    .lte-health-dot    { color: #5a4a3a; }
-    .lte-health-dot.on { color: #6ad0c0; }
-    .lte-health-peer   { color: #9ab0c4; letter-spacing: 0.04em; }
-    .lte-health-rtt    { color: #6a8; margin-left: auto; font-variant-numeric: tabular-nums; }
-    .lte-health-clash  { color: #f0b040; font-weight: bold; }
-    .lte-health-sub    { color: #556; font-style: italic; }
-    .lte-health-verdict{ margin-top: 2px; padding: 1px 4px; border-radius: 2px; display: inline-block; }
 
     /* bookmark Decoration.mark — subtle underline + tinted bg so overlapping
        ranges read clearly. One rule works even when marks overlap because

@@ -1,13 +1,9 @@
 Credulation
-  run=0,at=1781890123.921,ok=0,ok_pct=0,book:PortPlan,mode:check
-    uses:Ghost_N_Peeroleum,dige:9f7f49199da2fc1b
+  run=0,at=1781893828.323,ok,ok_pct,book:PortPlan,mode:check
+    uses:Ghost_N_Peeroleum,dige:3840ee1b2536634d
     uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
     uses:Ghost_Story_Peregrination,dige:6ad01960423b9e20
-  run,at=1781890622.737,ok,ok_pct,book:PortPlan,mode:check
-    uses:Ghost_N_Peeroleum,dige:9f7f49199da2fc1b
-    uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
-    uses:Ghost_Story_Peregrination,dige:6ad01960423b9e20
-  run=2,at=1781890625.981,ok,ok_pct,book:PortPlan,mode:check
-    uses:Ghost_N_Peeroleum,dige:9f7f49199da2fc1b
+  run,at=1781893862.681,ok,ok_pct,book:PortPlan,mode:check
+    uses:Ghost_N_Peeroleum,dige:3840ee1b2536634d
     uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
     uses:Ghost_Story_Peregrination,dige:6ad01960423b9e20

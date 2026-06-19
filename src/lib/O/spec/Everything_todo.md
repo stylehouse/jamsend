@@ -168,14 +168,20 @@ Fold work uncommitted (human commits on host). Open:
 
 ### Interest
 Graduated to prod (gate InterestLive); the real Lang↔Lies channel is live.
-Post-graduation work is mostly the **metromap vision** — animated SVG:
+Post-graduation work *was* mostly the **metromap vision** — animated SVG:
  Interestily → activeWhat (obscured network) → Points, with folded-away
-  "elsewheres"; the surprise_read popover was the first proof. **Blocked on a
-   human call**: confirm metromap shape, drum-sequencing, priority.
-Smaller threads: self-arming havoc limbs parked on a known race (fix = host in
- the Funkcion pump so it runs after the dock reads); PeelInput × dismissal CRUD
-  merge dangles; escalate target lands on the whole Lang/Lies House, not the
-   Liesui sub-element.
+  "elsewheres"; the surprise_read popover was the first proof. **Priority call
+   made 2026-06-19: metromap pushed much later** (still the destination, not the
+    next move); when revisited, evaluate **Svelvet** (github.com/open-source-labs/
+     Svelvet) as the node/edge substrate. The **Lens "generalissimo" is low
+      motivation** — a UI-nester whose need isn't proven; parked until a concrete
+       consumer pulls for it.
+Smaller threads still live: the runner status panel (the unclickable
+ minimap-over-hoverer `.lte-health` in Langui) is moving **out of Lang into Lies**
+  (Liesui, bottom-right absolute, with a Vexpandy) — the more natural home; self-
+   arming havoc limbs parked on a known race (fix = host in the Funkcion pump so it
+    runs after the dock reads); PeelInput × dismissal CRUD merge dangles; escalate
+     target lands on the whole Lang/Lies House, not the Liesui sub-element.
 
 ### reactivity
 One low-priority unknown (`reactivity_docs.md`):

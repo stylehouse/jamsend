@@ -1,7 +1,7 @@
 Snap:H
   H:Peregrination,Run
     A:Alice
-      self,round=2	{"mung":["age"]}
+      self,round	{"mung":["age"]}
       w:Peeroleum
         Peering,name:alice
           Pier,pub:bob
@@ -10,9 +10,10 @@ Snap:H
           req:p2paddy
         transport,type:mock
         active_transport,type:mock,open
-        self,round=2	{"mung":["age"]}
+        self,round	{"mung":["age"]}
+        seemingly:ya aooooolly,figaro:Vanology
     A:Bob
-      self,round=2	{"mung":["age"]}
+      self,round	{"mung":["age"]}
       w:Peeroleum
         Peering,name:bob
           Pier,pub:alice
@@ -21,52 +22,13 @@ Snap:H
           req:p2paddy
         transport,type:mock
         active_transport,type:mock,open
-        self,round=2	{"mung":["age"]}
+        self,round	{"mung":["age"]}
+        seemingly:ya aooooolly,figaro:Vanology
     A:Peregrination
-      self,round=6	{"mung":["age"]}
+      self,round=3	{"mung":["age"]}
       w:Peregrination
-        req:ensure_compiled,path:Ghost/N/Peeroleum.g,finished
-        req:ensure_compiled,path:Ghost/N/Tribunal.g,finished
-        req:ensure_compiled,path:Ghost/Story/Peregrination.g,finished
-        compiled,path:Ghost/N/Peeroleum.g
-        compiled,path:Ghost/N/Tribunal.g
-        compiled,path:Ghost/Story/Peregrination.g
         req:wrangle,eternal,ok
         reached:step_2
+        self,round=3	{"mung":["age"]}
+        see:y Peregrination — apparatus ready yyy!
         witnessed:step_2
-        self,round=6	{"mung":["age"]}
-    A:Lies
-      self,round=13	{"mung":["age"]}
-      w:Lies,runner,dontSnap
-    A:Lang
-      self,round=12	{"mung":["age"]}
-      w:Lang,runner,dontSnap
-    A:Pantheate
-      self,round=9	{"mung":["age"]}
-      w:Pantheate
-        include:gen/N/Peeroleum.go
-        req:include,gen_path:gen/N/Peeroleum.go,path:Ghost/N/Peeroleum.g,source_dige:151f815dce7a5444,ghostmeta_name:Ghostmeta_Ghost_N_Peeroleum,permanent,live_dige:151f815dce7a5444,finished
-        include:gen/N/Tribunal.go
-        req:include,gen_path:gen/N/Tribunal.go,path:Ghost/N/Tribunal.g,source_dige:629863cbce4ca045,ghostmeta_name:Ghostmeta_Ghost_N_Tribunal,permanent,live_dige:629863cbce4ca045,finished
-        include:gen/Story/Peregrination.go
-        req:include,gen_path:gen/Story/Peregrination.go,path:Ghost/Story/Peregrination.g,source_dige:fe4c4e69c837fa9c,ghostmeta_name:Ghostmeta_Ghost_Story_Peregrination,permanent,live_dige:fe4c4e69c837fa9c,finished
-        self,round=9	{"mung":["age"]}
-        o_elvis:Ghost_update_notify
-    watched:ave
-      examining
-      Languinio,dontSnap,no_doc
-    watched:UIs
-      UI:Lies	{"ref":{"component":"Function()"}}
-      UI:Langui	{"ref":{"component":"Function()"}}
-      UI:Pantheate-include,gen_path:gen/N/Peeroleum.go	{"ref":{"component":"Function()"}}
-      UI:Pantheate-include,gen_path:gen/N/Tribunal.go	{"ref":{"component":"Function()"}}
-      UI:Pantheate-include,gen_path:gen/Story/Peregrination.go	{"ref":{"component":"Function()"}}
-    watched:actions
-      action,role:debookmark,label:-marks	{"ref":{"fn":"Function()"}}
-      action,role:enbookmark,label:+marks	{"ref":{"fn":"Function()"}}
-      action,role:compile,label:compile	{"ref":{"fn":"Function()"}}
-      action,role:lang_pick,kind:dropdown,label:language,icon:✎,value:stho	{"ref":{"options":"[Object(),Object()]","on_pick":"Function()"}}
-      action,role:gen_parser,label:gen,icon:⚙,disabled:true	{"ref":{"fn":"Function()"}}
-      action,role:nogen,label:nogen,icon:nogen,cls:toggle-off	{"ref":{"fn":"Function()"}}
-      action,role:softgen,label:softgen,icon:softgen,cls:toggle-off	{"ref":{"fn":"Function()"}}
-      action,role:compo,label:compo,icon:compo,cls:toggle-off	{"ref":{"fn":"Function()"}}

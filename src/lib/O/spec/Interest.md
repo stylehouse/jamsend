@@ -189,6 +189,13 @@ The through-line: a surprise_read (external edit conflict on an open Doc) **pops
 
 ## 5. The metromap & the lens "generalissimo" — the future picture (not now)
 
+**Priority (2026-06-19): pushed much later.** The metromap is deferred well past the near-term work — it
+ stays the destination, not the next move. When it does come up, **evaluate Svelvet**
+  (https://github.com/open-source-labs/Svelvet) as the node/edge substrate rather than hand-rolling the
+   SVG — a Svelte-native flow-diagram lib may carry the folding-network draw for free. **The Lens
+    "generalissimo" is low motivation** (see the owner's read below): it's essentially a UI-nester, and
+     it's unclear how much we actually need it yet — do not start it on the metromap's behalf.
+
 The popover proves the "Interest pops out big attention" mechanic. The picture the owner wants is a tiny
  **animated SVG metromap** of the two layers of Interest/Point working: (1) **Interestily sprouts the
   activeWhat** via an *obscured network*, then (2) the activeWhat **sprouts its Points**. Nodes carry
@@ -196,7 +203,9 @@ The popover proves the "Interest pops out big attention" mechanic. The picture t
     readable behind the words**. No `×` (dismissal lives in PeelInput). This extends the InterestStrip
      switcher from a button strip toward a spatial channel map.
 
-**The lens as UI-pluggability "generalissimo"** (the reverted `InterestLens` was too small):
+**The lens as UI-pluggability "generalissimo"** (the reverted `InterestLens` was too small) — **low
+ motivation (2026-06-19):** it reads as a UI-nester, and the need isn't proven yet; parked until a
+  concrete consumer pulls for it:
 - A **Lens is optional UI pluggability** — host the *meaning* of an Interest at Lang (or wherever), used
    only if something wants it, **driven by a property on the Waft** (`sc.lens` is the seed). Lies grows
     full UIs that strip back to the "unillusioned Waft"; via an Interest a thing offers a *tiny* UI.

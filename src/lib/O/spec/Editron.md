@@ -253,6 +253,46 @@ First slice (mirrors §201's): one Funkcion bound to one dock via `%of_dock`, re
  `%run_result.ok` and colouring its embed red|green|working. Generalise the bind to every Funkcion on load,
   and per-step granularity, after the single light works end to end.
 
+## 5e. Credence — the editor-side admirer (the Creduler's opposite)
+
+The Creduler accrues credibility (Credulate HEAD + Credulation trail) but today nothing reads it back —
+ the soul is spooled write-only. **Credence** is the missing other half: the editor-side board that
+  acquires and admires those Credulations. (Supersedes §6's one-line "Editor-side Cred Waft".)
+
+- **A plain Waft, NOT an Interest.** `Waft:Credence` sits above the doc under test (e.g. above
+   `Waft:Ghost/Net/Easy`). You navigate to it and click — direct manipulation, not cursored attention — so
+    it forgoes the Interest channel entirely. Relevance here comes from runs (the matrix), not the cursor.
+- **Tests = Library Books, as Funkcions.** First slice: a hand-made `Waft:Credence` holding a few `Port*`
+   Books as Funkcion test-lights (§5d). Click one to run it; click the group to fan out over all rows on
+    one shared version-set.
+- **The matrix — the artifact, NOT a hoard of run instances.** Rows = Books (tests), columns = Docs
+   (ghosts), each cell = `{relevant?, version(dige), verdict}`. The snaps stay on the runner
+    (`Story/This`); Credence holds only the matrix — light, editor-side — and pulls a snap across on demand
+     to diff a cell. Relevancy is **observed** from runs (the Creduler's `GhostInclude` + the rungo
+      `demands` know what loaded), with a **declared** seed (a Funkcion's `%of_dock`/Books) so a never-run
+       test still shows its column.
+- **Nondeterminism is a cell property**, not a trail scan: a cell seen both ✓ and ✗ at the SAME
+   version-set (see the §6 start==end guard — drift must not masquerade as nondeterminism).
+- **Progress relay (optional, on top of the big-ok).** Story already emits
+   `story_analysis {the_steps,live,frontier}` per tick; the Creduler relays it as a lightweight `run_phase`
+    frame so a Funkcion shows `◴ 3/5` rather than a bare spinner. The load-bearing signal is still the
+     final verdict (Phase 1, done); this is garnish.
+
+**Driving the runner from Credence — Book becomes runtime, persisted, remotely set.** Clicking a `Port*`
+ test must point the runner at that Book WITHOUT touching the URL (`?B=` is a crusty boot-only seed).
+- The command is editor→runner "become Book X" → the runner runs `resetStory{Book:X}`. **Enabler landed
+   this session:** `resetStory` now works on a runner with no Library (`Auto.svelte` — lifted out of
+    `if (Li)`, Book off the event or `H.c.book`), so the path the click needs already fires.
+- **Persist the current Book** to `localStorage` (per-origin — fits "one runner chrome shared on a dev
+   machine"); NOT OPFS (forbidden under `?B=`/`?E=` dev boot, [[opfs-illegal-under-dev-boot]]). Precedence:
+    persisted current-book > `?B=` seed; `?B=` degrades to first-time seed / hard override. A refresh then
+     returns to the remote-controlled state (the cred ledger is already persisted), so the shared runner
+      tab resumes where you left it.
+
+**Build order:** (a) Funkcion→Book/dock bind (§5d first slice); (b) editor→runner "become Book" frame +
+ `localStorage` persist; (c) the start==end version guard feeding the matrix; (d) the `run_phase` progress
+  relay last.
+
 ## 6. Creduler — open slices
 
 The Creduler is credibility of code over runs. Its missing half is **a runner that drives a Story to a
@@ -269,8 +309,12 @@ The Creduler is credibility of code over runs. Its missing half is **a runner th
    git rev. `Cred*.snap` are Lines-encoded now; commit-status still stubbed null. (The overlay
     write-verdict pattern — write to sandbox every run, commit on acceptance — already exists in the
      Wormhole backends; reuse it.)
-- **Nondeterminism** from the trail (same version-set, differing outcomes).
-- **Editor-side Cred Waft** (Funkcions) — expands to list runners, normally collapsed.
+- **Nondeterminism** is a Credence cell (§5e) seen both ✓ and ✗ at the SAME version-set. Guard: capture the
+   version-set at the START and END of a run — start ≠ end means a version drifted mid-run (an HMR landed),
+    so the verdict is suspect (discard / re-run, don't record); only start == end with a differing outcome
+     is true nondeterminism. Don't conflate drift with nondeterminism.
+- **Editor-side Cred Waft** — now specced as **Credence** (§5e): the board that reads the Credulations the
+   Creduler spools. Expands to list runners, normally collapsed.
 - `%rungo` dedupe — don't re-run an already-run seq (seq-authority is in place; the guard is NOT wired).
 
 ## 7. Other queued (not started)

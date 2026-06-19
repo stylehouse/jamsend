@@ -15,22 +15,26 @@ story:PortPlan
     For
     noCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.023
-      sample=0.014,at=1781576532
-      sample=0.021,at=1781576648
-      sample=0.023,at=1781576899
-      sample=0.014,at=1781616484
+    TimeTotal:beliefs,avg=0.028
       sample=0.008,at=1781616535
       sample=0.016,at=1781889888
       sample=0.016,at=1781889898
       sample=0.068,at=1781890123
       sample=0.032,at=1781890622
       sample=0.018,at=1781890625
+      sample=0.027,at=1781891737
+      sample=0.048,at=1781891775
+      sample=0.037,at=1781893828
+      sample=0.014,at=1781893862
     TimeTotal:step,avg=0.015
       sample=0.008,at=1781889888
       sample=0.008,at=1781889898
       sample=0.034,at=1781890123
       sample=0.016,at=1781890622
       sample=0.009,at=1781890625
+      sample=0.014,at=1781891737
+      sample=0.024,at=1781891775
+      sample=0.019,at=1781893828
+      sample=0.007,at=1781893862
   step,dige:e5e0e345ad397b93
   step=2,dige:9e380eacd379ad76
