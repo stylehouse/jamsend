@@ -15,11 +15,9 @@ Library
       TimeTotal:beliefs,avg=0.081
         sample=0.077,at=1781080326
         sample=0.085,at=1781607913
-  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1781707445.993
+  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1781862872.755
     TimeSpool
-      TimeTotal:beliefs,avg=1.992
-        sample=2.793,at=1781665168
-        sample=1.932,at=1781680195
+      TimeTotal:beliefs,avg=2.012
         sample=1.387,at=1781680223
         sample=1.834,at=1781680244
         sample=2.221,at=1781681507
@@ -28,10 +26,11 @@ Library
         sample=1.497,at=1781704670
         sample=2.25,at=1781705324
         sample=2.662,at=1781707448
-  Book:LakeSurfer,ok_pct=0,last_pct_change=1779607681.571,done=2,last_run_ms=1781664694.333
+        sample=2.341,at=1781862804
+        sample=2.582,at=1781862872
+  Book:LakeSurfer,ok_pct=0,last_pct_change=1779607681.571,done=2,last_run_ms=1781863048.346
     TimeSpool
-      TimeTotal:beliefs,avg=0.836
-        sample=0.777,at=1781573422
+      TimeTotal:beliefs,avg=0.812
         sample=0.292,at=1781573493
         sample=0.547,at=1781604769
         sample=0.868,at=1781620407
@@ -41,6 +40,7 @@ Library
         sample=0.62,at=1781630446
         sample=1.456,at=1781631165
         sample=1.334,at=1781664695
+        sample=0.54,at=1781863051
   Book:Peeringinst,ok_pct=0.5,last_pct_change=1779063073.279,done=2,last_run_ms=1779063093.816
   Book:PeeringLive,ok_pct=0.17,last_pct_change=1780023433.073,done=6,last_run_ms=1780418711.44
     TimeSpool
@@ -259,10 +259,9 @@ Library
         sample=1.336,at=1781715010
         sample=0.815,at=1781715794
         sample=0.846,at=1781750525
-  Book:Peregrination,ok_pct=0,done,last_run_ms=1781837632.278,active
+  Book:Peregrination,ok_pct=0,done,last_run_ms=1781862490.6
     TimeSpool
-      TimeTotal:beliefs,avg=0.804
-        sample=0.477,at=1781715374
+      TimeTotal:beliefs,avg=0.869
         sample=0.935,at=1781717222
         sample=1.238,at=1781749851
         sample=0.72,at=1781782587
@@ -272,3 +271,4 @@ Library
         sample=0.785,at=1781783856
         sample=0.073,at=1781785071
         sample=2.171,at=1781837633
+        sample=1.131,at=1781862498

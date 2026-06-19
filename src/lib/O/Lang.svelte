@@ -1806,6 +1806,19 @@
         // This pump consumes any pending trickle — re-armed below if we bow out still firing.
         if (req.c.trickle_timer) { clearTimeout(req.c.trickle_timer as any); req.c.trickle_timer = undefined }
 
+        // Compile ONLY .g → .go.  A non-.g dock (.md, .svelte, a .ts opened for reading) has no
+        //  gen target, so the stho compiler has no business running on it — finish straight away.
+        //   This also closes the worst hang: a file type with no grammar wired never satisfies the
+        //    parser gate below, so without this it would sit firing forever.  Point NAVIGATION for
+        //     non-.g (tsstho Points in .ts/.svelte, markdown Points in the specs) is wanted, but it
+        //      belongs on its own parse-for-Points path that emits NO .go — not bolted onto this
+        //       hard-compile gate.  Not built yet (see [[creduler]] handover notes).
+        if (!H.Lies_gen_path(dock.sc.dock as string)) {
+            H.Langspinner(w, 'compile', true)
+            languish.finish(req)
+            return
+        }
+
         // Wait for the language PARSER, not just the state.  The editor (Langui) mints the
         //  EditorState and arms this req, but editorExtensions is built via `await lang(...)`,
         //   so there is a window where the state exists with no parser on its `language` facet.
@@ -1907,16 +1920,23 @@
         const change = languinio.oai({ Change: 1 })
 
         // roai replaces the particle when sc doesn't match → new C ref → Svelte re-renders.
+        // Snapped booleans ride as 1-or-ABSENT, never `false` (project policy): a JS boolean in
+        //  sc is not a clean scalar string, and `dim:false` snapped inconsistently (sometimes a
+        //   flat key, sometimes a munged JSON object).  Build each leg's sc with only the truthy
+        //    flags present as 1; roai's replace drops the key cleanly when a flag goes false.
         await change.roai({ backend: 1 }, { dige: text_dige })
 
         const disk_dim = !!text_dige && !!disk_dige && text_dige !== disk_dige
-        await change.roai({ storage: 1 }, { dige: disk_dige, dim: disk_dim })
+        await change.roai({ storage: 1 }, disk_dim ? { dige: disk_dige, dim: 1 } : { dige: disk_dige })
 
         if (output) {
             const compile_dim = pending || (!!compiled_dige && !!disk_dige && compiled_dige !== disk_dige)
             // pending rides as its own flag (not just folded into dim) so the strip can
             //  tell "actively compiling — strain" from "merely stale — fidget".
-            await change.roai({ compile: 1 }, { dige: compiled_dige, dim: compile_dim, pending: pending || undefined, secs: compile_cost })
+            const sc: Record<string, any> = { dige: compiled_dige, secs: compile_cost }
+            if (compile_dim) sc.dim     = 1
+            if (pending)     sc.pending = 1
+            await change.roai({ compile: 1 }, sc)
         } else {
             for (const old_c of change.o({ compile: 1 }) as TheC[]) change.drop(old_c)
         }

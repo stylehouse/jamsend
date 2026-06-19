@@ -1,15 +1,16 @@
 Snap:H
   H:LangTiles,Run
     A:Lies
-      self,round=33	{"mung":["age"]}
+      self,round=32	{"mung":["age"]}
       w:Lies
         Opt
           nowriting:^Ghost
+          dontSnapGhostList
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/LangTiles/Waftily/toc.snap,waft_path:Story/LangTiles/Waftily
             known,dige:ae7dc27a85992c99,kind:read	{"mung":["at"]}
           Good,type:text/Waft,path:wormhole/GhostList/toc.snap,waft_path:GhostList
-            known,dige:d3d7d22dd688afee,kind:read	{"mung":["at"]}
+            known,dige:49050014ac279775,kind:read	{"mung":["at"]}
           Good,type:text/Doc,path:Ghost/test/LangTiles.g
             known,dige:e633c97628b42c32,kind:read	{"mung":["at"]}
         examining	{"loopy":1}
@@ -35,70 +36,20 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781707344360,kind:cold
-          want=1781707344420,kind:cold
-          want=1781707345047,kind:cold,resolved
+          want=1781862805882,kind:cold
+          want=1781862805929,kind:cold
+          want=1781862806182,kind:cold,resolved
         o_elvis:dock_askies
-        Waft:GhostList,lists	{"mung":["seeded"]}
-          Funkcion:dirlist,interval_ms=8000	{"mung":["walked_at"]}
-          group:src/lib,dir:src/lib
-            sub:src/lib/O,name:O
-            sub:src/lib/data,name:data
-            sub:src/lib/gen,name:gen
-            sub:src/lib/ghost,name:ghost
-            sub:src/lib/mostly,name:mostly
-            sub:src/lib/p2p,name:p2p
-            Doc:src/lib/FTrusting.svelte,name:FTrusting
-            Doc:src/lib/MTrusting.svelte,name:MTrusting
-            Doc:src/lib/Trust.svelte.ts,name:Trust
-            Doc:src/lib/Y.svelte.ts,name:Y
-          group:src/lib/O,dir:src/lib/O
-            sub:src/lib/O/D,name:D
-            sub:src/lib/O/lang,name:lang
-            sub:src/lib/O/shelved,name:shelved
-            sub:src/lib/O/spec,name:spec
-            sub:src/lib/O/test,name:test
-            sub:src/lib/O/ui,name:ui
-            Doc:src/lib/O/Cyto.svelte,name:Cyto
-            Doc:src/lib/O/Cytui.svelte,name:Cytui
-            Doc:src/lib/O/Ghost.svelte,name:Ghost
-            Doc:src/lib/O/Housing.svelte.ts,name:Housing
-            Doc:src/lib/O/Hovercraft.svelte,name:Hovercraft
-            Doc:src/lib/O/Lang.svelte,name:Lang
-            Doc:src/lib/O/LangCompiling.svelte,name:LangCompiling
-            Doc:src/lib/O/LangGraft.svelte,name:LangGraft
-            Doc:src/lib/O/LangLang.svelte,name:LangLang
-            Doc:src/lib/O/LangPoint.svelte,name:LangPoint
-            Doc:src/lib/O/LangRegions.svelte,name:LangRegions
-            Doc:src/lib/O/LangSion.svelte,name:LangSion
-            Doc:src/lib/O/LangWhatwhere.svelte,name:LangWhatwhere
-            Doc:src/lib/O/Langui.svelte,name:Langui
-            Doc:src/lib/O/Lies.svelte,name:Lies
-            Doc:src/lib/O/LiesCortex.svelte,name:LiesCortex
-            Doc:src/lib/O/LiesCurse.svelte,name:LiesCurse
-            Doc:src/lib/O/LiesEnd.svelte,name:LiesEnd
-            Doc:src/lib/O/LiesStore.svelte,name:LiesStore
-            Doc:src/lib/O/Liesui.svelte,name:Liesui
-            Doc:src/lib/O/MachPeerily.svelte,name:MachPeerily
-            Doc:src/lib/O/Matstyle.svelte,name:Matstyle
-            Doc:src/lib/O/Otro.svelte,name:Otro
-            Doc:src/lib/O/Storui.svelte,name:Storui
-            Doc:src/lib/O/Story.svelte,name:Story
-            Doc:src/lib/O/Text.svelte,name:Text
-            Doc:src/lib/O/Thang.svelte,name:Thang
-            Doc:src/lib/O/ThangShelf.svelte,name:ThangShelf
-            Doc:src/lib/O/Thangs.svelte,name:Thangs
-            Doc:src/lib/O/stho.ts,name:stho
-            Doc:src/lib/O/Interest.svelte,name:Interest	{"mung":["noticed_at"]}
+        Waft:GhostList,lists,O_defaulted,dontSnap	{"mung":["seeded"]}
         Funkcions
           req:Funkcion,funk_id:GhostList/dirlist,eternal,ok
-        Waft:Ting/2026-06-18/024230,takes
-          Point:theCompiledStuff,doc:Ghost/test/LangTiles.g,n=2,weight=4,last=1781707352300,first=1781707350174,heat=4.346,warm=0.5,bright,held,long
-            {"say":"o hut/although:1/they,can,be,mixed","at":1781707352300}
-        self,round=33	{"mung":["age"]}
+        Waft:Ting/2026-06-19/215328,takes
+          Point:theCompiledStuff,doc:Ghost/test/LangTiles.g,n=2,weight=4,last=1781862811029,first=1781862808862,heat=4.458,warm=0.5,bright,held,long
+            {"say":"o hut/although:1/they,can,be,mixed","at":1781862811029}
+        self,round=32	{"mung":["age"]}
         see:🗂 1 doc · 3 Wafts
     A:Lang
-      self,round=34	{"mung":["age"]}
+      self,round=36	{"mung":["age"]}
       w:Lang
         Opt
           txtsyntaxdump
@@ -164,7 +115,7 @@ Snap:H
               req:text_loaded,maz=3,finished
               {"req":"text_mutated","maz":2,"eternal":1,"text":"// yeti etc!!!!!\ntheCompiledStuff(A,w) {\n    i hut/toot:3\n    o hut/toot$\n    let la = i hut/$toot\n    o hut/although:1/they,can,be,mixed\n    i $la/something\n    i thung/wither/etc\n    i yeses/because,it:2\n    i yeses/because:five,it:5\n    A i %prefixy:'stuffule sivi'\n    A i %prefixy:`i th/re/e = ${1 + 2}`\n    A i %prefixy:stuff,wither:angles\n\n    A o %wither$\n    A o yeses$\n    // row capture: wither:1 filters, vish = the row C (%prefixy,wither)\n    A o wither$vish\n\n    // . binds tight and grabs the %wither value to tuple amongst other stuff\n    A o prefixy,wither.$ang\n    // multi-capture destructure: ang flows in on %are, then so|module|etc each\n    //  grab a value out — so auto-names so, the others name sooo|tv|etc|year.\n    //   .$ takes the value (?.sc,key); a bare $ would take the row C instead.\n    w i angles/are:$ang,etc:3/so:ont.$sooo,module.$tv,etc.$\n    w i angles/are:$ang,etc:3/so:ont.$soow,module.$tw,etc$yeaw\n    \n    // you can declare let variables like this:\n    $its = 'ferv'\n    // should be strings 'stuff', 'levels', 'its', but then sits='ferv'\n    A i %prefixy:stuff/wither:levels,its:its,sits:$its\n    \n\n    &nothinging,A,w,555\n    &nothinging,A,w,{figuira:'out', all_these:3}\n    if (&nothinging,A,w,{figuira:'out', all_these:3}) 3+2+4\n    if &nothinging,A,w,{figuira:'out', all_these:3}\n        && 6\n        3 + 3\n    // we should prefer no semicolon on the end of control structures\n    //  just continuating expr and indent indicate:\n    if &nothinging,A,w,{figuira:'out', all_these:3}\n        && 6\n        3+2+4\n        3 + 2\n\n    // loosely binding if block maker. right of and is a block so can contain ;\n    !0 and w i wibble_andily\n\n    [3]\n    S o yeses/because\n        let val = because.sc.it\n        i figiura/datch:$val\n    if 3\n        i know\n    if 0\n        i dont/know\n    elsif 1 && 0\n        && 50\n        i never/knew\n    elsif 50 > 5\n            && 3 > 2\n        i helped\n    i yep\n    &severally,A,w,555\n},\nnothinging():\n    return true && true\nseverally(A,w,thing):\n    i miles,of,words\n    i miles,of,wordings\n    i thingure:thing,of,wordings\n    i thingure:$thing,of,wording\n    thing += 6\n    H.laterally(A,w,thing)\n\nlaterally(A,w,thing):\n    i thingure:$thing,of,word:$thing/really\n\nmoreTiles(A,w):\n    // newer capture coverage the corpus hadn't exercised yet.\n    //  (a trailing capture names its own let — no manual let prefix needed.)\n    // value capture on a multi-leg o — tval = the %toot value, not the row C.\n    //  .$:name is the value-OUT spelling (mirror of :$ value-in); .$name still reads.\n    o hut/toot.$:tval\n    // single leg, two value captures → tier0-multi takes the caps drill\n    A o prefixy,wither.$:angle,its.$:itsval\n    // a multi-leg i whose freshly-inserted leaf we keep — no capture, so the\n    //  let is manual, binding the drill's return (the leaf C)\n    let leaf = i deep/nest/leaf\n    // ── frontier — commented; documents the path syntax still to come ──\n    // @ark: a capture name advertises a column (an ark); @name reuses it,\n    //   multi-row.  $ang above named a column, a sibling IOing reads it back:\n    //  o angles/are:@ang/module$\n    // fan-out: a mid leg matching N rows makes the captures below it N-wide\n    //   (columns — basically a database); wants the taxonomy seam first:\n    //  w o angles/are:$ang,etc:3/so:ont.$sooo\n    // the -> flow form splits the obtain from the insert across @are:\n    //  w o angles/are:$ang,etc:3\n    //  -> i @are/so:ont.$sooo,module.$tv,etc.$\n\n// the r / rm / replace family.  r and rm are IOness2 verbs compiling to async\n//  TheC methods, so they emit `await` — the method is async.  `...` (FlowSep) is\n//  the pattern→replacement separator; an external token so JS spread {...x} is\n//  untouched.  Either side can be a $var (the object itself) or a peeled path.\nasync replaceTiles(A,w):\n    // (1) re-assert — one path → await w.r({solved: 1})\n    r %solved\n    // receiver before the verb → await A.r({io: \"radiostock\"})\n    A r %io:radiostock\n    // multi-key pattern → await w.r({journey: 1, oaims: 1})\n    r %journey,oaims\n\n    // (2) two-arg r(pattern, replacement), split by ...  (the dominant usage)\n    //  await w.r({buffers: 1}, {ok: 1})\n    r %buffers...%ok\n    //  await w.r({wear: enid}, {is_nowPlaying: 1, started, re})\n    r %wear:$enid...%is_nowPlaying,$started,$re\n\n    // (3) whole-object args — a $var is the pattern|replacement object itself\n    //  await w.r(c, fuller)\n    r $c...$fuller\n\n    // (4) rm — removal sugar, r(pattern, {}) underneath\n    //  await w.rm({stream: 1})\n    rm %stream\n    //  await w.rm(c)\n    rm $c\n\n    // (5) the rest of the two-arg IOness2 family — same match...props shape.\n    //  oai is sync (find-or-create-or-mutate, no await); roai is async.\n    //   let seat = oai %seat:3...%taken    → let seat = w.oai({seat: 3}, {taken: 1})\n    let seat = oai %seat:3...%taken\n    //   await w.roai({aim: 1}, {category: cat})\n    roai %aim...%category:$cat\n    //   A.oai({mo: \"main\"}, {interval: 1})   — sync, no await\n    A oai %mo:main...%interval\n\n    // (6) replace-with-a-block — pattern + a pythonic body (like S) becomes the\n    //  async fn() that re-fills the cleared pattern:\n    //   await A.replace({journey: 1, oaims: 1}, async () => {\n    //       w.i({path: 1}); A.i({oaim: j})\n    //   })\n    A r %journey,oaims\n        i %path\n        A i %oaim:$j\n\n// the req family — the heart of the data language.  oai seeds-or-mutates a %req\n//  in place (same ref, %mutated flagged on drift); oai + a BLOCK wires that req's\n//   do_fn (compiles to doai()).  oai is sync, so — note — this method needs no\n//    `async`: the only async thing is each do_fn body, which is its own arrow.\nreqTiles(A,w)\n    // ── oai: the canonical shape ──────────────────────────────────────────────\n    // receiver, a named req with identity keys, props after the \"...\" that merge\n    //  in on every pass — find-or-create-or-mutate.  Sync, no await:\n    //   A.oai({req: \"step\", seq: 2}, {demand: 800})\n    A oai %req:step,seq:2...%demand:800\n    // re-run with a drifted prop: same identity (req+seq) so it mutates the SAME\n    //  req in place, flagging %mutated so a do_fn re-reacts — no new ref:\n    //   A.oai({req: \"step\", seq: 2}, {demand: 1600})\n    A oai %req:step,seq:2...%demand:1600\n\n    // named req, no props — pure find-or-create on the name:\n    //   let workon = w.oai({req: \"workon\"})\n    let workon = oai %req:workon\n    // a maz level + a seed prop after the ...; maz:1 is implied so it never\n    //  identifies, but maz:3 here is part of how the stage is seeded:\n    //   workon.oai({req: \"understanding\", maz: 3}, {permanent: 1})\n    workon oai %req:understanding,maz:3...%permanent\n\n    // anonymous req — %req with no value is the serialise-me sentinel, handed a\n    //  serial (%req:2, 3, …) off the host counter:\n    //   w.oai({req: 1})\n    oai %req\n\n    // ── oai + a BLOCK: the body becomes the req's do_fn ───────────────────────\n    // the same seed, but a BLOCK after it lowers to doai(): seed the %req, then\n    //  take the indented body as its one-shot do_fn, handed the req as its implied\n    //   arg `req`.  doai is sync and returns a setter (or null once wired), so the\n    //    call leads with \";\".  The seed reads exactly like a plain oai — identity\n    //     path, optional \"...\" props path, both forwarded to doai():\n    //   ;(A.doai({req: \"step\", seq: 2}, {demand: 800}))?.(async (req) => {\n    //       A.i({started: 1}); await req.r({ok: 1})\n    //   })\n    A oai %req:step,seq:2...%demand:800\n        A i %started\n        req r %ok\n\n    // a level folded into the identity path instead of a separate props path:\n    //   ;(w.doai({req: \"waft_roster\", eternal: 1}))?.(async (req) => { … })\n    oai %req:waft_roster,eternal\n        i %roster\n        req i %seen\n\n    // nested — a child req wired inside the parent's do_fn.  The implied arg is\n    //  always named `req`, so the inner block's `req` shadows the outer one (the\n    //   name is per-block; mirrors the runtime's w.doai(desire) → desire.doai(acquire)).\n    oai %req:desire\n        i %wanting\n        req oai %req:acquire,maz:9\n            req i %got\n\n// loose peel values + the n%such scalar-child accessor — the two human-friendly\n//  tiles.  Bare values may now carry dashes etc; \"%\" tight between a word and a\n//  word-start reads a scalar child (n%such → n.sc.such).\nlooseScTiles(A,w):\n    // (1) loose values — a bare value carrying a non-word char (external PathVal):\n    //  w.i({transport: 1, type: \"webrtc\", reason: \"no-direct-route\"})\n    w i %transport,type:webrtc,reason:no-direct-route\n    // word-only stays a string, numeric stays a number — no regression:\n    //  w.i({slug: \"web-socket\", n: 3, f: 3.6, type: \"mock\"})\n    w i %slug:web-socket,n:3,f:3.6,type:mock\n    // spaces|commas still need quoting:\n    //  w.i({label: 'two words'})\n    w i %label:'two words'\n\n    // (2) n%such → n.sc.such — the \"%\" scalar-child accessor (tight \"%\" only).\n    //  let v = n.sc.such\n    let v = n%such.slice(0,12)\n    // chains fold left-to-right:  let c = n.sc.a.sc.b\n    let c = n%a%b\n    // works in a condition too — pythonic if:  if (req.sc.demand) { w.i({go: 1}) }\n    if req%demand\n        i %go\n    // spaced \"%\" stays modulo, untouched:  let m = idx % len\n    let m = idx % len\n    // string-safe — a \"%\" inside quotes is left alone:  let s = \"50%off\"\n    let s = \"50%off\"\n\n// receiver-amp, the fabricated House alias, and inline IO in a control body — the\n//  three seams that used to force raw JS, now tiles.\nasync ampTiles(A,w):\n    // (1) recv&method → recv.method(args): a tight identifier before \"&\" is the\n    //  receiver, the way a leading bareword is for i/o.  pier.do(), req.bump():\n    pier&do\n    req&bump\n    // args ride after the method, like &-calls:  pier.emit('hello', 3)\n    pier&emit,'hello',3\n    // await flows through untouched:  await pier.settle()\n    await pier&settle\n    // a bare \"&\" with no receiver still means this.method(...):\n    &severally,A,w,5\n    // spaced \"&\" is left as bitwise-and — tight-vs-spaced, exactly like \"%\":\n    //  let m = a & b\n    let m = a & b\n\n    // (2) the House alias is fabricated: every method body that keeps a bare H gets\n    //  a \"const H = this\" at its top (parameterised in compile.ts — skipped when H is\n    //   a param or already declared), so a raw House call resolves even inline in a\n    //    control structure:  if (a > b) H.laterally(A,w,1)\n    if (a > b) H.laterally(A,w,1)\n\n    // (3) IO atoms translate inside a control body now (the per-line parser is\n    //  threaded into method-body recursion) — both pythonic and parenthesised:\n    if a > b\n        i %reached:here\n    if (a > b) i %reached:also\n\n// the obtain verb family and the $:name capture-out spelling.\nobtainTiles(A,w):\n    // the full IOness obtain family (not just i|o) compiles — each shares o's\n    //  (sc, q) signature: a single-leg recv.verb(sc).  oa is the presence probe:\n    //   let s = w.oa({seat: 3})\n    let s = oa %seat:3\n    // ob | bo | o1 | oa1 | bo1 | boa | boa1 likewise:\n    let one = o1 %req:step\n    let any = A oa1 %mo:main\n    // they translate inside a condition too (a bare o there already reads as oa):\n    if (s && !(oa %taken)) i %seat:free\n\n// $:name — the capture-OUT spelling.  \"$:\" reads \"out comes name\", the mirror of\n//  \":$\" (value-IN).  Both name the let; the \":\" is sugar, dropped at compile.\ncaptureOutTiles(A,w):\n    // value IN on A (the var ang flows in) and row OUT into AB on one line:\n    //  let {AB} = this._i_drill_caps(this, [{sc:{A:\"Bearing\"}, caps:[{as:\"AB\",…}]}])\n    H i A:Bearing$:AB\n    // the in|out symmetry, side by side: A:$side is value-in, Pier$:pier is row-out\n    o A:$side/w:Peeroleum/Pier$:pier\n    // value-out keeps the dot:  .$:name  →  let ang = …?.sc.wither\n    A o prefixy,wither.$:ang\n    // the older bare spelling stays valid (additive): name$ , name$var , name.$var\n    o hut/toot$tval\n","machine":1}
               req:compile,maz=2,finished
-            Text,dige:e293669d534d431d,disk_dige:e633c97628b42c32,disk_rev
+            Text,dige:e293669d534d431d,disk_dige:e293669d534d431d,disk_rev
             Compile
               Map
                 def,method:theCompiledStuff,from=17,to=34,line=2
@@ -199,7 +150,7 @@ Snap:H
                 def,method:obtainTiles,from=10762,to=10774,line=260
                 {"controlflow":1,"keyword":"if","title":"(s && !(oa %taken)) i %seat:free","from":11195,"to":11198,"line":269,"via":"obtainTiles"}
                 def,method:captureOutTiles,from=11393,to=11409,line=273
-              time,compile=0.012,all=0.616,write=0
+              time,compile=0.03,all=0.591,write=0
               Output,gen_path:gen/test/LangTiles.go,dige:5f4e0d1a6bc741f6,source_dige:e293669d534d431d
                source: |
                  <script lang="ts">
@@ -573,19 +524,20 @@ Snap:H
           dock,active	{"loopy":0,"hid":1}
           Change
             backend,dige:e2936
-            storage,dige:e633c,dim:true
-            compile,dige:e2936,dim:true,secs=0.012
+            compile,dige:e2936,secs=0.03,dim,pending
+            storage,dige:e2936
           LE:Undertaking,reason:Undertaking
             Seem:workon
               Funkcion:trail,halflife_ms=60000
-          Interest:Ting,waft:Ting/2026-06-18/024230,lens:DocTing,presence:always,state:live
-            cursor,what:Ting/2026-06-18/024230,latest
+          Interest:Ting,waft:Ting/2026-06-19/215328,lens:DocTing,presence:always,state:live
+            cursor,what:Ting/2026-06-19/215328,latest
         req:workon,following,auto_push	{"ref":{"w":"%w:Lang"}}
           {"req":"understanding","maz":3,"permanent":1,"sig":"1:13:0:0","what":"labelofaWhat","finished":1}
           req:ingredients,maz=2,permanent,sig:Ghost/test/LangTiles.g,finished
             req:furnishing,path:Ghost/test/LangTiles.g,permanent,asked,finished
           {"req":"instrumentation","permanent":1,"sig":"Ghost/test/LangTiles.g:e633c97628b42c32:1:29","have_Map":1,"n_pmirrors":3,"finished":1}
         req:waft_roster,eternal,subscribed
+        o_elvis:Lies_compile_settled
         o_elvis:dock_content
         LE:Story/LangTiles/Waftily	{"ref":{"target":"%What:labelofaWhat"}}
           Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:labelofaWhat","topD":"%Demonstrations:origin"}}
@@ -611,11 +563,10 @@ Snap:H
           {"encode":1,"snap_origin":"Doc:Ghost/test/LangTiles.g\nPoint:nothings\nPoint:nothinging\nPoint:Blaga\n","snap_working":"Doc:Ghost/test/LangTiles.g\nPoint:nothings\nPoint:nothinging\nPoint:Blaga\n","dirty":"0"}
         received,doc_opened,doc:Ghost/test/LangTiles.g
         received,editorBegins,doc:Ghost/test/LangTiles.g
-        o_elvis:Lies_compile_settled
-        self,round=34	{"mung":["age"]}
+        self,round=36	{"mung":["age"]}
         see:🟦 tiles 1 bookmarks
     A:Pantheate
-      self,round=15	{"mung":["age"]}
+      self,round=16	{"mung":["age"]}
       w:Pantheate
         include:gen/test/LangTiles.go
         req:include,gen_path:gen/test/LangTiles.go,path:Ghost/test/LangTiles.g,source_dige:e293669d534d431d,ghostmeta_name:Ghostmeta_Ghost_test_LangTiles,permanent,live_dige:e293669d534d431d,finished
@@ -654,7 +605,7 @@ Snap:H
             prefixy:stuff,wither:angles
               wither:levels,its:its,sits:ferv
         req:run_method,method:theCompiledStuff,finished
-        self,round=15	{"mung":["age"]}
+        self,round=16	{"mung":["age"]}
         o_elvis:Ghost_update_notify
     watched:ave
       examining	{"loopy":1,"hid":1}
@@ -669,6 +620,6 @@ Snap:H
       action,role:compile,label:compile	{"ref":{"fn":"Function()"}}
       action,role:lang_pick,kind:dropdown,label:language,icon:✎,value:stho	{"ref":{"options":"[Object(),Object()]","on_pick":"Function()"}}
       action,role:gen_parser,label:gen,icon:⚙,disabled:true	{"ref":{"fn":"Function()"}}
-      action,role:compo,label:compo,icon:compo ✓,cls:toggle-on	{"ref":{"fn":"Function()"}}
       action,role:nogen,label:nogen,icon:nogen,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:softgen,label:softgen,icon:softgen,cls:toggle-off	{"ref":{"fn":"Function()"}}
+      action,role:compo,label:compo,icon:compo,cls:toggle-off	{"ref":{"fn":"Function()"}}

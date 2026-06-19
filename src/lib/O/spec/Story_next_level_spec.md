@@ -1,4 +1,4 @@
-# Story, next level — one enWaft, continuity, time-surfing, fuzz
+# Story, next level — one enWaft, continuity, time-surfing, fuzz```
 
 A scheme, not a fix. Diffmatication works badly and wants a full shakeout, but
  the shakeout is downstream of a bigger merge: there are **two snap encoders** in

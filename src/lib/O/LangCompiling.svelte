@@ -226,6 +226,12 @@ import { LANG_COMPILE } from "./lang/compile"
         if (!state) { w.i({ see: '⚠ Lang_compile: no editorState yet' }); return }
         if (state.doc.length === 0) return
 
+        // Compile ONLY .g → .go (same gate as req_compile, here for the Esc path that calls
+        //  Lang_compile_dock directly).  A non-.g dock has no gen target — don't park a job or
+        //   run the stho compiler on it; Esc on a .md/.svelte is a clean no-op (no .go, no Map).
+        const gen_path = H.Lies_gen_path(dock.sc.dock as string)
+        if (!gen_path) return
+
         // Park the job; large source stays in .c to keep sc clean.
         const job = dock.oai({ Compile: 1 })
         job.empty()
@@ -236,9 +242,6 @@ import { LANG_COMPILE } from "./lang/compile"
         job.c.compile_t0 = Date.now()
 
         await dock.r({ compile_error: 1 }, {})
-
-        // gen_path derived here — the earliest it is needed.
-        const gen_path = H.Lies_gen_path(dock.sc.dock as string)
 
         let source: string
         let source_dige = ''

@@ -195,7 +195,7 @@
         //        Lies CONSUMER: stand the channel up on a Peering, register the two
         //         app frame types, and bridge them to the compile/run pipeline.
         //
-        //   Two frame types, plain-text bodies (Editron_runner_channel.md):
+        //   Two frame types, plain-text bodies (spec/Editron.md §2):
         //     rungo       editor → runner   { demands: [{path, dige}], header:{seq} }
         //     run_result  runner → editor   { path, dige, ok, errors, snap_dige }
         //

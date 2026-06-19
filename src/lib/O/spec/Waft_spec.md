@@ -598,3 +598,10 @@ ghost_timers: Map<string, number>       — setInterval ids for 10 s shrink per 
 
 - **Multi-Lang per Lies**: not in scope.  Path is clear (each Doc maps to a Lang
   instance by path) but wiring is not done.
+
+- **`req:timemachine` placement**: the playback engine that drives `rwnd | pause | +time`
+  currently lives on `w:Lies` under `%examining` as a child of an ave signal (precedent:
+  `%Spotlight` child + `c.w` back-ref).  Tolerated but unusual — a particle that drives
+  time-stepped Waft gardening arguably belongs on `w:Lies` directly rather than nested
+  inside an ave-enrolled signal.  (Moved here from `Waft-palmtree-trajectory.md`; it is a
+  Waft-gardening concern, not Lies plumbing.)  ⛑️

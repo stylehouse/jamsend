@@ -105,7 +105,7 @@
 
     // the %Interest channel on the REAL wire — the regression gate for the channel
     //  (it retired Book:Interesting's InterLies/InterLang stand-ins; see
-    //   spec/Interest_realchannel_plan.md).
+    //   spec/Interest.md).
     //  No worker body: the real Lies/Lang/Pantheate ghosts run; the scenario is
     //   driven from the Story Plan's Preps (Lies_open_Waft, now_Ting, Lang mark)
     //    and recorded as the regression gate.

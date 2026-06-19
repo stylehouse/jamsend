@@ -1,31 +1,19 @@
-# Waft palmtree trajectory — reqy migration + What transport
+# Waft transport — Lies/Lang req map + open faults
 
-`Waft_spec.md` owns the design.  This doc owns the implementation slice.
+`Waft_spec.md` owns the design and the Waft-gardening concept (What/Doc/Point grammar,
+ +time branch/dive, carry-over, the cave metaphor).  This doc owns the implementation
+  slice: the live `w:Lies`/`w:Lang` req map and the open fault list.  Anything about
+   *the concept of a Waft* rather than its plumbing now lives in `Waft_spec.md`.
 
----
-
-## What cursor model
-
-A Waft is a tree of What, Doc, and Point — but **What is the base type**.
-Doc and Point are refinements; when something sits in the position of a Point
-but isn't one, it's another place the cursor wants to visit before returning.
-It might stop and take in a Doc with no Points, even.
-
-But for now it's quite strictly `Waft(/What/(Doc|Point*)*)*`, so we can clone
-a simple flat list of What/* to manipulate...
-
-```
-Waft,Ghost/LakeNets
-  What:foundations
-    What:story
-      Doc:Ghost/test/Story/Peeroleum.g
-      Point,method:LakeNetherland
-      Point,method:Something
-    What:peer
-      Doc:Ghost/test/Peeroleum.g
-      Point,method:Peeroleum
-```
-
+Pointers for material that moved out:
+- Cursor model, What/Doc/Point grammar, Interest/LE design, NaviCado — `Waft_spec`
+  §"Interests", §"The cursor the wire carries"; `Wire_spec` §5.
+- Branch + dive (↓/↘ +time), Dip split-point, carry-over, secondary strip —
+  `Waft_spec` §"`pause | rwnd | +time` transport", §"Carry-over heuristic".
+- `req%mutated` engine semantics — `Hovercraft.design` §5 + Handover.
+- `req:timemachine` placement — `Waft_spec` §"Open questions".
+- Notation / verbs / ttlilt / Point class — `NOTATION.md`, `Hovercraft.design` §5,
+  `Waft_spec` §"Point class".
 
 ---
 
@@ -41,7 +29,6 @@ w:Lies
   /req:desire
     /req:acquire,maz:9    gate; holds until a Waft is locked
     /%Waft,key            c.src → locked Waft
-  /req:git                Waftlet accumulator; < do_fn pending
   /req:Furnishing,path    doc-open RPC; seeded by wants resolver
   /req:Cortex,path        compile-and-settle workforce (LiesCortex)
                           sc.gen_path, sc.source_dige; c.write_t0 (transient)
@@ -102,142 +89,7 @@ w:Lang
               sc.class etc! culture space
 ```
 
-## LE crux
-
-```
-  Spotlight%src = Lies Waft**, LE/Seem:origin $OC
-  Interest%src = Lang, LE/Seem:working $C
-```
-
-...maybe LE, since it is %dock indifferent, should just be on w:Lang/LE ?
-
-and that's what we have to watch, via every act on LE setting off an elvis to update some state in a controlled fashion (involved %req to watch it complete, etc.)
-
-they've separated their navigation into cursoring the origin right? I suppose LE could abstract that too, presenting a manifold of C** you can read or write.
-
-### LE operation
-
-really unifying and clarifying what req:Languish vs req:workon is supposed to be doing... we need to realise how to reliably set our %Interest and other intentions.
-
-
-does Seem:working C/* get put into Interest/* ? could be handy - they are invisible at the moment, we only snap the D** and its /U
-
-so ~Interest resolves a %dock to contextify the Points with (which has to be found via the Waft** origin itself, because we may not have it in the cloned subset), may be at What/Doc or What(.c.up)+ (find_Doc_from_What() ?)
-
-### LE clients (NaviCado)
-
-NaviCado wants to know the full What/What/What C-path we're in...
-  this is in the corner of the screen while talking through a series of caves full of information...
-  it's important to regularly return to depth <3, for a good coherent show.
-  having just the What** depth number (if > 1) and the latest What:$label showing 
-
-   < by the way the label isn't appearing right now, just nav arrows (which work) with a blank space where the What label usually is. reactivity problem?
-
-  is a LE feature, I think - knowing the remote....
-
-getting the Interest%src:$C, finding C/* to pump at NaviCado... NaviCado would just be given prop LE from Languinio and talk entirely to it? and not even know it's in a Minimap or Codemirror? because LE knows the remote, it can be the channel of movement between the two. it's obvious really...
-
-LE could take on scurrying around the origin Waft** for some What's relative something, eg. Lies_src_doc_path(), waft_key_of should be find_Waft_path_from_What()? and probably shouldn't exist... yeah, all the passing around waft_key looks like bad programming? we can analyse that...
-
-### LE arrives
-
-And w:Lang/req:workon - or something within it - takes charge! Perhaps req:Languish is a better term, as it is very central work... It provisions care, attention, or favorable conditions.
-
-req:settle gives way to req:Showing... Lower-case (class, level, complexity) and upper.
-
-`req:Showing` only exists as `Lang_show_pmirrors` so far.
-`pmirror.c.src_clone` is set at graft time.
-As a proper open-ended req it would survive cursor-absent ticks so U-edit
-fold-toggles repaint without needing a cursor move.
-
-
-There's also w:Lies's req:timemachine and req:wants we need to keep in mind when distributing the systemic load into mutable machinations.
-
-any more isolations or interface togetherings we'd like to imagine...
-
-
-# Future
-
-It may slightly be here already.
-
 ---
-
-## Chunk 4c — branch + dive %What** space
-
-The two gestures create new `%What` particles from the current cursor position.
-They look like the vector indented lines move when encoding this structure.
-
-### ↓ onwards +time
-
-Creates a new `%What` sibling immediately after the current one in the parent's
-child list, which becomes the new cursor target.
-
-### ↘ furthermore +time
-
-Creates a new `%What` *inside* the current one.
-
-1. User selects a split point (between which two Points the new What is
-   inserted) — UI TBD; simplest is between the last accepted Point and the rest.
-2. Points below the split move into the new child `%What`; Points above stay.
-3. The new child What becomes the cursor target; the parent What retains the
-   Points above the split.
-
-The dive address (which Points delimit the pocket) is the Dip concept from
-`Waft_spec.md` — deferred for now.  Initial implementation: ↓ always dives
-after the last accepted/showing Point.
-
-### +time: the carry-over heuristic
-
-When a new `%What` is sprouted off another (both ↘ and ↓), seed its new What/*
-with Points still accepted and showing. If one was `U%created_at` recently,
-assume we are meant to take that from the old group. `U%created_at` is ephemeral.
-
-The `Seem:working` may be kept around and navigated back to, turning up with
-unpushed state and the same C it checked out, if dige still matches.
-
-If we +time away from one What/*, it may play a parent relation... Perhaps if we just
-look around, the last few waves of things we have looked at kinda stay,
-lurking ever smaller at the edges...
-After +time, the prev What's uncarried Points appear in NaviCado below a horizontal line — smaller, fainter, secondary. Clicking one unretires it: `LE_add_clone(current_LE, pt.sc)` copies it into the current What's clone tree and it hides from the secondary strip (its spec is now in the current clone set). Orb-toggling it back to unshowing re-retires it: the clone is dropped from the current tree, its spec leaves the current set, and the Point reappears in the strip from the prev source — undisturbed throughout.
-
-The secondary strip needs no container. It is a pure derived view:
-
-```
-prevWhat Points (direct + via Doc children)
-    filtered to: spec not in current What's clone tree
-```
-
-`clone.c.from_prev = true` stamped at unretire time (on `c`, invisible to encode/push) tells the orb and × apart from freshly-created clones — for those, orb means `U%unshowing` and × means `U%unaccepted` as usual.
-
-```
-// < secondary strip looks one step back (LE_what_prev) for now;
-//   ancestry depth is open.
-```
-
-So the old What/* lurks beneath the current ones, as a different but same-looking
-UI, where they can be easily individually brought back from.
-
-I suppose other paraphenalia might lurk longer than the so-ing machine is biting
-it too, in ways that can transpire more involvement...
-
-### handling
-
-unshowing is just presentation-facing, for codemirror to do decorations. it'll need flushing to when that toggles?
-
-we might be manipulated to show|unshow by some other system.
-
-unaccepted tries (even if you leave the target, could nag to save|abandon) to push that disinclusion
-
-Other changes to the C push more easily? And pushing Waft to disk or where-ever is a little slower?
-
-### The caving metaphor
-
-A Waft is a cave system.  Each `%What` is a chamber — a moment of focused
-attention with particular Points illuminated on the walls.
-
----
-
-# Open faults
 
 # important todo
 
@@ -281,29 +133,18 @@ attention with particular Points illuminated on the walls.
 
 ```
 
+---
+
 # Open faults / futures — Lies · Lang · LiesStore · LiesCortex · LiesEnd
 
 probably won't resolve these before moving on with other work.
 
-Ordered roughly by severity and actionability.  The `< ` annotations in the source are the primary map; this document traces each one to its consequence and the minimal fix.
+Ordered roughly by severity and actionability.  Fault numbers are stable; gaps
+ (1, 3, 12, 17, 19, 20) are items since resolved or dropped — see git history.
 
 ---
 
 ## Active faults — wrong behaviour today
-
-### 1. surprise_read blocks the write but never resumes it  *(LiesStore:547)*  — RESOLVED
-
-`req_LiesStore_writeCarefully` detects an external edit (disk dige ≠ base dige), stamps `good/%surprise_read` with the stashed text+dige, and finishes.  It now *also* stashes the disk text off-snap (`sr.c.disk_text`) for the diff.
-
-The data on the stash:
-- `sr.sc.text` = the text we wanted to write (mine; on-snap — survives reload)
-- `sr.sc.dige` = its dige
-- `sr.sc.disk_dige` = what's on disk right now
-- `sr.c.disk_text` = the disk content itself (theirs; off-snap — re-fetched on reload)
-
-Resume legs (DocRow conflict row): **keep mine** → `e_Lies_surprise_keep_mine` writes `sr.sc.text` via `LiesStore_write` and drops the stash; **take theirs** → `e_Lies_surprise_take_theirs` drops the stash, `delete good.c.content`, and re-provides the dock so disk text re-lands in the editor.  See fault 12 below for the diff widget.
-
----
 
 ### 2. push verify false-positives when clones were dropped  *(LiesEnd:308, 574)*
 
@@ -315,17 +156,11 @@ The fix the comment names: before `LE_replace_back`, iterate clones with `U%unac
 
 ---
 
-### 3. snap bloat: rw_data and req_sent on sc  *(LiesStore:110)*
+### 4. write error leaves req:Codebit waiting forever  *(LiesStore:460, LiesCortex)*
 
-`LiesStore_write` parks `rw_data` (the full file content) and `rw_op` on `sc` of the write req, meaning every in-flight write carries its source text in the snap.  For large Ghost files this is significant.  The comment names the fix: make them oncelers (off-snap, on `.c`).  The req already uses `rw_data` only to send to Wormhole; once sent, holding it on `.c` is fine.
+`LiesStore` Phase 1 now logs a write `reply.error` (`LiesStore:460`), but on error it still does not stamp `write_finished` — so `req:Codebit` parks on a `write_finished` that never arrives and the Codebit stalls permanently.
 
----
-
-### 4. write errors silently discarded in e_Lies_compiled  *(LiesCortex:147)*
-
-`e_Lies_compiled` calls `LiesStore_write` but never checks whether `reply.error` arrived on the finished write req.  Phase 1 in `req_Store` does check and `console.error`s, but `e_Lies_compiled` returns before that runs and has no recovery path.  A gen/ write failure leaves `req:Codebit` waiting on `write_finished` that never arrives — the Codebit stalls permanently.
-
-Minimal fix: after `LiesStore_write` returns a req (not null), park a check in e_Lies_compiled that reads `req.sc.reply?.error` — though since Phase 1 handles it, the real gap is that `req_Codebit` should detect a write error and finish-with-error rather than waiting forever.
+Minimal fix: on write error, the Codebit should finish-with-error rather than wait; give Phase 1 an error path that wakes it instead of only `console.error`ing.
 
 ---
 
@@ -363,6 +198,14 @@ Note: `req:Open` no longer exists — Doc provisioning is now content-keyed on
 5. drop the job particle
 
 Doc rename additionally needs a gen/ rename (delete old gen path, write new one) and a Lang dock re-path.
+
+But the single-Waft path is only half of it: a rename has to reach **every other Waft
+that includes this one**.  That wants a join table — the inclusion graph — the way
+Creduler leaves `Story/Name/Credulation.snap`: keep, per Waft, a list of the Wafts that
+include it, and distribute the rename to each includer.  This implies a Waft must be
+**owned by some agent that can accept a rename job** — close to Lies, but its own
+responsibility, not anything below it in the req tree.  Everything_todo-level work, not a
+stub to knock off here.
 
 ---
 
@@ -404,13 +247,9 @@ The comment proposes merging this into `e:operate{ LE, op:'pull', src }`.  Low p
 
 ## Larger features
 
-### 12. surprise_read diff view  *(Lies:113, LiesStore:547)*  — DONE
-
-The full pull-before-push story: detection + resume (fault 1) and the diff view now exist.  `ui/DocDiff.svelte` is the diff widget — a plain DMP line diff (theirs → mine, with context-elision), unlike `H.compute_diff` which is snap-specialised.  DocRow renders it under the conflict row behind a "diff" toggle, with the "keep mine" / "take theirs" buttons.  Remaining of fault 13's trio: (a) re-read on external change (TTL/watch, fault 14) and (c) the full close path (stub 5).
-
 ### 13. Full doc-level Good lifecycle  *(Lies:113)*
 
-The comment groups `%LiesStore_writeCarefully / %surprise_read / diff per Good,type:'text/Doc'`.  This is the whole per-file disk-awareness story: Good is the single carrier of disk state, and the missing pieces are (a) re-read on external change (TTL or watch), (b) the surprise diff UI above, and (c) the full close path (stub 5 above).
+The comment groups `%LiesStore_writeCarefully / %surprise_read / diff per Good,type:'text/Doc'`.  This is the whole per-file disk-awareness story: Good is the single carrier of disk state.  The remaining pieces are (a) re-read on external change (TTL or watch — fault 14) and (c) the full close path (stub 5).  (b) the surprise diff UI is done — `ui/DocDiff.svelte`.
 
 ### 14. Good TTL re-read (req:refresh)  *(LiesStore:627)*
 
@@ -422,42 +261,15 @@ The comment groups `%LiesStore_writeCarefully / %surprise_read / diff per Good,t
 
 ### 16. next_doc hierarchy traversal  *(LiesEnd:142)*
 
-`e_LE_operate op:next_doc` steps flat `Waft_cursor_candidates`.  When a `%What` has children expanded via branch/dive, `next_doc` should descend into them.  The candidates generator would need a DFS walk of the What tree rather than a flat list.
-
-### 17. Push on req:git / Waftlet commit path  *(LiesEnd:255)*
-
-The spec intent: a push is a Waftlet commit on `w:Lies/req:git`, which then flushes via the git do_fn to disk/remote.  Currently push lives on `w:Lang` where the %LE and clone tree are.  The bridge (Lies reading Lang's clones without reaching into Lang's reqs) is the missing piece.
+`e_LE_operate op:next_doc` steps the flat result list of `Waft_cursor_candidates`.  The candidate generator already DFS-walks the What tree, but the result is flattened; when a `%What` has children expanded via branch/dive, `next_doc` should descend into them rather than skip across the flattened siblings.
 
 ### 18. nested Waft save  *(Lies:114)*
 
-A Waft can hold `%What` nodes which can be other Wafts logically.  The snap format and `enWaft/deWaft` protocol for a Waft-within-a-Waft is not designed.  Deferred until there's a concrete use case.
-
-### 19. Lang compiler: async await injection, .$ capture, block verbs  *(Lang:56,70,87)*
-
-Three deferred compiler features:
-- **async/await injection** — `async` stamped on def entries but `await` never injected at call sites.
-- **`.$ tight value-capture`** — parses as an error node; the grammar token + PeelItem tail rule needed first.
-- **block verbs** — `r / roai / oai` with a trailing `{}` block; unresolved value-semantics for bareword args.
-
-### 20. Graft mark vanishing  *(Lang:1494)*
-
-When a full-span edit wipes a graft mark from CM's `graftMarkField`, `Lang_update_grafts` receives an empty update for that id and the Pmirror becomes unresolved.  Relies on a future re-anchor scan, same shape as bookmark_vanished (stub 8 above) but for Pmirrors.
+A Waft can hold `%What` nodes which can be other Wafts logically.  `enWaft`/`deWaft` serialise a single Waft, but the snap format and protocol for a Waft-*within*-a-Waft is not designed.  Deferred until there's a concrete use case.
 
 ### 21. workon.following diverged state  *(Lang:323)*
 
 `workon.sc.following = 1` (track group cursor) is set at plan time and never cleared.  When a user manually navigates away from the group cursor, `following:0` should trigger a thought-balloon on the breadcrumb.  Needs a comparison between `workon.c.src` and the group cursor's current position, and a UI read of `following` in NaviCado/breadcrumb.
-
----
-
-## Cross-cutting: req%mutated
-
-Several faults and directions converge on `req%mutated` not yet being fully leveraged:
-- LiesStore_write resend (direction 10)
-- Codebit re-arm on re-compile (already works — this is the good example)
-- req:include re-confirm on re-compile (also works)
-- A future %want dedup (a second want for the same src could mutate the existing unresolved one rather than piling)
-
-The pattern is established and working in the Codebit case; the remaining uses need the mutation to be cheap (no `.c` fields that are content-significant) and the do_fn to be idempotent on re-entry.
 
 ---
 
@@ -509,16 +321,12 @@ cleared on the next checkout (cursor move), but if no cursor move happens after 
 encode-compare that comes back clean, the spinner lingers.  `LE_encode_compare` (or
 the encode gate in `Lang_settle`) should also drop `spinner:stale` when `!dirty`.
 
-## req:git do_fn
-
-The particle exists; `doai` is called; the do_fn that flushes committed Waftlets to
-disk/remote is missing.
-
 ## Se_o as standing watch
 
 `Se.process` (and the `o_Seem` wrapper) is call-driven — invoked explicitly by `LE_pull`
 and `LE_encode_compare`.  A standing-watch form would re-run automatically when its
-input C** changes, without needing a fresh pull.  Design not yet settled.
+input C** changes, without needing a fresh pull.  Design not yet settled — this is the
+same shape as `Wire_spec`'s standing wire / `%subscribe`.
 
 ## req:wants never prunes
 
@@ -526,39 +334,9 @@ Wants accumulate indefinitely.  A sweep keeping the newest resolved + a bounded 
 of recent unresolved is the eventual shape; nothing reads the full history yet so the
 accumulation is harmless but will eventually need a bound.
 
-## req:timemachine placement
-
-`req:timemachine` is a reqy particle under `%examining` — an ave signal.  This is
-tolerated (precedent: `%Spotlight` child + `c.w` back-ref) but unusual; a particle
-that drives time-stepped playback arguably belongs on `w:Lies` directly rather than
-nested inside an ave-enrolled signal particle.
-
 ## survey fictional worth
 
 `caving()`, `assail()`, `regroup()` in Lang.svelte are vision documents for
 diving into expanding code spaces (Cyto-within-Cyto), sauntering into a codebase
 (lexing/stemming/threads of inquiry), and the Map (Selection.process over function
 calls + io expressions).  Worth reading when scoping what comes after the current phase.
-
----
-
-## Style notes (standing)
-
-- `// < …` marks a lack of development.
-- `%like,this` for a lone C object; `/%like,this/written:is` for structures.
-  `$values` for sc scalars; `$C` for TheC refs in sc.
-- Snap notation: `:1` suffix suppressed by depeel; a bare key implies value 1.
-  `What` and `Doc` now use the value directly: `What:story`, `Doc:Ghost/Foo.g`.
-  Unlabelled Whats remain bare `What` (value 1).  `Point,method:foo` unchanged.
-- One-Doc-per-What: section Whats are pure containers (no Doc, no Points
-  directly); leaf Whats have exactly one Doc.  Cursor candidates only surface
-  Whats that have direct Points (`Lies_what_has_direct_points`).
-- `oai` sync, `roai` async; `moai` async in-place mutate + bump (preserves C ref — use when Svelte holds a `$state` ref to the particle); `i()` always inserts.  `moai` bumps both the particle and its parent (`this`) when changed — a `bump_version()` on the parent immediately after `moai` is redundant.
-- `i_req_ttlilt` holds the snap open (defers finalize); it does not poke a think.
-- Read children-dependent derives with `.ob()`; chain on `vers`, not
-  `$derived.by(void …)`.
-- UItime reactivity: always `void C.vers` (the `$state` signal), never
-  `void C.version` (the Atime counter, not tracked by Svelte).  The
-  double-click glow bug was caused by this.  Watch for it elsewhere.
-- `reqonce(req, name)` stamps `req.sc[name]=1` once per req lifetime.
-- `watch_c` handlers are `async () =>` and the flush loop awaits them.

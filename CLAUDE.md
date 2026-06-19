@@ -28,6 +28,11 @@ Two child stores:
   `c`:  runtime refs and backlinks, never encoded.
 Objects|functions belong in `.c` only; an object value in `.sc` is fatal
  at encode time.
+A snapped boolean rides as `1` or **absent**, never `false`/`0`: a JS boolean is not
+ a clean scalar string and snaps inconsistently (a flat `dim:false` one tick, a munged
+  `{"dim":false}` JSON object the next). Prefer **deleting** the key to setting it `0`,
+   and prefer a C method (`replace()`/`r()`/roai's replace) over a raw `delete n.sc.key`
+    so the change is tracked and the snap stays consistent.
 
 Notation we use when talking about particles:
   `%Text` means `{Text:1}`; `%LE` means `{LE:1}`, never write `%LE,1`,
