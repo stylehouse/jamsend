@@ -1,137 +1,26 @@
-# EntropyArrest — Lines, Snapcaps, and spaying acknowledged noise
+# EntropyArrest — taming acknowledged snap-diff noise
 
-A scheme, architected before any code. It realises `Story_next_level_spec.md` §1
- (the two-encoders merge) and §4 (acknowledged non-determinism) as one concrete
-  mechanism, and adds the authoring loop the spec left at "a human acknowledges it
-   by adding a fuzz rule" — turning that hand-edit into a **click on the diff**.
+> **في غيابها كوّنتُ صورتها** — *in her absence, I formed her image* (Darwish).
+> The motto of a spay: the noisy value is absent, and what we compare against in its
+>  place is the image we formed — the expected snapshot's own value, read live.
 
-Three moving parts, in dependency order:
+The Story snap diff is the test signal (`On_the_artchitecture.md`: "this codebase's
+ safety rests almost entirely on snap-diff vigilance"). Non-determinism drowns it —
+  counters, timestamps, timings, signatures churn every run and bury the one line that
+   actually regressed. **EntropyArrest** lets you acknowledge a noise source by clicking
+    the noisy diff line: it stores a `Snapcap` (a locator + a tolerance rule), and at
+     compare time the noise is forgiven without rewriting the fixture. The snap on disk
+      stays honest; the churn is reconciled when got and expected are compared.
 
-1. **Lines** — collapse the two snap encoders into one parameterised walk. The
-    precondition: the noise layer needs exactly *one* place to bite.
-2. **spay** — neutralise a noisy token in a snap line in place (glyph it, or band
-    it), keyed by a structural locator, not a line number.
-3. **EntropyArrest / Snapcap** — the authored, data-form store of what to spay,
-    compiled to one fat lematch + a handler table, included globally, offered to
-     the diff UI.
-
-The headline the user named: *refactor the snapper to be like `enWaft` and call it
- Lines — architect that first.* §1 is that. §2–§4 are what it unlocks.
-
-## Status & grounding (read this first on a cold start)
-
-**The engine is built and the spay-bite PIVOTED to compare time (see §2.3'); the
- authoring UI v1 (Stage 5 — spawn+CRUD a cap from a diff click) is now built too (see
-  §7); the live-app forgive verdict is now wired too (the non-lenient drive forgives +
-   caveats + resumes — see §7); what is NOT wired is the §4.3 diff index.**
-   Forgiveness moved out of the encoder: snaps are
-  persisted HONEST (the real noisy number stays on disk and in the dige), and the
-   noise is forgiven when got and expected are compared. Built and runner-proven:
-
-- **spay machinery in Text.svelte** — `spay_line` (one blank|band spayer applied to a
-   line) + `spay_num`; the marker `SPAY_MARKER`; the blow-out `SPAY_BLOWOUT` (`‼`).
-- **compare-time forgiveness** — `collect_spayers(rules)` flattens every blank|band
-   spayer out of `story_matching ∪ entropy_rules` (recursing `thence_matching`);
-    `spay_normalize(snap, spayers, step_n)` runs them over a snap's text line-by-line.
-     Applied to BOTH the got and the expected snap before comparison, a noisy span
-      collapses to the same thing on each side → the line matches regardless of the
-       number, with **no fixture re-record**. A `band` value that blows tolerance keeps
-        its real number + `‼` on one side only → the lines differ → a real surprise
-         survives. Proven via `scripts/Story_cli.spec.ts`: a step whose fixture differs
-          from got only in a `round` value now reports `match:true, exact:false,
-           caveat:true` ("virtually OK, with a caveat") instead of a surprise.
-- **`drop` still bites at encode** (`enLine`, folded into `mung`) — it is a structural
-   omission (a key that should not appear at all), deterministic and value-free, so it
-    belongs in the encoder, not the forgiveness pass.
-- **the global default**: `story_matching`'s `self,round` rule carries
-   `means.spay = {kind:'blank', re:'(?<=round=)\\d+'}` — the per-tick counter is value
-    noise, forgiven at compare. (Chose `blank` over §6-Stage-3's `band`: a counter that
-     can drift across a band boundary would re-introduce the flake; blank is
-      unconditional.)
-- **per-test store + compile**: `entropy_rules(The)` + `entropy_rule_of` /
-   `lematch_to_rule` / `entropy_spayer_of` in Hovercraft's new `//#region entropy`
-    (beside the determinism sibling `prandle`). `snap_H(Run, w)` compiles
-     `story_matching ∪ entropy_rules(w.c.The)`. At encode these contribute only `drop`;
-      their blank/band spayers are consumed by `collect_spayers`/`spay_normalize` at
-       compare. Proven: a hand-authored `Snapcap` forgave exactly its targeted line.
-
-**Storage shape decision (the UI must follow it).** Unlike the transient
- object-valued `sc_has` that `i_scheme_req` writes on the live `w`, an EntropyArrest
-  locator persists in `toc.snap`, where an object in `.sc` is fatal at encode. So a
-   `%lematch` stores its matcher as its **own scalar sc keys** (the mainkey `lematch`
-    stripped off *is* the `sc_has`); a `%spayer` stores `kind`/`re`/`glyph`/`first`/
-     `factor`/`add_step_mult`/`floor` flat, and `drop` names its target key as `key:`.
-      Nested `%lematch` children become `thence_matching`; the spay rides the leaf.
-       The toc codec is fully generic, so this round-trips with zero codec changes.
-   (Caveat from §2.4, now load-bearing: at compare time you have lines, not particles,
-    so the **regex** does the locating — the lematch only scopes the got-side author
-     view. A blank/band `re` must carry enough discriminator to self-select its lines.)
-
-**No mass re-record needed — that was the point of the pivot.** Because both sides
- normalize live, a stale fixture recorded at a different number still compares equal.
-  Re-recording is only wanted to retire *structural* / line-ordering drift (§2.4),
-   which spay does not forgive — that is a deterministic-child-sort problem, separate.
-
-**The live-app engine verdict now forgives (BUILT).** The runner (`scripts/
- Story_cli.spec.ts`) is lenient (`w.c.lenient`) — it never halts, and forgives at its own
-  text compare. The live app is non-lenient: a dige mismatch HALTS the drive and queues
-   `fetch_snap`/`check_snap`, which load the expected fixture text. Forgiveness now lands
-    in that `check_snap` block (Story.svelte): once the disk fixture is in hand,
-     `H.entropy_forgive(w, got, disk, n)` (Hovercraft entropy region) runs
-      `collect_spayers(story_matching ∪ entropy_rules(The))` + `spay_normalize` over BOTH
-       got and disk text; if they agree, the step is demoted to **OK with a caveat**
-        (`step.sc.caveat = 1`, `step.sc.ok = true`), the halt is cleared (`failed_at`/
-         `paused`/`frontier`/`open_at`), and the drive resumes (line ~1407 re-drives, do_step
-          advances to n+1) — the eventually-ok signal goes through, no fixture re-record.
-           A band blow-out keeps `‼` on the got side only, so a real surprise still halts.
-            NOT exercised by the lenient runner (it skips the halt) — verify live on :9091.
-             Still open: SURFACING the caveat in Storui (a badge) is the UI session's job;
-              the §4.3 diff index lands in the diff panel.
-
-**Authoring loop status (§4).** Stage 5 v1 is **built**: `ui/EntropyArrest.svelte`
- authors a cap from a diff click (single in-flight draft, PeelInput-segment IOpath
-  breadcrumb, OK mints a `%Snapcap` via `entropy_commit` + `story_save`). Still unbuilt:
-   the §4.3 diff index (mirage-scan → `%spayer`, glowy pulse), the §4.4 superscript
-    widen/narrow + §4.5 gone-parents, and multi-segment parent-descent reduction (a click
-     yields a single-segment locator for now). The store also stays hand-authorable in
-      `toc.snap`. Verify the UI with the app rendering on :9091 — and note the live-app
-       verdict doesn't forgive yet (§7), so a committed cap won't green a line in-app
-        until that engine slice lands.
-
-**The original first move (§1 Lines walker-merge) was deliberately skipped** as an
- unneeded risk: its whole purpose (§1.1) was to give spay *one* bite-point, but
-  `enLine` was already the single per-node encoder — and with the pivot the bite-point
-   is `spay_normalize`, one text pass over each snap, even more clearly singular. The
-    `snap_H`-vs-`encode_wh_lines` *walk* unification is a cosmetic-only refactor with
-     no behaviour payoff — leave it unless a concrete need appears.
-
-The five code anchors a builder reads before touching anything:
-
-- **Story.svelte** — `snap_H` (~916), `story_process_node` + `story_matching`
-   (~786–914): the Story encoder and its hand-rolled loopy pass that §1 deletes.
-- **Text.svelte** — `encode_wh_lines` (~143), `enWaft` (~306), `enLine` (~642,
-   where `means`→`q` becomes a line; spay joins here as `q.spay`).
-- **Hovercraft.svelte** — `i_scheme_req` (~400) + `i_Story_o_req_ttlilt`'s `follow()`
-   (~467): the existing "build a `%scheme/%lematch` chain and descend it" pattern the
-    §3.2 entropy compile mirrors; `prandle` (Housing.svelte.ts ~388) is its
-     determinism sibling.
-- **ui/EncodingSplatter.svelte** — the placeholder ancestor (§4.0): group-by-mainkey
-   + lematch-snippet generation, clipboard-into-source. EntropyArrest.svelte grows
-    from it.
-- **LangRegions.svelte** — `Lang_def_at_offset` (~431): the bookmark→named-pointer
-   reducer that §4.1/§4.4 reuse to turn a clicked line into a minimal locator.
-
-Parent: `Story_next_level_spec.md` (§1 encoder merge, §4 fuzz, §13 the Waft framing
- this drops into later). The marker for every spay is **في غيابها كوّنتُ صورتها**
-  (Darwish — *in her absence, I formed her image*).
+It is the acknowledged-non-determinism half of controlling entropy in a test; `prandle`
+ (Housing) is the other half — injected determinism, a seeded PRNG. They sit side by side
+  in Hovercraft's `//#region entropy`.
 
 ---
 
 ## 0. The problem, exactly
 
-The Story snap diff is the test signal (`On_the_artchitecture.md`: "this
- codebase's safety rests almost entirely on snap-diff vigilance"). Non-determinism
-  drowns it. From the example `Step:2` diff:
+From a `Step:2` diff:
 
 ```
 self,round=15            {"mung":["age"]}     ← counter, value-key
@@ -139,708 +28,272 @@ want=1781935793885,kind:cold                  ← timestamp, MAINKEY value (iden
 time,compile=0.008,all=0.259                  ← timings, value-keys
 ```
 
-Today these are tamed by `story_matching` munging (Story.svelte) — but mung is
- **drop-the-key**: it removes the key from the diffed `stringies` entirely. That
-  works for `age` (a pure-noise sidecar timestamp) but fails the three above:
+The old tool was `story_matching` munging — but mung is **drop-the-key**: it removes the
+ key from the diffed stringies entirely. That works for `age` (pure-noise sidecar) but
+  fails the three above:
 
-- `want=<ts>` — the timestamp *is the mainkey value*. Drop it and you destroy the
-   particle's identity; the line can't be matched to its prior self at all.
-- `time,compile=…,all=…` — drop them and you lose the timing signal you might
-   actually want to watch (the TimeSpool slope, §4.3 of the parent spec).
-- `round=15` — drop it and you can't assert it at all; keep it and it churns ±1.
+- `want=<ts>` — the timestamp *is the mainkey value*. Drop it and the particle loses its
+   identity; the line can't be matched to its prior self at all.
+- `time,compile=…` — drop them and you lose the timing signal you may want to watch.
+- `round=15` — drop it and you can't assert it; keep it and it churns ±1 every tick.
 
-What's missing is a **third option between keep and drop**: rewrite the noisy
- *number* in place while keeping the line's shape and identity. The user's words:
-  *"just replacing the number with some unicode characters."* That is **spay**.
-
-And it must be **authored from the diff**, not hand-coded in `story_matching`: you
- are staring at the noisy line; clicking it should be how you silence it.
+What was missing is a **third option between keep and drop**: tolerate the noisy *value*
+ in place while keeping the line's shape and identity. That is **spay** — and it must be
+  authored *from the diff*, not hand-coded, because you are already staring at the line.
 
 ---
 
-## 1. Lines — one walk, one bite-point
+## 1. The model — captures + surgical graft
 
-There are two implementations of "walk a C tree, emit snap lines":
-
-| | encode | per-node | walk |
-|---|---|---|---|
-| **Text** | `encode_wh_lines` | `enLine` | `Travel.dive` (ref-count) then `Travel.forward` (encode), loopy stubs inline |
-| **Story** | `snap_H` | `story_process_node` → `enLine` | `Selection.process` (each_fn/trace_fn/traced_fn), **then a hand-rolled second loopy pass** (Story.svelte ~968–1009) |
-
-They share `enLine` already. They differ in the *walk* and in the loopy pass,
- which `snap_H` re-implements (`loopy_Cs`, `forward()`, the `hid:1` shadow stub) —
-  a verbatim second copy of what `encode_wh_lines` does at lines 226–253.
-
-**The merge.** Promote `encode_wh_lines` to the one walker; rename the concept
- **Lines** (`enLines` / `deLines`). It already owns the loopy pass. Grow its `opt`
-  to accept what `snap_H` inlines today:
+A `%spayer`'s regex (`re`) matches **context** — meaningless edges, anchors — and carries
+ **capture groups** that are the actual noise. One `re` can hold several captures.
 
 ```
-enLines(C, {
-  matching,            // protocol rules (WAFT_PROTOCOL | STORY_PROTOCOL | …)
-  max_child_depth,
-  muted_log,
-  all_knowing,
+want=1781952245057,kind:cold
+   →  (?:want=)(\d+(?:\.\d+)?),kind          one capture; ",kind" is a trailing anchor
 
-  // — Story parameterisation (folded in from snap_H) —
-  process?:  Selection,          // reuse across steps; the D-tree mirror
-  trace_fn?, traced_fn?,         // continuity (bD compare) — Story's change/is_new
-}) => { snap, raw_snap, errors, muted_log, Se }
+time,compile=0.161,all=1.836,write=0.001
+   →  time,compile=(\d+(?:\.\d+)?),all=(\d+(?:\.\d+)?),write=(\d+(?:\.\d+)?)
+                  └ cap 1 ┘          └ cap 2 ┘          └ cap 3 ┘
 ```
 
-**spay is not a new parameter.** It rides the `matching` rules already passed in.
- The lematch a rule carries `means: { spay }`, and `enLine` delivers a `q.spay`
-  alongside the `q.skip` / `q.mung` / `q.thence` it already produces — applied at
-   the same point those are (§2). So EntropyArrest's compiled output (§3) is just
-    *more `matching` rules*, concatenated onto `STORY_PROTOCOL` the way
-     `thence_matching` already is. `enLines` learns nothing new; the vocabulary
-      grows by one `means` key.
+Forgiveness is **two-sided and reconstructive** (`spay_graft`). For each aligned got/exp
+ line pair:
 
-- `snap_H` becomes a thin caller: `enLines(Run, { matching: STORY_PROTOCOL,
-   process: Run.c.snap_Se, trace_fn, traced_fn, spay })`. Its bespoke loopy block
-    is **deleted** — `enLines` already stamps `loopy:N` / `hid:1`.
-- `enWaft` stays a thin caller with `matching: WAFT_PROTOCOL`, no `spay`.
-- `story_process_node`'s `story_matching` becomes `STORY_PROTOCOL`, passed in as
-   `matching`, exactly like `WAFT_PROTOCOL` — no behaviour change.
+1. run each spayer's `re` on both lines (its Nth got match pairs with its Nth exp match);
+2. for each capture pair, if the got value is within the spayer's **tolerance** of the exp
+    value, **graft the exp capture into the got line** (replace got's span with exp's);
+3. after all grafts, require the rebuilt got line to be **`===`** the exp line.
 
-> Open (encoder-internal): `encode_wh_lines` uses a two-pass `dive`+`forward`;
->  `snap_H` uses `Selection.process` for the D-tree mirror it needs for continuity.
->   The merged `enLines` keeps the `dive`+`forward` spine and drives the Selection's
->    `trace_fn`/`traced_fn` from the `forward` pass — one walk feeding both the line
->     emit and the D mirror. Verify the ref-count pass sees the same tree the
->      `process_sc:{snap_root:1}` selection saw. (Parent spec §1.1 flags this.)
+A step relaxes to **OK-with-caveat** only if *every* differing line fully reconstructs into
+ exp using only sanctioned graft-spans. Anything left over is a **real surprise** and the
+  step stays a mismatch — you cannot accidentally bury a structural change, because the
+   leftover won't reconcile. Line alignment is **positional**: a differing line count is
+    structural drift (reordering, added/removed rows), which spay does **not** forgive (that
+     is the deterministic-child-sort problem, separate). This is the §2.4 ordering caveat
+      landing correctly.
 
-**This stage is a provable no-op.** Gate it on the existing `wormhole/Story/*.snap`
- fixtures — byte-identical before/after. Nothing here removes noise yet; it only
-  gives the noise layer a single door (one `means` key on the one walker) to walk
-   through. *This is the "architect that first."*
-
-### 1.1 Why Lines must land before spay
-
-If two encoders survive, spay has to be wired into both, and the dige (computed
- over `snap_H`'s output) and the visual diff (Diffmaticui, over the same) could
-  spay differently — re-deriving the same disagreement the parent spec §2.3
-   diagnoses three times over. One walker → one spay pass → one notion of "what
-    this line really says."
+The graft model needs **no marker, no stored baseline, no step multiplier**: the baseline
+ *is* the expected snapshot's own capture, read live, so a value that legitimately advances
+  per step is already carried by the fixture.
 
 ---
 
-## 2. spay — the third option
-
-**spay** is a `means` in the matching vocabulary. A matched rule carries
- `means: { spay: <spayer> }`; `enLine` collects it into `q.spay` exactly as it
-  collects `omit_sc` / `munging` today (Text.svelte 668–682), and applies it where
-   it already rewrites the rendered line — after `parent_line` is built (721–725),
-    beside the mung-drop and BQ handling. No separate pass, no new walker arg. The
-     line goes out spayed; the pre-spay text is kept on `q.raw_line` for the UI.
-      Three spayers, cheapest-noise-first (mirrors parent spec §2.2):
-
-| spayer | does | for | line after |
-|---|---|---|---|
-| `drop` | remove the key from stringies (today's mung) | pure-noise sidecars (`age`) | `self,round=15` |
-| `blank` | regex-replace the matched number with the mirage marker | identity-bearing or uninteresting numbers (`want=<ts>`, `round`) | `want=في غيابها كوّنتُ صورتها,kind:cold` |
-| `band` | snap the value to its nailed baseline while within tolerance; let it diverge past `factor×` | measured timings you want to *watch but tolerate* (`compile`, `all`) | `time,compile=0.005,all=0.18` (baseline) — until a run blows 10× |
-
-`drop` is the existing rule, re-expressed. `blank` and `band` are new.
-
-### 2.1 `blank` — the regex spay
-
-The user's core gesture: *"make a regex pattern for matching the noisy number in
- the snap line and replace it with unicode characters."* A spayer carries:
+## 2. The `%spayer` schema
 
 ```
-%spayer,kind:blank
-  re:    (?<=want=)\d+(\.\d+)?    // the noisy span within the rendered line
-  glyph: في غيابها كوّنتُ صورتها   // THE MARKER — one phrase for all spayings
+spayer,re:<regex-with-captures>,tol:band,factor:1.5    within factor× of exp's value (both ways)
+spayer,re:<regex-with-captures>,tol:any                graft wholesale, any value
 ```
 
-It runs on the **rendered line text**, because the noise can sit anywhere — a
- mainkey value (`want=…`), a value-key (`round=…`), even inside an objecties JSON
-  blob — and the regex is the only thing that reaches all three uniformly.
+- **`tol:band`** + `factor` — numeric captures; graft iff `max(got,exp) ≤ factor·min(got,exp)`
+   (and the both-≈0 case). A capture that blows the band does not graft → the line fails to
+    reconstruct → real surprise survives. No blow-out flag needed; the failure is the signal.
+- **`tol:any`** — graft every capture unconditionally. The **hash / signature / timestamp**
+   case, and the seam to prepub-subjectivity testing: swappable Alice+Bob sets on one PeerJS
+    make pubkeys/signatures/timestamps vary; `tol:any` relaxes a whole span — yet the
+     reconstruct-must-equal-exp rule still proves nothing else moved.
+- A spayer with **no** capture groups treats the whole match as capture 0 (so a bare
+   whole-match regex still works under `tol:any`).
 
-**The marker — a mirage.** The token that replaces a number must be one that
- *cannot occur in snap content*, so `deL`/peel never confuse a spayed hole with a
-  real value, and so the diff (§4) can find every spayed line by scanning for it.
-   Snap content is ASCII peel (`k:v`, sayable), so an Arabic RTL phrase is
-    content-impossible by construction. The marker, for **all** spayings, is the
-     Mahmoud Darwish line:
+`spay_within` parses a band capture with `parseFloat` → `NaN` for a non-numeric token, which
+ never grafts. So a hash/signature **must** be `tol:any`; only numerics may be `band`.
 
-> **في غيابها كوّنتُ صورتها** — *in her absence, I formed her image.*
-
-Which is precisely what a spay is: the value is *absent* (noise, a mirage), and what
- stands in its place is the image we formed — the baseline, or just the mark of a
-  thing that looked like water and wasn't. One phrase, every spay; `peel`/`depeel`
-   reserve it. Canonically it is the full line (deterministic in the dige, unmistakable
-    in the raw text); the UI may render it abbreviated/dimmed so a long sentence
-     doesn't bloat the read — display is cosmetic, the canonical marker is the line.
-
-The dige is computed over the spayed `snap`, so a `blank`ed token can no longer
- flip `story_ok`. The **raw** line is kept (`raw_snap` / `D.sc.raw_line`) so the UI
-  can reveal "what it really was" and so authoring (§4) can diff raw got-vs-prev to
-   *propose* the regex.
-
-The dige is computed over the spayed `snap`, so a `blank`ed token can no longer
- flip `story_ok`. The **raw** line is kept (`raw_snap` / `D.sc.raw_line`) so the UI
-  can reveal "what it really was" and so authoring (§4) can diff raw got-vs-prev to
-   *propose* the regex.
-
-### 2.2 `band` — the "not 10× what it was nailed down at" scheme
-
-The user: *"want=… and compile=… non-deterministic — a scheme to handle that;
- perhaps ensure it is not 10× what it was first nailed down at."* Timings shouldn't
-  vanish (you lose the regression signal) nor churn (every run flips the dige). The
-   band:
-
-```
-%spayer,kind:band
-  re:    (?<=compile=)\d+\.\d+
-  first: 0.005          // the baseline, set when the cap is authored (§3.3)
-  factor: 10            // tolerance multiplier
-```
-
-Encode-time realisation, so the **dige stays stable inside the band and flips out
- of it**:
-
-```
-v = parse(match)
-out = (v <= factor * first) ? render(first) + MARKER   // within band → baseline + mirage
-                            : render(v) + ' ‼'          // blown → real value, blow-out flag
-```
-
-Within band the line carries the **deterministic baseline *and* the marker** — the
- baseline keeps the dige stable, the marker makes the line findable by the §4.3 index
-  ("the quote for all spayings"). So `compile=0.008` renders `compile=0.005 ‹mirage›`
-   every run (identical dige, still indexed as spayed) until a run is >`0.05` (10×),
-    which drops the marker and renders the true value with a blow-out flag `‼` — a
-     `Dif:change` that *means something*. `first` is set when the cap is authored
-      (§3.3) and persists in `The` — **not** recomputed each run. This is `surprise > 0`
-       (parent spec §4.3) made local and cheap: the only timings that ever diff are
-        real regressions.
-
-> A `band` could also assert a floor (`< first/factor` = suspiciously fast, e.g. a
->  no-op'd step). Symmetric; defer until wanted.
-
-#### `add_step_mult` — a step-linear baseline
-
-A counter that legitimately advances each step (`round`, a per-step `want` index)
- breaks a constant band: at step 11 its value is ~11, which a `first:1, factor:10`
-  band rejects (`11 > 1×10`). `add_step_mult` makes the baseline grow with the step
-   number instead of staying flat:
-
-```
-%spayer,kind:band,add_step_mult
-  re:    (?<=round=)\d+
-  first: 1               // the per-step increment, NOT a fixed value
-  factor: 2              // tolerance around the step-scaled baseline
-```
-
-```
-baseline = first * step_n          // step 11 → 11, not 1
-out = within(value, baseline, factor) ? render(baseline) + MARKER : render(value) + ' ‼'
-```
-
-So `first:1` *expects step 11 to read 11* — the baseline tracks the step axis, and
- only a value off the line (a counter that double-counted, or stalled) escapes the
-  band and diffs. `step_n` is in hand at encode time (the snap knows its step). This
-   is the counter analogue of the timing band: same "snap to the expected, diverge on
-    real surprise," with an expectation that *moves*.
-
-### 2.3' PIVOT — diff-time forgiveness, honest snaps (supersedes §2.3)
-
-**This reverses §2.3.** spay does **not** bite at encode. The snap is persisted
- HONEST — the real noisy number stays on disk and in the dige. Forgiveness happens at
-  **compare time**, by running each value spayer's regex over the snap *text* line by
-   line (`spay_normalize`), applied to **both** the got and the expected snap before
-    they are compared. The regex *captures* the number on each side, so the noisy span
-     collapses to the same thing on both — the line matches regardless of the value.
-
-Why this is better than encode-time (§2.3's three points, answered):
-
-- **flake** — both sides normalize identically, so a churning value can no longer
-   make the lines differ. Silence is real, but achieved at the compare, not by
-    rewriting the file. (The raw dige *does* churn; the verdict consults the forgiving
-     compare, not raw dige equality.)
-- **honesty** — the on-disk fixture keeps the true number a human reads; nothing is a
-   mirage on disk. The marker only ever appears in the transient normalized projection
-    used for comparison, never in `Snap:H`.
-- **no re-record** — the killer property §2.3 lacked. Because the *expected* side is
-   normalized live too, a stale fixture recorded at a different number still compares
-    equal. The expected line carrying its own number is exactly what lets us
-     compare-and-forgive instead of capture-and-destroy. (A `band` blow-out is the one
-      asymmetry: the blown side keeps its real value + `‼`, so it *does* diff — a real
-       surprise survives.)
-- **caveat verdict** — a step that passes only because it was forgiven is "virtually
-   OK, with a caveat" (`match && !exact`), distinct from an exact match. No variance
-    history, no TimeSpool — just per-step formula/tolerance, nothing fancy yet.
-
-`drop` is the exception that stays at encode (`enLine` → `mung`): it removes a key
- entirely (a structural omission, value-free, deterministic), which is an encoder
-  concern, not a value to forgive at compare.
-
-The rest of §2.3 below is kept for the record but is **superseded**.
-
-### 2.3 Encode-time, not diff-time — and why  (SUPERSEDED by §2.3')
-
-spay bites in `enLine` (via `q.spay`), changing the persisted `snap` and therefore
- the dige — **not** only in the diff renderer. Rationale:
-
-- the dige is the pass/fail signal (`story_ok`). If spay were diff-only, the snap
-   on disk and its dige still churn on every noisy value; the test still flakes.
-   "Shush" has to be *real silence*, which means at the dige.
-- it's the one place every channel (parent spec §2) flows through after the merge.
-- it keeps `Snap:H` canonically clean (parent spec §2.2) — the on-disk fixture
-   *is* the de-noised text a human reads.
-
-The diff UI consumes already-spayed lines; it does not spay independently. It
- *can* reveal the raw line on demand (`raw_snap`) and surfaces the spay marks for
-  authoring (§4). One spay, two readings — never two spays.
-
-> Consequence for fixtures: introducing spay **deliberately rewrites** the
->  `wormhole/Story/*.snap` files once (noise removed / banded). That is the parent
->   spec's stage 2 ("Snap:H gets cleaner — fixtures change once, deliberately"),
->    distinct from the stage-1 Lines no-op. Re-record under `ACCEPT=1`.
-
-### 2.4 The line-order caveat, bounded
-
-The user: *"we can't know when lines change order too easily."* Correct — and it's
- why the locator is **structural (a lematch), not positional**. A Snapcap matches
-  *the particle*, wherever it has drifted in the walk order, so a reordered-but-same
-   line is still spayed. spay handles **value-noise**.
-
-What spay does *not* fix is **set/map ordering** — the same children emitted in a
- different order run to run (parent spec §4.2 `kind:ordering`, Open: "the hard
-  one"). That is an *encoder* problem (sort the children deterministically before
-   emit), not a per-line spay. Keep them separate: Snapcaps shush noisy *numbers*;
-    a deterministic child-sort in `enLines` removes noisy *order*. A Snapcap whose
-     locator keeps "missing" its line across runs is the diagnostic that you have an
-      ordering problem, not a value problem.
+**Codec reality:** capture regexes contain `:` (every `(?:…)`) and usually `,`, so a
+ `%spayer`/`%means` line serialises as **JSON** in `toc.snap` (`encode_stringies` fallback).
+  This round-trips fine; regex legibility lives in the editor field, not the snap.
 
 ---
 
-## 3. EntropyArrest / Snapcap — the authored store
+## 3. The store — `The/EntropyArrest`
 
-### 3.1 The bucket
-
-A new bucket under `The`, beside `The/TimeSpool` and `The/Styles`:
-
-```
-w:Story/The/EntropyArrest         per-test; absent until the first cap is authored
-  Snapcap:<slug>            one acknowledged-noise entry
-    %lematch,sc_has:{…}     the locator recipe (nested %lematch for descent)
-    %spayer,kind:blank|band|drop, re, glyph | first,factor[,add_step_mult]
-    note:…                  human reason ("ttlilt deadline is wall-clock")
-    scope:step=N            optional; omitted ⇒ ALL steps ("does all steps by default")
-```
-
-A `Snapcap` is `(locator, spayer)`:
-
-- **locator** — a `%lematch` (the existing C\*\* pattern: `sc_has` + nested
-   `%lematch` children, walked by `Housing.find_lematch`/`unwrap_lematch`). It says
-    *which particles*. Stored as a **recipe** — enough of the clicked particle's
-     identity to re-find it (mainkey + discriminating sc keys), not a frozen ref.
-- **spayer** — *how* to neutralise (§2). The "get-spayed handler."
-- a `band` spayer additionally stores `first` (§3.3).
-
-`The/EntropyArrest` is itself **never spayed and never the test subject** — it's
- metadata about the test, like `Styles`. It rides in `The` so it persists in
-  `toc.snap` and travels with the Book.
-
-### 3.2 The compile — Hovercraft `region:entropy`, beside `prandle`
-
-The user: *"EntropyArrest turns [the Snapcaps] into a big fat lematch with all the
- get-spayed handlers — try not to overload the diff UI… some of this goes in
-  Hovercraft, new `region:entropy` along with `prandle()`."*
-
-Where it lives. Hovercraft already owns the "build a `%scheme/%lematch` chain on
- `w` and descend it" pattern — `i_scheme_req` (Hovercraft.svelte 400) writes
-  `w/%scheme:req/%lematch,sc_has:{…}` and `i_Story_o_req_ttlilt`'s `follow()` walks
-   it (467–485). The entropy compile is the same move under a new
-    `//#region entropy`: read `The/EntropyArrest/Snapcap**`, emit matching rules.
-     It sits beside `prandle` deliberately — `prandle` is *injected* determinism (a
-      seeded PRNG, on the House class), spay is *acknowledged* non-determinism. The
-       two halves of controlling entropy in a test: remove it at the source, or name
-        it at the snap. Same region, same concern.
-
-What it produces. **Not** a bespoke `SpaySet` object — `matching` rules, the shape
- `STORY_PROTOCOL` already uses, so they concatenate straight on:
+A per-test bucket, beside `The/Styles` and `The/TimeSpool`. It lives in `The`, so it
+ round-trips through `toc.snap` and travels with the Book. Absent until the first cap is
+  authored.
 
 ```
-prandle's sibling, entropy_rules(The) -> Array<Rule>
-  // one rule per Snapcap, nested thence_matching for descent locators
-  { matching_any: [{ sc_has: <locator.sc_has> }],
-    means: { spay: <spayer>,
-             thence_matching: [ …nested locators… ] } }
+The/EntropyArrest                       per-test; lazily minted on first author
+  Snapcap:<slug>                        one acknowledged-noise entry
+    lematch,<sc…>                       outer locator segment — the node's OWN sc IS sc_has
+      lematch,<sc…>                     nested descent (→ thence_matching at compile)
+        means,spayer,re:…,tol:band,factor:1.5     the handler, INSIDE the leaf lematch
+    scope,step:N                        optional; omitted ⇒ ALL steps
+    note:…                              optional human reason
 ```
 
-`Story.snap_H` concatenates `entropy_rules(w.c.The)` onto `STORY_PROTOCOL` before
- calling `enLines`. The "big fat lematch" is that merged rule array; the "handlers"
-  are the `means.spay` on each. Cost is **one `n.lematch(rules)` per node** — the
-   call `enLine` already makes (Text.svelte 656) — not N passes. "Don't overload"
-    holds because spay adds zero walks: it's a richer `means` on the walk already
-     happening.
+Two storage decisions make this snap-safe and extensible:
 
-The merged rules are also handed to the UI (§4) so it can show which lines a rule
- spays and author new ones. One compiled artifact, two readers — never two spays.
+- **`%lematch` carries its matcher as its OWN scalar sc** (the mainkey `lematch` stripped off
+   *is* the `sc_has`) — not the object-valued `sc_has` that `i_scheme_req` writes on a live
+    `w` (an object in `.sc` is fatal at toc encode). Nested `%lematch` children are descent
+     (`thence_matching`).
+- **`%means` is a prefix mainkey** like `%lematch`: the rest of its sc follows in the *same*
+   particle (`means,spayer,re:…,tol:band`), and a kind-flag (`spayer`; later `omit_sc`,
+    `munging`) names which handler it is. The handler rides **inside the leaf `%lematch`**, and
+     a leaf may hold **several `%means`** — so the store is a tree of matches with any handler
+      at any node.
 
-### 3.3 EntropyArrest is per-test; the defaults are the global layer
-
-EntropyArrest is **per-test** — it lives in `The`, which *is* the Book's `toc.snap`
- (its instructions and expected fields). It travels with the Book and nothing else.
-  There is no shared global EntropyArrest particle.
-
-The global layer already exists, in code: the default `story_matching` rules. A
- `means.spay` rides them exactly as it rides a Snapcap — **the same expand function
-  turns either into a matching rule**. So `self,round` and the rest can carry a
-   `band,add_step_mult` (or a `drop`) directly in `story_matching`, applying to
-    *every* Book, with no `The/EntropyArrest` stored anywhere. A test gets global
-     spaying for free; it only grows a `The/EntropyArrest` once you author something
-      test-specific.
-
-This matters for the UI (§4): when the diff lands on a line spayed by a *default*
- rule, the same index/pulse leads to that rule — **the test appears to have an
-  EntropyArrest at play even though `The` holds no caps**, because the defaults flow
-   through the identical pipeline. The UI reads one merged rule set (defaults ∪ this
-    Book's caps) and need not care which half a given spay came from.
-
-`compile` (§3.2) is therefore `story_matching ∪ entropy_rules(w.c.The)` — both
- sides already `matching` rules. The per-test caps are the only ones authored from
-  the UI and persisted; the defaults are source.
-
-**Promotion to globality** is the EncodingSplatter move, reborn (§4.0): a per-test
- cap you find yourself wanting everywhere (a fresh `self,round`-shaped noise)
-  generates a `story_matching` rule snippet to paste into source — the same
-   copy-to-`Text.svelte` gesture EncodingSplatter already does for skip/omit rules.
-    Per-test caps live in `The`; promotion graduates one into the default set.
-
-`first` and any band baseline are set **when the cap is authored** (the UI's OK,
- §4) and persist in `The` as ordinary accepted state — *"separate from Accept; our
-  changes go into what is Accepted."* No per-run re-nailing.
-
-"Tells it to shush" = these merged rules are the silence applied at encode time —
- the defaults always, this Book's caps once authored.
+`The/EntropyArrest` is itself never spayed and never the test subject — it is metadata about
+ the test, like `Styles`.
 
 ---
 
-## 4. The authoring loop — `ui/EntropyArrest.svelte`
+## 4. The compile — `entropy_rules`
 
-The user: *"a UI that pushes a pointer for a C\*\* situation from a snap line click,
- and leaves on that snap D\*\* some advice that comes out when we find the text
-  encoded from that D in the diff… `ui/EntropyArrest.svelte` appears if there are
-   already rules defined in this test (and a step is open) to CRUD; clicks on snap
-    diff lines cause the birth of locators down there, and you can tweak the autogen
-     regex; click OK to actually put them in, which auto-saves toc.snap; then
-      restart to use them."*
+`entropy_rules(The)` reads `The/EntropyArrest/Snapcap**` and emits one **matching rule** per
+ cap — the same `{ matching_any, means }` shape `story_matching` uses, so they concatenate
+  straight on. `snap_H(Run, w)` compiles `story_matching ∪ entropy_rules(w.c.The)`; the cost
+   is zero extra walks — spay is a richer `means` on the `n.lematch` call `enLine` already
+    makes per node.
 
-### 4.0 It is EncodingSplatter, grown up
+`lematch_to_rule(lm)` is a pure **structural walk that names no handler**:
 
-`ui/EncodingSplatter.svelte` is the ancestor — *"almost almost nearly, not the same;
- a placeholder."* It already: groups encode/decode complaints by mainkey, parses the
-  offending mainkey + props out of the message, and **generates a lematch snippet**
-   (`skip_snippet`, `omit_snippet`) — `{ matching_any:[{mk}], means:{…} }`. What it
-    lacks is everything that makes a Snapcap live rather than advisory:
+- the node's own sc (minus `lematch`) → `matching_any:[{ sc_has }]`;
+- every `%means` child → merged into the rule's `means` via `means_of` (which maps
+   `%means,spayer,…` → `means.spay` through `spayer_of_sc`; new means-kinds slot in there);
+- nested `%lematch` → `thence_matching` (recurse);
+- a branch with no `%means` anywhere beneath it compiles to `null` — **pruned**.
 
-| EncodingSplatter (placeholder) | EntropyArrest.svelte |
-|---|---|
-| source: encode/decode **errors** | source: diff **noise** (a clicked `Dif:change`) |
-| output: clipboard text to **paste into `Text.svelte`** | output: a **`Snapcap` particle** under `The/EntropyArrest` |
-| means: `skip` / `omit_sc` | means: `spay` (drop / blank / band) |
-| mute is **visual-only**, never feeds `enWaft` | OK **commits + saves toc.snap**; restart applies |
+`entropy_mint` writes the inverse: it nests the locator segments via `oai` (find-or-create, so
+ a shared prefix reuses a `%lematch` node) and drops `host.i({ means:1, spayer:1, …})` on the
+  leaf. Re-minting a slug **overwrites** (drops the prior cap first), never piles.
 
-So EntropyArrest.svelte **supersedes** EncodingSplatter for the noise case and can
- lift its group/snippet helpers wholesale. (Whether the encode-error case folds in
-  too — same panel, two sources — is a later call; the lematch-snippet machinery is
-   identical, only the `means` differs.)
+### The global layer is code, not data
 
-### 4.1 When it shows, and what it does
-
-Shows **iff** the test already has `The/EntropyArrest/Snapcap**` *and* a step is
- open — a CRUD surface for the existing rules (list, edit regex, change spayer,
-  delete, toggle scope). It is not a permanent panel; absent rules, absent UI.
-
-Birth of a locator, from a click on a `Dif:change` row:
-
-1. **The row is a `D`** carrying both line sides (`Dif:change` got + its `Dif:prev`
-    sibling) and the source particle's identity — `trace_fn` keyed each D on the
-     full `the_*` identity and stashed `D.sc.copy = {...n.sc}` (Story.svelte 910,
-      955–959). The click has, free: mainkey, sc, and both texts.
-2. **Reduce to a minimal locator** — *"reduce a lematch that satisfies the thing,"*
-    the same move as `Lang_def_at_offset` (LangRegions 431): a raw positional mark →
-     the smallest *intelligible* identity that uniquely resolves. Here: start from
-      the full `the_*` identity, drop the noisy key, and narrow to the fewest
-       `sc_has` keys that still single out this particle among its siblings (mainkey
-        first, then discriminators). Bootstrapping a structural pointer from a click,
-         exactly as LangPoint bootstraps a Point from a bookmark.
-3. **Autogen the regex.** Diff got vs `Dif:prev` (both in hand): the changed run is
-    the noisy number. Offer `(?<=key=)\d+(\.\d+)?` for `blank`, or — duration-shaped
-     float — a `band` with `first` = the prev value. The user **tweaks** this regex
-      in the panel before committing ("attacking numbers").
-4. **OK commits.** Only on OK is the `Snapcap` written under this Book's
-    `The/EntropyArrest`. This is the deliberate "click ok to actually put them in" —
-     no half-formed rule leaks. (Recurring noise can later be *promoted* to a
-      default `story_matching` rule via the copy-to-source snippet, §3.3/§4.0.)
-
-We do **not** live-test the locator/regex in the panel. *"Then probably test how it
- works right there? but we can't really — that's too far."* Verification is the next
-  run's diff, not an inline preview.
-
-### 4.2 Saving and the restart boundary
-
-toc.snap *"is not too reactive atm, unless you Accept something."* A `Snapcap` lands
- in `The`, which only persists to `toc.snap` on Accept today. So **OK explicitly
-  drives a toc.snap save** (the same write `story_accept` triggers, called for the
-   Snapcap edit alone — not a full step accept). The compiled rules (§3.2) are read
-    at snap time, so **a restart/re-run is required** for new caps to take — the UI
-     says so. Making it hot (recompile + re-diff in place) is a later nicety; the
-      restart boundary is acceptable and honest for v1.
-
-"Advice that comes out when we find the text encoded from that D in the diff": when
- the diff renders a line carrying the mirage marker, it draws it dimmed + a hover —
-  *"spayed by `want-ts` · reveal raw · edit · undo."* The advice is **stored on
-   EntropyArrest keyed by the lematch**, not on the ephemeral per-step D (a D dies
-    with its step; the Snapcap persists in `The`) — but the gesture and the
-     recognition are both "from this D's text," so it reads as advice on the line.
-
-This is granular, per-situation Resnapture: instead of accepting a whole noisy snap,
- you name one noise source and it's silenced for every step of this test.
-
-### 4.3 The index — every spayed line, leading to its `%spayer`
-
-The diff UI gains a **handy index of every line a spayer touched**, each entry
- leading to its exact `%spayer` (in the EntropyArrest panel or the default set) by a
-  **glowy pulse** — click the index entry, the line and its rule pulse in sync, so
-   you can see which rule silenced what. This is the contact surface between "the
-    noise I'm reading" and "the cap that explains it."
-
-Building the index is the fiddly part, and it's where the §2.4 caveat bites
- concretely. spay applies **per `enLine`**, on the particle as the snap traversal
-  found it. But the *diff* runs over the whole `got_snap` string, aligned into
-   `Dif:same` / `Dif:change`+`Dif:prev` / `Dif:+` / `Dif:-` rows — each row a
-    **from** side (prev) and/or a **to** side (got). So to find the spayed lines in
-     the diff we **scan both the from and the to text of every row for the mirage
-      marker** ("pick apart from|to from the same|new parts… to find any with holes
-       in them"). The marker is the join: it survived from the per-line encode into
-        whichever diff cell that line landed in, on either side, regardless of how
-         the alignment shuffled. Reverse-map a marked span → the spayer whose `re`
-          produced it → the index entry.
-
-This is *why* the marker must be content-impossible (§2.1): the whole index is a
- text-scan for it across the diff, and a false positive would mis-route a pulse.
-
-### 4.4 Shaping the locator — superscript substitution buttons
-
-A fresh `%spayer` opens in **edit mode**, and the panel is *sensitive*: each token
- of the locator carries a **superscript button** to widen or narrow the match
-  without retyping a lematch.
-
-- `w:Lies` shows a superscript `*` — click it and the token becomes the general
-   `w` (value wildcarded: `{w:1}`); the superscript now reads `Lies`, click it to
-    snap back to `w:Lies`. One toggle, both directions, the label always naming the
-     *other* state.
-- a further step drops the token altogether (stop matching on `w` at all — *"just
-   look for `req:wants/want,kind`"*), climbing the lematch toward the leaf that
-    actually carries the noise.
-- each token is also **directly editable** — type a different value when neither the
-   stored one nor the wildcard is what you want.
-
-This *is* the answer to recipe-looseness: the auto-reduced locator (§4.1 step 2) is
- only a starting guess; the superscripts let you *"beat it into shape"* — too tight,
-  widen a token to `*`; too broad, pin a value or add a parent — reading the match
-   shrink and grow as you go. The `Lang_def_at_offset` reducer proposes; these
-    buttons dispose.
-
-### 4.5 Gone parents — clickable while awake, never stored
-
-Reducing or widening a locator walks an ancestor chain, and some of those parents
- will be **gone** — present in the live tree you clicked from but not in the
-  committed locator, or vanished from the current step (parent spec §5 ghosts). Keep
-   them **clickable at `opacity:0.5` while the session is awake** — so you can climb
-    back into a parent you generalised away — but **do not store them** in
-     `Story/*/toc.snap`. Only the committed (tightened) locator persists; the faded
-      gone-parents are session-scoped scaffolding for shaping, not part of the cap.
-       (Same discipline as the parent spec's ghost rows: a gone thing stays a tick,
-        interactive, then is not written.)
-
-### 4.6 Don't overload the diff UI
-
-- spaying adds **zero walks** — a richer `means` on the `n.lematch` call `enLine`
-   already makes (§3.2). The UI renders pre-spayed lines.
-- spay **marks** fold into the line, not extra rows — the mirage dimmed in place,
-   not a `Dif:` sibling. A fully-spayed line reads `Dif:same` and *leaves the diff
-    entirely*; the §4.3 index is how you still find it.
-- the CRUD panel shows **only when caps exist + a step is open**; authoring is a
-   click on a row, not a standing fixture.
+The defaults are the in-code `story_matching` rules. A `means.spay` rides them exactly as it
+ rides a Snapcap — the same compile turns either into a matching rule. The default `self,round`
+  rule carries `spay:{ re:'(?:round=)(\d+)', tol:'any' }` (a per-tick counter — graft
+   unconditionally). So every Book gets global spaying for free; it only grows a
+    `The/EntropyArrest` once you author something test-specific. The UI reads the merged set
+     (defaults ∪ this Book's caps) and need not care which half a spay came from.
 
 ---
 
-## 5. How this lands against the parent spec
+## 5. The verdict — compare-time forgiveness + caveat
 
-This is a focused, shippable slice of `Story_next_level_spec.md`:
+Forgiveness happens at **compare**, never at encode — the snap on disk keeps the true number a
+ human reads.
 
-- **§1 (merge the encoder)** → §1 here (Lines), the no-op stage.
-- **§4 (acknowledged non-determinism / fuzz classes)** → §2 here. `drop`/`blank`/
-   `band` are the concrete fuzz handlers the parent spec sketched as
-    `%fuzz,kind:…`. `band` is the parent spec's "is it 10× / surprise>0" made a
-     per-line encode rule.
-- **§4.3 (TimeSpool trend)** → unchanged; `band` *feeds* it (the blow-out glyph is
-   exactly a `surprise` sample).
-- **§14.2 (surprise → fuzz-rule-or-Point)** → §4 here is the "acknowledge as fuzz"
-   half, given a real authoring gesture.
-- Snapcaps are **data**, so they drop cleanly into the eventual `%Interest,Testing`
-   framing (parent §13) — an EntropyArrest cap is a per-test declaration like a Point.
+- **Runner** (`scripts/Story_cli.spec.ts`) is **lenient** (`w.c.lenient`): it never halts and
+   forgives at its own text compare.
+- **Live app** is **non-lenient**: a dige mismatch HALTS the drive and queues
+   `fetch_snap`/`check_snap`, which loads the expected fixture text. Forgiveness lands in that
+    `check_snap` block (Story.svelte): `H.entropy_forgive(w, got, disk, n)` runs
+     `collect_spayers(story_matching ∪ entropy_rules(The))` + `spay_graft` over both sides. On
+      agreement the step is demoted to **OK with a caveat** (`step.sc.caveat = 1`,
+       `step.sc.ok = true`), the halt is cleared (`failed_at`/`paused`/`frontier`/`open_at`), and
+        the drive resumes — the eventually-ok signal goes through, no re-record. The verdict
+         `delete`s `step.sc.caveat` on each fresh snap so it re-derives.
 
-What this slice deliberately does **not** do: the Waft/Interest unification (§13),
- channels split (§2 of parent), continuity surfing (§3.2), fern gardens (§6). It
-  needs only the Lines merge under it.
+Both paths share the same `collect_spayers` → `spay_graft` core, so the in-app and headless
+ verdicts agree line-for-line (both apply the `mo:main` stale-fixture hide + `trimEnd`).
 
----
+A step that passes only because it was forgiven is "virtually OK, with a caveat"
+ (`match && !exact`) — distinct from an exact match, surfaced as a `≈` badge in Storui.
 
-## 6. Staging
-
-1. **Lines (no-op).** Merge `snap_H`'s loopy pass into `encode_wh_lines`; rename to
-    `enLines`; recast `story_matching` as `STORY_PROTOCOL`; route `snap_H` and
-     `enWaft` through it. Gate byte-identical on `wormhole/Story/*.snap`.
-2. **spay `means`.** Add `spay` to the `means` vocabulary: `enLine` collects
-    `q.spay` (beside `omit_sc`/`munging`, Text 668–682) and applies it after
-     `parent_line` (721–725); keep the pre-spay text on `q.raw_line`. Implement
-      `drop` (re-express one existing mung rule through it to prove parity), then
-       `blank` with the mirage marker (teach `peel`/`depeel` the reserved phrase).
-3. **Defaults carry spay.** Move the noisiest `story_matching` rules to `band`/
-    `blank` spayers through the **same** expand fn — the global layer, in code, no
-     store. `self,round` → `band,add_step_mult`. Re-record affected fixtures *once*
-      (deliberate noise removal — parent §18 stage 2).
-4. **EntropyArrest store + entropy compile.** Per-test `The/EntropyArrest`,
-    `Snapcap` shape; Hovercraft `region:entropy` `entropy_rules(The)` → `matching`
-     rules with `means.spay` (sibling to `i_scheme_req`/`prandle`); `compile =
-      story_matching ∪ entropy_rules(w.c.The)`. `first` set at authoring.
-5. **Authoring UI.** `ui/EntropyArrest.svelte`, lifting EncodingSplatter's
-    group/snippet helpers: shows iff caps-exist + step-open; click `Dif:change` →
-     reduce locator (à la `Lang_def_at_offset`) + autogen+tweak regex; superscript
-      widen/narrow buttons (§4.4); gone-parents at 0.5, unstored (§4.5); **OK** mints
-       the Snapcap and drives a toc.snap save; restart to apply. No live-test.
-6. **The diff index.** Scan both from|to sides of every diff row for the mirage
-    marker (§4.3); reverse-map each → its `%spayer`; glowy-pulse line↔rule. Promotion
-     snippet (per-test → default) reuses EncodingSplatter's copy-to-source.
-
-Stage 1 is the keystone the user named and is a provable no-op — do it first and
- prove it. Everything after is additive and gated by the same fixtures.
+`drop` is the one handler that would bite at **encode** (`enLine` → `mung`): removing a key
+ entirely is a structural omission, value-free and deterministic, an encoder concern not a
+  value to forgive. It is deferred (see TODO).
 
 ---
 
-## Open / to decide
+## 6. The authoring UI — `ui/EntropyArrest.svelte`
 
-*Resolved in this pass:* encode-time spay (dige stability, raw kept); EntropyArrest
- is **per-test**, the defaults are the global layer (§3.3); `first` set at authoring,
-  not re-nailed (§2.2/§3.3); recipe-looseness is the superscript-button job (§4.4);
-   **the marker is `في غيابها كوّنتُ صورتها`** (Darwish), one phrase for every spay (§2.1).
+Shows when the test has caps **or** a draft is in flight, mounted under the Storui diff body
+ scoped to the open step. Authoring is a click on a noisy diff cell, not a standing panel.
 
-Still open:
+**One in-flight draft, breadcrumb discipline.** A click on a `.sr-spayable` `Dif:change` cell
+ sets `ea_seed` (`{ left, right, parent }` from Storui's `seed_spay`/`diff_parent_line`), which
+  **re-points** the single draft (DevTools-Elements style — a new click never accumulates).
+   Nothing reaches `toc.snap` until **OK**, so you can poke around the diff without drowning in
+    caps.
 
-- **Marker → spayer reverse-map.** The §4.3 index needs each mirage span to name the
-   `re` that made it, and the marker is now uniform across all spayings. So
-    disambiguation rides *beside* the phrase: tag it with a tiny cap-id at encode time
-     (`…صورتها#7`, still content-impossible) — O(1) at scan — or re-run each cap's `re`
-      against the raw line to attribute, keeping the canonical phrase pristine. Lean
-       tag-with-id; the UI strips the `#id` when it renders the line dimmed.
-- **Hot vs restart.** v1 requires a restart for new caps (§4.2). Recompiling
-   `entropy_rules` and re-diffing in place is the eventual nicety; decide if it's
-    worth it before the per-test caps see real use.
-- **Promotion ergonomics.** Per-test → default `story_matching` is a copy-to-source
-   snippet today (§3.3). Whether a default set ever becomes editable *data* (a real
-    global `The`) rather than source is deferred — the user explicitly kept defaults
-     in code for now.
+**The locator (`at`)** is one text field of peelables split by ` / `, outer→leaf (e.g.
+ `A:Lang / self,round`). Plain text ⇒ Ctrl-Z for free, no segment widget. Each chunk
+  `peel()`s into one `%lematch` segment's sc (`self,round` → `{self:1,round:1}`; `w:Lang` →
+   `{w:'Lang'}`). Seeded including the **parent** line.
+
+**The slug (`cap`)** auto-derives from the form beneath (parent match + noisy key) and keeps
+ re-deriving until the user edits the field.
+
+**The spayer editor** is a `tol` band|any toggle (rendered as an overlapping mutex switch) +
+ `factor` + a capture `re`. `H.entropy_suggest(right, left)` proposes them: changed keys become
+  captures, stable text stays a literal anchor, and `tol` autodetects — any number → `band`
+   factor **1.5** (even a unix timestamp: seconds of drift sit far inside 1.5×); a non-numeric
+    hash/signature token → `any`. All fields stay editable.
+
+**OK** hands the draft across the elvisto seam as a JSON string —
+ `H.i_elvisto('Story/Story', 'entropy_commit', { cap_json })` — because elvisto args ride as
+  scalar sc and a nested locator would be a fatal object-in-sc. `e_entropy_commit` parses,
+   calls `entropy_mint`, then `story_save()`. Compiled rules are read at snap time, so a
+    **restart re-reads the caps to apply them** — the panel says so. The CRUD list edits
+     (`edit_cap` loads the draft) and deletes (`entropy_delete` → `entropy_unmint`) existing
+      caps; `cap_spayer` reads the handler from the leaf `%means`.
+
+We deliberately do **not** live-test the locator/regex in the panel — verification is the next
+ run's diff, not an inline preview.
 
 ---
 
-## 7. Handover — the UI thread (authoring UI v1 landed; live-app forgive is next)
+## 7. Code map
 
-The arc: the spay engine PIVOTED to compare-time (§2.3'), runner-proven. Then the
- **authoring UI v1 landed** — `ui/EntropyArrest.svelte` spawns and CRUDs a `%Snapcap`
-  from a diff click (Stage 5, the bulk of §4). What remains is two slices, in order: the
-   **live-app forgive verdict** (the engine prerequisite — without it the UI's caps have
-    no in-app effect to *show*), then the **diff index** (§4.3) and the §4.4/§4.5 locator
-     polish. All front-end / in-app, not gateable headlessly — drive it on :9091.
+- **Text.svelte** — the compare. `spay_graft(got, exp, spayers, step_n)` (positional line zip,
+   returns a graft log), `spay_graft_line` (per-capture graft), `spay_within` (band/any
+    tolerance), `_spay_flags`. `collect_spayers(rules)` flattens every spayer carrying a `re`
+     out of the merged rule set (recursing `thence_matching`). (`spay_line`/`spay_normalize`/
+      `SPAY_MARKER` are the pre-graft marker model, off the compare path — see TODO.)
+- **Hovercraft.svelte `//#region entropy`** — `entropy_rules` / `entropy_rule_of` /
+   `lematch_to_rule` / `means_of` / `spayer_of_sc` (the compile); `entropy_forgive` (the in-app
+    verdict); `entropy_suggest` (the generator); `The_EntropyArrest` / `entropy_mint` /
+     `entropy_unmint` (the store). Sibling to `prandle` (Housing).
+- **Story.svelte** — `snap_H` (`story_matching ∪ entropy_rules`); the default `story_matching`
+   `self,round` rule; `e_entropy_commit` / `e_entropy_delete`; the `check_snap` forgive block.
+- **Storui.svelte** — the `<EntropyArrest>` mount, `ea_seed` + `seed_spay` + `diff_parent_line`,
+   the `.sr-spayable` clickable `changed` cells, and the `≈` caveat badge/pip.
+- **ui/EntropyArrest.svelte** — the editor (draft, `at` field, slug, tol/factor/re, CRUD).
+- **scripts/Story_cli.spec.ts** — the lenient runner; gates got-before vs got-after.
 
-### What v1 built (Stage 5)
+---
 
-- **`ui/EntropyArrest.svelte`** — the editor. One in-flight **draft** (`$state`), the
-   only live thing: a `Dif:change` click *re-points* it (DevTools-Elements-breadcrumb
-    discipline — never accumulates; nothing reaches `toc.snap` until **OK**). The locator
-     renders as an **IOpath breadcrumb of `PeelInput` segments** (PeelInput = the reused
-      "singular piece"; type `*` to wildcard a value); the `%spayer` leaf is a
-       kind-picker (blank/band/drop) + fields. `draft_from_seed` autogens the regex
-        (`H.deL` both sides → churning numeric key → `(?<=key=)\d+(\.\d+)?`; a float →
-         `band` nailed at the prev value). CRUD list of existing caps (edit loads via
-          `draft_from_cap`/`segs_from_lematch`; × deletes).
-- **Story.svelte** — `e_entropy_commit` / `e_entropy_delete` (beside `e_story_accept`,
-   ~731). The UI never mutates `The`; it hands the draft across as a **JSON string**
-    (`cap_json`) — elvisto args ride as scalar `sc`, and a nested locator would be a
-     fatal object-in-`sc`. Commit runs `entropy_mint` then `story_save()`.
-- **Hovercraft.svelte `//#region entropy`** — `The_EntropyArrest` + `entropy_mint`
-   (builds the `%lematch` chain + flat `%spayer`; **overwrites** a same-slug cap, never
-    piles) + `entropy_unmint`. These are the inverse of `entropy_rule_of`/`lematch_to_rule`.
-- **Storui.svelte** — `story_w` (the `A:Story/w:Story` lookup), `ea_seed` + `seed_spay`,
-   the `.sr-spayable` clickable `changed` cells in `diff2_view`, and the `<EntropyArrest>`
-    mount under the diff body (~1150), scoped to the open step `n`.
+## 8. Non-goals (decided)
 
-### The bomb (know this or the next move misfires)
+- **The §1 "Lines" encoder merge** (unify `snap_H`'s loopy pass with `encode_wh_lines` into one
+   `enLines` walker) was deliberately **skipped**: its purpose was to give spay one bite-point,
+    but the compare-time pivot already makes `spay_graft` a single text pass per snap. A
+     cosmetic walk-unification with no behaviour payoff — left alone unless a concrete need
+      appears.
+- **Encode-time forgiveness** is rejected (it would make the on-disk fixture a mirage and still
+   churn the raw dige). Forgiveness is compare-time; the snap stays honest.
+- **Cross-cap shared `%lematch` forest** — caps stay per-`Snapcap` (flat), each with its own
+   locator tree, because CRUD identity (slug/edit/delete) is per-cap. `oai` in `entropy_mint`
+    already dedups within a cap and is ready for a shared forest if it is ever wanted (see TODO).
 
-- **The live-app verdict does NOT forgive yet — so a committed cap looks like it does
-   nothing in-app.** `snap_step_after_wave` (Story.svelte ~1659) is still raw
-    `exp_dige === got_dige`. Only the runner (`scripts/Story_cli.spec.ts` `forgive`)
-     honors caps today. So when you test v1 in the app: author → OK → restart → **the
-      line is still red**, because the in-app diff never ran `spay_normalize`. This is
-       NOT a UI bug — it is the missing engine slice (move 1 below). Do not chase it as
-        a UI regression.
-- **Forgiveness is at COMPARE time, not encode.** The UI authors a *descriptor* only;
-   the snap on disk stays honest. `SPAY_MARKER` only ever appears in the transient
-    normalized projection used for comparison — never in `Snap:H`. (`drop` is the one
-     exception that bites at encode.)
-- **At compare you have lines, not particles** — the **regex** self-locates (its
-   lookbehind names the key); the `%lematch` only scopes the author's got-side view.
-    v1's seed yields a **single-segment** locator (parent descent / superscript widen
-     not built); that is fine *because* the regex does the real locating.
-- **Store shape is snap-safe and fixed** (v1 mints exactly this): `%lematch` = its own
-   scalar sc keys (mainkey stripped = `sc_has`); `%spayer` flat
-    (`kind`/`re`/`glyph`/`first`/`factor`/`add_step_mult`/`floor`); `drop` names its key
-     as `key:`; nested `%lematch` → `thence_matching`. **Codec round-trip verified:** a
-      `re:` value's leading colon-split always wins over an embedded `=`; a regex with
-       `:` or `,` trips `encode_stringies`'s JSON fallback — either way it survives
-        `toc.snap`. Zero codec change, as designed.
+---
 
-### Next move, in order
+## 9. TODO
 
-1. **Live-app forgive + caveat — DONE (engine).** In the non-lenient drive's
-    `check_snap` block (Story.svelte), once the disk fixture is loaded,
-     `H.entropy_forgive(w, got, disk, n)` (Hovercraft entropy region) runs
-      `collect_spayers(story_matching ∪ entropy_rules(The))` + `spay_normalize` over both
-       sides; on agreement the step is set `ok=true`/`caveat=1`, the halt is cleared, and
-        the drive resumes (no re-record). The verdict also `delete step.sc.caveat` on each
-         fresh snap so it re-derives. **Still TODO (UI session):** surface the caveat badge
-          in Storui (the `sr-plabel` row ~1042; sibling to `accepted`/`mismatch`) — the
-           `step.sc.caveat` flag is set and ready. NOT exercised by the lenient runner;
-            verify live on :9091.
-2. **The diff index (§4.3).** Scan BOTH the from and to side of every `Dif` row for
-    `SPAY_MARKER`; reverse-map each marked span → its `%spayer`; glowy-pulse line↔rule.
-     (Post-pivot the marker lives only in the normalized projection, so scan the
-      normalized text, not `Snap:H`.)
-3. **Locator polish (§4.4/§4.5) + multi-segment seed.** Superscript widen/narrow on each
-    breadcrumb `PeelInput` segment; gone-parents at opacity 0.5, unstored; and grow
-     `draft_from_seed` from a single segment to a real parent-descent reduction (à la
-      `Lang_def_at_offset`, LangRegions ~431). Cosmetic v1 debt: the breadcrumb
-       PeelInputs stretch (`.pi-wrap{flex:1}`) — tighten them.
-
-**Anchors (code that exists now):** the v1 files above, plus the engine —
- `spay_line`/`spay_num`/`collect_spayers`/`spay_normalize`/`SPAY_MARKER` (Text.svelte);
-  `entropy_rules`/`entropy_rule_of`/`lematch_to_rule`/`entropy_spayer_of` + the new
-   `The_EntropyArrest`/`entropy_mint`/`entropy_unmint` (Hovercraft `//#region entropy`);
-    `snap_H(Run, w)` (Story.svelte); the runner `forgive` in `scripts/Story_cli.spec.ts`.
-     Ancestor for the UI: `ui/EncodingSplatter.svelte`.
-
-**Gate methodology:** got-before vs got-after, NOT got-vs-fixture (fixtures broadly
- stale; the pivot is exactly what lets you ignore that). The UI itself can't be gated
-  headlessly — drive it in the app.
-
-> Unrelated fix that rode along this session (not EntropyArrest): the Cyto commission
->  moved from `Story_plan` (which runs before the toc is decoded, so `useCyto` read
->   false) to `Story_settingoff` (once, just before step 1, toc decoded) — fixes the
->    `?B=Peregrination` "no House has A:Cyto" fatal for useCyto Books like LeafFarm.
+- **§4.3 diff index.** The **glow is built**: a changed diff line a Snapcap reaches is marked
+   in Storui — teal+steady when the captures are within tolerance (acknowledged noise that would
+    forgive), amber+pulsing when a capture blew its variance band (a watched line that still
+     diffs badly). Driven by `spay_classify_line(got, exp, spayers)` (Text.svelte) over
+      `collect_spayers(story_matching ∪ entropy_rules)`. **Still to build:** the *index* proper —
+       a **link to the other end, like a shared ref / loopy zipline**: each glowing line carries a
+        ref to the exact `%spayer` that touched it (and the `%spayer` back to its lines), so
+         clicking one end pulses the other — the same two-way binding the snap's `hid:1`/`loopy:N`
+          shadow stubs already model for shared-C refs. Fed from `spay_graft`'s graft log, not the
+           dead `SPAY_MARKER` text-scan.
+- **Locator polish (§4.4/§4.5).** Superscript widen/narrow on each `at` chunk (token ↔ `{k:1}`
+   wildcard ↔ dropped); gone-parents shown at `opacity:0.5` while awake, never stored.
+- **Multi-segment seed.** Grow `seed_into_fields` from `parent / leaf` to a real parent-descent
+   reduction (à la `Lang_def_at_offset`, LangRegions ~431).
+- **Hot vs restart.** New caps need a restart to apply (compile reads them at snap time).
+   Recompiling `entropy_rules` + re-diffing in place is the eventual nicety.
+- **`drop` means-kind.** Remove a key (or a whole row) as a `%means` handler that bites at
+   encode (`enLine` → `these_sc` mung). Deferred — "maybe later".
+- **Shared `%lematch` forest.** One tree across all caps, `oai`-deduped, dead branches pruned —
+   if per-cap chains prove redundant in real use. Changes delete semantics (a cap delete must
+    prune only the branches no other cap needs).
+- **Promotion to defaults.** A per-test cap you want everywhere → a `story_matching` snippet to
+   paste into source (the EncodingSplatter copy-to-source gesture).
+- **Retire the marker model.** If `spay_line`/`spay_normalize`/`SPAY_MARKER` are confirmed
+   unused on every path, remove them; the graft compare needs no marker.

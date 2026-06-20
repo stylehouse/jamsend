@@ -115,11 +115,48 @@
         return A?.o({ w: 'Story' })[0] as TheC | undefined
     })
 
-    // ea_seed — the two line-sides of the last-clicked Dif:change row.  Setting it
-    //   re-points EntropyArrest's single draft (the DevTools-breadcrumb discipline);
-    //   on_done clears it after a commit or cancel.  A new click overwrites, never piles.
-    let ea_seed = $state<{ left: string, right: string } | null>(null)
-    function seed_spay(left: string, right: string) { ea_seed = { left, right } }
+    // spayers — every spayer that bites this Book (in-code story_matching defaults ∪ this
+    //   test's authored caps), the same set the compare uses.  Drives the diff glow: a
+    //    changed line a Snapcap reaches gets marked, so you can see at a glance which diffs
+    //     are acknowledged noise (would forgive) and which blew their variance band.
+    let spayers = $derived.by((): any[] => {
+        const The = story_w?.c.The as TheC | undefined
+        void The?.version
+        return H.collect_spayers([...(H.story_matching ?? []), ...H.entropy_rules(The)])
+    })
+
+    // row_spay_class — '' | 'graft' | 'blown' for a changed diff row (got=right, exp=left).
+    function row_spay_class(row: DiffRow): '' | 'graft' | 'blown' {
+        if (row.kind !== 'pair' || row.tag !== 'changed' || !spayers.length) return ''
+        const c = H.spay_classify_line(row.right, row.left, spayers)
+        return c === 'none' ? '' : c
+    }
+
+    // ea_seed — the line-sides of the last-clicked Dif:change row plus its parent line.
+    //   Setting it re-points EntropyArrest's single draft (the DevTools-breadcrumb
+    //   discipline); on_done clears it after commit/cancel.  A new click overwrites.
+    let ea_seed = $state<{ left: string, right: string, parent?: string | null } | null>(null)
+
+    // the rendered text of a diff row (got side preferred), or null for a squish
+    function diff_row_line(r: DiffRow): string | null {
+        return r.kind === 'pair' ? (r.right ?? r.left) : r.kind === 'squish' ? null : r.line
+    }
+    // the nearest earlier row at a shallower indent — the clicked particle's container
+    //  line, so the authored locator always includes the parent's match (§8.6).
+    function diff_parent_line(rows: DiffRow[], i: number): string | null {
+        const cur = diff_row_line(rows[i]); if (cur == null) return null
+        const depth = cur.match(/^ */)?.[0].length ?? 0
+        for (let j = i - 1; j >= 0; j--) {
+            const l = diff_row_line(rows[j]); if (l == null) continue
+            if ((l.match(/^ */)?.[0].length ?? 0) < depth) return l
+        }
+        return null
+    }
+    function seed_spay(rows: DiffRow[], i: number) {
+        const row = rows[i]
+        if (row.kind !== 'pair') return
+        ea_seed = { left: row.left, right: row.right, parent: diff_parent_line(rows, i) }
+    }
 
 
     //#region types
@@ -999,6 +1036,7 @@
                 {@const ok        = !!(Step && Step.sc.ok)}
                 {@const hollow    = !Step}
                 {@const accepted  = !!(Step && Step.sc.accepted)}
+                {@const caveat    = !!(Step && Step.sc.caveat)}
                 {@const on        = display.open_at === n}
                 {@const ph        = n === playhead_n()}
                 {@const flags     = note_flags_for(n)}
@@ -1013,6 +1051,7 @@
                         class="sr-pip"
                         class:ok
                         class:accepted
+                        class:caveat={caveat && !accepted}
                         class:fail={!ok && !hollow && !accepted}
                         class:hollow
                         class:on
@@ -1020,8 +1059,8 @@
                         class:has-notes={flags.length > 0}
                         class:is-anchor={is_anchor}
                         onclick={() => pick(n)}
-                        title="step {String(n).padStart(3,'0')}{hollow?' (hollow)':accepted?' (accepted)':''}  {(Step && Step.sc.dige || ts.dige) ?? ''}"
-                    >{hollow ? '○' : ok ? '·' : '✗'}</button>
+                        title="step {String(n).padStart(3,'0')}{hollow?' (hollow)':accepted?' (accepted)':caveat?' (caveat — forgiven noise)':''}  {(Step && Step.sc.dige || ts.dige) ?? ''}"
+                    >{hollow ? '○' : caveat && !accepted ? '≈' : ok ? '·' : '✗'}</button>
                 </div>
             {/each}
         </div>
@@ -1040,6 +1079,7 @@
             {@const ok         = !!(Step && Step.sc.ok)}
             {@const hollow     = !Step}
             {@const accepted   = !!(Step && Step.sc.accepted)}
+            {@const caveat     = !!(Step && Step.sc.caveat)}
             {@const dige       = String(Step && Step.sc.dige || ts_sel && ts_sel.dige || '').slice(0, 8)}
             {@const can_accept = !ok && !hollow}
             {@const step_notes = display.notes[n] ?? []}
@@ -1057,6 +1097,9 @@
                         <span class="sr-plabel hollow">hollow</span>
                     {:else if accepted}
                         <span class="sr-plabel accepted">accepted</span>
+                    {:else if caveat}
+                        <!-- forgiven value-noise (EntropyArrest §8): OK with a caveat -->
+                        <span class="sr-plabel caveat" title="virtually OK — acknowledged value-noise was forgiven (a Snapcap grafted got→exp)">≈ caveat</span>
                     {:else if !ok}
                         <span class="sr-plabel mm">mismatch</span>
                     {/if}
@@ -1234,9 +1277,13 @@
                     {:else if row.kind === 'pair' && row.tag === 'same'}
                         <div class="sr-diff2-cell">{@render line_content(row.left)}</div>
                     {:else if row.kind === 'pair' && row.tag === 'changed'}
+                        {@const sc = row_spay_class(row)}
                         <div class="sr-diff2-cell changed sr-spayable"
-                             title="silence this noise — author a Snapcap"
-                             onclick={() => seed_spay(row.left, row.right)}>{@render intra_line(row.left, row.ops, 'left')}</div>
+                             class:spay-graft={sc === 'graft'} class:spay-blown={sc === 'blown'}
+                             title={sc === 'blown' ? 'a Snapcap matches here but the value blew its variance band'
+                                  : sc === 'graft' ? 'acknowledged noise — a Snapcap forgives this line'
+                                  : 'silence this noise — author a Snapcap'}
+                             onclick={() => seed_spay(rows, i)}>{@render intra_line(row.left, row.ops, 'left')}</div>
                     {:else if row.kind === 'left_only'}
                         <div class="sr-diff2-cell gone">{@render line_content(row.line)}</div>
                     {:else if row.kind === 'right_only'}
@@ -1251,9 +1298,13 @@
                     {:else if row.kind === 'pair' && row.tag === 'same'}
                         <div class="sr-diff2-cell">{@render line_content(row.right)}</div>
                     {:else if row.kind === 'pair' && row.tag === 'changed'}
+                        {@const sc = row_spay_class(row)}
                         <div class="sr-diff2-cell changed sr-spayable"
-                             title="silence this noise — author a Snapcap"
-                             onclick={() => seed_spay(row.left, row.right)}>{@render intra_line(row.right, row.ops, 'right')}</div>
+                             class:spay-graft={sc === 'graft'} class:spay-blown={sc === 'blown'}
+                             title={sc === 'blown' ? 'a Snapcap matches here but the value blew its variance band'
+                                  : sc === 'graft' ? 'acknowledged noise — a Snapcap forgives this line'
+                                  : 'silence this noise — author a Snapcap'}
+                             onclick={() => seed_spay(rows, i)}>{@render intra_line(row.right, row.ops, 'right')}</div>
                     {:else if row.kind === 'left_only'}
                         <div class="sr-diff2-cell gone sr-empty-cell"></div>
                     {:else if row.kind === 'right_only'}
@@ -1430,6 +1481,8 @@
 .sr-pip.fail     { background: #3a1a1a; color: #c55; }
 /* accepted: mismatch acknowledged — green background, red glyph */
 .sr-pip.accepted { background: #1a3a25; color: #c55; }
+/* caveat: forgiven value-noise — virtually OK (a Snapcap relaxed it) */
+.sr-pip.caveat   { background: #12333a; color: #6cc; }
 /* hollow: step in The but not yet reached this session */
 .sr-pip.hollow   { background: #1a1a1a; color: #555; border: 1px solid #383838; }
 .sr-pip.on       { outline: 1px solid #79b; outline-offset: 1px; }
@@ -1456,6 +1509,7 @@
 .sr-plabel { font-size: 10px; }
 .sr-plabel.mm       { color: #c55; }
 .sr-plabel.accepted { color: #4a9; }
+.sr-plabel.caveat   { color: #6cc; }
 .sr-plabel.hollow   { color: #444; }
 /* dige integrity warning — disk/toc mismatch surfaced by check_snap */
 .sr-warn {
@@ -1579,6 +1633,20 @@
 /* a changed line is the click target for authoring a Snapcap (entropy arrest) */
 .sr-spayable { cursor: pointer; }
 .sr-spayable:hover { background: #2a2008; box-shadow: inset 2px 0 0 #ca0; }
+
+/* a changed line a Snapcap reaches glows: teal+steady = acknowledged noise (would forgive);
+   amber+pulsing = a cap matches but the value blew its variance band, so it still diffs badly */
+.sr-diff2-cell.changed.spay-graft {
+    background: #06140f; border-left-color: #2a8; box-shadow: inset 3px 0 0 #2a8, 0 0 4px #1a6a4a44;
+}
+.sr-diff2-cell.changed.spay-blown {
+    background: #1d0c00; border-left-color: #e83;
+    animation: spay-pulse 1.6s ease-in-out infinite;
+}
+@keyframes spay-pulse {
+    0%, 100% { box-shadow: inset 3px 0 0 #e83, 0 0 3px #c6330033; }
+    50%      { box-shadow: inset 3px 0 0 #fb5, 0 0 8px #e8773399; }
+}
 
 /* squish: collapsed run of uninteresting same lines */
 .sr-squish {

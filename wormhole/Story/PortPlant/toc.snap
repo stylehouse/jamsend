@@ -38,7 +38,6 @@ story:PortPlant
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.068
-      sample=0.057,at=1781585668
       sample=0.127,at=1781608040
       sample=0.069,at=1781608074
       sample=0.088,at=1781610180
@@ -48,12 +47,14 @@ story:PortPlant
       sample=0.045,at=1781934724
       sample=0.048,at=1781944849
       sample=0.055,at=1781947636
+      sample=0.056,at=1781961860
     TimeTotal:step,avg=0.006
       sample=0.007,at=1781934682
       sample=0.007,at=1781934705
       sample=0.005,at=1781934724
       sample=0.005,at=1781944849
       sample=0.006,at=1781947636
+      sample=0.006,at=1781961860
   step,dige:86d4698cb9eb6911
   step=2,dige:6417206157eadd6e
   step=3,dige:d799d31cb69e079c

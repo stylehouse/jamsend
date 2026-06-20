@@ -746,11 +746,11 @@
         if (!raw) return
         let draft: any
         try { draft = JSON.parse(raw) } catch { return }
-        if (!draft?.slug || !draft.spayer?.kind) return
+        if (!draft?.slug || !draft.spayer?.re) return
         H.entropy_mint(w, draft)
         H.story_analysis(w)
         H.story_save()
-        ;V.Story && console.log(`🛑 entropy_commit Snapcap:${draft.slug} (${draft.spayer.kind})`)
+        ;V.Story && console.log(`🛑 entropy_commit Snapcap:${draft.slug} (${draft.spayer.tol})`)
     },
 
     async e_entropy_delete(A: TheC, w: TheC, e?: TheC) {
@@ -844,13 +844,14 @@
                           // age is a pure-noise sidecar timestamp → drop (munged out).
                           // round is the per-tick counter: it churns run-to-run (the
                           //  ticks a step takes is non-deterministic), so a kept round=N
-                          //   flakes the dige every run.  blank it — the value is
-                          //    uninteresting (EntropyArrest.md §2.1 lists round under
-                          //     blank), so the mirage marker stands in and the line is
-                          //      deterministic.  The presence/shape of the counter is
-                          //       still asserted; only its churning value is silenced.
+                          //   flakes the dige every run.  v2 spay (EntropyArrest.md §8):
+                          //    capture the value, tol:any → at compare it grafts got's round
+                          //     onto exp's, unconditionally (a counter that could drift across
+                          //      a band boundary would re-introduce the flake — the doc chose
+                          //       the unconditional path).  The presence/shape of the counter
+                          //        is still asserted; only its churning value is forgiven.
                           munging: [{ these_sc: { age: 1 }, type: 'time' }],
-                          spay: { kind: 'blank', re: '(?<=round=)\\d+' },
+                          spay: { re: '(?:round=)(\\d+)', tol: 'any' },
                       } },
                     { matching_any: [{ sc_only: { wasLast: 1, at: 1 } }],
                       means: { munging: [{ these_sc: { at: 1 }, type: 'time' }] } },

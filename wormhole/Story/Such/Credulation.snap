@@ -1,5 +1,13 @@
 Credulation
-  run=0,at=1781954125.652,ok=0,ok_pct=0,book:LakeSurfer,mode:check
+  run=0,at=1781963759.454,ok=0,ok_pct=0,book:LakeSurfer,mode:check
+    uses:Ghost_N_Peeroleum,dige:4558b12beb13ec7a
+    uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
+    uses:Ghost_Story_Peregrination,dige:6ad01960423b9e20
+  run,at=1781963774.871,ok=0,ok_pct=0,book:LakeSurfer,mode:check
+    uses:Ghost_N_Peeroleum,dige:4558b12beb13ec7a
+    uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
+    uses:Ghost_Story_Peregrination,dige:6ad01960423b9e20
+  run=2,at=1781963782.558,ok=0,ok_pct=0,book:LakeSurfer,mode:check
     uses:Ghost_N_Peeroleum,dige:4558b12beb13ec7a
     uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
     uses:Ghost_Story_Peregrination,dige:6ad01960423b9e20

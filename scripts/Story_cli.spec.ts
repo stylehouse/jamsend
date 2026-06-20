@@ -159,17 +159,16 @@ test(`Story_cli: run + dump Book:${BOOK}`, async () => {
     try { rmSync(OUT, { recursive: true, force: true }) } catch {}
     mkdirSync(OUT, { recursive: true })
     const steps: any[] = []
-    // EntropyArrest spay-normalize (the §2.3' pivot): forgive acknowledged value-noise
-    //  at COMPARE time, applied to BOTH the got and the expected snap, so a churning
-    //   number (round, a timestamp, a banded timing) collapses to the same thing on each
-    //    side and the step matches without a fixture re-record.  `exact` is byte equality;
-    //     `match` is equality after forgiveness; `caveat` is a step that only passes
-    //      because it was forgiven — "virtually OK".
+    // EntropyArrest forgiveness (§8 captures+graft): forgive acknowledged value-noise at
+    //  COMPARE time by grafting the tolerated exp captures into got and asking whether the
+    //   rebuilt got then equals exp — so a churning number (round, a timestamp, a banded
+    //    timing) reconciles to its exp pair and the step matches without a fixture re-record.
+    //     `exact` is byte equality; `match` is equality after the graft; `caveat` is a step
+    //      that only passes because it was forgiven — "virtually OK".
     const spayers = (() => {
         try { return S.collect_spayers([...(S.story_matching ?? []), ...S.entropy_rules(w?.c.The)]) }
         catch { return [] }
     })()
-    const forgive = (s: string, n: number) => spayers.length ? S.spay_normalize(s, spayers, n) : s
     for (const n of Object.keys(got).map(Number).sort((a, b) => a - b)) {
         const g = hide(got[n].snap).trimEnd()
         let exp = ''
@@ -178,7 +177,7 @@ test(`Story_cli: run + dump Book:${BOOK}`, async () => {
         writeFileSync(path.join(OUT, `${pad(n)}.exp.snap`), exp + '\n')
         writeFileSync(path.join(OUT, `${pad(n)}.trace.txt`), traceDump(got[n].trace) + '\n')
         const exact = g === exp && !!exp
-        const match = (exact || forgive(g, n) === forgive(exp, n)) && !!exp
+        const match = !!exp && (exact || (spayers.length ? S.spay_graft(g, exp, spayers, n).forgiven : false))
         steps.push({ n, story_ok: got[n].ok, match, exact, caveat: match && !exact,
                      got_lines: g.split('\n').length, exp_lines: exp ? exp.split('\n').length : 0 })
     }

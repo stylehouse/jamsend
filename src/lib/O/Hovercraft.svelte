@@ -605,61 +605,76 @@
             .filter(Boolean)
     },
 
-    // One Snapcap (locator, spayer) → one matching rule.  The locator is a %lematch
-    //   chain; the spayer is the get-spayed handler.  Returns null if either is
-    //    missing — a half-authored cap silently does nothing rather than crash a snap.
+    // One Snapcap → one matching rule, by walking its %lematch tree.  Returns null if
+    //   the tree carries no handler anywhere (a half-authored cap silently does nothing
+    //    rather than crash a snap).
     entropy_rule_of(cap: TheC): any | null {
         const lm = (cap.o({ lematch: 1 })[0]) as TheC | undefined
-        const sp = (cap.o({ spayer: 1 })[0]) as TheC | undefined
-        if (!lm || !sp) return null
-        const spayer = this.entropy_spayer_of(sp)
-        if (!spayer) return null
-        return this.lematch_to_rule(lm, spayer)
+        return lm ? this.lematch_to_rule(lm) : null
     },
 
-    // A %lematch chain → a (possibly nested) matching rule.  Unlike the transient
-    //   object-valued sc_has i_scheme_req writes on the live w, an EntropyArrest
-    //    locator persists in toc.snap, so it must be snap-safe: the %lematch
-    //     particle's OWN sc (minus its `lematch` mainkey) IS the sc_has matcher —
-    //      all scalars.  Nested %lematch children become thence_matching for descent;
-    //       the spay rides the deepest level (the leaf that carries the noise), mirroring
-    //        how story_matching nests its munging under an outer descent rule.
-    lematch_to_rule(lm: TheC, spayer: any): any {
+    // means_of — one flat %means particle → its contribution to the rule-`means` object.
+    //   A %means is a prefix mainkey like %lematch: the rest of its sc follows in the SAME
+    //    particle (%means,spayer,re:…,tol:band), and a kind-flag (spayer / later omit_sc /
+    //     munging) names which handler it is.  So lematch_to_rule names no handler — it just
+    //      collects every %means child and merges; new means-kinds slot in here.
+    means_of(mn: TheC): any | null {
+        const { means, spayer, ...rest } = mn.sc as Record<string, any>
+        const m: any = {}
+        if (spayer != null) { const s = this.spayer_of_sc(rest); if (s) m.spay = s }
+        // future: if (omit_sc != null) m.omit_sc = …; if (munging != null) m.munging = …
+        return Object.keys(m).length ? m : null
+    },
+
+    // A %lematch (sub)tree → a matching rule, or null for a dead branch (no %means
+    //   anywhere beneath it — the prune the user asked for).  A pure STRUCTURAL walk
+    //    that names no specific handler: the node's OWN sc (minus the `lematch` mainkey)
+    //     IS the sc_has matcher (all scalars, snap-safe, unlike the transient object-valued
+    //      sc_has i_scheme_req writes on a live w); nested %lematch recurse into
+    //       thence_matching; EVERY %means child merges in via means_of (multiple means per
+    //        node is allowed).  So the store can grow a tree of matches with any handler at
+    //         any node, and a branch that reduced to no means just drops out.
+    lematch_to_rule(lm: TheC): any | null {
         const { lematch, ...sc_has } = lm.sc as Record<string, any>
-        const kids  = (lm.o({ lematch: 1 })) as TheC[]
         const means: any = {}
-        if (kids.length) means.thence_matching = kids.map(k => this.lematch_to_rule(k, spayer))
-        else             means.spay = spayer
+        for (const mn of lm.o({ means: 1 }) as TheC[]) Object.assign(means, this.means_of(mn))
+        const had_means = Object.keys(means).length > 0
+        const thence = (lm.o({ lematch: 1 }) as TheC[])
+            .map(k => this.lematch_to_rule(k))
+            .filter(Boolean)
+        if (!had_means && !thence.length) return null
+        if (thence.length) means.thence_matching = thence
         return { matching_any: [{ sc_has }], means }
     },
 
-    // A %spayer particle → the plain spayer descriptor enLine's spay_line consumes.
-    //   Stored flat (all scalar sc keys) so it round-trips through toc.snap:
-    //     blank → kind, re, glyph
-    //     band  → kind, re, first, factor[, add_step_mult][, floor]
-    //     drop  → kind, key   (key names the sc field to mung out → these_sc)
-    //   peel already typed the numbers (first=0.01 → number) and flags (add_step_mult
-    //    → 1), so little coercion is needed.
-    entropy_spayer_of(sp: TheC): any | null {
-        const { spayer, key, add_step_mult, floor, ...rest } = sp.sc as Record<string, any>
-        if (!rest.kind) return null
-        const o: any = { ...rest }
+    // The plain spayer descriptor the compare consumes, built from a particle's sc-rest
+    //   (its mainkey + any kind-flag already stripped).  Fields are stored flat so they
+    //    round-trip through toc.snap:
+    //     v2 (§8) → re (capture regex), tol (band|any)[, factor]
+    //     legacy  → kind, re[, first, factor, glyph]   (still honored by spay_graft)
+    //     drop    → key   (names the sc field to mung out → these_sc)
+    //   peel already typed the numbers (factor=1.5 → number) so little coercion is needed.
+    spayer_of_sc(rest: Record<string, any>): any | null {
+        const { key, add_step_mult, floor, ...r } = rest
+        // a usable spayer is defined by its `re` (v2/legacy), its `kind` (legacy), or its
+        //  `key` (drop) — an empty descriptor compiles to nothing.
+        if (!r.re && !r.kind && key == null) return null
+        const o: any = { ...r }
         if (add_step_mult != null) o.add_step_mult = !!add_step_mult
         if (floor != null)         o.floor         = !!floor
         if (key != null)           o.these_sc      = { [key]: 1 }   // drop's target
         return o
     },
 
-    // entropy_forgive — the compare-time forgiveness verdict (EntropyArrest.md §2.3'),
-    //   the in-app twin of the runner's text compare in scripts/Story_cli.spec.ts.  Runs
-    //    every blank|band spayer (the default story_matching layer ∪ this Book's caps)
-    //     over BOTH the got and the expected snap TEXT; if they then agree, a dige
-    //      mismatch was acknowledged value-noise, not a surprise — the caller passes the
-    //       step "OK with a caveat", with no halt and no fixture re-record (the snap on
-    //        disk stays honest).  A band blow-out keeps its real number + ‼ on the got
-    //         side only, so the lines differ and a real surprise still survives.  Returns
-    //          false — a genuine mismatch — when there are no spayers, when either text is
-    //           missing, or when any non-noise difference remains.
+    // entropy_forgive — the compare-time forgiveness verdict (EntropyArrest.md §8, the
+    //   captures+graft model), the in-app twin of the runner's compare in
+    //    scripts/Story_cli.spec.ts.  Grafts every tolerated exp capture into got (the
+    //     default story_matching layer ∪ this Book's caps) and asks whether the rebuilt got
+    //      then EQUALS exp; if so a dige mismatch was acknowledged value-noise, not a
+    //       surprise — the caller passes the step "OK with a caveat", no halt and no fixture
+    //        re-record (the snap on disk stays honest).  Any line that won't reconstruct, or
+    //         a structural line-count drift, leaves a real surprise.  False when there are no
+    //          spayers or either text is missing.
     entropy_forgive(w: TheC, got: string, expected: string, step_n: number): boolean {
         if (!got || !expected) return false
         const spayers = this.collect_spayers([
@@ -667,11 +682,55 @@
             ...this.entropy_rules((w?.c.The) as TheC | undefined),
         ])
         if (!spayers.length) return false
-        // mirror the runner's stale-fixture shim (mo:main lives only in old fixtures)
-        //  so the in-app and headless verdicts agree line-for-line.
-        const hide = (s: string) => s.split('\n').filter(l => !/\bmo:main\b/.test(l)).join('\n')
-        const norm = (s: string) => this.spay_normalize(hide(s), spayers, step_n).trimEnd()
-        return norm(got) === norm(expected)
+        // mirror the runner's stale-fixture shim (mo:main lives only in old fixtures) +
+        //  trimEnd, so the in-app and headless verdicts align line-for-line.
+        const hide = (s: string) => s.split('\n').filter(l => !/\bmo:main\b/.test(l)).join('\n').trimEnd()
+        return this.spay_graft(hide(got), hide(expected), spayers, step_n).forgiven
+    },
+
+    // entropy_suggest — the smart capture-regex generator (§8.4).  Given a noisy got line
+    //   and its prev/exp pair, propose a `%spayer` descriptor: a `re` whose CAPTURE GROUPS
+    //    are exactly the keys whose value changed (numeric → a number capture; long hex/token
+    //     → a token capture), with the stable text/keys kept as literal edge anchors, plus an
+    //      autodetected `tol` (drifting counters / long ints / hex → `any`; small floats →
+    //       `band`, factor 10).  Only a proposal — the UI's `re`/`tol` fields stay editable.
+    //        Returns null when nothing numeric/token changed.
+    entropy_suggest(gotLine: string, prevLine: string): { re: string, tol: string, factor?: number } | null {
+        const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        const gs = (this.deL(gotLine)?.stringies ?? {}) as Record<string, any>
+        const ps = (this.deL(prevLine)?.stringies ?? {}) as Record<string, any>
+        const keys = Object.keys(gs)
+        if (!keys.length) return null
+
+        // a snap stringies line is `k=N` (number) / `k:v` (string) / `k` (flag), comma-joined.
+        //  Rebuild it token by token, turning each CHANGED key into a capture, keeping the
+        //   rest literal as anchors.  classify the changed value to pick the capture class.
+        let anyTok = false, changed = false
+        const num_cap = '(\\d+(?:\\.\\d+)?)', tok_cap = '(\\S+?)'
+        const parts: string[] = []
+        for (const k of keys) {
+            const gv = gs[k], pv = ps[k]
+            const is_changed = pv !== undefined && pv !== gv
+            if (typeof gv === 'number' && is_changed) {
+                changed = true                                                    // any number → band
+                parts.push(`${esc(k)}=${num_cap}`)
+            } else if (typeof gv === 'string' && is_changed && /^[0-9a-fA-F]{8,}$/.test(gv)) {
+                changed = true; anyTok = true                                     // hash / signature
+                parts.push(`${esc(k)}:${tok_cap}`)
+            } else {
+                // stable token — a literal anchor (number→k=v, string→k:v, flag→k)
+                parts.push(typeof gv === 'number' ? `${esc(k)}=${esc(String(gv))}`
+                         : gv === 1 || gv === true ? esc(k)
+                         : `${esc(k)}:${esc(String(gv))}`)
+            }
+        }
+        if (!changed) return null
+        // A number drifts within a band (factor 1.5) — even a unix timestamp: seconds of
+        //  drift sit far inside 1.5×.  A non-numeric token (hash / signature) cannot band
+        //   (spay_within parseFloats to NaN → never grafts), so it must graft wholesale → any.
+        const tol = anyTok ? 'any' : 'band'
+        const re = parts.join(',')
+        return tol === 'band' ? { re, tol, factor: 1.5 } : { re, tol }
     },
 
     // The_EntropyArrest — the per-test bucket, beside The/Styles.  Absent until the
@@ -702,11 +761,14 @@
         const cap = ea.i({ Snapcap: draft.slug })
         if (draft.note != null)       cap.i({ note: draft.note })
         if (draft.scope_step != null) cap.i({ scope: 1, step: draft.scope_step })
-        // descent: each segment nests under the previous; entropy_rule_of finds the
-        //  outer %lematch as a direct child of the cap and recurses the rest.
+        // descent: each segment nests under the previous via oai (find-or-create), so a
+        //  shared locator prefix reuses an existing %lematch node instead of duplicating
+        //   it.  The handler lands as a flat %means,spayer particle INSIDE the leaf %lematch
+        //    (not a cap-level sibling) — %means is a prefix mainkey carrying its fields inline,
+        //     so a leaf can grow several %means later and lematch_to_rule stays handler-agnostic.
         let host: TheC = cap
-        for (const seg of draft.lematch) host = host.i({ lematch: 1, ...seg.sc })
-        cap.i({ spayer: 1, ...draft.spayer })   // the get-spayed handler, beside the lematch
+        for (const seg of draft.lematch) host = host.oai({ lematch: 1, ...seg.sc })
+        host.i({ means: 1, spayer: 1, ...draft.spayer })
         ea.bump_version()
         return cap
     },

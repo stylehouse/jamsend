@@ -843,7 +843,10 @@
                 const m = r?.means
                 if (!m) continue
                 const spays = m.spay ? (Array.isArray(m.spay) ? m.spay : [m.spay]) : []
-                for (const sp of spays) if (sp?.kind === 'blank' || sp?.kind === 'band') out.push(sp)
+                // v2 (§8): pull any spayer carrying a `re` — both the new tol:band|any
+                //  capture spayers and the legacy blank/band.  `drop` has no `re` (it names
+                //   a key, bites at encode), so it is naturally excluded from the compare set.
+                for (const sp of spays) if (sp?.re) out.push(sp)
                 if (m.thence_matching) walk(m.thence_matching)
             }
         }
@@ -870,6 +873,128 @@
         return snap.split('\n')
             .map(line => spayers.reduce((l, sp) => this.spay_line(l, sp, step_n), line))
             .join('\n')
+    },
+
+    // ── Matching v2 — captures & surgical graft (EntropyArrest.md §8) ───────────────
+    //   Supersedes spay_normalize's "blank BOTH sides to a marker, compare".  A spayer's
+    //    `re` matches edges and carries CAPTURE GROUPS that are the noise; the compare is
+    //     two-sided and reconstructive: graft the tolerated exp captures into got, then
+    //      require the rebuilt got to EQUAL exp.  Nothing else can hide — a leftover diff
+    //       means a real surprise.  No marker, no stored baseline (exp's capture IS the
+    //        baseline, read live), no add_step_mult (exp already carries the per-step value).
+
+    // _spay_flags — force global + indices (d) so capture spans are addressable, keeping
+    //   any author-supplied flags.
+    _spay_flags(sp: any): string {
+        return Array.from(new Set(('gd' + (sp.flags ?? '')).split(''))).join('')
+    },
+
+    // spay_within — is the got capture tolerable against its exp pair?
+    //   tol:any  → always (hashes / signatures / timestamps — graft wholesale).
+    //   tol:band → numeric, within factor× either way (and the both-zero case).
+    //   Legacy: a spayer with no `tol` is read as band when kind:band, else any.
+    spay_within(g: string, e: string, tol: string, factor?: number): boolean {
+        if (tol === 'any') return true
+        if (tol === 'band') {
+            const gv = parseFloat(g), ev = parseFloat(e)
+            if (Number.isNaN(gv) || Number.isNaN(ev)) return false
+            const a = Math.abs(gv), b = Math.abs(ev), f = factor ?? 10
+            if (a === 0 && b === 0) return true
+            if (a === 0 || b === 0) return false
+            return Math.max(a, b) <= f * Math.min(a, b)
+        }
+        return false
+    },
+
+    // spay_graft_line — rebuild one got line toward its aligned exp line by grafting every
+    //   tolerated capture (exp's value over got's span).  A spayer's Nth match on got pairs
+    //    with its Nth match on exp; mismatched match counts ⇒ that spayer grafts nothing
+    //     (the line will then fail to reconcile, which is the correct verdict).  A regex with
+    //      no capture groups treats the whole match as capture 0 (legacy whole-match rules).
+    spay_graft_line(gotLine: string, expLine: string, spayers: Array<any>, _step_n?: number): string {
+        let out = gotLine
+        for (const sp of spayers) {
+            if (!sp?.re) continue
+            let rx: RegExp
+            try { rx = new RegExp(sp.re, this._spay_flags(sp)) }
+            catch { continue }   // a malformed authored regex must never crash the compare
+            const gms = [...out.matchAll(rx)]
+            const ems = [...expLine.matchAll(rx)]
+            if (!gms.length || gms.length !== ems.length) continue
+            const tol = sp.tol ?? (sp.kind === 'band' ? 'band' : 'any')
+            const edits: Array<{ start: number, end: number, text: string }> = []
+            for (let mi = 0; mi < gms.length; mi++) {
+                const gm = gms[mi], em = ems[mi]
+                const ng = gm.length - 1                                  // capture group count
+                const groups = ng > 0 ? Array.from({ length: ng }, (_, k) => k + 1) : [0]
+                for (const grp of groups) {
+                    const gcap = gm[grp], ecap = em[grp]
+                    if (gcap == null || ecap == null || gcap === ecap) continue
+                    if (!this.spay_within(gcap, ecap, tol, sp.factor)) continue
+                    const span = (gm as any).indices?.[grp]
+                    if (!span) continue
+                    edits.push({ start: span[0], end: span[1], text: ecap })
+                }
+            }
+            // apply right-to-left so earlier offsets stay valid
+            edits.sort((a, b) => b.start - a.start)
+            for (const ed of edits) out = out.slice(0, ed.start) + ed.text + out.slice(ed.end)
+        }
+        return out
+    },
+
+    // spay_graft — the snap-level forgiveness verdict (§8.2).  Positional line zip: a value
+    //   drift keeps line count + order, so a differing count is structural drift (not value
+    //    noise) → not forgiven (the §2.4 ordering caveat landing correctly).  Each differing
+    //     line must reconstruct EXACTLY into exp via grafts, else the step is a real surprise.
+    //      Returns the graft log too, for the future §4.3 index (which spans got→exp rewrote).
+    spay_graft(got: string, exp: string, spayers: Array<any>, step_n?: number):
+            { forgiven: boolean, grafts: Array<{ line: number, from: string, to: string }> } {
+        const grafts: Array<{ line: number, from: string, to: string }> = []
+        if (!spayers?.length) return { forgiven: got === exp, grafts }
+        const gl = got.split('\n'), el = exp.split('\n')
+        if (gl.length !== el.length) return { forgiven: false, grafts }
+        let forgiven = true
+        for (let i = 0; i < gl.length; i++) {
+            if (gl[i] === el[i]) continue
+            const rebuilt = this.spay_graft_line(gl[i], el[i], spayers, step_n)
+            if (rebuilt === el[i]) grafts.push({ line: i, from: gl[i], to: el[i] })
+            else forgiven = false
+        }
+        return { forgiven, grafts }
+    },
+
+    // spay_classify_line — for the diff glow (Storui): does any spayer's `re` touch this
+    //   got/exp line pair, and did every touched capture stay within tolerance?  Same
+    //    matching as spay_graft_line, but it only reports — it grafts nothing.
+    //      'none'  — no Snapcap reaches this line.
+    //      'graft' — matched + every capture within tol → this diff is acknowledged noise
+    //                 (it would be forgiven at compare).
+    //      'blown' — matched but a capture is out of variance → a watched line that
+    //                 surprised; it still diffs badly, the glow just says a cap is on it.
+    spay_classify_line(gotLine: string, expLine: string, spayers: Array<any>): 'none' | 'graft' | 'blown' {
+        let touched = false, blown = false
+        for (const sp of spayers) {
+            if (!sp?.re) continue
+            let rx: RegExp
+            try { rx = new RegExp(sp.re, this._spay_flags(sp)) } catch { continue }
+            const gms = [...gotLine.matchAll(rx)]
+            const ems = [...expLine.matchAll(rx)]
+            if (!gms.length || gms.length !== ems.length) continue
+            const tol = sp.tol ?? (sp.kind === 'band' ? 'band' : 'any')
+            for (let mi = 0; mi < gms.length; mi++) {
+                const gm = gms[mi], em = ems[mi]
+                const ng = gm.length - 1
+                const groups = ng > 0 ? Array.from({ length: ng }, (_, k) => k + 1) : [0]
+                for (const grp of groups) {
+                    const gcap = gm[grp], ecap = em[grp]
+                    if (gcap == null || ecap == null) continue
+                    touched = true
+                    if (gcap !== ecap && !this.spay_within(gcap, ecap, tol, sp.factor)) blown = true
+                }
+            }
+        }
+        return !touched ? 'none' : blown ? 'blown' : 'graft'
     },
 
     // ── snap_indent ────────────────────────────────────────────────────────────

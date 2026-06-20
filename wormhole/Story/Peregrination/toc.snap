@@ -5,7 +5,6 @@ story:Peregrination
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.476
-      sample=0.365,at=1781945807
       sample=0.329,at=1781945842
       sample=0.777,at=1781945880
       sample=0.829,at=1781945918
@@ -15,8 +14,8 @@ story:Peregrination
       sample=0.853,at=1781949399
       sample=0.191,at=1781950671
       sample=0.493,at=1781951488
+      sample=0.364,at=1781963005
     TimeTotal:step,avg=0.095
-      sample=0.073,at=1781945807
       sample=0.066,at=1781945842
       sample=0.155,at=1781945880
       sample=0.166,at=1781945918
@@ -26,6 +25,7 @@ story:Peregrination
       sample=0.171,at=1781949399
       sample=0.038,at=1781950671
       sample=0.099,at=1781951488
+      sample=0.073,at=1781963005
   step,dige:b75dd49e6e4919fd
   step=2,dige:028c6e566c40bf00
   step=3,dige:a94460d7836eee56
