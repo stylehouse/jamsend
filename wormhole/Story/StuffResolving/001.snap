@@ -14,7 +14,6 @@ Snap:H
           blah,bang
             first
           etc
-    mo:main,interval=3.6	{"mung":["id"]}
 Snap:cytowave
   upsert,id:cytoid_1_1,label:StuffResolving,isCompound:true
     style,background-color:#8f3232

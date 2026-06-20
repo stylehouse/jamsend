@@ -17,7 +17,6 @@ Snap:H
         self,round	{"mung":["age"]}
         hand:left
         hand:right
-    mo:main,interval=3.6	{"mung":["id"]}
 Snap:cytowave
   upsert,id:cytoid_1_1,label:Yin,isCompound:true
     style,background-color:#bbdb43

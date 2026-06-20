@@ -245,7 +245,7 @@ Library
         sample=0.163,at=1781656675
         sample=0.171,at=1781660709
         sample=0.002,at=1781750531
-  Book:InterestLive,ok_pct=0,done=4,last_run_ms=1781896969.473,active
+  Book:InterestLive,ok_pct=0,done=4,last_run_ms=1781896969.473
     TimeSpool
       TimeTotal:beliefs,avg=1.27
         sample=0.905,at=1781704642

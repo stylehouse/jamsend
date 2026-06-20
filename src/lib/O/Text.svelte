@@ -657,11 +657,8 @@
         d: number
         rules?: Array<any>
         loopy?: number              // integer serial — this is the shallowest/original appearance of a repeated C
-        step_n?: number             // current step number — band/add_step_mult scale their baseline by it
         // outputs written back:
         snap_line?: string
-        raw_line?: string           // the pre-spay parent line — kept so the UI can reveal "what it really was"
-        spayed?: boolean            // true if any blank/band spayer rewrote the rendered line
         stringies?: Record<string, any>
         objecties?: Record<string, any> | undefined
         skip?: boolean
@@ -682,17 +679,16 @@
         // same pattern as before but now also collects omit_sc.
         const bq_keys:   Record<string, 1> = {}
         const omit_keys: Record<string, 1> = {}
-        // spay (EntropyArrest.md §2): the third option between keep and drop.  A
-        //  matched rule carries means.spay = { kind, … }; we collect each spayer here
-        //   exactly as we collect omit_sc/blockquote, then apply them below:
-        //    drop  → fold its keys into mung (today's mung, re-expressed)
-        //    blank → regex-replace the noisy number with the mirage marker
-        //    band  → snap the value to its nailed baseline within tolerance, diverge past factor×
-        //   blank/band rewrite the *rendered line text* (the noise can sit anywhere —
-        //    a mainkey value, a value-key, or inside an objecties blob) so they run
-        //     after parent_line is built; drop must bite before stringies are formed.
+        // spay (EntropyArrest.md §2).  The encoder keeps the snap HONEST — the real
+        //  noisy number stays on disk and in the dige (the pivot in §2.3': forgiveness
+        //   moved to compare time, not encode time).  Only `drop` bites here, because
+        //    it is a structural omission (≡ today's mung — a key that should not appear
+        //     at all), deterministic and value-free.  `blank`/`band` are value
+        //      forgiveness: they capture a noisy number and forgive it against a marker
+        //       or a formula — that needs BOTH the got and the expected number in hand,
+        //        which only exists at compare time, so it lives in spay_normalize, not
+        //         here.  See spay_normalize / collect_spayers below.
         const spay_drop_keys: Record<string, 1> = {}
-        const spay_line_ops: Array<any> = []
         for (const rule of q.rules ?? []) {
             const matched = (rule.matching_any as any[] ?? []).some((entry: any) => {
                 if (entry.mk)      return Object.keys(n.sc ?? {})[0] === entry.mk
@@ -712,7 +708,6 @@
                 : []
             for (const sp of spays) {
                 if (sp.kind === 'drop') Object.assign(spay_drop_keys, sp.these_sc ?? {})
-                else                    spay_line_ops.push(sp)
             }
         }
 
@@ -756,20 +751,10 @@
         q.objecties = Object.keys(objecties).length ? objecties : undefined
         q.mung      = mung
 
-        // Parent line — inline keys only (BQ keys excluded above)
-        const raw_line = this.enL({ d: q.d, objecties: q.objecties ?? {}, stringies })
-        q.raw_line = raw_line
-
-        // spay the rendered line (§2): blank/band rewrite the noisy number in place,
-        //  keeping the line's shape and identity.  The marker rides in the persisted
-        //   snap (so the dige is computed over the spayed text and a noisy number can
-        //    no longer flip story_ok) while q.raw_line keeps what it really was for the
-        //     UI to reveal.  A fully-spayed line is deterministic run-to-run.
-        const parent_line = spay_line_ops.length
-            ? spay_line_ops.reduce((line: string, sp: any) => this.spay_line(line, sp, q.step_n), raw_line)
-            : raw_line
+        // Parent line — inline keys only (BQ keys excluded above).  Honest: the real
+        //  value rides to disk; blank/band forgiveness happens later, in spay_normalize.
+        const parent_line = this.enL({ d: q.d, objecties: q.objecties ?? {}, stringies })
         q.snap_line = parent_line
-        q.spayed    = parent_line !== raw_line
 
         const out_lines: string[] = [parent_line]
 
@@ -843,6 +828,48 @@
     //    keep a fixed precision so the baseline text is stable across runs.
     spay_num(v: number): string {
         return Number.isInteger(v) ? String(v) : v.toFixed(3)
+    },
+
+    // ── collect_spayers ───────────────────────────────────────────────────────────
+    //   Flatten every blank|band spayer out of a matching-rule array (story_matching
+    //    ∪ entropy_rules), recursing through thence_matching.  These are the value
+    //     spayers used at COMPARE time by spay_normalize — `drop` is excluded (it bites
+    //      at encode, a structural omission, not a value to forgive).  No live tree
+    //       needed: a spayer is just { kind, re, glyph | first, factor, … }.
+    collect_spayers(rules: Array<any>): Array<any> {
+        const out: Array<any> = []
+        const walk = (rs: Array<any>) => {
+            for (const r of rs ?? []) {
+                const m = r?.means
+                if (!m) continue
+                const spays = m.spay ? (Array.isArray(m.spay) ? m.spay : [m.spay]) : []
+                for (const sp of spays) if (sp?.kind === 'blank' || sp?.kind === 'band') out.push(sp)
+                if (m.thence_matching) walk(m.thence_matching)
+            }
+        }
+        walk(rules)
+        return out
+    },
+
+    // ── spay_normalize ────────────────────────────────────────────────────────────
+    //   The pivot (EntropyArrest.md §2.3').  Snaps are persisted HONEST — the real
+    //    noisy number stays on disk.  Forgiveness happens here, at compare time, by
+    //     running every value spayer over a snap's text line by line.  Applied to BOTH
+    //      the got snap and the expected snap before they are compared, so a noisy span
+    //       collapses to the same thing on each side:
+    //        blank → both become the marker → the line matches regardless of the number
+    //        band  → both snap to the step-scaled baseline while in tolerance → match;
+    //                a value that blows the band keeps its real number + ‼ on that side
+    //                 only → the lines differ → a real surprise survives.
+    //   Because both sides normalize live, a stale fixture recorded at a different
+    //    number still compares equal — no re-record needed.  The regex self-selects its
+    //     lines (its lookbehind names the key), so applying every spayer to every line
+    //      is safe; a non-matching line passes through untouched.
+    spay_normalize(snap: string, spayers: Array<any>, step_n?: number): string {
+        if (!spayers?.length) return snap
+        return snap.split('\n')
+            .map(line => spayers.reduce((l, sp) => this.spay_line(l, sp, step_n), line))
+            .join('\n')
     },
 
     // ── snap_indent ────────────────────────────────────────────────────────────

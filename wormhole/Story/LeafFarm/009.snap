@@ -3,52 +3,46 @@ Snap:H
     A:farm
       self,round=9	{"mung":["age"]}
       w:farm
+        self,round=9	{"mung":["age"]}
         sunshine,dose=0.8136899401169151
         sunny_streak,count=9
         poo,dose=1.7416682550914064
         leaf,leaf_id:leaf_2_0,dose=0.4022710830106882
         leaf,leaf_id:leaf_3_0,dose=0.32973039591040015
         leaf,leaf_id:leaf_4_0,dose=0.2702708163200001
-        self,round=9	{"mung":["age"]}
     A:plate
       self,round=9	{"mung":["age"]}
       w:plate
+        self,round=9	{"mung":["age"]}
         sunshine,dose
         material:basic,amount=0.7558612060546875
         protein,protein_id:prot_7,complexity=2
         wants_enzyme
-        self,round=9	{"mung":["age"]}
         mouthful,mouthful_id:seed_0_m9,dose=0.2291999999999999,spawning_from:seed_0,ttl=0
         shelf,enzyme,units=5
     A:enzymeco
       self,round=9	{"mung":["age"]}
       w:enzymeco
-        wants_to_produce
         self,round=9	{"mung":["age"]}
-    mo:main,interval=3.6	{"mung":["id"]}
+        wants_to_produce
 Snap:cytowave
   upsert,id:cytoid_1_1_1
-    style,height=34
-    style,width=34
-  {"upsert":1,"id":"cytoid_1_1_2","label":"poo\ndose:1.74"}
-  {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n0.402"}
-    style,height=8
-    style,width=8
-  {"upsert":1,"id":"cytoid_1_1_4","label":"🌿\n0.330","parent":"cytoid_1_1"}
+    style,height=37
+    style,width=37
+  {"upsert":1,"id":"cytoid_1_1_2","label":"poo\ndose:0.87"}
+  {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n0.122"}
+  {"upsert":1,"id":"cytoid_1_1_4","label":"🌿\n0.100","parent":"cytoid_1_1"}
     style,background-color:#29d638
     style,color:#b0ffb0
-    style,height=7
+    style,height=6
     style,shape:ellipse
-    style,width=7
-  {"upsert":1,"id":"cytoid_1_2_4","label":"material:basic\namount:0.76"}
-  {"upsert":1,"id":"cytoid_1_2_7","label":"shelf\nenzyme\nunits:5","parent":"cytoid_1_2"}
-    style,background-color:#1a4828
-    style,color:#90ffc0
-    style,height=24
+    style,width=6
+  {"upsert":1,"id":"cytoid_1_2_2","label":"🌿\n1.679"}
+    style,height=16
+    style,width=16
+  {"upsert":1,"id":"cytoid_1_2_4","label":"material:basic\namount:0.25","parent":"cytoid_1_2"}
+    style,background-color:#3a2810
+    style,color:#ffe8c0
+    style,height=18
     style,shape:round-rectangle
-    style,width=24
-  remove,id:cytoid_1_1_5
-  remove,id:cytoid_1_2_2
-  remove,id:cytoid_1_3_1
-  remove,id:cytoid_1_3_1_1
-  edge_remove,id:cytoid_1_3_1_1_1
+    style,width=18

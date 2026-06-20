@@ -272,9 +272,10 @@ The host stays generic:
 - A **dock** cell → `Lies_run_arm{of_dock}` (the Esc "run it now" intent).
 - A **Book** cell → `e_Lies_become_book` → the editor ships a `become_book` frame; the runner
    `resetStory{Book}`s and the `storyFinished → Lies_runner_verdict → run_result` loop reports back,
-   Book-keyed (`Lies_run_result_recv` accepts a no-dock result as `Book:<name>`). **LANDMINE (untested):**
-   `Auto.auto_reset_story` still `throw`s `"forgot A"` on a *second* Book switch — first run is fine; this
-   blocks any repeated-switch driver (StoryTimes, §5f) until fixed.
+   Book-keyed (`Lies_run_result_recv` accepts a no-dock result as `Book:<name>`). **Repeated Book switches
+   are now safe** — `Auto.auto_reset_story`'s old `throw "forgot A"` (the existing-`H:Story` teardown loop
+   iterating `existing.o({w:1})` directly, finding no `w`) is fixed: it now walks `A → w → run`, stopping
+   each drive before teardown. So the sequencing driver (StoryTimes, §5f) is unblocked.
 
 **The board.** `wormhole/Credence/toc.snap` = `Waft:Credence`, Book-bound + What-grouped to mirror the
 Library: `Peregrination | Lake{Surfer,Nets,Flush} | Leaf{Farm,Juggle} | Port{Plan,Planet,Plant} |
@@ -322,7 +323,8 @@ The Creduler accrues credibility (Credulate HEAD + Credulation trail) but today 
 
 **Build order:** (a) Funkcion→Book/dock bind (§5d first slice) — **DONE**; (b) editor→runner "become Book"
  frame — **DONE** (click a Book cell), `localStorage` persist still open; (c) `StoryTimes` the run-all sweep
-  (§5f); (d) the start==end version guard feeding the matrix; (e) the `run_phase` progress relay last.
+  (§5f) — **DONE** (single-runner width; the fan-out seam is `ADDRESSABLE`); (d) the start==end version guard
+   feeding the matrix; (e) the `run_phase` progress relay last.
 
 **The matrix IS a Waft — don't build a grid widget.** The instinct to render an HTML `<table>` is the
  wrong altitude; the matrix is already the Waft you navigate. The minimal honest shape, all in existing
@@ -343,31 +345,40 @@ The Creduler accrues credibility (Credulate HEAD + Credulation trail) but today 
    `%run_result` and shows the step badge red|green|working. The matrix is N of those on one `Waft:Credence`;
     nothing matrix-specific exists until per-row grouping is needed, and even then it's a `$derived` group-by.
 
-## 5f. StoryTimes — the run-all station (next build, the Credulation sweep)
+## 5f. StoryTimes — the run-all station (LANDED, the Credulation sweep)
 
 The `Storying` cells are *individual* run buttons: click one, that Book runs on the runner and its light
 settles — single runs you play with. **`Funkcion:StoryTimes`** is the *station*: one button that runs **all
 the `%of_Book` cells in its scope, in sequence**, never stopping for an `!ok` — just recording which passed
 and which failed. That sweep IS the Credulation stationing: a full board pass at one sitting.
 
-- **Scope = its containing `What`.** Credence is already `Waft/What/*`-grouped, so StoryTimes gets its
-   run-list for free: it scans its parent `What`'s children for `%of_Book` Funkcions and runs them in order.
-    A What-level station sweeps that group (`What:Lake` → the three Lake Books); a board-level one (its What
-     spanning all) sweeps everything. *(If we want a board-level run-all, encase the groups under one outer
-      What, or drop a StoryTimes at the Waft root that walks all Whats.)*
-- **An action kind with a sequencing driver.** Like Ballistics it has no pumped `run` — it's a button. But
-   its click can't fire-and-forget N become_books: the runner is one *sequential* Story Run, so it needs a
-    Lies-side driver — a `req:StoryTimes` (one per struck station) holding the queue, advancing on each
-     `run_result`: run Book 1, await its verdict, run Book 2, … "Not stopping for `!ok`" = it records the
-      verdict and proceeds regardless; the row of cell-lights IS the result. (The become_book→run_result loop
-       already gives the per-Book step; StoryTimes only chains it.)
+**BUILT.** `O/Funk/StoryTimes.svelte` (the kind) + `Lies_storytimes_drive` and helpers in `LiesWaft.svelte`
+(the sequencer), registered in `O/Funk/kinds.ts`. `Waft:Credence` now carries a per-What station (the first
+child of each `What:*`) plus a board-wide `Funkcion:StoryTimes,all:1` at the Waft root.
+
+- **Scope = its containing `What`** (or the whole Waft for `%all` / a Waft-root station). Credence is already
+   `Waft/What/*`-grouped, so a station scans its scope's descendants for `%of_Book` Storying cells and runs
+    them in order (`Lies_storytimes_books`/`Lies_storytimes_scope_c`). A What-level station sweeps that group
+     (`What:Lake` → the three Lake Books); the `%all` board-level one sweeps every What.
+- **A monitor kind whose pumped `run` IS the sequencer.** Not an action (despite *feeling* like a button):
+   a fire-and-forget click can't chain N become_books, because the runner is one *sequential* Story Run that
+    `resetStory`s on each switch — a second become_book mid-run would clobber the first. So the click only
+     *arms* (`funk.c.sweep={phase:'arm'}`); the central Funkcions pump ticks `storytimes_run` → `Lies_storytimes_-
+      drive`, which builds the queue, dispatches become_book, and **advances on each `run_result`** (book-keyed,
+       newer-than-dispatch), recording the verdict and proceeding regardless of pass/fail. A 60s per-Book
+        timeout fails-and-advances so a stalled runner can't wedge the board. All state rides off-snap on
+         `funk.c.sweep` (`{phase,queue,inflight,results,total}`) — inspectable, never persisted.
+- **Runners on the phone — the in-flight width.** `Lies_runner_count(w)` reports however many runner Piers
+   are connected (shown on the station as `⌥N`). The sweep keeps `Lies_storytimes_width(w)` Books in flight.
+    **Today that width is capped at 1** (`ADDRESSABLE=1`): a `become_book` is a single-address broadcast to the
+     one bridged runner — the frame carries no per-runner `to` (§7) — so two at once would reset that runner
+      mid-run. **The fan-out seam is one constant:** when the channel carries a runner address, lift
+       `ADDRESSABLE` to `Lies_runner_count(w)` and the same driver dispatches across the fleet, the round of
+        cell-lights filling in parallel. (Each switch tears down + rebuilds the Story Run, so a sweep of 11
+         Books on one runner is 11 teardowns — thorough, not fast; fanning across runners is the speedup.)
 - **Feeds the matrix.** A sweep populates a whole Credence row at a known version-set — exactly the
    `book × dock` matrix's input; the §6 start==end version guard gates whether a sweep's verdicts are
     trustworthy or HMR-drifted.
-- **⚠ BLOCKED on the become-Book landmine.** StoryTimes does *exactly* repeated Book switches, so it will
-   hit `Auto.auto_reset_story`'s `throw "forgot A"` on the second Book immediately. Fixing that teardown is a
-    hard prerequisite, not a polish item. (And each switch tears down + rebuilds the Story Run — a sweep of
-     11 Books is 11 teardowns; fine for a thorough credulation pass, not a fast one.)
 
 **Vision — Funkcions as public-sphere infra.** A Credence board is a small instance of a larger pattern:
 embedded buttons in a shared document that **switch server-side functionality on**. "Click a test to run it
@@ -414,8 +425,10 @@ The Creduler is credibility of code over runs. Its missing half is **a runner th
    parse-for-Points-only path that emits NO `.go` (see [[nong-pointing-todo]] + the gate comment in
     Lang.svelte).
 - **Deferred for v1:** security/trust *enforcement* (accept the one runner, trust-everything handshake);
-   many-runners fan-out (`dock_push`/Rungo per connected runner); `Thangs` persistence of who's allowed
-    (Peeroleum heading 11).
+   many-runners fan-out — the frame needs a per-runner `to` so the editor can address one of several
+    connected runners (`dock_push`/Rungo/`become_book` per runner). StoryTimes (§5f) is already written to
+     fan out across the fleet; it's gated only by `ADDRESSABLE=1` until that addressing lands. `Thangs`
+      persistence of who's allowed (Peeroleum heading 11).
 - Loose ends: stray `debugger` at `Housing.svelte.ts:1852`; the `ack seq=undefined DROPPED` after each
    HMR (channel re-establish — separate from latency).
 
@@ -425,6 +438,7 @@ The Creduler is credibility of code over runs. Its missing half is **a runner th
     → re-enable ambient tick, stop story_drive" mode need adding to `story_drive`? Verify on :9091.
 - **step count / mode.** `toc.snap` has one `step,dige` (a lie dige). Confirm it runs exactly one step
    then settles; Accept/Resnapture to record the real dige.
-- **re-activation landmine (pre-existing):** `Auto.svelte` `auto_reset_story` has `throw "forgot A"` in
-   the existing-H:Story teardown loop — switching Books after one is up will throw. First boot is fine;
-    fix before relying on Book-switching.
+- **re-activation landmine (FIXED):** `Auto.svelte` `auto_reset_story` no longer `throw`s `"forgot A"` —
+   the teardown loop now walks `A → w → run` (it had iterated `existing.o({w:1})` directly, found no `w`,
+    and threw on every Book-switch / from-start reset). Book-switching and the StoryTimes sweep (§5f) are
+     safe.

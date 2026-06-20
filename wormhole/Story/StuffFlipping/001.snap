@@ -194,7 +194,6 @@ Snap:H
           {"ok":"split-left: old Leg(6–10) → new Leg(6–7) via from-anchor"}
           {"ok":"range-narrow: still resolves (not dropped)"}
           all_ok
-    mo:main,interval=3.6	{"mung":["id"]}
 Snap:cytowave
   upsert,id:cytoid_1_1,label:StuffFlipping,isCompound:true
     style,background-color:#8f3232

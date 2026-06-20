@@ -3,60 +3,69 @@ Snap:H
     A:farm
       self,round=21	{"mung":["age"]}
       w:farm
+        self,round=21	{"mung":["age"]}
         sunshine,dose=0.6084069502421748
         sunny_streak,count
         poo,dose=2.1919899701105017
         leaf,leaf_id:leaf_4_0,dose=1.9439626689080272
         seen:wonder
-        self,round=21	{"mung":["age"]}
     A:plate
       self,round=21	{"mung":["age"]}
       w:plate
+        self,round=21	{"mung":["age"]}
         sunshine,dose
         material:basic,amount=0.5272816796545332
         shelf,enzyme,units=5
         leaf,leaf_id:leaf_2_0,dose=1.7216344560677928,tick=20
         leaf,leaf_id:leaf_3_0,dose=2.0316344560677924,tick=21
         protein,protein_id:prot_21,complexity
-        self,round=21	{"mung":["age"]}
         mouthful,mouthful_id:leaf_2_0_m21,dose=0.33999999999999997,spawning_from:leaf_2_0,ttl=0
         mouthful,mouthful_id:leaf_3_0_m21,dose=0.33999999999999997,spawning_from:leaf_3_0,ttl=0
     A:enzymeco
       self,round=21	{"mung":["age"]}
       w:enzymeco
         self,round=21	{"mung":["age"]}
-    mo:main,interval=3.6	{"mung":["id"]}
 Snap:cytowave
   upsert,id:cytoid_1_1_1
-    style,height=31
-    style,width=31
-  {"upsert":1,"id":"cytoid_1_1_2","label":"poo\ndose:2.19"}
-  upsert,id:cytoid_1_2_10
+    style,height=37
+    style,width=37
+  {"upsert":1,"id":"cytoid_1_1_2","label":"poo\ndose:1.54"}
+  {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n0.270"}
     style,height=7
     style,width=7
-  {"upsert":1,"id":"cytoid_1_2_11","label":"🌿\n2.032","parent":"cytoid_1_2"}
+  {"upsert":1,"id":"cytoid_1_1_4","label":"🌿\n0.222","parent":"cytoid_1_1"}
     style,background-color:#29d638
     style,color:#b0ffb0
-    style,height=19
+    style,height=6
     style,shape:ellipse
-    style,width=19
-  {"upsert":1,"id":"cytoid_1_2_12","label":"protein\nprotein_id:prot_21\ncomplexity","parent":"cytoid_1_2"}
+    style,width=6
+  {"upsert":1,"id":"cytoid_1_2_2","label":"🌿\n0.539"}
+    style,height=9
+    style,width=9
+  {"upsert":1,"id":"cytoid_1_2_4","label":"material:basic\namount:0.65"}
+  {"upsert":1,"id":"cytoid_1_2_5","label":"protein\nprotein_id:prot_7\ncomplexity:2","parent":"cytoid_1_2"}
     style,background-color:#3a1a4a
     style,color:#ddc8ff
-    style,height=21
+    style,height=24
     style,shape:hexagon
-    style,width=21
-  upsert,id:cytoid_1_2_13,label:mouthful,parent:cytoid_1_2
-    style,background-color:#4a7a20
-    style,color:#003300
-    style,height=7
+    style,width=24
+  upsert,id:cytoid_1_2_6,label:wants_enzyme,parent:cytoid_1_2
+    style,background-color:#6a1a08
+    style,color:#ff9070
+    style,height=22
+    style,shape:star
+    style,width=22
+  {"upsert":1,"id":"cytoid_1_3_1","label":"producing\nticks_left:2","parent":"cytoid_1_3"}
+    style,background-color:#142060
+    style,color:#9ab4ff
+    style,height=42
+    style,shape:round-rectangle
+    style,width=42
+  {"upsert":1,"id":"cytoid_1_3_1_1","label":"enzyme\nunits:5","parent":"cytoid_1_3"}
+    style,background-color:#3aa67e
+    style,color:#ccc
+    style,height=20
     style,shape:ellipse
-    style,width=7
-  {"upsert":1,"id":"cytoid_1_2_4","label":"material:basic\namount:0.53"}
-  {"upsert":1,"id":"cytoid_1_2_9","label":"🌿\n1.722"}
-    style,height=17
-    style,width=17
+    style,width=20
+  edge_upsert,id:cytoid_1_3_1_1_1,source:cytoid_1_3_1,target:cytoid_1_3_1_1
   remove,id:cytoid_1_1_5
-  remove,id:cytoid_1_2_6
-  remove,id:cytoid_1_2_7
-  migrate,id:cytoid_1_1_4,toward:cytoid_1_2_11

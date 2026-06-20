@@ -1,19 +1,26 @@
 Waft:Credence
+  Funkcion:StoryTimes,all:1
   What:Peregrination
+    Funkcion:StoryTimes
     Funkcion:Storying,of_Book:Peregrination
   What:Lake
+    Funkcion:StoryTimes
     Funkcion:Storying,of_Book:LakeSurfer
     Funkcion:Storying,of_Book:LakeNets
     Funkcion:Storying,of_Book:LakeFlush
   What:Leaf
+    Funkcion:StoryTimes
     Funkcion:Storying,of_Book:LeafFarm
     Funkcion:Storying,of_Book:LeafJuggle
   What:Port
+    Funkcion:StoryTimes
     Funkcion:Storying,of_Book:PortPlan
     Funkcion:Storying,of_Book:PortPlanet
     Funkcion:Storying,of_Book:PortPlant
   What:Stuff
+    Funkcion:StoryTimes
     Funkcion:Storying,of_Book:StuffFlipping
     Funkcion:Storying,of_Book:StuffResolving
   What:LangTiles
+    Funkcion:StoryTimes
     Funkcion:Storying,of_Book:LangTiles

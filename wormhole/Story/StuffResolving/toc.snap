@@ -25,16 +25,24 @@ story:StuffResolving
   Plan
   Opt
     For
+    useCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.007
-      sample=0.005,at=1778646752
-      sample=0.004,at=1778646757
-      sample=0.004,at=1778646776
-      sample=0.004,at=1778646781
-      sample=0.005,at=1778647260
-      sample=0.007,at=1778647469
+    TimeTotal:beliefs,avg=0.008
       sample=0.015,at=1778647932
       sample=0.005,at=1778804554
       sample=0.009,at=1781080327
       sample=0.009,at=1781080336
-  step,dige:cb36e5340bffca01
+      sample=0.004,at=1781947668
+      sample=0.004,at=1781947737
+      sample=0.004,at=1781947756
+      sample=0.004,at=1781947760
+      sample=0.018,at=1781947769
+      sample=0.003,at=1781947791
+    TimeTotal:step,avg=0.006
+      sample=0.004,at=1781947668
+      sample=0.004,at=1781947737
+      sample=0.004,at=1781947756
+      sample=0.004,at=1781947760
+      sample=0.018,at=1781947769
+      sample=0.003,at=1781947791
+  step,dige:904f453593d439e7

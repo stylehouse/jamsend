@@ -3,6 +3,7 @@ Snap:H
     A:Yin,began
       self,round=6	{"mung":["age"]}
       w:Yin
+        self,round=6	{"mung":["age"]}
         hand:left
           leaf
         hand:right
@@ -10,21 +11,109 @@ Snap:H
           thing:with,see	{"loopy":0}
         other=3
           thing,see	{"loopy":0,"hid":1}
-        self,round=6	{"mung":["age"]}
     A:Yang
       self,round=6	{"mung":["age"]}
       w:Yang
+        self,round=6	{"mung":["age"]}
         hand:left
         hand:right
-        self,round=6	{"mung":["age"]}
-    mo:main,interval=3.6	{"mung":["id"]}
 Snap:cytowave
-  upsert,id:cytoid_1_1_1_2,label:🌿,parent:cytoid_1_1
+  upsert,id:cytoid_1_1,label:Yin,isCompound:true
+    style,background-color:#bbdb43
+    style,background-opacity=0.6
+    style,color:#ccc
+    style,font-size:8px
+    style,font-style:italic
+    style,height=20
+    style,padding:7px
+    style,shape:ellipse
+    style,text-valign:top
+    style,width=20
+  upsert,id:cytoid_1_1_1,label:left,parent:cytoid_1_1
+    style,background-color:#1a1a28
+    style,border-color:#5a5a9a
+    style,border-style:solid
+    style,border-width
+    style,color:#8888bb
+    style,height=24
+    style,shape:round-rectangle
+    style,width=24
+  upsert,id:cytoid_1_1_1_1,label:🌿,parent:cytoid_1_1
     style,background-color:#1a5a2a
     style,color:#b0ffb0
     style,height=20
     style,shape:triangle
     style,width=20
-  edge_upsert,id:cytoid_1_1_1_2_1,source:cytoid_1_1_1,target:cytoid_1_1_1_2
-  remove,id:cytoid_1_1_5
-  migrate,id:cytoid_1_1_5,toward:cytoid_1_1_1_2
+  upsert,id:cytoid_1_1_2,label:right,parent:cytoid_1_1
+    style,background-color:#1a1a28
+    style,border-color:#5a5a9a
+    style,border-style:solid
+    style,border-width
+    style,color:#8888bb
+    style,height=24
+    style,shape:round-rectangle
+    style,width=24
+  upsert,id:cytoid_1_1_3,label:whatsit,parent:cytoid_1_1
+    style,background-color:#bd36c9
+    style,color:#ccc
+    style,height=20
+    style,shape:hexagon
+    style,width=20
+  {"upsert":1,"id":"cytoid_1_1_3_1","label":"thing:with\nsee","parent":"cytoid_1_1"}
+    style,background-color:#298699
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  {"upsert":1,"id":"cytoid_1_1_4","label":"other:3","parent":"cytoid_1_1"}
+    style,background-color:#bc2476
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  {"upsert":1,"id":"cytoid_1_1_4_1","label":"thing:with\nsee","parent":"cytoid_1_1"}
+    style,background-color:#298699
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  upsert,id:cytoid_1_2,label:Yang,isCompound:true
+    style,background-color:#bbdb43
+    style,background-opacity=0.6
+    style,color:#ccc
+    style,font-size:8px
+    style,font-style:italic
+    style,height=20
+    style,padding:7px
+    style,shape:ellipse
+    style,text-valign:top
+    style,width=20
+  upsert,id:cytoid_1_2_1,label:left,parent:cytoid_1_2
+    style,background-color:#1a1a28
+    style,border-color:#5a5a9a
+    style,border-style:solid
+    style,border-width
+    style,color:#8888bb
+    style,height=24
+    style,shape:round-rectangle
+    style,width=24
+  upsert,id:cytoid_1_2_2,label:right,parent:cytoid_1_2
+    style,background-color:#1a1a28
+    style,border-color:#5a5a9a
+    style,border-style:solid
+    style,border-width
+    style,color:#8888bb
+    style,height=24
+    style,shape:round-rectangle
+    style,width=24
+  edge_upsert,id:cytoid_1_1_1_1_1,source:cytoid_1_1_1,target:cytoid_1_1_1_1
+  edge_upsert,id:cytoid_1_1_3_1_1,source:cytoid_1_1_3,target:cytoid_1_1_3_1
+  edge_upsert,id:cytoid_1_1_3_1_2,source:cytoid_1_1_3_1,target:cytoid_1_1_4_1
+    style,curve-style:bezier
+    style,line-color:#4488ff
+    style,line-style:dashed
+    style,opacity=0.5
+    style,target-arrow-color:#4488ff
+    style,target-arrow-shape:none
+    style,width=1.2
+  edge_upsert,id:cytoid_1_1_4_1_1,source:cytoid_1_1_4,target:cytoid_1_1_4_1

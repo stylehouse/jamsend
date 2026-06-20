@@ -5,6 +5,7 @@ Snap:H
       w:Lies
         Opt
           dontSnapGhostList
+        self,round=15	{"mung":["age"]}
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/LakeSurfer/Waftily/toc.snap,waft_path:Story/LakeSurfer/Waftily
             known,dige:194ecbd2c531d08c,kind:read	{"mung":["at"]}
@@ -44,17 +45,17 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781888238446,kind:cold
-          want=1781888238496,kind:cold
-          want=1781888238653,kind:cold,resolved
+          want=1781947604007,kind:cold
+          want=1781947604057,kind:cold
+          want=1781947604209,kind:cold,resolved
         o_elvis:dock_askies
-        self,round=15	{"mung":["age"]}
         see:🗂 1 doc · 1 Waft
     A:Lang
       self,round=15	{"mung":["age"]}
       w:Lang
         Opt
           txtsyntaxdump
+        self,round=15	{"mung":["age"]}
         model,cyto_dir
         docks
           dock:Ghost/test/Idzeuzia.g,active	{"loopy":0}
@@ -251,7 +252,7 @@ Snap:H
                 controlflow,keyword:if,title:(Idzeug.stashed.nRepeating) {,line=750,via:claim_Idzeug_number,rel_from=3627,rel_to=3630
                 controlflow,keyword:if,title:(N.includes(n)) return false,line=755,via:claim_Idzeug_number,rel_from=3748,rel_to=3751
                 def,method:ier_is_Good,line=763,rel_from=4005,rel_to=4017
-              time,compile=0.068,all=0.827,write=0
+              time,compile=0.108,all=1.21,write=0
               Output,gen_path:gen/test/Idzeuzia.go,dige:a66bfcce15c2d272,source_dige:f894a5ff10d26203
                source: |
                  <script lang="ts">
@@ -1294,7 +1295,7 @@ Snap:H
           Change
             backend,dige:f894a
             storage,dige:f894a
-            compile,dige:f894a,secs=0.068,dim,pending
+            compile,dige:f894a,secs=0.108,dim,pending
         req:workon,auto_push	{"ref":{"w":"%w:Lang"}}
           {"req":"understanding","maz":3,"permanent":1,"sig":"2:13:0:0","what":"itis","finished":1}
           req:ingredients,maz=2,permanent,sig:Ghost/test/Idzeuzia.g,finished
@@ -1327,14 +1328,13 @@ Snap:H
           {"encode":1,"snap_origin":"Doc:Ghost/test/Idzeuzia.g\nPoint,method:Idzeugnosis\nPoint:Idzeuganise\nPoint:Idvoyage_verify\n","snap_working":"Doc:Ghost/test/Idzeuzia.g\nPoint,method:Idzeugnosis\nPoint:Idzeuganise\nPoint:Idvoyage_verify\n","dirty":"0"}
         received,doc_opened,doc:Ghost/test/Idzeuzia.g
         received,editorBegins,doc:Ghost/test/Idzeuzia.g
-        self,round=15	{"mung":["age"]}
         see:🟦 tiles 0 bookmarks
     A:Pantheate
       self,round=4	{"mung":["age"]}
       w:Pantheate
+        self,round=4	{"mung":["age"]}
         include:gen/test/Idzeuzia.go
         req:include,gen_path:gen/test/Idzeuzia.go,path:Ghost/test/Idzeuzia.g,source_dige:f894a5ff10d26203,ghostmeta_name:Ghostmeta_Ghost_test_Idzeuzia,permanent,live_dige:f894a5ff10d26203,finished
-        self,round=4	{"mung":["age"]}
         o_elvis:Ghost_update_notify
     watched:ave
       examining	{"loopy":1,"hid":1}

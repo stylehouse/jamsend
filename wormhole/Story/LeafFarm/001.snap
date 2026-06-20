@@ -17,7 +17,6 @@ Snap:H
       self,round	{"mung":["age"]}
       w:enzymeco
         self,round	{"mung":["age"]}
-    mo:main,interval=3.6	{"mung":["id"]}
 Snap:cytowave
   upsert,id:cytoid_1_1,label:farm,isCompound:true
     style,background-color:#8f3232

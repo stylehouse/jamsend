@@ -159,6 +159,17 @@ test(`Story_cli: run + dump Book:${BOOK}`, async () => {
     try { rmSync(OUT, { recursive: true, force: true }) } catch {}
     mkdirSync(OUT, { recursive: true })
     const steps: any[] = []
+    // EntropyArrest spay-normalize (the §2.3' pivot): forgive acknowledged value-noise
+    //  at COMPARE time, applied to BOTH the got and the expected snap, so a churning
+    //   number (round, a timestamp, a banded timing) collapses to the same thing on each
+    //    side and the step matches without a fixture re-record.  `exact` is byte equality;
+    //     `match` is equality after forgiveness; `caveat` is a step that only passes
+    //      because it was forgiven — "virtually OK".
+    const spayers = (() => {
+        try { return S.collect_spayers([...(S.story_matching ?? []), ...S.entropy_rules(w?.c.The)]) }
+        catch { return [] }
+    })()
+    const forgive = (s: string, n: number) => spayers.length ? S.spay_normalize(s, spayers, n) : s
     for (const n of Object.keys(got).map(Number).sort((a, b) => a - b)) {
         const g = hide(got[n].snap).trimEnd()
         let exp = ''
@@ -166,7 +177,10 @@ test(`Story_cli: run + dump Book:${BOOK}`, async () => {
         writeFileSync(path.join(OUT, `${pad(n)}.got.snap`), g + '\n')
         writeFileSync(path.join(OUT, `${pad(n)}.exp.snap`), exp + '\n')
         writeFileSync(path.join(OUT, `${pad(n)}.trace.txt`), traceDump(got[n].trace) + '\n')
-        steps.push({ n, story_ok: got[n].ok, match: g === exp && !!exp, got_lines: g.split('\n').length, exp_lines: exp ? exp.split('\n').length : 0 })
+        const exact = g === exp && !!exp
+        const match = (exact || forgive(g, n) === forgive(exp, n)) && !!exp
+        steps.push({ n, story_ok: got[n].ok, match, exact, caveat: match && !exact,
+                     got_lines: g.split('\n').length, exp_lines: exp ? exp.split('\n').length : 0 })
     }
     if (w) writeFileSync(path.join(OUT, 'wstory.json'), JSON.stringify(dumpC(w), null, 1))
     const summary = { book: BOOK, captured: steps.length, mode: run?.sc.mode,
@@ -175,7 +189,10 @@ test(`Story_cli: run + dump Book:${BOOK}`, async () => {
 
     // ── tiny console: just the pointer + headline ────────────────────────────
     console.log(`[Story_cli] ${BOOK}: ${steps.length} steps → ${OUT}`)
-    console.log(`[Story_cli] match: ${steps.filter(s => s.match).length}/${steps.length}  surprises at steps: [${summary.surprises.join(',')}]`)
+    const forgiven = steps.filter(s => s.caveat).map(s => s.n)
+    console.log(`[Story_cli] match: ${steps.filter(s => s.match).length}/${steps.length}`
+        + `  surprises at steps: [${summary.surprises.join(',')}]`
+        + (forgiven.length ? `  forgiven (caveat) at: [${forgiven.join(',')}]` : ''))
 
     // halt the machine so its drive timers/elvises stop firing after the test
     try { if (run) run.c.driving = false; for (const h of allHouses(H)) h.stop?.() } catch {}

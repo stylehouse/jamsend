@@ -3,21 +3,21 @@ Snap:H
     A:farm
       self,round=7	{"mung":["age"]}
       w:farm
+        self,round=7	{"mung":["age"]}
         sunshine,dose=1.0316046833244368
         sunny_streak,count=7
         poo,dose=1.5400252665625
         leaf,leaf_id:leaf_2_0,dose=0.2702708163200001
         leaf,leaf_id:leaf_3_0,dose=0.22153345600000007
         leaf,leaf_id:leaf_4_0,dose=0.18158480000000005
-        self,round=7	{"mung":["age"]}
     A:plate
       self,round=7	{"mung":["age"]}
       w:plate
+        self,round=7	{"mung":["age"]}
         sunshine,dose
         leaf,leaf_id:seed_0,dose=0.5391999999999999,tick=2
         material:basic,amount=0.650419921875
         protein,protein_id:prot_7,complexity=2
-        self,round=7	{"mung":["age"]}
         mouthful,mouthful_id:seed_0_m7,dose=0.28,spawning_from:seed_0,ttl=0
         wants_enzyme
     A:enzymeco
@@ -26,48 +26,61 @@ Snap:H
         self,round=7	{"mung":["age"]}
         producing,ticks_left=2
           enzyme,units=5
-    mo:main,interval=3.6	{"mung":["id"]}
 Snap:cytowave
-  upsert,id:cytoid_1_1_1
-    style,height=37
-    style,width=37
-  {"upsert":1,"id":"cytoid_1_1_2","label":"poo\ndose:1.54"}
-  {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n0.270"}
-    style,height=7
-    style,width=7
-  {"upsert":1,"id":"cytoid_1_1_4","label":"🌿\n0.222","parent":"cytoid_1_1"}
+  upsert,id:cytoid_1_1,label:farm,isCompound:true
+    style,background-color:#8f3232
+    style,background-opacity=0.6
+    style,color:#ccc
+    style,font-size:8px
+    style,font-style:italic
+    style,height=20
+    style,padding:7px
+    style,shape:ellipse
+    style,text-valign:top
+    style,width=20
+  upsert,id:cytoid_1_1_1,label:sunshine,parent:cytoid_1_1
+    style,background-color:#bbdb43
+    style,color:#331800
+    style,height=33
+    style,shape:star
+    style,width=33
+  {"upsert":1,"id":"cytoid_1_1_2","label":"poo\ndose:0.34","parent":"cytoid_1_1"}
+    style,background-color:#5c3010
+    style,color:#c88040
+    style,height=18
+    style,shape:ellipse
+    style,width=18
+  {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n1.860","parent":"cytoid_1_1"}
     style,background-color:#29d638
     style,color:#b0ffb0
-    style,height=6
+    style,height=18
     style,shape:ellipse
-    style,width=6
-  {"upsert":1,"id":"cytoid_1_2_2","label":"🌿\n0.539"}
-    style,height=9
-    style,width=9
-  {"upsert":1,"id":"cytoid_1_2_4","label":"material:basic\namount:0.65"}
-  {"upsert":1,"id":"cytoid_1_2_5","label":"protein\nprotein_id:prot_7\ncomplexity:2","parent":"cytoid_1_2"}
-    style,background-color:#3a1a4a
-    style,color:#ddc8ff
-    style,height=24
-    style,shape:hexagon
-    style,width=24
-  upsert,id:cytoid_1_2_6,label:wants_enzyme,parent:cytoid_1_2
-    style,background-color:#6a1a08
-    style,color:#ff9070
-    style,height=22
-    style,shape:star
-    style,width=22
-  {"upsert":1,"id":"cytoid_1_3_1","label":"producing\nticks_left:2","parent":"cytoid_1_3"}
-    style,background-color:#142060
-    style,color:#9ab4ff
-    style,height=42
-    style,shape:round-rectangle
-    style,width=42
-  {"upsert":1,"id":"cytoid_1_3_1_1","label":"enzyme\nunits:5","parent":"cytoid_1_3"}
-    style,background-color:#3aa67e
+    style,width=18
+  upsert,id:cytoid_1_2,label:plate,isCompound:true
+    style,background-color:#8f3232
+    style,background-opacity=0.6
     style,color:#ccc
+    style,font-size:8px
+    style,font-style:italic
     style,height=20
+    style,padding:7px
     style,shape:ellipse
+    style,text-valign:top
     style,width=20
-  edge_upsert,id:cytoid_1_3_1_1_1,source:cytoid_1_3_1,target:cytoid_1_3_1_1
-  remove,id:cytoid_1_1_5
+  upsert,id:cytoid_1_2_1,label:sunshine,parent:cytoid_1_2
+    style,background-color:#bbdb43
+    style,color:#331800
+    style,height=37
+    style,shape:star
+    style,width=37
+  upsert,id:cytoid_1_3,label:enzymeco,isCompound:true
+    style,background-color:#8f3232
+    style,background-opacity=0.6
+    style,color:#ccc
+    style,font-size:8px
+    style,font-style:italic
+    style,height=20
+    style,padding:7px
+    style,shape:ellipse
+    style,text-valign:top
+    style,width=20

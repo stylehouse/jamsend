@@ -67,16 +67,26 @@ story:StuffFlipping
   Plan
   Opt
     For
+    useCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.095
-      sample=0.092,at=1776929359
-      sample=0.079,at=1776929364
-      sample=0.045,at=1777260473
-      sample=0.118,at=1778378534
-      sample=0.084,at=1779062991
-      sample=0.148,at=1779622702
-      sample=0.148,at=1779622713
-      sample=0.077,at=1781080310
+    TimeTotal:beliefs,avg=0.079
       sample=0.077,at=1781080322
       sample=0.085,at=1781607902
-  step,dige:1079358c362446bb
+      sample=0.098,at=1781947665
+      sample=0.069,at=1781947717
+      sample=0.071,at=1781947734
+      sample=0.129,at=1781947766
+      sample=0.066,at=1781947775
+      sample=0.066,at=1781947777
+      sample=0.061,at=1781947781
+      sample=0.068,at=1781947786
+    TimeTotal:step,avg=0.079
+      sample=0.098,at=1781947665
+      sample=0.069,at=1781947717
+      sample=0.071,at=1781947734
+      sample=0.129,at=1781947766
+      sample=0.066,at=1781947775
+      sample=0.066,at=1781947777
+      sample=0.061,at=1781947781
+      sample=0.068,at=1781947786
+  step,dige:2bfb22e11aa3f336

@@ -3,8 +3,8 @@ Snap:H
     A:PortPlan
       self,round=2	{"mung":["age"]}
       w:PortPlan
+        self,round=2	{"mung":["age"]}
         req:sort,maz=2,finished
           req:wait,time=123,thing=3,finished
         req:yay,finished
-        self,round=2	{"mung":["age"]}
         confetti:!!!

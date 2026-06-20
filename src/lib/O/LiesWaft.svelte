@@ -521,6 +521,118 @@ await M.eatfunc({
         },
 
 //#endregion
+//#region StoryTimes — the run-all sweep (Editron §5f, the Credulation stationing)
+
+        // ── Lies_storytimes_drive — the sweep sequencer ───────────────────────────────────
+        //   A StoryTimes station (Funkcion:StoryTimes) is struck → its component arms
+        //    funk.c.sweep={phase:'arm'}; the central Funkcions pump ticks storytimes_run, which
+        //     lands here.  We run every %of_Book Storying cell in the station's scope IN SEQUENCE,
+        //      "never stopping for an !ok" — each become_book→run_result settles its own cell beside
+        //       us; the sweep just chains them and tallies which passed.  The runner is one
+        //        sequential Story Run, so we keep at most `width` Books in flight and advance each as
+        //         its run_result lands (or after a timeout, so a stalled runner can't wedge the board).
+        //   The whole sweep state is off-snap on funk.c.sweep — inspectable, never persisted.
+        async Lies_storytimes_drive(host: TheC, funk: TheC, w: TheC) {
+            const H = this as House
+            const s = funk.c.sweep as any
+            if (!s || s.phase === 'idle' || s.phase === 'done') return
+
+            if (s.phase === 'arm') {                                   // build the queue once, then run
+                const books = H.Lies_storytimes_books(funk, host)
+                funk.c.sweep = { phase: books.length ? 'running' : 'done',
+                                 queue: [...books], inflight: [], results: {}, total: books.length, started: Date.now() }
+                funk.bump_version()
+                H.tlog(`⇶ StoryTimes ${funk.sc.all ? 'all' : H.Lies_storytimes_scope(funk)}: ${books.length} Book(s) — ${books.join(', ')}`)
+                return
+            }
+            if (s.phase !== 'running') return
+
+            let changed = false
+            // reap settled / timed-out dispatches.  A book is done when a run_result newer than its
+            //  dispatch lands (book-keyed by Lies_run_result_recv); a 60s stall fails it and moves on.
+            const still: any[] = []
+            for (const f of s.inflight) {
+                const rr = (w.o({ run_result: 1 }) as TheC[])
+                    .filter(r => r.sc.book === f.book)
+                    .sort((a, b) => Number(b.sc.at ?? 0) - Number(a.sc.at ?? 0))[0]
+                if (rr && Number(rr.sc.at ?? 0) > f.at) { s.results[f.book] = rr.sc.ok ? 'pass' : 'fail'; changed = true; continue }
+                if (Date.now() - f.at > 60000)          { s.results[f.book] = 'fail';                     changed = true; continue }
+                still.push(f)
+            }
+            s.inflight = still
+
+            // dispatch up to the addressable runner width (§5f: one today, fans out when the channel
+            //  carries a per-runner address).
+            const width = H.Lies_storytimes_width(w)
+            while (s.inflight.length < width && s.queue.length) {
+                const book = s.queue.shift() as string
+                H.Lies_storytimes_dispatch(w, book)
+                s.inflight.push({ book, at: Date.now() })
+                changed = true
+            }
+
+            if (!s.queue.length && !s.inflight.length) {
+                s.phase = 'done'; changed = true
+                const green = Object.values(s.results as Record<string, string>).filter(v => v === 'pass').length
+                H.tlog(`🏁 StoryTimes done: ${green}/${s.total} green`)
+            }
+            if (changed) funk.bump_version()
+        },
+
+        // the Books this station sweeps: every %of_Book Storying cell under its scope.  Scope is the
+        //  station's containing What (its group), or the whole Waft when it rides the root or carries
+        //   %all — the board-wide run-everything (§5f: "a StoryTimes at the Waft root that walks all
+        //    Whats").  Order = snap order; dedup so an of_Book listed twice runs once.
+        Lies_storytimes_books(funk: TheC, host: TheC): string[] {
+            const scope = (this as House).Lies_storytimes_scope_c(funk, host)
+            const out: string[] = []
+            const walk = (c: TheC) => { for (const k of c.o() as TheC[]) {
+                if (k.sc.Funkcion === 'Storying' && k.sc.of_Book) out.push(k.sc.of_Book as string); walk(k) } }
+            if (scope) walk(scope)
+            return [...new Set(out)]
+        },
+        Lies_storytimes_scope_c(funk: TheC, host: TheC): TheC {
+            if (funk.sc.all) return host                              // %all → the whole Waft
+            let node: any = funk.c.up
+            while (node && node.sc?.What === undefined && node.sc?.Waft === undefined) node = node.c?.up
+            return (node ?? host) as TheC
+        },
+        Lies_storytimes_scope(funk: TheC): string {                  // the scope's name, for logging
+            let node: any = funk.c.up
+            while (node && node.sc?.What === undefined && node.sc?.Waft === undefined) node = node.c?.up
+            return (node?.sc?.What as string) ?? 'all'
+        },
+
+        // dispatch one become_book the way a Storying Book-cell click does — editor ships the frame,
+        //  a bare/co-resident Lies drives locally.
+        Lies_storytimes_dispatch(w: TheC, book: string): boolean {
+            const H = this as House
+            if (H.Lies_is_editor(w)) {
+                const sent = H.Lies_send_become_book(w, book)
+                H.tlog(`🎟 StoryTimes → ${book} ${sent ? '(sent)' : '(channel down — no runner)'}`)
+                return sent
+            }
+            H.Lies_become_book_drive(w, book)                        // bare dev Lies with a co-resident Run
+            return true
+        },
+
+        // Lies_runner_count — however many runners are on the phone (connected runner Piers on the
+        //  editor's channel).  Surfaced on the station so you can see the fleet.
+        Lies_runner_count(w: TheC): number {
+            const peering = (w.o({ Peering: 1 })[0]) as TheC | undefined
+            return peering ? (peering.o({ Pier: 1 }) as TheC[]).length : 0
+        },
+        // Lies_storytimes_width — how many Books we keep in flight.  A become_book today is a
+        //  single-address broadcast to the one bridged runner (no per-runner `to` in the frame yet,
+        //   Editron §7) — firing two at once would reset that runner's Story mid-run — so the sweep
+        //    drives ONE at a time however many runners are detected.  When the channel carries a
+        //     runner address, lift ADDRESSABLE to Lies_runner_count(w) and the same driver fans out.
+        Lies_storytimes_width(w: TheC): number {
+            const ADDRESSABLE = 1
+            return Math.min(Math.max(1, (this as House).Lies_runner_count(w)), ADDRESSABLE)
+        },
+
+//#endregion
 
 })
 })

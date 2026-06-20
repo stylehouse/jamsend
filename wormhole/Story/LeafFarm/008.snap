@@ -3,52 +3,49 @@ Snap:H
     A:farm
       self,round=8	{"mung":["age"]}
       w:farm
+        self,round=8	{"mung":["age"]}
         sunshine,dose=0.9377315902755754
         sunny_streak,count=8
         poo,dose=1.649021476578125
         leaf,leaf_id:leaf_2_0,dose=0.32973039591040015
         leaf,leaf_id:leaf_3_0,dose=0.2702708163200001
         leaf,leaf_id:leaf_4_0,dose=0.22153345600000007
-        self,round=8	{"mung":["age"]}
     A:plate
       self,round=8	{"mung":["age"]}
       w:plate
+        self,round=8	{"mung":["age"]}
         sunshine,dose
         leaf,leaf_id:seed_0,dose=0.2291999999999999,tick=2
         material:basic,amount=0.69781494140625
         protein,protein_id:prot_7,complexity=2
         wants_enzyme
-        self,round=8	{"mung":["age"]}
         mouthful,mouthful_id:seed_0_m8,dose=0.31,spawning_from:seed_0,ttl=0
     A:enzymeco
       self,round=8	{"mung":["age"]}
       w:enzymeco
+        self,round=8	{"mung":["age"]}
         producing,ticks_left
           enzyme,units=5
         wants_to_produce
-        self,round=8	{"mung":["age"]}
-    mo:main,interval=3.6	{"mung":["id"]}
 Snap:cytowave
   upsert,id:cytoid_1_1_1
-    style,height=36
-    style,width=36
-  {"upsert":1,"id":"cytoid_1_1_2","label":"poo\ndose:1.65"}
-  {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n0.330"}
-  {"upsert":1,"id":"cytoid_1_1_4","label":"🌿\n0.270","parent":"cytoid_1_1"}
+    style,height=35
+    style,width=35
+  {"upsert":1,"id":"cytoid_1_1_2","label":"poo\ndose:0.63"}
+    style,height=19
+    style,width=19
+  {"upsert":1,"id":"cytoid_1_1_3","label":"🌿\n0.100"}
+    style,height=6
+    style,width=6
+  {"upsert":1,"id":"cytoid_1_2_2","label":"🌿\n1.939","parent":"cytoid_1_2"}
     style,background-color:#29d638
     style,color:#b0ffb0
-    style,height=7
+    style,height=18
     style,shape:ellipse
-    style,width=7
-  {"upsert":1,"id":"cytoid_1_2_2","label":"🌿\n0.229"}
-    style,height=7
-    style,width=7
-  {"upsert":1,"id":"cytoid_1_2_4","label":"material:basic\namount:0.7"}
-  {"upsert":1,"id":"cytoid_1_3_1","label":"producing\nticks_left"}
-  upsert,id:cytoid_1_3_2,label:wants_to_produce,parent:cytoid_1_3
-    style,background-color:#6a1a08
-    style,color:#ff9070
-    style,height=22
-    style,shape:star
-    style,width=22
-  remove,id:cytoid_1_1_5
+    style,width=18
+  upsert,id:cytoid_1_2_3,label:mouthful,parent:cytoid_1_2
+    style,background-color:#4a7a20
+    style,color:#003300
+    style,height=6
+    style,shape:ellipse
+    style,width=6

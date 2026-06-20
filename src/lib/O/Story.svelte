@@ -901,10 +901,11 @@
     // sets T.sc.not=1 to skip the particle entirely.
     // sets D.sc.snap_line — the complete encoded line (indent + objecties + tab +
     //   stringies), used directly by story_snap and compared in traced_fn.
-    story_process_node(n: TheC, T: Travel, D: TheD, step_n?: number, entropy?: Array<any>) {
+    story_process_node(n: TheC, T: Travel, D: TheD, entropy?: Array<any>) {
         // compile = story_matching ∪ entropy_rules(w.c.The) (EntropyArrest.md §3.2):
         //  the global default layer in code, plus this Book's authored per-test caps.
-        //  Both sides are plain matching rules, so they concatenate straight on.
+        //  At encode only the structural means bite (skip/mung/bq/drop); blank/band
+        //   forgiveness is deferred to spay_normalize at compare time (the §2.3' pivot).
         const active: Array<any> = [
             ...this.story_matching,
             ...(entropy ?? []),
@@ -914,7 +915,6 @@
             d:      T.c.path.length - 1,
             rules:  active,
             loopy:  T.sc.loopy,   // integer serial — this is the shallowest/original appearance
-            step_n,               // band/add_step_mult spayers scale their baseline by it
         }
         const lines = this.enLine(n, q)
 
@@ -925,9 +925,6 @@
         D.sc.objecties = q.objecties
         D.sc.copy = { ...n.sc }
         D.sc.snap_line = lines.join("\n")
-        // The pre-spay line is kept so the diff UI can reveal "what it really was"
-        //  and the §4.3 index can attribute a marked span back to its spayer.
-        if (q.spayed) { D.sc.raw_line = q.raw_line; D.sc.spayed = 1 }
         if (q.mung?.length) { D.c.munged ??= []; D.c.munged.push(q.mung) }
         if (q.thence?.length) T.sc.thence_matching = q.thence
     },
@@ -941,8 +938,9 @@
     async snap_H(Run: House, w?: TheC): Promise<string> {
         const lines: TheD[] = []
         const loopy_Cs = new Set<TheC>()   // C** that appeared more than once (loopy)
-        const step_n = Run.c.step_n as number | undefined   // band spayers scale by it
-        // per-test EntropyArrest caps, compiled once per snap into matching rules (§3.2)
+        // per-test EntropyArrest caps, compiled once per snap into matching rules (§3.2).
+        //  At encode these contribute only structural means (drop); their blank/band
+        //   spayers are consumed at compare time by spay_normalize / collect_spayers.
         const entropy = this.entropy_rules(w?.c.The as TheC | undefined)
 
         Run.c.snap_Se ??= new Selection()
@@ -961,7 +959,7 @@
                     loopy_Cs.add(n)
                     return
                 }
-                this.story_process_node(n, T, D, step_n, entropy)
+                this.story_process_node(n, T, D, entropy)
                 if (T.sc.not) return
                 if (T.c.path.length === 1) {
                     T.sc.more = (n.o({})).filter(c => !c.sc.snap_root)
@@ -1012,7 +1010,7 @@
                 if (!T.sc.no_further) {
                     // first DFS encounter — the structural home; re-encode with loopy integer
                     T.sc.loopy = id
-                    this.story_process_node(n, T, T.sc.D, step_n, entropy)
+                    this.story_process_node(n, T, T.sc.D, entropy)
                 } else {
                     // revisit — stub: munged shadow, every key shown as :1
                     // hid:1 marks this as the shadow; the original carries loopy:N only
@@ -1066,9 +1064,9 @@
         }
 
         // Snap:Cytowave — read whatever wave Cyto has currently.
-        // Cyto is commissioned in Story_plan and watches Scannable (=Run)
-        // for version changes, so its wave is already current by the time
-        // we snap.  No need to prod it here.
+        // Cyto is commissioned in Story_settingoff (just before step 1) and watches
+        // Scannable (=Run) for version changes, so its wave is already current by the
+        // time we snap.  No need to prod it here.
         // useCyto is guaranteed here (snap_H returned early above when off), so the world
         //  exists — Awo throws loudly if that invariant ever breaks.
         const cyto_w = H.Awo('Cyto') as TheC
@@ -1158,22 +1156,35 @@
         // i The/Opt
         H.watch_c(this.The_Opt(w), async () => await H.story_save())
 
-        // ── commission Cyto ───────────────────────────────────────────
-        // Cyto reads Scannable/Styles/client_w/capability flags from this
-        // req; watch_c on stylesC drives save-on-edit.
-        // Cyto puts its given commission%Styles into H.ave for us.
-        // Only when useCyto — Story uses its OWN Cyto in this test (e.g. the Leaf*
-        // tests), so commission one.  Default off: most tests don't need their own Cyto.
+        // Cyto is NOT commissioned here.  Story_plan runs before the toc is decoded,
+        //  so The/Opt/useCyto is not yet readable (it would always read false here).
+        //   The commission moved to Story_settingoff, which runs once just before step 1
+        //    with the toc decoded — see there.
 
-        // < this is possibly meant to be an i_elvis_req(), but pretending works too...
+        let total = 1   // user builds up the test step-by-step via Resume
+        return w.i({ run: book, done: 0, total, paused: false, mode: 'new' })
+    },
+
+    Story_settingoff(w: TheC, Run: House, run: TheC) {
+        // Called once, just before step 1 — toc decoded, Run wired.
+        const H = this as House
+
+        // ── commission Cyto ───────────────────────────────────────────
+        // Stand up this Story's OWN Cyto world (e.g. the Leaf* tests) on demand, gated
+        //  by The/Opt/useCyto.  This must run AFTER the toc is decoded — Story_plan runs
+        //   before decode_toc_snap, when useCyto still reads false, so commissioning
+        //    there silently never created A:Cyto/w:Cyto for a useCyto Book.  Doing it
+        //     here, just before step 1, guarantees the Cyto world exists before
+        //      snap_step's wave handshake calls i_elvisto('Cyto/Cyto', …) — otherwise
+        //       that throws the fatal "no House has A:Cyto".  Idempotent on the create;
+        //        a Book without useCyto never makes A:Cyto nor pays for its ticking.
         if (H.The_Opt_val(w, 'useCyto')) {
-            // Stand up this Story's own Cyto world on demand — gated by useCyto, so a Book
-            //  that doesn't want it never creates A:Cyto/w:Cyto nor pays for its ticking.
             if (!H.o({ A: 'Cyto' }).length) H.i({ A: 'Cyto' }).i({ w: 'Cyto' })
-            let Run = H.o({H:1,Run:1})[0]
-            if (!Run) throw "!H/%H,Run"
+            const stylesC = this.The_Styles(w)
+            const RunH = H.o({ H: 1, Run: 1 })[0]
+            if (!RunH) throw "!H/%H,Run"
             const commission = new TheC({ c: {}, sc: {
-                Scannable:          Run,
+                Scannable:          RunH,
                 Styles:             stylesC,
                 client_w:           w,
                 supports_seek:      true,
@@ -1185,12 +1196,6 @@
             H.i_elvisto('Cyto/Cyto', 'Cyto_commission', { req: commission })
         }
 
-        let total = 1   // user builds up the test step-by-step via Resume
-        return w.i({ run: book, done: 0, total, paused: false, mode: 'new' })
-    },
-
-    Story_settingoff(w: TheC, Run: House, run: TheC) {
-        // Called once, just before step 1 — toc decoded, Run wired.
         // The doorstep moment: gifts of Opt delivered for the journey.
         this.push_opt_to_run(w)
     },

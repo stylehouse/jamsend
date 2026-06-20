@@ -3,21 +3,20 @@ Snap:H
     A:Yin,began
       self,round=4	{"mung":["age"]}
       w:Yin
+        self,round=4	{"mung":["age"]}
         hand:left
         hand:right
         whatsit
           thing:with,see	{"loopy":0}
         other=3
           thing,see	{"loopy":0,"hid":1}
-        self,round=4	{"mung":["age"]}
     A:Yang
       self,round=4	{"mung":["age"]}
       w:Yang
+        self,round=4	{"mung":["age"]}
         hand:left
         hand:right
           leaf
-        self,round=4	{"mung":["age"]}
-    mo:main,interval=3.6	{"mung":["id"]}
 Snap:cytowave
   upsert,id:cytoid_1_2_2_1,label:🌿,parent:cytoid_1_2
     style,background-color:#1a5a2a
