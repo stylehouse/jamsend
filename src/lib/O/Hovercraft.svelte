@@ -600,14 +600,14 @@
         if (!The) { if (this.c.entropy_debug) console.log('🛑 entropy_rules: no The'); return [] }
         const ea = The.o({ EntropyArrest: 1 })[0] as TheC | undefined
         if (!ea) { if (this.c.entropy_debug) console.log('🛑 entropy_rules: no The/EntropyArrest bucket'); return [] }
-        const caps = ea.o({ Snapcap: 1 }) as TheC[]
+        const caps = ea.o({ Entcase: 1 }) as TheC[]
         const rules = caps.map(cap => this.entropy_rule_of(cap)).filter(Boolean)
         if (this.c.entropy_debug)
             console.log(`🛑 entropy_rules: ${caps.length} cap(s) → ${rules.length} rule(s)`, JSON.parse(JSON.stringify(rules)))
         return rules
     },
 
-    // One Snapcap → one matching rule, by walking its %lematch tree.  Returns null if
+    // One Entcase → one matching rule, by walking its %lematch tree.  Returns null if
     //   the tree carries no handler anywhere (a half-authored cap silently does nothing
     //    rather than crash a snap).
     entropy_rule_of(cap: TheC): any | null {
@@ -703,11 +703,11 @@
     entropy_diagnose(w: TheC, got?: string, expected?: string, step_n = 0): void {
         const The = w?.c.The as TheC | undefined
         const ea  = The?.o({ EntropyArrest: 1 })[0] as TheC | undefined
-        const caps = (ea?.o({ Snapcap: 1 }) ?? []) as TheC[]
-        console.log('🛑 diagnose: The?', !!The, '| EntropyArrest?', !!ea, '| caps:', caps.map(c => c.sc.Snapcap))
+        const caps = (ea?.o({ Entcase: 1 }) ?? []) as TheC[]
+        console.log('🛑 diagnose: The?', !!The, '| EntropyArrest?', !!ea, '| caps:', caps.map(c => c.sc.Entcase))
         for (const cap of caps) {
             const lm = cap.o({ lematch: 1 })[0] as TheC | undefined
-            console.log(`  cap ${cap.sc.Snapcap}: outer lematch mainkey=${lm ? Object.keys(lm.sc)[0] : 'NONE'} sc=`, lm?.sc)
+            console.log(`  cap ${cap.sc.Entcase}: outer lematch mainkey=${lm ? Object.keys(lm.sc)[0] : 'NONE'} sc=`, lm?.sc)
             console.log('    → rule', JSON.parse(JSON.stringify(this.entropy_rule_of(cap) ?? null)))
         }
         const spayers = this.collect_spayers([...(this.story_matching ?? []), ...this.entropy_rules(The)])
@@ -740,7 +740,7 @@
     //    identity-ish and cannot band (you can't put a date or a path in a 1.5× window — and one
     //     tol rules every capture in the re), so any such capture forces the whole spayer to `any`.
     //   Returns null when nothing changed.
-    entropy_suggest(gotLine: string, prevLine: string): { re: string, tol: string, factor?: number } | null {
+    entropy_suggest(gotLine: string, prevLine: string): { re: string, tol: string, factor?: number, parts: string[] } | null {
         const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
         // an integer run gets {INT} (\d+); a fractional one {NUM}.  Dates/times/ids are integers,
         //  so they read as {INT} — the float option would be misleading noise on them.
@@ -800,7 +800,9 @@
         //    literals inside a part keep their real `.` as `\.`, so the unescaped `.` here is
         //     unambiguously the field-boundary wildcard.
         const re = parts.join('.')
-        return tol === 'band' ? { re, tol, factor: 1.5 } : { re, tol }
+        // hand back the anchor/capture parts too: the authoring UI's fuzz sliders re-render the
+        //  re from these (winding the head|tail anchors down toward greedy) without re-suggesting.
+        return tol === 'band' ? { re, tol, factor: 1.5, parts } : { re, tol, parts }
     },
 
     // The_EntropyArrest — the per-test bucket, beside The/Styles.  Absent until the
@@ -814,7 +816,7 @@
     },
 
     // entropy_mint — turn the plain draft descriptor ui/EntropyArrest.svelte authors
-    //   into the persisted Snapcap shape entropy_rules reads back (entropy_rule_of):
+    //   into the persisted Entcase shape entropy_rules reads back (entropy_rule_of):
     //   a %lematch chain (outer→leaf) whose OWN sc IS the sc_has, plus a flat %spayer
     //    child of the cap.  Snap-safe by construction — every value a scalar, no object
     //     in .sc.  Re-minting the same slug is an OVERWRITE, not a pile-up: a prior cap
@@ -828,8 +830,8 @@
         scope_step?: number
     }): TheC {
         const ea = this.The_EntropyArrest(w)
-        for (const old of ea.o({ Snapcap: draft.slug }) as TheC[]) ea.drop(old)
-        const cap = ea.i({ Snapcap: draft.slug })
+        for (const old of ea.o({ Entcase: draft.slug }) as TheC[]) ea.drop(old)
+        const cap = ea.i({ Entcase: draft.slug })
         if (draft.note != null)       cap.i({ note: draft.note })
         if (draft.scope_step != null) cap.i({ scope: 1, step: draft.scope_step })
         // descent: each segment nests under the previous.  Plain i() — a fresh cap has nothing
@@ -850,13 +852,13 @@
         return cap
     },
 
-    // entropy_unmint — drop one authored Snapcap by slug.  Returns whether anything
+    // entropy_unmint — drop one authored Entcase by slug.  Returns whether anything
     //   was removed, so the caller can skip a needless toc.snap save.
     entropy_unmint(w: TheC, slug: string): boolean {
         const The = w.c.The as TheC
         const ea  = The?.o({ EntropyArrest: 1 })[0] as TheC | undefined
         if (!ea) return false
-        const caps = ea.o({ Snapcap: slug }) as TheC[]
+        const caps = ea.o({ Entcase: slug }) as TheC[]
         for (const cap of caps) ea.drop(cap)
         if (caps.length) ea.bump_version()
         return caps.length > 0

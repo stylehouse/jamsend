@@ -226,6 +226,16 @@ The decisions the specs *defer* but that gate real work:
      runner) noted but not decided.
 6. **Cyto diff source** — live C vs decoded snap text; both want the same `bD`
     primitive but the spec leaves a wedge.
+7. **Wheel-vs-page-scroll arbitration (the "whole-page traffic jam")** — a small
+    in-panel control that wants the mouse-wheel (the EntropyArrest fuzz sliders;
+     any `<input type=range>` we let the wheel nudge) must NOT steal a wheel event
+      that is really the user scrolling the page past it. Wanted rule: the wheel
+       adjusts the control only when the page itself hasn't scrolled very recently
+        (a short cooldown after the last window scroll), so a fast flick down the
+         page glides over the slider instead of getting snagged and dialing it. One
+          shared "last page-scrolled at" signal, read by every wheel-grabbing widget.
+           Until it lands, the fuzz sliders take the wheel unconditionally (drag
+            always works).
 
 The earlier "Point nesting reconciliation" entry was a misread — the snap and
  memory shapes agree (`Waft→What*→(Doc, Point*)`); the real gap was the blind

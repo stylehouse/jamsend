@@ -1012,7 +1012,7 @@
     // spay_classify_line — for the diff glow (Storui): does any spayer's `re` touch this
     //   got/exp line pair, and did every touched capture stay within tolerance?  Same
     //    matching as spay_graft_line, but it only reports — it grafts nothing.
-    //      'none'  — no Snapcap reaches this line.
+    //      'none'  — no Entcase reaches this line.
     //      'graft' — matched + every capture within tol → this diff is acknowledged noise
     //                 (it would be forgiven at compare).
     //      'blown' — matched but a capture is out of variance → a watched line that
@@ -1333,7 +1333,7 @@
 
             if (row.kind === 'pair' && row.tag === 'changed') {
                 // got side under Dif:change; prev side under the Dif:prev sibling.
-                //  When spayers are in hand, tag the marker with how a Snapcap sees this
+                //  When spayers are in hand, tag the marker with how an Entcase sees this
                 //   line — `,spay:graft` (acknowledged noise that would forgive) or
                 //    `,spay:blown` (a watched line whose value blew its band) — so a
                 //     pasted diff carries the same signal the live glow shows.  deDif reads

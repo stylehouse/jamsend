@@ -8,7 +8,7 @@ The Story snap diff is the test signal (`On_the_artchitecture.md`: "this codebas
  safety rests almost entirely on snap-diff vigilance"). Non-determinism drowns it —
   counters, timestamps, timings, signatures churn every run and bury the one line that
    actually regressed. **EntropyArrest** lets you acknowledge a noise source by clicking
-    the noisy diff line: it stores a `Snapcap` (a locator + a tolerance rule), and at
+    the noisy diff line: it stores an `Entcase` (a locator + a tolerance rule), and at
      compare time the noise is forgiven without rewriting the fixture. The snap on disk
       stays honest; the churn is reconciled when got and expected are compared.
 
@@ -137,13 +137,21 @@ spayer,re:<regex-with-captures>,tol:any                graft wholesale, any valu
 
 ## 3. The store — `The/EntropyArrest`
 
+> **ما لا يُسكَّن، يُؤوى** — *what cannot be stilled is given shelter.*
+> An **Entcase** encases one anomaly — entropy that will not sit still. We do not kill the
+>  noise and we do not pretend it isn't there; we name it and build it walls (a locator + a
+>   tolerance), a case in which it may churn in peace while the snap outside keeps its quiet.
+>    To case a thing is to forgive it without forgetting it: the real value still stands honest
+>     on disk, watched, only no longer mistaken for alarm. (`Snapcap` was the old name; the
+>      entry is now an `Entcase` — a case for entropy, held for safety.)
+
 A per-test bucket, beside `The/Styles` and `The/TimeSpool`. It lives in `The`, so it
  round-trips through `toc.snap` and travels with the Book. Absent until the first cap is
-  authored.
+  authored. Each entry is an **`Entcase`** (was `Snapcap`).
 
 ```
 The/EntropyArrest                       per-test; lazily minted on first author
-  Snapcap:<slug>                        one acknowledged-noise entry
+  Entcase:<slug>                        one acknowledged-noise entry
     lematch,<sc…>                       outer locator segment — the node's OWN sc IS sc_has
       lematch,<sc…>                     nested descent (→ thence_matching at compile)
         means,spayer,re:…,tol:band,factor:1.5     the handler, INSIDE the leaf lematch
@@ -170,7 +178,7 @@ Two storage decisions make this snap-safe and extensible:
 
 ## 4. The compile — `entropy_rules`
 
-`entropy_rules(The)` reads `The/EntropyArrest/Snapcap**` and emits one **matching rule** per
+`entropy_rules(The)` reads `The/EntropyArrest/Entcase**` and emits one **matching rule** per
  cap — the same `{ matching_any, means }` shape `story_matching` uses, so they concatenate
   straight on. `snap_H(Run, w)` compiles `story_matching ∪ entropy_rules(w.c.The)`; the cost
    is zero extra walks — spay is a richer `means` on the `n.lematch` call `enLine` already
@@ -191,7 +199,7 @@ Two storage decisions make this snap-safe and extensible:
 ### The global layer is code, not data
 
 The defaults are the in-code `story_matching` rules. A `means.spay` rides them exactly as it
- rides a Snapcap — the same compile turns either into a matching rule. The default `self,round`
+ rides an Entcase — the same compile turns either into a matching rule. The default `self,round`
   rule carries `spay:{ re:'(?:round=)(\d+)', tol:'any' }` (a per-tick counter — graft
    unconditionally). So every Book gets global spaying for free; it only grows a
     `The/EntropyArrest` once you author something test-specific. The UI reads the merged set
@@ -260,6 +268,16 @@ Shows when the test has caps **or** a draft is in flight, mounted under the Stor
   `peel()`s into one `%lematch` segment's sc (`self,round` → `{self:1,round:1}`; `w:Lang` →
    `{w:'Lang'}`). Seeded including the **parent** line.
 
+The seed **errs vague after the mainkey**, two ways, because a too-loose locator is safe (it
+ no-ops where it over-matches; the spayer's `re` does the precise work) while an over-anchored
+  one silently stops forgiving the moment a pinned value drifts. `loc_chunk` barewords (`{k:1}`)
+   every key from the clicked key onward, **and** any non-mainkey key whose value *looks* noisy
+    — a date/path/long-id run (`noisy_val`: `\d{3,}` or digit groups joined by `-`/`/`), even one
+     sitting *before* the clicked key. So a parent like `Interest:Ting,waft:Ting/2026-06-21/042649,
+      lens:DocTing,…` seeds as `Interest:Ting,waft,lens:DocTing,…` — the churny `waft:` value is
+       wildcarded out, the type tag and the stable short values stay literal. (The same tell that
+        makes a `what` PeelValue read as `{INT}` in the spayer.)
+
 **The slug (`cap`)** auto-derives from the form beneath (parent match + noisy key) and keeps
  re-deriving until the user edits the field.
 
@@ -267,13 +285,38 @@ Shows when the test has caps **or** a draft is in flight, mounted under the Stor
  `factor` + a capture `re`. `H.entropy_suggest(right, left)` proposes them: changed keys become
   captures, stable text stays a literal anchor, and `tol` autodetects — any number → `band`
    factor **1.5** (even a unix timestamp: seconds of drift sit far inside 1.5×); a non-numeric
-    hash/signature token → `any`. All fields stay editable.
+    hash/signature token → `any`. All fields stay editable. The suggested `re` now joins anchors
+     with **`.`** (any-char) rather than a literal `,`: the snap field separator is always a single
+      `,`, so `.` matches it 1:1 yet tolerates a separator that drifts (escaped literals keep their
+       real `.` as `\.`, so the join `.` is unambiguously the field boundary).
+
+**The fuzz tub** is a compact pill (`|_O_fuzz_O_|`) in the footer row, between the `only step N`
+ scope and the `cancel`/`OK` buttons — two short sliders converging on a `fuzz` label, the left
+  winding the `re`'s **head** anchors down, the right the **tail**, toward a greedy match (drag or
+   wheel). `entropy_suggest` hands back the re's structured `parts` (anchors + captures); `fuzz_model`
+    splits them into head | capture-core | tail and precomputes each side's wind-down. The notch
+     model is **strip-value-then-trim**: the anchor nearest the capture loses its value first, then
+      the far landmark drops, then the nearest key drops — `want={INT}.kind:cold.resolved` →
+       `…kind.+resolved` → `…kind` → `want={INT}` (greedy). A `.+` appears **only when there is a
+        value to absorb** — a bare flag (`time`, `dim`) has nothing to strip, so it goes straight
+         full → greedy (no spurious `time.+compile`). When there is a value, the `.+` follows peel's
+          key-then-value order — it lands to the **right of the key**, the *far* side for a tail token
+           (`kind.+resolved`) but the **core-facing** side for a head token (`compile.dige.+secs={NUM}`,
+            not `compile.+dige.…`); each notch therefore carries its own core bridge (`.`, or `.+`
+             once the near value goes).
+           While the tub is live the sliders **own** `re` (an effect
+        recomposes it); a hand-edit latches `re_dirty` and **retires** the tub (the parts no longer
+         describe the field). Loading an existing cap to edit also retires it (no parts to drive it
+          — re-suggest from a fresh diff click to get the sliders back). The wheel nudges a slider;
+           the page-scroll-vs-wheel arbitration (a wheel over the slider shouldn't snag a fast page
+            flick) is the shared "whole-page traffic jam" TODO in `Everything_todo.md`.
 
 **OK** hands the draft across the elvisto seam as a JSON string —
  `H.i_elvisto('Story/Story', 'entropy_commit', { cap_json })` — because elvisto args ride as
   scalar sc and a nested locator would be a fatal object-in-sc. `e_entropy_commit` parses,
    calls `entropy_mint`, then `story_save()`. Compiled rules are read at snap time, so a
-    **restart re-reads the caps to apply them** — the panel says so. The CRUD list edits
+    **restart re-reads the caps to apply them** (the panel no longer spends a row saying so —
+     the footer is the fuzz tub's home now). The CRUD list edits
      (`edit_cap` loads the draft) and deletes (`entropy_delete` → `entropy_unmint`) existing
       caps; `cap_spayer` reads the handler from the leaf `%means`.
 
@@ -294,8 +337,9 @@ We deliberately do **not** live-test the locator/regex in the panel — verifica
 - **Hovercraft.svelte `//#region entropy`** — `entropy_rules` / `entropy_rule_of` /
    `lematch_to_rule` / `means_of` (spayer + structural drop/dontSnap) / `spayer_of_sc` (the
     compile); `entropy_forgive` (the in-app verdict); `entropy_suggest` (the generator, emits
-     {NUM}/{TOK}); `The_EntropyArrest` / `entropy_mint` / `entropy_unmint` (the store). Sibling
-      to `prandle` (Housing).
+     {NUM}/{TOK}, joins anchors with `.`, and returns the `parts` the fuzz tub winds down);
+      `The_EntropyArrest` / `entropy_mint` / `entropy_unmint` (the store). Sibling to `prandle`
+       (Housing).
 - **Story.svelte** — `snap_H` (`story_matching ∪ entropy_rules`); `story_process_node` (forwards
    `q.dontSnap` → `T.sc.dontSnap`, pruned in `snap_H`); the default `story_matching` `self,round`
     rule (`round={NUM}`, `tol:any`); `e_entropy_commit` (general means descriptor) / `e_entropy_delete`;
@@ -303,9 +347,11 @@ We deliberately do **not** live-test the locator/regex in the panel — verifica
 - **Storui.svelte** — the `<EntropyArrest>` mount, `ea_seed` + `seed_spay` + `diff_parent_line`,
    the `.sr-spayable` clickable `changed` cells (graft = dimmed/receding, blown = amber pulse),
     the `≈` caveat badge/pip, and `spayers` passed into `enDif` so a copied diff carries the tags.
-- **ui/EntropyArrest.svelte** — the editor: draft, `at` field (wildcards the changing key and
-   everything after it), slug, the `means` 4-way mutex (band | any | drop | dontSnap), factor/re
-    (spayer only), `{NUM}`/`{TOK}` re-sugar on load, CRUD.
+- **ui/EntropyArrest.svelte** — the editor: draft, `at` field (`loc_chunk`/`noisy_val` wildcard the
+   changing key + everything after it AND any noisy-looking value after the mainkey), slug, the
+    `means` 4-way mutex (band | any | drop | dontSnap), factor/re (spayer only), the **fuzz tub**
+     (`fuzz_seq`/`fuzz_model`/`compose_re` + the head|tail sliders, retires on hand-edit),
+      `{NUM}`/`{TOK}` re-sugar on load, CRUD.
 - **scripts/Story_cli.spec.ts** — the lenient runner; gates got-before vs got-after.
 
 ---
@@ -319,7 +365,7 @@ We deliberately do **not** live-test the locator/regex in the panel — verifica
       appears.
 - **Encode-time forgiveness** is rejected (it would make the on-disk fixture a mirage and still
    churn the raw dige). Forgiveness is compare-time; the snap stays honest.
-- **Cross-cap shared `%lematch` forest** — caps stay per-`Snapcap` (flat), each with its own
+- **Cross-cap shared `%lematch` forest** — caps stay per-`Entcase` (flat), each with its own
    locator tree, because CRUD identity (slug/edit/delete) is per-cap. `oai` in `entropy_mint`
     already dedups within a cap and is ready for a shared forest if it is ever wanted (see TODO).
 
@@ -337,7 +383,7 @@ We deliberately do **not** live-test the locator/regex in the panel — verifica
          capture pairs it already computes), keyed by cap-slug + capture index. Storage rides
           in `The` beside `EntropyArrest`, so it travels with the Book and round-trips through
            `toc.snap`. The histogram is the eventual UI; the spool is the prerequisite.
-- **§4.3 diff index.** The **glow is built**: a changed diff line a Snapcap reaches is marked
+- **§4.3 diff index.** The **glow is built**: a changed diff line an Entcase reaches is marked
    in Storui — teal+steady when the captures are within tolerance (acknowledged noise that would
     forgive), amber+pulsing when a capture blew its variance band (a watched line that still
      diffs badly). Driven by `spay_classify_line(got, exp, spayers)` (Text.svelte) over

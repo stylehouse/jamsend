@@ -730,7 +730,7 @@
         if (sub) H.story_drive(sub.Run, w, run)
     },
 
-    // ── entropy authoring — mint / unmint a Snapcap from ui/EntropyArrest ──────
+    // ── entropy authoring — mint / unmint an Entcase from ui/EntropyArrest ──────
     //
     //  The UI never mutates The directly: it authors a plain draft descriptor and
     //   hands it here as a JSON string (cap_json) — elvisto args ride as scalar sc,
@@ -755,7 +755,7 @@
         H.entropy_mint(w, draft)
         H.story_analysis(w)
         H.story_save()
-        ;V.Story && console.log(`🛑 entropy_commit Snapcap:${draft.slug} (${means.kind}${means.tol ? ' ' + means.tol : ''})`)
+        ;V.Story && console.log(`🛑 entropy_commit Entcase:${draft.slug} (${means.kind}${means.tol ? ' ' + means.tol : ''})`)
     },
 
     async e_entropy_delete(A: TheC, w: TheC, e?: TheC) {
@@ -765,7 +765,7 @@
         if (H.entropy_unmint(w, slug)) {
             H.story_analysis(w)
             H.story_save()
-            ;V.Story && console.log(`🗑 entropy_delete Snapcap:${slug}`)
+            ;V.Story && console.log(`🗑 entropy_delete Entcase:${slug}`)
         }
     },
 

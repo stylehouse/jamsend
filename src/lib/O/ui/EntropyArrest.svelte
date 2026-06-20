@@ -1,6 +1,6 @@
 <script lang="ts">
-    // EntropyArrest.svelte — author a Snapcap (an acknowledged-noise rule) from a click
-    //   on a noisy diff line.  Mints a live %Snapcap under The/EntropyArrest; entropy_rules
+    // EntropyArrest.svelte — author an Entcase (an acknowledged-noise rule) from a click
+    //   on a noisy diff line.  Mints a live %Entcase under The/EntropyArrest; entropy_rules
     //   compiles it into a spay rule, and the live-app verdict forgives it at compare
     //   (EntropyArrest.md §8 — the captures+graft model).
     //
@@ -30,6 +30,81 @@
     import type { House } from "$lib/O/Housing.svelte"
     import { peel, depeel } from "$lib/Y.svelte"
 
+    // ── the fuzz tub: wind the suggested re's head|tail anchors down toward greedy ───
+    //   entropy_suggest hands back the re's `parts` (anchors + captures).  The captures
+    //    are the fixed core; the anchors before the first / after the last capture are the
+    //     head / tail, and each fuzz slider winds its side down a notch at a time.  The
+    //      wind-down is "strip-value-then-trim": the anchor nearest the capture loses its
+    //       value first, then the far landmark drops, then the nearest key drops too — so
+    //        `want={INT}.kind:cold.resolved` goes `…kind.+resolved` → `…kind` → `want={INT}`.
+    //   The `.+` always absorbs the stripped value, which peel renders to the RIGHT of the key
+    //    — so for a TAIL token (core on its left) the gap is on the far side (`kind.+resolved`),
+    //     but for a HEAD token (core on its right) the gap faces the core, so the `.+` is the
+    //      head's CORE-facing bridge (`compile.dige.+secs={NUM}`, not `compile.+dige.secs…`).
+    //   Each level therefore carries its own core-facing bridge (`.` normal, `.+` once the near
+    //    value is stripped).  The tub vanishes the moment you hand-edit re.
+    const SPAY_TAG = /\{(?:INT|NUM|TOK)\}/         // a part carrying a capture group
+
+    // the bare-flag form of an anchor token: the key before its first : or = (kind:cold → kind)
+    function key_of(tok: string): string { return tok.split(/[:=]/)[0] }
+
+    // one wind-down level: `str` is the side's anchor text, `bridge` the connector to the core
+    type Notch = { str: string, bridge: string }
+    // drop a level identical to the one before it (a valueless single token yields a dup notch)
+    function dedupe(seq: Notch[]): Notch[] {
+        return seq.filter((s, i) => i === 0 || s.str !== seq[i - 1].str || s.bridge !== seq[i - 1].bridge)
+    }
+
+    // one side's wind-down, full (index 0) → greedy ('' last).  `near` is the token nearest the
+    //  core (survives longest).  A `.+` only appears when there is a near VALUE to absorb — a
+    //   bare flag (`time`, `dim`) has nothing to strip, so it goes full → greedy with no spurious
+    //    `time.+compile` notch.  When there is a value, the `.+` lands on the TAIL inside the side
+    //     text (far side of the key, `kind.+resolved`) but on the HEAD as the core bridge (the
+    //      value sits between the head key and the core, `compile.dige.+secs`).
+    function fuzz_seq(tokens: string[], side: 'head' | 'tail'): Notch[] {
+        const join = (ts: string[]) => ts.join('.')
+        if (!tokens.length) return [{ str: '', bridge: '' }]
+        const near_tok = side === 'tail' ? tokens[0] : tokens[tokens.length - 1]
+        const near = key_of(near_tok)
+        const valued = /[:=]/.test(near_tok)                  // a value to strip → a `.+` is warranted
+        const rest = side === 'tail' ? tokens.slice(1) : tokens.slice(0, -1)
+        const seq: Notch[] = [{ str: join(tokens), bridge: '.' }]
+        if (side === 'tail') {
+            if (valued && rest.length) seq.push({ str: `${near}.+${join(rest)}`, bridge: '.' })
+            if (valued || rest.length) seq.push({ str: near, bridge: '.' })
+        } else {
+            if (valued && rest.length) seq.push({ str: `${join(rest)}.${near}`, bridge: '.+' })
+            if (valued || rest.length) seq.push({ str: near, bridge: valued ? '.+' : '.' })
+        }
+        seq.push({ str: '', bridge: '' })
+        return dedupe(seq)
+    }
+
+    type FuzzModel = { core: string, head_seq: Notch[], tail_seq: Notch[] }
+    // split the parts into head anchors | capture core | tail anchors, and precompute each
+    //  side's wind-down sequence.  null when there is no capture to anchor around.
+    function fuzz_model(parts: string[]): FuzzModel | null {
+        if (!parts.length) return null
+        let fc = -1, lc = -1
+        parts.forEach((p, i) => { if (SPAY_TAG.test(p)) { if (fc < 0) fc = i; lc = i } })
+        if (fc < 0) return null
+        return {
+            core:     parts.slice(fc, lc + 1).join('.'),
+            head_seq: fuzz_seq(parts.slice(0, fc), 'head'),
+            tail_seq: fuzz_seq(parts.slice(lc + 1), 'tail'),
+        }
+    }
+    // render the re at the current head|tail fuzz levels (clamped to each sequence).  The head
+    //  attaches with its bridge on the core side; the tail's bridge is always a plain `.`.
+    function compose_re(m: FuzzModel, h: number, t: number): string {
+        const H = m.head_seq[Math.min(h, m.head_seq.length - 1)]
+        const T = m.tail_seq[Math.min(t, m.tail_seq.length - 1)]
+        let re = m.core
+        if (H.str) re = `${H.str}${H.bridge}${re}`
+        if (T.str) re = `${re}${T.bridge}${T.str}`
+        return re
+    }
+
     let { H, w, seed, step_n, on_done }: {
         H:       House
         w:       TheC | undefined
@@ -43,12 +118,33 @@
     let at_text  = $state('')                       // the ' / '-split peelable locator
     let noisy    = $state<string | undefined>()     // the changed key (drives the auto-slug + wildcard)
     let re_text  = $state('')
+    // the fuzz tub rides the suggested re's structured parts.  re_dirty latches the moment
+    //  the user hand-edits re — the parts no longer describe it, so the sliders retire.
+    let re_parts = $state<string[]>([])
+    let re_dirty = $state(false)
+    let h_fuzz   = $state(0)
+    let t_fuzz   = $state(0)
+    let fuzz     = $derived(re_parts.length ? fuzz_model(re_parts) : null)
+    // while the tub is live the sliders own re — recompose it as they move.  The effect never
+    //  reads re_text, so writing it can't loop; once re_dirty it stops, leaving the field manual.
+    $effect(() => {
+        if (re_dirty || !fuzz) return
+        re_text = compose_re(fuzz, h_fuzz, t_fuzz)
+    })
+    function wheel_fuzz(e: WheelEvent, which: 'h' | 't', max: number) {
+        e.preventDefault()
+        const v = (which === 'h' ? h_fuzz : t_fuzz) + (e.deltaY > 0 ? 1 : -1)
+        const c = Math.max(0, Math.min(max, v))
+        if (which === 'h') h_fuzz = c; else t_fuzz = c
+    }
     // the handler kind, a 4-way mutex: band|any are spayer tolerances (a capture re forgives
     //  a value), drop|dontSnap are structural means (no captures — drop omits the whole line,
     //   dontSnap keeps the line but folds its subtree away).  band|any need the re/tol fields;
     //    drop|dontSnap don't.
     let mode     = $state<'band' | 'any' | 'drop' | 'dontSnap'>('band')
     let is_spayer = $derived(mode === 'band' || mode === 'any')
+    // the fuzz tub shows only for a spayer with anchors to wind down, and retires on hand-edit
+    let show_tub = $derived(is_spayer && !re_dirty && !!fuzz && (fuzz.head_seq.length > 1 || fuzz.tail_seq.length > 1))
     let factor   = $state(1.5)
     let scope_on = $state(false)
     // slug auto-derives from the form beneath until the user edits it (§8.6)
@@ -63,7 +159,7 @@
         void The?.version
         const ea = The?.o({ EntropyArrest: 1 })[0] as TheC | undefined
         void ea?.version
-        return (ea?.o({ Snapcap: 1 }) ?? []) as TheC[]
+        return (ea?.o({ Entcase: 1 }) ?? []) as TheC[]
     })
     //#endregion
 
@@ -120,12 +216,14 @@
         const leaf = loc_chunk(s.right, nk)
         at_text = s.parent ? `${loc_chunk(s.parent)} / ${leaf}` : leaf
 
-        // spayer: ask the engine for a capture-style regex + tolerance
+        // spayer: ask the engine for a capture-style regex + tolerance, and seed the fuzz
+        //  tub from its structured parts (a fresh draft starts at full precision, head|tail 0).
         const sug = H.entropy_suggest(s.right, s.left)
-        if (sug) { re_text = sug.re; mode = sug.tol as 'band' | 'any'; factor = sug.factor ?? 1.5 }
+        re_dirty = false; h_fuzz = 0; t_fuzz = 0
+        if (sug) { re_text = sug.re; mode = sug.tol as 'band' | 'any'; factor = sug.factor ?? 1.5; re_parts = sug.parts }
         // no suggestion: a numeric noisy key still defaults to band (the common case);
-        //  only a non-numeric locator falls back to any.
-        else     { re_text = nk ? `${nk}={NUM}` : ''; mode = nk ? 'band' : 'any'; factor = 1.5 }
+        //  only a non-numeric locator falls back to any.  No parts ⇒ no fuzz tub.
+        else     { re_text = nk ? `${nk}={NUM}` : ''; mode = nk ? 'band' : 'any'; factor = 1.5; re_parts = [] }
 
         slug_edited = false; slug_manual = ''
         scope_on = false
@@ -154,6 +252,7 @@
         active = false; at_text = ''; noisy = undefined
         re_text = ''; mode = 'band'; factor = 1.5; scope_on = false
         slug_edited = false; slug_manual = ''
+        re_parts = []; re_dirty = false; h_fuzz = 0; t_fuzz = 0
     }
     function commit() {
         const s = slug.trim()
@@ -177,7 +276,7 @@
     function cancel() { reset(); on_done() }
 
     function del_cap(cap: TheC) {
-        H.i_elvisto('Story/Story', 'entropy_delete', { slug: String(cap.sc.Snapcap) })
+        H.i_elvisto('Story/Story', 'entropy_delete', { slug: String(cap.sc.Entcase) })
     }
 
     function segs_from_lematch(lm: TheC): TheC[] {
@@ -220,11 +319,15 @@
         const k  = cap_means_kind(cap)
         at_text     = lm ? lematch_chunks(lm) : ''
         re_text     = resugar((sp?.sc.re as string) ?? '')
+        // an existing cap's re is loaded as-is (no structured parts to drive the fuzz tub) —
+        //  treat it as hand-authored so the sliders stay retired; re-suggest from a diff click
+        //   to get them back.
+        re_parts    = []; re_dirty = true; h_fuzz = 0; t_fuzz = 0
         mode        = k === '?' ? 'band' : k
         factor      = (sp?.sc.factor as number) ?? 1.5
         noisy       = undefined
         slug_edited = true
-        slug_manual = String(cap.sc.Snapcap)
+        slug_manual = String(cap.sc.Entcase)
         scope_on    = cap.o({ scope: 1 })[0] != null
         active      = true
     }
@@ -243,15 +346,15 @@
 {#if active || caps.length}
 <div class="ea">
     <div class="ea-hdr">
-        <span class="ea-title">🛑 entropy arrest</span>
-        <span class="ea-sub">{caps.length} cap{caps.length === 1 ? '' : 's'}{active ? ' · drafting' : ''}</span>
+        <span class="ea-title">EntropyArrest</span>
+        {#if active}<span class="ea-sub">drafting</span>{/if}
     </div>
 
     <!-- existing authored caps — CRUD list -->
-    {#each caps as cap (cap.sc.Snapcap)}
+    {#each caps as cap (cap.sc.Entcase)}
         <div class="ea-cap">
             <span class="ea-cap-tol ea-tol-{cap_tol(cap)}">{cap_tol(cap)}</span>
-            <span class="ea-cap-slug">{cap.sc.Snapcap}</span>
+            <span class="ea-cap-slug">{cap.sc.Entcase}</span>
             <span class="ea-cap-path">{cap_path(cap)}</span>
             <span class="ea-spacer"></span>
             <button class="ea-mini" title="load into the draft to edit" onclick={() => edit_cap(cap)}>edit</button>
@@ -300,7 +403,7 @@
                 <div class="ea-row ea-fields">
                     <label class="ea-field ea-field-wide">re
                         <input class="ea-input ea-re" placeholder={'round={NUM}'} value={re_text}
-                               oninput={(e) => re_text = (e.target as HTMLInputElement).value} />
+                               oninput={(e) => { re_text = (e.target as HTMLInputElement).value; re_dirty = true }} />
                     </label>
                 </div>
             {:else}
@@ -311,7 +414,10 @@
                 </div>
             {/if}
 
-            <!-- scope + commit -->
+            <!-- scope + fuzz + commit.  The fuzz tub rides here, compact, between the step
+                 scope and the buttons: two short handles converging on `fuzz` — left winds the
+                  re's head anchors down toward greedy, right the tail.  Drag or wheel; retires
+                   the moment you hand-edit re. -->
             <div class="ea-row ea-foot">
                 {#if step_n != null}
                     <label class="ea-check" title="limit to this step; off = all steps">
@@ -320,8 +426,20 @@
                         only step {step_n}
                     </label>
                 {/if}
+                {#if show_tub && fuzz}
+                    <span class="ea-fuzz-wrap" title="wind the re's head | tail anchors down toward a greedy match — drag or wheel">
+                        <input class="ea-fuzz ea-fuzz-l" type="range" min="0" max={fuzz.head_seq.length - 1} step="1"
+                               value={h_fuzz} disabled={fuzz.head_seq.length < 2}
+                               oninput={(e) => h_fuzz = Number((e.target as HTMLInputElement).value)}
+                               onwheel={(e) => wheel_fuzz(e, 'h', fuzz.head_seq.length - 1)} />
+                        <span class="ea-fuzz-lbl">fuzz</span>
+                        <input class="ea-fuzz ea-fuzz-r" type="range" min="0" max={fuzz.tail_seq.length - 1} step="1"
+                               value={t_fuzz} disabled={fuzz.tail_seq.length < 2}
+                               oninput={(e) => t_fuzz = Number((e.target as HTMLInputElement).value)}
+                               onwheel={(e) => wheel_fuzz(e, 't', fuzz.tail_seq.length - 1)} />
+                    </span>
+                {/if}
                 <span class="ea-spacer"></span>
-                <span class="ea-hint">restart to apply</span>
                 <button class="ea-cancel" onclick={cancel}>cancel</button>
                 <button class="ea-ok" onclick={commit}>OK</button>
             </div>
@@ -388,6 +506,35 @@
     .ea-re   { flex: 1; min-width: 8rem }
     .ea-num  { width: 4.5rem }
 
+    /* the fuzz tub: |_O_fuzz_O_| — compact, in the footer between the step scope and the
+       buttons.  Two short handles converging on `fuzz`: left winds the re's head anchors
+        down, right the tail. */
+    .ea-fuzz-wrap {
+        display: inline-flex; align-items: center; gap: 0.3rem;
+        padding: 0.1rem 0.4rem; margin-left: 0.4rem;
+        background: #0b0f17; border: 1px solid #2a3850; border-radius: 999px;
+    }
+    .ea-fuzz {
+        -webkit-appearance: none; appearance: none;
+        width: 3rem; height: 3px; background: #243044; border-radius: 2px; outline: none;
+        cursor: ew-resize;
+    }
+    .ea-fuzz-r { transform: scaleX(-1) }            /* handle starts at the right, winds inward */
+    .ea-fuzz::-webkit-slider-thumb {
+        -webkit-appearance: none; appearance: none;
+        width: 11px; height: 11px; border-radius: 50%;
+        background: #6cc; border: 1px solid #0b0f17;
+    }
+    .ea-fuzz::-moz-range-thumb {
+        width: 11px; height: 11px; border-radius: 50%;
+        background: #6cc; border: 1px solid #0b0f17;
+    }
+    .ea-fuzz:disabled { opacity: 0.3; cursor: default }
+    .ea-fuzz-lbl {
+        font-family: monospace; font-size: 0.6rem; color: #668;
+        letter-spacing: 0.06em; flex-shrink: 0; user-select: none;
+    }
+
     /* a 4-way segmented mutex (band | any | drop | dontSnap): buttons share borders
        (-1px) and the active one rides on top.  drop|dontSnap are tinted apart as the
        structural category — they forgive nothing, they omit. */
@@ -421,7 +568,6 @@
     }
 
     .ea-foot { margin-top: 0.3rem }
-    .ea-hint { color: #546; font-size: 0.66rem; font-style: italic }
     .ea-cancel {
         background: none; border: none; color: #556; cursor: pointer;
         font-size: 0.72rem; padding: 0.15rem 0.3rem;

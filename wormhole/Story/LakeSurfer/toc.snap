@@ -12,41 +12,49 @@ story:LakeSurfer
         dontSnapGhostList
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=0.832
-      sample=1.109,at=1781963759
-      sample=0.762,at=1781963774
-      sample=0.619,at=1781963782
-      sample=1.023,at=1781967899
+    TimeTotal:beliefs,avg=0.843
       sample=1.061,at=1781967922
       sample=0.6,at=1781968627
       sample=0.615,at=1781969005
       sample=0.721,at=1781969341
       sample=1.051,at=1781971157
       sample=0.761,at=1781971223
-    TimeTotal:step,avg=0.416
-      sample=0.554,at=1781963759
-      sample=0.381,at=1781963774
-      sample=0.31,at=1781963782
-      sample=0.512,at=1781967899
+      sample=0.479,at=1781976206
+      sample=1.005,at=1781977093
+      sample=1.126,at=1781977559
+      sample=1.006,at=1781977593
+    TimeTotal:step,avg=0.422
       sample=0.531,at=1781967922
       sample=0.3,at=1781968627
       sample=0.308,at=1781969005
       sample=0.361,at=1781969341
       sample=0.526,at=1781971157
       sample=0.381,at=1781971223
+      sample=0.24,at=1781976206
+      sample=0.503,at=1781977093
+      sample=0.563,at=1781977559
+      sample=0.503,at=1781977593
   EntropyArrest
-    Snapcap:Compile_time-compile
+    Entcase:Languinio_Interest-waft
+      lematch,Languinio
+        lematch,Interest:Ting,waft,lens,presence,state
+          {"means":1,"spayer":1,"re":"Interest:Ting,waft:Ting/202\\d+-\\d+-{INT}/{INT},lens:DocTing,presence:always,state:live","tol":"any"}
+    Entcase:Ting_cursor-what
+      lematch,Interest:Ting,waft:Ting/2026-06-21/040014,lens:DocTing,presence:always,state:live
+        lematch,cursor,what,latest
+          {"means":1,"spayer":1,"re":"cursor,what:Ting/202\\d-\\d+-{INT}/{INT},latest","tol":"any"}
+    Entcase:Compile_time-compile
       lematch,Compile
         lematch,time,compile,all,write
           {"means":1,"spayer":1,"re":"time,compile={NUM},all={NUM},write=0","tol":"band","factor":2.53}
-    Snapcap:w_self-round
+    Entcase:w_self-round
       lematch,w/self,round
         {"means":1,"spayer":1,"re":"self,round={NUM}","tol":"band","factor":1.5}
-    Snapcap:wants_want-want
+    Entcase:wants_want-want
       lematch,req:wants
         lematch,want,kind
           means,spayer,re:want={NUM},tol:band,factor=1.5
-    Snapcap:Change_compile-secs
+    Entcase:Change_compile-secs
       lematch,Change
         lematch,compile,dige,secs,dim,pending
           means,spayer,re:secs={NUM},tol:band,factor=2.52

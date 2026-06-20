@@ -117,7 +117,7 @@
 
     // spayers — every spayer that bites this Book (in-code story_matching defaults ∪ this
     //   test's authored caps), the same set the compare uses.  Drives the diff glow: a
-    //    changed line a Snapcap reaches gets marked, so you can see at a glance which diffs
+    //    changed line an Entcase reaches gets marked, so you can see at a glance which diffs
     //     are acknowledged noise (would forgive) and which blew their variance band.
     let spayers = $derived.by((): any[] => {
         const The = story_w?.c.The as TheC | undefined
@@ -1099,7 +1099,7 @@
                         <span class="sr-plabel accepted">accepted</span>
                     {:else if caveat}
                         <!-- forgiven value-noise (EntropyArrest §8): OK with a caveat -->
-                        <span class="sr-plabel caveat" title="virtually OK — acknowledged value-noise was forgiven (a Snapcap grafted got→exp)">≈ caveat</span>
+                        <span class="sr-plabel caveat" title="virtually OK — acknowledged value-noise was forgiven (an Entcase grafted got→exp)">≈ caveat</span>
                     {:else if !ok}
                         <span class="sr-plabel mm">mismatch</span>
                     {/if}
@@ -1206,7 +1206,7 @@
                 {/if}
                 </div>
 
-                <!-- entropy arrest: author/CRUD acknowledged-noise Snapcaps.
+                <!-- entropy arrest: author/CRUD acknowledged-noise Entcases.
                      Shows iff a diff line was clicked (a draft is in flight) or this
                      test already holds caps.  Mints into The/EntropyArrest on OK;
                      restart re-reads them via entropy_rules. -->
@@ -1280,9 +1280,9 @@
                         {@const sc = row_spay_class(row)}
                         <div class="sr-diff2-cell changed sr-spayable"
                              class:spay-graft={sc === 'graft'} class:spay-blown={sc === 'blown'}
-                             title={sc === 'blown' ? 'a Snapcap matches here but the value blew its variance band'
-                                  : sc === 'graft' ? 'acknowledged noise — a Snapcap forgives this line'
-                                  : 'silence this noise — author a Snapcap'}
+                             title={sc === 'blown' ? 'an Entcase matches here but the value blew its variance band'
+                                  : sc === 'graft' ? 'acknowledged noise — an Entcase forgives this line'
+                                  : 'silence this noise — author an Entcase'}
                              onclick={() => seed_spay(rows, i)}>{@render intra_line(row.left, row.ops, 'left')}</div>
                     {:else if row.kind === 'left_only'}
                         <div class="sr-diff2-cell gone">{@render line_content(row.line)}</div>
@@ -1301,9 +1301,9 @@
                         {@const sc = row_spay_class(row)}
                         <div class="sr-diff2-cell changed sr-spayable"
                              class:spay-graft={sc === 'graft'} class:spay-blown={sc === 'blown'}
-                             title={sc === 'blown' ? 'a Snapcap matches here but the value blew its variance band'
-                                  : sc === 'graft' ? 'acknowledged noise — a Snapcap forgives this line'
-                                  : 'silence this noise — author a Snapcap'}
+                             title={sc === 'blown' ? 'an Entcase matches here but the value blew its variance band'
+                                  : sc === 'graft' ? 'acknowledged noise — an Entcase forgives this line'
+                                  : 'silence this noise — author an Entcase'}
                              onclick={() => seed_spay(rows, i)}>{@render intra_line(row.right, row.ops, 'right')}</div>
                     {:else if row.kind === 'left_only'}
                         <div class="sr-diff2-cell gone sr-empty-cell"></div>
@@ -1481,7 +1481,7 @@
 .sr-pip.fail     { background: #3a1a1a; color: #c55; }
 /* accepted: mismatch acknowledged — green background, red glyph */
 .sr-pip.accepted { background: #1a3a25; color: #c55; }
-/* caveat: forgiven value-noise — virtually OK (a Snapcap relaxed it) */
+/* caveat: forgiven value-noise — virtually OK (an Entcase relaxed it) */
 .sr-pip.caveat   { background: #12333a; color: #6cc; }
 /* hollow: step in The but not yet reached this session */
 .sr-pip.hollow   { background: #1a1a1a; color: #555; border: 1px solid #383838; }
@@ -1630,11 +1630,11 @@
 .sr-diff2-cell.neu                        { background: #001a10; }
 .sr-diff2-cell.neu:not(.sr-empty-cell)    { border-left-color: #4a9; }
 .sr-empty-cell { opacity: 0.12; }
-/* a changed line is the click target for authoring a Snapcap (entropy arrest) */
+/* a changed line is the click target for authoring an Entcase (entropy arrest) */
 .sr-spayable { cursor: pointer; }
 .sr-spayable:hover { background: #2a2008; box-shadow: inset 2px 0 0 #ca0; }
 
-/* a changed line a Snapcap reaches: acknowledged noise (would forgive) RECEDES — a teal
+/* a changed line an Entcase reaches: acknowledged noise (would forgive) RECEDES — a teal
    left-tick marks it as spayed, and the content is dimmed right down so the eye skates past
    it to the diffs that matter.  Hover restores full contrast to read/re-click it.  A blown
    band keeps the loud amber+pulse (below): it still diffs badly and must not hide. */
