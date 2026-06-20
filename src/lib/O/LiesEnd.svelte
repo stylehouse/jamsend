@@ -620,10 +620,16 @@ await M.eatfunc({
         // funk_id keys the req — a plain scalar, NOT the Waft|Funkcion mainkeys (those
         //  are type-tags a tree-walk reads to detect wafts|funkcions; using them as req
         //  sc keys makes the walk misread this req).  The waft|funk are .c refs.
-        //  Includes the funk's BINDING (of_Book|of_dock) so sibling cells of one kind —
-        //   many Funkcion:Storying on a Credence board — get distinct reqs, not one shared.
+        //  Identity is the funk's structural **Dip** (`c.Dip`, the waftid slot Waft_dip
+        //   stamps on every Waft** particle) — reliably present, since Waft_dip runs right
+        //    before instantiate on both the load and the UI-add path.  Generic and
+        //     collision-free for sibling cells of one kind (a board of Funkcion:Storying),
+        //      with no kind-specific keys leaking into this host.  Fall back to kind (+ any
+        //       binding) for a funk whose host isn't a dipped Waft — e.g. the trail Funkcion,
+        //        which rides a Seem.
+        const dip     = funk.c.Dip as string | undefined
         const bind    = (funk.sc.of_Book ?? funk.sc.of_dock ?? '') as string
-        const funk_id = `${host.sc.Waft}/${funk.sc.Funkcion}${bind ? '/' + bind : ''}`
+        const funk_id = `${host.sc.Waft}/${dip ?? (funk.sc.Funkcion + (bind ? '/' + bind : ''))}`
         const fr = await funks.oai({ req: 'Funkcion', funk_id, eternal: 1 })
         fr.c.host = host
         fr.c.funk = funk

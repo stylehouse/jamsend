@@ -389,7 +389,7 @@
             if (funk.sc.Funkcion === undefined) continue          // only %Funkcion embeds
             if (funk.c.run) continue                               // already bound (dirlist / prior load)
             const kind = FUNK_KINDS[funk.sc.Funkcion as string]   // the kind owns the behaviour
-            if (!kind) continue                                    // unknown kind → host renders it bare
+            if (!kind?.run) continue                               // unknown, or an action kind (no pumped run)
             funk.c.run = kind.run
             await H.Lies_register_funkcion(w, waft, funk, w)
         }

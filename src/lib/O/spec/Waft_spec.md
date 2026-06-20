@@ -211,11 +211,31 @@ embedded an SWF with `<object>` / `<embed>`.  Two halves, like any plugin:
   The plugin host — separate from the page, like the browser's Flash runtime was separate
   from the HTML.
 
-Loading a Waft **instantiates** its embeds: each `Waft/Funkcion:<name>` is bound to a
-`run` and registered into the central host (today `GhostList_funkcion` does exactly this
-for `dirlist`).  The embed persists; the runtime is re-bound on each load.  ⛑️
-*generalise instantiation so any Waft's Funkcions auto-bind on load — today only
-GhostList's is wired by hand.*
+**Monitor vs action — the pump axis.**  A Funkcion's mainkey *value* is its **kind**
+(`Funkcion:Storying`, `Funkcion:dirlist`, …).  A kind is a self-contained module under
+`O/Funk/` registered in `O/Funk/kinds.ts` as `{ run?, component }`.  `run` present = a
+**monitor**: pumped every tick (the verdict light `Storying`, the `dirlist` walker).  `run`
+absent = an **action**: never pumped, struck on demand (the `Ballistics` drum-pad — a click
+pops a Lies/Store limb via `e_Lies_strike`).  Both render through the one generic host
+`FunkHost` (mounted by `Waft.svelte` for any `%Funkcion` — and the legacy `%havoc` particle,
+aliased to the `Ballistics` kind); the host knows only "mount the kind's component", so Waft
+stays ignorant of any applet's specifics.
+
+Loading a Waft **instantiates** its embeds: `Lies_instantiate_funkcions` (`LiesStore`) walks
+a loaded Waft's subtree and binds each monitor kind's `run` into the central host (on load and
+on `watch_c` mutation).  `Lies_register_funkcion` keys each req by the funk's structural
+**Dip** (`c.Dip`, the waftid slot `Waft_dip` stamps on every Waft** particle — reliably present
+because `Waft_dip` runs immediately before instantiate on both the load and UI-add paths), so
+sibling cells of one kind don't collide on one req; a host with no Dip (the trail Funkcion, on a
+Seem) falls back to kind + binding.  The embed persists; the runtime is re-bound on each load.
+*(Generalised — was GhostList-only.)*
+
+The one test that authored `%havoc` — **InterestLive** (the limb `surprise_read`, which
+fabricates a disk-diverged-under-edit on the active dock) — has been **folded** to
+`Funkcion:Ballistics,kind:surprise_read` across its snaps; `Lies_arm_engaged`'s self-arm scan
+matches both the folded form and legacy `%havoc`.  FunkHost still aliases a bare `%havoc:<kind>`
+particle to the `Ballistics` kind as back-compat (no live snap uses it now).  The limb kind rides
+as `kind:`; the limb *behaviour* stays in `Lies/HAVOC_LIMBS`, dispatched by that kind.
 
 **Who turns an applet on.**  `%run_when` on the embed sets a floor — `loaded` (run
 whenever the Waft is loaded; GhostList's `dirlist`, warm even off-stage) or `locked`

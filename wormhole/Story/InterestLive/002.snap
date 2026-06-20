@@ -32,7 +32,7 @@ Snap:H
           What:landing
             Doc:Ghost/test/Peeroleum.g
             Point,method:InterestLanding
-            havoc:surprise_read
+            Funkcion:Ballistics,kind:surprise_read
         Waft:GhostList,lists,O_defaulted	{"mung":["seeded"]}
           Funkcion:dirlist,interval_ms=8000	{"mung":["walked_at"]}
           group:src/lib,dir:src/lib
@@ -155,7 +155,7 @@ Snap:H
             Demonstrations:origin
               Demonstrations:origin,Doc:Ghost/test/Peeroleum.g
               Demonstrations:origin,Point,method:InterestLanding
-              Demonstrations:origin,havoc:surprise_read
+              Demonstrations:origin,Funkcion:Ballistics,kind:surprise_read
             News:origin,goners=0,neus=3
           Seem:working	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:landing","topD":"%Demonstrations:working"}}
             Demonstrations:working
@@ -163,12 +163,12 @@ Snap:H
                 Understandable
               Demonstrations:working,Point,method:InterestLanding
                 Understandable
-              Demonstrations:working,havoc:surprise_read
+              Demonstrations:working,Funkcion:Ballistics,kind:surprise_read
                 Understandable
               Understandable
             News:working,goners=0,neus=3
           State,changey
-          {"encode":1,"snap_origin":"Doc:Ghost/test/Peeroleum.g\nPoint,method:InterestLanding\nhavoc:surprise_read\n","snap_working":"Doc:Ghost/test/Peeroleum.g\nPoint,method:InterestLanding\nhavoc:surprise_read\nPoint,method:InterestLanding,class:focus\n","dirty":"1"}
+          {"encode":1,"snap_origin":"Doc:Ghost/test/Peeroleum.g\nPoint,method:InterestLanding\nFunkcion:Ballistics,kind:surprise_read\n","snap_working":"Doc:Ghost/test/Peeroleum.g\nPoint,method:InterestLanding\nFunkcion:Ballistics,kind:surprise_read\nPoint,method:InterestLanding,class:focus\n","dirty":"1"}
         received,doc_opened,doc:Ghost/test/Peeroleum.g
         received,editorBegins,doc:Ghost/test/Peeroleum.g
         self,round=12	{"mung":["age"]}

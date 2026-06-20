@@ -578,11 +578,16 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         await new Travel().dive({
             n: what,
             match_sc: {},
-            each_fn: async (n: TheC) => { if (n.sc.havoc !== undefined && n.sc.arm) limbs.push(n) },
+            // a Ballistics pad — folded form (%Funkcion:Ballistics,kind:…) or legacy (%havoc:…) —
+            //  with arm:1 self-fires.  Limb name = the kind either way.
+            each_fn: async (n: TheC) => {
+                const ballistic = n.sc.Funkcion === 'Ballistics' || n.sc.havoc !== undefined
+                if (ballistic && n.sc.arm) limbs.push(n)
+            },
         })
         let fired = false
         for (const c of limbs)
-            if (await run_limb(H, w, c.sc.havoc as string, c)) fired = true
+            if (await run_limb(H, w, (c.sc.kind ?? c.sc.havoc) as string, c)) fired = true
         if (fired) H.i_elvisto(w, 'think')
     },
 

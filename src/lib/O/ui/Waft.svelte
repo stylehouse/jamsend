@@ -217,29 +217,8 @@
     let is_lister     = $derived(!!waft.sc.lists)
     let raw           = $state(false)
 
-    // ── havoc pads (Ballistics — the testing havoc drum-machine) ───────
-    //   A %havoc particle authored anywhere in the tree renders inline as a
-    //   strikeable pad (waftitem).  Striking runs the limb keyed by the havoc kind
-    //   (Lies/HAVOC_LIMBS) — popping that limb out of the Lies/Store plumbing.  In a
-    //   switcheroo Waft's raw mode the bare particle shows instead of the pad.
-    let struck = $state<TheC | null>(null)
-    function strike_havoc(c: TheC) {
-        H.i_elvisto('Lies/Lies', 'Lies_strike', { kind: c.sc.havoc as string })
-        struck = c
-        setTimeout(() => { if (struck === c) struck = null }, 180)
-    }
-    function havoc_raw(c: TheC): string {
-        return Object.entries(c.sc).map(([k, v]) => v === 1 ? k : `${k}:${v}`).join(', ')
-    }
-    // a %havoc,arm pad self-arms: it strikes itself whenever its containing What is
-    //  engaged (Lies_arm_engaged).  Glow it when that What holds the spotlight, so the
-    //  auto-fire is legible — the pad lights the same moment the limb runs.
-    function havoc_armed_engaged(c: TheC): boolean {
-        if (!c.sc.arm) return false
-        let what: any = c
-        while (what && what.sc?.What === undefined) what = what.c?.up
-        return what ? is_spotlight(what) : false
-    }
+    // Embedded applets (%Funkcion, and legacy %havoc drum-pads) render through FunkHost —
+    //  the kind module owns the pad/light, the strike, and the armed glow.  See O/Funk/.
 
     // ── unified item-edit form state ──────────────────────────────────
     //
@@ -634,29 +613,12 @@
      upC is the containing C — used for edit/delete keying and Doc dpath.
      Type selection now lives in the PeelInput irow via on_crud.on_pick_type. -->
 {#snippet waftitem(C: TheC, upC: TheC)}
-    {@const hav = C.sc?.havoc}
-    {#if hav !== undefined}
-        <!-- %havoc — a Ballistics pad rendered inline; bare particle in raw mode. -->
-        {#if raw}
-            <div class="ls-havoc-raw">{havoc_raw(C)}</div>
-        {:else}
-            <div class="ls-havoc">
-                <button class="ls-havoc-pad" class:ls-havoc-hit={struck === C}
-                        class:ls-havoc-armed={!!C.sc.arm}
-                        class:ls-havoc-engaged={havoc_armed_engaged(C)}
-                        title={(C.sc.hint as string) ?? (C.sc.arm ? `self-arming havoc: ${hav} (also strikeable)` : `strike havoc: ${hav}`)}
-                        onclick={() => strike_havoc(C)}>
-                    <span class="ls-havoc-glyph">{(C.sc.emoji as string) ?? '💥'}</span>
-                    <span class="ls-havoc-label">{hav}</span>
-                    {#if C.sc.arm}<span class="ls-havoc-arm" title="self-arms when its What is looked at">⟳</span>{/if}
-                </button>
-            </div>
-        {/if}
-    {:else if C.sc?.Funkcion !== undefined}
-        <!-- %Funkcion — an embedded applet.  Waft hosts it generically: FunkHost mounts
-             the kind's own component (kinds.ts); the specifics (Storying's verdict light,
-             a Book run, …) live in that module, not here. -->
-        <FunkHost {H} {w} funk={C} {raw} />
+    {#if C.sc?.Funkcion !== undefined || C.sc?.havoc !== undefined}
+        <!-- an embedded applet (%Funkcion, or a legacy %havoc pad).  Waft hosts it
+             generically: FunkHost mounts the kind's own component (kinds.ts); every
+             specific — Storying's verdict light, a Ballistics drum-pad, a Book run — lives
+             in that module, never here. -->
+        <FunkHost {H} {w} funk={C} {raw} {examining} />
     {:else}
     {@const t = item_type_of(C)}
     {#if t}
@@ -812,39 +774,4 @@
         display: none;  /* < type picker now lives in the PeelInput irow */
     }
 
-    /* %havoc — a Ballistics pad, struck to pop a limb out of the Lies/Store plumbing.
-       Renders inline among the tree rows; presses down + flashes warm on a hit. */
-    .ls-havoc { margin: 0.15rem 0; }
-    .ls-havoc-pad {
-        display: inline-flex; align-items: center; gap: 0.35rem;
-        padding: 0.2rem 0.5rem;
-        background: #1a1408; border: 1px solid #3a2c10; border-radius: 5px;
-        color: #c9b48a; cursor: pointer;
-        box-shadow: 0 2px 0 #0c0a04;
-        transition: transform 0.06s, box-shadow 0.06s, background 0.12s, border-color 0.12s;
-    }
-    .ls-havoc-pad:hover  { background: #221a0c; border-color: #5a4418; color: #e8d4a4; }
-    .ls-havoc-pad:active { transform: translateY(2px); box-shadow: 0 0 0 #0c0a04; }
-    .ls-havoc-hit {
-        background: #4a3410; border-color: #c89a3a;
-        box-shadow: 0 0 10px rgba(200, 154, 58, 0.6); color: #ffe6a8;
-    }
-    .ls-havoc-glyph { font-size: 0.95rem; line-height: 1; }
-    .ls-havoc-label { font-family: monospace; font-size: 0.74rem; }
-    /* self-arming pad (%havoc,arm): a cooler cast + a ⟳ mark; it lights warm
-       (.ls-havoc-engaged) the moment its What holds the spotlight and the limb
-       self-fires, the same glow a manual hit gives. */
-    .ls-havoc-armed { border-color: #2c3a4a; }
-    .ls-havoc-armed:hover { border-color: #44627e; }
-    .ls-havoc-arm { font-size: 0.7rem; color: #6a86a8; line-height: 1; }
-    .ls-havoc-engaged {
-        background: #14283a; border-color: #4a86c8;
-        box-shadow: 0 0 9px rgba(74, 134, 200, 0.55); color: #cfe4ff;
-    }
-    .ls-havoc-engaged .ls-havoc-arm { color: #9cc4ee; }
-    /* raw mode (switcheroo Waft): show the bare particle, not the pad */
-    .ls-havoc-raw {
-        font-family: monospace; font-size: 0.74rem; color: #8a7a5a;
-        padding: 0.1rem 0.2rem;
-    }
 </style>
