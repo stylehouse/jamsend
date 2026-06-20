@@ -16,13 +16,12 @@ Snap:H
             soil,dose=3
         yard
           soil,dose=12
+        self,round=2	{"mung":["age"]}
         req:repot,maz=2
           req:move_outside,maz=3
           req:repot,maz=2
           req:move_inside
         req:celebrate
-        self,round=2	{"mung":["age"]}
         log
           msg:carrying rose
           msg:carrying fern
-    mo:main,interval=3.6	{"mung":["id"]}

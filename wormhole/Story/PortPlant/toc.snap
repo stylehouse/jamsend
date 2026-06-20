@@ -37,10 +37,7 @@ story:PortPlant
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.064
-      sample=0.034,at=1781571861
-      sample=0.04,at=1781571874
-      sample=0.05,at=1781573511
+    TimeTotal:beliefs,avg=0.068
       sample=0.055,at=1781576017
       sample=0.048,at=1781580620
       sample=0.057,at=1781585668
@@ -48,12 +45,19 @@ story:PortPlant
       sample=0.069,at=1781608074
       sample=0.088,at=1781610180
       sample=0.069,at=1781612766
-  step,dige:233efb05f8010f49
-  step=2,dige:8e3affc549062d6b
-  step=3,dige:c289561c55a32a65
-  step=4,dige:c67c13cd0fb3c23c
-  step=5,dige:b20d358a94e8ca81
-  step=6,dige:881a3da97f6ec4b1
-  step=7,dige:bde517a50c93e4b5
-  step=8,dige:3895624ccbbfcfef
-  step=9,dige:dcce3d028730b461
+      sample=0.061,at=1781934682
+      sample=0.061,at=1781934705
+      sample=0.045,at=1781934724
+    TimeTotal:step,avg=0.006
+      sample=0.007,at=1781934682
+      sample=0.007,at=1781934705
+      sample=0.005,at=1781934724
+  step,dige:86d4698cb9eb6911
+  step=2,dige:6417206157eadd6e
+  step=3,dige:d799d31cb69e079c
+  step=4,dige:2eb9e969adb08b24
+  step=5,dige:c09b3fa0955e03ef
+  step=6,dige:2ec9eb21a31abaeb
+  step=7,dige:12ea5966d7c0a855
+  step=8,dige:6399d2bfc03e4469
+  step=9,dige:c28adb68df18b0f9

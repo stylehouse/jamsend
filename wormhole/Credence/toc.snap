@@ -1,19 +1,19 @@
 Waft:Credence
   What:Peregrination
-    Funkcion:Peregrination,of_book:Peregrination,run_when:loaded
+    Funkcion:Storying,of_Book:Peregrination,run_when:loaded
   What:Lake
-    Funkcion:LakeSurfer,of_book:LakeSurfer,run_when:loaded
-    Funkcion:LakeNets,of_book:LakeNets,run_when:loaded
-    Funkcion:LakeFlush,of_book:LakeFlush,run_when:loaded
+    Funkcion:Storying,of_Book:LakeSurfer,run_when:loaded
+    Funkcion:Storying,of_Book:LakeNets,run_when:loaded
+    Funkcion:Storying,of_Book:LakeFlush,run_when:loaded
   What:Leaf
-    Funkcion:LeafFarm,of_book:LeafFarm,run_when:loaded
-    Funkcion:LeafJuggle,of_book:LeafJuggle,run_when:loaded
+    Funkcion:Storying,of_Book:LeafFarm,run_when:loaded
+    Funkcion:Storying,of_Book:LeafJuggle,run_when:loaded
   What:Port
-    Funkcion:PortPlan,of_book:PortPlan,run_when:loaded
-    Funkcion:PortPlanet,of_book:PortPlanet,run_when:loaded
-    Funkcion:PortPlant,of_book:PortPlant,run_when:loaded
+    Funkcion:Storying,of_Book:PortPlan,run_when:loaded
+    Funkcion:Storying,of_Book:PortPlanet,run_when:loaded
+    Funkcion:Storying,of_Book:PortPlant,run_when:loaded
   What:Stuff
-    Funkcion:StuffFlipping,of_book:StuffFlipping,run_when:loaded
-    Funkcion:StuffResolving,of_book:StuffResolving,run_when:loaded
+    Funkcion:Storying,of_Book:StuffFlipping,run_when:loaded
+    Funkcion:Storying,of_Book:StuffResolving,run_when:loaded
   What:LangTiles
-    Funkcion:LangTiles,of_book:LangTiles,run_when:loaded
+    Funkcion:Storying,of_Book:LangTiles,run_when:loaded

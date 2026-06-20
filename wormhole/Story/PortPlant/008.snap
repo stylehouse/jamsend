@@ -16,6 +16,7 @@ Snap:H
             soil,dose=5
         yard
           soil,dose=6
+        self,round=8	{"mung":["age"]}
         req:repot,maz=2,finished
           req:move_outside,maz=3,finished
           req:repot,maz=2,finished
@@ -23,5 +24,3 @@ Snap:H
         req:celebrate,finished
           req:confetti,finished
         thus:🎉 all repotted and shelved!
-        self,round=8	{"mung":["age"]}
-    mo:main,interval=3.6	{"mung":["id"]}

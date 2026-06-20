@@ -620,7 +620,10 @@ await M.eatfunc({
         // funk_id keys the req — a plain scalar, NOT the Waft|Funkcion mainkeys (those
         //  are type-tags a tree-walk reads to detect wafts|funkcions; using them as req
         //  sc keys makes the walk misread this req).  The waft|funk are .c refs.
-        const funk_id = `${host.sc.Waft}/${funk.sc.Funkcion}`
+        //  Includes the funk's BINDING (of_Book|of_dock) so sibling cells of one kind —
+        //   many Funkcion:Storying on a Credence board — get distinct reqs, not one shared.
+        const bind    = (funk.sc.of_Book ?? funk.sc.of_dock ?? '') as string
+        const funk_id = `${host.sc.Waft}/${funk.sc.Funkcion}${bind ? '/' + bind : ''}`
         const fr = await funks.oai({ req: 'Funkcion', funk_id, eternal: 1 })
         fr.c.host = host
         fr.c.funk = funk

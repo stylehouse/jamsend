@@ -24,4 +24,3 @@ Snap:H
           req:repot,maz=2
           req:move_inside
         req:celebrate
-    mo:main,interval=3.6	{"mung":["id"]}

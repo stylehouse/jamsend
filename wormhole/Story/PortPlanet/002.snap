@@ -6,10 +6,10 @@ Snap:H
         orders
           order:rose,dose=3
           order:fern,dose=7
+        self,round=2	{"mung":["age"]}
         req:receive
           req=2,order:rose,dose=3
           req=3,order:fern,dose=7
-        self,round=2	{"mung":["age"]}
         logger,n
           driver[2],dispatch,inA
         req:transport

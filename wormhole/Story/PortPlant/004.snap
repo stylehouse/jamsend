@@ -16,15 +16,14 @@ Snap:H
           pot:cactus
             plant
             soil,dose=5
+        self,round=4	{"mung":["age"]}
         req:repot,maz=2
           req:move_outside,maz=3,finished
           req:repot,maz=2,finished
           req:move_inside
         req:celebrate
-        self,round=4	{"mung":["age"]}
         log
           msg:cactus in yard
           {"msg":"repotted rose (yard soil: 10)"}
           {"msg":"repotted fern (yard soil: 8)"}
           {"msg":"repotted cactus (yard soil: 6)"}
-    mo:main,interval=3.6	{"mung":["id"]}

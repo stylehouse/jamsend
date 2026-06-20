@@ -6,6 +6,7 @@ Snap:H
         orders
           order:rose,dose=5
           order:fern,dose=7
+        self,round=6	{"mung":["age"]}
         req:receive
           req=2,order:rose,dose=5,out
             already_sent,dose=3
@@ -20,7 +21,6 @@ Snap:H
           req:gatherself,maz=2,finished
           req:summarise,finished
           surprise=42
-        self,round=6	{"mung":["age"]}
         logger,n
           report_final,total=12,inA
         {"see":"📋 world total: 12 doses"}

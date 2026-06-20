@@ -16,14 +16,13 @@ Snap:H
           pot:fern
             plant
             soil,dose=3
+        self,round=3	{"mung":["age"]}
         req:repot,maz=2
           req:move_outside,maz=3
           req:repot,maz=2
           req:move_inside
         req:celebrate
-        self,round=3	{"mung":["age"]}
         log
           msg:rose in yard
           msg:fern in yard
           msg:carrying cactus
-    mo:main,interval=3.6	{"mung":["id"]}

@@ -64,8 +64,6 @@ Library
       TimeTotal:beliefs,avg=0.059
         sample=0.046,at=1781080365
         sample=0.071,at=1781608049
-  Book:ReactiveVers,ok_pct=0,last_pct_change=1779063108.089,done=8,last_run_ms=1779063283.368
-  Book:PotPlaner,ok_pct,last_pct_change=1779063324.719,done=2,last_run_ms=1779063328.951
   Book:TextInca,ok_pct,last_pct_change=1779067355.632,done,last_run_ms=1781588144.081
     TimeSpool
       TimeTotal:beliefs,avg=0.011

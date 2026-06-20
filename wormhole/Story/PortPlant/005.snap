@@ -16,13 +16,12 @@ Snap:H
             soil,dose=5
         yard
           soil,dose=6
+        self,round=5	{"mung":["age"]}
         req:repot,maz=2
           req:move_outside,maz=3,finished
           req:repot,maz=2,finished
           req:move_inside
         req:celebrate
-        self,round=5	{"mung":["age"]}
         log
           msg:rose back on shelf
           msg:fern back on shelf
-    mo:main,interval=3.6	{"mung":["id"]}

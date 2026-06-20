@@ -6,13 +6,13 @@ Snap:H
         orders
           order:rose,dose=3
           order:fern,dose=7
+        self,round=3	{"mung":["age"]}
         req:receive
           req=2,order:rose,dose=3,out
           req=3,order:fern,dose=7,out
         req:transport
           req:van_rose,van:rose,dose=3,finished
           req:van_fern,van:fern,dose=7,finished
-        self,round=3	{"mung":["age"]}
         world
           order:rose,dose=3
           order:fern,dose=7

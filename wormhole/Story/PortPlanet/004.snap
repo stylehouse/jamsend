@@ -6,6 +6,7 @@ Snap:H
         orders
           order:rose,dose=5
           order:fern,dose=7
+        self,round=4	{"mung":["age"]}
         req:receive
           req=2,order:rose,dose=5,out
             already_sent,dose=3
@@ -17,7 +18,6 @@ Snap:H
         world
           order:rose,dose=3
           order:fern,dose=7
-        self,round=4	{"mung":["age"]}
         logger,n=2
           driver[3],order:rose,dose=5,inA
           extra_order,order:rose,gap=2,inA

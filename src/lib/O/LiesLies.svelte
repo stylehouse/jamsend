@@ -261,9 +261,12 @@
             }
             ;(H as any).Tribunal_activate_websocket(w)
 
-            // Inbound: the runner receives pushed source; the editor receives results.
-            if (role === 'runner') (H as any).Peeroleum_on(w, 'rungo',      (cw: TheC, _p: TheC, fr: any) => H.Lies_rungo_recv(cw, fr))
-            else                   (H as any).Peeroleum_on(w, 'run_result', (cw: TheC, _p: TheC, fr: any) => H.Lies_run_result_recv(cw, fr))
+            // Inbound: the runner receives pushed source + become-Book commands; the editor
+            //  receives results.
+            if (role === 'runner') {
+                (H as any).Peeroleum_on(w, 'rungo',       (cw: TheC, _p: TheC, fr: any) => H.Lies_rungo_recv(cw, fr))
+                ;(H as any).Peeroleum_on(w, 'become_book', (cw: TheC, _p: TheC, fr: any) => H.Lies_become_book_recv(cw, fr))
+            } else            (H as any).Peeroleum_on(w, 'run_result', (cw: TheC, _p: TheC, fr: any) => H.Lies_run_result_recv(cw, fr))
             // ping/pong heartbeat — both roles echo a ping and record a pong, so the real
             //  envelope path is provable (and shown by the badge), not just relay control.
             ;(H as any).Peeroleum_on(w, 'ping', (cw: TheC, _p: TheC, fr: any) => { H.Lies_pong(cw, fr);      return true })
@@ -327,6 +330,60 @@
             if (!demands.length) return
             const seq = (H as any).Peeroleum_send_consumer(w, 'rungo', { demands })
             H.tlog(`📤 rungo seq=${seq} → runner: ${demands.map(d => `${d.path}@${String(d.dige).slice(0, 8)}`).join(', ')}`)
+        },
+
+        // ── become-Book — point the runner at a Book and run it (§5e build-order b) ───────
+        //   A Credence Book cell's click flows here.  The editor SHIPS the command (it never
+        //    runs anything itself — Pantheate split); the runner RESETS its Story onto that
+        //     Book.  resetStory works on a runner with no Library (Auto.svelte: Book off the
+        //      event), so the path the click needs already fires.  No dock/dige: a Book run is
+        //       not a compile-driven Rungo, so we stash awaiting_verdict{book} ourselves and the
+        //        same storyFinished → Lies_runner_verdict → run_result loop reports it back, keyed
+        //         by the Book (Lies_run_result_recv accepts a Book-keyed result with no path).
+        //   LANDMINE (untested): Auto.auto_reset_story still has `throw "forgot A"` in its
+        //    existing-H:Story teardown loop — switching Books after one is up may throw until
+        //     that's fixed.  First boot is fine.
+        async e_Lies_become_book(A: TheC, w: TheC, e: TheC) {
+            const H    = this as House
+            const book = e.sc.book as string | undefined
+            if (!book) return
+            if (H.Lies_is_editor(w)) {
+                const sent = H.Lies_send_become_book(w, book)
+                H.tlog(`🎬 editor become_book → ${book} ${sent ? '(sent)' : '(channel down — no runner)'}`)
+            } else {
+                H.Lies_become_book_drive(w, book)   // runner, or a bare dev Lies with a co-resident Run
+            }
+        },
+
+        // Lies_send_become_book — editor emit, mirrors Lies_send_rungo (same direction, the
+        //  rungo channel).  Returns false when the channel is down so the caller can say so.
+        Lies_send_become_book(w: TheC, book: string): boolean {
+            const H = this as House
+            if (!H.Lies_is_editor(w)) return false
+            const pier = (w.o({ Peering: 1 })[0] as TheC | undefined)?.o({ Pier: 1 })[0] as TheC | undefined
+            if (!pier || !H.Lies_channel_live(w)) return false
+            ;(H as any).Peeroleum_send_consumer(w, 'become_book', { book })
+            H.tlog(`📤 become_book → runner: ${book}`)
+            return true
+        },
+
+        // Lies_become_book_recv — runner receives the command and drives the run.
+        async Lies_become_book_recv(w: TheC, frame: any): Promise<boolean> {
+            const H    = this as House
+            const book = frame?.book as string | undefined
+            if (!book) return false
+            H.tlog(`📥 become_book recv: ${book}`)
+            H.Lies_become_book_drive(w, book)
+            return true
+        },
+
+        // Lies_become_book_drive — stash the awaiting_verdict{book} (so the finish reports a
+        //  verdict for this Book) and resetStory onto it.
+        Lies_become_book_drive(w: TheC, book: string) {
+            const H = this as House
+            w.c.awaiting_verdict = { book }
+            H.top_House().i_elvisto('Auto/Auto', 'resetStory', { Book: book })
+            H.tlog(`🎬 become_book drive → ${book}`)
         },
 
         // Lies_send_gen_write — ship a freshly-compiled .go straight down the editor's relay socket
@@ -553,19 +610,24 @@
         Lies_runner_verdict(w: TheC, book?: string) {
             const H = this as House
             if (!H.Lies_is_runner(w)) return
-            const aw = w.c.awaiting_verdict as { path: string, dige: string } | undefined
+            const aw = w.c.awaiting_verdict as { path?: string, dige?: string, book?: string } | undefined
             if (!aw) return
             const outcome = (H as any).Cred_run_outcome() as { ok: boolean, ok_pct: number, done: number } | null
             if (!outcome) return
             w.c.awaiting_verdict = undefined
-            H.Lies_report_result(w, { path: aw.path, dige: aw.dige, ok: outcome.ok, ok_pct: outcome.ok_pct, done: outcome.done, book })
+            // a Rungo run carries a {path,dige}; a become-Book run carries {book} only.  Either
+            //  way the report carries the Book (storyFinished's bname), so a Book cell can match.
+            H.Lies_report_result(w, { path: aw.path, dige: aw.dige, ok: outcome.ok, ok_pct: outcome.ok_pct, done: outcome.done, book: book ?? aw.book })
         },
 
         // Lies_run_result_recv — editor receives the runner's outcome and stamps it on
         //  the dock so the staging chrome can read ok/errors/snap_dige off the snap.
         async Lies_run_result_recv(w: TheC, frame: any): Promise<boolean> {
             const H = this as House
-            const path = frame?.path as string | undefined
+            // a dock run keys by its path; a become-Book run has no dock, so key by the Book
+            //  (a synthetic `Book:<name>` slot).  Either way `book` rides as a field so a Book
+            //   cell matches by it.
+            const path = (frame?.path ?? (frame?.book ? `Book:${frame.book}` : undefined)) as string | undefined
             if (!path) return false
             // roai (not oai): bump w:Lies so Liesui's Cred readout re-renders — oai would merge
             //  in place and bump only the %run_result child, which the header $effect doesn't track.

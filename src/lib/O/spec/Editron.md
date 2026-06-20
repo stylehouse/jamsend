@@ -258,23 +258,30 @@ First slice (mirrors §201's): one Funkcion bound to one dock via `%of_dock`, re
  `%run_result.ok` and colouring its embed red|green|working. Generalise the bind to every Funkcion on load,
   and per-step granularity, after the single light works end to end.
 
-**LANDED — the Credence cell.** All three: (1) generic instantiation (`Lies_instantiate_funkcions`,
- `LiesStore.svelte`) walks a loaded Waft's subtree and binds a verdict-reader run to every `%Funkcion`
-  carrying a bind (`%of_book` or `%of_dock`) — called from `Lies_open` on load AND from the Waft's
-   `watch_c` so a freshly-authored cell binds too (this is §201's ⛑️ "generalise instantiation"). (2) The
-    reader (`Lies_verdict_read`) finds the matching `%run_result` — by `book` field for `%of_book` (latest
-     by `at`, since one Book runs several docks), by dock `path` for `%of_dock` — and stamps a *separate*
-      `funk.c.verdict = {phase,pass,total,dige}` off-snap (NOT `req.sc.ok`): phase = good (all steps) / bad
-       / working (no result yet); per-step `round(ok_pct*done)/done`. (3) The decoration (`Waft.svelte`
-        `waftitem`) renders a `%Funkcion` as a clickable test-light reusing the Langui ✓/✗/◴ + good/bad/
-         working colours; a dock cell's click fires `Lies_run_arm{of_dock}` (the Esc intent), a Book cell's
-          click acks optimistically (become-Book remote control is §5e build-order b, not yet wired). Seeded
-           `wormhole/Credence/toc.snap` — `Waft:Credence`, **Book-bound and What-grouped** to mirror the
-            Library: `What:Peregrination | Lake{Surfer,Nets,Flush} | Leaf{Farm,Juggle} | Port{Plan,Planet,
-             Plant} | Stuff{Flipping,Resolving} | LangTiles` (the substantive Books; the rest are R&D husks).
-              Open via Liesui `+Waft → Credence`. A fresh cell shows `◴ working` immediately (single-tab
-               visible); it greens/reds when a `run_result` carrying that Book lands. Still deferred: the
-                per-row group-by into a `book × dock` matrix, and the become-Book remote control.
+**LANDED — the Credence cell, as a partitioned Funkcion KIND.** A `%Funkcion`'s mainkey value is its
+ *kind* (`Funkcion:Storying,of_Book:PortPlan`); the host (Waft) stays ignorant of any kind's specifics —
+  it mounts `FunkHost`, which dispatches on kind via the **`O/Funk/kinds.ts`** registry to the kind's own
+   component. The **`O/Funk/Storying.svelte`** module owns BOTH halves: `storying_run` (the behaviour,
+    pumped centrally by Lies) finds the matching `%run_result` — by `book` for `%of_Book` (latest by `at`,
+     since one Book runs several docks), by `path` for `%of_dock` — and stamps a *separate* off-snap
+      `funk.c.verdict = {phase,pass,total,dige}` (NOT `req.sc.ok`; per-step `round(ok_pct*done)/done`); the
+       component renders the ✓/✗/◴ good/bad/working light. `Lies_instantiate_funkcions` (`LiesStore`) binds
+        `funk.c.run = FUNK_KINDS[kind].run` on load + on `watch_c` mutation; `Lies_register_funkcion`'s
+         `funk_id` now includes the binding so sibling cells of one kind don't collide on one req. Adding a
+          kind = one `O/Funk/<Kind>.svelte` + one registry line (Ballistics, today hardwired in `Waft.svelte`,
+           is the obvious next migration). **Become-Book is now wired** (§5e build-order b): a Book cell's
+            click → `e_Lies_become_book` → the editor *ships* a `become_book` frame; the runner *receives* it
+             (`Lies_become_book_recv`) and `Lies_become_book_drive` stashes `awaiting_verdict{book}` +
+              `resetStory{Book}`, so the same `storyFinished → Lies_runner_verdict → run_result` loop reports
+               back, Book-keyed (`Lies_run_result_recv` accepts a Book-keyed result with no dock path). A dock
+                cell still fires `Lies_run_arm{of_dock}`. Seeded `wormhole/Credence/toc.snap` — `Waft:Credence`,
+                 **Book-bound, What-grouped** to mirror the Library: `Peregrination | Lake{Surfer,Nets,Flush} |
+                  Leaf{Farm,Juggle} | Port{Plan,Planet,Plant} | Stuff{Flipping,Resolving} | LangTiles` (the
+                   substantive Books — the rest are R&D husks, see [[story-books-catalog]]). Open via Liesui
+                    `+Waft → Credence`. A fresh cell shows `◴ working` at once (single-tab visible); greens/reds
+                     when its Book's `run_result` lands. **LANDMINE (untested):** `Auto.auto_reset_story` still
+                      `throw`s `"forgot A"` switching Books after one is up — become-Book may hit it until fixed.
+                       Still deferred: the per-row group-by into a `book × dock` matrix.
 
 ## 5e. Credence — the editor-side admirer (the Creduler's opposite)
 

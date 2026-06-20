@@ -67,8 +67,7 @@ story:LakeNets
     quiesce_snap_time=0.4
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=1.353
-      sample=1.744,at=1781863420
+    TimeTotal:beliefs,avg=1.315
       sample=1.744,at=1781865121
       sample=1.955,at=1781882033
       sample=1.955,at=1781882044
@@ -78,6 +77,9 @@ story:LakeNets
       sample=1.231,at=1781888267
       sample=0.814,at=1781888291
       sample=0.814,at=1781888330
+      sample=1.357,at=1781935261
+    TimeTotal:step,avg=0.104
+      sample=0.104,at=1781935261
   step,dige:e35c7ed50ffa0327
   step=2,dige:face93fc235ca68a
   step=3,dige:5b5ddb343d380c84

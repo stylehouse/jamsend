@@ -152,6 +152,7 @@
     import { Travel }         from "$lib/mostly/Selection.svelte"
     import type { House }     from "$lib/O/Housing.svelte"
     import { dig, throttle }  from "$lib/Y.svelte"
+    import { FUNK_KINDS }     from "$lib/O/Funk/kinds"
     import { onMount }        from "svelte"
 
     let { M } = $props()
@@ -373,56 +374,25 @@
 
     // ── Lies_instantiate_funkcions ────────────────────────────────────────────────
     //   Generalise GhostList's hand-wired bind (Waft_spec §201's ⛑️): on Waft load —
-    //   and on a later in-place edit — every embedded %Funkcion that declares a binding
-    //   (%of_book or %of_dock) gets its verdict-reader run bound and registered into the
-    //   central host.  Idempotent: a funk already carrying a run (the dirlist, or a prior
-    //   pass) is skipped, so re-calling on every mutation is cheap.  This is the Credence
-    //   cell's instantiation half — the embed rides the snap, the runtime re-binds each
-    //   load.  Walks the whole Waft subtree so a cell can ride anywhere (a row under a
-    //   group, not just a top child).
+    //   and on a later in-place edit — every embedded %Funkcion whose KIND (its mainkey
+    //   value: Funkcion:Storying, …) is registered in FUNK_KINDS gets that kind's `run`
+    //   bound and registered into the central host.  The kind owns the behaviour; this
+    //   only wires it.  Idempotent: a funk already carrying a run (the dirlist, or a prior
+    //   pass) is skipped, so re-calling on every mutation is cheap.  Walks the whole Waft
+    //   subtree so a cell can ride anywhere (a row under a group, not just a top child).
     async Lies_instantiate_funkcions(w: TheC, waft: TheC): Promise<void> {
         const H   = this as House
         const all: TheC[] = []
         const walk = (c: TheC) => { for (const k of c.o() as TheC[]) { all.push(k); walk(k) } }
         walk(waft)
         for (const funk of all) {
-            if (funk.sc.Funkcion === undefined) continue   // only %Funkcion embeds
-            if (funk.c.run) continue                        // already bound (dirlist / prior load)
-            if (funk.sc.of_book === undefined && funk.sc.of_dock === undefined) continue  // verdict cells only
-            funk.c.run = async (_host: TheC, fk: TheC, ww: TheC) => H.Lies_verdict_read(ww, fk)
+            if (funk.sc.Funkcion === undefined) continue          // only %Funkcion embeds
+            if (funk.c.run) continue                               // already bound (dirlist / prior load)
+            const kind = FUNK_KINDS[funk.sc.Funkcion as string]   // the kind owns the behaviour
+            if (!kind) continue                                    // unknown kind → host renders it bare
+            funk.c.run = kind.run
             await H.Lies_register_funkcion(w, waft, funk, w)
         }
-    },
-
-    // ── Lies_verdict_read ─────────────────────────────────────────────────────────
-    //   A verdict Funkcion's per-tick run: find the matching %run_result (the runner's
-    //   verdict, landed on w:Lies by Lies_run_result_recv) and stamp a *separate*
-    //   %verdict on the funk — NOT req.sc.ok, which only says "the closure ran" (a
-    //   broken Funkcion vs a failing test must stay distinguishable, §5d).  Two binds:
-    //   %of_book matches the run_result whose `book` field is this Book (the latest by
-    //   `at`, since one Book can run several docks); %of_dock matches by dock `path`.
-    //   phase mirrors the Langui idiom: good (every step passed) / bad (some failed) /
-    //   working (no result yet).  Off-snap on funk.c so a live verdict never bakes into
-    //   the document snap; bump only on a real change (the pump runs this every tick).
-    Lies_verdict_read(ww: TheC, funk: TheC): void {
-        const book = funk.sc.of_book as string | undefined
-        const path = funk.sc.of_dock as string | undefined
-        let rr: TheC | undefined
-        if (book) {
-            rr = (ww.o({ run_result: 1 }) as TheC[])
-                .filter(r => r.sc.book === book)
-                .sort((a, b) => Number(b.sc.at ?? 0) - Number(a.sc.at ?? 0))[0]
-        } else if (path) {
-            rr = ww.o({ run_result: 1, path })[0] as TheC | undefined
-        } else return
-        const pass  = rr ? Math.round(Number(rr.sc.ok_pct ?? (rr.sc.ok ? 1 : 0)) * Number(rr.sc.done ?? 1)) : 0
-        const total = rr ? Number(rr.sc.done ?? 1) : 0
-        const phase = !rr ? 'working' : (total > 0 && pass === total) ? 'good' : 'bad'
-        const dige  = rr?.sc.dige as string | undefined
-        const prev  = funk.c.verdict as { phase?: string, pass?: number, total?: number, dige?: string } | undefined
-        if (prev && prev.phase === phase && prev.pass === pass && prev.total === total && prev.dige === dige) return
-        funk.c.verdict = { phase, pass, total, dige }
-        funk.bump_version()
     },
 
     // ── Lies_waft_save ────────────────────────────────────────────────────────

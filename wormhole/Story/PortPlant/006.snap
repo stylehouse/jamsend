@@ -16,14 +16,13 @@ Snap:H
             soil,dose=5
         yard
           soil,dose=6
+        self,round=6	{"mung":["age"]}
         req:repot,maz=2,finished
           req:move_outside,maz=3,finished
           req:repot,maz=2,finished
           req:move_inside,finished
         req:celebrate,finished
           req:confetti,finished
-        self,round=6	{"mung":["age"]}
         log
           msg:cactus back on shelf
         thus:🎉 all repotted and shelved!
-    mo:main,interval=3.6	{"mung":["id"]}
