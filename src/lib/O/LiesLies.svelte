@@ -131,76 +131,6 @@
             H.tlog(`🔪 Lies run-mode → ${mode}`)
         },
 
-        // ── e_Lies_run_arm — the "run it now" signal (Esc in the editor) ──────
-        //
-        //   Esc means "I'm keen to run this now."  The editor compiles + writes the
-        //    .go (it never runs the code itself — the Pantheate split), then arms a
-        //     run on the runner that shares the Waft.  This is the local-first half
-        //      of the editor↔runner channel: the same {path, mode} the Peeroleum
-        //       dock_push frame will carry over the wire later (heading 10).
-        //
-        //   By role:
-        //     editor — emit the go-run intent outward.  Locally there is usually no
-        //              co-resident runner Run, so this stamps the intent (snapped as
-        //               w%run_arm) + logs; the websocket transport (deferred) is what
-        //                delivers it cross-instance.  The editor never drives a run.
-        //     runner — invalidate the dock's Good so the recompile reads the fresh
-        //              source (the good.c.content short-circuit otherwise serves
-        //               stale bytes — see LiesStore_read_good's "force a re-read:
-        //                delete good.c.content"), then resume (in_place) or, for an
-        //                 explicit runner, reset (from_start, the Story_reset path).
-        //
-        //   e.sc: { path, mode? }   mode falls back to the stored editor preference.
-        async e_Lies_run_arm(A: TheC, w: TheC, e: TheC) {
-            const H    = this as House
-            const path = e.sc.path as string | undefined
-            const mode = (e.sc.mode as string) ?? H.Lies_run_mode()
-
-            if (H.Lies_is_editor(w)) {
-                // Snap the last arm.  The runner re-runs off the Rungo the compile-write
-                //  emits (Lies_send_rungo), so once the channel is live the arm is a record,
-                //   not a wait — only call it "awaiting" when the channel is down.
-                w.oai({ run_arm: 1 }, { path, mode })
-                const live = H.Lies_channel_live(w)
-                H.tlog(`🔪 editor arm-run → ${path} [${mode}] ${live ? '(channel live — runner runs on Rungo)' : '(awaiting channel)'}`)
-                return
-            }
-
-            // runner (or a bare dev Lies): drive the actual run.
-            H.Lies_drive_run(w, path, mode as 'in_place' | 'from_start')
-            H.tlog(`🔪 runner arm-run → ${path} [${mode}]`)
-        },
-
-        // Lies_drive_run — make the runner ACTUALLY run `path`.  The Story Run House is
-        //  no_ambient (story_drive owns its clock), so an ambient think on an actor w never
-        //   reaches it.  Two cases for "which Run":
-        //    • inner Lies (old test path): H itself IS the Run House (%Run).
-        //    • Creduler (the runner, outside Story): H is Mundo — find the sibling Run House
-        //       (the one carrying %Run) and drive THAT; the dock's %Good lives on the Run's
-        //        inner compiler Lies, not on this Creduler's w, so invalidate it there.
-        //   from_start: tear down + rebuild via Auto/resetStory (no explicit Book → active one).
-        //    in_place: invalidate the inner Good + re-kick the Run (main(true) bypasses no_ambient,
-        //     cf Story's own Run.main(true)) + a think to re-pump its compile req-stack.
-        Lies_drive_run(w: TheC, path?: string, mode?: 'in_place' | 'from_start') {
-            const H   = this as House
-            mode = mode ?? H.Lies_run_mode()
-            const Run = ((H as any).sc?.Run ? H
-                : H.top_House().all_House.find((h: any) => h.sc?.Run)) as House | undefined
-            if (path && Run) {
-                // the Good lives on the Run's inner compiler Lies (or on H itself for the old path)
-                const innerW = ((Run.o({ A: 'Lies' })[0] as TheC | undefined)?.o({ w: 'Lies' })[0]
-                    ?? w) as TheC
-                const good = (Run as any).LiesStore_good_of(innerW, 'text/Doc', path) as TheC | undefined
-                if (good) delete good.c.content   // force the next read off disk
-            }
-            if (mode === 'from_start') {
-                H.top_House().i_elvisto('Auto/Auto', 'resetStory', {})
-            } else if (Run) {
-                (Run as any).i_elvisto(Run, 'think')   // wake the inner compile req-stack
-                Run.main(true)                          // re-kick the no_ambient Story Run
-            }
-        },
-
         //#endregion
         //#region channel — standup, transport & emit (Peeroleum consumer)
         // ── the editor↔runner channel — Lies as a Peeroleum consumer ──────────
@@ -330,60 +260,6 @@
             if (!demands.length) return
             const seq = (H as any).Peeroleum_send_consumer(w, 'rungo', { demands })
             H.tlog(`📤 rungo seq=${seq} → runner: ${demands.map(d => `${d.path}@${String(d.dige).slice(0, 8)}`).join(', ')}`)
-        },
-
-        // ── become-Book — point the runner at a Book and run it (§5e build-order b) ───────
-        //   A Credence Book cell's click flows here.  The editor SHIPS the command (it never
-        //    runs anything itself — Pantheate split); the runner RESETS its Story onto that
-        //     Book.  resetStory works on a runner with no Library (Auto.svelte: Book off the
-        //      event), so the path the click needs already fires.  No dock/dige: a Book run is
-        //       not a compile-driven Rungo, so we stash awaiting_verdict{book} ourselves and the
-        //        same storyFinished → Lies_runner_verdict → run_result loop reports it back, keyed
-        //         by the Book (Lies_run_result_recv accepts a Book-keyed result with no path).
-        //   LANDMINE (untested): Auto.auto_reset_story still has `throw "forgot A"` in its
-        //    existing-H:Story teardown loop — switching Books after one is up may throw until
-        //     that's fixed.  First boot is fine.
-        async e_Lies_become_book(A: TheC, w: TheC, e: TheC) {
-            const H    = this as House
-            const book = e.sc.book as string | undefined
-            if (!book) return
-            if (H.Lies_is_editor(w)) {
-                const sent = H.Lies_send_become_book(w, book)
-                H.tlog(`🎬 editor become_book → ${book} ${sent ? '(sent)' : '(channel down — no runner)'}`)
-            } else {
-                H.Lies_become_book_drive(w, book)   // runner, or a bare dev Lies with a co-resident Run
-            }
-        },
-
-        // Lies_send_become_book — editor emit, mirrors Lies_send_rungo (same direction, the
-        //  rungo channel).  Returns false when the channel is down so the caller can say so.
-        Lies_send_become_book(w: TheC, book: string): boolean {
-            const H = this as House
-            if (!H.Lies_is_editor(w)) return false
-            const pier = (w.o({ Peering: 1 })[0] as TheC | undefined)?.o({ Pier: 1 })[0] as TheC | undefined
-            if (!pier || !H.Lies_channel_live(w)) return false
-            ;(H as any).Peeroleum_send_consumer(w, 'become_book', { book })
-            H.tlog(`📤 become_book → runner: ${book}`)
-            return true
-        },
-
-        // Lies_become_book_recv — runner receives the command and drives the run.
-        async Lies_become_book_recv(w: TheC, frame: any): Promise<boolean> {
-            const H    = this as House
-            const book = frame?.book as string | undefined
-            if (!book) return false
-            H.tlog(`📥 become_book recv: ${book}`)
-            H.Lies_become_book_drive(w, book)
-            return true
-        },
-
-        // Lies_become_book_drive — stash the awaiting_verdict{book} (so the finish reports a
-        //  verdict for this Book) and resetStory onto it.
-        Lies_become_book_drive(w: TheC, book: string) {
-            const H = this as House
-            w.c.awaiting_verdict = { book }
-            H.top_House().i_elvisto('Auto/Auto', 'resetStory', { Book: book })
-            H.tlog(`🎬 become_book drive → ${book}`)
         },
 
         // Lies_send_gen_write — ship a freshly-compiled .go straight down the editor's relay socket
@@ -588,59 +464,6 @@
         //       on w:Lies (not the House), so there is nothing useful to enumerate here.
         Ghost_version_checkin() {
             for (const h of (this as House).all_House as House[]) h.feebly_ponder()
-        },
-
-        // Lies_report_result — runner emit, after a run settles.  The editor's handler
-        //  re-attaches it so the staging chrome lights up.
-        Lies_report_result(w: TheC, sc: { path?: string, dige?: string, ok?: boolean, errors?: any[], snap_dige?: string, ok_pct?: number, done?: number, book?: string }) {
-            const H = this as House
-            if (!H.Lies_is_runner(w)) return
-            const pier = (w.o({ Peering: 1 })[0] as TheC | undefined)?.o({ Pier: 1 })[0] as TheC | undefined
-            if (!pier || !H.Lies_channel_live(w)) return
-            ;(H as any).Peeroleum_send_consumer(w, 'run_result', { path: sc.path, dige: sc.dige, ok: sc.ok, errors: sc.errors, snap_dige: sc.snap_dige, ok_pct: sc.ok_pct, done: sc.done, book: sc.book })
-            H.tlog(`📤 run_result → editor: ${sc.path} ${sc.ok ? 'green' : 'red'}${sc.done != null ? ` ${Math.round((sc.ok_pct ?? 0) * sc.done)}/${sc.done}` : ''}`)
-        },
-
-        // Lies_runner_verdict — the REAL verdict, sent from storyFinished on a runner.  The run
-        //  fired by req_rungo is async, so its outcome isn't known at FIRE; Cred_run_outcome reads
-        //   the just-finished Story's %ok steps / total.  Reports it against the dock the last rungo
-        //    fired on (w.c.awaiting_verdict, stashed at FIRE), then clears the slot.  One slot only:
-        //     v1 runs are sequential, so the latest FIRE owns the next finish.  A finish with no
-        //      awaiting_verdict (the runner's own boot run) reports nothing.
-        Lies_runner_verdict(w: TheC, book?: string) {
-            const H = this as House
-            if (!H.Lies_is_runner(w)) return
-            const aw = w.c.awaiting_verdict as { path?: string, dige?: string, book?: string } | undefined
-            if (!aw) return
-            const outcome = (H as any).Cred_run_outcome() as { ok: boolean, ok_pct: number, done: number } | null
-            if (!outcome) return
-            w.c.awaiting_verdict = undefined
-            // a Rungo run carries a {path,dige}; a become-Book run carries {book} only.  Either
-            //  way the report carries the Book (storyFinished's bname), so a Book cell can match.
-            H.Lies_report_result(w, { path: aw.path, dige: aw.dige, ok: outcome.ok, ok_pct: outcome.ok_pct, done: outcome.done, book: book ?? aw.book })
-        },
-
-        // Lies_run_result_recv — editor receives the runner's outcome and stamps it on
-        //  the dock so the staging chrome can read ok/errors/snap_dige off the snap.
-        async Lies_run_result_recv(w: TheC, frame: any): Promise<boolean> {
-            const H = this as House
-            // a dock run keys by its path; a become-Book run has no dock, so key by the Book
-            //  (a synthetic `Book:<name>` slot).  Either way `book` rides as a field so a Book
-            //   cell matches by it.
-            const path = (frame?.path ?? (frame?.book ? `Book:${frame.book}` : undefined)) as string | undefined
-            if (!path) return false
-            // roai (not oai): bump w:Lies so Liesui's Cred readout re-renders — oai would merge
-            //  in place and bump only the %run_result child, which the header $effect doesn't track.
-            await w.roai({ run_result: 1, path }, {
-                ok: frame.ok ? 1 : 0,
-                errors: Array.isArray(frame.errors) ? frame.errors.length : 0,
-                snap_dige: frame.snap_dige, dige: frame.dige, at: Date.now(),
-                ...(frame.ok_pct != null ? { ok_pct: frame.ok_pct } : {}),
-                ...(frame.done   != null ? { done: frame.done }     : {}),
-                ...(frame.book   != null ? { book: frame.book }     : {}),
-            })
-            H.tlog(`📥 run_result: ${path} ${frame.ok ? 'green' : 'red'}${frame.done != null ? ` ${Math.round((frame.ok_pct ?? 0) * frame.done)}/${frame.done}` : ''}`)
-            return true
         },
 
         //#endregion

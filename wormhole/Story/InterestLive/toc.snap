@@ -51,8 +51,7 @@ story:InterestLive
         nogen
         nopush
   TimeSpool
-    TimeTotal:beliefs,avg=1.476
-      sample=0.914,at=1781711895
+    TimeTotal:beliefs,avg=1.464
       sample=1.272,at=1781713633
       sample=1.446,at=1781714201
       sample=1.336,at=1781714794
@@ -62,10 +61,12 @@ story:InterestLive
       sample=0.539,at=1781896878
       sample=3.143,at=1781896911
       sample=3.143,at=1781896959
-    TimeTotal:step,avg=0.207
+      sample=0.79,at=1781944344
+    TimeTotal:step,avg=0.173
       sample=0.049,at=1781896878
       sample=0.286,at=1781896911
       sample=0.286,at=1781896959
+      sample=0.072,at=1781944344
   step,dige:4b17c161c7026279
   step=2,dige:f8697cb9effd3749
   step=3,dige:f44e018e56c462eb

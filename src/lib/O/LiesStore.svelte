@@ -152,7 +152,6 @@
     import { Travel }         from "$lib/mostly/Selection.svelte"
     import type { House }     from "$lib/O/Housing.svelte"
     import { dig, throttle }  from "$lib/Y.svelte"
-    import { FUNK_KINDS }     from "$lib/O/Funk/kinds"
     import { onMount }        from "svelte"
 
     let { M } = $props()
@@ -301,98 +300,6 @@
         }
         ;(this as House).i_elvisto(w, 'Lies_open_Waft', { path: 'GhostList' })  // load (idempotent)
         return undefined
-    },
-
-    // ── GhostList_funkcion ──────────────────────────────────────────────────────
-    //   Install the GhostList's dirlist behaviour on funk.c.run (off-snap), riding the
-    //   Waft directly (Waft/Funkcion:dirlist — no Seem), and register its central
-    //   req:Funkcion in Lies/Funkcions.  Idempotent — installs|registers once.
-    async GhostList_funkcion(gl: TheC, w: TheC): Promise<TheC> {
-        const funk = gl.oai({ Funkcion: 'dirlist' })
-        funk.sc.interval_ms ??= 8000
-        if (funk.c.run) return funk
-        delete funk.sc.walked_at   // a fresh install (incl. after a load) walks at once
-        const H = this as House
-
-        // src/lib/O is open by default — seed its %open_dir exactly once per list (tracked by
-        //  sc.O_defaulted) so a brand-new OR an already-persisted GhostList shows the O/ ghosts
-        //   without a click, while a later user collapse still sticks (the one-shot never re-seeds).
-        if (!gl.sc.O_defaulted) { gl.oai({ open_dir: 'src/lib/O' }); gl.sc.O_defaulted = 1 }
-
-        // the roots are always listed; the user opens deeper dirs by clicking (each becomes an
-        //  %open_dir child), and those get listed too — a navigable tree. Ghost/ holds the .g
-        //   docks; src/lib/O rides in as the default-open subdir of src/lib (seeded above), not a root.
-        const ROOTS = ['src/lib', 'Ghost']
-        const SRC   = /\.(svelte|svelte\.ts|ts|g)$/
-        // the hive clusters on the filename minus its source suffix, so Lang*|Lies* fold onto
-        //  shared stems rather than all sharing `.svelte` (and Peeroleum.g → Peeroleum).
-        const stem  = (name: string) => name.replace(/\.(svelte\.ts|svelte|ts|g)$/, '')
-
-        funk.c.run = async (host: TheC, _fk: TheC, ww: TheC) => {
-            const now = Date.now()
-            const interval = (funk.sc.interval_ms as number) ?? 8000
-            // throttle re-walks; a finished walk goes quiet until the interval lapses
-            if (funk.sc.walked_at && now - (funk.sc.walked_at as number) < interval) return
-
-            const seeded = !!host.sc.seeded   // a baseline walk has happened → newer files glow
-            const opened = (host.o({ open_dir: 1 }) as TheC[]).map(o => o.sc.open_dir as string)
-            const dirs   = [...new Set([...ROOTS, ...opened])]
-
-            let pending = false, changed = false
-            for (const dir of dirs) {
-                const lreq = await H.LiesStore_listing(ww, dir)
-                if (!lreq.sc.finished) { pending = true; continue }   // come back next tick
-                const reply   = lreq.sc.reply as { entries?: { name: string, is_dir: boolean }[] } | undefined
-                const entries = reply?.entries ?? []
-                const group   = host.oai({ group: dir })             // GhostList/<dir>/…
-                group.sc.dir  = dir
-                for (const e of entries) {
-                    const path = `${dir}/${e.name}`
-                    if (e.is_dir) {                                  // a subdir — click opens it
-                        if (!group.oa({ sub: path })) changed = true
-                        group.oai({ sub: path }).sc.name = e.name
-                    } else if (SRC.test(e.name)) {                   // a ghost file — click gotos it
-                        const fresh = !group.oa({ Doc: path })
-                        const d = group.oai({ Doc: path })
-                        d.sc.name = stem(e.name)
-                        // noticed_at = first seen AFTER the baseline; the UI glows it for 24h.
-                        //  (not created_at — that's a stripped SESSION_KEY, never persists.)
-                        if (fresh) { changed = true; if (seeded) d.sc.noticed_at = now }
-                    }
-                }
-                // < prune sub|Doc entries whose dir|file vanished; oai-only is fine for now.
-            }
-            if (!pending) {
-                funk.sc.walked_at = now
-                if (!host.sc.seeded) host.sc.seeded = now   // first full walk = baseline; nothing glows
-                if (changed) host.bump_version()            // bump|render only on real change
-            }
-        }
-        await H.Lies_register_funkcion(w, gl, funk, w)   // the Funkcion spawns its central req
-        return funk
-    },
-
-    // ── Lies_instantiate_funkcions ────────────────────────────────────────────────
-    //   Generalise GhostList's hand-wired bind (Waft_spec §201's ⛑️): on Waft load —
-    //   and on a later in-place edit — every embedded %Funkcion whose KIND (its mainkey
-    //   value: Funkcion:Storying, …) is registered in FUNK_KINDS gets that kind's `run`
-    //   bound and registered into the central host.  The kind owns the behaviour; this
-    //   only wires it.  Idempotent: a funk already carrying a run (the dirlist, or a prior
-    //   pass) is skipped, so re-calling on every mutation is cheap.  Walks the whole Waft
-    //   subtree so a cell can ride anywhere (a row under a group, not just a top child).
-    async Lies_instantiate_funkcions(w: TheC, waft: TheC): Promise<void> {
-        const H   = this as House
-        const all: TheC[] = []
-        const walk = (c: TheC) => { for (const k of c.o() as TheC[]) { all.push(k); walk(k) } }
-        walk(waft)
-        for (const funk of all) {
-            if (funk.sc.Funkcion === undefined) continue          // only %Funkcion embeds
-            if (funk.c.run) continue                               // already bound (dirlist / prior load)
-            const kind = FUNK_KINDS[funk.sc.Funkcion as string]   // the kind owns the behaviour
-            if (!kind?.run) continue                               // unknown, or an action kind (no pumped run)
-            funk.c.run = kind.run
-            await H.Lies_register_funkcion(w, waft, funk, w)
-        }
     },
 
     // ── Lies_waft_save ────────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted
-  Funkcion:dirlist,interval_ms=8000
+  Funkcion:dirlist,interval_ms=8000,walked_at=1781944191605
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -70,3 +70,4 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted
     Doc:src/lib/O/Thangs.svelte,name:Thangs,noticed_at=1781943194564
     Doc:src/lib/O/WormholeOpfs.svelte.ts,name:WormholeOpfs,noticed_at=1781943194564
     Doc:src/lib/O/stho.ts,name:stho,noticed_at=1781943194564
+    Doc:src/lib/O/LiesWaft.svelte,name:LiesWaft,noticed_at=1781944191605

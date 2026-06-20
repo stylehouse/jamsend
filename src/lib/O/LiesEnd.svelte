@@ -600,55 +600,6 @@ await M.eatfunc({
         if (run) await run(LE, funk)
     },
 
-    // ── Funkcions — Lies-side, no LE ──────────────────────────────────────────
-    //   A Funkcion is behaviour on funk.c.run riding a Waft directly
-    //   (Waft/Funkcion:$name — no Seem, no req inside the Waft).  Its hosting req
-    //   lives centrally in Lies/Funkcions as req:Funkcion (one per Funkcion); the
-    //   Funkcion spawns|knows its own req via Lies_register_funkcion.  Lies_pump_-
-    //   funkcions runs them all once per tick (funks.do()).  A Funkcion isn't really
-    //   req-like — it's behaviour hung on a req host — so the per-tick driver is wired
-    //   as an explicit do_fn (doai), NOT the req_$name convention: it runs funk.c.run
-    //   and sets sc.ok, re-running every tick but staying inspectable.  run is
-    //   (host, funk, ...args) — host is the Waft, args carry through (e.g. the w a
-    //   walker lists against), all read off req.c so a re-register refreshes them.
-    async Lies_register_funkcion(w: TheC, host: TheC, funk: TheC, ...args: any[]): Promise<TheC> {
-        const funks = w.oai({ Funkcions: 1 })
-        // funks is a plain container, so the A/w-spine c.up wiring never reaches it;
-        //  point it at w so funks.do()'s _req_do_one can climb to the House to reach
-        //  do_fn_for, which returns the req's wired do_fn (funks → w → A → House).
-        funks.c.up = w
-        // funk_id keys the req — a plain scalar, NOT the Waft|Funkcion mainkeys (those
-        //  are type-tags a tree-walk reads to detect wafts|funkcions; using them as req
-        //  sc keys makes the walk misread this req).  The waft|funk are .c refs.
-        //  Identity is the funk's structural **Dip** (`c.Dip`, the waftid slot Waft_dip
-        //   stamps on every Waft** particle) — reliably present, since Waft_dip runs right
-        //    before instantiate on both the load and the UI-add path.  Generic and
-        //     collision-free for sibling cells of one kind (a board of Funkcion:Storying),
-        //      with no kind-specific keys leaking into this host.  Fall back to kind (+ any
-        //       binding) for a funk whose host isn't a dipped Waft — e.g. the trail Funkcion,
-        //        which rides a Seem.
-        const dip     = funk.c.Dip as string | undefined
-        const bind    = (funk.sc.of_Book ?? funk.sc.of_dock ?? '') as string
-        const funk_id = `${host.sc.Waft}/${dip ?? (funk.sc.Funkcion + (bind ? '/' + bind : ''))}`
-        const fr = await funks.oai({ req: 'Funkcion', funk_id, eternal: 1 })
-        fr.c.host = host
-        fr.c.funk = funk
-        fr.c.run_args = args
-        // wire the behaviour as a do_fn (one-shot; doai no-ops on re-register, but the
-        //  .c refs above are refreshed each call so the wired closure reads current).
-        ;(await funks.doai({ req: 'Funkcion', funk_id, eternal: 1 }))?.(async (req: TheC) => {
-            const run = (req.c.funk as TheC | undefined)?.c.run as
-                ((host: TheC, funk: TheC, ...a: any[]) => void | Promise<void>) | undefined
-            if (run && req.c.host) await run(req.c.host as TheC, req.c.funk as TheC, ...((req.c.run_args as any[]) ?? []))
-            req.sc.ok = 1   // pass-local; eternal req re-arms next tick
-        })
-        return fr
-    },
-    async Lies_pump_funkcions(w: TheC) {
-        const funks = w.o({ Funkcions: 1 })[0] as TheC | undefined
-        if (funks) await funks.do()
-    },
-
     // ── LE_arm ──────────────────────────────────────────────────────────────
     // Aim (or re-aim) LE at a source %What.  Sets up both Seems: origin reads
     // the remote for awareness; working holds the editable clones (Seem.sc.C
