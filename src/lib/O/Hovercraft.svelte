@@ -650,6 +650,30 @@
         return o
     },
 
+    // entropy_forgive — the compare-time forgiveness verdict (EntropyArrest.md §2.3'),
+    //   the in-app twin of the runner's text compare in scripts/Story_cli.spec.ts.  Runs
+    //    every blank|band spayer (the default story_matching layer ∪ this Book's caps)
+    //     over BOTH the got and the expected snap TEXT; if they then agree, a dige
+    //      mismatch was acknowledged value-noise, not a surprise — the caller passes the
+    //       step "OK with a caveat", with no halt and no fixture re-record (the snap on
+    //        disk stays honest).  A band blow-out keeps its real number + ‼ on the got
+    //         side only, so the lines differ and a real surprise still survives.  Returns
+    //          false — a genuine mismatch — when there are no spayers, when either text is
+    //           missing, or when any non-noise difference remains.
+    entropy_forgive(w: TheC, got: string, expected: string, step_n: number): boolean {
+        if (!got || !expected) return false
+        const spayers = this.collect_spayers([
+            ...(this.story_matching ?? []),
+            ...this.entropy_rules((w?.c.The) as TheC | undefined),
+        ])
+        if (!spayers.length) return false
+        // mirror the runner's stale-fixture shim (mo:main lives only in old fixtures)
+        //  so the in-app and headless verdicts agree line-for-line.
+        const hide = (s: string) => s.split('\n').filter(l => !/\bmo:main\b/.test(l)).join('\n')
+        const norm = (s: string) => this.spay_normalize(hide(s), spayers, step_n).trimEnd()
+        return norm(got) === norm(expected)
+    },
+
     // The_EntropyArrest — the per-test bucket, beside The/Styles.  Absent until the
     //   first cap is authored (entropy_rules returns [] when it is); the authoring UI
     //    lazily mints it here.  Lives in The so it round-trips through toc.snap and

@@ -1382,7 +1382,31 @@
 
             const disk_snap = snap_req.sc.reply?.snap as string | undefined
             const step      = H.i_step(w, n)
-            if (disk_snap) {
+
+            // Compare-time forgiveness (EntropyArrest.md §2.3'): a dige mismatch whose
+            //  only differences fall inside acknowledged-noise spans is not a surprise.
+            //   Normalize the got and the disk fixture on BOTH sides; if they agree, pass
+            //    the step "OK with a caveat", clear the halt, and let the drive resume
+            //     (the eventually-ok signal goes through — line ~1407 re-drives once paused
+            //      clears, and do_step advances to n+1).  Nothing is re-recorded; the snap
+            //       on disk stays honest.  In-app twin of the runner forgive in Story_cli.
+            const forgiven = !!disk_snap && step.sc.ok === false && !!step.sc.got_snap
+                && H.entropy_forgive(w, step.sc.got_snap as string, disk_snap as string, n)
+
+            if (forgiven) {
+                const disk_dige   = await dig(disk_snap as string)
+                step.sc.disk_dige = disk_dige
+                step.sc.disk_ok   = disk_dige === H.The_step_dige(w, n)  // honest: fixture vs toc
+                step.sc.ok        = true
+                step.sc.caveat    = true
+                delete run.sc.failed_at
+                delete run.sc.fetch_snap
+                run.sc.paused   = 0          // line ~1407 re-drives; do_step advances to n+1
+                run.sc.open_at  = null
+                run.sc.frontier = 0          // the only outstanding mismatch is resolved
+                H.The_set_frontier(w, 0)
+                console.log(`⚖ Story: step ${H.pad(n)} forgiven (caveat) — acknowledged value-noise`)
+            } else if (disk_snap) {
                 const disk_dige = await dig(disk_snap)
                 const exp_dige  = H.The_step_dige(w, n)
                 const ok        = disk_dige === exp_dige
@@ -1708,6 +1732,9 @@
                 step.sc.got_snap = snap
                 step.sc.dige = got_dige
                 step.sc.ok = ok
+                // fresh exact verdict — clear any caveat from a prior run; entropy_forgive
+                //  re-sets it in the check_snap block if this dige mismatch is value-noise.
+                delete step.sc.caveat
                 H.story_analysis(w)
 
                 if (!ok && !w.c.lenient) {

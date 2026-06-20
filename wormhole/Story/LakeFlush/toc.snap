@@ -42,9 +42,7 @@ story:LakeFlush
     quiesce_snap_time=0.4
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=0.72
-      sample=0.15,at=1781865173
-      sample=1.233,at=1781882066
+    TimeTotal:beliefs,avg=0.832
       sample=1.233,at=1781882091
       sample=0.755,at=1781882785
       sample=0.755,at=1781882804
@@ -53,15 +51,19 @@ story:LakeFlush
       sample=0.522,at=1781888810
       sample=0.603,at=1781896980
       sample=0.603,at=1781897014
-    TimeTotal:step,avg=0.089
+      sample=1.252,at=1781952623
+      sample=1.252,at=1781952628
+    TimeTotal:step,avg=0.119
       sample=0.109,at=1781888790
       sample=0.075,at=1781888810
       sample=0.086,at=1781896980
       sample=0.086,at=1781897014
-  step,dige:945833ed38992149
-  step=2,dige:86de1b7032c478a7
-  step=3,dige:098998fe95285b35
-  step=4,dige:6cd20c48fb37ab0e
-  step=5,dige:2a38e6667c382ec8
-  step=6,dige:cc2c9a12b1df43f0
-  step=7,dige:b243933a2b0e94be
+      sample=0.179,at=1781952623
+      sample=0.179,at=1781952628
+  step,dige:f551a01c38f682f2
+  step=2,dige:d4504b2453937ca1
+  step=3,dige:a2e2554cf8a2b3a9
+  step=4,dige:8167ccd44e8adcd9
+  step=5,dige:f08fce2882ce258c
+  step=6,dige:9201b54d0d86e62f
+  step=7,dige:0016aa22f900253d

@@ -21,7 +21,10 @@ The headline the user named: *refactor the snapper to be like `enWaft` and call 
 ## Status & grounding (read this first on a cold start)
 
 **The engine is built and the spay-bite PIVOTED to compare time (see §2.3'); the
- authoring UI (Stages 5–6) is not.** Forgiveness moved out of the encoder: snaps are
+ authoring UI v1 (Stage 5 — spawn+CRUD a cap from a diff click) is now built too (see
+  §7); the live-app forgive verdict is now wired too (the non-lenient drive forgives +
+   caveats + resumes — see §7); what is NOT wired is the §4.3 diff index.**
+   Forgiveness moved out of the encoder: snaps are
   persisted HONEST (the real noisy number stays on disk and in the dige), and the
    noise is forgiven when got and expected are compared. Built and runner-proven:
 
@@ -69,18 +72,31 @@ The headline the user named: *refactor the snapper to be like `enWaft` and call 
   Re-recording is only wanted to retire *structural* / line-ordering drift (§2.4),
    which spay does not forgive — that is a deterministic-child-sort problem, separate.
 
-**Where the pivot is NOT yet wired: the live-app engine verdict.** `scripts/
- Story_cli.spec.ts` (the runner) forgives at its text compare, proving the mechanism.
-  The in-app verdict (`snap_step_after_wave`, Story.svelte ~1659) is still pure
-   `exp_dige === got_dige`, and the expected snap text isn't loaded until a mismatch
-    opens the diff panel. Wiring forgiveness there = on a dige mismatch, normalize the
-     loaded got+expected text with `spay_normalize` and demote to "OK (caveat)". That
-      is the next engine slice; the diff panel is also where the §4.3 caveat UI lands.
+**The live-app engine verdict now forgives (BUILT).** The runner (`scripts/
+ Story_cli.spec.ts`) is lenient (`w.c.lenient`) — it never halts, and forgives at its own
+  text compare. The live app is non-lenient: a dige mismatch HALTS the drive and queues
+   `fetch_snap`/`check_snap`, which load the expected fixture text. Forgiveness now lands
+    in that `check_snap` block (Story.svelte): once the disk fixture is in hand,
+     `H.entropy_forgive(w, got, disk, n)` (Hovercraft entropy region) runs
+      `collect_spayers(story_matching ∪ entropy_rules(The))` + `spay_normalize` over BOTH
+       got and disk text; if they agree, the step is demoted to **OK with a caveat**
+        (`step.sc.caveat = 1`, `step.sc.ok = true`), the halt is cleared (`failed_at`/
+         `paused`/`frontier`/`open_at`), and the drive resumes (line ~1407 re-drives, do_step
+          advances to n+1) — the eventually-ok signal goes through, no fixture re-record.
+           A band blow-out keeps `‼` on the got side only, so a real surprise still halts.
+            NOT exercised by the lenient runner (it skips the halt) — verify live on :9091.
+             Still open: SURFACING the caveat in Storui (a badge) is the UI session's job;
+              the §4.3 diff index lands in the diff panel.
 
-**Not built: the authoring loop (§4, Stages 5–6).** `ui/EntropyArrest.svelte` does
- not exist; nothing yet *authors* a cap from a diff click, and the diff index
-  (mirage-scan → `%spayer`, glowy pulse) is unbuilt. The store is hand-authorable in
-   `toc.snap` today (and proven so). Best built with the app rendering on :9091.
+**Authoring loop status (§4).** Stage 5 v1 is **built**: `ui/EntropyArrest.svelte`
+ authors a cap from a diff click (single in-flight draft, PeelInput-segment IOpath
+  breadcrumb, OK mints a `%Snapcap` via `entropy_commit` + `story_save`). Still unbuilt:
+   the §4.3 diff index (mirage-scan → `%spayer`, glowy pulse), the §4.4 superscript
+    widen/narrow + §4.5 gone-parents, and multi-segment parent-descent reduction (a click
+     yields a single-segment locator for now). The store also stays hand-authorable in
+      `toc.snap`. Verify the UI with the app rendering on :9091 — and note the live-app
+       verdict doesn't forgive yet (§7), so a committed cap won't green a line in-app
+        until that engine slice lands.
 
 **The original first move (§1 Lines walker-merge) was deliberately skipped** as an
  unneeded risk: its whole purpose (§1.1) was to give spay *one* bite-point, but
@@ -735,66 +751,90 @@ Still open:
 
 ---
 
-## 7. Handover — next session (the live-app forgive + the CRUD authoring loop)
+## 7. Handover — the UI thread (authoring UI v1 landed; live-app forgive is next)
 
-The arc so far: the spay engine PIVOTED to compare-time (§2.3'). Snaps persist
- honest; `spay_normalize` forgives noise on both the got and the expected side at
-  compare; a forgiven step is "OK with a caveat"; no fixture re-record. Built and
-   runner-proven. Per-test store (`The/EntropyArrest/Snapcap`) + compile
-    (`entropy_rules`) done and proven by a hand-authored cap. What's left is two
-     slices of a *different kind* of work — in-app, front-end, not gateable by the
-      headless runner. Build them with the app on :9091.
+The arc: the spay engine PIVOTED to compare-time (§2.3'), runner-proven. Then the
+ **authoring UI v1 landed** — `ui/EntropyArrest.svelte` spawns and CRUDs a `%Snapcap`
+  from a diff click (Stage 5, the bulk of §4). What remains is two slices, in order: the
+   **live-app forgive verdict** (the engine prerequisite — without it the UI's caps have
+    no in-app effect to *show*), then the **diff index** (§4.3) and the §4.4/§4.5 locator
+     polish. All front-end / in-app, not gateable headlessly — drive it on :9091.
 
-**The bomb (know this or the next move misfires):**
+### What v1 built (Stage 5)
 
-- **Forgiveness is at COMPARE time, not encode.** The UI authors a *spayer
-   descriptor*; it never mangles the snap. The snap on disk stays honest. The marker
-    (`SPAY_MARKER`) only ever appears in the transient normalized projection used for
-     comparison — never in `Snap:H`.
-- **The live-app verdict does NOT forgive yet.** Only the runner
-   (`scripts/Story_cli.spec.ts`, its `forgive`/`spay_normalize` at the text compare)
-    does. The in-app verdict (`snap_step_after_wave`, Story.svelte ~1659) is still
-     `exp_dige === got_dige`, and the expected snap *text* isn't loaded until a
-      mismatch opens the diff panel (`run.sc.fetch_snap`/`check_snap`, ~1320 / ~1660).
-       **This is the prerequisite slice** — until the in-app diff forgives, the CRUD
-        UI has nothing real to stand on.
-- **At compare you have lines, not particles** — so the **regex** self-locates (its
+- **`ui/EntropyArrest.svelte`** — the editor. One in-flight **draft** (`$state`), the
+   only live thing: a `Dif:change` click *re-points* it (DevTools-Elements-breadcrumb
+    discipline — never accumulates; nothing reaches `toc.snap` until **OK**). The locator
+     renders as an **IOpath breadcrumb of `PeelInput` segments** (PeelInput = the reused
+      "singular piece"; type `*` to wildcard a value); the `%spayer` leaf is a
+       kind-picker (blank/band/drop) + fields. `draft_from_seed` autogens the regex
+        (`H.deL` both sides → churning numeric key → `(?<=key=)\d+(\.\d+)?`; a float →
+         `band` nailed at the prev value). CRUD list of existing caps (edit loads via
+          `draft_from_cap`/`segs_from_lematch`; × deletes).
+- **Story.svelte** — `e_entropy_commit` / `e_entropy_delete` (beside `e_story_accept`,
+   ~731). The UI never mutates `The`; it hands the draft across as a **JSON string**
+    (`cap_json`) — elvisto args ride as scalar `sc`, and a nested locator would be a
+     fatal object-in-`sc`. Commit runs `entropy_mint` then `story_save()`.
+- **Hovercraft.svelte `//#region entropy`** — `The_EntropyArrest` + `entropy_mint`
+   (builds the `%lematch` chain + flat `%spayer`; **overwrites** a same-slug cap, never
+    piles) + `entropy_unmint`. These are the inverse of `entropy_rule_of`/`lematch_to_rule`.
+- **Storui.svelte** — `story_w` (the `A:Story/w:Story` lookup), `ea_seed` + `seed_spay`,
+   the `.sr-spayable` clickable `changed` cells in `diff2_view`, and the `<EntropyArrest>`
+    mount under the diff body (~1150), scoped to the open step `n`.
+
+### The bomb (know this or the next move misfires)
+
+- **The live-app verdict does NOT forgive yet — so a committed cap looks like it does
+   nothing in-app.** `snap_step_after_wave` (Story.svelte ~1659) is still raw
+    `exp_dige === got_dige`. Only the runner (`scripts/Story_cli.spec.ts` `forgive`)
+     honors caps today. So when you test v1 in the app: author → OK → restart → **the
+      line is still red**, because the in-app diff never ran `spay_normalize`. This is
+       NOT a UI bug — it is the missing engine slice (move 1 below). Do not chase it as
+        a UI regression.
+- **Forgiveness is at COMPARE time, not encode.** The UI authors a *descriptor* only;
+   the snap on disk stays honest. `SPAY_MARKER` only ever appears in the transient
+    normalized projection used for comparison — never in `Snap:H`. (`drop` is the one
+     exception that bites at encode.)
+- **At compare you have lines, not particles** — the **regex** self-locates (its
    lookbehind names the key); the `%lematch` only scopes the author's got-side view.
-    The autogen regex MUST carry enough discriminator to pick its own lines.
-- **Store shape is snap-safe and fixed:** `%lematch` = its own scalar sc keys (mainkey
-   stripped = `sc_has`); `%spayer` flat (`kind`/`re`/`glyph`/`first`/`factor`/
-    `add_step_mult`/`floor`); `drop` names its key as `key:`. Nested `%lematch` →
-     `thence_matching`. Round-trips toc.snap with zero codec change. The UI must mint
-      exactly this.
-- **`drop` bites at encode; `blank`/`band` at compare.** `entropy_rules` feeds both
-   paths; `collect_spayers` pulls only blank/band for the normalize pass.
+    v1's seed yields a **single-segment** locator (parent descent / superscript widen
+     not built); that is fine *because* the regex does the real locating.
+- **Store shape is snap-safe and fixed** (v1 mints exactly this): `%lematch` = its own
+   scalar sc keys (mainkey stripped = `sc_has`); `%spayer` flat
+    (`kind`/`re`/`glyph`/`first`/`factor`/`add_step_mult`/`floor`); `drop` names its key
+     as `key:`; nested `%lematch` → `thence_matching`. **Codec round-trip verified:** a
+      `re:` value's leading colon-split always wins over an embedded `=`; a regex with
+       `:` or `,` trips `encode_stringies`'s JSON fallback — either way it survives
+        `toc.snap`. Zero codec change, as designed.
 
-**Next move, in order:**
+### Next move, in order
 
-1. **Live-app forgive + caveat.** In the mismatch/check path where the expected text
-    is loaded (Story.svelte ~1320/~1660), `collect_spayers([...story_matching,
-     ...entropy_rules(w.c.The)])`, `spay_normalize` both the got and expected text,
-      and if they then match, set the step OK with a caveat flag (`step.sc.caveat`).
-       Surface the caveat in Storui. This makes the in-app diff forgive the way the
-        runner already does.
+1. **Live-app forgive + caveat — DONE (engine).** In the non-lenient drive's
+    `check_snap` block (Story.svelte), once the disk fixture is loaded,
+     `H.entropy_forgive(w, got, disk, n)` (Hovercraft entropy region) runs
+      `collect_spayers(story_matching ∪ entropy_rules(The))` + `spay_normalize` over both
+       sides; on agreement the step is set `ok=true`/`caveat=1`, the halt is cleared, and
+        the drive resumes (no re-record). The verdict also `delete step.sc.caveat` on each
+         fresh snap so it re-derives. **Still TODO (UI session):** surface the caveat badge
+          in Storui (the `sr-plabel` row ~1042; sibling to `accepted`/`mismatch`) — the
+           `step.sc.caveat` flag is set and ready. NOT exercised by the lenient runner;
+            verify live on :9091.
 2. **The diff index (§4.3).** Scan BOTH the from and to side of every `Dif` row for
     `SPAY_MARKER`; reverse-map each marked span → its `%spayer`; glowy-pulse line↔rule.
-     (With the pivot the marker lives only in the normalized projection, so the index
-      scans the normalized text, not `Snap:H`.)
-3. **`ui/EntropyArrest.svelte` CRUD (§4).** Lift EncodingSplatter's group/snippet
-    helpers. Shows iff `The/EntropyArrest/Snapcap**` exists AND a step is open. Click a
-     `Dif:change` row → reduce a locator (à la `Lang_def_at_offset`, LangRegions ~431)
-      → autogen + tweak the regex → **OK** mints a `Snapcap` and drives a toc.snap save
-       (the `story_accept` write, for the cap alone) → restart to apply. Superscript
-        widen/narrow buttons (§4.4); gone-parents at opacity 0.5, unstored (§4.5). No
-         live-test of the regex (§4.1) — verification is the next run's diff.
+     (Post-pivot the marker lives only in the normalized projection, so scan the
+      normalized text, not `Snap:H`.)
+3. **Locator polish (§4.4/§4.5) + multi-segment seed.** Superscript widen/narrow on each
+    breadcrumb `PeelInput` segment; gone-parents at opacity 0.5, unstored; and grow
+     `draft_from_seed` from a single segment to a real parent-descent reduction (à la
+      `Lang_def_at_offset`, LangRegions ~431). Cosmetic v1 debt: the breadcrumb
+       PeelInputs stretch (`.pi-wrap{flex:1}`) — tighten them.
 
-**Anchors (code that exists now):** `spay_line`/`spay_num`/`collect_spayers`/
- `spay_normalize`/`SPAY_MARKER` (Text.svelte); `entropy_rules`/`entropy_rule_of`/
-  `lematch_to_rule`/`entropy_spayer_of` (Hovercraft `//#region entropy`); `snap_H(Run,
-   w)` + `story_process_node` (Story.svelte); the runner `forgive` in
-    `scripts/Story_cli.spec.ts`. Ancestor for the UI: `ui/EncodingSplatter.svelte`.
-     Locator reducer to reuse: `Lang_def_at_offset` (LangRegions.svelte ~431).
+**Anchors (code that exists now):** the v1 files above, plus the engine —
+ `spay_line`/`spay_num`/`collect_spayers`/`spay_normalize`/`SPAY_MARKER` (Text.svelte);
+  `entropy_rules`/`entropy_rule_of`/`lematch_to_rule`/`entropy_spayer_of` + the new
+   `The_EntropyArrest`/`entropy_mint`/`entropy_unmint` (Hovercraft `//#region entropy`);
+    `snap_H(Run, w)` (Story.svelte); the runner `forgive` in `scripts/Story_cli.spec.ts`.
+     Ancestor for the UI: `ui/EncodingSplatter.svelte`.
 
 **Gate methodology:** got-before vs got-after, NOT got-vs-fixture (fixtures broadly
  stale; the pivot is exactly what lets you ignore that). The UI itself can't be gated

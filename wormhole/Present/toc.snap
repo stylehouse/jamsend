@@ -69,10 +69,9 @@ Library
       TimeTotal:beliefs,avg=0.011
         sample=0.01,at=1781150336
         sample=0.012,at=1781588145
-  Book:PortPlan,ok_pct,last_pct_change=1779622885.154,done=2,last_run_ms=1781616658.437
+  Book:PortPlan,ok_pct,last_pct_change=1779622885.154,done=2,last_run_ms=1781953865.385
     TimeSpool
-      TimeTotal:beliefs,avg=0.014
-        sample=0.016,at=1780417638
+      TimeTotal:beliefs,avg=0.013
         sample=0.02,at=1781080153
         sample=0.01,at=1781569951
         sample=0.009,at=1781570383
@@ -82,6 +81,7 @@ Library
         sample=0.015,at=1781576007
         sample=0.023,at=1781578899
         sample=0.008,at=1781616659
+        sample=0.012,at=1781953868
   Book:PortPlanet,ok_pct=0,last_pct_change=1779622894.947,done=6,last_run_ms=1781704560.232
     TimeSpool
       TimeTotal:beliefs,avg=0.08

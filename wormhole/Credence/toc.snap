@@ -8,6 +8,7 @@ Waft:Credence
     Funkcion:Storying,of_Book:LakeSurfer
     Funkcion:Storying,of_Book:LakeNets
     Funkcion:Storying,of_Book:LakeFlush
+    Funkcion:Storying,of_Book:LakeTiles
   What:Leaf
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:LeafFarm
@@ -21,6 +22,3 @@ Waft:Credence
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:StuffFlipping
     Funkcion:Storying,of_Book:StuffResolving
-  What:LakeTiles
-    Funkcion:StoryTimes
-    Funkcion:Storying,of_Book:LakeTiles

@@ -83,12 +83,13 @@
     async Auto(A: TheC, w: TheC, e?: TheC) {
         const H = this as House
 
-        // Auto resolves the boot to a PAGE — the one case it runs as.  A ?B runner is the
-        //  `run` page: the Creduler + the single ?B Book, with NO Library (no book browser,
-        //   no Present/toc.snap riding on the runner).  Editor (?E) and the plain app are the
-        //    `library` page: the disk-backed book browser below.  The Library is just a region
-        //     lit by its page, the same way the Creduler region is lit by the runner role.
-        const page = H.c.boot_role === 'runner' ? 'run' : 'library'
+        // Auto resolves the boot to a PAGE — the one case it runs as.  A booted ROLE (?B runner
+        //  or ?E editor) is the `run` page: it boots the single Book it was given (H.c.book), with
+        //   NO Library — neither the editor (editing a Waft) nor the runner (running one Book) has
+        //    anything to browse or persist.  Only the plain app (no boot_role) is the `library`
+        //     page: the disk-backed book browser below.  The Library is just a region lit by its
+        //      page, the same way the Creduler region is lit by the runner role.
+        const page = H.c.boot_role ? 'run' : 'library'
 
         // ── shared setup (both pages) ─────────────────────────────────────────
         if (!w.c.Auto_setup) {
@@ -116,8 +117,8 @@
         }
 
         // ── Library page region (book browser + disk-backed Library) ──────────
-        //   Wholly skipped on the `run` page: a runner has no Library — it runs the one
-        //    Book it was booted with (?B), so there's nothing to browse or persist.
+        //   Wholly skipped on the `run` page (any ?B/?E boot): a runner runs the one Book it was
+        //    booted with, an editor edits a Waft — neither browses or persists a Library.
         let Li: TheC | undefined
         if (page === 'library') {
             // register the LibraryRun UI once (Otro mounts it off watched:UIs)

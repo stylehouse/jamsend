@@ -34,32 +34,35 @@ story:LakeTiles
         nowriting:^Ghost
         dontSnapGhostList
   TimeSpool
-    TimeTotal:beliefs,avg=1.431
-      sample=1.13,at=1781888130
-      sample=1.264,at=1781888175
-      sample=1.264,at=1781888233
-      sample=1.265,at=1781888835
+    TimeTotal:beliefs,avg=1.894
       sample=1.495,at=1781889665
       sample=1.54,at=1781897108
       sample=1.293,at=1781897151
       sample=1.677,at=1781897665
       sample=1.29,at=1781944332
       sample=2.092,at=1781947807
-    TimeTotal:step,avg=0.169
-      sample=0.141,at=1781888835
+      sample=2.504,at=1781952258
+      sample=2.504,at=1781952291
+      sample=2.084,at=1781952324
+      sample=2.465,at=1781952754
+    TimeTotal:step,avg=0.21
       sample=0.166,at=1781889665
       sample=0.171,at=1781897108
       sample=0.144,at=1781897151
       sample=0.186,at=1781897665
       sample=0.143,at=1781944332
       sample=0.232,at=1781947807
-  step,dige:85fdfbecdd453056
-  step=2,dige:7f5d382fa6a731bb
-  step=3,dige:d2e5d68b10b8ad75
-  step=4,dige:7f8dc4b39d6b996e
+      sample=0.278,at=1781952258
+      sample=0.278,at=1781952291
+      sample=0.232,at=1781952324
+      sample=0.274,at=1781952754
+  step,dige:2272cfed5684738e
+  step=2,dige:3d56b0e43f1a9c36
+  step=3,dige:f73a900b6481dc18
+  step=4,dige:def56c0c34f2dca8
     note,bug:Cyto edge problems with Leg/PeelGroup/Leg the other PeelGroup alone
-  step=5,dige:5b8379d71d65e92a
-  step=6,dige:d31f4572a4ba1fea
-  step=7,dige:0faa621f125beb83
-  step=8,dige:401305c662136476
-  step=9,dige:0b6b0514a7a48898
+  step=5,dige:a787a5ab36d6084b
+  step=6,dige:275629dc4bf1c47f
+  step=7,dige:ada6793816844476
+  step=8,dige:d8f92468ed137e1d
+  step=9,dige:c5c1a74380803c89

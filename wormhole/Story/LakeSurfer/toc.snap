@@ -12,10 +12,7 @@ story:LakeSurfer
         dontSnapGhostList
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=0.689
-      sample=0.416,at=1781882352
-      sample=0.665,at=1781882815
-      sample=0.665,at=1781882825
+    TimeTotal:beliefs,avg=0.827
       sample=0.654,at=1781887657
       sample=0.501,at=1781888242
       sample=0.501,at=1781888249
@@ -23,10 +20,16 @@ story:LakeSurfer
       sample=0.909,at=1781947608
       sample=0.909,at=1781947617
       sample=0.841,at=1781951793
-    TimeTotal:step,avg=0.437
+      sample=0.819,at=1781952698
+      sample=0.819,at=1781952736
+      sample=1.49,at=1781954125
+    TimeTotal:step,avg=0.473
       sample=0.415,at=1781888821
       sample=0.455,at=1781947608
       sample=0.455,at=1781947617
       sample=0.421,at=1781951793
-  step,dige:546855999651ba68
-  step=2,dige:f05230d88b21d657
+      sample=0.41,at=1781952698
+      sample=0.41,at=1781952736
+      sample=0.745,at=1781954125
+  step,dige:3a50dc40063ca8e3
+  step=2,dige:2541f92dc475d119

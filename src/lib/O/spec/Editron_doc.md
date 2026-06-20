@@ -16,10 +16,13 @@ The coherent overview of the editor|runner machine: who the two roles are, how c
 
 ## 1. Roles & boot — the editor is a Story Book; the Pantheate split
 
-**The editor runs as a Story Book, not a top-level world.** Boot it `/Otro?B=Editron` (`&W=<Waft>`
- for a different Waft). Otro's `boot_param` parses `?B=`/`?E=<Book>` (the `B=`/`E=` env in node) and
-  stamps **`H.c.book`**; a runner boot also stamps **`H.c.boot_role='runner'`**. `A=Auto` reads
-   `H.c.book` on first boot and stands the Book up: `Story_subHouse` lays the Run via the
+**The editor runs as a Story Book, not a top-level world.** Boot it `/Otro?E=Editron` (`&W=<Waft>`
+ for a different Waft). Otro's `boot_param` parses `?E=<Book>` (editor) / `?B=<Book>` (runner) — the
+  `E=`/`B=` env in node — stamping **`H.c.book`** and **`H.c.boot_role='editor'|'runner'`** (the plain
+   app stamps neither). A booted role skips the disk **Library** entirely — Auto's `run` page: the
+    editor edits a Waft and the runner runs one Book, so neither browses or persists a book library;
+     only the plain app loads it. `A=Auto` reads `H.c.book` on first boot and stands the Book up:
+      `Story_subHouse` lays the Run via the
     **`Run_A_<Book>`** recipe (`Run_A_Editron` mirrors `Run_A_Peregrination`), which puts
      `A:Editron/w:Editron` + `Lies%editor` + `Lang%editor` (+ Pantheate) INTO the Run. The per-beat
       handler `Editron(A,w)` (`src/lib/O/Editron.svelte`) opens the Waft named by `?W=` (default
