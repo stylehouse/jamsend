@@ -294,6 +294,16 @@ The Creduler accrues credibility (Credulate HEAD + Credulation trail) but today 
 - **A plain Waft, NOT an Interest.** `Waft:Credence` sits above the doc under test (e.g. above
    `Waft:Ghost/Net/Easy`). You navigate to it and click — direct manipulation, not cursored attention — so
     it forgoes the Interest channel entirely. Relevance here comes from runs (the matrix), not the cursor.
+- **Inline Funkcions ↔ editable C (the per-What negotiation).** A What full of Funkcions reads best as its
+   illusions *flowed inline*, not a bullet list of structural rows.  `Waft_dip` stamps `c.inlined` on such a
+    What at load (a suggestion; an author forces it with `%What:Label,inline`), and `Waft.svelte` lays an
+     inlined What out as a compact flow of live cells.  The illusion carries its own affordance — a `✎` on the
+      What — that flips it to the conventional bullet C**, where each Funkcion node renders as a plain editable
+       PeelInput row (`raw_props`: depeel idle → peel back into the funk's `sc`, mainkey is whatever you type);
+        `◉` restores the live inline flow.  So the two halves of the illusion are (1) toggling the suggested
+         inline and (2) editing the Funkcion node itself — no separate dis-illusion chrome, no per-node handle.
+          `struct_what` holds the session's flipped Whats.  (Earlier tri-state per-node "view source" handle was
+           too much structure by default — replaced by this.)
 - **Tests = Library Books, as Funkcions.** DONE for the single-run: a hand-made `Waft:Credence` holds the
    Books as `Funkcion:Storying` test-lights (§5d), each a button that runs its one Book on click. The
     group fan-out — one click runs every Book under a What in sequence — is `Funkcion:StoryTimes` (§5f).

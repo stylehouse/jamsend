@@ -116,6 +116,24 @@ await M.eatfunc({
                 C.c.Dip = H.Dip_assign('waftid', D)
             },
         })
+
+        // Inline suggestion: a What full of Funkcions (e.g. a Credence group) reads best as its
+        //  illusions flowed inline, not a bullet list of structural rows.  Stamp c.inlined on such
+        //   a What so the Waft UI lays it out inline by default (off-snap, a hint the author can
+        //    force with %What,inline and the user can flip per-session).  Re-run on every load /
+        //     in-place edit, so it self-corrects when a non-Funkcion child is added or removed.
+        const mark_inlined = (c: TheC) => {
+            for (const k of c.o() as TheC[]) {
+                if (k.sc.What !== undefined) {
+                    const kids = k.o() as TheC[]
+                    const funkfull = kids.length > 0 &&
+                        kids.every(x => x.sc.Funkcion !== undefined || x.sc.havoc !== undefined)
+                    if (funkfull) k.c.inlined = 1; else delete k.c.inlined
+                }
+                mark_inlined(k)
+            }
+        }
+        mark_inlined(waft)
     },
 
 //#endregion

@@ -220,6 +220,51 @@
     // Embedded applets (%Funkcion, and legacy %havoc drum-pads) render through FunkHost —
     //  the kind module owns the pad/light, the strike, and the armed glow.  See O/Funk/.
 
+    // ── inline Funkcions ↔ editable C (the per-What negotiation) ──────────────────────
+    //   A What full of Funkcions reads best as its illusions flowed inline, not a bullet list of
+    //    structural rows.  Waft_dip stamps `c.inlined` on such a What at load (a suggestion); an
+    //     author can force it with `%What:Label,inline`.  An inlined What lays its children out in
+    //      a compact flow and shows them live (the Storying lights, the StoryTimes station).
+    //   That illusion carries its own affordance: a ✎ on the What toggles it to the conventional
+    //    bullet C**, where each Funkcion node becomes an editable plain-C PeelInput row — so you
+    //     edit the Funkcion node itself, then ◉ back to the live inline view.  struct_what holds
+    //      the Whats currently flipped to that editing presentation (session-local).
+    let struct_what = new SvelteSet<TheC>()
+    function toggle_struct(C: TheC) {
+        if (struct_what.has(C)) struct_what.delete(C); else struct_what.add(C)
+        waft.bump_version()
+    }
+    const what_inlined  = (C: TheC) => C.sc.inline !== undefined || !!C.c.inlined
+    const has_funk_child = (C: TheC) => (C.o() as TheC[]).some(k => k.sc.Funkcion !== undefined || k.sc.havoc !== undefined)
+
+    // ── editing a Funkcion node as plain C (no ItemType — peel/depeel its whole sc) ──
+    //   A %Funkcion's mainkey isn't an ITEM_TYPE, so it has no PeelInput of its own.  In a What's
+    //    editing presentation we render it as a generic C row: idle shows the depeeled line ("the
+    //     usual plain Waft C"), the orb opens a PeelInput that peels the typed text straight back
+    //      into the funk's sc — the mainkey is whatever you type.  raw_edit_C marks a funk whose
+    //       open form submits this way (vs an ItemType edit).
+    const raw_edit_C = new WeakSet<TheC>()
+    const DISPLAY_SKIP_C = new Set(['active', 'new', 'not_found', 'created_at'])
+    function raw_display(c: TheC): { mk: string; sc: string } {
+        const ents = Object.entries(c.sc as Record<string, any>).filter(([k]) => !DISPLAY_SKIP_C.has(k))
+        const tok  = ([k, v]: [string, any]) => v === 1 ? k : `${k}:${v}`
+        return { mk: ents[0] ? tok(ents[0]) : '', sc: ents.slice(1).map(tok).join(',') }
+    }
+    function start_edit_raw(funk: TheC) {
+        editing.clear(); editing.add(funk); raw_edit_C.add(funk)
+        const d = raw_display(funk); draft_mk = d.mk; draft_sc = d.sc; draft_focus_sc = false
+    }
+    async function submit_edit_raw(container: TheC, funk: TheC) {
+        const text = [draft_mk.trim(), draft_sc.trim()].filter(Boolean).join(',')
+        const sc   = peel(text)
+        if (!Object.keys(sc).length) return
+        Object.keys(funk.sc).forEach(k => delete funk.sc[k])
+        Object.assign(funk.sc, sc)
+        container.bump_version(); waft.bump_version()
+        await tick()
+        editing.delete(funk); raw_edit_C.delete(funk)
+    }
+
     // ── unified item-edit form state ──────────────────────────────────
     //
     //   editing: the one C currently open for editing/adding.
@@ -516,6 +561,38 @@
             on_cancel:    () => { cancel_add(container); orb_open_C.delete(orb_item) },
         }
     }
+
+    // raw_props: a generic plain-C row for a %Funkcion node in a What's editing presentation.
+    //   idle = the depeeled line; orb opens a PeelInput that peels straight back into the sc.
+    function raw_props(funk: TheC, container: TheC): PiProps {
+        const open = editing.has(funk) && raw_edit_C.has(funk)
+        const d    = raw_display(funk)
+        return {
+            label:        Object.keys(funk.sc)[0] ?? 'C',
+            open,
+            display_val:  d.mk,
+            display_sc:   d.sc,
+            mk_ph:        'Funkcion:Kind',
+            sc_ph:        'of_Book:Foo',
+            mainkey:      open ? draft_mk : '',
+            on_mk:        (v: string) => { draft_mk = v },
+            sc_str:       open ? draft_sc : '',
+            on_sc:        (v: string) => { draft_sc = v },
+            focus_sc:     false,
+            submit_label: '✓',
+            on_submit:    () => submit_edit_raw(container, funk),
+            on_cancel:    () => { editing.delete(funk); raw_edit_C.delete(funk); orb_open_C.delete(funk) },
+            on_crud: {
+                orb_open: orb_open_C.has(funk),
+                on_orb: () => {
+                    if (orb_open_C.has(funk)) { orb_open_C.delete(funk); editing.delete(funk); raw_edit_C.delete(funk) }
+                    else { orb_open_C.clear(); editing.clear(); orb_open_C.add(funk); start_edit_raw(funk) }
+                },
+                on_cancel_orb: () => { orb_open_C.delete(funk); editing.delete(funk); raw_edit_C.delete(funk) },
+                on_del: () => delete_item(funk, container),
+            },
+        }
+    }
 </script>
 
 <div class="ls-waft" style="margin-left: {depth * 14}px"
@@ -536,7 +613,7 @@
             {#if waft_mungs.length || waft.oa({ encode_error: 1 })}
                 <EncodingSplatter {waft} />
             {/if}
-            {@render waftitem(waft, waft)}
+            {@render waftitem(waft, waft, false)}
             {#each sub_wafts as sw (sw.sc.Waft)}
                 <svelte:self {H} {w} waft={sw} depth={depth + 1} {examining}
                     {on_active} {on_delete} />
@@ -557,7 +634,7 @@
             {#if waft_mungs.length || waft.oa({ encode_error: 1 })}
                 <EncodingSplatter {waft} />
             {/if}
-            {@render waftitem(waft, waft)}
+            {@render waftitem(waft, waft, false)}
             {#each sub_wafts as sw (sw.sc.Waft)}
                 <svelte:self {H} {w} waft={sw} depth={depth + 1} {examining}
                     {on_active} {on_delete} />
@@ -571,7 +648,7 @@
     {#if waft_mungs.length || waft.oa({ encode_error: 1 })}
         <EncodingSplatter {waft} />
     {/if}
-    {@render waftitem(waft, waft)}
+    {@render waftitem(waft, waft, false)}
 
     <!-- sub-Wafts (recursive) -->
     {#each sub_wafts as sw (sw.sc.Waft)}
@@ -612,22 +689,40 @@
      All per-type personality (CSS, child_types, spotlight) comes from ITEM_TYPES.
      upC is the containing C — used for edit/delete keying and Doc dpath.
      Type selection now lives in the PeelInput irow via on_crud.on_pick_type. -->
-{#snippet waftitem(C: TheC, upC: TheC)}
+{#snippet waftitem(C: TheC, upC: TheC, funk_as_C: boolean)}
     {#if C.sc?.Funkcion !== undefined || C.sc?.havoc !== undefined}
-        <!-- an embedded applet (%Funkcion, or a legacy %havoc pad).  Waft hosts it
-             generically: FunkHost mounts the kind's own component (kinds.ts); every
-             specific — Storying's verdict light, a Ballistics drum-pad, a Book run — lives
-             in that module, never here. -->
-        <FunkHost {H} {w} funk={C} {raw} {examining} />
+        <!-- an embedded applet (%Funkcion, or a legacy %havoc pad).  By default Waft hosts it
+             generically through FunkHost — the kind's own component (the Storying light, a
+             Ballistics drum-pad, a StoryTimes run) — knowing nothing else.  Inside a What flipped
+             to its editing presentation (funk_as_C), it instead renders as a plain editable C row,
+             so you edit the Funkcion node itself, then toggle back to the live illusion. -->
+        {#if funk_as_C}
+            <div class="ls-item ls-item-funkc">
+                <div class="ls-item-hdr">{@render pi(raw_props(C, upC))}</div>
+            </div>
+        {:else}
+            <FunkHost {H} {w} funk={C} {raw} {examining} />
+        {/if}
     {:else}
     {@const t = item_type_of(C)}
     {#if t}
         {@const td       = ITEM_TYPES[t]}
-        {@const items    = (() => { void C.version; return C.o() as TheC[] })()} 
+        {@const items    = (() => { void C.version; return C.o() as TheC[] })()}
         {@const dpath    = t === 'Doc' ? C.sc.Doc as string : undefined}
         {@const dyn_cls  = td.item_cls_fns.filter(f => f.when(C)).map(f => f.cls).join(' ')}
+        {@const is_what  = t === 'What'}
+        {@const editing_struct = is_what && struct_what.has(C)}
+        {@const inline_flow    = is_what && what_inlined(C) && !editing_struct}
+        {@const show_tog       = is_what && (has_funk_child(C) || what_inlined(C))}
+        {@const child_as_C     = is_what ? editing_struct : funk_as_C}
         <div class="{td.item_cls} {dyn_cls}">
             <div class="ls-item-hdr">
+                <!-- a Funkcion-bearing What carries the inline⇄edit toggle as part of its
+                     illusion: ✎ flips to the editable bullet C**, ◉ restores the live inline flow. -->
+                {#if show_tog}
+                    <button class="ls-inline-tog" onclick={() => toggle_struct(C)}
+                        title={editing_struct ? 'show the live Funkcions inline' : 'edit as plain C'}>{editing_struct ? '◉' : '✎'}</button>
+                {/if}
                 {@render pi(item_props(C, upC, t, dpath))}
             </div>
             {#if td.child_types}
@@ -635,9 +730,9 @@
                     <div class="ls-add-row">{@render pi(add_item_props(C, orb_trigger.get(C) ?? C))}</div>
                 {/if}
                 {#if items.length}
-                    <div class="ls-items">
+                    <div class={inline_flow ? 'ls-inline' : 'ls-items'}>
                         {#each items as child (child)}
-                            {@render waftitem(child, C)}
+                            {@render waftitem(child, C, child_as_C)}
                         {/each}
                     </div>
                 {/if}
@@ -707,6 +802,21 @@
         position: absolute; left: -2px; top: 0; bottom: 0; width: 2px;
         background: #88c; box-shadow: 0 0 6px 2px #446a;
     }
+
+    /* an inlined What flows its Funkcion illusions instead of bulleting them */
+    .ls-inline {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem;
+        padding-left: 0.5rem;
+    }
+    /* the inline⇄edit toggle on a Funkcion-bearing What — subtle, brightens on hover */
+    .ls-inline-tog {
+        background: none; border: none; cursor: pointer; padding: 0 0.1rem;
+        color: #45506a; font-size: 0.72rem; line-height: 1; flex: none;
+        transition: color 0.1s;
+    }
+    .ls-inline-tog:hover { color: #8fa6d0; }
+    /* a Funkcion edited as plain C — same muted register as a Point row */
+    .ls-item-funkc :global(.pi-label) { color: #6a6a8a; }
 
     /* shared item wrapper */
     .ls-item { margin: 0.1rem 0; }

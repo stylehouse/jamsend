@@ -1091,7 +1091,14 @@
 
         const Run  = this.subHouse(book)
         Run.sc.Run = 1
-        Run.c.no_ambient = true   // story_drive owns the clock; suppress ambient tick
+        Run.c.no_ambient  = true   // story_drive owns the clock; suppress ambient tick
+        Run.c.no_interval = true   // …so don't even arm the ambient %mo:main timer: it
+                                   //  would re-fire main() every interval into a no-op
+                                   //   (no_ambient), and its mo:main,interval particle is
+                                   //    pure lies — Story never trickles on it.  Skipping
+                                   //     reset_interval means no dead timer and nothing to
+                                   //      draw (snap/Cyto/inspector); the %mo skip rule
+                                   //       stays only as a net for other houses.
         // Inherit the boot-param role (?E=editor / ?B=runner) onto the Run House before its recipe
         //  runs — H.c.role is read here (the Run House), not on Mundo.  ??= so a Book booted from
         //   the Library (no param) still gets its recipe's own default.
