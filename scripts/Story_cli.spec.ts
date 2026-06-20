@@ -100,7 +100,7 @@ test(`Story_cli: run + dump Book:${BOOK}`, async () => {
         for (const h of allHouses(H)) {
             if (!h.started) h.started = true
             const o = h.The_Opt_val?.bind(h)
-            if (o && !h._noc) { h._noc = true; h.The_Opt_val = (ww: any, k: string) => k === 'noCyto' ? true : o(ww, k) }
+            if (o && !h._noc) { h._noc = true; h.The_Opt_val = (ww: any, k: string) => k === 'useCyto' ? false : o(ww, k) }
         }
         if (w && !w.c.lenient) w.c.lenient = true                  // walk all steps; never pause on a mismatch
         if (ACCEPT && w && !w.c.keep_snaps) w.c.keep_snaps = true   // disable the 5-step got_snap trim so every step survives to be re-recorded

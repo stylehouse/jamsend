@@ -577,7 +577,7 @@ export class House extends StorableHousing {
         return e
     }
 
-    // feebly_elvisto: best-effort i_elvisto — fire only if the target A is up the tree,
+    // feebly_i_elvisto: best-effort i_elvisto — fire only if the target A is up the tree,
     //   else a silent no-op.  Sibling of feebly_ponder: "feebly" = it won't insist.  For
     //   pokes that inform an OPTIONAL collaborator — Lies telling Lang the cursor moved /
     //   a dock landed / the Waft mutated — when that ghost isn't stood up (a runner with no
@@ -585,7 +585,7 @@ export class House extends StorableHousing {
     //   be wrong.  Probes via _find_house (the same resolver i_elvisto defers to), so the
     //   throw becomes a return-null here rather than an async unhandled rejection.
     //   Returns the elvis e if it fired, else null.
-    feebly_elvisto(target: string | TheC | Housing, method: string, extra: Partial<TheUniversal> = {}): TheC | null {
+    feebly_i_elvisto(target: string | TheC | Housing, method: string, extra: Partial<TheUniversal> = {}): TheC | null {
         try { this._find_house(target) } catch { return null }
         return this.i_elvisto(target, method, extra)
     }

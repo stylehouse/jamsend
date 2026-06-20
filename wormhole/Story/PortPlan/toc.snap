@@ -13,29 +13,28 @@ story:PortPlan
   Plan
   Opt
     For
-    noCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.036
-      sample=0.037,at=1781893828
-      sample=0.014,at=1781893862
-      sample=0.049,at=1781894465
-      sample=0.052,at=1781894498
-      sample=0.028,at=1781894531
-      sample=0.025,at=1781894564
-      sample=0.046,at=1781894604
-      sample=0.031,at=1781894792
-      sample=0.023,at=1781895176
-      sample=0.058,at=1781895240
-    TimeTotal:step,avg=0.018
-      sample=0.019,at=1781893828
-      sample=0.007,at=1781893862
-      sample=0.024,at=1781894465
-      sample=0.026,at=1781894498
-      sample=0.014,at=1781894531
-      sample=0.013,at=1781894564
-      sample=0.023,at=1781894604
-      sample=0.015,at=1781894792
-      sample=0.012,at=1781895176
-      sample=0.029,at=1781895240
+    TimeTotal:beliefs,avg=0.046
+      sample=0.02,at=1781895862
+      sample=0.014,at=1781896410
+      sample=0.069,at=1781896461
+      sample=0.065,at=1781896514
+      sample=0.045,at=1781896773
+      sample=0.026,at=1781897654
+      sample=0.093,at=1781897694
+      sample=0.049,at=1781897733
+      sample=0.012,at=1781929620
+      sample=0.062,at=1781929632
+    TimeTotal:step,avg=0.023
+      sample=0.01,at=1781895862
+      sample=0.007,at=1781896410
+      sample=0.034,at=1781896461
+      sample=0.032,at=1781896514
+      sample=0.022,at=1781896773
+      sample=0.013,at=1781897654
+      sample=0.046,at=1781897694
+      sample=0.024,at=1781897733
+      sample=0.006,at=1781929620
+      sample=0.031,at=1781929632
   step,dige:e5e0e345ad397b93
   step=2,dige:9e380eacd379ad76

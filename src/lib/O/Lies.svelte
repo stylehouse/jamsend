@@ -759,7 +759,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 // auto-flushes any in-scope drift into the working clone tree.
                 // Cross-ghost, so it goes by elvis; Lang gates on whether its
                 // armed target lives in this Waft.
-                H.feebly_elvisto('Lang/Lang', 'Lies_waft_mutated', { waft_key: waft.sc.Waft })
+                H.feebly_i_elvisto('Lang/Lang', 'Lies_waft_mutated', { waft_key: waft.sc.Waft })
             })
 
             w.bump_version()

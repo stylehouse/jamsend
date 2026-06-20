@@ -322,7 +322,9 @@
             const S = H.subHouse('Story')
             S.sc.Run = undefined   // clear any stale flag
             S.i({ A: 'Story' }).i({ w: 'Story', Book: bname })
-            S.i({ A: 'Cyto'  }).i({ w: 'Cyto' })
+            // A:Cyto/w:Cyto is no longer created eagerly — Story_plan stands it up on demand
+            //  only when the Book opts in via Opt/useCyto, so a Book that doesn't want its own
+            //   Cyto never creates the world nor pays for it ticking.
             S.i_elvisto(S, 'think')
             console.log(`▶ Story subHouse created for ${bname}`)
         }, { see: `activate ${bname}` })

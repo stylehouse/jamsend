@@ -28,10 +28,12 @@ The keeper doc for the UIless Story runner. **How to run it + the pile layout li
      fire, paced toward the soonest `until_ts`. Self-terminating (ttlilts drop on finish).
       Without the trickle the run quiesces early and the pending work's ttlilt just times out
        (the stuck-compile blob). See the `liveTtlilts` gate in `Story_cli.spec.ts`.
-- **noCyto + lenient.** Patch `The_Opt_val('noCyto')→true` (else the tick-1 Cyto commission
-   throws "no House has A:Cyto") and set `w.c.lenient = true` (so `check` mode walks all
-    steps instead of pausing on the first dige mismatch). The runner does its own
-     mo:main-normalized got-vs-fixture diff rather than trusting Story's internal dige.
+- **no own-Cyto + lenient.** Cyto is opt-in now (`Opt/useCyto`, default off), so most Books
+   need no patch. For the Books that DO set it (the Leaf* tests) the headless runner forces it
+    off — patch `The_Opt_val('useCyto')→false` (else the tick-1 Cyto commission throws "no House
+     has A:Cyto") — and set `w.c.lenient = true` (so `check` mode walks all steps instead of
+      pausing on the first dige mismatch). The runner does its own mo:main-normalized
+       got-vs-fixture diff rather than trusting Story's internal dige.
 - **Wormhole I/O** goes through a node backend injected at `WA.c.nav` (`NodeWormholeNav.ts`,
    a repo→`/tmp` overlay) — its own brief is `Wormhole_backends_handover.md`.
 

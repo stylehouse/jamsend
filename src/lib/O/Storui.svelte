@@ -777,7 +777,8 @@
     // exp_snap arrives and the diff panel catches up.
     $effect(() => {
         if (display.open_at) {
-            setTimeout(() => H.i_elvisto('Cyto/Cyto', 'Cyto_seek', { open_at: display.open_at }), 0)
+            // feebly: a Book without Opt/useCyto has no A:Cyto to seek — no-op, don't throw.
+            setTimeout(() => H.feebly_i_elvisto('Cyto/Cyto', 'Cyto_seek', { open_at: display.open_at }), 0)
         }
     })
     // when the panel opens from outside (server-pushed open_at: end of run,

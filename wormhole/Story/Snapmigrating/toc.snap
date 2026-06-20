@@ -22,7 +22,6 @@ story:Snapmigrating
   Opt
     For
     trickle
-    noCyto
   TimeSpool
     TimeTotal:beliefs,avg=0.005
       sample=0.005,at=1780626764

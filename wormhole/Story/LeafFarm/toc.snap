@@ -63,6 +63,7 @@ story:LeafFarm
   Opt
     For
     waitCyto
+    useCyto
   TimeSpool
     TimeTotal:beliefs,avg=0.24
       sample=0.251,at=1778378056

@@ -11,7 +11,6 @@ story:PeeringLive
   Plan
   Opt
     For
-    noCyto
   TimeSpool
     TimeTotal:beliefs,avg=0.628
       sample=0.517,at=1779845622

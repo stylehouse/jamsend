@@ -13,7 +13,6 @@ story:PortPain
   Plan
   Opt
     For
-    noCyto
   TimeSpool
     TimeTotal:beliefs,avg=0.029
       sample=0.013,at=1778833965

@@ -2,13 +2,9 @@ story:Peregrination
   Styles
   Plan
   Opt
-    noCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.156
-      sample=0.129,at=1781893066
-      sample=0.156,at=1781893557
-      sample=0.156,at=1781893581
+    TimeTotal:beliefs,avg=0.216
       sample=0.188,at=1781893587
       sample=0.133,at=1781893592
       sample=0.135,at=1781893711
@@ -16,10 +12,10 @@ story:Peregrination
       sample=0.137,at=1781893726
       sample=0.149,at=1781893799
       sample=0.132,at=1781893805
-    TimeTotal:step,avg=0.031
-      sample=0.026,at=1781893066
-      sample=0.031,at=1781893557
-      sample=0.031,at=1781893581
+      sample=0.19,at=1781929677
+      sample=0.38,at=1781930046
+      sample=0.478,at=1781933058
+    TimeTotal:step,avg=0.043
       sample=0.038,at=1781893587
       sample=0.027,at=1781893592
       sample=0.027,at=1781893711
@@ -27,6 +23,9 @@ story:Peregrination
       sample=0.027,at=1781893726
       sample=0.03,at=1781893799
       sample=0.026,at=1781893805
+      sample=0.038,at=1781929677
+      sample=0.076,at=1781930046
+      sample=0.096,at=1781933058
   step,dige:b75dd49e6e4919fd
   step=2,dige:028c6e566c40bf00
   step=3,dige:a94460d7836eee56

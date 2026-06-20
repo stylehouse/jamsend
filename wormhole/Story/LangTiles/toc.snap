@@ -27,7 +27,6 @@ story:LangTiles
         esc:match,v:UltraThung
         esc:replacement,v:thung
   Opt
-    noCyto
     For
       w:Lang
         txtsyntaxdump
@@ -35,10 +34,7 @@ story:LangTiles
         nowriting:^Ghost
         dontSnapGhostList
   TimeSpool
-    TimeTotal:beliefs,avg=1.636
-      sample=3.277,at=1781885700
-      sample=0.715,at=1781887369
-      sample=1.993,at=1781887394
+    TimeTotal:beliefs,avg=1.488
       sample=2.166,at=1781888047
       sample=1.791,at=1781888096
       sample=1.13,at=1781888130
@@ -46,9 +42,15 @@ story:LangTiles
       sample=1.264,at=1781888233
       sample=1.265,at=1781888835
       sample=1.495,at=1781889665
-    TimeTotal:step,avg=0.154
+      sample=1.54,at=1781897108
+      sample=1.293,at=1781897151
+      sample=1.677,at=1781897665
+    TimeTotal:step,avg=0.162
       sample=0.141,at=1781888835
       sample=0.166,at=1781889665
+      sample=0.171,at=1781897108
+      sample=0.144,at=1781897151
+      sample=0.186,at=1781897665
   step,dige:85fdfbecdd453056
   step=2,dige:7f5d382fa6a731bb
   step=3,dige:d2e5d68b10b8ad75

@@ -1,31 +1,33 @@
 story:Editron
   Styles
   Plan
+    Prep
+      i_elvisto:Lies,e:Lies_open_Waft
+        esc:path,v:Credence
   Opt
-    noCyto
     For
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=1.277
-      sample=1.167,at=1781891741
-      sample=0.967,at=1781891779
-      sample=2.086,at=1781894470
-      sample=1.681,at=1781894505
-      sample=2.106,at=1781894536
-      sample=0.87,at=1781894568
-      sample=0.992,at=1781894608
-      sample=0.871,at=1781894796
-      sample=0.822,at=1781895179
-      sample=1.204,at=1781895245
-    TimeTotal:step,avg=1.277
-      sample=1.167,at=1781891741
-      sample=0.967,at=1781891779
-      sample=2.086,at=1781894470
-      sample=1.681,at=1781894505
-      sample=2.106,at=1781894536
-      sample=0.87,at=1781894568
-      sample=0.992,at=1781894608
-      sample=0.871,at=1781894796
-      sample=0.822,at=1781895179
-      sample=1.204,at=1781895245
+    TimeTotal:beliefs,avg=1.129
+      sample=1.073,at=1781896464
+      sample=1.083,at=1781896519
+      sample=1.087,at=1781896776
+      sample=1.754,at=1781929619
+      sample=0.97,at=1781929635
+      sample=0.786,at=1781929790
+      sample=1.208,at=1781930048
+      sample=0.677,at=1781931779
+      sample=1.784,at=1781933059
+      sample=0.864,at=1781933303
+    TimeTotal:step,avg=1.129
+      sample=1.073,at=1781896464
+      sample=1.083,at=1781896519
+      sample=1.087,at=1781896776
+      sample=1.754,at=1781929619
+      sample=0.97,at=1781929635
+      sample=0.786,at=1781929790
+      sample=1.208,at=1781930048
+      sample=0.677,at=1781931779
+      sample=1.784,at=1781933059
+      sample=0.864,at=1781933303
   step,dige:9539156ca45bb65f

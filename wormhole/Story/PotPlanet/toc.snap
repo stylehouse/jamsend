@@ -25,7 +25,6 @@ story:PotPlanet
   Plan
   Opt
     For
-    noCyto
   TimeSpool
     TimeTotal:beliefs,avg=0.048
       sample=0.039,at=1778671069

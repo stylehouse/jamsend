@@ -240,7 +240,7 @@
         // drop any pending cold subscribe (we are about to satisfy it), then push.
         for (const sub of good.o({ subscribe: 1 }) as TheC[]) good.drop(sub)
         // feebly: with no Lang up the tree (runner, no editor) there's no dock to hand to.
-        H.feebly_elvisto('Lang/Lang', 'dock_content', { Good: good })
+        H.feebly_i_elvisto('Lang/Lang', 'dock_content', { Good: good })
     },
 
     // ── Lies_spawn_look_waft ──────────────────────────────────────────────────
@@ -373,10 +373,10 @@
 
     // ── Lies_instantiate_funkcions ────────────────────────────────────────────────
     //   Generalise GhostList's hand-wired bind (Waft_spec §201's ⛑️): on Waft load —
-    //   and on a later in-place edit — every embedded %Funkcion that declares an
-    //   %of_dock gets its verdict-reader run bound and registered into the central
-    //   host.  Idempotent: a funk already carrying a run (the dirlist, or a prior pass)
-    //   is skipped, so re-calling on every mutation is cheap.  This is the Credence
+    //   and on a later in-place edit — every embedded %Funkcion that declares a binding
+    //   (%of_book or %of_dock) gets its verdict-reader run bound and registered into the
+    //   central host.  Idempotent: a funk already carrying a run (the dirlist, or a prior
+    //   pass) is skipped, so re-calling on every mutation is cheap.  This is the Credence
     //   cell's instantiation half — the embed rides the snap, the runtime re-binds each
     //   load.  Walks the whole Waft subtree so a cell can ride anywhere (a row under a
     //   group, not just a top child).
@@ -388,25 +388,33 @@
         for (const funk of all) {
             if (funk.sc.Funkcion === undefined) continue   // only %Funkcion embeds
             if (funk.c.run) continue                        // already bound (dirlist / prior load)
-            if (funk.sc.of_dock === undefined) continue     // dock-bound cells only, for now
+            if (funk.sc.of_book === undefined && funk.sc.of_dock === undefined) continue  // verdict cells only
             funk.c.run = async (_host: TheC, fk: TheC, ww: TheC) => H.Lies_verdict_read(ww, fk)
             await H.Lies_register_funkcion(w, waft, funk, w)
         }
     },
 
     // ── Lies_verdict_read ─────────────────────────────────────────────────────────
-    //   A dock-bound Funkcion's per-tick run: read the dock's %run_result (the runner's
+    //   A verdict Funkcion's per-tick run: find the matching %run_result (the runner's
     //   verdict, landed on w:Lies by Lies_run_result_recv) and stamp a *separate*
     //   %verdict on the funk — NOT req.sc.ok, which only says "the closure ran" (a
-    //   broken Funkcion vs a failing test must stay distinguishable, §5d).  phase mirrors
-    //   the Langui idiom: good (every step passed) / bad (some failed) / working (a
-    //   result is still awaited — no run_result for this dock yet).  Off-snap on funk.c
-    //   so a live verdict never bakes into the document snap; bump only on a real change
-    //   (the pump runs this every tick).
+    //   broken Funkcion vs a failing test must stay distinguishable, §5d).  Two binds:
+    //   %of_book matches the run_result whose `book` field is this Book (the latest by
+    //   `at`, since one Book can run several docks); %of_dock matches by dock `path`.
+    //   phase mirrors the Langui idiom: good (every step passed) / bad (some failed) /
+    //   working (no result yet).  Off-snap on funk.c so a live verdict never bakes into
+    //   the document snap; bump only on a real change (the pump runs this every tick).
     Lies_verdict_read(ww: TheC, funk: TheC): void {
+        const book = funk.sc.of_book as string | undefined
         const path = funk.sc.of_dock as string | undefined
-        if (!path) return
-        const rr    = ww.o({ run_result: 1, path })[0] as TheC | undefined
+        let rr: TheC | undefined
+        if (book) {
+            rr = (ww.o({ run_result: 1 }) as TheC[])
+                .filter(r => r.sc.book === book)
+                .sort((a, b) => Number(b.sc.at ?? 0) - Number(a.sc.at ?? 0))[0]
+        } else if (path) {
+            rr = ww.o({ run_result: 1, path })[0] as TheC | undefined
+        } else return
         const pass  = rr ? Math.round(Number(rr.sc.ok_pct ?? (rr.sc.ok ? 1 : 0)) * Number(rr.sc.done ?? 1)) : 0
         const total = rr ? Number(rr.sc.done ?? 1) : 0
         const phase = !rr ? 'working' : (total > 0 && pass === total) ? 'good' : 'bad'
@@ -997,7 +1005,7 @@
             const Aw   = sub.sc.Aw   as string | undefined
             const wake = sub.sc.wake as string | undefined
             // feebly: a subscriber whose ghost is no longer stood up just isn't notified.
-            if (Aw && wake) H.feebly_elvisto(Aw, wake, { Good: good })
+            if (Aw && wake) H.feebly_i_elvisto(Aw, wake, { Good: good })
             good.drop(sub)
         }
     },

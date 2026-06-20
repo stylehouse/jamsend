@@ -27,10 +27,8 @@ story:MundaneStation
   Plan
   Opt
     For
-    noCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.112
-      sample=0.135,at=1779759680
+    TimeTotal:beliefs,avg=0.105
       sample=0.147,at=1779759687
       sample=0.131,at=1779759693
       sample=0.145,at=1779767342
@@ -40,6 +38,9 @@ story:MundaneStation
       sample=0.205,at=1781711972
       sample=0.053,at=1781749855
       sample=0.047,at=1781749865
+      sample=0.066,at=1781897129
+    TimeTotal:step,avg=0.013
+      sample=0.013,at=1781897129
   step,dige:8b979660562a8fa0
   step=2,dige:bd9c2e451935f04e
   step=3,dige:1dd22464d2af64d9

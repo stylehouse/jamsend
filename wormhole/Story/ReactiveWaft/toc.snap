@@ -15,7 +15,6 @@ story:ReactiveWaft
   Plan
   Opt
     For
-    noCyto
   TimeSpool
     TimeTotal:beliefs,avg=0.041
       sample=0.03,at=1778674465

@@ -27,7 +27,6 @@ story:TextInca
   Plan
   Opt
     For
-    noCyto
   TimeSpool
     TimeTotal:beliefs,avg=0.011
       sample=0.009,at=1779063333

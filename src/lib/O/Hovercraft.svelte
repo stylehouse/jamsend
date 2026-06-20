@@ -29,14 +29,16 @@
         !C.oa({ self: 1, est: 1 })
             && C.i({ self: 1, est: now_in_seconds() })
 
-        // two senses of time
-        let ro = C.o({ self: 1, round: 1 })[0]
-        let es = C.o({ self: 1, est: 1 })[0]
-        await C.replace({ self: 1, round: 1 }, async () => {
-            let round = Number(ro?.sc.round || 0) + 1
-            let age = es && es.ago('est')
-            C.i({ self: 1, round, age })
-        })
+        // two senses of time.  oai merge-in-place (not replace+i) keeps ONE stable
+        //  self,round C and bumps it when round|age drift — so it stays put as a clean
+        //   Dif:change instead of churning goner+new and drifting past its siblings (the
+        //    "moving self,round").  _foc finds via o() so round:1 wildcards the value and
+        //     the same C is re-found every round; the merged round overrides the seed.
+        let es    = C.o({ self: 1, est: 1 })[0]
+        let ro    = C.o({ self: 1, round: 1 })[0]
+        let round = Number(ro?.sc.round || 0) + 1
+        let age   = es && es.ago('est')
+        C.oai({ self: 1, round: 1 }, { round, age })
     },
 
     // when starting a new time, set the next ambient tick

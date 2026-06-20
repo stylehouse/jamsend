@@ -29,7 +29,6 @@ story:Snaptesting
   Plan
   Opt
     For
-    noCyto
   TimeSpool
     TimeTotal:beliefs,avg=0.009
       sample=0.022,at=1780584264

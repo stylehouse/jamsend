@@ -134,7 +134,7 @@
             // immediate settle — no write, no Pantheate notify.
             if (nowriting) await H.Lies_log_want(w, 'gen_write', gen_path, source)
             const reason = nowriting ? 'nowriting' : nogen ? 'nogen' : 'softgen'
-            H.feebly_elvisto('Lang/Lang', 'Lies_compile_settled', { path })
+            H.feebly_i_elvisto('Lang/Lang', 'Lies_compile_settled', { path })
             H.tlog(`🔪 Lies compile settled: ${path} [${reason}]`)
             H.i_elvisto(w, 'think')
             return
@@ -189,7 +189,7 @@
         //  A changed dige un-finishes the Codebit (diff → delete %finished) and takes the
         //  normal req_Codebit path below — so exactly one settle fires either way.
         if (had_cb && cb.sc.finished) {
-            H.feebly_elvisto('Lang/Lang', 'Lies_compile_settled', { path, source_dige })
+            H.feebly_i_elvisto('Lang/Lang', 'Lies_compile_settled', { path, source_dige })
             H.i_elvisto(w, 'think')
             return
         }
@@ -281,7 +281,7 @@
                 source_dige: req.sc.source_dige,
             })
         }
-        H.feebly_elvisto('Lang/Lang', 'Lies_compile_settled', {
+        H.feebly_i_elvisto('Lang/Lang', 'Lies_compile_settled', {
             path,
             write_ms: write_ms != null ? +(write_ms / 1000).toFixed(3) : undefined,
             // source_dige rides home so req:compiled_is_settled can stamp the dock's

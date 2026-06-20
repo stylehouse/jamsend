@@ -40,12 +40,9 @@ story:LakeFlush
         txtsyntaxdump
         nogen
     quiesce_snap_time=0.4
-    noCyto
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=0.733
-      sample=1.216,at=1781660677
-      sample=0.114,at=1781865139
+    TimeTotal:beliefs,avg=0.72
       sample=0.15,at=1781865173
       sample=1.233,at=1781882066
       sample=1.233,at=1781882091
@@ -54,13 +51,17 @@ story:LakeFlush
       sample=0.586,at=1781888345
       sample=0.762,at=1781888790
       sample=0.522,at=1781888810
-    TimeTotal:step,avg=0.092
+      sample=0.603,at=1781896980
+      sample=0.603,at=1781897014
+    TimeTotal:step,avg=0.089
       sample=0.109,at=1781888790
       sample=0.075,at=1781888810
-  step,dige:1ee66d4348d67676
-  step=2,dige:692c1524d66a9c92
-  step=3,dige:5f010c10867ae4e3
-  step=4,dige:6c9bc59d4d7db739
-  step=5,dige:3910451fed8420d1
-  step=6,dige:10736b4fc7dcfa7a
-  step=7,dige:7f2e11e8d26b3c6f
+      sample=0.086,at=1781896980
+      sample=0.086,at=1781897014
+  step,dige:945833ed38992149
+  step=2,dige:86de1b7032c478a7
+  step=3,dige:098998fe95285b35
+  step=4,dige:6cd20c48fb37ab0e
+  step=5,dige:2a38e6667c382ec8
+  step=6,dige:cc2c9a12b1df43f0
+  step=7,dige:b243933a2b0e94be

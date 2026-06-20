@@ -202,7 +202,7 @@ This is the big shift from §1's "Pantheate include in the Run". The runner no l
      ride the spine it's editing). This fixed the "test ran the frozen `figaro:Sausage` copy" bug. The
       runner's channel flaps on each push — fine, it re-runs. Promote a new spine into the *editor's* channel
        with **`lang-compile --write`** then `cp gen/N/*.go → p2p/transport/`.
-- **`feebly_elvisto(target,method,extra)`** (`Housing`) — best-effort `i_elvisto`, no-op if no target A is up
+- **`feebly_i_elvisto(target,method,extra)`** (`Housing`) — best-effort `i_elvisto`, no-op if no target A is up
    the tree. The Lies→Lang pokes (`Lang_workon_update`, `dock_content`, `Lies_waft_mutated`,
     `Lies_compile_settled`) route through it, so a runner with no Lang doesn't throw.
 - **`lang-compile --write`** writes the gen `.go` from the CLI (UIless *compile*) — kills the "recompile in
@@ -260,18 +260,21 @@ First slice (mirrors §201's): one Funkcion bound to one dock via `%of_dock`, re
 
 **LANDED — the Credence cell.** All three: (1) generic instantiation (`Lies_instantiate_funkcions`,
  `LiesStore.svelte`) walks a loaded Waft's subtree and binds a verdict-reader run to every `%Funkcion`
-  carrying `%of_dock` — called from `Lies_open` on load AND from the Waft's `watch_c` so a freshly-authored
-   cell binds too (this is §201's ⛑️ "generalise instantiation", done for dock cells). (2) The reader
-    (`Lies_verdict_read`) reads `w:Lies/{run_result,path}` and stamps a *separate* `funk.c.verdict =
-     {phase,pass,total,dige}` off-snap (NOT `req.sc.ok`) — phase = good (all steps) / bad / working (no
-      result yet); per-step granularity from the start (`round(ok_pct*done)/done`). (3) The decoration
-       (`Waft.svelte` `waftitem`) renders a `%Funkcion` as a clickable test-light reusing the Langui
-        ✓/✗/◴ + good/bad/working colours; click fires `Lies_run_arm{of_dock}` (the Esc intent). Seeded
-         `wormhole/Credence/toc.snap` (`Waft:Credence`, three cells bound to Peregrination/Peeroleum/Tribunal
-          docks) — open it in the editor (Liesui `+Waft → Credence`) to see the board. A fresh cell shows
-           `◴ working` immediately (single-tab visible); it greens/reds when a `run_result` for its dock
-            lands. Still deferred: the per-row group-by into a `book × dock` matrix, and the runner-side
-             become-Book remote control (§5e build-order b).
+  carrying a bind (`%of_book` or `%of_dock`) — called from `Lies_open` on load AND from the Waft's
+   `watch_c` so a freshly-authored cell binds too (this is §201's ⛑️ "generalise instantiation"). (2) The
+    reader (`Lies_verdict_read`) finds the matching `%run_result` — by `book` field for `%of_book` (latest
+     by `at`, since one Book runs several docks), by dock `path` for `%of_dock` — and stamps a *separate*
+      `funk.c.verdict = {phase,pass,total,dige}` off-snap (NOT `req.sc.ok`): phase = good (all steps) / bad
+       / working (no result yet); per-step `round(ok_pct*done)/done`. (3) The decoration (`Waft.svelte`
+        `waftitem`) renders a `%Funkcion` as a clickable test-light reusing the Langui ✓/✗/◴ + good/bad/
+         working colours; a dock cell's click fires `Lies_run_arm{of_dock}` (the Esc intent), a Book cell's
+          click acks optimistically (become-Book remote control is §5e build-order b, not yet wired). Seeded
+           `wormhole/Credence/toc.snap` — `Waft:Credence`, **Book-bound and What-grouped** to mirror the
+            Library: `What:Peregrination | Lake{Surfer,Nets,Flush} | Leaf{Farm,Juggle} | Port{Plan,Planet,
+             Plant} | Stuff{Flipping,Resolving} | LangTiles` (the substantive Books; the rest are R&D husks).
+              Open via Liesui `+Waft → Credence`. A fresh cell shows `◴ working` immediately (single-tab
+               visible); it greens/reds when a `run_result` carrying that Book lands. Still deferred: the
+                per-row group-by into a `book × dock` matrix, and the become-Book remote control.
 
 ## 5e. Credence — the editor-side admirer (the Creduler's opposite)
 

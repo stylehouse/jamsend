@@ -2105,7 +2105,9 @@
                     dock.c.last_whatsthis_dock = state.doc
                     dock.c.last_dock_version  = dock.version
                 }
-                H.i_elvisto('Cyto/Cyto', 'Cyto_animation_request', { Langy: 1 })
+                // feebly: Cyto is opt-in now — when no A:Cyto is stood up there's simply
+                //  no graph to animate, so no-op rather than throwing "no House has A:Cyto".
+                H.feebly_i_elvisto('Cyto/Cyto', 'Cyto_animation_request', { Langy: 1 })
             }
             else if (H.o_Opt_val(w, 'txtsyntaxdump')) {
                 // txt path — nested Lezer hierarchy under model/Line:N/<NodeName>/...

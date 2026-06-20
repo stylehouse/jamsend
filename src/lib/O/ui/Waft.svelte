@@ -238,14 +238,17 @@
         return (c.c.verdict as any) ?? { phase: 'working' }
     }
     const leaf = (p: any) => String(p ?? '').split('/').pop()
-    // click a cell to run its dock — the same "run it now" intent Esc fires (Lies_run_arm),
-    //  targeted at this cell's %of_dock.  On the editor it records the arm; the runner picks
-    //   it up off the Rungo the compile-write emits (the become-Book remote half is §5e).
+    // a cell binds to a Book (%of_book) or a dock (%of_dock); label by whichever.
+    const funk_bound = (c: TheC) => (c.sc.of_book ?? c.sc.of_dock) as string | undefined
+    // click a cell to run it.  A dock cell fires the same "run it now" intent Esc does
+    //  (Lies_run_arm → the runner runs it off the Rungo the compile-write emits).  A Book
+    //   cell wants the editor→runner "become Book" remote control (§5e build-order b, not
+    //    yet wired) — for now it just acks optimistically; the verdict still lands live
+    //     whenever that Book is run on the runner by any means.
     function strike_funk(c: TheC) {
-        const path = c.sc.of_dock as string | undefined
-        if (!path) return
-        H.i_elvisto('Lies/Lies', 'Lies_run_arm', { path })
-        c.c.verdict = { ...(c.c.verdict as any ?? {}), phase: 'working' }   // optimistic
+        if (c.sc.of_dock) H.i_elvisto('Lies/Lies', 'Lies_run_arm', { path: c.sc.of_dock as string })
+        else console.log(`🧪 Credence: become-Book "${c.sc.of_book}" not yet wired (§5e b)`)
+        c.c.verdict = { ...(c.c.verdict as any ?? {}), phase: 'working' }   // optimistic ack
         c.bump_version()
     }
     // a %havoc,arm pad self-arms: it strikes itself whenever its containing What is
@@ -674,11 +677,11 @@
              as a Credence test-light: ✓ green / ✗ red / ◴ working, with the step pass-count
              and the dock leaf.  Raw mode shows the bare particle. -->
         {#if raw}
-            <div class="ls-havoc-raw">Funkcion:{C.sc.Funkcion}{C.sc.of_dock ? ` → ${C.sc.of_dock}` : ''}</div>
+            <div class="ls-havoc-raw">Funkcion:{C.sc.Funkcion}{funk_bound(C) ? ` → ${funk_bound(C)}` : ''}</div>
         {:else}
             {@const v = funk_verdict(C)}
             <button class="ls-funk ls-funk-{v.phase}" onclick={() => strike_funk(C)}
-                 title="Credence cell · click to run · {C.sc.of_dock ?? 'unbound'} — {v.phase === 'good' ? `green, ${v.pass}/${v.total} steps` : v.phase === 'bad' ? `red, ${v.pass}/${v.total} steps` : 'awaiting a run'}{v.dige ? ` @ ${String(v.dige).slice(0,8)}` : ''}">
+                 title="Credence cell · click to run · {funk_bound(C) ?? 'unbound'} — {v.phase === 'good' ? `green, ${v.pass}/${v.total} steps` : v.phase === 'bad' ? `red, ${v.pass}/${v.total} steps` : 'awaiting a run'}{v.dige ? ` @ ${String(v.dige).slice(0,8)}` : ''}">
                 <span class="ls-funk-ico">{v.phase === 'good' ? '✓' : v.phase === 'bad' ? '✗' : '◴'}</span>
                 <span class="ls-funk-name">{C.sc.Funkcion}</span>
                 {#if v.total}<span class="ls-funk-steps">{v.pass}/{v.total}</span>{/if}

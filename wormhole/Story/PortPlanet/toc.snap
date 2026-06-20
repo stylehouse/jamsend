@@ -25,7 +25,6 @@ story:PortPlanet
   Plan
   Opt
     For
-    noCyto
   TimeSpool
     TimeTotal:beliefs,avg=0.095
       sample=0.118,at=1781609968

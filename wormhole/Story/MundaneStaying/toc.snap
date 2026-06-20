@@ -19,10 +19,8 @@ story:MundaneStaying
   Plan
   Opt
     For
-    noCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.058
-      sample=0.039,at=1781080134
+    TimeTotal:beliefs,avg=0.056
       sample=0.061,at=1781594530
       sample=0.042,at=1781594885
       sample=0.057,at=1781594939
@@ -32,6 +30,9 @@ story:MundaneStaying
       sample=0.047,at=1781595803
       sample=0.059,at=1781608053
       sample=0.092,at=1781710740
+      sample=0.024,at=1781897136
+    TimeTotal:step,avg=0.008
+      sample=0.008,at=1781897136
   step,dige:33c50d750bfb954d
   step=2,dige:318a0052d83cf66f
   step=3,dige:e813bca6ff3d0bfb
