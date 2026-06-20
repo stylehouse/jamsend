@@ -12,10 +12,7 @@ story:LakeSurfer
         dontSnapGhostList
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=0.872
-      sample=0.694,at=1781960834
-      sample=0.562,at=1781961004
-      sample=1.439,at=1781962669
+    TimeTotal:beliefs,avg=0.871
       sample=1.16,at=1781962911
       sample=1.047,at=1781963597
       sample=0.663,at=1781963620
@@ -23,10 +20,10 @@ story:LakeSurfer
       sample=1.109,at=1781963759
       sample=0.762,at=1781963774
       sample=0.619,at=1781963782
+      sample=1.023,at=1781967899
+      sample=1.061,at=1781967922
+      sample=0.6,at=1781968627
     TimeTotal:step,avg=0.436
-      sample=0.347,at=1781960834
-      sample=0.281,at=1781961004
-      sample=0.72,at=1781962669
       sample=0.58,at=1781962911
       sample=0.523,at=1781963597
       sample=0.332,at=1781963620
@@ -34,14 +31,24 @@ story:LakeSurfer
       sample=0.554,at=1781963759
       sample=0.381,at=1781963774
       sample=0.31,at=1781963782
+      sample=0.512,at=1781967899
+      sample=0.531,at=1781967922
+      sample=0.3,at=1781968627
   EntropyArrest
     Snapcap:wants_want-want
       req:wants,lematch
         lematch,want,kind:cold
           {"means":1,"spayer":1,"re":"want=(\\d+(?:\\.\\d+)?),kind:cold","tol":"band","factor":1.5}
-    Snapcap:Lies_self-round
-      lematch,w:Lies
-        lematch,self,round
-          {"means":1,"spayer":1,"re":"self=1,round=(\\d+(?:\\.\\d+)?)","tol":"band","factor":1.5}
+    Snapcap:self-round
+      lematch,self,round
+        {"means":1,"spayer":1,"re":"self=1,round=(\\d+(?:\\.\\d+)?)","tol":"band","factor":1.5}
+    Snapcap:Compile_time-compile
+      lematch,Compile
+        lematch,time,compile,all,write
+          {"means":1,"spayer":1,"re":"time=1,compile={NUM},all={NUM},write=0","tol":"band","factor":1.5}
+    Snapcap:Change_compile-secs
+      lematch,Change
+        lematch,compile,dige,secs,dim,pending
+          means,spayer,re:secs={NUM},tol:band,factor=1.5
   step,dige:3a50dc40063ca8e3
   step=2,dige:2541f92dc475d119

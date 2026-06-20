@@ -43,7 +43,12 @@
     let at_text  = $state('')                       // the ' / '-split peelable locator
     let noisy    = $state<string | undefined>()     // the changed key (drives the auto-slug + wildcard)
     let re_text  = $state('')
-    let tol      = $state<'band' | 'any'>('band')
+    // the handler kind, a 4-way mutex: band|any are spayer tolerances (a capture re forgives
+    //  a value), drop|dontSnap are structural means (no captures — drop omits the whole line,
+    //   dontSnap keeps the line but folds its subtree away).  band|any need the re/tol fields;
+    //    drop|dontSnap don't.
+    let mode     = $state<'band' | 'any' | 'drop' | 'dontSnap'>('band')
+    let is_spayer = $derived(mode === 'band' || mode === 'any')
     let factor   = $state(1.5)
     let scope_on = $state(false)
     // slug auto-derives from the form beneath until the user edits it (§8.6)
@@ -69,11 +74,18 @@
         if (s && s !== _seed_seen) { _seed_seen = s; seed_into_fields(s) }
     })
 
-    // depeel a snap line into one locator chunk; optionally wildcard the noisy key's value
-    //  (1 = "has key, any value") so the locator never pins the noise it forgives.
-    function loc_chunk(line: string, wildcard?: string): string {
+    // depeel a snap line into one locator chunk; from `wildcard_from` onward, wildcard
+    //  each key's value (1 = "has key, any value") so the locator pins only the STABLE
+    //   keys BEFORE the changing one.  The noisy key and every key after it become
+    //    barewords — a trailing churner (`all=…,write=0`) would otherwise over-anchor
+    //     the match and stop forgiving the moment it drifts too.
+    function loc_chunk(line: string, wildcard_from?: string): string {
         const sc = { ...(H.deL(line)?.stringies ?? {}) } as Record<string, any>
-        if (wildcard && sc[wildcard] !== undefined) sc[wildcard] = 1
+        if (wildcard_from) {
+            const ks = Object.keys(sc)
+            const from = ks.indexOf(wildcard_from)
+            if (from >= 0) for (const k of ks.slice(from)) sc[k] = 1
+        }
         return depeel(sc)
     }
 
@@ -93,10 +105,10 @@
 
         // spayer: ask the engine for a capture-style regex + tolerance
         const sug = H.entropy_suggest(s.right, s.left)
-        if (sug) { re_text = sug.re; tol = sug.tol as 'band' | 'any'; factor = sug.factor ?? 1.5 }
+        if (sug) { re_text = sug.re; mode = sug.tol as 'band' | 'any'; factor = sug.factor ?? 1.5 }
         // no suggestion: a numeric noisy key still defaults to band (the common case);
         //  only a non-numeric locator falls back to any.
-        else     { re_text = nk ? `(?:${nk}=)(\\d+(?:\\.\\d+)?)` : ''; tol = nk ? 'band' : 'any'; factor = 1.5 }
+        else     { re_text = nk ? `${nk}={NUM}` : ''; mode = nk ? 'band' : 'any'; factor = 1.5 }
 
         slug_edited = false; slug_manual = ''
         scope_on = false
@@ -123,7 +135,7 @@
     //#region commit / delete / edit
     function reset() {
         active = false; at_text = ''; noisy = undefined
-        re_text = ''; tol = 'band'; factor = 1.5; scope_on = false
+        re_text = ''; mode = 'band'; factor = 1.5; scope_on = false
         slug_edited = false; slug_manual = ''
     }
     function commit() {
@@ -131,8 +143,17 @@
         if (!s) return
         const lematch = chunks(at_text).map(c => ({ sc: peel(c) }))
         if (!lematch.length) return
-        const spayer = tol === 'band' ? { re: re_text, tol, factor } : { re: re_text, tol }
-        const cap = { slug: s, lematch, spayer, scope_step: scope_on && step_n != null ? step_n : undefined }
+        // means descriptor by kind: band|any → a spayer (re + tol[+factor]); drop|dontSnap →
+        //  a bare structural kind.  A spayer with no re is incomplete — bail.
+        let means: { kind: string, [k: string]: any }
+        if (is_spayer) {
+            if (!re_text.trim()) return
+            means = mode === 'band' ? { kind: 'spayer', re: re_text, tol: 'band', factor }
+                                    : { kind: 'spayer', re: re_text, tol: 'any' }
+        } else {
+            means = { kind: mode }
+        }
+        const cap = { slug: s, lematch, means, scope_step: scope_on && step_n != null ? step_n : undefined }
         H.i_elvisto('Story/Story', 'entropy_commit', { cap_json: JSON.stringify(cap) })
         reset(); on_done()
     }
@@ -146,25 +167,43 @@
         const kid = lm.o({ lematch: 1 })[0] as TheC | undefined
         return kid ? [lm, ...segs_from_lematch(kid)] : [lm]
     }
-    // the spayer fields ride on a flat %means particle inside the leaf %lematch
-    //  (%means,spayer,re:…,tol:…); the %means carries .sc.re/.tol/.factor directly.
+    // the handler rides on a flat %means particle inside the leaf %lematch — a spayer
+    //  (%means,spayer,re:…,tol:…) or a structural kind (%means,drop / %means,dontSnap).
     function cap_spayer(cap: TheC): TheC | undefined {
         const lm = cap.o({ lematch: 1 })[0] as TheC | undefined
         const leaf = lm ? segs_from_lematch(lm).at(-1) : undefined
         return leaf?.o({ means: 1 })[0] as TheC | undefined
+    }
+    // the means kind, as the 4-way mode: a structural drop/dontSnap, else the spayer tol.
+    function cap_means_kind(cap: TheC): 'band' | 'any' | 'drop' | 'dontSnap' | '?' {
+        const mn = cap_spayer(cap)
+        if (!mn) return '?'
+        if (mn.sc.drop != null)     return 'drop'
+        if (mn.sc.dontSnap != null) return 'dontSnap'
+        return (mn.sc.tol ?? (mn.sc.kind === 'band' ? 'band' : 'any')) as 'band' | 'any'
     }
     function lematch_chunks(lm: TheC): string {
         return segs_from_lematch(lm)
             .map(seg => { const { lematch, ...sc } = seg.sc as Record<string, any>; return depeel(sc) })
             .join(' / ')
     }
+    // re-sugar a stored raw capture regex back to {NUM}/{TOK} for the field, so an
+    //  older cap reads as legibly as a freshly-suggested one.  Text.spay_desugar is
+    //   the inverse applied at compare time; both sides agree.
+    function resugar(re: string): string {
+        return re
+            .replace(/\(\\d\+\(\?:\\\.\\d\+\)\?\)/g, '{NUM}')   // (\d+(?:\.\d+)?)
+            .replace(/\(\\d\+\)/g, '{NUM}')                     // (\d+)
+            .replace(/\(\\S\+\?\)/g, '{TOK}')                   // (\S+?)
+    }
     function edit_cap(cap: TheC) {
         const lm = cap.o({ lematch: 1 })[0] as TheC | undefined
         const sp = cap_spayer(cap)
+        const k  = cap_means_kind(cap)
         at_text     = lm ? lematch_chunks(lm) : ''
-        re_text     = (sp?.sc.re as string) ?? ''
-        tol         = (sp?.sc.tol ?? (sp?.sc.kind === 'band' ? 'band' : 'any')) as 'band' | 'any'
-        factor      = (sp?.sc.factor as number) ?? 10
+        re_text     = resugar((sp?.sc.re as string) ?? '')
+        mode        = k === '?' ? 'band' : k
+        factor      = (sp?.sc.factor as number) ?? 1.5
         noisy       = undefined
         slug_edited = true
         slug_manual = String(cap.sc.Snapcap)
@@ -178,8 +217,7 @@
         return lm ? lematch_chunks(lm) : '∅'
     }
     function cap_tol(cap: TheC): string {
-        const sp = cap_spayer(cap)
-        return (sp?.sc.tol as string) ?? (sp?.sc.kind as string) ?? '?'
+        return cap_means_kind(cap)
     }
     //#endregion
 </script>
@@ -221,16 +259,18 @@
                        oninput={(e) => at_text = (e.target as HTMLInputElement).value} />
             </div>
 
-            <!-- the spayer: tolerance + capture regex -->
+            <!-- the handler kind: band|any forgive a value (spayer); drop|dontSnap are
+                 structural (drop the line / fold the subtree).  factor rides band only. -->
             <div class="ea-row">
-                <span class="ea-flabel">spay</span>
+                <span class="ea-flabel">means</span>
                 <div class="ea-kinds">
-                    {#each ['band','any'] as t (t)}
-                        <button class="ea-kindbtn" class:on={tol === t}
-                                onclick={() => tol = t as 'band' | 'any'}>{t}</button>
+                    {#each ['band','any','drop','dontSnap'] as t (t)}
+                        <button class="ea-kindbtn" class:on={mode === t}
+                                class:structural={t === 'drop' || t === 'dontSnap'}
+                                onclick={() => mode = t as typeof mode}>{t}</button>
                     {/each}
                 </div>
-                {#if tol === 'band'}
+                {#if mode === 'band'}
                     <label class="ea-field">factor
                         <input class="ea-input ea-num" type="number" step="any" value={factor}
                                oninput={(e) => factor = Number((e.target as HTMLInputElement).value)} />
@@ -238,12 +278,20 @@
                 {/if}
             </div>
 
-            <div class="ea-row ea-fields">
-                <label class="ea-field ea-field-wide">re
-                    <input class="ea-input ea-re" placeholder="(?:round=)(\d+)" value={re_text}
-                           oninput={(e) => re_text = (e.target as HTMLInputElement).value} />
-                </label>
-            </div>
+            {#if is_spayer}
+                <div class="ea-row ea-fields">
+                    <label class="ea-field ea-field-wide">re
+                        <input class="ea-input ea-re" placeholder={'round={NUM}'} value={re_text}
+                               oninput={(e) => re_text = (e.target as HTMLInputElement).value} />
+                    </label>
+                </div>
+            {:else}
+                <div class="ea-row ea-note">
+                    {mode === 'drop'
+                        ? 'drops the whole matched line from the snap (got and exp) — for a structural surprise spay can\'t forgive (an added/removed row).'
+                        : 'keeps the matched line but folds its subtree away — stops snapping any further in.'}
+                </div>
+            {/if}
 
             <!-- scope + commit -->
             <div class="ea-row ea-foot">
@@ -287,6 +335,8 @@
     .ea-cap-tol { font-size: 0.66rem; border-radius: 2px; padding: 0 0.22rem; flex-shrink: 0 }
     .ea-tol-band { background: #2a2410; color: #cb6 }
     .ea-tol-any  { background: #102a2a; color: #6cc }
+    .ea-tol-drop     { background: #2a1018; color: #c69 }
+    .ea-tol-dontSnap { background: #1a1226; color: #a8d }
     .ea-cap-slug { color: #9ab; flex-shrink: 0 }
     .ea-cap-path { color: #567; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
     .ea-spacer   { flex: 1 }
@@ -320,8 +370,9 @@
     .ea-re   { flex: 1; min-width: 8rem }
     .ea-num  { width: 4.5rem }
 
-    /* band|any overlap like a physical mutex toggle — the second sits -1em onto the
-       first, and whichever is `on` rides on top */
+    /* a 4-way segmented mutex (band | any | drop | dontSnap): buttons share borders
+       (-1px) and the active one rides on top.  drop|dontSnap are tinted apart as the
+       structural category — they forgive nothing, they omit. */
     .ea-kinds { display: flex }
     .ea-kindbtn {
         position: relative;
@@ -329,9 +380,16 @@
         color: #567; cursor: pointer; font-family: monospace; font-size: 0.7rem;
         padding: 0.1rem 0.4rem;
     }
-    .ea-kindbtn:last-child { margin-left: -1em }
+    .ea-kindbtn:not(:first-child) { margin-left: -1px }
+    .ea-kindbtn.structural { color: #946 }
     .ea-kindbtn:hover { color: #9bd }
     .ea-kindbtn.on { background: #16263a; color: #bdf; border-color: #468; z-index: 1 }
+    .ea-kindbtn.structural.on { background: #2a1226; color: #d9f; border-color: #639 }
+
+    .ea-note {
+        font-family: monospace; font-size: 0.66rem; color: #768;
+        padding: 0.1rem 0.2rem 0.1rem 2.75rem; line-height: 1.3;
+    }
 
     .ea-fields { gap: 0.5rem; flex-wrap: wrap }
     .ea-field {

@@ -42,12 +42,10 @@ Real Waft **stances** (input to `interest_stance_of`):
 - lister / `lists` (→ GhostList): the GhostList singleton Waft.
 - tentative (→ Sidetrack): a Waft opened by a sidetrack request.
 
-**The Crux — RESOLVED (verified live 2026-06-17).** An old `LakeNets/001.snap` recorded `Languinio`
- carrying a single `{Interest:in_Doc:…}` rather than the `Interest:Trail,…` family; that snap was simply
-  **stale** (predates the Trail unification). A live `LakeSurprise` run confirms the real wire emits the
-   full family (Ting/Trail/GhostList + `ActiveInterest`) and `interest_reconcile` mints it correctly.
-    The recorded LakeNets/LakeFlush expected snaps are the intended improvement, not a regression — the
-     human re-records.
+**The Crux — resolved.** The real wire emits the full Interest family (Ting/Trail/GhostList +
+ `ActiveInterest`) and `interest_reconcile` mints it correctly. An old `LakeNets/001.snap` carrying a
+  single `{Interest:in_Doc}` was just stale (pre-Trail-unification); LakeNets/LakeFlush expected snaps
+   want re-recording (the improvement, not a regression).
 
 ## 3. Implemented items & phases (all 2026-06-17, verified live; human re-records snaps)
 
@@ -184,17 +182,9 @@ The through-line: a surprise_read (external edit conflict on an open Doc) **pops
         reads land, re-running every tick so it self-gates on readiness and retries; `maz`-leveled
          sequencing of those = the drum machine. See [[ballistics-drum-pad]], [[nested-req-needs-cup-stamped]].
 
-**Still open (popover follow-ups):** move InterestStrip's `×` into `PeelInput` (a distinct UX refactor);
- tighten the escalate target from the whole Lang/Lies House header onto the Liesui sub-element.
-
 ## 5. The metromap & the lens "generalissimo" — the future picture (not now)
 
-**Priority (2026-06-19): pushed much later.** The metromap is deferred well past the near-term work — it
- stays the destination, not the next move. When it does come up, **evaluate Svelvet**
-  (https://github.com/open-source-labs/Svelvet) as the node/edge substrate rather than hand-rolling the
-   SVG — a Svelte-native flow-diagram lib may carry the folding-network draw for free. **The Lens
-    "generalissimo" is low motivation** (see the owner's read below): it's essentially a UI-nester, and
-     it's unclear how much we actually need it yet — do not start it on the metromap's behalf.
+*(Status/priority for both lives in the §7 TODO; this section is the vision.)*
 
 The popover proves the "Interest pops out big attention" mechanic. The picture the owner wants is a tiny
  **animated SVG metromap** of the two layers of Interest/Point working: (1) **Interestily sprouts the
@@ -253,3 +243,26 @@ The popover proves the "Interest pops out big attention" mechanic. The picture t
      the active LE for the bare reason. Gate Book: `wormhole/Story/LakeSurprise/` (11 Preps + `step=`
       lines; fixtures Interestily→Peeroleum.g, Interestily2→Peregrination.g). Elvis names must match
        handlers verbatim ([[elvis-handler-name-verbatim]]).
+
+## 7. TODO
+
+- **Popover follow-ups** — move InterestStrip's `×` into `PeelInput` (a distinct UX refactor); tighten the
+   escalate target from the whole Lang/Lies House header onto the Liesui sub-element.
+- **Self-arming havoc limbs — PARKED** (known race: firing synchronously in the Spotlight races the cold
+   dock open, so `surprise_read` no-ops on an empty `%Good`). Run-level fix: host the armed limb in the
+    **Funkcion pump** (`req:Store` Phase 2b, after dock reads land) so it self-gates on readiness and retries;
+     `maz`-leveled sequencing of those = the drum machine. [[ballistics-drum-pad]], [[nested-req-needs-cup-stamped]].
+- **Per-deck Sidetrack LEs + dual-LE push-mutex** — a Sidetrack foreground still falls back to the last
+   Trail's LE (no off-anchor clone of its own); arming a Trail + a Sidetrack at once needs a true
+    simultaneous dual-LE push-mutex. Both are the Sidetrack half of `Waft_spec` §Presence.
+- **Metromap — deferred well past the near-term** (the destination, not the next move). When revisited,
+   evaluate **Svelvet** (github.com/open-source-labs/Svelvet) as the node/edge substrate before hand-rolling
+    the SVG. The two-layer picture: Interestily sprouts the activeWhat (obscured network), then the activeWhat
+     sprouts its Points, with folded-away "elsewheres" and faintly-readable horizon creases.
+- **Lens "generalissimo" — parked, low motivation** — a UI-pluggability router (an Interest declares which
+   slot + which tiny UI; `sc.lens` is the seed). Reads as a UI-nester whose need isn't proven; revive
+    `InterestLens` as a multi-slot host only when a concrete consumer pulls. Per-kind menus sketched
+     (GhostList prefix-box search, Ting time-trail strata, a Pantheate run controller).
+- **Loose fancies** (undefined) — fold-into-chunks (auto-cluster a method's internals into ~3 chunks, peer
+   of StemHive stem clustering); "scribbles" (an annotation/marginalia layer over the doc).
+- **Snap re-records pending** — LakeNets/LakeFlush expected snaps (the post-unification improvement).

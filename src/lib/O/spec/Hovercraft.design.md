@@ -43,7 +43,7 @@ Two leftovers that are NOT Hovercraft's moved out, so this doc can settle to its
  permanent §1–9 plus this thinning tail: the compiler-facing data language (the
  `req:X {…}` block → doai lowering) went to **LangCompiler_TODO.md** now that doai has
  a runtime, and the Pmirror UI-non-resolution deferral lives in
- **Lang_session4_handover.md** (Open threads).
+ **Everything_todo.md** (§ Lang / Waft / Wire).
 
 
 ## Future Directions
@@ -655,4 +655,4 @@ reqy()/reqcon/handler_of_last_resort are DELETED (the reqy_spec doc + the reqy(w
  - snap-id churn (§1) — a transient appearing/finishing each beat churns the diff;
     decide deliberately whether one earns a scan-id or is summarised.
  - deferred (not a req-migration blocker): the Pmirror UI-non-resolution item moved to
-    Lang_session4_handover.md (Open threads, "Pmirror non-resolution is silent").
+    Everything_todo.md (§ Lang / Waft / Wire, "Pmirror non-resolution is silent").

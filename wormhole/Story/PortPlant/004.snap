@@ -24,6 +24,6 @@ Snap:H
         req:celebrate
         log
           msg:cactus in yard
-          {"msg":"repotted rose (yard soil: 10)"}
-          {"msg":"repotted fern (yard soil: 8)"}
-          {"msg":"repotted cactus (yard soil: 6)"}
+          msg:repotted rose (yard soil: 10)
+          msg:repotted fern (yard soil: 8)
+          msg:repotted cactus (yard soil: 6)

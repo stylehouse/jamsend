@@ -123,6 +123,18 @@
     //  the real value flagged — a Dif:change that means something (§2.2).
     const SPAY_BLOWOUT = '‼'
 
+    // ── re sugar ────────────────────────────────────────────────────────────────
+    // A spayer's capture regex stays legible by hiding the verbose number/token
+    //  capture behind a tag: `{NUM}` for a (possibly-fractional) number, `{TOK}` for
+    //   a run of non-space (a hash / signature / timestamp).  The tag is what the
+    //    author sees in the field AND what rides to disk in toc.snap; it expands to a
+    //     real capturing group only when the RegExp is built (spay_desugar).  A legacy
+    //      raw regex carries no tag and passes through untouched.
+    const SPAY_RE_SUGAR: Record<string, string> = {
+        '{NUM}': '(\\d+(?:\\.\\d+)?)',
+        '{TOK}': '(\\S+?)',
+    }
+
     onMount(async () => {
     await M.eatfunc({
 
@@ -567,11 +579,17 @@
     //   is called, so they never appear inline.
 
     encode_stringies(obj: Record<string,any>): string {
-        const unsafe = /[:,\t\n]/
+        // A key with : , \t \n mis-splits on decode (peel keys off the first : / =),
+        //  so any of them forces JSON.  A VALUE is laxer: peel splits each comma-field
+        //   on its FIRST : / = only, so a : or = that occurs INSIDE the value (after the
+        //    key's separator) rides through verbatim — a regex like `self=1,round=…` keeps
+        //     its : and = fine.  Only , \t \n actually break a value out of its field.
+        const unsafe_key = /[:,\t\n]/
+        const unsafe_val = /[,\t\n]/
         for (const [k, v] of Object.entries(obj)) {
-            if (unsafe.test(k)) return JSON.stringify(obj)
+            if (unsafe_key.test(k)) return JSON.stringify(obj)
             if (typeof v === 'number' || typeof v === 'boolean') continue
-            if (typeof v !== 'string' || unsafe.test(v)) return JSON.stringify(obj)
+            if (typeof v !== 'string' || unsafe_val.test(v)) return JSON.stringify(obj)
         }
         return depeel(obj)
     },
@@ -662,8 +680,10 @@
         stringies?: Record<string, any>
         objecties?: Record<string, any> | undefined
         skip?: boolean
+        dontSnap?: boolean          // a matched rule asked to emit this line but prune its subtree
         thence?: Array<any>
         mung?: string[]
+        undef?: string[]            // keys present in sc with an undefined value — recorded, not inlined
         omitted?: string[]          // keys silently dropped by omit_sc means
         bq_errors?: string[]
     }): string[] | null {
@@ -703,6 +723,10 @@
             if (!matched) continue
             if (rule.means?.blockquote_these_sc) Object.assign(bq_keys,   rule.means.blockquote_these_sc)
             if (rule.means?.omit_sc)             Object.assign(omit_keys, rule.means.omit_sc)
+            // dontSnap: a structural means (EntropyArrest.md §5/§9 drop-kind) that keeps the
+            //  node's own line but tells the snap walk to prune the subtree below it.  The
+            //   line still encodes here; story_process_node forwards the flag, snap_H folds.
+            if (rule.means?.dontSnap)            q.dontSnap = true
             const spays = rule.means?.spay
                 ? (Array.isArray(rule.means.spay) ? rule.means.spay : [rule.means.spay])
                 : []
@@ -714,6 +738,7 @@
         const stringies: Record<string, any> = {}
         const ref: Record<string, string> = {}
         const mung: string[] = []
+        const undef: string[] = []
         const bq_pending: Array<{ key: string, value: string }> = []
         q.bq_errors = []
 
@@ -724,6 +749,11 @@
             }
             const is_munged = mr.munging.find(r => Object.hasOwn(r.these_sc, k)) || spay_drop_keys[k]
             if (is_munged) { mung.push(k); continue }
+            // An undefined value is not a clean scalar — inlining it would drop the key
+            //  AND tip encode_stringies into the JSON-blob fallback.  Record it like mung
+            //   (objecties.undef) so the key's absence is explicit and the rest of the
+            //    line stays peelable.  undefined ≡ absent on decode, so nothing to rebuild.
+            if (v === undefined) { undef.push(k); continue }
 
             // blockquote_these_sc: only strings ending in \n get BQ treatment
             if (bq_keys[k]) {
@@ -746,10 +776,12 @@
         if (q.loopy !== undefined) objecties.loopy = q.loopy   // shallowest/original appearance of a repeated C
         if (Object.keys(ref).length) objecties.ref = ref
         if (mung.length) objecties.mung = mung
+        if (undef.length) objecties.undef = undef
 
         q.stringies = stringies
         q.objecties = Object.keys(objecties).length ? objecties : undefined
         q.mung      = mung
+        q.undef     = undef
 
         // Parent line — inline keys only (BQ keys excluded above).  Honest: the real
         //  value rides to disk; blank/band forgiveness happens later, in spay_normalize.
@@ -799,7 +831,7 @@
     spay_line(line: string, sp: any, step_n?: number): string {
         if (!sp?.re) return line
         let rx: RegExp
-        try { rx = new RegExp(sp.re, sp.flags ?? 'g') }
+        try { rx = new RegExp(this.spay_desugar(sp.re), sp.flags ?? 'g') }
         catch { return line }   // a malformed authored regex must never crash the snap
 
         if (sp.kind === 'blank') {
@@ -889,6 +921,13 @@
         return Array.from(new Set(('gd' + (sp.flags ?? '')).split(''))).join('')
     },
 
+    // spay_desugar — expand the legible {NUM}/{TOK} tags in an authored re into the
+    //   real capturing groups before a RegExp is built (each tag → exactly one group,
+    //    so the graft's group-counting is unaffected).  Idempotent on a raw regex.
+    spay_desugar(re: string): string {
+        return (re ?? '').replace(/\{NUM\}|\{TOK\}/g, m => SPAY_RE_SUGAR[m] ?? m)
+    },
+
     // spay_within — is the got capture tolerable against its exp pair?
     //   tol:any  → always (hashes / signatures / timestamps — graft wholesale).
     //   tol:band → numeric, within factor× either way (and the both-zero case).
@@ -916,7 +955,7 @@
         for (const sp of spayers) {
             if (!sp?.re) continue
             let rx: RegExp
-            try { rx = new RegExp(sp.re, this._spay_flags(sp)) }
+            try { rx = new RegExp(this.spay_desugar(sp.re), this._spay_flags(sp)) }
             catch { continue }   // a malformed authored regex must never crash the compare
             const gms = [...out.matchAll(rx)]
             const ems = [...expLine.matchAll(rx)]
@@ -977,7 +1016,7 @@
         for (const sp of spayers) {
             if (!sp?.re) continue
             let rx: RegExp
-            try { rx = new RegExp(sp.re, this._spay_flags(sp)) } catch { continue }
+            try { rx = new RegExp(this.spay_desugar(sp.re), this._spay_flags(sp)) } catch { continue }
             const gms = [...gotLine.matchAll(rx)]
             const ems = [...expLine.matchAll(rx)]
             if (!gms.length || gms.length !== ems.length) continue
@@ -1257,7 +1296,7 @@
     //     Dif:+         — got line as child (new in got, absent from prev)
     //     Dif:-         — prev line as child (gone from got, was in prev)
 
-    enDif(rows: any[], dif_depth: number): string[] {
+    enDif(rows: any[], dif_depth: number, spayers?: Array<any>): string[] {
         const ind = (d: number) => '  '.repeat(Math.max(0, d))
         const out: string[] = []
 
@@ -1287,8 +1326,15 @@
             }
 
             if (row.kind === 'pair' && row.tag === 'changed') {
-                // got side under Dif:change; prev side under the Dif:prev sibling
-                out.push(`${ind(dif_depth)}Dif:change`)
+                // got side under Dif:change; prev side under the Dif:prev sibling.
+                //  When spayers are in hand, tag the marker with how a Snapcap sees this
+                //   line — `,spay:graft` (acknowledged noise that would forgive) or
+                //    `,spay:blown` (a watched line whose value blew its band) — so a
+                //     pasted diff carries the same signal the live glow shows.  deDif reads
+                //      only sc.Dif, so the extra key round-trips harmlessly.
+                const sc = spayers?.length
+                    ? this.spay_classify_line(row.right, row.left, spayers) : 'none'
+                out.push(`${ind(dif_depth)}Dif:change${sc !== 'none' ? `,spay:${sc}` : ''}`)
                 out.push(re_indent(row.right, child_depth(row.right)))
                 out.push(`${ind(dif_depth)}Dif:prev`)
                 out.push(re_indent(row.left, child_depth(row.left)))

@@ -99,9 +99,17 @@ spayer,re:<regex-with-captures>,tol:any                graft wholesale, any valu
 `spay_within` parses a band capture with `parseFloat` → `NaN` for a non-numeric token, which
  never grafts. So a hash/signature **must** be `tol:any`; only numerics may be `band`.
 
+**`{NUM}` / `{TOK}` sugar.** A raw capture group reads as line-noise (`(\d+(?:\.\d+)?)`), so
+ a spayer's `re` carries legible tags instead: **`{NUM}`** for a (possibly-fractional) number,
+  **`{TOK}`** for a run of non-space (hash / signature / timestamp). The tag is what the author
+   sees in the field *and* what rides to disk; `Text.spay_desugar` expands each to exactly one
+    capturing group (so graft's group-counting is unchanged) only when the `RegExp` is built. A
+     legacy raw regex carries no tag and passes through untouched; the editor re-sugars a stored
+      raw capture back to a tag when you load a cap. `entropy_suggest` emits tags directly.
+
 **Codec reality:** capture regexes contain `:` (every `(?:…)`) and usually `,`, so a
  `%spayer`/`%means` line serialises as **JSON** in `toc.snap` (`encode_stringies` fallback).
-  This round-trips fine; regex legibility lives in the editor field, not the snap.
+  This round-trips fine; with `{NUM}`/`{TOK}` the snap form is far more legible than a raw regex.
 
 ---
 
@@ -191,9 +199,26 @@ Both paths share the same `collect_spayers` → `spay_graft` core, so the in-app
 A step that passes only because it was forgiven is "virtually OK, with a caveat"
  (`match && !exact`) — distinct from an exact match, surfaced as a `≈` badge in Storui.
 
-`drop` is the one handler that would bite at **encode** (`enLine` → `mung`): removing a key
- entirely is a structural omission, value-free and deterministic, an encoder concern not a
-  value to forgive. It is deferred (see TODO).
+### The structural means-kinds — `drop` and `dontSnap`
+
+Spay forgives a *value*. Some noise is **structural** — an added/removed row, a churning
+ subtree — which spay cannot reconcile (a differing line count is drift, never forgiven, §1).
+  For those, two means-kinds bite at **encode**, value-free and deterministic, so the surprise
+   never reaches the snap in the first place:
+
+- **`drop`** → `means.skip`: omit the whole matched line from the snap (got *and* exp encode
+   the same way, so a `Dif:+`/`Dif:-` for that row simply vanishes). The proven `self,est`
+    skip path; the line is gone, its children re-parent.
+- **`dontSnap`** → `means.dontSnap`: keep the matched line but **fold its subtree away** —
+   "stop snapping any further in". `enLine` sets `q.dontSnap`, `story_process_node` forwards it
+    onto the Travel, `snap_H` prunes `T.sc.more` (the same fold the `n.sc.dontSnap` node flag
+     does). Used to retire a churning apparatus subtree while keeping its head legible.
+
+Both ride the same `%means` prefix-mainkey as a spayer (`%means,drop` / `%means,dontSnap`, no
+ captures) and are authored from the same panel (the `means` mutex: band | any | drop |
+  dontSnap). They carry no `re`, so `collect_spayers` ignores them — they are encode-time
+   omissions, orthogonal to the compare-time graft. A `drop`/`dontSnap` cap, like every cap,
+    never touches `The/EntropyArrest` itself.
 
 ---
 
@@ -239,18 +264,26 @@ We deliberately do **not** live-test the locator/regex in the panel — verifica
 
 - **Text.svelte** — the compare. `spay_graft(got, exp, spayers, step_n)` (positional line zip,
    returns a graft log), `spay_graft_line` (per-capture graft), `spay_within` (band/any
-    tolerance), `_spay_flags`. `collect_spayers(rules)` flattens every spayer carrying a `re`
-     out of the merged rule set (recursing `thence_matching`). (`spay_line`/`spay_normalize`/
-      `SPAY_MARKER` are the pre-graft marker model, off the compare path — see TODO.)
+    tolerance), `_spay_flags`, `spay_desugar` ({NUM}/{TOK} → capture groups). `collect_spayers(rules)`
+     flattens every spayer carrying a `re` out of the merged rule set (recursing `thence_matching`).
+      `enLine` honours the structural `means.dontSnap` (→ `q.dontSnap`); `enDif(rows, depth, spayers?)`
+       tags a `Dif:change` with `,spay:graft`/`,spay:blown`. (`spay_line`/`spay_normalize`/
+        `SPAY_MARKER` are the pre-graft marker model, off the compare path — see TODO.)
 - **Hovercraft.svelte `//#region entropy`** — `entropy_rules` / `entropy_rule_of` /
-   `lematch_to_rule` / `means_of` / `spayer_of_sc` (the compile); `entropy_forgive` (the in-app
-    verdict); `entropy_suggest` (the generator); `The_EntropyArrest` / `entropy_mint` /
-     `entropy_unmint` (the store). Sibling to `prandle` (Housing).
-- **Story.svelte** — `snap_H` (`story_matching ∪ entropy_rules`); the default `story_matching`
-   `self,round` rule; `e_entropy_commit` / `e_entropy_delete`; the `check_snap` forgive block.
+   `lematch_to_rule` / `means_of` (spayer + structural drop/dontSnap) / `spayer_of_sc` (the
+    compile); `entropy_forgive` (the in-app verdict); `entropy_suggest` (the generator, emits
+     {NUM}/{TOK}); `The_EntropyArrest` / `entropy_mint` / `entropy_unmint` (the store). Sibling
+      to `prandle` (Housing).
+- **Story.svelte** — `snap_H` (`story_matching ∪ entropy_rules`); `story_process_node` (forwards
+   `q.dontSnap` → `T.sc.dontSnap`, pruned in `snap_H`); the default `story_matching` `self,round`
+    rule (`round={NUM}`, `tol:any`); `e_entropy_commit` (general means descriptor) / `e_entropy_delete`;
+     the `check_snap` forgive block.
 - **Storui.svelte** — the `<EntropyArrest>` mount, `ea_seed` + `seed_spay` + `diff_parent_line`,
-   the `.sr-spayable` clickable `changed` cells, and the `≈` caveat badge/pip.
-- **ui/EntropyArrest.svelte** — the editor (draft, `at` field, slug, tol/factor/re, CRUD).
+   the `.sr-spayable` clickable `changed` cells (graft = dimmed/receding, blown = amber pulse),
+    the `≈` caveat badge/pip, and `spayers` passed into `enDif` so a copied diff carries the tags.
+- **ui/EntropyArrest.svelte** — the editor: draft, `at` field (wildcards the changing key and
+   everything after it), slug, the `means` 4-way mutex (band | any | drop | dontSnap), factor/re
+    (spayer only), `{NUM}`/`{TOK}` re-sugar on load, CRUD.
 - **scripts/Story_cli.spec.ts** — the lenient runner; gates got-before vs got-after.
 
 ---
@@ -272,6 +305,16 @@ We deliberately do **not** live-test the locator/regex in the panel — verifica
 
 ## 9. TODO
 
+- **Number-wander statistics (TimeSpool-like).** A spayer forgives a number's *churn* but
+   throws the churn away — the value drifts unobserved until it blows the band. Gather it
+    instead: a per-cap spool (à la `The/TimeSpool`, which already accumulates per-step
+     seconds) that records each spayed capture's value over time — count, min/max, mean,
+      spread, last — so a band `factor` can be *seen* rather than guessed, a slow leak
+       (a counter trending up every run) surfaces before it surprises, and the `≈` caveat
+        can carry "n=42, 0.8–1.3, μ=1.0". Fed from `spay_graft`'s graft log (the got/exp
+         capture pairs it already computes), keyed by cap-slug + capture index. Storage rides
+          in `The` beside `EntropyArrest`, so it travels with the Book and round-trips through
+           `toc.snap`. The histogram is the eventual UI; the spool is the prerequisite.
 - **§4.3 diff index.** The **glow is built**: a changed diff line a Snapcap reaches is marked
    in Storui — teal+steady when the captures are within tolerance (acknowledged noise that would
     forgive), amber+pulsing when a capture blew its variance band (a watched line that still
@@ -281,18 +324,32 @@ We deliberately do **not** live-test the locator/regex in the panel — verifica
         ref to the exact `%spayer` that touched it (and the `%spayer` back to its lines), so
          clicking one end pulses the other — the same two-way binding the snap's `hid:1`/`loopy:N`
           shadow stubs already model for shared-C refs. Fed from `spay_graft`'s graft log, not the
-           dead `SPAY_MARKER` text-scan.
+           dead `SPAY_MARKER` text-scan. (The glow now also rides into the **copied** diff: `enDif`
+            tags a `Dif:change` with `,spay:graft`/`,spay:blown`, so a pasted-from-Storui block
+             carries the same signal — a structural `Dif:+`/`Dif:-` left untagged reads as a real
+              surprise, the cue to reach for a `drop`/`dontSnap` cap.)
+- **Seed a `drop`/`dontSnap` from a single-sided row.** Today only a `changed` cell is
+   click-to-seed (`.sr-spayable`); a `Dif:+`/`Dif:-` (the structural surprise these kinds are
+    *for*) has no click target, so you author its `at` by hand. Make `right_only`/`left_only`
+     rows seedable too, defaulting the draft to `drop`.
 - **Locator polish (§4.4/§4.5).** Superscript widen/narrow on each `at` chunk (token ↔ `{k:1}`
    wildcard ↔ dropped); gone-parents shown at `opacity:0.5` while awake, never stored.
 - **Multi-segment seed.** Grow `seed_into_fields` from `parent / leaf` to a real parent-descent
    reduction (à la `Lang_def_at_offset`, LangRegions ~431).
 - **Hot vs restart.** New caps need a restart to apply (compile reads them at snap time).
    Recompiling `entropy_rules` + re-diffing in place is the eventual nicety.
-- **`drop` means-kind.** Remove a key (or a whole row) as a `%means` handler that bites at
-   encode (`enLine` → `these_sc` mung). Deferred — "maybe later".
-- **Shared `%lematch` forest.** One tree across all caps, `oai`-deduped, dead branches pruned —
-   if per-cap chains prove redundant in real use. Changes delete semantics (a cap delete must
-    prune only the branches no other cap needs).
+- **`drop` / `dontSnap` means-kinds.** *Built* (§5): `drop` → `means.skip` (omit the whole line),
+   `dontSnap` → `means.dontSnap` (keep the line, fold the subtree). Authored from the `means` mutex
+    beside band|any. **Still open:** the *key-level* drop — mung out one `%means,these_sc` key from a
+     line that otherwise stays (the original `enLine`→`mung` idea). The two row-level kinds cover the
+      structural-surprise case; per-key drop is the finer tool, still "maybe later".
+- **Shared `%lematch` forest.** One tree across all caps, deduped, dead branches pruned — if
+   per-cap chains prove redundant in real use. Changes delete semantics (a cap delete must
+    prune only the branches no other cap needs). `entropy_mint` uses plain `i()` (a fresh cap
+     has nothing to dedup); a shared-forest dedup can use `oai` since `oai` now only treats
+      `req` as a req when it is the **mainkey** (first key) — a `req:wants` locator key whose
+       node is `lematch`-first is harmless. (Before that fix, such a key minted a real `%req`
+        that the req machine pumped and cleaned away.)
 - **Promotion to defaults.** A per-test cap you want everywhere → a `story_matching` snippet to
    paste into source (the EncodingSplatter copy-to-source gesture).
 - **Retire the marker model.** If `spay_line`/`spay_normalize`/`SPAY_MARKER` are confirmed

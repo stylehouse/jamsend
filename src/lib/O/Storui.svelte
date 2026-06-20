@@ -731,7 +731,7 @@
                 ? H.positional_diff(ref_snap, got_snap)
                 : H.compute_diff(ref_snap, got_snap)
             const rows = H.squish_context(raw_rows)
-            all_lines.push(...H.enDif(rows, 2))
+            all_lines.push(...H.enDif(rows, 2, spayers))
         }
 
         const text = all_lines.join('\n') + '\n'
@@ -1634,11 +1634,15 @@
 .sr-spayable { cursor: pointer; }
 .sr-spayable:hover { background: #2a2008; box-shadow: inset 2px 0 0 #ca0; }
 
-/* a changed line a Snapcap reaches glows: teal+steady = acknowledged noise (would forgive);
-   amber+pulsing = a cap matches but the value blew its variance band, so it still diffs badly */
+/* a changed line a Snapcap reaches: acknowledged noise (would forgive) RECEDES — a teal
+   left-tick marks it as spayed, and the content is dimmed right down so the eye skates past
+   it to the diffs that matter.  Hover restores full contrast to read/re-click it.  A blown
+   band keeps the loud amber+pulse (below): it still diffs badly and must not hide. */
 .sr-diff2-cell.changed.spay-graft {
-    background: #06140f; border-left-color: #2a8; box-shadow: inset 3px 0 0 #2a8, 0 0 4px #1a6a4a44;
+    background: #06140f; border-left-color: #2a8; box-shadow: inset 3px 0 0 #2a8;
+    filter: contrast(0.6) brightness(0.45);
 }
+.sr-diff2-cell.changed.spay-graft:hover { filter: none; }
 .sr-diff2-cell.changed.spay-blown {
     background: #1d0c00; border-left-color: #e83;
     animation: spay-pulse 1.6s ease-in-out infinite;

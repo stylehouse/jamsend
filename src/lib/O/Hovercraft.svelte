@@ -597,12 +597,14 @@
     //   The per-test caps are the only ones authored from the UI and persisted in The;
     //    the global layer is the default story_matching rules in code (§3.3).
     entropy_rules(The: TheC | undefined): Array<any> {
-        if (!The) return []
+        if (!The) { if (this.c.entropy_debug) console.log('🛑 entropy_rules: no The'); return [] }
         const ea = The.o({ EntropyArrest: 1 })[0] as TheC | undefined
-        if (!ea) return []
-        return (ea.o({ Snapcap: 1 }) as TheC[])
-            .map(cap => this.entropy_rule_of(cap))
-            .filter(Boolean)
+        if (!ea) { if (this.c.entropy_debug) console.log('🛑 entropy_rules: no The/EntropyArrest bucket'); return [] }
+        const caps = ea.o({ Snapcap: 1 }) as TheC[]
+        const rules = caps.map(cap => this.entropy_rule_of(cap)).filter(Boolean)
+        if (this.c.entropy_debug)
+            console.log(`🛑 entropy_rules: ${caps.length} cap(s) → ${rules.length} rule(s)`, JSON.parse(JSON.stringify(rules)))
+        return rules
     },
 
     // One Snapcap → one matching rule, by walking its %lematch tree.  Returns null if
@@ -619,9 +621,15 @@
     //     munging) names which handler it is.  So lematch_to_rule names no handler — it just
     //      collects every %means child and merges; new means-kinds slot in here.
     means_of(mn: TheC): any | null {
-        const { means, spayer, ...rest } = mn.sc as Record<string, any>
+        const { means, spayer, drop, dontSnap, ...rest } = mn.sc as Record<string, any>
         const m: any = {}
         if (spayer != null) { const s = this.spayer_of_sc(rest); if (s) m.spay = s }
+        // structural means-kinds (EntropyArrest.md §5/§9): no captures, they bite at encode.
+        //  drop → omit the whole line (means.skip, the proven self,est path); dontSnap → keep
+        //   the line but prune the subtree (means.dontSnap, folded in snap_H).  Used to retire
+        //    a structural surprise spay can't forgive (an added/removed row, a churning subtree).
+        if (drop     != null) m.skip     = true
+        if (dontSnap != null) m.dontSnap = true
         // future: if (omit_sc != null) m.omit_sc = …; if (munging != null) m.munging = …
         return Object.keys(m).length ? m : null
     },
@@ -688,6 +696,34 @@
         return this.spay_graft(hide(got), hide(expected), spayers, step_n).forgiven
     },
 
+    // entropy_diagnose — console-callable chain dump for "why isn't my cap applying?".
+    //   From the app:  H.entropy_diagnose(w)   (w = A:Story/w:Story), or pass got/exp text
+    //    to see per-line classification.  Walks: The found → caps → compiled rules →
+    //     collected spayers → (optionally) which lines each spayer touches / blows.
+    entropy_diagnose(w: TheC, got?: string, expected?: string, step_n = 0): void {
+        const The = w?.c.The as TheC | undefined
+        const ea  = The?.o({ EntropyArrest: 1 })[0] as TheC | undefined
+        const caps = (ea?.o({ Snapcap: 1 }) ?? []) as TheC[]
+        console.log('🛑 diagnose: The?', !!The, '| EntropyArrest?', !!ea, '| caps:', caps.map(c => c.sc.Snapcap))
+        for (const cap of caps) {
+            const lm = cap.o({ lematch: 1 })[0] as TheC | undefined
+            console.log(`  cap ${cap.sc.Snapcap}: outer lematch mainkey=${lm ? Object.keys(lm.sc)[0] : 'NONE'} sc=`, lm?.sc)
+            console.log('    → rule', JSON.parse(JSON.stringify(this.entropy_rule_of(cap) ?? null)))
+        }
+        const spayers = this.collect_spayers([...(this.story_matching ?? []), ...this.entropy_rules(The)])
+        console.log(`🛑 collected ${spayers.length} spayer(s):`, spayers)
+        if (got != null && expected != null) {
+            const gl = got.split('\n'), el = expected.split('\n')
+            console.log(`🛑 per-line over ${gl.length} got / ${el.length} exp lines:`)
+            for (let i = 0; i < Math.max(gl.length, el.length); i++) {
+                if (gl[i] === el[i]) continue
+                const cls = this.spay_classify_line(gl[i] ?? '', el[i] ?? '', spayers)
+                if (cls !== 'none') console.log(`  L${i} [${cls}] got=${JSON.stringify(gl[i])} exp=${JSON.stringify(el[i])}`)
+            }
+            console.log('🛑 forgiven?', this.spay_graft(got, expected, spayers, step_n).forgiven)
+        }
+    },
+
     // entropy_suggest — the smart capture-regex generator (§8.4).  Given a noisy got line
     //   and its prev/exp pair, propose a `%spayer` descriptor: a `re` whose CAPTURE GROUPS
     //    are exactly the keys whose value changed (numeric → a number capture; long hex/token
@@ -706,17 +742,18 @@
         //  Rebuild it token by token, turning each CHANGED key into a capture, keeping the
         //   rest literal as anchors.  classify the changed value to pick the capture class.
         let anyTok = false, changed = false
-        const num_cap = '(\\d+(?:\\.\\d+)?)', tok_cap = '(\\S+?)'
+        // {NUM}/{TOK} are legible sugar — Text.spay_desugar expands each to one capture
+        //  group at RegExp-build time, and they ride to disk that way too (§8.4).
         const parts: string[] = []
         for (const k of keys) {
             const gv = gs[k], pv = ps[k]
             const is_changed = pv !== undefined && pv !== gv
             if (typeof gv === 'number' && is_changed) {
                 changed = true                                                    // any number → band
-                parts.push(`${esc(k)}=${num_cap}`)
+                parts.push(`${esc(k)}={NUM}`)
             } else if (typeof gv === 'string' && is_changed && /^[0-9a-fA-F]{8,}$/.test(gv)) {
                 changed = true; anyTok = true                                     // hash / signature
-                parts.push(`${esc(k)}:${tok_cap}`)
+                parts.push(`${esc(k)}:{TOK}`)
             } else {
                 // stable token — a literal anchor (number→k=v, string→k:v, flag→k)
                 parts.push(typeof gv === 'number' ? `${esc(k)}=${esc(String(gv))}`
@@ -752,7 +789,8 @@
     entropy_mint(w: TheC, draft: {
         slug: string
         lematch: Array<{ sc: Record<string, any> }>
-        spayer: Record<string, any>
+        means?: { kind: string, [k: string]: any }   // kind: spayer | drop | dontSnap
+        spayer?: Record<string, any>                  // back-compat: implies kind:'spayer'
         note?: string
         scope_step?: number
     }): TheC {
@@ -761,14 +799,20 @@
         const cap = ea.i({ Snapcap: draft.slug })
         if (draft.note != null)       cap.i({ note: draft.note })
         if (draft.scope_step != null) cap.i({ scope: 1, step: draft.scope_step })
-        // descent: each segment nests under the previous via oai (find-or-create), so a
-        //  shared locator prefix reuses an existing %lematch node instead of duplicating
-        //   it.  The handler lands as a flat %means,spayer particle INSIDE the leaf %lematch
-        //    (not a cap-level sibling) — %means is a prefix mainkey carrying its fields inline,
-        //     so a leaf can grow several %means later and lematch_to_rule stays handler-agnostic.
+        // descent: each segment nests under the previous.  Plain i() — a fresh cap has nothing
+        //  to find-or-create against.  `lematch:1` is the FIRST key, so the node's mainkey is
+        //   `lematch`; a locator key like `req:wants` is now harmless (oai only treats req as a
+        //    req when it is the mainkey, so a shared-forest dedup could use oai here too).  The
+        //     handler lands as a flat %means,spayer particle INSIDE the leaf %lematch; a leaf
+        //      can grow several %means.
         let host: TheC = cap
-        for (const seg of draft.lematch) host = host.oai({ lematch: 1, ...seg.sc })
-        host.i({ means: 1, spayer: 1, ...draft.spayer })
+        for (const seg of draft.lematch) host = host.i({ lematch: 1, ...seg.sc })
+        // the handler rides as a flat %means prefix-mainkey inside the leaf %lematch: a kind
+        //  flag (spayer | drop | dontSnap) names it; for spayer the re/tol/factor follow inline,
+        //   the structural kinds carry no extra field.
+        const means = draft.means ?? { kind: 'spayer', ...(draft.spayer ?? {}) }
+        const { kind, ...fields } = means
+        host.i({ means: 1, [kind]: 1, ...fields })
         ea.bump_version()
         return cap
     },

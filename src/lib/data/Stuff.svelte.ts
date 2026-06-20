@@ -521,7 +521,12 @@ abstract class StuffAware extends StuffIO {
     //  stage un-finishes so do() re-runs it.  A req is never replaced, only mutated
     //  — its identity rides the ref.
     oai(s, c = {}): TheC {
-        if ('req' in s) {
+        // %req triggers the req machine ONLY when it is the MAINKEY (first key) — a
+        //  particle's type is its first sc key (the prefixing convention), so `req` as an
+        //   incidental value-key (e.g. a generic {lematch:1, req:'wants'} locator) must NOT
+        //    be minted as a req with c.up/serial/initialdo.  Every real req caller passes
+        //     req first ({req:…, maz?, …}); nothing means a non-first req as a req.
+        if (Object.keys(s)[0] === 'req') {
             // maz:1 is implied, never identifying — strip it from the identity match
             //  (a created req drops it below) so a later oai({…,maz:1}) re-finds the
             //   same req instead of minting a duplicate that carries no maz.

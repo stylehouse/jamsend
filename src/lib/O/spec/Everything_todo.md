@@ -129,6 +129,14 @@ Three overlapping forward designs:
        translation view" leftover in `Lang_compile_dock` — a dead `if(0)` emit of
         per-line `result:1` chunks with no consumer — was removed; the runner
          verdict strip reads `run_result:1` and the gen/ `.go` is the artifact.)*
+- **Pmirror non-resolution is silent** (folded from the retired Lang_session4 handover).
+   Lang doesn't notice or surface that some Pmirrors fail to resolve — they only emit
+    console warnings. Give it a noticing/UI. Check once the channel refactoring settles. **[bug · deferred]**
+- **All method def|call index** — a global, queryable index of every method definition and
+   call site (likely IndexedDB). Feeds goto / fork-the-What / the StemHive. **[mid · cold]**
+- **GhostList polish** — prune goners (a deleted file lingers by design today); cascade-collapse
+   deeper opened dirs when a parent collapses; a faster listings `ttlilt` (the ~1.6s beat before a
+    newly-opened dir fills is the wormhole re-check interval). **[low · cold]**
 
 ### Hovercraft req-migration
 Nearly landed. reqy() fully sublated; the engine is C-native and self-contained

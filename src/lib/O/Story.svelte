@@ -746,11 +746,16 @@
         if (!raw) return
         let draft: any
         try { draft = JSON.parse(raw) } catch { return }
-        if (!draft?.slug || !draft.spayer?.re) return
+        // a draft carries a means descriptor: spayer (needs a re), or a structural drop /
+        //  dontSnap (no captures).  Back-compat: an older draft.spayer implies kind:'spayer'.
+        const means = draft?.means ?? (draft?.spayer ? { kind: 'spayer', ...draft.spayer } : null)
+        if (!draft?.slug || !means?.kind) return
+        if (means.kind === 'spayer' && !means.re) return
+        draft.means = means
         H.entropy_mint(w, draft)
         H.story_analysis(w)
         H.story_save()
-        ;V.Story && console.log(`🛑 entropy_commit Snapcap:${draft.slug} (${draft.spayer.tol})`)
+        ;V.Story && console.log(`🛑 entropy_commit Snapcap:${draft.slug} (${means.kind}${means.tol ? ' ' + means.tol : ''})`)
     },
 
     async e_entropy_delete(A: TheC, w: TheC, e?: TheC) {
@@ -851,7 +856,7 @@
                           //       the unconditional path).  The presence/shape of the counter
                           //        is still asserted; only its churning value is forgiven.
                           munging: [{ these_sc: { age: 1 }, type: 'time' }],
-                          spay: { re: '(?:round=)(\\d+)', tol: 'any' },
+                          spay: { re: 'round={NUM}', tol: 'any' },
                       } },
                     { matching_any: [{ sc_only: { wasLast: 1, at: 1 } }],
                       means: { munging: [{ these_sc: { at: 1 }, type: 'time' }] } },
@@ -955,6 +960,10 @@
 
         if (q.skip) { T.sc.not = 1; return }
         if (!lines) throw "!lines"
+        // a dontSnap means (EntropyArrest §5) emits this line but folds the subtree away;
+        //  forward it onto the Travel so snap_H prunes T.sc.more, same as the n.sc.dontSnap
+        //   node flag.
+        if (q.dontSnap) T.sc.dontSnap = 1
 
         D.sc.stringies = q.stringies
         D.sc.objecties = q.objecties
@@ -1003,7 +1012,7 @@
                 //  Snap-only — the node keeps pumping; orthogonal to inclusion. Used
                 //  to retire compile scaffolding (w:Lies/w:Lang) from a runner snap
                 //  once the apparatus is ready, leaving the run state legible.
-                if (n.sc.dontSnap) T.sc.more = []
+                if (n.sc.dontSnap || T.sc.dontSnap) T.sc.more = []
                 lines.push(D)
             },
 
