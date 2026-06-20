@@ -1,41 +1,5 @@
 Credulation
-  run=0,at=1781934479.603,ok=0,ok_pct=0.2,book:Peregrination,mode:check
-    uses:Ghost_N_Peeroleum,dige:4558b12beb13ec7a
-    uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
-    uses:Ghost_Story_Peregrination,dige:6ad01960423b9e20
-  run,at=1781934639.318,ok=0,ok_pct=0.17,book:PortPlanet,mode:check
-    uses:Ghost_N_Peeroleum,dige:4558b12beb13ec7a
-    uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
-    uses:Ghost_Story_Peregrination,dige:6ad01960423b9e20
-  run=2,at=1781934650.081,ok=0,ok_pct=0.17,book:PortPlanet,mode:check
-    uses:Ghost_N_Peeroleum,dige:4558b12beb13ec7a
-    uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
-    uses:Ghost_Story_Peregrination,dige:6ad01960423b9e20
-  run=3,at=1781934655.453,ok,ok_pct,book:PortPlanet,mode:check
-    uses:Ghost_N_Peeroleum,dige:4558b12beb13ec7a
-    uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
-    uses:Ghost_Story_Peregrination,dige:6ad01960423b9e20
-  run=4,at=1781934669.294,ok,ok_pct,book:PortPlanet,mode:check
-    uses:Ghost_N_Peeroleum,dige:4558b12beb13ec7a
-    uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
-    uses:Ghost_Story_Peregrination,dige:6ad01960423b9e20
-  run=5,at=1781934677.073,ok,ok_pct,book:PortPlanet,mode:check
-    uses:Ghost_N_Peeroleum,dige:4558b12beb13ec7a
-    uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
-    uses:Ghost_Story_Peregrination,dige:6ad01960423b9e20
-  run=6,at=1781934682.895,ok=0,ok_pct=0,book:PortPlant,mode:check
-    uses:Ghost_N_Peeroleum,dige:4558b12beb13ec7a
-    uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
-    uses:Ghost_Story_Peregrination,dige:6ad01960423b9e20
-  run=7,at=1781934708.138,ok=0,ok_pct=0,book:PortPlant,mode:check
-    uses:Ghost_N_Peeroleum,dige:4558b12beb13ec7a
-    uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
-    uses:Ghost_Story_Peregrination,dige:6ad01960423b9e20
-  run=8,at=1781934724.634,ok,ok_pct,book:PortPlant,mode:check
-    uses:Ghost_N_Peeroleum,dige:4558b12beb13ec7a
-    uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
-    uses:Ghost_Story_Peregrination,dige:6ad01960423b9e20
-  run=9,at=1781935261.165,ok=0,ok_pct=0,book:LakeNets,mode:check
+  run=0,at=1781940983.913,ok=0,ok_pct=0.2,book:Peregrination,mode:check
     uses:Ghost_N_Peeroleum,dige:4558b12beb13ec7a
     uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
     uses:Ghost_Story_Peregrination,dige:6ad01960423b9e20

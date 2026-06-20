@@ -233,55 +233,56 @@ This is the big shift from §1's "Pantheate include in the Run". The runner no l
 
 Then return to Interest.
 
-## 5d. Phase 2 — Funkcions go red|green (spec note)
+## 5d. Phase 2 — Funkcions go red|green
 
-Destination: a Waft's embedded Funkcions show a pass/fail colour, so a Waft reads as a board of live test
- lights. Both ends already exist — a Funkcion can be struck (ballistics drum-pad, [[ballistics-drum-pad]])
-  and a real verdict comes back (Phase 1: `%run_result{path}` carries `ok`/`ok_pct`/`done` on the editor's
-   `w:Lies`; per-step truth is `This/{Step}.sc.ok`, roll-up `Cred_run_outcome`). The unbuilt bit is the
-    binding and its decoration — three seams to decide before code:
+Destination: a Waft's embedded Funkcions show a pass/fail colour, so the Waft reads as a board of live test
+ lights. The three seams that were open here are now resolved by the framework below — the **mapping key** is
+  the Funkcion's `%of_Book`/`%of_dock` binding; the **colour** comes from a *separate* off-snap
+   `funk.c.verdict` (not the per-tick `req.sc.ok`, which only means "the run closure executed" — conflating
+    them would lose broken-Funkcion vs failing-test); the **decoration** is the kind's own component (the
+     Langui good/bad/working idiom, `working` = awaiting a verdict). The Interest-driven runstate
+      (start/pause/poke from the cursored region, §201) stays future — these cells are plain buttons for now.
 
-1. **Mapping key.** What is one Funkcion's verdict — a dock (`%run_result{path}`) or a step
-    (`This/{Step}.sc.ok`)? The embed `Waft/Funkcion:<name>` has no dock/step link today; add a bind field
-     (e.g. `%of_dock:<path>`, mirroring `Codebit%of_dock`).
-2. **Where the colour comes from.** The verdict particle already bumps `w:Lies`. A display-Funkcion's
-    `funk.c.run` reads its matching verdict and writes the colour. Keep it a separate `%verdict`, NOT the
-     per-tick `req.sc.ok` that `Lies_register_funkcion` stamps (= "the run closure executed" — conflating
-      them loses broken-Funkcion vs failing-test).
-3. **Decoration surface.** §201's "a Funkcion may reply with UI" is the home — a badge over the lens,
-    reusing Langui's good/bad/working idiom (`working` = struck, awaiting verdict).
+**LANDED — the Funkcion framework + the Credence cell.** A `%Funkcion`'s mainkey value is its **kind**;
+a kind is a self-contained module under `O/Funk/`, registered in `O/Funk/kinds.ts` as `{ run?, component }`.
+The host stays generic:
 
-`%run_when:loaded` so the light shows the last verdict whenever the Waft is loaded, refreshing on the
- `run_result`/`Step` bump; the Interest still drives start/pause/poke from the cursored region (§201).
+- **`Waft.svelte`** mounts `<FunkHost>` for any `%Funkcion` (or legacy `%havoc`) and knows nothing else —
+   it is the host of the whole editable web, ignorant of any one applet.
+- **`FunkHost.svelte`** dispatches on kind to the kind's own component; an unknown kind renders a bare line.
+- **The pump is ours.** The `req:Funkcion`s live in a `%Funkcions` container (`funks.c.up = w` hand-stamped),
+   driven by an explicit `Lies_pump_funkcions` → `funks.do()` in req_Store Phase 2b — *separated from w's
+   main req tree*, so we own when/whether they tick. `Lies_instantiate_funkcions` (`LiesStore`) binds each
+   *monitor* kind's `run` on Waft load + on `watch_c` mutation (a UI-authored cell binds too). `funk_id` keys
+   on the funk's structural `c.Dip` (the waftid slot `Waft_dip` stamps on every Waft** particle), so sibling
+   cells of one kind get distinct reqs without leaking kind-vocabulary into the host.
+- **Monitor vs action** is the whole taxonomy: `run` present = a **monitor** (pumped); `run` absent = an
+   **action** (struck on click). Adding a kind = one `O/Funk/<Kind>.svelte` + one registry line.
 
-First slice (mirrors §201's): one Funkcion bound to one dock via `%of_dock`, reading that dock's
- `%run_result.ok` and colouring its embed red|green|working. Generalise the bind to every Funkcion on load,
-  and per-step granularity, after the single light works end to end.
+**Kinds today:**
+- **`Storying`** — a *monitor*. Bound to a Book (`%of_Book`) or dock (`%of_dock`), `storying_run` finds the
+   matching `%run_result` (by `book`, latest by `at`, since one Book runs several docks; or by dock `path`)
+   and stamps a *separate* off-snap `funk.c.verdict={phase,pass,total,dige}` (NOT `req.sc.ok`; per-step
+   `round(ok_pct*done)/done`). Its component shows the ✓/✗/◴ light and, on click, launches a run.
+- **`Ballistics`** — an *action*. The havoc drum-pad, struck on demand (`e_Lies_strike` → a Lies/Store limb).
+   `%havoc:<kind>` is folded into `Funkcion:Ballistics,kind:<kind>` (only InterestLive used it — limb
+   `surprise_read`, fabricate a disk-diverged-under-edit on the active dock).
 
-**LANDED — the Credence cell, as a partitioned Funkcion KIND.** A `%Funkcion`'s mainkey value is its
- *kind* (`Funkcion:Storying,of_Book:PortPlan`); the host (Waft) stays ignorant of any kind's specifics —
-  it mounts `FunkHost`, which dispatches on kind via the **`O/Funk/kinds.ts`** registry to the kind's own
-   component. The **`O/Funk/Storying.svelte`** module owns BOTH halves: `storying_run` (the behaviour,
-    pumped centrally by Lies) finds the matching `%run_result` — by `book` for `%of_Book` (latest by `at`,
-     since one Book runs several docks), by `path` for `%of_dock` — and stamps a *separate* off-snap
-      `funk.c.verdict = {phase,pass,total,dige}` (NOT `req.sc.ok`; per-step `round(ok_pct*done)/done`); the
-       component renders the ✓/✗/◴ good/bad/working light. `Lies_instantiate_funkcions` (`LiesStore`) binds
-        `funk.c.run = FUNK_KINDS[kind].run` on load + on `watch_c` mutation; `Lies_register_funkcion`'s
-         `funk_id` now includes the binding so sibling cells of one kind don't collide on one req. Adding a
-          kind = one `O/Funk/<Kind>.svelte` + one registry line (Ballistics, today hardwired in `Waft.svelte`,
-           is the obvious next migration). **Become-Book is now wired** (§5e build-order b): a Book cell's
-            click → `e_Lies_become_book` → the editor *ships* a `become_book` frame; the runner *receives* it
-             (`Lies_become_book_recv`) and `Lies_become_book_drive` stashes `awaiting_verdict{book}` +
-              `resetStory{Book}`, so the same `storyFinished → Lies_runner_verdict → run_result` loop reports
-               back, Book-keyed (`Lies_run_result_recv` accepts a Book-keyed result with no dock path). A dock
-                cell still fires `Lies_run_arm{of_dock}`. Seeded `wormhole/Credence/toc.snap` — `Waft:Credence`,
-                 **Book-bound, What-grouped** to mirror the Library: `Peregrination | Lake{Surfer,Nets,Flush} |
-                  Leaf{Farm,Juggle} | Port{Plan,Planet,Plant} | Stuff{Flipping,Resolving} | LangTiles` (the
-                   substantive Books — the rest are R&D husks, see [[story-books-catalog]]). Open via Liesui
-                    `+Waft → Credence`. A fresh cell shows `◴ working` at once (single-tab visible); greens/reds
-                     when its Book's `run_result` lands. **LANDMINE (untested):** `Auto.auto_reset_story` still
-                      `throw`s `"forgot A"` switching Books after one is up — become-Book may hit it until fixed.
-                       Still deferred: the per-row group-by into a `book × dock` matrix.
+**Run, wired both ways** (a click on a Storying cell):
+- A **dock** cell → `Lies_run_arm{of_dock}` (the Esc "run it now" intent).
+- A **Book** cell → `e_Lies_become_book` → the editor ships a `become_book` frame; the runner
+   `resetStory{Book}`s and the `storyFinished → Lies_runner_verdict → run_result` loop reports back,
+   Book-keyed (`Lies_run_result_recv` accepts a no-dock result as `Book:<name>`). **LANDMINE (untested):**
+   `Auto.auto_reset_story` still `throw`s `"forgot A"` on a *second* Book switch — first run is fine; this
+   blocks any repeated-switch driver (StoryTimes, §5f) until fixed.
+
+**The board.** `wormhole/Credence/toc.snap` = `Waft:Credence`, Book-bound + What-grouped to mirror the
+Library: `Peregrination | Lake{Surfer,Nets,Flush} | Leaf{Farm,Juggle} | Port{Plan,Planet,Plant} |
+Stuff{Flipping,Resolving} | LangTiles` (the substantive Books — the rest are R&D husks, [[story-books-catalog]]).
+Open via Liesui `+Waft → Credence`; a fresh cell shows `◴ working`, greening/redding when its Book's
+`run_result` lands. **These cells are buttons** — they don't auto-run, so `%run_when` is dropped: each
+monitors a verdict and launches a *single* run on click. The fan-out "run them all" is `StoryTimes` (§5f);
+the per-row `book × dock` matrix is still deferred.
 
 ## 5e. Credence — the editor-side admirer (the Creduler's opposite)
 
@@ -292,9 +293,9 @@ The Creduler accrues credibility (Credulate HEAD + Credulation trail) but today 
 - **A plain Waft, NOT an Interest.** `Waft:Credence` sits above the doc under test (e.g. above
    `Waft:Ghost/Net/Easy`). You navigate to it and click — direct manipulation, not cursored attention — so
     it forgoes the Interest channel entirely. Relevance here comes from runs (the matrix), not the cursor.
-- **Tests = Library Books, as Funkcions.** First slice: a hand-made `Waft:Credence` holding a few `Port*`
-   Books as Funkcion test-lights (§5d). Click one to run it; click the group to fan out over all rows on
-    one shared version-set.
+- **Tests = Library Books, as Funkcions.** DONE for the single-run: a hand-made `Waft:Credence` holds the
+   Books as `Funkcion:Storying` test-lights (§5d), each a button that runs its one Book on click. The
+    group fan-out — one click runs every Book under a What in sequence — is `Funkcion:StoryTimes` (§5f).
 - **The matrix — the artifact, NOT a hoard of run instances.** Rows = Books (tests), columns = Docs
    (ghosts), each cell = `{relevant?, version(dige), verdict}`. The snaps stay on the runner
     (`Story/This`); Credence holds only the matrix — light, editor-side — and pulls a snap across on demand
@@ -319,9 +320,9 @@ The Creduler accrues credibility (Credulate HEAD + Credulation trail) but today 
      returns to the remote-controlled state (the cred ledger is already persisted), so the shared runner
       tab resumes where you left it.
 
-**Build order:** (a) Funkcion→Book/dock bind (§5d first slice) — **DONE** (the Credence cell; see §5d
- LANDED); (b) editor→runner "become Book" frame + `localStorage` persist; (c) the start==end version guard
-  feeding the matrix; (d) the `run_phase` progress relay last.
+**Build order:** (a) Funkcion→Book/dock bind (§5d first slice) — **DONE**; (b) editor→runner "become Book"
+ frame — **DONE** (click a Book cell), `localStorage` persist still open; (c) `StoryTimes` the run-all sweep
+  (§5f); (d) the start==end version guard feeding the matrix; (e) the `run_phase` progress relay last.
 
 **The matrix IS a Waft — don't build a grid widget.** The instinct to render an HTML `<table>` is the
  wrong altitude; the matrix is already the Waft you navigate. The minimal honest shape, all in existing
@@ -341,6 +342,40 @@ The Creduler accrues credibility (Credulate HEAD + Credulation trail) but today 
 - **First build = the §5d first slice, unchanged.** One Funkcion, `%of_dock:<path>`, reads that dock's
    `%run_result` and shows the step badge red|green|working. The matrix is N of those on one `Waft:Credence`;
     nothing matrix-specific exists until per-row grouping is needed, and even then it's a `$derived` group-by.
+
+## 5f. StoryTimes — the run-all station (next build, the Credulation sweep)
+
+The `Storying` cells are *individual* run buttons: click one, that Book runs on the runner and its light
+settles — single runs you play with. **`Funkcion:StoryTimes`** is the *station*: one button that runs **all
+the `%of_Book` cells in its scope, in sequence**, never stopping for an `!ok` — just recording which passed
+and which failed. That sweep IS the Credulation stationing: a full board pass at one sitting.
+
+- **Scope = its containing `What`.** Credence is already `Waft/What/*`-grouped, so StoryTimes gets its
+   run-list for free: it scans its parent `What`'s children for `%of_Book` Funkcions and runs them in order.
+    A What-level station sweeps that group (`What:Lake` → the three Lake Books); a board-level one (its What
+     spanning all) sweeps everything. *(If we want a board-level run-all, encase the groups under one outer
+      What, or drop a StoryTimes at the Waft root that walks all Whats.)*
+- **An action kind with a sequencing driver.** Like Ballistics it has no pumped `run` — it's a button. But
+   its click can't fire-and-forget N become_books: the runner is one *sequential* Story Run, so it needs a
+    Lies-side driver — a `req:StoryTimes` (one per struck station) holding the queue, advancing on each
+     `run_result`: run Book 1, await its verdict, run Book 2, … "Not stopping for `!ok`" = it records the
+      verdict and proceeds regardless; the row of cell-lights IS the result. (The become_book→run_result loop
+       already gives the per-Book step; StoryTimes only chains it.)
+- **Feeds the matrix.** A sweep populates a whole Credence row at a known version-set — exactly the
+   `book × dock` matrix's input; the §6 start==end version guard gates whether a sweep's verdicts are
+    trustworthy or HMR-drifted.
+- **⚠ BLOCKED on the become-Book landmine.** StoryTimes does *exactly* repeated Book switches, so it will
+   hit `Auto.auto_reset_story`'s `throw "forgot A"` on the second Book immediately. Fixing that teardown is a
+    hard prerequisite, not a polish item. (And each switch tears down + rebuilds the Story Run — a sweep of
+     11 Books is 11 teardowns; fine for a thorough credulation pass, not a fast one.)
+
+**Vision — Funkcions as public-sphere infra.** A Credence board is a small instance of a larger pattern:
+embedded buttons in a shared document that **switch server-side functionality on**. "Click a test to run it
+on the runner" generalises to *people voting to activate a capability* — the Waft is the public surface, the
+Funkcion the franchise, the runner the server that acts. Worth holding in view as the channel hardens
+(trust/addressing, §4 / Peeroleum heading 11): *who may strike which Funkcion* becomes a permissions
+question, not just a test-runner one. The Funkcion taxonomy already has the seam — a monitor reads, an
+action acts; an action that acts on the *server* is the franchise.
 
 ## 6. Creduler — open slices
 

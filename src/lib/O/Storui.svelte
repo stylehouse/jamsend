@@ -746,6 +746,9 @@
             diff_anchor     = null
         }
         last_user_pick = n
+        // opening a step pip should show its diff — default the panel open (the user can
+        //  still collapse it via the Vexpandy; the next pip-open re-opens).
+        expanded = true
         // tell NaviScroll not to seek Story's house while the user is navigating pips
         H.stashed ??= {}
         H.stashed.pip_user_engaged_until = Date.now() + 2 * 60 * 1000

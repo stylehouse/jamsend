@@ -4,28 +4,28 @@ story:Peregrination
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.284
-      sample=0.137,at=1781893726
-      sample=0.149,at=1781893799
-      sample=0.132,at=1781893805
-      sample=0.19,at=1781929677
+    TimeTotal:beliefs,avg=0.333
       sample=0.38,at=1781930046
       sample=0.478,at=1781933058
       sample=0.218,at=1781934356
       sample=0.374,at=1781934404
       sample=0.391,at=1781934442
       sample=0.387,at=1781934479
-    TimeTotal:step,avg=0.057
-      sample=0.027,at=1781893726
-      sample=0.03,at=1781893799
-      sample=0.026,at=1781893805
-      sample=0.038,at=1781929677
+      sample=0.196,at=1781935667
+      sample=0.307,at=1781939820
+      sample=0.219,at=1781940551
+      sample=0.375,at=1781940983
+    TimeTotal:step,avg=0.067
       sample=0.076,at=1781930046
       sample=0.096,at=1781933058
       sample=0.044,at=1781934356
       sample=0.075,at=1781934404
       sample=0.078,at=1781934442
       sample=0.077,at=1781934479
+      sample=0.039,at=1781935667
+      sample=0.061,at=1781939820
+      sample=0.044,at=1781940551
+      sample=0.075,at=1781940983
   step,dige:b75dd49e6e4919fd
   step=2,dige:028c6e566c40bf00
   step=3,dige:a94460d7836eee56

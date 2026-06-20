@@ -1,19 +1,19 @@
 Waft:Credence
   What:Peregrination
-    Funkcion:Storying,of_Book:Peregrination,run_when:loaded
+    Funkcion:Storying,of_Book:Peregrination
   What:Lake
-    Funkcion:Storying,of_Book:LakeSurfer,run_when:loaded
-    Funkcion:Storying,of_Book:LakeNets,run_when:loaded
-    Funkcion:Storying,of_Book:LakeFlush,run_when:loaded
+    Funkcion:Storying,of_Book:LakeSurfer
+    Funkcion:Storying,of_Book:LakeNets
+    Funkcion:Storying,of_Book:LakeFlush
   What:Leaf
-    Funkcion:Storying,of_Book:LeafFarm,run_when:loaded
-    Funkcion:Storying,of_Book:LeafJuggle,run_when:loaded
+    Funkcion:Storying,of_Book:LeafFarm
+    Funkcion:Storying,of_Book:LeafJuggle
   What:Port
-    Funkcion:Storying,of_Book:PortPlan,run_when:loaded
-    Funkcion:Storying,of_Book:PortPlanet,run_when:loaded
-    Funkcion:Storying,of_Book:PortPlant,run_when:loaded
+    Funkcion:Storying,of_Book:PortPlan
+    Funkcion:Storying,of_Book:PortPlanet
+    Funkcion:Storying,of_Book:PortPlant
   What:Stuff
-    Funkcion:Storying,of_Book:StuffFlipping,run_when:loaded
-    Funkcion:Storying,of_Book:StuffResolving,run_when:loaded
+    Funkcion:Storying,of_Book:StuffFlipping
+    Funkcion:Storying,of_Book:StuffResolving
   What:LangTiles
-    Funkcion:Storying,of_Book:LangTiles,run_when:loaded
+    Funkcion:Storying,of_Book:LangTiles
