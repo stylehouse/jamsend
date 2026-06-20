@@ -111,7 +111,9 @@
     }
 </script>
 
-<div class="ls-doc-hdr">
+<!-- data-doc-path lets a remote surface (the surprise_read popover's "go to Lies")
+     scroll straight to THIS row, instead of the whole Lies House. -->
+<div class="ls-doc-hdr" data-doc-path={path}>
     {#if renaming !== null}
         <!-- rename form — mirrors the +Doc form style (input + [rename] cancel) -->
         <input class="ls-input ls-rename-input"

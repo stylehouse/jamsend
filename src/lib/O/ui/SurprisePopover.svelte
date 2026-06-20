@@ -158,13 +158,20 @@
     function take_theirs() { if (conflict) H.i_elvisto('Lies/Lies', 'Lies_surprise_take_theirs', { path: conflict.path }) }
 
     // Escalate to Lies: open the doc (its DocRow glows + carries the inline keep/take/
-    //  diff), dismiss, then scroll the Lies House into view (the durable seam).
+    //  diff), dismiss, then scroll to THAT DocRow — the Liesui sub-element for this path,
+    //  not the whole Lies House.  scrollIntoView brings the House along as an ancestor,
+    //  so the row lands centred in view.  Falls back to the House scroll if the row isn't
+    //  mounted (e.g. it sits in a collapsed Waft section) after the layout settles.
     function escalate() {
         if (!conflict) return
         const path = conflict.path
         H.i_elvisto('Lang/Lang', 'Dock_open', { path })
         dismissed = true
-        setTimeout(() => H.top_House().scroll_to_house?.(H), 50)
+        setTimeout(() => {
+            const row = document.querySelector(`.ls-doc-hdr[data-doc-path="${CSS.escape(path)}"]`)
+            if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            else     H.top_House().scroll_to_house?.(H)
+        }, 50)
     }
 </script>
 

@@ -67,28 +67,28 @@ story:LakeNets
     quiesce_snap_time=0.4
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=1.346
-      sample=1.516,at=1781935810
-      sample=1.516,at=1781936700
-      sample=1.437,at=1781936957
-      sample=1.589,at=1781952653
-      sample=1.589,at=1781952661
-      sample=1.697,at=1781953978
-      sample=0.735,at=1781976400
-      sample=1.212,at=1781977100
-      sample=1.185,at=1781977573
-      sample=0.98,at=1781977607
-    TimeTotal:step,avg=0.104
-      sample=0.117,at=1781935810
-      sample=0.117,at=1781936700
-      sample=0.111,at=1781936957
-      sample=0.122,at=1781952653
-      sample=0.122,at=1781952661
-      sample=0.131,at=1781953978
-      sample=0.057,at=1781976400
-      sample=0.093,at=1781977100
-      sample=0.091,at=1781977573
-      sample=0.075,at=1781977607
+    TimeTotal:beliefs,avg=1.683
+      sample=1.456,at=1781978280
+      sample=1.402,at=1781979830
+      sample=1.518,at=1781979868
+      sample=1.589,at=1781979900
+      sample=1.397,at=1781979946
+      sample=2.024,at=1781980023
+      sample=2.222,at=1781980113
+      sample=2.35,at=1781980177
+      sample=1.701,at=1781980231
+      sample=1.175,at=1781980263
+    TimeTotal:step,avg=0.13
+      sample=0.112,at=1781978280
+      sample=0.108,at=1781979830
+      sample=0.117,at=1781979868
+      sample=0.122,at=1781979900
+      sample=0.107,at=1781979946
+      sample=0.156,at=1781980023
+      sample=0.171,at=1781980113
+      sample=0.181,at=1781980177
+      sample=0.131,at=1781980231
+      sample=0.09,at=1781980263
   EntropyArrest
     Entcase:wants_want
       lematch,req:wants

@@ -152,8 +152,10 @@ The through-line: a surprise_read (external edit conflict on an open Doc) **pops
    w:Lies via `H.ave`'s `%examining.c.w`, the seam Liesui uses, so it stays live without a parent
     re-render). Renders a Storui-flavour `Vexpandy popup={true}` (position:fixed, top of viewport, z-index
      500 — FaceSucker wasn't needed): ⚠ + path, keep/take, and an **escalate** ("go to Lies ↓") that fires
-      `Dock_open` then `scroll_to_house(H)` after a 50ms layout settle (mirrors Storui's `go_to_diff`). Esc
-       dismisses; resolving the conflict clears `good/%surprise_read` so the popover closes. No × kill.
+      `Dock_open` then, after a 50ms layout settle, scrolls to **that doc's `DocRow`** (`.ls-doc-hdr[data-
+       doc-path]`, the Liesui sub-element) via `scrollIntoView` — tightened off the whole-`scroll_to_house(H)`
+        target, which stays the fallback when the row isn't mounted. Esc dismisses; resolving the conflict
+         clears `good/%surprise_read` so the popover closes. No × kill.
 - Mounted from `ui/InterestStrip.svelte`, rendered unconditionally with its own gate (pops regardless of
    whether any Interest caps show).
 - **The reseat chain is the bomb** — fragile/non-obvious: Good → `LiesStore_drain_good_now` →
@@ -222,22 +224,49 @@ The beyond-reasonable picture — held in view, not scheduled.
      router — an Interest declares which slot + which tiny UI; revive `InterestLens` as a multi-slot host. Per-
       kind menus, a "DJ mixer for spraying notes around": GhostList = recent ghosts + a search whose placeholders
        are **prefix boxes** for the context (`[Ghost/][N/][ ]`); Ting = a time-trail sorted into strata; a
-        Pantheate run controller as an embeddable widget. *Low motivation — reads as a UI-nester whose need
-         isn't proven; don't start it on the metromap's behalf.*
+        Pantheate run controller as an embeddable widget. The chip's controls land here too: a double-click on an
+         Interest cap opens a per-Interest **PeelInput**-based menu where dismiss/rename live, retiring the strip's
+          bespoke inline `.isx-x` × ("dismissal lives in PeelInput, no ×"). *Low motivation — reads as a UI-nester
+           whose need isn't proven; don't start it on the metromap's behalf.*
 - **Loose fancies.** Fold-into-chunks (auto-cluster a method's *internals* into ~3 chunks — a peer of StemHive
    stem clustering, but inside a body); "scribbles" (an annotation/marginalia layer over the doc).
 
 ## TODO
 
-- **Popover follow-ups** — move InterestStrip's `×` into `PeelInput`; tighten the escalate target from the
-   whole Lang/Lies House header onto the Liesui sub-element.
-- **GhostList click → Sidetrack** — a GhostList entry click is `Dock_open` today (`DocGhostList.svelte:63`),
-   landing the ghost on the *current* Trail over the foreground cursor. Editing wants the opposite: throw into
-    a `Ghost/**` that was NOT in the foreground Trail's cloud *without* disturbing it — sprout a Sidetrack onto
-     the clicked ghost (reuse the Item-3 drivers `e_Lang_sprout_sidetrack` / `e_Lies_open_sidetrack`). Wrinkle:
-      `from` is a cursor anchor today; a ghost origin has none, so the tentative-Waft minting (`<from>/side`,
-       bind-by-`%from`) must accept a ghost-path origin. Gesture question: plain-click sprouts, or a modifier
-        does (keeping `Dock_open` as the default).
+- **Escalate target tightened — DONE.** The surprise_read popover's "go to Lies ↓" now `scrollIntoView`s the
+   conflicted doc's `DocRow` (`.ls-doc-hdr[data-doc-path]`) instead of the whole Lies House (which stays the
+    fallback). The other half of the old "Popover follow-ups" line — moving the strip's `×` into `PeelInput` —
+     was **dropped**: it's a fragment of the FUTURE lens-menu (a compact 10px chip can't host PeelInput's
+      orb→irow→del without hiding a one-click dismiss behind a menu), folded into that bullet above.
+- **GhostList click → one smart action — DONE.** A click is `e_Lies_ghost_pick{path}` (Lies, which owns the
+   Waft knowledge): if the ghost is **already open on a giver Trail** it foregrounds that Trail (jumps there);
+    otherwise it **sprouts a Sidetrack** onto the ghost. The "already open" scan is **giver-Wafts only**
+     (`interest_stance_of === 'active'`) — the GhostList's own lister Waft indexes every ghost as a `%Doc`, so it
+      would always self-match, and taker/tentative Wafts are no home to jump to. The sprout reuses
+       `Lang_sprout_sidetrack` / `Lies_open_sidetrack` with `from` = the ghost path; the **subject seed** —
+        `Lies_open_sidetrack` now takes a `doc` and plants `{Doc:doc}` in the tentative Waft — is what lets
+         foregrounding land the cursor on the ghost and open the real file off-Trail. (The earlier ↳-badge split
+          and its StemHive `onalt` were dropped — one smart click subsumes both; StemHive is back to baseline.)
+- **Sprout auto-foregrounds — DONE.** The InterestStrip's `↳` (and the GhostList sprout) now *go there*: a
+   sprout marks `it.c.foreground_on_bind` (c-side, one-shot, off-snap) and `interest_reconcile` foregrounds the
+    Sidetrack the moment it binds to its Waft. Also fixed a reactivity bug behind it — the in-place
+     (Sidetrack/light) `interest_foreground` raw-assigned `it.sc.state='locked'` without bumping `languinio`, so
+      the snap showed `locked` but the live cap tooltip stayed `pending`; it now `lang.bump_version()`s like the
+       Trail path. *Still deferred:* the seeded ghost-Sidetrack foregrounds (ActiveInterest + its own armed LE)
+        but does NOT yet land the Lies cursor on the seeded Doc — that's the per-deck-LE item below.
+- **Persisted scratch Waft (`Aside/<YMD>`) — TODO.** We need somewhere to dump scrappy info that survives a page
+   reload; Ting is session-only, so it doesn't. A Sidetrack-flavoured but **daily-timestamp-named, persisted**
+    Waft. The tidy home — *inside* the owning Trail, e.g. `Ghost/Net/Aside-20260621` — is **blocked by Waft
+     renaming + remote-link-caretaking**, so don't reach for it yet. Candidate near-term home: a top-level
+      wormhole-scoped `Waft:Aside/<YMD>` (Wafts are wormhole-scoped, so a flat dated name suffices). Open: does it
+       ride as a Sidetrack stance or a new kind, and who garbage-collects stale days.
+- **Strip collapses the "uninteresting" caps — DONE.** A cap is *engaged* (always shown) when it's the
+   foreground, has been `locked` by a foreground, or carries an LE (the editing checkout's `c.LE` or an armed
+    `{LE}` child). A merely-loaded giver (e.g. `Waft:Credence`) and the always-on GhostList sit at `pending` with
+     no LE — those collapse into a muted **"+N more"** toggle (`InterestStrip.svelte`, `hot`/`cold` partition),
+      reachable but not claiming a foreground slot. The fuller arc — promote to *more UI* on crossing the
+       threshold, a per-Interest lens choosing its own slot — still waits on the FUTURE lens generalissimo; this
+        is just the which-caps-render knob. (Heat as an extra threshold signal is not wired yet.)
 - **Per-deck Sidetrack LEs + dual-LE push-mutex** — a Sidetrack foreground still falls back to the last Trail's
    LE (no off-anchor clone of its own); arming a Trail + a Sidetrack at once needs a true simultaneous dual-LE
     push-mutex. Both are the Sidetrack half of `Waft_spec` §Presence.

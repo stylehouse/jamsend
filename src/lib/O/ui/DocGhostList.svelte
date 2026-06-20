@@ -2,9 +2,11 @@
     // DocGhostList — the GhostList Waft as a stem-clustered ghost index.
     //   Its dirlist Funkcion fills one group per root (lib, lib/O) with a %Doc per
     //   ghost file; each group renders as a StemHive (the MiniMap's clustering) so
-    //   Lang*|Lies* fold onto shared stems.  Click a ghost to goto it (e:Dock_open) —
-    //   an index, not an editable surface, so no cursoring.
-    //   < a pick could also drop the Doc into the giver Waft, not only switch the editor.
+    //   Lang*|Lies* fold onto shared stems.  Clicking a ghost does ONE smart thing
+    //   (e:Lies_ghost_pick): if that ghost is already open on a giver Trail, the Trail
+    //   jumps there; otherwise it sprouts a Sidetrack onto the ghost — opening it in a
+    //   throwaway Waft off the Trail, leaving the Trail's own Waft cloud undisturbed.
+    //   An index, not an editable surface, so no cursoring of the list itself.
 
     import type { TheC }  from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
@@ -60,7 +62,7 @@
     let total = $derived(groups.reduce((s, g) => s + g.items.length, 0))
 
     function pick(id: string) {
-        ;(H as any).i_elvisto?.('Lang/Lang', 'Dock_open', { path: id })
+        ;(H as any).i_elvisto?.('Lies/Lies', 'Lies_ghost_pick', { path: id })
     }
     function toggle(dir: string) {
         ;(H as any).i_elvisto?.('Lies/Lies', 'Lies_toggle_dir', { dir })

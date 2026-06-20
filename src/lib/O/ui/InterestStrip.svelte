@@ -19,12 +19,13 @@
     let { H }: { H: House } = $props()
 
     type Row = {
-        kind:   string
-        waft:   string | undefined
-        label:  string
-        state:  string
-        active: boolean
-        key:    string
+        kind:        string
+        waft:        string | undefined
+        label:       string
+        state:       string
+        active:      boolean
+        interesting: boolean   // engaged enough to hold a strip slot (else it collapses)
+        key:         string
     }
 
     let languinio: TheC | undefined = $state()
@@ -50,15 +51,29 @@
             const label = kind === 'GhostList' ? 'ghosts'
                         : kind === 'Sidetrack' ? (it.sc.from ? `↳${it.sc.from}` : 'sidetrack')
                         : (waft?.split('/').pop() ?? 'trail')
+            const state    = (it.sc.state as string) ?? 'pending'
+            const is_active = active.kind === kind && (active.waft ?? undefined) === (waft ?? undefined)
+            // "Interesting" = actually engaged, so it earns a permanent slot: it's the
+            //  foreground, it's been locked by a foreground at some point, or it carries
+            //  an LE (the editing checkout's c.LE, or an armed {LE} child).  A merely
+            //  loaded giver (a passive Trail) and the always-on GhostList sit at 'pending'
+            //  with no LE — those collapse into "+N more" until the user reaches for them.
+            const interesting = !!(is_active || state === 'locked' || it.c.LE || it.oa({ LE: 1 }))
             out.push({
-                kind, waft, label,
-                state:  (it.sc.state as string) ?? 'pending',
-                active: active.kind === kind && (active.waft ?? undefined) === (waft ?? undefined),
+                kind, waft, label, state,
+                active: is_active,
+                interesting,
                 key:    `${kind}:${waft ?? ''}`,
             })
         }
         return out
     })
+
+    // Engaged caps always show; the rest tuck behind a "+N more" toggle so a passive
+    //  Credence Trail or the GhostList index doesn't claim the foreground switcher.
+    let hot  = $derived(rows.filter(r => r.interesting))
+    let cold = $derived(rows.filter(r => !r.interesting))
+    let show_cold = $state(false)
 
     const foreground = (r: Row) =>
         H.i_elvisto('Lang/Lang', 'Lang_foreground', { kind: r.kind, ...(r.waft ? { waft: r.waft } : {}) })
@@ -82,22 +97,34 @@
      above the strip itself.  Rendered unconditionally — it has its own gate. -->
 <SurprisePopover {H} />
 
-{#if rows.length}
+{#snippet cap(r: Row)}
+    <div class="isx-cap"
+         data-waft={r.waft ?? ''}
+         class:isx-active={r.active}
+         class:isx-pending={r.state === 'pending'}
+         class:isx-ghostlist={r.kind === 'GhostList'}>
+        <button class="isx-btn"
+                title={`${r.kind}${r.waft ? ' · ' + r.waft : ''} — ${r.state}${r.active ? ' (foreground)' : ''}`}
+                onclick={() => foreground(r)}>{r.label}</button>
+        {#if r.waft && r.kind !== 'GhostList'}
+            <button class="isx-x" title="Dismiss this Interest" onclick={() => dismiss(r)}>×</button>
+        {/if}
+    </div>
+{/snippet}
+
+{#if hot.length || cold.length}
 <div class="isx">
-    {#each rows as r (r.key)}
-        <div class="isx-cap"
-             data-waft={r.waft ?? ''}
-             class:isx-active={r.active}
-             class:isx-pending={r.state === 'pending'}
-             class:isx-ghostlist={r.kind === 'GhostList'}>
-            <button class="isx-btn"
-                    title={`${r.kind}${r.waft ? ' · ' + r.waft : ''} — ${r.state}${r.active ? ' (foreground)' : ''}`}
-                    onclick={() => foreground(r)}>{r.label}</button>
-            {#if r.waft && r.kind !== 'GhostList'}
-                <button class="isx-x" title="Dismiss this Interest" onclick={() => dismiss(r)}>×</button>
-            {/if}
-        </div>
-    {/each}
+    {#each hot as r (r.key)}{@render cap(r)}{/each}
+    {#if cold.length}
+        <!-- the quiet ones: loaded-but-unengaged givers, the GhostList index.  Collapsed
+             until clicked — they're reachable, just not claiming a foreground slot. -->
+        <button class="isx-more" class:isx-more-open={show_cold}
+                title={show_cold ? 'hide the quiet Interests' : `${cold.length} quiet Interest${cold.length > 1 ? 's' : ''} (loaded, not engaged)`}
+                onclick={() => show_cold = !show_cold}>{show_cold ? '− less' : `+${cold.length} more`}</button>
+        {#if show_cold}
+            {#each cold as r (r.key)}{@render cap(r)}{/each}
+        {/if}
+    {/if}
     {#if active.kind === 'Trail' && active.waft}
         <button class="isx-sprout" title="Sprout a Sidetrack off this Trail" onclick={sprout}>↳</button>
     {/if}
@@ -162,6 +189,20 @@
         padding:     0 1px;
     }
     .isx-x:hover { color: #e06c75; }
+    /* "+N more" — the collapsed quiet Interests; muted dashed pill, lights on open */
+    .isx-more {
+        background:    none;
+        border:        1px dashed rgba(150, 160, 180, 0.28);
+        border-radius: 3px;
+        cursor:        pointer;
+        color:         #6a6f80;
+        font-family:   inherit;
+        font-size:     9px;
+        line-height:   1;
+        padding:       2px 5px;
+    }
+    .isx-more:hover     { color: #aab; border-color: rgba(170, 185, 215, 0.55); }
+    .isx-more-open      { color: #99a; border-style: solid; }
     /* ↳ sprout a Sidetrack off the foreground Trail */
     .isx-sprout {
         background:    none;

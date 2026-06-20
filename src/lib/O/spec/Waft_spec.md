@@ -262,8 +262,8 @@ persistent slot regardless — ambient, never stealing the stage.
 
 **The canonical cursor** — what NaviCado and `%openity` read — is whichever of `Trail` |
 `Sidetrack` is foregrounded; those two are the *social* Interests, wired deep into Lang
-where the human works Points.  `Ting` and `GhostList` are less social — they pop UI over
-from Lies and stay out of the Point-play.  But both decks can show NaviCados **at once**:
+where the human works Points.  `Ting` and `GhostList` are less social — they have UI over
+in Lies and stay out of the Point-play.  But both decks can show NaviCados **at once**:
 stumble around a `Sidetrack` while keeping the `Trail` you came in on in view — a ropeway
 through dense bush, the way back always strung up.
 

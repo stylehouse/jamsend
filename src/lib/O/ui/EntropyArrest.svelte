@@ -170,12 +170,13 @@
         if (s && s !== _seed_seen) { _seed_seen = s; seed_into_fields(s) }
     })
 
-    // a value that LOOKS like churn — a timestamp / path / long id: a run of ≥3 digits, or
-    //  digit groups joined by `-` or `/` (`2026-06-21`, `042649`, `Ting/2026-06-21/042649`).
-    //   We don't know which keys are noisy a priori, but a date/path value is a reliable tell;
-    //    `lens:DocTing` / `state:live` carry no such run and stay literal.
+    // a value that LOOKS like churn — a timestamp / path / long id: a run of ≥5 digits (a HHMMSS
+    //  time `042649`, a unix-ts, a long id), or digit groups joined by `-`/`/` (a date/path like
+    //   `2026-06-21`, `Ting/2026-06-21/042649`).  The ≥5 floor (not ≥3) spares a stable small
+    //    number that is a real anchor — a `port:8080`, a `year:2026`, a small count — from being
+    //     wildcarded.  `lens:DocTing` / `state:live` carry no such run and stay literal.
     function noisy_val(v: any): boolean {
-        return typeof v === 'string' && /\d{3,}|\d+[-/]\d+/.test(v)
+        return typeof v === 'string' && /\d{5,}|\d+[-/]\d+/.test(v)
     }
 
     // depeel a snap line into one locator chunk.  Two wildcardings, both "err vague after the

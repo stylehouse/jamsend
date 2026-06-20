@@ -212,11 +212,46 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     async e_Lies_open_sidetrack(A: TheC, w: TheC, e: TheC) {
         const from = e.sc.from as string | undefined
         if (!from) throw 'e_Lies_open_sidetrack: needs from'
+        const doc  = e.sc.doc as string | undefined
         const waft = w.oai({ Waft: `${from}/side` })
         waft.sc.tentative = 1
         waft.sc.from      = from
+        // A ghost-origin sidetrack (the GhostList ↳) carries its subject: seed the
+        //  throwaway Waft with the ghost as a %Doc so foregrounding lands the cursor on
+        //  it (Waft_cursor_first's bare-Doc fallback) and the editor opens the real file
+        //  in the Sidetrack lens.  A Trail-origin sidetrack flew off a cursor anchor with
+        //  no subject yet, so it passes no `doc` and the Waft stays empty off-anchor scratch.
+        if (doc) waft.oai({ Doc: doc })
         w.bump_version()
         this.i_elvisto(w, 'think')
+    },
+
+    // ── e_Lies_ghost_pick — the one smart GhostList click ───────────────────
+    //
+    //   A GhostList entry does the same into-Sidetrack throw as the ↳ everywhere —
+    //   EXCEPT when that ghost is already open on a giver Trail, in which case the
+    //   Trail just jumps there (foregrounds that Waft).  The "already open" test scans
+    //   giver Wafts ONLY: the GhostList's own lister Waft indexes every ghost as a
+    //   %Doc, so it would always self-match; taker/tentative Wafts don't count as a
+    //   home to jump to either.  So: in a Trail → foreground it; else → sprout a
+    //   Sidetrack seeded with the ghost (Lies_open_sidetrack's `doc`), off the Trail.
+    async e_Lies_ghost_pick(A: TheC, w: TheC, e: TheC) {
+        const H    = this as House
+        const path = e.sc.path as string | undefined
+        if (!path) return
+        let trail_waft: string | undefined
+        for (const wf of w.o({ Waft: 1 }) as TheC[]) {
+            if (H.interest_stance_of(wf) !== 'active') continue   // givers only — skip lister/taker/tentative
+            if (H.Lies_walk_docs(wf, (d: TheC) => (d.sc.Doc as string) === path)) {
+                trail_waft = wf.sc.Waft as string; break
+            }
+        }
+        if (trail_waft) {
+            H.i_elvisto('Lang/Lang', 'Lang_foreground', { kind: 'Trail', waft: trail_waft })
+        } else {
+            H.i_elvisto('Lang/Lang', 'Lang_sprout_sidetrack', { from: path })
+            H.i_elvisto('Lies/Lies', 'Lies_open_sidetrack',   { from: path, doc: path })
+        }
     },
 
     // ── Lies_desire_land_cursor ───────────────────────────────────────────────
