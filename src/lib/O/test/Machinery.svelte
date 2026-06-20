@@ -38,14 +38,14 @@
 
 
 //#endregion
-//#region LangTiles
+//#region LakeTiles
 
-    // LangTiles ghost — a second test-case game with its own Cyto instance.
+    // LakeTiles ghost — a second test-case game with its own Cyto instance.
     //
     // ── eithery commissioning ───────────────────────────────────────────────
     //
     //   H:Story commissions its Cyto with Scannable=H (everything), giving the
-    //   low-frequency overview wave.  H:LangTiles commissions its own Cyto
+    //   low-frequency overview wave.  H:LakeTiles commissions its own Cyto
     //   with Scannable=w.c.model — a permanent TheC it owns — for a tighter,
     //   higher-detail wave of just the Lang viewable model.
     //
@@ -54,19 +54,19 @@
     //   Any matstyle edit from either Cytui writes to the same place and both
     //   graphs restyle.  Story's watch_c on stylesC handles save-on-change.
     //
-    //   Client for LangTiles's Cyto is w:Lang itself, so Cyto_animation_done
+    //   Client for LakeTiles's Cyto is w:Lang itself, so Cyto_animation_done
     //   etc. route back here.  Story's Cyto still talks to w:Story.
     //
 
 
-    // Called from Auto (same path Story uses) with Book=name of a LangTiles book.
-    // Auto spawns H:LangTiles as a subHouse and calls Run_A_LangTiles on it.
-    Run_A_LangTiles(this: House) {
+    // Called from Auto (same path Story uses) with Book=name of a LakeTiles book.
+    // Auto spawns H:LakeTiles as a subHouse and calls Run_A_LakeTiles on it.
+    Run_A_LakeTiles(this: House) {
         const H = this
         H.i({ A: 'Lies' }).i({ w: 'Lies' })
         H.i({ A: 'Lang' }).i({ w: 'Lang' })
         H.i({ A: 'Pantheate' }).i({ w: 'Pantheate' })
-        console.log(`🟦 ${H.name} LangTiles wired`)
+        console.log(`🟦 ${H.name} LakeTiles wired`)
     },
 
 
@@ -108,12 +108,12 @@
     //  No worker body: the real Lies/Lang/Pantheate ghosts run; the scenario is
     //   driven from the Story Plan's Preps (Lies_open_Waft, now_Ting, Lang mark)
     //    and recorded as the regression gate.
-    Run_A_InterestLive(this: House) {
+    Run_A_LakeSurprise(this: House) {
         const H = this
         H.i({ A: 'Lies' }).i({ w: 'Lies' })
         H.i({ A: 'Lang'       }).i({ w: 'Lang' })
         H.i({ A: 'Pantheate'  }).i({ w: 'Pantheate' })
-        console.log(`🟪 ${H.name} InterestLive wired`)
+        console.log(`🟪 ${H.name} LakeSurprise wired`)
     },
 
 
@@ -940,7 +940,7 @@ The double-envelopment became the template for every subsequent battle of annihi
 
         // < GONER? it doesn't reproduce the problem.
         // ── resolve() Leg-split: the_from vs the_to tie ──────────────────────
-        // Regression for the scan_id mismatch seen in LangTiles step 3→4.
+        // Regression for the scan_id mismatch seen in LakeTiles step 3→4.
         //
         // When one Leg(from:6, to:10) splits into Leg(6–8) + Leg(9–10),
         // both halves score unambiguity 1.0 against the old node:

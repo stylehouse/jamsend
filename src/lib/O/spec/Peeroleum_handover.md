@@ -573,7 +573,7 @@ Still open — each a place the spine dropped to raw JS:
 - drilled paths on `oai/r/rm` (seed a `%req` under a nested host without pre-resolving it).
 - object/`.c` payloads (`c.connection`, `stashed:{…}`).
 - list fan-out (one `%req:dial` per peer over a thang list).
-Corpus + compiler: `Ghost/test/LangTiles.g`, `src/lib/O/LangCompiling.svelte`, `LangCompiler_TODO.md`.
+Corpus + compiler: `Ghost/test/Story/Lake/LakeTiles.g`, `src/lib/O/LangCompiling.svelte`, `LangCompiler_TODO.md`.
 
 ### W — Hide compilation behind Waft architecture  `[ ]`
 Make opening a Waft auto-compile its `.g` Docs, so the loader's explicit `Dock_open` loop (and the

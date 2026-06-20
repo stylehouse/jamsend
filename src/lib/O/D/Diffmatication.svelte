@@ -11,8 +11,8 @@
 //   One Good persists per path read, so re-visiting a step is a cache hit.
 //
 //   Paths on disk:
-//     toc  → wormhole/Story/LangTiles/toc.snap   (derived by Lies_waft_snap_path)
-//     step → wormhole/Story/LangTiles/NNN.snap   (a raw snap string per step)
+//     toc  → wormhole/Story/LakeTiles/toc.snap   (derived by Lies_waft_snap_path)
+//     step → wormhole/Story/LakeTiles/NNN.snap   (a raw snap string per step)
 //
 // ── Structure ─────────────────────────────────────────────────────────────────
 //
@@ -54,11 +54,11 @@ import Diffmatic      from "./Diffmatic.svelte"
 
 let { M } = $props()
 
-const WH_PATH      = 'Story/LangTiles'
+const WH_PATH      = 'Story/LakeTiles'
 
 // ── dm_step_path ─────────────────────────────────────────────────────────────
 //   Zero-padded snap path for a given step number.
-//   Story/LangTiles/003.snap etc — stable naming, no collisions.
+//   Story/LakeTiles/003.snap etc — stable naming, no collisions.
 const dm_step_path = (n: number) =>
     `wormhole/${WH_PATH}/${String(n).padStart(3, '0')}.snap`
 

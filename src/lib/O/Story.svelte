@@ -730,6 +730,40 @@
         if (sub) H.story_drive(sub.Run, w, run)
     },
 
+    // ── entropy authoring — mint / unmint a Snapcap from ui/EntropyArrest ──────
+    //
+    //  The UI never mutates The directly: it authors a plain draft descriptor and
+    //   hands it here as a JSON string (cap_json) — elvisto args ride as scalar sc,
+    //    and a nested locator would be a fatal object-in-sc, so it crosses the seam
+    //     serialised.  entropy_mint turns it into the snap-safe %lematch/%spayer
+    //      shape; story_save re-encodes The/** to toc.snap.  A restart re-reads the
+    //       caps via entropy_rules — the UI tells the user so.  This is the only path
+    //        that persists a cap, the deliberate "click OK to actually put them in"
+    //         so we never drown in half-formed rules.
+    async e_entropy_commit(A: TheC, w: TheC, e?: TheC) {
+        const H = this
+        const raw = e?.sc.cap_json as string | undefined
+        if (!raw) return
+        let draft: any
+        try { draft = JSON.parse(raw) } catch { return }
+        if (!draft?.slug || !draft.spayer?.kind) return
+        H.entropy_mint(w, draft)
+        H.story_analysis(w)
+        H.story_save()
+        ;V.Story && console.log(`🛑 entropy_commit Snapcap:${draft.slug} (${draft.spayer.kind})`)
+    },
+
+    async e_entropy_delete(A: TheC, w: TheC, e?: TheC) {
+        const H = this
+        const slug = e?.sc.slug as string | undefined
+        if (!slug) return
+        if (H.entropy_unmint(w, slug)) {
+            H.story_analysis(w)
+            H.story_save()
+            ;V.Story && console.log(`🗑 entropy_delete Snapcap:${slug}`)
+        }
+    },
+
     async e_story_resnap(A: TheC, w: TheC) {
         // Resnapture: anchor %first_snap (once) then re-fire snap_step_after_wave
         // to produce a fresh %got_snap.  The diff between the two is shown in
@@ -830,7 +864,7 @@
             //  on otherwise stable particles.  Mung them so a real w:Lies snap diffs on
             //   structure, not on WHEN a read/walk/seed/notice happened.  The content
             //    dige beside each stays, so a real change still shows.  Needed for the
-            //     real Lang↔Lies channel (Book:InterestLive et al.) to settle as a gate.
+            //     real Lang↔Lies channel (Book:LakeSurprise et al.) to settle as a gate.
             matching_any: [
                 { sc_has: { known: 1, at: 1 } },          // Good/known,dige,kind:read,at
                 { sc_has: { Waft: 1, seeded: 1 } },       // Waft:GhostList,lists,seeded

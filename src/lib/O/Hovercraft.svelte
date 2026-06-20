@@ -650,6 +650,55 @@
         return o
     },
 
+    // The_EntropyArrest — the per-test bucket, beside The/Styles.  Absent until the
+    //   first cap is authored (entropy_rules returns [] when it is); the authoring UI
+    //    lazily mints it here.  Lives in The so it round-trips through toc.snap and
+    //     travels with the Book.
+    The_EntropyArrest(w: TheC): TheC {
+        const The = w.c.The as TheC
+        if (!The) throw '!The for EntropyArrest'
+        return (The.o({ EntropyArrest: 1 })[0] as TheC) ?? The.i({ EntropyArrest: 1 })
+    },
+
+    // entropy_mint — turn the plain draft descriptor ui/EntropyArrest.svelte authors
+    //   into the persisted Snapcap shape entropy_rules reads back (entropy_rule_of):
+    //   a %lematch chain (outer→leaf) whose OWN sc IS the sc_has, plus a flat %spayer
+    //    child of the cap.  Snap-safe by construction — every value a scalar, no object
+    //     in .sc.  Re-minting the same slug is an OVERWRITE, not a pile-up: a prior cap
+    //      of that slug is dropped first, so the authoring loop never accretes dupes.
+    entropy_mint(w: TheC, draft: {
+        slug: string
+        lematch: Array<{ sc: Record<string, any> }>
+        spayer: Record<string, any>
+        note?: string
+        scope_step?: number
+    }): TheC {
+        const ea = this.The_EntropyArrest(w)
+        for (const old of ea.o({ Snapcap: draft.slug }) as TheC[]) ea.drop(old)
+        const cap = ea.i({ Snapcap: draft.slug })
+        if (draft.note != null)       cap.i({ note: draft.note })
+        if (draft.scope_step != null) cap.i({ scope: 1, step: draft.scope_step })
+        // descent: each segment nests under the previous; entropy_rule_of finds the
+        //  outer %lematch as a direct child of the cap and recurses the rest.
+        let host: TheC = cap
+        for (const seg of draft.lematch) host = host.i({ lematch: 1, ...seg.sc })
+        cap.i({ spayer: 1, ...draft.spayer })   // the get-spayed handler, beside the lematch
+        ea.bump_version()
+        return cap
+    },
+
+    // entropy_unmint — drop one authored Snapcap by slug.  Returns whether anything
+    //   was removed, so the caller can skip a needless toc.snap save.
+    entropy_unmint(w: TheC, slug: string): boolean {
+        const The = w.c.The as TheC
+        const ea  = The?.o({ EntropyArrest: 1 })[0] as TheC | undefined
+        if (!ea) return false
+        const caps = ea.o({ Snapcap: slug }) as TheC[]
+        for (const cap of caps) ea.drop(cap)
+        if (caps.length) ea.bump_version()
+        return caps.length > 0
+    },
+
 //#endregion
 
 

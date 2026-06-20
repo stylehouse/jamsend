@@ -167,7 +167,7 @@ Fold work uncommitted (human commits on host). Open:
 - Layout knobs to tune by eye (stem position, cell widths, `FOLD_UP_UNDER`).
 
 ### Interest
-Graduated to prod (gate InterestLive); the real Lang↔Lies channel is live.
+Graduated to prod (gate LakeSurprise); the real Lang↔Lies channel is live.
 Post-graduation work *was* mostly the **metromap vision** — animated SVG:
  Interestily → activeWhat (obscured network) → Points, with folded-away
   "elsewheres"; the surprise_read popover was the first proof. **Priority call
@@ -237,8 +237,8 @@ A compiled `.g` becomes a `gen/**.go` that is a **Svelte component**: its `eatfu
 
 **The ask:** a way to run a `gen/**.go`'s `eatfunc` (deposit methods + `Ghostmeta`)
  **without a DOM mount** — evaluate the component's deposit path directly, or a headless
-  Svelte-component instantiation that runs `onMount`-equivalent. See `Editron.md` §4
-   ("The UIless-include problem"), `Peeroleum_handover.md` heading 1b, and
+  Svelte-component instantiation that runs `onMount`-equivalent. See `Editron_doc.md` §3 + TODO
+   ("UIless-include"), `Peeroleum_handover.md` heading 1b, and
     `Story_next_level_spec.md` §16. Until it lands, the runner is a live browser tab
      (which is fine for v1 — the channel is identical either way).
 

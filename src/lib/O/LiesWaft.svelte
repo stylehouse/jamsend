@@ -359,7 +359,7 @@ await M.eatfunc({
 //       channel TRANSPORT (Peering/Pier standup, rungo send, gen_write, heartbeat)
 //        stays in LiesLies; this is only the run-intent + verdict surface that the
 //         dynamic web touches.  May grow into a Cred*_result|verdict|instruct family
-//          as the Creduler matures (spec/Editron.md §5/§6).
+//          as the Creduler matures (spec/Editron_doc.md §4 + TODO).
 
         // ── e_Lies_run_arm — the "run it now" signal (Esc in the editor) ──────
         //

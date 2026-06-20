@@ -1,24 +1,24 @@
 Waft:Story/LakeFlush/Waftily
   What:foundations
     What:story
-      Doc:Ghost/test/Story/Peregrination.g
+      Doc:Ghost/test/Story/Lake/LakeAmeliorations.g
       Point,method:LakeNetherland
     What:peer
-      Doc:Ghost/test/Peeroleum.g
+      Doc:Ghost/test/Story/Lake/LakeAntecedents.g
       Point,method:Peeroleum
   What:transport
     What:first look
-      Doc:Ghost/test/Peeroleum.g
+      Doc:Ghost/test/Story/Lake/LakeAntecedents.g
       Point,method:transport
       Point,method:PeerJS
     What:reliability
-      Doc:Ghost/test/Peeroleum.g
+      Doc:Ghost/test/Story/Lake/LakeAntecedents.g
       Point,method:Socket
       Point,method:Mesh
   What:integration
     What:story
-      Doc:Ghost/test/Story/Peregrination.g
+      Doc:Ghost/test/Story/Lake/LakeAmeliorations.g
       Point,method:LakeNetherland
     What:peer
-      Doc:Ghost/test/Peeroleum.g
+      Doc:Ghost/test/Story/Lake/LakeAntecedents.g
       Point,method:Peeroleum

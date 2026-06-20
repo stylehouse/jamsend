@@ -63,7 +63,7 @@ Notes on the shape that landed:
   - a bare inline `doai` (no block) has no handler to wire, so `Lang_compile_IOness`
     throws "doai needs an indented block — its do_fn body".
 
-Corpus: `Ghost/test/LangTiles.g` `reqTiles` exercises moai + the doai block forms
+Corpus: `Ghost/test/Story/Lake/LakeTiles.g` `reqTiles` exercises moai + the doai block forms
 (plain, receiver-before-verb with a maz level, and nested).
 
 ## whole-doc parse vs. the per-line fast path
@@ -87,7 +87,7 @@ drill treatment; for now the throw is the spec.
 Two real bugs, same disease: the compiler emitted text that **was never validated** before
 it was written/trusted, so a `.go` of garbage landed on disk (and svelte's parser is the first
 thing to notice, far too late — and on the editor↔runner channel it would be PUSHED to a runner
-that trusts it). See `Editron.md` §2 for the channel half.
+that trusts it). See `Editron_doc.md` §2 for the channel half.
 
 **Failure A — compile with no parser (FIXED).** `Lang_compile_collect`'s contract is "a line the
 grammar doesn't recognise passes through verbatim (`kind:'raw'`)" — correct per line. But if the
@@ -119,7 +119,7 @@ later pass once the parser was ready — i.e. an intermittent corruption window.
       `Lang_compile_dock` guard is then pure belt-and-suspenders for any other caller.
 - **Still separate (NOT this bug): the editor should compile but NOT write.** Wanting the translation
    view means the editor SHOULD compile; suppressing the `.go` write/push is the `w%editor` gate
-    (`Editron.md` §1 "Pantheate split" + §2), orthogonal to parser
+    (`Editron_doc.md` §1 "Pantheate split" + §2), orthogonal to parser
      readiness. The translation display itself (`LangCompiling.svelte:238`, the disabled
       `if (0 && ln.kind === 'translated')` block) is still a TODO to wire up.
 

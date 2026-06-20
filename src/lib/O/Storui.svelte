@@ -104,8 +104,22 @@
     import type { House } from "$lib/O/Housing.svelte"
     import { peel }       from "$lib/Y.svelte"
     import Vexpandy       from "$lib/O/ui/Vexpandy.svelte"
+    import EntropyArrest  from "$lib/O/ui/EntropyArrest.svelte"
 
     let { H }: { H: House } = $props()
+
+    // story_w — the Story world (A:Story/w:Story), same lookup story_save uses.
+    //   EntropyArrest reads its The/EntropyArrest bucket and elvistos commits back.
+    let story_w = $derived.by((): TheC | undefined => {
+        const A = H.o({ A: 'Story' })[0] as TheC | undefined
+        return A?.o({ w: 'Story' })[0] as TheC | undefined
+    })
+
+    // ea_seed — the two line-sides of the last-clicked Dif:change row.  Setting it
+    //   re-points EntropyArrest's single draft (the DevTools-breadcrumb discipline);
+    //   on_done clears it after a commit or cancel.  A new click overwrites, never piles.
+    let ea_seed = $state<{ left: string, right: string } | null>(null)
+    function seed_spay(left: string, right: string) { ea_seed = { left, right } }
 
 
     //#region types
@@ -1148,6 +1162,18 @@
                     {@render diff2_view(diff_rows, col_labels, eff_mode)}
                 {/if}
                 </div>
+
+                <!-- entropy arrest: author/CRUD acknowledged-noise Snapcaps.
+                     Shows iff a diff line was clicked (a draft is in flight) or this
+                     test already holds caps.  Mints into The/EntropyArrest on OK;
+                     restart re-reads them via entropy_rules. -->
+                <EntropyArrest
+                    H={H}
+                    w={story_w}
+                    seed={ea_seed}
+                    step_n={n}
+                    on_done={() => ea_seed = null} />
+
                 {#if show_trace && Step?.sc.Run_trace?.length}
                     {@render trace_panel(Step.sc.Run_trace)}
                 {/if}
@@ -1208,7 +1234,9 @@
                     {:else if row.kind === 'pair' && row.tag === 'same'}
                         <div class="sr-diff2-cell">{@render line_content(row.left)}</div>
                     {:else if row.kind === 'pair' && row.tag === 'changed'}
-                        <div class="sr-diff2-cell changed">{@render intra_line(row.left, row.ops, 'left')}</div>
+                        <div class="sr-diff2-cell changed sr-spayable"
+                             title="silence this noise — author a Snapcap"
+                             onclick={() => seed_spay(row.left, row.right)}>{@render intra_line(row.left, row.ops, 'left')}</div>
                     {:else if row.kind === 'left_only'}
                         <div class="sr-diff2-cell gone">{@render line_content(row.line)}</div>
                     {:else if row.kind === 'right_only'}
@@ -1223,7 +1251,9 @@
                     {:else if row.kind === 'pair' && row.tag === 'same'}
                         <div class="sr-diff2-cell">{@render line_content(row.right)}</div>
                     {:else if row.kind === 'pair' && row.tag === 'changed'}
-                        <div class="sr-diff2-cell changed">{@render intra_line(row.right, row.ops, 'right')}</div>
+                        <div class="sr-diff2-cell changed sr-spayable"
+                             title="silence this noise — author a Snapcap"
+                             onclick={() => seed_spay(row.left, row.right)}>{@render intra_line(row.right, row.ops, 'right')}</div>
                     {:else if row.kind === 'left_only'}
                         <div class="sr-diff2-cell gone sr-empty-cell"></div>
                     {:else if row.kind === 'right_only'}
@@ -1546,6 +1576,9 @@
 .sr-diff2-cell.neu                        { background: #001a10; }
 .sr-diff2-cell.neu:not(.sr-empty-cell)    { border-left-color: #4a9; }
 .sr-empty-cell { opacity: 0.12; }
+/* a changed line is the click target for authoring a Snapcap (entropy arrest) */
+.sr-spayable { cursor: pointer; }
+.sr-spayable:hover { background: #2a2008; box-shadow: inset 2px 0 0 #ca0; }
 
 /* squish: collapsed run of uninteresting same lines */
 .sr-squish {

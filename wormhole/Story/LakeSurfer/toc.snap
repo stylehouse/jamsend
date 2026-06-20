@@ -12,8 +12,7 @@ story:LakeSurfer
         dontSnapGhostList
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=0.643
-      sample=0.379,at=1781882254
+    TimeTotal:beliefs,avg=0.689
       sample=0.416,at=1781882352
       sample=0.665,at=1781882815
       sample=0.665,at=1781882825
@@ -23,9 +22,11 @@ story:LakeSurfer
       sample=0.83,at=1781888821
       sample=0.909,at=1781947608
       sample=0.909,at=1781947617
-    TimeTotal:step,avg=0.442
+      sample=0.841,at=1781951793
+    TimeTotal:step,avg=0.437
       sample=0.415,at=1781888821
       sample=0.455,at=1781947608
       sample=0.455,at=1781947617
+      sample=0.421,at=1781951793
   step,dige:546855999651ba68
   step=2,dige:f05230d88b21d657

@@ -21,7 +21,7 @@ Interest is the **UItime expression** of the `%subscribe` wire (`Wire_spec.md`);
     `interest_roster_sig` moves.
 - The editing checkout is **unified onto the foreground Trail** in `Lang_set_interest` (non-destructive;
    found by `c.LE`). Editing works through it.
-- **`InterestLive` Book** (`wormhole/Story/InterestLive/`, 11 Preps) is the sole regression gate; the
+- **`LakeSurprise` Book** (`wormhole/Story/LakeSurprise/`, 11 Preps) is the sole regression gate; the
    `Interesting`/`InterLies`/`InterLang` stand-ins were retired 2026-06-17.
 
 ## 2. The real channel, end to end
@@ -44,7 +44,7 @@ Real Waft **stances** (input to `interest_stance_of`):
 
 **The Crux — RESOLVED (verified live 2026-06-17).** An old `LakeNets/001.snap` recorded `Languinio`
  carrying a single `{Interest:in_Doc:…}` rather than the `Interest:Trail,…` family; that snap was simply
-  **stale** (predates the Trail unification). A live `InterestLive` run confirms the real wire emits the
+  **stale** (predates the Trail unification). A live `LakeSurprise` run confirms the real wire emits the
    full family (Ting/Trail/GhostList + `ActiveInterest`) and `interest_reconcile` mints it correctly.
     The recorded LakeNets/LakeFlush expected snaps are the intended improvement, not a regression — the
      human re-records.
@@ -250,6 +250,6 @@ The popover proves the "Interest pops out big attention" mechanic. The picture t
   reducers (Interest.svelte); switcher `ui/InterestStrip.svelte` (mounted in `ui/DocMinimap.svelte`).
    Per-Interest LE: `Lang_active_interest` / `Lang_active_LE` (Lang.svelte) are the foreground resolvers
     everything reads through; `Lang_set_interest` owns each giver's `c.LE`; `LE_for()` (LiesEnd) returns
-     the active LE for the bare reason. Gate Book: `wormhole/Story/InterestLive/` (11 Preps + `step=`
+     the active LE for the bare reason. Gate Book: `wormhole/Story/LakeSurprise/` (11 Preps + `step=`
       lines; fixtures Interestily→Peeroleum.g, Interestily2→Peregrination.g). Elvis names must match
        handlers verbatim ([[elvis-handler-name-verbatim]]).

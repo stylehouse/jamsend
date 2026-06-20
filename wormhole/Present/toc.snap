@@ -15,7 +15,7 @@ Library
       TimeTotal:beliefs,avg=0.081
         sample=0.077,at=1781080326
         sample=0.085,at=1781607913
-  Book:LangTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1781944332.489
+  Book:LakeTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1781944332.489
     TimeSpool
       TimeTotal:beliefs,avg=1.85
         sample=1.21,at=1781884125
@@ -245,11 +245,9 @@ Library
         sample=0.163,at=1781656675
         sample=0.171,at=1781660709
         sample=0.002,at=1781750531
-  Book:InterestLive,ok_pct=0,done=4,last_run_ms=1781896969.473
+  Book:LakeSurprise,ok_pct=0,done=4,last_run_ms=1781950342.024
     TimeSpool
-      TimeTotal:beliefs,avg=1.27
-        sample=0.905,at=1781704642
-        sample=1.48,at=1781707342
+      TimeTotal:beliefs,avg=1.33
         sample=0.914,at=1781711927
         sample=1.272,at=1781714096
         sample=1.446,at=1781714321
@@ -258,6 +256,8 @@ Library
         sample=0.846,at=1781750525
         sample=0.539,at=1781896889
         sample=3.143,at=1781896969
+        sample=2.002,at=1781950278
+        sample=0.986,at=1781950343
   Book:Peregrination,ok_pct=0,done,last_run_ms=1781880299.081
     TimeSpool
       TimeTotal:beliefs,avg=0.351

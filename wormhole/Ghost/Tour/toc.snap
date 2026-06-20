@@ -1,6 +1,6 @@
 Waft:Ghost/Tour
   What:itis
-    Doc:Ghost/test/Idzeuzia.g
+    Doc:Ghost/test/Story/Lake/Idzeuzia.g
       Point,method:Idzeugnosis
       Point:Idzeuganise
       Point:Idvoyage_verify
@@ -8,7 +8,7 @@ Waft:Ghost/Tour
     Doc:src/lib/ghost/Radios.svelte
       Point:reset
   What:itis
-    Doc:Ghost/test/LangTiles.g
+    Doc:Ghost/test/Story/Lake/LakeTiles.g
   What:itis
     Doc:src/lib/p2p/Peerily.svelte.ts
       Point:Pier

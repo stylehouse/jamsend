@@ -4,7 +4,7 @@ Snap:H
       self,round=2	{"mung":["age"]}
       w:Diffmatication
         requesty_wh_serial,i=2
-        requesty_wh:1,wh_path:Story/LangTiles,wh_op:read_toc,req_i,finished:true	{"ref":{"reply":"Object()"}}
+        requesty_wh:1,wh_path:Story/LakeTiles,wh_op:read_toc,req_i,finished:true	{"ref":{"reply":"Object()"}}
           req_sent
         self,round=2	{"mung":["age"]}
     watched:ave

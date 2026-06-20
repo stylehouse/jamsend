@@ -230,7 +230,7 @@ sibling cells of one kind don't collide on one req; a host with no Dip (the trai
 Seem) falls back to kind + binding.  The embed persists; the runtime is re-bound on each load.
 *(Generalised — was GhostList-only.)*
 
-The one test that authored `%havoc` — **InterestLive** (the limb `surprise_read`, which
+The one test that authored `%havoc` — **LakeSurprise** (the limb `surprise_read`, which
 fabricates a disk-diverged-under-edit on the active dock) — has been **folded** to
 `Funkcion:Ballistics,kind:surprise_read` across its snaps; `Lies_arm_engaged`'s self-arm scan
 matches both the folded form and legacy `%havoc`.  FunkHost still aliases a bare `%havoc:<kind>`
@@ -325,11 +325,11 @@ Waft:Ghost/LakeNets,Ghost/LakeNets
       Doc:Ghost/test/Story/Peeroleum.g
       Point,method:LakeNetherland
     What:peer
-      Doc:Ghost/test/Peeroleum.g
+      Doc:Ghost/test/Story/Lake/LakeAntecedents.g
       Point,method:Peeroleum
   What:transport
     What:first look
-      Doc:Ghost/test/Peeroleum.g
+      Doc:Ghost/test/Story/Lake/LakeAntecedents.g
       Point,method:transport
       Point,method:PeerJS
 ```

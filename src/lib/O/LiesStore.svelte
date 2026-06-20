@@ -604,7 +604,7 @@
     //   Returns { Waft, errors, not_found }.  not_found true when the file is
     //    absent — caller decides whether that means start empty or surface an error.
     //
-    //   waft_path: the logical Waft key (e.g. 'Story/LangTiles') — passed to deWaft
+    //   waft_path: the logical Waft key (e.g. 'Story/LakeTiles') — passed to deWaft
     //    as the path context it uses for error messages.
     //
     //   Usage (see Diffmatication req_Twisto):

@@ -10,9 +10,9 @@ Snap:H
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/LakeNets/Waftily/toc.snap,waft_path:Story/LakeNets/Waftily
             known,dige:8033a5f07c152bb9,kind:read	{"mung":["at"]}
-          Good,type:text/Doc,path:Ghost/test/Story/Peregrination.g
+          Good,type:text/Doc,path:Ghost/test/Story/Lake/LakeAmeliorations.g
             known,dige:5243d16758eb710b,kind:read	{"mung":["at"]}
-          Good,type:text/Doc,path:Ghost/test/Peeroleum.g
+          Good,type:text/Doc,path:Ghost/test/Story/Lake/LakeAntecedents.g
             known,dige:69f9fd8539393ad7,kind:read	{"mung":["at"]}
         examining	{"loopy":1}
           req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
@@ -21,28 +21,28 @@ Snap:H
         Waft:Story/LakeNets/Waftily
           What:foundations
             What:story
-              Doc:Ghost/test/Story/Peregrination.g
+              Doc:Ghost/test/Story/Lake/LakeAmeliorations.g
               Point,method:LakeNetherland,class:caution
               Point,method:LakeNetherland,class:focus
             What:peer
-              Doc:Ghost/test/Peeroleum.g
+              Doc:Ghost/test/Story/Lake/LakeAntecedents.g
               Point,method:Peeroleum
             What
           What:transport
             What:first look
-              Doc:Ghost/test/Peeroleum.g
+              Doc:Ghost/test/Story/Lake/LakeAntecedents.g
               Point,method:transport
               Point,method:PeerJS
             What:reliability
-              Doc:Ghost/test/Peeroleum.g
+              Doc:Ghost/test/Story/Lake/LakeAntecedents.g
               Point,method:Socket
               Point,method:Mesh
           What:integration
             What:story
-              Doc:Ghost/test/Story/Peregrination.g
+              Doc:Ghost/test/Story/Lake/LakeAmeliorations.g
               Point,method:LakeNetherland
             What:peer
-              Doc:Ghost/test/Peeroleum.g
+              Doc:Ghost/test/Story/Lake/LakeAntecedents.g
               Point,method:Peeroleum
               Point,method:Harbour
         req:desire
@@ -72,7 +72,7 @@ Snap:H
         self,round=55	{"mung":["age"]}
         model,cyto_dir
         docks
-          dock:Ghost/test/Story/Peregrination.g,active	{"loopy":0}
+          dock:Ghost/test/Story/Lake/LakeAmeliorations.g,active	{"loopy":0}
             req:Languish
               req:text_loaded,maz=3,finished
               req:text_mutated,maz=2,eternal
@@ -113,7 +113,7 @@ Snap:H
                 graft,bookmark_id:g_2,from,to=16,line=2
             Navicade
               Mapule,kind:def,key:LakeNetherland,depth=0,line=2,from,to=16
-          dock:Ghost/test/Peeroleum.g
+          dock:Ghost/test/Story/Lake/LakeAntecedents.g
             req:Languish
               req:text_loaded,maz=3,finished
               req:text_mutated,maz=2,eternal
@@ -171,7 +171,7 @@ Snap:H
           lematch	{"ref":{"sc_has":"Object()"}}
             lematch	{"ref":{"sc_has":"Object()"}}
         Languinio	{"loopy":2}
-          Interest:Trail,waft:Story/LakeNets/Waftily,lens:NaviCado,presence:active,state:locked,in_Doc:Ghost/test/Story/Peregrination.g	{"ref":{"src":"%What:foundations"}}
+          Interest:Trail,waft:Story/LakeNets/Waftily,lens:NaviCado,presence:active,state:locked,in_Doc:Ghost/test/Story/Lake/LakeAmeliorations.g	{"ref":{"src":"%What:foundations"}}
             cursor,what:Story/LakeNets/Waftily,doc:Story/LakeNets/Waftily/doc0,depth=0
             MapReport,n_def,n_call=0,n_region=0,n_cf=0
           ActiveInterest,kind:Trail,waft:Story/LakeNets/Waftily
@@ -182,9 +182,9 @@ Snap:H
           dock,active	{"loopy":0,"hid":1}
         req:workon,auto_push=0	{"ref":{"w":"%w:Lang"}}
           {"req":"understanding","maz":3,"permanent":1,"sig":"5:13:4:0","what":"foundations","finished":1}
-          req:ingredients,maz=2,permanent,sig:Ghost/test/Story/Peregrination.g,finished
-            req:furnishing,path:Ghost/test/Story/Peregrination.g,permanent,finished
-          {"req":"instrumentation","permanent":1,"sig":"Ghost/test/Story/Peregrination.g:5243d16758eb710b:5:299","have_Map":1,"n_pmirrors":2,"finished":1}
+          req:ingredients,maz=2,permanent,sig:Ghost/test/Story/Lake/LakeAmeliorations.g,finished
+            req:furnishing,path:Ghost/test/Story/Lake/LakeAmeliorations.g,permanent,finished
+          {"req":"instrumentation","permanent":1,"sig":"Ghost/test/Story/Lake/LakeAmeliorations.g:5243d16758eb710b:5:299","have_Map":1,"n_pmirrors":2,"finished":1}
           req:push,finished
             req:encode,maz=3,finished
             req:replace,maz=2,finished
@@ -211,11 +211,11 @@ Snap:H
               Understandable
             News:working,goners=0,neus=3
           {"encode":1,"snap_origin":"What:story\nWhat:peer\nWhat\n","snap_working":"What:story\nWhat:peer\nWhat\n","dirty":"0"}
-        received,doc_opened,doc:Ghost/test/Story/Peregrination.g
-        received,editorBegins,doc:Ghost/test/Story/Peregrination.g
-        received,doc_opened,doc:Ghost/test/Peeroleum.g
-        received,editorBegins,doc:Ghost/test/Peeroleum.g
-        received,editorBegins,doc:Ghost/test/Story/Peregrination.g
+        received,doc_opened,doc:Ghost/test/Story/Lake/LakeAmeliorations.g
+        received,editorBegins,doc:Ghost/test/Story/Lake/LakeAmeliorations.g
+        received,doc_opened,doc:Ghost/test/Story/Lake/LakeAntecedents.g
+        received,editorBegins,doc:Ghost/test/Story/Lake/LakeAntecedents.g
+        received,editorBegins,doc:Ghost/test/Story/Lake/LakeAmeliorations.g
         see:🟦 tiles 0 bookmarks
     A:Pantheate
       self,round=15	{"mung":["age"]}

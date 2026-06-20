@@ -6,7 +6,7 @@
 //
 // It is an OVERLAY: reads fall through real-repo → sandbox; writes land in the sandbox,
 //  so booting compile-pipeline Books (Peregrination, Diffmatication, the Lake*/Leaf*
-//   Peeroleum tests, InterestLive…) exercises their gen/ + Ghost/ writes WITHOUT
+//   Peeroleum tests, LakeSurprise…) exercises their gen/ + Ghost/ writes WITHOUT
 //    mutating the working tree.  The one exception is fixtures under wormhole/, which
 //     pass through to the real repo only when `recording` is on (ACCEPT) — so re-record
 //      lands real fixtures while plain runs leave even toc.snap untouched.
