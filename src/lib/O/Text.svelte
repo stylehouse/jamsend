@@ -109,6 +109,20 @@
 
     let { M } = $props()
 
+    // ── spay marker ─────────────────────────────────────────────────────────────
+    // The mirage that stands in for a spayed (acknowledged-noise) number.  One
+    //  phrase for every spaying (EntropyArrest.md §2.1): Mahmoud Darwish's
+    //   "في غيابها كوّنتُ صورتها" — in her absence, I formed her image.  A spay makes
+    //    the real value absent (noise) and stands its image in its place.
+    //  It is content-impossible: real snap content is ASCII peel (k:v, sayable) and
+    //   carries none of the peel separators (, : =), so deL/peel never mistake a
+    //    spayed hole for a real value, and the diff index can find every spayed line
+    //     by scanning for this phrase across both sides of a row (§4.3).
+    const SPAY_MARKER  = 'في غيابها كوّنتُ صورتها'
+    // A band that blows past factor× its nailed baseline drops the marker and shows
+    //  the real value flagged — a Dif:change that means something (§2.2).
+    const SPAY_BLOWOUT = '‼'
+
     onMount(async () => {
     await M.eatfunc({
 
@@ -643,8 +657,11 @@
         d: number
         rules?: Array<any>
         loopy?: number              // integer serial — this is the shallowest/original appearance of a repeated C
+        step_n?: number             // current step number — band/add_step_mult scale their baseline by it
         // outputs written back:
         snap_line?: string
+        raw_line?: string           // the pre-spay parent line — kept so the UI can reveal "what it really was"
+        spayed?: boolean            // true if any blank/band spayer rewrote the rendered line
         stringies?: Record<string, any>
         objecties?: Record<string, any> | undefined
         skip?: boolean
@@ -665,6 +682,17 @@
         // same pattern as before but now also collects omit_sc.
         const bq_keys:   Record<string, 1> = {}
         const omit_keys: Record<string, 1> = {}
+        // spay (EntropyArrest.md §2): the third option between keep and drop.  A
+        //  matched rule carries means.spay = { kind, … }; we collect each spayer here
+        //   exactly as we collect omit_sc/blockquote, then apply them below:
+        //    drop  → fold its keys into mung (today's mung, re-expressed)
+        //    blank → regex-replace the noisy number with the mirage marker
+        //    band  → snap the value to its nailed baseline within tolerance, diverge past factor×
+        //   blank/band rewrite the *rendered line text* (the noise can sit anywhere —
+        //    a mainkey value, a value-key, or inside an objecties blob) so they run
+        //     after parent_line is built; drop must bite before stringies are formed.
+        const spay_drop_keys: Record<string, 1> = {}
+        const spay_line_ops: Array<any> = []
         for (const rule of q.rules ?? []) {
             const matched = (rule.matching_any as any[] ?? []).some((entry: any) => {
                 if (entry.mk)      return Object.keys(n.sc ?? {})[0] === entry.mk
@@ -679,6 +707,13 @@
             if (!matched) continue
             if (rule.means?.blockquote_these_sc) Object.assign(bq_keys,   rule.means.blockquote_these_sc)
             if (rule.means?.omit_sc)             Object.assign(omit_keys, rule.means.omit_sc)
+            const spays = rule.means?.spay
+                ? (Array.isArray(rule.means.spay) ? rule.means.spay : [rule.means.spay])
+                : []
+            for (const sp of spays) {
+                if (sp.kind === 'drop') Object.assign(spay_drop_keys, sp.these_sc ?? {})
+                else                    spay_line_ops.push(sp)
+            }
         }
 
         const stringies: Record<string, any> = {}
@@ -692,7 +727,7 @@
                 ref[k] = objectify(v)
                 continue
             }
-            const is_munged = mr.munging.find(r => Object.hasOwn(r.these_sc, k))
+            const is_munged = mr.munging.find(r => Object.hasOwn(r.these_sc, k)) || spay_drop_keys[k]
             if (is_munged) { mung.push(k); continue }
 
             // blockquote_these_sc: only strings ending in \n get BQ treatment
@@ -722,8 +757,19 @@
         q.mung      = mung
 
         // Parent line — inline keys only (BQ keys excluded above)
-        const parent_line = this.enL({ d: q.d, objecties: q.objecties ?? {}, stringies })
+        const raw_line = this.enL({ d: q.d, objecties: q.objecties ?? {}, stringies })
+        q.raw_line = raw_line
+
+        // spay the rendered line (§2): blank/band rewrite the noisy number in place,
+        //  keeping the line's shape and identity.  The marker rides in the persisted
+        //   snap (so the dige is computed over the spayed text and a noisy number can
+        //    no longer flip story_ok) while q.raw_line keeps what it really was for the
+        //     UI to reveal.  A fully-spayed line is deterministic run-to-run.
+        const parent_line = spay_line_ops.length
+            ? spay_line_ops.reduce((line: string, sp: any) => this.spay_line(line, sp, q.step_n), raw_line)
+            : raw_line
         q.snap_line = parent_line
+        q.spayed    = parent_line !== raw_line
 
         const out_lines: string[] = [parent_line]
 
@@ -748,6 +794,55 @@
         }
 
         return out_lines
+    },
+
+    // ── spay_line ───────────────────────────────────────────────────────────────
+    //   Apply one blank|band spayer to a rendered snap line, in place (§2.1–2.2).
+    //   The spayer matches the noisy number via a regex on the line text, so it
+    //    reaches a noise token wherever it sits — a mainkey value, a value-key, even
+    //     inside an objecties JSON blob.  Returns the line unchanged if the regex
+    //      finds nothing (a tolerant locator that over-matches still no-ops cleanly).
+    //
+    //   blank — replace the matched span with the mirage marker (glyph overridable).
+    //   band  — snap the value to its nailed baseline while within tolerance, and
+    //            render the real value flagged once it blows past factor× (§2.2).
+    //            add_step_mult scales the baseline by the step number, so a counter
+    //             that legitimately advances each step (round) stays inside the band.
+    //   Both are deterministic within the band: the line carries the baseline (not the
+    //    churning value), so the dige is stable until a run blows the band — the only
+    //     diff that then survives is a real surprise.
+    spay_line(line: string, sp: any, step_n?: number): string {
+        if (!sp?.re) return line
+        let rx: RegExp
+        try { rx = new RegExp(sp.re, sp.flags ?? 'g') }
+        catch { return line }   // a malformed authored regex must never crash the snap
+
+        if (sp.kind === 'blank') {
+            return line.replace(rx, sp.glyph ?? SPAY_MARKER)
+        }
+        if (sp.kind === 'band') {
+            const factor   = sp.factor ?? 10
+            const baseline = sp.add_step_mult ? (sp.first ?? 1) * (step_n ?? 1) : (sp.first ?? 0)
+            return line.replace(rx, (m: string) => {
+                const v = parseFloat(m)
+                if (Number.isNaN(v)) return m
+                const hi = factor * baseline
+                const lo = sp.floor ? baseline / factor : -Infinity
+                const within = v <= hi && v >= lo
+                // within band → the deterministic baseline + marker (stable dige, still
+                //  findable by the §4.3 index); blown → the real value + blow-out flag.
+                return within ? `${this.spay_num(baseline)} ${SPAY_MARKER}`
+                              : `${m} ${SPAY_BLOWOUT}`
+            })
+        }
+        return line
+    },
+
+    // ── spay_num ────────────────────────────────────────────────────────────────
+    //   Render a band baseline back into the line.  Integers stay integers; floats
+    //    keep a fixed precision so the baseline text is stable across runs.
+    spay_num(v: number): string {
+        return Number.isInteger(v) ? String(v) : v.toFixed(3)
     },
 
     // ── snap_indent ────────────────────────────────────────────────────────────

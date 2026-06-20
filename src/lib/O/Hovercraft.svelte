@@ -585,6 +585,74 @@
 //#endregion
 
 
+//#region entropy — acknowledged non-determinism, beside prandle's injected kind
+
+    // entropy_rules — compile a per-test The/EntropyArrest into matching rules with
+    //   means.spay, for snap_H to concatenate onto story_matching (EntropyArrest.md
+    //    §3.2).  The "big fat lematch" is the merged rule array; the get-spayed
+    //     handlers are the means.spay on each.  This sits beside prandle deliberately:
+    //      prandle removes entropy at the source (a seeded PRNG), spay names it at the
+    //       snap — the two halves of controlling entropy in a test.  Cost is zero extra
+    //        walks — spay is a richer means on the n.lematch call enLine already makes.
+    //   The per-test caps are the only ones authored from the UI and persisted in The;
+    //    the global layer is the default story_matching rules in code (§3.3).
+    entropy_rules(The: TheC | undefined): Array<any> {
+        if (!The) return []
+        const ea = The.o({ EntropyArrest: 1 })[0] as TheC | undefined
+        if (!ea) return []
+        return (ea.o({ Snapcap: 1 }) as TheC[])
+            .map(cap => this.entropy_rule_of(cap))
+            .filter(Boolean)
+    },
+
+    // One Snapcap (locator, spayer) → one matching rule.  The locator is a %lematch
+    //   chain; the spayer is the get-spayed handler.  Returns null if either is
+    //    missing — a half-authored cap silently does nothing rather than crash a snap.
+    entropy_rule_of(cap: TheC): any | null {
+        const lm = (cap.o({ lematch: 1 })[0]) as TheC | undefined
+        const sp = (cap.o({ spayer: 1 })[0]) as TheC | undefined
+        if (!lm || !sp) return null
+        const spayer = this.entropy_spayer_of(sp)
+        if (!spayer) return null
+        return this.lematch_to_rule(lm, spayer)
+    },
+
+    // A %lematch chain → a (possibly nested) matching rule.  Unlike the transient
+    //   object-valued sc_has i_scheme_req writes on the live w, an EntropyArrest
+    //    locator persists in toc.snap, so it must be snap-safe: the %lematch
+    //     particle's OWN sc (minus its `lematch` mainkey) IS the sc_has matcher —
+    //      all scalars.  Nested %lematch children become thence_matching for descent;
+    //       the spay rides the deepest level (the leaf that carries the noise), mirroring
+    //        how story_matching nests its munging under an outer descent rule.
+    lematch_to_rule(lm: TheC, spayer: any): any {
+        const { lematch, ...sc_has } = lm.sc as Record<string, any>
+        const kids  = (lm.o({ lematch: 1 })) as TheC[]
+        const means: any = {}
+        if (kids.length) means.thence_matching = kids.map(k => this.lematch_to_rule(k, spayer))
+        else             means.spay = spayer
+        return { matching_any: [{ sc_has }], means }
+    },
+
+    // A %spayer particle → the plain spayer descriptor enLine's spay_line consumes.
+    //   Stored flat (all scalar sc keys) so it round-trips through toc.snap:
+    //     blank → kind, re, glyph
+    //     band  → kind, re, first, factor[, add_step_mult][, floor]
+    //     drop  → kind, key   (key names the sc field to mung out → these_sc)
+    //   peel already typed the numbers (first=0.01 → number) and flags (add_step_mult
+    //    → 1), so little coercion is needed.
+    entropy_spayer_of(sp: TheC): any | null {
+        const { spayer, key, add_step_mult, floor, ...rest } = sp.sc as Record<string, any>
+        if (!rest.kind) return null
+        const o: any = { ...rest }
+        if (add_step_mult != null) o.add_step_mult = !!add_step_mult
+        if (floor != null)         o.floor         = !!floor
+        if (key != null)           o.these_sc      = { [key]: 1 }   // drop's target
+        return o
+    },
+
+//#endregion
+
+
 
 
 //#region Story utils

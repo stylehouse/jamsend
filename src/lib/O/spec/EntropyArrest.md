@@ -20,10 +20,55 @@ The headline the user named: *refactor the snapper to be like `enWaft` and call 
 
 ## Status & grounding (read this first on a cold start)
 
-**Nothing here is built.** This is design only; no `enLines`, no `spay`, no
- `EntropyArrest`, no `ui/EntropyArrest.svelte` exists yet. The next move is **§6
-  Stage 1** — the Lines merge as a *provable no-op*, gated byte-identical on the
-   `wormhole/Story/*.snap` fixtures. Do that first; everything else is additive.
+**The engine is built (Stages 2–4); the authoring UI (Stages 5–6) is not.** What
+ landed, all gated got-to-got on the headless runner (`scripts/Story_cli_run.mjs`):
+
+- **spay `means` in the shared `enLine`** (Text.svelte) — `drop` (≡ today's mung),
+   `blank` (regex → mirage marker), `band`/`add_step_mult` (snap to a step-scaled
+    baseline within `factor×`, diverge past it with a `‼` blow-out flag). Helpers
+     `spay_line` / `spay_num`; the marker constant `SPAY_MARKER`. The pre-spay text
+      is kept on `q.raw_line` (and `D.sc.raw_line` + `D.sc.spayed` for the UI).
+- **the global default**: `story_matching`'s `self,round` rule now carries
+   `means.spay = {kind:'blank', re:'(?<=round=)\\d+'}` — the per-tick counter churns
+    run-to-run, so blanking it makes the line deterministic. Proven: MundaneStation,
+     formerly flaking on `round=N`, is now byte-identical across two runs. (round is
+      listed under `blank` in §2.1; `blank` is chosen over the §6-Stage-3 `band`
+       because a counter that can drift across the band boundary would re-introduce
+        the very flake we're killing — `blank` is unconditionally deterministic.)
+- **per-test store + compile**: `entropy_rules(The)` + `entropy_rule_of` /
+   `lematch_to_rule` / `entropy_spayer_of` in Hovercraft's new `//#region entropy`
+    (beside the determinism sibling `prandle`). `snap_H(Run, w)` compiles
+     `story_matching ∪ entropy_rules(w.c.The)` and threads it + `step_n` through
+      `story_process_node`. Proven end-to-end: a hand-authored `Snapcap` under
+       `The/EntropyArrest` spayed exactly its targeted particle and nothing else.
+
+**Storage shape decision (the UI must follow it).** Unlike the transient
+ object-valued `sc_has` that `i_scheme_req` writes on the live `w`, an EntropyArrest
+  locator persists in `toc.snap`, where an object in `.sc` is fatal at encode. So a
+   `%lematch` stores its matcher as its **own scalar sc keys** (the mainkey `lematch`
+    stripped off *is* the `sc_has`); a `%spayer` stores `kind`/`re`/`glyph`/`first`/
+     `factor`/`add_step_mult`/`floor` flat, and `drop` names its target key as `key:`.
+      Nested `%lematch` children become `thence_matching`; the spay rides the leaf.
+       The toc codec is fully generic, so this round-trips with zero codec changes.
+
+**Consequence — fixtures need a one-time re-record.** The `round` blank rewrites
+ every `self,round=N` line in every Book's got snap, so the committed `*.snap`
+  fixtures (already stale from earlier accepted changes) are now further off. Re-record
+   deliberately under `ACCEPT=1` (`ACCEPT=1 node scripts/Story_cli_sweep.mjs`) — the
+    human owns that commit. This is the parent spec's stage-2 "Snap:H gets cleaner".
+
+**Not built: the authoring loop (§4, Stages 5–6).** `ui/EntropyArrest.svelte` does
+ not exist; nothing yet *authors* a cap from a diff click, and the diff index
+  (mirage-scan → `%spayer`, glowy pulse) is unbuilt. The store is hand-authorable in
+   `toc.snap` today (and proven so). The remaining work is the interactive surface,
+    best built with the app rendering on :9091 — see §4 and §6 Stages 5–6.
+
+**The original first move (§1 Lines walker-merge) was deliberately skipped** as an
+ unneeded risk: its whole purpose (§1.1) was to give spay *one* bite-point, but
+  `enLine` is already the single per-node encoder both walkers call, so spay landed
+   there directly with no merge. The `snap_H`-vs-`encode_wh_lines` *walk* unification
+    (Selection D-mirror vs Travel) remains a cosmetic-only refactor with no behaviour
+     payoff — leave it unless a concrete need appears.
 
 The five code anchors a builder reads before touching anything:
 

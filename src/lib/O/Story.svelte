@@ -806,7 +806,18 @@
                     { matching_any: [{ sc_only: { self: 1, est: 1 } }],
                       means: { skip: true } },
                     { matching_any: [{ sc_only: { self: 1, round: 1, age: 1 } }],
-                      means: { munging: [{ these_sc: { age: 1 }, type: 'time' }] } },
+                      means: {
+                          // age is a pure-noise sidecar timestamp → drop (munged out).
+                          // round is the per-tick counter: it churns run-to-run (the
+                          //  ticks a step takes is non-deterministic), so a kept round=N
+                          //   flakes the dige every run.  blank it — the value is
+                          //    uninteresting (EntropyArrest.md §2.1 lists round under
+                          //     blank), so the mirage marker stands in and the line is
+                          //      deterministic.  The presence/shape of the counter is
+                          //       still asserted; only its churning value is silenced.
+                          munging: [{ these_sc: { age: 1 }, type: 'time' }],
+                          spay: { kind: 'blank', re: '(?<=round=)\\d+' },
+                      } },
                     { matching_any: [{ sc_only: { wasLast: 1, at: 1 } }],
                       means: { munging: [{ these_sc: { at: 1 }, type: 'time' }] } },
                     { matching_any: [{ sc_only: { chaFrom: 1, was: 1, v: 1, at: 1 } }],
@@ -890,15 +901,20 @@
     // sets T.sc.not=1 to skip the particle entirely.
     // sets D.sc.snap_line — the complete encoded line (indent + objecties + tab +
     //   stringies), used directly by story_snap and compared in traced_fn.
-    story_process_node(n: TheC, T: Travel, D: TheD) {
+    story_process_node(n: TheC, T: Travel, D: TheD, step_n?: number, entropy?: Array<any>) {
+        // compile = story_matching ∪ entropy_rules(w.c.The) (EntropyArrest.md §3.2):
+        //  the global default layer in code, plus this Book's authored per-test caps.
+        //  Both sides are plain matching rules, so they concatenate straight on.
         const active: Array<any> = [
             ...this.story_matching,
+            ...(entropy ?? []),
             ...(T.sc.up?.sc.thence_matching ?? []),
         ]
         const q: any = {
             d:      T.c.path.length - 1,
             rules:  active,
             loopy:  T.sc.loopy,   // integer serial — this is the shallowest/original appearance
+            step_n,               // band/add_step_mult spayers scale their baseline by it
         }
         const lines = this.enLine(n, q)
 
@@ -909,6 +925,9 @@
         D.sc.objecties = q.objecties
         D.sc.copy = { ...n.sc }
         D.sc.snap_line = lines.join("\n")
+        // The pre-spay line is kept so the diff UI can reveal "what it really was"
+        //  and the §4.3 index can attribute a marked span back to its spayer.
+        if (q.spayed) { D.sc.raw_line = q.raw_line; D.sc.spayed = 1 }
         if (q.mung?.length) { D.c.munged ??= []; D.c.munged.push(q.mung) }
         if (q.thence?.length) T.sc.thence_matching = q.thence
     },
@@ -919,9 +938,12 @@
     // encode each particle as a snap line, return joined string.
     // snap_Se lives here; traced_fn compares snap_line strings across runs.
 
-    async snap_H(Run: House): Promise<string> {
+    async snap_H(Run: House, w?: TheC): Promise<string> {
         const lines: TheD[] = []
         const loopy_Cs = new Set<TheC>()   // C** that appeared more than once (loopy)
+        const step_n = Run.c.step_n as number | undefined   // band spayers scale by it
+        // per-test EntropyArrest caps, compiled once per snap into matching rules (§3.2)
+        const entropy = this.entropy_rules(w?.c.The as TheC | undefined)
 
         Run.c.snap_Se ??= new Selection()
         const Se: Selection = Run.c.snap_Se
@@ -939,7 +961,7 @@
                     loopy_Cs.add(n)
                     return
                 }
-                this.story_process_node(n, T, D)
+                this.story_process_node(n, T, D, step_n, entropy)
                 if (T.sc.not) return
                 if (T.c.path.length === 1) {
                     T.sc.more = (n.o({})).filter(c => !c.sc.snap_root)
@@ -990,7 +1012,7 @@
                 if (!T.sc.no_further) {
                     // first DFS encounter — the structural home; re-encode with loopy integer
                     T.sc.loopy = id
-                    this.story_process_node(n, T, T.sc.D)
+                    this.story_process_node(n, T, T.sc.D, step_n, entropy)
                 } else {
                     // revisit — stub: munged shadow, every key shown as :1
                     // hid:1 marks this as the shadow; the original carries loopy:N only
@@ -1033,7 +1055,7 @@
         const H = this as House
 
         // Snap:H — indent +1 so content nests under the header
-        const h_snap  = await this.snap_H(Run)
+        const h_snap  = await this.snap_H(Run, w)
         const h_block = this.snap_indent(h_snap, 1)
 
         // Cyto is opt-in (Opt/useCyto).  Without it this Story has no Cyto of its own
