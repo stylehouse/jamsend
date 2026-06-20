@@ -724,49 +724,82 @@
         }
     },
 
-    // entropy_suggest — the smart capture-regex generator (§8.4).  Given a noisy got line
-    //   and its prev/exp pair, propose a `%spayer` descriptor: a `re` whose CAPTURE GROUPS
-    //    are exactly the keys whose value changed (numeric → a number capture; long hex/token
-    //     → a token capture), with the stable text/keys kept as literal edge anchors, plus an
-    //      autodetected `tol` (drifting counters / long ints / hex → `any`; small floats →
-    //       `band`, factor 10).  Only a proposal — the UI's `re`/`tol` fields stay editable.
-    //        Returns null when nothing numeric/token changed.
+    // entropy_suggest — the smart capture-regex generator (§8.4).  Given a noisy got line and
+    //   its prev/exp pair, propose a `%spayer` descriptor: a `re` whose CAPTURE GROUPS are the
+    //    bits that actually churned, with everything stable kept as a literal anchor.
+    //   It captures at TWO granularities:
+    //    - a whole CHANGED value-key (`secs=0.127`) → one number capture (`secs={NUM}`/`{INT}`);
+    //    - a CHANGED string value (a mainkey path/timestamp like `Waft:Ting/2026-06-21/034032`)
+    //       → sub-tokenised: stable text & stable numbers stay literal, only the churning numbers
+    //        become captures (`Waft:Ting/2026-06-{INT}/{INT}`).  This is the case a flat
+    //         per-key capture misses — the noise is INSIDE the value, not the value itself.
+    //   {INT} (`\d+`) for an integer run, {NUM} (`\d+(?:\.\d+)?`) for a fractional one, {TOK}
+    //    (`\S+?`) for a non-numeric token; all are legible sugar Text.spay_desugar expands to one
+    //     capture group at RegExp-build time (and they ride to disk that way too).
+    //   tol: a purely-numeric line bands (factor 1.5); a structured string / token capture is
+    //    identity-ish and cannot band (you can't put a date or a path in a 1.5× window — and one
+    //     tol rules every capture in the re), so any such capture forces the whole spayer to `any`.
+    //   Returns null when nothing changed.
     entropy_suggest(gotLine: string, prevLine: string): { re: string, tol: string, factor?: number } | null {
         const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        // an integer run gets {INT} (\d+); a fractional one {NUM}.  Dates/times/ids are integers,
+        //  so they read as {INT} — the float option would be misleading noise on them.
+        const numtag = (s: string) => s.includes('.') ? '{NUM}' : '{INT}'
+        // sub-tokenise a CHANGED string value against its prev: split on numeric runs, keep the
+        //  non-numeric skeleton + the stable numbers literal, replace only the numbers that
+        //   actually differ.  null if the skeleton itself differs (a structural change, not churn)
+        //    or nothing numeric moved — the caller then falls back to a whole-token {TOK}.
+        const num_frag = (gv: string, pv: string): string | null => {
+            const split = (s: string) => s.split(/(\d+(?:\.\d+)?)/)
+            const g = split(gv), p = split(pv)
+            if (g.length !== p.length) return null
+            let frag = '', captured = false
+            for (let i = 0; i < g.length; i++) {
+                if (i % 2 === 0) { if (g[i] !== p[i]) return null; frag += esc(g[i]) }   // text — must match
+                else if (g[i] !== p[i]) { frag += numtag(g[i]); captured = true }        // churning number
+                else frag += esc(g[i])                                                   // stable number
+            }
+            return captured ? frag : null
+        }
+
         const gs = (this.deL(gotLine)?.stringies ?? {}) as Record<string, any>
         const ps = (this.deL(prevLine)?.stringies ?? {}) as Record<string, any>
         const keys = Object.keys(gs)
         if (!keys.length) return null
 
-        // a snap stringies line is `k=N` (number) / `k:v` (string) / `k` (flag), comma-joined.
-        //  Rebuild it token by token, turning each CHANGED key into a capture, keeping the
-        //   rest literal as anchors.  classify the changed value to pick the capture class.
-        let anyTok = false, changed = false
-        // {NUM}/{TOK} are legible sugar — Text.spay_desugar expands each to one capture
-        //  group at RegExp-build time, and they ride to disk that way too (§8.4).
+        let anyTol = false, changed = false
         const parts: string[] = []
         for (const k of keys) {
             const gv = gs[k], pv = ps[k]
             const is_changed = pv !== undefined && pv !== gv
-            if (typeof gv === 'number' && is_changed) {
-                changed = true                                                    // any number → band
-                parts.push(`${esc(k)}={NUM}`)
-            } else if (typeof gv === 'string' && is_changed && /^[0-9a-fA-F]{8,}$/.test(gv)) {
-                changed = true; anyTok = true                                     // hash / signature
-                parts.push(`${esc(k)}:{TOK}`)
-            } else {
-                // stable token — a literal anchor (number→k=v, string→k:v, flag→k)
-                parts.push(typeof gv === 'number' ? `${esc(k)}=${esc(String(gv))}`
-                         : gv === 1 || gv === true ? esc(k)
+            if (!is_changed) {
+                // stable anchor — render EXACTLY as the snap line does (depeel, Y.svelte): a value
+                //  of 1/true is a bare flag (`time`, never `time=1`, so the 1-case precedes the
+                //   number case), any other number is `k=N`, a string is `k:v`.
+                parts.push(gv === 1 || gv === true ? esc(k)
+                         : typeof gv === 'number' ? `${esc(k)}=${esc(String(gv))}`
                          : `${esc(k)}:${esc(String(gv))}`)
+            } else if (typeof gv === 'number') {
+                changed = true                                                    // value-key number → band
+                parts.push(`${esc(k)}=${numtag(String(gv))}`)
+            } else if (typeof gv === 'string') {
+                // a churning string value (timestamp / path / id): {NUM}/{INT} its moving numbers,
+                //  else a whole-token {TOK}.  Either way it is identity-ish → the whole spayer is `any`.
+                const frag = typeof pv === 'string' ? num_frag(gv, pv) : null
+                changed = true; anyTol = true
+                parts.push(`${esc(k)}:${frag ?? '{TOK}'}`)
+            } else {
+                parts.push(`${esc(k)}:${esc(String(gv))}`)                        // non-scalar — anchor literally
             }
         }
         if (!changed) return null
-        // A number drifts within a band (factor 1.5) — even a unix timestamp: seconds of
-        //  drift sit far inside 1.5×.  A non-numeric token (hash / signature) cannot band
-        //   (spay_within parseFloats to NaN → never grafts), so it must graft wholesale → any.
-        const tol = anyTok ? 'any' : 'band'
-        const re = parts.join(',')
+        const tol = anyTol ? 'any' : 'band'
+        // join anchors with `.` (any-char) rather than a literal `,`: the snap field separator
+        //  is always a single `,`, so `.` matches it 1:1 yet also tolerates a separator that
+        //   drifts — erring vague between anchors, the same spirit as the locator.  Escaped
+        //    literals inside a part keep their real `.` as `\.`, so the unescaped `.` here is
+        //     unambiguously the field-boundary wildcard.
+        const re = parts.join('.')
         return tol === 'band' ? { re, tol, factor: 1.5 } : { re, tol }
     },
 

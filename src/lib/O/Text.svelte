@@ -131,8 +131,14 @@
     //     real capturing group only when the RegExp is built (spay_desugar).  A legacy
     //      raw regex carries no tag and passes through untouched.
     const SPAY_RE_SUGAR: Record<string, string> = {
-        '{NUM}': '(\\d+(?:\\.\\d+)?)',
-        '{TOK}': '(\\S+?)',
+        '{NUM}': '(\\d+(?:\\.\\d+)?)',   // a possibly-fractional number (timings, ratios)
+        '{INT}': '(\\d+)',               // a plain integer run (dates, times, ids, counters)
+        // a whole PeelVal — one field's value (a hash / signature / opaque token).  Bounded to a
+        //  run of non-comma, non-whitespace: `,` is the peel field separator (so this never gobbles
+        //   the next key) and whitespace is the objecties tab boundary.  A value MAY hold `:`/`/`/`=`
+        //    (peel splits only the first `:`), so those stay inside the capture.  Greedy, so it grabs
+        //     the whole token even at end-of-line (a non-greedy `\S+?` there would match one char).
+        '{TOK}': '([^,\\s]+)',
     }
 
     onMount(async () => {
@@ -925,7 +931,7 @@
     //   real capturing groups before a RegExp is built (each tag → exactly one group,
     //    so the graft's group-counting is unaffected).  Idempotent on a raw regex.
     spay_desugar(re: string): string {
-        return (re ?? '').replace(/\{NUM\}|\{TOK\}/g, m => SPAY_RE_SUGAR[m] ?? m)
+        return (re ?? '').replace(/\{NUM\}|\{INT\}|\{TOK\}/g, m => SPAY_RE_SUGAR[m] ?? m)
     },
 
     // spay_within — is the got capture tolerable against its exp pair?

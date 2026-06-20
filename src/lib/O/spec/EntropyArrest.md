@@ -99,17 +99,39 @@ spayer,re:<regex-with-captures>,tol:any                graft wholesale, any valu
 `spay_within` parses a band capture with `parseFloat` → `NaN` for a non-numeric token, which
  never grafts. So a hash/signature **must** be `tol:any`; only numerics may be `band`.
 
-**`{NUM}` / `{TOK}` sugar.** A raw capture group reads as line-noise (`(\d+(?:\.\d+)?)`), so
- a spayer's `re` carries legible tags instead: **`{NUM}`** for a (possibly-fractional) number,
-  **`{TOK}`** for a run of non-space (hash / signature / timestamp). The tag is what the author
-   sees in the field *and* what rides to disk; `Text.spay_desugar` expands each to exactly one
-    capturing group (so graft's group-counting is unchanged) only when the `RegExp` is built. A
-     legacy raw regex carries no tag and passes through untouched; the editor re-sugars a stored
-      raw capture back to a tag when you load a cap. `entropy_suggest` emits tags directly.
+**`{INT}` / `{NUM}` / `{TOK}` sugar.** A raw capture group reads as line-noise (`(\d+(?:\.\d+)?)`),
+ so a spayer's `re` carries legible tags instead: **`{INT}`** for an integer run (`\d+` — dates,
+  times, ids, counters), **`{NUM}`** for a possibly-fractional number (`\d+(?:\.\d+)?` — timings,
+   ratios), **`{TOK}`** for one whole PeelVal (`[^,\s]+` — a hash / signature / opaque token; bounded
+    by the `,` field separator and the objecties-tab whitespace, so it never gobbles the next key and
+     grabs the whole token even at end-of-line — a non-greedy `\S+?` would match a single char there).
+      The tag
+    is what the author sees in the field *and* what rides to disk; `Text.spay_desugar` expands each
+     to exactly one capturing group (so graft's group-counting is unchanged) only when the `RegExp`
+      is built. A legacy raw regex carries no tag and passes through untouched; the editor re-sugars
+       a stored raw capture back to a tag when you load a cap. `entropy_suggest` emits tags directly.
+
+**Captures live INSIDE a value, not just around it.** The churn is often a number *embedded* in a
+ mainkey's string value — a timestamp/path like `Waft:Ting/2026-06-21/034032`, where the day and
+  the time move but `Ting/2026-06-` is stable. `entropy_suggest` sub-tokenises a changed string
+   value against its prev: it splits on numeric runs, keeps the non-numeric skeleton *and the stable
+    numbers* literal, and replaces only the numbers that actually differ → `Waft:Ting/2026-06-{INT}/{INT}`.
+     A structured string like this is identity-ish — you cannot fit a date in a 1.5× band, and one
+      `tol` rules every capture in the re — so any in-value/token capture forces the whole spayer to
+       **`tol:any`**. The **locator** then matches the *keys* (`w:Lies / Waft,takes`), wildcarding the
+        mutating value out of the anchor, since the whole PeelValue is what moves.
 
 **Codec reality:** capture regexes contain `:` (every `(?:…)`) and usually `,`, so a
  `%spayer`/`%means` line serialises as **JSON** in `toc.snap` (`encode_stringies` fallback).
   This round-trips fine; with `{NUM}`/`{TOK}` the snap form is far more legible than a raw regex.
+
+**The spayed *target* line must be peelable, not JSON.** Forgiveness matches a regex against
+ the snap **line text**, and an authored `re` is built against the clean `k=N,k:v,k` peel form —
+  exactly as `depeel` (Y.svelte) renders it, so a value of `1`/`true` is a **bare key** (`time`,
+   never `time=1`), `entropy_suggest` mirrors that. A particle that trips `encode_stringies`' JSON
+    fallback (an object-in-`sc`, or otherwise non-scalar children) snaps as a single `{"…":…}` blob,
+     which the peel-shaped `re` can't cleanly capture. We do **not** spay JSON lines: to be spayable,
+      a C must encode non-JSON-ically (keep its `sc` scalar) — otherwise it simply doesn't get spayed.
 
 ---
 

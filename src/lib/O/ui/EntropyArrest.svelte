@@ -74,18 +74,31 @@
         if (s && s !== _seed_seen) { _seed_seen = s; seed_into_fields(s) }
     })
 
-    // depeel a snap line into one locator chunk; from `wildcard_from` onward, wildcard
-    //  each key's value (1 = "has key, any value") so the locator pins only the STABLE
-    //   keys BEFORE the changing one.  The noisy key and every key after it become
-    //    barewords — a trailing churner (`all=…,write=0`) would otherwise over-anchor
-    //     the match and stop forgiving the moment it drifts too.
+    // a value that LOOKS like churn — a timestamp / path / long id: a run of ≥3 digits, or
+    //  digit groups joined by `-` or `/` (`2026-06-21`, `042649`, `Ting/2026-06-21/042649`).
+    //   We don't know which keys are noisy a priori, but a date/path value is a reliable tell;
+    //    `lens:DocTing` / `state:live` carry no such run and stay literal.
+    function noisy_val(v: any): boolean {
+        return typeof v === 'string' && /\d{3,}|\d+[-/]\d+/.test(v)
+    }
+
+    // depeel a snap line into one locator chunk.  Two wildcardings, both "err vague after the
+    //  mainkey" — a too-loose locator is safe (it just no-ops where it over-matches; the spayer's
+    //   re does the precise work), an over-anchored one silently stops forgiving the moment a
+    //    pinned value drifts:
+    //   - from `wildcard_from` onward, bareword every key (the noisy key and everything after it),
+    //      so a trailing churner (`all=…,write=0`) doesn't over-anchor;
+    //   - on ANY non-mainkey key whose value looks noisy (a `waft:Ting/2026-06-21/042649` date/path),
+    //      bareword it even when it sits BEFORE the clicked key — this is the parent-line over-anchor
+    //       (a pinned `waft:` value is full of diff noise).  The first key (the type tag) stays literal.
     function loc_chunk(line: string, wildcard_from?: string): string {
         const sc = { ...(H.deL(line)?.stringies ?? {}) } as Record<string, any>
+        const ks = Object.keys(sc)
         if (wildcard_from) {
-            const ks = Object.keys(sc)
             const from = ks.indexOf(wildcard_from)
             if (from >= 0) for (const k of ks.slice(from)) sc[k] = 1
         }
+        for (const k of ks.slice(1)) if (noisy_val(sc[k])) sc[k] = 1
         return depeel(sc)
     }
 
@@ -94,8 +107,12 @@
         if (!got) return
         const gs = got.stringies as Record<string, any>
         const ps = (H.deL(s.left)?.stringies ?? {}) as Record<string, any>
-        // noisy key: first numeric that changed prev→got, else any numeric
-        let nk = Object.keys(gs).find(k => typeof gs[k] === 'number' && ps[k] !== undefined && ps[k] !== gs[k])
+        // noisy key: the first key whose value CHANGED prev→got — numeric (a counter/timing) OR
+        //  a structured string whose embedded numbers churn (a mainkey path/timestamp like
+        //   `Waft:Ting/2026-06-21/034032`).  It is the wildcard-from point, so the locator pins
+        //    the stable keys before it and barewords the mutating value + everything after
+        //     (`Waft,takes`, not `Waft:Ting/…,takes`).  Fall back to the first numeric.
+        let nk = Object.keys(gs).find(k => ps[k] !== undefined && ps[k] !== gs[k])
         nk ??= Object.keys(gs).find(k => typeof gs[k] === 'number')
         noisy = nk
 
@@ -127,7 +144,7 @@
         const prefix = cs.slice(0, -1)
             .map(c => { const o = peel(c) as Record<string, any>; const k = Object.keys(o)[0]; return o[k] === 1 ? k : String(o[k]) })
             .join('_')
-        const tail = nk ? `${leafmk}-${nk}` : leafmk
+        const tail = nk && nk !== leafmk ? `${leafmk}-${nk}` : leafmk
         return prefix ? `${prefix}_${tail}` : tail
     }
     //#endregion
@@ -193,8 +210,9 @@
     function resugar(re: string): string {
         return re
             .replace(/\(\\d\+\(\?:\\\.\\d\+\)\?\)/g, '{NUM}')   // (\d+(?:\.\d+)?)
-            .replace(/\(\\d\+\)/g, '{NUM}')                     // (\d+)
-            .replace(/\(\\S\+\?\)/g, '{TOK}')                   // (\S+?)
+            .replace(/\(\\d\+\)/g, '{INT}')                     // (\d+)
+            .replace(/\(\[\^,\\s\]\+\)/g, '{TOK}')              // ([^,\s]+)
+            .replace(/\(\\S\+\?\)/g, '{TOK}')                   // (\S+?) — legacy form
     }
     function edit_cap(cap: TheC) {
         const lm = cap.o({ lematch: 1 })[0] as TheC | undefined

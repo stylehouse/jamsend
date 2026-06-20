@@ -186,11 +186,6 @@ The runner does NOT compile or include inside its Story Run; it **acquires** wha
     the snaps stay on the runner (`Story/This`), pulled across on demand to diff a cell. Relevancy = a `(book,path)`
      with a `run_result` (observed) ∪ a Funkcion's declared `%of_dock` (so a never-run column still shows).
 
-*Funkcions as public-sphere infra:* a Credence board is a small instance of embedded buttons in a shared document
- that switch *server-side* capability on. "Click a test to run it on the runner" generalises to people activating a
-  capability — the Waft the public surface, the Funkcion the franchise, the runner the server that acts. As the
-   channel hardens (trust/addressing), *who may strike which Funkcion* becomes a permissions question.
-
 ## 5. Durable gotchas
 
 - **`%ttlilt` is NOT a keep-alive** ([[ttlilt-not-a-keepalive]]). One-shot snap-timing advisor; re-arming is a
@@ -217,6 +212,15 @@ The runner does NOT compile or include inside its Story Run; it **acquires** wha
    [[ballistics-drum-pad]], [[editron-verdict-phase2]].
 
 ---
+
+## FUTURE
+
+- **Funkcions as public-sphere infrastructure.** A Credence board is a small instance of a larger pattern:
+   embedded buttons in a shared document that switch *server-side* capability on. "Click a test to run it on
+    the runner" generalises to *people activating a capability* — the Waft is the public surface, the Funkcion
+     the franchise, the runner the server that acts. As the channel hardens (trust/addressing, see TODO),
+      *who may strike which Funkcion* becomes a permissions question, not just a test-runner one. The taxonomy
+       already has the seam: a monitor reads, an action acts; an action that acts on the *server* is the franchise.
 
 ## TODO
 

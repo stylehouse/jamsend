@@ -4,7 +4,7 @@ The `%Interest` cluster + Lang↔Lies `waft_roster` channel is graduated into th
  and verified live. **Interests are attention channels: the IDE escalates state *through* them.** This
   doc merges the three former Interest handovers (graduation, the real-channel reshape, the surprise
    popover) into one: **foundation → the real channel end-to-end → the implemented items & phases →
-    the popover/havoc surface → the metromap future → gotchas**.
+    the popover/havoc surface → gotchas → FUTURE → TODO**.
 
 Interest is the **UItime expression** of the `%subscribe` wire (`Wire_spec.md`); Editron is its Atime
  sibling — they share the subscribe/wake vocabulary, not a merge. The general push-dual-of-pull
@@ -182,45 +182,7 @@ The through-line: a surprise_read (external edit conflict on an open Doc) **pops
         reads land, re-running every tick so it self-gates on readiness and retries; `maz`-leveled
          sequencing of those = the drum machine. See [[ballistics-drum-pad]], [[nested-req-needs-cup-stamped]].
 
-## 5. The metromap & the lens "generalissimo" — the future picture (not now)
-
-*(Status/priority for both lives in the §7 TODO; this section is the vision.)*
-
-The popover proves the "Interest pops out big attention" mechanic. The picture the owner wants is a tiny
- **animated SVG metromap** of the two layers of Interest/Point working: (1) **Interestily sprouts the
-  activeWhat** via an *obscured network*, then (2) the activeWhat **sprouts its Points**. Nodes carry
-   **"elsewheres" that fold away** like a real folded metromap; the creased **horizon edges stay faintly
-    readable behind the words**. No `×` (dismissal lives in PeelInput). This extends the InterestStrip
-     switcher from a button strip toward a spatial channel map.
-
-**The lens as UI-pluggability "generalissimo"** (the reverted `InterestLens` was too small) — **low
- motivation (2026-06-19):** it reads as a UI-nester, and the need isn't proven yet; parked until a
-  concrete consumer pulls for it:
-- A **Lens is optional UI pluggability** — host the *meaning* of an Interest at Lang (or wherever), used
-   only if something wants it, **driven by a property on the Waft** (`sc.lens` is the seed). Lies grows
-    full UIs that strip back to the "unillusioned Waft"; via an Interest a thing offers a *tiny* UI.
-- **Generalize the Lens into the placement router.** Many locations could host UI (multiple MiniMap
-   slots, inline, elsewhere). The Lens system is the registry/router: an Interest declares *which slot* +
-    *which tiny UI*; revive `InterestLens` as a multi-slot host, not a single mount. (The data-channel
-     question returns then: ref-pipe vs ride-the-roster.)
-- **Interaction:** double-click an Interest or a Point → opens its menu; build on/extend `PeelInput`
-   (the controlled inline add/edit form for any keyed particle). Interest buttons read as `i`/`o`.
-- **Per-kind menus** (a "DJ mixer for spraying notes around," not widgets yet): **GhostList** = a cluster
-   of recent ghosts + a name search whose placeholders are **prefix boxes** for the current context (in
-    `Ghost/N/` you search at `[Ghost/][N/][ ]`); **Ting** = a huge **time-trail** sorted into strata (the
-     metromap); a **Pantheate controller** (the BlastPit run operation as an embeddable widget).
-- **Remaining LE slice:** real **per-deck Sidetrack** LEs (a Sidetrack foreground still falls back to the
-   last Trail's LE — no off-anchor clone of its own) and the true **simultaneous dual-LE push-mutex**
-    (arming both a Trail and a Sidetrack at once). Both are the Sidetrack half of Waft_spec §Presence.
-
-**Loose fancies (raised, undefined — capture when they firm up):**
-- **Fold-into-chunks** — auto-cluster a method's *internals* into ~3 chunks: sub-method auto-chunking, a
-   peer of the StemHive stem clustering but inside a body rather than across names. Granularity/trigger
-    unspecified. (Lands as a lens/render concern over an engaged What — metromap-adjacent.)
-- **"Scribbles"** — an annotation/marginalia layer over the doc. Undefined direction; a natural
-   inhabitant of the attention-channel surface once it firms up.
-
-## 6. Gotchas & code map
+## 5. Gotchas & code map
 
 **Gotchas (durable):**
 - **`o({k:1})` wildcards on value** — numeric `1` matches ANY value for key `k` (`n_matches_kv`). Use
@@ -244,25 +206,43 @@ The popover proves the "Interest pops out big attention" mechanic. The picture t
       lines; fixtures Interestily→Peeroleum.g, Interestily2→Peregrination.g). Elvis names must match
        handlers verbatim ([[elvis-handler-name-verbatim]]).
 
-## 7. TODO
+## FUTURE
 
-- **Popover follow-ups** — move InterestStrip's `×` into `PeelInput` (a distinct UX refactor); tighten the
-   escalate target from the whole Lang/Lies House header onto the Liesui sub-element.
-- **Self-arming havoc limbs — PARKED** (known race: firing synchronously in the Spotlight races the cold
-   dock open, so `surprise_read` no-ops on an empty `%Good`). Run-level fix: host the armed limb in the
-    **Funkcion pump** (`req:Store` Phase 2b, after dock reads land) so it self-gates on readiness and retries;
-     `maz`-leveled sequencing of those = the drum machine. [[ballistics-drum-pad]], [[nested-req-needs-cup-stamped]].
-- **Per-deck Sidetrack LEs + dual-LE push-mutex** — a Sidetrack foreground still falls back to the last
-   Trail's LE (no off-anchor clone of its own); arming a Trail + a Sidetrack at once needs a true
-    simultaneous dual-LE push-mutex. Both are the Sidetrack half of `Waft_spec` §Presence.
-- **Metromap — deferred well past the near-term** (the destination, not the next move). When revisited,
-   evaluate **Svelvet** (github.com/open-source-labs/Svelvet) as the node/edge substrate before hand-rolling
-    the SVG. The two-layer picture: Interestily sprouts the activeWhat (obscured network), then the activeWhat
-     sprouts its Points, with folded-away "elsewheres" and faintly-readable horizon creases.
-- **Lens "generalissimo" — parked, low motivation** — a UI-pluggability router (an Interest declares which
-   slot + which tiny UI; `sc.lens` is the seed). Reads as a UI-nester whose need isn't proven; revive
-    `InterestLens` as a multi-slot host only when a concrete consumer pulls. Per-kind menus sketched
-     (GhostList prefix-box search, Ting time-trail strata, a Pantheate run controller).
-- **Loose fancies** (undefined) — fold-into-chunks (auto-cluster a method's internals into ~3 chunks, peer
-   of StemHive stem clustering); "scribbles" (an annotation/marginalia layer over the doc).
+The beyond-reasonable picture — held in view, not scheduled.
+
+- **The metromap.** A tiny **animated SVG metromap** of the two layers of Interest/Point working: (1)
+   Interestily sprouts the activeWhat via an *obscured network*, then (2) the activeWhat sprouts its Points.
+    Nodes carry **"elsewheres" that fold away** like a real folded metromap; the creased **horizon edges
+     stay faintly readable behind the words**. Dismissal lives in `PeelInput`, no `×`. It extends the
+      InterestStrip switcher from a button strip toward a spatial channel map. When revisited, evaluate
+       **Svelvet** (github.com/open-source-labs/Svelvet) as the node/edge substrate before hand-rolling the SVG.
+- **The lens "generalissimo" — UI-pluggability.** Host the *meaning* of an Interest (at Lang or wherever),
+   used only if something wants it, driven by `sc.lens`; Lies grows full UIs that strip back to the
+    "unillusioned Waft", and via an Interest a thing offers a *tiny* UI. Generalize the lens into a placement
+     router — an Interest declares which slot + which tiny UI; revive `InterestLens` as a multi-slot host. Per-
+      kind menus, a "DJ mixer for spraying notes around": GhostList = recent ghosts + a search whose placeholders
+       are **prefix boxes** for the context (`[Ghost/][N/][ ]`); Ting = a time-trail sorted into strata; a
+        Pantheate run controller as an embeddable widget. *Low motivation — reads as a UI-nester whose need
+         isn't proven; don't start it on the metromap's behalf.*
+- **Loose fancies.** Fold-into-chunks (auto-cluster a method's *internals* into ~3 chunks — a peer of StemHive
+   stem clustering, but inside a body); "scribbles" (an annotation/marginalia layer over the doc).
+
+## TODO
+
+- **Popover follow-ups** — move InterestStrip's `×` into `PeelInput`; tighten the escalate target from the
+   whole Lang/Lies House header onto the Liesui sub-element.
+- **GhostList click → Sidetrack** — a GhostList entry click is `Dock_open` today (`DocGhostList.svelte:63`),
+   landing the ghost on the *current* Trail over the foreground cursor. Editing wants the opposite: throw into
+    a `Ghost/**` that was NOT in the foreground Trail's cloud *without* disturbing it — sprout a Sidetrack onto
+     the clicked ghost (reuse the Item-3 drivers `e_Lang_sprout_sidetrack` / `e_Lies_open_sidetrack`). Wrinkle:
+      `from` is a cursor anchor today; a ghost origin has none, so the tentative-Waft minting (`<from>/side`,
+       bind-by-`%from`) must accept a ghost-path origin. Gesture question: plain-click sprouts, or a modifier
+        does (keeping `Dock_open` as the default).
+- **Per-deck Sidetrack LEs + dual-LE push-mutex** — a Sidetrack foreground still falls back to the last Trail's
+   LE (no off-anchor clone of its own); arming a Trail + a Sidetrack at once needs a true simultaneous dual-LE
+    push-mutex. Both are the Sidetrack half of `Waft_spec` §Presence.
+- **Self-arming havoc limbs — PARKED** (known race: firing synchronously in the Spotlight races the cold dock
+   open, so `surprise_read` no-ops on an empty `%Good`). Fix: host the armed limb in the **Funkcion pump**
+    (`req:Store` Phase 2b, after dock reads land) so it self-gates on readiness and retries.
+     [[ballistics-drum-pad]], [[nested-req-needs-cup-stamped]].
 - **Snap re-records pending** — LakeNets/LakeFlush expected snaps (the post-unification improvement).
