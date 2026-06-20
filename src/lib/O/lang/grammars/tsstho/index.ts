@@ -18,11 +18,16 @@
 import { LRLanguage } from "@codemirror/language"
 import { HighlightStyle } from "@codemirror/language"
 import { parseMixed } from "@lezer/common"
-import { parser as jsBaseParser } from "@lezer/javascript"
 import { tags as t } from "@lezer/highlight"
 
 import { get_inner_parser } from "../stho"
 import type { LangResolve } from "../../registry"
+
+// @lezer/javascript (the big TS/JS grammar) is imported LAZILY inside resolve() —
+//  a top-level import welds it into the main bundle (and onto the runner / old-mobile
+//   endpoints that never open a .ts/.svelte).  Only stho stays eager — it is the .g
+//    core, always live.  parseMixed / LRLanguage / @lezer/highlight are already-bundled
+//     CM core, so they stay static.
 
 // Highlight palette for the TS host. The inner stho HighlightStyle is
 // already applied separately at the editor level via sthoTags, so this set
@@ -50,6 +55,7 @@ export const highlightStyle = HighlightStyle.define([
 ])
 
 export async function resolve(): Promise<LangResolve> {
+    const { parser: jsBaseParser } = await import("@lezer/javascript")   // lazy: the big grammar, .ts/.svelte-only
     const innerParser = await get_inner_parser()
     if (!innerParser) {
         // No inner stho parser — fall back to plain TS. Islands won't nest

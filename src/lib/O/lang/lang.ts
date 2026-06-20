@@ -157,5 +157,6 @@ export function lang_for_path(path: string): string {
     if (path.endsWith('.stho'))    return 'stho'
     if (path.endsWith('.ts'))      return 'tsstho'
     if (path.endsWith('.svelte'))  return 'tsstho'
+    if (path.endsWith('.md'))      return 'markdown'
     return 'stho'
 }

@@ -253,6 +253,14 @@ The runner does NOT compile or include inside its Story Run; it **acquires** wha
    expandable to error / Story summary / Story diff.
 - **non-.g Pointing** — tsstho Points in `.ts`/`.svelte`, markdown Points in specs, on a parse-for-Points-only
    path emitting NO `.go` ([[nong-pointing-todo]]).
+- **Runner / low-end bundle split** — keep CodeMirror + the editor island off the runner and old-mobile
+   endpoints. The editor is one static-import island (`Lang*`, `O/lang/`, `@codemirror/*`); today it rides into
+    the runner's chunk because the runner's spine statically reaches `Lang*`. Gate the editor mount by role
+     behind a dynamic `import()` so Rollup splits it into an editor-only chunk the runner never names; verify
+      with a bundle visualizer that the runner entry no longer contains `@codemirror`. *Cheap precursor done:*
+       all langs but `stho` are now lazy (`tsstho`/`markdown` `await import()` their grammars, so `@lezer/javascript`
+        and `@codemirror/lang-markdown` only load when a `.ts`/`.svelte`/`.md` dock opens). A separate route/entry
+         for the runner would let Vite split it for free — worth it if the runner endpoint hardens.
 - **Trust enforcement** (deferred for v1) — accept-the-one-runner trust-everything handshake → real
    per-Funkcion permissions; `Thangs` persistence of who's allowed (`Peeroleum` heading 11).
 - **Loose ends** — stray `debugger` at `Housing.svelte.ts:1852`; the `ack seq=undefined DROPPED` after each HMR

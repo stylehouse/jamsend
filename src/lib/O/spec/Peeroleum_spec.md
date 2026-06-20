@@ -1,16 +1,37 @@
 # Peeroleum spec
 
 The nailed-down design for retiring `Peerily.svelte.ts` (+ `MachPeerily.svelte`)
-and growing `Peeroleum.svelte` (+ `MachPeeroleum.svelte`) in their place.
+and growing **Peeroleum** in their place — the particle-only p2p transport/message/
+`%req` spine, the "linoleum floor" everything social stands on.
 
 This is a spec, not a sketch. Where the brief said "sketch, not law", this says
 law — every particle, every state, every transition is pinned down. Code comes
 after; this is the thing code is checked against.
 
-The first thing built against this spec is the `%transport,type:mock` spine: two
-sides come up under one House, exchange hello+trust as particles only, and land
-at `%req:handshake,finished` on both. No real network, no corruption, no binary.
-If that compiles and the snap is clean, everything else is filling in.
+**Realised shape (corrects the original framing).** The live spine is **not** a
+hand-written `Peeroleum.svelte` — it is the LangTiles ghost `Ghost/N/Peeroleum.g`
+(compiled to `gen/`), with the transport-trial carriers in `Ghost/N/Tribunal.g`.
+`MachPeeroleum.svelte` was never grown: **observation is a Story Book**
+(`Ghost/Story/Peregrination.g`), not a Mach layer (§14). The endgame stands —
+retire Peerily/MachPeerily and rename Peeroleum → Peerily (handover heading 12).
+
+The first thing built against this spec was the `%transport,type:mock` spine: two
+sides come up under one House, exchange hello+trust as particles only, and land at
+`%req:handshake,finished` on both. That **is built and proven** (handover rungs
+0–4); what follows is filling in.
+
+**This doc is one of a two-frequency pair — read this rule before editing either.**
+`Peeroleum_spec.md` (here) is the LOW-frequency half: the durable, settled design of
+the floor — particle layouts, the one signed frame envelope, the outbox/inbox/ack/
+whittle lifecycle, handshake-as-`%req`, the mock substrate, the realised relay
+topology (§5). It changes rarely; it is the law code is checked against.
+`Peeroleum_handover.md` is the HIGH-frequency half: the live `[x]`/`[~]`/`[ ]`
+checklist, "start here", per-rung status and proofs, next moves, and the forward
+look (the Garden.g/Tyrant.g cabinetry+party layer riding this floor). **Rule of
+thumb:** a fact that is "how the floor IS designed, settled" belongs here; a fact
+that is "what's DONE / BROKEN / NEXT / proven-at-step-N" belongs in the handover.
+When a handover engine-fact corrects this spec, promote it here and leave a one-line
+gravestone on the prose it replaced — no silent caps.
 
 ---
 
@@ -47,10 +68,11 @@ mainkey used to.
 
 > Every piece of a peer's state is a particle. The transport is swappable, with a
 > `type:mock` that runs tests in-process and deterministic. Every message — hello,
-> trust, data, binary — is one signed envelope. Reqs are unified on `%req` and a
-> req that waits says so by spawning a throwaway `%req:waiting` that carries its
-> demand for time, droppable by its parent. The Mach choreography survives; it
-> queries particles instead of polling booleans.
+> trust, data, binary — is one signed envelope. Reqs are unified on `%req`; a req
+> that must wait is advised by a one-shot `%ttlilt` (the Lies family runs on this).
+> The Peeroleum floor's own quiescence needs none — `feebly_ponder` + `post_do` +
+> Story step-pacing drive the round-trip to completion inside a step (`Tribunal.g`
+> deliberately avoids a ttlilt). Observation queries particles, not booleans.
 
 ---
 
@@ -63,7 +85,7 @@ A:Peerologist                                    the manager — its own clean A
   w:Peerologist
     %req:p2pman                                  brings Peerings up per our desire to appear online
     %sides,N:[Alice,Bob,Mallory]           (test only) single source of side names
-    %witnessed,step:N                            (test only) was the step's expected event seen
+    %witnessed:step_N                            (test only) was the step's expected event seen (step on value, §14)
     %meddle ...                                  (test only) corruption arming, see §14
 
 A:Alice                                        one A per identity-presence
@@ -104,8 +126,12 @@ main presence, room for `A:Alice/w:OtherPresence` later without a second House.
 
 ## 3. The req model (unified %req)
 
-`reqy()` is unchanged in mechanism (see `Hovercraft.svelte`). What changes is that
-*everything* uses it with the default mainkey `req`, and desires nest under desires.
+`reqy()` is **gone** — superseded by the C-native `%req` engine on any host C:
+`host.oai({req,maz,eternal?,permanent?},sc?)` (sync), `host.doai(c,sc)?.(req=>…)`,
+`await host.do()`, `host.finish(child)`, `host.all_finished()` (`Stuff.svelte.ts`
+~574-652). `eternal` = never finished, self-settles via `req.sc.ok=1`; `permanent`
+un-finishes on input drift. What is durable is the *shape*: everything is a `%req`
+with the default mainkey `req`, and desires nest under desires.
 
 ### 3.1 Nesting via req/*req
 
@@ -115,7 +141,7 @@ its own `%reqcons`, `do_one` finds no explicit `do_fn` and instead does each
 
 ```
 %req:handshake                                   the desire (has children → recursion drives it)
-  %reqcons                                        protocol bucket (reqy bookkeeping)
+  %reqcons                                        child-req bucket (serialised anon reqs)
     %reqcon:req,serial_i:…
   %req:said_hello,maz:4                           leaf work items
   %req:heard_hello,maz:3
@@ -127,28 +153,15 @@ its own `%reqcons`, `do_one` finds no explicit `do_fn` and instead does each
 (`do()` filters to the highest unfinished maz). So heard_hello (maz:3) can't run
 until said_hello (maz:4) is finished, and so on down to heard_trust (no maz = 1).
 
-### 3.2 The waiting-req (per-req demand for time)
+### 3.2 The waiting-req — VOIDED (never built)
 
-This is the mechanism the brief asked for and §13 details. The shape:
-
-A leaf `%req` that cannot finish yet does **not** itself hold demand (it will
-finish, and a finished req must not pin time open). Instead it spawns a throwaway:
-
-```
-%req:heard_hello,maz:3                            the waiting work item
-  %req:waiting,for:heard_hello,until:T            throwaway — carries the demand
-```
-
-- `%req:waiting` is the *client* of the demand. While it exists with `until:T` in
-  the future, the global `leave_running_until` is at least `T`.
-- The parent (`%req:heard_hello`) drops `%req:waiting` the moment hello is heard,
-  **or** when it decides to give up — either way the demand vanishes with it.
-- Cancelling your own demand = dropping your own waiting-req. No global mutation,
-  no race: the global is recomputed each poll as the max `until` over all live
-  `%req:waiting` anywhere in the tree (§13).
-
-A req can have at most one live `%req:waiting`; re-running its do_fn while still
-waiting bumps `until` on the existing one (or leaves it; see §13 on initialdo).
+The original design was a throwaway `%req:waiting,until:T` per leaf as the demand
+client, with a computed-max global. **It was never built and is deliberately
+abandoned** — `%req:waiting` appears in no engine code. A leaf that cannot finish
+yet simply stays `needs_work` and is re-pumped; the realised demand mechanism is a
+one-shot `%ttlilt` (a snap-timing advisor, §1), and the floor self-drives on
+`feebly_ponder` + `post_do` + step-pacing. Full gravestone in §13; see handover
+heading 5 (CLOSED).
 
 ---
 
@@ -229,10 +242,71 @@ type because they perturb whatever is carrying.
 
 ---
 
-## 5. (reserved)
+## 5. Realised transport topology — relay, two-AP routing, the frame spine (the "heading 10" design)
 
-*(Section numbering kept stable with the brief; transport selection logic is in §4.1
- and §11.)*
+The settled design for real transport, promoted here from the handover. Kept
+addressable as **"heading 10"** — its first customer is the editor↔runner channel,
+which makes the music-app peers and Lies (editor/runner) two consumers of ONE
+envelope/transport/ack/faulty machinery. (Transport *selection* is §4.1 + §11.)
+
+**Topology — two servers on localhost, two ports.** Browsers talk only to their
+**own-origin** `/relay` (same-origin WS — sidesteps CORS, mixed-content, Origin
+checks). The two node relays **bridge each other server-to-server** over plain `ws`
+to the one with a reachable domain (the **editor**). One relay dials the other at a
+**hardcoded** editor endpoint — not a mesh, a pair.
+
+```
+editor browser ──ws──▶ editor /relay ◀──relay↔relay (plain ws)──▶ staging /relay ◀──ws── staging browser
+   (same origin)         (node)              (no CORS)                (node)         (same origin)
+```
+
+**Routing = two-AP, no ARP / no discovery.** The 802.11g picture: your relay is the
+**AP**, `header.to` is the destination address. A relay reads `header.to`; local
+socket → deliver; else hand it **once** to the peer relay. With exactly two APs,
+"not local → the other one" is the whole routing table. **No-local-socket → drop**
+(the sender's no-ack `%ttlilt` retries).
+
+**Loop-safety is structural, not a flag.** A frame from a **browser** socket may be
+forwarded once to the peer relay; a frame over the **relay↔relay** link is
+**deliver-local-or-drop, never re-forwarded**. Two relays, single hop, asymmetric
+rule ⇒ a frame cannot loop.
+
+**Role is runtime, browser-commanded, set-once.** `Lies%runner` sends a control
+frame to its own server: *become runner-server.* The server locks `role=runner` and
+opens exactly one r2r ws-client to the editor's hardcoded domain; `Lies%editor` locks
+it `editor`. A second, conflicting assignment **throws** (errorific). The whole flow
+is initiated from the browser by Lies — the servers are dumb pipes that wake on
+browser traffic, and the r2r link comes up lazily on the first remote-bound frame.
+NO docker/env role config.
+
+**The four asks to this spine (all realised in code):**
+1. **App-frame dispatch seam (`Peeroleum_on`)** — `Peeroleum_pump_inbox` routes a
+   non-protocol `header.type` to a per-`w` registered handler (`Peeroleum_on(w,type,
+   fn)` → `w.c.on[type]`, a `.c` seam), keeping the inbox/ack/faulty lifecycle +
+   pre-Ud gate. This lets Lies own `dock_push`/`run_result` without editing the spine.
+2. **Consumer emit via `Peeroleum_send`** — already books the outbox emit + seq for
+   any non-ack frame; a consumer just calls it. Promoted to a Pier-hosted `%req:send`
+   it hits the **c.up rule** (§8) or it silently never pumps.
+3. **Peer-ready signal (`Peeroleum_peer_ready`)** — a thin read of both Piers'
+   `%req:handshake,finished` / `%Ud` for a consumer to gate on (the pre-Ud inbox gate
+   rejects app frames until handshake completes anyway).
+4. **Real WS on the editor's server** — attach via a `configureServer` vite plugin on
+   the dev `httpServer` (`ws` is already vite's transitive dep). **Avoid the phantom**:
+   `vite.config.server.js` points at a `server.ts` that does NOT exist — half-removed
+   scaffold; do not build on it. (Realised: `src/lib/server/relay.ts` `attachRelay`.)
+
+**Security / v1 reality — the seam Tyrant.g attaches to.** The runner HAS an Id
+(`%Peering`/`%Pier` are keyed by it) — identity is present, trust *enforcement* is
+deferred. v1 = **trust-everything**: accept the one runner that connects, handshake
+completes implicitly, hardcoded editor+runner Ids so there is *some* identity to
+tighten later. `%Ud` verification, per-runner authorization, Thangs persistence are
+future — this trust-everything seam is exactly where the cabinetry layer (Tyrant.g,
+identity/trust) bolts on.
+
+**Where frames land (the Lies side).** Editor emit hook = `write_finished` + `w%editor`;
+runner receiver = `LiesStore_good → land_good → drain_good`. The channel carries the `.go`
+**bytes**, not a path — there is no shared OPFS across the two origins, so a shared-disk
+shortcut is *not* available (don't "optimise" the byte-shipping away).
 
 ---
 
@@ -355,6 +429,12 @@ terminal mark (`%done` or `%error`).
 see in the snap. In mock mode delivery is instant so backlog rarely persists into
 a committed snap; under real transport it can, and then it is legible.
 
+**Invariant (query-safe delete).** At `%done` the transient `%queued`/`%handling`
+flags are `delete`d (the serial lock query `handling && !done` needs them gone).
+`delete`+query is sound: `n_matches_kv` checks `hasOwnProperty` and the encoder
+reads `sc` directly, so a dropped key vanishes from both queries and the snap even
+though the stale X index still lists it (the post-filter rejects it).
+
 ### 7.4 Whittle (the cull)
 
 From the brief's `whittle_N`, fixed so `drop` targets the host:
@@ -397,7 +477,8 @@ Each leaf's do_fn is now a **particle existence check**, not a bool poll:
 
 ```
 %req:said_hello   do:  if Pier/protocol/hello/%said exists -> finish
-                       else -> spawn|keep %req:waiting,for:said_hello (demand)
+                       else -> stay needs_work; the wrangler/post_do chain re-pumps
+                               it next pass (no %req:waiting — that was never built)
 ```
 
 The protocol writes that drive these come from the hello/trust exchange:
@@ -416,6 +497,16 @@ The cross-side short-circuit (from MachPeerily) survives: once the *other* side
 is settled, this side stops demanding — the gap is the result (e.g. heard_hello
 never arriving after a corrupt hello is the test passing).
 
+**The c.up bomb (load-bearing).** A `%req` hosted below `w` (under `%Pier`/
+`%Peering`) silently never pumps unless the host chain's `c.up` is stamped by hand:
+`Pier.c.up = Peering; Peering.c.up = w`. The belief walk wires `A.c.up`/`w.c.up`
+only — not the domain particles under `w` — so `pier.do()` climbs an undefined
+`c.up`, never reaches the House to resolve `req_handshake`, and the req sits
+`needs_work` with no throw. In production the spine must do the same wherever
+`req_p2paddy` ensures a `%Pier` (§11.2). (`req.oai`/`doai` DO set `req.c.up=host`,
+so the req *tree* is fine; it's the non-req host chain `Pier→Peering→w` that the
+walk leaves unwired.)
+
 ---
 
 ## 9. faulty + reset_handshake
@@ -429,7 +520,8 @@ never arriving after a corrupt hello is the test passing).
     %unemit:M,error:invalid-signature,seq:4[,claim:step_5]
 ```
 
-`claim:step_N` is the Mach mechanism (§14) stamping which step expected this fault.
+`claim:step_N` is the corruption-test stamp (§14) marking which step expected this
+fault — reserved for heading 6 (the meddle machinery is not built yet).
 
 `reset_handshake` is an elvis — `o_elvis:reset_handshake` aimed at a `%Pier`:
 
@@ -500,6 +592,13 @@ identity thang's `keys`; `prepub` is `name`; `prepri` is a display fragment.
 Three tiers of desire, each a `%req` owning sub-`%req`. Motivation flows down;
 state flows up.
 
+> **Forward design, largely unbuilt** — the current spine bodies are `// <` seams
+>  that just `req.do(); req.sc.ok=1`. Two corrections to the diagrams below: (1) a
+>   leaf that must wait carries **no `%req:waiting`** (never built) — it stays
+>    `needs_work` and is re-pumped, advised by a one-shot `%ttlilt` if a real
+>     transport makes it span a snap; (2) any Pier-/Peering-hosted `%req` needs its
+>      host chain's `c.up` stamped (§8) or it silently never pumps.
+
 ### 11.1 %req:p2pman — appear online
 
 ```
@@ -507,13 +606,13 @@ A:Peerologist/w:Peerologist
   %req:p2pman                                       top desire: be online per our identities
     %req:init                                        one-time wiring (on_hangup, side names)
     %req:bring_up,prepub:7acf…                       one per identity-thang with online_want
-      %req:waiting,for:peering_open,until:T          throwaway demand while the Peering connects
+                                                     (waits by staying needs_work; no %req:waiting)
 ```
 
 `%req:p2pman` reads `w:Thangs,thangs:identities`. For each `online_want` identity
 it seeds a `%req:bring_up` whose do_fn ensures `A:<side>/w:Peeroleum/%Peering`
 exists and its transport is open. `%req:bring_up` finishes when the Peering is
-`%open`; until then it carries a `%req:waiting`.
+`%open`; until then it stays `needs_work`.
 
 ### 11.2 %req:p2paddy — manage this Peering's Piers
 
@@ -522,15 +621,17 @@ A:Alice/w:Peeroleum
   %Peering,name:alice,prepub:7acf…
     %req:p2paddy                                     desire: maintain Piers per known-peers
       %req:dial,target:8cbc…                          one per peer we want connected
-        %req:waiting,for:connected,until:T
       %req:transport_select                           try webrtc, fall back to websocket
-        %req:waiting,for:webrtc_open,until:T          dropped on open OR on fallback decision
+                                                       (reserved for REAL peers; the test trial
+                                                        is wrangler-driven — Tribunal.g, not a %req)
 ```
 
 `%req:p2paddy` reads `w:Thangs,thangs:peerings`. For each known peer it seeds a
 `%req:dial`. It also owns `%req:transport_select`, which seeds `%transport,type:webrtc`,
 waits, and on timeout seeds `%transport,type:websocket` and points
-`%active_transport` at it (leaving webrtc present-and-`%faulty`).
+`%active_transport` at it (leaving webrtc present-and-`%faulty`). **In the test this
+is wrangler-driven** — `req_transport_select` is GONE (nesting it under p2paddy broke
+the `req.c.up`→Peering navigation); the req version is reserved for real peers.
 
 ### 11.3 per-Pier desires — handshake and sends
 
@@ -540,16 +641,17 @@ A:Alice/w:Peeroleum
     %Pier,pub:8cbc…
       %req:handshake,target:8cbc…                     §8 — the round-trip
       %req:send,type:data,seq:S                        a thing we want on the wire
-        %req:waiting,for:acked,until:T                 dropped when %outbox/emit:S is %acked
+                                                       (finishes when %outbox/emit:S is %acked)
 ```
 
 A `%req:send` is how the new world replaces `ier.emit()` poking. To send, seed a
 `%req:send`; its do_fn writes a `%outbox/emit:N`; the transport ferries it; the
-ack stamps `%acked`; the waiting-req drops; `%req:send` finishes.
+ack stamps `%acked`; `%req:send` finishes.
 
-State flows up the same hierarchy as exports (§12): a Pier's `%faulty` can hoist
-to its Peering, a Peering's open-count to p2pman, so each tier sees a summary of
-the tier below without reaching into it.
+State flows up the hierarchy in principle — a Pier's `%faulty` summarised to its
+Peering, a Peering's open-count to p2pman — so each tier sees the tier below without
+walking it. (The `%exports`/`%aim` hoisting once specced for this is **not built**;
+no consumer needs it until p2pman is real — see §12.)
 
 ---
 
@@ -572,29 +674,20 @@ for each A under Run, each w under A:
     cull  Pier/outbox/emit:* where %acked    -> Pier/outbox/recent (whittle 20)
     cull  Pier/inbox/unemit:* where %done -> Pier/inbox/recent (whittle 20)
     rebuild Pier/%faulty from remaining inbox/**/error
-    hoist Pier exports (see 12.2)
 ```
 
 This is the only place outbox/inbox items vanish, so the snap *before* this
 boundary always shows the send/receive that happened during the step. That is the
-"capture important moments before carrying on" the brief asked for.
+"capture important moments before carrying on" the brief asked for. **The witness
+stamps during the step (pre-boundary); do not move the cull earlier or it would
+strip the traffic the witness and the snap depend on.**
 
-### 12.2 Hoisting exports
+### 12.2 Hoisting exports — VOIDED (not built)
 
-`reqy.do` already hoists `%aim` from `req` to `w`. Generalise: a particle may
-declare `%exports` it wants lifted to its parent for legibility.
-
-```
-%Pier,pub:8cbc…
-  %faulty …                                            present -> export a summary up
--> at boundary ->
-%Peering,name:alice
-  %pier_faulty,pub:8cbc…                               hoisted summary, so Peering shows trouble
-```
-
-Exports are *summaries*, not moves — the detail stays on the Pier; the parent
-gets a flag. p2pman thereby sees "some Peering has a faulty Pier" without walking
-every Pier each tick.
+The `%exports`/`%aim` hoisting once specced here (a particle declaring a summary to
+lift to its parent for legibility) is **not in the engine**. No consumer needs the
+Peering-level summary until `%req:p2pman` is real (handover heading 11). Deferred,
+not designed.
 
 ### 12.3 Munging times
 
@@ -605,103 +698,58 @@ live value on `c` for behaviour). Mock runs avoid times entirely, so their snaps
 are naturally stable; real runs are stable after munging. The brief accepted this:
 "we'll have to."
 
-### 12.4 want_savepoint and %waits_savepoint
+### 12.4 want_savepoint / %waits_savepoint — VOIDED (not built)
 
-A req may declare `%req:…,waits_savepoint:1`. When its do_fn makes the progress
-it was waiting to record (e.g. `%req:send` stamps `%outbox/emit:S,sent`), the
-do-loop calls `H.want_savepoint()` — zeroing demand so Story snaps *now*, before
-the next boundary culls the just-sent item. So a send is guaranteed at least one
-snap-frame of visibility even if its ack arrives in the same Atime.
-
-```
-%req:send,type:hello,waits_savepoint:1
-  do: write %outbox/emit:N,sent
-      H.want_savepoint()        -> Story snaps -> boundary culls -> %outbox/recent
-```
+`want_savepoint`/`%waits_savepoint` (force a snap before the boundary culls a
+just-sent item) is **not in the engine**. Under the mock the `post_do` chain drives
+the round-trip within a step, so the snap-visibility guarantee it bought isn't
+needed yet; a real transport would reach for a `%ttlilt`, not this. Deferred.
 
 ---
 
-## 13. Per-req demand for time (the waiting-req, in full)
+## 13. Per-req demand for time — VOIDED (ttlilt is the realised mechanism)
 
-The old `demand_time_to_think(ms)` mutates one global `H.c.leave_running_until`,
-extend-only, with `want_savepoint()` the only (sledgehammer) cancel. The new
-model: demand is owned by throwaway `%req:waiting` particles; the global is a
-*computed max*, never directly mutated by waiters.
-
-### 13.1 The waiting-req
-
-```
-%req:heard_hello,maz:3                              a leaf that may need to wait
-  %req:waiting,for:heard_hello,until:T              throwaway; T = now + this phase's ms
-```
-
-- `for:` is a label for the snap ("what are we waiting on").
-- `until:` is wall-clock seconds; the demand this waiter contributes.
-- At most one `%req:waiting` per parent req.
-
-### 13.2 The computed global
-
-`poll_step` (in `Story.svelte`) computes, each tick:
-
-```
-leave_running_until = max( until of every live %req:waiting anywhere under Run )
-                      , falling back to 0 if none
-```
-
-- A waiter extends time by *existing* with a future `until`.
-- A waiter cancels its demand by being *dropped* — if it held the max, the global
-  drops to the next-highest automatically. No write-write race: dropping removes
-  from the set the max reads from; there is no shared mutable number to clobber.
-- Two waiters racing (one drops, one extends) resolve cleanly: the max is taken
-  after both edits land, because it is recomputed, not incrementally maintained.
-
-### 13.3 initialdo and not extending forever
-
-The MachPeerily lesson (don't re-extend on every heartbeat tick) becomes: a
-waiting-req sets `until` **once**, when first created (the parent's `initialdo`
-pass). Subsequent do_fn runs while still waiting *leave `until` alone* — so the
-deadline genuinely elapses on failure and the step can end. Only a fresh phase
-(a new waiting-req for a different `for:`) sets a new `until`.
-
-```
-first run (initialdo):  spawn %req:waiting,for:heard_hello,until: now+0.8
-later runs (waiting):    %req:waiting already there -> do not touch until
-hello heard:             parent drops %req:waiting -> demand gone
-gave up / other settled: parent drops %req:waiting -> demand gone, gap recorded
-```
-
-### 13.4 reqy as the demand client
-
-This is the brief's "reqy() should be the %client for a demand for time, so they
-can cancel their own demand". Realised: the reqy do-loop, when a leaf cannot
-finish, owns the spawn/keep/drop of that leaf's `%req:waiting`. The leaf never
-touches the global; it only manages its own throwaway. Cancellation is local and
-safe by construction.
+This whole section specced a `%req:waiting` demand client + a computed-max global
+`leave_running_until` + `reqy` as the demand client. **None of it was built**, and
+all three subjects are gone: `reqy()` is deleted (§3); `%req:waiting` and the
+computed-max global exist in no code. The realised mechanism is a one-shot `%ttlilt`
+(`H.i_req_ttlilt(req, secs, {waiting})`, `Hovercraft.svelte:380`) — owned demand,
+dropped on `finish()`, polled-not-mutated (no write-write race), already what the
+live system runs on (LiesStore/Lang/LiesCortex). The floor itself uses none
+(`Tribunal.g` deliberately avoids it; it self-drives on `feebly_ponder` + `post_do`
++ step-pacing). See handover heading 5 (CLOSED) — don't rebuild this.
 
 ---
 
-## 14. Mach layer (MachPeeroleum) — observing particles
+## 14. Observation is a Story Book (Peregrination), not a Mach layer
 
-The Mach pattern from `MachPeerily` survives almost unchanged: `on_step` table,
-per-step force-finish-prior, the witness flag, `expected_error` + `claim:step_N`,
-the `meddle_fn` mechanic. What changes is *what it observes* — particles, not
-booleans through `.c.inst`.
+The original design here was a `MachPeeroleum` Mach layer (an `on_step` choreography
+table, force-finish-prior, the witness flag). **`MachPeeroleum` was never grown** —
+observation is the Story Book `Ghost/Story/Peregrination.g`, acquired by the Creduler
+runner. What survives from the Mach idea is durable and lives on:
 
-### 14.1 What stays
+- **Assertions are particle-existence queries**, not `.c.inst` polling. Every check is
+  a `q.o(...)` on the right particle — e.g. "does `Pier/protocol/hello/%said` exist on
+  the Pier with this `pub`". (`Lake_witness` in the Book does exactly this.)
+- **The witness is a particle**: `%witnessed:step_N` — the step rides in the *value*
+  (`step` is the Story mainkey, so it can't be a key), so the step-witnessing shows up
+  in the snap diff like everything else.
+  > Gravestone: the old shape was `%witnessed,step:N` — corrected to `%witnessed:step_N`.
+- **The corruption meddle hook sits on `%active_transport`** (not `Pier.emit`), read
+  live on every `send`, so the same corruption test runs under mock/webrtc/websocket —
+  it perturbs whatever is carrying (§14.1). Reserved for heading 6; the meddle
+  machinery itself is not built yet (legacy `MachPeerily` only).
 
-```
-on_step({ 1:…, 2:…, 4:…, 5:… })                    step choreography table (unchanged shape)
-force-finish prior step's %req before seeding next  (unchanged)
-%witnessed,step:N                                    the witness flag — now a particle on the mgr w
-expected_error + claim:step_N                        stamps which step expected which %faulty
-%req:emit_corruption (was %De:emit_corruption)       eternal; swappable meddle child
-```
+**The realised observer.** `Run_A_Peregrination` wires the Run; `Peregrination(A,w)`
+installs `%req:wrangle,eternal` whose do_fn calls `Lake_drive(w, req)` each pass.
+`Lake_drive` dispatches per inner step off a **req-local `req.c.did_step`** — and
+**explicitly refuses `H.on_step`**, which keys off one H-global `did_on_step_n`: when
+cold-compile spills into the next step, an `on_step` table claims it and starves the
+real setup (the exact bug the old Mach `on_step` would reintroduce). `Lake_witness`
+stamps the witnesses; `Lake_sides_up` / `Lake_handshake` / `Lake_trial_*` are the
+per-step setups.
 
-The witness flag moving from `H.c._pl_step_error_witnessed` to a particle
-`%witnessed,step:N` is the §8-style win applied to the test harness itself: the
-step-witnessing shows up in the snap diff like everything else.
-
-### 14.2 Meddle attaches to %active_transport
+### 14.1 Meddle attaches to %active_transport (corruption — heading 6)
 
 ```
 A:Peerologist/w:Peerologist
@@ -710,42 +758,19 @@ A:Peerologist/w:Peerologist
     %req:N,corruption:publicKey,meddle_fn:Function   the live lie; re-arm latest-onlys it
 ```
 
-The wrap installs a hook on `%active_transport` (not `Pier.emit`). On every
-`send`, the transport reads the live `meddle_fn` from the corruption req and
-applies it to the frame post-sign. Because it sits on the transport, the same
-corruption test runs under mock, webrtc, or websocket — the meddle perturbs
-whatever is carrying.
+The wrap installs a hook on `%active_transport`. On every `send` the transport reads
+the live `meddle_fn` and applies it to the frame **post-sign**, so:
 
 ```
-Mallory send path:
-  build frame -> sign header -> [meddle_fn(frame)] -> active_transport.send(frame)
-                                  ^ reads %req:emit_corruption/%req:N/meddle_fn live
-Alice inbox:
-  %unemit:N,handling -> verify fails -> %unemit:N,error:invalid-signature
-                                          -> hoist to %faulty,claim:step_5
+Mallory send path:  build frame -> sign header -> [meddle_fn(frame)] -> active_transport.send(frame)
+Alice inbox:        %unemit:N,handling -> verify fails -> %unemit:N,error:invalid-signature
+                                                            -> hoist to %faulty,claim:step_N
 ```
 
-### 14.3 Reading state — existence, not polling
-
-Old: `Pier_n.c.inst.said_hello` (escape hatch into JS). New:
-`Pier_n.o({protocol:1})[0].o({hello:1})[0].oa({said:1})` — particle existence.
-Every Mach assertion is a `q.o(...)` on the right particle. The `De_handshake`
-target filter that was fixed last week stays, but it is now "does
-`Pier/protocol/hello/%said` exist on the Pier with this `pub`", a structural
-query.
-
-### 14.4 Step opts gain transport
-
-```
-on_step(2): happy-path hello+trust under type:mock
-  seed %req:handshake on both sides ; mock delivers instantly ; both reach finished
-on_step(4): Mallory dials Alice, meddle publicKey -> Alice %faulty,error:not-them
-on_step(5): meddle sign -> Alice %faulty,error:invalid-signature
-```
-
-A step opt `transport: mock|webrtc|websocket` lets the same step sequence run
-under different transports — the cross-product the brief wanted (corruption ×
-message-type × transport).
+A step opt `transport:mock|webrtc|websocket` lets the same sequence run under each
+carrier — the corruption × message-type × transport cross-product. The receive side is
+**already realised**: `hear_*` `return false` on reject → `%error` →
+`Peeroleum_rollup_faulty`; the missing piece for heading 6 is only the meddle wrap.
 
 ---
 
@@ -773,7 +798,7 @@ B.send(frame):
 
 - No ICE, no SDP, no timers measured in seconds — delivery is a `post_do` in the
   same House, so a full hello+trust round-trip completes within a step.
-- The meddle hook (§14.2) sits on the mock `%active_transport` exactly as it will
+- The meddle hook (§14.1) sits on the mock `%active_transport` exactly as it will
   on real ones, so corruption tests written against mock port straight across.
 - No timestamps written to particles, so snaps are stable with no munging.
 
@@ -785,36 +810,12 @@ side, then at `%req:handshake,finished` on both.
 
 ## 16. Build order
 
-Strict order; each rung must snap clean before the next.
-
-```
-1  mock transport spine
-     %transport,type:mock ; shared-queue delivery ; one frame A->B delivered
-2  hello+trust under mock
-     %req:handshake on both sides ; both reach finished ; clean snap   ← MachPeeroleum on_step(1|2)
-3  outbox/inbox lifecycle + acks + whittle
-     %emit/%unemit states ; serial handling ; boundary cull ; %recent tails
-4  per-req demand (waiting-reqs) replacing global demand
-     %req:waiting ; computed-max global ; initialdo-once ; want_savepoint
-5  corruption tests (re-use meddle, now on %active_transport)
-     on_step(4) publicKey -> not-them ; on_step(5) sign -> invalid-signature
-6  binary frames (body + body_hash) folded into the envelope
-     test_binary as just-another-frame ; corruption identical to hello-sign
-7  disconnect + reset_handshake
-     %active_transport e:close -> reset ; p2paddy re-dials ; phases re-run
-8  webrtc transport alongside mock
-     %transport,type:webrtc ; tries, may go %faulty,reason visibly
-9  websocket fallback (separate relay endpoint)
-     %req:transport_select fall-through ; %active_transport switches
-10 Thangs persistence wired
-     identities + peerings thangs drive p2pman + p2paddy
-11 migrate Otro over ; delete Peerily ; rename Peeroleum -> Peerily
-```
-
-Rungs 1–4 are the spine and the riskiest (they prove particle-only state +
-per-req demand actually work). If they reveal friction it is cheap to find here.
-Rungs 5–7 are re-applications of patterns that already worked in MachPeerily.
-Rungs 8–11 are real-world transport and cleanup, each its own session.
+The rung-by-rung build order and its live status are tracked in
+`Peeroleum_handover.md` (the `[x]`/`[~]`/`[ ]` checklist), which has diverged from
+the original static list once here: rung 4 ("per-req demand") closed as
+`%ttlilt`-not-`%req:waiting` (§13), the transport trial became `Tribunal.g`, and the
+rungs renumbered. The endgame rung still stands: migrate Otro, delete Peerily/
+MachPeerily, rename Peeroleum → Peerily (handover heading 12).
 
 ---
 
@@ -830,12 +831,8 @@ Holes flagged, not filled, so the next reader knows they were seen:
 - `// <` whether the body is fully opaque or carries a tiny `body_type:json|raw|file_chunk`;
    the envelope reserves room (`body_len`) but the spec assumes opaque for now,
     type-tells-the-receiver-how-to-read it.
-- `// <` the relay forwarding case (websocket server, or a mutual-friend relay) —
-   the `from`+`to`-on-header design supports it,
-    but the relay endpoint itself is rung 9, deliberately not specified here.
-- `// <` whether `%req:waiting` should carry `for:` only or also a small reason
-   when it gives up;
-    leaving it `for:` until rung 4 shows whether give-up needs its own record.
+- relay forwarding (websocket server, or a mutual-friend relay) — **RESOLVED**: the
+   `from`+`to`-on-header design carries it; the realised relay topology is §5.
 - `// <` reaping `%faulty` — currently kept until `reset_handshake`;
    if a Pier accumulates faults without disconnecting,
     a whittle on `%faulty` may be wanted, decided when rung 5 generates volume.

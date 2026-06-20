@@ -5,15 +5,19 @@
 // whether the result came from the generated artifact or a live build, plus
 // a stale flag the header UI uses to surface a "regen" affordance.
 
-import type { LRLanguage } from "@codemirror/language"
+import type { Language } from "@codemirror/language"
 import type { HighlightStyle } from "@codemirror/language"
 
-import * as stho   from "./grammars/stho"
-import * as tsstho from "./grammars/tsstho"
+import * as stho     from "./grammars/stho"
+import * as tsstho   from "./grammars/tsstho"
+import * as markdown from "./grammars/markdown"   // prebuilt lib lang, lazily imported inside its resolve()
 // < lezer-grammar would be next: highlight the .grammar files we're editing.
 
+// Language, not LRLanguage: stho/tsstho are LR (buildParser); markdown is a
+//  @lezer/markdown Language.  The base class covers both, and LanguageSupport
+//   (lang.ts) accepts either.
 export type LangResolve = {
-    language: LRLanguage | null
+    language: Language | null
     source:   'generated' | 'live'
     stale:    boolean
     warnings: any[]
@@ -43,6 +47,12 @@ export const REGISTRY: Record<string, LangEntry> = {
         resolve:        tsstho.resolve,
         grammar_path:   'src/lib/O/lang/grammars/tsstho/tsstho.grammar',
         generated_path: 'src/lib/O/lang/grammars/tsstho/tsstho.grammar.ts',
+    },
+    markdown: {
+        label:          'markdown',
+        highlightStyle: markdown.highlightStyle,
+        resolve:        markdown.resolve,
+        // no grammar_path/generated_path: a prebuilt lib language, nothing to regen.
     },
 }
 

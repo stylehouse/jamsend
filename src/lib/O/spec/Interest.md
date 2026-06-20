@@ -239,27 +239,62 @@ The beyond-reasonable picture — held in view, not scheduled.
      was **dropped**: it's a fragment of the FUTURE lens-menu (a compact 10px chip can't host PeelInput's
       orb→irow→del without hiding a one-click dismiss behind a menu), folded into that bullet above.
 - **GhostList click → one smart action — DONE.** A click is `e_Lies_ghost_pick{path}` (Lies, which owns the
-   Waft knowledge): if the ghost is **already open on a giver Trail** it foregrounds that Trail (jumps there);
-    otherwise it **sprouts a Sidetrack** onto the ghost. The "already open" scan is **giver-Wafts only**
-     (`interest_stance_of === 'active'`) — the GhostList's own lister Waft indexes every ghost as a `%Doc`, so it
-      would always self-match, and taker/tentative Wafts are no home to jump to. The sprout reuses
-       `Lang_sprout_sidetrack` / `Lies_open_sidetrack` with `from` = the ghost path; the **subject seed** —
-        `Lies_open_sidetrack` now takes a `doc` and plants `{Doc:doc}` in the tentative Waft — is what lets
-         foregrounding land the cursor on the ghost and open the real file off-Trail. (The earlier ↳-badge split
-          and its StemHive `onalt` were dropped — one smart click subsumes both; StemHive is back to baseline.)
-- **Sprout auto-foregrounds — DONE.** The InterestStrip's `↳` (and the GhostList sprout) now *go there*: a
-   sprout marks `it.c.foreground_on_bind` (c-side, one-shot, off-snap) and `interest_reconcile` foregrounds the
-    Sidetrack the moment it binds to its Waft. Also fixed a reactivity bug behind it — the in-place
-     (Sidetrack/light) `interest_foreground` raw-assigned `it.sc.state='locked'` without bumping `languinio`, so
-      the snap showed `locked` but the live cap tooltip stayed `pending`; it now `lang.bump_version()`s like the
-       Trail path. *Still deferred:* the seeded ghost-Sidetrack foregrounds (ActiveInterest + its own armed LE)
-        but does NOT yet land the Lies cursor on the seeded Doc — that's the per-deck-LE item below.
-- **Persisted scratch Waft (`Aside/<YMD>`) — TODO.** We need somewhere to dump scrappy info that survives a page
-   reload; Ting is session-only, so it doesn't. A Sidetrack-flavoured but **daily-timestamp-named, persisted**
-    Waft. The tidy home — *inside* the owning Trail, e.g. `Ghost/Net/Aside-20260621` — is **blocked by Waft
-     renaming + remote-link-caretaking**, so don't reach for it yet. Candidate near-term home: a top-level
-      wormhole-scoped `Waft:Aside/<YMD>` (Wafts are wormhole-scoped, so a flat dated name suffices). Open: does it
-       ride as a Sidetrack stance or a new kind, and who garbage-collects stale days.
+   Waft knowledge):
+   - **Already open on a giver Trail** → jump there and land on **that Doc's What** (a follow-up `Lies_want` on
+      the found Doc wins over Lies_foreground_waft's land-on-first), so a re-click continues where that ghost
+       lives. The scan counts a **real home only** — `active` givers and the `aside` daily scratch — skipping the
+        GhostList's own lister Waft (it indexes every ghost as a `%Doc`, so it would always self-match) and taker/
+         tentative Wafts.
+   - **Not open anywhere** → thrown into today's **persisted `Waft:Aside/<YMD>`** (see below) as a fresh "moment"
+      `%What` carrying `%FromWhat` — a loose `Waft:<key>/<mainkey>:<value>` locator of what we were looking at,
+       matchable by mainkey+value (the "stringy cheese", deliberately NOT a hard C ref) — with the ghost `%Doc`
+        inside it; the Waft is marked `active` and
+        the cursor lands on the new What so the ghost opens off the Trail. (The earlier `Dock_open`/↳-badge split
+         and its StemHive `onalt` were dropped; StemHive is back to baseline.)
+- **`Aside` is now its own Interest kind — DONE.** Kinds are *elected by a stance mark on the Waft*
+   (`interest_stance_of`: `takes`→Ting, `lists`→GhostList, `tentative`→Sidetrack, **`aside`→Aside**, else→Trail);
+    the kind is read off that, never self-declared. `Lies_spawn_aside_waft` now stamps `%aside` so the daily
+     scratch Waft *knows itself* — its own warm-amber cap style (`isx-aside`), a `🗒` label, and a clean place to
+      hang Aside-specific behaviour later — instead of masquerading as an undifferentiated Trail. It still walks
+       like a Trail (`interest_cursor_for` + `interest_foreground` treat Aside as a Trail: NaviCado lens, takes
+        the stage, armed LE) and still **persists** (`Lies_waft_save` exempts only `takes`/`tentative`, like the
+         GhostList's `lists`). The smart-click "already open" scan now counts both `active` givers **and** `aside`,
+          so re-throwing a ghost continues into today's Aside. *Throw-away for now, not permanent — but persists
+           across reload (that was the point); could become permanent the way anything can.* *Open:* who garbage-
+            collects stale days; the tidy in-Trail home (`Trail/Aside-<YMD>`) still waits on Waft-rename caretaking.
+- **InterestStrip: bare × / ↳ gone, Interest inspector landed — DONE.** Dropped the per-cap `×` (dropping a
+   Lies/Waft with no confirm was far too drastic) and the `↳` sprout button. Tapping a cap now: if it isn't the
+    foreground, foregrounds it; if it already IS, opens its **inspector** — the open|edit step *just beyond*
+     foregrounding. Crucial framing: the inspector manages the **Interest itself (the grapple), not its Waft
+      content (the gripped)** — content stays the editor/NaviCado's job. It shows the Interest's own properties:
+       a **hyperlink to its Waft** (`waft` — re-foregrounds/re-lands), its **posture** (`from` = the anchor it flew
+        off, `state`/foreground vs background), `lens`, `presence`, `in_Doc`, and a **two-step confirm dismiss**
+         (the safe replacement for ×; GhostList exempt — it's the singleton index). *Growth direction, footed in
+          the panel:* an Interest **is a channel** (§4 "Interests are attention channels"), so "what it can
+           tell · be-told" — escalations like surprise_read already pop out of it — is what the inspector grows to
+            surface/drive. Lens-pick and Waft-rename land here too once rename-caretaking exists.
+- **Sprout auto-foregrounds — DONE.** The InterestStrip's `↳` now *goes there*: a sprout marks
+   `it.c.foreground_on_bind` (c-side, one-shot, off-snap) and `interest_reconcile` foregrounds the Sidetrack the
+    moment it binds to its Waft. Also fixed a reactivity bug behind it — the in-place (Sidetrack/light)
+     `interest_foreground` raw-assigned `it.sc.state='locked'` without bumping `languinio`, so the snap showed
+      `locked` but the live cap tooltip stayed `pending`; it now `lang.bump_version()`s like the Trail path.
+- **Grafted-spinner hang on non-`.g` Aside docs — FIXED.** Switching between Aside Whats (which hold plain
+   `.svelte`/`.ts` docs) left DocMinimap's gold "grafting points" spinner spinning forever. `req_instrumentation`
+    armed a `waiting:methods` ttlilt whenever a doc had no `%Map` — but a non-`.g` doc never compiles to one
+     (Point-nav for those is the open tsstho TODO), and a ttlilt is a one-shot snap-timing advisor, not a
+      keep-alive, so it timed out and nothing re-fired. Now the wait is gated on `Lies_gen_path(want)` (the
+       compiler's own `.g`→`.go` gate): a `.g` waits exactly as before; a non-`.g` wipes Pmirrors, clears the
+        spinner, and finishes. See [[ttlilt-not-a-keepalive]], [[nong-pointing-todo]].
+- **Rejoin the stack frame — back to the Trail — TODO.** The Aside is a *pushed frame*: you throw a thread off
+   the Trail you were on, then want to *pop back* to exactly where you were. Two halves:
+   - **`%FromWhat` click-through** — render the moment-What's `FromWhat` locator as a link that resolves
+      `Waft:<key>/<mainkey>:<value>` (match by mainkey+value) and foregrounds it, landing on that source What.
+       Eventually a Trail What fraying with many Asides could *show* that (a frayed-edge affordance).
+   - **Per-(Interest, Waft) cursor-memory** — any Interest, on leaving a Waft, remembers where its cursor was and
+      restores it on return (instead of `Waft_cursor_first`'s land-on-first). The smart-click jump approximates
+       this for one Doc. Pairs with the per-deck-LE item.
+   Both need **reference-caretaking across Waft (maybe What) renames** — the same blocker behind the in-Trail
+    Aside home; a stored locator must survive its target being renamed.
 - **Strip collapses the "uninteresting" caps — DONE.** A cap is *engaged* (always shown) when it's the
    foreground, has been `locked` by a foreground, or carries an LE (the editing checkout's `c.LE` or an armed
     `{LE}` child). A merely-loaded giver (e.g. `Waft:Credence`) and the always-on GhostList sit at `pending` with

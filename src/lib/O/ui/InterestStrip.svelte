@@ -25,6 +25,12 @@
         state:       string
         active:      boolean
         interesting: boolean   // engaged enough to hold a strip slot (else it collapses)
+        // the Interest's own properties — what the inspector edits|shows (NOT its Waft
+        //  content): the grapple, not the gripped.
+        lens:        string | undefined
+        presence:    string | undefined
+        from:        string | undefined   // the anchor it flew off (Sidetrack|Aside) — a posture
+        in_doc:      string | undefined   // the doc its cursor is on
         key:         string
     }
 
@@ -50,6 +56,7 @@
             const waft  = it.sc.waft as string | undefined
             const label = kind === 'GhostList' ? 'ghosts'
                         : kind === 'Sidetrack' ? (it.sc.from ? `↳${it.sc.from}` : 'sidetrack')
+                        : kind === 'Aside'     ? `🗒 ${waft?.split('/').pop() ?? 'aside'}`
                         : (waft?.split('/').pop() ?? 'trail')
             const state    = (it.sc.state as string) ?? 'pending'
             const is_active = active.kind === kind && (active.waft ?? undefined) === (waft ?? undefined)
@@ -63,6 +70,10 @@
                 kind, waft, label, state,
                 active: is_active,
                 interesting,
+                lens:     it.sc.lens     as string | undefined,
+                presence: it.sc.presence as string | undefined,
+                from:     it.sc.from     as string | undefined,
+                in_doc:   it.sc.in_Doc   as string | undefined,
                 key:    `${kind}:${waft ?? ''}`,
             })
         }
@@ -78,18 +89,25 @@
     const foreground = (r: Row) =>
         H.i_elvisto('Lang/Lang', 'Lang_foreground', { kind: r.kind, ...(r.waft ? { waft: r.waft } : {}) })
 
-    // Dismiss acts Lies-side — drop Lies/Waft (Waft_spec); the roster re-push then marks
-    //  the Interest gone.  GhostList is the self-listing singleton — not dismissable here.
-    const dismiss = (r: Row) => { if (r.waft && r.kind !== 'GhostList') H.i_elvisto('Lies/Lies', 'Lies_close_Waft', { path: r.waft }) }
+    // The open|edit mode — the step JUST BEYOND being foregrounded.  Tapping a cap that
+    //  isn't the foreground foregrounds it; tapping the one that already IS opens its
+    //  inspector.  The inspector manages the INTEREST (the grapple) — a hyperlink to its
+    //  Waft, its posture (where it flew off, whether it holds the stage), and a safe
+    //  confirm-guarded dismiss — not the Waft's content (that's the editor/NaviCado).
+    //  No bare × on the caps: dropping a Waft is a deliberate two-step in here.
+    let open_key   = $state<string | undefined>()
+    let confirming = $state(false)
+    let open_row   = $derived(rows.find(r => r.key === open_key && r.active))
 
-    // ↳ Sprout a Sidetrack off the foreground Trail (the reverse arrow, Waft_spec).  One
-    //  gesture: Lang sprouts the pending Sidetrack, Lies opens its tentative Waft, the
-    //   roster re-push binds them by %from.  Only meaningful while a Trail is foreground.
-    const sprout = () => {
-        const from = active.waft
-        if (active.kind !== 'Trail' || !from) return
-        H.i_elvisto('Lang/Lang', 'Lang_sprout_sidetrack', { from })
-        H.i_elvisto('Lies/Lies', 'Lies_open_sidetrack',   { from })
+    const tap = (r: Row) => {
+        if (r.active) { open_key = open_key === r.key ? undefined : r.key; confirming = false }
+        else          { open_key = undefined; foreground(r) }
+    }
+    // Dismiss acts Lies-side — drop Lies/Waft; the roster re-push then marks it gone.
+    //  GhostList is the self-listing singleton, not dismissable.
+    const dismiss = (r: Row) => {
+        if (r.waft && r.kind !== 'GhostList') H.i_elvisto('Lies/Lies', 'Lies_close_Waft', { path: r.waft })
+        open_key = undefined; confirming = false
     }
 </script>
 
@@ -102,13 +120,12 @@
          data-waft={r.waft ?? ''}
          class:isx-active={r.active}
          class:isx-pending={r.state === 'pending'}
-         class:isx-ghostlist={r.kind === 'GhostList'}>
+         class:isx-ghostlist={r.kind === 'GhostList'}
+         class:isx-aside={r.kind === 'Aside'}
+         class:isx-open={open_key === r.key && r.active}>
         <button class="isx-btn"
-                title={`${r.kind}${r.waft ? ' · ' + r.waft : ''} — ${r.state}${r.active ? ' (foreground)' : ''}`}
-                onclick={() => foreground(r)}>{r.label}</button>
-        {#if r.waft && r.kind !== 'GhostList'}
-            <button class="isx-x" title="Dismiss this Interest" onclick={() => dismiss(r)}>×</button>
-        {/if}
+                title={`${r.kind}${r.waft ? ' · ' + r.waft : ''} — ${r.state}${r.active ? ' (foreground — tap to inspect)' : ''}`}
+                onclick={() => tap(r)}>{r.label}</button>
     </div>
 {/snippet}
 
@@ -125,10 +142,42 @@
             {#each cold as r (r.key)}{@render cap(r)}{/each}
         {/if}
     {/if}
-    {#if active.kind === 'Trail' && active.waft}
-        <button class="isx-sprout" title="Sprout a Sidetrack off this Trail" onclick={sprout}>↳</button>
-    {/if}
 </div>
+
+{#if open_row}
+    {@const or = open_row}
+    <!-- the Interest inspector — the open|edit step beyond foregrounding.  Shows the
+         Interest (the grapple), not its Waft content.  Grows toward the channel nature
+         (tell|be-told) noted at the foot. -->
+    <div class="isx-panel">
+        <div class="isx-panel-hd">
+            <span class="isx-panel-kind">{or.kind}</span>
+            {#if or.waft}
+                <!-- hyperlink to the Waft: re-foreground / re-land the cursor on it -->
+                <button class="isx-panel-waft" title="go to this Waft" onclick={() => foreground(or)}>↗ {or.waft}</button>
+            {/if}
+        </div>
+        <div class="isx-panel-facts">
+            {#if or.lens}<span>lens <b>{or.lens}</b></span>{/if}
+            {#if or.presence}<span>presence <b>{or.presence}</b></span>{/if}
+            <span>state <b>{or.state}</b></span>
+            {#if or.from}<span class="isx-panel-posture" title="the anchor this flew off">off <b>{or.from}</b></span>{/if}
+            {#if or.in_doc}<span title="the doc its cursor is on">in <b>{or.in_doc}</b></span>{/if}
+        </div>
+        <div class="isx-panel-actions">
+            {#if or.kind !== 'GhostList' && or.waft}
+                {#if !confirming}
+                    <button class="isx-panel-dismiss" onclick={() => confirming = true}>dismiss…</button>
+                {:else}
+                    <span class="isx-panel-q">drop this Waft from the desk?</span>
+                    <button class="isx-panel-yes" onclick={() => dismiss(or)}>yes, drop</button>
+                    <button class="isx-panel-no"  onclick={() => confirming = false}>keep</button>
+                {/if}
+            {/if}
+        </div>
+        <div class="isx-panel-note">an Interest is a channel — what it can tell · be-told lands here</div>
+    </div>
+{/if}
 {/if}
 
 <style>
@@ -158,9 +207,17 @@
         border-color: rgba(196, 170, 238, 0.7);
         box-shadow:   0 0 6px rgba(196, 170, 238, 0.35);
     }
+    /* inspector open on this cap — a notch brighter, reads as "drilled in" */
+    .isx-open {
+        border-color: rgba(196, 170, 238, 0.9);
+        box-shadow:   0 0 8px rgba(196, 170, 238, 0.5);
+    }
     /* noticed but not yet locked (no LE armed) */
     .isx-pending  { opacity: 0.6; }
     .isx-ghostlist { background: rgba(120, 170, 140, 0.06); border-color: rgba(120, 170, 140, 0.28); }
+    /* Aside — the daily scratch dump; a warm amber tint, kin to but distinct from a Trail */
+    .isx-aside     { background: rgba(214, 178, 110, 0.08); border-color: rgba(214, 178, 110, 0.30); }
+    .isx-aside .isx-btn { color: #d9b877; }
     .isx-btn {
         background:    none;
         border:        none;
@@ -178,17 +235,6 @@
     .isx-btn:hover            { color: #fff; }
     .isx-active .isx-btn      { color: #e7dcff; font-weight: 600; }
     .isx-ghostlist .isx-btn   { color: #8fc7a6; }
-    .isx-x {
-        background:  none;
-        border:      none;
-        cursor:      pointer;
-        color:       #5a4a6a;
-        font-family: inherit;
-        font-size:   10px;
-        line-height: 1;
-        padding:     0 1px;
-    }
-    .isx-x:hover { color: #e06c75; }
     /* "+N more" — the collapsed quiet Interests; muted dashed pill, lights on open */
     .isx-more {
         background:    none;
@@ -203,18 +249,48 @@
     }
     .isx-more:hover     { color: #aab; border-color: rgba(170, 185, 215, 0.55); }
     .isx-more-open      { color: #99a; border-style: solid; }
-    /* ↳ sprout a Sidetrack off the foreground Trail */
-    .isx-sprout {
-        background:    none;
-        border:        1px dashed rgba(196, 170, 238, 0.3);
-        border-radius: 3px;
-        cursor:        pointer;
-        color:         #8a7aa6;
+
+    /* ── the Interest inspector — opens below the strip for the foregrounded cap ── */
+    .isx-panel {
+        display:       flex;
+        flex-direction: column;
+        gap:           3px;
+        padding:       5px 8px 6px;
+        background:    rgba(18, 15, 26, 0.95);
+        border-bottom: 1px solid rgba(196, 170, 238, 0.18);
         font-family:   inherit;
-        font-size:     11px;
-        line-height:   1;
-        padding:       2px 5px;
-        margin-left:   2px;
+        font-size:     10px;
+        color:         #b6a8cc;
     }
-    .isx-sprout:hover { color: #c4aaee; border-color: rgba(196, 170, 238, 0.6); }
+    .isx-panel-hd { display: flex; align-items: baseline; gap: 8px; }
+    .isx-panel-kind {
+        color: #e7dcff; font-weight: 600; letter-spacing: 0.04em;
+    }
+    /* the hyperlink to the Waft — the Interest's subject */
+    .isx-panel-waft {
+        background: none; border: none; padding: 0; cursor: pointer;
+        color: #9ab8e8; font-family: inherit; font-size: 10px;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 22ch;
+    }
+    .isx-panel-waft:hover { color: #cfe2ff; text-decoration: underline; }
+    .isx-panel-facts { display: flex; flex-wrap: wrap; gap: 2px 10px; color: #7e7494; }
+    .isx-panel-facts b { color: #b6a8cc; font-weight: 600; }
+    .isx-panel-posture b { color: #d9b877; }   /* the off-anchor reads amber, like an Aside */
+    .isx-panel-actions { display: flex; align-items: center; gap: 6px; min-height: 1.1em; }
+    .isx-panel-dismiss {
+        background: none; border: 1px solid rgba(224, 108, 117, 0.3); border-radius: 3px;
+        cursor: pointer; color: #a06a72; font-family: inherit; font-size: 9px; padding: 1px 6px;
+    }
+    .isx-panel-dismiss:hover { color: #e06c75; border-color: rgba(224, 108, 117, 0.6); }
+    .isx-panel-q   { color: #c98a90; }
+    .isx-panel-yes {
+        background: rgba(224, 108, 117, 0.16); border: 1px solid rgba(224, 108, 117, 0.5);
+        border-radius: 3px; cursor: pointer; color: #e06c75; font-family: inherit; font-size: 9px; padding: 1px 6px;
+    }
+    .isx-panel-yes:hover { background: rgba(224, 108, 117, 0.3); }
+    .isx-panel-no {
+        background: none; border: none; cursor: pointer; color: #777; font-family: inherit; font-size: 9px; padding: 1px 4px;
+    }
+    .isx-panel-no:hover { color: #aaa; }
+    .isx-panel-note { color: #5a5470; font-style: italic; font-size: 9px; }
 </style>

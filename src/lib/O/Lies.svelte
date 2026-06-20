@@ -212,46 +212,72 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     async e_Lies_open_sidetrack(A: TheC, w: TheC, e: TheC) {
         const from = e.sc.from as string | undefined
         if (!from) throw 'e_Lies_open_sidetrack: needs from'
-        const doc  = e.sc.doc as string | undefined
         const waft = w.oai({ Waft: `${from}/side` })
         waft.sc.tentative = 1
         waft.sc.from      = from
-        // A ghost-origin sidetrack (the GhostList ↳) carries its subject: seed the
-        //  throwaway Waft with the ghost as a %Doc so foregrounding lands the cursor on
-        //  it (Waft_cursor_first's bare-Doc fallback) and the editor opens the real file
-        //  in the Sidetrack lens.  A Trail-origin sidetrack flew off a cursor anchor with
-        //  no subject yet, so it passes no `doc` and the Waft stays empty off-anchor scratch.
-        if (doc) waft.oai({ Doc: doc })
         w.bump_version()
         this.i_elvisto(w, 'think')
     },
 
     // ── e_Lies_ghost_pick — the one smart GhostList click ───────────────────
     //
-    //   A GhostList entry does the same into-Sidetrack throw as the ↳ everywhere —
-    //   EXCEPT when that ghost is already open on a giver Trail, in which case the
-    //   Trail just jumps there (foregrounds that Waft).  The "already open" test scans
-    //   giver Wafts ONLY: the GhostList's own lister Waft indexes every ghost as a
-    //   %Doc, so it would always self-match; taker/tentative Wafts don't count as a
-    //   home to jump to either.  So: in a Trail → foreground it; else → sprout a
-    //   Sidetrack seeded with the ghost (Lies_open_sidetrack's `doc`), off the Trail.
+    //   Clicking a ghost does ONE smart thing:
+    //    • Already open on a giver Trail → jump there, landing on THAT Doc's What (not
+    //       the Waft's first), so a re-click continues where that ghost lives.  The
+    //       "already open" scan is giver-Wafts ONLY: the GhostList's own lister Waft
+    //       indexes every ghost as a %Doc and would always self-match; taker/tentative
+    //       Wafts are no home to jump to either.
+    //    • Not open anywhere → throw it into today's persisted Aside scratch Waft
+    //       (Waft:Aside/YMD) as a fresh "moment" %What carrying %FromWhat — a loose
+    //       string back-ref to what we were looking at, separable from the Aside (the
+    //       "stringy cheese", deliberately not a hard C ref) — then activate that Waft
+    //       and land the cursor on the new What so the ghost opens off the Trail.
     async e_Lies_ghost_pick(A: TheC, w: TheC, e: TheC) {
         const H    = this as House
         const path = e.sc.path as string | undefined
         if (!path) return
-        let trail_waft: string | undefined
+
+        let found: { doc: TheC, waft_key: string } | undefined
         for (const wf of w.o({ Waft: 1 }) as TheC[]) {
-            if (H.interest_stance_of(wf) !== 'active') continue   // givers only — skip lister/taker/tentative
-            if (H.Lies_walk_docs(wf, (d: TheC) => (d.sc.Doc as string) === path)) {
-                trail_waft = wf.sc.Waft as string; break
-            }
+            const st = H.interest_stance_of(wf)
+            if (st !== 'active' && st !== 'aside') continue       // a real home only — givers + today's Aside; skip lister/taker/tentative
+            let hit: TheC | undefined
+            H.Lies_walk_docs(wf, (d: TheC) => { if ((d.sc.Doc as string) === path) { hit = d; return true } return false })
+            if (hit) { found = { doc: hit, waft_key: wf.sc.Waft as string }; break }
         }
-        if (trail_waft) {
-            H.i_elvisto('Lang/Lang', 'Lang_foreground', { kind: 'Trail', waft: trail_waft })
-        } else {
-            H.i_elvisto('Lang/Lang', 'Lang_sprout_sidetrack', { from: path })
-            H.i_elvisto('Lies/Lies', 'Lies_open_sidetrack',   { from: path, doc: path })
+
+        if (found) {
+            // jump: foreground that Trail for the strip, then land precisely on its Doc
+            //  (a later want wins over Lies_foreground_waft's land-on-first, which no-ops
+            //   once the cursor is already inside the Waft).
+            H.i_elvisto('Lang/Lang', 'Lang_foreground', { kind: 'Trail', waft: found.waft_key })
+            H.i_elvisto(w, 'Lies_want', { src: found.doc, kind: 'cold' })
+            return
         }
+
+        // throw into today's Aside as a new moment What, seeded with the ghost + FromWhat
+        const aside    = H.Lies_spawn_aside_waft(w)
+        // FromWhat — a loose `Waft:<key>/<mainkey>:<value>` locator of where we came from,
+        //  matchable by mainkey+value (the cheap find), deliberately a string not a hard C
+        //  ref so it stays separable and survives the Aside being thrown away.  Click-
+        //  through-to-source and rename-caretaking (Wafts, maybe Whats) are later.
+        const cur_src  = (w.o({ examining: 1 })[0] as TheC | undefined)?.o({ Spotlight: 1 })[0]?.sc.src as TheC | undefined
+        const fromWhat = (() => {
+            if (!cur_src) return undefined
+            const wk = H.waft_key_of(cur_src)
+            const mk = H.mainkey(cur_src)
+            return wk && mk ? `Waft:${wk}/${mk}:${(cur_src.sc as any)[mk]}` : undefined
+        })()
+        const moment   = aside.i({ What: 1 })
+        if (fromWhat) moment.sc.FromWhat = fromWhat
+        moment.i({ Doc: path })
+        moment.c.up = aside; moment.c.waft = aside          // back-refs so the want can land before re-link
+        await H.Waft_link_up(aside, aside)
+        for (const other of w.o({ Waft: 1 }) as TheC[]) delete other.sc.active
+        aside.sc.active = 1                                  // session-only active flag, mirrors +Now
+        H.Lies_waft_save(w, aside)                           // persist — survives reload
+        w.bump_version()
+        H.i_elvisto(w, 'Lies_want', { src: moment, kind: 'cold' })
     },
 
     // ── Lies_desire_land_cursor ───────────────────────────────────────────────

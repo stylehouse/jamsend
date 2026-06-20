@@ -255,7 +255,7 @@ A compiled `.g` becomes a `gen/**.go` that is a **Svelte component**: its `eatfu
 
 **The ask:** a way to run a `gen/**.go`'s `eatfunc` (deposit methods + `Ghostmeta`)
  **without a DOM mount** — evaluate the component's deposit path directly, or a headless
-  Svelte-component instantiation that runs `onMount`-equivalent. See `Editron_doc.md` §3 + TODO
+  Svelte-component instantiation that runs `onMount`-equivalent. See `Editron.md` §3 + TODO
    ("UIless-include"), `Peeroleum_handover.md` heading 1b, and
     `Story_next_level_spec.md` §16. Until it lands, the runner is a live browser tab
      (which is fine for v1 — the channel is identical either way).

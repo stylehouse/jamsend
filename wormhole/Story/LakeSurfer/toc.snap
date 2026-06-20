@@ -12,28 +12,28 @@ story:LakeSurfer
         dontSnapGhostList
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=1.485
-      sample=3.148,at=1781980134
-      sample=1.474,at=1781980161
-      sample=1.837,at=1781980218
-      sample=1.431,at=1781980249
-      sample=0.935,at=1781982825
-      sample=2.048,at=1781982870
-      sample=1.039,at=1781982906
-      sample=1.269,at=1781984053
-      sample=0.744,at=1781984089
-      sample=0.922,at=1781984131
-    TimeTotal:step,avg=0.742
-      sample=1.574,at=1781980134
-      sample=0.737,at=1781980161
-      sample=0.918,at=1781980218
-      sample=0.716,at=1781980249
-      sample=0.468,at=1781982825
-      sample=1.024,at=1781982870
-      sample=0.519,at=1781982906
-      sample=0.635,at=1781984053
-      sample=0.372,at=1781984089
-      sample=0.461,at=1781984131
+    TimeTotal:beliefs,avg=0.837
+      sample=0.615,at=1781992013
+      sample=1.549,at=1781992074
+      sample=0.873,at=1781992662
+      sample=0.742,at=1781992709
+      sample=1.477,at=1781993308
+      sample=0.692,at=1781993616
+      sample=0.654,at=1781994318
+      sample=0.452,at=1781994417
+      sample=0.71,at=1781994453
+      sample=0.605,at=1781994553
+    TimeTotal:step,avg=0.418
+      sample=0.308,at=1781992013
+      sample=0.774,at=1781992074
+      sample=0.437,at=1781992662
+      sample=0.371,at=1781992709
+      sample=0.738,at=1781993308
+      sample=0.346,at=1781993616
+      sample=0.327,at=1781994318
+      sample=0.226,at=1781994417
+      sample=0.355,at=1781994453
+      sample=0.302,at=1781994553
   EntropyArrest
     Entcase:Languinio_Interest-waft
       lematch,Languinio

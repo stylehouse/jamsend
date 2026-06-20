@@ -4,9 +4,10 @@
     //   ghost file; each group renders as a StemHive (the MiniMap's clustering) so
     //   Lang*|Lies* fold onto shared stems.  Clicking a ghost does ONE smart thing
     //   (e:Lies_ghost_pick): if that ghost is already open on a giver Trail, the Trail
-    //   jumps there; otherwise it sprouts a Sidetrack onto the ghost — opening it in a
-    //   throwaway Waft off the Trail, leaving the Trail's own Waft cloud undisturbed.
-    //   An index, not an editable surface, so no cursoring of the list itself.
+    //   jumps there (landing on that Doc's What); otherwise it's thrown into today's
+    //   persisted Aside scratch Waft (Waft:Aside/YMD) as a new moment %What, off the
+    //   Trail and surviving reload.  An index, not an editable surface, so no cursoring
+    //   of the list itself.
 
     import type { TheC }  from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"

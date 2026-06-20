@@ -1288,8 +1288,26 @@
         const err = dock.oa({ compile_error: 1 }) || job?.oa({ compile_error: 1 })
         req.sc.have_Map = job?.oa({ Map: 1 }) ? 1 : 0
         if (!req.sc.have_Map && !err) {
-            H.Langspinner(w, 'grafted')
-            H.i_req_ttlilt(req, 3.0, { waiting: 'methods' })
+            // Wait for the index ONLY for a doc that will actually produce one — a
+            //  compilable .g (Lies_gen_path, the same .g→.go gate the compiler uses).
+            //  A plain .svelte/.ts/.md never compiles to a %Map (Point-nav for those is
+            //  the still-open tsstho TODO), so the methods never arrive; the old
+            //  unconditional ttlilt then spun the grafted spinner forever (a ttlilt is a
+            //  one-shot snap-timing advisor, not a keep-alive — on timeout nothing
+            //  re-fires).  Switching between Aside Whats holding plain .svelte docs hit
+            //  exactly this.  (Gate on gen-ability, not job presence, so a .g whose
+            //  compile job hasn't parked yet still waits rather than finishing un-grafted.)
+            if (H.Lies_gen_path(want)) {
+                H.Langspinner(w, 'grafted')
+                H.i_req_ttlilt(req, 3.0, { waiting: 'methods' })
+                return
+            }
+            // Non-compilable doc — nothing to graft, nothing coming: clear this doc's
+            //  Pmirrors, drop the spinner, and finish (mirrors the branches above).
+            await H.Lang_wipe_pmirrors(dock)
+            req.sc.n_pmirrors = 0
+            H.Langspinner(w, 'grafted', true)
+            workon.finish(req)
             return
         }
         // the waiting:methods ttlilt is dropped by the workon.finish below (finish()

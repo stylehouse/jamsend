@@ -257,6 +257,25 @@
         return waft
     },
 
+    // ── Lies_spawn_aside_waft ─────────────────────────────────────────────────
+    //
+    //   The daily scratch Waft — Waft:Aside/YMD — where a GhostList throw lands when
+    //   the ghost isn't already open on a Trail.  One slot per DAY (coarser than Look's
+    //   per-hour), oai-idempotent, and a plain giver (no takes|lists|tentative mark) so
+    //   it PERSISTS across reloads — the whole point, since Ting is session-only.  Wafts
+    //   are wormhole-scoped, so a flat dated name suffices (the tidy in-Trail home,
+    //   Trail/Aside-YMD, waits on Waft-rename + remote-link-caretaking).
+    Lies_spawn_aside_waft(w: TheC): TheC {
+        const now = new Date()
+        const ymd = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`
+        const key = `Aside/${ymd}`
+        const waft = w.oai({ Waft: key })
+        waft.sc.aside = 1   // the stance mark — so it knows itself as an Aside (own kind|style),
+                            //  not an undifferentiated Trail.  Persists like the GhostList's %lists.
+        console.log(`🗒 Aside waft: ${key}`)
+        return waft
+    },
+
     // ── Lies_spawn_ting_waft ──────────────────────────────────────────────────
     //
     //   Spawn or reuse the transient Ting for this page load — the taker Waft that
