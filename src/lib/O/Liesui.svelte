@@ -134,11 +134,15 @@
     //    out once it ages (30s of silence ⇒ the runner went quiet — stop pretending it's live).
     //     all_done lands a final "🏁 done n/n" that the verdict (run_result) then greens/reds.
     const bk = (p: any) => p.book ? `${base(p.book)} ` : ''
+    // stall_band — coarse, calm staleness for the runner panel.  A localhost run should feel
+    //  instant, so a per-second number counting up reads as alarm, not information.  Show only the
+    //   largest threshold crossed (>2s, >5s, …): it steps at milestones and never ticks.
+    const stall_band = (s: number) => { for (const t of [60, 30, 10, 5, 2]) if (s >= t) return `>${t}s`; return '' }
     const PHASE_VIEW: Record<string, { glyph: string, label: (p: any) => string }> = {
         rungo_ack:   { glyph: '📥', label: () => 'acked' },
         story_begun: { glyph: '▶',  label: (p) => `running ${p.book ? base(p.book) : p.path ? base(p.path) : ''}`.trimEnd() },
         step_done:   { glyph: '●',  label: (p) => `${bk(p)}step ${p.n}${p.total ? `/${p.total}` : ''}` },
-        step_stall:  { glyph: '⏳', label: (p) => `${bk(p)}step ${p.n}${p.total ? `/${p.total}` : ''} — ${p.secs}s…` },
+        step_stall:  { glyph: '⏳', label: (p) => { const b = stall_band(Number(p.secs)); return `${bk(p)}step ${p.n}${p.total ? `/${p.total}` : ''}${b ? ` — ${b}…` : ''}` } },
         all_done:    { glyph: '🏁', label: (p) => `${bk(p)}done ${p.n ?? ''}${p.total ? `/${p.total}` : ''}` },
     }
     let phase_age_s = $derived(run_phase?.at ? Math.round((now - (run_phase.at as number)) / 1000) : null)

@@ -224,6 +224,15 @@ frame
   delivering, exactly the old crypto→data→buffer cycle, now header→body). On
   WebSocket/mock it can be one chunk. Either way the *frame* is the unit the
   inbox tracks.
+  > Gravestone (v1 reality): the first `test_binary` build ships the body as a
+  > **base64 string inside the JSON envelope** (`frame.body`), not as a separate
+  > wire item — so it rides the existing `Socket_real`/relay text path untouched
+  > (the relay routes on `header.to` and never parses the body) and the in-process
+  > mock carries it as-is. The 33% base64 inflation is accepted for now; the
+  > separate-wire-item form (header-send then body-send) is deferred to the WebRTC
+  > binary path, where it earns its keep. The frame is still the unit the inbox
+  > tracks. The body lives off-snap on `.c` (riding `unemit.c.frame`); only
+  > `header.body_hash` + `header.body_len` reach the snap.
 
 ### 4.3 Transport interface (conceptual, not signatures)
 
@@ -727,7 +736,7 @@ req that never finishes has nothing for a ttlilt to release — so an `eternal` 
 
 ---
 
-## 14. Observation is a Story Book (PereStartuppity), not a Mach layer
+## 14. Observation is a Story Book (PereStaple), not a Mach layer
 
 The original design here was a `MachPeeroleum` Mach layer (an `on_step` choreography
 table, force-finish-prior, the witness flag). **`MachPeeroleum` was never grown** —
@@ -746,7 +755,7 @@ runner. What survives from the Mach idea is durable and lives on:
   it perturbs whatever is carrying (§14.1). Reserved for heading 6; the meddle
   machinery itself is not built yet (legacy `MachPeerily` only).
 
-**The realised observer.** `Run_A_PereStartuppity` wires the Run; `PereStartuppity(A,w)`
+**The realised observer.** `Run_A_PereStaple` wires the Run; `PereStaple(A,w)`
 installs `%req:wrangle,eternal` whose do_fn calls `Lake_drive(w, req)` each pass.
 `Lake_drive` dispatches per inner step off a **req-local `req.c.did_step`** — and
 **explicitly refuses `H.on_step`**, which keys off one H-global `did_on_step_n`: when

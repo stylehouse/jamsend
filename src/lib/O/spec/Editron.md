@@ -23,7 +23,7 @@ The coherent overview of the editor|runner machine: who the two roles are, how c
     editor edits a Waft and the runner runs one Book, so neither browses or persists a book library;
      only the plain app loads it. `A=Auto` reads `H.c.book` on first boot and stands the Book up:
       `Story_subHouse` lays the Run via the
-    **`Run_A_<Book>`** recipe (`Run_A_Editron` mirrors `Run_A_PereStartuppity`), which puts
+    **`Run_A_<Book>`** recipe (`Run_A_Editron` mirrors `Run_A_PereStaple`), which puts
      `A:Editron/w:Editron` + `Lies%editor` + `Lang%editor` (+ Pantheate) INTO the Run. The per-beat
       handler `Editron(A,w)` (`src/lib/O/Editron.svelte`) opens the Waft named by `?W=` (default
        `Ghost/Net/Easy`). The Book itself is `wormhole/Story/Editron/toc.snap` (one step, no own Cyto).
@@ -51,7 +51,7 @@ The coherent overview of the editor|runner machine: who the two roles are, how c
 **The Pantheate split — editor compiles, runner runs.** The editor edits a Waft; it must NOT *run*
  it. Compiling a `.g` writes the `.go` and stops — the editor's Pantheate must not import + mount the
   compiled module, or the editor would run the code itself. The gate is **on the Run's role, not a
-   per-`w` flag**: `Run_A_Editron`/`Run_A_PereStartuppity` stamp `H.c.role='editor'|'runner'`, and the
+   per-`w` flag**: `Run_A_Editron`/`Run_A_PereStaple` stamp `H.c.role='editor'|'runner'`, and the
     predicate lives in one place — `LiesLies.svelte` (`Lies_role`/`Lies_is_editor`/`Lies_is_runner`,
      three-state so a *bare* Lies — the plain app, Machinery test Runs — still mounts and runs).
       `req_Codebit` fires the Pantheate include only when `!Lies_is_editor()`. The per-`w`
@@ -103,9 +103,9 @@ ping / pong  either            liveness
 The runner does NOT compile or include inside its Story Run; it **acquires** what the editor shipped,
  bootstrapped from the top House.
 
-- **`Ghost/Story/Peregrination.g` IS the Book** `PereStartuppity` (no `Peregrination.svelte`; the
-   `.g` filename stays, the runtime identity is PereStartuppity): it defines `Run_A_PereStartuppity()`
-    (the Run recipe) and `PereStartuppity(A,w)` (the per-beat handler). No hand-written bootstrap, no
+- **`Ghost/Story/Peregrination.g` IS the Book** `PereStaple` (no `Peregrination.svelte`; the
+   `.g` filename stays, the runtime identity is PereStaple): it defines `Run_A_PereStaple()`
+    (the Run recipe) and `PereStaple(A,w)` (the per-beat handler). No hand-written bootstrap, no
      call-through.
 - **The Creduler is the bootstrap.** `Auto.svelte` stands up the Mundo runner Lies
    (`w:Lies{runner,creduler}`, outside Story). Its tick drives **`Creduler_ensure()`** (`LiesLies.svelte`):
@@ -113,7 +113,7 @@ The runner does NOT compile or include inside its Story Run; it **acquires** wha
      onto H via **`Lies_ghost_load`** (enrol the gen `.go` in `watched:UIs` → Otro mounts → `onMount` eatfunc
       deposits methods + `Ghostmeta`), riding **`%Creduler_pending`** while it works.
 - **Story kickoff gates on `%Creduler_pending`** (`Story.svelte`: `if (H.oa({Creduler_pending:1})) return
-   w.i({waits:'loadingcoding'})`) — steps don't begin until the ghosts are live and `Run_A_PereStartuppity`
+   w.i({waits:'loadingcoding'})`) — steps don't begin until the ghosts are live and `Run_A_PereStaple`
     is on H.
 - **The runner runs the LIVE spine.** `CREDULER_GHOSTS` includes the transport itself (`Ghost/N/Peeroleum.g`,
    `Tribunal.g`) as live gen, so the runner tests current code. Two acquire primitives in `LiesLies`:
@@ -168,7 +168,7 @@ The runner does NOT compile or include inside its Story Run; it **acquires** wha
       step badge (`Liesui.svelte`) and the Storying lights read it.
 
 **The board.** `wormhole/Credence/toc.snap` = `Waft:Credence`, Book-bound + What-grouped to mirror the Library
- (`PereStartuppity | Lake* | Leaf* | Port* | Stuff* | LangTiles` — the substantive Books; the rest are R&D husks,
+ (`PereStaple | Lake* | Leaf* | Port* | Stuff* | LangTiles` — the substantive Books; the rest are R&D husks,
   [[story-books-catalog]]). Each `What:*` holds its Storying cells + a `Funkcion:StoryTimes` station; a board-wide
    `Funkcion:StoryTimes,all:1` sits at the root. Open via Liesui `+Waft → Credence`.
 

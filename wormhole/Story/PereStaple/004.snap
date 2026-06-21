@@ -1,0 +1,83 @@
+Snap:H
+  H:PereStaple,Run
+    A:Alice
+      self,round=8	{"mung":["age"]}
+      w:Peeroleum
+        Peering,name:alice
+          Pier,pub:bob
+            outbox
+              recent
+                emit,type:noop,seq
+                emit=2,type:hello,seq=2
+                emit=3,type:trust,seq=3
+              emit=4,type:noop,seq=4,sent
+            req:handshake,finished
+              req:said_hello,maz=4,finished
+              req:heard_hello,maz=3,finished
+              req:said_trust,maz=2,finished
+              req:heard_trust,finished
+            protocol
+              hello
+                said,seq=2,acked
+                heard,publicKey:bob
+              trust
+                said,seq=3,acked
+                heard
+            inbox
+              recent
+                unemit,type:hello,seq
+                unemit=2,type:trust,seq=2
+            Ud,publicKey:bob
+          req:p2paddy
+        transport,type:mock
+        active_transport,type:webrtc,open
+        self,round=8	{"mung":["age"]}
+        seemingly:ya aooooolly,figaro:Vunkular
+        transport,type:webrtc
+        transport,type:websocket
+    A:Bob
+      self,round=8	{"mung":["age"]}
+      w:Peeroleum
+        Peering,name:bob
+          Pier,pub:alice
+            inbox
+              recent
+                unemit,type:noop,seq
+                unemit=2,type:hello,seq=2
+                unemit=3,type:trust,seq=3
+            req:handshake,finished
+              req:said_hello,maz=4,finished
+              req:heard_hello,maz=3,finished
+              req:said_trust,maz=2,finished
+              req:heard_trust,finished
+            protocol
+              hello
+                said,seq,acked
+                heard,publicKey:alice
+              trust
+                said,seq=2,acked
+                heard
+            outbox
+              recent
+                emit,type:hello,seq
+                emit=2,type:trust,seq=2
+            Ud,publicKey:alice
+          req:p2paddy
+        transport,type:mock
+        active_transport,type:webrtc,open
+        self,round=8	{"mung":["age"]}
+        seemingly:ya aooooolly,figaro:Vunkular
+        transport,type:webrtc
+        transport,type:websocket
+    A:PereStaple
+      self,round=10	{"mung":["age"]}
+      w:PereStaple
+        self,round=10	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        witnessed:step_2
+        reached:step_3
+        witnessed:step_3
+        see:y PereStaple — apparatus ready yyy!
+        reached:step_4
+        witnessed:step_4

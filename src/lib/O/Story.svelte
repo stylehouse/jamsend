@@ -620,7 +620,10 @@
             .map(s => ({ n: s.sc.step as number, dige: s.sc.dige }))
             .sort((a, b) => a.n - b.n)
 
-        const bad_count = thisC ? (thisC.o({ Step: 1 }) as any[]).filter(s => !s.sc.ok && !s.sc.accepted).length : 0
+        // A step is "bad" (offerable to Accept All) when it mismatches OR when it
+        //  passed against toc but its on-disk NNN.snap fixture drifted (disk_ok===false).
+        const bad_count = thisC ? (thisC.o({ Step: 1 }) as any[])
+            .filter(s => !s.sc.accepted && (!s.sc.ok || s.sc.disk_ok === false)).length : 0
 
         const an        = ave.oai({ story_analysis: 1 })
         an.sc.run_sc    = run ? { ...run.sc } : null
@@ -662,7 +665,9 @@
         const H   = this
         const run = w.o({ run: 1 })[0]
         if (!run) return
-        const allBad = (w.c.This?.o({ Step: 1 }) ?? []).filter(s => !s.sc.ok)
+        // !ok mismatches plus disk-stale ok steps (disk_ok===false) — Accept All
+        //  rewrites the drifted fixtures alongside the genuine mismatches.
+        const allBad = (w.c.This?.o({ Step: 1 }) ?? []).filter(s => !s.sc.ok || s.sc.disk_ok === false)
         ;V.Story && console.log(`✅ story_accept_all: ${allBad.length} steps`)
         for (const step of allBad) {
             const n = step.sc.Step
@@ -1804,14 +1809,16 @@
             step.bump_version()
 
             // Trim (got|exp)_snap 5 steps behind — best-effort GC.
-            //   ok+!accepted:   already on disk unchanged, safe to drop.
+            //   ok+!accepted:   already on disk unchanged, safe to drop —
+            //                   UNLESS disk_ok===false: the fixture drifted and
+            //                   Accept needs got_snap to rewrite it, so keep it.
             //   accepted+saved: written by story_save, safe to drop.
             //   exp_snap:       display-only, always safe to drop.
             // Skipped when keep_snaps toggle is on.
             const trim_n = n - 5
             if (trim_n >= 1 && !w.c.keep_snaps) {
                 const old = H.i_step(w, trim_n)
-                if (old.sc.ok && !old.sc.accepted)   delete old.sc.got_snap
+                if (old.sc.ok && !old.sc.accepted && old.sc.disk_ok !== false) delete old.sc.got_snap
                 if (old.sc.accepted && old.sc.saved)  delete old.sc.got_snap
                 // first_snap is a session diff anchor paired with got_snap
                 if (!old.sc.got_snap)                 delete old.sc.first_snap
@@ -2085,8 +2092,17 @@
         //   most tests don't want their own Cyto; the Leaf* tests are the main users.
         //   Both are per-Book — stored in The/Opt, not stashed, so they don't bleed
         //   across Books the way a stashed bool would.
-        await this.i_actions_to_C(Opt, 'waitCyto', { label: 'waitCyto' })
         await this.i_actions_to_C(Opt, 'useCyto', { label: 'useCyto' })
+        // waitCyto only means anything with useCyto on (it gates on this Book's own
+        //  Cyto animation).  Posit the toggle only then; when useCyto is off, rm() the
+        //   action so a previously-created waitCyto button disappears instead of
+        //    lingering as a dead toggle.  rm() is replace()-backed, so the removal is
+        //     tracked and the snap stays consistent.
+        if (this.The_Opt_val(w, 'useCyto')) {
+            await this.i_actions_to_C(Opt, 'waitCyto', { label: 'waitCyto' })
+        } else {
+            await wa.rm({ action: 1, role: 'waitCyto' })
+        }
         // trickle: when toggled on, stores the current Book name (not boolean true).
         // This means only this Book gets the trickle treatment — other Books in
         // the same House don't accidentally inherit it from stashed.

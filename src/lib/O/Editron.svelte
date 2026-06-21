@@ -1,7 +1,7 @@
 <script lang="ts">
     // Editron — the IDE, run as a Story Book.  Booted via ?B=Editron: Otro stamps H.c.book, Auto
     //  activates the Editron Book (Auto.svelte), and Story_subHouse stands up its Run by calling
-    //   Run_A_Editron below (the Run_A_<Book> recipe, mirroring Run_A_PereStartuppity).
+    //   Run_A_Editron below (the Run_A_<Book> recipe, mirroring Run_A_PereStaple).
     //
     //  Why a Book and not a bare top-level world: running the editor AS a Story makes its own
     //   startup one observable, re-runnable step.  If the editor breaks, re-run the Book and read
@@ -34,7 +34,7 @@
 
         // Run_A_Editron — the Editron Book's Run recipe.  Story_subHouse calls this once (the
         //  Run has no A: yet) to wire the editor's actors into the Run, exactly as
-        //   Run_A_PereStartuppity wires the test runner's.  The actors must live in the Run so its
+        //   Run_A_PereStaple wires the test runner's.  The actors must live in the Run so its
         //    own think/reqdo_sweep pumps the Lies/Lang compile chain.
         Run_A_Editron(this: House) {
             const H = this

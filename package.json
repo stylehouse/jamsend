@@ -12,7 +12,9 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"test:unit": "vitest",
 		"test": "npm run test:unit -- --run",
-		"lang-compile": "vite-node scripts/lang-compile.ts --"
+		"lang-compile": "vite-node -c scripts/compile.vite.config.ts scripts/lang-compile.ts --",
+		"compile-request": "vite-node -c scripts/compile.vite.config.ts scripts/compile_request.ts --",
+		"ghost-update": "vite-node -c scripts/compile.vite.config.ts scripts/ghost_update.ts --"
 	},
 	"devDependencies": {
 		"@lezer/generator": "^1.8.0",

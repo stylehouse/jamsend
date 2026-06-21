@@ -1,0 +1,8 @@
+Snap:H
+  H:PereStaple,Run
+    A:PereStaple
+      self,round	{"mung":["age"]}
+      w:PereStaple
+        self,round	{"mung":["age"]}
+        see:y PereStaple — apparatus ready yyy!
+        req:wrangle,eternal,ok

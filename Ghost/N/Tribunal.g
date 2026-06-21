@@ -47,7 +47,7 @@ Socket(w):
 //  (editor↔runner). Unlike Socket (the in-process mock the deterministic Story test pairs), this
 //   opens a native WebSocket to our OWN-origin /relay?addr=<our id>; the relay routes by header.to
 //    (locally, or once over the relay↔relay bridge to the other origin). addr is our Peering %name.
-//     The mock stays untouched so the PereStartuppity test keeps its determinism; this is the
+//     The mock stays untouched so the PereStaple test keeps its determinism; this is the
 //      production path, installed by the consumer (Lies) for a real channel. Raw JS: WebSocket +
 //       location + objects-on-.c are all transport seams. Delivery is wrapped in post_do so an
 //        inbound frame off the (async, off-tick) socket lands in Atime, exactly as the mock's

@@ -1187,7 +1187,10 @@
             {@const accepted   = !!(Step && Step.sc.accepted)}
             {@const caveat     = !!(Step && Step.sc.caveat)}
             {@const dige       = String(Step && Step.sc.dige || ts_sel && ts_sel.dige || '').slice(0, 8)}
-            {@const can_accept = !ok && !hollow}
+            <!-- A disk-stale step is ok against toc but its NNN.snap fixture on disk
+                 drifted (disk_ok===false) — Accept rewrites the fixture, so offer it
+                 here too, not just for outright mismatches. -->
+            {@const can_accept = !hollow && (!ok || Step.sc.disk_ok === false)}
             {@const step_notes = display.notes[n] ?? []}
             <!-- trace_span: ms from first to last trace event — the step's wall clock -->
             {@const trace_events = Step?.sc.Run_trace as TraceEvent[] | undefined}

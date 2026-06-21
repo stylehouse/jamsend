@@ -1,6 +1,6 @@
 Waft:Ghost/Net/Easy
   Funkcion:CreduFunk
-    Funkcion:Storying,of_Book:PereStartuppity
+    Funkcion:Storying,of_Book:PereStaple
   What:the peer
     Doc:Ghost/N/Peeroleum.g
     Point,method:Peeroleum
@@ -8,8 +8,8 @@ Waft:Ghost/Net/Easy
     Point,method:req_p2paddy
     Point,method:req_handshake
   What:the test
-    Point,method:PereStartuppity
-    Point,method:Run_A_PereStartuppity
+    Point,method:PereStaple
+    Point,method:Run_A_PereStaple
     Doc:Ghost/Story/Peregrination.g
     Point,method:LakeNetherland
   What:transport

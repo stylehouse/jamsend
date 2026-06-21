@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return '44c4342c851503c4' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return '69bb10f57bf7590d' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -172,6 +172,36 @@ Pier_next_seq(pier) {
     return pier.c.seq
 
 },
+// ── binary body helpers (spec §4.2 gravestone, heading 7) ─────────────────────
+// v1 ships a binary body as a base64 string inside the one JSON envelope (frame.body),
+//  not a separate wire item: it rides the existing Socket_real/relay text path untouched
+//   (the relay routes on header.to and never parses the body) and the in-process mock
+//    carries it by reference. The body stays off-snap on unemit.c.frame; only
+//     header.body_hash + body_len reach the snap. The integrity check is a SYNCHRONOUS
+//      content digest, NOT crypto sha256: it keeps Peeroleum_pump_inbox and the whole
+//       delivery path sync, which both the §7.3 serial lock and the mock's in-Atime
+//        determinism require — an awaited crypto.subtle.digest resolves after the beliefs
+//         mutex releases (the carrier recv does not await deliver), so it would escape
+//          Atime. The digest still trips on any flipped byte, which is all the corruption
+//           exercise (heading 6) asks of it; crypto sha256 + the separate-wire-item form
+//            land together on the deferred WebRTC binary path. Raw JS: btoa/TextEncoder +
+//             a dynamic-value digest, no DSL verb for any of it.
+Peeroleum_b64_encode(bytes) {
+    let s = ''
+    for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i])
+    return btoa(s)
+
+},
+// Peeroleum_body_digest — a deterministic synchronous content digest (FNV-1a, 32-bit,
+//  hex) over the base64 body string. Same input → same hex on sender and receiver, so a
+//   clean body verifies and a meddled one does not. NOT cryptographic — see the note above.
+Peeroleum_body_digest(b64) {
+    let s = String(b64 || '')
+    let h = 0x811c9dc5
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) }
+    return (h >>> 0).toString(16).padStart(8, '0')
+
+},
 // ── consumer seam (spec heading 10, asks 1–3): the editor↔runner channel and any other app
 //     rides the same envelope/inbox/ack/faulty machinery without editing this spine ──────────
 // Peeroleum_on — register an app-frame handler for a non-protocol header.type on this w. The
@@ -250,7 +280,13 @@ Peeroleum_send(w, frame) {
     //     cull — and the ack it would otherwise draw re-wakes the runner's Story drive, wedging
     //      quiescence into an endless step_stall loop.)
     let ephemeral = (h.type === 'ack' || h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase')
-    if (pier && !ephemeral) pier.oai({outbox: 1}).i({emit: h.seq, type: h.type, seq: h.seq, sent: 1})
+    if (pier && !ephemeral) {
+        // a binary frame records body_hash + body_len on its emit so the snap shows
+        //  "a test_binary of N bytes, hash X, sent" (the body itself rides off-snap on the frame).
+        let esc = {emit: h.seq, type: h.type, seq: h.seq, sent: 1}
+        if (h.body_hash != null) { esc.body_hash = h.body_hash; esc.body_len = h.body_len }
+        pier.oai({outbox: 1}).i(esc)
+    }
     let conn = w.o({active_transport:1})[0]?.c.connection
     // No transport is a real fault (the frame is lost) — always say so, clearly.  A live+loud
     //  frame logs normally; a live heartbeat stays quiet so a healthy channel doesn't spam.
@@ -282,7 +318,9 @@ Peeroleum_deliver(w, frame) {
     //    runner, whose Peeroleum_deliver feebly_ponders → re-wakes its Story drive so the step never
     //     quiesces → step_stall fires → another run_phase → another ack → an endless wedge (the 48s).
     if (h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, pier, frame); H.feebly_ponder(); return }
-    let unemit = pier.oai({inbox: 1}).i({unemit: h.seq, type: h.type, seq: h.seq, queued: 1})
+    let usc = {unemit: h.seq, type: h.type, seq: h.seq, queued: 1}
+    if (h.body_hash != null) { usc.body_hash = h.body_hash; usc.body_len = h.body_len }
+    let unemit = pier.oai({inbox: 1}).i(usc)
     unemit.c.frame = frame
     H.Peeroleum_pump_inbox(w, pier)
     H.feebly_ponder()
@@ -310,6 +348,14 @@ Peeroleum_pump_inbox(w, pier) {
     next.sc.handling = 1
     let pre_ud = !pier.oa({Ud:1})
     let ok = !(pre_ud && h.type !== 'hello' && h.type !== 'noop')
+    let reason = pre_ud ? 'pre-Ud' : 'not-them'
+    // body integrity (spec §4.2: header.body_hash covers the body) is part of verify, checked
+    //  BEFORE delivery so a corrupt body fails identically to a tweaked header-sign — same
+    //   %error→%faulty path, no bifurcated handling. The digest is recomputed synchronously
+    //    from the off-snap base64 body (Peeroleum_body_digest); a mismatch is bad-body-hash.
+    if (ok && h.body_hash != null && H.Peeroleum_body_digest(frame.body) !== h.body_hash) {
+        ok = false; reason = 'bad-body-hash'
+    }
     if (ok) {
         next.sc.verified = 1
         let on = w.c.on && w.c.on[h.type]
@@ -327,7 +373,7 @@ Peeroleum_pump_inbox(w, pier) {
         let me = pier.c.up.sc.name
         H.Peeroleum_send(w, {header:{type:'ack', from:me, to:pier.sc.pub, ack:h.seq}})
     } else {
-        next.sc.error = pre_ud ? 'pre-Ud' : 'not-them'
+        next.sc.error = reason
         delete next.sc.queued
         delete next.sc.handling
         pier.bump()

@@ -1,11 +1,11 @@
 
-// PereStartuppity — the Peeroleum p2p test (the outer test layer), and the first of a
+// PereStaple — the Peeroleum p2p test (the outer test layer), and the first of a
 //  new kind of runtime test.  (The Book / actor / w / per-beat handler are all
-//   PereStartuppity; this source file stays Peregrination.g — the file is the artifact,
+//   PereStaple; this source file stays Peregrination.g — the file is the artifact,
 //    the Book is the identity.)  The Creduler (the runner Lies on H:Mundo) loads this
 //     ghost live BEFORE the Story begins, so its sibling methods are on H; there is no
-//      hand-written bootstrap anymore.  Run_A_PereStartuppity wires the Run, then the
-//       per-beat PereStartuppity(A,w) installs the eternal %req:wrangle whose do_fn drives
+//      hand-written bootstrap anymore.  Run_A_PereStaple wires the Run, then the
+//       per-beat PereStaple(A,w) installs the eternal %req:wrangle whose do_fn drives
 //      the *inner* steps, starting at 2. The toc.snap carries one `step,…` line per
 //       inner step (real seq, lie diges till a run records them).
 //
@@ -20,20 +20,20 @@
 //  queued→handling→verified→done, acks, %recent whittle at the step boundary) is not
 //   its own step — it rides the traffic of steps 2 and 3, in the Peeroleum spine.
 //
-// Run_A_PereStartuppity — the Book's Run recipe (Story_subHouse calls it to wire the
+// Run_A_PereStaple — the Book's Run recipe (Story_subHouse calls it to wire the
 //  Run).  Lives here now that the Creduler loads this ghost before the Story begins;
 //   the hand-written Peregrination.svelte is gone.  Lay the single test actor + its w;
 //    the role is already 'runner' (Auto/boot) — this just guards it.
-Run_A_PereStartuppity():
+Run_A_PereStaple():
     this.c.role ??= 'runner'
-    H i A:PereStartuppity/w:PereStartuppity
+    H i A:PereStaple/w:PereStaple
 
 // We do NOT use H.on_step: it keys off one H-global `did_on_step_n`, which a step-1
 //  table would claim when setup spills into step 2 — that starves step 2's setup (the
 //   symptom: step 3 fires, step 2's sides never lay).  Lake_drive keeps a req-local
 //    `did_step` instead, immune to any other caller.
-PereStartuppity(A,w):
-    w i %see:'y PereStartuppity — apparatus ready yyy!'
+PereStaple(A,w):
+    w i %see:'y PereStaple — apparatus ready yyy!'
     w oai %req:wrangle,eternal
         await &Lake_drive,w,req
         req%ok = 1
@@ -55,6 +55,8 @@ async Lake_drive(w, req):
             await &Lake_trial_fallback,w
         else if n === 6
             await &Lake_trial_confirm,w
+        else if n === 7
+            await &Lake_exercise_binary,w
     await &Lake_pump_handshakes,w
     &Lake_witness,w
     await &Lake_order,w
@@ -210,6 +212,33 @@ async Lake_trial_confirm(w):
     &Tribunal_reputation_good,Alicew
     &Tribunal_reputation_good,Bobw
 
+// Lake_exercise_binary -- step 7: the first transport-agnostic exercise (heading 7). With the
+//  handshake long settled (Bob has %Ud, so the pre-Ud inbox gate admits the frame), send one
+//   binary frame A->B: a fixed 64-byte fixture, base64'd into the one envelope (spec §4.2
+//    gravestone) carrying body_hash + body_len. Bob's serial inbox recomputes the body digest
+//     (Peeroleum_pump_inbox), runs the registered test_binary handler (stamps %got_binary), and
+//      acks -- so the witness sees the full round-trip (Bob %got_binary + Alice's emit %acked, no
+//       %faulty). The SAME exercise runs over ANY carrier: it reads whatever %active_transport
+//        points at (here the websocket the trial fell to at step 5). Raw JS: an object frame, a
+//         Uint8Array fixture, and an inline handler are all transport seams. Fired once at step 7.
+async Lake_exercise_binary(w):
+    w i %reached:step_7
+    H o A:Alice/w:Peeroleum$:Alicew
+    H o A:Bob/w:Peeroleum$:Bobw
+    if (!Alicew || !Bobw) return
+    H o A:Alice/w:Peeroleum/Peering/Pier$:AlicePier
+    if (!AlicePier) return
+    // Bob dispatches the app frame through the consumer seam (spec §5 ask 1): a verified
+    //  test_binary stamps %got_binary on his Pier, a durable witness target that survives the cull.
+    this.Peeroleum_on(Bobw, 'test_binary', (cw, pier, frame) => pier.i({got_binary: 1, seq: frame.header.seq, body_len: frame.header.body_len}))
+    // a fixed 64-byte fixture -> deterministic body, digest, snap.
+    let bytes = new Uint8Array(64)
+    for (let i = 0; i < 64; i++) bytes[i] = (i * 7 + 3) & 0xff
+    let body = this.Peeroleum_b64_encode(bytes)
+    let bh = this.Peeroleum_body_digest(body)
+    let s = this.Pier_next_seq(AlicePier)
+    this.Peeroleum_send(Alicew, {header: {type: 'test_binary', from: 'alice', to: 'bob', seq: s, body_hash: bh, body_len: bytes.length}, body})
+
 // Lake_witness — the readable assertion, polled each pass: once Bob's inbox
 //  shows a handled (%done) frame, stamp %witnessed:step_2 (the step rides in the
 //   value — `step` is the Story mainkey, so it can't be a key). Idempotent via the probe.
@@ -236,3 +265,13 @@ Lake_witness(w):
     let Alicews = Alicew?.o({transport:1, type:'websocket'})[0]
     let Bobws = Bobw?.o({transport:1, type:'websocket'})[0]
     if (Alicews?.oa({reputation:'good'}) && Bobws?.oa({reputation:'good'}) && !(oa %witnessed:step_6)) i %witnessed:step_6
+    // step 7 (send_binary exercise): Bob received + verified the binary frame (%got_binary stamped
+    //  by the registered test_binary handler), and Alice's emit came back %acked -- live, or once
+    //   the boundary culls it, present in %recent (which holds ONLY acked emits). The first exercise
+    //    over the transport spine; the value names the exercise, not a step number.
+    let Bobgot = BobPier?.oa({got_binary:1})
+    let Aliceob = AlicePier?.o({outbox:1})[0]
+    let binlive = Aliceob?.o({type:'test_binary'})[0]
+    let binrecent = Aliceob?.o({recent:1})[0]?.o({type:'test_binary'})[0]
+    let binacked = (binlive && binlive.sc.acked) || !!binrecent
+    if (Bobgot && binacked && !(oa %witnessed:send_binary)) i %witnessed:send_binary

@@ -105,7 +105,7 @@ Three overlapping forward designs:
    *Also done:* fixed `wormhole/Ghost/Net/Easy/toc.snap` to the `What→(Doc|Point)`
     grammar (Points were nested inside their Doc; now siblings under the What).
      The Story recordings that embed this Waft (`Story/Editron/001`,`002`,
-      `Story/PereStartuppity/toc`) still hold the old shape and will re-record on
+      `Story/PereStaple/toc`) still hold the old shape and will re-record on
        next run, or want a hand-fix. *TODO cloud:*
 - **LiesCurse cull → LiesPoint** — cull unused LiesCurse, then refactor the
    locating + waking/activating of Points in Waft\*\* into a `LiesPoint` ghost

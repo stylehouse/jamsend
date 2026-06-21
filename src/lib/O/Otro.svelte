@@ -24,7 +24,7 @@
     //  tick → the tab OOMs to multi-GB.  (Svelte 5: an effect re-runs on any $state it reads.)
     const toplevel = boot_param('A') || 'Auto'
     // ?B=<Book> auto-activates a Story Book under the default A=Auto (the Library/Story owner) —
-    //  ?B=Editron boots the editor as a Book, ?B=PereStartuppity the test runner, etc.  Auto reads
+    //  ?B=Editron boots the editor as a Book, ?B=PereStaple the test runner, etc.  Auto reads
     //   H.c.book on first boot and activates it (see Auto.svelte).  ?W=<Waft> rides alongside for
     //    the Book that opens one.  Stamped on the LOCAL `h`, never inside the $effect — same
     //     self-retrigger trap as toplevel above.
@@ -119,6 +119,16 @@
         H.stashed.things += 1
         H.i_elvisto(H, 'think')
     }
+
+    // Per-House toggle for the C** dump (the Stuffing tree).  Stored on the
+    //  Dexie-backed .stashed, not in Opt/the C tree — it's a viewer preference,
+    //   not Book state, so it shouldn't snap or bleed across Books.  Following
+    //    the "lean stashed" doctrine we delete the key when off rather than
+    //     storing a 0, so the autosave $effect (which tracks the key set) fires.
+    function toggle_C(house) {
+        if (house.stashed.showC) delete house.stashed.showC
+        else house.stashed.showC = 1
+    }
 </script>
 
 {#if disk_gated}
@@ -184,7 +194,12 @@
                 <svelte:component this={uiC.sc.component} H={house} />
             {/each}
             {#if house.stashed}
-                <Stuffing mem={house.imem('current')} stuff={house} H={house} M={house} />
+                <button class="cstar" class:on={house.stashed.showC}
+                    title="show this House's C** tree"
+                    onclick={() => toggle_C(house)}>C**</button>
+                {#if house.stashed.showC}
+                    <Stuffing mem={house.imem('current')} stuff={house} H={house} M={house} />
+                {/if}
             {/if}
         {/each}
     {/snippet}
@@ -201,6 +216,12 @@
 
 <style>
     .ungood { color: red; }
+
+    .cstar {
+        font-size: 0.7rem;
+        opacity: 0.5;
+    }
+    .cstar.on { opacity: 1; }
 
     .disk-gate {
         position: absolute;

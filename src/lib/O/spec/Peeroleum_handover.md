@@ -47,7 +47,7 @@ spec §5** ("Realised transport topology — the 'heading 10' design"); this is 
 - **[x] (2) Real WS carrier port — COMPILES.** `Socket_real(w)` + `Tribunal_activate_websocket(w)` in
    `Ghost/N/Tribunal.g`: a native `WebSocket` to own-origin `/relay?addr=<Peering name>`, send-buffered-until-open,
     inbound delivery wrapped in `post_do` → `Peeroleum_deliver`. The mock `Socket`/pairing is UNTOUCHED so the
-     PereStartuppity test keeps its determinism. `lang-compile` clean; not yet run in-app.
+     PereStaple test keeps its determinism. `lang-compile` clean; not yet run in-app.
 - **[x] (3) Consumer dispatch seam — COMPILES.** `Peeroleum_on(w,type,fn)` (per-w `w.c.on` registry),
    `Peeroleum_send_consumer(w,type,body)`, `Peeroleum_peer_ready(pier)` in `Ghost/N/Peeroleum.g`;
     `Peeroleum_pump_inbox` now dispatches non-hello/trust types to the registered handler inside the same
@@ -75,17 +75,37 @@ spec §5** ("Realised transport topology — the 'heading 10' design"); this is 
                 The heartbeat ping rate was halved to 6s (`LiesLies.svelte` `Lies_heartbeat`) but was never the
                  dominant cause (6s ≪ 18fps). The editor still acks run_phase = harmless channel chatter until
                   its bootstrap regenerates.
-- **[ ] (6) The REAL wedge underneath — a beliefs-drain DEADLOCK (the next move).** The brutal trace tail
-   (`Story.svelte` `poll_step`, dumps the live `Run.trace_log` past 5s, Δms per event) revealed it: a step
-    wedged 43.5s had only **10 trace events** — NOT churn, the opposite. The House ran two beliefs cycles
-     (`think → PereStartuppity → done`, then `fn() → done`) then went **idle with `Run.todo` non-empty** (a
-      `fn:?` = the mock `partner.recv` delivery + a `think`), and `poll_step` polls forever (`dont_want_Atime`
-       false) for a queue nothing drains. The run_phase ack-spam had been *masking* this — its constant
-        `feebly_ponder` kept beliefs cycling, draining the todo each pass; kill the spam (fixes 1–5) and the
-         latent bug surfaces: **a `think`/`fn` queued after `beliefs:done` does not reliably re-trigger the next
-          beliefs cycle** (trace: the `think` at event 2 kicked a cycle; the one at event 9 did not). Next move:
-           the beliefs re-schedule in `Housing.svelte.ts` (why a post-`done` queued item doesn't re-fire) — or a
-            `poll_step` safety re-kick (`if (Run.todo?.length) Run.i_elvisto(Run,'think')`) while non-quiescent.
+- **[~] (6) The wedge underneath — a beliefs-drain LOST WAKEUP, now NETTED (verify on :9091).** Confirmed
+   *what* it is: NOT churn — a **lost wakeup**. The House goes **idle out of Atime** (`finished_run` set, no
+    cycle running) with `Run.todo` **still non-empty** (a `fn:?` = the mock `partner.recv` delivery + a
+     `think`), and `poll_step` — which only ever *waited* on quiescence — waits **forever**; its `setTimeout`
+      "comes back infinitely" but the machine is FROZEN, not spinning. **Tell:** a STATIC trace while the step
+       clock climbs is this lost wakeup; a GROWING one would be the other failure (infinite re-enqueue / churn).
+        The drain path is lossy in three spots: `answer_calls` fires `_really_answer_calls()` **async-unawaited**
+         behind a 50ms throttle decoupled from work completion; `i_elvisto` defers its `_push_todo` into a
+          `clear()` (mutex re-acquire); `feebly_ponder→main` routes through a `throttle()` that can coalesce away
+           the kick. (The `Story_cli` harness already works around all this — it manually loops
+            `while(todo.length) _really_answer_calls()` + trickles think — which is *why* it never reproduces the
+             wedge.) **Net (landed, browser-unverified):** a watchdog in `poll_step` — when
+              `not_in_Atime && Run.todo.length` it drives the drain itself (`Run.answer_calls()`), self-healing a
+               dropped wakeup on the next 50ms tick; a throttled **`rekick` trace** marks each intervention
+                (rekick-then-lands = lost wakeup; rekick-forever = churn, now loud instead of a silent
+                 forever-wait). Design write-up: `Story_next_level_spec.md` **§15.5**. **Verify on :9091:** the
+                  wedged step should now COMPLETE. Deeper follow-up (optional): root-harden (await `_really`,
+                   de-throttle the event-driven think) or the §15 **req\*\*** recast (wake becomes ttlilt-owned,
+                    so the whole class dissolves rather than being netted).
+
+**Instruments + open latency thread (this session).** The old brutal *console* trace-tail is GONE — replaced by
+ an in-UI **overrun monitor** in Storui: a `⏱` button arms at >5s on a wedged step and opens a live trace ticker
+  (batches the latest ≤30 unshown events every 3s) plus an **idle Xs** counter — *idle climbing while the step
+   clock runs is the static-trace tell* that reads lost-wakeup-not-churn at a glance. Its signal rides an
+    ave-held `live_poll` particle bumped directly (the reactivity_docs "lever"), so it updates even while a wedge
+     keeps beliefs from flushing ave. **Open thread — editor↔runner channel RTT is ~400–900ms** (two tabs ↔ two
+      node relays), far too slow: applied `socket.setNoDelay(true)` (Nagle off) to the relay sockets (`relay.ts`
+       onUpgrade + the r2r bridge) — the multi-hop r2r path can stack ~100ms of Nagle per hop — but the dominant
+        cost is likely the app round-trip threading the same throttled belief/think machinery on both ends (cf.
+         the boomerang-latency memory). **Instrument the actual ping path next.** Runner-panel stall readout
+          matured to a coarse `>2s/>5s/…` band (no per-second count).
 
 **Prerequisite unblocked (compiler robustness — why the editor wrote uncompiled `.go`):** task (4) needs the
 editor to compile cleanly, gated by a real bug — a compile firing before the language parser landed emitted
@@ -104,8 +124,8 @@ for real peers (spec §11.2). No wall-clock `ttlilt` in the trial anymore — it
 
 **The in-app run reshapes every step snap** (outbox/inbox carry the full lifecycle; the boundary culls
 acked/done into `%recent` after each step), so the `toc.snap` step diges — already lies — are doubly stale.
-Run the `PereStartuppity` Story on :9091, eyeball the lifecycle, then Accept/Resnapture. (`Story_cli` produces a
-PereStartuppity pile too — read `witnessed:*`/`A:PereStartuppity`; the `A:Lang` AST blob is per-step noise; see the
+Run the `PereStaple` Story on :9091, eyeball the lifecycle, then Accept/Resnapture. (`Story_cli` produces a
+PereStaple pile too — read `witnessed:*`/`A:PereStaple`; the `A:Lang` AST blob is per-step noise; see the
 `peregrination-pile-reading` memory + `Story_cli_docs.md`.)
 
 ### Standing asks (apply to every heading)
@@ -127,19 +147,19 @@ is **GONE** — the runner now **ACQUIRES the live spine via the Creduler**: `Cr
 `%Creduler_pending` flag on H, set in `Auto.svelte`) loads every ghost in the `CREDULER_GHOSTS` manifest
 (`LiesLies.svelte`) live, compiling+including each before the Story is allowed to start. The `.g` IS the Book.
 
-- `Run_A_PereStartuppity` (in `Ghost/Story/Peregrination.g`) is the Run recipe — lays `A:PereStartuppity/
-   w:PereStartuppity` and guards the `runner` role. (Mirrored by `Run_A_Editron`.)
-- per beat, `PereStartuppity(A,w)` installs `%req:wrangle,eternal` whose do_fn `await`s `Lake_drive(w, req)`.
+- `Run_A_PereStaple` (in `Ghost/Story/Peregrination.g`) is the Run recipe — lays `A:PereStaple/
+   w:PereStaple` and guards the `runner` role. (Mirrored by `Run_A_Editron`.)
+- per beat, `PereStaple(A,w)` installs `%req:wrangle,eternal` whose do_fn `await`s `Lake_drive(w, req)`.
 - `Lake_drive` is the inner-step dispatch (step 2 `Lake_sides_up`, 3 `Lake_handshake`, 4/5/6 `Lake_trial_*`),
    off a req-local `req.c.did_step` — explicitly NOT `H.on_step` (see "Why NOT on_step" under heading 2).
 - `Lake_witness` polls each pass and stamps `%witnessed:step_N` by structural query.
 
-Driven by the **PereStartuppity Story** (`wormhole/Story/PereStartuppity/toc.snap`), whose Prep opens the
+Driven by the **PereStaple Story** (`wormhole/Story/PereStaple/toc.snap`), whose Prep opens the
 **Ghost/Net/Easy** Waft overlay (`wormhole/Ghost/Net/Easy/toc.snap`) — its `.g` Docs are the manifest.
 
 > (`LakeNetherland` is NOT this wrangler — it is an unrelated 3-line fixture in
 >  `Ghost/test/Story/Lake/LakeAmeliorations.g`, surfaced in the LakeNets editor-machine Book. The
->   PereStartuppity wrangler is `PereStartuppity(A,w)`/`Lake_drive`. Earlier notes confusing the two were wrong.)
+>   PereStaple wrangler is `PereStaple(A,w)`/`Lake_drive`. Earlier notes confusing the two were wrong.)
 
 ---
 
@@ -249,9 +269,27 @@ it's transport-agnostic. `publicKey`→not-them; `sign`→invalid-signature; `%f
 side is **already realised** (`hear_*` return false → `%error` → `Peeroleum_rollup_faulty`); the only new
 machinery is the meddle wrap. Re-applies `MachPeerily.svelte:725-794`. Spec §14 / §14.1.
 
-### 7 — binary frames  `[ ]`
+### 7 — binary frames  `[~]`
 `body` + `body_hash` folded into the one envelope; `test_binary` as just-another-frame; corruption identical to
 a tweaked hello-sign. Spec §4.2, §15.
+- **v1 shape (spec §4.2 gravestone):** body rides as a **base64 string inside the JSON envelope**
+   (`frame.body`), not a separate wire item — zero relay changes (it routes on `header.to`, body opaque), and
+    the mock carries it as-is. Body stays off-snap on `unemit.c.frame`; only `header.body_hash`+`body_len` snap.
+- **Digest is SYNCHRONOUS, not crypto sha256 — on purpose.** The only hashes reachable to ghost code are
+   async (`crypto.subtle`/`Y.svelte` sha256 are Promises), and the carrier `recv` does NOT await
+    `Peeroleum_deliver`, so an awaited digest resolves AFTER the beliefs mutex releases (`_really_answer_calls`
+     holds it only across `await e.sc.fn(e)`) — escaping Atime and breaking the mock's determinism + the §7.3
+      serial lock. So `Peeroleum_body_digest` is a deterministic sync content digest (FNV-1a, hex over the base64
+       body); `Peeroleum_pump_inbox` recomputes it from the off-snap `frame.body` and string-compares to
+        `header.body_hash`. It still trips on any flipped byte (all heading 6 asks). Mismatch →
+         `%error:bad-body-hash` → `%faulty`, the same path as a bad sign (no bifurcated error paths). crypto
+          sha256 lands with the separate-wire-item form on the deferred WebRTC binary path.
+- **`test_binary` dispatches via the `Peeroleum_on` consumer registry** (§5 ask 1), not a hardcoded branch in
+   pump_inbox; the harness registers it. Sent only AFTER handshake (the pre-Ud gate rejects non-hello/noop).
+- **Exercise:** `Lake_exercise_binary` (Peregrination.g) runs as wrangler step 7, witnessed
+   `%witnessed:send_binary`. The first of the transport-agnostic exercise set (same body runs over mock or the
+    real-ws carrier). Built; lang-compile clean; **browser-unverified** — run on :9091, eyeball the lifecycle,
+     Accept/Resnapture steps 2–7.
 
 ### 8 — disconnect + reset_handshake  `[ ]`
 `%active_transport e:close` → `o_elvis:reset_handshake` on the Pier: drop protocol/outbox/inbox/faulty, keep
@@ -341,11 +379,11 @@ ghosts, Garden.g + Tyrant.g.
 ## Files in play
 - `Ghost/N/Peeroleum.g` — the spine (compiled; the mock carrier + envelope + lifecycle).
 - `Ghost/N/Tribunal.g` — the transport-trial carriers (webrtc/websocket mocks + `Socket_real`/relay client).
-- `Ghost/Story/Peregrination.g` — the Book + wrangler: `Run_A_PereStartuppity`, `PereStartuppity(A,w)` installs
+- `Ghost/Story/Peregrination.g` — the Book + wrangler: `Run_A_PereStaple`, `PereStaple(A,w)` installs
    `%req:wrangle`, `Lake_drive`/`Lake_witness`/`Lake_sides_up`/`Lake_trial_*`. (Acquired by the Creduler —
     `Creduler_ensure` / `CREDULER_GHOSTS` in `Lies.svelte`/`LiesLies.svelte`; no hand-written loader.)
 - `src/lib/server/relay.ts` — the real `/relay` WS server (`attachRelay`) + its `configureServer` vite plugin.
 - `wormhole/Ghost/Net/Easy/toc.snap` — annotation overlay / compile manifest.
-- `wormhole/Story/PereStartuppity/toc.snap` — the Story that drives the Book (step lines run through `step=5`).
+- `wormhole/Story/PereStaple/toc.snap` — the Story that drives the Book (step lines run through `step=5`).
 - `src/lib/O/spec/Peeroleum_spec.md` — the pinned design (the floor). This file — the living progress.
 - `src/lib/O/spec/Covenant_design.md` — the cabinetry+party design sketch (Garden.g/Tyrant.g).

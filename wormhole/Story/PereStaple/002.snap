@@ -1,5 +1,5 @@
 Snap:H
-  H:PereStartuppity,Run
+  H:PereStaple,Run
     A:Alice
       self,round	{"mung":["age"]}
       w:Peeroleum
@@ -24,11 +24,11 @@ Snap:H
         active_transport,type:mock,open
         self,round	{"mung":["age"]}
         seemingly:ya aooooolly,figaro:Vunkular
-    A:PereStartuppity
+    A:PereStaple
       self,round=3	{"mung":["age"]}
-      w:PereStartuppity
+      w:PereStaple
         self,round=3	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
-        see:y PereStartuppity — apparatus ready yyy!
+        see:y PereStaple — apparatus ready yyy!
         witnessed:step_2

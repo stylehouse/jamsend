@@ -11,7 +11,7 @@
     // ── One source of truth: H.c.role ─────────────────────────────────────────
     //
     //   The split is per-Run, not per-w: the editor and runner are each a Story
-    //    Book's Run (Run_A_Editron / Run_A_PereStartuppity), and a Run owns several
+    //    Book's Run (Run_A_Editron / Run_A_PereStaple), and a Run owns several
     //     actors.  Pantheate is its OWN actor (A:Pantheate/w:Pantheate) — its w
     //      carries neither flag — yet the load-bearing gate (suppress the mount on
     //       the editor) lives in its handler.  So the authoritative role is stamped
@@ -161,7 +161,7 @@
         //
         //   LIVE verification is two-origin / browser-only: one relay is set-once
         //    role, so editor and runner cannot both run under a single dev server —
-        //     exercise it with the editor on :9091 and a runner on staging :9092.
+        //     exercise it with the runner on :9091 and a editor on staging :9092.
 
         // Lies_channel_up — idempotent, role-gated standup.  Lays the Peering/Pier,
         //  opens the real ws (own-origin /relay?addr=<role>), commands the relay role

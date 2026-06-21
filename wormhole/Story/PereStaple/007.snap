@@ -1,7 +1,7 @@
 Snap:H
-  H:PereStartuppity,Run
+  H:PereStaple,Run
     A:Alice
-      self,round=8	{"mung":["age"]}
+      self,round=13	{"mung":["age"]}
       w:Peeroleum
         Peering,name:alice
           Pier,pub:bob
@@ -10,6 +10,7 @@ Snap:H
                 emit,type:noop,seq
                 emit=2,type:hello,seq=2
                 emit=3,type:trust,seq=3
+                emit=5,type:noop,seq=5
               emit=4,type:noop,seq=4,sent
             req:handshake,finished
               req:said_hello,maz=4,finished
@@ -30,13 +31,14 @@ Snap:H
             Ud,publicKey:bob
           req:p2paddy
         transport,type:mock
-        active_transport,type:webrtc,open
-        self,round=8	{"mung":["age"]}
+        active_transport,type:websocket,open
+        self,round=13	{"mung":["age"]}
         seemingly:ya aooooolly,figaro:Vunkular
-        transport,type:webrtc
+        transport,type:webrtc,faulty,reason:no-ack
         transport,type:websocket
+          reputation:good
     A:Bob
-      self,round=8	{"mung":["age"]}
+      self,round=13	{"mung":["age"]}
       w:Peeroleum
         Peering,name:bob
           Pier,pub:alice
@@ -45,6 +47,7 @@ Snap:H
                 unemit,type:noop,seq
                 unemit=2,type:hello,seq=2
                 unemit=3,type:trust,seq=3
+                unemit=5,type:noop,seq=5
             req:handshake,finished
               req:said_hello,maz=4,finished
               req:heard_hello,maz=3,finished
@@ -64,20 +67,25 @@ Snap:H
             Ud,publicKey:alice
           req:p2paddy
         transport,type:mock
-        active_transport,type:webrtc,open
-        self,round=8	{"mung":["age"]}
+        active_transport,type:websocket,open
+        self,round=13	{"mung":["age"]}
         seemingly:ya aooooolly,figaro:Vunkular
-        transport,type:webrtc
+        transport,type:webrtc,faulty,reason:no-ack
         transport,type:websocket
-    A:PereStartuppity
-      self,round=10	{"mung":["age"]}
-      w:PereStartuppity
-        self,round=10	{"mung":["age"]}
+          reputation:good
+    A:PereStaple
+      self,round=15	{"mung":["age"]}
+      w:PereStaple
+        self,round=15	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         witnessed:step_2
         reached:step_3
         witnessed:step_3
-        see:y PereStartuppity — apparatus ready yyy!
         reached:step_4
         witnessed:step_4
+        reached:step_5
+        witnessed:step_5
+        reached:step_6
+        witnessed:step_6
+        see:y PereStaple — apparatus ready yyy!

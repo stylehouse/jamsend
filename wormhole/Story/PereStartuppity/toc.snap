@@ -4,9 +4,7 @@ story:PereStartuppity
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.157
-      sample=0.132,at=1782026475
-      sample=0.116,at=1782026482
+    TimeTotal:beliefs,avg=0.135
       sample=0.149,at=1782026496
       sample=0.149,at=1782026519
       sample=0.186,at=1782026642
@@ -15,9 +13,9 @@ story:PereStartuppity
       sample=0.215,at=1782027768
       sample=0.215,at=1782028077
       sample=0.15,at=1782028103
-    TimeTotal:step,avg=0.031
-      sample=0.026,at=1782026475
-      sample=0.023,at=1782026482
+      sample=0.021,at=1782033673
+      sample=0.01,at=1782033704
+    TimeTotal:step,avg=0.027
       sample=0.03,at=1782026496
       sample=0.03,at=1782026519
       sample=0.037,at=1782026642
@@ -26,6 +24,8 @@ story:PereStartuppity
       sample=0.043,at=1782027768
       sample=0.043,at=1782028077
       sample=0.03,at=1782028103
+      sample=0.004,at=1782033673
+      sample=0.002,at=1782033704
   step,dige:dadc4ece8cd5c9c7
   step=2,dige:bcaf7e4f0b721f68
   step=3,dige:194e49e6e1de786c

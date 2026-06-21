@@ -158,6 +158,7 @@ export function attachRelay(
 		}, 5000)
 		link.on('open', () => {
 			clearTimeout(watchdog)
+			try { (link as any)._socket?.setNoDelay(true) } catch {}   // Nagle off on the r2r bridge too
 			relayLog(`✓ peer relay LINKED (outbound r2r) → ${editorRelayUrl}`)
 			broadcastControl({ control: 'peer-relay', up: true, target: editorRelayUrl })
 		})
@@ -290,6 +291,11 @@ export function attachRelay(
 			return
 		}
 		if (u.pathname !== PATH) return // not ours (vite HMR etc.) — leave it for the next listener
+		// Nagle off (TCP_NODELAY).  This is a latency-sensitive frame relay: Nagle pools a small WS
+		//  frame (ws splits header/payload into separate writes) until a delayed-ACK returns — tens to
+		//   a couple hundred ms per hop, and the r2r path stacks several hops.  setNoDelay so tiny
+		//    frames shoot immediately instead of sitting in the pipe waiting for company.
+		try { socket.setNoDelay(true) } catch {}
 		selfHost = selfHost || req.headers?.host || '' // learn our own host:port for the self-dial guard
 		const meta: Meta = { addr: u.searchParams.get('addr'), r2r: u.searchParams.get('r2r') === '1' }
 		wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, meta))
