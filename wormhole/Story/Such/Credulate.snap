@@ -3,3 +3,8 @@ Credulate
   ghost:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
   ghost:Ghost_Story_Peregrination,dige:0df73e8177a7a23e
   ghost:Ghost_N_Tyrant,dige:d9455412901394d4
+  last_ok,at=1782028103.899,ok_pct,book:PereStartuppity
+    uses:Ghost_N_Peeroleum,dige:44c4342c851503c4
+    uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
+    uses:Ghost_Story_Peregrination,dige:0df73e8177a7a23e
+    uses:Ghost_N_Tyrant,dige:d9455412901394d4

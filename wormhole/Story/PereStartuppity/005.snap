@@ -1,7 +1,7 @@
 Snap:H
-  H:Peregrination,Run
+  H:PereStartuppity,Run
     A:Alice
-      self,round=11	{"mung":["age"]}
+      self,round=10	{"mung":["age"]}
       w:Peeroleum
         Peering,name:alice
           Pier,pub:bob
@@ -32,12 +32,12 @@ Snap:H
           req:p2paddy
         transport,type:mock
         active_transport,type:websocket,open
-        seemingly:ya aooooolly,figaro:Vanology
+        self,round=10	{"mung":["age"]}
+        seemingly:ya aooooolly,figaro:Vunkular
         transport,type:webrtc,faulty,reason:no-ack
         transport,type:websocket
-        self,round=11	{"mung":["age"]}
     A:Bob
-      self,round=11	{"mung":["age"]}
+      self,round=10	{"mung":["age"]}
       w:Peeroleum
         Peering,name:bob
           Pier,pub:alice
@@ -67,13 +67,14 @@ Snap:H
           req:p2paddy
         transport,type:mock
         active_transport,type:websocket,open
-        seemingly:ya aooooolly,figaro:Vanology
+        self,round=10	{"mung":["age"]}
+        seemingly:ya aooooolly,figaro:Vunkular
         transport,type:webrtc,faulty,reason:no-ack
         transport,type:websocket
-        self,round=11	{"mung":["age"]}
-    A:Peregrination
-      self,round=13	{"mung":["age"]}
-      w:Peregrination
+    A:PereStartuppity
+      self,round=12	{"mung":["age"]}
+      w:PereStartuppity
+        self,round=12	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         witnessed:step_2
@@ -83,5 +84,4 @@ Snap:H
         witnessed:step_4
         reached:step_5
         witnessed:step_5
-        self,round=13	{"mung":["age"]}
-        see:y Peregrination — apparatus ready yyy!
+        see:y PereStartuppity — apparatus ready yyy!

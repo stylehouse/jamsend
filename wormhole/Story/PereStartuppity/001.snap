@@ -1,8 +1,8 @@
 Snap:H
-  H:Peregrination,Run
-    A:Peregrination
+  H:PereStartuppity,Run
+    A:PereStartuppity
       self,round	{"mung":["age"]}
-      w:Peregrination
+      w:PereStartuppity
         self,round	{"mung":["age"]}
-        see:y Peregrination — apparatus ready yyy!
+        see:y PereStartuppity — apparatus ready yyy!
         req:wrangle,eternal,ok

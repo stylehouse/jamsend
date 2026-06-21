@@ -1193,6 +1193,13 @@
         w.c.swatchC = ave.oai({ swatches: 1 })
         w.c.ave     = ave
 
+        // live_poll — the overrun-monitor signal for Storui.  A stable same-object hold
+        //  in the ave channel: poll_step writes the wedge tail into its .c and bumps its
+        //   version DIRECTLY (the reactivity_docs "lever"), so the UI re-renders even while
+        //    a wedged step keeps beliefs from ever flushing ave.  Everything rides in .c
+        //     (Run ref, batch, flags) so nothing reaches the snap.
+        w.c.live_poll = ave.oai({ live_poll: 1 })
+
         H.oai_enroll(H, { watched: 'actions' })
 
         // Register Storui in %watched:UIs so Otro can mount it for this house.
@@ -1566,7 +1573,8 @@
                 console.log(`⏸ do_step skipped: driving=${run.c.driving} paused=${run.sc.paused}`)
                 schedule(); return
             }
-            H.live_poll = null   // a fresh step (or run-end) — lower any overrun monitor
+            { const lp = w.c.live_poll as TheC | undefined   // fresh step (or run-end) — lower the monitor
+              if (lp?.c.on) { lp.c.on = false; lp.bump_version() } }
             const n = ((run.sc.done ?? 0) as number) + 1
             ;V.Story && console.log(`▷ do_step n=${n} mode=${run.sc.mode}`)
             ;V.Story && console.log(`The at n=${n}:`, (w.c.The)?.o({step:1}).map((s:any)=>s.sc.step+'→'+(s.sc.dige?s.sc.dige.slice(0,6):'no-dige')).join(', '))
@@ -1625,7 +1633,6 @@
         let was_ttlilt_timed_out = false  // cleared by time-expiry, not req completion
         const poll_step = () => {
             if (!run.c.driving) return
-            console.log(' - ')
             const f = Run.c.finished_run as number | null
             let not_in_Atime = f != null
                 && f > (run.c.began_step as number)
@@ -1673,6 +1680,24 @@
                 && !ttlilt_held()
             
             if (!quiescent) {
+                // watchdog — actively re-drive a dropped wakeup so a stall can never harden into a
+                //  permanent wedge.  The drive otherwise TRUSTS that a non-empty Run.todo will drain
+                //   itself (the todo_version $effect → answer_calls).  But that path is async +
+                //    50ms-throttled and defers some pushes through clear()/throttle, so a wakeup can
+                //     be lost: the House goes idle (out of Atime — finished_run set, no cycle running)
+                //      with todo STILL non-empty, and poll_step would then wait forever.  Seeing
+                //       exactly that, we drive the drain ourselves rather than trust it.  not_in_Atime
+                //        guards against re-entering a live cycle; answer_calls() is throttle-safe
+                //         against repeats.  If it instead fires forever with todo never emptying,
+                //          that's an infinite RE-ENQUEUE, not a lost wakeup — and the throttled
+                //           'rekick' trace makes which-one-it-is loud (vs the old silent forever-wait).
+                if (not_in_Atime && Run.todo.length) {
+                    if (now_in_seconds_with_ms() - ((run.c.rekicked as number) ?? 0) > 1) {
+                        run.c.rekicked = now_in_seconds_with_ms()
+                        Run.trace('rekick', `todo:${Run.todo.length} idle:${(now_in_seconds_with_ms() - (f as number)).toFixed(2)}s`)
+                    }
+                    Run.answer_calls()
+                }
                 // step_stall: this step is dragging.  Blip the editor once past 2s, then re-blip
                 //  about every second, so a wedged step reads as a live "still working n…" on the
                 //   runner panel instead of dead air.  stall_blipped (a seconds stamp) is cleared
@@ -1682,25 +1707,38 @@
                     run.c.stall_blipped = now_in_seconds_with_ms()
                     runner_phase('step_stall', { n: run.c.step_n, total: story_total(), secs: Math.round(secs), book: w.sc.Book })
                 }
-                // overrun monitor — a step dragging past 5s is wedged.  Raise H.live_poll once
-                //  (guarded on step_n so we don't churn the UI every 50ms tick), pointing at this
-                //   Run so Storui can open a live ticker over the still-accumulating trace_log.
-                if (secs > 5 && H.live_poll?.step !== run.c.step_n) {
-                    H.live_poll = { step: run.c.step_n as number, since: run.c.began_step as number, Run }
-                }
-                // brutal trace tail — the console fallback for the same wedge; dump the LIVE Run.trace_log
-                //  (otherwise only trace_drain()ed at snap, which a wedged step never reaches — so the
-                //   trace is invisible exactly when you need it).  Re-dumped every ~2s, with the Δms
-                //    between events, so the repeating tail names the re-armer that keeps Atime hot.
-                if (secs > 5 && now_in_seconds_with_ms() - ((run.c.trace_tailed as number) ?? 0) > 2) {
-                    run.c.trace_tailed = now_in_seconds_with_ms()
-                    const log  = ((Run as any).trace_log ?? []) as any[]
-                    const tail = log.slice(-40)
-                    const lines = tail.map((ev: any, i: number) => {
-                        const d = i ? ev.t - tail[i - 1].t : 0
-                        return `  +${String(d.toFixed(1)).padStart(7)}ms  ${ev.kind}${ev.tag ? ':' + ev.tag : ''}`
-                    })
-                    console.log(`⏳⏳ step ${run.c.step_n} WEDGED @ ${secs.toFixed(1)}s — trace tail (last ${tail.length}/${log.length}):\n${lines.join('\n')}`)
+                // overrun monitor — a step past 5s is wedged.  Publish the live trace tail on the
+                //  ave-held live_poll particle and bump its version DIRECTLY, so Storui (reading
+                //   lp.vers) refreshes even while a wedged step never flushes ave.  Paced here:
+                //    on arming, and then ~every 3s when the trace has grown, we stash the latest
+                //     ≤30 UNSHOWN events in lp.c.batch (older backlog skipped) and bump.  A static
+                //      wedge bumps once and holds.  (Surfaced in the UI now, not the console.)
+                const lp = w.c.live_poll as TheC | undefined
+                if (lp && secs > 5) {
+                    const fresh = !lp.c.on || lp.c.step !== run.c.step_n
+                    const nowm  = now_in_seconds_with_ms()
+                    const tlog  = Run.trace_log ?? []
+                    const shown = (lp.c.shown as number) ?? 0
+                    const due   = nowm - ((lp.c.beat as number) ?? 0) > 3
+                    if (fresh || (due && tlog.length > shown)) {
+                        if (fresh) {
+                            lp.c.on = true; lp.c.step = run.c.step_n
+                            lp.c.since = run.c.began_step; lp.c.Run = Run
+                        }
+                        lp.c.beat = nowm
+                        const lo = Math.max(fresh ? 0 : shown, tlog.length - 30)
+                        lp.c.batch = tlog.slice(lo).map((ev, i) => ({
+                            kind: ev.kind, tag: ev.tag, key: lo + i, i,
+                            d: (lo + i) > 0 ? ev.t - tlog[lo + i - 1].t : 0,
+                        }))
+                        lp.c.shown = tlog.length
+                        lp.c.total = tlog.length
+                        // last_t: performance.now() of the newest event.  The UI shows "idle Xs"
+                        //  off this — for a wedged-idle trace it stops advancing while the step
+                        //   clock keeps climbing, which IS the deadlock signature (heading 6).
+                        lp.c.last_t = tlog.length ? tlog[tlog.length - 1].t : performance.now()
+                        lp.bump_version()
+                    }
                 }
                 setTimeout(poll_step, TICK_MS)
                 return
@@ -1727,8 +1765,9 @@
             const n = run.c.step_n as number
             run.sc.done = n
             run.c.stall_blipped = undefined            // this step landed — re-arm stall detection
-            run.c.trace_tailed  = undefined            // …and the brutal-trace-tail throttle
-            H.live_poll = null                         // …and lower the overrun monitor
+            run.c.rekicked      = undefined            // …and the watchdog rekick-trace throttle
+            { const lp = w.c.live_poll as TheC | undefined   // …and lower the overrun monitor
+              if (lp?.c.on) { lp.c.on = false; lp.bump_version() } }
             runner_phase('step_done', { n, total: story_total(), book: w.sc.Book })
             Run.trace('snap', String(n))
 

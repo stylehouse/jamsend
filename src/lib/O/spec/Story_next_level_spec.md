@@ -833,6 +833,46 @@ The drive's troubles — the manual step that won't behave, the not-useful creat
           ttlilt (§8.2) makes that lifetime structural: drop `req:Step` and its
            ttlilt's share of the coalesced timer dies with it.
 
+### 15.5 The lost wakeup the parallel drive can drop (and the watchdog net)
+
+The sharpest cost of the parallel drive is a **lost wakeup**: a step that never
+ ends because the queue that feeds it stalled and nobody noticed. The drive trusts
+  that a non-empty `Run.todo` will drain itself, but the drain path is lossy:
+
+- `answer_calls` fires `_really_answer_calls()` **async and unawaited**, then a 50 ms
+   throttle timer clears `answer_calls_waiting` *independently of whether that work
+    finished* — so liveness rides on an `answer_calls_pending` flag and the
+     `todo_version` `$effect` lining back up, not on the work itself.
+- the pushes that *should* re-arm it are themselves deferred: `i_elvisto` parks its
+   `_push_todo` inside a `clear()` (a mutex re-acquire), and `feebly_ponder → main`
+    routes through a `throttle()` that can **coalesce away** the very `think` meant to
+     kick the next cycle.
+
+Drop any one of those and the House goes **idle out of Atime** — `finished_run` set,
+ no cycle running — with `Run.todo` **still non-empty**. `poll_step`, which only ever
+  *waited* on quiescence, then waits **forever**: its `setTimeout` "comes back
+   infinitely," which reads like a spin but is the opposite — a frozen machine. The
+    tell is the trace: a **static** trace (no new events) while the step clock climbs
+     is a lost wakeup; a **growing** trace that never settles is the other failure,
+      an infinite re-enqueue (churn). Same dead step, opposite cause — don't conflate
+       them; the trace is what tells them apart.
+
+The net, until the drive is a real req** (§15.1): a **watchdog** in `poll_step`. When
+ it sees exactly the deadlock signature — `not_in_Atime && Run.todo.length` — it stops
+  trusting and drives the drain itself (`Run.answer_calls()`), `not_in_Atime` guarding
+   against re-entering a live cycle and `answer_calls`' own throttle guarding against
+    repeats. A dropped wakeup self-heals on the next tick instead of wedging. A
+     throttled **`rekick` trace** marks each intervention, so the two failure modes are
+      legible at runtime (rekick-then-lands = lost wakeup; rekick-forever = churn) and
+       the event *before* the rekick names the last thing that happened before the drop.
+
+This is the §15 lesson at its bluntest: the parallel drive keeps its own notion of
+ *liveness* beside the engine's, and pays for it with a class of silent forever-wait.
+  The watchdog makes `poll_step` the liveness authority instead of a trusting observer
+   — reliable, but still a net over fragility. Recast the drive as `req:Step`/`req:Drive`
+    and the wake becomes ttlilt-owned (§8.2): there is no separate `todo_version`/throttle
+     handshake to drop, so the whole class dissolves rather than being caught.
+
 ---
 
 ## 16. Running it UIless — the agent as test driver

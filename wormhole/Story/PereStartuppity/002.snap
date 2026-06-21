@@ -1,5 +1,5 @@
 Snap:H
-  H:Peregrination,Run
+  H:PereStartuppity,Run
     A:Alice
       self,round	{"mung":["age"]}
       w:Peeroleum
@@ -11,7 +11,7 @@ Snap:H
         transport,type:mock
         active_transport,type:mock,open
         self,round	{"mung":["age"]}
-        seemingly:ya aooooolly,figaro:Vanology
+        seemingly:ya aooooolly,figaro:Vunkular
     A:Bob
       self,round	{"mung":["age"]}
       w:Peeroleum
@@ -23,12 +23,12 @@ Snap:H
         transport,type:mock
         active_transport,type:mock,open
         self,round	{"mung":["age"]}
-        seemingly:ya aooooolly,figaro:Vanology
-    A:Peregrination
+        seemingly:ya aooooolly,figaro:Vunkular
+    A:PereStartuppity
       self,round=3	{"mung":["age"]}
-      w:Peregrination
+      w:PereStartuppity
+        self,round=3	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
-        self,round=3	{"mung":["age"]}
-        see:y Peregrination — apparatus ready yyy!
+        see:y PereStartuppity — apparatus ready yyy!
         witnessed:step_2

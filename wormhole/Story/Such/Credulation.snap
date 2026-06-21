@@ -1,5 +1,30 @@
 Credulation
-  run=0,at=1782018615.026,ok=0,ok_pct=0,book:PereStartuppity,mode:check
+  run=0,at=1782026642.947,ok=0,ok_pct=0.8,book:PereStartuppity,mode:check
+    uses:Ghost_N_Peeroleum,dige:44c4342c851503c4
+    uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
+    uses:Ghost_Story_Peregrination,dige:0df73e8177a7a23e
+    uses:Ghost_N_Tyrant,dige:d9455412901394d4
+  run,at=1782026650.092,ok,ok_pct,book:PereStartuppity,mode:check
+    uses:Ghost_N_Peeroleum,dige:44c4342c851503c4
+    uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
+    uses:Ghost_Story_Peregrination,dige:0df73e8177a7a23e
+    uses:Ghost_N_Tyrant,dige:d9455412901394d4
+  run=2,at=1782026659.553,ok,ok_pct,book:PereStartuppity,mode:check
+    uses:Ghost_N_Peeroleum,dige:44c4342c851503c4
+    uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
+    uses:Ghost_Story_Peregrination,dige:0df73e8177a7a23e
+    uses:Ghost_N_Tyrant,dige:d9455412901394d4
+  run=3,at=1782027768.766,ok=0,ok_pct=0.8,book:PereStartuppity,mode:check
+    uses:Ghost_N_Peeroleum,dige:44c4342c851503c4
+    uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
+    uses:Ghost_Story_Peregrination,dige:0df73e8177a7a23e
+    uses:Ghost_N_Tyrant,dige:d9455412901394d4
+  run=4,at=1782028077.287,ok,ok_pct,book:PereStartuppity,mode:check
+    uses:Ghost_N_Peeroleum,dige:44c4342c851503c4
+    uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
+    uses:Ghost_Story_Peregrination,dige:0df73e8177a7a23e
+    uses:Ghost_N_Tyrant,dige:d9455412901394d4
+  run=5,at=1782028103.899,ok,ok_pct,book:PereStartuppity,mode:check
     uses:Ghost_N_Peeroleum,dige:44c4342c851503c4
     uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
     uses:Ghost_Story_Peregrination,dige:0df73e8177a7a23e

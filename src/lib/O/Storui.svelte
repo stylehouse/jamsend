@@ -103,7 +103,7 @@
     import type { TheC }  from "$lib/data/Stuff.svelte"
     import type { House, TraceEvent } from "$lib/O/Housing.svelte"
     import { peel }       from "$lib/Y.svelte"
-    import { fly }        from "svelte/transition"
+    import { fly, fade } from "svelte/transition"
     import Vexpandy       from "$lib/O/ui/Vexpandy.svelte"
     import EntropyArrest  from "$lib/O/ui/EntropyArrest.svelte"
 
@@ -959,61 +959,65 @@
 
     //#region overrun trace monitor
     //
-    //   poll_step (Story.svelte) sets H.live_poll = {step, since, Run} when a step drags
-    //   past 5s, and clears it when the step lands.  We raise a button on the run bar;
-    //   toggling it opens a live ticker that walks the still-accumulating Run.trace_log
-    //   with its OWN reveal cursor — separate from the snap-time trace_drain(), so it
-    //   only reads the trace, never consumes it.
+    //   poll_step (Story.svelte) publishes the wedge tail onto an ave-held `live_poll`
+    //   particle and bumps its version DIRECTLY (the reactivity_docs "lever"), so this
+    //   updates even while a wedged step keeps beliefs from ever flushing ave.  We read
+    //   `lp.vers` — the codebase's reactive signal — never a plain $state field.
     //
-    //   Pace: one reveal every REVEAL_MS, i.e. 30 lines / 3s.  When the trace grows
-    //   slower than that the cursor catches the live tail and idles (fewer than 30/3s).
-    //   On open the cursor starts ~30 events back, so the existing tail "flashes by"
-    //   over the first ~3s, then it tracks newly-arriving events.
+    //   poll_step owns the pacing: lp.c.batch already holds the latest ≤30 UNSHOWN events
+    //   (older backlog skipped, refreshed ~every 3s while the trace grows; a static wedge
+    //   holds its last batch).  Here we just render it; the old batch flashes away and the
+    //   new one flashes in (keyed each + in/out transitions).  ⎘ copies the shown batch.
 
-    const REVEAL_MS  = 100   // 10 reveals/sec → 30 lines per 3s
-    const LIVE_LINES = 30
+    type LiveRow = { kind: string, tag?: string, d: number, key: number, i: number }
 
-    // over: the live_poll record while a step is overrunning (null otherwise).  $state on
-    //   the House, so this reads reactively even while beliefs is idle (the wedge case).
-    let over     = $derived(H.live_poll as { step: number, since: number, Run: House } | null)
+    // lp — the live_poll particle, taken from the ave channel ($effect re-runs each ave
+    //   flush; during a wedge it's already held, and lp.vers bumps are seen directly).
+    let lp = $state<TheC | undefined>()
+    $effect(() => { lp = H.ave.ob({ live_poll: 1 })[0] as TheC | undefined })
+
+    // over: truthy while a step is overrunning.  Gated on lp.vers (the reactive signal) —
+    //   the .c reads are plain, but the vers read makes the whole derive reactive.
+    let over = $derived(
+        (lp?.vers && lp.c.on)
+            ? { step: lp.c.step as number, since: lp.c.since as number, Run: lp.c.Run as House }
+            : null
+    )
     let over_on  = $state(false)   // ticker toggled open
     let over_secs = $state(0)      // live elapsed seconds, for the button label
-    let live_cursor = $state(-1)   // index in Run.trace_log of the last revealed event
-    let live_total  = $state(0)    // current Run.trace_log length (the live tail we chase)
-    let live_window = $state<{ ev: TraceEvent, key: number, d: number }[]>([])
+    let over_idle = $state(0)      // seconds since the newest trace event — climbs while frozen
 
-    // elapsed-seconds clock — runs whenever a step is overrunning, button or not.
+    // the shown batch + counts, straight off the particle — reactive via lp.vers.
+    let live_window = $derived(((lp?.vers && over_on && lp.c.on) ? (lp.c.batch as LiveRow[]) : null) ?? [])
+    let live_total  = $derived((lp?.vers && (lp.c.total as number)) || 0)
+    let live_shown  = $derived((lp?.vers && (lp.c.shown as number)) || 0)
+
+    // elapsed-seconds clock — a plain component-local interval (the canonical Svelte
+    //   counter), running whenever a step is overrunning, button or not.
     $effect(() => {
         const o = over
-        if (!o) { over_secs = 0; over_on = false; return }
-        const upd = () => { over_secs = Date.now() / 1000 - o.since }
+        if (!o) { over_secs = 0; over_idle = 0; over_on = false; return }
+        const upd = () => {
+            over_secs = Date.now() / 1000 - o.since
+            // idle: ms since the newest trace event (performance.now clock, shared with the
+            //  worker).  Static while the trace is frozen → climbs → reads as "trace dead".
+            const lt = lp?.c.last_t as number | undefined
+            over_idle = lt != null ? (performance.now() - lt) / 1000 : 0
+        }
         upd()
         const id = setInterval(upd, 250)
         return () => clearInterval(id)
     })
 
-    // the reveal cursor — only while the ticker is open AND a step is overrunning.
-    $effect(() => {
-        const o = over
-        if (!o || !over_on) { live_window = []; live_cursor = -1; live_total = 0; return }
-        const Run = o.Run
-        // start ~LIVE_LINES back so the current tail flashes past, then track the live end.
-        //  len0 is a LOCAL, not a read of live_total — reading the $state here would make
-        //   this effect depend on it, and the interval below writes it every tick → reset loop.
-        const len0  = Run.trace_log?.length ?? 0
-        live_total  = len0
-        live_cursor = Math.max(-1, len0 - 1 - LIVE_LINES)
-        const id = setInterval(() => {
-            const log = (Run.trace_log ?? []) as TraceEvent[]
-            live_total = log.length
-            if (live_cursor >= log.length - 1) return   // caught up — idle until more arrives
-            live_cursor++
-            const lo  = Math.max(0, live_cursor - (LIVE_LINES - 1))
-            const win = log.slice(lo, live_cursor + 1)
-            live_window = win.map((ev, i) => ({ ev, key: lo + i, d: i ? ev.t - win[i - 1].t : 0 }))
-        }, REVEAL_MS)
-        return () => clearInterval(id)
-    })
+    // live_copy — the currently SHOWN batch as text (Δms + kind:tag); grabs what's on
+    //   screen right now.  Same shape as poll_step's old console "brutal trace tail".
+    function live_copy() {
+        const o = over; if (!o) return
+        const lines = live_window.map(r =>
+            `+${r.d.toFixed(1).padStart(8)}ms  ${r.kind}${r.tag ? ':' + r.tag : ''}`)
+        const head = `step ${String(o.step).padStart(3, '0')} live trace — ${live_window.length} lines @ ${over_secs.toFixed(1)}s`
+        navigator.clipboard.writeText(head + '\n' + lines.join('\n') + '\n').catch(() => {})
+    }
     //#endregion
 </script>
 
@@ -1060,22 +1064,29 @@
 
         <!-- ── live overrun trace ticker ──────────────────────────────────── -->
         <!-- Raised while a step overruns 5s and the ⏱ button is toggled on.    -->
-        <!-- Walks the still-accumulating Run.trace_log at ≤30 lines/3s, newest  -->
-        <!-- at the bottom, flying each new line in.  Same trace_fg() colouring  -->
-        <!-- as the per-step trace panel.                                        -->
+        <!-- Every 3s the latest ≤30 unshown lines flash in (old batch flashes   -->
+        <!-- away); ⎘ copies the shown batch.  Same trace_fg() colouring as the  -->
+        <!-- per-step trace panel.                                               -->
         {#if over && over_on}
             <div class="sr-live">
                 <div class="sr-trace-axis">
                     <span class="sr-trace-axis-lbl">live · step {String(over.step).padStart(3,'0')}</span>
                     <span>{over_secs.toFixed(1)}s</span>
-                    <span class="sr-live-cur">{live_cursor + 1}/{live_total}</span>
+                    <span class="sr-live-idle" class:stale={over_idle > 3}
+                          title="seconds since the newest trace event — if this climbs while the step clock runs, the trace is frozen (a beliefs-drain deadlock), not churning">
+                        idle {over_idle.toFixed(1)}s
+                    </span>
+                    <span class="sr-live-cur">{live_shown}/{live_total}</span>
+                    <button class="sr-trace-copy" onclick={live_copy} title="copy the shown batch">⎘</button>
                 </div>
                 <div class="sr-live-rows">
                     {#each live_window as row (row.key)}
-                        <div class="sr-trace-row" in:fly={{ y: 7, duration: 180 }}>
+                        <div class="sr-trace-row"
+                             in:fly={{ y: 8, duration: 220, delay: row.i * 18 }}
+                             out:fade={{ duration: 120 }}>
                             <span class="sr-live-d">{row.d ? '+' + row.d.toFixed(0) + 'ms' : ''}</span>
-                            <span class="sr-trace-lbl" style="color:{trace_fg(row.ev.kind)}"
-                            >{row.ev.kind}{row.ev.tag ? ':' + row.ev.tag : ''}</span>
+                            <span class="sr-trace-lbl" style="color:{trace_fg(row.kind)}"
+                            >{row.kind}{row.tag ? ':' + row.tag : ''}</span>
                         </div>
                     {/each}
                     {#if !live_window.length}
@@ -1855,6 +1866,8 @@
     max-height:30vh; min-height:8em; overflow:hidden; padding:2px 6px 4px;
 }
 .sr-live-d   { display:inline-block; width:62px; text-align:right; color:#7a5a2a; padding-right:8px; }
+.sr-live-idle { color:#5a5230; }
+.sr-live-idle.stale { color:#e08a3a; font-weight:600; }   /* trace frozen — the wedge signal */
 .sr-live-cur { margin-left:auto; color:#6a4a1a; }
 .sr-live-wait { color:#5a4a2a; padding:4px 0; }
 /* step wall-clock — right-aligned in the panel header, dimmer than the dige */
