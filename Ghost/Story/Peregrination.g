@@ -1,9 +1,11 @@
 
-// Peregrination — the Peeroleum p2p test (the outer test layer), and the first of a
-//  new kind of runtime test.  The Creduler (the runner Lies on H:Mundo) loads this
-//   ghost live BEFORE the Story begins, so its sibling methods are on H; there is no
-//    hand-written bootstrap anymore.  Run_A_Peregrination wires the Run, then the
-//     per-beat Peregrination(A,w) installs the eternal %req:wrangle whose do_fn drives
+// PereStartuppity — the Peeroleum p2p test (the outer test layer), and the first of a
+//  new kind of runtime test.  (The Book / actor / w / per-beat handler are all
+//   PereStartuppity; this source file stays Peregrination.g — the file is the artifact,
+//    the Book is the identity.)  The Creduler (the runner Lies on H:Mundo) loads this
+//     ghost live BEFORE the Story begins, so its sibling methods are on H; there is no
+//      hand-written bootstrap anymore.  Run_A_PereStartuppity wires the Run, then the
+//       per-beat PereStartuppity(A,w) installs the eternal %req:wrangle whose do_fn drives
 //      the *inner* steps, starting at 2. The toc.snap carries one `step,…` line per
 //       inner step (real seq, lie diges till a run records them).
 //
@@ -18,20 +20,20 @@
 //  queued→handling→verified→done, acks, %recent whittle at the step boundary) is not
 //   its own step — it rides the traffic of steps 2 and 3, in the Peeroleum spine.
 //
-// Run_A_Peregrination — the Book's Run recipe (Story_subHouse calls it to wire the
+// Run_A_PereStartuppity — the Book's Run recipe (Story_subHouse calls it to wire the
 //  Run).  Lives here now that the Creduler loads this ghost before the Story begins;
 //   the hand-written Peregrination.svelte is gone.  Lay the single test actor + its w;
 //    the role is already 'runner' (Auto/boot) — this just guards it.
-Run_A_Peregrination():
+Run_A_PereStartuppity():
     this.c.role ??= 'runner'
-    H i A:Peregrination/w:Peregrination
+    H i A:PereStartuppity/w:PereStartuppity
 
 // We do NOT use H.on_step: it keys off one H-global `did_on_step_n`, which a step-1
 //  table would claim when setup spills into step 2 — that starves step 2's setup (the
 //   symptom: step 3 fires, step 2's sides never lay).  Lake_drive keeps a req-local
 //    `did_step` instead, immune to any other caller.
-Peregrination(A,w):
-    w i %see:'y Peregrination — apparatus ready yyy!'
+PereStartuppity(A,w):
+    w i %see:'y PereStartuppity — apparatus ready yyy!'
     w oai %req:wrangle,eternal
         await &Lake_drive,w,req
         req%ok = 1

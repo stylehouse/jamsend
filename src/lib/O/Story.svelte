@@ -1530,6 +1530,24 @@
             wa()?.bump_version()
         }
 
+        // runner_phase — best-effort progress blip up the editor channel as this Run steps.  The
+        //  channel participant is the Creduler Lies under Mundo (top_House), found the same way
+        //   Auto's storyFinished bridge finds it; Lies_runner_phase no-ops unless this is genuinely
+        //    a runner with a live channel, so an editor's own Run or a bare dev Run costs only the
+        //     lookup.  total = the recorded step count (the toc step lines) when 'new' mode hasn't
+        //      stamped run.sc.total yet.
+        const story_total = () => (run.sc.total as number | undefined)
+            ?? ((w.c.The as TheC | undefined)?.o({ step: 1 }) ?? []).length
+        const runner_phase = (phase: string, extra?: any) => {
+            const Mundo = H.top_House()
+            const liesW = Mundo.o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] as TheC | undefined
+            // Invoke ON Mundo, not on this Run House: Lies_role's inside-story guard returns
+            //  undefined when `this` sits within a Story Run (>1 Lies in the tree), so the role —
+            //   and the no-op gate — must be read from Mundo's vantage (where Auto's verdict bridge
+            //    also calls it).  The Creduler w carries %runner, so the role still resolves there.
+            if (liesW) (Mundo as any).Lies_runner_phase(liesW, phase, extra)
+        }
+
         // advance: called after snap_step completes and (for waitCyto path)
         // after the animation_done event has resumed the drive.
         const advance = async () => {
@@ -1653,6 +1671,15 @@
                 && !ttlilt_held()
             
             if (!quiescent) {
+                // step_stall: this step is dragging.  Blip the editor once past 2s, then re-blip
+                //  about every second, so a wedged step reads as a live "still working n…" on the
+                //   runner panel instead of dead air.  stall_blipped (a seconds stamp) is cleared
+                //    when the step lands (snap_step), re-arming detection for the next step.
+                const secs = now_in_seconds_with_ms() - (run.c.began_step as number)
+                if (secs > 2 && now_in_seconds_with_ms() - ((run.c.stall_blipped as number) ?? 0) > 1) {
+                    run.c.stall_blipped = now_in_seconds_with_ms()
+                    runner_phase('step_stall', { n: run.c.step_n, total: story_total(), secs: Math.round(secs), book: w.sc.Book })
+                }
                 setTimeout(poll_step, TICK_MS)
                 return
             }
@@ -1677,6 +1704,8 @@
             if (!run.c.driving) return
             const n = run.c.step_n as number
             run.sc.done = n
+            run.c.stall_blipped = undefined            // this step landed — re-arm stall detection
+            runner_phase('step_done', { n, total: story_total(), book: w.sc.Book })
             Run.trace('snap', String(n))
 
             // No own Cyto (default / !useCyto): bypass the wave handshake, snap immediately.

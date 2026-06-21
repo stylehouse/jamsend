@@ -303,10 +303,13 @@ tighten later. `%Ud` verification, per-runner authorization, Thangs persistence 
 future — this trust-everything seam is exactly where the cabinetry layer (Tyrant.g,
 identity/trust) bolts on.
 
-**Where frames land (the Lies side).** Editor emit hook = `write_finished` + `w%editor`;
+**Where the `.go` lands (the Lies side).** Editor emit hook = `write_finished` + `w%editor`;
 runner receiver = `LiesStore_good → land_good → drain_good`. The channel carries the `.go`
-**bytes**, not a path — there is no shared OPFS across the two origins, so a shared-disk
-shortcut is *not* available (don't "optimise" the byte-shipping away).
+**bytes** to the runner, which writes them to disk **server-side**. Why ship bytes rather
+than write from the browser: (1) a bet on beating the browser DirectoryAPI's write speed —
+**probably a miniscule advantage**; (2) the real payoff — **remote running**, where the
+runner's `.go` destination is away on a server with no shared disk to the editor, so the
+bytes must travel. (Same-machine, the win is negligible; remote is where it earns its keep.)
 
 ---
 
@@ -713,15 +716,18 @@ This whole section specced a `%req:waiting` demand client + a computed-max globa
 `leave_running_until` + `reqy` as the demand client. **None of it was built**, and
 all three subjects are gone: `reqy()` is deleted (§3); `%req:waiting` and the
 computed-max global exist in no code. The realised mechanism is a one-shot `%ttlilt`
-(`H.i_req_ttlilt(req, secs, {waiting})`, `Hovercraft.svelte:380`) — owned demand,
-dropped on `finish()`, polled-not-mutated (no write-write race), already what the
-live system runs on (LiesStore/Lang/LiesCortex). The floor itself uses none
+(`H.i_req_ttlilt(req, secs, {waiting})`, `Hovercraft.svelte:380`) — owned demand on a
+req **that finishes**: it advises how long to hold the snap open for that req to reach
+`finished`, and is dropped on `finish()` (polled-not-mutated, no write-write race). A
+req that never finishes has nothing for a ttlilt to release — so an `eternal` foreman
+(self-settling via `req.sc.ok=1`) carries none. Already what the live system runs on
+(LiesStore/Lang/LiesCortex). The floor itself uses none
 (`Tribunal.g` deliberately avoids it; it self-drives on `feebly_ponder` + `post_do`
 + step-pacing). See handover heading 5 (CLOSED) — don't rebuild this.
 
 ---
 
-## 14. Observation is a Story Book (Peregrination), not a Mach layer
+## 14. Observation is a Story Book (PereStartuppity), not a Mach layer
 
 The original design here was a `MachPeeroleum` Mach layer (an `on_step` choreography
 table, force-finish-prior, the witness flag). **`MachPeeroleum` was never grown** —
@@ -740,7 +746,7 @@ runner. What survives from the Mach idea is durable and lives on:
   it perturbs whatever is carrying (§14.1). Reserved for heading 6; the meddle
   machinery itself is not built yet (legacy `MachPeerily` only).
 
-**The realised observer.** `Run_A_Peregrination` wires the Run; `Peregrination(A,w)`
+**The realised observer.** `Run_A_PereStartuppity` wires the Run; `PereStartuppity(A,w)`
 installs `%req:wrangle,eternal` whose do_fn calls `Lake_drive(w, req)` each pass.
 `Lake_drive` dispatches per inner step off a **req-local `req.c.did_step`** — and
 **explicitly refuses `H.on_step`**, which keys off one H-global `did_on_step_n`: when

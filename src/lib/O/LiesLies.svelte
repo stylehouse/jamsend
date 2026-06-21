@@ -11,7 +11,7 @@
     // ── One source of truth: H.c.role ─────────────────────────────────────────
     //
     //   The split is per-Run, not per-w: the editor and runner are each a Story
-    //    Book's Run (Run_A_Editron / Run_A_Peregrination), and a Run owns several
+    //    Book's Run (Run_A_Editron / Run_A_PereStartuppity), and a Run owns several
     //     actors.  Pantheate is its OWN actor (A:Pantheate/w:Pantheate) — its w
     //      carries neither flag — yet the load-bearing gate (suppress the mount on
     //       the editor) lives in its handler.  So the authoritative role is stamped
@@ -51,6 +51,7 @@
         'Ghost/N/Peeroleum.g',          // transport spine — envelope, inbox/outbox, handshake
         'Ghost/N/Tribunal.g',           // carriers — mock / webrtc / websocket relay
         'Ghost/Story/Peregrination.g',  // the p2p test — first of a new kind; more pile on here
+        'Ghost/N/Tyrant.g',             // cabinetry — trust + policy-gated admission (rides the floor)
     ]
 
     onMount(async () => {
@@ -143,9 +144,13 @@
         //        Lies CONSUMER: stand the channel up on a Peering, register the two
         //         app frame types, and bridge them to the compile/run pipeline.
         //
-        //   Two frame types, plain-text bodies (spec/Editron.md §2):
-        //     rungo       editor → runner   { demands: [{path, dige}], header:{seq} }
-        //     run_result  runner → editor   { path, dige, ok, errors, snap_dige }
+        //   App frame types, plain-text bodies (spec/Editron.md §2):
+        //     rungo        editor → runner   { demands: [{path, dige}], header:{seq} }
+        //     become_book  editor → runner   { book }
+        //     run_result   runner → editor   { path, dige, ok, errors, snap_dige }
+        //     run_phase    runner → editor   { phase, n?, total?, secs?, book?, path? }
+        //                    transient progress: rungo_ack → story_begun → step_done×N
+        //                     → all_done (step_stall while a step drags) — the run, felt bouncing.
         //
         //   v1 scope (deferred items spelled out in the channel doc): one editor,
         //    one runner, trust-everything (the hello/trust handshake is skipped — we
@@ -196,7 +201,10 @@
             if (role === 'runner') {
                 (H as any).Peeroleum_on(w, 'rungo',       (cw: TheC, _p: TheC, fr: any) => H.Lies_rungo_recv(cw, fr))
                 ;(H as any).Peeroleum_on(w, 'become_book', (cw: TheC, _p: TheC, fr: any) => H.Lies_become_book_recv(cw, fr))
-            } else            (H as any).Peeroleum_on(w, 'run_result', (cw: TheC, _p: TheC, fr: any) => H.Lies_run_result_recv(cw, fr))
+            } else {
+                (H as any).Peeroleum_on(w, 'run_result', (cw: TheC, _p: TheC, fr: any) => H.Lies_run_result_recv(cw, fr))
+                ;(H as any).Peeroleum_on(w, 'run_phase',  (cw: TheC, _p: TheC, fr: any) => H.Lies_run_phase_recv(cw, fr))
+            }
             // ping/pong heartbeat — both roles echo a ping and record a pong, so the real
             //  envelope path is provable (and shown by the badge), not just relay control.
             ;(H as any).Peeroleum_on(w, 'ping', (cw: TheC, _p: TheC, fr: any) => { H.Lies_pong(cw, fr);      return true })
@@ -314,6 +322,7 @@
             req.c.await_since = Date.now()
             req.c.last_sig    = undefined
             H.tlog(`📥 rungo seq=${seq} recv: ${demands.map(d => `${d.path}@${String(d.dige).slice(0, 8)}`).join(', ')}`)
+            H.Lies_runner_phase(w, 'rungo_ack', { seq })   // blip the editor: authority received
             H.i_elvisto(w, 'think')   // wake a tick so w.do() pumps the rungo now, not next gesture
             return true
         },
@@ -426,6 +435,7 @@
                 const primary = demands[0]
                 H.Lies_drive_run(w, primary.path)
                 w.c.awaiting_verdict = { path: primary.path, dige: primary.dige }
+                H.Lies_runner_phase(w, 'story_begun', { path: primary.path, seq })   // blip: Run kicked
                 H.tlog(`▶ rungo seq=${seq} FIRES @ ${demands.map(d => String(d.dige).slice(0, 8)).join('+')} — ${demands.map(d => d.path).join(', ')} (all ${demands.length} live)`)
                 ;(req.c.up as TheC).finish(req)
                 return

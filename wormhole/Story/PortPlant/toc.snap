@@ -37,28 +37,28 @@ story:PortPlant
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.044
-      sample=0.061,at=1781934682
-      sample=0.061,at=1781934705
-      sample=0.045,at=1781934724
-      sample=0.048,at=1781944849
-      sample=0.055,at=1781947636
-      sample=0.056,at=1781961860
+    TimeTotal:beliefs,avg=0.041
       sample=0.028,at=1781967694
       sample=0.027,at=1781967702
       sample=0.025,at=1781967710
       sample=0.034,at=1781967822
-    TimeTotal:step,avg=0.005
-      sample=0.007,at=1781934682
-      sample=0.007,at=1781934705
-      sample=0.005,at=1781934724
-      sample=0.005,at=1781944849
-      sample=0.006,at=1781947636
-      sample=0.006,at=1781961860
+      sample=0.03,at=1781996122
+      sample=0.059,at=1781998581
+      sample=0.057,at=1781998601
+      sample=0.045,at=1781998612
+      sample=0.04,at=1781998626
+      sample=0.062,at=1782000783
+    TimeTotal:step,avg=0.004
       sample=0.003,at=1781967694
       sample=0.003,at=1781967702
       sample=0.003,at=1781967710
       sample=0.004,at=1781967822
+      sample=0.003,at=1781996122
+      sample=0.007,at=1781998581
+      sample=0.006,at=1781998601
+      sample=0.005,at=1781998612
+      sample=0.004,at=1781998626
+      sample=0.007,at=1782000783
   step,dige:86d4698cb9eb6911
   step=2,dige:6417206157eadd6e
   step=3,dige:d799d31cb69e079c

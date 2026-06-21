@@ -21,6 +21,7 @@ import type { TheC } from "$lib/data/Stuff.svelte"
 import Storying, { storying_run } from "$lib/O/Funk/Storying.svelte"
 import Ballistics from "$lib/O/Funk/Ballistics.svelte"
 import StoryTimes, { storytimes_run } from "$lib/O/Funk/StoryTimes.svelte"
+import CreduFunk, { credufunk_run } from "$lib/O/Funk/CreduFunk.svelte"
 
 export type FunkKind = {
     run?:      (host: TheC, funk: TheC, ww: TheC) => void
@@ -31,4 +32,5 @@ export const FUNK_KINDS: Record<string, FunkKind> = {
     Storying:   { run: storying_run,   component: Storying },   // monitor: a pumped verdict light
     Ballistics: { component: Ballistics },                      // action: a struck havoc drum-pad
     StoryTimes: { run: storytimes_run, component: StoryTimes }, // station: a struck run-all sweep, driven by a pumped tick
+    CreduFunk:  { run: credufunk_run,  component: CreduFunk },  // container: holds Storying cells + journals their Credulates (coherence)
 }

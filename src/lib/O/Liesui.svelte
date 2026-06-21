@@ -43,6 +43,12 @@
     //  editor's w:Lies): ok/errors/dige.  The header's credibility readout reads these.
     let run_results: TheC[] = $state([])
 
+    // run_phase — the runner's latest in-flight progress blip (off-snap on the editor's w:Lies,
+    //  stamped by Lies_run_phase_recv): {phase, n, total, secs, book, path, at}.  Transient — it
+    //   describes a run bouncing, not its verdict; the panel below blips off it and goes quiet
+    //    once it ages out.
+    let run_phase: any = $state(undefined)
+
     // examining — the %examining particle from Lies's w, placed in watched:ave.
     // Passed down to Waft and DocRow; DocRow derives is_examining from it.
     // examining.sc.active_path mirrors Lang's active_doc so DocRow glows without
@@ -63,6 +69,7 @@
             examining   = ex
             peers       = lies_w.o({ channel_peer: 1 }) as TheC[]
             run_results = lies_w.o({ run_result: 1 })  as TheC[]
+            run_phase   = lies_w.c?.run_phase
             now         = Date.now()
         })
     })
@@ -93,8 +100,7 @@
     let peer_clash  = $derived(live_face.length > 1)
     let peer_age_s  = $derived(face?.sc?.last ? Math.round((now - (face.sc.last as number)) / 1000) : null)
 
-    // ── Cred — code credibility at a glance: is there any verdict to show yet? ──
-    let cred_total = $derived(run_results.length)
+    // ── Cred — code credibility at a glance ──
     const base = (p: any) => String(p ?? '').split('/').pop()
 
     // ── the verdict, step-level — the honest "this test passes" count ──────
@@ -106,11 +112,42 @@
     //        step of five was stale).  book rides the frame from storyFinished.
     const rr_pass  = (rr: TheC) => Math.round(Number(rr.sc?.ok_pct ?? (rr.sc?.ok ? 1 : 0)) * Number(rr.sc?.done ?? 1))
     const rr_total = (rr: TheC) => Number(rr.sc?.done ?? 1)
-    let steps_pass  = $derived(run_results.reduce((n, rr) => n + rr_pass(rr), 0))
-    let steps_total = $derived(run_results.reduce((n, rr) => n + rr_total(rr), 0))
+
+    // ── cred cull — let stale verdict rows age out ──────────────────────────
+    //   A sweep (StoryTimes / become_book) piles up one row per Book; left forever they bury the
+    //    panel.  So each %run_result fades on age (off rr.sc.at, stamped by Lies_run_result_recv)
+    //     and is dropped from the strip past CRED_TTL — the data stays on w:Lies, only the LINE
+    //      goes quiet.  now ticks on the 3s heartbeat bump, so the fade is coarse but free.  A
+    //       row with no `at` (legacy) never ages.  The headline rolls up only what's still shown.
+    const CRED_TTL  = 45000
+    const CRED_FADE = 25000
+    const rr_age    = (rr: TheC) => rr.sc?.at ? now - Number(rr.sc.at) : 0
+    let cred_rows   = $derived(run_results.filter(rr => rr_age(rr) < CRED_TTL))
+    let steps_pass  = $derived(cred_rows.reduce((n, rr) => n + rr_pass(rr), 0))
+    let steps_total = $derived(cred_rows.reduce((n, rr) => n + rr_total(rr), 0))
     let all_green   = $derived(steps_total > 0 && steps_pass === steps_total)
     // the Book under test — the latest run_result carrying a book label (one runner, v1).
-    let verdict_book = $derived(run_results.find(r => r.sc?.book)?.sc?.book as string | undefined)
+    let verdict_book = $derived(cred_rows.find(r => r.sc?.book)?.sc?.book as string | undefined)
+
+    // ── runner panel — the run, felt bouncing (the run_phase relay) ──────────
+    //   The latest progress blip, glyphed by flavour, shown while a run is in flight and faded
+    //    out once it ages (30s of silence ⇒ the runner went quiet — stop pretending it's live).
+    //     all_done lands a final "🏁 done n/n" that the verdict (run_result) then greens/reds.
+    const bk = (p: any) => p.book ? `${base(p.book)} ` : ''
+    const PHASE_VIEW: Record<string, { glyph: string, label: (p: any) => string }> = {
+        rungo_ack:   { glyph: '📥', label: () => 'acked' },
+        story_begun: { glyph: '▶',  label: (p) => `running ${p.book ? base(p.book) : p.path ? base(p.path) : ''}`.trimEnd() },
+        step_done:   { glyph: '●',  label: (p) => `${bk(p)}step ${p.n}${p.total ? `/${p.total}` : ''}` },
+        step_stall:  { glyph: '⏳', label: (p) => `${bk(p)}step ${p.n}${p.total ? `/${p.total}` : ''} — ${p.secs}s…` },
+        all_done:    { glyph: '🏁', label: (p) => `${bk(p)}done ${p.n ?? ''}${p.total ? `/${p.total}` : ''}` },
+    }
+    let phase_age_s = $derived(run_phase?.at ? Math.round((now - (run_phase.at as number)) / 1000) : null)
+    let phase_live  = $derived(!!run_phase && now - (run_phase.at as number) < 30000)
+    let phase_view  = $derived(run_phase ? PHASE_VIEW[run_phase.phase as string] : undefined)
+    let phase_stall = $derived(run_phase?.phase === 'step_stall')
+    let phase_done  = $derived(run_phase?.phase === 'all_done')
+    // the fill of the little progress bar — n/total when the blip carries a count, else empty.
+    let phase_pct   = $derived(run_phase?.total ? Math.min(100, Math.round((Number(run_phase.n ?? 0) / Number(run_phase.total)) * 100)) : null)
 
     // ── health card expand (Vexpandy block mode) ─────────────────────
     //   Opens by default: the channel + verdict glance is the panel's headline, so a
@@ -175,15 +212,31 @@
          passed.  Step-level (not the all-or-nothing dock ok) so it agrees with the .ls-health
          headline; the runner's .ls-health card is the at-a-glance home, this is the detail strip.
          Empty until a run_result comes home, so it's quiet on a fresh editor / a bare Lies. -->
-    {#if cred_total}
+    {#if cred_rows.length}
         <div class="ls-cred" title="code credibility — the runner's verdict on the versions you pushed">
             <span class="ls-cred-h" class:all-green={all_green}>🧪 {steps_pass}/{steps_total}</span>
-            {#each run_results as rr (rr.sc.path)}
+            {#each cred_rows as rr (rr.sc.path)}
                 <span class="ls-cred-dock" class:ok={rr_pass(rr) === rr_total(rr)} class:bad={rr_pass(rr) !== rr_total(rr)}
+                      class:aging={rr_age(rr) > CRED_FADE}
                       title="{rr.sc.path} @ {String(rr.sc.dige ?? '').slice(0,8)} — {rr_pass(rr)}/{rr_total(rr)} steps{rr.sc.errors ? `, ${rr.sc.errors} err` : ''}">
                     {rr_pass(rr) === rr_total(rr) ? '✓' : '✗'} {base(rr.sc.path)}&nbsp;{rr_pass(rr)}/{rr_total(rr)}
                 </span>
             {/each}
+        </div>
+    {/if}
+
+    <!-- runner panel — the live progress of the run on the other end of the channel.  One row
+         that blips through the flavour arc (acked → running → step n/total → done); the glyph BANGS
+         on each blip ({#key} replays the pop), a count rides a shimmering fill bar, a stalled step
+         pulses amber.  Present only while a run is in flight (fades out after 30s of silence). -->
+    {#if phase_live && phase_view}
+        <div class="ls-runphase" class:stall={phase_stall} class:done={phase_done}
+             title="runner progress — {run_phase.phase}{phase_age_s != null ? `, ${phase_age_s}s ago` : ''}">
+            {#key run_phase.at}<span class="ls-runphase-g">{phase_view.glyph}</span>{/key}
+            <span class="ls-runphase-l">{phase_view.label(run_phase)}</span>
+            {#if phase_pct != null}
+                <span class="ls-runphase-bar"><span class="ls-runphase-bar-fill" style="width:{phase_pct}%"></span></span>
+            {/if}
         </div>
     {/if}
 
@@ -274,9 +327,11 @@
                     {:else}no {expect_peer} has connected{/if}
                 </div>
                 <!-- per-dock breakdown — each pushed dock's step pass count, so a multi-dock
-                     run shows which dock is dragging the roll-up red. -->
-                {#each run_results as rr (rr.sc.path)}
+                     run shows which dock is dragging the roll-up red.  Ages out with the strip
+                     (cred_rows): a sweep's Book rows dim past CRED_FADE and cull at CRED_TTL. -->
+                {#each cred_rows as rr (rr.sc.path)}
                     <div class="ls-health-dock" class:all-green={rr_pass(rr) === rr_total(rr)}
+                         class:aging={rr_age(rr) > CRED_FADE}
                          title="{rr.sc.path} @ {String(rr.sc.dige ?? '').slice(0,8)}">
                         {rr_pass(rr) === rr_total(rr) ? '✓' : '✗'} {rr_pass(rr)}/{rr_total(rr)} {base(rr.sc.path)}
                     </div>
@@ -335,6 +390,7 @@
     .ls-health-pass.all-green { color: #6ad0c0; background: rgba(106, 208, 192, 0.14); }
     .ls-health-dock           { margin-top: 2px; color: #c98; }
     .ls-health-dock.all-green { color: #8a9; }
+    .ls-health-dock.aging     { opacity: 0.4; transition: opacity 0.6s ease }
     .ls-cred {
         display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center;
         margin-bottom: 0.4rem; padding: 0.2rem 0.3rem; border-radius: 3px;
@@ -351,6 +407,41 @@
     }
     .ls-cred-dock.ok  { color: #6ad0c0; background: rgba(106, 208, 192, 0.12) }
     .ls-cred-dock.bad { color: #f88;    background: rgba(255, 136, 136, 0.12) }
+    /* runner panel — the live run blip.  A quiet purple row that pulses amber on a stall and
+       settles green on all_done; the glyph BANGS on each blip, the count rides a shimmering bar. */
+    .ls-runphase {
+        display: flex; gap: 0.4rem; align-items: center;
+        margin-bottom: 0.4rem; padding: 0.2rem 0.45rem; border-radius: 3px;
+        font-size: 0.74rem; color: #c4aaee; background: rgba(196, 170, 238, 0.08);
+        border-left: 2px solid #c4aaee; cursor: help;
+    }
+    /* the glyph re-mounts on every blip ({#key run_phase.at}) and replays this pop — the bang. */
+    .ls-runphase-g {
+        display: inline-block; font-size: 0.82rem; line-height: 1; transform-origin: center;
+        animation: ls-runphase-pop 0.34s cubic-bezier(0.3, 1.5, 0.5, 1);
+    }
+    .ls-runphase-l { font-family: monospace; letter-spacing: 0.02em; white-space: nowrap }
+    /* the fill bar: a sliding sheen while running, freezing solid on done. */
+    .ls-runphase-bar {
+        flex: 1; min-width: 28px; height: 3px; margin-left: 0.1rem;
+        background: rgba(196, 170, 238, 0.16); border-radius: 2px; overflow: hidden;
+    }
+    .ls-runphase-bar-fill {
+        display: block; height: 100%; border-radius: 2px; transition: width 0.35s ease;
+        background: linear-gradient(90deg, #8d6fce 0%, #c4aaee 40%, #8fd6ff 50%, #c4aaee 60%, #8d6fce 100%);
+        background-size: 220% 100%; animation: ls-runphase-shimmer 1.3s linear infinite;
+    }
+    .ls-runphase.stall { color: #e7b15a; border-left-color: #e7b15a;
+        background: rgba(231, 177, 90, 0.10); animation: ls-runphase-pulse 1s ease-in-out infinite }
+    .ls-runphase.stall .ls-runphase-bar-fill { background: #e7b15a; animation: none }
+    .ls-runphase.done  { color: #6ad0c0; border-left-color: #6ad0c0; background: rgba(106, 208, 192, 0.10) }
+    .ls-runphase.done  .ls-runphase-bar-fill { background: #6ad0c0; animation: none }
+    @keyframes ls-runphase-pulse   { 0%, 100% { opacity: 1 } 50% { opacity: 0.55 } }
+    @keyframes ls-runphase-pop     { 0% { transform: scale(1.7); filter: brightness(1.9) }
+                                     55% { transform: scale(0.9) } 100% { transform: scale(1); filter: none } }
+    @keyframes ls-runphase-shimmer { 0% { background-position: 220% 0 } 100% { background-position: 0 0 } }
+    /* a verdict row past CRED_FADE dims toward its cull at CRED_TTL — visibly going quiet. */
+    .ls-cred-dock.aging { opacity: 0.4; transition: opacity 0.6s ease }
     .ls-errors {
         background: #300; border: 1px solid #c44; border-radius: 3px;
         padding: 0.3rem 0.5rem; margin-bottom: 0.4rem;

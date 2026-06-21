@@ -326,8 +326,12 @@
             wants_wave_done:      false,
             wants_animation_done: false,
         }})
-        // target our local A:Cyto/w:Cyto, not H:Story's
-        H.i_elvisto(`Cyto/Cyto`, 'Cyto_commission', { req: commission })
+        // target our local A:Cyto/w:Cyto, not H:Story's — feebly, so a context with no Cyto
+        //  ghost mounted (a headless runner / non-useCyto Story) no-ops instead of throwing
+        //   "no House has A:Cyto".  Lang is a Cyto *client*: it commissions one if present, never
+        //    creates it (unlike Story, the owner, which makes A:Cyto for a useCyto Book).  Mirrors
+        //     the feebly Cyto sites (animation_request ~2128) — the noCyto→useCyto opt-in leftover.
+        H.feebly_i_elvisto(`Cyto/Cyto`, 'Cyto_commission', { req: commission })
 
         // ── %Languinio — Lang's reactive signal particle ────────────
         // Parallel to %examining on w:Lies.  Enrolled in ave so UItime

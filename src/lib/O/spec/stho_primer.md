@@ -80,6 +80,12 @@ oai %req:desire                   // nesting: a child req inside the parent's do
 ```
 (See `LakeTiles.g` `reqTiles`/`looseScTiles`/`ampTiles`/`captureOutTiles` for the full set.)
 
+A leaf that must wait for wall-clock time arms a one-shot `%ttlilt`
+(`H.i_req_ttlilt(req, secs)`) — but **only a req that finishes** can carry one: the ttlilt
+holds the snap open until that req reaches `finished` and is dropped on `finish()`. An
+`eternal` req (never finishes, self-settles via `req.sc.ok=1`) uses none. See
+[[ttlilt-not-a-keepalive]].
+
 ## The language is still soft — extend it before dropping to raw JS
 
 Doctrine ([[dsl-over-raw-js]]): when a `.g` keeps reaching for raw JS for the same kind

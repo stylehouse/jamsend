@@ -482,6 +482,7 @@ await M.eatfunc({
             const H = this as House
             w.c.awaiting_verdict = { book }
             H.top_House().i_elvisto('Auto/Auto', 'resetStory', { Book: book })
+            H.Lies_runner_phase(w, 'story_begun', { book })   // blip: Run kicked (Book sweep / cell click)
             H.tlog(`🎬 become_book drive → ${book}`)
         },
 
@@ -494,6 +495,23 @@ await M.eatfunc({
             if (!pier || !H.Lies_channel_live(w)) return
             ;(H as any).Peeroleum_send_consumer(w, 'run_result', { path: sc.path, dige: sc.dige, ok: sc.ok, errors: sc.errors, snap_dige: sc.snap_dige, ok_pct: sc.ok_pct, done: sc.done, book: sc.book })
             H.tlog(`📤 run_result → editor: ${sc.path} ${sc.ok ? 'green' : 'red'}${sc.done != null ? ` ${Math.round((sc.ok_pct ?? 0) * sc.done)}/${sc.done}` : ''}`)
+        },
+
+        // Lies_runner_phase — runner emit, a transient progress blip up the channel so the editor
+        //  can FEEL the run bouncing rather than wait blind for the verdict.  The arc is
+        //   rungo_ack (got the authority) → story_begun (kicked the Run) → step_done×N (n/total)
+        //    → all_done (steps finished, the real run_result is right behind it); step_stall fires
+        //     while a single step drags (>2s, re-blipped each second) so a wedge is visible.
+        //   Unlike run_result this is NOT a verdict and NOT persisted: the runner stamps nothing,
+        //    the editor keeps the latest blip off-snap on w.c.run_phase.  No-op for a bare|editor
+        //     Lies or a down channel — same gate as Lies_report_result, so it's safe to call from
+        //      anywhere a run progresses (Story stepping included).
+        Lies_runner_phase(w: TheC, phase: string, extra?: { n?: number, total?: number, secs?: number, book?: string, path?: string, seq?: number }) {
+            const H = this as House
+            if (!H.Lies_is_runner(w)) return
+            const pier = (w.o({ Peering: 1 })[0] as TheC | undefined)?.o({ Pier: 1 })[0] as TheC | undefined
+            if (!pier || !H.Lies_channel_live(w)) return
+            ;(H as any).Peeroleum_send_consumer(w, 'run_phase', { phase, ...extra })
         },
 
         // Lies_runner_verdict — the REAL verdict, sent from storyFinished on a runner.  The run
@@ -510,6 +528,9 @@ await M.eatfunc({
             const outcome = (H as any).Cred_run_outcome() as { ok: boolean, ok_pct: number, done: number } | null
             if (!outcome) return
             w.c.awaiting_verdict = undefined
+            // all_done precedes the real run_result: the steps are in, the verdict is one frame
+            //  behind.  Carries the final n/total so the panel lands on a complete count.
+            H.Lies_runner_phase(w, 'all_done', { n: outcome.done, total: outcome.done, book: book ?? aw.book, path: aw.path })
             // a Rungo run carries a {path,dige}; a become-Book run carries {book} only.  Either
             //  way the report carries the Book (storyFinished's bname), so a Book cell can match.
             H.Lies_report_result(w, { path: aw.path, dige: aw.dige, ok: outcome.ok, ok_pct: outcome.ok_pct, done: outcome.done, book: book ?? aw.book })
@@ -535,6 +556,20 @@ await M.eatfunc({
                 ...(frame.book   != null ? { book: frame.book }     : {}),
             })
             H.tlog(`📥 run_result: ${path} ${frame.ok ? 'green' : 'red'}${frame.done != null ? ` ${Math.round((frame.ok_pct ?? 0) * frame.done)}/${frame.done}` : ''}`)
+            return true
+        },
+
+        // Lies_run_phase_recv — editor receives a runner progress blip and keeps the LATEST one
+        //  off-snap on w.c.run_phase (transient — a fresh value each step; persisting it would be
+        //   pure snap noise).  A version bump wakes Liesui's runner panel; all_done clears the slot
+        //    after a beat so the panel goes quiet between runs rather than freezing on the last step.
+        async Lies_run_phase_recv(w: TheC, frame: any): Promise<boolean> {
+            const H = this as House
+            const phase = frame?.phase as string | undefined
+            if (!phase) return false
+            w.c.run_phase = { phase, n: frame.n, total: frame.total, secs: frame.secs, book: frame.book, path: frame.path, seq: frame.seq, at: Date.now() }
+            w.bump_version()
+            H.tlog(`📥 run_phase: ${phase}${frame.n != null ? ` ${frame.n}/${frame.total ?? '?'}` : ''}${frame.book ? ` [${frame.book}]` : ''}`)
             return true
         },
 

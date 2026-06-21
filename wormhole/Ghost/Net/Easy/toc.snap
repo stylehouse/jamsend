@@ -1,5 +1,6 @@
 Waft:Ghost/Net/Easy
   Funkcion:CreduFunk
+    Funkcion:Storying,of_Book:PereStartuppity
   What:the peer
     Doc:Ghost/N/Peeroleum.g
     Point,method:Peeroleum
@@ -7,8 +8,8 @@ Waft:Ghost/Net/Easy
     Point,method:req_p2paddy
     Point,method:req_handshake
   What:the test
-    Point,method:Peregrination
-    Point,method:Run_A_Peregrination
+    Point,method:PereStartuppity
+    Point,method:Run_A_PereStartuppity
     Doc:Ghost/Story/Peregrination.g
     Point,method:LakeNetherland
   What:transport
@@ -30,6 +31,16 @@ Waft:Ghost/Net/Easy
         Point,method:Lake_trial_arm
         Point,method:Lake_trial_fallback
         Point,method:Lake_trial_confirm
+  What:the cabinetry
+    Doc:Ghost/N/Tyrant.g
+    Point,method:Run_A_Tyrant
+    Point,method:Tyrant
+    Point,method:Tyrant_sides_up
+    Point,method:req_trust
+    Point,method:say_vouch
+    Point,method:hear_vouch
+    Point,method:req_join
   What:the spec
     Doc:src/lib/O/spec/Peeroleum_spec.md
     Doc:src/lib/O/spec/Peeroleum_handover.md
+    Doc:src/lib/O/spec/Covenant_design.md

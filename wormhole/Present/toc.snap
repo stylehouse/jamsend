@@ -245,10 +245,9 @@ Library
         sample=0.163,at=1781656675
         sample=0.171,at=1781660709
         sample=0.002,at=1781750531
-  Book:LakeSurprise,ok_pct=0,done=4,last_run_ms=1781950342.024,active
+  Book:LakeSurprise,ok_pct=0,done=4,last_run_ms=1781997736.811
     TimeSpool
-      TimeTotal:beliefs,avg=1.33
-        sample=0.914,at=1781711927
+      TimeTotal:beliefs,avg=1.285
         sample=1.272,at=1781714096
         sample=1.446,at=1781714321
         sample=1.336,at=1781715010
@@ -258,10 +257,10 @@ Library
         sample=3.143,at=1781896969
         sample=2.002,at=1781950278
         sample=0.986,at=1781950343
-  Book:Peregrination,ok_pct=0,done,last_run_ms=1781880299.081
+        sample=0.46,at=1781997738
+  Book:PereStartuppity,ok_pct=0,done,last_run_ms=1781997745.885,active
     TimeSpool
-      TimeTotal:beliefs,avg=0.351
-        sample=0.073,at=1781785071
+      TimeTotal:beliefs,avg=0.345
         sample=2.171,at=1781837633
         sample=1.131,at=1781862498
         sample=0.018,at=1781877711
@@ -271,3 +270,4 @@ Library
         sample=0.018,at=1781880195
         sample=0.023,at=1781880302
         sample=0.006,at=1781880468
+        sample=0.008,at=1781997747

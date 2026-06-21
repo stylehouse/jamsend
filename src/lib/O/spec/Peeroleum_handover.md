@@ -47,7 +47,7 @@ spec §5** ("Realised transport topology — the 'heading 10' design"); this is 
 - **[x] (2) Real WS carrier port — COMPILES.** `Socket_real(w)` + `Tribunal_activate_websocket(w)` in
    `Ghost/N/Tribunal.g`: a native `WebSocket` to own-origin `/relay?addr=<Peering name>`, send-buffered-until-open,
     inbound delivery wrapped in `post_do` → `Peeroleum_deliver`. The mock `Socket`/pairing is UNTOUCHED so the
-     Peregrination test keeps its determinism. `lang-compile` clean; not yet run in-app.
+     PereStartuppity test keeps its determinism. `lang-compile` clean; not yet run in-app.
 - **[x] (3) Consumer dispatch seam — COMPILES.** `Peeroleum_on(w,type,fn)` (per-w `w.c.on` registry),
    `Peeroleum_send_consumer(w,type,body)`, `Peeroleum_peer_ready(pier)` in `Ghost/N/Peeroleum.g`;
     `Peeroleum_pump_inbox` now dispatches non-hello/trust types to the registered handler inside the same
@@ -76,8 +76,8 @@ for real peers (spec §11.2). No wall-clock `ttlilt` in the trial anymore — it
 
 **The in-app run reshapes every step snap** (outbox/inbox carry the full lifecycle; the boundary culls
 acked/done into `%recent` after each step), so the `toc.snap` step diges — already lies — are doubly stale.
-Run the `Peregrination` Story on :9091, eyeball the lifecycle, then Accept/Resnapture. (`Story_cli` produces a
-Peregrination pile too — read `witnessed:*`/`A:Peregrination`; the `A:Lang` AST blob is per-step noise; see the
+Run the `PereStartuppity` Story on :9091, eyeball the lifecycle, then Accept/Resnapture. (`Story_cli` produces a
+PereStartuppity pile too — read `witnessed:*`/`A:PereStartuppity`; the `A:Lang` AST blob is per-step noise; see the
 `peregrination-pile-reading` memory + `Story_cli_docs.md`.)
 
 ### Standing asks (apply to every heading)
@@ -99,19 +99,19 @@ is **GONE** — the runner now **ACQUIRES the live spine via the Creduler**: `Cr
 `%Creduler_pending` flag on H, set in `Auto.svelte`) loads every ghost in the `CREDULER_GHOSTS` manifest
 (`LiesLies.svelte`) live, compiling+including each before the Story is allowed to start. The `.g` IS the Book.
 
-- `Run_A_Peregrination` (in `Ghost/Story/Peregrination.g`) is the Run recipe — lays `A:Peregrination/
-   w:Peregrination` and guards the `runner` role. (Mirrored by `Run_A_Editron`.)
-- per beat, `Peregrination(A,w)` installs `%req:wrangle,eternal` whose do_fn `await`s `Lake_drive(w, req)`.
+- `Run_A_PereStartuppity` (in `Ghost/Story/Peregrination.g`) is the Run recipe — lays `A:PereStartuppity/
+   w:PereStartuppity` and guards the `runner` role. (Mirrored by `Run_A_Editron`.)
+- per beat, `PereStartuppity(A,w)` installs `%req:wrangle,eternal` whose do_fn `await`s `Lake_drive(w, req)`.
 - `Lake_drive` is the inner-step dispatch (step 2 `Lake_sides_up`, 3 `Lake_handshake`, 4/5/6 `Lake_trial_*`),
    off a req-local `req.c.did_step` — explicitly NOT `H.on_step` (see "Why NOT on_step" under heading 2).
 - `Lake_witness` polls each pass and stamps `%witnessed:step_N` by structural query.
 
-Driven by the **Peregrination Story** (`wormhole/Story/Peregrination/toc.snap`), whose Prep opens the
+Driven by the **PereStartuppity Story** (`wormhole/Story/PereStartuppity/toc.snap`), whose Prep opens the
 **Ghost/Net/Easy** Waft overlay (`wormhole/Ghost/Net/Easy/toc.snap`) — its `.g` Docs are the manifest.
 
 > (`LakeNetherland` is NOT this wrangler — it is an unrelated 3-line fixture in
 >  `Ghost/test/Story/Lake/LakeAmeliorations.g`, surfaced in the LakeNets editor-machine Book. The
->   Peregrination wrangler is `Peregrination(A,w)`/`Lake_drive`. Earlier notes confusing the two were wrong.)
+>   PereStartuppity wrangler is `PereStartuppity(A,w)`/`Lake_drive`. Earlier notes confusing the two were wrong.)
 
 ---
 
@@ -307,11 +307,11 @@ ghosts, Garden.g + Tyrant.g.
 ## Files in play
 - `Ghost/N/Peeroleum.g` — the spine (compiled; the mock carrier + envelope + lifecycle).
 - `Ghost/N/Tribunal.g` — the transport-trial carriers (webrtc/websocket mocks + `Socket_real`/relay client).
-- `Ghost/Story/Peregrination.g` — the Book + wrangler: `Run_A_Peregrination`, `Peregrination(A,w)` installs
+- `Ghost/Story/Peregrination.g` — the Book + wrangler: `Run_A_PereStartuppity`, `PereStartuppity(A,w)` installs
    `%req:wrangle`, `Lake_drive`/`Lake_witness`/`Lake_sides_up`/`Lake_trial_*`. (Acquired by the Creduler —
     `Creduler_ensure` / `CREDULER_GHOSTS` in `Lies.svelte`/`LiesLies.svelte`; no hand-written loader.)
 - `src/lib/server/relay.ts` — the real `/relay` WS server (`attachRelay`) + its `configureServer` vite plugin.
 - `wormhole/Ghost/Net/Easy/toc.snap` — annotation overlay / compile manifest.
-- `wormhole/Story/Peregrination/toc.snap` — the Story that drives the Book (step lines run through `step=5`).
+- `wormhole/Story/PereStartuppity/toc.snap` — the Story that drives the Book (step lines run through `step=5`).
 - `src/lib/O/spec/Peeroleum_spec.md` — the pinned design (the floor). This file — the living progress.
 - `src/lib/O/spec/Covenant_design.md` — the cabinetry+party design sketch (Garden.g/Tyrant.g).

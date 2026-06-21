@@ -24,7 +24,7 @@
     //  tick → the tab OOMs to multi-GB.  (Svelte 5: an effect re-runs on any $state it reads.)
     const toplevel = boot_param('A') || 'Auto'
     // ?B=<Book> auto-activates a Story Book under the default A=Auto (the Library/Story owner) —
-    //  ?B=Editron boots the editor as a Book, ?B=Peregrination the test runner, etc.  Auto reads
+    //  ?B=Editron boots the editor as a Book, ?B=PereStartuppity the test runner, etc.  Auto reads
     //   H.c.book on first boot and activates it (see Auto.svelte).  ?W=<Waft> rides alongside for
     //    the Book that opens one.  Stamped on the LOCAL `h`, never inside the $effect — same
     //     self-retrigger trap as toplevel above.
