@@ -58,6 +58,34 @@ spec §5** ("Realised transport topology — the 'heading 10' design"); this is 
      split (gate `Ghost_update_notify` on `!w%editor`). Deliberately NOT written blind — no UIless runner yet
       (heading 1b), so build it against a live browser. **The committed `gen/**.go` are stale vs the new `.g`;
        the dige gate regenerates them on the next in-app run (do not hand-edit gen).**
+- **[~] (5) The bridged channel RUNS live (runner ⇄ editor) — mind the run_phase wedge (FIXED).** First real
+   bridged run: the runner Creduler-acquires the spine, the WS relay bridges runner↔editor, the Story drives
+    over it. **Bomb (fixed):** `run_phase` (the transient progress blip the runner sends the editor) was a
+     NON-ephemeral frame, so the editor acked each one; the ack hit the runner's `Peeroleum_deliver` →
+      `feebly_ponder()` → re-woke the Story drive so the step never quiesced → `step_stall` fired → another
+       `run_phase` → another ack → an endless wedge (a 5-step run took 48s). Fix: `run_phase` is now ephemeral
+        like ping/pong (`Peeroleum.g` — no booked emit, no ack-back). **That alone did NOT fix it** — the
+         runner's gen recompiled fine, but the **editor still ACKs each run_phase** (the editor rides a
+          *separate frozen bootstrap* Peeroleum, not the live `CREDULER_GHOSTS` gen the runner re-acquires, so
+           it never got the fix), and the runner's ack branch `feebly_ponder`ed on that spurious ack →
+            re-wedge (`poll_step` spinning at the 50ms `TICK_MS`, ~18fps; run_phase seq climbed past 390). **The
+             robust fix (runner-side, peer-agnostic):** `Peeroleum_take_ack` now returns whether it actually
+              stamped an outbox emit / protocol `%said`, and the ack branch only `feebly_ponder`s on a *hit* —
+               so an ack for an untracked (ephemeral run_phase) frame is ignored, no matter what the peer does.
+                The heartbeat ping rate was halved to 6s (`LiesLies.svelte` `Lies_heartbeat`) but was never the
+                 dominant cause (6s ≪ 18fps). The editor still acks run_phase = harmless channel chatter until
+                  its bootstrap regenerates.
+- **[ ] (6) The REAL wedge underneath — a beliefs-drain DEADLOCK (the next move).** The brutal trace tail
+   (`Story.svelte` `poll_step`, dumps the live `Run.trace_log` past 5s, Δms per event) revealed it: a step
+    wedged 43.5s had only **10 trace events** — NOT churn, the opposite. The House ran two beliefs cycles
+     (`think → PereStartuppity → done`, then `fn() → done`) then went **idle with `Run.todo` non-empty** (a
+      `fn:?` = the mock `partner.recv` delivery + a `think`), and `poll_step` polls forever (`dont_want_Atime`
+       false) for a queue nothing drains. The run_phase ack-spam had been *masking* this — its constant
+        `feebly_ponder` kept beliefs cycling, draining the todo each pass; kill the spam (fixes 1–5) and the
+         latent bug surfaces: **a `think`/`fn` queued after `beliefs:done` does not reliably re-trigger the next
+          beliefs cycle** (trace: the `think` at event 2 kicked a cycle; the one at event 9 did not). Next move:
+           the beliefs re-schedule in `Housing.svelte.ts` (why a post-`done` queued item doesn't re-fire) — or a
+            `poll_step` safety re-kick (`if (Run.todo?.length) Run.i_elvisto(Run,'think')`) while non-quiescent.
 
 **Prerequisite unblocked (compiler robustness — why the editor wrote uncompiled `.go`):** task (4) needs the
 editor to compile cleanly, gated by a real bug — a compile firing before the language parser landed emitted
@@ -286,12 +314,18 @@ Creduler acquire, which already loads a `CREDULER_GHOSTS` manifest.)
 
 **Peeroleum is the linoleum on the floor; the cabinetry and partying go over the top.** Over the transport
 floor sits the social platform, reborn clean-room in stho as **two** new ghosts (legacy `ghost/Gardening.svelte`
-+ `ghost/Tyranny.svelte` are the conceptual ancestors; neither `.g` exists yet):
-- **Tyrant.g** — the *cabinetry*: identity & trust (ex-Tyranny). Identity proof, vouching, and policy-gated
-   admission (a `%req:join` whose `finished` is the AND of policy leaves — "you're not on the network until
-    the req is signed finished", the LiesStore phased-`%req` shape).
++ `ghost/Tyranny.svelte` are the conceptual ancestors):
+- **Tyrant.g** — the *cabinetry*: identity & trust (ex-Tyranny). **BUILT (`Ghost/N/Tyrant.g`, M1+M2,
+   `lang-compile` clean).** M1 = trust over GIVEN identities (`%Ud` pre-stamped, a bidirectional `vouch`
+    exchange over the Pier settling on acks → `%trust,grants:full`); M2 = policy-gated admission (`%req:join`
+     whose `finished` is the AND of maz-ordered policy leaves `proven`∧`trusted`, above an `admit` leaf →
+      `w/%member,signed` — "you're not on the network until the req is signed finished", the LiesStore
+       phased-`%req` shape). Wired into `CREDULER_GHOSTS` (LiesLies) + the Net/Easy overlay (open
+        "What:the cabinetry" to compile). **Not yet runnable** — needs a `wormhole/Story/Tyrant/toc.snap` Book
+         (step=2/step=3 lines); held pending the "make step 1 neat" rethink. Meet+prove (earning `%Ud`) is the
+          deferred deeper M2.
 - **Garden.g** — the *partying*: social cultivation (ex-Gardening). Introductions, engagements, tending many
-   Piers, pruning dead ones.
+   Piers, pruning dead ones. **Net-new, unbuilt.**
 
 Both ride the Peeroleum floor via the **reused transport seam** — they emit through `&Peeroleum_send` →
 `Peeroleum_deliver` → `Peeroleum_take_ack` (the outbox/inbox lifecycle, `rollup_faulty`, whittle) and plug new

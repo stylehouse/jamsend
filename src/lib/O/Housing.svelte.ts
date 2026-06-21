@@ -9,7 +9,7 @@ import { Dexie, liveQuery, type EntityTable } from 'dexie';
 
 const V: Record<string, any> = {}
 V.organise =  0  // set >0 to enable answer_calls/beliefs/organise logs
-V.beliefs = 0
+V.beliefs = 1
 V.req_legs = 1   // set >0 to walk req** as the transient level (more-legs); see assert_req_legs
 
 export const ANSWER_CALLS_TICK_MS = 50
@@ -434,6 +434,16 @@ export class House extends StorableHousing {
     }
 
     trace_log: TraceEvent[] | null = null   // null = noop
+
+    // live_poll — poll_step (Story.svelte) publishes here when a step overruns 5s,
+    //   OUTSIDE the ave/beliefs replication.  That replication only flushes after the
+    //    mutex releases, so it goes silent exactly when a step wedges — but poll_step's
+    //     setTimeout chain keeps ticking between cycles, so it can raise this directly.
+    //   null = no overrun.  Set once when a step crosses the threshold, cleared when it
+    //    lands.  Storui reads it to raise the overrun button and to reach the Run House's
+    //     still-accumulating, un-drained trace_log for the live ticker.  Lives on the
+    //      Story House; .Run points at the sub-House that owns the trace.
+    live_poll: { step: number, since: number, Run: House } | null = $state(null)
 
     // trace: push a TraceEvent and return a setter for late-binding the tag.
     //   The returned fn mutates ev.tag in place — valid until trace_drain(),

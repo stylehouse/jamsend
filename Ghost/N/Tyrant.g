@@ -28,7 +28,7 @@ Run_A_Tyrant():
 //   step-1 table claims when setup spills into step 2); Tyrant_drive keeps a req-local
 //    did_step instead.
 Tyrant(A,w):
-    w i %see:'y Tyrant — cabinetry up yyy!'
+    w i %see:'y Tyrant — yyyyar!'
     w oai %req:wrangle,eternal
         await &Tyrant_drive,w,req
         req%ok = 1

@@ -480,7 +480,7 @@
         //#region heartbeat — ping / pong
         // ── ping / pong — the channel heartbeat (proves the envelope path carries) ──
         //
-        //   Lies_heartbeat fires a ping at most every 3s while the channel is live; the
+        //   Lies_heartbeat fires a ping at most every 6s while the channel is live; the
         //    peer's 'ping' handler echoes a 'pong' carrying our send-time; our 'pong'
         //     handler stamps %channel_peer (role + RTT + last) on w:Lies, which the badge
         //      reads.  No pong ⇒ the slot stays absent|stale and the badge shows no peer —
@@ -489,7 +489,7 @@
             const H = this as House
             if (!H.Lies_channel_live(w)) return
             const now = Date.now()
-            if (w.c.last_ping && now - (w.c.last_ping as number) < 3000) return
+            if (w.c.last_ping && now - (w.c.last_ping as number) < 6000) return
             w.c.last_ping = now
             H.Lies_ping(w)
         },

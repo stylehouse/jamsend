@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Tyrant(): string { return '97cfbd04ab0ea500' },
+    Ghostmeta_Ghost_N_Tyrant(): string { return 'd9455412901394d4' },
 
 // Tyrant — the cabinetry over the Peeroleum floor: identity & trust → admission.
 //  A clean-room rebirth of legacy Tyranny, in stho, riding the Peeroleum transport
@@ -41,7 +41,7 @@ Run_A_Tyrant() {
 //   step-1 table claims when setup spills into step 2); Tyrant_drive keeps a req-local
 //    did_step instead.
 Tyrant(A,w) {
-    w.i({see: 'y Tyrant — cabinetry up yyy!'})
+    w.i({see: 'y Tyrant — yyyyar!'})
     w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
         await this.Tyrant_drive(w,req)
         req.sc.ok = 1

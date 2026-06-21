@@ -101,8 +101,9 @@
     //   story_analysis() — it is a fatal design error to render an unswatched type.
 
     import type { TheC }  from "$lib/data/Stuff.svelte"
-    import type { House } from "$lib/O/Housing.svelte"
+    import type { House, TraceEvent } from "$lib/O/Housing.svelte"
     import { peel }       from "$lib/Y.svelte"
+    import { fly }        from "svelte/transition"
     import Vexpandy       from "$lib/O/ui/Vexpandy.svelte"
     import EntropyArrest  from "$lib/O/ui/EntropyArrest.svelte"
 
@@ -954,6 +955,66 @@
         return `hsl(${hue},68%,${lit}%)`
     }
     // trace_bg unused — labels are tinted text only, no background gutter
+    //#endregion
+
+    //#region overrun trace monitor
+    //
+    //   poll_step (Story.svelte) sets H.live_poll = {step, since, Run} when a step drags
+    //   past 5s, and clears it when the step lands.  We raise a button on the run bar;
+    //   toggling it opens a live ticker that walks the still-accumulating Run.trace_log
+    //   with its OWN reveal cursor — separate from the snap-time trace_drain(), so it
+    //   only reads the trace, never consumes it.
+    //
+    //   Pace: one reveal every REVEAL_MS, i.e. 30 lines / 3s.  When the trace grows
+    //   slower than that the cursor catches the live tail and idles (fewer than 30/3s).
+    //   On open the cursor starts ~30 events back, so the existing tail "flashes by"
+    //   over the first ~3s, then it tracks newly-arriving events.
+
+    const REVEAL_MS  = 100   // 10 reveals/sec → 30 lines per 3s
+    const LIVE_LINES = 30
+
+    // over: the live_poll record while a step is overrunning (null otherwise).  $state on
+    //   the House, so this reads reactively even while beliefs is idle (the wedge case).
+    let over     = $derived(H.live_poll as { step: number, since: number, Run: House } | null)
+    let over_on  = $state(false)   // ticker toggled open
+    let over_secs = $state(0)      // live elapsed seconds, for the button label
+    let live_cursor = $state(-1)   // index in Run.trace_log of the last revealed event
+    let live_total  = $state(0)    // current Run.trace_log length (the live tail we chase)
+    let live_window = $state<{ ev: TraceEvent, key: number, d: number }[]>([])
+
+    // elapsed-seconds clock — runs whenever a step is overrunning, button or not.
+    $effect(() => {
+        const o = over
+        if (!o) { over_secs = 0; over_on = false; return }
+        const upd = () => { over_secs = Date.now() / 1000 - o.since }
+        upd()
+        const id = setInterval(upd, 250)
+        return () => clearInterval(id)
+    })
+
+    // the reveal cursor — only while the ticker is open AND a step is overrunning.
+    $effect(() => {
+        const o = over
+        if (!o || !over_on) { live_window = []; live_cursor = -1; live_total = 0; return }
+        const Run = o.Run
+        // start ~LIVE_LINES back so the current tail flashes past, then track the live end.
+        //  len0 is a LOCAL, not a read of live_total — reading the $state here would make
+        //   this effect depend on it, and the interval below writes it every tick → reset loop.
+        const len0  = Run.trace_log?.length ?? 0
+        live_total  = len0
+        live_cursor = Math.max(-1, len0 - 1 - LIVE_LINES)
+        const id = setInterval(() => {
+            const log = (Run.trace_log ?? []) as TraceEvent[]
+            live_total = log.length
+            if (live_cursor >= log.length - 1) return   // caught up — idle until more arrives
+            live_cursor++
+            const lo  = Math.max(0, live_cursor - (LIVE_LINES - 1))
+            const win = log.slice(lo, live_cursor + 1)
+            live_window = win.map((ev, i) => ({ ev, key: lo + i, d: i ? ev.t - win[i - 1].t : 0 }))
+        }, REVEAL_MS)
+        return () => clearInterval(id)
+    })
+    //#endregion
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
@@ -982,6 +1043,13 @@
             {:else}
                 <span class="sr-status running">▶</span>
             {/if}
+            {#if over}
+                <button class="sr-over-btn" class:active={over_on}
+                        onclick={() => over_on = !over_on}
+                        title="step {String(over.step).padStart(3,'0')} has run {over_secs.toFixed(0)}s — show the live trace tail">
+                    ⏱ {over_secs.toFixed(0)}s
+                </button>
+            {/if}
             {#if display.avg_step}
                 <span class="sr-mode" title="average per-step time, averaged over recent runs">~{display.avg_step}s/step</span>
             {/if}
@@ -989,6 +1057,33 @@
                 <button class="sr-accept-all" onclick={accept_all}>Accept All ({display.bad_count})</button>
             {/if}
         </div>
+
+        <!-- ── live overrun trace ticker ──────────────────────────────────── -->
+        <!-- Raised while a step overruns 5s and the ⏱ button is toggled on.    -->
+        <!-- Walks the still-accumulating Run.trace_log at ≤30 lines/3s, newest  -->
+        <!-- at the bottom, flying each new line in.  Same trace_fg() colouring  -->
+        <!-- as the per-step trace panel.                                        -->
+        {#if over && over_on}
+            <div class="sr-live">
+                <div class="sr-trace-axis">
+                    <span class="sr-trace-axis-lbl">live · step {String(over.step).padStart(3,'0')}</span>
+                    <span>{over_secs.toFixed(1)}s</span>
+                    <span class="sr-live-cur">{live_cursor + 1}/{live_total}</span>
+                </div>
+                <div class="sr-live-rows">
+                    {#each live_window as row (row.key)}
+                        <div class="sr-trace-row" in:fly={{ y: 7, duration: 180 }}>
+                            <span class="sr-live-d">{row.d ? '+' + row.d.toFixed(0) + 'ms' : ''}</span>
+                            <span class="sr-trace-lbl" style="color:{trace_fg(row.ev.kind)}"
+                            >{row.ev.kind}{row.ev.tag ? ':' + row.ev.tag : ''}</span>
+                        </div>
+                    {/each}
+                    {#if !live_window.length}
+                        <div class="sr-live-wait">waiting for trace…</div>
+                    {/if}
+                </div>
+            </div>
+        {/if}
 
         <!-- ── Resnapture popup (fixed modal) ──────────────────────────────── -->
         <!-- Appears at top of viewport when 📸 is clicked in the actions bar.  -->
@@ -1739,6 +1834,29 @@
 /* sr-trace-lbl: colour inline via trace_fg(); no background — just tinted text trickling down */
 .sr-trace-lbl { }
 .sr-trace-row:hover .sr-trace-lbl { filter:brightness(1.4); }
+
+/* ── overrun monitor — button on the run bar + live ticker ──────────────── */
+/* amber, distinct from the green trace button; pulses so a wedged step nags */
+.sr-over-btn {
+    background:#1e1606; border:1px solid #4a3a1a; border-radius:2px;
+    color:#d99; cursor:pointer; font-size:9px; font-family:inherit;
+    padding:0 6px; line-height:15px; white-space:nowrap;
+    animation: sr-over-pulse 1.4s ease-in-out infinite;
+}
+.sr-over-btn.active { background:#2a1e08; border-color:#6a4a1a; color:#fb8; animation:none; }
+@keyframes sr-over-pulse { 0%,100% { border-color:#4a3a1a } 50% { border-color:#8a6a2a } }
+.sr-live {
+    font-family:'Berkeley Mono','Fira Code',ui-monospace,monospace;
+    font-size:10px; line-height:1.4; background:#0c0a06;
+    border-bottom:1px solid #2a1e08; overflow:hidden;
+}
+.sr-live-rows {
+    display:flex; flex-direction:column; justify-content:flex-end;
+    max-height:30vh; min-height:8em; overflow:hidden; padding:2px 6px 4px;
+}
+.sr-live-d   { display:inline-block; width:62px; text-align:right; color:#7a5a2a; padding-right:8px; }
+.sr-live-cur { margin-left:auto; color:#6a4a1a; }
+.sr-live-wait { color:#5a4a2a; padding:4px 0; }
 /* step wall-clock — right-aligned in the panel header, dimmer than the dige */
 .sr-ptime {
     margin-left: auto; color: #4a6a5a;

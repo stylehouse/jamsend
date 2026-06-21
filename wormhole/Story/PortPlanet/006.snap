@@ -23,4 +23,4 @@ Snap:H
           surprise=42
         logger,n
           report_final,total=12,inA
-        {"see":"📋 world total: 12 doses"}
+        see:📋 world total: 12 doses

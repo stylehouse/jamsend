@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return 'f374ef095606af3b' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return '44c4342c851503c4' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -243,10 +243,13 @@ transport(A,w) {
 Peeroleum_send(w, frame) {
     let h = frame.header
     let pier = w.o({Peering:1})[0]?.o({Pier:1})[0]
-    // ack AND the heartbeat (ping/pong) book no outbox emit: an ack is light (spec §7.2), and
-    //  ping/pong are ephemeral liveness probes — booking them would pile %emit rows in the snap
-    //   that nothing reliably culls between Story steps. Only real app/protocol frames are tracked.
-    let ephemeral = (h.type === 'ack' || h.type === 'ping' || h.type === 'pong')
+    // ack, the heartbeat (ping/pong), AND run_phase (the transient progress blip) book no outbox
+    //  emit: an ack is light (spec §7.2); ping/pong/run_phase are fire-and-forget — booking them
+    //   piles %emit rows nothing reliably culls between Story steps. Only real app/protocol frames
+    //    are tracked. (run_phase MUST be ephemeral: it is never acked, so a booked emit would never
+    //     cull — and the ack it would otherwise draw re-wakes the runner's Story drive, wedging
+    //      quiescence into an endless step_stall loop.)
+    let ephemeral = (h.type === 'ack' || h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase')
     if (pier && !ephemeral) pier.oai({outbox: 1}).i({emit: h.seq, type: h.type, seq: h.seq, sent: 1})
     let conn = w.o({active_transport:1})[0]?.c.connection
     // No transport is a real fault (the frame is lost) — always say so, clearly.  A live+loud
@@ -267,11 +270,18 @@ Peeroleum_deliver(w, frame) {
     let h = frame.header
     let pier = w.o({Peering:1})[0]?.o({Pier:1})[0]
     if (!pier) return
-    if (h.type === 'ack') { H.Peeroleum_take_ack(w, pier, h); H.feebly_ponder(); return }
-    // ping/pong are an ephemeral heartbeat: dispatch straight to the registered handler, like an
-    //  ack — NO inbox booking (so they never stack in the snap) and NO ack-back (so the heartbeat
-    //   can't generate the ack-storm whose sends drop as "no transport" right after an HMR).
-    if (h.type === 'ping' || h.type === 'pong') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, pier, frame); H.feebly_ponder(); return }
+    // only wake a watching do_fn if the ack actually advanced something (stamped an outbox emit or a
+    //  protocol %said). An ack for an UNtracked frame — an ephemeral run_phase/ping the far side acked
+    //   anyway (e.g. an un-fixed editor bootstrap that still inboxes+acks run_phase) — matches nothing,
+    //    so feebly_ponder-ing on it would re-wake a quiescing Story drive into the step_stall wedge.
+    //     This is robust to the PEER's behaviour: the runner ignores acks that advance nothing here.
+    if (h.type === 'ack') { if (H.Peeroleum_take_ack(w, pier, h)) H.feebly_ponder(); return }
+    // ping/pong (heartbeat) AND run_phase (progress blip) are ephemeral: dispatch straight to the
+    //  registered handler, like an ack — NO inbox booking (so they never stack in the snap) and NO
+    //   ack-back. The ack-back is the killer: a run_phase that gets acked sends the ack to the
+    //    runner, whose Peeroleum_deliver feebly_ponders → re-wakes its Story drive so the step never
+    //     quiesces → step_stall fires → another run_phase → another ack → an endless wedge (the 48s).
+    if (h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, pier, frame); H.feebly_ponder(); return }
     let unemit = pier.oai({inbox: 1}).i({unemit: h.seq, type: h.type, seq: h.seq, queued: 1})
     unemit.c.frame = frame
     H.Peeroleum_pump_inbox(w, pier)
@@ -332,11 +342,13 @@ Peeroleum_pump_inbox(w, pier) {
 Peeroleum_take_ack(w, pier, h) {
     let emit = pier.o({outbox:1})[0]?.o({emit:1}).find(e => e.sc.seq == h.ack)
     if (emit) { emit.sc.acked = 1; pier.bump() }
+    let hit = !!emit
     let proto = pier.o({protocol:1})[0]
     for (const kind of ['hello','trust']) {
         let said = proto?.o({[kind]:1})[0]?.o({said:1})[0]
-        if (said && said.sc.seq == h.ack) said.sc.acked = 1
+        if (said && said.sc.seq == h.ack) { said.sc.acked = 1; hit = true }
     }
+    return hit
 
 },
 // Peeroleum_rollup_faulty — rebuild %faulty from the inbox's %error items (spec §9).

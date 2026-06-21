@@ -1566,6 +1566,7 @@
                 console.log(`⏸ do_step skipped: driving=${run.c.driving} paused=${run.sc.paused}`)
                 schedule(); return
             }
+            H.live_poll = null   // a fresh step (or run-end) — lower any overrun monitor
             const n = ((run.sc.done ?? 0) as number) + 1
             ;V.Story && console.log(`▷ do_step n=${n} mode=${run.sc.mode}`)
             ;V.Story && console.log(`The at n=${n}:`, (w.c.The)?.o({step:1}).map((s:any)=>s.sc.step+'→'+(s.sc.dige?s.sc.dige.slice(0,6):'no-dige')).join(', '))
@@ -1624,6 +1625,7 @@
         let was_ttlilt_timed_out = false  // cleared by time-expiry, not req completion
         const poll_step = () => {
             if (!run.c.driving) return
+            console.log(' - ')
             const f = Run.c.finished_run as number | null
             let not_in_Atime = f != null
                 && f > (run.c.began_step as number)
@@ -1680,6 +1682,26 @@
                     run.c.stall_blipped = now_in_seconds_with_ms()
                     runner_phase('step_stall', { n: run.c.step_n, total: story_total(), secs: Math.round(secs), book: w.sc.Book })
                 }
+                // overrun monitor — a step dragging past 5s is wedged.  Raise H.live_poll once
+                //  (guarded on step_n so we don't churn the UI every 50ms tick), pointing at this
+                //   Run so Storui can open a live ticker over the still-accumulating trace_log.
+                if (secs > 5 && H.live_poll?.step !== run.c.step_n) {
+                    H.live_poll = { step: run.c.step_n as number, since: run.c.began_step as number, Run }
+                }
+                // brutal trace tail — the console fallback for the same wedge; dump the LIVE Run.trace_log
+                //  (otherwise only trace_drain()ed at snap, which a wedged step never reaches — so the
+                //   trace is invisible exactly when you need it).  Re-dumped every ~2s, with the Δms
+                //    between events, so the repeating tail names the re-armer that keeps Atime hot.
+                if (secs > 5 && now_in_seconds_with_ms() - ((run.c.trace_tailed as number) ?? 0) > 2) {
+                    run.c.trace_tailed = now_in_seconds_with_ms()
+                    const log  = ((Run as any).trace_log ?? []) as any[]
+                    const tail = log.slice(-40)
+                    const lines = tail.map((ev: any, i: number) => {
+                        const d = i ? ev.t - tail[i - 1].t : 0
+                        return `  +${String(d.toFixed(1)).padStart(7)}ms  ${ev.kind}${ev.tag ? ':' + ev.tag : ''}`
+                    })
+                    console.log(`⏳⏳ step ${run.c.step_n} WEDGED @ ${secs.toFixed(1)}s — trace tail (last ${tail.length}/${log.length}):\n${lines.join('\n')}`)
+                }
                 setTimeout(poll_step, TICK_MS)
                 return
             }
@@ -1705,6 +1727,8 @@
             const n = run.c.step_n as number
             run.sc.done = n
             run.c.stall_blipped = undefined            // this step landed — re-arm stall detection
+            run.c.trace_tailed  = undefined            // …and the brutal-trace-tail throttle
+            H.live_poll = null                         // …and lower the overrun monitor
             runner_phase('step_done', { n, total: story_total(), book: w.sc.Book })
             Run.trace('snap', String(n))
 
