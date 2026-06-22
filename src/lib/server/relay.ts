@@ -26,6 +26,8 @@ import { WebSocketServer, WebSocket } from 'ws'
 import type { Server } from 'node:http'
 import { writeFile, mkdir } from 'node:fs/promises'
 import { resolve, dirname, sep } from 'node:path'
+import { createHash } from 'node:crypto'
+import { loadTrustedPubs, verifyHeader, prepubOf } from '../p2p/cluster_trust'
 
 // gen_write lands here: the editor compiles a ghost and, rather than pay the browser's
 //  ~0.5s File-System-Access write, ships the .go down its relay socket for Node to write
@@ -104,13 +106,16 @@ export function attachRelay(
 		set.delete(ws)
 		if (!set.size) locals.delete(addr)
 	}
-	function deliverLocal(to: string, text: string): boolean {
+	// payload is the raw wire item — a string (text JSON frame) or a Buffer (a buffer-carrying
+	//  binary frame, [header JSON]\n[raw buffer]).  ws.send carries either as-is (string → text
+	//   message, Buffer → binary message); the relay never parses past the header line.
+	function deliverLocal(to: string, payload: string | Buffer): boolean {
 		const set = locals.get(to)
 		if (!set || !set.size) return false
 		let delivered = false
 		for (const ws of set)
 			if (ws.readyState === WebSocket.OPEN) {
-				ws.send(text)
+				ws.send(payload)
 				delivered = true
 			}
 		return delivered
@@ -162,7 +167,7 @@ export function attachRelay(
 			relayLog(`✓ peer relay LINKED (outbound r2r) → ${editorRelayUrl}`)
 			broadcastControl({ control: 'peer-relay', up: true, target: editorRelayUrl })
 		})
-		link.on('message', (data) => routeFromPeer(asText(data)))
+		link.on('message', (data: any, isBinary: boolean) => routeFromPeer(isBinary ? asBuffer(data) : asText(data)))
 		link.on('close', (code: number) => {
 			clearTimeout(watchdog)
 			if (peerLink === link) peerLink = null
@@ -177,26 +182,32 @@ export function attachRelay(
 		})
 	}
 
-	// A frame from a BROWSER socket: deliver local, else forward ONCE to the peer relay.
-	function routeFromBrowser(text: string) {
-		const to = headerTo(text)
+	// A frame from a BROWSER socket: deliver local, else forward ONCE to the peer relay. payload
+	//  is a string (text JSON frame) or a Buffer (binary [header JSON]\n[buffer]) — routed the same
+	//   way, by header.to; the binary buffer tail is never inspected.
+	function routeFromBrowser(payload: string | Buffer) {
+		const bin = typeof payload !== 'string'
+		const to = bin ? headerToBin(payload as Buffer) : headerTo(payload as string)
 		if (!to) return
 		// Heartbeat traffic (ping/pong/ack) is suppressed on the SUCCESS path — it would flood
 		//  the log once the channel is healthy. A DROP is always logged, even for a ping: a
 		//   dropped heartbeat is the symptom worth seeing (and only happens while unbridged).
-		const loud = !NOISY.has(frameType(text))
-		if (deliverLocal(to, text)) { if (loud) relayLog(`→ ${to} ${frameKind(text)} (local)`); return }
-		if (peerLink && peerLink.readyState === WebSocket.OPEN) { peerLink.send(text); if (loud) relayLog(`→ ${to} ${frameKind(text)} (forwarded over bridge)`); return }
-		relayLog(`→ ${to} ${frameKind(text)} DROPPED (no local socket, ${peerLink ? 'bridge not OPEN' : 'no bridge'})`)
+		const loud = bin ? true : !NOISY.has(frameType(payload as string))
+		const kind = bin ? frameKindBin(payload as Buffer) : frameKind(payload as string)
+		if (deliverLocal(to, payload)) { if (loud) relayLog(`→ ${to} ${kind} (local)`); return }
+		if (peerLink && peerLink.readyState === WebSocket.OPEN) { peerLink.send(payload); if (loud) relayLog(`→ ${to} ${kind} (forwarded over bridge)`); return }
+		relayLog(`→ ${to} ${kind} DROPPED (no local socket, ${peerLink ? 'bridge not OPEN' : 'no bridge'})`)
 	}
 
 	// A frame from the PEER relay: deliver local or drop. NEVER re-forwarded (the loop guard).
-	function routeFromPeer(text: string) {
-		const to = headerTo(text)
+	function routeFromPeer(payload: string | Buffer) {
+		const bin = typeof payload !== 'string'
+		const to = bin ? headerToBin(payload as Buffer) : headerTo(payload as string)
 		if (!to) return
-		const loud = !NOISY.has(frameType(text))
-		if (deliverLocal(to, text)) { if (loud) relayLog(`← bridge → ${to} ${frameKind(text)} (local)`) }
-		else relayLog(`← bridge → ${to} ${frameKind(text)} DROPPED (no local socket for ${to})`)
+		const loud = bin ? true : !NOISY.has(frameType(payload as string))
+		const kind = bin ? frameKindBin(payload as Buffer) : frameKind(payload as string)
+		if (deliverLocal(to, payload)) { if (loud) relayLog(`← bridge → ${to} ${kind} (local)`) }
+		else relayLog(`← bridge → ${to} ${kind} DROPPED (no local socket for ${to})`)
 	}
 
 	function handleControl(ws: WebSocket, msg: any) {
@@ -216,6 +227,14 @@ export function attachRelay(
 	//  frame: the editor settles optimistically (a localhost Node write is ~1ms and reliable);
 	//   a rejection or fs error is surfaced via relayLog, which already echoes to the browser
 	//    console.  Validates the browser-supplied path to gen/**.go under GEN_ROOT, no traversal.
+	//  AUTHENTICATION (cluster trust, ClusterTrust_handover.md): gen_write writes code Vite then
+	//   runs, so it is the relay's one RCE surface.  When the cluster flock is configured
+	//    (CLUSTER_TRUSTED_PUBS present) we ENFORCE: the frame must carry a `sign` over its header
+	//     ({control,path,from,body_hash}) by a trusted key, and body_hash must be sha256(body) —
+	//      so the signature commits to exactly these bytes (sha256, NOT the spine's collidable FNV).
+	//       Unsigned/foreign/tampered ⇒ dropped.  When NOT configured we warn-and-allow, so the dev
+	//        loop keeps working until the cluster env is deployed (then enforcement is automatic —
+	//         migrate the editor's gen_write behind a node signer first; the browser can't sign).
 	async function handleGenWrite(msg: any) {
 		const rel  = String(msg.path ?? '')
 		const body = typeof msg.body === 'string' ? msg.body : ''
@@ -223,6 +242,17 @@ export function attachRelay(
 		if (body.length > GEN_MAX_BYTES)                  { relayLog(`✗ gen_write REJECTED ${rel} too large (${body.length}c)`); return }
 		const abs = resolve('src/lib', rel)
 		if (abs !== GEN_ROOT && !abs.startsWith(GEN_ROOT + sep)) { relayLog(`✗ gen_write REJECTED ${rel} escapes gen root`); return }
+		const trusted = loadTrustedPubs()
+		if (trusted.length) {
+			const expect = createHash('sha256').update(body).digest('hex')
+			if (msg.body_hash !== expect) { relayLog(`✗ gen_write REJECTED ${rel} — body_hash ≠ sha256(body) (tampered or wrong digest)`); return }
+			const header = { control: 'gen_write', path: rel, from: msg.from, body_hash: msg.body_hash, sign: msg.sign }
+			const signer = await verifyHeader(header, trusted)
+			if (!signer) { relayLog(`✗ gen_write REJECTED ${rel} — unsigned or foreign (not a trusted cluster key)`); return }
+			relayLog(`🔑 gen_write authorised by ${prepubOf(signer)}`)
+		} else {
+			relayLog(`⚠ gen_write UNAUTHENTICATED ${rel} — cluster trust not configured (set CLUSTER_TRUSTED_PUBS / .env.cluster-identos to enforce)`)
+		}
 		const t0 = Date.now()
 		try {
 			await mkdir(dirname(abs), { recursive: true })
@@ -246,7 +276,7 @@ export function attachRelay(
 			peerLink = ws
 			relayLog(`✓ peer relay LINKED (inbound r2r) — editor end`)
 			broadcastControl({ control: 'peer-relay', up: true })
-			ws.on('message', (data) => routeFromPeer(asText(data)))
+			ws.on('message', (data: any, isBinary: boolean) => routeFromPeer(isBinary ? asBuffer(data) : asText(data)))
 			ws.on('close', (code: number) => {
 				if (peerLink === ws) peerLink = null
 				relayLog(`✗ peer relay CLOSED code=${code} (inbound r2r)`)
@@ -267,7 +297,10 @@ export function attachRelay(
 		//     browser reload: the v1 "dial once" becomes "dial whenever a browser arrives and we're
 		//      unbridged" — still no background reconnect timer, but no longer a one-shot dead end.
 		if (role === 'runner' && !peerLink) { relayLog(`browser (re)connected, bridge down — re-dialing`); dialEditor() }
-		ws.on('message', (data) => {
+		ws.on('message', (data: any, isBinary: boolean) => {
+			// A binary message is a buffer-carrying frame ([header JSON]\n[buffer]) — route it
+			//  whole by its header line; it is never a control frame.
+			if (isBinary) { routeFromBrowser(asBuffer(data)); return }
 			const text = asText(data)
 			const msg = parse(text)
 			if (msg && msg.control) {
@@ -348,4 +381,28 @@ function frameKind(text: string): string {
 function frameType(text: string): string {
 	const m = parse(text)
 	return (m && m.header && m.header.type) || ''
+}
+
+// ── binary frames ([header JSON]\n[raw buffer]) — encode/decode MUST match Tribunal.g Socket_real.
+//  The header LINE is the bare header object (not the {header:…} wrapper a text frame is), so we
+//   read `.to` directly. The buffer tail is never parsed — the relay only needs the routing header.
+function asBuffer(data: any): Buffer {
+	if (Buffer.isBuffer(data)) return data
+	if (Array.isArray(data)) return Buffer.concat(data)
+	return Buffer.from(data) // ArrayBuffer / TypedArray
+}
+function binHeader(buf: Buffer): any {
+	const nl = buf.indexOf(10) // '\n'
+	if (nl < 0) return null
+	try { return JSON.parse(buf.subarray(0, nl).toString()) } catch { return null }
+}
+function headerToBin(buf: Buffer): string | undefined {
+	const h = binHeader(buf)
+	return h && h.to
+}
+function frameKindBin(buf: Buffer): string {
+	const h = binHeader(buf)
+	if (!h) return '(binary, no header line)'
+	const nl = buf.indexOf(10)
+	return `${h.type}${h.seq != null ? ' seq=' + h.seq : ''} +buf=${buf.length - nl - 1}`
 }

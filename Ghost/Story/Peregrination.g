@@ -214,8 +214,8 @@ async Lake_trial_confirm(w):
 
 // Lake_exercise_binary -- step 7: the first transport-agnostic exercise (heading 7). With the
 //  handshake long settled (Bob has %Ud, so the pre-Ud inbox gate admits the frame), send one
-//   binary frame A->B: a fixed 64-byte fixture, base64'd into the one envelope (spec §4.2
-//    gravestone) carrying body_hash + body_len. Bob's serial inbox recomputes the body digest
+//   binary frame A->B: a fixed 64-byte fixture as RAW bytes on frame.buffer (spec §4.2 — no
+//    base64), the header carrying body_hash + body_len. Bob's serial inbox recomputes the body digest
 //     (Peeroleum_pump_inbox), runs the registered test_binary handler (stamps %got_binary), and
 //      acks -- so the witness sees the full round-trip (Bob %got_binary + Alice's emit %acked, no
 //       %faulty). The SAME exercise runs over ANY carrier: it reads whatever %active_transport
@@ -231,13 +231,12 @@ async Lake_exercise_binary(w):
     // Bob dispatches the app frame through the consumer seam (spec §5 ask 1): a verified
     //  test_binary stamps %got_binary on his Pier, a durable witness target that survives the cull.
     this.Peeroleum_on(Bobw, 'test_binary', (cw, pier, frame) => pier.i({got_binary: 1, seq: frame.header.seq, body_len: frame.header.body_len}))
-    // a fixed 64-byte fixture -> deterministic body, digest, snap.
+    // a fixed 64-byte fixture -> deterministic buffer, digest, snap.
     let bytes = new Uint8Array(64)
     for (let i = 0; i < 64; i++) bytes[i] = (i * 7 + 3) & 0xff
-    let body = this.Peeroleum_b64_encode(bytes)
-    let bh = this.Peeroleum_body_digest(body)
+    let bh = this.Peeroleum_body_digest(bytes)
     let s = this.Pier_next_seq(AlicePier)
-    this.Peeroleum_send(Alicew, {header: {type: 'test_binary', from: 'alice', to: 'bob', seq: s, body_hash: bh, body_len: bytes.length}, body})
+    this.Peeroleum_send(Alicew, {header: {type: 'test_binary', from: 'alice', to: 'bob', seq: s, body_hash: bh, body_len: bytes.length}, buffer: bytes})
 
 // Lake_witness — the readable assertion, polled each pass: once Bob's inbox
 //  shows a handled (%done) frame, stamp %witnessed:step_2 (the step rides in the

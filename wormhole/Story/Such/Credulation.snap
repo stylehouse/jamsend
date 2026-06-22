@@ -1,11 +1,26 @@
 Credulation
-  run=0,at=1782036520.13,ok,ok_pct,book:PereStaple,mode:check
-    uses:Ghost_N_Peeroleum,dige:44c4342c851503c4
+  run=0,at=1782090080.978,ok=0,ok_pct=0.29,book:PereStaple,mode:check
+    uses:Ghost_N_Peeroleum,dige:8af5a80f5da01c1e
     uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
     uses:Ghost_Story_Peregrination,dige:a23bc110db3251ac
     uses:Ghost_N_Tyrant,dige:d9455412901394d4
-  run,at=1782082420.684,ok=0,ok_pct=0.86,book:PereStaple,mode:check
-    uses:Ghost_N_Peeroleum,dige:69bb10f57bf7590d
+  run,at=1782090209.344,ok=0,ok_pct=0.43,book:PereStaple,mode:check
+    uses:Ghost_N_Peeroleum,dige:8af5a80f5da01c1e
+    uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
+    uses:Ghost_Story_Peregrination,dige:a23bc110db3251ac
+    uses:Ghost_N_Tyrant,dige:d9455412901394d4
+  run=2,at=1782090218.631,ok=0,ok_pct=0.86,book:PereStaple,mode:check
+    uses:Ghost_N_Peeroleum,dige:8af5a80f5da01c1e
+    uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
+    uses:Ghost_Story_Peregrination,dige:a23bc110db3251ac
+    uses:Ghost_N_Tyrant,dige:d9455412901394d4
+  run=3,at=1782090220.442,ok,ok_pct,book:PereStaple,mode:check
+    uses:Ghost_N_Peeroleum,dige:8af5a80f5da01c1e
+    uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
+    uses:Ghost_Story_Peregrination,dige:a23bc110db3251ac
+    uses:Ghost_N_Tyrant,dige:d9455412901394d4
+  run=4,at=1782090254.061,ok,ok_pct,book:PereStaple,mode:check
+    uses:Ghost_N_Peeroleum,dige:8af5a80f5da01c1e
     uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
     uses:Ghost_Story_Peregrination,dige:a23bc110db3251ac
     uses:Ghost_N_Tyrant,dige:d9455412901394d4

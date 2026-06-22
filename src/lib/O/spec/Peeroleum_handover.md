@@ -272,20 +272,30 @@ machinery is the meddle wrap. Re-applies `MachPeerily.svelte:725-794`. Spec §14
 ### 7 — binary frames  `[~]`
 `body` + `body_hash` folded into the one envelope; `test_binary` as just-another-frame; corruption identical to
 a tweaked hello-sign. Spec §4.2, §15.
-- **v1 shape (spec §4.2 gravestone):** body rides as a **base64 string inside the JSON envelope**
-   (`frame.body`), not a separate wire item — zero relay changes (it routes on `header.to`, body opaque), and
-    the mock carries it as-is. Body stays off-snap on `unemit.c.frame`; only `header.body_hash`+`body_len` snap.
+- **Wire form = text header line then raw buffer (spec §4.2), NOT base64.** A buffer-carrying frame is
+   `[header JSON]\n[raw buffer]` — one atomic message, "text first" (header human-readable at the front;
+    JSON.stringify never emits a raw \n so the first 0x0A is the delimiter), raw bytes (binary is the bulk; no
+    33% base64 tax). One message ⇒ no per-frame assembly queue (the receiver splits on the first \n: header = a
+     JSON view, buffer = a near-zero-copy byte-tail). Beats Peerily's three-message crypto→data→buffer reassembly;
+      the reassembly that IS needed (a transfer split into ~50kB frames) moves UP to the chunk layer (Phase 3). The
+       buffer rides to PeerJS as one ArrayBuffer (whole-buffer efficiency). **Hybrid**: no-buffer frames (hello/
+        trust/ack/noop/control) stay text JSON; only buffer frames go binary. The **mock** serialises nothing —
+         it carries `{header, buffer:Uint8Array}` by reference. Buffer off-snap; only `body_hash`+`body_len` snap.
 - **Digest is SYNCHRONOUS, not crypto sha256 — on purpose.** The only hashes reachable to ghost code are
    async (`crypto.subtle`/`Y.svelte` sha256 are Promises), and the carrier `recv` does NOT await
     `Peeroleum_deliver`, so an awaited digest resolves AFTER the beliefs mutex releases (`_really_answer_calls`
      holds it only across `await e.sc.fn(e)`) — escaping Atime and breaking the mock's determinism + the §7.3
-      serial lock. So `Peeroleum_body_digest` is a deterministic sync content digest (FNV-1a, hex over the base64
-       body); `Peeroleum_pump_inbox` recomputes it from the off-snap `frame.body` and string-compares to
+      serial lock. So `Peeroleum_body_digest` is a deterministic sync content digest (FNV-1a, hex over the raw
+       buffer bytes); `Peeroleum_pump_inbox` recomputes it from `frame.buffer` and string-compares to
         `header.body_hash`. It still trips on any flipped byte (all heading 6 asks). Mismatch →
          `%error:bad-body-hash` → `%faulty`, the same path as a bad sign (no bifurcated error paths). crypto
-          sha256 lands with the separate-wire-item form on the deferred WebRTC binary path.
+          sha256 + one-sig signing (header commits to the buffer via body_hash) land with the trust layer.
 - **`test_binary` dispatches via the `Peeroleum_on` consumer registry** (§5 ask 1), not a hardcoded branch in
    pump_inbox; the harness registers it. Sent only AFTER handshake (the pre-Ud gate rejects non-hello/noop).
+- **Carriers grow a binary branch.** `Socket_real` (Tribunal.g) encodes/decodes the `[header]\n[buffer]`
+   message (`binaryType='arraybuffer'`); the relay (relay.ts) routes a binary message by reading the header
+    line's `to` and forwards it whole (buffer opaque) — covered by `scripts/relay-test.ts` (local + cross-relay,
+     buffer-intact). The mock/in-process carrier is by-reference, unchanged.
 - **Exercise:** `Lake_exercise_binary` (Peregrination.g) runs as wrangler step 7, witnessed
    `%witnessed:send_binary`. The first of the transport-agnostic exercise set (same body runs over mock or the
     real-ws carrier). Built; lang-compile clean; **browser-unverified** — run on :9091, eyeball the lifecycle,

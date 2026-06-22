@@ -37,6 +37,7 @@
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import { onMount } from "svelte"
+    import { signHeader, prepubOf, sha256hex, loadRoleKey } from "$lib/p2p/cluster_trust"
 
     let { M } = $props()
 
@@ -276,17 +277,59 @@
         //    runner: the relay writes the file, Vite HMRs it to BOTH origins (shared /app), and the
         //     runner acquires the version that way.  Returns false (→ caller falls back to the local
         //      FSA write) when the socket isn't open.  Editor-only; other roles never compile-write.
-        Lies_send_gen_write(w: TheC, gen_path: string, body: string): boolean {
+        async Lies_send_gen_write(w: TheC, gen_path: string, body: string): Promise<boolean> {
             const H = this as House
             if (!H.Lies_is_editor(w)) return false
             const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
             const ws   = port?.ws as WebSocket | undefined
             if (!ws || ws.readyState !== WebSocket.OPEN) return false
+
+            // Sign with the editor's cluster Idento so the relay's verify gate trusts this write
+            //  (it is otherwise an RCE — any socket can gen_write code to disk). The signed unit is
+            //   the header {control,path,from,body_hash}; body_hash is sha256 (NOT the spine's FNV),
+            //    so one sig pins exactly these bytes. Forward-compatible: when no key is configured we
+            //     send unsigned and the relay warn-and-allows (current dev loop), so signing can land
+            //      before CLUSTER_TRUSTED_PUBS is deployed without breaking anything.
+            let frame: Record<string, unknown> = { control: 'gen_write', path: gen_path, body }
+            const idento = H.Lies_cluster_idento(w)
+            if (idento) {
+                try {
+                    const body_hash = await sha256hex(body)
+                    const header = { control: 'gen_write', path: gen_path, from: prepubOf(idento.pub), body_hash }
+                    const sign   = await signHeader(header, idento.key)
+                    frame = { ...header, body, sign }
+                } catch (e) {
+                    H.tlog(`⚠ gen_write sign failed (${String(e)}) — sending unsigned; relay rejects if enforcing`)
+                }
+            }
             try {
-                ws.send(JSON.stringify({ control: 'gen_write', path: gen_path, body }))
-                H.tlog(`📤 gen_write → relay: ${gen_path} (${body.length}c)`)
+                ws.send(JSON.stringify(frame))
+                H.tlog(`📤 gen_write → relay: ${gen_path} (${body.length}c)${frame.sign ? ' [signed]' : ' [UNSIGNED]'}`)
                 return true
             } catch { return false }
+        },
+
+        // Lies_cluster_idento — this client's cluster signing key {pub, key}, or undefined when none
+        //  is provisioned (then gen_write goes unsigned — fine until the relay enforces). A BROWSER
+        //   editor keeps its secret in localStorage (per-profile, set out-of-band — never bundled):
+        //    localStorage['cluster_idento'] = '{"pub":"<64hex>","key":"<64hex>"}'. A node client
+        //     (runner/cli headless) instead reads its role key from the env (.env.cluster-identos).
+        Lies_cluster_idento(w?: TheC): { pub: string; key: string } | undefined {
+            const H = this as House
+            try {
+                if (typeof localStorage !== 'undefined') {
+                    const raw = localStorage.getItem('cluster_idento')
+                    if (raw) {
+                        const o = JSON.parse(raw)
+                        if (o?.pub && o?.key) return { pub: o.pub, key: o.key }
+                    }
+                }
+            } catch { /* malformed localStorage — fall through to env */ }
+            const role = H.Lies_role(w)
+            const key  = role && typeof process !== 'undefined' ? loadRoleKey(role) : undefined
+            const pub  = role && typeof process !== 'undefined'
+                ? (process.env?.[`CLUSTER_IDENTO_${role.toUpperCase()}_PUB`]) : undefined
+            return key && pub ? { pub, key } : undefined
         },
 
         //#endregion

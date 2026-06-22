@@ -219,20 +219,52 @@ frame
 - One signature covers the header; `header.body_hash` covers the body. So
   `test_binary` corruption is just the meddle tweaking body bytes — verify fails
   identically to a tweaked hello-sign. No bifurcated error paths.
-- Binary cannot ride inside JSON, so the body is a separate wire item. On WebRTC
-  that is header-send then body-send (the receiver waits for body before
-  delivering, exactly the old crypto→data→buffer cycle, now header→body). On
-  WebSocket/mock it can be one chunk. Either way the *frame* is the unit the
-  inbox tracks.
-  > Gravestone (v1 reality): the first `test_binary` build ships the body as a
-  > **base64 string inside the JSON envelope** (`frame.body`), not as a separate
-  > wire item — so it rides the existing `Socket_real`/relay text path untouched
-  > (the relay routes on `header.to` and never parses the body) and the in-process
-  > mock carries it as-is. The 33% base64 inflation is accepted for now; the
-  > separate-wire-item form (header-send then body-send) is deferred to the WebRTC
-  > binary path, where it earns its keep. The frame is still the unit the inbox
-  > tracks. The body lives off-snap on `.c` (riding `unemit.c.frame`); only
-  > `header.body_hash` + `header.body_len` reach the snap.
+- Binary cannot ride inside JSON, so the buffer is **raw bytes**, never base64
+  (binary is the bulk of real traffic — a 33% base64 tax on every byte is
+  unacceptable). The realised wire form for a **buffer-carrying** frame is a
+  **text header line then the raw buffer** — one message, not three:
+
+  ```
+  [ header JSON (from,to,seq,type,body_hash,body_len[,sign]) ]\n[ raw buffer bytes ]
+  ```
+
+  - One message ⇒ atomic ⇒ **no per-frame assembly queue**: a ws/DataChannel
+    message arrives whole, so the receiver splits on the **first `\n`** (`header` =
+    the text before it — `JSON.stringify` never emits a raw `\n`, so the first
+    `0x0A` is an unambiguous delimiter; `buffer` = the byte-tail, a near-zero-copy
+    `subarray`) and unemits one frame. The message reads "text first" — the header
+    is human-readable at the front, debuggable in a ws inspector. This is the
+    improvement over the old Peerily crypto→data→buffer **three**-message cycle
+    (which needed an incoming queue to reassemble the triple per frame). The
+    reassembly that *is* needed — a large transfer split into many ~50kB frames —
+    lives one layer **up**, at the chunk layer (§ speed-limited upload), keyed on a
+    transfer id, where it belongs.
+  - The buffer stays contiguous and raw, handed to PeerJS as one ArrayBuffer (its
+    whole-buffer send efficiency, preserved). PeerJS message-size limits mean a
+    large transfer chunks anyway — that's the chunk layer, not this envelope.
+  - **One signature, not two.** Peerily signed data and buffer separately; here
+    `header.sign` covers the header, and the header commits to the buffer via
+    `body_hash` — so verifying the header authenticates the buffer transitively.
+    Both are authenticated; one crypto op. The signed unit is the header **minus**
+    `sign`, key-sorted (`cluster_trust.ts` `canonicalHeader`), so signer and
+    verifier serialise identically regardless of property order. `sign` is cleartext
+    (signed ≠ encrypted) so the relay still routes on `to`. (The signing/verifying
+    primitives live in `src/lib/p2p/cluster_trust.ts` — `signHeader`/`verifyHeader`
+    against the secret cluster flock `CLUSTER_TRUSTED_PUBS`; wiring privileged
+    frames through them is the trust layer, the envelope just carries `sign`.)
+  - **Hybrid, common case untouched**: frames with **no** buffer (hello, trust,
+    ack, noop, control) stay **text JSON** exactly as before. Only buffer-carrying
+    frames use the binary framing. A carrier therefore has a text branch and a
+    binary branch; the relay routes the binary message by peeking the header line's
+    `to` and forwarding the whole message untouched (buffer opaque). The in-process
+    **mock** serialises nothing — it carries the frame object
+    `{header, buffer:Uint8Array}` by reference.
+  - The buffer lives off-snap (mock: `unemit.c.frame.buffer`; real: decoded on
+    receipt); only `header.body_hash` + `body_len` reach the snap. `body_hash` is a
+    deterministic **synchronous** digest over the raw bytes (§7.3 needs a sync
+    inbox; crypto sha256 + signing come with the trust layer).
+
+  Either way the *frame* is the unit the inbox tracks.
 
 ### 4.3 Transport interface (conceptual, not signatures)
 

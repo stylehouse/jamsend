@@ -158,7 +158,7 @@
         //    loaded_doc whose base_dige tracks source-on-disk for the surprise_read check, and keying
         //     by path stamped that base_dige with the gen output dige (read as an external change,
         //      blocked the next source write).  gen_path has no loaded_doc, so its namespace is clean.
-        const relayed = H.Lies_send_gen_write(w, gen_path, source)
+        const relayed = await H.Lies_send_gen_write(w, gen_path, source)
         if (!relayed)
             await H.LiesStore_write(w, gen_path, source, { rw_name: `src/lib/${gen_path}` })
 

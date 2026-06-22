@@ -30,19 +30,33 @@ async function until(pred: () => boolean, ms = 2000): Promise<boolean> {
 	return pred()
 }
 
-// A browser ws-client that records every frame it receives.
+// A browser ws-client that records every frame it receives. A binary message is a
+//  buffer-carrying frame ([header JSON]\n[raw buffer]) — decoded to {header, buffer}; a text
+//   message is the JSON frame (or a control frame). Mirrors Tribunal.g Socket_real / the relay.
 function browser(port: number, addr: string) {
 	const ws = new WebSocket(`ws://127.0.0.1:${port}/relay?addr=${addr}`)
 	const got: any[] = []
 	const ctrl: any[] = []
-	ws.on('message', (d) => {
+	ws.on('message', (d, isBinary) => {
+		if (isBinary) {
+			const buf = Buffer.isBuffer(d) ? d : Buffer.from(d as any)
+			const nl = buf.indexOf(10)
+			const header = JSON.parse(buf.subarray(0, nl).toString())
+			got.push({ header, buffer: buf.subarray(nl + 1) })
+			return
+		}
 		const m = JSON.parse(d.toString())
 		;(m.control ? ctrl : got).push(m)
 	})
 	const open = new Promise<void>((r) => ws.on('open', () => r()))
 	const send = (o: any) => ws.send(JSON.stringify(o))
 	const frame = (to: string, type: string, seq = 1) => send({ header: { from: addr, to, type, seq } })
-	return { ws, got, ctrl, open, send, frame }
+	// A buffer-carrying frame: bare header line + '\n' + raw buffer (the binary wire form).
+	const binframe = (to: string, type: string, seq: number, buffer: Buffer) => {
+		const hj = Buffer.from(JSON.stringify({ from: addr, to, type, seq, body_len: buffer.length }))
+		ws.send(Buffer.concat([hj, Buffer.from([10]), buffer]))
+	}
+	return { ws, got, ctrl, open, send, frame, binframe }
 }
 
 async function main() {
@@ -85,6 +99,20 @@ async function main() {
 	bob.frame('ALICE', 'run_result', 3)
 	const back = await until(() => alice.got.some((m) => m.header?.to === 'ALICE' && m.header?.from === 'BOB'))
 	check('cross-relay deliver BOB→ALICE (runner→editor)', back)
+
+	// Binary frames ([header]\n[buffer]) route exactly like text, by header.to — buffer opaque.
+	const payload = Buffer.from([1, 2, 3, 4, 250, 128, 0, 99, 17])
+	alice.binframe('ALICE2', 'test_binary', 5, payload)
+	const binSame = await until(() => alice2.got.some((m) => m.buffer && m.header?.from === 'ALICE' && m.header?.type === 'test_binary'))
+	check('binary same-origin deliver ALICE→ALICE2', binSame)
+	const binSameRow = alice2.got.find((m) => m.buffer && m.header?.type === 'test_binary')
+	check('binary buffer intact (same-origin)', !!binSameRow && Buffer.compare(binSameRow.buffer, payload) === 0)
+
+	alice.binframe('BOB', 'test_binary', 6, payload)
+	const binFwd = await until(() => bob.got.some((m) => m.buffer && m.header?.from === 'ALICE' && m.header?.type === 'test_binary'))
+	check('binary cross-relay deliver ALICE→BOB (over bridge)', binFwd)
+	const binFwdRow = bob.got.find((m) => m.buffer && m.header?.type === 'test_binary')
+	check('binary buffer intact (cross-relay)', !!binFwdRow && Buffer.compare(binFwdRow.buffer, payload) === 0)
 
 	// Set-once errorific: BOB's server is already 'runner'; asking it to become 'editor' must error.
 	const ctrlBefore = bob.ctrl.length

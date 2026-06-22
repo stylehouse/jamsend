@@ -145,32 +145,26 @@ Pier_next_seq(pier):
     pier.c.seq = (pier.c.seq || 0) + 1
     return pier.c.seq
 
-// ── binary body helpers (spec §4.2 gravestone, heading 7) ─────────────────────
-// v1 ships a binary body as a base64 string inside the one JSON envelope (frame.body),
-//  not a separate wire item: it rides the existing Socket_real/relay text path untouched
-//   (the relay routes on header.to and never parses the body) and the in-process mock
-//    carries it by reference. The body stays off-snap on unemit.c.frame; only
-//     header.body_hash + body_len reach the snap. The integrity check is a SYNCHRONOUS
-//      content digest, NOT crypto sha256: it keeps Peeroleum_pump_inbox and the whole
-//       delivery path sync, which both the §7.3 serial lock and the mock's in-Atime
-//        determinism require — an awaited crypto.subtle.digest resolves after the beliefs
-//         mutex releases (the carrier recv does not await deliver), so it would escape
-//          Atime. The digest still trips on any flipped byte, which is all the corruption
-//           exercise (heading 6) asks of it; crypto sha256 + the separate-wire-item form
-//            land together on the deferred WebRTC binary path. Raw JS: btoa/TextEncoder +
-//             a dynamic-value digest, no DSL verb for any of it.
-Peeroleum_b64_encode(bytes):
-    let s = ''
-    for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i])
-    return btoa(s)
-
-// Peeroleum_body_digest — a deterministic synchronous content digest (FNV-1a, 32-bit,
-//  hex) over the base64 body string. Same input → same hex on sender and receiver, so a
-//   clean body verifies and a meddled one does not. NOT cryptographic — see the note above.
-Peeroleum_body_digest(b64):
-    let s = String(b64 || '')
+// ── binary body digest (spec §4.2, heading 7) ─────────────────────────────────
+// A binary frame carries its payload as RAW bytes on frame.buffer (a Uint8Array), never
+//  base64 — binary is the bulk of real traffic, so a 33% base64 tax is unacceptable. On
+//   the wire a buffer-carrying frame is one length-prefixed binary message (carrier's job,
+//    Socket_real/relay); the in-process mock carries frame.buffer by reference. The buffer
+//     stays off-snap (mock: unemit.c.frame.buffer); only header.body_hash + body_len snap.
+//  The integrity check is a SYNCHRONOUS content digest, NOT crypto sha256: it keeps
+//   Peeroleum_pump_inbox and the whole delivery path sync, which both the §7.3 serial lock
+//    and the mock's in-Atime determinism require — an awaited crypto.subtle.digest resolves
+//     after the beliefs mutex releases (the carrier recv does not await deliver), so it
+//      would escape Atime. The digest still trips on any flipped byte, which is all the
+//       corruption exercise (heading 6) asks of it; crypto sha256 + one-sig signing (the
+//        header commits to the buffer via body_hash) land with the trust layer.
+// Peeroleum_body_digest — deterministic synchronous digest (FNV-1a, 32-bit, hex) over the
+//  raw buffer bytes. Same bytes → same hex on sender and receiver, so a clean buffer
+//   verifies and a meddled one does not. Raw JS: a dynamic-value byte loop, no DSL verb.
+Peeroleum_body_digest(bytes):
+    let b = bytes || []
     let h = 0x811c9dc5
-    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) }
+    for (let i = 0; i < b.length; i++) { h ^= b[i]; h = Math.imul(h, 0x01000193) }
     return (h >>> 0).toString(16).padStart(8, '0')
 
 // ── consumer seam (spec heading 10, asks 1–3): the editor↔runner channel and any other app
@@ -317,8 +311,8 @@ Peeroleum_pump_inbox(w, pier):
     // body integrity (spec §4.2: header.body_hash covers the body) is part of verify, checked
     //  BEFORE delivery so a corrupt body fails identically to a tweaked header-sign — same
     //   %error→%faulty path, no bifurcated handling. The digest is recomputed synchronously
-    //    from the off-snap base64 body (Peeroleum_body_digest); a mismatch is bad-body-hash.
-    if (ok && h.body_hash != null && H.Peeroleum_body_digest(frame.body) !== h.body_hash) {
+    //    from the off-snap raw buffer (Peeroleum_body_digest); a mismatch is bad-body-hash.
+    if (ok && h.body_hash != null && H.Peeroleum_body_digest(frame.buffer) !== h.body_hash) {
         ok = false; reason = 'bad-body-hash'
     }
     if (ok) {
