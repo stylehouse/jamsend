@@ -3,19 +3,22 @@
     import { TheC } from "$lib/data/Stuff.svelte"
     import { onMount } from "svelte"
 
+import Peeroleum from "$lib/gen/N/Peeroleum.go"
+import { browserTrustedPubs, prepubOf } from "$lib/p2p/cluster_trust"
+
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_test_Story_Lake_LakeTiles(): string { return 'e633c97628b42c32' },
+    Ghostmeta_Ghost_test_Story_Lake_LakeTiles(): string { return 'da408f224e8f0132' },
 
 // yeti etc!!!!!
 theCompiledStuff(A,w) {
     this._i_drill(w, [{sc: {hut: 1}}, {sc: {toot: 3}}])
     let toot = this._o_drill1(w, [{sc: {hut: 1}}, {sc: {toot: 1}}])
     let la = this._i_drill(w, [{sc: {hut: 1}}, {sc: {toot}}])
-    this._o_drill(w, [{sc: {hut: 1}}, {sc: {although: 1, they: 1, can: 1, be: 1, mixed: 1}, exactly: {although: true}}])
+    this._o_drill(w, [{sc: {hut: 1}}, {sc: {although: 1}, exactly: {although: true}}, {sc: {they: 1, can: 1, be: 1, mixed: 1}}])
     la.i({something: 1})
     this._i_drill(w, [{sc: {thung: 1}}, {sc: {wither: 1}}, {sc: {etc: 1}}])
     this._i_drill(w, [{sc: {yeses: 1}}, {sc: {because: 1, it: 2}}])
@@ -80,8 +83,7 @@ theCompiledStuff(A,w) {
 nothinging() {
     return true && true
 },
-severally(A,w,thing) {
-    const H = this
+severally(A,w,thing) { const H = this;
     w.i({miles: 1, of: 1, words: 1})
     w.i({miles: 1, of: 1, wordings: 1})
     w.i({thingure: "thing", of: 1, wordings: 1})
@@ -256,8 +258,7 @@ looseScTiles(A,w) {
 },
 // receiver-amp, the fabricated House alias, and inline IO in a control body — the
 //  three seams that used to force raw JS, now tiles.
-async ampTiles(A,w) {
-    const H = this
+async ampTiles(A,w) { const H = this;
     // (1) recv&method → recv.method(args): a tight identifier before "&" is the
     //  receiver, the way a leading bareword is for i/o.  pier.do(), req.bump():
     pier.do()
@@ -272,10 +273,12 @@ async ampTiles(A,w) {
     //  let m = a & b
     let m = a & b
 
-    // (2) the House alias is fabricated: every method body that keeps a bare H gets
-    //  a "const H = this" at its top (parameterised in compile.ts — skipped when H is
-    //   a param or already declared), so a raw House call resolves even inline in a
-    //    control structure:  if (a > b) H.laterally(A,w,1)
+    // (2) the House alias is fabricated automatically: if the COMPILED body still
+    //  carries a bare `H` (\bH\b) — i.e. raw JS reached for it; the DSL's own `H i …`
+    //   receiver lowers to `this` and leaves none — the compiler tucks a `const H = this`
+    //    onto this method's opening-brace line (out of the way when debugging the gen),
+    //     skipped when H is a param or already declared.  So a raw House call resolves
+    //      even inline in a control structure:  if (a > b) H.laterally(A,w,1)
     if (a > b) H.laterally(A,w,1)
 
     // (3) IO atoms translate inside a control body now (the per-line parser is
@@ -317,3 +320,6 @@ captureOutTiles(A,w) {
     })
     })
 </script>
+
+<Peeroleum {H} />
+

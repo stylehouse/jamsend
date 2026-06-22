@@ -95,7 +95,15 @@
         if (!w.c.Auto_setup) {
             w.c.Auto_setup = true
             w.c.ave = H.oai_enroll(H, { watched: 'ave' })
-            H.oai_enroll(H, { watched: 'actions' })
+            const wa = H.oai_enroll(H, { watched: 'actions' })
+            // 'Id' hatch — a browser tab can't read the node-side .env.cluster-<role> files, so its
+            //  cluster signing key lives on the top House's Dexie .stashed. This action toggles the IdHatch overlay where
+            //   you paste a role file (cat .env.cluster-editor | xclip → paste) to load it, or copy your
+            //    public identity. See scripts/gen-cluster-identos.ts.
+            wa.oai({ action: 1, role: 'identity' }, {
+                label: 'Id', icon: '🪪',
+                fn: () => { if (!H.stashed) return; if (H.stashed.showId) delete H.stashed.showId; else H.stashed.showId = 1 },
+            })
         }
 
         // ?B= runner: stand up the Creduler — an outside-Story Lies on the top House.  It lives

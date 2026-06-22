@@ -2,6 +2,14 @@
 #  dev container's HMR/build so running an IDE here can't disturb dev (and vice-versa).
 #  It's "staging" only in that it's a more stable place to keep a tab open than dev.
 #
+# PAIRED WITH ../docker-compose.yml — the DEV instance: the app/runner on :9091 (+ the `claude` CLI).
+#  This is the EDITOR half on :9092. The two are bridged at runtime by the relay's r2r link (the runner
+#   dials this server's ws://172.17.0.1:9092/relay), so editor↔runner frames cross between them. CLUSTER
+#    TRUST spans the pair: the secret Idento flock is split per role (scripts/gen-cluster-identos.ts); this
+#     editor side env_files the PUBLIC `../.env.cluster-pubs` below so its relay can verify gen_write and
+#      vite can bake VITE_CLUSTER_TRUSTED_PUBS for the browser. No private key lives here (the editor browser
+#       signs with its localStorage cluster Idento). Edit one of the pair and check the other still lines up.
+#
 # How you use it: open  http://localhost:9092/Otro?B=Editron  — the app lives at the
 #  /Otro route (/ is the p2p Intro page).  The ?B URL param (parsed in Otro) tells the default
 #  Auto to activate the Editron Story Book — a full Lies/Lang IDE that comes up as a one-step
@@ -21,7 +29,8 @@
 #  root — run it from anywhere.  No proxy / DuckDNS / tunnel: bound to 127.0.0.1 only.
 #  No WebRTC, no /music mount: this instance reaches the dev repo's content at runtime via
 #   Wormhole + the Directory API (the browser picks the dev repo dir), not a bind mount.
-#  No env_file: ALLOWED_HOSTS stays empty → vite serves localhost only (the secure default).
+#  The only env_file is the PUBLIC cluster pubs (below) — it sets CLUSTER_TRUSTED_PUBS, NOT
+#   ALLOWED_HOSTS, so ALLOWED_HOSTS stays empty → vite serves localhost only (the secure default).
 
 services:
   staging:
@@ -49,6 +58,13 @@ services:
       - "127.0.0.1:9092:9092"    # localhost only — no LAN, no proxy
       - "172.17.0.1:9092:9092"
     command: npm run dev -- --host 0.0.0.0 --port 9092
+    env_file:
+      # Cluster trust — PUBLIC pubs ONLY (paired with the dev compose; see header). The editor relay
+      #  verifies gen_write against these and vite bakes VITE_CLUSTER_TRUSTED_PUBS for the browser. The
+      #   editor's OWN signing key is in its browser localStorage, never here. `..` = the worktree root,
+      #    where you place the pubs file. required:false so an un-minted cluster doesn't break `up`.
+      - path: ../.env.cluster-pubs
+        required: false
     # No boot env var: which Book loads is chosen per-tab by the ?B URL param
     #  (default Auto's Library; ?B=Editron = the IDE Book).  See the header note.
     tty: true

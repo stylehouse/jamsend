@@ -220,7 +220,7 @@ export function attachRelay(
 			}
 			return
 		}
-		if (msg.control === 'gen_write') { void handleGenWrite(msg); return }
+		if (msg.control === 'gen_write') { void handleGenWrite(ws, msg); return }
 	}
 
 	// Write a compiled .go to disk on the editor's behalf (see GEN_ROOT note above).  No ack
@@ -235,20 +235,30 @@ export function attachRelay(
 	//       Unsigned/foreign/tampered ⇒ dropped.  When NOT configured we warn-and-allow, so the dev
 	//        loop keeps working until the cluster env is deployed (then enforcement is automatic —
 	//         migrate the editor's gen_write behind a node signer first; the browser can't sign).
-	async function handleGenWrite(msg: any) {
+	async function handleGenWrite(ws: WebSocket, msg: any) {
 		const rel  = String(msg.path ?? '')
 		const body = typeof msg.body === 'string' ? msg.body : ''
-		if (!GEN_PATH_RE.test(rel) || rel.includes('..')) { relayLog(`✗ gen_write REJECTED bad path ${JSON.stringify(rel)}`); return }
-		if (body.length > GEN_MAX_BYTES)                  { relayLog(`✗ gen_write REJECTED ${rel} too large (${body.length}c)`); return }
+		// Every reject REPLIES to the sender (control:gen_write_error) as well as logging, so a
+		//  rejected compile surfaces as a real error in the editor — not a silent drop the editor's
+		//   optimistic settle never learns about (ClusterTrust_handover: "I WANT ERRORS").
+		const reject = (reason: string) => {
+			relayLog(`✗ gen_write REJECTED ${rel || '(no path)'} — ${reason}`)
+			try { ws.send(JSON.stringify({ control: 'gen_write_error', path: rel, reason })) } catch {}
+		}
+		if (!GEN_PATH_RE.test(rel) || rel.includes('..')) return reject(`bad path ${JSON.stringify(rel)}`)
+		if (body.length > GEN_MAX_BYTES)                  return reject(`too large (${body.length}c > ${GEN_MAX_BYTES})`)
 		const abs = resolve('src/lib', rel)
-		if (abs !== GEN_ROOT && !abs.startsWith(GEN_ROOT + sep)) { relayLog(`✗ gen_write REJECTED ${rel} escapes gen root`); return }
+		if (abs !== GEN_ROOT && !abs.startsWith(GEN_ROOT + sep)) return reject('escapes gen root')
 		const trusted = loadTrustedPubs()
 		if (trusted.length) {
+			// Distinguish UNSIGNED (no body_hash — the editor has no cluster key) from a TAMPERED/wrong
+			//  digest, so the editor's error says which and how to fix it.
+			if (msg.body_hash == null) return reject('unsigned — no body_hash (cluster trust enforced; the editor needs its cluster key)')
 			const expect = createHash('sha256').update(body).digest('hex')
-			if (msg.body_hash !== expect) { relayLog(`✗ gen_write REJECTED ${rel} — body_hash ≠ sha256(body) (tampered or wrong digest)`); return }
+			if (msg.body_hash !== expect) return reject('body_hash ≠ sha256(body) (tampered or wrong digest)')
 			const header = { control: 'gen_write', path: rel, from: msg.from, body_hash: msg.body_hash, sign: msg.sign }
 			const signer = await verifyHeader(header, trusted)
-			if (!signer) { relayLog(`✗ gen_write REJECTED ${rel} — unsigned or foreign (not a trusted cluster key)`); return }
+			if (!signer) return reject('foreign or unsigned — not a trusted cluster key')
 			relayLog(`🔑 gen_write authorised by ${prepubOf(signer)}`)
 		} else {
 			relayLog(`⚠ gen_write UNAUTHENTICATED ${rel} — cluster trust not configured (set CLUSTER_TRUSTED_PUBS / .env.cluster-identos to enforce)`)
@@ -259,7 +269,7 @@ export function attachRelay(
 			await writeFile(abs, body)
 			relayLog(`✍ gen_write ${rel} (${body.length}c, ${Date.now() - t0}ms)`)
 		} catch (e) {
-			relayLog(`✗ gen_write FAILED ${rel}: ${(e as Error).message}`)
+			return reject(`fs write failed: ${(e as Error).message}`)
 		}
 	}
 

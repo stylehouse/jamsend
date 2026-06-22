@@ -58,7 +58,7 @@ So the diagrams read unambiguously:
 A note on the `req` unification: previously the desire layer used mainkey `De`
 (`%De:handshake`) and the work layer used mainkey `req` (`%req:said_hello`). Both
 are gone-as-two; everything is `%req` now. A "desire" is just a `%req` that owns
-sub-`%req` (driven by `handler_of_last_resort`'s `req/*req` recursion). A leaf
+sub-`%req` (driven by `req/*req` recursion). A leaf
 work item is a `%req` with no children. Depth carries the distinction the
 mainkey used to.
 
@@ -126,24 +126,22 @@ main presence, room for `A:Alice/w:OtherPresence` later without a second House.
 
 ## 3. The req model (unified %req)
 
-`reqy()` is **gone** — superseded by the C-native `%req` engine on any host C:
-`host.oai({req,maz,eternal?,permanent?},sc?)` (sync), `host.doai(c,sc)?.(req=>…)`,
-`await host.do()`, `host.finish(child)`, `host.all_finished()` (`Stuff.svelte.ts`
-~574-652). `eternal` = never finished, self-settles via `req.sc.ok=1`; `permanent`
+The C-native `%req` engine runs on any host C: `host.oai({req,maz,eternal?,
+permanent?},sc?)` (sync), `host.doai(c,sc)?.(req=>…)`, `await host.do()`,
+`host.finish(child)`, `host.all_finished()` (`Stuff.svelte.ts` ~574-652).
+`eternal` = never finished, self-settles via `req.sc.ok=1`; `permanent`
 un-finishes on input drift. What is durable is the *shape*: everything is a `%req`
-with the default mainkey `req`, and desires nest under desires.
+with the default mainkey `req`, and desires nest under desires. (`reqy()` is gone.)
 
-### 3.1 Nesting via req/*req
+### 3.1 Nesting via req/req
 
-A desire with children is driven by `handler_of_last_resort`: when a `%req` has
-its own `%reqcons`, `do_one` finds no explicit `do_fn` and instead does each
-`req/*req` recursively, finishing the parent when all children finish.
+A desire with children is driven by recursion: a `%req` with no own `do_fn` (no
+`doai`-set `req.c.do_fn`, no `H.req_<name>` handler) but with `%req` children does
+each `req/*req` recursively, finishing the parent when all children finish.
 
 ```
 %req:handshake                                   the desire (has children → recursion drives it)
-  %reqcons                                        child-req bucket (serialised anon reqs)
-    %reqcon:req,serial_i:…
-  %req:said_hello,maz:4                           leaf work items
+  %req:said_hello,maz:4                           leaf work items, direct %req children
   %req:heard_hello,maz:3
   %req:said_trust,maz:2
   %req:heard_trust                                last → finishing it finishes %req:handshake
@@ -153,15 +151,19 @@ its own `%reqcons`, `do_one` finds no explicit `do_fn` and instead does each
 (`do()` filters to the highest unfinished maz). So heard_hello (maz:3) can't run
 until said_hello (maz:4) is finished, and so on down to heard_trust (no maz = 1).
 
-### 3.2 The waiting-req — VOIDED (never built)
+### 3.2 Waiting: ttlilt on a req that finishes
 
-The original design was a throwaway `%req:waiting,until:T` per leaf as the demand
-client, with a computed-max global. **It was never built and is deliberately
-abandoned** — `%req:waiting` appears in no engine code. A leaf that cannot finish
-yet simply stays `needs_work` and is re-pumped; the realised demand mechanism is a
-one-shot `%ttlilt` (a snap-timing advisor, §1), and the floor self-drives on
-`feebly_ponder` + `post_do` + step-pacing. Full gravestone in §13; see handover
-heading 5 (CLOSED).
+A leaf that cannot finish yet stays `needs_work` and is re-pumped — there is no
+`%req:waiting` (an early per-leaf demand-client design, never built). When a real
+transport makes a req span a snap, the realised way to advise how long to hold the
+snap open is a one-shot `%ttlilt` (`H.i_req_ttlilt(req, secs, {waiting})`, a
+snap-timing advisor — §1). The floor itself needs none: it self-drives on
+`feebly_ponder` + `post_do` + step-pacing.
+
+**A ttlilt must ride a req that finishes.** It advises holding the snap open until
+that req reaches `finished`, and is dropped on `finish()`. A req that never finishes
+— an `eternal` foreman, self-settling via `req.sc.ok=1` — has nothing for a ttlilt
+to release, so it carries none.
 
 ---
 
@@ -261,8 +263,10 @@ frame
     `{header, buffer:Uint8Array}` by reference.
   - The buffer lives off-snap (mock: `unemit.c.frame.buffer`; real: decoded on
     receipt); only `header.body_hash` + `body_len` reach the snap. `body_hash` is a
-    deterministic **synchronous** digest over the raw bytes (§7.3 needs a sync
-    inbox; crypto sha256 + signing come with the trust layer).
+    **sha256** hex digest over the raw bytes — the same algorithm the trust layer
+    signs over, so `header.sign` pins the buffer transitively with no second hash.
+    It is async (`crypto.subtle`); the inbox awaits it (§7.3 is an async serial
+    drain, so the whole delivery path stays in Atime by awaiting through the carrier).
 
   Either way the *frame* is the unit the inbox tracks.
 
@@ -439,8 +443,18 @@ Alice: finds %outbox/emit:N,seq:7 -> stamps %acked
 ### 7.3 Inbox states (serial handling)
 
 Inbound is the careful side. Frames arrive possibly faster than they verify
-(verify is async). They must be handled **one at a time, in order** — the old
+(verify is async — body `body_hash` is an awaited sha256, and header-sign is awaited
+`verifyHeader`). They must be handled **one at a time, in order** — the old
 `unemit_queue` + `unemit_processing` guarantee, now expressed as particle state.
+
+`Peeroleum_pump_inbox` is an **async serial drain**: an `async` handler that
+`await`s the verify of one `%unemit` before taking the next. The whole delivery
+path is awaited end to end — the carrier `recv` awaits `Peeroleum_deliver` awaits
+`pump_inbox` awaits the digest — so the async verify resolves **inside** the
+carrier's awaited `post_do`, i.e. still within the beliefs mutex / Atime (§15),
+keeping the mock deterministic. (This is why the body digest no longer needs to be
+a synchronous FNV hash: going async dissolved that constraint, so `body_hash`
+became a signable sha256.)
 
 A `%unemit:N` walks:
 
@@ -467,7 +481,11 @@ The serial guarantee, stated plainly:
 the handler refuses to run handlings in parallel.
 There is never more than one `%unemit:N,handling` under a Pier's inbox.
 A second frame arriving mid-handle sits at `%queued` until the first reaches a
-terminal mark (`%done` or `%error`).
+terminal mark (`%done` or `%error`). Concretely: a re-entrant `Peeroleum_deliver`
+firing while the live drain is parked on an `await` sees the `%handling` unemit,
+bows out on the lock, and leaves its frame at `%queued`; single-threaded JS then
+returns control to the parked drain, whose `while` loop finds and handles the
+newly-queued frame before it returns. No frame is lost and order is preserved.
 
 `%queued` is the "unhandled-yet" marking the brief asked for — backlog you can
 see in the snap. In mock mode delivery is instant so backlog rarely persists into
@@ -695,14 +713,14 @@ ack stamps `%acked`; `%req:send` finishes.
 State flows up the hierarchy in principle — a Pier's `%faulty` summarised to its
 Peering, a Peering's open-count to p2pman — so each tier sees the tier below without
 walking it. (The `%exports`/`%aim` hoisting once specced for this is **not built**;
-no consumer needs it until p2pman is real — see §12.)
+no consumer needs it until p2pman is real.)
 
 ---
 
 ## 12. Step-boundary janitorial
 
-The brief wanted "a time to do things" — clear `w/**%log`, cull outbox, hoist
-exports. That time already exists: `_resolve_runstepped` runs on Run after each
+The brief wanted "a time to do things" — clear `w/**%log` and cull outbox. That
+time already exists: `_resolve_runstepped` runs on Run after each
 snap is committed (`Story.svelte` `advance` -> `_resolve_runstepped`). We extend
 it, and we register per-w page-turning callbacks.
 
@@ -726,13 +744,6 @@ boundary always shows the send/receive that happened during the step. That is th
 stamps during the step (pre-boundary); do not move the cull earlier or it would
 strip the traffic the witness and the snap depend on.**
 
-### 12.2 Hoisting exports — VOIDED (not built)
-
-The `%exports`/`%aim` hoisting once specced here (a particle declaring a summary to
-lift to its parent for legibility) is **not in the engine**. No consumer needs the
-Peering-level summary until `%req:p2pman` is real (handover heading 11). Deferred,
-not designed.
-
 ### 12.3 Munging times
 
 Where a real run writes `header.time` or `last_seen` into a particle that reaches
@@ -742,29 +753,13 @@ live value on `c` for behaviour). Mock runs avoid times entirely, so their snaps
 are naturally stable; real runs are stable after munging. The brief accepted this:
 "we'll have to."
 
-### 12.4 want_savepoint / %waits_savepoint — VOIDED (not built)
-
-`want_savepoint`/`%waits_savepoint` (force a snap before the boundary culls a
-just-sent item) is **not in the engine**. Under the mock the `post_do` chain drives
-the round-trip within a step, so the snap-visibility guarantee it bought isn't
-needed yet; a real transport would reach for a `%ttlilt`, not this. Deferred.
-
 ---
 
-## 13. Per-req demand for time — VOIDED (ttlilt is the realised mechanism)
+## 13. Per-req demand for time — removed (see §3.2)
 
-This whole section specced a `%req:waiting` demand client + a computed-max global
-`leave_running_until` + `reqy` as the demand client. **None of it was built**, and
-all three subjects are gone: `reqy()` is deleted (§3); `%req:waiting` and the
-computed-max global exist in no code. The realised mechanism is a one-shot `%ttlilt`
-(`H.i_req_ttlilt(req, secs, {waiting})`, `Hovercraft.svelte:380`) — owned demand on a
-req **that finishes**: it advises how long to hold the snap open for that req to reach
-`finished`, and is dropped on `finish()` (polled-not-mutated, no write-write race). A
-req that never finishes has nothing for a ttlilt to release — so an `eternal` foreman
-(self-settling via `req.sc.ok=1`) carries none. Already what the live system runs on
-(LiesStore/Lang/LiesCortex). The floor itself uses none
-(`Tribunal.g` deliberately avoids it; it self-drives on `feebly_ponder` + `post_do`
-+ step-pacing). See handover heading 5 (CLOSED) — don't rebuild this.
+The `%req:waiting` demand-client + computed-max-global (`leave_running_until`) design
+was never built; all three subjects (`%req:waiting`, the global, `reqy`) are gone.
+Waiting is a `%ttlilt` on a req that finishes — folded into §3.2.
 
 ---
 

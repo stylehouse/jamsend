@@ -22,8 +22,23 @@
     import DocRow           from "$lib/O/ui/DocRow.svelte"
     import PeelInput        from "$lib/O/ui/PeelInput.svelte"
     import Vexpandy         from "$lib/O/ui/Vexpandy.svelte"
+    import Actions         from "$lib/O/ui/Actions.svelte"
+    import { browserTrustedPubs } from "$lib/p2p/cluster_trust"
 
     let { H }: { H: House } = $props()
+
+    // Warn when this editor tab can't sign: the cluster is enforced (trusted pubs baked in) but no
+    //  cluster signing key is on the top House's .stashed, so every gen_write is rejected. Reactive to
+    //   .stashed, so the warning clears the moment a key is set.
+    const no_cluster_key = $derived.by(() => {
+        if (role !== 'editor' || !browserTrustedPubs().length) return false
+        return !((H.top_House?.() as any)?.stashed?.cluster_idento)   // top House's stashed (the 🪪 Id hatch sets it)
+    })
+    // The 🪪 Id action — the SAME off-snap recipe Auto registered on the top House (its fn opens the
+    //  IdHatch). Fed to <Actions> so the popup carries the button itself, not just a "click Id" hint.
+    const id_action = $derived(
+        ((H.top_House?.() as any)?.o?.({ watched: 'actions' })[0]?.o({ action: 1, role: 'identity' }) ?? []) as TheC[]
+    )
 
     // ── state ─────────────────────────────────────────────────────────
     let Lies:        TheC | undefined = $state()
@@ -305,6 +320,18 @@
          runner, a runner watches its editor.  It carries the headline verdict glance — the
          step-level "this test passes" badge ({passed}/{total} {Book}) — and opens by default so a
          glance answers "did my pushed code pass?" without a click. -->
+    <!-- Cluster-identity alert — a SurprisePopup-style notice pinned to the bottom of the panel (by
+         the runner/cluster status card), so a keyless editor — which can't sign gen_write and is
+         silently rejected by the relay — is impossible to miss. Reactive to .stashed: clears the
+         instant the 🪪 Id hatch loads a key. -->
+    {#if no_cluster_key}
+        <div class="ls-nokey" role="alert"
+             title="this editor has no cluster signing key — gen_write is rejected unsigned. Load one →">
+            <span class="ls-nokey-hd">⚠ no cluster identity</span>
+            <Actions N={id_action} />
+        </div>
+    {/if}
+
     {#if expect_peer}
         <div class="ls-health" class:ls-health-live={peer_live} class:ls-health-open={health_open}>
             <div class="ls-health-line">
@@ -363,6 +390,17 @@
     .ls-role-runner { color: #c4aaee; background: rgba(196, 170, 238, 0.12) }
     .ls-role-editor { color: #6ad0c0; background: rgba(106, 208, 192, 0.12) }
     .ls-role-lies   { color: #888;    background: rgba(136, 136, 136, 0.12) }
+    /* SurprisePopup-style: sticks to the bottom of the panel so it stays in view (by the status
+       card) however the waft list scrolls, with a loud border + shadow so it reads as a popup. */
+    .ls-nokey {
+        position: sticky; bottom: 0; z-index: 5;
+        margin: 0.4rem 0 0; padding: 0.55rem 0.75rem; border-radius: 5px; font-size: 1rem;
+        display: flex; align-items: center; gap: 0.5rem;
+        color: #f0c674; background: #2a1d08; border: 1px solid rgba(240, 198, 116, 0.55);
+        box-shadow: 0 -2px 14px rgba(0,0,0,0.5);
+    }
+    .ls-nokey-hd { font-weight: bold; }
+    .ls-nokey :global(.btn) { font-size: 1.15rem; padding: 0.2rem 0.6rem; }
     /* ── connection-health card — bottom-right channel status, ex-Lang minimap floater ── */
     .ls-health {
         position: absolute;

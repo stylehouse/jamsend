@@ -30,7 +30,16 @@ noop culled to `%recent`, no `%faulty`. (Mechanism is in spec §7/§8 now.) **St
 
 **Step 6 caveat:** the `toc.snap` step lines run only through `step=5`. Step 6 (`Lake_trial_confirm` →
 `%reputation:good`) is in code and was green in the older `006.snap` (Jun 18) but is **not a current
-recorded gate** — re-run + Accept/Resnapture steps 2–6.
+recorded gate** — re-run + Accept/Resnapture steps 2–6. (Step 7, the binary exercise, also needs re-adding
+to `toc.snap` to run; its `body_hash` is now sha256, so the old step-7 dige is stale either way.)
+
+**This session — the delivery path went async all the way.** `Peeroleum_pump_inbox` is now an async serial
+drain, `Peeroleum_deliver` + carrier `recv` await it, and the body digest is `crypto.subtle` **sha256**
+(was a sync FNV hack that only existed to keep the inbox synchronous). The sha256 makes `body_hash` signable
+(trust layer). All three `.g` compile clean, gen `.go` regenerated, and the Story driver boots+runs to
+completion headless — but **PereStartuppity's headless fixtures are blank right now**, so the dige gate can't
+confirm it; verify on **:9091**. Spec §4.2 + §7.3 updated. The endorsed next move (fold inbox into the `%req`
+engine via `%req:1,unemit` + `%req:1,Pier,prepub`) is written up under heading 4.
 
 ### → START HERE: real websocket transport (heading 10) — editor↔runner is its first customer
 
@@ -255,6 +264,21 @@ realised helpers: `Pier_next_seq` (monotone per-Pier on `.c`), `Peeroleum_send`/
 trust lifecycle, both `%req:handshake,finished`). Still open (deferred, not blocking): production wiring of
 acks/sends through `%req:send` (spec §11.3) — under the mock the `post_do` chain drives the round-trip, so the
 deferred `want_savepoint`/exports (spec §12, voided) aren't needed yet.
+- **The inbox is now an async serial drain** (was a sync recursive pump). `Peeroleum_pump_inbox` is `async`,
+   `await`s the verify of each `%unemit` (sha256 body hash; header-sign verify lands here too), and loops with a
+    `while` instead of tail recursion; the `%handling` lock makes a re-entrant `deliver` (firing while the drain
+     is parked on an `await`) bow out and leave its frame `%queued` for the live loop to pick up. Order preserved,
+      no frame lost (single-threaded JS). Spec §7.3.
+- **NEXT (endorsed, not built): fold the inbox into the `%req` engine.** Make each inbound frame a serial
+   `%req:1,unemit` and each Pier a `%req:1,Pier,prepub` (keeping the `Pier:1` marker so `o({Pier:1})` still
+    finds it). Then `inbox.do()` IS the serial drain — `do()`'s `for (…) await _req_do_one` already runs reqs
+     one-at-a-time, in arrival order (keep them maz-less), awaiting each; verify becomes a plain awaited step in
+      the unemit-req's `do_fn`; `%queued`/`%handling` collapse into `needs_work`/`finished` + a small "verify in
+       flight" idempotency guard. The two changes compose: `oai` auto-wires `req.c.up` down `Pier → unemit`, so
+        the c.up-bomb (a `%req` below `w` silently never pumps unless `c.up` is stamped — see the nested-req note)
+         is gone for the whole inbox. Gotcha: `do()` resolves its handler by climbing `c.up` to the House, so the
+          `inbox`/`Pier`/`Peering`/`w` chain must still reach Mundo (the handshake reqs already rely on this).
+           Re-shapes the inbox snaps (unemits gain `req:N`) → re-record. This is the floor `%req:1,unemit` was for.
 
 ### 5 — per-req demand for time  `[x]`  CLOSED — `ttlilt` is the realised waiting-req
 `%ttlilt` (`Hovercraft.svelte:380`) IS spec §13's per-req owned demand (dropped on `finish()`,
@@ -281,15 +305,15 @@ a tweaked hello-sign. Spec §4.2, §15.
        buffer rides to PeerJS as one ArrayBuffer (whole-buffer efficiency). **Hybrid**: no-buffer frames (hello/
         trust/ack/noop/control) stay text JSON; only buffer frames go binary. The **mock** serialises nothing —
          it carries `{header, buffer:Uint8Array}` by reference. Buffer off-snap; only `body_hash`+`body_len` snap.
-- **Digest is SYNCHRONOUS, not crypto sha256 — on purpose.** The only hashes reachable to ghost code are
-   async (`crypto.subtle`/`Y.svelte` sha256 are Promises), and the carrier `recv` does NOT await
-    `Peeroleum_deliver`, so an awaited digest resolves AFTER the beliefs mutex releases (`_really_answer_calls`
-     holds it only across `await e.sc.fn(e)`) — escaping Atime and breaking the mock's determinism + the §7.3
-      serial lock. So `Peeroleum_body_digest` is a deterministic sync content digest (FNV-1a, hex over the raw
-       buffer bytes); `Peeroleum_pump_inbox` recomputes it from `frame.buffer` and string-compares to
-        `header.body_hash`. It still trips on any flipped byte (all heading 6 asks). Mismatch →
-         `%error:bad-body-hash` → `%faulty`, the same path as a bad sign (no bifurcated error paths). crypto
-          sha256 + one-sig signing (header commits to the buffer via body_hash) land with the trust layer.
+- **Digest is sha256, async all the way (was sync FNV).** The whole delivery path is now awaited end to end:
+   the carrier `recv` awaits `Peeroleum_deliver` awaits `Peeroleum_pump_inbox` (an async serial drain) awaits
+    `Peeroleum_body_digest` (await `crypto.subtle.digest('SHA-256', …)`). Because the carrier's `post_do`
+     callback (`async () => { await partner.recv(frame) }`) is awaited inside the beliefs mutex
+      (`_really_answer_calls` holds it across `await e.sc.fn(e)`), the digest resolves **within** Atime — the
+       reason the FNV sync hack existed is gone. Mismatch → `%error:bad-body-hash` → `%faulty`, same path as a
+        bad sign (no bifurcated error paths). sha256 makes `body_hash` **signable** — one-sig signing (header
+         commits to the buffer via body_hash) now drops in with the trust layer, no second hash. Matches
+          `cluster_trust.ts` `sha256hex` in strength (string-body vs raw-buffer is the only difference).
 - **`test_binary` dispatches via the `Peeroleum_on` consumer registry** (§5 ask 1), not a hardcoded branch in
    pump_inbox; the harness registers it. Sent only AFTER handshake (the pre-Ud gate rejects non-hello/noop).
 - **Carriers grow a binary branch.** `Socket_real` (Tribunal.g) encodes/decodes the `[header]\n[buffer]`

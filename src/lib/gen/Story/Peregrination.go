@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Peregrination(): string { return 'a23bc110db3251ac' },
+    Ghostmeta_Ghost_Story_Peregrination(): string { return '86f1f3b223cc82aa' },
 
 
 // PereStaple — the Peeroleum p2p test (the outer test layer), and the first of a
@@ -70,6 +70,8 @@ async Lake_drive(w, req) {
             await this.Lake_trial_fallback(w)
         } else if (n === 6) {
             await this.Lake_trial_confirm(w)
+        } else if (n === 7) {
+            await this.Lake_exercise_binary(w)
         }
     }
     await this.Lake_pump_handshakes(w)
@@ -83,8 +85,7 @@ async Lake_drive(w, req) {
 //    .is()'d (identity|data|/* untouched), and it no-ops once already in order. A
 //     plain place({A:1},…) can't do this — replace() lands the matched set LAST, so
 //      it'd sink the A's to the bottom; reordering the whole /* is the only way up.
-async Lake_order(w) {
-    const H = this
+async Lake_order(w) { const H = this;
     let As = this.o({A: 1})
     if (As.length < 2) return
     let peer = (a) => (a.sc.A === 'Alice' || a.sc.A === 'Bob') ? 0 : 1
@@ -236,6 +237,33 @@ async Lake_trial_confirm(w) {
     this.Tribunal_reputation_good(Bobw)
 
 },
+// Lake_exercise_binary -- step 7: the first transport-agnostic exercise (heading 7). With the
+//  handshake long settled (Bob has %Ud, so the pre-Ud inbox gate admits the frame), send one
+//   binary frame A->B: a fixed 64-byte fixture as RAW bytes on frame.buffer (spec §4.2 — no
+//    base64), the header carrying body_hash + body_len. Bob's serial inbox recomputes the body digest
+//     (Peeroleum_pump_inbox), runs the registered test_binary handler (stamps %got_binary), and
+//      acks -- so the witness sees the full round-trip (Bob %got_binary + Alice's emit %acked, no
+//       %faulty). The SAME exercise runs over ANY carrier: it reads whatever %active_transport
+//        points at (here the websocket the trial fell to at step 5). Raw JS: an object frame, a
+//         Uint8Array fixture, and an inline handler are all transport seams. Fired once at step 7.
+async Lake_exercise_binary(w) {
+    w.i({reached: "step_7"})
+    let Alicew = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}])
+    let Bobw = this._o_drill1(this, [{sc: {A: "Bob"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}])
+    if (!Alicew || !Bobw) return
+    let AlicePier = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
+    if (!AlicePier) return
+    // Bob dispatches the app frame through the consumer seam (spec §5 ask 1): a verified
+    //  test_binary stamps %got_binary on his Pier, a durable witness target that survives the cull.
+    this.Peeroleum_on(Bobw, 'test_binary', (cw, pier, frame) => pier.i({got_binary: 1, seq: frame.header.seq, body_len: frame.header.body_len}))
+    // a fixed 64-byte fixture -> deterministic buffer, digest, snap.
+    let bytes = new Uint8Array(64)
+    for (let i = 0; i < 64; i++) bytes[i] = (i * 7 + 3) & 0xff
+    let bh = await this.Peeroleum_body_digest(bytes)
+    let s = this.Pier_next_seq(AlicePier)
+    this.Peeroleum_send(Alicew, {header: {type: 'test_binary', from: 'alice', to: 'bob', seq: s, body_hash: bh, body_len: bytes.length}, buffer: bytes})
+
+},
 // Lake_witness — the readable assertion, polled each pass: once Bob's inbox
 //  shows a handled (%done) frame, stamp %witnessed:step_2 (the step rides in the
 //   value — `step` is the Story mainkey, so it can't be a key). Idempotent via the probe.
@@ -262,6 +290,16 @@ Lake_witness(w) {
     let Alicews = Alicew?.o({transport:1, type:'websocket'})[0]
     let Bobws = Bobw?.o({transport:1, type:'websocket'})[0]
     if (Alicews?.oa({reputation:'good'}) && Bobws?.oa({reputation:'good'}) && !(w.oa({witnessed: "step_6"}))) w.i({witnessed: "step_6"})
+    // step 7 (send_binary exercise): Bob received + verified the binary frame (%got_binary stamped
+    //  by the registered test_binary handler), and Alice's emit came back %acked -- live, or once
+    //   the boundary culls it, present in %recent (which holds ONLY acked emits). The first exercise
+    //    over the transport spine; the value names the exercise, not a step number.
+    let Bobgot = BobPier?.oa({got_binary:1})
+    let Aliceob = AlicePier?.o({outbox:1})[0]
+    let binlive = Aliceob?.o({type:'test_binary'})[0]
+    let binrecent = Aliceob?.o({recent:1})[0]?.o({type:'test_binary'})[0]
+    let binacked = (binlive && binlive.sc.acked) || !!binrecent
+    if (Bobgot && binacked && !(w.oa({witnessed: "send_binary"}))) w.i({witnessed: "send_binary"})
 
 },
 

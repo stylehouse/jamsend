@@ -256,7 +256,7 @@ import { LANG_COMPILE } from "./lang/compile"
                 throw 'no language parser wired on this dock (lang() not resolved onto its EditorState yet) — refusing to emit raw .g passthrough'
             const lines = this.Lang_compile_collect(state, job, this.Lang_stho_parser(state))
 
-            const body = lines.map(l => l.text).join('\n')
+            const { body, header, tail } = this.Lang_split_compiled(lines)
 
             let ghost: { ghostmeta_name: string, source_dige: string } | undefined
             if (gen_path) {
@@ -267,7 +267,7 @@ import { LANG_COMPILE } from "./lang/compile"
                 source_dige = await dig(state.doc.sliceString(0))
                 ghost = { ghostmeta_name: H.Lang_ghostmeta_name(dock.sc.dock as string), source_dige }
             }
-            source = this.Lang_compile_render_module(body, ghost)
+            source = this.Lang_compile_render_module(body, ghost, { header, tail })
             // Prove the emitted JS actually parses before anyone trusts it — the
             //  run-time twin of scripts/lang-compile.ts's esbuild gate.  A raw-JS
             //   passthrough can mangle a brace into invalid JS even WITH a parser

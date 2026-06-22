@@ -1,22 +1,22 @@
 Snap:H
   H:LakeTiles,Run
     A:Lies
-      self,round=15	{"mung":["age"]}
+      self,round=17	{"mung":["age"]}
       w:Lies
         Opt
           nowriting:^Ghost
           dontSnapGhostList
-        self,round=15	{"mung":["age"]}
+        self,round=17	{"mung":["age"]}
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/LakeTiles/Waftily/toc.snap,waft_path:Story/LakeTiles/Waftily
             known,dige:1f545ca0106605b0,kind:read	{"mung":["at"]}
           Good,type:text/Doc,path:Ghost/test/Story/Lake/LakeTiles.g
-            known,dige:e633c97628b42c32,kind:read	{"mung":["at"]}
+            known,dige:10aa9324a9bc08e8,kind:read	{"mung":["at"]}
         examining	{"loopy":1}
           req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
           Spotlight	{"ref":{"src":"%What:labelofaWhat"}}
         req:Cortex,eternal,maz=5,ok
-          req:Codebit,path:Ghost/test/Story/Lake/LakeTiles.g,maz=2,gen_path:gen/test/Story/Lake/LakeTiles.go,source_dige:e633c97628b42c32,dige:933f80e4094f8af3,permanent,write_finished,finished
+          req:Codebit,path:Ghost/test/Story/Lake/LakeTiles.g,maz=2,gen_path:gen/test/Story/Lake/LakeTiles.go,source_dige:10aa9324a9bc08e8,dige:32c599f0bc85de82,permanent,write_finished,finished
         Waft:Story/LakeTiles/Waftily
           What:labelofaWhat
             Doc:Ghost/test/Story/Lake/LakeTiles.g
@@ -33,17 +33,17 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781952245057,kind:cold
-          want=1781952245087,kind:cold
-          want=1781952245240,kind:cold,resolved
+          want=1782105618572,kind:cold
+          want=1782105618624,kind:cold
+          want=1782105618776,kind:cold,resolved
         o_elvis:dock_askies
         see:🗂 1 doc · 1 Waft
     A:Lang
-      self,round=18	{"mung":["age"]}
+      self,round=19	{"mung":["age"]}
       w:Lang
         Opt
           txtsyntaxdump
-        self,round=18	{"mung":["age"]}
+        self,round=19	{"mung":["age"]}
         model,cyto_dir
           Line=5,line_from=74,line_to=98,str:    let la = i hut/$toot,the_bm_bm_98_132
             Name,from=78,to=81,str:let
@@ -76,10 +76,10 @@ Snap:H
                 PathSep,from=108,to=109,str:/
                 {"Leg":1,"from":109,"to":137,"str":"although:1,they,can,be,mixed"}
                   {"PeelGroup":1,"from":109,"to":137,"str":"although:1,they,can,be,mixed"}
-                    {"PeelItem":1,"from":109,"to":119,"str":"although:1"}
+                    PeelItem,from=109,to=119,str:although:1
                       PeelKey,from=109,to=117,str:although
                         Name,from=109,to=117,str:although
-                      {"PathColon":1,"from":117,"to":118,"str":":"}
+                      PathColon,from=117,to=118,str::
                       PeelVal,from=118,to=119,str:1
                         Number,from=118,to=119,str:1
                     {"PathComma":1,"from":119,"to":120,"str":","}
@@ -104,7 +104,7 @@ Snap:H
               req:text_loaded,maz=3,finished
               req:text_mutated,maz=2,eternal
               req:compile,maz=2,finished
-            Text,dige:e633c97628b42c32,disk_dige:e633c97628b42c32,disk_rev
+            Text,dige:10aa9324a9bc08e8,disk_dige:10aa9324a9bc08e8,disk_rev
             Compile
               Map
                 def,method:theCompiledStuff,line=2,rel_from=17,rel_to=34
@@ -135,24 +135,29 @@ Snap:H
                 call,method:severally,line=242,via:ampTiles,rel_from=9982,rel_to=9992
                 {"controlflow":1,"keyword":"if","title":"(a > b) H.laterally(A,w,1)","line":251,"via":"ampTiles","rel_from":10439,"rel_to":10442}
                 controlflow,keyword:if,title:a > b,line=255,via:ampTiles,rel_from=10634,rel_to=10637
-                {"controlflow":1,"keyword":"if","title":"(a > b) i %reached:also","line":257,"via":"ampTiles","rel_from":10671,"rel_to":10674}
+                controlflow,keyword:if,title:(a > b) i %reached:also,line=257,via:ampTiles,rel_from=10671,rel_to=10674
                 def,method:obtainTiles,line=260,rel_from=10762,rel_to=10774
-                {"controlflow":1,"keyword":"if","title":"(s && !(oa %taken)) i %seat:free","line":269,"via":"obtainTiles","rel_from":11195,"rel_to":11198}
+                controlflow,keyword:if,title:(s && !(oa %taken)) i %seat:free,line=269,via:obtainTiles,rel_from=11195,rel_to=11198
                 def,method:captureOutTiles,line=273,rel_from=11393,rel_to=11409
-              time,compile=0.074,all=0.894,write=0
-              Output,gen_path:gen/test/Story/Lake/LakeTiles.go,dige:933f80e4094f8af3,source_dige:e633c97628b42c32
+                def,magic,method:IMPORT,line=284,rel_from=11924,rel_to=11931
+                def,magic,method:RENDER,line=288,rel_from=12060,rel_to=12067
+              time,compile=0.048,all=0.624,write=0
+              Output,gen_path:gen/test/Story/Lake/LakeTiles.go,dige:32c599f0bc85de82,source_dige:10aa9324a9bc08e8
                source: |
                  <script lang="ts">
                      // GENERATED by Lang compile — do not edit by hand.
                      import { TheC } from "$lib/data/Stuff.svelte"
                      import { onMount } from "svelte"
                  
+                 import Peeroleum from "$lib/gen/N/Peeroleum.go"
+                 import { browserTrustedPubs, prepubOf } from "$lib/p2p/cluster_trust"
+                 
                      let { H } = $props()
                  
                      onMount(async () => {
                      await H.eatfunc({
                  
-                     Ghostmeta_Ghost_test_Story_Lake_LakeTiles(): string { return 'e633c97628b42c32' },
+                     Ghostmeta_Ghost_test_Story_Lake_LakeTiles(): string { return '10aa9324a9bc08e8' },
                  
                  // yeti etc!!!!!
                  theCompiledStuff(A,w) {
@@ -461,6 +466,9 @@ Snap:H
                      })
                      })
                  </script>
+                 
+                 <Peeroleum {H} />
+                 
             Pmirrors
               Pmirror,src_Waft:Story/LakeTiles/Waftily,spec:nothings	{"ref":{"src_Point":"%Point:nothings"}}
               Pmirror,src_Waft:Story/LakeTiles/Waftily,spec:nothinging	{"ref":{"src_Point":"%Point:nothinging"}}
@@ -499,6 +507,8 @@ Snap:H
               Mapule,kind:def,key:obtainTiles,depth=0,line=260,from=10762,to=10774
               Mapule,kind:cf,key:if,depth=0,line=269,from=11195,to=11198
               Mapule,kind:def,key:captureOutTiles,depth=0,line=273,from=11393,to=11409
+              Mapule,kind:def,key:IMPORT,depth=0,line=284,from=11924,to=11931
+              Mapule,kind:def,key:RENDER,depth=0,line=288,from=12060,to=12067
             {"bookmark":"bm_98_132","from":98,"to":132,"label":" o hut/although:1,th"}
         scheme:req
           lematch	{"ref":{"sc_has":"Object()"}}
@@ -506,18 +516,18 @@ Snap:H
         Languinio	{"loopy":2}
           Interest:Trail,waft:Story/LakeTiles/Waftily,lens:NaviCado,presence:active,state:locked,in_Doc:Ghost/test/Story/Lake/LakeTiles.g	{"ref":{"src":"%What:labelofaWhat"}}
             cursor,what:Story/LakeTiles/Waftily,doc:Story/LakeTiles/Waftily/doc0,depth=0
-            MapReport,n_def=11,n_call=9,n_region=0,n_cf=12
+            MapReport,n_def=13,n_call=9,n_region=0,n_cf=12
           ActiveInterest,kind:Trail,waft:Story/LakeTiles/Waftily
           dock,active	{"loopy":0,"hid":1}
           Change
-            backend,dige:e633c
-            storage,dige:e633c
-            compile,dige:e633c,secs=0.074,dim,pending
+            backend,dige:10aa9
+            storage,dige:10aa9
+            compile,dige:10aa9,secs=0.048,dim,pending
         req:workon,auto_push	{"ref":{"w":"%w:Lang"}}
-          {"req":"understanding","maz":3,"permanent":1,"sig":"1:13:0:0","what":"labelofaWhat","finished":1}
+          req:understanding,maz=3,permanent,sig:1:13:0:0,what:labelofaWhat,finished
           req:ingredients,maz=2,permanent,sig:Ghost/test/Story/Lake/LakeTiles.g,finished
             req:furnishing,path:Ghost/test/Story/Lake/LakeTiles.g,permanent,asked,finished
-          {"req":"instrumentation","permanent":1,"sig":"Ghost/test/Story/Lake/LakeTiles.g:e633c97628b42c32:1:29","have_Map":1,"n_pmirrors":3,"finished":1}
+          req:instrumentation,permanent,sig:Ghost/test/Story/Lake/LakeTiles.g:10aa9324a9bc08e8:1:29,have_Map,n_pmirrors=3,finished
         req:waft_roster,eternal,subscribed
         o_elvis:Lies_compile_settled
         o_elvis:dock_content
@@ -547,11 +557,11 @@ Snap:H
         received,editorBegins,doc:Ghost/test/Story/Lake/LakeTiles.g
         see:🟦 tiles 1 bookmarks
     A:Pantheate
-      self,round=4	{"mung":["age"]}
+      self,round=6	{"mung":["age"]}
       w:Pantheate
-        self,round=4	{"mung":["age"]}
+        self,round=6	{"mung":["age"]}
         include:gen/test/Story/Lake/LakeTiles.go
-        req:include,gen_path:gen/test/Story/Lake/LakeTiles.go,path:Ghost/test/Story/Lake/LakeTiles.g,source_dige:e633c97628b42c32,ghostmeta_name:Ghostmeta_Ghost_test_Story_Lake_LakeTiles,permanent,live_dige:e633c97628b42c32,finished
+        req:include,gen_path:gen/test/Story/Lake/LakeTiles.go,path:Ghost/test/Story/Lake/LakeTiles.g,source_dige:10aa9324a9bc08e8,ghostmeta_name:Ghostmeta_Ghost_test_Story_Lake_LakeTiles,permanent,live_dige:10aa9324a9bc08e8,finished
         o_elvis:Ghost_update_notify
     watched:ave
       examining	{"loopy":1,"hid":1}
@@ -564,7 +574,7 @@ Snap:H
       action,role:debookmark,label:-marks	{"ref":{"fn":"Function()"}}
       action,role:enbookmark,label:+marks	{"ref":{"fn":"Function()"}}
       action,role:compile,label:compile	{"ref":{"fn":"Function()"}}
-      action,role:lang_pick,kind:dropdown,label:language,icon:✎,value:stho	{"ref":{"options":"[Object(),Object()]","on_pick":"Function()"}}
+      action,role:lang_pick,kind:dropdown,label:language,icon:✎,value:stho	{"ref":{"options":"[Object(),Object(),Object()]","on_pick":"Function()"}}
       action,role:gen_parser,label:gen,icon:⚙,disabled:true	{"ref":{"fn":"Function()"}}
       action,role:compo,label:compo,icon:compo,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:nogen,label:nogen,icon:nogen,cls:toggle-off	{"ref":{"fn":"Function()"}}

@@ -4,6 +4,7 @@
     import { House } from "$lib/O/Housing.svelte"
     import { keyser } from "$lib/data/Stuff.svelte"
     import Actions from "$lib/O/ui/Actions.svelte"
+    import IdHatch from "$lib/O/ui/IdHatch.svelte"
     import Stuffing from "$lib/data/Stuffing.svelte"
     import { onDestroy, onMount } from "svelte";
     import NaviScroll from "./ui/NaviScroll.svelte";
@@ -114,12 +115,6 @@
         H?.stop()
     })
 
-    function upthings() {
-        H.stashed.things ||= 0
-        H.stashed.things += 1
-        H.i_elvisto(H, 'think')
-    }
-
     // Per-House toggle for the C** dump (the Stuffing tree).  Stored on the
     //  Dexie-backed .stashed, not in Opt/the C tree — it's a viewer preference,
     //   not Book state, so it shouldn't snap or bleed across Books.  Following
@@ -184,30 +179,27 @@
                     </div>
                 {/if}
 
-                {#if hasActions}
-                    <div class="house-actions">
-                        <Actions N={house.actions.ob({ action: 1 })} />
-                    </div>
-                {/if}
+                <div class="house-actions">
+                    {#if hasActions}<Actions N={house.actions.ob({ action: 1 })} />{/if}
+                    {#if house.stashed}
+                        <button class="cstar" class:on={house.stashed.showC}
+                            title="show this House's C** (Stuffing) tree"
+                            onclick={() => toggle_C(house)}>C**</button>
+                    {/if}
+                </div>
             </div>
             {#each house.UIs.ob({ UI: 1 }) as uiC (keyser(uiC.sc))}
                 <svelte:component this={uiC.sc.component} H={house} />
             {/each}
-            {#if house.stashed}
-                <button class="cstar" class:on={house.stashed.showC}
-                    title="show this House's C** tree"
-                    onclick={() => toggle_C(house)}>C**</button>
-                {#if house.stashed.showC}
-                    <Stuffing mem={house.imem('current')} stuff={house} H={house} M={house} />
-                {/if}
+            {#if house.stashed?.showC}
+                <Stuffing mem={house.imem('current')} stuff={house} H={house} M={house} />
             {/if}
         {/each}
     {/snippet}
 </NaviScroll>
 
-{#if H?.stashed}
-    <button onclick={upthings}>upthings ({H.stashed?.things ?? 0})</button>
-    <button onclick={go_busily}>think</button>
+{#if H?.stashed?.showId}
+    <IdHatch {H} />
 {/if}
 
 {#if H}
@@ -217,10 +209,20 @@
 <style>
     .ungood { color: red; }
 
+    /* Sits in the .house-actions row beside the data-driven <Actions>; styled to match them
+       (a toggle: faint when off, solid when on) so the C** dump reads as just another action. */
     .cstar {
-        font-size: 0.7rem;
-        opacity: 0.5;
+        padding: 0.3rem 0.6rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        line-height: 0.8;
+        font-size: 0.8rem;
+        background: #2196F3;
+        color: white;
+        opacity: 0.45;
     }
+    .cstar:hover { opacity: 0.75; }
     .cstar.on { opacity: 1; }
 
     .disk-gate {

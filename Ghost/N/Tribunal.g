@@ -39,8 +39,8 @@ Socket(w):
     // < the live port is an object on .c (a transport seam): a working shared-queue
     //    port, partner paired across the two sides by the wrangler (cf transport()).
     let port = { type: 'websocket', partner: null,
-        send(frame) { H.post_do(async () => this.partner?.recv(frame)) },
-        recv(frame) { H.Peeroleum_deliver(w, frame) } }
+        send(frame) { H.post_do(async () => { await this.partner?.recv(frame) }) },
+        recv(frame) { return H.Peeroleum_deliver(w, frame) } }
     w.o({ transport: 1, type: 'websocket' })[0].c.port = port
 
 // Socket_real — the REAL websocket carrier (heading 10), for actual peers across two origins
@@ -98,21 +98,21 @@ Socket_real(w):
             if (!noisy(h)) console.log(`🛰 ws SEND ${h ? h.type + (frame.buffer ? ' +buf=' + frame.buffer.length : '') + ' seq=' + h.seq + ' → ' + h.to : '(control)'}`)
             wire(frame)
         },
-        recv(frame) { H.Peeroleum_deliver(w, frame) },
+        recv(frame) { return H.Peeroleum_deliver(w, frame) },
         close() { try { ws.close() } catch (e) {} },
     }
     ws.onopen = () => { console.log(`🛰 ws OPEN ${url} — flushing ${pending.length} buffered`); let q = pending.splice(0); for (const f of q) wire(f) }
     ws.onclose = (ev) => console.log(`🛰 ws CLOSE code=${ev.code} clean=${ev.wasClean}`)
     ws.onerror = () => console.log(`🛰 ws ERROR (relay down? wrong origin?)`)
     ws.onmessage = (ev) => H.post_do(async () => {
-        // A binary message is a buffer-carrying frame (length-prefixed); decode it to
+        // A binary message is a buffer-carrying frame ([header JSON]\n[raw buffer]); decode it to
         //  {header, buffer} and deliver. Control + no-buffer frames arrive as text JSON below.
         if (ev.data instanceof ArrayBuffer) {
             let frame
             try { frame = decode_binary(ev.data) } catch (e) { console.warn('🛰 ws RECV binary decode failed', e); return }
             let bh = frame.header
             console.log(`🛰 ws RECV ${bh.type} seq=${bh.seq} +buf=${frame.buffer.length} ← ${bh.from}`)
-            port.recv(frame)
+            await port.recv(frame)
             return
         }
         let frame
@@ -138,7 +138,7 @@ Socket_real(w):
         }
         let h = frame && frame.header
         if (!noisy(h)) console.log(`🛰 ws RECV ${h ? h.type + ' seq=' + h.seq + ' ← ' + h.from : '(headerless, dropped)'}`)
-        port.recv(frame)
+        await port.recv(frame)
     })
     w.o({ transport: 1, type: 'websocket' })[0].c.port = port
 

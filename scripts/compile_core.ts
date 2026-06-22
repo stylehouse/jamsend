@@ -130,13 +130,13 @@ export async function compileGo(
 		const job = mkC({ Compile: 1 })
 
 		const lines = C.Lang_compile_collect(state, job, C.Lang_stho_parser(state))
-		const body = lines.map((l: any) => l.text).join('\n')
+		const { body, header, tail } = C.Lang_split_compiled(lines)
 		// source_dige: a written/manifested .go bakes the real dige into Ghostmeta_<name>() and the
 		//  runner compares it against the wanted version, so dig the real source text exactly as the
 		//   in-app editor does (dig(state.doc.sliceString(0))). A bare parse-check uses 'cli'.
 		const dige = wantDige ? await dig(text) : 'cli'
 		const ghost = { ghostmeta_name: C.Lang_ghostmeta_name(file), source_dige: dige }
-		const module = C.Lang_compile_render_module(body, ghost)
+		const module = C.Lang_compile_render_module(body, ghost, { header, tail })
 
 		// The translator running clean is not proof the emitted JS parses — gate it with esbuild,
 		//  and cross-check the in-app lezer twin so the two gates never silently drift apart.

@@ -234,7 +234,7 @@ async Lake_exercise_binary(w):
     // a fixed 64-byte fixture -> deterministic buffer, digest, snap.
     let bytes = new Uint8Array(64)
     for (let i = 0; i < 64; i++) bytes[i] = (i * 7 + 3) & 0xff
-    let bh = this.Peeroleum_body_digest(bytes)
+    let bh = await this.Peeroleum_body_digest(bytes)
     let s = this.Pier_next_seq(AlicePier)
     this.Peeroleum_send(Alicew, {header: {type: 'test_binary', from: 'alice', to: 'bob', seq: s, body_hash: bh, body_len: bytes.length}, buffer: bytes})
 

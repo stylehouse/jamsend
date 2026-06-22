@@ -35,13 +35,28 @@ export function loadRoleKey(role: string, env: Record<string, string | undefined
 	return env[`CLUSTER_IDENTO_${role.toUpperCase().replace(/[^A-Z0-9]/g, '_')}_KEY`]
 }
 
+// Browser-side counterparts. The browser has no process.env: vite.config bakes the PUBLIC trust
+//  anchors via `define`. CRITICAL: the access must be the EXACT literal `import.meta.env.VITE_CLUSTER_*`
+//   — a cast or `?.` between the tokens defeats Vite's textual define swap, leaving it undefined at
+//    runtime (the bug that silently disabled the no-key warning). Only browser code calls these.
+export function browserTrustedPubs(): string[] {
+	const raw = import.meta.env.VITE_CLUSTER_TRUSTED_PUBS ?? ''
+	return String(raw).split(',').map((s: string) => s.trim()).filter(Boolean)
+}
+export function browserRole(): string | undefined {
+	const r = import.meta.env.VITE_CLUSTER_ROLE
+	return r ? String(r) : undefined
+}
+
 // pretty_pubkey: the 16-hex routing address (header.from) derived from a full pub. Mirrors Idento.
 export const prepubOf = (pubHex: string): string => pubHex.slice(0, 16)
 
-// The cryptographic body commitment for a privileged frame: full sha256 hex over the body. Both
-//  signer and verifier (relay) MUST use this — NOT the spine's FNV Peeroleum_body_digest, which is
-//   collidable, so a signature over an FNV hash would not actually pin the body. crypto.subtle is
-//    present in both the browser and node (global webcrypto), so one impl serves both sides.
+// The cryptographic body commitment for a privileged frame: full sha256 hex over the body STRING.
+//  Both signer and verifier (relay) MUST use this. The spine's Peeroleum_body_digest is the same
+//   algorithm (sha256) over the raw buffer bytes — they agree in strength now that the spine dropped
+//    its forgeable FNV digest, the difference is only the input (string body vs raw Uint8Array buffer),
+//     so a header.sign over body_hash genuinely pins the payload. crypto.subtle is present in both the
+//      browser and node (global webcrypto), so one impl serves both sides.
 export async function sha256hex(data: string): Promise<string> {
 	const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(data))
 	return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('')

@@ -4,28 +4,28 @@ story:PereStaple
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.135
-      sample=0.081,at=1782089404
-      sample=0.398,at=1782089436
-      sample=0.087,at=1782089529
-      sample=0.082,at=1782089930
-      sample=0.1,at=1782090042
-      sample=0.185,at=1782090080
-      sample=0.185,at=1782090209
-      sample=0.084,at=1782090218
-      sample=0.084,at=1782090220
-      sample=0.065,at=1782090254
-    TimeTotal:step,avg=0.019
-      sample=0.012,at=1782089404
-      sample=0.057,at=1782089436
-      sample=0.012,at=1782089529
-      sample=0.012,at=1782089930
-      sample=0.014,at=1782090042
-      sample=0.026,at=1782090080
-      sample=0.026,at=1782090209
-      sample=0.012,at=1782090218
-      sample=0.012,at=1782090220
-      sample=0.009,at=1782090254
+    TimeTotal:beliefs,avg=0.128
+      sample=0.139,at=1782118694
+      sample=0.147,at=1782120664
+      sample=0.095,at=1782120678
+      sample=0.086,at=1782120688
+      sample=0.16,at=1782120830
+      sample=0.135,at=1782120846
+      sample=0.198,at=1782122339
+      sample=0.012,at=1782126242
+      sample=0.208,at=1782127441
+      sample=0.104,at=1782128890
+    TimeTotal:step,avg=0.018
+      sample=0.02,at=1782118694
+      sample=0.021,at=1782120664
+      sample=0.014,at=1782120678
+      sample=0.012,at=1782120688
+      sample=0.023,at=1782120830
+      sample=0.019,at=1782120846
+      sample=0.028,at=1782122339
+      sample=0.002,at=1782126242
+      sample=0.03,at=1782127441
+      sample=0.015,at=1782128890
   step,dige:fc17a965812c976b
   step=2,dige:1e1586b76bfb4cfb
   step=3,dige:a3b0aad0fe01dacf

@@ -26,7 +26,18 @@ const allowedHosts = (process.env.ALLOWED_HOSTS ?? '')
 
 export default defineConfig({
 	plugins: [sveltekit(), relayPlugin()],
-	
+
+	// Bake the cluster's PUBLIC trust anchors into the client so the browser can VERIFY inbound
+	//  signed frames (this-dock-updated, etc.). Sourced from process.env (compose env_file
+	//   .env.cluster-identos) — same pattern as ALLOWED_HOSTS above. Only the PUBLIC pubs + the role
+	//    LABEL cross into the bundle; CLUSTER_IDENTO_*_KEY (the secrets) are NEVER referenced here, so
+	//     they cannot leak into client code. The browser editor's own signing key comes from
+	//      localStorage (per-profile, out-of-band), not from any baked env.
+	define: {
+		'import.meta.env.VITE_CLUSTER_TRUSTED_PUBS': JSON.stringify(process.env.CLUSTER_TRUSTED_PUBS ?? ''),
+		'import.meta.env.VITE_CLUSTER_ROLE':         JSON.stringify(process.env.CLUSTER_ROLE ?? ''),
+	},
+
 	build: {
 		// Generate source maps for production debugging
 		sourcemap: true,

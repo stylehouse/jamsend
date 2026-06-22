@@ -37,7 +37,7 @@
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import { onMount } from "svelte"
-    import { signHeader, prepubOf, sha256hex, loadRoleKey } from "$lib/p2p/cluster_trust"
+    import { signHeader, verifyHeader, prepubOf, sha256hex, loadRoleKey, browserTrustedPubs, browserRole } from "$lib/p2p/cluster_trust"
 
     let { M } = $props()
 
@@ -205,6 +205,11 @@
             } else {
                 (H as any).Peeroleum_on(w, 'run_result', (cw: TheC, _p: TheC, fr: any) => H.Lies_run_result_recv(cw, fr))
                 ;(H as any).Peeroleum_on(w, 'run_phase',  (cw: TheC, _p: TheC, fr: any) => H.Lies_run_phase_recv(cw, fr))
+                // this-dock-updated: a cluster peer (claude-cli editing a .g, or the runner) tells the
+                //  editor a dock's source changed on disk → re-read its %Good so the loaded doc stays in
+                //   sync. Verify-in-handler (async), NOT in the sync inbox: the cluster sign rides the
+                //    consumer payload, so the spine ferries it opaque and never needs to know about trust.
+                ;(H as any).Peeroleum_on(w, 'this_dock_updated', (cw: TheC, _p: TheC, fr: any) => { void H.Lies_this_dock_updated_recv(cw, fr); return true })
             }
             // ping/pong heartbeat — both roles echo a ping and record a pong, so the real
             //  envelope path is provable (and shown by the badge), not just relay control.
@@ -290,8 +295,18 @@
             //    so one sig pins exactly these bytes. Forward-compatible: when no key is configured we
             //     send unsigned and the relay warn-and-allows (current dev loop), so signing can land
             //      before CLUSTER_TRUSTED_PUBS is deployed without breaking anything.
+            // FATAL when the cluster is enforced (trusted pubs configured) but this editor has no
+            //  signing key: an unsigned gen_write is dropped by the relay, so silently falling back
+            //   would hide a broken compile→disk loop. Error LOUDLY with the exact fix, don't send.
+            const trusted = browserTrustedPubs()
+            const idento  = H.Lies_cluster_idento(w)
+            if (trusted.length && !idento) {
+                const msg = `gen_write BLOCKED — cluster trust is enforced but this editor has no signing key. Click the 🪪 Id action and paste your .env.cluster-editor (mint it with scripts/gen-cluster-identos.ts). (An unsigned gen_write is fatally rejected by the relay.)`
+                H.tlog(`❌ ${msg}`)
+                throw new Error(msg)
+            }
+
             let frame: Record<string, unknown> = { control: 'gen_write', path: gen_path, body }
-            const idento = H.Lies_cluster_idento(w)
             if (idento) {
                 try {
                     const body_hash = await sha256hex(body)
@@ -309,27 +324,59 @@
             } catch { return false }
         },
 
-        // Lies_cluster_idento — this client's cluster signing key {pub, key}, or undefined when none
-        //  is provisioned (then gen_write goes unsigned — fine until the relay enforces). A BROWSER
-        //   editor keeps its secret in localStorage (per-profile, set out-of-band — never bundled):
-        //    localStorage['cluster_idento'] = '{"pub":"<64hex>","key":"<64hex>"}'. A node client
-        //     (runner/cli headless) instead reads its role key from the env (.env.cluster-identos).
+        // Lies_cluster_idento — this client's CLUSTER signing key {pub, key} (distinct from the page's
+        //  main Peering Id), or undefined when none is provisioned (then gen_write goes unsigned — fine
+        //   until the relay enforces). A BROWSER keeps it on the TOP House's Dexie-backed .stashed, set
+        //    via the 🪪 Id hatch (paste a .env.cluster-<role>) — read live here, so it takes effect with
+        //     no reload. A node client (runner/cli headless) instead reads its role key from the env.
         Lies_cluster_idento(w?: TheC): { pub: string; key: string } | undefined {
             const H = this as House
-            try {
-                if (typeof localStorage !== 'undefined') {
-                    const raw = localStorage.getItem('cluster_idento')
-                    if (raw) {
-                        const o = JSON.parse(raw)
-                        if (o?.pub && o?.key) return { pub: o.pub, key: o.key }
-                    }
-                }
-            } catch { /* malformed localStorage — fall through to env */ }
-            const role = H.Lies_role(w)
+            const id = ((H.top_House?.() as House | undefined)?.stashed as any)?.cluster_idento
+            if (id?.pub && id?.key) return { pub: id.pub, key: id.key }
+            const role = browserRole() ?? H.Lies_role(w)
             const key  = role && typeof process !== 'undefined' ? loadRoleKey(role) : undefined
             const pub  = role && typeof process !== 'undefined'
                 ? (process.env?.[`CLUSTER_IDENTO_${role.toUpperCase()}_PUB`]) : undefined
             return key && pub ? { pub, key } : undefined
+        },
+
+        // Lies_send_dock_updated — tell the cluster a dock's source changed (so the editor re-reads its
+        //  %Good). The signed unit is a self-contained {type,from,path} in the CONSUMER PAYLOAD (not the
+        //   spine header), so verification is independent of the transport — the spine just ferries it.
+        //    Editor↔runner only (both Ud-handshaken); a non-peer signer (claude-cli) reaches the editor
+        //     once the spine accepts cluster-trusted frames pre-Ud (the recv-window trust accept — TODO).
+        async Lies_send_dock_updated(w: TheC, path: string): Promise<boolean> {
+            const H = this as House
+            const idento = H.Lies_cluster_idento(w)
+            if (!idento) { H.tlog(`⚠ dock_updated ${path} — no cluster idento, not sending`); return false }
+            const signed = { type: 'this_dock_updated', from: prepubOf(idento.pub), path }
+            const sign   = await signHeader(signed, idento.key)
+            ;(H as any).Peeroleum_send_consumer(w, 'this_dock_updated', { dock: signed, sign })
+            H.tlog(`📤 this_dock_updated → ${path} [signed ${prepubOf(idento.pub)}]`)
+            return true
+        },
+
+        // Lies_this_dock_updated_recv — verify the payload signature against the trusted flock, then
+        //  refresh the loaded %Good for that dock (delete content → re-read; the LiesStore primitive).
+        //   Async (ed verify is a Promise) but fired un-awaited from the sync inbox handler, so the
+        //    §7.3 serial lock is never held across the await. Untrusted/unsigned → dropped, logged.
+        async Lies_this_dock_updated_recv(w: TheC, frame: any): Promise<void> {
+            const H = this as House
+            const dock = frame?.dock
+            const sign = frame?.sign
+            if (!dock?.path || typeof sign !== 'string') { H.tlog(`🚫 this_dock_updated DROPPED — malformed`); return }
+            const signer = await verifyHeader({ ...dock, sign }, browserTrustedPubs())
+            if (!signer) { H.tlog(`🚫 this_dock_updated DROPPED — untrusted/unsigned ${dock.path}`); return }
+            const good = H.LiesStore_good_of(w, 'text/Doc', dock.path)
+            if (!good) { H.tlog(`👻 this_dock_updated ${dock.path} — no loaded dock here, nothing to refresh`); return }
+            delete good.c.content                              // force a fresh disk read
+            await H.LiesStore_read_good(w, 'text/Doc', dock.path)
+            // Re-reading %Good refreshes the IO store, but the OPEN dock view only reseats when
+            //  dock_content is PUSHED to e_Lang_dock_content (the one content-writer — it bumps
+            //   Text.disk_rev, which drives Langui's reseat $effect). The first-open %subscribe is
+            //    spent, so push it ourselves; e_Lang_dock_content no-ops if the text didn't change.
+            H.feebly_i_elvisto('Lang/Lang', 'dock_content', { Good: good })
+            H.tlog(`🔄 dock refreshed from ${prepubOf(signer)}: ${dock.path}`)
         },
 
         //#endregion

@@ -29,6 +29,7 @@
     import type { TheC }  from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import { peel, depeel } from "$lib/Y.svelte"
+    import Vexpandy from "$lib/O/ui/Vexpandy.svelte"
 
     // ── the fuzz tub: wind the suggested re's head|tail anchors down toward greedy ───
     //   entropy_suggest hands back the re's `parts` (anchors + captures).  The captures
@@ -114,6 +115,10 @@
     } = $props()
 
     //#region draft fields — discrete state (no segment widget, just inputs)
+    // the panel starts CLOSED (just the title + V toggle); the cap list and the draft live
+    //  behind the Vexpandy.  Seeding a draft from a diff click auto-opens it (seed_into_fields)
+    //   so authoring isn't hidden; otherwise the V is yours to tuck the cap list away.
+    let expanded = $state(false)
     let active   = $state(false)
     let at_text  = $state('')                       // the ' / '-split peelable locator
     let noisy    = $state<string | undefined>()     // the changed key (drives the auto-slug + wildcard)
@@ -229,6 +234,7 @@
         slug_edited = false; slug_manual = ''
         scope_on = false
         active = true
+        expanded = true     // a diff-click means "author now" — open the panel so the draft shows
     }
     //#endregion
 
@@ -347,10 +353,12 @@
 {#if active || caps.length}
 <div class="ea">
     <div class="ea-hdr">
+        <Vexpandy bind:expanded />
         <span class="ea-title">EntropyArrest</span>
         {#if active}<span class="ea-sub">drafting</span>{/if}
     </div>
 
+    {#if expanded}
     <!-- existing authored caps — CRUD list -->
     {#each caps as cap (cap.sc.Entcase)}
         <div class="ea-cap">
@@ -446,6 +454,7 @@
             </div>
         </div>
     {/if}
+    {/if}
 </div>
 {/if}
 
@@ -459,6 +468,9 @@
         font-size: 0.78rem;
     }
     .ea-hdr { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem }
+    /* the Vexpandy V resting too dim (#484848) on the panel's dark bg — lift it to the
+       muted-blue palette; Vexpandy keeps its own hover/open transform. */
+    .ea-hdr :global(.vx-btn) { color: #678 }
     .ea-title { color: #8ab; font-weight: bold; font-size: 0.8rem }
     .ea-sub   { color: #557; font-size: 0.72rem }
 

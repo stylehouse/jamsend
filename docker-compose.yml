@@ -1,3 +1,13 @@
+# docker-compose.yml — the DEV instance: the app/runner on :9091 (+ the `claude` CLI container).
+#
+# PAIRED WITH staging/docker-compose.yml — the EDITOR/staging instance on :9092 (the Editron IDE, a
+#  separate git worktree). The two are bridged at runtime by the relay's r2r link (the runner dials
+#   ws://172.17.0.1:9092/relay), so editor↔runner frames cross between them. CLUSTER TRUST spans the
+#    pair: the secret Idento flock is split per role (scripts/gen-cluster-identos.ts) — this side holds
+#     `.env.cluster-pubs` (public, for the relay's gen_write verify + the VITE bake) and `.env.cluster-claude`
+#      (the CLI's signing key, masked from `app`); the editor side holds pubs too. Edit one of the pair and
+#       check the other still lines up (ports, relay bridge, cluster env). See that file's header.
+
 x-common-volumes: &common-volumes
   music-volume: &music-volume "${MUSIC_PATH:-/home/s/Music/71mix/}:/music:ro"
 
@@ -21,6 +31,11 @@ services:
       - .:/app
       # - "./testsounds:/music:ro"
       - *music-volume
+      # The broad .:/app would let the dev server READ other roles' secret files off disk. It only
+      #  needs the PUBLIC pubs (env_file'd above), so mask the co-located claude secret with a blank
+      #   file (same pattern as the .env.chrome-profiles masks on the claude service). Foreign role
+      #    files (editor/runner) belong on their own hosts and should not sit in this /app at all.
+      - ./.claude/.blank:/app/.env.cluster-claude:ro
     ports:
       # a bare "9091:9091" binds ALL interfaces (LAN-exposed) — avoid.  Publish to
       #  two explicit addresses instead:
@@ -37,6 +52,12 @@ services:
     #  .env.local is gitignored; it must exist (cp .env.example .env.local) or `up` errors.
     env_file:
       - .env.local
+      # Cluster trust — PUBLIC pubs ONLY (no private key): the relay verifies gen_write against these
+      #  and vite.config bakes them into VITE_CLUSTER_TRUSTED_PUBS for the browser. required:false so an
+      #   un-minted cluster doesn't break `up` (relay warn-and-allows). The editor browser's OWN signing
+      #    key comes from localStorage, never from here. (gen with scripts/gen-cluster-identos.ts.)
+      - path: .env.cluster-pubs
+        required: false
     tty: true
     stdin_open: true
     restart: 'always'
@@ -103,6 +124,15 @@ services:
       - ./.claude/.blank:/app/ty/droidlounge/.env.chrome-profiles:ro
     environment:
       - CLAUDE_CONFIG_DIR=/home/node/.claude
+    env_file:
+      # Cluster trust — claude's OWN role secret (CLUSTER_IDENTO_CLAUDE_KEY/_PUB), so the CLI can sign
+      #  this_dock_updated / gen_write. Not other roles' keys.
+      - path: .env.cluster-claude
+        required: false
+      # PUBLIC pubs file — carries EDITOR_URL (where ghost-update notifies + verifies the editor) and
+      #  the trusted pubs. No secret. required:false so an un-minted cluster doesn't break `up`.
+      - path: .env.cluster-pubs
+        required: false
     tty: true
     stdin_open: true
     command: sleep infinity     # stays up; you attach a session with docker compose exec

@@ -244,10 +244,12 @@ async ampTiles(A,w):
     //  let m = a & b
     let m = a & b
 
-    // (2) the House alias is fabricated: every method body that keeps a bare H gets
-    //  a "const H = this" at its top (parameterised in compile.ts — skipped when H is
-    //   a param or already declared), so a raw House call resolves even inline in a
-    //    control structure:  if (a > b) H.laterally(A,w,1)
+    // (2) the House alias is fabricated automatically: if the COMPILED body still
+    //  carries a bare `H` (\bH\b) — i.e. raw JS reached for it; the DSL's own `H i …`
+    //   receiver lowers to `this` and leaves none — the compiler tucks a `const H = this`
+    //    onto this method's opening-brace line (out of the way when debugging the gen),
+    //     skipped when H is a param or already declared.  So a raw House call resolves
+    //      even inline in a control structure:  if (a > b) H.laterally(A,w,1)
     if (a > b) H.laterally(A,w,1)
 
     // (3) IO atoms translate inside a control body now (the per-line parser is
@@ -280,3 +282,10 @@ captureOutTiles(A,w):
     A o prefixy,wither.$:ang
     // the older bare spelling stays valid (additive): name$ , name$var , name.$var
     o hut/toot$tval
+
+IMPORT()
+    import Peeroleum from "$lib/gen/N/Peeroleum.go"
+    import { browserTrustedPubs, prepubOf } from "$lib/p2p/cluster_trust"
+
+RENDER()
+    <Peeroleum {H} />

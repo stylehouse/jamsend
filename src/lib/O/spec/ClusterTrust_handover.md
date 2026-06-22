@@ -34,9 +34,11 @@ dropped.** "All clients have and use the trust."
     `JSON.stringify`. Signer and verifier serialise identically regardless of key order.
   - `loadTrustedPubs(env)` (`CLUSTER_TRUSTED_PUBS`), `loadRoleKey(role, env)`
     (`CLUSTER_IDENTO_<ROLE>_KEY`), `prepubOf(pub)` (16-hex address).
-- `scripts/gen-cluster-identos.ts` — mints the SECRET flock (random ed25519 per role) →
-  `.env.cluster-identos` (gitignored; distribute out-of-band; add to each machine's
-  docker-compose `env_file`). `--force` rotates.
+- `scripts/gen-cluster-identos.ts` — mints the SECRET flock (random ed25519 per role), SPLIT per
+  role: `.env.cluster-pubs` (PUBLIC — `CLUSTER_TRUSTED_PUBS`, every verifier) + `.env.cluster-<role>`
+  (SECRET — that role's KEY/PUB). All gitignored (`.env.*`). Distribute each role file to its host
+  ALONE; env_file it into only that service — so no container loads or can read a foreign role's key.
+  `--force` rotates.
 - `src/lib/p2p/Identos.ts` — the PUBLIC deterministic pool (peer NAMES for the flock tests).
   **Distinct from cluster_trust**: Identos = public addresses, no secrecy; cluster_trust =
   secret signing keys. Don't conflate them.
@@ -57,14 +59,18 @@ commitment), never the body bytes directly:
    re-serialises canonically, checks against `CLUSTER_TRUSTED_PUBS`, and **also** re-checks
    `body_hash` against the received body (so the signed hash actually covers what arrived).
 
-### body_hash: FNV (test) vs sha256 (security) — IMPORTANT
+### body_hash: now sha256 on both sides (was FNV on the spine) — IMPORTANT
 
-The Peeroleum spine's `Peeroleum_body_digest` is **FNV-1a** — a fast, *non-cryptographic*
-digest, fine for the binary **test** exercise (detects accidental/meddle corruption) but
-**trivially collidable**. A signature over an FNV `body_hash` is NOT real integrity — an
-attacker can craft a different body with the same FNV. So **security-critical frames
-(`gen_write`, anything that writes code/disk) MUST use a cryptographic `body_hash` (sha256)**,
-not the spine FNV. Keep them separate; do not sign an FNV hash and call it secure.
+The Peeroleum spine's `Peeroleum_body_digest` is now **sha256** (`crypto.subtle`, async) over the
+raw buffer bytes — it used to be a non-cryptographic FNV-1a hack that only existed to keep the inbox
+synchronous, and that constraint is gone (the delivery path went async all the way). So the old
+warning is **lifted**: `body_hash` is cryptographic and therefore **signable** — a `header.sign`
+over it genuinely pins the body. The remaining nuance is the **input**, not the strength: the spine
+hashes the **raw `Uint8Array` buffer**, while cluster_trust `sha256hex` hashes the **body string**.
+For a privileged frame whose body is a string (`gen_write` ships `.go` text), keep using
+`sha256hex(body)`; if/when a privileged frame carries a raw buffer, hash the bytes the same way the
+spine does so signer and verifier agree byte-for-byte. Security-critical frames still MUST use the
+cryptographic hash (now true of both paths) — just be explicit about string-body vs buffer-bytes.
 
 ## The three constraints that shape who-does-what
 
@@ -146,7 +152,7 @@ Relay: `body_hash === sha256(body)` AND `verifyHeader({control,path,from,body_ha
   now `await`s it. **Forward-compatible**: with no key it sends unsigned and the relay warn-and-allows,
   so this is safe to run before `CLUSTER_TRUSTED_PUBS` is deployed.
 - `Lies_cluster_idento(w)` (LiesLies.svelte) resolves this client's `{pub,key}`: **browser editor** reads
-  `localStorage['cluster_idento']` = `'{"pub":"<64hex>","key":"<64hex>"}'` (per-profile, set out-of-band,
+  the top House's Dexie `.stashed.cluster_idento` = `{pub,key}` (set via the 🪪 Id hatch / IdHatch.svelte — paste a .env.cluster-<role>; read live, no reload),
   never bundled — resolves constraint #1 by the user's choice: the editor browser holds its own key);
   a **node** client falls back to `loadRoleKey(role)` / `CLUSTER_IDENTO_<ROLE>_KEY` from the env.
 - `sha256hex(data)` added to `cluster_trust.ts` (browser+node, crypto.subtle) — the shared body-commitment
@@ -155,11 +161,44 @@ Relay: `body_hash === sha256(body)` AND `verifyHeader({control,path,from,body_ha
   `handleGenWrite` gate (signer identified); tampered-body / foreign-key / unsigned all rejected under
   enforcement. Type-clean (no new svelte-check errors).
 
-**STILL OPEN (OTHER job):**
-- `this-dock-updated` routed envelope (editor learns a dock's `.g` changed → refresh `%Good`): sign on
-  emit, **verify in the async carrier-recv window** (constraint #2 — not in sync `pump_inbox`).
-- Expose `CLUSTER_TRUSTED_PUBS` to the browser (constraint #3, a `VITE_` env) for verifying inbound
-  routed frames; node clients read `process.env`.
-- claude-cli signed `gen_write` — only needed for **remote** runners (out of scope for now; local uses
-  `ghost_update.ts` which writes `.go` to the shared disk directly, no `gen_write`).
-- The PereEditrogression test.
+**DONE — `this-dock-updated` event + browser trust exposure.**
+- Signed unit lives in the **consumer payload**, not the spine header: `{type:'this_dock_updated',
+  from, path}` + `sign`. So the spine ferries it opaque and needs NO trust awareness — verification is
+  done in the handler, not in sync `pump_inbox` (resolves constraint #2 without a spine edit).
+- Editor handler: `Peeroleum_on(w,'this_dock_updated', …)` → `Lies_this_dock_updated_recv` (LiesLies.svelte):
+  async `verifyHeader({...dock,sign}, browserTrustedPubs())`; on trust, `delete good.c.content` +
+  `LiesStore_read_good` to re-read the dock's `%Good`. Untrusted/unsigned dropped+logged.
+- Emitters: `Lies_send_dock_updated(w,path)` (browser, signs + `Peeroleum_send_consumer`) and
+  `ghost-update --notify-editor <relay-ws>` (claude-cli signs with `CLUSTER_IDENTO_CLAUDE_KEY` + sends).
+- Browser trust exposure (constraint #3): `vite.config.ts` bakes `import.meta.env.VITE_CLUSTER_TRUSTED_PUBS`
+  + `VITE_CLUSTER_ROLE` from `process.env` (PUBLIC pubs + role label only — keys never referenced);
+  `cluster_trust.ts` adds `browserTrustedPubs()` / `browserRole()`. Node still uses `loadTrustedPubs(process.env)`.
+- Tested: the `this_dock_updated` signed payload round-trips (accept / tampered-path / foreign / unsigned /
+  empty-trust all correct). Type-clean.
+
+**THE ONE REMAINING HOP (needs the spine — coordinate):** the editor's Peeroleum inbox still drops
+PRE-`%Ud` senders (`Peeroleum.g:308-310`). Editor↔runner `this_dock_updated` works today (both Ud-handshaken),
+but **claude-cli→editor** is dropped pre-Ud until the spine accepts a cluster-trusted frame in the async
+**recv window** (`Peeroleum_deliver` post_do): verify the payload sign, and if trusted, treat as Ud-ok so it
+reaches the handler. That edit is on the host-live spine surface — left for coordination with the Peeroleum job.
+
+**STILL OPEN:** the spine recv-window trust-accept (above); claude-cli signed `gen_write` (remote runners
+only — out of scope); the PereEditrogression test.
+
+---
+
+## Role / env convention (answers "does compose tell each service its role?")
+
+Secrets are SPLIT per role (gen-cluster-identos), and each service env_files ONLY what it needs — so a
+container never loads or can read a foreign role's key. docker-compose.yml wires the local pair:
+- **Relay / dev server (`app`): verify-only** — `env_file: .env.cluster-pubs` (PUBLIC pubs); the relay
+  verifies gen_write and vite bakes `VITE_CLUSTER_TRUSTED_PUBS`. No private key. The co-located
+  `.env.cluster-claude` is blank-masked from this container so it can't read claude's secret off `.:/app`.
+- **Browser (editor/runner):** *role* from `?E=`/`?B=` (`Lies_role`) or `VITE_CLUSTER_ROLE`; *signing key*
+  from the top House's `.stashed.cluster_idento` (via the 🪪 Id action — never bundled); trusted pubs via the
+  baked `VITE_CLUSTER_TRUSTED_PUBS`.
+- **CLI (`claude`): role `claude`** — `env_file: .env.cluster-claude` (its OWN key/pub only). It signs.
+- Each `env_file` is `required:false` so an un-minted cluster doesn't break `up`. Distribute
+  `.env.cluster-editor`/`-runner` to the staging editor / runner hosts; don't leave foreign role files here.
+- So: compose declares role only where a process *signs autonomously* (none yet) or for a *dedicated* browser
+  deployment's default; verifiers just need the trusted pubs. Secrets stay node-side + the editor's .stashed (Id hatch).

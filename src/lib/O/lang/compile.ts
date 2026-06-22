@@ -19,12 +19,14 @@ import type { SyntaxNode } from "@lezer/common"
 import { parser as jsBaseParser } from "@lezer/javascript"   // in-browser syntax gate (ts dialect) — see Lang_validate_rendered_module
 import type { TheC } from "$lib/data/Stuff.svelte"   // type-only: keeps this module data-layer-free (CLI-loadable)
 
-// The House-receiver alias fabricated at the top of every compiled method body, so
-//  raw-JS House calls (H.foo(), H.c.x) resolve without hand-writing `const H = this`.
-//  Parameterised here: `name` is the alias, `inject:false` turns the whole thing off.
-//  Per-method it is skipped when the alias is a param (would shadow), when the body
-//   already declares it (would redeclare — so an existing hand-written `const H = this`
-//    keeps working untouched), or when the body never mentions it (nothing to bind).
+// The House-receiver alias fabricated onto the opening-brace line of a compiled method
+//  (a pythonic header's `{ const H = this`; a user-braced one takes it on a body-top
+//   line), so raw-JS House calls (H.foo(), H.c.x) resolve without hand-writing it — and
+//    it stays out of the way when reading the gen output.  Parameterised here: `name` is
+//     the alias, `inject:false` turns the whole thing off.  Per-method it is skipped when
+//      the alias is a param (would shadow), when the body already declares it (would
+//       redeclare — an existing hand-written `const H = this` keeps working untouched), or
+//        when the compiled body never mentions a bare `H` (nothing to bind).
 const RECEIVER_ALIAS = { name: 'H', inject: true }
 
 // The IOness verb families.  OBTAIN_VERBS share o's (sc, q) signature, so they
@@ -141,7 +143,7 @@ export const LANG_COMPILE = {
     //   or any caller that hasn't wired the parser) it falls back to one
     //   whole-document tree walk.
     Lang_compile_collect(state: EditorState, job: TheC, sthoParser?: { parse(input: string): any }): Array<{
-        kind: 'translated' | 'raw',
+        kind: 'translated' | 'raw' | 'header' | 'tail',
         text: string,
     }> {
         // Fetched lazily in the fallback branch only.  On the fast path we never
@@ -149,11 +151,11 @@ export const LANG_COMPILE = {
         // (and error-recover over) the whole document.
         let tree: any = null
         const doc   = state.doc
-        const out: Array<{ kind: 'translated' | 'raw', text: string }> = []
+        const out: Array<{ kind: 'translated' | 'raw' | 'header' | 'tail', text: string }> = []
         // accumulates {def|call|region|controlflow:1, …} during the walk; flushed below
         // `via` = enclosing method name for calls (renamed from `from` to avoid collision)
         // `class` = enclosing class name for PropertyDefinition defs (tsstho only)
-        // `magic` = set on IMPORT and RENDER defs (reserved for compiler header/tail extraction)
+        // `magic` = set on IMPORT and RENDER defs (the header/tail pseudo-methods, diverted out of the eatfunc)
         // `from`, `to`, `line` = character offsets and 1-based line number in the document
         // `region_path` = snapshot of region_stack at the time each entry is recorded
         const words: Array<{ def?: 1, call?: 1, region?: 1, controlflow?: 1,
@@ -273,8 +275,10 @@ export const LANG_COMPILE = {
                 //   PropertyName (object shorthand fallback) → eatfunc method
                 //
                 // Discriminator: %class present → method inside a class.
-                // IMPORT and RENDER are reserved for compiler header/tail extraction.
-                // < IMPORT/RENDER body extraction in Lang_compile_collect is future work.
+                // IMPORT and RENDER are the magic pseudo-methods: their bodies are
+                //  diverted to the module header/tail (the MethodLike branch of
+                //   _collect_line does the extraction for stho files; here on the
+                //    tsstho whole-doc path they are still recorded magic:1 for nav).
                 if (ref.name === 'PropertyDefinition') {
                     const name = state.doc.sliceString(ref.from, ref.to)
                     if (!name || !/^\w/.test(name)) return false
@@ -688,6 +692,43 @@ export const LANG_COMPILE = {
             const nameNode  = hit.node.getChild('Name')
             const funcName  = sliceState.doc.sliceString(nameNode.from, nameNode.to)
 
+            // ── IMPORT / RENDER — the two "magic" pseudo-methods ──────────────
+            //
+            //   They are not eatfunc methods: their indented bodies are diverted
+            //   OUT of the H.eatfunc({…}) object entirely and templated into the
+            //   module's header (IMPORT → import lines, above `let { H }`) or its
+            //   tail (RENDER → Svelte markup below `</script>`).  RENDER is how a
+            //   `.g` names its own child ghosts as components (`<Child {H} />`) —
+            //   a `.go` IS a Svelte component (svelte.config.js maps the .go ext),
+            //   so the dependency tree lives in source instead of a hand-kept
+            //   include manifest.
+            //
+            //   The body is emitted VERBATIM (kind 'header'|'tail') — no stho
+            //   translation, no `const H = this` alias, no `{`/`},` wrapper: these
+            //   are raw TS imports and raw markup.  Body lines are relative-dedented
+            //   by the first body line's indent so they sit flush in the output.
+            //   Top-level only; a nested IMPORT()/RENDER() falls through as a call.
+            if (ctx.current_method === null && (funcName === 'IMPORT' || funcName === 'RENDER')) {
+                const sink = funcName === 'IMPORT' ? 'header' : 'tail'
+                const decl_indent = (line.text.match(/^(\s*)/) ?? ['', ''])[1].length
+                // word index: a magic def — kept for navigation, not a callable method.
+                ctx.words.push({ def: 1, magic: 1, method: funcName,
+                                 from: docOff(hit.node.from), to: docOff(hit.node.to), line: n,
+                                 region_path: [...ctx.region_stack] })
+                n++
+                let dedent = -1
+                while (n <= doc.lines) {
+                    const peek = doc.line(n)
+                    if (peek.text.trim() === '') { out.push({ kind: sink, text: '' }); n++; continue }
+                    const peek_indent = (peek.text.match(/^(\s*)/) ?? ['', ''])[1].length
+                    if (peek_indent <= decl_indent) break   // body ended
+                    if (dedent < 0) dedent = peek_indent     // first body line sets the dedent
+                    out.push({ kind: sink, text: peek.text.slice(dedent) })
+                    n++
+                }
+                return n
+            }
+
             // Inside a method body every MethodLike is a call — fetch(, setTimeout(,
             // a chained .catch( — never a nested %method,def.  current_method is set
             // only while we recurse through a decl's body, so its presence is the
@@ -758,14 +799,14 @@ export const LANG_COMPILE = {
                     out.push({ kind: 'translated', text: line.text.trimEnd().replace(/:$/, '') + ' {' })
                 }
 
-                // fabricate the House-receiver alias (const H = this) at the body top
-                //  so raw-JS House calls resolve.  Reserve a slot now and fill it after
-                //   the body is translated: inject only if the COMPILED body still
-                //    carries a bare `H` — an stho receiver (`H i …`, `H o %A`) lowers to
-                //     `this` and leaves none, so it needs no const.  Skipped when the
-                //      alias is a param (shadow) or the body already declares it (a
-                //       hand-written `const H = this` is left untouched).
-                let aliasSlot = -1
+                // fabricate the House-receiver alias (const H = this) so raw-JS House
+                //  calls resolve.  Decide eligibility now, inject after the body is
+                //   translated (placement + the use-test are resolved below): only if the
+                //    COMPILED body still carries a bare `H` — an stho receiver (`H i …`,
+                //     `H o %A`) lowers to `this` and leaves none, so it needs no const.
+                //      Skipped when the alias is a param (shadow) or the body already
+                //       declares it (a hand-written `const H = this` is left untouched).
+                let aliasAllowed = false
                 if (RECEIVER_ALIAS.inject) {
                     const A = RECEIVER_ALIAS.name
                     const params   = (line.text.match(/\(([^)]*)\)/) ?? ['', ''])[1]
@@ -779,10 +820,7 @@ export const LANG_COMPILE = {
                         if (pind <= decl_indent) break
                         if (declRe.test(pl.text)) { declares = true; break }
                     }
-                    if (!isParam && !declares) {
-                        out.push({ kind: 'translated', text: '' })   // reserved — resolved below
-                        aliasSlot = out.length - 1
-                    }
+                    aliasAllowed = !isParam && !declares
                 }
 
                 // recurse into body with current_method set, for both brace and pythonic styles,
@@ -834,16 +872,28 @@ export const LANG_COMPILE = {
                     }
                 }
 
-                // resolve the reserved alias slot — fill with `const H = this` only if
-                //  the translated body kept a bare `H` (ignoring comment lines), else
-                //   drop the slot so nothing unused is emitted.
-                if (aliasSlot >= 0) {
+                // inject `const H = this` only if the translated body kept a bare `H`
+                //  (ignoring comment lines), else emit nothing.  Tucked onto the
+                //   opening-brace line itself so it sits out of the way when reading the
+                //    gen output — except for a user-written brace, whose `{` can hide
+                //     mid-line behind a comment: that header is left intact and takes the
+                //      const on a body-top line instead.
+                if (aliasAllowed) {
                     const A = RECEIVER_ALIAS.name
                     const useRe = new RegExp(`\\b${A}\\b`)
-                    const used = out.slice(aliasSlot + 1).some(o =>
+                    const used = out.slice(headerIdx + 1).some(o =>
                         !/^\s*\/\//.test(o.text) && useRe.test(o.text))
-                    if (used) out[aliasSlot].text = ' '.repeat(decl_indent + 4) + `const ${A} = this`
-                    else out.splice(aliasSlot, 1)
+                    if (used) {
+                        // Terminated with a `;` — unlike hand-authored stho (no-semicolon
+                        //  house style), this is compiler-emitted machinery and must be
+                        //   reliable no matter what the first body line starts with: a bare
+                        //    `const H = this` followed by a `[`/`(`-led line would ASI-glue
+                        //     into `const H = this[…]`.  The `;` makes the alias unbreakable.
+                        // pythonic: we appended ` {`, so it is the line's tail → append after it.
+                        if (!hasBrace) out[headerIdx].text += ` const ${A} = this;`
+                        else out.splice(headerIdx + 1, 0,
+                            { kind: 'translated', text: ' '.repeat(decl_indent + 4) + `const ${A} = this;` })
+                    }
                 }
 
                 // pythonic style needs an injected closing "}," — brace style has its own
@@ -1592,12 +1642,35 @@ export const LANG_COMPILE = {
     },
 
 
+    // Partition the collector's flat line stream into the three module regions.
+    //  The bulk are eatfunc body lines; 'header' lines came from an IMPORT
+    //   pseudo-method (raw imports for the module top) and 'tail' from a RENDER
+    //    pseudo-method (Svelte markup below </script>).  Both callers (in-app
+    //     Lang_compile_dock and the CLI compile_core) run this, then hand the
+    //      pieces to Lang_compile_render_module.
+    Lang_split_compiled(lines: Array<{ kind: string, text: string }>): { body: string, header: string, tail: string } {
+        const pick = (k: (kind: string) => boolean) =>
+            lines.filter(l => k(l.kind)).map(l => l.text).join('\n')
+        return {
+            header: pick(k => k === 'header'),
+            tail:   pick(k => k === 'tail'),
+            body:   pick(k => k !== 'header' && k !== 'tail'),
+        }
+    },
+
     // Wrap the user's (partially-translated) body in a Svelte ghost module
     // Pantheate can dynamic-import.  The shape is minimal — just the script
     // tag Svelte needs, plus `await H.eatfunc({ … })` around the user's
     // source.  Function names, braces, commas between methods etc. all come
     // from the user — we don't inject theCompiledStuff or any other wrapper.
-    Lang_compile_render_module(body: string, ghost?: { ghostmeta_name: string, source_dige: string }): string {
+    //   extras.header — IMPORT-pseudo-method lines, dropped after the builtin
+    //    imports and before `let { H }` (imports must sit at module top).
+    //   extras.tail — RENDER-pseudo-method markup, dropped below </script> so a
+    //    `.g` can mount child ghosts as components (<Child {H} />).
+    Lang_compile_render_module(body: string, ghost?: { ghostmeta_name: string, source_dige: string },
+                               extras?: { header?: string, tail?: string }): string {
+        const header = extras?.header ? '\n' + extras.header : ''
+        const tail   = extras?.tail   ? '\n' + extras.tail + '\n' : ''
         // dodge Svelte's script-tag tokenizer, which will get confused even
         // by closing script tags in comments
         const OPEN  = '<' + 'script lang="ts">'
@@ -1613,7 +1686,7 @@ export const LANG_COMPILE = {
     // GENERATED by Lang compile — do not edit by hand.
     import { TheC } from "$lib/data/Stuff.svelte"
     import { onMount } from "svelte"
-
+${header}
     let { H } = $props()
 
     onMount(async () => {
@@ -1624,7 +1697,7 @@ ${meta}${body}
     })
     })
 ${CLOSE}
-`
+${tail}`
         )
     },
 

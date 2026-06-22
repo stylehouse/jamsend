@@ -6,28 +6,27 @@ story:Editron
         esc:path,v:Credence
   Opt
     For
-    trickle
   TimeSpool
-    TimeTotal:beliefs,avg=0.809
-      sample=1.441,at=1782031925
-      sample=0.721,at=1782032017
-      sample=0.654,at=1782032398
-      sample=0.803,at=1782033854
-      sample=0.954,at=1782080140
-      sample=0.749,at=1782089422
-      sample=0.605,at=1782089500
-      sample=0.407,at=1782089929
-      sample=0.637,at=1782090041
-      sample=1.122,at=1782090080
-    TimeTotal:step,avg=0.809
-      sample=1.441,at=1782031925
-      sample=0.721,at=1782032017
-      sample=0.654,at=1782032398
-      sample=0.803,at=1782033854
-      sample=0.954,at=1782080140
-      sample=0.749,at=1782089422
-      sample=0.605,at=1782089500
-      sample=0.407,at=1782089929
-      sample=0.637,at=1782090041
-      sample=1.122,at=1782090080
+    TimeTotal:beliefs,avg=1.23
+      sample=1.089,at=1782120679
+      sample=1.069,at=1782120688
+      sample=1.385,at=1782120831
+      sample=1.217,at=1782120847
+      sample=0.817,at=1782121722
+      sample=2.446,at=1782122338
+      sample=1.028,at=1782123720
+      sample=0.927,at=1782126946
+      sample=0.909,at=1782127092
+      sample=1.416,at=1782127445
+    TimeTotal:step,avg=1.23
+      sample=1.089,at=1782120679
+      sample=1.069,at=1782120688
+      sample=1.385,at=1782120831
+      sample=1.217,at=1782120847
+      sample=0.817,at=1782121722
+      sample=2.446,at=1782122338
+      sample=1.028,at=1782123720
+      sample=0.927,at=1782126946
+      sample=0.909,at=1782127092
+      sample=1.416,at=1782127445
   step,dige:9539156ca45bb65f
