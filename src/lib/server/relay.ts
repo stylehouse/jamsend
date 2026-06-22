@@ -137,7 +137,12 @@ export function attachRelay(
 	//     logged loudly: the target, a self-dial guard, open/error(code)/close, and a 5s
 	//      not-connectable callback — all echoed to the browser via {control:'peer-relay'}.
 	function dialEditor() {
-		if (peerLink) return
+		// A still-OPEN bridge is fine. But a STALE half-open peerLink (a bridge drop with no close
+		//  event) is non-null yet dead — and would block every re-dial forever (browser refresh
+		//   included) until a server restart: the "state stuckness". Treat a non-OPEN link as down —
+		//    close it and dial fresh.
+		if (peerLink && peerLink.readyState === WebSocket.OPEN) return
+		if (peerLink) { try { peerLink.close() } catch {} ; peerLink = null }
 		// Self-dial guard: the default editor-relay is hardcoded to :9091, but if THIS server is
 		//  :9091 the runner dials itself — the r2r upgrade then hits the set-once role guard
 		//   (already 'runner'), throws, and closes. Detect it and say so instead of failing mute;
@@ -306,7 +311,7 @@ export function attachRelay(
 		//    a SERVER restart, with every reload silently dropping frames. This recovers it on a
 		//     browser reload: the v1 "dial once" becomes "dial whenever a browser arrives and we're
 		//      unbridged" — still no background reconnect timer, but no longer a one-shot dead end.
-		if (role === 'runner' && !peerLink) { relayLog(`browser (re)connected, bridge down — re-dialing`); dialEditor() }
+		if (role === 'runner' && !(peerLink && peerLink.readyState === WebSocket.OPEN)) { relayLog(`browser (re)connected, bridge down — re-dialing`); dialEditor() }
 		ws.on('message', (data: any, isBinary: boolean) => {
 			// A binary message is a buffer-carrying frame ([header JSON]\n[buffer]) — route it
 			//  whole by its header line; it is never a control frame.

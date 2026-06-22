@@ -38,8 +38,9 @@ drain, `Peeroleum_deliver` + carrier `recv` await it, and the body digest is `cr
 (was a sync FNV hack that only existed to keep the inbox synchronous). The sha256 makes `body_hash` signable
 (trust layer). All three `.g` compile clean, gen `.go` regenerated, and the Story driver boots+runs to
 completion headless — but **PereStartuppity's headless fixtures are blank right now**, so the dige gate can't
-confirm it; verify on **:9091**. Spec §4.2 + §7.3 updated. The endorsed next move (fold inbox into the `%req`
-engine via `%req:1,unemit` + `%req:1,Pier,prepub`) is written up under heading 4.
+confirm it; verify on **:9091**. Spec §4.2 + §7.3 updated. The endorsed next move — folding the inbox into the
+`%req` engine (`%req:unemit` drained by `inbox.do()`, `Peeroleum_pump_inbox` deleted) — is now **BUILT in `.g`
+source, compile-verified, with regen/refreeze HELD** so it doesn't disturb the live reconnect check; see heading 4.
 
 ### → START HERE: real websocket transport (heading 10) — editor↔runner is its first customer
 
@@ -175,14 +176,14 @@ Driven by the **PereStaple Story** (`wormhole/Story/PereStaple/toc.snap`), whose
 ## Engine facts (the rest promoted to the spec)
 
 The two engine-facts that corrected the spec's aspirational prose are now **in the spec** (reqy→C-native →
-spec §3; `%req:waiting`/`%exports`/`waits_savepoint` not-in-engine → spec §13/§12). What stays here, live:
+spec §3; the never-built `%req:waiting`/`%exports`/`waits_savepoint` were dropped from the spec — waiting is spec §3.2). What stays here, live:
 
 - **LangTiles gaps** (→ raw-JS passthrough, flag `// <`): no auto-`async` (hand-write it), no
   `oa`/`drop`/`empty` verbs, no drilled paths on `oai/r/rm`, no object/`.c` payloads in `sc`, no list
   fan-out. See heading L.
 - One-liner reminder of what moved: `reqy()` is deleted (live API `oai/doai/do/finish/all_finished`,
   `Stuff.svelte.ts`); waiting today = `H.i_req_ttlilt(req,secs,{waiting})` (`Hovercraft.svelte:380`) +
-  eternal-foreman `req.sc.ok=1`. Both detailed in spec §3/§13.
+  eternal-foreman `req.sc.ok=1`. Both detailed in spec §3/§3.2.
 
 ---
 
@@ -263,27 +264,32 @@ realised helpers: `Pier_next_seq` (monotone per-Pier on `.c`), `Peeroleum_send`/
 `_rollup_faulty`/`_runstepped`/`_arm_whittle`. Status: confirmed in-app at step 2 (noop) and step 3 (hello+
 trust lifecycle, both `%req:handshake,finished`). Still open (deferred, not blocking): production wiring of
 acks/sends through `%req:send` (spec §11.3) — under the mock the `post_do` chain drives the round-trip, so the
-deferred `want_savepoint`/exports (spec §12, voided) aren't needed yet.
-- **The inbox is now an async serial drain** (was a sync recursive pump). `Peeroleum_pump_inbox` is `async`,
-   `await`s the verify of each `%unemit` (sha256 body hash; header-sign verify lands here too), and loops with a
-    `while` instead of tail recursion; the `%handling` lock makes a re-entrant `deliver` (firing while the drain
-     is parked on an `await`) bow out and leave its frame `%queued` for the live loop to pick up. Order preserved,
-      no frame lost (single-threaded JS). Spec §7.3.
-- **NEXT (endorsed, not built): fold the inbox into the `%req` engine.** Make each inbound frame a serial
-   `%req:1,unemit` and each Pier a `%req:1,Pier,prepub` (keeping the `Pier:1` marker so `o({Pier:1})` still
-    finds it). Then `inbox.do()` IS the serial drain — `do()`'s `for (…) await _req_do_one` already runs reqs
-     one-at-a-time, in arrival order (keep them maz-less), awaiting each; verify becomes a plain awaited step in
-      the unemit-req's `do_fn`; `%queued`/`%handling` collapse into `needs_work`/`finished` + a small "verify in
-       flight" idempotency guard. The two changes compose: `oai` auto-wires `req.c.up` down `Pier → unemit`, so
-        the c.up-bomb (a `%req` below `w` silently never pumps unless `c.up` is stamped — see the nested-req note)
-         is gone for the whole inbox. Gotcha: `do()` resolves its handler by climbing `c.up` to the House, so the
-          `inbox`/`Pier`/`Peering`/`w` chain must still reach Mundo (the handshake reqs already rely on this).
-           Re-shapes the inbox snaps (unemits gain `req:N`) → re-record. This is the floor `%req:1,unemit` was for.
+deferred `want_savepoint`/exports (voided, dropped from the spec) aren't needed yet.
+- **The inbox is the `%req` engine now — BUILT in `.g` source, compile-verified, regen/refreeze HELD.**
+   `Peeroleum_pump_inbox` is GONE. Each inbound frame is booked as `%req:unemit,seq:N,type` under the inbox
+    (`Peeroleum_deliver`) and drained by **`inbox.do()`**, which runs the new **`req_unemit(req)`** do_fn one at a
+     time, in arrival order, awaiting each — that IS the serial async drain. The realisations:
+  - **The `%handling`/`%queued` lock is GONE.** `do()`'s `for (…) await _req_do_one` serialises within a pass,
+     and the beliefs mutex (the carrier's `post_do` is awaited across the whole delivery) means no two `do()`
+      drains ever overlap — so there's no re-entrancy to guard. This is exactly the thesis: ordering is a property
+       of the reconciler (the engine), not a sync-execution constraint.
+  - **`req_unemit`** does the per-frame logic only: pre-`%Ud` gate → awaited sha256 body-hash → `hear_*`/handler
+     → on success `req.sc.done`+`%to`, `inbox.finish(req)`, ack; on failure `req.sc.error`, finish, roll up
+      `%faulty`. `w`/`pier`/`frame` ride the req's `.c` (stashed at booking — avoids a deep `c.up` walk).
+  - **c.up:** `oai` auto-wires `ureq.c.up = inbox`; `Peeroleum_deliver` stamps `inbox.c.up = pier` (one line) so
+     `do()`'s climb reaches the House to resolve `req_unemit`. The Pier→Peering→w→Mundo chain the handshake reqs
+      already rely on does the rest. (Pier itself is NOT yet a `%req:1,Pier,prepub` — not needed for the fold;
+       still endorsed as a follow-up.)
+  - `rollup_faulty`/`runstepped` now read `inbox.o({req:'unemit'})` (was `{unemit:1}`); recent records keep the
+     readable `%unemit:seq` shape.
+  - **NOT regen'd / refrozen** (so live reconnect verification isn't disturbed) and **browser-unverified** —
+     `lang-compile` PASS only proves valid JS. Re-shapes the inbox snaps (`%unemit:N` → `%req:unemit,seq:N`), so
+      re-record after verifying on :9091. Promote spec §7.3 from the `%unemit` description once proven.
 
 ### 5 — per-req demand for time  `[x]`  CLOSED — `ttlilt` is the realised waiting-req
-`%ttlilt` (`Hovercraft.svelte:380`) IS spec §13's per-req owned demand (dropped on `finish()`,
-polled-not-mutated, no write-write race), and the live system runs on it (LiesStore/Lang/LiesCortex). Spec
-§13's `%req:waiting` + computed-max global exist in **no** code (voided in the spec). Don't build §13 — it'd
+`%ttlilt` (`Hovercraft.svelte:380`) IS spec §3.2's per-req owned demand (dropped on `finish()`,
+polled-not-mutated, no write-write race), and the live system runs on it (LiesStore/Lang/LiesCortex). The never-built
+`%req:waiting` + computed-max global exist in **no** code (spec §13 now redirects to §3.2). Don't rebuild it — it'd
 churn every step snap for no p2p gain. The only thing that bites is a ttlilt expiring before its work
 finishes; the fix is the seconds knob (bump `i_req_ttlilt(req, 2.5, …)`). Don't re-open this rabbit hole.
 
@@ -325,9 +331,25 @@ a tweaked hello-sign. Spec §4.2, §15.
     real-ws carrier). Built; lang-compile clean; **browser-unverified** — run on :9091, eyeball the lifecycle,
      Accept/Resnapture steps 2–7.
 
-### 8 — disconnect + reset_handshake  `[ ]`
+### 8 — disconnect + reset_handshake  `[~]`  transport reconnect BUILT; protocol reset still TODO
 `%active_transport e:close` → `o_elvis:reset_handshake` on the Pier: drop protocol/outbox/inbox/faulty, keep
-`%Ud`; p2paddy re-dials. Spec §9.
+`%Ud`; p2paddy re-dials. Spec §9. **Protocol-level reset is still TODO** (the Lies channel is trust-everything
+ v1 — it stamps `%Ud` and runs no hello/trust — so it didn't need it yet).
+- **Transport-level auto-reconnect IS built** (the "no ping on both ends" bug — a dev-server/relay restart
+   dropped both browsers at once and v1 had no reconnect). Three parts:
+  - **`Socket_real` (Tribunal.g)** re-dials on `onclose` with capped backoff+jitter; `ws` is reassigned per
+     reconnect (wire/send read it live, `port.ws` tracks it). New `port.on_open(cb)` re-fires consumer open-work
+      on *every* (re)connect; `port.reconnect()` force-drops a half-open socket; ephemeral frames are dropped
+       (not buffered) while down so `pending` can't bloat.
+  - **`LiesLies` (`Lies_channel_up`)** registers the relay `become` via `port.on_open` (so a returning socket
+     re-binds its role/addr), and `Lies_heartbeat` force-reconnects when a once-proven channel goes silent >20s
+      (catches a half-open socket whose `onclose` never fired).
+  - **Relay (`relay.ts`)** — fixed the bridge "state stuckness": a stale half-open `peerLink` is non-null but
+     dead, and the `!peerLink` re-dial guards skipped it forever (only a server restart cleared it). Now a
+      non-OPEN `peerLink` counts as down — closed and re-dialed on the next runner browser (re)connect.
+  - **Editor needs the re-freeze**: it runs the FROZEN `p2p/transport/*.go`, so reconnect only reaches it after
+     `cp src/lib/gen/N/*.go src/lib/p2p/transport/` (done this session). A runner-only fix leaves the editor's
+      socket dead — the channel needs BOTH ends reconnecting. Browser-unverified; confirm two-origin on :9091/:9092.
 
 ### 9/10 — transport trial: webrtc → websocket fallback (mocked)  `[~]`  PROVEN in-app thru step 5
 The mocked selection lives in `Ghost/N/Tribunal.g` ("a peer connection's reputation, constantly on trial") —

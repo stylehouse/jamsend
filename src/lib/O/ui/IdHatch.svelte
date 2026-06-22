@@ -52,7 +52,7 @@
             <h2>🪪 Cluster identity</h2>
             <p class="cur">{current
                 ? `loaded: addr ${current.pub.slice(0, 16)}…`
-                : "none — this tab can't sign privileged frames (gen_write, this_dock_updated)"}</p>
+                : "none — this tab can't sign privileged frames (gen_write, ghost_update)"}</p>
             <p>Paste a <code>.env.cluster-&lt;role&gt;</code> file — generate &amp; copy with:</p>
             <pre>npx vite-node scripts/gen-cluster-identos.ts
 cat .env.cluster-editor | xclip -selection clipboard</pre>

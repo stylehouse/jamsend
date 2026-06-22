@@ -22,6 +22,8 @@
     import DocTing          from "$lib/O/ui/DocTing.svelte"   // taker-Waft switcheroo: histogram, not raw globules
     import DocGhostList      from "$lib/O/ui/DocGhostList.svelte"   // lister-Waft switcheroo: the stem-clustered ghost index
     import FunkHost          from "$lib/O/Funk/FunkHost.svelte"     // generic host for %Funkcion embeds (kind-dispatched)
+    import { FUNK_KINDS }     from "$lib/O/Funk/kinds"               // registry: which kinds have a live component
+    import Orb                from "$lib/O/ui/micro/Orb.svelte"      // shared edit/crud toggle (ui/micro/)
 
     let { H, w, waft, depth = 0, on_active, on_delete, examining }: {
         H:         House
@@ -217,6 +219,17 @@
     let is_lister     = $derived(!!waft.sc.lists)
     let raw           = $state(false)
 
+    // ── per-Waft view controls (ephemeral; never touch the C/snap) ────────────
+    //   These ride alongside the ghost|data disillusioner as plain view state.
+    //   minimised:  collapse the body to just the control bar (the wkey stays as a tab).
+    //   capped:     Vexpany — cap the body at 10em and let it scroll, vs. infinite height.
+    //   sidebyside: halve this Waft's width.  The parent list (.ls-waft-section) is a
+    //               flex-wrap row, so two adjacent half-Wafts pair onto one line by
+    //               themselves — no parent bookkeeping, the wrap does the pairing.
+    let minimised  = $state(false)
+    let capped     = $state(false)
+    let sidebyside = $state(false)
+
     // Embedded applets (%Funkcion, and legacy %havoc drum-pads) render through FunkHost —
     //  the kind module owns the pad/light, the strike, and the armed glow.  See O/Funk/.
 
@@ -264,6 +277,17 @@
         await tick()
         editing.delete(funk); raw_edit_C.delete(funk)
     }
+    // open_raw_edit — flip a Funkcion (live or bare) into its plain-C edit row.  Shared by
+    //  the live-view orb and raw_props' orb so both land in the same edit+irow state.
+    function open_raw_edit(funk: TheC) {
+        orb_open_C.clear(); editing.clear()
+        orb_open_C.add(funk); start_edit_raw(funk)
+    }
+    // funk_kind / funk_live — a Funkcion's kind, and whether that kind has a registered
+    //  live component.  An unregistered kind (e.g. dirlist) has no illusion to host, so it
+    //   renders as a plain editable C row instead of an orb beside an empty applet.
+    const funk_kind = (c: TheC) => (c.sc.Funkcion ?? (c.sc.havoc !== undefined ? 'Ballistics' : undefined)) as string | undefined
+    const funk_live = (c: TheC) => { const k = funk_kind(c); return k != null && FUNK_KINDS[k] != null }
 
     // ── unified item-edit form state ──────────────────────────────────
     //
@@ -586,7 +610,7 @@
                 orb_open: orb_open_C.has(funk),
                 on_orb: () => {
                     if (orb_open_C.has(funk)) { orb_open_C.delete(funk); editing.delete(funk); raw_edit_C.delete(funk) }
-                    else { orb_open_C.clear(); editing.clear(); orb_open_C.add(funk); start_edit_raw(funk) }
+                    else open_raw_edit(funk)
                 },
                 on_cancel_orb: () => { orb_open_C.delete(funk); editing.delete(funk); raw_edit_C.delete(funk) },
                 on_del: () => delete_item(funk, container),
@@ -596,7 +620,29 @@
 </script>
 
 <div class="ls-waft" style="margin-left: {depth * 14}px"
-     class:ls-waft-active={is_active} class:ls-waft-ting={is_taker} class:ls-waft-ghl={is_lister}>
+     class:ls-waft-active={is_active} class:ls-waft-ting={is_taker} class:ls-waft-ghl={is_lister}
+     class:ls-waft-half={sidebyside}>
+
+    <!-- control bar — view toggles that ride beside the ghost|data disillusioner.
+         All three are render-only and never reach the C/snap. -->
+    <div class="ls-waft-ctl">
+        <button class="ls-waft-btn" class:ls-waft-btn-on={minimised}
+                onclick={() => minimised = !minimised}
+                title="{minimised ? 'expand this Waft' : 'minimise this Waft'}">{minimised ? '▸' : '▾'}</button>
+        {#if minimised}
+            <span class="ls-waft-tab" title={wkey}>{wkey}</span>
+        {/if}
+        <span class="ls-waft-ctl-spacer"></span>
+        <button class="ls-waft-btn" class:ls-waft-btn-on={sidebyside}
+                onclick={() => sidebyside = !sidebyside}
+                title="{sidebyside ? 'full width' : 'side-by-side (half width; pairs with a neighbour)'}">▥</button>
+        <button class="ls-waft-btn" class:ls-waft-btn-on={capped}
+                onclick={() => capped = !capped}
+                title="{capped ? 'uncap height (infinite)' : 'cap height at 10em (Vexpany)'}">{capped ? '⤢' : '⤡'}</button>
+    </div>
+
+    {#if !minimised}
+    <div class="ls-waft-body" class:ls-waft-capped={capped} class:scrollbig={capped}>
 
     {#if is_taker}
         <!-- Switcheroo: a taker Waft (the attention Ting) is all machine-y %Point
@@ -613,7 +659,7 @@
             {#if waft_mungs.length || waft.oa({ encode_error: 1 })}
                 <EncodingSplatter {waft} />
             {/if}
-            {@render waftitem(waft, waft, false)}
+            {@render waftitem(waft, waft, false, false)}
             {#each sub_wafts as sw (sw.sc.Waft)}
                 <svelte:self {H} {w} waft={sw} depth={depth + 1} {examining}
                     {on_active} {on_delete} />
@@ -634,7 +680,7 @@
             {#if waft_mungs.length || waft.oa({ encode_error: 1 })}
                 <EncodingSplatter {waft} />
             {/if}
-            {@render waftitem(waft, waft, false)}
+            {@render waftitem(waft, waft, false, false)}
             {#each sub_wafts as sw (sw.sc.Waft)}
                 <svelte:self {H} {w} waft={sw} depth={depth + 1} {examining}
                     {on_active} {on_delete} />
@@ -648,7 +694,7 @@
     {#if waft_mungs.length || waft.oa({ encode_error: 1 })}
         <EncodingSplatter {waft} />
     {/if}
-    {@render waftitem(waft, waft, false)}
+    {@render waftitem(waft, waft, false, false)}
 
     <!-- sub-Wafts (recursive) -->
     {#each sub_wafts as sw (sw.sc.Waft)}
@@ -656,6 +702,9 @@
             {on_active} {on_delete} />
     {/each}
 
+    {/if}
+
+    </div>
     {/if}
 
 </div>
@@ -689,19 +738,23 @@
      All per-type personality (CSS, child_types, spotlight) comes from ITEM_TYPES.
      upC is the containing C — used for edit/delete keying and Doc dpath.
      Type selection now lives in the PeelInput irow via on_crud.on_pick_type. -->
-{#snippet waftitem(C: TheC, upC: TheC, funk_as_C: boolean)}
+{#snippet waftitem(C: TheC, upC: TheC, funk_as_C: boolean, inline: boolean)}
     {#if C.sc?.Funkcion !== undefined || C.sc?.havoc !== undefined}
-        <!-- an embedded applet (%Funkcion, or a legacy %havoc pad).  By default Waft hosts it
-             generically through FunkHost — the kind's own component (the Storying light, a
-             Ballistics drum-pad, a StoryTimes run) — knowing nothing else.  Inside a What flipped
-             to its editing presentation (funk_as_C), it instead renders as a plain editable C row,
-             so you edit the Funkcion node itself, then toggle back to the live illusion. -->
-        {#if funk_as_C}
+        {@const fediting = editing.has(C) && raw_edit_C.has(C)}
+        <!-- Every Funkcion is editable through an orb.  A live kind shows its illusion with a
+             small orb beside it (compact in an inline flow, a row otherwise); the orb flips it
+             to the plain-C edit form.  A kind with no live component (e.g. Funkcion:dirlist), a
+             What flipped to edit-as-C, or a Funkcion mid-edit instead renders the full plain-C
+             row — the generic PeelInput — so it looks like, and edits as, any other C. -->
+        {#if fediting || funk_as_C || !funk_live(C)}
             <div class="ls-item ls-item-funkc">
                 <div class="ls-item-hdr">{@render pi(raw_props(C, upC))}</div>
             </div>
         {:else}
-            <FunkHost {H} {w} funk={C} {raw} {examining} />
+            <div class="ls-funk-live" class:ls-funk-live-inline={inline}>
+                <Orb onclick={() => open_raw_edit(C)} title="edit this Funkcion" />
+                <FunkHost {H} {w} funk={C} {raw} {examining} />
+            </div>
         {/if}
     {:else}
     {@const t = item_type_of(C)}
@@ -732,7 +785,7 @@
                 {#if items.length}
                     <div class={inline_flow ? 'ls-inline' : 'ls-items'}>
                         {#each items as child (child)}
-                            {@render waftitem(child, C, child_as_C)}
+                            {@render waftitem(child, C, child_as_C, inline_flow)}
                         {/each}
                     </div>
                 {/if}
@@ -771,8 +824,36 @@
         background: #13131d; border: 1px solid #252535;
         border-radius: 3px; padding: 0.3rem 0.4rem; margin-bottom: 0.25rem;
         font-size: 0.83rem; color: #ccc;
+        /* full row by default in the flex-wrap parent list; .ls-waft-half halves it
+           so two adjacent Wafts pair. Inert (block) for nested/non-flex parents. */
+        flex: 1 1 100%; min-width: 0;
     }
     .ls-waft-active { border-color: #446 }
+
+    /* control bar — thin row of view toggles at the top of every Waft */
+    .ls-waft-ctl {
+        display: flex; align-items: center; gap: 0.15rem;
+        margin: -0.1rem 0 0.15rem 0;
+    }
+    .ls-waft-ctl-spacer { flex: 1; }
+    .ls-waft-btn {
+        background: none; border: 1px solid #2a2a3a; border-radius: 3px;
+        color: #667; cursor: pointer; font-size: 0.7rem; line-height: 1;
+        padding: 0.05rem 0.28rem; flex-shrink: 0;
+        transition: color 0.1s, border-color 0.1s;
+    }
+    .ls-waft-btn:hover  { color: #aab; border-color: #446; }
+    .ls-waft-btn-on     { color: #9ab; border-color: #446; background: #1a1a2a; }
+    /* when minimised, the wkey rides the bar as a tab so you can still tell which Waft */
+    .ls-waft-tab {
+        font-family: monospace; font-size: 0.74rem; color: #7a8fa8; font-weight: bold;
+        min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        padding-left: 0.2rem;
+    }
+    /* Vexpany — cap the body height and let it scroll instead of growing forever */
+    .ls-waft-capped { max-height: 10em; overflow: auto; }
+    /* side-by-side — half width; the flex-wrap parent pairs two halves onto one row */
+    .ls-waft-half { flex: 1 1 calc(50% - 0.3rem); min-width: 0; }
 
     /* taker Waft (the Ting) — the histogram switcheroo + its toggle */
     .ls-waft-ting { border-color: #4a3a2a; }
@@ -818,6 +899,11 @@
     /* a Funkcion edited as plain C — same muted register as a Point row */
     .ls-item-funkc :global(.pi-label) { color: #6a6a8a; }
 
+    /* a live Funkcion illusion with its edit orb beside it — a row by default,
+       compact inline-flex inside an inlined What's flow */
+    .ls-funk-live        { display: flex; align-items: center; gap: 0.25rem; }
+    .ls-funk-live-inline { display: inline-flex; }
+
     /* shared item wrapper */
     .ls-item { margin: 0.1rem 0; }
     .ls-item-hdr {
@@ -829,9 +915,8 @@
     /* children indented under any item type */
     .ls-items { padding-left: 0.5rem; }
 
-    /* Point — pink left border, warm label */
+    /* Point — warm label, hairline separator; no left border or indent (reads flat) */
     .ls-item-point {
-        border-left: 2px solid #4a2a3a; padding-left: 0.3rem;
         border-bottom: 1px solid #1c1c28;
     }
     .ls-item-point:last-child { border-bottom: none }

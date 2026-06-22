@@ -34,8 +34,7 @@ story:LakeTiles
         nowriting:^Ghost
         dontSnapGhostList
   TimeSpool
-    TimeTotal:beliefs,avg=1.402
-      sample=1.081,at=1781972817
+    TimeTotal:beliefs,avg=1.71
       sample=1.901,at=1781975783
       sample=2.165,at=1781975824
       sample=1.908,at=1781975866
@@ -45,8 +44,8 @@ story:LakeTiles
       sample=1.002,at=1782105682
       sample=1.529,at=1782126259
       sample=1.514,at=1782127472
-    TimeTotal:step,avg=0.156
-      sample=0.12,at=1781972817
+      sample=4.164,at=1782136891
+    TimeTotal:step,avg=0.19
       sample=0.211,at=1781975783
       sample=0.241,at=1781975824
       sample=0.212,at=1781975866
@@ -56,6 +55,7 @@ story:LakeTiles
       sample=0.111,at=1782105682
       sample=0.17,at=1782126259
       sample=0.168,at=1782127472
+      sample=0.463,at=1782136891
   EntropyArrest
     Entcase:Languinio_Interest-waft
       lematch,Languinio

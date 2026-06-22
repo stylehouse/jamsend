@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Tribunal(): string { return '9801547adf0a0c10' },
+    Ghostmeta_Ghost_N_Tribunal(): string { return '4c66c638f91c46d7' },
 
 
 // Tribunal — a peer connection's reputation, constantly on trial (spec §4.1, §11.2).
@@ -75,9 +75,16 @@ async Socket_real(w) {
     let addr = (peering && peering.sc.name) || ''
     let scheme = (location.protocol === 'https:') ? 'wss' : 'ws'
     let url = scheme + '://' + location.host + '/relay?addr=' + encodeURIComponent(addr)
+    // The socket AUTO-RECONNECTS (v1 had none — a relay/dev-server restart dropped both browsers at
+    //  once and neither came back, so the heartbeat read "no pong" forever). connect() (below) opens
+    //   the ws; onclose re-dials with backoff; the relay re-binds our addr and the consumer's on_open
+    //    hook re-sends `become`, so the channel self-heals. ws is reassigned each reconnect — wire/send
+    //     read it live; port.ws tracks the current socket for direct readers (Lies_send_gen_write).
     let pending = []
-    let ws = new WebSocket(url)
-    ws.binaryType = 'arraybuffer'   // so a binary frame arrives as ArrayBuffer (sync-decodable), not a Blob
+    let ws = null
+    let intentional = false   // port.close() was called — stay down, do not re-dial
+    let tries = 0             // reconnect attempt counter (drives the backoff)
+    let open_hooks = []       // consumer callbacks fired on every (re)open (e.g. the relay `become`)
     // Wire framing (spec §4.2). A frame with no buffer rides as text JSON (the common case —
     //  hello/trust/ack/control, unchanged). A buffer-carrying frame rides as a text header LINE
     //   then the raw buffer: [header JSON]\n[raw buffer bytes] — one message, "text first" (the
@@ -105,20 +112,27 @@ async Socket_real(w) {
     //   always logged: it only happens before the socket opens, which is worth seeing.)
     let noisy = (h) => h && (h.type === 'ping' || h.type === 'pong' || h.type === 'ack')
     let port = {
-        type: 'websocket', real: 1, ws,
+        type: 'websocket', real: 1, ws: null,
         send(frame) {
             let h = frame && frame.header
-            if (ws.readyState !== WebSocket.OPEN) { pending.push(frame); console.log(`🛰 ws SEND buffered (socket not open): ${h && h.type}`); return }
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                // Ephemeral frames (ping/pong/ack/run_phase) are worthless once stale — a fresh one
+                //  is sent next tick — so DROP them while down; only real frames buffer, capped, so a
+                //   long outage can't grow `pending` without bound.
+                if (!noisy(h) && !(h && h.type === 'run_phase')) { pending.push(frame); if (pending.length > 200) pending.shift(); console.log(`🛰 ws SEND buffered (socket not open): ${h && h.type}`) }
+                return
+            }
             if (!noisy(h)) console.log(`🛰 ws SEND ${h ? h.type + (frame.buffer ? ' +buf=' + frame.buffer.length : '') + ' seq=' + h.seq + ' → ' + h.to : '(control)'}`)
             wire(frame)
         },
         recv(frame) { return H.Peeroleum_deliver(w, frame) },
-        close() { try { ws.close() } catch (e) {} },
+        // on_open — register a callback fired on EVERY (re)connect (fires immediately if already open).
+        //  The consumer (Lies) re-sends the relay `become` through this so a reconnected socket re-binds.
+        on_open(cb) { open_hooks.push(cb); if (ws && ws.readyState === WebSocket.OPEN) { try { cb() } catch (e) {} } },
+        reconnect() { try { if (ws) ws.close() } catch (e) {} },   // force a drop → onclose re-dials (for a half-open socket)
+        close() { intentional = true; try { if (ws) ws.close() } catch (e) {} },
     }
-    ws.onopen = () => { console.log(`🛰 ws OPEN ${url} — flushing ${pending.length} buffered`); let q = pending.splice(0); for (const f of q) wire(f) }
-    ws.onclose = (ev) => console.log(`🛰 ws CLOSE code=${ev.code} clean=${ev.wasClean}`)
-    ws.onerror = () => console.log(`🛰 ws ERROR (relay down? wrong origin?)`)
-    ws.onmessage = (ev) => H.post_do(async () => {
+    let on_message = (ev) => H.post_do(async () => {
         // A binary message is a buffer-carrying frame ([header JSON]\n[raw buffer]); decode it to
         //  {header, buffer} and deliver. Control + no-buffer frames arrive as text JSON below.
         if (ev.data instanceof ArrayBuffer) {
@@ -154,6 +168,30 @@ async Socket_real(w) {
         if (!noisy(h)) console.log(`🛰 ws RECV ${h ? h.type + ' seq=' + h.seq + ' ← ' + h.from : '(headerless, dropped)'}`)
         await port.recv(frame)
     })
+    let connect = () => {
+        ws = new WebSocket(url)
+        port.ws = ws
+        ws.binaryType = 'arraybuffer'   // so a binary frame arrives as ArrayBuffer (sync-decodable), not a Blob
+        ws.onopen = () => {
+            tries = 0
+            console.log(`🛰 ws OPEN ${url} — flushing ${pending.length} buffered`)
+            let q = pending.splice(0); for (const f of q) wire(f)
+            for (const cb of open_hooks) { try { cb() } catch (e) {} }   // re-run consumer open work (relay `become`) on every (re)connect
+        }
+        ws.onclose = (ev) => {
+            console.log(`🛰 ws CLOSE code=${ev.code} clean=${ev.wasClean}${intentional ? ' (intentional)' : ''}`)
+            if (intentional) return
+            // backoff 0.5s→1→2…capped 15s, + jitter so a relay/dev-server restart (which drops every
+            //  browser at once) doesn't thunder back in lockstep. The relay re-binds our addr on the
+            //   new socket and the on_open hook re-sends `become`, so the channel heals itself.
+            let delay = Math.min(15000, 500 * Math.pow(2, tries++)) + Math.floor(Math.random() * 300)
+            console.log(`🛰 ws reconnect in ${delay}ms (attempt ${tries})`)
+            setTimeout(() => { if (!intentional) connect() }, delay)
+        }
+        ws.onerror = () => console.log(`🛰 ws ERROR (relay down? wrong origin?)`)
+        ws.onmessage = on_message
+    }
+    connect()
     w.o({ transport: 1, type: 'websocket' })[0].c.port = port
 
 },

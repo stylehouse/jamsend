@@ -155,10 +155,12 @@
         //
         //   v1 scope (deferred items spelled out in the channel doc): one editor,
         //    one runner, trust-everything (the hello/trust handshake is skipped — we
-        //     stamp %Ud so the inbox's pre-Ud gate passes app frames), no auto-
-        //      reconnect.  Hosting the Peering on w:Lies keeps the consumer and its
-        //       channel in one actor; a dedicated transport w (beside Wormhole) is a
-        //        clean future move if Peeroleum particles on w:Lies get noisy.
+        //     stamp %Ud so the inbox's pre-Ud gate passes app frames).  Auto-reconnect
+        //      IS built now: Socket_real re-dials on close (backoff), re-fires `become`
+        //       via port.on_open, and Lies_heartbeat forces a reconnect on a half-open
+        //        socket gone silent.  Hosting the Peering on w:Lies keeps the consumer and
+        //         its channel in one actor; a dedicated transport w (beside Wormhole) is a
+        //          clean future move if Peeroleum particles on w:Lies get noisy.
         //
         //   LIVE verification is two-origin / browser-only: one relay is set-once
         //    role, so editor and runner cannot both run under a single dev server —
@@ -189,11 +191,12 @@
 
             ;(H as any).Socket_real(w)
             const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
-            const ws = port?.ws as WebSocket | undefined
-            if (ws) {
-                const become = () => { try { H.tlog(`🛰 ws SEND control:become role=${role}`); ws.send(JSON.stringify({ control: 'become', role })) } catch { /* relay down — the no-ack ttlilt retries */ } }
-                if (ws.readyState === WebSocket.OPEN) become()
-                else ws.addEventListener('open', become)   // additive — Socket_real owns ws.onopen
+            // Announce our relay role on EVERY (re)connect, not just the first open: Socket_real now
+            //  auto-reconnects, and a returning socket must re-`become` so the relay re-binds it to this
+            //   role/addr. on_open fires immediately if already open, else on each (re)open. (Set-once
+            //    role on the relay makes a repeat become with the same role a safe no-op.)
+            if (port?.on_open) {
+                port.on_open(() => { try { H.tlog(`🛰 ws SEND control:become role=${role}`); port.ws?.send(JSON.stringify({ control: 'become', role })) } catch { /* relay down — reconnect re-dials */ } })
             }
             ;(H as any).Tribunal_activate_websocket(w)
 
@@ -205,11 +208,13 @@
             } else {
                 (H as any).Peeroleum_on(w, 'run_result', (cw: TheC, _p: TheC, fr: any) => H.Lies_run_result_recv(cw, fr))
                 ;(H as any).Peeroleum_on(w, 'run_phase',  (cw: TheC, _p: TheC, fr: any) => H.Lies_run_phase_recv(cw, fr))
-                // this-dock-updated: a cluster peer (claude-cli editing a .g, or the runner) tells the
-                //  editor a dock's source changed on disk → re-read its %Good so the loaded doc stays in
-                //   sync. Verify-in-handler (async), NOT in the sync inbox: the cluster sign rides the
-                //    consumer payload, so the spine ferries it opaque and never needs to know about trust.
-                ;(H as any).Peeroleum_on(w, 'this_dock_updated', (cw: TheC, _p: TheC, fr: any) => { void H.Lies_this_dock_updated_recv(cw, fr); return true })
+                // ghost_update: a cluster peer (claude-cli editing a .g) hands the editor the dock-involved
+                //  COMPILE job — {path, dige} for a .g that changed on disk. The editor force-loads the dock
+                //   (displaying it: the compile reads the CodeMirror state, which only exists for a mounted
+                //    dock), compiles, writes the .go, HMRs it to runners. Verify-in-handler (async), NOT in
+                //     the sync inbox: the cluster sign rides the consumer payload, so the spine ferries it
+                //      opaque and never needs to know about trust.
+                ;(H as any).Peeroleum_on(w, 'ghost_update', (cw: TheC, _p: TheC, fr: any) => { void H.Lies_ghost_update_recv(cw, fr); return true })
             }
             // ping/pong heartbeat — both roles echo a ping and record a pong, so the real
             //  envelope path is provable (and shown by the badge), not just relay control.
@@ -291,7 +296,7 @@
 
             // Sign with the editor's cluster Idento so the relay's verify gate trusts this write
             //  (it is otherwise an RCE — any socket can gen_write code to disk). The signed unit is
-            //   the header {control,path,from,body_hash}; body_hash is sha256 (NOT the spine's FNV),
+            //   the header {control,path,from,body_hash}; body_hash is sha256 over the body string,
             //    so one sig pins exactly these bytes. Forward-compatible: when no key is configured we
             //     send unsigned and the relay warn-and-allows (current dev loop), so signing can land
             //      before CLUSTER_TRUSTED_PUBS is deployed without breaking anything.
@@ -340,43 +345,51 @@
             return key && pub ? { pub, key } : undefined
         },
 
-        // Lies_send_dock_updated — tell the cluster a dock's source changed (so the editor re-reads its
-        //  %Good). The signed unit is a self-contained {type,from,path} in the CONSUMER PAYLOAD (not the
-        //   spine header), so verification is independent of the transport — the spine just ferries it.
-        //    Editor↔runner only (both Ud-handshaken); a non-peer signer (claude-cli) reaches the editor
-        //     once the spine accepts cluster-trusted frames pre-Ud (the recv-window trust accept — TODO).
-        async Lies_send_dock_updated(w: TheC, path: string): Promise<boolean> {
+        // Lies_send_ghost_update — hand the cluster the dock-involved compile job for a .g (the in-app
+        //  twin of scripts/ghost_update.ts; uncalled today, kept as the wired in-app send site). The
+        //   signed unit is a self-contained {type,from,path,dige} in the CONSUMER PAYLOAD (not the spine
+        //    header), so verification is independent of the transport — the spine just ferries it.
+        //     Editor↔runner only (both Ud-handshaken); a non-peer signer (claude-cli) reaches the editor
+        //      once the spine accepts cluster-trusted frames pre-Ud (the recv-window trust accept — TODO).
+        async Lies_send_ghost_update(w: TheC, path: string): Promise<boolean> {
             const H = this as House
             const idento = H.Lies_cluster_idento(w)
-            if (!idento) { H.tlog(`⚠ dock_updated ${path} — no cluster idento, not sending`); return false }
-            const signed = { type: 'this_dock_updated', from: prepubOf(idento.pub), path }
+            if (!idento) { H.tlog(`⚠ ghost_update ${path} — no cluster idento, not sending`); return false }
+            const dige   = H.LiesStore_good_of(w, 'text/Doc', path)?.o({ known: 1 })[0]?.sc.dige as string | undefined
+            const signed = { type: 'ghost_update', from: prepubOf(idento.pub), path, dige }
             const sign   = await signHeader(signed, idento.key)
-            ;(H as any).Peeroleum_send_consumer(w, 'this_dock_updated', { dock: signed, sign })
-            H.tlog(`📤 this_dock_updated → ${path} [signed ${prepubOf(idento.pub)}]`)
+            ;(H as any).Peeroleum_send_consumer(w, 'ghost_update', { dock: signed, sign })
+            H.tlog(`📤 ghost_update → ${path} @ ${dige ?? '?'} [signed ${prepubOf(idento.pub)}]`)
             return true
         },
 
-        // Lies_this_dock_updated_recv — verify the payload signature against the trusted flock, then
-        //  refresh the loaded %Good for that dock (delete content → re-read; the LiesStore primitive).
-        //   Async (ed verify is a Promise) but fired un-awaited from the sync inbox handler, so the
-        //    §7.3 serial lock is never held across the await. Untrusted/unsigned → dropped, logged.
-        async Lies_this_dock_updated_recv(w: TheC, frame: any): Promise<void> {
+        // Lies_ghost_update_recv — verify the payload signature against the trusted flock, then TAKE the
+        //  dock-involved compile job for that .g.  Force the dock's disk content into the editor and make
+        //   it active (force_active): active ⇒ Langui mounts it ⇒ its CodeMirror EditorState appears ⇒
+        //    req_instrumentation compiles it ⇒ the .go lands on disk and HMRs to runners.  This is why
+        //     "forcing its contents into the editor is essential" — there is no headless compile; the
+        //      compile reads the mounted dock's state.  An already-loaded dock is re-read from disk
+        //       (delete content) so the changed .g lands, not the stale session copy.  Lies_provide_dock
+        //        warms the %Good and routes it to e_Lang_dock_content whether the dock was open or closed.
+        //   Async (ed verify is a Promise) but fired un-awaited from the sync inbox handler, so the §7.3
+        //    serial lock is never held across the await. Untrusted/unsigned → dropped, logged.
+        //   TODO (merge UI): when the editor holds UNSAVED edits to this dock (its buffer diverged from
+        //    %Good), forcing the disk content in reseats over them.  The integrate-or-revert popover should
+        //     mediate — raise a %surprise_read (mine = buffer, theirs = incoming disk) and let the existing
+        //      SurprisePopover keep-mine/take-theirs flow resolve it, as req_LiesStore_writeCarefully does
+        //       on the write leg.  Until then this follows the prior reseat (the active-dock clobber risk
+        //        was already present on the old this_dock_updated refresh; force_active widens it).
+        async Lies_ghost_update_recv(w: TheC, frame: any): Promise<void> {
             const H = this as House
             const dock = frame?.dock
             const sign = frame?.sign
-            if (!dock?.path || typeof sign !== 'string') { H.tlog(`🚫 this_dock_updated DROPPED — malformed`); return }
+            if (!dock?.path || typeof sign !== 'string') { H.tlog(`🚫 ghost_update DROPPED — malformed`); return }
             const signer = await verifyHeader({ ...dock, sign }, browserTrustedPubs())
-            if (!signer) { H.tlog(`🚫 this_dock_updated DROPPED — untrusted/unsigned ${dock.path}`); return }
+            if (!signer) { H.tlog(`🚫 ghost_update DROPPED — untrusted/unsigned ${dock.path}`); return }
             const good = H.LiesStore_good_of(w, 'text/Doc', dock.path)
-            if (!good) { H.tlog(`👻 this_dock_updated ${dock.path} — no loaded dock here, nothing to refresh`); return }
-            delete good.c.content                              // force a fresh disk read
-            await H.LiesStore_read_good(w, 'text/Doc', dock.path)
-            // Re-reading %Good refreshes the IO store, but the OPEN dock view only reseats when
-            //  dock_content is PUSHED to e_Lang_dock_content (the one content-writer — it bumps
-            //   Text.disk_rev, which drives Langui's reseat $effect). The first-open %subscribe is
-            //    spent, so push it ourselves; e_Lang_dock_content no-ops if the text didn't change.
-            H.feebly_i_elvisto('Lang/Lang', 'dock_content', { Good: good })
-            H.tlog(`🔄 dock refreshed from ${prepubOf(signer)}: ${dock.path}`)
+            if (good) delete good.c.content                    // force a fresh disk read of the changed .g
+            await H.Lies_provide_dock(w, dock.path, { force_active: true })
+            H.tlog(`🔄 ghost_update ${dock.path} @ ${dock.dige ?? '?'} from ${prepubOf(signer)} — forced into editor + compiling`)
         },
 
         //#endregion
@@ -579,6 +592,20 @@
             const H = this as House
             if (!H.Lies_channel_live(w)) return
             const now = Date.now()
+            // Liveness watchdog: if the channel WAS proven (a pong landed) but has since gone silent
+            //  past the badge's window, the socket is likely half-open (a drop with no close event, so
+            //   Socket_real's onclose never fired) — force a reconnect so the carrier re-dials. A
+            //    never-yet-proven channel is left to the open/become path; throttled so we don't storm.
+            const peer = H.Lies_role(w) === 'editor' ? 'runner' : 'editor'
+            const last = (w.o({ channel_peer: peer })[0] as TheC | undefined)?.sc.last as number | undefined
+            if (last && now - last > 20000 && (!w.c.last_reconnect || now - (w.c.last_reconnect as number) > 20000)) {
+                const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
+                if (port?.reconnect) {
+                    w.c.last_reconnect = now
+                    H.tlog(`🛰 channel silent ${Math.round((now - last) / 1000)}s — forcing reconnect`)
+                    port.reconnect()
+                }
+            }
             if (w.c.last_ping && now - (w.c.last_ping as number) < 6000) return
             w.c.last_ping = now
             H.Lies_ping(w)

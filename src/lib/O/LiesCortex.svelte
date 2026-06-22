@@ -307,9 +307,13 @@
     //   req:include and req:run_method (driven below via rq.do()) poll each tick.
     async Pantheate(A: TheC, w: TheC) {
         const H = this
-        // keep %include (dynamic-import markers), %BlastPit (run output), %self,
-        //  and all req particles (req:include, req:run_method) — drop everything else.
-        w.o().filter(n => !n.sc.self && !n.sc.include && !n.sc.BlastPit && !n.sc.req).map(n => n.drop(n))
+        // Everything that lands directly on w:Pantheate is durable: %self, the
+        //  %o_elvis routing markers, %include (dynamic-import markers), req:include
+        //  and req:run_method, and %BlastPit (run output — its A/w scratch lives
+        //  under BlastPit, not as a direct child).  An older per-tick "keep those,
+        //  drop everything else" pass lived here, but with nothing transient left
+        //  to clear its only effect was dropping and re-creating the o_elvis marker
+        //  each tick, churning its snap position — so it's gone.
 
         for (let me of this.o_elvis(w,'Ghost_update_notify')) {
             if (!me.sc.include) throw "!Gun"

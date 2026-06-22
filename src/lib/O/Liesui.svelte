@@ -501,5 +501,11 @@
         padding: 0 0.35rem; line-height: 1.5;
     }
     .ls-qnote  { color: #667; font-size: 0.72rem; font-style: italic }
-    .ls-waft-section { margin-top: 0.2rem }
+    /* flex-wrap row so side-by-side (half-width) Wafts pair onto one line; a
+       full-width Waft (the default) takes its own row via flex-basis 100%. */
+    .ls-waft-section {
+        margin-top: 0.2rem;
+        display: flex; flex-wrap: wrap; align-items: flex-start;
+        gap: 0 0.3rem;
+    }
 </style>

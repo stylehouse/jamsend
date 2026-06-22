@@ -1,11 +1,31 @@
 Credulation
-  run=0,at=1782127441.533,ok=0,ok_pct=0.14,book:PereStaple,mode:check
-    uses:Ghost_N_Peeroleum,dige:e5b47a08cecb135b
-    uses:Ghost_N_Tribunal,dige:8547ff44d47d7d2c
-    uses:Ghost_Story_Peregrination,dige:a23bc110db3251ac
+  run=0,at=1782133788.651,ok=0,ok_pct=0.14,book:PereStaple,mode:check
+    uses:Ghost_N_Peeroleum,dige:3a34a0536b917164
+    uses:Ghost_N_Tribunal,dige:4c66c638f91c46d7
+    uses:Ghost_Story_Peregrination,dige:86f1f3b223cc82aa
     uses:Ghost_N_Tyrant,dige:d9455412901394d4
-  run,at=1782128890.944,ok=0,ok_pct=0.14,book:PereStaple,mode:check
-    uses:Ghost_N_Peeroleum,dige:449fb428ad270352
-    uses:Ghost_N_Tribunal,dige:9801547adf0a0c10
+  run,at=1782134534.498,ok=0,ok_pct=0.14,book:PereStaple,mode:check
+    uses:Ghost_N_Peeroleum,dige:b2fea0600ca5cedd
+    uses:Ghost_N_Tribunal,dige:4c66c638f91c46d7
+    uses:Ghost_Story_Peregrination,dige:86f1f3b223cc82aa
+    uses:Ghost_N_Tyrant,dige:d9455412901394d4
+  run=2,at=1782136700.015,ok=0,ok_pct=0,book:LakeSurfer,mode:check
+    uses:Ghost_N_Peeroleum,dige:83f874dfa51bb975
+    uses:Ghost_N_Tribunal,dige:4c66c638f91c46d7
+    uses:Ghost_Story_Peregrination,dige:86f1f3b223cc82aa
+    uses:Ghost_N_Tyrant,dige:d9455412901394d4
+  run=3,at=1782136807.407,ok=0,ok_pct=0.14,book:PereStaple,mode:check
+    uses:Ghost_N_Peeroleum,dige:83f874dfa51bb975
+    uses:Ghost_N_Tribunal,dige:4c66c638f91c46d7
+    uses:Ghost_Story_Peregrination,dige:86f1f3b223cc82aa
+    uses:Ghost_N_Tyrant,dige:d9455412901394d4
+  run=4,at=1782137762.126,ok=0,ok_pct=0.14,book:PereStaple,mode:check
+    uses:Ghost_N_Peeroleum,dige:83f874dfa51bb975
+    uses:Ghost_N_Tribunal,dige:4c66c638f91c46d7
+    uses:Ghost_Story_Peregrination,dige:86f1f3b223cc82aa
+    uses:Ghost_N_Tyrant,dige:d9455412901394d4
+  run=5,at=1782138553.846,ok=0,ok_pct=0.14,book:PereStaple,mode:check
+    uses:Ghost_N_Peeroleum,dige:83f874dfa51bb975
+    uses:Ghost_N_Tribunal,dige:4c66c638f91c46d7
     uses:Ghost_Story_Peregrination,dige:86f1f3b223cc82aa
     uses:Ghost_N_Tyrant,dige:d9455412901394d4

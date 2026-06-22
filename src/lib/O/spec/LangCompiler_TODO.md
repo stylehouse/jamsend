@@ -45,6 +45,20 @@ The editor and `npm run lang-compile` share the translator + syntax gates, so `�
 
 ## Open
 
+- **post-IOing element accessor — `o req:handshake 0` / `-1` / ranges.** A query (`o`/`oa`/…) returns a
+   list, and reaching one element is today raw JS: `pier.o({req:'handshake'})[0]`, then `.sc.finished`.
+    The seam: **anything that is illegal JavaScript right after an IOing is the DSL's to claim.** A bare
+     trailing integer is illegal JS after `o {…}` (two expressions, no operator), so it can mean index:
+     - `pier o req:handshake 0`   → `pier.o({req:'handshake'})[0]`   (first match)
+     - `pier o req:handshake -1`  → `…[len-1]` (last) — `.at(-1)`, so a negative counts from the end
+     - `pier o req:handshake 0..2` (or `0:2`) → a range/slice accessor (returns a list) — spelling TBD
+    Composes with the existing capture/`%` sugar so the cited line collapses to one tile:
+     `if (pier o req:handshake 0)%finished` ⟶ `if (pier.o({req:'handshake'})[0]?.sc.finished)`, or with a
+      let: `let hs = pier o req:handshake 0` then `hs%finished`. Decide: does `0` bind tighter than a
+       following `.$:cap` / `%key`? (Index first, then the accessor on the element — `o … 0 %finished`.)
+        Guard the obvious footgun: a bare `0` that is actually a *value* leg belongs inside the peel
+         (`req:0`), never trailing; the accessor only attaches after the whole IOing peel closes.
+
 - **whole-doc parse vs. the per-line fast path.** `Lang_compile_collect` parses each candidate
    line standalone — the cause of multi-line template literals miscompiling (a prose line in a
     backtick re-parsed as a `ControlFlow` block). A whole-doc stho parse of the largest ghost

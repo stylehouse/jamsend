@@ -3,7 +3,7 @@
 //
 //  Sibling of gen-identos.ts but the opposite trust posture. gen-identos makes a PUBLIC,
 //   deterministic pool (committed). THIS makes the cluster's TRUST ANCHORS: one random ed25519
-//    keypair per role (editor/runner/claude/…). Privileged frames (gen_write, this_dock_updated)
+//    keypair per role (editor/runner/claude/…). Privileged frames (gen_write, ghost_update)
 //     are signed by one of these; a receiver verifies against the flock's PUBLIC keys and drops
 //      anything unsigned/foreign — closing the unauthenticated-relay RCE.
 //

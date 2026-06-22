@@ -32,6 +32,9 @@
     //     Caller then takes over with the proper add form in the ls-add-row.
     //     The char is passed so the caller can pre-seed draft_mk.
 
+    import Orb     from "$lib/O/ui/micro/Orb.svelte"
+    import DeleteX from "$lib/O/ui/micro/DeleteX.svelte"
+
     let {
         label        = 'Point',
         mainkey      = '',
@@ -107,14 +110,8 @@
 <div class="pi-wrap">
     <div class="pi-row">
         {#if on_crud}
-            <!-- ○ orb — border-only circle, sits at the indent edge.
-                 Clicking opens edit mode immediately (no intermediate picker state). -->
-            <button
-                class="pi-orb"
-                class:pi-orb-active={on_crud.orb_open}
-                title="edit / add / delete"
-                onclick={on_crud.on_orb}
-            ></button>
+            <!-- ○ orb — opens edit mode immediately (no intermediate picker state). -->
+            <Orb active={on_crud.orb_open} onclick={on_crud.on_orb} />
         {/if}
 
         <span class="pi-label">{label}{open ? ':' : mk_is_one ? (display_val ? ',' : '') : ':'}</span>
@@ -193,7 +190,7 @@
                     {/if}
                 {/if}
                 <button class="pi-irow-cancel" onclick={on_crud.on_cancel_orb}>cancel</button>
-                <button class="pi-irow-del" title="delete" onclick={on_crud.on_del}>×</button>
+                <DeleteX ondelete={on_crud.on_del} />
             </div>
         </div>
     {/if}
@@ -209,18 +206,6 @@
         display: flex; align-items: center; gap: 0.2rem;
         min-height: 1.4rem;
     }
-
-    /* ○ orb — border-radius circle, no text content */
-    .pi-orb {
-        background: none;
-        border: 1px solid #334; border-radius: 50%;
-        width: 0.72rem; height: 0.72rem;
-        padding: 0; flex-shrink: 0;
-        cursor: pointer;
-        transition: border-color 0.1s, box-shadow 0.1s;
-    }
-    .pi-orb:hover   { border-color: #557; box-shadow: 0 0 3px #4467 }
-    .pi-orb-active  { border-color: #88a; box-shadow: 0 0 4px #446a }
 
     .pi-label {
         font-family: monospace; font-size: 0.74rem;
@@ -320,10 +305,4 @@
     /* in-type buttons slightly cooler tint to distinguish after vs in */
     .pi-irow-type-in         { border-color: #223344; color: #446 }
     .pi-irow-type-in:hover   { color: #7ab; border-color: #336 }
-
-    .pi-irow-del {
-        background: none; border: none; color: #445;
-        cursor: pointer; font-size: 0.82rem; padding: 0 0.15rem;
-    }
-    .pi-irow-del:hover { color: #f66 }
 </style>

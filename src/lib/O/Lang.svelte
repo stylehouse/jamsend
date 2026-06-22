@@ -1208,8 +1208,11 @@
                 Text.bump_version()
             }
 
-            // first dock furnished becomes the active one (MVP: active = wanted Doc).
-            if (!w.c.active_dock_path) await H.Lang_set_active_dock(w, path)
+            // first dock furnished becomes the active one (MVP: active = wanted Doc).  A ghost_update
+            //  compile job rides force_active: take the active seat even if another dock holds it, so this
+            //   dock MOUNTS (gains a CodeMirror state) and req_instrumentation can compile it — there is no
+            //    headless compile.  (TODO: the unsaved-buffer merge popover — see Lies_ghost_update_recv.)
+            if (ev.sc.force_active || !w.c.active_dock_path) await H.Lang_set_active_dock(w, path)
 
             // poke a think — the furnishing waiting on this path is still needs_work
             //  (it bowed out on a ttlilt, never finished), so the next drive re-runs

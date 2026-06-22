@@ -60,6 +60,9 @@
     //     itself is credufunk_run above; this is only the face.
     import type { House } from "$lib/O/Housing.svelte"
     import FunkHost from "$lib/O/Funk/FunkHost.svelte"
+    import Orb      from "$lib/O/ui/micro/Orb.svelte"
+    import { depeel } from "$lib/Y.svelte"
+    import { SvelteSet } from "svelte/reactivity"
     // TheC is in scope from the module script.
 
     let { H, w, funk, raw = false, examining }: {
@@ -67,6 +70,12 @@
     } = $props()
 
     let open  = $state(false)
+    // per-cell de-illusion: an orb flips a child Book cell from its live illusion to the
+    //  raw C** line, so every cell is openable, not just the container.
+    let bare  = new SvelteSet<TheC>()
+    const toggle_bare = (c: TheC) => { if (bare.has(c)) bare.delete(c); else bare.add(c) }
+    // the CreduCoherence** journal hides behind a reveal-orb at its top.
+    let jopen = $state(false)
     let cells = $derived((() => { void funk.version; return funk.o({ Funkcion: "Storying" }) as TheC[] })())
 
     // per-Book coherence: latest's version-set (vset) equals perfection's → HEAD is proven.
@@ -112,16 +121,35 @@
     </button>
     {#if open}
         <div class="cf-body">
-            <!-- exploded: the illusioned child cells (each Book's Storying light) … -->
+            <!-- exploded: the illusioned child cells (each Book's Storying light), each
+                 orbed so it de-illusions to its raw C** line on demand. -->
             <div class="cf-illusions">
-                {#each cells as c (c)}<FunkHost {H} {w} funk={c} {examining} />{/each}
+                {#each cells as c (c)}
+                    <span class="cf-cell" class:cf-cell-bare={bare.has(c)}>
+                        <Orb active={bare.has(c)} onclick={() => toggle_bare(c)}
+                             title={bare.has(c) ? 'show the illusion' : 'reveal the raw C'} />
+                        {#if bare.has(c)}
+                            <code class="cf-cell-raw">{depeel(c.sc)}</code>
+                        {:else}
+                            <FunkHost {H} {w} funk={c} {examining} />
+                        {/if}
+                    </span>
+                {/each}
             </div>
-            <!-- … and the dis-illusioned C** journal it stashes inside itself. -->
+            <!-- … and the dis-illusioned C** journal it stashes inside itself, revealed by
+                 the orb at the top of the CreduCoherence**. -->
             {#if journal.length}
                 <div class="cf-journal">
-                    {#each journal as ln}
-                        <div class="cf-jl" style="padding-left:{ln.depth * 0.8 + 0.2}rem">{ln.text}</div>
-                    {/each}
+                    <div class="cf-jhead">
+                        <Orb active={jopen} onclick={() => jopen = !jopen}
+                             title={jopen ? 'fold the journal' : 'reveal the CreduCoherence journal'} />
+                        <span class="cf-jhead-lbl">CreduCoherence** · {journal.length}</span>
+                    </div>
+                    {#if jopen}
+                        {#each journal as ln}
+                            <div class="cf-jl" style="padding-left:{ln.depth * 0.8 + 0.2}rem">{ln.text}</div>
+                        {/each}
+                    {/if}
                 </div>
             {/if}
         </div>
@@ -150,7 +178,14 @@
         border-left: 1px solid #2a2a3a;
     }
     .cf-illusions { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    .cf-cell { display: inline-flex; align-items: center; gap: 0.25rem; }
+    .cf-cell-raw {
+        font-family: monospace; font-size: 0.68rem; color: #8a93b4;
+        background: #161a28; border-radius: 3px; padding: 0.05rem 0.3rem;
+    }
     .cf-journal { margin-top: 0.25rem; }
+    .cf-jhead { display: flex; align-items: center; gap: 0.3rem; }
+    .cf-jhead-lbl { font-family: monospace; font-size: 0.68rem; color: #6a7088; }
     .cf-jl {
         font-family: monospace; font-size: 0.68rem; color: #6a7088; line-height: 1.35;
     }

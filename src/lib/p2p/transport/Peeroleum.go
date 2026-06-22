@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return 'f466667e4008ca65' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return '2b17c426d1cc9020' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -38,7 +38,7 @@ async req_p2pman(req) {
 // ── per-identity worker ───────────────────────────────────────────────────────
 // A:Alice/w:Peeroleum — one per identity-presence; owns this address's Piers.
 async Peeroleum(A,w) {
-    w.oai({seemingly: `ya aooooolly`}, {figaro: "Sausage"})
+    w.oai({seemingly: `ya aooooolly`}, {figaro: "Snowdogsialutionsin33g44"})
     // each installed %Peering manages its own Piers via %req:p2paddy
     for (const Peering of this._o_iter(w, [{sc: {Peering: 1}}])) {
         Peering.oai({req: "p2paddy"})
@@ -172,6 +172,28 @@ Pier_next_seq(pier) {
     return pier.c.seq
 
 },
+// ── binary body digest (spec §4.2, heading 7) ─────────────────────────────────
+// A binary frame carries its payload as RAW bytes on frame.buffer (a Uint8Array), never
+//  base64 — binary is the bulk of real traffic, so a 33% base64 tax is unacceptable. On
+//   the wire a buffer-carrying frame is one binary message ([header JSON]\n[raw buffer], the
+//    carrier's job — Socket_real/relay); the in-process mock carries frame.buffer by reference. The buffer
+//     stays off-snap (mock: unemit.c.frame.buffer); only header.body_hash + body_len snap.
+//  The integrity check is sha256 (crypto.subtle), the same digest the trust layer signs over —
+//   so when header.sign lands it commits to the buffer through body_hash with no second algorithm.
+//    It is async, and the whole delivery path is async all the way (carrier recv awaits
+//     Peeroleum_deliver awaits Peeroleum_pump_inbox awaits this), so the digest resolves INSIDE the
+//      carrier's awaited post_do — still within the beliefs mutex / Atime (spec §15), deterministic.
+//       (An FNV-1a digest stood here purely to stay synchronous under a sync inbox; going async
+//        dissolved that constraint, and with it the forgeable hash — body_hash is now signable.)
+// Peeroleum_body_digest — sha256 hex over the raw buffer bytes. Same bytes → same hex on
+//  sender and receiver, so a clean buffer verifies and a meddled one does not. Raw JS:
+//   crypto.subtle, no DSL verb. Async — the whole delivery path awaits it (see below).
+async Peeroleum_body_digest(bytes) {
+    let b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || [])
+    let digest = await crypto.subtle.digest('SHA-256', b)
+    return Array.from(new Uint8Array(digest)).map(x => x.toString(16).padStart(2, '0')).join('')
+
+},
 // ── consumer seam (spec heading 10, asks 1–3): the editor↔runner channel and any other app
 //     rides the same envelope/inbox/ack/faulty machinery without editing this spine ──────────
 // Peeroleum_on — register an app-frame handler for a non-protocol header.type on this w. The
@@ -214,7 +236,7 @@ Peeroleum_peer_ready(pier) {
 //  each other via a partner ref (paired by the wrangler once both sides stand
 //   up); a send is H.post_do(() => partner.recv(frame)) — instant, in Atime,
 //    deterministic (spec §15). The live handle + partner ref are objects on .c.
-transport(A,w) {
+async transport(A,w) {
     w.i({transport: 1, type: "mock"})
     const H = this
     let at = w.i({active_transport: 1, type: 'mock', open: 1})
@@ -223,8 +245,8 @@ transport(A,w) {
     //   starts null — the wrangler pairs the two ports after both sides exist.
     at.c.connection = {
         type: 'mock', partner: null,
-        send(frame) { H.post_do(async () => this.partner?.recv(frame)) },
-        recv(frame) { H.Peeroleum_deliver(w, frame) },
+        send(frame) { H.post_do(async () => { await this.partner?.recv(frame) }) },
+        recv(frame) { return H.Peeroleum_deliver(w, frame) },
     }
 
 },
@@ -243,11 +265,20 @@ transport(A,w) {
 Peeroleum_send(w, frame) {
     let h = frame.header
     let pier = w.o({Peering:1})[0]?.o({Pier:1})[0]
-    // ack AND the heartbeat (ping/pong) book no outbox emit: an ack is light (spec §7.2), and
-    //  ping/pong are ephemeral liveness probes — booking them would pile %emit rows in the snap
-    //   that nothing reliably culls between Story steps. Only real app/protocol frames are tracked.
-    let ephemeral = (h.type === 'ack' || h.type === 'ping' || h.type === 'pong')
-    if (pier && !ephemeral) pier.oai({outbox: 1}).i({emit: h.seq, type: h.type, seq: h.seq, sent: 1})
+    // ack, the heartbeat (ping/pong), AND run_phase (the transient progress blip) book no outbox
+    //  emit: an ack is light (spec §7.2); ping/pong/run_phase are fire-and-forget — booking them
+    //   piles %emit rows nothing reliably culls between Story steps. Only real app/protocol frames
+    //    are tracked. (run_phase MUST be ephemeral: it is never acked, so a booked emit would never
+    //     cull — and the ack it would otherwise draw re-wakes the runner's Story drive, wedging
+    //      quiescence into an endless step_stall loop.)
+    let ephemeral = (h.type === 'ack' || h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase')
+    if (pier && !ephemeral) {
+        // a binary frame records body_hash + body_len on its emit so the snap shows
+        //  "a test_binary of N bytes, hash X, sent" (the body itself rides off-snap on the frame).
+        let esc = {emit: h.seq, type: h.type, seq: h.seq, sent: 1}
+        if (h.body_hash != null) { esc.body_hash = h.body_hash; esc.body_len = h.body_len }
+        pier.oai({outbox: 1}).i(esc)
+    }
     let conn = w.o({active_transport:1})[0]?.c.connection
     // No transport is a real fault (the frame is lost) — always say so, clearly.  A live+loud
     //  frame logs normally; a live heartbeat stays quiet so a healthy channel doesn't spam.
@@ -262,19 +293,28 @@ Peeroleum_send(w, frame) {
 //    serial inbox as %unemit,queued (its raw frame stashed on .c for the handler) and
 //     Peeroleum_pump_inbox drains it. feebly_ponder re-drives a think (Runtime asserted —
 //      we run inside the carrier's post_do) so a watching do_fn reacts this same run.
-Peeroleum_deliver(w, frame) {
+async Peeroleum_deliver(w, frame) {
     const H = this
     let h = frame.header
     let pier = w.o({Peering:1})[0]?.o({Pier:1})[0]
     if (!pier) return
-    if (h.type === 'ack') { H.Peeroleum_take_ack(w, pier, h); H.feebly_ponder(); return }
-    // ping/pong are an ephemeral heartbeat: dispatch straight to the registered handler, like an
-    //  ack — NO inbox booking (so they never stack in the snap) and NO ack-back (so the heartbeat
-    //   can't generate the ack-storm whose sends drop as "no transport" right after an HMR).
-    if (h.type === 'ping' || h.type === 'pong') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, pier, frame); H.feebly_ponder(); return }
-    let unemit = pier.oai({inbox: 1}).i({unemit: h.seq, type: h.type, seq: h.seq, queued: 1})
+    // only wake a watching do_fn if the ack actually advanced something (stamped an outbox emit or a
+    //  protocol %said). An ack for an UNtracked frame — an ephemeral run_phase/ping the far side acked
+    //   anyway (e.g. an un-fixed editor bootstrap that still inboxes+acks run_phase) — matches nothing,
+    //    so feebly_ponder-ing on it would re-wake a quiescing Story drive into the step_stall wedge.
+    //     This is robust to the PEER's behaviour: the runner ignores acks that advance nothing here.
+    if (h.type === 'ack') { if (H.Peeroleum_take_ack(w, pier, h)) H.feebly_ponder(); return }
+    // ping/pong (heartbeat) AND run_phase (progress blip) are ephemeral: dispatch straight to the
+    //  registered handler, like an ack — NO inbox booking (so they never stack in the snap) and NO
+    //   ack-back. The ack-back is the killer: a run_phase that gets acked sends the ack to the
+    //    runner, whose Peeroleum_deliver feebly_ponders → re-wakes its Story drive so the step never
+    //     quiesces → step_stall fires → another run_phase → another ack → an endless wedge (the 48s).
+    if (h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, pier, frame); H.feebly_ponder(); return }
+    let usc = {unemit: h.seq, type: h.type, seq: h.seq, queued: 1}
+    if (h.body_hash != null) { usc.body_hash = h.body_hash; usc.body_len = h.body_len }
+    let unemit = pier.oai({inbox: 1}).i(usc)
     unemit.c.frame = frame
-    H.Peeroleum_pump_inbox(w, pier)
+    await H.Peeroleum_pump_inbox(w, pier)
     H.feebly_ponder()
 
 },
@@ -288,42 +328,55 @@ Peeroleum_deliver(w, frame) {
 //        verify/deliver failure: stamp %error (no %done) and roll up to %faulty. Then loop
 //         to drain the next %queued now the lock is free. Raw JS — reads the stashed frame
 //          off .c, mutates flag keys, walks dynamic state (no DSL verb for any of it yet).
-Peeroleum_pump_inbox(w, pier) {
+async Peeroleum_pump_inbox(w, pier) {
     const H = this
     let inbox = pier.o({inbox:1})[0]
     if (!inbox) return
+    // serial lock: if an unemit is already mid-handle (an awaited verify in flight on a live
+    //  drain), bow out — the just-queued frame waits at %queued and that drain picks it up when
+    //   it loops. Single-threaded JS makes this airtight: a re-entrant deliver runs fully during
+    //    our await, leaving its frame queued for the while-loop below to find before it returns.
     if (inbox.o({unemit:1}).some(u => u.sc.handling && !u.sc.done && !u.sc.error)) return
-    let next = inbox.o({unemit:1}).find(u => u.sc.queued && !u.sc.done && !u.sc.error)
-    if (!next) return
-    let frame = next.c.frame
-    let h = (frame && frame.header) || {}
-    next.sc.handling = 1
-    let pre_ud = !pier.oa({Ud:1})
-    let ok = !(pre_ud && h.type !== 'hello' && h.type !== 'noop')
-    if (ok) {
-        next.sc.verified = 1
-        let on = w.c.on && w.c.on[h.type]
-        if (h.type === 'hello') ok = H.hear_hello(w, pier, frame) !== false
-        else if (h.type === 'trust') ok = H.hear_trust(w, pier, frame) !== false
-        else if (on) ok = on(w, pier, frame) !== false
-        // else (noop, or an unregistered type): nothing to deliver — verified+done, then acked.
+    while (true) {
+        let next = inbox.o({unemit:1}).find(u => u.sc.queued && !u.sc.done && !u.sc.error)
+        if (!next) return
+        let frame = next.c.frame
+        let h = (frame && frame.header) || {}
+        next.sc.handling = 1
+        let pre_ud = !pier.oa({Ud:1})
+        let ok = !(pre_ud && h.type !== 'hello' && h.type !== 'noop')
+        let reason = pre_ud ? 'pre-Ud' : 'not-them'
+        // body integrity (spec §4.2: header.body_hash covers the body) is part of verify, checked
+        //  BEFORE delivery so a corrupt body fails identically to a tweaked header-sign — same
+        //   %error→%faulty path. The digest is an AWAITED sha256 over the off-snap raw buffer
+        //    (Peeroleum_body_digest); a mismatch is bad-body-hash. Header-sign verify lands here too.
+        if (ok && h.body_hash != null && (await H.Peeroleum_body_digest(frame.buffer)) !== h.body_hash) {
+            ok = false; reason = 'bad-body-hash'
+        }
+        if (ok) {
+            next.sc.verified = 1
+            let on = w.c.on && w.c.on[h.type]
+            if (h.type === 'hello') ok = (await H.hear_hello(w, pier, frame)) !== false
+            else if (h.type === 'trust') ok = (await H.hear_trust(w, pier, frame)) !== false
+            else if (on) ok = (await on(w, pier, frame)) !== false
+            // else (noop, or an unregistered type): nothing to deliver — verified+done, then acked.
+        }
+        if (ok) {
+            next.sc.done = 1
+            next.sc.to = h.type
+            delete next.sc.queued
+            delete next.sc.handling
+            pier.bump()
+            let me = pier.c.up.sc.name
+            H.Peeroleum_send(w, {header:{type:'ack', from:me, to:pier.sc.pub, ack:h.seq}})
+        } else {
+            next.sc.error = reason
+            delete next.sc.queued
+            delete next.sc.handling
+            pier.bump()
+            H.Peeroleum_rollup_faulty(pier)
+        }
     }
-    if (ok) {
-        next.sc.done = 1
-        next.sc.to = h.type
-        delete next.sc.queued
-        delete next.sc.handling
-        pier.bump()
-        let me = pier.c.up.sc.name
-        H.Peeroleum_send(w, {header:{type:'ack', from:me, to:pier.sc.pub, ack:h.seq}})
-    } else {
-        next.sc.error = pre_ud ? 'pre-Ud' : 'not-them'
-        delete next.sc.queued
-        delete next.sc.handling
-        pier.bump()
-        H.Peeroleum_rollup_faulty(pier)
-    }
-    H.Peeroleum_pump_inbox(w, pier)
 
 },
 // Peeroleum_take_ack — an inbound ack names a seq we sent (spec §7.2): stamp that
@@ -332,11 +385,13 @@ Peeroleum_pump_inbox(w, pier) {
 Peeroleum_take_ack(w, pier, h) {
     let emit = pier.o({outbox:1})[0]?.o({emit:1}).find(e => e.sc.seq == h.ack)
     if (emit) { emit.sc.acked = 1; pier.bump() }
+    let hit = !!emit
     let proto = pier.o({protocol:1})[0]
     for (const kind of ['hello','trust']) {
         let said = proto?.o({[kind]:1})[0]?.o({said:1})[0]
-        if (said && said.sc.seq == h.ack) said.sc.acked = 1
+        if (said && said.sc.seq == h.ack) { said.sc.acked = 1; hit = true }
     }
+    return hit
 
 },
 // Peeroleum_rollup_faulty — rebuild %faulty from the inbox's %error items (spec §9).

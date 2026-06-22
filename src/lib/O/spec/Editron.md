@@ -270,3 +270,15 @@ The runner does NOT compile or include inside its Story Run; it **acquires** wha
    (interaction-poked think vs a "boot story → re-enable ambient" mode); the `toc.snap`s carry one `step,dige`
     lie — confirm one step then settle, Accept/Resnapture to record real diges (the now-honest badge reads red
      until they're re-recorded).
+- **Agent-requested in-app compile (ask Editron, don't spawn a program).** Today an external agent (claude-cli)
+   syntax-checks a `.g` by spawning `npm run lang-compile` / `ghost-update` — each boots a fresh `vite-node`+esbuild
+    program. Doing that repeatedly is slow and (observed) exhausts the sandbox's thread budget until esbuild
+     core-dumps (`failed to create new OS thread, errno=11`). The running Editron ALREADY has the compiler loaded
+      (`LangCompiling`), so it should answer a compile request directly. Proposed: a relay frame `compile_request
+       {path}` (the inbound twin of `this_dock_updated`) → the editor compiles that dock and replies
+        `compile_verdict {path, ok, errors[], gen_dige}`. **Catch the user flagged:** the dock may not be OPEN —
+         the editor must *auto-open + auto-compile* the requested path (read `%Good`, run `Lang_compile_dock`
+          headlessly, no focus change), and gracefully reply "editor not running / file not found" so the agent
+           can fall back to `lang-compile`. Reuses the existing signed-frame channel (claude's cluster Idento); the
+            verdict is the same data `lang-compile` prints, just without a cold program start. Folds naturally into
+             `ghost-update` (which already notifies the editor) — make the notify *also* return the compile verdict.

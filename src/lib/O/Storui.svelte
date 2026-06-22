@@ -1135,7 +1135,7 @@
         <!-- tabindex=0: Tab-key entry point for story focus; arrow/e/r/t keys -->
         <!--   bubble from any focused child up to the .sr root handler.       -->
         <div class="sr-strip-wrap">
-        <div class="sr-strip" tabindex="0" bind:this={strip_el}>
+        <div class="sr-strip scrollsmall" tabindex="0" bind:this={strip_el}>
             {#each display.steps as ts (ts.n)}
                 {@const n         = ts.n}
                 {@const Step      = live_step(n)}
@@ -1306,7 +1306,7 @@
                     <div class="sr-hollow-body">snap not yet loaded</div>
                 {:else if eff_mode === 'naive'}
                     <!-- raw: single pre, full got_snap text, no diff colouring -->
-                    <pre class="sr-pre sr-tree-pre">{#each diff_rows as row, i (i)}{#if row.kind === 'pair'}{@render snap_line(row.left, 'same')}{/if}{/each}</pre>
+                    <pre class="sr-pre sr-tree-pre scrollbig">{#each diff_rows as row, i (i)}{#if row.kind === 'pair'}{@render snap_line(row.left, 'same')}{/if}{/each}</pre>
 
                 {:else}
                     <!-- two-column proper diff — rendered via the diff2_view snippet -->
@@ -1377,7 +1377,7 @@
             <div class="sr-dlabel ref">{labels.left}</div>
             <div class="sr-dlabel got">{labels.right}</div>
         </div>
-        <div class="sr-diff2-body">
+        <div class="sr-diff2-body scrollbig">
         <div class="sr-diff2-grid">
             <div class="sr-diff2-col" onscroll={sync_col_scroll}>
                 {#each rows as row, i (i)}
@@ -1462,7 +1462,7 @@
     {@const span = (tN - t0) || 1}
     {@const COLS = 60}
     {@const scale = (t: number) => Math.round((t - t0) / span * (COLS - 1))}
-    <div class="sr-trace">
+    <div class="sr-trace scrollbig">
         <div class="sr-trace-axis">
             <span class="sr-trace-axis-lbl">trace</span>
             <span>{span.toFixed(1)}ms</span>
@@ -1915,25 +1915,7 @@
 /* plain: equal chars — inherits cell colour, no decoration                */
 .sr-plain { }
 
-/* ── scrollbars ─────────────────────────────────────────────────────────── */
-.sr-strip::-webkit-scrollbar              { width: 4px; height: 4px; }
-.sr-strip::-webkit-scrollbar-track       { background: #0e0e0e; }
-.sr-strip::-webkit-scrollbar-thumb       { background: #2a2a2a; border-radius: 2px; }
-/* pre, diff, and trace scrollbars: fatter so they're grabbable */
-.sr-pre::-webkit-scrollbar,
-.sr-diff2-body::-webkit-scrollbar,
-.sr-trace::-webkit-scrollbar             { width: 12px; height: 12px; }
-.sr-pre::-webkit-scrollbar-track,
-.sr-diff2-body::-webkit-scrollbar-track,
-.sr-trace::-webkit-scrollbar-track      { background: #0e0e0e; }
-.sr-pre::-webkit-scrollbar-thumb,
-.sr-diff2-body::-webkit-scrollbar-thumb,
-.sr-trace::-webkit-scrollbar-thumb      { background: #3a3a3a; border-radius: 3px; border: 2px solid #0e0e0e; }
-.sr-pre::-webkit-scrollbar-thumb:hover,
-.sr-diff2-body::-webkit-scrollbar-thumb:hover,
-.sr-trace::-webkit-scrollbar-thumb:hover { background: #555; }
-/* firefox */
-.sr-pre,
-.sr-diff2-body,
-.sr-trace { scrollbar-width: auto; scrollbar-color: #3a3a3a #0e0e0e; }
+/* ── scrollbars ─────────────────────────────────────────────────────────────
+   The strip rides the global .scrollsmall; the grabbable pre/diff/trace panes
+   ride the global .scrollbig (see app.css).  Both classes are on the elements. */
 </style>

@@ -723,7 +723,10 @@ export const LANG_COMPILE = {
                     const peek_indent = (peek.text.match(/^(\s*)/) ?? ['', ''])[1].length
                     if (peek_indent <= decl_indent) break   // body ended
                     if (dedent < 0) dedent = peek_indent     // first body line sets the dedent
-                    out.push({ kind: sink, text: peek.text.slice(dedent) })
+                    // strip at MOST `dedent` leading whitespace — a body line less indented
+                    //  than the first (rare, but legal in markup) keeps all its content; a
+                    //   plain slice(dedent) would eat real characters off such a line.
+                    out.push({ kind: sink, text: peek.text.replace(new RegExp(`^[ \\t]{0,${dedent}}`), '') })
                     n++
                 }
                 return n

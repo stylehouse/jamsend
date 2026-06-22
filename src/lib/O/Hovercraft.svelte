@@ -505,8 +505,11 @@
     //   linger until the next i_Story_o_req_ttlilt replaces them out; the
     //   > now filter makes them harmless, and seeing one tells us the
     //   clearance is a timeout (the ttlilt outlived its req's chance to finish).
-    //   req.finished guard: finish() may beat the next i_Story_o_req_ttlilt cleanup,
-    //   so we skip any ttlilt whose req is already done.
+    //   req.finished guard: finish() may beat the next i_Story_o_req_ttlilt cleanup
+    //   (the work confirmed within its window — cleared by success, not timeout —
+    //    so until_ts is still in the future and there's no timed_out flag). We drop
+    //    that stale published copy on sight so it never reaches a snap, rather than
+    //    waiting a tick for i_Story_o_req_ttlilt's replace to retract it.
     o_Story_req_ttlilt(Run: House): boolean {
         // H.trace('ttlilt', 'Story poll')
 
@@ -520,7 +523,7 @@
 
         for (const t of Run.o({ ttlilt: 1 }) as TheC[]) {
             const req = t.sc.req as TheC | undefined
-            if (req?.sc.finished) continue  // stale: finish() beat i_Story_o_req_ttlilt cleanup
+            if (req?.sc.finished) { Run.drop(t); continue }  // stale: finish() beat cleanup — retract the published copy now
 
             const until_ts = t.sc.until_ts as number
             if (!t.sc.timed_out && until_ts > now) {

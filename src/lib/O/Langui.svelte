@@ -1493,6 +1493,9 @@
             parent: captured_container,
             state: EditorState.create({ doc: initial, extensions: editorExtensions }),
         })
+        // the scroller wears the global .scrollbig look (app.css); Langui keeps only
+        //  the gutter-width override so the minimap stays in lockstep with the bar.
+        view.scrollDOM.classList.add('scrollbig')
         // alignment key for Atime dispatchers — see the switch $effect's stamp.
         ;(view as any).lte_dock_path = captured_path
         last_applied_lang = initial_lang_name
@@ -1809,20 +1812,17 @@
     /* lte-expanded: V button pressed — give the editor room to breathe     */
     .lte-expanded .lte-cm :global(.cm-scroller) { max-height: 80vh }
 
-    /* ── webkit scrollbar — vertical fat, horizontal skinny ─────────────── */
-    /* Applies to cm-scroller only.  Outer page scrollbars are unaffected.  */
-    /* The 2em vertical track creates the gutter that DocMinimap tucks into. */
+    /* ── webkit scrollbar ─────────────────────────────────────────────────── */
+    /* The bar's look (thumb/track) is the global .scrollbig (app.css), added to  */
+    /* the scroller in JS.  Langui overrides only the WIDTH, because              */
+    /* --lte-scrollbar-w is the gutter the minimap tucks into and also positions  */
+    /* the chevron — width and minimap must move together.                       */
     .lte-cm :global(.cm-scroller)::-webkit-scrollbar {
-        width:  var(--lte-scrollbar-w);   /* vertical */
+        width:  var(--lte-scrollbar-w);   /* vertical — the minimap gutter */
         height: 0.5em;                    /* horizontal — stay out of the way */
     }
     .lte-cm :global(.cm-scroller)::-webkit-scrollbar-thumb {
-        border-radius: 1em;
-        min-height: 4em;
-        background: url(i/copper_anodes.jpg);
-    }
-    .lte-cm :global(.cm-scroller)::-webkit-scrollbar-track {
-        border-radius: 1em;
+        min-height: 4em;                  /* easier to grab on a tall doc */
     }
 
     /* .fathandle — wider thumb for when minimap gutter is wider;            */

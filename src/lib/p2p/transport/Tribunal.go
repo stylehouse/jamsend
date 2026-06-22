@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Tribunal(): string { return '8547ff44d47d7d2c' },
+    Ghostmeta_Ghost_N_Tribunal(): string { return '4c66c638f91c46d7' },
 
 
 // Tribunal — a peer connection's reputation, constantly on trial (spec §4.1, §11.2).
@@ -46,14 +46,14 @@ PeerJS(w) {
 //  process shared queue as the mock transport (the wrangler pairs the two sides), so
 //   the fallback delivers for real with no relay server. The real /relay endpoint on
 //    the dev server is heading 10.
-Socket(w) {
+async Socket(w) {
     const H = this
     w.i({transport: 1, type: "websocket"})
     // < the live port is an object on .c (a transport seam): a working shared-queue
     //    port, partner paired across the two sides by the wrangler (cf transport()).
     let port = { type: 'websocket', partner: null,
-        send(frame) { H.post_do(async () => this.partner?.recv(frame)) },
-        recv(frame) { H.Peeroleum_deliver(w, frame) } }
+        send(frame) { H.post_do(async () => { await this.partner?.recv(frame) }) },
+        recv(frame) { return H.Peeroleum_deliver(w, frame) } }
     w.o({ transport: 1, type: 'websocket' })[0].c.port = port
 
 },
@@ -61,12 +61,12 @@ Socket(w) {
 //  (editor↔runner). Unlike Socket (the in-process mock the deterministic Story test pairs), this
 //   opens a native WebSocket to our OWN-origin /relay?addr=<our id>; the relay routes by header.to
 //    (locally, or once over the relay↔relay bridge to the other origin). addr is our Peering %name.
-//     The mock stays untouched so the Peregrination test keeps its determinism; this is the
+//     The mock stays untouched so the PereStaple test keeps its determinism; this is the
 //      production path, installed by the consumer (Lies) for a real channel. Raw JS: WebSocket +
 //       location + objects-on-.c are all transport seams. Delivery is wrapped in post_do so an
 //        inbound frame off the (async, off-tick) socket lands in Atime, exactly as the mock's
 //         partner.recv does — Peeroleum_deliver then feebly_ponders so a watching do_fn reacts.
-Socket_real(w) {
+async Socket_real(w) {
     const H = this
     w.i({transport: 1, type: "websocket"})
     // < the live port is a real WebSocket on .c (the transport seam). send buffers until OPEN;
@@ -75,27 +75,74 @@ Socket_real(w) {
     let addr = (peering && peering.sc.name) || ''
     let scheme = (location.protocol === 'https:') ? 'wss' : 'ws'
     let url = scheme + '://' + location.host + '/relay?addr=' + encodeURIComponent(addr)
+    // The socket AUTO-RECONNECTS (v1 had none — a relay/dev-server restart dropped both browsers at
+    //  once and neither came back, so the heartbeat read "no pong" forever). connect() (below) opens
+    //   the ws; onclose re-dials with backoff; the relay re-binds our addr and the consumer's on_open
+    //    hook re-sends `become`, so the channel self-heals. ws is reassigned each reconnect — wire/send
+    //     read it live; port.ws tracks the current socket for direct readers (Lies_send_gen_write).
     let pending = []
-    let ws = new WebSocket(url)
+    let ws = null
+    let intentional = false   // port.close() was called — stay down, do not re-dial
+    let tries = 0             // reconnect attempt counter (drives the backoff)
+    let open_hooks = []       // consumer callbacks fired on every (re)open (e.g. the relay `become`)
+    // Wire framing (spec §4.2). A frame with no buffer rides as text JSON (the common case —
+    //  hello/trust/ack/control, unchanged). A buffer-carrying frame rides as a text header LINE
+    //   then the raw buffer: [header JSON]\n[raw buffer bytes] — one message, "text first" (the
+    //    header, with from/to/body_hash/[sig], is human-readable at the front; JSON.stringify never
+    //     emits a raw \n, so the first 0x0A is an unambiguous delimiter), then raw bytes (no base64).
+    //      The receiver splits on the first \n (no per-frame assembly queue); the relay routes by
+    //       reading that header line. encode/decode MUST match relay.ts.
+    let NL = 10   // '\n'
+    let encode_binary = (frame) => {
+        let hj = new TextEncoder().encode(JSON.stringify(frame.header))
+        let buf = frame.buffer
+        let out = new Uint8Array(hj.length + 1 + buf.length)
+        out.set(hj, 0); out[hj.length] = NL; out.set(buf, hj.length + 1)
+        return out.buffer
+    }
+    let decode_binary = (ab) => {
+        let bytes = new Uint8Array(ab)
+        let nl = bytes.indexOf(NL)
+        let header = JSON.parse(new TextDecoder().decode(bytes.subarray(0, nl)))
+        return { header, buffer: bytes.subarray(nl + 1) }   // buffer is a view — near-zero-copy
+    }
+    let wire = (frame) => { if (frame && frame.buffer) ws.send(encode_binary(frame)); else ws.send(JSON.stringify(frame)) }
     // Heartbeat traffic floods the console once the channel is healthy — log everything BUT
     //  ping/pong/ack, so dock_push/run_result/hello/trust still show. (A buffered send is
     //   always logged: it only happens before the socket opens, which is worth seeing.)
     let noisy = (h) => h && (h.type === 'ping' || h.type === 'pong' || h.type === 'ack')
     let port = {
-        type: 'websocket', real: 1, ws,
+        type: 'websocket', real: 1, ws: null,
         send(frame) {
             let h = frame && frame.header
-            if (ws.readyState !== WebSocket.OPEN) { pending.push(frame); console.log(`🛰 ws SEND buffered (socket not open): ${h && h.type}`); return }
-            if (!noisy(h)) console.log(`🛰 ws SEND ${h ? h.type + ' seq=' + h.seq + ' → ' + h.to : '(control)'}`)
-            ws.send(JSON.stringify(frame))
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                // Ephemeral frames (ping/pong/ack/run_phase) are worthless once stale — a fresh one
+                //  is sent next tick — so DROP them while down; only real frames buffer, capped, so a
+                //   long outage can't grow `pending` without bound.
+                if (!noisy(h) && !(h && h.type === 'run_phase')) { pending.push(frame); if (pending.length > 200) pending.shift(); console.log(`🛰 ws SEND buffered (socket not open): ${h && h.type}`) }
+                return
+            }
+            if (!noisy(h)) console.log(`🛰 ws SEND ${h ? h.type + (frame.buffer ? ' +buf=' + frame.buffer.length : '') + ' seq=' + h.seq + ' → ' + h.to : '(control)'}`)
+            wire(frame)
         },
-        recv(frame) { H.Peeroleum_deliver(w, frame) },
-        close() { try { ws.close() } catch (e) {} },
+        recv(frame) { return H.Peeroleum_deliver(w, frame) },
+        // on_open — register a callback fired on EVERY (re)connect (fires immediately if already open).
+        //  The consumer (Lies) re-sends the relay `become` through this so a reconnected socket re-binds.
+        on_open(cb) { open_hooks.push(cb); if (ws && ws.readyState === WebSocket.OPEN) { try { cb() } catch (e) {} } },
+        reconnect() { try { if (ws) ws.close() } catch (e) {} },   // force a drop → onclose re-dials (for a half-open socket)
+        close() { intentional = true; try { if (ws) ws.close() } catch (e) {} },
     }
-    ws.onopen = () => { console.log(`🛰 ws OPEN ${url} — flushing ${pending.length} buffered`); let q = pending.splice(0); for (const f of q) ws.send(JSON.stringify(f)) }
-    ws.onclose = (ev) => console.log(`🛰 ws CLOSE code=${ev.code} clean=${ev.wasClean}`)
-    ws.onerror = () => console.log(`🛰 ws ERROR (relay down? wrong origin?)`)
-    ws.onmessage = (ev) => H.post_do(async () => {
+    let on_message = (ev) => H.post_do(async () => {
+        // A binary message is a buffer-carrying frame ([header JSON]\n[raw buffer]); decode it to
+        //  {header, buffer} and deliver. Control + no-buffer frames arrive as text JSON below.
+        if (ev.data instanceof ArrayBuffer) {
+            let frame
+            try { frame = decode_binary(ev.data) } catch (e) { console.warn('🛰 ws RECV binary decode failed', e); return }
+            let bh = frame.header
+            console.log(`🛰 ws RECV ${bh.type} seq=${bh.seq} +buf=${frame.buffer.length} ← ${bh.from}`)
+            await port.recv(frame)
+            return
+        }
         let frame
         try { frame = JSON.parse(ev.data) } catch (e) { return }
         // The relay speaks two things over this one socket: Peeroleum envelopes (carry a
@@ -119,8 +166,32 @@ Socket_real(w) {
         }
         let h = frame && frame.header
         if (!noisy(h)) console.log(`🛰 ws RECV ${h ? h.type + ' seq=' + h.seq + ' ← ' + h.from : '(headerless, dropped)'}`)
-        port.recv(frame)
+        await port.recv(frame)
     })
+    let connect = () => {
+        ws = new WebSocket(url)
+        port.ws = ws
+        ws.binaryType = 'arraybuffer'   // so a binary frame arrives as ArrayBuffer (sync-decodable), not a Blob
+        ws.onopen = () => {
+            tries = 0
+            console.log(`🛰 ws OPEN ${url} — flushing ${pending.length} buffered`)
+            let q = pending.splice(0); for (const f of q) wire(f)
+            for (const cb of open_hooks) { try { cb() } catch (e) {} }   // re-run consumer open work (relay `become`) on every (re)connect
+        }
+        ws.onclose = (ev) => {
+            console.log(`🛰 ws CLOSE code=${ev.code} clean=${ev.wasClean}${intentional ? ' (intentional)' : ''}`)
+            if (intentional) return
+            // backoff 0.5s→1→2…capped 15s, + jitter so a relay/dev-server restart (which drops every
+            //  browser at once) doesn't thunder back in lockstep. The relay re-binds our addr on the
+            //   new socket and the on_open hook re-sends `become`, so the channel heals itself.
+            let delay = Math.min(15000, 500 * Math.pow(2, tries++)) + Math.floor(Math.random() * 300)
+            console.log(`🛰 ws reconnect in ${delay}ms (attempt ${tries})`)
+            setTimeout(() => { if (!intentional) connect() }, delay)
+        }
+        ws.onerror = () => console.log(`🛰 ws ERROR (relay down? wrong origin?)`)
+        ws.onmessage = on_message
+    }
+    connect()
     w.o({ transport: 1, type: 'websocket' })[0].c.port = port
 
 },
