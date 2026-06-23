@@ -208,13 +208,13 @@
             } else {
                 (H as any).Peeroleum_on(w, 'run_result', (cw: TheC, _p: TheC, fr: any) => H.Lies_run_result_recv(cw, fr))
                 ;(H as any).Peeroleum_on(w, 'run_phase',  (cw: TheC, _p: TheC, fr: any) => H.Lies_run_phase_recv(cw, fr))
-                // ghost_update: a cluster peer (claude-cli editing a .g) hands the editor the dock-involved
+                // ghost_compile: a cluster peer (claude-cli editing a .g) hands the editor the dock-involved
                 //  COMPILE job — {path, dige} for a .g that changed on disk. The editor force-loads the dock
                 //   (displaying it: the compile reads the CodeMirror state, which only exists for a mounted
                 //    dock), compiles, writes the .go, HMRs it to runners. Verify-in-handler (async), NOT in
                 //     the sync inbox: the cluster sign rides the consumer payload, so the spine ferries it
                 //      opaque and never needs to know about trust.
-                ;(H as any).Peeroleum_on(w, 'ghost_update', (cw: TheC, _p: TheC, fr: any) => { void H.Lies_ghost_update_recv(cw, fr); return true })
+                ;(H as any).Peeroleum_on(w, 'ghost_compile', (cw: TheC, _p: TheC, fr: any) => { void H.Lies_ghost_compile_recv(cw, fr); return true })
             }
             // ping/pong heartbeat — both roles echo a ping and record a pong, so the real
             //  envelope path is provable (and shown by the badge), not just relay control.
@@ -251,7 +251,7 @@
             //     LIVE spine (CREDULER_GHOSTS loads gen/N/*.go), so it tests current code; only the
             //      editor stays frozen, because it can't ride the spine it's actively editing.  To
             //       promote a new spine into the EDITOR's channel, re-copy gen/N/ → p2p/transport/ by
-            //        hand (now: lang-compile --write, then cp).
+            //        hand (now: ghost-compile the spine .g so the editor writes gen/N/*.go, then cp).
             const uis = H.oai_enroll(H, { watched: 'UIs' })
             for (const gen of ['p2p/transport/Peeroleum.go', 'p2p/transport/Tribunal.go']) {
                 if (uis.oa({ UI: 'Pantheate-include', gen_path: gen })) continue   // already mounted
@@ -345,25 +345,25 @@
             return key && pub ? { pub, key } : undefined
         },
 
-        // Lies_send_ghost_update — hand the cluster the dock-involved compile job for a .g (the in-app
-        //  twin of scripts/ghost_update.ts; uncalled today, kept as the wired in-app send site). The
+        // Lies_send_ghost_compile — hand the cluster the dock-involved compile job for a .g (the in-app
+        //  twin of scripts/ghost_compile.ts; uncalled today, kept as the wired in-app send site). The
         //   signed unit is a self-contained {type,from,path,dige} in the CONSUMER PAYLOAD (not the spine
         //    header), so verification is independent of the transport — the spine just ferries it.
         //     Editor↔runner only (both Ud-handshaken); a non-peer signer (claude-cli) reaches the editor
         //      once the spine accepts cluster-trusted frames pre-Ud (the recv-window trust accept — TODO).
-        async Lies_send_ghost_update(w: TheC, path: string): Promise<boolean> {
+        async Lies_send_ghost_compile(w: TheC, path: string): Promise<boolean> {
             const H = this as House
             const idento = H.Lies_cluster_idento(w)
-            if (!idento) { H.tlog(`⚠ ghost_update ${path} — no cluster idento, not sending`); return false }
+            if (!idento) { H.tlog(`⚠ ghost_compile ${path} — no cluster idento, not sending`); return false }
             const dige   = H.LiesStore_good_of(w, 'text/Doc', path)?.o({ known: 1 })[0]?.sc.dige as string | undefined
-            const signed = { type: 'ghost_update', from: prepubOf(idento.pub), path, dige }
+            const signed = { type: 'ghost_compile', from: prepubOf(idento.pub), path, dige }
             const sign   = await signHeader(signed, idento.key)
-            ;(H as any).Peeroleum_send_consumer(w, 'ghost_update', { dock: signed, sign })
-            H.tlog(`📤 ghost_update → ${path} @ ${dige ?? '?'} [signed ${prepubOf(idento.pub)}]`)
+            ;(H as any).Peeroleum_send_consumer(w, 'ghost_compile', { dock: signed, sign })
+            H.tlog(`📤 ghost_compile → ${path} @ ${dige ?? '?'} [signed ${prepubOf(idento.pub)}]`)
             return true
         },
 
-        // Lies_ghost_update_recv — verify the payload signature against the trusted flock, then TAKE the
+        // Lies_ghost_compile_recv — verify the payload signature against the trusted flock, then TAKE the
         //  dock-involved compile job for that .g.  Force the dock's disk content into the editor and make
         //   it active (force_active): active ⇒ Langui mounts it ⇒ its CodeMirror EditorState appears ⇒
         //    req_instrumentation compiles it ⇒ the .go lands on disk and HMRs to runners.  This is why
@@ -379,17 +379,17 @@
         //      SurprisePopover keep-mine/take-theirs flow resolve it, as req_LiesStore_writeCarefully does
         //       on the write leg.  Until then this follows the prior reseat (the active-dock clobber risk
         //        was already present on the old this_dock_updated refresh; force_active widens it).
-        async Lies_ghost_update_recv(w: TheC, frame: any): Promise<void> {
+        async Lies_ghost_compile_recv(w: TheC, frame: any): Promise<void> {
             const H = this as House
             const dock = frame?.dock
             const sign = frame?.sign
-            if (!dock?.path || typeof sign !== 'string') { H.tlog(`🚫 ghost_update DROPPED — malformed`); return }
+            if (!dock?.path || typeof sign !== 'string') { H.tlog(`🚫 ghost_compile DROPPED — malformed`); return }
             const signer = await verifyHeader({ ...dock, sign }, browserTrustedPubs())
-            if (!signer) { H.tlog(`🚫 ghost_update DROPPED — untrusted/unsigned ${dock.path}`); return }
+            if (!signer) { H.tlog(`🚫 ghost_compile DROPPED — untrusted/unsigned ${dock.path}`); return }
             const good = H.LiesStore_good_of(w, 'text/Doc', dock.path)
             if (good) delete good.c.content                    // force a fresh disk read of the changed .g
             await H.Lies_provide_dock(w, dock.path, { force_active: true })
-            H.tlog(`🔄 ghost_update ${dock.path} @ ${dock.dige ?? '?'} from ${prepubOf(signer)} — forced into editor + compiling`)
+            H.tlog(`🔄 ghost_compile ${dock.path} @ ${dock.dige ?? '?'} from ${prepubOf(signer)} — forced into editor + compiling`)
         },
 
         //#endregion

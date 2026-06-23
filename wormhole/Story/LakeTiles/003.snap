@@ -1,24 +1,24 @@
 Snap:H
   H:LakeTiles,Run
     A:Lies
-      self,round=22	{"mung":["age"]}
+      self,round=21	{"mung":["age"]}
       w:Lies
         Opt
           nowriting:^Ghost
           dontSnapGhostList
-        self,round=22	{"mung":["age"]}
+        self,round=21	{"mung":["age"]}
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/LakeTiles/Waftily/toc.snap,waft_path:Story/LakeTiles/Waftily
             known,dige:1f545ca0106605b0,kind:read	{"mung":["at"]}
           Good,type:text/Doc,path:Ghost/test/Story/Lake/LakeTiles.g
-            known,dige:10aa9324a9bc08e8,kind:read	{"mung":["at"]}
+            known,dige:260ffe937ed74666,kind:read	{"mung":["at"]}
         examining	{"loopy":1}
           req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
           Spotlight	{"ref":{"src":"%What:labelofaWhat"}}
         req:Cortex,eternal,maz=5,ok
-          req:Codebit,path:Ghost/test/Story/Lake/LakeTiles.g,maz=2,gen_path:gen/test/Story/Lake/LakeTiles.go,source_dige:10aa9324a9bc08e8,dige:32c599f0bc85de82,permanent,write_finished,finished
+          req:Codebit,path:Ghost/test/Story/Lake/LakeTiles.g,maz=2,gen_path:gen/test/Story/Lake/LakeTiles.go,source_dige:260ffe937ed74666,dige:b5ab5d825ab90187,permanent,write_finished,finished
           req:Rundown,eternal,run_method:theCompiledStuff,ok
-            ran:32c599f0bc85de82#leash:0
+            ran:b5ab5d825ab90187#leash:0
         Waft:Story/LakeTiles/Waftily
           What:labelofaWhat
             Doc:Ghost/test/Story/Lake/LakeTiles.g
@@ -35,12 +35,12 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1782105618572,kind:cold
-          want=1782105618624,kind:cold
-          want=1782105618776,kind:cold,resolved
+          want=1782178095123,kind:cold
+          want=1782178095177,kind:cold
+          want=1782178095334,kind:cold,resolved
         o_elvis:dock_askies
-        Waft:Ting/2026-06-22/172021,takes
-          Point:theCompiledStuff,doc:Ghost/test/Story/Lake/LakeTiles.g,n,weight,last=1782105621294,first=1782105621294,heat=0.995,warm=0,bright
+        Waft:Ting/2026-06-23/132819,takes
+          Point:theCompiledStuff,doc:Ghost/test/Story/Lake/LakeTiles.g,n,weight,last=1782178099071,first=1782178099071,heat=0.993,warm=0,bright
         see:🗂 1 doc · 2 Wafts
     A:Lang
       self,round=23	{"mung":["age"]}
@@ -108,7 +108,7 @@ Snap:H
               req:text_loaded,maz=3,finished
               req:text_mutated,maz=2,eternal
               req:compile,maz=2,finished
-            Text,dige:10aa9324a9bc08e8,disk_dige:10aa9324a9bc08e8,disk_rev
+            Text,dige:260ffe937ed74666,disk_dige:260ffe937ed74666,disk_rev
             Compile
               Map
                 def,method:theCompiledStuff,line=2,rel_from=17,rel_to=34
@@ -137,16 +137,16 @@ Snap:H
                 call,method:emit,line=238,via:ampTiles,rel_from=9816,rel_to=9821
                 call,method:settle,line=240,via:ampTiles,rel_from=9905,rel_to=9912
                 call,method:severally,line=242,via:ampTiles,rel_from=9982,rel_to=9992
-                {"controlflow":1,"keyword":"if","title":"(a > b) H.laterally(A,w,1)","line":251,"via":"ampTiles","rel_from":10439,"rel_to":10442}
-                controlflow,keyword:if,title:a > b,line=255,via:ampTiles,rel_from=10634,rel_to=10637
-                controlflow,keyword:if,title:(a > b) i %reached:also,line=257,via:ampTiles,rel_from=10671,rel_to=10674
-                def,method:obtainTiles,line=260,rel_from=10762,rel_to=10774
-                controlflow,keyword:if,title:(s && !(oa %taken)) i %seat:free,line=269,via:obtainTiles,rel_from=11195,rel_to=11198
-                def,method:captureOutTiles,line=273,rel_from=11393,rel_to=11409
-                def,magic,method:IMPORT,line=284,rel_from=11924,rel_to=11931
-                def,magic,method:RENDER,line=288,rel_from=12060,rel_to=12067
-              time,compile=0.048,all=0.624,write=0
-              Output,gen_path:gen/test/Story/Lake/LakeTiles.go,dige:32c599f0bc85de82,source_dige:10aa9324a9bc08e8
+                {"controlflow":1,"keyword":"if","title":"(a > b) H.laterally(A,w,1)","line":253,"via":"ampTiles","rel_from":10639,"rel_to":10642}
+                controlflow,keyword:if,title:a > b,line=257,via:ampTiles,rel_from=10834,rel_to=10837
+                controlflow,keyword:if,title:(a > b) i %reached:also,line=259,via:ampTiles,rel_from=10871,rel_to=10874
+                def,method:obtainTiles,line=262,rel_from=10962,rel_to=10974
+                controlflow,keyword:if,title:(s && !(oa %taken)) i %seat:free,line=271,via:obtainTiles,rel_from=11395,rel_to=11398
+                def,method:captureOutTiles,line=275,rel_from=11593,rel_to=11609
+                def,magic,method:IMPORT,line=286,rel_from=12124,rel_to=12131
+                def,magic,method:RENDER,line=290,rel_from=12260,rel_to=12267
+              time,compile=0.101,all=1.26,write=0
+              Output,gen_path:gen/test/Story/Lake/LakeTiles.go,dige:b5ab5d825ab90187,source_dige:260ffe937ed74666
                source: |
                  <script lang="ts">
                      // GENERATED by Lang compile — do not edit by hand.
@@ -161,7 +161,7 @@ Snap:H
                      onMount(async () => {
                      await H.eatfunc({
                  
-                     Ghostmeta_Ghost_test_Story_Lake_LakeTiles(): string { return '10aa9324a9bc08e8' },
+                     Ghostmeta_Ghost_test_Story_Lake_LakeTiles(): string { return '260ffe937ed74666' },
                  
                  // yeti etc!!!!!
                  theCompiledStuff(A,w) {
@@ -233,8 +233,7 @@ Snap:H
                  nothinging() {
                      return true && true
                  },
-                 severally(A,w,thing) {
-                     const H = this
+                 severally(A,w,thing) { const H = this;
                      w.i({miles: 1, of: 1, words: 1})
                      w.i({miles: 1, of: 1, wordings: 1})
                      w.i({thingure: "thing", of: 1, wordings: 1})
@@ -409,8 +408,7 @@ Snap:H
                  },
                  // receiver-amp, the fabricated House alias, and inline IO in a control body — the
                  //  three seams that used to force raw JS, now tiles.
-                 async ampTiles(A,w) {
-                     const H = this
+                 async ampTiles(A,w) { const H = this;
                      // (1) recv&method → recv.method(args): a tight identifier before "&" is the
                      //  receiver, the way a leading bareword is for i/o.  pier.do(), req.bump():
                      pier.do()
@@ -425,10 +423,12 @@ Snap:H
                      //  let m = a & b
                      let m = a & b
                  
-                     // (2) the House alias is fabricated: every method body that keeps a bare H gets
-                     //  a "const H = this" at its top (parameterised in compile.ts — skipped when H is
-                     //   a param or already declared), so a raw House call resolves even inline in a
-                     //    control structure:  if (a > b) H.laterally(A,w,1)
+                     // (2) the House alias is fabricated automatically: if the COMPILED body still
+                     //  carries a bare `H` (\bH\b) — i.e. raw JS reached for it; the DSL's own `H i …`
+                     //   receiver lowers to `this` and leaves none — the compiler tucks a `const H = this`
+                     //    onto this method's opening-brace line (out of the way when debugging the gen),
+                     //     skipped when H is a param or already declared.  So a raw House call resolves
+                     //      even inline in a control structure:  if (a > b) H.laterally(A,w,1)
                      if (a > b) H.laterally(A,w,1)
                  
                      // (3) IO atoms translate inside a control body now (the per-line parser is
@@ -505,14 +505,14 @@ Snap:H
               Mapule,kind:call,key:emit,depth=0,line=238,from=9816,to=9821
               Mapule,kind:call,key:settle,depth=0,line=240,from=9905,to=9912
               Mapule,kind:call,key:severally,depth=0,line=242,from=9982,to=9992
-              Mapule,kind:cf,key:if,depth=0,line=251,from=10439,to=10442
-              Mapule,kind:cf,key:if,depth=0,line=255,from=10634,to=10637
-              Mapule,kind:cf,key:if,depth=0,line=257,from=10671,to=10674
-              Mapule,kind:def,key:obtainTiles,depth=0,line=260,from=10762,to=10774
-              Mapule,kind:cf,key:if,depth=0,line=269,from=11195,to=11198
-              Mapule,kind:def,key:captureOutTiles,depth=0,line=273,from=11393,to=11409
-              Mapule,kind:def,key:IMPORT,depth=0,line=284,from=11924,to=11931
-              Mapule,kind:def,key:RENDER,depth=0,line=288,from=12060,to=12067
+              Mapule,kind:cf,key:if,depth=0,line=253,from=10639,to=10642
+              Mapule,kind:cf,key:if,depth=0,line=257,from=10834,to=10837
+              Mapule,kind:cf,key:if,depth=0,line=259,from=10871,to=10874
+              Mapule,kind:def,key:obtainTiles,depth=0,line=262,from=10962,to=10974
+              Mapule,kind:cf,key:if,depth=0,line=271,from=11395,to=11398
+              Mapule,kind:def,key:captureOutTiles,depth=0,line=275,from=11593,to=11609
+              Mapule,kind:def,key:IMPORT,depth=0,line=286,from=12124,to=12131
+              Mapule,kind:def,key:RENDER,depth=0,line=290,from=12260,to=12267
             {"bookmark":"bm_98_132","from":98,"to":132,"label":" o hut/although:1,th"}
         scheme:req
           lematch	{"ref":{"sc_has":"Object()"}}
@@ -524,19 +524,19 @@ Snap:H
           ActiveInterest,kind:Trail,waft:Story/LakeTiles/Waftily
           dock,active	{"loopy":0,"hid":1}
           Change
-            backend,dige:10aa9
-            storage,dige:10aa9
-            compile,dige:10aa9,secs=0.048,dim,pending
+            backend,dige:260ff
+            storage,dige:260ff
+            compile,dige:260ff,secs=0.101,dim,pending
           LE:Undertaking,reason:Undertaking
             Seem:workon
               Funkcion:trail,halflife_ms=60000
-          Interest:Ting,waft:Ting/2026-06-22/172021,lens:DocTing,presence:always,state:live
-            cursor,what:Ting/2026-06-22/172021,latest
+          Interest:Ting,waft:Ting/2026-06-23/132819,lens:DocTing,presence:always,state:live
+            cursor,what:Ting/2026-06-23/132819,latest
         req:workon,auto_push	{"ref":{"w":"%w:Lang"}}
           req:understanding,maz=3,permanent,sig:1:13:0:0,what:labelofaWhat,finished
           req:ingredients,maz=2,permanent,sig:Ghost/test/Story/Lake/LakeTiles.g,finished
             req:furnishing,path:Ghost/test/Story/Lake/LakeTiles.g,permanent,asked,finished
-          req:instrumentation,permanent,sig:Ghost/test/Story/Lake/LakeTiles.g:10aa9324a9bc08e8:1:29,have_Map,n_pmirrors=3,finished
+          req:instrumentation,permanent,sig:Ghost/test/Story/Lake/LakeTiles.g:260ffe937ed74666:1:29,have_Map,n_pmirrors=3,finished
         req:waft_roster,eternal,subscribed
         o_elvis:Lies_compile_settled
         o_elvis:dock_content
@@ -566,11 +566,12 @@ Snap:H
         received,editorBegins,doc:Ghost/test/Story/Lake/LakeTiles.g
         see:🟦 tiles 1 bookmarks
     A:Pantheate
-      self,round=10	{"mung":["age"]}
+      self,round=9	{"mung":["age"]}
       w:Pantheate
-        self,round=10	{"mung":["age"]}
+        self,round=9	{"mung":["age"]}
+        o_elvis:Ghost_update_notify
         include:gen/test/Story/Lake/LakeTiles.go
-        req:include,gen_path:gen/test/Story/Lake/LakeTiles.go,path:Ghost/test/Story/Lake/LakeTiles.g,source_dige:10aa9324a9bc08e8,ghostmeta_name:Ghostmeta_Ghost_test_Story_Lake_LakeTiles,permanent,live_dige:10aa9324a9bc08e8,finished
+        req:include,gen_path:gen/test/Story/Lake/LakeTiles.go,path:Ghost/test/Story/Lake/LakeTiles.g,source_dige:260ffe937ed74666,ghostmeta_name:Ghostmeta_Ghost_test_Story_Lake_LakeTiles,permanent,live_dige:260ffe937ed74666,finished
         req:run_method,method:theCompiledStuff,finished
         BlastPit
           A:blast
@@ -606,7 +607,6 @@ Snap:H
             prefixy:i th/re/e = 3
             prefixy:stuff,wither:angles
               wither:levels,its:its,sits:ferv
-        o_elvis:Ghost_update_notify
     watched:ave
       examining	{"loopy":1,"hid":1}
       Languinio	{"loopy":2,"hid":1}

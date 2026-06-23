@@ -60,9 +60,7 @@
     //     itself is credufunk_run above; this is only the face.
     import type { House } from "$lib/O/Housing.svelte"
     import FunkHost from "$lib/O/Funk/FunkHost.svelte"
-    import Orb      from "$lib/O/ui/micro/Orb.svelte"
-    import { depeel } from "$lib/Y.svelte"
-    import { SvelteSet } from "svelte/reactivity"
+    import MiniWaft from "$lib/O/ui/MiniWaft.svelte"
     // TheC is in scope from the module script.
 
     let { H, w, funk, raw = false, examining }: {
@@ -70,13 +68,9 @@
     } = $props()
 
     let open  = $state(false)
-    // per-cell de-illusion: an orb flips a child Book cell from its live illusion to the
-    //  raw C** line, so every cell is openable, not just the container.
-    let bare  = new SvelteSet<TheC>()
-    const toggle_bare = (c: TheC) => { if (bare.has(c)) bare.delete(c); else bare.add(c) }
-    // the CreduCoherence** journal hides behind a reveal-orb at its top.
-    let jopen = $state(false)
     let cells = $derived((() => { void funk.version; return funk.o({ Funkcion: "Storying" }) as TheC[] })())
+    // the CreduCoherence** roots — fed to a MiniWaft as a short, openable Travel.
+    let cohRoots = $derived((() => { void funk.version; return funk.o({ CreduCoherence: 1 }) as TheC[] })())
 
     // per-Book coherence: latest's version-set (vset) equals perfection's → HEAD is proven.
     let books = $derived((() => {
@@ -92,21 +86,6 @@
     })())
     let coherent = $derived(books.length > 0 && books.every(b => b.coherent))
     let phase    = $derived(books.length === 0 ? "working" : coherent ? "good" : "bad")
-
-    // the dis-illusioned journal: flat lines of the CreduCoherence/Credulate/GhostInclude tree.
-    let journal = $derived((() => {
-        void funk.version
-        const out: { depth: number; text: string }[] = []
-        for (const coh of funk.o({ CreduCoherence: 1 }) as TheC[]) {
-            out.push({ depth: 0, text: `CreduCoherence:${coh.sc.CreduCoherence}` })
-            for (const cred of coh.o({ Credulate: 1 }) as TheC[]) {
-                out.push({ depth: 1, text: `Credulate of_Book:${cred.sc.of_Book}` })
-                for (const gi of cred.o({ GhostInclude: 1 }) as TheC[])
-                    out.push({ depth: 2, text: `GhostInclude:${gi.sc.GhostInclude} ${String(gi.sc.dige ?? "").slice(0, 8)}` })
-            }
-        }
-        return out
-    })())
 </script>
 
 {#if raw}
@@ -121,35 +100,15 @@
     </button>
     {#if open}
         <div class="cf-body">
-            <!-- exploded: the illusioned child cells (each Book's Storying light), each
-                 orbed so it de-illusions to its raw C** line on demand. -->
+            <!-- exploded: the illusioned child cells (each Book's Storying light) … -->
             <div class="cf-illusions">
-                {#each cells as c (c)}
-                    <span class="cf-cell" class:cf-cell-bare={bare.has(c)}>
-                        <Orb active={bare.has(c)} onclick={() => toggle_bare(c)}
-                             title={bare.has(c) ? 'show the illusion' : 'reveal the raw C'} />
-                        {#if bare.has(c)}
-                            <code class="cf-cell-raw">{depeel(c.sc)}</code>
-                        {:else}
-                            <FunkHost {H} {w} funk={c} {examining} />
-                        {/if}
-                    </span>
-                {/each}
+                {#each cells as c (c)}<FunkHost {H} {w} funk={c} {examining} />{/each}
             </div>
-            <!-- … and the dis-illusioned C** journal it stashes inside itself, revealed by
-                 the orb at the top of the CreduCoherence**. -->
-            {#if journal.length}
+            <!-- … and the dis-illusioned C** it stashes inside itself, as a MiniWaft: a short
+                 Travel whose top orb pings orbs through the whole thing and makes it editable. -->
+            {#if cohRoots.length}
                 <div class="cf-journal">
-                    <div class="cf-jhead">
-                        <Orb active={jopen} onclick={() => jopen = !jopen}
-                             title={jopen ? 'fold the journal' : 'reveal the CreduCoherence journal'} />
-                        <span class="cf-jhead-lbl">CreduCoherence** · {journal.length}</span>
-                    </div>
-                    {#if jopen}
-                        {#each journal as ln}
-                            <div class="cf-jl" style="padding-left:{ln.depth * 0.8 + 0.2}rem">{ln.text}</div>
-                        {/each}
-                    {/if}
+                    <MiniWaft roots={cohRoots} top="bolocks**" />
                 </div>
             {/if}
         </div>
@@ -178,17 +137,7 @@
         border-left: 1px solid #2a2a3a;
     }
     .cf-illusions { display: flex; flex-wrap: wrap; gap: 0.3rem; }
-    .cf-cell { display: inline-flex; align-items: center; gap: 0.25rem; }
-    .cf-cell-raw {
-        font-family: monospace; font-size: 0.68rem; color: #8a93b4;
-        background: #161a28; border-radius: 3px; padding: 0.05rem 0.3rem;
-    }
     .cf-journal { margin-top: 0.25rem; }
-    .cf-jhead { display: flex; align-items: center; gap: 0.3rem; }
-    .cf-jhead-lbl { font-family: monospace; font-size: 0.68rem; color: #6a7088; }
-    .cf-jl {
-        font-family: monospace; font-size: 0.68rem; color: #6a7088; line-height: 1.35;
-    }
     .cf-raw-line {
         font-family: monospace; font-size: 0.72rem; color: #6a7a9a; padding: 0.1rem 0.2rem;
     }

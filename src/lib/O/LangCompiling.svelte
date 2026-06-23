@@ -268,8 +268,8 @@ import { LANG_COMPILE } from "./lang/compile"
                 ghost = { ghostmeta_name: H.Lang_ghostmeta_name(dock.sc.dock as string), source_dige }
             }
             source = this.Lang_compile_render_module(body, ghost, { header, tail })
-            // Prove the emitted JS actually parses before anyone trusts it — the
-            //  run-time twin of scripts/lang-compile.ts's esbuild gate.  A raw-JS
+            // Prove the emitted JS actually parses before anyone trusts it — an
+            //  esbuild parse gate on the emitted module.  A raw-JS
             //   passthrough can mangle a brace into invalid JS even WITH a parser
             //    wired, which the parser-guard above does not catch; a bad .go on
             //     disk (or pushed over the editor↔runner channel) is the disease.

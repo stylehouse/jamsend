@@ -135,6 +135,11 @@ services:
         required: false
     tty: true
     stdin_open: true
+    # tini as PID 1 (Docker injects its own docker-init; the slim image ships no
+    #  init). Without it, sleep infinity is PID 1 and never reaps: orphaned esbuild
+    #   children re-parent to it and pile up as zombies until they exhaust the pids
+    #    cap below, at which point the next fork hits EAGAIN and the claude TUI dies.
+    init: true
     command: sleep infinity     # stays up; you attach a session with docker compose exec
     restart: 'unless-stopped'
     deploy:

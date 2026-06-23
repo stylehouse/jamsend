@@ -212,6 +212,65 @@ The runner does NOT compile or include inside its Story Run; it **acquires** wha
 - Memories: [[creduler-runner-architecture]], [[opfs-illegal-under-dev-boot]], [[nested-req-needs-cup-stamped]],
    [[ballistics-drum-pad]], [[editron-verdict-phase2]].
 
+## 7. Credu storage — the soul lives inside the Story it's about (HANDOVER)
+
+*The storage shape settled: the Creduler soul moved out of the placeholder `Such` directory and **into each
+ Story**. The runner-side move is done; the CreduFunk view that reads it back is the open half. Read this before
+  touching anything Credu-named. (The earlier `O`/`I` filesystem-layout horizon that was tangled in here was
+   extracted to `Everything_todo.md` "Wormhole backends" — it is a general wormhole concern, not Credu-specific,
+    and supersedes any bespoke path here whenever it lands.)*
+
+**Decided: per-Story, not global `Such`.** `Such` was a literal placeholder directory — the Book lives in the
+ data (`book:PereStaple`), not the path. The soul used to aggregate **all** Books into one global trail at the
+  hardcoded `wormhole/Story/Such/{Credulate,Credulation}.snap`. Now each Book's soul lives **inside that Book's
+   directory** as two navigable Wafts:
+- `wormhole/Story/<Book>/Credulate/toc.snap` — HEAD: the Book's current inputs, one **`%GhostInclude:<gen>,dige`**
+   per included ghost, plus a `%last_ok` carrying the exact version-set the last passing run used (`%uses` per
+    ghost).
+- `wormhole/Story/<Book>/Credulation/toc.snap` — trail: the recent runs (`%run=N,at,ok,ok_pct,mode` + `%uses`
+   per ghost), **`whittle_N`-capped to 20** (the default whittled-list length — a log of the many versions tried
+    *recently*, not forever).
+
+Per-Book is `cred.runs` **partitioned by `book` at spool time**, not a directory rename: `Cred_spool` keeps the
+ in-mem soul per Book (`Mundo.c.cred.books[book] = {runs, last_ok}`, off-snap, runner-only, plain JS) and writes
+  just the finished Book's two snaps. The bytes decode identically to any other `toc.snap` (same Lines codec,
+   `decode_wh_lines`/`deWaft`), so a `<Book>/Credulate/toc.snap` is reachable by Waft path through `read_toc`
+    with zero special-casing — editor-openable like any Waft. `%GhostInclude` (not the old `%ghost`) is the HEAD
+     vocabulary deliberately: it's the word the CreduFunk reader already uses, so one source of truth. **Nothing
+      reads the Cred snaps back yet** — they were write-only; the read side is the open half below.
+
+**The bomb (know this or you'll wire the wrong thing).**
+- **There are still TWO parallel, confusingly co-named coherence mechanisms — collapse them onto the persisted
+   per-Story snap.**
+  - **The Creduler** (`Auto.svelte`, `Cred_*`) is the real soul, now persisted per-Story as above. This is the
+     intended single source of truth.
+  - **CreduFunk** (`O/Funk/CreduFunk.svelte`, `credufunk_run`) still independently stamps `CreduCoherence:latest|
+     perfection → Credulate(of_Book) → GhostInclude` **into the funk's own snapped subtree**, and `MiniWaft`
+      reads *that* today (`cohRoots = funk.o({CreduCoherence:1})`). This is the duplicate to retire — make
+       CreduFunk a **viewer** of the runner's per-Story snaps, not a second journaler.
+- **Editor-side async caveat.** The snaps are written runner-side; showing them in the editor's CreduFunk means
+   an **async `rw_op` read** (`deWaft(read_toc(path))`), not the synchronous in-tree read CreduFunk does now.
+- **`MiniWaft` is already generic** (`ui/MiniWaft.svelte`, takes `roots`): a bounded breadth-then-depth Travel,
+   top-orb pings editable orbs through the whole tree, `×N` chips dive deeper, bounded scroll box (global
+    `.scrollsmall`). Keep it dumb — the *caller* decides the source.
+
+**The next move (the read side — CreduFunk as the per-Story viewer).** CreduFunk lives with `Waft:Ghost/Net/Easy`
+ and is meant to communicate *how well tested* this suite of ghosts is. The shape:
+1. **`CreduStory:<Book>` children.** CreduFunk holds one `%CreduStory,<Book>` per Book it watches (e.g.
+    `CreduFunk/CreduStory:PereStaple`). Through it CreduFunk lists the Stories and reads each one's inputs by
+     loading `Story/<Book>/Credulate/toc.snap` and showing its `%GhostInclude` set + whether the run is behind.
+2. **Default face = "Docs the run is behind."** Before the `MiniWaft` orb is even popped, the collapsed CreduFunk
+    should show, per Book, the **list of Docs the run is behind** (HEAD `%GhostInclude` diges that the last
+     passing `%last_ok`/run didn't cover) — and perhaps the **last run's `%`**. The MiniWaft journal stays the
+      explode-to-detail view.
+3. **Source of truth:** feed both off the decoded per-Story snap and **retire** `credufunk_run`'s
+    `CreduCoherence` stamping. One shape — the persisted `toc.snap` one.
+4. **`Waft:Credence` up to date with the Books that exist** *(soft — "not sure how" yet)*. Credence is the nice-
+    tests board; `Waft:Ghost/Net/Easy`'s CreduFunk selects those particularly good for this suite of ghosts (by
+     linking to the relevant tests). Keeping Credence's Book list current as Books come and go is the unsolved
+      culture/automation question — part of "Editron" is the instruction you'd need to keep these lists fresh.
+       Cross-ref [[creduler-runner-architecture]], [[story-books-catalog]].
+
 ---
 
 ## FUTURE

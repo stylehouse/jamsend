@@ -34,28 +34,28 @@ story:LakeTiles
         nowriting:^Ghost
         dontSnapGhostList
   TimeSpool
-    TimeTotal:beliefs,avg=1.71
-      sample=1.901,at=1781975783
-      sample=2.165,at=1781975824
-      sample=1.908,at=1781975866
-      sample=0.697,at=1782105051
-      sample=1.219,at=1782105128
+    TimeTotal:beliefs,avg=1.907
       sample=1.002,at=1782105629
       sample=1.002,at=1782105682
       sample=1.529,at=1782126259
       sample=1.514,at=1782127472
       sample=4.164,at=1782136891
-    TimeTotal:step,avg=0.19
-      sample=0.211,at=1781975783
-      sample=0.241,at=1781975824
-      sample=0.212,at=1781975866
-      sample=0.077,at=1782105051
-      sample=0.135,at=1782105128
+      sample=3.083,at=1782178109
+      sample=3.083,at=1782178132
+      sample=1.231,at=1782178403
+      sample=1.231,at=1782178416
+      sample=1.231,at=1782178417
+    TimeTotal:step,avg=0.212
       sample=0.111,at=1782105629
       sample=0.111,at=1782105682
       sample=0.17,at=1782126259
       sample=0.168,at=1782127472
       sample=0.463,at=1782136891
+      sample=0.343,at=1782178109
+      sample=0.343,at=1782178132
+      sample=0.137,at=1782178403
+      sample=0.137,at=1782178416
+      sample=0.137,at=1782178417
   EntropyArrest
     Entcase:Languinio_Interest-waft
       lematch,Languinio
@@ -84,13 +84,13 @@ story:LakeTiles
       lematch,Point:theCompiledStuff,doc:Ghost/test/Story/Lake/LakeTiles.g
         lematch,say:o hut/although:1/they,can,be,mixed,at
           {"means":1,"spayer":1,"re":"say:o hut/although:1/they,can,be,mixed.at={INT}","tol":"band","factor":1.5}
-  step,dige:a0ca9ce651dde52a
-  step=2,dige:1a900018efe801e4
-  step=3,dige:fea7180df95e5abb
-  step=4,dige:bd626c3433c0564b
+  step,dige:9a30b87d01970b53
+  step=2,dige:16815d2732bfdeaa
+  step=3,dige:c7ff8a6938ab3e39
+  step=4,dige:c470c386d25589b4
     note,bug:Cyto edge problems with Leg/PeelGroup/Leg the other PeelGroup alone
-  step=5,dige:6441fe27df2a1592
-  step=6,dige:a6667f22a720cf11
-  step=7,dige:a4e82285027d674b
-  step=8,dige:88888eea723272c5
-  step=9,dige:fedc0b97f47975db
+  step=5,dige:889e54a7b9bcf5d2
+  step=6,dige:aa3df3c93c849f33
+  step=7,dige:ff088477ef0e0392
+  step=8,dige:a97d5adc4c79b7b5
+  step=9,dige:dfc1b3d39f3cbbc5

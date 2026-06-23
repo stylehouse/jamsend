@@ -231,9 +231,11 @@ await M.eatfunc({
         //  %open_dir child), and those get listed too — a navigable tree. Ghost/ holds the .g
         //   docks; src/lib/O rides in as the default-open subdir of src/lib (seeded above), not a root.
         const ROOTS = ['src/lib', 'Ghost']
-        const SRC   = /\.(svelte|svelte\.ts|ts|g)$/
-        // the hive clusters on the filename minus its source suffix, so Lang*|Lies* fold onto
-        //  shared stems rather than all sharing `.svelte` (and Peeroleum.g → Peeroleum).
+        // every file lists (a .md spec opens read-only just like a non-.g dock — no compile,
+        //  no Point-nav yet, but visible and gotoable); the hive clusters on the filename
+        //   minus its source suffix, so Lang*|Lies* fold onto shared stems rather than all
+        //    sharing `.svelte` (and Peeroleum.g → Peeroleum). A non-source name (Peeroleum_spec.md)
+        //     keeps its extension, since stripping nothing is the honest stem.
         const stem  = (name: string) => name.replace(/\.(svelte\.ts|svelte|ts|g)$/, '')
 
         funk.c.run = async (host: TheC, _fk: TheC, ww: TheC) => {
@@ -259,7 +261,7 @@ await M.eatfunc({
                     if (e.is_dir) {                                  // a subdir — click opens it
                         if (!group.oa({ sub: path })) changed = true
                         group.oai({ sub: path }).sc.name = e.name
-                    } else if (SRC.test(e.name)) {                   // a ghost file — click gotos it
+                    } else {                                         // any file — click gotos it
                         const fresh = !group.oa({ Doc: path })
                         const d = group.oai({ Doc: path })
                         d.sc.name = stem(e.name)

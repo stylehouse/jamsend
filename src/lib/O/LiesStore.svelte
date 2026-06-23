@@ -218,7 +218,7 @@
     //   fires dock_content immediately.  A cold path leaves the %subscribe for
     //   req:Store Phase 2 to drain when the read lands.
     //   opts.force_active rides through to e_Lang_dock_content (warm: direct; cold: stashed on the
-    //    %subscribe and forwarded when the read lands) so the ghost_update job can make the dock the
+    //    %subscribe and forwarded when the read lands) so the ghost_compile job can make the dock the
     //     active/displayed one — the only way it grows a CodeMirror state and so becomes compilable.
     async Lies_provide_dock(w: TheC, path: string, opts?: { force_active?: boolean }): Promise<void> {
         const H    = this as House
@@ -904,7 +904,7 @@
             const Aw   = sub.sc.Aw   as string | undefined
             const wake = sub.sc.wake as string | undefined
             // feebly: a subscriber whose ghost is no longer stood up just isn't notified.
-            //  force_active (a ghost_update job) rides through to e_Lang_dock_content.
+            //  force_active (a ghost_compile job) rides through to e_Lang_dock_content.
             if (Aw && wake) H.feebly_i_elvisto(Aw, wake, { Good: good, ...(sub.sc.force_active ? { force_active: 1 } : {}) })
             good.drop(sub)
         }

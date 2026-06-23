@@ -906,7 +906,9 @@
 
     // called on Run by Story after each snap — feebly_ponder is no-op here (runtime=false).
     //   callbacks that need Atime (w.r, feebly_ponder) use the cb form of Runstepped().
-    //   also clears %log on all A/w in this Run at each step boundary.
+    //   also clears %log at the step boundary: on each A/w, and under every %req beneath
+    //   it.  The drop runs AFTER the snap commits, so a %log shows in exactly one snap (the
+    //   step that wrote it) and is gone from the next.
     async _resolve_runstepped() {
         const q = (this.c._runstepped_q ?? []) as Function[]
         this.c._runstepped_q = []
@@ -916,7 +918,8 @@
 
         for (const A of this.o({ A: 1 }) as TheC[]) {
             for (const w of A.o({ w: 1 }) as TheC[]) {
-                await this.w_noproblemo(w, { log: 1 })
+                await this.w_noproblemo(w, { log: 1 })          // %log on w itself
+                await this.Runstepped_reqy_pageturning(w)        // %log under any %req in w
             }
         }
     },

@@ -1,9 +1,9 @@
-// scripts/ghost_update.ts — "I touched a .g, get it compiled to its .go."  npm run ghost-update
+// scripts/ghost_compile.ts — "I touched a .g, get it compiled to its .go."  npm run ghost-compile
 //
 // The everyday .g→.go path for editing ghosts on disk (Claude or anyone), distinct from the
 //  in-app editor's own compile chain — except now it BORROWS that chain instead of duplicating it.
 //   This script does NOT load the compiler.  You edit the .g on disk (shared /app); this sends the
-//    editor a signed `ghost_update` TICKET carrying {path, dige} (dige = sha256(.g text)[:16], the
+//    editor a signed `ghost_compile` TICKET carrying {path, dige} (dige = sha256(.g text)[:16], the
 //     same source_dige the editor's compile bakes into Ghostmeta).  The editor owns the dock-involved
 //      compile job: it force-loads the dock (displaying it — the CodeMirror EditorState the compile
 //       reads only exists for a mounted dock), reconciles against your %Good (the merge popover
@@ -12,11 +12,11 @@
 //          acquire loop (req_rungo / Creduler) flips to the new code on its own.
 //
 // Run (no flags — one maneuvre):
-//   npm run ghost-update -- Ghost/N/Peeroleum.g Ghost/N/Tribunal.g
-//   npm run ghost-update -- $(git diff --name-only '*.g')     # everything you just edited
-//   npm run ghost-update -- Ghost/N/Peeroleum.g --json        # + machine manifest on stdout
+//   npm run ghost-compile -- Ghost/N/Peeroleum.g Ghost/N/Tribunal.g
+//   npm run ghost-compile -- $(git diff --name-only '*.g')     # everything you just edited
+//   npm run ghost-compile -- Ghost/N/Peeroleum.g --json        # + machine manifest on stdout
 //
-// Each run: (1) compute each .g's dige off disk (no compiler); (2) send one signed `ghost_update`
+// Each run: (1) compute each .g's dige off disk (no compiler); (2) send one signed `ghost_compile`
 //  ticket per .g to EDITOR_URL's relay (claude's cluster key, short-lived ws); (3) POLL-VERIFY that
 //   EDITOR_URL now serves a .go whose baked dige matches — proof the editor took the job and compiled.
 //
@@ -25,14 +25,19 @@
 //   compile.  The fuller form carries the .g CONTENT inline (so a non-shared-disk editor needs no disk
 //    read) and is gated by a trust/role check that discerns WHO may update vs compile vs run — at
 //     which point this script parameterises which of those it is requesting.  See spec/ClusterTrust.
-// CAVEAT (the one open hop): the editor's Peeroleum inbox may still drop a PRE-%Ud sender, so claude's
-//  ticket is SENT but can be dropped until the relay verifies+forwards a cluster-signed frame (or the
-//   spine accepts it pre-Ud).  The verify works regardless; an editor with the dock open compiles
-//    regardless.
+// CAVEAT (the one open hop): the ticket is SENT, but whether it reaches the editor's Peeroleum inbox is
+//  the open question.  NOT the inbox pre-%Ud gate — in v1 trust-everything the editor force-stamps %Ud
+//   on its sole Pier (LiesLies Lies_channel_up) and Peeroleum_deliver books every inbound frame against
+//    that Pier, so a frame that REACHES the inbox already passes.  The likely death point is upstream:
+//     the relay forwarding claude's third, un-`become`'d socket to the editor, and/or the editor's WS
+//      transport delivering a frame whose sender isn't its configured peer.  Diagnose with relay logs on
+//       :9092 before assuming the inbox.  The verify works regardless; an editor with the dock open and
+//        reachable compiles regardless.
 //
 // ASSUMES the editor/staging :9092 shares /app with the runner (two vite servers, one disk — the
 //  documented setup), so the .g you edited and the .go the editor writes are on the same disk this
-//   script and the runners see.  If staging is a separate disk, use compile-request --remote instead.
+//   script and the runners see.  If staging is a separate disk, the .go the editor writes never reaches
+//    it — that is the inline-content + trust TODO above (ship the bytes), not a separate local tool.
 import { readFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { WebSocket } from 'ws'
@@ -40,13 +45,13 @@ import { signHeader, prepubOf, loadRoleKey } from '../src/lib/p2p/cluster_trust'
 
 // dig() — byte-for-byte the editor's src/lib/Y.svelte.ts dig (sha256 hex, first 16 chars), so the
 //  ticket dige equals the source_dige the editor's compile bakes into Ghostmeta_<name>().  Inlined
-//   (not imported from compile_core) so this script never pulls the compiler/translator into its graph.
+//   (computed here, not via the editor's compiler) so this script never pulls the translator into its graph.
 function dig(text: string): string {
 	return createHash('sha256').update(text, 'utf8').digest('hex').slice(0, 16)
 }
 
 // genPath() — Ghost/.../Foo.g → gen/.../Foo.go, the relay/HMR-relative path the editor writes and
-//  vite serves.  Mirrors compile_core.genPath / LiesCortex.Lies_gen_path; .g-only here (ghost-update
+//  vite serves.  Mirrors LiesCortex.Lies_gen_path (the editor's own rule); .g-only here (ghost-compile
 //   is a .g tool).  Used only by the verify leg.
 function genPath(path: string): string | undefined {
 	if (!path.endsWith('.g') || !path.includes('Ghost/')) return undefined
@@ -70,7 +75,7 @@ function clusterEnv(): Record<string, string | undefined> {
 	return env
 }
 
-// Sign + send one ghost_update ticket per changed dock to the editor, over a short-lived relay socket.
+// Sign + send one ghost_compile ticket per changed dock to the editor, over a short-lived relay socket.
 //  The signed unit is the self-contained {type,from,path,dige} consumer payload (transport-independent);
 //   the editor verifies that signature against the trusted flock, then takes the compile job for `path`.
 async function sendTickets(url: string, tickets: Array<{ path: string; dige: string }>, env: Record<string, string | undefined>): Promise<{ sent: number; error?: string }> {
@@ -80,9 +85,9 @@ async function sendTickets(url: string, tickets: Array<{ path: string; dige: str
 	const from = prepubOf(pub)
 	const frames: string[] = []
 	for (let i = 0; i < tickets.length; i++) {
-		const dock = { type: 'ghost_update', from, path: tickets[i].path, dige: tickets[i].dige }
+		const dock = { type: 'ghost_compile', from, path: tickets[i].path, dige: tickets[i].dige }
 		const sign = await signHeader(dock, key)
-		frames.push(JSON.stringify({ header: { type: 'ghost_update', from, to: 'editor', seq: Date.now() + i }, dock, sign }))
+		frames.push(JSON.stringify({ header: { type: 'ghost_compile', from, to: 'editor', seq: Date.now() + i }, dock, sign }))
 	}
 	return new Promise((resolve) => {
 		let settled = false
@@ -127,7 +132,7 @@ async function main() {
 	const json  = args.includes('--json')
 	const files = args.filter(a => !a.startsWith('-'))
 	if (!files.length) {
-		console.error('usage: ghost-update <file.g> [more.g ...] [--json]')
+		console.error('usage: ghost-compile <file.g> [more.g ...] [--json]')
 		process.exit(2)
 	}
 
@@ -148,7 +153,7 @@ async function main() {
 	//  editor to have started compiling), then verify — not concurrent like the old write+notify.
 	const sent = ok.length ? await sendTickets(WS_URL, ok.map(t => ({ path: t.path, dige: t.dige })), env) : { sent: 0 }
 	if (sent.error) console.error(`✗ ticket ${WS_URL}: ${sent.error}`)
-	else            console.error(`📤 ticket ${WS_URL}: ${sent.sent} ghost_update (signed, claude)`)
+	else            console.error(`📤 ticket ${WS_URL}: ${sent.sent} ghost_compile (signed, claude)`)
 
 	const served: Record<string, string> = {}
 	for (const t of ok) if (t.gen_path) {

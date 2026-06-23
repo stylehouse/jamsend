@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return '83f874dfa51bb975' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return 'f99033ba02fe073e' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -30,7 +30,7 @@ async Peerologist(A,w) {
 async req_p2pman(req) {
     // < ensure a %Peering per identity-thang with online_want (spec §11.1);
     //    for the spine the wrangler lays the sides directly.
-    await req.do();;;;;;;;;;;
+    await req.do()
     req.sc.ok = 1
 
 },
@@ -38,7 +38,7 @@ async req_p2pman(req) {
 // ── per-identity worker ───────────────────────────────────────────────────────
 // A:Alice/w:Peeroleum — one per identity-presence; owns this address's Piers.
 async Peeroleum(A,w) {
-    w.oai({seemingly: `ya aooooolly`}, {figaro: "Snowdogsialutionsin33g44"})
+    w.oai({seemingly: `ya aooooolly`}, {figaro: "Vunkular"})
     // each installed %Peering manages its own Piers via %req:p2paddy
     for (const Peering of this._o_iter(w, [{sc: {Peering: 1}}])) {
         Peering.oai({req: "p2paddy"})

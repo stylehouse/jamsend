@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted
-  Funkcion:dirlist,interval_ms=8000,walked_at=1781995792551
+  Funkcion:dirlist,interval_ms=8000,walked_at=1782180409139
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -25,6 +25,30 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted
   open_dir:Ghost/Story
   group:Ghost/Story,dir:Ghost/Story
     Doc:Ghost/Story/Peregrination.g,name:Peregrination,noticed_at=1781771909101
+  open_dir:src/lib/O/spec
+  group:src/lib/O/spec,dir:src/lib/O/spec
+    Doc:src/lib/O/spec/ClusterTrust_handover.md,name:ClusterTrust_handover.md,noticed_at=1782180409139
+    Doc:src/lib/O/spec/Covenant_design.md,name:Covenant_design.md,noticed_at=1782180409139
+    Doc:src/lib/O/spec/Editron.md,name:Editron.md,noticed_at=1782180409139
+    Doc:src/lib/O/spec/EntropyArrest.md,name:EntropyArrest.md,noticed_at=1782180409139
+    Doc:src/lib/O/spec/Everything_todo.md,name:Everything_todo.md,noticed_at=1782180409139
+    Doc:src/lib/O/spec/Hovercraft.design.md,name:Hovercraft.design.md,noticed_at=1782180409139
+    Doc:src/lib/O/spec/Interest.md,name:Interest.md,noticed_at=1782180409139
+    Doc:src/lib/O/spec/LangCompiler_TODO.md,name:LangCompiler_TODO.md,noticed_at=1782180409139
+    Doc:src/lib/O/spec/LangSolver_report.md,name:LangSolver_report.md,noticed_at=1782180409139
+    Doc:src/lib/O/spec/LiesEnd_spec.md,name:LiesEnd_spec.md,noticed_at=1782180409139
+    Doc:src/lib/O/spec/NOTATION.md,name:NOTATION.md,noticed_at=1782180409139
+    Doc:src/lib/O/spec/Peeroleum_handover.md,name:Peeroleum_handover.md,noticed_at=1782180409139
+    Doc:src/lib/O/spec/Peeroleum_spec.md,name:Peeroleum_spec.md,noticed_at=1782180409139
+    Doc:src/lib/O/spec/Story_cli_docs.md,name:Story_cli_docs.md,noticed_at=1782180409139
+    Doc:src/lib/O/spec/Story_next_level_spec.md,name:Story_next_level_spec.md,noticed_at=1782180409139
+    Doc:src/lib/O/spec/Waft-palmtree-trajectory.md,name:Waft-palmtree-trajectory.md,noticed_at=1782180409139
+    Doc:src/lib/O/spec/Waft_spec.md,name:Waft_spec.md,noticed_at=1782180409139
+    Doc:src/lib/O/spec/Waft_styling_todo.md,name:Waft_styling_todo.md,noticed_at=1782180409139
+    Doc:src/lib/O/spec/Wire_spec.md,name:Wire_spec.md,noticed_at=1782180409139
+    Doc:src/lib/O/spec/Wormhole_backends_handover.md,name:Wormhole_backends_handover.md,noticed_at=1782180409139
+    Doc:src/lib/O/spec/reactivity_docs.md,name:reactivity_docs.md,noticed_at=1782180409139
+    Doc:src/lib/O/spec/stho_primer.md,name:stho_primer.md,noticed_at=1782180409139
   open_dir:src/lib/O
   group:src/lib/O,dir:src/lib/O
     sub:src/lib/O/D,name:D
@@ -34,41 +58,41 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted
     sub:src/lib/O/spec,name:spec
     sub:src/lib/O/test,name:test
     sub:src/lib/O/ui,name:ui
-    Doc:src/lib/O/Auto.svelte,name:Auto,noticed_at=1781943194564
-    Doc:src/lib/O/Cyto.svelte,name:Cyto,noticed_at=1781943194564
-    Doc:src/lib/O/Cytui.svelte,name:Cytui,noticed_at=1781943194564
-    Doc:src/lib/O/Editron.svelte,name:Editron,noticed_at=1781943194564
-    Doc:src/lib/O/Ghost.svelte,name:Ghost,noticed_at=1781943194564
-    Doc:src/lib/O/Housing.svelte.ts,name:Housing,noticed_at=1781943194564
-    Doc:src/lib/O/Hovercraft.svelte,name:Hovercraft,noticed_at=1781943194564
-    Doc:src/lib/O/Interest.svelte,name:Interest,noticed_at=1781943194564
-    Doc:src/lib/O/Lang.svelte,name:Lang,noticed_at=1781943194564
-    Doc:src/lib/O/LangCompiling.svelte,name:LangCompiling,noticed_at=1781943194564
-    Doc:src/lib/O/LangGraft.svelte,name:LangGraft,noticed_at=1781943194564
-    Doc:src/lib/O/LangLang.svelte,name:LangLang,noticed_at=1781943194564
-    Doc:src/lib/O/LangPoint.svelte,name:LangPoint,noticed_at=1781943194564
-    Doc:src/lib/O/LangRegions.svelte,name:LangRegions,noticed_at=1781943194564
-    Doc:src/lib/O/LangSion.svelte,name:LangSion,noticed_at=1781943194564
-    Doc:src/lib/O/LangTwist.svelte,name:LangTwist,noticed_at=1781943194564
-    Doc:src/lib/O/LangTwistui.svelte,name:LangTwistui,noticed_at=1781943194564
-    Doc:src/lib/O/LangWhatwhere.svelte,name:LangWhatwhere,noticed_at=1781943194564
-    Doc:src/lib/O/Langui.svelte,name:Langui,noticed_at=1781943194564
-    Doc:src/lib/O/Lies.svelte,name:Lies,noticed_at=1781943194564
-    Doc:src/lib/O/LiesCortex.svelte,name:LiesCortex,noticed_at=1781943194564
-    Doc:src/lib/O/LiesCurse.svelte,name:LiesCurse,noticed_at=1781943194564
-    Doc:src/lib/O/LiesEnd.svelte,name:LiesEnd,noticed_at=1781943194564
-    Doc:src/lib/O/LiesLies.svelte,name:LiesLies,noticed_at=1781943194564
-    Doc:src/lib/O/LiesStore.svelte,name:LiesStore,noticed_at=1781943194564
-    Doc:src/lib/O/Liesui.svelte,name:Liesui,noticed_at=1781943194564
-    Doc:src/lib/O/MachPeerily.svelte,name:MachPeerily,noticed_at=1781943194564
-    Doc:src/lib/O/Matstyle.svelte,name:Matstyle,noticed_at=1781943194564
-    Doc:src/lib/O/Otro.svelte,name:Otro,noticed_at=1781943194564
-    Doc:src/lib/O/Storui.svelte,name:Storui,noticed_at=1781943194564
-    Doc:src/lib/O/Story.svelte,name:Story,noticed_at=1781943194564
-    Doc:src/lib/O/Text.svelte,name:Text,noticed_at=1781943194564
-    Doc:src/lib/O/Thang.svelte,name:Thang,noticed_at=1781943194564
-    Doc:src/lib/O/ThangShelf.svelte,name:ThangShelf,noticed_at=1781943194564
-    Doc:src/lib/O/Thangs.svelte,name:Thangs,noticed_at=1781943194564
-    Doc:src/lib/O/WormholeOpfs.svelte.ts,name:WormholeOpfs,noticed_at=1781943194564
-    Doc:src/lib/O/stho.ts,name:stho,noticed_at=1781943194564
-    Doc:src/lib/O/LiesWaft.svelte,name:LiesWaft,noticed_at=1781944191605
+    Doc:src/lib/O/Auto.svelte,name:Auto,noticed_at=1782180401983
+    Doc:src/lib/O/Cyto.svelte,name:Cyto,noticed_at=1782180401983
+    Doc:src/lib/O/Cytui.svelte,name:Cytui,noticed_at=1782180401983
+    Doc:src/lib/O/Editron.svelte,name:Editron,noticed_at=1782180401983
+    Doc:src/lib/O/Ghost.svelte,name:Ghost,noticed_at=1782180401983
+    Doc:src/lib/O/Housing.svelte.ts,name:Housing,noticed_at=1782180401983
+    Doc:src/lib/O/Hovercraft.svelte,name:Hovercraft,noticed_at=1782180401983
+    Doc:src/lib/O/Interest.svelte,name:Interest,noticed_at=1782180401983
+    Doc:src/lib/O/Lang.svelte,name:Lang,noticed_at=1782180401983
+    Doc:src/lib/O/LangCompiling.svelte,name:LangCompiling,noticed_at=1782180401983
+    Doc:src/lib/O/LangGraft.svelte,name:LangGraft,noticed_at=1782180401983
+    Doc:src/lib/O/LangLang.svelte,name:LangLang,noticed_at=1782180401983
+    Doc:src/lib/O/LangPoint.svelte,name:LangPoint,noticed_at=1782180401983
+    Doc:src/lib/O/LangRegions.svelte,name:LangRegions,noticed_at=1782180401983
+    Doc:src/lib/O/LangSion.svelte,name:LangSion,noticed_at=1782180401983
+    Doc:src/lib/O/LangTwist.svelte,name:LangTwist,noticed_at=1782180401983
+    Doc:src/lib/O/LangTwistui.svelte,name:LangTwistui,noticed_at=1782180401983
+    Doc:src/lib/O/LangWhatwhere.svelte,name:LangWhatwhere,noticed_at=1782180401983
+    Doc:src/lib/O/Langui.svelte,name:Langui,noticed_at=1782180401983
+    Doc:src/lib/O/Lies.svelte,name:Lies,noticed_at=1782180401983
+    Doc:src/lib/O/LiesCortex.svelte,name:LiesCortex,noticed_at=1782180401983
+    Doc:src/lib/O/LiesCurse.svelte,name:LiesCurse,noticed_at=1782180401983
+    Doc:src/lib/O/LiesEnd.svelte,name:LiesEnd,noticed_at=1782180401983
+    Doc:src/lib/O/LiesLies.svelte,name:LiesLies,noticed_at=1782180401983
+    Doc:src/lib/O/LiesStore.svelte,name:LiesStore,noticed_at=1782180401983
+    Doc:src/lib/O/LiesWaft.svelte,name:LiesWaft,noticed_at=1782180401983
+    Doc:src/lib/O/Liesui.svelte,name:Liesui,noticed_at=1782180401983
+    Doc:src/lib/O/MachPeerily.svelte,name:MachPeerily,noticed_at=1782180401983
+    Doc:src/lib/O/Matstyle.svelte,name:Matstyle,noticed_at=1782180401983
+    Doc:src/lib/O/Otro.svelte,name:Otro,noticed_at=1782180401983
+    Doc:src/lib/O/Storui.svelte,name:Storui,noticed_at=1782180401983
+    Doc:src/lib/O/Story.svelte,name:Story,noticed_at=1782180401983
+    Doc:src/lib/O/Text.svelte,name:Text,noticed_at=1782180401983
+    Doc:src/lib/O/Thang.svelte,name:Thang,noticed_at=1782180401983
+    Doc:src/lib/O/ThangShelf.svelte,name:ThangShelf,noticed_at=1782180401983
+    Doc:src/lib/O/Thangs.svelte,name:Thangs,noticed_at=1782180401983
+    Doc:src/lib/O/WormholeOpfs.svelte.ts,name:WormholeOpfs,noticed_at=1782180401983
+    Doc:src/lib/O/stho.ts,name:stho,noticed_at=1782180401983

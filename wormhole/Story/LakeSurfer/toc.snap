@@ -12,8 +12,7 @@ story:LakeSurfer
         dontSnapGhostList
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=0.836
-      sample=0.913,at=1781996601
+    TimeTotal:beliefs,avg=0.745
       sample=0.817,at=1781996640
       sample=1.149,at=1781996679
       sample=0.789,at=1781996718
@@ -23,8 +22,8 @@ story:LakeSurfer
       sample=0.762,at=1782001468
       sample=1.364,at=1782129239
       sample=0.882,at=1782136699
-    TimeTotal:step,avg=0.418
-      sample=0.456,at=1781996601
+      sample=0,at=1782138764
+    TimeTotal:step,avg=0.373
       sample=0.408,at=1781996640
       sample=0.575,at=1781996679
       sample=0.395,at=1781996718
@@ -34,6 +33,7 @@ story:LakeSurfer
       sample=0.381,at=1782001468
       sample=0.682,at=1782129239
       sample=0.441,at=1782136699
+      sample=0,at=1782138764
   EntropyArrest
     Entcase:Languinio_Interest-waft
       lematch,Languinio

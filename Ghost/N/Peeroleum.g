@@ -17,14 +17,14 @@ async Peerologist(A,w):
 async req_p2pman(req):
     // < ensure a %Peering per identity-thang with online_want (spec §11.1);
     //    for the spine the wrangler lays the sides directly.
-    await req&do;;;;;;;;;;;
+    await req&do
     req.sc.ok = 1
 
 //#region oleum
 // ── per-identity worker ───────────────────────────────────────────────────────
 // A:Alice/w:Peeroleum — one per identity-presence; owns this address's Piers.
 async Peeroleum(A,w):
-    oai seemingly:`ya aooooolly`...figaro:Snowdogsialutionsin33g44
+    oai seemingly:`ya aooooolly`...figaro:Snazzlewump
     // each installed %Peering manages its own Piers via %req:p2paddy
     S o Peering
         Peering oai %req:p2paddy

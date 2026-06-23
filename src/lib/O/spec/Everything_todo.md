@@ -165,6 +165,22 @@ Records-as-files for Identities ("switch who you are" = read a different record)
  is planned-not-started. `WhNav` shared interface still duck-typed across the
   three backends (browser / node / OPFS overlay).
 
+**The `O`/`I` layout — the filesystem mirroring the particle split (deferred).**
+ A standardisation of the whole `wormhole/` tree on directories that hold *only
+  names*. A Story's step 001 becomes `wormhole/Story/O/LakeTiles/O/Step=001/I`,
+   where **`I` is today's `toc.snap`** (the node's own content) and **`O/*` are
+    pure name-containers** — the filesystem laid out as the C split itself:
+     `o()` = children (the `O/` dirs), `i()` = the node (its `I`). The bytes
+      decode identically to a `toc.snap` (same Lines codec, `decode_wh_lines`/
+       `deWaft`); this is purely an *addressing* rework, so it supersedes any
+        fixed `Such`-style path and the toc.snap promotion both. **Don't
+         over-invest in bespoke paths anywhere in `wormhole/` until this lands**;
+          shape new layouts knowing `O`/`I` is the horizon. A third axis the
+           layout must accommodate: the **git seam** (group history by git rev —
+            see the Editron `Credulation`-by-rev TODO). Extracted here from
+             `Editron.md` §7 (was tangled into the Credu-storage handover); it is
+              a general wormhole-storage concern, not Credu-specific.
+
 ### StemHive / Langui fold UX
 Fold work uncommitted (human commits on host). Open:
 - `↦` handle on every region from the start (today only after a region's first fold).
