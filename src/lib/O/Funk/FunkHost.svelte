@@ -1,12 +1,9 @@
 <script lang="ts">
-    // FunkHost — the generic host for an embedded applet.  Waft mounts this for any
-    //  %Funkcion (or legacy %havoc) in the document and passes the funk C; FunkHost
-    //   dispatches on the funk's KIND to the registered component (kinds.ts).  This is the
-    //    seam that keeps Waft — which mounts the entire editable web — ignorant of any one
-    //     applet's specifics: the kind module owns its UI and behaviour.  An unknown kind
-    //      falls back to a bare line so an unbound/typo'd embed is still visible.
-    //   A legacy `%havoc:<kind>` particle (mainkey havoc, no Funkcion key) is aliased to
-    //    the Ballistics kind, so existing drum-pads route here without re-authoring.
+    // FunkHost — the generic host for an embedded applet; the inline sibling of LensHost.
+    //   Waft mounts it for any %Funkcion, passes the funk C.
+    //   dispatches on the funk's kind → the registered component (kinds.ts)
+    //     unknown kind → a bare line, so a typo'd/unbound embed stays visible
+    //   the seam keeping Waft — which mounts the whole editable web — ignorant of any applet's specifics.
     import type { House } from "$lib/O/Housing.svelte"
     import type { TheC }  from "$lib/data/Stuff.svelte"
     import { FUNK_KINDS } from "$lib/O/Funk/kinds"
@@ -15,7 +12,7 @@
         H: House, w: TheC, funk: TheC, raw?: boolean, examining?: TheC
     } = $props()
 
-    let kind  = $derived((funk.sc.Funkcion ?? (funk.sc.havoc !== undefined ? 'Ballistics' : undefined)) as string | undefined)
+    let kind  = $derived(funk.sc.Funkcion as string | undefined)
     let entry = $derived(kind ? FUNK_KINDS[kind] : undefined)
 </script>
 

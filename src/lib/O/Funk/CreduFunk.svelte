@@ -1,19 +1,20 @@
 <script module lang="ts">
     import type { TheC } from "$lib/data/Stuff.svelte"
 
-    // credufunk_run — the RECEIVER (a monitor, pumped centrally by Lies).  CreduFunk is a
-    //  container: it holds a clutch of child Funkcion:Storying cells (the Books that fly by it).
-    //   Each tick it captures the editor's current Doc version-set — the GhostInclude ledger off
-    //    Ghostmeta (Cred_ghost_versions) — and journals it, per Book, as a %Credulate under
-    //     CreduCoherence:latest; when that Book's %run_result is 100%, also under :perfection.
-    //   The cell's verdict is COHERENCE: per Book, does latest's version-set equal perfection's
-    //    (i.e. is HEAD the last proven version)?  Change-detected (a %vset signature) so the
-    //     snapped journal only churns on a genuine change, not every tick.
-    //   Structure stamped:  Funkcion:CreduFunk
-    //                         CreduCoherence:latest
-    //                           %Credulate,of_Book,finished_at,vset
-    //                             GhostInclude:<gen>,dige
-    //                         CreduCoherence:perfection / …
+    // credufunk_run — a Funkcion kind's run; Lies pumps it centrally each tick.
+    //   holds Storying cells — the Books flying past it.
+    //   each tick, per %Book:
+    //     capture the version-set from Cred_ghost_versions()  (the %GhostInclude ledger off Ghostmeta)
+    //     journal it as a %Credulate  → CreduCoherence:latest
+    //       if run_result is 100%     → CreduCoherence:perfection  too
+    //     skip if vset unchanged      — snap churns only on real change
+    //   verdict = coherence: latest's version-set == perfection's?  (is HEAD proven?)
+    //   structure stamped:
+    //     Funkcion:CreduFunk
+    //       CreduCoherence:latest
+    //         %Credulate,of_Book,finished_at,vset
+    //           GhostInclude:<gen>,dige
+    //       CreduCoherence:perfection / …
     export function credufunk_run(_host: TheC, funk: TheC, ww: TheC): void {
         let H: any = ww
         while (H && typeof H.Cred_ghost_versions !== "function") H = H.c?.up
@@ -53,15 +54,23 @@
 </script>
 
 <script lang="ts">
-    // CreduFunk.svelte — the container Funkcion KIND.  Reads as a ONELINER usually (a coherence
-    //  summary of the Books inside it); click to EXPLODE into both the illusioned child cells (the
-    //   Storying lights, hosted through FunkHost) AND the dis-illusioned plain-C journal (the
-    //    CreduCoherence / Credulate / GhostInclude tree it stashes inside itself).  The journaling
-    //     itself is credufunk_run above; this is only the face.
+    // UI:CreduFunk — the container Funkcion kind's face; the journaling is credufunk_run above.
+    //   collapsed: a oneliner — coherence summary of the Books inside.
+    //   click to EXPLODE into:
+    //     the illusioned child cells   — Storying lights, hosted through FunkHost
+    //     the dis-illusioned journal   — the CreduCoherence / Credulate / GhostInclude tree it stashes
     import type { House } from "$lib/O/Housing.svelte"
-    import FunkHost from "$lib/O/Funk/FunkHost.svelte"
+    import { onMount } from "svelte"
     import MiniWaft from "$lib/O/ui/MiniWaft.svelte"
     // TheC is in scope from the module script.
+
+    // FunkHost loaded DYNAMICALLY, not statically: CreduFunk is a kind registered in kinds.ts,
+    //  and FunkHost imports that same kinds.ts (FUNK_KINDS) — a static import here would close a
+    //   kinds → CreduFunk → FunkHost → kinds runtime cycle, which makes Vite full-reload the whole
+    //    app on any edit to those modules instead of hot-swapping.  The async edge is its own HMR
+    //     boundary, so the cycle dissolves; the child cells just mount one tick after the explode.
+    let FunkHost = $state<any>(undefined)
+    onMount(async () => { FunkHost = (await import("$lib/O/Funk/FunkHost.svelte")).default })
 
     let { H, w, funk, raw = false, examining }: {
         H: House, w: TheC, funk: TheC, raw?: boolean, examining?: TheC
@@ -102,7 +111,7 @@
         <div class="cf-body">
             <!-- exploded: the illusioned child cells (each Book's Storying light) … -->
             <div class="cf-illusions">
-                {#each cells as c (c)}<FunkHost {H} {w} funk={c} {examining} />{/each}
+                {#if FunkHost}{#each cells as c (c)}<FunkHost {H} {w} funk={c} {examining} />{/each}{/if}
             </div>
             <!-- … and the dis-illusioned C** it stashes inside itself, as a MiniWaft: a short
                  Travel whose top orb pings orbs through the whole thing and makes it editable. -->

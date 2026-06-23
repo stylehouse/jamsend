@@ -230,8 +230,8 @@
     let capped     = $state(false)
     let sidebyside = $state(false)
 
-    // Embedded applets (%Funkcion, and legacy %havoc drum-pads) render through FunkHost —
-    //  the kind module owns the pad/light, the strike, and the armed glow.  See O/Funk/.
+    // Embedded applets (%Funkcion) render through FunkHost — the kind module owns the
+    //  pad/light, the strike, and the armed glow.  See O/Funk/.
 
     // ── inline Funkcions ↔ editable C (the per-What negotiation) ──────────────────────
     //   A What full of Funkcions reads best as its illusions flowed inline, not a bullet list of
@@ -248,7 +248,7 @@
         waft.bump_version()
     }
     const what_inlined  = (C: TheC) => C.sc.inline !== undefined || !!C.c.inlined
-    const has_funk_child = (C: TheC) => (C.o() as TheC[]).some(k => k.sc.Funkcion !== undefined || k.sc.havoc !== undefined)
+    const has_funk_child = (C: TheC) => (C.o() as TheC[]).some(k => k.sc.Funkcion !== undefined)
 
     // ── editing a Funkcion node as plain C (no ItemType — peel/depeel its whole sc) ──
     //   A %Funkcion's mainkey isn't an ITEM_TYPE, so it has no PeelInput of its own.  In a What's
@@ -286,7 +286,7 @@
     // funk_kind / funk_live — a Funkcion's kind, and whether that kind has a registered
     //  live component.  An unregistered kind (e.g. dirlist) has no illusion to host, so it
     //   renders as a plain editable C row instead of an orb beside an empty applet.
-    const funk_kind = (c: TheC) => (c.sc.Funkcion ?? (c.sc.havoc !== undefined ? 'Ballistics' : undefined)) as string | undefined
+    const funk_kind = (c: TheC) => c.sc.Funkcion as string | undefined
     const funk_live = (c: TheC) => { const k = funk_kind(c); return k != null && FUNK_KINDS[k] != null }
 
     // ── unified item-edit form state ──────────────────────────────────
@@ -305,7 +305,7 @@
     const add_type_C   = new WeakMap<TheC, ItemType>()
     // containers whose pending add is a *raw* C — the plain "C" box, no imposed
     //  mainkey: the typed text is peel()'d straight into the sc, so the mainkey is
-    //  whatever you type (a %havoc, or anything), not a forced ItemType.
+    //  whatever you type, not a forced ItemType.
     const add_raw_C    = new WeakSet<TheC>()
     const orb_trigger  = new WeakMap<TheC, TheC>()    // container → item whose orb opened this add
 
@@ -317,7 +317,7 @@
     const after_item_C = new WeakMap<TheC, TheC>()   // container → insert-after target
 
     //   raw=true is the plain "C" box: no ItemType, the typed text is peel()'d into
-    //   the sc (mainkey is whatever you type — a %havoc, anything).  t is ignored then.
+    //   the sc (mainkey is whatever you type — anything).  t is ignored then.
     function pick_and_open(container: TheC, t: ItemType | undefined, seed = '', raw = false) {
         editing.clear()
         editing.add(container)
@@ -542,8 +542,8 @@
                 },
                 on_cancel_orb: () => { close_orb(); cancel_edit(item) },
                 on_del: is_waft ? () => on_delete(waft) : () => delete_item(item, container),
-                // C box: first typed char opens a RAW add form (peel — any mainkey,
-                //  including a %havoc).  Gated by where an add is structurally allowed.
+                // C box: first typed char opens a RAW add form (peel — any mainkey).
+                //  Gated by where an add is structurally allowed.
                 on_start_after: after_types?.length
                     ? (char: string) => open_after_raw(char)
                     : undefined,
@@ -573,7 +573,7 @@
         return {
             label:        raw ? 'C' : add_type_C.get(container)!,
             open:         true,
-            mk_ph:        raw ? 'havoc:kind' : td!.mk_ph,
+            mk_ph:        raw ? 'Funkcion:Ballistics' : td!.mk_ph,
             sc_ph:        raw ? 'emoji:💥,arm:1' : td!.sc_ph,
             mainkey:      draft_mk,
             on_mk:        (v: string) => { draft_mk = v },
@@ -739,7 +739,7 @@
      upC is the containing C — used for edit/delete keying and Doc dpath.
      Type selection now lives in the PeelInput irow via on_crud.on_pick_type. -->
 {#snippet waftitem(C: TheC, upC: TheC, funk_as_C: boolean, inline: boolean)}
-    {#if C.sc?.Funkcion !== undefined || C.sc?.havoc !== undefined}
+    {#if C.sc?.Funkcion !== undefined}
         {@const fediting = editing.has(C) && raw_edit_C.has(C)}
         <!-- Every Funkcion is editable through an orb.  A live kind shows its illusion with a
              small orb beside it (compact in an inline flow, a row otherwise); the orb flips it

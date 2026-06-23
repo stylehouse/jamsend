@@ -104,7 +104,7 @@
         examining.bump_version()   // Waft snippet reads void examining?.version for glow reactivity
         console.log(`👁 cursor → Waft:${waft_key} ${(src.sc as any).What !== undefined ? 'What:' + (src.sc as any).What : 'doc:' + ((src.sc as any).Doc ?? '?')}`)
 
-        // self-arming havoc: any %havoc,arm limb in the now-engaged What strikes itself.
+        // self-arming: any Ballistics pad marked %arm in the now-engaged What strikes itself.
         //  Dormant until a pad opts in with arm:1.  < first cut fires synchronously here,
         //  which races a cold dock open (see Lies_arm_engaged); the run-level home is the
         //  Funkcion pump (req:Store Phase 2b, post dock-read-land) when this is revisited.

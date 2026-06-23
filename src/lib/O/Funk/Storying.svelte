@@ -1,13 +1,13 @@
 <script module lang="ts">
     import type { TheC } from "$lib/data/Stuff.svelte"
 
-    // storying_run — the Storying Funkcion's BEHAVIOUR, pumped centrally by Lies (one
-    //  req:Funkcion per cell, ticked off w:Lies's Funkcions container).  It finds the
-    //   matching %run_result — by `book` field for %of_Book (latest by `at`, since one
-    //    Book runs several docks), by dock `path` for %of_dock — and stamps a SEPARATE
-    //     funk.c.verdict (NOT req.sc.ok: "the closure ran" ≠ "the test passed").  phase
-    //      mirrors the Langui idiom: good (every step) / bad / working (no result yet).
-    //   Off-snap, self-contained C ops only — the host (Waft) never sees any of this.
+    // storying_run — the Storying kind's behaviour; Lies pumps it centrally (one req:Funkcion per cell).
+    //   find the matching run_result:
+    //     %of_Book → by book field, latest by at  (one Book runs several docks)
+    //     %of_dock → by dock path
+    //   stamp funk.c.verdict  (NOT req%ok — "the closure ran" ≠ "the test passed")
+    //     phase: good (every step) | bad | working (no result yet)
+    //   off-snap, self-contained C ops — the host (Waft) never sees any of this.
     export function storying_run(_host: TheC, funk: TheC, ww: TheC): void {
         const book = funk.sc.of_Book as string | undefined
         const path = funk.sc.of_dock as string | undefined

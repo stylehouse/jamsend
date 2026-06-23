@@ -1781,8 +1781,7 @@ export class House extends StorableHousing {
     // The toc format is the snap line codec: steps partition the tree, notes hang
     // below them — that structure is general enough for any project, not just Story.
     //
-    // op: 'read_toc'   → tries toc.snap; if absent tries legacy toc.json and
-    //                    migrates it in-place to toc.snap before returning.
+    // op: 'read_toc'   → reads toc.snap.
     //                    reply: { toc_snap: string } | { not_found:true, toc_snap:'' }
     //
     // op: 'write_toc'  → writes wh_data (string) to toc.snap
@@ -1833,7 +1832,6 @@ export class House extends StorableHousing {
     
             try {
                 if (op === 'read_toc') {
-                    // prefer toc.snap; transparently migrate from toc.json if present
                     let snap = await nav.read_file(path, 'toc.snap')
     
                     done(snap ? { toc_snap: snap } : { not_found: true, toc_snap: '' })

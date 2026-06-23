@@ -158,11 +158,11 @@ The through-line: a surprise_read (external edit conflict on an open Doc) **pops
          clears `good/%surprise_read` so the popover closes. No × kill.
 - Mounted from `ui/InterestStrip.svelte`, rendered unconditionally with its own gate (pops regardless of
    whether any Interest caps show).
-- **The reseat chain is the bomb** — fragile/non-obvious: Good → `LiesStore_drain_good_now` →
-   `e:dock_content` → `Lang_open_dock` → **`req:Languish` never finishes** (eternal `req:text_mutated`)
-    so it's never recreated → `e_Lang_dock_content` must *manually* bump `%Text.disk_rev` → Langui's
-     disk-reload `$effect` → minimal-diff dispatch (`diff_to_changes`, so cursor/folds/scroll map
-      through). Break any link and the open editor stops updating with no error.
+- The reseat chain is the bomb — break any link and the open editor stops updating, no error.
+    %Good → LiesStore_drain_good_now() → e:dock_content → Lang_open_dock()
+      req:Languish never finishes (eternal req:text_mutated) — never recreated
+        so e_Lang_dock_content() must MANUALLY bump Text%disk_rev
+          → Langui disk-reload $effect → minimal-diff dispatch (diff_to_changes, so cursor|folds|scroll map through)
 - **Floating UI off the minimap MUST portal a single node** — `.lte-mm-host` (overflow:hidden) + `.lmm`
    (backdrop-filter) are containing blocks that clip/anchor `position:fixed`; portaling two Svelte-owned
     nodes corrupts the strip/minimap DOM.

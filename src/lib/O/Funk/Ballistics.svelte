@@ -1,13 +1,10 @@
 <script lang="ts">
-    // Ballistics.svelte — the Ballistics Funkcion KIND: a havoc drum-pad.  Unlike Storying
-    //  (a MONITOR: a pumped run that reads state and colours a light), Ballistics is an
-    //   ACTION: it is NOT pumped (the kind declares no `run`) — it just renders a pad whose
-    //    click pops a limb out of the Lies/Store plumbing via e_Lies_strike.  The limb
-    //     behaviour stays in Lies (HAVOC_LIMBS); this is only its face.  Hosted by FunkHost
-    //      like any kind, so Waft knows nothing about havoc.
-    //  Legacy particle shape: `%havoc:<kind>` (mainkey havoc).  FunkHost aliases it to this
-    //   kind, so existing pads keep working without re-authoring; the limb kind is read from
-    //    `havoc` (or `kind` on a `%Funkcion:Ballistics` embed).
+    // UI:Ballistics — a Funkcion kind: a havoc drum-pad.
+    //   an ACTION, not a monitor — no run, never pumped; just a pad.
+    //   click → e_Lies_strike() pops a limb out of Lies/Store
+    //     (limb behaviour lives in Lies, HAVOC_LIMBS; this is only the face)
+    //   hosted by FunkHost like any kind — Waft knows nothing about the limbs.
+    //   the limb kind rides as kind: on the Funkcion:Ballistics embed.
     import type { House } from "$lib/O/Housing.svelte"
     import type { TheC }  from "$lib/data/Stuff.svelte"
 
@@ -15,7 +12,7 @@
         H: House, funk: TheC, raw?: boolean, examining?: TheC
     } = $props()
 
-    let kind = $derived((funk.sc.havoc ?? funk.sc.kind) as string)
+    let kind = $derived(funk.sc.kind as string)
 
     // a press flashes the pad warm for a beat.
     let struck = $state(false)
@@ -26,9 +23,9 @@
         setTimeout(() => { struck = false }, 180)
     }
 
-    // a %…,arm pad self-arms: Lies_arm_engaged strikes it when its What is looked at.  Glow
-    //  it when that What holds the Spotlight, so the auto-fire is legible (same warmth a hit
-    //   gives).  Reads the cursor's Spotlight src off `examining`, climbing to the What.
+    // a pad marked %arm self-arms — Lies_arm_engaged() strikes it when its %What is looked at.
+    //   glow it while that What holds the %Spotlight, so the auto-fire is legible (a hit's warmth)
+    //   reads the Spotlight src off examining, climbing to the What.
     function is_spotlight(what: TheC): boolean {
         void examining?.vers
         const spot = examining?.o?.({ Spotlight: 1 })?.[0] as any

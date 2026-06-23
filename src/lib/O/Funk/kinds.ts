@@ -30,14 +30,16 @@ import Ballistics from "$lib/O/Funk/Ballistics.svelte"
 import StoryTimes, { storytimes_run } from "$lib/O/Funk/StoryTimes.svelte"
 import CreduFunk, { credufunk_run } from "$lib/O/Funk/CreduFunk.svelte"
 import IdHatch from "$lib/O/ui/IdHatch.svelte"
-import Runner from "$lib/O/Funk/Runner.svelte"
+import Runner, { runner_run } from "$lib/O/Funk/Runner.svelte"
+import Relay, { relay_run } from "$lib/O/Funk/Relay.svelte"
 
 export type FunkKind = {
     run?:                (host: TheC, funk: TheC, ww: TheC) => void
     component?:          any   // the inline in-Waft face (FunkHost)
     // hoisted faces, keyed by Lens-KIND (the slot|intensity a Lens carries) — LensHost picks
     //  comp_<lens.Lens> off the Funkcion named by lens.of_Funkcion:
-    comp_Panel?:         any   // → the bottom Lens dock (ui/Lens.svelte)
+    comp_Panel?:         any   // → the global/fullscreen Lens dock in Otro (ui/Lens.svelte kind="Panel")
+    comp_Brink?:         any   // → the Brink dock pinned inside Liesui (ui/Lens.svelte kind="Brink")
     comp_InterestSmall?: any   // → popped small in the InterestStrip
     comp_InterestBig?:   any   // → popped big in the InterestStrip
 }
@@ -47,6 +49,7 @@ export const FUNK_KINDS: Record<string, FunkKind> = {
     Ballistics: { component: Ballistics },                      // action: a struck havoc drum-pad
     StoryTimes: { run: storytimes_run, component: StoryTimes }, // station: a struck run-all sweep, driven by a pumped tick
     CreduFunk:  { run: credufunk_run,  component: CreduFunk },  // container: holds Storying cells + journals their Credulates (coherence)
-    IdHatch:    { comp_Panel: IdHatch },                        // face-only: the cluster-identity hatch, a Lens:Panel
-    Runner:     { comp_Panel: Runner },                         // face-only: the endpoint monitor (liveness + run_phase), a docked Lens:Panel
+    IdHatch:    { comp_Panel: IdHatch },                        // face-only: the cluster-identity hatch, a global Lens:Panel
+    Runner:     { run: runner_run, comp_Brink: Runner },        // %Aim watcher: the peer ping (%channel_peer), hoisted as Lens:Brink
+    Relay:      { run: relay_run,  comp_Brink: Relay },         // %Aim watcher: the relay ping (channel carrier), hoisted as Lens:Brink
 }

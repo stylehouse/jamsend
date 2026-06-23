@@ -7,17 +7,10 @@ A cross-spec sweep of what is in motion and what is deferred-but-load-bearing,
 
 ## Notes for whoever picks this up
 
-- **Stuff and Housing are the central two.** `data/Stuff.svelte.ts` is the C
-   substrate — the light medium you CRUD with (`TheC`, `sc`/`c`, `o`/`i`/`oai`,
-    the X-indexes, Travel). `O/Housing.svelte.ts` is the House machine built on
-     it — the H/A/w levels, the `beliefs()` think-loop (organise → attend →
-      reqdo_sweep), the `beliefs` mutex, `i_elvisto`/`i_elvis` targeting,
-       Stuffing, Dexie persistence, Wormhole. Everything else orbits these two.
-        **Hovercraft sits between them, negotiating for more Housing with Stuff**
-         — it owns the transient `%req` level (reqyoncile/reqonce/reqy_recurse/
-          ttlilt), i.e. the run-time *work* that asks the stable House for more
-           capacity, spun out of Stuff particles. Read Stuff and Housing first;
-            they're the load-bearing context for almost every item below.
+- Stuff and Housing are the central two — everything orbits them; read them first.
+    Stuff       the C substrate you CRUD: TheC, sc|c, o|i|oai, the X-indexes, Travel
+    Housing     the machine on it: H/A/w, beliefs() think-loop (organise → attend → reqdo_sweep), the mutex, i_elvisto(), Stuffing, Dexie, Wormhole
+    Hovercraft  sits between — negotiates more Housing out of Stuff; owns the transient %req level (the run-time work asking the House for capacity)
 
 - **Verify against code before believing a difficulty.** Every item touched so
    far shrank on contact: the Stuffing "over-creation" was already solved, the

@@ -1,15 +1,41 @@
+<script module lang="ts">
+    import type { TheC as TheCm } from "$lib/data/Stuff.svelte"
+    // runner_run — the Runner Funkcion's pumped watcher (Lies pumps it once a tick, like
+    //  storying_run).  Pure C-tree, no H: it reads the peer ping (%channel_peer, stamped by
+    //   Lies_pong_recv) off w:Lies and, on a liveness TRANSITION (dialing→silent→live), stamps
+    //    funk.c.latest = {state, event, at} + bumps so the hoisted Brink face can caption the
+    //     latest thing the endpoint did.  The face still reads the live state itself; this is the
+    //      change-log, the first sliver of %Aim's "describe the latest event from it".
+    export function runner_run(_host: TheCm, funk: TheCm, ww: TheCm): void {
+        const role   = ww.sc.runner ? 'runner' : ww.sc.editor ? 'editor' : ''
+        const expect = role === 'editor' ? 'runner' : role === 'runner' ? 'editor' : ''
+        if (!expect) return
+        const now   = Date.now()
+        const face  = ww.o({ channel_peer: expect })[0] as TheCm | undefined
+        const live  = !!(face?.sc.last && now - (face.sc.last as number) < 7000)
+        const state = !face ? 'dialing' : live ? 'live' : 'silent'
+        if ((funk.c.latest as { state?: string } | undefined)?.state === state) return
+        funk.c.latest = { state, event: `${expect} ${state}`, at: now }
+        funk.bump_version()
+    }
+</script>
+
 <script lang="ts">
-    // Runner — the endpoint monitor, hoisted as a Lens:Panel (the first docked tenant of the
-    //  bottom-accreting Lens stack).  It reads the live channel state on a w:Lies — the peer's
+    // Runner — the endpoint monitor, hoisted as a Lens:Brink (a tenant of the Liesui-pinned dock).
+    //  It reads the live channel state on a w:Lies — the peer's
     //   liveness off %channel_peer (role + rtt + last, stamped by Lies_pong_recv on the ping/pong
     //    heartbeat), whether the socket carries at all (Lies_channel_live), and the in-flight
     //     run_phase blip — and shows, at a glance, whether the remote endpoint is up and what its
     //      run is doing.  Suggested by Lies_heartbeat whenever this instance holds an editor|runner
     //       role; the Aim layer will later point one of these at each endpoint it orchestrates.
+    import { onDestroy }   from 'svelte'
     import type { House } from "$lib/O/Housing.svelte"
     import type { TheC }  from "$lib/data/Stuff.svelte"
 
-    let { H, lens }: { H: House, lens?: TheC, funk?: TheC, w?: TheC } = $props()
+    let { H, lens, funk }: { H: House, lens?: TheC, funk?: TheC, w?: TheC } = $props()
+
+    // the latest transition the watcher (runner_run) logged — a quiet caption under the link.
+    let latest = $derived((funk?.vers && funk.c?.latest) as { state?: string, event?: string, at?: number } | undefined)
 
     // the w:Lies this panel monitors — stamped on the lens by the suggester (lens.c.w), else
     //  resolved the way Liesui does (the %examining signal's back-ref).
@@ -17,7 +43,10 @@
     let run_phase: any = $state(undefined)
     let role           = $state('')
     let channel_live   = $state(false)
-    let now            = $state(0)
+    let now            = $state(Date.now())
+
+    const _tick = setInterval(() => { now = Date.now() }, 1000)
+    onDestroy(() => clearInterval(_tick))
 
     $effect(() => {
         const w = (lens?.c?.w ?? H.ave.ob({ examining: 1 })[0]?.c?.w) as TheC | undefined
@@ -40,14 +69,17 @@
     let peer_rtt    = $derived(live_face[0]?.sc?.rtt as number | undefined)
     let peer_age_s  = $derived(face?.sc?.last ? Math.round((now - (face.sc.last as number)) / 1000) : null)
 
-    // the endpoint clue — four honest states, not a binary up/down: no socket → dialing → silent
-    //  (was proven, gone quiet) → live.  A clash (>1 facing peer) is the "freak out" Langui flags.
+    // the endpoint clue — the WATCHED peer is the subject (→RUNNER), the carrier state rides as a
+    //  parenthetical, so a glance reads "who, and how is it".  Four honest states, not a binary
+    //   up/down: no socket → dialing → silent (was proven, gone quiet) → live.  A clash (>1 facing
+    //    peer) is the "freak out" Langui flags.
+    let PEER = $derived((expect_peer || '').toUpperCase())
     let link = $derived(
-        !channel_live        ? { glyph: '✕', cls: 'down',   text: `no channel${expect_peer ? ` to ${expect_peer}` : ''}` }
-      : live_face.length > 1 ? { glyph: '⚠', cls: 'clash',  text: `${live_face.length} ${expect_peer}s — clash` }
-      : live_face.length     ? { glyph: '●', cls: 'live',   text: `${expect_peer} ${peer_rtt ?? '?'}ms` }
-      : face                 ? { glyph: '◍', cls: 'silent', text: `${expect_peer} silent${peer_age_s != null ? ` ${peer_age_s}s` : ''}` }
-      :                        { glyph: '◌', cls: 'dial',   text: `dialing ${expect_peer || '…'}` }
+        !channel_live        ? { glyph: '✕', cls: 'down',   text: `→${PEER || '?'} (no channel)` }
+      : live_face.length > 1 ? { glyph: '⚠', cls: 'clash',  text: `→${PEER} (clash ×${live_face.length})` }
+      : live_face.length     ? { glyph: '●', cls: 'live',   text: `→${PEER} (${peer_rtt ?? '?'}ms)` }
+      : face                 ? { glyph: '◍', cls: 'silent', text: `→${PEER} (silent${peer_age_s != null ? ` ${peer_age_s}s` : ''})` }
+      :                        { glyph: '◌', cls: 'dial',   text: `→${PEER || '…'} (dialing)` }
     )
 
     // the in-flight run blip (mirrors Liesui's PHASE_VIEW), shown while a run is bouncing and gone
@@ -74,6 +106,9 @@
         <span class="rp-role">{role || 'lies'}</span>
         <span class="rp-txt">{link.text}</span>
     </div>
+    {#if latest?.state}
+        <div class="rp-latest">↪ {latest.state}{#if latest.at}<span class="rp-ago"> {Math.round((now - latest.at) / 1000)}s ago</span>{/if}</div>
+    {/if}
     {#if phase_live && phase_view}
         <div class="rp-phase" class:stall={run_phase.phase === 'step_stall'} class:done={run_phase.phase === 'all_done'}>
             <span class="rp-ph-g">{phase_view.glyph}</span>
@@ -102,6 +137,8 @@
     .rp-down   .rp-dot { color: #e06c75; }
     .rp-clash  .rp-dot { color: #e06c75; }
     .rp-down  .rp-txt, .rp-clash .rp-txt { color: #d68a90; }
+    .rp-latest { font-size: 9.5px; color: #6a7398; }
+    .rp-ago { color: #4e5676; }
     .rp-phase { display: flex; align-items: center; gap: 5px; color: #b6a8cc; }
     .rp-phase.stall { color: #d8b86a; }
     .rp-phase.done  { color: #8fe4c0; }

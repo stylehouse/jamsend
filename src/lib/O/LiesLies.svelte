@@ -590,16 +590,11 @@
         //       which is the honest signal we lacked while only control frames crossed.
         Lies_heartbeat(w: TheC) {
             const H = this as House
-            // surface the endpoint as a docked Lens:Panel,of_Funkcion:Runner whenever this instance
-            //  holds an editor|runner role (a remote relationship exists) — the Runner panel reads
-            //   this w's liveness/run_phase.  Suggested once (idempotent presence-guarded) and dropped
-            //    when the role lapses; done before the channel-live gate so the panel can show "no
-            //     channel" while the socket is down.  (The Aim layer will later own this targeting.)
-            const livesRole = (H as any).Lies_role(w)
-            if (livesRole === 'editor' || livesRole === 'runner') {
-                if (!(H as any).Lies_lens_bag().oa({ Lens: 'Panel', of_Funkcion: 'Runner' }))
-                    ((H as any).Lies_lens_suggest('Panel', 'Runner', { altitude: 20 }) as TheC).c.w = w
-            } else (H as any).Lies_lens_dismiss('Panel', 'Runner')
+            // %Aim (naive) owns the endpoint targeting now: ensure the Waft:Cluster,Aim + its
+            //  watcher Funkcions exist (once) and hoist/retire the cluster Brinks (Runner peer-ping
+            //   + Relay relay-ping) by role.  Done before the channel-live gate so a Brink can show
+            //    "no channel / relay down" while the socket is down.
+            ;(H as any).Lies_aim(w)
             if (!H.Lies_channel_live(w)) return
             const now = Date.now()
             // Liveness watchdog: if the channel WAS proven (a pong landed) but has since gone silent

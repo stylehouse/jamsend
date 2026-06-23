@@ -29,11 +29,11 @@ import { onMount } from "svelte"
 
 let { M } = $props()
 
-// HAVOC_LIMBS — the havoc drum-machine's reusable behaviours, keyed by %havoc kind.
-//  Each limb pops a different part of the Lies/Store plumbing.  A %havoc:<kind>
-//  particle authored in a Waft is the per-test config; this is the shared behaviour
-//  the strike runs.  Add a limb by adding an entry — the inline pad (Waft.svelte) and
-//  e_Lies_strike both dispatch by kind, so nothing else needs touching.
+// HAVOC_LIMBS — the havoc drum-machine's reusable behaviours, keyed by limb kind.
+//  Each limb pops a different part of the Lies/Store plumbing.  A Ballistics pad
+//  (Funkcion:Ballistics,kind:…) authored in a Waft is the per-test config; this is the
+//  shared behaviour the strike runs.  Add a limb by adding an entry — the inline pad
+//  (Waft.svelte) and e_Lies_strike both dispatch by kind, so nothing else needs touching.
 const HAVOC_LIMBS: Record<string, { run: (H: House, w: TheC, c?: TheC) => Promise<void> }> = {
     // 💥 fabricate a surprise_read (disk diverged under the open edit) on the active
     //  doc.  Active-doc truth is w:Lang.c.active_dock_path (set by Lang_set_active_dock).
@@ -49,7 +49,7 @@ const HAVOC_LIMBS: Record<string, { run: (H: House, w: TheC, c?: TheC) => Promis
 }
 
 // Run one havoc limb by kind against w:Lies, optionally carrying the authored
-//  %havoc particle c (its params).  Shared by the manual strike (e_Lies_strike)
+//  Ballistics pad c (its params).  Shared by the manual strike (e_Lies_strike)
 //  and the self-arming scan (Lies_arm_engaged).  Returns whether a limb ran.
 async function run_limb(H: House, w: TheC, kind: string, c?: TheC): Promise<boolean> {
     const limb = HAVOC_LIMBS[kind]
@@ -127,7 +127,7 @@ await M.eatfunc({
                 if (k.sc.What !== undefined) {
                     const kids = k.o() as TheC[]
                     const funkfull = kids.length > 0 &&
-                        kids.every(x => x.sc.Funkcion !== undefined || x.sc.havoc !== undefined)
+                        kids.every(x => x.sc.Funkcion !== undefined)
                     if (funkfull) k.c.inlined = 1; else delete k.c.inlined
                 }
                 mark_inlined(k)
@@ -223,6 +223,42 @@ await M.eatfunc({
         const H = this as any
         if ((H.Lies_lens_bag() as TheC).oa({ Lens: lensKind, of_Funkcion })) H.Lies_lens_dismiss(lensKind, of_Funkcion)
         else H.Lies_lens_suggest(lensKind, of_Funkcion, sc)
+    },
+
+    // ── %Aim (naive) — the cluster-awareness Waft + its hoisted Brink faces ──────────
+    //   The first, deliberately-thin %Aim: a Waft:Cluster,Aim holding two watcher Funkcions —
+    //    Funkcion:Runner (the peer ping, %channel_peer) and Funkcion:Relay (the relay carrier,
+    //     channel_up) — each a pumped run (kinds.ts) that stamps its latest transition, surfaced
+    //      as a Lens:Brink hoisted into the Liesui-pinned dock.  Mature %Aim (a traffic-light
+    //       aggregate, the relay control:log ring-buffer, a navigable fixture) layers onto this.
+    //   The Waft is a runtime fixture (dontSnap) for now, reconstructed each boot from setup.
+    async Lies_aim_setup(w: TheC): Promise<void> {
+        const H = this as House
+        const cluster = w.oai({ Waft: 'Cluster' }, { Aim: 1 })
+        cluster.sc.dontSnap ??= 1
+        for (const kind of ['Runner', 'Relay']) cluster.oai({ Funkcion: kind })
+        await (H as any).Lies_instantiate_funkcions(w, cluster)   // binds each kind's run + registers the pump
+    },
+    //   Hoist (or retire) the cluster Brinks by role — called every heartbeat.  editor|runner
+    //    means a remote relationship exists, so the endpoint faces are worth showing; otherwise
+    //     they're dropped.  Each Brink backlinks its w (the monitored Lies) + funk cell, so the
+    //      face reads the live state and the watcher's funk.c.latest.  Setup runs once (guarded).
+    Lies_aim(w: TheC): void {
+        const H = this as any
+        if (!w.c.aim_setup) { w.c.aim_setup = true; void H.Lies_aim_setup(w) }
+        const on = H.Lies_role(w) === 'editor' || H.Lies_role(w) === 'runner'
+        const cluster = w.o({ Waft: 'Cluster' })[0] as TheC | undefined
+        const kinds = ['Runner', 'Relay']
+        for (let i = 0; i < kinds.length; i++) {
+            const kind = kinds[i]
+            if (on) {
+                if (!(H.Lies_lens_bag() as TheC).oa({ Lens: 'Brink', of_Funkcion: kind })) {
+                    const funk = cluster?.o({ Funkcion: kind })[0] as TheC | undefined
+                    const lens = H.Lies_lens_suggest('Brink', kind, { altitude: 20 + i * 5 }, funk) as TheC
+                    lens.c.w = w
+                }
+            } else H.Lies_lens_dismiss('Brink', kind)
+        }
     },
 
     // ── Lies_instantiate_funkcions ────────────────────────────────────────────────
@@ -322,12 +358,13 @@ await M.eatfunc({
 //#endregion
 //#region Ballistics — action Funkcions: strike-on-demand + self-arm
 //
-//  havoc.  A "limb" is authored as content — a %havoc particle dropped anywhere in
-//  a Waft tree (Waft.svelte renders it inline as a strikeable pad; a switcheroo Waft
-//  in raw mode shows the bare particle instead).  The particle is pure config
-//  (havoc:<kind>, + any params); the *behaviour* lives here, in HAVOC_LIMBS, keyed
-//  by kind — so the drum-machine is reusable while each test authors which limbs it
-//  carries.  Struck via e_Lies_strike (not auto-pumped like w:Lies/Funkcions).
+//  havoc.  A "limb" is authored as content — a Ballistics pad (Funkcion:Ballistics,
+//  kind:…) dropped anywhere in a Waft tree (Waft.svelte renders it inline as a
+//  strikeable pad; a switcheroo Waft in raw mode shows the bare particle instead).
+//  The pad is pure config (kind:<…>, + any params); the *behaviour* lives here, in
+//  HAVOC_LIMBS, keyed by kind — so the drum-machine is reusable while each test
+//  authors which limbs it carries.  Struck via e_Lies_strike (not auto-pumped like
+//  w:Lies/Funkcions).
 //
 //  A pad is struck by hand (e_Lies_strike).  A pad authored with `arm:1` also
 //   *self-arms*: Lies_arm_engaged strikes it the moment its What is looked at.
@@ -343,7 +380,7 @@ await M.eatfunc({
     // ── Lies_arm_engaged ─────────────────────────────────────────────────
     //   Self-arming limbs (parked first cut — dormant until a pad opts in with
     //   arm:1).  Called from Lies_i_Spotlight on every cursor move.  When the
-    //   *engaged What* changes, strike every %havoc,arm limb authored in that
+    //   *engaged What* changes, strike every Ballistics pad marked %arm authored in that
     //   What's subtree — the test runs itself the moment its What is looked at.
     //   Engagement rides the Spotlight cursor, which Lang opens and scrolls the
     //   What's region into view, so "engaged" already means "not folded away"
@@ -375,16 +412,16 @@ await M.eatfunc({
         await new Travel().dive({
             n: what,
             match_sc: {},
-            // a Ballistics pad — folded form (%Funkcion:Ballistics,kind:…) or legacy (%havoc:…) —
-            //  with arm:1 self-fires.  Limb name = the kind either way.
+            // a Ballistics pad (Funkcion:Ballistics,kind:…) marked %arm self-fires;
+            //  limb name = its kind.
             each_fn: async (n: TheC) => {
-                const ballistic = n.sc.Funkcion === 'Ballistics' || n.sc.havoc !== undefined
+                const ballistic = n.sc.Funkcion === 'Ballistics'
                 if (ballistic && n.sc.arm) limbs.push(n)
             },
         })
         let fired = false
         for (const c of limbs)
-            if (await run_limb(H, w, (c.sc.kind ?? c.sc.havoc) as string, c)) fired = true
+            if (await run_limb(H, w, c.sc.kind as string, c)) fired = true
         if (fired) H.i_elvisto(w, 'think')
     },
 

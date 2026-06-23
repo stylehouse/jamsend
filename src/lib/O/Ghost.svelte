@@ -55,10 +55,6 @@
     }
     // so H can be used for lib/gen/ ghosts.
     // M.eatfunc(M)
-    // Agency is de-included: this House is the island going forward, where Modus
-    //  became House.  Agency's hovering machine was copied into Hovercraft (and
-    //   prandle into Housing); legacy Agency still serves the p2p Modus in
-    //    Modus.svelte.
 </script>
 <Hovercraft {M} />
 <!-- below are all AI -->

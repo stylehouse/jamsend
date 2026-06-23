@@ -1350,8 +1350,6 @@
 
         if (!run.c.toc_loaded) {
             // ── load toc.snap ──────────────────────────────────────────────
-            // Wormhole.read_toc handles toc.json → toc.snap migration transparently
-            // (reads toc.json if toc.snap absent, converts, writes toc.snap, returns).
             const toc_req = await wh.oai({ req: 'read_toc', wh_path: run_path, wh_op: 'read_toc' })
             if (!H.i_elvis_req(w, 'Wormhole', 'wh_op', { req: toc_req }))
                 return w.i({ see: '⏳ toc...' })

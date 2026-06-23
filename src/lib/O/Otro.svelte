@@ -199,7 +199,7 @@
 </NaviScroll>
 
 {#if H}
-    <Lens {H} />
+    <Lens {H} kind="Panel" />
 {/if}
 
 {#if H}

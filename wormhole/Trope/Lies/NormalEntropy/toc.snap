@@ -1,0 +1,25 @@
+Waft:Trope/Lies/NormalEntropy
+  EntropyArrest
+    Entcase:Languinio_Interest-waft
+      lematch,Languinio
+        lematch,Interest:Ting,waft,lens,presence,state
+          {"means":1,"spayer":1,"re":"Interest:Ting,waft:Ting/202\\d+-\\d+-{INT}/{INT},lens:DocTing,presence:always,state:live","tol":"any"}
+    Entcase:Ting_cursor-what
+      lematch,Interest:Ting,waft,lens,presence,state
+        lematch,cursor,what,latest
+          {"means":1,"spayer":1,"re":"cursor,what:Ting/202\\d-\\d+-{INT}/{INT},latest","tol":"any"}
+    Entcase:Compile_time-compile
+      lematch,Compile
+        lematch,time,compile,all,write
+          {"means":1,"spayer":1,"re":"time,compile={NUM},all={NUM},write=0","tol":"band","factor":2.53}
+    Entcase:w_self-round
+      lematch,w/self,round
+        {"means":1,"spayer":1,"re":"self,round={NUM}","tol":"band","factor":1.5}
+    Entcase:wants_want-want
+      lematch,req:wants
+        lematch,want,kind
+          means,spayer,re:want={NUM},tol:band,factor=1.5
+    Entcase:Change_compile-secs
+      lematch,Change
+        lematch,compile,dige,secs,dim,pending
+          means,spayer,re:secs={NUM},tol:band,factor=2.52
