@@ -56,30 +56,8 @@ story:LakeTiles
       sample=0.137,at=1782178417
       sample=0.173,at=1782205631
       sample=0.725,at=1782218863
+  EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
-    Entcase:Languinio_Interest-waft
-      lematch,Languinio
-        lematch,Interest:Ting,waft,lens,presence,state
-          {"means":1,"spayer":1,"re":"Interest:Ting,waft:Ting/202\\d+-\\d+-{INT}/{INT},lens:DocTing,presence:always,state:live","tol":"any"}
-    Entcase:Ting_cursor-what
-      lematch,Interest:Ting,waft:Ting/2026-06-21/040014,lens:DocTing,presence:always,state:live
-        lematch,cursor,what,latest
-          {"means":1,"spayer":1,"re":"cursor,what:Ting/202\\d-\\d+-{INT}/{INT},latest","tol":"any"}
-    Entcase:Compile_time-compile
-      lematch,Compile
-        lematch,time,compile,all,write
-          {"means":1,"spayer":1,"re":"time,compile={NUM},all={NUM},write=0","tol":"band","factor":2.53}
-    Entcase:w_self-round
-      lematch,w/self,round
-        {"means":1,"spayer":1,"re":"self,round={NUM}","tol":"band","factor":1.5}
-    Entcase:wants_want-want
-      lematch,req:wants
-        lematch,want,kind
-          means,spayer,re:want={NUM},tol:band,factor=1.5
-    Entcase:Change_compile-secs
-      lematch,Change
-        lematch,compile,dige,secs,dim,pending
-          means,spayer,re:secs={NUM},tol:band,factor=2.52
     Entcase:theCompiledStuff_say-at
       lematch,Point:theCompiledStuff,doc:Ghost/test/Story/Lake/LakeTiles.g
         lematch,say:o hut/although:1/they,can,be,mixed,at

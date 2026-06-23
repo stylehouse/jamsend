@@ -1366,25 +1366,21 @@
             H.story_analysis(w)
         }
 
-        // ── resolve shared EntropyProfiles ─────────────────────────────────
-        // The/EntropyProfile,Wref:<path> names another Waft whose EntropyArrest
-        //  Entcases this Story shares.  Resolve them BEFORE stepping so the shared
-        //   set bites from step 1.  Cached on the top House — loaded once, served to
-        //    every Story run (the cache outlives H:Story).  entropy_rules unions them.
+        // ── open shared EntropyProfiles as canonical Lies Wafts ────────────
+        // The/EntropyProfile,Wref:<path> borrows another Waft's EntropyArrest
+        //  Entcases.  Open it into the outside-Story Lies roster like any dock —
+        //   elvis aims up-tree to that Lies — so it's deWaft'd to a live C tree
+        //    that autosaves on edit and is shared by every Story that borrows it:
+        //     the roster IS the cache (Lies outlives H:Story).  Wait until it lands
+        //      so the set bites from step 1; entropy_rules reads it off the roster.
         {
-            const The = w.c.The as TheC | undefined
-            const top = H.top_House()
-            top.c.entropy_profiles ??= {}
-            for (const p of (The?.o({ EntropyProfile: 1 }) ?? []) as TheC[]) {
+            const The   = w.c.The as TheC | undefined
+            const liesW = H.top_House().o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] as TheC | undefined
+            if (liesW) for (const p of (The?.o({ EntropyProfile: 1 }) ?? []) as TheC[]) {
                 const ref = p.sc.Wref as string | undefined
-                if (!ref || top.c.entropy_profiles[ref]) continue
-                const prof_req = await wh.oai({ req: 'read_toc', wh_path: ref, wh_op: 'read_toc' })
-                if (!H.i_elvis_req(w, 'Wormhole', 'wh_op', { req: prof_req }))
-                    return w.i({ see: `⏳ entropy profile ${ref}...` })
-                const { Waft } = H.deWaft(prof_req.sc.reply?.toc_snap ?? '', ref)
-                const ea = Waft?.o({ EntropyArrest: 1 })[0] as TheC | undefined
-                top.c.entropy_profiles[ref] = (ea?.o({ Entcase: 1 }) ?? []) as TheC[]
-                ;V.Story && console.log(`🛑 entropy profile ${ref}: ${top.c.entropy_profiles[ref].length} shared Entcase(s)`)
+                if (!ref || liesW.o({ Waft: ref })[0]) continue   // already in the roster
+                H.i_elvisto('Lies/Lies', 'Lies_open_Waft', { path: ref })
+                return w.i({ see: `⏳ entropy profile ${ref}…` })
             }
         }
 

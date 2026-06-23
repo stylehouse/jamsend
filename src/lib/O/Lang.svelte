@@ -1214,6 +1214,21 @@
             //    headless compile.  (TODO: the unsaved-buffer merge popover — see Lies_ghost_compile_recv.)
             if (ev.sc.force_active || !w.c.active_dock_path) await H.Lang_set_active_dock(w, path)
 
+            // A force_active dock arrived over the channel (a cluster peer's ghost_compile) with no
+            //  editor user behind it to press Esc — and req:Languish is eternal, so a re-provide never
+            //   re-arms req_compile.  Compile it ourselves, but from a state built straight off the
+            //    fresh disk `text` (Lang_compile_source_state), NOT dock.c.state: the editor's reseat
+            //     into CodeMirror is async, so dock.c.state can still hold the PREVIOUS edit at this
+            //      instant — compiling it lands one round behind (the locked-in lag).  The disk-text
+            //       state is exact and never disturbs the editor's own buffer.  Then arm the run so the
+            //        recompiled ghost reaches the runner (the Esc pair: compile + run).  Awaited inline,
+            //         so the verdict the asking CLI waits on settles on this beat, not a later one.
+            if (ev.sc.force_active) {
+                const srcState = await H.Lang_compile_source_state(dock, text, path)
+                await H.Lang_compile_dock(w, dock, srcState)
+                H.i_elvisto('Lies/Lies', 'Lies_run_arm', { path })
+            }
+
             // poke a think — the furnishing waiting on this path is still needs_work
             //  (it bowed out on a ttlilt, never finished), so the next drive re-runs
             //   it, it sees content_dige, and finishes; the driver then re-keys

@@ -1,0 +1,10 @@
+Credulate,of_Book:LakeSurfer
+  GhostInclude:Ghost_N_Peeroleum,dige:f15775fe21a60d93
+  GhostInclude:Ghost_N_Tribunal,dige:683d031e368194c6
+  GhostInclude:Ghost_Story_Peregrination,dige:86f1f3b223cc82aa
+  GhostInclude:Ghost_N_Tyrant,dige:d9455412901394d4
+  last_ok,at=1782221611.625,ok_pct
+    uses:Ghost_N_Peeroleum,dige:f15775fe21a60d93
+    uses:Ghost_N_Tribunal,dige:683d031e368194c6
+    uses:Ghost_Story_Peregrination,dige:86f1f3b223cc82aa
+    uses:Ghost_N_Tyrant,dige:d9455412901394d4

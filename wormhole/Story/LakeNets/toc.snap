@@ -89,6 +89,7 @@ story:LakeNets
       sample=0.09,at=1781980263
       sample=0.071,at=1782197491
       sample=0.069,at=1782198195
+  EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
     Entcase:wants_want
       lematch,req:wants

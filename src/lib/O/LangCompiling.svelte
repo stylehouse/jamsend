@@ -130,11 +130,12 @@
     import { TheC } from "$lib/data/Stuff.svelte"
     import { dig } from "$lib/Y.svelte";
     import { syntaxTree, language } from "@codemirror/language"
-    import type { EditorState } from "@codemirror/state"
+    import { EditorState } from "@codemirror/state"
     import type { SyntaxNode } from "@lezer/common"
     import { onMount } from "svelte"
     import type { House } from "$lib/O/Housing.svelte"
 import { LANG_COMPILE } from "./lang/compile"
+import { lang, lang_for_path } from "./lang/lang"
 
     let { M } = $props()
 
@@ -186,6 +187,27 @@ import { LANG_COMPILE } from "./lang/compile"
         H.i_elvisto('Lies/Lies', 'Lies_run_arm', { path })
     },
 
+    // ── Lang_compile_source_state — the EditorState to COMPILE (not to display) ─────
+    //
+    //   A ghost_compile must compile the freshly-read DISK text, not whatever the editor's
+    //    buffer happens to hold (it lags the async reseat — the one-round lag).  So build
+    //     the compile-source state here, decoupled from dock.c.state:
+    //      - editor mounted (dock.c.state present): reuse its config — same parser, theme,
+    //         compartments — and just swap the doc to `text` via a transaction.  Cheap, and
+    //          guaranteed to match the language the editor itself is configured with.
+    //      - no editor state (a headless runner, or a dock not yet mounted): build a fresh
+    //         state from the language registry, lang(path).  This is the DOM-free bridge —
+    //          EditorState.create + the Lezer parser, no mounted view — which is exactly why
+    //           a ghost_compile can now be driven, and tested, headless.
+    //   Never stamps dock.c.state: the editor keeps its own buffer; this is a throwaway state
+    //    that exists only to feed Lang_compile_dock the right bytes.
+    async Lang_compile_source_state(dock: TheC, text: string, path: string): Promise<EditorState> {
+        const cur = dock.c.state as EditorState | undefined
+        if (cur) return cur.update({ changes: { from: 0, to: cur.doc.length, insert: text } }).state
+        const exts = await lang(lang_for_path(path))
+        return EditorState.create({ doc: text, extensions: exts })
+    },
+
     // ── Lang_compile ──────────────────────────────────────────────────────────
     //   Resolves the active dock and hands off to Lang_compile_dock.
     //   The split lets req:compile (in Languish) drive a specific dock
@@ -219,10 +241,17 @@ import { LANG_COMPILE } from "./lang/compile"
     //   %Compile/%Map — fully populated before this returns, in both paths.
     //   A resolver needing %Map can rely on it the instant this resolves;
     //   only the gen-file write (if any) outlives it.
-    async Lang_compile_dock(w: TheC, dock: TheC) {
+    async Lang_compile_dock(w: TheC, dock: TheC, stateOverride?: EditorState) {
         const H = this
 
-        const state = dock.c.state as EditorState | undefined
+        // The COMPILE SOURCE is an EditorState.  Normally it is the editor's live buffer
+        //  (dock.c.state), but a ghost_compile hands one built straight from the fresh disk
+        //   text (Lang_compile_source_state) — decoupled from the editor's display buffer.
+        //    That is the one-round-lag fix: the editor's reseat into CodeMirror is async, so
+        //     dock.c.state can still hold the PREVIOUS edit when a channel-driven compile
+        //      fires; compiling a provided disk-text state makes the source exact, and never
+        //       disturbs dock.c.state (which point-nav, region folding and offset reads share).
+        const state = stateOverride ?? (dock.c.state as EditorState | undefined)
         if (!state) { w.i({ see: '⚠ Lang_compile: no editorState yet' }); return }
         if (state.doc.length === 0) return
 
@@ -362,7 +391,7 @@ import { LANG_COMPILE } from "./lang/compile"
             const dock = (w.o({ docks: 1 })[0] as TheC | undefined)?.o({ dock: path })[0] as TheC | undefined
             const err  = dock?.o({ compile_error: 1 })[0] as TheC | undefined
             if (err) { H.Lies_ghost_compile_ack(acks[path].w, acks[path].corr, 'error', { path, errors: [String(err.sc.msg ?? 'compile error')] }); delete acks[path] }
-            else if (Date.now() - acks[path].at > 30000) delete acks[path]
+            else if (Date.now() - acks[path].at > 60000) delete acks[path]   // survive a manual jiggle / long timeout
         }
     },
 

@@ -1,0 +1,11 @@
+Credulation,of_Book:StuffFlipping
+  run=0,at=1782227569.046,ok=0,ok_pct=0,mode:check
+    uses:Ghost_N_Peeroleum,dige:811eb503253707a6
+    uses:Ghost_N_Tribunal,dige:683d031e368194c6
+    uses:Ghost_Story_Peregrination,dige:86f1f3b223cc82aa
+    uses:Ghost_N_Tyrant,dige:d9455412901394d4
+  run,at=1782227586.537,ok=0,ok_pct=0,mode:check
+    uses:Ghost_N_Peeroleum,dige:811eb503253707a6
+    uses:Ghost_N_Tribunal,dige:683d031e368194c6
+    uses:Ghost_Story_Peregrination,dige:86f1f3b223cc82aa
+    uses:Ghost_N_Tyrant,dige:d9455412901394d4

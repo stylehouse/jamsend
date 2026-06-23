@@ -1,6 +1,7 @@
-# staging/docker-compose.yml — a second, localhost-only app instance, isolated from the
-#  dev container's HMR/build so running an IDE here can't disturb dev (and vice-versa).
-#  It's "staging" only in that it's a more stable place to keep a tab open than dev.
+# staging/docker-compose.yml — a second, localhost-only app instance: the EDITOR half on :9092,
+#  a live dev server with full HMR in its own right (you edit and build the IDE here too).  It's
+#   "staging" only in that it's a calmer place to keep an editor tab open than the dev/runner side;
+#    the two run side by side, each HMR-ing independently (see "separate build caches" below).
 #
 # PAIRED WITH ../docker-compose.yml — the DEV instance: the app/runner on :9091 (+ the `claude` CLI).
 #  This is the EDITOR half on :9092. The two are bridged at runtime by the relay's r2r link (the runner
@@ -17,20 +18,31 @@
 #  opens on.  Plain http://localhost:9092/Otro still boots Auto's Library as normal.  No
 #  build/env flag needed — the param picks the Book per-tab.
 #
-# Isolation = a separate git worktree.  The worktree is its own checkout with its own
-#  node_modules / .vite / .svelte-kit, so two SvelteKit dev servers never share a build
-#  cache.  Set it up once on the host:
+# Separate build caches — the one thing two dev servers must NOT share.  SvelteKit/Vite
+#  constantly regenerate .svelte-kit (generated/root.svelte, tsconfig) and node_modules/.vite;
+#   if both servers write one shared copy, each sees the other's rewrite as a change and
+#    FULL-reloads instead of HMR-ing.  The volume overlays below give staging its OWN
+#     node_modules and .svelte-kit, so both servers keep clean HMR.  Two ways to run it:
 #
-#     git worktree add ../jamsend-staging        # a sibling checkout (own working files)
-#     cd ../jamsend-staging && npm install        # its OWN node_modules (isolated .vite cache)
-#     docker compose -f staging/docker-compose.yml up
+#   • Same checkout (simplest, while building both halves together) — `..:/app` shares THIS
+#      repo as the source; the overlays isolate only the caches.  Seed them uid-1000-owned once
+#      (Docker makes a missing bind source root-owned, which the uid-1000 container can't write):
+#        mkdir -p staging/node_modules staging/.svelte-kit
+#        chown 1000:1000 staging/node_modules staging/.svelte-kit
+#        cp -a node_modules/. staging/node_modules/   # this checkout's deps; or `npm install` in staging/
 #
-# Relative paths below resolve against THIS file's dir (staging/), so `..` is the worktree
-#  root — run it from anywhere.  No proxy / DuckDNS / tunnel: bound to 127.0.0.1 only.
-#  No WebRTC, no /music mount: this instance reaches the dev repo's content at runtime via
-#   Wormhole + the Directory API (the browser picks the dev repo dir), not a bind mount.
-#  The only env_file is the PUBLIC cluster pubs (below) — it sets CLUSTER_TRUSTED_PUBS, NOT
-#   ALLOWED_HOSTS, so ALLOWED_HOSTS stays empty → vite serves localhost only (the secure default).
+#   • Separate worktree (when you also want isolated WORKING FILES) — `..` becomes the worktree
+#      root, already carrying its own node_modules/.svelte-kit; the overlays just nest those under
+#      staging/ instead, which is harmless:
+#        git worktree add ../jamsend-staging && cd ../jamsend-staging && npm install
+#        docker compose -f staging/docker-compose.yml up
+#
+# Relative paths below resolve against THIS file's dir (staging/).  No proxy / DuckDNS / tunnel:
+#  bound to 127.0.0.1 only.  No WebRTC, no /music mount: this instance reaches the dev repo's
+#   content at runtime via Wormhole + the Directory API (the browser picks the dev repo dir), not
+#    a bind mount.  The only env_file is the PUBLIC cluster pubs (below) — it sets
+#     CLUSTER_TRUSTED_PUBS, NOT ALLOWED_HOSTS, so ALLOWED_HOSTS stays empty → vite serves
+#      localhost only (the secure default).
 
 services:
   staging:
@@ -47,13 +59,12 @@ services:
     working_dir: /app
     user: "1000:1000"            # uid 1000 — files it writes are yours on the host
     volumes:
-      # The worktree root (this file lives in staging/).  node_modules lives HERE, in the
-      #  worktree — copy the dev checkout's alpine-built deps in instead of a second install:
-      #    cp -a ../jamsend/node_modules .          # run from the worktree root, as your uid
-      #  Owned by your uid (1000) so the uid-1000 container can write node_modules/.vite, and
-      #   fully isolated (its own .vite / .svelte-kit) — no shared-volume permission trap.
+      # `..` = the source (this checkout, or the worktree root).  The two overlays give staging
+      #  its OWN build caches so its HMR doesn't fight dev's — see "separate build caches" up top
+      #   for why, and the one-time uid-1000 seeding of the staging/ source dirs.
       - ..:/app
-      - ./node_modules:/app/node_modules
+      - ./node_modules:/app/node_modules           # own deps + .vite cache (.vite lives inside node_modules)
+      - ./.svelte-kit:/app/.svelte-kit             # own generated route tree (root.svelte, tsconfig)
     ports:
       - "127.0.0.1:9092:9092"    # localhost only — no LAN, no proxy
       - "172.17.0.1:9092:9092"

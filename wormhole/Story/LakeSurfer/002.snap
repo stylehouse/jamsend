@@ -1,11 +1,11 @@
 Snap:H
   H:LakeSurfer,Run
     A:Lies
-      self,round=16	{"mung":["age"]}
+      self,round=15	{"mung":["age"]}
       w:Lies
         Opt
           dontSnapGhostList
-        self,round=16	{"mung":["age"]}
+        self,round=15	{"mung":["age"]}
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/LakeSurfer/Waftily/toc.snap,waft_path:Story/LakeSurfer/Waftily
             known,dige:4304b2cef25b6d74,kind:read	{"mung":["at"]}
@@ -45,9 +45,9 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1781952694676,kind:cold
-          want=1781952694727,kind:cold
-          want=1781952694878,kind:cold,resolved
+          want=1782221523266,kind:cold
+          want=1782221523317,kind:cold
+          want=1782221523467,kind:cold,resolved
         o_elvis:dock_askies
         see:🗂 1 doc · 1 Waft
     A:Lang
@@ -83,7 +83,7 @@ Snap:H
                 controlflow,keyword:if,title:(msg.includes('console_batch')) return,line=31,via:install_console_capture,rel_from=1280,rel_to=1283
                 region,label:Tyranny,depth=0,from=1451,to=8839,line=39
                 def,method:Tyranny,line=41,async,rel_from=29,rel_to=37
-                {"controlflow":1,"keyword":"if","title":"(!eer) return w.i({waits:'instantiate ourselves...'})","line":44,"via":"Tyranny","rel_from":127,"rel_to":130}
+                controlflow,keyword:if,title:(!eer) return w.i({waits:'instantiate ourselves...'}),line=44,via:Tyranny,rel_from=127,rel_to=130
                 controlflow,keyword:if,title:(M.log_Idvoyage_testspam) {,line=48,via:Tyranny,rel_from=235,rel_to=238
                 call,method:log_Idvoyage,line=49,via:Tyranny,rel_from=278,rel_to=296
                 call,method:Tyranny_of_Idvoyage,line=51,via:Tyranny,rel_from=355,rel_to=380
@@ -160,14 +160,14 @@ Snap:H
                 controlflow,keyword:if,title:(I.sc.dead) {,line=415,via:Idzeuganise,rel_from=327,rel_to=330
                 controlflow,keyword:if,title:(I.sc.dead++ > 3) {,line=416,via:Idzeuganise,rel_from=360,rel_to=363
                 {"controlflow":1,"keyword":"if","title":"(!I.sc.dead) this.UIsay(w,say)","line":422,"via":"Idzeuganise","rel_from":525,"rel_to":528}
-                {"controlflow":1,"keyword":"for","title":"(let I of w.o({Idzeugnation:1})) {","line":430,"via":"Idzeuganise","rel_from":719,"rel_to":723}
+                controlflow,keyword:for,title:(let I of w.o({Idzeugnation:1})) {,line=430,via:Idzeuganise,rel_from=719,rel_to=723
                 call,method:Idzeugnation,line=433,via:Idzeuganise,rel_from=855,rel_to=873
-                {"controlflow":1,"keyword":"for","title":"(let wa of I.o1({waits:1})) {","line":435,"via":"Idzeuganise","rel_from":975,"rel_to":979}
+                controlflow,keyword:for,title:(let wa of I.o1({waits:1})) {,line=435,via:Idzeuganise,rel_from=975,rel_to=979
                 call,method:UIsay,line=436,via:Idzeuganise,rel_from=1025,rel_to=1036
                 {"controlflow":1,"keyword":"for","title":"(let e of this.o_elvis(w,'o Idzeugnosis')) {","line":443,"via":"Idzeuganise","rel_from":1245,"rel_to":1249}
                 {"controlflow":1,"keyword":"for","title":"(let e of this.o_elvis(w,'i Idvoyage')) {","line":445,"via":"Idzeuganise","rel_from":1312,"rel_to":1316}
                 call,method:o_elvis_Idzeugnosis,line=449,via:Idzeuganise,rel_from=1392,rel_to=1417
-                {"controlflow":1,"keyword":"for","title":"(let I of w.o({Idzeugnosis:1})) {","line":450,"via":"Idzeuganise","rel_from":1430,"rel_to":1434}
+                controlflow,keyword:for,title:(let I of w.o({Idzeugnosis:1})) {,line=450,via:Idzeuganise,rel_from=1430,rel_to=1434
                 call,method:Idzeugnosis,line=453,via:Idzeuganise,rel_from=1572,rel_to=1589
                 def,method:Idzeugnation,line=458,async,rel_from=1628,rel_to=1641
                 controlflow,keyword:if,title:(!nonfatal) this.reset_location_hash(),line=462,via:Idzeugnation,rel_from=1838,rel_to=1841
@@ -181,7 +181,7 @@ Snap:H
                 call,method:Our_main_Id,line=489,via:Idzeugnation,rel_from=2839,rel_to=2856
                 controlflow,keyword:if,title:(Id+'' == prepub) return no("invited yourself"),line=490,via:Idzeugnation,rel_from=2871,rel_to=2874
                 call,method:simply_i_Pier_Our,line=493,via:Idzeugnation,rel_from=2981,rel_to=3004
-                {"controlflow":1,"keyword":"if","title":"(!Our) return I.i({waits:\"Our\"}).i(I)","line":494,"via":"Idzeugnation","rel_from":3020,"rel_to":3023}
+                controlflow,keyword:if,title:(!Our) return I.i({waits:"Our"}).i(I),line=494,via:Idzeugnation,rel_from=3020,rel_to=3023
                 controlflow,keyword:if,title:(!Pier) throw "never",line=496,via:Idzeugnation,rel_from=3111,rel_to=3114
                 call,method:RingUp,line=498,via:Idzeugnation,rel_from=3191,rel_to=3203
                 call,method:RingUp,line=502,via:Idzeugnation,rel_from=3359,rel_to=3371
@@ -252,7 +252,7 @@ Snap:H
                 controlflow,keyword:if,title:(Idzeug.stashed.nRepeating) {,line=750,via:claim_Idzeug_number,rel_from=3627,rel_to=3630
                 controlflow,keyword:if,title:(N.includes(n)) return false,line=755,via:claim_Idzeug_number,rel_from=3748,rel_to=3751
                 def,method:ier_is_Good,line=763,rel_from=4005,rel_to=4017
-              time,compile=0.132,all=0.809,write=0
+              time,compile=0.059,all=0.92,write=0
               Output,gen_path:gen/test/Story/Lake/Idzeuzia.go,dige:dbe210c73e58de4d,source_dige:f894a5ff10d26203
                source: |
                  <script lang="ts">
@@ -1295,12 +1295,12 @@ Snap:H
           Change
             backend,dige:f894a
             storage,dige:f894a
-            compile,dige:f894a,secs=0.132,dim,pending
+            compile,dige:f894a,secs=0.059,dim,pending
         req:workon,auto_push	{"ref":{"w":"%w:Lang"}}
-          {"req":"understanding","maz":3,"permanent":1,"sig":"2:13:0:0","what":"itis","finished":1}
+          req:understanding,maz=3,permanent,sig:2:13:0:0,what:itis,finished
           req:ingredients,maz=2,permanent,sig:Ghost/test/Story/Lake/Idzeuzia.g,finished
             req:furnishing,path:Ghost/test/Story/Lake/Idzeuzia.g,permanent,asked,finished
-          {"req":"instrumentation","permanent":1,"sig":"Ghost/test/Story/Lake/Idzeuzia.g:f894a5ff10d26203:2:57","have_Map":1,"n_pmirrors":3,"finished":1}
+          req:instrumentation,permanent,sig:Ghost/test/Story/Lake/Idzeuzia.g:f894a5ff10d26203:2:57,have_Map,n_pmirrors=3,finished
         req:waft_roster,eternal,subscribed
         o_elvis:Lies_compile_settled
         o_elvis:dock_content
@@ -1330,12 +1330,12 @@ Snap:H
         received,editorBegins,doc:Ghost/test/Story/Lake/Idzeuzia.g
         see:🟦 tiles 0 bookmarks
     A:Pantheate
-      self,round=5	{"mung":["age"]}
+      self,round=4	{"mung":["age"]}
       w:Pantheate
-        self,round=5	{"mung":["age"]}
+        self,round=4	{"mung":["age"]}
+        o_elvis:Ghost_update_notify
         include:gen/test/Story/Lake/Idzeuzia.go
         req:include,gen_path:gen/test/Story/Lake/Idzeuzia.go,path:Ghost/test/Story/Lake/Idzeuzia.g,source_dige:f894a5ff10d26203,ghostmeta_name:Ghostmeta_Ghost_test_Story_Lake_Idzeuzia,permanent,live_dige:f894a5ff10d26203,finished
-        o_elvis:Ghost_update_notify
     watched:ave
       examining	{"loopy":1,"hid":1}
       Languinio	{"loopy":2,"hid":1}
@@ -1347,7 +1347,7 @@ Snap:H
       action,role:debookmark,label:-marks	{"ref":{"fn":"Function()"}}
       action,role:enbookmark,label:+marks	{"ref":{"fn":"Function()"}}
       action,role:compile,label:compile	{"ref":{"fn":"Function()"}}
-      action,role:lang_pick,kind:dropdown,label:language,icon:✎,value:stho	{"ref":{"options":"[Object(),Object()]","on_pick":"Function()"}}
+      action,role:lang_pick,kind:dropdown,label:language,icon:✎,value:stho	{"ref":{"options":"[Object(),Object(),Object()]","on_pick":"Function()"}}
       action,role:gen_parser,label:gen,icon:⚙,disabled:true	{"ref":{"fn":"Function()"}}
       action,role:compo,label:compo,icon:compo,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:nogen,label:nogen,icon:nogen,cls:toggle-off	{"ref":{"fn":"Function()"}}

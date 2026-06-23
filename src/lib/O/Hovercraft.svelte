@@ -603,14 +603,17 @@
         if (!The) { if (this.c.entropy_debug) console.log('🛑 entropy_rules: no The'); return [] }
         const ea   = The.o({ EntropyArrest: 1 })[0] as TheC | undefined
         const caps = (ea?.o({ Entcase: 1 }) ?? []) as TheC[]
-        // shared profiles: each The/EntropyProfile,Wref names another Waft whose Entcases
-        //  Story resolved + cached on the top House (one load serves every run).  Union them
-        //   in — a referenced Entcase compiles and bites exactly like a local one.
-        const cache  = this.top_House().c.entropy_profiles as Record<string, TheC[]> | undefined
+        // shared profiles: each The/EntropyProfile,Wref names another Waft Story opened
+        //  into the outside-Story Lies roster (one load serves every run).  Read its
+        //   Entcases straight off that live C tree and union them in — a referenced
+        //    Entcase compiles and bites exactly like a local one.
+        const liesW  = this.top_House().o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] as TheC | undefined
         const shared: TheC[] = []
         for (const p of The.o({ EntropyProfile: 1 }) as TheC[]) {
-            const ref = p.sc.Wref as string | undefined
-            if (ref && cache?.[ref]) shared.push(...cache[ref])
+            const ref  = p.sc.Wref as string | undefined
+            const waft = ref ? liesW?.o({ Waft: ref })[0] as TheC | undefined : undefined
+            const wea  = waft?.o({ EntropyArrest: 1 })[0] as TheC | undefined
+            if (wea) shared.push(...(wea.o({ Entcase: 1 }) as TheC[]))
         }
         const rules = [...caps, ...shared].map(cap => this.entropy_rule_of(cap)).filter(Boolean)
         if (this.c.entropy_debug)

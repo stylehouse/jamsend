@@ -166,6 +166,35 @@
         void ea?.version
         return (ea?.o({ Entcase: 1 }) ?? []) as TheC[]
     })
+
+    // shared caps — the Entcases this Story borrows from another Waft via
+    //  The/EntropyProfile,Wref:<path>.  Story opens that Waft into the outside-Story
+    //   Lies roster (one load serves every borrower), so they're read live off that
+    //    C tree here.  Shown read-only, grouped per profile: editing one changes it
+    //     for everyone, so it's done at the source — open ⇗ focuses the profile Waft
+    //      (its own autosave persists the edit).
+    let shared = $derived.by((): { ref: string, caps: TheC[] }[] => {
+        const The = w?.c.The as TheC | undefined
+        void The?.version
+        const liesW = H.top_House?.().o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] as TheC | undefined
+        if (!The || !liesW) return []
+        void liesW.version
+        const out: { ref: string, caps: TheC[] }[] = []
+        for (const p of (The.o({ EntropyProfile: 1 }) ?? []) as TheC[]) {
+            const ref  = p.sc.Wref as string | undefined
+            const waft = ref ? liesW.o({ Waft: ref })[0] as TheC | undefined : undefined
+            void waft?.version
+            const ea   = waft?.o({ EntropyArrest: 1 })[0] as TheC | undefined
+            const caps = (ea?.o({ Entcase: 1 }) ?? []) as TheC[]
+            if (ref && caps.length) out.push({ ref, caps })
+        }
+        return out
+    })
+    // open the profile Waft in the editor — it's already a canonical roster Waft, so
+    //  this just focuses it; its own autosave persists any edit for every borrower.
+    function open_profile(ref: string) {
+        H.i_elvisto('Lies/Lies', 'Lies_open_Waft', { path: ref })
+    }
     //#endregion
 
     //#region seed — a diff click re-points the one draft
@@ -350,7 +379,7 @@
     //#endregion
 </script>
 
-{#if active || caps.length}
+{#if active || caps.length || shared.length}
 <div class="ea">
     <div class="ea-hdr">
         <Vexpandy bind:expanded />
@@ -368,6 +397,27 @@
             <span class="ea-spacer"></span>
             <button class="ea-mini" title="load into the draft to edit" onclick={() => edit_cap(cap)}>edit</button>
             <button class="ea-mini ea-del" title="delete this cap" onclick={() => del_cap(cap)}>×</button>
+        </div>
+    {/each}
+
+    <!-- shared caps borrowed from a profile Waft — their own bordered group, read-only.
+         Edit them at the source (open ⇗): the profile's own save persists for everyone. -->
+    {#each shared as grp (grp.ref)}
+        <div class="ea-shared">
+            <div class="ea-shared-hdr">
+                <span class="ea-shared-tag">shared</span>
+                <span class="ea-shared-ref" title="borrowed from this Waft; edits there affect every Story that uses it">{grp.ref}</span>
+                <span class="ea-spacer"></span>
+                <button class="ea-mini" title="open the profile Waft to edit the shared set (saves for everyone)"
+                        onclick={() => open_profile(grp.ref)}>open ⇗</button>
+            </div>
+            {#each grp.caps as cap (cap.sc.Entcase)}
+                <div class="ea-cap ea-cap-ro">
+                    <span class="ea-cap-tol ea-tol-{cap_tol(cap)}">{cap_tol(cap)}</span>
+                    <span class="ea-cap-slug">{cap.sc.Entcase}</span>
+                    <span class="ea-cap-path">{cap_path(cap)}</span>
+                </div>
+            {/each}
         </div>
     {/each}
 
@@ -495,6 +545,25 @@
     }
     .ea-mini:hover { color: #9bd; border-color: #356 }
     .ea-del:hover  { color: #f66; border-color: #633 }
+
+    /* shared caps borrowed from a profile Waft — the line drawn around the set.  A
+       dashed teal border + faint wash sets it apart from the locally-authored caps;
+        read-only rows (no edit/× ), edited at the source via the header's open ⇗. */
+    .ea-shared {
+        margin: 0.3rem 0 0.2rem; padding: 0.2rem 0.3rem 0.25rem;
+        border: 1px dashed #2c4a4a; border-radius: 3px; background: #08120f;
+    }
+    .ea-shared-hdr { display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.15rem }
+    .ea-shared-tag {
+        font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase;
+        color: #6cc; background: #0d2424; border-radius: 2px; padding: 0 0.26rem; flex-shrink: 0;
+    }
+    .ea-shared-ref {
+        font-family: monospace; font-size: 0.68rem; color: #588;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .ea-cap-ro { opacity: 0.85 }
+    .ea-cap-ro .ea-cap-slug { color: #8aa }
 
     /* the draft */
     .ea-draft {

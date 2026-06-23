@@ -330,14 +330,52 @@ Per-Book is `cred.runs` **partitioned by `book` at spool time**, not a directory
    (interaction-poked think vs a "boot story → re-enable ambient" mode); the `toc.snap`s carry one `step,dige`
     lie — confirm one step then settle, Accept/Resnapture to record real diges (the now-honest badge reads red
      until they're re-recorded).
-- **Agent-requested in-app compile — verdict reply still missing.** The REQUEST half landed: `npm run
-   ghost-compile` signs a `ghost_compile {path, dige}` relay frame (no fresh `vite-node`/esbuild program —
-    that old spawn path exhausted the sandbox's thread budget, `failed to create new OS thread, errno=11`),
-     and `Lies_ghost_compile_recv` (LiesLies.svelte) auto-opens the dock (`force_active`, fresh disk read of
-      `%Good`), compiles, writes the `.go`, and HMRs it. **Still open — the reply back to the requester.** The
-       editor answers nothing; the CLI only HTTP-polls the served `.go` for the baked dige (`verifyServed`),
-        so it is BLIND to compile errors and cannot tell "no editor connected" from "still compiling". Build the
-         verdict: a `ghost_compile_ack {path, phase: started|done|error, dige?, errors?[]}` frame back to the
-          signer, mirroring the runner's `run_phase` blips (`Lies_runner_phase`), and have the CLI listen for it
-           instead of (or alongside) the poll. That makes "nothing happened" legible: untrusted, no-editor,
-            compiling, errored, or done.
+- **Agent-requested in-app compile — DONE (verdict reply + the one-round-lag fix).** `npm run ghost-compile`
+   signs a `ghost_compile {path, dige}` relay frame; `Lies_ghost_compile_recv` auto-opens the dock
+    (`force_active`, fresh disk read of `%Good`), compiles, writes the `.go`, HMRs it; and the
+     `ghost_compile_ack {phase: started|done|error, dige?}` frame now routes back (corr-keyed via the editor's
+      `H.c.gc_acks`), so "nothing happened" is legible: untrusted / no-editor / compiling / errored / done.
+       The compile-never-fired wedge was that `req:Languish` is eternal, so a re-provide never re-armed
+        `req_compile` — `e_Lang_dock_content`'s force_active branch now compiles itself. And the **one-round
+         lag** (it compiled the PREVIOUS edit) was the swamp you named: `Lang_compile_dock` read `dock.c.state`,
+          conflating the editor's *display buffer* with the *compile source* — and the editor's reseat into
+           CodeMirror is async, so the buffer still held the prior edit. Fixed by decoupling: the source is now a
+            parameter (`Lang_compile_dock(w,dock,stateOverride?)`) built straight from the fresh disk text via
+             `Lang_compile_source_state` (reuse the editor's config + swap the doc, or build via `lang()` when no
+              editor — the DOM-free bridge, which is *also* why a ghost_compile can now be driven/tested headless).
+               Never touches `dock.c.state` (point-nav / region-fold / offsets keep it). Headless proof:
+                `scripts/LakeRace.*` ([[lakerace-compiler-fast]]).
+
+## THE LATENCY SWAMP (the next frontier — masterminding to keep relating to as it mutates)
+
+The loop is now *correct* but **~5.3s wall from the CLI for a ~30ms compile** (and a ~91ms `.go` write). The
+ time is NOT in any step — it is DEAD AIR BETWEEN steps. The tells, straight off the live trace: the editor↔runner
+  heartbeat reports `round-trip 3584ms`, then `7322ms` — a ping→pong that should be milliseconds. Each ghost_compile
+   stage (`recv → provide_dock → dock_content → compile → gen_write → settle → rungo → run_phase`) lands, then the
+    editor's beliefs loop **quiesces** and the next stage waits seconds for a happenstance re-entry. The compiler is
+     a red herring (proven fast, [[lakerace-compiler-fast]]); **the channel/req pacing is the whole cost.**
+
+Root: a `%ttlilt` is a one-shot snap-timing advisor — it does NOT re-fire `think` ([[ttlilt-not-a-keepalive]]) —
+ and the event-driven wakes that should advance the pipeline are incomplete, so between stages nothing re-pumps.
+  This is the same family as [[compile-boomerang-latency]] (the measured `LiesStore_write` boomerang) and is in
+   live tension with the **`Trickle → single wake`** TODO above: that item wants to DEMOTE the `req_compile`/
+    `req_rungo` busy-poll toward event wakes — but the 5.3s says the event coverage isn't there yet, so demoting
+     without completing it is what leaves the dead air.
+
+Masterminding (the next move, in order):
+ 1. **Trace first, don't guess.** Stamp ms at each pipeline hop (the `H.trace`/Storui copy-trace instruments from
+     [[compile-boomerang-latency]] already exist) and read where the seconds actually sit — recv→compile, settle→
+      rungo, rungo→run_phase. The trace decides the rest.
+ 2. **A conditional self-pump on the Lies channel/run `req**` pile** — the hypothesis: while it *notices in-flight
+     conditions* (a pending compile, an unacked rungo/outbox emit, a run awaiting `run_phase`), re-arm a paced
+      ~200ms `setTimeout → i_elvisto(w,'think')`, self-terminating once quiescent. This is exactly the proven
+       `req_compile` trickle shape (`Lang.svelte:~1905`, the `🔥` spinner) generalised to the channel pile —
+        bounded by the SAME conditions, so it can't busy-spin forever.
+ 3. **vs. complete the event wakes** — the cleaner end state the `Trickle → single wake` TODO wants. Decide #2-vs-#3
+     *from the trace*: a self-pump is the cheap unblock; completing the wakes is the real fix. Likely both — pump now,
+      wire the wakes as they're found.
+
+Track this swamp the way the doctrine says — **durable in-document markers, not transient state**: the masterminding
+ should ride as actual markers (the `%Map`/region/Mapule layer, or marks in the Editron Book itself) that outlast any
+  one run's state, so the next session *relates to* the swamp as it mutates instead of re-discovering it from scratch.
+   (This very section is the stopgap until those markers exist.)

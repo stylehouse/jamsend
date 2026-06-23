@@ -60,6 +60,7 @@ story:LakeFlush
       sample=0.086,at=1781897014
       sample=0.179,at=1781952623
       sample=0.179,at=1781952628
+  EntropyProfile,Wref:Trope/Lies/NormalEntropy
   step,dige:f551a01c38f682f2
   step=2,dige:d4504b2453937ca1
   step=3,dige:a2e2554cf8a2b3a9
