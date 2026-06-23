@@ -601,12 +601,20 @@
     //    the global layer is the default story_matching rules in code (§3.3).
     entropy_rules(The: TheC | undefined): Array<any> {
         if (!The) { if (this.c.entropy_debug) console.log('🛑 entropy_rules: no The'); return [] }
-        const ea = The.o({ EntropyArrest: 1 })[0] as TheC | undefined
-        if (!ea) { if (this.c.entropy_debug) console.log('🛑 entropy_rules: no The/EntropyArrest bucket'); return [] }
-        const caps = ea.o({ Entcase: 1 }) as TheC[]
-        const rules = caps.map(cap => this.entropy_rule_of(cap)).filter(Boolean)
+        const ea   = The.o({ EntropyArrest: 1 })[0] as TheC | undefined
+        const caps = (ea?.o({ Entcase: 1 }) ?? []) as TheC[]
+        // shared profiles: each The/EntropyProfile,Wref names another Waft whose Entcases
+        //  Story resolved + cached on the top House (one load serves every run).  Union them
+        //   in — a referenced Entcase compiles and bites exactly like a local one.
+        const cache  = this.top_House().c.entropy_profiles as Record<string, TheC[]> | undefined
+        const shared: TheC[] = []
+        for (const p of The.o({ EntropyProfile: 1 }) as TheC[]) {
+            const ref = p.sc.Wref as string | undefined
+            if (ref && cache?.[ref]) shared.push(...cache[ref])
+        }
+        const rules = [...caps, ...shared].map(cap => this.entropy_rule_of(cap)).filter(Boolean)
         if (this.c.entropy_debug)
-            console.log(`🛑 entropy_rules: ${caps.length} cap(s) → ${rules.length} rule(s)`, JSON.parse(JSON.stringify(rules)))
+            console.log(`🛑 entropy_rules: ${caps.length} local + ${shared.length} shared cap(s) → ${rules.length} rule(s)`, JSON.parse(JSON.stringify(rules)))
         return rules
     },
 

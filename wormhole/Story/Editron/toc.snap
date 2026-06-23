@@ -7,26 +7,26 @@ story:Editron
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=1.448
-      sample=0.869,at=1782197744
-      sample=0.742,at=1782198100
-      sample=0.719,at=1782198146
-      sample=2.203,at=1782201162
-      sample=1.669,at=1782201302
-      sample=1.437,at=1782201510
-      sample=1.727,at=1782201541
-      sample=1.997,at=1782201583
-      sample=1.587,at=1782201621
-      sample=1.533,at=1782202851
-    TimeTotal:step,avg=1.448
-      sample=0.869,at=1782197744
-      sample=0.742,at=1782198100
-      sample=0.719,at=1782198146
-      sample=2.203,at=1782201162
-      sample=1.669,at=1782201302
-      sample=1.437,at=1782201510
-      sample=1.727,at=1782201541
-      sample=1.997,at=1782201583
-      sample=1.587,at=1782201621
-      sample=1.533,at=1782202851
+    TimeTotal:beliefs,avg=1.304
+      sample=1.155,at=1782212150
+      sample=1.424,at=1782213121
+      sample=2.033,at=1782213808
+      sample=2.005,at=1782213822
+      sample=1.083,at=1782214025
+      sample=1.315,at=1782214108
+      sample=1.39,at=1782214489
+      sample=0.889,at=1782217637
+      sample=1.064,at=1782218105
+      sample=0.683,at=1782218610
+    TimeTotal:step,avg=1.304
+      sample=1.155,at=1782212150
+      sample=1.424,at=1782213121
+      sample=2.033,at=1782213808
+      sample=2.005,at=1782213822
+      sample=1.083,at=1782214025
+      sample=1.315,at=1782214108
+      sample=1.39,at=1782214489
+      sample=0.889,at=1782217637
+      sample=1.064,at=1782218105
+      sample=0.683,at=1782218610
   step,dige:5b8c2bf8a1eff285

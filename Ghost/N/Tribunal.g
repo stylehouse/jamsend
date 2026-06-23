@@ -97,6 +97,14 @@ Socket_real(w):
     //  ping/pong/ack, so dock_push/run_result/hello/trust still show. (A buffered send is
     //   always logged: it only happens before the socket opens, which is worth seeing.)
     let noisy = (h) => h && (h.type === 'ping' || h.type === 'pong' || h.type === 'ack')
+    // note — mirror a carrier event to the browser console AND ring it onto w.c.relay_log (off-snap,
+    //  capped) so the Relay Brink can surface a live event log in-UI. NO version bump: the Brink polls the
+    //   ring on its 1s tick, so high-frequency traffic never re-pumps the House (the run_phase lesson).
+    //    ping/pong/ack are already filtered by the callers, so the ring stays the meaningful events.
+    let note = (line, warn) => {
+        (warn ? console.warn : console.log)(line)
+        try { let lg = (w.c.relay_log = w.c.relay_log || []); lg.push({ line: String(line), at: Date.now() }); if (lg.length > 60) lg.shift() } catch (e) {}
+    }
     let port = {
         type: 'websocket', real: 1, ws: null,
         send(frame) {
@@ -108,7 +116,7 @@ Socket_real(w):
                 if (!noisy(h) && !(h && h.type === 'run_phase')) { pending.push(frame); if (pending.length > 200) pending.shift(); console.log(`🛰 ws SEND buffered (socket not open): ${h && h.type}`) }
                 return
             }
-            if (!noisy(h)) console.log(`🛰 ws SEND ${h ? h.type + (frame.buffer ? ' +buf=' + frame.buffer.length : '') + ' seq=' + h.seq + ' → ' + h.to : '(control)'}`)
+            if (!noisy(h)) note(`🛰 ws SEND ${h ? h.type + (frame.buffer ? ' +buf=' + frame.buffer.length : '') + ' seq=' + h.seq + ' → ' + h.to : '(control)'}`)
             wire(frame)
         },
         recv(frame) { return H.Peeroleum_deliver(w, frame) },
@@ -140,18 +148,18 @@ Socket_real(w):
             //  the server↔server bridge (control:peer-relay) so both surface in THIS origin's
             //   browser console — the server's own console.log is otherwise buried in the
             //    dev-server terminal among svelte-check noise.
-            if (frame.control === 'log') { console.log(frame.line); return }
+            if (frame.control === 'log') { note(frame.line); return }
             if (frame.control === 'peer-relay') {
                 let m = frame.up ? `🌉 relay bridge UP${frame.target ? ' → ' + frame.target : ''}` : `🌉 relay bridge DOWN — error=${frame.error || '?'}${frame.detail ? ' — ' + frame.detail : ''}`
-                ;(frame.up ? console.log : console.warn)(m)
+                note(m, !frame.up)
                 return
             }
-            console.log(`🛰 ws RECV control:${frame.control}${frame.role ? ' role=' + frame.role : ''}`)
+            note(`🛰 ws RECV control:${frame.control}${frame.role ? ' role=' + frame.role : ''}`)
             if (frame.control === 'error') console.warn('relay refused:', frame.error)
             return
         }
         let h = frame && frame.header
-        if (!noisy(h)) console.log(`🛰 ws RECV ${h ? h.type + ' seq=' + h.seq + ' ← ' + h.from : '(headerless, dropped)'}`)
+        if (!noisy(h)) note(`🛰 ws RECV ${h ? h.type + ' seq=' + h.seq + ' ← ' + h.from : '(headerless, dropped)'}`)
         await port.recv(frame)
     })
     let connect = () => {
@@ -160,21 +168,21 @@ Socket_real(w):
         ws.binaryType = 'arraybuffer'   // so a binary frame arrives as ArrayBuffer (sync-decodable), not a Blob
         ws.onopen = () => {
             tries = 0
-            console.log(`🛰 ws OPEN ${url} — flushing ${pending.length} buffered`)
+            note(`🛰 ws OPEN ${url} — flushing ${pending.length} buffered`)
             let q = pending.splice(0); for (const f of q) wire(f)
             for (const cb of open_hooks) { try { cb() } catch (e) {} }   // re-run consumer open work (relay `become`) on every (re)connect
         }
         ws.onclose = (ev) => {
-            console.log(`🛰 ws CLOSE code=${ev.code} clean=${ev.wasClean}${intentional ? ' (intentional)' : ''}`)
+            note(`🛰 ws CLOSE code=${ev.code} clean=${ev.wasClean}${intentional ? ' (intentional)' : ''}`)
             if (intentional) return
             // backoff 0.5s→1→2…capped 15s, + jitter so a relay/dev-server restart (which drops every
             //  browser at once) doesn't thunder back in lockstep. The relay re-binds our addr on the
             //   new socket and the on_open hook re-sends `become`, so the channel heals itself.
             let delay = Math.min(15000, 500 * Math.pow(2, tries++)) + Math.floor(Math.random() * 300)
-            console.log(`🛰 ws reconnect in ${delay}ms (attempt ${tries})`)
+            note(`🛰 ws reconnect in ${delay}ms (attempt ${tries})`)
             setTimeout(() => { if (!intentional) connect() }, delay)
         }
-        ws.onerror = () => console.log(`🛰 ws ERROR (relay down? wrong origin?)`)
+        ws.onerror = () => note(`🛰 ws ERROR (relay down? wrong origin?)`)
         ws.onmessage = on_message
     }
     connect()

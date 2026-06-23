@@ -1366,6 +1366,28 @@
             H.story_analysis(w)
         }
 
+        // ── resolve shared EntropyProfiles ─────────────────────────────────
+        // The/EntropyProfile,Wref:<path> names another Waft whose EntropyArrest
+        //  Entcases this Story shares.  Resolve them BEFORE stepping so the shared
+        //   set bites from step 1.  Cached on the top House — loaded once, served to
+        //    every Story run (the cache outlives H:Story).  entropy_rules unions them.
+        {
+            const The = w.c.The as TheC | undefined
+            const top = H.top_House()
+            top.c.entropy_profiles ??= {}
+            for (const p of (The?.o({ EntropyProfile: 1 }) ?? []) as TheC[]) {
+                const ref = p.sc.Wref as string | undefined
+                if (!ref || top.c.entropy_profiles[ref]) continue
+                const prof_req = await wh.oai({ req: 'read_toc', wh_path: ref, wh_op: 'read_toc' })
+                if (!H.i_elvis_req(w, 'Wormhole', 'wh_op', { req: prof_req }))
+                    return w.i({ see: `⏳ entropy profile ${ref}...` })
+                const { Waft } = H.deWaft(prof_req.sc.reply?.toc_snap ?? '', ref)
+                const ea = Waft?.o({ EntropyArrest: 1 })[0] as TheC | undefined
+                top.c.entropy_profiles[ref] = (ea?.o({ Entcase: 1 }) ?? []) as TheC[]
+                ;V.Story && console.log(`🛑 entropy profile ${ref}: ${top.c.entropy_profiles[ref].length} shared Entcase(s)`)
+            }
+        }
+
         if (run.sc.fetch_snap) {
             // ── fetch the expected snap for the failed step ────────────────
             // Just loads the file content into step.sc.exp_snap for the diff panel.

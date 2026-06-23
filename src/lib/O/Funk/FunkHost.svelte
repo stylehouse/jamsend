@@ -1,8 +1,10 @@
 <script lang="ts">
     // FunkHost — the generic host for an embedded applet; the inline sibling of LensHost.
     //   Waft mounts it for any %Funkcion, passes the funk C.
-    //   dispatches on the funk's kind → the registered component (kinds.ts)
-    //     unknown kind → a bare line, so a typo'd/unbound embed stays visible
+    //   dispatches on the funk's kind → the registered INLINE component (kinds.ts)
+    //     unknown kind, OR a hoisted-only kind (comp_<Lens> but no `component`, e.g. Runner/Relay)
+    //      → a bare line, so a typo'd|unbound|UI-less embed stays visible.  (Waft renders such a kind
+    //       as a plain-C row via funk_live; this {#if} is the defensive fallback if mounted directly.)
     //   the seam keeping Waft — which mounts the whole editable web — ignorant of any applet's specifics.
     import type { House } from "$lib/O/Housing.svelte"
     import type { TheC }  from "$lib/data/Stuff.svelte"
@@ -16,7 +18,7 @@
     let entry = $derived(kind ? FUNK_KINDS[kind] : undefined)
 </script>
 
-{#if entry}
+{#if entry?.component}
     {@const Kind = entry.component}
     <Kind {H} {w} {funk} {raw} {examining} />
 {:else}

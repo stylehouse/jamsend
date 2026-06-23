@@ -444,8 +444,14 @@
     //   Lies_pong_recv) — there is no separate `role` key.  Reading p.sc.role never
     //    matched, so this set stayed empty and the card said "no runner has connected"
     //     even while a run_result verdict was held.  Match the value, as Liesui does.
-    let live_runners = $derived(peers.filter(p =>
-        p.sc?.channel_peer === 'runner' && p.sc?.last && now - (p.sc.last as number) < 7000))
+    // liveness is max(last, last_heard): `last` is our-ping-home (rtt-bearing), last_heard is any
+    //  inbound frame from the runner (Lies_pong) — so a half-open carrier (last frozen) still reads
+    //   live off the runner's pings instead of falsely "no runner connected".
+    let live_runners = $derived(peers.filter(p => {
+        if (p.sc?.channel_peer !== 'runner') return false
+        const heard = Math.max(Number(p.sc?.last ?? 0), Number(p.sc?.last_heard ?? 0))
+        return heard > 0 && now - heard < 7000
+    }))
     let runner_rtt   = $derived(live_runners[0]?.sc?.rtt as number | undefined)
     // >1 live runner: the editor can't tell which one's verdict is canonical.
     let runner_clash = $derived(live_runners.length > 1)

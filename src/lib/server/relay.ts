@@ -74,6 +74,12 @@ export function attachRelay(
 
 	const wss = new WebSocketServer({ noServer: true })
 	const locals = new Map<string, Set<WebSocket>>() // addr → live browser sockets
+	// corr → the socket that sent a ghost_compile.  The CLI (ghost_compile.ts) is NOT a bound peer
+	//  (no ?addr=), so the editor's ghost_compile_ack can't be routed by header.to — instead we
+	//   remember which socket asked, keyed by the frame's corr, and route the ack back to it.
+	//    Entries are short-lived (cleared on the terminal done/error ack, the sender's close, or
+	//     just superseded), so the map stays tiny.
+	const ackBack = new Map<string, WebSocket>()
 	let role: Role | null = null
 	let peerLink: WebSocket | null = null // the single relay↔relay socket (either end)
 	let selfHost = '' // our own host:port, learned from the first upgrade's Host header
@@ -190,18 +196,19 @@ export function attachRelay(
 	// A frame from a BROWSER socket: deliver local, else forward ONCE to the peer relay. payload
 	//  is a string (text JSON frame) or a Buffer (binary [header JSON]\n[buffer]) — routed the same
 	//   way, by header.to; the binary buffer tail is never inspected.
-	function routeFromBrowser(payload: string | Buffer) {
+	function routeFromBrowser(payload: string | Buffer): 'local' | 'bridge' | 'dropped' {
 		const bin = typeof payload !== 'string'
 		const to = bin ? headerToBin(payload as Buffer) : headerTo(payload as string)
-		if (!to) return
+		if (!to) return 'dropped'
 		// Heartbeat traffic (ping/pong/ack) is suppressed on the SUCCESS path — it would flood
 		//  the log once the channel is healthy. A DROP is always logged, even for a ping: a
 		//   dropped heartbeat is the symptom worth seeing (and only happens while unbridged).
 		const loud = bin ? true : !NOISY.has(frameType(payload as string))
 		const kind = bin ? frameKindBin(payload as Buffer) : frameKind(payload as string)
-		if (deliverLocal(to, payload)) { if (loud) relayLog(`→ ${to} ${kind} (local)`); return }
-		if (peerLink && peerLink.readyState === WebSocket.OPEN) { peerLink.send(payload); if (loud) relayLog(`→ ${to} ${kind} (forwarded over bridge)`); return }
+		if (deliverLocal(to, payload)) { if (loud) relayLog(`→ ${to} ${kind} (local)`); return 'local' }
+		if (peerLink && peerLink.readyState === WebSocket.OPEN) { peerLink.send(payload); if (loud) relayLog(`→ ${to} ${kind} (forwarded over bridge)`); return 'bridge' }
 		relayLog(`→ ${to} ${kind} DROPPED (no local socket, ${peerLink ? 'bridge not OPEN' : 'no bridge'})`)
+		return 'dropped'
 	}
 
 	// A frame from the PEER relay: deliver local or drop. NEVER re-forwarded (the loop guard).
@@ -226,6 +233,16 @@ export function attachRelay(
 			return
 		}
 		if (msg.control === 'gen_write') { void handleGenWrite(ws, msg); return }
+		// ghost_compile_ack (editor → CLI): the verdict-reply for a ghost_compile.  Route it back to
+		//  the socket that asked (by corr), since the CLI has no addr to deliverLocal to.  started
+		//   narrates; done/error are terminal, so the corr mapping is spent and dropped.
+		if (msg.control === 'ghost_compile_ack' && msg.corr) {
+			const cli = ackBack.get(String(msg.corr))
+			if (cli && cli.readyState === WebSocket.OPEN) { cli.send(JSON.stringify(msg)); relayLog(`→ cli ghost_compile_ack ${msg.phase ?? '?'} corr=${msg.corr}`) }
+			else relayLog(`ghost_compile_ack ${msg.phase ?? '?'} corr=${msg.corr} — no asking socket (gone)`)
+			if (msg.phase === 'done' || msg.phase === 'error') ackBack.delete(String(msg.corr))
+			return
+		}
 	}
 
 	// Write a compiled .go to disk on the editor's behalf (see GEN_ROOT note above).  No ack
@@ -279,6 +296,10 @@ export function attachRelay(
 	}
 
 	wss.on('connection', (ws: WebSocket, meta: Meta) => {
+		// #1-real — transport keepalive (see the heartbeat below): every socket starts alive and is
+		//  re-proven on each pong.  This is what unmasks a half-open socket that still reports OPEN.
+		;(ws as any).isAlive = true
+		ws.on('pong', () => { (ws as any).isAlive = true })
 		if (meta.r2r) {
 			// Inbound relay↔relay link: we are the editor end. Assert the editor role (set-once;
 			//  throws → close, if a browser already locked us 'runner' — a real misconfig).
@@ -322,14 +343,49 @@ export function attachRelay(
 				handleControl(ws, msg)
 				return
 			}
-			routeFromBrowser(text)
+			// Remember the asking socket by corr so the editor's ghost_compile_ack (a control frame,
+			//  handled below) can be routed back to this addr-less CLI.
+			const gcCorr = msg?.header?.type === 'ghost_compile' && (msg.corr ?? msg.header?.corr)
+			if (gcCorr) ackBack.set(String(gcCorr), ws)
+			const outcome = routeFromBrowser(text)
+			// #1 — undeliverable: a ghost_compile that reached no editor (no local socket, no bridge)
+			//  is dropped, and the asking CLI must HEAR that rather than wait its full 12s timeout
+			//   blind.  Reply on its own socket (it's right here — no routing), with corr+path so it
+			//    matches the ticket; the corr mapping is spent, so drop it.
+			if (gcCorr && outcome === 'dropped') {
+				try { ws.send(JSON.stringify({ control: 'undeliverable', to: msg.header?.to ?? 'editor', path: msg.dock?.path, corr: String(gcCorr) })) } catch {}
+				ackBack.delete(String(gcCorr))
+			}
 		})
+		// Log the disconnect — it was silent before (only the bind logged), so a half-open drop +
+		//  rebind read as two "browser bound" lines with no close between, hiding the reconnect.
+		//   relayLog broadcasts as control:log, so this also lands in each browser console + the
+		//    Relay Brink ring.  unbind first, then report the remaining locals.
 		const drop = () => {
 			if (meta.addr) unbind(meta.addr, ws)
+			for (const [corr, s] of ackBack) if (s === ws) ackBack.delete(corr)   // asker hung up — forget its corr
 		}
-		ws.on('close', drop)
+		ws.on('close', (code: number) => {
+			drop()
+			if (meta.addr) relayLog(`browser DISCONNECTED addr=${meta.addr} code=${code} (locals: ${[...locals.keys()].join(',') || 'none'})`)
+		})
 		ws.on('error', drop)
 	})
+
+	// #1-real — transport keepalive so `locals` can't lie.  deliverLocal trusts readyState===OPEN,
+	//  but a TCP-half-open socket (a tab crash / NAT drop with no close frame) reports OPEN forever
+	//   and the relay "delivers" into the void (bomb #1 — the runner-Lens flap, the silent ghost_compile
+	//    drop).  A WS ping/pong round is the only thing that unmasks it: a socket that misses a pong is
+	//     dead → terminate → its close handler unbinds it from `locals` → deliverLocal honestly fails →
+	//      routeFromBrowser drops → the asking CLI hears `undeliverable` instead of waiting the timeout.
+	const HEARTBEAT_MS = 15000
+	const heartbeat = setInterval(() => {
+		for (const ws of wss.clients) {
+			if ((ws as any).isAlive === false) { relayLog(`✂ half-open socket terminated (missed pong)`); ws.terminate(); continue }
+			;(ws as any).isAlive = false
+			try { ws.ping() } catch { /* terminating anyway next round */ }
+		}
+	}, HEARTBEAT_MS)
 
 	const onUpgrade = (req: any, socket: any, head: any) => {
 		let u: URL
@@ -363,6 +419,7 @@ export function attachRelay(
 		},
 		close() {
 			httpServer.off('upgrade', onUpgrade)
+			clearInterval(heartbeat)
 			peerLink?.close()
 			wss.close()
 			delete (httpServer as any)[ATTACHED]

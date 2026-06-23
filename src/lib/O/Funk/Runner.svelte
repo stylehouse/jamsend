@@ -12,7 +12,11 @@
         if (!expect) return
         const now   = Date.now()
         const face  = ww.o({ channel_peer: expect })[0] as TheCm | undefined
-        const live  = !!(face?.sc.last && now - (face.sc.last as number) < 7000)
+        // liveness is max(last, last_heard) — SAME as the face's reader, else the watcher stamps
+        //  'silent' off a stale `last` while the panel reads 'live' off fresh last_heard (a nonsense
+        //   "silent 222s ago, yet heard 2s ago").  Inbound frames keep the peer honestly alive.
+        const seen  = face ? Math.max(Number(face.sc.last ?? 0), Number(face.sc.last_heard ?? 0)) : 0
+        const live  = seen > 0 && now - seen < 7000
         const state = !face ? 'dialing' : live ? 'live' : 'silent'
         if ((funk.c.latest as { state?: string } | undefined)?.state === state) return
         funk.c.latest = { state, event: `${expect} ${state}`, at: now }
@@ -63,21 +67,29 @@
 
     // the peer this instance faces (the opposite role) and its proven-liveness — the 7s window
     //  Liesui/Langui use, so a frozen channel reads as growing silence, not a stale "live" lie.
+    //   Liveness is max(last, last_heard): `last` is our-ping-come-home (carries rtt), last_heard is
+    //    ANY inbound frame from the peer (Lies_pong).  Over a half-open carrier `last` freezes while
+    //     last_heard keeps advancing, so the panel reads the truth instead of a false silence.
+    const heard = (p: any) => Math.max(Number(p?.sc?.last ?? 0), Number(p?.sc?.last_heard ?? 0))
     let expect_peer = $derived(role === 'editor' ? 'runner' : role === 'runner' ? 'editor' : '')
     let face        = $derived(peers.find(p => p.sc?.channel_peer === expect_peer))
-    let live_face   = $derived(peers.filter(p => p.sc?.channel_peer === expect_peer && p.sc?.last && now - (p.sc.last as number) < 7000))
+    let live_face   = $derived(peers.filter(p => p.sc?.channel_peer === expect_peer && heard(p) && now - heard(p) < 7000))
     let peer_rtt    = $derived(live_face[0]?.sc?.rtt as number | undefined)
-    let peer_age_s  = $derived(face?.sc?.last ? Math.round((now - (face.sc.last as number)) / 1000) : null)
+    let peer_age_s  = $derived(heard(face) ? Math.round((now - heard(face)) / 1000) : null)
 
     // the endpoint clue — the WATCHED peer is the subject (→RUNNER), the carrier state rides as a
     //  parenthetical, so a glance reads "who, and how is it".  Four honest states, not a binary
     //   up/down: no socket → dialing → silent (was proven, gone quiet) → live.  A clash (>1 facing
     //    peer) is the "freak out" Langui flags.
     let PEER = $derived((expect_peer || '').toUpperCase())
+    // rtt rides `last` (our-ping-come-home); when we're live only via last_heard (inbound frames,
+    //  half-open send leg), `last` is stale and so is its rtt — show "heard Ns" instead of a frozen,
+    //   misleading round-trip number.
+    let rtt_fresh = $derived(face?.sc?.last != null && now - Number(face.sc.last) < 7000)
     let link = $derived(
         !channel_live        ? { glyph: '✕', cls: 'down',   text: `→${PEER || '?'} (no channel)` }
       : live_face.length > 1 ? { glyph: '⚠', cls: 'clash',  text: `→${PEER} (clash ×${live_face.length})` }
-      : live_face.length     ? { glyph: '●', cls: 'live',   text: `→${PEER} (${peer_rtt ?? '?'}ms)` }
+      : live_face.length     ? { glyph: '●', cls: 'live',   text: rtt_fresh ? `→${PEER} (${peer_rtt ?? '?'}ms)` : `→${PEER} (heard ${peer_age_s ?? 0}s)` }
       : face                 ? { glyph: '◍', cls: 'silent', text: `→${PEER} (silent${peer_age_s != null ? ` ${peer_age_s}s` : ''})` }
       :                        { glyph: '◌', cls: 'dial',   text: `→${PEER || '…'} (dialing)` }
     )
@@ -106,8 +118,10 @@
         <span class="rp-role">{role || 'lies'}</span>
         <span class="rp-txt">{link.text}</span>
     </div>
-    {#if latest?.state}
-        <div class="rp-latest">↪ {latest.state}{#if latest.at}<span class="rp-ago"> {Math.round((now - latest.at) / 1000)}s ago</span>{/if}</div>
+    {#if latest?.state && latest.at && now - latest.at < 5000}
+        <!-- a transition TOAST: the last state-change, fading out after 5s (not a persistent
+             growing-age line — that read as a broken gauge). -->
+        <div class="rp-latest">↪ {latest.state} {Math.round((now - latest.at) / 1000)}s ago</div>
     {/if}
     {#if phase_live && phase_view}
         <div class="rp-phase" class:stall={run_phase.phase === 'step_stall'} class:done={run_phase.phase === 'all_done'}>

@@ -17,8 +17,14 @@
 //   npm run ghost-compile -- Ghost/N/Peeroleum.g --json        # + machine manifest on stdout
 //
 // Each run: (1) compute each .g's dige off disk (no compiler); (2) send one signed `ghost_compile`
-//  ticket per .g to EDITOR_URL's relay (claude's cluster key, short-lived ws); (3) POLL-VERIFY that
-//   EDITOR_URL now serves a .go whose baked dige matches — proof the editor took the job and compiled.
+//  ticket per .g to EDITOR_URL's relay (claude's cluster key) and STAY CONNECTED; (3) narrate every
+//   reply to stderr and settle each ticket on the FIRST of: the served .go's dige flipping (ground truth,
+//    HTTP-polled), a relay `undeliverable` (no editor on the relay), an editor `ghost_compile_ack`
+//     (started / done / error), or a TIMEOUT. The timeout is load-bearing: a half-open editor leaves the
+//      relay falsely reporting delivery AND never acks, so silence-past-N is the only signal that catches
+//       it (observational liveness at the client — never close on send and exit 0 reporting unconfirmed
+//        success). `undeliverable` + the editor ack are relay/editor-side follow-ons; until they land the
+//         dige-flip poll and the timeout carry the client, fully backward-compatible.
 //
 // TODO (the "full way", deferred — trust + parameterisation): right now the ticket is dige-only and
 //  assumes the editor reads the .g from the SHARED disk, and that claude is trusted to ask for a
@@ -75,57 +81,33 @@ function clusterEnv(): Record<string, string | undefined> {
 	return env
 }
 
-// Sign + send one ghost_compile ticket per changed dock to the editor, over a short-lived relay socket.
-//  The signed unit is the self-contained {type,from,path,dige} consumer payload (transport-independent);
-//   the editor verifies that signature against the trusted flock, then takes the compile job for `path`.
-async function sendTickets(url: string, tickets: Array<{ path: string; dige: string }>, env: Record<string, string | undefined>): Promise<{ sent: number; error?: string }> {
-	const key = loadRoleKey('claude', env)
-	const pub = env.CLUSTER_IDENTO_CLAUDE_PUB
-	if (!key || !pub) return { sent: 0, error: 'no claude cluster idento (env nor .env.cluster-claude)' }
-	const from = prepubOf(pub)
-	const frames: string[] = []
-	for (let i = 0; i < tickets.length; i++) {
-		const dock = { type: 'ghost_compile', from, path: tickets[i].path, dige: tickets[i].dige }
-		const sign = await signHeader(dock, key)
-		frames.push(JSON.stringify({ header: { type: 'ghost_compile', from, to: 'editor', seq: Date.now() + i }, dock, sign }))
-	}
-	return new Promise((resolve) => {
-		let settled = false
-		const done = (r: { sent: number; error?: string }) => { if (!settled) { settled = true; resolve(r) } }
-		let ws: WebSocket
-		try { ws = new WebSocket(url) } catch (e: any) { return done({ sent: 0, error: String(e?.message ?? e) }) }
-		const wd = setTimeout(() => { try { ws.terminate() } catch {} ; done({ sent: 0, error: 'connect timeout (5s)' }) }, 5000)
-		ws.on('open', () => {
-			clearTimeout(wd)
-			for (const f of frames) ws.send(f)
-			const close = () => { try { ws.close() } catch {} ; done({ sent: frames.length }) }
-			if (ws.bufferedAmount === 0) close()
-			else { const t = setInterval(() => { if (ws.bufferedAmount === 0) { clearInterval(t); close() } }, 20); setTimeout(() => { clearInterval(t); close() }, 3000) }
-		})
-		ws.on('error', (err: any) => { clearTimeout(wd); done({ sent: 0, error: String(err?.code ?? err?.message ?? err) }) })
-	})
+// signFrame — one signed ghost_compile frame per dock. The signed unit is the self-contained
+//  {type,from,path,dige} consumer payload (transport-independent); the editor verifies it against the
+//   trusted flock, then takes the compile job for `path`. `corr` rides OUTSIDE the signed dock (frame
+//    header) as a correlation id the editor echoes on its ack and the relay maps back to THIS socket —
+//     unsigned (not security-bearing) and additive, so an editor that ignores it still verifies the dock
+//      exactly as before.
+async function signFrame(t: { path: string; dige: string }, from: string, key: string, corr: string, seq: number): Promise<string> {
+	const dock = { type: 'ghost_compile', from, path: t.path, dige: t.dige }
+	const sign = await signHeader(dock, key)
+	return JSON.stringify({ header: { type: 'ghost_compile', from, to: 'editor', seq, corr }, dock, sign, corr })
 }
 
-// Prove the editor actually took the job: fetch the .go vite serves and check the new dige is baked
-//  into its Ghostmeta. Answers "did the editor compile my change?" — but the editor's compile takes a
-//   beat (receive ticket → display dock → compile → write → HMR), so POLL briefly rather than reading
-//    once and calling a not-yet-written .go "stale".
-async function verifyServed(base: string, gen_path: string, dige: string, tries = 8, gapMs = 400): Promise<string> {
+// pollServed — the GROUND TRUTH that the byte actually landed: fetch the .go vite serves and check the
+//  new dige is baked into its Ghostmeta. Independent of any ack (an editor with no ack code still flips the
+//   dige), so this is what keeps the client backward-compatible. Resolves true once seen, false at deadline.
+async function pollServed(base: string, gen_path: string, dige: string, deadline: number): Promise<boolean> {
 	const url = `${base.replace(/\/$/, '')}/src/lib/${gen_path}`
-	let last = 'unreachable'
-	for (let i = 0; i < tries; i++) {
-		try {
-			const r = await fetch(url)
-			if (r.ok) {
-				const t = await r.text()
-				if (t.includes(`'${dige}'`)) return `current (dige ${dige})`
-				last = t.length < 200 ? `not a module (${t.length}c — wrong path?)` : `not yet ${dige} (editor still compiling?)`
-			} else last = `HTTP ${r.status}`
-		} catch (e: any) { last = `unreachable (${String(e?.message ?? e)})` }
-		if (i < tries - 1) await new Promise(res => setTimeout(res, gapMs))
+	while (Date.now() < deadline) {
+		try { const r = await fetch(url); if (r.ok && (await r.text()).includes(`'${dige}'`)) return true }
+		catch { /* unreachable — keep trying until the deadline */ }
+		await new Promise(res => setTimeout(res, 500))
 	}
-	return last
+	return false
 }
+
+type Status = 'compiled' | 'no-editor' | 'error' | 'timeout' | 'send-failed'
+interface Verdict { path: string; status: Status; dige?: string; errors?: string[] }
 
 async function main() {
 	const args  = process.argv.slice(2)
@@ -139,40 +121,101 @@ async function main() {
 	const env = clusterEnv()
 	const EDITOR_URL = env.EDITOR_URL || 'http://172.17.0.1:9092'
 	const WS_URL = EDITOR_URL.replace(/^http/, 'ws').replace(/\/$/, '') + '/relay'
+	const TIMEOUT_MS = Number(env.GHOST_COMPILE_TIMEOUT_MS || 12000)
 
-	// Compute each .g's dige off disk — no compiler. A read failure is a per-file error, not fatal.
-	const tickets: Array<{ path: string; dige: string; gen_path?: string; error?: string }> = []
-	for (const f of files) {
-		try { tickets.push({ path: f, dige: dig(readFileSync(f, 'utf8')), gen_path: genPath(f) }) }
-		catch (e: any) { tickets.push({ path: f, dige: '', error: String(e?.message ?? e) }) }
+	// (1) dige off disk — no compiler. A read failure is a per-file error, not fatal. Each ticket carries a
+	//  unique `corr` so replies (relay `undeliverable`, editor `ghost_compile_ack`) match back to it.
+	const stamp = Date.now()
+	const tickets: Array<{ path: string; dige: string; gen_path?: string; corr: string; error?: string }> = []
+	for (let i = 0; i < files.length; i++) {
+		const f = files[i]
+		try { tickets.push({ path: f, dige: dig(readFileSync(f, 'utf8')), gen_path: genPath(f), corr: `gc-${stamp}-${i}` }) }
+		catch (e: any) { tickets.push({ path: f, dige: '', corr: `gc-${stamp}-${i}`, error: String(e?.message ?? e) }) }
 	}
 	for (const t of tickets) if (t.error) console.error(`✗ ${t.path}  ${t.error}`)
 	const ok = tickets.filter(t => !t.error)
+	if (!ok.length) process.exit(tickets.some(t => t.error) ? 1 : 0)
 
-	// Send all tickets, then poll-verify the editor served each new dige. Send first (verify needs the
-	//  editor to have started compiling), then verify — not concurrent like the old write+notify.
-	const sent = ok.length ? await sendTickets(WS_URL, ok.map(t => ({ path: t.path, dige: t.dige })), env) : { sent: 0 }
-	if (sent.error) console.error(`✗ ticket ${WS_URL}: ${sent.error}`)
-	else            console.error(`📤 ticket ${WS_URL}: ${sent.sent} ghost_compile (signed, claude)`)
+	const key = loadRoleKey('claude', env)
+	const pub = env.CLUSTER_IDENTO_CLAUDE_PUB
+	if (!key || !pub) { console.error('✗ no claude cluster idento (env nor .env.cluster-claude) — cannot sign'); process.exit(1) }
+	const from = prepubOf(pub)
 
-	const served: Record<string, string> = {}
-	for (const t of ok) if (t.gen_path) {
-		served[t.path] = await verifyServed(EDITOR_URL, t.gen_path, t.dige)
-		console.error(`🔎 ${EDITOR_URL} serves ${t.gen_path}: ${served[t.path]}`)
+	// Per-ticket verdict, settled by the FIRST of: served-dige (ground truth), a socket reply
+	//  (undeliverable / ack done|error), or the timeout. `started` only narrates; it does not settle.
+	const resolvers = new Map<string, (v: Verdict) => void>()   // corr → resolve
+	const byPath    = new Map<string, string>()                  // path → corr (a reply may carry only path)
+	const settled   = new Set<string>()
+	const verdicts: Promise<Verdict>[] = []
+	for (const t of ok) {
+		byPath.set(t.path, t.corr)
+		verdicts.push(new Promise<Verdict>(resolve => resolvers.set(t.corr, v => {
+			if (!settled.has(t.corr)) { settled.add(t.corr); resolve(v) }
+		})))
 	}
+	const settle = (corr: string | undefined, v: Verdict) => { const r = corr ? resolvers.get(corr) : undefined; if (r) r(v) }
 
+	// (2) open the relay socket, send each signed frame, and STAY OPEN to hear replies — the original sin
+	//  was closing on send and exiting 0, reporting a success it never confirmed.
+	//   Bind an ephemeral relay addr so the relay LOGS this CLI's connect/disconnect (an addr-less
+	//    socket is invisible in its `locals`).  The reply itself is corr-routed and needs no addr —
+	//     this is purely for visibility; the prepub prefix names it, the stamp keeps concurrent runs
+	//      from colliding.  (The CLI ignores the relay's broadcast control:log frames it now receives.)
+	const cliAddr = `cli-${from.slice(0, 8)}-${stamp}`
+	let ws: WebSocket
+	try { ws = new WebSocket(`${WS_URL}?addr=${encodeURIComponent(cliAddr)}`) } catch (e: any) { console.error(`✗ relay ${WS_URL}: ${String(e?.message ?? e)}`); process.exit(1) }
+	ws.on('message', (data: any) => {
+		let msg: any; try { msg = JSON.parse(String(data)) } catch { return }
+		const path   = msg.path ?? msg.dock?.path
+		const target = (msg.corr ?? msg.header?.corr) ?? (path ? byPath.get(path) : undefined)
+		if (msg.control === 'undeliverable') { settle(target, { path: path ?? '?', status: 'no-editor' }); return }
+		if (msg.type === 'ghost_compile_ack' || msg.control === 'ghost_compile_ack') {
+			const p = path ?? '?'
+			if (msg.phase === 'started') { console.error(`· editor compiling ${p}`); return }
+			if (msg.phase === 'done')    { settle(target, { path: p, status: 'compiled', dige: msg.dige }); return }
+			if (msg.phase === 'error')   { settle(target, { path: p, status: 'error', errors: msg.errors ?? [] }); return }
+		}
+	})
+	ws.on('error', (err: any) => {
+		const e = String(err?.code ?? err?.message ?? err)
+		for (const t of ok) settle(t.corr, { path: t.path, status: 'send-failed', errors: [e] })
+	})
+
+	const opened = await new Promise<boolean>(resolve => {
+		const wd = setTimeout(() => resolve(false), 5000)
+		ws.on('open', () => { clearTimeout(wd); resolve(true) })
+	})
+	if (!opened) { console.error(`✗ relay ${WS_URL}: connect timeout (5s)`); process.exit(1) }
+	let seq = stamp
+	for (const t of ok) ws.send(await signFrame(t, from, key, t.corr, seq++))
+	console.error(`📤 ${WS_URL} (as ${cliAddr}): ${ok.length} ghost_compile (signed, claude) — awaiting reply…`)
+
+	// (3) ground-truth poll (per ticket) races the socket replies; the timeout is the catch-all that fires
+	//  even when a half-open editor leaves BOTH the relay ("delivered" to a dead socket) and the ack silent.
+	const deadline = stamp + 5000 + TIMEOUT_MS   // +5s for the connect window already spent on `opened`
+	for (const t of ok) if (t.gen_path)
+		void pollServed(EDITOR_URL, t.gen_path, t.dige, deadline).then(seen => { if (seen) settle(t.corr, { path: t.path, status: 'compiled', dige: t.dige }) })
+	const timer = setTimeout(() => { for (const t of ok) settle(t.corr, { path: t.path, status: 'timeout' }) }, TIMEOUT_MS)
+
+	const results = await Promise.all(verdicts)
+	clearTimeout(timer)
+	try { ws.close() } catch {}
+
+	for (const v of results) {
+		if      (v.status === 'compiled')    console.error(`✓ compiled ${v.path}${v.dige ? ` @ ${v.dige}` : ''}`)
+		else if (v.status === 'no-editor')   console.error(`✗ ${v.path}: no editor connected to the relay — frame dropped`)
+		else if (v.status === 'error')       console.error(`✗ ${v.path}: compile error — ${(v.errors ?? []).join('; ') || 'see editor'}`)
+		else if (v.status === 'send-failed') console.error(`✗ ${v.path}: relay send failed — ${(v.errors ?? []).join('; ')}`)
+		else                                 console.error(`✗ ${v.path}: no response in ${Math.round(TIMEOUT_MS / 1000)}s (editor not connected or half-open?)`)
+	}
+	const compiled = results.filter(v => v.status === 'compiled').length
 	if (json) {
 		process.stdout.write(JSON.stringify(
-			tickets.map(t => ({ path: t.path, dige: t.dige || undefined, gen_path: t.gen_path, error: t.error, served: served[t.path] })),
+			tickets.map(t => { const v = results.find(r => r.path === t.path); return { path: t.path, dige: t.dige || undefined, gen_path: t.gen_path, error: t.error, status: v?.status, errors: v?.errors } }),
 		) + '\n')
 	} else {
-		const current = ok.filter(t => t.gen_path && served[t.path]?.startsWith('current')).length
-		console.error(`\n— ${ok.length}/${tickets.length} ticket(s) sent; ${current} confirmed compiled by the editor`)
+		console.error(`\n— ${ok.length}/${tickets.length} sent; ${compiled} compiled`)
 	}
-
-	// Exit non-zero if any file failed to read or the ticket send errored. A "not yet compiled" verify
-	//  is NOT fatal (the open pre-Ud hop / editor offline are expected); the runner picks up the .go on
-	//   HMR once the editor compiles.
-	process.exit(tickets.some(t => t.error) || sent.error ? 1 : 0)
+	process.exit(tickets.some(t => t.error) || compiled < ok.length ? 1 : 0)
 }
 main()

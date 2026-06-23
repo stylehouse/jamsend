@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted
-  Funkcion:dirlist,interval_ms=8000,walked_at=1782197741865
+  Funkcion:dirlist,interval_ms=8000,walked_at=1782213118877
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -50,6 +50,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted
     Doc:src/lib/O/spec/reactivity_docs.md,name:reactivity_docs.md,noticed_at=1782180409139
     Doc:src/lib/O/spec/stho_primer.md,name:stho_primer.md,noticed_at=1782180409139
     Doc:src/lib/O/spec/Lens_handover.md,name:Lens_handover.md,noticed_at=1782197741865
+    Doc:src/lib/O/spec/GhostCompile_feedback_handover.md,name:GhostCompile_feedback_handover.md,noticed_at=1782213118877
   open_dir:src/lib/O
   group:src/lib/O,dir:src/lib/O
     sub:src/lib/O/D,name:D

@@ -112,6 +112,18 @@
             const at = w.o({ active_transport: 1 })[0] as TheC | undefined
             return !!(w.c.channel_up && at?.c.connection)
         },
+        // Lies_relay_note — ring a CONSUMER-side channel event onto w.c.relay_log, the same off-snap
+        //  ring Tribunal's carrier note() feeds, so the Relay Brink surfaces it (poll-on-tick, NO
+        //   version bump — the run_phase wedge).  important:1 events (a reconnect, a compile landing)
+        //    PERSIST in the panel instead of fading with routine SEND/RECV chatter — the state changes
+        //     that must not slip past in a 5s window.  Best-effort: a logging miss never breaks a tick.
+        Lies_relay_note(w: TheC, line: string, important = false) {
+            try {
+                const lg = (w.c.relay_log = ((w.c.relay_log as any[]) || []))
+                lg.push({ line: String(line), at: Date.now(), important: important ? 1 : 0 })
+                if (lg.length > 60) lg.shift()
+            } catch (e) { /* off-snap best-effort */ }
+        },
 
         //#endregion
         //#region run-mode & arm — Esc → run authority
@@ -390,6 +402,33 @@
             if (good) delete good.c.content                    // force a fresh disk read of the changed .g
             await H.Lies_provide_dock(w, dock.path, { force_active: true })
             H.tlog(`🔄 ghost_compile ${dock.path} @ ${dock.dige ?? '?'} from ${prepubOf(signer)} — forced into editor + compiling`)
+            H.Lies_relay_note(w, `🔄 compiling ${dock.path.split('/').pop()} @ ${String(dock.dige ?? '?').slice(0, 8)}`, true)
+            // The verdict-reply (#2): tell the asking CLI we took the job (started), and remember its
+            //  corr keyed by path so the async compile's done|error can be reported back to it when it
+            //   settles (Lang_drain_compile_settles).  No corr (an older CLI) ⇒ no ack, just the compile.
+            const corr = (frame.corr ?? frame.header?.corr) as string | undefined
+            if (corr) {
+                // gc_acks lives on the HOUSE, not w:Lies: the done/error hook runs in
+                //  Lang_drain_compile_settles on w:Lang — a DIFFERENT w — so only H.c bridges the two
+                //   ghosts.  Stash the channel w (this w:Lies, which holds the transport socket) so the
+                //    reply rides down it no matter which w observes the completion.
+                const acks = (H.c.gc_acks = (H.c.gc_acks as Record<string, { corr: string, dige?: string, at: number, w: TheC }>) || {})
+                acks[dock.path] = { corr, dige: dock.dige, at: Date.now(), w }
+                H.Lies_ghost_compile_ack(w, corr, 'started', { path: dock.path })
+            }
+        },
+        // Lies_ghost_compile_ack — the editor's verdict-reply for a ghost_compile, a raw control frame
+        //  straight down the relay socket (like gen_write — NOT a Peeroleum envelope: the CLI is no
+        //   peer).  The relay routes it back to the asking socket by corr.  phases: started (took it) ·
+        //    done{dige} (the .go landed) · error{errors} (compile failed) — the only POSITIVE proof of
+        //     a live editor, vs the CLI's dige-poll/timeout guesses.  Best-effort: no socket ⇒ the CLI
+        //      still settles on its poll or timeout.
+        Lies_ghost_compile_ack(w: TheC, corr: string, phase: 'started' | 'done' | 'error', extra?: { path?: string, dige?: string, errors?: string[] }) {
+            const H = this as House
+            const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
+            const ws   = port?.ws as WebSocket | undefined
+            if (!ws || ws.readyState !== WebSocket.OPEN) return
+            try { ws.send(JSON.stringify({ control: 'ghost_compile_ack', corr, phase, ...extra })) } catch { /* CLI falls back to poll/timeout */ }
         },
 
         //#endregion
@@ -602,12 +641,22 @@
             //   Socket_real's onclose never fired) — force a reconnect so the carrier re-dials. A
             //    never-yet-proven channel is left to the open/become path; throttled so we don't storm.
             const peer = H.Lies_role(w) === 'editor' ? 'runner' : 'editor'
-            const last = (w.o({ channel_peer: peer })[0] as TheC | undefined)?.sc.last as number | undefined
-            if (last && now - last > 20000 && (!w.c.last_reconnect || now - (w.c.last_reconnect as number) > 20000)) {
+            const cp   = w.o({ channel_peer: peer })[0] as TheC | undefined
+            // Silence is measured by what we've HEARD (max(last, last_heard)), NOT by our own ping
+            //  coming home (`last`).  A half-open SEND leg freezes `last` while inbound frames keep
+            //   arriving; reconnecting on stale `last` then force-closes a socket that is actively
+            //    receiving — it tore the channel down mid-ghost_compile, and the dropped socket
+            //     re-freezes `last`, so the watchdog re-fires next window: a self-perpetuating flap
+            //      that manufactures its own trigger.  Re-dial only when we genuinely haven't heard
+            //       the peer at all — then the carrier really is dead and a fresh socket is warranted.
+            const heard = Math.max(Number(cp?.sc.last ?? 0), Number(cp?.sc.last_heard ?? 0))
+            if (heard && now - heard > 20000 && (!w.c.last_reconnect || now - (w.c.last_reconnect as number) > 20000)) {
                 const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
                 if (port?.reconnect) {
                     w.c.last_reconnect = now
-                    H.tlog(`🛰 channel silent ${Math.round((now - last) / 1000)}s — forcing reconnect`)
+                    const msg = `⚠ channel silent ${Math.round((now - heard) / 1000)}s — forcing reconnect`
+                    H.tlog(`🛰 ${msg}`)
+                    H.Lies_relay_note(w, msg, true)   // surface this in the Relay Brink — it was console-only
                     port.reconnect()
                 }
             }
@@ -620,8 +669,20 @@
             if (!H.Lies_channel_live(w)) return
             ;(H as any).Peeroleum_send_consumer(w, 'ping', { t: Date.now() })
         },
-        Lies_pong(w: TheC, fr: any) {   // echo a received ping straight back
-            ;(this as any).Peeroleum_send_consumer(w, 'pong', { t: fr?.t })
+        Lies_pong(w: TheC, fr: any) {   // echo a received ping straight back — AND the ping itself is
+                                        //  proof the peer is alive, so stamp last_heard.  This is the
+                                        //   liveness signal that survives a HALF-OPEN carrier: our own
+                                        //    ping may be gated off (channel_live false → no pong comes
+                                        //     home → `last` freezes), but we still HEAR the peer's pings,
+                                        //      so the badge reads live off inbound traffic instead of
+                                        //       going dark until the 20s watchdog re-dials.  In the snap,
+                                        //        a fresh last_heard beside a stale `last` IS the half-open
+                                        //         diagnosis, legibly — no off-snap connection-ref guessing.
+            const H = this as House
+            ;(H as any).Peeroleum_send_consumer(w, 'pong', { t: fr?.t })   // echo first — keep the peer's RTT honest
+            const peer = H.Lies_role(w) === 'editor' ? 'runner' : 'editor'
+            w.oai({ channel_peer: peer }, { last_heard: Date.now() })      // oai: in-place merge, no transacting window (cf. pong_recv's roai)
+            w.bump_version()                                                // wake the .ob() readers (Runner Brink, Langui card)
         },
         async Lies_pong_recv(w: TheC, fr: any) {   // our ping came home — the channel is proven
             const H = this as House

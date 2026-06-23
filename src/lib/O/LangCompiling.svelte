@@ -340,7 +340,29 @@ import { LANG_COMPILE } from "./lang/compile"
             const settle = w.oai({ req: 'compiled_is_settled', path })
             if (ev.sc.write_ms != null)     settle.sc.write_ms     = ev.sc.write_ms
             if (ev.sc.source_dige != null)  settle.sc.source_dige  = ev.sc.source_dige
+            // ghost_compile verdict-reply (#2): the .go landed → tell the asking CLI it compiled.
+            //  gc_acks is on H.c (shared with the Lies-side recv that stashed it — this drain runs on
+            //   w:Lang, a different w); gc.w is the channel w:Lies the reply rides down.
+            const acks0 = H.c.gc_acks as Record<string, { corr: string, w: TheC }> | undefined
+            const gc = acks0?.[path]
+            if (gc) {
+                H.tlog(`✅ gc_ack done → corr=${gc.corr} ${path} @ ${String(ev.sc.source_dige ?? '?').slice(0, 8)}`)
+                H.Lies_ghost_compile_ack(gc.w, gc.corr, 'done', { path, dige: ev.sc.source_dige }); delete acks0![path]
+            } else if (acks0 && Object.keys(acks0).length) {
+                H.tlog(`⚠ compile settled ${path} but no pending gc_ack (have: ${Object.keys(acks0).join(',')})`)
+            }
             H.main()
+        }
+        // Sweep still-pending ghost_compile acks: a dock that ERRORED reports its compile_error — the
+        //  signal the CLI's dige-poll can never give (it just times out) — and a stale entry (the CLI
+        //   long since timed out at 12s) is dropped so the map can't grow.  Docks live on this w:Lang,
+        //   so the error read is local; the reply still rides the stashed channel w:Lies (acks[p].w).
+        const acks = H.c.gc_acks as Record<string, { corr: string, at: number, w: TheC }> | undefined
+        if (acks) for (const path of Object.keys(acks)) {
+            const dock = (w.o({ docks: 1 })[0] as TheC | undefined)?.o({ dock: path })[0] as TheC | undefined
+            const err  = dock?.o({ compile_error: 1 })[0] as TheC | undefined
+            if (err) { H.Lies_ghost_compile_ack(acks[path].w, acks[path].corr, 'error', { path, errors: [String(err.sc.msg ?? 'compile error')] }); delete acks[path] }
+            else if (Date.now() - acks[path].at > 30000) delete acks[path]
         }
     },
 

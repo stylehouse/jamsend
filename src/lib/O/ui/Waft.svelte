@@ -287,7 +287,7 @@
     //  live component.  An unregistered kind (e.g. dirlist) has no illusion to host, so it
     //   renders as a plain editable C row instead of an orb beside an empty applet.
     const funk_kind = (c: TheC) => c.sc.Funkcion as string | undefined
-    const funk_live = (c: TheC) => { const k = funk_kind(c); return k != null && FUNK_KINDS[k] != null }
+    const funk_live = (c: TheC) => { const k = funk_kind(c); return k != null && FUNK_KINDS[k]?.component != null }
 
     // ── unified item-edit form state ──────────────────────────────────
     //

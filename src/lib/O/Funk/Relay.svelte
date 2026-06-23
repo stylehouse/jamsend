@@ -33,9 +33,11 @@
     onDestroy(() => clearInterval(_tick))
 
     let live = $state(false)
+    let wref = $state<TheC | undefined>(undefined)
     $effect(() => {
         const w = (lens?.c?.w ?? H.ave.ob({ examining: 1 })[0]?.c?.w) as TheC | undefined
         if (!w) return
+        wref = w
         w.ob()
         H.clear(async () => {
             const at = w.o({ active_transport: 1 })[0] as TheC | undefined
@@ -43,7 +45,22 @@
         })
     })
 
-    let latest = $derived((funk?.vers && funk.c?.latest) as { event?: string, at?: number } | undefined)
+    // the relay/carrier event stream — relay control:log lines + the carrier's SEND/RECV/dial events,
+    //  ringed onto w.c.relay_log by Tribunal.g's `note` (off-snap, capped, NO version bump). Polled on
+    //   the 1s `now` tick, so it's a live in-UI console for "what is the channel actually doing" without
+    //    re-pumping the House — the Relay Brink's "real event stream" TODO, the msgs-other-than-pong view.
+    // event lines fade out 5s after they land (depend on the tick) — a live "what just happened"
+    //  toast stream, not a growing backlog.  Quiet when nothing's happening, which is the honest
+    //   resting state.  (No funk.c.latest caption here: it just duplicated the link line + grew a
+    //    misleading age; the link is the steady state, this is the events.)
+    // important state-changes (reconnect, a compile landing) persist 60s so you can't miss them in a
+    //  blink; routine SEND/RECV chatter fades at 5s.  Both depend on the tick (the ring mutates w.c in
+    //   place, no C version bump to react off).
+    let log = $derived.by(() => {
+        return ((wref?.c?.relay_log ?? []) as { line: string, at: number, important?: number }[])
+            .filter(e => now - e.at < (e.important ? 60000 : 5000)).slice(-8)
+    })
+
     let link   = $derived(live
         ? { glyph: '🛰', cls: 'up',   text: 'relay up' }
         : { glyph: '⚠', cls: 'down', text: 'relay down' })
@@ -55,8 +72,12 @@
         <span class="rl-dot">{link.glyph}</span>
         <span class="rl-txt">{link.text}</span>
     </div>
-    {#if latest?.event}
-        <div class="rl-latest">{latest.event}{#if latest.at}<span class="rl-ago"> · {Math.round((now - latest.at) / 1000)}s</span>{/if}</div>
+    {#if log.length}
+        <div class="rl-log" title="relay/carrier event stream — Tribunal note() → w.c.relay_log (ping/pong filtered)">
+            {#each log as e (e.at + e.line)}
+                <div class="rl-log-line" class:important={e.important}>{e.line}</div>
+            {/each}
+        </div>
     {/if}
 </div>
 
@@ -74,6 +95,7 @@
     .rl-up   .rl-dot { color: #6ad0a0; }
     .rl-down .rl-dot { color: #e06c75; }
     .rl-down .rl-txt { color: #d68a90; }
-    .rl-latest { font-size: 9.5px; color: #6a7398; }
-    .rl-ago { color: #4e5676; }
+    .rl-log { margin-top: 4px; border-top: 1px solid #2c3450; padding-top: 3px; max-height: 9rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1px; }
+    .rl-log-line { font-size: 9px; line-height: 1.25; color: #7c86ad; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rl-log-line.important { color: #e7c06a; font-weight: bold; }
 </style>
