@@ -188,6 +188,43 @@ await M.eatfunc({
         if (funks) await funks.do()
     },
 
+    // ── Lens — the ambient hoisted-UI bag (dock + InterestStrip pop-outs) ──────────
+    //   A Lens is plural by design: Lens:<LensKind>,of_Funkcion:<funk-kind>.  The Lens-KIND is
+    //   the slot|intensity — Panel rides the bottom dock (the presence:always accreting stack
+    //   over Lies), InterestSmall|InterestBig pop in the InterestStrip.  of_Funkcion names the
+    //   source; LensHost mounts that Funkcion's comp_<LensKind> face.  A Lens is suggested by a
+    //   Funkcion (from its pumped run, or a strike) or a system poke (the Id hatch, a server
+    //   log, a peer's status), and held in the session ave on the TOP House (off-snap, never
+    //   pumped: no c.up in the A/w spine, ave is outside the snap tree).  Identity is
+    //   (LensKind, of_Funkcion), so re-suggesting lands on the same held particle — an oai merge
+    //   + bump is how a live face notices change.
+    Lies_lens_bag(): TheC {
+        return (this as House).top_House().ave.oai({ Lenses: 1 })
+    },
+    //   Suggest (or refresh) a hoisted face.  sc carries altitude + any face state; funk (if
+    //   given) backlinks the suggesting Funkcion cell so the face reads the same C its inline
+    //   face does.  Returns the held Lens particle.
+    Lies_lens_suggest(lensKind: string, of_Funkcion: string, sc: Record<string, any> = {}, funk?: TheC): TheC {
+        const bag  = (this as any).Lies_lens_bag() as TheC
+        const lens = bag.oai({ Lens: lensKind, of_Funkcion }, sc)
+        if (funk) lens.c.funk = funk
+        lens.bump_version(); bag.bump_version()
+        return lens
+    },
+    //   Un-hoist a face — drop the held Lens.  A monitor that simply stops suggesting is the
+    //   other retirement (sweep it when its reason passes); this is the explicit close.
+    Lies_lens_dismiss(lensKind: string, of_Funkcion: string): void {
+        const bag  = (this as any).Lies_lens_bag() as TheC
+        const lens = bag.o({ Lens: lensKind, of_Funkcion })[0] as TheC | undefined
+        if (lens) { bag.drop(lens); bag.bump_version() }
+    },
+    //   Toggle — the user's hand on a face (e.g. the Id-hatch action).
+    Lies_lens_toggle(lensKind: string, of_Funkcion: string, sc: Record<string, any> = {}): void {
+        const H = this as any
+        if ((H.Lies_lens_bag() as TheC).oa({ Lens: lensKind, of_Funkcion })) H.Lies_lens_dismiss(lensKind, of_Funkcion)
+        else H.Lies_lens_suggest(lensKind, of_Funkcion, sc)
+    },
+
     // ── Lies_instantiate_funkcions ────────────────────────────────────────────────
     //   Generalise GhostList's hand-wired bind (Waft_spec §201's ⛑️): on Waft load —
     //   and on a later in-place edit — every embedded %Funkcion whose KIND (its mainkey

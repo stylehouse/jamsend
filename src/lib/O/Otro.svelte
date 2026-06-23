@@ -4,7 +4,7 @@
     import { House } from "$lib/O/Housing.svelte"
     import { keyser } from "$lib/data/Stuff.svelte"
     import Actions from "$lib/O/ui/Actions.svelte"
-    import IdHatch from "$lib/O/ui/IdHatch.svelte"
+    import Lens from "$lib/O/ui/Lens.svelte"
     import Stuffing from "$lib/data/Stuffing.svelte"
     import { onDestroy, onMount } from "svelte";
     import NaviScroll from "./ui/NaviScroll.svelte";
@@ -198,8 +198,8 @@
     {/snippet}
 </NaviScroll>
 
-{#if H?.stashed?.showId}
-    <IdHatch {H} />
+{#if H}
+    <Lens {H} />
 {/if}
 
 {#if H}

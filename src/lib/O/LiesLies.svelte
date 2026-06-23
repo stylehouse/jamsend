@@ -45,7 +45,7 @@
     //  gen .go) onto H so the runner runs the editor's CURRENT code.  Grouped + ordered like
     //   Ghost.svelte's O/* mount list — extend it by adding a line (easier than building a way
     //    for the editor to flush the set to its runners live; the runner owns its own MO).
-    //     These TAKE OVER from the frozen p2p/transport/*.go, which is now only the EDITOR's
+    //     These TAKE OVER from the frozen p2p/pinned_staging/*.go, which is now only the EDITOR's
     //      bootstrap — the editor can't ride the spine it's editing, but the runner can and
     //       should.  The runner's channel flaps on each push; fine, the runner re-runs anyway.
     const CREDULER_GHOSTS = [
@@ -246,14 +246,14 @@
             //  Peeroleum.go we're actively editing: importing gen/N/Peeroleum.go put it in the
             //   editor's module graph, so every compile HMR-reloaded the channel out from under
             //    itself (the "channel down / re-establishing" flap, and the settle stalls behind it).
-            //   p2p/transport/*.go are a deliberate frozen copy of the working spine+carriers: the
+            //   p2p/pinned_staging/*.go are a deliberate frozen copy of the working spine+carriers: the
             //    editor's channel rides this stable copy and never reloads.  The RUNNER dogfoods the
             //     LIVE spine (CREDULER_GHOSTS loads gen/N/*.go), so it tests current code; only the
             //      editor stays frozen, because it can't ride the spine it's actively editing.  To
-            //       promote a new spine into the EDITOR's channel, re-copy gen/N/ → p2p/transport/ by
+            //       promote a new spine into the EDITOR's channel, re-copy gen/N/ → p2p/pinned_staging/ by
             //        hand (now: ghost-compile the spine .g so the editor writes gen/N/*.go, then cp).
             const uis = H.oai_enroll(H, { watched: 'UIs' })
-            for (const gen of ['p2p/transport/Peeroleum.go', 'p2p/transport/Tribunal.go']) {
+            for (const gen of ['p2p/pinned_staging/Peeroleum.go', 'p2p/pinned_staging/Tribunal.go']) {
                 if (uis.oa({ UI: 'Pantheate-include', gen_path: gen })) continue   // already mounted
                 const module = await import(/* @vite-ignore */ `../../lib/${gen}`)
                 uis.oai({ UI: 'Pantheate-include', gen_path: gen }, { component: module.default })
@@ -590,6 +590,16 @@
         //       which is the honest signal we lacked while only control frames crossed.
         Lies_heartbeat(w: TheC) {
             const H = this as House
+            // surface the endpoint as a docked Lens:Panel,of_Funkcion:Runner whenever this instance
+            //  holds an editor|runner role (a remote relationship exists) — the Runner panel reads
+            //   this w's liveness/run_phase.  Suggested once (idempotent presence-guarded) and dropped
+            //    when the role lapses; done before the channel-live gate so the panel can show "no
+            //     channel" while the socket is down.  (The Aim layer will later own this targeting.)
+            const livesRole = (H as any).Lies_role(w)
+            if (livesRole === 'editor' || livesRole === 'runner') {
+                if (!(H as any).Lies_lens_bag().oa({ Lens: 'Panel', of_Funkcion: 'Runner' }))
+                    ((H as any).Lies_lens_suggest('Panel', 'Runner', { altitude: 20 }) as TheC).c.w = w
+            } else (H as any).Lies_lens_dismiss('Panel', 'Runner')
             if (!H.Lies_channel_live(w)) return
             const now = Date.now()
             // Liveness watchdog: if the channel WAS proven (a pong landed) but has since gone silent

@@ -143,7 +143,7 @@ PereStaple pile too — read `witnessed:*`/`A:PereStaple`; the `A:Lang` AST blob
 - **Write the spine in the DSL, not raw JS.** Heading L covers a lot — `%` optional on peels, `H` receiver
    for actor-laying, multi-assign two-leg row-capture, drilled-`o` captures, `&name,a,b` calls. Reach for a
     LangTiles extension before raw JS; only object/`.c` seams (mock-port pairing, frame objects off the wire,
-     dynamic-value writes) stay raw. Check every `.g` edit with `npm run lang-compile -- <file>`.
+     dynamic-value writes) stay raw. Compile every `.g` edit with `npm run ghost-compile -- <file>`.
 - **The c.up rule (bit me in heading 3, now spec §8).** A `%req` hosted below `w` (under Pier/Peering)
    silently never pumps unless you stamp the host chain's `c.up` — the belief walk wires `A`/`w` only. So any
     new Pier-hosted req (e.g. `%req:send`, spec §11.3) needs `Pier.c.up=Peering` etc.
@@ -205,12 +205,13 @@ quiescent snap. Things learned / kept:
 peer / transport / spec. Its `.g` Docs double as the compile manifest. Next: when heading W lands, the
 acquire reads this list instead of a hardcoded manifest.
 
-### 1a — CLI compiler  `[x]`  (lets the agent self-check `.g` files)
+### 1a — compile path  `[x]`  (lets the agent compile `.g` files)
 The pure translator was extracted verbatim from `LangCompiling.svelte` into `src/lib/O/lang/compile.ts`
 (`export const LANG_COMPILE`); the ghost spreads `...LANG_COMPILE` into its eatfunc, so the in-app path is
-behaviour-identical. The CLI `scripts/lang-compile.ts` (`npm run lang-compile -- <file.g>`) builds the real
-stho parser, runs the translator over a tiny C-shaped stub, prints the generated module or the first compile
-error. Already caught real bugs (a hyphen in a bareword peel value). **Use it to check every `.g` edit.**
+behaviour-identical. **The standalone `scripts/lang-compile.ts` CLI has since been REMOVED** (the
+"consolidate scripts" commit) — the translator extraction is what endured. The agent now compiles a `.g`
+with `npm run ghost-compile -- <file.g>`, which signs a relay ticket to the live in-app editor (the editor
+owns the only compiler). **Use it to compile every `.g` edit** ([[ghost-compile]]).
 
 ### 1b — UIless Story-runner  `[ ]`  (the bigger half)
 Include works in-app; what remains for a *fully UIless* (no-browser) run is the Story runner itself, driven by
@@ -347,8 +348,8 @@ a tweaked hello-sign. Spec §4.2, §15.
   - **Relay (`relay.ts`)** — fixed the bridge "state stuckness": a stale half-open `peerLink` is non-null but
      dead, and the `!peerLink` re-dial guards skipped it forever (only a server restart cleared it). Now a
       non-OPEN `peerLink` counts as down — closed and re-dialed on the next runner browser (re)connect.
-  - **Editor needs the re-freeze**: it runs the FROZEN `p2p/transport/*.go`, so reconnect only reaches it after
-     `cp src/lib/gen/N/*.go src/lib/p2p/transport/` (done this session). A runner-only fix leaves the editor's
+  - **Editor needs the re-freeze**: it runs the FROZEN `p2p/pinned_staging/*.go`, so reconnect only reaches it after
+     `cp src/lib/gen/N/*.go src/lib/p2p/pinned_staging/` (done this session). A runner-only fix leaves the editor's
       socket dead — the channel needs BOTH ends reconnecting. Browser-unverified; confirm two-origin on :9091/:9092.
 
 ### 9/10 — transport trial: webrtc → websocket fallback (mocked)  `[~]`  PROVEN in-app thru step 5

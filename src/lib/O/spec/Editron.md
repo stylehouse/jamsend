@@ -124,10 +124,11 @@ The runner does NOT compile or include inside its Story Run; it **acquires** wha
 
 **Transport freeze (editor only).** The editor can't ride the spine it's editing: editing `Peeroleum.g`
  would HMR-reload its own transport. So the editor bootstraps off a **frozen** copy at
-  `src/lib/p2p/transport/*.go`; `Lies_transport_up` is EDITOR-ONLY (`role!=='editor'` bails). The editor
+  `src/lib/p2p/pinned_staging/*.go`; `Lies_transport_up` is EDITOR-ONLY (`role!=='editor'` bails). The editor
    *compiles* `gen/N/Peeroleum.go` but never *imports* it, so editing it HMRs nothing in the editor's Vite
-    graph. **Promote a new spine into the editor's channel by hand:** `lang-compile --write` then `cp
-     gen/N/*.go → src/lib/p2p/transport/`. The frozen copies are deliberately stale until you do.
+    graph. **Promote a new spine into the editor's channel by hand:** `ghost-compile` the spine `.g`
+     (the editor writes `gen/N/*.go`) then `cp gen/N/*.go → src/lib/p2p/pinned_staging/`. The frozen copies
+      are deliberately stale until you do.
 
 ## 4. The Funkcion board — Credence reads verdicts back
 
@@ -195,7 +196,7 @@ The runner does NOT compile or include inside its Story Run; it **acquires** wha
 - **Snapped booleans = `1` or absent, never `false`/`0`** (CLAUDE.md policy). Prefer delete over 0; a C method
    (`r()`/`roai` replace) over a raw `delete n.sc.key`.
 - **The editor compiles the spine but never imports it** — the freeze (§3) insulates it. Promote a new spine by
-   `cp gen/N/*.go → p2p/transport/`; the frozen copies are deliberately stale until you do.
+   `cp gen/N/*.go → p2p/pinned_staging/`; the frozen copies are deliberately stale until you do.
 - **`relay.ts` is Node server code** — a direct import of `vite.config.ts`, so Vite **auto-restarts** the dev
    server on edit. If `✍ gen_write` never appears after a compile, it didn't restart — `touch vite.config.ts`.
 - **`mode` is editor-local.** `run_arm{mode}` doesn't cross; the runner runs `in_place`. To wire `from_start`
@@ -329,15 +330,14 @@ Per-Book is `cred.runs` **partitioned by `book` at spool time**, not a directory
    (interaction-poked think vs a "boot story → re-enable ambient" mode); the `toc.snap`s carry one `step,dige`
     lie — confirm one step then settle, Accept/Resnapture to record real diges (the now-honest badge reads red
      until they're re-recorded).
-- **Agent-requested in-app compile (ask Editron, don't spawn a program).** Today an external agent (claude-cli)
-   syntax-checks a `.g` by spawning `npm run lang-compile` / `ghost-update` — each boots a fresh `vite-node`+esbuild
-    program. Doing that repeatedly is slow and (observed) exhausts the sandbox's thread budget until esbuild
-     core-dumps (`failed to create new OS thread, errno=11`). The running Editron ALREADY has the compiler loaded
-      (`LangCompiling`), so it should answer a compile request directly. Proposed: a relay frame `compile_request
-       {path}` (the inbound twin of `this_dock_updated`) → the editor compiles that dock and replies
-        `compile_verdict {path, ok, errors[], gen_dige}`. **Catch the user flagged:** the dock may not be OPEN —
-         the editor must *auto-open + auto-compile* the requested path (read `%Good`, run `Lang_compile_dock`
-          headlessly, no focus change), and gracefully reply "editor not running / file not found" so the agent
-           can fall back to `lang-compile`. Reuses the existing signed-frame channel (claude's cluster Idento); the
-            verdict is the same data `lang-compile` prints, just without a cold program start. Folds naturally into
-             `ghost-update` (which already notifies the editor) — make the notify *also* return the compile verdict.
+- **Agent-requested in-app compile — verdict reply still missing.** The REQUEST half landed: `npm run
+   ghost-compile` signs a `ghost_compile {path, dige}` relay frame (no fresh `vite-node`/esbuild program —
+    that old spawn path exhausted the sandbox's thread budget, `failed to create new OS thread, errno=11`),
+     and `Lies_ghost_compile_recv` (LiesLies.svelte) auto-opens the dock (`force_active`, fresh disk read of
+      `%Good`), compiles, writes the `.go`, and HMRs it. **Still open — the reply back to the requester.** The
+       editor answers nothing; the CLI only HTTP-polls the served `.go` for the baked dige (`verifyServed`),
+        so it is BLIND to compile errors and cannot tell "no editor connected" from "still compiling". Build the
+         verdict: a `ghost_compile_ack {path, phase: started|done|error, dige?, errors?[]}` frame back to the
+          signer, mirroring the runner's `run_phase` blips (`Lies_runner_phase`), and have the CLI listen for it
+           instead of (or alongside) the poll. That makes "nothing happened" legible: untrusted, no-editor,
+            compiling, errored, or done.

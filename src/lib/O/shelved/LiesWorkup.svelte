@@ -17,8 +17,9 @@
 //                stay soft (revertable | mergeable); older ones harden into
 //                the spool
 //
-//   The Waft address space underneath: Waft_dip runs a Selection over the
-//   whole Waft** and stamps a session-stable c.Dip on every particle — the
+//   The Waft address space underneath: Waft_dip (in LiesWaft now) runs a
+//   Selection over the whole Waft** and stamps a session-stable c.Dip on
+//   every particle — the
 //   rename-proof identity %Seemed keys on, clones carry, and svelte #each
 //   blocks key by.  Same Dip protocol as Cyto's scanid|cytoid, persisted in
 //   the D sphere via resume_X.
@@ -29,7 +30,6 @@
 //   e_waftlet) live together here because they are two ends of one protocol.
 
 import { _C, type TheC } from "$lib/data/Stuff.svelte"
-import { Selection } from "$lib/mostly/Selection.svelte"
 import { type House } from "$lib/O/Housing.svelte"
 import { onMount } from "svelte"
 
@@ -44,51 +44,12 @@ let { M } = $props()
 onMount(async () => {
 await M.eatfunc({
 
-//#region Waft_dip — the address space
+//#region addressing — c.Dip → Workup_at
 //
-//   Waft** as an address space: every What|Doc|Point gets a session-stable
-//   c.Dip, minted hierarchically (w_2_1 …) but opaque after minting — an
-//   existing particle keeps its value across re-walks, reorders, renames.
-//
-//   The mechanism is Cyto's: one Selection per waft (waft.c.dip_Se), its
-//   D sphere persisted across process() calls via resume_X, %Dip particles
-//   riding the D nodes outside trace_sc so they carry over.  A renamed
-//   particle pairs with its old D when resolve() can see the continuity;
-//   a genuinely new particle claims the next slot from its parent's counter.
-//
-//   Idempotent and cheap — call it whenever the address space might have
-//   grown: on retarget, after a commit, after a revert.
-//
-//   c.Dip never snaps (it is .c) — across a reload the space re-mints, which
-//   is fine because %workup and soft %Waftlets are session-lived by design.
-
-    async Waft_dip(waft: TheC | undefined) {
-        const H = this as House
-        if (!waft) return
-        const Se: Selection = waft.c.dip_Se ??= new Selection()
-        Se.sc.topD ??= (() => {
-            const topD = _C({ Dipping: waft.sc.Waft })
-            // Dip must begin on the topD — children claim slots from the
-            // nearest ancestor Dip, and without this seed every depth-1
-            // child would mint the same first slot.
-            topD.i({ Dip: 'waftid', value: 'w', i: 0 })
-            return topD
-        })()
-        // fresh Travel each pass; D|** (the %Dip particles) resume via resume_X
-        Se.sc.topD.c.T = undefined
-
-        await Se.process({
-            n:          waft,
-            process_D:  Se.sc.topD,
-            match_sc:   {},
-            loop_but_no_further: 1,
-            trace_sc:   { dipping: 1 },
-            trace_fn:   async (uD: TheC, C: TheC) => uD.i({ dipping: 1, ...C.sc }),
-            traced_fn:  async (D: TheC, _bD: TheC, C: TheC) => {
-                C.c.Dip = H.Dip_assign('waftid', D)
-            },
-        })
-    },
+//   Waft** is an address space: every What|Doc|Point carries a session-stable
+//   c.Dip, the rename-proof identity %Seemed keys on and clones carry.  The
+//   dip pass that mints and stamps it (Waft_dip) lives in LiesWaft; this file
+//   only reads the stamped value through Workup_at.
 
     // address of a particle in the space; the spec-string fallback covers a
     // particle the dip pass hasn't seen yet (a just-added clone, a Waft from
@@ -414,13 +375,13 @@ await M.eatfunc({
 //   < a visual language for the grapple this makes on the real memory, hung
 //     on the starting intention.
 
+    // reqs hang directly on the host now (the reqy() stack is gone), so the
+    // %req:git container is a child of w, or of w's req:desire.
     Workup_git_of(w: TheC): TheC | undefined {
-        const H  = this as House
-        const rq = H.reqy(w)
-        const at_w = rq.o({ req: 'git' })[0] as TheC | undefined
+        const at_w = w.o({ req: 'git' })[0] as TheC | undefined
         if (at_w) return at_w
-        const desire = rq.o({ req: 'desire' })[0] as TheC | undefined
-        return desire ? H.reqy(desire).o({ req: 'git' })[0] as TheC | undefined : undefined
+        const desire = w.o({ req: 'desire' })[0] as TheC | undefined
+        return desire ? desire.o({ req: 'git' })[0] as TheC | undefined : undefined
     },
 
     // drop the heavy live refs; the receipt (sc + %encode snaps) stays as the

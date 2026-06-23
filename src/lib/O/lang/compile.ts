@@ -1,18 +1,17 @@
 // @ts-nocheck
 // $lib/O/lang/compile.ts — the pure stho→TS translator.
 //
-// Extracted verbatim from LangCompiling.svelte so it has ONE home and can run
-//  UIless (the `lang-compile` CLI, and a future UIless Story runner) — not
-//  just inside the in-app Lies pipeline. LangCompiling.svelte imports LANG_COMPILE
-//  and spreads it into its eatfunc, so in-app these run on H exactly as before
-//  (`this === H` at call time: sibling Lang_compile_* calls + this.trace resolve
-//  off H). The orchestration that needs a House — resolving the active dock, the
-//  Lies write-handoff (e:Lies_compiled), dig(), particle plumbing — stays in the
+// Extracted verbatim from LangCompiling.svelte into its own data-layer-free
+//  module (type-only TheC import), so the pure translation lives in ONE place
+//  apart from the orchestration. LangCompiling.svelte imports LANG_COMPILE and
+//  spreads it into its eatfunc, so these run on H exactly as before (`this === H`
+//  at call time: sibling Lang_compile_* calls + this.trace resolve off H). The
+//  orchestration that needs a House — resolving the active dock, the Lies
+//  write-handoff (e:Lies_compiled), dig(), particle plumbing — stays in the
 //  .svelte; only the pure text+parser→module translation lives here.
 //
-// `this` at call time is H in-app, or a stub carrying these fns + a no-op trace
-//  in the CLI (see scripts/lang-compile). @ts-nocheck: these moved verbatim and
-//  lean on that loose `this` (House) typing — runtime is the contract, not tsc.
+// `this` at call time is H (the in-app House). @ts-nocheck: these moved verbatim
+//  and lean on that loose `this` (House) typing — runtime is the contract, not tsc.
 import { syntaxTree, language } from "@codemirror/language"
 import type { EditorState } from "@codemirror/state"
 import type { SyntaxNode } from "@lezer/common"

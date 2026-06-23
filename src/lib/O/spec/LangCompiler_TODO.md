@@ -9,7 +9,7 @@ Open compile-side work + the durable authoring rules. The IOing *reduction* (dri
 ### Imports — `IMPORT()` with `$lib/…`, never relative
 Reach a TS module via the `IMPORT()` header pseudo-method, always with the absolute `$lib`
  alias — never a relative path. The gen `.go` lands at two depths (runner `gen/N/*.go`, editor
-  frozen `p2p/transport/*.go`), and only a `$lib` alias resolves identically from both. Keep
+  frozen `p2p/pinned_staging/*.go`), and only a `$lib` alias resolves identically from both. Keep
    shared primitives that a node side also needs (e.g. `cluster_trust.ts`, so `relay.ts` can
     import it) in their own TS module and `IMPORT` them — a `.go` is a browser Svelte component,
      not a home for node-side or duplicated code. `RENDER()` is the tail twin (`<Child {H} />`).
@@ -37,11 +37,11 @@ It compiles each `.g`, writes its `.go` (Vite HMRs that to every dev server on t
    `.env.cluster-claude` to sign. Open hop: the editor still drops claude's notify PRE-`%Ud` until
     the relay verifies + forwards it — verify + runner HMR work regardless. See `ClusterTrust_handover.md`.
 
-### `lang-compile` PASS ≠ it runs
-The editor and `npm run lang-compile` share the translator + syntax gates, so `✓ PASS` means the
- `.go` is valid JS/TS — NOT that the ghost behaves. A `.go` is a live Svelte component; only an
+### compile PASS ≠ it runs
+The editor's compile (driven by `npm run ghost-compile`) runs the translator + syntax gates, so a
+ written `.go` is valid JS/TS — NOT proof the ghost behaves. A `.go` is a live Svelte component; only an
   in-app run / a Story test mounts it (catching a bad import path, a runtime throw, an eatfunc that
-   deposits nothing). Gate syntax with `lang-compile`; verify behaviour on :9091.
+   deposits nothing). Gate syntax with `ghost-compile`; verify behaviour on :9091.
 
 ## Open
 

@@ -7,7 +7,10 @@
     import FaceSucker from "$lib/p2p/ui/FaceSucker.svelte"
     import type { House } from "$lib/O/Housing.svelte"
 
-    let { H }: { H: House } = $props()
+    // mounted as a Lens panel (LensHost) — the extra panel props (lens/funk/w) land in
+    //  rest and are ignored; this hatch reads only the top House's .stashed.
+    let { H, ...rest }: { H: House } & Record<string, any> = $props()
+    void rest
 
     let pasted = $state('')
     let msg    = $state('')
@@ -43,7 +46,7 @@
         catch { msg = current.pub }
     }
     function clear() { delete (H.stashed as any).cluster_idento; msg = 'identity cleared.' }
-    function close() { if (H.stashed) delete (H.stashed as any).showId }
+    function close() { (H as any).Lies_lens_dismiss?.('Panel', 'IdHatch') }
 </script>
 
 <FaceSucker altitude={88} fullscreen={true}>

@@ -9,8 +9,9 @@ language; **LangTiles** is its tile set. This is the orientation; the worked can
 - **Compiler:** `src/lib/O/lang/compile.ts` (`LANG_COMPILE`, the pure translator) +
    `src/lib/O/LangCompiling.svelte` (orchestration). Grammar: `stho.grammar` (→ the
     generated `stho.grammar.ts` artifact) + `io_tokens.ts` (the value/capture tokens).
-- **Self-check any `.g`:** `npm run lang-compile -- <file.g>` (prints the gen module or
-   the first compile error; `--write` writes the real `.go`). Use it on every `.g` edit.
+- **Compile any `.g`:** `npm run ghost-compile -- <file.g>` — signs a `ghost_compile`
+   ticket to the live in-app editor, which force-loads the dock, compiles, writes the
+    `.go`, and HMRs it. Needs an editor open; there is no standalone compiler CLI now.
 - **How a `.g` goes live:** compile → `gen/**.go` → Pantheate `import()` → Otro mount →
    `eatfunc` runs (`onMount`) → methods on `H`. A runner **acquires** its spine via
     `Creduler_ensure(w)` (gated by `%Creduler_pending`), which loads every ghost in the
@@ -106,7 +107,7 @@ values that are objects-off-the-wire — `.sc` is scalars only.
 **To change the language:** edit `io_tokens.ts` (value/capture tokens) and/or `stho.grammar`
 (then regen the `stho.grammar.ts` artifact via the in-app gen action — the registry falls
 back to a live `buildParser` until you do, so it works but is flagged stale) and/or
-`lang/compile.ts` (the translator). Verify with `npm run lang-compile -- <file>` against
+`lang/compile.ts` (the translator). Verify with `npm run ghost-compile -- <file>` against
 the corpus (`LakeTiles.g`) — its output should be unchanged for everything but the new form.
 
 ## Gotchas (durable)
@@ -120,5 +121,5 @@ the corpus (`LakeTiles.g`) — its output should be unchanged for everything but
    `buildParser` fallback is correct, just flagged); editing `io_tokens.ts` needs no regen.
 
 Canon: `Ghost/test/Story/Lake/LakeTiles.g`. Compiler: `src/lib/O/lang/compile.ts`,
-`LangCompiling.svelte`. CLI: [[lang-compile-cli]]. Open language work: handover heading L,
+`LangCompiling.svelte`. Compile a `.g`: [[ghost-compile]] (`npm run ghost-compile`). Open language work: handover heading L,
 `LangCompiler_TODO.md`. Peel/capture details: [[langtiles-peel-syntax]].

@@ -154,8 +154,10 @@ Nearly landed. reqy() fully sublated; the engine is C-native and self-contained
           `%aim`/`%satisfied` machinery (i_journeys_o_aims, name_A, Aw_satisfied,
            out_of_instructions) kept in a quarantined `//#region relics` beside
             it; `prandle` moved to the House class in Housing; only `i_unemits_o_Aw`
-             left out (Peeroleum rebuild). `LiesWorkup.svelte` is still shelved
-              referencing deleted reqy() (compile-or-stays-shelved).
+             left out (Peeroleum rebuild). `LiesWorkup.svelte` no longer
+              references the deleted reqy() (`Workup_git_of` reads `req:git`
+               off the host directly) and its `Waft_dip` copy is gone (lives in
+                LiesWaft); it stays shelved as a parked design — see Parked below.
 
 ### Wormhole backends
 OPFS-from-GitHub backend is coded and **runtime-verified in browser** (Library
@@ -280,6 +282,19 @@ A compiled `.g` becomes a `gen/**.go` that is a **Svelte component**: its `eatfu
 Editor→runner channel (version handshake → acquire-then-poll is "THE next edit";
  `active_transport` keystone reportedly still not live), dual-LE Sidetrack
   crossfade, and the Peeroleum spec items — all set aside here.
+
+**`LiesWorkup.svelte` (shelved) — branch-awareness on top of the LE.** The most
+ coherent way to read it: where LiesEnd gives one Understanding at one target,
+  LiesWorkup gives that Understanding a *working branch* — touring the What**
+   slope accumulates change across targets instead of shedding it on each
+    retarget. park/resume pool a %Seemed clone tree per visited-and-modified
+     What; a presented %leg + a move is the commit moment; commit replaces-back
+      and files a soft (revertable | mergeable) %Waftlet on w:Lies' `req:git`,
+       the last two staying soft before they harden into the spool. A small
+        local VCS over the Waft, in other words. Interesting and self-contained,
+         but unshipped — the open question is whether the branch model earns its
+          surface over plain LE retargeting. De-noised (no dead reqy/Waft_dip),
+           so it compiles if revived.
 
 ## Where to actually start
 Cleanest self-contained wins:

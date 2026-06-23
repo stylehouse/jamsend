@@ -102,7 +102,9 @@
             //    public identity. See scripts/gen-cluster-identos.ts.
             wa.oai({ action: 1, role: 'identity' }, {
                 label: 'Id', icon: '🪪',
-                fn: () => { if (!H.stashed) return; if (H.stashed.showId) delete H.stashed.showId; else H.stashed.showId = 1 },
+                // hoist|drop the cluster-identity hatch as a Lens:Panel,of_Funkcion:IdHatch (the
+                //  dock renders IdHatch's comp_Panel); altitude:88 floats it over everything.
+                fn: () => { (H as any).Lies_lens_toggle?.('Panel', 'IdHatch', { altitude: 88 }) },
             })
         }
 

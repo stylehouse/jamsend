@@ -18,6 +18,9 @@ become its header comment instead of a standalone file.
 - Exception: when it's obvious the property carries an unwritten value, the bare form
   still implies it — e.g. `%Spotlight,src` means Spotlight with some `src` value, not
   `src:1`.
+- Written with an **explicit value**, drop the `%`: `CreduCoherence:latest`,
+  `run_result:100%`, `req:Languish`. The `%` is the **lone-key** form (`%Credulate`,
+  `%Book`, `%GhostInclude` as a type/ledger).
 - `%Point:name` — the spec rides as the Point value (`{Point:name}`), preferred over
   `%Point,method:name`. Resolution crawls `%Map` by name, never by stored absolute
   offset.
@@ -26,6 +29,14 @@ become its header comment instead of a standalone file.
 
 - `%kind,key,path,depth` — how to write a **tuple floating in language**: an anonymous
   structure carrying those keys. (This is the shape of one Mapule.)
+
+## Methods, events, components
+
+- `name()` — a **method/function**, written with parens: `Cred_ghost_versions()`,
+  `beliefs()`, `i_elvisto()`. Tells a call apart from a particle key.
+- `e:name` — an **elvis event** (the dispatch); its handler is the method
+  `e_<Target>_<name>()` — `e:dock_content` → `e_Lang_dock_content()`.
+- `UI:Name` — a **Svelte component / mounted face**: `UI:CreduFunk`, `UI:Liesui`.
 
 ## Compound type names — `|` and `/`
 
@@ -52,5 +63,8 @@ In ordinary comment prose (distinct from type names above):
   like that
     as things often do
   or moving on.
+- **Indent is the branch** — a deeper line is subordinate to, or a consequence of, the
+  one above. Don't mark it (no `↳`); the indent already says so.
+- `→` is **inline flow** — "leads to", left-to-right on one line: `compile → settle → run`.
 - Don't randomly cap lengths for presentation; a reliable measurement is reported whole
   unless a limit is actually wanted.
