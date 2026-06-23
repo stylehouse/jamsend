@@ -11,12 +11,14 @@
 #      vite can bake VITE_CLUSTER_TRUSTED_PUBS for the browser. No private key lives here (the editor browser
 #       signs with its localStorage cluster Idento). Edit one of the pair and check the other still lines up.
 #
-# How you use it: open  http://localhost:9092/Otro?B=Editron  — the app lives at the
-#  /Otro route (/ is the p2p Intro page).  The ?B URL param (parsed in Otro) tells the default
-#  Auto to activate the Editron Story Book — a full Lies/Lang IDE that comes up as a one-step
-#  "watch itself start up" Story, then is used live; the companion ?W=<Waft> picks the Waft it
-#  opens on.  Plain http://localhost:9092/Otro still boots Auto's Library as normal.  No
-#  build/env flag needed — the param picks the Book per-tab.
+# How you use it: open  http://localhost:9092/Otro?E=Editron&W=Ghost/Net/Easy  — the app lives at
+#  the /Otro route (/ is the p2p Intro page).  The ?E URL param (parsed in Otro) boots this instance
+#   as the EDITOR of the named Story Book — here Editron, a full Lies/Lang IDE that comes up as a
+#    one-step "watch itself start up" Story, then is used live (?B=<Book> is the runner counterpart,
+#     used by the dev side).  The companion &W=<Waft> picks the Waft it opens on: Ghost/Net/Easy here
+#      resolves under wormhole/ to wormhole/Ghost/Net/Easy, a Waft annotating a ghost.  Plain
+#       http://localhost:9092/Otro still boots Auto's Library as normal.  No build/env flag needed —
+#        the params pick role + Book + Waft per-tab.
 #
 # Separate build caches — the one thing two dev servers must NOT share.  SvelteKit/Vite
 #  constantly regenerate .svelte-kit (generated/root.svelte, tsconfig) and node_modules/.vite;

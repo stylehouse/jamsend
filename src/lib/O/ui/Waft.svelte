@@ -226,7 +226,9 @@
     //   sidebyside: halve this Waft's width.  The parent list (.ls-waft-section) is a
     //               flex-wrap row, so two adjacent half-Wafts pair onto one line by
     //               themselves — no parent bookkeeping, the wrap does the pairing.
-    let minimised  = $state(false)
+    //   A %boring Waft (backstage infra — a borrowed EntropyProfile, etc.) starts
+    //    minimised: it's not the work, just a tab.  Expand to find its whole inner /** .
+    let minimised  = $state(!!waft.sc.boring)
     let capped     = $state(false)
     let sidebyside = $state(false)
 

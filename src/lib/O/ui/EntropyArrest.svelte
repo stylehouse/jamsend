@@ -175,14 +175,12 @@
     //      (its own autosave persists the edit).
     let shared = $derived.by((): { ref: string, caps: TheC[] }[] => {
         const The = w?.c.The as TheC | undefined
-        void The?.version
-        const liesW = H.top_House?.().o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] as TheC | undefined
-        if (!The || !liesW) return []
-        void liesW.version
+        void The?.version, void w?.version   // w bumps each Story tick → re-scan once the profile lands
+        if (!The) return []
         const out: { ref: string, caps: TheC[] }[] = []
         for (const p of (The.o({ EntropyProfile: 1 }) ?? []) as TheC[]) {
             const ref  = p.sc.Wref as string | undefined
-            const waft = ref ? liesW.o({ Waft: ref })[0] as TheC | undefined : undefined
+            const waft = ref ? H.entropy_profile_waft?.(ref) as TheC | undefined : undefined
             void waft?.version
             const ea   = waft?.o({ EntropyArrest: 1 })[0] as TheC | undefined
             const caps = (ea?.o({ Entcase: 1 }) ?? []) as TheC[]

@@ -289,6 +289,37 @@ Editor→runner channel (version handshake → acquire-then-poll is "THE next ed
           surface over plain LE retargeting. De-noised (no dead reqy/Waft_dip),
            so it compiles if revived.
 
+## Cluster-trust + ghost-compile — SHIPPED; residual TODO (low priority, parked)
+The authenticated relay (signed `gen_write` + `this_dock_updated`, browser trust exposed) and the
+ ghost-compile feedback loop are done — the loop closes at ~2–5s ("is ok"). The two continuation briefs
+  `ClusterTrust_handover.md` + `GhostCompile_feedback_handover.md` are sublated into these lines and
+   **deletable once committed**. Nothing below is wanted right now (the cluster is "enough for atm"):
+- **`remote-local-ghost-compile`** (rename of the editor's `this_dock_updated` refresh — the name makes the
+   strangeness plain: the `.g` is already on the editor's shared `/app` disk when the CLI asks, so this is a
+    *local* compile *triggered* remotely, not a content push. A *purely* remote form — CodeMirror carrying
+     the edit over the wire, no shared disk — is the distinct, unbuilt variant. Low priority; the loop works
+      as-is.) `this_dock_updated` is already gone from live code (only a comment vestige at `LiesLies:393`);
+       the `ghost_compile`+ack loop superseded it.
+   strange form legible: claude-cli compiles a `.g` ALREADY on this shared disk, then pings the editor to
+    re-read it; a *purely* remote form would be CodeMirror carrying the changes in, not on the recipient's
+     disk). Open hop: the editor inbox drops PRE-`%Ud` senders (`Peeroleum.g:308-310`), so claude-cli→editor
+      is dropped until the spine accepts a cluster-trusted frame in the async recv window (`Peeroleum_deliver`
+       post_do → verify payload sign → treat trusted as Ud-ok). Editor↔runner already works (both Ud-handshaken).
+- **PereEditrogression test** — show claude editing + compiling `.g`→`.go` end to end. Not started.
+- **Normalise the dige** — the CLI hashes disk bytes, the editor hashes the CodeMirror buffer (EOL differs),
+   so the ground-truth `.go`-poll never agrees; the `done` ack is the only reliable confirm today. A canonical
+    trailing newline on both sides restores the poll as a 2nd path.
+- **`note()` `important` flag** in `Tribunal.g` (frozen spine — recompile + promote) so carrier CLOSE/reconnect
+   log lines persist 60s not 5s.
+- **Latency** parked as optional (`Editron.md` → THE LATENCY SWAMP): 2–5s is "is ok"; a bounded self-pump is the
+   cheap win if it ever bites. The two framings live in that section (an Editron "big step" bracketing the whole
+    AI-edit→landing round-trip; `reqyoncile` owning the return everywhere).
+- *Done in this pass:* removed the temp ✅/⚠ `gc_ack` diagnostic tlogs in `LangCompiling`.
+
+The CLI-as-Idento / identity-on-the-connection cluster redesign (briefly named "Proteer") is **deliberately
+ dropped** — confusing, and nothing more is wanted from the cluster for now. The analysis survives in git
+  history (the `GhostCompile_feedback_handover.md` §"swamp underneath" at its last commit) if ever revived.
+
 ## Where to actually start
 Cleanest self-contained wins:
 - **Finish the Hovercraft req-migration tail** — delete requesty_serial + Agency bits.

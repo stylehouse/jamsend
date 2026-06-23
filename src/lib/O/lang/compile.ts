@@ -117,6 +117,92 @@ export const LANG_COMPILE = {
         } catch { return false }
     },
 
+    // Codetypes we index for Points but never compile to a .go: markdown specs
+    //  (the heading TOC) and tsstho (.ts/.svelte method+call Map).  Lang_compile_dock
+    //  runs its soft path on these — builds %Map, writes nothing.  Disjoint from
+    //  Lies_gen_path (the .g→.go gate): a path is gen-able OR points-only OR neither
+    //  (a .png dock indexes to nothing and the compile reqs no-op on it).
+    Lang_points_only(path: string): boolean {
+        return /\.(?:md|ts|svelte)$/.test(path ?? '')
+    },
+
+    // Scan a markdown dock's headings into %Compile/%Map as region entries — the
+    //  same vocabulary Lang_compile_collect emits for //#region, so the minimap,
+    //  the Mapulen and the fold logic read a markdown TOC with no markdown-specific
+    //  branch downstream.  depth is the heading LEVEL (1..6), not nesting count, so
+    //  a skipped level (h1 then h3) still indents and folds correctly: Lang_build_
+    //  mapules closes a region at the next region of depth ≤ its own, which is exactly
+    //  "this heading's section ends where the next same-or-higher heading begins".
+    //  region_path is the ancestor heading chain ending in this heading's own label
+    //   (the shape Lang_build_mapules' m.c.path and the trail heatmap key expect); it
+    //    rides .c, never .sc — an array in sc is an encode fatal.
+    //  Walks the parse tree, not a /^#/ regex, so a `#` inside a fenced code block is
+    //   a FencedCode node, never a heading.  Markdown emits no module, so there is
+    //    nothing to return — the caller takes the soft (no-gen) close.
+    Lang_collect_markdown_regions(state: EditorState, job: TheC): void {
+        const doc  = state.doc
+
+        // Parse the WHOLE document — NOT syntaxTree(state).  CodeMirror parses its
+        //  tree lazily within a time budget, and for an off-view compile (no editor
+        //   viewport driving it) that tree can be empty or cover only the opening
+        //    lines — which silently collapsed the TOC to zero headings.  The language
+        //     facet's parser (the same one syntaxTree feeds) parses a string fully and
+        //      synchronously; only markdown reaches here and its parser is linear, so a
+        //       whole-doc parse is cheap.  Fall back to the lazy tree only if no parser
+        //        is wired (the caller's Lang_has_lang_parser guard makes that rare).
+        let tree: any
+        try {
+            const parser: any = (state.facet(language as any) as any)?.parser
+            tree = parser ? parser.parse(doc.sliceString(0)) : syntaxTree(state)
+        } catch { tree = syntaxTree(state) }
+
+        // 1-based line number for a doc offset — binary search (twin of the lineOf
+        //  inside Lang_compile_collect).
+        const lineOf = (pos: number) => {
+            let lo = 1, hi = doc.lines
+            while (lo < hi) {
+                const mid = (lo + hi + 1) >> 1
+                if (doc.line(mid).from <= pos) lo = mid; else hi = mid - 1
+            }
+            return lo
+        }
+
+        const HEADING_RE = /^(?:ATX|Setext)Heading([1-6])$/
+        const words: Array<{ label: string, depth: number, from: number, to: number,
+                             line: number, region_path: string[] }> = []
+        // the open-heading chain: each entry the {label, level} of an ancestor still
+        //  in scope.  A new heading pops every open heading of equal-or-deeper level
+        //   (a sibling or a shallower section), then becomes the new innermost.
+        const stack: Array<{ label: string, level: number }> = []
+
+        tree.iterate({ enter: (ref) => {
+            const m = HEADING_RE.exec(ref.name)
+            if (!m) return            // Document and other containers — descend
+            const level   = +m[1]
+            const headLn  = lineOf(ref.from)
+            const lineC   = doc.line(headLn)
+            // heading text with the leading #s and any ATX closing #s stripped
+            const label = lineC.text.replace(/^\s*#{1,6}\s*/, '').replace(/\s*#+\s*$/, '').trim()
+                          || `(h${level})`
+            while (stack.length && stack[stack.length - 1].level >= level) stack.pop()
+            stack.push({ label, level })
+            words.push({ label, depth: level, from: lineC.from, to: lineC.to,
+                         line: headLn, region_path: stack.map(s => s.label) })
+            return false              // a heading owns no nested heading inside its node
+        }})
+
+        // flush — regions carry absolute from/to (the anchor children resolve against;
+        //  markdown has no children, so they are just the heading's own span).
+        const Map_C = job.oai({ Map: 1 })
+        Map_C.empty()
+        for (const w of words) {
+            const wc = Map_C.i({ region: 1, label: w.label, depth: w.depth,
+                                 from: w.from, to: w.to, line: w.line })
+            wc.c.region_path = w.region_path
+        }
+        this.trace(`Lang`, `Markdown TOC regions x${words.length}`)
+    },
+
     // Walk the document line-by-line (via doc.line(n), independent of the
     // syntax tree's own Line recovery).  For each doc-line we look into the
     // syntax tree for the first IOing or Sunpit node strictly within the

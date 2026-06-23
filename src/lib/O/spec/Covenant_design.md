@@ -2,7 +2,8 @@
 
 *Two ghosts (the owner's call): **Tyrant.g** = the cabinetry — identity & trust → admission
  (ex-Tyranny); **Garden.g** = the partying — social cultivation (ex-Gardening). The earlier
-  single-ghost name `Joinery`/`Covenant` is **rejected**. Neither `.g` exists yet — net-new.*
+  single-ghost name `Joinery`/`Covenant` is **rejected**. `Tyrant.g` now EXISTS (built — M1+M2,
+   `Ghost/N/Tyrant.g`); `Garden.g` is still net-new.*
 
 **The image (owner's):** Peeroleum is the *Linoleum on the floor* — the transport substrate you
  stand on but never see; a message crosses, acked, either carrier. Everything else is **cabinetry

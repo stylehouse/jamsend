@@ -1311,15 +1311,15 @@
         req.sc.have_Map = job?.oa({ Map: 1 }) ? 1 : 0
         if (!req.sc.have_Map && !err) {
             // Wait for the index ONLY for a doc that will actually produce one — a
-            //  compilable .g (Lies_gen_path, the same .g→.go gate the compiler uses).
-            //  A plain .svelte/.ts/.md never compiles to a %Map (Point-nav for those is
-            //  the still-open tsstho TODO), so the methods never arrive; the old
+            //  compilable .g (Lies_gen_path) or a points-only dock (.md/.ts/.svelte,
+            //  Lang_points_only) whose soft compile builds a %Map of regions/defs.  A
+            //  doc that is neither produces no %Map, so the methods never arrive; the old
             //  unconditional ttlilt then spun the grafted spinner forever (a ttlilt is a
             //  one-shot snap-timing advisor, not a keep-alive — on timeout nothing
-            //  re-fires).  Switching between Aside Whats holding plain .svelte docs hit
-            //  exactly this.  (Gate on gen-ability, not job presence, so a .g whose
+            //  re-fires).  Switching between Aside Whats holding such docs hit exactly
+            //  this.  (Gate on will-produce-a-Map, not job presence, so a dock whose
             //  compile job hasn't parked yet still waits rather than finishing un-grafted.)
-            if (H.Lies_gen_path(want)) {
+            if (H.Lies_gen_path(want) || H.Lang_points_only(want)) {
                 H.Langspinner(w, 'grafted')
                 H.i_req_ttlilt(req, 3.0, { waiting: 'methods' })
                 return
@@ -1854,14 +1854,14 @@
         // This pump consumes any pending trickle — re-armed below if we bow out still firing.
         if (req.c.trickle_timer) { clearTimeout(req.c.trickle_timer as any); req.c.trickle_timer = undefined }
 
-        // Compile ONLY .g → .go.  A non-.g dock (.md, .svelte, a .ts opened for reading) has no
-        //  gen target, so the stho compiler has no business running on it — finish straight away.
-        //   This also closes the worst hang: a file type with no grammar wired never satisfies the
-        //    parser gate below, so without this it would sit firing forever.  Point NAVIGATION for
-        //     non-.g (tsstho Points in .ts/.svelte, markdown Points in the specs) is wanted, but it
-        //      belongs on its own parse-for-Points path that emits NO .go — not bolted onto this
-        //       hard-compile gate.  Not built yet (see [[creduler]] handover notes).
-        if (!H.Lies_gen_path(dock.sc.dock as string)) {
+        // Run for a .g (gen-compile → .go) OR a points-only dock (.md, .ts, .svelte —
+        //  parse-for-Points: %Map only, no .go; Lang_compile_dock takes the soft path).
+        //   A dock that is NEITHER (a file type with no indexable structure) has no
+        //    business here — finish straight away.  This also closes the worst hang: such
+        //     a type never satisfies the parser gate below, so without the bail it would
+        //      sit firing forever.
+        const cpath = dock.sc.dock as string
+        if (!H.Lies_gen_path(cpath) && !H.Lang_points_only(cpath)) {
             H.Langspinner(w, 'compile', true)
             languish.finish(req)
             return
@@ -2014,7 +2014,8 @@
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
         if (languinio) {
             ;(await w.doai({ req: 'waft_roster', eternal: 1 }))?.((req: TheC) => {
-                const roster = req.c.roster as Array<{ path: string, stance: string, from?: string }> | undefined
+                const roster = (req.c.roster as Array<{ path: string, stance: string, from?: string }> | undefined)
+                    ?.filter(e => !H.waft_is_boring(e.path))   // backstage Wafts never become Interests
                 if (!roster) return
                 // Retire a closed giver's per-Interest %LE before reconcile.  Each open
                 //  giver keeps its own LE (the crossfade), and reconcile's gone-loop spares

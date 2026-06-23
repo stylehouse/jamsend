@@ -612,7 +612,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const store  = w.o({ req: 'Store' })[0] as TheC | undefined
         const loaded = ((store?.o({ Good: 1, type: 'text/Doc' }) ?? []) as TheC[])
             .filter(g => g.c.content !== undefined).length
-        const wafts  = w.o({ Waft: 1 }).length
+        const wafts  = (w.o({ Waft: 1 }) as TheC[]).filter(wf => !wf.sc.boring).length   // backstage Wafts uncounted
         w.i({ see: `🗂 ${loaded} doc${loaded === 1 ? '' : 's'}${wafts ? ` · ${wafts} Waft${wafts === 1 ? '' : 's'}` : ''}` })
     },
 
@@ -711,6 +711,10 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             })()
 
             await w.place({ Waft: path }, waft)
+            // a Waft that declares itself %boring (backstage infra, e.g. a borrowed
+            //  EntropyProfile) carries the flag to its load Good too, so both vanish
+            //   from the snap.  Stamped before watch_c below, so it triggers no save.
+            if (waft.sc.boring) good.sc.boring = 1
             await H.Waft_link_up(waft, waft)
             await H.Waft_dip(waft)
             await H.Lies_instantiate_funkcions(w, waft)   // bind embedded %Funkcion cells

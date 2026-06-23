@@ -346,10 +346,15 @@ Per-Book is `cred.runs` **partitioned by `book` at spool time**, not a directory
                Never touches `dock.c.state` (point-nav / region-fold / offsets keep it). Headless proof:
                 `scripts/LakeRace.*` ([[lakerace-compiler-fast]]).
 
-## THE LATENCY SWAMP (the next frontier — masterminding to keep relating to as it mutates)
+## THE LATENCY SWAMP (OPTIONAL now — parked; was the next frontier)
 
-The loop is now *correct* but **~5.3s wall from the CLI for a ~30ms compile** (and a ~91ms `.go` write). The
- time is NOT in any step — it is DEAD AIR BETWEEN steps. The tells, straight off the live trace: the editor↔runner
+**Status update:** a later session settled this to **~2–5s wall** (from ~5.3s, originally ~18s) and the human's
+ call is **"is ok"** — so this is now **parked as optional**, not the frontier. The road ahead is Peeroleum
+  (`Peeroleum_handover.md`). Keep this section so the analysis isn't lost, but don't re-enter the masterminding
+   as if it blocks anything. Revisit only if 2–5s starts to bite (e.g. the AI-edit loop below makes it compound).
+
+The loop is *correct* but the residual **~2–5s wall from the CLI for a ~30ms compile** (and a ~91ms `.go` write):
+ the time is NOT in any step — it is DEAD AIR BETWEEN steps. The tells, straight off the live trace: the editor↔runner
   heartbeat reports `round-trip 3584ms`, then `7322ms` — a ping→pong that should be milliseconds. Each ghost_compile
    stage (`recv → provide_dock → dock_content → compile → gen_write → settle → rungo → run_phase`) lands, then the
     editor's beliefs loop **quiesces** and the next stage waits seconds for a happenstance re-entry. The compiler is
@@ -378,4 +383,15 @@ Masterminding (the next move, in order):
 Track this swamp the way the doctrine says — **durable in-document markers, not transient state**: the masterminding
  should ride as actual markers (the `%Map`/region/Mapule layer, or marks in the Editron Book itself) that outlast any
   one run's state, so the next session *relates to* the swamp as it mutates instead of re-discovering it from scratch.
+
+Two human-floated framings for *if* this is revisited (neither decided):
+ - **An extra "big step" in the Editron Book** that brackets the WHOLE timeframe of *the human asking an AI to do a
+   test manipulation → it actually landing* — the ghost-compile round-trip as ONE traced Story step. That makes this
+    loop's latency a recorded step-snap (the durable marker above), and is where a compounding cost would show: an
+     AI doing many edits at 2–5s each is exactly when "is ok" stops being ok.
+ - **`reqyoncile` is "the coming back."** Hypothesis: in most cases the req reconcile already does the return/settle,
+   and the dead air is precisely the hops where it does NOT re-pump (no event wake; a ttlilt is one-shot,
+    [[ttlilt-not-a-keepalive]]). "It shouldn't be fragile" → audit each hop for whether reqyoncile owns its return;
+     where it doesn't, either make it so or wire the event wake. This is the same target as #2/#3, framed as a single
+      invariant rather than a pile of self-pumps. The GhostCompile feedback handover carries the matching note.
    (This very section is the stopgap until those markers exist.)

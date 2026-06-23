@@ -690,17 +690,11 @@
             const peer = H.Lies_role(w) === 'editor' ? 'runner' : 'editor'
             // The editor↔runner channel always crosses the relay↔relay bridge, so this round-trip
             //  is the BRIDGED time — a local-relay delivery would never reach this pong path.
-            // Log only on a state FLIP — first pong, or recovery after a >7s gap (the badge's
-            //  liveness window) — not every 3s heartbeat: the console should show transitions, not
-            //   tick like a metronome.  The live number rides the badge (%channel_peer.rtt).
-            const prev = (w.o({ channel_peer: peer })[0] as TheC | undefined)?.sc.last as number | undefined
-            const flipped = !prev || (Date.now() - prev > 7000)
             // roai, not oai: oai merges rtt/last in place and bumps only the %channel_peer child's
             //  own version — which Liesui's badge $effect doesn't track (it keys off w:Lies via
             //   examining/watch_c).  roai drops+recreates the child, bumping w:Lies, so the $effect
             //    re-runs and the badge's "● runner 414ms" actually ticks instead of freezing.
             await w.roai({ channel_peer: peer }, { rtt, last: Date.now() })
-            if (flipped) H.tlog(`🛰 channel live — ${H.Lies_role(w)} ⇄ ${peer} (bridged) — round-trip ${rtt}ms`)
         },
         //#endregion
 

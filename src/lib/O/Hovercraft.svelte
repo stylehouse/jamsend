@@ -604,21 +604,40 @@
         const ea   = The.o({ EntropyArrest: 1 })[0] as TheC | undefined
         const caps = (ea?.o({ Entcase: 1 }) ?? []) as TheC[]
         // shared profiles: each The/EntropyProfile,Wref names another Waft Story opened
-        //  into the outside-Story Lies roster (one load serves every run).  Read its
-        //   Entcases straight off that live C tree and union them in — a referenced
-        //    Entcase compiles and bites exactly like a local one.
-        const liesW  = this.top_House().o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] as TheC | undefined
+        //  into a Lies roster (one load serves every run).  Read its Entcases straight
+        //   off that live C tree and union them in — a referenced Entcase compiles and
+        //    bites exactly like a local one.
         const shared: TheC[] = []
         for (const p of The.o({ EntropyProfile: 1 }) as TheC[]) {
             const ref  = p.sc.Wref as string | undefined
-            const waft = ref ? liesW?.o({ Waft: ref })[0] as TheC | undefined : undefined
-            const wea  = waft?.o({ EntropyArrest: 1 })[0] as TheC | undefined
+            const wea  = (ref ? this.entropy_profile_waft(ref) : undefined)?.o({ EntropyArrest: 1 })[0] as TheC | undefined
             if (wea) shared.push(...(wea.o({ Entcase: 1 }) as TheC[]))
         }
         const rules = [...caps, ...shared].map(cap => this.entropy_rule_of(cap)).filter(Boolean)
         if (this.c.entropy_debug)
             console.log(`🛑 entropy_rules: ${caps.length} local + ${shared.length} shared cap(s) → ${rules.length} rule(s)`, JSON.parse(JSON.stringify(rules)))
         return rules
+    },
+
+    // find a borrowed EntropyProfile's roster Waft, wherever it opened.  The Story's
+    //  elvis aims Lies_open_Waft at the NEAREST Lies (the inner Run Lies, beside Waftily),
+    //   which is not necessarily the outside one — so don't guess: scan every House's
+    //    Lies (there are only a few) for Waft:ref.  Returns the live C tree or undefined
+    //     (not loaded yet); callers read EntropyArrest/Entcase off it.
+    entropy_profile_waft(ref: string): TheC | undefined {
+        for (const house of this.top_House().all_House) {
+            const lw   = (house.o({ A: 'Lies' })[0] as TheC | undefined)?.o({ w: 'Lies' })[0] as TheC | undefined
+            const waft = lw?.o({ Waft: ref })[0] as TheC | undefined
+            if (waft) return waft
+        }
+        return undefined
+    },
+
+    // is the Waft at this roster path backstage (%boring)?  The interest roster carries
+    //  only paths, so the Lang side asks here before advertising one as an Interest —
+    //   a boring Waft (borrowed EntropyProfile, etc.) stays out of the trail/NaviCado.
+    waft_is_boring(path: string): boolean {
+        return !!this.entropy_profile_waft(path)?.sc.boring
     },
 
     // One Entcase → one matching rule, by walking its %lematch tree.  Returns null if

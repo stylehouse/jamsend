@@ -19,23 +19,26 @@ Reach a TS module via the `IMPORT()` header pseudo-method, always with the absol
 The gen template auto-injects only **`TheC`** (plus `onMount`, eatfunc plumbing, not yours to
  call). Everything else needs an explicit `IMPORT`; don't re-`IMPORT` `TheC`.
 
-### After you edit a `.g` on disk — run `ghost-update`
+### After you edit a `.g` on disk — run `ghost-compile`
 Editing a `.g` outside the in-app editor does NOT regenerate its `.go`, so runners keep judging
  themselves current against stale code (the dige is content-addressed, `Ghostmeta = sha256(.g
   text)[:16]`). The one maneuvre, no flags:
 
 ```
-docker compose exec claude npm run ghost-update -- Ghost/N/Foo.g [more.g …]
+docker compose exec claude npm run ghost-compile -- Ghost/N/Foo.g [more.g …]
 ```
 
-It compiles each `.g`, writes its `.go` (Vite HMRs that to every dev server on the shared `/app`,
- so runners re-acquire), then ALWAYS — concurrently — **notifies** the editor (signs a
-  `this_dock_updated` with claude's cluster key, short-lived ws to `EDITOR_URL`'s relay, so the
-   editor re-reads the dock's `%Good`) and **verifies** `EDITOR_URL` serves the new module.
- `EDITOR_URL` comes from the cluster env (`gen-cluster-identos` defaults `http://172.17.0.1:9092`).
-  The editor needs its cluster key (🪪 Id hatch) to have its own `gen_write` accepted; claude needs
-   `.env.cluster-claude` to sign. Open hop: the editor still drops claude's notify PRE-`%Ud` until
-    the relay verifies + forwards it — verify + runner HMR work regardless. See `ClusterTrust_handover.md`.
+This is the **remote-local-ghost-compile** form, and the name earns its strangeness: the `.g` is
+ already on the editor's shared `/app` disk, so the CLI ships no content — it signs a `ghost_compile`
+  ticket `{path, dige}` (claude's cluster key) to `EDITOR_URL`'s relay and STAYS OPEN. The live editor
+   force-loads that dock, compiles it, writes the `.go` (Vite HMRs it to every runner on the shared
+    disk), and **acks back** `started → done(dige) | error(errors)`, corr-routed to the waiting CLI;
+     the CLI also dige-poll-verifies `EDITOR_URL` serves the new module, and times out (12s) if the
+      editor is gone/half-open. `EDITOR_URL` comes from the cluster env (`gen-cluster-identos` defaults
+       `http://172.17.0.1:9092`); the editor needs its cluster key (🪪 Id hatch) for its own `gen_write`
+        to be accepted, claude needs `.env.cluster-claude` to sign. A *purely* remote form — CodeMirror
+         carrying the edit over the wire, no shared disk — could exist but doesn't.
+   See `GhostCompile_feedback_handover.md`.
 
 ### compile PASS ≠ it runs
 The editor's compile (driven by `npm run ghost-compile`) runs the translator + syntax gates, so a

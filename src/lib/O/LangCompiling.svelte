@@ -255,11 +255,16 @@ import { lang, lang_for_path } from "./lang/lang"
         if (!state) { w.i({ see: '⚠ Lang_compile: no editorState yet' }); return }
         if (state.doc.length === 0) return
 
-        // Compile ONLY .g → .go (same gate as req_compile, here for the Esc path that calls
-        //  Lang_compile_dock directly).  A non-.g dock has no gen target — don't park a job or
-        //   run the stho compiler on it; Esc on a .md/.svelte is a clean no-op (no .go, no Map).
-        const gen_path = H.Lies_gen_path(dock.sc.dock as string)
-        if (!gen_path) return
+        // Two compile shapes share this method.  A .g dock GEN-compiles: stho→TS,
+        //  render a module, write a .go.  A points-only dock (.md, .ts, .svelte) takes
+        //   the SOFT path below: build %Compile/%Map for Point/region navigation and
+        //    write nothing.  A path that is neither (a .png, say) indexes to nothing —
+        //     don't park a job or run any parser on it (Esc on it stays a clean no-op).
+        const path     = dock.sc.dock as string
+        const gen_path = H.Lies_gen_path(path)
+        const points   = !gen_path && H.Lang_points_only(path)
+        const is_md     = /\.md$/.test(path)
+        if (!gen_path && !points) return
 
         // Park the job; large source stays in .c to keep sc clean.
         const job = dock.oai({ Compile: 1 })
@@ -272,7 +277,7 @@ import { lang, lang_for_path } from "./lang/lang"
 
         await dock.r({ compile_error: 1 }, {})
 
-        let source: string
+        let source = ''
         let source_dige = ''
         try {
             // Refuse to compile with no language parser wired on this dock's EditorState:
@@ -281,31 +286,41 @@ import { lang, lang_for_path } from "./lang/lang"
             //    (and, on the editor↔runner channel, pushed to a runner that trusts it). A
             //     caught compile_error here writes NOTHING and the job re-arms next pass once
             //      the async lang() resolve has landed — self-healing, instead of silent garbage.
+            //   The same race blanks a markdown TOC, so the guard fronts both paths.
             if (!this.Lang_has_lang_parser(state))
                 throw 'no language parser wired on this dock (lang() not resolved onto its EditorState yet) — refusing to emit raw .g passthrough'
-            const lines = this.Lang_compile_collect(state, job, this.Lang_stho_parser(state))
 
-            const { body, header, tail } = this.Lang_split_compiled(lines)
+            if (is_md) {
+                // Markdown: scan headings into %Map as regions; emit no module.  Falls
+                //  through to the soft (no-gen) close below — Map only, nothing to write.
+                this.Lang_collect_markdown_regions(state, job)
+            } else {
+                // stho (.g) or tsstho (.ts/.svelte): the same collector indexes both — the
+                //  tsstho whole-doc walk picks up PropertyDefinition/VariableDefinition as
+                //   method+class defs.  Only a gen-able .g goes on to render+validate+write;
+                //    a points-only .ts/.svelte keeps just the %Map and soft-closes.
+                const lines = this.Lang_compile_collect(state, job, this.Lang_stho_parser(state))
 
-            let ghost: { ghostmeta_name: string, source_dige: string } | undefined
-            if (gen_path) {
-                // source_dige: dige of the raw source text this module was compiled from.
-                // Injected into the Ghostmeta method so Pantheate can confirm the right
-                // version is live after mount.  Computed before render so it's independent
-                // of the generated wrapper boilerplate.
-                source_dige = await dig(state.doc.sliceString(0))
-                ghost = { ghostmeta_name: H.Lang_ghostmeta_name(dock.sc.dock as string), source_dige }
+                if (gen_path) {
+                    const { body, header, tail } = this.Lang_split_compiled(lines)
+                    // source_dige: dige of the raw source text this module was compiled from.
+                    // Injected into the Ghostmeta method so Pantheate can confirm the right
+                    // version is live after mount.  Computed before render so it's independent
+                    // of the generated wrapper boilerplate.
+                    source_dige = await dig(state.doc.sliceString(0))
+                    const ghost = { ghostmeta_name: H.Lang_ghostmeta_name(path), source_dige }
+                    source = this.Lang_compile_render_module(body, ghost, { header, tail })
+                    // Prove the emitted JS actually parses before anyone trusts it — an
+                    //  esbuild parse gate on the emitted module.  A raw-JS
+                    //   passthrough can mangle a brace into invalid JS even WITH a parser
+                    //    wired, which the parser-guard above does not catch; a bad .go on
+                    //     disk (or pushed over the editor↔runner channel) is the disease.
+                    //      A failure here drops into the compile_error path below — writes
+                    //       nothing, surfaces the line to the editor, re-arms next pass.
+                    const bad_js = this.Lang_validate_rendered_module(source)
+                    if (bad_js) throw bad_js
+                }
             }
-            source = this.Lang_compile_render_module(body, ghost, { header, tail })
-            // Prove the emitted JS actually parses before anyone trusts it — an
-            //  esbuild parse gate on the emitted module.  A raw-JS
-            //   passthrough can mangle a brace into invalid JS even WITH a parser
-            //    wired, which the parser-guard above does not catch; a bad .go on
-            //     disk (or pushed over the editor↔runner channel) is the disease.
-            //      A failure here drops into the compile_error path below — writes
-            //       nothing, surfaces the line to the editor, re-arms next pass.
-            const bad_js = this.Lang_validate_rendered_module(source)
-            if (bad_js) throw bad_js
         } catch (err: any) {
             dock.i({ compile_error: 1, msg: String(err?.message ?? err), stack: err?.stack ?? '' })
             delete job.sc.pending
@@ -334,9 +349,9 @@ import { lang, lang_for_path } from "./lang/lang"
                 ...(H.Lies_is_editor(w) ? { dock_source: state.doc.sliceString(0) } : {}),
             })
         } else {
-            // soft compile — non-Ghost path or non-gen-able codetype (a .ts doc
-            //   opened for Point navigation, say).  %Map is built; no gen/
-            //   write happens, so no settle elvis will arrive: close the job
+            // soft compile — a points-only codetype (a .ts/.svelte opened for method
+            //   navigation, or a .md scanned into a heading TOC).  %Map is built; no
+            //   gen/write happens, so no settle elvis will arrive: close the job
             //   here the way req:compiled_is_settled would (clear pending, stamp
             //   %time.all) so req_compile's waiting:gen_write gate releases.
             delete job.sc.pending
@@ -375,10 +390,7 @@ import { lang, lang_for_path } from "./lang/lang"
             const acks0 = H.c.gc_acks as Record<string, { corr: string, w: TheC }> | undefined
             const gc = acks0?.[path]
             if (gc) {
-                H.tlog(`✅ gc_ack done → corr=${gc.corr} ${path} @ ${String(ev.sc.source_dige ?? '?').slice(0, 8)}`)
                 H.Lies_ghost_compile_ack(gc.w, gc.corr, 'done', { path, dige: ev.sc.source_dige }); delete acks0![path]
-            } else if (acks0 && Object.keys(acks0).length) {
-                H.tlog(`⚠ compile settled ${path} but no pending gc_ack (have: ${Object.keys(acks0).join(',')})`)
             }
             H.main()
         }

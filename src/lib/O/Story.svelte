@@ -1013,6 +1013,13 @@
                 if (T.c.path.length === 1) {
                     T.sc.more = (n.o({})).filter(c => !c.sc.snap_root)
                 }
+                // %boring: backstage infrastructure (a borrowed EntropyProfile Waft and
+                //  its load Good) — vanish ENTIRELY from the snap, line and subtree, so a
+                //   test that borrows a profile reads no differently from one that inlines it.
+                //  T.sc.not (not just skipping lines.push) is what hides it: the loopy-ref
+                //   rebuild pass below re-collects every D with a snap_line, and only T.sc.not
+                //    survives that — story_process_node already stamped this node's snap_line.
+                if (n.sc.boring || T.sc.boring) { T.sc.more = []; T.sc.not = true; return }
                 // fold: a %dontSnap node emits its own line but hides its subtree.
                 //  Snap-only — the node keeps pumping; orthogonal to inclusion. Used
                 //  to retire compile scaffolding (w:Lies/w:Lang) from a runner snap
@@ -1371,16 +1378,17 @@
         //  Entcases.  Open it into the outside-Story Lies roster like any dock —
         //   elvis aims up-tree to that Lies — so it's deWaft'd to a live C tree
         //    that autosaves on edit and is shared by every Story that borrows it:
-        //     the roster IS the cache (Lies outlives H:Story).  Wait until it lands
-        //      so the set bites from step 1; entropy_rules reads it off the roster.
+        //     the roster IS the cache (Lies outlives H:Story).  Fire the open ONCE
+        //      and DON'T block — compares run long after this, by which time the
+        //       Waft has landed; entropy_rules reads it off the roster when present.
         {
-            const The   = w.c.The as TheC | undefined
-            const liesW = H.top_House().o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] as TheC | undefined
-            if (liesW) for (const p of (The?.o({ EntropyProfile: 1 }) ?? []) as TheC[]) {
+            const The = w.c.The as TheC | undefined
+            for (const p of (The?.o({ EntropyProfile: 1 }) ?? []) as TheC[]) {
                 const ref = p.sc.Wref as string | undefined
-                if (!ref || liesW.o({ Waft: ref })[0]) continue   // already in the roster
+                if (!ref || p.c.opened) continue                   // fire-once (c. is runtime, unsnapped)
+                if (H.entropy_profile_waft(ref)) { p.c.opened = true; continue }  // already in a roster
                 H.i_elvisto('Lies/Lies', 'Lies_open_Waft', { path: ref })
-                return w.i({ see: `⏳ entropy profile ${ref}…` })
+                p.c.opened = true
             }
         }
 

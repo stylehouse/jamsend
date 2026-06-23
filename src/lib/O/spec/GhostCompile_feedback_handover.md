@@ -20,9 +20,12 @@ doing. The whole feedback effort is one instance of "make every peer legible."
 
 **The loop now CLOSES, correctly: `ghost-compile` → `✅ gc_ack done @ <new dige>`, live-verified.**
 The compile-never-fired wedge AND the one-round lag are both fixed (see RESOLVED below). What's left is
-not correctness — it's **speed**: ~**5.3s wall from the CLI for a ~30ms compile**. That entire cost is
-channel/req-pacing dead-air, not the compiler (proven fast). **The frontier moved from "does it work" to
-"why is it slow" — and that lives in `Editron.md` → THE LATENCY SWAMP.**
+not correctness — it's **speed**, and speed is now **acceptable**: a later session settled the channel to
+**~2–5s wall** (down from ~5.3s, originally ~18s), and the human's call on it is **"is ok."** So the
+latency swamp (`Editron.md` → THE LATENCY SWAMP) is **demoted from blocker to OPTIONAL**: the cost is still
+channel/req-pacing dead-air (not the compiler — proven fast), and a bounded self-pump is a ready cheap win
+*if* 2–5s ever bites — but **the road ahead is Peeroleum**, not more channel-shaving. Don't re-enter the
+swamp's masterminding as if it's urgent; it isn't anymore.
 
 ## This session (the turning point)
 
@@ -49,7 +52,9 @@ channel/req-pacing dead-air, not the compiler (proven fast). **The frontier move
   `Lies_ghost_compile_recv`; `done`/`error` fire from `Lang_drain_compile_settles` (off the shared
   **`H.c.gc_acks`** — NOT `w.c`: recv runs on `w:Lies`, the drain on `w:Lang`, only the House
   bridges them; the entry also stashes the channel `w:Lies` so the reply rides the socket-bearing w).
-  **Live-verified: `started` reaches the CLI** (`· editor compiling`). `done`/`error` do not — see blocker.
+  **Live-verified end-to-end: `started` AND `done`/`error` now reach the CLI** — the wedge that swallowed
+  `done` (the missing settle) is RESOLVED. The CLI settles `✓ compiled @ <dige>` on the `done` ack; that is
+  the reliable confirm path (the ground-truth dige poll stays unreliable per bomb 3, so don't lean on it).
 - **`#1` relay `undeliverable`** — `routeFromBrowser` returns `'local'|'bridge'|'dropped'`; on a
   dropped `ghost_compile` the asking socket gets `{control:'undeliverable',corr,path}`. Clean-gone
   editor → CLI settles `no-editor` at once (no 12s wait).
@@ -128,11 +133,25 @@ ghost-compile-specific.
    inner compiler-Lies; check for a stray editor tab.
 8. **Never bump `w.version` per frame** — the `relay_log` ring is poll-on-tick (the run_phase wedge).
 
-## Next moves (in order)
+## Next moves — the road ahead is PEEROLEUM (latency parked)
 
-THE move is **the latency swamp — `Editron.md` → "THE LATENCY SWAMP"** (~5.3s wall for a 30ms compile; all
- dead-air between req hops; heartbeat round-trips of 3.5–7.3s show the editor's beliefs loop quiescing).
-  In order:
+The human's call: compiles are ~2–5s and **"is ok"**, so **get on with Peeroleum and the actual road ahead**
+ ([[peeroleum-bootstrap]], `Peeroleum_handover.md`) — not more channel-shaving. Everything below is **parked
+  as optional**, kept so the design isn't lost, not because it's the next thing.
+
+Two design musings the human floated — capture so they survive; neither is decided:
+ - **Editron: an extra "big step"** that brackets the WHOLE timeframe of *the human asking an AI to do a test
+   manipulation → it actually landing* (the ghost-compile round-trip as ONE traced Story step), so that loop's
+    latency/correctness is a recorded step-snap, not transient channel noise. Aligns with the swamp's "durable
+     markers, not transient state" doctrine; the marker would live in the Editron Book.
+ - **`reqyoncile` should be "the coming back."** Hypothesis: in most cases the req reconcile already does the
+   return/settle; the dead-air is exactly the hops where it DOESN'T re-pump (no event wake; a ttlilt is one-shot,
+    [[ttlilt-not-a-keepalive]]). "It shouldn't be fragile" → find the hops where reqyoncile is NOT what brings
+     the pipeline back and make it so (or give them an event wake). Same diagnosis as #2/#3 below, framed as
+      *reqyoncile owns the return everywhere.*
+
+**If/when the latency is revisited** (`Editron.md` → "THE LATENCY SWAMP"; all dead-air between req hops,
+ heartbeat round-trips of 3.5–7.3s show the editor's beliefs loop quiescing), in order:
 1. **Trace first** — ms-stamp each pipeline hop (recv→compile, settle→rungo, rungo→run_phase) with the
    existing `H.trace`/Storui copy-trace instruments; read where the seconds actually sit. Don't guess.
 2. **Conditional self-pump on the Lies channel/run `req**` pile** — while in-flight conditions hold (pending
@@ -148,16 +167,19 @@ Leftover small ones: **normalise the dige** (bomb 3) so the CLI poll agrees agai
  **`note()` `important` flag** in `Tribunal.g` (frozen spine — recompile+promote) so carrier CLOSE/reconnect
   persist 60s.
 
-## Working tree (uncommitted)
-This session's lag fix: `src/lib/O/Lang.svelte` (e_Lang_dock_content force_active branch) ·
-`src/lib/O/LangCompiling.svelte` (`Lang_compile_dock` stateOverride + `Lang_compile_source_state` +
- `lang`/`EditorState` value imports). New headless harness: `scripts/LakeRace.spec.ts` ·
- `scripts/LakeRace.vitest.config.mjs` · `scripts/LakeRace.run.mjs` (untracked; the `.mjs` ones were swept
-  once by a host tree-touch — recreate if gone). Carried from prior sessions:
-   `scripts/ghost_compile.ts` · `src/lib/server/relay.ts` · `src/lib/O/LiesLies.svelte` ·
-   `src/lib/p2p/pinned_staging/Tribunal.go` (+ the channel/Brink set). The Brink/`%Aim` half rides in
-    spec/Lens_handover.md. **Bomb #6 ("hard-reload after editing a ghost") is corrected** —
-     [[hmr-remixes-ghost-methods]]; methods re-mix on HMR.
+## Working tree — feedback + lag fix are COMMITTED
+All of the feedback machine and the lag fix are now committed (`7fdb8126` "fix remote compile lag" and its
+ predecessors): `Lang.svelte` (e_Lang_dock_content force_active branch), `LangCompiling.svelte`
+  (`Lang_compile_dock` stateOverride + `Lang_compile_source_state`), `scripts/LakeRace.*`,
+   `scripts/ghost_compile.ts`, `src/lib/server/relay.ts`, `LiesLies.svelte`, `Tribunal.go` (+ channel/Brink).
+The Brink/`%Aim` half rides in `spec/Lens_handover.md`. Bomb #6 ("hard-reload after editing a ghost") is
+ corrected — [[hmr-remixes-ghost-methods]]; methods re-mix on HMR.
+
+The ONLY currently-uncommitted work in the tree is **unrelated** to ghost-compile — it's the Trope/`%boring`
+ backstage-Waft EntropyProfile-sharing line ([[trope-entropy-profile-sharing]]): `Hovercraft.svelte`
+  (`entropy_profile_waft`/`waft_is_boring`), `Lies.svelte` (boring Wafts uncounted + flag rides to the load
+   Good), `Lang.svelte`, `Story.svelte`, `EntropyArrest.svelte`, `Peeroleum.g`/`.go`, several `toc.snap`.
+    Don't mistake it for compile-channel work.
 
 ---
 

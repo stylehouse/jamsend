@@ -422,3 +422,15 @@ We deliberately do **not** live-test the locator/regex in the panel — verifica
    paste into source (the EncodingSplatter copy-to-source gesture).
 - **Retire the marker model.** If `spay_line`/`spay_normalize`/`SPAY_MARKER` are confirmed
    unused on every path, remove them; the graft compare needs no marker.
+- **Port the `%Entcase` editor onto `UI:Waft` and/or `PeelInput`.** `ui/EntropyArrest.svelte` is a
+   bespoke CRUD form, but an `EntropyArrest` is now just a live C tree — and a *shared* profile
+    (`Trope/Lies/NormalEntropy`, a `%boring` Waft borrowed via `The/EntropyProfile,Wref`) is already
+     a canonical roster Waft that edits + autosaves through the generic `UI:Waft`/`PeelInput`
+      machinery. So the bespoke panel could collapse onto that generic editor: an `Entcase`/`lematch`/
+       `means` node is a plain `%`-peelable C, and `PeelInput` already peels typed text into sc. What
+        would have to survive the port (the bespoke form's real value-add): the **suggest-from-diff
+         seed** (`H.entropy_suggest` + the one-draft breadcrumb), the **fuzz tub** (head|tail anchor
+          wind-down), and the **4-way means mutex** (band|any|drop|dontSnap). Likeliest shape: keep
+           those as authoring affordances, but render/edit the resulting tree as a Waft so local and
+            shared caps use one editor — local in `The`, shared via `open ⇗` into the profile Waft.
+             (Today: local caps = the bespoke panel; shared caps = read-only group + `open ⇗`.)
