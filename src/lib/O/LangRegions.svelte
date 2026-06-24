@@ -456,7 +456,9 @@
         //    names the Point o_elvis_Idzeugnosis without landing on the name|
         //    the line carries one MethodLike so this is unambiguous now.  Richer
         //    cases (a call we'd rather name, nested arrows) come later.
-        const state = dock.c.state as EditorState | undefined
+        // `offset` is a Map-frame char position and `d.sc.line` a Map-frame line, so read
+        //  them in the Map's own coordinate frame (Lang_index_state), not the live buffer.
+        const state = this.Lang_index_state(dock)
         if (state) {
             const at = Math.max(0, Math.min(offset, state.doc.length))
             const ln = state.doc.lineAt(at).number
@@ -502,7 +504,9 @@
         if (!dock) return
         const job    = dock.o({ Compile: 1 })[0] as TheC | undefined
         const Map_C  = job?.o({ Map: 1 })[0]      as TheC | undefined
-        const state  = dock.c.state as EditorState | undefined
+        // The tap resolves to a $region/$method by NAME through %Map, so map its char to a
+        //  line in the Map's own frame (Lang_index_state) — consistent with the Map it queries.
+        const state  = this.Lang_index_state(dock)
         if (!Map_C || !state) return
 
         const at       = Math.max(0, Math.min(from, state.doc.length))
@@ -628,7 +632,10 @@
         const dock  = this.Lang_active_dock(w)
         if (!dock) return
         const view  = dock.c.view  as EditorView | undefined
-        const state = dock.c.state as EditorState | undefined
+        // Resolve the Point spec + build regions in the Map's frame (Lang_index_state):
+        //  result.from is born in that frame, so the selection|fold we then dispatch onto the
+        //   view lands right — a Point-navigate is a settled gesture, so view ≈ this snapshot.
+        const state = this.Lang_index_state(dock)
         if (!view || !state) return
 
         const result = this.Lang_resolve_point(state, dock, spec)

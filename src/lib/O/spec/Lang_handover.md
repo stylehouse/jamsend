@@ -9,8 +9,8 @@ The Lang machine is the **base layer** of editing in jamsend: a CodeMirror edito
     (`Editron.md`); Lens hoists UI over it; Interest threads the cursor through it. This doc is
      the layer *underneath* all of them: what a dock is, how it compiles, how the pieces divide
       the labour, and the one structural seam (`dock.c.state`) that is the source of the editor's
-       recurring bugs. Written at a resting point — the base is built and runs; the seam is
-        understood and not yet cut.
+       recurring bugs. Written at a resting point — the base is built and runs; the seam (§7) has
+        now been **cut** (role #2 + #3, headless-verified, browser-verify pending — see §8).
 
 **One sentence.** A `dock` is one document open in CodeMirror; compiling it walks its syntax tree
  into `%Compile/%Map` (regions + points), which fans out to a minimap, a fold model, and — for a
@@ -220,12 +220,16 @@ So the real obligation the split adds is a **contract, per reader, of who may be
 
 ### The cut — bounded blast radius
 
-**Plumbing (2):** (1) `Lang_compile_source_state` builds from `lang(path)` for *every* compile,
- not only headless — first compile correct regardless of reseat timing, and remote compile stops
-  mounting a dock. (2) **Stamp** the source onto the job (`job.c.source_state`) so the index
-   oracle has the exact compiled-against state. — **(2) is landed**: `job.c.source_state = state`
-    is stamped in `Lang_compile_dock` (`LangCompiling:290`), additive and unread, so the readers
-     below have an anchor to repoint onto. (1) is the part still to do.
+**Plumbing (2): both landed.** (1) `Lang_compile_source_state` now builds a source with the
+ `lang(path)` parser for *every* compile, not only headless — first compile correct regardless of
+  reseat timing, and remote compile stops mounting a dock. It takes the cheap form (below): reuse
+   `dock.c.state` when its grammar already matches (a doc-swap transaction, byte-identical to before
+    on the happy path), synthesize a fresh state only on a genuine parser mismatch. The match test is
+     `Lang_state_lang_is(state, want)` (`compile.ts`) — positive grammar identity, so it can never
+      *false-positive* into reusing a wrong-parser state. The normal path in `Lang_compile_dock` now
+       routes through it instead of reading `dock.c.state` raw. (2) `job.c.source_state = state` is
+        stamped at compile (`LangCompiling`), now the live anchor the role-#3 readers resolve against
+         via `Lang_index_state(dock)`.
 
 > **Perf caveat on step 1 — don't `EditorState.create` per settle.** The compile runs on every
 >  settled keystroke; a fresh whole-state build there would re-detonate the boomerang latency
@@ -236,37 +240,56 @@ So the real obligation the split adds is a **contract, per reader, of who may be
 >       `dock.c.state` itself as `source_state` whenever its parser already matches the path, and
 >        only synthesize when it doesn't.
 
-**Repoints (~5):** 3b readers (`LangRegions` ×3, whatsthis) → `job.c.source_state`; 3a + text
- (`LangPoint:329`, `LangLang:161`) → `view.state`; parser-gate moves with role #2.
+**Repoints (~5): landed.** 3b readers → the compiled-against frame via `Lang_index_state(dock)`
+ (`= job.c.source_state ?? dock.c.state`): `Lang_def_at_offset` (`LangRegions`), the tap
+  (`e_Lang_tap`), point-nav (`e_Lang_point_navigate`), and the whatsthis dump (`Lang.svelte`). 3a +
+   text → `view.state`: the Q-fold (`LangPoint`) and the parser-gen text read (`LangLang`). The
+    `req_compile` parser-gate (`Lang:1916`) is left in place but is now belt-and-suspenders — it
+     guards "no parser at all", not "wrong parser", because the compile rebuilds on `lang(path)`
+      itself (comment updated there).
 
-**The one real risk is step 3b.** Today those readers silently assume `dock.c.state ==
- what-the-Map-was-compiled-against`. Separate the compile source and that assumption is false
-  unless they follow `job.c.source_state` (or resolve purely through `rel_*`/`abs_*`). Get it
-   wrong and offsets drift on the first keystroke after a compile — silent, looks like
-    "navigation is slightly off," the worst kind. All the care goes here. Display→`view.state`
-     can't regress (strictly more current); compile-source only *adds* first-open correctness.
+**Where the residual risk lives — and why it stayed small.** The scary failure was offset drift on
+ the first keystroke after a compile. It didn't materialize, for a structural reason: plumbing-1
+  *reuses the mounted doc* (only the parser may be synthesized), so `source_state.doc` is the **same
+   text** `dock.c.state` held at compile — the 3b readers that only do `doc.lineAt`/`doc.length`
+    (`Lang_build_regions` is text-based, no parse tree) get identical answers either way today; the
+     repoint just pins them to the Map's frame so they *stay* correct if the frames ever diverge. The
+      only behavioural deltas are strict improvements: whatsthis now dumps with the **right parser**;
+       fold + gen-text now read the **live** buffer instead of the ~debounce-stale one. No offset
+        *writer* was touched (graft/decorations ride CM's StateField `.map`, untouched), which is the
+         only place the cut could have corrupted placement.
 
 ## 8. Next move + current uncommitted state
 
-**Next move.** (1) Confirm the first-open trigger before cutting — `Lang_collect_markdown_regions`
- stamps `md_parser` + `md_heads` on the Compile particle (`compile.ts:228`, TEMP, strip when
-  done): `stho`/`md_heads:0` → bake-time, `MarkdownParser`/`md_heads:1` → partial-tree. Either
-   way the cut fixes it, so I'd just do the cut. (2) Cut **role #2 first** (plumbing + parser-gate)
-    — highest payoff, lowest risk, retires three of four masks. (3) Cut **role #3 second**, guarded
-     by a bookmark round-trip test (compile, type above a bookmark, jump — must still land).
+**The cut is landed (role #2 + role #3).** Both plumbing steps and all ~5 repoints are in the
+ working tree, type-clean (no new svelte-check errors at the edited lines; `compile.ts` — the only
+  file with genuinely-typed additions — is wholly clean). Files touched: `compile.ts`
+   (`Lang_state_lang_is` + `Lang_index_state` helpers), `LangCompiling.svelte`
+    (`Lang_compile_source_state` rewrite + `Lang_compile_dock` source routing), `LangRegions.svelte`
+     (×3 reader repoints), `LangPoint.svelte` (fold→`view.state`), `LangLang.svelte`
+      (gen-text→`view.state`), `Lang.svelte` (whatsthis→`Lang_index_state`, parser-gate comment).
 
-**Landed-but-uncommitted.** The seam's anchor (plumbing 2) is in: `job.c.source_state = state`
- (`LangCompiling:290`) — additive, unread, zero-risk; the foundation the role-#3 repoints sit on.
-  The rest below are downstream of the cut (they make the *second* compile reach the minimap, they
-   do not remove the extra step — only the cut does):
-- `Actions.svelte:26,28` — `value={(a.vers, a.sc.value)}` / `disabled={(a.vers, …)}`: the lang
-   dropdown `<select>` wasn't reactive to the particle bump.
-- `Lang.svelte` instrumentation `n_sig` — added `%Compile.version` so a parser switch (same text →
-   new Map) re-runs report + mapules.
-- `Lang.svelte` `Lang_build_mapules` — `dock.bump_version()` so `DocMinimap` re-derives without a
-   doc-switch.
+**Verified headless.** `node scripts/LakeRace.run.mjs` (3/3 pass) exercises the rewritten
+ `Lang_compile_source_state` on real `Peeroleum.g` across both branches — WARM (stale buffer + fresh
+  disk text → reuse-and-swap-doc) and COLD/headless (no editor → synth on `lang()`) — plus the full
+   `force_active` recv path. So the `.g` path (the one that writes a `.go`) is proven through the cut.
 
-All browser-unverified, all left in the working tree (**commits are the human's job**).
+**Next move — browser-verify on `:9091`** (the part LakeRace can't reach — it can't mount CodeMirror):
+- **The first-open extra step (mask #4).** Open `Peeroleum_spec.md` cold → the minimap should fill
+   with the heading TOC on the **first** compile, no second nudge, and no `# `-prefixed fallback row.
+- **The 3b bookmark round-trip (the guarded risk).** Drop a bookmark, compile, type *above* it, jump
+   to a Point/tap — must still land on the right span (offsets must not drift post-compile).
+- **Fold + lang-gen** still behave (now reading `view.state`).
+
+**Diagnostics removed.** The `md_parser`/`md_heads`/`md_kids` TEMP stamps in
+ `Lang_collect_markdown_regions` (the instrument that proved the first-open diagnosis) are now
+  stripped — the cut makes them moot. The first-open verify above is therefore purely visual (TOC
+   fills on the first compile, no `#`-fallback row), no snap field to read.
+
+**Also in the tree from earlier sessions** (downstream reactivity, not this cut): `Actions.svelte`
+ lang-dropdown reactivity; `Lang.svelte` instrumentation `n_sig` += `%Compile.version`;
+  `Lang_build_mapules` `dock.bump_version()`. All left in the working tree (**commits are the
+   human's job**).
 
 **Adjacent reading:** `Editron.md` (the channel/runner layer that rides *on* this), `Waft_spec.md`
  (the document tree), `map-rel-offsets` + `nong-pointing` memories (the offset/TOC work),

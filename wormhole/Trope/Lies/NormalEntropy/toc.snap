@@ -11,7 +11,7 @@ Waft:Trope/Lies/NormalEntropy,boring,dontSnap
     Entcase:Compile_time-compile
       lematch,Compile
         lematch,time,compile,all,write
-          {"means":1,"spayer":1,"re":"time,compile={NUM},all={NUM},write=0","tol":"band","factor":2.53}
+          {"means":1,"spayer":1,"re":"time,compile={NUM},all={NUM},write=0","tol":"band","factor":2.53,"pm":0.5}
     Entcase:w_self-round
       lematch,w/self,round
         {"means":1,"spayer":1,"re":"self,round={NUM}","tol":"band","factor":1.5}

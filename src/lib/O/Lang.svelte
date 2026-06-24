@@ -1913,6 +1913,10 @@
         //     raw") — Lang_compile_dock now refuses that as a compile_error, but a compile_error
         //      is TERMINAL below, so the dock would never compile.  Hold here instead (the reqonce
         //       is not consumed), so it fires exactly once, cleanly, the moment the parser lands.
+        //   This guards "NO parser at all" only.  A WRONG-but-present parser (stho baked onto a
+        //    just-opened .md) is no longer this gate's problem: Lang_compile_dock builds its own
+        //     source on lang(path) (Lang_handover.md §7, role #2), so it indexes as markdown even
+        //      while this gate sees the present-but-stale stho facet and waves it through.
         if (dock.c.state && !H.Lang_has_lang_parser(dock.c.state)) {
             H.i_req_ttlilt(req, 0.5, { waiting: 'parser' })
             return
@@ -2163,7 +2167,11 @@
         if (dock?.o({ Pmirrors: 1 })[0]) this.Lang_show_pmirrors(w, dock)
 
         const model     = w.c.model as TheC
-        const state     = dock?.c.state
+        // whatsthis dumps the syntax tree at each bookmark for the Story snap — a parse-tree
+        //  read, so it needs the state the Map was compiled against (Lang_index_state), which
+        //   carries the RIGHT parser (Lang_handover.md §7, role 3b), not the live dock.c.state
+        //    whose language compartment may still be mid-reconfigure.
+        const state     = dock ? this.Lang_index_state(dock) : undefined
         const opt       = {compound_nodes: !!w.c.compo}
         const bookmarks = (dock?.o({ bookmark: 1 }) ?? []) as TheC[]
 

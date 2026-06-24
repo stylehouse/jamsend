@@ -203,23 +203,39 @@ import { lang, lang_for_path } from "./lang/lang"
 
     // ── Lang_compile_source_state — the EditorState to COMPILE (not to display) ─────
     //
-    //   A ghost_compile must compile the freshly-read DISK text, not whatever the editor's
-    //    buffer happens to hold (it lags the async reseat — the one-round lag).  So build
-    //     the compile-source state here, decoupled from dock.c.state:
-    //      - editor mounted (dock.c.state present): reuse its config — same parser, theme,
-    //         compartments — and just swap the doc to `text` via a transaction.  Cheap, and
-    //          guaranteed to match the language the editor itself is configured with.
-    //      - no editor state (a headless runner, or a dock not yet mounted): build a fresh
-    //         state from the language registry, lang(path).  This is the DOM-free bridge —
-    //          EditorState.create + the Lezer parser, no mounted view — which is exactly why
-    //           a ghost_compile can now be driven, and tested, headless.
-    //   Never stamps dock.c.state: the editor keeps its own buffer; this is a throwaway state
-    //    that exists only to feed Lang_compile_dock the right bytes.
-    async Lang_compile_source_state(dock: TheC, text: string, path: string): Promise<EditorState> {
-        const cur = dock.c.state as EditorState | undefined
-        if (cur) return cur.update({ changes: { from: 0, to: cur.doc.length, insert: text } }).state
-        const exts = await lang(lang_for_path(path))
-        return EditorState.create({ doc: text, extensions: exts })
+    //   The compile source is decoupled from the display buffer (Lang_handover.md §7, role
+    //    #2): it owns its own bytes AND its own parser, so the index is correct regardless of
+    //     where the editor's async language-reconfigure happens to be.  That single guarantee
+    //      retires three masks at once — the .md-stranded-on-stho first open, the language-
+    //       reconfigure lag, and "there is no headless compile" (a remote ghost_compile no
+    //        longer has to mount a dock just to borrow a dock.c.state).
+    //
+    //   `text`: the doc to compile.  A ghost_compile passes the freshly-read DISK text (the
+    //    editor's reseat into CM is async, so dock.c.state can lag a round behind it).  The
+    //     normal in-editor compile passes undefined → compile what the editor's buffer holds.
+    //
+    //   Cheap by construction (the perf caveat — this runs on every settled keystroke, so a
+    //    fresh EditorState.create per settle would re-detonate the boomerang latency):
+    //      - dock.c.state already on the RIGHT grammar (the steady state — Langui keeps the
+    //         display compartment correct): reuse it, swapping only the doc when `text`
+    //          differs.  A transaction, not a create — and when `text` matches it IS dock.c.state,
+    //           so the happy path allocates nothing and is byte-identical to before the cut.
+    //      - WRONG/absent grammar (the first-open reconfigure window, or no view at all —
+    //         headless): synthesize a fresh state on the registry parser lang(want).  This is
+    //          the only branch that pays an EditorState.create, and it fires only on a genuine
+    //           parser mismatch, never per settle.
+    //   Never stamps dock.c.state: the editor keeps its own buffer; this is the compile's own
+    //    state, also stamped onto the job as job.c.source_state (the Map's coordinate frame).
+    async Lang_compile_source_state(dock: TheC, text: string | undefined, path: string): Promise<EditorState> {
+        const want = (dock.sc.lang_override as string) ?? lang_for_path(path)   // mirrors Langui's reconfigure `want`
+        const cur  = dock.c.state as EditorState | undefined
+        const body = text ?? cur?.doc.toString() ?? ''
+        if (cur && this.Lang_state_lang_is(cur, want)) {
+            if (body === cur.doc.toString()) return cur
+            return cur.update({ changes: { from: 0, to: cur.doc.length, insert: body } }).state
+        }
+        const exts = await lang(want)
+        return EditorState.create({ doc: body, extensions: exts })
     },
 
     // ── Lang_compile ──────────────────────────────────────────────────────────
@@ -258,17 +274,6 @@ import { lang, lang_for_path } from "./lang/lang"
     async Lang_compile_dock(w: TheC, dock: TheC, stateOverride?: EditorState) {
         const H = this
 
-        // The COMPILE SOURCE is an EditorState.  Normally it is the editor's live buffer
-        //  (dock.c.state), but a ghost_compile hands one built straight from the fresh disk
-        //   text (Lang_compile_source_state) — decoupled from the editor's display buffer.
-        //    That is the one-round-lag fix: the editor's reseat into CodeMirror is async, so
-        //     dock.c.state can still hold the PREVIOUS edit when a channel-driven compile
-        //      fires; compiling a provided disk-text state makes the source exact, and never
-        //       disturbs dock.c.state (which point-nav, region folding and offset reads share).
-        const state = stateOverride ?? (dock.c.state as EditorState | undefined)
-        if (!state) { w.i({ see: '⚠ Lang_compile: no editorState yet' }); return }
-        if (state.doc.length === 0) return
-
         // Two compile shapes share this method.  A .g dock GEN-compiles: stho→TS,
         //  render a module, write a .go.  A points-only dock (.md, .ts, .svelte) takes
         //   the SOFT path below: build %Compile/%Map for Point/region navigation and
@@ -280,6 +285,20 @@ import { lang, lang_for_path } from "./lang/lang"
         const is_md     = /\.md$/.test(path)
         if (!gen_path && !points) return
 
+        // The COMPILE SOURCE is the compile's OWN EditorState — its own bytes and its own
+        //  parser — never dock.c.state read raw (Lang_handover.md §7, role #2).  A channel-
+        //   driven ghost_compile hands one built off the fresh disk text (stateOverride); the
+        //    in-editor compile builds one from the live buffer but on the parser lang(path)
+        //     DEMANDS, so a .md indexes as markdown even before Langui's async reconfigure has
+        //      reseated the display compartment (no more first-open extra step, no stho-on-md).
+        //   When the editor isn't mounted yet and nothing was handed in, there is genuinely
+        //    nothing to compile — bow out exactly as before (the in-editor caller, req_compile,
+        //     only reaches here past its own parser-gate, so dock.c.state is present then).
+        const state = stateOverride
+            ?? (dock.c.state ? await this.Lang_compile_source_state(dock, undefined, path) : undefined)
+        if (!state) { w.i({ see: '⚠ Lang_compile: no editorState yet' }); return }
+        if (state.doc.length === 0) return
+
         // Park the job; large source stays in .c to keep sc clean.
         const job = dock.oai({ Compile: 1 })
         job.empty()
@@ -289,11 +308,11 @@ import { lang, lang_for_path } from "./lang/lang"
         // c.compile_t0: wall-clock start for %time accounting (transient).
         job.c.compile_t0 = Date.now()
 
-        // c.source_state: the exact EditorState this %Map is about to be built against —
-        //  the Map's coordinate frame, frozen at compile.  Additive anchor for the dock-state
-        //   decoupling (Lang_handover.md §7): nothing reads it yet; the index-oracle readers
-        //    (LangRegions offset reads, whatsthis) are to be repointed off dock.c.state onto
-        //     this, so offsets resolve against what the Map was compiled on, not the live buffer.
+        // c.source_state: the exact EditorState this %Map is built against — the Map's
+        //  coordinate frame, frozen at compile (Lang_handover.md §7, role #3).  The index-
+        //   oracle readers (LangRegions offset reads, the tap, point-nav, the whatsthis
+        //    syntax dump) resolve against THIS via Lang_index_state, not the live dock.c.state,
+        //     so a Map offset is read in the very frame it was born in — no drift as you type.
         job.c.source_state = state
 
         await dock.r({ compile_error: 1 }, {})

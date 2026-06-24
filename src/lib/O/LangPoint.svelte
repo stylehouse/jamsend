@@ -326,7 +326,10 @@
     // only ever unfold ranges we put down).
     Lang_apply_Q(dock: TheC, Q: number) {
         const view  = dock.c.view  as EditorView | undefined
-        const state = dock.c.state as EditorState | undefined
+        // Fold is a DISPLAY op — it dispatches onto `view` — so it computes against the LIVE
+        //  view.state, not the debounce-stale dock.c.state (Lang_handover.md §7, role 3a): the
+        //   fold|font ranges then match exactly what is on screen, with no off-by-a-burst skew.
+        const state = view?.state as EditorState | undefined
         if (!view || !state) return
 
         const blocks  = this.Lang_indent_blocks(state)

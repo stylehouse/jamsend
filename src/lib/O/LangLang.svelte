@@ -158,7 +158,9 @@ export const grammar_hash = ${JSON.stringify(hash)}
             return
         }
 
-        const state = dock?.c.state as { doc: { toString(): string } } | undefined
+        // The generated parser must match the grammar text on SCREEN, so read the LIVE
+        //  view.state (Lang_handover.md §7, role #1), falling back to dock.c.state if no view.
+        const state = ((dock?.c.view as any)?.state ?? dock?.c.state) as { doc: { toString(): string } } | undefined
         if (!state) { w.i({ see: '⚠ gen: no active editor state' }); return }
         const source = state.doc.toString()
 

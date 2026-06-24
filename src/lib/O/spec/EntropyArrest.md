@@ -82,13 +82,19 @@ The graft model needs **no marker, no stored baseline, no step multiplier**: the
 ## 2. The `%spayer` schema
 
 ```
-spayer,re:<regex-with-captures>,tol:band,factor:1.5    within factor× of exp's value (both ways)
-spayer,re:<regex-with-captures>,tol:any                graft wholesale, any value
+spayer,re:<regex-with-captures>,tol:band,factor:1.5         within factor× of exp's value (both ways)
+spayer,re:<regex-with-captures>,tol:band,factor:1,pm:500    …or within ±500 of it (absolute slack)
+spayer,re:<regex-with-captures>,tol:any                     graft wholesale, any value
 ```
 
-- **`tol:band`** + `factor` — numeric captures; graft iff `max(got,exp) ≤ factor·min(got,exp)`
-   (and the both-≈0 case). A capture that blows the band does not graft → the line fails to
-    reconstruct → real surprise survives. No blow-out flag needed; the failure is the signal.
+- **`tol:band`** + `factor` [+ `pm`] — numeric captures; graft iff
+   `max(got,exp) ≤ factor·min(got,exp) + pm`. `factor` is the **ratio** band (a value that scales);
+    `pm` is an **absolute ± slack added after the factor** (`pm:0` default → pure ratio band, the
+     old behaviour, incl. the 0/0→in and x/0→out cases). `pm` is the right tool when a value swings
+      in absolute terms but not ratio — **compile ms** (100↔600 is 6×, yet "within 500 of 500" is
+       fine): set `pm` and drop `factor` toward 1. A capture that blows *both* does not graft → the
+        line fails to reconstruct → real surprise survives. No blow-out flag needed; the failure is
+         the signal.
 - **`tol:any`** — graft every capture unconditionally. The **hash / signature / timestamp**
    case, and the seam to prepub-subjectivity testing: swappable Alice+Bob sets on one PeerJS
     make pubkeys/signatures/timestamps vary; `tol:any` relaxes a whole span — yet the
@@ -299,7 +305,8 @@ The seed **errs vague after the mainkey**, two ways, because a too-loose locator
  re-deriving until the user edits the field.
 
 **The spayer editor** is a `tol` band|any toggle (rendered as an overlapping mutex switch) +
- `factor` + a capture `re`. `H.entropy_suggest(right, left)` proposes them: changed keys become
+ `factor` + a `±` field (the absolute `pm` slack, band only, omitted from the snap when 0) + a
+  capture `re`. `H.entropy_suggest(right, left)` proposes them: changed keys become
   captures, stable text stays a literal anchor, and `tol` autodetects — any number → `band`
    factor **1.5** (even a unix timestamp: seconds of drift sit far inside 1.5×); a non-numeric
     hash/signature token → `any`. All fields stay editable. The suggested `re` now joins anchors

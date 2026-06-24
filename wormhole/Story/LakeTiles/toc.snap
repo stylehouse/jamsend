@@ -34,28 +34,28 @@ story:LakeTiles
         nowriting:^Ghost
         dontSnapGhostList
   TimeSpool
-    TimeTotal:beliefs,avg=2.014
-      sample=2.024,at=1782283829
-      sample=2.307,at=1782285317
-      sample=2.393,at=1782286574
-      sample=1.562,at=1782286768
-      sample=1.562,at=1782286861
-      sample=2.275,at=1782288174
-      sample=1.815,at=1782288197
-      sample=2.16,at=1782289542
-      sample=2.16,at=1782289568
-      sample=1.879,at=1782289584
-    TimeTotal:step,avg=0.224
-      sample=0.225,at=1782283829
-      sample=0.256,at=1782285317
-      sample=0.266,at=1782286574
-      sample=0.174,at=1782286768
-      sample=0.174,at=1782286861
-      sample=0.253,at=1782288174
-      sample=0.202,at=1782288197
-      sample=0.24,at=1782289542
-      sample=0.24,at=1782289568
-      sample=0.209,at=1782289584
+    TimeTotal:beliefs,avg=2.381
+      sample=3.244,at=1782290244
+      sample=2.716,at=1782290511
+      sample=2.812,at=1782291514
+      sample=2.812,at=1782292171
+      sample=2.044,at=1782292185
+      sample=2.042,at=1782292892
+      sample=1.812,at=1782293292
+      sample=2.112,at=1782293334
+      sample=2.112,at=1782293358
+      sample=2.1,at=1782293377
+    TimeTotal:step,avg=0.264
+      sample=0.36,at=1782290244
+      sample=0.302,at=1782290511
+      sample=0.312,at=1782291514
+      sample=0.312,at=1782292171
+      sample=0.227,at=1782292185
+      sample=0.227,at=1782292892
+      sample=0.201,at=1782293292
+      sample=0.235,at=1782293334
+      sample=0.235,at=1782293358
+      sample=0.233,at=1782293377
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
     Entcase:theCompiledStuff_say-at
@@ -66,13 +66,17 @@ story:LakeTiles
       lematch,Waft,takes
         lematch,Point:theCompiledStuff,doc:Ghost/test/Story/Lake/LakeTiles.g
           means,spayer,re:Point:theCompiledStuff.+last={INT}.+first={INT}.+heat={NUM},tol:any
+    Entcase:theCompiledStuff_say
+      lematch,Point:theCompiledStuff,doc:Ghost/test/Story/Lake/LakeTiles.g,bright,held,long
+        lematch,say,at
+          means,spayer,re:say:{TOK}.at={INT},tol:any
   step,dige:88b70b44e6c98e92
   step=2,dige:23ec4d1f0342e49b
   step=3,dige:d9f8e297427f9b71
   step=4,dige:61ce1807eff97b65
     note,bug:Cyto edge problems with Leg/PeelGroup/Leg the other PeelGroup alone
   step=5,dige:e7c584d72e9dc7c9
-  step=6,dige:d30092f3367a2275
+  step=6,dige:a8141b42ae32823f
   step=7,dige:2cdb9b705c66aa37
   step=8,dige:f1ecf063f8cd0078
-  step=9,dige:464ca87c541cd5b5
+  step=9,dige:bc4107733428b655

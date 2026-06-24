@@ -157,6 +157,10 @@
     // the fuzz tub shows only for a spayer with anchors to wind down, and retires on hand-edit
     let show_tub = $derived(is_spayer && !re_dirty && !!fuzz && (fuzz.head_seq.length > 1 || fuzz.tail_seq.length > 1))
     let factor   = $state(1.5)
+    // pm — absolute ± slack added after the factor (band only): a value is in-band within
+    //  factor× OR within ±pm of exp.  0 = off (pure ratio band).  For a value that swings in
+    //   absolute terms but not ratio — compile ms — set pm and drop factor toward 1.
+    let pm       = $state(0)
     let scope_on = $state(false)
     // slug auto-derives from the form beneath until the user edits it (§8.6)
     let slug_edited = $state(false)
@@ -258,7 +262,7 @@
         // spayer: ask the engine for a capture-style regex + tolerance, and seed the fuzz
         //  tub from its structured parts (a fresh draft starts at full precision, head|tail 0).
         const sug = H.entropy_suggest(s.right, s.left)
-        re_dirty = false; h_fuzz = 0; t_fuzz = 0
+        re_dirty = false; h_fuzz = 0; t_fuzz = 0; pm = 0
         if (sug) { re_text = sug.re; mode = sug.tol as 'band' | 'any'; factor = sug.factor ?? 1.5; re_parts = sug.parts }
         // no suggestion: a numeric noisy key still defaults to band (the common case);
         //  only a non-numeric locator falls back to any.  No parts ⇒ no fuzz tub.
@@ -349,7 +353,7 @@
     //#region commit / delete / edit
     function reset() {
         active = false; at_text = ''; noisy = undefined
-        re_text = ''; mode = 'band'; factor = 1.5; scope_on = false
+        re_text = ''; mode = 'band'; factor = 1.5; pm = 0; scope_on = false
         slug_edited = false; slug_manual = ''
         re_parts = []; re_dirty = false; h_fuzz = 0; t_fuzz = 0
     }
@@ -363,7 +367,7 @@
         let means: { kind: string, [k: string]: any }
         if (is_spayer) {
             if (!re_text.trim()) return
-            means = mode === 'band' ? { kind: 'spayer', re: re_text, tol: 'band', factor }
+            means = mode === 'band' ? { kind: 'spayer', re: re_text, tol: 'band', factor, ...(pm ? { pm } : {}) }
                                     : { kind: 'spayer', re: re_text, tol: 'any' }
         } else {
             means = { kind: mode }
@@ -424,6 +428,7 @@
         re_parts    = []; re_dirty = true; h_fuzz = 0; t_fuzz = 0
         mode        = k === '?' ? 'band' : k
         factor      = (sp?.sc.factor as number) ?? 1.5
+        pm          = (sp?.sc.pm as number) ?? 0
         noisy       = undefined
         slug_edited = true
         slug_manual = String(cap.sc.Entcase)
@@ -525,9 +530,13 @@
                     {/each}
                 </div>
                 {#if mode === 'band'}
-                    <label class="ea-field">factor
+                    <label class="ea-field" title="ratio band: in-band within factor× of expected (either way)">factor
                         <input class="ea-input ea-num" type="number" step="any" value={factor}
                                oninput={(e) => factor = Number((e.target as HTMLInputElement).value)} />
+                    </label>
+                    <label class="ea-field" title="absolute ± slack ADDED after the factor — e.g. ±500 = within 500 of expected.  For a value that jumps in absolute terms but not ratio (compile ms): set ± and drop factor toward 1.  0 = off.">±
+                        <input class="ea-input ea-num" type="number" step="any" value={pm}
+                               oninput={(e) => pm = Number((e.target as HTMLInputElement).value)} />
                     </label>
                 {/if}
             </div>

@@ -117,6 +117,49 @@ export const LANG_COMPILE = {
         } catch { return false }
     },
 
+    // Does this EditorState already carry the grammar named `want`?
+    //
+    //   The compile-source decoupling (Lang_handover.md §7) lets Lang_compile_source_state
+    //    REUSE a mounted dock.c.state when its parser already matches the path — the hot
+    //     settle path, a transaction not an EditorState.create — and synthesize a fresh
+    //      state on lang(want) only when it doesn't.  This is the "already matches" test.
+    //   Positive grammar identity, so a FALSE POSITIVE (reuse a wrong-parser state) is
+    //    impossible — that is the one outcome that would reintroduce the bug we are closing
+    //     (a .md compiled by the stho parser).  A false negative only costs one needless
+    //      synthesis, never correctness:
+    //        stho     — owns the IOing node, which no other grammar has.
+    //        markdown — its parser is a MarkdownParser (the @lezer/markdown class).
+    //        tsstho   — the other LR grammar: a parser that is neither markdown nor stho.
+    //      An unknown `want` trusts whatever is wired (we have nothing to compare against).
+    Lang_state_lang_is(state: EditorState | undefined, want: string): boolean {
+        try {
+            const parser: any = (state?.facet(language as any) as any)?.parser
+            if (!parser) return false
+            const cn       = parser.constructor?.name ?? ''
+            const isMd     = /Markdown/i.test(cn)
+            const hasIOing = (parser.nodeSet?.types ?? []).some((t: any) => t?.name === 'IOing')
+            switch (want) {
+                case 'stho':     return hasIOing
+                case 'markdown': return isMd
+                case 'tsstho':   return !isMd && !hasIOing
+                default:         return true
+            }
+        } catch { return false }
+    },
+
+    // The EditorState a dock's %Map was compiled against — its coordinate frame.
+    //
+    //   Stamped on the Compile job at compile (job.c.source_state, LangCompiling).  Map
+    //    offsets are BORN in this frame, so a reader interpreting one (point-nav, def-at-
+    //     offset, the tap, the whatsthis syntax dump) must resolve against THIS, not the
+    //      live dock.c.state — else rel_*/abs_* offsets drift the first keystroke after a
+    //       compile (Lang_handover.md §7, the 3b readers).  Falls back to dock.c.state
+    //        before the first compile, where there is no snapshot yet.
+    Lang_index_state(dock: TheC): EditorState | undefined {
+        const job = dock?.o({ Compile: 1 })[0] as TheC | undefined
+        return (job?.c.source_state as EditorState | undefined) ?? (dock?.c.state as EditorState | undefined)
+    },
+
     // Codetypes we index for Points but never compile to a .go: markdown specs
     //  (the heading TOC) and tsstho (.ts/.svelte method+call Map).  Lang_compile_dock
     //  runs its soft path on these — builds %Map, writes nothing.  Disjoint from
@@ -213,24 +256,6 @@ export const LANG_COMPILE = {
                                  from: w.from, to: w.to, line: w.line })
             wc.c.region_path = w.region_path
         }
-
-        // ── TEMP diagnostics — remove once the markdown TOC is confirmed.  The TOC
-        //    came up empty in-app though parse-by-parser found every heading headless,
-        //    so surface WHAT we actually walked onto the Compile particle (visible in
-        //    the snap): the parser class, the tree length, the top node, and the first
-        //    dozen top-level child node names.  If md_parser isn't MarkdownParser or
-        //    md_kids has no ATXHeading*, the wrong grammar is wired on the state.
-        try {
-            const p: any = (state.facet(language as any) as any)?.parser
-            const kids: string[] = []
-            const cur: any = tree?.cursor?.()
-            if (cur && cur.firstChild()) { do { kids.push(cur.name) } while (kids.length < 12 && cur.nextSibling()) }
-            job.sc.md_parser = p?.constructor?.name ?? 'none'
-            job.sc.md_len    = tree?.length ?? -1
-            job.sc.md_top    = tree?.type?.name ?? '?'
-            job.sc.md_kids   = kids.join('>') || '(none)'
-            job.sc.md_heads  = words.length
-        } catch (e: any) { job.sc.md_diag = String(e?.message ?? e).slice(0, 80) }
 
         this.trace(`Lang`, `Markdown TOC regions x${words.length}`)
     },

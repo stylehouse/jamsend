@@ -936,17 +936,19 @@
 
     // spay_within — is the got capture tolerable against its exp pair?
     //   tol:any  → always (hashes / signatures / timestamps — graft wholesale).
-    //   tol:band → numeric, within factor× either way (and the both-zero case).
+    //   tol:band → numeric: within factor× either way, PLUS an absolute ±pm slack added AFTER
+    //               the factor — `max(a,b) <= factor*min(a,b) + pm` (pm=0 default).  pm catches a
+    //                value that jumps in ABSOLUTE terms but not ratio (compile ms: 100↔600 is 6×
+    //                 yet ±500 is fine); with pm=0 this is exactly the old ratio-only band — its
+    //                  0/0→in and x/0→out cases fall straight out of the one inequality.
     //   Legacy: a spayer with no `tol` is read as band when kind:band, else any.
-    spay_within(g: string, e: string, tol: string, factor?: number): boolean {
+    spay_within(g: string, e: string, tol: string, factor?: number, plusminus?: number): boolean {
         if (tol === 'any') return true
         if (tol === 'band') {
             const gv = parseFloat(g), ev = parseFloat(e)
             if (Number.isNaN(gv) || Number.isNaN(ev)) return false
-            const a = Math.abs(gv), b = Math.abs(ev), f = factor ?? 10
-            if (a === 0 && b === 0) return true
-            if (a === 0 || b === 0) return false
-            return Math.max(a, b) <= f * Math.min(a, b)
+            const a = Math.abs(gv), b = Math.abs(ev), f = factor ?? 10, pm = plusminus ?? 0
+            return Math.max(a, b) <= f * Math.min(a, b) + pm
         }
         return false
     },
@@ -975,7 +977,7 @@
                 for (const grp of groups) {
                     const gcap = gm[grp], ecap = em[grp]
                     if (gcap == null || ecap == null || gcap === ecap) continue
-                    if (!this.spay_within(gcap, ecap, tol, sp.factor)) continue
+                    if (!this.spay_within(gcap, ecap, tol, sp.factor, sp.pm)) continue
                     const span = (gm as any).indices?.[grp]
                     if (!span) continue
                     edits.push({ start: span[0], end: span[1], text: ecap })
@@ -1035,7 +1037,7 @@
                     const gcap = gm[grp], ecap = em[grp]
                     if (gcap == null || ecap == null) continue
                     touched = true
-                    if (gcap !== ecap && !this.spay_within(gcap, ecap, tol, sp.factor)) blown = true
+                    if (gcap !== ecap && !this.spay_within(gcap, ecap, tol, sp.factor, sp.pm)) blown = true
                 }
             }
         }
