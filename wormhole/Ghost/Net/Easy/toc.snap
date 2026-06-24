@@ -1,6 +1,10 @@
-Waft:Ghost/Net/Easy
+Waft:Ghost/Net/Easy,active
   Funkcion:CreduFunk
     Funkcion:Storying,of_Book:PereStaple
+    CreduCoherence:latest
+      Credulate,of_Book:PereStaple,vset:Ghost_N_Peeroleum@2b17c426d1cc9020|Ghost_N_Tribunal@683d031e368194c6,finished_at=1782269354667
+        GhostInclude:Ghost_N_Peeroleum,dige:2b17c426d1cc9020
+        GhostInclude:Ghost_N_Tribunal,dige:683d031e368194c6
   What:the peer
     Doc:Ghost/N/Peeroleum.g
     Point,method:Peeroleum
@@ -31,7 +35,7 @@ Waft:Ghost/Net/Easy
         Point,method:Lake_trial_arm
         Point,method:Lake_trial_fallback
         Point,method:Lake_trial_confirm
-  What:the cabinetry
+  What:Security
     Doc:Ghost/N/Tyrant.g
     Point,method:Run_A_Tyrant
     Point,method:Tyrant

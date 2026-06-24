@@ -12,7 +12,7 @@
 //
 // `this` at call time is H (the in-app House). @ts-nocheck: these moved verbatim
 //  and lean on that loose `this` (House) typing — runtime is the contract, not tsc.
-import { syntaxTree, language } from "@codemirror/language"
+import { syntaxTree, language, ensureSyntaxTree } from "@codemirror/language"
 import type { EditorState } from "@codemirror/state"
 import type { SyntaxNode } from "@lezer/common"
 import { parser as jsBaseParser } from "@lezer/javascript"   // in-browser syntax gate (ts dialect) — see Lang_validate_rendered_module
@@ -126,6 +126,30 @@ export const LANG_COMPILE = {
         return /\.(?:md|ts|svelte)$/.test(path ?? '')
     },
 
+    // A COMPLETE syntax tree for `state`, forcing a parse when CodeMirror's incremental
+    //  tree is empty or partial.  syntaxTree(state) is lazy and viewport-driven: an
+    //   off-view dock (or a freshly-built state not yet attached to a view) yields a
+    //    tree of length 0, which silently blanked BOTH the markdown TOC and the bookmark
+    //     syntax dump (whatsthis_txt's "no tree" bail).  When the lazy tree already
+    //      covers the whole doc we keep it — that dodges a redundant whole-doc reparse and
+    //       the stho grammar's error-recovery storm on raw-TS lines.  Otherwise force a
+    //        full parse via the language facet's parser (the same parser syntaxTree feeds;
+    //         markdown/ts are linear enough), falling back to ensureSyntaxTree then the
+    //          lazy tree so a caller always gets *some* tree rather than null.
+    Lang_full_tree(state: EditorState): any {
+        const lazy = syntaxTree(state)
+        if (lazy && lazy.length >= state.doc.length) return lazy
+        try {
+            const parser: any = (state.facet(language as any) as any)?.parser
+            if (parser) return parser.parse(state.doc.sliceString(0))
+        } catch { /* fall through to ensureSyntaxTree */ }
+        try {
+            const forced = ensureSyntaxTree(state, state.doc.length, 5000)
+            if (forced) return forced
+        } catch { /* fall through to the lazy tree */ }
+        return lazy
+    },
+
     // Scan a markdown dock's headings into %Compile/%Map as region entries — the
     //  same vocabulary Lang_compile_collect emits for //#region, so the minimap,
     //  the Mapulen and the fold logic read a markdown TOC with no markdown-specific
@@ -141,20 +165,9 @@ export const LANG_COMPILE = {
     //    nothing to return — the caller takes the soft (no-gen) close.
     Lang_collect_markdown_regions(state: EditorState, job: TheC): void {
         const doc  = state.doc
-
-        // Parse the WHOLE document — NOT syntaxTree(state).  CodeMirror parses its
-        //  tree lazily within a time budget, and for an off-view compile (no editor
-        //   viewport driving it) that tree can be empty or cover only the opening
-        //    lines — which silently collapsed the TOC to zero headings.  The language
-        //     facet's parser (the same one syntaxTree feeds) parses a string fully and
-        //      synchronously; only markdown reaches here and its parser is linear, so a
-        //       whole-doc parse is cheap.  Fall back to the lazy tree only if no parser
-        //        is wired (the caller's Lang_has_lang_parser guard makes that rare).
-        let tree: any
-        try {
-            const parser: any = (state.facet(language as any) as any)?.parser
-            tree = parser ? parser.parse(doc.sliceString(0)) : syntaxTree(state)
-        } catch { tree = syntaxTree(state) }
+        // Lang_full_tree forces a complete parse — syntaxTree(state) is empty for an
+        //  off-view compile, which collapsed the TOC to zero headings.
+        const tree = this.Lang_full_tree(state)
 
         // 1-based line number for a doc offset — binary search (twin of the lineOf
         //  inside Lang_compile_collect).

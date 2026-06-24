@@ -296,6 +296,14 @@
         const up  = doc_C.c.up as TheC | undefined
         const src = (up && up.sc.Waft === undefined) ? up : doc_C
 
+        // Remember WHICH Doc was clicked, on the What we lifted to.  A multiDocWhat
+        //  resolves to its first Doc by default (Waft_src_doc rule 2), so without
+        //   this, clicking the 3rd Doc of What:`the spec` opened the 1st.  Sticky
+        //    per What and off-snap: a later bare What-click reads it back as the
+        //     active Doc (cursor-memory); cleared by nothing — a stale path just
+        //      falls through to first-Doc on read.
+        if (src !== doc_C) src.c.chosen_doc = doc_C.sc.Doc
+
         this.i_elvisto(w, 'Lies_want', { src, kind: 'click' })
     },
 

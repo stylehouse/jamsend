@@ -825,9 +825,12 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 const examining = w.o({ examining: 1 })[0] as TheC | undefined
                 const cur_src   = examining?.o({ Spotlight: 1 })[0]?.sc.src as TheC | undefined
                 const cur_waft  = cur_src ? H.waft_key_of(cur_src) : undefined
-                const waft = (w.o({ Waft: 1 }) as TheC[]).find(wf => wf.sc.active)
-                    ?? (cur_waft ? w.o({ Waft: cur_waft })[0] as TheC | undefined : undefined)
-                    ?? w.o({ Waft: 1 })[0] as TheC | undefined
+                // backstage (%boring) Wafts are never acquired — else a profile opened
+                //  before Waftily would win the gate and drag the editor focus onto itself.
+                const wafts = (w.o({ Waft: 1 }) as TheC[]).filter(wf => !wf.sc.boring)
+                const waft = wafts.find(wf => wf.sc.active)
+                    ?? (cur_waft ? wafts.find(wf => wf.sc.Waft === cur_waft) : undefined)
+                    ?? wafts[0]
                 if (!waft) return
                 desire.oai({ Waft: waft.sc.Waft as string }, { src: waft })
 

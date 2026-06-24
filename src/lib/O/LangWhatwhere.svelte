@@ -230,7 +230,9 @@
     //  - we don't measure text, don't emit `order`, don't tag bm_keys —
     //    none of that is useful for plain-text reading
     whatsthis_txt(state:EditorState, model:TheC, bookmarks:TheC[]) {
-        const tree = syntaxTree(state)
+        // Lang_full_tree forces a complete parse: syntaxTree(state) is empty for a
+        //  markdown dock parsed off-view, which is the "no tree" the dump used to show.
+        const tree = this.Lang_full_tree(state)
         if (!tree || tree.length === 0) return
         const doc = state.doc
 

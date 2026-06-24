@@ -431,7 +431,10 @@
         waft.bump_version()
         // await tick so derived display values re-read updated sc before edit mode clears
         await tick()
+        // close both the edit form and the irow overlay — orb openness is coupled,
+        //  same as on_orb's second-click and the cancel paths.  Submitting is "done".
         editing.delete(item)
+        orb_open_C.delete(item)
     }
     function delete_item(item: TheC, container: TheC) {
         container.drop(item)

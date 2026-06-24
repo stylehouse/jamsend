@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Tyrant(): string { return 'd9455412901394d4' },
+    Ghostmeta_Ghost_N_Tyrant(): string { return '14cd36bb03c4f617' },
 
 // Tyrant — the cabinetry over the Peeroleum floor: identity & trust → admission.
 //  A clean-room rebirth of legacy Tyranny, in stho, riding the Peeroleum transport
@@ -29,7 +29,7 @@
 //     step 3  arm %req:join + drive the policy gate ⇒ %witnessed:step_3 (both w/%member,signed)
 
 // Run_A_Tyrant — the Book's Run recipe (Story_subHouse calls it to wire the Run),
-//  mirroring Run_A_PereStartuppity. Lay the single test actor + its w; the role is
+//  mirroring Run_A_PereStaple. Lay the single test actor + its w; the role is
 //   already 'runner' (Auto/boot) — this just guards it.
 Run_A_Tyrant() {
     this.c.role ??= 'runner'
@@ -37,7 +37,7 @@ Run_A_Tyrant() {
 
 },
 // Per beat: install the eternal %req:wrangle whose do_fn drives the inner steps. Like
-//  PereStartuppity, we do NOT use H.on_step (it keys off one H-global did_on_step_n that a
+//  PereStaple, we do NOT use H.on_step (it keys off one H-global did_on_step_n that a
 //   step-1 table claims when setup spills into step 2); Tyrant_drive keeps a req-local
 //    did_step instead.
 Tyrant(A,w) {
@@ -66,7 +66,7 @@ async Tyrant_drive(w, req) {
 },
 // Tyrant_sides_up — step 2: stand up both GIVEN sides directly (magic provisioning), pair
 //  their mock-ports, register the vouch receive handler, and seed %req:trust on each Pier.
-//   Mirrors PereStartuppity's Lake_sides_up, with two differences: %Ud is pre-stamped (so the
+//   Mirrors PereStaple's Lake_sides_up, with two differences: %Ud is pre-stamped (so the
 //    spine's pre-Ud inbox gate lets a `vouch` frame through), and a `vouch` handler is
 //     registered via the Peeroleum_on consumer seam (no edit to the floor).
 Tyrant_sides_up(w) {

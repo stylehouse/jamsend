@@ -957,6 +957,12 @@ await M.eatfunc({
     //   Whats nested inside a Doc both read as docless title pages.
     // Resolution order:
     //   1. src is a %Doc                → itself.
+    //   1b. c.chosen_doc — a per-%What sticky pick (a Doc-row click stamps the
+    //        clicked Doc's path here, e_Lies_set_cursor).  A multiDocWhat would
+    //        otherwise always resolve to its first Doc, so clicking the 3rd Doc
+    //        opened the 1st; honoring the pick is the cursor's Doc granularity.
+    //        Off-snap + validated against the live Doc-set, so a stale path (Doc
+    //        removed|renamed) self-heals back to the first-Doc default below.
     //   2. first %Doc descendant in document order — a container %What presents
     //        the first Doc it leads to; o({}) preserves insertion order, which
     //        is exactly snap-line order.  Wins over (3|4) so a What that
@@ -973,6 +979,11 @@ await M.eatfunc({
     Waft_src_doc(src: TheC): TheC | undefined {
         if (!src) return undefined
         if ((src.sc as any).Doc !== undefined) return src
+        const chosen = src.c.chosen_doc as string | undefined
+        if (chosen) {
+            const pick = (src.o({ Doc: 1 }) as TheC[]).find(d => (d.sc as any).Doc === chosen)
+            if (pick) return pick
+        }
         for (const child of src.o({}) as TheC[]) {
             const sc = child.sc as any
             if (sc.Doc !== undefined) return child
