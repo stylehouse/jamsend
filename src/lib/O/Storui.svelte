@@ -1350,6 +1350,8 @@
                     H={H}
                     w={story_w}
                     seed={ea_seed}
+                    covered={covered_click}
+                    diff_changed={diff_changed}
                     step_n={n}
                     on_done={() => ea_seed = null} />
 
@@ -1416,10 +1418,10 @@
                         {@const sc = row_spay_class(row)}
                         <div class="sr-diff2-cell changed sr-spayable"
                              class:spay-graft={sc === 'graft'} class:spay-blown={sc === 'blown'}
-                             title={sc === 'blown' ? 'an Entcase matches here but the value blew its variance band'
-                                  : sc === 'graft' ? 'acknowledged noise — an Entcase forgives this line'
-                                  : 'silence this noise — author an Entcase'}
-                             onclick={() => seed_spay(rows, i)}>{@render intra_line(row.left, row.ops, 'left')}</div>
+                             title={sc === 'blown' ? 'an Entcase matches here but the value blew its variance band — click to reveal it, again to edit'
+                                  : sc === 'graft' ? 'acknowledged noise — an Entcase forgives this line; click to reveal it, again to edit'
+                                  : 'silence this noise — click to author an Entcase'}
+                             onclick={() => diff_click(rows, i)}>{@render intra_line(row.left, row.ops, 'left')}</div>
                     {:else if row.kind === 'left_only'}
                         <div class="sr-diff2-cell gone">{@render line_content(row.line)}</div>
                     {:else if row.kind === 'right_only'}
@@ -1437,10 +1439,10 @@
                         {@const sc = row_spay_class(row)}
                         <div class="sr-diff2-cell changed sr-spayable"
                              class:spay-graft={sc === 'graft'} class:spay-blown={sc === 'blown'}
-                             title={sc === 'blown' ? 'an Entcase matches here but the value blew its variance band'
-                                  : sc === 'graft' ? 'acknowledged noise — an Entcase forgives this line'
-                                  : 'silence this noise — author an Entcase'}
-                             onclick={() => seed_spay(rows, i)}>{@render intra_line(row.right, row.ops, 'right')}</div>
+                             title={sc === 'blown' ? 'an Entcase matches here but the value blew its variance band — click to reveal it, again to edit'
+                                  : sc === 'graft' ? 'acknowledged noise — an Entcase forgives this line; click to reveal it, again to edit'
+                                  : 'silence this noise — click to author an Entcase'}
+                             onclick={() => diff_click(rows, i)}>{@render intra_line(row.right, row.ops, 'right')}</div>
                     {:else if row.kind === 'left_only'}
                         <div class="sr-diff2-cell gone sr-empty-cell"></div>
                     {:else if row.kind === 'right_only'}

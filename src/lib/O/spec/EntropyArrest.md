@@ -267,6 +267,19 @@ Shows when the test has caps **or** a draft is in flight, mounted under the Stor
    Nothing reaches `toc.snap` until **OK**, so you can poke around the diff without drowning in
     caps.
 
+**The click is routed, not blindly seeded** (Storui `diff_click`), so selecting regex source or
+ clicking an already-covered line can't clobber the draft:
+- **A live text selection is never a seed.** A drag-select still emits a `click`; if
+   `window.getSelection()` is non-collapsed, `diff_click` bails — so grabbing a token to paste
+    into `re` no longer spawns a stray `+Entcase`.
+- **An already-covered line reveals, doesn't author.** A changed cell whose `row_spay_class ≠ ''`
+   (a cap or default rule already reaches it) routes to a `covered` channel instead of seeding —
+    we never author a duplicate cap over one that already bites. The first such click **glows the
+     owning local cap's row for ~2s** (`hl_slug`, `ea-cap-hl`); a second click while it glows
+      **loads that cap into the draft to edit** (`edit_cap`). A line owned only by a shared/default
+       rule reveals nothing (nothing local to edit) but still never seeds.
+- **Only a genuinely-uncovered changed line** (`row_spay_class === ''`) seeds a new draft.
+
 **The locator (`at`)** is one text field of peelables split by ` / `, outer→leaf (e.g.
  `A:Lang / self,round`). Plain text ⇒ Ctrl-Z for free, no segment widget. Each chunk
   `peel()`s into one `%lematch` segment's sc (`self,round` → `{self:1,round:1}`; `w:Lang` →
@@ -321,8 +334,13 @@ The seed **errs vague after the mainkey**, two ways, because a too-loose locator
    calls `entropy_mint`, then `story_save()`. Compiled rules are read at snap time, so a
     **restart re-reads the caps to apply them** (the panel no longer spends a row saying so —
      the footer is the fuzz tub's home now). The CRUD list edits
-     (`edit_cap` loads the draft) and deletes (`entropy_delete` → `entropy_unmint`) existing
-      caps; `cap_spayer` reads the handler from the leaf `%means`.
+     (`edit_cap` loads the draft) and deletes existing caps; `cap_spayer` reads the handler from
+      the leaf `%means`. Each cap row carries a **match tally** (`cap_tally` → `N×`, near edit|×) —
+       how many of the open step's changed diff lines that cap reaches this step, classified by its
+        own compiled spayers (`cap_own_spayers` = `collect_spayers([entropy_rule_of(cap)])`). Delete
+         is a **two-stage confirm** (`ui/micro/DeleteX`: first click arms a red `delete?` pill, a
+          second within ~2s fires `entropy_delete` → `entropy_unmint`) so a stray click can't drop a
+           cap.
 
 We deliberately do **not** live-test the locator/regex in the panel — verification is the next
  run's diff, not an inline preview.
@@ -350,12 +368,17 @@ We deliberately do **not** live-test the locator/regex in the panel — verifica
      the `check_snap` forgive block.
 - **Storui.svelte** — the `<EntropyArrest>` mount, `ea_seed` + `seed_spay` + `diff_parent_line`,
    the `.sr-spayable` clickable `changed` cells (graft = dimmed/receding, blown = amber pulse),
-    the `≈` caveat badge/pip, and `spayers` passed into `enDif` so a copied diff carries the tags.
+    `diff_click` (the routed click: selection-guard → `covered_click` for an already-reached line →
+     `seed_spay` only for an uncovered one), `diff_changed` (the open step's changed pairs, fed to
+      the cap tally), the `≈` caveat badge/pip, and `spayers` passed into `enDif` so a copied diff
+       carries the tags.
 - **ui/EntropyArrest.svelte** — the editor: draft, `at` field (`loc_chunk`/`noisy_val` wildcard the
    changing key + everything after it AND any noisy-looking value after the mainkey), slug, the
     `means` 4-way mutex (band | any | drop | dontSnap), factor/re (spayer only), the **fuzz tub**
      (`fuzz_seq`/`fuzz_model`/`compose_re` + the head|tail sliders, retires on hand-edit),
-      `{NUM}`/`{TOK}` re-sugar on load, CRUD.
+      `{NUM}`/`{TOK}` re-sugar on load, CRUD. The `covered`-line reveal/edit (`on_covered` + `hl_slug`
+       2s glow), the per-cap match tally (`cap_own_spayers`/`cap_tally`), and the two-stage delete
+        (`ui/micro/DeleteX`).
 - **scripts/Story_cli.spec.ts** — the lenient runner; gates got-before vs got-after.
 
 ---

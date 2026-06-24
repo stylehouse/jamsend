@@ -30,6 +30,7 @@
     import type { House } from "$lib/O/Housing.svelte"
     import { peel, depeel } from "$lib/Y.svelte"
     import Vexpandy from "$lib/O/ui/Vexpandy.svelte"
+    import DeleteX from "$lib/O/ui/micro/DeleteX.svelte"
 
     // ── the fuzz tub: wind the suggested re's head|tail anchors down toward greedy ───
     //   entropy_suggest hands back the re's `parts` (anchors + captures).  The captures
@@ -106,12 +107,17 @@
         return re
     }
 
-    let { H, w, seed, step_n, on_done }: {
-        H:       House
-        w:       TheC | undefined
-        seed:    { left: string, right: string, parent?: string | null } | null
-        step_n:  number | null
-        on_done: () => void
+    let { H, w, seed, covered = null, diff_changed = [], step_n, on_done }: {
+        H:            House
+        w:            TheC | undefined
+        seed:         { left: string, right: string, parent?: string | null } | null
+        // a click on a changed diff line a cap ALREADY reaches (Storui already gated out
+        //  text-selection + uncovered lines): reveal that cap, edit it on a second click.
+        covered?:     { left: string, right: string, token: number } | null
+        // this step's changed diff line-pairs — drives the per-cap match tally beside edit|×.
+        diff_changed?: { left: string, right: string }[]
+        step_n:       number | null
+        on_done:      () => void
     } = $props()
 
     //#region draft fields — discrete state (no segment widget, just inputs)
@@ -265,6 +271,65 @@
     }
     //#endregion
 
+    //#region per-cap match — which diff lines a single cap reaches
+    // Compile JUST this cap (its own re) so we can tell which changed lines IT bites — the same
+    //  classify the merged compare uses, but scoped to one cap.  Drives the match tally and
+    //   routes a covered-line click to the cap that owns the line.
+    function cap_own_spayers(cap: TheC): any[] {
+        const rule = H.entropy_rule_of(cap)
+        return rule ? H.collect_spayers([rule]) : []
+    }
+    function cap_hits_line(cap: TheC, left: string, right: string): boolean {
+        const sps = cap_own_spayers(cap)
+        return sps.length > 0 && H.spay_classify_line(right ?? '', left ?? '', sps) !== 'none'
+    }
+    // how many of this step's changed diff lines this cap reaches (graft or blown) — a live count
+    //  beside the cap's edit|× so you can see which caps are actually biting this step.
+    function cap_tally(cap: TheC): number {
+        if (!diff_changed?.length) return 0
+        const sps = cap_own_spayers(cap)
+        if (!sps.length) return 0
+        return diff_changed.filter(d => H.spay_classify_line(d.right ?? '', d.left ?? '', sps) !== 'none').length
+    }
+    //#endregion
+
+    //#region covered-line click — reveal the cap, edit on a second click
+    // A click on a changed line a cap already owns doesn't author a new cap (Storui gated that
+    //  out).  First such click GLOWS the owning cap's row for 2s — so you can see which one it is;
+    //   a second click while it glows loads it into the draft to edit.  Local caps only — a line
+    //    owned solely by a shared/default rule simply reveals nothing (and never seeds).
+    let hl_slug = $state<string | null>(null)
+    let hl_timer: ReturnType<typeof setTimeout> | undefined
+    let _covered_seen: typeof covered = null
+    function clear_hl() { hl_slug = null; if (hl_timer) { clearTimeout(hl_timer); hl_timer = undefined } }
+    $effect(() => {
+        const c = covered
+        if (c && c !== _covered_seen) { _covered_seen = c; on_covered(c) }
+    })
+    function on_covered(c: { left: string, right: string }) {
+        // the cap that owns this line — a LOCAL one first, else a SHARED one (read-only, so a
+        //  second click opens its profile to edit at the source rather than loading the draft).
+        let cap = caps.find(cp => cap_hits_line(cp, c.left, c.right))
+        let ref: string | undefined
+        if (!cap) for (const grp of shared) {
+            const m = grp.caps.find(cp => cap_hits_line(cp, c.left, c.right))
+            if (m) { cap = m; ref = grp.ref; break }
+        }
+        if (!cap) return                       // owned only by a code default — nothing to reveal
+        const slug = String(cap.sc.Entcase)
+        if (hl_slug === slug) {                // second click → edit (local: draft; shared: source)
+            clear_hl(); expanded = true
+            if (ref) open_profile(ref)
+            else     edit_cap(cap)
+        } else {
+            expanded = true
+            hl_slug  = slug
+            if (hl_timer) clearTimeout(hl_timer)
+            hl_timer = setTimeout(clear_hl, 2000)
+        }
+    }
+    //#endregion
+
     //#region slug derivation
     function chunks(at: string): string[] {
         return at.split(/\s+\/\s+/).map(c => c.trim()).filter(Boolean)
@@ -388,13 +453,18 @@
     {#if expanded}
     <!-- existing authored caps — CRUD list -->
     {#each caps as cap (cap.sc.Entcase)}
-        <div class="ea-cap">
+        {@const tally = cap_tally(cap)}
+        <div class="ea-cap" class:ea-cap-hl={hl_slug === String(cap.sc.Entcase)}>
             <span class="ea-cap-tol ea-tol-{cap_tol(cap)}">{cap_tol(cap)}</span>
             <span class="ea-cap-slug">{cap.sc.Entcase}</span>
             <span class="ea-cap-path">{cap_path(cap)}</span>
             <span class="ea-spacer"></span>
+            {#if diff_changed?.length}
+                <span class="ea-cap-tally" class:zero={tally === 0}
+                      title="{tally} changed line{tally === 1 ? '' : 's'} in this step's diff that this cap reaches">{tally}×</span>
+            {/if}
             <button class="ea-mini" title="load into the draft to edit" onclick={() => edit_cap(cap)}>edit</button>
-            <button class="ea-mini ea-del" title="delete this cap" onclick={() => del_cap(cap)}>×</button>
+            <DeleteX ondelete={() => del_cap(cap)} title="delete this cap" />
         </div>
     {/each}
 
@@ -410,10 +480,16 @@
                         onclick={() => open_profile(grp.ref)}>open ⇗</button>
             </div>
             {#each grp.caps as cap (cap.sc.Entcase)}
-                <div class="ea-cap ea-cap-ro">
+                {@const tally = cap_tally(cap)}
+                <div class="ea-cap ea-cap-ro" class:ea-cap-hl={hl_slug === String(cap.sc.Entcase)}>
                     <span class="ea-cap-tol ea-tol-{cap_tol(cap)}">{cap_tol(cap)}</span>
                     <span class="ea-cap-slug">{cap.sc.Entcase}</span>
                     <span class="ea-cap-path">{cap_path(cap)}</span>
+                    <span class="ea-spacer"></span>
+                    {#if diff_changed?.length}
+                        <span class="ea-cap-tally" class:zero={tally === 0}
+                              title="{tally} changed line{tally === 1 ? '' : 's'} in this step's diff that this shared cap reaches">{tally}×</span>
+                    {/if}
                 </div>
             {/each}
         </div>
@@ -527,8 +603,17 @@
         display: flex; align-items: center; gap: 0.3rem;
         padding: 0.12rem 0.2rem; border-radius: 2px;
         font-family: monospace; font-size: 0.72rem;
+        transition: background 0.3s, box-shadow 0.3s;
     }
     .ea-cap:hover { background: #0e1420 }
+    /* revealed by clicking its line in the diff — glows ~2s; click that line again to edit it. */
+    .ea-cap-hl { background: #16263a; box-shadow: inset 0 0 0 1px #468, 0 0 6px #2a4a6a }
+    /* live count of this step's changed diff lines the cap reaches, beside its edit|× */
+    .ea-cap-tally {
+        font-size: 0.64rem; color: #6a9; background: #0d1a18;
+        border-radius: 2px; padding: 0 0.24rem; flex-shrink: 0;
+    }
+    .ea-cap-tally.zero { color: #445; background: none }
     .ea-cap-tol { font-size: 0.66rem; border-radius: 2px; padding: 0 0.22rem; flex-shrink: 0 }
     .ea-tol-band { background: #2a2410; color: #cb6 }
     .ea-tol-any  { background: #102a2a; color: #6cc }
@@ -542,7 +627,6 @@
         color: #678; cursor: pointer; font-size: 0.66rem; padding: 0.04rem 0.26rem; flex-shrink: 0;
     }
     .ea-mini:hover { color: #9bd; border-color: #356 }
-    .ea-del:hover  { color: #f66; border-color: #633 }
 
     /* shared caps borrowed from a profile Waft — the line drawn around the set.  A
        dashed teal border + faint wash sets it apart from the locally-authored caps;

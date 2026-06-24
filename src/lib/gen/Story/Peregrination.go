@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Peregrination(): string { return 'c48bf542bc7d3a28' },
+    Ghostmeta_Ghost_Story_Peregrination(): string { return 'b8e86e6981d6da92' },
 
 
 // PereStaple — the Peeroleum p2p test (the outer test layer), and the first of a
@@ -111,14 +111,19 @@ Lake_sides_up(w) {
     let {BobA, Bobw} = this._i_drill_caps(this, [{sc: {A: "Bob"}, caps: [{as: "BobA", key: "A", val: false}]}, {sc: {w: "Peeroleum"}, caps: [{as: "Bobw", key: "w", val: false}]}])
     // each side: a Peering and a Pier named by the peer's identity (whom this Pier
     //  is a Pier to), plus a mock transport on the Peering's active_transport.
-    let {AlicePeering, AlicePier} = this._i_drill_caps(Alicew, [{sc: {Peering: 1, name: "alice"}, caps: [{as: "AlicePeering", key: "name", val: false}]}, {sc: {Pier: 1, pub: "bob"}, caps: [{as: "AlicePier", key: "pub", val: false}]}])
-    let {BobPeering, BobPier} = this._i_drill_caps(Bobw, [{sc: {Peering: 1, name: "bob"}, caps: [{as: "BobPeering", key: "name", val: false}]}, {sc: {Pier: 1, pub: "alice"}, caps: [{as: "BobPier", key: "pub", val: false}]}])
-    // wire c.up below w: the belief walk wires A.c.up and w.c.up but NOT the
-    //  domain particles under w (Peering/Pier), so a nested req's pump (pier.do())
-    //   can't climb to the House to resolve its do_fn. Stamp the chain — the
-    //    migration idiom (cf examining.c.up=w, funks.c.up=w). Objects-on-.c → raw JS.
-    AlicePeering.c.up = Alicew; AlicePier.c.up = AlicePeering
-    BobPeering.c.up = Bobw; BobPier.c.up = BobPeering
+    let AlicePeering = Alicew.i({Peering: 1, name: "alice"})
+    let BobPeering = Bobw.i({Peering: 1, name: "bob"})
+    // wire c.up below w: the belief walk wires A.c.up and w.c.up but NOT the domain
+    //  particles under w, so a nested req's pump can't climb to the House to resolve its
+    //   do_fn.  The Peering we stamp by hand (i doesn't wire c.up); each Pier is minted with
+    //    oai (the flock — %Pier,pub:…,req), which wires Pier.c.up=Peering for us.
+    AlicePeering.c.up = Alicew
+    BobPeering.c.up = Bobw
+    // the Pier flock: oai Pier,$pub,req — find-or-create a per-peer Pier carrying the
+    //  serialise sentinel, so it mints as %Pier,pub:…,req:N (mainkey Pier, a typed serial
+    //   req dispatched by req_Pier).  WE mint it ⇒ we own its identity (no remote gut-swap).
+    AlicePeering.oai({Pier: 1, pub: "bob", req: 1})
+    BobPeering.oai({Pier: 1, pub: "alice", req: 1})
     this.transport(AliceA,Alicew)
     this.transport(BobA,Bobw)
     // each w culls its Piers' acked outbox / done inbox into %recent at the step
@@ -149,16 +154,17 @@ async Lake_handshake(w) {
     w.i({reached: "step_3"})
 
 },
-// Lake_pump_handshakes — re-pump each Pier's %req:handshake every pass. The
-//  handshake is nested (Pier/Peering/w), below reqdo_sweep's w-level reach, so the
-//   wrangler drives it; each inbound frame's feebly_ponder brings the run back
-//    here, advancing the maz leaves as their protocol particles land (say→hear→
-//     say_trust→hear_trust). No-op before step 3 — no Piers stand up yet.
+// Lake_pump_handshakes — re-pump each side's Pier flock every pass.  We pump the PEERING
+//  now (peering.do()), which runs each Pier as a typed serial-req via req_Pier (the Pier
+//   reconciles its own %req:handshake) — nested below reqdo_sweep's w-level reach, so the
+//    wrangler drives it; each inbound frame's feebly_ponder brings the run back here,
+//     advancing the maz leaves as their protocol particles land (say→hear→say_trust→
+//      hear_trust). No-op before step 3 — no Piers stand up yet.
 async Lake_pump_handshakes(w) {
     for (const side of ['Alice', 'Bob']) {
-        let pier = this._o_drill1(this, [{sc: {A: side}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
-        if (!pier) continue
-        await pier.do()
+        let peering = this._o_drill1(this, [{sc: {A: side}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Peering: 1}}])
+        if (!peering) continue
+        await peering.do()
     }
 
 },

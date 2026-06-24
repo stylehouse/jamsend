@@ -23,3 +23,7 @@ Waft:Trope/Lies/NormalEntropy,boring,dontSnap
       lematch,Change
         lematch,compile,dige,secs,dim,pending
           means,spayer,re:secs={NUM},tol:band,factor=2.52
+    Entcase:Lies_Waft:Ting
+      lematch,w:Lies
+        lematch,Waft,takes
+          means,spayer,re:Waft:Ting/{INT}-{INT}-{INT}/{INT}.takes,tol:any

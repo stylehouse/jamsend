@@ -33,9 +33,9 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1782178095123,kind:cold
-          want=1782178095177,kind:cold
-          want=1782178095334,kind:cold,resolved
+          want=1782289529609,kind:cold
+          want=1782289529653,kind:cold
+          want=1782289529808,kind:cold,resolved
         o_elvis:dock_askies
         see:🗂 1 doc · 1 Waft
     A:Lang
@@ -88,7 +88,7 @@ Snap:H
                 def,method:captureOutTiles,line=275,rel_from=11593,rel_to=11609
                 def,magic,method:IMPORT,line=286,rel_from=12124,rel_to=12131
                 def,magic,method:RENDER,line=290,rel_from=12260,rel_to=12267
-              time,compile=0.101,all=1.26,write=0
+              time,compile=0.122,all=0.874,write=0
               Output,gen_path:gen/test/Story/Lake/LakeTiles.go,dige:b5ab5d825ab90187,source_dige:260ffe937ed74666
                source: |
                  <script lang="ts">
@@ -468,12 +468,12 @@ Snap:H
           Change
             backend,dige:260ff
             storage,dige:260ff
-            compile,dige:260ff,secs=0.101,dim,pending
+            compile,dige:260ff,secs=0.122,dim,pending
         req:workon,auto_push	{"ref":{"w":"%w:Lang"}}
           req:understanding,maz=3,permanent,sig:1:13:0:0,what:labelofaWhat,finished
           req:ingredients,maz=2,permanent,sig:Ghost/test/Story/Lake/LakeTiles.g,finished
             req:furnishing,path:Ghost/test/Story/Lake/LakeTiles.g,permanent,asked,finished
-          req:instrumentation,permanent,sig:Ghost/test/Story/Lake/LakeTiles.g:260ffe937ed74666:1:29,have_Map,n_pmirrors=3,finished
+          req:instrumentation,permanent,sig:Ghost/test/Story/Lake/LakeTiles.g:260ffe937ed74666:1:29:12,have_Map,n_pmirrors=3,finished
         req:waft_roster,eternal,subscribed
         o_elvis:Lies_compile_settled
         o_elvis:dock_content

@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Tyrant(): string { return 'cf11b5d3ea6b9cee' },
+    Ghostmeta_Ghost_N_Tyrant(): string { return '169ac003c8f3705c' },
 
 // Tyrant — the cabinetry over the Peeroleum floor: identity & trust → admission.
 //  A clean-room rebirth of legacy Tyranny, in stho, riding the Peeroleum transport
@@ -77,12 +77,18 @@ Tyrant_sides_up(w) {
     // lay each side: actor + its w:Tyrant, a Peering named by us, a Pier named by the peer.
     let {AliceA, Alicew} = this._i_drill_caps(this, [{sc: {A: "Alice"}, caps: [{as: "AliceA", key: "A", val: false}]}, {sc: {w: "Tyrant"}, caps: [{as: "Alicew", key: "w", val: false}]}])
     let {BobA, Bobw} = this._i_drill_caps(this, [{sc: {A: "Bob"}, caps: [{as: "BobA", key: "A", val: false}]}, {sc: {w: "Tyrant"}, caps: [{as: "Bobw", key: "w", val: false}]}])
-    let {AlicePeering, AlicePier} = this._i_drill_caps(Alicew, [{sc: {Peering: 1, name: "alice"}, caps: [{as: "AlicePeering", key: "name", val: false}]}, {sc: {Pier: 1, pub: "bob"}, caps: [{as: "AlicePier", key: "pub", val: false}]}])
-    let {BobPeering, BobPier} = this._i_drill_caps(Bobw, [{sc: {Peering: 1, name: "bob"}, caps: [{as: "BobPeering", key: "name", val: false}]}, {sc: {Pier: 1, pub: "alice"}, caps: [{as: "BobPier", key: "pub", val: false}]}])
-    // c.up: the belief walk wires A/w only, not the domain particles under w — stamp the
-    //  Pier→Peering→w chain by hand or the Pier-hosted %req:trust silently never pumps (spec §8).
-    AlicePeering.c.up = Alicew; AlicePier.c.up = AlicePeering
-    BobPeering.c.up = Bobw; BobPier.c.up = BobPeering
+    let AlicePeering = Alicew.i({Peering: 1, name: "alice"})
+    let BobPeering = Bobw.i({Peering: 1, name: "bob"})
+    // c.up: the belief walk wires A/w only, not the domain particles under w.  Stamp each
+    //  Peering→w by hand (i doesn't wire c.up); each Pier is minted with oai (the flock —
+    //   %Pier,pub:…,req), which wires Pier.c.up=Peering for us, so its %req:trust can pump.
+    AlicePeering.c.up = Alicew
+    BobPeering.c.up = Bobw
+    // the Pier flock: oai Pier,$pub,req — a per-peer Pier carrying the serialise sentinel
+    //  mints as %Pier,pub:…,req:N (mainkey Pier, dispatched by req_Pier).  We mint it ⇒ we
+    //   own its identity (no remote gut-swap), the security M1's trust then rides on.
+    AlicePeering.oai({Pier: 1, pub: "bob", req: 1})
+    BobPeering.oai({Pier: 1, pub: "alice", req: 1})
     // GIVEN identities (M1 skips meet+prove): %Ud pre-stamped, so a vouch frame clears the
     //  spine's pre-Ud gate (which otherwise admits only hello|noop, spec §7.3).
     AlicePier.i({Ud: 1, id: "bob"})
@@ -118,13 +124,14 @@ Tyrant_admit_arm(w) {
         Bobw.oai({req: "join"})
 
 },
-// Tyrant_pump — re-pump each side's nested reqs every pass: the Pier's %req:trust (below
-//  reqdo_sweep's w-level reach) and the w's %req:join. Each inbound vouch's feebly_ponder
-//   brings the run back here, advancing the leaves as their protocol particles land.
+// Tyrant_pump — re-pump each side's nested reqs every pass: the PEERING (peering.do() runs
+//  the Pier flock via req_Pier, each Pier driving its own %req:trust) and the w's %req:join.
+//   Each inbound vouch's feebly_ponder brings the run back here, advancing the leaves as
+//    their protocol particles land.
 async Tyrant_pump(w) {
     for (const side of ['Alice', 'Bob']) {
-        let pier = this._o_drill1(this, [{sc: {A: side}, exactly: {A: true}}, {sc: {w: "Tyrant"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
-        if (pier) await pier.do()
+        let peering = this._o_drill1(this, [{sc: {A: side}, exactly: {A: true}}, {sc: {w: "Tyrant"}, exactly: {w: true}}, {sc: {Peering: 1}}])
+        if (peering) await peering.do()
         let sw = this._o_drill1(this, [{sc: {A: side}, exactly: {A: true}}, {sc: {w: "Tyrant"}, exactly: {w: true}}])
         if (sw) await sw.do()
     }
