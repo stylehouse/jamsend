@@ -42,6 +42,12 @@
             //  reads via Lies_role (incl. Pantheate, whose w carries no flag).  This
             //   is what makes the editor compile-and-write but NOT mount/run.
             H.c.role ??= 'editor'   // boot param (?E=) wins; this is the Library-boot fallback
+            // Editron's boot-step snap captures the whole Lang state — but Editron is NOT a compiler
+            //  test, so the full generated .go module text on each %Compile/%Output (hundreds of lines
+            //   per dock) is pure snap noise.  Flag the run so Lang_compile_dock munges the SNAPPED
+            //    source to a marker; the real source still rides the Lies_compiled elvis for the write,
+            //     and %Output.dige stays the compile fingerprint, so nothing the run asserts on is lost.
+            H.c.mungOutputstring = 1
             H.i({ A: 'Editron' }).i({ w: 'Editron' })
             // editor-flavoured Lies/Lang: full chrome (NOT runner:1), edits the Waft.
             H.i({ A: 'Lies' }).i({ w: 'Lies', editor: 1 })

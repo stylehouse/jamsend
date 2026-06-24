@@ -757,6 +757,20 @@
         if (!draft?.slug || !means?.kind) return
         if (means.kind === 'spayer' && !means.re) return
         draft.means = means
+        // draft.ref set ⇒ editing a SHARED cap: mint into the borrowed profile Waft's bucket and
+        //  persist the profile's OWN toc.snap (Lies_waft_save) so every borrower gets it; the live
+        //   C edit + story_analysis re-bites this run immediately.  No ref ⇒ a local cap in The.
+        const ref = draft.ref as string | undefined
+        if (ref) {
+            const loc = H.entropy_profile_loc(ref)
+            if (!loc) { console.warn(`entropy_commit: profile ${ref} not loaded — cannot edit shared cap`); return }
+            H.entropy_mint_into(loc.ea, draft)
+            loc.waft.bump_version()
+            H.Lies_waft_save(loc.lies_w, loc.waft)
+            H.story_analysis(w)
+            ;V.Story && console.log(`🛑 entropy_commit (shared ${ref}) Entcase:${draft.slug} (${means.kind}${means.tol ? ' ' + means.tol : ''})`)
+            return
+        }
         H.entropy_mint(w, draft)
         H.story_analysis(w)
         H.story_save()
@@ -767,6 +781,17 @@
         const H = this
         const slug = e?.sc.slug as string | undefined
         if (!slug) return
+        const ref = e?.sc.ref as string | undefined
+        if (ref) {
+            const loc = H.entropy_profile_loc(ref)
+            if (loc && H.entropy_unmint_from(loc.ea, slug)) {
+                loc.waft.bump_version()
+                H.Lies_waft_save(loc.lies_w, loc.waft)
+                H.story_analysis(w)
+                ;V.Story && console.log(`🗑 entropy_delete (shared ${ref}) Entcase:${slug}`)
+            }
+            return
+        }
         if (H.entropy_unmint(w, slug)) {
             H.story_analysis(w)
             H.story_save()
@@ -1370,6 +1395,8 @@
             w.c.run_path     = run_path
             w.c.wh           = wh
             run.c.toc_loaded = true
+            w.c.exp_snaps    = {}            // fresh fixture cache per toc load (see preload below)
+            delete run.c.exps_loaded
             H.story_analysis(w)
         }
 
@@ -1399,6 +1426,34 @@
                 H.top_House().i_elvisto('Lies/Lies', 'Lies_open_Waft', { path: ref })   // aim at the outside Lies
                 p.c.opened = true
             }
+        }
+
+        // ── preload expected snaps (check mode) — so fuzz-ok can solve INLINE at check time ──
+        // The sluggish path is per-step: a value-noise step pauses, loads its NNN.snap over the
+        //  wh queue, forgives, resumes — a disk round-trip every step.  Instead, read every
+        //   expected snap into memory ONCE here, before the drive starts (timing-safe: the run
+        //    hasn't begun, exactly like toc.snap + the EntropyProfile open above).  Then
+        //     snap_step grafts in-memory — microseconds, can't perturb a later step's numbers —
+        //      and the pip goes green/caveat between steps with no pause.  One read per round
+        //       (the wh queue is serial); returning early here gates the drive until it's done.
+        //        A missing fixture caches as null and falls back to the pause / post-run sweep.
+        if (run.sc.mode === 'check' && !run.c.exps_loaded) {
+            const exps = (w.c.exp_snaps ??= {}) as Record<number, string | null>
+            const need = ((w.c.The as TheC | undefined)?.o({ step: 1 }) ?? [])
+                .map(s => s.sc.step as number)
+                .filter(n => exps[n] === undefined)
+            if (need.length) {
+                const n   = need[0]
+                const req = await wh.oai({ req: 'read_snap', wh_path: run_path, wh_op: 'read_snap', wh_step: n })
+                if (!H.i_elvis_req(w, 'Wormhole', 'wh_op', { req }))
+                    return w.i({ see: `⏳ load ${H.pad(n)} (${need.length} left)...` })
+                exps[n] = (req.sc.reply?.snap as string | undefined) ?? null
+                wh.drop(req)
+                H.main()
+                return w.i({ see: `⏳ loaded ${H.pad(n)}` })
+            }
+            run.c.exps_loaded = true
+            H.story_analysis(w)
         }
 
         if (run.sc.fetch_snap) {
@@ -1970,15 +2025,26 @@
                 await snap_step_finish()
             } else {
                 const exp_dige = H.The_step_dige(w, n)
-                const ok = exp_dige === got_dige
+                let ok = exp_dige === got_dige
                 V.Story && console.log(`🔍 n=${n} ok=${ok} exp=${exp_dige?.slice(0,8)} got=${got_dige.slice(0,8)}`)
                 step.sc.got_snap = snap
                 step.sc.dige = got_dige
-                step.sc.ok = ok
-                // fresh exact verdict — clear any caveat from a prior run; entropy_forgive
-                //  re-sets it (check_snap block at a pause, or the post-run sweep) if this dige
-                //   mismatch turns out to be acknowledged value-noise.
+                // fresh verdict — clear any caveat from a prior run; the inline forgive just below
+                //  re-sets it if this dige mismatch is acknowledged value-noise.
                 delete step.sc.caveat
+
+                // INLINE fuzz-ok at check time (between steps): a dige mismatch that reconstructs
+                //  through acknowledged-noise spayers passes OK-with-caveat RIGHT HERE — no pause,
+                //   no per-step disk round-trip (the sluggish path).  The expected snaps were
+                //    pre-loaded before the drive (timing-safe), so this is an in-memory graft of
+                //     microseconds that can't perturb a later step's numbers.  A step with no
+                //      cached fixture falls through to the pause (editor) / post-run sweep (runner).
+                if (!ok) {
+                    const exp = (w.c.exp_snaps as Record<number, string | null> | undefined)?.[n]
+                    if (exp && H.entropy_forgive(w, snap, exp, n)) { ok = true; step.sc.caveat = true }
+                }
+                step.sc.ok = ok
+                step.bump_version()   // verdict (ok/caveat) settled — wake the pip now, this step
                 H.story_analysis(w)
 
                 if (!ok && !w.c.lenient && !is_runner()) {
@@ -1995,10 +2061,10 @@
                     H.main()
                     return
                 }
-                // Runner flag-and-continue (EntropyArrest §10): the headless runner doesn't pause
-                //  and doesn't fetch — loading the expected snap now would perturb later steps'
-                //   timings (§10.1).  Flag the step and drive on; story_sweep_arm forgives the
-                //    flagged steps in a post-run sweep, before the verdict is read.
+                // Runner flag-and-continue (EntropyArrest §10): reached only for an UNCACHED
+                //  fixture (the inline forgive above already cleared the cached value-noise ones).
+                //   The headless runner still doesn't pause or fetch mid-run — it flags the
+                //    straggler and drives on; story_sweep_arm forgives it in a post-run sweep.
                 if (!ok && is_runner()) step.sc.unexpected = 1
                 if (!ok) console.log(`⚠ Story: step ${H.pad(n)} mismatch accepted (${is_runner() ? 'runner — flagged for sweep' : 'lenient'})`)
                 await update_status(`${ok ? '✓' : '⚠'} ${H.pad(n)}`, ok ? 'default' : 'save')

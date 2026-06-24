@@ -633,6 +633,24 @@
         return undefined
     },
 
+    // entropy_profile_loc — the WRITE-side sibling of entropy_profile_waft.  A shared cap is now
+    //   editable inline (no cross-component open ⇗), so editing one must mint into the borrowed
+    //    profile Waft's own EntropyArrest bucket and persist the profile's OWN toc.snap for every
+    //     borrower.  Returns the Lies world it rostered into (needed for Lies_waft_save's throttle),
+    //      the Waft C, and its EntropyArrest bucket (find-or-CREATED — so unlike the pure read path
+    //       above, only call this when actually writing).  undefined when the profile isn't loaded.
+    entropy_profile_loc(ref: string): { lies_w: TheC, waft: TheC, ea: TheC } | undefined {
+        for (const house of this.top_House().all_House) {
+            const lies_w = (house.o({ A: 'Lies' })[0] as TheC | undefined)?.o({ w: 'Lies' })[0] as TheC | undefined
+            const waft   = lies_w?.o({ Waft: ref })[0] as TheC | undefined
+            if (lies_w && waft) {
+                const ea = (waft.o({ EntropyArrest: 1 })[0] as TheC) ?? waft.i({ EntropyArrest: 1 })
+                return { lies_w, waft, ea }
+            }
+        }
+        return undefined
+    },
+
     // is the Waft at this roster path backstage (%boring)?  The interest roster carries
     //  only paths, so the Lang side asks here before advertising one as an Interest —
     //   a boring Waft (borrowed EntropyProfile, etc.) stays out of the trail/NaviCado.
@@ -862,7 +880,20 @@
         note?: string
         scope_step?: number
     }): TheC {
-        const ea = this.The_EntropyArrest(w)
+        return this.entropy_mint_into(this.The_EntropyArrest(w), draft)
+    },
+
+    // entropy_mint_into — the bucket-level mint, shared by the local The bucket
+    //   (entropy_mint) and a borrowed profile Waft's EntropyArrest (a shared-cap edit,
+    //    via entropy_profile_loc).  Same overwrite-by-slug discipline either way.
+    entropy_mint_into(ea: TheC, draft: {
+        slug: string
+        lematch: Array<{ sc: Record<string, any> }>
+        means?: { kind: string, [k: string]: any }
+        spayer?: Record<string, any>
+        note?: string
+        scope_step?: number
+    }): TheC {
         for (const old of ea.o({ Entcase: draft.slug }) as TheC[]) ea.drop(old)
         const cap = ea.i({ Entcase: draft.slug })
         if (draft.note != null)       cap.i({ note: draft.note })
@@ -888,8 +919,14 @@
     // entropy_unmint — drop one authored Entcase by slug.  Returns whether anything
     //   was removed, so the caller can skip a needless toc.snap save.
     entropy_unmint(w: TheC, slug: string): boolean {
-        const The = w.c.The as TheC
-        const ea  = The?.o({ EntropyArrest: 1 })[0] as TheC | undefined
+        const ea = (w.c.The as TheC)?.o({ EntropyArrest: 1 })[0] as TheC | undefined
+        return this.entropy_unmint_from(ea, slug)
+    },
+
+    // entropy_unmint_from — drop one Entcase by slug from a given bucket (local The's or a
+    //   borrowed profile Waft's).  Returns whether anything went, so the caller can skip a
+    //    needless save.
+    entropy_unmint_from(ea: TheC | undefined, slug: string): boolean {
         if (!ea) return false
         const caps = ea.o({ Entcase: slug }) as TheC[]
         for (const cap of caps) ea.drop(cap)

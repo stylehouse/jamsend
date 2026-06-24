@@ -269,6 +269,18 @@ So the real obligation the split adds is a **contract, per reader, of who may be
      (×3 reader repoints), `LangPoint.svelte` (fold→`view.state`), `LangLang.svelte`
       (gen-text→`view.state`), `Lang.svelte` (whatsthis→`Lang_index_state`, parser-gate comment).
 
+**Follow-on landed — live point resolution (the staleness axis).** Stored Map offsets go stale on
+ edit until the next compile (`req:compile`'s keyboard-settle timer is ~6 s). For *points-only* docs
+  there is no expensive artifact to throttle, so `e_Lang_tap` + `e_Lang_point_navigate` now reindex
+   the **live** buffer (`Lang_compile_dock(w, dock, view.state)`) at the top of the gesture — sub-ms,
+    writes nothing — which re-stamps `job.c.source_state = view.state`, so the `Lang_index_state`
+     reads below resolve in the exact frame the selection/fold dispatches onto. Navigation no longer
+      waits on the settle timer. `.g` docks are explicitly skipped (a `.g` reindex re-runs
+       GEN→`.go`→runner — too heavy for a gesture), so they resolve against the last settled Map as
+        before. This is the same `view.state`-vs-`stateCompiled` split, applied to *when* not *which
+         parser* — and it leans on the meaning-resolution (`Lang_map_span` reconstructs def positions
+          from `region_path` + `rel_*`) that was already half the answer.
+
 **Verified headless.** `node scripts/LakeRace.run.mjs` (3/3 pass) exercises the rewritten
  `Lang_compile_source_state` on real `Peeroleum.g` across both branches — WARM (stale buffer + fresh
   disk text → reuse-and-swap-doc) and COLD/headless (no editor → synth on `lang()`) — plus the full

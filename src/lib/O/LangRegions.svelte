@@ -502,10 +502,20 @@
         const opt    = { long: !!e.sc.long, weight: (e.sc.weight as number) ?? 1 }
         const dock   = this.Lang_active_dock(w)
         if (!dock) return
+        const dpath  = dock.sc.dock as string   // dock path (the later `path` is the tap's region path)
+        const view   = dock.c.view as EditorView | undefined
+        // Reindex against the CURRENT text before resolving, so a tap lands even on a doc edited
+        //  since the last compile — no waiting on req:compile's ~6s keyboard-settle timer.  Points-
+        //   only: a .g reindex would re-run GEN (render → .go → runner), far too heavy|side-effecting
+        //    for a gesture, so a .g resolves against its last settled Map.  This re-stamps
+        //     job.c.source_state = view.state, so Lang_index_state below is the live frame the
+        //      tap's char and the Map it queries now share — sub-millisecond, writes nothing.
+        if (view && !H.Lies_gen_path(dpath) && H.Lang_points_only(dpath))
+            await H.Lang_compile_dock(w, dock, view.state)
         const job    = dock.o({ Compile: 1 })[0] as TheC | undefined
         const Map_C  = job?.o({ Map: 1 })[0]      as TheC | undefined
-        // The tap resolves to a $region/$method by NAME through %Map, so map its char to a
-        //  line in the Map's own frame (Lang_index_state) — consistent with the Map it queries.
+        // The tap resolves to a $region/$method by NAME through %Map; map its char to a line in
+        //  the Map's frame (Lang_index_state) — which the reindex just pinned to the live view.
         const state  = this.Lang_index_state(dock)
         if (!Map_C || !state) return
 
@@ -632,9 +642,16 @@
         const dock  = this.Lang_active_dock(w)
         if (!dock) return
         const view  = dock.c.view  as EditorView | undefined
-        // Resolve the Point spec + build regions in the Map's frame (Lang_index_state):
-        //  result.from is born in that frame, so the selection|fold we then dispatch onto the
-        //   view lands right — a Point-navigate is a settled gesture, so view ≈ this snapshot.
+        const path  = dock.sc.dock as string
+        // Reindex against the CURRENT text before resolving, so a Point lands even on a doc edited
+        //  since the last compile — no waiting on req:compile's ~6s keyboard-settle timer.  Points-
+        //   only: a .g reindex would re-run GEN (render → .go → runner), far too heavy for a
+        //    navigation gesture, so a .g resolves against its last settled Map as before.
+        if (view && !H.Lies_gen_path(path) && H.Lang_points_only(path))
+            await H.Lang_compile_dock(w, dock, view.state)
+        // Resolve the spec + build regions in the Map's frame (Lang_index_state) — which the reindex
+        //  just pinned to the live view, so result.from and the fold|selection we dispatch onto the
+        //   view all share one frame (no off-by-an-edit drift, no settle wait).
         const state = this.Lang_index_state(dock)
         if (!view || !state) return
 

@@ -700,6 +700,30 @@
         })
     })
 
+    // ── slow-open overlay $effect ───────────────────────────────────────────────
+    //   A dock open that lands fast needs no fanfare, but a furnish that has to read a file
+    //    off Wormhole can take a beat — and the minimap's phase spinner is tiny and tucked in
+    //     the corner.  So if the open hasn't completed within 0.2s, raise a big centred spinner
+    //      over the editor until it lands.  Driven off the existing furnish|text_load %Languinio
+    //       spinners (the open-phase indicators); a cached re-open sets neither, so an instant
+    //        switch never flashes this.  Reads slow_open in the arm guard, so the timer→true edge
+    //         re-runs this once and then no-ops — no re-arm loop.
+    let slow_open = $state(false)
+    let _open_timer: ReturnType<typeof setTimeout> | null = null
+    $effect(() => {
+        const languinio = H.ave.ob({ Languinio: 1 })[0] as TheC | undefined
+        languinio?.ob()   // track version: a spinner set|clear wakes this
+        const opening = !!languinio?.ob({ spinner: 'furnish'   }).length
+                     || !!languinio?.ob({ spinner: 'text_load' }).length
+        if (!opening) {
+            if (_open_timer) { clearTimeout(_open_timer); _open_timer = null }
+            if (slow_open) slow_open = false
+            return
+        }
+        if (!_open_timer && !slow_open)
+            _open_timer = setTimeout(() => { _open_timer = null; slow_open = true }, 200)
+    })
+
     // ── Lang_i_elvis ─────────────────────────────────────────────────────────
     //
     //   Central CM→backend bridge.  Stamps { dock, view, state } on every event
@@ -1729,6 +1753,12 @@
         {/each}
     </div>
     {/if}
+    {#if slow_open}
+    <!-- Slow-open overlay: a furnish reading off Wormhole can take a beat, and the minimap
+         spinner is tiny|cornered — so past 0.2s raise a big centred spinner over the editor
+         until the doc lands.  pointer-events:none so it never traps a click. -->
+    <div class="lte-opening" aria-hidden="true"><span class="lte-opening-spin">◴</span></div>
+    {/if}
 </div>
 {/if}
 
@@ -1799,7 +1829,19 @@
         to   { transform: rotate(360deg); }
     }
     @media (prefers-reduced-motion: reduce) {
-        .lte-run-spin { animation: none; }
+        .lte-run-spin, .lte-opening-spin { animation: none; }
+    }
+
+    /* ── slow-open overlay — big centred spinner once an open passes 0.2s ────── */
+    .lte-opening {
+        position: absolute; inset: 0; z-index: 5;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(10, 10, 10, 0.55);
+        pointer-events: none;   /* a loading veil, never a click trap */
+    }
+    .lte-opening-spin {
+        display: inline-block; font-size: 56px; line-height: 1; color: #9ab0c4;
+        animation: lte-run-spin-kf 1.1s linear infinite;
     }
 
     /* ── "map" button — minimap toggle ─────────────────────────────────── */

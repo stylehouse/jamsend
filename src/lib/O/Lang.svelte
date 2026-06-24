@@ -2215,8 +2215,6 @@
         }
         if (!bookmarks.length) model.empty()
 
-        w.i({ see: `🟦 tiles ${bookmarks.length} bookmarks` })
-
         // ── compile_ready gate ────────────────────────────────────────────────
         // req_text_mutated sets dock.c.compile_ready after the quiet period
         //   (30ms for machine edits, 6s for keyboard typing).  We reset the

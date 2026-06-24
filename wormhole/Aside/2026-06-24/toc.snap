@@ -1,3 +1,5 @@
 Waft:Aside/2026-06-24,aside,active
   What,FromWhat:Waft:Ghost/Net/Easy/What:the peer
-    Doc:src/lib/O/spec/Wormhole_backends_handover.md
+    Doc:src/lib/O/spec/LiesEnd_spec.md
+  What,FromWhat:Waft:Aside/2026-06-24/Doc:src/lib/O/spec/LiesEnd_spec.md
+    Doc:src/lib/O/LangPoint.svelte

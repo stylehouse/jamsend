@@ -407,6 +407,42 @@ We deliberately do **not** live-test the locator/regex in the panel — verifica
 
 ## 9. TODO
 
+- **Perfect the capture-regex generator (`entropy_suggest`).** It is *serialization-aware on
+   input but blind on output*: it reasons over `deL`'s parsed `stringies` (which handle both peel
+    and JSON-blob lines) yet always *renders* anchors in peel form — `k=N` for a number, `k:v` for
+     a string. On a line `encode_stringies` JSON-blobbed (any value carrying `,`/`:`/`/`), the
+      emitted peel anchors (`at=…`, `say:…`) never match the on-disk JSON shape (`"at":…`,
+       `"say":"…"`), and `{TOK}`=`[^,\s]+` can't *bridge* a value that itself holds commas — so the
+        suggestion silently matches nothing and `seed_spay` persists it unverified. The ladder,
+         cheapest first:
+   - **(1) Self-verify before emitting.** After building `re`, run it back through `spay_graft` /
+      `spay_classify_line` against the very `(got, prev)` it was born from; if it doesn't graft
+       `got→exp`, widen (`{TOK}`→`{ANY}`, peel↔JSON shape, `.`→`.+?` bridge) and retry. *Never hand
+        back a suggestion the generator never tested* — this kills the whole "looks plausible, bites
+         nothing" class, and a failing self-test is a real UI signal ("couldn't auto-capture — loose
+          skeleton, tighten it").
+   - **(2) Serialization-aware output.** `deL` already knows the line was JSON (`str_raw[0]==='{'`);
+      thread that one bit through and render anchors/captures JSON-shaped (`"k":N` / `"k":"v"`) when
+       the source line was JSON. The `say,at` case then auto-generates correctly with no special-casing.
+   - **(3) Make the `{TOK}` limit known to the engine.** Boundedness is enforced *silently by the
+      matcher* today (`{TOK}`=`[^,\s]+`); make it a property the generator queries — a small table
+       (`{INT}`/`{NUM}`→`\D`, `{TOK}`→`[,\s]`, new `{ANY}`=`.+?`→none) so when a capture or a bridge
+        must *span* a region containing a token's forbidden char (reaching `at` past `they,can,be,mixed`),
+         it picks the narrowest token that can cross it instead of producing a dud.
+- **The next-level generator (when the `*Samples` corpus lands, §10).** The above fixes pairwise
+   `entropy_suggest(got, prev)` — generalizing from *one* delta. The principled engine generalizes
+    from the **whole sample set**: anti-unification / least-general-generalization over every recorded
+     snap of a line (the `EntropySamples` corpus) — positions constant across *all* samples stay
+      literal, varying positions become captures whose *kind* (`{INT}`/`{NUM}`/`{TOK}`/`{ANY}`) is
+       *inferred from observed variation*, not guessed. Add **discrimination against negatives** so a
+        pattern never over-generalizes past observed variation (a 13-digit ms stamp → `\d{13}`, an
+         enum → an alternation, not `.+`) — that is the line between *fuzz-ok* and *blind*. The
+          ceiling is **structural spayers over the parsed C** (a predicate on `deL`'s `stringies` —
+           "field `at` under this lematch is timestamp-noise") instead of a text regex: serialization-
+            agnostic by construction, it dissolves the peel-vs-JSON mismatch entirely; the regex layer
+             survives only as the fallback for churn *inside* a value. This is also the natural home
+              for "analysing all the expressions in the program" — the corpus that makes (anti-unify +
+               discriminate) possible.
 - **Number-wander statistics (TimeSpool-like).** A spayer forgives a number's *churn* but
    throws the churn away — the value drifts unobserved until it blows the band. Gather it
     instead: a per-cap spool (à la `The/TimeSpool`, which already accumulates per-step
@@ -466,8 +502,10 @@ We deliberately do **not** live-test the locator/regex in the panel — verifica
          seed** (`H.entropy_suggest` + the one-draft breadcrumb), the **fuzz tub** (head|tail anchor
           wind-down), and the **4-way means mutex** (band|any|drop|dontSnap). Likeliest shape: keep
            those as authoring affordances, but render/edit the resulting tree as a Waft so local and
-            shared caps use one editor — local in `The`, shared via `open ⇗` into the profile Waft.
-             (Today: local caps = the bespoke panel; shared caps = read-only group + `open ⇗`.)
+            shared caps use one editor. (Today: both local AND shared caps edit inline in the bespoke
+             panel — a shared edit mints into the profile Waft's `EntropyArrest` and persists via
+              `Lies_waft_save` for every borrower; the old cross-component `open ⇗` scroll-jump was
+               dropped as the inter-component travelway isn't built.)
 
 ---
 
@@ -599,12 +637,37 @@ Built:
       uses, and stamps `ok+caveat` (forgiven) or `%swept` (genuinely red). When the last is
        resolved it fires `storyFinished`, so `Cred_run_outcome` reads the swept result — no re-push.
 
+### 10.8 Inline fuzz-ok at check time — pre-load, then forgive between steps (2026-06-24)
+
+The §10.7 paths solve forgiveness *late*: the editor at a per-step **pause** (load NNN.snap over the
+ wh queue, forgive, resume) and the runner in a **post-run sweep**. Both make the pips solve
+  sluggishly — a disk round-trip every value-noise step. This closes that by pulling the expected
+   snaps into memory **before the drive**, exactly the §10.2 timing window (alongside the
+    EntropyProfile open), so `snap_step` can forgive **inline, between steps, in-memory**:
+
+- **Pre-load (`Story()`):** after toc-load + the profile open, a poll-loop reads every check-mode
+   step's `NNN.snap` into `w.c.exp_snaps` (one per round; returning early **gates the drive** until
+    done; cleared on toc reload for freshness). Timing-safe — the run hasn't begun, like toc.snap
+     itself. A missing fixture caches `null`.
+- **Inline forgive (`snap_step`):** on a dige mismatch, if `w.c.exp_snaps[n]` is cached, run
+   `entropy_forgive(got, exp, n)` right there → `ok + caveat`, **no pause, no round-trip**. The graft
+    is in-memory microseconds, so it can't perturb a later step's measured numbers (the §10.1 bomb
+     was the *disk load*, now moved to boot). `step.bump_version()` wakes the pip that step.
+- **Fallbacks unchanged:** an uncached fixture (missing file, or a stale cache that won't
+   reconstruct) falls through to the editor **pause** / runner **flag + post-run sweep** — which load
+    fresh from disk, so they remain the correctness floor and a stale cache can never mint a wrong
+     green (it just fails to reconstruct and defers).
+
+Net: value-noise steps go green-with-caveat as the run steps, the editor stops halting per step, and
+ **lenient-by-default makes sense** (every step forgives live). Cost: a one-time boot read per step
+  (sub-second for a Lake\*); it reads exact-match steps' snaps too (can't predict mismatches) — the
+   lean `EntropySamples.snap` sidecar below would trim that to one file.
+
 Remaining (the lean cache, the §10.2 vision):
 
-- **`EntropySamples.snap` sidecar** — write the expected captures at record time and prefer them
-   over `NNN.snap` in the sweep + the editor's `check_snap`, with `NNN.snap` as the fallback. This
-    cuts the sweep's per-step disk reads to a single boot-time sidecar load and removes the editor
-     pause's async-profile dependency. It is an optimisation only: the NNN sweep above is already
-      correct, and a stale/absent sidecar must defer to NNN (so it can never mint a wrong green).
+- **`EntropySamples.snap` sidecar** — write the expected *captures* at record time and prefer them
+   over the full `NNN.snap` pre-load, with `NNN.snap` as the fallback. Trims the boot read to a
+    single sidecar file and the in-memory footprint to the captures (not whole snaps). Optimisation
+     only: the NNN pre-load above is already correct, and a stale/absent sidecar must defer to NNN.
 - **Substitution forgive** — the `spay_graft_line`-style variant that substitutes stored `exp`
    tokens into got and re-diges against `The_step_dige`, the in-memory half of the sidecar path.

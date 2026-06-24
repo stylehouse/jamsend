@@ -371,8 +371,15 @@ import { lang, lang_for_path } from "./lang/lang"
         job.oai({ time: 1 }, { compile: +(compile_ms / 1000).toFixed(3) })
 
         if (gen_path) {
-            const dige = await dig(source)
-            job.oai({ Output: 1, gen_path, source, dige, source_dige })
+            const dige = await dig(source)   // fingerprints the REAL source, even when it's munged below
+            // %Output.source is only ever read back by the snap (the write + runner take `source`
+            //  off the Lies_compiled elvis below, not this particle).  So when a run flags itself as
+            //   not-a-compiler-test (H.c.mungOutputstring, set by Run_A_Editron), redact the snapped
+            //    source to a marker — hundreds of lines of generated module per dock, pure noise in
+            //     that snap.  dige still changes when the real output does, so the compile is still
+            //      witnessed; only the verbatim text is dropped.
+            const out_source = H.c.mungOutputstring ? `«munged: ${source.length}c, see dige»` : source
+            job.oai({ Output: 1, gen_path, source: out_source, dige, source_dige })
 
             // Hand off to Lies — Lies decides write vs softgen vs nogen.
             // e_Lies_compiled parks req:Cortex + req:Codebit; Rundown is separate.

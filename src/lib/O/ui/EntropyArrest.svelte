@@ -157,11 +157,15 @@
     // the fuzz tub shows only for a spayer with anchors to wind down, and retires on hand-edit
     let show_tub = $derived(is_spayer && !re_dirty && !!fuzz && (fuzz.head_seq.length > 1 || fuzz.tail_seq.length > 1))
     let factor   = $state(1.5)
-    // pm — absolute ± slack added after the factor (band only): a value is in-band within
-    //  factor× OR within ±pm of exp.  0 = off (pure ratio band).  For a value that swings in
-    //   absolute terms but not ratio — compile ms — set pm and drop factor toward 1.
-    let pm       = $state(0)
+    // slack — absolute ± wiggle added after the factor (band only): a value is in-band within
+    //  factor× OR within ±slack of exp.  0 = off (pure ratio band).  For a value that swings in
+    //   absolute terms but not ratio — compile ms — set slack and drop factor toward 1.
+    let slack    = $state(0)
     let scope_on = $state(false)
+    // which bucket this draft commits to: null = a local cap in The; a Wref string = a SHARED cap,
+    //  edited in place but written through to that profile Waft (commit/delete carry the ref, the
+    //   Story side mints into the profile + Lies_waft_save persists it for every borrower).
+    let edit_ref = $state<string | null>(null)
     // slug auto-derives from the form beneath until the user edits it (§8.6)
     let slug_edited = $state(false)
     let slug_manual = $state('')
@@ -180,9 +184,10 @@
     // shared caps — the Entcases this Story borrows from another Waft via
     //  The/EntropyProfile,Wref:<path>.  Story opens that Waft into the outside-Story
     //   Lies roster (one load serves every borrower), so they're read live off that
-    //    C tree here.  Shown read-only, grouped per profile: editing one changes it
-    //     for everyone, so it's done at the source — open ⇗ focuses the profile Waft
-    //      (its own autosave persists the edit).
+    //    C tree here.  Grouped per profile, and EDITABLE inline (edit/× like a local
+    //     cap) — but a shared edit writes through to the profile Waft (entropy_commit
+    //      with ref), which persists ITS toc.snap for every borrower.  (The old
+    //       cross-component open ⇗ scroll-jump was dropped — the travelway isn't built.)
     let shared = $derived.by((): { ref: string, caps: TheC[] }[] => {
         const The = w?.c.The as TheC | undefined
         void The?.version, void w?.version   // w bumps each Story tick → re-scan once the profile lands
@@ -198,11 +203,6 @@
         }
         return out
     })
-    // open the profile Waft in the editor — it's already a canonical roster Waft, so
-    //  this just focuses it; its own autosave persists any edit for every borrower.
-    function open_profile(ref: string) {
-        H.i_elvisto('Lies/Lies', 'Lies_open_Waft', { path: ref })
-    }
     //#endregion
 
     //#region seed — a diff click re-points the one draft
@@ -262,7 +262,7 @@
         // spayer: ask the engine for a capture-style regex + tolerance, and seed the fuzz
         //  tub from its structured parts (a fresh draft starts at full precision, head|tail 0).
         const sug = H.entropy_suggest(s.right, s.left)
-        re_dirty = false; h_fuzz = 0; t_fuzz = 0; pm = 0
+        re_dirty = false; h_fuzz = 0; t_fuzz = 0; slack = 0
         if (sug) { re_text = sug.re; mode = sug.tol as 'band' | 'any'; factor = sug.factor ?? 1.5; re_parts = sug.parts }
         // no suggestion: a numeric noisy key still defaults to band (the common case);
         //  only a non-numeric locator falls back to any.  No parts ⇒ no fuzz tub.
@@ -311,8 +311,8 @@
         if (c && c !== _covered_seen) { _covered_seen = c; on_covered(c) }
     })
     function on_covered(c: { left: string, right: string }) {
-        // the cap that owns this line — a LOCAL one first, else a SHARED one (read-only, so a
-        //  second click opens its profile to edit at the source rather than loading the draft).
+        // the cap that owns this line — a LOCAL one first, else a SHARED one (a ref tags the draft
+        //  so OK writes through to the profile Waft; both edit inline now).
         let cap = caps.find(cp => cap_hits_line(cp, c.left, c.right))
         let ref: string | undefined
         if (!cap) for (const grp of shared) {
@@ -321,10 +321,9 @@
         }
         if (!cap) return                       // owned only by a code default — nothing to reveal
         const slug = String(cap.sc.Entcase)
-        if (hl_slug === slug) {                // second click → edit (local: draft; shared: source)
+        if (hl_slug === slug) {                // second click → edit (local or shared, both inline)
             clear_hl(); expanded = true
-            if (ref) open_profile(ref)
-            else     edit_cap(cap)
+            edit_cap(cap, ref)
         } else {
             expanded = true
             hl_slug  = slug
@@ -353,9 +352,10 @@
     //#region commit / delete / edit
     function reset() {
         active = false; at_text = ''; noisy = undefined
-        re_text = ''; mode = 'band'; factor = 1.5; pm = 0; scope_on = false
+        re_text = ''; mode = 'band'; factor = 1.5; slack = 0; scope_on = false
         slug_edited = false; slug_manual = ''
         re_parts = []; re_dirty = false; h_fuzz = 0; t_fuzz = 0
+        edit_ref = null
     }
     function commit() {
         const s = slug.trim()
@@ -367,19 +367,27 @@
         let means: { kind: string, [k: string]: any }
         if (is_spayer) {
             if (!re_text.trim()) return
-            means = mode === 'band' ? { kind: 'spayer', re: re_text, tol: 'band', factor, ...(pm ? { pm } : {}) }
+            means = mode === 'band' ? { kind: 'spayer', re: re_text, tol: 'band', factor, ...(slack ? { slack } : {}) }
                                     : { kind: 'spayer', re: re_text, tol: 'any' }
         } else {
             means = { kind: mode }
         }
-        const cap = { slug: s, lematch, means, scope_step: scope_on && step_n != null ? step_n : undefined }
+        // ref tags a shared edit → the Story side mints into the profile Waft + persists it.  scope
+        //  (only-this-step) is a per-Story notion, so it never rides onto a shared profile cap.
+        const cap = {
+            slug: s, lematch, means,
+            scope_step: !edit_ref && scope_on && step_n != null ? step_n : undefined,
+            ref: edit_ref ?? undefined,
+        }
         H.i_elvisto('Story/Story', 'entropy_commit', { cap_json: JSON.stringify(cap) })
         reset(); on_done()
     }
     function cancel() { reset(); on_done() }
 
-    function del_cap(cap: TheC) {
-        H.i_elvisto('Story/Story', 'entropy_delete', { slug: String(cap.sc.Entcase) })
+    // ref ⇒ delete a SHARED cap from its profile Waft (for everyone); else a local cap.  The ×
+    //  is a two-stage DeleteX (confirm), so this only fires on the second, confirming click.
+    function del_cap(cap: TheC, ref?: string) {
+        H.i_elvisto('Story/Story', 'entropy_delete', { slug: String(cap.sc.Entcase), ...(ref ? { ref } : {}) })
     }
 
     function segs_from_lematch(lm: TheC): TheC[] {
@@ -416,7 +424,9 @@
             .replace(/\(\[\^,\\s\]\+\)/g, '{TOK}')              // ([^,\s]+)
             .replace(/\(\\S\+\?\)/g, '{TOK}')                   // (\S+?) — legacy form
     }
-    function edit_cap(cap: TheC) {
+    // load an existing cap into the draft.  ref ⇒ a SHARED cap: the draft tags it (edit_ref) so
+    //  OK writes back to that profile Waft; undefined ⇒ a local cap in The.
+    function edit_cap(cap: TheC, ref?: string) {
         const lm = cap.o({ lematch: 1 })[0] as TheC | undefined
         const sp = cap_spayer(cap)
         const k  = cap_means_kind(cap)
@@ -428,11 +438,12 @@
         re_parts    = []; re_dirty = true; h_fuzz = 0; t_fuzz = 0
         mode        = k === '?' ? 'band' : k
         factor      = (sp?.sc.factor as number) ?? 1.5
-        pm          = (sp?.sc.pm as number) ?? 0
+        slack       = (sp?.sc.slack as number) ?? 0
         noisy       = undefined
         slug_edited = true
         slug_manual = String(cap.sc.Entcase)
-        scope_on    = cap.o({ scope: 1 })[0] != null
+        scope_on    = !ref && cap.o({ scope: 1 })[0] != null
+        edit_ref    = ref ?? null
         active      = true
     }
 
@@ -473,20 +484,18 @@
         </div>
     {/each}
 
-    <!-- shared caps borrowed from a profile Waft — their own bordered group, read-only.
-         Edit them at the source (open ⇗): the profile's own save persists for everyone. -->
+    <!-- shared caps borrowed from a profile Waft — their own bordered group.  Editable inline like
+         a local cap, but edit|× write THROUGH to the profile Waft (for every borrower). -->
     {#each shared as grp (grp.ref)}
         <div class="ea-shared">
             <div class="ea-shared-hdr">
                 <span class="ea-shared-tag">shared</span>
-                <span class="ea-shared-ref" title="borrowed from this Waft; edits there affect every Story that uses it">{grp.ref}</span>
+                <span class="ea-shared-ref" title="borrowed from this Waft; editing a cap here changes it for every Story that uses this profile">{grp.ref}</span>
                 <span class="ea-spacer"></span>
-                <button class="ea-mini" title="open the profile Waft to edit the shared set (saves for everyone)"
-                        onclick={() => open_profile(grp.ref)}>open ⇗</button>
             </div>
             {#each grp.caps as cap (cap.sc.Entcase)}
                 {@const tally = cap_tally(cap)}
-                <div class="ea-cap ea-cap-ro" class:ea-cap-hl={hl_slug === String(cap.sc.Entcase)}>
+                <div class="ea-cap" class:ea-cap-hl={hl_slug === String(cap.sc.Entcase)}>
                     <span class="ea-cap-tol ea-tol-{cap_tol(cap)}">{cap_tol(cap)}</span>
                     <span class="ea-cap-slug">{cap.sc.Entcase}</span>
                     <span class="ea-cap-path">{cap_path(cap)}</span>
@@ -495,6 +504,8 @@
                         <span class="ea-cap-tally" class:zero={tally === 0}
                               title="{tally} changed line{tally === 1 ? '' : 's'} in this step's diff that this shared cap reaches">{tally}×</span>
                     {/if}
+                    <button class="ea-mini" title="edit this shared cap — saves to the profile for every borrower" onclick={() => edit_cap(cap, grp.ref)}>edit</button>
+                    <DeleteX ondelete={() => del_cap(cap, grp.ref)} title="delete this shared cap (removes it from the profile for everyone)" />
                 </div>
             {/each}
         </div>
@@ -502,7 +513,12 @@
 
     <!-- the single in-flight draft -->
     {#if active}
-        <div class="ea-draft">
+        <div class="ea-draft" class:ea-draft-shared={edit_ref}>
+            {#if edit_ref}
+                <div class="ea-shared-edit" title="this cap lives in a shared profile — OK writes it to {edit_ref} for every Story that borrows it">
+                    editing shared · {edit_ref}
+                </div>
+            {/if}
             <!-- slug (auto-derives until edited) -->
             <div class="ea-row">
                 <span class="ea-flabel">cap</span>
@@ -534,9 +550,9 @@
                         <input class="ea-input ea-num" type="number" step="any" value={factor}
                                oninput={(e) => factor = Number((e.target as HTMLInputElement).value)} />
                     </label>
-                    <label class="ea-field" title="absolute ± slack ADDED after the factor — e.g. ±500 = within 500 of expected.  For a value that jumps in absolute terms but not ratio (compile ms): set ± and drop factor toward 1.  0 = off.">±
-                        <input class="ea-input ea-num" type="number" step="any" value={pm}
-                               oninput={(e) => pm = Number((e.target as HTMLInputElement).value)} />
+                    <label class="ea-field" title="slack: absolute ± wiggle ADDED after the factor — e.g. 500 = within 500 of expected.  For a value that jumps in absolute terms but not ratio (compile ms): set slack and drop factor toward 1.  0 = off.">± slack
+                        <input class="ea-input ea-num" type="number" step="any" value={slack}
+                               oninput={(e) => slack = Number((e.target as HTMLInputElement).value)} />
                     </label>
                 {/if}
             </div>
