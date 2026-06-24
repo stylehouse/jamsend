@@ -1,9 +1,9 @@
-Credulate,of_Book:StuffFlipping
+Credulate,of_Book:StuffResolving
   GhostInclude:Ghost_N_Peeroleum,dige:38a1f9ec2bbc4f3c
   GhostInclude:Ghost_N_Tribunal,dige:683d031e368194c6
   GhostInclude:Ghost_Story_Peregrination,dige:cbcb91135c98b814
   GhostInclude:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
-  last_ok,at=1782308236.633,ok_pct
+  last_ok,at=1782308224.129,ok_pct
     uses:Ghost_N_Peeroleum,dige:38a1f9ec2bbc4f3c
     uses:Ghost_N_Tribunal,dige:683d031e368194c6
     uses:Ghost_Story_Peregrination,dige:cbcb91135c98b814

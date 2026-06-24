@@ -51,10 +51,10 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1782283538572,kind:cold
-          want=1782283538623,kind:cold
-          want=1782283538774,kind:cold
-          want=1782283540840,kind:test,resolved
+          want=1782306399312,kind:cold
+          want=1782306399364,kind:cold
+          want=1782306399514,kind:cold
+          want=1782306401505,kind:test,resolved
         o_elvis:dock_askies
         see:🗂 2 docs · 1 Waft
     A:Lang
@@ -75,7 +75,7 @@ Snap:H
             Compile
               Map
                 def,method:LakeNetherland,line=2,rel_from,rel_to=16
-              time,compile=0.007,all=0.249
+              time,compile=0.002,all=0.253
               Output,gen_path:gen/test/Story/Lake/LakeAmeliorations.go,dige:66dc96483acf789c,source_dige:5243d16758eb710b
                source: |
                  <script lang="ts">
@@ -117,7 +117,7 @@ Snap:H
                 def,method:transport,line=5,rel_from=65,rel_to=75
                 def,method:PeerJS,line=7,rel_from=108,rel_to=115
                 def,method:Socket,line=9,rel_from=145,rel_to=152
-              time,compile=0.004,all=0.153
+              time,compile=0.002,all=0.145
               Output,gen_path:gen/test/Story/Lake/LakeAntecedents.go,dige:e9aa19c131ec60a2,source_dige:69f9fd8539393ad7
                source: |
                  <script lang="ts">
@@ -171,7 +171,7 @@ Snap:H
           Change
             backend,dige:69f9f
             storage,dige:69f9f
-            compile,dige:69f9f,secs=0.004,dim,pending
+            compile,dige:69f9f,secs=0.002,dim,pending
           dock,active	{"loopy":0,"hid":1}
         req:workon,auto_push	{"ref":{"w":"%w:Lang"}}
           req:understanding,maz=3,permanent,sig:2:29:1:0,what:peer,finished
@@ -204,7 +204,6 @@ Snap:H
         received,editorBegins,doc:Ghost/test/Story/Lake/LakeAmeliorations.g
         received,doc_opened,doc:Ghost/test/Story/Lake/LakeAntecedents.g
         received,editorBegins,doc:Ghost/test/Story/Lake/LakeAntecedents.g
-        see:🟦 tiles 0 bookmarks
     A:Pantheate
       self,round=4	{"mung":["age"]}
       w:Pantheate

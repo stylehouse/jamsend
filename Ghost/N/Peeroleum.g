@@ -289,21 +289,78 @@ async Peeroleum_deliver(w, frame):
     //    runner, whose Peeroleum_deliver feebly_ponders → re-wakes its Story drive so the step never
     //     quiesces → step_stall fires → another run_phase → another ack → an endless wedge (the 48s).
     if (h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, pier, frame); H.feebly_ponder(); return }
-    // Book the inbound frame as a serial inbox req (%req:unemit, discriminated by the sender's
-    //  per-Pier seq) and drain via inbox.do(): the %req engine's do() runs each unemit-req's do_fn
-    //   (req_unemit) one at a time, in arrival order, awaiting each — that IS the serial async drain,
-    //    so the hand-rolled %queued/%handling lock is gone. The beliefs mutex (post_do is awaited
-    //     across the whole delivery) means no two do() drains overlap, so no in-flight guard is needed.
+    // The inbox is a serial %req drain: a booked frame is a %req:unemit (discriminated by the sender's
+    //  per-Pier seq) and inbox.do() runs each unemit-req's do_fn (req_unemit) one at a time, in arrival
+    //   order, awaiting each — that IS the serial async drain, so the hand-rolled %queued/%handling lock
+    //    is gone. The beliefs mutex (post_do is awaited across the whole delivery) means no two do()
+    //     drains overlap, so no in-flight guard is needed. The inseq gate below decides WHICH frames book.
     let inbox = pier.oai({inbox: 1})
     inbox.c.up = pier   // do() climbs c.up to the House to resolve req_unemit; stamp the inbox→pier link
+    // ── inbound seq discipline (peeroleum_inseq) ──────────────────────────────
+    // A real inbox frame carries the sender's per-Pier monotone seq (Pier_next_seq); acks +
+    //  ping/pong/run_phase booked none and returned above, so the seqs reaching here ARE exactly
+    //   our real inbound frames — one contiguous stream across hello/trust/noop/app. The clean mock
+    //    delivers 1,2,3… in order, so inseq_admit is a pure pass-through (PereStaple unchanged) — but
+    //     the moment retransmit re-sends an acked seq, or a real carrier reorders, it stops being one:
+    //  · DELIVERED-DUP (seq ≤ last — already delivered, verified, acked) → the ack was lost; re-ack so
+    //     the sender stops retransmitting, but NEVER re-book (a second hear_trust / dock_push is the
+    //      corruption this prevents). `last` persists on pier.c, so a seq re-sent after its %req:unemit
+    //       went %done+culled to %recent is STILL caught — the gap the bare oai-by-seq dedup left open.
+    //  · GAP / BUFFERED-DUP (seq ahead of last+1, or one already held) → stash the raw frame off-snap on
+    //     pier.c.held keyed by seq and book nothing — and DON'T ack: a held frame is unverified (verify
+    //      runs at dispatch in req_unemit), so acking it would break "ack = verified-clean receipt"; the
+    //       sender keeps it alive until the missing seq fills and the whole tail delivers+verifies+acks.
+    //  · contiguous → inseq_admit returns the run now ready (this frame, then any tail it unblocked);
+    //     book each as %req:unemit and drain once via inbox.do().
+    let seq = Number(h.seq)
+    if (!Number.isFinite(seq)) {
+        // no per-Pier seq (no real inbox frame lacks one — every send allocates via Pier_next_seq):
+        //  bypass the cursor and book straight, so an unexpected frame is delivered, never silently
+        //   held in the gap buffer forever.
+        H.Peeroleum_book_unemit(inbox, w, pier, frame)
+        await inbox.do()
+        H.feebly_ponder()
+        return
+    }
+    // the cursor rides pier.c (off-snap) beside the outbound pier.c.seq counter, so a transport
+    //  reconnect that keeps %Ud and keeps the counter climbing stays in sync.  < a PROTOCOL reset
+    //   (heading 8, still TODO) that rewinds Pier_next_seq must also clear pier.c.inseq + pier.c.held,
+    //    or the rewound seq=1 reads as a delivered-dup and never lands.
+    pier.c.inseq = pier.c.inseq || inseq_new()
+    let ready = inseq_admit(pier.c.inseq, seq)
+    if (!ready.length) {
+        if (seq <= pier.c.inseq.last) {
+            let me = pier.c.up%name
+            H.Peeroleum_send(w, {header:{type:'ack', from:me, to:pier%pub, ack:seq}})   // delivered-dup → re-ack only
+        } else {
+            pier.c.held = pier.c.held || {}
+            pier.c.held[seq] = frame                                                     // gap / buffered-dup → hold, no ack
+        }
+        H.feebly_ponder()
+        return
+    }
+    // ready[0] is this frame; any tail entries are gap-held frames now unblocked, in seq order.
+    for (const s of ready) {
+        let f = (s === seq) ? frame : (pier.c.held && pier.c.held[s])
+        if (pier.c.held) delete pier.c.held[s]
+        if (f) H.Peeroleum_book_unemit(inbox, w, pier, f)
+    }
+    await inbox.do()
+    H.feebly_ponder()
+
+// Peeroleum_book_unemit — book ONE inbound frame as a %req:unemit under the inbox (discriminated by
+//  the sender's per-Pier seq) and stash its w/pier/raw-frame on .c for req_unemit (avoids the deep
+//   c.up walk). Booking only; the caller drains with inbox.do(). Split out of Peeroleum_deliver so the
+//    inseq path can book a whole gap-released run before a single drain.
+Peeroleum_book_unemit(inbox, w, pier, frame):
+    let h = frame.header
     let usc = {req: 'unemit', seq: h.seq, type: h.type}
     if (h.body_hash != null) { usc.body_hash = h.body_hash; usc.body_len = h.body_len }
     let ureq = inbox.oai(usc)
     ureq.c.frame = frame
     ureq.c.w = w
     ureq.c.pier = pier
-    await inbox.do()
-    H.feebly_ponder()
+    return ureq
 
 // req_unemit — the inbox do_fn (spec §7.3): handle ONE inbound frame, booked as %req:unemit by
 //  Peeroleum_deliver and drained by inbox.do(). do() serialises these — one at a time, in arrival
@@ -418,3 +475,10 @@ Peeroleum_runstepped(w):
             H.Peeroleum_rollup_faulty(pier)
         }
     }
+
+// ── module imports (magic pseudo-method: body emitted verbatim into the .go header) ──
+// peeroleum_inseq — the pure per-Pier inbound seq-discipline floor (dedup + gap-buffer),
+//  spec'd + headless-proven (scripts/InSeq.spec.ts) before this thin .g wiring. Folded into
+//   Peeroleum_deliver above so a retransmit/reorder can't corrupt the inbox.
+IMPORT()
+    import { inseq_new, inseq_admit } from "$lib/O/peeroleum_inseq"

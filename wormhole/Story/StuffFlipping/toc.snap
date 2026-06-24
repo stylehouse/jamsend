@@ -69,8 +69,7 @@ story:StuffFlipping
     For
     useCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.083
-      sample=0.098,at=1781947665
+    TimeTotal:beliefs,avg=0.082
       sample=0.069,at=1781947717
       sample=0.071,at=1781947734
       sample=0.129,at=1781947766
@@ -80,8 +79,8 @@ story:StuffFlipping
       sample=0.068,at=1781947786
       sample=0.103,at=1782227568
       sample=0.103,at=1782227586
-    TimeTotal:step,avg=0.083
-      sample=0.098,at=1781947665
+      sample=0.089,at=1782308236
+    TimeTotal:step,avg=0.082
       sample=0.069,at=1781947717
       sample=0.071,at=1781947734
       sample=0.129,at=1781947766
@@ -91,4 +90,5 @@ story:StuffFlipping
       sample=0.068,at=1781947786
       sample=0.103,at=1782227568
       sample=0.103,at=1782227586
+      sample=0.089,at=1782308236
   step,dige:8c12d8e0828d1af0

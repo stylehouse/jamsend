@@ -1,6 +1,6 @@
-Credulation,of_Book:LakeTiles
-  run=0,at=1782308710.244,ok,ok_pct,mode:check
-    uses:Ghost_N_Peeroleum,dige:899180b78093453a
+Credulation,of_Book:StuffResolving
+  run=0,at=1782308224.129,ok,ok_pct,mode:check
+    uses:Ghost_N_Peeroleum,dige:38a1f9ec2bbc4f3c
     uses:Ghost_N_Tribunal,dige:683d031e368194c6
     uses:Ghost_Story_Peregrination,dige:cbcb91135c98b814
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a

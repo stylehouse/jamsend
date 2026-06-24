@@ -63,10 +63,28 @@ source, compile-verified, with regen/refreeze HELD** so it doesn't disturb the l
       `setInterval` (liveness must not ride think); `relay.ts` keepalive now pings the outbound `peerLink` bridge
        (was `wss.clients`-only). **LANDED, pure+headless:** `src/lib/O/peeroleum_lossy.ts` (adversarial carrier;
         drop/dup/delay-reorder, logical-tick clock; `scripts/LossyCarrier.spec.ts` 5/5) + `peeroleum_inseq.ts`
-         (per-Pier dedup + gap-buffer; `scripts/InSeq.spec.ts` 6/6). **NEXT:** wire `inseq` into `Peeroleum.g`
-          `req_unemit` (ghost-compile; a pass-through on a clean stream, so PereStaple is unaffected), then
-           retransmit. The PINNED carrier `last_heard` stamp (`Peeroleum_deliver`, every frame incl. **acks** —
-            closes the watchdog's ack-blindness) rides the next re-pin.
+         (per-Pier dedup + gap-buffer; `scripts/InSeq.spec.ts` 6/6).
+- **inseq WIRED into `Peeroleum_deliver` (this session; ghost-compiled + HMR'd live, behaviour-through-the-wire :9091-owed).** Every inbound inbox
+   frame now folds through a per-Pier `pier.c.inseq` cursor BEFORE booking: contiguous → book+drain (the clean
+    mock delivers 1,2,3… so this is a pure pass-through, PereStaple/PereTyrant unaffected); a delivered-dup
+     (`seq ≤ last`) re-acks only (lost-ack recovery, never re-dispatches — `last` persists on `.c`, so a seq
+      re-sent after its `%req:unemit` culled to `%recent` is still caught); a gap/buffered-dup holds the raw
+       frame off-snap on `pier.c.held` and does NOT ack (unverified until dispatch — keeps "ack = verified-clean
+        receipt"), then the fill drains the whole tail in order. Booking split into `Peeroleum_book_unemit`; the
+         import rides a new `IMPORT()` block. `FlockCompile.spec.ts` green (real translator + esbuild gate).
+          **< a protocol reset (heading 8) that rewinds `Pier_next_seq` must also clear `pier.c.inseq`/`held`.**
+- **retransmit PRIMITIVE built (this session; pure+headless, proven).** `src/lib/O/peeroleum_retransmit.ts`
+   (`retx_due`/`retx_delay`/`RETX_DEFAULT`): partitions un-acked `%outbox/emit`s at a LOGICAL tick into
+    `{resend, dead}` on capped exponential backoff; `scripts/Retransmit.spec.ts` 7/7 — units + a **capstone that
+     composes lossy(transient-drop) + retransmit + inseq into reliable in-order delivery** + the permanent-loss→
+      dead path (no-SACK cascade documented in the module). **NEXT: wire it into the spine** — the `.g` part is two
+       moves: (1) stash the raw frame + `sent_tick`/`attempts` on each `%outbox/emit` at send (`Peeroleum_send`),
+        (2) a sweep (drive a per-Pier tick off `Runstepped`/the keepalive interval) that calls `retx_due`,
+         re-sends `emit.c.frame` for each `resend` (bump attempts/sent_tick), and rolls each `dead` to `%faulty` +
+          kicks liveness. Needs :9091 to verify (the Creduler wrangler doesn't run headless). Then spine liveness
+           hardening + Tribunal fallback close the arc.
+The PINNED carrier `last_heard` stamp (`Peeroleum_deliver`, every frame incl. **acks** — closes the watchdog's
+ ack-blindness) rides the next re-pin.
 
 ### → START HERE: real websocket transport (heading 10) — editor↔runner is its first customer
 
@@ -478,6 +496,10 @@ ghosts, Garden.g + Tyrant.g.
    `%req:wrangle`, `Lake_drive`/`Lake_witness`/`Lake_sides_up`/`Lake_trial_*`. (Acquired by the Creduler —
     `Creduler_ensure` / `CREDULER_GHOSTS` in `Lies.svelte`/`LiesLies.svelte`; no hand-written loader.)
 - `src/lib/server/relay.ts` — the real `/relay` WS server (`attachRelay`) + its `configureServer` vite plugin.
+- `src/lib/O/peeroleum_lossy.ts` — adversarial mock carrier (drop/dup/delay-reorder, logical-tick clock).
+- `src/lib/O/peeroleum_inseq.ts` — per-Pier inbound seq discipline (dedup + gap-buffer); wired in `Peeroleum_deliver`.
+- `src/lib/O/peeroleum_retransmit.ts` — the re-send decision (`retx_due`, capped backoff); NOT yet wired (spine TODO).
+- `scripts/{LossyCarrier,InSeq,Retransmit}.spec.ts` — headless gates for the three (run via `Story_cli.vitest.config.mjs`).
 - `wormhole/Ghost/Net/Easy/toc.snap` — annotation overlay / compile manifest.
 - `wormhole/Story/PereStaple/toc.snap` — the Story that drives the Book (step lines run through `step=5`).
 - `src/lib/O/spec/Peeroleum_spec.md` — the pinned design (the floor). This file — the living progress.

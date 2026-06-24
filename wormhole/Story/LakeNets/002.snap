@@ -49,9 +49,9 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1782283435539,kind:cold
-          want=1782283435588,kind:cold
-          want=1782283435743,kind:cold,resolved
+          want=1782306022650,kind:cold
+          want=1782306022701,kind:cold
+          want=1782306022853,kind:cold,resolved
         o_elvis:dock_askies
         see:🗂 1 doc · 1 Waft
     A:Lang
@@ -73,7 +73,7 @@ Snap:H
             Compile
               Map
                 def,method:LakeNetherland,line=2,rel_from,rel_to=16
-              time,compile=0.009,all=0.278
+              time,compile=0.005,all=0.253
               Output,gen_path:gen/test/Story/Lake/LakeAmeliorations.go,dige:66dc96483acf789c,source_dige:5243d16758eb710b
                source: |
                  <script lang="ts">
@@ -117,7 +117,7 @@ Snap:H
           Change
             backend,dige:5243d
             storage,dige:5243d
-            compile,dige:5243d,secs=0.009,dim,pending
+            compile,dige:5243d,secs=0.005,dim,pending
         req:workon,auto_push=0	{"ref":{"w":"%w:Lang"}}
           req:understanding,maz=3,permanent,sig:1:13:1:0,what:story,finished
           req:ingredients,maz=2,permanent,sig:Ghost/test/Story/Lake/LakeAmeliorations.g,finished
@@ -144,7 +144,6 @@ Snap:H
           {"encode":1,"snap_origin":"Doc:Ghost/test/Story/Lake/LakeAmeliorations.g\nPoint,method:LakeNetherland\n","snap_working":"Doc:Ghost/test/Story/Lake/LakeAmeliorations.g\nPoint,method:LakeNetherland\nPoint,method:LakeNetherland,class:focus\n","dirty":"1"}
         received,doc_opened,doc:Ghost/test/Story/Lake/LakeAmeliorations.g
         received,editorBegins,doc:Ghost/test/Story/Lake/LakeAmeliorations.g
-        see:🟦 tiles 0 bookmarks
     A:Pantheate
       self,round=3	{"mung":["age"]}
       w:Pantheate
