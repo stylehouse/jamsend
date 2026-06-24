@@ -23,9 +23,9 @@
             {#if a.sc.icon}<span class="dd-icon">{a.sc.icon}</span>{/if}
             <select
                 class="dd-select btn btn-{cls}"
-                value={a.sc.value ?? ''}
+                value={(a.vers, a.sc.value) ?? ''}
                 onchange={(e) => { try { a.sc.on_pick?.((e.target as HTMLSelectElement).value) } catch (err) { console.warn(`Dropdown "${a.sc.label}" failed:`, err) } }}
-                disabled={a.sc.disabled ?? false}
+                disabled={(a.vers, a.sc.disabled) ?? false}
             >
                 {#each (a.sc.options ?? []) as opt}
                     <option value={opt.value}>{opt.label ?? opt.value}</option>

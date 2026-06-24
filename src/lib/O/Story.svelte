@@ -1375,19 +1375,28 @@
 
         // ── open shared EntropyProfiles as canonical Lies Wafts ────────────
         // The/EntropyProfile,Wref:<path> borrows another Waft's EntropyArrest
-        //  Entcases.  Open it into the outside-Story Lies roster like any dock —
-        //   elvis aims up-tree to that Lies — so it's deWaft'd to a live C tree
-        //    that autosaves on edit and is shared by every Story that borrows it:
-        //     the roster IS the cache (Lies outlives H:Story).  Fire the open ONCE
-        //      and DON'T block — compares run long after this, by which time the
-        //       Waft has landed; entropy_rules reads it off the roster when present.
+        //  Entcases.  Open it as a real Lies Waft (deWaft'd to a live C tree that
+        //   autosaves on edit; entropy_rules reads it off the roster).  Aim the open
+        //    at the OUTSIDE Lies — `top_House().i_elvisto` resolves from Mundo's
+        //     vantage, so _find_house lands on Mundo's `Lies,runner` (which sits
+        //      outside the test's H:Run subtree, so the profile never enters the test
+        //       snap and is cached across runs).  Where Mundo has no Lies (a plain
+        //        editor), the resolver falls back to the nearest = the inner Run Lies,
+        //         and the %boring / defer / acquire-filter guards below keep that inner
+        //          case from disturbing the snap.  Timing: fire ONCE per profile, never
+        //           block, and wait until the test's own (non-boring) Waft is open so an
+        //            inner-Lies open can't reorder w:Lies's reqs before the Preps run.
         {
             const The = w.c.The as TheC | undefined
-            for (const p of (The?.o({ EntropyProfile: 1 }) ?? []) as TheC[]) {
+            const foreground_up = H.top_House().all_House.some((h: any) => {
+                const lw = (h.o({ A: 'Lies' })[0] as TheC | undefined)?.o({ w: 'Lies' })[0] as TheC | undefined
+                return !!lw && (lw.o({ Waft: 1 }) as TheC[]).some(wf => !wf.sc.boring)
+            })
+            if (foreground_up) for (const p of (The?.o({ EntropyProfile: 1 }) ?? []) as TheC[]) {
                 const ref = p.sc.Wref as string | undefined
                 if (!ref || p.c.opened) continue                   // fire-once (c. is runtime, unsnapped)
                 if (H.entropy_profile_waft(ref)) { p.c.opened = true; continue }  // already in a roster
-                H.i_elvisto('Lies/Lies', 'Lies_open_Waft', { path: ref })
+                H.top_House().i_elvisto('Lies/Lies', 'Lies_open_Waft', { path: ref })   // aim at the outside Lies
                 p.c.opened = true
             }
         }

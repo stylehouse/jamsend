@@ -213,6 +213,25 @@ export const LANG_COMPILE = {
                                  from: w.from, to: w.to, line: w.line })
             wc.c.region_path = w.region_path
         }
+
+        // ── TEMP diagnostics — remove once the markdown TOC is confirmed.  The TOC
+        //    came up empty in-app though parse-by-parser found every heading headless,
+        //    so surface WHAT we actually walked onto the Compile particle (visible in
+        //    the snap): the parser class, the tree length, the top node, and the first
+        //    dozen top-level child node names.  If md_parser isn't MarkdownParser or
+        //    md_kids has no ATXHeading*, the wrong grammar is wired on the state.
+        try {
+            const p: any = (state.facet(language as any) as any)?.parser
+            const kids: string[] = []
+            const cur: any = tree?.cursor?.()
+            if (cur && cur.firstChild()) { do { kids.push(cur.name) } while (kids.length < 12 && cur.nextSibling()) }
+            job.sc.md_parser = p?.constructor?.name ?? 'none'
+            job.sc.md_len    = tree?.length ?? -1
+            job.sc.md_top    = tree?.type?.name ?? '?'
+            job.sc.md_kids   = kids.join('>') || '(none)'
+            job.sc.md_heads  = words.length
+        } catch (e: any) { job.sc.md_diag = String(e?.message ?? e).slice(0, 80) }
+
         this.trace(`Lang`, `Markdown TOC regions x${words.length}`)
     },
 

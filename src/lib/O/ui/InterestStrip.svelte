@@ -43,6 +43,17 @@
         return { kind: ai?.sc.kind as string | undefined, waft: ai?.sc.waft as string | undefined }
     })
 
+    // tail_name — the cap label from a Waft path: the last segment that carries a
+    //  letter, so a day-stamped scratch (Aside/2026-06-24) reads as "Aside", not the
+    //   date, and a numbered slice (Foo/001) reads as "Foo".  Walks from the end and
+    //    skips totally-numbery bits; falls back to the bare last segment if every part
+    //     is numbery, then to `fallback` when there's no path at all.
+    function tail_name(path: string | undefined, fallback: string): string {
+        const segs = (path ?? '').split('/').filter(Boolean)
+        for (let i = segs.length - 1; i >= 0; i--) if (/[a-z]/i.test(segs[i])) return segs[i]
+        return segs[segs.length - 1] ?? fallback
+    }
+
     // One row per presence:active Interest that hasn't left the roster.  {Interest:1}
     //  wildcards the kind value, so this collects Trail | Sidetrack | GhostList alike.
     let rows: Row[] = $derived.by(() => {
@@ -56,8 +67,8 @@
             const waft  = it.sc.waft as string | undefined
             const label = kind === 'GhostList' ? 'ghosts'
                         : kind === 'Sidetrack' ? (it.sc.from ? `↳${it.sc.from}` : 'sidetrack')
-                        : kind === 'Aside'     ? `🗒 ${waft?.split('/').pop() ?? 'aside'}`
-                        : (waft?.split('/').pop() ?? 'trail')
+                        : kind === 'Aside'     ? `🗒 ${tail_name(waft, 'aside')}`
+                        : tail_name(waft, 'trail')
             const state    = (it.sc.state as string) ?? 'pending'
             const is_active = active.kind === kind && (active.waft ?? undefined) === (waft ?? undefined)
             // "Interesting" = actually engaged, so it earns a permanent slot: it's the

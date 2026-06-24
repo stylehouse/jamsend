@@ -957,12 +957,13 @@ await M.eatfunc({
     //   Whats nested inside a Doc both read as docless title pages.
     // Resolution order:
     //   1. src is a %Doc                → itself.
-    //   1b. c.chosen_doc — a per-%What sticky pick (a Doc-row click stamps the
-    //        clicked Doc's path here, e_Lies_set_cursor).  A multiDocWhat would
-    //        otherwise always resolve to its first Doc, so clicking the 3rd Doc
-    //        opened the 1st; honoring the pick is the cursor's Doc granularity.
-    //        Off-snap + validated against the live Doc-set, so a stale path (Doc
-    //        removed|renamed) self-heals back to the first-Doc default below.
+    //   1b. c.alpha_doc — the What's alpha sub-Doc: a per-%What pick (a Doc-row click
+    //        stamps the clicked Doc's path, e_Lies_set_cursor; an Interest restores its
+    //        remembered in_Doc here on checkout — Lang_set_interest).  A multiDocWhat
+    //        would otherwise always resolve to its first Doc, so clicking the 3rd Doc
+    //        opened the 1st; honoring the alpha is the cursor's Doc granularity.  Off-
+    //        snap + validated against the live Doc-set, so a stale path (Doc removed|
+    //        renamed) self-heals back to the first-Doc default below.
     //   2. first %Doc descendant in document order — a container %What presents
     //        the first Doc it leads to; o({}) preserves insertion order, which
     //        is exactly snap-line order.  Wins over (3|4) so a What that
@@ -979,9 +980,9 @@ await M.eatfunc({
     Waft_src_doc(src: TheC): TheC | undefined {
         if (!src) return undefined
         if ((src.sc as any).Doc !== undefined) return src
-        const chosen = src.c.chosen_doc as string | undefined
-        if (chosen) {
-            const pick = (src.o({ Doc: 1 }) as TheC[]).find(d => (d.sc as any).Doc === chosen)
+        const alpha = src.c.alpha_doc as string | undefined
+        if (alpha) {
+            const pick = (src.o({ Doc: 1 }) as TheC[]).find(d => (d.sc as any).Doc === alpha)
             if (pick) return pick
         }
         for (const child of src.o({}) as TheC[]) {

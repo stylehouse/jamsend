@@ -47,10 +47,21 @@
     let fail = $derived(Object.values((s.results ?? {}) as Record<string, string>).filter(v => v === "fail").length)
     let done = $derived(pass + fail)
     let running = $derived(s.phase === "arm" || s.phase === "running")
+    let stopped = $derived(s.stopped === true)
 
     function strike() {
         if (running) return                 // a sweep is already underway — ignore re-clicks
         funk.c.sweep = { phase: "arm" }
+        funk.bump_version()
+    }
+
+    // turn the sweep off mid-run: settle the station as done-but-stopped, keeping whatever verdicts
+    //  already landed and dropping the rest of the queue so nothing more dispatches.  One become_book
+    //   already on a runner finishes on its own — we only stop sequencing.  The driver early-returns
+    //    on phase:'done', so the pump goes quiet; a later click re-arms a fresh sweep.
+    function stop(e: MouseEvent) {
+        e.stopPropagation()
+        funk.c.sweep = { phase: "done", results: s.results ?? {}, total: s.total ?? 0, stopped: true }
         funk.bump_version()
     }
 </script>
@@ -58,18 +69,23 @@
 {#if raw}
     <div class="st-raw">Funkcion:StoryTimes{funk.sc.all ? " (all)" : ` → ${scope}`}</div>
 {:else}
-    <button class="st" class:st-running={running} class:st-done={s.phase === "done"}
+    <span class="st-wrap">
+    <button class="st" class:st-running={running} class:st-done={s.phase === "done"} class:st-stopped={stopped}
         onclick={strike}
         title="StoryTimes · sweep every Book in {funk.sc.all ? 'this board' : `What:${scope}`}, in sequence, recording each verdict — on {runners || 'no'} runner{runners === 1 ? '' : 's'}">
-        <span class="st-ico">{running ? "◴" : s.phase === "done" ? "✓" : "⇶"}</span>
+        <span class="st-ico">{running ? "◴" : stopped ? "⊘" : s.phase === "done" ? "✓" : "⇶"}</span>
         <span class="st-name">{funk.sc.all ? "run all" : `run ${scope}`}</span>
         {#if running}
             <span class="st-prog">{done}/{s.total ?? "?"}</span>
         {:else if s.phase === "done"}
-            <span class="st-tally"><span class="st-pass">✓{pass}</span> <span class="st-fail">✗{fail}</span></span>
+            <span class="st-tally"><span class="st-pass">✓{pass}</span> <span class="st-fail">✗{fail}</span>{#if stopped}<span class="st-stopnote"> ⊘ stopped</span>{/if}</span>
         {/if}
         <span class="st-runners" title="{runners} runner{runners === 1 ? '' : 's'} on the phone">⌥{runners}</span>
     </button>
+    {#if running}
+        <button class="st-stop" onclick={stop} title="turn this sweep off — stop dispatching more Books">✕</button>
+    {/if}
+    </span>
 {/if}
 
 <style>
@@ -93,6 +109,20 @@
     .st-running { border-color: #3a3420; color: #c4a86a; }
     .st-running .st-name { color: #d8c490; }
     .st-done    { border-color: rgba(106, 208, 160, 0.4); background: rgba(106, 208, 160, 0.06); }
+    .st-wrap    { display: inline-flex; align-items: center; gap: 0.2rem; }
+    /* the off control — only shown while a sweep is underway. */
+    .st-stop {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 1.3rem; height: 1.3rem; padding: 0; border-radius: 4px; cursor: pointer;
+        border: 1px solid #5a2c34; background: #1c1216; color: #f88;
+        font-family: monospace; font-size: 0.8rem; line-height: 1;
+        transition: filter 0.1s, transform 0.06s;
+    }
+    .st-stop:hover  { filter: brightness(1.35); border-color: #9e4450; }
+    .st-stop:active { transform: translateY(1px); }
+    /* a stopped sweep — overrides .st-done's green (later rule, equal specificity). */
+    .st-stopped { border-color: rgba(248, 136, 136, 0.35); background: rgba(248, 136, 136, 0.05); }
+    .st-stopnote { color: #c88; }
     .st-raw {
         font-family: monospace; font-size: 0.74rem; color: #6a7a9a; padding: 0.1rem 0.2rem;
     }

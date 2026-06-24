@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Peregrination(): string { return '86f1f3b223cc82aa' },
+    Ghostmeta_Ghost_Story_Peregrination(): string { return 'c48bf542bc7d3a28' },
 
 
 // PereStaple — the Peeroleum p2p test (the outer test layer), and the first of a
@@ -241,7 +241,7 @@ async Lake_trial_confirm(w) {
 //  handshake long settled (Bob has %Ud, so the pre-Ud inbox gate admits the frame), send one
 //   binary frame A->B: a fixed 64-byte fixture as RAW bytes on frame.buffer (spec §4.2 — no
 //    base64), the header carrying body_hash + body_len. Bob's serial inbox recomputes the body digest
-//     (Peeroleum_pump_inbox), runs the registered test_binary handler (stamps %got_binary), and
+//     (req_unemit), runs the registered test_binary handler (stamps %got_binary), and
 //      acks -- so the witness sees the full round-trip (Bob %got_binary + Alice's emit %acked, no
 //       %faulty). The SAME exercise runs over ANY carrier: it reads whatever %active_transport
 //        points at (here the websocket the trial fell to at step 5). Raw JS: an object frame, a

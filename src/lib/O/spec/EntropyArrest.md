@@ -229,6 +229,10 @@ Both paths share the same `collect_spayers` → `spay_graft` core, so the in-app
 A step that passes only because it was forgiven is "virtually OK, with a caveat"
  (`match && !exact`) — distinct from an exact match, surfaced as a `≈` badge in Storui.
 
+> **§10 extends this.** As built, forgiveness is *lazy* (it only fires at a non-lenient halt
+>  or a manual pip-open) and the caveat never reaches the **verdict** Editron reads. §10 makes
+>   fuzz-ok compute without a pip-open and ride the verdict back — green, tagged.
+
 ### The structural means-kinds — `drop` and `dontSnap`
 
 Spay forgives a *value*. Some noise is **structural** — an added/removed row, a churning
@@ -434,3 +438,107 @@ We deliberately do **not** live-test the locator/regex in the panel — verifica
            those as authoring affordances, but render/edit the resulting tree as a Waft so local and
             shared caps use one editor — local in `The`, shared via `open ⇗` into the profile Waft.
              (Today: local caps = the bespoke panel; shared caps = read-only group + `open ⇗`.)
+
+---
+
+## 10. The sample loop — deferred forgiveness + `EntropySamples.snap`
+
+§5's forgiveness, as built, has two holes:
+
+1. **It's lazy.** The caveat is only computed where the `check_snap` block runs — a *non-lenient
+    halt*, or a *manual pip-open* (`e_story_sel` → `fetch_snap` → `check_snap ??= n`,
+     Story.svelte). A lenient run, or a `Lies%runner` sweep, finishes with value-noise steps
+      still red until a human pokes each pip. ("atm I have to open the pip first for it to
+       compute ok-ness.")
+2. **It's unpushed.** The verdict Editron reads is computed once, at `storyFinished`
+    (`Cred_run_outcome` counts `step.sc.ok`) → `Lies_runner_verdict` → `run_result`. A caveat
+     conjured *after* that — by a later pip-open — never re-reaches the editor.
+
+This section closes the loop: **fuzz-ok is taken as ok, computed without a pip-open, and the
+ verdict carries it back — green, tagged with the forgiven count.** It does *not* re-record; the
+  snap on disk stays honest (§5's invariant holds throughout).
+
+### 10.1 Why deferred — the timing bomb
+
+A snap **is** the thing being measured: it carries `secs=0.127`, timestamps, counters — the very
+ values a spayer forgives. Loading a fixture and grafting *between* steps would perturb the numbers
+  the *next* steps record. So the expensive half of forgiveness — load expected + graft — must
+   never ride inside a back-to-back run.
+
+The escape: *detecting* unexpectedness is cheap and in-memory — got-dige vs `The_step_dige(w,n)`,
+ already computed at Story.svelte (~`const ok = exp_dige === got_dige`). Only the *resolving*
+  (load + graft) is costly, and it can wait for a moment when timing no longer bites:
+
+- **`Lies%editor` / interactive — at the pause.** Non-lenient already halts on a mismatch; once
+   *stopped*, loading is free. Keep §5's path: mismatch → **pause → load expected → entropy check
+    → caveat → resume**. §10.2 only changes *where* "expected" comes from.
+- **`Lies%runner` — at the end.** A headless sweep has no pause, so a value-mismatch must
+   **flag-and-continue** (mark the step `unexpected` off the dige compare; *no* fetch, *no* graft)
+    and forgive in a single **post-run sweep** that runs before the verdict is read.
+
+### 10.2 `EntropySamples.snap` — the expected-value sidecar
+
+To forgive by **substitution** ("with those numbers substituted it matches") we need, per step,
+ the *expected* captured values — not a hash, the actual tokens. These are persisted in a new
+  `Entropy*`-family snap, written **at record time** (new-mode completion, where `NNN.snap` is
+   written) by running the merged spayers over each recorded snap and keeping the captures:
+
+```
+EntropySamples:<Book>
+  step:N
+    sample:<cap-slug>,cap_ix:<i>,line:<ord>,exp:<expected-token>
+    …
+```
+
+Fed from the **same graft log** `spay_graft` already computes (the got/exp capture pairs, keyed
+ cap-slug + capture index) — the sibling of the §9 *number-wander spool*: EntropySamples is the
+  *record-time expected* captures, the wander spool the *per-run observed* ones; one source.
+   Encoded as Lines via `encode_wh_lines`, so it round-trips and is editor-openable like any snap.
+
+**It is a cache, never truth.** The forgive path is *sidecar → NNN.snap fallback*: substitute the
+ stored `exp` tokens into got at each cap/line/capture position, re-dige, and compare to the
+  expected dige in `toc.snap`; on a hit the step is fuzz-ok. When the sidecar is **absent or
+   stale** (the spayer set changed since record — detect via a content dige or a spayer-set
+    stamp), fall back to grafting the full on-disk `NNN.snap` as §5 does today. A stale sidecar
+     can therefore never mint a wrong green: worst case it misses and the fallback decides.
+
+### 10.3 The two paths, precisely
+
+- **Editor / interactive (keep the live pause).** Story.svelte's mismatch branch still pauses
+   (`paused`/`failed_at`/`fetch_snap`/`check_snap`) for live review. The `check_snap` forgive now
+    reads `EntropySamples.snap` first (no async-profile dependency — which is what forced the
+     pip-open), NNN.snap as fallback.
+- **Runner (flag-and-continue + post-run sweep).** On a `Lies%runner` the mismatch branch does
+   **not** pause and does **not** fetch — it stamps `step.sc.unexpected` off the dige compare and
+    drives on. A new `story_forgive_sweep(w)` runs once in the check-mode **completion** branch
+     (do_step, where `mode==='check' && !The_step_dige(n)`), **before** `story_save` /
+      `storyFinished` fire: for each `unexpected`/`!ok` step that retained `got_snap`, load expected
+       (sidecar→NNN) and forgive → stamp `ok+caveat`. Real mismatches stay red and pull `ok_pct`
+        down honestly.
+
+### 10.4 The verdict — green, tagged caveat
+
+Because the sweep runs *before* `Cred_run_outcome` reads the steps, the single emitted verdict is
+ already correct — **nothing is re-pushed.** A caveat counts green (its `sc.ok` is true), and the
+  forgiven count rides along so Editron can show "passed, N forgiven":
+
+- `Cred_run_outcome` (Auto.svelte) → also return `caveat` (`steps.filter(s => s.sc.ok &&
+   s.sc.caveat).length`); `ok` stays `ok_count === done` (caveats included).
+- `Lies_runner_verdict` → `Lies_report_result` → the `run_result` frame carries `caveat`;
+   `Lies_run_result_recv` stamps it on the dock's `%run_result`; Liesui's Cred readout shows `≈N`.
+
+### 10.5 The runner behaviour change (decided, flagged)
+
+Making the runner **flag-and-continue** instead of halting is a deliberate semantics change: a
+ genuinely-failing Book now **completes and reports an honest `ok_pct`** instead of wedging at the
+  first mismatch until the StoryTimes 60s sweep-stall fails it. Net better for a headless
+   judge — but it *is* a change to how the runner treats a real failure, recorded here on purpose.
+
+### 10.6 Decisions (locked)
+
+- Cover **both** flows via a completion-level fix; the editor keeps its live pause.
+- Caveat reads **green, tagged** with the forgiven count (not a new amber state).
+- Expected values: **`EntropySamples.snap` sidecar + `NNN.snap` fallback** (sidecar can't mint a
+   wrong green).
+- The **timing rule** is the runner's only: never load a snap mid-run; the editor loads at the
+   pause, the runner at the post-run sweep.

@@ -860,7 +860,14 @@
         const want_dock = want_doc
             ? (w.o({ docks: 1 })[0]?.o({ dock: want_doc })[0] as TheC | undefined)
             : undefined
-        const n_sig  = `${want_doc ?? ''}:${(want_dock?.c.content_dige as string | undefined) ?? ''}:${src_serial}:${LE?.version ?? 0}`
+        // The %Compile version closes a gap content_dige misses: a parser switch (a
+        //  language change → recompile) rebuilds %Map from the SAME text, so content_dige
+        //   is unchanged and instrumentation would skip — leaving Navicade/MapReport built
+        //    from the prior parser's (e.g. empty stho-on-markdown) Map.  job.empty() bumps
+        //     the job each recompile, so this term re-runs the graft/report/Mapulen build
+        //      against the fresh Map.
+        const compile_v = want_dock?.o({ Compile: 1 })[0]?.version ?? 0
+        const n_sig  = `${want_doc ?? ''}:${(want_dock?.c.content_dige as string | undefined) ?? ''}:${src_serial}:${LE?.version ?? 0}:${compile_v}`
         await workon.oai({ req: 'instrumentation' }, { sig: n_sig })
 
         // pump the pipeline — maz orders understanding → ingredients → instrumentation.
@@ -986,10 +993,20 @@
         //    foregrounds its OWN Trail.  Fall back to a fresh checkout Trail awaiting
         //     bind, then to a new Trail the roster binds to its giver next reconcile.
         const waft_key = H.waft_key_of(armed)
-        const trails   = (languinio.o({ Interest: 'Trail' }) ?? []) as TheC[]
-        const interest = (waft_key != null ? trails.find(t => t.sc.waft === waft_key) : undefined)
-                       ?? trails.find(t => t.c.LE && !t.sc.waft)
-                       ?? languinio.oai({ Interest: 'Trail' })
+        // Stance-aware foreground: a stance-marked giver foregrounds its OWN Interest
+        //  row, not a parallel Trail.  Reading the armed What's Waft stance — aside→Aside,
+        //   else Trail — keeps the common giver path byte-identical (Trail) while routing
+        //    today's scratch dump to the Aside row reconcile mints.  Without this a cursor
+        //     landing inside an Aside spun up a second {Interest:'Trail',waft:Aside/…} beside
+        //      the {Interest:'Aside'} row: the strip showed the Trail (date-labelled, not 🗒)
+        //       and the two-row ambiguity flickered out next reconcile.  (Sidetrack keeps its
+        //        own origination path; only aside diverges here for now.)
+        const waft_C   = H.LE_what_waft(armed)
+        const kind     = (waft_C && H.interest_stance_of(waft_C) === 'aside') ? 'Aside' : 'Trail'
+        const pool     = (languinio.o({ Interest: kind }) ?? []) as TheC[]
+        const interest = (waft_key != null ? pool.find(t => t.sc.waft === waft_key) : undefined)
+                       ?? pool.find(t => t.c.LE && !t.sc.waft)
+                       ?? languinio.oai({ Interest: kind })
 
         // Per-Interest %LE: this giver keeps its OWN Understanding (held on c.LE, parented
         //  under w outside any replace() so it survives checkouts), keyed {LE:<waft>} so
@@ -998,7 +1015,11 @@
         //     from locked to pending (noticed-but-not-foreground).
         let LE = interest.c.LE as TheC | undefined
         if (!LE) { LE = w.oai({ LE: waft_key ?? 'checkout' }); interest.c.LE = LE }
-        for (const t of trails) if (t !== interest && t.sc.state === 'locked') t.sc.state = 'pending'
+        // demote the foreground we left (any heavy kind — Trail or Aside) locked→pending,
+        //  so its cap collapses while keeping its own LE for the crossfade back.
+        const foregroundable = [...(languinio.o({ Interest: 'Trail' }) as TheC[]),
+                                ...(languinio.o({ Interest: 'Aside' }) as TheC[])]
+        for (const t of foregroundable) if (t !== interest && t.sc.state === 'locked') t.sc.state = 'pending'
 
         const working_C = LE.o({ Seem: 'working' })[0]?.sc.C as TheC | undefined
         interest.sc.src = working_C
@@ -1008,7 +1029,7 @@
         //   alone once lens is set, so this sticks across roster pushes.
         interest.sc.state = 'locked'
         const ai = languinio.oai({ ActiveInterest: 1 })
-        ai.sc.kind = 'Trail'
+        ai.sc.kind = kind                                          // Trail | Aside — the foreground's kind
         if (waft_key != null) ai.sc.waft = waft_key; else delete ai.sc.waft   // which giver is foreground
         languinio.c.active_LE = LE                                 // the readers' foreground-LE handle (off-snap)
 
@@ -1017,6 +1038,18 @@
         //   a string: it is the dock-map key, and docks are keyed by path.
         const sc = armed.sc as any
         interest.c.What = armed
+        // alpha sub-Doc memory.  Focusing a What also picks one of its Docs (the alpha) —
+        //  in_Doc here, in_Point its sibling axis (the focus spec).  The Interest is the
+        //   memory home: if the live What lost its pick (a re-decoded Waft mints a fresh
+        //    What with no c.alpha_doc) but this Interest still remembers a Doc that's one of
+        //     the What's, re-stamp it so returning lands on the same sub-Doc.  Waft_src_doc
+        //      then projects alpha (chosen) ?? first-Doc back out — so an explicit click
+        //       (which sets c.alpha_doc Lies-side) wins, and absent any pick it's first-Doc.
+        const remembered = interest.sc.in_Doc as string | undefined
+        if (remembered && !armed.c.alpha_doc
+            && (armed.o({ Doc: 1 }) as TheC[]).some(d => (d.sc as any).Doc === remembered)) {
+            armed.c.alpha_doc = remembered
+        }
         const in_Doc   = H.Waft_src_doc_path(armed)
         const in_Point = sc.method as string | undefined
         // set|clear — no longer a drop+recreate, so an absent value must be cleared
@@ -1435,7 +1468,7 @@
         const Map_C    = dock.o({ Compile: 1 })[0]?.o({ Map: 1 })[0] as TheC | undefined
         const navicade = dock.oai({ Navicade: 1 })
         navicade.empty()
-        if (!Map_C) { navicade.bump_version(); return }
+        if (!Map_C) { navicade.bump_version(); dock.bump_version(); return }
 
         // doc geometry — char offset of each line's end, and the line count.  The
         // minimap holds none of this Lang-side|the Mapulen carry the finished spans
@@ -1539,6 +1572,12 @@
             }
         }
         navicade.bump_version()
+        // Also bump the dock: DocMinimap subscribes via `void lang_dock?.vers`, but
+        //  building navicade (a child) bumps navicade, not the dock — so without this the
+        //   rebuilt Mapulen don't re-derive the strip until an unrelated dock bump (the
+        //    "switch docs to unfurl" workaround).  reactivity_docs: bump the particle
+        //     everyone keys on.
+        dock.bump_version()
     },
 
     // ── Lang_pointed_specs — the set of working-Point specs ────────────────────
@@ -2150,9 +2189,12 @@
                 //  no graph to animate, so no-op rather than throwing "no House has A:Cyto".
                 H.feebly_i_elvisto('Cyto/Cyto', 'Cyto_animation_request', { Langy: 1 })
             }
-            else if (H.o_Opt_val(w, 'txtsyntaxdump')) {
+            else {
                 // txt path — nested Lezer hierarchy under model/Line:N/<NodeName>/...
                 // built for the Story snap to render as plain text.  No Cyto ping.
+                // Unconditional now (was gated on Opt/txtsyntaxdump): a bookmark always
+                //  wants its syntax dump — the outer guard already scopes this to "there
+                //   are bookmarks and something changed", so it's not constant work.
                 model.empty()
                 this.whatsthis_txt(state, model, bookmarks)
                 // bump so DocPoint's $derived(model.ob()) re-fires

@@ -126,6 +126,12 @@
     //   $effect skips no-op reapplications.
     const langCompartment = new Compartment()
     let last_applied_lang: string | undefined
+    // The lang editorExtensions baked into langCompartment.of() at build_editor — the
+    //  grammar a freshly setState'd state carries until the reconfigure $effect corrects
+    //   it.  The switch $effect resets last_applied_lang to this (not undefined) so the
+    //    effect re-applies ONLY on a real mismatch, sparing a same-grammar reconfigure +
+    //     its now-attached recompile on every same-language dock open.
+    let baked_lang_name: string | undefined
 
     const UPDATE_DELAY_MS = 800
     let update_timer: ReturnType<typeof setTimeout> | null = null
@@ -372,7 +378,13 @@
     //   always arrive together with no mid-flush gap.
     let _signal_seen    = ''
     $effect(() => {
-        const la        = H.ave.ob({ lang_actions: 1 })[0] as TheC | undefined
+        // The editor's actions live on the actions channel (H.actions — the same
+        //  channel Otro renders per House), NOT under H.ave: nothing ever populated an
+        //   ave/lang_actions child, so .lte-bar's <Actions> read an always-empty list
+        //    and the language picker never appeared in the toolbar.  Subscribe to the
+        //     channel here; the language actions are filtered out of it when settling below.
+        const la        = (H.actions as TheC | undefined)
+        la?.ob({ action: 1 })   // track H.actions.vers so a (de)register repaints the bar
         const languinio = H.ave.ob({ Languinio: 1 })[0] as TheC | undefined
         languinio?.ob()   // track languinio.version
         const dock_C    = languinio?.ob({ dock: 1 })[0] as TheC | undefined
@@ -381,7 +393,13 @@
         if (sig !== _signal_seen) { console.log(`🔭 Languinio $effect: ${sig}`); _signal_seen = sig }
         const nd = !!languinio?.sc.no_doc
         H.clear(async () => {
-            lang_actions = la ? la.o({ action: 1 }) as TheC[] : []
+            // Just the language actions — the lang_pick dropdown and the gen-parser
+            //  button.  The rest of H.actions (bookmark/compile) already render in Otro's
+            //   House row, so filtering here keeps the toolbar to the language picker.
+            lang_actions = la
+                ? (la.o({ action: 1 }) as TheC[]).filter(a =>
+                    a.sc.role === 'lang_pick' || a.sc.role === 'gen_parser')
+                : []
             if (path) active_path = path
             if (dock_C) dock = dock_C
             // no_doc is a deliberate flag (req_instrumentation stamps it for a
@@ -537,6 +555,18 @@
                 view!.setState(EditorState.create({ doc: text, extensions: editorExtensions! }))
             }
 
+            // Track the grammar the state we just installed actually carries, so the
+            //  reconfigure $effect (which runs right after — it reads active_path too)
+            //   dispatches+recompiles ONLY on a real mismatch.  A fresh state carries
+            //    editorExtensions' baked grammar; a restored state carries the grammar it was
+            //     reconfigured to when last live (its doc's wanted lang).  Setting this to the
+            //      stale prior-dock name (the old bug) stranded a same-named doc; setting it to
+            //       undefined re-applied on every open (a wasted recompile now that a language
+            //        change drives one).
+            last_applied_lang = cached
+                ? ((dock?.sc.lang_override as string | undefined) ?? lang_for_path(arriving))
+                : baked_lang_name
+
             // Which doc this view's live state belongs to — the alignment key
             //   the Atime graft|decoration dispatchers check (Lang_view_on)
             //   before mutating, since they would otherwise write marks into
@@ -636,16 +666,36 @@
         const want = (dock?.sc.lang_override as string)
             ?? lang_for_path(active_path)
         if (want === last_applied_lang) return
+        const my_view = view          // capture identity + target: a since-stale resolve
+        const my_path = active_path    //  must not dispatch onto a swapped view/state
         const prev = last_applied_lang
         last_applied_lang = want
         lang(want).then(exts => {
-            if (!view) return
+            // Stale-resolve guard.  While lang() resolved, the view may have been rebuilt
+            //  (a remount) OR the active doc may have moved on (a setState dock switch) —
+            //   either way dispatching `want` now would strand the CURRENT doc on the wrong
+            //    grammar (the way a .md ends up on the prior dock's stho parser).  Bail,
+            //     reverting the optimistic mark only if it's still ours (the live doc's own
+            //      effect run owns it otherwise), so that run re-applies off a clean slate.
+            if (view !== my_view || active_path !== my_path) {
+                if (last_applied_lang === want) last_applied_lang = prev
+                return
+            }
             if (exts.warnings?.length) {
                 console.warn(`lang(${want}) warnings:`, exts.warnings)
             }
             view.dispatch({ effects: langCompartment.reconfigure(exts) })
+            // The reconfigure produced a NEW immutable EditorState carrying the new parser.
+            //  The compile reads its parser off dock.c.state and is a reqonce keyed on text,
+            //   so without this it keeps the OLD grammar's Map (a .md stranded on stho) until
+            //    a manual Esc. Fire the same path Esc does — Lang_i_elvis stamps the fresh
+            //     state onto dock.c.state (Lang_dock_from_event) and e_Lang_compile recompiles
+            //      against it — so the language change drives the recompile (and the minimap
+            //       Map/Mapule rebuild) automatically. Guarded above to fire only on a real
+            //        grammar change, so this is not a per-open double compile.
+            Lang_i_elvis(view, 'Lang_compile', {})
         }).catch(err => {
-            last_applied_lang = prev
+            if (last_applied_lang === want) last_applied_lang = prev
             console.warn(`Langui: lang(${want}) failed:`, err)
         })
     })
@@ -1505,6 +1555,7 @@
         // alignment key for Atime dispatchers — see the switch $effect's stamp.
         ;(view as any).lte_dock_path = captured_path
         last_applied_lang = initial_lang_name
+        baked_lang_name   = initial_lang_name   // the grammar editorExtensions baked in
         console.log(`🏗 EditorView created: dom.clientHeight=${view.dom.clientHeight} scrollDOM.clientHeight=${view.scrollDOM.clientHeight}`)
 
         // Seed the spool with the initial text so the very first echo
