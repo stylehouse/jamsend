@@ -69,8 +69,8 @@ Tyrant_sides_up(w):
     // the Pier flock: oai Pier,$pub,req — a per-peer Pier carrying the serialise sentinel
     //  mints as %Pier,pub:…,req:N (mainkey Pier, dispatched by req_Pier).  We mint it ⇒ we
     //   own its identity (no remote gut-swap), the security M1's trust then rides on.
-    AlicePeering oai Pier,pub:bob,req$:AlicePier
-    BobPeering oai Pier,pub:alice,req$:BobPier
+    let AlicePier = AlicePeering oai Pier,pub:bob,req
+    let BobPier = BobPeering oai Pier,pub:alice,req
     // GIVEN identities (M1 skips meet+prove): %Ud pre-stamped, so a vouch frame clears the
     //  spine's pre-Ud gate (which otherwise admits only hello|noop, spec §7.3).
     AlicePier i %Ud,id:bob

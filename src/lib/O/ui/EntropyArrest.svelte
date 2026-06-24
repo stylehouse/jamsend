@@ -655,7 +655,7 @@
 
     /* shared caps borrowed from a profile Waft — the line drawn around the set.  A
        dashed teal border + faint wash sets it apart from the locally-authored caps;
-        read-only rows (no edit/× ), edited at the source via the header's open ⇗. */
+        the rows are editable (edit|×), but they write THROUGH to the profile Waft. */
     .ea-shared {
         margin: 0.3rem 0 0.2rem; padding: 0.2rem 0.3rem 0.25rem;
         border: 1px dashed #2c4a4a; border-radius: 3px; background: #08120f;
@@ -669,8 +669,13 @@
         font-family: monospace; font-size: 0.68rem; color: #588;
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-    .ea-cap-ro { opacity: 0.85 }
-    .ea-cap-ro .ea-cap-slug { color: #8aa }
+    /* the draft banner when editing a shared cap — teal, matching the shared group's accent,
+       so it's clear OK writes to the profile (not a local cap). */
+    .ea-shared-edit {
+        font-family: monospace; font-size: 0.64rem; color: #6cc;
+        background: #0d2424; border-radius: 2px; padding: 0.08rem 0.3rem; margin-bottom: 0.25rem;
+    }
+    .ea-draft-shared { border-color: #2c4a4a }
 
     /* the draft */
     .ea-draft {

@@ -11,7 +11,7 @@ Waft:Trope/Lies/NormalEntropy,boring,dontSnap
     Entcase:Compile_time-compile
       lematch,Compile
         lematch,time,compile,all,write
-          {"means":1,"spayer":1,"re":"time,compile={NUM},all={NUM},write=0","tol":"band","factor":2.53,"pm":0.5}
+          {"means":1,"spayer":1,"re":"time,compile={NUM},all={NUM},write={NUM}","tol":"band","factor":2.53,"slack":0.5}
     Entcase:w_self-round
       lematch,w/self,round
         {"means":1,"spayer":1,"re":"self,round={NUM}","tol":"band","factor":1.5}
@@ -19,11 +19,15 @@ Waft:Trope/Lies/NormalEntropy,boring,dontSnap
       lematch,req:wants
         lematch,want,kind
           means,spayer,re:want={NUM},tol:band,factor=1.5
-    Entcase:Change_compile-secs
-      lematch,Change
-        lematch,compile,dige,secs,dim,pending
-          means,spayer,re:secs={NUM},tol:band,factor=2.52
     Entcase:Lies_Waft:Ting
       lematch,w:Lies
         lematch,Waft,takes
           means,spayer,re:Waft:Ting/{INT}-{INT}-{INT}/{INT}.takes,tol:any
+    Entcase:Change_compile-secs
+      lematch,Change
+        lematch,compile,dige,secs,dim,pending
+          means,spayer,re:secs={NUM},tol:band,factor=0.52,slack=0.07
+    Entcase:Lies_log-source-write
+      lematch,w:Lies
+        lematch,log:source_write
+          means,drop

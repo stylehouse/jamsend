@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Tyrant(): string { return '169ac003c8f3705c' },
+    Ghostmeta_Ghost_N_Tyrant(): string { return 'ed4fd88c7e2b904a' },
 
 // Tyrant — the cabinetry over the Peeroleum floor: identity & trust → admission.
 //  A clean-room rebirth of legacy Tyranny, in stho, riding the Peeroleum transport
@@ -87,8 +87,8 @@ Tyrant_sides_up(w) {
     // the Pier flock: oai Pier,$pub,req — a per-peer Pier carrying the serialise sentinel
     //  mints as %Pier,pub:…,req:N (mainkey Pier, dispatched by req_Pier).  We mint it ⇒ we
     //   own its identity (no remote gut-swap), the security M1's trust then rides on.
-    AlicePeering.oai({Pier: 1, pub: "bob", req: 1})
-    BobPeering.oai({Pier: 1, pub: "alice", req: 1})
+    let AlicePier = AlicePeering.oai({Pier: 1, pub: "bob", req: 1})
+    let BobPier = BobPeering.oai({Pier: 1, pub: "alice", req: 1})
     // GIVEN identities (M1 skips meet+prove): %Ud pre-stamped, so a vouch frame clears the
     //  spine's pre-Ud gate (which otherwise admits only hello|noop, spec §7.3).
     AlicePier.i({Ud: 1, id: "bob"})

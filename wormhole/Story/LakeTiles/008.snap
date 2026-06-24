@@ -1,12 +1,12 @@
 Snap:H
   H:LakeTiles,Run
     A:Lies
-      self,round=49	{"mung":["age"]}
+      self,round=48	{"mung":["age"]}
       w:Lies
         Opt
           nowriting:^Ghost
           dontSnapGhostList
-        self,round=49	{"mung":["age"]}
+        self,round=48	{"mung":["age"]}
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/LakeTiles/Waftily/toc.snap,waft_path:Story/LakeTiles/Waftily
             known,dige:1f545ca0106605b0,kind:read	{"mung":["at"]}
@@ -35,20 +35,20 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1782294752651,kind:cold
-          want=1782294752699,kind:cold
-          want=1782294752852,kind:cold,resolved
+          want=1782298115271,kind:cold
+          want=1782298115336,kind:cold
+          want=1782298115489,kind:cold,resolved
         o_elvis:dock_askies
-        Waft:Ting/2026-06-24/215235,takes
-          Point:theCompiledStuff,doc:Ghost/test/Story/Lake/LakeTiles.g,n=2,weight=4,last=1782294757928,first=1782294755597,heat=4.231,warm=0.5,bright,held,long
-            {"say":"o hut/although:1/they,can,be,mixed","at":1782294757928}
+        Waft:Ting/2026-06-24/224838,takes
+          Point:theCompiledStuff,doc:Ghost/test/Story/Lake/LakeTiles.g,n=2,weight=4,last=1782298120894,first=1782298118639,heat=4.208,warm=0.5,bright,held,long
+            {"say":"o hut/although:1,they,can,be,mixed","at":1782298120894}
         see:🗂 1 doc · 2 Wafts
     A:Lang
-      self,round=66	{"mung":["age"]}
+      self,round=68	{"mung":["age"]}
       w:Lang
         Opt
           txtsyntaxdump
-        self,round=66	{"mung":["age"]}
+        self,round=68	{"mung":["age"]}
         model,cyto_dir
           Line=5,line_from=74,line_to=98,str:    let la = i hut/$toot,the_bm_bm_98_132
             Name,from=78,to=81,str:let
@@ -148,7 +148,7 @@ Snap:H
                 def,method:captureOutTiles,line=275,rel_from=11593,rel_to=11609
                 def,magic,method:IMPORT,line=286,rel_from=12124,rel_to=12131
                 def,magic,method:RENDER,line=290,rel_from=12260,rel_to=12267
-              time,compile=0.046,all=0.628,write=0
+              time,compile=0.025,all=0.564,write=0
               Output,gen_path:gen/test/Story/Lake/LakeTiles.go,dige:6eaad12d8cc6d6e4,source_dige:da408f224e8f0132
                source: |
                  <script lang="ts">
@@ -528,13 +528,13 @@ Snap:H
           dock,active	{"loopy":0,"hid":1}
           Change
             backend,dige:da408
-            compile,dige:da408,secs=0.046,dim,pending
+            compile,dige:da408,secs=0.025,dim,pending
             storage,dige:da408
           LE:Undertaking,reason:Undertaking
             Seem:workon
               Funkcion:trail,halflife_ms=60000
-          Interest:Ting,waft:Ting/2026-06-24/215235,lens:DocTing,presence:always,state:live
-            cursor,what:Ting/2026-06-24/215235,latest
+          Interest:Ting,waft:Ting/2026-06-24/224838,lens:DocTing,presence:always,state:live
+            cursor,what:Ting/2026-06-24/224838,latest
         req:workon,auto_push	{"ref":{"w":"%w:Lang"}}
           req:understanding,maz=3,permanent,sig:1:13:0:0,what:labelofaWhat,finished
           req:ingredients,maz=2,permanent,sig:Ghost/test/Story/Lake/LakeTiles.g,finished
@@ -568,9 +568,9 @@ Snap:H
         received,doc_opened,doc:Ghost/test/Story/Lake/LakeTiles.g
         received,editorBegins,doc:Ghost/test/Story/Lake/LakeTiles.g
     A:Pantheate
-      self,round=32	{"mung":["age"]}
+      self,round=31	{"mung":["age"]}
       w:Pantheate
-        self,round=32	{"mung":["age"]}
+        self,round=31	{"mung":["age"]}
         o_elvis:Ghost_update_notify
         include:gen/test/Story/Lake/LakeTiles.go
         req:include,gen_path:gen/test/Story/Lake/LakeTiles.go,path:Ghost/test/Story/Lake/LakeTiles.g,source_dige:da408f224e8f0132,ghostmeta_name:Ghostmeta_Ghost_test_Story_Lake_LakeTiles,permanent,live_dige:da408f224e8f0132,finished

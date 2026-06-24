@@ -103,8 +103,8 @@ Lake_sides_up(w):
     // the Pier flock: oai Pier,$pub,req — find-or-create a per-peer Pier carrying the
     //  serialise sentinel, so it mints as %Pier,pub:…,req:N (mainkey Pier, a typed serial
     //   req dispatched by req_Pier).  WE mint it ⇒ we own its identity (no remote gut-swap).
-    AlicePeering oai Pier,pub:bob,req$:AlicePier
-    BobPeering oai Pier,pub:alice,req$:BobPier
+    let AlicePier = AlicePeering oai Pier,pub:bob,req
+    let BobPier = BobPeering oai Pier,pub:alice,req
     &transport,AliceA,Alicew
     &transport,BobA,Bobw
     // each w culls its Piers' acked outbox / done inbox into %recent at the step
@@ -249,7 +249,11 @@ async Lake_exercise_binary(w):
 //   value — `step` is the Story mainkey, so it can't be a key). Idempotent via the probe.
 Lake_witness(w):
     H o A:Bob/w:Peeroleum/Peering/Pier$:BobPier
-    BobPier o inbox/unemit$:landed?.sc.done
+    // the noop proved the carrier once Bob HANDLED it — a %done req:unemit (the inbox-fold
+    //  shape; the old flat %unemit mainkey is gone), or, past the step-boundary cull, its
+    //   readable %recent/unemit record (presence there = it round-tripped, the step-6 idiom).
+    let Bobinbox = BobPier?.o({inbox:1})[0]
+    let landed = Bobinbox?.o({req:'unemit'})[0]?.sc.done || Bobinbox?.o({recent:1})[0]?.oa({unemit:1})
     if (landed && !(oa %witnessed:step_2)) i %witnessed:step_2
     // step 3: both Piers' %req:handshake reached finished (all four leaves done).
     H o A:Alice/w:Peeroleum/Peering/Pier$:AlicePier

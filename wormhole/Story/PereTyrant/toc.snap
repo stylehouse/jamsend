@@ -3,6 +3,11 @@ story:PereTyrant
   Plan
   Opt
     For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.016
+      sample=0.016,at=1782296909
+    TimeTotal:step,avg=0.005
+      sample=0.005,at=1782296909
   step,dige:1111111111111111
   step=2,dige:2222222222222222
   step=3,dige:3333333333333333

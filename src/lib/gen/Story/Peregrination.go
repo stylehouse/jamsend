@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Peregrination(): string { return 'b8e86e6981d6da92' },
+    Ghostmeta_Ghost_Story_Peregrination(): string { return 'c03482f916c0d795' },
 
 
 // PereStaple — the Peeroleum p2p test (the outer test layer), and the first of a
@@ -122,8 +122,8 @@ Lake_sides_up(w) {
     // the Pier flock: oai Pier,$pub,req — find-or-create a per-peer Pier carrying the
     //  serialise sentinel, so it mints as %Pier,pub:…,req:N (mainkey Pier, a typed serial
     //   req dispatched by req_Pier).  WE mint it ⇒ we own its identity (no remote gut-swap).
-    AlicePeering.oai({Pier: 1, pub: "bob", req: 1})
-    BobPeering.oai({Pier: 1, pub: "alice", req: 1})
+    let AlicePier = AlicePeering.oai({Pier: 1, pub: "bob", req: 1})
+    let BobPier = BobPeering.oai({Pier: 1, pub: "alice", req: 1})
     this.transport(AliceA,Alicew)
     this.transport(BobA,Bobw)
     // each w culls its Piers' acked outbox / done inbox into %recent at the step
@@ -275,7 +275,11 @@ async Lake_exercise_binary(w) {
 //   value — `step` is the Story mainkey, so it can't be a key). Idempotent via the probe.
 Lake_witness(w) {
     let BobPier = this._o_drill1(this, [{sc: {A: "Bob"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
-    let landed = this._o_drill1(BobPier, [{sc: {inbox: 1}}, {sc: {unemit: 1}}])?.sc.done
+    // the noop proved the carrier once Bob HANDLED it — a %done req:unemit (the inbox-fold
+    //  shape; the old flat %unemit mainkey is gone), or, past the step-boundary cull, its
+    //   readable %recent/unemit record (presence there = it round-tripped, the step-6 idiom).
+    let Bobinbox = BobPier?.o({inbox:1})[0]
+    let landed = Bobinbox?.o({req:'unemit'})[0]?.sc.done || Bobinbox?.o({recent:1})[0]?.oa({unemit:1})
     if (landed && !(w.oa({witnessed: "step_2"}))) w.i({witnessed: "step_2"})
     // step 3: both Piers' %req:handshake reached finished (all four leaves done).
     let AlicePier = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
