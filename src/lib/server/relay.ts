@@ -174,10 +174,12 @@ export function attachRelay(
 		}, 5000)
 		link.on('open', () => {
 			clearTimeout(watchdog)
+			;(link as any).isAlive = true                              // keepalive: the heartbeat round pings this outbound bridge too
 			try { (link as any)._socket?.setNoDelay(true) } catch {}   // Nagle off on the r2r bridge too
 			relayLog(`✓ peer relay LINKED (outbound r2r) → ${editorRelayUrl}`)
 			broadcastControl({ control: 'peer-relay', up: true, target: editorRelayUrl })
 		})
+		link.on('pong', () => { (link as any).isAlive = true })        // re-proven each round — unmasks a half-open outbound bridge
 		link.on('message', (data: any, isBinary: boolean) => routeFromPeer(isBinary ? asBuffer(data) : asText(data)))
 		link.on('close', (code: number) => {
 			clearTimeout(watchdog)
@@ -384,6 +386,22 @@ export function attachRelay(
 			if ((ws as any).isAlive === false) { relayLog(`✂ half-open socket terminated (missed pong)`); ws.terminate(); continue }
 			;(ws as any).isAlive = false
 			try { ws.ping() } catch { /* terminating anyway next round */ }
+		}
+		// The OUTBOUND r2r bridge (dialEditor's `new WebSocket`) is NOT a wss client, so the loop
+		//  above never pings it — a half-open outbound bridge reports OPEN forever and silently
+		//   swallows every forwarded frame (routeFromBrowser's bridge.send into the void). Ping it on
+		//    the same round; a missed pong terminates+nulls it, so the next browser (re)connect's
+		//     re-dial guard dials a FRESH bridge instead of trusting the zombie (the relay.ts:335 case).
+		const link = peerLink
+		if (link && link.readyState === WebSocket.OPEN && !wss.clients.has(link as any)) {
+			if ((link as any).isAlive === false) {
+				relayLog(`✂ half-open r2r bridge terminated (missed pong) — will re-dial`)
+				try { link.terminate() } catch {}
+				if (peerLink === link) peerLink = null
+			} else {
+				;(link as any).isAlive = false
+				try { link.ping() } catch {}
+			}
 		}
 	}, HEARTBEAT_MS)
 

@@ -34,28 +34,28 @@ story:LakeTiles
         nowriting:^Ghost
         dontSnapGhostList
   TimeSpool
-    TimeTotal:beliefs,avg=2.057
-      sample=1.906,at=1782298186
-      sample=2.193,at=1782298436
-      sample=2.059,at=1782298532
-      sample=1.964,at=1782298635
-      sample=1.964,at=1782298648
-      sample=1.965,at=1782298668
-      sample=2.1,at=1782298702
+    TimeTotal:beliefs,avg=2.394
       sample=1.901,at=1782298780
       sample=2.274,at=1782298800
       sample=2.246,at=1782300091
-    TimeTotal:step,avg=0.229
-      sample=0.212,at=1782298186
-      sample=0.244,at=1782298436
-      sample=0.229,at=1782298532
-      sample=0.218,at=1782298635
-      sample=0.218,at=1782298648
-      sample=0.218,at=1782298668
-      sample=0.233,at=1782298702
+      sample=2.401,at=1782302547
+      sample=2.503,at=1782302815
+      sample=2.597,at=1782302859
+      sample=2.261,at=1782303021
+      sample=2.221,at=1782303213
+      sample=2.929,at=1782303358
+      sample=2.61,at=1782303468
+    TimeTotal:step,avg=0.266
       sample=0.211,at=1782298780
       sample=0.253,at=1782298800
       sample=0.25,at=1782300091
+      sample=0.267,at=1782302547
+      sample=0.278,at=1782302815
+      sample=0.289,at=1782302859
+      sample=0.251,at=1782303021
+      sample=0.247,at=1782303213
+      sample=0.325,at=1782303358
+      sample=0.29,at=1782303468
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
     Entcase:Ting_Point-last

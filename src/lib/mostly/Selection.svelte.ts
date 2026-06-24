@@ -220,6 +220,9 @@ class SelectionItself extends Travel {
     // what D** looks like (its tree basis, sans epiphytes)
     // the big replace() is limited to the trace_sc
     trace_sc:TheUniversal
+    // dive into already-visited C** too — each revisit still reaches each_fn,
+    //  but flagged (T.sc.no_further) so the walk doesn't descend past it
+    loop_but_no_further?:boolean|number
 
     each_fn?:Function
     trace_fn?:Function

@@ -92,7 +92,7 @@
 
     import { onDestroy, untrack } from "svelte"
     import { EditorView, basicSetup } from "codemirror"
-    import { EditorState, StateField, StateEffect, Compartment, type Extension } from "@codemirror/state"
+    import { EditorState, StateField, StateEffect, Compartment, type Extension, type Range } from "@codemirror/state"
     import { Decoration, type DecorationSet, keymap, ViewUpdate, ViewPlugin, WidgetType, drawSelection } from "@codemirror/view"
     import { indentService, indentUnit } from "@codemirror/language";
     import { foldEffect, unfoldEffect, unfoldAll, foldedRanges, codeFolding } from "@codemirror/language";
@@ -912,7 +912,7 @@
             for (const e of tr.effects) {
                 if (!e.is(setPointDecorationsEffect)) continue
                 const len   = tr.state.doc.length
-                const marks: Array<ReturnType<typeof Decoration.line>> = []
+                const marks: Array<Range<Decoration>> = []
                 const lined = new Set<number>()
                 for (const { from, cls } of e.value) {
                     // Skip offsets outside the live doc rather than letting
@@ -980,7 +980,7 @@
             for (const e of tr.effects) {
                 if (!e.is(setPointFontsEffect)) continue
                 const len   = tr.state.doc.length
-                const marks: ReturnType<typeof Decoration.mark>[] = []
+                const marks: Array<Range<Decoration>> = []
                 const placed = new Set<number>()
                 for (const { from, to, px } of e.value) {
                     // Skip stale|empty spans rather than letting the RangeSet throw —
@@ -1105,7 +1105,7 @@
             const marks = view.state.field(markedRegions, false)
             if (!marks || !marks.size) return Decoration.none
             const folds = foldedRanges(view.state)
-            const out: Array<ReturnType<typeof Decoration.widget>> = []
+            const out: Array<Range<Decoration>> = []
             for (const [from, to] of marks) {
                 if (from < 0 || to > view.state.doc.length || from >= to) continue
                 // skip if this region is currently folded (the ↤N↦ placeholder shows)

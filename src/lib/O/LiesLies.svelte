@@ -214,26 +214,43 @@
 
             // Inbound: the runner receives pushed source + become-Book commands; the editor
             //  receives results.
+            // Liveness is a CARRIER fact, not a per-handler one: EVERY inbound consumer frame (not
+            //  just a ping) proves the peer is alive, so route them all through `on`, which stamps
+            //   last_heard (Lies_heard) before dispatching.  The watchdog then keys off "heard
+            //    anything" — a think-quiesced peer still answering run_phase/etc. no longer reads dead.
+            //     (Acks ride the carrier BELOW this consumer seam, so they're invisible here; catching
+            //      those too is the pinned Peeroleum_deliver stamp — this is the non-pinned half, and
+            //       the watchdog needs no further change when that lands, it already keys off last_heard.)
+            const on = (type: string, fn: (cw: TheC, p: TheC, fr: any) => any) =>
+                (H as any).Peeroleum_on(w, type, (cw: TheC, p: TheC, fr: any) => { H.Lies_heard(cw); return fn(cw, p, fr) })
             if (role === 'runner') {
-                (H as any).Peeroleum_on(w, 'rungo',       (cw: TheC, _p: TheC, fr: any) => H.Lies_rungo_recv(cw, fr))
-                ;(H as any).Peeroleum_on(w, 'become_book', (cw: TheC, _p: TheC, fr: any) => H.Lies_become_book_recv(cw, fr))
+                on('rungo',       (cw, _p, fr) => H.Lies_rungo_recv(cw, fr))
+                on('become_book', (cw, _p, fr) => H.Lies_become_book_recv(cw, fr))
             } else {
-                (H as any).Peeroleum_on(w, 'run_result', (cw: TheC, _p: TheC, fr: any) => H.Lies_run_result_recv(cw, fr))
-                ;(H as any).Peeroleum_on(w, 'run_phase',  (cw: TheC, _p: TheC, fr: any) => H.Lies_run_phase_recv(cw, fr))
+                on('run_result', (cw, _p, fr) => H.Lies_run_result_recv(cw, fr))
+                on('run_phase',  (cw, _p, fr) => H.Lies_run_phase_recv(cw, fr))
                 // ghost_compile: a cluster peer (claude-cli editing a .g) hands the editor the dock-involved
                 //  COMPILE job — {path, dige} for a .g that changed on disk. The editor force-loads the dock
                 //   (displaying it: the compile reads the CodeMirror state, which only exists for a mounted
                 //    dock), compiles, writes the .go, HMRs it to runners. Verify-in-handler (async), NOT in
                 //     the sync inbox: the cluster sign rides the consumer payload, so the spine ferries it
                 //      opaque and never needs to know about trust.
-                ;(H as any).Peeroleum_on(w, 'ghost_compile', (cw: TheC, _p: TheC, fr: any) => { void H.Lies_ghost_compile_recv(cw, fr); return true })
+                on('ghost_compile', (cw, _p, fr) => { void H.Lies_ghost_compile_recv(cw, fr); return true })
             }
             // ping/pong heartbeat — both roles echo a ping and record a pong, so the real
             //  envelope path is provable (and shown by the badge), not just relay control.
-            ;(H as any).Peeroleum_on(w, 'ping', (cw: TheC, _p: TheC, fr: any) => { H.Lies_pong(cw, fr);      return true })
-            ;(H as any).Peeroleum_on(w, 'pong', (cw: TheC, _p: TheC, fr: any) => { H.Lies_pong_recv(cw, fr); return true })
+            on('ping', (cw, _p, fr) => { H.Lies_pong(cw, fr);      return true })
+            on('pong', (cw, _p, fr) => { H.Lies_pong_recv(cw, fr); return true })
 
             w.c.channel_up = true
+            // INDEPENDENT keepalive timer — liveness must NOT ride the belief loop: a think-quiesced
+            //  peer would stop pinging and the far watchdog would flap it (the LATENCY SWAMP / "44s to
+            //   ack").  This setInterval ticks Lies_keepalive (watchdog + ping; .c+ws only, no snap-tree
+            //    mutation, so safe off-think) on its own cadence; Lies_heartbeat still drives it in-think
+            //     for the Aim Brink, and the 6s ping guard de-dups.  Set once (channel_up is guarded).
+            if (typeof setInterval === 'function' && !w.c.keepalive_timer) {
+                w.c.keepalive_timer = setInterval(() => { try { (H as any).Lies_keepalive(w) } catch { /* next tick */ } }, 5000)
+            }
             H.tlog(`🔌 Lies channel up [${role}] addr=${role} → ${peer}`)
         },
 
@@ -627,6 +644,16 @@
         //     handler stamps %channel_peer (role + RTT + last) on w:Lies, which the badge
         //      reads.  No pong ⇒ the slot stays absent|stale and the badge shows no peer —
         //       which is the honest signal we lacked while only control frames crossed.
+        // Lies_heard — the frame-agnostic liveness stamp (called by Lies_channel_up's `on` wrapper
+        //  before every consumer dispatch).  ANY inbound frame refreshes last_heard, so the watchdog
+        //   tells "peer quiesced but alive" (heard recently) from "peer gone" (silent).  Bumps w so
+        //    the badge / Relay Brink readers re-run.
+        Lies_heard(w: TheC) {
+            const H = this as House
+            const peer = H.Lies_role(w) === 'editor' ? 'runner' : 'editor'
+            w.oai({ channel_peer: peer }, { last_heard: Date.now() })
+            w.bump_version()
+        },
         Lies_heartbeat(w: TheC) {
             const H = this as House
             // %Aim (naive) owns the endpoint targeting now: ensure the Waft:Cluster,Aim + its
@@ -634,31 +661,49 @@
             //   + Relay relay-ping) by role.  Done before the channel-live gate so a Brink can show
             //    "no channel / relay down" while the socket is down.
             ;(H as any).Lies_aim(w)
+            // liveness + ping is split into Lies_keepalive so an INDEPENDENT timer (Lies_channel_up)
+            //  can drive it OFF the belief loop too — liveness must not ride think, or a quiesced peer
+            //   stops pinging and the far watchdog flaps it (the LATENCY SWAMP symptom).
+            H.Lies_keepalive(w)
+        },
+        // Lies_keepalive — the channel keepalive: the three-state liveness watchdog + the ping cadence.
+        //  Touches ONLY .c + the ws (the ping is ephemeral → books no %outbox/emit, so no snap-tree
+        //   mutation), which is exactly why it is safe to fire from an independent setInterval and not
+        //    only the belief loop.  Lies_heartbeat also calls it in-think (alongside the Lies_aim Brink);
+        //     the 6s ping guard de-dups the two cadences.
+        Lies_keepalive(w: TheC) {
+            const H = this as House
             if (!H.Lies_channel_live(w)) return
             const now = Date.now()
-            // Liveness watchdog: if the channel WAS proven (a pong landed) but has since gone silent
-            //  past the badge's window, the socket is likely half-open (a drop with no close event, so
-            //   Socket_real's onclose never fired) — force a reconnect so the carrier re-dials. A
-            //    never-yet-proven channel is left to the open/become path; throttled so we don't storm.
             const peer = H.Lies_role(w) === 'editor' ? 'runner' : 'editor'
             const cp   = w.o({ channel_peer: peer })[0] as TheC | undefined
-            // Silence is measured by what we've HEARD (max(last, last_heard)), NOT by our own ping
-            //  coming home (`last`).  A half-open SEND leg freezes `last` while inbound frames keep
-            //   arriving; reconnecting on stale `last` then force-closes a socket that is actively
-            //    receiving — it tore the channel down mid-ghost_compile, and the dropped socket
-            //     re-freezes `last`, so the watchdog re-fires next window: a self-perpetuating flap
-            //      that manufactures its own trigger.  Re-dial only when we genuinely haven't heard
-            //       the peer at all — then the carrier really is dead and a fresh socket is warranted.
-            const heard = Math.max(Number(cp?.sc.last ?? 0), Number(cp?.sc.last_heard ?? 0))
-            if (heard && now - heard > 20000 && (!w.c.last_reconnect || now - (w.c.last_reconnect as number) > 20000)) {
-                const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
-                if (port?.reconnect) {
-                    w.c.last_reconnect = now
-                    const msg = `⚠ channel silent ${Math.round((now - heard) / 1000)}s — forcing reconnect`
-                    H.tlog(`🛰 ${msg}`)
-                    H.Lies_relay_note(w, msg, true)   // surface this in the Relay Brink — it was console-only
-                    port.reconnect()
+            // Three liveness states — reconnect ONLY on the last (a re-dial tears a live channel):
+            //  • LIVE     — our ping came home recently (`last` fresh): nothing to do.
+            //  • SLUGGISH — we've HEARD the peer (last_heard: ANY inbound frame, stamped by Lies_heard)
+            //     but our ping isn't coming home (`last` stale): the peer is alive but think-quiesced.
+            //      DO NOT reconnect — surface it on the Relay Brink; the ping cadence is the nudge.
+            //  • DEAD     — nothing inbound at all past the window: the carrier really is gone → re-dial.
+            //   Folding last+last_heard into `heard` is what kills the old self-flap: a half-open SEND
+            //    leg freezes `last` while frames still arrive — that now reads SLUGGISH, never DEAD, so
+            //     we no longer force-close a socket that is actively receiving mid-ghost_compile.
+            const last  = Number(cp?.sc.last ?? 0)
+            const heard = Math.max(last, Number(cp?.sc.last_heard ?? 0))
+            const DEAD_MS = 20000, SLUGGISH_MS = 9000
+            if (heard && now - heard > DEAD_MS) {
+                if (!w.c.last_reconnect || now - (w.c.last_reconnect as number) > DEAD_MS) {
+                    const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
+                    if (port?.reconnect) {
+                        w.c.last_reconnect = now
+                        const msg = `⚠ channel DEAD — ${Math.round((now - heard) / 1000)}s silent, re-dialing`
+                        H.tlog(`🛰 ${msg}`)
+                        H.Lies_relay_note(w, msg, true)   // surface in the Relay Brink (was console-only)
+                        port.reconnect()
+                    }
                 }
+            } else if (heard && last && now - last > SLUGGISH_MS
+                       && (!w.c.last_sluggish || now - (w.c.last_sluggish as number) > SLUGGISH_MS)) {
+                w.c.last_sluggish = now
+                H.Lies_relay_note(w, `◍ peer sluggish — ${Math.round((now - last) / 1000)}s since pong, still hearing it (not reconnecting)`, false)
             }
             if (w.c.last_ping && now - (w.c.last_ping as number) < 6000) return
             w.c.last_ping = now

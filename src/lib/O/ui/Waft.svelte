@@ -128,7 +128,10 @@
             spotlight:  true,
         },
     } as const
-    type ItemType = keyof typeof ITEM_TYPES
+    // spelled out, not keyof typeof ITEM_TYPES — the table's own child_types use
+    //  `as ItemType[]`, so deriving the type from the table would close a cycle
+    //   that collapses ITEM_TYPES to `any`.  Keep in step with the keys above.
+    type ItemType = 'Waft' | 'Point' | 'Doc' | 'What'
 
     // ── item_to_display — split display for any item C ───────────────
     //

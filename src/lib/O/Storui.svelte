@@ -473,7 +473,7 @@
         if (has_exp_snap)       return 'exp'
         // mismatch step waiting for exp_snap — hold on naive rather than
         // briefly showing vs-prev which will flip away once exp_snap arrives
-        if (!Step.sc.ok && !Step.sc.accepted) return 'naive'
+        if (Step && !Step.sc.ok && !Step.sc.accepted) return 'naive'
         if (has_prev_snap)      return 'prev'
         return 'naive'
     })
@@ -1363,7 +1363,7 @@
                 <div class="sr-notes">
                     <div class="sr-notes-hdr">
                         <span class="sr-notes-title">notes</span>
-                        <button class="sr-note-plus" onclick={() => { adding_note = !adding_note; if(adding_note) setTimeout(()=>document.querySelector('.sr-note-input')?.focus(),0) }}>+</button>
+                        <button class="sr-note-plus" onclick={() => { adding_note = !adding_note; if(adding_note) setTimeout(()=>document.querySelector<HTMLElement>('.sr-note-input')?.focus(),0) }}>+</button>
                         {#if adding_note}
                             <input class="sr-note-input"
                                 placeholder="frontier  /  todo:text  /  key:val"

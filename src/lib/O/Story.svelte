@@ -1831,7 +1831,7 @@
             let not_in_Atime = f != null
                 && f > (run.c.began_step as number)
             let long_after_Atime = not_in_Atime
-                && (now_in_seconds_with_ms() - f) > quiesce_snap_time
+                && (now_in_seconds_with_ms() - (f as number)) > quiesce_snap_time
             let dont_want_Atime = !Run.todo.length
 
             // < GONER prototype of ttlilt
@@ -1944,7 +1944,7 @@
             was_ttlilt_held = false   // defensive; should already be false at quiescence
 
 
-            let ago = (now_in_seconds_with_ms() - f)
+            let ago = (now_in_seconds_with_ms() - (f as number))
             Run.trace('quiescent', timed_out ? `${ago.toFixed(3)} timeout` : ago.toFixed(3))
             ;V.Story && console.log(`⏱ poll_step quiescent n=${run.c.step_n} since ${ago.toFixed(3)} TICK=${TICK_MS}`)
             // on_step_ending: called once at quiescence, before the snap.
