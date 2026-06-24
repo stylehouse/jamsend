@@ -67,10 +67,7 @@ story:LakeNets
     quiesce_snap_time=0.4
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=1.529
-      sample=1.397,at=1781979946
-      sample=2.024,at=1781980023
-      sample=2.222,at=1781980113
+    TimeTotal:beliefs,avg=1.452
       sample=2.35,at=1781980177
       sample=1.701,at=1781980231
       sample=1.175,at=1781980263
@@ -78,10 +75,10 @@ story:LakeNets
       sample=0.898,at=1782198195
       sample=1.415,at=1782233402
       sample=1.182,at=1782276066
-    TimeTotal:step,avg=0.118
-      sample=0.107,at=1781979946
-      sample=0.156,at=1781980023
-      sample=0.171,at=1781980113
+      sample=1.624,at=1782283451
+      sample=1.624,at=1782283482
+      sample=1.624,at=1782283528
+    TimeTotal:step,avg=0.112
       sample=0.181,at=1781980177
       sample=0.131,at=1781980231
       sample=0.09,at=1781980263
@@ -89,22 +86,25 @@ story:LakeNets
       sample=0.069,at=1782198195
       sample=0.109,at=1782233402
       sample=0.091,at=1782276066
+      sample=0.125,at=1782283451
+      sample=0.125,at=1782283482
+      sample=0.125,at=1782283528
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
     Entcase:wants_want
       lematch,req:wants
         lematch,want,kind
           means,spayer,re:want={INT}.kind,tol:band,factor=1.5
-  step,dige:1efe1e5a04a60246
-  step=2,dige:0cc5b71de8a3ba54
-  step=3,dige:25cc301968762551
-  step=4,dige:e02fcbea9d50d139
-  step=5,dige:358e2d9637936ad3
-  step=6,dige:f373b97459306acc
-  step=7,dige:724bb7fb89665f87
-  step=8,dige:99b34b6f73ddeb4c
-  step=9,dige:142c7505b9e7797c
-  step=10,dige:5f75dee8220552e0
-  step=11,dige:0aac767540387a80
-  step=12,dige:84ceabcd6ab24e12
-  step=13,dige:24045de264d579a0
+  step,dige:ed681906b184cee8
+  step=2,dige:bb37e457dd8950cf
+  step=3,dige:274689acaa9055b8
+  step=4,dige:59dffde5879f15c8
+  step=5,dige:9855e97b4beb30e7
+  step=6,dige:d26807c771e1e898
+  step=7,dige:4cfae1c345af2989
+  step=8,dige:17c81c48b24ca2d4
+  step=9,dige:07a15b3dd061a87f
+  step=10,dige:5bd66352c239c21c
+  step=11,dige:013c7153c26be158
+  step=12,dige:f8f40dd88a7df5f8
+  step=13,dige:04a3d99396fd7bbd

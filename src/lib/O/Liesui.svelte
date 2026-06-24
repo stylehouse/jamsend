@@ -183,8 +183,8 @@
             {#each cred_rows as rr (rr.sc.path)}
                 <span class="ls-cred-dock" class:ok={rr_pass(rr) === rr_total(rr)} class:bad={rr_pass(rr) !== rr_total(rr)}
                       class:aging={rr_age(rr) > CRED_FADE}
-                      title="{rr.sc.path} @ {String(rr.sc.dige ?? '').slice(0,8)} — {rr_pass(rr)}/{rr_total(rr)} steps{rr.sc.errors ? `, ${rr.sc.errors} err` : ''}">
-                    {rr_pass(rr) === rr_total(rr) ? '✓' : '✗'} {base(rr.sc.path)}&nbsp;{rr_pass(rr)}/{rr_total(rr)}
+                      title="{rr.sc.path} @ {String(rr.sc.dige ?? '').slice(0,8)} — {rr_pass(rr)}/{rr_total(rr)} steps{Number(rr.sc.caveat) ? `, ${rr.sc.caveat} forgiven` : ''}{rr.sc.errors ? `, ${rr.sc.errors} err` : ''}">
+                    {rr_pass(rr) === rr_total(rr) ? '✓' : '✗'} {base(rr.sc.path)}&nbsp;{rr_pass(rr)}/{rr_total(rr)}{#if Number(rr.sc.caveat)}<span class="ls-cred-caveat" title="{rr.sc.caveat} step{Number(rr.sc.caveat) === 1 ? '' : 's'} passed by acknowledged value-noise (EntropyArrest)">&nbsp;≈{rr.sc.caveat}</span>{/if}
                 </span>
             {/each}
         </div>
@@ -309,6 +309,8 @@
     }
     .ls-cred-dock.ok  { color: #6ad0c0; background: rgba(106, 208, 192, 0.12) }
     .ls-cred-dock.bad { color: #f88;    background: rgba(255, 136, 136, 0.12) }
+    /* ≈N — steps that passed by EntropyArrest forgiveness (green, but tagged, §10). */
+    .ls-cred-caveat   { color: #c4aaee; opacity: 0.85 }
     /* a verdict row past CRED_FADE dims toward its cull at CRED_TTL — visibly going quiet. */
     .ls-cred-dock.aging { opacity: 0.4; transition: opacity 0.6s ease }
     .ls-errors {

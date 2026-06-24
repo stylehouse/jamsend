@@ -542,3 +542,39 @@ Making the runner **flag-and-continue** instead of halting is a deliberate seman
    wrong green).
 - The **timing rule** is the runner's only: never load a snap mid-run; the editor loads at the
    pause, the runner at the post-run sweep.
+
+### 10.7 Status — what's built (2026-06-24)
+
+The **correctness floor is built** — fuzz-ok is taken as ok, computed without a pip-open, and
+ rides the verdict back green+tagged. The lean `EntropySamples.snap` sidecar is **not** built; the
+  sweep runs on the `NNN.snap` fallback, which §10.2 names as the path that "can never mint a wrong
+   green." The sidecar is therefore a pure I/O optimisation, deferred (see *Remaining* below).
+
+Built:
+
+- **Verdict tagging.** `Cred_run_outcome` (Auto.svelte) returns a `caveat` count (ok steps that
+   are also `%caveat`); it threads `Lies_runner_verdict` → `Lies_report_result` → the `run_result`
+    frame → `Lies_run_result_recv` (stamps `%run_result,caveat`) → Liesui's Cred readout shows a
+     `≈N` badge. Purely additive — caveats already count green via `sc.ok`.
+- **Runner flag-and-continue.** Story.svelte's snap_step mismatch branch gates the live pause on
+   `!is_runner()` (`is_runner = top_House().c.boot_role === 'runner'`). A runner stamps
+    `step.sc.unexpected` and drives on — no fetch, no graft (the timing rule). The editor's
+     non-lenient pause path is unchanged, and a strict editor run still auto-forgives at the pause
+      via the existing `check_snap` block (so the "needs a pip-open" gap was only ever the *lenient*
+       and *runner* paths, both now covered by the sweep).
+- **Post-run sweep.** `story_sweep_arm` / `story_sweep_next` (Story.svelte) + a sweep block in the
+   `Story()` belief loop. do_step's check-completion branch arms the sweep instead of firing
+    `storyFinished`; the sweep walks each `!ok && got_snap && !swept` step one per round, reads its
+     `NNN.snap` through the wh queue (safe — run is over), runs the same `entropy_forgive` the pause
+      uses, and stamps `ok+caveat` (forgiven) or `%swept` (genuinely red). When the last is
+       resolved it fires `storyFinished`, so `Cred_run_outcome` reads the swept result — no re-push.
+
+Remaining (the lean cache, the §10.2 vision):
+
+- **`EntropySamples.snap` sidecar** — write the expected captures at record time and prefer them
+   over `NNN.snap` in the sweep + the editor's `check_snap`, with `NNN.snap` as the fallback. This
+    cuts the sweep's per-step disk reads to a single boot-time sidecar load and removes the editor
+     pause's async-profile dependency. It is an optimisation only: the NNN sweep above is already
+      correct, and a stale/absent sidecar must defer to NNN (so it can never mint a wrong green).
+- **Substitution forgive** — the `spay_graft_line`-style variant that substitutes stored `exp`
+   tokens into got and re-diges against `The_step_dige`, the in-memory half of the sidecar path.

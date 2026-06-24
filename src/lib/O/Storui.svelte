@@ -159,6 +159,33 @@
         ea_seed = { left: row.left, right: row.right, parent: diff_parent_line(rows, i) }
     }
 
+    // covered_click — a click on a changed line a cap ALREADY reaches.  We do NOT author a new
+    //  cap there (it would duplicate the existing one, and clobber an in-flight edit); instead we
+    //   hand the line to EntropyArrest, which glows the cap it's for and edits it on a second
+    //    click.  token bumps each click so the child re-acts even on the same line.
+    let covered_click = $state<{ left: string, right: string, token: number } | null>(null)
+    let _click_tok = 0
+
+    // diff_changed — this step's changed line-pairs, fed to EntropyArrest for the per-cap match
+    //  tally (how many lines each cap bites this step, shown beside its edit|×).
+    let diff_changed = $derived.by((): { left: string, right: string }[] =>
+        diff_rows.filter(r => r.kind === 'pair' && r.tag === 'changed')
+                 .map(r => ({ left: (r as any).left as string, right: (r as any).right as string })))
+
+    // a click on a changed diff cell.  Two guards before it ever seeds a draft:
+    //   1. a live text selection means the user is grabbing regex source — a drag-select still
+    //       emits a click, which used to spawn a +Entcase and clobber the edit.  Never seed then.
+    //   2. a line a cap already covers (row_spay_class ≠ '') routes to covered_click (reveal/edit
+    //       the existing cap), never a new draft.  Only a genuinely-uncovered line seeds.
+    function diff_click(rows: DiffRow[], i: number) {
+        const sel = typeof window !== 'undefined' ? window.getSelection() : null
+        if (sel && !sel.isCollapsed && sel.toString().trim().length) return
+        const row = rows[i]
+        if (row.kind !== 'pair' || row.tag !== 'changed') return
+        if (row_spay_class(row) !== '') covered_click = { left: row.left, right: row.right, token: ++_click_tok }
+        else                            seed_spay(rows, i)
+    }
+
 
     //#region types
 

@@ -16,18 +16,20 @@
 //     step 2  given sides + run %req:trust          ⇒ %witnessed:step_2 (both %trust,grants)
 //     step 3  arm %req:join + drive the policy gate ⇒ %witnessed:step_3 (both w/%member,signed)
 
-// Run_A_Tyrant — the Book's Run recipe (Story_subHouse calls it to wire the Run),
-//  mirroring Run_A_PereStaple. Lay the single test actor + its w; the role is
-//   already 'runner' (Auto/boot) — this just guards it.
-Run_A_Tyrant():
+// Run_A_PereTyrant — the Book's Run recipe (Story_subHouse calls it to wire the Run),
+//  mirroring Run_A_PereStaple. Lay the single test actor + its w; the role is already
+//   'runner' (Auto/boot) — this just guards it. (Book/test name = PereTyrant, the Pere*
+//    family alongside PereStaple; the Tyrant_* helpers below keep the Tyrant name — that
+//     is the subsystem, exactly as PereStaple's wrangler drives Lake_* helpers.)
+Run_A_PereTyrant():
     this.c.role ??= 'runner'
-    H i A:Tyrant/w:Tyrant
+    H i A:PereTyrant/w:PereTyrant
 
 // Per beat: install the eternal %req:wrangle whose do_fn drives the inner steps. Like
 //  PereStaple, we do NOT use H.on_step (it keys off one H-global did_on_step_n that a
 //   step-1 table claims when setup spills into step 2); Tyrant_drive keeps a req-local
 //    did_step instead.
-Tyrant(A,w):
+PereTyrant(A,w):
     w i %see:'y Tyrant — yyyyar!'
     w oai %req:wrangle,eternal
         await &Tyrant_drive,w,req
@@ -57,12 +59,18 @@ Tyrant_sides_up(w):
     // lay each side: actor + its w:Tyrant, a Peering named by us, a Pier named by the peer.
     H i A:Alice$:AliceA/w:Tyrant$:Alicew
     H i A:Bob$:BobA/w:Tyrant$:Bobw
-    Alicew i Peering,name:alice$:AlicePeering/Pier,pub:bob$:AlicePier
-    Bobw i Peering,name:bob$:BobPeering/Pier,pub:alice$:BobPier
-    // c.up: the belief walk wires A/w only, not the domain particles under w — stamp the
-    //  Pier→Peering→w chain by hand or the Pier-hosted %req:trust silently never pumps (spec §8).
-    AlicePeering.c.up = Alicew; AlicePier.c.up = AlicePeering
-    BobPeering.c.up = Bobw; BobPier.c.up = BobPeering
+    Alicew i Peering,name:alice$:AlicePeering
+    Bobw i Peering,name:bob$:BobPeering
+    // c.up: the belief walk wires A/w only, not the domain particles under w.  Stamp each
+    //  Peering→w by hand (i doesn't wire c.up); each Pier is minted with oai (the flock —
+    //   %Pier,pub:…,req), which wires Pier.c.up=Peering for us, so its %req:trust can pump.
+    AlicePeering.c.up = Alicew
+    BobPeering.c.up = Bobw
+    // the Pier flock: oai Pier,$pub,req — a per-peer Pier carrying the serialise sentinel
+    //  mints as %Pier,pub:…,req:N (mainkey Pier, dispatched by req_Pier).  We mint it ⇒ we
+    //   own its identity (no remote gut-swap), the security M1's trust then rides on.
+    AlicePeering oai Pier,pub:bob,req$:AlicePier
+    BobPeering oai Pier,pub:alice,req$:BobPier
     // GIVEN identities (M1 skips meet+prove): %Ud pre-stamped, so a vouch frame clears the
     //  spine's pre-Ud gate (which otherwise admits only hello|noop, spec §7.3).
     AlicePier i %Ud,id:bob
@@ -96,13 +104,14 @@ Tyrant_admit_arm(w):
     if (Bobw)
         Bobw oai %req:join
 
-// Tyrant_pump — re-pump each side's nested reqs every pass: the Pier's %req:trust (below
-//  reqdo_sweep's w-level reach) and the w's %req:join. Each inbound vouch's feebly_ponder
-//   brings the run back here, advancing the leaves as their protocol particles land.
+// Tyrant_pump — re-pump each side's nested reqs every pass: the PEERING (peering.do() runs
+//  the Pier flock via req_Pier, each Pier driving its own %req:trust) and the w's %req:join.
+//   Each inbound vouch's feebly_ponder brings the run back here, advancing the leaves as
+//    their protocol particles land.
 async Tyrant_pump(w):
     for (const side of ['Alice', 'Bob']) {
-        H o A:$side/w:Tyrant/Peering/Pier$:pier
-        if (pier) await pier.do()
+        H o A:$side/w:Tyrant/Peering$:peering
+        if (peering) await peering.do()
         H o A:$side/w:Tyrant$:sw
         if (sw) await sw.do()
     }

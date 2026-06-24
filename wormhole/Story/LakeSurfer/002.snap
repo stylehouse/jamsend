@@ -45,9 +45,9 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1782276205026,kind:cold
-          want=1782276205075,kind:cold
-          want=1782276205226,kind:cold,resolved
+          want=1782283187036,kind:cold
+          want=1782283187085,kind:cold
+          want=1782283187239,kind:cold,resolved
         o_elvis:dock_askies
         see:🗂 1 doc · 1 Waft
     A:Lang
@@ -252,7 +252,7 @@ Snap:H
                 controlflow,keyword:if,title:(Idzeug.stashed.nRepeating) {,line=750,via:claim_Idzeug_number,rel_from=3627,rel_to=3630
                 controlflow,keyword:if,title:(N.includes(n)) return false,line=755,via:claim_Idzeug_number,rel_from=3748,rel_to=3751
                 def,method:ier_is_Good,line=763,rel_from=4005,rel_to=4017
-              time,compile=0.069,all=0.695,write=0
+              time,compile=0.068,all=0.696,write=0
               Output,gen_path:gen/test/Story/Lake/Idzeuzia.go,dige:dbe210c73e58de4d,source_dige:f894a5ff10d26203
                source: |
                  <script lang="ts">
@@ -1295,12 +1295,12 @@ Snap:H
           Change
             backend,dige:f894a
             storage,dige:f894a
-            compile,dige:f894a,secs=0.069,dim,pending
+            compile,dige:f894a,secs=0.068,dim,pending
         req:workon,auto_push	{"ref":{"w":"%w:Lang"}}
           req:understanding,maz=3,permanent,sig:2:13:0:0,what:itis,finished
           req:ingredients,maz=2,permanent,sig:Ghost/test/Story/Lake/Idzeuzia.g,finished
             req:furnishing,path:Ghost/test/Story/Lake/Idzeuzia.g,permanent,asked,finished
-          req:instrumentation,permanent,sig:Ghost/test/Story/Lake/Idzeuzia.g:f894a5ff10d26203:2:57,have_Map,n_pmirrors=3,finished
+          req:instrumentation,permanent,sig:Ghost/test/Story/Lake/Idzeuzia.g:f894a5ff10d26203:2:57:12,have_Map,n_pmirrors=3,finished
         req:waft_roster,eternal,subscribed
         o_elvis:Lies_compile_settled
         o_elvis:dock_content

@@ -1,6 +1,6 @@
 Credulation,of_Book:LakeSurfer
-  run=0,at=1782280786.97,ok=0,ok_pct=0,mode:check
-    uses:Ghost_N_Peeroleum,dige:e210968f3fd4a138
+  run=0,at=1782284341.988,ok=0,ok_pct=0,mode:check
+    uses:Ghost_N_Peeroleum,dige:38a1f9ec2bbc4f3c
     uses:Ghost_N_Tribunal,dige:683d031e368194c6
     uses:Ghost_Story_Peregrination,dige:c48bf542bc7d3a28
-    uses:Ghost_N_Tyrant,dige:14cd36bb03c4f617
+    uses:Ghost_N_Tyrant,dige:cf11b5d3ea6b9cee

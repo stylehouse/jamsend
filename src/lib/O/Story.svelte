@@ -1483,6 +1483,55 @@
             H.story_analysis(w)
         }
 
+        if (run.sc.sweeping) {
+            // ── post-run forgive sweep (EntropyArrest §10) ──────────────────────
+            // Armed by do_step's check-completion branch once the run is OVER.  One step per
+            //  round: load its NNN.snap through the wh queue (safe now — no live timings to
+            //   perturb, §10.1) and run the same compare-time forgiveness the editor's pause
+            //    uses.  A value-noise mismatch becomes OK-with-caveat; a real mismatch keeps
+            //     %swept and stays red, pulling ok_pct down honestly.  When the last bad step is
+            //      resolved we fire storyFinished, so Cred_run_outcome reads the swept result —
+            //       green, tagged.  Nothing is re-recorded; the snap on disk stays honest.
+            const n        = run.sc.sweeping as number
+            const snap_req = await wh.oai({ req: 'read_snap', wh_path: run_path, wh_op: 'read_snap', wh_step: n })
+            if (!H.i_elvis_req(w, 'Wormhole', 'wh_op', { req: snap_req }))
+                return w.i({ see: `⏳ forgive ${H.pad(n)}...` })
+
+            const disk_snap = snap_req.sc.reply?.snap as string | undefined
+            const step      = H.i_step(w, n)
+            if (disk_snap && step.sc.got_snap
+                && H.entropy_forgive(w, step.sc.got_snap as string, disk_snap, n)) {
+                const disk_dige   = await dig(disk_snap)
+                step.sc.disk_dige = disk_dige
+                step.sc.disk_ok   = disk_dige === H.The_step_dige(w, n)   // honest: fixture vs toc
+                step.sc.ok        = true
+                step.sc.caveat    = true
+                delete step.sc.unexpected
+                console.log(`⚖ Story: step ${H.pad(n)} forgiven (caveat) — post-run sweep`)
+            } else {
+                step.sc.swept = 1   // checked, genuinely !ok — don't re-pick (stays red)
+            }
+            step.bump_version()
+
+            const next = H.story_sweep_next(w)
+            if (next != null) {
+                run.sc.sweeping = next
+            } else {
+                delete run.sc.sweeping
+                // open the last step that's STILL bad after the sweep (lenient-editor review path)
+                const last_bad = (w.c.This?.o({ Step: 1 }) ?? [])
+                    .filter(s => !s.sc.ok)
+                    .sort((a, b) => b.sc.Step - a.sc.Step)[0]
+                run.sc.open_at = last_bad ? last_bad.sc.Step : null
+                console.log(`✓ Story: check complete (sweep done)`)
+                H.top_House().i_elvisto('Auto/Auto', 'storyFinished', { Book: w.sc.Book, mode: 'check' })
+            }
+            H.story_analysis(w)
+            ;(wh.o({ req: 1, finished: 1 }) as TheC[]).forEach(nn => wh.drop(nn))
+            H.main()
+            return
+        }
+
         if (!run.c.driving && !run.sc.paused) H.story_drive(Run, w, run)
         await H.story_ui(Run, w, run)
         if (this.The_Opt_val(w, 'trickle') && run.c.settled_off) Run.main(true)
@@ -1525,6 +1574,39 @@
         // in snap_step, so this does the right thing.
         run.c.driving = false   // story_drive early-returns if driving
         this.story_drive(sub.Run, w, run)
+    },
+
+    // ── post-run forgive sweep (EntropyArrest §10) ──────────────────────────────
+    //  A value-noise mismatch (a dige diff whose only changes fall in acknowledged-noise
+    //   spans) isn't a real failure — but proving that needs the expected snap loaded, which
+    //    would perturb a LIVE run's timings (§10.1), the very numbers a spayer forgives.  So we
+    //     never forgive mid-run: the runner flags each mismatch (snap_step) and drives on, and a
+    //      lenient run accumulates !ok steps.  Once the run is OVER (do_step's check-completion
+    //       branch), story_sweep_arm picks up those flagged steps and the sweep block in Story()
+    //        loads each NNN.snap (safe now) and runs the same entropy_forgive the editor's pause
+    //         uses — forgiven → ok+caveat, real mismatch → stays red.  The verdict is read AFTER
+    //          the sweep, so it lands green+tagged with no re-push.  Nothing is re-recorded.
+
+    // story_sweep_next — the next This/Step that finished !ok with a got_snap retained and not yet
+    //  swept (forgiven steps flip to ok; genuinely-bad ones get %swept so the walk terminates).
+    //   null when none remain.  The 5-step trim keeps got_snap for !ok steps, so it's there.
+    story_sweep_next(w: TheC): number | null {
+        const This = w.c.This as TheC | undefined
+        if (!This) return null
+        const cand = (This.o({ Step: 1 }) as TheC[])
+            .filter(s => !s.sc.ok && s.sc.got_snap && !s.sc.swept)
+            .sort((a, b) => (a.sc.Step as number) - (b.sc.Step as number))[0]
+        return cand ? (cand.sc.Step as number) : null
+    },
+
+    // story_sweep_arm — arm the post-run forgive sweep if any step needs it.  Returns whether it
+    //  armed; the caller then DEFERS storyFinished until the sweep block fires it (so the verdict
+    //   reads the swept result).  No-op (false) on a clean run — finish immediately as before.
+    story_sweep_arm(w: TheC, run: TheC): boolean {
+        const next = (this as House).story_sweep_next(w)
+        if (next == null) return false
+        run.sc.sweeping = next
+        return true
     },
 
 
@@ -1593,6 +1675,13 @@
             if (liesW) (Mundo as any).Lies_runner_phase(liesW, phase, extra)
         }
 
+        // is_runner — is this Run executing on a headless Lies%runner (a ?B= boot)?  The runner
+        //  must NOT halt on a value-noise mismatch (no one is there to resume it, and loading the
+        //   expected snap to forgive mid-run would perturb later steps' timings, EntropyArrest
+        //    §10.1).  Instead it flags-and-continues and forgives in a post-run sweep.  boot_role
+        //     rides on top_House (the same gate Auto's storyFinished bridge uses).
+        const is_runner = () => (H.top_House() as any).c.boot_role === 'runner'
+
         // advance: called after snap_step completes and (for waitCyto path)
         // after the animation_done event has resumed the drive.
         const advance = async () => {
@@ -1633,14 +1722,26 @@
                 // clear frontier when we reach the end — no outstanding mismatch
                 run.sc.frontier = 0
                 H.The_set_frontier(w, 0)
+                H.collect_time_sample(w)   // append to The/TimeSpool before save
+                H.story_save()
+                // Post-run forgive sweep (EntropyArrest §10): the run is over, so loading the
+                //  expected snaps to forgive value-noise steps no longer perturbs any timing.
+                //   If there are flagged/!ok steps to sweep, hand off to the sweep block in
+                //    Story() (it polls each NNN.snap through the wh queue) and let IT fire
+                //     storyFinished once the last one resolves — so Cred_run_outcome reads the
+                //      swept (green+tagged) result.  No bad steps → finish immediately as before.
+                if (H.story_sweep_arm(w, run)) {
+                    H.story_analysis(w)
+                    await update_status('forgiving…', 'save')
+                    H.main()
+                    return
+                }
                 // if we ran lenient, open the last !ok step so the user can review it
                 const last_bad = (w.c.This?.o({ Step: 1 }) ?? [])
                     .filter(s => !s.sc.ok)
                     .sort((a, b) => b.sc.Step - a.sc.Step)[0]
                 if (last_bad) run.sc.open_at = last_bad.sc.Step
-                H.collect_time_sample(w)   // append to The/TimeSpool before save
                 H.story_analysis(w)
-                H.story_save()
                 await update_status('done ✓', 'start')
                 console.log(`✓ Story: check complete at n=${n}`)
                 H.top_House().i_elvisto('Auto/Auto', 'storyFinished', { Book: w.sc.Book, mode: 'check' })
@@ -1875,11 +1976,12 @@
                 step.sc.dige = got_dige
                 step.sc.ok = ok
                 // fresh exact verdict — clear any caveat from a prior run; entropy_forgive
-                //  re-sets it in the check_snap block if this dige mismatch is value-noise.
+                //  re-sets it (check_snap block at a pause, or the post-run sweep) if this dige
+                //   mismatch turns out to be acknowledged value-noise.
                 delete step.sc.caveat
                 H.story_analysis(w)
 
-                if (!ok && !w.c.lenient) {
+                if (!ok && !w.c.lenient && !is_runner()) {
                     run.c.driving = false
                     run.sc.paused = 2
                     run.sc.failed_at = n
@@ -1893,7 +1995,12 @@
                     H.main()
                     return
                 }
-                if (!ok) console.log(`⚠ Story: step ${H.pad(n)} mismatch accepted (lenient)`)
+                // Runner flag-and-continue (EntropyArrest §10): the headless runner doesn't pause
+                //  and doesn't fetch — loading the expected snap now would perturb later steps'
+                //   timings (§10.1).  Flag the step and drive on; story_sweep_arm forgives the
+                //    flagged steps in a post-run sweep, before the verdict is read.
+                if (!ok && is_runner()) step.sc.unexpected = 1
+                if (!ok) console.log(`⚠ Story: step ${H.pad(n)} mismatch accepted (${is_runner() ? 'runner — flagged for sweep' : 'lenient'})`)
                 await update_status(`${ok ? '✓' : '⚠'} ${H.pad(n)}`, ok ? 'default' : 'save')
 
                 if (ok && w.c.snap_checking) {

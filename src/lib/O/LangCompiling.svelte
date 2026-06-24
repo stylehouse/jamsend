@@ -172,6 +172,20 @@ import { lang, lang_for_path } from "./lang/lang"
             return
         }
         await this.Lang_compile(A, w)
+
+        // This compile ran OUTSIDE the req machine — Esc, or the language-reconfigure
+        //  recompile (Langui dispatches a new parser onto the live EditorState, then
+        //   fires Lang_compile here).  It filled %Compile/%Map directly but woke nobody:
+        //    req:workon only re-derives the instrumentation sig — the key that rebuilds
+        //     %Navicade and the %MapReport the minimap reads — inside its per-tick w.do(),
+        //      and after a language switch the driver has usually quiesced.  The %Compile
+        //       version bumped (it's a term in that sig), but with no think the driver
+        //        never re-keys, so the minimap stays on the PRIOR parser's index — empty,
+        //         for the stho-on-markdown first pass.  Poke one think so the driver
+        //          re-keys instrumentation against the fresh Map.  (The channel/headless
+        //           compile path already pokes its own think; req:compile runs inside the
+        //            driver tick, so neither needs this.)
+        this.i_elvisto(w, 'think')
     },
 
     // ── e_Lang_run_now — Esc's "run it now", beside the compile it just fired ──

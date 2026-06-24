@@ -21,7 +21,7 @@ engine-facts, the heading-10 settled design, and the §7/§8 lifecycle bombs wer
 **Proven in-app, rungs 0–4 (clean quiescent snap, no timeout):** the Creduler acquires the live spine
 (`Ghost/N/Peeroleum.g` + `Ghost/N/Tribunal.g`) before the Story begins; the mock transport carries frames
 A↔B (heading 2); and at **step 3 the full hello+trust handshake completes** — both Piers
-`%req:handshake,finished` (all four leaves), `protocol/{hello,trust}/{said,heard}`, `%Ud,publicKey`,
+`%req:handshake,finished` (all four leaves), `protocol/{hello,trust}/{said,heard}`, `%Ud,pubkey`,
 inbox/outbox pairs, `%witnessed:step_3`. **Heading 4 (full outbox/inbox lifecycle + acks + whittle) is
 PROVEN in-app at step 3** — monotone seq (noop=1/hello=2/trust=3 on Alice, hello=1/trust=2 on Bob), every
 `%outbox/emit,sent,acked` + `protocol/%said,acked`, inbox `%unemit,verified,done,to:<type>`, the step-2
@@ -41,6 +41,18 @@ completion headless — but **PereStartuppity's headless fixtures are blank righ
 confirm it; verify on **:9091**. Spec §4.2 + §7.3 updated. The endorsed next move — folding the inbox into the
 `%req` engine (`%req:unemit` drained by `inbox.do()`, `Peeroleum_pump_inbox` deleted) — is now **BUILT in `.g`
 source, compile-verified, with regen/refreeze HELD** so it doesn't disturb the live reconnect check; see heading 4.
+
+**This session — the Pier flock + key naming.** A `%Pier` is now a *typed serial-req*: `%Pier,pub:…,req:N`,
+ minted `oai Pier,$pub,req`, pumped by **`req_Pier`** when its `Peering.do()`s (the Lake/Tyrant wranglers
+  route through `peering.do()` now, not each Pier directly). Two enabling core lines: `do_fn_for` dispatches
+   a typed serial-req by its **mainkey** (the serial req value can't name a method → `req_Pier`), and `oai`
+    fires the req machine on a non-first `req:1` serialise-sentinel too (mainkey stays the type → still
+     queryable; identity locally-minted ⇒ no remote gut-swap). `publicKey`→**`pubkey`** in the hello/`%Ud`
+      (the full key; `pub` is a prefix of it); the spec-only `prepub`/`prepri` (never built) are dropped for
+       `pub`/`pubkey`/`prikey`. **All `.g` compile-clean** (headless gate: `scripts/FlockCompile.spec.ts`);
+        the handshake/trust BEHAVIOUR *through* the flock is **:9091-unverified** (the Creduler wrangler does
+         not run in the Story_cli boot, so headless can't exercise it). Design: `Hovercraft.design.md`
+          (dispatch ladder) + `Peeroleum_spec.md` §6/§11.3 (the Pier flock).
 
 ### → START HERE: real websocket transport (heading 10) — editor↔runner is its first customer
 
@@ -279,8 +291,10 @@ deferred `want_savepoint`/exports (voided, dropped from the spec) aren't needed 
       `%faulty`. `w`/`pier`/`frame` ride the req's `.c` (stashed at booking — avoids a deep `c.up` walk).
   - **c.up:** `oai` auto-wires `ureq.c.up = inbox`; `Peeroleum_deliver` stamps `inbox.c.up = pier` (one line) so
      `do()`'s climb reaches the House to resolve `req_unemit`. The Pier→Peering→w→Mundo chain the handshake reqs
-      already rely on does the rest. (Pier itself is NOT yet a `%req:1,Pier,prepub` — not needed for the fold;
-       still endorsed as a follow-up.)
+      already rely on does the rest. (Pier itself is now a typed serial-req — `%Pier,pub:…,req:N`, minted
+       `oai Pier,$pub,req`, pumped by `req_Pier` when its `Peering.do()`s — BUILT this session; the mainkey
+        stays `Pier` so it's still a queryable type, and `oai` wires its `c.up`. The enabling change is one
+         line in `do_fn_for` (typed serial-req → mainkey handler) + `oai` firing on a non-first `req:1`.)
   - `rollup_faulty`/`runstepped` now read `inbox.o({req:'unemit'})` (was `{unemit:1}`); recent records keep the
      readable `%unemit:seq` shape.
   - **NOT regen'd / refrozen** (so live reconnect verification isn't disturbed) and **browser-unverified** —

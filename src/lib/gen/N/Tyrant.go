@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Tyrant(): string { return '14cd36bb03c4f617' },
+    Ghostmeta_Ghost_N_Tyrant(): string { return 'cf11b5d3ea6b9cee' },
 
 // Tyrant — the cabinetry over the Peeroleum floor: identity & trust → admission.
 //  A clean-room rebirth of legacy Tyranny, in stho, riding the Peeroleum transport
@@ -28,19 +28,21 @@
 //     step 2  given sides + run %req:trust          ⇒ %witnessed:step_2 (both %trust,grants)
 //     step 3  arm %req:join + drive the policy gate ⇒ %witnessed:step_3 (both w/%member,signed)
 
-// Run_A_Tyrant — the Book's Run recipe (Story_subHouse calls it to wire the Run),
-//  mirroring Run_A_PereStaple. Lay the single test actor + its w; the role is
-//   already 'runner' (Auto/boot) — this just guards it.
-Run_A_Tyrant() {
+// Run_A_PereTyrant — the Book's Run recipe (Story_subHouse calls it to wire the Run),
+//  mirroring Run_A_PereStaple. Lay the single test actor + its w; the role is already
+//   'runner' (Auto/boot) — this just guards it. (Book/test name = PereTyrant, the Pere*
+//    family alongside PereStaple; the Tyrant_* helpers below keep the Tyrant name — that
+//     is the subsystem, exactly as PereStaple's wrangler drives Lake_* helpers.)
+Run_A_PereTyrant() {
     this.c.role ??= 'runner'
-    this._i_drill(this, [{sc: {A: "Tyrant"}}, {sc: {w: "Tyrant"}}])
+    this._i_drill(this, [{sc: {A: "PereTyrant"}}, {sc: {w: "PereTyrant"}}])
 
 },
 // Per beat: install the eternal %req:wrangle whose do_fn drives the inner steps. Like
 //  PereStaple, we do NOT use H.on_step (it keys off one H-global did_on_step_n that a
 //   step-1 table claims when setup spills into step 2); Tyrant_drive keeps a req-local
 //    did_step instead.
-Tyrant(A,w) {
+PereTyrant(A,w) {
     w.i({see: 'y Tyrant — yyyyar!'})
     w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
         await this.Tyrant_drive(w,req)

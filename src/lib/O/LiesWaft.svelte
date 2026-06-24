@@ -564,12 +564,12 @@ await M.eatfunc({
 
         // Lies_report_result — runner emit, after a run settles.  The editor's handler
         //  re-attaches it so the staging chrome lights up.
-        Lies_report_result(w: TheC, sc: { path?: string, dige?: string, ok?: boolean, errors?: any[], snap_dige?: string, ok_pct?: number, done?: number, book?: string }) {
+        Lies_report_result(w: TheC, sc: { path?: string, dige?: string, ok?: boolean, errors?: any[], snap_dige?: string, ok_pct?: number, done?: number, caveat?: number, book?: string }) {
             const H = this as House
             if (!H.Lies_is_runner(w)) return
             const pier = (w.o({ Peering: 1 })[0] as TheC | undefined)?.o({ Pier: 1 })[0] as TheC | undefined
             if (!pier || !H.Lies_channel_live(w)) return
-            ;(H as any).Peeroleum_send_consumer(w, 'run_result', { path: sc.path, dige: sc.dige, ok: sc.ok, errors: sc.errors, snap_dige: sc.snap_dige, ok_pct: sc.ok_pct, done: sc.done, book: sc.book })
+            ;(H as any).Peeroleum_send_consumer(w, 'run_result', { path: sc.path, dige: sc.dige, ok: sc.ok, errors: sc.errors, snap_dige: sc.snap_dige, ok_pct: sc.ok_pct, done: sc.done, caveat: sc.caveat, book: sc.book })
             H.tlog(`📤 run_result → editor: ${sc.path} ${sc.ok ? 'green' : 'red'}${sc.done != null ? ` ${Math.round((sc.ok_pct ?? 0) * sc.done)}/${sc.done}` : ''}`)
         },
 
@@ -601,7 +601,7 @@ await M.eatfunc({
             if (!H.Lies_is_runner(w)) return
             const aw = w.c.awaiting_verdict as { path?: string, dige?: string, book?: string } | undefined
             if (!aw) return
-            const outcome = (H as any).Cred_run_outcome() as { ok: boolean, ok_pct: number, done: number } | null
+            const outcome = (H as any).Cred_run_outcome() as { ok: boolean, ok_pct: number, done: number, caveat: number } | null
             if (!outcome) return
             w.c.awaiting_verdict = undefined
             // all_done precedes the real run_result: the steps are in, the verdict is one frame
@@ -609,7 +609,8 @@ await M.eatfunc({
             H.Lies_runner_phase(w, 'all_done', { n: outcome.done, total: outcome.done, book: book ?? aw.book, path: aw.path })
             // a Rungo run carries a {path,dige}; a become-Book run carries {book} only.  Either
             //  way the report carries the Book (storyFinished's bname), so a Book cell can match.
-            H.Lies_report_result(w, { path: aw.path, dige: aw.dige, ok: outcome.ok, ok_pct: outcome.ok_pct, done: outcome.done, book: book ?? aw.book })
+            //   caveat rides along (§10): forgiven steps are green but tagged "passed, N forgiven".
+            H.Lies_report_result(w, { path: aw.path, dige: aw.dige, ok: outcome.ok, ok_pct: outcome.ok_pct, done: outcome.done, caveat: outcome.caveat, book: book ?? aw.book })
         },
 
         // Lies_run_result_recv — editor receives the runner's outcome and stamps it on
@@ -629,6 +630,7 @@ await M.eatfunc({
                 snap_dige: frame.snap_dige, dige: frame.dige, at: Date.now(),
                 ...(frame.ok_pct != null ? { ok_pct: frame.ok_pct } : {}),
                 ...(frame.done   != null ? { done: frame.done }     : {}),
+                ...(frame.caveat != null ? { caveat: frame.caveat } : {}),
                 ...(frame.book   != null ? { book: frame.book }     : {}),
             })
             H.tlog(`📥 run_result: ${path} ${frame.ok ? 'green' : 'red'}${frame.done != null ? ` ${Math.round((frame.ok_pct ?? 0) * frame.done)}/${frame.done}` : ''}`)

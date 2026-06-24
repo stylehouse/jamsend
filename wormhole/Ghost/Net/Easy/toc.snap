@@ -37,8 +37,8 @@ Waft:Ghost/Net/Easy,active
         Point,method:Lake_trial_confirm
   What:Security
     Doc:Ghost/N/Tyrant.g
-    Point,method:Run_A_Tyrant
-    Point,method:Tyrant
+    Point,method:Run_A_PereTyrant
+    Point,method:PereTyrant
     Point,method:Tyrant_sides_up
     Point,method:req_trust
     Point,method:say_vouch

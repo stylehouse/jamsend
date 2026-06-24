@@ -92,14 +92,19 @@ Lake_sides_up(w):
     H i A:Bob$:BobA/w:Peeroleum$:Bobw
     // each side: a Peering and a Pier named by the peer's identity (whom this Pier
     //  is a Pier to), plus a mock transport on the Peering's active_transport.
-    Alicew i Peering,name:alice$:AlicePeering/Pier,pub:bob$:AlicePier
-    Bobw i Peering,name:bob$:BobPeering/Pier,pub:alice$:BobPier
-    // wire c.up below w: the belief walk wires A.c.up and w.c.up but NOT the
-    //  domain particles under w (Peering/Pier), so a nested req's pump (pier.do())
-    //   can't climb to the House to resolve its do_fn. Stamp the chain — the
-    //    migration idiom (cf examining.c.up=w, funks.c.up=w). Objects-on-.c → raw JS.
-    AlicePeering.c.up = Alicew; AlicePier.c.up = AlicePeering
-    BobPeering.c.up = Bobw; BobPier.c.up = BobPeering
+    Alicew i Peering,name:alice$:AlicePeering
+    Bobw i Peering,name:bob$:BobPeering
+    // wire c.up below w: the belief walk wires A.c.up and w.c.up but NOT the domain
+    //  particles under w, so a nested req's pump can't climb to the House to resolve its
+    //   do_fn.  The Peering we stamp by hand (i doesn't wire c.up); each Pier is minted with
+    //    oai (the flock — %Pier,pub:…,req), which wires Pier.c.up=Peering for us.
+    AlicePeering.c.up = Alicew
+    BobPeering.c.up = Bobw
+    // the Pier flock: oai Pier,$pub,req — find-or-create a per-peer Pier carrying the
+    //  serialise sentinel, so it mints as %Pier,pub:…,req:N (mainkey Pier, a typed serial
+    //   req dispatched by req_Pier).  WE mint it ⇒ we own its identity (no remote gut-swap).
+    AlicePeering oai Pier,pub:bob,req$:AlicePier
+    BobPeering oai Pier,pub:alice,req$:BobPier
     &transport,AliceA,Alicew
     &transport,BobA,Bobw
     // each w culls its Piers' acked outbox / done inbox into %recent at the step
@@ -128,16 +133,17 @@ async Lake_handshake(w):
     }
     w i %reached:step_3
 
-// Lake_pump_handshakes — re-pump each Pier's %req:handshake every pass. The
-//  handshake is nested (Pier/Peering/w), below reqdo_sweep's w-level reach, so the
-//   wrangler drives it; each inbound frame's feebly_ponder brings the run back
-//    here, advancing the maz leaves as their protocol particles land (say→hear→
-//     say_trust→hear_trust). No-op before step 3 — no Piers stand up yet.
+// Lake_pump_handshakes — re-pump each side's Pier flock every pass.  We pump the PEERING
+//  now (peering.do()), which runs each Pier as a typed serial-req via req_Pier (the Pier
+//   reconciles its own %req:handshake) — nested below reqdo_sweep's w-level reach, so the
+//    wrangler drives it; each inbound frame's feebly_ponder brings the run back here,
+//     advancing the maz leaves as their protocol particles land (say→hear→say_trust→
+//      hear_trust). No-op before step 3 — no Piers stand up yet.
 async Lake_pump_handshakes(w):
     for (const side of ['Alice', 'Bob']) {
-        H o A:$side/w:Peeroleum/Peering/Pier$:pier
-        if (!pier) continue
-        await pier&do
+        H o A:$side/w:Peeroleum/Peering$:peering
+        if (!peering) continue
+        await peering&do
     }
 
 // Lake_trial — step 4: put the carrier on trial (spec §4.1, §11.2; flavour in

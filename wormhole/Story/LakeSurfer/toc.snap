@@ -12,28 +12,29 @@ story:LakeSurfer
         dontSnapGhostList
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=1.243
-      sample=0.636,at=1782276392
-      sample=1.73,at=1782276474
-      sample=1.453,at=1782276503
-      sample=0.6,at=1782276869
-      sample=0.6,at=1782276879
-      sample=0.6,at=1782276880
-      sample=1.955,at=1782277939
-      sample=1.595,at=1782277967
-      sample=1.377,at=1782280749
-      sample=1.884,at=1782280786
-    TimeTotal:step,avg=0.621
-      sample=0.318,at=1782276392
-      sample=0.865,at=1782276474
-      sample=0.726,at=1782276503
-      sample=0.3,at=1782276869
-      sample=0.3,at=1782276879
-      sample=0.3,at=1782276880
-      sample=0.978,at=1782277939
-      sample=0.798,at=1782277967
-      sample=0.688,at=1782280749
-      sample=0.942,at=1782280786
+    TimeTotal:beliefs,avg=1.043
+      sample=0.455,at=1782283361
+      sample=0.717,at=1782283368
+      sample=0.63,at=1782283377
+      sample=0.624,at=1782283425
+      sample=1.543,at=1782283757
+      sample=0.488,at=1782283806
+      sample=1.95,at=1782284088
+      sample=1.003,at=1782284153
+      sample=1.304,at=1782284276
+      sample=1.718,at=1782284341
+    TimeTotal:step,avg=0.522
+      sample=0.228,at=1782283361
+      sample=0.358,at=1782283368
+      sample=0.315,at=1782283377
+      sample=0.312,at=1782283425
+      sample=0.772,at=1782283757
+      sample=0.244,at=1782283806
+      sample=0.975,at=1782284088
+      sample=0.502,at=1782284153
+      sample=0.652,at=1782284276
+      sample=0.859,at=1782284341
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
-  step,dige:c52b1a5902ed7ff7
-  step=2,dige:2440a16cb2607e6b
+  EntropyArrest
+  step,dige:d46f0c0dd4a88837
+  step=2,dige:7763893596815fce

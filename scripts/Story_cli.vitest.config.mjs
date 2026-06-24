@@ -15,8 +15,10 @@ const APP = path.resolve('.')
 export default defineConfig({
     plugins: [svelte(), svelteTesting()],
     resolve: { alias: { $lib: path.join(APP, 'src/lib') }, conditions: ['browser'] },
-    // run with --root /tmp/cliroot (node-writable) so .vite-temp/.vite land there,
-    //  not in the root-owned /app/node_modules; allow serving the real /app files.
+    // a root-run dev server leaves /app/node_modules/.vite root-owned → EACCES when the
+    //  svelte optimizer writes _svelte_metadata.json.  Point the cache at a node-writable
+    //   /tmp dir (the proven LakeRace fix; --root was tried and breaks bare svelte resolution).
+    cacheDir: '/tmp/story_cli_vite',
     server: { fs: { allow: [APP, '/tmp'] } },
     test: {
         environment: 'jsdom',

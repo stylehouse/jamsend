@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return 'e210968f3fd4a138' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return '38a1f9ec2bbc4f3c' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -55,6 +55,19 @@ async req_p2paddy(req) {
     // < per known peer: seed %req:dial → ensure a %Pier → seed its %req:handshake.
     await req.do()
     req.sc.ok = 1
+
+},
+// req_Pier — the per-Pier worker, the flock's do_fn (spec §11.3).  A Pier is
+//  %Pier,pub:…,req:N (oai Pier,$pub,req): its MAINKEY Pier names this handler — do_fn_for
+//   dispatches a typed serial-req by mainkey, while the serial req: just plugs the Pier into
+//    the req pump — so when its Peering does(), each Pier reconciles ITSELF.  Because WE mint
+//     the Pier, its identity is ours: a peer can land frames in an existing Pier's inbox but
+//      can never mint or re-key one (no gut-swap).  The job: pump whatever sub-reqs this Pier
+//       hosts (handshake / trust / send, seeded by the caller), then stay a live flock member
+//        — ok re-armed each pass, mirroring req_p2paddy.
+async req_Pier(pier) {
+    await pier.do()
+    pier.sc.ok = 1
 
 },
 // ── the handshake (hello + trust) as %req (spec §8) ───────────────────────────
@@ -114,7 +127,7 @@ async req_heard_trust(req) {
 //  on the protocol particle so a re-pump never double-sends. hear_* read the
 //   inbound frame (raw — it's a JS object off the wire), verify, and write the
 //    far half. identity in the mock: a Peering's %name is our address, a Pier's
-//     %pub is the peer it faces, and the publicKey we send IS our name (verify is
+//     %pub is the peer it faces, and the pubkey we send IS our name (verify is
 //      then startsWith(pub)). seq is the per-Pier monotone outbound counter
 //       (Pier_next_seq, spec §7.1) — each say allocates the next and records it on
 //        the protocol %said so the matching ack can stamp it %acked.
@@ -125,7 +138,7 @@ say_hello(w, pier) {
     let me = pier.c.up.sc.name
     let seq = this.Pier_next_seq(pier)
     hello.i({said:1, seq})
-    this.Peeroleum_send(w,{header:{type:'hello', from:me, to:pier.sc.pub, seq, publicKey:me}})
+    this.Peeroleum_send(w,{header:{type:'hello', from:me, to:pier.sc.pub, seq, pubkey:me}})
 
 },
 say_trust(w, pier) {
@@ -139,7 +152,7 @@ say_trust(w, pier) {
 
 },
 // hear_hello — verify their key starts-with the pub we expect, record %heard +
-//  the proven publicKey, set %Ud (their identity, survives resets — spec §6), and
+//  the proven pubkey, set %Ud (their identity, survives resets — spec §6), and
 //   if we have not said yet, say now (the single-initiator path; a no-op under the
 //    symmetric dual-init). A failed verify writes nothing — the gap is the result
 //     (spec §8: a corrupt hello that never arrives is the test passing).
@@ -149,10 +162,10 @@ say_trust(w, pier) {
 hear_hello(w, pier, frame) {
     const H = this
     let h = frame.header
-    if (!String(h.publicKey).startsWith(pier.sc.pub)) return false
+    if (!String(h.pubkey).startsWith(pier.sc.pub)) return false
     let hello = pier.oai({protocol: 1}).oai({hello: 1})
-    hello.i({heard: 1, publicKey: h.publicKey})
-    pier.oai({Ud: 1, publicKey: h.publicKey})
+    hello.i({heard: 1, pubkey: h.pubkey})
+    pier.oai({Ud: 1, pubkey: h.pubkey})
     if (!hello.oa({said: 1})) H.say_hello(w, pier)
     return true
 

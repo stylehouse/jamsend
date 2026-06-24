@@ -1129,7 +1129,16 @@ export class House extends StorableHousing {
         const ark = opt.ark ?? (is_req ? 'req' : 'w')
 
         if (ark === 'req') {
-            const name = typeof n.sc.req === 'string' ? n.sc.req : undefined
+            // the handler NAME: a string req value IS the kind → req_<kind> (req_handshake).
+            //  a serial req (req:N, auto-numbered per container) can't name a method — so a
+            //   TYPED serial-req, whose mainkey is a real type (e.g. %Pier,pub:…,req:N),
+            //    dispatches by that MAINKEY (req_Pier): the type leads and the serial merely
+            //     plugs it into req reality.  A classic %req:N (mainkey IS 'req') keeps
+            //      name:undefined and runs off its inline do_fn (resolved just below).
+            const mk = Object.keys(n.sc)[0]
+            const name = typeof n.sc.req === 'string' ? n.sc.req
+                       : mk !== 'req' ? mk
+                       : undefined
             const handler: Function | undefined =
                    n.sc.mutated && (n.c.mutated_fn || con?.c.mutated_fn)  // con?.c: deprecated reqcon path
                 || n.c.do_fn || con?.c.do_fn                              // doai sets n.c.do_fn

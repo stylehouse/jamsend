@@ -521,12 +521,14 @@ abstract class StuffAware extends StuffIO {
     //  stage un-finishes so do() re-runs it.  A req is never replaced, only mutated
     //  — its identity rides the ref.
     oai(s, c = {}): TheC {
-        // %req triggers the req machine ONLY when it is the MAINKEY (first key) — a
-        //  particle's type is its first sc key (the prefixing convention), so `req` as an
-        //   incidental value-key (e.g. a generic {lematch:1, req:'wants'} locator) must NOT
-        //    be minted as a req with c.up/serial/initialdo.  Every real req caller passes
-        //     req first ({req:…, maz?, …}); nothing means a non-first req as a req.
-        if (Object.keys(s)[0] === 'req') {
+        // %req triggers the req machine when it is the MAINKEY (classic %req:kind), OR when a
+        //  TYPED particle carries the serialise sentinel req:1 behind a real mainkey
+        //   (%Pier,pub:…,req → {Pier:1, pub:…, req:1}): the flock shape — the type leads and
+        //    req:1 plugs it into the req pump (serial value, c.up wiring, initialdo, do()).
+        //     The footgun stays shut: an incidental string value-key ({lematch:1, req:'wants'})
+        //      has req !== 1, so it is NOT minted as a req.  do_fn_for then dispatches a typed
+        //       serial-req by its MAINKEY (req_Pier), a classic one by its kind (req_handshake).
+        if (Object.keys(s)[0] === 'req' || s.req === 1) {
             // maz:1 is implied, never identifying — strip it from the identity match
             //  (a created req drops it below) so a later oai({…,maz:1}) re-finds the
             //   same req instead of minting a duplicate that carries no maz.
@@ -546,11 +548,15 @@ abstract class StuffAware extends StuffIO {
                 req = this.o(ident)[0] as TheC | undefined
             }
             if (req) { this.maybe_mutate_sc(req, c); return req }
-            const mix: TheUniversal = { req: 1, ...s }
-            // an anonymous %req:1 wants serial numbering — the serial IS the %req
-            //  value (%req:$i), off the host counter.  A named req keeps its name.
-            //  Serials start at %req:2 ((??1)+1) so they never collide with the
-            //   %req:1 "please-serialise" sentinel; next is 3, 4, …
+            // preserve the caller's key order so the MAINKEY is kept: a classic req is
+            //  {req:…} (req leads anyway); a typed serial-req is {Pier:…, …, req:1} (the type
+            //   leads, req rides behind).  s always carries req here (the gate guarantees it),
+            //    so spreading s alone both keeps req present and keeps the type in front.
+            const mix: TheUniversal = { ...s }
+            // a serialise-sentinel req:1 (anonymous %req:1 OR a typed %…,req:1) wants serial
+            //  numbering off the host counter — the serial becomes the %req value.  A named
+            //   req keeps its name.  Serials start at 2 ((??1)+1) so they never collide with
+            //    the req:1 "please-serialise" sentinel; next is 3, 4, …
             if (mix.req === 1) mix.req = this.c.req_serial = ((this.c.req_serial as number) ?? 1) + 1
             req = this.i(mix) as TheC
             req.c.up = this

@@ -68,12 +68,13 @@ Everything is `%req` now (the old `De:`-desire / `req:`-work split is gone): a "
 A:Peerologist / w:Peerologist      the manager — its own clean A (no identity, no transport)
     %req:p2pman                    brings Peerings up per our desire to appear online
 A:Alice / w:Peeroleum              one A per identity-presence (room for A:Alice/w:OtherPresence later)
-    %Peering,name:alice,prepub:…   a listen address (one Idento); owns its Piers
+    %Peering,name:alice            a listen address (one Idento); owns its Piers
       %req:p2paddy                 manages the Piers under this Peering
-      Id:Idento,prepri:…           immutable identity of this Peering
+      Id:Idento,prikey:…           this Peering's keypair (prikey private; pubkey the full public key)
       %active_transport,type:…     what is carrying right now
       %transport,type:…            an installed transport option (may be present-and-%faulty)
-      %Pier,pub:…                  one per known remote, within this Peering (§6)
+      %Pier,pub:…,req:N            one per known remote (§6); a typed serial-req flock member —
+                                   pub is a prefix of the peer's pubkey, req_Pier pumps it
 A:Alice / w:Thangs,thangs:peerings|identities   persisted lists (Dexie, §10)
 ```
 
@@ -200,6 +201,12 @@ heard}`, `%outbox`, `%inbox`, optional `%faulty`, and the handshake `%req`). Rea
    reconnect; it is the thing a faulty handshake must not reach prematurely.
 - **`c.connection` is the ONLY `c.*` state on a Pier** — nothing else to reverse-engineer; the garden has
    no hidden roots.
+- **A `%Pier` is a typed serial-req — `%Pier,pub:…,req:N`** (minted `oai Pier,$pub,req`): the mainkey
+   `Pier` keeps it a queryable type *and* names its worker (`req_Pier`, dispatched by mainkey since the
+    serial `req:` can't name a method), while `req:N` plugs it into the req pump — so `Peering.do()`
+     reconciles the whole flock. We mint each Pier, so its identity is ours: a peer fills an existing
+      Pier's inbox but never mints or re-keys one (no gut-swap). `pub` is a prefix of the proven `pubkey`
+       (on `%Ud`); the mock verify is `pubkey.startsWith(pub)`.
 - **State is queried, not field-polled:** "did they say hello" is `q.o({heard:1})` on `Pier/protocol/
    hello`, not a `.c.inst` bool that can flip before `%Ud` is set. Errors are `%inbox/**/error:…` rolled
     up to `%faulty`, not a thrown string from a hot path.
@@ -273,9 +280,9 @@ Two Dexie-backed tables under `w:Thangs`:
    last_good}, last_seen}` per known peer. The hello+trust round-trip mutates `stashed.trust`; the
     throttled save persists it. `%req:p2paddy` reads these to know which Piers to (re)dial and with which
      transport preference (`transport.last_good` seeds next session's choice).
-- `thangs:identities` — one `%thang,name:<our-prepub>,stashed:{keys, friendly, online_want}` per identity
+- `thangs:identities` — one `%thang,name:<our-pub>,stashed:{keys, friendly, online_want}` per identity
    we listen as. `%req:p2pman` ensures a `%Peering` per `online_want` identity. `Id` is constructed from
-    `keys`; `prepub` is `name`.
+    `keys` (`pubkey` the full public key, `prikey` the private); our `name` is our `pub`, a prefix of `pubkey`.
 
 ---
 
@@ -293,8 +300,10 @@ Three tiers, each a `%req` owning sub-`%req` — motivation flows down, state up
    `%req:transport_select` (try webrtc, wait, fall to websocket on timeout, leaving webrtc present-and-
     `%faulty`). *In the test this is wrangler-driven — `req_transport_select` is GONE (nesting it under
      p2paddy broke the `req.c.up`→Peering navigation); the req version is reserved for real peers.*
-- **per-Pier** — `%req:handshake` (§8) and `%req:send` (seed it to put a thing on the wire; its do_fn writes
-   a `%outbox/emit`, the transport ferries it, the ack finishes the req). Replaces old `Pier.emit()` poking.
+- **per-Pier** — the `%Pier,pub:…,req:N` is itself the worker: `req_Pier` (dispatched by mainkey, §6) pumps
+   the Pier's own sub-reqs — `%req:handshake` (§8) and `%req:send` (seed it to put a thing on the wire; its
+    do_fn writes a `%outbox/emit`, the transport ferries it, the ack finishes the req). `Peering.do()` runs
+     the whole flock. Replaces old `Pier.emit()` poking. **BUILT** for the test wranglers (Lake/Tyrant).
 
 The `%exports`/`%aim` upward hoisting once specced for state-roll-up is **not built** and no consumer needs
  it until p2pman is real.

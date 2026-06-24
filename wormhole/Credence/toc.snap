@@ -1,8 +1,9 @@
 Waft:Credence
   Funkcion:StoryTimes,all:1
-  What:PereStaple
+  What:Pere
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:PereStaple
+    Funkcion:Storying,of_Book:PereTyrant
   What:Lake
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:LakeSurfer

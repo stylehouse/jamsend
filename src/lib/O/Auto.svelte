@@ -419,7 +419,9 @@
 
     // Cred_run_outcome — the real pass/fail of the just-finished Story: how many Steps stamped
     //  %ok out of the total (the same signal auto_sync_story_stats reads).  null if no run yet.
-    Cred_run_outcome(): { ok: boolean, ok_pct: number, done: number } | null {
+    //  caveat = the ok steps that passed only by EntropyArrest forgiveness (§10): they count
+    //   green (their %ok is true) but ride back tagged so the editor can show "passed, N forgiven".
+    Cred_run_outcome(): { ok: boolean, ok_pct: number, done: number, caveat: number } | null {
         const H = this as House
         const story = H.o({ H: 'Story' })[0] as House | undefined
         const stW   = story?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] as TheC | undefined
@@ -428,8 +430,9 @@
         const steps = thisC.o({ Step: 1 }) as TheC[]
         const done  = steps.length
         if (!done) return null
-        const ok = steps.filter(s => s.sc.ok).length
-        return { ok: ok === done, ok_pct: Math.round((ok / done) * 100) / 100, done }
+        const ok     = steps.filter(s => s.sc.ok).length
+        const caveat = steps.filter(s => s.sc.ok && s.sc.caveat).length
+        return { ok: ok === done, ok_pct: Math.round((ok / done) * 100) / 100, done, caveat }
     },
 
     // Cred_spool — record this run into the soul (in-mem on Mundo.c.cred, off-snap, partitioned

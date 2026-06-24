@@ -337,7 +337,10 @@ One handler ladder serves every node receiving attention,
     //   and any future ark rides the same ${k}_${name} convention
     do_fn_for(n, T, e) {
         const k    = T.sc.level?.ark === 'req' ? 'req' : 'w'
-        const name = typeof n.sc[k] === 'string' ? n.sc[k] : undefined
+        // a string req value IS the kind (req_handshake); a TYPED serial-req — mainkey a real
+        //  type, req a non-first serial (%Pier,…,req:N) — dispatches by its MAINKEY (req_Pier).
+        const mk   = Object.keys(n.sc)[0]
+        const name = typeof n.sc[k] === 'string' ? n.sc[k] : (k === 'req' && mk !== 'req' ? mk : undefined)
         const con  = n.c.on
         return e?.sc.elvis && e.sc.elvis !== 'think' && this[`e_${e.sc.elvis}`]
             || n.sc.mutated && (n.c.mutated_fn || con?.c.mutated_fn)
@@ -346,7 +349,12 @@ One handler ladder serves every node receiving attention,
             || this.handler_of_last_resort?.(n)
     }
 
-Name-convention (H.req_$name, from a string %req value) is primary.
+Name-convention (H.req_$name) is primary: from a string %req value (req_handshake), or — for a
+ TYPED serial-req, where the type leads and req: rides behind as a serialise-sentinel
+  (%Pier,pub:…,req:N, the per-Pier flock) — from the MAINKEY (req_Pier).  A serial req value can't
+   name a method, so the type does; this is how a particle is BOTH a queryable type (o Pier variously)
+    AND a pumped req — sublating req from being the headline type.  oai mints it via `oai Pier,$pub,req`
+     (the gate also fires on a non-first req:1 serialise-sentinel, not just a req-mainkey).
  req.c.do_fn — set one-shot via doai — serves anonymous reqs (%req:1 with no name).
   With %reqcon banished there is no protocol-level do_fn to fall back to;
    the climb-down plus the name convention resolve nearly everything,
