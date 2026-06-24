@@ -54,6 +54,20 @@ source, compile-verified, with regen/refreeze HELD** so it doesn't disturb the l
          not run in the Story_cli boot, so headless can't exercise it). Design: `Hovercraft.design.md`
           (dispatch ladder) + `Peeroleum_spec.md` §6/§11.3 (the Pier flock).
 
+**This session — network-healing + the reliability arc** (full state: [[peeroleum-reliability-arc]]). Reliability is
+ **absence-handling**, an ambient-sweep job — and `%outbox/emit` is a retransmit queue with no retransmitter yet.
+  Build order: adversarial carrier + logical clock → inbound seq discipline → retransmit → spine liveness → Tribunal
+   fallback. **LANDED, non-pinned (both roles, no re-pin):** `LiesLies` liveness split into `Lies_keepalive` —
+    frame-agnostic (`Lies_heard` stamps `last_heard` on EVERY consumer frame, not just ping) + three-state
+     LIVE/SLUGGISH/DEAD (reconnect ONLY on DEAD; supersedes the old binary >20s in heading 8) on an INDEPENDENT
+      `setInterval` (liveness must not ride think); `relay.ts` keepalive now pings the outbound `peerLink` bridge
+       (was `wss.clients`-only). **LANDED, pure+headless:** `src/lib/O/peeroleum_lossy.ts` (adversarial carrier;
+        drop/dup/delay-reorder, logical-tick clock; `scripts/LossyCarrier.spec.ts` 5/5) + `peeroleum_inseq.ts`
+         (per-Pier dedup + gap-buffer; `scripts/InSeq.spec.ts` 6/6). **NEXT:** wire `inseq` into `Peeroleum.g`
+          `req_unemit` (ghost-compile; a pass-through on a clean stream, so PereStaple is unaffected), then
+           retransmit. The PINNED carrier `last_heard` stamp (`Peeroleum_deliver`, every frame incl. **acks** —
+            closes the watchdog's ack-blindness) rides the next re-pin.
+
 ### → START HERE: real websocket transport (heading 10) — editor↔runner is its first customer
 
 **Active direction (settled with the human).** The editor↔runner channel is NOT new construction — it is
@@ -356,12 +370,17 @@ a tweaked hello-sign. Spec §4.2, §15.
      reconnect (wire/send read it live, `port.ws` tracks it). New `port.on_open(cb)` re-fires consumer open-work
       on *every* (re)connect; `port.reconnect()` force-drops a half-open socket; ephemeral frames are dropped
        (not buffered) while down so `pending` can't bloat.
-  - **`LiesLies` (`Lies_channel_up`)** registers the relay `become` via `port.on_open` (so a returning socket
-     re-binds its role/addr), and `Lies_heartbeat` force-reconnects when a once-proven channel goes silent >20s
-      (catches a half-open socket whose `onclose` never fired).
+  - **`LiesLies`** registers the relay `become` via `port.on_open` (so a returning socket re-binds its role/addr).
+     Liveness is now **`Lies_keepalive`** (split out of `Lies_heartbeat`), driven by an INDEPENDENT `setInterval`
+      (NOT the belief loop — a think-quiesced peer must still ping) and **frame-agnostic** (`Lies_heard` stamps
+       `last_heard` on every inbound consumer frame). Three states: only **DEAD** (nothing heard >20s) re-dials;
+        **SLUGGISH** (heard, but no pong home) surfaces on the Relay Brink but does NOT reconnect — the old binary
+         force-reconnect tore live channels mid-ghost_compile (the self-flap).
   - **Relay (`relay.ts`)** — fixed the bridge "state stuckness": a stale half-open `peerLink` is non-null but
      dead, and the `!peerLink` re-dial guards skipped it forever (only a server restart cleared it). Now a
-      non-OPEN `peerLink` counts as down — closed and re-dialed on the next runner browser (re)connect.
+      non-OPEN `peerLink` counts as down — closed and re-dialed on the next runner browser (re)connect. The
+       heartbeat round also **keepalive-pings the outbound `peerLink`** itself now (was `wss.clients`-only), so a
+        half-open outbound bridge is terminated+nulled proactively, not only on the next browser reconnect.
   - **Editor needs the re-freeze**: it runs the FROZEN `p2p/pinned_staging/*.go`, so reconnect only reaches it after
      `cp src/lib/gen/N/*.go src/lib/p2p/pinned_staging/` (done this session). A runner-only fix leaves the editor's
       socket dead — the channel needs BOTH ends reconnecting. Browser-unverified; confirm two-origin on :9091/:9092.
@@ -429,10 +448,15 @@ floor sits the social platform, reborn clean-room in stho as **two** new ghosts 
     exchange over the Pier settling on acks → `%trust,grants:full`); M2 = policy-gated admission (`%req:join`
      whose `finished` is the AND of maz-ordered policy leaves `proven`∧`trusted`, above an `admit` leaf →
       `w/%member,signed` — "you're not on the network until the req is signed finished", the LiesStore
-       phased-`%req` shape). Wired into `CREDULER_GHOSTS` (LiesLies) + the Net/Easy overlay (open
-        "What:the cabinetry" to compile). **Not yet runnable** — needs a `wormhole/Story/Tyrant/toc.snap` Book
-         (step=2/step=3 lines); held pending the "make step 1 neat" rethink. Meet+prove (earning `%Ud`) is the
-          deferred deeper M2.
+       phased-`%req` shape). Wired into `CREDULER_GHOSTS` (LiesLies) + the Net/Easy overlay. **NOW RUNNABLE —
+        Book `PereTyrant`** (`wormhole/Story/PereTyrant/toc.snap`, step 2 trust / step 3 admit), click-runnable on
+         the Credence board under `What:Pere`; the Book/recipe/actor renamed `Tyrant`→`PereTyrant` (the `Tyrant_*`
+          helpers keep the subsystem name). **:9091 run:** M1 trust COMPLETES (`req:trust,finished`, vouch
+           exchanged both ways) — BUT **`%trust,grants:full` isn't landing on the Pier** despite `Tyrant_grant`
+            lowering fine (`pier.oai({trust:1},{grants:full})`), so the `trusted` policy + `admit` stall (no
+             `%member,signed`). **That grant gap is the open item before admission goes green** (suspect: confirm
+              `Tyrant_grant` actually runs / the snap wasn't truncated). Meet+prove (earning `%Ud`) is the deferred
+               deeper M2.
 - **Garden.g** — the *partying*: social cultivation (ex-Gardening). Introductions, engagements, tending many
    Piers, pruning dead ones. **Net-new, unbuilt.**
 

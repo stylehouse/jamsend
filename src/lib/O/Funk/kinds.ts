@@ -32,6 +32,7 @@ import CreduFunk, { credufunk_run } from "$lib/O/Funk/CreduFunk.svelte"
 import IdHatch from "$lib/O/ui/IdHatch.svelte"
 import Runner, { runner_run } from "$lib/O/Funk/Runner.svelte"
 import Relay, { relay_run } from "$lib/O/Funk/Relay.svelte"
+import Upkeep from "$lib/O/Funk/Upkeep.svelte"
 
 export type FunkKind = {
     run?:                (host: TheC, funk: TheC, ww: TheC) => void
@@ -52,4 +53,5 @@ export const FUNK_KINDS: Record<string, FunkKind> = {
     IdHatch:    { comp_Panel: IdHatch },                        // face-only: the cluster-identity hatch, a global Lens:Panel
     Runner:     { run: runner_run, comp_Brink: Runner },        // %Aim watcher: the peer ping (%channel_peer), hoisted as Lens:Brink
     Relay:      { run: relay_run,  comp_Brink: Relay },         // %Aim watcher: the relay ping (channel carrier), hoisted as Lens:Brink
+    Upkeep:     { comp_Brink: Upkeep },                         // %Upkeep ledger: live %Errands (compiles, sweeps) hoisted as Lens:Brink
 }

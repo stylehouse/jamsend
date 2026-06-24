@@ -225,6 +225,46 @@ await M.eatfunc({
         else H.Lies_lens_suggest(lensKind, of_Funkcion, sc)
     },
 
+    // ── %Upkeep — the machine's background work-ledger (the opposite pole of %Interest) ──────
+    //   %Upkeep is the quality of work the machine owes ITSELF — keeping endpoints up, Books green,
+    //    ghosts compiled — surfaced at the Brink, never courting attention the way an %Interest does.
+    //     Its units are %Errands: transient work-items (a ghost-compile in flight, a StoryTimes sweep
+    //      grinding to green) that show while live and fade once settled.  Distinct from the cluster
+    //       %Aim layer (Runner/Relay endpoint watch) on purpose — build churn stays out of that.
+    //   The ledger is ambient on top_House().ave.{Upkeep} — off-snap like the Lenses bag (no c.up in
+    //    the A/w spine, outside the snap tree).  An Errand is keyed Errand:<key> so a repeated report
+    //     (a compile re-firing, a sweep ticking) lands on the same item.
+    Upkeep_bag(): TheC {
+        return (this as House).top_House().ave.oai({ Upkeep: 1 })
+    },
+    //   Upsert an Errand by key.  phase: running (live) | ok | failed (settled — fades, then GC'd).
+    //    A settled report stamps `settled` so Lies_upkeep can reap it after it's shown a moment.
+    Upkeep_errand(key: string, sc: Record<string, any>): TheC {
+        const bag     = (this as any).Upkeep_bag() as TheC
+        const settled = sc.phase && sc.phase !== 'running'
+        const e = bag.oai({ Errand: key }, { ...sc, at: Date.now(), ...(settled ? { settled: Date.now() } : {}) })
+        e.bump_version(); bag.bump_version()
+        return e
+    },
+    //   Hoist/retire the Upkeep Brink by whether any Errand is live-or-recently-settled, GC'ing the
+    //    long-settled ones.  Called every heartbeat (from any w — the ledger is global, one Brink).
+    Lies_upkeep(_w: TheC): void {
+        const H   = this as any
+        const bag = H.Upkeep_bag() as TheC
+        const now = Date.now()
+        let live = 0, gc = false
+        for (const e of bag.o({ Errand: 1 }) as TheC[]) {
+            const settled = Number(e.sc.settled ?? 0)
+            if (settled && now - settled > 8000) { bag.drop(e); gc = true; continue }
+            live++
+        }
+        if (gc) bag.bump_version()
+        if (live) {
+            if (!(H.Lies_lens_bag() as TheC).oa({ Lens: 'Brink', of_Funkcion: 'Upkeep' }))
+                H.Lies_lens_suggest('Brink', 'Upkeep', { altitude: 10 })   // atop Runner(20)/Relay(25)
+        } else H.Lies_lens_dismiss('Brink', 'Upkeep')
+    },
+
     // ── %Aim (naive) — the cluster-awareness Waft + its hoisted Brink faces ──────────
     //   The first, deliberately-thin %Aim: a Waft:Cluster,Aim holding two watcher Funkcions —
     //    Funkcion:Runner (the peer ping, %channel_peer) and Funkcion:Relay (the relay carrier,
@@ -654,46 +694,57 @@ await M.eatfunc({
 //#endregion
 //#region StoryTimes — the run-all sweep (Editron §5f, the Credulation stationing)
 
-        // ── Lies_storytimes_drive — the sweep sequencer ───────────────────────────────────
+        // ── Lies_storytimes_drive — the sweep sequencer (%Upkeep: the run-til-green Errand) ──────
         //   A StoryTimes station (Funkcion:StoryTimes) is struck → its component arms
-        //    funk.c.sweep={phase:'arm'}; the central Funkcions pump ticks storytimes_run, which
-        //     lands here.  We run every %of_Book Storying cell in the station's scope IN SEQUENCE,
-        //      "never stopping for an !ok" — each become_book→run_result settles its own cell beside
-        //       us; the sweep just chains them and tallies which passed.  The runner is one
-        //        sequential Story Run, so we keep at most `width` Books in flight and advance each as
-        //         its run_result lands (or after a timeout, so a stalled runner can't wedge the board).
-        //   The whole sweep state is off-snap on funk.c.sweep — inspectable, never persisted.
+        //    funk.c.sweep={phase:'arm'}; the central Funkcions pump ticks storytimes_run, which lands
+        //     here.  We run every %of_Book Storying cell in the station's scope, but as an %Upkeep
+        //      ERRAND that pursues a green: pass 0 attempts every Book once IN ORDER, never spinning on
+        //       the first !ok (it moves on); then up to `retries` passes re-attempt only the not-green
+        //        ones — "try the later ones, then come back to the earlier".  The runs are jettisoned
+        //         from memory at the source: each dispatch is a become_book, which Story_resets (tears
+        //          down + rebuilds) the runner's prior Story — so shooting the next Storying frees the
+        //           last one and runs don't pile up.  We KEEP the editor-side run_result verdicts (the
+        //            Storying cells read them).  One Book in flight at a time (the runner-addressing
+        //             limit); the sweep rides off-snap on funk.c.sweep and mirrors to the Brink as
+        //              Errand:sweep:<scope>.
         async Lies_storytimes_drive(host: TheC, funk: TheC, w: TheC) {
             const H = this as House
             const s = funk.c.sweep as any
             if (!s || s.phase === 'idle' || s.phase === 'done') return
 
-            if (s.phase === 'arm') {                                   // build the queue once, then run
+            if (s.phase === 'arm') {                                   // build the roster once, then run
                 const books = H.Lies_storytimes_books(funk, host)
-                funk.c.sweep = { phase: books.length ? 'running' : 'done',
-                                 queue: [...books], inflight: [], results: {}, total: books.length, started: Date.now() }
+                const scope = funk.sc.all ? 'all' : H.Lies_storytimes_scope(funk)
+                funk.c.sweep = { phase: books.length ? 'running' : 'done', scope,
+                                 books: [...books], queue: [...books], inflight: [], results: {},
+                                 pass: 0, retries: 2, total: books.length, started: Date.now() }
                 funk.bump_version()
-                H.tlog(`⇶ StoryTimes ${funk.sc.all ? 'all' : H.Lies_storytimes_scope(funk)}: ${books.length} Book(s) — ${books.join(', ')}`)
+                H.tlog(`⇶ StoryTimes ${scope}: ${books.length} Book(s) — ${books.join(', ')}`)
+                H.Upkeep_errand(`sweep:${scope}`, { kind: 'sweep', label: scope, pass: 0, green: 0, total: books.length, phase: books.length ? 'running' : 'ok' })
                 return
             }
             if (s.phase !== 'running') return
 
             let changed = false
-            // reap settled / timed-out dispatches.  A book is done when a run_result newer than its
-            //  dispatch lands (book-keyed by Lies_run_result_recv); a 60s stall fails it and moves on.
+            // reap settled / timed-out dispatches.  A Book is green when a run_result newer than its
+            //  dispatch lands OK; an !ok (or a 60s stall) is left not-green for a later retry pass.  The
+            //   verdict run_result is kept either way — the Storying cell shows it; the run itself was
+            //    already jettisoned on the runner by the next become_book's Story_reset.
             const still: any[] = []
             for (const f of s.inflight) {
                 const rr = (w.o({ run_result: 1 }) as TheC[])
                     .filter(r => r.sc.book === f.book)
                     .sort((a, b) => Number(b.sc.at ?? 0) - Number(a.sc.at ?? 0))[0]
-                if (rr && Number(rr.sc.at ?? 0) > f.at) { s.results[f.book] = rr.sc.ok ? 'pass' : 'fail'; changed = true; continue }
-                if (Date.now() - f.at > 60000)          { s.results[f.book] = 'fail';                     changed = true; continue }
+                const fresh = !!rr && Number(rr.sc.at ?? 0) > f.at
+                if (fresh)                     { s.results[f.book] = rr!.sc.ok ? 'pass' : 'fail'; changed = true; continue }
+                if (Date.now() - f.at > 60000) { s.results[f.book] = 'fail';                      changed = true; continue }
                 still.push(f)
             }
             s.inflight = still
 
-            // dispatch up to the addressable runner width (§5f: one today, fans out when the channel
-            //  carries a per-runner address).
+            // dispatch this pass's queue, one Book in flight (Editron §7: a become_book is a single-
+            //  address broadcast today; firing two resets the one runner mid-run).  No mid-pass retry —
+            //   a failed Book waits for the next pass, so we never spin in the first spot of trouble.
             const width = H.Lies_storytimes_width(w)
             while (s.inflight.length < width && s.queue.length) {
                 const book = s.queue.shift() as string
@@ -702,12 +753,32 @@ await M.eatfunc({
                 changed = true
             }
 
+            // pass complete: open a retry pass over just the not-green (up to s.retries), else settle.
             if (!s.queue.length && !s.inflight.length) {
-                s.phase = 'done'; changed = true
-                const green = Object.values(s.results as Record<string, string>).filter(v => v === 'pass').length
-                H.tlog(`🏁 StoryTimes done: ${green}/${s.total} green`)
+                const notgreen = (s.books as string[]).filter(b => s.results[b] !== 'pass')
+                if (notgreen.length && s.pass < s.retries) {
+                    s.pass += 1; s.queue = [...notgreen]; changed = true
+                    H.tlog(`↻ StoryTimes ${s.scope} retry ${s.pass}/${s.retries}: ${notgreen.length} not-green — ${notgreen.join(', ')}`)
+                } else {
+                    s.phase = 'done'; changed = true
+                    const green = (s.books as string[]).filter(b => s.results[b] === 'pass').length
+                    H.tlog(`🏁 StoryTimes ${s.scope} done: ${green}/${s.total} green${notgreen.length ? ` · ${notgreen.length} stuck (${notgreen.join(', ')})` : ''}`)
+                }
+            }
+            // mirror to the Brink as an %Upkeep Errand (live while running, settles ok|failed).
+            {
+                const green = (s.books as string[]).filter(b => s.results[b] === 'pass').length
+                H.Upkeep_errand(`sweep:${s.scope}`, { kind: 'sweep', label: s.scope, pass: s.pass, green, total: s.total,
+                    phase: s.phase === 'done' ? (green === s.total ? 'ok' : 'failed') : 'running' })
             }
             if (changed) funk.bump_version()
+            // keep the loop alive at a brisk cadence while the sweep is in flight — otherwise it
+            //  advances only on the idle 3s heartbeat (seconds dead per Book, on top of the run).  One
+            //   timer per w, re-armed each running tick, abandoned once every sweep on this w settles
+            //    (cf the creduler / req_rungo trickle); a verdict thus reaps within ~150ms, not a beat.
+            if (s.phase === 'running' && !w.c.sweep_trickle) {
+                w.c.sweep_trickle = setTimeout(() => { w.c.sweep_trickle = undefined; H.i_elvisto(w, 'think') }, 150)
+            }
         },
 
         // the Books this station sweeps: every %of_Book Storying cell under its scope.  Scope is the

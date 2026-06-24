@@ -420,6 +420,9 @@
             await H.Lies_provide_dock(w, dock.path, { force_active: true })
             H.tlog(`🔄 ghost_compile ${dock.path} @ ${dock.dige ?? '?'} from ${prepubOf(signer)} — forced into editor + compiling`)
             H.Lies_relay_note(w, `🔄 compiling ${dock.path.split('/').pop()} @ ${String(dock.dige ?? '?').slice(0, 8)}`, true)
+            // pop a live %Errand at the Brink — settled to ok|failed by Lies_ghost_compile_ack when the
+            //  .go lands or the compile errors (this mint covers an older CLI with no corr → no ack).
+            ;(H as any).Upkeep_errand(`compile:${dock.path}`, { kind: 'compile', label: dock.path.split('/').pop(), phase: 'running', dige: dock.dige })
             // The verdict-reply (#2): tell the asking CLI we took the job (started), and remember its
             //  corr keyed by path so the async compile's done|error can be reported back to it when it
             //   settles (Lang_drain_compile_settles).  No corr (an older CLI) ⇒ no ack, just the compile.
@@ -442,6 +445,13 @@
         //      still settles on its poll or timeout.
         Lies_ghost_compile_ack(w: TheC, corr: string, phase: 'started' | 'done' | 'error', extra?: { path?: string, dige?: string, errors?: string[] }) {
             const H = this as House
+            // mirror the compile job to the Brink as an %Upkeep Errand — started/done/error map to
+            //  running/ok/failed.  Above the ws gate so the Brink updates even when the reply can't send.
+            if (extra?.path) (H as any).Upkeep_errand(`compile:${extra.path}`, {
+                kind: 'compile', label: extra.path.split('/').pop(),
+                phase: phase === 'done' ? 'ok' : phase === 'error' ? 'failed' : 'running',
+                ...(extra.dige ? { dige: extra.dige } : {}), errors: extra.errors?.length ?? 0,
+            })
             const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
             const ws   = port?.ws as WebSocket | undefined
             if (!ws || ws.readyState !== WebSocket.OPEN) return
@@ -661,6 +671,10 @@
             //   + Relay relay-ping) by role.  Done before the channel-live gate so a Brink can show
             //    "no channel / relay down" while the socket is down.
             ;(H as any).Lies_aim(w)
+            // %Upkeep (the background work-ledger, opposite pole of %Interest): hoist/retire the
+            //  Upkeep Brink by whether any %Errand (a compile, a sweep) is live, and reap settled
+            //   ones.  Off the channel gate — a compile/sweep is local work that runs without a peer.
+            ;(H as any).Lies_upkeep(w)
             // liveness + ping is split into Lies_keepalive so an INDEPENDENT timer (Lies_channel_up)
             //  can drive it OFF the belief loop too — liveness must not ride think, or a quiesced peer
             //   stops pinging and the far watchdog flaps it (the LATENCY SWAMP symptom).

@@ -1,5 +1,5 @@
 Credulation,of_Book:LakeTiles
-  run=0,at=1782303469.646,ok=0,ok_pct=0.44,mode:check
+  run=0,at=1782305797.136,ok=0,ok_pct=0.78,mode:check
     uses:Ghost_N_Peeroleum,dige:38a1f9ec2bbc4f3c
     uses:Ghost_N_Tribunal,dige:683d031e368194c6
     uses:Ghost_Story_Peregrination,dige:cbcb91135c98b814

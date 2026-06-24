@@ -4,9 +4,7 @@ story:PereStaple
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.172
-      sample=0.182,at=1782300792
-      sample=0.145,at=1782300804
+    TimeTotal:beliefs,avg=0.186
       sample=0.212,at=1782300834
       sample=0.143,at=1782300854
       sample=0.207,at=1782301295
@@ -15,9 +13,9 @@ story:PereStaple
       sample=0.198,at=1782301343
       sample=0.135,at=1782301353
       sample=0.149,at=1782301608
-    TimeTotal:step,avg=0.024
-      sample=0.026,at=1782300792
-      sample=0.021,at=1782300804
+      sample=0.17,at=1782303752
+      sample=0.3,at=1782305574
+    TimeTotal:step,avg=0.026
       sample=0.03,at=1782300834
       sample=0.02,at=1782300854
       sample=0.03,at=1782301295
@@ -26,6 +24,8 @@ story:PereStaple
       sample=0.028,at=1782301343
       sample=0.019,at=1782301353
       sample=0.021,at=1782301608
+      sample=0.024,at=1782303752
+      sample=0.043,at=1782305574
   step,dige:0e3a61058c6cb03e
   step=2,dige:c5f14b0b21cc722e
   step=3,dige:90d73b87938e513f

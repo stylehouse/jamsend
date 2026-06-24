@@ -1,10 +1,10 @@
 Credulate,of_Book:PortPlanet
-  GhostInclude:Ghost_N_Peeroleum,dige:811eb503253707a6
+  GhostInclude:Ghost_N_Peeroleum,dige:0268875eea0d929c
   GhostInclude:Ghost_N_Tribunal,dige:683d031e368194c6
-  GhostInclude:Ghost_Story_Peregrination,dige:86f1f3b223cc82aa
-  GhostInclude:Ghost_N_Tyrant,dige:d9455412901394d4
-  last_ok,at=1782227557.688,ok_pct
-    uses:Ghost_N_Peeroleum,dige:811eb503253707a6
+  GhostInclude:Ghost_Story_Peregrination,dige:cbcb91135c98b814
+  GhostInclude:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
+  last_ok,at=1782305448.94,ok_pct
+    uses:Ghost_N_Peeroleum,dige:0268875eea0d929c
     uses:Ghost_N_Tribunal,dige:683d031e368194c6
-    uses:Ghost_Story_Peregrination,dige:86f1f3b223cc82aa
-    uses:Ghost_N_Tyrant,dige:d9455412901394d4
+    uses:Ghost_Story_Peregrination,dige:cbcb91135c98b814
+    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a

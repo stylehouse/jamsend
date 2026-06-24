@@ -892,6 +892,17 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const wants = w.o({ req: 'wants' })[0] as TheC | undefined
         if (!wants) return
 
+        // Drain the accumulator.  A %want is cursor-intent history, but nothing reads the deep
+        //  tail yet (drag-reorder | undo | "where was I" are still `// <`), and an UNBOUNDED pile
+        //   makes this resolver O(N) on EVERY beliefs heartbeat — the reduce below plus the
+        //    resolved-relabel loop — so across a long click session the whole editor beat drags
+        //     and the newest want lands late: the "stuck on not-the-last-click" stall.  Bound to
+        //      the recent dozen (> the busiest recorded run's 7 wants, so no oracle shifts); drop
+        //       oldest-first, and the newest is last-inserted so it always survives.
+        const pile = wants.o({ want: 1 }) as TheC[]
+        if (pile.length > 12)
+            for (const old of pile.slice(0, pile.length - 12)) wants.drop(old)
+
         const all = wants.o({ want: 1 }) as TheC[]
         if (!all.length) return
         const newest = all.reduce((a, b) =>

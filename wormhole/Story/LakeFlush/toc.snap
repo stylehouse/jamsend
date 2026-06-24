@@ -42,27 +42,28 @@ story:LakeFlush
     quiesce_snap_time=0.4
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=0.807
-      sample=0.586,at=1781888345
-      sample=0.762,at=1781888790
-      sample=0.522,at=1781888810
-      sample=0.603,at=1781896980
-      sample=0.603,at=1781897014
-      sample=1.252,at=1781952623
+    TimeTotal:beliefs,avg=1.16
       sample=1.252,at=1781952628
       sample=0.925,at=1782276081
       sample=0.785,at=1782283547
       sample=0.785,at=1782283570
-    TimeTotal:step,avg=0.119
-      sample=0.109,at=1781888790
-      sample=0.075,at=1781888810
-      sample=0.086,at=1781896980
-      sample=0.086,at=1781897014
-      sample=0.179,at=1781952623
+      sample=2.588,at=1782304975
+      sample=1.087,at=1782305171
+      sample=0.932,at=1782305662
+      sample=1.523,at=1782305743
+      sample=0.922,at=1782305833
+      sample=0.802,at=1782305922
+    TimeTotal:step,avg=0.166
       sample=0.179,at=1781952628
       sample=0.132,at=1782276081
       sample=0.112,at=1782283547
       sample=0.112,at=1782283570
+      sample=0.37,at=1782304975
+      sample=0.155,at=1782305171
+      sample=0.133,at=1782305662
+      sample=0.218,at=1782305743
+      sample=0.132,at=1782305833
+      sample=0.115,at=1782305922
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   step,dige:13d04b21f01cb161
   step=2,dige:af42db6959cf0e6a
