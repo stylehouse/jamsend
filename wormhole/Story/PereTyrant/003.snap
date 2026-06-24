@@ -1,0 +1,58 @@
+Snap:H
+  H:PereTyrant,Run
+    A:PereTyrant
+      self,round=5	{"mung":["age"]}
+      w:PereTyrant
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        reached:step_3
+        see:y Tyrant — yyyyar!
+    A:Alice
+      self,round=3	{"mung":["age"]}
+      w:Tyrant
+        Peering,name:alice
+          Pier,pub:bob,req=2,ok
+            Ud,id:bob
+            req:trust,finished
+              req:said_vouch,maz=2,finished
+              req:heard_vouch,finished
+            protocol
+              vouch
+                said,seq
+                heard
+            outbox
+              emit,type:vouch,seq,sent,acked
+            inbox
+              req:unemit,seq,type:vouch,done,to:vouch,finished
+        transport,type:mock
+        active_transport,type:mock,open
+        self,round=3	{"mung":["age"]}
+        req:join
+          req:policy,kind:proven,maz=3,finished
+          req:policy,kind:trusted,maz=2
+          req:admit
+    A:Bob
+      self,round=3	{"mung":["age"]}
+      w:Tyrant
+        Peering,name:bob
+          Pier,pub:alice,req=2,ok
+            Ud,id:alice
+            req:trust,finished
+              req:said_vouch,maz=2,finished
+              req:heard_vouch,finished
+            protocol
+              vouch
+                said,seq
+                heard
+            outbox
+              emit,type:vouch,seq,sent,acked
+            inbox
+              req:unemit,seq,type:vouch,done,to:vouch,finished
+        transport,type:mock
+        active_transport,type:mock,open
+        self,round=3	{"mung":["age"]}
+        req:join
+          req:policy,kind:proven,maz=3,finished
+          req:policy,kind:trusted,maz=2
+          req:admit

@@ -4,7 +4,7 @@ Snap:H
       self,round=13	{"mung":["age"]}
       w:Peeroleum
         Peering,name:alice
-          Pier,pub:bob
+          Pier,pub:bob,req=2,ok
             outbox
               recent
                 emit,type:noop,seq
@@ -12,6 +12,7 @@ Snap:H
                 emit=3,type:trust,seq=3
                 emit=5,type:noop,seq=5
               emit=4,type:noop,seq=4,sent
+              emit=6,type:test_binary,seq=6,sent,body_hash:39e3d7b6b5d075d37d053ad89b24b41bef4f3c29760c84447cab3f3be1882241,body_len=64,acked
             req:handshake,finished
               req:said_hello,maz=4,finished
               req:heard_hello,maz=3,finished
@@ -20,7 +21,7 @@ Snap:H
             protocol
               hello
                 said,seq=2,acked
-                heard,publicKey:bob
+                heard,pubkey:bob
               trust
                 said,seq=3,acked
                 heard
@@ -28,12 +29,12 @@ Snap:H
               recent
                 unemit,type:hello,seq
                 unemit=2,type:trust,seq=2
-            Ud,publicKey:bob
-          req:p2paddy
+            Ud,pubkey:bob
+          req:p2paddy,ok
         transport,type:mock
         active_transport,type:websocket,open
         self,round=13	{"mung":["age"]}
-        seemingly:ya aooooolly,figaro:Vunkular
+        seemingly:ya aooooolly,figaro:Squelchbury
         transport,type:webrtc,faulty,reason:no-ack
         transport,type:websocket
           reputation:good
@@ -41,13 +42,14 @@ Snap:H
       self,round=13	{"mung":["age"]}
       w:Peeroleum
         Peering,name:bob
-          Pier,pub:alice
+          Pier,pub:alice,req=2,ok
             inbox
               recent
                 unemit,type:noop,seq
                 unemit=2,type:hello,seq=2
                 unemit=3,type:trust,seq=3
                 unemit=5,type:noop,seq=5
+              req:unemit,seq=6,type:test_binary,body_hash:39e3d7b6b5d075d37d053ad89b24b41bef4f3c29760c84447cab3f3be1882241,body_len=64,done,to:test_binary,finished
             req:handshake,finished
               req:said_hello,maz=4,finished
               req:heard_hello,maz=3,finished
@@ -56,7 +58,7 @@ Snap:H
             protocol
               hello
                 said,seq,acked
-                heard,publicKey:alice
+                heard,pubkey:alice
               trust
                 said,seq=2,acked
                 heard
@@ -64,12 +66,13 @@ Snap:H
               recent
                 emit,type:hello,seq
                 emit=2,type:trust,seq=2
-            Ud,publicKey:alice
-          req:p2paddy
+            Ud,pubkey:alice
+            got_binary,seq=6,body_len=64
+          req:p2paddy,ok
         transport,type:mock
         active_transport,type:websocket,open
         self,round=13	{"mung":["age"]}
-        seemingly:ya aooooolly,figaro:Vunkular
+        seemingly:ya aooooolly,figaro:Squelchbury
         transport,type:webrtc,faulty,reason:no-ack
         transport,type:websocket
           reputation:good
@@ -79,8 +82,8 @@ Snap:H
         self,round=15	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
-        witnessed:step_2
         reached:step_3
+        witnessed:step_2
         witnessed:step_3
         reached:step_4
         witnessed:step_4
@@ -88,4 +91,5 @@ Snap:H
         witnessed:step_5
         reached:step_6
         witnessed:step_6
-        see:y PereStaple — apparatus ready yyy!
+        reached:step_7
+        witnessed:send_binary

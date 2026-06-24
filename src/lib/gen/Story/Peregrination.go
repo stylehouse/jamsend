@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Peregrination(): string { return 'c03482f916c0d795' },
+    Ghostmeta_Ghost_Story_Peregrination(): string { return 'cbcb91135c98b814' },
 
 
 // PereStaple — the Peeroleum p2p test (the outer test layer), and the first of a
@@ -46,7 +46,6 @@ Run_A_PereStaple() {
 //   symptom: step 3 fires, step 2's sides never lay).  Lake_drive keeps a req-local
 //    `did_step` instead, immune to any other caller.
 PereStaple(A,w) {
-    w.i({see: 'y PereStaple — apparatus ready yyy!'})
     w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
         await this.Lake_drive(w,req)
         req.sc.ok = 1

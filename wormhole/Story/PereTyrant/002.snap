@@ -1,0 +1,25 @@
+Snap:H
+  H:PereTyrant,Run
+    A:PereTyrant
+      self,round=2	{"mung":["age"]}
+      w:PereTyrant
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        see:y Tyrant — yyyyar!
+        reached:step_2
+    A:Alice
+      w:Tyrant
+        Peering,name:alice
+          Pier,pub:bob,req=2
+            Ud,id:bob
+            req:trust
+        transport,type:mock
+        active_transport,type:mock,open
+    A:Bob
+      w:Tyrant
+        Peering,name:bob
+          Pier,pub:alice,req=2
+            Ud,id:alice
+            req:trust
+        transport,type:mock
+        active_transport,type:mock,open

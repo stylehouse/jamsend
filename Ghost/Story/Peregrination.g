@@ -33,7 +33,6 @@ Run_A_PereStaple():
 //   symptom: step 3 fires, step 2's sides never lay).  Lake_drive keeps a req-local
 //    `did_step` instead, immune to any other caller.
 PereStaple(A,w):
-    w i %see:'y PereStaple — apparatus ready yyy!'
     w oai %req:wrangle,eternal
         await &Lake_drive,w,req
         req%ok = 1
