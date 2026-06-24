@@ -142,6 +142,13 @@ And role #3 is really **two** roles: **3a live-structural** (folding — a *disp
  `view.state`) and **3b Map-anchored** (point-nav / whatsthis — wants the frozen snapshot).
   Conflating 3a and 3b under one object is its own latent bug.
 
+**But this is two states, not three.** #2 and #3 are the *same object* — the frozen snapshot the
+ Map was compiled against (call it `stateCompiled`). So the whole machine holds exactly two
+  EditorStates: `view.state` (live, moves every keystroke) and `stateCompiled` (frozen at last
+   compile, **the Map's coordinate frame** by definition). A Map offset is *born* in
+    `stateCompiled` coords; a reader that wants to interpret one reads `stateCompiled`. That is
+     the easy half — no translation, just read the right object.
+
 ### Four masks, one seam
 
 | Mask | Where it bites | The fusion underneath |
@@ -181,12 +188,53 @@ The decoupling is *partially* built, which is why it half-works and confuses:
 | text read | `LangLang:161` | #1 | `view.state.doc` |
 | Story-open monitor | `Lang:1732,:1849` | presence probe | unchanged (only tests existence) |
 
+### The staleness contract — what you must NOT build
+
+The scary version of this cut is a position-mapping layer of your own: keep the Map in compiled
+ coords and thread a `from,to` change-map into every reader that touches the live doc. **Don't.**
+  The design already delegates the syncery two ways, and the cut's job is to lean on them, not
+   replace them:
+
+- **Recompile-on-settle closes the big gap.** `req:compile` is text-keyed reqonce, so the Map is
+   rebuilt every settled edit and `stateCompiled ≈ view.state` almost always. The only window
+    where they diverge is an *un-settled typing burst*. The `rel_*`/`abs_*` work already committed
+     to this — re-derive offsets each compile rather than map-on-read. The cut finishes that
+      commitment; it does not open a new front.
+- **CodeMirror closes the small gap for free.** Folds, point decorations and graft marks live in
+   **StateFields whose `.map` remaps `{from,to}` through every transaction** — see
+    `Lang_update_grafts` (`LangGraft:597`) *receiving* already-mapped `{id,from,to}`. You never
+     hand-roll a ChangeSet for the live surface; CM does it.
+
+So the real obligation the split adds is a **contract, per reader, of who may be stale** — today
+ invisible because everyone reads `dock.c.state`, which is all three frames smeared into one:
+
+- **Offset *readers*** (jump-to-heading nav, `LangRegions`/whatsthis) may be lazy — a few chars
+   stale during a burst is invisible. Repoint them at `stateCompiled`; it always matches the Map.
+- **Offset *writers*** (graft marks, point decorations, region folds — all dispatched by
+   `{from,to}` onto the view in `LangGraft:464,470,524,720`) must dispatch Map offsets **while the
+    view still equals `stateCompiled`** (i.e. right after compile) and then let CM's StateField
+     mapping carry them through the burst. Dispatch a Map offset onto a view that has *already*
+      drifted and CM faithfully maps the **wrong** placement — silent, looks like "the highlight
+       sits a few chars off." This writer/reader line is the only place the cut can corrupt
+        anything; it lives on the `LangPoint`/`LangGraft` side, not the `LangRegions` read side.
+
 ### The cut — bounded blast radius
 
 **Plumbing (2):** (1) `Lang_compile_source_state` builds from `lang(path)` for *every* compile,
  not only headless — first compile correct regardless of reseat timing, and remote compile stops
   mounting a dock. (2) **Stamp** the source onto the job (`job.c.source_state`) so the index
-   oracle has the exact compiled-against state.
+   oracle has the exact compiled-against state. — **(2) is landed**: `job.c.source_state = state`
+    is stamped in `Lang_compile_dock` (`LangCompiling:290`), additive and unread, so the readers
+     below have an anchor to repoint onto. (1) is the part still to do.
+
+> **Perf caveat on step 1 — don't `EditorState.create` per settle.** The compile runs on every
+>  settled keystroke; a fresh whole-state build there would re-detonate the boomerang latency
+>   (`compile-boomerang-latency` memory). The cheap form is what `Lang_compile_source_state`
+>    already half-does: *reuse the mounted state's doc, swap only the language compartment* to
+>     `lang(path)` when it doesn't match — a `reconfigure` transaction, not a `create`. Build a
+>      genuinely fresh state only on the headless branch (no view). Equivalently: stamp
+>       `dock.c.state` itself as `source_state` whenever its parser already matches the path, and
+>        only synthesize when it doesn't.
 
 **Repoints (~5):** 3b readers (`LangRegions` ×3, whatsthis) → `job.c.source_state`; 3a + text
  (`LangPoint:329`, `LangLang:161`) → `view.state`; parser-gate moves with role #2.
@@ -207,8 +255,10 @@ The decoupling is *partially* built, which is why it half-works and confuses:
     — highest payoff, lowest risk, retires three of four masks. (3) Cut **role #3 second**, guarded
      by a bookmark round-trip test (compile, type above a bookmark, jump — must still land).
 
-**Landed-but-uncommitted (downstream of the cut; make the *second* compile reach the minimap, do
- not remove the extra step):**
+**Landed-but-uncommitted.** The seam's anchor (plumbing 2) is in: `job.c.source_state = state`
+ (`LangCompiling:290`) — additive, unread, zero-risk; the foundation the role-#3 repoints sit on.
+  The rest below are downstream of the cut (they make the *second* compile reach the minimap, they
+   do not remove the extra step — only the cut does):
 - `Actions.svelte:26,28` — `value={(a.vers, a.sc.value)}` / `disabled={(a.vers, …)}`: the lang
    dropdown `<select>` wasn't reactive to the particle bump.
 - `Lang.svelte` instrumentation `n_sig` — added `%Compile.version` so a parser switch (same text →

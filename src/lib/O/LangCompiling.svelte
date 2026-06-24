@@ -289,6 +289,13 @@ import { lang, lang_for_path } from "./lang/lang"
         // c.compile_t0: wall-clock start for %time accounting (transient).
         job.c.compile_t0 = Date.now()
 
+        // c.source_state: the exact EditorState this %Map is about to be built against —
+        //  the Map's coordinate frame, frozen at compile.  Additive anchor for the dock-state
+        //   decoupling (Lang_handover.md §7): nothing reads it yet; the index-oracle readers
+        //    (LangRegions offset reads, whatsthis) are to be repointed off dock.c.state onto
+        //     this, so offsets resolve against what the Map was compiled on, not the live buffer.
+        job.c.source_state = state
+
         await dock.r({ compile_error: 1 }, {})
 
         let source = ''
