@@ -1,12 +1,12 @@
 Credulate,of_Book:PereStaple
-  GhostInclude:Ghost_N_Peeroleum,dige:d0f210c645771724
+  GhostInclude:Ghost_N_Peeroleum,dige:d1930fee4fd4e23a
   GhostInclude:Ghost_N_Reliable,dige:b282dca8b1abe0c9
   GhostInclude:Ghost_N_Tribunal,dige:683d031e368194c6
-  GhostInclude:Ghost_Story_Peregrination,dige:37f14459a466665d
+  GhostInclude:Ghost_Story_Peregrination,dige:40050159d36b8446
   GhostInclude:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
-  last_ok,at=1782359303.499,ok_pct
-    uses:Ghost_N_Peeroleum,dige:d0f210c645771724
+  last_ok,at=1782363123.242,ok_pct
+    uses:Ghost_N_Peeroleum,dige:d1930fee4fd4e23a
     uses:Ghost_N_Reliable,dige:b282dca8b1abe0c9
     uses:Ghost_N_Tribunal,dige:683d031e368194c6
-    uses:Ghost_Story_Peregrination,dige:37f14459a466665d
+    uses:Ghost_Story_Peregrination,dige:40050159d36b8446
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a

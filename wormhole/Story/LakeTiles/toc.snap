@@ -34,28 +34,28 @@ story:LakeTiles
         nowriting:^Ghost
         dontSnapGhostList
   TimeSpool
-    TimeTotal:beliefs,avg=2.172
-      sample=1.961,at=1782354334
-      sample=1.722,at=1782354354
-      sample=2.369,at=1782355352
-      sample=2.606,at=1782356218
-      sample=1.943,at=1782356259
-      sample=2.452,at=1782356450
-      sample=3.013,at=1782356546
-      sample=2.639,at=1782357232
-      sample=1.759,at=1782357790
-      sample=1.26,at=1782360806
-    TimeTotal:step,avg=0.241
-      sample=0.218,at=1782354334
-      sample=0.191,at=1782354354
-      sample=0.263,at=1782355352
-      sample=0.29,at=1782356218
-      sample=0.216,at=1782356259
-      sample=0.272,at=1782356450
-      sample=0.335,at=1782356546
-      sample=0.293,at=1782357232
-      sample=0.195,at=1782357790
-      sample=0.14,at=1782360806
+    TimeTotal:beliefs,avg=1.349
+      sample=1.203,at=1782363251
+      sample=1.025,at=1782363328
+      sample=1.13,at=1782363347
+      sample=1.365,at=1782363429
+      sample=1.23,at=1782364024
+      sample=1.29,at=1782364053
+      sample=1.717,at=1782364189
+      sample=1.639,at=1782364250
+      sample=1.564,at=1782364281
+      sample=1.331,at=1782364348
+    TimeTotal:step,avg=0.15
+      sample=0.134,at=1782363251
+      sample=0.114,at=1782363328
+      sample=0.126,at=1782363347
+      sample=0.152,at=1782363429
+      sample=0.137,at=1782364024
+      sample=0.143,at=1782364053
+      sample=0.191,at=1782364189
+      sample=0.182,at=1782364250
+      sample=0.174,at=1782364281
+      sample=0.148,at=1782364348
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
     Entcase:Ting_Point-last
@@ -69,10 +69,10 @@ story:LakeTiles
   step,dige:01a68c41d6a87a67
   step=2,dige:ab197eb9ad23dba1
   step=3,dige:ae3b590d3bcd95b4
-  step=4,dige:209fb681b3139974
+  step=4,dige:566c06d4d3ae1b01
     note,bug:Cyto edge problems with Leg/PeelGroup/Leg the other PeelGroup alone
-  step=5,dige:64bfb32b9f95c4d8
-  step=6,dige:b323aaa72eaeea6e
-  step=7,dige:cb463027c3735d8f
-  step=8,dige:21ed46ac15d5c455
-  step=9,dige:d643a91cd72e1346
+  step=5,dige:01130dc838d65a18
+  step=6,dige:fe77cc2b276dca44
+  step=7,dige:4b26fb43977fcb0c
+  step=8,dige:d01dd33f017351bb
+  step=9,dige:618679f7950f14d3

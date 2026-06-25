@@ -1,21 +1,7 @@
 Credulation,of_Book:LakeNets
-  run=0,at=1782305906.642,ok=0,ok_pct=0,mode:check
-    uses:Ghost_N_Peeroleum,dige:38a1f9ec2bbc4f3c
+  run=0,at=1782363298.844,ok,ok_pct,mode:check
+    uses:Ghost_N_Peeroleum,dige:d1930fee4fd4e23a
+    uses:Ghost_N_Reliable,dige:b282dca8b1abe0c9
     uses:Ghost_N_Tribunal,dige:683d031e368194c6
-    uses:Ghost_Story_Peregrination,dige:cbcb91135c98b814
-    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
-  run,at=1782306041.967,ok=0,ok_pct=0,mode:check
-    uses:Ghost_N_Peeroleum,dige:38a1f9ec2bbc4f3c
-    uses:Ghost_N_Tribunal,dige:683d031e368194c6
-    uses:Ghost_Story_Peregrination,dige:cbcb91135c98b814
-    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
-  run=2,at=1782306063.899,ok=0,ok_pct=0,mode:check
-    uses:Ghost_N_Peeroleum,dige:38a1f9ec2bbc4f3c
-    uses:Ghost_N_Tribunal,dige:683d031e368194c6
-    uses:Ghost_Story_Peregrination,dige:cbcb91135c98b814
-    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
-  run=3,at=1782306101.824,ok,ok_pct,mode:check
-    uses:Ghost_N_Peeroleum,dige:38a1f9ec2bbc4f3c
-    uses:Ghost_N_Tribunal,dige:683d031e368194c6
-    uses:Ghost_Story_Peregrination,dige:cbcb91135c98b814
+    uses:Ghost_Story_Peregrination,dige:40050159d36b8446
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
