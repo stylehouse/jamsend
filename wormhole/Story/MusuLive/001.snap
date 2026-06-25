@@ -1,7 +1,7 @@
 Snap:H
-  H:MusuStaple,Run
-    A:MusuStaple
+  H:MusuLive,Run
+    A:MusuLive
       self,round=7	{"mung":["age"]}
-      w:MusuStaple
+      w:MusuLive
         self,round=7	{"mung":["age"]}
         req:wrangle,eternal,ok

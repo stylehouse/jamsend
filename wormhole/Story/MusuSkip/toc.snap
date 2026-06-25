@@ -1,0 +1,17 @@
+story:MusuSkip
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.03
+      sample=0.03,at=1782392694
+      sample=0.029,at=1782396665
+    TimeTotal:step,avg=0.006
+      sample=0.006,at=1782392694
+      sample=0.006,at=1782396665
+  step,dige:1a500a5c41963498
+  step=2,dige:5c887118e7808f09
+  step=3,dige:0516963081b97f8c
+  step=4,dige:6e76dd9a26085d9b
+  step=5,dige:75556da3fccfdf29

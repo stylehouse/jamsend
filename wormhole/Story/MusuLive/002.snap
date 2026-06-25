@@ -1,13 +1,13 @@
 Snap:H
-  H:MusuStaple,Run
-    A:MusuStaple
+  H:MusuLive,Run
+    A:MusuLive
       self,round=8	{"mung":["age"]}
-      w:MusuStaple
+      w:MusuLive
         self,round=8	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
-        Caster,name:alpha,total=12,next=0
-          req:cast,eternal,ok
         Terminal,name:omega
           inbox
-        witnessed:step_2
+        Player,name:ear,playhead=-1,decoded=-1
+          req:progress,eternal,ok
+        witnessed:wired

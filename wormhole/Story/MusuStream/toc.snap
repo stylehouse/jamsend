@@ -4,12 +4,14 @@ story:MusuStream
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.034
+    TimeTotal:beliefs,avg=0.036
       sample=0.022,at=1782383511
       sample=0.045,at=1782386246
+      sample=0.042,at=1782396592
     TimeTotal:step,avg=0.007
       sample=0.004,at=1782383511
       sample=0.009,at=1782386246
+      sample=0.008,at=1782396592
   step,dige:9c08aa64b9189bca
   step=2,dige:712a3bc6e12e0809
   step=3,dige:f4e142ed84e04379

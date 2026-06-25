@@ -1,0 +1,18 @@
+Snap:H
+  H:MusuSkip,Run
+    A:MusuSkip
+      self,round=9	{"mung":["age"]}
+      w:MusuSkip
+        self,round=9	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Terminal,name:omega,record=0
+        Player,name:ear,playhead=2,decoded=4
+          aud,seq=0
+          aud,seq
+          aud,seq=2
+          aud,seq=3
+          aud,seq=4
+        witnessed:cued
+        reached:step_3
+        witnessed:spinning

@@ -46,13 +46,23 @@ const traceDump = (trace: any): string => {
 const dumpC = (n: any, d = 0): any => d > 12 ? '…' : { sc: { ...n.sc }, kids: (n.o?.({}) ?? []).map((k: any) => dumpC(k, d + 1)) }
 
 // CREDULER methods that prove the acquire landed (the spine + this Book's Run recipe)
-const SPINE_READY = (H: any) => typeof H.Peeroleum_deliver === 'function' && typeof H[`Run_A_${BOOK}`] === 'function'
+// acquire landed when the spine + this Book's ghost are live.  A Book needs EITHER a Run_A_<Book>
+//  recipe OR just its world-named per-beat handler (H[BOOK]) — the trivial books that lean on
+//   Story_subHouse's default A:<Book>/w:<Book> standup have no Run_A_ at all.
+const SPINE_READY = (H: any) => typeof H.Peeroleum_deliver === 'function'
+    && (typeof H[`Run_A_${BOOK}`] === 'function' || typeof H[BOOK] === 'function')
 
 test(`CredRunner: ${BOOK} runs headless (acquire → drive → pile)`, async () => {
     let H: any
     mount(Runner, { target: document.body, props: { onhouse: (h: any) => { H = h } } })
     for (let i = 0; i < 40 && !(H && typeof H.Creduler_ensure === 'function'); i++) await sleep(50)
     expect(typeof H?.Creduler_ensure, 'shell booted (Lies ghost deposited)').toBe('function')
+
+    // Headless has no ?B= boot param, so give the top House the runner boot_role the LIVE runner gets
+    //  from the URL — Story_subHouse defaults Run.c.role from top_House().c.boot_role, so a Book needs
+    //   no per-recipe `this.c.role ??= 'runner'`.  That ceremony belongs here, in the runner harness,
+    //    not stamped into every Book's (now-deleted) Run_A_<Book>.
+    H.c.boot_role ??= 'runner'
 
     const WA = H.i({ A: 'Wormhole' }); WA.i({ w: 'Wormhole' }); WA.c.nav = nodeNav
 

@@ -511,11 +511,16 @@ polled-not-mutated, no write-write race), and the live system runs on it (LiesSt
 churn every step snap for no p2p gain. The only thing that bites is a ttlilt expiring before its work
 finishes; the fix is the seconds knob (bump `i_req_ttlilt(req, 2.5, …)`). Don't re-open this rabbit hole.
 
-### 6 — corruption tests  `[ ]`  (NEXT after step-6 Accept)
+### 6 — corruption tests  `[~]`  receive-side PROVEN headless; send-side meddle-wrap still TODO
 `meddle_fn` on an eternal `%req:emit_corruption`, wrap installed on `%active_transport` (not `Pier.emit`), so
 it's transport-agnostic. `publicKey`→not-them; `sign`→invalid-signature; `%faulty,claim:step_N`. The receive
 side is **already realised** (`hear_*` return false → `%error` → `Peeroleum_rollup_faulty`); the only new
 machinery is the meddle wrap. Re-applies `MachPeerily.svelte:725-794`. Spec §14 / §14.1.
+- **Receive-side fault path PROVEN headless** (CredRunner): a tweaked `body_hash` fails the awaited sha256 and
+   latches `%faulty,error:bad-body-hash`. Step 25 `Lake_corruption_arm` (one bad noop → `%witnessed:corruption`),
+    and the combinatory step 44 `Lake_corrupt_stream_arm` (a bad frame BETWEEN two good ones: the cursor advances
+     past the burned slot, the good frames behind it still deliver → `%witnessed:corrupt_stream`). The send-side
+      meddle wrap is the only thing left to author here — the assertion target (the fault) already proves itself.
 
 ### 7 — binary frames  `[~]`
 `body` + `body_hash` folded into the one envelope; `test_binary` as just-another-frame; corruption identical to
@@ -549,10 +554,20 @@ a tweaked hello-sign. Spec §4.2, §15.
     real-ws carrier). Built; lang-compile clean; **browser-unverified** — run on :9091, eyeball the lifecycle,
      Accept/Resnapture steps 2–7.
 
-### 8 — disconnect + reset_handshake  `[~]`  transport reconnect BUILT; protocol reset still TODO
+### 8 — disconnect + reset_handshake  `[~]`  protocol reset BUILT + PROVEN headless; transport reconnect BUILT
 `%active_transport e:close` → `o_elvis:reset_handshake` on the Pier: drop protocol/outbox/inbox/faulty, keep
-`%Ud`; p2paddy re-dials. Spec §9. **Protocol-level reset is still TODO** (the Lies channel is trust-everything
- v1 — it stamps `%Ud` and runs no hello/trust — so it didn't need it yet).
+`%Ud`; p2paddy re-dials. Spec §9.
+- **Protocol-level reset BUILT** (`Peeroleum_reset_handshake`, Peeroleum.g): drops protocol/outbox/inbox/faulty/
+   stalled/silent + the handshake `%req` and clears the dead-stream `.c` (connection/held/last_heard_tick), but
+    KEEPS `%Ud` AND the seq cursors (`c.seq`/`c.inseq`) — continuity dodges the epoch handshake a seq-reset would
+     force on both sides. **PROVEN headless**: step 32 `Lake_reset_arm` builds a full dead-connection state and
+      asserts one reset keeps `%Ud`+cursors and drops everything else (`%witnessed:reset`); the combinatory step
+       46/48 `Lake_rededup_arm`/`_replay` proves the CONSEQUENCE — a re-dial does NOT re-open the replay window:
+        an old frame replayed after the reset is caught by the surviving `c.inseq` cursor (`%witnessed:rededup`).
+- **BUG FOUND + FIXED by the storm_redial braid (step 50):** reset kept `c.inseq` WHOLE while dropping `c.held`,
+   so `c.inseq.buffered` (the seq numbers of the deleted held frames) lingered → a reset mid-gap silently lost the
+    re-supplied tail (ghost-slot drain). Fixed: `reset_handshake` clears `c.inseq.buffered` with `c.held`, keeps
+     only the cursor `last`. See the Combinatory section. **Spine change — re-pin `pinned_stable` + browser-verify.**
 - **Transport-level auto-reconnect IS built** (the "no ping on both ends" bug — a dev-server/relay restart
    dropped both browsers at once and v1 had no reconnect). Three parts:
   - **`Socket_real` (Tribunal.g)** re-dials on `onclose` with capped backoff+jitter; `ws` is reassigned per
@@ -680,7 +695,63 @@ ghosts, Garden.g + Tyrant.g.
        locked gate; surprises [1] (stale fixture) + [3] (handshake-quiescence timing).
 - `wormhole/Ghost/Net/Easy/toc.snap` — annotation overlay / compile manifest, curated to landmarks (one front-door
    Point per theme, not every method).
-- `wormhole/Story/PereStaple/toc.snap` — the Story that drives the Book (step lines run through `step=15`:
-   2–7 the spine/trial/binary, 8 heal, 11 stall, 9-10/12-15 settle; the arm-lag puts the stall death at step 14).
+- `wormhole/Story/PereStaple/toc.snap` — the Story that drives the Book (step lines run through `step=52`):
+   2–7 spine/trial/binary, 8 heal, 11 stall, 16 silence, 19 redial; the **isolated floor proofs** 25 corruption,
+    27 dedup, 29/30 reorder, 32 reset, 34 pre-Ud, 36/38 dedup-after-cull; the **combinatory braids** 40 storm
+     (drop+dup+gap on one stream), 44 corrupt-stream, 46/48 rededup, 50 storm_redial (re-dial mid-gap — found+fixed
+      the reset/buffered bug). 21 `%witnessed:*` stamps fire headless; locked gate 2–15 byte-identical (surprises
+       [1,3] = stale-001 + handshake-quiescence residuals).
 - `src/lib/O/spec/Peeroleum_spec.md` — the pinned design (the floor). This file — the living progress.
 - `src/lib/O/spec/Covenant_design.md` — the cabinetry+party design sketch (Garden.g/Tyrant.g).
+
+## Combinatory phase + behaviour-space map (the simple proofs are in; what braids next)
+
+The proofs grew in two layers, deliberately in this order:
+- **Isolated floor proofs (steps 25–38)** — each bends ONE knob on its own clean stage: corruption, dedup,
+   reorder/gap, reset, pre-Ud admission, dedup-after-cull. The simple single-concept assertions.
+- **Combinatory braids (steps 40–48)** — several knobs on ONE stream, so they must hold TOGETHER. Done so far:
+  - **storm (40)** — drop + dup + gap-buffer on one stream; every seq still delivered exactly once in order
+     (the dropped seq MAKES the reorder, retx heals it, the dups collapse in the buffer). `heal ∘ dedup ∘ reorder`.
+  - **corrupt-stream (44)** — a corrupt frame between two good ones: it faults without wedging the stream behind
+     it. `verify ∘ ordering`.
+  - **rededup (46/48)** — a re-dial (reset_handshake) keeps `c.inseq`, so a replayed old frame is still caught:
+     the reconnect does not re-open the replay window. `reset ∘ dedup` — the security consequence the lone reset
+      proof only implied.
+  - **storm_redial (50)** — a re-dial WHILE a gap is open. `reset ∘ dedup ∘ ordering`. **This braid FOUND A REAL
+     BUG** (it was on the "not yet braided" list below as "worth a witness" — it was): `reset_handshake` dropped
+      `c.held` (the gap-buffered frames) but kept `c.inseq` whole — including `c.inseq.buffered`, the seq NUMBERS
+       of those deleted frames. So after a reset mid-gap, inseq believed those seqs were ready: the re-supplied
+        tail drained the ghost slots (no frame → silently skipped) then deduped the real re-sends — **data lost on
+         a reconnect that lands mid-gap.** The lone reset proof (step 32) built `buffered:[]` empty, so it never
+          saw it. **Fix:** `reset_handshake` now clears `c.inseq.buffered` together with `c.held` (two halves of
+           one fact), keeping only the cursor `last`. The braid now witnesses full recovery (`%witnessed:storm_redial`):
+            held cleared, cursor kept, the re-supplied tail admitted in order, every seq dispatched exactly once.
+            **Spine change — browser-verify the editor↔runner channel + re-pin `pinned_stable/N/Peeroleum.go`.**
+
+**NOT yet braided (the behaviour space, parked here as the user asked — pick the next braid):**
+- corruption DURING a stall/redial (does a bad frame mid-re-dial fault correctly, or get lost in the reset?);
+- silence + retransmit racing (an inbound-silent peer whose outbox is still retransmitting — which latch wins?);
+- multi-peer crossfire (3+ peers on `w:PereStaple`, one lossy, one corrupt — the swarm-route by identity under load).
+
+**The real-application connect (the "realer things to test it with" — bigger, its own arc):**
+- **runner ↔ editor v2 channel** as a Story: the editor emits `dock_push` (the gen `.go` bytes) and `run` over the
+   consumer seam (`Peeroleum_on`/`Peeroleum_send_consumer`), the runner emits `run_result`/verdict back — the same
+    edit→compile→run→witness loop CredRunner+LocalGen already close locally, but now ACROSS the transport, with the
+     reliability floor underneath. This is the first real customer of the spine (heading 10 ask 4). A `Lies%editorv2`
+      Book would drive it. **Bigger than a combinatory braid — its own heading; map its step arc before building.**
+- **Trust + Features port** — the legacy `PeeringFeature`/`PierFeature` model (`src/lib/p2p/Peerily.svelte.ts`,
+   `Trust.svelte.ts`) onto the C-particle spine. Recommendation for v1: **NOT** a first-class `A:` actor — float a
+    `req**` under the existing `w:PereStaple` (or a thin `w:Featurings` only if a snap/heartbeat boundary earns it;
+     an `A:` is for peer-isolation, which Features doesn't need yet — see the Aw/req level-uniformity note). The
+      receive-side trust check already half-exists (`hear_trust` + the pre-Ud gate). First test: a frame from an
+       untrusted/unfeatured peer is refused, the same `%error→%faulty` path corruption/pre-Ud already prove. Swap
+        the carrier (req** → w → A) later if it grows weight; the test stays.
+
+**Real relay (the transport under all this).** The deterministic Story rides the clean mock + the adversary on
+ PURPOSE — logical-tick replay, no wall-clock (so a Story replays identically). The real relay is the integration
+  layer, and it splits: **websocket IS reachable headless** (a node `ws` client → the `/relay` server in `relay.ts`,
+   covered by `scripts/relay-test.ts`), so a headless ws-round-trip smoke test is buildable as a SEPARATE harness
+    (not a witnessed Story — real timing is non-deterministic, an integration probe not a replay proof). **webrtc is
+     browser-only** (no `RTCPeerConnection` in node without a heavy polyfill) — that stays Tier 3 / on :9091. Note the
+      transport-selection LOGIC (webrtc black-hole → ws fallback → reputation) is already witnessed at steps 4–6 with
+       mock carriers; only the actual socket bytes are unproven headless.

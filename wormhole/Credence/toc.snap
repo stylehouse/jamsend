@@ -9,6 +9,9 @@ Waft:Credence
     Funkcion:Storying,of_Book:MusuStaple
     Funkcion:Storying,of_Book:MusuStream
     Funkcion:Storying,of_Book:MusuStock
+    Funkcion:Storying,of_Book:MusuLive
+    Funkcion:Storying,of_Book:MusuWear
+    Funkcion:Storying,of_Book:MusuSkip
   What:Lake
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:LakeSurfer

@@ -1,13 +1,11 @@
 Snap:H
-  H:MusuStaple,Run
-    A:MusuStaple
+  H:MusuLive,Run
+    A:MusuLive
       self,round=9	{"mung":["age"]}
-      w:MusuStaple
+      w:MusuLive
         self,round=9	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
-        Caster,name:alpha,total=12,next=7,live
-          req:cast,eternal,ok
         Terminal,name:omega
           inbox
             Chunk,seq=0
@@ -17,6 +15,14 @@ Snap:H
             Chunk,seq=4
             Chunk,seq=5
             Chunk,seq=6
-        witnessed:step_2
+            Chunk,seq=7
+        Player,name:ear,playhead=-1,decoded=4,live
+          req:progress,eternal,ok
+          aud,seq=0
+          aud,seq
+          aud,seq=2
+          aud,seq=3
+          aud,seq=4
+        witnessed:wired
         reached:step_3
-        witnessed:filled
+        witnessed:buffered

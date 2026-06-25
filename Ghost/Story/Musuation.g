@@ -1,7 +1,7 @@
 // Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Music_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
 //   Story begins (once it is in CREDULER_GHOSTS), so its sibling methods + Ghost/M/Radiola.g's spine
-//    are on H.  Run_A_MusuStaple wires the Run; the per-beat MusuStaple(A,w) installs the eternal
+//    are on H.  Story_subHouse auto-stands-up A:Book/w:Book (no Run_A_ needed); MusuStaple(A,w) installs the eternal
 //     %req:wrangle whose do_fn Musu_drive drives the inner beats, starting at 2.  The toc.snap carries
 //      one `step,…` line per inner beat (real seq, lie diges till a run records them).
 //
@@ -13,13 +13,10 @@
 //     beat 4  omega plays 3 (ack -1->2) -> the window slides, 7..9 spool through
 //     beat 5  omega drains (ack 2->11) -> 10..11 spool, next === total, the stock is empty
 //
-// Run_A_MusuStaple — the Book's Run recipe (Story_subHouse calls it to wire the Run).  Lay the single
-//  test actor + its one world.  The world MUST be named after the Book: the per-beat handler is
-//   dispatched by the WORLD NAME (do_fn_for reads w.sc.w), so w:MusuStaple -> MusuStaple(A,w).  Name it
-//    anything else and the handler silently never fires.  The role is already 'runner' (Auto/boot).
-Run_A_MusuStaple():
-    this.c.role ??= 'runner'
-    H i A:MusuStaple/w:MusuStaple
+// CONVENTION (all Musu* books): NO Run_A_<Book> recipe — Story_subHouse stands up A:<Book>/w:<Book>
+//  by default when none exists.  The world MUST be named after the Book: the per-beat handler is
+//   dispatched by the WORLD NAME (do_fn_for reads w.sc.w), so w:MusuStaple -> MusuStaple(A,w); name the
+//    world anything else and the handler silently never fires.
 
 // We do NOT use H.on_step (its one H-global did_on_step_n is claimed by whichever caller spills first).
 //  Musu_drive keeps a req-local did_step instead, immune to any other caller — the Pere* lesson.
@@ -135,12 +132,6 @@ async Musu_order(w):
 //                  arms %want:stream -> the spool ungates, the continuation (seq 4..8, kind:stream)
 //                   joins the inbox
 //         beat 5  omega plays out (ack 1->11) -> the rest of the stream drains, next === total
-
-// Run_A_MusuStream — wire the Run.  Its own actor + world, the world NAMED AFTER THE BOOK so the
-//  per-beat handler MusuStream(A,w) is found (do_fn_for reads w.sc.w).
-Run_A_MusuStream():
-    this.c.role ??= 'runner'
-    H i A:MusuStream/w:MusuStream
 
 // MusuStream(A,w) — install the eternal wrangle, driven by MusuStream_drive (own did_step, immune
 //  to on_step's H-global, the Pere* lesson).
@@ -265,12 +256,6 @@ async MusuStream_order(w):
 //                 (made 8->12, the source is spent) while the slow listener still trails, records 6..11
 //                  produced and waiting in hand
 
-// Run_A_MusuStock — wire the Run.  Own actor + world, the world NAMED AFTER THE BOOK so the per-beat
-//  handler MusuStock(A,w) is found (do_fn_for reads w.sc.w).
-Run_A_MusuStock():
-    this.c.role ??= 'runner'
-    H i A:MusuStock/w:MusuStock
-
 // MusuStock(A,w) — install the eternal wrangle, driven by MusuStock_drive (own did_step, immune to
 //  on_step's H-global — the Pere* lesson).
 MusuStock(A,w):
@@ -390,6 +375,368 @@ async MusuStock_order(w):
     let As = H.o({A: 1})
     if (!As.length) return
     let first = (a) => (a.sc.A === 'MusuStock') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+
+// ══ SLICE 4 — MusuLive: live-edge playback (Radios.svelte listening/progress/enqueue) ════════════
+//  The decode-ahead chain made visible: a %Player decodes delivered %Chunk into an %aud LINKED LIST
+//   (a chain, the first non-star Cyto shape) ahead of its playhead but stays live_back(3) behind the
+//    live edge — the newest delivered chunk — so a chunk arriving a beat late still has slack.  Own
+//     world w:MusuLive.  The four beats trace the live-edge dance:
+//      beat 2  the link stands up (terminal+inbox / player / %req:progress), idle
+//      beat 3  chunks 0..7 arrive (live edge 7), the player goes %live -> decodes 0..4 and HOLDS, 3
+//               behind the edge (5,6,7 delivered but withheld — the safety margin)
+//      beat 4  chunks 8..11 arrive (edge 11) and the listener plays (playhead -1->4) -> the decode
+//               frontier FOLLOWS to 8, still exactly 3 behind the moving edge
+//      beat 5  the stream ENDS and the listener plays on (playhead ->8) -> the margin drops, the
+//               player drains through to the last chunk (decoded 11 === edge), the whole record decoded
+
+MusuLive(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuLive_drive,w,req
+        req%ok = 1
+
+async MusuLive_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.MusuLive_sides_up(w)
+        if (n === 3) this.MusuLive_arrive(w)
+        if (n === 4) this.MusuLive_follow(w)
+        if (n === 5) this.MusuLive_end(w)
+    }
+    await this.MusuLive_pump(w)
+    this.MusuLive_witness(w)
+    await this.MusuLive_order(w)
+
+// MusuLive_sides_up — beat 2: a %Terminal with an %inbox (where the wire drops %Chunk) and a %Player
+//  reading it, cross-linked (player.c.term / term.c.player) with c.up stamped so req_progress reads the
+//   window|live_back off w.  Seed the player's %req:progress.  Idle till live.
+MusuLive_sides_up(w):
+    w i reached:step_2
+    let term = w.i({Terminal: 1, name: 'omega'})
+    term.c.up = w
+    term.i({inbox: 1})
+    let player = w.i({Player: 1, name: 'ear', playhead: -1, decoded: -1})
+    player.c.up = w
+    player.c.term = term
+    term.c.player = player
+    player.oai({req: 'progress', eternal: 1})
+
+// MusuLive_deliver — the wire drops chunks seq lo..hi into the inbox; delivered chunks are what the
+//  player may decode, bounded by the live-edge margin.
+MusuLive_deliver(w, lo, hi):
+    let inbox = w.o({Terminal: 1})[0]?.o({inbox: 1})[0]
+    if (!inbox) return
+    let seq = lo
+    while (seq <= hi) {
+        inbox.i({Chunk: 1, seq: seq})
+        seq = seq + 1
+    }
+
+// MusuLive_arrive — beat 3: chunks 0..7 arrive, the player goes live.  The next pump decodes 0..4 and
+//  HOLDS 3 behind the live edge (7) — 5,6,7 delivered but withheld as the margin.
+MusuLive_arrive(w):
+    w i reached:step_3
+    this.MusuLive_deliver(w, 0, 7)
+    let player = w.o({Player: 1})[0]
+    if (player) {
+        player.sc.live = 1
+        player.bump()
+    }
+
+// MusuLive_follow — beat 4: more chunks (8..11) arrive AND the listener plays (playhead -> 4).  The
+//  decode frontier follows the moving edge to 8, still 3 behind.
+MusuLive_follow(w):
+    w i reached:step_4
+    this.MusuLive_deliver(w, 8, 11)
+    this.MusuLive_play(w, 5)
+
+// MusuLive_end — beat 5: the stream ends; the listener plays on (playhead -> 8).  req_progress drops
+//  the margin and drains to the last delivered chunk (decoded === edge).
+MusuLive_end(w):
+    w i reached:step_5
+    let term = w.o({Terminal: 1})[0]
+    if (term) {
+        term.sc.ended = 1
+        term.bump()
+    }
+    this.MusuLive_play(w, 4)
+
+// MusuLive_play — the listener plays n chunks: advance the playhead (starts at -1).  Bumps for the wave.
+MusuLive_play(w, n):
+    let player = w.o({Player: 1})[0]
+    if (!player) return
+    let head = +(player.sc.playhead ?? -1)
+    player.sc.playhead = head + n
+    player.bump()
+
+// MusuLive_pump — pump every %Player; player.do() runs %req:progress.  Delivery + play happened at
+//  dispatch, so the decode reacts to the new edge/playhead in the same pass.
+async MusuLive_pump(w):
+    for (const player of w.o({Player: 1})) {
+        await player.do()
+    }
+
+// MusuLive_witness — structural + idempotent, the beat in the VALUE.  Unique names so they never
+//  collide on H.  edge = highest delivered seq; the playhead splits pre-playback buffering from
+//   playing-and-following.
+MusuLive_witness(w):
+    let term = w.o({Terminal: 1})[0]
+    let player = w.o({Player: 1})[0]
+    if (!term || !player) return
+    let inbox = term.o({inbox: 1})[0]
+    if (!inbox) return
+    let back = this.Radiola_live_back(w)
+    let head = +(player.sc.playhead ?? -1)
+    let decoded = +(player.sc.decoded ?? -1)
+    let auds = player.o({aud: 1}).length
+    let edge = -1
+    for (const ch of inbox.o({Chunk: 1})) {
+        let s = +(ch.sc.seq ?? -1)
+        if (s > edge) edge = s
+    }
+    // beat 2 (wired): the link exists, the player idle (not live, nothing decoded).
+    if (!player.sc.live && auds === 0 && player.o({req: 'progress'}).length && !(oa %witnessed:wired)) i %witnessed:wired
+    // beat 3 (buffered): live, not yet playing (playhead < 0), the decode held exactly live_back behind
+    //  the live edge -- delivered chunks beyond decoded are withheld as the safety margin.
+    if (player.sc.live && !term.sc.ended && head < 0 && decoded >= 0 && decoded === edge - back && !(oa %witnessed:buffered)) i %witnessed:buffered
+    // beat 4 (followed): now playing (playhead >= 0), the live edge moved and the decode frontier
+    //  followed it, still exactly live_back behind.
+    if (player.sc.live && !term.sc.ended && head >= 0 && decoded === edge - back && !(oa %witnessed:followed)) i %witnessed:followed
+    // beat 5 (caughtup): the stream ended and the player drained through -- decoded met the edge, the
+    //  whole record decoded, no margin left to hold.
+    if (term.sc.ended && edge > 0 && decoded === edge && !(oa %witnessed:caughtup)) i %witnessed:caughtup
+
+async MusuLive_order(w):
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'MusuLive') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+
+// ══ SLICE 5 — MusuWear: record wear / GC (Radios.svelte raterminal_recordWear) ════════════════════
+//  Listened records age and get reaped, but a floor of live records is kept.  A %Stock pool of 7
+//   %Record, each accreting wear (.sc.played while heard, .sc.idle once another takes over); the
+//    spine's %req:reap tombstones a record that is heard-enough then long-idle with %wore_out — a
+//     legible husk, not a delete — but never below the floor.  Own world w:MusuWear; shrink the
+//      thresholds (wear_enough 2, wear_delay 3) so the beats fire tight.  The four beats:
+//       beat 2  the pool of 7 records + %req:reap stand up, none worn
+//       beat 3  records 0,1,2 are heard enough (played >= 2) but only just stopped (idle 0) -> none worn
+//       beat 4  records 0,1 sit idle past the delay (idle >= 3) -> reaped (wore_out), pool 7 -> 5 (floor)
+//       beat 5  records 2,3 also age past the delay, but reaping would breach the floor -> KEPT
+//                worn-but-live (the GC holds the floor)
+
+MusuWear(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuWear_drive,w,req
+        req%ok = 1
+
+async MusuWear_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.MusuWear_sides_up(w)
+        if (n === 3) this.MusuWear_heard(w)
+        if (n === 4) this.MusuWear_age_first(w)
+        if (n === 5) this.MusuWear_age_more(w)
+    }
+    await this.MusuWear_pump(w)
+    this.MusuWear_witness(w)
+    await this.MusuWear_order(w)
+
+// MusuWear_sides_up — beat 2: a %Stock pool of 7 %Record (seq 0..6, played/idle 0) and the spine's
+//  %req:reap.  Shrink the wear thresholds on w so the sweep fires within a few beats; c.up stamped so
+//   req_reap reads them off w.
+MusuWear_sides_up(w):
+    w i reached:step_2
+    w.sc.wear_enough = 2
+    w.sc.wear_delay = 3
+    let pool = w.i({Stock: 1, name: 'records'})
+    pool.c.up = w
+    let seq = 0
+    while (seq < 7) {
+        pool.i({Record: 1, seq: seq, played: 0, idle: 0})
+        seq = seq + 1
+    }
+    pool.oai({req: 'reap', eternal: 1})
+
+// MusuWear_heard — beat 3: records 0,1,2 are heard enough (played 2) but only just stopped (idle 0) --
+//  over the play threshold yet too freshly-played to cull.
+MusuWear_heard(w):
+    w i reached:step_3
+    let pool = w.o({Stock: 1})[0]
+    if (!pool) return
+    let recs = pool.o({Record: 1})
+    recs[0].sc.played = 2
+    recs[1].sc.played = 2
+    recs[2].sc.played = 2
+    pool.bump()
+
+// MusuWear_age_first — beat 4: records 0,1 sit idle past the delay (idle 3) -> req_reap tombstones
+//  them, the pool drops 7 -> 5 (the floor).
+MusuWear_age_first(w):
+    w i reached:step_4
+    let pool = w.o({Stock: 1})[0]
+    if (!pool) return
+    let recs = pool.o({Record: 1})
+    recs[0].sc.idle = 3
+    recs[1].sc.idle = 3
+    pool.bump()
+
+// MusuWear_age_more — beat 5: records 2,3 also age past the delay, but the pool is already at the floor
+//  -> req_reap leaves them worn-but-live.
+MusuWear_age_more(w):
+    w i reached:step_5
+    let pool = w.o({Stock: 1})[0]
+    if (!pool) return
+    let recs = pool.o({Record: 1})
+    recs[2].sc.idle = 3
+    recs[3].sc.played = 2
+    recs[3].sc.idle = 3
+    pool.bump()
+
+async MusuWear_pump(w):
+    for (const pool of w.o({Stock: 1})) {
+        await pool.do()
+    }
+
+// MusuWear_witness — structural + idempotent.  worn = wore_out count; kept_worn = live records that are
+//  eligible (heard-enough AND idle-enough) yet still held by the floor.
+MusuWear_witness(w):
+    let pool = w.o({Stock: 1})[0]
+    if (!pool) return
+    let all = pool.o({Record: 1})
+    let enough = this.Radiola_wear_enough(w)
+    let delay = this.Radiola_wear_delay(w)
+    let worn = all.filter(r => r.sc.wore_out).length
+    let live = all.filter(r => !r.sc.wore_out)
+    let heard = all.filter(r => +(r.sc.played ?? 0) >= enough).length
+    let kept_worn = live.filter(r => +(r.sc.played ?? 0) >= enough && +(r.sc.idle ?? 0) >= delay).length
+    // beat 2 (stockpiled): the pool of records + the reap req stand up, none worn.
+    if (all.length >= 6 && pool.o({req: 'reap'}).length && worn === 0 && !(oa %witnessed:stockpiled)) i %witnessed:stockpiled
+    // beat 3 (heardenough): some records crossed the play threshold but none worn yet (too freshly played).
+    if (heard >= 1 && worn === 0 && !(oa %witnessed:heardenough)) i %witnessed:heardenough
+    // beat 4 (reaped): the aged records were tombstoned, the pool sits at the floor.
+    if (worn >= 1 && live.length === 5 && !(oa %witnessed:reaped)) i %witnessed:reaped
+    // beat 5 (floored): more records are eligible, but the GC holds the floor -- worn-but-live records
+    //  remain (kept_worn > 0) while the live count stays at the floor.
+    if (kept_worn >= 1 && live.length === 5 && worn >= 1 && !(oa %witnessed:floored)) i %witnessed:floored
+
+async MusuWear_order(w):
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'MusuWear') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+
+// ══ SLICE 6 — MusuSkip: skip-track (Radios.svelte turn_knob/do_skip_track_fn) ════════════════════
+//  The listener jumps mid-stream.  A %Terminal carries a record cursor (.sc.record) and a %Player with
+//   a decoded %aud chain; a %Knob strike (Radiola_skip) advances the cursor to the next record and
+//    resets the player — the abandoned %aud chain is marked %stale (the wear sweep reaps it), the player
+//     re-decodes from the new record's head.  Own world w:MusuSkip.  The four beats:
+//      beat 2  the terminal (record 0) + player stand up, no auds yet
+//      beat 3  the player decodes %aud on record 0 and plays into them (playhead moves)
+//      beat 4  a %Knob strike -> skip: record 0 -> 1, the player resets (playhead -1), the old auds stale
+//      beat 5  the player re-decodes on the new record -> FRESH (non-stale) auds appear, playback resumes
+
+MusuSkip(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuSkip_drive,w,req
+        req%ok = 1
+
+async MusuSkip_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.MusuSkip_sides_up(w)
+        if (n === 3) this.MusuSkip_decode(w)
+        if (n === 4) this.MusuSkip_strike(w)
+        if (n === 5) this.MusuSkip_rebuild(w)
+    }
+    this.MusuSkip_witness(w)
+    await this.MusuSkip_order(w)
+
+// MusuSkip_sides_up — beat 2: a %Terminal on record 0 with a %Player (cross-linked), no auds yet.
+MusuSkip_sides_up(w):
+    w i reached:step_2
+    let term = w.i({Terminal: 1, name: 'omega', record: 0})
+    term.c.up = w
+    let player = w.i({Player: 1, name: 'ear', playhead: -1, decoded: -1})
+    player.c.up = w
+    player.c.term = term
+    term.c.player = player
+
+// MusuSkip_seed — hand-decode fresh %aud seq 0..hi onto the player (chained on c.tail), playing into
+//  them (playhead).  Stands in for req_progress here — MusuLive covers the decode; this Book is the skip.
+MusuSkip_seed(w, hi, head):
+    let player = w.o({Player: 1})[0]
+    if (!player) return
+    let seq = 0
+    let tail = player.c.tail
+    while (seq <= hi) {
+        let aud = player.i({aud: 1, seq: seq})
+        if (tail) {
+            aud.c.prev = tail
+            tail.c.next = aud
+        }
+        tail = aud
+        seq = seq + 1
+    }
+    player.c.tail = tail
+    player.sc.decoded = hi
+    player.sc.playhead = head
+    player.bump()
+
+// MusuSkip_decode — beat 3: the player decodes auds 0..4 on record 0 and plays into them (playhead 2).
+MusuSkip_decode(w):
+    w i reached:step_3
+    this.MusuSkip_seed(w, 4, 2)
+
+// MusuSkip_strike — beat 4: a %Knob strike -> Radiola_skip: record 0 -> 1, player reset, old auds stale.
+MusuSkip_strike(w):
+    w i reached:step_4
+    w.i({Knob: 1, turn: 'next'})
+    let term = w.o({Terminal: 1})[0]
+    if (term) this.Radiola_skip(term)
+
+// MusuSkip_rebuild — beat 5: the player re-decodes on the new record -> fresh auds 0..2, playback resumes.
+MusuSkip_rebuild(w):
+    w i reached:step_5
+    this.MusuSkip_seed(w, 2, 0)
+
+// MusuSkip_witness — structural + idempotent.  fresh = auds without %stale; stale = the husks the skip
+//  abandoned.
+MusuSkip_witness(w):
+    let term = w.o({Terminal: 1})[0]
+    let player = w.o({Player: 1})[0]
+    if (!term || !player) return
+    let auds = player.o({aud: 1})
+    let fresh = auds.filter(a => !a.sc.stale).length
+    let stale = auds.filter(a => a.sc.stale).length
+    let record = +(term.sc.record ?? 0)
+    let head = +(player.sc.playhead ?? -1)
+    // beat 2 (cued): terminal on record 0 + player, no auds.
+    if (record === 0 && auds.length === 0 && term.c.player && !(oa %witnessed:cued)) i %witnessed:cued
+    // beat 3 (spinning): decoded auds on record 0, playing into them.
+    if (record === 0 && fresh >= 1 && head >= 0 && !(oa %witnessed:spinning)) i %witnessed:spinning
+    // beat 4 (skipped): the knob advanced the record cursor (-> 1) and the player reset -- every aud is
+    //  now %stale and the playhead rewound.
+    if (record === 1 && stale >= 1 && fresh === 0 && head < 0 && !(oa %witnessed:skipped)) i %witnessed:skipped
+    // beat 5 (resumed): the player re-decoded on the new record -- fresh auds joined the stale husks,
+    //  playback resumed (playhead moving again).
+    if (record === 1 && fresh >= 1 && stale >= 1 && !(oa %witnessed:resumed)) i %witnessed:resumed
+
+async MusuSkip_order(w):
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'MusuSkip') ? 0 : 1
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)

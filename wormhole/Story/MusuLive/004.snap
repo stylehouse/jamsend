@@ -1,0 +1,38 @@
+Snap:H
+  H:MusuLive,Run
+    A:MusuLive
+      self,round=10	{"mung":["age"]}
+      w:MusuLive
+        self,round=10	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Terminal,name:omega
+          inbox
+            Chunk,seq=0
+            Chunk,seq
+            Chunk,seq=2
+            Chunk,seq=3
+            Chunk,seq=4
+            Chunk,seq=5
+            Chunk,seq=6
+            Chunk,seq=7
+            Chunk,seq=8
+            Chunk,seq=9
+            Chunk,seq=10
+            Chunk,seq=11
+        Player,name:ear,playhead=4,decoded=8,live
+          req:progress,eternal,ok
+          aud,seq=0
+          aud,seq
+          aud,seq=2
+          aud,seq=3
+          aud,seq=4
+          aud,seq=5
+          aud,seq=6
+          aud,seq=7
+          aud,seq=8
+        witnessed:wired
+        reached:step_3
+        witnessed:buffered
+        reached:step_4
+        witnessed:followed

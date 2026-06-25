@@ -124,19 +124,20 @@ One slice at a time; each is: a spine mechanism + a `Musu*` beat or two + a witn
      source-spent). Restock keys off the LEADING cursor (KEEP_AHEAD=5 ahead of the fastest), so the
       lagging listener visibly trails — the first genuinely graph-shaped picture (one stock → two
        cursors, a growing `%Record` pile). **Status: compiled, run, ACCEPTED — green** (§7).
-- **Slices 4–6 — PROTOTYPED (spine sketches, not yet Book-run).** Compact, faithful mechanisms in
-   `Radiola.g`, compiling live, inert until a Book wires them (the explore-the-code substrate for the
-    `Waft:Ality` map, §8). Each carries the real `Radios.svelte` constants and the cursor arithmetic:
-  - **4 live-edge playback** — `req_progress` + `Radiola_live_back(3)`: a `%Player` decodes delivered
-     `%Chunk` into an `%aud` linked list (chained on `player.c.tail`) ahead of its playhead but stays
-      `live_back` behind the live edge. Hugging the live edge is the backpressure.
-  - **5 record wear / GC** — `req_reap` + `Radiola_wear_enough(3)`/`Radiola_wear_delay(19)`: a
-     `%Record` heard-enough then long-idle is tombstoned in place with `%wore_out` (a flag, a legible
-      husk — not a delete), keeping a floor of live records.
-  - **6 skip-track** — `Radiola_skip`: a `%Knob` strike advances the terminal's record cursor and
-     resets the player's decode frontier; the abandoned `%aud` chain is marked `%stale` (the wear
-      sweep reaps it). The cursor move is the whole act.
-  - Next per slice: own world + `Musu*` Book + witnesses + CredRunner accept, the slice-1–3 cadence.
+- **Slices 4–6 — DONE, ACCEPTED — green** (§7; baked headless via CredRunner, 5/5 exact each). Each
+   a faithful mechanism in `Radiola.g` carrying the real `Radios.svelte` constants, plus a focused Book:
+  - **4 live-edge playback** — `req_progress` + `Radiola_live_back(3)`; Book `MusuLive` beats 2–5
+     (wired → buffered → followed → caughtup). A `%Player` decodes delivered `%Chunk` into an `%aud`
+      **linked list** (chained on `player.c.tail`) ahead of its playhead but stays `live_back` behind
+       the live edge; once the stream `ended` the margin drops and it drains through. The aud chain is
+        the first non-star Cyto shape (a chain, not a hub).
+  - **5 record wear / GC** — `req_reap` + `Radiola_wear_enough(2)`/`Radiola_wear_delay(3)` (shrunk for
+     a tight Book); Book `MusuWear` beats 2–5 (stockpiled → heardenough → reaped → floored). A
+      heard-enough, long-idle `%Record` is tombstoned in place with `%wore_out` (a legible husk, not a
+       delete); a running floor counter holds ≥5 live, so the last eligibles are KEPT (floored).
+  - **6 skip-track** — `Radiola_skip`; Book `MusuSkip` beats 2–5 (cued → spinning → skipped → resumed).
+     A `%Knob` strike advances the terminal's `record` cursor and resets the player; the abandoned
+      `%aud` chain is marked `%stale`, fresh auds re-decode on the new record beside the husks.
 
 Keep `MusuStaple` as the staple end-to-end book; spin out focused books (`MusuStock`,
  `MusuWear`, …) under the same `Ghost/Story/Musuation.g` as slices land, exactly as the
@@ -279,14 +280,18 @@ If a beat mismatches: restock keys off the **leading** (highest) cursor, not the
   `MusuStock_witness` is inverted. `made===cap` with a cursor short of cap is the intended endpoint
    (source spent, listener still draining), not a bug.
 
+**All six instances 1–6 are now spine + Book + accepted.** `Radios.svelte` items 7–8 (codec
+ segmentation, disk cache) stay out of scope — the irreducibly-real bytes/disk seam (§3).
+
 **The next move:**
-1. Watch slices 2–3 in Cyto on `:9091` (the headless CredRunner has no graph): slice 2 the inbox
-    holding at the preview gate then surging; slice 3 the `%Stock` accreting `%Record`s while the two
-     cursors fan out at different depths — both `.bump()`-fed so the wave rides.
-2. Pick a prototype (4, 5 or 6) and grow it the slice-1–3 way: own `w:Musu<X>`, a `Musu<X>` Book with
-    beats + witnesses, then `BOOK=Musu<X> ACCEPT=1 … CredRunner` to bake it (§6). The mechanism is
-     already there; it just needs a scenario to drive it.
-3. Verify the `Waft:Ality` map + the substrate bridges on `:9091` (§8 — owed a browser pass).
+1. Watch the machine in Cyto on `:9091` (the headless CredRunner has no graph): the spool window
+    breathing, the preview gate holding then surging, the `%Stock` fan-out, the `%aud` **chain**
+     decode-ahead hugging the live edge, records going `%wore_out`, the skip rewinding the chain — all
+      `.bump()`-fed so the wave rides each move.
+2. Verify the `Waft:Ality` map + the substrate bridges on `:9091` (§8 — owed a browser pass: the
+    `Point,text:` click-through, the bridge lighting the same token across all three Docs).
+3. Beyond the slices: a live bridge auto-minter (§8), spaced-phrase Points, or fold a real source file
+    into a sim if a 7–8 behaviour ever wants watching.
 
 ---
 

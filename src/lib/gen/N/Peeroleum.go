@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return '490c302cad15ad34' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return '2ccbc1626d347189' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -522,8 +522,13 @@ Peeroleum_rollup_faulty(pier) {
 //   now-irrelevant gap). last_heard_tick is CLEARED, not kept: a stale "last heard long ago" would make the
 //    silence sweep re-latch %silent on the brand-new carrier instantly and loop the re-dial — clearing it means
 //     the Pier reads "never heard" until the new carrier actually delivers, a fresh silence window. The seq
-//      counters (c.seq / c.inseq) are KEPT: they only ever climb, so continuity costs nothing and dodges the
-//       epoch-handshake (heading 8) a seq-reset would demand of BOTH sides.
+//      CURSOR `c.inseq.last` (and c.seq) is KEPT: it only ever climbs, so continuity costs nothing and dodges the
+//       epoch-handshake (heading 8) a seq-reset would demand of BOTH sides. But `c.inseq.buffered` is CLEARED with
+//        c.held — they are two halves of one fact (the held tail: buffered = its seq NUMBERS, held = its FRAMES).
+//         Dropping the frames but keeping the numbers leaves inseq believing those seqs are ready: the re-supplied
+//          tail would drain the ghost slots with no frame (silently skipped), then dedup the real re-sends — data
+//           lost on a reconnect that lands mid-gap. (Found by the storm_redial braid; the lone reset test had an
+//            empty buffered, so it never saw it.) The sender's emits for the held tail are un-acked → retx resupplies.
 Peeroleum_reset_handshake(pier) {
     for (const key of ['protocol', 'outbox', 'inbox', 'faulty', 'stalled', 'silent']) {
         let n = pier.o({[key]: 1})[0]
@@ -533,6 +538,7 @@ Peeroleum_reset_handshake(pier) {
     if (hs) pier.drop(hs)
     delete pier.c.connection
     delete pier.c.held
+    if (pier.c.inseq) pier.c.inseq.buffered = []   // drop the held-tail seqs with the held frames (keep last)
     delete pier.c.last_heard_tick
 
 },

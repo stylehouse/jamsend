@@ -1,9 +1,9 @@
 Snap:H
   H:MusuStaple,Run
     A:MusuStaple
-      self,round=4	{"mung":["age"]}
+      self,round=10	{"mung":["age"]}
       w:MusuStaple
-        self,round=4	{"mung":["age"]}
+        self,round=10	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Caster,name:alpha,total=12,next=10,live

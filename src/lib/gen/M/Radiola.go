@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radiola(): string { return '245b17fb06ea71bc' },
+    Ghostmeta_Ghost_M_Radiola(): string { return '1ddd51d246dc635d' },
 
 //#region radiola
 // Radiola — the music-piracy spine, reborn on Housing+req (spec: src/lib/O/spec/Music_todo.md).
@@ -165,7 +165,9 @@ Radiola_live_back(w) {
 //   is within the window of the playhead AND at least live_back behind the live edge, decode the next
 //    chunk: mint an %aud,seq and chain it (c.prev/c.next, tracked on player.c.tail to dodge the seq-as-1
 //     query wildcard).  The instant it would decode past live_edge - live_back it stops — hugging the
-//      live edge is the backpressure (a player underruns rather than races the wire).
+//      live edge is the backpressure (a player underruns rather than races the wire).  Once the stream
+//       has ENDED (term.sc.ended) the margin drops to 0: a finished record decodes through to its last
+//        delivered chunk (nothing more is coming, so there is no live edge to stay behind).
 async req_progress(req) {
     let player = req.c.up
     if (player && player.sc.live) {
@@ -174,6 +176,7 @@ async req_progress(req) {
         if (inbox) {
             let win = this.Radiola_window(player.c.up)
             let back = this.Radiola_live_back(player.c.up)
+            let margin = (term.sc.ended) ? 0 : back     // ended -> drain to the last chunk, no margin
             let head = +(player.sc.playhead ?? -1)
             let front = +(player.sc.decoded ?? -1)
             let live_edge = -1
@@ -183,7 +186,7 @@ async req_progress(req) {
             }
             let start = front
             let tail = player.c.tail
-            while (front < live_edge - back && front < head + win) {
+            while (front < live_edge - margin && front < head + win) {
                 let seq = front + 1
                 let aud = player.i({aud: 1, seq: seq})
                 if (tail) {
@@ -224,12 +227,15 @@ req_reap(req) {
         let enough = this.Radiola_wear_enough(pool.c.up)
         let delay = this.Radiola_wear_delay(pool.c.up)
         let live = pool.o({Record: 1}).filter(r => !r.sc.wore_out)
+        let n = live.length
         for (const re of live) {
+            if (n <= 5) break              // hold the floor (Radios reaps only a deep pool, >= 6)
             let played = +(re.sc.played ?? 0)
             let idle = +(re.sc.idle ?? 0)
-            if (played >= enough && idle >= delay && !re.sc.playing && live.length > 5) {
+            if (played >= enough && idle >= delay && !re.sc.playing) {
                 re.sc.wore_out = 1
                 re.bump()
+                n = n - 1
             }
         }
     }

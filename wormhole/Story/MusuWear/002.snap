@@ -1,0 +1,18 @@
+Snap:H
+  H:MusuWear,Run
+    A:MusuWear
+      self,round=8	{"mung":["age"]}
+      w:MusuWear,wear_enough=2,wear_delay=3
+        self,round=8	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Stock,name:records
+          Record,seq=0,played=0,idle=0
+          Record,seq,played=0,idle=0
+          Record,seq=2,played=0,idle=0
+          Record,seq=3,played=0,idle=0
+          Record,seq=4,played=0,idle=0
+          Record,seq=5,played=0,idle=0
+          Record,seq=6,played=0,idle=0
+          req:reap,eternal,ok
+        witnessed:stockpiled

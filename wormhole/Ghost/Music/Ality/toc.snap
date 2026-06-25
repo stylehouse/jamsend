@@ -3,6 +3,9 @@ Waft:Ghost/Music/Ality,active
     Funkcion:Storying,of_Book:MusuStaple
     Funkcion:Storying,of_Book:MusuStream
     Funkcion:Storying,of_Book:MusuStock
+    Funkcion:Storying,of_Book:MusuLive
+    Funkcion:Storying,of_Book:MusuWear
+    Funkcion:Storying,of_Book:MusuSkip
   What:the machine
     What:1 the spool
       Doc:Ghost/M/Radiola.g
@@ -16,16 +19,16 @@ Waft:Ghost/Music/Ality,active
       Doc:Ghost/M/Radiola.g
       Point,method:req_restock
       Point,method:Radiola_keep_ahead
-    What:4 live-edge playback (prototype)
+    What:4 live-edge playback
       Doc:Ghost/M/Radiola.g
       Point,method:req_progress
       Point,method:Radiola_live_back
-    What:5 record wear / GC (prototype)
+    What:5 record wear / GC
       Doc:Ghost/M/Radiola.g
       Point,method:req_reap
       Point,method:Radiola_wear_enough
       Point,method:Radiola_wear_delay
-    What:6 skip-track (prototype)
+    What:6 skip-track
       Doc:Ghost/M/Radiola.g
       Point,method:Radiola_skip
   What:the tests
@@ -42,6 +45,18 @@ Waft:Ghost/Music/Ality,active
       Doc:Ghost/Story/Musuation.g
       Point,method:MusuStock_drive
       Point,method:MusuStock_witness
+    What:MusuLive (live-edge playback)
+      Doc:Ghost/Story/Musuation.g
+      Point,method:MusuLive_drive
+      Point,method:MusuLive_witness
+    What:MusuWear (wear / GC)
+      Doc:Ghost/Story/Musuation.g
+      Point,method:MusuWear_drive
+      Point,method:MusuWear_witness
+    What:MusuSkip (skip-track)
+      Doc:Ghost/Story/Musuation.g
+      Point,method:MusuSkip_drive
+      Point,method:MusuSkip_witness
   What:the source it reimagines
     Doc:src/lib/ghost/Radios.svelte
     Point,method:listening
@@ -106,3 +121,10 @@ Waft:Ghost/Music/Ality,active
       Point,text:not_too_far_ahead
       Doc:src/lib/ghost/Radios.svelte
       Point,text:not_too_far_ahead
+    What:wore_out
+      Doc:src/lib/O/spec/Music_todo.md
+      Point,text:wore_out
+      Doc:Ghost/M/Radiola.g
+      Point,text:wore_out
+      Doc:src/lib/ghost/Radios.svelte
+      Point,text:wore_out

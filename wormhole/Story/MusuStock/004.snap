@@ -1,9 +1,9 @@
 Snap:H
   H:MusuStock,Run
     A:MusuStock
-      self,round=10	{"mung":["age"]}
+      self,round=9	{"mung":["age"]}
       w:MusuStock
-        self,round=10	{"mung":["age"]}
+        self,round=9	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Stock,name:radiostock,cap=12,made=8,live

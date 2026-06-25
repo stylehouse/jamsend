@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Peregrination(): string { return '54ab07183fdb07c3' },
+    Ghostmeta_Ghost_Story_Peregrination(): string { return '7711424db53b25db' },
 
 
 // PereStaple — the Peeroleum p2p test (the outer test layer), and the first of a
@@ -106,6 +106,16 @@ async Lake_drive(w, req) {
             await this.Lake_dedup_cull_arm(w)
         } else if (n === 38) {
             await this.Lake_dedup_cull_replay(w)
+        } else if (n === 40) {
+            await this.Lake_storm_arm(w)
+        } else if (n === 44) {
+            await this.Lake_corrupt_stream_arm(w)
+        } else if (n === 46) {
+            await this.Lake_rededup_arm(w)
+        } else if (n === 48) {
+            await this.Lake_rededup_replay(w)
+        } else if (n === 50) {
+            await this.Lake_storm_redial_arm(w)
         }
     }
     await this.Lake_pump_handshakes(w)
@@ -532,6 +542,141 @@ async Lake_dedup_cull_replay(w) {
     await this.Peeroleum_deliver(w, SibPier.c.cull_frame)
 
 },
+// ══ combinatory scenarios — the isolated proofs braided so they must hold TOGETHER ══
+// 25-38 each bent ONE knob: drop, dup, reorder, corruption, reset, each on its own clean stage.  A feature
+//  that passes alone can still break beside another — a corrupt frame that wedges the good ones queued behind
+//   it, a re-dial that re-opens the replay window dedup just closed.  These braid the knobs onto one stream
+//    and assert the floor survives the braid.  Still the SIMPLE combinations first (two|three features each),
+//     not the whole-app weave — that is the runner↔editor Story, parked in the handover's TODO.
+
+// Lake_storm_arm — step 40: drop + dup + gap-buffer on ONE stream, every seq still delivered EXACTLY once in
+//  order (heal ∘ dedup ∘ reorder).  A fresh LOSSY link (Que/Ros, reliable:false); %Ud on Ros + a per-seq
+//   counting handler.  Four consecutive seqs; the adversary drops s2's first transit and dups s3 every transit.
+//    s1 lands; s2 is lost, so s3,s4 arrive AHEAD of their slot and gap-buffer (the drop MAKES the reorder) while
+//     the s3 dups collapse in the buffer.  retx re-sends s2 → 2nd transit passes → s2 fills the gap and drains
+//      s3,s4 in order.  End: inseq.last===s4 and every seq dispatched once — no loss|dup|disorder survived the
+//       braid.  Witnessed across blank steps 41-43 (retx rides Runstepped, exactly as the lone heal at step 8).
+async Lake_storm_arm(w) {
+    w.i({reached: "step_40"})
+    let [QuePier, RosPier] = await this.Lake_link(w, 'que', 'ros')
+    let Queport = this.Lake_port(QuePier)
+    let Rosport = this.Lake_port(RosPier)
+    Queport.reliable = false
+    Rosport.reliable = false
+    RosPier.i({Ud: 1, pubkey: 'que'})
+    this.Peeroleum_on(w, 'test_storm', (cw, pier, frame) => { pier.c.storm_counts = pier.c.storm_counts || {}; let k = frame.header.seq; pier.c.storm_counts[k] = (pier.c.storm_counts[k] || 0) + 1 })
+    let s1 = this.Pier_next_seq(QuePier)
+    let s2 = this.Pier_next_seq(QuePier)
+    let s3 = this.Pier_next_seq(QuePier)
+    let s4 = this.Pier_next_seq(QuePier)
+    QuePier.c.storm_seqs = [s1, s2, s3, s4]
+    let lossy = this.make_lossy_partner(Rosport, {drop: [s2], dup: [s3]})
+    QuePier.c.lossy = lossy
+    Queport.partner = lossy
+    this.Peeroleum_send(w, {header: {type: 'test_storm', from: 'que', to: 'ros', seq: s1}})
+    this.Peeroleum_send(w, {header: {type: 'test_storm', from: 'que', to: 'ros', seq: s2}})
+    this.Peeroleum_send(w, {header: {type: 'test_storm', from: 'que', to: 'ros', seq: s3}})
+    this.Peeroleum_send(w, {header: {type: 'test_storm', from: 'que', to: 'ros', seq: s4}})
+
+},
+// Lake_corrupt_stream_arm — step 44: a CORRUPT frame mid-stream faults WITHOUT wedging the stream (verify ∘
+//  ordering).  A fresh link (Wyn/Xan, reliable:false so inseq runs); %Ud on Xan + a per-seq counting handler.
+//   Three consecutive seqs: s1 good, s2 a tweaked body (bad body_hash), s3 good.  inseq ADMITS s2 (the cursor
+//    advances — a corrupt frame still burns its slot, it is not re-requested), but req_unemit's sha256 verify
+//     rejects it → %faulty,bad-body-hash and the handler never runs for s2.  s3, the next contiguous seq, then
+//      dispatches normally.  End: faulty carries bad-body-hash, inseq.last reached s3, only s1+s3 dispatched —
+//       one bad frame did not stall the good ones behind it.  Clean carrier (the fault is verify, not loss).
+async Lake_corrupt_stream_arm(w) {
+    w.i({reached: "step_44"})
+    let [WynPier, XanPier] = await this.Lake_link(w, 'wyn', 'xan')
+    let Wynport = this.Lake_port(WynPier)
+    let Xanport = this.Lake_port(XanPier)
+    Wynport.reliable = false
+    Xanport.reliable = false
+    XanPier.i({Ud: 1, pubkey: 'wyn'})
+    this.Peeroleum_on(w, 'test_cstream', (cw, pier, frame) => { pier.c.cstream_counts = pier.c.cstream_counts || {}; let k = frame.header.seq; pier.c.cstream_counts[k] = (pier.c.cstream_counts[k] || 0) + 1 })
+    let s1 = this.Pier_next_seq(WynPier)
+    let s2 = this.Pier_next_seq(WynPier)
+    let s3 = this.Pier_next_seq(WynPier)
+    WynPier.c.cstream_seqs = [s1, s2, s3]
+    let bytes = new Uint8Array([5, 6, 7, 8])
+    let bad = '0'.repeat(64)   // 64 hex chars; the real sha256 of the body won't match → bad-body-hash
+    this.Peeroleum_send(w, {header: {type: 'test_cstream', from: 'wyn', to: 'xan', seq: s1}})
+    this.Peeroleum_send(w, {header: {type: 'test_cstream', from: 'wyn', to: 'xan', seq: s2, body_hash: bad, body_len: bytes.length}, buffer: bytes})
+    this.Peeroleum_send(w, {header: {type: 'test_cstream', from: 'wyn', to: 'xan', seq: s3}})
+
+},
+// Lake_rededup_arm — step 46, phase 1 of dedup-survives-a-re-dial (reset ∘ dedup, the security consequence of
+//  spec §9 keeping c.inseq).  A fresh LOSSY link (Yul/Zoe, reliable:false so inseq runs); %Ud on Zoe + a
+//   counting handler.  Yul sends one frame; Zoe delivers it once (cursor last===s).  Stash the raw frame for the
+//    step-48 replay.  The reset that follows must NOT re-open the replay window this delivery just closed.
+async Lake_rededup_arm(w) {
+    w.i({reached: "step_46"})
+    let [YulPier, ZoePier] = await this.Lake_link(w, 'yul', 'zoe')
+    let Yulport = this.Lake_port(YulPier)
+    let Zoeport = this.Lake_port(ZoePier)
+    Yulport.reliable = false
+    Zoeport.reliable = false
+    ZoePier.i({Ud: 1, pubkey: 'yul'})
+    this.Peeroleum_on(w, 'test_rededup', (cw, pier, frame) => { pier.c.rededup_count = (pier.c.rededup_count || 0) + 1 })
+    let s = this.Pier_next_seq(YulPier)
+    YulPier.c.rededup_seq = s
+    let frame = {header: {type: 'test_rededup', from: 'yul', to: 'zoe', seq: s}}
+    YulPier.c.rededup_frame = frame
+    this.Peeroleum_send(w, frame)
+
+},
+// Lake_rededup_replay — step 48, phase 2: re-dial, then replay the OLD frame.  reset_handshake drops the
+//  connection facts (protocol/outbox/inbox/...) but KEEPS %Ud and c.inseq — continuity that dodges the epoch
+//   handshake (spec §9).  Replaying the same seq over the SURVIVING cursor (seq ≤ last) must be caught: re-ack
+//    only, never a second dispatch.  rededup_count stays 1 = the re-dial did not re-open the replay window.
+//     This is the consequence the lone reset proof (step 32) only implied by keeping the cursor's VALUE.
+async Lake_rededup_replay(w) {
+    w.i({reached: "step_48"})
+    let YulPier = this.Lake_pier(w, 'yul')
+    let ZoePier = this.Lake_pier(w, 'zoe')
+    if (!ZoePier || !YulPier || !YulPier.c.rededup_frame) return
+    this.Peeroleum_reset_handshake(ZoePier)
+    await this.Peeroleum_deliver(w, YulPier.c.rededup_frame)
+    ZoePier.c.rededup_replayed = 1
+
+},
+// Lake_storm_redial_arm — step 50: a re-dial DURING a gap (reset ∘ dedup ∘ ordering — continuity must not LOSE
+//  data).  reset_handshake CLEARS c.held (the gap-buffered tail) but KEEPS the c.inseq cursor, so the stream
+//   resumes from where it left off, not from zero.  Driven DETERMINISTICALLY by awaited Peeroleum_deliver: the
+//    mock's Peeroleum_send is post_do-deferred (racy to orchestrate a precise mid-gap reset), and retransmit-
+//     redelivery is already proven by heal/storm — here we ISOLATE the reset interaction, synchronously.  A fresh
+//      LOSSY link (Ada/Bex), %Ud on Bex.  Deliver s1 (cursor→s1); deliver s3,s4 with s2 MISSING → they gap-buffer
+//       in Bex.c.held (the held tail).  Capture the gap, reset Bex (held cleared, cursor kept), then re-supply
+//        s2,s3,s4 — exactly what the sender's un-acked emits retransmit.  The kept cursor admits s2 as last+1 and
+//         drains in order: every seq dispatched EXACTLY once, the cleared tail re-supplied, the already-delivered
+//          s1 NOT re-dispatched.  This braid FOUND the reset bug (reset kept c.inseq.buffered while dropping
+//           c.held → the re-supplied tail drained ghost slots and was lost); the fix clears buffered with held.
+//            All synchronous, so witnessed at step 50.
+async Lake_storm_redial_arm(w) {
+    w.i({reached: "step_50"})
+    let [AdaPier, BexPier] = await this.Lake_link(w, 'ada', 'bex')
+    let Bexport = this.Lake_port(BexPier)
+    Bexport.reliable = false
+    BexPier.i({Ud: 1, pubkey: 'ada'})
+    this.Peeroleum_on(w, 'test_sredial', (cw, pier, frame) => { pier.c.sr_counts = pier.c.sr_counts || {}; let k = frame.header.seq; pier.c.sr_counts[k] = (pier.c.sr_counts[k] || 0) + 1 })
+    let s1 = this.Pier_next_seq(AdaPier)
+    let s2 = this.Pier_next_seq(AdaPier)
+    let s3 = this.Pier_next_seq(AdaPier)
+    let s4 = this.Pier_next_seq(AdaPier)
+    AdaPier.c.sr_seqs = [s1, s2, s3, s4]
+    let mk = (s) => { return {header: {type: 'test_sredial', from: 'ada', to: 'bex', seq: s}} }
+    await this.Peeroleum_deliver(w, mk(s1))     // cursor → s1
+    await this.Peeroleum_deliver(w, mk(s3))     // s2 MISSING → gap-buffer
+    await this.Peeroleum_deliver(w, mk(s4))     // gap-buffer
+    BexPier.c.sr_held_before = (BexPier.c.held && Object.keys(BexPier.c.held).length) || 0
+    this.Peeroleum_reset_handshake(BexPier)     // the re-dial: clears held + buffered, KEEPS %Ud + cursor.last
+    BexPier.c.sr_held_after = (BexPier.c.held && Object.keys(BexPier.c.held).length) || 0
+    await this.Peeroleum_deliver(w, mk(s2))     // retx re-supplies the dropped/cleared frames; cursor admits in order
+    await this.Peeroleum_deliver(w, mk(s3))
+    await this.Peeroleum_deliver(w, mk(s4))
+
+},
 // Lake_witness — the readable assertions, polled each pass.  Navigates through w:PereStaple by node name
 //  (Lake_pier/Lake_peering).  Each stamp is structural + idempotent; the step rides in the VALUE
 //   (`step` is the Story mainkey, so it can't be a key).
@@ -648,6 +793,54 @@ Lake_witness(w) {
     let tomculled = tominbox && tominbox.o({recent:1})[0]?.o({type:'test_cull'})[0]
     let tomonce = TomPier2 && TomPier2.c.cull_count === 1
     if (tomculled && tomonce && !(w.oa({witnessed: "dedup_cull"}))) w.i({witnessed: "dedup_cull"})
+    // step 40 (storm): drop+dup+gap on one stream, every seq dispatched EXACTLY once in order.  Four readings:
+    //  the adversary swallowed a transit (dropped) AND duped a seq (duped) — the storm provably happened; the
+    //   receiver's inseq.last reached the LAST seq (everything drained, in order); and each of the four seqs'
+    //    handler ran exactly once (no loss left a hole, no dup leaked a double).
+    let QuePier2 = this.Lake_pier(w, 'que')
+    let RosPier2 = this.Lake_pier(w, 'ros')
+    let stormdropped = !!(QuePier2 && QuePier2.c.lossy && QuePier2.c.lossy.dropped.length)
+    let stormduped = !!(QuePier2 && QuePier2.c.lossy && QuePier2.c.lossy.duped && QuePier2.c.lossy.duped.length)
+    let stormseqs = QuePier2 && QuePier2.c.storm_seqs
+    let stormcounts = RosPier2 && RosPier2.c.storm_counts
+    let stormdrained = !!(RosPier2 && RosPier2.c.inseq && stormseqs && RosPier2.c.inseq.last >= stormseqs[stormseqs.length - 1])
+    let stormonce = !!(stormcounts && stormseqs && stormseqs.every(s => stormcounts[s] === 1))
+    if (stormdropped && stormduped && stormdrained && stormonce && !(w.oa({witnessed: "storm"}))) w.i({witnessed: "storm"})
+    // step 44 (corrupt_stream): the corrupt s2 faulted (bad-body-hash) but did not wedge the stream — inseq.last
+    //  advanced past it to the good s3, and only s1+s3 dispatched (s2 never reached the handler, its count absent).
+    let XanPier2 = this.Lake_pier(w, 'xan')
+    let WynPier2 = this.Lake_pier(w, 'wyn')
+    let xanfaulty = XanPier2 && XanPier2.o({faulty:1})[0]
+    let xanfaulterr = xanfaulty && xanfaulty.o({unemit:1})[0]?.sc.error
+    let cs = WynPier2 && WynPier2.c.cstream_seqs
+    let csc = XanPier2 && XanPier2.c.cstream_counts
+    let csdrained = !!(XanPier2 && XanPier2.c.inseq && cs && XanPier2.c.inseq.last >= cs[2])
+    let csgood = !!(csc && cs && csc[cs[0]] === 1 && csc[cs[2]] === 1 && csc[cs[1]] == null)
+    if (xanfaulterr === 'bad-body-hash' && csdrained && csgood && !(w.oa({witnessed: "corrupt_stream"}))) w.i({witnessed: "corrupt_stream"})
+    // step 46/48 (rededup): a re-dial (reset_handshake) KEPT %Ud + c.inseq, so replaying the OLD frame after the
+    //  reset was caught by the surviving cursor (seq ≤ last) — rededup_count stayed 1, no second dispatch.  The
+    //   re-dial did not re-open the replay window.  Gated on the replay actually having run.
+    let YulPier2 = this.Lake_pier(w, 'yul')
+    let ZoePier2 = this.Lake_pier(w, 'zoe')
+    let rdseq = YulPier2 && YulPier2.c.rededup_seq
+    let rdreplayed = ZoePier2 && ZoePier2.c.rededup_replayed
+    let rdud = ZoePier2 && ZoePier2.oa({Ud:1})
+    let rdcursor = !!(ZoePier2 && ZoePier2.c.inseq && rdseq != null && ZoePier2.c.inseq.last >= rdseq)
+    let rdonce = ZoePier2 && ZoePier2.c.rededup_count === 1
+    if (rdreplayed && rdud && rdcursor && rdonce && !(w.oa({witnessed: "rededup"}))) w.i({witnessed: "rededup"})
+    // step 50 (storm_redial): a re-dial mid-gap CLEARED Bex's held tail (sr_held_before >= 2 proves the buffer was
+    //  holding s3,s4 when reset hit; sr_held_after === 0 proves the reset emptied it), yet the stream RECOVERED —
+    //   the re-supplied tail (what retx re-sends) was admitted by the KEPT cursor, inseq.last reached the last seq,
+    //    every seq dispatched exactly once.  The reset cost no data only because buffered was cleared WITH held.
+    let AdaPier2 = this.Lake_pier(w, 'ada')
+    let BexPier2 = this.Lake_pier(w, 'bex')
+    let srseqs = AdaPier2 && AdaPier2.c.sr_seqs
+    let srheld = BexPier2 && BexPier2.c.sr_held_before
+    let srcleared = BexPier2 && BexPier2.c.sr_held_after === 0
+    let srcounts = BexPier2 && BexPier2.c.sr_counts
+    let srrecovered = !!(BexPier2 && BexPier2.c.inseq && srseqs && BexPier2.c.inseq.last >= srseqs[srseqs.length - 1])
+    let srallonce = !!(srcounts && srseqs && srseqs.every(s => srcounts[s] === 1))
+    if (srheld >= 2 && srcleared && srrecovered && srallonce && !(w.oa({witnessed: "storm_redial"}))) w.i({witnessed: "storm_redial"})
 
 },
 // Lake_order — keep the Run snap readable: float the peer world A:PereStaple to the front of H/*

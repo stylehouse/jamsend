@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted
-  Funkcion:dirlist,interval_ms=8000,walked_at=1782383251634
+  Funkcion:dirlist,interval_ms=8000,walked_at=1782393617713
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -115,4 +115,4 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted
     Doc:src/lib/O/LiesRun.svelte,name:LiesRun,noticed_at=1782360711895
   open_dir:Ghost/M
   group:Ghost/M,dir:Ghost/M
-    Doc:Ghost/M/Radiola.g,name:Radiola,noticed_at=1782383251634
+    Doc:Ghost/M/Radiola.g,name:Radiola,noticed_at=1782393617713
