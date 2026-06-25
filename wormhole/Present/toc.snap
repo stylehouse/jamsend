@@ -15,10 +15,9 @@ Library
       TimeTotal:beliefs,avg=0.081
         sample=0.077,at=1781080326
         sample=0.085,at=1781607913
-  Book:LakeTiles,ok_pct=0,last_pct_change=1780029934.789,done=5,last_run_ms=1781976378.299,active
+  Book:LakeTiles,ok_pct=0.22,last_pct_change=1780029934.789,done=9,last_run_ms=1782357972.679
     TimeSpool
-      TimeTotal:beliefs,avg=1.336
-        sample=1.13,at=1781888162
+      TimeTotal:beliefs,avg=1.399
         sample=1.264,at=1781888237
         sample=1.54,at=1781897126
         sample=1.29,at=1781944332
@@ -28,6 +27,7 @@ Library
         sample=1.714,at=1781972343
         sample=1.037,at=1781972804
         sample=1.908,at=1781976378
+        sample=1.759,at=1782357974
   Book:LakeSurfer,ok_pct=0,last_pct_change=1779607681.571,done=2,last_run_ms=1781888821.61
     TimeSpool
       TimeTotal:beliefs,avg=0.8
@@ -271,3 +271,4 @@ Library
         sample=0.006,at=1781880468
         sample=0.008,at=1781997747
         sample=0.012,at=1782126246
+  Book:PereTyrant,active,ok_pct=0,done=3,last_run_ms=1782357977.238

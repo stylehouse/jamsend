@@ -143,7 +143,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     import LiesHold         from "./LiesHold.svelte"
     import LiesCortex       from "./LiesCortex.svelte"
     import LiesLies         from "./LiesLies.svelte"
-    import LiesWaft         from "./LiesWaft.svelte"
+    import LiesFunk         from "./LiesFunk.svelte"
 
     let { M } = $props()
 
@@ -1121,4 +1121,4 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 <LiesStore {M} />
 <LiesHold {M} />
 <LiesCortex {M} />
-<LiesWaft {M} />
+<LiesFunk {M} />

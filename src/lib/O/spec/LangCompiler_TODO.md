@@ -9,7 +9,7 @@ Open compile-side work + the durable authoring rules. The IOing *reduction* (dri
 ### Imports — `IMPORT()` with `$lib/…`, never relative
 Reach a TS module via the `IMPORT()` header pseudo-method, always with the absolute `$lib`
  alias — never a relative path. The gen `.go` lands at two depths (runner `gen/N/*.go`, editor
-  frozen `p2p/pinned_staging/*.go`), and only a `$lib` alias resolves identically from both. Keep
+  frozen `p2p/pinned_stable/*.go`), and only a `$lib` alias resolves identically from both. Keep
    shared primitives that a node side also needs (e.g. `cluster_trust.ts`, so `relay.ts` can
     import it) in their own TS module and `IMPORT` them — a `.go` is a browser Svelte component,
      not a home for node-side or duplicated code. `RENDER()` is the tail twin (`<Child {H} />`).

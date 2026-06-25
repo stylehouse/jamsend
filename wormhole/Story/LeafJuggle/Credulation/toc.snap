@@ -1,17 +1,11 @@
-Credulation,of_Book:PereStaple
-  run=0,at=1782359265.718,ok=0,ok_pct=0.36,mode:check
+Credulation,of_Book:LeafJuggle
+  run=0,at=1782359231.913,ok=0,ok_pct=0,mode:check
     uses:Ghost_N_Peeroleum,dige:d0f210c645771724
     uses:Ghost_N_Reliable,dige:b282dca8b1abe0c9
     uses:Ghost_N_Tribunal,dige:683d031e368194c6
     uses:Ghost_Story_Peregrination,dige:37f14459a466665d
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
-  run,at=1782359292.646,ok=0,ok_pct=0.36,mode:check
-    uses:Ghost_N_Peeroleum,dige:d0f210c645771724
-    uses:Ghost_N_Reliable,dige:b282dca8b1abe0c9
-    uses:Ghost_N_Tribunal,dige:683d031e368194c6
-    uses:Ghost_Story_Peregrination,dige:37f14459a466665d
-    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
-  run=2,at=1782359303.499,ok,ok_pct,mode:check
+  run,at=1782359232.474,ok=0,ok_pct=0,mode:check
     uses:Ghost_N_Peeroleum,dige:d0f210c645771724
     uses:Ghost_N_Reliable,dige:b282dca8b1abe0c9
     uses:Ghost_N_Tribunal,dige:683d031e368194c6

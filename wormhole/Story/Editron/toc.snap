@@ -7,9 +7,7 @@ story:Editron
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=1.416
-      sample=1.893,at=1782303349
-      sample=1.364,at=1782305319
+    TimeTotal:beliefs,avg=1.355
       sample=1.22,at=1782308499
       sample=1.054,at=1782308724
       sample=2.86,at=1782310361
@@ -18,9 +16,9 @@ story:Editron
       sample=0.64,at=1782350921
       sample=1.474,at=1782351864
       sample=1.721,at=1782354162
-    TimeTotal:step,avg=1.416
-      sample=1.893,at=1782303349
-      sample=1.364,at=1782305319
+      sample=2.134,at=1782356533
+      sample=0.518,at=1782358613
+    TimeTotal:step,avg=1.355
       sample=1.22,at=1782308499
       sample=1.054,at=1782308724
       sample=2.86,at=1782310361
@@ -29,4 +27,6 @@ story:Editron
       sample=0.64,at=1782350921
       sample=1.474,at=1782351864
       sample=1.721,at=1782354162
+      sample=2.134,at=1782356533
+      sample=0.518,at=1782358613
   step,dige:5b8c2bf8a1eff285

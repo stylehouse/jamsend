@@ -120,8 +120,8 @@ ghost-compile-specific.
    (canonical trailing newline) so content-addressing actually agrees.
 4. **No standalone compiler** — `ghost-compile` is relay→**live editor** only. You cannot
    headless-verify a `.g`; you need an editor tab with the dock open.
-5. **Editor rides the FROZEN `pinned_staging` spine** — `.g` edits reach the *runner* via
-   ghost-compile; the *editor* only after `cp gen/N → pinned_staging`. So `Tribunal.g` edits (the
+5. **Editor rides the FROZEN `pinned_stable` spine** — `.g` edits reach the *runner* via
+   ghost-compile; the *editor* only after `cp gen/N → pinned_stable`. So `Tribunal.g` edits (the
    carrier `note()` etc.) need a recompile + promote to go live in the editor.
 6. **Ghost-method edits may not HMR onto the live House** — `LiesLies`/`LangCompiling` are eatfunc'd
    onto a persistent House at construction; Svelte HMR can swap the component without re-mixing the

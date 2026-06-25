@@ -45,7 +45,7 @@
     //  gen .go) onto H so the runner runs the editor's CURRENT code.  Grouped + ordered like
     //   Ghost.svelte's O/* mount list — extend it by adding a line (easier than building a way
     //    for the editor to flush the set to its runners live; the runner owns its own MO).
-    //     These TAKE OVER from the frozen p2p/pinned_staging/*.go, which is now only the EDITOR's
+    //     These TAKE OVER from the frozen p2p/pinned_stable/*.go, which is now only the EDITOR's
     //      bootstrap — the editor can't ride the spine it's editing, but the runner can and
     //       should.  The runner's channel flaps on each push; fine, the runner re-runs anyway.
     const CREDULER_GHOSTS = [
@@ -276,14 +276,14 @@
             //  Peeroleum.go we're actively editing: importing gen/N/Peeroleum.go put it in the
             //   editor's module graph, so every compile HMR-reloaded the channel out from under
             //    itself (the "channel down / re-establishing" flap, and the settle stalls behind it).
-            //   p2p/pinned_staging/*.go are a deliberate frozen copy of the working spine+carriers: the
+            //   p2p/pinned_stable/*.go are a deliberate frozen copy of the working spine+carriers: the
             //    editor's channel rides this stable copy and never reloads.  The RUNNER dogfoods the
             //     LIVE spine (CREDULER_GHOSTS loads gen/N/*.go), so it tests current code; only the
             //      editor stays frozen, because it can't ride the spine it's actively editing.  To
-            //       promote a new spine into the EDITOR's channel, re-copy gen/N/ → p2p/pinned_staging/ by
+            //       promote a new spine into the EDITOR's channel, re-copy gen/N/ → p2p/pinned_stable/ by
             //        hand (now: ghost-compile the spine .g so the editor writes gen/N/*.go, then cp).
             const uis = H.oai_enroll(H, { watched: 'UIs' })
-            for (const gen of ['p2p/pinned_staging/Peeroleum.go', 'p2p/pinned_staging/Tribunal.go']) {
+            for (const gen of ['p2p/pinned_stable/Peeroleum.go', 'p2p/pinned_stable/Tribunal.go']) {
                 if (uis.oa({ UI: 'Pantheate-include', gen_path: gen })) continue   // already mounted
                 const module = await import(/* @vite-ignore */ `../../lib/${gen}`)
                 uis.oai({ UI: 'Pantheate-include', gen_path: gen }, { component: module.default })
@@ -605,6 +605,7 @@
                 const primary = demands[0]
                 H.Lies_drive_run(w, primary.path)
                 w.c.awaiting_verdict = { path: primary.path, dige: primary.dige }
+                H.Lies_runner_begin(w, primary.path)   // durable run-record (rungo twin of become_book)
                 H.Lies_runner_phase(w, 'story_begun', { path: primary.path, seq })   // blip: Run kicked
                 H.tlog(`▶ rungo seq=${seq} FIRES @ ${demands.map(d => String(d.dige).slice(0, 8)).join('+')} — ${demands.map(d => d.path).join(', ')} (all ${demands.length} live)`)
                 ;(req.c.up as TheC).finish(req)

@@ -1,11 +1,11 @@
 Credulate,of_Book:LakeTiles
-  GhostInclude:Ghost_N_Peeroleum,dige:db5bb6bfa755444a
+  GhostInclude:Ghost_N_Peeroleum,dige:d0f210c645771724
   GhostInclude:Ghost_N_Reliable,dige:b282dca8b1abe0c9
   GhostInclude:Ghost_N_Tribunal,dige:683d031e368194c6
   GhostInclude:Ghost_Story_Peregrination,dige:37f14459a466665d
   GhostInclude:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
-  last_ok,at=1782354354.865,ok_pct
-    uses:Ghost_N_Peeroleum,dige:db5bb6bfa755444a
+  last_ok,at=1782357232.451,ok_pct
+    uses:Ghost_N_Peeroleum,dige:d0f210c645771724
     uses:Ghost_N_Reliable,dige:b282dca8b1abe0c9
     uses:Ghost_N_Tribunal,dige:683d031e368194c6
     uses:Ghost_Story_Peregrination,dige:37f14459a466665d

@@ -62,12 +62,12 @@ All edited regions typecheck clean (the residual `Lies_channel_live`/eatfunc "no
    other; liveness just decays.  The only existing partial is `Lies_heartbeat`'s >20s force-reconnect
     watchdog.  Real fix is transport-spine work — see bomb 3.
 
-3. **`pinned_staging/` is the frozen spine — reliability work lands THERE, not in O/*.**  The host
-   renamed `p2p/transport/` → **`p2p/pinned_staging/`** (`Peeroleum.go`, `Tribunal.go`) this session.
+3. **`pinned_stable/` is the frozen spine — reliability work lands THERE, not in O/*.**  The host
+   renamed `p2p/transport/` → **`p2p/pinned_stable/`** (`Peeroleum.go`, `Tribunal.go`) this session.
     The editor compiles the spine but imports these *frozen* copies so editing it doesn't HMR its own
-     channel (Editron.md §3; promote with `cp gen/N/*.go → pinned_staging/`).  Anything that becomes
+     channel (Editron.md §3; promote with `cp gen/N/*.go → pinned_stable/`).  Anything that becomes
       transport behaviour — new ping/reconnect frames, server-down probing that rides the spine —
-       eventually ships as `pinned_staging/Peero*.go`.  **Prototype monitoring/UI in `O/*`** (where all
+       eventually ships as `pinned_stable/Peero*.go`.  **Prototype monitoring/UI in `O/*`** (where all
         the Lens/Runner/Aim work lives — plain ghost modules, live HMR); only graduate to the spine
          when the editor must run it without HMR-reloading the channel.
 

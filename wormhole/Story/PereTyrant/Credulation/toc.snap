@@ -1,6 +1,7 @@
 Credulation,of_Book:PereTyrant
-  run=0,at=1782305588.114,ok,ok_pct,mode:check
-    uses:Ghost_N_Peeroleum,dige:0268875eea0d929c
+  run=0,at=1782358781.809,ok,ok_pct,mode:check
+    uses:Ghost_N_Peeroleum,dige:d0f210c645771724
+    uses:Ghost_N_Reliable,dige:b282dca8b1abe0c9
     uses:Ghost_N_Tribunal,dige:683d031e368194c6
-    uses:Ghost_Story_Peregrination,dige:cbcb91135c98b814
+    uses:Ghost_Story_Peregrination,dige:37f14459a466665d
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a

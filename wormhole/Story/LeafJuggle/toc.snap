@@ -31,8 +31,7 @@ story:LeafJuggle
     For
     useCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.121
-      sample=0.149,at=1778414018
+    TimeTotal:beliefs,avg=0.113
       sample=0.116,at=1779063044
       sample=0.157,at=1779622774
       sample=0.102,at=1781080187
@@ -42,10 +41,12 @@ story:LeafJuggle
       sample=0.111,at=1781946981
       sample=0.103,at=1781947511
       sample=0.103,at=1781947531
+      sample=0.069,at=1782359229
     TimeTotal:step,avg=0.005
       sample=0.006,at=1781946981
       sample=0.005,at=1781947511
       sample=0.005,at=1781947531
+      sample=0.004,at=1782359229
   step,dige:8680104b4a50971e
   step=2,dige:f43c222f04298ad2
   step=3,dige:9f51ff7a4aa6f48f

@@ -6,7 +6,7 @@
     //   never stopping for an !ok — the Credulation sweep (Editron §5f).  Unlike Ballistics
     //    (a struck action that fires once), the sweep must be DRIVEN: the runner is a single
     //     sequential Story Run, so the station chains become_book→run_result, advancing on each
-    //      verdict.  That driving lives where the channel methods live (LiesWaft,
+    //      verdict.  That driving lives where the channel methods live (LiesFunk,
     //       Lies_storytimes_drive); this shim is the pumped tick — it climbs to the House and
     //        hands off.  Registered as a kind WITH a run, so Lies_instantiate_funkcions binds it
     //         and the central Funkcions pump ticks it every beat (idle until struck).

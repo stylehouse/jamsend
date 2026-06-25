@@ -101,6 +101,34 @@ source, compile-verified, with regen/refreeze HELD** so it doesn't disturb the l
             `%dead`→`%faulty`/liveness (via `blackhole`), spine-liveness + Tribunal fallback.
 The PINNED carrier `last_heard` stamp (`Peeroleum_deliver`, every frame incl. **acks** — closes the watchdog's
  ack-blindness) rides the next re-pin.
+- **inseq COLD-START baseline (LANDED by another agent, `Peeroleum.go @ d0f210c645771724`, reload-to-activate).**
+   The bug inseq always had: it assumes a stream FROM seq 1, with no notion of a receiver joining mid-flight. Reload
+    only the runner (its `pier.c.inseq` resets to `{last:0}`) while the editor keeps climbing (`Pier_next_seq`=569) →
+     `inseq_admit` reads 569 as a gap above `last+1` and **gap-buffers every app-frame forever** (`become_book` RECV'd,
+      `Lies_become_book_recv` never fires, runner idle). It HID because ack/ping/pong/run_phase bypass inseq
+       (`Peeroleum_deliver` early-returns), so the carrier looked perfectly live while every booked frame drowned.
+   Fix (at the deliver SEED, `Peeroleum.g:321`, NOT in `inseq_admit` — so the adversarial Reliable Story + the step-8
+    heal both untouched, they start at seq 1): `if (pier.c.inseq.last === 0 && seq > 1) { inseq = {last: seq-1,
+     buffered: []}; pier.c.held = {} }` — a cold cursor adopts the peer's position, self-heals a poisoned cursor, drops
+      stale held. Safe because the real ws is in-order (no genuine sub-baseline frame to lose).
+- **The layering (my review of that fix — the receiver-side of the heading-8 reset the `Peeroleum.g:308` note flags):**
+   keep all three rungs.
+   1. **Floor (have it):** lazy baseline-adoption at the deliver seed. Keep permanently — the self-healing net even
+       after a handshake exists.
+   2. **Middle (small, NEXT):** PROACTIVE reset — clear `pier.c.inseq` + `pier.c.held` in `Lies_channel_up` (the
+       reconnect lifecycle event), not inferred from a frame. Wipes the cursor BEFORE any frame, killing the race below.
+   3. **Full (heading-8):** sender-authoritative reconnect handshake — the sender announces its `Pier_next_seq`; the
+       receiver adopts the SENDER's position, sender re-sends from there. Baseline from the authority, not arrival order.
+- **Latent hole in the floor alone** (why rung 3 is the real home): lazy adoption takes its baseline from whichever
+   frame ARRIVES FIRST, which races retransmit. If on reconnect the sender emits a NEW high frame before re-sending an
+    un-acked older one, the receiver adopts the high baseline and the older retransmit arrives `seq ≤ last` → **re-ack
+     only, never booked** (`Peeroleum.g:326`): the runner acks it (sender stops retrying) but never processes it —
+      silent payload loss. Benign on a quiet in-order reload; real once retransmit/reorder are live.
+- **Make the wedge LOUD (the most valuable follow-up — observability).** This bug was invisible because liveness rides
+   the ephemeral frames that bypass inseq, so the 3-state watchdog sees a LIVE carrier while the consumer starves. Add a
+    cheap **held-too-long alarm**: `pier.c.held` non-empty (or the `last`→first-held gap) persisting across K sweeps →
+     surface it (relay_log / Relay Brink) and optionally trigger the reset. Double duty: the observability the wedge
+      needed AND the trigger that drives the resync before rung 3 exists. (Offered to build rung 2 + this alarm; parked.)
 
 > **Doctrine (human, this session): `.g` is the home; the `.ts`+spec+`FlockCompile` route is a STAGED layer.**
 >  A pure `.ts` primitive + headless spec (and `FlockCompile`, which compiles in-memory and does NOT write the
@@ -423,8 +451,8 @@ a tweaked hello-sign. Spec §4.2, §15.
       non-OPEN `peerLink` counts as down — closed and re-dialed on the next runner browser (re)connect. The
        heartbeat round also **keepalive-pings the outbound `peerLink`** itself now (was `wss.clients`-only), so a
         half-open outbound bridge is terminated+nulled proactively, not only on the next browser reconnect.
-  - **Editor needs the re-freeze**: it runs the FROZEN `p2p/pinned_staging/*.go`, so reconnect only reaches it after
-     `cp src/lib/gen/N/*.go src/lib/p2p/pinned_staging/` (done this session). A runner-only fix leaves the editor's
+  - **Editor needs the re-freeze**: it runs the FROZEN `p2p/pinned_stable/*.go`, so reconnect only reaches it after
+     `cp src/lib/gen/N/*.go src/lib/p2p/pinned_stable/` (done this session). A runner-only fix leaves the editor's
       socket dead — the channel needs BOTH ends reconnecting. Browser-unverified; confirm two-origin on :9091/:9092.
 
 ### 9/10 — transport trial: webrtc → websocket fallback (mocked)  `[~]`  PROVEN in-app thru step 5

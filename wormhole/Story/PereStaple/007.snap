@@ -1,7 +1,7 @@
 Snap:H
   H:PereStaple,Run
     A:Alice
-      self,round=13	{"mung":["age"]}
+      self,round=12	{"mung":["age"]}
       w:Peeroleum
         Peering,name:alice
           Pier,pub:bob,req=2,ok
@@ -10,8 +10,8 @@ Snap:H
                 emit,type:noop,seq
                 emit=2,type:hello,seq=2
                 emit=3,type:trust,seq=3
+                emit=4,type:noop,seq=4
                 emit=5,type:noop,seq=5
-              emit=4,type:noop,seq=4,sent
               emit=6,type:test_binary,seq=6,sent,body_hash:39e3d7b6b5d075d37d053ad89b24b41bef4f3c29760c84447cab3f3be1882241,body_len=64,acked
             req:handshake,finished
               req:said_hello,maz=4,finished
@@ -33,13 +33,13 @@ Snap:H
           req:p2paddy,ok
         transport,type:mock
         active_transport,type:websocket,open
-        self,round=13	{"mung":["age"]}
+        self,round=12	{"mung":["age"]}
         seemingly:ya aooooolly,figaro:Squelchbury
         transport,type:webrtc,faulty,reason:no-ack
         transport,type:websocket
           reputation:good
     A:Bob
-      self,round=13	{"mung":["age"]}
+      self,round=12	{"mung":["age"]}
       w:Peeroleum
         Peering,name:bob
           Pier,pub:alice,req=2,ok
@@ -48,6 +48,7 @@ Snap:H
                 unemit,type:noop,seq
                 unemit=2,type:hello,seq=2
                 unemit=3,type:trust,seq=3
+                unemit=4,type:noop,seq=4
                 unemit=5,type:noop,seq=5
               req:unemit,seq=6,type:test_binary,body_hash:39e3d7b6b5d075d37d053ad89b24b41bef4f3c29760c84447cab3f3be1882241,body_len=64,done,to:test_binary,finished
             req:handshake,finished
@@ -71,15 +72,15 @@ Snap:H
           req:p2paddy,ok
         transport,type:mock
         active_transport,type:websocket,open
-        self,round=13	{"mung":["age"]}
+        self,round=12	{"mung":["age"]}
         seemingly:ya aooooolly,figaro:Squelchbury
         transport,type:webrtc,faulty,reason:no-ack
         transport,type:websocket
           reputation:good
     A:PereStaple
-      self,round=15	{"mung":["age"]}
+      self,round=14	{"mung":["age"]}
       w:PereStaple
-        self,round=15	{"mung":["age"]}
+        self,round=14	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         reached:step_3

@@ -1,5 +1,6 @@
 <script lang="ts">
-// LiesWaft.svelte — the dynamic web on Waft**.
+// LiesFunk.svelte — the dynamic web on Waft** (was LiesWaft; "Waft" the name now
+//   belongs to the document model in Lies.svelte, not this Funkcion-host runtime).
 //
 //   A Waft is the editable web; the live, interactive stuff that rides ON it —
 //   the Funkcions (monitor cells and action drum-pads), the Waft address space
@@ -592,11 +593,12 @@ await M.eatfunc({
             return true
         },
 
-        // Lies_become_book_drive — stash the awaiting_verdict{book} (so the finish reports a
-        //  verdict for this Book) and resetStory onto it.
+        // Lies_become_book_drive — open the durable run-record (Lies_runner_begin), stash the
+        //  awaiting_verdict{book} (so the finish reports a verdict for this Book), and resetStory onto it.
         Lies_become_book_drive(w: TheC, book: string) {
             const H = this as House
             w.c.awaiting_verdict = { book }
+            H.Lies_runner_begin(w, book)   // open the durable run-record (the become_book twin of rungo)
             H.top_House().i_elvisto('Auto/Auto', 'resetStory', { Book: book })
             H.Lies_runner_phase(w, 'story_begun', { book })   // blip: Run kicked (Book sweep / cell click)
             H.tlog(`🎬 become_book drive → ${book}`)
@@ -624,10 +626,43 @@ await M.eatfunc({
         //      anywhere a run progresses (Story stepping included).
         Lies_runner_phase(w: TheC, phase: string, extra?: { n?: number, total?: number, secs?: number, book?: string, path?: string, seq?: number }) {
             const H = this as House
+            // write the step's feedback THROUGH onto the durable run-record first — role-agnostic, so
+            //  the snap (and any client) reads live progress even with the channel down or on a bare
+            //   dev Lies.  The record is the durable sink; the channel blip below is the live echo.
+            H.Lies_runner_track(w, phase, extra)
             if (!H.Lies_is_runner(w)) return
             const pier = (w.o({ Peering: 1 })[0] as TheC | undefined)?.o({ Pier: 1 })[0] as TheC | undefined
             if (!pier || !H.Lies_channel_live(w)) return
             ;(H as any).Peeroleum_send_consumer(w, 'run_phase', { phase, ...extra })
+        },
+
+        // Lies_runner_begin — open a fresh durable run-record (Storyrun:<ident>) for a run the runner
+        //  is about to drive: the runner-side noun a rungo (ident = dock path) or become_book (ident =
+        //   Book) produces, on-snap beside req:Cortex.  Phase walks begun → stepping (n/total fill in
+        //    as steps land) → done|failed.  One run at a time (v1 is sequential), so it drops any prior
+        //     record first.  This is the durable CLIENT that holds each step's feedback — not the
+        //      fire-and-forget blip the under-designed rungo/become_book pair shipped before.
+        Lies_runner_begin(w: TheC, ident: string) {
+            for (const old of w.o({ Storyrun: 1 }) as TheC[]) w.drop(old)
+            w.i({ Storyrun: ident, phase: 'begun', at: Date.now() })
+        },
+
+        // Lies_runner_track — fold a transient progress blip onto the durable Storyrun record (the
+        //  runner-side noun a rungo / become_book produces; opened by Lies_runner_begin).  Maps the
+        //   blip arc onto a settled phase + n/total so a client reads "running PereStaple, 4/9"
+        //    straight off the snap.  No-op when no record is up (a stray blip).
+        //   rungo_ack/story_begun → begun; step_done/step_stall → stepping; all_done → all_done
+        //    (the verdict stamp in Lies_runner_verdict lands the final done|failed right behind it).
+        Lies_runner_track(w: TheC, phase: string, extra?: { n?: number, total?: number }) {
+            const sr = w.o({ Storyrun: 1 })[0] as TheC | undefined
+            if (!sr) return
+            sr.sc.phase = phase === 'step_done' || phase === 'step_stall' ? 'stepping'
+                        : phase === 'all_done'                            ? 'all_done'
+                        : phase === 'rungo_ack' || phase === 'story_begun' ? 'begun'
+                        : phase
+            if (extra?.n     != null) sr.sc.n     = extra.n
+            if (extra?.total != null) sr.sc.total = extra.total
+            sr.bump_version()
         },
 
         // Lies_runner_verdict — the REAL verdict, sent from storyFinished on a runner.  The run
@@ -647,6 +682,15 @@ await M.eatfunc({
             // all_done precedes the real run_result: the steps are in, the verdict is one frame
             //  behind.  Carries the final n/total so the panel lands on a complete count.
             H.Lies_runner_phase(w, 'all_done', { n: outcome.done, total: outcome.done, book: book ?? aw.book, path: aw.path })
+            // land the run-record done — phase done|failed wins over the all_done the blip just wrote,
+            //  so `Lies%runner/Storyrun` shows the completed verdict, not a frozen 'stepping'.
+            const sr = w.o({ Storyrun: 1 })[0] as TheC | undefined
+            if (sr) {
+                sr.sc.phase = outcome.ok ? 'done' : 'failed'
+                sr.sc.done  = outcome.done
+                if (outcome.caveat) sr.sc.caveat = outcome.caveat
+                sr.bump_version()
+            }
             // a Rungo run carries a {path,dige}; a become-Book run carries {book} only.  Either
             //  way the report carries the Book (storyFinished's bname), so a Book cell can match.
             //   caveat rides along (§10): forgiven steps are green but tagged "passed, N forgiven".

@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return 'db5bb6bfa755444a' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return 'd0f210c645771724' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -345,6 +345,14 @@ async Peeroleum_deliver(w, frame) {
         H.Peeroleum_book_unemit(inbox, w, pier, frame); await inbox.do(); H.feebly_ponder(); return
     }
     pier.c.inseq = pier.c.inseq || {last: 0, buffered: []}
+    // Cold cursor (last:0 — nothing ever delivered) but the peer is mid-stream → ADOPT its position as
+    //  our baseline. A reloaded peer joins the far side's stream mid-flight: the far Pier_next_seq never
+    //   reset (only WE reloaded), so its next say is seq=569, not 1. A {last:0} cursor reads that as a
+    //    gap above last+1 and gap-buffers EVERY frame forever (the "become_book RECV'd but runner does
+    //     nothing" wedge). Re-baseline to seq-1 so this first arrival is contiguous and we stream on;
+    //      drop any frames already gap-held (stale — they predate the baseline we just adopted). Real
+    //       transport is in-order, so there is no genuine sub-baseline frame lost by doing this.
+    if (pier.c.inseq.last === 0 && seq > 1) { pier.c.inseq = {last: seq - 1, buffered: []}; pier.c.held = {} }
     let ready = this.inseq_admit(pier.c.inseq, seq)
     if (!ready.length) {
         // delivered-dup (seq ≤ last) → re-ack only, never re-book (a 2nd hear_trust/dock_push is the

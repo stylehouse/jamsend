@@ -124,10 +124,10 @@ The runner does NOT compile or include inside its Story Run; it **acquires** wha
 
 **Transport freeze (editor only).** The editor can't ride the spine it's editing: editing `Peeroleum.g`
  would HMR-reload its own transport. So the editor bootstraps off a **frozen** copy at
-  `src/lib/p2p/pinned_staging/*.go`; `Lies_transport_up` is EDITOR-ONLY (`role!=='editor'` bails). The editor
+  `src/lib/p2p/pinned_stable/*.go`; `Lies_transport_up` is EDITOR-ONLY (`role!=='editor'` bails). The editor
    *compiles* `gen/N/Peeroleum.go` but never *imports* it, so editing it HMRs nothing in the editor's Vite
     graph. **Promote a new spine into the editor's channel by hand:** `ghost-compile` the spine `.g`
-     (the editor writes `gen/N/*.go`) then `cp gen/N/*.go → src/lib/p2p/pinned_staging/`. The frozen copies
+     (the editor writes `gen/N/*.go`) then `cp gen/N/*.go → src/lib/p2p/pinned_stable/`. The frozen copies
       are deliberately stale until you do.
 
 ## 4. The Funkcion board — Credence reads verdicts back
@@ -196,7 +196,7 @@ The runner does NOT compile or include inside its Story Run; it **acquires** wha
 - **Snapped booleans = `1` or absent, never `false`/`0`** (CLAUDE.md policy). Prefer delete over 0; a C method
    (`r()`/`roai` replace) over a raw `delete n.sc.key`.
 - **The editor compiles the spine but never imports it** — the freeze (§3) insulates it. Promote a new spine by
-   `cp gen/N/*.go → p2p/pinned_staging/`; the frozen copies are deliberately stale until you do.
+   `cp gen/N/*.go → p2p/pinned_stable/`; the frozen copies are deliberately stale until you do.
 - **`relay.ts` is Node server code** — a direct import of `vite.config.ts`, so Vite **auto-restarts** the dev
    server on edit. If `✍ gen_write` never appears after a compile, it didn't restart — `touch vite.config.ts`.
 - **`mode` is editor-local.** `run_arm{mode}` doesn't cross; the runner runs `in_place`. To wire `from_start`
