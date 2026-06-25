@@ -72,13 +72,14 @@ source, compile-verified, with regen/refreeze HELD** so it doesn't disturb the l
        keep for dormant test scaffolding — it's now just the bottom region here (the human: "Lossy could just be
         a region"). In `CREDULER_GHOSTS` + Net/Easy; **gen ghost-compiled live** (`gen/N/Reliable.go`). The
          adversary stays dormant (no caller) until an adversarial Story (heading 6) hands a port through it.
-- **inseq is WIRED + live.** `Peeroleum_deliver` folds every inbound inbox frame through a per-Pier `pier.c.inseq`
-   cursor (`this.inseq_admit`) BEFORE booking: contiguous → `Peeroleum_book_unemit`+drain (clean mock = 1,2,3…
-    pass-through, PereStaple/PereTyrant unaffected); delivered-dup (`seq ≤ last`) → re-ack only (lost-ack recovery,
-     never re-dispatch — `last` persists on `.c`, catches a seq re-sent after its `%req:unemit` culled to `%recent`);
-      gap/buffered-dup → hold the raw frame off-snap on `pier.c.held`, NO ack (unverified till dispatch). `Peeroleum.g`
-       + `Reliable.go` ghost-compiled & live; **behaviour-through-the-wire :9091-owed.** **< a protocol reset (heading 8)
-        rewinding `Pier_next_seq` must also clear `pier.c.inseq`/`held`.**
+- **inseq is WIRED + live, and now TRANSPORT-GATED (engages only on a lossy carrier).** `Peeroleum_deliver` first
+   reads the receiving carrier's `connection.reliable` (default true via `conn?.reliable !== false`): a reliable+ordered
+    carrier (the ws relay, the clean mock) **books STRAIGHT and skips inseq entirely** — it already delivers in order,
+     exactly once, so the gate would be pure redundancy (and the redundancy was the bug — see the gating note below).
+      On a `reliable:false` carrier (the adversary mock today, the webrtc datachannel tomorrow) it folds the frame through
+       `this.inseq_admit` BEFORE booking: contiguous → `Peeroleum_book_unemit`+drain; delivered-dup (`seq ≤ last`) → re-ack
+        only (never re-dispatch); gap/buffered-dup → hold off-snap on `pier.c.held`, NO ack, and now a `console.warn` (a
+         hold is LOUD, never silent). `Peeroleum.g` + `Reliable.go` ghost-compiled & live.
 - **retransmit WIRED (this session; ghost-compiled live, DORMANT-safe, active path :9091-owed).** `Peeroleum_send`
    stashes `emit.c.frame`/`sent_tick`/`attempts`; `Peeroleum_retx_sweep(w)` rides the `Peeroleum_arm_whittle`
     Runstepped boundary BEFORE the cull — advances a per-w logical tick `w.c.retx_tick`, asks `retx_due` which
@@ -101,34 +102,28 @@ source, compile-verified, with regen/refreeze HELD** so it doesn't disturb the l
             `%dead`→`%faulty`/liveness (via `blackhole`), spine-liveness + Tribunal fallback.
 The PINNED carrier `last_heard` stamp (`Peeroleum_deliver`, every frame incl. **acks** — closes the watchdog's
  ack-blindness) rides the next re-pin.
-- **inseq COLD-START baseline (LANDED by another agent, `Peeroleum.go @ d0f210c645771724`, reload-to-activate).**
-   The bug inseq always had: it assumes a stream FROM seq 1, with no notion of a receiver joining mid-flight. Reload
-    only the runner (its `pier.c.inseq` resets to `{last:0}`) while the editor keeps climbing (`Pier_next_seq`=569) →
-     `inseq_admit` reads 569 as a gap above `last+1` and **gap-buffers every app-frame forever** (`become_book` RECV'd,
-      `Lies_become_book_recv` never fires, runner idle). It HID because ack/ping/pong/run_phase bypass inseq
-       (`Peeroleum_deliver` early-returns), so the carrier looked perfectly live while every booked frame drowned.
-   Fix (at the deliver SEED, `Peeroleum.g:321`, NOT in `inseq_admit` — so the adversarial Reliable Story + the step-8
-    heal both untouched, they start at seq 1): `if (pier.c.inseq.last === 0 && seq > 1) { inseq = {last: seq-1,
-     buffered: []}; pier.c.held = {} }` — a cold cursor adopts the peer's position, self-heals a poisoned cursor, drops
-      stale held. Safe because the real ws is in-order (no genuine sub-baseline frame to lose).
-- **The layering (my review of that fix — the receiver-side of the heading-8 reset the `Peeroleum.g:308` note flags):**
-   keep all three rungs.
-   1. **Floor (have it):** lazy baseline-adoption at the deliver seed. Keep permanently — the self-healing net even
-       after a handshake exists.
-   2. **Middle (small, NEXT):** PROACTIVE reset — clear `pier.c.inseq` + `pier.c.held` in `Lies_channel_up` (the
-       reconnect lifecycle event), not inferred from a frame. Wipes the cursor BEFORE any frame, killing the race below.
-   3. **Full (heading-8):** sender-authoritative reconnect handshake — the sender announces its `Pier_next_seq`; the
-       receiver adopts the SENDER's position, sender re-sends from there. Baseline from the authority, not arrival order.
-- **Latent hole in the floor alone** (why rung 3 is the real home): lazy adoption takes its baseline from whichever
-   frame ARRIVES FIRST, which races retransmit. If on reconnect the sender emits a NEW high frame before re-sending an
-    un-acked older one, the receiver adopts the high baseline and the older retransmit arrives `seq ≤ last` → **re-ack
-     only, never booked** (`Peeroleum.g:326`): the runner acks it (sender stops retrying) but never processes it —
-      silent payload loss. Benign on a quiet in-order reload; real once retransmit/reorder are live.
-- **Make the wedge LOUD (the most valuable follow-up — observability).** This bug was invisible because liveness rides
-   the ephemeral frames that bypass inseq, so the 3-state watchdog sees a LIVE carrier while the consumer starves. Add a
-    cheap **held-too-long alarm**: `pier.c.held` non-empty (or the `last`→first-held gap) persisting across K sweeps →
-     surface it (relay_log / Relay Brink) and optionally trigger the reset. Double duty: the observability the wedge
-      needed AND the trigger that drives the resync before rung 3 exists. (Offered to build rung 2 + this alarm; parked.)
+- **TRANSPORT-GATING LANDED — the editor↔runner FIX (2026-06-25, ghost-compiled live `Peeroleum.go @ d1930fee`).**
+   ROOT DEFECT (other agent, confirmed in code): `Peeroleum_send_consumer` (`Peeroleum.g:203`) allocates a `Pier_next_seq`
+    for EVERY consumer frame — including the ephemerals (ping/pong/run_phase) that `Peeroleum_deliver` routes to handlers
+     BEFORE the inseq gate. So each ephemeral burns a seq the receiver never books → inseq reads a PHANTOM gap → the next
+      booked frame gap-buffers forever; the 5s keepalive guarantees a hole between any two = **"only the first `rungo`
+       lands"** (broken direction editor→runner: the pinned editor seqs its ephemerals, the live runner holds). FIX = the
+        gate (above): a reliable+ordered carrier bypasses inseq, so the redundant ordering layer can no longer invent a
+         gap. RECEIVER-SIDE → fixes the pinned-editor direction without un-fossilizing. Correct LAYERING, not a hack —
+          inseq/retransmit are the healing layer for an UNRELIABLE transport; the live ws path just never reaches them.
+   (Promoting live → `pinned_stable` would NOT fix it: both ends would gain inseq → symmetric wedge.)
+- **Reverted the cold-start baseline** (was the `last===0 && seq>1` re-baseline at the deliver seed): dead weight under
+   gating — that reload wedge lived on the reliable relay, which no longer sequences, so the deliver site is clean algebra
+    again. The real lossy-reconnect resync (and reconnect-replay dedup on a reliable carrier) is the **epoch handshake
+     (heading 8)** — sender announces its `Pier_next_seq`, receiver adopts it — done properly then, not a band-aid now.
+- **A held frame is now LOUD** (`console.warn` on every gap-hold) — DONE, not a follow-up. The wedge hid because liveness
+   rides the ephemerals that bypass inseq, so the watchdog saw a LIVE carrier while the consumer starved; now a hold (only
+    legitimate on a lossy carrier) screams. **< DEFERRED:** the epoch handshake (above), and mark the webrtc datachannel
+     `reliable:false` when it goes live. The larger deterministic reconnect/carrier-swap game belongs AFTER the epoch
+      exists to make it determinate — not before.
+- **SIDE EFFECT to re-snap:** the clean Alice/Bob mock now bypasses inseq too, so the step 5–7 trial-probe coupling
+   (the websocket probe gap-buffering behind the lost webrtc one) DISSOLVES — those steps revert to clean. **Re-record
+    steps 5–11** on the next `:9091` run.
 
 > **Doctrine (human, this session): `.g` is the home; the `.ts`+spec+`FlockCompile` route is a STAGED layer.**
 >  A pure `.ts` primitive + headless spec (and `FlockCompile`, which compiles in-memory and does NOT write the

@@ -6,9 +6,9 @@ story:Editron
         esc:path,v:Credence
   Opt
     For
+    trickle
   TimeSpool
-    TimeTotal:beliefs,avg=1.355
-      sample=1.22,at=1782308499
+    TimeTotal:beliefs,avg=1.279
       sample=1.054,at=1782308724
       sample=2.86,at=1782310361
       sample=1.082,at=1782348978
@@ -18,8 +18,8 @@ story:Editron
       sample=1.721,at=1782354162
       sample=2.134,at=1782356533
       sample=0.518,at=1782358613
-    TimeTotal:step,avg=1.355
-      sample=1.22,at=1782308499
+      sample=0.457,at=1782362460
+    TimeTotal:step,avg=1.279
       sample=1.054,at=1782308724
       sample=2.86,at=1782310361
       sample=1.082,at=1782348978
@@ -29,4 +29,5 @@ story:Editron
       sample=1.721,at=1782354162
       sample=2.134,at=1782356533
       sample=0.518,at=1782358613
+      sample=0.457,at=1782362460
   step,dige:5b8c2bf8a1eff285

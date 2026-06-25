@@ -224,8 +224,10 @@ transport(A,w):
     // the mock-port on at.c.connection: `send` posts the frame to the partner
     //  port; `recv` lands an inbound frame in this side's Pier inbox. `partner`
     //   starts null — the wrangler pairs the two ports after both sides exist.
+    //  reliable:true — in-process, ordered, exactly-once, so Peeroleum_deliver books
+    //   straight and skips inseq; a lossy test wraps this port and sets reliable:false.
     at.c.connection = {
-        type: 'mock', partner: null,
+        type: 'mock', partner: null, reliable: true,
         send(frame) { H.post_do(async () => { await this.partner?.recv(frame) }) },
         recv(frame) { return H.Peeroleum_deliver(w, frame) },
     }
@@ -302,23 +304,25 @@ async Peeroleum_deliver(w, frame):
     //     drains overlap, so no in-flight guard is needed. The inseq gate below decides WHICH frames book.
     let inbox = pier.oai({inbox: 1})
     inbox.c.up = pier   // do() climbs c.up to the House to resolve req_unemit; stamp the inbox→pier link
-    // ── inbound seq discipline (Reliable.g: inseq_admit) ──
-    // Real inbox frames carry the sender's per-Pier monotone seq (acks/ping/pong/run_phase returned
-    //  above). Clean mock = 1,2,3… contiguous → pass-through; a retransmit/reorder is where it earns its
-    //   keep. < a protocol reset (heading 8) rewinding Pier_next_seq must also clear pier.c.inseq/held.
+    // ── transport-gating: engage the seq discipline ONLY on a lossy carrier ──
+    // A reliable+ordered carrier (the ws relay, the clean mock) already delivers in order, exactly once,
+    //  so an ordering layer on top is redundant — and the redundancy is what bites. An ephemeral (ack/ping/
+    //   pong/run_phase, all returned above) still burns a Pier_next_seq on the sender, but the receiver never
+    //    books it, so inseq reads a PHANTOM gap and holds the next booked frame forever — the editor↔runner
+    //     "only the first rungo lands" wedge, which the 5s keepalive guarantees by punching a hole between any
+    //      two booked frames. So a reliable carrier books STRAIGHT, in arrival order. inseq + retransmit engage
+    //       only where the carrier is genuinely lossy (its connection sets reliable:false — today the adversary
+    //        mock, tomorrow the webrtc datachannel); the adversary IS that carrier, so the Story still drives
+    //         every line of Reliable.g. (Reconnect-replay dedup on a reliable carrier is the epoch handshake,
+    //          heading 8 — not a cold-start re-baseline smeared on the deliver site.)
+    let conn = w.o({active_transport:1})[0]?.c.connection
+    let reliable = conn?.reliable !== false   // default reliable; only an explicit false engages inseq
     let seq = Number(h.seq)
-    if (!Number.isFinite(seq)) {   // no seq (shouldn't happen) → book straight, never silently hold
+    if (reliable || !Number.isFinite(seq)) {   // reliable carrier, or a frame with no seq → book straight, never hold
         H.Peeroleum_book_unemit(inbox, w, pier, frame); await inbox.do(); H.feebly_ponder(); return
     }
+    // ── inbound seq discipline (Reliable.g: inseq_admit) — LOSSY carriers only ──
     pier.c.inseq = pier.c.inseq || {last: 0, buffered: []}
-    // Cold cursor (last:0 — nothing ever delivered) but the peer is mid-stream → ADOPT its position as
-    //  our baseline. A reloaded peer joins the far side's stream mid-flight: the far Pier_next_seq never
-    //   reset (only WE reloaded), so its next say is seq=569, not 1. A {last:0} cursor reads that as a
-    //    gap above last+1 and gap-buffers EVERY frame forever (the "become_book RECV'd but runner does
-    //     nothing" wedge). Re-baseline to seq-1 so this first arrival is contiguous and we stream on;
-    //      drop any frames already gap-held (stale — they predate the baseline we just adopted). Real
-    //       transport is in-order, so there is no genuine sub-baseline frame lost by doing this.
-    if (pier.c.inseq.last === 0 && seq > 1) { pier.c.inseq = {last: seq - 1, buffered: []}; pier.c.held = {} }
     let ready = this.inseq_admit(pier.c.inseq, seq)
     if (!ready.length) {
         // delivered-dup (seq ≤ last) → re-ack only, never re-book (a 2nd hear_trust/dock_push is the
@@ -329,6 +333,9 @@ async Peeroleum_deliver(w, frame):
         } else {
             pier.c.held = pier.c.held || {}
             pier.c.held[seq] = frame
+            // a hold must be LOUD, never silent: on a lossy carrier it is legitimate (retransmit will fill the
+            //  gap), but on anything else it is the wedge this whole gate exists to prevent — so it screams.
+            console.warn(`⚠ inseq HOLDING seq=${seq} type=${h.type} — gap above last=${pier.c.inseq.last} (need ${pier.c.inseq.last + 1}); legitimate only on a lossy carrier, else a wedge`)
         }
         H.feebly_ponder()
         return

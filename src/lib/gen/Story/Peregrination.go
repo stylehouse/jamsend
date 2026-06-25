@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Peregrination(): string { return '37f14459a466665d' },
+    Ghostmeta_Ghost_Story_Peregrination(): string { return '40050159d36b8446' },
 
 
 // PereStaple — the Peeroleum p2p test (the outer test layer), and the first of a
@@ -298,6 +298,9 @@ async Lake_heal_arm(w) {
     this.Peeroleum_arm_whittle(Jonw)
     let Ivyport = Ivyw.o({active_transport: 1})[0].c.connection
     let Jonport = Jonw.o({active_transport: 1})[0].c.connection
+    // declare this link LOSSY (reliable:false) so the seq discipline engages — the adversary is the only
+    //  live carrier that exercises Reliable.g's inseq, so it must opt OUT of the reliable-carrier bypass.
+    Ivyport.reliable = false; Jonport.reliable = false
     // the seq to drop, captured before the schedule so the adversary targets exactly this frame.
     let s = this.Pier_next_seq(IvyPier)
     IvyPier.c.heal_seq = s

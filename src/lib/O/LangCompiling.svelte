@@ -4,8 +4,8 @@
     // Lang.svelte joins features at a high level; the guts live here so that
     // translation can grow (Sunpit bodies, Se, Flug …) without Lang.svelte
     // turning into a mass of helpers.  Pantheate (the compiled-code receiver and
-    // runner) lives in LiesCortex — it's essential to the Cortex pipeline, not
-    // to compilation itself.
+    // runner) lives in LiesRun (the run pipeline, carved from LiesCortex) — it's
+    // downstream of the compile, not part of compilation itself.
     //
     // Deposits onto H via M.eatfunc():
     //

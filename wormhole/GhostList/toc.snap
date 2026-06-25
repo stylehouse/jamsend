@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted
-  Funkcion:dirlist,interval_ms=8000,walked_at=1782355239589
+  Funkcion:dirlist,interval_ms=8000,walked_at=1782360711895
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -107,3 +107,4 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted
     Doc:src/lib/O/peeroleum_retransmit.ts,name:peeroleum_retransmit,noticed_at=1782308496623
     Doc:src/lib/O/LiesHold.svelte,name:LiesHold,noticed_at=1782348976323
     Doc:src/lib/O/LiesFunk.svelte,name:LiesFunk,noticed_at=1782355239589
+    Doc:src/lib/O/LiesRun.svelte,name:LiesRun,noticed_at=1782360711895

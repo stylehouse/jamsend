@@ -272,6 +272,9 @@ async Lake_heal_arm(w):
     &Peeroleum_arm_whittle,Jonw
     Ivyw o active_transport$:Ivyport.c.connection
     Jonw o active_transport$:Jonport.c.connection
+    // declare this link LOSSY (reliable:false) so the seq discipline engages — the adversary is the only
+    //  live carrier that exercises Reliable.g's inseq, so it must opt OUT of the reliable-carrier bypass.
+    Ivyport.reliable = false; Jonport.reliable = false
     // the seq to drop, captured before the schedule so the adversary targets exactly this frame.
     let s = this.Pier_next_seq(IvyPier)
     IvyPier.c.heal_seq = s
