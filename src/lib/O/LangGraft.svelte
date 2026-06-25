@@ -133,7 +133,7 @@
         }
 
         // The cursor's doc must match the active CM dock.
-        // src_path comes from the live %What via Waft_src_doc_path (LiesEnd — the
+        // src_path comes from the live %What via Waft_src_doc_path (LiesHold — the
         // shared finder: descendant Doc in document order, else the c.Doc context
         // stamped by Waft_dip).  dock_path is dock.sc.dock; diverged → wipe and wait.
         const dock_path   = dock.sc.dock as string | undefined
@@ -369,9 +369,9 @@
         for (const sub of container.o({ What: 1 }) as TheC[]) this.Lang_walk_points(sub, visit)
     },
 
-    // Doc-from-src resolution lives in LiesEnd as Waft_src_doc_path — the old
+    // Doc-from-src resolution lives in LiesHold as Waft_src_doc_path — the old
     //   "each world keeps its own copy" stance let the copies drift (none of
-    //   them saw a Doc nested deeper than one level); LiesEnd is dual-mounted,
+    //   them saw a Doc nested deeper than one level); LiesHold is dual-mounted,
     //   so one body serves both worlds without reaching across.
 
     // ── Lang_point_spec ──────────────────────────────────────────────────

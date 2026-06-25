@@ -1,13 +1,13 @@
 <script lang="ts">
 //#region Understandication
-// Understandication.svelte — wandering integration test for LiesEnd.
+// Understandication.svelte — wandering integration test for LiesHold.
 //   A bigger fixture (two top-level Whats, each with a nested What) exercises
 //   the full lifecycle: checkout at different Whats, edits (add / delete /
 //   rename), push, and no-cross-contamination of U meanings between targets.
 //
 //   Exercises three new higher-level helpers defined here (LE_add_clone,
 //   LE_drop_clone, LE_accepted_clones) that belong on the LE API surface and
-//   will migrate into LiesEnd.svelte once proven.
+//   will migrate into LiesHold.svelte once proven.
 //
 //     1  arm at %What:routing, pull 4 children               (fixture coverage)
 //     2  re-pull unchanged — no-diff                          (stability)

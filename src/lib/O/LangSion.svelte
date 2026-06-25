@@ -352,7 +352,7 @@
     //   %Seem:origin   match_sc:{} wide, trace_sc:%Demonstrations,origin
     //                  → o one wide leg, the awareness walk (goners|neus)
     //   %Seem:working  a clone tree walked with use_Understandable
-    //                  → o the same shape, carrying its D/U sphere per LiesEnd
+    //                  → o the same shape, carrying its D/U sphere per LiesHold
     //
     // < trace_sc (the D-sphere tag) is not a match — it rides the walk, not the
     //   leg sc.  it returns on opt.trace so _io_plan stays match-only; a walker

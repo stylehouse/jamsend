@@ -140,7 +140,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     import Liesui           from "$lib/O/Liesui.svelte"
     import LiesCurse        from "$lib/O/LiesCurse.svelte"
     import LiesStore        from "./LiesStore.svelte"
-    import LiesEnd          from "./LiesEnd.svelte"
+    import LiesHold         from "./LiesHold.svelte"
     import LiesCortex       from "./LiesCortex.svelte"
     import LiesLies         from "./LiesLies.svelte"
     import LiesWaft         from "./LiesWaft.svelte"
@@ -1119,6 +1119,6 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 <LiesLies {M} />
 <LiesCurse {M} />
 <LiesStore {M} />
-<LiesEnd {M} />
+<LiesHold {M} />
 <LiesCortex {M} />
 <LiesWaft {M} />

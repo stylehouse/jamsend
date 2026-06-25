@@ -19,10 +19,6 @@ Waft:Trope/Lies/NormalEntropy,boring,dontSnap
       lematch,w:Lies
         lematch,Waft,takes
           means,spayer,re:Waft:Ting/{INT}-{INT}-{INT}/{INT}.takes,tol:any
-    Entcase:Change_compile-secs
-      lematch,Change
-        lematch,compile,dige,secs,dim,pending
-          means,spayer,re:secs={NUM},tol:band,factor=0.52,slack=0.07
     Entcase:Lies_log-source-write
       lematch,w:Lies
         lematch,log:source_write
@@ -31,3 +27,7 @@ Waft:Trope/Lies/NormalEntropy,boring,dontSnap
       lematch,Compile
         lematch,time,compile,all,write
           {"means":1,"spayer":1,"re":"time,compile={NUM},all={NUM}(?:,write={NUM})?","tol":"band","factor":2.53,"slack":0.5}
+    Entcase:Change_compile-secs
+      lematch,Change
+        lematch,compile,dige,secs,dim,pending
+          means,spayer,re:secs={NUM},tol:band,factor=0.52,slack=0.2

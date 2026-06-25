@@ -35,6 +35,15 @@ Waft:Ghost/Net/Easy,active
         Point,method:Lake_trial_arm
         Point,method:Lake_trial_fallback
         Point,method:Lake_trial_confirm
+  What:healing
+    Doc:Ghost/N/Reliable.g
+    Point,method:inseq_admit
+    Point,method:retx_due
+    Point,method:retx_delay
+    What:the adversary
+      Doc:Ghost/N/Lossy.g
+      Point,method:lossy_decide
+      Point,method:make_lossy_partner
   What:Security
     Doc:Ghost/N/Tyrant.g
     Point,method:Run_A_PereTyrant

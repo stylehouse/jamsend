@@ -1,5 +1,15 @@
 <script lang="ts">
-// LiesEnd.svelte — the Understanding housing (two-Seem model).
+// LiesHold.svelte — the Understanding hold (was LiesEnd; the two-Seem model).
+//
+//   The whole live-editable model lives here now: the Seem primitives, the LE
+//   lifecycle, the push cluster — AND the per-tick convergence driver req:workon
+//   with its understanding | ingredients | furnishing | instrumentation stages,
+//   pulled in from Lang.svelte so the clone machinery and its driver are one file
+//   (Lang keeps only the language + its CM lifecycle; it still SEEDS req:workon in
+//    Lang_plan — only the do_fns moved, resolved by name out of the one H.* table).
+//   The three top regions (entry → req:workon → foreground) are the moved-in
+//   driver; everything below (operate/mark, Seem, LE_*, encoding, navigation) is
+//   the original LiesEnd housing.
 //
 //   Lies commissions Lang to look at an area of the Waft/%What** graph; an
 //   Understanding (U) is a bounded checkout of one %What's /%Point extent.
@@ -30,6 +40,539 @@ let { M } = $props()
 onMount(async () => {
 await M.eatfunc({
 
+//#region entry — the cursor seam
+    // ── e:Lang_workon_update ────────────────────────────────────────────
+    //
+    //   Fired by Lies_i_Spotlight on every cursor move.  Stashes the new src
+    //   on workon.c.src and pokes a think — the workon driver converges from there.
+    //   All checkout | furnish | graft | encode logic lives in the workon stages.
+    //
+    //   < design direction: replace with e:operate{LE,op:'pull',src} so cursor
+    //     moves and LE resync share one event.  A pull on an already-armed src
+    //     is a cheap noop in req:understanding (armed_src identity check), so the
+    //     extra specificity of this dedicated handler buys little.
+    //
+    //   e.sc: { src: TheC }
+    async e_Lang_workon_update(A: TheC, w: TheC, e: TheC) {
+        const H      = this as House
+        const src    = e.sc.src as TheC | undefined
+        if (!src) return
+        const workon = w.o({ req: 'workon' })[0] as TheC | undefined
+        if (!workon) return
+        workon.c.src = src
+        H.i_elvisto(w, 'think')
+    },
+
+//#endregion
+
+//#region req:workon — the per-tick convergence driver
+    // ── req_workon — the thin per-tick driver ─────────────────────────
+    //
+    //   do_fn for req:workon.  Holds no work itself: it computes each stage's
+    //   input signature, roai's any stage whose signature drifted (which
+    //   un-finishes the %permanent stage with a fresh lease), then pumps the
+    //   stage pipeline once.  Invalidation cascades forward through the keys —
+    //   understanding sets %Interest, which is ingredients' key; ingredients
+    //   settles the active dock, which feeds instrumentation's key — so no stage
+    //   ever reaches forward to wake another.  The driver does one uniform
+    //   compare-and-wake; the stages do the work, off live state, when woken.
+    //
+    //   A signature is a short string on stage%sig.  maybe_mutate_sc fires its
+    //   %mutated (and the %permanent un-finish) only when sig actually changes,
+    //   so a settled tick re-drives nothing — every stage sits finished.
+    async req_workon(req: TheC) {
+        const H      = this as House
+        const workon = req
+        const w      = H.upto_w(req)
+        const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
+        const LE     = H.Lang_active_LE(languinio)   // the foreground giver's LE, undefined until first checkout
+
+        // understanding — re-arm + flush whenever src, the working tree, or origin
+        //   drift moves.  src identity rides as a stable serial bumped on change;
+        //   the LE flush keys (working.version, U_serial, origin_dirty) ride too,
+        //   so an e:mark edit or an origin mutation wakes the same stage.
+        //   roai (not reqyoncile) carries the sig: it routes through maybe_mutate_sc,
+        //   which un-finishes a quiescent %permanent stage on a real sig change and
+        //   no-ops when unchanged — reqyoncile bails on already-finished reqs.
+        const src        = workon.c.src as TheC | undefined
+        const wv         = LE?.o({ Seem: 'working' })[0]?.version ?? 0
+        const u_serial   = (LE?.c.U_serial as number | undefined) ?? 0
+        const od         = LE?.c.origin_dirty ? 1 : 0
+        const src_serial = H.Lang_src_serial(workon, src)   // bumps on every What move
+        const u_sig      = `${src_serial}:${wv}:${u_serial}:${od}`
+        await workon.oai({ req: 'understanding' }, { sig: u_sig })
+
+        // ingredients — the wanted-%Doc set.  want_doc derives DIRECTLY from the
+        //   live src via Waft_src_doc_path — the same resolution Lang_set_interest
+        //   publishes onto %Interest/in_Doc, but computed here from the source of
+        //   truth.  Reading %Interest instead lagged one tick: these sigs are
+        //   built before understanding (which updates Interest) runs in this same
+        //   pump, so a doc move keyed the stages stale and the new doc only loaded
+        //   on the NEXT tick — visible as "poised until one more trickle".
+        //   in_Doc is the only field that changes which %Goods we want; a
+        //   Point-only move within the same Doc leaves it untouched, so the dock
+        //   isn't re-fetched.
+        const want_doc = src ? H.Waft_src_doc_path(src) : undefined
+        const g_sig    = want_doc ?? ''
+        await workon.oai({ req: 'ingredients' }, { sig: g_sig })
+
+        // instrumentation — the doc the CURSOR wants (want_doc above), its content
+        //   dige, the cursor identity, and the Understanding's own version.  Keying
+        //   on the wanted doc rather than the foregrounded one is what lets a hop
+        //   back to an already-furnished doc re-run the stage and re-point the active
+        //   dock — the furnish/open path only ever activated a doc once.  Compile keys
+        //   on dige; graft keys on the working clone, so the stage re-runs on any
+        //   cursor move (a different What, even on the SAME Doc → different Points)
+        //   and on in-What working edits.  src_serial catches the cross-What-same-Doc
+        //   move; LE.version is bumped by LE_arm (re-aim) and e_LE_mark (in-What edit),
+        //   so it subsumes the in-What case the old wv term missed (a clone-root
+        //   child-add never bumps the Seem's wv).  The wanted dock's content_dige
+        //   rides along so a not-yet-furnished doc re-wakes us the moment its content
+        //   lands — no waiting ttlilt of instrumentation's own.  The graft's own
+        //   fingerprint then decides whether to actually rebuild — a redundant wake
+        //   is a cheap no-op.
+        const want_dock = want_doc
+            ? (w.o({ docks: 1 })[0]?.o({ dock: want_doc })[0] as TheC | undefined)
+            : undefined
+        // The %Compile version closes a gap content_dige misses: a parser switch (a
+        //  language change → recompile) rebuilds %Map from the SAME text, so content_dige
+        //   is unchanged and instrumentation would skip — leaving Navicade/MapReport built
+        //    from the prior parser's (e.g. empty stho-on-markdown) Map.  job.empty() bumps
+        //     the job each recompile, so this term re-runs the graft/report/Mapulen build
+        //      against the fresh Map.
+        const compile_v = want_dock?.o({ Compile: 1 })[0]?.version ?? 0
+        const n_sig  = `${want_doc ?? ''}:${(want_dock?.c.content_dige as string | undefined) ?? ''}:${src_serial}:${LE?.version ?? 0}:${compile_v}`
+        await workon.oai({ req: 'instrumentation' }, { sig: n_sig })
+
+        // pump the pipeline — maz orders understanding → ingredients → instrumentation.
+        await workon.do()
+
+        // trail decay — the Undertaking's Funkcion re-runs each trickle so the trail
+        //   brightness cools over time, not only when a tap lands.  Cheap + defensive:
+        //   a no-op until the Undertaking LE and its Funkcion exist (first tap), and
+        //   wrapped so a trail hiccup never breaks the per-tick driver.
+        try {
+            const undertaking = H.LE_for('Undertaking')
+            if (undertaking) await H.LE_host_funkcion(undertaking)
+        } catch (e) { console.warn('🫧 trail decay skipped', e) }
+    },
+
+    // ── Lang_src_serial — stable per-src identity for the understanding sig ────
+    //   src is a TheC; we want a sig token that changes only when the cursored
+    //   src object changes.  Stash the last src on workon.c and bump a counter on
+    //   identity change — cheaper and snap-clean versus stringifying the src.
+    Lang_src_serial(workon: TheC, src: TheC | undefined): number {
+        if (workon.c.last_src !== src) {
+            workon.c.last_src    = src
+            workon.c.src_serial  = ((workon.c.src_serial as number | undefined) ?? 0) + 1
+        }
+        return (workon.c.src_serial as number | undefined) ?? 0
+    },
+
+    // ── req_understanding — the %Waft|%LE boundary stage ─────────────────────
+    //
+    //   %permanent; woken by the driver when src, the working tree, or origin
+    //   drift moves.  Owns checkout (re-arm the Understanding on src change) and
+    //   the two-direction flush (origin drift → re-pull; working drift → push).
+    //   Sets %Interest (c.What, in_Doc, in_Point) — the C-side address the rest
+    //   of the pipeline keys off.  Touches no dock and no compile index, so it
+    //   converges independently of editor readiness.
+    async req_understanding(req: TheC) {
+        const H      = this as House
+        const workon = req.c.up as TheC         // understanding.c.up = workon (the host)
+        const w      = H.upto_w(req)
+        const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
+        const want   = workon?.c.src as TheC | undefined
+
+        // checkout — the cursor moved to a (possibly different) giver's What.
+        if (want && req.c.armed_src !== want) {
+            // Foreground that giver: find|create its Trail and its OWN %LE (per-Interest),
+            //  set %ActiveInterest, stash languinio.c.active_LE.  Returns the giver's LE.
+            const LE = H.Lang_set_interest(w, want)
+            // Arm ONLY a never-armed-here LE.  Switching back to a giver we already edited
+            //  reuses its preserved working clone — the dual-LE crossfade: no re-pull, the
+            //   in-flight Seem:working drift survives the switch.  (LE_arm drops the Seems.)
+            //  A fresh LE has no working clone until LE_pull mints it, so re-bind afterward
+            //   to publish interest.sc.src off the new clone root (set_interest read it empty).
+            if (LE && LE.sc.target !== want) {
+                H.LE_arm(LE, want)
+                await H.LE_pull(LE)
+                H.Lang_set_interest(w, want)
+            }
+            req.c.armed_src       = want
+            req.c.last_encode_key = undefined   // re-encode the now-active LE below
+            req.sc.what           = (want.sc as any).What ?? (want.sc as any).path ?? '?'
+            console.log(`🔗 understanding checkout: ${req.sc.what}`)
+        }
+        if (!req.c.armed_src) { workon.finish(req); return }   // nothing cursored yet
+        const armed = req.c.armed_src as TheC
+        const LE    = H.Lang_active_LE(languinio)
+        if (!LE) { workon.finish(req); return }                // no foreground Understanding yet
+
+        // origin drift — the Waft OC moved under us (e:Lies_waft_mutated stamped
+        //   LE.c.origin_dirty).  Re-pull origin; if it touched our extent
+        //   (%State.stale) re-clone working off the new origin.  With autopush
+        //   on, working held no unflushed edits, so re-cloning loses nothing;
+        //   the editor's own edits already landed on the OC and arrive as the
+        //   new origin we re-clone from.
+        if (LE.c.origin_dirty) {
+            delete LE.c.origin_dirty
+            await H.LE_pull(LE)
+            if (LE.o({ State: 1 })[0]?.sc.stale) {
+                H.LE_arm(LE, armed)
+                await H.LE_pull(LE)
+                req.c.last_encode_key = undefined   // force the re-encode below
+            }
+            H.Lang_set_interest(w, armed)            // re-point %Interest at fresh clone
+        }
+
+        // encode — gated on working.version + U_serial so enWaft is not called
+        //   every wake.  LE_encode_compare stamps %State.changey and bumps LE.version
+        //   on the edge so NaviCado's ~ bar wakes.
+        //   auto_push: when workon.sc.auto_push is set, working drift with stable origin
+        //   immediately pushes back to the Waft OC.  Off by default — edits are staged
+        //   for explicit push via the ~ bar.  The !stale guard remains so an origin edit
+        //   never gets clobbered by a now-superseded auto-push even when the flag is on.
+        const wv         = LE.o({ Seem: 'working' })[0]?.version
+        const u_serial   = (LE.c.U_serial as number | undefined) ?? 0
+        const encode_key = `${wv}:${u_serial}`
+        if (req.c.last_encode_key !== encode_key) {
+            const { dirty } = await H.LE_encode_compare(LE)   // stamps %State.changey
+            req.c.last_encode_key = encode_key
+            if (dirty && workon.sc.auto_push && !LE.o({ State: 1 })[0]?.sc.stale) {
+                await H.LE_push(LE)
+            }
+        }
+
+        workon.finish(req)   // converged for this signature; driver wakes on drift
+    },
+
+    // ── req_ingredients — the raw %Goods we need ─────────────────────────────
+    //
+    //   %permanent; woken when %Interest's in_Doc moves.  Ensures one
+    //   req:furnishing per wanted %Doc and drives them; finished when every
+    //   furnishing is.  MVP wants exactly the active What's %Doc; the structure
+    //   holds more, so a look-ahead furnishing further along the Waft trail drops
+    //   in here later with no instrumentation churn (in_Doc, not "ingredients
+    //   changed", is what keys instrumentation).
+    async req_ingredients(req: TheC) {
+        const H        = this as House
+        const w        = H.upto_w(req)
+        const workon   = req.c.up as TheC   // ingredients → workon (the host, for unify)
+        // want derives from the live src (workon.c.src is this stage's parent's
+        //   cursor hold), same as the driver's sig — NOT from %Interest, which
+        //   only refreshes when understanding re-runs and so can trail a Waft
+        //   edit (a Doc added to the cursored What) by a tick.
+        const src      = workon?.c.src as TheC | undefined
+        const want_doc = src ? H.Waft_src_doc_path(src) : undefined
+
+        // a title-page %What with no %Doc needs no dock — nothing to furnish.
+        if (!want_doc) { workon.finish(req); return }
+
+        // ensure a furnishing for each wanted path; MVP set is just want_doc.
+        //   furnishings are %req children of THIS req (ingredients is their host).
+        //   drop furnishings whose path is no longer wanted (path moved on) —
+        //   and clear the furnish spinner they may have left spinning; the fresh
+        //   furnishing re-sets it if the new dock also needs loading.
+        for (const f of req.o({ req: 'furnishing' }) as TheC[]) {
+            if (f.sc.path !== want_doc) {
+                req.drop(f)
+                H.Langspinner(w, 'furnish', true)
+            }
+        }
+        await req.oai({ req: 'furnishing', path: want_doc, permanent: 1 })
+
+        await req.do()
+        // unify: finished when every furnishing is — settle ingredients under workon.
+        if (req.all_finished() && !req.sc.finished) workon.finish(req)
+    },
+
+    // ── req_furnishing — bring one dock %Good into being ─────────────────────
+    //
+    //   %permanent; pure gate + ttlilt + pull-trigger.  Never carries content:
+    //   the dock is minted solely by e_Lang_dock_content (the one content-writer).
+    //   This req only asks (dock_askies, the pull half) and reports furnished.
+    //
+    //   do_fn:  dock present with current content?  → drop ttlilt, finish
+    //           else not asked yet → i_elvisto dock_askies%path ; arm ttlilt
+    //           else still waiting (ttlilt holds Story awake; speculative push or
+    //             pull will land via e_Lang_dock_content, which reqyoncile's us)
+    //
+    //   The %Good arriving (push or pull) de-finishes us via the dock_content
+    //   handler; on a later inotify re-land it would wake us again — the dock as a
+    //   standing push|pull boundary.
+    async req_furnishing(req: TheC) {
+        const H        = this as House
+        const w        = H.upto_w(req)   // furnishing → ingredients → workon
+        const ingredients = req.c.up as TheC   // the host that settles this furnishing
+        const path = req.sc.path as string
+        if (!path) { ingredients.finish(req); return }
+
+        const dock = w.o({ docks: 1 })[0]?.o({ dock: path })[0] as TheC | undefined
+        if (dock && dock.c.content_dige !== undefined) {
+            H.Langspinner(w, 'furnish', true)   // dock landed — loading is over
+            ingredients.finish(req)   // finish() drops the waiting:dock ttlilt — no dangler
+            return
+        }
+
+        // dock loading — the spinner Liesui|DocMinimap show while content is in
+        //   flight; cleared above when the %Good lands (or by ingredients when the
+        //   cursor moves on and this furnishing is dropped).
+        H.Langspinner(w, 'furnish')
+
+        // not furnished — ask once (pull), then hold on a ttlilt.  The ask is
+        //   idempotent against the speculative push: both land on the one %Good.
+        if (!req.sc.asked) {
+            req.sc.asked = 1
+            H.i_elvisto('Lies/Lies', 'dock_askies', { path })
+        }
+        H.i_req_ttlilt(req, 2.5, { waiting: 'dock' })
+    },
+
+    // ── req_instrumentation — foreground + compile + graft the cursor's doc ───
+    //
+    //   %permanent; woken when the cursor's wanted doc, its content dige, the
+    //   cursor identity, or the Understanding version moves.  Owns the ONE place a
+    //   cursor move re-points the active dock — reading it from %Interest/in_Doc
+    //   rather than letting it ride the furnish/open side-effect, which only ever
+    //   activated a doc once and so left a hop back to an already-furnished doc
+    //   stuck on the old one (the minimap painting the wrong Points).
+    //
+    //   Then the things-we-build-on-the-dock: the compile %Map index and the
+    //   grafted %Pmirrors.  Holds convergence-markers only — the index and Pmirrors
+    //   live on the dock — so de-finishing loses nothing; it re-checks and no-ops
+    //   when the dock is already current at this dige.
+    async req_instrumentation(req: TheC) {
+        const H        = this as House
+        const w        = H.upto_w(req)
+        const workon   = req.c.up as TheC   // instrumentation → workon (the host)
+        // want derives from the live src, like ingredients above — %Interest is
+        //   the published address for UI readers, not the pipeline key.
+        const src       = workon?.c.src as TheC | undefined
+        const want      = src ? H.Waft_src_doc_path(src) : undefined
+        const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
+        if (!want) {
+            // docless What — a title page.  Wipe the previously foregrounded
+            //   dock's Pmirrors (drops graft marks, clears decorations, unfolds —
+            //   Lang_wipe_pmirrors) and stamp %Languinio sc.no_doc so Langui
+            //   blanks the editor behind the no-doc shell.  Also drop a grafted
+            //   spinner a prior What's methods-wait may have left spinning.
+            const prev = H.Lang_active_dock(w)
+            if (prev) await H.Lang_wipe_pmirrors(prev)
+            if (languinio && !languinio.sc.no_doc) {
+                languinio.sc.no_doc = 1
+                languinio.bump_version()
+            }
+            H.Langspinner(w, 'grafted', true)
+            workon.finish(req)
+            return
+        }
+
+        const dock = w.o({ docks: 1 })[0]?.o({ dock: want })[0] as TheC | undefined
+        if (!dock || dock.c.content_dige === undefined) {
+            // ingredients is still furnishing the wanted dock.  Finish — the
+            //   content_dige term in our sig (req_workon) re-wakes us the instant
+            //   e_Lang_dock_content lands it, so no waiting ttlilt of our own.
+            //   (furnish, not grafted, is the spinner for this window; no_doc
+            //   stays as-is so a title page keeps its blank while loading.)
+            H.Langspinner(w, 'grafted', true)
+            workon.finish(req)
+            return
+        }
+
+        // a doc is wanted and furnished — the editor shows it; lift the blank.
+        if (languinio?.sc.no_doc) {
+            delete languinio.sc.no_doc
+            languinio.bump_version()
+        }
+
+        // foreground the doc the cursor wants.  e_Lies_active_doc_changed early-
+        //   returns while the cursor sits on a %What, so this drives no feedback.
+        if (w.c.active_dock_path !== want) await H.Lang_set_active_dock(w, want)
+
+        // compile — Languish builds %Compile/%Map; the graft needs the index.
+        //   compile_error is terminal — fall through so graft mints unresolved
+        //   Pmirrors the minimap can surface; otherwise hold for the index.
+        //   The grafted spinner (DocMinimap's gold ⟳) spins across this hold —
+        //   set here, cleared on finish; when methods are already in, set+clear
+        //   land within one tick and the UI correctly never sees it.
+        const job = dock.o({ Compile: 1 })[0] as TheC | undefined
+        const err = dock.oa({ compile_error: 1 }) || job?.oa({ compile_error: 1 })
+        req.sc.have_Map = job?.oa({ Map: 1 }) ? 1 : 0
+        if (!req.sc.have_Map && !err) {
+            // Wait for the index ONLY for a doc that will actually produce one — a
+            //  compilable .g (Lies_gen_path) or a points-only dock (.md/.ts/.svelte,
+            //  Lang_points_only) whose soft compile builds a %Map of regions/defs.  A
+            //  doc that is neither produces no %Map, so the methods never arrive; the old
+            //  unconditional ttlilt then spun the grafted spinner forever (a ttlilt is a
+            //  one-shot snap-timing advisor, not a keep-alive — on timeout nothing
+            //  re-fires).  Switching between Aside Whats holding such docs hit exactly
+            //  this.  (Gate on will-produce-a-Map, not job presence, so a dock whose
+            //  compile job hasn't parked yet still waits rather than finishing un-grafted.)
+            if (H.Lies_gen_path(want) || H.Lang_points_only(want)) {
+                H.Langspinner(w, 'grafted')
+                H.i_req_ttlilt(req, 3.0, { waiting: 'methods' })
+                return
+            }
+            // Non-compilable doc — nothing to graft, nothing coming: clear this doc's
+            //  Pmirrors, drop the spinner, and finish (mirrors the branches above).
+            await H.Lang_wipe_pmirrors(dock)
+            req.sc.n_pmirrors = 0
+            H.Langspinner(w, 'grafted', true)
+            workon.finish(req)
+            return
+        }
+        // the waiting:methods ttlilt is dropped by the workon.finish below (finish()
+        //  clears all ttlilts on the req) — we always finish in this same pass once
+        //   methods are ready, so no separate drop is needed.
+
+        // graft — self-caching via dock.c.graft_cache_key; cheap every wake.
+        await H.Lang_graft_points_once(w, dock)
+        req.sc.n_pmirrors =
+            (dock.o({ Pmirrors: 1 })[0]?.o({ Pmirror: 1 }) as TheC[] ?? []).length
+
+        // settle %Compile/%Map into %Interest/%MapReport for the minimap —
+        // content-gated, so an edit that recompiles to the same structure leaves
+        // the report (and the minimap) untouched.
+        await H.Lang_Map_report(w, dock)
+
+        // build the generic overview layer next to %Compile — the minimap and the
+        // capsule strip navigate Mapulen, not %Map.  Rebuilt every compile so its
+        // goto offsets track the latest text.
+        H.Lang_build_mapules(w, dock)
+
+        H.Langspinner(w, 'grafted', true)
+        workon.finish(req)
+    },
+
+//#endregion
+
+//#region foreground — %Interest <-> %LE binding
+    // ── Lang_active_interest / Lang_active_LE — the foreground resolvers ───────
+    //
+    //   Each open giver now keeps its OWN Understanding (per-Interest %LE held on
+    //   interest.c.LE), so several {Interest:'Trail'} bear an LE at once — the
+    //   crossfade.  The foreground is the one %ActiveInterest names (kind + waft),
+    //   not "the first c.LE".  Lang_active_interest resolves that Interest; matching
+    //   on waft picks the right giver, then it falls back to any LE-bearing one,
+    //   then the first of its kind.
+    Lang_active_interest(languinio: TheC | undefined): TheC | undefined {
+        if (!languinio) return undefined
+        const ai   = languinio.o({ ActiveInterest: 1 })[0] as TheC | undefined
+        const kind = ai?.sc.kind as string | undefined
+        const waft = ai?.sc.waft as string | undefined
+        if (!kind) return undefined
+        const pool = (languinio.o({ Interest: kind }) ?? []) as TheC[]
+        return (waft != null ? pool.find(t => t.sc.waft === waft) : undefined)
+            ?? pool.find(t => t.c.LE)
+            ?? pool[0]
+    },
+
+    // The %LE currently driving the editor.  Normally the foreground Interest's own
+    //  LE; a light or not-yet-armed foreground (GhostList, or a Sidetrack with no
+    //   clone of its own yet) leaves the last LE-bearing Trail driving, so fall back
+    //    to languinio.c.active_LE — the last LE Lang_set_interest bound (off-snap).
+    Lang_active_LE(languinio: TheC | undefined): TheC | undefined {
+        const it = this.Lang_active_interest(languinio)
+        return (it?.c.LE as TheC | undefined) ?? (languinio?.c.active_LE as TheC | undefined)
+    },
+
+    // ── Lang_set_interest — publish the C-side address ────────────────────────
+    //
+    //   %Interest,Trail mirrors Lies' %Spotlight on the Lang side.  Attached
+    //   NON-destructively onto the foreground Trail (sc.src overwritten each call,
+    //   so never stale) — preserving the roster-set lens/cursor/state.  c.LE is the
+    //   nav handle LangGraft reads;
+    //   sc.src is the clone root NaviCado reads; c.What is the live %What object;
+    //   in_Doc is ingredients' key and the active-dock selector; in_Point is the
+    //   focus spec.
+    Lang_set_interest(w: TheC, armed: TheC): TheC | undefined {
+        const H         = this as House
+        const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
+        if (!languinio) return undefined
+
+        // Multi-giver foreground arbitration (Waft_spec §"Presence").  With several
+        //  giver Wafts open there are several {Interest:'Trail'}; bind to the one whose
+        //   Waft we are actually checking out — matched by waft_key — so each giver
+        //    foregrounds its OWN Trail.  Fall back to a fresh checkout Trail awaiting
+        //     bind, then to a new Trail the roster binds to its giver next reconcile.
+        const waft_key = H.waft_key_of(armed)
+        // Stance-aware foreground: a stance-marked giver foregrounds its OWN Interest
+        //  row, not a parallel Trail.  Reading the armed What's Waft stance — aside→Aside,
+        //   else Trail — keeps the common giver path byte-identical (Trail) while routing
+        //    today's scratch dump to the Aside row reconcile mints.  Without this a cursor
+        //     landing inside an Aside spun up a second {Interest:'Trail',waft:Aside/…} beside
+        //      the {Interest:'Aside'} row: the strip showed the Trail (date-labelled, not 🗒)
+        //       and the two-row ambiguity flickered out next reconcile.  (Sidetrack keeps its
+        //        own origination path; only aside diverges here for now.)
+        const waft_C   = H.LE_what_waft(armed)
+        const kind     = (waft_C && H.interest_stance_of(waft_C) === 'aside') ? 'Aside' : 'Trail'
+        const pool     = (languinio.o({ Interest: kind }) ?? []) as TheC[]
+        const interest = (waft_key != null ? pool.find(t => t.sc.waft === waft_key) : undefined)
+                       ?? pool.find(t => t.c.LE && !t.sc.waft)
+                       ?? languinio.oai({ Interest: kind })
+
+        // Per-Interest %LE: this giver keeps its OWN Understanding (held on c.LE, parented
+        //  under w outside any replace() so it survives checkouts), keyed {LE:<waft>} so
+        //   several coexist.  Get-or-create it — do NOT strip LEs off the other Trails;
+        //    their working clones persist for the crossfade.  Only demote the ones we left
+        //     from locked to pending (noticed-but-not-foreground).
+        let LE = interest.c.LE as TheC | undefined
+        if (!LE) { LE = w.oai({ LE: waft_key ?? 'checkout' }); interest.c.LE = LE }
+        // demote the foreground we left (any heavy kind — Trail or Aside) locked→pending,
+        //  so its cap collapses while keeping its own LE for the crossfade back.
+        const foregroundable = [...(languinio.o({ Interest: 'Trail' }) as TheC[]),
+                                ...(languinio.o({ Interest: 'Aside' }) as TheC[])]
+        for (const t of foregroundable) if (t !== interest && t.sc.state === 'locked') t.sc.state = 'pending'
+
+        const working_C = LE.o({ Seem: 'working' })[0]?.sc.C as TheC | undefined
+        interest.sc.src = working_C
+        if (waft_key != null) interest.sc.waft = waft_key          // bind the giver subject
+        // checking out IS foregrounding: lock the Trail and make it the ActiveInterest
+        //  (the editing checkout, not merely a noticed giver).  reconcile leaves state
+        //   alone once lens is set, so this sticks across roster pushes.
+        interest.sc.state = 'locked'
+        const ai = languinio.oai({ ActiveInterest: 1 })
+        ai.sc.kind = kind                                          // Trail | Aside — the foreground's kind
+        if (waft_key != null) ai.sc.waft = waft_key; else delete ai.sc.waft   // which giver is foreground
+        languinio.c.active_LE = LE                                 // the readers' foreground-LE handle (off-snap)
+
+        // the live %What rides as the object on c.What — readers reach the real
+        //   particle (its Points, their c.Doc) without a name lookup.  in_Doc stays
+        //   a string: it is the dock-map key, and docks are keyed by path.
+        const sc = armed.sc as any
+        interest.c.What = armed
+        // alpha sub-Doc memory.  Focusing a What also picks one of its Docs (the alpha) —
+        //  in_Doc here, in_Point its sibling axis (the focus spec).  The Interest is the
+        //   memory home: if the live What lost its pick (a re-decoded Waft mints a fresh
+        //    What with no c.alpha_doc) but this Interest still remembers a Doc that's one of
+        //     the What's, re-stamp it so returning lands on the same sub-Doc.  Waft_src_doc
+        //      then projects alpha (chosen) ?? first-Doc back out — so an explicit click
+        //       (which sets c.alpha_doc Lies-side) wins, and absent any pick it's first-Doc.
+        const remembered = interest.sc.in_Doc as string | undefined
+        if (remembered && !armed.c.alpha_doc
+            && (armed.o({ Doc: 1 }) as TheC[]).some(d => (d.sc as any).Doc === remembered)) {
+            armed.c.alpha_doc = remembered
+        }
+        const in_Doc   = H.Waft_src_doc_path(armed)
+        const in_Point = sc.method as string | undefined
+        // set|clear — no longer a drop+recreate, so an absent value must be cleared
+        if (in_Doc   != null) interest.sc.in_Doc   = in_Doc;   else delete interest.sc.in_Doc
+        if (in_Point != null) interest.sc.in_Point = in_Point; else delete interest.sc.in_Point
+
+        interest.bump_version()
+        languinio.bump_version()   // the foreground moved — wake NaviCado/DocMinimap's active-LE derive
+
+        // stale spinner — origin pull drifted; cleared once encode is clean.
+        const stale = LE.o({ State: 1 })[0]?.sc.stale
+        if (stale) languinio.oai({ spinner: 'stale' })
+        else       languinio.o({ spinner: 'stale' }).forEach((s: TheC) => languinio.drop(s))
+        return LE
+    },
+
+//#endregion
+
+
 //#region operate / mark — generalised routed handlers
 //
 //   Two thin public events sit above the LE-scoped implementations.
@@ -52,11 +595,12 @@ await M.eatfunc({
 //   e:LE_operate / e:LE_mark are the direct implementations.
 //   e_Lang_LE_push is the durable push cluster (req:push|encode|replace|verify).
 //
-//   LiesEnd is the right home for all of this: it owns %LE, the U/D sphere
-//   protocol, and the clone tree API.  Lang touches at the edges — workon
-//   threading, doc lifecycle, CM wiring.  Lies touches at the cursor seam.
+//   LiesHold is the right home for all of this: it owns %LE, the U/D sphere
+//   protocol, the clone tree API, AND the req:workon driver that converges them.
+//   Lang now touches only at the edges — doc lifecycle, CM wiring (it still seeds
+//   req:workon in Lang_plan).  Lies touches at the cursor seam.
 //
-//   Mounting: LiesEnd must be mounted by BOTH Lies.svelte and Lang.svelte.
+//   Mounting: LiesHold must be mounted by BOTH Lies.svelte and Lang.svelte.
 //   All eatfunc calls mix into one H.* table — file placement is organisational.
 //   LiesCurse provides the branch/dive/stepping workers; this file owns all
 //   handler entry points.
@@ -792,7 +1336,7 @@ await M.eatfunc({
 
 //#region helpers — LE API surface candidates
 //
-//   These three will migrate to LiesEnd.svelte once the test confirms them.
+//   These three will migrate to LiesHold.svelte once the test confirms them.
 //   They operate only on Seem:working's C tree and the U sphere — no D rewiring.
 
     // ── LE_add_clone ────────────────────────────────────────────────────────

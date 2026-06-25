@@ -50,7 +50,9 @@
     //       should.  The runner's channel flaps on each push; fine, the runner re-runs anyway.
     const CREDULER_GHOSTS = [
         'Ghost/N/Peeroleum.g',          // transport spine — envelope, inbox/outbox, handshake
+        'Ghost/N/Reliable.g',           // network-healing floor — inbound seq discipline + retransmit
         'Ghost/N/Tribunal.g',           // carriers — mock / webrtc / websocket relay
+        'Ghost/N/Lossy.g',              // adversary (drop/dup/delay) — test sad path; dormant till a Story uses it
         'Ghost/Story/Peregrination.g',  // the p2p test — first of a new kind; more pile on here
         'Ghost/N/Tyrant.g',             // cabinetry — trust + policy-gated admission (rides the floor)
     ]

@@ -257,7 +257,13 @@ Peeroleum_send(w, frame):
         //  "a test_binary of N bytes, hash X, sent" (the body itself rides off-snap on the frame).
         let esc = {emit: h.seq, type: h.type, seq: h.seq, sent: 1}
         if (h.body_hash != null) { esc.body_hash = h.body_hash; esc.body_len = h.body_len }
-        pier.oai({outbox: 1}).i(esc)
+        let emit = pier.oai({outbox: 1}).i(esc)
+        // retransmit bookkeeping (off-snap): the raw frame to re-hand the transport, the logical tick
+        //  of this first send, the attempt count (Reliable.g retx_due reads these). Clean streams ack
+        //   before a sweep tick elapses, so they stay attempts:1 and never re-send.
+        emit.c.frame = frame
+        emit.c.sent_tick = w.c.retx_tick || 0
+        emit.c.attempts = 1
     }
     let conn = w.o({active_transport:1})[0]?.c.connection
     // No transport is a real fault (the frame is lost) — always say so, clearly.  A live+loud
@@ -296,50 +302,30 @@ async Peeroleum_deliver(w, frame):
     //     drains overlap, so no in-flight guard is needed. The inseq gate below decides WHICH frames book.
     let inbox = pier.oai({inbox: 1})
     inbox.c.up = pier   // do() climbs c.up to the House to resolve req_unemit; stamp the inbox→pier link
-    // ── inbound seq discipline (peeroleum_inseq) ──────────────────────────────
-    // A real inbox frame carries the sender's per-Pier monotone seq (Pier_next_seq); acks +
-    //  ping/pong/run_phase booked none and returned above, so the seqs reaching here ARE exactly
-    //   our real inbound frames — one contiguous stream across hello/trust/noop/app. The clean mock
-    //    delivers 1,2,3… in order, so inseq_admit is a pure pass-through (PereStaple unchanged) — but
-    //     the moment retransmit re-sends an acked seq, or a real carrier reorders, it stops being one:
-    //  · DELIVERED-DUP (seq ≤ last — already delivered, verified, acked) → the ack was lost; re-ack so
-    //     the sender stops retransmitting, but NEVER re-book (a second hear_trust / dock_push is the
-    //      corruption this prevents). `last` persists on pier.c, so a seq re-sent after its %req:unemit
-    //       went %done+culled to %recent is STILL caught — the gap the bare oai-by-seq dedup left open.
-    //  · GAP / BUFFERED-DUP (seq ahead of last+1, or one already held) → stash the raw frame off-snap on
-    //     pier.c.held keyed by seq and book nothing — and DON'T ack: a held frame is unverified (verify
-    //      runs at dispatch in req_unemit), so acking it would break "ack = verified-clean receipt"; the
-    //       sender keeps it alive until the missing seq fills and the whole tail delivers+verifies+acks.
-    //  · contiguous → inseq_admit returns the run now ready (this frame, then any tail it unblocked);
-    //     book each as %req:unemit and drain once via inbox.do().
+    // ── inbound seq discipline (Reliable.g: inseq_admit) ──
+    // Real inbox frames carry the sender's per-Pier monotone seq (acks/ping/pong/run_phase returned
+    //  above). Clean mock = 1,2,3… contiguous → pass-through; a retransmit/reorder is where it earns its
+    //   keep. < a protocol reset (heading 8) rewinding Pier_next_seq must also clear pier.c.inseq/held.
     let seq = Number(h.seq)
-    if (!Number.isFinite(seq)) {
-        // no per-Pier seq (no real inbox frame lacks one — every send allocates via Pier_next_seq):
-        //  bypass the cursor and book straight, so an unexpected frame is delivered, never silently
-        //   held in the gap buffer forever.
-        H.Peeroleum_book_unemit(inbox, w, pier, frame)
-        await inbox.do()
-        H.feebly_ponder()
-        return
+    if (!Number.isFinite(seq)) {   // no seq (shouldn't happen) → book straight, never silently hold
+        H.Peeroleum_book_unemit(inbox, w, pier, frame); await inbox.do(); H.feebly_ponder(); return
     }
-    // the cursor rides pier.c (off-snap) beside the outbound pier.c.seq counter, so a transport
-    //  reconnect that keeps %Ud and keeps the counter climbing stays in sync.  < a PROTOCOL reset
-    //   (heading 8, still TODO) that rewinds Pier_next_seq must also clear pier.c.inseq + pier.c.held,
-    //    or the rewound seq=1 reads as a delivered-dup and never lands.
-    pier.c.inseq = pier.c.inseq || inseq_new()
-    let ready = inseq_admit(pier.c.inseq, seq)
+    pier.c.inseq = pier.c.inseq || {last: 0, buffered: []}
+    let ready = this.inseq_admit(pier.c.inseq, seq)
     if (!ready.length) {
+        // delivered-dup (seq ≤ last) → re-ack only, never re-book (a 2nd hear_trust/dock_push is the
+        //  corruption this guards). gap/buffered-dup → hold off-snap, no ack (unverified till dispatch).
         if (seq <= pier.c.inseq.last) {
             let me = pier.c.up%name
-            H.Peeroleum_send(w, {header:{type:'ack', from:me, to:pier%pub, ack:seq}})   // delivered-dup → re-ack only
+            H.Peeroleum_send(w, {header:{type:'ack', from:me, to:pier%pub, ack:seq}})
         } else {
             pier.c.held = pier.c.held || {}
-            pier.c.held[seq] = frame                                                     // gap / buffered-dup → hold, no ack
+            pier.c.held[seq] = frame
         }
         H.feebly_ponder()
         return
     }
-    // ready[0] is this frame; any tail entries are gap-held frames now unblocked, in seq order.
+    // ready[0] is this frame; the tail are gap-held frames a fill just unblocked, in seq order.
     for (const s of ready) {
         let f = (s === seq) ? frame : (pier.c.held && pier.c.held[s])
         if (pier.c.held) delete pier.c.held[s]
@@ -432,16 +418,53 @@ Peeroleum_rollup_faulty(pier):
     faulty.r({unemit:1}, {})
     for (const u of errs) faulty.i({unemit:u.sc.seq, error:u.sc.error, seq:u.sc.seq})
 
+// ── retransmit sweep (Reliable.g: retx_due) ───────────────────────────────────
+// Peeroleum_retx_sweep — the retransmitter the %outbox/emit queue was always waiting for. Each step
+//  boundary advances a per-w LOGICAL tick (w.c.retx_tick — replay-safe, never ms) and, per Pier, asks
+//   retx_due which un-acked emits' backoff windows have elapsed: re-hand each emit.c.frame to the
+//    CURRENT active transport (no new emit booked — the same seq, which the peer's inseq dedups), bump
+//     its attempts/sent_tick, mark %resent. Exhausted emits get %dead. Dormant on a clean stream: emits
+//      ack within the step, so retx_due skips them (acked) and nothing re-sends.
+//   < %dead should also roll to %faulty + kick liveness/reset (heading 8/9); for now it only marks +
+//      leaves the emit (a dead emit isn't culled — only the adversarial path makes any, unbuilt yet).
+Peeroleum_retx_sweep(w):
+    const H = this
+    w.c.retx_tick = (w.c.retx_tick || 0) + 1
+    let now = w.c.retx_tick
+    let policy = {base: 2, factor: 2, max_attempts: 5, cap: 16}
+    let conn = w.o({active_transport:1})[0]?.c.connection
+    for (const peering of w.o({Peering:1})) {
+        for (const pier of peering.o({Pier:1})) {
+            let outbox = pier.o({outbox:1})[0]
+            if (!outbox) continue
+            let emits = outbox.o({emit:1})
+            let snap = emits.map(e => ({seq: e.sc.seq, sent_tick: e.c.sent_tick || 0, attempts: e.c.attempts || 1, acked: e.sc.acked}))
+            let verdict = H.retx_due(snap, now, policy)
+            for (const seq of verdict.resend) {
+                let emit = emits.find(e => e.sc.seq == seq)
+                if (!emit || !emit.c.frame) continue
+                emit.c.attempts = (emit.c.attempts || 1) + 1
+                emit.c.sent_tick = now
+                emit.sc.resent = emit.c.attempts
+                conn?.send(emit.c.frame)
+            }
+            for (const seq of verdict.dead) {
+                let emit = emits.find(e => e.sc.seq == seq)
+                if (emit) emit.sc.dead = 1
+            }
+        }
+    }
+
 // ── step-boundary whittle (spec §7.4, §12.1) ──────────────────────────────────
-// Peeroleum_arm_whittle — register the per-w cull at each step boundary, re-arming
-//  itself each pass (the logger idiom: Runstepped drains its queue every boundary, so a
-//   standing callback must re-push). Guarded so a w arms exactly once. The cull runs in
-//    Atime (clear()), so drop/r/i are safe inside it.
+// Peeroleum_arm_whittle — register the per-w sweeps at each step boundary, re-arming itself each pass
+//  (the logger idiom: Runstepped drains its queue every boundary, so a standing callback must re-push).
+//   Guarded so a w arms exactly once. Runs in Atime (clear()), so drop/r/i are safe. Retransmit sweeps
+//    BEFORE the cull (re-send the un-acked, then archive the acked — disjoint sets, order is just intent).
 Peeroleum_arm_whittle(w):
     const H = this
     if (w.c._whittle_armed) return
     w.c._whittle_armed = 1
-    let rearm = () => H.Runstepped(async () => { H.Peeroleum_runstepped(w); rearm() })
+    let rearm = () => H.Runstepped(async () => { H.Peeroleum_retx_sweep(w); H.Peeroleum_runstepped(w); rearm() })
     rearm()
 
 // Peeroleum_runstepped — the cull, per Pier under w (spec §7.4): acked %outbox/emit move
@@ -475,10 +498,3 @@ Peeroleum_runstepped(w):
             H.Peeroleum_rollup_faulty(pier)
         }
     }
-
-// ── module imports (magic pseudo-method: body emitted verbatim into the .go header) ──
-// peeroleum_inseq — the pure per-Pier inbound seq-discipline floor (dedup + gap-buffer),
-//  spec'd + headless-proven (scripts/InSeq.spec.ts) before this thin .g wiring. Folded into
-//   Peeroleum_deliver above so a retransmit/reorder can't corrupt the inbox.
-IMPORT()
-    import { inseq_new, inseq_admit } from "$lib/O/peeroleum_inseq"

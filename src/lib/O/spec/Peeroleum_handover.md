@@ -64,27 +64,41 @@ source, compile-verified, with regen/refreeze HELD** so it doesn't disturb the l
        (was `wss.clients`-only). **LANDED, pure+headless:** `src/lib/O/peeroleum_lossy.ts` (adversarial carrier;
         drop/dup/delay-reorder, logical-tick clock; `scripts/LossyCarrier.spec.ts` 5/5) + `peeroleum_inseq.ts`
          (per-Pier dedup + gap-buffer; `scripts/InSeq.spec.ts` 6/6).
-- **inseq WIRED into `Peeroleum_deliver` (this session; ghost-compiled + HMR'd live, behaviour-through-the-wire :9091-owed).** Every inbound inbox
-   frame now folds through a per-Pier `pier.c.inseq` cursor BEFORE booking: contiguous → book+drain (the clean
-    mock delivers 1,2,3… so this is a pure pass-through, PereStaple/PereTyrant unaffected); a delivered-dup
-     (`seq ≤ last`) re-acks only (lost-ack recovery, never re-dispatches — `last` persists on `.c`, so a seq
-      re-sent after its `%req:unemit` culled to `%recent` is still caught); a gap/buffered-dup holds the raw
-       frame off-snap on `pier.c.held` and does NOT ack (unverified until dispatch — keeps "ack = verified-clean
-        receipt"), then the fill drains the whole tail in order. Booking split into `Peeroleum_book_unemit`; the
-         import rides a new `IMPORT()` block. `FlockCompile.spec.ts` green (real translator + esbuild gate).
-          **< a protocol reset (heading 8) that rewinds `Pier_next_seq` must also clear `pier.c.inseq`/`held`.**
-- **retransmit PRIMITIVE built (this session; pure+headless, proven).** `src/lib/O/peeroleum_retransmit.ts`
-   (`retx_due`/`retx_delay`/`RETX_DEFAULT`): partitions un-acked `%outbox/emit`s at a LOGICAL tick into
-    `{resend, dead}` on capped exponential backoff; `scripts/Retransmit.spec.ts` 7/7 — units + a **capstone that
-     composes lossy(transient-drop) + retransmit + inseq into reliable in-order delivery** + the permanent-loss→
-      dead path (no-SACK cascade documented in the module). **NEXT: wire it into the spine** — the `.g` part is two
-       moves: (1) stash the raw frame + `sent_tick`/`attempts` on each `%outbox/emit` at send (`Peeroleum_send`),
-        (2) a sweep (drive a per-Pier tick off `Runstepped`/the keepalive interval) that calls `retx_due`,
-         re-sends `emit.c.frame` for each `resend` (bump attempts/sent_tick), and rolls each `dead` to `%faulty` +
-          kicks liveness. Needs :9091 to verify (the Creduler wrangler doesn't run headless). Then spine liveness
-           hardening + Tribunal fallback close the arc.
+- **FOLDED .ts → .g (this session, per the human's doctrine — see below).** The three pure `.ts` primitives +
+   their specs are DELETED; their logic now lives as House methods in two focused new ghosts:
+  - **`Ghost/N/Reliable.g`** — the network-healing floor: `inseq_admit` (inbound seq discipline) + `retx_due`/
+     `retx_delay` (the re-send decision). In `CREDULER_GHOSTS` + Net/Easy; **gen built** (`gen/N/Reliable.go`).
+  - **`Ghost/N/Lossy.g`** — the adversarial carrier: `lossy_decide`/`make_lossy_partner`. In `CREDULER_GHOSTS` +
+     Net/Easy; **gen built** (`gen/N/Lossy.go`). The `ghost-compile` CLI reported "no response in 12s" (its reply
+      window) but the editor was just SLOW on the closure-heavy raw JS and finished writing the `.go` ~minutes
+       later — check disk, the gen landed. Dormant (no caller) until an adversarial Story (heading 6) uses it.
+- **inseq is WIRED + live.** `Peeroleum_deliver` folds every inbound inbox frame through a per-Pier `pier.c.inseq`
+   cursor (`this.inseq_admit`) BEFORE booking: contiguous → `Peeroleum_book_unemit`+drain (clean mock = 1,2,3…
+    pass-through, PereStaple/PereTyrant unaffected); delivered-dup (`seq ≤ last`) → re-ack only (lost-ack recovery,
+     never re-dispatch — `last` persists on `.c`, catches a seq re-sent after its `%req:unemit` culled to `%recent`);
+      gap/buffered-dup → hold the raw frame off-snap on `pier.c.held`, NO ack (unverified till dispatch). `Peeroleum.g`
+       + `Reliable.go` ghost-compiled & live; **behaviour-through-the-wire :9091-owed.** **< a protocol reset (heading 8)
+        rewinding `Pier_next_seq` must also clear `pier.c.inseq`/`held`.**
+- **retransmit WIRED (this session; ghost-compiled live, DORMANT-safe, active path :9091-owed).** `Peeroleum_send`
+   stashes `emit.c.frame`/`sent_tick`/`attempts`; `Peeroleum_retx_sweep(w)` rides the `Peeroleum_arm_whittle`
+    Runstepped boundary BEFORE the cull — advances a per-w logical tick `w.c.retx_tick`, asks `retx_due` which
+     un-acked emits' windows elapsed, re-hands each `emit.c.frame` to the CURRENT active transport (no new emit;
+      same seq, peer's inseq dedups), bumps attempts + stamps `%resent`; exhausted → `%dead`. **Dormant on a clean
+       stream** (emits ack within the step → `retx_due` skips them → PereStaple snap unchanged). Its ACTIVE path is
+        unexercised — no adversarial Story drops a frame yet (heading 6). **< `%dead` only marks; rolling it to
+         `%faulty` + kicking liveness/reset is heading 8/9, and a dead emit currently isn't culled (adversarial-only
+          leak).** **NEXT verifier: a wrangler step that pairs a `Lossy.g` carrier (drop a seq), sends, and witnesses
+           retransmit heal it** — exercises Lossy + retransmit + inseq end-to-end. Then spine-liveness + Tribunal fallback.
 The PINNED carrier `last_heard` stamp (`Peeroleum_deliver`, every frame incl. **acks** — closes the watchdog's
  ack-blindness) rides the next re-pin.
+
+> **Doctrine (human, this session): `.g` is the home; the `.ts`+spec+`FlockCompile` route is a STAGED layer.**
+>  A pure `.ts` primitive + headless spec (and `FlockCompile`, which compiles in-memory and does NOT write the
+>   `.go`) is the "expecting trouble" workbench — fast, isolated, non-committal. The real artifact is the `.g`,
+>    and **ghost-compile is the commit** that writes the `.go` + HMRs it live so you can play immediately. Protocol:
+>     work it out in the soft layer only if needed, then FOLD into `.g` and ghost-compile. Don't leave scattered
+>      `.ts`. New ghosts get registered in `CREDULER_GHOSTS` (LiesLies — the live acquire) AND the Net/Easy overlay,
+>       and a ghost MUST have a gen `.go` before it's enrolled (the acquire `import`s the `.go`; no file → boot hangs).
 
 ### → START HERE: real websocket transport (heading 10) — editor↔runner is its first customer
 
@@ -496,10 +510,10 @@ ghosts, Garden.g + Tyrant.g.
    `%req:wrangle`, `Lake_drive`/`Lake_witness`/`Lake_sides_up`/`Lake_trial_*`. (Acquired by the Creduler —
     `Creduler_ensure` / `CREDULER_GHOSTS` in `Lies.svelte`/`LiesLies.svelte`; no hand-written loader.)
 - `src/lib/server/relay.ts` — the real `/relay` WS server (`attachRelay`) + its `configureServer` vite plugin.
-- `src/lib/O/peeroleum_lossy.ts` — adversarial mock carrier (drop/dup/delay-reorder, logical-tick clock).
-- `src/lib/O/peeroleum_inseq.ts` — per-Pier inbound seq discipline (dedup + gap-buffer); wired in `Peeroleum_deliver`.
-- `src/lib/O/peeroleum_retransmit.ts` — the re-send decision (`retx_due`, capped backoff); NOT yet wired (spine TODO).
-- `scripts/{LossyCarrier,InSeq,Retransmit}.spec.ts` — headless gates for the three (run via `Story_cli.vitest.config.mjs`).
+- `Ghost/N/Reliable.g` — network-healing floor: `inseq_admit` (wired) + `retx_due`/`retx_delay` (folded, unwired).
+- `Ghost/N/Lossy.g` — adversarial carrier (`lossy_decide`/`make_lossy_partner`); gen unbuilt, off `CREDULER_GHOSTS`.
+- `scripts/FlockCompile.spec.ts` — headless compile gate for the flock (now incl. Reliable.g/Lossy.g); the
+   break-glass "expecting trouble" check, NOT the default (ghost-compile is). Currently blocked by the LiesEnd WIP.
 - `wormhole/Ghost/Net/Easy/toc.snap` — annotation overlay / compile manifest.
 - `wormhole/Story/PereStaple/toc.snap` — the Story that drives the Book (step lines run through `step=5`).
 - `src/lib/O/spec/Peeroleum_spec.md` — the pinned design (the floor). This file — the living progress.

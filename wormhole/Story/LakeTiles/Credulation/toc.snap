@@ -1,6 +1,8 @@
 Credulation,of_Book:LakeTiles
-  run=0,at=1782308710.244,ok,ok_pct,mode:check
-    uses:Ghost_N_Peeroleum,dige:899180b78093453a
+  run=0,at=1782311323.157,ok,ok_pct,mode:check
+    uses:Ghost_N_Peeroleum,dige:e4bc40095aa2a1e4
+    uses:Ghost_N_Reliable,dige:cfb6ab036989f8c5
     uses:Ghost_N_Tribunal,dige:683d031e368194c6
+    uses:Ghost_N_Lossy,dige:3b62b5b7b9d08ccb
     uses:Ghost_Story_Peregrination,dige:cbcb91135c98b814
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
