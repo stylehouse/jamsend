@@ -31,16 +31,19 @@ button:hover {
 
 /* ── global scrollbars ──────────────────────────────────────────────────────
    Two opt-in utilities so the app's scroll areas share one look:
-     .scrollbig   — fat, grabbable (the editor, Storui panes, a capped Waft)
-     .scrollsmall — thin, unobtrusive (strips, side rails)
-   webkit draws via ::-webkit-scrollbar; firefox via scrollbar-* on the element. */
-.scrollbig::-webkit-scrollbar             { width: 12px; height: 12px; }
-.scrollbig::-webkit-scrollbar-track       { background: #0e0e0e; }
-.scrollbig::-webkit-scrollbar-thumb       { background: #3a3a3a; border-radius: 3px; border: 2px solid #0e0e0e; }
-.scrollbig::-webkit-scrollbar-thumb:hover { background: #555; }
-.scrollbig { scrollbar-width: auto; scrollbar-color: #3a3a3a #0e0e0e; }
+     .scrollbig   — fat, grabbable copper handle (Storui panes, a capped Waft, the GhostList)
+     .scrollsmall — slim, unobtrusive (strips, side rails)
+   Drawn PURELY via ::-webkit-scrollbar.  We deliberately do NOT set the standard scrollbar-width /
+   scrollbar-color: on Chromium those take precedence and DISABLE the ::-webkit-scrollbar styling —
+   scrollbar-color flatly replaces the thumb's copper background-image.  Texture is webkit-only
+   anyway, so Firefox just gets its default bar.  (The editor owns its own copper scrollbar in
+   Langui at the minimap-gutter width 2em — see Langui; .scrollbig is for the non-editor areas.) */
+.scrollbig::-webkit-scrollbar             { width: 18px; height: 18px; }
+.scrollbig::-webkit-scrollbar-track       { background: #0e0e0e; border-radius: 1em; }
+/* the fat grabbable handle: the copper_anodes texture (static/i/, served at /i/), rounded, no inset
+   border so the whole gutter is handle.  Tiles over a copper fallback if the image misses. */
+.scrollbig::-webkit-scrollbar-thumb       { background: #6e4e2e url(/i/copper_anodes.jpg); border-radius: 1em; min-height: 3em; }
 
-.scrollsmall::-webkit-scrollbar           { width: 4px; height: 4px; }
+.scrollsmall::-webkit-scrollbar           { width: 12px; height: 12px; }
 .scrollsmall::-webkit-scrollbar-track     { background: #0e0e0e; }
-.scrollsmall::-webkit-scrollbar-thumb     { background: #2a2a2a; border-radius: 2px; }
-.scrollsmall { scrollbar-width: thin; scrollbar-color: #2a2a2a #0e0e0e; }
+.scrollsmall::-webkit-scrollbar-thumb     { background: #2a2a2a; border-radius: 6px; }

@@ -81,7 +81,7 @@
         </button>
     </div>
     {#if open}
-    <div class="ghl-groups">
+    <div class="ghl-groups scrollbig">
         {#each groups as g (g.dir)}
             <div class="ghl-group" style="margin-left: {g.depth * 12}px">
                 <div class="ghl-dir" title={g.dir}>{g.dir}<span class="ghl-n">{g.items.length}</span></div>

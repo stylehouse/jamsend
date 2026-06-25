@@ -4,28 +4,28 @@ story:PereStaple
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.164
-      sample=0.3,at=1782305574
-      sample=0.177,at=1782358717
-      sample=0.154,at=1782359199
-      sample=0.151,at=1782359264
-      sample=0.151,at=1782359291
-      sample=0.17,at=1782359303
-      sample=0.153,at=1782362643
-      sample=0.127,at=1782363093
-      sample=0.127,at=1782363109
-      sample=0.126,at=1782363123
-    TimeTotal:step,avg=0.017
-      sample=0.043,at=1782305574
-      sample=0.016,at=1782358717
-      sample=0.014,at=1782359199
-      sample=0.014,at=1782359264
-      sample=0.014,at=1782359291
-      sample=0.015,at=1782359303
-      sample=0.014,at=1782362643
-      sample=0.012,at=1782363093
-      sample=0.012,at=1782363109
-      sample=0.011,at=1782363123
+    TimeTotal:beliefs,avg=0.201
+      sample=0.197,at=1782366518
+      sample=0.189,at=1782367475
+      sample=0.207,at=1782368123
+      sample=0.207,at=1782368127
+      sample=0.207,at=1782368128
+      sample=0.207,at=1782368129
+      sample=0.207,at=1782368129
+      sample=0.207,at=1782368130
+      sample=0.207,at=1782368131
+      sample=0.172,at=1782368147
+    TimeTotal:step,avg=0.014
+      sample=0.013,at=1782366518
+      sample=0.013,at=1782367475
+      sample=0.014,at=1782368123
+      sample=0.014,at=1782368127
+      sample=0.014,at=1782368128
+      sample=0.014,at=1782368129
+      sample=0.014,at=1782368129
+      sample=0.014,at=1782368130
+      sample=0.014,at=1782368131
+      sample=0.011,at=1782368147
   step,dige:0e3a61058c6cb03e
   step=2,dige:c5f14b0b21cc722e
   step=3,dige:90d73b87938e513f
@@ -36,4 +36,8 @@ story:PereStaple
   step=8,dige:ffffa3f9204dd27d
   step=9,dige:33b528f2d13f5dd3
   step=10,dige:b6187b8878911912
-  step=11,dige:65e2aac90e337045
+  step=11,dige:6a95bc456eccb4e0
+  step=12,dige:c1f1cdbc800ee07c
+  step=13,dige:ce1f675f17c985f7
+  step=14,dige:63b02476959f6a7f
+  step=15,dige:90577babde6d2b59

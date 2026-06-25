@@ -55,8 +55,8 @@ The Waft\*\* tree (a `Waft → What* → (Doc, Point*)` forest) renders today as
 
 A run = a maximal sequence of **sibling** Whats whose resolved Doc is the same.
  Resolve a What's Doc the way the cursor does — descendant `Doc` in document
-  order, else the `c.Doc` context (see `Waft_src_doc_path` / `find_Doc_from_What`
-   referenced in `Waft-palmtree-trajectory.md:125`). Nested Whats (a What inside
+  order, else the `c.Doc` context (see `Waft_src_doc_path` / `find_Doc_from_What`).
+   Nested Whats (a What inside
     a What) are their own sub-runs; cohere within a sibling level, don't flatten
      the hierarchy. When in doubt, prefer under-coalescing (show the Doc again)
       over hiding a Doc boundary that's really there.

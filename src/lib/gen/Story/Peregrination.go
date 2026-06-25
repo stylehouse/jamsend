@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Peregrination(): string { return '40050159d36b8446' },
+    Ghostmeta_Ghost_Story_Peregrination(): string { return 'c631796a656491ee' },
 
 
 // PereStaple — the Peeroleum p2p test (the outer test layer), and the first of a
@@ -29,6 +29,8 @@
 //   step 7  binary exercise: a 64-byte frame A→B, body-hash verified, round-trips over the live carrier
 //   step 8  reliability heal: a fresh pair on a lossy carrier loses a frame; retransmit re-sends it,
 //            playing out over steps 9-10 (logical-tick backoff) until the drop heals and acks
+//   step 11 permanent fault: a fresh pair on a blackhole carrier loses EVERY transit; the retransmits
+//            exhaust and the emit latches %stalled (carrier-down) — the heal's twin, witnessed by step 14
 //
 // The heading-4 message lifecycle (outbox created→sent→acked, serial inbox
 //  queued→handling→verified→done, acks, %recent whittle at the step boundary) is not
@@ -75,6 +77,8 @@ async Lake_drive(w, req) {
             await this.Lake_exercise_binary(w)
         } else if (n === 8) {
             await this.Lake_heal_arm(w)
+        } else if (n === 11) {
+            await this.Lake_stall_arm(w)
         }
     }
     await this.Lake_pump_handshakes(w)
@@ -91,7 +95,7 @@ async Lake_drive(w, req) {
 async Lake_order(w) { const H = this;
     let As = this.o({A: 1})
     if (As.length < 2) return
-    let peer = (a) => ['Alice', 'Bob', 'Ivy', 'Jon'].includes(a.sc.A) ? 0 : 1
+    let peer = (a) => ['Alice', 'Bob', 'Ivy', 'Jon', 'Kim', 'Lee'].includes(a.sc.A) ? 0 : 1
     let sorted = [...As].sort((a, b) => peer(a) - peer(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({},ordered)
@@ -313,6 +317,47 @@ async Lake_heal_arm(w) {
     this.Peeroleum_send(Ivyw,{header:{type:'noop', from:'ivy', to:'jon', seq:s}})
 
 },
+// Lake_stall_arm -- step 11: the PERMANENT-fault path (Reliable.g: retransmit exhaustion + the blackhole adversary).
+//  The twin of step 8's heal -- there a single drop healed on the resend; here a blackhole swallows EVERY
+//   transit, so the retransmits exhaust and the emit LATCHES %stalled (the carrier-down signal a re-dial reads,
+//    heading 8) instead of healing. A FRESH isolated pair (Kim/Lee), a TIGHT retx_policy on Kimw so the death
+//     lands in two ticks (production's {max_attempts:5,cap:16} would need ~46 steps), one noop Kim->Lee through
+//      the blackhole. Lee never hears it and no resend ever lands, so Peeroleum_retx_sweep marks the emit %dead,
+//       rolls %stalled onto KimPier, and culls the spent emit. Death is two retx ticks, but the arm-lag (the
+//        arm_whittle registered mid-step misses the first boundary drain, as the heal pair does) spreads it over
+//         steps 11->14: send@11, first resend@13, exhaust@14. Witnessed at step 14 (dropped>=2 + %stalled).
+async Lake_stall_arm(w) {
+    w.i({reached: "step_11"})
+    let {KimA, Kimw} = this._i_drill_caps(this, [{sc: {A: "Kim"}, caps: [{as: "KimA", key: "A", val: false}]}, {sc: {w: "Peeroleum"}, caps: [{as: "Kimw", key: "w", val: false}]}])
+    let {LeeA, Leew} = this._i_drill_caps(this, [{sc: {A: "Lee"}, caps: [{as: "LeeA", key: "A", val: false}]}, {sc: {w: "Peeroleum"}, caps: [{as: "Leew", key: "w", val: false}]}])
+    let KimPeering = Kimw.i({Peering: 1, name: "kim"})
+    let LeePeering = Leew.i({Peering: 1, name: "lee"})
+    KimPeering.c.up = Kimw
+    LeePeering.c.up = Leew
+    let KimPier = KimPeering.oai({Pier: 1, pub: "lee", req: 1})
+    let LeePier = LeePeering.oai({Pier: 1, pub: "kim", req: 1})
+    this.transport(KimA,Kimw)
+    this.transport(LeeA,Leew)
+    this.Peeroleum_arm_whittle(Kimw)
+    this.Peeroleum_arm_whittle(Leew)
+    let Kimport = Kimw.o({active_transport: 1})[0].c.connection
+    let Leeport = Leew.o({active_transport: 1})[0].c.connection
+    // declare the link LOSSY (reliable:false) so inseq + retransmit engage -- the adversary is the only live
+    //  carrier exercising Reliable.g, so it opts OUT of the reliable-carrier bypass (as the heal pair does).
+    Kimport.reliable = false; Leeport.reliable = false
+    // a TIGHT retransmit policy on THIS w so the exhaustion lands in two ticks, not the production ~46.
+    Kimw.c.retx_policy = {base: 1, factor: 1, max_attempts: 2, cap: 1}
+    // the seq to swallow, captured before the schedule so the adversary targets exactly this frame.
+    let s = this.Pier_next_seq(KimPier)
+    KimPier.c.stall_seq = s
+    // a blackhole (EVERY transit lost), not a single drop: the resend never lands either, so the emit dies.
+    //  Stash the wrapper on the Pier so the witness reads its drop-log (>=2 transits) off-snap, past the cull.
+    let lossy = this.make_lossy_partner(Leeport, {blackhole: [s]})
+    KimPier.c.lossy = lossy
+    Kimport.partner = lossy; Leeport.partner = Kimport
+    this.Peeroleum_send(Kimw,{header:{type:'noop', from:'kim', to:'lee', seq:s}})
+
+},
 // Lake_witness — the readable assertion, polled each pass: once Bob's inbox
 //  shows a handled (%done) frame, stamp %witnessed:step_2 (the step rides in the
 //   value — `step` is the Story mainkey, so it can't be a key). Idempotent via the probe.
@@ -368,6 +413,16 @@ Lake_witness(w) {
     let healive = Ivyob2 && Ivyob2.o({emit:1})[0]
     let healacked = (healive && healive.sc.acked) || (Ivyob2 && Ivyob2.o({recent:1})[0]?.oa({emit:1}))
     if (healdropped && healhandled && healacked && !(w.oa({witnessed: "heal"}))) w.i({witnessed: "heal"})
+    // step 11 (stall): the blackhole swallows EVERY transit, so Kim's emit exhausts its retransmits and
+    //  LATCHES %stalled on the Pier -- the permanent fault, the heal's twin. Two durable readings: the
+    //   adversary swallowed >=2 transits (the original send + at least one retransmit, all black-holed --
+    //    a single delivery shows no drop), and the Pier carries the latched %stalled marker. The emit is
+    //     GONE from the outbox (culled on death, never archived to %recent, which holds only acked emits),
+    //      so its absence is implicit in %stalled. Sticky once stamped.
+    let KimPier2 = this._o_drill1(this, [{sc: {A: "Kim"}, exactly: {A: true}}, {sc: {w: "Peeroleum"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
+    let stalldropped = !!(KimPier2 && KimPier2.c.lossy && KimPier2.c.lossy.dropped.length >= 2)
+    let stalled = KimPier2 && KimPier2.oa({stalled:1})
+    if (stalldropped && stalled && !(w.oa({witnessed: "stall"}))) w.i({witnessed: "stall"})
 
 },
 

@@ -28,10 +28,12 @@ PROVEN in-app at step 3** — monotone seq (noop=1/hello=2/trust=3 on Alice, hel
 noop culled to `%recent`, no `%faulty`. (Mechanism is in spec §7/§8 now.) **Standing ask: record the diges
 (Accept/Resnapture)** to make these a regression gate.
 
-**Step 6 caveat:** the `toc.snap` step lines run only through `step=5`. Step 6 (`Lake_trial_confirm` →
-`%reputation:good`) is in code and was green in the older `006.snap` (Jun 18) but is **not a current
-recorded gate** — re-run + Accept/Resnapture steps 2–6. (Step 7, the binary exercise, also needs re-adding
-to `toc.snap` to run; its `body_hash` is now sha256, so the old step-7 dige is stale either way.)
+**Gate status (current):** `toc.snap` runs `step,step=2..15`, and a green :9091 run witnesses the WHOLE arc —
+`witnessed:step_2..6` (mock carrier → handshake → trial → `reputation:good`), `send_binary` (step 7),
+`heal` (step 8, transient loss), `stall` (step 11, permanent loss); steps 9-10/12-15 are the heal/stall settle.
+**Standing ask: Accept/Resnapture steps 2–15** (the recorded `0NN.snap` diges are the regression gate; 011–015
+land this session). **Reload the runner before recording** — a long-lived runner can keep a stale cached gen
+after a ghost-compile (it bit the stall run once; the committed gen reproduces the same snaps).
 
 **This session — the delivery path went async all the way.** `Peeroleum_pump_inbox` is now an async serial
 drain, `Peeroleum_deliver` + carrier `recv` await it, and the body digest is `crypto.subtle` **sha256**
@@ -50,9 +52,9 @@ source, compile-verified, with regen/refreeze HELD** so it doesn't disturb the l
      queryable; identity locally-minted ⇒ no remote gut-swap). `publicKey`→**`pubkey`** in the hello/`%Ud`
       (the full key; `pub` is a prefix of it); the spec-only `prepub`/`prepri` (never built) are dropped for
        `pub`/`pubkey`/`prikey`. **All `.g` compile-clean** (headless gate: `scripts/FlockCompile.spec.ts`);
-        the handshake/trust BEHAVIOUR *through* the flock is **:9091-unverified** (the Creduler wrangler does
-         not run in the Story_cli boot, so headless can't exercise it). Design: `Hovercraft.design.md`
-          (dispatch ladder) + `Peeroleum_spec.md` §6/§11.3 (the Pier flock).
+        the handshake/trust BEHAVIOUR *through* the flock is **now :9091-PROVEN** — every PereStaple run shows
+         `Pier,pub:…,req=2,ok` + `req:handshake,finished` (all four leaves) on both peers. Design:
+          `Hovercraft.design.md` (dispatch ladder) + `Peeroleum_spec.md` §6/§11.3 (the Pier flock).
 
 **This session — network-healing + the reliability arc** (full state: [[peeroleum-reliability-arc]]). Reliability is
  **absence-handling**, an ambient-sweep job — and `%outbox/emit` is a retransmit queue with no retransmitter yet.
@@ -80,16 +82,38 @@ source, compile-verified, with regen/refreeze HELD** so it doesn't disturb the l
        `this.inseq_admit` BEFORE booking: contiguous → `Peeroleum_book_unemit`+drain; delivered-dup (`seq ≤ last`) → re-ack
         only (never re-dispatch); gap/buffered-dup → hold off-snap on `pier.c.held`, NO ack, and now a `console.warn` (a
          hold is LOUD, never silent). `Peeroleum.g` + `Reliable.go` ghost-compiled & live.
-- **retransmit WIRED (this session; ghost-compiled live, DORMANT-safe, active path :9091-owed).** `Peeroleum_send`
+- **retransmit WIRED (ghost-compiled live, DORMANT-safe; active path :9091-PROVEN by the heal verifier).** `Peeroleum_send`
    stashes `emit.c.frame`/`sent_tick`/`attempts`; `Peeroleum_retx_sweep(w)` rides the `Peeroleum_arm_whittle`
     Runstepped boundary BEFORE the cull — advances a per-w logical tick `w.c.retx_tick`, asks `retx_due` which
      un-acked emits' windows elapsed, re-hands each `emit.c.frame` to the CURRENT active transport (no new emit;
-      same seq, peer's inseq dedups), bumps attempts + stamps `%resent`; exhausted → `%dead`. **Dormant on a clean
-       stream** (emits ack within the step → `retx_due` skips them → PereStaple snap unchanged). Its ACTIVE path is
-        now EXERCISED by an adversarial Story (the verifier below). **< `%dead` only marks; rolling it to
-         `%faulty` + kicking liveness/reset is heading 8/9, and a dead emit currently isn't culled (adversarial-only
-          leak).**
-- **The verifier — `Peregrination.g` step 8 `Lake_heal_arm` (BUILT 2026-06-25, ghost-compiled live, browser-UNVERIFIED).**
+      same seq, peer's inseq dedups), bumps attempts + stamps `%resent`; exhausted emits now **roll up `%stalled`
+       and are culled** (was `%dead`-and-leak — see the stall rung below). **Dormant on a clean stream** (emits ack
+        within the step → `retx_due` skips them → PereStaple snap unchanged). Its ACTIVE path is EXERCISED by the
+         heal + stall verifiers (below). The retransmit **policy is now per-w** (`w.c.retx_policy`, default the
+          production `{base:2,factor:2,max_attempts:5,cap:16}`) so an adversarial Story can tighten it to land a
+           death in a couple ticks instead of ~46.
+- **STALL RUNG — `%dead`→`%stalled` rollup + cull (2026-06-25, PROVEN green on :9091, ghost-compiled `Peeroleum.go @ cec4c84`).**
+   The two open holes the retransmit left (the `%dead`-only-marks line above) are closed: when an emit's retransmits
+    exhaust, `Peeroleum_retx_sweep` (dead branch) latches a per-Pier **`%stalled`** container holding the dead emit
+     (`stalled/emit,type,seq,reason:no-ack` — parallel to `%faulty` over `%unemit`, the durable outbound carrier-down
+      signal; the inbound-silence half stays the LiesLies keepalive), then **drops the spent emit** (else it re-enters
+       `verdict.dead` every sweep and re-dies forever — that WAS the leak). `%stalled` is **latched**, NOT rebuilt each
+        boundary like `%faulty` (the emit is gone, nothing to rebuild from); only `reset_handshake` (heading 8) clears it.
+         **PROVEN:** step-13 snap shows `Kim/Pier/stalled/emit,…,reason:no-ack`, emit culled, `witnessed:stall` stamped
+          (alongside `witnessed:heal`). **< the re-dial itself** (mark the active `%transport` faulty → the Tribunal
+           re-trials a carrier) stays the **heading 9/10 seam** — real transports own carrier reselection.
+  - **The FREEZE scare + the real cause.** An intermediate run froze: Kim stuck at `resent=2` across steps 13/14/15,
+     no `%stalled`. The retransmit/cull heartbeat is a self-re-pushing `Runstepped` rearm (`arm_whittle`:
+      `() => Runstepped(() => { retx_sweep; runstepped; rearm() })`), so ANY throw in `retx_sweep` skips `rearm()` and
+       that w **stops sweeping forever** — every later frame silently stranded. I first blamed the nested create in the
+        `Peeroleum_mark_stalled` helper — **WRONG**: the very next run ran that same helper green. The real culprit was
+         an **HMR desync** (`retx_sweep` hot-updated while the new `mark_stalled` method wasn't yet deposited →
+          "not a function" → froze). Fix kept both robustnesses: **inline the stamp** (no separate method → nothing to
+           desync) and **try/catch the dead branch**, surfacing any residual throw IN THE SNAP (`%stall_err,msg`) — a
+            frozen heartbeat must never be silent again. (Latent twin: `rollup_faulty`'s nested `faulty.i(…)` — same
+             pattern, fine, but untested; heading 6.) **Lesson: after a ghost-compile, a long-lived runner may keep a
+              STALE gen — reload it before trusting a run (the nested-vs-flat snap shape is how this was caught).**
+- **The heal verifier — `Peregrination.g` step 8 `Lake_heal_arm` (2026-06-25, PROVEN GREEN on :9091).**
    A FRESH isolated pair (Ivy/Jon) on a clean mock carrier, with the adversary (`make_lossy_partner, {drop:[s]}`)
     slipped onto the Ivy→Jon path; one `noop` seq s sent. A noop is admitted+acked pre-handshake, so no handshake is
      needed (isolated + fresh-seq=1). The drop leaves Ivy's emit un-acked → `Peeroleum_retx_sweep` re-sends at the step
@@ -98,8 +122,21 @@ source, compile-verified, with regen/refreeze HELD** so it doesn't disturb the l
         the adversary's drop-log (`IvyPier.c.lossy.dropped`), Jon HANDLED it (`%done` unemit / `%recent`), Ivy's emit
          `%acked` (live / `%recent`). toc.snap carries `step=8..11` (lie diges). The carrier's `drop` is now drop-ONCE
           (transient → retransmit heals); a new `blackhole` knob is the drop-every-transit permanent-fault case. This is
-           the FIRST end-to-end exercise of Lossy + retransmit + inseq. **Run PereStaple on :9091 to confirm.** Then
-            `%dead`→`%faulty`/liveness (via `blackhole`), spine-liveness + Tribunal fallback.
+           the FIRST end-to-end exercise of Lossy + retransmit + inseq.
+- **The stall verifier — `Peregrination.g` step 11 `Lake_stall_arm` (2026-06-25, PROVEN GREEN on :9091).**
+   The heal's twin: a FRESH isolated pair (Kim/Lee), the adversary on a **`blackhole`** (every transit lost) Kim→Lee,
+    a **tight `Kimw.c.retx_policy = {base:1,factor:1,max_attempts:2,cap:1}`** so the death lands in two logical ticks,
+     one `noop` Kim→Lee. Lee never hears it and no resend lands → `Peeroleum_retx_sweep` marks the emit `%dead`, rolls
+      `%stalled` onto KimPier, culls the emit. `Lake_witness` stamps **`%witnessed:stall`** on two cull-surviving readings:
+       the adversary swallowed **≥2 transits** (`KimPier.c.lossy.dropped` — original send + ≥1 retransmit, a clean delivery
+        shows none) and the Pier carries the latched `%stalled`. Placed at step 11 (after the heal settles at 10) so the
+         heal gate (steps 8–10) stays byte-identical; the stall plays out 11→14 (the arm-lag — `arm_whittle` registered
+          mid-step misses the first boundary drain, as the heal pair does — spreads the two retx ticks: send@11, first
+           resend@13, exhaust@14, though the arm-lag can be shorter — the green run died by step 13). **PROVEN on :9091:**
+            step-13 snap = `Kim/Pier/stalled/emit,type:noop,seq,reason:no-ack`, emit culled, `witnessed:stall` + `witnessed:heal`.
+             toc.snap runs `step=15` (12-15 lie diges). **Re-record steps 11–15** (reload the runner first so it re-acquires
+              the committed gen — the green run executed a stale cached gen; the committed inline produces the same nested
+               shape). Next: the re-dial (heading 9/10 carrier reselection) + spine inbound-silence liveness + Tribunal fallback.
 The PINNED carrier `last_heard` stamp (`Peeroleum_deliver`, every frame incl. **acks** — closes the watchdog's
  ack-blindness) rides the next re-pin.
 - **TRANSPORT-GATING LANDED — the editor↔runner FIX (2026-06-25, ghost-compiled live `Peeroleum.go @ d1930fee`).**
@@ -550,6 +587,7 @@ ghosts, Garden.g + Tyrant.g.
    "expecting trouble" check, NOT the default (ghost-compile is). Boots + passes again (LiesEnd WIP settled).
 - `wormhole/Ghost/Net/Easy/toc.snap` — annotation overlay / compile manifest, curated to landmarks (one front-door
    Point per theme, not every method).
-- `wormhole/Story/PereStaple/toc.snap` — the Story that drives the Book (step lines run through `step=5`).
+- `wormhole/Story/PereStaple/toc.snap` — the Story that drives the Book (step lines run through `step=15`:
+   2–7 the spine/trial/binary, 8 heal, 11 stall, 9-10/12-15 settle; the arm-lag puts the stall death at step 14).
 - `src/lib/O/spec/Peeroleum_spec.md` — the pinned design (the floor). This file — the living progress.
 - `src/lib/O/spec/Covenant_design.md` — the cabinetry+party design sketch (Garden.g/Tyrant.g).

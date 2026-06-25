@@ -603,25 +603,3 @@ ghost_timers: Map<string, number>       — setInterval ids for 10 s shrink per 
 
 - **Squish fold widget DOM**: `codeFolding({ placeholderDOM })` needs wiring in
   Langui.svelte's extension list.  ⛑️
-
-- **`C.children()` order**: the encoder calls `C.children()`.  Confirm TheC exposes an
-  ordered child iterator that preserves insertion order (or use `o({})` with a mainkey
-  filter).  ⛑️
-
-- **Ghost cleanup on save**: ghost Points that have decayed (timer elapsed, dropped from
-  in-memory state) are omitted from the next snap write because `encode_waft` walks
-  live in-memory state.  If the user saves immediately after +time the ghosts are still
-  present; they'll decay next session.  Acceptable — but worth noting.  ⛑️
-
-- **Global Points (no Doc ancestor)**: schema accepted, resolution deferred.  Minimap
-  renders them as unresolved red dots.
-
-- **Multi-Lang per Lies**: not in scope.  Path is clear (each Doc maps to a Lang
-  instance by path) but wiring is not done.
-
-- **`req:timemachine` placement**: the playback engine that drives `rwnd | pause | +time`
-  currently lives on `w:Lies` under `%examining` as a child of an ave signal (precedent:
-  `%Spotlight` child + `c.w` back-ref).  Tolerated but unusual — a particle that drives
-  time-stepped Waft gardening arguably belongs on `w:Lies` directly rather than nested
-  inside an ave-enrolled signal.  (Moved here from `Waft-palmtree-trajectory.md`; it is a
-  Waft-gardening concern, not Lies plumbing.)  ⛑️

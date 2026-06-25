@@ -34,28 +34,28 @@ story:LakeTiles
         nowriting:^Ghost
         dontSnapGhostList
   TimeSpool
-    TimeTotal:beliefs,avg=1.349
-      sample=1.203,at=1782363251
-      sample=1.025,at=1782363328
-      sample=1.13,at=1782363347
-      sample=1.365,at=1782363429
-      sample=1.23,at=1782364024
-      sample=1.29,at=1782364053
-      sample=1.717,at=1782364189
-      sample=1.639,at=1782364250
-      sample=1.564,at=1782364281
-      sample=1.331,at=1782364348
-    TimeTotal:step,avg=0.15
-      sample=0.134,at=1782363251
-      sample=0.114,at=1782363328
-      sample=0.126,at=1782363347
-      sample=0.152,at=1782363429
-      sample=0.137,at=1782364024
-      sample=0.143,at=1782364053
-      sample=0.191,at=1782364189
-      sample=0.182,at=1782364250
-      sample=0.174,at=1782364281
-      sample=0.148,at=1782364348
+    TimeTotal:beliefs,avg=1.38
+      sample=1.3,at=1782364418
+      sample=1.303,at=1782364469
+      sample=1.453,at=1782364516
+      sample=1.516,at=1782365345
+      sample=1.503,at=1782365383
+      sample=1.157,at=1782366998
+      sample=1.587,at=1782367798
+      sample=1.562,at=1782367829
+      sample=1.237,at=1782367893
+      sample=1.187,at=1782368855
+    TimeTotal:step,avg=0.153
+      sample=0.144,at=1782364418
+      sample=0.145,at=1782364469
+      sample=0.161,at=1782364516
+      sample=0.168,at=1782365345
+      sample=0.167,at=1782365383
+      sample=0.129,at=1782366998
+      sample=0.176,at=1782367798
+      sample=0.174,at=1782367829
+      sample=0.137,at=1782367893
+      sample=0.132,at=1782368855
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
     Entcase:Ting_Point-last

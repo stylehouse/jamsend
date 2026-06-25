@@ -438,15 +438,15 @@ Peeroleum_rollup_faulty(pier):
 //  boundary advances a per-w LOGICAL tick (w.c.retx_tick — replay-safe, never ms) and, per Pier, asks
 //   retx_due which un-acked emits' backoff windows have elapsed: re-hand each emit.c.frame to the
 //    CURRENT active transport (no new emit booked — the same seq, which the peer's inseq dedups), bump
-//     its attempts/sent_tick, mark %resent. Exhausted emits get %dead. Dormant on a clean stream: emits
-//      ack within the step, so retx_due skips them (acked) and nothing re-sends.
-//   < %dead should also roll to %faulty + kick liveness/reset (heading 8/9); for now it only marks +
-//      leaves the emit (a dead emit isn't culled — only the adversarial path makes any, unbuilt yet).
+//     its attempts/sent_tick, mark %resent. Exhausted emits roll up %stalled and are culled (below).
+//      Dormant on a clean stream: emits ack within the step, so retx_due skips them (acked), nothing re-sends.
+//   The retransmit policy is per-w (w.c.retx_policy), so an adversarial Story can tighten it to land a
+//    death in a couple ticks; it defaults to the production {base:2, factor:2, max_attempts:5, cap:16}.
 Peeroleum_retx_sweep(w):
     const H = this
     w.c.retx_tick = (w.c.retx_tick || 0) + 1
     let now = w.c.retx_tick
-    let policy = {base: 2, factor: 2, max_attempts: 5, cap: 16}
+    let policy = w.c.retx_policy || {base: 2, factor: 2, max_attempts: 5, cap: 16}
     let conn = w.o({active_transport:1})[0]?.c.connection
     for (const peering of w.o({Peering:1})) {
         for (const pier of peering.o({Pier:1})) {
@@ -465,7 +465,24 @@ Peeroleum_retx_sweep(w):
             }
             for (const seq of verdict.dead) {
                 let emit = emits.find(e => e.sc.seq == seq)
-                if (emit) emit.sc.dead = 1
+                if (!emit) continue
+                try {
+                    // latch the carrier-down signal: a %stalled container holding the emit that died (one
+                    //  per dead frame — parallel to %faulty over %unemit). The durable record a re-dial reads
+                    //   (heading 8); it does NOT rebuild like %faulty (the emit is gone), so only
+                    //    reset_handshake clears it. Inlined (no separate method) so an HMR mid-update can't
+                    //     leave the call dangling — the desync that froze a sweep once.
+                    let stalled = pier.o({stalled:1})[0]
+                    stalled ||= pier.i({stalled:1})
+                    stalled.i({emit: emit.sc.seq, type: emit.sc.type, seq: emit.sc.seq, reason: 'no-ack'})
+                    outbox.drop(emit)                      // then cull — else it re-dies every sweep
+                } catch (err) {
+                    // a throw here MUST NOT break the rearm: a frozen sweep silently strands every later
+                    //  frame on this w. Surface the cause in the snap (not just console) so it is never a guess.
+                    let msg = (err && err.message || String(err)).slice(0, 60)
+                    if (!pier.o({stall_err:1})[0]) pier.i({stall_err:1, msg})
+                    console.error(`⚠ Peeroleum stall stamp threw seq=${seq}: ${msg}`, err)
+                }
             }
         }
     }

@@ -8,10 +8,11 @@
     //   panel double-shows):
     //     • Otro mounts kind="Panel" — the global/fullscreen modals (e.g. IdHatch), fixed to the
     //       viewport bottom, accreting upward.
-    //     • Liesui mounts kind="Brink" — the cluster faces (Runner/Relay) of %Aim, pinned INSIDE the
-    //       Lies backend box (.ls-ui, position:relative), floating over the wafts.  Bottom-anchored
-    //       at rest; an extra Vexpandy JUMPS the whole dock to the top of Liesui (it re-perches, it
-    //       does not expand).  Bounded by .ls-ui, so a Brink can never bleed onto the Langui editor.
+    //     • Liesui mounts kind="Brink" — the cluster faces (Runner/Relay) of %Aim, FLOATING inside
+    //       the Lies backend box (.ls-ui, position:relative) over a zero-height sticky anchor, so it
+    //       reserves no flow space (its growing height never pushes the list) yet stays pinned to a
+    //       corner of the scrollport however the list scrolls.  Vexpandy re-perches it bottom↔top, a
+    //       side button right↔left.  Bounded by .ls-ui, so a Brink can never bleed onto the Langui editor.
     //   Re-suggesting the same (kind, of_Funkcion) is the change-notice (oai merge + bump re-renders
     //   a face without tearing it down); altitude orders the stack.
     import type { House } from "$lib/O/Housing.svelte"
@@ -29,22 +30,27 @@
         return [...ps].sort((a, b) => Number(a.sc.altitude ?? 10) - Number(b.sc.altitude ?? 10))
     })())
 
-    // Brink only: the Vexpandy flips the dock between bottom-anchored (rest) and top-anchored
-    //  (jumped) within the Liesui box — a re-perch, not an expand.
+    // Brink only: the dock re-perches between corners of the Liesui box — a move, not an expand.
+    //  jumped = the Vexpandy flips it bottom↔top; lefted = the side button shoots it right↔left.
     let jumped = $state(false)
+    let lefted = $state(false)
 </script>
 
 {#if panels.length}
     {#if kind === 'Brink'}
-        <div class="lens-brink" class:lens-brink-top={jumped}>
-            <div class="lens-brink-grip" title={jumped ? 'drop the cluster dock to the bottom of Lies' : 'jump the cluster dock to the top of Lies'}>
-                <Vexpandy bind:expanded={jumped} />
-            </div>
-            {#each panels as p (p.sc.of_Funkcion)}
-                <div class="lens-slot">
-                    <LensHost {H} lens={p} />
+        <div class="lens-brink-anchor" class:lens-brink-top={jumped} class:lens-brink-left={lefted}>
+            <div class="lens-brink">
+                <div class="lens-brink-grips" title={jumped ? 'drop the cluster dock to the bottom of Lies' : 'jump the cluster dock to the top of Lies'}>
+                    <Vexpandy bind:expanded={jumped} />
+                    <button class="lens-brink-side" onclick={() => lefted = !lefted}
+                        title={lefted ? 'send the cluster dock to the right of Lies' : 'send the cluster dock to the left of Lies'}>{lefted ? '⟩' : '⟨'}</button>
                 </div>
-            {/each}
+                {#each panels as p (p.sc.of_Funkcion)}
+                    <div class="lens-slot">
+                        <LensHost {H} lens={p} />
+                    </div>
+                {/each}
+            </div>
         </div>
     {:else}
         <div class="lens-dock">
@@ -65,17 +71,32 @@
         display: flex; flex-direction: column-reverse; align-items: stretch;
         gap: 2px; pointer-events: none; z-index: 40000;
     }
-    /* Brink: floats over the wafts INSIDE .ls-ui (absolute, no flow space), ~1/3 max / 1/5 min of
-       the panel.  Bottom-right at rest (where the old .ls-health card sat), jumping to top-right on
-       the Vexpandy.  z-index over the waft rows but well under the global Panel dock. */
-    .lens-brink {
-        position: absolute; right: 8px; bottom: 8px;
-        max-width: 33%; min-width: 20%;
-        display: flex; flex-direction: column; align-items: stretch; gap: 2px;
+    /* Brink: a ZERO-HEIGHT sticky anchor reserves NO flow space; the dock floats OUT of it
+       (absolute), overlaying the wafts and staying pinned to a corner of the .ls-ui scrollport
+       however the list scrolls (sticky on the 0-height anchor = the .ls-nokey trick, minus the
+       reserved strip — so its growing height never pushes the list).  Vexpandy jumps it bottom↔top;
+       the side button shoots it right↔left, so it can perch in any corner.  z-index over the waft
+       rows but well under the global Panel dock. */
+    .lens-brink-anchor {
+        position: sticky; bottom: 8px; height: 0;
         z-index: 7; pointer-events: none;
     }
-    .lens-brink-top { top: 8px; bottom: auto; }
-    .lens-brink-grip { display: flex; justify-content: flex-end; pointer-events: auto; }
+    .lens-brink-anchor.lens-brink-top { top: 8px; bottom: auto; }
+    .lens-brink {
+        position: absolute; right: 8px; bottom: 0;
+        width: max-content; max-width: 33%; min-width: 14rem;
+        display: flex; flex-direction: column; align-items: stretch; gap: 2px;
+        pointer-events: none;
+    }
+    .lens-brink-top  .lens-brink { bottom: auto; top: 0; }
+    .lens-brink-left .lens-brink { right: auto; left: 8px; }
+    .lens-brink-grips { display: flex; justify-content: flex-end; align-items: center; gap: 4px; pointer-events: auto; }
+    .lens-brink-side {
+        font-family: monospace; font-size: 0.8rem; line-height: 1; cursor: pointer;
+        color: #5a6488; background: transparent; border: 1px solid #2c3450; border-radius: 3px;
+        padding: 0 0.3rem;
+    }
+    .lens-brink-side:hover { color: #8fa0d0; border-color: #44609e; }
     .lens-slot { pointer-events: auto; }
     :global(.lens-brink .vx-btn) { color: #5a6488; }
 </style>

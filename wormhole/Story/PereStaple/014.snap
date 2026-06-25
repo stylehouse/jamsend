@@ -1,7 +1,7 @@
 Snap:H
   H:PereStaple,Run
     A:Alice
-      self,round=18	{"mung":["age"]}
+      self,round=21	{"mung":["age"]}
       w:Peeroleum
         Peering,name:alice
           Pier,pub:bob,req=2,ok
@@ -33,13 +33,13 @@ Snap:H
           req:p2paddy,ok
         transport,type:mock
         active_transport,type:websocket,open
-        self,round=18	{"mung":["age"]}
+        self,round=21	{"mung":["age"]}
         seemingly:ya aooooolly,figaro:Squelchbury
         transport,type:webrtc,faulty,reason:no-ack
         transport,type:websocket
           reputation:good
     A:Bob
-      self,round=18	{"mung":["age"]}
+      self,round=21	{"mung":["age"]}
       w:Peeroleum
         Peering,name:bob
           Pier,pub:alice,req=2,ok
@@ -72,13 +72,13 @@ Snap:H
           req:p2paddy,ok
         transport,type:mock
         active_transport,type:websocket,open
-        self,round=18	{"mung":["age"]}
+        self,round=21	{"mung":["age"]}
         seemingly:ya aooooolly,figaro:Squelchbury
         transport,type:webrtc,faulty,reason:no-ack
         transport,type:websocket
           reputation:good
     A:Ivy
-      self,round=3	{"mung":["age"]}
+      self,round=6	{"mung":["age"]}
       w:Peeroleum
         Peering,name:ivy
           Pier,pub:jon,req=2
@@ -88,10 +88,10 @@ Snap:H
           req:p2paddy
         transport,type:mock
         active_transport,type:mock,open
-        self,round=3	{"mung":["age"]}
+        self,round=6	{"mung":["age"]}
         seemingly:ya aooooolly,figaro:Squelchbury
     A:Jon
-      self,round=3	{"mung":["age"]}
+      self,round=6	{"mung":["age"]}
       w:Peeroleum
         Peering,name:jon
           Pier,pub:ivy,req=2
@@ -101,26 +101,36 @@ Snap:H
           req:p2paddy
         transport,type:mock
         active_transport,type:mock,open
-        self,round=3	{"mung":["age"]}
+        self,round=6	{"mung":["age"]}
         seemingly:ya aooooolly,figaro:Squelchbury
     A:Kim
+      self,round=3	{"mung":["age"]}
       w:Peeroleum
         Peering,name:kim
           Pier,pub:lee,req=2
             outbox
-              emit,type:noop,seq,sent
+              recent
+            stalled
+              emit,type:noop,seq,reason:no-ack
+          req:p2paddy
         transport,type:mock
         active_transport,type:mock,open
+        self,round=3	{"mung":["age"]}
+        seemingly:ya aooooolly,figaro:Squelchbury
     A:Lee
+      self,round=3	{"mung":["age"]}
       w:Peeroleum
         Peering,name:lee
           Pier,pub:kim,req=2
+          req:p2paddy
         transport,type:mock
         active_transport,type:mock,open
+        self,round=3	{"mung":["age"]}
+        seemingly:ya aooooolly,figaro:Squelchbury
     A:PereStaple
-      self,round=20	{"mung":["age"]}
+      self,round=23	{"mung":["age"]}
       w:PereStaple
-        self,round=20	{"mung":["age"]}
+        self,round=23	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         reached:step_3
@@ -137,3 +147,4 @@ Snap:H
         reached:step_8
         witnessed:heal
         reached:step_11
+        witnessed:stall

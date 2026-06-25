@@ -23,7 +23,7 @@ A cross-spec sweep of what is in motion and what is deferred-but-load-bearing,
    down that should be" over the per-subsystem prose, which drifts run-to-run.
 - **Highest-leverage move latent here:** items #2 (where standing things live —
    `H.ave` vs `Run.c`) and #3 (what counts as "the same change") are the *same*
-    cross-cutting questions asked in three dialects across Story/Wire/palmtree.
+    cross-cutting questions asked in three dialects across Story/Wire/Waft.
      Answer each once as a shared primitive and three specs partly collapse.
 - **Durable invariant worth a real home:** *the LE owns every Waft C manipulation
    from Lang* — Lang never writes Waft C directly. It's only in an elvis comment
@@ -81,10 +81,30 @@ The near-permanent compile boomerang is fixed (unchanged-dige settle-wedge in
 ### Lang / Waft / Wire
 Three overlapping forward designs:
 
-- **`Waft-palmtree-trajectory.md`** — the What-cursor + branch/dive (`↓`/`↘`
-   +time) model. ~10 "faults" still open; the meaty ones: Doc-close is a no-op
-    so removed Docs stay editable (#5); Waft/Doc rename are warn-stubs (#6);
-     `bookmark_vanished` re-anchor unbuilt (#8).
+- **Waft transport faults** (drained from the retired `Waft-palmtree-trajectory.md`;
+   the *concept* now lives in `Waft_spec.md`, these are the live plumbing gaps).
+    Verified still-open against code:
+   - **Doc-close is a no-op** — `Lies_sync_waft_docs` (LiesStore.svelte:204) never
+      GCs a `%Good` whose path left every Waft, so a removed Doc stays loaded,
+       compilable, editable (#5).
+   - **Waft/Doc rename are warn-stubs** — `e_Lies_rename_waft` / `e_Lies_rename_doc`
+      (Lies.svelte:402,407) just `console.warn`. The hard half is the inclusion
+       graph: a rename must reach every Waft that *includes* this one, and a stored
+        locator must survive its target renaming — the SAME reference-caretaking
+         blocker behind Interest.md's "Rejoin the stack frame" Point-carry (#6).
+   - **`bookmark_vanished` re-anchor unbuilt** — `Lang_bookmark_vanished`
+      (Lang.svelte:2142) warns + stamps `%vanished`; the re-anchor + copy-paste
+       recovery passes are empty stubs (#8).
+   - **push verify false-positives** — a dropped unaccepted clone reads as a goner
+      on the origin walk, so `req:push/%dirty` stays open for a push that landed;
+       fix = stamp `bD/was_disincluded` before `LE_replace_back` (LiesHold:896, still
+        comment-only) (#2).
+   - **write-error stalls req:Codebit** — a write error never stamps `write_finished`,
+      so the Codebit parks forever (LiesCortex write path) (#4).
+   - **`LE_available_ops` not stamped** — computed (LiesHold:1659) but never written
+      to `%LE/%moves.sc.ops`, so NaviCado falls back to static ↑←→ buttons (#7).
+   The rest of palmtree was cleanup-directions (req%mutated write-dedup, `req:desire`
+    collapse, `req:Showing` as a real req) and resolved/vision items — let go with the file.
 
 **Point work (bookmark → Point).** *Done:* the ↑ on a ripe bookmark now shoots
  it into the active Interest's LE as a Point — `DocPoint.export_to_doc` →
@@ -225,7 +245,7 @@ The decisions the specs *defer* but that gate real work:
      fan-out / ark design.
 2. **Where standing continuity / wires live** — `H.ave` (session-scoped,
     graph-clean) vs `Run.c` (per-run). Asked identically in Story §8.5, Wire
-     spec, and palmtree. Answer it once.
+     spec, and the Waft transport (timemachine→Funkcion). Answer it once.
 3. **Delta-shape equivalence relation** — what counts as "the same change" for
     covariance folding (Wire §12) and fuzz classification (Story §4.2). Too loose
      folds real divergence; too tight folds nothing. Likely a `%fuzz,kind` ladder

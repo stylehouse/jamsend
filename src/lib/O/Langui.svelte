@@ -1573,9 +1573,11 @@
             parent: captured_container,
             state: EditorState.create({ doc: initial, extensions: editorExtensions }),
         })
-        // the scroller wears the global .scrollbig look (app.css); Langui keeps only
-        //  the gutter-width override so the minimap stays in lockstep with the bar.
-        view.scrollDOM.classList.add('scrollbig')
+        // the editor owns its scrollbar entirely in its style block (.lte-cm .cm-scroller::-webkit-
+        //  scrollbar*).  NOT the global .scrollbig class: one class (0,1,1) is too weak to beat
+        //   CodeMirror's own injected scroller styles on this element, so the copper handle has to ride
+        //    a component-scoped, more-specific rule — which is how it worked before it was hoisted to
+        //     global, and the class only dragged in a competing width:12px.
         // alignment key for Atime dispatchers — see the switch $effect's stamp.
         ;(view as any).lte_dock_path = captured_path
         last_applied_lang = initial_lang_name
@@ -1911,18 +1913,31 @@
     /* lte-expanded: V button pressed — give the editor room to breathe     */
     .lte-expanded .lte-cm :global(.cm-scroller) { max-height: 80vh }
 
-    /* ── webkit scrollbar ─────────────────────────────────────────────────── */
-    /* The bar's look (thumb/track) is the global .scrollbig (app.css), added to  */
-    /* the scroller in JS.  Langui overrides only the WIDTH, because              */
-    /* --lte-scrollbar-w is the gutter the minimap tucks into and also positions  */
-    /* the chevron — width and minimap must move together.                       */
+    /* ── webkit scrollbar — the fat copper handle, OWNED HERE (not global .scrollbig) ───────────── */
+    /* These component-scoped rules (.lte-cm .cm-scroller, 0,3,1) are specific enough to beat both    */
+    /* CodeMirror's injected scroller styles AND the global .scrollbig (0,1,1) — which is why the     */
+    /* handle worked here originally and vanished when it was hoisted to the weaker global class.     */
+    /* Width is a LITERAL 2em, NOT var(--lte-scrollbar-w): custom properties don't inherit into a     */
+    /* ::-webkit-scrollbar pseudo (Chromium).  Keep 2em == --lte-scrollbar-w by hand; the minimap/    */
+    /* chevron (real elements) read the var, so they stay in lockstep.  url is relative (resolves at  */
+    /* runtime to /i/, the static root) — the form that worked before.                                */
     .lte-cm :global(.cm-scroller)::-webkit-scrollbar {
-        width:  var(--lte-scrollbar-w);   /* vertical — the minimap gutter */
+        width:  2em;                      /* vertical — the minimap gutter; must equal --lte-scrollbar-w */
         height: 0.5em;                    /* horizontal — stay out of the way */
     }
     .lte-cm :global(.cm-scroller)::-webkit-scrollbar-thumb {
+        background: #6e4e2e url(i/copper_anodes.jpg);   /* the fat copper handle (static/i/copper_anodes.jpg) */
+        border-radius: 1em;
         min-height: 4em;                  /* easier to grab on a tall doc */
+        border: none;
     }
+    .lte-cm :global(.cm-scroller)::-webkit-scrollbar-track {
+        background: #0e0e0e;
+        border-radius: 1em;
+    }
+    /* NB do NOT set the standard scrollbar-width/scrollbar-color here: on Chromium they take
+       precedence and DISABLE the ::-webkit-scrollbar styling above — the scrollbar-color flatly
+       replaces the thumb's copper background-image.  webkit-pseudo only; Firefox gets its default. */
 
     /* .fathandle — wider thumb for when minimap gutter is wider;            */
     /* add class to cm-scroller via EditorView.scrollDOMAttributes           */
