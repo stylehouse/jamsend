@@ -8,51 +8,30 @@ Waft:Ghost/Net/Easy,active
   What:the peer
     Doc:Ghost/N/Peeroleum.g
     Point,method:Peeroleum
-    Point,method:req_p2pman
-    Point,method:req_p2paddy
     Point,method:req_handshake
   What:the test
-    Point,method:PereStaple
-    Point,method:Run_A_PereStaple
     Doc:Ghost/Story/Peregrination.g
-    Point,method:LakeNetherland
+    Point,method:Run_A_PereStaple
   What:transport
     What:mock
       Doc:Ghost/N/Peeroleum.g
       Point,method:transport
-      Point:seemingly
     What:webrtc-or-not
       What:reliability
         Doc:Ghost/N/Tribunal.g
-        Point,method:PeerJS
-        Point,method:Socket
-        Point,method:Tribunal_hand_to_webrtc
-        Point,method:Tribunal_pair_websocket
         Point,method:Tribunal_fall_to_websocket
-        Point,method:Tribunal_reputation_good
       What:the trial
         Doc:Ghost/Story/Peregrination.g
-        Point,method:Lake_trial_arm
         Point,method:Lake_trial_fallback
-        Point,method:Lake_trial_confirm
   What:healing
     Doc:Ghost/N/Reliable.g
     Point,method:inseq_admit
     Point,method:retx_due
-    Point,method:retx_delay
-    What:the adversary
-      Doc:Ghost/N/Lossy.g
-      Point,method:lossy_decide
-      Point,method:make_lossy_partner
+    Point,method:make_lossy_partner
   What:Security
     Doc:Ghost/N/Tyrant.g
     Point,method:Run_A_PereTyrant
-    Point,method:PereTyrant
-    Point,method:Tyrant_sides_up
     Point,method:req_trust
-    Point,method:say_vouch
-    Point,method:hear_vouch
-    Point,method:req_join
   What:the spec
     Doc:src/lib/O/spec/Peeroleum_spec.md
     Doc:src/lib/O/spec/Peeroleum_handover.md

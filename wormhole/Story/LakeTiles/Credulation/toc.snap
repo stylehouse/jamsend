@@ -1,8 +1,25 @@
 Credulation,of_Book:LakeTiles
-  run=0,at=1782311323.157,ok,ok_pct,mode:check
-    uses:Ghost_N_Peeroleum,dige:e4bc40095aa2a1e4
-    uses:Ghost_N_Reliable,dige:cfb6ab036989f8c5
+  run=0,at=1782354175.049,ok,ok_pct,mode:check
+    uses:Ghost_N_Peeroleum,dige:db5bb6bfa755444a
+    uses:Ghost_N_Reliable,dige:b282dca8b1abe0c9
     uses:Ghost_N_Tribunal,dige:683d031e368194c6
-    uses:Ghost_N_Lossy,dige:3b62b5b7b9d08ccb
-    uses:Ghost_Story_Peregrination,dige:cbcb91135c98b814
+    uses:Ghost_Story_Peregrination,dige:37f14459a466665d
+    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
+  run,at=1782354283.627,ok=0,ok_pct=0.33,mode:check
+    uses:Ghost_N_Peeroleum,dige:db5bb6bfa755444a
+    uses:Ghost_N_Reliable,dige:b282dca8b1abe0c9
+    uses:Ghost_N_Tribunal,dige:683d031e368194c6
+    uses:Ghost_Story_Peregrination,dige:37f14459a466665d
+    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
+  run=2,at=1782354334.873,ok,ok_pct,mode:check
+    uses:Ghost_N_Peeroleum,dige:db5bb6bfa755444a
+    uses:Ghost_N_Reliable,dige:b282dca8b1abe0c9
+    uses:Ghost_N_Tribunal,dige:683d031e368194c6
+    uses:Ghost_Story_Peregrination,dige:37f14459a466665d
+    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
+  run=3,at=1782354354.865,ok,ok_pct,mode:check
+    uses:Ghost_N_Peeroleum,dige:db5bb6bfa755444a
+    uses:Ghost_N_Reliable,dige:b282dca8b1abe0c9
+    uses:Ghost_N_Tribunal,dige:683d031e368194c6
+    uses:Ghost_Story_Peregrination,dige:37f14459a466665d
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a

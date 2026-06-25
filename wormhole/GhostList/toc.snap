@@ -23,7 +23,6 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted
     Doc:Ghost/N/Tribunal.g,name:Tribunal,noticed_at=1781771905413
     Doc:Ghost/N/Tyrant.g,name:Tyrant,noticed_at=1781995792551
     Doc:Ghost/N/Reliable.g,name:Reliable,noticed_at=1782310356887
-    Doc:Ghost/N/Lossy.g,name:Lossy,noticed_at=1782310615259
   open_dir:Ghost/Story
   group:Ghost/Story,dir:Ghost/Story
     Doc:Ghost/Story/Peregrination.g,name:Peregrination,noticed_at=1781771909101

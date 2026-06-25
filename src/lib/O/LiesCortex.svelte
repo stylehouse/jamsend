@@ -398,7 +398,8 @@
     //   Waits until all permanent req:include on w confirm their versions — no
     //   ghostmeta polling here, that lives in req_include.
     //   When all are confirmed: mints a fresh BlastPit, calls H[method](A,w:blast),
-    //   then reqyoncile-finishes the BlatDo req on w:Lies so Story lands in-step.
+    //   then flags the BlatDo instance done (off-snap) and drives req:Rundown (w:Lies)
+    //   so it records %ran and reaps BlatDo in-step — BlatDo's ttlilt still holding.
     //
     //   BlastPit at w:Pantheate/BlastPit/A:blast/w:blast — wiped + re-seeded
     //    each run so the method's output lands in clean visible scratch.
@@ -429,11 +430,17 @@
             await fn.call(H, blastA, blastW)
         }
 
-        // signal BlatDo (on w:Lies) that the run completed —
-        //  e_reqyonciliation properly finishes the req, dropping its %ttlilt
-        //   so Story snaps with BlastPit in the same step.
+        // the run landed.  Do NOT finish BlatDo here: finish() drops its %ttlilt, but
+        //  Rundown records %ran on a LATER pass — that gap is where the step can snap
+        //   half-rolled (ran a moment behind, no ok, a stray finished BlatDo).  Instead
+        //    flag the instance done (off-snap) and DRIVE req:Rundown, which records %ran
+        //     and reaps BlatDo in one delivery — BlatDo's ttlilt still holding the snap
+        //      until that record (it rides BlatDo, the one req that finishes, not Rundown).
         const blatdo = req.c.blatdo as TheC | undefined
-        if (blatdo) H.reqyoncile(blatdo, { finished: 1, see: `run:${method}` })
+        if (blatdo) {
+            blatdo.c.run_done = `run:${method}`                    // off-snap: this instance's run finished
+            H.reqyoncile(blatdo.c.up, { see: `run:${method}` })    // drive Rundown to settle in-step
+        }
         pw.finish(req)
     },
 
@@ -448,14 +455,16 @@
     //
     //   Idles on /%waits:!run_method until a compile carrying a Pantheate_method
     //   configures one.  Once set, hashes the sibling Codebit diges + %leashi
-    //   into a moment id.  For each new moment, mints req:BlatDo and drives it.
-    //   BlatDo fires the run command and holds a %ttlilt so Story stays open;
-    //   Rundown oks only after BlatDo finishes — then records %ran:moment,
-    //   drops BlatDo, and prunes old ran:* so only the current marker remains.
+    //   into a moment id.  For each new moment, mints req:BlatDo, which fires the run
+    //   command and holds a %ttlilt so Story stays open.
+    //   When the run lands req_run_method flags the instance (run_done, off-snap) and
+    //   drives this req: Rundown records %ran:moment, finish()es + reaps BlatDo, prunes
+    //   old ran:*, and oks — all in that one driven pass, so the snap never catches a
+    //   half-rolled runner (BlatDo's ttlilt held it from fire through the record).
     //
-    //   A stale in-flight BlatDo (re-compile arriving mid-run) is dropped; the
-    //   orphaned run on Pantheate completes harmlessly and its reqyoncile return
-    //   is a no-op on the already-dropped particle.
+    //   A stale in-flight BlatDo (re-compile arriving mid-run) is dropped; the orphaned
+    //   run on Pantheate completes harmlessly — its drive recomputes a now-different
+    //   moment, so run_done never matches and the stray landing is ignored.
     //
     //   maz ordering means do() only reaches maz:1 when all maz:2 Codebits are
     //   finished — no runner fires while a ghost is still writing.
@@ -491,24 +500,24 @@
         const moment = `${diges.join(',')}#leash:${leashi}`
 
         // BlatDo is a %req child of this Rundown (req is its host).
-        // drop a BlatDo whose moment is stale (re-compile or leash bump)
-        const existing = req.o({ req: 'BlatDo' })[0] as TheC | undefined
-        if (existing && existing.sc.moment !== moment) req.drop(existing)
+        // drop a BlatDo whose moment is stale (re-compile or leash bump) so a just-landed
+        //  old run never records as this moment.
+        let blatdo = req.o({ req: 'BlatDo' })[0] as TheC | undefined
+        if (blatdo && blatdo.sc.moment !== moment) { req.drop(blatdo); blatdo = undefined }
 
         // already ran this moment
         if (req.oa({ ran: moment })) { req.sc.ok = 1; return }
 
-        // mint BlatDo for this moment (idempotent if already in-flight)
-        await req.oai({ req: 'BlatDo' }, { moment, run_method: req.sc.run_method })
-        await req.do()
-
-        // if BlatDo finished this tick: record the moment, then clean up
-        const blatdo = req.o({ req: 'BlatDo' })[0] as TheC | undefined
-        if (blatdo?.sc.finished) {
+        // run landed: req_run_method flagged the instance done (off-snap) and drove us.
+        //  Record %ran and reap the instance in THIS pass — BlatDo's %ttlilt held the snap
+        //   from fire right through here, so settling now releases a fully-settled Rundown,
+        //    never a half-rolled in-between.  finish() is the clean done-signal (drops the
+        //     ttlilt); the drop then keeps the finished instance out of the snap.
+        if (blatdo?.c.run_done) {
             req.oai({ ran: moment })
-            // BlatDo's job is done; drop it now rather than waiting for the next compile.
-            // Prune ran:* from older moments — only the current one is needed for the gate.
+            req.finish(blatdo)
             req.drop(blatdo)
+            // Prune ran:* from older moments — only the current one is needed for the gate.
             for (const old of req.o({ ran: 1 }) as TheC[]) {
                 if (old.sc.ran !== moment) req.drop(old)
             }
@@ -516,6 +525,11 @@
             console.log(`🏃 Rundown: ${req.sc.run_method} @ ${moment}`)
             return
         }
+
+        // not landed yet → ensure an instance is in flight for this moment (idempotent if
+        //  already running).  Its %ttlilt holds Story open while Pantheate runs the method.
+        await req.oai({ req: 'BlatDo' }, { moment, run_method: req.sc.run_method })
+        await req.do()
         // BlatDo in-flight — its %ttlilt holds Story open; Rundown stays needs_work
     },
 
@@ -525,8 +539,10 @@
     //   Fires e:Pantheate_run_method carrying %req (itself) once — req_sent guards
     //   re-entry.  Holds %ttlilt,waiting:run so Story stays open while Pantheate
     //   confirms includes and runs the method.
-    //   Finished by e_reqyonciliation when req_run_method calls
-    //    reqyoncile(req, {finished:1}) — dropping the %ttlilt in-step with BlastPit.
+    //   When the run lands, req_run_method flags req.c.run_done (off-snap) and drives
+    //    req:Rundown — Rundown records %ran then finish()es + reaps this instance.  So
+    //    the ttlilt holds the snap from fire right through the record, never dropping
+    //    early (an early finish here is exactly the half-rolled-snap bug it would cause).
     //
     //   req.c.up = req:Rundown
     //   req.c.up.c.up = req:Cortex
@@ -542,10 +558,7 @@
                 req,
             })
         }
-        // hold Story open while Pantheate confirms includes and runs the method.
-        //  reqyoncile(req, {finished:1}) from req_run_method finishes us properly —
-        //   e_reqyonciliation drops the %ttlilt and feebly_ponders,
-        //    waking Rundown to record %ran and go ok in the same Story step.
+        // hold the snap open across the whole run slice; Rundown reaps us at the record.
         H.i_req_ttlilt(req, 0.5, { waiting: 'run' })
     },
 

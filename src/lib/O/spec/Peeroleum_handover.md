@@ -65,13 +65,13 @@ source, compile-verified, with regen/refreeze HELD** so it doesn't disturb the l
         drop/dup/delay-reorder, logical-tick clock; `scripts/LossyCarrier.spec.ts` 5/5) + `peeroleum_inseq.ts`
          (per-Pier dedup + gap-buffer; `scripts/InSeq.spec.ts` 6/6).
 - **FOLDED .ts → .g (this session, per the human's doctrine — see below).** The three pure `.ts` primitives +
-   their specs are DELETED; their logic now lives as House methods in two focused new ghosts:
-  - **`Ghost/N/Reliable.g`** — the network-healing floor: `inseq_admit` (inbound seq discipline) + `retx_due`/
-     `retx_delay` (the re-send decision). In `CREDULER_GHOSTS` + Net/Easy; **gen built** (`gen/N/Reliable.go`).
-  - **`Ghost/N/Lossy.g`** — the adversarial carrier: `lossy_decide`/`make_lossy_partner`. In `CREDULER_GHOSTS` +
-     Net/Easy; **gen built** (`gen/N/Lossy.go`). The `ghost-compile` CLI reported "no response in 12s" (its reply
-      window) but the editor was just SLOW on the closure-heavy raw JS and finished writing the `.go` ~minutes
-       later — check disk, the gen landed. Dormant (no caller) until an adversarial Story (heading 6) uses it.
+   their specs are DELETED; their logic now lives as House methods in ONE focused ghost, three regions:
+  - **`Ghost/N/Reliable.g`** — the network-healing floor: `inseq_admit` (inbound seq discipline), then
+     `retx_delay` + `retx_due` (the re-send decision), then the adversary `lossy_decide` + `make_lossy_partner`
+      (a deterministic lossy carrier). The adversary started as its own `Lossy.g` but a separate ghost earned no
+       keep for dormant test scaffolding — it's now just the bottom region here (the human: "Lossy could just be
+        a region"). In `CREDULER_GHOSTS` + Net/Easy; **gen ghost-compiled live** (`gen/N/Reliable.go`). The
+         adversary stays dormant (no caller) until an adversarial Story (heading 6) hands a port through it.
 - **inseq is WIRED + live.** `Peeroleum_deliver` folds every inbound inbox frame through a per-Pier `pier.c.inseq`
    cursor (`this.inseq_admit`) BEFORE booking: contiguous → `Peeroleum_book_unemit`+drain (clean mock = 1,2,3…
     pass-through, PereStaple/PereTyrant unaffected); delivered-dup (`seq ≤ last`) → re-ack only (lost-ack recovery,
@@ -85,10 +85,20 @@ source, compile-verified, with regen/refreeze HELD** so it doesn't disturb the l
      un-acked emits' windows elapsed, re-hands each `emit.c.frame` to the CURRENT active transport (no new emit;
       same seq, peer's inseq dedups), bumps attempts + stamps `%resent`; exhausted → `%dead`. **Dormant on a clean
        stream** (emits ack within the step → `retx_due` skips them → PereStaple snap unchanged). Its ACTIVE path is
-        unexercised — no adversarial Story drops a frame yet (heading 6). **< `%dead` only marks; rolling it to
+        now EXERCISED by an adversarial Story (the verifier below). **< `%dead` only marks; rolling it to
          `%faulty` + kicking liveness/reset is heading 8/9, and a dead emit currently isn't culled (adversarial-only
-          leak).** **NEXT verifier: a wrangler step that pairs a `Lossy.g` carrier (drop a seq), sends, and witnesses
-           retransmit heal it** — exercises Lossy + retransmit + inseq end-to-end. Then spine-liveness + Tribunal fallback.
+          leak).**
+- **The verifier — `Peregrination.g` step 8 `Lake_heal_arm` (BUILT 2026-06-25, ghost-compiled live, browser-UNVERIFIED).**
+   A FRESH isolated pair (Ivy/Jon) on a clean mock carrier, with the adversary (`make_lossy_partner, {drop:[s]}`)
+    slipped onto the Ivy→Jon path; one `noop` seq s sent. A noop is admitted+acked pre-handshake, so no handshake is
+     needed (isolated + fresh-seq=1). The drop leaves Ivy's emit un-acked → `Peeroleum_retx_sweep` re-sends at the step
+      boundaries (`retx_delay(1)=2` ticks → heal plays out over steps 9-10) → the resend passes the now-spent drop →
+       Jon delivers+acks → `%acked`. `Lake_witness` stamps **`%witnessed:heal`** on three cull-surviving readings:
+        the adversary's drop-log (`IvyPier.c.lossy.dropped`), Jon HANDLED it (`%done` unemit / `%recent`), Ivy's emit
+         `%acked` (live / `%recent`). toc.snap carries `step=8..11` (lie diges). The carrier's `drop` is now drop-ONCE
+          (transient → retransmit heals); a new `blackhole` knob is the drop-every-transit permanent-fault case. This is
+           the FIRST end-to-end exercise of Lossy + retransmit + inseq. **Run PereStaple on :9091 to confirm.** Then
+            `%dead`→`%faulty`/liveness (via `blackhole`), spine-liveness + Tribunal fallback.
 The PINNED carrier `last_heard` stamp (`Peeroleum_deliver`, every frame incl. **acks** — closes the watchdog's
  ack-blindness) rides the next re-pin.
 
@@ -510,11 +520,13 @@ ghosts, Garden.g + Tyrant.g.
    `%req:wrangle`, `Lake_drive`/`Lake_witness`/`Lake_sides_up`/`Lake_trial_*`. (Acquired by the Creduler —
     `Creduler_ensure` / `CREDULER_GHOSTS` in `Lies.svelte`/`LiesLies.svelte`; no hand-written loader.)
 - `src/lib/server/relay.ts` — the real `/relay` WS server (`attachRelay`) + its `configureServer` vite plugin.
-- `Ghost/N/Reliable.g` — network-healing floor: `inseq_admit` (wired) + `retx_due`/`retx_delay` (folded, unwired).
-- `Ghost/N/Lossy.g` — adversarial carrier (`lossy_decide`/`make_lossy_partner`); gen unbuilt, off `CREDULER_GHOSTS`.
-- `scripts/FlockCompile.spec.ts` — headless compile gate for the flock (now incl. Reliable.g/Lossy.g); the
-   break-glass "expecting trouble" check, NOT the default (ghost-compile is). Currently blocked by the LiesEnd WIP.
-- `wormhole/Ghost/Net/Easy/toc.snap` — annotation overlay / compile manifest.
+- `Ghost/N/Reliable.g` — network-healing floor, three regions: `inseq_admit` (wired), `retx_delay` + `retx_due`
+   (wired via `Peeroleum_retx_sweep`), and the adversary `lossy_decide` + `make_lossy_partner` (dormant scaffolding,
+    folded down from the retired `Lossy.g`).
+- `scripts/FlockCompile.spec.ts` — headless compile gate for the flock (incl. `Reliable.g`); the break-glass
+   "expecting trouble" check, NOT the default (ghost-compile is). Boots + passes again (LiesEnd WIP settled).
+- `wormhole/Ghost/Net/Easy/toc.snap` — annotation overlay / compile manifest, curated to landmarks (one front-door
+   Point per theme, not every method).
 - `wormhole/Story/PereStaple/toc.snap` — the Story that drives the Book (step lines run through `step=5`).
 - `src/lib/O/spec/Peeroleum_spec.md` — the pinned design (the floor). This file — the living progress.
 - `src/lib/O/spec/Covenant_design.md` — the cabinetry+party design sketch (Garden.g/Tyrant.g).

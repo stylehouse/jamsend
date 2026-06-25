@@ -14,7 +14,9 @@
 //   step 4  transport trial: carriers up, carrier handed to webrtc, probe sent
 //   step 5  no-ack-then-give-up: webrtc faulty, carrier falls to the websocket relay
 //   step 6  the relay carries (probe acked) -> reputation:good on both carriers
-//   step 7  corruption tests (heading 6) -- placeholder
+//   step 7  binary exercise: a 64-byte frame A→B, body-hash verified, round-trips over the live carrier
+//   step 8  reliability heal: a fresh pair on a lossy carrier loses a frame; retransmit re-sends it,
+//            playing out over steps 9-10 (logical-tick backoff) until the drop heals and acks
 //
 // The heading-4 message lifecycle (outbox created→sent→acked, serial inbox
 //  queued→handling→verified→done, acks, %recent whittle at the step boundary) is not
@@ -56,6 +58,8 @@ async Lake_drive(w, req):
             await &Lake_trial_confirm,w
         else if n === 7
             await &Lake_exercise_binary,w
+        else if n === 8
+            await &Lake_heal_arm,w
     await &Lake_pump_handshakes,w
     &Lake_witness,w
     await &Lake_order,w
@@ -69,7 +73,7 @@ async Lake_drive(w, req):
 async Lake_order(w):
     let As = H o %A
     if (As.length < 2) return
-    let peer = (a) => (a%A === 'Alice' || a%A === 'Bob') ? 0 : 1
+    let peer = (a) => ['Alice', 'Bob', 'Ivy', 'Jon'].includes(a%A) ? 0 : 1
     let sorted = [...As].sort((a, b) => peer(a) - peer(b))
     let ordered = [...sorted, ...H.o().filter(c => !c%A)]
     await &place,{},ordered
@@ -243,6 +247,42 @@ async Lake_exercise_binary(w):
     let s = this.Pier_next_seq(AlicePier)
     this.Peeroleum_send(Alicew, {header: {type: 'test_binary', from: 'alice', to: 'bob', seq: s, body_hash: bh, body_len: bytes.length}, buffer: bytes})
 
+// Lake_heal_arm -- step 8: the reliability heal end-to-end (Reliable.g: inseq + retransmit + the adversary).
+//  Stand up a FRESH isolated pair (Ivy/Jon) on a clean mock carrier -- isolated so the step-4 trial's
+//   webrtc/websocket state can't muddy it, fresh so its per-Pier seq starts at 1. Slip the adversary onto
+//    the Ivy->Jon path (make_lossy_partner, drop:[s]) so the first transit of seq s is swallowed; Jon->Ivy
+//     (the acks) rides the bare port, clean. Send one noop Ivy->Jon -- a pre-handshake transport ping
+//      (req_unemit admits a noop pre-Ud, like step 2). Jon never hears it, so Ivy's %outbox/emit stays
+//       un-acked: the retransmit trigger. Peeroleum_retx_sweep re-sends it at the step boundaries
+//        (retx_delay(1)=2 logical ticks), the resend passes the now-spent drop, Jon delivers + acks, the
+//         emit goes %acked -- the heal, witnessed across steps 9-10. Fired once at step 8.
+async Lake_heal_arm(w):
+    w i %reached:step_8
+    H i A:Ivy$:IvyA/w:Peeroleum$:Ivyw
+    H i A:Jon$:JonA/w:Peeroleum$:Jonw
+    Ivyw i Peering,name:ivy$:IvyPeering
+    Jonw i Peering,name:jon$:JonPeering
+    IvyPeering.c.up = Ivyw
+    JonPeering.c.up = Jonw
+    let IvyPier = IvyPeering oai Pier,pub:jon,req
+    let JonPier = JonPeering oai Pier,pub:ivy,req
+    &transport,IvyA,Ivyw
+    &transport,JonA,Jonw
+    &Peeroleum_arm_whittle,Ivyw
+    &Peeroleum_arm_whittle,Jonw
+    Ivyw o active_transport$:Ivyport.c.connection
+    Jonw o active_transport$:Jonport.c.connection
+    // the seq to drop, captured before the schedule so the adversary targets exactly this frame.
+    let s = this.Pier_next_seq(IvyPier)
+    IvyPier.c.heal_seq = s
+    // slip the adversary between Ivy and Jon: Ivy's send reaches Jon THROUGH the lossy wrapper (drops seq s
+    //  once); Jon's acks reach Ivy by the bare port. Stash the wrapper on the Pier so the witness can read
+    //   its drop-log off-snap (survives the cull).
+    let lossy = this.make_lossy_partner(Jonport, {drop: [s]})
+    IvyPier.c.lossy = lossy
+    Ivyport.partner = lossy; Jonport.partner = Ivyport
+    &Peeroleum_send,Ivyw,{header:{type:'noop', from:'ivy', to:'jon', seq:s}}
+
 // Lake_witness — the readable assertion, polled each pass: once Bob's inbox
 //  shows a handled (%done) frame, stamp %witnessed:step_2 (the step rides in the
 //   value — `step` is the Story mainkey, so it can't be a key). Idempotent via the probe.
@@ -283,3 +323,18 @@ Lake_witness(w):
     let binrecent = Aliceob?.o({recent:1})[0]?.o({type:'test_binary'})[0]
     let binacked = (binlive && binlive.sc.acked) || !!binrecent
     if (Bobgot && binacked && !(oa %witnessed:send_binary)) i %witnessed:send_binary
+    // step 8 (heal): the dropped noop healed via retransmit. Three durable readings, each surviving the
+    //  cull: the adversary swallowed a frame (IvyPier.c.lossy.dropped, the runtime drop-log), Jon HANDLED
+    //   it anyway (a %done inbox unemit, or its %recent record past the boundary), and Ivy's emit came back
+    //    %acked (live, or present in %recent which holds only acked emits). Dropped-yet-arrived-and-acked is
+    //     the proof a retransmit closed the gap -- no clean first delivery shows a drop. The isolated pair
+    //      carries one frame, so [0]/any-unemit names it unambiguously. Sticky once stamped.
+    H o A:Ivy/w:Peeroleum/Peering/Pier$:IvyPier2
+    H o A:Jon/w:Peeroleum/Peering/Pier$:JonPier2
+    let healdropped = !!(IvyPier2 && IvyPier2.c.lossy && IvyPier2.c.lossy.dropped.length)
+    let Joninbox2 = JonPier2 && JonPier2.o({inbox:1})[0]
+    let healhandled = Joninbox2 && (Joninbox2.o({req:'unemit'})[0]?.sc.done || Joninbox2.o({recent:1})[0]?.oa({unemit:1}))
+    let Ivyob2 = IvyPier2 && IvyPier2.o({outbox:1})[0]
+    let healive = Ivyob2 && Ivyob2.o({emit:1})[0]
+    let healacked = (healive && healive.sc.acked) || (Ivyob2 && Ivyob2.o({recent:1})[0]?.oa({emit:1}))
+    if (healdropped && healhandled && healacked && !(oa %witnessed:heal)) i %witnessed:heal

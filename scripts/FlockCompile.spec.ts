@@ -13,7 +13,7 @@ import Story_cli from './Story_cli.svelte'
 
 const ROOT  = process.cwd()
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
-const FILES = ['Ghost/N/Peeroleum.g', 'Ghost/N/Reliable.g', 'Ghost/N/Lossy.g', 'Ghost/Story/Peregrination.g', 'Ghost/N/Tyrant.g']
+const FILES = ['Ghost/N/Peeroleum.g', 'Ghost/N/Reliable.g', 'Ghost/Story/Peregrination.g', 'Ghost/N/Tyrant.g']
 
 test('FlockCompile: the Pier-flock .g edits all compile clean', async () => {
     let H: any
