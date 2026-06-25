@@ -8,9 +8,13 @@
 //
 //  The convention a Caster follows (the Book stands these up):
 //   %Caster  .sc.total = how many %Chunk the source holds | .sc.next = next seq to spool |
-//             .sc.live = spool armed | .c.term = the %Terminal it feeds | .c.up = w
+//             .sc.live = spool armed | .sc.preview = how many leading seq are the free preview
+//              (absent = the whole stock is free, slice-1 behaviour) | .c.term = the %Terminal it
+//               feeds | .c.up = w
 //   %Terminal .sc.ack = highest seq the listener has played (absent = none yet) |
-//             %inbox = where delivered %Chunk land
+//             .sc.want = the listener has asked for the paid continuation (%want:stream, slice 2) |
+//              %inbox = where delivered %Chunk land (each %Chunk carries .sc.kind preview|stream
+//               once a preview is set) | .c.caster = the %Caster feeding it
 
 // Radiola_window — how far the caster may run ahead of the terminal's ack: Radios.svelte's
 //  STAY_AHEAD_OF_ACK_SEQ. One knob, read off the world so a Book can shrink it for a tight snap.
@@ -24,6 +28,10 @@ Radiola_window(w):
 //     delivers nothing and the req just re-arms: THAT absence of work is the backpressure (Radios'
 //      `if pr.seq > not_too_far_ahead: cool it`, now a req that finds nothing it may send rather
 //       than a hand-rolled spin guard).  Inert until the caster is %live (the Book's go-live beat).
+//  Slice 2 adds a SECOND gate inside the window: a %Caster with a .sc.preview boundary spools its
+//   leading preview seq for free, but withholds the paid continuation (seq >= preview, kind:stream)
+//    until the terminal sets .sc.want (Radios' streamability handoff).  No preview set -> the whole
+//     stock is free and nothing is tagged: slice-1 behaviour, byte-identical.
 async req_cast(req):
     let caster = req.c.up
     if (caster && caster.sc.live) {
@@ -34,14 +42,51 @@ async req_cast(req):
             let total = +(caster.sc.total ?? 0)
             let next = +(caster.sc.next ?? 0)
             let ack = +(term.sc.ack ?? -1)
-            // spool every chunk inside the window; stop at the stock end or the window edge.
+            let start = next
+            let has_preview = caster.sc.preview != null   // opt-in; absent = all-free (slice 1)
+            let preview = +(caster.sc.preview ?? total)
+            let granted = term.sc.want                     // the listener asked for the stream
+            // spool every chunk inside the window; stop at the stock end, the window edge, or
+            //  (with a preview) the preview boundary until the continuation has been wanted.
             while (next < total && next <= ack + win) {
-                inbox.i({Chunk: 1, seq: next})
+                if (has_preview && next >= preview && !granted) break
+                if (has_preview) {
+                    let kind = 'preview'
+                    if (next >= preview) kind = 'stream'
+                    inbox.i({Chunk: 1, seq: next, kind: kind})
+                }
+                if (!has_preview) inbox.i({Chunk: 1, seq: next})
                 next = next + 1
             }
             caster.sc.next = next
+            // animate only the slice-2 path: bump so the Cyto wave rides the cursor move (slice 1
+            //  stays bump-free, snap-neutral). The inbox.i inserts already bump the delivered nodes.
+            if (has_preview && next !== start) caster.bump()
         }
     }
     // re-armed each pass, like req_Pier — the gate is the window, not %ok.
+    req.sc.ok = 1
+
+// req_streamability — the listener side of the slice-2 handoff (Radios' `streamability` /
+//  want_streaming).  Rides a %Terminal (oai wires req.c.up = the Terminal); once the UN-played
+//   preview tail — preview - 1 - ack — drops to the want-floor (MIN_LEFT_TO_WANT_STREAMING, read
+//    off w as want_left, default 22), arm .sc.want so req_cast ungates the continuation.  One-way:
+//     the ask never un-asks.  Inert without a preview boundary (nothing can run low), so a slice-1
+//      terminal that carries no streamability req is wholly unaffected.
+req_streamability(req):
+    let term = req.c.up
+    if (term && !term.sc.want) {
+        let caster = term.c.caster
+        if (caster && caster.sc.preview != null) {
+            let preview = +(caster.sc.preview)
+            let ack = +(term.sc.ack ?? -1)
+            let left = preview - 1 - ack
+            let floor = +((term.c.up)?.sc.want_left ?? 22)
+            if (left <= floor) {
+                term.sc.want = 1
+                term.bump()
+            }
+        }
+    }
     req.sc.ok = 1
 //#endregion

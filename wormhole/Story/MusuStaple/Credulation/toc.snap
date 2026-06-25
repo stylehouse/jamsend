@@ -1,5 +1,5 @@
-Credulation,of_Book:PereStaple
-  run=0,at=1782381795.56,ok,ok_pct,mode:check
+Credulation,of_Book:MusuStaple
+  run=0,at=1782380251.744,ok=0,ok_pct=0,mode:check
     uses:Ghost_N_Peeroleum,dige:50037abbbf6b8f6b
     uses:Ghost_N_Reliable,dige:b282dca8b1abe0c9
     uses:Ghost_N_Tribunal,dige:66b6bbb6511f04f2
@@ -7,7 +7,15 @@ Credulation,of_Book:PereStaple
     uses:Ghost_Story_Peregrination,dige:349080831f4af54d
     uses:Ghost_M_Radiola,dige:ca16d1a38546b315
     uses:Ghost_Story_Musuation,dige:ba50546d6f8799d9
-  run,at=1782382357.315,ok,ok_pct,mode:check
+  run,at=1782380796.253,ok=0,ok_pct=0,mode:check
+    uses:Ghost_N_Peeroleum,dige:50037abbbf6b8f6b
+    uses:Ghost_N_Reliable,dige:b282dca8b1abe0c9
+    uses:Ghost_N_Tribunal,dige:66b6bbb6511f04f2
+    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
+    uses:Ghost_Story_Peregrination,dige:349080831f4af54d
+    uses:Ghost_M_Radiola,dige:ca16d1a38546b315
+    uses:Ghost_Story_Musuation,dige:ba50546d6f8799d9
+  run=2,at=1782380836.886,ok,ok_pct,mode:check
     uses:Ghost_N_Peeroleum,dige:50037abbbf6b8f6b
     uses:Ghost_N_Reliable,dige:b282dca8b1abe0c9
     uses:Ghost_N_Tribunal,dige:66b6bbb6511f04f2

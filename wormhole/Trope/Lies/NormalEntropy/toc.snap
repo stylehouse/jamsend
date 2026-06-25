@@ -2,10 +2,10 @@ Waft:Trope/Lies/NormalEntropy,boring,dontSnap
   EntropyArrest
     Entcase:Languinio_Interest-waft
       lematch,Languinio
-        lematch,Interest:Ting,waft,lens,presence,state
-          {"means":1,"spayer":1,"re":"Interest:Ting,waft:Ting/202\\d+-\\d+-{INT}/{INT},lens:DocTing,presence:always,state:live","tol":"any"}
+        lematch,Interest:Ting,waft,face,presence,state
+          {"means":1,"spayer":1,"re":"Interest:Ting,waft:Ting/202\\d+-\\d+-{INT}/{INT},face:DocTing,presence:always,state:live","tol":"any"}
     Entcase:Ting_cursor-what
-      lematch,Interest:Ting,waft,lens,presence,state
+      lematch,Interest:Ting,waft,face,presence,state
         lematch,cursor,what,latest
           {"means":1,"spayer":1,"re":"cursor,what:Ting/202\\d-\\d+-{INT}/{INT},latest","tol":"any"}
     Entcase:w_self-round

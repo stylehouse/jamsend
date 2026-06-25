@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted
-  Funkcion:dirlist,interval_ms=8000,walked_at=1782375234557
+  Funkcion:dirlist,interval_ms=8000,walked_at=1782381240813
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -59,6 +59,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted
     Doc:src/lib/O/spec/EntropyArrest.md.tmp.21534.481b9f2efd09,name:EntropyArrest.md.tmp.21534.481b9f2efd09,noticed_at=1782290121696
     Doc:src/lib/O/spec/Lens_posable_TODO.md,name:Lens_posable_TODO.md,noticed_at=1782364945395
     Doc:src/lib/O/spec/Music_todo.md,name:Music_todo.md,noticed_at=1782375234557
+    Doc:src/lib/O/spec/Cluster_design.md,name:Cluster_design.md,noticed_at=1782381240813
   open_dir:src/lib/O
   group:src/lib/O,dir:src/lib/O
     sub:src/lib/O/D,name:D

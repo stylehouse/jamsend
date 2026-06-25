@@ -109,11 +109,14 @@ One slice at a time; each is: a spine mechanism + a `Musu*` beat or two + a witn
  slice 2 on) a Cyto read. Land it, compile it, run it, accept the snap, then the next.
 
 - **Slice 1 — ACK-backpressure spool.** `req_cast` + `Radiola_window`; Book `MusuStaple`
-   beats 2–5 (link → fill-to-window → slide-on-ack → drain). **Status: authored, uncompiled
-    (§7).** This is the heartbeat; everything else spools on top of it.
-- **Slice 2 — preview→stream handoff.** Add `%Chunk,kind`, the `streamability` arm, the
-   `%want:stream` request. New `Musu*` beats; first real animation target (the preview bar
-    draining, the request firing, the continuation joining).
+   beats 2–5 (link → fill-to-window → slide-on-ack → drain). **Status: compiled, run, ACCEPTED
+    (§7) — green.** This is the heartbeat; everything else spools on top of it.
+- **Slice 2 — preview→stream handoff.** `req_cast` grows an opt-in preview/stream gate +
+   `req_streamability`; Book `MusuStream` (own world/verbs, slice 1 untouched) beats 2–5
+    (link-with-preview → preview-and-HOLD → want+stream → drain). `%Chunk,kind:preview|stream`,
+     `%want:stream` on the terminal, `want_left` floor on `w`. Cursor moves now `.bump()` so the
+      Cyto wave rides them (the first animation target: the inbox holding at the preview gate, then
+       the continuation pouring in on the want). **Status: authored, uncompiled (§7).**
 - **Slice 3 — radiostock cursor / multi-listener fan-out.** Two terminals, one stock, per-
    client cursors, refill pressure. The fan-out is the first genuinely graph-shaped picture.
 - **Slice 4+** — live-edge decode-ahead, wear/GC, skip-track — as appetite holds.
@@ -176,31 +179,58 @@ Headless: `Story_cli` can boot the machine in node (vitest+jsdom) but cannot mou
 
 ## 7. Status & next move
 
-**Done — slice 1 is wired into the machine:**
+**Slice 1 — DONE, ACCEPTED, green.**
 - `Ghost/M/Radiola.g` — `Radiola_window`, `req_cast` (the spool with backpressure). Compiled →
    `src/lib/gen/M/Radiola.go`.
 - `Ghost/Story/Musuation.g` — `Run_A_MusuStaple`, `MusuStaple`, `Musu_drive`, `Musu_sides_up`,
    `Musu_go_live`, `Musu_play`, `Musu_pump`, `Musu_witness`, `Musu_order`. Compiled →
     `src/lib/gen/Story/Musuation.go`.
 - **Registered** in `CREDULER_GHOSTS` (`src/lib/O/LiesLies.svelte`): `'Ghost/M/Radiola.g'` +
-   `'Ghost/Story/Musuation.g'` — the runner acquires them live like the Pere\* cluster.
-- **On the Credence board** (`wormhole/Credence/toc.snap`): a `What:Musu` group with
-   `Funkcion:Storying,of_Book:MusuStaple`, beside `What:Pere`.
-- `wormhole/Ghost/Music/Ality/toc.snap` — overlay skeleton.
-- `wormhole/Story/MusuStaple/toc.snap` — has run (TimeSpool samples present); step diges still
-   lie placeholders.
+   `'Ghost/Story/Musuation.g'`. **On the Credence board** beside `What:Pere`. Overlay
+    `Waft:Ghost/Music/Ality` resolves.
+- `wormhole/Story/MusuStaple/toc.snap` — real beat diges recorded, `TimeSpool` samples present.
+   The four beats ran clean (link → fill-to-window hold@7 → slide-on-ack@10 → drain@12, all four
+    `witnessed:` markers in order). Snap quirk noted: value-1 `seq` rides bare (`Chunk,seq`),
+     decodes to `seq:1`.
+
+**Slice 2 — AUTHORED, uncompiled.** The preview→stream handoff, all inside the cluster + the one
+ (already-present) Credence/overlay touch — no new `CREDULER_GHOSTS` line (the book is new methods
+  in the already-enrolled `Musuation.g`):
+- `Ghost/M/Radiola.g` — `req_cast` grew an **opt-in** preview/stream gate (a `%Caster` with
+   `.sc.preview` spools the free preview, withholds `kind:stream` chunks until `term.sc.want`); new
+    `req_streamability` (the listener arms `%want:stream` when the un-played preview tail drops to
+     the `want_left` floor). The gate is inert without `preview`, so slice 1's `req_cast` path is
+      byte-identical (no `kind`, no `bump`).
+- `Ghost/Story/Musuation.g` — Book `MusuStream` (`Run_A_MusuStream`, `MusuStream`,
+   `MusuStream_drive`/`_sides_up`/`_go_live`/`_play`/`_pump`/`_witness`/`_order`). Own world
+    `w:MusuStream`, own witness names (`linked`/`previewed`/`wanted`/`streamed`/`streamdrained`) — no
+     overlap with the staple. `MusuStream_pump` pumps the **terminal first** (streamability decides),
+      then the caster (the spool honours it) so the want→stream causality settles in one pass.
+- `wormhole/Story/MusuStream/toc.snap` — 5 step lines, lie diges. `wormhole/Credence/toc.snap` —
+   `Funkcion:Storying,of_Book:MusuStream` under `What:Musu`. `wormhole/Ghost/Music/Ality/toc.snap`
+    — `What:the preview->stream handoff` + `What:the handoff test`.
 
 **The next move:**
-1. Become `MusuStaple` and **accept the snaps** — the step diges are still lies
-    (`0000000000000001…`); accepting records the real beat diges and turns the Credence cell green.
-2. Watch the four beats hold (below). If a beat mismatches, the witness or the spool wiring is
-    off — the `%req:cast` pump (`caster.do()` reaching the child req) is the first suspect.
-3. Open `Waft:Ghost/Music/Ality` to confirm the overlay resolves and navigates the cluster.
-4. Then slice 2 (preview→stream) — §4.
+1. **Ghost-compile both `.g`** (live editor on `:9091`): `npm run ghost-compile -- Ghost/M/Radiola.g`
+    and `npm run ghost-compile -- Ghost/Story/Musuation.g` — the changed spine + the new book HMR
+     into the live runners. (`Radiola.g` changed; `Musuation.g` gained the book — both need recompiling.)
+2. Run `MusuStream` (Credence `What:Musu`, or `Run_A_MusuStream`), watch the four beats (below).
+3. Become `MusuStream` and **accept** — records the real diges, greens the cell.
+4. Watch it in Cyto: the inbox should **fill to the preview gate and hold**, then **surge** with the
+    continuation when the want fires — the first animation target (the `.bump()`s now feed the wave).
+5. Then slice 3 (radiostock cursor / multi-listener) — §4.
 
-**The beat to verify (slice 1):** with `total=12`, `window=7` —
- beat 2 link up; beat 3 caster goes live → spools seq 0..6 and **HOLDS** (5 chunks withheld
-  though they exist) → `witnessed:filled`; beat 4 terminal plays 3 (ack→2) → window slides,
-   7..9 delivered → `witnessed:slid`; beat 5 terminal drains (ack→11) → 10..11 delivered,
-    `next===total` → `witnessed:drained`. If the hold at beat 3 doesn't happen, the spool isn't
-     reading the ack/window — that's the bomb to look at first.
+**The slice-2 beats to verify** (`total=12`, `preview=4`, `window=7`, `want_left=2`):
+- beat 2 — **linked**: caster (preview=4) + terminal + inbox + both reqs stand up, idle.
+- beat 3 — **previewed**: caster goes live → spools the free preview seq 0..3 (`kind:preview`) and
+   **HOLDS** at `next=4` — the window had room for 4..6 and the stock has 4..11, but the preview gate
+    holds and the listener hasn't asked → `witnessed:previewed`.
+- beat 4 — **wanted + streamed**: omega plays 2 (ack -1→1) → un-played preview tail = `4-1-1 = 2 ≤
+   want_left` → `req_streamability` arms `term.sc.want` → `req_cast` ungates → seq 4..8 (`kind:stream`)
+    pour in, `next=9` → `witnessed:wanted` **and** `witnessed:streamed`.
+- beat 5 — **streamdrained**: omega plays out (ack 1→11) → seq 9..11 deliver, `next=12===total` →
+   `witnessed:streamdrained`.
+
+If a beat mismatches: the pump order (`term.do()` before `caster.do()`) is the first suspect — if
+ the want and the stream split across two beats instead of landing together in beat 4, the terminal
+  isn't being pumped before the caster in the wrangle pass.

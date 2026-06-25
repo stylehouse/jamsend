@@ -7,6 +7,34 @@ The keeper doc for the UIless Story runner. **How to run it + the pile layout li
     things that bit a past session hard enough to be worth re-reading before you touch a
      ttlilt-timed Book, go spelunking in the trace, or wonder why the pump seems dead.
 
+## Acquired (Creduler) Books — `CredRunner`
+
+`Story_cli` runs **fixture** Books (spine on disk).  A **Creduler-ACQUIRED** wrangler Book (PereStaple /
+ PereTyrant / Editron / Musu — spine loads via `Creduler_ensure` / `CREDULER_GHOSTS`) needs two things
+  `Story_cli.svelte` lacks, both supplied by `scripts/CredRunner.spec.ts` + `scripts/Story_cli_runner.svelte`:
+- **Render the dynamic includes.** The acquire enrols each gen `.go` as a `watched:UIs` Pantheate-include;
+   in-app **Otro** mounts those, `Story_cli.svelte` (just `<Ghost>`) does not.  The runner shell adds Otro's
+    one line — `{#each house.UIs.ob({UI:1})} <svelte:component this={uiC.sc.component} H={house}/>` — so an
+     enrolled gen mounts headless and its onMount eatfunc deposits.  (`.go` resolves because `svelte.config.js`
+      maps it to svelte; jsdom fires onMount — the "onMount never fires UIless" warning on `Lies_ghost_set` is
+       about a true no-DOM run, not this jsdom one.)
+- **The acquire prelude.** Make the creduler Lies (`H.i({A:'Lies'}).i({w:'Lies',runner:1,creduler:1})`), then
+   crank `await H.Creduler_ensure(liesW)` + `flushSync()` + think until the spine reads live, BEFORE standing up
+    `w:Story,Book:<Book>` (the rest is the Story_cli drive loop verbatim).
+
+Run + record exactly like Story_cli:
+   `BOOK=PereStaple node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs scripts/CredRunner.spec.ts`
+   — `ACCEPT=1 …` re-records the fixtures.  `CredulerProbe.spec.ts` is the bare-acquire proof (spine methods
+    deposit) — run it to tell "acquire broke" from "drive broke" when a run wedges.
+
+**Known caveat — the handshake-quiescence step.** A step whose work completes via a `post_do`/`feebly_ponder`
+ round-trip with **no ttlilt** can snap one beat early headless: node reaches quiescence before the deferred
+  completion (the inverse tail of the MundaneStation race below — same root).  PereStaple step 3 caught it
+   (`req:handshake` not yet `,finished`, no `witnessed:step_3`); steps 4+ reconcile.  Do NOT "fix" it by
+    trickling think while a req is open — a req that legitimately spans steps then never lets an earlier step
+     quiesce (it hangs).  The real fix is a waiting ttlilt on the unfinished req (a `.g` edit) — the same
+      ttlilt-determinism lever this whole doc is about.
+
 ## How it boots & drives — the load-bearing gotchas
 
 - **Substrate is vitest + jsdom + `svelteTesting()`, NOT vite-node.** vite-node ignores

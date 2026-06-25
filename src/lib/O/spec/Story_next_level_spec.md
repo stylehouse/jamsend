@@ -920,8 +920,13 @@ What it enables: the agent writes a Story test as a script, runs the bundle UIle
 ### 16.1 Refinements, once the runner exists
 
 The runner is built (`scripts/Story_cli.*`, via vitest's transform instead of the
- Compile bundle — see `Story_cli_docs.md`); it dumps a pile of files per Book. Two
-  refinements remain, both about *what* and *when* the pile emits:
+ Compile bundle — see `Story_cli_docs.md`); it dumps a pile of files per Book. It now
+  reaches the **Creduler-ACQUIRED** Books too (PereStaple et al.), not only on-disk-fixture
+   Books: `scripts/CredRunner.spec.ts` mounts a shell that renders the dynamic `watched:UIs`
+    includes (`scripts/Story_cli_runner.svelte` — the "minimal Otro over the Run's UIs" this
+     section called for) and cranks `Creduler_ensure` before the Story, so the spine +
+      `Run_A_<Book>` are live headless. (Build log: the "Runner access" tiers in
+       `Peeroleum_handover.md`.) Two refinements remain, both about *what* and *when* the pile emits:
 
 - **Emission frequencies — a "pause-as-soon-as-wobble" mode.** Today the dump is
    everything-at-once: drive the whole Book, then serialise every step. Add a mode that

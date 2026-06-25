@@ -9,7 +9,7 @@
     //
     //   Foreground routes through e_Lang_foreground: heavy kinds (Trail|Sidetrack)
     //   re-checkout via Lies (landing the cursor → arming the LE on that giver's own
-    //   Trail); light kinds (GhostList) are a pure lens swap.  %ActiveInterest drives
+    //   Trail); light kinds (GhostList) are a pure face swap.  %ActiveInterest drives
     //   the highlight; with several givers it carries the foreground giver's waft too.
 
     import type { TheC }  from "$lib/data/Stuff.svelte"
@@ -27,7 +27,7 @@
         interesting: boolean   // engaged enough to hold a strip slot (else it collapses)
         // the Interest's own properties — what the inspector edits|shows (NOT its Waft
         //  content): the grapple, not the gripped.
-        lens:        string | undefined
+        face:        string | undefined
         presence:    string | undefined
         from:        string | undefined   // the anchor it flew off (Sidetrack|Aside) — a posture
         in_doc:      string | undefined   // the doc its cursor is on
@@ -81,7 +81,7 @@
                 kind, waft, label, state,
                 active: is_active,
                 interesting,
-                lens:     it.sc.lens     as string | undefined,
+                face:     it.sc.face     as string | undefined,
                 presence: it.sc.presence as string | undefined,
                 from:     it.sc.from     as string | undefined,
                 in_doc:   it.sc.in_Doc   as string | undefined,
@@ -169,7 +169,7 @@
             {/if}
         </div>
         <div class="isx-panel-facts">
-            {#if or.lens}<span>lens <b>{or.lens}</b></span>{/if}
+            {#if or.face}<span>face <b>{or.face}</b></span>{/if}
             {#if or.presence}<span>presence <b>{or.presence}</b></span>{/if}
             <span>state <b>{or.state}</b></span>
             {#if or.from}<span class="isx-panel-posture" title="the anchor this flew off">off <b>{or.from}</b></span>{/if}
@@ -212,7 +212,7 @@
         padding:       2px 3px 2px 4px;
         line-height:   1;
     }
-    /* the foreground Interest — its lens holds the primary stage */
+    /* the foreground Interest — its face holds the primary stage */
     .isx-active {
         background:   rgba(196, 170, 238, 0.18);
         border-color: rgba(196, 170, 238, 0.7);

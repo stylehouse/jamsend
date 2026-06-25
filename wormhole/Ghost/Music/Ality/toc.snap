@@ -1,15 +1,24 @@
 Waft:Ghost/Music/Ality,active
   Funkcion:CreduFunk
     Funkcion:Storying,of_Book:MusuStaple
+    Funkcion:Storying,of_Book:MusuStream
   What:the spool
     Doc:Ghost/M/Radiola.g
     Point,method:req_cast
     Point,method:Radiola_window
+  What:the preview->stream handoff
+    Doc:Ghost/M/Radiola.g
+    Point,method:req_streamability
+    Point,method:req_cast
   What:the test
     Doc:Ghost/Story/Musuation.g
     Point,method:Run_A_MusuStaple
     Point,method:Musu_drive
     Point,method:Musu_witness
+  What:the handoff test
+    Doc:Ghost/Story/Musuation.g
+    Point,method:MusuStream_drive
+    Point,method:MusuStream_witness
   What:the source it reimagines
     Doc:src/lib/ghost/Radios.svelte
   What:the spec

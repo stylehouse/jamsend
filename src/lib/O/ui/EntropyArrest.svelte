@@ -216,7 +216,7 @@
     //  time `042649`, a unix-ts, a long id), or digit groups joined by `-`/`/` (a date/path like
     //   `2026-06-21`, `Ting/2026-06-21/042649`).  The ≥5 floor (not ≥3) spares a stable small
     //    number that is a real anchor — a `port:8080`, a `year:2026`, a small count — from being
-    //     wildcarded.  `lens:DocTing` / `state:live` carry no such run and stay literal.
+    //     wildcarded.  `face:DocTing` / `state:live` carry no such run and stay literal.
     function noisy_val(v: any): boolean {
         return typeof v === 'string' && /\d{5,}|\d+[-/]\d+/.test(v)
     }

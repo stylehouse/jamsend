@@ -1,0 +1,13 @@
+Snap:H
+  H:MusuStaple,Run
+    A:MusuStaple
+      self,round=2	{"mung":["age"]}
+      w:MusuStaple
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Caster,name:alpha,total=12,next=0
+          req:cast,eternal,ok
+        Terminal,name:omega
+          inbox
+        witnessed:step_2

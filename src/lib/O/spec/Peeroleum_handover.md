@@ -309,6 +309,48 @@ Run the `PereStaple` Story on :9091, eyeball the lifecycle, then Accept/Resnaptu
 PereStaple pile too — read `witnessed:*`/`A:PereStaple`; the `A:Lang` AST blob is per-step noise; see the
 `peregrination-pile-reading` memory + `Story_cli_docs.md`.)
 
+### Runner access — the verification-loop unlock (heading 1b, in tiers)  `[~]`
+
+Every behaviour claim in this file ends "browser-unverified, verify on :9091" because a human at a
+ browser sits in the critical path of every proof. `Story_cli` (vitest+jsdom pile + `ACCEPT` re-record
+  + sweep) already runs FIXTURE Books headless — but `Story_cli.svelte` mounts `<Ghost>` only, it NEVER
+   fires `Creduler_ensure`, so the wrangler Books that acquire the live spine (PereStaple / PereTyrant /
+    Editron / Musu — exactly the ones built here) can't run headless. The gen `.go` for every CREDULER_GHOST
+     is on disk + current. The unlock = fire the acquire under node. Tiers, priority order:
+- **Tier 0 `[x]` PROVEN this session — Creduler acquire fires headless.** Both open Qs resolved YES: (a)
+   `svelte.config.js` maps `.go`→svelte (`extensions:['.svelte','.go']`), so `import('…/gen/**/*.go')` resolves
+    under the `svelte()` vitest config — no `.go` work needed; (b) the missing piece was the RENDER tree —
+     `scripts/Story_cli_runner.svelte` = the Story_cli shell + Otro's dynamic-UIs `{#each house.UIs.ob({UI:1})}
+      <svelte:component this={uiC.sc.component} H={house}/>`, so an enrolled gen MOUNTS headless + its onMount
+       eatfunc deposits (the "onMount never fires UIless" warning is about a true no-DOM run; jsdom mounts fine).
+        `scripts/CredulerProbe.spec.ts` proves the acquire — all 6 spine ghosts deposit (`Peeroleum_deliver` /
+         `inseq_admit` / `Tribunal_pair_websocket` / `Tyrant_grant` / `Run_A_PereStaple` live). `scripts/CredRunner
+          .spec.ts` drives the WHOLE Book: acquire prelude (creduler Lies + `Creduler_ensure` crank till spine live)
+           → stand up `w:Story,Book:PereStaple` → the proven Story_cli drive loop + pile/diff/ACCEPT. **PereStaple
+            runs end-to-end with ZERO browser.** (Musuation.go doesn't enrol → `%Creduler_pending` lingers; orthogonal
+             music-cluster gap, PereStaple's spine is full.)
+- **Tier 1 `[~]` WORKING — self-record the gate; the equivalence contract now has TEETH.** CredRunner emits the
+   pile, diffs each step vs the locked fixture (spay-forgiving the `round=N` age-mung), and has the ACCEPT re-record
+    path. Headless PereStaple = **13/15 match** the browser-locked gate. The 2 surprises ARE the contract working,
+     not noise: **(1)** step 1's `001.snap` is a stale Jun-24 fixture the `acceptings` commit never rewrote (it did
+      002–015) — re-record it; **(3)** a REAL determinism gap — headless snaps step 3 with `req:handshake` /
+       `req:heard_trust` NOT yet `,finished` + no `witnessed:step_3` (the post_do/feebly_ponder handshake round-trip
+        lags the step's quiescence snapshot; reconciles by step 4, so steps 4–15 match). A harness "trickle-while-
+         any-req-open" fix HANGS (the handshake req legitimately spans steps 1–3, so it never lets step 1 quiesce) —
+          the right fix is heading-3's ttlilt-on-unfinished-handshake (a `.g` edit → blocked on Tier 2 headless-
+           recompile or a browser), NOT a harness hack. So Tier 1 caught the ONE place headless≠browser.
+- **Tier 2 `[ ]` — compile→run round-trip.** edit `.g` → compile → runner picks up FRESH gen (no stale cache)
+   → run, no human HMR. Kills the "reload the runner to re-acquire the committed gen" gotcha (bit the stall run twice).
+- **Tier 3 `[ ]` — two-origin transport.** two runners on separate origins + the real `/relay` ws + fault
+   injection I drive (kill relay / drop socket / partition). The mock + `make_lossy_partner` prove the LOGIC of
+    inbound-silence-liveness + re-dial + Tribunal fallback; only a real silent socket proves the TRANSPORT. The
+     capability that lets the reliability thread FINISH verified, not land dormant like the retransmit/stall rungs.
+- **Tier 4 `[ ]` — observability.** on-demand snap at any tick (not just step boundaries) + the `live_poll`
+   overrun signal (lost-wakeup-vs-churn tell) in the pile. (`wstory.json` + the ms-trace already cover most.)
+Non-goals: no render / CodeMirror / Cyto / Storui — behaviour + snap + trace only (heading 1b: eatfunc without
+ a DOM / minimal Otro). Acceptance: PereStaple green→edit→re-run→diff→ACCEPT zero-browser, and a later :9091
+  run agrees on the diges (that equivalence IS the contract).
+
 ### Standing asks (apply to every heading)
 
 - **Write the spine in the DSL, not raw JS.** Heading L covers a lot — `%` optional on peels, `H` receiver
@@ -384,14 +426,16 @@ behaviour-identical. **The standalone `scripts/lang-compile.ts` CLI has since be
 with `npm run ghost-compile -- <file.g>`, which signs a relay ticket to the live in-app editor (the editor
 owns the only compiler). **Use it to compile every `.g` edit** ([[ghost-compile]]).
 
-### 1b — UIless Story-runner  `[ ]`  (the bigger half)
-Include works in-app; what remains for a *fully UIless* (no-browser) run is the Story runner itself, driven by
-`story_drive` via `setTimeout` + GUI (`Story.svelte`), and the Otro render that mounts gen components (a UIless
-run would evaluate the gen module's `eatfunc` without a DOM, or drive a minimal Otro over the Run's `UIs`).
-Goal: run a Book to completion UIlessly, emitting the per-step snap. Surface: `story_drive`/`do_step`/
-`snap_step`/`advance`, `Run.main()`/`beliefs`/`all_clear`, `Story_subHouse`. Partial supersession: the
-`Story_cli` boot (vitest+jsdom) runs the machine headless. Until a true UIless render lands, Story
-verification is in-app on :9091. (Cited as **heading 1b** by Editron.md + Everything_todo.md — keep the token.)
+### 1b — UIless Story-runner  `[~]`  acquired Books run headless (CredRunner) — see "Runner access"
+The "Otro render that mounts gen components" half is DONE: `scripts/Story_cli_runner.svelte` renders the dynamic
+`watched:UIs` includes + `scripts/CredRunner.spec.ts` cranks `Creduler_ensure` before the Story, so a Creduler-
+ACQUIRED Book (PereStaple et al.) runs to completion headless and emits the per-step pile (full account: the
+"Runner access" section above + `Story_cli_docs.md`). **Story verification of the COMMITTED spine is no longer
+:9091-only.** What's left for a *fully* UIless loop: (a) the determinism residual — a `post_do`/`feebly_ponder`
+step can snap a beat early headless (PereStaple step 3); (b) **Tier 2** — a headless `.g`→`.go` writer so EDITS,
+not just the committed gen, run headless (today a `.g` edit still needs `ghost-compile` on :9091). Surface:
+`story_drive`/`do_step`/`snap_step`/`advance`, `Run.main()`/`beliefs`/`all_clear`, `Story_subHouse`. (Cited as
+**heading 1b** by Editron.md + Everything_todo.md — keep the token.)
 
 ### 2 — Mock transport spine  `[x]` PROVEN in-app  (spec rung 1)
 `transport()` (`Ghost/N/Peeroleum.g`) declares `%transport,type:mock` + `%active_transport,type:mock,open` and
@@ -628,6 +672,12 @@ ghosts, Garden.g + Tyrant.g.
     folded down from the retired `Lossy.g`).
 - `scripts/FlockCompile.spec.ts` — headless compile gate for the flock (incl. `Reliable.g`); the break-glass
    "expecting trouble" check, NOT the default (ghost-compile is). Boots + passes again (LiesEnd WIP settled).
+- `scripts/Story_cli_runner.svelte` + `scripts/CredulerProbe.spec.ts` + `scripts/CredRunner.spec.ts` — the
+   headless runner-access build (Tier 0/1, see the "Runner access" section): the runner shell = Story_cli's shell
+    + Otro's dynamic `watched:UIs` mount (the piece Story_cli lacks); the probe proves the Creduler acquire deposits
+     the spine; CredRunner drives the whole acquired Book + diffs the pile (`BOOK=PereStaple node_modules/.bin/vitest
+      run -c scripts/Story_cli.vitest.config.mjs scripts/CredRunner.spec.ts`, `ACCEPT=1` to re-record). 13/15 vs the
+       locked gate; surprises [1] (stale fixture) + [3] (handshake-quiescence timing).
 - `wormhole/Ghost/Net/Easy/toc.snap` — annotation overlay / compile manifest, curated to landmarks (one front-door
    Point per theme, not every method).
 - `wormhole/Story/PereStaple/toc.snap` — the Story that drives the Book (step lines run through `step=15`:
