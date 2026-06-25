@@ -2,6 +2,7 @@ Waft:Ghost/Music/Ality,active
   Funkcion:CreduFunk
     Funkcion:Storying,of_Book:MusuStaple
     Funkcion:Storying,of_Book:MusuStream
+    Funkcion:Storying,of_Book:MusuStock
   What:the spool
     Doc:Ghost/M/Radiola.g
     Point,method:req_cast
@@ -19,6 +20,14 @@ Waft:Ghost/Music/Ality,active
     Doc:Ghost/Story/Musuation.g
     Point,method:MusuStream_drive
     Point,method:MusuStream_witness
+  What:the radiostock fan-out
+    Doc:Ghost/M/Radiola.g
+    Point,method:req_restock
+    Point,method:Radiola_keep_ahead
+  What:the fan-out test
+    Doc:Ghost/Story/Musuation.g
+    Point,method:MusuStock_drive
+    Point,method:MusuStock_witness
   What:the source it reimagines
     Doc:src/lib/ghost/Radios.svelte
   What:the spec

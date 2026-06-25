@@ -397,21 +397,22 @@
         },
 
         // Lies_ghost_compile_recv — verify the payload signature against the trusted flock, then TAKE the
-        //  dock-involved compile job for that .g.  Force the dock's disk content into the editor and make
-        //   it active (force_active): active ⇒ Langui mounts it ⇒ its CodeMirror EditorState appears ⇒
-        //    req_instrumentation compiles it ⇒ the .go lands on disk and HMRs to runners.  This is why
-        //     "forcing its contents into the editor is essential" — there is no headless compile; the
-        //      compile reads the mounted dock's state.  An already-loaded dock is re-read from disk
-        //       (delete content) so the changed .g lands, not the stale session copy.  Lies_provide_dock
-        //        warms the %Good and routes it to e_Lang_dock_content whether the dock was open or closed.
+        //  dock-involved compile job for that .g as a BACKGROUND compile (force_compile).  It furnishes the
+        //   dock and compiles it off the fresh disk text (e_Lang_dock_content → Lang_compile_source_state →
+        //    Lang_compile_dock), landing the .go on disk + HMRing to runners, WITHOUT taking the active seat
+        //     or mounting CodeMirror.  The old path forced the dock active so a CodeMirror state would mount
+        //      and the compile could read it — but the compile reads disk text, not the live editor, so that
+        //       was vestigial focus-theft: it switched the human's open dock|Interest for nothing.  An
+        //        already-loaded dock is re-read from disk (delete content) so the changed .g lands, not the
+        //         stale session copy.  Lies_provide_dock warms the %Good and routes it whether open or closed.
         //   Async (ed verify is a Promise) but fired un-awaited from the sync inbox handler, so the §7.3
         //    serial lock is never held across the await. Untrusted/unsigned → dropped, logged.
-        //   TODO (merge UI): when the editor holds UNSAVED edits to this dock (its buffer diverged from
-        //    %Good), forcing the disk content in reseats over them.  The integrate-or-revert popover should
-        //     mediate — raise a %surprise_read (mine = buffer, theirs = incoming disk) and let the existing
-        //      SurprisePopover keep-mine/take-theirs flow resolve it, as req_LiesStore_writeCarefully does
-        //       on the write leg.  Until then this follows the prior reseat (the active-dock clobber risk
-        //        was already present on the old this_dock_updated refresh; force_active widens it).
+        //   TODO (merge UI): when the editor holds UNSAVED edits to the SAME dock (its buffer diverged from
+        //    %Good) AND that dock is the active one, the disk-text reseat can clobber them.  The integrate-or-
+        //     revert popover should mediate — raise a %surprise_read (mine = buffer, theirs = incoming disk)
+        //      and let the existing SurprisePopover keep-mine/take-theirs flow resolve it, as
+        //       req_LiesStore_writeCarefully does on the write leg.  (Narrowed by backgrounding: a compile of
+        //        a dock the human is NOT editing no longer reseats anything — only same-active-dock collides.)
         async Lies_ghost_compile_recv(w: TheC, frame: any): Promise<void> {
             const H = this as House
             const dock = frame?.dock
@@ -421,7 +422,7 @@
             if (!signer) { H.tlog(`🚫 ghost_compile DROPPED — untrusted/unsigned ${dock.path}`); return }
             const good = H.LiesStore_good_of(w, 'text/Doc', dock.path)
             if (good) delete good.c.content                    // force a fresh disk read of the changed .g
-            await H.Lies_provide_dock(w, dock.path, { force_active: true })
+            await H.Lies_provide_dock(w, dock.path, { force_compile: true })
             H.tlog(`🔄 ghost_compile ${dock.path} @ ${dock.dige ?? '?'} from ${prepubOf(signer)} — forced into editor + compiling`)
             H.Lies_relay_note(w, `🔄 compiling ${dock.path.split('/').pop()} @ ${String(dock.dige ?? '?').slice(0, 8)}`, true)
             // pop a live %Errand at the Brink — settled to ok|failed by Lies_ghost_compile_ack when the

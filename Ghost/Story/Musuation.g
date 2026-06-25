@@ -247,3 +247,149 @@ async MusuStream_order(w):
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)
+
+
+// ══ SLICE 3 — MusuStock: the radiostock fan-out (Radios.svelte radiostock / KEEP_AHEAD) ══════════
+//  The first genuinely graph-shaped beat: ONE %Stock (radiostock, a 12-record finite source) feeding
+//   TWO consumers through per-client %cursor children — a 'fast' listener and a 'slow' one — so the
+//    restock pressure keys off the LEADING cursor while the laggard trails (Radios' KEEP_AHEAD off the
+//     fastest consumer).  Wholly separate verbs + witness names from the other books; its own world
+//      w:MusuStock (the per-beat handler dispatches by WORLD NAME — same bomb as the staple).  The
+//       four beats:
+//        beat 2  the stock + both cursors (fast/slow at the head) + the restock req stand up, none made
+//        beat 3  the stock goes %live -> restock fills the buffer keep_ahead(5) deep (made 0->5) and
+//                 HOLDS, both cursors still at 0
+//        beat 4  the fast listener plays 3 (at 0->3) -> restock tops up to stay 5 ahead of IT (made
+//                 5->8) while the slow listener still sits at 0 -- restock tracks the LEADER, not the lag
+//        beat 5  fast plays out (at 3->12=cap) and slow plays 6 -> restock runs the stock to the cap
+//                 (made 8->12, the source is spent) while the slow listener still trails, records 6..11
+//                  produced and waiting in hand
+
+// Run_A_MusuStock — wire the Run.  Own actor + world, the world NAMED AFTER THE BOOK so the per-beat
+//  handler MusuStock(A,w) is found (do_fn_for reads w.sc.w).
+Run_A_MusuStock():
+    this.c.role ??= 'runner'
+    H i A:MusuStock/w:MusuStock
+
+// MusuStock(A,w) — install the eternal wrangle, driven by MusuStock_drive (own did_step, immune to
+//  on_step's H-global — the Pere* lesson).
+MusuStock(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuStock_drive,w,req
+        req%ok = 1
+
+// MusuStock_drive — per-inner-step dispatch off the run's step_n (tracked on req.c.did_step), then
+//  pump + witness + order every pass.  Separate guarded ifs sidestep the bare-else tile mangle.
+async MusuStock_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.MusuStock_sides_up(w)
+        if (n === 3) this.MusuStock_go_live(w)
+        if (n === 4) this.MusuStock_serve(w)
+        if (n === 5) this.MusuStock_drain(w)
+    }
+    await this.MusuStock_pump(w)
+    this.MusuStock_witness(w)
+    await this.MusuStock_order(w)
+
+// ── the scenario verbs ──────────────────────────────────────────────────────────────────────
+// MusuStock_sides_up — beat 2: stand up the fan-out under w:MusuStock.  One %Stock (a 12-record finite
+//  source, nothing produced yet, NOT live) with two %cursor consumers (fast + slow, both at the head)
+//   as children — Radios' consumers,of=radiostock — and the spine's %req:restock seeded on the stock.
+//    Stamp stock.c.up by hand so restock reads keep_ahead off w.  Idle till live.
+MusuStock_sides_up(w):
+    w i reached:step_2
+    let stock = w.i({Stock: 1, name: 'radiostock', cap: 12, made: 0})
+    stock.c.up = w
+    stock.i({cursor: 1, client: 'fast', at: 0})
+    stock.i({cursor: 1, client: 'slow', at: 0})
+    stock.oai({req: 'restock', eternal: 1})
+
+// MusuStock_go_live — beat 3: arm restock.  The next pump fills the buffer keep_ahead deep (made->5)
+//  and holds — the producer keeps just enough ahead of the (tied-at-0) consumers, no more.
+MusuStock_go_live(w):
+    w i reached:step_3
+    let stock = w.o({Stock: 1})[0]
+    if (stock) {
+        stock.sc.live = 1
+        stock.bump()
+    }
+
+// MusuStock_serve — beat 4: the fast listener plays 3.  Advancing its cursor moves the leading edge,
+//  so the next restock tops the stock up to stay keep_ahead ahead of it (the slow listener, still at 0,
+//   proves restock tracks the leader).
+MusuStock_serve(w):
+    w i reached:step_4
+    this.MusuStock_advance(w, 'fast', 3)
+
+// MusuStock_drain — beat 5: the fast listener plays out (to the source end) and the slow one plays a
+//  little.  Restock runs the stock to the cap (the source is finite) and can make no more, while the
+//   slow listener still trails with produced records waiting.
+MusuStock_drain(w):
+    w i reached:step_5
+    this.MusuStock_advance(w, 'fast', 9)
+    this.MusuStock_advance(w, 'slow', 6)
+
+// MusuStock_advance — a listener "plays" n records: advance its cursor's playhead, clamped at the
+//  source end (cap; you can't play a record the source never held).  Bumps for the wave.  The spine's
+//   restock guarantees the record exists by the time the playhead reaches it, so the clamp only bites
+//    at the very end.
+MusuStock_advance(w, client, n):
+    let stock = w.o({Stock: 1})[0]
+    if (!stock) return
+    let cur = stock.o({cursor: 1, client: client})[0]
+    if (!cur) return
+    let cap = +(stock.sc.cap ?? 0)
+    let at = +(cur.sc.at ?? 0)
+    at = at + n
+    if (at > cap) at = cap
+    cur.sc.at = at
+    cur.bump()
+
+// MusuStock_pump — pump every %Stock each pass; stock.do() runs its %req:restock.  The consumers were
+//  advanced at dispatch, so restock reacts to the new leading edge in the SAME pass.  Needs stock.c.up
+//   (stamped in sides_up) for the child req to pump.
+async MusuStock_pump(w):
+    for (const stock of w.o({Stock: 1})) {
+        await stock.do()
+    }
+
+// MusuStock_witness — the readable assertions, polled each pass; structural + idempotent, the beat in
+//  the VALUE.  Unique marker names (stocked/primed/served/sourced) so they never collide on H.
+MusuStock_witness(w):
+    let stock = w.o({Stock: 1})[0]
+    if (!stock) return
+    let curs = stock.o({cursor: 1})
+    // beat 2 (stocked): the stock, both cursors, and the restock req stand up -- nothing produced yet.
+    if (curs.length >= 2 && stock.o({req: 'restock'}).length && !(oa %witnessed:stocked)) i %witnessed:stocked
+    let cap = +(stock.sc.cap ?? 0)
+    let made = +(stock.sc.made ?? 0)
+    let keep = this.Radiola_keep_ahead(w)
+    let lead = 0
+    let lag = cap
+    for (const cur of curs) {
+        let at = +(cur.sc.at ?? 0)
+        if (at > lead) lead = at
+        if (at < lag) lag = at
+    }
+    // beat 3 (primed): live -> restock filled the buffer keep_ahead deep while every cursor still sits
+    //  at the head -- made sits exactly at keep_ahead, short of the cap.
+    if (made === keep && lead === 0 && made < cap && !(oa %witnessed:primed)) i %witnessed:primed
+    // beat 4 (served): the leading consumer advanced and restock stayed keep_ahead ahead of IT (made
+    //  === lead+keep) while a laggard still trails (lag < lead) -- the producer tracks the fastest, not
+    //   the slowest, and the source isn't spent yet (made < cap).
+    if (lead > 0 && made === lead + keep && lag < lead && made < cap && !(oa %witnessed:served)) i %witnessed:served
+    // beat 5 (sourced): the leading consumer reached the source end (lead === cap) so restock ran the
+    //  stock to the cap and can make no more (made === cap) -- the finite-source backpressure; a laggard
+    //   may still have produced records waiting (lag < cap).
+    if (lead === cap && made === cap && cap > 0 && !(oa %witnessed:sourced)) i %witnessed:sourced
+
+// MusuStock_order — float A:MusuStock to the front of H/* so the Run snap stays readable.
+async MusuStock_order(w):
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'MusuStock') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)

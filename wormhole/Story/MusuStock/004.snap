@@ -1,0 +1,25 @@
+Snap:H
+  H:MusuStock,Run
+    A:MusuStock
+      self,round=10	{"mung":["age"]}
+      w:MusuStock
+        self,round=10	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Stock,name:radiostock,cap=12,made=8,live
+          cursor,client:fast,at=3
+          cursor,client:slow,at=0
+          req:restock,eternal,ok
+          Record,seq=0
+          Record,seq
+          Record,seq=2
+          Record,seq=3
+          Record,seq=4
+          Record,seq=5
+          Record,seq=6
+          Record,seq=7
+        witnessed:stocked
+        reached:step_3
+        witnessed:primed
+        reached:step_4
+        witnessed:served

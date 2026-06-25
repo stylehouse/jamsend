@@ -89,4 +89,49 @@ req_streamability(req):
         }
     }
     req.sc.ok = 1
+
+// ══ SLICE 3 — radiostock fan-out (Radios.svelte radiostock / KEEP_AHEAD) ══════════════════════
+//  A %Stock is a finite source of cap records (0..cap-1) that materialise as %Record children seq
+//   0..made-1 as they are produced; it feeds N %cursor consumers (Radios' consumers,of=radiostock),
+//    each .sc.at the next record that client wants (its playhead).  The stock keeps a buffer of
+//     produced records ahead of the listeners; the listeners draw from it at their own pace.
+
+// Radiola_keep_ahead — how many records the %Stock keeps produced ahead of the LEADING consumer:
+//  Radios.svelte's KEEP_AHEAD.  One knob, read off w so a Book can shrink it for a tight snap.
+Radiola_keep_ahead(w):
+    return +(w.sc.keep_ahead ?? 5)
+
+// req_restock — the producer side of the fan-out (Radios' radiostock refill).  %req:restock,eternal
+//  rides a %Stock (oai wires req.c.up = the Stock); the Book pumps it each pass via stock.do().  Keep
+//   the stock keep_ahead records produced ahead of the LEADING cursor — the consumer nearest the
+//    frontier, since that one starves first; the laggards trail with more already in hand — bounded by
+//     the finite source (cap).  Each pass, while the lead is shallower than keep_ahead and the source
+//      isn't spent, mint one more %Record and advance made.  The instant the lead is satisfied OR made
+//       meets cap it mints nothing: THAT absence is the backpressure (Radios' "don't run the encoder if
+//        the stock is deep enough", now a req that finds nothing to make rather than a spin guard).
+//         Inert until the stock is %live (the Book's go-live beat).
+req_restock(req):
+    let stock = req.c.up
+    if (stock && stock.sc.live) {
+        let cap = +(stock.sc.cap ?? 0)
+        let made = +(stock.sc.made ?? 0)
+        let keep = this.Radiola_keep_ahead(stock.c.up)
+        // the leading consumer = the highest cursor (consumed the most, fewest records still in hand);
+        //  staying ahead of IT automatically covers every slower consumer.
+        let lead = 0
+        for (const cur of stock.o({cursor: 1})) {
+            let at = +(cur.sc.at ?? 0)
+            if (at > lead) lead = at
+        }
+        let start = made
+        while (made < cap && made - lead < keep) {
+            stock.i({Record: 1, seq: made})
+            made = made + 1
+        }
+        stock.sc.made = made
+        // animate the stock accreting records: bump so the Cyto wave rides the new frontier.
+        if (made !== start) stock.bump()
+    }
+    // re-armed each pass; the gate is the keep_ahead lead and the cap, not %ok.
+    req.sc.ok = 1
 //#endregion

@@ -827,7 +827,15 @@
             docks.c.up  ??= w
             const dock  = docks.oai({ dock: path })
             dock.c.up   ??= docks
-            await H.Lang_open_dock(w, dock, text)
+            // force_compile (a cluster peer's ghost_compile) is a BACKGROUND compile: it must not disturb
+            //  the human's active dock|Interest, so it SKIPS the interactive req:Languish lifecycle
+            //   (Lang_open_dock → req_text_loaded → activate + cm_mount).  The compile it needs runs headless
+            //    off disk text below (Lang_compile_source_state), never the live CodeMirror — so a mounted
+            //     editor is not required.  Just ensure a %Text so the dock lists and carries the dige; a
+            //      later interactive open mints req:Languish then.
+            const background = !!ev.sc.force_compile
+            if (background) await dock.oai({ Text: 1 })
+            else            await H.Lang_open_dock(w, dock, text)
             dock.c.content_dige = dige ?? ''
 
             // Re-provide of an already-open dock (e.g. surprise_read "take theirs"):
@@ -847,22 +855,20 @@
                 Text.bump_version()
             }
 
-            // first dock furnished becomes the active one (MVP: active = wanted Doc).  A ghost_compile
-            //  compile job rides force_active: take the active seat even if another dock holds it, so this
-            //   dock MOUNTS (gains a CodeMirror state) and req_instrumentation can compile it — there is no
-            //    headless compile.  (TODO: the unsaved-buffer merge popover — see Lies_ghost_compile_recv.)
-            if (ev.sc.force_active || !w.c.active_dock_path) await H.Lang_set_active_dock(w, path)
+            // first human-opened dock furnished becomes the active one (MVP: active = wanted Doc).  A
+            //  background compile (force_compile) NEVER takes the seat — not even into an empty editor — so
+            //   it leaves the human's active dock|Interest untouched.  (The compile below needs no mount.)
+            if (!background && !w.c.active_dock_path) await H.Lang_set_active_dock(w, path)
 
-            // A force_active dock arrived over the channel (a cluster peer's ghost_compile) with no
-            //  editor user behind it to press Esc — and req:Languish is eternal, so a re-provide never
-            //   re-arms req_compile.  Compile it ourselves, but from a state built straight off the
-            //    fresh disk `text` (Lang_compile_source_state), NOT dock.c.state: the editor's reseat
-            //     into CodeMirror is async, so dock.c.state can still hold the PREVIOUS edit at this
-            //      instant — compiling it lands one round behind (the locked-in lag).  The disk-text
-            //       state is exact and never disturbs the editor's own buffer.  Then arm the run so the
-            //        recompiled ghost reaches the runner (the Esc pair: compile + run).  Awaited inline,
-            //         so the verdict the asking CLI waits on settles on this beat, not a later one.
-            if (ev.sc.force_active) {
+            // The background compile (force_compile) has no editor user behind it to press Esc, and it
+            //  skipped req:Languish above — so compile it ourselves here, from a state built straight off
+            //   the fresh disk `text` (Lang_compile_source_state), NOT a live dock.c.state: there is no
+            //    mounted CodeMirror on a background dock, and even on an open one the reseat is async so its
+            //     state can lag one edit (the locked-in lag).  The disk-text state is exact and never
+            //      disturbs the human's own buffer.  Then arm the run so the recompiled ghost reaches the
+            //       runner (the Esc pair: compile + run).  Awaited inline, so the verdict the asking CLI
+            //        waits on settles on this beat, not a later one.
+            if (background) {
                 const srcState = await H.Lang_compile_source_state(dock, text, path)
                 await H.Lang_compile_dock(w, dock, srcState)
                 H.i_elvisto('Lies/Lies', 'Lies_run_arm', { path })

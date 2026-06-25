@@ -71,7 +71,15 @@ async Lake_drive(w, req):
             await &Lake_heal_arm,w
         else if n === 11
             await &Lake_stall_arm,w
+        else if n === 16
+            await &Lake_silence_arm,w
+        else if n === 19
+            await &Lake_redial_arm,w
     await &Lake_pump_handshakes,w
+    // the re-dial reaction (Tribunal): scan auto-redial Peerings for a carrier-down signal and fall to a fresh
+    //  carrier. Every pass, like Lake_pump_handshakes — a no-op until step 19 arms an auto_redial Peering. In
+    //   production LiesLies' keepalive drives this off the same signals; here the wrangler does (no browser).
+    &Tribunal_redial_sweep,w
     &Lake_witness,w
     await &Lake_order,w
 
@@ -290,6 +298,50 @@ async Lake_stall_arm(w):
     Kimport.partner = lossy
     this.Peeroleum_send(w, {header: {type: 'noop', from: 'kim', to: 'lee', seq: s}})
 
+// Lake_silence_arm — step 16: INBOUND-silence liveness (Reliable.g: the inbound twin of the stall).  Where
+//  the stall proves "I sent and heard no ack", this proves "I was hearing them and they went quiet".  A FRESH
+//   isolated link (Mae/Ned); arm a TIGHT silence window on Mae's Peering ONLY (silence_dead:2 — opt-in, so
+//    every other quiet peer of this run stays untouched).  One noop Mae->Ned: Ned admits + acks it, so Mae
+//     HEARS the ack (stamps her Pier's logical last_heard_tick) — she was live.  Then nothing more crosses, so
+//      Mae's last_heard freezes; two boundary ticks later Peeroleum_liveness_sweep sees the gap and LATCHES
+//       %silent,reason:no-inbound on MaePier — witnessed structurally (plays out 17-18).  No auto_redial here:
+//        this verifier witnesses DETECTION; the redial verifier (step 19) witnesses the reaction.
+async Lake_silence_arm(w):
+    w i %reached:step_16
+    let [MaePier, NedPier] = await this.Lake_link(w, 'mae', 'ned')
+    MaePier.c.up.c.retx_policy = {base: 2, factor: 2, max_attempts: 5, cap: 16, silence_dead: 2}
+    let s = this.Pier_next_seq(MaePier)
+    this.Peeroleum_send(w, {header: {type: 'noop', from: 'mae', to: 'ned', seq: s}})
+
+// Lake_redial_arm — step 19: the RE-DIAL end-to-end (Tribunal_redial), autonomous carrier reselection driven
+//  by a carrier-down signal — the trial's (steps 4-6) self-driving twin.  A FRESH isolated link (Ola/Pam) with
+//   BOTH carriers installed (mirrors Lake_trial_arm): webrtc (a black hole) handed the active role, websocket
+//    (working, relay ports paired) waiting.  A TIGHT retx_policy + auto_redial on Ola's Peering: the probe over
+//     the black hole goes un-acked, Peeroleum_retx_sweep exhausts it and LATCHES %stalled, and then — with NO
+//      step-paced fall — Tribunal_redial_sweep sees the signal, demotes webrtc %faulty,reason:no-ack, repoints
+//       %active_transport at the websocket relay, and leaves a %redialed:websocket breadcrumb.  Witnessed by the
+//        carrier swap (webrtc faulty + active websocket + the breadcrumb), plays out 20-22.
+async Lake_redial_arm(w):
+    w i %reached:step_19
+    let [OlaPier, PamPier] = await this.Lake_link(w, 'ola', 'pam')
+    let Ola = this.Lake_peering(w, 'ola')
+    let Pam = this.Lake_peering(w, 'pam')
+    if (!Ola || !Pam) return
+    this.PeerJS(Ola)
+    this.PeerJS(Pam)
+    this.Socket(Ola)
+    this.Socket(Pam)
+    this.Tribunal_pair_websocket(Ola, Pam)
+    this.Tribunal_hand_to_webrtc(Ola)
+    this.Tribunal_hand_to_webrtc(Pam)
+    // tight policy so the black-holed probe stalls in two ticks (production's would need ~46); auto_redial so
+    //  the reaction sweep falls THIS Peering autonomously.  Both ride Ola's Peering (per-Peering, like the stall).
+    Ola.c.retx_policy = {base: 1, factor: 1, max_attempts: 2, cap: 1}
+    Ola.c.auto_redial = 1
+    let s = this.Pier_next_seq(OlaPier)
+    OlaPier.c.redial_probe_seq = s
+    this.Peeroleum_send(w, {header: {type: 'noop', from: 'ola', to: 'pam', seq: s}})
+
 // Lake_witness — the readable assertions, polled each pass.  Navigates through w:PereStaple by node name
 //  (Lake_pier/Lake_peering).  Each stamp is structural + idempotent; the step rides in the VALUE
 //   (`step` is the Story mainkey, so it can't be a key).
@@ -346,6 +398,19 @@ Lake_witness(w):
     let stalldropped = !!(KimPier2 && KimPier2.c.lossy && KimPier2.c.lossy.dropped.length >= 2)
     let stalled = KimPier2 && KimPier2.oa({stalled:1})
     if (stalldropped && stalled && !(oa %witnessed:stall)) i %witnessed:stall
+    // step 16 (silence): Mae heard the ack once then the link went quiet, so the inbound-silence sweep LATCHED
+    //  %silent,reason:no-inbound on her Pier — the inbound twin of %stalled (no outbound to stall on).
+    let MaePier2 = this.Lake_pier(w, 'mae')
+    let silent = MaePier2 && MaePier2.oa({silent:1})
+    if (silent && !(oa %witnessed:silence)) i %witnessed:silence
+    // step 19 (redial): Ola's black-holed probe stalled, so Tribunal_redial_sweep fell the carrier autonomously.
+    //  Three cull-surviving readings: the webrtc carrier is %faulty, the active transport is now websocket, and
+    //   the %redialed:websocket breadcrumb records the fall (reset_handshake dropped the transient %stalled).
+    let Ola2 = this.Lake_peering(w, 'ola')
+    let Olawr = Ola2 && Ola2.o({transport:1, type:'webrtc'})[0]
+    let Olaactive = Ola2 && Ola2.o({active_transport:1})[0]
+    let redialed = Ola2 && Ola2.oa({redialed:'websocket'})
+    if (Olawr?.sc.faulty && Olaactive?.sc.type === 'websocket' && redialed && !(oa %witnessed:redial)) i %witnessed:redial
 
 // Lake_order — keep the Run snap readable: float the peer world A:PereStaple to the front of H/*
 //  (ahead of the apparatus actors A:Lies/A:Lang), the rest after.  A whole-/* place({}, ordered)

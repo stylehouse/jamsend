@@ -1,16 +1,8 @@
 Credulate,of_Book:PereStaple
-  GhostInclude:Ghost_N_Peeroleum,dige:50037abbbf6b8f6b
-  GhostInclude:Ghost_N_Reliable,dige:b282dca8b1abe0c9
-  GhostInclude:Ghost_N_Tribunal,dige:66b6bbb6511f04f2
+  GhostInclude:Ghost_N_Peeroleum,dige:490c302cad15ad34
+  GhostInclude:Ghost_N_Reliable,dige:b41dfeeaf391b273
+  GhostInclude:Ghost_N_Tribunal,dige:375733b4018a8e9a
   GhostInclude:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
-  GhostInclude:Ghost_Story_Peregrination,dige:349080831f4af54d
-  GhostInclude:Ghost_M_Radiola,dige:ca16d1a38546b315
-  GhostInclude:Ghost_Story_Musuation,dige:ba50546d6f8799d9
-  last_ok,at=1782382357.315,ok_pct
-    uses:Ghost_N_Peeroleum,dige:50037abbbf6b8f6b
-    uses:Ghost_N_Reliable,dige:b282dca8b1abe0c9
-    uses:Ghost_N_Tribunal,dige:66b6bbb6511f04f2
-    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
-    uses:Ghost_Story_Peregrination,dige:349080831f4af54d
-    uses:Ghost_M_Radiola,dige:ca16d1a38546b315
-    uses:Ghost_Story_Musuation,dige:ba50546d6f8799d9
+  GhostInclude:Ghost_Story_Peregrination,dige:bf8921bc03c9cfdf
+  GhostInclude:Ghost_M_Radiola,dige:697e49fd9691d5c4
+  GhostInclude:Ghost_Story_Musuation,dige:5e256e5809df81c4

@@ -217,17 +217,18 @@
     //   is already in hand it lands+drains synchronously, so an already-warm path
     //   fires dock_content immediately.  A cold path leaves the %subscribe for
     //   req:Store Phase 2 to drain when the read lands.
-    //   opts.force_active rides through to e_Lang_dock_content (warm: direct; cold: stashed on the
-    //    %subscribe and forwarded when the read lands) so the ghost_compile job can make the dock the
-    //     active/displayed one — the only way it grows a CodeMirror state and so becomes compilable.
-    async Lies_provide_dock(w: TheC, path: string, opts?: { force_active?: boolean }): Promise<void> {
+    //   opts.force_compile rides through to e_Lang_dock_content (warm: direct; cold: stashed on the
+    //    %subscribe and forwarded when the read lands): a BACKGROUND compile (the cluster's ghost_compile)
+    //     that furnishes the dock and compiles it off disk text WITHOUT taking the active seat or mounting
+    //      CodeMirror — so it never disturbs the human's open dock|Interest (Lang.svelte e_Lang_dock_content).
+    async Lies_provide_dock(w: TheC, path: string, opts?: { force_compile?: boolean }): Promise<void> {
         const H    = this as House
         const good = await H.LiesStore_read_good(w, 'text/Doc', path)
         if (good.c.content === undefined) {
             // cold — register where to push when the read lands (Aw + wake, not
             //  a held ref); oai keeps it single across repeated provides.
             const sub = good.oai({ subscribe: 1, Aw: 'Lang/Lang', wake: 'dock_content' })
-            if (opts?.force_active) sub.sc.force_active = 1
+            if (opts?.force_compile) sub.sc.force_compile = 1
             return
         }
         // already warm — hand it straight back so a re-point lands the dock now.
@@ -238,12 +239,12 @@
     //   Push an already-warm %Good to Lang without waiting for a read-land drain.
     //   Used by Lies_provide_dock on the warm path; mirrors the Phase-2 drain but
     //   fires a single handback for the standing Lang/Lang dock_content seam.
-    LiesStore_drain_good_now(_w: TheC, good: TheC, opts?: { force_active?: boolean }): void {
+    LiesStore_drain_good_now(_w: TheC, good: TheC, opts?: { force_compile?: boolean }): void {
         const H = this as House
         // drop any pending cold subscribe (we are about to satisfy it), then push.
         for (const sub of good.o({ subscribe: 1 }) as TheC[]) good.drop(sub)
         // feebly: with no Lang up the tree (runner, no editor) there's no dock to hand to.
-        H.feebly_i_elvisto('Lang/Lang', 'dock_content', { Good: good, ...(opts?.force_active ? { force_active: 1 } : {}) })
+        H.feebly_i_elvisto('Lang/Lang', 'dock_content', { Good: good, ...(opts?.force_compile ? { force_compile: 1 } : {}) })
     },
 
     // ── Lies_spawn_look_waft ──────────────────────────────────────────────────
@@ -904,8 +905,8 @@
             const Aw   = sub.sc.Aw   as string | undefined
             const wake = sub.sc.wake as string | undefined
             // feebly: a subscriber whose ghost is no longer stood up just isn't notified.
-            //  force_active (a ghost_compile job) rides through to e_Lang_dock_content.
-            if (Aw && wake) H.feebly_i_elvisto(Aw, wake, { Good: good, ...(sub.sc.force_active ? { force_active: 1 } : {}) })
+            //  force_compile (a ghost_compile job) rides through to e_Lang_dock_content.
+            if (Aw && wake) H.feebly_i_elvisto(Aw, wake, { Good: good, ...(sub.sc.force_compile ? { force_compile: 1 } : {}) })
             good.drop(sub)
         }
     },

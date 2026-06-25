@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return '50037abbbf6b8f6b' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return '490c302cad15ad34' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -355,6 +355,11 @@ async Peeroleum_deliver(w, frame) {
     let h = frame.header
     let {peering, pier} = this.Peeroleum_route(w, h, 'to')
     if (!pier) return
+    // inbound-silence liveness (Reliable.g twin of the outbound %stalled): stamp the LOGICAL tick we last
+    //  heard ANYTHING on this Pier — every frame, acks included (an ack is the cheapest liveness proof, so
+    //   counting it closes the watchdog's ack-blindness). Replay-safe (logical tick, never ms), off-snap on
+    //    .c. The silence sweep reads it; production's wall-clock keepalive is the other half (handover §8).
+    pier.c.last_heard_tick = w.c.retx_tick || 0
     // only wake a watching do_fn if the ack actually advanced something (stamped an outbox emit or a
     //  protocol %said). An ack for an UNtracked frame — an ephemeral run_phase/ping the far side acked
     //   anyway (e.g. an un-fixed editor bootstrap that still inboxes+acks run_phase) — matches nothing,
@@ -508,6 +513,29 @@ Peeroleum_rollup_faulty(pier) {
     for (const u of errs) faulty.i({unemit:u.sc.seq, error:u.sc.error, seq:u.sc.seq})
 
 },
+// Peeroleum_reset_handshake — the clean particle reset behind a re-dial (spec §9). A dead carrier makes every
+//  fact about THIS connection stale, so drop them all: protocol/**, outbox, inbox, faulty, the handshake %req,
+//   and the carrier-down signals (%stalled outbound, %silent inbound) that flagged the death. KEEP %Ud — we
+//    still know who they are across a reconnect, the one fact a reset must never reach. The fresh carrier re-
+//     runs hello/trust from zero.
+//  Runtime .c for the dead stream goes too: c.connection (the dead handle) and c.held (frames buffered behind a
+//   now-irrelevant gap). last_heard_tick is CLEARED, not kept: a stale "last heard long ago" would make the
+//    silence sweep re-latch %silent on the brand-new carrier instantly and loop the re-dial — clearing it means
+//     the Pier reads "never heard" until the new carrier actually delivers, a fresh silence window. The seq
+//      counters (c.seq / c.inseq) are KEPT: they only ever climb, so continuity costs nothing and dodges the
+//       epoch-handshake (heading 8) a seq-reset would demand of BOTH sides.
+Peeroleum_reset_handshake(pier) {
+    for (const key of ['protocol', 'outbox', 'inbox', 'faulty', 'stalled', 'silent']) {
+        let n = pier.o({[key]: 1})[0]
+        if (n) pier.drop(n)
+    }
+    let hs = pier.o({req: 'handshake'})[0]
+    if (hs) pier.drop(hs)
+    delete pier.c.connection
+    delete pier.c.held
+    delete pier.c.last_heard_tick
+
+},
 // ── retransmit sweep (Reliable.g: retx_due) ───────────────────────────────────
 // Peeroleum_retx_sweep — the retransmitter the %outbox/emit queue was always waiting for. Each step
 //  boundary advances a per-w LOGICAL tick (w.c.retx_tick — replay-safe, never ms) and, per Pier, asks
@@ -565,16 +593,51 @@ Peeroleum_retx_sweep(w) {
     }
 
 },
+// ── inbound-silence liveness sweep (Reliable.g: the inbound twin of retx_due) ──
+// Peeroleum_liveness_sweep — the inbound half of carrier-down detection. retx_due/%stalled catches "I sent
+//  and heard no ack"; this catches the symmetric "I was hearing them and they went silent" — a peer whose
+//   carrier died while I had nothing outbound to stall on. Per Pier: silence = now - last_heard_tick (logical
+//    ticks). Past the window, latch %silent,reason:no-inbound — latched (one-shot, like %stalled), the durable
+//     carrier-down signal a re-dial reads. Only reset_handshake clears it.
+//  OPT-IN, by design: it engages ONLY where the Peering's policy carries a `silence_dead` window. Production's
+//   inbound-silence detector is the wall-clock keepalive (handover §8); THIS logical-tick path is the replay-
+//    safe primitive a deterministic Story arms (tighten silence_dead, like the stall test tightens retx_policy),
+//     so the gate stays provably dormant on every link that doesn't ask for it — an idle-but-alive channel with
+//      no keepalive looks silent, so a blanket default would false-trip the quiet peers of an existing run.
+//  GATE: only a Pier that has HEARD at least once (last_heard_tick set) can "go silent" — a never-heard Pier is
+//   a handshake-never-started fault, not this one. Skipped once %silent is latched, so it fires exactly once.
+Peeroleum_liveness_sweep(w) {
+    let now = w.c.retx_tick || 0
+    for (const peering of w.o({Peering:1})) {
+        let policy = peering.c.retx_policy || w.c.retx_policy
+        let dead = policy && policy.silence_dead
+        if (!dead) continue                                   // opt-in: no window → no inbound-silence check
+        for (const pier of peering.o({Pier:1})) {
+            let heard = pier.c.last_heard_tick
+            if (heard == null) continue                       // never heard → not "went silent" (a different fault)
+            if (pier.oa({silent:1})) continue                 // latched already → one-shot
+            if (now - heard >= dead) pier.i({silent:1, reason:'no-inbound', since:heard})
+        }
+    }
+
+},
 // ── step-boundary whittle (spec §7.4, §12.1) ──────────────────────────────────
 // Peeroleum_arm_whittle — register the per-w sweeps at each step boundary, re-arming itself each pass
 //  (the logger idiom: Runstepped drains its queue every boundary, so a standing callback must re-push).
 //   Guarded so a w arms exactly once. Runs in Atime (clear()), so drop/r/i are safe. Retransmit sweeps
 //    BEFORE the cull (re-send the un-acked, then archive the acked — disjoint sets, order is just intent).
+//  The body is try/caught so a throw in any sweep can NEVER skip rearm(): a frozen heartbeat silently
+//   strands every later frame on this w (the freeze-scare, handover §8). The cause surfaces (console), and
+//    the next boundary still sweeps — strictly safer than the bare chain that froze once.
 Peeroleum_arm_whittle(w) {
     const H = this
     if (w.c._whittle_armed) return
     w.c._whittle_armed = 1
-    let rearm = () => H.Runstepped(async () => { H.Peeroleum_retx_sweep(w); H.Peeroleum_runstepped(w); rearm() })
+    let rearm = () => H.Runstepped(async () => {
+        try { H.Peeroleum_retx_sweep(w); H.Peeroleum_liveness_sweep(w); H.Peeroleum_runstepped(w) }
+        catch (e) { console.error('⚠ Peeroleum whittle sweep threw — rearming anyway', e) }
+        rearm()
+    })
     rearm()
 
 },

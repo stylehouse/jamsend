@@ -1,5 +1,5 @@
-Credulation,of_Book:MusuStaple
-  run=0,at=1782383499.095,ok,ok_pct,mode:check
+Credulation,of_Book:MusuStream
+  run=0,at=1782383512.788,ok=0,ok_pct=0,mode:check
     uses:Ghost_N_Peeroleum,dige:50037abbbf6b8f6b
     uses:Ghost_N_Reliable,dige:b282dca8b1abe0c9
     uses:Ghost_N_Tribunal,dige:66b6bbb6511f04f2

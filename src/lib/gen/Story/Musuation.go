@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Musuation(): string { return 'ba50546d6f8799d9' },
+    Ghostmeta_Ghost_Story_Musuation(): string { return '8436381a86fe9012' },
 
 // Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Music_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
@@ -135,6 +135,304 @@ async Musu_order(w) { const H = this;
     let As = H.o({A: 1})
     if (!As.length) return
     let first = (a) => (a.sc.A === 'MusuStaple') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+
+},
+// ══ SLICE 2 — MusuStream: the preview->stream handoff (Radios.svelte radiopreview/rastream) ══════
+//  A focused book on the SAME spine: one %Caster (alpha) of 12 chunks whose leading 4 are a FREE
+//   preview, the rest a paid continuation withheld until the listener asks.  A %Terminal (omega)
+//    carries BOTH a %req:cast's terminal AND its own %req:streamability — the listener-side logic
+//     that, once the un-played preview runs low (want_left=2), arms %want:stream and lets the
+//      continuation pour in.  Wholly separate verbs + witness names from MusuStaple so slice 1's
+//       accepted snap is untouched.  Its own world w:MusuStream (the per-beat handler dispatches by
+//        WORLD NAME — same bomb as the staple).  The four beats:
+//         beat 2  the link stands up WITH a preview boundary (caster+preview / terminal+inbox /
+//                  both reqs seeded), idle
+//         beat 3  caster goes %live -> spools ONLY the free preview (seq 0..3) and HOLDS at the
+//                  preview gate though the window has room (4..6) and the stock has more
+//         beat 4  omega plays into the preview (ack -1->1) -> the tail runs low -> streamability
+//                  arms %want:stream -> the spool ungates, the continuation (seq 4..8, kind:stream)
+//                   joins the inbox
+//         beat 5  omega plays out (ack 1->11) -> the rest of the stream drains, next === total
+
+// Run_A_MusuStream — wire the Run.  Its own actor + world, the world NAMED AFTER THE BOOK so the
+//  per-beat handler MusuStream(A,w) is found (do_fn_for reads w.sc.w).
+Run_A_MusuStream() {
+    this.c.role ??= 'runner'
+    this._i_drill(this, [{sc: {A: "MusuStream"}}, {sc: {w: "MusuStream"}}])
+
+},
+// MusuStream(A,w) — install the eternal wrangle, driven by MusuStream_drive (own did_step, immune
+//  to on_step's H-global, the Pere* lesson).
+MusuStream(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuStream_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// MusuStream_drive — per-inner-step dispatch off the run's step_n (tracked on req.c.did_step), then
+//  pump + witness + order every pass.  Separate guarded ifs sidestep the bare-else tile mangle.
+async MusuStream_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.MusuStream_sides_up(w)
+        if (n === 3) this.MusuStream_go_live(w)
+        if (n === 4) this.MusuStream_play(w, 2, 'step_4')
+        if (n === 5) this.MusuStream_play(w, 10, 'step_5')
+    }
+    await this.MusuStream_pump(w)
+    this.MusuStream_witness(w)
+    await this.MusuStream_order(w)
+
+},
+// ── the scenario verbs ──────────────────────────────────────────────────────────────────────
+// MusuStream_sides_up — beat 2: the link with a preview boundary.  A %Caster (12 stock, the first 4
+//  a free preview, cursor 0, NOT live) feeding a %Terminal whose %inbox catches chunks.  Stamp c.up
+//   on both (so the spine reads w), the caster<->terminal cross-refs (term.c.caster is what
+//    streamability drills), the want-floor on w (shrunk to 2 so the want fires only after a couple
+//     of plays, not instantly), and seed BOTH reqs: the caster's spool and the terminal's
+//      streamability.  Idle till live.
+MusuStream_sides_up(w) {
+    w.i({reached: "step_2"})
+    w.sc.want_left = 2
+    let caster = w.i({Caster: 1, name: 'alpha', total: 12, preview: 4, next: 0})
+    caster.c.up = w
+    let term = w.i({Terminal: 1, name: 'omega'})
+    term.c.up = w
+    term.i({inbox: 1})
+    caster.c.term = term
+    term.c.caster = caster
+    caster.oai({req: 'cast', eternal: 1})
+    term.oai({req: 'streamability', eternal: 1})
+
+},
+// MusuStream_go_live — beat 3: arm the spool.  The next pump spools the free preview (0..3) and
+//  HOLDS at the preview gate — the continuation is withheld though the window and stock both have it.
+MusuStream_go_live(w) {
+    w.i({reached: "step_3"})
+    let caster = w.o({Caster: 1})[0]
+    if (caster) {
+        caster.sc.live = 1
+        caster.bump()
+    }
+
+},
+// MusuStream_play — the terminal plays n chunks: advance ack (starts at -1).  Drives the preview
+//  tail down so streamability fires on its own, and later drains the stream.  Bumps for the wave.
+MusuStream_play(w, n, mark) {
+    w.i({reached: mark})
+    let term = w.o({Terminal: 1})[0]
+    if (!term) return
+    let ack = +(term.sc.ack ?? -1)
+    term.sc.ack = ack + n
+    term.bump()
+
+},
+// MusuStream_pump — pump the TERMINAL first (its %req:streamability decides to want) THEN the caster
+//  (its %req:cast honours that want in the SAME pass — the wrangle runs once per step, so order is
+//   the causality).  Both need their c.up stamped (done in sides_up) for the child req to pump.
+async MusuStream_pump(w) {
+    for (const term of w.o({Terminal: 1})) {
+        await term.do()
+    }
+    for (const caster of w.o({Caster: 1})) {
+        await caster.do()
+    }
+
+},
+// MusuStream_witness — the readable assertions, polled each pass; structural + idempotent, the beat
+//  in the VALUE.  Unique marker names (linked/previewed/wanted/streamed/streamdrained) so they never
+//   collide with MusuStaple's on H.
+MusuStream_witness(w) {
+    let caster = w.o({Caster: 1})[0]
+    let term = w.o({Terminal: 1})[0]
+    // beat 2: the link exists -- caster, terminal+inbox, and the streamability req that watches it.
+    if (caster && term && term.o({inbox: 1})[0] && term.o({req: 'streamability'}).length && !(w.oa({witnessed: "linked"}))) w.i({witnessed: "linked"})
+    if (!caster || !term) return
+    let inbox = term.o({inbox: 1})[0]
+    let total = +(caster.sc.total ?? 0)
+    let next = +(caster.sc.next ?? 0)
+    let preview = +(caster.sc.preview ?? total)
+    let streamed = inbox?.o({Chunk: 1, kind: 'stream'}).length ?? 0
+    // beat 3 (previewed): the free preview spooled to the boundary and HELD -- next sits exactly at
+    //  the preview edge, the stock still holds withheld chunks, and the listener hasn't asked.
+    if (next === preview && next < total && !term.sc.want && !(w.oa({witnessed: "previewed"}))) w.i({witnessed: "previewed"})
+    // beat 4a (wanted): the un-played preview ran low -> streamability armed %want:stream.
+    if (term.sc.want && !(w.oa({witnessed: "wanted"}))) w.i({witnessed: "wanted"})
+    // beat 4b (streamed): the paid continuation joined the inbox (a kind:stream chunk arrived).
+    if (streamed > 0 && !(w.oa({witnessed: "streamed"}))) w.i({witnessed: "streamed"})
+    // beat 5 (streamdrained): the whole stock, preview + stream, reached the terminal.
+    if (next === total && total > 0 && !(w.oa({witnessed: "streamdrained"}))) w.i({witnessed: "streamdrained"})
+
+},
+// MusuStream_order — float A:MusuStream to the front of H/* so the Run snap stays readable.
+async MusuStream_order(w) { const H = this;
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'MusuStream') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+
+},
+// ══ SLICE 3 — MusuStock: the radiostock fan-out (Radios.svelte radiostock / KEEP_AHEAD) ══════════
+//  The first genuinely graph-shaped beat: ONE %Stock (radiostock, a 12-record finite source) feeding
+//   TWO consumers through per-client %cursor children — a 'fast' listener and a 'slow' one — so the
+//    restock pressure keys off the LEADING cursor while the laggard trails (Radios' KEEP_AHEAD off the
+//     fastest consumer).  Wholly separate verbs + witness names from the other books; its own world
+//      w:MusuStock (the per-beat handler dispatches by WORLD NAME — same bomb as the staple).  The
+//       four beats:
+//        beat 2  the stock + both cursors (fast/slow at the head) + the restock req stand up, none made
+//        beat 3  the stock goes %live -> restock fills the buffer keep_ahead(5) deep (made 0->5) and
+//                 HOLDS, both cursors still at 0
+//        beat 4  the fast listener plays 3 (at 0->3) -> restock tops up to stay 5 ahead of IT (made
+//                 5->8) while the slow listener still sits at 0 -- restock tracks the LEADER, not the lag
+//        beat 5  fast plays out (at 3->12=cap) and slow plays 6 -> restock runs the stock to the cap
+//                 (made 8->12, the source is spent) while the slow listener still trails, records 6..11
+//                  produced and waiting in hand
+
+// Run_A_MusuStock — wire the Run.  Own actor + world, the world NAMED AFTER THE BOOK so the per-beat
+//  handler MusuStock(A,w) is found (do_fn_for reads w.sc.w).
+Run_A_MusuStock() {
+    this.c.role ??= 'runner'
+    this._i_drill(this, [{sc: {A: "MusuStock"}}, {sc: {w: "MusuStock"}}])
+
+},
+// MusuStock(A,w) — install the eternal wrangle, driven by MusuStock_drive (own did_step, immune to
+//  on_step's H-global — the Pere* lesson).
+MusuStock(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuStock_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// MusuStock_drive — per-inner-step dispatch off the run's step_n (tracked on req.c.did_step), then
+//  pump + witness + order every pass.  Separate guarded ifs sidestep the bare-else tile mangle.
+async MusuStock_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.MusuStock_sides_up(w)
+        if (n === 3) this.MusuStock_go_live(w)
+        if (n === 4) this.MusuStock_serve(w)
+        if (n === 5) this.MusuStock_drain(w)
+    }
+    await this.MusuStock_pump(w)
+    this.MusuStock_witness(w)
+    await this.MusuStock_order(w)
+
+},
+// ── the scenario verbs ──────────────────────────────────────────────────────────────────────
+// MusuStock_sides_up — beat 2: stand up the fan-out under w:MusuStock.  One %Stock (a 12-record finite
+//  source, nothing produced yet, NOT live) with two %cursor consumers (fast + slow, both at the head)
+//   as children — Radios' consumers,of=radiostock — and the spine's %req:restock seeded on the stock.
+//    Stamp stock.c.up by hand so restock reads keep_ahead off w.  Idle till live.
+MusuStock_sides_up(w) {
+    w.i({reached: "step_2"})
+    let stock = w.i({Stock: 1, name: 'radiostock', cap: 12, made: 0})
+    stock.c.up = w
+    stock.i({cursor: 1, client: 'fast', at: 0})
+    stock.i({cursor: 1, client: 'slow', at: 0})
+    stock.oai({req: 'restock', eternal: 1})
+
+},
+// MusuStock_go_live — beat 3: arm restock.  The next pump fills the buffer keep_ahead deep (made->5)
+//  and holds — the producer keeps just enough ahead of the (tied-at-0) consumers, no more.
+MusuStock_go_live(w) {
+    w.i({reached: "step_3"})
+    let stock = w.o({Stock: 1})[0]
+    if (stock) {
+        stock.sc.live = 1
+        stock.bump()
+    }
+
+},
+// MusuStock_serve — beat 4: the fast listener plays 3.  Advancing its cursor moves the leading edge,
+//  so the next restock tops the stock up to stay keep_ahead ahead of it (the slow listener, still at 0,
+//   proves restock tracks the leader).
+MusuStock_serve(w) {
+    w.i({reached: "step_4"})
+    this.MusuStock_advance(w, 'fast', 3)
+
+},
+// MusuStock_drain — beat 5: the fast listener plays out (to the source end) and the slow one plays a
+//  little.  Restock runs the stock to the cap (the source is finite) and can make no more, while the
+//   slow listener still trails with produced records waiting.
+MusuStock_drain(w) {
+    w.i({reached: "step_5"})
+    this.MusuStock_advance(w, 'fast', 9)
+    this.MusuStock_advance(w, 'slow', 6)
+
+},
+// MusuStock_advance — a listener "plays" n records: advance its cursor's playhead, clamped at the
+//  source end (cap; you can't play a record the source never held).  Bumps for the wave.  The spine's
+//   restock guarantees the record exists by the time the playhead reaches it, so the clamp only bites
+//    at the very end.
+MusuStock_advance(w, client, n) {
+    let stock = w.o({Stock: 1})[0]
+    if (!stock) return
+    let cur = stock.o({cursor: 1, client: client})[0]
+    if (!cur) return
+    let cap = +(stock.sc.cap ?? 0)
+    let at = +(cur.sc.at ?? 0)
+    at = at + n
+    if (at > cap) at = cap
+    cur.sc.at = at
+    cur.bump()
+
+},
+// MusuStock_pump — pump every %Stock each pass; stock.do() runs its %req:restock.  The consumers were
+//  advanced at dispatch, so restock reacts to the new leading edge in the SAME pass.  Needs stock.c.up
+//   (stamped in sides_up) for the child req to pump.
+async MusuStock_pump(w) {
+    for (const stock of w.o({Stock: 1})) {
+        await stock.do()
+    }
+
+},
+// MusuStock_witness — the readable assertions, polled each pass; structural + idempotent, the beat in
+//  the VALUE.  Unique marker names (stocked/primed/served/sourced) so they never collide on H.
+MusuStock_witness(w) {
+    let stock = w.o({Stock: 1})[0]
+    if (!stock) return
+    let curs = stock.o({cursor: 1})
+    // beat 2 (stocked): the stock, both cursors, and the restock req stand up -- nothing produced yet.
+    if (curs.length >= 2 && stock.o({req: 'restock'}).length && !(w.oa({witnessed: "stocked"}))) w.i({witnessed: "stocked"})
+    let cap = +(stock.sc.cap ?? 0)
+    let made = +(stock.sc.made ?? 0)
+    let keep = this.Radiola_keep_ahead(w)
+    let lead = 0
+    let lag = cap
+    for (const cur of curs) {
+        let at = +(cur.sc.at ?? 0)
+        if (at > lead) lead = at
+        if (at < lag) lag = at
+    }
+    // beat 3 (primed): live -> restock filled the buffer keep_ahead deep while every cursor still sits
+    //  at the head -- made sits exactly at keep_ahead, short of the cap.
+    if (made === keep && lead === 0 && made < cap && !(w.oa({witnessed: "primed"}))) w.i({witnessed: "primed"})
+    // beat 4 (served): the leading consumer advanced and restock stayed keep_ahead ahead of IT (made
+    //  === lead+keep) while a laggard still trails (lag < lead) -- the producer tracks the fastest, not
+    //   the slowest, and the source isn't spent yet (made < cap).
+    if (lead > 0 && made === lead + keep && lag < lead && made < cap && !(w.oa({witnessed: "served"}))) w.i({witnessed: "served"})
+    // beat 5 (sourced): the leading consumer reached the source end (lead === cap) so restock ran the
+    //  stock to the cap and can make no more (made === cap) -- the finite-source backpressure; a laggard
+    //   may still have produced records waiting (lag < cap).
+    if (lead === cap && made === cap && cap > 0 && !(w.oa({witnessed: "sourced"}))) w.i({witnessed: "sourced"})
+
+},
+// MusuStock_order — float A:MusuStock to the front of H/* so the Run snap stays readable.
+async MusuStock_order(w) { const H = this;
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'MusuStock') ? 0 : 1
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)

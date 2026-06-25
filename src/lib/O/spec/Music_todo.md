@@ -116,9 +116,14 @@ One slice at a time; each is: a spine mechanism + a `Musu*` beat or two + a witn
     (link-with-preview → preview-and-HOLD → want+stream → drain). `%Chunk,kind:preview|stream`,
      `%want:stream` on the terminal, `want_left` floor on `w`. Cursor moves now `.bump()` so the
       Cyto wave rides them (the first animation target: the inbox holding at the preview gate, then
-       the continuation pouring in on the want). **Status: authored, uncompiled (§7).**
-- **Slice 3 — radiostock cursor / multi-listener fan-out.** Two terminals, one stock, per-
-   client cursors, refill pressure. The fan-out is the first genuinely graph-shaped picture.
+       the continuation pouring in on the want). **Status: compiled, run, ACCEPTED — green** (§7;
+        baked headless via CredRunner).
+- **Slice 3 — radiostock cursor / multi-listener fan-out.** `req_restock` + `Radiola_keep_ahead` on
+   a `%Stock` (a finite `cap`-record source, `%Record` frontier) feeding two `%cursor` consumers; Book
+    `MusuStock` (own world/verbs) beats 2–5 (stock+two-cursors → prime-the-buffer → serve-the-leader →
+     source-spent). Restock keys off the LEADING cursor (KEEP_AHEAD=5 ahead of the fastest), so the
+      lagging listener visibly trails — the first genuinely graph-shaped picture (one stock → two
+       cursors, a growing `%Record` pile). **Status: compiled, run, ACCEPTED — green** (§7).
 - **Slice 4+** — live-edge decode-ahead, wear/GC, skip-track — as appetite holds.
 
 Keep `MusuStaple` as the staple end-to-end book; spin out focused books (`MusuStock`,
@@ -171,9 +176,23 @@ Built exactly like `Pere*` (read `Ghost/Story/Peregrination.g` as the canon):
    DRIVE how many steps run. Lie diges until a real run with ACCEPT records them.
 - `Musu_order(w)` floats `A:MusuStaple` to the front of `H/*` so the Run snap stays readable.
 
-Headless: `Story_cli` can boot the machine in node (vitest+jsdom) but cannot mount CodeMirror,
- so a Musu book that needs no editor runs there; the browser runner on `:9091` is the full
-  path. (Mirror `scripts/Story_cli.spec.ts` if a headless Musu harness is wanted.)
+Headless — **the run AND accept loop is closed in node**, no `:9091` required for the Musu books.
+ `scripts/CredRunner.spec.ts` is the harness: it mounts the runner shell, runs `Creduler_ensure` to
+  load `CREDULER_GHOSTS` (so `Run_A_<Book>` + the spine come up live from the acquired gen), drives
+   the Story, and piles the snaps — exactly like `Story_cli` but for Creduler-acquired Books. So:
+
+```
+BOOK=MusuStock node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs scripts/CredRunner.spec.ts
+BOOK=MusuStock ACCEPT=1 …    # re-records wormhole/Story/MusuStock/*.snap + the toc diges, headless
+```
+
+`ACCEPT=1` writes the real fixtures (`NodeWormholeNav` passes `wormhole/` writes through to the repo
+ only while recording; `gen/`+`Ghost/` writes sandbox to `/tmp`, so nothing else in the tree is
+  touched). **The flow is: edit `.g` → `ghost-compile` each (writes the live gen `.go`) → `CredRunner`
+   (acquires the fresh gen) → dry-run to eyeball the beats → `ACCEPT=1` to bake.** The diges no longer
+    wait on a browser accept. (The browser `:9091` runner is still the path for the Cyto animation
+     read — CredRunner is headless, no graph.) A plain `Story_cli` boot can't acquire the spine (no
+      Creduler crank) and can't mount CodeMirror, so it's only a compile/parse gate, not a Musu runner.
 
 ---
 
@@ -193,9 +212,13 @@ Headless: `Story_cli` can boot the machine in node (vitest+jsdom) but cannot mou
     `witnessed:` markers in order). Snap quirk noted: value-1 `seq` rides bare (`Chunk,seq`),
      decodes to `seq:1`.
 
-**Slice 2 — AUTHORED, uncompiled.** The preview→stream handoff, all inside the cluster + the one
- (already-present) Credence/overlay touch — no new `CREDULER_GHOSTS` line (the book is new methods
-  in the already-enrolled `Musuation.g`):
+**Slice 2 — DONE, ACCEPTED, green.** The preview→stream handoff, all inside the cluster + the one
+ (already-present) Credence/overlay touch — no new `CREDULER_GHOSTS` line (the book is new methods in
+  the already-enrolled `Musuation.g`). Both gen `.go` recompiled and HMR'd live; a 5-step run
+   reproduced every beat below to the chunk — `previewed` HELD at the gate (window had room, preview
+    withheld 4..6), `wanted`+`streamed` landed TOGETHER in beat 4 (pump order took), `streamdrained`
+     at 12. **Baked headless via `BOOK=MusuStream ACCEPT=1 … CredRunner` — 5/5 exact** (`toc.snap`
+      diges real, e.g. `step=5,dige:b697de52…`); `001..005.snap` recorded.
 - `Ghost/M/Radiola.g` — `req_cast` grew an **opt-in** preview/stream gate (a `%Caster` with
    `.sc.preview` spools the free preview, withholds `kind:stream` chunks until `term.sc.want`); new
     `req_streamability` (the listener arms `%want:stream` when the un-played preview tail drops to
@@ -210,27 +233,43 @@ Headless: `Story_cli` can boot the machine in node (vitest+jsdom) but cannot mou
    `Funkcion:Storying,of_Book:MusuStream` under `What:Musu`. `wormhole/Ghost/Music/Ality/toc.snap`
     — `What:the preview->stream handoff` + `What:the handoff test`.
 
+**Slice 3 — DONE, ACCEPTED, green.** The radiostock fan-out (the first one-source→many-listeners
+ picture), all inside the cluster + the one Credence/overlay touch — again no new `CREDULER_GHOSTS`
+  line. Both gen `.go` recompiled (Radiola `@ 6754c58b…`, Musuation `@ 8436381a…`) and HMR'd live;
+   parse-checked headless first, then **baked via `BOOK=MusuStock ACCEPT=1 … CredRunner` — 5/5 exact**
+    (`toc.snap` diges real, e.g. `step=5,dige:be088b85…`); `001..005.snap` recorded.
+- `Ghost/M/Radiola.g` — `Radiola_keep_ahead` (the KEEP_AHEAD=5 knob) + `req_restock`: rides a
+   `%Stock` (finite `cap`-record source, `%Record` children seq 0..`made`-1), keeps `keep_ahead`
+    records produced ahead of the LEADING `%cursor` consumer, capped by the source. Minting nothing
+     once the lead is satisfied or `made===cap` IS the backpressure. Independent of the slice-1/2
+      caster path (its own mainkeys), so those accepted snaps are untouched.
+- `Ghost/Story/Musuation.g` — Book `MusuStock` (`Run_A_MusuStock`, `MusuStock`, `MusuStock_drive`/
+   `_sides_up`/`_go_live`/`_serve`/`_drain`/`_advance`/`_pump`/`_witness`/`_order`). Own world
+    `w:MusuStock`, own witness names (`stocked`/`primed`/`served`/`sourced`). One `%Stock` (12-record
+     source) with two `%cursor` children (`fast`/`slow`) — the consumers,of=radiostock fan-out.
+- `wormhole/Story/MusuStock/toc.snap` (+ `001..005.snap`) — baked. `wormhole/Credence/toc.snap` —
+   `Funkcion:Storying,of_Book:MusuStock` under `What:Musu`. `wormhole/Ghost/Music/Ality/toc.snap` —
+    `What:the radiostock fan-out` + `What:the fan-out test`.
+
+**The slice-3 beats — VERIFIED+ACCEPTED by run (2026-06-25)** (`cap=12`, `keep_ahead=5`, two cursors):
+- beat 2 — **stocked**: `%Stock` (made=0, not live) + two `%cursor` (fast/slow at 0) + `%req:restock`
+   stand up; nothing produced → `witnessed:stocked`.
+- beat 3 — **primed**: stock goes live → restock fills the buffer to `keep_ahead` (made 0→5, Records
+   0..4) and HOLDS, both cursors still at 0 → `witnessed:primed`.
+- beat 4 — **served**: fast plays 3 (at 0→3) → restock tops up to stay 5 ahead of the LEADER (made
+   5→8) while slow still sits at 0 (`lag < lead` proves it tracks the fastest) → `witnessed:served`.
+- beat 5 — **sourced**: fast plays out (at 3→12=cap), slow plays 6 → restock runs the stock to the
+   cap (made 8→12) and can make no more — the finite-source backpressure — while slow still trails at
+    6 with records 6..11 in hand → `witnessed:sourced`.
+
+If a beat mismatches: restock keys off the **leading** (highest) cursor, not the lagging one — if
+ `served` doesn't fire (or `made` tracks the slow cursor), the lead/lag pick in `req_restock` /
+  `MusuStock_witness` is inverted. `made===cap` with a cursor short of cap is the intended endpoint
+   (source spent, listener still draining), not a bug.
+
 **The next move:**
-1. **Ghost-compile both `.g`** (live editor on `:9091`): `npm run ghost-compile -- Ghost/M/Radiola.g`
-    and `npm run ghost-compile -- Ghost/Story/Musuation.g` — the changed spine + the new book HMR
-     into the live runners. (`Radiola.g` changed; `Musuation.g` gained the book — both need recompiling.)
-2. Run `MusuStream` (Credence `What:Musu`, or `Run_A_MusuStream`), watch the four beats (below).
-3. Become `MusuStream` and **accept** — records the real diges, greens the cell.
-4. Watch it in Cyto: the inbox should **fill to the preview gate and hold**, then **surge** with the
-    continuation when the want fires — the first animation target (the `.bump()`s now feed the wave).
-5. Then slice 3 (radiostock cursor / multi-listener) — §4.
-
-**The slice-2 beats to verify** (`total=12`, `preview=4`, `window=7`, `want_left=2`):
-- beat 2 — **linked**: caster (preview=4) + terminal + inbox + both reqs stand up, idle.
-- beat 3 — **previewed**: caster goes live → spools the free preview seq 0..3 (`kind:preview`) and
-   **HOLDS** at `next=4` — the window had room for 4..6 and the stock has 4..11, but the preview gate
-    holds and the listener hasn't asked → `witnessed:previewed`.
-- beat 4 — **wanted + streamed**: omega plays 2 (ack -1→1) → un-played preview tail = `4-1-1 = 2 ≤
-   want_left` → `req_streamability` arms `term.sc.want` → `req_cast` ungates → seq 4..8 (`kind:stream`)
-    pour in, `next=9` → `witnessed:wanted` **and** `witnessed:streamed`.
-- beat 5 — **streamdrained**: omega plays out (ack 1→11) → seq 9..11 deliver, `next=12===total` →
-   `witnessed:streamdrained`.
-
-If a beat mismatches: the pump order (`term.do()` before `caster.do()`) is the first suspect — if
- the want and the stream split across two beats instead of landing together in beat 4, the terminal
-  isn't being pumped before the caster in the wrangle pass.
+1. Watch slices 2–3 in Cyto on `:9091` (the headless CredRunner has no graph): slice 2 the inbox
+    holding at the preview gate then surging; slice 3 the `%Stock` accreting `%Record`s while the two
+     cursors fan out at different depths — both `.bump()`-fed so the wave rides.
+2. Slice 4 — live-edge decode-ahead (the `%aud` linked list + a `%req:progress` decoding ahead of the
+    playhead, "stay 3s back from live edge") — §3 item 4 / §4.

@@ -3,8 +3,15 @@ story:MusuStream
   Plan
   Opt
     For
-  step,dige:0000000000000001
-  step=2,dige:0000000000000002
-  step=3,dige:0000000000000003
-  step=4,dige:0000000000000004
-  step=5,dige:0000000000000005
+  TimeSpool
+    TimeTotal:beliefs,avg=0.034
+      sample=0.022,at=1782383511
+      sample=0.045,at=1782386246
+    TimeTotal:step,avg=0.007
+      sample=0.004,at=1782383511
+      sample=0.009,at=1782386246
+  step,dige:9c08aa64b9189bca
+  step=2,dige:712a3bc6e12e0809
+  step=3,dige:f4e142ed84e04379
+  step=4,dige:88ebbfdaab5f5f16
+  step=5,dige:b697de52222b540d

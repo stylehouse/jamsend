@@ -5,7 +5,6 @@ story:MusuStaple
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.016
-      sample=0.008,at=1782375815
       sample=0.013,at=1782377143
       sample=0.027,at=1782378103
       sample=0.028,at=1782379003
@@ -14,8 +13,9 @@ story:MusuStaple
       sample=0.011,at=1782380794
       sample=0.02,at=1782380836
       sample=0.01,at=1782381943
+      sample=0.02,at=1782383499
+      sample=0.012,at=1782386743
     TimeTotal:step,avg=0.003
-      sample=0.002,at=1782375815
       sample=0.003,at=1782377143
       sample=0.005,at=1782378103
       sample=0.006,at=1782379003
@@ -24,6 +24,8 @@ story:MusuStaple
       sample=0.002,at=1782380794
       sample=0.004,at=1782380836
       sample=0.002,at=1782381943
+      sample=0.004,at=1782383499
+      sample=0.002,at=1782386743
   step,dige:b14b535572c8c8ab
   step=2,dige:f34851e231519b29
   step=3,dige:4d8b0fece923ebf5
