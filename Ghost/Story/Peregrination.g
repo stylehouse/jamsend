@@ -75,6 +75,22 @@ async Lake_drive(w, req):
             await &Lake_silence_arm,w
         else if n === 19
             await &Lake_redial_arm,w
+        else if n === 25
+            await &Lake_corruption_arm,w
+        else if n === 27
+            await &Lake_dedup_arm,w
+        else if n === 29
+            await &Lake_reorder_gap,w
+        else if n === 30
+            await &Lake_reorder_fill,w
+        else if n === 32
+            await &Lake_reset_arm,w
+        else if n === 34
+            await &Lake_preud_arm,w
+        else if n === 36
+            await &Lake_dedup_cull_arm,w
+        else if n === 38
+            await &Lake_dedup_cull_replay,w
     await &Lake_pump_handshakes,w
     // the re-dial reaction (Tribunal): scan auto-redial Peerings for a carrier-down signal and fall to a fresh
     //  carrier. Every pass, like Lake_pump_handshakes — a no-op until step 19 arms an auto_redial Peering. In
@@ -342,6 +358,138 @@ async Lake_redial_arm(w):
     OlaPier.c.redial_probe_seq = s
     this.Peeroleum_send(w, {header: {type: 'noop', from: 'ola', to: 'pam', seq: s}})
 
+// ── correctness-floor proofs (Reliable.g + the spine's verify path), each a fresh isolated link so the
+//     2-15 gate stays byte-identical: corruption (heading 6), dedup + reorder (inseq), reset (heading 8) ──
+
+// Lake_corruption_arm — step 25: a CORRUPT frame fails verify (heading 6).  A fresh link (Cad/Cob) on the
+//  clean carrier; Cad sends a noop carrying a real 4-byte buffer but a deliberately WRONG body_hash.  Cob's
+//   serial inbox recomputes the sha256 (req_unemit, spec §4.2) — it cannot match — so the frame fails verify
+//    with reason bad-body-hash and Peeroleum_rollup_faulty latches %faulty on CobPier (a tweaked body fails
+//     identically to a tweaked header-sign, the same %error→%faulty path).  A noop carries it so the integrity
+//      check runs with no handshake (admitted pre-Ud); the receiver acks nothing, so the emit lingers un-acked
+//       (resending slowly on the default backoff) and %faulty, rebuilt from the errored unemit, stays latched.
+async Lake_corruption_arm(w):
+    w i %reached:step_25
+    let [CadPier, CobPier] = await this.Lake_link(w, 'cad', 'cob')
+    let bytes = new Uint8Array([1, 2, 3, 4])
+    let bad = '0'.repeat(64)   // 64 hex chars, the sha256 of [1,2,3,4] is not all-zero → mismatch
+    let s = this.Pier_next_seq(CadPier)
+    this.Peeroleum_send(w, {header: {type: 'noop', from: 'cad', to: 'cob', seq: s, body_hash: bad, body_len: bytes.length}, buffer: bytes})
+
+// Lake_dedup_arm — step 27: a DUPLICATED frame is handled exactly once (inseq dedup).  A fresh LOSSY link
+//  (Fin/Gus, reliable:false so the seq discipline engages); stamp %Ud on Gus so a consumer-type frame is
+//   admitted (the pre-Ud gate allows only hello|noop) and register a counting handler — a re-dispatch would
+//    show dup_count===2.  Slip the adversary onto Fin->Gus with dup:[s]: the carrier delivers seq s TWICE in
+//     one transit, so inseq must collapse the second (seq ≤ last → re-ack only, never re-dispatch).  The
+//      adversary's duped-log proves two arrived; dup_count===1 proves one dispatched — the dedup, airtight.
+async Lake_dedup_arm(w):
+    w i %reached:step_27
+    let [FinPier, GusPier] = await this.Lake_link(w, 'fin', 'gus')
+    let Finport = this.Lake_port(FinPier)
+    let Gusport = this.Lake_port(GusPier)
+    Finport.reliable = false
+    Gusport.reliable = false
+    GusPier.i({Ud: 1, pubkey: 'fin'})
+    this.Peeroleum_on(w, 'test_dup', (cw, pier, frame) => { pier.c.dup_count = (pier.c.dup_count || 0) + 1 })
+    let s = this.Pier_next_seq(FinPier)
+    FinPier.c.dedup_seq = s
+    let lossy = this.make_lossy_partner(Gusport, {dup: [s]})
+    FinPier.c.lossy = lossy
+    Finport.partner = lossy
+    this.Peeroleum_send(w, {header: {type: 'test_dup', from: 'fin', to: 'gus', seq: s}})
+
+// Lake_reorder_gap — step 29: an OUT-OF-ORDER frame is gap-buffered (inseq, the reorder half).  A fresh LOSSY
+//  link (Hal/Ida); allocate two consecutive seqs but send the SECOND first, so seq s2 arrives ahead of s1.
+//   inseq sees s2 > last+1 → buffers it and delivers NOTHING (pier.c.held holds it off-snap, no ack) until the
+//    gap fills.  Park both seqs on the Pier for step 30.  The witness reads the held gap THIS step; step 30 fills it.
+async Lake_reorder_gap(w):
+    w i %reached:step_29
+    let [HalPier, IdaPier] = await this.Lake_link(w, 'hal', 'ida')
+    let Halport = this.Lake_port(HalPier)
+    let Idaport = this.Lake_port(IdaPier)
+    Halport.reliable = false
+    Idaport.reliable = false
+    let s1 = this.Pier_next_seq(HalPier)
+    let s2 = this.Pier_next_seq(HalPier)
+    HalPier.c.reorder_s1 = s1
+    HalPier.c.reorder_s2 = s2
+    this.Peeroleum_send(w, {header: {type: 'noop', from: 'hal', to: 'ida', seq: s2}})
+
+// Lake_reorder_fill — step 30: fill the gap.  Send s1 (= last+1), so inseq delivers s1 AND drains the buffered
+//  s2 — both booked and handled in seq order, the held frame released and the buffer emptied.  This is the
+//   drain half of the reorder proof (the held-then-drained arc the witness checks across steps 29-30).
+async Lake_reorder_fill(w):
+    w i %reached:step_30
+    let HalPier = this.Lake_pier(w, 'hal')
+    if (!HalPier) return
+    let s1 = HalPier.c.reorder_s1
+    this.Peeroleum_send(w, {header: {type: 'noop', from: 'hal', to: 'ida', seq: s1}})
+
+// Lake_reset_arm — step 32: reset_handshake keeps identity + seq continuity across a re-dial (heading 8, spec §9).
+//  A single fresh peer (Rex) built up with a FULL connection state — %Ud (their proven identity), protocol,
+//   outbox, inbox, %faulty, the carrier-down signals (%stalled outbound, %silent inbound), the handshake %req,
+//    the seq cursors (c.seq / c.inseq), and the dead-stream .c (connection / held / last_heard).  One
+//     Peeroleum_reset_handshake must drop every connection FACT but KEEP %Ud and the seq counters: continuity
+//      across a reconnect is what dodges the epoch handshake a seq-reset would force on BOTH sides.  Synthetic
+//       state via plain .i (not oai — oai on a req mainkey would run req_handshake and dirty the outbox).
+async Lake_reset_arm(w):
+    w i %reached:step_32
+    let RexPier = await this.Lake_peer(w, 'rex', 'rio')
+    RexPier.i({Ud: 1, pubkey: 'rio'})
+    RexPier.i({protocol: 1}).i({hello: 1, said: 1, heard: 1})
+    RexPier.i({outbox: 1}).i({emit: 9, type: 'noop', seq: 9, sent: 1})
+    RexPier.i({inbox: 1}).i({req: 'unemit', seq: 7, type: 'noop', done: 1})
+    RexPier.i({faulty: 1})
+    RexPier.i({stalled: 1})
+    RexPier.i({silent: 1, reason: 'no-inbound'})
+    RexPier.i({req: 'handshake'})
+    RexPier.c.seq = 9
+    RexPier.c.inseq = {last: 7, buffered: []}
+    RexPier.c.connection = {dead: 1}   // a dead Pier-level handle reset must clear (else this clause is vacuous)
+    RexPier.c.held = {8: {}}
+    RexPier.c.last_heard_tick = 3
+    this.Peeroleum_reset_handshake(RexPier)
+
+// Lake_preud_arm — step 34: the pre-%Ud admission gate (spec §7.3).  A fresh link (Uma/Val); Val never
+//  handshakes, so it has no %Ud.  Uma sends a consumer-type frame (test_preud): the gate admits only
+//   hello|noop before identity is proven, so req_unemit refuses this one with reason pre-Ud and rolls up
+//    %faulty on ValPier — a peer cannot push app frames before proving who it is.  (A noop here WOULD be
+//     admitted; the consumer type proves the gate by contrast.)  Clean carrier — the gate is identity, not loss.
+async Lake_preud_arm(w):
+    w i %reached:step_34
+    let [UmaPier, ValPier] = await this.Lake_link(w, 'uma', 'val')
+    let s = this.Pier_next_seq(UmaPier)
+    this.Peeroleum_send(w, {header: {type: 'test_preud', from: 'uma', to: 'val', seq: s}})
+
+// Lake_dedup_cull_arm — step 36, phase 1 of dedup-survives-the-cull (Reliable.g: "last persists").  A fresh
+//  LOSSY link (Sib/Tom, reliable:false); stamp %Ud on Tom + a counting handler.  Sib sends ONE test_cull
+//   frame, handled once (cull_count===1) and acked — so at the step-36 boundary its %unemit culls to %recent
+//    and the live req is GONE.  Stash the raw frame for the step-38 replay.  The inseq cursor lives on Tom's
+//     .c (pier.c.inseq.last), NOT on the culled req, so the dedup must survive the req's disappearance.
+async Lake_dedup_cull_arm(w):
+    w i %reached:step_36
+    let [SibPier, TomPier] = await this.Lake_link(w, 'sib', 'tom')
+    let Sibport = this.Lake_port(SibPier)
+    let Tomport = this.Lake_port(TomPier)
+    Sibport.reliable = false
+    Tomport.reliable = false
+    TomPier.i({Ud: 1, pubkey: 'sib'})
+    this.Peeroleum_on(w, 'test_cull', (cw, pier, frame) => { pier.c.cull_count = (pier.c.cull_count || 0) + 1 })
+    let s = this.Pier_next_seq(SibPier)
+    let frame = {header: {type: 'test_cull', from: 'sib', to: 'tom', seq: s}}
+    SibPier.c.cull_frame = frame
+    this.Peeroleum_send(w, frame)
+
+// Lake_dedup_cull_replay — step 38, phase 2: replay the SAME frame from the wire, now that its %unemit was
+//  handled and culled to %recent two steps ago.  A bare oai-by-seq would no longer find the req and would
+//   re-dispatch; inseq's persisted cursor (last ≥ seq) catches it — re-ack only, never a second dispatch.
+//    Deliver straight, exactly as the carrier's recv would hand it.  cull_count stays 1 = the dedup held.
+async Lake_dedup_cull_replay(w):
+    w i %reached:step_38
+    let SibPier = this.Lake_pier(w, 'sib')
+    if (!SibPier || !SibPier.c.cull_frame) return
+    await this.Peeroleum_deliver(w, SibPier.c.cull_frame)
+
 // Lake_witness — the readable assertions, polled each pass.  Navigates through w:PereStaple by node name
 //  (Lake_pier/Lake_peering).  Each stamp is structural + idempotent; the step rides in the VALUE
 //   (`step` is the Story mainkey, so it can't be a key).
@@ -411,6 +559,53 @@ Lake_witness(w):
     let Olaactive = Ola2 && Ola2.o({active_transport:1})[0]
     let redialed = Ola2 && Ola2.oa({redialed:'websocket'})
     if (Olawr?.sc.faulty && Olaactive?.sc.type === 'websocket' && redialed && !(oa %witnessed:redial)) i %witnessed:redial
+    // step 25 (corruption): Cad's tweaked-body noop failed Cob's sha256 verify, so %faulty latched on CobPier
+    //  carrying the bad-body-hash error (rebuilt each boundary from the errored, never-culled %unemit).
+    let CobPier2 = this.Lake_pier(w, 'cob')
+    let cobfaulty = CobPier2 && CobPier2.o({faulty:1})[0]
+    let cobfaulterr = cobfaulty && cobfaulty.o({unemit:1})[0]?.sc.error
+    if (cobfaulterr === 'bad-body-hash' && !(oa %witnessed:corruption)) i %witnessed:corruption
+    // step 27 (dedup): the adversary delivered seq s TWICE (duped-log non-empty) but inseq collapsed the
+    //  second, so the registered handler ran exactly once (dup_count===1) — handled-once despite a dup.
+    let FinPier2 = this.Lake_pier(w, 'fin')
+    let GusPier2 = this.Lake_pier(w, 'gus')
+    let deduped = !!(FinPier2 && FinPier2.c.lossy && FinPier2.c.lossy.duped && FinPier2.c.lossy.duped.length)
+    let dispatchedonce = GusPier2 && GusPier2.c.dup_count === 1
+    if (deduped && dispatchedonce && !(oa %witnessed:dedup)) i %witnessed:dedup
+    // step 29 (reorder_held): s2 arrived ahead of s1, so inseq buffered it — pier.c.held holds it off-snap
+    //  with inseq.last still below it, the gap NOT yet delivered.  Caught during step 29, before step 30 fills it.
+    let HalPier2 = this.Lake_pier(w, 'hal')
+    let IdaPier2 = this.Lake_pier(w, 'ida')
+    let rs2 = HalPier2 && HalPier2.c.reorder_s2
+    let reorderheld = !!(IdaPier2 && IdaPier2.c.held && rs2 != null && IdaPier2.c.held[rs2])
+    if (reorderheld && !(oa %witnessed:reorder_held)) i %witnessed:reorder_held
+    // step 30 (reorder): s1 filled the gap, so inseq drained both in order — inseq.last advanced past s2 and
+    //  the held frame was released (no longer buffered).  Gated on reorder_held so the gap was provably real.
+    let reorderdrained = !!(IdaPier2 && IdaPier2.c.inseq && rs2 != null && IdaPier2.c.inseq.last >= rs2 && (!IdaPier2.c.held || !IdaPier2.c.held[rs2]))
+    if (reorderdrained && (oa %witnessed:reorder_held) && !(oa %witnessed:reorder)) i %witnessed:reorder
+    // step 32 (reset): one reset_handshake on Rex KEPT %Ud + the seq cursors (c.seq / c.inseq.last —
+    //  continuity, no epoch) but DROPPED every connection fact (protocol/outbox/inbox/faulty/stalled/silent +
+    //   the handshake %req) and cleared the dead-stream .c (connection/held/last_heard).
+    let RexPier2 = this.Lake_pier(w, 'rex')
+    let resetud = RexPier2 && RexPier2.oa({Ud:1})
+    let resetseq = RexPier2 && RexPier2.c.seq === 9 && RexPier2.c.inseq && RexPier2.c.inseq.last === 7
+    let resetdropped = RexPier2 && !RexPier2.oa({protocol:1}) && !RexPier2.oa({outbox:1}) && !RexPier2.oa({inbox:1}) && !RexPier2.oa({faulty:1}) && !RexPier2.oa({stalled:1}) && !RexPier2.oa({silent:1}) && !RexPier2.o({req:'handshake'})[0]
+    let resetcleared = RexPier2 && RexPier2.c.connection == null && RexPier2.c.held == null && RexPier2.c.last_heard_tick == null
+    if (resetud && resetseq && resetdropped && resetcleared && !(oa %witnessed:reset)) i %witnessed:reset
+    // step 34 (preud): Uma's consumer-type frame hit Val's pre-Ud admission gate (Val never handshook → no
+    //  %Ud) and was refused with reason pre-Ud — %faulty latched, proving a peer can't push app frames unproven.
+    let ValPier2 = this.Lake_pier(w, 'val')
+    let valfaulty = ValPier2 && ValPier2.o({faulty:1})[0]
+    let valfaulterr = valfaulty && valfaulty.o({unemit:1})[0]?.sc.error
+    if (valfaulterr === 'pre-Ud' && !(oa %witnessed:preud)) i %witnessed:preud
+    // step 36/38 (dedup_cull): Tom handled test_cull once (cull_count===1) and its %unemit culled to %recent;
+    //  the step-38 replay of the SAME seq, AFTER the req was gone, did NOT re-dispatch — inseq's persisted
+    //   cursor caught it.  Proves the dedup a bare oai-by-seq would miss once the req is culled.
+    let TomPier2 = this.Lake_pier(w, 'tom')
+    let tominbox = TomPier2 && TomPier2.o({inbox:1})[0]
+    let tomculled = tominbox && tominbox.o({recent:1})[0]?.o({type:'test_cull'})[0]
+    let tomonce = TomPier2 && TomPier2.c.cull_count === 1
+    if (tomculled && tomonce && !(oa %witnessed:dedup_cull)) i %witnessed:dedup_cull
 
 // Lake_order — keep the Run snap readable: float the peer world A:PereStaple to the front of H/*
 //  (ahead of the apparatus actors A:Lies/A:Lang), the rest after.  A whole-/* place({}, ordered)

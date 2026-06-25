@@ -124,7 +124,19 @@ One slice at a time; each is: a spine mechanism + a `Musu*` beat or two + a witn
      source-spent). Restock keys off the LEADING cursor (KEEP_AHEAD=5 ahead of the fastest), so the
       lagging listener visibly trails — the first genuinely graph-shaped picture (one stock → two
        cursors, a growing `%Record` pile). **Status: compiled, run, ACCEPTED — green** (§7).
-- **Slice 4+** — live-edge decode-ahead, wear/GC, skip-track — as appetite holds.
+- **Slices 4–6 — PROTOTYPED (spine sketches, not yet Book-run).** Compact, faithful mechanisms in
+   `Radiola.g`, compiling live, inert until a Book wires them (the explore-the-code substrate for the
+    `Waft:Ality` map, §8). Each carries the real `Radios.svelte` constants and the cursor arithmetic:
+  - **4 live-edge playback** — `req_progress` + `Radiola_live_back(3)`: a `%Player` decodes delivered
+     `%Chunk` into an `%aud` linked list (chained on `player.c.tail`) ahead of its playhead but stays
+      `live_back` behind the live edge. Hugging the live edge is the backpressure.
+  - **5 record wear / GC** — `req_reap` + `Radiola_wear_enough(3)`/`Radiola_wear_delay(19)`: a
+     `%Record` heard-enough then long-idle is tombstoned in place with `%wore_out` (a flag, a legible
+      husk — not a delete), keeping a floor of live records.
+  - **6 skip-track** — `Radiola_skip`: a `%Knob` strike advances the terminal's record cursor and
+     resets the player's decode frontier; the abandoned `%aud` chain is marked `%stale` (the wear
+      sweep reaps it). The cursor move is the whole act.
+  - Next per slice: own world + `Musu*` Book + witnesses + CredRunner accept, the slice-1–3 cadence.
 
 Keep `MusuStaple` as the staple end-to-end book; spin out focused books (`MusuStock`,
  `MusuWear`, …) under the same `Ghost/Story/Musuation.g` as slices land, exactly as the
@@ -271,5 +283,53 @@ If a beat mismatches: restock keys off the **leading** (highest) cursor, not the
 1. Watch slices 2–3 in Cyto on `:9091` (the headless CredRunner has no graph): slice 2 the inbox
     holding at the preview gate then surging; slice 3 the `%Stock` accreting `%Record`s while the two
      cursors fan out at different depths — both `.bump()`-fed so the wave rides.
-2. Slice 4 — live-edge decode-ahead (the `%aud` linked list + a `%req:progress` decoding ahead of the
-    playhead, "stay 3s back from live edge") — §3 item 4 / §4.
+2. Pick a prototype (4, 5 or 6) and grow it the slice-1–3 way: own `w:Musu<X>`, a `Musu<X>` Book with
+    beats + witnesses, then `BOOK=Musu<X> ACCEPT=1 … CredRunner` to bake it (§6). The mechanism is
+     already there; it just needs a scenario to drive it.
+3. Verify the `Waft:Ality` map + the substrate bridges on `:9091` (§8 — owed a browser pass).
+
+---
+
+## 8. The presentation map — `Waft:Ality` + substrate bridges
+
+`wormhole/Ghost/Music/Ality/toc.snap` is now a *navigable map of the whole machine* — open it in the
+ editor and every piece is a `What` you can jump into:
+
+- **the machine** — slices 1–6, each `What` Pointing at its spine method(s) in `Ghost/M/Radiola.g`
+   (`req_cast`/`req_streamability`/`req_restock`/`req_progress`/`req_reap`/`Radiola_skip` + the knobs).
+- **the tests** — the three `Musu*` Books (`MusuStaple`/`MusuStream`/`MusuStock`), each Pointing at its
+   `_drive`/`_witness`.
+- **the source it reimagines** — `src/lib/ghost/Radios.svelte`, Pointed at the original functions
+   (`listening`/`progress`/`enqueue`/`raterminal_recordWear`/`turn_knob`).
+- **the spec** — this file.
+- **bridges** — the new part (below).
+
+**Fine-grained text Points bridge the substrates.** A new Point kind, `Point,text:<str>`, resolves to
+ a literal occurrence in the Doc itself (a word or phrase) rather than a named def/region. Mechanism:
+ `Lang_resolve_point` (`LangRegions.svelte`) grew a `text:` branch — word-boundary exact, then
+  substring, then loose case-insensitive — needing only `state.doc`, so it resolves even before a
+   compile; `Lang_point_spec` (+ the two inline twins in `Lang.svelte`/`LiesHold.svelte`) carry a
+    `sc.text` as a `"text:"`-prefixed spec. (Headless-verified: `keep_ahead`/`want` (word-boundary,
+     not inside `wanted`)/`STAY_AHEAD_OF_ACK_SEQ` resolve, a miss returns null. Browser click-through
+      on `:9091` still owed.)
+
+Because the SAME `text:` string lands on its own occurrence in each Doc, a `What:bridges` entry puts
+ one shared token across two or three substrates at once — the editor lights it up in each. The tokens
+  were *discovered in common* (a token-intersection over the three Docs), so they're real overlaps:
+
+| bridge token | spec | `Radiola.g` (new) | `Radios.svelte` (old) |
+|---|---|---|---|
+| `STAY_AHEAD_OF_ACK_SEQ` | ✓ | ✓ (comment) | ✓ (the const) |
+| `KEEP_AHEAD` → `keep_ahead` | ✓ | `keep_ahead` | `KEEP_AHEAD` |
+| `MIN_LEFT_TO_WANT_STREAMING` → `want_left` | ✓ | `want_left` | the const |
+| `streamability` → `req_streamability` | ✓ | ✓ | ✓ |
+| `radiostock` | ✓ | ✓ | ✓ |
+| `preview` → `radiopreview` | ✓ | ✓ | old name |
+| `playhead` | ✓ | ✓ | ✓ |
+| `not_too_far_ahead` | ✓ | — | ✓ |
+
+The rename rows (`KEEP_AHEAD`→`keep_ahead`, `preview`→`radiopreview`) are the most telling: the bridge
+ shows the SAME idea wearing different names across the substrates, which a name-only Point can't.
+  Next layer: spaced phrases (the snap value needs quoting/escaping — single tokens are robust today)
+   and an in-app *auto-discovery* that mints bridge Points from a live two-Doc token-intersection
+    (done here at author-time by a script; the live minter is the follow-up).

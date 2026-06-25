@@ -386,7 +386,10 @@
     //   on its own with no other sc — pure placeholder).
     Lang_point_spec(pt: TheC): string | null {
         const sc = pt.sc as any
-        const v = sc.method ?? sc.label ?? sc.Point
+        // sc.text → a fine-grained literal Point (Point,text:<word>), carried as a
+        //  "text:"-prefixed spec the resolver searches for; else the named-target chain.
+        const v = (sc.text != null && sc.text !== 1) ? ('text:' + sc.text)
+                                                     : (sc.method ?? sc.label ?? sc.Point)
         if (v == null || v === 1 || v === true) return null
         return String(v)
     },

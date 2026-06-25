@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radiola(): string { return '6754c58bc3f4cf4e' },
+    Ghostmeta_Ghost_M_Radiola(): string { return '245b17fb06ea71bc' },
 
 //#region radiola
 // Radiola — the music-piracy spine, reborn on Housing+req (spec: src/lib/O/spec/Music_todo.md).
@@ -150,6 +150,109 @@ req_restock(req) {
     }
     // re-armed each pass; the gate is the keep_ahead lead and the cap, not %ok.
     req.sc.ok = 1
+
+},
+// ══ SLICE 4 (prototype) — live-edge playback chain (Radios.svelte listening/progress/enqueue) ════
+//  A %Player decodes delivered %Chunk into an %aud linked list AHEAD of its playhead, but stays
+//   live_back behind the live edge (the newest delivered chunk) so a chunk arriving a beat late still
+//    has slack.  Inert till a Book stands up the player; the playhead is advanced by the consumer.
+Radiola_live_back(w) {
+    return +(w.sc.live_back ?? 3)
+
+},
+// req_progress — the decode-ahead producer.  Rides a %Player (oai wires req.c.up); read the terminal's
+//  %inbox of delivered %Chunk, find the live edge (highest delivered seq), and while the decode frontier
+//   is within the window of the playhead AND at least live_back behind the live edge, decode the next
+//    chunk: mint an %aud,seq and chain it (c.prev/c.next, tracked on player.c.tail to dodge the seq-as-1
+//     query wildcard).  The instant it would decode past live_edge - live_back it stops — hugging the
+//      live edge is the backpressure (a player underruns rather than races the wire).
+async req_progress(req) {
+    let player = req.c.up
+    if (player && player.sc.live) {
+        let term = player.c.term
+        let inbox = term && term.o({inbox: 1})[0]
+        if (inbox) {
+            let win = this.Radiola_window(player.c.up)
+            let back = this.Radiola_live_back(player.c.up)
+            let head = +(player.sc.playhead ?? -1)
+            let front = +(player.sc.decoded ?? -1)
+            let live_edge = -1
+            for (const ch of inbox.o({Chunk: 1})) {
+                let s = +(ch.sc.seq ?? -1)
+                if (s > live_edge) live_edge = s
+            }
+            let start = front
+            let tail = player.c.tail
+            while (front < live_edge - back && front < head + win) {
+                let seq = front + 1
+                let aud = player.i({aud: 1, seq: seq})
+                if (tail) {
+                    aud.c.prev = tail
+                    tail.c.next = aud
+                }
+                tail = aud
+                front = seq
+            }
+            player.c.tail = tail
+            player.sc.decoded = front
+            if (front !== start) player.bump()
+        }
+    }
+    req.sc.ok = 1
+
+},
+// ══ SLICE 5 (prototype) — record wear / GC (Radios.svelte raterminal_recordWear) ═════════════════
+//  Each %Record accretes wear as it is heard: .sc.played ticks while it is the one playing, .sc.idle
+//   ticks once another record takes over.  A record heard wear_enough then left idle wear_delay is
+//    worn out — tombstoned in place with %wore_out (so a re-offer reads as a re-run, not new) — but
+//     only while a floor of live records remains.  Makes nothing while none are over threshold.
+Radiola_wear_enough(w) {
+    return +(w.sc.wear_enough ?? 3)
+
+},
+Radiola_wear_delay(w) {
+    return +(w.sc.wear_delay ?? 19)
+
+},
+// req_reap — the wear sweep.  Rides a %Stock | record pool (oai wires req.c.up); tombstone each record
+//  that is heard-enough, long-idle, not playing, not already worn — keeping at least a floor of live
+//   records (Radios reaps only once the pool is deep).  %wore_out is a flag, not a delete: the husk
+//    stays legible in the snap and Cyto, the way a real tombstone marks where a record used to be.
+req_reap(req) {
+    let pool = req.c.up
+    if (pool) {
+        let enough = this.Radiola_wear_enough(pool.c.up)
+        let delay = this.Radiola_wear_delay(pool.c.up)
+        let live = pool.o({Record: 1}).filter(r => !r.sc.wore_out)
+        for (const re of live) {
+            let played = +(re.sc.played ?? 0)
+            let idle = +(re.sc.idle ?? 0)
+            if (played >= enough && idle >= delay && !re.sc.playing && live.length > 5) {
+                re.sc.wore_out = 1
+                re.bump()
+            }
+        }
+    }
+    req.sc.ok = 1
+
+},
+// ══ SLICE 6 (prototype) — skip-track (Radios.svelte turn_knob/do_skip_track_fn) ══════════════════
+// Radiola_skip — a %Knob strike: the listener jumps mid-stream.  Advance the terminal's record cursor
+//  to the next record and reset the player's decode frontier so it re-decodes from the new record's
+//   head; the abandoned %aud chain is marked %stale (the wear sweep reaps it later).  The cursor move
+//    is the whole act — it re-points the spool|stock at the next record, the rest follows.
+Radiola_skip(term) {
+    let cur = +(term.sc.record ?? 0)
+    term.sc.record = cur + 1
+    let player = term.c.player
+    if (player) {
+        for (const aud of player.o({aud: 1})) aud.sc.stale = 1
+        player.sc.playhead = -1
+        player.sc.decoded = -1
+        delete player.c.tail
+        player.bump()
+    }
+    term.bump()
 },
 //#endregion
 

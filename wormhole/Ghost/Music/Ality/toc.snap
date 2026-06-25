@@ -3,32 +3,106 @@ Waft:Ghost/Music/Ality,active
     Funkcion:Storying,of_Book:MusuStaple
     Funkcion:Storying,of_Book:MusuStream
     Funkcion:Storying,of_Book:MusuStock
-  What:the spool
-    Doc:Ghost/M/Radiola.g
-    Point,method:req_cast
-    Point,method:Radiola_window
-  What:the preview->stream handoff
-    Doc:Ghost/M/Radiola.g
-    Point,method:req_streamability
-    Point,method:req_cast
-  What:the test
-    Doc:Ghost/Story/Musuation.g
-    Point,method:Run_A_MusuStaple
-    Point,method:Musu_drive
-    Point,method:Musu_witness
-  What:the handoff test
-    Doc:Ghost/Story/Musuation.g
-    Point,method:MusuStream_drive
-    Point,method:MusuStream_witness
-  What:the radiostock fan-out
-    Doc:Ghost/M/Radiola.g
-    Point,method:req_restock
-    Point,method:Radiola_keep_ahead
-  What:the fan-out test
-    Doc:Ghost/Story/Musuation.g
-    Point,method:MusuStock_drive
-    Point,method:MusuStock_witness
+  What:the machine
+    What:1 the spool
+      Doc:Ghost/M/Radiola.g
+      Point,method:req_cast
+      Point,method:Radiola_window
+    What:2 the preview-stream handoff
+      Doc:Ghost/M/Radiola.g
+      Point,method:req_streamability
+      Point,method:req_cast
+    What:3 the radiostock fan-out
+      Doc:Ghost/M/Radiola.g
+      Point,method:req_restock
+      Point,method:Radiola_keep_ahead
+    What:4 live-edge playback (prototype)
+      Doc:Ghost/M/Radiola.g
+      Point,method:req_progress
+      Point,method:Radiola_live_back
+    What:5 record wear / GC (prototype)
+      Doc:Ghost/M/Radiola.g
+      Point,method:req_reap
+      Point,method:Radiola_wear_enough
+      Point,method:Radiola_wear_delay
+    What:6 skip-track (prototype)
+      Doc:Ghost/M/Radiola.g
+      Point,method:Radiola_skip
+  What:the tests
+    What:MusuStaple (the spool)
+      Doc:Ghost/Story/Musuation.g
+      Point,method:Run_A_MusuStaple
+      Point,method:Musu_drive
+      Point,method:Musu_witness
+    What:MusuStream (the handoff)
+      Doc:Ghost/Story/Musuation.g
+      Point,method:MusuStream_drive
+      Point,method:MusuStream_witness
+    What:MusuStock (the fan-out)
+      Doc:Ghost/Story/Musuation.g
+      Point,method:MusuStock_drive
+      Point,method:MusuStock_witness
   What:the source it reimagines
     Doc:src/lib/ghost/Radios.svelte
+    Point,method:listening
+    Point,method:progress
+    Point,method:enqueue
+    Point,method:raterminal_recordWear
+    Point,method:turn_knob
   What:the spec
     Doc:src/lib/O/spec/Music_todo.md
+  What:bridges
+    What:STAY_AHEAD_OF_ACK_SEQ
+      Doc:src/lib/O/spec/Music_todo.md
+      Point,text:STAY_AHEAD_OF_ACK_SEQ
+      Doc:Ghost/M/Radiola.g
+      Point,text:STAY_AHEAD_OF_ACK_SEQ
+      Doc:src/lib/ghost/Radios.svelte
+      Point,text:STAY_AHEAD_OF_ACK_SEQ
+    What:KEEP_AHEAD
+      Doc:src/lib/O/spec/Music_todo.md
+      Point,text:KEEP_AHEAD
+      Doc:src/lib/ghost/Radios.svelte
+      Point,text:KEEP_AHEAD
+      Doc:Ghost/M/Radiola.g
+      Point,text:keep_ahead
+    What:MIN_LEFT_TO_WANT_STREAMING
+      Doc:src/lib/O/spec/Music_todo.md
+      Point,text:MIN_LEFT_TO_WANT_STREAMING
+      Doc:src/lib/ghost/Radios.svelte
+      Point,text:MIN_LEFT_TO_WANT_STREAMING
+      Doc:Ghost/M/Radiola.g
+      Point,text:want_left
+    What:streamability
+      Doc:src/lib/O/spec/Music_todo.md
+      Point,text:streamability
+      Doc:Ghost/M/Radiola.g
+      Point,text:req_streamability
+      Doc:src/lib/ghost/Radios.svelte
+      Point,text:streamability
+    What:radiostock
+      Doc:src/lib/O/spec/Music_todo.md
+      Point,text:radiostock
+      Doc:Ghost/M/Radiola.g
+      Point,text:radiostock
+      Doc:src/lib/ghost/Radios.svelte
+      Point,text:radiostock
+    What:preview
+      Doc:src/lib/O/spec/Music_todo.md
+      Point,text:preview
+      Doc:Ghost/M/Radiola.g
+      Point,text:preview
+      Doc:src/lib/ghost/Radios.svelte
+      Point,text:radiopreview
+    What:playhead
+      Doc:src/lib/O/spec/Music_todo.md
+      Point,text:playhead
+      Doc:Ghost/M/Radiola.g
+      Point,text:playhead
+      Doc:src/lib/ghost/Radios.svelte
+      Point,text:playhead
+    What:not_too_far_ahead
+      Doc:src/lib/O/spec/Music_todo.md
+      Point,text:not_too_far_ahead
+      Doc:src/lib/ghost/Radios.svelte
+      Point,text:not_too_far_ahead

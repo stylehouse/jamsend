@@ -755,7 +755,8 @@ await M.eatfunc({
         // every non-method Point capsule (the 2nd, 3rd…) could not be toggled.
         const clone_spec = (c: TheC): string | undefined => {
             const sc  = c.sc as any
-            const raw = sc.method ?? sc.label ?? sc.Point
+            const raw = (sc.text != null && sc.text !== 1) ? ('text:' + sc.text)
+                                                           : (sc.method ?? sc.label ?? sc.Point)
             return (raw == null || raw === 1 || raw === true) ? undefined : String(raw)
         }
         const find = (spec?: unknown) =>

@@ -1,9 +1,9 @@
 Credulation,of_Book:PereStaple
-  run=0,at=1782386607.128,ok=0,ok_pct=0.63,mode:check
+  run=0,at=1782389266.774,ok=0,ok_pct=0.63,mode:check
     uses:Ghost_N_Peeroleum,dige:490c302cad15ad34
-    uses:Ghost_N_Reliable,dige:b41dfeeaf391b273
+    uses:Ghost_N_Reliable,dige:b282dca8b1abe0c9
     uses:Ghost_N_Tribunal,dige:375733b4018a8e9a
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
     uses:Ghost_Story_Peregrination,dige:bf8921bc03c9cfdf
-    uses:Ghost_M_Radiola,dige:697e49fd9691d5c4
-    uses:Ghost_Story_Musuation,dige:5e256e5809df81c4
+    uses:Ghost_M_Radiola,dige:245b17fb06ea71bc
+    uses:Ghost_Story_Musuation,dige:8436381a86fe9012

@@ -184,6 +184,30 @@
         dock:        TheC,
         method_spec: string,
     ): { from: number, to: number, line: number, kind: string, issues: string[] } | null {
+        // ── text: a fine-grained literal Point — find a word|phrase in the doc itself,
+        //    not a named def|region.  Needs only state.doc, so it resolves even before a
+        //     compile (no %Map).  A Point,text:<str> with the SAME str in two docs bridges
+        //      the substrates: the shared token (eg STAY_AHEAD_OF_ACK_SEQ, keep_ahead, preview)
+        //       lands on its own occurrence in each.  Word-boundary exact first (so 'want'
+        //        misses inside 'wanted'), then substring, then loose case-insensitive.
+        const t0 = method_spec.trim()
+        if (t0.startsWith('text:')) {
+            const needle   = t0.slice(5).trim()
+            const tIssues  = [`text '${needle}'`]
+            if (needle) {
+                const src = state.doc.toString()
+                let at = -1
+                if (/^\w+$/.test(needle)) at = src.search(new RegExp(`\\b${needle}\\b`))
+                if (at < 0) at = src.indexOf(needle)
+                if (at < 0) at = src.toLowerCase().indexOf(needle.toLowerCase())
+                if (at >= 0)
+                    return { from: at, to: at + needle.length,
+                             line: state.doc.lineAt(at).number, kind: 'text', issues: tIssues }
+                tIssues.push('not found in this doc')
+            }
+            return null
+        }
+
         const job     = dock.o({ Compile: 1 })[0]  as TheC | undefined
         // Map is a direct child of Compile, not nested under Output.
         // (Output holds source/dige; Map is a sibling.)

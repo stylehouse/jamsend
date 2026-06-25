@@ -1088,7 +1088,9 @@
         const specs = new Set<string>()
         if (!LE || !LE.oa({ Seem: 'working' })) return specs
         for (const clone of (this.LE_clones(LE) as TheC[])) {
-            const raw = clone.sc.method ?? clone.sc.label ?? clone.sc.Point
+            const raw = ((clone.sc as any).text != null && (clone.sc as any).text !== 1)
+                ? ('text:' + (clone.sc as any).text)
+                : (clone.sc.method ?? clone.sc.label ?? clone.sc.Point)
             if (raw == null) continue
             specs.add(String(raw))
         }

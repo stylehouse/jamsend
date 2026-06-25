@@ -107,20 +107,31 @@ So durability lives in the **Funkcion** that takes a hole over and projects a fa
 
 ### 3b. Interest sheds historical facts — staying alive as a *document*
 
-The `%Interest` particle has accreted presentation cruft it should drop, so it can be a lean,
- editable **document** (identity + state) — *the grapple, not the gripped*. Write-counts across `O`
-  show the sheddable keys are already nearly vestigial:
-  - **`sc.lens`** — the inert component string (`DocTing`/`DocGhostList`/`NaviCado`): **0 writes**,
-     shown never dispatched. Drop.
-  - **`sc.face`** — the half-applied rename: **1 write**. Correct vocabulary, still wrong *home* —
-     drop once the kind-table lands.
-  - **`sc.presence`** (`active`/`always`): derivable from kind (Ting = always, givers = active).
+The `%Interest` particle accreted presentation cruft it should drop, so it can be a lean, editable
+ **document** (identity + state) — *the grapple, not the gripped*. **Decided (2026-06-25):**
+  - **`sc.face` — dropped entirely.** Nothing reads it but a debug tooltip (`InterestStrip:172`); no
+     component mounts from it (the trail renders via `%ActiveInterest` + `%LE`, never a face string —
+      `NaviCado` is hard-mounted in `DocMinimap:699`). *Which* World-A face a kind mounts (§3) is the
+       **InterestWrangle's** job, picked by kind at mount-time — never a stored per-particle fact.
+        (`sc.lens` was already 0-refs; the `lens → face` rename swept it. Now both are gone.)
+  - **`sc.presence`** (`active`/`always`) — derived from kind (Ting = always, the rest = active),
+     not stored.
+  - **`sc.from`** — was the Sidetrack sprout-binding posture; with Sidetrack folded into Aside
+     (below) the sprout-origin is **transient, not stored**, so this goes too.
 
-All three fold into the declarative **`INTEREST_KINDS` table** the gap-map already wants
- (`{stance, face, presence, persists, hasLE}` keyed by kind — [[interest-switch-active-fix]]). The
-  table is the single home for "what a kind looks like"; the particle keeps only its **durable
-   identity + state** — `waft`, `state` (locked), the cursor-memory (`in_Doc` / `LastCursored`), the
-    `from` posture (Sidetrack/Aside). Lean enough to persist and edit as a document.
+So the kind set collapses **5 → 4**: `Trail · Ting · GhostList · Aside` (**Sidetrack merged into
+ Aside**). A kind's looks/behaviour live in the declarative **`INTEREST_KINDS` table** (`{stance,
+  presence, hasLE, cursor}` keyed by kind — [[interest-switch-active-fix]]); the particle keeps only
+   its **durable identity + state** — `waft`, `state` (locked), cursor-memory (`in_Doc` /
+    `LastCursored`). Lean enough to persist and edit as a document.
+
+**Aside, specifically** — Waft-first, *open-or-create*. A "sprout off a What" is a **transient
+ gesture**: the origin (`%fromWhat`) is not storable (a hard What-ref doesn't belong in `sc`) and
+  doesn't need to be — what persists is the **Docs you write inside it**, as ordinary content under
+   the Aside Waft. So the old Sidetrack `%from` reverse-arrow binding in `interest_reconcile`
+    (~116-137) simply deletes. An Aside is therefore **durable but not eternal**: persisted across
+     reload, then **GC'd** once its notes are vacuumed into permanent homes (lifecycle TODO — wants a
+      last-touched / emptied signal to reap safely).
 
 ## 4. Phases (revised)
 
@@ -138,8 +149,9 @@ All three fold into the declarative **`INTEREST_KINDS` table** the gap-map alrea
      cursor-memory"* TODO — build them together (both want the rename-surviving locator caretaking).
 4. **Per-Waft Interests + the `INTEREST_KINDS` table** *(behind the `InterestLive` gate)*. Re-key
     `Interest:<WaftTail>` (kind/stance ride as properties); **shed the presentation strings**
-     (`sc.lens`/`sc.face`/`sc.presence` → derived from kind via the table, §3b) so the Interest is a
-      lean document, and let the **InterestWrangle** Funkcion (§3) project the faces.
+     (`sc.face` dropped outright; `sc.presence` derived from kind; `sc.from` gone with Sidetrack —
+      §3b) so the Interest is a lean document, and let the **InterestWrangle** Funkcion (§3) project
+       the faces by kind.
        **Riskiest** — it touches the live Lang↔Lies channel whose contract is the Story Book
         `InterestLive`, so it lands **last**. Payoff: the awkward *"find the Trail with `c.LE` and no
          waft"* probe in `interest_reconcile` (`Interest.svelte` 121-126) **dissolves** — you find by
@@ -236,8 +248,9 @@ The owner's ladder for *Claude driving the gate itself* — recorded here becaus
 - **Who owns `LastCursored` + scroll** — Cluster, or the Interest particle itself (as document,
    §3b), or the InterestWrangle Funkcion that fills the hole? **NOT the Lens** — a Lens is ephemeral
     real-estate (§3).
-- **Aside: durable or ephemera?** It persists to disk today **and** the owner wants `Interest:Aside`
-   → so: **durable / tracked**, not session-only.
+- **Aside: durable or ephemera?** *(RESOLVED)* **Durable but not eternal** — Waft-first /
+   open-or-create, sprout-origin transient (not stored), Docs persist, GC'd after notes are vacuumed
+    out. The lifecycle reap-signal (last-touched / emptied) is the only open bit (§3b).
 - **Re-key Interests now or after?** §4 Phase 4 is the riskiest (live channel, `InterestLive` gate)
    — ship Phases 1–3 (the persistence win) first, or pull the re-key forward as the anchor?
 - **Auth/acceptance scope.** Does `Waft:Cluster` **subsume** Covenant's `Tyrant.g` admission UI, or

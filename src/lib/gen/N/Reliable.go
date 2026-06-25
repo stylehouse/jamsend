@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Reliable(): string { return 'b282dca8b1abe0c9' },
+    Ghostmeta_Ghost_N_Reliable(): string { return '48e8948c7d8da3ed' },
 
 // Reliable — the network-healing floor: an in-order, exactly-once stream over a lossy line.
 //  Pure cursor|ledger algebra, no particles of its own; the methods ride on H and the spine calls them.
@@ -103,13 +103,14 @@ lossy_decide(s, seq) {
 //  blackhole loses every transit — the permanent-fault case.
 //  dup delivers twice, so inseq must collapse it; delay holds N ticks (the gap-buffer|reorder case).
 //  tick() advances the logical clock, releasing due frames in seq order.
-//  held, dropped (the seqs it actually swallowed — a witness target that survives the cull), and clock are exposed.
+//  held, dropped, duped (the seqs it swallowed | sent twice — witness targets that survive the cull), clock are exposed.
 make_lossy_partner(realPartner, schedule) {
     const H = this
     let held = []
     let clock = 0
     let seen = {}
     let dropped = []
+    let duped = []
     let deliver = (f) => realPartner.recv(f)
     return {
         recv(frame) {
@@ -121,7 +122,10 @@ make_lossy_partner(realPartner, schedule) {
                 if (seen[seq] === 1) { dropped.push(seq); return }
                 return deliver(frame)
             }
-            if (action === 'dup') { deliver(frame); deliver(frame); return }
+            // dup delivers the SAME frame twice in one transit — the receiver's inseq must collapse the
+            //  second (seq ≤ last → re-ack only). duped logs that the dup actually fired, so a dedup
+            //   witness can prove two arrived AND one dispatched (not merely that one was sent).
+            if (action === 'dup') { duped.push(seq); deliver(frame); deliver(frame); return }
             if (typeof action === 'object') { held.push({ frame, due: clock + action.delay }); return }
             return deliver(frame)
         },
@@ -132,6 +136,7 @@ make_lossy_partner(realPartner, schedule) {
         },
         held,
         dropped,
+        duped,
         get clock() { return clock },
     }
 
