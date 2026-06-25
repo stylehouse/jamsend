@@ -1,32 +1,19 @@
 Snap:H
   H:PereStaple,Run
-    A:Alice
-      self,round	{"mung":["age"]}
-      w:Peeroleum
-        Peering,name:alice
-          Pier,pub:bob,req=2,ok
-            outbox
-              emit,type:noop,seq,sent
-          req:p2paddy,ok
-        transport,type:mock
-        active_transport,type:mock,open
-        self,round	{"mung":["age"]}
-        seemingly:ya aooooolly,figaro:Squelchbury
-    A:Bob
-      self,round	{"mung":["age"]}
-      w:Peeroleum
-        Peering,name:bob
-          Pier,pub:alice,req=2,ok
-            inbox
-              req:unemit,seq,type:noop
-          req:p2paddy,ok
-        transport,type:mock
-        active_transport,type:mock,open
-        self,round	{"mung":["age"]}
-        seemingly:ya aooooolly,figaro:Squelchbury
     A:PereStaple
       self,round=3	{"mung":["age"]}
       w:PereStaple
         self,round=3	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
+        Peering,name:alice,req=2,ok
+          Pier,pub:bob,req=2,ok
+            outbox
+              emit,type:noop,seq,sent,acked
+          active_transport,type:mock,open
+        Peering,name:bob,req=3,ok
+          Pier,pub:alice,req=2,ok
+            inbox
+              req:unemit,seq,type:noop,done,to:noop,finished
+          active_transport,type:mock,open
+        witnessed:step_2

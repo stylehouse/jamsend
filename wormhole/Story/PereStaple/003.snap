@@ -1,13 +1,16 @@
 Snap:H
   H:PereStaple,Run
-    A:Alice
-      self,round=6	{"mung":["age"]}
-      w:Peeroleum
-        Peering,name:alice
+    A:PereStaple
+      self,round=8	{"mung":["age"]}
+      w:PereStaple
+        self,round=8	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Peering,name:alice,req=2,ok
           Pier,pub:bob,req=2,ok
             outbox
-              emit,type:noop,seq,sent,acked
               recent
+                emit,type:noop,seq
               emit=2,type:hello,seq=2,sent,acked
               emit=3,type:trust,seq=3,sent,acked
             req:handshake,finished
@@ -26,19 +29,12 @@ Snap:H
               req:unemit,seq,type:hello,done,to:hello,finished
               req:unemit,seq=2,type:trust,done,to:trust,finished
             Ud,pubkey:bob
-          req:p2paddy,ok
-        transport,type:mock
-        active_transport,type:mock,open
-        self,round=6	{"mung":["age"]}
-        seemingly:ya aooooolly,figaro:Squelchbury
-    A:Bob
-      self,round=6	{"mung":["age"]}
-      w:Peeroleum
-        Peering,name:bob
+          active_transport,type:mock,open
+        Peering,name:bob,req=3,ok
           Pier,pub:alice,req=2,ok
             inbox
-              req:unemit,seq,type:noop,done,to:noop,finished
               recent
+                unemit,type:noop,seq
               req:unemit,seq=2,type:hello,done,to:hello,finished
               req:unemit,seq=3,type:trust,done,to:trust,finished
             req:handshake,finished
@@ -57,17 +53,7 @@ Snap:H
               emit,type:hello,seq,sent,acked
               emit=2,type:trust,seq=2,sent,acked
             Ud,pubkey:alice
-          req:p2paddy,ok
-        transport,type:mock
-        active_transport,type:mock,open
-        self,round=6	{"mung":["age"]}
-        seemingly:ya aooooolly,figaro:Squelchbury
-    A:PereStaple
-      self,round=8	{"mung":["age"]}
-      w:PereStaple
-        self,round=8	{"mung":["age"]}
-        req:wrangle,eternal,ok
-        reached:step_2
-        reached:step_3
+          active_transport,type:mock,open
         witnessed:step_2
+        reached:step_3
         witnessed:step_3

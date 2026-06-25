@@ -1,9 +1,12 @@
 Snap:H
   H:PereStaple,Run
-    A:Alice
-      self,round=15	{"mung":["age"]}
-      w:Peeroleum
-        Peering,name:alice
+    A:PereStaple
+      self,round=18	{"mung":["age"]}
+      w:PereStaple
+        self,round=18	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Peering,name:alice,req=2,ok
           Pier,pub:bob,req=2,ok
             outbox
               recent
@@ -30,18 +33,11 @@ Snap:H
                 unemit,type:hello,seq
                 unemit=2,type:trust,seq=2
             Ud,pubkey:bob
-          req:p2paddy,ok
-        transport,type:mock
-        active_transport,type:websocket,open
-        self,round=15	{"mung":["age"]}
-        seemingly:ya aooooolly,figaro:Squelchbury
-        transport,type:webrtc,faulty,reason:no-ack
-        transport,type:websocket
-          reputation:good
-    A:Bob
-      self,round=15	{"mung":["age"]}
-      w:Peeroleum
-        Peering,name:bob
+          active_transport,type:websocket,open
+          transport,type:webrtc,faulty,reason:no-ack
+          transport,type:websocket
+            reputation:good
+        Peering,name:bob,req=3,ok
           Pier,pub:alice,req=2,ok
             inbox
               recent
@@ -69,36 +65,12 @@ Snap:H
                 emit=2,type:trust,seq=2
             Ud,pubkey:alice
             got_binary,seq=6,body_len=64
-          req:p2paddy,ok
-        transport,type:mock
-        active_transport,type:websocket,open
-        self,round=15	{"mung":["age"]}
-        seemingly:ya aooooolly,figaro:Squelchbury
-        transport,type:webrtc,faulty,reason:no-ack
-        transport,type:websocket
-          reputation:good
-    A:Ivy
-      w:Peeroleum
-        Peering,name:ivy
-          Pier,pub:jon,req=2
-            outbox
-              emit,type:noop,seq,sent
-        transport,type:mock
-        active_transport,type:mock,open
-    A:Jon
-      w:Peeroleum
-        Peering,name:jon
-          Pier,pub:ivy,req=2
-        transport,type:mock
-        active_transport,type:mock,open
-    A:PereStaple
-      self,round=17	{"mung":["age"]}
-      w:PereStaple
-        self,round=17	{"mung":["age"]}
-        req:wrangle,eternal,ok
-        reached:step_2
-        reached:step_3
+          active_transport,type:websocket,open
+          transport,type:webrtc,faulty,reason:no-ack
+          transport,type:websocket
+            reputation:good
         witnessed:step_2
+        reached:step_3
         witnessed:step_3
         reached:step_4
         witnessed:step_4
@@ -109,3 +81,11 @@ Snap:H
         reached:step_7
         witnessed:send_binary
         reached:step_8
+        Peering,name:ivy,req=4,ok
+          Pier,pub:jon,req=2,ok
+            outbox
+              emit,type:noop,seq,sent
+          active_transport,type:mock,open
+        Peering,name:jon,req=5,ok
+          Pier,pub:ivy,req=2,ok
+          active_transport,type:mock,open

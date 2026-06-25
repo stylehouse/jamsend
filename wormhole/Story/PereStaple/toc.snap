@@ -4,40 +4,40 @@ story:PereStaple
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.109
-      sample=0.217,at=1782373025
-      sample=0.019,at=1782373083
-      sample=0.025,at=1782373144
-      sample=0.026,at=1782373182
-      sample=0.026,at=1782373356
-      sample=0.127,at=1782373798
-      sample=0.145,at=1782376712
+    TimeTotal:beliefs,avg=0.19
       sample=0.175,at=1782377003
       sample=0.143,at=1782377036
       sample=0.19,at=1782377664
-    TimeTotal:step,avg=0.007
-      sample=0.014,at=1782373025
-      sample=0.001,at=1782373083
-      sample=0.002,at=1782373144
-      sample=0.002,at=1782373182
-      sample=0.002,at=1782373356
-      sample=0.008,at=1782373798
-      sample=0.01,at=1782376712
+      sample=0.26,at=1782377983
+      sample=0.174,at=1782378326
+      sample=0.174,at=1782378350
+      sample=0.174,at=1782378354
+      sample=0.191,at=1782378856
+      sample=0.247,at=1782378906
+      sample=0.168,at=1782378934
+    TimeTotal:step,avg=0.013
       sample=0.012,at=1782377003
       sample=0.01,at=1782377036
       sample=0.013,at=1782377664
+      sample=0.017,at=1782377983
+      sample=0.012,at=1782378326
+      sample=0.012,at=1782378350
+      sample=0.012,at=1782378354
+      sample=0.013,at=1782378856
+      sample=0.016,at=1782378906
+      sample=0.011,at=1782378934
   step,dige:0e3a61058c6cb03e
-  step=2,dige:c5f14b0b21cc722e
-  step=3,dige:90d73b87938e513f
-  step=4,dige:9fa06c0a10dd1d29
-  step=5,dige:d86f88cea323d3ce
-  step=6,dige:99f982962a71aafb
-  step=7,dige:6b9df1392640194e
-  step=8,dige:ffffa3f9204dd27d
-  step=9,dige:33b528f2d13f5dd3
-  step=10,dige:b6187b8878911912
-  step=11,dige:6a95bc456eccb4e0
-  step=12,dige:c1f1cdbc800ee07c
-  step=13,dige:ce1f675f17c985f7
-  step=14,dige:63b02476959f6a7f
-  step=15,dige:90577babde6d2b59
+  step=2,dige:e2a220d8cd00bcac
+  step=3,dige:49af6443c3635b73
+  step=4,dige:b4fa5e8d47a2e6be
+  step=5,dige:1f569486bd80767f
+  step=6,dige:dab92b531df918a1
+  step=7,dige:d1952e8fc7b80daa
+  step=8,dige:4ee88567ffe6b780
+  step=9,dige:7772539a201b6171
+  step=10,dige:c1ec9228598a469a
+  step=11,dige:d7ba2453362dcc7a
+  step=12,dige:82df7bd87d490fd7
+  step=13,dige:9eecb2f20de849fb
+  step=14,dige:c6b4b04c0072369b
+  step=15,dige:0e7ea91cbdcd1707

@@ -451,17 +451,24 @@
             if (cur_waft === waft_key || cur_waft === undefined) return
         }
 
-        // Prefer a leaf What with direct Points; fall back to bare Doc on fresh Waft.
-        const candidates: Array<TheC> = []
+        // Prefer a leaf What with direct Points; then a What that merely carries a Doc
+        //  (an Aside scratch dump has Doc-bearing moment Whats but NO Points, and its Docs
+        //   ride under those Whats — not as direct Waft children — so without the docful
+        //    fallback the cursor had nothing to land on and the dock never followed a switch
+        //     onto the Aside); last, a bare Doc directly under the Waft (a fresh giver).
+        const points: Array<TheC> = []
+        const docful: Array<TheC> = []
         const collect = (container: TheC) => {
             for (const what of container.o({ What: 1 }) as TheC[]) {
-                if (H.Lies_what_has_direct_points(what)) candidates.push(what)
+                if (H.Lies_what_has_direct_points(what))       points.push(what)
+                else if ((what.o({ Doc: 1 }) as TheC[]).length) docful.push(what)
                 collect(what)
             }
         }
         collect(waft)
         const first: TheC | undefined =
-            candidates[0]
+            points[0]
+            ?? docful[0]
             ?? (waft.o({ Doc: 1 }) as TheC[]).find(d => (d.o({ Point: 1 }) as TheC[]).length > 0)
             ?? waft.o({ Doc: 1 })[0] as TheC | undefined
         if (!first) return

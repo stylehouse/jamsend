@@ -1,9 +1,12 @@
 Snap:H
   H:PereStaple,Run
-    A:Alice
-      self,round=19	{"mung":["age"]}
-      w:Peeroleum
-        Peering,name:alice
+    A:PereStaple
+      self,round=22	{"mung":["age"]}
+      w:PereStaple
+        self,round=22	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Peering,name:alice,req=2,ok
           Pier,pub:bob,req=2,ok
             outbox
               recent
@@ -30,18 +33,11 @@ Snap:H
                 unemit,type:hello,seq
                 unemit=2,type:trust,seq=2
             Ud,pubkey:bob
-          req:p2paddy,ok
-        transport,type:mock
-        active_transport,type:websocket,open
-        self,round=19	{"mung":["age"]}
-        seemingly:ya aooooolly,figaro:Squelchbury
-        transport,type:webrtc,faulty,reason:no-ack
-        transport,type:websocket
-          reputation:good
-    A:Bob
-      self,round=19	{"mung":["age"]}
-      w:Peeroleum
-        Peering,name:bob
+          active_transport,type:websocket,open
+          transport,type:webrtc,faulty,reason:no-ack
+          transport,type:websocket
+            reputation:good
+        Peering,name:bob,req=3,ok
           Pier,pub:alice,req=2,ok
             inbox
               recent
@@ -69,71 +65,12 @@ Snap:H
                 emit=2,type:trust,seq=2
             Ud,pubkey:alice
             got_binary,seq=6,body_len=64
-          req:p2paddy,ok
-        transport,type:mock
-        active_transport,type:websocket,open
-        self,round=19	{"mung":["age"]}
-        seemingly:ya aooooolly,figaro:Squelchbury
-        transport,type:webrtc,faulty,reason:no-ack
-        transport,type:websocket
-          reputation:good
-    A:Ivy
-      self,round=4	{"mung":["age"]}
-      w:Peeroleum
-        Peering,name:ivy
-          Pier,pub:jon,req=2
-            outbox
-              recent
-                emit,type:noop,seq
-          req:p2paddy
-        transport,type:mock
-        active_transport,type:mock,open
-        self,round=4	{"mung":["age"]}
-        seemingly:ya aooooolly,figaro:Squelchbury
-    A:Jon
-      self,round=4	{"mung":["age"]}
-      w:Peeroleum
-        Peering,name:jon
-          Pier,pub:ivy,req=2
-            inbox
-              recent
-                unemit,type:noop,seq
-          req:p2paddy
-        transport,type:mock
-        active_transport,type:mock,open
-        self,round=4	{"mung":["age"]}
-        seemingly:ya aooooolly,figaro:Squelchbury
-    A:Kim
-      self,round	{"mung":["age"]}
-      w:Peeroleum
-        Peering,name:kim
-          Pier,pub:lee,req=2
-            outbox
-              emit,type:noop,seq,sent,resent=2
-              recent
-          req:p2paddy
-        transport,type:mock
-        active_transport,type:mock,open
-        self,round	{"mung":["age"]}
-        seemingly:ya aooooolly,figaro:Squelchbury
-    A:Lee
-      self,round	{"mung":["age"]}
-      w:Peeroleum
-        Peering,name:lee
-          Pier,pub:kim,req=2
-          req:p2paddy
-        transport,type:mock
-        active_transport,type:mock,open
-        self,round	{"mung":["age"]}
-        seemingly:ya aooooolly,figaro:Squelchbury
-    A:PereStaple
-      self,round=21	{"mung":["age"]}
-      w:PereStaple
-        self,round=21	{"mung":["age"]}
-        req:wrangle,eternal,ok
-        reached:step_2
-        reached:step_3
+          active_transport,type:websocket,open
+          transport,type:webrtc,faulty,reason:no-ack
+          transport,type:websocket
+            reputation:good
         witnessed:step_2
+        reached:step_3
         witnessed:step_3
         reached:step_4
         witnessed:step_4
@@ -144,5 +81,26 @@ Snap:H
         reached:step_7
         witnessed:send_binary
         reached:step_8
+        Peering,name:ivy,req=4,ok
+          Pier,pub:jon,req=2,ok
+            outbox
+              recent
+                emit,type:noop,seq
+          active_transport,type:mock,open
+        Peering,name:jon,req=5,ok
+          Pier,pub:ivy,req=2,ok
+            inbox
+              recent
+                unemit,type:noop,seq
+          active_transport,type:mock,open
         witnessed:heal
         reached:step_11
+        Peering,name:kim,req=6,ok
+          Pier,pub:lee,req=2,ok
+            outbox
+              emit,type:noop,seq,sent,resent=2
+              recent
+          active_transport,type:mock,open
+        Peering,name:lee,req=7,ok
+          Pier,pub:kim,req=2,ok
+          active_transport,type:mock,open

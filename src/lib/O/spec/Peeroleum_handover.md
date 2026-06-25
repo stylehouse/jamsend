@@ -50,13 +50,16 @@ engine-facts, the heading-10 settled design, and the §7/§8 lifecycle bombs wer
 - **Blast radius held to 3 `.g` files.** `Reliable.g` untouched (the lossy partner delegates to the wrapped
    port's `recv`). `Tribunal.g`: the six TEST trial fns (PeerJS/Socket/pair/hand/fall/reputation) take a Peering;
     production `Socket_real`/`Tribunal_activate_websocket` stay on `w`. **No Lies / svelte / Relay-Brink edits.**
-- **Status: compile-clean (`FlockCompile` 4/4: Peeroleum/Reliable/Peregrination/Tyrant), behaviour :9091-OWED.**
-   Story_cli can't drive PereStaple's Creduler wrangler headless (it ran stale gen + the wrangler doesn't fire in
-    that boot). **NEXT: ghost-compile the 3 `.g` (regen the stale gen `.go`), run PereStaple on :9091, eyeball the
-     cascade DRIVES** (Peering `req,ok` + handshake `finished` on both, `witnessed:step_2..6/send_binary/heal/stall`),
-      **then Accept/Resnapture steps 2–15** (the structure changed — every dige is now doubly a lie). **The one bet
-       to watch:** that `oai` wires `Peering.c.up=w` for a typed serial-req exactly as it does for Pier (proven for
-        Pier); if the cascade does NOT drive, the one-line fix is a defensive `peering.c.up = w` in `Lake_peer`.
+- **Status: PROVEN GREEN on :9091 (Peregrination.go @ 349080831f4af54d).** One run witnessed the WHOLE arc —
+   `req:handshake,finished` + `Ud` both Piers, hello+trust said/acked/heard both ways, `got_binary` (no `faulty`),
+    and all eight `witnessed:step_2,step_3,step_4,step_5,step_6,send_binary,heal,stall` (heal = ivy noop dropped→retx→jon;
+     stall = kim noop blackholed→`%stalled,reason:no-ack` latched). Clean: one `w:PereStaple`, six Peering/Pier flocks,
+      no per-side actors, no `seemingly`/`p2paddy` cruft. **Two debug rounds got here:** (1) renaming the test world
+       `w:PereStaple`→`w:Peers` broke the per-beat handler dispatch (it keys on the **w-NAME** — see the GOTCHA above);
+        (2) the REAL pairing bug — `Lake_peer` was AUTO-ASYNC'd by the mock-port closure's `await`, so it returned a
+         Promise and `Lake_link` used it un-awaited → `Lake_port(Promise)` threw → the link never paired → mock never
+          carried (c.up was a red herring; fix = `await` the cascade, see [[g-authoring-gotchas]] #5). **NEXT: Accept/
+           Resnapture steps 2–15** to lock the new snaps as the regression gate.
 
 **Proven in-app, rungs 0–4 (clean quiescent snap, no timeout):** the Creduler acquires the live spine
 (`Ghost/N/Peeroleum.g` + `Ghost/N/Tribunal.g`) before the Story begins; the mock transport carries frames

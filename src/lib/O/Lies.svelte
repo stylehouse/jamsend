@@ -831,14 +831,10 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
             ;(await desire.doai({ req: 'acquire', maz: 9 }))?.(async (acquire: TheC) => {
                 const examining = w.o({ examining: 1 })[0] as TheC | undefined
-                const cur_src   = examining?.o({ Spotlight: 1 })[0]?.sc.src as TheC | undefined
-                const cur_waft  = cur_src ? H.waft_key_of(cur_src) : undefined
-                // backstage (%boring) Wafts are never acquired — else a profile opened
-                //  before Waftily would win the gate and drag the editor focus onto itself.
-                const wafts = (w.o({ Waft: 1 }) as TheC[]).filter(wf => !wf.sc.boring)
-                const waft = wafts.find(wf => wf.sc.active)
-                    ?? (cur_waft ? wafts.find(wf => wf.sc.Waft === cur_waft) : undefined)
-                    ?? wafts[0]
+                // Lies_focus_waft applies the %boring filter + the .sc.active | cursor |
+                //  first-Waft order — the SAME selector the timemachine lands by, so the
+                //   boot seed and the per-tick land cannot diverge (see its comment).
+                const waft = H.Lies_focus_waft(w)
                 if (!waft) return
                 desire.oai({ Waft: waft.sc.Waft as string }, { src: waft })
 
@@ -932,6 +928,27 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         await H.Lies_i_Spotlight(examining, src, waft_key)
     },
 
+    // ── Lies_focus_waft — THE single "which Waft has focus" selector ─────────
+    //
+    //   Shared by the boot acquire seed (req:desire) AND the per-tick timemachine
+    //   land, so they cannot diverge.  Focus = .sc.active (set by the cap-foreground,
+    //   +Now, ghost_pick — exactly one Waft bears it at a time), then the cursor's own
+    //   Waft, then the first non-%boring Waft.  Before this the timemachine trusted the
+    //   ONE-SHOT desire lock, which froze on the boot Waft while the foreground moved
+    //   elsewhere → every trickle re-landed the cursor on the frozen lock (drag-back).
+    Lies_focus_waft(w: TheC): TheC | undefined {
+        const H         = this as House
+        const examining = w.o({ examining: 1 })[0] as TheC | undefined
+        const cur_src   = examining?.o({ Spotlight: 1 })[0]?.sc.src as TheC | undefined
+        const cur_waft  = cur_src ? H.waft_key_of(cur_src) : undefined
+        // backstage (%boring) Wafts are never focused — else a profile opened before
+        //  Waftily would win the gate and drag the editor focus onto itself.
+        const wafts = (w.o({ Waft: 1 }) as TheC[]).filter(wf => !wf.sc.boring)
+        return wafts.find(wf => wf.sc.active)
+            ?? (cur_waft ? wafts.find(wf => wf.sc.Waft === cur_waft) : undefined)
+            ?? wafts[0]
+    },
+
     // ── req_timemachine ────────────────────────────────────────────────────
     //
     //   do_fn for %examining/req:timemachine.  Drains play/pause/step
@@ -940,13 +957,17 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     async req_timemachine(tm: TheC) {
         const H = this as House
         const w = tm.sc.w as TheC
-        // waft comes from req:desire which lives on w, not from tm.c.up (= examining)
-        const desire    = w.o({ req: 'desire' })[0] as TheC | undefined
-        const waft_node = desire?.o({ Waft: 1 })[0] as TheC | undefined
-        if (!waft_node) return
-
-        const waft     = waft_node.sc.src  as TheC
-        const waft_key = waft_node.sc.Waft as string
+        // Focus is .sc.active-driven (Lies_focus_waft), NOT the one-shot req:desire lock:
+        //  the cap-foreground | +Now move focus by re-flagging .sc.active, but the boot
+        //   acquire froze the desire lock on its first Waft — trusting it re-landed the
+        //    cursor on the stale Waft every tick and dragged the foreground back.
+        const waft = H.Lies_focus_waft(w)
+        if (!waft) return
+        const waft_key = waft.sc.Waft as string
+        // keep the snap-visible desire lock honest (acquire only seeds it at boot) so a
+        //  reader sees the real focus, not the frozen boot Waft.
+        const lock = w.o({ req: 'desire' })[0]?.o({ Waft: 1 })[0] as TheC | undefined
+        if (lock && lock.sc.Waft !== waft_key) { lock.sc.Waft = waft_key; lock.sc.src = waft; lock.bump_version() }
 
         await H.Lies_desire_land_cursor(w, waft, waft_key)
 
