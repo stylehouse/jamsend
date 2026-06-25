@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted
-  Funkcion:dirlist,interval_ms=8000,walked_at=1782364945395
+  Funkcion:dirlist,interval_ms=8000,walked_at=1782375234557
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -17,6 +17,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted
     sub:Ghost/N,name:N
     sub:Ghost/Story,name:Story
     sub:Ghost/test,name:test
+    sub:Ghost/M,name:M
   open_dir:Ghost/N
   group:Ghost/N,dir:Ghost/N
     Doc:Ghost/N/Peeroleum.g,name:Peeroleum,noticed_at=1781771905413
@@ -26,6 +27,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted
   open_dir:Ghost/Story
   group:Ghost/Story,dir:Ghost/Story
     Doc:Ghost/Story/Peregrination.g,name:Peregrination,noticed_at=1781771909101
+    Doc:Ghost/Story/Musuation.g,name:Musuation,noticed_at=1782375234557
   open_dir:src/lib/O/spec
   group:src/lib/O/spec,dir:src/lib/O/spec
     Doc:src/lib/O/spec/ClusterTrust_handover.md,name:ClusterTrust_handover.md,noticed_at=1782180409139
@@ -56,6 +58,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted
     Doc:src/lib/O/spec/Lang_handover.md,name:Lang_handover.md,noticed_at=1782287148306
     Doc:src/lib/O/spec/EntropyArrest.md.tmp.21534.481b9f2efd09,name:EntropyArrest.md.tmp.21534.481b9f2efd09,noticed_at=1782290121696
     Doc:src/lib/O/spec/Lens_posable_TODO.md,name:Lens_posable_TODO.md,noticed_at=1782364945395
+    Doc:src/lib/O/spec/Music_todo.md,name:Music_todo.md,noticed_at=1782375234557
   open_dir:src/lib/O
   group:src/lib/O,dir:src/lib/O
     sub:src/lib/O/D,name:D

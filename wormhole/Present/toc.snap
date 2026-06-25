@@ -271,4 +271,8 @@ Library
         sample=0.006,at=1781880468
         sample=0.008,at=1781997747
         sample=0.012,at=1782126246
-  Book:PereTyrant,active,ok_pct=0,done=3,last_run_ms=1782357977.238
+  Book:PereTyrant,ok_pct=0,done=3,last_run_ms=1782375810.494
+    TimeSpool
+      TimeTotal:beliefs,avg=0.005
+        sample=0.005,at=1782375812
+  Book:MusuStaple,active,ok_pct=0,done=5,last_run_ms=1782375816.782

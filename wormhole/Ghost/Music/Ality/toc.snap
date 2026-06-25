@@ -1,0 +1,16 @@
+Waft:Ghost/Music/Ality,active
+  Funkcion:CreduFunk
+    Funkcion:Storying,of_Book:MusuStaple
+  What:the spool
+    Doc:Ghost/M/Radiola.g
+    Point,method:req_cast
+    Point,method:Radiola_window
+  What:the test
+    Doc:Ghost/Story/Musuation.g
+    Point,method:Run_A_MusuStaple
+    Point,method:Musu_drive
+    Point,method:Musu_witness
+  What:the source it reimagines
+    Doc:src/lib/ghost/Radios.svelte
+  What:the spec
+    Doc:src/lib/O/spec/Music_todo.md

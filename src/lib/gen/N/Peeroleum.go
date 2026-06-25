@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return 'cec4c84867d35a9e' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return '50037abbbf6b8f6b' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -55,6 +55,17 @@ async req_p2paddy(req) {
     // < per known peer: seed %req:dial → ensure a %Pier → seed its %req:handshake.
     await req.do()
     req.sc.ok = 1
+
+},
+// req_Peering — the per-Peering worker, the node-level flock do_fn (the twin of req_Pier one
+//  level up). A Peering is %Peering,name:…,req:N (oai Peering,$name,req): its MAINKEY Peering
+//   names this handler, the serial req: just plugs it into the pump — so w.do() pumps each
+//    Peering, which pumps each Pier (req_Pier), which pumps the handshake. The ambient w-level
+//     sweep thus cascades the whole flock from ONE entry at w, so a nested flock needs no hand-pump.
+//      oai wires Peering.c.up = w for us. Job: pump this Peering's Piers, then stay a live member.
+async req_Peering(peering) {
+    await peering.do()
+    peering.sc.ok = 1
 
 },
 // req_Pier — the per-Pier worker, the flock's do_fn (spec §11.3).  A Pier is
@@ -270,6 +281,31 @@ async transport(A,w) {
 //   (PeerJS, Socket, Tribunal_hand_to_webrtc, req_transport_select). This spine keeps
 //    only the mock carrier + the envelope; the trial repoints %active_transport.
 
+// ── routing: which Peering|Pier a frame belongs to (spec §11.3) ───────────────
+// Peeroleum_route — resolve {peering, pier} for a frame. `mine` is the header key naming THIS
+//  node: `from` when we send, `to` when we receive; the OTHER end names the Pier's %pub. ONE
+//   Peering ⇒ use it (production: a w is one identity — the live channel / Tyrant / Relay Brink);
+//    MANY ⇒ route by identity (the co-resident test swarm keeps every node's Peering under one
+//     w:Peers). So a single-identity w is behaviour-identical; the swarm just disambiguates.
+Peeroleum_route(w, h, mine) {
+    let peerings = w.o({Peering:1})
+    let peering = (peerings.length === 1) ? peerings[0] : peerings.find(p => p.sc.name === h[mine])
+    if (!peering) return {}
+    let other = (mine === 'from') ? h.to : h.from
+    let piers = peering.o({Pier:1})
+    let pier = (piers.length === 1) ? piers[0] : piers.find(p => p.sc.pub === other)
+    return {peering, pier}
+
+},
+// Peeroleum_carrier — the live connection for a frame's endpoint. The swarm hangs one carrier per
+//  Peering (many peers under one w); production hangs ONE on the w (a single-identity node, where the
+//   Relay Brink + keepalive read it off w). Prefer the Peering's own, fall back to the w's — so a
+//    single-peer w is untouched and the swarm still gets its per-peer carrier. (w is passed in, not
+//     walked via c.up, so it resolves before a production Peering's c.up is wired.)
+Peeroleum_carrier(peering, w) {
+    return (peering && peering.o({active_transport:1})[0]?.c.connection) || (w && w.o({active_transport:1})[0]?.c.connection)
+
+},
 // ── send / deliver — the one envelope across the active transport (spec §4.3) ──
 // Peeroleum_send — hand a frame to this side's active transport (spec §4.3). A real
 //  outbound frame books a %outbox/emit (created→sent in one stamp — the mock hands off
@@ -279,7 +315,7 @@ async transport(A,w) {
 //      writes are LangTiles seams, so the body is raw JS.
 Peeroleum_send(w, frame) {
     let h = frame.header
-    let pier = w.o({Peering:1})[0]?.o({Pier:1})[0]
+    let {peering, pier} = this.Peeroleum_route(w, h, 'from')
     // ack, the heartbeat (ping/pong), AND run_phase (the transient progress blip) book no outbox
     //  emit: an ack is light (spec §7.2); ping/pong/run_phase are fire-and-forget — booking them
     //   piles %emit rows nothing reliably culls between Story steps. Only real app/protocol frames
@@ -300,7 +336,7 @@ Peeroleum_send(w, frame) {
         emit.c.sent_tick = w.c.retx_tick || 0
         emit.c.attempts = 1
     }
-    let conn = w.o({active_transport:1})[0]?.c.connection
+    let conn = peering && this.Peeroleum_carrier(peering, w)
     // No transport is a real fault (the frame is lost) — always say so, clearly.  A live+loud
     //  frame logs normally; a live heartbeat stays quiet so a healthy channel doesn't spam.
     if (!conn) console.log(`🛰 Peeroleum_send ${h.type} seq=${h.seq} → ${h.to} ⚠ DROPPED — no live transport (channel down / re-establishing)`)
@@ -317,7 +353,7 @@ Peeroleum_send(w, frame) {
 async Peeroleum_deliver(w, frame) {
     const H = this
     let h = frame.header
-    let pier = w.o({Peering:1})[0]?.o({Pier:1})[0]
+    let {peering, pier} = this.Peeroleum_route(w, h, 'to')
     if (!pier) return
     // only wake a watching do_fn if the ack actually advanced something (stamped an outbox emit or a
     //  protocol %said). An ack for an UNtracked frame — an ephemeral run_phase/ping the far side acked
@@ -349,7 +385,7 @@ async Peeroleum_deliver(w, frame) {
     //        mock, tomorrow the webrtc datachannel); the adversary IS that carrier, so the Story still drives
     //         every line of Reliable.g. (Reconnect-replay dedup on a reliable carrier is the epoch handshake,
     //          heading 8 — not a cold-start re-baseline smeared on the deliver site.)
-    let conn = w.o({active_transport:1})[0]?.c.connection
+    let conn = this.Peeroleum_carrier(peering, w)
     let reliable = conn?.reliable !== false   // default reliable; only an explicit false engages inseq
     let seq = Number(h.seq)
     if (reliable || !Number.isFinite(seq)) {   // reliable carrier, or a frame with no seq → book straight, never hold
@@ -485,9 +521,11 @@ Peeroleum_retx_sweep(w) {
     const H = this
     w.c.retx_tick = (w.c.retx_tick || 0) + 1
     let now = w.c.retx_tick
-    let policy = w.c.retx_policy || {base: 2, factor: 2, max_attempts: 5, cap: 16}
-    let conn = w.o({active_transport:1})[0]?.c.connection
     for (const peering of w.o({Peering:1})) {
+        // policy is per-Peering (a swarm peer can tighten its own backoff — the stall test does),
+        //  falling back to the w default; the carrier is this Peering's (or the single w one).
+        let policy = peering.c.retx_policy || w.c.retx_policy || {base: 2, factor: 2, max_attempts: 5, cap: 16}
+        let conn = H.Peeroleum_carrier(peering, w)
         for (const pier of peering.o({Pier:1})) {
             let outbox = pier.o({outbox:1})[0]
             if (!outbox) continue

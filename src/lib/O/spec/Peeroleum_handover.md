@@ -18,6 +18,46 @@ engine-facts, the heading-10 settled design, and the §7/§8 lifecycle bombs wer
 
 ## Status — start here
 
+**This session — the swarm refactor: ONE `w:PereStaple`, Peering+Pier as typed serial-reqs.** The test's
+ per-peer `A:<Name>/w:Peeroleum` worlds are GONE; every node now lives under the ONE test world `w:PereStaple` as a
+  `%Peering,name,req` (a typed serial-req, new do_fn **`req_Peering`**) holding its one `%Pier,pub,req` and
+   its OWN mock carrier on the Peering's `%active_transport`. This is the production shape — a node owns many
+    per-remote channels — forced into the test. **The carrier-merge fear that kept Alice/Bob separate was
+     moot:** inbox/outbox/seq/inseq already lived on the Pier; only the carrier + the one-Pier-per-`w` lookup
+      were `w`-bound, and both move cleanly. (Supersedes `[[aw-req-level-uniformity]]`'s "keep Alice/Bob
+       separate" for PereStaple, and the per-side structure described in headings 2/3 + "How the loop works".)
+- **Spine (`Peeroleum.g`): two routing primitives.** `Peeroleum_route(w, h, mine)` resolves `{peering, pier}`
+   by identity (`from`→Peering on send, `to`→Peering on deliver; the OTHER end = the Pier's `pub`);
+    `Peeroleum_carrier(peering, w)` reads the Peering's own carrier, falling back to the `w`-level one. **ONE
+     Peering ⇒ short-circuit** (`peerings.length===1` → use it), so a single-identity `w` — production's live
+      channel, Tyrant, the Relay Brink that reads `active_transport` off `w` — is BEHAVIOUR-IDENTICAL.
+       `send`/`deliver`/`retx_sweep` route through these; `retx_policy` moved per-Peering (the stall test
+        tightens just Kim's link); `retx_tick` + the consumer `on` registry stay per-`w` (shared, fine).
+- **The level-uniform cascade (the real payoff).** With Peering a req, `w:PereStaple.do()` pumps each Peering
+   (`req_Peering`) → each Pier (`req_Pier`) → the handshake — the ambient reqdo_sweep reaches the WHOLE flock
+    from ONE entry at `w`, so heading 3's "re-pump MUST live in the wrangler, below reqdo's w-reach" is
+     SUPERSEDED. `Lake_pump_handshakes` is KEPT (belt-and-braces, pumps each Peering) but is no longer the only
+      driver. **`oai` wires `Peering.c.up=w` and `Pier.c.up=Peering`** — the hand-stamped `.c.up` is gone.
+- **The Book (`Peregrination.g`) reads clean.** A peer is `Lake_peer(w,name,pub)`; a link is `Lake_link(w,a,b)`
+   (the whole of "two peers talking"). The ~30-line per-side `A:/w:/Peering/c.up/transport/arm/pair` boilerplate
+    the human flagged collapses to ONE line per step. The whittle arms ONCE on `w:PereStaple` (its sweep iterates
+     every Peering, so heal/stall peers added at later steps are swept with no re-arm — and no per-pair arm-lag).
+   **GOTCHA (bit me — empty `w`, no handler, no error):** the per-beat Book handler is dispatched BY THE W-NAME
+    (`Story`↔`w:Story`, `PereStaple`↔`w:PereStaple`), so the test world MUST stay named `PereStaple` — renaming it
+     to `w:Peers` made the machinery look for a nonexistent `Peers(A,w)` and the whole Book silently never ran. The
+      peer flocks just mount INSIDE `w:PereStaple` (the human: indifferent now that peers are reqs). A *different*
+       `w:*` earns its keep only for stuff that thinks at a DIFFERENT cadence (its own heartbeat entry — see [[aw-req-level-uniformity]]).
+- **Blast radius held to 3 `.g` files.** `Reliable.g` untouched (the lossy partner delegates to the wrapped
+   port's `recv`). `Tribunal.g`: the six TEST trial fns (PeerJS/Socket/pair/hand/fall/reputation) take a Peering;
+    production `Socket_real`/`Tribunal_activate_websocket` stay on `w`. **No Lies / svelte / Relay-Brink edits.**
+- **Status: compile-clean (`FlockCompile` 4/4: Peeroleum/Reliable/Peregrination/Tyrant), behaviour :9091-OWED.**
+   Story_cli can't drive PereStaple's Creduler wrangler headless (it ran stale gen + the wrangler doesn't fire in
+    that boot). **NEXT: ghost-compile the 3 `.g` (regen the stale gen `.go`), run PereStaple on :9091, eyeball the
+     cascade DRIVES** (Peering `req,ok` + handshake `finished` on both, `witnessed:step_2..6/send_binary/heal/stall`),
+      **then Accept/Resnapture steps 2–15** (the structure changed — every dige is now doubly a lie). **The one bet
+       to watch:** that `oai` wires `Peering.c.up=w` for a typed serial-req exactly as it does for Pier (proven for
+        Pier); if the cascade does NOT drive, the one-line fix is a defensive `peering.c.up = w` in `Lake_peer`.
+
 **Proven in-app, rungs 0–4 (clean quiescent snap, no timeout):** the Creduler acquires the live spine
 (`Ghost/N/Peeroleum.g` + `Ghost/N/Tribunal.g`) before the Story begins; the mock transport carries frames
 A↔B (heading 2); and at **step 3 the full hello+trust handshake completes** — both Piers

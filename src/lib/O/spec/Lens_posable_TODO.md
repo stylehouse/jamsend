@@ -76,11 +76,16 @@ Two parts:
     re-seat into that last-What context so you land somewhere coherent in the Waft**, instead of the
      current "scroll up and hunt for a What."  This is a small tracking hook (stamp `doc.c.last_What`
       / a `WhatDoc` ledger when a What is viewed with a Doc) feeding 2a's navigation.
+   Same family as `Interest.md`'s **"Per-(Interest, Waft) cursor-memory"** TODO (an Interest remembering
+    where its cursor sat on leaving a Waft) and its smart-click "land on that Doc's What" — build them
+     together; both want the rename-surviving locator caretaking that gates Interest.md's "Rejoin the
+      stack frame."
 
 ## Near TODO 3 — three navigation frictions (Interest/Aside/Trail)
 
-These are in the delicate `Lang_set_interest` arbitration; worth fixing **after** the Interest-Docs
- model (TODO 2) settles, since they're symptoms of the same seam.
+These are in the delicate `Lang_set_interest` arbitration — the same seam `Interest.md` tracks (its
+ Aside-kind/foreground election and the "Rejoin the stack frame" TODO).  Worth fixing **after** the
+  Interest-Docs model (TODO 2) settles, since they're symptoms of the same seam.
 
 - **3a — GhostList-Doc click is confiscated by the Trail.**  Clicking a Doc in the GhostList opens
    it for a moment **as an Aside**, then `Interest,active` is **snatched back by the Trail**.  Likely
@@ -94,4 +99,5 @@ These are in the delicate `Lang_set_interest` arbitration; worth fixing **after*
     `… ?? wafts[0]` in `Lies.svelte` ~833 and the roster-epoch dance in `Lang.svelte` ~1548-1563).
 - **3c — switching between Docs is unclear.**  Today you must scroll up and find a What.  TODO 2 (the
    per-Interest Doc mini-list + What↔Doc-last) is the intended cure; listed here so the symptom and
-    the cure stay linked.
+    the cure stay linked.  The Waft-tree-render half — cohering runs of sibling Whats so a Doc draws
+     once and its boundaries read — is `Waft_styling_todo.md`.

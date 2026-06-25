@@ -52,8 +52,11 @@
         'Ghost/N/Peeroleum.g',          // transport spine — envelope, inbox/outbox, handshake
         'Ghost/N/Reliable.g',           // network-healing floor — inbound seq + retransmit + the lossy-carrier adversary
         'Ghost/N/Tribunal.g',           // carriers — mock / webrtc / websocket relay
-        'Ghost/Story/Peregrination.g',  // the p2p test — first of a new kind; more pile on here
         'Ghost/N/Tyrant.g',             // cabinetry — trust + policy-gated admission (rides the floor)
+        'Ghost/Story/Peregrination.g',  // the p2p test — first of a new kind; more pile on here
+        
+        'Ghost/M/Radiola.g',            // music-piracy spine — the ACK-backpressure spool (slice 1)
+        'Ghost/Story/Musuation.g',      // the Musu* tests — MusuStaple; more pile on here
     ]
 
     onMount(async () => {

@@ -762,10 +762,13 @@
         const waft      = e.sc.waft as string | undefined
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
         if (!languinio || !kind) return
-        if (kind === 'Trail') {
-            // A giver Trail foregrounds by real checkout: set ActiveInterest eagerly for
-            //  instant strip feedback, then land the Lies cursor on the Waft's What so
-            //   req_understanding re-arms the single LE there (Lang_set_interest arbitration).
+        if (kind === 'Trail' || (kind === 'Aside' && waft)) {
+            // A giver Trail — or today's Aside scratch dump, which walks like one — foregrounds
+            //  by real checkout: set ActiveInterest eagerly for instant strip feedback, then land
+            //   the Lies cursor on the Waft's What so req_understanding re-arms the single LE there.
+            //    Lang_set_interest is stance-aware (binds the Aside row, not a stray Trail), and the
+            //     cursor-landing is what actually moves the dock + claims %active — the in-place else
+            //      path below never did, so an Aside cap click had left the dock on the old giver.
             const ai = languinio.oai({ ActiveInterest: 1 })
             ai.sc.kind = kind
             if (waft != null) ai.sc.waft = waft

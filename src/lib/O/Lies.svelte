@@ -189,14 +189,21 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //   The Interest-switcher foregrounding a giver/Sidetrack from Lang.  Land the
     //   cursor on this Waft's first navigable What — that moves %Spotlight, which
     //   flows to Lang's checkout (req_understanding → Lang_set_interest), arming the
-    //   single LE on this giver's own Trail (the multi-giver arbitration).  No-op when
-    //   the cursor already sits in this Waft.
+    //   single LE on this giver's own Trail (the multi-giver arbitration).  The cursor-
+    //   land no-ops if the cursor already sits here; claiming %active never does.
     async e_Lies_foreground_waft(A: TheC, w: TheC, e: TheC) {
         const H    = this as House
         const path = e.sc.path as string | undefined
         if (!path) throw 'e_Lies_foreground_waft: needs path'
         const waft = w.o({ Waft: path })[0] as TheC | undefined
-        if (waft) await H.Lies_desire_land_cursor(w, waft, path)
+        if (!waft) return
+        // claim the session %active flag for the foregrounded Waft (clear the rest) so
+        //  the per-tick acquire resolver desires IT — else the last +Now|ghost_pick
+        //  %active stays sticky and drags focus back to it every trickle.
+        for (const other of w.o({ Waft: 1 }) as TheC[]) delete other.sc.active
+        waft.sc.active = 1
+        w.bump_version()
+        await H.Lies_desire_land_cursor(w, waft, path)
     },
 
     // ── e_Lies_open_sidetrack ──────────────────────────────────────────────

@@ -6,27 +6,28 @@ story:Editron
         esc:path,v:Credence
   Opt
     For
+    trickle
   TimeSpool
-    TimeTotal:beliefs,avg=1.013
-      sample=0.64,at=1782350921
-      sample=1.474,at=1782351864
-      sample=1.721,at=1782354162
-      sample=2.134,at=1782356533
-      sample=0.518,at=1782358613
-      sample=0.457,at=1782362460
+    TimeTotal:beliefs,avg=1.122
       sample=0.551,at=1782364947
       sample=0.731,at=1782366587
       sample=0.89,at=1782368375
       sample=1.012,at=1782369593
-    TimeTotal:step,avg=1.013
-      sample=0.64,at=1782350921
-      sample=1.474,at=1782351864
-      sample=1.721,at=1782354162
-      sample=2.134,at=1782356533
-      sample=0.518,at=1782358613
-      sample=0.457,at=1782362460
+      sample=0.894,at=1782373170
+      sample=4.025,at=1782374770
+      sample=0.467,at=1782375873
+      sample=1.054,at=1782377294
+      sample=0.935,at=1782377322
+      sample=0.664,at=1782377528
+    TimeTotal:step,avg=1.122
       sample=0.551,at=1782364947
       sample=0.731,at=1782366587
       sample=0.89,at=1782368375
       sample=1.012,at=1782369593
-  step,dige:5b8c2bf8a1eff285
+      sample=0.894,at=1782373170
+      sample=4.025,at=1782374770
+      sample=0.467,at=1782375873
+      sample=1.054,at=1782377294
+      sample=0.935,at=1782377322
+      sample=0.664,at=1782377528
+  step,dige:f6c79f87353daa8b

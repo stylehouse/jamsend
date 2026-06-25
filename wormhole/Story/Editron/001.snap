@@ -1,33 +1,102 @@
 Snap:H
   H:Editron,Run
     A:Editron
-      self,round=4	{"mung":["age"]}
+      self,round=6	{"mung":["age"]}
       w:Editron
-        self,round=4	{"mung":["age"]}
+        self,round=6	{"mung":["age"]}
     A:Lies
-      self,round=16	{"mung":["age"]}
+      self,round=79	{"mung":["age"]}
       w:Lies,editor
-        self,round=16	{"mung":["age"]}
+        self,round=79	{"mung":["age"]}
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Credence/toc.snap,waft_path:Credence
-            known,dige:37db6b6f6d4104ff,kind:read	{"mung":["at"]}
+            known,dige:1e75b27698124807,kind:read	{"mung":["at"]}
           Good,type:text/Waft,path:wormhole/Ghost/Net/Easy/toc.snap,waft_path:Ghost/Net/Easy
-            known,dige:71648f2240af0138,kind:read	{"mung":["at"]}
+            known,dige:b510a836bb74db5d,kind:read	{"mung":["at"]}
           Good,type:text/Waft,path:wormhole/GhostList/toc.snap,waft_path:GhostList
-            known,dige:f417195e341c3d67,kind:read	{"mung":["at"]}
+            known,dige:dcb71b2a9f3da01f,kind:read	{"mung":["at"]}
           Good,type:text/Doc,path:Ghost/N/Peeroleum.g
-            known,dige:bbac43f63bac57dc,kind:read	{"mung":["at"]}
+            known,dige:50037abbbf6b8f6b,kind:read	{"mung":["at"]}
+          Good,type:text/Doc,path:Ghost/Story/Peregrination.g
+            known,dige:3f023fcd0ebdc679,kind:read	{"mung":["at"]}
+          Good,type:text/Doc,path:src/lib/O/LiesCurse.svelte
+            known,dige:64821aef6be2cd07,kind:read	{"mung":["at"]}
         examining	{"loopy":1}
           req:timemachine,playing=0	{"ref":{"w":"%w:Lies, editor:1"}}
           Spotlight	{"ref":{"src":"%What:the peer"}}
         Opt
         req:Cortex,eternal,maz=5,ok
-          req:Codebit,path:Ghost/N/Peeroleum.g,maz=2,gen_path:gen/N/Peeroleum.go,source_dige:bbac43f63bac57dc,dige:ed8df17c406d8722,permanent,write_finished,finished
+          req:Codebit,path:Ghost/N/Peeroleum.g,maz=2,gen_path:gen/N/Peeroleum.go,source_dige:50037abbbf6b8f6b,dige:91e8b8a251da67bb,permanent,write_finished,finished
+          req:Codebit,path:Ghost/Story/Peregrination.g,maz=2,gen_path:gen/Story/Peregrination.go,source_dige:3f023fcd0ebdc679,dige:4d30ca9c4988d0c8,permanent,write_finished,finished
+        Funkcions
+          req:Funkcion,funk_id:Credence/w_1,eternal,ok
+          req:Funkcion,funk_id:Credence/w_2_1,eternal,ok
+          req:Funkcion,funk_id:Credence/w_2_2,eternal,ok
+          req:Funkcion,funk_id:Credence/w_2_3,eternal,ok
+          req:Funkcion,funk_id:Credence/w_3_1,eternal,ok
+          req:Funkcion,funk_id:Credence/w_3_2,eternal,ok
+          req:Funkcion,funk_id:Credence/w_3_3,eternal,ok
+          req:Funkcion,funk_id:Credence/w_3_4,eternal,ok
+          req:Funkcion,funk_id:Credence/w_3_5,eternal,ok
+          req:Funkcion,funk_id:Credence/w_4_1,eternal,ok
+          req:Funkcion,funk_id:Credence/w_4_2,eternal,ok
+          req:Funkcion,funk_id:Credence/w_4_3,eternal,ok
+          req:Funkcion,funk_id:Credence/w_5_1,eternal,ok
+          req:Funkcion,funk_id:Credence/w_5_2,eternal,ok
+          req:Funkcion,funk_id:Credence/w_5_3,eternal,ok
+          req:Funkcion,funk_id:Credence/w_5_4,eternal,ok
+          req:Funkcion,funk_id:Credence/w_6_1,eternal,ok
+          req:Funkcion,funk_id:Credence/w_6_2,eternal,ok
+          req:Funkcion,funk_id:Credence/w_6_3,eternal,ok
+          req:Funkcion,funk_id:Ghost/Net/Easy/w_1,eternal,ok
+          req:Funkcion,funk_id:Ghost/Net/Easy/w_1_1,eternal,ok
+          req:Funkcion,funk_id:Cluster/Runner,eternal,ok
+          req:Funkcion,funk_id:Cluster/Relay,eternal,ok
+          req:Funkcion,funk_id:GhostList/w_1,eternal,ok
+        req:desire
+          req:acquire,maz=9,finished
+          Waft:Ghost/Net/Easy	{"ref":{"src":"%Waft:Ghost/Net/Easy"}}
+        o_elvis:Lies_desire_play
+        o_elvis:Lies_desire_pause
+        o_elvis:Lies_desire_step
+        req:git
+        req:wants
+          want=1782373167151,kind:cold
+          want=1782373167197,kind:cold
+          want=1782373167646,kind:cold
+          want=1782374585404,kind:cold
+          want=1782374586957,kind:cold
+          want=1782374587130,kind:cold
+          want=1782374587538,kind:cold,resolved
+        o_elvis:dock_askies
+        Peering,name:editor
+          Pier,pub:runner
+            Ud
+            outbox
+              emit=2,type:rungo,seq=2,sent,acked
+              emit=3,type:become_book,seq=3,sent,acked
+              emit=42,type:become_book,seq=42,sent,acked
+              emit=91,type:rungo,seq=91,sent,acked
+              emit=94,type:rungo,seq=94,sent,acked
+              emit=278,type:rungo,seq=278,sent,acked
+              emit=317,type:rungo,seq=317,sent,acked
+            inbox
+              unemit=31,type:run_result,seq=31,verified,done,to:run_result
+              unemit=101,type:run_result,seq=101,verified,done,to:run_result
+              unemit=1782373562731,type:ghost_compile,seq=1782373562731,verified,done,to:ghost_compile
+              unemit=254,type:run_result,seq=254,verified,done,to:run_result
+              unemit=1782374406111,type:ghost_compile,seq=1782374406111,verified,done,to:ghost_compile
+        transport,type:websocket
+        active_transport,type:websocket,open
+        run_result,path:Book:PereStaple,ok=0,errors=0,at=1782373360799,ok_pct=0,done=15,caveat=0,book:PereStaple	{"undef":["snap_dige","dige"]}
+        run_arm,path:Ghost/Story/Peregrination.g,mode:in_place
+        run_result,path:Ghost/Story/Peregrination.g,ok=0,errors=0,dige:b324271b0a231c90,at=1782373802443,ok_pct=0.07,done=15,caveat=0,book:PereStaple	{"undef":["snap_dige"]}
         Waft:Credence
           Funkcion:StoryTimes,all:1
-          What:PereStaple
+          What:Pere
             Funkcion:StoryTimes
             Funkcion:Storying,of_Book:PereStaple
+            Funkcion:Storying,of_Book:PereTyrant
           What:Lake
             Funkcion:StoryTimes
             Funkcion:Storying,of_Book:LakeSurfer
@@ -47,88 +116,45 @@ Snap:H
             Funkcion:StoryTimes
             Funkcion:Storying,of_Book:StuffFlipping
             Funkcion:Storying,of_Book:StuffResolving
-        Funkcions
-          req:Funkcion,funk_id:Credence/w_1,eternal,ok
-          req:Funkcion,funk_id:Credence/w_2_1,eternal,ok
-          req:Funkcion,funk_id:Credence/w_2_2,eternal,ok
-          req:Funkcion,funk_id:Credence/w_3_1,eternal,ok
-          req:Funkcion,funk_id:Credence/w_3_2,eternal,ok
-          req:Funkcion,funk_id:Credence/w_3_3,eternal,ok
-          req:Funkcion,funk_id:Credence/w_3_4,eternal,ok
-          req:Funkcion,funk_id:Credence/w_3_5,eternal,ok
-          req:Funkcion,funk_id:Credence/w_4_1,eternal,ok
-          req:Funkcion,funk_id:Credence/w_4_2,eternal,ok
-          req:Funkcion,funk_id:Credence/w_4_3,eternal,ok
-          req:Funkcion,funk_id:Credence/w_5_1,eternal,ok
-          req:Funkcion,funk_id:Credence/w_5_2,eternal,ok
-          req:Funkcion,funk_id:Credence/w_5_3,eternal,ok
-          req:Funkcion,funk_id:Credence/w_5_4,eternal,ok
-          req:Funkcion,funk_id:Credence/w_6_1,eternal,ok
-          req:Funkcion,funk_id:Credence/w_6_2,eternal,ok
-          req:Funkcion,funk_id:Credence/w_6_3,eternal,ok
-          req:Funkcion,funk_id:Ghost/Net/Easy/w_1,eternal,ok
-          req:Funkcion,funk_id:Ghost/Net/Easy/w_1_1,eternal,ok
-          req:Funkcion,funk_id:GhostList/w_1,eternal,ok
         Waft:Ghost/Net/Easy
           Funkcion:CreduFunk
             Funkcion:Storying,of_Book:PereStaple
             CreduCoherence:latest
-              Credulate,of_Book:PereStaple,vset:Ghost_N_Peeroleum@2b17c426d1cc9020|Ghost_N_Tribunal@4c66c638f91c46d7,finished_at=1782196583319
+              Credulate,of_Book:PereStaple,vset:Ghost_N_Peeroleum@2b17c426d1cc9020|Ghost_N_Tribunal@683d031e368194c6,finished_at=1782373167310
                 GhostInclude:Ghost_N_Peeroleum,dige:2b17c426d1cc9020
-                GhostInclude:Ghost_N_Tribunal,dige:4c66c638f91c46d7
+                GhostInclude:Ghost_N_Tribunal,dige:683d031e368194c6
           What:the peer
             Doc:Ghost/N/Peeroleum.g
             Point,method:Peeroleum
-            Point,method:req_p2pman
-            Point,method:req_p2paddy
             Point,method:req_handshake
           What:the test
-            Point,method:PereStaple
-            Point,method:Run_A_PereStaple
             Doc:Ghost/Story/Peregrination.g
-            Point,method:LakeNetherland
+            Point,method:Run_A_PereStaple
           What:transport
             What:mock
               Doc:Ghost/N/Peeroleum.g
               Point,method:transport
-              Point:seemingly
             What:webrtc-or-not
               What:reliability
                 Doc:Ghost/N/Tribunal.g
-                Point,method:PeerJS
-                Point,method:Socket
-                Point,method:Tribunal_hand_to_webrtc
-                Point,method:Tribunal_pair_websocket
                 Point,method:Tribunal_fall_to_websocket
-                Point,method:Tribunal_reputation_good
               What:the trial
                 Doc:Ghost/Story/Peregrination.g
-                Point,method:Lake_trial_arm
                 Point,method:Lake_trial_fallback
-                Point,method:Lake_trial_confirm
-          What:the cabinetry
+          What:healing
+            Doc:Ghost/N/Reliable.g
+            Point,method:inseq_admit
+            Point,method:retx_due
+            Point,method:make_lossy_partner
+          What:Security
             Doc:Ghost/N/Tyrant.g
-            Point,method:Run_A_Tyrant
-            Point,method:Tyrant
-            Point,method:Tyrant_sides_up
+            Point,method:Run_A_PereTyrant
             Point,method:req_trust
-            Point,method:say_vouch
-            Point,method:hear_vouch
-            Point,method:req_join
           What:the spec
             Doc:src/lib/O/spec/Peeroleum_spec.md
             Doc:src/lib/O/spec/Peeroleum_handover.md
             Doc:src/lib/O/spec/Covenant_design.md
-        req:desire
-          req:acquire,maz=9,finished
-          Waft:Credence	{"ref":{"src":"%Waft:Credence"}}
-        o_elvis:Lies_desire_play
-        o_elvis:Lies_desire_pause
-        o_elvis:Lies_desire_step
-        req:git
-        req:wants
-          want=1782196583211,kind:cold,resolved
-        o_elvis:dock_askies
+        Waft:Cluster,Aim,dontSnap
         Waft:GhostList,lists,O_defaulted	{"mung":["seeded"]}
           Funkcion:dirlist,interval_ms=8000	{"mung":["walked_at"]}
           group:src/lib,dir:src/lib
@@ -153,6 +179,7 @@ Snap:H
             Doc:Ghost/N/Peeroleum.g,name:Peeroleum	{"mung":["noticed_at"]}
             Doc:Ghost/N/Tribunal.g,name:Tribunal	{"mung":["noticed_at"]}
             Doc:Ghost/N/Tyrant.g,name:Tyrant	{"mung":["noticed_at"]}
+            Doc:Ghost/N/Reliable.g,name:Reliable	{"mung":["noticed_at"]}
           open_dir:Ghost/Story
           group:Ghost/Story,dir:Ghost/Story
             Doc:Ghost/Story/Peregrination.g,name:Peregrination	{"mung":["noticed_at"]}
@@ -180,6 +207,12 @@ Snap:H
             Doc:src/lib/O/spec/Wormhole_backends_handover.md,name:Wormhole_backends_handover.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/reactivity_docs.md,name:reactivity_docs.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/stho_primer.md,name:stho_primer.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Lens_handover.md,name:Lens_handover.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/GhostCompile_feedback_handover.md,name:GhostCompile_feedback_handover.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Lang_dockstate.md,name:Lang_dockstate.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Lang_handover.md,name:Lang_handover.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/EntropyArrest.md.tmp.21534.481b9f2efd09,name:EntropyArrest.md.tmp.21534.481b9f2efd09	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Lens_posable_TODO.md,name:Lens_posable_TODO.md	{"mung":["noticed_at"]}
           open_dir:src/lib/O
           group:src/lib/O,dir:src/lib/O
             sub:src/lib/O/D,name:D
@@ -227,17 +260,27 @@ Snap:H
             Doc:src/lib/O/Thangs.svelte,name:Thangs	{"mung":["noticed_at"]}
             Doc:src/lib/O/WormholeOpfs.svelte.ts,name:WormholeOpfs	{"mung":["noticed_at"]}
             Doc:src/lib/O/stho.ts,name:stho	{"mung":["noticed_at"]}
-        Peering,name:editor
-          Pier,pub:runner
-            Ud
-            outbox
-              emit=2,type:rungo,seq=2,sent
-        transport,type:websocket
-        active_transport,type:websocket,open
+            Doc:src/lib/O/peeroleum_lossy.ts,name:peeroleum_lossy	{"mung":["noticed_at"]}
+            Doc:src/lib/O/peeroleum_inseq.ts,name:peeroleum_inseq	{"mung":["noticed_at"]}
+            Doc:src/lib/O/peeroleum_retransmit.ts,name:peeroleum_retransmit	{"mung":["noticed_at"]}
+            Doc:src/lib/O/LiesHold.svelte,name:LiesHold	{"mung":["noticed_at"]}
+            Doc:src/lib/O/LiesFunk.svelte,name:LiesFunk	{"mung":["noticed_at"]}
+            Doc:src/lib/O/LiesRun.svelte,name:LiesRun	{"mung":["noticed_at"]}
+        Waft:Aside/2026-06-25,aside,active
+          What,FromWhat:Waft:Ghost/Net/Easy/What:the peer
+            Doc:src/lib/O/LiesCurse.svelte
+        Waft:Ting/2026-06-25/194932,takes
+          Point:Lake_witness,doc:Ghost/Story/Peregrination.g,n=5,weight=9,last=1782374432608,first=1782373772486,heat=1.923,warm=0.4,bright=0.483,held=2,long
+            say:Lake_witness(w):,at=1782373777136
+            say:Lake_witness(w):,at=1782374432608
+          Point:Lake_stall_arm,doc:Ghost/Story/Peregrination.g,n,weight,last=1782373774287,first=1782373774287,heat=0,warm=0,bright=0
+          Point:Lake_heal_arm,doc:Ghost/Story/Peregrination.g,n=2,weight=4,last=1782374580176,first=1782374578220,heat=3.979,warm=0.5,bright,held,long
+            say:let s = this.Pier_next_seq(IvyPier),at=1782374580176
+        channel_peer:runner,rtt=3,last=1782374757442
     A:Lang
-      self,round=12	{"mung":["age"]}
+      self,round=75	{"mung":["age"]}
       w:Lang,editor
-        self,round=12	{"mung":["age"]}
+        self,round=75	{"mung":["age"]}
         model,cyto_dir
         docks
           dock:Ghost/N/Peeroleum.g,active	{"loopy":0}
@@ -245,650 +288,493 @@ Snap:H
               req:text_loaded,maz=3,finished
               req:text_mutated,maz=2,eternal
               req:compile,maz=2,finished
-            Text,dige:bbac43f63bac57dc,disk_dige:bbac43f63bac57dc,disk_rev
+            Text,dige:50037abbbf6b8f6b,disk_dige:50037abbbf6b8f6b,disk_rev
             Compile
               Map
-                region,label:ologist,depth=0,from=0,to=23419,line
+                region,label:ologist,depth=0,from=0,to=34384,line
                 def,method:Peerologist,line=11,async,rel_from=650,rel_to=662
                 call,method:do,line=13,via:Peerologist,rel_from=709,rel_to=712
                 def,method:req_p2pman,line=17,async,rel_from=883,rel_to=894
                 call,method:do,line=20,via:req_p2pman,rel_from=1052,rel_to=1055
-                region,label:oleum,depth,from=1075,to=23419,line=23
+                region,label:oleum,depth,from=1075,to=34384,line=23
                 def,method:Peeroleum,line=26,async,rel_from=183,rel_to=193
-                call,method:do,line=31,via:Peeroleum,rel_from=382,rel_to=385
-                def,method:req_p2paddy,line=34,async,rel_from=461,rel_to=473
-                call,method:do,line=40,via:req_p2paddy,rel_from=923,rel_to=926
-                def,method:req_handshake,line=47,async,rel_from=1278,rel_to=1292
-                call,method:do,line=52,via:req_handshake,rel_from=1443,rel_to=1446
-                controlflow,keyword:if,title:(req.all_finished() && !req.sc.finished) (req.c.up).finish(req),line=54,via:req_handshake,rel_from=1539,rel_to=1542
-                def,method:req_said_hello,line=66,async,rel_from=2451,rel_to=2466
-                call,method:say_hello,line=69,via:req_said_hello,rel_from=2532,rel_to=2542
-                controlflow,keyword:if,title:(said) (req.c.up).finish(req),line=71,via:req_said_hello,rel_from=2591,rel_to=2594
-                def,method:req_heard_hello,line=73,async,rel_from=2631,rel_to=2647
-                controlflow,keyword:if,title:(heard) (req.c.up).finish(req),line=76,via:req_heard_hello,rel_from=2725,rel_to=2728
-                def,method:req_said_trust,line=78,async,rel_from=2766,rel_to=2781
-                call,method:say_trust,line=81,via:req_said_trust,rel_from=2847,rel_to=2857
-                controlflow,keyword:if,title:(said) (req.c.up).finish(req),line=83,via:req_said_trust,rel_from=2906,rel_to=2909
-                def,method:req_heard_trust,line=85,async,rel_from=2946,rel_to=2962
-                controlflow,keyword:if,title:(heard) (req.c.up).finish(req),line=88,via:req_heard_trust,rel_from=3040,rel_to=3043
-                def,method:say_hello,line=99,rel_from=3793,rel_to=3803
-                controlflow,keyword:if,title:(hello.oa({said:1})) return,line=102,via:say_hello,rel_from=3883,rel_to=3886
-                call,method:Pier_next_seq,line=104,via:say_hello,rel_from=3956,rel_to=3975
-                call,method:Peeroleum_send,line=106,via:say_hello,rel_from=4012,rel_to=4027
-                def,method:say_trust,line=108,rel_from=4096,rel_to=4106
-                controlflow,keyword:if,title:(trust.oa({said:1})) return,line=111,via:say_trust,rel_from=4186,rel_to=4189
-                call,method:Pier_next_seq,line=113,via:say_trust,rel_from=4259,rel_to=4278
-                call,method:Peeroleum_send,line=115,via:say_trust,rel_from=4315,rel_to=4330
-                def,method:hear_hello,line=125,rel_from=5028,rel_to=5039
-                controlflow,keyword:if,title:(!String(h.publicKey).startsWith(pier%pub)) return false,line=128,via:hear_hello,rel_from=5104,rel_to=5107
-                {"controlflow":1,"keyword":"if","title":"(!hello.oa({said: 1})) H.say_hello(w, pier)","line":132,"via":"hear_hello","rel_from":5318,"rel_to":5321}
-                def,method:hear_trust,line=136,rel_from=5462,rel_to=5473
-                def,method:Pier_next_seq,line=144,rel_from=5898,rel_to=5912
-                def,method:Peeroleum_body_digest,line=164,async,rel_from=7493,rel_to=7515
-                def,method:Peeroleum_on,line=176,rel_from=8451,rel_to=8464
-                def,method:Peeroleum_send_consumer,line=187,rel_from=9237,rel_to=9261
-                controlflow,keyword:if,title:(!pier) return,line=189,via:Peeroleum_send_consumer,rel_from=9332,rel_to=9335
-                call,method:Pier_next_seq,line=191,via:Peeroleum_send_consumer,rel_from=9392,rel_to=9411
-                call,method:Peeroleum_send,line=192,via:Peeroleum_send_consumer,rel_from=9421,rel_to=9441
-                def,method:Peeroleum_peer_ready,line=199,rel_from=9875,rel_to=9896
-                def,method:transport,line=208,async,rel_from=10380,rel_to=10390
-                call,method:send,line=217,via:transport,rel_from=10816,rel_to=10821
-                call,method:recv,line=218,via:transport,rel_from=10900,rel_to=10905
-                def,method:Peeroleum_send,line=233,rel_from=11878,rel_to=11893
-                controlflow,keyword:if,title:(pier && !ephemeral) {,line=243,via:Peeroleum_send,rel_from=12642,rel_to=12645
-                controlflow,keyword:if,title:(h.body_hash != null) { esc.body_hash = h.body_hash; esc.body_len = h.body_len },line=247,via:Peeroleum_send,rel_from=12928,rel_to=12931
-                controlflow,keyword:if,title:(!conn) console.log(`🛰 Peeroleum_send ${h.type} seq=${h.seq} → ${h.to} ⚠ DROPPED — no live transport (channel down / re-establishing)`),line=253,via:Peeroleum_send,rel_from=13305,rel_to=13308
-                controlflow,keyword:if,title:(conn && !ephemeral) console.log(`🛰 Peeroleum_send ${h.type} seq=${h.seq} → ${h.to} (transport live)`),line=254,via:Peeroleum_send,rel_from=13449,rel_to=13452
-                def,method:Peeroleum_deliver,line=263,async,rel_from=14130,rel_to=14148
-                controlflow,keyword:if,title:(!pier) return,line=267,via:Peeroleum_deliver,rel_from=14258,rel_to=14261
-                {"controlflow":1,"keyword":"if","title":"(h.type === 'ack') { if (H.Peeroleum_take_ack(w, pier, h)) H.feebly_ponder(); return }","line":273,"via":"Peeroleum_deliver","rel_from":14795,"rel_to":14798}
-                {"controlflow":1,"keyword":"if","title":"(h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, pier, frame); H.feebly_ponder(); return }","line":279,"via":"Peeroleum_deliver","rel_from":15389,"rel_to":15392}
-                controlflow,keyword:if,title:(h.body_hash != null) { usc.body_hash = h.body_hash; usc.body_len = h.body_len },line=288,via:Peeroleum_deliver,rel_from=16258,rel_to=16261
-                call,method:feebly_ponder,line=294,via:Peeroleum_deliver,rel_from=16462,rel_to=16478
-                def,method:req_unemit,line=304,async,rel_from=17308,rel_to=17319
-                controlflow,keyword:if,title:(ok && h.body_hash != null && (await H.Peeroleum_body_digest(frame.buffer)) !== h.body_hash) {,line=318,via:req_unemit,rel_from=18014,rel_to=18017
-                controlflow,keyword:if,title:(ok) {,line=321,via:req_unemit,rel_from=18167,rel_to=18170
-                {"controlflow":1,"keyword":"if","title":"(h.type === 'hello') ok = (await H.hear_hello(w, pier, frame)) !== false","line":323,"via":"req_unemit","rel_from":18227,"rel_to":18230}
-                {"controlflow":1,"keyword":"else if","title":"(h.type === 'trust') ok = (await H.hear_trust(w, pier, frame)) !== false","line":324,"via":"req_unemit","rel_from":18311,"rel_to":18319}
-                {"controlflow":1,"keyword":"else if","title":"(on) ok = (await on(w, pier, frame)) !== false","line":325,"via":"req_unemit","rel_from":18400,"rel_to":18408}
-                controlflow,keyword:if,title:(ok) {,line=328,via:req_unemit,rel_from=18553,rel_to=18556
-                call,method:Peeroleum_send,line=333,via:req_unemit,rel_from=18680,rel_to=18697
-                call,method:Peeroleum_rollup_faulty,line=337,via:req_unemit,rel_from=18833,rel_to=18859
-                def,method:Peeroleum_take_ack,line=343,rel_from=19127,rel_to=19146
-                controlflow,keyword:if,title:(emit) { emit.sc.acked = 1; pier.bump() },line=345,via:Peeroleum_take_ack,rel_from=19242,rel_to=19245
-                {"controlflow":1,"keyword":"for","title":"(const kind of ['hello','trust']) {","line":348,"via":"Peeroleum_take_ack","rel_from":19352,"rel_to":19356}
-                controlflow,keyword:if,title:(said && said.sc.seq == h.ack) { said.sc.acked = 1; hit = true },line=350,via:Peeroleum_take_ack,rel_from=19459,rel_to=19462
-                def,method:Peeroleum_rollup_faulty,line=357,rel_from=19812,rel_to=19836
-                controlflow,keyword:if,title:(!errs.length) { if (faulty) pier.drop(faulty); return },line=361,via:Peeroleum_rollup_faulty,rel_from=19999,rel_to=20002
-                {"controlflow":1,"keyword":"for","title":"(const u of errs) faulty.i({unemit:u.sc.seq, error:u.sc.error, seq:u.sc.seq})","line":364,"via":"Peeroleum_rollup_faulty","rel_from":20126,"rel_to":20130}
-                def,method:Peeroleum_arm_whittle,line=371,rel_from=20608,rel_to=20630
-                controlflow,keyword:if,title:(w.c._whittle_armed) return,line=373,via:Peeroleum_arm_whittle,rel_from=20657,rel_to=20660
-                call,method:Runstepped,line=375,via:Peeroleum_arm_whittle,rel_from=20737,rel_to=20750
-                call,method:Peeroleum_runstepped,line=375,via:Peeroleum_arm_whittle,rel_from=20764,rel_to=20787
-                call,method:rearm,line=376,via:Peeroleum_arm_whittle,rel_from=20806,rel_to=20812
-                def,method:Peeroleum_runstepped,line=384,rel_from=21344,rel_to=21365
-                controlflow,keyword:for,title:(const peering of w.o({Peering:1})) {,line=386,via:Peeroleum_runstepped,rel_from=21392,rel_to=21396
-                controlflow,keyword:for,title:(const pier of peering.o({Pier:1})) {,line=387,via:Peeroleum_runstepped,rel_from=21442,rel_to=21446
-                controlflow,keyword:if,title:(outbox) {,line=389,via:Peeroleum_runstepped,rel_from=21543,rel_to=21546
-                controlflow,keyword:for,title:(const e of outbox.o({emit:1}).filter(e => e.sc.acked)) {,line=391,via:Peeroleum_runstepped,rel_from=21625,rel_to=21629
-                call,method:whittle_N,line=395,via:Peeroleum_runstepped,rel_from=21833,rel_to=21845
-                controlflow,keyword:if,title:(inbox) {,line=398,via:Peeroleum_runstepped,rel_from=21940,rel_to=21943
-                controlflow,keyword:for,title:(const u of inbox.o({req:'unemit'}).filter(u => u.sc.done)) {,line=400,via:Peeroleum_runstepped,rel_from=22020,rel_to=22024
-                call,method:whittle_N,line=404,via:Peeroleum_runstepped,rel_from=22232,rel_to=22244
-                call,method:Peeroleum_rollup_faulty,line=406,via:Peeroleum_runstepped,rel_from=22296,rel_to=22322
-              time,compile=0.071,all=0.469,write=0
-              Output,gen_path:gen/N/Peeroleum.go,dige:ed8df17c406d8722,source_dige:bbac43f63bac57dc
-               source: |
-                 <script lang="ts">
-                     // GENERATED by Lang compile — do not edit by hand.
-                     import { TheC } from "$lib/data/Stuff.svelte"
-                     import { onMount } from "svelte"
-                 
-                     let { H } = $props()
-                 
-                     onMount(async () => {
-                     await H.eatfunc({
-                 
-                     Ghostmeta_Ghost_N_Peeroleum(): string { return 'bbac43f63bac57dc' },
-                 
-                 //#region ologist
-                 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
-                 //  Getting-started scaffold: the req tree (p2pman → p2paddy → handshake) and the
-                 //  three transports, compile-clean. Bodies range from real LangTiles req-seeds to
-                 //  `// <` seams where the spec needs forms LangTiles can't yet say (deep/wildcard
-                 //  drop, drilled req paths, object/.c payloads) — each a tracked language seam.
-                 //  Progress lives in Peeroleum_handover.md.
-                 
-                 // ── manager: appear online ────────────────────────────────────────────────────
-                 // A:Peerologist/w:Peerologist — no identity, no transport; it only wants Peerings.
-                 async Peerologist(A,w) {
-                     w.oai({req: "p2pman", eternal: 1})
-                     await w.do()
-                 
-                 },
-                 // %req:p2pman — top desire: a %Peering per online identity. Eternal foreman:
-                 //  pump children, then settle the gate for this tick with %ok (re-armed next tick).
-                 async req_p2pman(req) {
-                     // < ensure a %Peering per identity-thang with online_want (spec §11.1);
-                     //    for the spine the wrangler lays the sides directly.
-                     await req.do()
-                     req.sc.ok = 1
-                 
-                 },
-                 //#region oleum
-                 // ── per-identity worker ───────────────────────────────────────────────────────
-                 // A:Alice/w:Peeroleum — one per identity-presence; owns this address's Piers.
-                 async Peeroleum(A,w) {
-                     w.oai({seemingly: `ya aooooolly`}, {figaro: "Bumblewick"})
-                     // each installed %Peering manages its own Piers via %req:p2paddy
-                     for (const Peering of this._o_iter(w, [{sc: {Peering: 1}}])) {
-                         Peering.oai({req: "p2paddy"})
-                     }
-                     await w.do()
-                 
-                 },
-                 // %req:p2paddy — maintain this Peering's Piers + pick a transport.
-                 async req_p2paddy(req) {
-                     // < transport_select is seeded + driven by the wrangler (Lake_trial) directly on
-                     //    the Peering in this test, so req.c.up IS the Peering. Auto-seeding it here
-                     //     nests it under p2paddy (req.c.up = p2paddy), which breaks that navigation —
-                     //      restore (and walk up to the Peering) when p2paddy drives real peers (§11.2).
-                     // < per known peer: seed %req:dial → ensure a %Pier → seed its %req:handshake.
-                     await req.do()
-                     req.sc.ok = 1
-                 
-                 },
-                 // ── the handshake (hello + trust) as %req (spec §8) ───────────────────────────
-                 // Four maz-ordered leaves under a %Pier: highest maz runs first, lower gated behind.
-                 //  Each leaf finishes when its protocol particle exists; the parent rolls up when
-                 //  all four are done. The leaf do_fns + say/hear exchange are just below.
-                 async req_handshake(req) {
-                     req.oai({req: "said_hello", maz: 4})
-                     req.oai({req: "heard_hello", maz: 3})
-                     req.oai({req: "said_trust", maz: 2})
-                     req.oai({req: "heard_trust"})
-                     await req.do()
-                     // parent rolls up once all four leaves finish (heard_trust last → handshake done).
-                     if (req.all_finished() && !req.sc.finished) (req.c.up).finish(req)
-                 
-                 },
-                 // ── handshake leaf do_fns (spec §8) — existence checks, not bool polls ─────────
-                 // A leaf is `%Pier/%req:handshake/%req:<leaf>`, so its Pier is req.c.up.c.up and
-                 //  its w is two hops above that (Pier→Peering→w). Each finishes the moment its
-                 //   protocol particle exists. The said_* leaves also *perform* the say (idempotent
-                 //    on their protocol particle); the heard_* leaves are pure existence checks, fed
-                 //     by the far side's say landing through hear_* (Peeroleum_deliver dispatches the
-                 //      inbound hello/trust frame). Symmetric: both sides run all four, so both
-                 //       initiate and the round-trip converges. maz orders them: said_hello (4) then
-                 //        heard_hello (3) then said_trust (2) then heard_trust (1), each gated behind
-                 //         the last by the do() level's some(needs_work) — trust never precedes hello.
-                 async req_said_hello(req) {
-                     let pier = req.c.up.c.up
-                     let w = pier.c.up.c.up
-                     this.say_hello(w,pier)
-                     let said = this._o_drill1(pier, [{sc: {protocol: 1}}, {sc: {hello: 1}}, {sc: {said: 1}}])
-                     if (said) (req.c.up).finish(req)
-                 
-                 },
-                 async req_heard_hello(req) {
-                     let pier = req.c.up.c.up
-                     let heard = this._o_drill1(pier, [{sc: {protocol: 1}}, {sc: {hello: 1}}, {sc: {heard: 1}}])
-                     if (heard) (req.c.up).finish(req)
-                 
-                 },
-                 async req_said_trust(req) {
-                     let pier = req.c.up.c.up
-                     let w = pier.c.up.c.up
-                     this.say_trust(w,pier)
-                     let said = this._o_drill1(pier, [{sc: {protocol: 1}}, {sc: {trust: 1}}, {sc: {said: 1}}])
-                     if (said) (req.c.up).finish(req)
-                 
-                 },
-                 async req_heard_trust(req) {
-                     let pier = req.c.up.c.up
-                     let heard = this._o_drill1(pier, [{sc: {protocol: 1}}, {sc: {trust: 1}}, {sc: {heard: 1}}])
-                     if (heard) (req.c.up).finish(req)
-                 
-                 },
-                 // ── say / hear — the hello+trust exchange (spec §8) ───────────────────────────
-                 // say_* write our half of the protocol and emit one frame to the peer; idempotent
-                 //  on the protocol particle so a re-pump never double-sends. hear_* read the
-                 //   inbound frame (raw — it's a JS object off the wire), verify, and write the
-                 //    far half. identity in the mock: a Peering's %name is our address, a Pier's
-                 //     %pub is the peer it faces, and the publicKey we send IS our name (verify is
-                 //      then startsWith(pub)). seq is the per-Pier monotone outbound counter
-                 //       (Pier_next_seq, spec §7.1) — each say allocates the next and records it on
-                 //        the protocol %said so the matching ack can stamp it %acked.
-                 say_hello(w, pier) {
-                     let proto = pier.oai({protocol: 1})
-                     let hello = proto.oai({hello: 1})
-                     if (hello.oa({said:1})) return
-                     let me = pier.c.up.sc.name
-                     let seq = this.Pier_next_seq(pier)
-                     hello.i({said:1, seq})
-                     this.Peeroleum_send(w,{header:{type:'hello', from:me, to:pier.sc.pub, seq, publicKey:me}})
-                 
-                 },
-                 say_trust(w, pier) {
-                     let proto = pier.oai({protocol: 1})
-                     let trust = proto.oai({trust: 1})
-                     if (trust.oa({said:1})) return
-                     let me = pier.c.up.sc.name
-                     let seq = this.Pier_next_seq(pier)
-                     trust.i({said:1, seq})
-                     this.Peeroleum_send(w,{header:{type:'trust', from:me, to:pier.sc.pub, seq}})
-                 
-                 },
-                 // hear_hello — verify their key starts-with the pub we expect, record %heard +
-                 //  the proven publicKey, set %Ud (their identity, survives resets — spec §6), and
-                 //   if we have not said yet, say now (the single-initiator path; a no-op under the
-                 //    symmetric dual-init). A failed verify writes nothing — the gap is the result
-                 //     (spec §8: a corrupt hello that never arrives is the test passing).
-                 // Returns true on a clean verify, false on reject — the serial inbox handler
-                 //  (req_unemit) stamps %error on a false (the deliver-failure path, spec
-                 //   §7.3); under the mock with no corruption this is always true (heading 6 arms it).
-                 hear_hello(w, pier, frame) {
-                     const H = this
-                     let h = frame.header
-                     if (!String(h.publicKey).startsWith(pier.sc.pub)) return false
-                     let hello = pier.oai({protocol: 1}).oai({hello: 1})
-                     hello.i({heard: 1, publicKey: h.publicKey})
-                     pier.oai({Ud: 1, publicKey: h.publicKey})
-                     if (!hello.oa({said: 1})) H.say_hello(w, pier)
-                     return true
-                 
-                 },
-                 // hear_trust — verify their grants (trivial under the mock) and record %heard.
-                 hear_trust(w, pier, frame) {
-                     pier.oai({protocol: 1}).oai({trust: 1}).i({heard: 1})
-                     return true
-                 
-                 },
-                 // Pier_next_seq — the per-Pier monotone outbound counter (spec §7.1). On .c: it
-                 //  survives across steps in the live tree and never snaps; the seq it hands out
-                 //   lands on the %outbox/emit, which is what the snap shows. Acks do NOT consume a
-                 //    seq (they book no emit), so the counter counts exactly our real outbound frames.
-                 Pier_next_seq(pier) {
-                     pier.c.seq = (pier.c.seq || 0) + 1
-                     return pier.c.seq
-                 
-                 },
-                 // ── binary body digest (spec §4.2, heading 7) ─────────────────────────────────
-                 // A binary frame carries its payload as RAW bytes on frame.buffer (a Uint8Array), never
-                 //  base64 — binary is the bulk of real traffic, so a 33% base64 tax is unacceptable. On
-                 //   the wire a buffer-carrying frame is one binary message ([header JSON]\n[raw buffer], the
-                 //    carrier's job — Socket_real/relay); the in-process mock carries frame.buffer by reference. The buffer
-                 //     stays off-snap (mock: unemit.c.frame.buffer); only header.body_hash + body_len snap.
-                 //  The integrity check is sha256 (crypto.subtle), the same digest the trust layer signs over —
-                 //   so when header.sign lands it commits to the buffer through body_hash with no second algorithm.
-                 //    It is async, and the whole delivery path is async all the way (carrier recv awaits
-                 //     Peeroleum_deliver awaits inbox.do() → req_unemit awaits this), so the digest resolves INSIDE the
-                 //      carrier's awaited post_do — still within the beliefs mutex / Atime (spec §15), deterministic.
-                 //       (An FNV-1a digest stood here purely to stay synchronous under a sync inbox; going async
-                 //        dissolved that constraint, and with it the forgeable hash — body_hash is now signable.)
-                 // Peeroleum_body_digest — sha256 hex over the raw buffer bytes. Same bytes → same hex on
-                 //  sender and receiver, so a clean buffer verifies and a meddled one does not. Raw JS:
-                 //   crypto.subtle, no DSL verb. Async — the whole delivery path awaits it (see below).
-                 async Peeroleum_body_digest(bytes) {
-                     let b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || [])
-                     let digest = await crypto.subtle.digest('SHA-256', b)
-                     return Array.from(new Uint8Array(digest)).map(x => x.toString(16).padStart(2, '0')).join('')
-                 
-                 },
-                 // ── consumer seam (spec heading 10, asks 1–3): the editor↔runner channel and any other app
-                 //     rides the same envelope/inbox/ack/faulty machinery without editing this spine ──────────
-                 // Peeroleum_on — register an app-frame handler for a non-protocol header.type on this w. The
-                 //  serial inbox (req_unemit, driven by inbox.do()) dispatches a verified frame of that type to fn(w,pier,frame)
-                 //   inside the SAME lifecycle as hello/trust — pre-Ud gate, verified→done→ack, error→faulty — so a
-                 //    consumer (Lies: dock_push/run_result) owns its frames here. fn returns false to reject (→
-                 //     %error→%faulty), exactly like hear_*. The registry is an object on .c (a seam), keyed by type.
-                 Peeroleum_on(w, type, fn) {
-                     w.c.on = w.c.on || {}
-                     w.c.on[type] = fn
-                 
-                 },
-                 // Peeroleum_send_consumer — the consumer emit (ask 2): allocate this Pier's next monotone seq, fill
-                 //  from/to from the Pier identity, and hand {header, ...body} to Peeroleum_send (which books the
-                 //   %outbox/emit and carries it over the active transport). body holds the app payload (e.g. a dock's
-                 //    path + .go text); it rides the one envelope untouched — the relay routes on header.to only.
-                 //     Returns the seq so the caller can watch its %outbox/emit go %acked. (The durable form is a
-                 //      Pier-hosted %req:send — when built it hits the c.up rule: stamp Pier.c.up=Peering; Peering.c.up=w
-                 //       or its do_fn silently never pumps. Not built for v1 — the direct call drives via feebly_ponder.)
-                 Peeroleum_send_consumer(w, type, body) {
-                     let pier = w.o({Peering:1})[0]?.o({Pier:1})[0]
-                     if (!pier) return
-                     let me = pier.c.up.sc.name
-                     let seq = this.Pier_next_seq(pier)
-                     this.Peeroleum_send(w, Object.assign({ header: { type, from: me, to: pier.sc.pub, seq } }, body || {}))
-                     return seq
-                 
-                 },
-                 // Peeroleum_peer_ready — the watchable readiness signal (ask 3): true once this Pier's %req:handshake
-                 //  has finished (hello+trust both ways). A consumer $effects off it before emitting app frames — and
-                 //   the inbox's pre-Ud gate already refuses non-hello/noop until then, so this is the affirmative side
-                 //    of the same coupling.
-                 Peeroleum_peer_ready(pier) {
-                     let hs = pier.o({req:'handshake'})[0]
-                     return !!(hs && hs.sc.finished)
-                 
-                 },
-                 // ── transports (spec §4) — one envelope, swappable carrier ────────────────────
-                 // The mock: in-process, deterministic, tick-driven. Two mock-ports deliver into
-                 //  each other via a partner ref (paired by the wrangler once both sides stand
-                 //   up); a send is H.post_do(() => partner.recv(frame)) — instant, in Atime,
-                 //    deterministic (spec §15). The live handle + partner ref are objects on .c.
-                 async transport(A,w) {
-                     w.i({transport: 1, type: "mock"})
-                     const H = this
-                     let at = w.i({active_transport: 1, type: 'mock', open: 1})
-                     // the mock-port on at.c.connection: `send` posts the frame to the partner
-                     //  port; `recv` lands an inbound frame in this side's Pier inbox. `partner`
-                     //   starts null — the wrangler pairs the two ports after both sides exist.
-                     at.c.connection = {
-                         type: 'mock', partner: null,
-                         send(frame) { H.post_do(async () => { await this.partner?.recv(frame) }) },
-                         recv(frame) { return H.Peeroleum_deliver(w, frame) },
-                     }
-                 
-                 },
-                 // The webrtc + websocket carriers and the carrier-selection trial (try webrtc,
-                 //  fall to websocket on no-ack) live in their own flavour now — Ghost/N/Tribunal.g
-                 //   (PeerJS, Socket, Tribunal_hand_to_webrtc, req_transport_select). This spine keeps
-                 //    only the mock carrier + the envelope; the trial repoints %active_transport.
-                 
-                 // ── send / deliver — the one envelope across the active transport (spec §4.3) ──
-                 // Peeroleum_send — hand a frame to this side's active transport (spec §4.3). A real
-                 //  outbound frame books a %outbox/emit (created→sent in one stamp — the mock hands off
-                 //   instantly) that lives until its ack stamps %acked (spec §7.1). An ack is light: it
-                 //    ferries but books no emit and is never itself acked (spec §7.2), so the outbox stays
-                 //     exactly the set of frames awaiting acknowledgement. Objects-on-.c + dynamic-value
-                 //      writes are LangTiles seams, so the body is raw JS.
-                 Peeroleum_send(w, frame) {
-                     let h = frame.header
-                     let pier = w.o({Peering:1})[0]?.o({Pier:1})[0]
-                     // ack, the heartbeat (ping/pong), AND run_phase (the transient progress blip) book no outbox
-                     //  emit: an ack is light (spec §7.2); ping/pong/run_phase are fire-and-forget — booking them
-                     //   piles %emit rows nothing reliably culls between Story steps. Only real app/protocol frames
-                     //    are tracked. (run_phase MUST be ephemeral: it is never acked, so a booked emit would never
-                     //     cull — and the ack it would otherwise draw re-wakes the runner's Story drive, wedging
-                     //      quiescence into an endless step_stall loop.)
-                     let ephemeral = (h.type === 'ack' || h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase')
-                     if (pier && !ephemeral) {
-                         // a binary frame records body_hash + body_len on its emit so the snap shows
-                         //  "a test_binary of N bytes, hash X, sent" (the body itself rides off-snap on the frame).
-                         let esc = {emit: h.seq, type: h.type, seq: h.seq, sent: 1}
-                         if (h.body_hash != null) { esc.body_hash = h.body_hash; esc.body_len = h.body_len }
-                         pier.oai({outbox: 1}).i(esc)
-                     }
-                     let conn = w.o({active_transport:1})[0]?.c.connection
-                     // No transport is a real fault (the frame is lost) — always say so, clearly.  A live+loud
-                     //  frame logs normally; a live heartbeat stays quiet so a healthy channel doesn't spam.
-                     if (!conn) console.log(`🛰 Peeroleum_send ${h.type} seq=${h.seq} → ${h.to} ⚠ DROPPED — no live transport (channel down / re-establishing)`)
-                     if (conn && !ephemeral) console.log(`🛰 Peeroleum_send ${h.type} seq=${h.seq} → ${h.to} (transport live)`)
-                     conn?.send(frame)
-                 
-                 },
-                 // Peeroleum_deliver — the transport handed us an inbound frame (spec §4.3). An ack is
-                 //  handled here directly (spec §7.2): Peeroleum_take_ack stamps the outbox emit it names
-                 //   %acked — it never enters the inbox or a hear_* handler. Any other frame lands in the
-                 //    serial inbox as %unemit,queued (its raw frame stashed on .c for the handler) and
-                 //     inbox.do() drains it (req_unemit per frame). feebly_ponder re-drives a think (Runtime asserted —
-                 //      we run inside the carrier's post_do) so a watching do_fn reacts this same run.
-                 async Peeroleum_deliver(w, frame) {
-                     const H = this
-                     let h = frame.header
-                     let pier = w.o({Peering:1})[0]?.o({Pier:1})[0]
-                     if (!pier) return
-                     // only wake a watching do_fn if the ack actually advanced something (stamped an outbox emit or a
-                     //  protocol %said). An ack for an UNtracked frame — an ephemeral run_phase/ping the far side acked
-                     //   anyway (e.g. an un-fixed editor bootstrap that still inboxes+acks run_phase) — matches nothing,
-                     //    so feebly_ponder-ing on it would re-wake a quiescing Story drive into the step_stall wedge.
-                     //     This is robust to the PEER's behaviour: the runner ignores acks that advance nothing here.
-                     if (h.type === 'ack') { if (H.Peeroleum_take_ack(w, pier, h)) H.feebly_ponder(); return }
-                     // ping/pong (heartbeat) AND run_phase (progress blip) are ephemeral: dispatch straight to the
-                     //  registered handler, like an ack — NO inbox booking (so they never stack in the snap) and NO
-                     //   ack-back. The ack-back is the killer: a run_phase that gets acked sends the ack to the
-                     //    runner, whose Peeroleum_deliver feebly_ponders → re-wakes its Story drive so the step never
-                     //     quiesces → step_stall fires → another run_phase → another ack → an endless wedge (the 48s).
-                     if (h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, pier, frame); H.feebly_ponder(); return }
-                     // Book the inbound frame as a serial inbox req (%req:unemit, discriminated by the sender's
-                     //  per-Pier seq) and drain via inbox.do(): the %req engine's do() runs each unemit-req's do_fn
-                     //   (req_unemit) one at a time, in arrival order, awaiting each — that IS the serial async drain,
-                     //    so the hand-rolled %queued/%handling lock is gone. The beliefs mutex (post_do is awaited
-                     //     across the whole delivery) means no two do() drains overlap, so no in-flight guard is needed.
-                     let inbox = pier.oai({inbox: 1})
-                     inbox.c.up = pier   // do() climbs c.up to the House to resolve req_unemit; stamp the inbox→pier link
-                     let usc = {req: 'unemit', seq: h.seq, type: h.type}
-                     if (h.body_hash != null) { usc.body_hash = h.body_hash; usc.body_len = h.body_len }
-                     let ureq = inbox.oai(usc)
-                     ureq.c.frame = frame
-                     ureq.c.w = w
-                     ureq.c.pier = pier
-                     await inbox.do()
-                     H.feebly_ponder()
-                 
-                 },
-                 // req_unemit — the inbox do_fn (spec §7.3): handle ONE inbound frame, booked as %req:unemit by
-                 //  Peeroleum_deliver and drained by inbox.do(). do() serialises these — one at a time, in arrival
-                 //   order, each awaited — so this is the per-frame logic only; the old %queued/%handling lock is gone
-                 //    (do()'s await-loop + the beliefs mutex are the serializer). Walk: a pre-%Ud frame may only be
-                 //     hello|noop (spec §7.3); verify the body_hash (awaited sha256; header-sign verify lands here too);
-                 //      then deliver to the hear_* / registered handler for its type. On success: mark %done+%to, finish
-                 //       the req, ack the sender (spec §7.2). On a verify/deliver failure: mark %error, finish, roll up to
-                 //        %faulty. w/pier/frame ride the req's .c (stashed at booking — cheaper than the deep c.up walk).
-                 async req_unemit(req) {
-                     const H = this
-                     let inbox = req.c.up
-                     let w = req.c.w
-                     let pier = req.c.pier
-                     let frame = req.c.frame
-                     let h = (frame && frame.header) || {}
-                     let pre_ud = !pier.oa({Ud:1})
-                     let ok = !(pre_ud && h.type !== 'hello' && h.type !== 'noop')
-                     let reason = pre_ud ? 'pre-Ud' : 'not-them'
-                     // body integrity (spec §4.2: header.body_hash covers the body) is part of verify, checked
-                     //  BEFORE delivery so a corrupt body fails identically to a tweaked header-sign — same
-                     //   %error→%faulty path. The digest is an AWAITED sha256 over the off-snap raw buffer
-                     //    (Peeroleum_body_digest); a mismatch is bad-body-hash. Header-sign verify lands here too.
-                     if (ok && h.body_hash != null && (await H.Peeroleum_body_digest(frame.buffer)) !== h.body_hash) {
-                         ok = false; reason = 'bad-body-hash'
-                     }
-                     if (ok) {
-                         let on = w.c.on && w.c.on[h.type]
-                         if (h.type === 'hello') ok = (await H.hear_hello(w, pier, frame)) !== false
-                         else if (h.type === 'trust') ok = (await H.hear_trust(w, pier, frame)) !== false
-                         else if (on) ok = (await on(w, pier, frame)) !== false
-                         // else (noop, or an unregistered type): nothing to deliver — done, then acked.
-                     }
-                     if (ok) {
-                         req.sc.done = 1
-                         req.sc.to = h.type
-                         inbox.finish(req)
-                         let me = pier.c.up.sc.name
-                         H.Peeroleum_send(w, {header:{type:'ack', from:me, to:pier.sc.pub, ack:h.seq}})
-                     } else {
-                         req.sc.error = reason
-                         inbox.finish(req)
-                         H.Peeroleum_rollup_faulty(pier)
-                     }
-                 
-                 },
-                 // Peeroleum_take_ack — an inbound ack names a seq we sent (spec §7.2): stamp that
-                 //  %outbox/emit %acked, and the matching protocol %said too (spec §6, so the handshake's
-                 //   acked-ness is visible). Acks book no inbox item and run no protocol handler.
-                 Peeroleum_take_ack(w, pier, h) {
-                     let emit = pier.o({outbox:1})[0]?.o({emit:1}).find(e => e.sc.seq == h.ack)
-                     if (emit) { emit.sc.acked = 1; pier.bump() }
-                     let hit = !!emit
-                     let proto = pier.o({protocol:1})[0]
-                     for (const kind of ['hello','trust']) {
-                         let said = proto?.o({[kind]:1})[0]?.o({said:1})[0]
-                         if (said && said.sc.seq == h.ack) { said.sc.acked = 1; hit = true }
-                     }
-                     return hit
-                 
-                 },
-                 // Peeroleum_rollup_faulty — rebuild %faulty from the inbox's %error items (spec §9).
-                 //  A roll-up present only while something is wrong; the detail stays on the unemit. Run
-                 //   on every fault and at the step boundary, so a cleared inbox drops a stale %faulty.
-                 Peeroleum_rollup_faulty(pier) {
-                     let inbox = pier.o({inbox:1})[0]
-                     let errs = inbox ? inbox.o({req:'unemit'}).filter(u => u.sc.error) : []
-                     let faulty = pier.o({faulty:1})[0]
-                     if (!errs.length) { if (faulty) pier.drop(faulty); return }
-                     faulty ||= pier.i({faulty:1})
-                     faulty.r({unemit:1}, {})
-                     for (const u of errs) faulty.i({unemit:u.sc.seq, error:u.sc.error, seq:u.sc.seq})
-                 
-                 },
-                 // ── step-boundary whittle (spec §7.4, §12.1) ──────────────────────────────────
-                 // Peeroleum_arm_whittle — register the per-w cull at each step boundary, re-arming
-                 //  itself each pass (the logger idiom: Runstepped drains its queue every boundary, so a
-                 //   standing callback must re-push). Guarded so a w arms exactly once. The cull runs in
-                 //    Atime (clear()), so drop/r/i are safe inside it.
-                 Peeroleum_arm_whittle(w) {
-                     const H = this
-                     if (w.c._whittle_armed) return
-                     w.c._whittle_armed = 1
-                     let rearm = () => H.Runstepped(async () => { H.Peeroleum_runstepped(w); rearm() })
-                     rearm()
-                 
-                 },
-                 // Peeroleum_runstepped — the cull, per Pier under w (spec §7.4): acked %outbox/emit move
-                 //  to %outbox/recent (whittled 20); %done %inbox/unemit move to %inbox/recent (whittled
-                 //   20); %faulty is rebuilt from any remaining inbox errors (faults are kept, not culled).
-                 //    %recent items carry only their emit|unemit/type/seq — no flags, no time (record order
-                 //     is the order). This is the one place outbox/inbox items vanish, so the snap taken
-                 //      *before* this boundary always shows the step's traffic (spec §12.1).
-                 Peeroleum_runstepped(w) {
-                     const H = this
-                     for (const peering of w.o({Peering:1})) {
-                         for (const pier of peering.o({Pier:1})) {
-                             let outbox = pier.o({outbox:1})[0]
-                             if (outbox) {
-                                 let recent = outbox.oai({recent:1})
-                                 for (const e of outbox.o({emit:1}).filter(e => e.sc.acked)) {
-                                     recent.i({emit:e.sc.emit, type:e.sc.type, seq:e.sc.seq})
-                                     outbox.drop(e)
-                                 }
-                                 H.whittle_N(recent.o({emit:1}), 20)
-                             }
-                             let inbox = pier.o({inbox:1})[0]
-                             if (inbox) {
-                                 let recent = inbox.oai({recent:1})
-                                 for (const u of inbox.o({req:'unemit'}).filter(u => u.sc.done)) {
-                                     recent.i({unemit:u.sc.seq, type:u.sc.type, seq:u.sc.seq})
-                                     inbox.drop(u)
-                                 }
-                                 H.whittle_N(recent.o({unemit:1}), 20)
-                             }
-                             H.Peeroleum_rollup_faulty(pier)
-                         }
-                     }
-                 
-                 },
-                 
-                     })
-                     })
-                 </script>
+                call,method:do,line=31,via:Peeroleum,rel_from=383,rel_to=386
+                def,method:req_p2paddy,line=34,async,rel_from=462,rel_to=474
+                call,method:do,line=40,via:req_p2paddy,rel_from=924,rel_to=927
+                def,method:req_Peering,line=49,async,rel_from=1532,rel_to=1544
+                call,method:do,line=50,via:req_Peering,rel_from=1571,rel_to=1574
+                def,method:req_Pier,line=61,async,rel_from=2304,rel_to=2313
+                call,method:do,line=62,via:req_Pier,rel_from=2334,rel_to=2337
+                def,method:req_handshake,line=69,async,rel_from=2690,rel_to=2704
+                call,method:do,line=74,via:req_handshake,rel_from=2855,rel_to=2858
+                controlflow,keyword:if,title:(req.all_finished() && !req.sc.finished) (req.c.up).finish(req),line=76,via:req_handshake,rel_from=2951,rel_to=2954
+                def,method:req_said_hello,line=88,async,rel_from=3863,rel_to=3878
+                call,method:say_hello,line=91,via:req_said_hello,rel_from=3944,rel_to=3954
+                controlflow,keyword:if,title:(said) (req.c.up).finish(req),line=93,via:req_said_hello,rel_from=4003,rel_to=4006
+                def,method:req_heard_hello,line=95,async,rel_from=4043,rel_to=4059
+                controlflow,keyword:if,title:(heard) (req.c.up).finish(req),line=98,via:req_heard_hello,rel_from=4137,rel_to=4140
+                def,method:req_said_trust,line=100,async,rel_from=4178,rel_to=4193
+                call,method:say_trust,line=103,via:req_said_trust,rel_from=4259,rel_to=4269
+                controlflow,keyword:if,title:(said) (req.c.up).finish(req),line=105,via:req_said_trust,rel_from=4318,rel_to=4321
+                def,method:req_heard_trust,line=107,async,rel_from=4358,rel_to=4374
+                controlflow,keyword:if,title:(heard) (req.c.up).finish(req),line=110,via:req_heard_trust,rel_from=4452,rel_to=4455
+                def,method:say_hello,line=121,rel_from=5202,rel_to=5212
+                controlflow,keyword:if,title:(hello.oa({said:1})) return,line=124,via:say_hello,rel_from=5292,rel_to=5295
+                call,method:Pier_next_seq,line=126,via:say_hello,rel_from=5365,rel_to=5384
+                call,method:Peeroleum_send,line=128,via:say_hello,rel_from=5421,rel_to=5436
+                def,method:say_trust,line=130,rel_from=5502,rel_to=5512
+                controlflow,keyword:if,title:(trust.oa({said:1})) return,line=133,via:say_trust,rel_from=5592,rel_to=5595
+                call,method:Pier_next_seq,line=135,via:say_trust,rel_from=5665,rel_to=5684
+                call,method:Peeroleum_send,line=137,via:say_trust,rel_from=5721,rel_to=5736
+                def,method:hear_hello,line=147,rel_from=6431,rel_to=6442
+                controlflow,keyword:if,title:(!String(h.pubkey).startsWith(pier%pub)) return false,line=150,via:hear_hello,rel_from=6507,rel_to=6510
+                {"controlflow":1,"keyword":"if","title":"(!hello.oa({said: 1})) H.say_hello(w, pier)","line":154,"via":"hear_hello","rel_from":6706,"rel_to":6709}
+                def,method:hear_trust,line=158,rel_from=6850,rel_to=6861
+                def,method:Pier_next_seq,line=166,rel_from=7286,rel_to=7300
+                def,method:Peeroleum_body_digest,line=186,async,rel_from=8881,rel_to=8903
+                def,method:Peeroleum_on,line=198,rel_from=9839,rel_to=9852
+                def,method:Peeroleum_send_consumer,line=209,rel_from=10625,rel_to=10649
+                controlflow,keyword:if,title:(!pier) return,line=211,via:Peeroleum_send_consumer,rel_from=10720,rel_to=10723
+                call,method:Pier_next_seq,line=213,via:Peeroleum_send_consumer,rel_from=10780,rel_to=10799
+                call,method:Peeroleum_send,line=214,via:Peeroleum_send_consumer,rel_from=10809,rel_to=10829
+                def,method:Peeroleum_peer_ready,line=221,rel_from=11263,rel_to=11284
+                def,method:transport,line=230,async,rel_from=11768,rel_to=11778
+                call,method:send,line=241,via:transport,rel_from=12395,rel_to=12400
+                call,method:recv,line=242,via:transport,rel_from=12479,rel_to=12484
+                def,method:Peeroleum_route,line=256,rel_from=13434,rel_to=13450
+                controlflow,keyword:if,title:(!peering) return {},line=259,via:Peeroleum_route,rel_from=13603,rel_to=13606
+                def,method:Peeroleum_carrier,line=270,rel_from=14313,rel_to=14331
+                call,method:return,line=271,via:Peeroleum_carrier,rel_from=14348,rel_to=14356
+                def,method:Peeroleum_send,line=280,rel_from=15054,rel_to=15069
+                call,method:Peeroleum_route,line=282,via:Peeroleum_send,rel_from=15131,rel_to=15152
+                controlflow,keyword:if,title:(pier && !ephemeral) {,line=290,via:Peeroleum_send,rel_from=15828,rel_to=15831
+                controlflow,keyword:if,title:(h.body_hash != null) { esc.body_hash = h.body_hash; esc.body_len = h.body_len },line=294,via:Peeroleum_send,rel_from=16114,rel_to=16117
+                call,method:Peeroleum_carrier,line=303,via:Peeroleum_send,rel_from=16672,rel_to=16695
+                controlflow,keyword:if,title:(!conn) console.log(`🛰 Peeroleum_send ${h.type} seq=${h.seq} → ${h.to} ⚠ DROPPED — no live transport (channel down / re-establishing)`),line=306,via:Peeroleum_send,rel_from=16899,rel_to=16902
+                controlflow,keyword:if,title:(conn && !ephemeral) console.log(`🛰 Peeroleum_send ${h.type} seq=${h.seq} → ${h.to} (transport live)`),line=307,via:Peeroleum_send,rel_from=17043,rel_to=17046
+                def,method:Peeroleum_deliver,line=316,async,rel_from=17724,rel_to=17742
+                call,method:Peeroleum_route,line=319,via:Peeroleum_deliver,rel_from=17823,rel_to=17844
+                controlflow,keyword:if,title:(!pier) return,line=320,via:Peeroleum_deliver,rel_from=17860,rel_to=17863
+                {"controlflow":1,"keyword":"if","title":"(h.type === 'ack') { if (H.Peeroleum_take_ack(w, pier, h)) H.feebly_ponder(); return }","line":326,"via":"Peeroleum_deliver","rel_from":18397,"rel_to":18400}
+                {"controlflow":1,"keyword":"if","title":"(h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, pier, frame); H.feebly_ponder(); return }","line":332,"via":"Peeroleum_deliver","rel_from":18991,"rel_to":18994}
+                call,method:Peeroleum_carrier,line=351,via:Peeroleum_deliver,rel_from=21000,rel_to=21023
+                controlflow,keyword:if,title:(reliable || !Number.isFinite(seq)) {,line=354,via:Peeroleum_deliver,rel_from=21171,rel_to=21174
+                call,method:Peeroleum_book_unemit,line=355,via:Peeroleum_deliver,rel_from=21294,rel_to=21318
+                call,method:feebly_ponder,line=355,via:Peeroleum_deliver,rel_from=21360,rel_to=21376
+                call,method:inseq_admit,line=359,via:Peeroleum_deliver,rel_from=21551,rel_to=21568
+                controlflow,keyword:if,title:(!ready.length) {,line=360,via:Peeroleum_deliver,rel_from=21591,rel_to=21594
+                controlflow,keyword:if,title:(seq <= pier.c.inseq.last) {,line=363,via:Peeroleum_deliver,rel_from=21828,rel_to=21831
+                call,method:Peeroleum_send,line=365,via:Peeroleum_deliver,rel_from=21908,rel_to=21925
+                call,method:feebly_ponder,line=373,via:Peeroleum_deliver,rel_from=22510,rel_to=22526
+                controlflow,keyword:for,title:(const s of ready) {,line=377,via:Peeroleum_deliver,rel_from=22650,rel_to=22654
+                controlflow,keyword:if,title:(pier.c.held) delete pier.c.held[s],line=379,via:Peeroleum_deliver,rel_from=22753,rel_to=22756
+                {"controlflow":1,"keyword":"if","title":"(f) H.Peeroleum_book_unemit(inbox, w, pier, f)","line":380,"via":"Peeroleum_deliver","rel_from":22800,"rel_to":22803}
+                call,method:feebly_ponder,line=383,via:Peeroleum_deliver,rel_from=22881,rel_to=22897
+                def,method:Peeroleum_book_unemit,line=389,rel_from=23279,rel_to=23301
+                controlflow,keyword:if,title:(h.body_hash != null) { usc.body_hash = h.body_hash; usc.body_len = h.body_len },line=392,via:Peeroleum_book_unemit,rel_from=23410,rel_to=23413
+                def,method:req_unemit,line=407,async,rel_from=24433,rel_to=24444
+                controlflow,keyword:if,title:(ok && h.body_hash != null && (await H.Peeroleum_body_digest(frame.buffer)) !== h.body_hash) {,line=421,via:req_unemit,rel_from=25139,rel_to=25142
+                controlflow,keyword:if,title:(ok) {,line=424,via:req_unemit,rel_from=25292,rel_to=25295
+                {"controlflow":1,"keyword":"if","title":"(h.type === 'hello') ok = (await H.hear_hello(w, pier, frame)) !== false","line":426,"via":"req_unemit","rel_from":25352,"rel_to":25355}
+                {"controlflow":1,"keyword":"else if","title":"(h.type === 'trust') ok = (await H.hear_trust(w, pier, frame)) !== false","line":427,"via":"req_unemit","rel_from":25436,"rel_to":25444}
+                {"controlflow":1,"keyword":"else if","title":"(on) ok = (await on(w, pier, frame)) !== false","line":428,"via":"req_unemit","rel_from":25525,"rel_to":25533}
+                controlflow,keyword:if,title:(ok) {,line=431,via:req_unemit,rel_from=25678,rel_to=25681
+                call,method:Peeroleum_send,line=436,via:req_unemit,rel_from=25805,rel_to=25822
+                call,method:Peeroleum_rollup_faulty,line=440,via:req_unemit,rel_from=25958,rel_to=25984
+                def,method:Peeroleum_take_ack,line=446,rel_from=26252,rel_to=26271
+                controlflow,keyword:if,title:(emit) { emit.sc.acked = 1; pier.bump() },line=448,via:Peeroleum_take_ack,rel_from=26367,rel_to=26370
+                {"controlflow":1,"keyword":"for","title":"(const kind of ['hello','trust']) {","line":451,"via":"Peeroleum_take_ack","rel_from":26477,"rel_to":26481}
+                controlflow,keyword:if,title:(said && said.sc.seq == h.ack) { said.sc.acked = 1; hit = true },line=453,via:Peeroleum_take_ack,rel_from=26584,rel_to=26587
+                def,method:Peeroleum_rollup_faulty,line=460,rel_from=26937,rel_to=26961
+                controlflow,keyword:if,title:(!errs.length) { if (faulty) pier.drop(faulty); return },line=464,via:Peeroleum_rollup_faulty,rel_from=27124,rel_to=27127
+                {"controlflow":1,"keyword":"for","title":"(const u of errs) faulty.i({unemit:u.sc.seq, error:u.sc.error, seq:u.sc.seq})","line":467,"via":"Peeroleum_rollup_faulty","rel_from":27251,"rel_to":27255}
+                def,method:Peeroleum_retx_sweep,line=478,rel_from=28246,rel_to=28267
+                controlflow,keyword:for,title:(const peering of w.o({Peering:1})) {,line=482,via:Peeroleum_retx_sweep,rel_from=28367,rel_to=28371
+                call,method:Peeroleum_carrier,line=486,via:Peeroleum_retx_sweep,rel_from=28735,rel_to=28755
+                controlflow,keyword:for,title:(const pier of peering.o({Pier:1})) {,line=487,via:Peeroleum_retx_sweep,rel_from=28775,rel_to=28779
+                controlflow,keyword:if,title:(!outbox) continue,line=489,via:Peeroleum_retx_sweep,rel_from=28876,rel_to=28879
+                call,method:retx_due,line=492,via:Peeroleum_retx_sweep,rel_from=29103,rel_to=29114
+                controlflow,keyword:for,title:(const seq of verdict.resend) {,line=493,via:Peeroleum_retx_sweep,rel_from=29145,rel_to=29149
+                controlflow,keyword:if,title:(!emit || !emit.c.frame) continue,line=495,via:Peeroleum_retx_sweep,rel_from=29257,rel_to=29260
+                controlflow,keyword:for,title:(const seq of verdict.dead) {,line=501,via:Peeroleum_retx_sweep,rel_from=29510,rel_to=29514
+                controlflow,keyword:if,title:(!emit) continue,line=503,via:Peeroleum_retx_sweep,rel_from=29620,rel_to=29623
+                {"controlflow":1,"keyword":"if","title":"(!pier.o({stall_err:1})[0]) pier.i({stall_err:1, msg})","line":518,"via":"Peeroleum_retx_sweep","rel_from":30846,"rel_to":30849}
+                def,method:Peeroleum_arm_whittle,line=530,rel_from=31546,rel_to=31568
+                controlflow,keyword:if,title:(w.c._whittle_armed) return,line=532,via:Peeroleum_arm_whittle,rel_from=31595,rel_to=31598
+                call,method:Runstepped,line=534,via:Peeroleum_arm_whittle,rel_from=31675,rel_to=31688
+                call,method:Peeroleum_retx_sweep,line=534,via:Peeroleum_arm_whittle,rel_from=31702,rel_to=31725
+                call,method:Peeroleum_runstepped,line=534,via:Peeroleum_arm_whittle,rel_from=31729,rel_to=31752
+                call,method:rearm,line=535,via:Peeroleum_arm_whittle,rel_from=31771,rel_to=31777
+                def,method:Peeroleum_runstepped,line=543,rel_from=32309,rel_to=32330
+                controlflow,keyword:for,title:(const peering of w.o({Peering:1})) {,line=545,via:Peeroleum_runstepped,rel_from=32357,rel_to=32361
+                controlflow,keyword:for,title:(const pier of peering.o({Pier:1})) {,line=546,via:Peeroleum_runstepped,rel_from=32407,rel_to=32411
+                controlflow,keyword:if,title:(outbox) {,line=548,via:Peeroleum_runstepped,rel_from=32508,rel_to=32511
+                controlflow,keyword:for,title:(const e of outbox.o({emit:1}).filter(e => e.sc.acked)) {,line=550,via:Peeroleum_runstepped,rel_from=32590,rel_to=32594
+                call,method:whittle_N,line=554,via:Peeroleum_runstepped,rel_from=32798,rel_to=32810
+                controlflow,keyword:if,title:(inbox) {,line=557,via:Peeroleum_runstepped,rel_from=32905,rel_to=32908
+                controlflow,keyword:for,title:(const u of inbox.o({req:'unemit'}).filter(u => u.sc.done)) {,line=559,via:Peeroleum_runstepped,rel_from=32985,rel_to=32989
+                call,method:whittle_N,line=563,via:Peeroleum_runstepped,rel_from=33197,rel_to=33209
+                call,method:Peeroleum_rollup_faulty,line=565,via:Peeroleum_runstepped,rel_from=33261,rel_to=33287
+              time,compile=0.064,all=0.555
+              {"Output":1,"gen_path":"gen/N/Peeroleum.go","source":"«munged: 35294c, see dige»","dige":"91e8b8a251da67bb","source_dige":"50037abbbf6b8f6b"}
             Pmirrors
               Pmirror,src_Waft:Ghost/Net/Easy,spec:Peeroleum	{"ref":{"src_Point":"%Point:1, method:Peeroleum"}}
                 graft,bookmark_id:g_1,from=1258,to=1268,line=26
-              Pmirror,src_Waft:Ghost/Net/Easy,spec:req_p2pman	{"ref":{"src_Point":"%Point:1, method:req_p2pman"}}
-                graft,bookmark_id:g_2,from=883,to=894,line=17
-              Pmirror,src_Waft:Ghost/Net/Easy,spec:req_p2paddy	{"ref":{"src_Point":"%Point:1, method:req_p2paddy"}}
-                graft,bookmark_id:g_3,from=1536,to=1548,line=34
               Pmirror,src_Waft:Ghost/Net/Easy,spec:req_handshake	{"ref":{"src_Point":"%Point:1, method:req_handshake"}}
-                graft,bookmark_id:g_4,from=2353,to=2367,line=47
+                graft,bookmark_id:g_2,from=3765,to=3779,line=69
             Navicade
-              Mapule,kind:region,key:ologist,depth=0,line,from=0,to=23419,end_line=409
+              Mapule,kind:region,key:ologist,depth=0,line,from=0,to=34384,end_line=568
               Mapule,kind:def,key:Peerologist,depth=0,line=11,from=650,to=662
               Mapule,kind:call,key:do,depth=0,line=13,from=709,to=712
               Mapule,kind:def,key:req_p2pman,depth=0,line=17,from=883,to=894
               Mapule,kind:call,key:do,depth=0,line=20,from=1052,to=1055
-              Mapule,kind:region,key:oleum,depth,line=23,from=1075,to=23419,end_line=409
+              Mapule,kind:region,key:oleum,depth,line=23,from=1075,to=34384,end_line=568
               Mapule,kind:def,key:Peeroleum,depth=0,line=26,from=1258,to=1268
-              Mapule,kind:call,key:do,depth=0,line=31,from=1457,to=1460
-              Mapule,kind:def,key:req_p2paddy,depth=0,line=34,from=1536,to=1548
-              Mapule,kind:call,key:do,depth=0,line=40,from=1998,to=2001
-              Mapule,kind:def,key:req_handshake,depth=0,line=47,from=2353,to=2367
-              Mapule,kind:call,key:do,depth=0,line=52,from=2518,to=2521
-              Mapule,kind:cf,key:if,depth=0,line=54,from=2614,to=2617
-              Mapule,kind:def,key:req_said_hello,depth=0,line=66,from=3526,to=3541
-              Mapule,kind:call,key:say_hello,depth=0,line=69,from=3607,to=3617
-              Mapule,kind:cf,key:if,depth=0,line=71,from=3666,to=3669
-              Mapule,kind:def,key:req_heard_hello,depth=0,line=73,from=3706,to=3722
-              Mapule,kind:cf,key:if,depth=0,line=76,from=3800,to=3803
-              Mapule,kind:def,key:req_said_trust,depth=0,line=78,from=3841,to=3856
-              Mapule,kind:call,key:say_trust,depth=0,line=81,from=3922,to=3932
-              Mapule,kind:cf,key:if,depth=0,line=83,from=3981,to=3984
-              Mapule,kind:def,key:req_heard_trust,depth=0,line=85,from=4021,to=4037
-              Mapule,kind:cf,key:if,depth=0,line=88,from=4115,to=4118
-              Mapule,kind:def,key:say_hello,depth=0,line=99,from=4868,to=4878
-              Mapule,kind:cf,key:if,depth=0,line=102,from=4958,to=4961
-              Mapule,kind:call,key:Pier_next_seq,depth=0,line=104,from=5031,to=5050
-              Mapule,kind:call,key:Peeroleum_send,depth=0,line=106,from=5087,to=5102
-              Mapule,kind:def,key:say_trust,depth=0,line=108,from=5171,to=5181
-              Mapule,kind:cf,key:if,depth=0,line=111,from=5261,to=5264
-              Mapule,kind:call,key:Pier_next_seq,depth=0,line=113,from=5334,to=5353
-              Mapule,kind:call,key:Peeroleum_send,depth=0,line=115,from=5390,to=5405
-              Mapule,kind:def,key:hear_hello,depth=0,line=125,from=6103,to=6114
-              Mapule,kind:cf,key:if,depth=0,line=128,from=6179,to=6182
-              Mapule,kind:cf,key:if,depth=0,line=132,from=6393,to=6396
-              Mapule,kind:def,key:hear_trust,depth=0,line=136,from=6537,to=6548
-              Mapule,kind:def,key:Pier_next_seq,depth=0,line=144,from=6973,to=6987
-              Mapule,kind:def,key:Peeroleum_body_digest,depth=0,line=164,from=8568,to=8590
-              Mapule,kind:def,key:Peeroleum_on,depth=0,line=176,from=9526,to=9539
-              Mapule,kind:def,key:Peeroleum_send_consumer,depth=0,line=187,from=10312,to=10336
-              Mapule,kind:cf,key:if,depth=0,line=189,from=10407,to=10410
-              Mapule,kind:call,key:Pier_next_seq,depth=0,line=191,from=10467,to=10486
-              Mapule,kind:call,key:Peeroleum_send,depth=0,line=192,from=10496,to=10516
-              Mapule,kind:def,key:Peeroleum_peer_ready,depth=0,line=199,from=10950,to=10971
-              Mapule,kind:def,key:transport,depth=0,line=208,from=11455,to=11465
-              Mapule,kind:call,key:send,depth=0,line=217,from=11891,to=11896
-              Mapule,kind:call,key:recv,depth=0,line=218,from=11975,to=11980
-              Mapule,kind:def,key:Peeroleum_send,depth=0,line=233,from=12953,to=12968
-              Mapule,kind:cf,key:if,depth=0,line=243,from=13717,to=13720
-              Mapule,kind:cf,key:if,depth=0,line=247,from=14003,to=14006
-              Mapule,kind:cf,key:if,depth=0,line=253,from=14380,to=14383
-              Mapule,kind:cf,key:if,depth=0,line=254,from=14524,to=14527
-              Mapule,kind:def,key:Peeroleum_deliver,depth=0,line=263,from=15205,to=15223
-              Mapule,kind:cf,key:if,depth=0,line=267,from=15333,to=15336
-              Mapule,kind:cf,key:if,depth=0,line=273,from=15870,to=15873
-              Mapule,kind:cf,key:if,depth=0,line=279,from=16464,to=16467
-              Mapule,kind:cf,key:if,depth=0,line=288,from=17333,to=17336
-              Mapule,kind:call,key:feebly_ponder,depth=0,line=294,from=17537,to=17553
-              Mapule,kind:def,key:req_unemit,depth=0,line=304,from=18383,to=18394
-              Mapule,kind:cf,key:if,depth=0,line=318,from=19089,to=19092
-              Mapule,kind:cf,key:if,depth=0,line=321,from=19242,to=19245
-              Mapule,kind:cf,key:if,depth=0,line=323,from=19302,to=19305
-              Mapule,kind:cf,key:else if,depth=0,line=324,from=19386,to=19394
-              Mapule,kind:cf,key:else if,depth=0,line=325,from=19475,to=19483
-              Mapule,kind:cf,key:if,depth=0,line=328,from=19628,to=19631
-              Mapule,kind:call,key:Peeroleum_send,depth=0,line=333,from=19755,to=19772
-              Mapule,kind:call,key:Peeroleum_rollup_faulty,depth=0,line=337,from=19908,to=19934
-              Mapule,kind:def,key:Peeroleum_take_ack,depth=0,line=343,from=20202,to=20221
-              Mapule,kind:cf,key:if,depth=0,line=345,from=20317,to=20320
-              Mapule,kind:cf,key:for,depth=0,line=348,from=20427,to=20431
-              Mapule,kind:cf,key:if,depth=0,line=350,from=20534,to=20537
-              Mapule,kind:def,key:Peeroleum_rollup_faulty,depth=0,line=357,from=20887,to=20911
-              Mapule,kind:cf,key:if,depth=0,line=361,from=21074,to=21077
-              Mapule,kind:cf,key:for,depth=0,line=364,from=21201,to=21205
-              Mapule,kind:def,key:Peeroleum_arm_whittle,depth=0,line=371,from=21683,to=21705
-              Mapule,kind:cf,key:if,depth=0,line=373,from=21732,to=21735
-              Mapule,kind:call,key:Runstepped,depth=0,line=375,from=21812,to=21825
-              Mapule,kind:call,key:Peeroleum_runstepped,depth=0,line=375,from=21839,to=21862
-              Mapule,kind:call,key:rearm,depth=0,line=376,from=21881,to=21887
-              Mapule,kind:def,key:Peeroleum_runstepped,depth=0,line=384,from=22419,to=22440
-              Mapule,kind:cf,key:for,depth=0,line=386,from=22467,to=22471
-              Mapule,kind:cf,key:for,depth=0,line=387,from=22517,to=22521
-              Mapule,kind:cf,key:if,depth=0,line=389,from=22618,to=22621
-              Mapule,kind:cf,key:for,depth=0,line=391,from=22700,to=22704
-              Mapule,kind:call,key:whittle_N,depth=0,line=395,from=22908,to=22920
-              Mapule,kind:cf,key:if,depth=0,line=398,from=23015,to=23018
-              Mapule,kind:cf,key:for,depth=0,line=400,from=23095,to=23099
-              Mapule,kind:call,key:whittle_N,depth=0,line=404,from=23307,to=23319
-              Mapule,kind:call,key:Peeroleum_rollup_faulty,depth=0,line=406,from=23371,to=23397
+              Mapule,kind:call,key:do,depth=0,line=31,from=1458,to=1461
+              Mapule,kind:def,key:req_p2paddy,depth=0,line=34,from=1537,to=1549
+              Mapule,kind:call,key:do,depth=0,line=40,from=1999,to=2002
+              Mapule,kind:def,key:req_Peering,depth=0,line=49,from=2607,to=2619
+              Mapule,kind:call,key:do,depth=0,line=50,from=2646,to=2649
+              Mapule,kind:def,key:req_Pier,depth=0,line=61,from=3379,to=3388
+              Mapule,kind:call,key:do,depth=0,line=62,from=3409,to=3412
+              Mapule,kind:def,key:req_handshake,depth=0,line=69,from=3765,to=3779
+              Mapule,kind:call,key:do,depth=0,line=74,from=3930,to=3933
+              Mapule,kind:cf,key:if,depth=0,line=76,from=4026,to=4029
+              Mapule,kind:def,key:req_said_hello,depth=0,line=88,from=4938,to=4953
+              Mapule,kind:call,key:say_hello,depth=0,line=91,from=5019,to=5029
+              Mapule,kind:cf,key:if,depth=0,line=93,from=5078,to=5081
+              Mapule,kind:def,key:req_heard_hello,depth=0,line=95,from=5118,to=5134
+              Mapule,kind:cf,key:if,depth=0,line=98,from=5212,to=5215
+              Mapule,kind:def,key:req_said_trust,depth=0,line=100,from=5253,to=5268
+              Mapule,kind:call,key:say_trust,depth=0,line=103,from=5334,to=5344
+              Mapule,kind:cf,key:if,depth=0,line=105,from=5393,to=5396
+              Mapule,kind:def,key:req_heard_trust,depth=0,line=107,from=5433,to=5449
+              Mapule,kind:cf,key:if,depth=0,line=110,from=5527,to=5530
+              Mapule,kind:def,key:say_hello,depth=0,line=121,from=6277,to=6287
+              Mapule,kind:cf,key:if,depth=0,line=124,from=6367,to=6370
+              Mapule,kind:call,key:Pier_next_seq,depth=0,line=126,from=6440,to=6459
+              Mapule,kind:call,key:Peeroleum_send,depth=0,line=128,from=6496,to=6511
+              Mapule,kind:def,key:say_trust,depth=0,line=130,from=6577,to=6587
+              Mapule,kind:cf,key:if,depth=0,line=133,from=6667,to=6670
+              Mapule,kind:call,key:Pier_next_seq,depth=0,line=135,from=6740,to=6759
+              Mapule,kind:call,key:Peeroleum_send,depth=0,line=137,from=6796,to=6811
+              Mapule,kind:def,key:hear_hello,depth=0,line=147,from=7506,to=7517
+              Mapule,kind:cf,key:if,depth=0,line=150,from=7582,to=7585
+              Mapule,kind:cf,key:if,depth=0,line=154,from=7781,to=7784
+              Mapule,kind:def,key:hear_trust,depth=0,line=158,from=7925,to=7936
+              Mapule,kind:def,key:Pier_next_seq,depth=0,line=166,from=8361,to=8375
+              Mapule,kind:def,key:Peeroleum_body_digest,depth=0,line=186,from=9956,to=9978
+              Mapule,kind:def,key:Peeroleum_on,depth=0,line=198,from=10914,to=10927
+              Mapule,kind:def,key:Peeroleum_send_consumer,depth=0,line=209,from=11700,to=11724
+              Mapule,kind:cf,key:if,depth=0,line=211,from=11795,to=11798
+              Mapule,kind:call,key:Pier_next_seq,depth=0,line=213,from=11855,to=11874
+              Mapule,kind:call,key:Peeroleum_send,depth=0,line=214,from=11884,to=11904
+              Mapule,kind:def,key:Peeroleum_peer_ready,depth=0,line=221,from=12338,to=12359
+              Mapule,kind:def,key:transport,depth=0,line=230,from=12843,to=12853
+              Mapule,kind:call,key:send,depth=0,line=241,from=13470,to=13475
+              Mapule,kind:call,key:recv,depth=0,line=242,from=13554,to=13559
+              Mapule,kind:def,key:Peeroleum_route,depth=0,line=256,from=14509,to=14525
+              Mapule,kind:cf,key:if,depth=0,line=259,from=14678,to=14681
+              Mapule,kind:def,key:Peeroleum_carrier,depth=0,line=270,from=15388,to=15406
+              Mapule,kind:call,key:return,depth=0,line=271,from=15423,to=15431
+              Mapule,kind:def,key:Peeroleum_send,depth=0,line=280,from=16129,to=16144
+              Mapule,kind:call,key:Peeroleum_route,depth=0,line=282,from=16206,to=16227
+              Mapule,kind:cf,key:if,depth=0,line=290,from=16903,to=16906
+              Mapule,kind:cf,key:if,depth=0,line=294,from=17189,to=17192
+              Mapule,kind:call,key:Peeroleum_carrier,depth=0,line=303,from=17747,to=17770
+              Mapule,kind:cf,key:if,depth=0,line=306,from=17974,to=17977
+              Mapule,kind:cf,key:if,depth=0,line=307,from=18118,to=18121
+              Mapule,kind:def,key:Peeroleum_deliver,depth=0,line=316,from=18799,to=18817
+              Mapule,kind:call,key:Peeroleum_route,depth=0,line=319,from=18898,to=18919
+              Mapule,kind:cf,key:if,depth=0,line=320,from=18935,to=18938
+              Mapule,kind:cf,key:if,depth=0,line=326,from=19472,to=19475
+              Mapule,kind:cf,key:if,depth=0,line=332,from=20066,to=20069
+              Mapule,kind:call,key:Peeroleum_carrier,depth=0,line=351,from=22075,to=22098
+              Mapule,kind:cf,key:if,depth=0,line=354,from=22246,to=22249
+              Mapule,kind:call,key:Peeroleum_book_unemit,depth=0,line=355,from=22369,to=22393
+              Mapule,kind:call,key:feebly_ponder,depth=0,line=355,from=22435,to=22451
+              Mapule,kind:call,key:inseq_admit,depth=0,line=359,from=22626,to=22643
+              Mapule,kind:cf,key:if,depth=0,line=360,from=22666,to=22669
+              Mapule,kind:cf,key:if,depth=0,line=363,from=22903,to=22906
+              Mapule,kind:call,key:Peeroleum_send,depth=0,line=365,from=22983,to=23000
+              Mapule,kind:call,key:feebly_ponder,depth=0,line=373,from=23585,to=23601
+              Mapule,kind:cf,key:for,depth=0,line=377,from=23725,to=23729
+              Mapule,kind:cf,key:if,depth=0,line=379,from=23828,to=23831
+              Mapule,kind:cf,key:if,depth=0,line=380,from=23875,to=23878
+              Mapule,kind:call,key:feebly_ponder,depth=0,line=383,from=23956,to=23972
+              Mapule,kind:def,key:Peeroleum_book_unemit,depth=0,line=389,from=24354,to=24376
+              Mapule,kind:cf,key:if,depth=0,line=392,from=24485,to=24488
+              Mapule,kind:def,key:req_unemit,depth=0,line=407,from=25508,to=25519
+              Mapule,kind:cf,key:if,depth=0,line=421,from=26214,to=26217
+              Mapule,kind:cf,key:if,depth=0,line=424,from=26367,to=26370
+              Mapule,kind:cf,key:if,depth=0,line=426,from=26427,to=26430
+              Mapule,kind:cf,key:else if,depth=0,line=427,from=26511,to=26519
+              Mapule,kind:cf,key:else if,depth=0,line=428,from=26600,to=26608
+              Mapule,kind:cf,key:if,depth=0,line=431,from=26753,to=26756
+              Mapule,kind:call,key:Peeroleum_send,depth=0,line=436,from=26880,to=26897
+              Mapule,kind:call,key:Peeroleum_rollup_faulty,depth=0,line=440,from=27033,to=27059
+              Mapule,kind:def,key:Peeroleum_take_ack,depth=0,line=446,from=27327,to=27346
+              Mapule,kind:cf,key:if,depth=0,line=448,from=27442,to=27445
+              Mapule,kind:cf,key:for,depth=0,line=451,from=27552,to=27556
+              Mapule,kind:cf,key:if,depth=0,line=453,from=27659,to=27662
+              Mapule,kind:def,key:Peeroleum_rollup_faulty,depth=0,line=460,from=28012,to=28036
+              Mapule,kind:cf,key:if,depth=0,line=464,from=28199,to=28202
+              Mapule,kind:cf,key:for,depth=0,line=467,from=28326,to=28330
+              Mapule,kind:def,key:Peeroleum_retx_sweep,depth=0,line=478,from=29321,to=29342
+              Mapule,kind:cf,key:for,depth=0,line=482,from=29442,to=29446
+              Mapule,kind:call,key:Peeroleum_carrier,depth=0,line=486,from=29810,to=29830
+              Mapule,kind:cf,key:for,depth=0,line=487,from=29850,to=29854
+              Mapule,kind:cf,key:if,depth=0,line=489,from=29951,to=29954
+              Mapule,kind:call,key:retx_due,depth=0,line=492,from=30178,to=30189
+              Mapule,kind:cf,key:for,depth=0,line=493,from=30220,to=30224
+              Mapule,kind:cf,key:if,depth=0,line=495,from=30332,to=30335
+              Mapule,kind:cf,key:for,depth=0,line=501,from=30585,to=30589
+              Mapule,kind:cf,key:if,depth=0,line=503,from=30695,to=30698
+              Mapule,kind:cf,key:if,depth=0,line=518,from=31921,to=31924
+              Mapule,kind:def,key:Peeroleum_arm_whittle,depth=0,line=530,from=32621,to=32643
+              Mapule,kind:cf,key:if,depth=0,line=532,from=32670,to=32673
+              Mapule,kind:call,key:Runstepped,depth=0,line=534,from=32750,to=32763
+              Mapule,kind:call,key:Peeroleum_retx_sweep,depth=0,line=534,from=32777,to=32800
+              Mapule,kind:call,key:Peeroleum_runstepped,depth=0,line=534,from=32804,to=32827
+              Mapule,kind:call,key:rearm,depth=0,line=535,from=32846,to=32852
+              Mapule,kind:def,key:Peeroleum_runstepped,depth=0,line=543,from=33384,to=33405
+              Mapule,kind:cf,key:for,depth=0,line=545,from=33432,to=33436
+              Mapule,kind:cf,key:for,depth=0,line=546,from=33482,to=33486
+              Mapule,kind:cf,key:if,depth=0,line=548,from=33583,to=33586
+              Mapule,kind:cf,key:for,depth=0,line=550,from=33665,to=33669
+              Mapule,kind:call,key:whittle_N,depth=0,line=554,from=33873,to=33885
+              Mapule,kind:cf,key:if,depth=0,line=557,from=33980,to=33983
+              Mapule,kind:cf,key:for,depth=0,line=559,from=34060,to=34064
+              Mapule,kind:call,key:whittle_N,depth=0,line=563,from=34272,to=34284
+              Mapule,kind:call,key:Peeroleum_rollup_faulty,depth=0,line=565,from=34336,to=34362
+          dock:Ghost/Story/Peregrination.g
+            req:Languish
+              req:text_loaded,maz=3,finished
+              req:text_mutated,maz=2,eternal
+              req:compile,maz=2,finished
+            Text,dige:3f023fcd0ebdc679,disk_dige:3f023fcd0ebdc679,disk_rev=2
+            Compile
+              Map
+                def,method:Run_A_PereStaple,line=38,rel_from=2767,rel_to=2784
+                def,method:PereStaple,line=46,rel_from=3162,rel_to=3173
+                call,method:Lake_drive,line=48,via:PereStaple,rel_from=3224,rel_to=3235
+                def,method:Lake_drive,line=54,async,rel_from=3507,rel_to=3518
+                controlflow,keyword:if,title:n != null && n !== req.c.did_step,line=56,via:Lake_drive,rel_from=3566,rel_to=3569
+                controlflow,keyword:if,title:n === 2,line=58,via:Lake_drive,rel_from=3638,rel_to=3641
+                call,method:Lake_sides_up,line=59,via:Lake_drive,rel_from=3661,rel_to=3675
+                controlflow,keyword:else if,title:n === 3,line=60,via:Lake_drive,rel_from=3686,rel_to=3694
+                call,method:Lake_handshake,line=61,via:Lake_drive,rel_from=3720,rel_to=3735
+                controlflow,keyword:else if,title:n === 4,line=62,via:Lake_drive,rel_from=3746,rel_to=3754
+                call,method:Lake_trial_arm,line=63,via:Lake_drive,rel_from=3780,rel_to=3795
+                controlflow,keyword:else if,title:n === 5,line=64,via:Lake_drive,rel_from=3806,rel_to=3814
+                call,method:Lake_trial_fallback,line=65,via:Lake_drive,rel_from=3840,rel_to=3860
+                controlflow,keyword:else if,title:n === 6,line=66,via:Lake_drive,rel_from=3871,rel_to=3879
+                call,method:Lake_trial_confirm,line=67,via:Lake_drive,rel_from=3905,rel_to=3924
+                controlflow,keyword:else if,title:n === 7,line=68,via:Lake_drive,rel_from=3935,rel_to=3943
+                call,method:Lake_exercise_binary,line=69,via:Lake_drive,rel_from=3969,rel_to=3990
+                controlflow,keyword:else if,title:n === 8,line=70,via:Lake_drive,rel_from=4001,rel_to=4009
+                call,method:Lake_heal_arm,line=71,via:Lake_drive,rel_from=4035,rel_to=4049
+                controlflow,keyword:else if,title:n === 11,line=72,via:Lake_drive,rel_from=4060,rel_to=4068
+                call,method:Lake_stall_arm,line=73,via:Lake_drive,rel_from=4095,rel_to=4110
+                call,method:Lake_pump_handshakes,line=74,via:Lake_drive,rel_from=4123,rel_to=4144
+                call,method:Lake_witness,line=75,via:Lake_drive,rel_from=4151,rel_to=4164
+                call,method:Lake_order,line=76,via:Lake_drive,rel_from=4177,rel_to=4188
+                def,method:Lake_peer,line=91,async,rel_from=5299,rel_to=5309
+                call,method:send,line=100,via:Lake_peer,rel_from=5645,rel_to=5650
+                call,method:recv,line=101,via:Lake_peer,rel_from=5729,rel_to=5734
+                def,method:Lake_link,line=107,rel_from=6004,rel_to=6014
+                call,method:Lake_peer,line=108,via:Lake_link,rel_from=6037,rel_to=6052
+                call,method:Lake_peer,line=109,via:Lake_link,rel_from=6074,rel_to=6089
+                call,method:Lake_port,line=110,via:Lake_link,rel_from=6114,rel_to=6129
+                call,method:Lake_port,line=111,via:Lake_link,rel_from=6149,rel_to=6164
+                def,method:Lake_peering,line=118,rel_from=6428,rel_to=6441
+                def,method:Lake_pier,line=121,rel_from=6511,rel_to=6521
+                call,method:Lake_peering,line=122,via:Lake_pier,rel_from=6542,rel_to=6560
+                def,method:Lake_port,line=124,rel_from=6587,rel_to=6597
+                def,method:Lake_sides_up,line=133,rel_from=7247,rel_to=7261
+                call,method:Lake_link,line=135,via:Lake_sides_up,rel_from=7319,rel_to=7334
+                call,method:Peeroleum_arm_whittle,line=136,via:Lake_sides_up,rel_from=7357,rel_to=7384
+                call,method:Pier_next_seq,line=137,via:Lake_sides_up,rel_from=7399,rel_to=7418
+                call,method:Peeroleum_send,line=138,via:Lake_sides_up,rel_from=7433,rel_to=7453
+                def,method:Lake_handshake,line=142,async,rel_from=7717,rel_to=7732
+                {"controlflow":1,"keyword":"for","title":"(const name of ['alice', 'bob']) {","line":143,"via":"Lake_handshake","rel_from":7740,"rel_to":7744}
+                call,method:Lake_pier,line=144,via:Lake_handshake,rel_from=7798,rel_to=7813
+                controlflow,keyword:if,title:(!pier) continue,line=145,via:Lake_handshake,rel_from=7830,rel_to=7833
+                def,method:Lake_pump_handshakes,line=156,async,rel_from=8463,rel_to=8484
+                controlflow,keyword:for,title:(const peering of w.o({Peering: 1})) {,line=157,via:Lake_pump_handshakes,rel_from=8492,rel_to=8496
+                def,method:Lake_trial_arm,line=166,async,rel_from=9023,rel_to=9038
+                call,method:Lake_peering,line=168,via:Lake_trial_arm,rel_from=9082,rel_to=9100
+                call,method:Lake_peering,line=169,via:Lake_trial_arm,rel_from=9126,rel_to=9144
+                controlflow,keyword:if,title:(!Alice || !Bob) return,line=170,via:Lake_trial_arm,rel_from=9158,rel_to=9161
+                call,method:PeerJS,line=171,via:Lake_trial_arm,rel_from=9189,rel_to=9201
+                call,method:PeerJS,line=172,via:Lake_trial_arm,rel_from=9212,rel_to=9224
+                call,method:Socket,line=173,via:Lake_trial_arm,rel_from=9233,rel_to=9245
+                call,method:Socket,line=174,via:Lake_trial_arm,rel_from=9256,rel_to=9268
+                call,method:Tribunal_pair_websocket,line=175,via:Lake_trial_arm,rel_from=9277,rel_to=9306
+                call,method:Tribunal_hand_to_webrtc,line=176,via:Lake_trial_arm,rel_from=9322,rel_to=9351
+                call,method:Tribunal_hand_to_webrtc,line=177,via:Lake_trial_arm,rel_from=9362,rel_to=9391
+                call,method:Lake_pier,line=178,via:Lake_trial_arm,rel_from=9416,rel_to=9431
+                controlflow,keyword:if,title:(!AlicePier) return,line=179,via:Lake_trial_arm,rel_from=9447,rel_to=9450
+                call,method:Pier_next_seq,line=180,via:Lake_trial_arm,rel_from=9482,rel_to=9501
+                call,method:Peeroleum_send,line=182,via:Lake_trial_arm,rel_from=9553,rel_to=9573
+                def,method:Lake_trial_fallback,line=187,async,rel_from=9939,rel_to=9959
+                call,method:Lake_peering,line=189,via:Lake_trial_fallback,rel_from=10003,rel_to=10021
+                call,method:Lake_peering,line=190,via:Lake_trial_fallback,rel_from=10047,rel_to=10065
+                call,method:Lake_pier,line=191,via:Lake_trial_fallback,rel_from=10095,rel_to=10110
+                controlflow,keyword:if,title:(!Alice || !Bob || !AlicePier) return,line=192,via:Lake_trial_fallback,rel_from=10126,rel_to=10129
+                controlflow,keyword:if,title:(probe?.sc.acked) return,line=194,via:Lake_trial_fallback,rel_from=10258,rel_to=10261
+                call,method:Tribunal_fall_to_websocket,line=195,via:Lake_trial_fallback,rel_from=10343,rel_to=10375
+                call,method:Tribunal_fall_to_websocket,line=196,via:Lake_trial_fallback,rel_from=10386,rel_to=10418
+                call,method:Pier_next_seq,line=197,via:Lake_trial_fallback,rel_from=10435,rel_to=10454
+                call,method:Peeroleum_send,line=199,via:Lake_trial_fallback,rel_from=10502,rel_to=10522
+                def,method:Lake_trial_confirm,line=205,async,rel_from=10933,rel_to=10952
+                call,method:Lake_peering,line=207,via:Lake_trial_confirm,rel_from=10996,rel_to=11014
+                call,method:Lake_peering,line=208,via:Lake_trial_confirm,rel_from=11040,rel_to=11058
+                call,method:Lake_pier,line=209,via:Lake_trial_confirm,rel_from=11088,rel_to=11103
+                controlflow,keyword:if,title:(!Alice || !Bob) return,line=210,via:Lake_trial_confirm,rel_from=11119,rel_to=11122
+                controlflow,keyword:if,title:(!acked) return,line=215,via:Lake_trial_confirm,rel_from=11379,rel_to=11382
+                call,method:Tribunal_reputation_good,line=216,via:Lake_trial_confirm,rel_from=11402,rel_to=11432
+                call,method:Tribunal_reputation_good,line=217,via:Lake_trial_confirm,rel_from=11443,rel_to=11473
+                def,method:Lake_exercise_binary,line=225,async,rel_from=12091,rel_to=12112
+                call,method:Lake_pier,line=227,via:Lake_exercise_binary,rel_from=12160,rel_to=12175
+                controlflow,keyword:if,title:(!AlicePier) return,line=228,via:Lake_exercise_binary,rel_from=12191,rel_to=12194
+                call,method:Peeroleum_on,line=231,via:Lake_exercise_binary,rel_from=12433,rel_to=12451
+                controlflow,keyword:for,title:(let i = 0; i < 64; i++) bytes[i] = (i * 7 + 3) & 0xff,line=233,via:Lake_exercise_binary,rel_from=12610,rel_to=12614
+                call,method:Peeroleum_body_digest,line=234,via:Lake_exercise_binary,rel_from=12688,rel_to=12715
+                call,method:Pier_next_seq,line=235,via:Lake_exercise_binary,rel_from=12734,rel_to=12753
+                call,method:Peeroleum_send,line=236,via:Lake_exercise_binary,rel_from=12768,rel_to=12788
+                def,method:Lake_heal_arm,line=246,async,rel_from=13722,rel_to=13736
+                call,method:Lake_link,line=248,via:Lake_heal_arm,rel_from=13793,rel_to=13808
+                call,method:Lake_port,line=249,via:Lake_heal_arm,rel_from=13843,rel_to=13858
+                call,method:Lake_port,line=250,via:Lake_heal_arm,rel_from=13885,rel_to=13900
+                call,method:Pier_next_seq,line=253,via:Lake_heal_arm,rel_from=13979,rel_to=13998
+                call,method:make_lossy_partner,line=258,via:Lake_heal_arm,rel_from=14310,rel_to=14334
+                call,method:Peeroleum_send,line=261,via:Lake_heal_arm,rel_from=14416,rel_to=14436
+                def,method:Lake_stall_arm,line=269,async,rel_from=15077,rel_to=15092
+                call,method:Lake_link,line=271,via:Lake_stall_arm,rel_from=15150,rel_to=15165
+                call,method:Lake_port,line=272,via:Lake_stall_arm,rel_from=15200,rel_to=15215
+                call,method:Lake_port,line=273,via:Lake_stall_arm,rel_from=15242,rel_to=15257
+                call,method:Pier_next_seq,line=278,via:Lake_stall_arm,rel_from=15520,rel_to=15539
+                call,method:make_lossy_partner,line=282,via:Lake_stall_arm,rel_from=15795,rel_to=15819
+                call,method:Peeroleum_send,line=285,via:Lake_stall_arm,rel_from=15906,rel_to=15926
+                def,method:Lake_witness,line=290,rel_from=16250,rel_to=16263
+                call,method:Lake_pier,line=291,via:Lake_witness,rel_from=16285,rel_to=16300
+                controlflow,keyword:if,title:(landed && !(oa %witnessed:step_2)) i %witnessed:step_2,line=296,via:Lake_witness,rel_from=16635,rel_to=16638
+                call,method:Lake_pier,line=298,via:Lake_witness,rel_from=16797,rel_to=16812
+                controlflow,keyword:if,title:(Alicehandshake?.sc.finished && Bobhandshake?.sc.finished && !(oa %witnessed:step_3)) i %witnessed:step_3,line=301,via:Lake_witness,rel_from=16944,rel_to=16947
+                call,method:Lake_peering,line=304,via:Lake_witness,rel_from=17246,rel_to=17264
+                call,method:Lake_peering,line=305,via:Lake_witness,rel_from=17290,rel_to=17308
+                controlflow,keyword:if,title:(Aliceactive?.sc.type === 'webrtc' && Bobactive?.sc.type === 'webrtc' && !(oa %witnessed:step_4)) i %witnessed:step_4,line=308,via:Lake_witness,rel_from=17430,rel_to=17433
+                controlflow,keyword:if,title:(Alicewr?.sc.faulty && Bobwr?.sc.faulty && Aliceactive?.sc.type === 'websocket' && Bobactive?.sc.type === 'websocket' && !(oa %witnessed:step_5)) i %witnessed:step_5,line=312,via:Lake_witness,rel_from=17762,rel_to=17765
+                controlflow,keyword:if,title:(Alicews?.oa({reputation:'good'}) && Bobws?.oa({reputation:'good'}) && !(oa %witnessed:step_6)) i %witnessed:step_6,line=316,via:Lake_witness,rel_from=18143,rel_to=18146
+                controlflow,keyword:if,title:(Bobgot && binacked && !(oa %witnessed:send_binary)) i %witnessed:send_binary,line=324,via:Lake_witness,rel_from=18719,rel_to=18722
+                call,method:Lake_pier,line=327,via:Lake_witness,rel_from=19021,rel_to=19036
+                call,method:Lake_pier,line=328,via:Lake_witness,rel_from=19065,rel_to=19080
+                controlflow,keyword:if,title:(healdropped && healhandled && healacked && !(oa %witnessed:heal)) i %witnessed:heal,line=335,via:Lake_witness,rel_from=19572,rel_to=19575
+                call,method:Lake_pier,line=339,via:Lake_witness,rel_from=19975,rel_to=19990
+                controlflow,keyword:if,title:(stalldropped && stalled && !(oa %witnessed:stall)) i %witnessed:stall,line=342,via:Lake_witness,rel_from=20155,rel_to=20158
+                def,method:Lake_order,line=348,async,rel_from=20606,rel_to=20617
+                call,method:o,line=349,via:Lake_order,rel_from=20634,rel_to=20638
+                controlflow,keyword:if,title:(!As.length) return,line=350,via:Lake_order,rel_from=20649,rel_to=20652
+                call,method:o,line=353,via:Lake_order,rel_from=20823,rel_to=20827
+                call,method:place,line=354,via:Lake_order,rel_from=20861,rel_to=20872
+              time,compile=0.055,all=8.223,write=0
+              {"Output":1,"gen_path":"gen/Story/Peregrination.go","source":"«munged: 21689c, see dige»","dige":"4d30ca9c4988d0c8","source_dige":"3f023fcd0ebdc679"}
+          dock:src/lib/O/LiesCurse.svelte
+            req:Languish
+              req:text_loaded,maz=3,finished
+              req:text_mutated,maz=2,eternal
+              req:compile,maz=2,finished
+            Text,dige:64821aef6be2cd07,disk_dige:64821aef6be2cd07,disk_rev
+            Compile
+              Map
+                def,method:LiesCurse,line=52,rel_from=2408,rel_to=2417
+                region,label:LiesCurse — cold-start cursor placement,depth=0,from=1871,to=3238,line=42
+                call,method:Lies_first_point_doc,line=59,rel_from=896,rel_to=919
+                call,method:Lies_first_doc,line=59,rel_from=925,rel_to=942
+                call,method:i_elvisto,line=65,rel_from=1272,rel_to=1284
+                region,label:seam — Lies_i_Spotlight: the one cursor write,depth=0,from=3239,to=5625,line=71
+                call,method:Lies_arm_engaged,line=111,rel_from=2170,rel_to=2189
+                call,method:feebly_i_elvisto,line=114,rel_from=2303,rel_to=2322
+                region,label:operate — cursor-movement gestures,depth=0,from=5626,to=11200,line=118
+                call,method:LE_what_waft,line=138,rel_from=1148,rel_to=1163
+                call,method:Lies_what_carry_over,line=141,rel_from=1219,rel_to=1242
+                call,method:Lies_seed_what_carry_over,line=149,rel_from=1557,rel_to=1585
+                call,method:Lies_waft_save,line=155,rel_from=1835,rel_to=1852
+                call,method:i_elvisto,line=156,rel_from=1869,rel_to=1881
+                call,method:LE_what_waft,line=170,rel_from=2589,rel_to=2604
+                call,method:Lies_what_carry_over,line=173,rel_from=2662,rel_to=2685
+                call,method:Lies_seed_what_carry_over,line=175,rel_from=2744,rel_to=2772
+                call,method:Lies_waft_save,line=181,rel_from=2977,rel_to=2994
+                call,method:i_elvisto,line=182,rel_from=3011,rel_to=3023
+                call,method:i_elvisto,line=202,rel_from=3974,rel_to=3986
+                call,method:LE_what_waft,line=225,rel_from=5243,rel_to=5258
+                call,method:LE_for,line=230,rel_from=5417,rel_to=5426
+                call,method:i_elvisto,line=232,rel_from=5530,rel_to=5542
+                region,label:doc-follow — doc-change and cursor-set events,depth=0,from=11201,to=14940,line=236
+                call,method:Lies_find_doc_in_wafts,line=266,rel_from=1444,rel_to=1469
+                call,method:i_elvisto,line=274,rel_from=1912,rel_to=1924
+                call,method:i_elvisto,line=306,rel_from=3664,rel_to=3679
+                region,label:finders — pure tree-walk helpers,depth=0,from=14941,to=19155,line=310
+                call,method:Lies_walk_docs,line=319,rel_from=521,rel_to=541
+                call,method:Lies_walk_docs,line=335,rel_from=1190,rel_to=1210
+                call,method:Lies_walk_docs,line=352,rel_from=1930,rel_to=1950
+                call,method:Lies_walk_docs,line=369,rel_from=2671,rel_to=2691
+                call,method:Lies_what_has_points,line=386,rel_from=3439,rel_to=3465
+                region,label:stepping — Waft-level cursor stepping (timemachine / acquire),depth=0,from=19156,to=23577,line=406
+                call,method:Lies_what_has_direct_points,line=423,rel_from=986,rel_to=1016
+                call,method:waft_key_of,line=450,rel_from=2341,rel_to=2355
+                call,method:Lies_what_has_direct_points,line=458,rel_from=2713,rel_to=2743
+                call,method:i_elvisto,line=468,rel_from=3104,rel_to=3116
+                call,method:Lies_what_has_direct_points,line=485,rel_from=3969,rel_to=3999
+                region,label:carry-over — +time Point seeding into new %Whats,depth=0,from=23578,to=26232,line=497
+                region,label:accept — What_Point acceptance round-trip,depth=0,from=26233,to=29446,line=550
+                call,method:Lies_waft_save,line=599,rel_from=2601,rel_to=2618
+              time,compile=0.004,all=0.004
+            Pmirrors
+            Navicade
+              Mapule,kind:def,key:LiesCurse,depth=0,line=52,from=2408,to=2417
+              Mapule,kind:region,key:LiesCurse — cold-start cursor placement,depth=0,line=42,from=1871,to=3238,end_line=70
+              Mapule,kind:call,key:Lies_first_point_doc,depth=0,line=59,from=2767,to=2790
+              Mapule,kind:call,key:Lies_first_doc,depth=0,line=59,from=2796,to=2813
+              Mapule,kind:call,key:i_elvisto,depth=0,line=65,from=3143,to=3155
+              Mapule,kind:region,key:seam — Lies_i_Spotlight: the one cursor write,depth=0,line=71,from=3239,to=5625,end_line=117
+              Mapule,kind:call,key:Lies_arm_engaged,depth=0,line=111,from=5409,to=5428
+              Mapule,kind:call,key:feebly_i_elvisto,depth=0,line=114,from=5542,to=5561
+              Mapule,kind:region,key:operate — cursor-movement gestures,depth=0,line=118,from=5626,to=11200,end_line=235
+              Mapule,kind:call,key:LE_what_waft,depth=0,line=138,from=6774,to=6789
+              Mapule,kind:call,key:Lies_what_carry_over,depth=0,line=141,from=6845,to=6868
+              Mapule,kind:call,key:Lies_seed_what_carry_over,depth=0,line=149,from=7183,to=7211
+              Mapule,kind:call,key:Lies_waft_save,depth=0,line=155,from=7461,to=7478
+              Mapule,kind:call,key:i_elvisto,depth=0,line=156,from=7495,to=7507
+              Mapule,kind:call,key:LE_what_waft,depth=0,line=170,from=8215,to=8230
+              Mapule,kind:call,key:Lies_what_carry_over,depth=0,line=173,from=8288,to=8311
+              Mapule,kind:call,key:Lies_seed_what_carry_over,depth=0,line=175,from=8370,to=8398
+              Mapule,kind:call,key:Lies_waft_save,depth=0,line=181,from=8603,to=8620
+              Mapule,kind:call,key:i_elvisto,depth=0,line=182,from=8637,to=8649
+              Mapule,kind:call,key:i_elvisto,depth=0,line=202,from=9600,to=9612
+              Mapule,kind:call,key:LE_what_waft,depth=0,line=225,from=10869,to=10884
+              Mapule,kind:call,key:LE_for,depth=0,line=230,from=11043,to=11052
+              Mapule,kind:call,key:i_elvisto,depth=0,line=232,from=11156,to=11168
+              Mapule,kind:region,key:doc-follow — doc-change and cursor-set events,depth=0,line=236,from=11201,to=14940,end_line=309
+              Mapule,kind:call,key:Lies_find_doc_in_wafts,depth=0,line=266,from=12645,to=12670
+              Mapule,kind:call,key:i_elvisto,depth=0,line=274,from=13113,to=13125
+              Mapule,kind:call,key:i_elvisto,depth=0,line=306,from=14865,to=14880
+              Mapule,kind:region,key:finders — pure tree-walk helpers,depth=0,line=310,from=14941,to=19155,end_line=405
+              Mapule,kind:call,key:Lies_walk_docs,depth=0,line=319,from=15462,to=15482
+              Mapule,kind:call,key:Lies_walk_docs,depth=0,line=335,from=16131,to=16151
+              Mapule,kind:call,key:Lies_walk_docs,depth=0,line=352,from=16871,to=16891
+              Mapule,kind:call,key:Lies_walk_docs,depth=0,line=369,from=17612,to=17632
+              Mapule,kind:call,key:Lies_what_has_points,depth=0,line=386,from=18380,to=18406
+              Mapule,kind:region,key:stepping — Waft-level cursor stepping (timemachine / acquire),depth=0,line=406,from=19156,to=23577,end_line=496
+              Mapule,kind:call,key:Lies_what_has_direct_points,depth=0,line=423,from=20142,to=20172
+              Mapule,kind:call,key:waft_key_of,depth=0,line=450,from=21497,to=21511
+              Mapule,kind:call,key:Lies_what_has_direct_points,depth=0,line=458,from=21869,to=21899
+              Mapule,kind:call,key:i_elvisto,depth=0,line=468,from=22260,to=22272
+              Mapule,kind:call,key:Lies_what_has_direct_points,depth=0,line=485,from=23125,to=23155
+              Mapule,kind:region,key:carry-over — +time Point seeding into new %Whats,depth=0,line=497,from=23578,to=26232,end_line=549
+              Mapule,kind:region,key:accept — What_Point acceptance round-trip,depth=0,line=550,from=26233,to=29446,end_line=614
+              Mapule,kind:call,key:Lies_waft_save,depth=0,line=599,from=28834,to=28851
         scheme:req
           lematch	{"ref":{"sc_has":"Object()"}}
             lematch	{"ref":{"sc_has":"Object()"}}
@@ -897,20 +783,30 @@ Snap:H
             cursor,what:Credence,doc:Credence/doc0,depth=0
           Interest:Trail,waft:Ghost/Net/Easy,lens:NaviCado,presence:active,state:locked,in_Doc:Ghost/N/Peeroleum.g	{"ref":{"src":"%What:the peer"}}
             cursor,what:Ghost/Net/Easy,doc:Ghost/Net/Easy/doc0,depth=0
-            MapReport,n_def=26,n_call=24,n_region=2,n_cf=36
-          Interest:GhostList,waft:GhostList,lens:DocGhostList,presence:active,state:pending
+            MapReport,n_def=32,n_call=39,n_region=2,n_cf=51
+          Interest:Trail,waft:Cluster,lens:NaviCado,presence:active,state:pending
+            cursor,what:Cluster,doc:Cluster/doc0,depth=0
+          Interest:GhostList,waft:GhostList,lens:DocGhostList,presence:active,state:locked
             cursor,doc:GhostList/doc0
           ActiveInterest,kind:Trail,waft:Ghost/Net/Easy
-          dock,active	{"loopy":0,"hid":1}
           Change
-            backend,dige:bbac4
-            storage,dige:bbac4
-            compile,dige:bbac4,secs=0.071,dim,pending
+            backend,dige:50037
+            storage,dige:50037
+            compile,dige:50037,secs=0.064,dim,pending
+          LE:Undertaking,reason:Undertaking
+            Seem:workon
+              Funkcion:trail,halflife_ms=60000
+          Interest:Ting,waft:Ting/2026-06-25/194932,lens:DocTing,presence:always,state:live
+            cursor,what:Ting/2026-06-25/194932,latest
+          Interest:Aside,waft:Aside/2026-06-25,lens:NaviCado,presence:active,state:pending,in_Doc:src/lib/O/LiesCurse.svelte	{"ref":{"src":"%What:1, FromWhat:Waft:Ghost/Net/Easy/What:the peer"}}
+            cursor,what:Aside/2026-06-25,doc:Aside/2026-06-25/doc0,depth=0
+            MapReport,n_def,n_call=33,n_region=8,n_cf=0
+          dock,active	{"loopy":0,"hid":1}
         req:workon,auto_push	{"ref":{"w":"%w:Lang, editor:1"}}
-          req:understanding,maz=3,permanent,sig:1:13:0:0,what:the peer,finished
+          req:understanding,maz=3,permanent,sig:3:13:0:0,what:the peer,finished
           req:ingredients,maz=2,permanent,sig:Ghost/N/Peeroleum.g,finished
-            req:furnishing,path:Ghost/N/Peeroleum.g,permanent,asked,finished
-          req:instrumentation,permanent,sig:Ghost/N/Peeroleum.g:bbac43f63bac57dc:1:29,have_Map,n_pmirrors=4,finished
+            req:furnishing,path:Ghost/N/Peeroleum.g,permanent,finished
+          req:instrumentation,permanent,sig:Ghost/N/Peeroleum.g:50037abbbf6b8f6b:3:50:12,have_Map,n_pmirrors=2,finished
         req:waft_roster,eternal,subscribed
         o_elvis:Lies_compile_settled
         o_elvis:dock_content
@@ -919,33 +815,44 @@ Snap:H
             Demonstrations:origin
               Demonstrations:origin,Doc:Ghost/N/Peeroleum.g
               Demonstrations:origin,Point,method:Peeroleum
-              Demonstrations:origin,Point,method:req_p2pman
-              Demonstrations:origin,Point,method:req_p2paddy
               Demonstrations:origin,Point,method:req_handshake
-            News:origin,goners=0,neus=5
+            News:origin,goners=0,neus=3
           Seem:working	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:the peer","topD":"%Demonstrations:working"}}
             Demonstrations:working
               Demonstrations:working,Doc:Ghost/N/Peeroleum.g
                 Understandable
               Demonstrations:working,Point,method:Peeroleum
                 Understandable
-              Demonstrations:working,Point,method:req_p2pman
-                Understandable
-              Demonstrations:working,Point,method:req_p2paddy
-                Understandable
               Demonstrations:working,Point,method:req_handshake
                 Understandable
               Understandable
-            News:working,goners=0,neus=5
+            News:working,goners=0,neus=3
           State
-          {"encode":1,"snap_origin":"Doc:Ghost/N/Peeroleum.g\nPoint,method:Peeroleum\nPoint,method:req_p2pman\nPoint,method:req_p2paddy\nPoint,method:req_handshake\n","snap_working":"Doc:Ghost/N/Peeroleum.g\nPoint,method:Peeroleum\nPoint,method:req_p2pman\nPoint,method:req_p2paddy\nPoint,method:req_handshake\n","dirty":"0"}
+          {"encode":1,"snap_origin":"Doc:Ghost/N/Peeroleum.g\nPoint,method:Peeroleum\nPoint,method:req_handshake\n","snap_working":"Doc:Ghost/N/Peeroleum.g\nPoint,method:Peeroleum\nPoint,method:req_handshake\n","dirty":"0"}
         received,doc_opened,doc:Ghost/N/Peeroleum.g
         received,editorBegins,doc:Ghost/N/Peeroleum.g
-        see:🟦 tiles 0 bookmarks
+        received,doc_opened,doc:Ghost/Story/Peregrination.g
+        received,editorBegins,doc:Ghost/Story/Peregrination.g
+        LE:Aside/2026-06-25	{"ref":{"target":"%What:1, FromWhat:Waft:Ghost/Net/Easy/What:the peer"}}
+          Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, FromWhat:Waft:Ghost/Net/Easy/What:the peer","topD":"%Demonstrations:origin"}}
+            Demonstrations:origin
+              Demonstrations:origin,Doc:src/lib/O/LiesCurse.svelte
+            News:origin,goners=0,neus
+          Seem:working	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, FromWhat:Waft:Ghost/Net/Easy/What:the peer","topD":"%Demonstrations:working"}}
+            Demonstrations:working
+              Demonstrations:working,Doc:src/lib/O/LiesCurse.svelte
+                Understandable
+              Understandable
+            News:working,goners=0,neus
+          State
+          {"encode":1,"snap_origin":"Doc:src/lib/O/LiesCurse.svelte\n","snap_working":"Doc:src/lib/O/LiesCurse.svelte\n","dirty":"0"}
+        received,doc_opened,doc:src/lib/O/LiesCurse.svelte
+        received,editorBegins,doc:src/lib/O/LiesCurse.svelte
+        received,editorBegins,doc:Ghost/N/Peeroleum.g
     A:Pantheate
-      self,round=4	{"mung":["age"]}
+      self,round=6	{"mung":["age"]}
       w:Pantheate
-        self,round=4	{"mung":["age"]}
+        self,round=6	{"mung":["age"]}
         o_elvis:Ghost_update_notify
     watched:ave
       examining	{"loopy":1,"hid":1}
@@ -953,8 +860,8 @@ Snap:H
     watched:UIs
       UI:Lies	{"ref":{"component":"Function()"}}
       UI:Langui	{"ref":{"component":"Function()"}}
-      UI:Pantheate-include,gen_path:p2p/pinned_staging/Peeroleum.go	{"ref":{"component":"Function()"}}
-      UI:Pantheate-include,gen_path:p2p/pinned_staging/Tribunal.go	{"ref":{"component":"Function()"}}
+      UI:Pantheate-include,gen_path:p2p/pinned_stable/Peeroleum.go	{"ref":{"component":"Function()"}}
+      UI:Pantheate-include,gen_path:p2p/pinned_stable/Tribunal.go	{"ref":{"component":"Function()"}}
     watched:actions
       action,role:debookmark,label:-marks	{"ref":{"fn":"Function()"}}
       action,role:enbookmark,label:+marks	{"ref":{"fn":"Function()"}}

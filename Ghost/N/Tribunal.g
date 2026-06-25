@@ -20,28 +20,30 @@
 //     connection-level errors (peer-unavailable, ICE failure, onclose) for free, but a
 //      channel that opens then goes silent on a NAT rebind acks nothing and fires no
 //       event. That silence is only catchable here.
-PeerJS(w):
+PeerJS(peering):
     const H = this
-    w i %transport,type:webrtc
+    let w = peering.c.up
+    peering i %transport,type:webrtc
     // < the live port is an object on .c (a transport seam): a black-hole send.
     let port = { type: 'webrtc', partner: null,
         send(frame) { /* oppressed: dropped, no delivery, no ack */ },
         recv(frame) { H.Peeroleum_deliver(w, frame) } }
-    w.o({ transport: 1, type: 'webrtc' })[0].c.port = port
+    peering.o({ transport: 1, type: 'webrtc' })[0].c.port = port
 
 // Socket — the WebSocket relay carrier. Under the mock its port rides the same in-
 //  process shared queue as the mock transport (the wrangler pairs the two sides), so
 //   the fallback delivers for real with no relay server. The real /relay endpoint on
 //    the dev server is heading 10.
-Socket(w):
+Socket(peering):
     const H = this
-    w i %transport,type:websocket
+    let w = peering.c.up
+    peering i %transport,type:websocket
     // < the live port is an object on .c (a transport seam): a working shared-queue
-    //    port, partner paired across the two sides by the wrangler (cf transport()).
+    //    port, partner paired across the two sides by the wrangler (cf the mock carrier).
     let port = { type: 'websocket', partner: null,
         send(frame) { H.post_do(async () => { await this.partner?.recv(frame) }) },
         recv(frame) { return H.Peeroleum_deliver(w, frame) } }
-    w.o({ transport: 1, type: 'websocket' })[0].c.port = port
+    peering.o({ transport: 1, type: 'websocket' })[0].c.port = port
 
 // Socket_real — the REAL websocket carrier (heading 10), for actual peers across two origins
 //  (editor↔runner). Unlike Socket (the in-process mock the deterministic Story test pairs), this
@@ -204,35 +206,35 @@ Tribunal_activate_websocket(w):
     at.sc.open = 1
     at.c.connection = ws.c.port       // < .c port handoff (transport seam)
 
-// Tribunal_hand_to_webrtc — repoint the single live %active_transport (the mock carrier
+// Tribunal_hand_to_webrtc — repoint the Peering's live %active_transport (the mock carrier
 //  from step 2) at the webrtc port, to start its trial. The active_transport slot is
-//   what Peeroleum_send reads, so handing it a new .c.connection is the whole of "switch
-//    carriers". Called per side by the wrangler at step 4.
-Tribunal_hand_to_webrtc(w):
-    let at = w.o({ active_transport: 1 })[0]
-    let webrtc = w.o({ transport: 1, type: 'webrtc' })[0]
+//   what Peeroleum_carrier reads, so handing it a new .c.connection is the whole of "switch
+//    carriers". Called per Peering by the wrangler at step 4.
+Tribunal_hand_to_webrtc(peering):
+    let at = peering.o({ active_transport: 1 })[0]
+    let webrtc = peering.o({ transport: 1, type: 'webrtc' })[0]
     if (!at || !webrtc) return
     at.sc.type = 'webrtc'
     at.c.connection = webrtc.c.port   // < .c port handoff (transport seam)
 
 // Tribunal_pair_websocket — pair the two sides' websocket ports so the relay delivers
-//  each side into the other (cf the mock-port pairing in Lake_sides_up). Objects-on-.c
-//   → raw JS. Called once by the wrangler with both sides' w.
-Tribunal_pair_websocket(wB, wN):
-    let bt = wB.o({ transport: 1, type: 'websocket' })[0]
-    let nt = wN.o({ transport: 1, type: 'websocket' })[0]
+//  each side into the other (cf the mock-port pairing in Lake_link). Objects-on-.c
+//   → raw JS. Called once by the wrangler with both sides' Peering.
+Tribunal_pair_websocket(pB, pN):
+    let bt = pB.o({ transport: 1, type: 'websocket' })[0]
+    let nt = pN.o({ transport: 1, type: 'websocket' })[0]
     if (!bt || !nt) return
     bt.c.port.partner = nt.c.port
     nt.c.port.partner = bt.c.port
 
 // Tribunal_fall_to_websocket — no-ack-then-give-up: stamp the webrtc carrier
 //  %faulty,reason:no-ack (left present and visible) and repoint %active_transport at the
-//   websocket relay port. Called per side by the wrangler at step 5 once the step-4
+//   websocket relay port. Called per Peering by the wrangler at step 5 once the step-4
 //    webrtc probe is seen un-acked.
-Tribunal_fall_to_websocket(w):
-    let at = w.o({ active_transport: 1 })[0]
-    let webrtc = w.o({ transport: 1, type: 'webrtc' })[0]
-    let ws = w.o({ transport: 1, type: 'websocket' })[0]
+Tribunal_fall_to_websocket(peering):
+    let at = peering.o({ active_transport: 1 })[0]
+    let webrtc = peering.o({ transport: 1, type: 'webrtc' })[0]
+    let ws = peering.o({ transport: 1, type: 'websocket' })[0]
     if (!at || !ws) return
     if (webrtc) { webrtc.sc.faulty = 1; webrtc.sc.reason = 'no-ack' }
     at.sc.type = 'websocket'
@@ -240,9 +242,9 @@ Tribunal_fall_to_websocket(w):
     at.c.connection = ws.c.port       // < .c port handoff (transport seam)
 
 // Tribunal_reputation_good — bless the active carrier's %transport with
-//  %reputation:good. Called per side by the wrangler at step 6 once the relay probe has
+//  %reputation:good. Called per Peering by the wrangler at step 6 once the relay probe has
 //   come back acked (proof the carrier actually carries, not just that we switched).
-Tribunal_reputation_good(w):
-    let at = w.o({ active_transport: 1 })[0]
-    let carrier = at && w.o({ transport: 1, type: at.sc.type })[0]
+Tribunal_reputation_good(peering):
+    let at = peering.o({ active_transport: 1 })[0]
+    let carrier = at && peering.o({ transport: 1, type: at.sc.type })[0]
     if (carrier && !carrier.oa({ reputation: 'good' })) carrier.i({ reputation: 'good' })

@@ -4,6 +4,9 @@ Waft:Credence
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:PereStaple
     Funkcion:Storying,of_Book:PereTyrant
+  What:Musu
+    Funkcion:StoryTimes
+    Funkcion:Storying,of_Book:MusuStaple
   What:Lake
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:LakeSurfer

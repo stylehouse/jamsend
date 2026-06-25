@@ -129,7 +129,7 @@ Three overlapping forward designs:
      regions carrying only the header-line span (needs region body extents).
 - **Waft\*\* styling** — cohere continuous runs of Whats + present the doc's
    real name nicely without lying (full path stays copyable). Spun out to
-    `Waft_styling_handover.md`.
+    `Waft_styling_todo.md`.
 - **`Wire_spec.md`** — generalizes Interest into one `%subscribe,target,on,wake`
    primitive spanning Atime (req/Stuffing/watched) and UItime (`$effect`).
     Staged 1–6; steps 1–3 are no-ops, step 4 ("one recursive boot wire", new
@@ -206,21 +206,20 @@ Fold work uncommitted (human commits on host). Open:
 - Layout knobs to tune by eye (stem position, cell widths, `FOLD_UP_UNDER`).
 
 ### Interest
-Graduated to prod (gate LakeSurprise); the real Lang↔Lies channel is live.
-Post-graduation work *was* mostly the **metromap vision** — animated SVG:
- Interestily → activeWhat (obscured network) → Points, with folded-away
-  "elsewheres"; the surprise_read popover was the first proof. **Priority call
-   made 2026-06-19: metromap pushed much later** (still the destination, not the
-    next move); when revisited, evaluate **Svelvet** (github.com/open-source-labs/
-     Svelvet) as the node/edge substrate. The **Lens "generalissimo" is low
-      motivation** — a UI-nester whose need isn't proven; parked until a concrete
-       consumer pulls for it.
-Smaller threads still live: the runner status panel (the unclickable
- minimap-over-hoverer `.lte-health` in Langui) is moving **out of Lang into Lies**
-  (Liesui, bottom-right absolute, with a Vexpandy) — the more natural home; self-
-   arming havoc limbs parked on a known race (fix = host in the Funkcion pump so it
-    runs after the dock reads); PeelInput × dismissal CRUD merge dangles; escalate
-     target lands on the whole Lang/Lies House, not the Liesui sub-element.
+Graduated to prod (gate LakeSurprise); the real Lang↔Lies channel is live.  The detailed status —
+ implemented log, the surprise_read popover, the inspector, the Aside kind, gotchas, FUTURE, TODO —
+  lives in its own doc; this is just the cross-subsystem pointer.
+- **Canonical doc: `Interest.md`.**
+- **Metromap** — pushed much later (2026-06-19 priority call); full description, the Svelvet eval, and
+   its **cursoring gate** (good multi-view code cursoring first) now live in `Interest.md` FUTURE.
+- **The Lens as a posable UI-container** (the old "generalissimo") — the torus/Decor vision is in
+   `Lens_posable_TODO.md`; the Interest-strip-menu facet (per-kind menus, chip→PeelInput) stays in
+    `Interest.md` FUTURE.  The Brink shipped (Runner/Relay/Upkeep faces, sticky + 4-corner perch —
+     `Lens_handover.md`), so the container now has a pulling consumer (no longer purely speculative).
+- **Runner status panel out of Lang into Lies — DONE.** The old `.lte-health` minimap-hoverer is now
+   the Brink in Liesui (Vexpandy + a side-button to perch left/right); see the Lens docs.
+- Escalate-target tightening (DONE) and the self-arming havoc-limb race (parked on the Funkcion-pump
+   fix) are tracked in `Interest.md` TODO.
 
 ### reactivity
 One low-priority unknown (`reactivity_docs.md`):

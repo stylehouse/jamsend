@@ -218,6 +218,9 @@ The beyond-reasonable picture — held in view, not scheduled.
      stay faintly readable behind the words**. Dismissal lives in `PeelInput`, no `×`. It extends the
       InterestStrip switcher from a button strip toward a spatial channel map. When revisited, evaluate
        **Svelvet** (github.com/open-source-labs/Svelvet) as the node/edge substrate before hand-rolling the SVG.
+        **Gated behind really good cursoring** — first the ability to compose *a bunch of views* of a body
+         of code (less noise, more pictures) for a later exploration/exposition; the metromap is that
+          view-making capability turned on Interest/Point itself, so it waits on the cursoring landing.
 - **The lens "generalissimo" — UI-pluggability.** Host the *meaning* of an Interest (at Lang or wherever),
    used only if something wants it, driven by `sc.lens`; Lies grows full UIs that strip back to the
     "unillusioned Waft", and via an Interest a thing offers a *tiny* UI. Generalize the lens into a placement
