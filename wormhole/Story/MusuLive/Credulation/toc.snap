@@ -1,17 +1,25 @@
 Credulation,of_Book:MusuLive
-  run=0,at=1782393394.876,ok,ok_pct,mode:new
-    uses:Ghost_N_Peeroleum,dige:490c302cad15ad34
+  run=0,at=1782450808.255,ok=0,ok_pct=0.8,mode:check
+    uses:Ghost_N_Peeroleum,dige:2ccbc1626d347189
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:375733b4018a8e9a
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
-    uses:Ghost_Story_Peregrination,dige:54ab07183fdb07c3
+    uses:Ghost_Story_Peregrination,dige:7711424db53b25db
     uses:Ghost_M_Radiola,dige:1ddd51d246dc635d
-    uses:Ghost_Story_Musuation,dige:ad788b2d853cf3d7
-  run,at=1782393404.453,ok,ok_pct,mode:check
-    uses:Ghost_N_Peeroleum,dige:490c302cad15ad34
+    uses:Ghost_Story_Musuation,dige:8d2005bc52a336da
+  run,at=1782450827.625,ok=0,ok_pct=0,mode:check
+    uses:Ghost_N_Peeroleum,dige:2ccbc1626d347189
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:375733b4018a8e9a
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
-    uses:Ghost_Story_Peregrination,dige:54ab07183fdb07c3
+    uses:Ghost_Story_Peregrination,dige:7711424db53b25db
     uses:Ghost_M_Radiola,dige:1ddd51d246dc635d
-    uses:Ghost_Story_Musuation,dige:ad788b2d853cf3d7
+    uses:Ghost_Story_Musuation,dige:8d2005bc52a336da
+  run=2,at=1782450862.734,ok=0,ok_pct=0.8,mode:check
+    uses:Ghost_N_Peeroleum,dige:2ccbc1626d347189
+    uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
+    uses:Ghost_N_Tribunal,dige:375733b4018a8e9a
+    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
+    uses:Ghost_Story_Peregrination,dige:7711424db53b25db
+    uses:Ghost_M_Radiola,dige:1ddd51d246dc635d
+    uses:Ghost_Story_Musuation,dige:8d2005bc52a336da

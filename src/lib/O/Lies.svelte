@@ -136,6 +136,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     import { _C, TheC }     from "$lib/data/Stuff.svelte"
     import type { House }   from "$lib/O/Housing.svelte"
     import { throttle, dig } from "$lib/Y.svelte"
+    import { boot_param }   from "$lib/boot"
     import { onMount }      from "svelte"
     import Liesui           from "$lib/O/Liesui.svelte"
     import LiesCurse        from "$lib/O/LiesCurse.svelte"
@@ -163,6 +164,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const snap_path = H.Lies_waft_snap_path(path)
         const good = await H.LiesStore_good(w, 'text/Waft', snap_path)
         if (!good.sc.waft_path) good.sc.waft_path = path   // logical path annotation
+        if (H.Lies_role(w) === 'editor' && path !== 'Keep') H.Lies_keep_note(w, path)   // accumulate every Waft we find
         this.i_elvisto(w, 'think')
     },
 
@@ -202,6 +204,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         //  %active stays sticky and drags focus back to it every trickle.
         for (const other of w.o({ Waft: 1 }) as TheC[]) delete other.sc.active
         waft.sc.active = 1
+        if (H.Lies_role(w) === 'editor') H.Lies_keep_mark_focus(w, path)   // Keep records focus → accessed_at + own %Cursor (auto-resume-last)
         w.bump_version()
         await H.Lies_desire_land_cursor(w, waft, path)
     },
@@ -947,6 +950,117 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         return wafts.find(wf => wf.sc.active)
             ?? (cur_waft ? wafts.find(wf => wf.sc.Waft === cur_waft) : undefined)
             ?? wafts[0]
+    },
+
+    // ── The Keep — Waft:Keep, the workspace that remembers ──────────────────────
+    //
+    //   A first-class particle (spec/Cluster_design.md): the ledger of every Waft we
+    //   find.  Each gets a /%WaftTimes,of_Waft:<path> bearing discovered_at (set once) +
+    //   accessed_at (bumped on focus); under it a /%Cursor history (the last several
+    //   positions, for resuming the cursor INSIDE the Waft).  The Keep ALSO keeps its OWN
+    //   /%Cursor history — the last Wafts focused — so boot can auto-resume the last one
+    //   when no ?W= is given.  Marked %boring: backstage, so it is never a switcher nib
+    //   (the interest_roster skip) nor a focus candidate (Lies_focus_waft's filter).
+    //   Persistence: the Keep SNAPS to its own home (a real Waft — reuses Lies_open_Waft /
+    //    Persist / Lies_waft_save like every overlay).  So it loads ASYNC, and the ONLY
+    //     creator is Persist — Lies_keep is a read-only getter (never oai), the accumulators
+    //      no-op until it has materialised, and Lies_keep_boot stages the reopen.  (The Idento
+    //       keeps riding stashed for crypto; attention snaps, a clean split.)
+
+    //   Lies_keep — the Waft:Keep particle if it exists yet (read-only — Persist creates it).
+    Lies_keep(w: TheC): TheC | undefined {
+        const keep = w.o({ Waft: 'Keep' })[0] as TheC | undefined
+        if (keep) keep.sc.boring ??= 1   // backstage: stamp on first sight (no nib, no focus)
+        return keep
+    },
+
+    //   Lies_keep_note — accumulate a Waft into the ledger: discovered_at once, accessed_at
+    //    now.  No-op until the Keep has loaded (early boot opens catch up on next focus).
+    Lies_keep_note(w: TheC, path: string): TheC | undefined {
+        const keep = (this as House).Lies_keep(w)
+        if (!keep) return undefined
+        const wt  = keep.oai({ WaftTimes: 1, of_Waft: path })
+        const now = Date.now()
+        wt.sc.discovered_at ??= now
+        wt.sc.accessed_at    = now
+        return wt
+    },
+
+    //   Lies_keep_mark_focus — record a focus: bump the Waft's accessed_at AND push the
+    //    Keep's OWN %Cursor (which Waft) so auto-resume-last knows where to return.
+    Lies_keep_mark_focus(w: TheC, path: string): void {
+        const H    = this as House
+        const keep = H.Lies_keep(w)
+        if (!keep) return
+        H.Lies_keep_note(w, path)
+        H.Lies_keep_push_cursor(keep, 'waft', path)
+    },
+
+    //   Lies_keep_push_cursor — append a %Cursor on a host (the Keep, or a WaftTimes),
+    //    newest last, capped to the last 10.  Coalesces a repeat of the current spot so an
+    //     idle re-focus does not bloat the history.
+    Lies_keep_push_cursor(host: TheC, key: string, val: string): void {
+        const now  = Date.now()
+        const curs = host.o({ Cursor: 1 }) as TheC[]
+        const last = curs[curs.length - 1]
+        if (last && last.sc[key] === val) { last.sc.at = now; return }
+        const c = host.i({ Cursor: 1 }); c.sc[key] = val; c.sc.at = now
+        const all = host.o({ Cursor: 1 }) as TheC[]
+        for (let i = 0; i < all.length - 10; i++) host.drop(all[i])
+        host.bump_version()
+    },
+
+    //   Lies_keep_resume_waft — the Waft to focus when no ?W= is given: the Keep's latest
+    //    own %Cursor (the last thing focused).  undefined on a fresh Keep.
+    Lies_keep_resume_waft(w: TheC): string | undefined {
+        const keep = w.o({ Waft: 'Keep' })[0] as TheC | undefined
+        const curs = (keep?.o({ Cursor: 1 }) as TheC[] | undefined) ?? []
+        return curs[curs.length - 1]?.sc.waft as string | undefined
+    },
+
+    //   Lies_keep_reopen — reopen every Waft in the ledger (idempotent via Lies_open_Waft's
+    //    Good dedup).  Seeds the first overlays on a fresh Keep so a brand-new editor still
+    //     co-loads Easy + Music/Ality.
+    Lies_keep_reopen(w: TheC): void {
+        const H    = this as House
+        const keep = H.Lies_keep(w)
+        if (!keep) return
+        let times  = keep.o({ WaftTimes: 1 }) as TheC[]
+        if (!times.length) {
+            for (const path of ['Ghost/Net/Easy', 'Ghost/Music/Ality']) H.Lies_keep_note(w, path)
+            times = keep.o({ WaftTimes: 1 }) as TheC[]
+        }
+        for (const wt of times)
+            H.i_elvisto('Lies/Lies', 'Lies_open_Waft', { path: wt.sc.of_Waft as string })
+    },
+
+    //   Lies_keep_boot — the editor boot driver (heartbeat, staged & gated by w.c flags):
+    //    (1) open Waft:Keep once so Persist loads it from its snap home (or creates it fresh);
+    //     (2) once it materialises, stamp it backstage + reopen its ledger (seeds if fresh);
+    //      (3) when no ?W= was given, once the remembered last Waft is open, foreground it so
+    //       the focus auto-resumes there.  (?W=, when present, already wins — Editron opens it
+    //        first.)  Each step fires at most once; step 3 retries until its Waft reopens.
+    Lies_keep_boot(w: TheC): void {
+        const H = this as House
+        if (H.Lies_role(w) !== 'editor') return
+        if (!w.c.keep_opened) {
+            w.c.keep_opened = 1
+            H.i_elvisto('Lies/Lies', 'Lies_open_Waft', { path: 'Keep' })   // Persist loads/creates it
+        }
+        if (!w.c.keep_booted) {
+            const keep = w.o({ Waft: 'Keep' })[0] as TheC | undefined
+            if (!keep) return                                              // wait for Persist
+            w.c.keep_booted = 1
+            keep.sc.boring ??= 1
+            H.Lies_keep_reopen(w)
+        }
+        if (!w.c.keep_resumed && !boot_param('W')) {
+            const resume = H.Lies_keep_resume_waft(w)
+            if (!resume) { w.c.keep_resumed = 1; return }                  // nothing remembered — keep Editron's default
+            if (!(w.o({ Waft: resume })[0])) return                       // the remembered Waft is still reopening — wait
+            w.c.keep_resumed = 1
+            H.i_elvisto('Lies/Lies', 'Lies_foreground_waft', { path: resume })   // canonical foreground = focus + land
+        }
     },
 
     // ── req_timemachine ────────────────────────────────────────────────────

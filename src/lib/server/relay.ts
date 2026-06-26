@@ -83,6 +83,14 @@ export function attachRelay(
 	let role: Role | null = null
 	let peerLink: WebSocket | null = null // the single relay↔relay socket (either end)
 	let selfHost = '' // our own host:port, learned from the first upgrade's Host header
+	// r2r bridge auto-reconnect (runner end only).  A dropped/half-open bridge USED to wait for a
+	//  browser (re)connect to re-dial — so an editor/staging restart with the runner's tabs left open
+	//   stranded the bridge until a manual restart (you bouncing staging WAS the missing trigger). This
+	//    is the server twin of Socket_real's onclose loop: schedule a backoff re-dial whenever the
+	//     bridge goes down, until it is OPEN again — no browser reload, no manual restart needed.
+	let closed = false // handle.close() called — stop re-dialing
+	let redialTimer: ReturnType<typeof setTimeout> | null = null
+	let redialTries = 0
 
 	// The relay runs in the node dev server: its console.log lands in the terminal, drowned
 	//  among svelte-check warnings. relayLog ALSO pushes the line down every local browser
@@ -171,9 +179,11 @@ export function attachRelay(
 			const msg = `editor relay ${editorRelayUrl} not connectable after 5s (readyState=${link.readyState}${lastError ? ', ' + lastError : ''})`
 			relayLog(`✗ ${msg}`)
 			broadcastControl({ control: 'peer-relay', up: false, error: lastError || 'timeout', detail: msg, target: editorRelayUrl })
+			scheduleRedial('not connectable after 5s') // a connect that never opens (black-hole) also retries
 		}, 5000)
 		link.on('open', () => {
 			clearTimeout(watchdog)
+			redialTries = 0                                            // a clean open resets the backoff for the NEXT outage
 			;(link as any).isAlive = true                              // keepalive: the heartbeat round pings this outbound bridge too
 			try { (link as any)._socket?.setNoDelay(true) } catch {}   // Nagle off on the r2r bridge too
 			relayLog(`✓ peer relay LINKED (outbound r2r) → ${editorRelayUrl}`)
@@ -186,13 +196,32 @@ export function attachRelay(
 			if (peerLink === link) peerLink = null
 			relayLog(`✗ peer relay CLOSED code=${code} → ${editorRelayUrl}`)
 			broadcastControl({ control: 'peer-relay', up: false, error: `close:${code}`, target: editorRelayUrl })
+			scheduleRedial(`bridge closed code=${code}`) // staging restart / network drop → heal on our own
 		})
 		link.on('error', (err: any) => {
 			lastError = (err && (err.code || err.message)) || 'error'
 			if (peerLink === link) peerLink = null
 			relayLog(`✗ peer relay ERROR ${lastError} → ${editorRelayUrl}`)
 			broadcastControl({ control: 'peer-relay', up: false, error: lastError, target: editorRelayUrl })
+			scheduleRedial(`bridge error ${lastError}`) // editor not up yet → keep retrying with backoff
 		})
+	}
+
+	// Schedule a backoff re-dial of the r2r bridge (RUNNER end only — the editor end is passive and
+	//  cannot dial).  One timer at a time; a no-op once the bridge is OPEN again or the relay is
+	//   closed.  Backoff 0.5s→1→2…capped 15s + jitter, mirroring Socket_real, so a relay/staging
+	//    restart that drops every bridge at once doesn't thunder back in lockstep.  redialTries resets
+	//     on a clean open.  This is what removes the "manual restart staging to recover" step.
+	function scheduleRedial(why: string) {
+		if (closed || role !== 'runner') return // editor end never dials
+		if (peerLink && peerLink.readyState === WebSocket.OPEN) return // already healthy
+		if (redialTimer) return // one pending re-dial is enough
+		const delay = Math.min(15000, 500 * Math.pow(2, redialTries++)) + Math.floor(Math.random() * 300)
+		relayLog(`r2r re-dial in ${delay}ms (attempt ${redialTries}) — ${why}`)
+		redialTimer = setTimeout(() => {
+			redialTimer = null
+			if (!closed) dialEditor()
+		}, delay)
 	}
 
 	// A frame from a BROWSER socket: deliver local, else forward ONCE to the peer relay. payload
@@ -243,6 +272,16 @@ export function attachRelay(
 			if (cli && cli.readyState === WebSocket.OPEN) { cli.send(JSON.stringify(msg)); relayLog(`→ cli ghost_compile_ack ${msg.phase ?? '?'} corr=${msg.corr}`) }
 			else relayLog(`ghost_compile_ack ${msg.phase ?? '?'} corr=${msg.corr} — no asking socket (gone)`)
 			if (msg.phase === 'done' || msg.phase === 'error') ackBack.delete(String(msg.corr))
+			return
+		}
+		// runner_ack (runner → CLI): the single reply to a runner_ask, a raw control frame the runner
+		//  sends down its own socket (mirrors ghost_compile_ack).  Route it back to the asking CLI by
+		//   corr; one reply per ask, so the corr mapping is spent on receipt.
+		if (msg.control === 'runner_ack' && msg.corr) {
+			const cli = ackBack.get(String(msg.corr))
+			if (cli && cli.readyState === WebSocket.OPEN) { cli.send(JSON.stringify(msg)); relayLog(`→ cli runner_ack ${msg.op ?? '?'} corr=${msg.corr}`) }
+			else relayLog(`runner_ack ${msg.op ?? '?'} corr=${msg.corr} — no asking socket (gone)`)
+			ackBack.delete(String(msg.corr))
 			return
 		}
 	}
@@ -345,18 +384,20 @@ export function attachRelay(
 				handleControl(ws, msg)
 				return
 			}
-			// Remember the asking socket by corr so the editor's ghost_compile_ack (a control frame,
-			//  handled below) can be routed back to this addr-less CLI.
-			const gcCorr = msg?.header?.type === 'ghost_compile' && (msg.corr ?? msg.header?.corr)
-			if (gcCorr) ackBack.set(String(gcCorr), ws)
+			// Remember the asking socket by corr so a browser's control-frame reply (a …_ack, handled
+			//  below) can be routed back to this addr-less CLI.  ghost_compile (→ editor) and runner_ask
+			//   (→ runner) are the two addr-less-CLI request frames; both reply by corr, not by addr.
+			const askType = msg?.header?.type
+			const askCorr = (askType === 'ghost_compile' || askType === 'runner_ask') && (msg.corr ?? msg.header?.corr)
+			if (askCorr) ackBack.set(String(askCorr), ws)
 			const outcome = routeFromBrowser(text)
-			// #1 — undeliverable: a ghost_compile that reached no editor (no local socket, no bridge)
-			//  is dropped, and the asking CLI must HEAR that rather than wait its full 12s timeout
-			//   blind.  Reply on its own socket (it's right here — no routing), with corr+path so it
-			//    matches the ticket; the corr mapping is spent, so drop it.
-			if (gcCorr && outcome === 'dropped') {
-				try { ws.send(JSON.stringify({ control: 'undeliverable', to: msg.header?.to ?? 'editor', path: msg.dock?.path, corr: String(gcCorr) })) } catch {}
-				ackBack.delete(String(gcCorr))
+			// #1 — undeliverable: a request that reached no browser (no local socket, no bridge) is
+			//  dropped, and the asking CLI must HEAR that rather than wait its full timeout blind.
+			//   Reply on its own socket (it's right here — no routing), with corr (+path for a compile)
+			//    so it matches the ticket; the corr mapping is spent, so drop it.
+			if (askCorr && outcome === 'dropped') {
+				try { ws.send(JSON.stringify({ control: 'undeliverable', to: msg.header?.to ?? '?', path: msg.dock?.path, corr: String(askCorr) })) } catch {}
+				ackBack.delete(String(askCorr))
 			}
 		})
 		// Log the disconnect — it was silent before (only the bind logged), so a half-open drop +
@@ -398,6 +439,7 @@ export function attachRelay(
 				relayLog(`✂ half-open r2r bridge terminated (missed pong) — will re-dial`)
 				try { link.terminate() } catch {}
 				if (peerLink === link) peerLink = null
+				scheduleRedial('half-open bridge (missed pong)') // the zombie case: now actually re-dials
 			} else {
 				;(link as any).isAlive = false
 				try { link.ping() } catch {}
@@ -436,6 +478,8 @@ export function attachRelay(
 			return !!peerLink && peerLink.readyState === WebSocket.OPEN
 		},
 		close() {
+			closed = true
+			if (redialTimer) { clearTimeout(redialTimer); redialTimer = null }
 			httpServer.off('upgrade', onUpgrade)
 			clearInterval(heartbeat)
 			peerLink?.close()

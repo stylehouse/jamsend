@@ -20,6 +20,14 @@ function check(name: string, ok: boolean) {
 function listen(server: Server): Promise<number> {
 	return new Promise((res) => server.listen(0, '127.0.0.1', () => res((server.address() as any).port)))
 }
+// Re-listen on a SPECIFIC port — for the reconnect test, where the editor/staging relay restarts
+//  on the same port the runner's hardcoded editorRelayUrl points at (SO_REUSEADDR is Node default).
+function listenOn(server: Server, port: number): Promise<void> {
+	return new Promise((res, rej) => {
+		server.once('error', rej)
+		server.listen(port, '127.0.0.1', () => res())
+	})
+}
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
 async function until(pred: () => boolean, ms = 2000): Promise<boolean> {
 	const t0 = Date.now()
@@ -130,10 +138,41 @@ async function main() {
 	check('no loopback to sender ALICE', !alice.got.some((m) => m.header?.from === 'ALICE'))
 	check('no loopback to sender BOB', !bob.got.some((m) => m.header?.from === 'BOB'))
 
+	// ── r2r AUTO-RECONNECT — the editor/staging end restarts while the runner's browser (BOB) stays
+	//  connected.  The runner must re-dial the bridge ON ITS OWN (no browser reload, no manual restart)
+	//   and cross-routing must resume.  This is the staging-restart bug: before the auto-redial loop,
+	//    the dropped bridge stayed down until something re-triggered dialEditor.
+	log('\n— r2r reconnect: simulating editor/staging restart (BOB stays put) —')
 	editor.close()
+	editorSrv.close()
+	const wentDown = await until(() => !runner.peerReady, 3000)
+	check('bridge drops when editor/staging restarts', wentDown)
+
+	// Bring the editor relay back up on the SAME port (staging is back); its hardcoded url is unchanged.
+	const editorSrv2 = createServer()
+	await listenOn(editorSrv2, editorPort)
+	const editor2: RelayHandle = attachRelay(editorSrv2)
+	// A reloaded editor tab re-binds ALICE on the fresh server (the old alice socket died with editorSrv).
+	const alice3 = browser(editorPort, 'ALICE')
+	await alice3.open
+	alice3.send({ control: 'become', role: 'editor' })
+
+	// The RUNNER must re-dial the bridge autonomously — BOB never reloaded, no new runner `become`.
+	const reBridged = await until(() => runner.peerReady && editor2.peerReady, 20000)
+	check('runner auto-re-dials the r2r bridge (no browser reload, no manual restart)', reBridged)
+
+	// And cross-relay routing resumes both directions after the heal.
+	bob.frame('ALICE', 'run_result', 7)
+	const backAgain = await until(() => alice3.got.some((m) => m.header?.to === 'ALICE' && m.header?.from === 'BOB'), 3000)
+	check('cross-relay deliver resumes after reconnect (BOB→ALICE)', backAgain)
+	alice3.frame('BOB', 'dock_push', 8)
+	const fwdAgain = await until(() => bob.got.some((m) => m.header?.to === 'BOB' && m.header?.from === 'ALICE' && m.header?.seq === 8), 3000)
+	check('cross-relay deliver resumes after reconnect (ALICE→BOB)', fwdAgain)
+
+	editor2.close()
 	runner.close()
 	await wait(50)
-	editorSrv.close()
+	editorSrv2.close()
 	runnerSrv.close()
 
 	log(failures ? `\nFAIL — ${failures} check(s) failed` : '\nPASS — relay routes')

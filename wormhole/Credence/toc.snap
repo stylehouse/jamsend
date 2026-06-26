@@ -31,3 +31,7 @@ Waft:Credence
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:StuffFlipping
     Funkcion:Storying,of_Book:StuffResolving
+  What:Toy
+    Funkcion:StoryTimes
+    Funkcion:Storying,of_Book:Diffmatication
+    Funkcion:Storying,of_Book:AwFloat

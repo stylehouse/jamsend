@@ -86,10 +86,9 @@ This same `Lies_open_Waft(path)` is the **general open-or-create primitive** —
      loaded, so the `Lies.svelte:832` acquire focuses it by default. (You can point the browser at
       `?W=Ghost/Music/Ality` to boot on a different one.) **This single-open is what the Keep
        generalises:** it opens a *remembered set* (loop `Lies_open_Waft`), and `?W=` degrades from
-        "the one Waft" to merely "which one is **focused** at boot."
-        **(Stop-gap landed —** `Editron.svelte:66-73` now opens a `boot_set = [EDITOR_WAFT,
-         'Ghost/Music/Ality']`: both co-load, `EDITOR_WAFT`/`?W=` stays the focus, the `Set` dedups.
-          The Keep will own this list once Phase 1 lands; until then it lives in the Book.)
+        "the one Waft" to merely "which one is **focused** at boot." (A Book-level `boot_set` stop-gap
+         that co-loaded `Ghost/Music/Ality` was tried and **yanked** — the owner wants the Keep, not
+          the Book, to own the set.)
 
 **Two birth mechanisms — and which one the Keep takes.** Credence (a durable board) is born the
  clean way: a Prep opens it, Persist loads it, it has a disk home, it snaps. `Waft:Cluster,Aim` is
@@ -129,6 +128,19 @@ This same `Lies_open_Waft(path)` is the **general open-or-create primitive** —
    the Doc (`Lang_set_interest`; [[multidocwhat-chosen-doc]]). **The new part is surviving reload.**
 - **+ CodeMirror scroll resume.** Capture viewport / `scrollTop` against the Interest; restore on
    re-foreground / reload. The dock hung off the cursor resumes where you left it.
+- **The Keep drives `?W=` — two resumability channels, don't conflate them.** Today `?W=` is
+   *read-only at boot* (`boot.ts:13`, `boot_param('W')`); the app never writes the URL. The Keep can
+    **drive it** — `history.replaceState` the `W` param on each focus switch (the same moment it
+     claims `.sc.active` / foregrounds), leaving `?E=`/`?B=` intact. Then:
+     - **`?W=` (URL)** = a thin, **shareable / bookmarkable** pointer to the **focus** (one Waft) —
+        send someone `?W=Ghost/Music/Ality` and they boot focused there.
+     - **`House.stashed`** = the **rich resumable state** — the open *set* + per-Waft `minimised` /
+        `LastCursored` / scroll. *"Resumes stuff"* lives here; the URL is just the address.
+     - **Boot precedence:** an explicit `?W=` wins the focus seed (deep-link / share); else
+        restore last-focus from `stashed`; the **set** always comes from `stashed` (the URL can't
+         carry it).
+     - *(Fork — see Open questions: `replaceState` = honest URL, no history (default) vs `pushState`
+        = browser Back walks your Waft history ("navigate"), but Back can exit the overlay.)*
 
 ## 3. A Lens is a hole, not a property — a wrangler fills it with a face
 
@@ -202,11 +214,12 @@ So the kind set collapses **5 → 4**: `Trail · Ting · GhostList · Aside` (**
 ## 4. Phases (revised)
 
 0. *(dropped — no `dontSnap` split; persist via stashed/autosave.)*
-1. **Keep knows the durable set.** Register every non-ephemera Waft into the Keep on load/create;
-    **seed the `Ghost/*` overlays once** by scanning `wormhole/Ghost/*` so they're reachable without
-     typing a path. The first concrete seeds (both snaps exist): `Ghost/Net/Easy` (the `?W=` default,
-      Peeroleum docks) and `Ghost/Music/Ality` (the Music cluster overlay — [[music-cluster-kickoff]]).
-       `?W=` then just marks which of the set is **focused** at boot.
+1. **Keep knows the durable set.** *(MODEL landed as the `Waft:Keep` PARTICLE — `Lies_keep*` in
+    `Lies.svelte`; see the Handover "Code this session". Boot driver + persistence still owed.)*
+     Accumulate every Waft found into the ledger (`Lies_keep_note` on open/foreground); `Waft:Keep`
+      seeds `{Ghost/Net/Easy, Ghost/Music/Ality}` on a fresh ledger. `?W=` then just marks which is
+       **focused** at boot — and **when `?W=` is absent, the Keep's own latest `%Cursor` auto-resumes
+        the last Waft** (`Lies_keep_resume_waft`).
 2. **Minimised + reopen-all on boot.** Persist `minimised` per Waft; boot **reopens the whole set**
     (all `Ghost/*`) instead of focus-one (`Lies.svelte` ~832). Two pieces: **(1)** write the
      open/closed set on open/close/active-change; **(2)** on boot, fire **`Lies_open_Waft(path)` per
@@ -318,6 +331,11 @@ The owner's ladder for *Claude driving the gate itself* — recorded here becaus
     reframe's *"UI:Waft"* is loose — there is no literal `UI:Waft` particle; pick the concrete
      channel. (`stashed` is the front-runner — it already carries the Idento, so the Keep+Cluster
       persistence symmetry of §5 is free.)
+- **URL `?W=` — `replaceState` or `pushState`?** The Keep mirrors the focus into the URL on switch
+   (§2). `replaceState` keeps the URL honest with **no** history entries (resumable + shareable — the
+    safe default); `pushState` makes the browser **Back button walk your Waft-focus history**
+     (genuinely "navigate"), but Back can eventually exit the overlay. Default `replaceState`; offer
+      `pushState` only if Waft-history navigation is wanted.
 - **Name for `%Aim`** (Cluster's *outward* half — your peers + carrier + their liveness + where to
    aim, growing to **re-dial / Tribunal fallback**). It's not pathfinding, it's
     awareness-plus-targeting that will start to *steer*. **"Navigator" proposed** (fits the steering
@@ -353,33 +371,56 @@ The owner's ladder for *Claude driving the gate itself* — recorded here becaus
     Crypto is Cluster's; the Keep only *surfaces/borrows* it.
 - **A `%Lens` is a HOLE; a `face` (`comp_<LensKind>`) fills it.** Durability lives in the Funkcion
    that projects the face, **never in the Lens**. `Interest.sc.face` is **dropped** (§3, §3b).
-- **Persist via `House.stashed`, not the snap.** `dontSnap` stays on `Waft:Cluster,Aim`. The Idento
-   already rides `stashed` — the keystone; the Keep's layout / `LastCursored` shares that home (§5).
-- **Boot now opens a SET, not one Waft** — `Editron.svelte:66-73` stop-gap: `boot_set =
-   [EDITOR_WAFT, 'Ghost/Music/Ality']`, `EDITOR_WAFT`/`?W=` first (stays focus), `Set`-deduped. So
-    Easy + Music/Ality co-load today. **The Keep will own this list** (Phase 1); until then it's
-     hardcoded in the Book. `?W=` is already just the focus.
-- **`Cluster_design.md` keeps its filename** even though the doc is now titled "The Keep" — it's
-   referenced from live code (`Editron.svelte:69`) and the GhostList snap; renaming = a snap
-    re-record, not worth it.
-- **Code touched this session:** the `Editron` `boot_set` stop-gap (above). Otherwise spec-only. The
-   prior session's **4-edit Interest-switch fix is still uncommitted + browser-unverified**
-    ([[interest-switch-active-fix]]).
+- **Persistence channel is now an OPEN fork** (an earlier pass wrote "stashed, not snap" — but
+   `Waft:Keep` being a real particle reopens it; see Next move §1). Either way `dontSnap` stays on
+    `Waft:Cluster,Aim`, and the cluster Idento keeps riding `stashed` (the crypto keystone, §5).
+- **`Waft:Keep` is a first-class PARTICLE, not a flat list.** (A `stashed.Keep.wafts` string-array
+   was the first try — **scrapped per owner**: *"Waft:Keep is an entire thing unto itself."*) It is a
+    **ledger**: one `/%WaftTimes,of_Waft:<path>,discovered_at,accessed_at` per Waft ever found, each
+     with a `/%Cursor` history (last several positions — resume the cursor *inside* the Waft). The
+      Keep **also keeps its OWN `/%Cursor`** history (the last Wafts focused) → boot **auto-resumes the
+       last one when `?W=` is absent**. Marked `%boring` → never a switcher nib (`interest_roster`
+        skip) nor a focus candidate (`Lies_focus_waft`).
+- **`Cluster_design.md` keeps its filename** even though the doc is titled "The Keep" — still
+   referenced from the GhostList snap (`Doc:…/Cluster_design.md`); renaming = a snap re-record, not
+    worth it.
+- **PERSISTENCE DECIDED (owner): the Keep SNAPS to its own home** — a real Waft, reusing
+   `Lies_open_Waft`/Persist/`Lies_waft_save` like every overlay (`wormhole/…/Keep/toc.snap`). `%boring`
+    does double duty: out of the editor's aggregate snap (`Lies.svelte:728` carries it to the Good) +
+     out of nibs/focus, **while still saving to its own home** (`Lies_waft_save` only skips
+      `takes|tentative`, not `boring`). The Idento keeps riding `stashed` (crypto) — attention snaps,
+       crypto stashed: a clean split.
+- **Code this session (MODEL + BOOT DRIVER — LANDED, type-clean, `:9091`-unverified, uncommitted).**
+   All in `Lies.svelte` unless noted:
+   - **Model:** `Lies_keep(w)` read-only getter (Persist is the sole creator — no lazy race);
+      `Lies_keep_note(w,path)` accumulates a `WaftTimes` (discovered_at once / accessed_at now, no-op
+       till the Keep loads); `Lies_keep_mark_focus`; `Lies_keep_push_cursor(host,key,val)` (capped
+        last-10, coalescing); `Lies_keep_resume_waft(w)`; `Lies_keep_reopen(w)` (seeds `{Easy,
+         Music/Ality}` on a fresh Keep).
+   - **Boot driver:** `Lies_keep_boot(w)` from `Lies_heartbeat` (editor-only, staged & self-gated by
+      `w.c.keep_opened|booted|resumed`): (1) open `Waft:Keep` so Persist loads/creates it; (2) once
+       materialised → stamp `boring` + reopen the ledger; (3) when no `?W=`, foreground
+        `Lies_keep_resume_waft` (canonical `e_Lies_foreground_waft` = focus + land). `?W=`, when
+         present, still wins (Editron opens it first).
+   - **Hooks:** `e_Lies_open_Waft` → `note`; `e_Lies_foreground_waft` → `mark_focus` (both
+      editor-only, skip `Keep`). `Interest.svelte interest_roster` skips `%boring` → no Keep nib.
+   - **Editron unchanged** — its `?W= || Easy` open is the safe default; the Keep *overrides* the
+      focus to the resumed Waft when `?W=` is absent (a brief Easy→resume flicker — acceptable).
+   - **Known wrinkle:** ~1-tick window on the *very first* boot where the fresh Keep isn't `boring`
+      yet (could blip a nib) — gone on every later boot (it loads `boring:1` from its snap).
 
 **Next move (in order):**
-1. ~~Load `Ghost/Music/Ality`~~ **DONE** via the `Editron` `boot_set` stop-gap — Easy + Music/Ality
-    co-load. (Browser-verify on `:9092` that both nibs appear and switch.)
-2. **Keep Phase 1** — register the durable set; **move the `boot_set` list out of `Editron` into the
-    Keep**; seed `{Ghost/Net/Easy, Ghost/Music/Ality}`; scan `wormhole/Ghost/*`.
-3. **Phase 2** reopen-all on boot · **Phase 3** `LastCursored` + scroll · **Phase 4** re-key
-    `Interest:<WaftTail>` + the `INTEREST_KINDS` table (behind `InterestLive` — lands last).
-4. **Unfinished thread:** the owner's *"scrolling the …"* (scroll resume per Interest, §2) — the
-    sentence trailed off; pick it up.
+1. **Verify on `:9091`.** Fresh editor → Easy + Music/Ality co-load. Focus Music, reload (no `?W=`)
+    → auto-resumes Music. Set `?W=Ghost/Net/Easy` → focus stays Easy. Check `Waft:Keep` snap appears
+     at its home with `WaftTimes` + `%Cursor`, and is **absent** from the editor's aggregate snap.
+2. **Per-Waft cursor resume** — record a `%Cursor` (rename-surviving locator, the `FromWhat`
+    `Waft:<key>/<mainkey>:<value>` pattern) under the `WaftTimes` on cursor-land; resume it on
+     foreground/boot via `Lies_keep_push_cursor`. (Touches the hot cursor machinery — do carefully.)
+3. **Phase 4** `INTEREST_KINDS` table (behind `InterestLive`, lands last).
 
-**Open forks (owner's calls — see Open questions):** Keep bootstrap (graduate-to-open vs
- mint+`stashed`) · persistence channel (`stashed` front-runner) · `%Aim` → **Navigator** name · who
-  owns `LastCursored`+scroll · re-key timing · Keep-surfaces-vs-drives Tyrant · ACCEPT provenance
-   (locator vs ref).
+**Open forks (owner's calls — see Open questions):** ~~persistence channel~~ **DECIDED: snap to own
+ home** · `%Aim` → **Navigator** name · who owns `LastCursored`+scroll · re-key timing ·
+  Keep-surfaces-vs-drives Tyrant · ACCEPT provenance (locator vs ref).
 
 ## Companions
 

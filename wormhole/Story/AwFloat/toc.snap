@@ -1,0 +1,22 @@
+story:AwFloat
+  Styles
+    matstyle:w
+      style:background-color,v:#04202a
+      meta:is_compound,v
+      meta:label,fmt:%s,keys:w
+    matstyle:see
+      style:background-color,v:#2fb155
+  Plan
+  Opt
+    For
+    useCyto
+  TimeSpool
+    TimeTotal:beliefs,avg=0.004
+      sample=0.005,at=1782448668
+      sample=0.005,at=1782449510
+      sample=0.003,at=1782450780
+    TimeTotal:step,avg=0.004
+      sample=0.005,at=1782448668
+      sample=0.005,at=1782449510
+      sample=0.003,at=1782450780
+  step,dige:a0a0a0a0a0a0a0a0

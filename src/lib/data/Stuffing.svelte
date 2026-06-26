@@ -35,7 +35,10 @@
     $effect(() => {
         const S = stuff
         if (!S) return
-        const deregister = H.register_stuffing(mem.path, S, () => {
+        // key the registry by the mem's keys-path, distinct per mounted Stuffing — mem.path is
+        //  undefined (Modusmem carries .keys, not .path), which collides the moment more than one
+        //   Stuffing registers (eg one per Cyto node). reading .keys stays in-bounds (no lib/mostly).
+        const deregister = H.register_stuffing(mem.keys.join('/'), S, () => {
             // called inside H.clear() — sibling Stuffings also committing in this flush.
             // < pure compute outside of any reactive scope, then atomic %state write
             stuffing.Stuff = S

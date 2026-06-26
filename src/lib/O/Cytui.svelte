@@ -18,7 +18,7 @@
     //   and cy 'render' event.
     //
 
-    import { onMount }    from 'svelte'
+    import { onMount, mount, unmount } from 'svelte'
     import cytoscape      from 'cytoscape'
     import fcose       from 'cytoscape-fcose'
     import coseBilkent from 'cytoscape-cose-bilkent'
@@ -29,6 +29,7 @@
     import { _C, objectify, type TheC }  from '$lib/data/Stuff.svelte'
     import { now_in_seconds_with_ms } from '$lib/p2p/Peerily.svelte';
     import MatstyleEditor from './ui/MatstyleEditor.svelte'
+    import Stuffing from '$lib/data/Stuffing.svelte'
     let matstyles = $state<TheC[]>([])
     let ms_palette: string[] = []
     let ms_shapes: string[]  = []
@@ -312,6 +313,9 @@
     const OVERLAY_QUIET_MS = 120
 
     let overlays: Map<string, HTMLElement> = new Map()
+    // stuff-overlays mount a LIVE Stuffing component into the node's overlay div.
+    //  track the mounted instance so we can unmount it when the node leaves the graph.
+    let stuff_mounts: Map<string, { app: any }> = new Map()
     // Background color per node id — used when updating so we don't
     // re-read the node style on every tick
     let overlay_bgs: Map<string, string> = new Map()
@@ -364,6 +368,24 @@
         overlays.set(id, el)
     }
 
+    // create_stuff_overlay: a node flagged %stuff (overlay_kind:'stuff') hosts a LIVE Stuffing of its
+    //  particle, mounted into the overlay div. source_n is the live particle, ferried on the wave entry's
+    //   .c (Cyto.make_wave). House IS the Modus, so a per-node mem (H.imem) keeps each Stuffing's
+    //    registration distinct in the refresh climb. H is passed (imperative mount has no Svelte context).
+    function create_stuff_overlay(id: string, source_n: TheC | undefined, bg?: string) {
+        if (!overlay_container || !source_n) return
+        if (overlays.has(id)) return   // already mounted — the Stuffing self-refreshes via register_stuffing
+        const el = document.createElement('div')
+        el.className = 'cyto-overlay stuff-overlay'
+        el.dataset.nodeId = id
+        if (bg) { el.style.backgroundColor = bg; overlay_bgs.set(id, bg) }
+        overlay_container.appendChild(el)
+        overlays.set(id, el)
+        const mem = (H as any).imem('cytostuff:' + id)
+        const app = mount(Stuffing, { target: el, props: { stuff: source_n, mem, H } })
+        stuff_mounts.set(id, { app })
+    }
+
     function update_overlay(id: string, str: string, bg?: string) {
         const el = overlays.get(id)
         if (!el) return
@@ -376,6 +398,8 @@
     }
 
     function remove_overlay(id: string) {
+        const sm = stuff_mounts.get(id)
+        if (sm) { try { unmount(sm.app) } catch (e) {} ; stuff_mounts.delete(id) }
         const el = overlays.get(id)
         if (!el) return
         el.remove()
@@ -405,6 +429,8 @@
     }
 
     function clear_all_overlays() {
+        for (const [, sm] of stuff_mounts) { try { unmount(sm.app) } catch (e) {} }
+        stuff_mounts.clear()
         for (const [id, el] of overlays) el.remove()
         overlays.clear()
         overlay_bgs.clear()
@@ -492,7 +518,9 @@
             const overlay_str  = nd.sc.overlay_str  as string | undefined
             const overlay_kind = nd.sc.overlay_kind as string | undefined
             const overlay_bg   = nd.sc.overlay_bg   as string | undefined
-            if (overlay_str != null) {
+            if (overlay_kind === 'stuff') {
+                create_stuff_overlay(id, (nd as any).c?.source_n as TheC | undefined, overlay_bg)
+            } else if (overlay_str != null) {
                 create_overlay(id, overlay_str, overlay_kind ?? 'code', overlay_bg)
             }
         }
@@ -912,5 +940,17 @@
 :global(.cm-hole-inner) {
     width: 100%; height: 100%;
     overflow: auto;
+}
+
+/* ── stuff overlay: a live Stuffing component mounted inside a %stuff node ── */
+/* pointer-events:all so the Stuffing is interactive (clicks/scroll don't pan the
+   graph); overflow:auto so a tall Stuffing scrolls within the node box. Override
+   the base .cyto-overlay centering — the Stuffing lays out from the top-left. */
+:global(.stuff-overlay) {
+    pointer-events: all;
+    overflow: auto;
+    align-items: flex-start;
+    justify-content: flex-start;
+    border-radius: 4px;
 }
 </style>

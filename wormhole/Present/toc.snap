@@ -1,4 +1,5 @@
 Library
+  Book:AwFloat
   Book:LeafJuggle,ok_pct=0,last_run_ms=1781080305.266,done=4,last_pct_change=1776741166.033
     TimeSpool
       TimeTotal:beliefs,avg=0.115

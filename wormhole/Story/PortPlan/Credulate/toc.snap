@@ -1,10 +1,16 @@
 Credulate,of_Book:PortPlan
-  GhostInclude:Ghost_N_Peeroleum,dige:0268875eea0d929c
-  GhostInclude:Ghost_N_Tribunal,dige:683d031e368194c6
-  GhostInclude:Ghost_Story_Peregrination,dige:cbcb91135c98b814
+  GhostInclude:Ghost_N_Peeroleum,dige:2ccbc1626d347189
+  GhostInclude:Ghost_N_Reliable,dige:48e8948c7d8da3ed
+  GhostInclude:Ghost_N_Tribunal,dige:375733b4018a8e9a
   GhostInclude:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
-  last_ok,at=1782305430.554,ok_pct
-    uses:Ghost_N_Peeroleum,dige:0268875eea0d929c
-    uses:Ghost_N_Tribunal,dige:683d031e368194c6
-    uses:Ghost_Story_Peregrination,dige:cbcb91135c98b814
+  GhostInclude:Ghost_Story_Peregrination,dige:7711424db53b25db
+  GhostInclude:Ghost_M_Radiola,dige:1ddd51d246dc635d
+  GhostInclude:Ghost_Story_Musuation,dige:8d2005bc52a336da
+  last_ok,at=1782450678.591,ok_pct
+    uses:Ghost_N_Peeroleum,dige:2ccbc1626d347189
+    uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
+    uses:Ghost_N_Tribunal,dige:375733b4018a8e9a
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
+    uses:Ghost_Story_Peregrination,dige:7711424db53b25db
+    uses:Ghost_M_Radiola,dige:1ddd51d246dc635d
+    uses:Ghost_Story_Musuation,dige:8d2005bc52a336da

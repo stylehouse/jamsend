@@ -38,6 +38,41 @@
 
 
 //#endregion
+//#region AwFloat
+
+    // AwFloat — a TOY: look at a reasonable amount of the LIVE A/w/** (like MiniWaft, bounded) as
+    //  Stuffings floating in Cyto.  Each `peek` node is a LEAF in the scanned tree (no children of its
+    //   own → no cyto explosion); its `c.stuff_of` points at a live top_House world, so the stuff-overlay
+    //    mounts a live Stuffing of THAT world's contents (Cyto reads source_n = n.c.stuff_of ?? n).
+    //  `useCyto` in the Book's toc.snap commissions the Run house, so the peek nodes render as floating
+    //   Stuffings.  < v1: a flat capped sweep of top_House's A/w; deepen (MiniWaft budget walk) + node titles next.
+
+    Run_A_AwFloat(this: House) {
+        const H = this
+        const A = H.o({ A: 'AwFloat' })[0] || H.i({ A: 'AwFloat' })
+        if (!A.o({ w: 'AwFloat' }).length) A.i({ w: 'AwFloat' })
+        console.log(`🔭 ${H.name} AwFloat wired`)
+    },
+
+    async AwFloat(A: TheC, w: TheC) {
+        // build once — a peek node per live world, capped to a reasonable amount
+        if (w.c.built) return
+        w.c.built = 1
+        const H = this as House
+        const top = H.top_House()
+        const CAP = 12
+        let count = 0
+        for (const Ac of top.o({ A: 1 }) as TheC[]) {
+            for (const wc of Ac.o({ w: 1 }) as TheC[]) {
+                const node = w.i({ peek: 1, idx: count, of: String(wc.sc.w ?? '?'), stuff: 1 })
+                node.c.stuff_of = wc   // the stuff-overlay shows THIS live world's contents
+                if (++count >= CAP) { w.i({ see: `🔭 ${count} worlds (capped)` }); return }
+            }
+        }
+        w.i({ see: `🔭 ${count} worlds` })
+    },
+
+//#endregion
 //#region LakeTiles
 
     // LakeTiles ghost — a second test-case game with its own Cyto instance.

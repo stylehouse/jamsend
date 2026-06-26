@@ -230,6 +230,11 @@
             if (role === 'runner') {
                 on('rungo',       (cw, _p, fr) => H.Lies_rungo_recv(cw, fr))
                 on('become_book', (cw, _p, fr) => H.Lies_become_book_recv(cw, fr))
+                // runner_ask: an addr-less CLI (scripts/runner_ask.mjs) asks the LIVE runner to RUN a
+                //  Book or EXAMINE state.  The reply is a {control:runner_ack,corr} frame the relay
+                //   routes back by corr — NOT a Peeroleum envelope (the CLI is no peer), same as the
+                //    editor's ghost_compile_ack.  Browser-side twin of become_book for real-time runs.
+                on('runner_ask', (cw, _p, fr) => { void H.Lies_runner_ask_recv(cw, fr); return true })
             } else {
                 on('run_result', (cw, _p, fr) => H.Lies_run_result_recv(cw, fr))
                 on('run_phase',  (cw, _p, fr) => H.Lies_run_phase_recv(cw, fr))
@@ -677,6 +682,10 @@
             //   + Relay relay-ping) by role.  Done before the channel-live gate so a Brink can show
             //    "no channel / relay down" while the socket is down.
             ;(H as any).Lies_aim(w)
+            // The Keep (editor only): load Waft:Keep from its snap, reopen its remembered
+            //  ledger, and auto-resume the last-focused Waft when no ?W= was given.  Staged
+            //   & self-gated; a no-op on runner|test worlds.  spec/Cluster_design.md.
+            ;(H as any).Lies_keep_boot(w)
             // %Upkeep (the background work-ledger, opposite pole of %Interest): hoist/retire the
             //  Upkeep Brink by whether any %Errand (a compile, a sweep) is live, and reap settled
             //   ones.  Off the channel gate — a compile/sweep is local work that runs without a peer.

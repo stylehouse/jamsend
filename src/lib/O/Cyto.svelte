@@ -444,7 +444,10 @@
 
                 // backlink for matstyle_restyle reactivity
                 // < can be got via Se1_D. generalise...
-                C.c.source_n = n
+                //  a node may REDIRECT its source (n.c.stuff_of) at a different live particle — so a
+                //   leaf 'peek' node (no children of its own → no cyto explosion) can host a stuff-overlay
+                //    Stuffing of some OTHER live tree (eg a floating view of A/w/**).  Default: n itself.
+                C.c.source_n = n.c.stuff_of ?? n
 
                 // nd already has matstyles_desc when matstyle_apply ran
                 if (nd.matstyles_desc) C.sc.matstyles = nd.matstyles_desc
@@ -459,6 +462,11 @@
                 if (nd.overlay_str) {
                     C.sc.overlay_str  = nd.overlay_str
                     C.sc.overlay_kind = nd.overlay_kind ?? 'code'
+                    if (nd.overlay_bg) C.sc.overlay_bg = nd.overlay_bg
+                } else if (nd.overlay_kind) {
+                    // a component overlay (eg 'stuff') carries no text — Cytui mounts the component.
+                    //  the live particle rides the wave entry's .c (stamped in make_wave from source_n).
+                    C.sc.overlay_kind = nd.overlay_kind
                     if (nd.overlay_bg) C.sc.overlay_bg = nd.overlay_bg
                 }
 
@@ -635,6 +643,31 @@
     // colour matching the node so the cytoscape-rendered label is hidden
     // underneath the overlay text. Returned alongside overlay_str.
     cyto_nstyle(w: TheC, n: TheC): any {
+        // a particle flagged %stuff hosts a LIVE Stuffing of itself, mounted in its HTML overlay
+        //  (Cytui). The cytoscape node is just a sized host box with a matching bg; the overlay
+        //   carries the real material. No overlay_str — the 'stuff' kind tells Cytui to mount the
+        //    component, not paint text. source_n rides the wave entry's .c to reach the live particle.
+        //  < descent is NOT yet suppressed — a stuffed container's children also render as nodes (TODO).
+        if (n.sc.stuff != null) {
+            const bg = '#04202a'
+            return {
+                label: '',
+                overlay_kind: 'stuff',
+                overlay_bg:   bg,
+                style: {
+                    'background-color': bg,
+                    'border-width': 1,
+                    'border-color': '#266ed9',
+                    shape: 'round-rectangle',
+                    width:  200,
+                    height: 130,
+                    color: '#266ed9',
+                    'font-size': '9px',
+                    'text-valign': 'top',
+                    'text-halign': 'center',
+                },
+            }
+        }
         // ── Lang particle types ──────────────────────────────────────
         if (n.sc.text != null) {
             // code token — sized to fit its string
@@ -1103,9 +1136,12 @@
                     if (C.sc.overlay_str)  etc.overlay_str  = C.sc.overlay_str
                     if (C.sc.overlay_kind) etc.overlay_kind = C.sc.overlay_kind
                     if (C.sc.overlay_bg)   etc.overlay_bg   = C.sc.overlay_bg
-                    wave.i({ upsert: 1, id, ...etc })
+                    const entry = wave.i({ upsert: 1, id, ...etc })
+                    // ferry the LIVE particle to Cytui for a component overlay (eg 'stuff' → mount a
+                    //  Stuffing of it). A .c ref, never encoded — it rides the in-process graph channel.
+                    if (C.sc.overlay_kind === 'stuff' && C.c.source_n) entry.c.source_n = C.c.source_n
                 } else if (style_ch || label_ch !== null || par_ch !== null) {
-                    wave.i({ upsert: 1, id, ...etc,
+                    const entry = wave.i({ upsert: 1, id, ...etc,
                         ...(style_ch          ? { style:      style_ch         } : {}),
                         ...(label_ch !== null ? { label:      C.sc.label       } : {}),
                         ...(par_ch   !== null ? { new_parent: C.sc.parent_id ?? null } : {}),
@@ -1114,6 +1150,7 @@
                         ...(C.sc.overlay_kind ? { overlay_kind: C.sc.overlay_kind } : {}),
                         ...(C.sc.overlay_bg   ? { overlay_bg:   C.sc.overlay_bg   } : {}),
                     })
+                    if (C.sc.overlay_kind === 'stuff' && C.c.source_n) entry.c.source_n = C.c.source_n
                 }
             },
  

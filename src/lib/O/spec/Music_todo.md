@@ -207,6 +207,103 @@ BOOK=MusuStock ACCEPT=1 …    # re-records wormhole/Story/MusuStock/*.snap + th
      read — CredRunner is headless, no graph.) A plain `Story_cli` boot can't acquire the spine (no
       Creduler crank) and can't mount CodeMirror, so it's only a compile/parse gate, not a Musu runner.
 
+### 6.1 The integration layer — real time, real audio, muted (`MusuSignal`)
+
+The `Musu*` Books are deterministic *tick*-snaps: no clock, no signal, they witness the **cursor
+ arithmetic** (§5 keeps the model clock-free and random-free on purpose). `scripts/MusuSignal.spec.ts`
+  is the **orthogonal** layer — the question the snap Books can't ask: *does a real signal actually
+   traverse the pipe?* It drives the **same acquired spine** (the `req_cast` spool feeding a
+    `req_progress` decode-ahead chain off one shared `%inbox`) but:
+
+- **real time** — the listener's `ack`/`playhead` advance on the **wall clock** (`Date.now()`), not a
+   tick counter, so both spine reqs do *incremental* work over ~1–2 s of actual elapsed time; the
+    window (7) and live-edge margin (3) breathe against a real clock.
+- **real audio API** — a `%Chunk`'s PCM rides on `.c` (a `Float32Array` is an object → `.c`, never
+   `.sc`), is `decodeAudioData`'d into a buffer, played through a `createBufferSource → gain → capture`
+    graph — the exact surface `src/lib/p2p/ftp/Audio.svelte.ts` uses. (jsdom has no Web Audio, so the
+     file stands in a faithful **muted offline** context; a `:9091` run swaps the platform `AudioContext`
+      + an `AnalyserNode` tap in unchanged.)
+- **muted** — the app's own mute: the capture replaces `AC.destination`, so it renders to a buffer and
+   never to a device — `setupRecorder`'s `gainNode2.disconnect()  // don't hear it`.
+- **measured, not snapped** — real time + real audio is non-deterministic, so the witness is **entropy**,
+   not a byte-exact snap. Quantize the rendered PCM to int16 and assert the byte histogram clears a floor
+    (Shannon `bits_per_byte > 4`, RMS, unique-bytes, longest-run). A **negative control** (same pipeline,
+     payload zeroed) must collapse to ~0 entropy — that is what gives the gate teeth: a dropped payload,
+      the "stream of `\x00`", *fails*. Observed: **7.62 bits/byte** signal vs **0** silence, 48/48 chunks.
+
+The codec seam (Radios item 7 — opus/webm) stays out of scope: the payload is uncompressed PCM, so
+ `decodeAudioData` is identity. What is exercised for real is the **wall clock**, the **audio graph**, and
+  the **real compiled spine** — not the codec.
+
+```
+node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs scripts/MusuSignal.spec.ts
+```
+
+---
+
+### 6.2 The Story-runner interface — request runs + examine, in a real browser (`runner_ask`)
+
+`scripts/MusuSignal.spec.ts` is out of place: it stands the whole machine up in node (jsdom, **no Web
+ Audio**) just to fake a muted offline context. The real home for a real-audio/real-time test is a
+  **live browser runner** — and we already have the wire to drive one. The `become_book` channel
+   (editor → runner over the `/relay` websocket) already makes a browser runner run a Book; what was
+    missing was a way for **the CLI** (me) to drive + examine it, the way the headless runner let me read
+     its file-writings. So: a small request/reply RPC over the *same* relay, the real-time twin of the
+      headless CredRunner.
+
+It is the exact mirror of `scripts/ghost_compile.ts` (the addr-less-CLI → editor round-trip), pointed at
+ the **runner** instead:
+- **`src/lib/server/relay.ts`** — additive. The corr-remembering that lets a browser's `…_ack` route
+   back to an addr-less CLI now also catches `header.type==='runner_ask'`; a new `runner_ack` control
+    verb routes the reply back by corr. Nothing else in the relay (`gen_write`/`become`/`ghost_compile`)
+     changes. Proven node-side by **`scripts/runner-ask-test.ts`** (real relay + fake runner + fake CLI,
+      6/6 green: corr round-trip, op dispatch, `undeliverable`, no crosstalk).
+- **`src/lib/O/LiesLies.svelte`** — registers `on('runner_ask', …)` on the runner role.
+- **`src/lib/O/LiesFunk.svelte`** — `Lies_runner_ask_recv(w, frame)` dispatches a fixed op set and
+   replies `{control:'runner_ack',corr,…}` down the socket (the exact `Lies_ghost_compile_ack` idiom):
+   - `ping` → `{role, channel, running}`
+   - `run <Book>` → drives `Lies_become_book_drive` on the wall clock → `{accepted, book}`
+   - `state` → `Cred_run_outcome()` (`{ok,ok_pct,done,caveat}`) + the `Storyrun` phase/n/total
+   - `steps` → per-`Step` `{n, ok, caveat, dige}`
+   - `snap <n>` → one `Step`'s `got_snap` (the live world serialisation — the "examine the writings" read)
+- **`scripts/runner_ask.mjs`** — the new sender. Addr-less, corr-settled (runner_ack / `undeliverable` /
+   timeout), `--watch` polls `state` until the run settles done|failed, exit code carries the verdict.
+
+```
+node scripts/runner_ask.mjs ping
+node scripts/runner_ask.mjs run MusuLive --watch     # kick + poll to verdict, real browser, real clock
+node scripts/runner_ask.mjs snap 3                    # the live world the runner produced
+RUNNER_URL=http://172.17.0.1:9091   # default; the runner dev server as seen from the claude container
+```
+
+**v1 is unsigned/trust-everything** (like `gen_write` when `CLUSTER_TRUSTED_PUBS` is unset): a run
+ executes already-compiled gen, dev-only on localhost. Signing mirrors `ghost_compile` once the cluster
+  flock deploys.
+
+**The delivery path is not a new hop — it's the production `become_book` path.** The CLI's frame carries a
+ foreign `from` (its own ephemeral addr, not `editor`), but that does not matter: the live runner's `w:Lies`
+  is a **single-identity node** (one `Peering:runner`, one Ud-stamped `Pier:editor` — LiesLies.svelte:202-206),
+   so `Peeroleum_route`'s **"ONE Peering / ONE Pier ⇒ use it"** short-circuit (Peeroleum.g:258,262) resolves a
+    CLI frame to that sole Pier *regardless of its `from`* — the swarm-refactor short-circuit, already in the
+     live gen, **no new `.go`**. The reliable relay carrier then books it straight (no inseq — Peeroleum.g:357),
+      the Ud gate passes (the gate checks only `%Ud`, never `from` — Peeroleum.g:420), and it dispatches to
+       `on('runner_ask')`. (Note: `ghost_compile` actually settles on its dige-**poll**, not this consumer
+        hop — so it is *not* the proof here; the single-Peering short-circuit is.)
+
+**Status:** relay + CLI proven green browserless; `Lies_runner_ask_recv` type-clean; the delivery path is the
+ same one prod `become_book` rides. A `:9091` `runner_ask ping` (boot `?B=MusuStaple`) is the smoke test, not
+  a risk-closer.
+
+**Two follow-ons this unlocks (not yet built):**
+1. **`H.SECONDS_IN_SECONDS`** — a time-scale constant so the real-time tests run at ~3× (audio shorter,
+    `beliefs()`/ttlilt/heartbeat faster). It threads through load-bearing core (`now_in_seconds_with_ms`
+     in `Peerily.svelte.ts`, the tick constants in `Housing.svelte.ts`, `Audio.svelte.ts` durations), so
+      it gets **proved in isolation first** (app still boots, suite stays green) before anything leans on
+       it — not bundled with this channel.
+2. **Relocate `MusuSignal` into a real browser Story Book** — the entropy witness becomes a step the
+    runner computes against a live `AudioContext`, surfaced through `runner_ask snap`/`state` instead of
+     a `scripts/` vitest. That is what finally moves it out of `scripts/`.
+
 ---
 
 ## 7. Status & next move
@@ -282,6 +379,22 @@ If a beat mismatches: restock keys off the **leading** (highest) cursor, not the
 
 **All six instances 1–6 are now spine + Book + accepted.** `Radios.svelte` items 7–8 (codec
  segmentation, disk cache) stay out of scope — the irreducibly-real bytes/disk seam (§3).
+
+**Integration layer — real time + real audio + entropy, MUTED — DONE, green** (§6.1).
+ `scripts/MusuSignal.spec.ts` acquires the spine like CredRunner, then drives `req_cast`→`req_progress`
+  on the wall clock with REAL PCM on `.c` through a muted audio graph, and asserts the rendered signal's
+   entropy (7.62 bits/byte) against a silent negative control (0). One new file, nothing else touched —
+    the spine + Books are untouched (the snap fixtures are unaffected). It needs no `:9091` and no
+     `ACCEPT` (it measures entropy, it does not bake a snap).
+
+**Story-runner interface — request runs + examine a LIVE browser runner — DONE browserless, owes a
+ `:9091` verify** (§6.2). `runner_ask`/`runner_ack` corr-routed over the existing `/relay`, mirroring
+  `ghost_compile`: `scripts/runner_ask.mjs <ping|run <Book>|state|steps|snap n>` drives a real-browser
+   runner and reads its live verdict/snap. Additive relay change proven green by `scripts/runner-ask-test.ts`
+    (6/6); the CLI proven end-to-end against a node relay; `Lies_runner_ask_recv` (LiesFunk) +
+     `on('runner_ask')` (LiesLies) type-clean. This is the seam the two follow-ons in §6.2 hang off
+      (`H.SECONDS_IN_SECONDS` 3× time-scale, prove-in-isolation; and relocating `MusuSignal` into a
+       browser Story Book read through `runner_ask`).
 
 **The next move:**
 1. Watch the machine in Cyto on `:9091` (the headless CredRunner has no graph): the spool window

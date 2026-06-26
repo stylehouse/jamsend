@@ -604,6 +604,76 @@ await M.eatfunc({
             H.tlog(`🎬 become_book drive → ${book}`)
         },
 
+        // Lies_runner_ask_recv — the runner answers an addr-less CLI's runner_ask (scripts/runner_ask.mjs):
+        //  a request/reply RPC over the relay, the real-time twin of become_book + the READ side the
+        //   headless runner gave through file-writings, now a live-browser query.  Dispatch by ask.op —
+        //    ping  → liveness {role,channel,running}
+        //    run   → drive a Book on the wall clock (Lies_become_book_drive) → {accepted,book}
+        //    state → the just|now-running verdict (Cred_run_outcome) + the Storyrun phase/n/total
+        //    steps → per-Step {n,ok,caveat,dige}
+        //    snap  → one Step's got_snap (the live world serialisation — the "examine the writings" read)
+        //   Reply is a raw {control:'runner_ack',corr} frame down the relay socket (mirrors
+        //    Lies_ghost_compile_ack); the relay routes it back to the CLI by corr.  v1 unsigned/trust-
+        //     everything like gen_write-when-unconfigured — a run executes already-compiled gen, dev-only
+        //      on localhost; signing mirrors ghost_compile once CLUSTER_TRUSTED_PUBS deploys.
+        async Lies_runner_ask_recv(w: TheC, frame: any): Promise<boolean> {
+            const H    = this as House
+            const corr = (frame?.corr ?? frame?.header?.corr) as string | undefined
+            const ask  = (frame?.ask ?? {}) as { op?: string, book?: string, n?: number }
+            const op   = ask.op
+            if (!corr || !op) return false
+            let ok = true
+            let result: any = {}
+            try {
+                if (op === 'ping') {
+                    const sr = w.o({ Storyrun: 1 })[0] as TheC | undefined
+                    result = {
+                        role:    H.Lies_is_runner(w) ? 'runner' : 'editor',
+                        channel: H.Lies_channel_live(w) ? 'up' : 'down',
+                        running: sr ? { book: sr.sc.Storyrun, phase: sr.sc.phase } : null,
+                    }
+                } else if (op === 'run') {
+                    if (!ask.book) { ok = false; result = { error: 'run needs a Book' } }
+                    else { H.Lies_become_book_drive(w, ask.book); result = { accepted: true, book: ask.book } }
+                } else if (op === 'state') {
+                    const sr = w.o({ Storyrun: 1 })[0] as TheC | undefined
+                    result = {
+                        outcome: (H as any).Cred_run_outcome() ?? null,
+                        run: sr ? { book: sr.sc.Storyrun, phase: sr.sc.phase, n: sr.sc.n ?? null, total: sr.sc.total ?? null, done: sr.sc.done ?? null } : null,
+                    }
+                } else if (op === 'steps' || op === 'snap') {
+                    const thisC = H.Lies_runner_this()
+                    const steps = (thisC?.o({ Step: 1 }) ?? []) as TheC[]
+                    if (op === 'steps') {
+                        result = {
+                            steps: steps.map(s => ({ n: s.sc.Step, ok: s.sc.ok ? 1 : 0, caveat: s.sc.caveat ? 1 : 0, dige: s.sc.dige })),
+                            done: steps.length, ok: steps.length > 0 && steps.every(s => !!s.sc.ok),
+                        }
+                    } else {
+                        const s = steps.find(st => Number(st.sc.Step) === Number(ask.n))
+                        if (!s) { ok = false; result = { error: `no Step ${ask.n}`, have: steps.map(st => st.sc.Step) } }
+                        else result = { n: s.sc.Step, ok: s.sc.ok ? 1 : 0, dige: s.sc.dige, got_snap: s.sc.got_snap ?? null }
+                    }
+                } else { ok = false; result = { error: `unknown op ${op}` } }
+            } catch (e) { ok = false; result = { error: String((e as Error).message) } }
+            const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
+            const ws   = port?.ws as any
+            if (ws && ws.readyState === 1 /* OPEN */) {
+                try { ws.send(JSON.stringify({ control: 'runner_ack', corr, op, ok, result })) } catch { /* CLI falls back to timeout */ }
+            }
+            H.tlog(`📥 runner_ask ${op}${ask.book ? ` ${ask.book}` : ''} → ${ok ? 'ok' : 'err'}`)
+            return true
+        },
+
+        // Lies_runner_this — the live Story This container (where each Step's got_snap/ok lands), the
+        //  same nav Cred_run_outcome walks.  null before any run.  Read-only; for runner_ask state/steps/snap.
+        Lies_runner_this(): TheC | undefined {
+            const H     = this as House
+            const story = H.o({ H: 'Story' })[0] as House | undefined
+            const stW   = story?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] as TheC | undefined
+            return stW?.c.This as TheC | undefined
+        },
+
         // Lies_report_result — runner emit, after a run settles.  The editor's handler
         //  re-attaches it so the staging chrome lights up.
         Lies_report_result(w: TheC, sc: { path?: string, dige?: string, ok?: boolean, errors?: any[], snap_dige?: string, ok_pct?: number, done?: number, caveat?: number, book?: string }) {
