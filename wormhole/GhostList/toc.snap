@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted
-  Funkcion:dirlist,interval_ms=8000,walked_at=1782393617713
+  Funkcion:dirlist,interval_ms=8000,walked_at=1782456500569
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -60,6 +60,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted
     Doc:src/lib/O/spec/Lens_posable_TODO.md,name:Lens_posable_TODO.md,noticed_at=1782364945395
     Doc:src/lib/O/spec/Music_todo.md,name:Music_todo.md,noticed_at=1782375234557
     Doc:src/lib/O/spec/Cluster_design.md,name:Cluster_design.md,noticed_at=1782381240813
+    Doc:src/lib/O/spec/Runner_talk_TODO.md,name:Runner_talk_TODO.md,noticed_at=1782456500569
   open_dir:src/lib/O
   group:src/lib/O,dir:src/lib/O
     sub:src/lib/O/D,name:D

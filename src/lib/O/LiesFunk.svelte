@@ -619,7 +619,7 @@ await M.eatfunc({
         async Lies_runner_ask_recv(w: TheC, frame: any): Promise<boolean> {
             const H    = this as House
             const corr = (frame?.corr ?? frame?.header?.corr) as string | undefined
-            const ask  = (frame?.ask ?? {}) as { op?: string, book?: string, n?: number }
+            const ask  = (frame?.ask ?? {}) as { op?: string, book?: string, n?: number, ns?: number[], on?: boolean }
             const op   = ask.op
             if (!corr || !op) return false
             let ok = true
@@ -641,7 +641,29 @@ await M.eatfunc({
                         outcome: (H as any).Cred_run_outcome() ?? null,
                         run: sr ? { book: sr.sc.Storyrun, phase: sr.sc.phase, n: sr.sc.n ?? null, total: sr.sc.total ?? null, done: sr.sc.done ?? null } : null,
                     }
-                } else if (op === 'steps' || op === 'snap') {
+                } else if (op === 'retain') {
+                    // keep middle steps' got_snap inspectable on a churning runner: set the Story world's
+                    //  keep_snaps, which suppresses the 5-step got_snap trim (Story.svelte:2008).  Rides
+                    //   w:Story.c (long-lived — survives resetStory), so `retain on` once sticks across runs.
+                    const stW = H.Lies_runner_story_w()
+                    if (!stW) { ok = false; result = { error: 'no Story world yet — run a Book first' } }
+                    else {
+                        const on = ask.on !== false   // default on
+                        if (on) stW.c.keep_snaps = 1; else delete stW.c.keep_snaps
+                        result = { retain: on ? 1 : 0 }
+                    }
+                } else if (op === 'trace') {
+                    // the step's "why", not just OK|NOT-OK: the beliefs-cycle trace (step.sc.Run_trace,
+                    //  drained at Story.svelte:1997) carries the quiescent label (causal vs timeout — what
+                    //   held the step) + the cycle walk.  Survives the got_snap trim, so always readable.
+                    const steps = (H.Lies_runner_this()?.o({ Step: 1 }) ?? []) as TheC[]
+                    const s = steps.find(st => Number(st.sc.Step) === Number(ask.n))
+                    if (!s) { ok = false; result = { error: `no Step ${ask.n}`, have: steps.map(st => st.sc.Step) } }
+                    else {
+                        const tr = Array.isArray(s.sc.Run_trace) ? s.sc.Run_trace : null
+                        result = { n: s.sc.Step, ok: s.sc.ok ? 1 : 0, caveat: s.sc.caveat ? 1 : 0, dige: s.sc.dige, cycles: tr?.length ?? 0, trace: tr }
+                    }
+                } else if (op === 'steps' || op === 'snap' || op === 'diff' || op === 'snaps') {
                     const thisC = H.Lies_runner_this()
                     const steps = (thisC?.o({ Step: 1 }) ?? []) as TheC[]
                     if (op === 'steps') {
@@ -649,10 +671,30 @@ await M.eatfunc({
                             steps: steps.map(s => ({ n: s.sc.Step, ok: s.sc.ok ? 1 : 0, caveat: s.sc.caveat ? 1 : 0, dige: s.sc.dige })),
                             done: steps.length, ok: steps.length > 0 && steps.every(s => !!s.sc.ok),
                         }
+                    } else if (op === 'snaps') {
+                        // atomic multi-step read: every requested got_snap from ONE pass over This, so a
+                        //  temporal pair (diff n prev) is coherent even while the runner churns between calls.
+                        const sr = w.o({ Storyrun: 1 })[0] as TheC | undefined
+                        const snaps: Record<number, any> = {}
+                        for (const n of (Array.isArray(ask.ns) ? ask.ns : []).map(Number)) {
+                            const s = steps.find(st => Number(st.sc.Step) === n)
+                            snaps[n] = s ? { n, ok: s.sc.ok ? 1 : 0, dige: s.sc.dige, got_snap: s.sc.got_snap ?? null } : null
+                        }
+                        result = { book: sr?.sc.Storyrun ?? null, snaps }
                     } else {
                         const s = steps.find(st => Number(st.sc.Step) === Number(ask.n))
                         if (!s) { ok = false; result = { error: `no Step ${ask.n}`, have: steps.map(st => st.sc.Step) } }
-                        else result = { n: s.sc.Step, ok: s.sc.ok ? 1 : 0, dige: s.sc.dige, got_snap: s.sc.got_snap ?? null }
+                        else if (op === 'snap') result = { n: s.sc.Step, ok: s.sc.ok ? 1 : 0, dige: s.sc.dige, got_snap: s.sc.got_snap ?? null }
+                        else {
+                            // diff: got + the diff-panel's expected IF already loaded (exp_snap is fetched
+                            //  lazily for the UI — Story.svelte:1470). When absent the CLI fills it from the
+                            //   shared-disk fixture (wormhole/Story/<book>/<NNN>.snap); `book` tells it which.
+                            const sr = w.o({ Storyrun: 1 })[0] as TheC | undefined
+                            result = {
+                                n: s.sc.Step, ok: s.sc.ok ? 1 : 0, dige: s.sc.dige, book: sr?.sc.Storyrun ?? null,
+                                got_snap: s.sc.got_snap ?? null, exp_snap: s.sc.exp_snap ?? null,
+                            }
+                        }
                     }
                 } else { ok = false; result = { error: `unknown op ${op}` } }
             } catch (e) { ok = false; result = { error: String((e as Error).message) } }
@@ -665,13 +707,18 @@ await M.eatfunc({
             return true
         },
 
-        // Lies_runner_this — the live Story This container (where each Step's got_snap/ok lands), the
-        //  same nav Cred_run_outcome walks.  null before any run.  Read-only; for runner_ask state/steps/snap.
-        Lies_runner_this(): TheC | undefined {
+        // Lies_runner_story_w — the live w:Story world (where This/Steps + the run state live, the same
+        //  nav Cred_run_outcome walks).  null before any run.  Long-lived (survives resetStory), so
+        //   keep_snaps rides here.  for runner_ask retain/state/steps/snap.
+        Lies_runner_story_w(): TheC | undefined {
             const H     = this as House
             const story = H.o({ H: 'Story' })[0] as House | undefined
-            const stW   = story?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] as TheC | undefined
-            return stW?.c.This as TheC | undefined
+            return story?.o({ A: 'Story' })[0]?.o({ w: 'Story' })[0] as TheC | undefined
+        },
+
+        // Lies_runner_this — the live Story This container (where each Step's got_snap/ok lands).  Read-only.
+        Lies_runner_this(): TheC | undefined {
+            return (this as House).Lies_runner_story_w()?.c.This as TheC | undefined
         },
 
         // Lies_report_result — runner emit, after a run settles.  The editor's handler

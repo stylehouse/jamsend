@@ -351,7 +351,7 @@
         // Matching rules for the Waft particle vocabulary.
         // Each rule matches by mainkey (entry.mk) and silently omits session keys.
         // Hierarchy is unstrict — (Waft|What|Doc|Point)** in any nesting order.
-        const WAFT_PROTOCOL = ['Waft', 'What', 'Doc', 'Point'].map(mk => ({
+        const WAFT_PROTOCOL = ['Waft', 'What', 'Doc', 'Point', 'WaftTimes', 'Cursor'].map(mk => ({
             matching_any: [{ mk }],
             means: { omit_sc: SESSION_KEYS },
         }))

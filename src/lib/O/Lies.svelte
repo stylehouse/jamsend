@@ -206,7 +206,13 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         waft.sc.active = 1
         if (H.Lies_role(w) === 'editor') H.Lies_keep_mark_focus(w, path)   // Keep records focus → accessed_at + own %Cursor (auto-resume-last)
         w.bump_version()
-        await H.Lies_desire_land_cursor(w, waft, path)
+        // resume the cursor where it last sat in THIS Waft (the Keep's per-Waft %Cursor) so a
+        //  nib-foreground | boot re-lands on the last What, not the Waft's first.  A later want
+        //   wins over Lies_desire_land_cursor's land-on-first; fall back to it when nothing is
+        //    remembered (fresh Waft | the locator no longer resolves | runner has no Keep).
+        const resume = H.Lies_role(w) === 'editor' ? H.Lies_keep_resume_what(w, waft, path) : undefined
+        if (resume) H.i_elvisto(w, 'Lies_want', { src: resume, kind: 'cold' })
+        else await H.Lies_desire_land_cursor(w, waft, path)
     },
 
     // ── e_Lies_open_sidetrack ──────────────────────────────────────────────
@@ -925,6 +931,30 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             else delete wnt.sc.resolved
         }
 
+        // Claim the session %active flag for the Waft this want lands in — active ≡ the
+        //  waft the cursor is in.  The cap-foreground | +Now | ghost_pick claim it eagerly,
+        //   but this want-land seam (tree-click | gesture | cold-start) is where every OTHER
+        //    cursor move funnels, and it never did → a stale %active elsewhere (the Keep's
+        //     boot-resumed Waft) won Lies_focus_waft's leg-1 and the per-tick timemachine
+        //      dragged the cursor back every trickle (the "can't hold focus for a second" bounce).
+        //   skip %boring (the Keep is never a focus candidate) and the already-active no-op.
+        const landed = w.o({ Waft: waft_key })[0] as TheC | undefined
+        if (landed && !landed.sc.active && !landed.sc.boring) {
+            for (const other of w.o({ Waft: 1 }) as TheC[]) delete other.sc.active
+            landed.sc.active = 1
+            w.bump_version()
+            // focus just MOVED to a new Waft → record it as the Keep's own latest %Cursor so
+            //  boot auto-resume-last has something to return to.  Until now only an explicit
+            //   nib-foreground (e_Lies_foreground_waft) seeded this, so passive focus changes
+            //    (tree-click | boot land | gesture) left the auto-resume history empty.
+            if (H.Lies_role(w) === 'editor') H.Lies_keep_mark_focus(w, waft_key)
+        }
+        // Keep remembers WHERE in this Waft the cursor sits, so the foreground above can re-land
+        //  there next time.  Editor only; skips %boring (the Keep itself).  Coalesces, so idle
+        //   re-lands on the same What don't bloat the per-Waft %Cursor history.
+        if (landed && !landed.sc.boring && H.Lies_role(w) === 'editor')
+            H.Lies_keep_note_cursor(w, waft_key, src)
+
         const doc_path = H.Waft_src_doc_path(src)
         if (doc_path) await H.Lies_provide_dock(w, doc_path)   // speculative push — warm the %Good
 
@@ -983,7 +1013,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const now = Date.now()
         wt.sc.discovered_at ??= now
         wt.sc.accessed_at    = now
-        return wt
+        keep.bump_version()   // watch_c watches the ROOT version only (Housing watch_c) — a
+        return wt             //  descendant (WaftTimes) mutation won't trigger the save without this
     },
 
     //   Lies_keep_mark_focus — record a focus: bump the Waft's accessed_at AND push the
@@ -1016,6 +1047,55 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const keep = w.o({ Waft: 'Keep' })[0] as TheC | undefined
         const curs = (keep?.o({ Cursor: 1 }) as TheC[] | undefined) ?? []
         return curs[curs.length - 1]?.sc.waft as string | undefined
+    },
+
+    //   Lies_keep_note_cursor — remember WHERE in a Waft the cursor sits: push a %Cursor onto
+    //    the Waft's WaftTimes carrying the src's own mainkey:value (What:<name> | Doc:<path>) —
+    //     the within-Waft tail of the FromWhat `Waft:<key>/…` locator (the WaftTimes already
+    //      names the Waft).  Reads the WaftTimes (Lies_keep_note creates it on Waft-open) — a
+    //       consumer, not a creator, so no oai churn on the hot want-land path.
+    Lies_keep_note_cursor(w: TheC, waft_key: string, src: TheC): void {
+        const H    = this as House
+        const keep = H.Lies_keep(w)
+        if (!keep) return
+        const wt = keep.o({ WaftTimes: 1, of_Waft: waft_key })[0] as TheC | undefined
+        if (!wt) return
+        const mk = H.mainkey(src)
+        if (!mk) return
+        H.Lies_keep_push_cursor(wt, 'what', `${mk}:${(src.sc as any)[mk]}`)
+        keep.bump_version()   // push_cursor bumped the WaftTimes child; bump the ROOT too so the
+                              //  top-only watch_c fires and the Keep actually re-saves (see note)
+    },
+
+    //   Lies_keep_resume_what — resolve a Waft's last-remembered cursor (the latest %Cursor on
+    //    its WaftTimes) back to a live particle inside the (re-opened) Waft.  undefined when
+    //     nothing is remembered or the locator no longer resolves → the caller lands on first.
+    Lies_keep_resume_what(w: TheC, waft: TheC, path: string): TheC | undefined {
+        const H    = this as House
+        const keep = w.o({ Waft: 'Keep' })[0] as TheC | undefined
+        const wt   = keep?.o({ WaftTimes: 1, of_Waft: path })[0] as TheC | undefined
+        const curs = (wt?.o({ Cursor: 1 }) as TheC[] | undefined) ?? []
+        const loc  = curs[curs.length - 1]?.sc.what as string | undefined
+        if (!loc) return undefined
+        const i = loc.indexOf(':')
+        if (i < 0) return undefined
+        return H.Lies_locate_in_waft(waft, loc.slice(0, i), loc.slice(i + 1))
+    },
+
+    //   Lies_locate_in_waft — depth-first over %What (any depth) then %Doc, return the first
+    //    node whose mainkey===mk and sc[mk] stringifies to val.  An anonymous What:1 matches the
+    //     first such What ≈ land-on-first, so an ambiguous locator never lands worse than today.
+    Lies_locate_in_waft(container: TheC, mk: string, val: string): TheC | undefined {
+        const H = this as House
+        for (const what of container.o({ What: 1 }) as TheC[]) {
+            if (mk === 'What' && String((what.sc as any).What) === val) return what
+            const inner = H.Lies_locate_in_waft(what, mk, val)
+            if (inner) return inner
+        }
+        if (mk === 'Doc')
+            for (const doc of container.o({ Doc: 1 }) as TheC[])
+                if (String((doc.sc as any).Doc) === val) return doc
+        return undefined
     },
 
     //   Lies_keep_reopen — reopen every Waft in the ledger (idempotent via Lies_open_Waft's

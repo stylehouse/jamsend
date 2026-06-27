@@ -646,6 +646,37 @@ export const LANG_COMPILE = {
             return n + 1
         }
 
+        // ── <condition> and <statement>  →  if (<condition>) { <statement> } ──
+        //
+        // The loosely-binding guard maker.  A standalone `and` splits the line into a
+        //  condition (left) and ONE guarded statement (right).  Unlike a ControlFlow
+        //   head it needs no `if`/brackets, and the body is ANY statement — `return`,
+        //    `break`, an io atom (`w i x`), an `&call`, raw JS — not just an io (the old
+        //     gating, which left `caster%live && term%want and break` unparseable).
+        //  Three rules make the binding predictable (LakeTiles.g's frontier note):
+        //    · `and` binds LOOSER than `&&`: the run left of the LAST `and` is the whole
+        //      condition, so `33 && 44 and return` → `if (33 && 44) { return }`.
+        //    · chained `and` are conjunctions, each operand parenthesised so a looser-than
+        //      -`&&` operator inside it can't rebind: `a||b and c and stmt` → `if ((a||b) && (c)) { stmt }`.
+        //    · string/bracket-aware: an `and` inside a quote or parens is literal text.
+        //  Detected before the node dispatch (like //#region / $name= above) so it is
+        //   independent of what the RHS parses to.  ControlFlow heads (their `and` is
+        //    part of the if-condition) and Sunpit loop heads are excluded.  stho-only —
+        //     gated on the per-line parser, which the io/amp body translation needs too.
+        if (ctx.sthoParser && !/^\s*(?:if|for|while|until|elsif|else)\b/.test(line.text)
+                           && !/^\s*S\s/.test(line.text)) {
+            const ga = this.Lang_loose_and_split(line.text)
+            if (ga) {
+                const cond = this.Lang_amp_calls_in_text(
+                    this.Lang_io_in_text(ga.cond, { sthoParser: ctx.sthoParser, bool_ctx: true }))
+                const body = this.Lang_amp_calls_in_text(
+                    this.Lang_io_in_text(ga.body, { sthoParser: ctx.sthoParser }))
+                const tail = ga.comment ? ' ' + ga.comment : ''
+                out.push({ kind: 'translated', text: `${ga.indent}if (${cond}) { ${body} }${tail}` })
+                return n + 1
+            }
+        }
+
         // first recognisable node whose span lies within this doc line
         const hit = ctx.lineHits.get(n) ?? null
 
@@ -761,8 +792,10 @@ export const LANG_COMPILE = {
             // line.text, rides through untouched after the substituted code.
             if (!cap_prefix && (condition.startsWith('(') || condition.endsWith('{'))) {
                 const bc = /^(?:if|while|until|else if|elsif)$/.test(keyword)
+                // lower a standalone `and` here too (see the pythonic path below)
+                const src = ctx.sthoParser ? this.Lang_and_to_amp(line.text) : line.text
                 out.push({ kind: 'raw', text: this.Lang_amp_calls_in_text(
-                    this.Lang_io_in_text(line.text, { sthoParser: ctx.sthoParser, bool_ctx: bc })) })
+                    this.Lang_io_in_text(src, { sthoParser: ctx.sthoParser, bool_ctx: bc })) })
                 return n + 1
             }
 
@@ -782,6 +815,12 @@ export const LANG_COMPILE = {
                 condition += ' ' + peek.text.trim()
                 n++
             }
+
+            // `and` reads as a conjunction inside an explicit condition too — the twin
+            //  of the line-level loose-`and` guard, so `if a and b` parses.  Each operand
+            //   is parenthesised (Lang_and_conjoin) so a looser-than-`&&` operator inside
+            //    it (`if a || b and c`) keeps its grouping.
+            if (ctx.sthoParser) condition = this.Lang_and_conjoin(condition)
 
             // &method,args and embedded IO atoms inside the condition →
             // this.method(args) / w.o(…). bool_ctx makes a bare obtain a presence
@@ -1139,14 +1178,9 @@ export const LANG_COMPILE = {
             const translated  = this.Lang_compile_IOing(hit.node, sliceState,
                 split.receiver ? { receiver: split.receiver } : {})
 
-            if (split.and_lhs != null) {
-                // "<LHS> and <io>" — loosely-binding inline if.  LHS is the
-                // condition; the IO expression is its single-statement body.
-                out.push({ kind: 'translated',
-                    text: `${split.indent}if (${split.and_lhs}) { ${translated}${after.trimEnd()} }` })
-            } else {
-                out.push({ kind: 'translated', text: split.keep_before + translated + after })
-            }
+            // A loose-`and` guard (`<cond> and w i x`) was already handled line-level
+            //  above and returned, so by here the prefix is only a receiver|assignment.
+            out.push({ kind: 'translated', text: split.keep_before + translated + after })
         } else {
             // untranslatable / no stho atom — verbatim, but still fold n%such →
             //  n.sc.such (string-aware, tight-% only) so the accessor works in plain
@@ -1180,6 +1214,87 @@ export const LANG_COMPILE = {
             }
         }
         return { code: s, comment: '' }
+    },
+
+    // Split a line for the loosely-binding `and` guard (see the call site in
+    //  _collect_line).  Returns null when the line carries no usable top-level
+    //   standalone `and`.  The LAST top-level `and` is the condition/statement
+    //    boundary (so `&&` groups tighter, inside the condition); every other `and`
+    //     in the condition is a conjunction lowered to `&&` (Lang_and_to_amp).  A
+    //      trailing // comment is peeled off and handed back to ride after the brace.
+    //   cond|body empty (a dangling/leading `and`) → not a guard (null).
+    Lang_loose_and_split(lineText: string): { indent: string, cond: string, body: string, comment: string } | null {
+        const { code: full, comment } = this.Lang_strip_line_comment(lineText)
+        const indent = (full.match(/^(\s*)/) ?? ['', ''])[1]
+        const code   = full.slice(indent.length)
+
+        const ands = this.Lang_loose_and_positions(code)
+        if (!ands.length) return null
+
+        const last = ands[ands.length - 1]
+        const body = code.slice(last + 3).trim()
+        if (!body) return null   // dangling `and` with no statement — not a guard
+        const cond = this.Lang_and_conjoin(code.slice(0, last)).trim()
+        if (!cond) return null   // leading `and` with no condition — not a guard
+
+        return { indent, cond, body, comment }
+    },
+
+    // Char offsets of every standalone `and` token in `code` that sits at bracket
+    //  depth 0 and outside any string|template.  Word-bounded, so `band`/`andy`/the
+    //   `and` buried in `command` never match.  Feeds Lang_loose_and_split's boundary
+    //    pick (the last one) and its emptiness guards.
+    Lang_loose_and_positions(code: string): number[] {
+        const out: number[] = []
+        let str: string | null = null, depth = 0
+        const ws = (c: string | undefined) => c === undefined || /\s/.test(c)
+        for (let i = 0; i < code.length; i++) {
+            const c = code[i]
+            if (str) { if (c === str && code[i - 1] !== '\\') str = null; continue }
+            if (c === '"' || c === "'" || c === '`') { str = c; continue }
+            if (c === '(' || c === '[' || c === '{') { depth++; continue }
+            if (c === ')' || c === ']' || c === '}') { depth--; continue }
+            if (depth === 0 && c === 'a' && code[i + 1] === 'n' && code[i + 2] === 'd'
+                    && ws(code[i - 1]) && ws(code[i + 3])) { out.push(i); i += 2 }
+        }
+        return out
+    },
+
+    // Replace every standalone `and` token in `s` with `&&` — String/template-aware
+    //  and word-bounded like Lang_loose_and_positions, but at ANY bracket depth.  Used
+    //   only for a USER-bracketed condition (`if (a and b)`), where the user's own parens
+    //    do the grouping; the synthesised forms use Lang_and_conjoin, which wraps.
+    Lang_and_to_amp(s: string): string {
+        let out = '', str: string | null = null
+        const ws = (c: string | undefined) => c === undefined || /\s/.test(c)
+        for (let i = 0; i < s.length; i++) {
+            const c = s[i]
+            if (str) { out += c; if (c === str && s[i - 1] !== '\\') str = null; continue }
+            if (c === '"' || c === "'" || c === '`') { str = c; out += c; continue }
+            if (c === 'a' && s[i + 1] === 'n' && s[i + 2] === 'd' && ws(s[i - 1]) && ws(s[i + 3])) {
+                out += '&&'; i += 2; continue
+            }
+            out += c
+        }
+        return out
+    },
+
+    // Join `and`-separated operands into a `&&` conjunction, the loose-binding way.
+    //  `and` is the LOOSEST operator, so each operand is a whole expression — but `&&`
+    //   binds TIGHTER than `||`/`?:`/assignment, so a bare substitution would rebind
+    //    across them (`a || b and c` chained → `a || b && c`, wrong).  So each operand
+    //     is wrapped in its own parens: `a || b and c || d` → `(a || b) && (c || d)`.
+    //   Splits on TOP-LEVEL `and` (a deeper `and` inside an operand's parens is lowered
+    //    blind, Lang_and_to_amp).  No top-level `and` → returned untouched, no parens
+    //     (the single-operand condition is already isolated by the caller's `if (...)`).
+    Lang_and_conjoin(s: string): string {
+        const ands = this.Lang_loose_and_positions(s)
+        if (!ands.length) return s
+        const parts: string[] = []
+        let prev = 0
+        for (const a of ands) { parts.push(s.slice(prev, a)); prev = a + 3 }
+        parts.push(s.slice(prev))
+        return parts.map(p => `(${this.Lang_and_to_amp(p).trim()})`).join(' && ')
     },
 
     // ── Lang_amp_calls_in_text ───────────────────────────────────────────────
@@ -1316,18 +1431,18 @@ export const LANG_COMPILE = {
     //   Split the text that sits on a line before an i/o verb into:
     //     receiver  — a leading bareword acting as the call receiver
     //                 ("A i foo" → receiver A; "w i foo" → receiver w).
-    //     and_lhs   — the condition of a loosely-binding "<LHS> and <io>" form
-    //                 ("!0 and w i x" → and_lhs "!0", receiver "w").
     //     keep_before — what should still be emitted before the translation
-    //                 (the indent for receiver/and forms; the whole prefix
+    //                 (the indent for the receiver form; the whole prefix
     //                  verbatim for assignments like "let la = i …").
     //
     //   JS keywords are never mistaken for receivers, so "return i x" keeps
     //   "return " verbatim rather than treating it as a receiver.
+    //   The loose-`and` guard (`<cond> and <io>`) is handled line-level in
+    //    _collect_line before any dispatch, so a prefix here never carries an `and`.
     // < no receiver is captured for the "$name" leg-0 hint form — that path
     //   stays inside Lang_compile_IOing via receiver_hint.
     Lang_io_before_split(raw_before: string): {
-        indent: string, keep_before: string, receiver?: string, and_lhs?: string,
+        indent: string, keep_before: string, receiver?: string,
     } {
         const indent = (raw_before.match(/^(\s*)/) ?? ['', ''])[1]
         const core   = raw_before.slice(indent.length)
@@ -1340,15 +1455,8 @@ export const LANG_COMPILE = {
         //  receiver normalises to `this` (the actor-laying form, heading L).
         const norm = (r: string) => r === 'H' ? 'this' : r
 
-        // "<LHS> and <receiver?> "
-        let m = core.match(/^(.+?)\s+and\s+(\w*)\s*$/)
-        if (m) {
-            const recv = m[2] && !KEYWORDS.has(m[2]) ? norm(m[2]) : undefined
-            return { indent, keep_before: indent, receiver: recv, and_lhs: m[1] }
-        }
-
         // bare receiver: the prefix is exactly one identifier
-        m = core.match(/^(\w+)\s+$/)
+        let m = core.match(/^(\w+)\s+$/)
         if (m && !KEYWORDS.has(m[1])) {
             return { indent, keep_before: indent, receiver: norm(m[1]) }
         }

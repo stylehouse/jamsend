@@ -54,10 +54,7 @@ Creation bumps version; watchers ($effect) react off that.
 **Travel** is the tree-walk primitive over the C tree, depth-first.
  The encoders walk with Travel + mainkey to serialise generically; a particle
   whose mainkey is not in the protocol is a fatal encode error, subtree skipped.
-A **snap** is the text serialisation of a C tree (toc.snap, the Waft snap).
- SESSION_KEYS — active, created_at, new, not_found — are stripped on the way out.
- Shared-C refs are handled by loopy|hid; the first DFS encounter is primary and
-  descends, every revisit is a munged shadow stub marked hid:1, loopy:N.
+A **snap** is the text serialisation of the C tree which Story makes between steps.
 
 ## Subsystems (each a "ghost" — a .svelte module of logic)
 

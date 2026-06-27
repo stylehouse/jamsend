@@ -4,28 +4,28 @@ story:PereStaple
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=1.746
-      sample=0.893,at=1782386564
-      sample=0.58,at=1782386605
-      sample=0.516,at=1782387762
-      sample=0.684,at=1782389264
-      sample=2.423,at=1782446280
-      sample=2.423,at=1782447461
-      sample=2.336,at=1782447587
-      sample=2.526,at=1782448408
+    TimeTotal:beliefs,avg=2.692
       sample=2.515,at=1782448477
       sample=2.561,at=1782449958
-    TimeTotal:step,avg=0.04
-      sample=0.037,at=1782386564
-      sample=0.024,at=1782386605
-      sample=0.021,at=1782387762
-      sample=0.029,at=1782389264
-      sample=0.047,at=1782446280
-      sample=0.047,at=1782447461
-      sample=0.045,at=1782447587
-      sample=0.049,at=1782448408
+      sample=2.548,at=1782451842
+      sample=2.447,at=1782452035
+      sample=2.527,at=1782454611
+      sample=3.029,at=1782457201
+      sample=3.225,at=1782459890
+      sample=3.049,at=1782471103
+      sample=2.628,at=1782476163
+      sample=2.39,at=1782522031
+    TimeTotal:step,avg=0.052
       sample=0.048,at=1782448477
       sample=0.049,at=1782449958
+      sample=0.049,at=1782451842
+      sample=0.047,at=1782452035
+      sample=0.049,at=1782454611
+      sample=0.058,at=1782457201
+      sample=0.062,at=1782459890
+      sample=0.059,at=1782471103
+      sample=0.051,at=1782476163
+      sample=0.046,at=1782522031
   step,dige:0e3a61058c6cb03e
   step=2,dige:e2a220d8cd00bcac
   step=3,dige:49af6443c3635b73

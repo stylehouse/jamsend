@@ -55,37 +55,29 @@
     //     bare call needs an `await` in front.
     //     < the await-injection itself is not wired up yet.
     //
+    //   .$ tight value-capture (key.$ , key.$:var , key:val.$)
+    //     "." binds tightly to its key and grabs that key's VALUE (not the whole
+    //     row), assigning it inline among other peel items — destructure/tuple style:
+    //       o prefixy,wither.$:ang   →  let ang = w.o({prefixy:1,wither:1})[0]?.sc.wither
+    //       w i …/so:ont.$           →  so auto-named from the key, …?.sc.so
+    //     Built (CaptureDot in io_tokens + Lang_compile_PeelItem); LakeTiles.g l.281
+    //     is the live example.
+    //
     // ── Deferred / infirm syntax (parses, but not yet compiled) ───────────────
     //
-    //   .$ tight value-capture (key.$ , key.$:var , key:val.$)
-    //     Intent: "." binds tightly to its key and grabs that key's VALUE
-    //     (rather than the whole row), assigning it inline among other peel
-    //     items — destructure/tuple style:
-    //       o prefixy,with.$:ang   "grab with's value into ang, keep querying"
-    //       w i …/so:ont.$         "so is auto-named from the key"
-    //     The "." currently produces an error node, so the .$ tail is dropped
-    //     and the leg compiles as if it weren't there (valid but incomplete).
-    //     Needs a grammar "." token + a PeelItem tail rule before it's safe to
-    //     emit — a wrong guess here is worse than none.
-    //     < not implemented; emits the leg without the capture.
-    //
-    //   Block verbs (r / roai / oai / replace with a trailing {} block)
-    //     Intent: expose what is normally
-    //       await w.r({key:'ing',field:'s'}, {})
-    //     as a squishy verb line, e.g.  w r key:ing,field:s {}  and the
-    //     multi-leg capture form  w oai docs/doc,$path$dock  (where $path is a
-    //     {variable}-style shorthand keyed by its own name, and the trailing
-    //     $dock assigns the result to dock).
-    //     Open questions before this can land:
-    //       · these verbs are async — we'd want the def/method async index
-    //         (groundwork above) to know when to inject `await`.
-    //       · bareword values: "key:ing" wants 'ing' as a STRING here, which
-    //         diverges from the i/o convention where a bareword is an
-    //         identifier.  That value-semantics fork is unresolved.
-    //       · the $path$dock jammed double-sigil form needs grammar support;
-    //         the clean capture today is name$ / name$:var.
-    //     < not implemented; the verb set would extend IOness (or a sibling
-    //       IOverb token) and reuse the Leg machinery once semantics are fixed.
+    //   Inline {}-block verbs (r / roai / oai / replace with a trailing {} ON THE LINE)
+    //     The pythonic indented-body form is BUILT — an r|oai whose path is followed
+    //     by a deeper block becomes the do_fn (Lang_compile_collect's IOing branch):
+    //       r %pat            →  await w.replace({pat}, async () => { …body… })
+    //       oai req:X         →  w.doai({req:'X'})?.(async (req) => { …body… })
+    //     Still infirm is the SAME-LINE trailing-{} spelling and the jammed multi-leg
+    //     capture, e.g.  w r key:ing,field:s {}  /  w oai docs/doc,$path$dock  (where
+    //     $path is a {variable}-shorthand keyed by its own name, $dock the result var):
+    //       · bareword values: "key:ing" wants 'ing' as a STRING here, which diverges
+    //         from the i/o convention where a bareword is an identifier — unresolved.
+    //       · the $path$dock jammed double-sigil form needs grammar support; the clean
+    //         capture today is name$ / name$:var.
+    //     < the inline {}-spelling + $path$dock are unbuilt; prefer the pythonic body.
     //
     // ── Document registry ────────────────────────────────────────────────────
     //

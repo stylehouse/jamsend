@@ -941,6 +941,17 @@ The runner is built (`scripts/Story_cli.*`, via vitest's transform instead of th
      — continuity goners (§2.3, §5) and shared-ref structure each get their own greppable
       file, not just the merged main snap.
 
+- **A live-runner explorer (BUILT — over the relay, not the pile).** `scripts/story_repl.mjs` is a
+   readline shell over the `runner_ask` RPC (the relay's corr-routed CLI↔browser channel — `Lies_runner_ask_recv`
+    in `LiesFunk.svelte`, `on('runner_ask')` in `LiesLies.svelte`): drive a runner ALREADY running in a
+     browser (`?B=<Book>`) — `run`/`watch`/`state`/`steps`/`snap`/`diff` — and read its live verdict plus a
+      colourised `diff <n>` (live `got_snap` vs the baked expected) **as text**, the §16 loop pointed at a
+       real-time / real-audio browser run instead of the headless pile. First use caught a MusuLive stale-bake
+        counter drift (`self,round`) as fuzz, not surprise (§4.2) — the diff localised it instantly. Brief:
+         `spec/Music_todo.md` §6.2. The expected side still rides the shared-disk fixture; driving the
+          `fetch_snap` read in the handler so it travels over the socket too is the natural completion of
+           "diff channels" above.
+
 ---
 
 ## 17. The realisations, and the order they imply

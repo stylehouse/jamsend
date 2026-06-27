@@ -46,6 +46,11 @@ theCompiledStuff(A,w) {
 
     // loosely binding if block maker. right of and is a block so can contain ;
     !0 and w i wibble_andily
+    // && binds tighter than and — the whole run left of the LAST and is the condition
+    33 && 44 and w i compound_andily
+    // chained EXPR and EXPR and STMT — each condition operand is parenthesised, so a
+    //  looser || inside one keeps its grouping: (0 || 1) && (!0), not 0 || (1 && !0)
+    0 || 1 and !0 and w i chained_andily
 
     [3]
     S o yeses/because
@@ -282,6 +287,11 @@ captureOutTiles(A,w):
     A o prefixy,wither.$:ang
     // the older bare spelling stays valid (additive): name$ , name$var , name.$var
     o hut/toot$tval
+
+// loose `and` is demoed live in theCompiledStuff above (wibble_/compound_/chained_andily).
+//  The statement right of the last `and` is ANY statement, not just an io — a bare `return`
+//   or `break` too (`caster%live && term%want and break` → if (caster.sc.live && term.sc.want) { break }),
+//    not shown above only because a `return` would cut the demo method short.
 
 IMPORT()
     import Peeroleum from "$lib/gen/N/Peeroleum.go"

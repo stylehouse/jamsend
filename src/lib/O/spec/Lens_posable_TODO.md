@@ -33,28 +33,66 @@ So the Lens-KIND vocabulary grows from {Panel, Brink, InterestSmall|Big} into a 
    **posing/anchoring model** (how a Decor wall sizes, how Brink layers over it, how the bridge
     routes) is the unbuilt, uncooked part.  Don't build until the pose model is designed.
 
-## Near TODO 1 — Waft:Cluster holds layout-state: persist Waft open|closed
+## Near TODO 1 — SUPERSEDED by the Keep + a layout service
 
-Goal (user): `Waft:Cluster` carries a **basic layout-state**, starting with **which Wafts are
- open vs closed**, persisted across reload.
+*(Original ask: `Waft:Cluster` holds basic layout-state, starting with which Wafts are open/closed,
+ persisted across reload. The `dontSnap` wrinkle — and the proposed "split the cluster Waft into
+  snapped-Layout + dontSnap-Aim" — is now **moot**: `Waft:Keep` is a real snapped, durable home of
+   its own (`Cluster_design.md`), so layout-state lives in the Keep, not a split Cluster. The
+    open/closed set is already the Keep's `WaftTimes` ledger — add an `open`/`minimised` flag.)*
 
-**The wrinkle (decide first):** `Waft:Cluster,Aim` is `dontSnap` (the endpoint layer — Runner/Relay/
- Errands must stay off the snap).  Layout-state needs the opposite: it must **persist**.  A snapped
-  child under a dontSnap parent does NOT snap, so the layout-state can't live *under* the Aim Waft.
-   Options:
-  - **(A, recommended)** Split the cluster Waft: `Waft:Cluster` snapped, with a `dontSnap`-tagged
-     `Aim` sub-section (endpoints) and a snapped `Layout` sub-section (open/closed).  `Lies_aim_setup`
-      stops stamping `dontSnap` on the whole Waft and moves it onto the Aim child.
-  - **(B)** A separate snapped particle (e.g. `Layout:1` on w:Lies) unrelated to Waft:Cluster — but
-     the user explicitly wants Waft:Cluster to *be* the layout home, so (A) honours that.
+## The layout service — bridge tiny UIs up to their Lens, backed by the Keep
 
-**Shape:** record open Waft identity by name/key (`waft.sc.Waft`), plus `active`.  Wafts already live
- as `Waft:1` particles on w:Lies with `active`/`boring` flags (Liesui `all_wafts`), but there is **no
-  LiesPersist / restore-the-open-set on boot** — the boot acquire path (`Lies.svelte` ~825) picks a
-   single Waft to focus (`active ?? current ?? first`), it does not reopen a remembered set.  So this
-    is two pieces: **(1)** write the open/closed set into the Layout particle on open/close/active-
-     change; **(2)** on boot, reopen that set (drive the Waft-acquire path from the Layout list, not
-      just focus one).  Piece (2) needs the acquire/open model mapped first — that is the real work.
+**The pattern that wants extracting.** Tiny UIs and Lens panels each hold ephemeral local `$state`
+ for their own layout — and a few already **hand-roll** persistence into `House.stashed`, scattered
+  and ad-hoc:
+- already-persisted (the proof the need is real): `Storui` → `stashed['Storui:'+book]`
+   (`open_at/sticky_mode/expanded`), `Cyto` → `stashed.Cyto_layout_name`, `Otro` → `stashed.showC`.
+- still LOST on reload: `Lens.svelte` Brink `jumped`/`lefted` (the corner pose), `Waft.svelte`
+   `minimised`/`capped`/`sidebyside`, `Langui` `minimap_open`/`expanded`, `DocTing` `open`/`sort`,
+    `MiniWaft` `orbed`, `InterestStrip` `show_cold`.
+
+A **layout service** is the one bridge: a `(scope, key) → get/set` backed by the Keep that any tiny
+ UI binds its local state to, instead of a bare `$state(false)` or a hand-rolled `stashed[...]`. The
+  Lens stays a **hole** (ephemeral, `ave`, off-snap — `Lies_lens_bag`); durability lives in the Keep,
+   projected into the live Lens at hoist and written back on a user gesture. This is the same doctrine
+    as `Cluster_design.md` §3 ("a Lens is a hole; durability lives in the Funkcion") — here the
+     durable home is the Keep, and the **Keep's own `Funkcion` (its agency) is the natural service
+      host**: at hoist it reads layout from the Keep → suggests the Lens with it; on toggle it writes
+       back + re-suggests.
+
+**Three scopes, mapped onto the Keep:**
+- **per-Waft** → the Keep's `WaftTimes,of_Waft:<path>` (minimised · capped · sidebyside · the dock's
+   Vexpandy · scroll · in_Doc). *This is "the layout status of each %Waft."*
+- **per-Lens** → keyed by the Lens identity `(LensKind, of_Funkcion)` — the Brink's `jumped`/`lefted`
+   corner, a Panel's `altitude`/open. A `Keep/Layout,of_Lens:<id>` section beside the WaftTimes.
+- **global chrome** → not tied to a Waft or Lens (`Langui minimap_open`, `DocTing sort`, `Cyto
+   layout_name`). The Keep's own top-level layout, or plain `mem()`/`stashed` — the client picks.
+
+**Gotchas to honour (caught while reading):**
+- **Don't persist the transient.** Input buffers (`new_waft_path`, `peel_text`, `draft_*`),
+   confirm-guards (`reset_confirm`, `confirming`), one-shot init guards (`setup_done`, `stash_loaded`),
+    DOM refs, measured geometry (`anchor`, `beam`), and live selection/telemetry (`sel_from`,
+     `status`) must STAY ephemeral. The service is **opt-in per state**, never blanket.
+- **CodeMirror selection** restores via CM's own EditorState — don't duplicate it in the Keep.
+- **ave (off-snap) ↔ Keep (snap) loop.** A write lands in the Keep (durable, pumped) AND must refresh
+   the ave Lens (live). Coalesce / write-only-on-user-change (like `Lies_keep_push_cursor`) so
+    Keep→re-suggest→ave-bump→re-render doesn't feed back into a write.
+- **Snap churn.** Layout gestures are frequent; the 800ms `Lies_waft_save` throttle absorbs most, but
+   keep only durable-worthy layout in the service (not fidgety affordances).
+- **Identity / rename.** per-Waft keys on `waft.sc.Waft`; the rename-surviving locator caretaking is
+   the same the cursor-resume wants — share it.
+- **Far-vision headroom.** The posable-torus (Decor/Brink poses, below) would ride this same service;
+   keep the value model general (not just booleans) so poses fit later — but don't build for it yet.
+
+**Boot/restore (the open-set half).** Wafts live as `Waft:1` on w:Lies (`active`/`boring`), and the
+ boot acquire (`Lies.svelte` ~830) now reopens the Keep's ledger — so "reopen the remembered set" is
+  the Keep's `Lies_keep_reopen`, no longer unmapped. Adding per-Waft `open`/`minimised` to the
+   WaftTimes + reading it on reopen completes the original Near-TODO-1.
+
+**DEFERRED (user): the Vexpandy client.** Build the service + Keep backing first; wire the actual
+ Vexpandy/minimise/Brink-pose clients onto it **once the service shape is seen** working. This note is
+  the design caught from reading Lens; the client wiring waits.
 
 ## Near TODO 2 — the Interest's Docs as a mini-GhostList in the Brink (+ What↔Doc tracking)
 

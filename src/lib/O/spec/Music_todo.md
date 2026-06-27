@@ -266,15 +266,35 @@ It is the exact mirror of `scripts/ghost_compile.ts` (the addr-less-CLI → edit
    - `state` → `Cred_run_outcome()` (`{ok,ok_pct,done,caveat}`) + the `Storyrun` phase/n/total
    - `steps` → per-`Step` `{n, ok, caveat, dige}`
    - `snap <n>` → one `Step`'s `got_snap` (the live world serialisation — the "examine the writings" read)
-- **`scripts/runner_ask.mjs`** — the new sender. Addr-less, corr-settled (runner_ack / `undeliverable` /
+   - `diff <n>` → `got_snap` + `exp_snap` (the diff-panel's expected, *if* already loaded — it is fetched
+      lazily for the UI, Story.svelte:1470) + the `book`, so the explorer can diff live-vs-expected
+- **`scripts/runner_ask.mjs`** — the one-shot sender. Addr-less, corr-settled (runner_ack / `undeliverable` /
    timeout), `--watch` polls `state` until the run settles done|failed, exit code carries the verdict.
+- **`scripts/story_repl.mjs`** — the **readline explorer** (§16 "agent as test driver", pointed at the LIVE
+   runner). One persistent socket, a `story›` prompt: `ping` / `run <Book> [--watch]` / `watch` / `state` /
+    `steps` / `snap <n>` / `diff <n>` / `books` / `book <Book>`. `diff` is a colourised LCS line-diff of the
+     live `got_snap` against the expected — the runner's `exp_snap` when the UI loaded it, else the
+      shared-disk fixture `wormhole/Story/<Book>/<NNN>.snap` — with a `-del +add` surprise count. Line
+       handling is serialised so a piped/scripted session runs in order.
 
 ```
-node scripts/runner_ask.mjs ping
-node scripts/runner_ask.mjs run MusuLive --watch     # kick + poll to verdict, real browser, real clock
-node scripts/runner_ask.mjs snap 3                    # the live world the runner produced
+node scripts/runner_ask.mjs run MusuLive --watch     # one-shot: kick + poll to verdict, real browser
+node scripts/story_repl.mjs                           # interactive explorer
+  story› run PortPlan --watch
+  story› diff 2                                        # ⇒ "(identical — no surprise)"
+  story› run MusuLive --watch
+  story› diff 2                                        # ⇒ the self,round counter drift (stale bake), nothing else
 RUNNER_URL=http://172.17.0.1:9091   # default; the runner dev server as seen from the claude container
 ```
+
+**The diff over the socket EARNED ITS KEEP first use:** MusuLive runs red live, but `diff 2`/`diff 4` showed
+ the *only* divergence is `self,round` off by a constant +6 (baked `8`/`10` vs live `2`/`4`) — every other
+  line identical. That is the prep-tick-count shift from the `Run_A` cleanup (a stale bake / counter fuzz,
+   §4.2), not a behavioural regression; EntropyArrest already forgives most of it (the `caveat` counts). The
+    fix is a re-ACCEPT (rebake), not a code change. NOTE: `got_snap` is fully over the socket; `exp_snap`
+     currently rides the disk fixture (the runner only holds it once the UI panel loaded it) — making the
+      expected travel over the socket too (drive the `fetch_snap` Wormhole read in the handler) is the §16.1
+       "diff channels in the pile" follow-up.
 
 **v1 is unsigned/trust-everything** (like `gen_write` when `CLUSTER_TRUSTED_PUBS` is unset): a run
  executes already-compiled gen, dev-only on localhost. Signing mirrors `ghost_compile` once the cluster

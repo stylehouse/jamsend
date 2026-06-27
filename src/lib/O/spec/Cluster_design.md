@@ -318,6 +318,11 @@ The owner's ladder for *Claude driving the gate itself* — recorded here becaus
       overrun signal** (the lost-wakeup-vs-churn tell) in the pile, so a wedge reads at a glance
        instead of from a frozen browser.
 
+**The LIVE realisation of these Tiers** — driving a runner in a real browser over the relay (not just the
+ headless CredRunner) — now has a built RPC (`runner_ask`/`story_repl`) and its own concrete TODO:
+  **`Runner_talk_TODO.md`** (diff-over-socket = Tier 1, trace/stack + hold/retain = Tier 4, signed ACCEPT =
+   Tier 1 × §6). Point the agent there for the live interface; this section is the headless framing it mirrors.
+
 ---
 
 ## Open questions for the room
