@@ -1,59 +1,19 @@
 <script lang="ts">
-    // LangSion.svelte — runtime helpers for IOing expressions translated by
-    // LangCompiling.svelte.
+    // LangSion.svelte — runtime helpers for the multi-leg IOing expressions
+    //  LangCompiling.svelte translates.  Single-leg IOing stays inline as
+    //   `w.i({x:1})` / `w.o({x:1})` for readability and speed; only multi-leg
+    //    paths land here.  The translator emits calls shaped
+    //      this._i_drill(w,  [ leg, … ])            leg = { sc, exactly? }
+    //      this._o_drill(w,  [ leg, … ])
+    //      this._o_drill1(w, [ leg, … ])   // "name$" single-value capture
+    //      this._o_iter(w,   [ leg, … ])   // Sunpit iteration
     //
-    // The translator emits calls of the shape
-    //
-    //   this._i_drill(w,  [ leg, leg, … ])
-    //   this._o_drill(w,  [ leg, leg, … ])
-    //   this._o_drill1(w, [ leg, leg, … ])   // used for "name$" capture
-    //   this._o_iter(w,   [ leg, leg, … ])   // used for Sunpit iteration
-    //
-    // where each leg is
-    //
-    //   { sc: TheUniversal, exactly?: TheUniversal }
-    //
-    // Only multi-leg paths go through these helpers — single-leg IOing stays
-    // inline as `w.i({x:1})` / `w.o({x:1})` etc. for readability and speed.
-    //
-    // ── why a separate ghost ────────────────────────────────────────────────
-    //
-    //   The runtime is deliberately split from the compile-side so the
-    //   guts can grow (Travel-based multi-row wandering, wildcards, @ark
-    //   copying, gref filtering per io.parsetalk — see regroup() phase 6)
-    //   without touching LangCompiling.  As tiers are added,
-    //   LangCompiling picks which helper to emit for each IOing's
-    //   complexity; LangSion provides the helpers.
-    //
-    // ── naming ──────────────────────────────────────────────────────────────
-    //
-    //   _o_* / _i_* mirror C.o() / C.i() from Stuff.svelte, which they
-    //   ultimately call.  The leading underscore marks these as called
-    //   from generated code only — not part of the hand-written surface.
-    //
-    // ── tier 1 semantics ────────────────────────────────────────────────────
-    //
-    //   _o_drill — drill through legs picking [0] at each intermediate step,
-    //              ending with the array of all matches for the final leg.
-    //              Missing intermediate collapses to [].
-    //
-    //   _o_drill1 — as _o_drill but returns the first hit or undefined.
-    //               Used when the trailing leg has a single "name$" capture so
-    //               the generated `let name = …` binds a single value.
-    //
-    //   _o_drill_caps / _i_drill_caps — as above but the legs carry `caps`
-    //               (trailing capture targets); they return a bag keyed by each
-    //               capture's let-name, which the generated code destructures
-    //               (`let {a, b} = this._i_drill_caps(…)`).  Used when one IOing
-    //               has two or more captures.
-    //
-    //   _i_drill — oai (find-or-create) every leg above the last, then a plain
-    //              i on the last (so the leaf is a fresh insert); returns the
-    //              last inserted C.  `exactly` is ignored (insert doesn't
-    //              filter, so LangCompiling doesn't bother emitting it for .i).
-    //
-    //   _o_iter — all matches at each level, flatMap'd across all frontier
-    //             members.  The for-of Sunpit emits iterates this directly.
+    // Split from the compile-side on purpose so the guts can grow (Travel
+    //  multi-row wandering, wildcards, @ark copying, gref filtering — see
+    //   regroup() phase 6) without touching LangCompiling, which only picks
+    //    which helper to emit.  _o_* / _i_* mirror C.o() / C.i() (Stuff.svelte),
+    //     which they ultimately call; the leading underscore marks them
+    //      generated-code-only, off the hand-written surface.
 
     import type { TheC } from "$lib/data/Stuff.svelte"
     import { onMount } from "svelte"
@@ -68,9 +28,8 @@
 
 //#region _o_drill
 
-    // Multi-leg .o:  drill through picking first at each intermediate step.
-    // Returns an array (possibly empty).  If any intermediate step misses,
-    // returns [] — so callers never see undefined from this helper.
+    // Multi-leg .o: pick first at each intermediate step, return all matches of
+    //  the last leg.  Any intermediate miss → [] (callers never get undefined).
     _o_drill(C: TheC | null | undefined, legs: Leg[]): TheC[] {
         if (!C || !legs.length) return []
         let cur: TheC = C
@@ -92,11 +51,10 @@
         return hits[0]
     },
 
-    // As _o_drill, but legs may carry `caps`.  Drills picking [0] at each step
-    // (intermediate caps read that picked C; final-leg caps read the first hit),
-    // recording each cap into a bag keyed by `as`.  A `val` cap takes the C's sc
-    // value for `key`, otherwise the C itself.  A missing step leaves later caps
-    // undefined (the bag still has the keys).  Generated code destructures it.
+    // As _o_drill, but legs may carry `caps` recorded into a bag keyed by `as`
+    //  (a `val` cap takes the picked C's sc[key], else the C itself).  A missing
+    //   step leaves later caps undefined but the bag keeps the keys; gen code
+    //    destructures it.
     _o_drill_caps(C: TheC | null | undefined, legs: Leg[]): Record<string, any> {
         const bag: Record<string, any> = {}
         const record = (leg: Leg, hit: TheC | undefined) => {
@@ -121,9 +79,8 @@
 //#endregion
 //#region _i_drill
 
-    // Multi-leg .i:  oai (find-or-create) every leg above the last, then a
-    // plain i on the last so the leaf is always a fresh insert.  Returns the
-    // last-inserted C.  exactly is ignored (insert doesn't filter).
+    // Multi-leg .i: oai (find-or-create) every leg above the last, plain i on the
+    //  last so the leaf is a fresh insert; returns it.  exactly ignored (no filter).
     _i_drill(C: TheC, legs: Leg[]): TheC {
         let cur: TheC = C
         const last = legs.length - 1
@@ -133,10 +90,9 @@
         return cur
     },
 
-    // As _i_drill, but legs may carry `caps` — trailing capture targets.  After
-    // each leg lands, every cap on it records into a bag keyed by `as`; a `val`
-    // cap takes the leaf's sc value for `key`, otherwise the leaf C itself.
-    // The generated code destructures the bag: `let {a, b} = this._i_drill_caps(…)`.
+    // As _i_drill, but legs may carry `caps`: after each leg lands, its caps record
+    //  into a bag keyed by `as` (a `val` cap → leaf's sc[key], else the leaf C).
+    //   Gen code destructures the bag.
     _i_drill_caps(C: TheC, legs: Leg[]): Record<string, any> {
         let cur: TheC = C
         const bag: Record<string, any> = {}
@@ -153,15 +109,11 @@
 //#endregion
 //#region _o_iter
 
-    // Sunpit iterator — all matches at each level, across all frontier
-    // members.  Returns a flat array the for-of Sunpit emits can walk.
-    //
-    //   S o yeses/because   iterates every `because` under every `yeses`
-    //   found on w — not just the first hut's first toot, etc.
-    //
-    // For phase 2 this is eager (builds the full frontier array).  Phase 3+
-    // may want a true generator if paths explode, but the common case of
-    // a hundred or so rows per level is fine eagerly.
+    // Sunpit iterator — ALL matches at each level across all frontier members
+    //  (not [0]-picking like the drills): `S o yeses/because` walks every `because`
+    //   under every `yeses` on w.  Returns a flat array the for-of Sunpit walks.
+    //  Eager for phase 2 (full frontier); phase 3+ may want a generator if paths
+    //   explode, but ~hundreds of rows/level is fine eager.
     _o_iter(C: TheC | null | undefined, legs: Leg[]): TheC[] {
         if (!C || !legs.length) return []
         let frontier: TheC[] = [C]
@@ -181,38 +133,24 @@
 //#endregion
 //#region _io_plan — the reductive oracle
 
-    // _io_plan — decide which helper an IOing path wants, |throw naming the
-    // iooia seam it would need.  It runs on (nearly) every IOing; the usual
-    // answer is "a drill handles it", so the verb compiles |runs with no further
-    // modelling at all.  One source of truth for the tier, shared by
-    // LangCompiling (which helper to emit) |the runtime (assert a plan before
-    // it runs).  The point is to reductively land on the cheapest existing
-    // helper, and to fail loudly the moment an expression reaches past them.
-    //
-    //   adv (the advice — how to execute one IOing; "req" is taken by reqy) = {
-    //     ness:    'i' | 'o',          the trimmed verb (Lang_compile_IOness)
-    //     legs:    Leg[],             the path after any receiver hint
-    //     sunpit?: boolean,           an "S " iteration wrapped this IOing
-    //     flags?:  { wildcard?, ark?, doof?, flow? },  set by the compile side
-    //   }                             when the tree carries a node a drill can't
-    //                                 walk; the runtime leaves flags unset since
-    //                                 a built Leg can't hold those shapes anyway.
-    //
-    // The reduction ladder, cheapest-first; the first rung that fits wins:
-    //   verb outside {i|o}      → throw   the full IOness family |the oai-verb
-    //                                     each want their own last-leg drill,
-    //                                     unbuilt (iooia io.i|io.o|knowables)
-    //   any flag set            → throw   wildcard /*: |@ark frontier |doof
-    //                                     mid-path |the -> flow form, all unbuilt
-    //   sunpit                  → _o_iter the frontier walk; a row at a time is
-    //                                     _io_cursor, the slow-motion variant
-    //   caps >= 2               → _{i|o}_drill_caps   destructured bag
-    //   caps === 1              → _i_drill |_o_drill1  (single leaf |first hit)
-    //   caps === 0              → _i_drill |_o_drill
-    //
-    // tier 0 (a single leg, no sunpit, fewer than two caps) stays inline in the
-    //   generated code (w.i(sc) |w.o(sc)), so the drills never see it; _io_plan
-    //   still reports tier 0, helper null so the compile side reads one ladder.
+    // _io_plan — the reductive oracle: pick the cheapest helper an IOing wants,
+    //  else throw naming the unbuilt iooia seam.  Runs on ~every IOing (usual
+    //   answer: a drill handles it).  ONE source of truth for the tier, shared by
+    //    LangCompiling (which helper to emit) and the runtime (assert before run).
+    //   adv (the advice — "req" is taken by reqy): ness = trimmed verb
+    //    (Lang_compile_IOness), legs = path after any receiver hint, sunpit = an
+    //     "S " iteration wrapped it, flags = compile-only escapes for a node no
+    //      drill can walk — the runtime leaves flags unset (a built Leg can't hold them).
+    // Reduction ladder, cheapest-first; first rung that fits wins (throw reasons
+    //  in the Error messages below):
+    //   verb outside {i|o}  → throw
+    //   any flag set        → throw
+    //   sunpit              → _o_iter            (a row at a time → _io_cursor)
+    //   caps >= 2           → _{i|o}_drill_caps  destructured bag
+    //   caps === 1          → _i_drill |_o_drill1  (single leaf |first hit)
+    //   caps === 0          → _i_drill |_o_drill
+    // tier 0 (single leg, no sunpit, <2 caps) stays inline in gen code (w.i|w.o);
+    //  the drills never see it, but _io_plan still reports it so one ladder serves.
     _io_plan(adv: {
         ness: 'i' | 'o', legs: Leg[], sunpit?: boolean,
         flags?: { wildcard?: boolean, ark?: boolean, doof?: boolean, flow?: boolean },
@@ -234,20 +172,18 @@
 
         const caps = legs.reduce((n, l) => n + (l.caps?.length ?? 0), 0)
 
-        // a sunpit iterates: every match at every level, flat.  the value-grab
-        //   never applies — an iteration binds the row C, not a value off it.
+        // a sunpit binds the row C, not a value off it → the value-grab never applies.
         if (adv.sunpit) {
             return { tier: 1, helper: '_o_iter', ness, iter: true, caps, grab: null }
         }
 
-        // the lone-capture grab: .$ takes ?.sc,key off the hit, a bare $ the C.
-        //   read it off the single cap when there is exactly one in the path.
+        // lone-capture grab: `.$` → hit's sc[key], bare `$` → the C; read off the
+        //  single cap when caps === 1.
         let grab: { value: boolean, key: string } | null = null
         if (caps === 1) {
             for (const l of legs) for (const c of l.caps ?? []) { grab = { value: c.val, key: c.key }; break }
         }
 
-        // single leg, fewer than two caps, no iter → tier 0, inline; drills skip it.
         if (legs.length === 1 && caps < 2) {
             return { tier: 0, helper: null, ness, iter: false, caps, grab }
         }
@@ -267,15 +203,12 @@
 //#endregion
 //#region _io_run — execute a plan
 
-    // _io_run — the one entry that turns a plan + legs into the C work.  Most
-    // generated code still calls the named drills directly (a lean inline read
-    // |a destructured bag reads better in place); _io_run is for the callers
-    // that hold a plan rather than emit one — the slow-motion cursor, a Se walk,
-    // an overmind stepping an extent.  _io_plan picks, _io_run does; tier 0 is
-    // inlined here too, so a plan alone can run any IOing.
-    //   returns: tier0-array |iter → TheC[]; caps-bag → the bag; leaf-returning
-    //   _i_drill |first-hit _o_drill1 → a single C |undefined.  the value-grab
-    //   is applied here when the plan carries one, so a caller sees the value.
+    // _io_run — the one entry that turns a plan + legs into C work.  Most gen code
+    //  calls the named drills directly (a lean inline |destructured bag reads better
+    //   in place); _io_run is for callers that hold a plan, not emit one — the
+    //    cursor, a Se walk, an overmind stepping an extent.  tier 0 is inlined here
+    //     too, so a plan alone runs any IOing; the value-grab is applied here.
+    //   returns: tier0|iter → TheC[]; caps → the bag; _i_drill |_o_drill1 → a C |undefined.
     _io_run(C: TheC, adv: { ness: 'i' | 'o', legs: Leg[], sunpit?: boolean, flags?: any }): any {
         const plan = this._io_plan(adv)
         const legs = adv.legs
@@ -306,19 +239,16 @@
 //#endregion
 //#region _io_cursor — slow-motion S (iterate in place, when wanted)
 
-    // _io_cursor — a Sunpit frontier you pull a row at a time, holding your
-    // place across pulls, so an overmind can step it when it wants — slow
-    // motion, in place — instead of draining it in one for-of.  This is iooia
-    // nz()/t.more() |forS (the standing cursor on 1s&forSing, its in_progress
-    // flag) reduced to a single-row eager frontier: a single walk advancing
-    // through an extent, pulled by an elvis from whatever process is minding it.
-    //   .more() → the next C |undefined once drained; .i|.done track position;
-    //   .in_progress is true once pulling began |is not yet drained — the flag
-    //   a forS reads to resume a held cursor rather than rebuild it.
-    // < the ark-grouping that folds a fanned leg into ar[k]=[v+] columns (the
-    //   "basically a database" escalation) is iooia parkar()'s read-ahead; not
-    //   built — this cursor is single-row, one C per leg, like the drills.  it
-    //   wants the taxonomy seam (which legs are plural) resolved first.
+    // _io_cursor — a Sunpit frontier pulled a row at a time, holding place across
+    //  pulls so an overmind steps it (slow motion, in place) not drained in one
+    //   for-of.  iooia nz()/t.more() |forS reduced to a single-row eager frontier,
+    //    pulled by an elvis from whoever minds it.
+    //   .more() → next C |undefined once drained; .i|.done track position;
+    //    .in_progress (pulling began, not drained) = the flag a forS reads to
+    //     resume a held cursor rather than rebuild it.
+    // < ark-grouping (fold a fanned leg into ar[k]=[v+] columns — the "basically a
+    //   database" escalation, iooia parkar()'s read-ahead) is not built; this cursor
+    //    is single-row like the drills, wants the taxonomy seam (which legs plural) first.
     _io_cursor(C: TheC, legs: Leg[]): {
         more: () => TheC | undefined, i: number, done: boolean, in_progress: boolean,
     } {
@@ -341,24 +271,19 @@
 //#endregion
 //#region _se_plan — a %Seem said as an IOing (FRONTIER — highly experimental)
 
-    // _se_plan — a highly experimental | theoretical weld: the idea that a %Seem
-    // could be wired by throwing an IOing around it, so a Seem's reach into the
-    // remote %What reads as an o-walk with a wide match |a trace tag, and the
-    // same ladder that routes o|i|S would describe what a Seem does.  This is a
-    // sketch of the translation shape only, not a load-bearing path — the %Seem
-    // itself lives in Selection beyond the cordon, and whether Se wants saying
-    // this way at all is unsettled.  Kept here as a frontier marker, not a wire.
-    //
+    // _se_plan — highly experimental: could a %Seem be wired by throwing an IOing
+    //  around it, so its reach into the remote %What reads as an o-walk (wide match
+    //   |trace tag) and the same o|i|S ladder describes a Seem?  A sketch of the
+    //    translation shape only, NOT load-bearing — the %Seem lives in Selection
+    //     beyond the cordon, and whether Se wants saying this way is unsettled.
     //   %Seem:origin   match_sc:{} wide, trace_sc:%Demonstrations,origin
     //                  → o one wide leg, the awareness walk (goners|neus)
-    //   %Seem:working  a clone tree walked with use_Understandable
-    //                  → o the same shape, carrying its D/U sphere per LiesHold
-    //
-    // < trace_sc (the D-sphere tag) is not a match — it rides the walk, not the
-    //   leg sc.  it returns on opt.trace so _io_plan stays match-only; a walker
-    //   (Selection.process, beyond the cordon) would consume trace, not a drill.
-    // < use_Understandable springs the per-D %Understandable child; that too is
-    //   a walker switch, carried on opt, not yet expressible as a leg.
+    //   %Seem:working  clone tree walked w/ use_Understandable → same o shape,
+    //                  carrying its D/U sphere per LiesHold
+    // < trace_sc (D-sphere tag) isn't a match — it rides the walk, returns on
+    //   opt.trace so _io_plan stays match-only; a walker (Selection.process, beyond
+    //    the cordon) consumes it, not a drill.  use_Understandable is likewise a
+    //     walker switch on opt, not yet expressible as a leg.
     _se_plan(seem: { match_sc?: any, trace_sc?: any, use_Understandable?: boolean }): {
         adv: { ness: 'i' | 'o', legs: Leg[] }, trace: any, understandable: boolean,
     } {

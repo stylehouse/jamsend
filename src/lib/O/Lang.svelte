@@ -6,223 +6,124 @@
     // keeps the per-doc lifecycle (plan / whatsthis / bookmark actions) and
     // threads the compile trigger + reply-polling into that lifecycle.
     //
-    // ── Language goals ───────────────────────────────────────────────────────
+    // ── Language goals (the .g DSL; compiled in LangCompiling/compile.ts) ──────
     //
-    //   Receivers (X i …, X o …)
-    //     A bareword before the verb is the call receiver:
-    //       A i %prefixy:'sivi'   →  A.i({prefixy: 'sivi'})
-    //       w i a/b               →  this._i_drill(w, …)   (w made explicit)
-    //     JS keywords (return, let, …) are never treated as receivers, so
-    //     "let la = i a/b" keeps its "let la = " prefix verbatim.  The older
-    //     "$name" leg-0 hint (o $la/x → la.o(…)) still works too.
+    //   Receivers (X i …)  — a bareword before the verb is the call receiver
+    //       A i %prefixy:'sivi'   →  A.i({prefixy:'sivi'})
+    //     JS keywords (return, let, …) are NEVER receivers, so "let la = i a/b" keeps
+    //      its "let la = " prefix verbatim.  Older "$name" leg-0 hint still works.
     //
-    //   Captures (name$, name$:var)
-    //     A trailing $ on the last leg captures the matched row:
-    //       o with$        →  let with = w.o({with:1})[0]
-    //       o with$:vish   →  let vish = w.o({with:1})[0]   (named target)
-    //     A colon-value after the $ names the target variable rather than
-    //     filtering.  Multi-leg captures route through _o_drill1.
+    //   Captures (name$, name$:var)  — trailing $ on the last leg captures the row
+    //       o with$:vish   →  let vish = w.o({with:1})[0]   (colon-value names the target
+    //                          var, not a filter).  Multi-leg captures route _o_drill1.
     //
-    //   let-declaration sugar ($name = expr)
+    //   let-sugar ($name = expr)  — a single "=" (not ==, +=) after a leading $name
     //       $its = 'ferv'   →  let its = 'ferv'
-    //     A single "=" (not ==, not +=) after a leading $name declares a local.
     //
-    //   Puddle values (%key:'string literal')
-    //     % before a PeelKey means the colon-value is a raw TS expression.
-    //     Currently StringVal handles 'single', "double", `backtick` strings.
-    //     The compiler emits the value verbatim; no exactly filter is applied.
-    //     Next: multi-token puddle blocks for arithmetic / function calls.
+    //   Puddle values (%key:'string literal')  — % before a PeelKey makes the colon-value
+    //     a raw TS expr, emitted VERBATIM (no exactly filter).  StringVal does 'single'|
+    //      "double"|`backtick`.  Next: multi-token puddle blocks (arithmetic/calls).
     //
-    //   Ampersand calls (&method,arg,arg,…)
-    //     Compiles to this.method(arg,arg,…), bracket/string-aware so object
-    //     literal args keep their own commas:
-    //       &nothinging,A,w,{x:3}   →  this.nothinging(A,w,{x:3})
-    //     Works standalone and inside if/elsif conditions, including the
-    //     pythonic colon form (the trailing ":" is dropped — indent marks the
-    //     block) and the &&-continuation form:
-    //       if &m,A,w:               if &m,A,w
-    //           && 6          and        && 6      →  if (this.m(A,w) && 6) {
-    //     The arg list is raw text — no inner stho parsing of each arg.
+    //   Ampersand calls (&method,arg,…)  → this.method(arg,…), bracket/string-aware so
+    //     object-literal args keep their own commas.  Works standalone and in if/elsif
+    //      conditions, incl. the pythonic colon form (trailing ":" dropped, indent marks
+    //       the block) and the &&-continuation.  The arg list is raw text — no inner stho.
     //
-    //   Loosely-binding "and" block (LHS and <io>)
-    //       !0 and w i wibble   →  if (!0) { w.i({wibble: 1}) }
-    //     LHS becomes the condition; the IO expression is the single-statement
-    //     body.  The body side is a block, so it can hold a ";".
+    //   "and" block (LHS and <io>)  — LHS is the condition, the IO expr the single-stmt body
+    //       !0 and w i wibble   →  if (!0) { w.i({wibble:1}) }   (body is a block, holds ";")
     //
-    //   async on method defs
-    //     "async name(…)" stamps async:1 on the def's word-index entry.  A
-    //     future pass can read that index to decide whether a matching &call /
-    //     bare call needs an `await` in front.
-    //     < the await-injection itself is not wired up yet.
+    //   async on defs  — "async name(…)" stamps async:1 on the word-index entry, for a
+    //     future pass to decide await-injection.   < the await-injection isn't wired up.
     //
-    //   .$ tight value-capture (key.$ , key.$:var , key:val.$)
-    //     "." binds tightly to its key and grabs that key's VALUE (not the whole
-    //     row), assigning it inline among other peel items — destructure/tuple style:
+    //   .$ tight value-capture (key.$ , key.$:var , key:val.$)  — "." binds to its key and
+    //     grabs that key's VALUE (not the row), assigned inline among peel items:
     //       o prefixy,wither.$:ang   →  let ang = w.o({prefixy:1,wither:1})[0]?.sc.wither
-    //       w i …/so:ont.$           →  so auto-named from the key, …?.sc.so
-    //     Built (CaptureDot in io_tokens + Lang_compile_PeelItem); LakeTiles.g l.281
-    //     is the live example.
+    //     Built (CaptureDot); LakeTiles.g l.281 is the live example.
     //
-    // ── Deferred / infirm syntax (parses, but not yet compiled) ───────────────
-    //
-    //   Inline {}-block verbs (r / roai / oai / replace with a trailing {} ON THE LINE)
-    //     The pythonic indented-body form is BUILT — an r|oai whose path is followed
-    //     by a deeper block becomes the do_fn (Lang_compile_collect's IOing branch):
-    //       r %pat            →  await w.replace({pat}, async () => { …body… })
-    //       oai req:X         →  w.doai({req:'X'})?.(async (req) => { …body… })
-    //     Still infirm is the SAME-LINE trailing-{} spelling and the jammed multi-leg
-    //     capture, e.g.  w r key:ing,field:s {}  /  w oai docs/doc,$path$dock  (where
-    //     $path is a {variable}-shorthand keyed by its own name, $dock the result var):
-    //       · bareword values: "key:ing" wants 'ing' as a STRING here, which diverges
-    //         from the i/o convention where a bareword is an identifier — unresolved.
-    //       · the $path$dock jammed double-sigil form needs grammar support; the clean
-    //         capture today is name$ / name$:var.
-    //     < the inline {}-spelling + $path$dock are unbuilt; prefer the pythonic body.
+    // ── Deferred / infirm syntax (parses, not yet compiled) ───────────────────
+    //   Inline {}-block verbs (r/roai/oai/replace + trailing {}).  The pythonic indented-
+    //     body form is BUILT (becomes the do_fn, compile_collect's IOing branch):
+    //       r %pat   →  await w.replace({pat}, async () => { …body… })
+    //     Infirm: the SAME-LINE trailing-{} and the jammed multi-leg capture
+    //      (w oai docs/doc,$path$dock) — bareword values want a STRING here (diverges from
+    //       i/o's identifier convention) and $path$dock needs grammar support.
+    //       < prefer the pythonic body; clean capture today is name$ / name$:var.
     //
     // ── Document registry ────────────────────────────────────────────────────
-    //
-    //   w/{docks: 1}/{dock: path} — one particle per open document.
-    //     c: { view, state, addBookmarkMark, clearAllBookmarks, saveEffect,
-    //          last_whatsthis_dock }
+    //   w/{docks:1}/{dock:path} — one particle per open document.
+    //     c: { view, state, addBookmarkMark, clearAllBookmarks, saveEffect, last_whatsthis_dock }
     //     sc: { doc:path, active:1? }
-    //     {bookmark:'bm_…', from, to, label}
-    //     {Compile:1}
-    //       {Output:1, name, source, dige}
-    //       {Pending:1}
-    //     {req:'Languish'}        — per-dock mind: text_loaded → compile.
-    //
-    //   Bookmarks, compile, and Languish live on dock, not w, so they can be r()'d per doc.
+    //     {bookmark:'bm_…',from,to,label} · {Compile:1}/{Output:1,name,source,dige}|{Pending:1}
+    //     {req:'Languish'}  — per-dock mind: text_loaded → compile.
+    //   Bookmarks, compile, Languish live on dock (not w) so they can be r()'d per doc.
     //
     // ── Understanding hold ───────────────────────────────────────────────────
-    //
-    //   w/{LE:<waft>}             — one Understanding PER open giver (per-Interest), keyed
-    //                               by its giver Waft so several coexist; stable (here,
-    //                               outside replace()).  Held on its Interest's c.LE; the
-    //                               foreground is resolved via %ActiveInterest, not a
-    //                               singleton (Lang_active_LE).  Switching foreground reuses
-    //                               a giver's preserved working clone — the crossfade.
-    //     /%State                 — synthesised: armed/changey/stale
-    //     // %push_dirty          — fault; present only when push didn't land clean
+    //   w/{LE:<waft>}  — one Understanding PER open giver, keyed by its giver Waft so
+    //     several coexist; stable (here, outside replace()), held on its Interest's c.LE.
+    //      Foreground resolved via %ActiveInterest, NOT a singleton (Lang_active_LE);
+    //       switching foreground reuses a giver's preserved working clone — the crossfade.
+    //     /%State  — synthesised armed/changey/stale  (//%push_dirty = push-didn't-land fault)
     //     /%Seem:origin / /%Seem:working
     //
-    //   w/{req:'workon'}          — open-ended; one per Lang instance.
-    //     c.src                   latest cursored TheC (stashed by e_Lang_workon_update)
-    //     do_fn = req_workon — the thin per-tick driver: roai's each stage
-    //       with its input signature (un-finishing a %permanent stage on drift),
-    //       then pumps the pipeline.  Invalidation cascades forward through keys.
-    //     /{req:'understanding',maz:3,permanent}  — re-arm LE + flush; sets %Interest
-    //       c.armed_src            identity-keyed re-arm gate (memoised)
-    //       sc.what                cursored What|path label for the snap
-    //     /{req:'ingredients',maz:2,permanent}    — the wanted %Goods, from %Interest
-    //       /{req:'furnishing',path,permanent}     — one per wanted dock; gate + ttlilt
-    //                                                + dock_askies pull.  Finished when
-    //                                                its dock has content_dige.
-    //     /{req:'instrumentation',maz:1,permanent} — compile + graft on the active dock
-    //       sc.have_Map, sc.n_pmirrors          convergence markers (results on dock)
+    //   w/{req:'workon'}  — open-ended, one per Lang instance.  do_fn req_workon is the thin
+    //     per-tick driver: roai's each stage with its input signature (un-finishing a
+    //      %permanent stage on drift), then pumps the pipeline; invalidation cascades forward.
+    //     c.src  latest cursored TheC (stashed by e_Lang_workon_update)
+    //     /{req:'understanding',maz:3}  re-arm LE + flush; sets %Interest.  c.armed_src =
+    //        identity-keyed re-arm gate (memoised); sc.what = cursored What|path label.
+    //     /{req:'ingredients',maz:2}    the wanted %Goods, from %Interest
+    //       /{req:'furnishing',path}    one per wanted dock; gate+ttlilt+dock_askies pull;
+    //          finished when its dock has content_dige.
+    //     /{req:'instrumentation',maz:1} compile + graft the active dock.  sc.have_Map,
+    //        sc.n_pmirrors = convergence markers (results on dock).
     //
-    //   w/{Languinio:1}           — Lang's one focus object enrolled in ave.
-    //     c.w                     back-ref to w:Lang
-    //     // ordered by volatility — dock on doc-switch, Interest on every checkout
-    //     c.active_LE              — off-snap handle to the foreground giver's w/{LE:<waft>}
-    //                                (the readers' "the LE driving now"); repointed each
-    //                                checkout|foreground.  No singleton {LE:1} hold anymore.
-    //     /{ActiveInterest:1}      — kind + waft of the foreground LE-bearing Interest.
-    //     /{dock:path}             — same-object hold  on the active CM doc.
-    //                                Re-pointed by Lang_set_active_dock on every doc switch.
-    //     /{Interest:1}            — sc.src = working clone root; c.LE = its own %LE.
-    //                                c.What = live %What object; sc.in_Doc|in_Point —
-    //                                the C-side address mirroring Lies' %Spotlight.
-    //                                in_Doc keys ingredients AND selects the active dock.
-    //                                Dropped + recreated by Lang_set_interest on each checkout.
+    //   w/{Languinio:1}  — Lang's one focus object enrolled in ave; c.w back-refs w:Lang.
+    //     Children ordered by volatility (dock on doc-switch, Interest on every checkout).
+    //     c.active_LE  — off-snap handle to the foreground giver's w/{LE:<waft>} ("the LE
+    //        driving now"); repointed each checkout|foreground.  No singleton {LE:1} hold.
+    //     /{ActiveInterest:1}  kind + waft of the foreground LE-bearing Interest.
+    //     /{dock:path}  same-object hold on the active CM doc; re-pointed by
+    //        Lang_set_active_dock on every doc switch.
+    //     /{Interest:1}  sc.src = working clone root; c.LE = its own %LE; c.What = live
+    //        %What; sc.in_Doc|in_Point = C-side address mirroring Lies' %Spotlight (in_Doc
+    //        keys ingredients AND selects the active dock).  Dropped+recreated by
+    //        Lang_set_interest each checkout.
     //
     // ── Reactive text sync ───────────────────────────────────────────────────
-    //
-    //   dock/{Text:1} — one per doc, holds sc.dige, sc.disk_dige, sc.disk_rev.
-    //   dock.c.text holds the source string (hidden from snap).
-    //   Lang_plan seeds it with default text on first run.
-    //   Langui (keyed by `doc` prop) watches its own particle.
+    //   dock/{Text:1} — one per doc, holds sc.dige/disk_dige/disk_rev; dock.c.text holds
+    //     the source string (hidden from snap).  Langui (keyed by `doc` prop) watches it.
     //
     // ── Active doc ───────────────────────────────────────────────────────────
-    //
-    //   w.c.active_dock_path — routing concern (not business state, not r()'able).
-    //   Lang_active_dock(w) resolves it to the {dock: path} particle.
-    //   Lang_set_active_dock(w, path) sets it and marks dock.sc.active.
+    //   w.c.active_dock_path — a routing string (not business state, not r()'able).
+    //     Lang_active_dock(w) resolves it to the {dock:path} particle;
+    //     Lang_set_active_dock(w,path) sets it and marks dock.sc.active.
     //
     // ── DRY state update ─────────────────────────────────────────────────────
-    //
-    //   All CM events carry { doc:path, view, state } in e.sc.
-    //   Lang_dock_from_event(w, e) finds-or-creates the dock particle and
-    //   writes dock.c.view / dock.c.state in exactly one place — eliminating
-    //   the scattered w.c.editorState = e.sc.state pattern.
+    //   Every CM event carries { doc:path, view, state } in e.sc.  Lang_dock_from_event
+    //     finds-or-creates the dock and writes dock.c.view/state in exactly one place.
     //
     // ── whatsthis cache ──────────────────────────────────────────────────────
-    //
-    //   dock.c.last_whatsthis_dock — the EditorState.doc rope from the last
-    //   whatsthis() call.  CM doc ropes are immutable value objects; identity
-    //   equality is O(1) and reliable.  Skipped when doc and bookmarks haven't
-    //   changed since last tick.
+    //   dock.c.last_whatsthis_dock — the EditorState.doc rope from the last whatsthis().
+    //     CM ropes are immutable, so identity equality is an O(1) reliable change-skip.
     //
     // ── Deposits ─────────────────────────────────────────────────────────────
+    //   whatsthis(state, container, bookmarks, opt) walks the Lezer parse tree and i()s
+    //     TheC nodes (Line, node, texts, text); w:Lang runs one call per %bookmark into
+    //     a per-bookmark subcontainer under model/**.
     //
-    //   whatsthis(state, container, bookmarks, opt)
-    //     — walks the EditorState's Lezer parse tree and i()s TheC nodes
-    //       (Line, node, texts, text) into `container`.
-    //
-    // Consumed by w:Lang, which runs one whatsthis() call per w/%bookmark
-    // into a per-bookmark subcontainer under model/**.
-    //
-    // ── State flows ──────────────────────────────────────────────────────────
-    //
-    //   e:Lang_workon_update  ← Lies_i_Spotlight, every cursor move
-    //     takes  e%src (cursored %What or %Doc from Spotlight)
-    //     makes  workon.c.src; pokes think → the driver re-keys req:understanding
-    //
-    //   req_workon (req:workon do_fn, the per-tick driver)
-    //     takes  workon.c.src, %LE working version + U_serial, active dock + dige
-    //     makes  a signature per stage; roai's it (un-finishes %permanent on drift)
-    //            then pumps understanding → ingredients → instrumentation
-    //
-    //   req:understanding  — the %Waft|%LE boundary stage
-    //     takes  workon.c.src, %LE, origin_dirty
-    //     makes  %Languinio/%Interest (sc.src clone root, c.LE handle, in_* address)
-    //            %LE/%State.changey (via LE_encode_compare), auto-push on working drift
-    //            understanding.c.armed_src (memoised — skipped on same src)
-    //
-    //   e:mark / e:LE_mark  ← NaviCado, test snaps
-    //     takes  e%LE (particle or sentinel 1), op, spec
-    //     makes  C.c.U.sc.unshowing | unaccepted (or clone.sc for add|edit);
-    //            LE.c.U_serial++
-    //            → driver's understanding sig (…:U_serial:…) drifts → re-encode →
-    //              %State.changey → auto-push (LE_push flushes clone tree → OC)
-    //
-    //   e:Lies_waft_mutated  ← Lies watch_c(waft), on any Waft OC change
-    //     takes  e%waft_key
-    //     makes  LE.c.origin_dirty when our target lives in that Waft
-    //            → driver's understanding sig (…:origin_dirty) drifts → re-pull
-    //              origin; in-scope drift (%State.stale) auto-pulls (re-arm +
-    //              re-clone working off the new origin)
-    //
-    //   e:dock_content  ← Lies drain (push) | dock_askies (pull), with the %Good
-    //     takes  e%Good (bytes off-snap, dige on /known)
-    //     makes  the dock (Lang_open_dock), dock.c.content_dige; pokes think
-    //            → the waiting req:furnishing finishes; driver re-keys instrumentation
-    //
-    //   e:LE_operate%op=push  ← NaviCado / DocMinimap
-    //     makes  req:push|encode|replace|verify cluster under workon/%LE
-    //
-    //   e:Lang_editorBegins  ← Langui on CM mount
-    //     takes  e%dock, view, state, updates (live bookmark positions)
-    //     makes  dock.c.view, dock.c.state; reconciles %bookmark from/to
-    //            → feebly_ponder wakes req:text_loaded monitor in Languish
-    //
-    //   e:dock_content    ← Lies, with the dock %Good (push|pull); mints the dock
-    //     takes  e%path, e%text
-    //     makes  req:Languish (text_loaded → compile phases)
-    //
-    //   Lang_update_change  (each tick, active dock known)
-    //     takes  dock/{Text:1}, dock/{Compile}/{Output}
-    //     makes  %Languinio/%Change/{backend|storage|compile} (roai → new C ref
-    //            → Svelte re-renders Langui's three-leg change strip)
+    // ── State flows (takes / makes; ← source; "below" = full inline doc at the handler) ──
+    //   e:Lang_workon_update ← Lies_i_Spotlight (each cursor move): e%src → workon.c.src; think
+    //   req_workon (per-tick driver): src, %LE ver+U_serial, dock+dige → per-stage sig; roai's
+    //     it (un-finishes %permanent on drift); pumps the 3-stage pipeline
+    //   req:understanding (the %Waft|%LE boundary): src,%LE,origin_dirty → %Interest (clone root,
+    //     c.LE, in_*); %State.changey (LE_encode_compare); auto-push on working drift
+    //   e:mark / e:LE_mark ← NaviCado/snaps: e%LE,op,spec → U.sc.unshowing|unaccepted (clone.sc
+    //     for add|edit); U_serial++ → understanding sig drifts → re-encode → changey → auto-push
+    //   e:Lies_waft_mutated ← watch_c(waft): waft_key → LE.c.origin_dirty → re-pull origin (below)
+    //   e:dock_content ← Lies push|pull: e%Good → the dock, content_dige, req:Languish (below)
+    //   e:LE_operate%op=push ← NaviCado/DocMinimap → req:push|encode|replace|verify under %LE
+    //   e:Lang_editorBegins ← Langui on CM mount → dock.c.view/state, %bookmark sync (below)
+    //   Lang_update_change (each tick) → %Languinio/%Change/{backend|storage|compile} (below)
     //
 
 
@@ -289,11 +190,9 @@
         H.i_scheme_req(w, [{docks: 1}, {dock: 1}])
 
         // ── Styles bucket for Cyto ──────────────────────────────────
-        // Prefer Story's shared bucket (w.c.The/{Styles:1}) when the full machine is up, so the
-        //  graph uses the same swatches Story persists. Standalone — the Editron editor or a
-        //   runner — there is NO H:Story, so own our own {Styles:1} on w:Lang: The_Styles' contract
-        //    sanctions a client bringing its own bucket, and Cyto then gets real, autovivifying
-        //     swatches instead of a palette-fallback (a runner folds it via w:Lang %dontSnap).
+        // Share Story's bucket when the full machine is up (same swatches Story persists).
+        //  Standalone (Editron|runner) has no H:Story → own a {Styles:1} on w:Lang, which
+        //   The_Styles' contract sanctions, so Cyto gets real swatches not a palette-fallback.
         const topH    = H.top_House()
         let stylesC: TheC | null = null
         const storyH = topH.o({ H: 'Story' })[0] as TheC | undefined
@@ -319,62 +218,43 @@
             wants_wave_done:      false,
             wants_animation_done: false,
         }})
-        // target our local A:Cyto/w:Cyto, not H:Story's — feebly, so a context with no Cyto
-        //  ghost mounted (a headless runner / non-useCyto Story) no-ops instead of throwing
-        //   "no House has A:Cyto".  Lang is a Cyto *client*: it commissions one if present, never
-        //    creates it (unlike Story, the owner, which makes A:Cyto for a useCyto Book).  Mirrors
-        //     the feebly Cyto sites (animation_request ~2128) — the noCyto→useCyto opt-in leftover.
+        // feebly so a context with no Cyto ghost (headless runner / non-useCyto Story) no-ops
+        //  instead of throwing "no House has A:Cyto".  Lang is a Cyto *client* — it commissions
+        //   one if present, never creates it (unlike Story the owner).  Mirrors the other feebly Cyto sites.
         H.feebly_i_elvisto(`Cyto/Cyto`, 'Cyto_commission', { req: commission })
 
         // ── %Languinio — Lang's reactive signal particle ────────────
-        // Parallel to %examining on w:Lies.  Enrolled in ave so UItime
-        // (Langui, DocMinimap) can read it without a new prop.  c.w is a
-        // back-ref so a reader can climb to w:Lang.
-        // Holds %LE / %dock / %Interest in volatility order (see comment above).
+        // Parallel to %examining on w:Lies; enrolled in ave so UItime (Langui, DocMinimap)
+        //  reads it without a new prop.  c.w back-refs w:Lang.  Holds %LE/%dock/%Interest
+        //   in volatility order (see header).
         const ave = H.oai_enroll(H, { watched: 'ave' })
         const languinio = w.oai({ Languinio: 1 })
-        // runner-flavoured Lang: fold the editor-nav apparatus (Interest/Trail/dock)
-        //  out of the snap. Languinio is enrolled in ave, so the w:Lang %dontSnap fold
-        //  doesn't reach it — stamp the Languinio itself. (Snap-only; editor still runs.)
-        //  Routed through Lies_role (H.c.role authoritative) so editor|runner|bare is
-        //   decided in one place — see LiesLies.svelte.
+        // runner-flavoured Lang folds the editor-nav apparatus out of the snap.  Languinio
+        //  is in ave, so the w:Lang %dontSnap fold doesn't reach it — stamp Languinio itself
+        //   (snap-only; editor still runs).  Role decided in one place via Lies_is_runner.
         if (H.Lies_is_runner(w)) languinio.sc.dontSnap = 1
         ave.i(languinio)
         languinio.c.w = w
 
         // ── per-Interest Understandings ──────────────────────────────
-        // No singleton LE: each open giver carries its OWN %LE, minted on checkout
-        // in Lang_set_interest and held on interest.c.LE — parented under w (here,
-        // outside any replace()) so LE/* and LE.c.* survive every checkout, keyed
-        // {LE:<waft>} so several coexist.  Readers resolve the foreground via
-        // %ActiveInterest (Lang_active_LE); languinio.c.active_LE caches the last
-        // bound LE for them.  Switching foreground reuses the giver's preserved
-        // working clone instead of re-pulling — the dual-LE crossfade.
+        // No singleton LE — each giver carries its own %LE, minted on checkout in
+        //  Lang_set_interest, held on interest.c.LE, parented here under w (outside any
+        //   replace()) so it survives every checkout.  See header "Understanding hold".
 
         // ── req:workon — the convergence home ────────────────────────
-        // Open-ended anchor.  Its do_fn (req_workon) is the thin per-tick
-        // driver: it computes each stage's input signature, roai's any stage
-        // whose signature drifted (→ %permanent de-finish), then pumps the stage
-        // pipeline.  The three stages are keyed (mutated-on) volatility lanes:
-        //   req:understanding  — src → re-arm LE + flush; sets %Interest
-        //   req:ingredients    — %Interest → req:furnishing per wanted %Doc
-        //   req:instrumentation — active dock + dige → compile + graft + decorate
-        // Each stage holds wants + convergence-markers only; its durable output
-        // lives elsewhere (%LE/%Seem, %Good, the dock) so de-finishing loses nothing.
+        // Open-ended anchor; do_fn req_workon is the per-tick driver (see header).  Each stage
+        //  holds wants + convergence-markers only — its durable output lives elsewhere
+        //   (%LE/%Seem, %Good, the dock), so de-finishing a drifted stage loses nothing.
         const workon = await w.oai({ req: 'workon' }, { w })
 
-        // auto_push on by default — changey working drift with a stable origin
-        //   flushes straight back to the Waft, so the OC is the working set and
-        //   touring sheds nothing.  This is the everyday "swing around the code,
-        //   pile bookmark trails, reset the file via real git" mode.  Opt nopush
-        //   turns it off so a test can exercise the underlying changey|push
-        //   truthiness without the flush hiding it.
+        // auto_push on by default — changey working drift with a stable origin flushes
+        //   straight back to the Waft (the OC is the working set, touring sheds nothing).
+        //   Opt nopush turns it off so a test can see the changey|push truthiness unhidden.
         workon.sc.auto_push = !!H.o_Opt_val(w, 'nopush') ? 0 : 1
 
-        // Stage reqs — %permanent so a signature roai un-finishes them with a
-        // fresh lease.  maz orders the pipeline: understanding (3) before
-        // ingredients (2) before instrumentation (1); a stage that bows out on a
-        // ttlilt stops do() at its level, gating the lanes below it.
+        // Stage reqs — %permanent so a signature roai un-finishes them with a fresh lease.
+        //  maz orders the pipeline understanding(3)→ingredients(2)→instrumentation(1); a stage
+        //   that bows out on a ttlilt stops do() at its level, gating the lanes below.
         await workon.oai({ req: 'understanding',  maz: 3, permanent: 1 })
         await workon.oai({ req: 'ingredients',    maz: 2, permanent: 1 })
         await workon.oai({ req: 'instrumentation', maz: 1, permanent: 1 })
@@ -384,33 +264,23 @@
 
 //#region doc routing helpers
 
-    // ── Lang_dock_from_event ──────────────────────────────────────────────────
-    //
-    //   DRY central router called at the top of every CM event handler.
-    //   Every event from Langui carries { doc:path, view, state } in e.sc.
-    //   This creates-or-finds the {dock: path} particle under w/{docks: 1} and
-    //   updates dock.c.view / dock.c.state in exactly one place.
-    //
-    //   Returns the dock so the caller can operate on it directly.
+    // ── Lang_dock_from_event — DRY router at the top of every CM event handler.
+    //   Creates-or-finds the {dock:path} under w/{docks:1} and writes dock.c.view/state
+    //   in one place; returns the dock.
     Lang_dock_from_event(w: TheC, e: TheC): TheC {
-        // e.sc.dock is stamped by Langui's Lang_i_elvis on every CM-sourced event.
-        // Internally-fired events (e.g. e_Lang_i_bookmark → Lang_add_bookmark,
-        // or automated test macros) don't go through Langui, so fall back to
-        // the active doc — which is always the right target in that case.
+        // e.sc.dock is stamped by Langui on every CM-sourced event.  Internally-fired
+        //  events (e_Lang_i_bookmark, test macros) don't go through Langui → fall back to
+        //   the active doc, which is the right target in that case.
         const path = (e.sc.dock as string) || (w.c.active_dock_path as string)
         if (!path) throw 'Lang_dock_from_event: no doc and no active doc yet'
         const docks = w.oai({docks: 1})
         const dock = docks.oai({dock: path})
-        // update view + state in exactly one place
         if (e.sc.view)  dock.c.view  = e.sc.view
         if (e.sc.state) dock.c.state = e.sc.state
         return dock
     },
 
-    // ── Lang_active_dock ─────────────────────────────────────────────────────
-    //
-    //   Returns the {dock: path} particle for the currently active doc, or
-    //   undefined if no doc has been registered yet (pre-editorBegins).
+    // ── Lang_active_dock — the {dock:path} for the active doc, or undefined pre-editorBegins.
     Lang_active_dock(w: TheC): TheC | undefined {
         const path = w.c.active_dock_path as string | undefined
         if (!path) return undefined
@@ -420,14 +290,9 @@
 
 
     // ── Lang_set_active_dock ──────────────────────────────────────────────────
-    //
-    //   Marks a path as active. Stamps dock.sc.active so a tabs UI can see which
-    //   doc is foregrounded, re-points the same-object %Languinio/%dock hold so
-    //   every Languinio reader (Langui, DocMinimap) reaches the live dock, and
-    //   tells w:Lies the foreground changed.
-    //
-    //   ave/%active_dock is gone — %Languinio/%dock is the single foreground-doc
-    //   truth; Langui watches %Languinio (already in ave).
+    //   Marks `path` active: stamps dock.sc.active, re-points the same-object
+    //   %Languinio/%dock hold (so every Languinio reader reaches the live dock), and tells
+    //   w:Lies.  %Languinio/%dock is the single foreground-doc truth (ave/%active_dock gone);
     //   w.c.active_dock_path stays as a cheap routing string.
     async Lang_set_active_dock(w: TheC, path: string) {
         const H = this as House
@@ -439,26 +304,18 @@
                 else delete d.sc.active
             }
         }
-        // Re-point the same-object hold on the active dock into %Languinio so
-        // consumers reach it via languinio.o({dock:1})[0] (its bookmarks, view,
-        // state, Pmirrors) without any ave round-trip.
-        //
-        // place() is the right primitive here: the dock is a same-object hold
-        // whose X (with %Compile, %Pmirrors etc.) belongs to the dock itself,
-        // not to %Languinio.  r() would go through replace()/resolve() and flag
-        // those children as "n have /*", which is a diagnostic for new nodes that
-        // would silently lose children — not for an existing hold being re-pointed.
-        //   < was r({dock:1},{}).then(() => i(dock)) — the .then() put i() into a
-        //     new microtask outside Atime; the two-step await r + i form and now
-        //     place() are both safe because Svelte effects are on setTimeout and
-        //     can't observe any gap between drop and insert while we're in Atime.
+        // place() re-points the same-object dock hold into %Languinio (consumers reach it via
+        //  languinio.o({dock:1})[0] without an ave round-trip).  place() not r(): the dock's X
+        //   (%Compile, %Pmirrors) belongs to the dock, and r()→replace()/resolve() would flag
+        //    them "n have /*" (a lose-children diagnostic), wrong for re-pointing an existing hold.
+        //   < the old r().then(i()) put i() in a microtask outside Atime; place() is gap-safe
+        //     since Svelte effects are on setTimeout and can't observe the drop→insert.
         const dock = docks?.o({dock: path})[0] as TheC | undefined
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
         if (languinio && dock) {
             await languinio.place({ dock: 1 }, dock)
         }
         // Tell w:Lies the foregrounded doc changed — direct Atime elvis.
-        // (The notify stays; only the ave storage went.)
         H.i_elvisto('Lies/Lies', 'Lies_active_doc_changed', { path })
     },
 
@@ -466,12 +323,9 @@
 //#region e
 
 //#region e cm -> Lang
-    // ── e:Lang_editorBegins ──────────────────────────────────────────────────────
-    //
-    //   CM has mounted a new editor view.  Registers view+state via the DRY
-    //   router and reconciles any live bookmark positions from the CM state.
+    // ── e:Lang_editorBegins ── CM mounted a view.  Registers view+state via the DRY
+    //   router and reconciles live bookmark positions from the CM state.
     async e_Lang_editorBegins(A, w, e) {
-        // Register view + state via the DRY router.
         const dock = this.Lang_dock_from_event(w, e)
 
         // CM StateEffects are per-view, so they live on dock.c — not w.c.
@@ -479,19 +333,15 @@
         dock.c.removeBookmarkMark = e.sc.removeBookmarkMark
         dock.c.clearAllBookmarks  = e.sc.clearAllBookmarks
         dock.c.saveEffect         = e.sc.saveEffect
-        // Pmirror graft marks live in their own StateField with parallel
-        // effects.  LangGraft dispatches these to install/remove graft
-        // marks as Pmirrors are minted and reaped.
+        // Pmirror graft marks live in their own StateField; LangGraft dispatches these to
+        //  install/remove marks as Pmirrors are minted and reaped.
         dock.c.addGraftMark       = e.sc.addGraftMark
         dock.c.removeGraftMark    = e.sc.removeGraftMark
         dock.c.clearAllGrafts     = e.sc.clearAllGrafts
-        // Point decoration + fold handles — Lang_show_pmirrors dispatches through
-        //   these.  setPointDecorations is the StateEffect for the glow|enlarge field;
-        //   setPointFonts is the StateEffect for the per-line font field LangPoint
-        //   uses to grow surviving headers as bodies fold; setPointFolds is a
-        //   function(view, showing, hiding) that dispatches foldEffect|unfoldEffect
-        //   for the unshowing + crunch set; unfoldAllFolds lifts every fold (used
-        //   when no Points govern the view, and on wipe).
+        // Point decoration + fold handles — Lang_show_pmirrors dispatches through these.
+        //   setPointDecorations = glow|enlarge field; setPointFonts = per-line font field
+        //    (LangPoint grows surviving headers as bodies fold); setPointFolds(view,showing,
+        //     hiding) dispatches fold|unfoldEffect; unfoldAllFolds lifts every fold (no Points / wipe).
         dock.c.setPointDecorations = e.sc.setPointDecorations
         dock.c.setPointFonts       = e.sc.setPointFonts
         dock.c.setPointFolds       = e.sc.setPointFolds
@@ -502,15 +352,12 @@
         // foldToggle(view, from, to) — fold|unfold one body range; Mapule.c.fold rides it.
         dock.c.foldToggle          = e.sc.foldToggle
 
-        // Only activate if we have a real path — empty string means the dock
-        // isn't known yet and Lies hasn't handed back the dock %Good yet.
+        // Only activate with a real path — empty string means Lies hasn't handed back the %Good yet.
         if (!w.c.active_dock_path && e.sc.dock) {
             await this.Lang_set_active_dock(w, e.sc.dock as string)
         }
-        // The dock hold lives on %Languinio.  On the first open the hold
-        // may have been re-pointed before the dock particle existed;
-        // Lang_set_active_dock above (when it fired) already installs the real
-        // particle, so re-point here only if active and the hold is missing or stale.
+        // The dock hold lives on %Languinio.  On first open it may have been re-pointed
+        //  before the dock existed; re-point here only if active and the hold is missing|stale.
         if (w.c.active_dock_path === dock.sc.dock) {
             const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
             const held = languinio?.o({ dock: 1 })[0] as TheC | undefined
@@ -522,22 +369,15 @@
 
         w.i({ received: 1, editorBegins: 1, doc: dock.sc.dock })
 
-        // The shared view has just arrived on this dock (Langui re-registers on
-        //   every switch): clear orphan graft marks left in this state by other
-        //   docks' pre-gating grafts and install this dock's own set; also
-        //   forces a decoration|fold repaint (show_fp reset inside).
+        // Shared view just arrived (Langui re-registers each switch): clear orphan graft marks
+        //  left by other docks and install this dock's own set; forces a decoration|fold repaint.
         this.Lang_reassert_graft_marks(dock)
 
-        // ── Bookmark position sync ────────────────────────────────────────────
-        //
-        // Langui passes `updates` (live CM positions) on every editorBegins,
-        // including after each doc switch.  Reconcile them against the dock
-        // particles so whatsthis() never starts from stale from/to values.
-        //
-        // Also re-dispatch addBookmarkMark for any bookmarks that exist in
-        // dock but are absent from the restored CM state (can happen when a
-        // bookmark was created programmatically and the dock was switched
-        // before the StateField had a chance to capture it).
+        // ── Bookmark position sync ──
+        // Langui passes `updates` (live CM positions) on every editorBegins; reconcile against
+        //  the dock so whatsthis() never sees stale from/to.  Also re-dispatch addBookmarkMark for
+        //   bookmarks present in dock but absent from the restored CM state (a programmatic add
+        //    whose dock was switched before the StateField captured it).
         const updates = e.sc.updates as Array<{id:string,from:number,to:number}> | undefined
         if (updates) {
             const seen = new Set(updates.map((u: any) => u.id))
@@ -548,7 +388,6 @@
                     bm.sc.from = u.from; bm.sc.to = u.to; bm.bump_version()
                 }
             }
-            // Re-apply bookmarks present in dock but absent from CM's live set.
             for (const bm of dock.o({ bookmark: 1 }) as TheC[]) {
                 if (!seen.has(bm.sc.bookmark as string) && !bm.sc.vanished) {
                     dock.c.addBookmarkMark && dock.c.view?.dispatch({ effects: dock.c.addBookmarkMark.of({
@@ -560,22 +399,15 @@
             }
         }
 
-        // dock.c.state has just been stamped (by Lang_dock_from_event above).
-        // A req:text_loaded phase may be holding Story open waiting for exactly
-        // this — wake a think so its monitor re-checks and descends to compile.
+        // dock.c.state just got stamped — a req:text_loaded ttlilt may be waiting on exactly
+        //  this; wake a think so its monitor re-checks and descends to compile.
         ;(this as House).feebly_ponder()
     },
-    // ── e:Lang_texting ───────────────────────────────────────────────────────────
-    //
-    //   Text arrived from the UI (80ms throttle) or from e_Lang_i_alterationStation
-    //   (machine:true, fires immediately alongside the CM dispatch).
-    //   Updates dock.c.text and dock/{Text:1}, then drives the Languish pipeline.
-    //
-    //   machine:true → compile_ready fires after 30ms (test / programmatic edits).
-    //   machine:false (default) → compile_ready fires after 6s of quiet typing.
-    //   Esc in the editor still calls Lang_compile directly, bypassing the timer.
-    //
-    //   e.sc: { dock_path: string, text: string, machine?: true }
+    // ── e:Lang_texting ── text arrived from the UI (80ms throttle) or from
+    //   e_Lang_i_alterationStation (machine:true, fires immediately).  Updates dock.c.text +
+    //   dock/{Text:1}, then drives Languish.  machine:true → compile_ready after 30ms; else
+    //   after 6s of quiet typing.  Esc calls Lang_compile directly, bypassing the timer.
+    //   e.sc: { dock_path, text, machine? }
     async e_Lang_texting(A: TheC, w: TheC, e: TheC) {
         if (!A.sc.A) throw "!A"
         const path = e.sc.dock_path as string | undefined
@@ -584,9 +416,8 @@
         if (text == null) throw "!text"
         const machine = !!e.sc.machine
 
-        // update the dock's text + Text metadata.  dock.c.text holds the
-        // string silently (hidden from snap); Text child carries the dige so
-        // Langui can track changes without the giant string in the snap.
+        // dock.c.text holds the string silently (hidden from snap); the Text child carries
+        //  the dige so Langui tracks changes without the giant string in the snap.
         const docks  = w.o({ docks: 1 })[0] as TheC | undefined
         const dock   = docks?.o({ dock: path })[0] as TheC | undefined
         if (!dock) return
@@ -616,7 +447,6 @@
         // normal: wait for a quiet period so rapid typing doesn't re-compile every keystroke.
         const machine    = !!(req.sc.machine as any) || !!H.o_Opt_val(w, 'Langui-machine-texting')
         const delay_ms   = machine ? 30 : 6_000
-        // dock is La.c.up (languish lives on dock now)
         if (!dock) return
 
         // coalesce rapid text changes — only the trailing edge triggers compile
@@ -636,15 +466,9 @@
 
 //#endregion
 //#region e etc
-    // ── e:Dock_open ──────────────────────────────────────────────────────────────
-    //
-    //   Fired by Liesui / Waft / DocRow when the user clicks a Doc label or a
-    //   Point inside one.  Switches the active doc to `path`.
-    //
-    //   e.sc.point (optional) — the Point value to navigate to once the doc is
-    //   active.  Finding + scrolling to it is handled here on the w:Lang side;
-    //   the UI just passes the raw Point sc value and forgets about it.
-    //
+    // ── e:Dock_open ── Liesui/Waft/DocRow click on a Doc label or a Point inside one.
+    //   Switches the active doc to `path`.  e.sc.point (optional) — navigate to it once
+    //   active (resolved + scrolled here, w:Lang-side; the UI just passes the raw value).
     //   e.sc: { path, point? }
     async e_Dock_open(A: TheC, w: TheC, e: TheC) {
         const path  = e.sc.path  as string | undefined
@@ -654,10 +478,8 @@
         // Switch active doc — Langui's $effect on %Languinio/%dock reacts.
         await this.Lang_set_active_dock(w, path)
 
-        // Point navigation: resolve the point spec against the compiled methods
-        // index, apply region-based openness (fold/unfold), and scroll the view.
-        // e_Lang_point_navigate (in LangRegions) handles the full cycle and
-        // reports issues back to Lies via e:Lies_point_issues.
+        // Point navigation: e_Lang_point_navigate (LangRegions) resolves the spec, applies
+        //  region openness, scrolls, and reports issues back to Lies via e:Lies_point_issues.
         if (point) {
             this.i_elvisto('Lang/Lang', 'Lang_point_navigate', { point, doc: path })
         }
@@ -665,18 +487,11 @@
         this.i_elvisto(w, 'think')
     },
 
-    // ── Lang_open_dock ────────────────────────────────────────────────────
-    //
-    //   Mint-or-refresh the per-dock req:Languish and drive one do() pass.
-    //   Returns the dock so callers can resolve their RPC immediately once the
-    //   dock particle exists (which is guaranteed — caller passes it in).
-    //
-    //   A re-open of an already-finished Languish drops it and its phase subtree,
-    //   then remints fresh so every phase re-runs against the newer source.
-    //
-    //   Languish lives on the dock — `dock.o({req:'Languish'})[0]`.
-    //   dock.c.up = docks, docks.c.up = w (stamped where the dock is minted) so
-    //   reqyoncile's %w walk and i_req_ttlilt both reach w:Lang correctly.
+    // ── Lang_open_dock ── mint-or-refresh the per-dock req:Languish and drive one do() pass;
+    //   returns the dock.  A re-open of an already-finished Languish drops it + its phase subtree
+    //   and remints, so every phase re-runs against the newer source.  Languish lives on the
+    //   dock; dock.c.up=docks, docks.c.up=w (stamped at mint) so reqyoncile's %w walk and
+    //   i_req_ttlilt reach w:Lang.
     async Lang_open_dock(w: TheC, dock: TheC, text: string): Promise<TheC> {
         let languish = await dock.oai({ req: 'Languish' })
         if (languish.sc.finished) {
@@ -693,35 +508,24 @@
     },
 
 
-    // ── e:Lies_waft_mutated ──────────────────────────────────────────────
-    //
-    //   Fired by Lies' watch_c(waft) whenever a loaded Waft OC changes (a UI
-    //   CRUD, a rename, or a test edit).  If our armed target lives in that
-    //   Waft, Seem:origin is now stale — stamp LE.c.origin_dirty (off-snap) and
-    //   poke a think.  The driver's understanding sig picks up origin_dirty,
-    //   re-pulls origin, and (when the drift falls inside the checked-out extent)
-    //   auto-pulls the change into the working clone tree.
-    //
-    //   Gated on target membership: an edit elsewhere in the same Waft still
-    //   fires the watcher, but the re-pull then finds no origin drift and is a
-    //   cheap no-op — which is exactly the out-of-scope case.
-    //
-    //   e.sc: { waft_key: string }
+    // ── e:Lies_waft_mutated ── Lies' watch_c(waft) on any loaded-Waft OC change (CRUD,
+    //   rename, test edit).  If our armed target lives there, Seem:origin is stale — stamp
+    //   LE.c.origin_dirty (off-snap) + poke think; the understanding sig re-pulls origin and,
+    //   when the drift is inside the checked-out extent, auto-pulls into the working clone.
+    //   Membership-gated: an edit elsewhere in the same Waft re-pulls to a cheap no-op.
+    //   e.sc: { waft_key }
     async e_Lies_waft_mutated(A: TheC, w: TheC, e: TheC) {
         const H        = this as House
         const waft_key = e.sc.waft_key as string | undefined
         if (!waft_key) return
-        // Per-Interest LEs: every giver has its own w/{LE:<waft>}; an edit to one giver's
-        //  Waft must stale only the LE(s) checked out into THAT Waft, even when another
-        //   giver is foreground.  w.o({LE:1}) wildcards over them all (matcher: numeric 1
-        //    matches any value of the key); stamp each whose armed target lives in this Waft.
+        // Per-Interest LEs: stale only the LE(s) checked out into THIS Waft, even when another
+        //  giver is foreground.  w.o({LE:1}) wildcards over them all (numeric 1 matches any value).
         let any = false
         for (const LE of w.o({ LE: 1 }) as TheC[]) {
             const target = LE.sc.target as TheC | undefined
             if (!target || H.waft_key_of(target) !== waft_key) continue
-            // < orphan case (target's c.up no longer reaches the Waft — deleted out
-            //   from under us) is not handled here; it is the natural home for the
-            //   Merge UI, which picks up an edit that lands inside something dropped.
+            // < orphan case (target's c.up no longer reaches the Waft — deleted under us) is
+            //   unhandled; natural home for the Merge UI (an edit inside something dropped).
             LE.c.origin_dirty = 1
             any = true
         }
@@ -742,12 +546,10 @@
 
 
     // ── e_Lang_foreground — the Interest-switcher's click ─────────────────────
-    //   Foreground one Interest (Waft_spec §"Presence … the switcher").  Heavy kinds
-    //    (Trail|Sidetrack) foreground by re-checkout: set %ActiveInterest eagerly for
-    //     instant strip feedback, then land the Lies cursor on the Waft so
-    //      req_understanding re-arms the single LE and Lang_set_interest binds that
-    //       giver's own Trail (the arbitration above).  Light kinds (GhostList) are a
-    //        pure lens swap — no checkout, no LE.
+    //   Foreground one Interest.  Heavy kinds (Trail|Sidetrack) foreground by re-checkout: set
+    //    %ActiveInterest eagerly (instant strip feedback), then land the Lies cursor on the Waft
+    //     so req_understanding re-arms the LE and Lang_set_interest binds that giver's Trail.
+    //      Light kinds (GhostList) are a pure lens swap — no checkout, no LE.
     async e_Lang_foreground(A: TheC, w: TheC, e: TheC) {
         const H         = this as House
         const kind      = e.sc.kind as string | undefined
@@ -755,34 +557,28 @@
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
         if (!languinio || !kind) return
         if (kind === 'Trail' || (kind === 'Aside' && waft)) {
-            // A giver Trail — or today's Aside scratch dump, which walks like one — foregrounds
-            //  by real checkout: set ActiveInterest eagerly for instant strip feedback, then land
-            //   the Lies cursor on the Waft's What so req_understanding re-arms the single LE there.
-            //    Lang_set_interest is stance-aware (binds the Aside row, not a stray Trail), and the
-            //     cursor-landing is what actually moves the dock + claims %active — the in-place else
-            //      path below never did, so an Aside cap click had left the dock on the old giver.
+            // Giver Trail (or today's Aside scratch dump, which walks like one): foreground by
+            //  real checkout.  The cursor-landing is what moves the dock + claims %active — the
+            //   in-place else below never did, so an Aside cap click had left the dock on the old
+            //    giver.  Lang_set_interest is stance-aware (binds the Aside row, not a stray Trail).
             const ai = languinio.oai({ ActiveInterest: 1 })
             ai.sc.kind = kind
             if (waft != null) ai.sc.waft = waft
             languinio.bump_version()   // strip + NaviCado re-derive the foreground at once
             if (waft) H.i_elvisto('Lies/Lies', 'Lies_foreground_waft', { path: waft })
         } else {
-            // A Sidetrack's cursor is off_what — there is no What to check out — so it
-            //  foregrounds in place, not via a Lies cursor-landing.  The light kinds
-            //   (GhostList) likewise.  interest_foreground sets ActiveInterest for the social
-            //    decks (Trail|Sidetrack) and engages the lens for the rest.  A real Sidetrack's
-            //     own LE + off-anchor edit traffic is the dual-LE crossfade — still future.
+            // A Sidetrack's cursor is off_what (no What to check out) → foreground in place, as do
+            //  light kinds (GhostList).  interest_foreground sets ActiveInterest for the social
+            //   decks and engages the lens for the rest.  A real Sidetrack's own LE is future.
             H.interest_foreground(languinio, kind, waft)
         }
     },
 
     // ── e_Lang_sprout_sidetrack — the reverse arrow's near end ────────────────
-    //   Sprout a Sidetrack Lang-side BEFORE its Waft exists (Waft_spec §"How an
-    //    Interest comes to be"): pending, lens chosen, cursor off-anchor, %from = the
-    //     anchor it flew off, no subject yet.  Pair with Lies e:Lies_open_sidetrack — Lies
-    //      opens the tentative Waft, the roster re-push binds this sprout to it by
-    //       %from (interest_reconcile).  The switcher fires both in one gesture; a Story
-    //        Plan may split them across Preps to witness the unbound gap.
+    //   Sprout a Sidetrack Lang-side BEFORE its Waft exists: pending, lens chosen, cursor
+    //    off-anchor, %from = the anchor it flew off, no subject.  Pairs with Lies
+    //     e:Lies_open_sidetrack (opens the tentative Waft); the roster re-push binds this sprout
+    //      by %from.  A Story Plan may split the two across Preps to witness the unbound gap.
     async e_Lang_sprout_sidetrack(A: TheC, w: TheC, e: TheC) {
         const H         = this as House
         const from      = e.sc.from as string | undefined
@@ -793,18 +589,11 @@
 
 
 
-    // ── e:dock_content — the one dock content-writer ──────────────────────────
-    //
-    //   Lies/Lies -> e:dock_content%Good -> Lang/Lang
-    //
-    //   The %Good rides back whole (off-snap bytes on good.c.content, dige on
-    //   /known).  This is the sole place a dock is minted|refreshed from content,
-    //   so there is one writer and no multipath.  After installing the text we
-    //   reqyoncile the matching req:furnishing (its finish trigger) and poke a
-    //   think so the driver re-keys instrumentation on the new active dock+dige.
-    //
-    //   Sanity: assert the %Good's path matches what understanding is aimed at;
-    //   a stale push (a newer cursor already moved on) is dropped, not installed.
+    // ── e:dock_content — the one dock content-writer (Lies/Lies → e:dock_content%Good).
+    //   The %Good rides back whole (off-snap bytes on good.c.content, dige on /known).  Sole
+    //   place a dock is minted|refreshed from content, so one writer, no multipath.  After
+    //   installing the text, finish the matching req:furnishing and poke think → the driver
+    //   re-keys instrumentation on the new active dock+dige.
     async e_Lang_dock_content(A: TheC, w: TheC, e?: TheC) {
         const H = this as House
         for (const ev of H.o_elvis(w, 'dock_content')) {
@@ -819,24 +608,19 @@
             docks.c.up  ??= w
             const dock  = docks.oai({ dock: path })
             dock.c.up   ??= docks
-            // force_compile (a cluster peer's ghost_compile) is a BACKGROUND compile: it must not disturb
-            //  the human's active dock|Interest, so it SKIPS the interactive req:Languish lifecycle
-            //   (Lang_open_dock → req_text_loaded → activate + cm_mount).  The compile it needs runs headless
-            //    off disk text below (Lang_compile_source_state), never the live CodeMirror — so a mounted
-            //     editor is not required.  Just ensure a %Text so the dock lists and carries the dige; a
-            //      later interactive open mints req:Languish then.
+            // force_compile (a cluster peer's ghost_compile) is a BACKGROUND compile: it must not
+            //  disturb the human's active dock|Interest, so it SKIPS the interactive req:Languish
+            //   lifecycle and compiles headless off disk text below (no mounted editor).  Just
+            //    ensure a %Text so the dock lists + carries the dige; a later interactive open mints Languish.
             const background = !!ev.sc.force_compile
             if (background) await dock.oai({ Text: 1 })
             else            await H.Lang_open_dock(w, dock, text)
             dock.c.content_dige = dige ?? ''
 
-            // Re-provide of an already-open dock (e.g. surprise_read "take theirs"):
-            //  req:Languish never finishes (its eternal req:text_mutated child keeps
-            //  all_finished() from tripping), so Lang_open_dock's recreate-on-finish
-            //  never fires and the text_loaded install that normally installs the text
-            //  and advances %Text.disk_rev didn't re-run.  Push it here — this is the one
-            //  dock content-writer — so Langui's disk-reload $effect (gated on disk_rev)
-            //  reseats the open editor with the incoming text.
+            // Re-provide of an already-open dock (e.g. surprise_read "take theirs"): req:Languish
+            //  never finishes (eternal text_mutated child), so its recreate-on-finish text install
+            //   + disk_rev bump don't re-run.  Push them here so Langui's disk-reload $effect
+            //    (gated on disk_rev) reseats the open editor with the incoming text.
             const Text = dock.o({ Text: 1 })[0] as TheC | undefined
             if (Text && dock.c.text !== text) {
                 const d = await dig(text)
@@ -847,56 +631,38 @@
                 Text.bump_version()
             }
 
-            // first human-opened dock furnished becomes the active one (MVP: active = wanted Doc).  A
-            //  background compile (force_compile) NEVER takes the seat — not even into an empty editor — so
-            //   it leaves the human's active dock|Interest untouched.  (The compile below needs no mount.)
+            // first human-opened dock furnished becomes active (MVP: active = wanted Doc).  A
+            //  background compile NEVER takes the seat, leaving the human's active dock|Interest untouched.
             if (!background && !w.c.active_dock_path) await H.Lang_set_active_dock(w, path)
 
-            // The background compile (force_compile) has no editor user behind it to press Esc, and it
-            //  skipped req:Languish above — so compile it ourselves here, from a state built straight off
-            //   the fresh disk `text` (Lang_compile_source_state), NOT a live dock.c.state: there is no
-            //    mounted CodeMirror on a background dock, and even on an open one the reseat is async so its
-            //     state can lag one edit (the locked-in lag).  The disk-text state is exact and never
-            //      disturbs the human's own buffer.  Then arm the run so the recompiled ghost reaches the
-            //       runner (the Esc pair: compile + run).  Awaited inline, so the verdict the asking CLI
-            //        waits on settles on this beat, not a later one.
+            // The background compile has no editor user to press Esc and skipped req:Languish — so
+            //  compile here from a state built off the fresh disk `text` (Lang_compile_source_state),
+            //   NOT a live dock.c.state: there's no mounted CM, and an open dock's reseat is async so
+            //    its state can lag one edit.  Then arm the run (the Esc pair: compile + run), awaited
+            //     inline so the verdict the asking CLI waits on settles on this beat.
             if (background) {
                 const srcState = await H.Lang_compile_source_state(dock, text, path)
                 await H.Lang_compile_dock(w, dock, srcState)
                 H.i_elvisto('Lies/Lies', 'Lies_run_arm', { path })
             }
 
-            // poke a think — the furnishing waiting on this path is still needs_work
-            //  (it bowed out on a ttlilt, never finished), so the next drive re-runs
-            //   it, it sees content_dige, and finishes; the driver then re-keys
-            //    instrumentation on the new active dock+dige.  No explicit wake: a
-            //     reqyoncile would bail on an already-finished req anyway, and the
-            //      furnishing isn't finished while it waits.
+            // poke a think — the furnishing waiting on this path is still needs_work (bowed out on
+            //  a ttlilt), so the next drive re-runs it, sees content_dige, finishes; the driver then
+            //   re-keys instrumentation.  (No targeted reqyoncile — it'd bail on the already-finished req.)
             H.i_elvisto(w, 'think')
         }
     },
 
 
     // ── Lang_Map_report — %Compile/%Map → %Interest/%MapReport ────────────────
-    //
-    //   The minimap reads a settled summary here instead of re-deriving it from
-    //   the raw index on every wake.  Lives on %Interest (Lang side, per-checkout|
-    //   Lang_set_interest drops + rebuilds %Interest each checkout, so the report
-    //   is naturally scoped to the current working clone).
-    //
-    //   Content-gated by a digest of the Map's entries.  %Map's version bumps on
-    //   every recompile even when the source structure is unchanged (the common
-    //   edit→recompile case), so a version gate would rebuild the report need-
-    //   lessly|the digest is stable across those, and only moves when defs,
-    //   calls, controlflows or regions actually change.
-    //
-    //   The digest is NOT an enWaft.  enWaft speaks only Waft vocabulary
-    //   (%What|%Doc|%Point) and faults on the def|call|region|controlflow main-
-    //   keys the Map holds, so we serialise the entries deterministically and
-    //   dig that.  If enWaft ever learns the Map vocabulary this can become
-    //   dig(enWaft(Map).snap) with no change to the gate.
-    //   < stored on report.c (off-snap identity, like dock.c.content_dige), so
-    //     the digest never rides the snap.
+    //   A settled summary the minimap reads instead of re-deriving from the raw index each wake.
+    //   On %Interest (rebuilt each checkout, so naturally scoped to the working clone).
+    //   Content-gated by a digest of the Map's entries: %Map's version bumps on every recompile
+    //    even when structure is unchanged, so a version gate would rebuild needlessly; the digest
+    //    is stable across those and moves only when defs/calls/cf/regions actually change.
+    //   NOT an enWaft — enWaft speaks only Waft vocab (%What|%Doc|%Point) and faults on the Map's
+    //    def|call|region|cf mainkeys, so we serialise entries deterministically and dig that.
+    //   < stored on report.c (off-snap, like dock.c.content_dige), so the digest never snaps.
     async Lang_Map_report(w: TheC, dock: TheC) {
         const H         = this as House
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
@@ -935,33 +701,24 @@
     },
 
     // ── Lang_build_mapules — %Compile/%Map → dock/%Navicade (the Mapulen) ──────
-    //
-    //   The generic overview layer.  One Mapule per Map entry — a %kind,key,path,depth
-    //   tuple (path on .c, it's an array) plus off-snap closures — so a UI can render
-    //   and navigate the doc knowing nothing Lang: the minimap and the capsule strip
-    //   both read Mapulen, never %Map.  Sits next to %Compile on the dock and is
-    //   rebuilt each compile (offsets move every edit), so the closures it carries on
-    //   .c are never stale.
-    //     m.c.goto()              — look at this entry: unfold + select + centre, via
-    //                               dock.c.seek (Langui owns the CM dispatch).
-    //     m.c.is_pointedat(specs) — is this entry one of the working Points.  The UI
-    //                               passes the pointed-spec set it derived from LE.vers,
-    //                               so a Point change re-derives in the Mapulen without
-    //                               rebuilding them — the Mapulen stay put across Point
-    //                               toggles, only the derive re-runs.
-    //   Region Mapulen additionally carry the finished band geometry so the minimap
-    //   parses no //#region and maps no lines to chars itself:
-    //     sc.end_line             — last line of the region body (extent for the band).
-    //     m.c.fold()              — toggle-fold the region body in the editor.
+    //   The generic overview layer: one Mapule per Map entry (%kind,key,path,depth + off-snap
+    //   closures) so a UI navigates knowing nothing Lang — the minimap + capsule strip read
+    //   Mapulen, never %Map.  Rebuilt each compile (offsets move every edit), so its .c closures
+    //   never go stale.
+    //     m.c.goto()              unfold + select + centre, via dock.c.seek (Langui owns dispatch).
+    //     m.c.is_pointedat(specs) is this entry a working Point.  The UI passes the spec set it
+    //                              derived from LE.vers, so a Point toggle re-derives without
+    //                              rebuilding the Mapulen.
+    //   Region Mapulen also carry band geometry so the minimap parses no //#region itself:
+    //     sc.end_line  last line of the region body;   m.c.fold()  toggle-fold the body.
     Lang_build_mapules(w: TheC, dock: TheC) {
         const Map_C    = dock.o({ Compile: 1 })[0]?.o({ Map: 1 })[0] as TheC | undefined
         const navicade = dock.oai({ Navicade: 1 })
         navicade.empty()
         if (!Map_C) { navicade.bump_version(); dock.bump_version(); return }
 
-        // doc geometry — char offset of each line's end, and the line count.  The
-        // minimap holds none of this Lang-side|the Mapulen carry the finished spans
-        // so the UI never parses //#region or maps lines to chars itself.
+        // doc geometry — char offset of each line's end + the line count.  The Mapulen carry
+        //  the finished spans so the UI never parses //#region or maps lines to chars itself.
         const text  = (dock.c.text as string) ?? ''
         const lines = text.split('\n')
         const total = lines.length || 1
@@ -971,11 +728,10 @@
             for (let i = 0; i < lines.length; i++) { off += lines[i].length; line_end[i + 1] = off; off += 1 }
         }
 
-        // region extents — a region's last line.  Honours //#endregion (a nested
-        // region can close back to its parent before any sibling opens, which pure
-        // depth+line ordering would miss), falling back to "next region at depth ≤
-        // mine, else EOF" for regions left implicitly open.  Lang owns the //#region
-        // syntax|the minimap just reads sc.end_line.
+        // region extents — a region's last line.  Honours //#endregion (a nested region can
+        //  close to its parent before a sibling opens, which depth+line ordering alone would
+        //   miss), falling back to "next region at depth ≤ mine, else EOF" for implicitly-open
+        //    regions.  Lang owns the //#region syntax; the minimap just reads sc.end_line.
         const region_entries = (Map_C.o({ region: 1 }) as TheC[])
             .map(r => ({ depth: (r.sc.depth as number) ?? 0, line: (r.sc.line as number) ?? 1 }))
             .sort((a, b) => a.line - b.line)
@@ -1002,11 +758,10 @@
             }
         }
 
-        // map_regions: the anchors def/call/cf entries store their rel_from/rel_to
-        //  against; Lang_map_span turns each entry back into an absolute span (it
-        //  reads c.abs_* the compile just wrote, reconstructing from rel only for a
-        //  Map decoded from a snap).  The Mapulen carry absolute from/to so the
-        //  minimap goto/nav is unchanged by the rel encoding upstream.
+        // map_regions: the anchors def/call/cf entries store rel_from/rel_to against;
+        //  Lang_map_span turns each into an absolute span (reads c.abs_* the compile wrote,
+        //   reconstructing from rel only for a snap-decoded Map).  Mapulen carry absolute
+        //    from/to so minimap nav is unchanged by the rel encoding upstream.
         const map_regions = Map_C.o({ region: 1 }) as TheC[]
         for (const e of Map_C.o({}) as TheC[]) {
             const s    = e.sc
@@ -1030,10 +785,9 @@
                 if (view && dock.c.seek) (dock.c.seek as Function)(view, from, to)
             }
             m.c.is_pointedat = (specs: Set<string>) => specs.has(key)
-            // bright(brights) — this entry's trail heat, 0..1.  Keyed by $region/$method
-            //   (region = region_path tail) to match how the Ting globulates a tap, so
-            //   the same rail as is_pointedat carries the heatmap without re-Langing the
-            //   minimap.  The UI sensitises brights on the Undertaking LE.vers.
+            // bright(brights) — this entry's trail heat 0..1, keyed $region/$method (region =
+            //   region_path tail) exactly as the Ting globulates a tap, so the heatmap rides the
+            //    same rail as is_pointedat.  The UI sensitises brights on the Undertaking LE.vers.
             const rpath  = (e.c.region_path as string[] | undefined) ?? []
             const region = rpath.length ? rpath[rpath.length - 1] : ''
             m.c.bright = (brights: Map<string, number>) => brights.get(`${region}\u0000${key}`) ?? 0
@@ -1061,21 +815,15 @@
             }
         }
         navicade.bump_version()
-        // Also bump the dock: DocMinimap subscribes via `void lang_dock?.vers`, but
-        //  building navicade (a child) bumps navicade, not the dock — so without this the
-        //   rebuilt Mapulen don't re-derive the strip until an unrelated dock bump (the
-        //    "switch docs to unfurl" workaround).  reactivity_docs: bump the particle
-        //     everyone keys on.
+        // Also bump the dock: DocMinimap subscribes via `void lang_dock?.vers`, but building
+        //  navicade (a child) bumps navicade not the dock — without this the rebuilt Mapulen
+        //   don't re-derive the strip until an unrelated dock bump.  Bump the particle readers key on.
         dock.bump_version()
     },
 
-    // ── Lang_pointed_specs — the set of working-Point specs ────────────────────
-    //
-    //   The specs of the Points in the current working checkout, the membership a
-    //   Mapule's is_pointedat tests against.  Same spec read as NaviCado's capsules
-    //   (method ?? label ?? Point) so the strip and the minimap agree on what's a
-    //   Point.  Derives from LE — the caller sensitises on LE.vers so it re-runs as
-    //   Points toggle.
+    // ── Lang_pointed_specs — the working-Point specs (membership is_pointedat tests against).
+    //   Same spec read as NaviCado's capsules (method ?? label ?? Point) so strip + minimap
+    //   agree.  Derives from LE; the caller sensitises on LE.vers so it re-runs as Points toggle.
     Lang_pointed_specs(LE: TheC | undefined): Set<string> {
         const specs = new Set<string>()
         if (!LE || !LE.oa({ Seem: 'working' })) return specs
@@ -1090,15 +838,10 @@
     },
 
     // ── Lang_trail_brights — the heatmap the minimap draws ─────────────────────
-    //
-    //   $region/$method → brightness (0..1), read off the Undertaking's Ting
-    //   globules (the trail Funkcion keeps bright fresh, decaying on each trickle).
-    //   Keyed exactly as a Mapule's bright(brights) looks itself up, so a band|chip
-    //   lights to the heat of the attention that's pooled on it.  A region band also
-    //   aggregates the hottest globule anywhere in it (its own preamble globule or any
-    //   method within), so a region you worked through its methods reads warm even
-    //   with no tap on its header.  Same shape as Lang_pointed_specs|the minimap
-    //   sensitises on the Undertaking LE.vers.
+    //   $region/$method → brightness 0..1, off the Undertaking Ting globules (the trail Funkcion
+    //   keeps bright fresh, decaying each trickle).  Keyed exactly as a Mapule's bright() looks
+    //   itself up.  A region band aggregates the hottest globule anywhere in it, so a region
+    //   worked through its methods reads warm even with no tap on its header.  Sensitise on LE.vers.
     Lang_trail_brights(): Map<string, number> {
         const H       = this as House
         const brights = new Map<string, number>()
@@ -1113,19 +856,16 @@
             const region = (g.sc.region as string | undefined) ?? ''
             const key    = String(g.sc.Point)
             const bright = (g.sc.bright as number) ?? 0
-            // roll this globule's heat up to every region band in its path (tail =
-            //  the direct region, then its ancestors) so a parent band warms from a
-            //  nested method.  Falls back to the direct region when no path was stored.
+            // roll this globule's heat up to every region band in its path (tail = direct region,
+            //  then ancestors) so a parent band warms from a nested method.  Falls back to direct region.
             const path  = g.sc.region_path as string | undefined
             const bands = path ? path.split('/') : (region ? [region] : [])
             for (const r of bands) region_max.set(r, Math.max(region_max.get(r) ?? 0, bright))
             brights.set(`${region}\u0000${key}`, (g.sc.bright as number) ?? 0)
         }
-        // light each region band to the hottest thing pooled in it, keyed the same
-        //  way a region-kind Mapule looks itself up.  max(), not sum: bright is already
-        //  0..1, so a band glows as warm as its hottest member rather than saturating
-        //  with how many defs it happens to hold.  Heat rolls up the path above, so a
-        //  parent band already carries its nested methods' warmth, deepest included.
+        // light each region band to the hottest thing pooled in it.  max() not sum: bright is
+        //  already 0..1, so a band glows as warm as its hottest member, not saturating with how
+        //   many defs it holds.  Heat rolled up the path above, so parents carry nested warmth.
         for (const [region, bright] of region_max) {
             const key = region + NUL + region
             brights.set(key, Math.max(brights.get(key) ?? 0, bright))
@@ -1134,12 +874,9 @@
     },
 
     // ── Lang_trail_warm — the deliberateness hue, the brights' twin rail ───────
-    //
-    //   $region/$method → warmth (0..1): how much of the attention pooled there was a
-    //   held|long tap rather than a graze, read off each globule's sc.warm (the trail
-    //   Funkcion keeps it fresh).  Same keys + ancestor roll-up as Lang_trail_brights,
-    //   so a band warms to its most-deliberate member.  The minimap tints the heat glow
-    //   by this — where you lingered reads a different hue from where you only glanced.
+    //   $region/$method → warmth 0..1: how much of the pooled attention was a held|long tap
+    //   vs a graze, off each globule's sc.warm.  Same keys + ancestor roll-up as Lang_trail_brights;
+    //   the minimap tints the heat glow by this — lingered reads a different hue from glanced.
     Lang_trail_warm(): Map<string, number> {
         const H     = this as House
         const warms = new Map<string, number>()
@@ -1163,12 +900,9 @@
     },
 
     // ── Lang_ting_globules — the attention histogram's bars ─────────────────────
-    //
-    //   The Undertaking Ting's %Point globules, each the pooled attention on a
-    //   $region/$method: n taps, total weight, decayed heat|bright (recency), warm
-    //   (the held|long share), region.  Sorted hottest-first so the histogram reads as
-    //   a ranking of where attention has gone.  The UI sensitises on the Undertaking
-    //   LE.vers (the Funkcion bumps it each tap + trickle), same rail as the brights.
+    //   The Undertaking Ting's %Point globules, each pooled attention on a $region/$method:
+    //   n taps, weight, decayed heat|bright (recency), warm (held|long share), region.  Sorted
+    //   hottest-first.  The UI sensitises on the Undertaking LE.vers (bumped each tap + trickle).
     Lang_ting_globules(): Array<{
         spec: string, region: string, doc: string, n: number, weight: number,
         heat: number, bright: number, warm: number, last: number, held: number,
@@ -1194,18 +928,11 @@
     },
 
     // ── e:Lang_goto_point — jump into a Point by name, resuming there ────────────
-    //
-    //   Fired by the Ting histogram: a bar carries its $region/$method spec, this
-    //   resolves it back to a doc location and seeks.  seek opens the target (unfolds
-    //   its covering folds + centres), so the jump lands on open code — attention
-    //   resumes from where the trail pooled.
-    //
-    //   Region-disambiguated: when e.sc.region is given, a method named `spec` is first
-    //   sought among the %Map defs whose region_path TAIL is that region — so two
-    //   same-named methods in different regions jump to the RIGHT one (the bars are
-    //   distinct, the jump should be too).  Falls back to the by-name resolver
-    //   (Lang_resolve_point) when there's no region match — region-globules (Point ==
-    //   region label) resolve to the region header that way.
+    //   Fired by the Ting histogram: a bar carries its $region/$method spec; resolve to a doc
+    //   location and seek (unfolds covering folds + centres, so the jump lands on open code).
+    //   Region-disambiguated: with e.sc.region, a method named `spec` is sought first among %Map
+    //   defs whose region_path TAIL is that region — two same-named methods in different regions
+    //   jump to the RIGHT one.  Falls back to Lang_resolve_point (region-globules resolve to the header).
     //   e.sc: { spec, region? }
     async e_Lang_goto_point(A: TheC, w: TheC, e: TheC) {
         const spec   = e.sc.spec   as string | undefined
@@ -1259,49 +986,32 @@
 
     // see e:Lang_texting where CodeMirror pushes text
 
-    // ── req:Languish — Lang's per-dock mind
-    //
-    //   Lives on dock ({dock:$path}/{req:'Languish'}).  Stages maz-ordered phase
-    //   reqs and pumps them with req.do(); the dock settles Languish (all_finished)
-    //   once its phases are.  Multi-maz do() descends through levels in one pass on
-    //   a fast (soft) compile.
-    //
-    //     req:text_loaded, maz:3   install text + wait for CM mount
-    //     req:compile,     maz:2   build the methods index; hold for hard-write
-    //
-    //   Grafting is no longer Languish's concern — req:instrumentation owns it.
-    //   Languish builds; the settler wires.
-    //
-    //   c.up chain: req.c.up = languish, languish.c.up = dock, dock.c.up = docks,
-    //   docks.c.up = w — wired where the dock is minted so reqyoncile and i_req_ttlilt
-    //   both climb correctly to w:Lang.
+    // ── req:Languish — Lang's per-dock mind ── on dock ({dock:$path}/{req:'Languish'}).
+    //   Stages maz-ordered phase reqs and pumps them with req.do(); the dock settles Languish
+    //   (all_finished) once its phases are.  Multi-maz do() descends in one pass on a soft compile.
+    //     req:text_loaded maz:3  install text + wait for CM mount
+    //     req:compile     maz:2  build the methods index; hold for hard-write
+    //   Grafting is req:instrumentation's now — Languish builds, the settler wires.
+    //   c.up chain req → languish → dock → docks → w (wired at mint) so reqyoncile +
+    //   i_req_ttlilt climb to w:Lang.
     async req_Languish(req: TheC) {
         const dock = req.c.up as TheC   // Languish → dock (the owner that settles it)
 
         await req.oai({ req: 'text_loaded', maz: 3 })
         await req.oai({ req: 'text_mutated', maz: 2 })
         await req.oai({ req: 'compile',     maz: 2 })
-        // grafted dropped — req:instrumentation owns all grafting; Languish builds the
-        //   compile index; the settler wires the rest.
 
         await req.do()
-        // unify under the dock when every phase is finished.  text_mutated is eternal
-        //   (it never finishes), so Languish stays open as the per-dock mind — same as
-        //   before; all_finished() simply never trips while text_mutated lives.
+        // unify under the dock when every phase is finished.  text_mutated is eternal (never
+        //   finishes), so all_finished() never trips and Languish stays open as the per-dock mind.
         if (req.all_finished() && !req.sc.finished) dock.finish(req)
     },
 
     // ── req:text_loaded, maz:3 ────────────────────────────────────────────────
-    //
-    //   reqonce: install text into the dock (already minted by e_Lang_dock_content),
-    //   seed Text metadata and dock.c.text, set the doc active.
-    //   gen_path derived at compile time — not stamped here.
-    //
-    //   The genuinely-async wait is the CodeMirror round-trip: Lang writes the
-    //   dock.c.text → Langui renders → CM mounts → e_Lang_editorBegins stamps
-    //   dock.c.state and feebly_ponders.  We hold Story open with a ttlilt until
-    //   dock.c.state appears; the feebly_ponder wakes this monitor precisely
-    //   when it lands.
+    //   reqonce: install text into the dock (already minted by e_Lang_dock_content), seed Text
+    //   metadata + dock.c.text, set the doc active.  The genuinely-async wait is the CM round-trip:
+    //   dock.c.text → Langui renders → CM mounts → e_Lang_editorBegins stamps dock.c.state +
+    //   feebly_ponders.  We hold a ttlilt until dock.c.state appears; the ponder wakes this monitor.
     async req_text_loaded(req: TheC) {
         const H        = this as House
         const languish = req.c.up as TheC   // text_loaded → Languish (the host)
@@ -1310,17 +1020,15 @@
         const path     = dock.sc.dock as string
 
         if (H.reqonce(req, 'opening')) {
-            // one chance: install text into the dock (already minted by e_Lang_dock_content).
+            // one chance: install text into the dock.
             H.Langspinner(w, 'text_load')
 
             const text = (languish.c.open_text as string) ?? ''
 
-            // gen_path derived at compile time — not stamped here.
             dock.c.initial_text = text   // Langui reads this before the Text dige arrives
 
-            // seed Text metadata; dock.c.text holds the string silently.
-            // Langui reaches dock via ave/Languinio/dock — Lang_set_active_dock
-            // (called below) places this dock into Languinio, already in ave.
+            // seed Text metadata; dock.c.text holds the string silently.  Langui reaches dock via
+            //  ave/Languinio/dock — Lang_set_active_dock (below) places this dock into Languinio.
             const initial_dige = text ? await dig(text) : ''
             dock.c.text = text
             await dock.oai({ Text: 1 }, {
@@ -1334,9 +1042,8 @@
             w.i({ received: 1, doc_opened: 1, doc: path })
         }
 
-        // monitor: CM has mounted and handed us its EditorState.  Until then
-        // there is nothing to compile.  e_Lang_editorBegins feebly_ponders when
-        // it stamps dock.c.state, which re-enters here.
+        // monitor: nothing to compile until CM mounts and hands us its EditorState;
+        //  e_Lang_editorBegins feebly_ponders when it stamps dock.c.state, re-entering here.
         if (!dock.c.state) {
             H.i_req_ttlilt(req, 3.0, { waiting: 'cm_mount' })
             return
@@ -1346,15 +1053,10 @@
         languish.finish(req)
     },
     // ── Langspinner — one named spinner under %Languinio ──────────────────────
-    //
-    //   Each {spinner:$name} particle is an independent in-flight indicator —
-    //   set|clear touches only the named one, so text_load + furnish + compile
-    //   can all spin at once.  oai|drop is the same per-name model the %stale
-    //   spinner uses in Lang_set_interest.
-    //   (The previous r({spinner:name}) form collapsed its pattern to the
-    //    {spinner:1} has-key wildcard, so setting any spinner replaced ALL of
-    //    them and clearing one cleared all — every overlapping phase broke.)
-    //
+    //   Each {spinner:$name} is an independent in-flight indicator — set|clear touches only the
+    //   named one, so text_load + furnish + compile can all spin at once (oai|drop per name).
+    //   < the old r({spinner:name}) collapsed to the {spinner:1} has-key wildcard, so setting
+    //     any spinner replaced ALL and clearing one cleared all — every overlapping phase broke.
     //   DocMinimap renders the live set; unknown names get the default style.
     Langspinner(w: TheC, spinner: string, not = false) {
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
@@ -1365,16 +1067,11 @@
     },
 
     // ── req:compile, maz:2 ────────────────────────────────────────────────────
-    //
-    //   reqonce: run the synchronous index build (Lang_compile_dock) once.  With
-    //   multi-maz do(), this fires in the same tick text_loaded finishes.
-    //
-    //   %Compile/%Map is populated synchronously by Lang_compile_dock, so a
-    //   soft-compile finishes this phase immediately.  For a hard-compile,
-    //   %Compile/sc.pending stays set while Lies writes the gen file; we hold Story
-    //   open with a ttlilt until it clears, so the gen file exists before the snap.
-    //   Either way %Map — the only thing grafting needs — is present the
-    //   instant Lang_compile_dock returns.
+    //   reqonce: run the synchronous index build (Lang_compile_dock) once — fires the same tick
+    //   text_loaded finishes (multi-maz do()).  %Compile/%Map is populated synchronously, so a
+    //   soft-compile finishes immediately.  A hard-compile leaves %Compile/sc.pending set while
+    //   Lies writes the gen file; we hold a ttlilt until it clears, so the gen file exists before
+    //   the snap.  Either way %Map (all grafting needs) is present the instant the build returns.
     async req_compile(req: TheC) {
         const H        = this as House
         const languish = req.c.up as TheC   // compile → Languish (the host)
@@ -1384,12 +1081,9 @@
         // This pump consumes any pending trickle — re-armed below if we bow out still firing.
         if (req.c.trickle_timer) { clearTimeout(req.c.trickle_timer as any); req.c.trickle_timer = undefined }
 
-        // Run for a .g (gen-compile → .go) OR a points-only dock (.md, .ts, .svelte —
-        //  parse-for-Points: %Map only, no .go; Lang_compile_dock takes the soft path).
-        //   A dock that is NEITHER (a file type with no indexable structure) has no
-        //    business here — finish straight away.  This also closes the worst hang: such
-        //     a type never satisfies the parser gate below, so without the bail it would
-        //      sit firing forever.
+        // Run for a .g (gen-compile → .go) OR a points-only dock (.md/.ts/.svelte: %Map only,
+        //  no .go, soft path).  A dock that is NEITHER has no business here → finish straight away;
+        //   this also closes the worst hang (such a type never satisfies the parser gate below).
         const cpath = dock.sc.dock as string
         if (!H.Lies_gen_path(cpath) && !H.Lang_points_only(cpath)) {
             H.Langspinner(w, 'compile', true)
@@ -1397,17 +1091,13 @@
             return
         }
 
-        // Wait for the language PARSER, not just the state.  The editor (Langui) mints the
-        //  EditorState and arms this req, but editorExtensions is built via `await lang(...)`,
-        //   so there is a window where the state exists with no parser on its `language` facet.
-        //    Compiling then emits every line as raw `.g` passthrough (compile.ts: "not found →
-        //     raw") — Lang_compile_dock now refuses that as a compile_error, but a compile_error
-        //      is TERMINAL below, so the dock would never compile.  Hold here instead (the reqonce
-        //       is not consumed), so it fires exactly once, cleanly, the moment the parser lands.
-        //   This guards "NO parser at all" only.  A WRONG-but-present parser (stho baked onto a
-        //    just-opened .md) is no longer this gate's problem: Lang_compile_dock builds its own
-        //     source on lang(path) (Lang_handover.md §7, role #2), so it indexes as markdown even
-        //      while this gate sees the present-but-stale stho facet and waves it through.
+        // Wait for the language PARSER, not just the state.  Langui mints the EditorState and arms
+        //  this req, but editorExtensions is built via `await lang(...)`, so there's a window where
+        //   the state exists with no parser on its `language` facet → compiling emits every line as
+        //    raw passthrough, which Lang_compile_dock refuses as a (terminal) compile_error.  Hold
+        //     here instead (reqonce not consumed), firing once the parser lands.  Guards "NO parser"
+        //      only — a WRONG-but-present parser (stho on a just-opened .md) is fine, since
+        //       Lang_compile_dock builds its own source on lang(path) and indexes as markdown anyway.
         if (dock.c.state && !H.Lang_has_lang_parser(dock.c.state)) {
             H.i_req_ttlilt(req, 0.5, { waiting: 'parser' })
             return
@@ -1421,33 +1111,29 @@
 
         const job = dock.o({ Compile: 1 })[0] as TheC | undefined
 
-        // compile error is a terminal: methods will never appear and Pending
-        // never clears, so don't ttlilt forever — finish and let grafting find
-        // nothing (the minimap surfaces unresolved Pmirrors).
+        // compile error is terminal: methods never appear, Pending never clears — finish rather
+        //  than ttlilt forever; grafting finds nothing (the minimap surfaces unresolved Pmirrors).
         if (dock.oa({ compile_error: 1 }) || job?.oa({ compile_error: 1 })) {
             H.Langspinner(w,'compile',true)
             languish.finish(req)
             return
         }
 
-        // index missing → compile hasn't run yet; methods present is the graft
-        // gate.  hold until it appears.
+        // index missing → compile hasn't run yet (methods present is the graft gate); hold.
         if (!job || !job.oa({ Map: 1 })) {
             H.i_req_ttlilt(req, 0.5, { waiting: 'methods' })
             return
         }
         if (job.sc.pending) {
-            // methods ready but gen-file write still in flight — hold Story open
-            // so the gen file exists before the snap; %Compile/sc.pending is now
-            // snapped so the wait is visible.
+            // methods ready but gen-file write still in flight — hold so the gen file exists
+            //  before the snap (sc.pending is snapped so the wait is visible).
             H.i_req_ttlilt(req, 0.5, { waiting: 'gen_write' })
-            // Trickle-think: the ttlilt is snap-timing only (it doesn't re-fire think), and the
-            //  settle's re-pump can be missed under fast re-compiles / a Runtime-gated feebly_ponder
-            //   — leaving req:compile wedged firing with pending stuck (the "boomerang" hang).  Self-
-            //    re-check every 150ms until pending clears, then finish.  Cleared at the top of each
-            //     pump; guarded by !finished.  Same ungated pattern as the runner's req_rungo.
-            // Spin counter: a healthy compile clears in a spin or two; a wedged pending spins
-            //  forever at ~7Hz.  Shout every 10th spin so the CPU burn is visible, not silent.
+            // Trickle-think: the ttlilt is snap-timing only and the settle's re-pump can be missed
+            //  under fast re-compiles / a Runtime-gated feebly_ponder — wedging req:compile firing
+            //   with pending stuck (the "boomerang" hang).  Self-re-check every 150ms until it clears
+            //    (cleared at the top of each pump, guarded by !finished).  Same as the runner's req_rungo.
+            // Spin counter: a healthy compile clears in a spin or two; a wedged one spins at ~7Hz —
+            //  shout every 10th so the CPU burn is visible, not silent.
             req.c.trickle_spins = ((req.c.trickle_spins as number) ?? 0) + 1
             if ((req.c.trickle_spins as number) % 10 === 0)
                 console.log(`🔥 req:compile trickle still spinning — ${req.c.trickle_spins} × 150ms (~${Math.round((req.c.trickle_spins as number) * 0.15)}s) burning CPU on stuck pending`)
@@ -1464,32 +1150,20 @@
 
 
 
-// ── Lang_update_change ───────────────────────────────────────────────────────
-    //
-    //   Writes the three-leg change strip into w/{Languinio:1}/{Change:1}.
-    //   Three child particles, one per leg:
-    //
+// ── Lang_update_change ── writes the three-leg change strip into w/{Languinio:1}/{Change:1}:
     //     /{backend:1}  sc.dige — current editor-text dige (from dock/{Text:1})
-    //     /{storage:1}  sc.dige — last dige confirmed written to disk
-    //                   sc.dim  — text has moved ahead (unsaved edits exist)
-    //     /{compile:1}  sc.dige — source_dige of last Compile/Output
-    //                   sc.dim  — compile is pending or disk is ahead of it
-    //                   sc.secs — %Compile/%time.sc.compile (synchronous cost)
-    //
-    //   Each leg uses roai with the sc payload as second arg.  roai replaces the
-    //   particle when its sc doesn't match, producing a fresh C reference.
-    //   Langui holds _backend/_storage/_compile as $state() C refs — only a new
-    //   reference triggers a Svelte re-render, so oai+bump_version isn't enough.
-    //
+    //     /{storage:1}  sc.dige — last dige written to disk; sc.dim — unsaved edits exist
+    //     /{compile:1}  sc.dige — source_dige of last Output; sc.dim — pending or disk-ahead;
+    //                   sc.secs — synchronous compile cost (%Compile/%time.sc.compile)
+    //   Each leg uses roai, which replaces the particle on sc-mismatch → a fresh C ref.  Langui
+    //   holds the legs as $state() C refs, so only a new ref re-renders (oai+bump isn't enough).
     //   Called from the Lang tick each time the active dock is known.
     async Lang_update_change(w: TheC, dock: TheC) {
         const H   = this as House
         const path = dock.sc.dock as string
 
-        // Read current dige values from dock/Text.
-        // Text is absent until req_text_loaded's oai resolves — bail rather
-        // than blanking Change with empty strings.  The tick will re-run once
-        // e_Lang_dock_content lands and populates Text.
+        // Text is absent until req_text_loaded's oai resolves — bail rather than blanking Change
+        //  with empty strings; the tick re-runs once e_Lang_dock_content populates Text.
         const Text      = dock.o({ Text: 1 })[0] as TheC | undefined
         if (!Text) return
         const text_dige  = (Text.sc.dige      as string ?? '').slice(0, 5)
@@ -1506,11 +1180,9 @@
         if (!languinio) return
         const change = languinio.oai({ Change: 1 })
 
-        // roai replaces the particle when sc doesn't match → new C ref → Svelte re-renders.
-        // Snapped booleans ride as 1-or-ABSENT, never `false` (project policy): a JS boolean in
-        //  sc is not a clean scalar string, and `dim:false` snapped inconsistently (sometimes a
-        //   flat key, sometimes a munged JSON object).  Build each leg's sc with only the truthy
-        //    flags present as 1; roai's replace drops the key cleanly when a flag goes false.
+        // Snapped booleans ride as 1-or-ABSENT, never `false` (project policy): `dim:false`
+        //  snapped inconsistently (flat key one tick, munged JSON the next).  Build each leg's sc
+        //   with only truthy flags as 1; roai's replace drops the key cleanly when a flag goes false.
         await change.roai({ backend: 1 }, { dige: text_dige })
 
         const disk_dim = !!text_dige && !!disk_dige && text_dige !== disk_dige
@@ -1537,32 +1209,21 @@
         if (!w.c.plan_done) await this.Lang_plan(A, w)
 
         // ── Waft roster subscription — Lang's standing lock-feed from Lies ──────
-        //   A standing eternal req Lies pushes the roster onto (req.c.roster) +
-        //   reqyoncile; its do_fn reconciles the %Interest family directly into
-        //   Languinio.  The editing checkout is unified onto its giver's Trail —
-        //   Lang_set_interest attaches c.LE to it — and the o({Interest:'Trail'})
-        //   readers find that editing Trail by c.LE, while reconcile's gone-loop
-        //   spares any c.LE-bearing Interest.  So the family and the editor coexist
-        //   as direct %Interest children of Languinio (Waft_spec §"How an Interest
-        //   comes to be"; %Spotlight's successor is Trail's cursor).
+        //   A standing eternal req Lies pushes the roster onto (req.c.roster) + reqyoncile; its
+        //   do_fn reconciles the %Interest family directly into Languinio.  The editing checkout is
+        //   unified onto its giver's Trail (Lang_set_interest attaches c.LE), and reconcile's
+        //   gone-loop spares any c.LE-bearing Interest — so the family + editor coexist as direct
+        //   %Interest children of Languinio.
         const languinio = w.o({ Languinio: 1 })[0] as TheC | undefined
         if (languinio) {
             ;(await w.doai({ req: 'waft_roster', eternal: 1 }))?.((req: TheC) => {
                 const roster = (req.c.roster as Array<{ path: string, stance: string, from?: string }> | undefined)
                     ?.filter(e => !H.waft_is_boring(e.path))   // backstage Wafts never become Interests
                 if (!roster) return
-                // Retire a closed giver's per-Interest %LE before reconcile.  Each open
-                //  giver keeps its own LE (the crossfade), and reconcile's gone-loop spares
-                //   any c.LE-bearing Interest ("alive by virtue of being checked out") — but
-                //    a giver whose Waft has LEFT the roster is truly gone (you cannot switch
-                //     back to a closed Waft), so drop its clone + c.LE here.  That clears the
-                //      guard so reconcile marks the Interest state:gone, and the dropped LE
-                //       leaves the snap.  (Spares mid-bind Trails — they carry no sc.waft yet.)
                 const open = new Set(roster.map(e => e.path))
-                // Roster epoch — a counter bumped ONLY when the Waft set/stances actually
-                //  change (a real push), not on the settle re-runs that re-drive this do_fn
-                //   each tick with the same roster.  It lets a departed row linger exactly one
-                //    push (the UI's beat to animate it out) before it drops.  All off-snap (.c).
+                // Roster epoch — bumped ONLY when the Waft set/stances actually change (a real
+                //  push), not on the settle re-runs that re-drive this do_fn each tick.  Lets a
+                //   departed row linger exactly one push (the UI's beat to animate out).  Off-snap (.c).
                 const sig = roster.map(e => `${e.path}:${e.stance}`).sort().join('|')
                 if (languinio.c.roster_sig !== sig) {
                     languinio.c.roster_sig   = sig
@@ -1579,13 +1240,11 @@
                         && it.c.gone_epoch != null && (it.c.gone_epoch as number) < epoch) {
                         languinio.drop(it); continue
                     }
-                    // Retire a closed giver's per-Interest %LE before reconcile.  Each open giver
-                    //  keeps its own LE (the crossfade), and reconcile's gone-loop spares any
-                    //   c.LE-bearing Interest ("alive by virtue of being checked out") — but a
-                    //    giver whose Waft has LEFT the roster is truly gone (you cannot switch back
-                    //     to a closed Waft), so drop its clone + c.LE here.  That clears the guard
-                    //      so reconcile marks it state:gone, and the dropped LE leaves the snap.
-                    //       (Spares mid-bind Trails — they carry no sc.waft yet.)
+                    // Retire a closed giver's per-Interest %LE.  reconcile's gone-loop spares any
+                    //  c.LE-bearing Interest ("alive by being checked out") — but a giver whose Waft
+                    //   has LEFT the roster is truly gone, so drop its clone + c.LE here.  That clears
+                    //    the guard so reconcile marks it state:gone + the LE leaves the snap.  (Spares
+                    //     mid-bind Trails — no sc.waft yet.)
                     const le = it.c.LE as TheC | undefined
                     if (le && waft && !open.has(waft)) {
                         delete it.c.LE
@@ -1616,24 +1275,21 @@
 
         const dock = this.Lang_active_dock(w)
 
-        // Drain compile settles unconditionally — not gated on the active dock, so
-        // a cursorless/UIless compile clears its own pending too (the settle names
-        // its dock %path).  This also keeps the o_elvis declaration present every
-        // tick, so a settle always routes here rather than to a missing e_ handler.
+        // Drain compile settles unconditionally (not gated on the active dock) so a cursorless/
+        //  UIless compile clears its own pending (the settle names its dock %path), and the o_elvis
+        //   declaration stays present every tick so a settle always routes here.
         this.Lang_drain_compile_settles(A, w)
 
         // language picker + gen button — registered fresh each tick so the
         // dropdown reflects the active doc's current language override.
         await this.LangLang_tick(A, w)
 
-        // ── drive dock landing + Languish + workon ───────────────────────────
-        // Drain dock_content first — the one content-writer mints|refreshes any
-        //  dock whose %Good just arrived (push or pull).
+        // ── drive dock landing + Languish + workon ──
+        // Drain dock_content first — the one content-writer mints|refreshes any dock whose %Good arrived.
         await this.e_Lang_dock_content(A, w)
 
-        // Drive each dock's Languish (text_loaded → compile) BEFORE the workon
-        //  driver, so a dock minted this tick has its %Map ready when
-        //  instrumentation re-keys — same-tick convergence, no extra round-trip.
+        // Drive each dock's Languish (text_loaded → compile) BEFORE the workon driver, so a dock
+        //  minted this tick has its %Map ready when instrumentation re-keys (same-tick convergence).
         //  Languish lives on dock — w.do() no longer reaches it.
         const docks_C = w.o({ docks: 1 })[0] as TheC | undefined
         if (docks_C) {
@@ -1643,13 +1299,10 @@
             }
         }
 
-        // Drive w-level reqs.  req:workon is open-ended; its do_fn (req_workon)
-        //  is the per-tick driver — it re-keys the three stages and pumps them via
-        //  its own workon.do().  No separate settle|push driving here: the LE flush
-        //  (push) runs inside req_understanding, the dock pipeline inside the stages.
-        //  Cheap when settled — every stage sits finished, no key drifts.  Kept inline
-        //  (not left to reqdo_sweep) because the rest of this tick reads the pump's
-        //  results — Pmirrors, the change strip — and must see them this same beat.
+        // Drive w-level reqs.  req:workon's do_fn re-keys the three stages and pumps them via its
+        //  own workon.do() (the LE push runs inside req_understanding).  Cheap when settled.  Kept
+        //   inline (not left to reqdo_sweep) because the rest of this tick reads its results —
+        //    Pmirrors, the change strip — and must see them this same beat.
         await w.do()
 
         // re-decorate from the U sphere after graft has minted Pmirrors.
@@ -1658,19 +1311,17 @@
         if (dock?.o({ Pmirrors: 1 })[0]) this.Lang_show_pmirrors(w, dock)
 
         const model     = w.c.model as TheC
-        // whatsthis dumps the syntax tree at each bookmark for the Story snap — a parse-tree
-        //  read, so it needs the state the Map was compiled against (Lang_index_state), which
-        //   carries the RIGHT parser (Lang_handover.md §7, role 3b), not the live dock.c.state
-        //    whose language compartment may still be mid-reconfigure.
+        // whatsthis dumps the syntax tree at each bookmark for the Story snap — a parse-tree read,
+        //  so it needs the state the Map was compiled against (Lang_index_state, the RIGHT parser),
+        //   not the live dock.c.state whose language compartment may be mid-reconfigure.
         const state     = dock ? this.Lang_index_state(dock) : undefined
         const opt       = {compound_nodes: !!w.c.compo}
         const bookmarks = (dock?.o({ bookmark: 1 }) ?? []) as TheC[]
 
-        // ── whatsthis cache check ────────────────────────────────────
-        // CM doc ropes are immutable — identity equality is O(1) and reliable.
-        // dock.version covers everything on the doc particle: bookmark adds,
-        // removes, position updates, compile state — no need to sum child
-        // versions (they all start at 0 anyway, making a sum unreliable).
+        // ── whatsthis cache check ──
+        // CM doc ropes are immutable — identity equality is O(1) reliable.  dock.version covers
+        //  everything on the doc particle (bookmark adds/removes/moves, compile state), so no need
+        //   to sum child versions (all start at 0, making a sum unreliable).
         const dock_unchanged  = state && state.doc === dock?.c.last_whatsthis_dock
         const docC_unchanged = dock?.version === dock?.c.last_dock_version
 
@@ -1689,11 +1340,9 @@
                 H.feebly_i_elvisto('Cyto/Cyto', 'Cyto_animation_request', { Langy: 1 })
             }
             else {
-                // txt path — nested Lezer hierarchy under model/Line:N/<NodeName>/...
-                // built for the Story snap to render as plain text.  No Cyto ping.
-                // Unconditional now (was gated on Opt/txtsyntaxdump): a bookmark always
-                //  wants its syntax dump — the outer guard already scopes this to "there
-                //   are bookmarks and something changed", so it's not constant work.
+                // txt path — nested Lezer hierarchy under model/Line:N/<NodeName>/… for the Story
+                //  snap to render as plain text.  No Cyto ping.  Unconditional now (was Opt-gated):
+                //   a bookmark always wants its dump, and the outer guard already scopes this work.
                 model.empty()
                 this.whatsthis_txt(state, model, bookmarks)
                 // bump so DocPoint's $derived(model.ob()) re-fires
@@ -1706,10 +1355,9 @@
         }
         if (!bookmarks.length) model.empty()
 
-        // ── compile_ready gate ────────────────────────────────────────────────
-        // req_text_mutated sets dock.c.compile_ready after the quiet period
-        //   (30ms for machine edits, 6s for keyboard typing).  We reset the
-        //   reqonce on compile so req_compile re-fires with fresh text.
+        // ── compile_ready gate ──
+        // req_text_mutated sets dock.c.compile_ready after the quiet period (30ms machine, 6s
+        //  typing).  Reset the reqonce on compile so req_compile re-fires with fresh text.
         if (dock?.c.compile_ready) {
             delete dock.c.compile_ready
             clearTimeout(dock.c.compile_timer as ReturnType<typeof setTimeout>)
@@ -1914,12 +1562,9 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
         this.i_elvisto(w, 'think', {})
     },
 
-    // ── e:Lang_i_bookmark ────────────────────────────────────────────────────
-    //
-    //   Generic Plan/Prep action: place a bookmark at a given char range.
-    //   No action button — params must come from the Prep/esc children.
-    //   from / to are char offsets into the doc.  If omitted or equal, the
-    //   handler expands to the enclosing line (same as Ctrl+B on empty selection).
+    // ── e:Lang_i_bookmark ── Generic Plan/Prep action: place a bookmark at a char range
+    //   (params from the Prep/esc children, no action button).  from/to omitted or equal →
+    //   expand to the enclosing line (same as Ctrl+B on an empty selection).
     async e_Lang_i_bookmark(A, w, e) {
         const dock = this.Lang_active_dock(w)
         const view = dock?.c.view
@@ -1944,27 +1589,15 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
         })
     },
 
-    // ── e:Lang_i_alterationStation ───────────────────────────────────────────
-    //
-    //   Generic Plan/Prep action: surgically replace a substring within a line.
-    //   Operates within the existing text so CM can remap any bookmark decorations
-    //   that span the edit — a whole-line replace would destroy them.
-    //   No action button — params must come from the Prep/esc children:
-    //
-    //     Prep:4
-    //       i_elvisto:Lang,e:Lang_i_alterationStation
-    //         esc:line_n,v:6
-    //         esc:sanity,v:    o hut/although:1,they,can,be,mixed
-    //         esc:match,v:",they,can,be,mixed"
-    //         esc:replacement,v:"/they,can,be,mixed"
-    //
-    //   line_n      — 1-based CodeMirror line number
-    //   sanity      — expected full line text; warns on mismatch but still proceeds
-    //   match       — JSON-encoded string: substring to find within that line (first occurrence)
-    //   replacement — JSON-encoded string: what to replace it with (may be different length)
-    //
-    //   match and replacement are JSON-encoded so commas in values don't collide
-    //   with the snap key:value,key:value delimiter format.
+    // ── e:Lang_i_alterationStation ── Generic Plan/Prep action: surgically replace a substring
+    //   within a line (operates within existing text so CM remaps spanning bookmark decorations —
+    //   a whole-line replace would destroy them).  Params from the Prep/esc children:
+    //     line_n      — 1-based CodeMirror line number
+    //     sanity      — expected full line text; warns on mismatch but still proceeds
+    //     match       — JSON-encoded substring to find (first occurrence)
+    //     replacement — JSON-encoded replacement (may be a different length)
+    //   match/replacement are JSON-encoded so commas in values don't collide with the snap's
+    //   key:value,key:value delimiter format.
     async e_Lang_i_alterationStation(A, w, e) {
         const dock = this.Lang_active_dock(w)
         const view = dock?.c.view
@@ -1989,8 +1622,7 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
             return
         }
 
-        // Surgical replace — CM remaps any decoration whose range spans this
-        // position, so bookmarks within the line survive intact.
+        // Surgical replace — CM remaps decorations spanning this position, so bookmarks survive.
         // updateListener fires Lang_texting (dock updated) and arms the 80ms timer.
         view.dispatch({ changes: { from: line.from + idx, to: line.from + idx + match.length, insert: replacement } })
 
@@ -1999,9 +1631,8 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
         view.dispatch({ effects: dock.c.saveEffect.of(null) })
         console.log(`Lang_i_alterationStation — line ${line_n} [${match}] → [${replacement}], saveEffect dispatched`)
 
-        // machine-texting: bypass the 80ms push throttle and compile immediately
-        //   rather than waiting 6s.  The Langui timer will also fire (80ms) but
-        //   will be a no-op since the text is already in ave.
+        // machine-texting: bypass the 80ms throttle and compile immediately, not after 6s.  The
+        //   Langui timer also fires (80ms) but no-ops since the text is already in ave.
         this.i_elvisto(w, 'Lang_texting', {
             dock_path: dock.sc.dock as string,
             text:      view.state.doc.toString(),
@@ -2011,13 +1642,9 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
 
 
 //#region bm e
-    // ── e:Lang_add_bookmark ──────────────────────────────────────────────────────
-    //
-    //   Ctrl+B from the editor — create a w/{dock}/%bookmark at the current
-    //   selection.  CM marks the range so from/to track edits automatically.
-    //   Periodic e:Lang_update_bookmarks pushes live positions back here.
-    //
-    //   e.sc: { doc, from, to, label?, view, state }
+    // ── e:Lang_add_bookmark ── Ctrl+B: create a w/{dock}/%bookmark at the current selection.
+    //   CM marks the range so from/to track edits; periodic e:Lang_update_bookmarks pushes live
+    //   positions back here.   e.sc: { doc, from, to, label?, view, state }
     async e_Lang_add_bookmark(A: TheC, w: TheC, e: TheC) {
         const dock = this.Lang_dock_from_event(w, e)
 
@@ -2059,9 +1686,8 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
 
         dock.i({ bookmark: id, from, to, label });
 
-        // Name it after the MethodLike on this line, if the compile index is in|
-        // a bookmark on `async o_elvis_Idzeugnosis(A,w) {` becomes that Point.
-        // No index yet → stays positional; e:Lang_point_fuzzify upgrades it later.
+        // Name it after the MethodLike on this line if the compile index is in (→ that Point).
+        //  No index yet → stays positional; e:Lang_point_fuzzify upgrades it later.
         const method = this.Lang_def_at_offset(dock, from)
         if (method) {
             const bm = dock.o({ bookmark: id })[0] as TheC | undefined
@@ -2073,18 +1699,10 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
     },
 
 
-    // Fired by the editor after the debounce (or immediately via saveEffect).
-    //
-    // Carries the live from/to for every bookmark still present in the CM
-    // decoration set, plus a fresh editorState so whatsthis() sees the updated
-    // ── e:Lang_update_bookmarks ──────────────────────────────────────────────────
-    //
-    //   Fired by the editor after the debounce (or immediately via saveEffect).
-    //   Carries live from/to for every bookmark in CM's decoration set plus
-    //   a fresh editorState.  Bookmarks absent from updates[] have vanished —
-    //   their decoration was wiped by an edit that fully replaced the span.
-    //
-    //   e.sc: { doc, updates=[{id,from,to}], view, state }
+    // ── e:Lang_update_bookmarks ── Fired by the editor after the debounce (or immediately via
+    //   saveEffect).  Carries live from/to for every bookmark in CM's decoration set + a fresh
+    //   editorState.  Bookmarks absent from updates[] have vanished (their decoration wiped by an
+    //   edit that fully replaced the span).   e.sc: { doc, updates=[{id,from,to}], view, state }
     async e_Lang_update_bookmarks(A: TheC, w: TheC, e: TheC) {
         if (!A.sc.A) throw "!A"
         const doc = this.Lang_dock_from_event(w, e)
@@ -2110,18 +1728,11 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
         this.i_elvisto(w, 'think', {})
     },
 
-    // ── e:Lang_update_grafts ─────────────────────────────────────────────────
-    //
-    //   Counterpart to e_Lang_update_bookmarks for Pmirror grafts.  Carries
-    //   the live from/to for every graft mark in CM's graftMarkField.  The
-    //   actual update logic lives in %LangGraft.Lang_update_grafts — this
-    //   is just the elvis entry point.
-    //
-    //   < graft vanishing (mark wiped by full-span edit) is not yet
-    //     handled.  The next graft pass will see the spec doesn't resolve
-    //     anymore (or resolves to a different place) and the Pmirror's
-    //     identity machinery will sort it out — possibly with a momentary
-    //     unresolved state visible in the minimap.
+    // ── e:Lang_update_grafts ── Counterpart to e_Lang_update_bookmarks for Pmirror grafts.
+    //   Carries live from/to for every graft mark in CM's graftMarkField; the update logic lives
+    //   in %LangGraft.Lang_update_grafts — this is just the elvis entry point.
+    //   < graft vanishing (mark wiped by full-span edit) isn't handled; the next graft pass sees
+    //     the spec no longer resolves and the Pmirror identity machinery sorts it out.
     async e_Lang_update_grafts(A: TheC, w: TheC, e: TheC) {
         if (!A.sc.A) throw "!A"
         const updates = e?.sc.updates as Array<{ id: string, from: number, to: number }> | undefined
@@ -2129,19 +1740,12 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
         this.i_elvisto(w, 'think', {})
     },
 
-    // ── Lang_bookmark_vanished ───────────────────────────────────────────────
-    //
-    //   Called when a bookmark's CM decoration is absent from the live set —
-    //   meaning an edit fully replaced or deleted the span it was anchored to.
-    //
-    //   < STUB: eventually this should attempt re-anchoring by scanning the
-    //     parse tree for the nearest surviving syntactic landmark (same Line:N,
-    //     same node type, same label text) and re-dispatching addBookmarkMark
-    //     at the recovered position.
-    //
-    //   < Copy+paste tracking: when a paste lands, compare incoming text chunks
-    //     against the label/content of vanished bookmarks and re-anchor any that
-    //     appear in the new location.
+    // ── Lang_bookmark_vanished ── a bookmark's CM decoration is absent from the live set (an edit
+    //   fully replaced|deleted its anchored span).
+    //   < STUB: re-anchor by scanning the parse tree for the nearest surviving landmark (same
+    //     Line:N, node type, label text) and re-dispatching addBookmarkMark there.
+    //   < Copy+paste tracking: on a paste, match incoming chunks against vanished bookmarks' labels
+    //     and re-anchor any that reappear.
     Lang_bookmark_vanished(doc: TheC, bm: TheC) {
         console.warn(`🔖 bookmark vanished: ${bm.sc.bookmark} was [${bm.sc.from}..${bm.sc.to}] "${bm.sc.label}"`)
         bm.i({ vanished: 1 })
@@ -2149,12 +1753,8 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
         // < copy+paste recovery pass goes here
     },
 
-    // ── e:Lang_remove_bookmark ───────────────────────────────────────────────
-    //
-    //   Remove one bookmark by id.  Dispatches removeBookmarkMark to CM
-    //   and drops the particle from the doc.  Wired to DocPoint's delete button.
-    //
-    //   e.sc: { bookmark_id }
+    // ── e:Lang_remove_bookmark ── remove one bookmark by id: dispatch removeBookmarkMark to CM +
+    //   drop the particle.  Wired to DocPoint's delete button.   e.sc: { bookmark_id }
     async e_Lang_remove_bookmark(A: TheC, w: TheC, e: TheC) {
         const doc = this.Lang_active_dock(w)
         if (!doc) return
@@ -2170,14 +1770,9 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
         this.i_elvisto(w, 'think', {})
     },
 
-    // ── e:Lang_point_fuzzify ─────────────────────────────────────────────────
-    //
-    //   Resolve a bookmark's char-offset range to the enclosing method name
-    //   from the compile index.  Stamps bm.sc.method, upgrading from a
-    //   positional anchor to a named method pointer.
-    //   No-op with a hint when the compile index is absent.
-    //
-    //   e.sc: { bookmark_id }
+    // ── e:Lang_point_fuzzify ── resolve a bookmark's char range to the enclosing method name
+    //   from the compile index, stamping bm.sc.method (positional anchor → named pointer).
+    //   No-op with a hint when the index is absent.   e.sc: { bookmark_id }
     async e_Lang_point_fuzzify(A: TheC, w: TheC, e: TheC) {
         const doc = this.Lang_active_dock(w)
         if (!doc) return
@@ -2194,12 +1789,8 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
         this.i_elvisto(w, 'think', {})
     },
 
-    // ── e:Lang_stamp_bookmark_serial ─────────────────────────────────────────
-    //
-    //   Stamp a global Point serial onto a bookmark after it has been exported
-    //   to a Waft Doc via e_Lies_export_point.  The DocPoint UI shows this to
-    //   signal the bookmark is already persisted.
-    //
+    // ── e:Lang_stamp_bookmark_serial ── stamp a global Point serial onto a bookmark after it's
+    //   exported to a Waft Doc (e_Lies_export_point); DocPoint shows it as "already persisted".
     //   e.sc: { bookmark_id, serial }
     async e_Lang_stamp_bookmark_serial(A: TheC, w: TheC, e: TheC) {
         const doc = this.Lang_active_dock(w)
@@ -2211,17 +1802,11 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
         this.i_elvisto(w, 'think', {})
     },
 
-    // ── e:Lang_shoot_point ────────────────────────────────────────────────────
-    //
-    //   The real bookmark→Point path: shoot a ripe bookmark into the active
-    //   Interest's LE.  The Point is added to the working clone of the What we
-    //   are at — Trail or Sidetrack, whichever is foreground — through the
-    //   e:mark op:add seam, and the push cluster lands it back on the canonical
-    //   Waft.  Lang never writes Waft C directly; the LE owns every Waft
-    //   manipulation from this side.  With no armed Interest there is nowhere
-    //   legitimate for the Point to land, so we error rather than fall back to a
-    //   blind path-keyed write — foreground an Interest first.
-    //
+    // ── e:Lang_shoot_point ── the real bookmark→Point path: shoot a ripe bookmark into the active
+    //   Interest's LE.  The Point is added to the working clone of the foreground What (Trail|
+    //   Sidetrack) via the e:mark op:add seam, and the push cluster lands it back on the canonical
+    //   Waft — Lang never writes Waft C directly, the LE owns every Waft manipulation here.  No
+    //   armed Interest → error (nowhere legitimate to land), don't fall back to a blind path write.
     //   e.sc: { path, bookmark_id, from, to, method, label? }
     async e_Lang_shoot_point(A: TheC, w: TheC, e: TheC) {
         const H        = this as House
@@ -2261,16 +1846,9 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
 
 //#region text measurement
 
-    // ── measureText ──────────────────────────────────────────────────────
-    // Monospace text measurement via OffscreenCanvas (or hidden canvas).
-    // Returns { width, height } in px for a given string at a given font size.
-    //
-    // Since we use a monospace font, the per-char width is constant —
-    // we cache the char width per fontSize and multiply by str.length.
-    // Non-printable / tab chars get a fixed slot width.
-    //
-    // The measurement canvas is created once and reused across all calls.
-    // Font: 'Berkeley Mono', 'Fira Code', monospace — same as Cytui.
+    // ── measureText ── monospace text measurement via a hidden canvas → { width, height } px.
+    //   Monospace, so per-char width is constant: cache it per fontSize and multiply by length.
+    //   Canvas created once and reused.  Font: 'Berkeley Mono','Fira Code',monospace (same as Cytui).
     _measure_cache: {} as Record<number, number>,
     _measure_ctx: null as CanvasRenderingContext2D | null,
 

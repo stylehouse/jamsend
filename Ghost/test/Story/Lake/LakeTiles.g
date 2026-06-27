@@ -288,11 +288,6 @@ captureOutTiles(A,w):
     // the older bare spelling stays valid (additive): name$ , name$var , name.$var
     o hut/toot$tval
 
-// loose `and` is demoed live in theCompiledStuff above (wibble_/compound_/chained_andily).
-//  The statement right of the last `and` is ANY statement, not just an io — a bare `return`
-//   or `break` too (`caster%live && term%want and break` → if (caster.sc.live && term.sc.want) { break }),
-//    not shown above only because a `return` would cut the demo method short.
-
 IMPORT()
     import Peeroleum from "$lib/gen/N/Peeroleum.go"
     import { browserTrustedPubs, prepubOf } from "$lib/p2p/cluster_trust"

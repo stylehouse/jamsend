@@ -4,13 +4,19 @@ story:MusuStock
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.037
+    TimeTotal:beliefs,avg=0.034
       sample=0.045,at=1782386888
       sample=0.029,at=1782396611
-    TimeTotal:step,avg=0.008
+      sample=0.028,at=1782535876
+      sample=0.028,at=1782535878
+      sample=0.038,at=1782535885
+    TimeTotal:step,avg=0.007
       sample=0.009,at=1782386888
       sample=0.006,at=1782396611
-  step,dige:351aa0ee49bc317d
+      sample=0.006,at=1782535876
+      sample=0.006,at=1782535878
+      sample=0.008,at=1782535885
+  step,dige:f26465eaaab20ded
   step=2,dige:786a2f9c7228f88a
   step=3,dige:b3c8350285ece11b
   step=4,dige:b119a64693df80df

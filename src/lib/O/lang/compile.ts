@@ -1,67 +1,49 @@
 // @ts-nocheck
 // $lib/O/lang/compile.ts — the pure stho→TS translator.
 //
-// Extracted verbatim from LangCompiling.svelte into its own data-layer-free
-//  module (type-only TheC import), so the pure translation lives in ONE place
-//  apart from the orchestration. LangCompiling.svelte imports LANG_COMPILE and
-//  spreads it into its eatfunc, so these run on H exactly as before (`this === H`
-//  at call time: sibling Lang_compile_* calls + this.trace resolve off H). The
-//  orchestration that needs a House — resolving the active dock, the Lies
-//  write-handoff (e:Lies_compiled), dig(), particle plumbing — stays in the
-//  .svelte; only the pure text+parser→module translation lives here.
-//
-// `this` at call time is H (the in-app House). @ts-nocheck: these moved verbatim
-//  and lean on that loose `this` (House) typing — runtime is the contract, not tsc.
+// Data-layer-free (type-only TheC import) so it's CLI-loadable; the pure translation
+//  lives here, orchestration (active dock, Lies write-handoff e:Lies_compiled, dig,
+//   particle plumbing) stays in LangCompiling.svelte.  Spread into that .svelte's
+//    eatfunc, so `this === H` at call time: sibling Lang_compile_* and this.trace off H.
+// @ts-nocheck: moved verbatim, leans on that loose `this` (House) typing — runtime is
+//  the contract, not tsc.
 import { syntaxTree, language, ensureSyntaxTree } from "@codemirror/language"
 import type { EditorState } from "@codemirror/state"
 import type { SyntaxNode } from "@lezer/common"
 import { parser as jsBaseParser } from "@lezer/javascript"   // in-browser syntax gate (ts dialect) — see Lang_validate_rendered_module
 import type { TheC } from "$lib/data/Stuff.svelte"   // type-only: keeps this module data-layer-free (CLI-loadable)
 
-// The House-receiver alias fabricated onto the opening-brace line of a compiled method
-//  (a pythonic header's `{ const H = this`; a user-braced one takes it on a body-top
-//   line), so raw-JS House calls (H.foo(), H.c.x) resolve without hand-writing it — and
-//    it stays out of the way when reading the gen output.  Parameterised here: `name` is
-//     the alias, `inject:false` turns the whole thing off.  Per-method it is skipped when
-//      the alias is a param (would shadow), when the body already declares it (would
-//       redeclare — an existing hand-written `const H = this` keeps working untouched), or
-//        when the compiled body never mentions a bare `H` (nothing to bind).
+// The House-receiver alias fabricated onto a compiled method's opening-brace line
+//  (`const H = this`), so raw-JS House calls (H.foo(), H.c.x) resolve unwritten.
+//   `name` = the alias; `inject:false` turns it off.  Per-method skip conditions
+//    (param-shadow, already-declared, no bare H in the body) are applied at the site.
 const RECEIVER_ALIAS = { name: 'H', inject: true }
 
-// The IOness verb families.  OBTAIN_VERBS share o's (sc, q) signature, so they
-//  ride the o-path: a single-leg `recv.verb(sc, {exactly})` (multi-leg drills and
-//   captures stay i|o-only, since the drill helpers are _o_drill/_i_drill).
-//   IONESS2_VERBS take (match, props) and route to Lang_compile_ioness2.  `drop`
-//    (a C arg) and `empty` (no arg) are grammar tokens but not sc-path shaped, so
-//     they stay unbuilt here — using one throws a clear "unknown IOness".
+// The IOness verb families.  OBTAIN_VERBS share o's (sc, q) signature → ride the
+//  o-path; multi-leg drills|captures stay i|o-only (helpers _o_drill/_i_drill).
+//   IONESS2_VERBS take (match, props) → Lang_compile_ioness2.  drop|empty tokenise
+//    but aren't sc-path shaped, so stay unbuilt (using one throws "unknown IOness").
 const OBTAIN_VERBS  = new Set(['o', 'oa', 'ob', 'o1', 'oa1', 'bo', 'boa', 'bo1', 'boa1'])
 const IONESS2_VERBS = new Set(['r', 'rm', 'oai', 'roai'])
-// Alternation for the candidate-line pre-filters.  The trailing `\s+` anchors each
-//  verb to a full match, so order is irrelevant (`oa ` can't match as `o`).
+// Alternation for the candidate pre-filters; trailing `\s+` anchors each verb to a full match (order irrelevant).
 const IONESS_VERB_RE = 'i|o|oa|ob|o1|oa1|bo|boa|bo1|boa1'
 
 // ── in-browser syntax gate (twin of scripts/lang-compile.ts's esbuild gate) ──
-//
-//   esbuild is build-time only, so in the browser we parse the rendered module
-//   with @lezer/javascript and reject on the first error node.  Two non-obvious
-//   musts, both load-bearing:
-//     - dialect "ts": the rendered module is TypeScript (`H: House`, `as TheC`,
-//       `: string`).  The default JS dialect emits an error node on every type
-//       annotation, so it would falsely reject every dock.  This is NOT the
-//       registry's substitute parser (lang.ts: configured {} → JS).
-//     - Lezer is error-recovering: it never throws, always returns a Tree with
-//       `.type.isError` nodes, so detection is a walk, not a try/catch.
-//   `tsParser` is built once and reused.
+//   esbuild is build-time only → in the browser, parse the rendered module with
+//    @lezer/javascript and reject on the first error node.  dialect "ts" is a MUST:
+//     the module is TS, and the default JS dialect errors on every type annotation
+//      → it would reject every dock (this is NOT lang.ts's substitute parser).
+//   Lezer is error-recovering (never throws, returns a Tree with .type.isError) so
+//    detection is a tree walk, not a try/catch.  tsParser is built once and reused.
 let _tsParser: any = null
 function tsParser(): any {
     if (!_tsParser) _tsParser = jsBaseParser.configure({ dialect: 'ts' })
     return _tsParser
 }
 
-// Extract the <script> body from a rendered module, padded with the leading
-//  newlines so a parse offset maps to the same line number as the .go module.
-//  Verbatim shape of scripts/lang-compile.ts's scriptOfModule, so the two gates
-//  see the same text and agree on accept/reject.
+// Extract the <script> body, padded with leading newlines so a parse offset maps
+//  to the same line number as the .go module.  Mirrors scripts/lang-compile.ts's
+//   scriptOfModule, so the two gates see the same text and agree on accept/reject.
 function tsScriptOfModule(mod: string): string {
     const open = mod.match(/<script[^>]*>/)
     if (!open) return mod   // no wrapper — treat the whole thing as the script
@@ -76,14 +58,10 @@ export const LANG_COMPILE = {
 //#region collect
 
     // The bare stho LRParser for the editor's active language, or undefined.
-    //
-    //   Lang_compile_collect uses this to parse candidate lines one at a time
-    //   instead of GLR-parsing the whole document.  We only return it when the
-    //   active language really is the stho grammar — detected by the presence of
-    //   an `IOing` node type, which no other grammar (e.g. the tsstho TS grammar)
-    //   has.  For anything else this returns undefined and the collector falls
-    //   back to a single whole-document tree walk.  Defensive throughout: any
-    //   unexpected CodeMirror shape yields undefined rather than throwing.
+    //   Lets Lang_compile_collect parse candidate lines one at a time vs GLR-parsing
+    //    the whole doc.  Returned only when the active grammar is stho — detected by
+    //     the IOing node type, which no other grammar (e.g. tsstho) has; else undefined
+    //      → whole-doc walk.  Defensive: an unexpected CodeMirror shape yields undefined.
     Lang_stho_parser(state: EditorState): { parse(input: string): any } | undefined {
         try {
             const lang: any = state.facet(language as any)
@@ -95,21 +73,13 @@ export const LANG_COMPILE = {
     },
 
     // Is ANY real language parser wired onto this EditorState's `language` facet?
-    //
-    //   The collector's contract is "a line the grammar doesn't recognise passes
-    //   through verbatim (kind:'raw')".  That is correct per-line — but if the
-    //   WHOLE facet is empty (the async lang() resolve hasn't landed on this state
-    //   yet, or the wrong/no extension was wired), then EVERY line is unrecognised,
-    //   so the collector emits the entire `.g` as raw and the rendered module is
-    //   uncompiled source.  Nothing downstream can tell that apart from a file that
-    //   is legitimately all raw-JS, so the garbage gets written to the .go (and, on
-    //   the editor↔runner channel, pushed to a runner that trusts it).
-    //
-    //   This is the cheap pre-check Lang_compile_dock uses to REFUSE that compile
-    //   loudly (a caught compile_error, no write) rather than emit passthrough.  It
-    //   is deliberately weaker than Lang_stho_parser: a parser of ANY grammar (stho
-    //   OR the tsstho TS grammar) counts as wired — the failure we guard is "no
-    //   grammar at all", which is the lang-not-ready race, not "wrong grammar".
+    //   The collector passes an unrecognised line through as kind:'raw' — fine per-line,
+    //    but if the WHOLE facet is empty (async lang() hasn't landed, or no extension
+    //     wired) EVERY line is raw, so the .g is emitted uncompiled and written to the .go
+    //      (and pushed to a trusting runner) — indistinguishable downstream from a real
+    //       all-raw-JS file.  Lang_compile_dock uses this to REFUSE loudly (compile_error,
+    //        no write).  Weaker than Lang_stho_parser on purpose: ANY grammar counts; this
+    //         guards "no grammar at all" (the lang-not-ready race), not "wrong grammar".
     Lang_has_lang_parser(state: EditorState): boolean {
         try {
             const lang: any = state.facet(language as any)
@@ -118,19 +88,12 @@ export const LANG_COMPILE = {
     },
 
     // Does this EditorState already carry the grammar named `want`?
-    //
-    //   The compile-source decoupling (Lang_handover.md §7) lets Lang_compile_source_state
-    //    REUSE a mounted dock.c.state when its parser already matches the path — the hot
-    //     settle path, a transaction not an EditorState.create — and synthesize a fresh
-    //      state on lang(want) only when it doesn't.  This is the "already matches" test.
-    //   Positive grammar identity, so a FALSE POSITIVE (reuse a wrong-parser state) is
-    //    impossible — that is the one outcome that would reintroduce the bug we are closing
-    //     (a .md compiled by the stho parser).  A false negative only costs one needless
-    //      synthesis, never correctness:
-    //        stho     — owns the IOing node, which no other grammar has.
-    //        markdown — its parser is a MarkdownParser (the @lezer/markdown class).
-    //        tsstho   — the other LR grammar: a parser that is neither markdown nor stho.
-    //      An unknown `want` trusts whatever is wired (we have nothing to compare against).
+    //   Lang_compile_source_state (Lang_handover.md §7) reuses a mounted dock.c.state when
+    //    its parser matches, else synthesizes one on lang(want); this is the match test.
+    //   Positive identity, so a false POSITIVE (reuse a wrong-parser state) is impossible —
+    //    that is the bug being closed (a .md compiled by the stho parser); a false negative
+    //     only costs one needless synthesis.  stho owns IOing; markdown's parser is a
+    //      MarkdownParser; tsstho is neither.  Unknown `want` trusts whatever is wired.
     Lang_state_lang_is(state: EditorState | undefined, want: string): boolean {
         try {
             const parser: any = (state?.facet(language as any) as any)?.parser
@@ -148,37 +111,30 @@ export const LANG_COMPILE = {
     },
 
     // The EditorState a dock's %Map was compiled against — its coordinate frame.
-    //
-    //   Stamped on the Compile job at compile (job.c.source_state, LangCompiling).  Map
-    //    offsets are BORN in this frame, so a reader interpreting one (point-nav, def-at-
-    //     offset, the tap, the whatsthis syntax dump) must resolve against THIS, not the
-    //      live dock.c.state — else rel_*/abs_* offsets drift the first keystroke after a
-    //       compile (Lang_handover.md §7, the 3b readers).  Falls back to dock.c.state
-    //        before the first compile, where there is no snapshot yet.
+    //   Stamped job.c.source_state at compile.  Map offsets are BORN in this frame, so a
+    //    reader (point-nav, def-at-offset, tap, whatsthis dump) must resolve against THIS,
+    //     not the live dock.c.state — else offsets drift the first keystroke after compile
+    //      (Lang_handover.md §7).  Falls back to dock.c.state before the first compile.
     Lang_index_state(dock: TheC): EditorState | undefined {
         const job = dock?.o({ Compile: 1 })[0] as TheC | undefined
         return (job?.c.source_state as EditorState | undefined) ?? (dock?.c.state as EditorState | undefined)
     },
 
-    // Codetypes we index for Points but never compile to a .go: markdown specs
-    //  (the heading TOC) and tsstho (.ts/.svelte method+call Map).  Lang_compile_dock
-    //  runs its soft path on these — builds %Map, writes nothing.  Disjoint from
-    //  Lies_gen_path (the .g→.go gate): a path is gen-able OR points-only OR neither
-    //  (a .png dock indexes to nothing and the compile reqs no-op on it).
+    // Codetypes we index for Points but never compile to a .go: markdown (heading TOC)
+    //  and tsstho (.ts/.svelte method+call Map).  Lang_compile_dock runs the soft path —
+    //   builds %Map, writes nothing.  Disjoint from Lies_gen_path (the .g→.go gate): a path
+    //    is gen-able OR points-only OR neither (a .png indexes to nothing, reqs no-op).
     Lang_points_only(path: string): boolean {
         return /\.(?:md|ts|svelte)$/.test(path ?? '')
     },
 
     // A COMPLETE syntax tree for `state`, forcing a parse when CodeMirror's incremental
-    //  tree is empty or partial.  syntaxTree(state) is lazy and viewport-driven: an
-    //   off-view dock (or a freshly-built state not yet attached to a view) yields a
-    //    tree of length 0, which silently blanked BOTH the markdown TOC and the bookmark
-    //     syntax dump (whatsthis_txt's "no tree" bail).  When the lazy tree already
-    //      covers the whole doc we keep it — that dodges a redundant whole-doc reparse and
-    //       the stho grammar's error-recovery storm on raw-TS lines.  Otherwise force a
-    //        full parse via the language facet's parser (the same parser syntaxTree feeds;
-    //         markdown/ts are linear enough), falling back to ensureSyntaxTree then the
-    //          lazy tree so a caller always gets *some* tree rather than null.
+    //  tree is empty|partial.  syntaxTree(state) is lazy + viewport-driven: an off-view
+    //   (or freshly-built, unattached) state yields a length-0 tree, which silently blanked
+    //    the markdown TOC and the bookmark syntax dump.  Keep the lazy tree when it already
+    //     covers the whole doc (dodges a reparse + the stho error-recovery storm on raw-TS);
+    //      else force a full parse, falling back ensureSyntaxTree → lazy so a caller always
+    //       gets *some* tree, never null.
     Lang_full_tree(state: EditorState): any {
         const lazy = syntaxTree(state)
         if (lazy && lazy.length >= state.doc.length) return lazy
@@ -193,27 +149,21 @@ export const LANG_COMPILE = {
         return lazy
     },
 
-    // Scan a markdown dock's headings into %Compile/%Map as region entries — the
-    //  same vocabulary Lang_compile_collect emits for //#region, so the minimap,
-    //  the Mapulen and the fold logic read a markdown TOC with no markdown-specific
-    //  branch downstream.  depth is the heading LEVEL (1..6), not nesting count, so
-    //  a skipped level (h1 then h3) still indents and folds correctly: Lang_build_
-    //  mapules closes a region at the next region of depth ≤ its own, which is exactly
-    //  "this heading's section ends where the next same-or-higher heading begins".
-    //  region_path is the ancestor heading chain ending in this heading's own label
-    //   (the shape Lang_build_mapules' m.c.path and the trail heatmap key expect); it
-    //    rides .c, never .sc — an array in sc is an encode fatal.
-    //  Walks the parse tree, not a /^#/ regex, so a `#` inside a fenced code block is
-    //   a FencedCode node, never a heading.  Markdown emits no module, so there is
-    //    nothing to return — the caller takes the soft (no-gen) close.
+    // Scan a markdown dock's headings into %Compile/%Map as region entries — the same
+    //  vocabulary Lang_compile_collect emits for //#region, so minimap|Mapulen|fold read
+    //   a markdown TOC with no md-specific branch.  depth = heading LEVEL (1..6), not
+    //    nesting count, so a skipped level (h1→h3) still folds: Lang_build_mapules closes
+    //     a region at the next region of depth ≤ its own.  region_path = the ancestor chain
+    //      ending in this label (shape m.c.path + the trail heatmap key expect); rides .c,
+    //       never .sc — an array in sc is an encode fatal.  Walks the parse tree, not a
+    //        /^#/ regex, so a `#` in a fenced block is FencedCode, not a heading.  Markdown
+    //         emits no module → nothing to return; the caller takes the soft (no-gen) close.
     Lang_collect_markdown_regions(state: EditorState, job: TheC): void {
         const doc  = state.doc
-        // Lang_full_tree forces a complete parse — syntaxTree(state) is empty for an
-        //  off-view compile, which collapsed the TOC to zero headings.
+        // Lang_full_tree, not syntaxTree — the latter is empty off-view (zero-heading TOC).
         const tree = this.Lang_full_tree(state)
 
-        // 1-based line number for a doc offset — binary search (twin of the lineOf
-        //  inside Lang_compile_collect).
+        // 1-based line number for a doc offset — binary search (twin of the one in collect).
         const lineOf = (pos: number) => {
             let lo = 1, hi = doc.lines
             while (lo < hi) {
@@ -226,9 +176,8 @@ export const LANG_COMPILE = {
         const HEADING_RE = /^(?:ATX|Setext)Heading([1-6])$/
         const words: Array<{ label: string, depth: number, from: number, to: number,
                              line: number, region_path: string[] }> = []
-        // the open-heading chain: each entry the {label, level} of an ancestor still
-        //  in scope.  A new heading pops every open heading of equal-or-deeper level
-        //   (a sibling or a shallower section), then becomes the new innermost.
+        // the open-heading chain ({label, level} per ancestor in scope): a new heading
+        //  pops every open heading of equal-or-deeper level, then becomes the innermost.
         const stack: Array<{ label: string, level: number }> = []
 
         tree.iterate({ enter: (ref) => {
@@ -247,8 +196,7 @@ export const LANG_COMPILE = {
             return false              // a heading owns no nested heading inside its node
         }})
 
-        // flush — regions carry absolute from/to (the anchor children resolve against;
-        //  markdown has no children, so they are just the heading's own span).
+        // flush — regions carry absolute from/to (markdown has no children, so just the span).
         const Map_C = job.oai({ Map: 1 })
         Map_C.empty()
         for (const w of words) {
@@ -260,89 +208,58 @@ export const LANG_COMPILE = {
         this.trace(`Lang`, `Markdown TOC regions x${words.length}`)
     },
 
-    // Walk the document line-by-line (via doc.line(n), independent of the
-    // syntax tree's own Line recovery).  For each doc-line we look into the
-    // syntax tree for the first IOing or Sunpit node strictly within the
-    // line's [from..to] range:
-    //
-    //   - found → substitute translated TS for the expression's span,
-    //             keeping the line's leading whitespace and anything after
-    //             the expression verbatim.  kind: 'translated'.
-    //   - not found → emit the line verbatim.  kind: 'raw'.
-    //
-    // This is how we "keep whole lines we don't understand" — the
-    // `theCompiledStuff(A,w) {` header, `[3]`, bare JS like
-    // `let val = because.sc.it`, the closing `}`, blank lines, comments
-    // all pass through unchanged.
-    //
-    //   sthoParser — optional bare Lezer LRParser for the stho grammar.  When
-    //   supplied (stho files), the line index is built by parsing only the
-    //   lines that *could* be stho, one at a time, instead of running the GLR
-    //   parser over the whole document.  This skips the costly error-recovery
-    //   the stho grammar does on every raw-TS line, so compile cost scales with
-    //   the number of stho lines rather than total file size.  When absent
-    //   (tsstho, whose TS grammar parses TS natively without a recovery storm,
-    //   or any caller that hasn't wired the parser) it falls back to one
-    //   whole-document tree walk.
+    // Per doc-line, find the first IOing|Sunpit node in its span → substitute
+    //  translated TS for that span (kind 'translated'), else emit the line verbatim
+    //   (kind 'raw').  So lines the grammar doesn't know pass through untouched.
+    //  sthoParser (stho files) parses each candidate line alone, not GLR-walking the
+    //   whole doc — dodges the stho grammar's error-recovery storm on every raw-TS line,
+    //    so cost scales with stho-line count, not file size.  Absent → one whole-doc walk.
     Lang_compile_collect(state: EditorState, job: TheC, sthoParser?: { parse(input: string): any }): Array<{
         kind: 'translated' | 'raw' | 'header' | 'tail',
         text: string,
     }> {
-        // Fetched lazily in the fallback branch only.  On the fast path we never
-        // touch syntaxTree(state), so CodeMirror is never asked to fully parse
-        // (and error-recover over) the whole document.
+        // Fetched in the fallback branch only — the fast path never touches syntaxTree,
+        //  so CodeMirror never fully parses (and error-recovers over) the whole document.
         let tree: any = null
         const doc   = state.doc
         const out: Array<{ kind: 'translated' | 'raw' | 'header' | 'tail', text: string }> = []
-        // accumulates {def|call|region|controlflow:1, …} during the walk; flushed below
-        // `via` = enclosing method name for calls (renamed from `from` to avoid collision)
-        // `class` = enclosing class name for PropertyDefinition defs (tsstho only)
-        // `magic` = set on IMPORT and RENDER defs (the header/tail pseudo-methods, diverted out of the eatfunc)
-        // `from`, `to`, `line` = character offsets and 1-based line number in the document
-        // `region_path` = snapshot of region_stack at the time each entry is recorded
+        // accumulates {def|call|region|controlflow:1, …} during the walk; flushed below.
+        //  via = enclosing method (for calls); class = enclosing class (tsstho defs only);
+        //   magic = IMPORT|RENDER (header/tail pseudo-methods, diverted out of the eatfunc);
+        //    region_path = snapshot of region_stack when the entry was recorded.
         const words: Array<{ def?: 1, call?: 1, region?: 1, controlflow?: 1,
                              method?: string, label?: string, keyword?: string, title?: string,
                              via?: string, class?: string, magic?: 1,
                              from?: number, to?: number, rel_from?: number, rel_to?: number, line?: number,
                              region_path?: string[] }> = []
 
-        // region_stack persists across all lines — it is the "Indian stack" of open regions.
-        // Shared via ctx reference so nested recursive calls in _collect_line see the same stack.
+        // region_stack persists across all lines (the stack of open regions); shared via
+        //  ctx ref so nested _collect_line recursions see the same stack.
         const region_stack: string[] = []
-        // open_regions mirrors region_stack with the region word objects themselves, so a
-        //  //#endregion can reach back and stamp the region's body extent (its to). Same
-        //  ref-shared lifetime as region_stack.
+        // open_regions mirrors region_stack with the region word objects, so //#endregion
+        //  can reach back and stamp the region's body extent (its `to`).  Same lifetime.
         const open_regions: any[] = []
 
-        // Per-line compile errors — collected here so each carries line/text context.
-        // < future: continue past first error once there's a UI path for line-level
-        //   diagnostics (akin to Point_issue); for now we stop at the first and rethrow.
+        // Per-line compile errors, each with line/text context.
+        // < continue past the first once a UI for line-level diagnostics exists (Point_issue).
         const line_errors: Array<{ n: number, text: string, msg: string }> = []
         if (doc.lines == 1) this.trace(`Lang`,`Only one line? ${doc.text[0]}`)
 
         let n = 1
 
         // ── single-pass tree index ────────────────────────────────────────────
-        //
-        // Build a line-number → hit map by iterating the tree exactly once.
-        // _collect_line then does a cheap Map lookup instead of its own
-        // tree.iterate, making the collector O(n) rather than O(n²).
-        //
-        // For each doc line we record the first stho node whose span sits
-        // strictly inside that line (same rule the old per-line iterate used).
-        // TS-grammar nodes (PropertyDefinition, PropertyName, VariableDefinition)
-        // are folded into the same pass; they land in `words` here so the
-        // second tree.iterate inside _collect_line can be removed entirely.
-        // Line index: line number → first stho hit on that line.  Whole-doc
-        // hits carry no localBase/sliceState (offsets are document-absolute);
-        // per-line fast hits carry localBase:0 and a per-line slice shim.
+        //   Iterate the tree ONCE into a line-number → first-hit map (the first stho node
+        //    strictly inside each line), so _collect_line does a Map lookup not its own
+        //     tree.iterate per line — O(n), not O(n²).  TS-grammar nodes (PropertyDefinition|
+        //      PropertyName|VariableDefinition) fold into the same pass, landing in `words`.
+        //   Whole-doc hits carry no localBase/sliceState (offsets are document-absolute);
+        //    per-line fast hits carry localBase:0 + a per-line slice shim.
         const lineHits = new Map<number, {
             name: string, node: SyntaxNode,
             localBase?: number, sliceState?: EditorState,
         }>()
 
-        // 1-based line number for a doc offset — binary search.
-        // Called once per relevant tree node, not once per character.
+        // 1-based line number for a doc offset — binary search, once per tree node.
         const lineOf = (pos: number) => {
             let lo = 1, hi = doc.lines
             while (lo < hi) {
@@ -355,19 +272,13 @@ export const LANG_COMPILE = {
         const STHO_HITS = new Set(['IOing','Sunpit','ControlFlow','MethodLike','AmpCall'])
 
         // ── fast path: per-line filtered parse (stho files) ───────────────────
-        //
-        // A cheap regex pre-filter rejects lines that cannot be stho (the bulk
-        // of a ghost file — raw TS).  Only survivors are handed to the parser,
-        // one line at a time, so we never pay for whole-document error recovery.
-        // Offsets from a single-line parse are line-local, so each hit carries
-        // localBase:0 and a slice shim over the line text; _collect_line maps
-        // those back to document offsets for the navigation word-index.
-        //
-        // The pre-filter is deliberately generous: a false positive only wastes
-        // one short parse, while a false negative would drop a real stho line.
-        // < TS method/class indexing (PropertyDefinition etc.) is not done on
-        //   this path; those nodes only exist in the tsstho TS tree, which takes
-        //   the fallback below.
+        //   A cheap regex pre-filter rejects lines that can't be stho (the raw-TS bulk);
+        //    survivors are parsed one line at a time — no whole-doc error recovery.  Those
+        //     offsets are line-local, so each hit carries localBase:0 + a slice shim that
+        //      _collect_line maps back to doc offsets.  The filter is deliberately generous:
+        //       a false positive wastes one short parse, a false negative drops a real line.
+        // < TS method/class indexing (PropertyDefinition etc.) is NOT done here — those
+        //    nodes exist only in the tsstho tree, which takes the fallback below.
         if (sthoParser) {
             const CAND = [
                 new RegExp(`(?:^|[^\\w.])(?:${IONESS_VERB_RE}|S)\\s+[%$A-Za-z_]`),  // IOness (i|o|oa|ob|…) or Sunpit verb
@@ -408,19 +319,13 @@ export const LANG_COMPILE = {
                 }
 
                 // ── TS-grammar method/class defs (tsstho files) ───────────────
-                //
-                //   VariableDefinition (parent=ClassDeclaration) → class name
-                //     e.g. "export class Pier {" → def:Pier
-                //   PropertyDefinition (parent=MethodDeclaration) → class method
-                //     e.g. "async emit(type, data={}) {" → def:emit class:'Pier'
-                //   PropertyDefinition (parent=Property with ParamList) → eatfunc method
-                //   PropertyName (object shorthand fallback) → eatfunc method
-                //
-                // Discriminator: %class present → method inside a class.
-                // IMPORT and RENDER are the magic pseudo-methods: their bodies are
-                //  diverted to the module header/tail (the MethodLike branch of
-                //   _collect_line does the extraction for stho files; here on the
-                //    tsstho whole-doc path they are still recorded magic:1 for nav).
+                //   VariableDefinition / ClassDeclaration               → class name
+                //   PropertyDefinition / MethodDeclaration              → class method (+ class:)
+                //   PropertyDefinition / Property-with-ParamList         → eatfunc method
+                //   PropertyName (object-shorthand fallback)            → eatfunc method
+                //  IMPORT|RENDER are the magic pseudo-methods (bodies diverted to the module
+                //   header/tail by _collect_line's MethodLike branch); here on the tsstho
+                //    whole-doc path they are only recorded magic:1 for nav.
                 if (ref.name === 'PropertyDefinition') {
                     const name = state.doc.sliceString(ref.from, ref.to)
                     if (!name || !/^\w/.test(name)) return false
@@ -448,9 +353,8 @@ export const LANG_COMPILE = {
                     return false
                 }
 
-                // Backup for grammars that emit PropertyName instead of PropertyDefinition
-                // in method-shorthand positions inside object literals (eatfunc context).
-                // Only record if the node looks like a method (sibling ParamList present).
+                // Backup for grammars that emit PropertyName not PropertyDefinition in
+                //  method-shorthand positions; only record if a sibling ParamList is present.
                 if (ref.name === 'PropertyName') {
                     const prop = ref.node.parent
                     if (!prop?.getChild('ParamList')) return false
@@ -491,30 +395,26 @@ export const LANG_COMPILE = {
             }
         }
 
-        // flush word index into Stuff:
-        //   job%Compile / Map / {def:1,  method:'name', class?:'ClassName', magic?:1, from, to, line, region_path}
-        //     class absent → class-name def or eatfunc method; class present → class method inside that class
-        //   job%Compile / Map / {call:1, method:'name', via:'caller', from, to, line, region_path}
-        //   job%Compile / Map / {region:1, label:'name', from, to, line, depth}
-        //   job%Compile / Map / {controlflow:1, keyword, title, from, to, line, via?, region_path}
+        // flush word index into Stuff — job%Compile/Map/ entries:
+        //   {def:1, method, class?, magic?, …}   class present → method inside that class
+        //   {call:1, method, via, …}             via = the calling method
+        //   {region:1, label, depth, …}
+        //   {controlflow:1, keyword, title, via?, …}
         const Map_C = job.oai({ Map: 1 })
         // clear stale entries from a previous compile
         Map_C.empty()
-        // Region anchors: region_path (which ends with the region's own label) →
-        //  the region header's char offset.  A child entry's region_path is the
-        //  same stack, so it keys back to its innermost enclosing region here.
+        // Region anchors: region_path (ends with the region's own label) → the header's
+        //  char offset.  A child shares that stack, so it keys back to its enclosing region.
         const region_from = new Map<string, number>()
         for (const word of words)
             if (word.region) region_from.set((word.region_path ?? []).join(' '), word.from as number)
         for (const word of words) {
             if (!word.region) {
-                // Snap child offsets RELATIVE to the enclosing region's from, so a
-                //  text edit OUTSIDE that region (which shifts every absolute offset
-                //  below it) leaves these rel_from/rel_to byte-identical — the bulk
-                //  of the old from=/to= snap churn was these entries.  The absolute
-                //  span the readers actually seek to rides in .c (never snapped),
-                //  recomputed every compile; a Map decoded from a snap reconstructs
-                //  it from rel + the region anchor (Lang_map_span).
+                // Snap child offsets RELATIVE to the enclosing region's `from`, so a text
+                //  edit OUTSIDE that region (which shifts every absolute offset below it)
+                //   leaves rel_from/rel_to byte-identical — that was the bulk of the old
+                //    from=/to= snap churn.  The absolute span readers seek rides in .c (never
+                //     snapped, recomputed each compile); a snap reconstructs it via Lang_map_span.
                 const af = word.from as number, at = word.to as number
                 const base = region_from.get((word.region_path ?? []).join(' ')) ?? 0
                 word.rel_from = af - base
@@ -529,15 +429,12 @@ export const LANG_COMPILE = {
                 }
                 continue
             }
-            // region: from/to stay absolute — they are the anchors children resolve
-            //  against and the range a stack-path narrows within.
+            // region: from/to stay absolute — the anchors children resolve against, and the range a stack-path narrows within.
             const wc = Map_C.i(word)
-            // region_path is an array — it belongs in .c, never .sc (an object in
-            //  sc is an encode fatal, and the readers — the Mapule build's m.c.path
-            //  and m.c.bright key, Lang_tap's region resolution — all read it off
-            //  .c).  i() lands it in sc with the rest of the word, so relocate it
-            //  here; without this the read is always undefined and every $region
-            //  collapses to '', leaving the heatmap's region dimension dormant.
+            // region_path is an array → .c, never .sc (an object in sc is an encode fatal;
+            //  the readers — Mapule's m.c.path|m.c.bright, Lang_tap — all read it off .c).
+            //   i() lands it in sc with the word, so relocate it here; without this the read
+            //    is always undefined, every $region collapses to '', the heatmap goes dormant.
             if (Array.isArray(wc.sc.region_path)) {
                 wc.c.region_path = wc.sc.region_path
                 delete wc.sc.region_path
@@ -546,9 +443,8 @@ export const LANG_COMPILE = {
         let was = Map_C.o().length
         this.trace(`Lang`,`There were Map entries x${was}`)
 
-        // Record per-line errors on the Compile particle so future UI can surface them.
-        // < like Point_issue, these want a line number and text snippet for navigation,
-        //   and markers|squiggles plus a refuse-to-run gate driven off these.
+        // Record per-line errors on the Compile particle for future UI to surface.
+        // < like Point_issue: want line+snippet for nav, markers|squiggles, a refuse-to-run gate.
         if (line_errors.length) {
             for (const e of line_errors) {
                 job.i({ compile_error: 1, line: e.n, msg: e.msg, text: e.text })
@@ -561,18 +457,13 @@ export const LANG_COMPILE = {
         return out
     },
 
-    // Process doc-line n, push result(s) into out, return next n to process.
-    // ctx carries:
-    //   words          — accumulated {def|call|region|controlflow,…} entries
-    //   current_method — name of the enclosing MethodLike decl, or null at top level
-    //   method_floor   — indent level of the enclosing decl; any MethodLike at or
-    //                    deeper than this floor is a call, never a declaration.
-    //                    Prevents fetch(, setTimeout( etc. inside a body from being
-    //                    mistaken for declarations when their args are more indented.
-    //   region_stack   — stack of region labels currently open (push on //#region,
-    //                    pop on //#endregion); persists across all doc lines
-    //   lineHits       — pre-built line-number→hit map from Lang_compile_collect;
-    //                    avoids a tree.iterate call per line (O(n²) → O(n))
+    // Process doc-line n, push result(s) into out, return next n.  ctx fields:
+    //   current_method — enclosing MethodLike decl name, or null at top level
+    //   method_floor   — the enclosing decl's indent; a MethodLike at|below it is a call,
+    //                    not a decl (stops fetch(/setTimeout( with indented args from
+    //                    reading as declarations)
+    //   region_stack   — open region labels (push //#region, pop //#endregion)
+    //   lineHits       — line-number→hit map from collect; dodges a per-line tree.iterate
     _collect_line(n: number, tree, doc, state: EditorState, out, ctx: {
         words: any[], current_method: string | null, method_floor: number,
         region_stack: string[],
@@ -583,11 +474,9 @@ export const LANG_COMPILE = {
         const line = doc.line(n)
 
         // ── Region markers ────────────────────────────────────────────────────
-        //
-        // //#region LABEL  and  //#endregion  are JS/TS-style markers that do
-        // not exist in the stho grammar.  Detect them before the syntax tree
-        // walk so they always pass through as 'raw' and the region stack stays
-        // accurate.  The stack is used to stamp region_path on every word entry.
+        //   //#region LABEL / //#endregion are JS markers absent from the stho grammar.
+        //    Handle them before the tree walk so they pass through as 'raw' and the region
+        //     stack (which stamps region_path on every word) stays accurate.
         const REGION_RE    = /^[\t ]*\/\/#region\s+(.+)$/
         const ENDREGION_RE = /^[\t ]*\/\/#endregion\b/
         const regionM = line.text.match(REGION_RE)
@@ -595,13 +484,11 @@ export const LANG_COMPILE = {
             const label = regionM[1].trim()
             const depth = ctx.region_stack.length
             ctx.region_stack.push(label)
-            // Record region boundary in words so Lang_resolve_point can search it.
-            //  from = the //#region header line; to is the region's BODY EXTENT —
-            //  defaulted to doc end here and tightened to the matching //#endregion
-            //  line below.  This body span (not the old header-line-only span) is
-            //  what lets a "region / method" stack-path narrow into the body, and it
-            //  is the absolute anchor every child entry in this region stores its
-            //  rel_from/rel_to against (see the flush below).
+            // Record the region boundary in words so Lang_resolve_point can search it.
+            //  from = the //#region line; to = the BODY EXTENT (doc end here, tightened to
+            //   the matching //#endregion below).  The body span (not header-only) lets a
+            //    "region / method" path narrow into the body, and is the anchor children
+            //     store their rel_from/rel_to against (see the flush).
             const rword: any = { region: 1, label, depth, from: line.from,
                                  to: doc.line(doc.lines).to, line: n,
                                  region_path: [...ctx.region_stack] }
@@ -612,8 +499,7 @@ export const LANG_COMPILE = {
         }
         if (ENDREGION_RE.test(line.text)) {
             if (ctx.region_stack.length) ctx.region_stack.pop()
-            // Close the innermost open region: its body runs through the //#endregion
-            //  line (matching Lang_build_regions, the fold source of truth).
+            // Close the innermost open region: its body runs through the //#endregion line (matching Lang_build_regions, the fold source of truth).
             const closing = ctx.open_regions.pop()
             if (closing) closing.to = line.to
             out.push({ kind: 'raw', text: line.text })
@@ -621,24 +507,17 @@ export const LANG_COMPILE = {
         }
 
         // ── Plain // line comments ────────────────────────────────────────────
-        //
-        // The compiled host is TS, so whole-line // comments are common in
-        // source.  stho's own comment token is "#", so the parser happily finds
-        // stho keywords inside a // comment ("…if we grabbed…" → a ControlFlow
-        // node) and the collector would otherwise translate the comment into a
-        // bogus block.  Pass any indent-then-// line through verbatim.  Runs
-        // after the //#region checks so those keep their stack handling.
+        //   stho's comment token is "#", so the parser finds stho keywords inside a TS //
+        //    comment ("…if we grabbed…" → a ControlFlow node) and would translate it into a
+        //     bogus block.  Pass any indent-then-// line verbatim, after the //#region checks.
         if (/^\s*\/\//.test(line.text)) {
             out.push({ kind: 'raw', text: line.text })
             return n + 1
         }
 
         // ── $name = expr  →  let name = expr ─────────────────────────────────
-        //
-        // Declaration sugar.  A leading $name followed by a single "=" (not
-        // "==", and not a compound like "+=") declares a local.  Detected
-        // before the tree walk because "$its = 'ferv'" otherwise parses as
-        // Sigil + Name + error nodes for the "=" and the string.
+        //   Declaration sugar: leading $name + a single "=" (not "==" / "+=").  Before the
+        //    tree walk because "$its = 'ferv'" otherwise parses as Sigil + Name + error nodes.
         const DECL_RE = /^(\s*)\$(\w+)\s*=(?!=)\s*(.+)$/
         const declM = line.text.match(DECL_RE)
         if (declM) {
@@ -647,22 +526,6 @@ export const LANG_COMPILE = {
         }
 
         // ── <condition> and <statement>  →  if (<condition>) { <statement> } ──
-        //
-        // The loosely-binding guard maker.  A standalone `and` splits the line into a
-        //  condition (left) and ONE guarded statement (right).  Unlike a ControlFlow
-        //   head it needs no `if`/brackets, and the body is ANY statement — `return`,
-        //    `break`, an io atom (`w i x`), an `&call`, raw JS — not just an io (the old
-        //     gating, which left `caster%live && term%want and break` unparseable).
-        //  Three rules make the binding predictable (LakeTiles.g's frontier note):
-        //    · `and` binds LOOSER than `&&`: the run left of the LAST `and` is the whole
-        //      condition, so `33 && 44 and return` → `if (33 && 44) { return }`.
-        //    · chained `and` are conjunctions, each operand parenthesised so a looser-than
-        //      -`&&` operator inside it can't rebind: `a||b and c and stmt` → `if ((a||b) && (c)) { stmt }`.
-        //    · string/bracket-aware: an `and` inside a quote or parens is literal text.
-        //  Detected before the node dispatch (like //#region / $name= above) so it is
-        //   independent of what the RHS parses to.  ControlFlow heads (their `and` is
-        //    part of the if-condition) and Sunpit loop heads are excluded.  stho-only —
-        //     gated on the per-line parser, which the io/amp body translation needs too.
         if (ctx.sthoParser && !/^\s*(?:if|for|while|until|elsif|else)\b/.test(line.text)
                            && !/^\s*S\s/.test(line.text)) {
             const ga = this.Lang_loose_and_split(line.text)
@@ -680,24 +543,19 @@ export const LANG_COMPILE = {
         // first recognisable node whose span lies within this doc line
         const hit = ctx.lineHits.get(n) ?? null
 
-        // Hit offsets can be either document-absolute (whole-doc tree, used for
-        // tsstho / fallback) or line-local (per-line fast parse for stho).  These
-        // locals normalise both: localBase is what to subtract from a node offset
-        // to get a line-local index; sliceState is the EditorState (or per-line
-        // shim) the translation helpers slice their text from; docOff maps a node
-        // offset back to a document offset for the navigation word-index.
+        // Hit offsets are document-absolute (whole-doc tree) or line-local (fast per-line
+        //  parse).  Normalise: localBase is subtracted to get a line-local index; sliceState
+        //   is what the translation helpers slice text from (EditorState or per-line shim);
+        //    docOff maps a node offset back to a document offset for the nav word-index.
         const localBase  = hit?.localBase  ?? line.from
         const sliceState = hit?.sliceState ?? state
         const docOff = (o: number) => line.from + (o - localBase)
 
         if (hit?.name === 'AmpCall') {
-            // &method,arg,arg,… → this.method(arg,arg,…)
-            // Lang_amp_calls_in_text does the bracket/string-aware conversion;
-            // it leaves any non-& text on the line untouched.
-            // AmpCall is one "&name" token now — the method is its text past the &.
+            // &method,arg,… → this.method(arg,…) — Lang_amp_calls_in_text does the
+            //  bracket/string-aware conversion.  AmpCall is one "&name" token; method = past the &.
             const method = sliceState.doc.sliceString(hit.node.from, hit.node.to).replace(/^&/, '')
             out.push({ kind: 'translated', text: this.Lang_amp_calls_in_text(line.text) })
-            // record as a call in the word index
             const entry: any = { call: 1, method, from: docOff(hit.node.from), to: docOff(hit.node.to), line: n,
                                  region_path: [...ctx.region_stack] }
             if (ctx.current_method) entry.via = ctx.current_method
@@ -717,7 +575,6 @@ export const LANG_COMPILE = {
             // indentation of the `S` line — body must be strictly deeper
             const sunpit_indent = (line.text.match(/^(\s*)/) ?? ['',''])[1].length
 
-            // consume and translate body lines while they are more indented
             while (n <= doc.lines) {
                 const peek = doc.line(n)
                 // blank lines stay inside the loop body
@@ -728,11 +585,9 @@ export const LANG_COMPILE = {
                 }
                 const peek_indent = (peek.text.match(/^(\s*)/) ?? ['',''])[1].length
                 if (peek_indent <= sunpit_indent) break  // body ended
-                // recurse so nested nodes are translated too
                 n = this._collect_line(n, tree, doc, state, out, ctx)
             }
 
-            // closing brace aligned with the `S` line
             out.push({ kind: 'raw', text: ' '.repeat(sunpit_indent) + '}' })
             return n
         }
@@ -741,11 +596,10 @@ export const LANG_COMPILE = {
             const headNode  = hit.node.getChild('ControlFlowHead')
             // keyword is "if", "for", "while", "until", "else if", "elsif", or "else"
             const keyword   = sliceState.doc.sliceString(headNode.from, headNode.to).trim()
-            // The grammar marks only the head — the condition is whatever the raw
-            // line carries after it.  Peel a trailing // line-comment off first so
-            // it can't swallow our ") {"; it rides back onto the header after the
-            // brace.  A "(" opener or a trailing "{" bails to verbatim below|
-            // a pythonic bracket-less condition becomes our "(…) {" header.
+            // The grammar marks only the head — the condition is the raw line after it.
+            //  Peel a trailing // comment off first so it can't swallow our ") {" (it rides
+            //   back after the brace).  A "(" opener | trailing "{" bails to verbatim below;
+            //    a pythonic bracket-less condition becomes our "(…) {" header.
             const raw_condition = line.text.slice(headNode.to - localBase)
             const { code: cf_cond_code, comment: cf_comment } = this.Lang_strip_line_comment(raw_condition)
             let condition    = cf_cond_code.trim()
@@ -753,8 +607,7 @@ export const LANG_COMPILE = {
             const before     = line.text.slice(0, hit.node.from - localBase)
             const cf_indent  = (line.text.match(/^(\s*)/) ?? ['', ''])[1].length
 
-            // Record control-flow header in the words index so Point resolution
-            // can match stack-path segments like "e_Dock_open / if point".
+            // Record the control-flow header in words so Point resolution can match a stack-path segment like "e_Dock_open / if point".
             ctx.words.push({
                 controlflow: 1,
                 keyword: keyword.trim(),
@@ -766,11 +619,10 @@ export const LANG_COMPILE = {
                 region_path: [...ctx.region_stack],
             })
 
-            // Capture-in-condition → declare and test on one line (";"), so a
-            // source line stays one compiled line:
-            //   if $x = &call,w   →  let x = this.call(w); if (x) {
-            //   if o foo$         →  let foo = w.o({foo:1})[0]; if (foo) {
-            // Continuations (&& …) then append to the test var, not the obtain.
+            // Capture-in-condition → declare and test on one line (";"), so one source line
+            //  stays one compiled line:  if $x = &call,w → let x = this.call(w); if (x) {
+            //   and  if o foo$ → let foo = w.o({foo:1})[0]; if (foo) {.  Continuations (&& …)
+            //    then append to the test var, not the obtain.
             let cap_prefix = ''
             {
                 const declM = condition.match(/^\$(\w+)\s*=(?!=)\s*(.+)$/)
@@ -786,28 +638,24 @@ export const LANG_COMPILE = {
                 }
             }
 
-            // bail to verbatim — user wrote their own brackets.  We still convert
-            // &method,args and embedded IO atoms inside, but inject no braces of
-            // our own (the user manages those + any body).  The comment, still in
-            // line.text, rides through untouched after the substituted code.
+            // bail to verbatim — user wrote their own brackets.  Still convert &method,args
+            //  and embedded IO atoms inside, but inject no braces (user manages those + the
+            //   body).  The comment (still in line.text) rides through after the code.
             if (!cap_prefix && (condition.startsWith('(') || condition.endsWith('{'))) {
                 const bc = /^(?:if|while|until|else if|elsif)$/.test(keyword)
-                // lower a standalone `and` here too (see the pythonic path below)
                 const src = ctx.sthoParser ? this.Lang_and_to_amp(line.text) : line.text
                 out.push({ kind: 'raw', text: this.Lang_amp_calls_in_text(
                     this.Lang_io_in_text(src, { sthoParser: ctx.sthoParser, bool_ctx: bc })) })
                 return n + 1
             }
 
-            // Drop a pythonic trailing ":" before collecting continuations —
-            // indent already marks the block, so we prefer no colon and the
-            // colon would otherwise land mid-condition once && lines append.
+            // Drop a pythonic trailing ":" before collecting continuations — indent marks
+            //  the block, and the colon would otherwise land mid-condition once && lines append.
             condition = condition.replace(/\s*:\s*$/, '')
 
             n++
 
-            // consume continuation lines — operators that can only open a
-            // continuation (&&, || spelled fully; also ternary/chain: ?, :, .)
+            // consume continuation lines — operators that only open one (&&, ||, ?, :, .)
             const CONTINUATION = /^\s*(&&|\|\||[?:.])/
             while (n <= doc.lines) {
                 const peek = doc.line(n)
@@ -816,21 +664,15 @@ export const LANG_COMPILE = {
                 n++
             }
 
-            // `and` reads as a conjunction inside an explicit condition too — the twin
-            //  of the line-level loose-`and` guard, so `if a and b` parses.  Each operand
-            //   is parenthesised (Lang_and_conjoin) so a looser-than-`&&` operator inside
-            //    it (`if a || b and c`) keeps its grouping.
             if (ctx.sthoParser) condition = this.Lang_and_conjoin(condition)
 
-            // &method,args and embedded IO atoms inside the condition →
-            // this.method(args) / w.o(…). bool_ctx makes a bare obtain a presence
-            // check (oa), since a condition is asking "is there one?".
+            // &method,args + embedded IO atoms in the condition → this.method(args) / w.o(…).
+            //  bool_ctx makes a bare obtain a presence check (oa) — a condition asks "is there one?".
             condition = this.Lang_amp_calls_in_text(
                 this.Lang_io_in_text(condition, { sthoParser: ctx.sthoParser, bool_ctx: true }))
 
-            // emit header — ") {" lands on this line, after the full condition.
-            // cap_prefix (if any) declares the captured var first, on this line|
-            // cf_tail re-appends a condition comment after the brace.
+            // emit header — ") {" lands after the full condition; cap_prefix (if any)
+            //  declares the captured var first; cf_tail re-appends a condition comment after.
             let header: string
             if (keyword === 'else') {
                 header = `${before}} else {${cf_tail}`
@@ -855,8 +697,7 @@ export const LANG_COMPILE = {
                 n = this._collect_line(n, tree, doc, state, out, ctx)
             }
 
-            // closing brace — suppressed when the very next same-indent line is
-            // else-family, which will open with "} else {" itself
+            // closing brace — suppressed when the next same-indent line is else-family (it opens with "} else {" itself)
             const ELSE_FAMILY = /^\s*(else\b|elsif\s)/
             const nextLine   = n <= doc.lines ? doc.line(n) : null
             const nextIsElse = nextLine
@@ -874,21 +715,14 @@ export const LANG_COMPILE = {
             const funcName  = sliceState.doc.sliceString(nameNode.from, nameNode.to)
 
             // ── IMPORT / RENDER — the two "magic" pseudo-methods ──────────────
-            //
-            //   They are not eatfunc methods: their indented bodies are diverted
-            //   OUT of the H.eatfunc({…}) object entirely and templated into the
-            //   module's header (IMPORT → import lines, above `let { H }`) or its
-            //   tail (RENDER → Svelte markup below `</script>`).  RENDER is how a
-            //   `.g` names its own child ghosts as components (`<Child {H} />`) —
-            //   a `.go` IS a Svelte component (svelte.config.js maps the .go ext),
-            //   so the dependency tree lives in source instead of a hand-kept
-            //   include manifest.
-            //
-            //   The body is emitted VERBATIM (kind 'header'|'tail') — no stho
-            //   translation, no `const H = this` alias, no `{`/`},` wrapper: these
-            //   are raw TS imports and raw markup.  Body lines are relative-dedented
-            //   by the first body line's indent so they sit flush in the output.
-            //   Top-level only; a nested IMPORT()/RENDER() falls through as a call.
+            //   Not eatfunc methods: their indented bodies are diverted OUT of H.eatfunc({…})
+            //    into the module header (IMPORT → import lines, above `let { H }`) or tail
+            //     (RENDER → Svelte markup below </script>).  RENDER is how a `.g` names child
+            //      ghosts as components (<Child {H} />) — a `.go` IS a Svelte component
+            //       (svelte.config.js maps the ext), so deps live in source, not a manifest.
+            //   Body emitted VERBATIM (kind 'header'|'tail') — no stho translation, no
+            //    `const H = this`, no wrapper; relative-dedented by the first body line's
+            //     indent.  Top-level only; a nested IMPORT()/RENDER() falls through as a call.
             if (ctx.current_method === null && (funcName === 'IMPORT' || funcName === 'RENDER')) {
                 const sink = funcName === 'IMPORT' ? 'header' : 'tail'
                 const decl_indent = (line.text.match(/^(\s*)/) ?? ['', ''])[1].length
@@ -905,29 +739,24 @@ export const LANG_COMPILE = {
                     if (peek_indent <= decl_indent) break   // body ended
                     if (dedent < 0) dedent = peek_indent     // first body line sets the dedent
                     // strip at MOST `dedent` leading whitespace — a body line less indented
-                    //  than the first (rare, but legal in markup) keeps all its content; a
-                    //   plain slice(dedent) would eat real characters off such a line.
+                    //  than the first (legal in markup) keeps its content; slice(dedent) would eat chars.
                     out.push({ kind: sink, text: peek.text.replace(new RegExp(`^[ \\t]{0,${dedent}}`), '') })
                     n++
                 }
                 return n
             }
 
-            // Inside a method body every MethodLike is a call — fetch(, setTimeout(,
-            // a chained .catch( — never a nested %method,def.  current_method is set
-            // only while we recurse through a decl's body, so its presence is the
-            // top-level test.  Emit the opener verbatim and step one line on|
-            // the body lines that follow (the call's args, an object literal, a
-            // trailing }).then) are ordinary lines the enclosing body loop carries
-            // through raw.  We must not run the multi-line-arg consumption below,
-            // which assumes a lone ")" closer and would otherwise swallow the
-            // call's body and drop this opening line entirely.
+            // Inside a method body every MethodLike is a call (fetch(, setTimeout(, a chained
+            //  .catch(), never a nested %method,def — current_method is set only while we
+            //   recurse a decl body, so its presence IS the top-level test.  Emit the opener
+            //    verbatim and step one line; the following body lines ride raw via the
+            //     enclosing loop.  Must NOT run the multi-line-arg consumption below: it assumes
+            //      a lone ")" closer and would swallow the call's body and drop this line.
             if (ctx.current_method !== null) {
                 ctx.words.push({ call: 1, method: funcName,
                                  from: docOff(hit.node.from), to: docOff(hit.node.to), line: n,
                                  via: ctx.current_method, region_path: [...ctx.region_stack] })
-                // the call may carry IO atoms in its args (consume(o %Foo, w)) —
-                // translate those, leave the rest of the call verbatim.
+                // the call's args may carry IO atoms (consume(o %Foo, w)) — translate those, rest verbatim.
                 out.push({ kind: 'raw', text: this.Lang_amp_calls_in_text(
                     this.Lang_io_in_text(line.text, { sthoParser: ctx.sthoParser })) })
                 return n + 1
@@ -957,17 +786,13 @@ export const LANG_COMPILE = {
             while (peekN <= doc.lines && !doc.line(peekN).text.trim()) peekN++
             const nextIndent = peekN <= doc.lines
                 ? (doc.line(peekN).text.match(/^(\s*)/) ?? ['', ''])[1].length : -1
-            // We only reach here at top level (the nested-call short-circuit above
-            // handled everything inside a body), so the sole question left is decl
-            // versus a bare top-level call: a %method,def has an indented body, a
-            // call does not.  Only top-level eatfunc methods are %method,def.
+            // Only reached at top level (the nested-call branch handled bodies), so the
+            //  question is decl vs bare call: a %method,def has an indented body, a call doesn't.
             const isDecl = nextIndent > decl_indent
 
             if (isDecl) {
-                // async:1 records whether the decl was written `async name(…)`
-                // (read from the line — the grammar leaves `async` as a bare Name).
-                // A future pass can use this to decide whether a matching &call /
-                // bare call needs await.
+                // async:1 records whether the decl was written `async name(…)` (grammar leaves
+                //  `async` a bare Name).  < a future pass: decide if a matching &call needs await.
                 const isAsync = /^\s*async\s/.test(line.text)
                 const defWord: any = { def: 1, method: funcName, from: docOff(hit.node.from), to: docOff(hit.node.to), line: n - 1,
                                  ...(isAsync ? { async: 1 } : {}),
@@ -983,13 +808,10 @@ export const LANG_COMPILE = {
                     out.push({ kind: 'translated', text: line.text.trimEnd().replace(/:$/, '') + ' {' })
                 }
 
-                // fabricate the House-receiver alias (const H = this) so raw-JS House
-                //  calls resolve.  Decide eligibility now, inject after the body is
-                //   translated (placement + the use-test are resolved below): only if the
-                //    COMPILED body still carries a bare `H` — an stho receiver (`H i …`,
-                //     `H o %A`) lowers to `this` and leaves none, so it needs no const.
-                //      Skipped when the alias is a param (shadow) or the body already
-                //       declares it (a hand-written `const H = this` is left untouched).
+                // fabricate `const H = this` so raw-JS House calls resolve.  Decide eligibility
+                //  now, inject after the body is translated — only if the COMPILED body still
+                //   carries a bare `H` (an stho receiver `H i …` lowers to `this`, leaving none).
+                //    Skipped when `H` is a param (shadow) or the body already declares it.
                 let aliasAllowed = false
                 if (RECEIVER_ALIAS.inject) {
                     const A = RECEIVER_ALIAS.name
@@ -1007,18 +829,15 @@ export const LANG_COMPILE = {
                     aliasAllowed = !isParam && !declares
                 }
 
-                // recurse into body with current_method set, for both brace and pythonic styles,
-                // so that via tracking works for H./this. calls inside the body
-                // arrowRanges collects the out-index spans of nested async-arrow bodies
-                //  (oai|r BLOCK do_fns) so the auto-async scan below can exclude them.
+                // recurse into the body with current_method set so via-tracking works for inner
+                //  H./this. calls.  arrowRanges = out-index spans of nested async-arrow bodies
+                //   (oai|r BLOCK do_fns), so the auto-async scan below can exclude them.
                 const arrowRanges: Array<{ from: number, to: number }> = []
                 const inner_ctx = { words: ctx.words, current_method: funcName,
                                     method_floor: decl_indent,
                                     region_stack: ctx.region_stack, lineHits: ctx.lineHits,
-                                    // carry the per-line parser into the body so io atoms
-                                    //  embedded in a control-flow condition|inline body
-                                    //  (if (n===4) i %x) translate — Lang_io_in_text is a
-                                    //   no-op without it, which silently left them raw.
+                                    // carry the per-line parser into the body so inline io atoms
+                                    //  (if (n===4) i %x) translate — Lang_io_in_text no-ops without it.
                                     sthoParser: ctx.sthoParser,
                                     arrowRanges }
                 while (n <= doc.lines) {
@@ -1033,20 +852,16 @@ export const LANG_COMPILE = {
                     n = this._collect_line(n, tree, doc, state, out, inner_ctx)
                 }
 
-                // auto-async — if the translated body carries a method-level `await` but
-                //  the decl wasn't written async, mark it async.  Otherwise that `await`
-                //   (a user one like `await pier&do`, or an r|roai the compiler emits)
-                //    sits in a sync fn: invalid JS the translation alone can't catch (a
-                //     PASS that fails at import).  Awaits inside a nested async arrow (an
-                //      oai|r BLOCK's do_fn) are the arrow's, not the method's, so the
-                //       arrowRanges spans exclude them — reqTiles|LakeNetherland stay sync.
-                //        Runs before the alias splice below, while arrow indices hold.
+                // auto-async — a method-level `await` in the translated body but a non-async
+                //  decl → mark it async; else that await (user `await pier&do`, or a compiler-
+                //   emitted r|roai) sits in a sync fn = invalid JS the translation can't catch.
+                //    Awaits inside a nested async arrow (oai|r BLOCK do_fn) are the arrow's, so
+                //     arrowRanges excludes them.  Runs before the alias splice, while indices hold.
                 if (!isAsync) {
                     const inArrow = (i: number) => arrowRanges.some(r => i >= r.from && i < r.to)
                     let bodyAwait = false
                     for (let i = headerIdx + 1; i < out.length; i++) {
-                        // skip comment lines — a commented `// … await …` (eg reqTiles's
-                        //  doc lines) isn't real code and must not force async.
+                        // skip comment lines — a commented `// … await …` must not force async.
                         if (/^\s*\/\//.test(out[i].text)) continue
                         if (!inArrow(i) && /\bawait\b/.test(out[i].text)) { bodyAwait = true; break }
                     }
@@ -1057,23 +872,19 @@ export const LANG_COMPILE = {
                 }
 
                 // inject `const H = this` only if the translated body kept a bare `H`
-                //  (ignoring comment lines), else emit nothing.  Tucked onto the
-                //   opening-brace line itself so it sits out of the way when reading the
-                //    gen output — except for a user-written brace, whose `{` can hide
-                //     mid-line behind a comment: that header is left intact and takes the
-                //      const on a body-top line instead.
+                //  (ignoring comments), else nothing.  Tucked onto the opening-brace line —
+                //   except a user-written brace, whose `{` can hide mid-line behind a comment:
+                //    that header is left intact, the const goes on a body-top line instead.
                 if (aliasAllowed) {
                     const A = RECEIVER_ALIAS.name
                     const useRe = new RegExp(`\\b${A}\\b`)
                     const used = out.slice(headerIdx + 1).some(o =>
                         !/^\s*\/\//.test(o.text) && useRe.test(o.text))
                     if (used) {
-                        // Terminated with a `;` — unlike hand-authored stho (no-semicolon
-                        //  house style), this is compiler-emitted machinery and must be
-                        //   reliable no matter what the first body line starts with: a bare
-                        //    `const H = this` followed by a `[`/`(`-led line would ASI-glue
-                        //     into `const H = this[…]`.  The `;` makes the alias unbreakable.
-                        // pythonic: we appended ` {`, so it is the line's tail → append after it.
+                        // Terminated with `;` (unlike the no-semicolon house style): a bare
+                        //  `const H = this` before a `[`/`(`-led line would ASI-glue into
+                        //   `const H = this[…]`; the `;` makes the alias unbreakable.
+                        // pythonic: we appended ` {`, so append the const after it (line tail).
                         if (!hasBrace) out[headerIdx].text += ` const ${A} = this;`
                         else out.splice(headerIdx + 1, 0,
                             { kind: 'translated', text: ' '.repeat(decl_indent + 4) + `const ${A} = this;` })
@@ -1085,7 +896,6 @@ export const LANG_COMPILE = {
                     out.push({ kind: 'raw', text: ' '.repeat(decl_indent) + '},' })
                 }
             } else {
-                // it's a call — record with enclosing method as `via`, plus position
                 const entry: any = { call: 1, method: funcName, from: docOff(hit.node.from), to: docOff(hit.node.to), line: n - 1,
                                      region_path: [...ctx.region_stack] }
                 if (ctx.current_method) entry.via = ctx.current_method
@@ -1095,8 +905,7 @@ export const LANG_COMPILE = {
             return n
         }
 
-        // scan every line for this./H. calls not caught by MethodLike
-        // (inline calls, chained calls, calls inside raw JS expressions)
+        // scan every line for this./H. calls MethodLike missed (inline, chained, in raw JS)
         const CALL_RE = /(?:this|H)\.(\w+)\s*\(/g
         for (const m of line.text.matchAll(CALL_RE)) {
             // m.index is the offset within the line; translate to doc offsets
@@ -1111,21 +920,15 @@ export const LANG_COMPILE = {
         }
 
         // ── IOness2 + a BLOCK: r → replace(), oai → wire a do_fn (doai) ───────
-        //   An IOness2 verb whose path is followed by a pythonic-indented BLOCK
-        //   (and no inline `...` replacement, for r) takes the body as an async fn:
-        //     r   %pat         → await w.replace({pat}, async () => { …body… })
-        //                        the body re-fills the cleared pattern.
-        //     oai %req:X       → w.doai({req:'X'})?.(async (req) => { …body… })
-        //                        oai + a BLOCK lowers to doai(): it seeds the %req and
-        //                        returns a one-shot setter (or null once wired), the
-        //                        body becoming its do_fn (run later by do()).  The body
-        //                        is handed the req as `req` and is async by construction
-        //                        so its own await-verbs are fine.  doai is sync, so the
-        //                        setter is optional-called directly — no `await`, no
-        //                        wrapping parens, and the line opens on an identifier so
-        //                        no ";" ASI guard is needed.
-        //   Same body-consumption as Sunpit.  `rm`, `roai`, plain `oai` (no BLOCK),
-        //   and the inline r()/two-arg forms fall through to the IOing branch.
+        //   An IOness2 verb + a pythonic-indented BLOCK (and no inline `...`, for r) takes
+        //    the body as an async fn:
+        //     r   %pat    → await w.replace({pat}, async () => { …body… })   body re-fills it
+        //     oai %req:X  → w.doai({req:'X'})?.(async (req) => { …body… })
+        //   oai + a BLOCK lowers to doai(): seeds the %req, returns a one-shot setter (null
+        //    once wired), the body becoming its do_fn (run later by do(), handed the req as
+        //     `req`, async by construction).  doai is sync, so the setter is optional-called
+        //      directly — no await/parens, and the line opens on an identifier so no ";" guard.
+        //   Same body-consumption as Sunpit.  rm|roai|plain oai|inline r() fall to the IOing branch.
         if (hit?.name === 'IOing') {
             const v2     = hit.node.getChild('IOness2')
             const verb   = v2 ? sliceState.doc.sliceString(v2.from, v2.to).trim() : ''
@@ -1136,9 +939,8 @@ export const LANG_COMPILE = {
             while (look <= doc.lines && doc.line(look).text.trim() === '') look++
             const body_follows = look <= doc.lines
                 && ((doc.line(look).text.match(/^(\s*)/) ?? ['', ''])[1].length > r_indent)
-            //   r takes exactly the one pattern path (an inline `...` replacement
-            //    would contradict the BLOCK); oai takes the seed — its identity path
-            //     and an optional `...` props path, both forwarded to doai().
+            // r takes exactly one pattern path (an inline `...` would contradict the BLOCK);
+            //  oai takes the seed — identity path + an optional `...` props path → doai().
             const block_ok = body_follows && (
                 (verb === 'r'   && ipaths.length === 1) ||
                 (verb === 'oai' && ipaths.length >= 1 && ipaths.length <= 2))
@@ -1151,9 +953,8 @@ export const LANG_COMPILE = {
                     ? `${' '.repeat(r_indent)}await ${receiver}.replace(${args[0]}, async () => {`
                     : `${' '.repeat(r_indent)}${receiver}.doai(${args.join(', ')})?.(async (req) => {`
                 out.push({ kind: 'translated', text: open })
-                // the do_fn arrow is its own async scope — record its body span so the
-                //  enclosing method's auto-async scan doesn't count these awaits as its
-                //   own (the `open` line's await, for r, is method-level and excluded).
+                // the do_fn arrow is its own async scope — record its span so the enclosing
+                //  method's auto-async scan skips these awaits (r's `open`-line await stays method-level).
                 const arrowFrom = out.length
                 n++
                 while (n <= doc.lines) {
@@ -1178,20 +979,16 @@ export const LANG_COMPILE = {
             const translated  = this.Lang_compile_IOing(hit.node, sliceState,
                 split.receiver ? { receiver: split.receiver } : {})
 
-            // A loose-`and` guard (`<cond> and w i x`) was already handled line-level
-            //  above and returned, so by here the prefix is only a receiver|assignment.
             out.push({ kind: 'translated', text: split.keep_before + translated + after })
         } else {
-            // untranslatable / no stho atom — verbatim, but still fold n%such →
-            //  n.sc.such (string-aware, tight-% only) so the accessor works in plain
-            //  raw JS lines (let v = n%such, return x%y) just as it does in conditions.
+            // untranslatable / no stho atom — verbatim, but still fold n%such → n.sc.such
+            //  (tight-% only) so the accessor works in plain raw JS lines, as in conditions.
             out.push({ kind: 'raw', text: this.Lang_sc_in_text(line.text) })
         }
         return n + 1
       } catch (err: any) {
-        // Stamp the line that actually failed.  The deepest _collect_line — the
-        // one sitting directly on the bad line — sets this first, so a nested
-        // body reports itself rather than its enclosing block header|method.
+        // Stamp the line that failed.  The deepest _collect_line (sitting on the bad line)
+        //  sets it first, so a nested body reports itself, not its enclosing block|method.
         if (err && err.line == null) { err.line = n; err.text = doc.line(n)?.text ?? '' }
         throw err
       }
@@ -1200,9 +997,8 @@ export const LANG_COMPILE = {
 //#endregion
 //#region IOing
 
-    // Split a trailing // line-comment off a stretch of code, string-aware so a
-    // // inside a quote stays put.  Returns the code (right-trimmed) and the
-    // comment (with its // and everything after)|comment is '' when there is none.
+    // Split a trailing // line-comment off code, string-aware (a // inside a quote stays).
+    //  Returns the code (right-trimmed) and the comment (with its //)| '' when there's none.
     Lang_strip_line_comment(s: string): { code: string, comment: string } {
         let str: string | null = null
         for (let i = 0; i < s.length; i++) {
@@ -1216,13 +1012,6 @@ export const LANG_COMPILE = {
         return { code: s, comment: '' }
     },
 
-    // Split a line for the loosely-binding `and` guard (see the call site in
-    //  _collect_line).  Returns null when the line carries no usable top-level
-    //   standalone `and`.  The LAST top-level `and` is the condition/statement
-    //    boundary (so `&&` groups tighter, inside the condition); every other `and`
-    //     in the condition is a conjunction lowered to `&&` (Lang_and_to_amp).  A
-    //      trailing // comment is peeled off and handed back to ride after the brace.
-    //   cond|body empty (a dangling/leading `and`) → not a guard (null).
     Lang_loose_and_split(lineText: string): { indent: string, cond: string, body: string, comment: string } | null {
         const { code: full, comment } = this.Lang_strip_line_comment(lineText)
         const indent = (full.match(/^(\s*)/) ?? ['', ''])[1]
@@ -1240,10 +1029,6 @@ export const LANG_COMPILE = {
         return { indent, cond, body, comment }
     },
 
-    // Char offsets of every standalone `and` token in `code` that sits at bracket
-    //  depth 0 and outside any string|template.  Word-bounded, so `band`/`andy`/the
-    //   `and` buried in `command` never match.  Feeds Lang_loose_and_split's boundary
-    //    pick (the last one) and its emptiness guards.
     Lang_loose_and_positions(code: string): number[] {
         const out: number[] = []
         let str: string | null = null, depth = 0
@@ -1260,10 +1045,6 @@ export const LANG_COMPILE = {
         return out
     },
 
-    // Replace every standalone `and` token in `s` with `&&` — String/template-aware
-    //  and word-bounded like Lang_loose_and_positions, but at ANY bracket depth.  Used
-    //   only for a USER-bracketed condition (`if (a and b)`), where the user's own parens
-    //    do the grouping; the synthesised forms use Lang_and_conjoin, which wraps.
     Lang_and_to_amp(s: string): string {
         let out = '', str: string | null = null
         const ws = (c: string | undefined) => c === undefined || /\s/.test(c)
@@ -1279,14 +1060,6 @@ export const LANG_COMPILE = {
         return out
     },
 
-    // Join `and`-separated operands into a `&&` conjunction, the loose-binding way.
-    //  `and` is the LOOSEST operator, so each operand is a whole expression — but `&&`
-    //   binds TIGHTER than `||`/`?:`/assignment, so a bare substitution would rebind
-    //    across them (`a || b and c` chained → `a || b && c`, wrong).  So each operand
-    //     is wrapped in its own parens: `a || b and c || d` → `(a || b) && (c || d)`.
-    //   Splits on TOP-LEVEL `and` (a deeper `and` inside an operand's parens is lowered
-    //    blind, Lang_and_to_amp).  No top-level `and` → returned untouched, no parens
-    //     (the single-operand condition is already isolated by the caller's `if (...)`).
     Lang_and_conjoin(s: string): string {
         const ands = this.Lang_loose_and_positions(s)
         if (!ands.length) return s
@@ -1298,17 +1071,11 @@ export const LANG_COMPILE = {
     },
 
     // ── Lang_amp_calls_in_text ───────────────────────────────────────────────
-    //
-    //   Convert every &method,arg,arg… span in a line of text into
-    //   this.method(arg,arg,…), leaving the rest of the line untouched.
-    //   Bracket- and string-aware: the arg list runs until a top-level
-    //   (depth-0, outside any string) && / || operator or a closing bracket
-    //   that isn't ours, or end of text.  So it handles object-literal args
-    //   with their own commas (&m,A,{x:1, y:2}) and conditions that continue
-    //   with && (&m,A && more).
-    //
-    //   &method with no following comma → this.method().
-    //   "&&" is never treated as an &-call opener.
+    //   Convert every &method,arg… span into this.method(arg…), rest untouched.  Bracket-
+    //    and string-aware: the arg list runs to a top-level (depth-0, outside strings) &&|||,
+    //     a closing bracket that isn't ours, or end — so it handles object-literal args
+    //      (&m,A,{x:1, y:2}) and && continuations.  &method with no comma → this.method().
+    //   "&&" is never an &-call opener.
     Lang_amp_calls_in_text(text: string): string {
         let out = ''
         let i = 0
@@ -1316,10 +1083,9 @@ export const LANG_COMPILE = {
         const isStart = (c: string) => !!c && /[A-Za-z_]/.test(c)
         while (i < text.length) {
             if (text[i] === '&' && text[i + 1] !== '&' && isStart(text[i + 1])) {
-                // a tight identifier before "&" is the receiver: pier&do → pier.do(),
-                //  req&bump → req.bump().  Absent|loose (space, "(", line start) → this.
-                //   Spaced "x & y" never enters (isStart fails on the space), so bitwise
-                //    "&" is untouched — the tight-vs-spaced rule mirrors "%" for sc.
+                // a tight identifier before "&" is the receiver: pier&do → pier.do();
+                //  absent|loose (space, "(", line start) → this.  Spaced "x & y" never enters
+                //   (isStart fails on the space), so bitwise "&" is untouched (mirrors "%" for sc).
                 let recv = 'this'
                 const before = text[i - 1]
                 if (before === '.' || before === '$' || isWord(before)) {
@@ -1353,20 +1119,15 @@ export const LANG_COMPILE = {
             }
             out += text[i++]
         }
-        // fold the other tight inline atom: n%such → n.sc.such (see Lang_sc_in_text).
-        //  Done here because every inline-translation site (raw lines, control-flow
-        //  conditions, decl RHS) routes through this pass.
+        // fold the other tight inline atom: n%such → n.sc.such (Lang_sc_in_text), here
+        //  because every inline-translation site routes through this pass.
         return this.Lang_sc_in_text(out)
     },
 
     // ── Lang_sc_in_text ───────────────────────────────────────────────────────
-    //
-    //   n%such → n.sc.such — the "%" scalar-child accessor (CLAUDE.md's Text%dige).
-    //   A "%" is rewritten to ".sc." only when TIGHT between a word char and a
-    //   word-start, so spaced modulo "a % b" is left alone (the convention: tight %
-    //   is sc-access, modulo needs spaces) and a separator-led "%Foo" never matches.
-    //   String/template-aware (skips a % inside quotes), like Lang_amp_calls_in_text.
-    //   Chains fold left-to-right: n%a%b → n.sc.a.sc.b.
+    //   n%such → n.sc.such — the "%" scalar-child accessor.  Rewritten only when TIGHT
+    //    between a word char and a word-start, so spaced modulo "a % b" and a separator-led
+    //     "%Foo" are left alone.  String/template-aware.  Chains: n%a%b → n.sc.a.sc.b.
     Lang_sc_in_text(text: string): string {
         let out = ''
         let str: string | null = null
@@ -1383,16 +1144,11 @@ export const LANG_COMPILE = {
     },
 
     // ── Lang_io_in_text ──────────────────────────────────────────────────────
-    //
-    //   Substitute every IOing span embedded in a stretch of text with its
-    //   compiled TS, leaving the rest verbatim — the IO analogue of
-    //   Lang_amp_calls_in_text, for IO atoms that sit inside host JS:
-    //     if (o this/Thing)   → if (w.oa({this:1}…))
-    //     f(o %Foo, b)        → f(w.o({Foo:1}), b)
-    //   ctx.bool_ctx flows into each compile so a bare o reads as oa (presence).
-    //   Needs ctx.sthoParser (the per-line stho parser)|without it (the tsstho
-    //   whole-doc path) the text returns unchanged.  IOings wrapped in a Sunpit
-    //   are left to the Sunpit branch, so only top-level spans are taken here.
+    //   Substitute every embedded IOing span with its compiled TS, rest verbatim — the IO
+    //    analogue of Lang_amp_calls_in_text, for IO atoms inside host JS (f(o %Foo, b) →
+    //     f(w.o({Foo:1}), b)).  ctx.bool_ctx flows in so a bare o reads as oa (presence).
+    //    Needs ctx.sthoParser; without it (the tsstho whole-doc path) text returns unchanged.
+    //   IOings wrapped in a Sunpit are left to the Sunpit branch — only top-level spans here.
     Lang_io_in_text(text: string, ctx: any = {}): string {
         const parser = ctx.sthoParser
         if (!parser || !new RegExp(`(?:^|[^\\w.])(?:${IONESS_VERB_RE})\\s+[%$A-Za-z_]`).test(text)) return text
@@ -1419,28 +1175,20 @@ export const LANG_COMPILE = {
             const io_ctx: any = { bool_ctx: ctx.bool_ctx, sthoParser: parser }
             if (split.receiver) io_ctx.receiver = split.receiver
             const translated = this.Lang_compile_IOing(node, slice, io_ctx)
-            // use keep_before, NOT the raw prefix: when a receiver is detected it's
-            //  baked into `translated` (recv.o(…)), so keeping the literal `recv ` in
-            //   the prefix would emit it twice (the inline `if (a && !(w oa %x))` bug).
-            //    keep_before == the raw prefix when no receiver, so the rest is intact.
+            // use keep_before, NOT the raw prefix: a detected receiver is baked into
+            //  `translated` (recv.o(…)), so keeping the literal `recv ` would emit it twice
+            //   (the `if (a && !(w oa %x))` bug).  keep_before == the prefix when no receiver.
             out = split.keep_before + translated + out.slice(to)
         }
         return out
     },
-    //
-    //   Split the text that sits on a line before an i/o verb into:
-    //     receiver  — a leading bareword acting as the call receiver
-    //                 ("A i foo" → receiver A; "w i foo" → receiver w).
-    //     keep_before — what should still be emitted before the translation
-    //                 (the indent for the receiver form; the whole prefix
-    //                  verbatim for assignments like "let la = i …").
-    //
-    //   JS keywords are never mistaken for receivers, so "return i x" keeps
-    //   "return " verbatim rather than treating it as a receiver.
-    //   The loose-`and` guard (`<cond> and <io>`) is handled line-level in
-    //    _collect_line before any dispatch, so a prefix here never carries an `and`.
-    // < no receiver is captured for the "$name" leg-0 hint form — that path
-    //   stays inside Lang_compile_IOing via receiver_hint.
+    //   Split the text before an i/o verb into:
+    //     receiver    — a leading bareword acting as the call receiver ("A i foo" → A)
+    //     keep_before — what still gets emitted before the translation (the indent for the
+    //                   receiver form; the whole prefix verbatim for "let la = i …")
+    //   JS keywords are never receivers, so "return i x" keeps "return " verbatim.
+    // < the "$name" leg-0 hint form captures no receiver here — that stays in
+    //    Lang_compile_IOing via receiver_hint.
     Lang_io_before_split(raw_before: string): {
         indent: string, keep_before: string, receiver?: string,
     } {
@@ -1450,9 +1198,8 @@ export const LANG_COMPILE = {
             'new', 'throw', 'typeof', 'void', 'delete', 'do', 'else',
             'if', 'for', 'while', 'until'])
 
-        // The House receiver: `H i %A:..` lays a sibling actor on the House, but the
-        //  generated eatfunc method has no `H` in scope — it is `this`.  So `H` as a
-        //  receiver normalises to `this` (the actor-laying form, heading L).
+        // `H` as a receiver normalises to `this`: `H i %A` lays a sibling actor on the House,
+        //  but the eatfunc method has no `H` in scope — it IS `this` (the actor-laying form).
         const norm = (r: string) => r === 'H' ? 'this' : r
 
         // bare receiver: the prefix is exactly one identifier
@@ -1461,20 +1208,17 @@ export const LANG_COMPILE = {
             return { indent, keep_before: indent, receiver: norm(m[1]) }
         }
 
-        // assignment with a receiver: "let bA = H i %A:Bearing" → keep "let bA = ",
-        //  receiver H.  Only fires when a lone bareword sits between "=" and the verb
-        //  (the no-receiver form "let la = i …" has nothing there, so it stays
-        //   verbatim with the default receiver).  JS keywords never count.
+        // assignment with a receiver: "let bA = H i %A" → keep "let bA = ", receiver H.
+        //  Only fires when a lone bareword sits between "=" and the verb ("let la = i …"
+        //   has nothing there → stays verbatim, default receiver).  JS keywords never count.
         m = core.match(/^(.*=\s*)(\w+)\s+$/)
         if (m && !KEYWORDS.has(m[2])) {
             return { indent, keep_before: indent + m[1], receiver: norm(m[2]) }
         }
 
-        // receiver buried in an expression: "…!(w " | "…&& (w " — a bareword tight
-        //  before the verb, preceded by an opener|operator (the "[^\w.$]" guard, so a
-        //   ".prop" access is never mistaken for a receiver).  Keeps everything up to
-        //    that boundary; the word is the receiver.  This is what lets an inline io
-        //     atom carry an explicit receiver mid-condition (if (a && !(w oa %x)) …).
+        // receiver buried in an expression ("…!(w " | "…&& (w "): a bareword tight before the
+        //  verb, preceded by an opener|operator (the "[^\w.$]" guard so ".prop" isn't taken).
+        //   Lets an inline io atom carry an explicit receiver mid-condition (if (a && !(w oa %x))).
         m = core.match(/^(.*[^\w.$])(\w+)\s+$/)
         if (m && !KEYWORDS.has(m[2])) {
             return { indent, keep_before: indent + m[1], receiver: norm(m[2]) }
@@ -1484,15 +1228,13 @@ export const LANG_COMPILE = {
         return { indent, keep_before: raw_before }
     },
 
-    // IOing → one TS expression.  The optional capture ("name$" on the last
-    // leg) turns the whole expression into `let name = …` with a trailing
-    // [0]-style first-pick, whichever form the tier uses.
+    // IOing → one TS expression.  An optional capture ("name$" on the last leg) turns it
+    //  into `let name = …` with a trailing [0]-style first-pick, per the tier's form.
     Lang_compile_IOing(node: SyntaxNode, state: EditorState, ctx: any): string {
         const ness = this.Lang_compile_IOness(node, state)
-        // the IOness2 family (r|rm|oai|roai) routes to its own emitter — it
-        //   carries up to two IOpaths (match ... props/replacement) and, bar the
-        //   sync oai, is an await-expression.  The obtain family (oa|ob|o1|…) shares
-        //    o's signature, so it stays on this path (handled like o below).
+        // the IOness2 family (r|rm|oai|roai) routes to its own emitter — up to two IOpaths
+        //  (match ... props), and (bar the sync oai) an await-expression.  The obtain family
+        //   (oa|ob|o1|…) shares o's signature, so it stays on this path (handled like o).
         if (IONESS2_VERBS.has(ness)) return this.Lang_compile_ioness2(node, state, ctx, ness)
         const pathNode = node.getChild('IOpath')
         if (!pathNode) throw new Error('IOing: no IOpath')
@@ -1501,8 +1243,7 @@ export const LANG_COMPILE = {
 
         const legs = legNodes.map((l: SyntaxNode) => this.Lang_compile_Leg(l, state, ctx))
 
-        // receiver detection — ctx.receiver (a bareword "X i …" before the
-        // verb) sets the base; a single bare "$name" leg-0 hint overrides it.
+        // receiver detection — ctx.receiver (a bareword "X i …") sets the base; a bare "$name" leg-0 hint overrides it.
         let receiver = ctx.receiver ?? 'w'
         let startIdx = 0
         if (legs[0].receiver_hint) {
@@ -1510,8 +1251,7 @@ export const LANG_COMPILE = {
             startIdx = 1
         }
 
-        // remaining path after any receiver hint — this is the "real" path
-        // the tiers branch on.
+        // remaining path after any receiver hint — the "real" path the tiers branch on.
         const path = legs.slice(startIdx)
 
         if (!path.length) {
@@ -1519,16 +1259,14 @@ export const LANG_COMPILE = {
             return `${receiver}`
         }
 
-        // captures aggregated across the whole path.  $ hands back the row (the
-        // C); .$ hands back the value (?.sc.<key>).  Zero → plain; one → a lean
-        // inline|drill1 with a `let name = …` prefix; two-plus → a single
-        // capture-bag drill the generated code destructures.
+        // captures aggregated across the path.  $ → the row (the C); .$ → the value
+        //  (?.sc.<key>).  Zero → plain; one → a lean inline|drill1 with a `let name = …`
+        //   prefix; two-plus → a single capture-bag drill the generated code destructures.
         const caps = path.flatMap(l => l.captures)
         // every obtain verb filters (so forwards `exactly`); only `i` (insert) drops it.
         const include_exactly = ness !== 'i'
-        // drills and captures are i|o-only — their helpers (_o_drill/_i_drill) end in
-        //  .o/.i, so they can't carry a sibling obtain verb (oa/ob/o1/…).  A single
-        //   leg with no capture is all those verbs support; anything more is an error.
+        // drills and captures are i|o-only — helpers (_o_drill/_i_drill) can't carry a
+        //  sibling obtain verb (oa/ob/…); those verbs support only a single leg, no capture.
         if (ness !== 'i' && ness !== 'o' && (caps.length || path.length > 1))
             throw new Error(`stho: '${ness}' takes a single leg with no capture (drills|captures are i|o only)`)
 
@@ -1544,9 +1282,8 @@ export const LANG_COMPILE = {
         if (caps.length === 1) {
             const c = caps[0]
             const grab = c.value ? `?.sc.${c.key}` : ''   // .$ → value, else the row
-            // tier 0: single inline leg.  .i returns the leaf directly; .o yields
-            // an array so we pick [0].  A capture always takes the real row, so
-            // it ignores the bool_ctx oa-rewrite.
+            // tier 0: single inline leg.  .i returns the leaf; .o yields an array → [0].
+            //  A capture always takes the real row, so it ignores the bool_ctx oa-rewrite.
             if (path.length === 1) {
                 const only = path[0]
                 if (ness === 'i') {
@@ -1570,17 +1307,15 @@ export const LANG_COMPILE = {
             if (ness === 'i') {
                 return `${receiver}.i(${only.sc_src})`
             }
-            // o — in a boolean context (ctx.bool_ctx, set when the IO sits in an
-            // if|while|until condition) a bare obtain becomes a presence check,
-            // so `if (o %Foo)` tests existence rather than yielding the array.
+            // o — in a boolean context (ctx.bool_ctx, an if|while|until condition) a bare
+            //  obtain becomes a presence check, so `if (o %Foo)` tests existence not the array.
             const obtain = ctx.bool_ctx && ness === 'o' ? 'oa' : ness
             const q = only.exactly_src ? `, { exactly: ${only.exactly_src} }` : ''
             return `${receiver}.${obtain}(${only.sc_src}${q})`
         }
 
-        // tier 1: multi-leg → backend function on H.  .i ignores `exactly` so
-        // don't bother emitting it in the leg objects; .o / Sunpit keep it so
-        // the helper can forward it to C.o().
+        // tier 1: multi-leg → backend drill on H.  .i ignores `exactly` (don't emit it);
+        //  .o / Sunpit keep it so the helper forwards it to C.o().
         const legs_src = path
             .map(l => this.Lang_compile_leg_obj_src(l, { include_exactly }))
             .join(', ')
@@ -1592,25 +1327,16 @@ export const LANG_COMPILE = {
     },
 
     // ── Lang_compile_ioness2 — the two-arg IOness2 family ────────────────────
-    //
-    //   r | rm | oai | roai all take (match_sc, props_sc) — the FlowSep "..."
-    //   splits the two paths.  oai is sync (find-or-create-or-mutate); r/rm/roai
-    //   are async, so they emit an `await` expression (the method must be `async`).
-    //
-    //     r %A               → await w.r({A: 1})                 re-assert
-    //     r %buffers...%ok    → await w.r({buffers: 1}, {ok: 1})  replace-with
-    //     rm %A              → await w.rm({A: 1})                removal (= r(.,{}))
-    //     oai %a...%b         → w.oai({a: 1}, {b: 1})             foc + mutate-in-place (sync)
-    //     roai %a...%b        → await w.roai({a: 1}, {b: 1})      foc + replace-if-changed
-    //     A r %foo            → await A.r({foo: 1})               receiver-before-verb
-    //
-    //   Either side may be a lone `$var` instead of a peeled path — the variable
-    //   IS the match|props object (these all take a C|sc directly):
-    //     r $c...$fuller      → await w.r(c, fuller)
-    //     rm $c              → await w.rm(c)
-    //
-    //   The BLOCK forms (r + body → replace(); oai + body → doai()) are handled in
-    //   _collect_line, not here — this emits the inline calls only.
+    //   r | rm | oai | roai take (match_sc, props_sc), split by the FlowSep "...".  oai is
+    //    sync (find-or-create-or-mutate); r/rm/roai are async → an `await` expression (so the
+    //     method must be `async`).
+    //     r %A            → await w.r({A: 1})            re-assert
+    //     r %buffers...%ok → await w.r({buffers:1},{ok:1}) replace-with
+    //     rm %A           → await w.rm({A: 1})           removal (= r(.,{}))
+    //     oai %a...%b      → w.oai({a:1},{b:1})           foc + mutate-in-place (sync)
+    //     roai %a...%b     → await w.roai({a:1},{b:1})    foc + replace-if-changed
+    //   Either side may be a lone `$var` (the variable IS the C|sc): rm $c → await w.rm(c).
+    //   The BLOCK forms (r/oai + body) are handled in _collect_line; this emits inline only.
     Lang_compile_ioness2(node: SyntaxNode, state: EditorState, ctx: any,
                          ness: 'r' | 'rm' | 'oai' | 'roai'): string {
         const paths = node.getChildren('IOpath')
@@ -1629,9 +1355,8 @@ export const LANG_COMPILE = {
         return `${aw}${receiver}.${ness}(${a1})`
     },
 
-    // One IOness2 argument → TS source.  A lone `$var` path is the object itself
-    //   (the var holds a C|sc); anything else is a peeled match object built
-    //   from the path's single leg (these match structurally, so no `exactly`).
+    // One IOness2 argument → TS source.  A lone `$var` path is the object itself (the var
+    //  holds a C|sc); else a peeled match object from the single leg (structural, no exactly).
     Lang_ioness2_arg_src(pathNode: SyntaxNode, state: EditorState, ctx: any): string {
         const legs = pathNode.getChildren('Leg')
         if (!legs.length) throw new Error('IOness2 arg: empty IOpath')
@@ -1654,11 +1379,8 @@ export const LANG_COMPILE = {
 //#endregion
 //#region Sunpit
 
-    // Sunpit := "S " IOing
-    // Emits only the for-of header (open brace).  Lang_compile_collect's
-    // _collect_line captures the pythonic-indented body and appends the
-    // closing }.
-    //
+    // Sunpit := "S " IOing.  Emits only the for-of header (open brace); _collect_line
+    //  captures the pythonic-indented body and appends the closing }.
     //   S o yeses/because
     //     → for (const because of this._o_iter(w, [{sc:{yeses:1}}, {sc:{because:1}}])) {
     Lang_compile_Sunpit(node: SyntaxNode, state: EditorState, ctx: any): string {
@@ -1701,12 +1423,10 @@ export const LANG_COMPILE = {
 //#endregion
 //#region Leg / PeelGroup / PeelItem
 
-    // One Leg = one PeelGroup = comma-separated PeelItems = a single sc {…}
-    // plus an optional exactly:{…} for keys that carry an explicit value.
-    //
-    // A Leg with exactly one PeelItem can surface a receiver_hint (leg 0).  Any
-    // item in any leg can carry a capture; they're gathered into `captures` and
-    // resolved by IOing/Sunpit (a value capture still filters on its key).
+    // One Leg = one PeelGroup = comma-separated PeelItems = a single sc {…} plus an optional
+    //  exactly:{…} for keys with an explicit value.  A one-PeelItem leg can surface a
+    //   receiver_hint (leg 0).  Any item can carry a capture; gathered into `captures` and
+    //    resolved by IOing/Sunpit (a value capture still filters on its key).
     Lang_compile_Leg(leg: SyntaxNode, state: EditorState, ctx: any): {
         sc_src: string,
         exactly_src: string,
@@ -1726,7 +1446,6 @@ export const LANG_COMPILE = {
             if (probe.receiver_hint) receiver_hint = probe.receiver_hint
         }
 
-        // normal rendering
         const parts: string[] = []
         const exactly_keys: string[] = []
         const captures: { var: string, key: string, value: boolean }[] = []
@@ -1746,20 +1465,13 @@ export const LANG_COMPILE = {
     },
 
     // One PeelItem → {sc_part, exactly_for?, capture?} plus probe flags.
-    //
-    //   name           →  name: 1              (wildcard, no exactly)
-    //   $name          →  name                 (ES6 shorthand; var `name` in scope)
-    //                     or receiver_hint=name when probe=true and no value
-    //   name:3         →  name: 3              (+ exactly_for:'name')
-    //   name:$v        →  name: v              (+ exactly_for:'name')
-    //   name:other     →  name: "other"        (+ exactly_for:'name')
-    //   %name:'str'    →  name: 'str'          (puddle — value is verbatim TS;
-    //                                           no exactly_for since it's an expression)
-    // A trailing Capture rides on top of any of the above; the key still filters,
-    // so sc_part is unchanged.  capture = {var, key, value}:
-    //   name$ | name$v  →  row   capture (the C)     into name | v
-    //   name.$ | name.$v →  value capture (?.sc.name) into name | v
-    // No CaptureName auto-names from the key.
+    //   name        →  name: 1          (wildcard, no exactly)
+    //   $name       →  name             (ES6 shorthand; or receiver_hint when probe + no value)
+    //   name:3 | name:$v | name:other  →  name: 3 | v | "other"   (+ exactly_for)
+    //   %name:'str' →  name: 'str'      (puddle — verbatim TS, no exactly: it's an expression)
+    // A trailing Capture rides on any of the above (the key still filters, sc_part unchanged):
+    //   name$ | name$v   →  row   capture (the C)      into name | v
+    //   name.$ | name.$v →  value capture (?.sc.name)  into name | v   (no CaptureName → key)
     Lang_compile_PeelItem(item: SyntaxNode, state: EditorState, ctx: any): {
         sc_part: string,
         exactly_for?: string,
@@ -1821,9 +1533,8 @@ export const LANG_COMPILE = {
         const doc = state.doc
         const numNode = val.getChild('Number')
         if (numNode) return doc.sliceString(numNode.from, numNode.to)
-        // A quoted TS string puddle — emit verbatim, quotes and all.  StringVal
-        // is the 'single'|"double" form; TemplateVal is the `backtick` form,
-        // whose ${…} interpolations and any /-bearing text pass straight through.
+        // A quoted TS string — emit verbatim, quotes and all.  StringVal = 'single'|"double";
+        //  TemplateVal = `backtick` (${…} interpolations and any /-bearing text pass through).
         const strNode = val.getChild('StringVal') ?? val.getChild('TemplateVal')
         if (strNode) return doc.sliceString(strNode.from, strNode.to)
         // PathVal — the loose unquoted value (no-direct-route, slug-ish, etc.).
@@ -1832,37 +1543,30 @@ export const LANG_COMPILE = {
         if (pathValNode) return JSON.stringify(doc.sliceString(pathValNode.from, pathValNode.to))
         const nameNode = val.getChild('Name')
         if (!nameNode) throw new Error('PeelVal: no Number, StringVal, TemplateVal, or Name')
-        // $name → variable reference; bare name → quoted string literal.
-        // key:$var means use the variable `var`; key:word means the string "word".
+        // $name → variable reference; bare name → quoted string literal ("word").
         const hasSigil = !!val.getChild('Sigil')
         const text = doc.sliceString(nameNode.from, nameNode.to)
         return hasSigil ? text : JSON.stringify(text)
     },
 
-    // IOness → the verb string.  `i` inserts; the obtain family (o|oa|ob|o1|oa1|
-    //   bo|boa|bo1|boa1) shares o's signature; the two-arg family (r|rm|oai|roai)
-    //    rides IOness2 (an `oai` + a BLOCK lowers to doai() in _collect_line before
-    //     this runs; bare `oai` lands here as the plain sync oai() call).  `drop`/
-    //      `empty` are grammar tokens but not sc-path shaped, so they stay unbuilt.
+    // IOness → the verb string.  `i` inserts; the obtain family shares o's signature; the
+    //  two-arg family (r|rm|oai|roai) rides IOness2 (an `oai` + BLOCK already lowered to
+    //   doai() in _collect_line; bare `oai` lands here).  drop|empty aren't sc-path shaped → unbuilt.
     Lang_compile_IOness(node: SyntaxNode, state: EditorState): string {
         const ness = node.getChild('IOness') ?? node.getChild('IOness2')
         if (!ness) throw new Error('no IOness')
         const s = state.doc.sliceString(ness.from, ness.to).trim()
         if (s === 'i' || OBTAIN_VERBS.has(s) || IONESS2_VERBS.has(s)) return s
-        // drop|empty tokenise as IOness but aren't sc-path shaped (a C arg | no arg);
-        //  the receiver-amp call form covers them — point there rather than leave a
-        //   bare "unbuilt".
+        // drop|empty tokenise as IOness but aren't sc-path shaped (a C arg | no arg) — the
+        //  receiver-amp call form covers them, so point there rather than a bare "unbuilt".
         if (s === 'drop' || s === 'empty')
             throw new Error(`stho: '${s}' isn't a path-verb — use the call form: recv&${s}${s === 'drop' ? ',c' : ''}`)
         throw new Error(`IOness unknown|unbuilt: "${s}"`)
     },
 
-    // Serialise a Leg into the JSON-ish shape the backend helpers receive:
-    //   {sc: <sc_src>}                              — default
-    //   {sc: <sc_src>, exactly: <exactly_src>}      — when exactly is set & requested
-    //   {sc: …, caps: [{as, key, val}, …]}          — when with_caps & the leg captures
-    // For .i calls we drop exactly entirely since insertion doesn't filter.  caps
-    // ride only on the *_caps drills (two-plus captures), so with_caps gates them.
+    // Serialise a Leg into the shape the backend helpers receive:  {sc} default; {sc, exactly}
+    //  when set & requested; {sc, caps:[{as,key,val}…]} when with_caps & the leg captures.
+    //   .i drops exactly (insertion doesn't filter); caps ride only on *_caps drills, gated by with_caps.
     Lang_compile_leg_obj_src(leg: {
         sc_src: string, exactly_src: string,
         captures?: { var: string, key: string, value: boolean }[],
@@ -1883,24 +1587,18 @@ export const LANG_COMPILE = {
 //#region rendering
 
     // ── Lang_ghostmeta_name ──────────────────────────────────────────────────
-    //
-    //   Derives the stable Ghostmeta method name from a source path.
-    //   Ghost/Story/Peeroleum.g → Ghostmeta_Ghost_Story_Peeroleum
-    //   The method is injected at the top of every compiled eatfunc and returns
-    //   the source_dige, giving Pantheate a reliable "this version landed" signal
-    //   that works for any method-name the user chooses.
+    //   Stable Ghostmeta method name from a source path:
+    //    Ghost/Story/Peeroleum.g → Ghostmeta_Ghost_Story_Peeroleum.  Injected atop every
+    //     eatfunc, returns the source_dige → Pantheate's "this version landed" signal.
     Lang_ghostmeta_name(path: string): string {
         const noext = path.replace(/\.[^/.]+$/, '')
         return 'Ghostmeta_' + noext.replace(/[^a-zA-Z0-9]/g, '_')
     },
 
 
-    // Partition the collector's flat line stream into the three module regions.
-    //  The bulk are eatfunc body lines; 'header' lines came from an IMPORT
-    //   pseudo-method (raw imports for the module top) and 'tail' from a RENDER
-    //    pseudo-method (Svelte markup below </script>).  Both callers (in-app
-    //     Lang_compile_dock and the CLI compile_core) run this, then hand the
-    //      pieces to Lang_compile_render_module.
+    // Partition the collector's flat line stream into the three module regions: the bulk are
+    //  eatfunc body; 'header' from an IMPORT pseudo-method (module-top imports), 'tail' from
+    //   RENDER (markup below </script>).  Both callers feed these to Lang_compile_render_module.
     Lang_split_compiled(lines: Array<{ kind: string, text: string }>): { body: string, header: string, tail: string } {
         const pick = (k: (kind: string) => boolean) =>
             lines.filter(l => k(l.kind)).map(l => l.text).join('\n')
@@ -1911,26 +1609,20 @@ export const LANG_COMPILE = {
         }
     },
 
-    // Wrap the user's (partially-translated) body in a Svelte ghost module
-    // Pantheate can dynamic-import.  The shape is minimal — just the script
-    // tag Svelte needs, plus `await H.eatfunc({ … })` around the user's
-    // source.  Function names, braces, commas between methods etc. all come
-    // from the user — we don't inject theCompiledStuff or any other wrapper.
-    //   extras.header — IMPORT-pseudo-method lines, dropped after the builtin
-    //    imports and before `let { H }` (imports must sit at module top).
-    //   extras.tail — RENDER-pseudo-method markup, dropped below </script> so a
-    //    `.g` can mount child ghosts as components (<Child {H} />).
+    // Wrap the user's (partially-translated) body in a Svelte ghost module Pantheate can
+    //  dynamic-import.  Minimal — the script tag plus `await H.eatfunc({ … })`; method names,
+    //   braces, commas all come from the user (we inject no wrapper).
+    //   extras.header — IMPORT lines, after the builtin imports, before `let { H }` (imports
+    //    must sit at module top).  extras.tail — RENDER markup below </script> (mount children).
     Lang_compile_render_module(body: string, ghost?: { ghostmeta_name: string, source_dige: string },
                                extras?: { header?: string, tail?: string }): string {
         const header = extras?.header ? '\n' + extras.header : ''
         const tail   = extras?.tail   ? '\n' + extras.tail + '\n' : ''
-        // dodge Svelte's script-tag tokenizer, which will get confused even
-        // by closing script tags in comments
+        // dodge Svelte's script-tag tokenizer (confused even by closing script tags in comments)
         const OPEN  = '<' + 'script lang="ts">'
         const CLOSE = '<' + '/script>'
-        // Ghostmeta sits first in the eatfunc so it's always reachable even if
-        // the user's methods below fail to parse.  Returns the source_dige so
-        // Pantheate can confirm "the right compiled version is live."
+        // Ghostmeta sits first in the eatfunc so it's reachable even if the user's methods
+        //  fail to parse.  Returns the source_dige → Pantheate confirms the right version is live.
         const meta = ghost
             ? `    ${ghost.ghostmeta_name}(): string { return '${ghost.source_dige}' },\n\n`
             : ''
@@ -1955,18 +1647,12 @@ ${tail}`
     },
 
     // ── Lang_validate_rendered_module — in-browser output syntax gate ─────────
-    //
-    //   The translator emitting a module string is NOT proof the JS parses: a
-    //   raw-JS passthrough can mangle a brace (a bare multi-line `else` becomes
-    //   `} else {}`), and Svelte's parser is the first thing to notice — far too
-    //   late, and on the editor↔runner channel it would already be a `.go` of
-    //   garbage pushed to a runner that trusts it.  scripts/lang-compile.ts gates
-    //   this at author time with esbuild; this is the run-time twin so the in-app
-    //   compile never hands disk/Pantheate output it hasn't proven is real JS.
-    //
-    //   Returns a one-line diagnostic (line-aligned to the .go module) on the
-    //   first syntax error, or null when the module parses.  Lang_compile_dock
-    //   throws the diagnostic into its existing compile_error path (writes nothing).
+    //   Emitting a module string is NOT proof the JS parses: a raw-JS passthrough can mangle
+    //    a brace (a bare multi-line `else` → `} else {}`), and Svelte's parser notices far too
+    //     late — by then it's a `.go` of garbage pushed to a trusting runner.  esbuild gates
+    //      this at author time (scripts/lang-compile.ts); this is the run-time twin.
+    //   Returns a one-line diagnostic (line-aligned to the .go) on the first error, else null;
+    //    Lang_compile_dock throws it into its compile_error path (writes nothing).
     Lang_validate_rendered_module(module: string): string | null {
         const script = tsScriptOfModule(module)
         let tree: any

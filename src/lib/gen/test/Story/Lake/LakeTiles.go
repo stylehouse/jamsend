@@ -11,14 +11,14 @@ import { browserTrustedPubs, prepubOf } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_test_Story_Lake_LakeTiles(): string { return 'dc0fd031cbcc19c9' },
+    Ghostmeta_Ghost_test_Story_Lake_LakeTiles(): string { return '9c4c3e373bf4ee17' },
 
 // yeti etc!!!!!
 theCompiledStuff(A,w) {
     this._i_drill(w, [{sc: {hut: 1}}, {sc: {toot: 3}}])
     let toot = this._o_drill1(w, [{sc: {hut: 1}}, {sc: {toot: 1}}])
     let la = this._i_drill(w, [{sc: {hut: 1}}, {sc: {toot}}])
-    this._o_drill(w, [{sc: {hut: 1}}, {sc: {although: 1, they: 1, can: 1, be: 1, mixed: 1}, exactly: {although: true}}])
+    this._o_drill(w, [{sc: {hut: 1}}, {sc: {although: 1}, exactly: {although: true}}, {sc: {they: 1, can: 1, be: 1, mixed: 1}}])
     la.i({something: 1})
     this._i_drill(w, [{sc: {thung: 1}}, {sc: {wither: 1}}, {sc: {etc: 1}}])
     this._i_drill(w, [{sc: {yeses: 1}}, {sc: {because: 1, it: 2}}])
@@ -321,11 +321,6 @@ captureOutTiles(A,w) {
     let tval = this._o_drill1(w, [{sc: {hut: 1}}, {sc: {toot: 1}}])
 
 },
-// loose `and` is demoed live in theCompiledStuff above (wibble_/compound_/chained_andily).
-//  The statement right of the last `and` is ANY statement, not just an io — a bare `return`
-//   or `break` too (`caster%live && term%want and break` → if (caster.sc.live && term.sc.want) { break }),
-//    not shown above only because a `return` would cut the demo method short.
-
 
     })
     })

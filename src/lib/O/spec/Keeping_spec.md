@@ -20,6 +20,44 @@ of time (playback). Time is the Cursor's, not Lies'.
 
 ---
 
+## The bigger frame — Lies ↔ Interest ↔ Lang
+
+Keeping is the *inward* half of one channel. Three observations set the altitude:
+
+**Interest and Keeping are the same attention channel from opposite ends.**
+`%Interest` (Lang side) projects attention *outward* — the strip, the foreground
+LE, the checkout. Keeping projects it *inward* — the ledger, resume, minimise. They
+were built as unrelated subsystems; they are one thing. The north star both reduce
+to is `%subscribe` (`Wire_spec.md` / Hovercraft §7): *"I attend to Waft X" is "I
+subscribe to X."* The Keep ledger = the **persisted** subscription set (for resume);
+the Interest roster = the **live** set, projected to the view.
+
+**Two things are each computed in too many places — and they're orthogonal.**
+- *Kind* ("what is this Waft") is derived **twice**: raw flags on the Lies Waft
+  (`boring`/`takes`/`lists`/`aside`) AND the reconciled `%Interest` on the Lang side,
+  re-derived ad-hoc in ~6 more spots (InterestStrip label+css, `Waft.svelte`
+  is_taker/is_lister, `Lies_waft_save` exemption, `Lies_order_wafts` sort, the
+  `boring` filters). → the **kind-table** collapses this. It lives on the **Waft**
+  (the subscribable noun); `interest_reconcile` *reads* it instead of re-deriving.
+- *Attention* ("am I looking at it now") is claimed **five ways**: `.sc.active`,
+  `ActiveInterest`, the desire lock, the Spotlight cursor, the Keep. → **req:Keeping**
+  collapses this. The cursor is the live truth; `.sc.active`/`ActiveInterest` become
+  projections Keeping writes; the Keep is the durable ledger.
+
+Kind is durable identity; attention is momentary. The flag-soup conflates them
+(`active` sits in the same `.sc` as `boring`). Splitting **kind (table, on the Waft)**
+from **attention (Keeping, off the cursor)** is the whole cleanup — two axes, not one.
+
+**LiesHold is already the bridge — name it.** `Lang_set_interest` and `req:workon`'s
+do_fn are *defined in LiesHold* yet *own Lang's particles* (`%Interest`, `Languinio`,
+`ActiveInterest`). That code-location-vs-data-ownership mismatch **is** the leaky
+boundary. The "Lies = document / Lang = view" cleave has a missing third part: the
+**attention engine** that turns a cursor move into foreground + checkout +
+address-publish. Renaming `workon → Keeping` is the moment to admit LiesHold *is*
+that engine — the Interest channel's driver — not "more Lies."
+
+---
+
 ## The spine **today** (what we're healing)
 
 The "what's focused and live" job is spread across four reqs with no shared owner:
@@ -53,14 +91,19 @@ req:Keeping  (one per w; was req:workon)
         first Waft present → Lies_keep_boot (resume from the Keep ledger) + seed.
         finishes once; never re-arms.
   2. focus          waft = Lies_focus_waft(w)        — the .sc.active | cursor | first-non-boring selector
+        Keeping becomes the SOLE writer of .sc.active (6 sites set it today); .sc.active
+        and ActiveInterest become PROJECTIONS of the resolved focus, not rival truths.
         record the snap-visible Waft lock (was desire's job; keep it honest)
   3. land           ensure the cursor sits on `waft`  (was timemachine Job A)
         SIG-GATED on focus-change — boot/reload/rename re-assert; steady-state no-op.
         (the .sc.active want-land already keeps the cursor put; this only catches
          the cases a want never fired for.)
   4. converge       understanding → ingredients → instrumentation   (workon's stages, UNCHANGED)
-        on `waft`'s active dock (src). Focus is resolved first (cheap) and fed in,
-        so the convergence sigs stay exactly as they are — no entanglement.
+        on `waft`'s active dock (src). Step 2 resolves WHICH Waft (cheap); the
+        understanding stage here still PROJECTS that foreground outward via
+        Lang_set_interest (ActiveInterest + the per-Interest LE) — the outward half
+        of the attention channel, unchanged. Keeping owns "which"; convergence owns
+        "tell the view".  (foregrounding == the checkout — see The bigger frame.)
   5. record         cursor + accessed_at → Keep ledger
         (was the bolted-on Lies_keep_note_cursor / _mark_focus on the want-land)
 
@@ -117,7 +160,8 @@ recommend-**IN** / **OUT** / **DECIDE**, for you to check:
 
 2. **IN (rides #1) — `%Aim` leaving `Waft:Cluster`.** Cluster's behaviour comes from
    `kind:Cluster` in the table, not a bolted `Aim` flag. The flag's departure is just
-   the table absorbing it.
+   the table absorbing it. *(Caveat: a read-sweep found no live `.sc.Aim` reader — it
+   may already be vestigial. Verify before counting its departure as work.)*
 
 3. **IN (new territory) — per-Waft minimise / scroll.** This is the "does the
    minimise sync to the Keep" you asked: today it's *unbuilt*. Keeping step 5 records

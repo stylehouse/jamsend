@@ -259,27 +259,17 @@ So the real obligation the split adds is a **contract, per reader, of who may be
         *writer* was touched (graft/decorations ride CM's StateField `.map`, untouched), which is the
          only place the cut could have corrupted placement.
 
-## 8. Next move + current uncommitted state
+## 8. Status + the verify still owed
 
-**The cut is landed (role #2 + role #3).** Both plumbing steps and all ~5 repoints are in the
- working tree, type-clean (no new svelte-check errors at the edited lines; `compile.ts` — the only
-  file with genuinely-typed additions — is wholly clean). Files touched: `compile.ts`
-   (`Lang_state_lang_is` + `Lang_index_state` helpers), `LangCompiling.svelte`
-    (`Lang_compile_source_state` rewrite + `Lang_compile_dock` source routing), `LangRegions.svelte`
-     (×3 reader repoints), `LangPoint.svelte` (fold→`view.state`), `LangLang.svelte`
-      (gen-text→`view.state`), `Lang.svelte` (whatsthis→`Lang_index_state`, parser-gate comment).
+**The cut is committed** (role #2 + role #3 — both plumbing steps + the ~5 repoints; landed in the
+ `bg compile` / `guts` commits, tree clean). `compile.ts` holds the typed helpers (`Lang_state_lang_is`,
+  `Lang_index_state`); the repoints sit in `LangCompiling`/`LangRegions`/`LangPoint`/`LangLang`/`Lang.svelte`.
 
-**Follow-on landed — live point resolution (the staleness axis).** Stored Map offsets go stale on
- edit until the next compile (`req:compile`'s keyboard-settle timer is ~6 s). For *points-only* docs
-  there is no expensive artifact to throttle, so `e_Lang_tap` + `e_Lang_point_navigate` now reindex
-   the **live** buffer (`Lang_compile_dock(w, dock, view.state)`) at the top of the gesture — sub-ms,
-    writes nothing — which re-stamps `job.c.source_state = view.state`, so the `Lang_index_state`
-     reads below resolve in the exact frame the selection/fold dispatches onto. Navigation no longer
-      waits on the settle timer. `.g` docks are explicitly skipped (a `.g` reindex re-runs
-       GEN→`.go`→runner — too heavy for a gesture), so they resolve against the last settled Map as
-        before. This is the same `view.state`-vs-`stateCompiled` split, applied to *when* not *which
-         parser* — and it leans on the meaning-resolution (`Lang_map_span` reconstructs def positions
-          from `region_path` + `rel_*`) that was already half the answer.
+**Follow-on landed — live point resolution.** A points-only tap/point-nav gesture reindexes the
+ **live** buffer at its top (`Lang_compile_dock(w, dock, view.state)` — sub-ms, writes nothing), so
+  navigation resolves in the exact frame it dispatches onto rather than waiting on the ~6 s settle
+   timer. `.g` docks are skipped (a reindex re-runs GEN→`.go`→runner). Same `view.state`-vs-
+    `stateCompiled` split, applied to *when* not *which parser*.
 
 **Verified headless.** `node scripts/LakeRace.run.mjs` (3/3 pass) exercises the rewritten
  `Lang_compile_source_state` on real `Peeroleum.g` across both branches — WARM (stale buffer + fresh
@@ -292,16 +282,6 @@ So the real obligation the split adds is a **contract, per reader, of who may be
 - **The 3b bookmark round-trip (the guarded risk).** Drop a bookmark, compile, type *above* it, jump
    to a Point/tap — must still land on the right span (offsets must not drift post-compile).
 - **Fold + lang-gen** still behave (now reading `view.state`).
-
-**Diagnostics removed.** The `md_parser`/`md_heads`/`md_kids` TEMP stamps in
- `Lang_collect_markdown_regions` (the instrument that proved the first-open diagnosis) are now
-  stripped — the cut makes them moot. The first-open verify above is therefore purely visual (TOC
-   fills on the first compile, no `#`-fallback row), no snap field to read.
-
-**Also in the tree from earlier sessions** (downstream reactivity, not this cut): `Actions.svelte`
- lang-dropdown reactivity; `Lang.svelte` instrumentation `n_sig` += `%Compile.version`;
-  `Lang_build_mapules` `dock.bump_version()`. All left in the working tree (**commits are the
-   human's job**).
 
 **Adjacent reading:** `Editron.md` (the channel/runner layer that rides *on* this), `Waft_spec.md`
  (the document tree), `map-rel-offsets` + `nong-pointing` memories (the offset/TOC work),

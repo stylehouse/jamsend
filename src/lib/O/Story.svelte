@@ -885,8 +885,19 @@
                           //      a band boundary would re-introduce the flake — the doc chose
                           //       the unconditional path).  The presence/shape of the counter
                           //        is still asserted; only its churning value is forgiven.
+                          // The re matches the WHOLE token and the `=N` is OPTIONAL — because
+                          //  depeel renders the canonical flag value 1 as a BARE key (round=1 →
+                          //   `round`, round>1 → `round=N`).  Whether a step happens to land at
+                          //    round 1 differs across runners (headless Story_cli boots in fewer
+                          //     ticks than a browser), so one side serialises bare `round` and the
+                          //      other `round=7`.  A `round={NUM}` re only matches the `=N` form, so
+                          //       the bare side gives zero matches → match-count mismatch → graft
+                          //        bails → a spurious Dif:change (the headless↔browser divergence).
+                          //   No capture group: graft then rewrites capture-0 (the whole match), so
+                          //    it reconciles the bare↔=N flip too, not just a value drift.  \b keeps
+                          //     it off `background`/`roundtrip`.
                           munging: [{ these_sc: { age: 1 }, type: 'time' }],
-                          spay: { re: 'round={NUM}', tol: 'any' },
+                          spay: { re: '\\bround(?:=\\d+)?\\b', tol: 'any' },
                       } },
                     { matching_any: [{ sc_only: { wasLast: 1, at: 1 } }],
                       means: { munging: [{ these_sc: { at: 1 }, type: 'time' }] } },

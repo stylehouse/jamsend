@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radiola(): string { return '1ddd51d246dc635d' },
+    Ghostmeta_Ghost_M_Radiola(): string { return '03dc3be514cf3dd2' },
 
 //#region radiola
 // Radiola — the music-piracy spine, reborn on Housing+req (spec: src/lib/O/spec/Music_todo.md).
@@ -34,8 +34,17 @@ Radiola_window(w) {
     return +(w.sc.window ?? 7)
 
 },
+// req_Caster — the per-Caster pump, the cascade entry (twin of Peeroleum's req_Peering). The Book
+//  mints %Caster,name,req (oai + c.up=w stamped); the MAINKEY Caster names this handler and the serial
+//   req: plugs the Caster into the w-level sweep — so the ambient pump reaches each Caster with no Book
+//    hand-crank.  Job: pump this Caster's %req:cast (the spool, below), then stay a live member.
+async req_Caster(caster) {
+    await caster.do()
+    caster.sc.ok = 1
+
+},
 // req_cast — the spool, the heart of slice 1.  %req:cast,eternal rides a %Caster (oai wires
-//  req.c.up = the Caster); the Book pumps it each pass via caster.do().  Each pass, while the
+//  req.c.up = the Caster); req_Caster drives it each pass, itself w-swept.  Each pass, while the
 //   next seq still fits the window — next <= terminal_ack + window — deliver one %Chunk into the
 //    terminal's inbox and advance the cursor.  The instant next runs past the window the loop
 //     delivers nothing and the req just re-arms: THAT absence of work is the backpressure (Radios'
@@ -81,6 +90,14 @@ async req_cast(req) {
     req.sc.ok = 1
 
 },
+// req_Terminal — the per-Terminal pump (cascade entry).  A Book that gives a Terminal listener-side
+//  work mints %Terminal,name,req; the w sweep reaches it and it pumps the Terminal's %req:streamability
+//   (below).  A passive Terminal (slice 1, inbox only) carries no req and is never dispatched here.
+async req_Terminal(term) {
+    await term.do()
+    term.sc.ok = 1
+
+},
 // req_streamability — the listener side of the slice-2 handoff (Radios' `streamability` /
 //  want_streaming).  Rides a %Terminal (oai wires req.c.up = the Terminal); once the UN-played
 //   preview tail — preview - 1 - ack — drops to the want-floor (MIN_LEFT_TO_WANT_STREAMING, read
@@ -115,6 +132,14 @@ req_streamability(req) {
 //  Radios.svelte's KEEP_AHEAD.  One knob, read off w so a Book can shrink it for a tight snap.
 Radiola_keep_ahead(w) {
     return +(w.sc.keep_ahead ?? 5)
+
+},
+// req_Stock — the per-Stock pump (cascade entry).  The Book mints %Stock,name,req; the w sweep reaches
+//  it and it pumps BOTH of the Stock's work-leaves in one do() — %req:restock (refill, below) and
+//   %req:reap (the wear sweep, slice 5).  The "two jobs" need no special handling: do() runs every child.
+async req_Stock(stock) {
+    await stock.do()
+    stock.sc.ok = 1
 
 },
 // req_restock — the producer side of the fan-out (Radios' radiostock refill).  %req:restock,eternal
@@ -158,6 +183,13 @@ req_restock(req) {
 //    has slack.  Inert till a Book stands up the player; the playhead is advanced by the consumer.
 Radiola_live_back(w) {
     return +(w.sc.live_back ?? 3)
+
+},
+// req_Player — the per-Player pump (cascade entry).  The Book mints %Player,name,req; the w sweep
+//  reaches it and it pumps the Player's %req:progress (the decode-ahead, below).
+async req_Player(player) {
+    await player.do()
+    player.sc.ok = 1
 
 },
 // req_progress — the decode-ahead producer.  Rides a %Player (oai wires req.c.up); read the terminal's

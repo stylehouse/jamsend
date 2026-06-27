@@ -34,28 +34,28 @@ story:LakeTiles
         nowriting:^Ghost
         dontSnapGhostList
   TimeSpool
-    TimeTotal:beliefs,avg=1.38
-      sample=1.3,at=1782364418
-      sample=1.303,at=1782364469
-      sample=1.453,at=1782364516
-      sample=1.516,at=1782365345
-      sample=1.503,at=1782365383
-      sample=1.157,at=1782366998
-      sample=1.587,at=1782367798
+    TimeTotal:beliefs,avg=1.613
       sample=1.562,at=1782367829
       sample=1.237,at=1782367893
       sample=1.187,at=1782368855
-    TimeTotal:step,avg=0.153
-      sample=0.144,at=1782364418
-      sample=0.145,at=1782364469
-      sample=0.161,at=1782364516
-      sample=0.168,at=1782365345
-      sample=0.167,at=1782365383
-      sample=0.129,at=1782366998
-      sample=0.176,at=1782367798
+      sample=1.05,at=1782532834
+      sample=1.703,at=1782533379
+      sample=1.152,at=1782533534
+      sample=1.152,at=1782533605
+      sample=2.812,at=1782535411
+      sample=1.931,at=1782535487
+      sample=2.343,at=1782539804
+    TimeTotal:step,avg=0.179
       sample=0.174,at=1782367829
       sample=0.137,at=1782367893
       sample=0.132,at=1782368855
+      sample=0.117,at=1782532834
+      sample=0.189,at=1782533379
+      sample=0.128,at=1782533534
+      sample=0.128,at=1782533605
+      sample=0.312,at=1782535411
+      sample=0.215,at=1782535487
+      sample=0.26,at=1782539804
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
     Entcase:Ting_Point-last
@@ -66,13 +66,13 @@ story:LakeTiles
       lematch,Point:theCompiledStuff,doc:Ghost/test/Story/Lake/LakeTiles.g
         lematch,say,at
           means,spayer,re:say.+at..?{INT},tol:any
-  step,dige:01a68c41d6a87a67
-  step=2,dige:ab197eb9ad23dba1
-  step=3,dige:ae3b590d3bcd95b4
-  step=4,dige:566c06d4d3ae1b01
+  step,dige:ffd34cee580e880f
+  step=2,dige:cc3363715ff7af97
+  step=3,dige:768d11055b4bcb13
+  step=4,dige:269c86e7a825539b
     note,bug:Cyto edge problems with Leg/PeelGroup/Leg the other PeelGroup alone
-  step=5,dige:01130dc838d65a18
-  step=6,dige:fe77cc2b276dca44
-  step=7,dige:4b26fb43977fcb0c
-  step=8,dige:d01dd33f017351bb
-  step=9,dige:618679f7950f14d3
+  step=5,dige:4460eab890967893
+  step=6,dige:9796e471802dd930
+  step=7,dige:aad129452bcaf898
+  step=8,dige:4d182f27f73633d6
+  step=9,dige:371b4aca1368854d

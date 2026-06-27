@@ -1,58 +1,17 @@
 <script lang="ts">
-    // LangRegions.svelte — region parsing, Point resolution, and fold-based
-    // "openness" management for Lang.
+    // LangRegions.svelte — region parsing, Point resolution, fold-based "openness".
+    //  Deposits onto H via M.eatfunc():
+    //   Lang_build_regions     //#region/#endregion → flat list + nested tree
+    //   Lang_resolve_point     method_spec → char span via the compiled Map index
+    //   Lang_apply_openness    fold all but the ancestor chain to a resolved Point
+    //   e_Lang_point_navigate  resolve → openness → scroll → report
     //
-    // Deposits onto H via M.eatfunc():
-    //
-    //   Lang_build_regions(state)
-    //     Pre-scans doc text for //#region NAME and //#endregion markers.
-    //     Returns { regions: RegionEntry[], tree: RegionEntry[] }.
-    //     Each RegionEntry: { label, depth, from_line, to_line, from_char, to_char, children }
-    //     Used by Lang_apply_openness to know which char spans to fold/unfold.
-    //
-    //   Lang_resolve_point(state, dock, method_spec)
-    //     Parses `method_spec` and matches against the compiled Map index
-    //     (dock / Compile / Map / {def|call|region|controlflow:1, …}).
-    //     Returns { from, to, line, kind, issues[] } or null (no index yet).
-    //
-    //     Spec forms (tried in order):
-    //       "a / b"           → stack-path: def `a`, then `b` within its range
-    //       "a / if cond"     → stack-path: def `a`, then ControlFlow matching `if cond`
-    //       "SomeName"        → exact def, then region label, then call
-    //       bare text         → fuzzy: defs, calls, regions, comments
-    //
-    //     Ranking: defs > calls > region headers > comments.
-    //     Issues[] is non-empty for any imperfection (multiple matches, no def
-    //     found, comment-only match, broken stack path).
-    //
-    //   Lang_apply_openness(view, regions, point_from)
-    //     Given the flat region list and a resolved Point char offset, dispatches
-    //     CM foldEffect / unfoldEffect so that only ancestor regions remain open.
-    //     Requires codeFolding() (or foldGutter()) in the editor's extensions.
-    //
-    //   e_Lang_point_navigate(A, w, e)
-    //     Fired from e_Dock_open when e.sc.point is present, or from Liesui when
-    //     a Point row is clicked.  Resolves → applies openness → scrolls → reports.
-    //     e.sc: { point: string, doc?: string }
-    //
-    // ── Region structure ─────────────────────────────────────────────────────
-    //
-    //   //#region Label   (any leading whitespace allowed)  → open a region
-    //   //#endregion      (optional; implicit close at same/shallower //#region)
-    //
-    //   A new //#region at depth ≤ current depth implicitly closes the current
-    //   one before opening the new one — matching how VS Code and most editors
-    //   handle unpaired markers.
-    //
-    //   fold range = [end of //#region line, to_char] — the header stays visible,
-    //   the body is hidden.  This matches foldInside semantics for { } blocks.
-    //
-    // ── Point spec → openness rule ───────────────────────────────────────────
-    //
-    //   A region is OPEN if it is an ancestor of (or equal to) the region that
-    //   contains the resolved Point.  All siblings and unrelated regions are FOLDED.
-    //   The innermost containing region is always fully unfolded.
-    //   This is essentially "Fold All Except" applied to the Point's location.
+    //  Lang_resolve_point spec forms, tried in order (rank defs > calls > regions > comments):
+    //    "a / b"        stack-path: def `a`, then `b` within its range
+    //    "a / if cond"  stack-path: def `a`, then ControlFlow matching `if cond`
+    //    "SomeName"     exact def, then region label, then call
+    //    bare text      fuzzy: defs, calls, regions, comments
+    //   issues[] is non-empty for any imperfection (ambiguity, no def, comment-only, broken path).
 
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { EditorState } from "@codemirror/state"
@@ -60,8 +19,7 @@
     import { foldEffect, unfoldEffect } from "@codemirror/language"
     import { onMount } from "svelte"
 
-    // RegionEntry mirrors what Lang_build_regions returns.
-    // Defined here (script scope) so the type is available inside eatfunc.
+    // RegionEntry — defined at script scope so the type is in scope inside eatfunc.
     type RegionEntry = {
         label:     string
         depth:     number
@@ -79,14 +37,10 @@
 
 //#region Lang_build_regions
 
-    // Pre-scan for //#region … //#endregion pairs.
-    //
-    // Returned flat list is in source order (parent before children).
-    // `tree` is the root-level list; children are nested on each entry.
-    //
-    // from_char / to_char are tight so foldEffect can hide exactly the
-    // body: from_char = line.from of the //#region header (the header
-    // itself stays visible because we fold from header.to, not header.from).
+    // Pre-scan for //#region … //#endregion pairs → flat list in source order
+    //  (parent before children) + `tree` (root-level, children nested per entry).
+    //  from_char = line.from of the header; we fold from header.to not .from, so
+    //   the header line stays visible.
     Lang_build_regions(state: EditorState): { regions: RegionEntry[], tree: RegionEntry[] } {
         const doc = state.doc
         const REGION_RE    = /^[\t ]*\/\/#region\s+(.+)$/
@@ -107,8 +61,7 @@
                 const label = regionM[1].trim()
                 const depth = stack.length
 
-                // Implicitly close any open region at same or greater depth
-                // before opening the new one (handles unpaired markers).
+                // Implicitly close any open region at depth ≥ new before opening (unpaired markers).
                 while (stack.length > depth) {
                     const closing      = stack.pop()!
                     closing.to_line    = n - 1
@@ -126,7 +79,6 @@
                 }
                 all.push(entry)
 
-                // Attach to tree root or to the innermost open region's children.
                 if (stack.length === 0) {
                     tree.push(entry)
                 } else {
@@ -147,23 +99,18 @@
 //#endregion
 //#region Lang_resolve_point
 
-    // Resolve a Point method_spec against dock's compiled Map index.
-    //
-    // Returns null when there is no compiled index yet — the caller should
-    // show a hint and ask the user to run compile first.
-    //
-    // The Map index lives at: dock / Compile / Map
-    //   {def:1, method, from, to, line, region_path}
-    //   {call:1, method, via?, from, to, line, region_path}
-    //   {region:1, label, from, to, line, depth}
+    // The compiled Map index that Lang_resolve_point + Lang_map_span query lives at
+    //  dock / Compile / Map; a null result = no index yet (caller hints "run compile").
+    //   {def:1,         method, from, to, line, region_path}
+    //   {call:1,        method, via?, from, to, line, region_path}
+    //   {region:1,      label,  from, to, line, depth}
     //   {controlflow:1, keyword, title, from, to, line, via?, region_path}
-    // Absolute [from,to) char span of a %Map entry.  Region entries store from/to
-    //  absolute (the anchor a stack-path narrows within); def/call/controlflow
-    //  store rel_from/rel_to against their enclosing region's from, so a text edit
-    //  outside that region leaves their snapped offsets untouched (that relative
-    //  encoding is what quiets the from=/to= snap churn).  c.abs_* is the live span
-    //  the compile writes every pass; the rel reconstruction (region matched by its
-    //  full region_path) is the fallback for a %Map decoded from a snap, no .c cache.
+    // Absolute [from,to) char span of a %Map entry.  region entries store from/to
+    //  absolute (the anchor a stack-path narrows within); def/call/controlflow store
+    //  rel_from/rel_to vs their region's from, so an edit outside that region leaves
+    //   their snapped offsets untouched — what quiets the from=/to= snap churn.
+    //  c.abs_* is the live span compile writes each pass; the rel reconstruction
+    //   (region matched by full region_path) is the fallback for a snap-decoded %Map.
     Lang_map_span(regions: TheC[], e: TheC): { from: number, to: number } {
         if (e.sc.region) return { from: (e.sc.from as number) ?? 0, to: (e.sc.to as number) ?? 0 }
         if (typeof e.c.abs_from === 'number')
@@ -184,12 +131,11 @@
         dock:        TheC,
         method_spec: string,
     ): { from: number, to: number, line: number, kind: string, issues: string[] } | null {
-        // ── text: a fine-grained literal Point — find a word|phrase in the doc itself,
-        //    not a named def|region.  Needs only state.doc, so it resolves even before a
-        //     compile (no %Map).  A Point,text:<str> with the SAME str in two docs bridges
-        //      the substrates: the shared token (eg STAY_AHEAD_OF_ACK_SEQ, keep_ahead, preview)
-        //       lands on its own occurrence in each.  Word-boundary exact first (so 'want'
-        //        misses inside 'wanted'), then substring, then loose case-insensitive.
+        // text: a literal Point — find a word|phrase in the doc itself, not a named
+        //  def|region.  Needs only state.doc, so it resolves even before a compile (no
+        //  %Map); a Point,text:<str> with the SAME str in two docs bridges the substrates,
+        //  each landing on its own occurrence.  Word-boundary exact first (so 'want' misses
+        //  inside 'wanted'), then substring, then loose case-insensitive.
         const t0 = method_spec.trim()
         if (t0.startsWith('text:')) {
             const needle   = t0.slice(5).trim()
@@ -209,8 +155,7 @@
         }
 
         const job     = dock.o({ Compile: 1 })[0]  as TheC | undefined
-        // Map is a direct child of Compile, not nested under Output.
-        // (Output holds source/dige; Map is a sibling.)
+        // Map is a direct child of Compile (Output holds source/dige; Map is its sibling).
         const Map_C = job?.o({ Map: 1 })[0]  as TheC | undefined
         if (!Map_C) return null   // no compiled index yet
 
@@ -295,11 +240,9 @@
         return null
     },
 
-    // Resolve a stack-path spec like "story_save / if runH".
-    //
-    // Splits on " / " and resolves each segment within the previous match's range.
-    // Issues are accumulated for each broken segment; we return the deepest match
-    // we found before the path broke.
+    // Resolve a stack-path "story_save / if runH": split on " / ", resolve each
+    //  segment within the previous match's range; return the deepest match reached
+    //  before the path broke (issues accumulate per broken segment).
     Lang_resolve_stack_path(
         state:   EditorState,
         spec:    string,
@@ -332,8 +275,7 @@
     },
 
     // Find `seg` within [range_from, range_to].
-    //
-    // Search order: exact def → fuzzy def → controlflow keyword match → call → region.
+    //  Order: exact def → fuzzy def → controlflow keyword → call → region.
     Lang_find_within_range(
         state:     EditorState,
         defs:      TheC[],
@@ -378,7 +320,6 @@
             return null
         }
 
-        // Exact def within range.
         const inDef = defs.find(d =>
             d.sc.method === seg &&
             span(d).from >= range_from &&
@@ -386,7 +327,6 @@
         )
         if (inDef) return { ...span(inDef), line: inDef.sc.line as number }
 
-        // Fuzzy def within range.
         const fuzzyDef = defs.find(d =>
             (d.sc.method as string)?.toLowerCase().includes(lc) &&
             span(d).from >= range_from &&
@@ -397,7 +337,6 @@
             return { ...span(fuzzyDef), line: fuzzyDef.sc.line as number }
         }
 
-        // Call within range.
         const inCall = calls.find(c =>
             c.sc.method === seg &&
             span(c).from >= range_from &&
@@ -408,7 +347,6 @@
             return { ...span(inCall), line: inCall.sc.line as number }
         }
 
-        // Region label within range.
         const inRegion = regions.find(r =>
             (r.sc.label as string)?.toLowerCase().includes(lc) &&
             span(r).from >= range_from &&
@@ -422,8 +360,7 @@
         return null
     },
 
-    // Scan doc lines for // or # comments that contain the search text.
-    // Returns position of the first matching comment, or null.
+    // First // or # comment line containing the search text, or null.
     Lang_search_comments(
         state: EditorState,
         text:  string,
@@ -441,17 +378,10 @@
         return null
     },
 
-    // ── Lang_def_at_offset ───────────────────────────────────────────────────
-    //
-    //   Find the innermost method def whose compiled source range contains
-    //   `offset`.  Returns the method name, or undefined when the compile
-    //   index is absent or no def encloses the offset.
-    //
-    //   "Innermost" = smallest span, so a helper nested inside a larger
-    //   function resolves to the helper name, not the outer one.
-    //
-    //   Used by e_Lang_point_fuzzify to upgrade a positional bookmark to a
-    //   named method pointer without requiring the user to type a name.
+    // Lang_def_at_offset — innermost method def whose compiled range contains `offset`
+    //  (smallest span wins, so a helper nested in a larger fn resolves to the helper),
+    //  or undefined (no index | no enclosing def).  Used by e_Lang_point_fuzzify to
+    //  upgrade a positional bookmark to a named method pointer with no typing.
     Lang_def_at_offset(dock: TheC, offset: number): string | undefined {
         // Map is a direct child of Compile (sibling of Output)
         const job   = dock.o({ Compile: 1 })[0] as TheC | undefined
@@ -462,9 +392,8 @@
         const regions = Map_C.o({ region: 1 }) as TheC[]
         const span    = (e: TheC) => this.Lang_map_span(regions, e)
 
-        // 1) a def whose own name-span contains the offset — the cursor sat right
-        //    on the method name.  Innermost (smallest span) wins, so a helper
-        //    nested in a larger function resolves to the helper.
+        // 1) def whose own name-span contains offset — cursor sat on the method name.
+        //    Innermost (smallest span) wins.
         const onName = defs.filter(d => {
             const s = span(d)
             return s.from <= offset && s.to >= offset
@@ -475,13 +404,12 @@
             return onName[0].sc.method as string
         }
 
-        // 2) a def declared on the same line — the MethodLike-on-the-line reducer.
-        //    A bookmark dropped anywhere on `async o_elvis_Idzeugnosis(A,w) {`
-        //    names the Point o_elvis_Idzeugnosis without landing on the name|
-        //    the line carries one MethodLike so this is unambiguous now.  Richer
-        //    cases (a call we'd rather name, nested arrows) come later.
-        // `offset` is a Map-frame char position and `d.sc.line` a Map-frame line, so read
-        //  them in the Map's own coordinate frame (Lang_index_state), not the live buffer.
+        // 2) a def declared on the same line — the MethodLike-on-the-line reducer: a
+        //    bookmark dropped anywhere on the def's line names it without landing on the
+        //    name (one MethodLike per line → unambiguous).  < richer cases (a call we'd
+        //    rather name, nested arrows) come later.
+        // `offset` + d.sc.line are Map-frame coordinates, so read them via Lang_index_state
+        //  (the Map's frame), not the live buffer.
         const state = this.Lang_index_state(dock)
         if (state) {
             const at = Math.max(0, Math.min(offset, state.doc.length))
@@ -496,29 +424,23 @@
         return undefined
     },
 
-    // ── e:Lang_tap ─────────────────────────────────────────────────────────
-    //
-    //   The giver side of the Point traffic — the elvis DocCompost's reveal|fly fire:
-    //   i_elvisto('Lang/Lang', 'Lang_tap', { from, long?, weight? }).  It MUST be named
-    //   e_Lang_tap (the e_ prefix is how i_elvisto resolves a handler) and take the
-    //   (A, w, e) elvis shape — as a plain Lang_tap(w, from, opt) the dispatch logged
-    //   "!method: e_Lang_tap" and the whole tap→globulate→trail pipeline never ran.
-    //
-    //   A tap at char `from` resolves to its $region/$method identity — by name, through
-    //   %Map, never by stored offset — handed to the taker Ting (e_Lies_take_point),
-    //   which globulates it.
-    //
-    //   %Map stores name-spans, not method|region bodies, so the owning method is the
-    //   def whose header line most recently precedes the tap line — bounded to the
-    //   region that actually contains the tap (its body span, from Lang_build_regions,
-    //   the fold source of truth) so a def in an earlier region can't claim it.
-    //   region rides the def's own region_path tail (the direct region it sits in); a
-    //   tap with no def above it inside its region is method-less and lands on the
-    //   region band itself, so a look at a region's header|preamble glows the band.
-    //   < precise per-def body containment — a tap in a parent's body after a child
-    //     region should read the parent, not the child's last def — needs def body
-    //     extents %Map doesn't carry; the indent-block decomposition would give them.
-    //   e.sc: { from, long?, weight? }
+    // e_Lang_tap — the giver side of Point traffic — the elvis DocCompost reveal|fly fire:
+    //  i_elvisto('Lang/Lang', 'Lang_tap', { from, long?, weight? }).  MUST be named
+    //  e_Lang_tap and take the (A, w, e) elvis shape (the e_ prefix is how i_elvisto
+    //  resolves a handler) — as a plain Lang_tap(w,...) the dispatch logs "!method:
+    //  e_Lang_tap" and the whole tap→globulate→trail pipeline silently never runs.
+    //  A tap at char `from` resolves to its $region/$method identity by NAME through
+    //  %Map (never by stored offset), handed to the taker Ting (e_Lies_take_point).
+    //  %Map stores name-spans not bodies, so the owning method = the def whose header
+    //  most recently precedes the tap line, bounded to the region that contains the tap
+    //  (its body span from Lang_build_regions, the fold source of truth) so an earlier
+    //  region's def can't claim it.  region = the def's region_path tail (the direct
+    //  region it sits in); a tap with no def above it within its region is method-less
+    //  and lands on the region band itself (look at a header|preamble → the band glows).
+    //  < precise per-def body containment (a tap in a parent's body after a child region
+    //    should read the parent, not the child's last def) needs def body extents %Map
+    //    lacks; the indent-block decomposition would give them.
+    //  e.sc: { from, long?, weight? }
     async e_Lang_tap(A: TheC, w: TheC, e: TheC) {
         const H      = this as House
         const from   = e.sc.from as number | undefined
@@ -528,38 +450,36 @@
         if (!dock) return
         const dpath  = dock.sc.dock as string   // dock path (the later `path` is the tap's region path)
         const view   = dock.c.view as EditorView | undefined
-        // Reindex against the CURRENT text before resolving, so a tap lands even on a doc edited
-        //  since the last compile — no waiting on req:compile's ~6s keyboard-settle timer.  Points-
-        //   only: a .g reindex would re-run GEN (render → .go → runner), far too heavy|side-effecting
-        //    for a gesture, so a .g resolves against its last settled Map.  This re-stamps
-        //     job.c.source_state = view.state, so Lang_index_state below is the live frame the
-        //      tap's char and the Map it queries now share — sub-millisecond, writes nothing.
+        // Reindex against the CURRENT text before resolving, so a tap lands even on a
+        //  doc edited since the last compile (no waiting on req:compile's ~6s settle).
+        //  Points-only: a .g reindex re-runs GEN (render→.go→runner), too heavy|side-
+        //  effecting for a gesture, so a .g resolves against its last settled Map.  Re-
+        //  stamps job.c.source_state = view.state so Lang_index_state shares the tap's
+        //  frame — sub-millisecond, writes nothing.
         if (view && !H.Lies_gen_path(dpath) && H.Lang_points_only(dpath))
             await H.Lang_compile_dock(w, dock, view.state)
         const job    = dock.o({ Compile: 1 })[0] as TheC | undefined
         const Map_C  = job?.o({ Map: 1 })[0]      as TheC | undefined
-        // The tap resolves to a $region/$method by NAME through %Map; map its char to a line in
-        //  the Map's frame (Lang_index_state) — which the reindex just pinned to the live view.
+        // Resolves to a $region/$method by NAME through %Map; map its char to a line in
+        //  the Map's frame (Lang_index_state), which the reindex just pinned to the view.
         const state  = this.Lang_index_state(dock)
         if (!Map_C || !state) return
 
         const at       = Math.max(0, Math.min(from, state.doc.length))
         const tap_line = state.doc.lineAt(at).number
 
-        // innermost region whose body span contains the tap — %Map's region entries
-        //  carry only the header line, so containment comes from the from_char|to_char
-        //  Lang_build_regions computes (with a proper open-region stack).  Regions
-        //  nest, so the deepest containing one wins.
+        // innermost region whose body span contains the tap — %Map region entries carry
+        //  only the header line, so containment comes from Lang_build_regions' from_char|
+        //  to_char (proper open-region stack); regions nest, deepest containing wins.
         const { regions } = this.Lang_build_regions(state)
         let reg: RegionEntry | undefined
         for (const r of regions) {
             if (r.from_char <= at && at <= r.to_char && (!reg || r.depth > reg.depth)) reg = r
         }
 
-        // owning def — nearest def header at|above the tap, bounded to reg so an
-        //  earlier region's def can't claim a tap that fell in this one (the def's
-        //  name offset must sit inside reg's body span).  None above within reg →
-        //  owner stays undefined: a method-less tap, landing on the region.
+        // owning def — nearest def header at|above the tap, bounded to reg (its name
+        //  offset must sit inside reg's body span) so an earlier region's def can't claim
+        //  it.  None within reg → owner undefined: a method-less tap on the region.
         const defs        = Map_C.o({ def: 1 })    as TheC[]
         const map_regions = Map_C.o({ region: 1 }) as TheC[]
         let owner: TheC | undefined
@@ -574,11 +494,10 @@
         }
 
         // region path for this tap, shallow→deep: a def carries its own (the region
-        //  stack at its header); a method-less tap takes the chain of regions that
-        //  contain it.  The tail is the direct region (the chip|band key the globule
-        //  keys on, exactly as the Mapule does); the rest are ancestors the heat rolls
-        //  up to, so a parent band warms from a nested method too.  A held tap also
-        //  carries the line it lingered on, filed under the Point as articulation.
+        //  stack at its header); a method-less tap takes the chain of regions containing
+        //  it.  Tail = the direct region (the chip|band key the globule keys on, like the
+        //  Mapule); the rest are ancestors the heat rolls up to, so a parent band warms
+        //  from a nested method.  A held (long) tap also carries the line it lingered on.
         const method = owner?.sc.method as string | undefined
         const path: string[] = owner
             ? ((owner.c.region_path as string[] | undefined) ?? [])
@@ -599,15 +518,10 @@
 //#endregion
 //#region Lang_apply_openness
 
-    // Dispatch CM fold/unfold effects so that only the ancestor chain leading
-    // to `point_from` stays open.  Everything else (at every depth) is folded.
-    //
-    // The fold range for a region is:
-    //   from: end of the //#region header line  (header stays readable)
-    //   to:   to_char of the region             (close at endregion or doc end)
-    //
-    // Requires codeFolding() or foldGutter() in the editor's extension list;
-    // otherwise foldEffect / unfoldEffect are no-ops (no installed handler).
+    // Dispatch CM fold/unfold so only the ancestor chain to `point_from` stays open;
+    //  everything else, at every depth, folds.  Fold range = header.to … region.to_char
+    //  (the //#region header line stays readable).  Requires codeFolding()|foldGutter()
+    //  in the editor extensions, else foldEffect/unfoldEffect are silent no-ops.
     Lang_apply_openness(
         view:       EditorView,
         regions:    RegionEntry[],
@@ -616,7 +530,6 @@
         const effects: ReturnType<typeof foldEffect.of>[] = []
 
         for (const region of regions) {
-            // fold range: body only — header //#region line itself stays visible
             const header_line = view.state.doc.line(region.from_line)
             const fold_from   = header_line.to   // end of header
             const fold_to     = region.to_char   // end of region body
@@ -627,10 +540,8 @@
             const is_ancestor = point_from >= region.from_char && point_from <= region.to_char
 
             if (is_ancestor) {
-                // Unfold: reveal the body so the Point is reachable.
                 effects.push(unfoldEffect.of({ from: fold_from, to: fold_to }))
             } else {
-                // Fold: hide everything not on the path to the Point.
                 effects.push(foldEffect.of({ from: fold_from, to: fold_to }))
             }
         }
@@ -643,21 +554,9 @@
 //#endregion
 //#region e_Lang_point_navigate
 
-    // ── e_Lang_point_navigate ─────────────────────────────────────────────────
-    //
-    //   Full resolution → openness → scroll cycle for a Point spec.
-    //   Called from e_Dock_open (point navigation TODO is now done here) and
-    //   directly from Liesui when a Point row is clicked.
-    //
-    //   Flow:
-    //     1. Check that we have a compiled Map index (needs Lang_compile first).
-    //     2. Resolve the Point spec (exact / stack / fuzzy / comment).
-    //     3. Build the region tree and apply fold/unfold so only the ancestor
-    //        chain is visible.
-    //     4. Scroll and select the resolved range.
-    //     5. Fire e:Lies_point_issues back to Lies with any diagnostic info.
-    //
-    //   e.sc: { point: string, doc?: string }
+    // e_Lang_point_navigate — full resolve → openness → scroll → report cycle for a
+    //  Point spec.  Called from e_Dock_open (when e.sc.point present) and directly from
+    //  Liesui on a Point-row click.  e.sc: { point: string, doc?: string }
     async e_Lang_point_navigate(A: TheC, w: TheC, e: TheC) {
         const H    = this
         const spec = e.sc.point as string | undefined
@@ -667,15 +566,14 @@
         if (!dock) return
         const view  = dock.c.view  as EditorView | undefined
         const path  = dock.sc.dock as string
-        // Reindex against the CURRENT text before resolving, so a Point lands even on a doc edited
-        //  since the last compile — no waiting on req:compile's ~6s keyboard-settle timer.  Points-
-        //   only: a .g reindex would re-run GEN (render → .go → runner), far too heavy for a
-        //    navigation gesture, so a .g resolves against its last settled Map as before.
+        // Reindex against the CURRENT text before resolving, so a Point lands even on a
+        //  doc edited since the last compile (no waiting on req:compile's ~6s settle).
+        //  Points-only: a .g reindex re-runs GEN, too heavy for a nav gesture, so a .g
+        //  resolves against its last settled Map as before.
         if (view && !H.Lies_gen_path(path) && H.Lang_points_only(path))
             await H.Lang_compile_dock(w, dock, view.state)
-        // Resolve the spec + build regions in the Map's frame (Lang_index_state) — which the reindex
-        //  just pinned to the live view, so result.from and the fold|selection we dispatch onto the
-        //   view all share one frame (no off-by-an-edit drift, no settle wait).
+        // Resolve + build regions in the Map's frame (Lang_index_state, pinned to the live
+        //  view by the reindex), so result.from and the fold|selection share one frame.
         const state = this.Lang_index_state(dock)
         if (!view || !state) return
 
@@ -692,11 +590,9 @@
             return
         }
 
-        // Apply fold/unfold so only the ancestor region chain is open.
         const { regions } = this.Lang_build_regions(state)
         this.Lang_apply_openness(view, regions, result.from)
 
-        // Scroll and select the resolved range in the editor.
         view.dispatch({
             selection: { anchor: result.from, head: result.to },
             effects:   EditorView.scrollIntoView(result.from, { y: 'center' }),

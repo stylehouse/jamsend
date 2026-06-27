@@ -290,8 +290,12 @@ RUNNER_URL=http://172.17.0.1:9091   # default; the runner dev server as seen fro
 **The diff over the socket EARNED ITS KEEP first use:** MusuLive runs red live, but `diff 2`/`diff 4` showed
  the *only* divergence is `self,round` off by a constant +6 (baked `8`/`10` vs live `2`/`4`) — every other
   line identical. That is the prep-tick-count shift from the `Run_A` cleanup (a stale bake / counter fuzz,
-   §4.2), not a behavioural regression; EntropyArrest already forgives most of it (the `caveat` counts). The
-    fix is a re-ACCEPT (rebake), not a code change. NOTE: `got_snap` is fully over the socket; `exp_snap`
+   §4.2), not a behavioural regression; EntropyArrest already forgives most of it (the `caveat` counts).
+    UPDATE 2026-06-27: it was a CODE fix, not a rebake — the `self,round` spay re only matched the `=N` form,
+     so whenever a step landed at round 1 (which `depeel` serialises as the BARE key `round`, value-1 → no
+      `=N`) the graft's match-count check bailed and the drift survived as a hard `Dif:change`.  The re is now
+       `\bround(?:=\d+)?\b` (whole-token, optional `=N`, no capture group → grafts capture-0), so the bare↔=N
+        flip forgives too; no rebake needed.  NOTE: `got_snap` is fully over the socket; `exp_snap`
      currently rides the disk fixture (the runner only holds it once the UI panel loaded it) — making the
       expected travel over the socket too (drive the `fetch_snap` Wormhole read in the handler) is the §16.1
        "diff channels in the pile" follow-up.

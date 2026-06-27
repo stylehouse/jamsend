@@ -67,9 +67,7 @@ story:LakeNets
     quiesce_snap_time=0.4
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=1.312
-      sample=2.152,at=1782305053
-      sample=1.249,at=1782305147
+    TimeTotal:beliefs,avg=1.416
       sample=1.295,at=1782305644
       sample=1.18,at=1782305719
       sample=1.268,at=1782305903
@@ -78,9 +76,9 @@ story:LakeNets
       sample=1.724,at=1782306101
       sample=0.816,at=1782363220
       sample=0.819,at=1782363298
-    TimeTotal:step,avg=0.101
-      sample=0.166,at=1782305053
-      sample=0.096,at=1782305147
+      sample=2.22,at=1782537792
+      sample=2.22,at=1782539777
+    TimeTotal:step,avg=0.109
       sample=0.1,at=1782305644
       sample=0.091,at=1782305719
       sample=0.098,at=1782305903
@@ -89,22 +87,24 @@ story:LakeNets
       sample=0.133,at=1782306101
       sample=0.063,at=1782363220
       sample=0.063,at=1782363298
+      sample=0.171,at=1782537792
+      sample=0.171,at=1782539777
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
     Entcase:wants_want
       lematch,req:wants
         lematch,want,kind
           means,spayer,re:want={INT}.kind,tol:band,factor=1.5
-  step,dige:677ca6bab82b4ac7
-  step=2,dige:4d1480fb223e5ff2
-  step=3,dige:6813d4ea7a380cb8
-  step=4,dige:82ff1ba000e65e3f
-  step=5,dige:b64f9cf45d4e506e
-  step=6,dige:26f7aae13fb084e2
-  step=7,dige:8edb65b9083ad087
-  step=8,dige:3d4f6f0f918ea236
-  step=9,dige:7b0b2c2d96f71b8c
-  step=10,dige:a08642e3c1604e29
-  step=11,dige:3d7eb5c1828aa4af
-  step=12,dige:d18071d16028d340
-  step=13,dige:10446a31864f3c8c
+  step,dige:0d1ee9724cb7803b
+  step=2,dige:01955f4c5bfbcbd6
+  step=3,dige:8f0d2f52c442c2ea
+  step=4,dige:f67073952908a219
+  step=5,dige:f3bbab976ce5c1ac
+  step=6,dige:6a6156ad6512010d
+  step=7,dige:7c8edb101f334c2b
+  step=8,dige:2a8d83b5c1e525b5
+  step=9,dige:c1dc27ec14388124
+  step=10,dige:9404126932cfab32
+  step=11,dige:0fdaf356f76a02d0
+  step=12,dige:0449083e10985849
+  step=13,dige:f7e5373351b95b6c

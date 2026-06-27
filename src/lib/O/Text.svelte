@@ -760,6 +760,14 @@
             //   (objecties.undef) so the key's absence is explicit and the rest of the
             //    line stays peelable.  undefined ≡ absent on decode, so nothing to rebuild.
             if (v === undefined) { undef.push(k); continue }
+            // A boolean is not a clean scalar, and false is the worst of it: encode_stringies
+            //  peels it inline as the bareword "false", which decodes back as a NON-EMPTY →
+            //   truthy string, silently INVERTING the flag.  That corrupts live state from the
+            //    most natural mistake there is (sc.k = false) — fatal here at the write, not
+            //     drifted three ticks downstream.  A snapped boolean rides as 1 or ABSENT, so
+            //      DELETE the key (or r()) rather than setting false.  true survives by luck
+            //       (truthy in, truthy out), so only false is fatal — the silent corrupter.
+            if (v === false) throw `enLine: ${Object.keys(n.sc)[0]} sc key "${k}"=false — a snapped boolean must be 1 or absent; delete the key instead (false decodes back as the truthy string "false" and inverts the flag)`
 
             // blockquote_these_sc: only strings ending in \n get BQ treatment
             if (bq_keys[k]) {

@@ -1,7 +1,17 @@
 Credulation,of_Book:LakeNets
-  run=0,at=1782363298.844,ok,ok_pct,mode:check
-    uses:Ghost_N_Peeroleum,dige:d1930fee4fd4e23a
-    uses:Ghost_N_Reliable,dige:b282dca8b1abe0c9
-    uses:Ghost_N_Tribunal,dige:683d031e368194c6
-    uses:Ghost_Story_Peregrination,dige:40050159d36b8446
+  run=0,at=1782537795.453,ok=0,ok_pct=0,mode:check
+    uses:Ghost_N_Peeroleum,dige:2ccbc1626d347189
+    uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
+    uses:Ghost_N_Tribunal,dige:375733b4018a8e9a
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
+    uses:Ghost_Story_Peregrination,dige:7711424db53b25db
+    uses:Ghost_M_Radiola,dige:03dc3be514cf3dd2
+    uses:Ghost_Story_Musuation,dige:8d2005bc52a336da
+  run,at=1782539780.495,ok=0,ok_pct=0,mode:check
+    uses:Ghost_N_Peeroleum,dige:2ccbc1626d347189
+    uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
+    uses:Ghost_N_Tribunal,dige:375733b4018a8e9a
+    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
+    uses:Ghost_Story_Peregrination,dige:7711424db53b25db
+    uses:Ghost_M_Radiola,dige:03dc3be514cf3dd2
+    uses:Ghost_Story_Musuation,dige:8d2005bc52a336da

@@ -1,7 +1,7 @@
 Snap:H
   H:MusuStock,Run
     A:MusuStock
-      self,round=6	{"mung":["age"]}
+      self,round	{"mung":["age"]}
       w:MusuStock
-        self,round=6	{"mung":["age"]}
+        self,round	{"mung":["age"]}
         req:wrangle,eternal,ok

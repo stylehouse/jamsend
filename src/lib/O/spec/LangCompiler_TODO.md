@@ -73,8 +73,10 @@ The editor's compile (driven by `npm run ghost-compile`) runs the translator + s
    on a drilled `a/b/c` path. If a drilled match ever makes sense for these verbs it needs the
     drill treatment; for now the throw is the spec.
 
-- **translation-display wiring.** The line-by-line translated view (`LangCompiling.svelte`, the
-   disabled `if (0 && ln.kind === 'translated')` block) is still TODO to wire up.
+- **translation-display wiring.** `Lang_compile_collect` already emits per-line
+   `{kind:'translated'|'raw', text}`, but nothing renders them — a side-by-side view of a `.g` and the
+    JS each tile becomes is still TODO. The collect output is the hook to wire a view onto. (The old
+     disabled `if (0 && ln.kind === 'translated')` stub is gone; don't go looking for it.)
 
 - **`</script>` sharp edge.** A literal `</script>` in `.g` source (even inside a comment)
    truncates `Lang_validate_rendered_module`'s extractor — it marks the FIRST one as the script

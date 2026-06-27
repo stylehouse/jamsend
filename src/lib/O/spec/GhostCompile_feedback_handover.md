@@ -44,7 +44,7 @@ swamp's masterminding as if it's urgent; it isn't anymore.
   all_House`); bomb #6's "hard-reload after editing a ghost" is wrong. Only construction-captured fn *refs*
   go stale. (Confirmed in-app: the lag fix took effect with no hard-reload.)
 
-## Landed (working tree, uncommitted, typecheck-clean)
+## Landed (committed — see "Working tree" below)
 
 - **`#2` editor ack `{started|done(dige)|error(errors)}`** — `Lies_ghost_compile_ack` sends a raw
   `control` frame (NOT a Peeroleum envelope; the CLI is no peer) down the editor socket; the relay
@@ -167,19 +167,13 @@ Leftover small ones: **normalise the dige** (bomb 3) so the CLI poll agrees agai
  **`note()` `important` flag** in `Tribunal.g` (frozen spine — recompile+promote) so carrier CLOSE/reconnect
   persist 60s.
 
-## Working tree — feedback + lag fix are COMMITTED
-All of the feedback machine and the lag fix are now committed (`7fdb8126` "fix remote compile lag" and its
- predecessors): `Lang.svelte` (e_Lang_dock_content force_active branch), `LangCompiling.svelte`
-  (`Lang_compile_dock` stateOverride + `Lang_compile_source_state`), `scripts/LakeRace.*`,
-   `scripts/ghost_compile.ts`, `src/lib/server/relay.ts`, `LiesLies.svelte`, `Tribunal.go` (+ channel/Brink).
-The Brink/`%Aim` half rides in `spec/Lens_handover.md`. Bomb #6 ("hard-reload after editing a ghost") is
- corrected — [[hmr-remixes-ghost-methods]]; methods re-mix on HMR.
-
-The ONLY currently-uncommitted work in the tree is **unrelated** to ghost-compile — it's the Trope/`%boring`
- backstage-Waft EntropyProfile-sharing line ([[trope-entropy-profile-sharing]]): `Hovercraft.svelte`
-  (`entropy_profile_waft`/`waft_is_boring`), `Lies.svelte` (boring Wafts uncounted + flag rides to the load
-   Good), `Lang.svelte`, `Story.svelte`, `EntropyArrest.svelte`, `Peeroleum.g`/`.go`, several `toc.snap`.
-    Don't mistake it for compile-channel work.
+## Working tree — all committed
+The feedback machine + lag fix landed in `7fdb8126` "fix remote compile lag" and predecessors
+ (`Lang.svelte` e_Lang_dock_content force_active branch, `LangCompiling.svelte` `Lang_compile_dock`
+  stateOverride + `Lang_compile_source_state`, `scripts/LakeRace.*`, `scripts/ghost_compile.ts`,
+   `src/lib/server/relay.ts`, `LiesLies.svelte`, `Tribunal.go` + channel/Brink). The `%Aim`/Brink half
+    rides in `spec/Lens_handover.md`. Tree is clean. Bomb #6 ("hard-reload after editing a ghost") is
+     corrected — [[hmr-remixes-ghost-methods]]; methods re-mix on HMR.
 
 ---
 

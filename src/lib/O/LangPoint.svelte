@@ -1,63 +1,27 @@
 <script lang="ts">
     // LangPoint.svelte — Point folding intensity (the "Q-factor") for Lang.
+    //  Deposits onto H via M.eatfunc(): Lang_indent_blocks (doc → foldable indent blocks),
+    //  Lang_fold_targets (outermost blocks at depth ≥ fold_depth, as char ranges),
+    //  Lang_apply_Q (reconcile editor to Q 1–5: fold set + shrink body + grow headers,
+    //  idempotent so it serves the climb up and down), Lang_point_climb / e:Lang_climb
+    //  (gallop Q → toQ one level per wave, a visible cascade), and the Waver (Lang_wave_*,
+    //  a generic timed wave queue).  Per-function detail below.
     //
-    // Deposits onto H via M.eatfunc():
+    // ── Font scale ──
+    //  The body scales by REAL font-size on %contentDOM + requestMeasure so CM reflows and
+    //  scroll-sync stays honest — NOT a transform, which lies about geometry.  base_font_px
+    //  is cached on dock.c so every climb scales from the same origin.  The surviving names
+    //  move the opposite way (method names + //#region titles GROW) via an absolute-px mark
+    //  decoration (dock.c.setPointFonts / pointFontField in Langui) — absolute so it
+    //  overrides the inherited body shrink, turning a deep crunch into a contents view.
+    //  Only the identifier swells; indent|keywords|args stay body-size.
+    //   < a font Compartment in Langui would isolate the body scale (swap Lang_set_font_scale
+    //     to dispatch fontCompartment.reconfigure) instead of touching contentDOM.style.
     //
-    //   Lang_indent_blocks(state)
-    //     Decompose the live doc into foldable indent blocks — a header line
-    //     plus the more-indented run beneath it — each with a structural depth.
-    //     This is the "few basic parts" a subroutine breaks into, indent-based|
-    //     it needs no grammar, so it works on any indented text.
-    //
-    //   Lang_fold_targets(state, blocks, fold_depth)
-    //     The outermost blocks at depth ≥ fold_depth, as char ranges to fold.
-    //     Outermost-only so folding a parent never strands a child fold when we
-    //     climb back down.
-    //
-    //   Lang_apply_Q(dock, Q)
-    //     Reconcile the editor to intensity Q (1–5): fold the target set (un-
-    //     folding our previous set first), shrink the body font, and grow the
-    //     surviving headers.  Idempotent toward Q, so it serves both the climb up
-    //     and the climb down.
-    //       Q=1  everything open, full size
-    //       Q=2  fold the deepest nests
-    //       …    each step folds one shallower indent level + shrinks a notch
-    //       Q=5  every method body folded — only the method names remain
-    //
-    //   Lang_point_climb(w, toQ) / e:Lang_climb
-    //     Gallop from the dock's current Q to toQ one level per wave, so the
-    //     folds cascade and the font shrinks as a visible series of climbs rather
-    //     than one jump.  Driven by the Waver below.
-    //
-    //   Lang_wave_enqueue / _step / _rush  — the Waver
-    //     A queue of timed diff-waves drained forward, each applied for its
-    //     duration, with a rush-to-end.  Deliberately generic (host + apply fn,
-    //     no fold/Q knowledge) so Cytui's graph waves can adopt the same kernel
-    //     later — its enqueue|drain|rush map onto this directly.
-    //
-    // ── Font scale ─────────────────────────────────────────────────────────────
-    //
-    //   The body scales by real font-size on %contentDOM + requestMeasure, so CM
-    //   reflows (line heights, scroll maths stay honest) — not a transform, which
-    //   would lie about geometry and break scroll-sync.  base_font_px is read once
-    //   and cached on dock.c so repeated climbs scale from the same origin.
-    //     The surviving names move the opposite way: as bodies fold and shrink, the
-    //     method names and //#region titles GROW, via a per-name absolute-px mark
-    //     decoration (dock.c.setPointFonts, the pointFontField in Langui) — only the
-    //     identifier swells, the indent and any async|static keyword and the args
-    //     stay body-size.  Absolute px so it overrides the inherited body shrink
-    //     rather than scaling with it, turning a deep crunch into a contents view.
-    //   < a font Compartment in Langui would isolate the body scale in a theme
-    //     extension instead of touching contentDOM.style|swap Lang_set_font_scale's
-    //     body to dispatch fontCompartment.reconfigure when that's wired.
-    //
-    // ── Fold animation ───────────────────────────────────────────────────────
-    //
-    //   < CM folds snap (the body is replaced by a placeholder, no height tween).
-    //     Motion today comes from the gallop — folds cascade level by level and
-    //     the font shrinks per step.  A true height tween needs a transitional
-    //     fold decoration animating max-height before the real foldEffect lands|
-    //     park that until the climb itself feels right.
+    // ── Fold animation ──
+    //  < CM folds snap (placeholder, no height tween); motion comes from the gallop.  A true
+    //    tween needs a transitional fold decoration animating max-height before the real
+    //    foldEffect lands.
 
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { EditorState } from "@codemirror/state"
@@ -65,9 +29,8 @@
     import { foldEffect, unfoldEffect } from "@codemirror/language"
     import { onMount } from "svelte"
 
-    // A foldable indent block: header line, the last body line, the header's
-    // leading-whitespace width, structural nesting depth (0 = top level), and
-    // whether the header is a //#region marker (those never fold — see below).
+    // A foldable indent block: header line, last body line, header indent width,
+    // structural depth (0 = top level), and whether it's a //#region marker (never folds).
     type Block = { header: number, end: number, indent: number, depth: number, is_region: boolean }
 
     let { M } = $props()
@@ -76,27 +39,14 @@
     await M.eatfunc({
 
 //#region < TODO: the canonical Pointer (region / method / if-keyword)
-//
-//   A Pointer addresses a place in code by NAME along a path:
-//     "Cyto / cyto_scan"            region → method
-//     "story_save / if runH"        method → control-flow head
-//     "Cyto / cyto_scan / for node" the full stack
-//   We build these (the Ting bars, NaviCado capsules, bookmarks) and resolve them
-//   back to offsets (e_Lang_goto_point, seek).  The resolver — Lang_resolve_point /
-//   Lang_resolve_stack_path — lives in LangRegions and works by name.  Two jobs to do
-//   here, where the Point/Pointer model belongs:
-//     1. A Pointer BUILDER: given an offset (or a tap's region_path + method), emit the
-//        shortest unambiguous Pointer string.  e_Lang_tap already has the pieces
-//        (region_path tail + method); generalise to the full stack incl. if-keywords.
-//     2. Fix region-scoped resolution: Lang_resolve_stack_path narrows by a region's
-//        %Map from/to, but %Map regions carry only the HEADER-LINE span, so "region /
-//        method" narrows to the header and the method lookup fails.  It needs region
-//        BODY extents (Lang_build_regions' from_char/to_char) to narrow into the body.
-//        Until then, region-disambiguated jumps match a def by its stored region_path
-//        tail (e_Lang_goto_point) rather than via the stack-path resolver.
-//   < decide what moves here from LangRegions (resolve_point/stack_path/find_within_range)
-//     vs stays — and how much LiesCurse's branch/dive/stepping should ride this same
-//     Pointer model rather than its own cursor walk.
+//   A Pointer addresses a code place by NAME along a path ("Cyto / cyto_scan / for node");
+//    we build them (Ting bars, NaviCado, bookmarks) and resolve back to offsets via
+//    LangRegions' Lang_resolve_point / Lang_resolve_stack_path.  Two jobs belong HERE:
+//     1. a Pointer BUILDER: offset → shortest unambiguous Pointer (e_Lang_tap has the pieces).
+//     2. fix region-scoped resolution: %Map holds only a region's HEADER-LINE span, so
+//        "region / method" narrows to the header and the method lookup fails — needs region
+//        BODY extents (Lang_build_regions from_char/to_char).
+//   < and whether LiesCurse's branch/dive should ride this Pointer model vs its own cursor walk.
 
 //#region parts
 
@@ -108,10 +58,9 @@
         return (m ? m[0] : '').replace(/\t/g, '    ').length
     },
 
-    // Decompose the doc into foldable indent blocks.  A line heads a block when
-    // the next non-blank line is more indented|the block runs to the last line
-    // still deeper than the header.  Depth counts the blocks that strictly
-    // contain this one, so it is structural nesting, not raw indent/4.
+    // Decompose the doc into foldable indent blocks: a line heads a block when the next
+    // non-blank line is more indented, and the block runs to the last line still deeper
+    // than that header.  (Depth — structural nesting, not raw indent/4 — is set below.)
     Lang_indent_blocks(state: EditorState): Block[] {
         const doc = state.doc
         const n   = doc.lines
@@ -133,11 +82,9 @@
                 blocks.push({ header: i, end, indent: ind[i], depth: 0, is_region })
             }
         }
-        // depth = blocks that strictly contain this block's header span.  A //#region
-        // marker is organizational, not structural nesting, so it doesn't count as a
-        // container — otherwise a method wrapped in a region would read one level
-        // deeper than the same method outside one, and the Q scale would jump a step
-        // just for being inside a region.
+        // depth = blocks that strictly contain this header span, EXCEPT a //#region marker
+        //  doesn't count as a container (organizational, not nesting); else a method inside
+        //  a region would read one level deeper and the Q scale would jump a step.
         for (const b of blocks) {
             b.depth = blocks.filter(o => o !== b && !o.is_region
                 && o.header < b.header && o.end >= b.end && o.indent < b.indent).length
@@ -145,19 +92,13 @@
         return blocks
     },
 
-    // The OUTERMOST blocks crossing fold_depth that are also worth folding — the set
-    // we actually fold.  Folding a parent already hides its children (a child would
-    // only re-strand on the climb back down), so granularity is mostly the Q depth's
-    // job: at Q5 (fold_depth 0) only top-level methods are direct targets and their
-    // inner if|for blocks fold away *inside* them; an inner block becomes a direct
-    // target only at a deeper Q that keeps its method open and dives.
-    // The size floor is depth-aware: a top-level method body (depth 0) folds even at
-    // 2 lines so the Q5 method list is complete, but a block INSIDE a method (depth ≥ 1)
-    // must be substantial (MIN_INNER) to earn its own marker — a 3-line if saves nothing
-    // and just litters the dive.  A //#region marker is navigational, never a fold
-    // target — folding it would swallow the method names and region structure the climb
-    // exists to surface — so region blocks stay counted for depth (their methods nest
-    // under them) but are skipped here.  Shared by the fold-range and header-font builders.
+    // The OUTERMOST blocks crossing fold_depth that are worth folding (folding a parent
+    //  already hides its children, so depth granularity is mostly Q's job).  Size floor is
+    //  depth-aware: a top-level method (depth 0) folds even at MIN_METHOD lines so the Q5
+    //  list is complete; a block INSIDE a method (depth ≥ 1) must reach MIN_INNER or it just
+    //  litters the dive.  A //#region marker is never a target — folding it swallows the
+    //  names the climb surfaces — counted for depth, skipped here.  Shared by fold-range +
+    //  header-font builders.
     Lang_folded_blocks(blocks: Block[], fold_depth: number): Block[] {
         if (!isFinite(fold_depth)) return []
         const MIN_METHOD = 2   // depth 0: header + one body line — fold even a tiny method
@@ -193,11 +134,9 @@
     Lang_Q_scale(Q: number): number {
         return +(1 - (Math.max(1, Math.min(5, Q)) - 1) * 0.09).toFixed(3)
     },
-    // Q → font scale for the SURVIVING headers, the inverse intent of Lang_Q_scale|
-    // as detail folds away the lines that remain (method names, region titles) grow
-    // so the overview reads as a table of contents.  1.0 at Q=1 (nothing folded, no
-    // emphasis) up to ~1.34 at Q=5.  Absolute, not relative to the body shrink — a
-    // header at Q=5 is ~1.34·base while bodies are ~0.64·base.
+    // Q → font scale for the SURVIVING headers, inverse of Lang_Q_scale: as detail folds,
+    //  the remaining names grow so the overview reads as a table of contents.  1.0 at Q=1 up
+    //  to ~1.34 at Q=5 — absolute, not relative to the body shrink (Q5 header 1.34·base, body 0.64·base).
     Lang_Q_header_scale(Q: number): number {
         return +(1 + (Math.max(1, Math.min(5, Q)) - 1) * 0.085).toFixed(3)
     },
@@ -205,9 +144,8 @@
 //#endregion
 //#region apply
 
-    // The dock's unscaled font px, read once from the live computed style and
-    // cached so every climb scales from the same origin (re-reading after a climb
-    // would read the already-shrunk size and the base would creep).
+    // The dock's unscaled font px, read once from the live computed style and cached:
+    //  re-reading after a climb would read the already-shrunk size and the base would creep.
     Lang_base_font_px(dock: TheC): number {
         let base = dock.c.base_font_px as number | undefined
         if (base == null) {
@@ -230,14 +168,10 @@
         view.requestMeasure()
     },
 
-    // The name token on a header line — the slice the font field swells, so the
-    // indent, any leading async|static|const keyword and the arg list all stay at
-    // body size and only the identifier grows.  Two shapes:
-    //   //#region <title>  → the title slice
-    //   <indent><keywords><name>(…)  → the name identifier
-    // Control-flow heads (if|for|while|…) carry no name worth promoting, so they
-    // return null and stay body-size even when their block folds.  Offsets are
-    // absolute (lineFrom + the match index) for the mark range.
+    // The name token on a header line — the slice the font field swells (only the identifier
+    //  grows; indent, keywords, args stay body-size).  Two shapes: a //#region title, or the
+    //  name after any keywords.  Control-flow heads (if|for|…) → null, so they stay body-size
+    //  even when folded.  Offsets absolute (lineFrom + match index) for the mark range.
     Lang_header_name_span(text: string, lineFrom: number): { from: number, to: number } | null {
         const region = text.match(/^(\s*\/\/#region\s+)(\S.*?)\s*$/)
         if (region) {
@@ -257,11 +191,9 @@
         return { from, to: from + name.length }
     },
 
-    // The names whose font grows against the body shrink: the name of every folded
-    // block (method heads) and every //#region title.  Each carries an absolute px
-    // over its name span|region titles get the extra bump since they're the overview's
-    // backbone, and are pushed first so dedup keeps their larger size when a region
-    // line also heads a block.  Empty at Q=1 — nothing's folded, so nothing earns it.
+    // The names whose font grows against the body shrink: every folded-block (method) head
+    //  and every //#region title, each an absolute px.  Region titles get the extra bump and
+    //  are pushed FIRST, so dedup keeps their larger size when a region line also heads a block.
     Lang_point_fonts(state: EditorState, blocks: Block[], Q: number, base: number)
         : Array<{ from: number, to: number, px: number }> {
         if (Q <= 1) return []
@@ -284,9 +216,8 @@
         return fonts
     },
 
-    // The doc position the crunch pivots around: the cursor when it's on screen, else
-    // the line at the vertical middle of the viewport — so a plain climb recedes toward
-    // the centre of what you're reading.
+    // The doc position the crunch pivots around: the cursor if on screen, else the line at
+    //  the viewport's vertical middle — so a plain climb recedes toward what you're reading.
     Lang_focal_pos(view: EditorView): number | null {
         const head = view.state.selection.main.head
         const vp   = view.viewport
@@ -296,14 +227,11 @@
         return pos ?? vp.from
     },
 
-    // Run a fold|layout mutation while keeping the focal point pinned on screen: note
-    // where the focus sits now, let `mutate` reflow the doc, then (once CM remeasures)
-    // scroll so the focus lands back at the same y.  This is what stops a fold ELSEWHERE
-    // — a Q climb, or a background Point-fold settle landing while you read — from
-    // bumping you off what you're looking at.  A deliberate goto's seek stays OUTSIDE
-    // this (the seek is meant to move you).
-    //   < the per-step wave gives the climb its rhythm; a CSS font-size transition would
-    //     smooth between steps but CM's discrete remeasure fights the anchor mid-tween.
+    // Run a fold|layout mutation while keeping the focal point pinned: note its y, let
+    //  `mutate` reflow, then (after CM remeasures) re-scroll so it lands at the same y.
+    //  Stops a fold ELSEWHERE — a Q climb, a background Point-fold settle — from bumping you
+    //  off what you're reading.  A deliberate goto's seek stays OUTSIDE this.
+    //   < a CSS transition would smooth steps but CM's discrete remeasure fights mid-tween.
     Lang_keep_focal(view: EditorView, mutate: () => void) {
         const focal    = this.Lang_focal_pos(view)
         const anchor_y = focal != null ? (view.coordsAtPos(focal)?.top ?? null) : null
@@ -318,17 +246,15 @@
         }
     },
 
-    // Reconcile the editor to intensity Q: unfold whatever WE folded last time, fold the
-    // new target set, shrink the body font and grow the surviving headers (one
-    // transaction, under Lang_keep_focal so the crunch recedes AROUND the point you're
-    // reading instead of sliding the doc off-screen).  Tracking our own folds on
-    // dock.c.q_folds keeps the climb from fighting the user's manual region folds (we
-    // only ever unfold ranges we put down).
+    // Reconcile the editor to Q: unfold whatever WE folded last, fold the new target set,
+    //  shrink the body font, grow the surviving headers — one transaction under
+    //  Lang_keep_focal so the crunch recedes AROUND what you're reading.  Tracking our own
+    //  folds on dock.c.q_folds keeps the climb from fighting the user's manual region folds
+    //  (we only ever unfold ranges we put down).
     Lang_apply_Q(dock: TheC, Q: number) {
         const view  = dock.c.view  as EditorView | undefined
-        // Fold is a DISPLAY op — it dispatches onto `view` — so it computes against the LIVE
-        //  view.state, not the debounce-stale dock.c.state (Lang_handover.md §7, role 3a): the
-        //   fold|font ranges then match exactly what is on screen, with no off-by-a-burst skew.
+        // Fold is a DISPLAY op (dispatched onto `view`) so it computes against the LIVE view.state,
+        //  not the debounce-stale dock.c.state (Lang_handover.md §7 role 3a) — ranges then match the screen.
         const state = view?.state as EditorState | undefined
         if (!view || !state) return
 
@@ -342,8 +268,7 @@
             ...prev.map(r => unfoldEffect.of(r)),
             ...targets.map(r => foldEffect.of(r)),
         ]
-        // header fonts ride the same transaction as the folds so the name lines
-        // grow in lock-step with the bodies vanishing — no flicker between them.
+        // header fonts ride the same transaction as the folds → grow in lock-step, no flicker.
         const setFonts = dock.c.setPointFonts as { of: (v: any) => any } | undefined
         if (setFonts) effects.push(setFonts.of(fonts))
 
@@ -359,16 +284,12 @@
 //#endregion
 //#region waver
 
-    // ── Waver — a generic forward-stepping wave queue ─────────────────────────
-    //
-    //   host  — any off-snap object to stash queue state on (here a dock).
-    //   apply — apply.call(this, wave, dur) for one wave.
-    //   waves — wave objects, each optionally carrying sc.duration (seconds).
-    //
-    //   Drains one wave per duration, so a series animates forward|rush() flushes
-    //   the rest instantly (a fresh enqueue or teardown wants the end state now).
-    //   No fold|Q knowledge here on purpose — Cytui's upsert|migrate|remove waves
-    //   can ride the same three calls.
+    // ── Waver — a generic forward-stepping wave queue ──
+    //   host = any off-snap object for queue state; apply = apply.call(this, wave, dur);
+    //    waves = wave objects, each optionally carrying a duration (seconds).  Drains one
+    //    per duration so a series animates forward; rush() flushes the rest instantly (a
+    //    fresh enqueue or teardown wants the end state now).  No fold|Q knowledge here —
+    //    Cytui's upsert|migrate|remove waves can ride the same three calls.
     Lang_wave_enqueue(host: any, apply: (wave: any, dur: number) => void, waves: any[]) {
         host._waves = ((host._waves as any[]) ?? []).concat(waves)
         if (!host._waving) this.Lang_wave_step(host, apply)
@@ -393,10 +314,9 @@
 //#endregion
 //#region climb
 
-    // Gallop the active dock from its current Q to toQ, one level per wave, so
-    // the folds cascade and the font shrinks as a visible climb.  Re-enqueueing
-    // mid-climb rushes the pending steps to their end state first, then climbs
-    // from there — no half-applied jumble.
+    // Gallop the active dock from its current Q to toQ, one level per wave (cascade).
+    //  Re-enqueueing mid-climb rushes the pending steps to their end first, then climbs
+    //  from there — no half-applied jumble.
     Lang_point_climb(w: TheC, toQ: number) {
         const dock = this.Lang_active_dock(w)
         if (!dock) return
@@ -417,8 +337,7 @@
         this.Lang_wave_enqueue(dock, apply, waves)
     },
 
-    // ── e:Lang_climb ─────────────────────────────────────────────────────────
-    //   The minimap's Q dial (and any goto wanting the current crunch) fires this.
+    // e:Lang_climb — the minimap's Q dial (or a goto wanting the current crunch) fires this.
     //   e.sc: { Q }
     async e_Lang_climb(A: TheC, w: TheC, e: TheC) {
         const Q = e.sc.Q as number | undefined
