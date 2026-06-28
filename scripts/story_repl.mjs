@@ -10,14 +10,20 @@
 //  Then:  story› run MusuLive --watch
 //         story› diff 2
 //
+//  After a run lands, the runner HANGS IN THERE holding it as a uid-addressable record (it pins the
+//   produced step snaps off-snap), so you can keep pulling its diff/snap/trace by uid even after you've
+//    kicked another run.  `run` prints the uid; `rungos` lists the held runs; append `@<uid>` (or bare `@`
+//     = the last run) to any read to target a held run instead of the live one.
+//
 //  Commands (alias):
 //    ping (p)            — runner liveness {role, channel, running}
-//    run <Book> (r)      — kick a run on the live browser; sets the current Book
+//    run <Book> (r)      — kick a run on the live browser; sets current Book; prints the run's uid
+//    rungos (rg)         — the held runs: ● active · uid · Book · phase · pinned step count
 //    watch (w)           — poll state until the run settles done|failed
 //    state (s)           — verdict {ok, ok_pct, done, caveat} + phase/n/total
-//    steps               — per-Step ok/caveat/dige
-//    snap <n>            — one Step's produced snap (the live world)
-//    diff <n> (d)        — colorised line-diff: live got_snap vs expected (socket exp_snap, else the
+//    steps [@uid]        — per-Step ok/caveat/dige
+//    snap <n> [@uid]     — one Step's produced snap (the live world, or a held run's frozen pin)
+//    diff <n> [@uid] (d) — colorised line-diff: got_snap vs expected (socket exp_snap, else the
 //                           shared-disk fixture wormhole/Story/<Book>/<NNN>.snap)
 //    books               — Books with a fixture dir under wormhole/Story
 //    book <Book>         — set the current Book (for diff/snap fixture lookup) without running
@@ -55,6 +61,7 @@ function sendAsk(theAsk) {
 }
 
 let currentBook = null
+let lastUid = null          // the uid of the most recent run — `@` with no chars resolves to it
 const pad = n => String(n).padStart(3, '0')
 function diskFixture(book, n) {
 	if (!book) return null
@@ -97,17 +104,19 @@ function renderDiff(rows) {
 
 const HELP = `commands:
   ping (p)            runner liveness
-  run <Book> (r)      kick a run on the live browser (sets current Book; add --watch to follow)
+  run <Book> (r)      kick a run on the live browser (sets current Book; prints uid; add --watch to follow)
+  rungos (rg)         the held runs (● active · uid · Book · phase · pinned step count)
   watch (w)           poll state until done|failed
   state (s)           verdict + phase/n/total
-  steps               per-Step ok/caveat/dige
+  steps [@uid]        per-Step ok/caveat/dige
   retain [on|off]     keep middle steps' got_snap (suppress the trim) — set it BEFORE a run
-  snap <n>            one Step's produced snap (the live world)
-  trace <n> (t)       the step's WHY: beliefs-cycle trace + quiescent (causal vs timeout) label
-  diff <n> (d)        live got_snap vs expected (socket exp_snap, else disk fixture)
-  diff <n> prev|<m>   TEMPORAL: how the world changed step n-1 (or m) → n, both produced (one atomic read)
+  snap <n> [@uid]     one Step's produced snap (live world, or a held run's frozen pin)
+  trace <n> [@uid] (t) the step's WHY: beliefs-cycle trace + quiescent (causal vs timeout) label
+  diff <n> [@uid] (d) got_snap vs expected (socket exp_snap, else disk fixture)
+  diff <n> prev|<m> [@uid]  TEMPORAL: how the world changed step n-1 (or m) → n, both produced (one read)
   books               Books with a wormhole/Story fixture dir
   book <Book>         set current Book (for diff/snap) without running
+  @uid                append to any read to target a HELD run (bare @ = the last run); else the live one
   help (h, ?)  ·  quit (q, exit)`
 
 async function pollWatch(printer) {
@@ -129,10 +138,14 @@ async function pollWatch(printer) {
 async function handle(line, out) {
 	const [cmd, ...rest] = line.split(/\s+/).filter(Boolean)
 	if (!cmd) return
-	const words = rest.filter(r => !r.startsWith('-'))
+	const words = rest.filter(r => !r.startsWith('-') && !r.startsWith('@'))
 	const arg = words[0]
 	const arg2 = words[1]
 	const watch = rest.includes('--watch') || rest.includes('-w')
+	// @uid targets a HELD run (its frozen pins); bare `@` = the last run; none = the live/active run.
+	const uidTok = rest.find(r => r.startsWith('@'))
+	const uid = uidTok ? (uidTok.slice(1) || lastUid || undefined) : undefined
+	const U = uid ? { uid } : {}
 	switch (cmd) {
 		case 'help': case 'h': case '?': out(HELP); return
 		case 'quit': case 'q': case 'exit': ws.close(); process.exit(0)
@@ -149,28 +162,37 @@ async function handle(line, out) {
 				: C.red(`✗ retain: ${r.error ?? r.result?.error}`))
 			return
 		}
-		case 'ping': case 'p': { const r = await sendAsk({ op: 'ping' }); out(r.control === 'runner_ack' ? JSON.stringify(r.result) : C.red(r.error)); if (r.result?.running?.book) currentBook = r.result.running.book; return }
-		case 'state': case 's': { const r = await sendAsk({ op: 'state' }); out(r.control === 'runner_ack' ? JSON.stringify(r.result) : C.red(r.error)); if (r.result?.run?.book) currentBook = r.result.run.book; return }
-		case 'steps': { const r = await sendAsk({ op: 'steps' }); out(r.control === 'runner_ack' ? JSON.stringify(r.result) : C.red(r.error)); return }
+		case 'ping': case 'p': { const r = await sendAsk({ op: 'ping' }); out(r.control === 'runner_ack' ? JSON.stringify(r.result) : C.red(r.error)); if (r.result?.running?.book) currentBook = r.result.running.book; if (r.result?.running?.uid) lastUid = r.result.running.uid; return }
+		case 'state': case 's': { const r = await sendAsk({ op: 'state' }); out(r.control === 'runner_ack' ? JSON.stringify(r.result) : C.red(r.error)); if (r.result?.run?.book) currentBook = r.result.run.book; if (r.result?.run?.uid) lastUid = r.result.run.uid; return }
+		case 'steps': { const r = await sendAsk({ op: 'steps', ...U }); out(r.control === 'runner_ack' && r.ok !== false ? JSON.stringify(r.result) : C.red(r.error ?? r.result?.error)); return }
+		case 'rungos': case 'rg': {
+			const r = await sendAsk({ op: 'rungos' })
+			if (r.control !== 'runner_ack' || r.ok === false) { out(C.red(`✗ rungos: ${r.error ?? r.result?.error}`)); return }
+			const rs = r.result?.rungos ?? []
+			if (!rs.length) { out(C.dim('(no runs held)')); return }
+			for (const x of rs) out(`${x.active ? C.grn('●') : ' '} ${C.cyan(x.uid ?? '????????')}  ${x.book}  ${C.dim(x.phase)}${x.done != null ? ` ${x.done}/${x.total ?? '?'}` : ''}  ${x.pinned ? C.dim(`pinned ${x.pinned} step(s)`) : C.yel('live (not pinned)')}`)
+			return
+		}
 		case 'run': case 'r': {
 			if (!arg) { out(C.red('run needs a Book')); return }
 			const r = await sendAsk({ op: 'run', book: arg })
 			if (r.control !== 'runner_ack' || r.ok === false) { out(C.red(`✗ run: ${r.error ?? r.result?.error ?? 'rejected'}`)); return }
-			currentBook = arg; out(`${C.grn('▶')} run ${C.cyan(arg)} accepted`)
+			currentBook = arg; if (r.result?.uid) lastUid = r.result.uid
+			out(`${C.grn('▶')} run ${C.cyan(arg)} accepted${r.result?.uid ? `  ${C.dim('uid')} ${C.cyan(r.result.uid)}` : ''}`)
 			if (watch) await pollWatch(out)
 			return
 		}
 		case 'watch': case 'w': await pollWatch(out); return
 		case 'snap': {
 			if (!arg) { out(C.red('snap needs a step number')); return }
-			const r = await sendAsk({ op: 'snap', n: Number(arg) })
+			const r = await sendAsk({ op: 'snap', n: Number(arg), ...U })
 			if (r.control !== 'runner_ack' || r.ok === false) { out(C.red(`✗ snap: ${r.error ?? r.result?.error}`)); return }
-			out(C.dim(`Step ${r.result.n} ok=${r.result.ok} dige=${r.result.dige}`)); out(r.result.got_snap ?? '(no got_snap)')
+			out(C.dim(`Step ${r.result.n} ok=${r.result.ok} dige=${r.result.dige}${uid ? ` @${uid}` : ''}`)); out(r.result.got_snap ?? '(no got_snap)')
 			return
 		}
 		case 'trace': case 't': {
 			if (!arg) { out(C.red('trace needs a step number')); return }
-			const r = await sendAsk({ op: 'trace', n: Number(arg) })
+			const r = await sendAsk({ op: 'trace', n: Number(arg), ...U })
 			if (r.control !== 'runner_ack' || r.ok === false) { out(C.red(`✗ trace: ${r.error ?? r.result?.error}`)); return }
 			out(C.dim(`trace Step ${r.result.n}  ok=${r.result.ok}${r.result.caveat ? ' caveat' : ''} dige=${r.result.dige}  ${r.result.cycles} beliefs-cycle(s)`))
 			const tr = r.result.trace
@@ -188,7 +210,7 @@ async function handle(line, out) {
 			//  changed BETWEEN steps, both produced (got_snap), neither the expected. Uses two snap ops.
 			if (arg2 === 'prev' || arg2 === 'p' || (arg2 != null && !Number.isNaN(Number(arg2)))) {
 				const baseN = (arg2 === 'prev' || arg2 === 'p') ? n - 1 : Number(arg2)
-				const r = await sendAsk({ op: 'snaps', ns: [baseN, n] })   // ONE atomic read — a coherent pair even while the runner churns
+				const r = await sendAsk({ op: 'snaps', ns: [baseN, n], ...U })   // ONE atomic read — a coherent pair even while the runner churns (doubly stable on a held @uid)
 				if (r.control !== 'runner_ack' || r.ok === false) { out(C.red(`✗ diff: ${r.error ?? r.result?.error}`)); return }
 				const ra = r.result?.snaps?.[baseN], rb = r.result?.snaps?.[n]
 				if (!ra?.got_snap || !rb?.got_snap) { out(C.yel(`need both Step ${baseN} and Step ${n} got_snap (have ${ra?.got_snap ? '✓' : '✗'}${baseN} / ${rb?.got_snap ? '✓' : '✗'}${n}; old steps get trimmed — use retain mode)`)); return }
@@ -197,7 +219,7 @@ async function handle(line, out) {
 				out(add || del ? body : C.grn('  (identical — no change between these steps)'))
 				return
 			}
-			const r = await sendAsk({ op: 'diff', n })
+			const r = await sendAsk({ op: 'diff', n, ...U })
 			if (r.control !== 'runner_ack' || r.ok === false) { out(C.red(`✗ diff: ${r.error ?? r.result?.error}`)); return }
 			const book = r.result.book ?? currentBook; if (r.result.book) currentBook = r.result.book
 			const got = r.result.got_snap

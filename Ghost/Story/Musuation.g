@@ -26,9 +26,12 @@ MusuStaple(A,w):
         req%ok = 1
 
 // Musu_drive — the wrangle's own beat dispatch.  Fires a beat's setup once, the first pass it sees a
-//  new run step_n (read the same way on_step does), tracked on req.c.did_step (runtime, unsnapped).
-//   Then pumps the spool and witnesses every pass.  Separate guarded ifs (not else-if) sidestep the
-//    bare-else tile mangle.
+//  new run step_n (read the same way on_step does), tracked on req.c.did_step (runtime, unsnapped), then
+//   re-sorts H/*.  Two things it NO LONGER does: pump the spool (the Caster is a typed serial-req now,
+//    swept ambiently like Peregrination's Peerings) and witness (that moved to %req:witness, a sibling
+//     swept AFTER the Caster — see Musu_sides_up).  The wrangle must run FIRST (go_live before the spool),
+//      so the witness can't ride here or it would observe pre-spool state at a single-think quiescence.
+//       Separate guarded ifs (not else-if) sidestep the bare-else tile mangle.
 async Musu_drive(w, req):
     let n = (this.c.run)?.c.step_n
     if (n != null && n !== req.c.did_step) {
@@ -38,26 +41,30 @@ async Musu_drive(w, req):
         if (n === 4) this.Musu_play(w, 3, 'step_4')
         if (n === 5) this.Musu_play(w, 9, 'step_5')
     }
-    await this.Musu_pump(w)
-    this.Musu_witness(w)
     await this.Musu_order(w)
 
 // ── the scenario verbs ──────────────────────────────────────────────────────────────────────
 // Musu_sides_up — beat 2: stand up the alpha->omega link under w:MusuStaple.  A %Caster (12 chunks of stock,
-//  cursor at 0, NOT live) feeding a %Terminal whose %inbox catches delivered chunks.  Seed %req:cast on
-//   the caster (the spine's spool) and stamp c.up by hand (.i does not wire it; the spool reads the
-//    window off w through caster.c.up).  No spooling yet — the caster is idle till it goes live.
+//  cursor at 0, NOT live) feeding a %Terminal whose %inbox catches delivered chunks.  The Caster is a
+//   TYPED SERIAL-REQ (oai Caster,…,req → req_Caster by mainkey), so the ambient w-sweep pumps it — no
+//    Musu_pump hand-crank.  Seed %req:cast on it (the spine's spool, which req_Caster drives) and stamp
+//     c.up by hand (oai defers the wiring to first pump; the spool reads the window off w through
+//      caster.c.up).  No spooling yet — the caster is idle till it goes live.
 Musu_sides_up(w):
     w i reached:step_2
-    let caster = w.i({Caster: 1, name: 'alpha', total: 12, next: 0})
+    let caster = w.oai({Caster: 1, name: 'alpha', total: 12, next: 0, req: 1})
     caster.c.up = w
     let term = w.i({Terminal: 1, name: 'omega'})
     term.c.up = w
     term.i({inbox: 1})
     caster.c.term = term
     caster.oai({req: 'cast', eternal: 1})
+    // the witness is its OWN swept req, minted AFTER the Caster so the w-sweep runs it LAST each pass
+    //  (wrangle go_live → Caster spool → THIS): it observes the SETTLED cursor, the same post-spool
+    //   vantage Musu_pump+Musu_witness shared in one synchronous pass before the spool became self-swept.
+    w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.Musu_witness(w); req.sc.ok = 1 })
 
-// Musu_go_live — beat 3: arm the spool.  The next Musu_pump pass spools the whole window (0..6) and
+// Musu_go_live — beat 3: arm the spool.  The next sweep pass spools the whole window (0..6) and
 //  holds — the backpressure is now observable.
 Musu_go_live(w):
     w i reached:step_3
@@ -73,14 +80,6 @@ Musu_play(w, n, mark):
     if (!term) return
     let ack = +(term.sc.ack ?? -1)
     term.sc.ack = ack + n
-
-// Musu_pump — pump every %Caster under w:MusuStaple each pass.  caster.do() runs its %req:cast child (the
-//  spool).  Belt-and-braces with the ambient sweep, guaranteeing the drive within the wrangle pass.
-//   No-op before beat 2 (no casters yet).
-async Musu_pump(w):
-    for (const caster of w.o({Caster: 1})) {
-        await caster.do()
-    }
 
 // Musu_witness — the readable assertions, polled each pass.  Each stamp is structural + idempotent; the
 //  beat rides in the VALUE (`witnessed` is a snap-read key, so the beat can't be the key).
@@ -737,6 +736,113 @@ async MusuSkip_order(w):
     let As = H.o({A: 1})
     if (!As.length) return
     let first = (a) => (a.sc.A === 'MusuSkip') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+
+// ══ MusuCrowd — the multi-client fan-out (one source, many independent listeners) ════════════════
+//  The cascade's payoff made visible.  One source delivered to TWO listeners as two independent
+//   %Caster spools (fast + slow), each backpressured by ITS OWN terminal's ack.  Nowhere is there a
+//    loop over casters: both are typed serial-reqs, so the w-sweep pumps the whole flock — adding a
+//     listener is adding ONE %Caster, nothing else (the deleted Musu_pump would have needed a wider
+//      loop for this).  The story proves the cursors are INDEPENDENT: the fast listener drains the
+//       whole stock while the slow one still holds at its window edge.
+//        beat 2  two client links stand up: fast (->omega_fast) + slow (->omega_slow), both idle
+//        beat 3  both go live -> each spools 0..6 and holds at the window edge (next 7 apiece)
+//        beat 4  fast plays 5 (ack->4) -> fast caster DRAINS 7..11 (next 12); slow plays 1 (ack->0)
+//                 -> slow caster spools only seq 7 (next 8): DIVERGED, per-client backpressure
+//        beat 5  slow plays out (ack->11) -> slow caster drains too (next 12); the stock is spent
+// World w:MusuCrowd (the per-beat handler dispatches by WORLD NAME).  Cascade-native from birth: the
+//  Casters are serial-reqs and the witness rides its own %req:witness, so no hand-pump exists here.
+MusuCrowd(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuCrowd_drive,w,req
+        req%ok = 1
+
+// MusuCrowd_drive — beat dispatch (own did_step, the Pere* lesson).  Fires each beat's setup once; no
+//  pump (the Casters are swept) and no witness (it is its own swept req, below) — just setup + the
+//   readability sort.  Separate guarded ifs (not else-if) sidestep the bare-else tile mangle.
+async MusuCrowd_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.MusuCrowd_sides_up(w)
+        if (n === 3) this.MusuCrowd_go_live(w)
+        if (n === 4) {
+            w i reached:step_4
+            this.MusuCrowd_play(w, 'fast', 5)
+            this.MusuCrowd_play(w, 'slow', 1)
+        }
+        if (n === 5) {
+            w i reached:step_5
+            this.MusuCrowd_play(w, 'slow', 11)
+        }
+    }
+    await this.MusuCrowd_order(w)
+
+// MusuCrowd_sides_up — beat 2: stand up TWO client links (fast + slow) under w:MusuCrowd, then mint
+//  the witness as its OWN %req:witness AFTER the casters, so the w-sweep runs it LAST each pass
+//   (wrangle setup -> caster spools -> witness): it reads the SETTLED cursors, the post-spool vantage
+//    a same-pass pump+witness shared before the spool became self-swept.
+MusuCrowd_sides_up(w):
+    w i reached:step_2
+    this.MusuCrowd_client(w, 'fast')
+    this.MusuCrowd_client(w, 'slow')
+    w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.MusuCrowd_witness(w); req.sc.ok = 1 })
+
+// MusuCrowd_client — one listener link: a %Caster (12-chunk source, cursor 0, NOT live) that is a
+//  typed serial-req (oai Caster,…,req -> req_Caster, swept by w) feeding its own %Terminal+inbox.
+//   c.up hand-stamped (oai defers it); the terminal is named omega_<who> so a play can route to it.
+MusuCrowd_client(w, who):
+    let caster = w.oai({Caster: 1, name: who, total: 12, next: 0, req: 1})
+    caster.c.up = w
+    let term = w.i({Terminal: 1, name: 'omega_' + who})
+    term.c.up = w
+    term.i({inbox: 1})
+    caster.c.term = term
+    caster.oai({req: 'cast', eternal: 1})
+
+// MusuCrowd_go_live — beat 3: arm every client's spool at once.
+MusuCrowd_go_live(w):
+    w i reached:step_3
+    for (const caster of w.o({Caster: 1})) caster.sc.live = 1
+
+// MusuCrowd_play — a NAMED listener plays n chunks: advance ITS terminal's ack (others untouched), so
+//  each playhead moves independently and the spools diverge.  Called once per listener per beat (the
+//   drive stamps the beat marker, so two plays in one beat don't double it).
+MusuCrowd_play(w, who, n):
+    let term = w.o({Terminal: 1, name: 'omega_' + who})[0]
+    if (!term) return
+    let ack = +(term.sc.ack ?? -1)
+    term.sc.ack = ack + n
+
+// MusuCrowd_witness — pair each listener's caster with its terminal and assert PER-CLIENT backpressure.
+//  Idempotent stamps, polled each pass from the witness req.  The `diverged` stamp is the headline: one
+//   source, two cursors, the fast drained while the slow still holds.
+MusuCrowd_witness(w):
+    let fast = w.o({Caster: 1, name: 'fast'})[0]
+    let slow = w.o({Caster: 1, name: 'slow'})[0]
+    if (!fast || !slow) return
+    let fterm = fast.c.term
+    let sterm = slow.c.term
+    // beat 2 (linked): both client links exist -- caster, terminal, inbox, on each side.
+    if (fterm && sterm && fterm.o({inbox: 1})[0] && sterm.o({inbox: 1})[0] && !(oa %witnessed:linked)) i %witnessed:linked
+    let total = +(fast.sc.total ?? 0)
+    let fnext = +(fast.sc.next ?? 0)
+    let snext = +(slow.sc.next ?? 0)
+    // beat 3 (both_filled): each spool ran to the window edge and held (next 7), stock still to go.
+    if (fnext === 7 && snext === 7 && fnext < total && !(oa %witnessed:both_filled)) i %witnessed:both_filled
+    // beat 4 (diverged): the fast ack DRAINED its spool while the slow one still holds short of the end
+    //  -- one source, two independent cursors.  This is the whole point of the book.
+    if (fnext === total && snext > 7 && snext < total && !(oa %witnessed:diverged)) i %witnessed:diverged
+    // beat 5 (both_drained): the slow listener caught up -- both cursors met the stock end.
+    if (fnext === total && snext === total && total > 0 && !(oa %witnessed:both_drained)) i %witnessed:both_drained
+
+async MusuCrowd_order(w):
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'MusuCrowd') ? 0 : 1
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)

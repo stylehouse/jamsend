@@ -1,8 +1,18 @@
 # req:Keeping — consolidating the focused-and-remembered workspace
 
-Status: **design, for review.** Nothing built yet. The Keep noun lives in
-`Cluster_design.md`; this doc is the *driver* that writes it and the spine
-refactor that gives it one owner.
+Status: **design, for review.** The **`req:Keeping` driver is unbuilt** — but the
+Keep *noun* it would own is already live: `Waft:Keep` is a real snapped Waft (Persist
+loads/creates it), and the `Lies_keep_*` helpers (`_boot`/`_reopen`/`_resume_waft`/
+`_resume_what`/`_note`/`_mark_focus`/`_push_cursor`/`_note_cursor`, `Lies.svelte`
+~1000–1140) already write and replay it — just **bolted onto the event handlers**, not
+owned by any req. This doc is the *driver* that consolidates them, plus the spine
+refactor that gives the focused-and-remembered workspace one owner. The Keep noun's
+fuller shape lives in `Cluster_design.md`.
+
+**This is where Lang/Interest state resumes from.** Focus, the cursor, and the open-set
+are no longer session-only — they persist through the Keep ledger and replay on boot
+(`Lies_keep_boot`/`_reopen`). The `Interest.md` "Rejoin the stack frame" /
+"Per-(Interest, Waft) cursor-memory" TODOs are the Interest-side face of this same resume.
 
 Distilled from reading the live spine (`Lies.svelte` desire/acquire/timemachine/
 focus_waft/keep_*, `LiesHold.svelte` req:workon). Marked **today** vs **proposed**
@@ -87,9 +97,10 @@ and pulls the Keep recording in off the event handlers. Per-tick walk:
 
 ```
 req:Keeping  (one per w; was req:workon)
-  1. acquire-once   (was req:acquire, maz:9 boot gate)
-        first Waft present → Lies_keep_boot (resume from the Keep ledger) + seed.
-        finishes once; never re-arms.
+  1. boot           (was req:acquire, maz:9 gate — but STAGED, not a one-shot)
+        a heartbeat gated by w.c flags: open Waft:Keep (async load via req:Store), then
+        once it materialises resume from the ledger (Lies_keep_boot), THEN finish.
+        a naive one-shot finishes before the async Keep arrives → no resume (gap 2).
   2. focus          waft = Lies_focus_waft(w)        — the .sc.active | cursor | first-non-boring selector
         Keeping becomes the SOLE writer of .sc.active (6 sites set it today); .sc.active
         and ActiveInterest become PROJECTIONS of the resolved focus, not rival truths.
@@ -104,8 +115,9 @@ req:Keeping  (one per w; was req:workon)
         Lang_set_interest (ActiveInterest + the per-Interest LE) — the outward half
         of the attention channel, unchanged. Keeping owns "which"; convergence owns
         "tell the view".  (foregrounding == the checkout — see The bigger frame.)
-  5. record         cursor + accessed_at → Keep ledger
-        (was the bolted-on Lies_keep_note_cursor / _mark_focus on the want-land)
+  5. record         the WANT-LAND records cursor + accessed_at → Keep ledger
+        (Lies_resolve_wants → Lies_keep_note_cursor, on the event — not a tick poll;
+         Keeping's tick only reads. recording stays event-driven.)
 
   DROPPED: playback — play/pause/step/auto-advance.  "No sense of time on Lies."
 ```
@@ -125,22 +137,84 @@ a later simplification once Keeping is proven.
 
 ---
 
-## What drops, and the bomb it detonates
+## What drops (D1 — the whole transport)
 
-**Playback (timemachine Job B)** is the only true deletion. Its consequence:
-**NaviCado's transport loses its engine.** play/pause/step/auto-advance were the
-`Lies_desire_play|pause|step` elvis gestures that `req_timemachine` drained into
-`%want,kind:step`. Two ways to land this — **a decision for you**:
-- **(a) drop the transport** — NaviCado stops offering play/step; the slideshow goes.
-- **(b) re-express as gestures** — the step button emits `%want,kind:step` straight
-  into `req:wants` (the accumulator already takes `kind:step`), `Waft_cursor_next_candidate`
-  stays, no engine. Auto-advance (the only piece that needs a *clock*) is the only
-  thing that genuinely dies.
+play/pause/step/auto-advance — the `Lies_desire_play|pause|step` gestures
+`req_timemachine` drained into `%want,kind:step` — **all go**, not just the dead
+play/pause but the prev/next step too. **The time dimension leaves the editing code
+entirely.** Sequencing a show through a set of Wafts becomes a separate *director*
+layer later — script-writer vs director: authoring the Wafts is one job, sequencing a
+show through them is another — built away from the cursor engine and probably off the
+code surface. NaviCado loses its transport; intended.
 
-**Job A (per-tick land)** is *demoted, not deleted* — it becomes step 3, sig-gated.
-The bomb if we delete it outright: boot/reload/`become_book`/rename leave the cursor
-with nothing to land on, and the editor opens blank or on the wrong Waft. The
-`.sc.active` want-land covers *moves*, not *cold starts*. Keep step 3.
+**Job A (per-tick cursor-land) is demoted, not deleted** — it becomes step 3,
+sig-gated on focus-change. The bomb if deleted outright: boot/reload/`become_book`/
+rename leave the cursor with nothing to land on → the editor opens blank or on the
+wrong Waft. The `.sc.active` want-land covers *moves*, not *cold starts*. Keep step 3.
+
+---
+
+## Keeping ↔ Interest — the boundary (half its life)
+
+Keeping and Interest meet at every step; here it is in detail.
+
+- **The `%Lango` edge (inward → resolver).** A UI:Waft click is a cursor move: Lies
+  fires the push-what's-focused event — call it **`%Lango`** (today
+  `e_Lang_workon_update`) — a bare "look at this, move the show here" naming NO specific
+  Interest. Keeping *resolves* one for it: focus (step 2) → converge (step 4), where the
+  understanding stage's `Lang_set_interest` brings the foreground Interest + its LE into
+  being. So `%Lango` is the inward signal; `%Interest`/`ActiveInterest` are the outward
+  projection Keeping produces. Most navigation IS this — clicks inside UI:Waft — so in
+  practice Keeping drives Interest far more than the reverse.
+- **The roster edge (the live subscription set).** Lies owns the Waft set; each tick
+  `Lies_waft_roster_pump` pushes the roster when `interest_roster_sig` moves;
+  `interest_reconcile` mints/binds/drops `%Interest` rows. With the kind-table on the
+  Waft (D6), reconcile READS `Lies_waft_kind` instead of re-deriving stance from flags.
+- **The ledger edge (the persisted subscription set).** Step 5 records cursor +
+  accessed_at + minimise to the Keep — the durable twin of the live roster. *Interest
+  roster : Keep ledger :: live : persisted.* (This is the `Interest.md` "Rejoin the
+  stack frame" / "Per-(Interest, Waft) cursor-memory" TODO, Lies-side.)
+
+**Scope — editor only.** This whole apparatus is **`Lies%editor`**. The runner
+(`Lies%runner`) stays lean: it acquires + runs — no Keep, no Interest, no resume. The
+helpers already gate on `Lies_role(w) === 'editor'`; Keeping makes that a *stated
+boundary*, not a scattered guard.
+
+---
+
+## The kind-table — on the Waft, realized by a Funkcion (D6)
+
+The Waft's kind lives **on the Waft** (the subscribable noun); `%Interest` is a
+projection `interest_reconcile` reads, not a parallel truth. A kind is two things:
+
+1. **capability flags** — what the classifiers need (snap / focusable / nibbed /
+   persists), replacing the ~6 scattered raw-flag reads (`interest_stance_of`,
+   `Waft.svelte` is_taker/is_lister, `Lies_waft_save` exemption, `Lies_order_wafts`,
+   the `boring` filters).
+2. **an autovivified Funkcion** — the kind's *behaviour*, and its **pathway in at
+   startup**: when the Waft loads from snap its kind's Funkcion autovivifies and wires
+   it up (the Keep replays its ledger; Cluster opens its network sync). Passive kinds
+   carry none — the editing checkout is their whole life.
+
+*Nibbed* = gets a switcher **nib** (a cap in the InterestStrip you click to
+foreground). Background kinds aren't nibbed — no cap, off-stage.
+
+| pole | kind | snap | focusable | nibbed | persists | autoviv Funkcion (startup pathway) |
+|---|---|---|---|---|---|---|
+| **attention** | Trail | full | ✓ | ✓ | ✓ | — (the checkout is its life) |
+| | Aside | full | ✓ | ✓ | ✓ | — (GC-stale-days, later) |
+| | Sidetrack | — session | ✓ | ✓ | ✗ till graft | — |
+| | Ting | — session | sinks | ✓ always | ✗ | the tap accumulator |
+| | GhostList | line (`dontSnap`) | ✗ light | ✓ | ✓ | the ghost-index builder |
+| **background** | **Keep** | **line — visible!** | ✗ | ✗ | ✓ own home | ledger replay/record (`Lies_keep_boot`) |
+| | **Cluster** | vanish (`boring`) | ✗ | ✗ | ✓ | the network-stack sync |
+| | Upkeep / Board | line / board | ✗ | ✗/special | ~ | the background-work runner |
+
+`boring` stops being a flag smeared onto whatever wants to hide — it's just **one
+kind** (full-vanish background: Cluster, borrowed `EntropyProfile`s). The **Keep is its
+own kind** (visible background — line-shows so you watch it accumulate), so we stop
+overloading `boring` onto it. That is the whole "can we lose `boring`" answer: not
+lose it — stop *misusing* it.
 
 ---
 
@@ -149,19 +223,21 @@ with nothing to land on, and the editor opens blank or on the wrong Waft. The
 You asked what else belongs in this change. Candidates, each marked
 recommend-**IN** / **OUT** / **DECIDE**, for you to check:
 
-1. **IN — the kind-table (INTEREST_KINDS) + Keep visibility.** This *is* "centralise
-   their properties." A declarative `{kind → snap, focusable, nibbed, persists,
-   minimisable, lens}` table that `Lies_waft_kind(waft)` resolves from the terse
-   flag-set, subsuming `interest_stance_of`. Decomposes `%boring`: **`kind:Keep`
-   shows its line in the snap** (so you finally *see* the Keep's `/**`), while a
-   borrowed `EntropyProfile` keeps full vanish. Step 2 (focus filter) and step 5
-   (record) both consult this table — same consolidation, and it fixes the
-   visibility you're staring at right now.
+1. **IN — the kind-table on the Waft (D6).** This *is* "centralise their properties" —
+   full shape in **The kind-table** above (capability flags + an autovivified Funkcion
+   per kind). `Lies_waft_kind(waft)` is the one authority; it subsumes
+   `interest_stance_of` and the raw flag reads, and gives the **Keep its own visible
+   kind** (line-shows) instead of overloading `boring`. **Now free:** `enWaft`'s old
+   mainkey-vocabulary gate is *parked* (commented out — any mainkey encodes;
+   `WAFT_PROTOCOL` only attaches `omit_sc` session-key stripping now, it does NOT gate),
+   so new Waft child kinds snap with zero protocol registration.
 
-2. **IN (rides #1) — `%Aim` leaving `Waft:Cluster`.** Cluster's behaviour comes from
-   `kind:Cluster` in the table, not a bolted `Aim` flag. The flag's departure is just
-   the table absorbing it. *(Caveat: a read-sweep found no live `.sc.Aim` reader — it
-   may already be vestigial. Verify before counting its departure as work.)*
+2. **IN (rides #1) — `Waft:Cluster` as a `boring` background kind.** Cluster is just the
+   full-vanish background kind (`boring`); its behaviour is an autovivified **Funkcion**
+   that syncs network-stack state into itself — a bare functional `req` with Funkcions
+   overlaying for persistence. `%Aim` leaving is the table absorbing it. *(Caveat: the
+   sweep found no live `.sc.Aim` reader — likely vestigial; verify before counting its
+   departure as work.)*
 
 3. **IN (new territory) — per-Waft minimise / scroll.** This is the "does the
    minimise sync to the Keep" you asked: today it's *unbuilt*. Keeping step 5 records
@@ -183,10 +259,24 @@ recommend-**IN** / **OUT** / **DECIDE**, for you to check:
    table and routes the Keep + focus through it; routing the *other three* is a follow-on
    so this change stays reviewable.
 
-**My recommendation for the bundle:** the spine refactor (1–5 of `req:Keeping`) **+
-rideable #1 and #3**. #1 because it's the same "centralise" instinct and it un-blinds
-the Keep; #3 because it's what makes the Keep more than a cursor log. #2 falls out of
-#1 for free. Hold #4/#6 for a follow-on.
+7. **IN (fold-in) — one locator/resolver.** The Keep's cursor-locator (`what:What:<name>`,
+   via `Lies_locate_in_waft`), `%FromWhat` (Interest.md's Aside back-pop,
+   `Waft:<key>/<mainkey>:<value>`), and the Text-Point bridge's `text:<word>` are the
+   SAME primitive — resolve a loose mainkey/value/text locator to a live particle. Unify
+   to one resolver here; the Keep just forked a third copy, and leaving it grows three
+   drifting ones.
+
+8. **DECIDE (shared blocker) — rename-caretaking.** Interest.md names it twice as the
+   blocker behind the tidy in-Trail Aside home AND per-(Interest,Waft) cursor-memory; the
+   Keep inherits it (`of_Waft:<path>` breaks on a Waft rename). Minimal move: commit the
+   Keep to **loose, path-tolerant locators now** (match by value, not path) so it isn't
+   *blocked*; the full caretaking pass is its own later work serving all three.
+
+**My recommendation for the bundle:** the spine refactor + **#1, #3, #7**, plus
+**stored/snapped `kind` + the on-load kind-sweep** (gap 1 — without it the
+autoviv-Funkcion story doesn't actually run). #1 un-blinds the Keep; #3 makes it
+remember; #7 stops the locator forking. #2 falls out of #1. Hold #4/#6 for a follow-on,
+and #8 too — but commit the Keep to loose locators now so #8 never blocks it.
 
 ---
 
@@ -209,16 +299,104 @@ mechanism in one step. Order:
 
 Each phase is independently verifiable; a regression bisects to one phase.
 
+**Each phase ships an integration Book** that drives it headless (the `Story_cli` /
+CredRunner family) — focus-switch, cursor-resume, kind-classification as steps — so the
+spine is *shown off*, not eyeballed. A `LakeKeep`-style Book is the gate, authored
+alongside, not after. (timemachine's hidden complexity is the argument *for* this.)
+
 ---
 
-## Open decisions for you (the check-twice list)
+## Decisions (settled)
 
-- **D1 — NaviCado transport:** drop it (a), or re-express step as a `%want,kind:step`
-  gesture and let only auto-advance die (b)? *(I lean b — cheap, keeps the button.)*
-- **D2 — bundle scope:** spine + #1 + #3 as recommended, or spine-only first and the
-  rideables as a second pass?
-- **D3 — `src` ownership (step 4):** keep Lang's `e_Lang_workon_update` push, or have
-  Keeping self-derive `src` from the cursor? *(I lean keep-the-push for cut #1.)*
-- **D4 — doc home:** this as its own `Keeping_spec.md` (current), or folded into
-  `Cluster_design.md` beside the Keep noun?
-- **D5 — name:** `req:Keeping` confirmed, or another gerund?
+- **D1 — transport:** DROP the whole thing (play/pause/step). Time/sequencing → a later
+  *director* layer, away from the editing code (see *What drops*).
+- **D2 — scope:** all at once — spine + kind-table (#1) + minimise (#3).
+- **D3 — the `%Lango` push (was step-4 `src`):** KEEP Lang's push. It's the bare
+  "look-at-this, move the show here" signal — mostly fired from Lies on a UI:Waft click —
+  naming no Interest; Keeping resolves one. **Introduce the term `%Lango`** for this
+  push-what's-focused event (today `e_Lang_workon_update`), gently.
+- **D4 — doc home:** standalone `Keeping_spec.md`; borders `Cluster_design.md`.
+- **D5 — name:** `req:Keeping` confirmed.
+- **D6 — kind-table home:** on the **Waft**, realized as `{capability flags + an
+  autovivified Funkcion}` (the Funkcion is the kind's startup pathway). `%Interest` is a
+  projection. `boring` becomes one kind (Cluster); the Keep gets its own visible kind.
+  (see *The kind-table*).
+- **D7 — name the bridge (settled):** split along the inward/outward (ownership) axis,
+  and the **Curse family names the cursor's two faces**:
+  - **`LiesKeep.svelte`** (new) — the Lies-side authority: `req:Keeping` driver, focus,
+    the Keep ledger (the `Lies_keep_*` helpers migrate here from `Lies.svelte`). Owns
+    *Lies* particles (Waft, Keep).
+  - **`LangHold.svelte`** — `LiesHold` renamed. *Lies code that holds Lang's particles*:
+    `Lang_set_interest`, `req_understanding`, the per-Interest LE arming, the
+    ingredients/instrumentation stages. `LiesKeep`'s converge step calls into it.
+  - **`LangCurse.svelte`** — `Interest.svelte` renamed. The Lang-side attention/cursor:
+    the `interest_*` reducers, the roster, LE-bind, the strip projection — twin of
+    **`LiesCurse.svelte`** (the substrate cursor). `LiesCurse` = where you are in the
+    document (Spotlight); `LangCurse` = how the view shows it (Interest). (`LiesEnd`
+    LE-mechanics fold into `LangHold` or stay.)
+  - Beats "LiesHold + LiesEnd" because the cut follows ownership, not chopping. **Header
+    comments now; the renames land when we cut Keeping** — one mechanical move, once.
+
+---
+
+## What stays Lies — and dissolving Spotlight (a later cut)
+
+With Interest taking attention, what's left on Lies? Not a hollowing — a *resolving*.
+**Lies is the substrate**:
+
+- the **Waft document model** (Waft/What/Doc/Point — stays in `Lies.svelte`) and the
+  **Waft helpers** (open/close/spawn/save/walk/`Waft_src_doc`) — the nouns + lifecycle;
+- **storage** — `req:Store` (Wafts, gen, docks ↔ disk);
+- **the compile/run machine** — `req:Cortex`/`Codebit`/`Rundown`/`BlatDo`
+  (`LiesCortex`/`LiesRun`);
+- **the Keep** (`LiesKeep`) — persisted attention;
+- **the runner role** — acquire + run (Creduler/Peeroleum), lean, no attention.
+
+What *migrates* to Lang is exactly one thing: the **cursor/attention projection**
+(foreground, live position, the convergence driver) — the `LangHold` + `LangCurse`
+carve. Interest takes *attention*, never the substrate. Final cleave: **Lies = nouns +
+lifecycle (document, storage, compile/run, persistence, runner); Lang = attention + view.**
+
+**Dissolving `Spotlight` — yes, but later, and anchored right.** `%examining/Spotlight`
+is today a *fifth* attention claimant (a runtime cursor ref). It can go — but the trap is
+moving its truth onto Interest (Lang), which inverts noun/projection (the *view* owning
+the cursor; close the view, lose your place). The right anchor: **the cursor's durable
+truth is the Keep ledger** (Lies, persisted — its `%Cursor` head IS "where I am"). Then
+`Spotlight` (runtime ref) and Interest's `in_Doc`/`in_Point` (view projection) are both
+*ephemeral projections* of the Keep head — and `Spotlight` degrades to a derived live-ref
+cache, or vanishes (resolve address→ref on demand, the `Lies_locate_in_waft` path the
+Keep resume already uses). The document still owns the cursor (via the Keep); the view
+shows it.
+
+**Scope:** a SEPARATE, deeper cut than Keeping — it touches every `Spotlight` reader
+(`Lies_focus_waft`, the want-land seam, havoc's `engaged_what`). Do NOT fold it into the
+Keeping build. Sketch now; cut after Keeping is proven and the Keep is the demonstrated
+cursor-truth. (Phase 5+.)
+
+---
+
+## Where it could still break — second-pass gaps
+
+Found on a critical re-read. (1) + fold-in #7 are real added scope; (2)–(5) are
+corrections already folded into the shape above.
+
+1. **The background-kind Funkcion has no carrier — the real gap.** Keeping is
+   *attention-only*; a background kind (Cluster) is *never focused*, so Keeping never
+   touches it — and there's no precedent (the Ting's behaviour is re-spawned each
+   session, never loaded from snap). So **`kind` must be a stored, snapped sc field**
+   (known at load, before any focus), and a **w-level on-load sweep** must read
+   `waft.sc.kind` and ensure its Funkcion — generalize `Lies_keep_boot` (exactly this,
+   hand-written for one kind) into a per-kind boot driver. That sweep is the autoviv
+   "pathway in," and it lives *beside* Keeping, not inside it.
+2. **Boot is staged, not one-shot** (fixed in step 1): the Keep loads async, so boot is a
+   heartbeat that finishes when the resume lands — a maz:9 one-shot finishes before the
+   Keep arrives.
+3. **Keeping spans maz 9→1**, not flat: acquire-gate (maz:9, before Store) + converge
+   (~maz:1, after Store's reads). One *owner*, maz-leveled children — the 5-step walk is
+   the logic, not the maz order.
+4. **Recording is event, not poll:** the want-land records into the Keep
+   (`Lies_resolve_wants → Lies_keep_note_cursor`), exactly when the cursor lands;
+   Keeping's tick only reads (step 5 reworded).
+5. **Non-goal — in-flight edits don't resume.** The working clone is re-pulled from
+   origin on reload; the Keep restores cursor *position*, not an unsaved edit. Stated, so
+   it's a decision, not a silent gap.

@@ -80,6 +80,16 @@ export function attachRelay(
 	//    Entries are short-lived (cleared on the terminal done/error ack, the sender's close, or
 	//     just superseded), so the map stays tiny.
 	const ackBack = new Map<string, WebSocket>()
+	// Multicast channels (spec §18).  A `to` starting with `@` is a TOPIC, not a peer addr: a
+	//  publisher uploads ONE frame and the relay fans it out to every subscriber — the whole point being
+	//   that a phone relaying to 100 listeners uploads once, not 100 addressed copies.  SUBSCRIBE reuses the
+	//    existing `locals` machinery: bind(@channel, ws) adds the socket to the channel's Set, and deliverLocal
+	//     (already a fan-out over that Set) does the multiplication with NO routing change.  CLAIM reserves the
+	//      @name — first-come now (a community/crypto-signed gate is the future); ownership is recorded but
+	//       publishing is NOT yet enforced against it (trust-everything v1, spec §5).  One relay instance for
+	//        now, so a topic delivers LOCAL-only; cross-relay topic fan-out (forward to the bridge too) is the
+	//         two-instance follow-up — penciled, not built.
+	const claims = new Map<string, WebSocket>() // @channel → the socket that claimed the name
 	let role: Role | null = null
 	let peerLink: WebSocket | null = null // the single relay↔relay socket (either end)
 	let selfHost = '' // our own host:port, learned from the first upgrade's Host header
@@ -264,6 +274,41 @@ export function attachRelay(
 			return
 		}
 		if (msg.control === 'gen_write') { void handleGenWrite(ws, msg); return }
+		// claim (publisher → relay): reserve an @channel.  First-come: granted if unclaimed or already this
+		//  socket's; a live foreign owner refuses (claim_error).  Recorded for the future crypto gate; publishing
+		//   is not enforced against it yet.  Tracked on the socket so its close releases the name.
+		if (msg.control === 'claim' && typeof msg.channel === 'string') {
+			const ch = msg.channel
+			const cur = claims.get(ch)
+			if (cur && cur !== ws && cur.readyState === WebSocket.OPEN) {
+				try { ws.send(JSON.stringify({ control: 'claim_error', channel: ch, reason: 'taken' })) } catch {}
+				relayLog(`✗ claim ${ch} REFUSED — already owned`)
+			} else {
+				claims.set(ch, ws)
+				;((ws as any).owns ??= new Set<string>()).add(ch)
+				try { ws.send(JSON.stringify({ control: 'claimed', channel: ch })) } catch {}
+				relayLog(`🎙 claim ${ch}`)
+			}
+			return
+		}
+		// subscribe (listener → relay): join the @channel's fan-out set.  bind() into `locals` IS the
+		//  subscription — deliverLocal then reaches us on every publish, no routing change.  Tracked on the
+		//   socket so close unbinds every channel, not just meta.addr.
+		if (msg.control === 'subscribe' && typeof msg.channel === 'string') {
+			const ch = msg.channel
+			bind(ch, ws)
+			;((ws as any).subs ??= new Set<string>()).add(ch)
+			try { ws.send(JSON.stringify({ control: 'subscribed', channel: ch })) } catch {}
+			relayLog(`📻 subscribe ${ch} (subs: ${locals.get(ch)?.size ?? 0})`)
+			return
+		}
+		if (msg.control === 'unsubscribe' && typeof msg.channel === 'string') {
+			const ch = msg.channel
+			unbind(ch, ws)
+			;(ws as any).subs?.delete(ch)
+			relayLog(`📻 unsubscribe ${ch} (subs: ${locals.get(ch)?.size ?? 0})`)
+			return
+		}
 		// ghost_compile_ack (editor → CLI): the verdict-reply for a ghost_compile.  Route it back to
 		//  the socket that asked (by corr), since the CLI has no addr to deliverLocal to.  started
 		//   narrates; done/error are terminal, so the corr mapping is spent and dropped.
@@ -407,6 +452,10 @@ export function attachRelay(
 		const drop = () => {
 			if (meta.addr) unbind(meta.addr, ws)
 			for (const [corr, s] of ackBack) if (s === ws) ackBack.delete(corr)   // asker hung up — forget its corr
+			const subs = (ws as any).subs as Set<string> | undefined        // release every @channel this socket subscribed to
+			if (subs) for (const ch of subs) unbind(ch, ws)
+			const owns = (ws as any).owns as Set<string> | undefined         // and free any @name it claimed, so it can be re-claimed
+			if (owns) for (const ch of owns) if (claims.get(ch) === ws) claims.delete(ch)
 		}
 		ws.on('close', (code: number) => {
 			drop()

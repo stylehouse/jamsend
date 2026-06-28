@@ -1159,10 +1159,22 @@ export class House extends StorableHousing {
         let method: string
         if (targeting === 2) {
             const elvis_type = e!.sc.elvis as string
+            // bootstrapping: a worker only stamps {o_elvis:type} the FIRST time its
+            //  method runs and reaches o_elvis_req — so a typed elvis arriving before
+            //   that first run finds no marker.  With no dedicated e_<type> handler it
+            //    would route to a non-existent method and be SILENTLY DROPPED (the read
+            //     stuck at %req_sent forever, ttlilt times out, "⏳ loading Waft…" never
+            //      clears — the ~20%-on-fresh-load Wormhole rw_op loss).  When there is
+            //       no e_<type> handler, prefer the w-method: it is the only thing that
+            //        can drain this elvis (o_elvis_req sees w.c.e IS it) AND running it
+            //         mints the marker for next time.  (e_Lies_subscribe_waft_roster's
+            //          ad-hoc e_ handler was the one-off dodge for this same hazard.)
+            const has_e_handler = typeof (this as any)['e_' + elvis_type] === 'function'
             let handled_by_w_method =
                 elvis_type == 'think' // asking for the main method
                     // e type is one it opens inside the main method
                     || w.oa({ o_elvis: elvis_type })
+                    || !has_e_handler   // nothing else can take it — give the worker the chance
             method =
                 handled_by_w_method ? w.sc.w
                     : 'e_'+elvis_type

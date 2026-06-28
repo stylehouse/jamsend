@@ -1,12 +1,12 @@
 Snap:H
   H:MusuStaple,Run
     A:MusuStaple
-      self,round=9	{"mung":["age"]}
+      self,round=8	{"mung":["age"]}
       w:MusuStaple
-        self,round=9	{"mung":["age"]}
+        self,round=8	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
-        Caster,name:alpha,total=12,next=7,live
+        Caster,name:alpha,total=12,next=7,req=2,live,ok
           req:cast,eternal,ok
         Terminal,name:omega
           inbox
@@ -17,6 +17,7 @@ Snap:H
             Chunk,seq=4
             Chunk,seq=5
             Chunk,seq=6
+        req:witness,eternal,ok
         witnessed:step_2
         reached:step_3
         witnessed:filled

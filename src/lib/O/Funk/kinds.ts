@@ -29,6 +29,7 @@ import Storying, { storying_run } from "$lib/O/Funk/Storying.svelte"
 import Ballistics from "$lib/O/Funk/Ballistics.svelte"
 import StoryTimes, { storytimes_run } from "$lib/O/Funk/StoryTimes.svelte"
 import CreduFunk, { credufunk_run } from "$lib/O/Funk/CreduFunk.svelte"
+import Shelver, { shelver_run } from "$lib/O/Funk/Shelver.svelte"
 import IdHatch from "$lib/O/ui/IdHatch.svelte"
 import Runner, { runner_run } from "$lib/O/Funk/Runner.svelte"
 import Relay, { relay_run } from "$lib/O/Funk/Relay.svelte"
@@ -50,6 +51,7 @@ export const FUNK_KINDS: Record<string, FunkKind> = {
     Ballistics: { component: Ballistics },                      // action: a struck havoc drum-pad
     StoryTimes: { run: storytimes_run, component: StoryTimes }, // station: a struck run-all sweep, driven by a pumped tick
     CreduFunk:  { run: credufunk_run,  component: CreduFunk },  // container: holds Storying cells + journals their Credulates (coherence)
+    Shelver:    { run: shelver_run,    component: Shelver },    // librarian: walks wormhole/Story, auto-files new Books onto its board by prefix
     IdHatch:    { comp_Panel: IdHatch },                        // face-only: the cluster-identity hatch, a global Lens:Panel
     Runner:     { run: runner_run, comp_Brink: Runner },        // %Aim watcher: the peer ping (%channel_peer), hoisted as Lens:Brink
     Relay:      { run: relay_run,  comp_Brink: Relay },         // %Aim watcher: the relay ping (channel carrier), hoisted as Lens:Brink

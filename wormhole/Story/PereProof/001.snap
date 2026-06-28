@@ -1,0 +1,7 @@
+Snap:H
+  H:PereProof,Run
+    A:PereProof
+      self,round=32	{"mung":["age"]}
+      w:PereProof
+        self,round=32	{"mung":["age"]}
+        req:wrangle,eternal,ok

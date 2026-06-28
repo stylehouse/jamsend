@@ -30,7 +30,7 @@ Pieces:
 - `O/ui/Lens.svelte` — the dock: `position:fixed; bottom:0; column-reverse`, ordered by `altitude`
   (z = altitude×100).  Reads the held Lenses off **`top_House().ave.{Lenses:1}`** (off-snap, never
    pumped: no `c.up` in the A/w spine, ave is outside the snap tree).  Mounted once in `Otro.svelte`.
-- `O/LiesWaft.svelte` — `Lies_lens_bag()/suggest(lensKind, of_Funkcion, sc, funk?)/dismiss/toggle`.
+- `O/LiesFunk.svelte` (was `LiesWaft`, renamed 2026-06-25) — `Lies_lens_bag()/suggest(lensKind, of_Funkcion, sc, funk?)/dismiss/toggle`.
   Identity is `(LensKind, of_Funkcion)`; re-suggesting is an oai-merge + bump = the change-notice.
 
 **Tenant 1 — IdHatch** (`comp_Panel`, `altitude:88`, fullscreen via its own FaceSucker).  The

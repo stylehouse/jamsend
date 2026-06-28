@@ -640,6 +640,67 @@ Make opening a Waft auto-compile its `.g` Docs, so the explicit `Dock_open` loop
 disappears — the Net/Easy overlay's Docs become the manifest directly. (Verify it's still meaningful under the
 Creduler acquire, which already loads a `CREDULER_GHOSTS` manifest.)
 
+### M — Multicast / topics over a claimed `@channel`  `[x]`  built + :9091-VERIFIED; lives in PereProof (step 29 after the split)
+**Settled design is now spec §18.** The product motivation (the human, this session): a high-bandwidth
+ publisher relaying to ~100 listeners must upload **once** to a topic, not 100 addressed copies, and may not
+  even hold all the addresses. So `to` gets a special case — a `to` starting with **`@`** is a topic, not a
+   peer `pub` — and the relay fans the one upload out to every subscriber. The handover seam: a 1:1 Pier hands
+    over a **stream pointer** (`Peeroleum_offer_stream` → a `stream_offer` frame), the peer subscribes, and the
+     bulk goes multicast. **"Someone has to come and claim that `@name`"** — a claim reserves the name (first-
+      come now, a community/crypto gate later); enforcement is soft (trust-everything v1).
+- **BUILT (4 files, all FlockCompile-clean + LocalGen-regenerated gen):**
+  - `Peeroleum.g` — `Peeroleum_claim` / `_subscribe` / `_publish` (fire-and-forget: NO outbox emit, NO ack,
+     per-**channel** seq) / `_offer_stream`; the `@`-branch atop `Peeroleum_deliver` (scans subscribed Peerings,
+      no inbox/ack); the mock carrier `send` fans a `@`-frame into the in-process relay.
+  - `Tribunal.g` — `Socket_real` gains `claim`/`subscribe`/`unsubscribe` port methods (relay control frames).
+  - `relay.ts` — `claims` map + `handleControl` claim/subscribe/unsubscribe; **subscribe reuses `bind`+
+     `deliverLocal`** (already a fan-out over the addr's Set), so routing is UNCHANGED; `drop()` releases a
+      socket's subs + claims on close.
+  - `Peregrination.g` — `Lake_multicast_arm` (step 53): Pab claims `@radio`, Sib subscribes via the
+     `stream_offer` HANDOVER, Sob/Sub subscribe directly, Pab publishes ONE frame → all three land `%mcast`
+      exactly once. `Lake_witness` stamps `%witnessed:multicast`.
+- **:9091-VERIFIED (the human ran it live):** the browser pile showed `pab/owns:@radio`, `sib2|sob|sub` each
+   with `%mcast` + `%subscribed:@radio`, sib2's `stream_offer` ran the full inbox lifecycle (`req:unemit…done…
+    finished` → culled to `%recent`), and `witnessed:multicast` under the world. So the LOGIC + spine fan-out +
+     the inbox round-trip are confirmed in a real browser (the in-process mock hub; a real `/relay` socket
+      fan-out is still Tier 3 — see below).
+- **NOW LIVES IN PereProof (the split — see "Two parallel Books" below):** multicast was step 53 of the old
+   54-step PereStaple; it moved to **PereProof step 29** (`Lake_multicast_arm`, witnessed by `Lake_proof_witness`),
+    recorded in `wormhole/Story/PereProof/`. Behaviour identical — only the Book + step number changed.
+- **STANDING ASK:** a real-`/relay` two-socket fan-out test (Tier 3) — the headless mock + the :9091 in-process
+   hub both prove the LOGIC + spine, but only real sockets prove the relay's `bind`/`deliverLocal` channel
+    fan-out end-to-end. **Open seams (spec §18):** the
+     crypto-signed claim gate (the community thing), cross-relay topic fan-out (one instance for now — a topic
+      is LOCAL-only, the bridge isn't forwarded), a per-channel inseq + NACK for a lossy multicast carrier, and
+       re-subscribe-on-reconnect. **First real customer = the music app** (`Music_todo.md` slice-3 radiostock
+        fan-out is exactly one-source→many-listeners — wire `Radiola` publish/subscribe onto these calls).
+
+### Two parallel Books — PereStaple (liveness) | PereProof (correctness)  `[x]`  split this session
+PereStaple had grown to 54 linear steps; the human asked to split it so the two halves run in PARALLEL and
+ reach "all green" in roughly half the wall-clock (target ~30 steps each). The cut follows the natural seam the
+  handover already named:
+- **PereStaple — the LIVENESS arc (steps 2–22).** Spine + transport trial + binary + heal/stall/silence/redial
+   — "does the floor carry, heal, and detect death." Dispatch `Lake_drive`, witness `Lake_witness`. Fixtures
+    `001–022.snap` are UNCHANGED by the split (the proof peers only ever appeared at step 25+, so 2–22 snaps are
+     byte-identical) — kept, no re-record. CredRunner: **21/22** (the lone miss is the known step-3 quiescence
+      residual). The old `023–054.snap` are DELETED (those proofs moved to PereProof, renumbered).
+- **PereProof — the CORRECTNESS arc (steps 2–30).** Corruption, dedup, reorder, reset, pre-Ud, dedup-cull, the
+   combinatory braids (storm / corrupt-stream / rededup / storm-redial), and multicast — "does the floor stay
+    correct under adversarial input." Dispatch `Lake_proof_drive`, witness `Lake_proof_witness`. Fixtures
+     `wormhole/Story/PereProof/001–030.snap` recorded headless (it has NO handshake, so no step-3 residual —
+      fully deterministic). CredRunner: **30/30**, all 12 `witnessed:*` fire.
+- **Mechanics + gotchas.** Both Books live in the SAME `Peregrination.g` (already a CREDULER_GHOST — no manifest
+   change); the `Lake_*` ARM methods are SHARED, only the dispatch + witness split. The world MUST be named
+    `w:PereProof` (the per-beat handler `PereProof(A,w)` is dispatched BY THE W-NAME — the same footgun the
+     `w:PereStaple` rename hit). `Lake_order` was generalised to float `w.sc.w`'s actor (not a hardcoded
+      `PereStaple`). **The one trap the split sprang:** `Peeroleum_arm_whittle(w)` (the retx/cull/liveness
+       sweep) is armed by PereStaple's `Lake_sides_up` (step 2); PereProof has no sides-up, so dedup-cull (needs
+        the cull) and storm (needs retransmit) silently never witnessed until `Lake_proof_drive` arms it at its
+         own step 2. Registered on the Credence board via `wormhole/Ghost/Net/Easy/toc.snap` (`Storying,of_Book:
+          PereProof` + `Point,method:Run_A_PereProof`). Run headless: `BOOK=PereProof … CredRunner.spec.ts`.
+- **Next split, when wanted:** multicast is the natural third Book once `pub[]` + `@handle` addressing grow it
+   (the human floated `to:pub[]` as the sender-side small-fan-out twin of `@channel`); for now it rides PereProof.
+
 ---
 
 ## Forward look — the cabinetry+party over the floor: Garden.g + Tyrant.g
@@ -695,12 +756,15 @@ ghosts, Garden.g + Tyrant.g.
        locked gate; surprises [1] (stale fixture) + [3] (handshake-quiescence timing).
 - `wormhole/Ghost/Net/Easy/toc.snap` — annotation overlay / compile manifest, curated to landmarks (one front-door
    Point per theme, not every method).
-- `wormhole/Story/PereStaple/toc.snap` — the Story that drives the Book (step lines run through `step=52`):
-   2–7 spine/trial/binary, 8 heal, 11 stall, 16 silence, 19 redial; the **isolated floor proofs** 25 corruption,
-    27 dedup, 29/30 reorder, 32 reset, 34 pre-Ud, 36/38 dedup-after-cull; the **combinatory braids** 40 storm
-     (drop+dup+gap on one stream), 44 corrupt-stream, 46/48 rededup, 50 storm_redial (re-dial mid-gap — found+fixed
-      the reset/buffered bug). 21 `%witnessed:*` stamps fire headless; locked gate 2–15 byte-identical (surprises
-       [1,3] = stale-001 + handshake-quiescence residuals).
+- `wormhole/Story/PereStaple/toc.snap` — drives the **LIVENESS** Book (steps 2–22 after the split): 2–7
+   spine/trial/binary, 8 heal, 11 stall, 16 silence, 19 redial. Fixtures `001–022.snap`; CredRunner 21/22 (step-3
+    quiescence residual the lone miss). See "Two parallel Books" under heading M.
+- `wormhole/Story/PereProof/toc.snap` — drives the **CORRECTNESS** Book (steps 2–30, split off PereStaple): 2
+   corruption, 4 dedup, 6/7 reorder, 9 reset, 11 pre-Ud, 13/15 dedup-after-cull; the **combinatory braids** 17
+    storm (drop+dup+gap), 21 corrupt-stream, 23/25 rededup, 27 storm_redial (the re-dial-mid-gap braid that found
+     the reset/buffered bug), and 29 multicast (claim + offer-handover + 3 subscribers + 1 publish → fan-out).
+      Fixtures `001–030.snap` recorded headless; CredRunner **30/30**, all 12 `%witnessed:*` fire (no handshake →
+       fully deterministic, no step-3 residual).
 - `src/lib/O/spec/Peeroleum_spec.md` — the pinned design (the floor). This file — the living progress.
 - `src/lib/O/spec/Covenant_design.md` — the cabinetry+party design sketch (Garden.g/Tyrant.g).
 
@@ -732,6 +796,20 @@ The proofs grew in two layers, deliberately in this order:
 - corruption DURING a stall/redial (does a bad frame mid-re-dial fault correctly, or get lost in the reset?);
 - silence + retransmit racing (an inbound-silent peer whose outbox is still retransmitting — which latch wins?);
 - multi-peer crossfire (3+ peers on `w:PereStaple`, one lossy, one corrupt — the swarm-route by identity under load).
+
+> **PENCILED WORRY (the human, this session — look at next): the p2p layer is tested happy-path +
+>  binary-failure only, and the headless harness gives FALSE CONFIDENCE on exactly where p2p fails.**
+>  PereStaple is 50+ steps but **linear**: no peer restart, no seqinx rollover, no cursor-persistence-across-
+>   reload (the exact [[inseq-reload-baseline]] bug), no mid-stream carrier death, no realistic loss/jitter
+>    (the mocks are all-or-nothing blackhole/faulty), no asymmetric (one-way-down) link. ttlilt boundary
+>     races are documented (the MundaneStation lesson) but **not regression-tested** — and node's `setTimeout`
+>      is more reliable than the browser's, so the headless harness **structurally can't reproduce the timing**
+>       that bites on :9091. The headless runners are excellent for LOGIC; they give false confidence on
+>        **timing and persistence**, which is exactly where p2p fails. Two distinct gaps to close: (a) widen the
+>         deterministic Story with the missing *logical* scenarios (restart, rollover, asymmetric, mid-stream
+>          death, graded loss — these the mock CAN model); (b) the *timing/persistence* class needs the
+>           **two-origin real-transport harness (Tier 3)** + a reload/persistence Story — the mock can't, by
+>            construction. Don't let a green PereStaple read as "p2p is proven."
 
 **The real-application connect (the "realer things to test it with" — bigger, its own arc):**
 - **runner ↔ editor v2 channel** as a Story: the editor emits `dock_push` (the gen `.go` bytes) and `run` over the

@@ -612,6 +612,9 @@ await M.eatfunc({
         //    state → the just|now-running verdict (Cred_run_outcome) + the Storyrun phase/n/total
         //    steps → per-Step {n,ok,caveat,dige}
         //    snap  → one Step's got_snap (the live world serialisation — the "examine the writings" read)
+        //    rungos→ the held runs, each addressable by uid (the runner "hangs in there" after a run)
+        //   Any READ op (steps/snap/snaps/diff/trace) takes an optional ask.uid → served from that run's
+        //    FROZEN pins instead of the live This; absent → the live/active run.  `run` hands back the uid.
         //   Reply is a raw {control:'runner_ack',corr} frame down the relay socket (mirrors
         //    Lies_ghost_compile_ack); the relay routes it back to the CLI by corr.  v1 unsigned/trust-
         //     everything like gen_write-when-unconfigured — a run executes already-compiled gen, dev-only
@@ -619,28 +622,41 @@ await M.eatfunc({
         async Lies_runner_ask_recv(w: TheC, frame: any): Promise<boolean> {
             const H    = this as House
             const corr = (frame?.corr ?? frame?.header?.corr) as string | undefined
-            const ask  = (frame?.ask ?? {}) as { op?: string, book?: string, n?: number, ns?: number[], on?: boolean }
+            const ask  = (frame?.ask ?? {}) as { op?: string, book?: string, n?: number, ns?: number[], on?: boolean, uid?: string }
             const op   = ask.op
             if (!corr || !op) return false
             let ok = true
             let result: any = {}
             try {
                 if (op === 'ping') {
-                    const sr = w.o({ Storyrun: 1 })[0] as TheC | undefined
+                    const sr = H.Lies_rungo_record(w)
                     result = {
                         role:    H.Lies_is_runner(w) ? 'runner' : 'editor',
                         channel: H.Lies_channel_live(w) ? 'up' : 'down',
-                        running: sr ? { book: sr.sc.Storyrun, phase: sr.sc.phase } : null,
+                        running: sr ? { book: sr.sc.Storyrun, phase: sr.sc.phase, uid: sr.sc.uid } : null,
                     }
                 } else if (op === 'run') {
+                    // drive the Book, then hand back the fresh run's uid — the addressable handle the CLI
+                    //  keeps so it can `@uid` this run's snap/diff/trace after it lands (the run is async;
+                    //   the record is already open via Lies_runner_begin, so its uid is readable now).
                     if (!ask.book) { ok = false; result = { error: 'run needs a Book' } }
-                    else { H.Lies_become_book_drive(w, ask.book); result = { accepted: true, book: ask.book } }
+                    else { H.Lies_become_book_drive(w, ask.book); result = { accepted: true, book: ask.book, uid: H.Lies_rungo_record(w)?.sc.uid ?? null } }
                 } else if (op === 'state') {
-                    const sr = w.o({ Storyrun: 1 })[0] as TheC | undefined
+                    const sr = H.Lies_rungo_record(w)
                     result = {
                         outcome: (H as any).Cred_run_outcome() ?? null,
-                        run: sr ? { book: sr.sc.Storyrun, phase: sr.sc.phase, n: sr.sc.n ?? null, total: sr.sc.total ?? null, done: sr.sc.done ?? null } : null,
+                        run: sr ? { book: sr.sc.Storyrun, phase: sr.sc.phase, uid: sr.sc.uid, n: sr.sc.n ?? null, total: sr.sc.total ?? null, done: sr.sc.done ?? null } : null,
                     }
+                } else if (op === 'rungos') {
+                    // the runs the runner is "hanging in there" with — each addressable by uid.  pinned =
+                    //  how many step snaps are frozen on it (0 = still live / not yet landed); active marks
+                    //   the one the no-uid reads follow.
+                    result = { rungos: (w.o({ Storyrun: 1 }) as TheC[]).map(s => ({
+                        uid: s.sc.uid, book: s.sc.Storyrun, phase: s.sc.phase,
+                        n: s.sc.n ?? null, total: s.sc.total ?? null, done: s.sc.done ?? null,
+                        pinned: s.c.pins ? Object.keys(s.c.pins).length : 0,
+                        active: s.sc.uid === w.c.active_rungo ? 1 : 0,
+                    })) }
                 } else if (op === 'retain') {
                     // keep middle steps' got_snap inspectable on a churning runner: set the Story world's
                     //  keep_snaps, which suppresses the 5-step got_snap trim (Story.svelte:2008).  Rides
@@ -652,48 +668,53 @@ await M.eatfunc({
                         if (on) stW.c.keep_snaps = 1; else delete stW.c.keep_snaps
                         result = { retain: on ? 1 : 0 }
                     }
-                } else if (op === 'trace') {
-                    // the step's "why", not just OK|NOT-OK: the beliefs-cycle trace (step.sc.Run_trace,
-                    //  drained at Story.svelte:1997) carries the quiescent label (causal vs timeout — what
-                    //   held the step) + the cycle walk.  Survives the got_snap trim, so always readable.
-                    const steps = (H.Lies_runner_this()?.o({ Step: 1 }) ?? []) as TheC[]
-                    const s = steps.find(st => Number(st.sc.Step) === Number(ask.n))
-                    if (!s) { ok = false; result = { error: `no Step ${ask.n}`, have: steps.map(st => st.sc.Step) } }
-                    else {
-                        const tr = Array.isArray(s.sc.Run_trace) ? s.sc.Run_trace : null
-                        result = { n: s.sc.Step, ok: s.sc.ok ? 1 : 0, caveat: s.sc.caveat ? 1 : 0, dige: s.sc.dige, cycles: tr?.length ?? 0, trace: tr }
+                } else if (op === 'steps' || op === 'snap' || op === 'diff' || op === 'snaps' || op === 'trace') {
+                    // the READ ops, served from ONE uniform per-step view: ask.uid → the record's frozen
+                    //  pins (a past run that's "hanging in there"); no uid → the live This.  So every read
+                    //   below is uid-agnostic — point it at a held run or the running one with the same code.
+                    const rec   = H.Lies_rungo_record(w, ask.uid)
+                    const book  = rec?.sc.Storyrun ?? null
+                    const uid   = rec?.sc.uid ?? null
+                    const steps = H.Lies_rungo_steps(w, ask)
+                    if (ask.uid && !steps.length) {
+                        // a uid that matches a record but has no pins = the run is still going (pins land at
+                        //  verdict); a uid that matches nothing = a typo / GC'd run.  Say which.
+                        ok = false
+                        result = rec
+                            ? { error: `run "${ask.uid}" (${rec.sc.Storyrun}) is ${rec.sc.phase} — not pinned yet; drop @uid for the live run, or wait for it to land` }
+                            : { error: `no held run "${ask.uid}" (try op:rungos)` }
                     }
-                } else if (op === 'steps' || op === 'snap' || op === 'diff' || op === 'snaps') {
-                    const thisC = H.Lies_runner_this()
-                    const steps = (thisC?.o({ Step: 1 }) ?? []) as TheC[]
-                    if (op === 'steps') {
+                    else if (op === 'steps') {
                         result = {
-                            steps: steps.map(s => ({ n: s.sc.Step, ok: s.sc.ok ? 1 : 0, caveat: s.sc.caveat ? 1 : 0, dige: s.sc.dige })),
-                            done: steps.length, ok: steps.length > 0 && steps.every(s => !!s.sc.ok),
+                            book, uid,
+                            steps: steps.map(s => ({ n: s.n, ok: s.ok, caveat: s.caveat, dige: s.dige })),
+                            done: steps.length, ok: steps.length > 0 && steps.every(s => !!s.ok),
                         }
                     } else if (op === 'snaps') {
-                        // atomic multi-step read: every requested got_snap from ONE pass over This, so a
-                        //  temporal pair (diff n prev) is coherent even while the runner churns between calls.
-                        const sr = w.o({ Storyrun: 1 })[0] as TheC | undefined
+                        // atomic multi-step read: every requested got_snap from ONE view, so a temporal pair
+                        //  (diff n prev) is coherent even while the runner churns between calls.  On a uid the
+                        //   pins are already frozen, so the pair is doubly stable.
                         const snaps: Record<number, any> = {}
                         for (const n of (Array.isArray(ask.ns) ? ask.ns : []).map(Number)) {
-                            const s = steps.find(st => Number(st.sc.Step) === n)
-                            snaps[n] = s ? { n, ok: s.sc.ok ? 1 : 0, dige: s.sc.dige, got_snap: s.sc.got_snap ?? null } : null
+                            const s = steps.find(st => st.n === n)
+                            snaps[n] = s ? { n, ok: s.ok, dige: s.dige, got_snap: s.got_snap } : null
                         }
-                        result = { book: sr?.sc.Storyrun ?? null, snaps }
+                        result = { book, uid, snaps }
                     } else {
-                        const s = steps.find(st => Number(st.sc.Step) === Number(ask.n))
-                        if (!s) { ok = false; result = { error: `no Step ${ask.n}`, have: steps.map(st => st.sc.Step) } }
-                        else if (op === 'snap') result = { n: s.sc.Step, ok: s.sc.ok ? 1 : 0, dige: s.sc.dige, got_snap: s.sc.got_snap ?? null }
-                        else {
-                            // diff: got + the diff-panel's expected IF already loaded (exp_snap is fetched
-                            //  lazily for the UI — Story.svelte:1470). When absent the CLI fills it from the
-                            //   shared-disk fixture (wormhole/Story/<book>/<NNN>.snap); `book` tells it which.
-                            const sr = w.o({ Storyrun: 1 })[0] as TheC | undefined
-                            result = {
-                                n: s.sc.Step, ok: s.sc.ok ? 1 : 0, dige: s.sc.dige, book: sr?.sc.Storyrun ?? null,
-                                got_snap: s.sc.got_snap ?? null, exp_snap: s.sc.exp_snap ?? null,
-                            }
+                        const s = steps.find(st => st.n === Number(ask.n))
+                        if (!s) { ok = false; result = { error: `no Step ${ask.n}`, have: steps.map(st => st.n) } }
+                        else if (op === 'snap') result = { n: s.n, ok: s.ok, dige: s.dige, got_snap: s.got_snap }
+                        else if (op === 'trace') {
+                            // the step's "why", not just OK|NOT-OK: the beliefs-cycle trace carries the
+                            //  quiescent label (causal vs timeout — what held the step) + the cycle walk.
+                            result = { n: s.n, ok: s.ok, caveat: s.caveat, dige: s.dige, cycles: s.trace?.length ?? 0, trace: s.trace }
+                        } else {
+                            // diff: got + the expected, BOTH over the wire (1c).  exp_snap is the per-step
+                            //  view's value = Step.sc.exp_snap (UI lazy load) ?? w:Story.c.exp_snaps[n] (the
+                            //   check-mode preload, every step in memory).  So a diskless CLI needs no
+                            //    `wormhole/` fixture; the CLI still falls back to disk only if exp is null
+                            //     (a non-check run, or a Book with no fixture for that step).
+                            result = { n: s.n, ok: s.ok, dige: s.dige, book, uid, got_snap: s.got_snap, exp_snap: s.exp_snap }
                         }
                     }
                 } else { ok = false; result = { error: `unknown op ${op}` } }
@@ -756,12 +777,63 @@ await M.eatfunc({
         // Lies_runner_begin — open a fresh durable run-record (Storyrun:<ident>) for a run the runner
         //  is about to drive: the runner-side noun a rungo (ident = dock path) or become_book (ident =
         //   Book) produces, on-snap beside req:Cortex.  Phase walks begun → stepping (n/total fill in
-        //    as steps land) → done|failed.  One run at a time (v1 is sequential), so it drops any prior
-        //     record first.  This is the durable CLIENT that holds each step's feedback — not the
-        //      fire-and-forget blip the under-designed rungo/become_book pair shipped before.
-        Lies_runner_begin(w: TheC, ident: string) {
-            for (const old of w.o({ Storyrun: 1 }) as TheC[]) w.drop(old)
-            w.i({ Storyrun: ident, phase: 'begun', at: Date.now() })
+        //    as steps land) → done|failed.  This is the durable CLIENT that holds each step's feedback —
+        //     not the fire-and-forget blip the under-designed rungo/become_book pair shipped before.
+        //   Each record carries a short `uid` — the addressable handle the CLI talks to (runner_ask
+        //    `@uid`): after the run lands, Lies_runner_verdict PINS the produced step snaps onto the
+        //     record (sr.c.pins, off-snap), so the run "hangs in there" and stays queryable by uid even
+        //      as later runs churn the live This.  We keep a bounded HISTORY (last KEEP finished) so a
+        //       few past runs stay addressable, and drop any stale never-finished record (superseded).
+        //        active_rungo marks the live one — the no-uid reads (ping/state) follow it.
+        Lies_runner_begin(w: TheC, ident: string): TheC {
+            const KEEP = 3
+            for (const old of w.o({ Storyrun: 1 }) as TheC[]) {
+                const fin = old.sc.phase === 'done' || old.sc.phase === 'failed'
+                if (!fin) w.drop(old)                                  // a superseded begun/stepping — drop
+            }
+            const held = w.o({ Storyrun: 1 }) as TheC[]               // re-read: the finished survivors
+            for (const old of held.slice(0, Math.max(0, held.length - (KEEP - 1)))) w.drop(old)   // oldest beyond cap
+            const uid = (globalThis.crypto?.randomUUID?.() ?? `r${Date.now()}`).replace(/-/g, '').slice(0, 8)
+            const sr = w.i({ Storyrun: ident, uid, phase: 'begun', at: Date.now() }) as TheC
+            w.c.active_rungo = uid
+            return sr
+        },
+
+        // Lies_rungo_record — the addressable run-record.  A uid (PREFIX-matched, so the CLI can type the
+        //  first few chars) picks a held one; absent picks the active/latest.  null if none yet.
+        Lies_rungo_record(w: TheC, uid?: string): TheC | undefined {
+            const all = w.o({ Storyrun: 1 }) as TheC[]
+            if (uid) return all.find(s => String(s.sc.uid ?? '').startsWith(uid))
+            const act = w.c.active_rungo as string | undefined
+            return (act && all.find(s => s.sc.uid === act)) || all[all.length - 1]
+        },
+
+        // Lies_rungo_steps — the uniform per-step view {n,ok,caveat,dige,got_snap,exp_snap,trace} the
+        //  read ops (steps/snap/snaps/diff/trace) share.  With ask.uid: serve the record's FROZEN pins
+        //   (deterministic — survives the live This churn + the 5-step trim).  Without: the live This
+        //    (a run still going, or the just-finished one before the next begin).  Empty when a uid is
+        //     given but the run isn't pinned yet (still running / unknown uid) — the caller errors.
+        Lies_rungo_steps(w: TheC, ask: { uid?: string }): Array<{ n: number, ok: number, caveat: number, dige: any, got_snap: any, exp_snap: any, trace: any }> {
+            const H = this as House
+            if (ask.uid) {
+                const pins = H.Lies_rungo_record(w, ask.uid)?.c.pins as Record<number, any> | undefined
+                return pins ? Object.values(pins) : []
+            }
+            // exp source (1c — over the wire, no disk): w:Story.c.exp_snaps is the check-mode preload —
+            //  EVERY step's expected, read into memory ONCE at run start (Story.svelte:1451), so the diff's
+            //   expected travels the socket with no `wormhole/` fixture on the CLI side.  Per-step
+            //    `Step.sc.exp_snap` (the UI diff-panel's lazy load) wins when present; else the Record.
+            const stW   = H.Lies_runner_story_w()
+            const exps  = (stW?.c.exp_snaps ?? {}) as Record<number, string | null>
+            const steps = ((stW?.c.This as TheC | undefined)?.o({ Step: 1 }) ?? []) as TheC[]
+            return steps.map(s => {
+                const n = Number(s.sc.Step)
+                return {
+                    n, ok: s.sc.ok ? 1 : 0, caveat: s.sc.caveat ? 1 : 0, dige: s.sc.dige,
+                    got_snap: s.sc.got_snap ?? null, exp_snap: s.sc.exp_snap ?? exps[n] ?? null,
+                    trace: Array.isArray(s.sc.Run_trace) ? s.sc.Run_trace : null,
+                }
+            })
         },
 
         // Lies_runner_track — fold a transient progress blip onto the durable Storyrun record (the
@@ -771,7 +843,7 @@ await M.eatfunc({
         //   rungo_ack/story_begun → begun; step_done/step_stall → stepping; all_done → all_done
         //    (the verdict stamp in Lies_runner_verdict lands the final done|failed right behind it).
         Lies_runner_track(w: TheC, phase: string, extra?: { n?: number, total?: number }) {
-            const sr = w.o({ Storyrun: 1 })[0] as TheC | undefined
+            const sr = (this as House).Lies_rungo_record(w)   // the active run, not a stale history entry
             if (!sr) return
             sr.sc.phase = phase === 'step_done' || phase === 'step_stall' ? 'stepping'
                         : phase === 'all_done'                            ? 'all_done'
@@ -801,11 +873,31 @@ await M.eatfunc({
             H.Lies_runner_phase(w, 'all_done', { n: outcome.done, total: outcome.done, book: book ?? aw.book, path: aw.path })
             // land the run-record done — phase done|failed wins over the all_done the blip just wrote,
             //  so `Lies%runner/Storyrun` shows the completed verdict, not a frozen 'stepping'.
-            const sr = w.o({ Storyrun: 1 })[0] as TheC | undefined
+            const sr = H.Lies_rungo_record(w)
             if (sr) {
                 sr.sc.phase = outcome.ok ? 'done' : 'failed'
                 sr.sc.done  = outcome.done
                 if (outcome.caveat) sr.sc.caveat = outcome.caveat
+                // PIN the produced steps onto the record (off-snap, .c — never encoded, no snap bloat) so
+                //  the runner "hangs in there": the CLI can pull this run's snap/diff/trace by uid long
+                //   after, even as later runs reset This.  Pins whatever survived the live trim — pair with
+                //    `retain on` (keep_snaps) BEFORE a long run to pin every step, not just the last 5.
+                const live = (H.Lies_runner_this()?.o({ Step: 1 }) ?? []) as TheC[]
+                // capture exp too (1c): exp_snaps is wiped at the NEXT run's toc-load (Story.svelte:1409),
+                //  so pin it now or a held @uid diff loses its expected.  string ref, not a copy.
+                const exps = (H.Lies_runner_story_w()?.c.exp_snaps ?? {}) as Record<number, string | null>
+                if (live.length) {
+                    const pins: Record<number, any> = {}
+                    for (const s of live) {
+                        const n = Number(s.sc.Step)
+                        pins[n] = {
+                            n, ok: s.sc.ok ? 1 : 0, caveat: s.sc.caveat ? 1 : 0, dige: s.sc.dige,
+                            got_snap: s.sc.got_snap ?? null, exp_snap: s.sc.exp_snap ?? exps[n] ?? null,
+                            trace: Array.isArray(s.sc.Run_trace) ? s.sc.Run_trace : null,
+                        }
+                    }
+                    sr.c.pins = pins
+                }
                 sr.bump_version()
             }
             // a Rungo run carries a {path,dige}; a become-Book run carries {book} only.  Either

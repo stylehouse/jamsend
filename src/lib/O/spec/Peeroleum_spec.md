@@ -407,3 +407,60 @@ Tracked rung-by-rung in `Peeroleum_handover.md` (the `[x]`/`[~]`/`[ ]` checklist
 - `// <` reaping `%faulty` — kept until `reset_handshake`; if a Pier accumulates faults without
    disconnecting, a whittle on `%faulty` may be wanted (decide when corruption volume exists).
 - relay forwarding — **RESOLVED**: the `from`+`to`-on-header design carries it (§5).
+
+---
+
+## 18. Multicast — topics over a claimed `@channel`  (built; headless-witnessed PereStaple step 53)
+
+The need: a high-bandwidth publisher (a phone relaying audio to 100 listeners) must **not** upload 100
+ copies, one addressed to each Pier, nor even hold all 100 addresses. It uploads **once** to a *topic* and
+  the relay does the fan-out. So the envelope's `to` grows a **special case**: a `to` that starts with `@`
+   is a **channel** (a topic), not a peer `pub`. Everything below hangs off that one sigil.
+
+**The split from a 1:1 stream is the load-bearing design choice** — a topic is NOT a reliable per-Pier
+ stream:
+- **Discovery/handshake/trust stay 1:1.** You still know *who* each subscriber is (per-Pier `%Ud`, the
+   §8 handshake). Only the **bulk** goes multicast. The seam from unicast→multicast is the **handover**:
+    an established Pier sends a `stream_offer` (a stream *pointer* — the `@channel` to subscribe to) over
+     its trusted link; the peer's registered handler subscribes and thereafter receives over the fan-out.
+      `Peeroleum_offer_stream` is the sender; a `Peeroleum_on(w,'stream_offer',…)` handler is the receiver.
+- **Publishing is fire-and-forget.** `Peeroleum_publish` books **no** `%outbox/emit`, expects **no** acks,
+   allocates **no** per-Pier seq — the whole point is not tracking N subscribers. A topic frame carries its
+    **own** per-channel seq (`peering.c.chan_seq[channel]`, off-snap) so a subscriber can later detect a gap
+     and NACK. This is the deliberate opposite of `Peeroleum_send` (§7's reliable outbox). On the reliable
+      relay ws v1 needs none of it; a per-channel inseq for a lossy multicast carrier is **future**, and is
+       NOT the per-Pier `inseq` (§7) — don't reuse that cursor.
+- **No ack means no ack-storm.** 100 subscribers acking one frame is exactly what we avoid; the receive
+   path (`Peeroleum_deliver`'s `@`-branch) dispatches to the handler and **returns** — no inbox booking, no
+    `req_unemit`, no ack-back.
+
+**Claiming an `@name` (the ownership primitive).** "Someone has to come and claim that `@name`." A claim
+ reserves the name before it carries — **first-come for now, a community/crypto-signed gate later**. The
+  claim records the owner (relay-side `claims` map + a `%owns,@channel` marker on the Peering); v1 does
+   **not** enforce publish-against-owner (trust-everything, §5). `Peeroleum_claim` is the spine call.
+
+**Where the multiplication happens — the relay (`relay.ts`).** Subscribe **reuses the existing routing**:
+ `bind(@channel, ws)` adds the socket to the channel's `Set` in `locals`, and `deliverLocal` is *already* a
+  fan-out over that Set — so a `to:@channel` frame routes to every subscriber with **zero routing change**.
+   `subscribe`/`unsubscribe`/`claim` are relay control frames (no header, handled in `handleControl`); a
+    socket's subscriptions + claims are tracked on it and released on close.
+- **Bomb — one relay instance only (v1).** A topic delivers **local-only**; it is NOT forwarded over the
+   r2r bridge. With subscribers split across two relays this would drop the far ones — the **two-instance**
+    follow-up is "fan a channel frame to the bridge too" (penciled, unbuilt). Single instance today, fine.
+- **Reconnect forgets subscriptions.** The relay drops a socket's channel binds on close; a reconnecting
+   consumer must **re-subscribe** (via `Socket_real`'s `on_open` hook). Not buffered forever in the carrier.
+
+**The mock substrate (deterministic test).** The mock carrier's `send` mirrors the relay: a `to:@channel`
+ frame fans into the in-process relay by calling `Peeroleum_deliver(w, frame)` once, and the `@`-branch
+  scans the Peerings under `w` that subscribed (`peering.c.subs[channel]`) — in production a `w` is one
+   identity so exactly one matches; the co-resident test swarm holds N under one `w`, so the scan fans out
+    to all N, the same multiplication the relay does across N sockets. Witnessed at **PereStaple step 53**
+     (`Lake_multicast_arm` → `%witnessed:multicast`): one publish, three subscribers land `%mcast` exactly
+      once, the publisher books no emit, the claim + the offer-driven subscribe both hold.
+
+**The realised spine calls** (all in `Ghost/N/Peeroleum.g`): `Peeroleum_claim(w,peering,channel)`,
+ `Peeroleum_subscribe(w,peering,channel,fn)`, `Peeroleum_publish(w,peering,channel,type,body)` (returns the
+  channel seq), `Peeroleum_offer_stream(w,pier,channel)`, and the `@`-branch atop `Peeroleum_deliver`.
+   `Socket_real` (`Ghost/N/Tribunal.g`) gains `claim`/`subscribe`/`unsubscribe` port methods that send the
+    relay control frames. **Open seams:** the crypto-signed claim gate, cross-relay topic fan-out, a
+     per-channel inseq + NACK for a lossy multicast carrier, and re-subscribe-on-reconnect.

@@ -1020,15 +1020,21 @@
     },
 
     // spay_classify_line — for the diff glow (Storui): does any spayer's `re` touch this
-    //   got/exp line pair, and did every touched capture stay within tolerance?  Same
-    //    matching as spay_graft_line, but it only reports — it grafts nothing.
+    //   got/exp line pair, and would grafting it FULLY reconcile the line?  Reuses
+    //    spay_graft_line so the glow can never disagree with the verdict (spay_graft):
+    //     a line glows 'graft' iff that same line would be forgiven at compare.
     //      'none'  — no Entcase reaches this line.
-    //      'graft' — matched + every capture within tol → this diff is acknowledged noise
-    //                 (it would be forgiven at compare).
-    //      'blown' — matched but a capture is out of variance → a watched line that
-    //                 surprised; it still diffs badly, the glow just says a cap is on it.
+    //      'graft' — matched AND the grafted got reconstructs EXACTLY into exp → acknowledged
+    //                 noise, forgiven at compare.
+    //      'blown' — matched but a residual diff survives the graft → a real surprise on a
+    //                 watched line.  Two ways in: a capture out of variance (band blown), OR
+    //                  an UNCAPTURED change riding the same line as a forgiven capture (e.g. a
+    //                   compiled-text edit next to a noise `at` timestamp).  The old classify
+    //                    only checked the captures and missed the second case — it glowed
+    //                     'graft' on a line the verdict refused, the exact "looks fuzz-ok but
+    //                      isn't" trap.  Now the glow names the true blocker.
     spay_classify_line(gotLine: string, expLine: string, spayers: Array<any>): 'none' | 'graft' | 'blown' {
-        let touched = false, blown = false
+        let touched = false
         for (const sp of spayers) {
             if (!sp?.re) continue
             let rx: RegExp
@@ -1036,20 +1042,16 @@
             const gms = [...gotLine.matchAll(rx)]
             const ems = [...expLine.matchAll(rx)]
             if (!gms.length || gms.length !== ems.length) continue
-            const tol = sp.tol ?? (sp.kind === 'band' ? 'band' : 'any')
-            for (let mi = 0; mi < gms.length; mi++) {
+            for (let mi = 0; mi < gms.length && !touched; mi++) {
                 const gm = gms[mi], em = ems[mi]
                 const ng = gm.length - 1
                 const groups = ng > 0 ? Array.from({ length: ng }, (_, k) => k + 1) : [0]
-                for (const grp of groups) {
-                    const gcap = gm[grp], ecap = em[grp]
-                    if (gcap == null || ecap == null) continue
-                    touched = true
-                    if (gcap !== ecap && !this.spay_within(gcap, ecap, tol, sp.factor, sp.slack)) blown = true
-                }
+                for (const grp of groups) if (gm[grp] != null && em[grp] != null) { touched = true; break }
             }
         }
-        return !touched ? 'none' : blown ? 'blown' : 'graft'
+        if (!touched) return 'none'
+        // graft only if the WHOLE line reconstructs — the same test the verdict applies.
+        return this.spay_graft_line(gotLine, expLine, spayers) === expLine ? 'graft' : 'blown'
     },
 
     // ── snap_indent ────────────────────────────────────────────────────────────

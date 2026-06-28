@@ -1,5 +1,19 @@
 # Interest — the Lang↔Lies attention channel
 
+> **Current state (2026-06-27).** Two things shifted under this doc since it was written;
+> the body below is an accurate *done-log* but read it through these:
+> - **The live decks are `Trail` + `Aside`.** `Aside` (stance `%aside`, the persisted daily
+>   scratch `Waft:Aside/<YMD>`) is the off-Trail exploration deck and walks like a Trail
+>   (full NaviCado, takes the stage, armed LE). **`Sidetrack` is dormant** — its `↳` sprout
+>   button was removed (see "InterestStrip: bare × / ↳ gone" below), so `e_Lang_sprout_sidetrack`
+>   / `interest_sprout_sidetrack` / the `tentative→Sidetrack` election have **no UI entry** and
+>   linger as dead code. The "Per-deck Sidetrack LEs" TODO is really the **Aside** deck-LE work.
+> - **Lang/Interest state resumes from `Waft:Keep`.** Focus, cursor, and the open-set are no
+>   longer session-only — they persist through the Keep ledger (`Lies_keep_*`). The
+>   consolidation of focus/resume into one `req:Keeping` driver is designed in
+>   `Keeping_spec.md`; the "Rejoin the stack frame" and "Per-(Interest, Waft) cursor-memory"
+>   TODOs below are the resume half that the Keep now backs.
+
 The `%Interest` cluster + Lang↔Lies `waft_roster` channel is graduated into the real `w:Lies`/`w:Lang`
  and verified live. **Interests are attention channels: the IDE escalates state *through* them.** This
   doc merges the three former Interest handovers (graduation, the real-channel reshape, the surprise
@@ -40,7 +54,8 @@ Real Waft **stances** (input to `interest_stance_of`):
 - giver / `active` (→ Trail): a plain opened Waft, or `Lies_spawn_look_waft` + `sc.active`.
 - taker / `takes` (→ Ting, presence:always): `Lies_spawn_ting_waft`.
 - lister / `lists` (→ GhostList): the GhostList singleton Waft.
-- tentative (→ Sidetrack): a Waft opened by a sidetrack request.
+- aside / `aside` (→ Aside): the persisted daily scratch `Waft:Aside/<YMD>` (`Lies_spawn_aside_waft`) — the live off-Trail deck.
+- ~~tentative (→ Sidetrack)~~: **dormant** — a Waft opened by a sidetrack request; no UI stamps it now (the `↳` is gone).
 
 **The Crux — resolved.** The real wire emits the full Interest family (Ting/Trail/GhostList +
  `ActiveInterest`) and `interest_reconcile` mints it correctly. An old `LakeNets/001.snap` carrying a
@@ -305,9 +320,10 @@ The beyond-reasonable picture — held in view, not scheduled.
       reachable but not claiming a foreground slot. The fuller arc — promote to *more UI* on crossing the
        threshold, a per-Interest lens choosing its own slot — still waits on the FUTURE lens generalissimo; this
         is just the which-caps-render knob. (Heat as an extra threshold signal is not wired yet.)
-- **Per-deck Sidetrack LEs + dual-LE push-mutex** — a Sidetrack foreground still falls back to the last Trail's
-   LE (no off-anchor clone of its own); arming a Trail + a Sidetrack at once needs a true simultaneous dual-LE
-    push-mutex. Both are the Sidetrack half of `Waft_spec` §Presence.
+- **Per-deck Aside LEs + dual-LE push-mutex** — an `Aside` foreground still falls back to the last Trail's
+   LE (no off-anchor clone of its own); arming a Trail + an Aside at once needs a true simultaneous dual-LE
+    push-mutex. Both are the second-deck half of `Waft_spec` §Presence. *(Was framed as "Sidetrack"; that
+     kind is dormant — the live second deck is the Aside.)*
 - **Self-arming havoc limbs — PARKED** (known race: firing synchronously in the Spotlight races the cold dock
    open, so `surprise_read` no-ops on an empty `%Good`). Fix: host the armed limb in the **Funkcion pump**
     (`req:Store` Phase 2b, after dock reads land) so it self-gates on readiness and retries.

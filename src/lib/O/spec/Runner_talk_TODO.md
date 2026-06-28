@@ -21,10 +21,11 @@ A request/reply RPC to a runner already running in a browser (`?B=<Book>`), mirr
 | --- | --- | --- |
 | relay corr-routing | `src/lib/server/relay.ts` (`runner_ask`→runner, `runner_ack`→CLI by corr, ~L280/L391) | additive; mirrors `ghost_compile`/`gen_write` |
 | handler registration | `src/lib/O/LiesLies.svelte:237` `on('runner_ask', …)` | on the runner role, inside `Lies_channel_up` |
-| handler + ops | `src/lib/O/LiesFunk.svelte:607` `Lies_runner_ask_recv` | ops: `ping`/`run`/`state`/`steps`/`snap`/`diff` + (new) `snaps` (1a, atomic multi-read)/`retain` (1b1, sets `keep_snaps`)/`trace` (1d, `Run_trace`); replies `{control:'runner_ack',corr,…}` via the `Lies_ghost_compile_ack` ws idiom |
-| live-This nav | `src/lib/O/LiesFunk.svelte` `Lies_runner_this()` | `H:Story → A:Story → w:Story → c.This` (same nav `Cred_run_outcome` uses) |
-| one-shot CLI | `scripts/runner_ask.mjs` | `ping/run <Book> [--watch]/state/steps/snap <n>` |
-| readline explorer | `scripts/story_repl.mjs` | persistent socket; `+ diff <n>` (vs expected) `+ diff <n> prev|<m>` (temporal, step→step) `+ books`/`book` |
+| handler + ops | `src/lib/O/LiesFunk.svelte:607` `Lies_runner_ask_recv` | ops: `ping`/`run`/`state`/`steps`/`snap`/`diff` + `snaps` (1a, atomic multi-read)/`retain` (1b1, sets `keep_snaps`)/`trace` (1d, `Run_trace`) + (new) `rungos` (list held runs) and an optional `uid` on every read op (1b-hold, serve a held run's pins); `run` now returns the new `uid`; replies `{control:'runner_ack',corr,…}` via the `Lies_ghost_compile_ack` ws idiom |
+| run-hold (uid) | `src/lib/O/LiesFunk.svelte` `Lies_runner_begin`/`Lies_runner_verdict` + `Lies_rungo_record`/`Lies_rungo_steps` | each `Storyrun:<ident>` carries a `uid`; at verdict the produced steps are PINNED into `sr.c.pins` (**off-snap** Record keyed by step n: `{n,ok,caveat,dige,got_snap,exp_snap,trace}` — string *refs*, not copies). Bounded history (last 3 finished) + `w.c.active_rungo`. The runner "hangs in there" — a held run stays queryable by `@uid` after `This` churns |
+| live-This nav | `src/lib/O/LiesFunk.svelte` `Lies_runner_this()` | `H:Story → A:Story → w:Story → c.This` (same nav `Cred_run_outcome` uses); `Lies_rungo_steps` reads here when no `uid` is asked |
+| one-shot CLI | `scripts/runner_ask.mjs` | `ping/run <Book> [--watch]/state/steps/snap <n>/rungos [@uid]` |
+| readline explorer | `scripts/story_repl.mjs` | persistent socket; `+ diff <n>` (vs expected) `+ diff <n> prev|<m>` (temporal, step→step) `+ rungos`/`@uid` (target a held run; bare `@` = last run) `+ books`/`book` |
 | node proof | `scripts/runner-ask-test.ts` | relay round-trip, 6/6 |
 
 **Delivery path is sound and needs no `.g`/`.go`:** the runner's `w:Lies` is single-identity, so
@@ -44,9 +45,16 @@ Each: **what · why · where · how.** Ordered for "get them now" in §2.
 
 **Status (2026-06-26):** **1a / 1b1 / 1d — DONE + verified live** against a `:9091` runner (all `.svelte`
  eatfunc + `story_repl`, HMR'd in, no `.g`/`.go`; proven with the LeafFarm step-9→10 temporal diff under
-  `retain on`, and the per-step `trace`). **1c — DEFERRED:** on a shared `/app` the runner's `fetch_snap`
-   reads the *same* disk fixture the CLI already falls back to, so it's byte-equivalent; value only for a
-    no-shared-disk remote runner. **1e (ACCEPT) + 1f — remain.**
+  `retain on`, and the per-step `trace`). **1c — DONE 2026-06-27** (exp over the wire via `w:Story.c.exp_snaps`,
+   the in-memory check-mode preload — see §1c; was deferred as byte-equivalent on shared disk, now cuts the
+    CLI loose from the fixture and makes `@uid` diffs self-contained). **1e (ACCEPT) + 1f — remain.**
+
+**Update (2026-06-27): the post-run HALF of 1b landed — the uid run-hold (§1b.hold below).** 1b was two
+ problems wearing one coat: *(during a run)* don't trim a middle step → `retain` (1b1, done); *(after a run)*
+  don't lose the run when the next one churns `This` → the **uid-pin hold**. A run now mints `Storyrun,uid:`
+   and PINS its produced steps off-snap (`sr.c.pins`), so you `run X` → get a uid → keep pulling `diff/snap/
+    trace @uid` long after, even past another run. **Type-clean; :9091 uid round-trip owed.** Still open from
+     1b: **(b2) breakpoint** — pause *at* step n mid-drive (the live-pause half, a `req:Step` build, §15).
 
 ### 1a. Atomic multi-step snap  *(small, enabling)* — DONE
 - **what** — `op:'snaps', ns:[…]` returns `{n: got_snap}` for several steps from ONE read of `This`.
@@ -71,16 +79,50 @@ Each: **what · why · where · how.** Ordered for "get them now" in §2.
 - **how** — retain (b1) is the cheap first cut: gate the trim on a `w.c.retain_snaps` flag the runner sets on
    a `runner_ask` op. Breakpoint (b2) is the fuller §16.1 build (a `req:Step`-level pause — see §15).
 
-### 1c. Diff over the socket — expected travels on the wire  *(Tier 1)*
+### 1b.hold — the uid run-hold (DONE 2026-06-27, the human's design)  *(the "after the run" half)*
+- **what** — a run "hangs in there" as a **uid-addressable** record you keep talking to. `run X` returns a
+   short `uid`; `rungos` lists held runs; any read op (`snap`/`snaps`/`diff`/`trace`/`steps`) takes an
+    optional `uid` → served from that run's frozen pins instead of the live `This`. CLI: append `@<uid>`
+     (bare `@` = the last run) to any read; `rungos`/`rg` to list.
+- **why** — the live runner churns: the next run's `resetStory` overwrites `This`, and the 5-step trim drops
+   middle steps. `retain` (1b1) only protects the *current* run *during* it; once you kick another Book the
+    old one is gone. The hold makes a past run **deterministically inspectable** — kick run B, still diff run A.
+- **where + shape** — `Lies_runner_begin` mints `Storyrun:<ident>,uid:` (uid = 8-hex of `crypto.randomUUID`),
+   sets `w.c.active_rungo`, keeps a **bounded history (last 3 finished)**, drops stale never-finished records.
+    `Lies_runner_verdict` PINS the produced steps into **`sr.c.pins`** — a plain Record keyed by step n
+     (`{n,ok,caveat,dige,got_snap,exp_snap,trace}`), **on `.c` so it is OFF-SNAP** (never encoded, no snap
+      bloat; same family as `w.c.exp_snaps`). Two readers: `Lies_rungo_record(w, uid?)` (uid prefix-matched →
+       that held run; else active/latest) and `Lies_rungo_steps(w, ask)` (pins when `ask.uid`, else live This).
+- **the shape, precisely (don't grep for child particles)** — conceptually `Storyrun(uid)/Step:n → {got, exp?}`,
+   but it is a **`.c` Record, NOT snapped `Step:` child particles**. Off-snap by construction; a pin holds the
+    *reference* to the (immutable) snap string, not a copy — pinning just extends the string's lifetime past the
+     `This` churn. `exp_snap` is now filled from `Step.sc.exp_snap` (UI lazy load) ?? `w:Story.c.exp_snaps[n]`
+      (the check-mode preload — see §1c), so a check-mode run's pins carry expected for self-contained `@uid`
+       diffs over the wire; the CLI falls back to the disk fixture only when exp is null (non-check / no fixture).
+- **memory** — bounded: ≤ 3 runs, each holding the steps that survived the trim (or **all** steps under
+   `retain on`). Refs-not-copies + off-snap ⇒ low MBs on the *browser runner*, nothing on the CLI. Freed by
+    FIFO eviction (`w.drop(oldest)` on the 4th run's begin → GC) or tab reload — **NOT** on CLI exit (the hold
+     is decoupled from the readline lifecycle on purpose). `KEEP` is a one-line constant; set 1 for strict
+      one-at-a-time. Open knob: a `forget <uid>`/`forget all` op for explicit release (not built).
+
+### 1c. Diff over the socket — expected travels on the wire  *(Tier 1)* — DONE 2026-06-27
 - **what** — `op:'diff'` returns the **expected** snap too, not just `got` + a maybe-loaded `exp_snap`.
-- **why** — today `got_snap` is fully over the socket but the *expected* rides the shared-disk fixture
-   (`wormhole/Story/<Book>/<NNN>.snap`), because the runner only holds `exp_snap` once the UI diff panel
-    lazily loaded it (`Story.svelte:1459-1474`, `fetch_snap → read_snap → Step.sc.exp_snap`). That only works
-     on a shared `/app`; a real remote runner has no disk for the CLI to read.
-- **where** — `Lies_runner_ask_recv` `diff` branch; drive the same `fetch_snap` Wormhole `read_snap` the UI
-   uses (set `run.sc.fetch_snap = n`, await the read, return `Step.sc.exp_snap`).
-- **how** — async in the handler; or pre-warm exp for all steps after a run. Completes
-   `Story_next_level §16.1` "diff channels in the pile" over the wire.
+- **why** — `got_snap` was fully over the socket but the *expected* rode the shared-disk fixture
+   (`wormhole/Story/<Book>/<NNN>.snap`), because the runner only held `exp_snap` once the UI diff panel
+    lazily loaded it. That only works on a shared `/app`; a real remote CLI has no disk to read.
+- **what landed (NOT the original plan)** — the planned "drive `fetch_snap` and await" doesn't fit a
+   request/reply handler: `fetch_snap → read_snap` is a **multi-round reactive Wormhole pump**
+    (`Story.svelte:1470`; `i_elvis_req` returns *pending* across beliefs rounds), not an awaitable call.
+     Instead the source is **`w:Story.c.exp_snaps`** — the check-mode preload (`Story.svelte:1451`) that reads
+      EVERY step's expected into memory ONCE at run start (timing-safe; respects "never load a snap mid-run on
+       a runner", [[entropy-samples-fuzzok]]). Every Book with fixtures runs check-mode (`run.sc.mode =
+        step_count>0 ? 'check'`, L1404), so it's already populated.
+- **where** — `Lies_rungo_steps` (live path) + `Lies_runner_verdict` (pin path) fold
+   `Step.sc.exp_snap ?? w:Story.c.exp_snaps[n]` as the exp; the `diff` branch ships it. Pinned at verdict
+    because the next run's toc-load wipes `exp_snaps` (L1409) — so a held `@uid` diff keeps its expected.
+- **caveat** — cuts the **CLI** loose from disk; the **runner** still read the fixture off its own disk (at
+   preload). A truly diskless *runner* needs exp seeded into the `become_book` payload — a further step. CLI
+    still falls back to the disk fixture only when exp is null (a non-check run / no fixture for that step).
 
 ### 1d. Per-step stack / trace — the *why*, not just OK|NOT-OK  *(Tier 4)*
 - **what** — `op:'trace', n:<n>` returns the step's trace channel: what held it (the **ttlilt** + its `req`/
@@ -123,7 +165,7 @@ Each: **what · why · where · how.** Ordered for "get them now" in §2.
 
 1. **1a atomic multi-snap** — tiny, makes the temporal diff coherent, unblocks 1b/1d windows.
 2. **1b1 retain mode** — the cheap half of the hold; ends the middle-step race we hit.
-3. **1c diff over the socket** — expected on the wire; the interface stops depending on shared disk.
+3. **1c diff over the socket** — DONE; expected on the wire via `w:Story.c.exp_snaps`; CLI no longer needs the fixture.
 4. **1d trace/stack** — turn NOT-OK into *why*.
 5. **1e ACCEPT (signed)** — close the loop; the one write op, gated by cluster Idento.
 6. **1f handler re-registration** — fold in alongside any of the above (it touches the same file).
@@ -131,6 +173,20 @@ Each: **what · why · where · how.** Ordered for "get them now" in §2.
 
 All of 1a–1f are **`.svelte` eatfunc + the two `scripts/` files** — no `.g`/`.go`, so they HMR into a live
  runner (except a *new* handler, which is 1f's point). Verify each with `story_repl` against a `?B=` tab.
+
+### Dev workflow (how to iterate on this interface)
+1. **Edit** the `.svelte` eatfunc (`LiesFunk`/`LiesLies`) or the `scripts/*.mjs` → it HMRs straight into a
+    live `?B=` runner. A new **op** on an existing handler hot-swaps; a brand-new **handler** needs 1f /
+     a tab reload (see §1f).
+2. **If you touched a `.g`** — e.g. the transport in `Ghost/N/Peeroleum.g` (route/carrier) or
+    `Tribunal.g` — **ghost-compile it FIRST**: `npm run ghost-compile -- Ghost/N/Peeroleum.g` (needs an
+     editor open on `:9091`). Disk `.g` edits are inert until compiled; the runner only re-acquires gen on a
+      fresh boot. The run-hold above is pure `.svelte`/`.mjs`, so it needed **no** ghost-compile — but the
+       moment a change reaches the wire format (a new frame type, not just a `runner_ask` op), it's `.g` and
+        the rule applies. (Memory: `[[ghost-compile-after-g-round]]`, `[[g-over-scattered-ts]]`.)
+3. **Verify** headless with `node --check` (scripts) + `vite-node scripts/runner-ask-test.ts` (relay 6/6),
+    then live with `story_repl` against the `?B=` tab. `npm run check` wants ≥ ~2.5G free (raise the
+     `claude` compose service's `memory` if it OOM-kills at the 2G default).
 
 ---
 

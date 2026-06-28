@@ -4,28 +4,28 @@ story:PereStaple
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=2.692
-      sample=2.515,at=1782448477
-      sample=2.561,at=1782449958
-      sample=2.548,at=1782451842
-      sample=2.447,at=1782452035
-      sample=2.527,at=1782454611
-      sample=3.029,at=1782457201
+    TimeTotal:beliefs,avg=2.993
       sample=3.225,at=1782459890
       sample=3.049,at=1782471103
       sample=2.628,at=1782476163
       sample=2.39,at=1782522031
-    TimeTotal:step,avg=0.052
-      sample=0.048,at=1782448477
-      sample=0.049,at=1782449958
-      sample=0.049,at=1782451842
-      sample=0.047,at=1782452035
-      sample=0.049,at=1782454611
-      sample=0.058,at=1782457201
+      sample=3.032,at=1782548182
+      sample=3.577,at=1782549736
+      sample=5.526,at=1782551010
+      sample=4.144,at=1782551131
+      sample=1.12,at=1782620219
+      sample=1.241,at=1782622699
+    TimeTotal:step,avg=0.063
       sample=0.062,at=1782459890
       sample=0.059,at=1782471103
       sample=0.051,at=1782476163
       sample=0.046,at=1782522031
+      sample=0.056,at=1782548182
+      sample=0.066,at=1782549736
+      sample=0.102,at=1782551010
+      sample=0.077,at=1782551131
+      sample=0.051,at=1782620219
+      sample=0.056,at=1782622699
   step,dige:0e3a61058c6cb03e
   step=2,dige:e2a220d8cd00bcac
   step=3,dige:49af6443c3635b73
@@ -48,33 +48,3 @@ story:PereStaple
   step=20,dige:226f4bcdec361486
   step=21,dige:c153b35945ad7c49
   step=22,dige:70fd02b6903207ed
-  step=23,dige:4c0be4ca95d779eb
-  step=24,dige:5657d31df1183b14
-  step=25,dige:5b7042baf05c6b5c
-  step=26,dige:7253ea12623531c2
-  step=27,dige:a603121030810ab1
-  step=28,dige:f8a8bfbd6f89e3fa
-  step=29,dige:72f060a810b7e4e6
-  step=30,dige:d9d873873a3c75d0
-  step=31,dige:bc6187109c66b0d5
-  step=32,dige:222d74bcfa83515b
-  step=33,dige:ab9eb2d6a4265df9
-  step=34,dige:1bc60c92784a48df
-  step=35,dige:7e01b9d7119c47bc
-  step=36,dige:59ca9f30c7d2070e
-  step=37,dige:5824eee53925158a
-  step=38,dige:6d8681fc0087acc0
-  step=39,dige:3c1b5cd789021c9d
-  step=40,dige:0bc93e7a122367c4
-  step=41,dige:1e4ee2a5dbf7821a
-  step=42,dige:bb60a076f249b169
-  step=43,dige:542cc02b71a232f6
-  step=44,dige:11af2e3cf7c5ec33
-  step=45,dige:706879eca1198e74
-  step=46,dige:210d8bb03f6e1ac9
-  step=47,dige:2aef7a9a20402bb4
-  step=48,dige:cdc460fece75b4df
-  step=49,dige:9bc8edb1329119f6
-  step=50,dige:18439ca18f29cd85
-  step=51,dige:c3a458f180b91895
-  step=52,dige:31d08d98170fc3b9

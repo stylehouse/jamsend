@@ -16,21 +16,25 @@
 //    node scripts/runner_ask.mjs state [--watch]         # verdict + phase/n/total
 //    node scripts/runner_ask.mjs steps                   # per-Step ok/caveat/dige
 //    node scripts/runner_ask.mjs snap 3                  # one Step's got_snap (the live world serialisation)
+//    node scripts/runner_ask.mjs rungos                  # the held runs, each addressable by uid
+//    node scripts/runner_ask.mjs snap 3 @ab12cd34        # a HELD run's frozen pin (the runner hangs in there)
 //
 //  RUNNER_URL overrides the relay origin (default http://172.17.0.1:9091 — the runner dev server as seen
 //   from the claude container; use http://localhost:9091 if running on the host).  Exit 1 when a --watch
 //    run finishes red (outcome not ok) or the request errors, else 0 — so it scripts.
 import { WebSocket } from 'ws'
 
-const OPS = ['ping', 'run', 'state', 'steps', 'snap']
+const OPS = ['ping', 'run', 'state', 'steps', 'snap', 'rungos']
 const argv  = process.argv.slice(2)
 const flags = new Set(argv.filter(a => a.startsWith('--')))
-const pos   = argv.filter(a => !a.startsWith('-'))
+const uidTok = argv.find(a => a.startsWith('@'))             // @uid → target a HELD run's frozen pins
+const uid    = uidTok ? uidTok.slice(1) : undefined
+const pos   = argv.filter(a => !a.startsWith('-') && !a.startsWith('@'))
 const op    = pos[0]
 const arg   = pos[1]
 const watch = flags.has('--watch')
 if (!op || !OPS.includes(op)) {
-	console.error('usage: node scripts/runner_ask.mjs <ping|run <Book>|state|steps|snap <n>> [--watch]')
+	console.error('usage: node scripts/runner_ask.mjs <ping|run <Book>|state|steps|snap <n>|rungos> [@uid] [--watch]')
 	process.exit(2)
 }
 if (op === 'run' && !arg)  { console.error('run needs a Book: node scripts/runner_ask.mjs run <Book>'); process.exit(2) }
@@ -39,6 +43,7 @@ if (op === 'snap' && !arg) { console.error('snap needs a step number: node scrip
 const ask = { op }
 if (op === 'run')  ask.book = arg
 if (op === 'snap') ask.n = Number(arg)
+if (uid) ask.uid = uid
 
 const HTTP       = process.env.RUNNER_URL || 'http://172.17.0.1:9091'
 const WS_URL     = HTTP.replace(/^http/, 'ws').replace(/\/$/, '') + '/relay'

@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Tribunal(): string { return '375733b4018a8e9a' },
+    Ghostmeta_Ghost_N_Tribunal(): string { return 'a9bf42ff80d08a94' },
 
 
 // Tribunal — a peer connection's reputation, constantly on trial (spec §4.1, §11.2).
@@ -136,6 +136,15 @@ async Socket_real(w) {
             wire(frame)
         },
         recv(frame) { return H.Peeroleum_deliver(w, frame) },
+        // Multicast control (spec §18): a claim reserves an @channel to publish on; a subscribe binds
+        //  us into the relay's per-channel fan-out set so a single upload reaches us. These are relay control
+        //   frames (no header — routed aside by handleControl, not delivered), sent through this.send so they
+        //    buffer-until-open and flush on (re)connect. A reconnect re-binds our addr but the relay forgets our
+        //     subscriptions, so a consumer should re-issue them via on_open — left to the caller (the bulk
+        //      handler re-subscribes), not buffered forever here.
+        claim(channel) { this.send({ control: 'claim', channel }) },
+        subscribe(channel) { this.send({ control: 'subscribe', channel }) },
+        unsubscribe(channel) { this.send({ control: 'unsubscribe', channel }) },
         // on_open — register a callback fired on EVERY (re)connect (fires immediately if already open).
         //  The consumer (Lies) re-sends the relay `become` through this so a reconnected socket re-binds.
         on_open(cb) { open_hooks.push(cb); if (ws && ws.readyState === WebSocket.OPEN) { try { cb() } catch (e) {} } },

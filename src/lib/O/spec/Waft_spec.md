@@ -1,5 +1,27 @@
 # Waft spec
 
+> **Status (2026-06-27) — own-the-state pass.** The durable part of this doc is
+> the **§Interests** frame below (lines ~32–294): how Lang comes to attend a Waft,
+> the Interest family, the Waft↔Interest border, the cursor, Funkcions, presence.
+> Two corrections fold into it:
+> - **The decks are `Trail` + `Aside`, not `Trail` + `Sidetrack`.** `Aside` is the
+>   live off-Trail exploration deck (the daily scratch `Waft:Aside/<YMD>`, stance
+>   `%aside`, persists, walks like a Trail). **`Sidetrack` is dormant** — the
+>   tentative-throwaway-grafts-back kind; its `↳` sprout button was removed, so it
+>   has *no UI entry* and lingers only as dead code (`interest_sprout_sidetrack`,
+>   `tentative→Sidetrack` in `interest_stance_of`) awaiting cleanup. Read every
+>   "Sidetrack" below as "Aside" for the live system. See `Interest.md`.
+> - **Lang/Interest state resumes from `Waft:Keep`.** The "session state, not
+>   persisted" claims in the back half are superseded: focus/cursor/open-set now
+>   persist through the Keep ledger (`Lies_keep_*`, `Cluster_design.md` /
+>   `Keeping_spec.md`).
+>
+> Everything from **§Point class onward has graduated or lapsed** — it is now a
+> short ledger (see "## Graduation ledger" at the foot) pointing at where each
+> piece lives in live code, not a design to build. The What-tree grammar it rests
+> on is still accurate and kept. A from-scratch rewrite from a higher vantage is
+> deferred until Lies+Lang settle.
+
 ---
 
 ## Goal
@@ -57,7 +79,7 @@ Interest **is the channel**, named from Lang's end because Lang is who renders i
 
 **Most of `%Interest` is shared.**  Every kind has a `c.waft` subject, a `%cursor` into
 it, a lens, a presence, and a `pending|locked` state.  Only the LE-bearing kinds
-(`Trail`, `Sidetrack`) add the heavy organ — an `%LE` checkout, armed only on
+(`Trail`, `Aside`) add the heavy organ — an `%LE` checkout, armed only on
 foreground.  The point of the family is *sameness*: a `Ting` and a `Trail`
 differ in a few fields, not in kind-of-thing.  Even `Ting` has a cursor — it just points
 at the latest thing.
@@ -76,21 +98,26 @@ subject-stance, a lens, and a presence; the two heavy kinds carry an `%LE`.
 | `%Interest`   | subject Waft (stance)        | wire carries                     | lens                   | presence          | LE? |
 | ------------- | ---------------------------- | -------------------------------- | ---------------------- | ----------------- | --- |
 | `Trail`       | the giver (`active`)         | `o What` (anchored, depth grows) | NaviCado + this spec   | active            | on fg¹ |
-| `Sidetrack`   | a spawned `Waft,tentative`   | `o Doc` (`off_what`)             | light NaviCado         | active            | on fg¹ |
+| `Aside`       | the daily scratch (`aside`)  | `o What` (anchored, like Trail)  | NaviCado               | active            | on fg¹ |
 | `Ting`        | the taker (`takes`)          | `i` — everything you do          | DocTing (heat)         | always            | —      |
 | `GhostList`   | the lister (`lists`)         | `o Doc` (`off_what`)             | DocGhostList           | active            | —      |
 | `Testing`     | a Story Waft                 | (its own)                        | a test panel           | active or always  | —      |
 
-¹ The LE-bearing kinds arm only when **foregrounded** — `Trail` first (it foregrounds at
-start), a `Sidetrack` when you switch to it.  Live LEs are bounded by the decks you've
-crossfaded into, never by roster size.  A `Sidetrack` keeps its LE until it settles and
-grafts back into `Trail` (a time-domain concern).
+> *Dormant:* `Sidetrack` (stance `tentative`) — a spawned throwaway `Waft,tentative`,
+> `off_what` light-NaviCado deck that kept its LE until it grafted back into a Trail.
+> Superseded by `Aside`, which fills the same off-Trail-exploration role but **persists**
+> (a real `Waft:Aside/<YMD>` home) instead of grafting back. The kind survives as dead
+> code with no UI entry; treat the rows below that name it as describing `Aside`.
 
-The three Waft flags `active | takes | lists` stop being the typing — **the Interest
+¹ The LE-bearing kinds arm only when **foregrounded** — `Trail` first (it foregrounds at
+start), an `Aside` when you switch to it.  Live LEs are bounded by the decks you've
+crossfaded into, never by roster size.
+
+The Waft flags `active | takes | lists | aside` stop being the typing — **the Interest
 kind is the typing**, and the flag is just the Waft-stance a kind locks onto.  (This
 folds the Waft-taxonomy open thread shut: a kind is a relation, not a flag.)
 
-`Trail` and `Sidetrack` are the heavy locks.  Their `%LE` (armed/clean/changey/stale/
+`Trail` and `Aside` are the heavy locks.  Their `%LE` (armed/clean/changey/stale/
 dirty — see `LiesEnd_spec`) is the *interior state* of an LE-bearing Interest.  The light
 kinds lock with no clone and no push — they only ferry a cursor and mount a lens.
 
@@ -115,7 +142,7 @@ depend on it).  Lang **subscribes**:
 
 3.  **Lock — lazily, on foreground.**  `sc.pending` clears when the Interest is engaged.
     The light kinds engage cheaply: start the cursor traffic, mount the lens.  The
-    LE-bearing kinds (`Trail`, `Sidetrack`) `LE_arm` + `LE_pull` only when **foregrounded**
+    LE-bearing kinds (`Trail`, `Aside`) `LE_arm` + `LE_pull` only when **foregrounded**
     — so noticing N giver Wafts arms *zero* LEs; you pay one only for a deck you actually
     crossfade into.
 
@@ -128,13 +155,16 @@ roster announces Waft → %Interest,kind +pending → lock → live → (Waft go
 
 By default a freshly-noticed Waft is a **`Trail`** — the writing/authoring stance, the
 one we keep good and readable and document things in — unless its properties say
-otherwise (`takes`→Ting, `lists`→GhostList, `tentative`→Sidetrack).
+otherwise (`takes`→Ting, `lists`→GhostList, `aside`→Aside; the dead `tentative`→Sidetrack
+path still resolves but nothing stamps it from the UI).
 
-The arrow runs backwards too: Lang can sprout an Interest *before* its Waft exists.  A
-`Sidetrack` starts Lang-side and asks Lies to open a fresh **`tentative`** Waft — a
-throwaway exploration Waft, often time-division-named, peer of the Ting — which returns
-through the roster and the pending Interest binds to.  The **main** Waft, conversely, is
-handed into Lang by the test suite via elvis, like an argument, not discovered.  Either
+The arrow runs backwards too: Lang can sprout an Interest *before* its Waft exists.  The
+live case is the **GhostList smart-click**: picking a Doc with no open home throws it into
+today's persisted `Waft:Aside/<YMD>` (`Lies_spawn_aside_waft`, stance `%aside`) and lands
+the cursor there.  (The older `Sidetrack` reverse arrow — sprout Lang-side, ask Lies to
+open a `tentative` throwaway peer of the Ting, bind the pending Interest when it returns
+through the roster — is the dormant form of the same move.)  The **main** Waft, conversely,
+is handed into Lang by the test suite via elvis, like an argument, not discovered.  Either
 way `pending` covers the gap.
 
 ### Waft vs Interest — the border
@@ -156,7 +186,7 @@ owns:
 - lens + presence + `pending|locked`;
 - `c.LE` — the LE-bearing kinds only.  The LE *and its working `/C` clone tree* are
   Lang-side **on the Interest**; the Waft's `C**` stays Lies-side and the origin `Seem`
-  reads across to it.  (So a `Sidetrack`'s second LE sits on its own Interest — only the
+  reads across to it.  (So an `Aside`'s second LE sits on its own Interest — only the
   read reaches the Lies Waft.)
 
 Rule of thumb: **if it would still be true with no one looking, it's on the Waft; if it
@@ -179,7 +209,7 @@ The kinds populate it differently — and that *is* their character:
 | kind        | `%cursor`                                          | driven by                       |
 | ----------- | -------------------------------------------------- | ------------------------------- |
 | `Trail`     | `what` + `doc` + `depth`, anchored                 | the user (the old `%Spotlight`) |
-| `Sidetrack` | `what`s like Ting, but `off_what` and **no heat**  | the user, flying off            |
+| `Aside`     | `what` + `doc` + `depth`, anchored (walks like a Trail) | the user, off on a thread  |
 | `Ting`      | points at the **latest** thing; `what`s + heatmap  | the `i` push — even backgrounded |
 | `GhostList` | `doc` only, **no `what`**                          | the pick                        |
 
@@ -261,10 +291,10 @@ the stage instead.  `presence:always` Interests (the `Ting` heat) render in thei
 persistent slot regardless — ambient, never stealing the stage.
 
 **The canonical cursor** — what NaviCado and `%openity` read — is whichever of `Trail` |
-`Sidetrack` is foregrounded; those two are the *social* Interests, wired deep into Lang
+`Aside` is foregrounded; those two are the *social* Interests, wired deep into Lang
 where the human works Points.  `Ting` and `GhostList` are less social — they have UI over
 in Lies and stay out of the Point-play.  But both decks can show NaviCados **at once**:
-stumble around a `Sidetrack` while keeping the `Trail` you came in on in view — a ropeway
+stumble around an `Aside` while keeping the `Trail` you came in on in view — a ropeway
 through dense bush, the way back always strung up.
 
 The switch is a **horizontal strip of Interest buttons atop the MiniMap**, above the
@@ -281,15 +311,18 @@ replaced the `$effect`/`watch_c` reactivity re-renders, and we do the rest.  For
 remote change arrives the same way: the `%LE`'s origin `Seem` *is* the Waft's
 subscription-to-the-remote — its goners/neus pull hands back a changed C.
 
-Switching between the two LE-bearing decks (`Trail` ↔ `Sidetrack`) is a **crossfade** —
+Switching between the two LE-bearing decks (`Trail` ↔ `Aside`) is a **crossfade** —
 like a DJ choosing where to jam sound from and to.  Both can be armed, but **only the
 foreground LE pushes** — a simple write-mutex; no clobber-merge or rebase to handle (two
 decks editing one region at once just won't happen).  A `Cyto` graph may float above to
 make the movement legible — the elvis arrows firing, the `/C` clone trees spawning under
-an `LE_arm` — then dismiss.
+an `LE_arm` — then dismiss.  *(A true simultaneous dual-LE push-mutex, and an Aside with
+its own off-anchor clone rather than borrowing the last Trail's LE, are still open — see
+`Interest.md` "Per-deck … LEs".)*
 
-(How the foreground arbitrates, how `depth` debits `%openity`, and how a `Sidetrack`
-settles and grafts back into `Trail`, are time-domain concerns — the next sections.)
+(How the foreground arbitrates and how `depth` debits `%openity` are time-domain
+concerns.  The old `Sidetrack`-settles-and-grafts-back step is gone: an `Aside` persists
+as its own Waft instead of grafting home — see "Rejoin the stack frame" in `Interest.md`.)
 
 ---
 
@@ -336,270 +369,27 @@ Waft:Ghost/LakeNets,Ghost/LakeNets
 
 ---
 
-## Point class
-
-A Point can carry `class` in its sc alongside `method` (or `label`):
-
-```
-Point:1, method:'e_Dock_open', class:'focus'
-Point:1, method:'Lang_plan', class:'ghost'
-Point:1, method:'Lang_compile'           — no class; defaults apply
-```
-
-A small fixed set of pre-defined classes, statically defined in component CSS — not
-runtime-configurable.  Avoiding the Matstyle path keeps the decoration system stable
-enough to actually use:
-
-| class     | CM decoration                                | minimap dot |
-| --------- | -------------------------------------------- | ----------- |
-| (default) | enlarge ×1.4, lavender glow                  | gold        |
-| `focus`   | enlarge ×2.0, brighter glow, context bar     | bright gold |
-| `caution` | amber glow                                   | amber       |
-| `dim`     | no enlarge, faint glow                       | grey        |
-| `ghost`   | 18% opacity, 40% height scale                | faint grey  |
-
-`ghost` is stamped automatically on Points that belong to prior-What siblings (the
-old-Flock role); it is not usually set by hand.  Clicking a ghost rescues it: `class`
-is cleared and it moves into the active What's Doc as a live Point.
-
----
-
-## The squish convention: `...`
-
-Non-ancestor regions in CM are not fully hidden — they are **squished**: the region
-header and its first two lines stay visible, and the CM fold hides the rest.  The fold
-widget renders `·····` rather than the default `···`.
-
-```
-//#region e
-async e_Lang_editorBegins(A, w, e) {
-  .....
-//#region doc routing helpers
-Lang_doc_from_event(w: TheC, e: TheC): TheC {
-  .....
-//#region w:Lang
-async Lang(A: TheC, w: TheC) {
-  .....
-  if (thing) {
-     .....selected = line + what(was, on_it)   ← target line, enlarged + glowing
-```
-
-`Lang_apply_openness` currently folds from `header_line.to` (hiding everything after
-the header).  The squish variant folds from `header_line.to + leading_char_count`,
-where `leading_char_count` is the character span of the first two lines after the
-header.  Two leading lines is a system constant — not configurable per-Point.
-
-The `·····` widget needs a CSS override.  `codeFolding()` in CM accepts a
-`placeholderDOM` factory; we supply one that returns
-`<span class="cm-squish">·····</span>`.  The host stylesheet gives `.cm-squish` a
-muted colour.  ⛑️ (Langui.svelte needs the extension wired in.)
-
----
-
-## `pause | rwnd | +time` transport
-
-The Waft UI gains a transport bar that operates on the **sibling What list** of the
-active What.  It sits at the bottom of the minimap strip:
-
-```
-  ◀◀ rwnd   ‖ pause   ＋time
-```
-
-### rwnd
-
-Steps the active What backward among its siblings (same parent).  Un-engages Points in
-the current What, re-engages those in the prior sibling.  Stops at the first sibling.
-
-Useful for finding "the start of a trail": scan backward through sibling What slices
-looking for where a given method first appeared.
-
-### pause
-
-Stops any automatic audience-paced advance.  Not implemented yet — button renders;
-advance is manual-only in this phase.
-
-### +time (cell-division)
-
-Creates a new sibling `What` immediately after the current active one, which becomes
-the new active:
-
-1.  A new `What:1,label:''` (empty label; user names it) is inserted after the current
-    What in the parent's child list.
-
-2.  Points from the current What that are presumed to carry forward (see heuristic
-    below) are **copied** into the new What.  The current What is left intact.
-
-3.  Points in the prior What that were not copied receive `class:'ghost'` stamped on
-    their sc.  The minimap and CM decoration layer render them at 18% opacity.
-
-4.  Ghost Points not clicked within 10 s (wall-clock timer in Waft.svelte `$state`)
-    shrink further and are eventually dropped from the prior What's in-memory state
-    (omitted from next snap write).  A clicked ghost is rescued: `class` is cleared and
-    it moves into the active What's Doc as a live Point.
-
-### Carry-over heuristic
-
-When +time fires: Points that were **engaged** in the old What are copied into the new
-one.  Points added within the last ~30 s (`created_at` in Point sc) are treated as
-belonging to the new What — they move rather than copy and are not ghosted.  Everything
-else ghosts in the old What.
-
-`created_at` is a session-only sc field — stripped from snap writes (see encoder).
-
----
-
-## Minimap engagement
-
-Engagement is which Points are currently driving the fold layout and CM decorations.
-Session state: `let engaged: Set<string> = $state(new Set())` in DocMinimap.
-
-Multiple Points can be concurrently engaged (soft cap 3; a constant, not a setting).
-A small lock glyph on an engaged minimap row prevents MRU eviction.
-
-When engagement changes, DocMinimap fires `e:Lang_point_navigate` for newly engaged
-Points and `e:Lang_point_deactivate` for newly disengaged ones.
-
-`Lang_apply_openness` is extended to accept an array of `point_from` offsets.  The
-union of their ancestor chains determines which regions stay open; everything else
-squishes.  Where Points have conflicting fold preferences the more-open one wins.
-
----
-
-## Encoder / decoder
-
-is enWaft() etc. uses Lies_waft_save with a per-waft JS throttle() closure on w.c, posting via post_do.
-
----
-
-## CM decoration infrastructure
-
-### What already exists
-
-- `foldEffect` / `unfoldEffect` dispatch (`Lang_apply_openness` in LangRegions)
-- Bookmark `StateField` — CM remaps `from/to` via `RangeSet.map` on every doc change
-- `EditorView.scrollIntoView` for navigation
-
-### What needs adding
-
-**Line enlarge + glow**
-
-`Decoration.line({ attributes: { class: 'cm-point-engaged cm-point-focus' } })` adds
-a CSS class to the whole line's DOM element.  The class drives enlargement and glow via
-static stylesheet rules — no per-Point CSS variable needed since the classes are a
-fixed set.
-
-```css
-.cm-point-engaged {
-    box-shadow: inset 0 0 12px #c4aaee33;
-    font-size: 1.4em; line-height: 1.96em;
-    transition: font-size 0.15s, line-height 0.15s;
-}
-.cm-point-focus {
-    box-shadow: inset 0 0 20px #c4aaee66;
-    font-size: 2em; line-height: 2.8em;
-}
-.cm-point-ghost {
-    opacity: 0.18;
-    transform: scaleY(0.4);
-    transition: opacity 1s, transform 1s;
-}
-```
-
-A `StateField<DecorationSet>` (`pointDecorationField`) holds the current engaged-Point
-decorations; a `StateEffect` replaces them atomically on each engage/disengage cycle.
-Ghost decorations live in a second `StateField` at lower precedence so engaged Points
-always paint over ghosts.
-
-**Context bar**
-
-A `Decoration.widget` with `side: -1` at the line's `from` offset renders a narrow
-`<div class="cm-point-ctx">` floating above the target line — the Point's `label` or
-`method` name as a dim annotation.  `WidgetType` subclass, rendered only when the
-`focus` class is in effect.
-
-**Squish fold widget** — see squish section above.
-
-### Coordinates
-
-- **Bookmark from/to**: tracked by CM's `RangeSet.map`; `e_Lang_update_bookmarks`
-  pushes positions back to `bm.sc` on each debounce.  Points backed by bookmarks
-  (`bm.sc.point_serial`) inherit this for free.
-- **Method-name Points**: no stored `from/to` — resolved fresh from the compile index
-  at navigation time.  Stale until recompile; flagged as unresolved in the minimap.
-- **Ghost decorations**: resolved at render time.  No persistent coordinates.
-- **Line glow**: `decos.map(tr.changes)` inside `pointDecorationField.update` remaps
-  line-from offsets automatically when lines are inserted or deleted above the target.
-
-No new coordinate-sync infrastructure is needed.
-
-### Selection.process() and Dip
-
-`Selection.process()` (from the `regroup()` note in Lang.svelte) is the planned
-Map-building pass — collecting function calls, IO expressions, and type names into a
-Dexie-backed index.  `Dip` (from `caving()`) is a depth-and-position address scheme
-for dive targets.  Neither has been written.  Neither is needed for the decoration
-system: method-name resolution and bookmark coordinates are sufficient.  Both belong to
-the later Map-building phase.
-
----
-
-## What we can show now
-
-With a single Doc and one working codemirror:
-
-- Open a Waft pointing at `Ghost/Lang.svelte`.
-- Add a `What:1,label:setup` with Points for `Lang_plan`, `Lang_compile`.
-- Add a sibling `What:1,label:routing` with Points for `e_Dock_open`,
-  `Lang_doc_from_event`.
-- Click `e_Dock_open` in the minimap → CM folds to show only the `e` region, squishing
-  everything above to 2-line crumbs, with the target line enlarged and lavender-glowing.
-- Press +time → a new sibling What appears; `routing` Points ghost to 18% opacity.
-  Add `Lang_apply_openness` and `Lang_build_regions` to the new What.
-- Press rwnd → `routing` Points come back; new Points ghost.
-- Click a ghost → it rescues into the active What.
-- Multi-engage two Points → CM holds both their regions open simultaneously; the
-  minimap shows both lit.
-
-Drifting through a doc's architecture with time-layered annotations and fold-based
-dramatic framing — no multi-Lang or fuzzy matching required.
-
----
-
-## Particle layout summary
-
-```
-// Persisted (snap) — encoder uses Travel + mainkey(), SESSION_KEYS stripped
-w/{Waft:'Ghost/Tour'}
-  /{What:1, label}                      — section / time-slice / subsection; unlimited nesting
-    /{What:1, label}
-      /{Doc:1, path}
-        /{Point:1, method, class?}      — leaf; class in static set above
-      /{Point:1, method, class?}        — Point in a What (global search site; deferred)
-    /{Doc:1, path}
-      /{What:1, label}                  — time-slice Whats under a Doc
-        /{Point:1, method, class?}
-      /{Point:1, method, class?}        — Points directly on Doc
-
-// Not persisted — session state
-ave/{active_what:1}
-  sc.path: string                       — Waft sc.Waft
-  c.what: TheC                          — direct ref to the active What particle
-
-// CM state (not particles)
-pointDecorationField                    — StateField<DecorationSet>: engaged Point glows
-ghostDecorationField                    — StateField<DecorationSet>: prior-What ghost decorations
-setPointDecorationsEffect               — StateEffect<DecorationSet>: full replace
-setGhostDecorationsEffect               — StateEffect<DecorationSet>: full replace
-
-// Minimap (Svelte $state — session only)
-engaged: Set<string>                    — engaged Point method specs
-locked:  Set<string>                    — Points locked against MRU eviction
-ghost_timers: Map<string, number>       — setInterval ids for 10 s shrink per ghost spec
-```
-
----
-
-## Open questions
-
-- **Squish fold widget DOM**: `codeFolding({ placeholderDOM })` needs wiring in
-  Langui.svelte's extension list.  ⛑️
+## Graduation ledger — the old interior (Point class · squish · transport · CM infra)
+
+Everything below `§What` here used to be the design for **one Interest's interior** —
+ Point decoration, the `...` squish, the `pause | rwnd | +time` transport, ghost-decay,
+  CM `StateField` infra, the demo script. It has either **graduated into live code** or
+   **lapsed**. Kept as a pointer ledger (verified 2026-06-27), not a plan; read the named
+    code, not this doc, for exact behaviour. A clean rewrite from a higher vantage waits on
+     Lies+Lang settling.
+
+| piece | status | where it lives now |
+| --- | --- | --- |
+| **What tree** `Waft→What*→Doc/Point` | **LIVE** | the grammar + snap shape above are current; every `wormhole/Story/**/toc.snap` carries it |
+| **Point `class` decoration** (default/focus/caution/dim/ghost — enlarge+glow, minimap dot) | **GRADUATED** | `Langui.svelte` — `pointDecorationField` (StateField), `.cm-point-engaged` / `.cm-point-<class>` CSS, driven via `dock.c.setPointFonts` / `LangPoint.svelte` |
+| **`+time` cell-division + carry-over heuristic** | **GRADUATED** | `LiesCurse.svelte` — `Lies_what_carry_over` / `Lies_seed_what_carry_over`: copies engaged/just-added Points into a new sibling `What`, leaves the parent intact |
+| **`pause \| rwnd` transport bar** | **PARTIAL — on the chopping block** | a play/pause/step transport lives in `NaviCado.svelte` (`.nvc-transport`, `Lies_desire_play\|pause`, gated on `req:desire`/`req:timemachine`); the standalone button strip atop the minimap was never built. `Keeping_spec.md` proposes **dropping playback** ("no sense of time on Lies", its decision **D1**) — don't invest here |
+| **Encoder/decoder throttle** (`enWaft` + per-Waft `throttle` via `post_do`) | **LIVE** | `Lies_waft_save` |
+| **Squish `...` / `cm-squish` fold widget** | **NOT BUILT** | no `cm-squish` anywhere; the lone surviving Open Question — `codeFolding({ placeholderDOM })` still unwired in `Langui` |
+| **`active_what` session state** | **SUPERSEDED** | active-What truth is `ave/{ActiveInterest}` (the foreground Interest) + its per-Interest `%cursor`; no `active_what` particle exists. Focus/cursor/open-set **resume from `Waft:Keep`** (`Lies_keep_*`), not session-only state — see `Keeping_spec.md` |
+| **`Selection.process()` / `Dip`** | **SPLIT** | `Dip` is **built** (`Waft_dip` → `c.Dip`, the Funkcion/Waft address space); `Selection.process()` (the Map call-graph pass) is **still unwritten**, referenced only in `Lang.svelte` / `LangSion.svelte` notes — the later Map phase |
+
+The old draft's CSS rules, `StateField`/`StateEffect` wiring, and coordinate-sync notes
+ are all folded into Langui's live implementation; the `## What we can show now` tutorial
+  and the `## Particle layout summary` (which still named `active_what`) are dropped as
+   served-their-purpose.

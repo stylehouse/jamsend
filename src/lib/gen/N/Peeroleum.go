@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return '2ccbc1626d347189' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return '1bb4df8687a8d30b' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -255,6 +255,72 @@ Peeroleum_peer_ready(pier) {
     return !!(hs && hs.sc.finished)
 
 },
+// ── multicast / topics: publish-subscribe over a claimed @channel (spec §18) ────────────
+// WHY: a high-bandwidth publisher (a webserver relaying to 100 listeners) must NOT upload 100 copies, one
+//  addressed to each Pier, nor even hold all 100 addresses. It publishes ONCE to a TOPIC — a `to` that starts
+//   with `@` (the special case, beside a per-peer pub) — and the relay fans that single upload out to every
+//    subscriber. The per-Pier handshake/trust still happens 1:1 (you know WHO each subscriber is); only the
+//     BULK stream goes multicast, handed over as a stream POINTER (Peeroleum_offer_stream). An @name must be
+//      CLAIMED before it carries — first-come for now, a community/crypto-signed gate later; the claim reserves
+//       the name and records the owner, enforcement stays soft (trust-everything v1, spec §5).
+// The reliability split from a 1:1 stream is deliberate: a topic frame is fire-and-forget (Peeroleum_publish
+//  books NO outbox emit, expects NO acks — the whole point is not tracking N subscribers), carrying its own
+//   per-channel seq so a subscriber can later detect a gap and NACK. The relay ws is reliable+ordered, so v1
+//    needs none of that; on a lossy multicast carrier a per-channel inseq is the future, NOT the per-Pier one.
+
+// Peeroleum_claim — reserve an @channel as ours to publish on. Tells the carrier (the real socket sends a
+//  {control:claim} to the relay; the mock has nothing to tell — ownership is soft) and stamps a local %owns
+//   marker on our Peering so the snap shows what we publish. Crypto-signed ownership is the community gate's job.
+Peeroleum_claim(w, peering, channel) {
+    if (!peering) return
+    if (!peering.oa({owns: channel})) peering.i({owns: channel})
+    let conn = this.Peeroleum_carrier(peering, w)
+    conn?.claim?.(channel)
+
+},
+// Peeroleum_subscribe — start receiving an @channel's broadcasts. Registers a per-Peering handler
+//  (peering.c.subs[channel] = fn, read by Peeroleum_deliver's channel branch) and tells the carrier to
+//   subscribe (the real socket sends {control:subscribe} so the relay binds us into the channel's fan-out
+//    set; the mock needs nothing — the deliver branch scans subscribed Peerings in-process). fn is
+//     (w, peering, frame): the topic frame, verified at source, no per-frame ack. %subscribed snaps the link.
+Peeroleum_subscribe(w, peering, channel, fn) {
+    if (!peering) return
+    peering.c.subs = peering.c.subs || {}
+    peering.c.subs[channel] = fn
+    if (!peering.oa({subscribed: channel})) peering.i({subscribed: channel})
+    let conn = this.Peeroleum_carrier(peering, w)
+    conn?.subscribe?.(channel)
+
+},
+// Peeroleum_publish — put ONE frame on an @channel: the single upload that fans out to every subscriber.
+//  Fire-and-forget, the deliberate opposite of Peeroleum_send: NO outbox emit, NO ack expected, NO per-Pier
+//   seq — a topic frame carries its OWN monotone seq (peering.c.chan_seq[channel], off-snap) so a subscriber
+//    can later detect a gap and NACK. The carrier ships it once; the relay (or mock hub) does the multiplication.
+//     body holds the payload (e.g. an audio chunk) and rides the one envelope untouched, routed by header.to only.
+Peeroleum_publish(w, peering, channel, type, body) {
+    if (!peering) return
+    let me = peering.sc.name
+    peering.c.chan_seq = peering.c.chan_seq || {}
+    let seq = peering.c.chan_seq[channel] = (peering.c.chan_seq[channel] || 0) + 1
+    let conn = this.Peeroleum_carrier(peering, w)
+    if (!conn) { console.log(`🛰 Peeroleum_publish ${type} seq=${seq} → ${channel} ⚠ DROPPED — no live transport`); return }
+    conn.send(Object.assign({header: {type, from: me, to: channel, seq}}, body || {}))
+    return seq
+
+},
+// Peeroleum_offer_stream — the HANDOVER: an established 1:1 Pier hands the peer a stream POINTER (an @channel
+//  to subscribe to) instead of streaming to it directly. Sends a `stream_offer` consumer frame over the
+//   existing per-Pier link (so it rides the trusted, handshaked channel — the receiver's pre-Ud gate refuses
+//    it otherwise), naming the channel in the header. The peer's registered stream_offer handler (Peeroleum_on)
+//     subscribes to that channel and thereafter receives the bulk over the fan-out. This is the seam where a
+//      unicast stream becomes multicast — the publisher stops addressing this peer by pub and starts addressing
+//       the topic, and uploads once for all of them.
+Peeroleum_offer_stream(w, pier, channel) {
+    let me = pier.c.up.sc.name
+    let seq = this.Pier_next_seq(pier)
+    this.Peeroleum_send(w, {header: {type: 'stream_offer', from: me, to: pier.sc.pub, seq, channel}})
+
+},
 // ── transports (spec §4) — one envelope, swappable carrier ────────────────────
 // The mock: in-process, deterministic, tick-driven. Two mock-ports deliver into
 //  each other via a partner ref (paired by the wrangler once both sides stand
@@ -271,7 +337,13 @@ async transport(A,w) {
     //   straight and skips inseq; a lossy test wraps this port and sets reliable:false.
     at.c.connection = {
         type: 'mock', partner: null, reliable: true,
-        send(frame) { H.post_do(async () => { await this.partner?.recv(frame) }) },
+        send(frame) {
+            let to = frame && frame.header && frame.header.to
+            // a to:@channel publish has no single partner — fan it into the in-process relay (Peeroleum_deliver's
+            //  channel branch scans subscribed Peerings). One post_do keeps it in Atime, exactly like a 1:1 send.
+            if (to != null && String(to)[0] === '@') { H.post_do(async () => { await H.Peeroleum_deliver(w, frame) }); return }
+            H.post_do(async () => { await this.partner?.recv(frame) })
+        },
         recv(frame) { return H.Peeroleum_deliver(w, frame) },
     }
 
@@ -353,6 +425,22 @@ Peeroleum_send(w, frame) {
 async Peeroleum_deliver(w, frame) {
     const H = this
     let h = frame.header
+    // ── multicast: a to:@channel frame is a TOPIC broadcast, not a 1:1 Pier message (spec §18) ──
+    // The relay (or, in the test, the mock hub) already fanned this one upload out to every subscriber's
+    //  socket; here each Peering under THIS w that subscribed to the channel dispatches it to its handler.
+    //   Best-effort + fire-and-forget by design — NO inbox booking, NO ack (a 100-subscriber ack storm is the
+    //    very thing multicast avoids), NO per-Pier seq/inseq (a topic carries its OWN seq, for a future gap-
+    //     NACK, not the per-Pier reliable stream). In production a w is one identity so exactly one Peering
+    //      matches; the co-resident test swarm holds N under one w, so the scan fans out to all N — the same
+    //       multiplication the relay does across N sockets, done in-process. A `to` with no `@` falls through.
+    if (h.to != null && String(h.to)[0] === '@') {
+        for (const peering of w.o({Peering:1})) {
+            let fn = peering.c.subs && peering.c.subs[h.to]
+            if (fn) await fn(w, peering, frame)
+        }
+        H.feebly_ponder()
+        return
+    }
     let {peering, pier} = this.Peeroleum_route(w, h, 'to')
     if (!pier) return
     // inbound-silence liveness (Reliable.g twin of the outbound %stalled): stamp the LOGICAL tick we last

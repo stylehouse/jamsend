@@ -1,0 +1,34 @@
+Snap:H
+  H:MusuCrowd,Run
+    A:MusuCrowd
+      self,round=9	{"mung":["age"]}
+      w:MusuCrowd
+        self,round=9	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Caster,name:fast,total=12,next=7,req=2,live,ok
+          req:cast,eternal,ok
+        Terminal,name:omega_fast
+          inbox
+            Chunk,seq=0
+            Chunk,seq
+            Chunk,seq=2
+            Chunk,seq=3
+            Chunk,seq=4
+            Chunk,seq=5
+            Chunk,seq=6
+        Caster,name:slow,total=12,next=7,req=3,live,ok
+          req:cast,eternal,ok
+        Terminal,name:omega_slow
+          inbox
+            Chunk,seq=0
+            Chunk,seq
+            Chunk,seq=2
+            Chunk,seq=3
+            Chunk,seq=4
+            Chunk,seq=5
+            Chunk,seq=6
+        req:witness,eternal,ok
+        witnessed:linked
+        reached:step_3
+        witnessed:both_filled

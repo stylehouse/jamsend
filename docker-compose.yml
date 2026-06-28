@@ -146,7 +146,7 @@ services:
       resources:
         limits:
           cpus: '2.0'
-          memory: 2G            # roomier than app, since claude spawns rg, node, subagents
+          memory: 4G            # roomier than app, since claude spawns rg, node, subagents (+ svelte-check, ~1.5–2G heap, OOM'd at 2G)
           # cap processes per container via cgroup, the limit we actually want.
           #  nproc is avoided on purpose: it is a per-UID limit counted across
           #   the whole host, so since this runs as node (uid 1000, your own

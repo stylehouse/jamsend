@@ -1,0 +1,18 @@
+Snap:H
+  H:MusuCrowd,Run
+    A:MusuCrowd
+      self,round=8	{"mung":["age"]}
+      w:MusuCrowd
+        self,round=8	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Caster,name:fast,total=12,next=0,req=2,ok
+          req:cast,eternal,ok
+        Terminal,name:omega_fast
+          inbox
+        Caster,name:slow,total=12,next=0,req=3,ok
+          req:cast,eternal,ok
+        Terminal,name:omega_slow
+          inbox
+        req:witness,eternal,ok
+        witnessed:linked

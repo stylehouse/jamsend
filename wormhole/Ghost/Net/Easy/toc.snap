@@ -1,6 +1,7 @@
 Waft:Ghost/Net/Easy,active
   Funkcion:CreduFunk
     Funkcion:Storying,of_Book:PereStaple
+    Funkcion:Storying,of_Book:PereProof
     CreduCoherence:latest
       Credulate,of_Book:PereStaple,vset:Ghost_N_Peeroleum@2b17c426d1cc9020|Ghost_N_Tribunal@683d031e368194c6,finished_at=1782269354667
         GhostInclude:Ghost_N_Peeroleum,dige:2b17c426d1cc9020
@@ -12,6 +13,7 @@ Waft:Ghost/Net/Easy,active
   What:the test
     Doc:Ghost/Story/Peregrination.g
     Point,method:Run_A_PereStaple
+    Point,method:Run_A_PereProof
   What:transport
     What:mock
       Doc:Ghost/N/Peeroleum.g
