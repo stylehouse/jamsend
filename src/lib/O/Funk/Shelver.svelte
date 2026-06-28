@@ -21,7 +21,7 @@
     //    tick" — its ttlilt re-pumps us — so we return without stamping walked_at and retry.
     async function shelver_walk(H: any, host: TheC, funk: TheC, ww: TheC): Promise<void> {
         const now      = Date.now()
-        const interval = Number(funk.sc.interval_ms ?? 20000)
+        const interval = Number(funk.sc.interval_ms ?? 300000)   // a Book appears rarely → a 5-min sweep; the chip's a manual rescan
         if (funk.c.walked_at && now - Number(funk.c.walked_at) < interval) return
 
         const lreq = await H.LiesStore_listing(ww, STORY_DIR)
@@ -43,10 +43,13 @@
 
         const plan = shelver_plan(books, on_board, shelves, filed)
         for (const { book, shelf } of plan) {
-            const what = host.oai({ What: shelf })
-            if (!what.oa({ Funkcion: "StoryTimes" })) what.i({ Funkcion: "StoryTimes" })   // a fresh shelf gets a run-all station
+            const fresh = !host.oa({ What: shelf })
+            // the catch-all is born %inline — a crowded bucket reads best as flowed chips, not a tall column
+            //  (the prefix shelves are human-curated; Waft_dip's off-snap hint inlines them already).
+            const what  = host.oai({ What: shelf }, fresh && shelf === MISC ? { inline: 1 } : {})
+            if (fresh) what.i({ Funkcion: "StoryTimes" })   // a shelf the Shelver mints gets its own run-all station
             what.i({ Funkcion: "Storying", of_Book: book })
-            funk.i({ shelved: book })                                                       // remember we filed it
+            funk.i({ shelved: book })                       // remember we filed it
         }
         funk.c.walked_at  = now
         funk.c.last_count = books.length

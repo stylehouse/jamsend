@@ -149,6 +149,30 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
     let { M } = $props()
 
+    // ── the kind-table — capability flags per Waft kind (Keeping_spec D6) ─────
+    //   KIND ("what is this Waft", durable) and ATTENTION ("am I looking at it",
+    //    momentary) used to both ride the one %boring flag.  This is the kind half:
+    //     the capabilities the focus filter, the roster nib filter, the Waft count, the
+    //      UI minimise default, and the load-Good backstage-hide each used to re-derive
+    //       from raw flags.  Lies_waft_kind is the one authority that reads it.
+    //   focusable — a Lies_focus_waft candidate (the cursor can land here).
+    //   nibbed    — gets an InterestStrip nib (rides the roster across the wire).
+    //   backstage — its Store load-Good vanishes from the snap (a boot driver reopens it,
+    //                not the Good-reload), AND it stays out of the switcher roster.
+    //   minimised — the UI:Waft starts collapsed (a tab, not the work).
+    //   %boring is no longer a flag smeared onto whatever hides — it IS the Cluster kind
+    //    (full-vanish background).  The Keep is its OWN kind: backstage (un-focusable,
+    //     un-nibbed) yet line-VISIBLE (minimised:false) so you watch the ledger accumulate.
+    const LIES_KIND_CAPS: Record<string, { focusable: boolean, nibbed: boolean, backstage: boolean, minimised: boolean }> = {
+        Keep:      { focusable: false, nibbed: false, backstage: true,  minimised: false },
+        Cluster:   { focusable: false, nibbed: false, backstage: true,  minimised: true  },
+        Ting:      { focusable: true,  nibbed: true,  backstage: false, minimised: false },
+        GhostList: { focusable: true,  nibbed: true,  backstage: false, minimised: false },
+        Sidetrack: { focusable: true,  nibbed: true,  backstage: false, minimised: false },
+        Aside:     { focusable: true,  nibbed: true,  backstage: false, minimised: false },
+        Trail:     { focusable: true,  nibbed: true,  backstage: false, minimised: false },
+    }
+
     onMount(async () => {
     await M.eatfunc({
 
@@ -629,7 +653,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const store  = w.o({ req: 'Store' })[0] as TheC | undefined
         const loaded = ((store?.o({ Good: 1, type: 'text/Doc' }) ?? []) as TheC[])
             .filter(g => g.c.content !== undefined).length
-        const wafts  = (w.o({ Waft: 1 }) as TheC[]).filter(wf => !wf.sc.boring).length   // backstage Wafts uncounted
+        const wafts  = (w.o({ Waft: 1 }) as TheC[]).filter(wf => this.Lies_waft_kind(wf).nibbed).length   // backstage Wafts (Keep/Cluster) uncounted
         w.i({ see: `🗂 ${loaded} doc${loaded === 1 ? '' : 's'}${wafts ? ` · ${wafts} Waft${wafts === 1 ? '' : 's'}` : ''}` })
     },
 
@@ -728,10 +752,12 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             })()
 
             await w.place({ Waft: path }, waft)
-            // a Waft that declares itself %boring (backstage infra, e.g. a borrowed
-            //  EntropyProfile) carries the flag to its load Good too, so both vanish
-            //   from the snap.  Stamped before watch_c below, so it triggers no save.
-            if (waft.sc.boring) good.sc.boring = 1
+            // a backstage kind (Cluster — a borrowed EntropyProfile — or the Keep) carries
+            //  the hide to its load Good too, so the Good vanishes from the parent Store snap
+            //   (a boot driver reopens it, not the Good-reload).  Stamped before watch_c below,
+            //    so it triggers no save.  The Keep WAFT itself still snaps & shows — only its
+            //     load-marker hides; that is the backstage cap, not %boring.
+            if (H.Lies_waft_kind(waft).backstage) good.sc.boring = 1
             await H.Waft_link_up(waft, waft)
             await H.Waft_dip(waft)
             await H.Lies_instantiate_funkcions(w, waft)   // bind embedded %Funkcion cells
@@ -937,9 +963,9 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         //    cursor move funnels, and it never did → a stale %active elsewhere (the Keep's
         //     boot-resumed Waft) won Lies_focus_waft's leg-1 and the per-tick timemachine
         //      dragged the cursor back every trickle (the "can't hold focus for a second" bounce).
-        //   skip %boring (the Keep is never a focus candidate) and the already-active no-op.
+        //   skip un-focusable kinds (the Keep is never a focus candidate) and the already-active no-op.
         const landed = w.o({ Waft: waft_key })[0] as TheC | undefined
-        if (landed && !landed.sc.active && !landed.sc.boring) {
+        if (landed && !landed.sc.active && H.Lies_waft_kind(landed).focusable) {
             for (const other of w.o({ Waft: 1 }) as TheC[]) delete other.sc.active
             landed.sc.active = 1
             w.bump_version()
@@ -950,15 +976,34 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             if (H.Lies_role(w) === 'editor') H.Lies_keep_mark_focus(w, waft_key)
         }
         // Keep remembers WHERE in this Waft the cursor sits, so the foreground above can re-land
-        //  there next time.  Editor only; skips %boring (the Keep itself).  Coalesces, so idle
-        //   re-lands on the same What don't bloat the per-Waft %Cursor history.
-        if (landed && !landed.sc.boring && H.Lies_role(w) === 'editor')
+        //  there next time.  Editor only; skips un-focusable kinds (the Keep itself).  Coalesces,
+        //   so idle re-lands on the same What don't bloat the per-Waft %Cursor history.
+        if (landed && H.Lies_waft_kind(landed).focusable && H.Lies_role(w) === 'editor')
             H.Lies_keep_note_cursor(w, waft_key, src)
 
         const doc_path = H.Waft_src_doc_path(src)
         if (doc_path) await H.Lies_provide_dock(w, doc_path)   // speculative push — warm the %Good
 
         await H.Lies_i_Spotlight(examining, src, waft_key)
+    },
+
+    // ── Lies_waft_kind — THE single Waft-kind classifier (the kind-table) ────
+    //
+    //   One authority for "what is this Waft": its kind name + the LIES_KIND_CAPS
+    //   capabilities.  The attention kinds (Trail/Aside/Sidetrack/Ting/GhostList) come
+    //   straight off interest_stance_of → interest_kind_from_stance (the existing
+    //   stance→kind map, not re-derived); the background kinds layer on top — a Waft
+    //   named 'Keep' is the Keep, a %boring Waft is the Cluster (full-vanish).  A stored
+    //   `.sc.kind` wins first: the forward path for a background kind that must be known
+    //   at load (before any focus), so its boot driver can wire it without waiting for
+    //   the cursor — see Keeping_spec gap 1.
+    Lies_waft_kind(waft: TheC): { kind: string, focusable: boolean, nibbed: boolean, backstage: boolean, minimised: boolean } {
+        const H    = this as House
+        const kind = (waft.sc.kind as string | undefined)
+            ?? (waft.sc.Waft === 'Keep' ? 'Keep'
+              : waft.sc.boring          ? 'Cluster'
+              : H.interest_kind_from_stance(H.interest_stance_of(waft)))
+        return { kind, ...(LIES_KIND_CAPS[kind] ?? LIES_KIND_CAPS.Trail) }
     },
 
     // ── Lies_focus_waft — THE single "which Waft has focus" selector ─────────
@@ -974,9 +1019,10 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
         const cur_src   = examining?.o({ Spotlight: 1 })[0]?.sc.src as TheC | undefined
         const cur_waft  = cur_src ? H.waft_key_of(cur_src) : undefined
-        // backstage (%boring) Wafts are never focused — else a profile opened before
-        //  Waftily would win the gate and drag the editor focus onto itself.
-        const wafts = (w.o({ Waft: 1 }) as TheC[]).filter(wf => !wf.sc.boring)
+        // backstage kinds (Cluster/Keep) are never focused — else a profile opened before
+        //  Waftily would win the gate and drag the editor focus onto itself.  Routed through
+        //   the kind-table now (focusable), so the Keep stays out without riding %boring.
+        const wafts = (w.o({ Waft: 1 }) as TheC[]).filter(wf => H.Lies_waft_kind(wf).focusable)
         return wafts.find(wf => wf.sc.active)
             ?? (cur_waft ? wafts.find(wf => wf.sc.Waft === cur_waft) : undefined)
             ?? wafts[0]
@@ -1000,7 +1046,13 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //   Lies_keep — the Waft:Keep particle if it exists yet (read-only — Persist creates it).
     Lies_keep(w: TheC): TheC | undefined {
         const keep = w.o({ Waft: 'Keep' })[0] as TheC | undefined
-        if (keep) keep.sc.boring ??= 1   // backstage: stamp on first sight (no nib, no focus)
+        // stamp its kind on first sight (and migrate an old %boring Keep off the overload):
+        //  kind:Keep is backstage (no nib, no focus) but VISIBLE — its own kind, not %boring.
+        if (keep && (keep.sc.boring || !keep.sc.kind)) {
+            delete keep.sc.boring
+            keep.sc.kind = 'Keep'
+            keep.bump_version()
+        }
         return keep
     },
 
@@ -1131,7 +1183,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             const keep = w.o({ Waft: 'Keep' })[0] as TheC | undefined
             if (!keep) return                                              // wait for Persist
             w.c.keep_booted = 1
-            keep.sc.boring ??= 1
+            H.Lies_keep(w)   // stamp kind:Keep (migrates off any old %boring) — see Lies_keep
             H.Lies_keep_reopen(w)
         }
         if (!w.c.keep_resumed && !boot_param('W')) {

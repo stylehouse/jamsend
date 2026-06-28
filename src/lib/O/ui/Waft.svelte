@@ -229,9 +229,11 @@
     //   sidebyside: halve this Waft's width.  The parent list (.ls-waft-section) is a
     //               flex-wrap row, so two adjacent half-Wafts pair onto one line by
     //               themselves — no parent bookkeeping, the wrap does the pairing.
-    //   A %boring Waft (backstage infra — a borrowed EntropyProfile, etc.) starts
+    //   A Cluster-kind Waft (backstage infra — a borrowed EntropyProfile, etc.) starts
     //    minimised: it's not the work, just a tab.  Expand to find its whole inner /** .
-    let minimised  = $state(!!waft.sc.boring)
+    //     The Keep is backstage too but its kind says minimised:false — line-visible so you
+    //      watch the ledger accumulate (the whole point of un-blinding it from %boring).
+    let minimised  = $state(H.Lies_waft_kind(waft).minimised)
     let capped     = $state(false)
     let sidebyside = $state(false)
 

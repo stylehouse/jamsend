@@ -108,7 +108,7 @@ Real Waft **stances** (input to `interest_stance_of`):
   - `e_Lies_waft_mutated`: iterates **all** per-Interest LEs (`w.o({LE:1})` wildcards over them) and
      stales each whose target is in the mutated Waft.
   - Readers → active resolution: `LangGraft.svelte`, `Lang_Map_report`, `NaviCado.svelte` &
-     `DocMinimap.svelte` LE derives (`$derived.by` on `languinio.vers`). `LE_for()` (`LiesEnd.svelte`):
+     `DocMinimap.svelte` LE derives (`$derived.by` on `languinio.vers`). `LE_for()` (`LiesHold.svelte`, was `LiesEnd`):
       bare/`'Interest'` reason returns the active LE; named reasons (Undertaking) unchanged.
   - **Close → gone regression fixed Lang-side:** a giver whose Waft left the roster has its per-Interest
      LE retired (drop the clone + `c.LE`) so reconcile's gone-loop (which spares any `c.LE`-bearing
@@ -218,7 +218,7 @@ The through-line: a surprise_read (external edit conflict on an open Doc) **pops
  `e_Lies_foreground_waft` / `e_Lies_open_sidetrack` / `e_Lies_close_Waft` (Lies.svelte); `interest_*`
   reducers (Interest.svelte); switcher `ui/InterestStrip.svelte` (mounted in `ui/DocMinimap.svelte`).
    Per-Interest LE: `Lang_active_interest` / `Lang_active_LE` (Lang.svelte) are the foreground resolvers
-    everything reads through; `Lang_set_interest` owns each giver's `c.LE`; `LE_for()` (LiesEnd) returns
+    everything reads through; `Lang_set_interest` owns each giver's `c.LE`; `LE_for()` (LiesHold, was LiesEnd) returns
      the active LE for the bare reason. Gate Book: `wormhole/Story/LakeSurprise/` (11 Preps + `step=`
       lines; fixtures Interestily→Peeroleum.g, Interestily2→Peregrination.g). Elvis names must match
        handlers verbatim ([[elvis-handler-name-verbatim]]).

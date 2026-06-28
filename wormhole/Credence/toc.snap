@@ -10,7 +10,6 @@ Waft:Credence
     shelved:PeeringLive
     shelved:Peeringinst
     shelved:PereProof
-    shelved:PereStartuppity
     shelved:PorPlan
     shelved:PortPain
     shelved:PotPlan
@@ -30,7 +29,6 @@ Waft:Credence
     Funkcion:Storying,of_Book:PereStaple
     Funkcion:Storying,of_Book:PereTyrant
     Funkcion:Storying,of_Book:PereProof
-    Funkcion:Storying,of_Book:PereStartuppity
   What:Musu
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:MusuStaple
@@ -65,7 +63,7 @@ Waft:Credence
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:Diffmatication
     Funkcion:Storying,of_Book:AwFloat
-  What:Misc
+  What:Misc,inline:1
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:Editron
     Funkcion:Storying,of_Book:Interesting

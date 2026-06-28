@@ -1,8 +1,0 @@
-Snap:H
-  H:PereStartuppity,Run
-    A:PereStartuppity
-      self,round	{"mung":["age"]}
-      w:PereStartuppity
-        self,round	{"mung":["age"]}
-        see:y PereStartuppity — apparatus ready yyy!
-        req:wrangle,eternal,ok
