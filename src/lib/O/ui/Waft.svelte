@@ -1,16 +1,27 @@
 <script lang="ts">
     // Waft.svelte — one Waft item in the recursive Waft tree.
     //
-    // Extracted from Liesui to be a stable component boundary:
-    // Svelte reconciles {#each} items by component key (waft.sc.Waft) so
-    // this component survives Liesui re-renders, keeping form state and
-    // focused inputs stable across think() ticks.
+    // A Waft is generic-C number one: a named, persistable container — an INDIFFERENT
+    // MEDIUM in which you expect Whats, Docs and Points. Strip away everything that once
+    // looked like Waft-schema and the floor is just an identity that is also its home
+    // (`Waft:<path>`, where it snaps) plus a bag of C children. That is irreducible —
+    // nothing about how we do a Waft gets simpler than a named container that holds.
+    //   Its FACE is not a kind on the Waft — it is just the Waft's main Funkcion, a
+    //   `%Funkcion,main` child resolved through FUNK_KINDS and mounted by FunkHost (see
+    //   main_funk below); DocTing rides Funkcion:Ting, DocGhostList rides Funkcion:dirlist.
+    //   takes|aside|minimised|equip are STANCES — plain %-properties a lens reads —
+    //   never render branches in here.
+    //   So this file knows only Waft/What/Doc/Point and "mount the main Funkcion"; it
+    //   knows nothing of Ting, GhostList or any applet. The attention that rides a Waft
+    //   (Interest), its persistence (the Keep) and the editor surface (Lang) all live
+    //   elsewhere — a Waft is the indifferent medium they share. See spec/Interest.md.
     //
-    // Single <PeelInput> callsite via pi(). Single item wrapper via waftitem(C, upC).
-    //   waftitem detects type from C.sc mainkey, reads C.o({}) for children,
-    //   renders .ls-item / .ls-item-hdr / .ls-items — all personality from ITEM_TYPES.
-    //   The Waft header row itself is rendered as waftitem(waft, waft) via the Waft
-    //   entry in ITEM_TYPES — no separate header block.
+    // Mechanics — a stable component boundary extracted from Liesui: Svelte reconciles
+    // {#each} items by key (waft.sc.Waft) so this survives Liesui re-renders, keeping form
+    // state and focused inputs stable across think() ticks. One <PeelInput> via pi(); one
+    // item wrapper via waftitem(C, upC) — type from C.sc mainkey, children from C.o({}),
+    // all personality from ITEM_TYPES (the header row is itself waftitem(waft, waft), no
+    // separate header block).
 
     import type { TheC }    from "$lib/data/Stuff.svelte"
     import type { House }   from "$lib/O/Housing.svelte"
@@ -19,9 +30,7 @@
     import { tick }         from "svelte"
     import EncodingSplatter from "$lib/O/ui/EncodingSplatter.svelte"
     import PeelInput        from "$lib/O/ui/PeelInput.svelte"
-    import DocTing          from "$lib/O/ui/DocTing.svelte"   // taker-Waft switcheroo: histogram, not raw globules
-    import DocGhostList      from "$lib/O/ui/DocGhostList.svelte"   // lister-Waft switcheroo: the stem-clustered ghost index
-    import FunkHost          from "$lib/O/Funk/FunkHost.svelte"     // generic host for %Funkcion embeds (kind-dispatched)
+    import FunkHost          from "$lib/O/Funk/FunkHost.svelte"     // generic host for %Funkcion embeds (kind-dispatched) — incl. a Waft's BIG main face
     import { FUNK_KINDS }     from "$lib/O/Funk/kinds"               // registry: which kinds have a live component
     import Orb                from "$lib/O/ui/micro/Orb.svelte"      // shared edit/crud toggle (ui/micro/)
 
@@ -214,12 +223,11 @@
     let waft_children = $derived((() => { void waft.version; return waft.o().filter((c: TheC) => !c.sc.Waft) as TheC[] })())
     let sub_wafts     = $derived((() => { void waft.version; return waft.o({ Waft: 1 }) as TheC[] })())
     let waft_mungs    = $derived((() => { void waft.version; return waft.o({ mung_error: 1 }) as TheC[] })())
-    // taker Waft (the attention Ting) renders as a histogram by default; toggle to peek
-    //  at the raw %Point globule tree.
+    // a taker Waft (the attention Ting) keeps a flavour border; its FACE now rides a main
+    //  Funkcion like any other (see main_funk), not a hardwired branch.
     let is_taker      = $derived(!!waft.sc.takes)
-    // lister Waft (the GhostList) renders as the stem-clustered ghost index, not its
-    //  raw group/Doc tree — the same switcheroo idea as the taker Ting.
-    let is_lister     = $derived(!!waft.sc.lists)
+    // raw — the face⇄data toggle for a main-Funkcion Waft: show the big face, or peek at
+    //  the raw child tree behind it.  (Was the per-Ting|GhostList switcheroo, now generic.)
     let raw           = $state(false)
 
     // ── per-Waft view controls ────────────────────────────────────────────────
@@ -294,10 +302,21 @@
         orb_open_C.add(funk); start_edit_raw(funk)
     }
     // funk_kind / funk_live — a Funkcion's kind, and whether that kind has a registered
-    //  live component.  An unregistered kind (e.g. dirlist) has no illusion to host, so it
-    //   renders as a plain editable C row instead of an orb beside an empty applet.
+    //  live component.  An unregistered or face-less kind (comp_<Lens>-only, e.g. Runner) has
+    //   no illusion to host, so it renders as a plain editable C row instead of an orb beside
+    //    an empty applet.
     const funk_kind = (c: TheC) => c.sc.Funkcion as string | undefined
     const funk_live = (c: TheC) => { const k = funk_kind(c); return k != null && FUNK_KINDS[k]?.component != null }
+
+    // main_funk — the Waft's MAIN Funkcion: a direct %Funkcion,main child whose kind has a
+    //  live face (FUNK_KINDS[kind].component).  When present the Waft body renders THAT face
+    //   (the close-up Lens — DocTing, DocGhostList, …) instead of its raw child tree; the ⤺
+    //    toggle peeks at the data behind it.  Generic + property-driven: any registered
+    //     big-face Funkcion marked %main, never a hardwired DocTing|DocGhostList branch.
+    const main_funk = $derived.by(() => {
+        void waft.version
+        return (waft.o({ Funkcion: 1 }) as TheC[]).find(f => f.sc.main && funk_live(f))
+    })
 
     // ── unified item-edit form state ──────────────────────────────────
     //
@@ -633,7 +652,7 @@
 </script>
 
 <div class="ls-waft" style="margin-left: {depth * 14}px"
-     class:ls-waft-active={is_active} class:ls-waft-ting={is_taker} class:ls-waft-ghl={is_lister}
+     class:ls-waft-active={is_active} class:ls-waft-ting={is_taker}
      class:ls-waft-half={sidebyside}>
 
     <!-- control bar — view toggles that ride beside the ghost|data disillusioner.
@@ -657,51 +676,29 @@
     {#if !minimised}
     <div class="ls-waft-body" class:ls-waft-capped={capped} class:scrollbig={capped}>
 
-    {#if is_taker}
-        <!-- Switcheroo: a taker Waft (the attention Ting) is all machine-y %Point
-             globule data raw, so instead of dumping the tree it engages DocTing and
-             "looks such" — the gold-bar histogram.  The header toggles to the raw
-             data when you want to inspect the gross C**. -->
-        <button class="ls-ting-switch" onclick={() => raw = !raw}
-                title="{raw ? 'show the histogram' : 'show the raw Ting data'}">
-            <span class="ls-ting-glyph">{raw ? '⤺' : '▦'}</span>
+    {#if main_funk && !raw}
+        <!-- a main-Funkcion Waft renders that Funkcion's BIG face (the close-up Lens —
+             DocTing histogram, DocGhostList index, …) as its whole body.  No per-kind
+             branch: the kind's component (kinds.ts) owns the face; here we just host it.
+             The ⤺ toggle peeks at the raw child tree behind it. -->
+        <button class="ls-ting-switch" onclick={() => raw = true}
+                title="peek at the raw data tree">
+            <span class="ls-ting-glyph">▦</span>
             <span class="ls-ting-key">{wkey}</span>
-            <span class="ls-ting-mode">{raw ? 'data' : 'bars'}</span>
+            <span class="ls-ting-mode">face</span>
         </button>
-        {#if raw}
-            {#if waft_mungs.length || waft.oa({ encode_error: 1 })}
-                <EncodingSplatter {waft} />
-            {/if}
-            {@render waftitem(waft, waft, false, false)}
-            {#each sub_wafts as sw (sw.sc.Waft)}
-                <svelte:self {H} {w} waft={sw} depth={depth + 1} {examining}
-                    {on_active} {on_delete} />
-            {/each}
-        {:else}
-            <DocTing {H} />
-        {/if}
-    {:else if is_lister}
-        <!-- a lister Waft (GhostList) shows DocGhostList — the stem-clustered ghost
-             index — not its raw group/Doc tree.  Toggle to inspect the raw data. -->
-        <button class="ls-ting-switch" onclick={() => raw = !raw}
-                title="{raw ? 'show the ghost index' : 'show the raw GhostList data'}">
-            <span class="ls-ting-glyph">{raw ? '⤺' : '👻'}</span>
-            <span class="ls-ting-key">{wkey}</span>
-            <span class="ls-ting-mode">{raw ? 'data' : 'ghosts'}</span>
-        </button>
-        {#if raw}
-            {#if waft_mungs.length || waft.oa({ encode_error: 1 })}
-                <EncodingSplatter {waft} />
-            {/if}
-            {@render waftitem(waft, waft, false, false)}
-            {#each sub_wafts as sw (sw.sc.Waft)}
-                <svelte:self {H} {w} waft={sw} depth={depth + 1} {examining}
-                    {on_active} {on_delete} />
-            {/each}
-        {:else}
-            <DocGhostList {H} {waft} />
-        {/if}
+        <FunkHost {H} {w} funk={main_funk} {examining} />
     {:else}
+
+        {#if main_funk}
+            <!-- raw view of a main-Funkcion Waft — the data tree, toggle back to its face -->
+            <button class="ls-ting-switch" onclick={() => raw = false}
+                    title="show the face">
+                <span class="ls-ting-glyph">⤺</span>
+                <span class="ls-ting-key">{wkey}</span>
+                <span class="ls-ting-mode">data</span>
+            </button>
+        {/if}
 
     <!-- Waft header row — waft C rendered as a waftitem like any other -->
     {#if waft_mungs.length || waft.oa({ encode_error: 1 })}
@@ -756,7 +753,7 @@
         {@const fediting = editing.has(C) && raw_edit_C.has(C)}
         <!-- Every Funkcion is editable through an orb.  A live kind shows its illusion with a
              small orb beside it (compact in an inline flow, a row otherwise); the orb flips it
-             to the plain-C edit form.  A kind with no live component (e.g. Funkcion:dirlist), a
+             to the plain-C edit form.  A kind with no live component (a comp_<Lens>-only kind), a
              What flipped to edit-as-C, or a Funkcion mid-edit instead renders the full plain-C
              row — the generic PeelInput — so it looks like, and edits as, any other C. -->
         {#if fediting || funk_as_C || !funk_live(C)}

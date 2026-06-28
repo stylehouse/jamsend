@@ -13,7 +13,11 @@
     import type { House } from "$lib/O/Housing.svelte"
     import StemHive       from "$lib/O/ui/StemHive.svelte"
 
-    let { H, waft }: { H: House, waft: TheC } = $props()
+    // FunkHost mounts this as the GhostList Waft's main Funkcion, handing the funk-host
+    //  props (H, w, funk, …).  The index data (group/Doc/open_dir) lives on the singleton
+    //   GhostList Waft, derived here from the world w.
+    let { H, w }: { H: House, w?: TheC } = $props()
+    let waft = $derived(w?.o({ Waft: 'GhostList' })[0] as TheC | undefined)
 
     let open = $state(true)
 
@@ -26,8 +30,8 @@
     //  subs come first, sorted; ids are full paths.  file label is the stem the
     //  Funkcion already stripped of its source suffix.
     let open_set = $derived.by(() => {
-        void waft.version
-        return new Set((waft.o({ open_dir: 1 }) as TheC[]).map(o => o.sc.open_dir as string))
+        void waft?.version
+        return new Set(((waft?.o({ open_dir: 1 }) ?? []) as TheC[]).map(o => o.sc.open_dir as string))
     })
     // groups indent by path depth (relative to the shallowest), so an opened subdir's
     //  group sits as a child under its parent — the flat list reads as a tree.  An
@@ -39,9 +43,9 @@
     type Item  = { id: string, label: string }
     type Group = { dir: string, depth: number, subs: Item[], items: Item[], styles: Map<string, string> }
     let groups: Group[] = $derived.by(() => {
-        void waft.version
+        void waft?.version
         const now = Date.now()
-        const gs = (waft.o({ group: 1 }) as TheC[]).map(g => {
+        const gs = ((waft?.o({ group: 1 }) ?? []) as TheC[]).map(g => {
             const docs = g.o({ Doc: 1 }) as TheC[]
             return {
                 dir:   g.sc.dir as string,

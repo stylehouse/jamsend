@@ -34,7 +34,7 @@ The owner's phrase for the offspring: *"accepting-of-tests becomes a first-class
     Funkcions, hoisted as `Lens:Brink` into the Liesui-pinned dock. A runtime fixture, rebuilt each
      boot. **This stays Cluster** — the Keep is a separate, durable object.
 - **The cluster Idento already rides `House.stashed`.** `Lies_cluster_idento` (`LiesLies` ~365)
-   reads `{pub,key}` from `stashed.cluster_idento` (pasted via the 🪪 Id hatch, `ui/IdHatch.svelte`
+   reads `{pub,key}` from `stashed.cluster_idento` (pasted via the 🪪 Id hatch, `Funk/IdHatch.svelte`
     — *"stashed's autosave persists it across reloads"*). It signs `gen_write` (`LiesLies` ~330),
      verified relay-side (`ClusterTrust_handover.md`). **`stashed` autosaves across reload** — this
       is the persistence keystone of §5 (the Keep can share the same home).

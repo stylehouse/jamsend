@@ -1,5 +1,10 @@
 # req:Keeping — consolidating the focused-and-remembered workspace
 
+> **Attention-layer trio.** This is the **persistence** doc; `Interest.md` is the attention
+> *channel*, `Lang_handover.md` the editor surface. The medium all three act on — the Waft, a
+> named container holding Whats/Docs/Points — is documented atop `Waft.svelte` (the old
+> `Waft_spec.md` is gutted to a pointer).
+
 Status: **design, for review.** The **`req:Keeping` driver is unbuilt** — but the
 Keep *noun* it would own is already live: `Waft:Keep` is a real snapped Waft (Persist
 loads/creates it), and the `Lies_keep_*` helpers (`_boot`/`_reopen`/`_resume_waft`/
@@ -189,12 +194,14 @@ projection `interest_reconcile` reads, not a parallel truth. A kind is two thing
 
 1. **capability flags** — what the classifiers need (snap / focusable / nibbed /
    persists), replacing the ~6 scattered raw-flag reads (`interest_stance_of`,
-   `Waft.svelte` is_taker/is_lister, `Lies_waft_save` exemption, `Lies_order_wafts`,
-   the `boring` filters).
+   `Lies_waft_save` exemption, `Lies_order_wafts`, the `boring` filters). *(Waft.svelte's
+   own is_taker/is_lister reads are already gone — a Waft's face is now its main Funkcion,
+   `%Funkcion,main` resolved through FUNK_KINDS; this kind-table is the next consolidation.)*
 2. **an autovivified Funkcion** — the kind's *behaviour*, and its **pathway in at
    startup**: when the Waft loads from snap its kind's Funkcion autovivifies and wires
    it up (the Keep replays its ledger; Cluster opens its network sync). Passive kinds
-   carry none — the editing checkout is their whole life.
+   carry none — the editing checkout is their whole life. *(The Ting/GhostList faces have
+   already landed this way — DocTing rides `Funkcion:Ting`, DocGhostList `Funkcion:dirlist`.)*
 
 *Nibbed* = gets a switcher **nib** (a cap in the InterestStrip you click to
 foreground). Background kinds aren't nibbed — no cap, off-stage.
@@ -203,7 +210,6 @@ foreground). Background kinds aren't nibbed — no cap, off-stage.
 |---|---|---|---|---|---|---|
 | **attention** | Trail | full | ✓ | ✓ | ✓ | — (the checkout is its life) |
 | | Aside | full | ✓ | ✓ | ✓ | — (GC-stale-days, later) |
-| | Sidetrack | — session | ✓ | ✓ | ✗ till graft | — |
 | | Ting | — session | sinks | ✓ always | ✗ | the tap accumulator |
 | | GhostList | line (`dontSnap`) | ✗ light | ✓ | ✓ | the ghost-index builder |
 | **background** | **Keep** | **line — visible!** | ✗ | ✗ | ✓ own home | ledger replay/record (`Lies_keep_boot`) |

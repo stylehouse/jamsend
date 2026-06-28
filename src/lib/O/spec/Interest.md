@@ -1,18 +1,20 @@
 # Interest — the Lang↔Lies attention channel
 
-> **Current state (2026-06-27).** Two things shifted under this doc since it was written;
-> the body below is an accurate *done-log* but read it through these:
-> - **The live decks are `Trail` + `Aside`.** `Aside` (stance `%aside`, the persisted daily
->   scratch `Waft:Aside/<YMD>`) is the off-Trail exploration deck and walks like a Trail
->   (full NaviCado, takes the stage, armed LE). **`Sidetrack` is dormant** — its `↳` sprout
->   button was removed (see "InterestStrip: bare × / ↳ gone" below), so `e_Lang_sprout_sidetrack`
->   / `interest_sprout_sidetrack` / the `tentative→Sidetrack` election have **no UI entry** and
->   linger as dead code. The "Per-deck Sidetrack LEs" TODO is really the **Aside** deck-LE work.
-> - **Lang/Interest state resumes from `Waft:Keep`.** Focus, cursor, and the open-set are no
->   longer session-only — they persist through the Keep ledger (`Lies_keep_*`). The
->   consolidation of focus/resume into one `req:Keeping` driver is designed in
->   `Keeping_spec.md`; the "Rejoin the stack frame" and "Per-(Interest, Waft) cursor-memory"
->   TODOs below are the resume half that the Keep now backs.
+> **The attention layer — one of three docs.** A Waft is an *indifferent medium* in which
+> you expect Whats, Docs and Points (the medium itself is now documented atop `Waft.svelte`;
+> the old `Waft_spec.md` is gutted to a pointer). Three docs *act* on that medium:
+> **this** = the Lang↔Lies attention *channel*; **`Keeping_spec.md`** = its persistence
+> (focus / cursor / open-set resume from `Waft:Keep`, `Lies_keep_*`); **`Lang_handover.md`**
+> = the editor surface the Interest's cursor points into. The "Rejoin the stack frame" and
+> "Per-(Interest, Waft) cursor-memory" TODOs below are the resume half the Keep now backs.
+>
+> **Live decks are `Trail` + `Aside`.** `Aside` (stance `%aside`, the persisted daily
+> scratch `Waft:Aside/<YMD>`) is the off-Trail exploration deck and walks like a Trail
+> (full NaviCado, takes the stage, armed LE). **`Sidetrack` is dead code awaiting deletion** —
+> its `↳` button is gone and nothing stamps `tentative`, so `e_Lang_sprout_sidetrack`,
+> `interest_sprout_sidetrack`, `e_Lies_open_sidetrack` and the `tentative→Sidetrack` election
+> all linger with no UI entry. Read any surviving "Sidetrack" below as "Aside" for the live
+> system; the "Per-deck Sidetrack LEs" TODO is really the **Aside** deck-LE work.
 
 The `%Interest` cluster + Lang↔Lies `waft_roster` channel is graduated into the real `w:Lies`/`w:Lang`
  and verified live. **Interests are attention channels: the IDE escalates state *through* them.** This
@@ -69,21 +71,19 @@ Real Waft **stances** (input to `interest_stance_of`):
   foregrounds its OWN Trail. It moves the single LE off any other Trail (exactly one bears `c.LE` =
    foreground), demotes the giver you left to `state:pending`, records the foreground on
     `ActiveInterest.waft`. `e_Lang_foreground({kind,waft})` is the switcher click: heavy kinds
-     (Trail|Sidetrack) set `ActiveInterest` eagerly then route to Lies `foreground_waft` to re-checkout;
+     (Trail|Aside) set `ActiveInterest` eagerly then route to Lies `foreground_waft` to re-checkout;
       light kinds (GhostList) are a pure lens swap. `InterestStrip.svelte` (atop the MiniMap, mounted in
        `DocMinimap`) shows one button per **presence:active** Interest, highlights `ActiveInterest`, `×`
         dismisses (drops the Lies Waft → gone). Light kinds lock/mount their lens but do **NOT** become
-         `ActiveInterest` — only Trail|Sidetrack take the stage and drive the canonical cursor
-          (Waft_spec §Presence). Add-Interest dropdown still unbuilt.
+         `ActiveInterest` — only Trail|Aside take the stage and drive the canonical cursor
+          (the foreground rule). Add-Interest dropdown still unbuilt.
 
-**Item 3 — real Sidetrack origination (the reverse arrow).** The reducers were there; this added the
- drivers. `e_Lang_sprout_sidetrack({from})` sprouts the pending, unbound Sidetrack Lang-side (lens
-  chosen, cursor off-anchor, `%from`=anchor, no `%waft` yet). `e_Lies_open_sidetrack({from})` mints the
-   throwaway **tentative** Waft `<from>/side` (in-memory, session-only, modelled on the Ting); the roster
-    sig moves → re-push → `interest_reconcile` binds the pending sprout by `%from`. `Lies_waft_save` is
-     save-exempt for `tentative` (no disk home until it grafts back). `InterestStrip ↳` sprouts a
-      Sidetrack off the foreground Trail in one gesture. Foregrounding a Sidetrack works in place (cursor
-       is `off_what`, routed via `interest_foreground`).
+**Item 3 — Sidetrack origination — SUPERSEDED by Aside, now dead code.** The reverse-arrow drivers
+ (`e_Lang_sprout_sidetrack` / `e_Lies_open_sidetrack`, minting a throwaway in-memory `tentative` Waft
+  bound back by `%from`) were built and then displaced by `Aside`, which fills the same off-Trail role
+   but **persists** instead of grafting home. The live reverse arrow is the **GhostList smart-click**
+    throwing a Doc into today's `Waft:Aside/<YMD>` (`Lies_spawn_aside_waft`, §TODO below). The Sidetrack
+     drivers + `interest_sprout_sidetrack` + the `tentative` save-exemption remain as **dead code to delete**.
 
 **Phase A — dual-LE crossfade (the headliner).** *Was:* exactly one Understanding `w/{LE:1}`;
  foreground-switching re-armed it onto the new target and **discarded the previous working clone** (the
@@ -270,7 +270,8 @@ The beyond-reasonable picture — held in view, not scheduled.
         the cursor lands on the new What so the ghost opens off the Trail. (The earlier `Dock_open`/↳-badge split
          and its StemHive `onalt` were dropped; StemHive is back to baseline.)
 - **`Aside` is now its own Interest kind — DONE.** Kinds are *elected by a stance mark on the Waft*
-   (`interest_stance_of`: `takes`→Ting, `lists`→GhostList, `tentative`→Sidetrack, **`aside`→Aside**, else→Trail);
+   (`interest_stance_of`: `takes`→Ting, `lists`→GhostList, **`aside`→Aside**, else→Trail; the dead
+    `tentative`→Sidetrack arm still resolves but nothing stamps it);
     the kind is read off that, never self-declared. `Lies_spawn_aside_waft` now stamps `%aside` so the daily
      scratch Waft *knows itself* — its own warm-amber cap style (`isx-aside`), a `🗒` label, and a clean place to
       hang Aside-specific behaviour later — instead of masquerading as an undifferentiated Trail. It still walks

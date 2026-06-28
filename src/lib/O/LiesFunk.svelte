@@ -340,6 +340,8 @@ await M.eatfunc({
     async GhostList_funkcion(gl: TheC, w: TheC): Promise<TheC> {
         const funk = gl.oai({ Funkcion: 'dirlist' })
         funk.sc.interval_ms ??= 8000
+        funk.sc.main        ??= 1   // it is the GhostList Waft's main Funkcion — its FACE (DocGhostList) is the Waft body
+
         if (funk.c.run) return funk
         delete funk.sc.walked_at   // a fresh install (incl. after a load) walks at once
         const H = this as House

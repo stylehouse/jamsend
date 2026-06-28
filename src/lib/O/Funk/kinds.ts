@@ -30,14 +30,18 @@ import Ballistics from "$lib/O/Funk/Ballistics.svelte"
 import StoryTimes, { storytimes_run } from "$lib/O/Funk/StoryTimes.svelte"
 import CreduFunk, { credufunk_run } from "$lib/O/Funk/CreduFunk.svelte"
 import Shelver, { shelver_run } from "$lib/O/Funk/Shelver.svelte"
-import IdHatch from "$lib/O/ui/IdHatch.svelte"
+import IdHatch from "$lib/O/Funk/IdHatch.svelte"
 import Runner, { runner_run } from "$lib/O/Funk/Runner.svelte"
 import Relay, { relay_run } from "$lib/O/Funk/Relay.svelte"
 import Upkeep from "$lib/O/Funk/Upkeep.svelte"
+import DocTing from "$lib/O/Funk/DocTing.svelte"
+import DocGhostList from "$lib/O/Funk/DocGhostList.svelte"
 
 export type FunkKind = {
     run?:                (host: TheC, funk: TheC, ww: TheC) => void
-    component?:          any   // the inline in-Waft face (FunkHost)
+    component?:          any   // the inline in-Waft face (FunkHost).  A small cell (Storying, a
+                               //  verdict light) OR a Waft's whole BIG body when the embed is its
+                               //   main Funkcion (Ting → DocTing, dirlist → DocGhostList) — same slot.
     // hoisted faces, keyed by Lens-KIND (the slot|intensity a Lens carries) — LensHost picks
     //  comp_<lens.Lens> off the Funkcion named by lens.of_Funkcion:
     comp_Panel?:         any   // → the global/fullscreen Lens dock in Otro (ui/Lens.svelte kind="Panel")
@@ -56,4 +60,6 @@ export const FUNK_KINDS: Record<string, FunkKind> = {
     Runner:     { run: runner_run, comp_Brink: Runner },        // %Aim watcher: the peer ping (%channel_peer), hoisted as Lens:Brink
     Relay:      { run: relay_run,  comp_Brink: Relay },         // %Aim watcher: the relay ping (channel carrier), hoisted as Lens:Brink
     Upkeep:     { comp_Brink: Upkeep },                         // %Upkeep ledger: live %Errands (compiles, sweeps) hoisted as Lens:Brink
+    Ting:       { component: DocTing },                         // big face: the attention-Ting histogram — a taker Waft's main Funkcion (data in H.ave)
+    dirlist:    { component: DocGhostList },                    // big face: the GhostList ghost-index — the GhostList Waft's main Funkcion (run rides funk.c.run, installed off-snap by GhostList_funkcion)
 }

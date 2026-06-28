@@ -1075,17 +1075,17 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         H.Lies_keep_push_cursor(keep, 'waft', path)
     },
 
-    //   Lies_keep_push_cursor — append a %Cursor on a host (the Keep, or a WaftTimes),
-    //    newest last, capped to the last 10.  Coalesces a repeat of the current spot so an
-    //     idle re-focus does not bloat the history.
+    //   Lies_keep_push_cursor — record the latest %Cursor on a host (the Keep, or a WaftTimes).
+    //    Keeps exactly ONE — the current position — reused in place.  (Was a capped-10 history,
+    //     but only the last is ever read — resume_waft | resume_what — so the tail was dead
+    //      weight bloating the snap.)  Any stragglers a legacy ledger left collapse on the next
+    //       move, so an old multi-Cursor Keep self-cleans to a single latest of each.
     Lies_keep_push_cursor(host: TheC, key: string, val: string): void {
-        const now  = Date.now()
         const curs = host.o({ Cursor: 1 }) as TheC[]
-        const last = curs[curs.length - 1]
-        if (last && last.sc[key] === val) { last.sc.at = now; return }
-        const c = host.i({ Cursor: 1 }); c.sc[key] = val; c.sc.at = now
-        const all = host.o({ Cursor: 1 }) as TheC[]
-        for (let i = 0; i < all.length - 10; i++) host.drop(all[i])
+        const cur  = curs[curs.length - 1] ?? host.i({ Cursor: 1 })
+        cur.sc[key] = val
+        cur.sc.at   = Date.now()
+        for (const old of curs.slice(0, -1)) host.drop(old)   // collapse a legacy multi-entry ledger
         host.bump_version()
     },
 
@@ -1185,9 +1185,17 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         if (!w.c.keep_resumed && !boot_param('W')) {
             const resume = H.Lies_keep_resume_waft(w)
             if (!resume) { w.c.keep_resumed = 1; return }                  // nothing remembered — keep Editron's default
-            if (!(w.o({ Waft: resume })[0])) return                       // the remembered Waft is still reopening — wait
+            const rw = w.o({ Waft: resume })[0] as TheC | undefined
+            if (!rw) return                                               // the remembered Waft particle is still reopening — wait
+            // wait for its CONTENT too, so the concentric pair resumes WHOLE: the foreground
+            //  runs Lies_keep_resume_what → Lies_locate_in_waft over this Waft's What|Doc tree,
+            //   and if that tree is still mid-load it finds nothing and lands on first — the
+            //    outer Waft resumes but the inner What is lost.  Bounded (~30 ticks) so an
+            //     empty | slow Waft still foregrounds (land-on-first) rather than hanging.
+            const ready = rw.o({ What: 1 }).length || rw.o({ Doc: 1 }).length
+            if (!ready && ((w.c.keep_resume_waits = ((w.c.keep_resume_waits as number) ?? 0) + 1) < 30)) return
             w.c.keep_resumed = 1
-            H.i_elvisto('Lies/Lies', 'Lies_foreground_waft', { path: resume })   // canonical foreground = focus + land
+            H.i_elvisto('Lies/Lies', 'Lies_foreground_waft', { path: resume })   // canonical foreground = focus + land (+ inner-what resume)
         }
     },
 

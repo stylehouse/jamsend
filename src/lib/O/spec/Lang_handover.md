@@ -73,7 +73,8 @@ A **dock** is a particle `{dock: <path>}` under `w:Lang`. One document, one dock
 
 Docs live in a `Waft` tree: `Waft → What* → (Doc | Point*)`, nesting unstrict
  (`Text.svelte:353`, `WAFT_PROTOCOL = Waft|What|Doc|Point`, each `omit_sc: SESSION_KEYS`). The
-  design lives in `Waft_spec.md`; `LiesEnd_spec.md` has the tight schema. A **What** is a topic, a
+  grammar lives atop `Waft.svelte` + `Waft_spec.md` (now a pointer doc); `LiesEnd_spec.md` has the
+   tight schema. A **What** is a topic, a
    **Doc** is a concrete file/blob, a **Point** is an authored location *in* a Doc. A What may hold
     several Docs (`multiDocWhat`); a click picks the alpha Doc (`what.c.alpha_doc`,
      `multidocwhat-chosen-doc` memory).
@@ -283,6 +284,9 @@ So the real obligation the split adds is a **contract, per reader, of who may be
    to a Point/tap — must still land on the right span (offsets must not drift post-compile).
 - **Fold + lang-gen** still behave (now reading `view.state`).
 
-**Adjacent reading:** `Editron.md` (the channel/runner layer that rides *on* this), `Waft_spec.md`
- (the document tree), `map-rel-offsets` + `nong-pointing` memories (the offset/TOC work),
-  `Langui`'s own "Option B" head comment (the per-path EditorState cache this seam extends).
+**Adjacent reading — the attention-layer trio this is the editor face of:** `Interest.md` (the
+ Lang↔Lies attention channel) and `Keeping_spec.md` (focus/cursor persistence). The Waft medium —
+  the document tree — is documented atop `Waft.svelte` (the old `Waft_spec.md` is now a pointer doc
+   keeping the grammar). Also `Editron.md` (the channel/runner layer that rides *on* this),
+    `map-rel-offsets` + `nong-pointing` memories (the offset/TOC work), `Langui`'s "Option B" head
+     comment (the per-path EditorState cache this seam extends).

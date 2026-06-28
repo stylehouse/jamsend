@@ -300,21 +300,21 @@
             console.log(`🫧 Ting waft: ${key}`)
         }
         const ting = w.oai({ Waft: key })
-        ting.sc.takes = 1   // a taker — receives globulated Points, never persisted
+        ting.sc.takes = 1   // a taker — receives globulated Points, never persisted (behaviour)
+        ting.oai({ Funkcion: 'Ting' }).sc.main = 1   // its FACE: the main Funkcion (DocTing histogram) — Waft body renders it generically
         return ting
     },
 
     // ── Lies_ghostlist ───────────────────────────────────────────────────────
     //   The GhostList — a singleton Waft that dirlists the ghost pile into itself
     //   (GhostList_funkcion) and shows it in the Lies UI.  It loads+saves like any
-    //   Waft: this returns the loaded container (marking sc.lists so the switcheroo
-    //   renders it as the index), or kicks the load and returns undefined while it
-    //   provisions.  Letting the Waft pipeline own the container is what gives it
+    //   Waft: this returns the loaded container (its dirlist Funkcion is its %main face,
+    //   so the Waft body renders the index), or kicks the load and returns undefined while
+    //   it provisions.  Letting the Waft pipeline own the container is what gives it
     //   persistence — and its watch_c auto-saves on every change.
     Lies_ghostlist(w: TheC): TheC | undefined {
         const gl = w.o({ Waft: 'GhostList' })[0] as TheC | undefined
         if (gl) {
-            if (!gl.sc.lists) gl.sc.lists = 1
             // a test opts out of snapping the volatile dirlist via
             //  Opt/For/w:Lies/dontSnapGhostList — the Waft:GhostList line stays,
             //   its self-listing subtree is folded out of the snap (%dontSnap).
