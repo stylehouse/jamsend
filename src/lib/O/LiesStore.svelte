@@ -588,6 +588,20 @@
     //
     //   Fires i_elvis_req immediately (idempotent via req_sent).
     //   Does NOT drop finished reqs before roai — callers need them to read reply.
+    //
+    //   Self-heal a lost dispatch.  i_elvis_req fires the Wormhole rw_op elvis exactly
+    //    ONCE — %req_sent then suppresses re-fire forever.  But that single fire can be
+    //     lost (a fresh-page-load race where the read reaches the Wormhole worker before
+    //      it first stamps {o_elvis:rw_op}, Mundo not yet ticking, a torn-down sub-House,
+    //       …) and there is no other retry: req:Store only pumps inside LiesRealised,
+    //        which a stuck read never reaches (LiesPersist returns !settled).  The read
+    //         sits at %req_sent, its ttlilt times out, "⏳ loading Waft…" never clears,
+    //          and only a page reload escapes (the reported ~20%-on-load editor hang).
+    //   LiesPersist re-calls us every tick while loading, so we are the one live retry
+    //    point: when an unfinished read's ttlilt has timed out, the fire is gone — clear
+    //     %req_sent + drop the dead ttlilt so the lines below re-dispatch and re-wait.
+    //      Re-arming a fresh ttlilt also keeps Story's poll non-quiescent, so the boot
+    //       step keeps ticking us until the read lands instead of finishing half-loaded.
     async LiesStore_read(
         w:       TheC,
         rw_name: string,
@@ -600,6 +614,24 @@
             : { req: 'LiesStore_read', rw_name }
 
         const req = await host.oai(c, { rw_op: 'read' })
+
+        // retry a read whose single dispatch is overdue.  Check the ttlilt's own
+        //  until_ts (== this think's clock, Date.now()/1000) rather than waiting for
+        //   the end-of-think publisher to stamp %timed_out: re-arming HERE, before that
+        //    publisher runs, means Story never sees a timed-out ttlilt and so never
+        //     declares the boot step quiescent on a half-loaded read — it keeps ticking
+        //      us until the re-fired read lands.  Dedup on the Wormhole side makes a
+        //       re-fire harmless if the original is genuinely still in flight.
+        if (!req.sc.finished && req.sc.req_sent) {
+            const now = Date.now() / 1000
+            const overdue = (req.o({ ttlilt: 1 }) as TheC[]).some(
+                t => t.sc.timed_out || (t.sc.until_ts as number) < now)
+            if (overdue) {
+                delete req.sc.req_sent                               // re-open the once-only dispatch gate
+                for (const t of req.o({ ttlilt: 1 }) as TheC[]) req.drop(t)
+                console.warn(`🗂 LiesStore_read retry (lost dispatch): ${rw_name}`)
+            }
+        }
 
         H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
         // a finished read handed to the caller is consumed now — mark seen so

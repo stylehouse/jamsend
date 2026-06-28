@@ -16,13 +16,14 @@ Snap:H
             Chunk,seq=5
             Chunk,seq=6
             Chunk,seq=7
-        Player,name:ear,playhead=-1,decoded=4,live
+        Player,name:ear,playhead=-1,decoded=4,req=2,live,ok
           req:progress,eternal,ok
           aud,seq=0
           aud,seq
           aud,seq=2
           aud,seq=3
           aud,seq=4
+        req:witness,eternal,ok
         witnessed:wired
         reached:step_3
         witnessed:buffered

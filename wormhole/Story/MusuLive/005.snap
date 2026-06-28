@@ -20,7 +20,7 @@ Snap:H
             Chunk,seq=9
             Chunk,seq=10
             Chunk,seq=11
-        Player,name:ear,playhead=8,decoded=11,live
+        Player,name:ear,playhead=8,decoded=11,req=2,live,ok
           req:progress,eternal,ok
           aud,seq=0
           aud,seq
@@ -34,6 +34,7 @@ Snap:H
           aud,seq=9
           aud,seq=10
           aud,seq=11
+        req:witness,eternal,ok
         witnessed:wired
         reached:step_3
         witnessed:buffered

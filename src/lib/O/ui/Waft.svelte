@@ -222,18 +222,21 @@
     let is_lister     = $derived(!!waft.sc.lists)
     let raw           = $state(false)
 
-    // ── per-Waft view controls (ephemeral; never touch the C/snap) ────────────
-    //   These ride alongside the ghost|data disillusioner as plain view state.
+    // ── per-Waft view controls ────────────────────────────────────────────────
     //   minimised:  collapse the body to just the control bar (the wkey stays as a tab).
+    //                PROJECTED from the Keep (Lies_keep_cfg) — per-Waft "how it's pitched"
+    //                 memory lives in the Keep's ledger, NOT on the Waft, so it survives reload
+    //                  (even the dontSnap Cluster) and the Keep owns it.  absent = open; an
+    //                   %equip fixture is seeded collapsed in the Keep (Lies_aim).
     //   capped:     Vexpany — cap the body at 10em and let it scroll, vs. infinite height.
     //   sidebyside: halve this Waft's width.  The parent list (.ls-waft-section) is a
     //               flex-wrap row, so two adjacent half-Wafts pair onto one line by
     //               themselves — no parent bookkeeping, the wrap does the pairing.
-    //   A Cluster-kind Waft (backstage infra — a borrowed EntropyProfile, etc.) starts
-    //    minimised: it's not the work, just a tab.  Expand to find its whole inner /** .
-    //     The Keep is backstage too but its kind says minimised:false — line-visible so you
-    //      watch the ledger accumulate (the whole point of un-blinding it from %boring).
-    let minimised  = $state(H.Lies_waft_kind(waft).minimised)
+    //   capped|sidebyside stay ephemeral — render-only, never reach the C/snap.
+    let minimised  = $derived((() => {
+        void (w.o({ Waft: 'Keep' })[0]?.version ?? w.version)   // re-derive when the Keep changes|loads
+        return !!H.Lies_keep_cfg_get(w, wkey, 'minimised')
+    })())
     let capped     = $state(false)
     let sidebyside = $state(false)
 
@@ -637,7 +640,7 @@
          All three are render-only and never reach the C/snap. -->
     <div class="ls-waft-ctl">
         <button class="ls-waft-btn" class:ls-waft-btn-on={minimised}
-                onclick={() => minimised = !minimised}
+                onclick={() => H.Lies_keep_cfg_set(w, wkey, 'minimised', minimised ? undefined : 1)}
                 title="{minimised ? 'expand this Waft' : 'minimise this Waft'}">{minimised ? '▸' : '▾'}</button>
         {#if minimised}
             <span class="ls-waft-tab" title={wkey}>{wkey}</span>

@@ -1,9 +1,9 @@
-Credulation,of_Book:PereStaple
-  run=0,at=1782628296.243,ok,ok_pct,mode:check
+Credulation,of_Book:ReactiveWaft
+  run=0,at=1782630240.632,ok=0,ok_pct=0.17,mode:check
     uses:Ghost_N_Peeroleum,dige:1bb4df8687a8d30b
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:a9bf42ff80d08a94
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
     uses:Ghost_Story_Peregrination,dige:01d7e14b7e285d68
     uses:Ghost_M_Radiola,dige:03dc3be514cf3dd2
-    uses:Ghost_Story_Musuation,dige:f017d01b28e6cfe2
+    uses:Ghost_Story_Musuation,dige:768dae1ef25cf558

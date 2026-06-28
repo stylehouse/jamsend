@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Musuation(): string { return 'f017d01b28e6cfe2' },
+    Ghostmeta_Ghost_Story_Musuation(): string { return 'fa4cb8d045a8825f' },
 
 // Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Music_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
@@ -162,7 +162,9 @@ MusuStream(A,w) {
     })
 },
 // MusuStream_drive — per-inner-step dispatch off the run's step_n (tracked on req.c.did_step), then
-//  pump + witness + order every pass.  Separate guarded ifs sidestep the bare-else tile mangle.
+//  order every pass.  No pump (Terminal + Caster are typed serial-reqs, swept) and no witness (its own
+//   %req:witness, swept LAST) — see MusuStream_sides_up.  Separate guarded ifs sidestep the bare-else
+//    tile mangle.
 async MusuStream_drive(w, req) {
     let n = (this.c.run)?.c.step_n
     if (n != null && n !== req.c.did_step) {
@@ -172,30 +174,31 @@ async MusuStream_drive(w, req) {
         if (n === 4) this.MusuStream_play(w, 2, 'step_4')
         if (n === 5) this.MusuStream_play(w, 10, 'step_5')
     }
-    await this.MusuStream_pump(w)
-    this.MusuStream_witness(w)
     await this.MusuStream_order(w)
 
 },
 // ── the scenario verbs ──────────────────────────────────────────────────────────────────────
 // MusuStream_sides_up — beat 2: the link with a preview boundary.  A %Caster (12 stock, the first 4
-//  a free preview, cursor 0, NOT live) feeding a %Terminal whose %inbox catches chunks.  Stamp c.up
-//   on both (so the spine reads w), the caster<->terminal cross-refs (term.c.caster is what
-//    streamability drills), the want-floor on w (shrunk to 2 so the want fires only after a couple
-//     of plays, not instantly), and seed BOTH reqs: the caster's spool and the terminal's
-//      streamability.  Idle till live.
+//  a free preview, cursor 0, NOT live) feeding a %Terminal whose %inbox catches chunks.  BOTH are typed
+//   serial-reqs (oai …,req → req_Terminal / req_Caster, swept by w).  The TERMINAL is minted FIRST so the
+//    sweep pumps its %req:streamability (decide want) BEFORE the caster's %req:cast (honour want) — the
+//     same single-pass causality the old terminal-before-caster MusuStream_pump enforced by hand.  Stamp
+//      c.up on both (oai defers it), the caster<->terminal cross-refs (term.c.caster is what streamability
+//       drills), the want-floor on w (shrunk to 2).  The witness rides its own %req:witness, minted LAST
+//        so it observes the settled state.  Idle till live.
 MusuStream_sides_up(w) {
     w.i({reached: "step_2"})
     w.sc.want_left = 2
-    let caster = w.i({Caster: 1, name: 'alpha', total: 12, preview: 4, next: 0})
-    caster.c.up = w
-    let term = w.i({Terminal: 1, name: 'omega'})
+    let term = w.oai({Terminal: 1, name: 'omega', req: 1})
     term.c.up = w
     term.i({inbox: 1})
+    let caster = w.oai({Caster: 1, name: 'alpha', total: 12, preview: 4, next: 0, req: 1})
+    caster.c.up = w
     caster.c.term = term
     term.c.caster = caster
     caster.oai({req: 'cast', eternal: 1})
     term.oai({req: 'streamability', eternal: 1})
+    w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.MusuStream_witness(w); req.sc.ok = 1 })
 
 },
 // MusuStream_go_live — beat 3: arm the spool.  The next pump spools the free preview (0..3) and
@@ -218,18 +221,6 @@ MusuStream_play(w, n, mark) {
     let ack = +(term.sc.ack ?? -1)
     term.sc.ack = ack + n
     term.bump()
-
-},
-// MusuStream_pump — pump the TERMINAL first (its %req:streamability decides to want) THEN the caster
-//  (its %req:cast honours that want in the SAME pass — the wrangle runs once per step, so order is
-//   the causality).  Both need their c.up stamped (done in sides_up) for the child req to pump.
-async MusuStream_pump(w) {
-    for (const term of w.o({Terminal: 1})) {
-        await term.do()
-    }
-    for (const caster of w.o({Caster: 1})) {
-        await caster.do()
-    }
 
 },
 // MusuStream_witness — the readable assertions, polled each pass; structural + idempotent, the beat
@@ -294,7 +285,8 @@ MusuStock(A,w) {
     })
 },
 // MusuStock_drive — per-inner-step dispatch off the run's step_n (tracked on req.c.did_step), then
-//  pump + witness + order every pass.  Separate guarded ifs sidestep the bare-else tile mangle.
+//  order every pass.  No pump (the %Stock is a swept serial-req) and no witness (its own %req:witness,
+//   swept LAST).  Separate guarded ifs sidestep the bare-else tile mangle.
 async MusuStock_drive(w, req) {
     let n = (this.c.run)?.c.step_n
     if (n != null && n !== req.c.did_step) {
@@ -304,8 +296,6 @@ async MusuStock_drive(w, req) {
         if (n === 4) this.MusuStock_serve(w)
         if (n === 5) this.MusuStock_drain(w)
     }
-    await this.MusuStock_pump(w)
-    this.MusuStock_witness(w)
     await this.MusuStock_order(w)
 
 },
@@ -313,14 +303,17 @@ async MusuStock_drive(w, req) {
 // MusuStock_sides_up — beat 2: stand up the fan-out under w:MusuStock.  One %Stock (a 12-record finite
 //  source, nothing produced yet, NOT live) with two %cursor consumers (fast + slow, both at the head)
 //   as children — Radios' consumers,of=radiostock — and the spine's %req:restock seeded on the stock.
-//    Stamp stock.c.up by hand so restock reads keep_ahead off w.  Idle till live.
+//    The %Stock is a typed serial-req (oai Stock,…,req → req_Stock, swept by w); stamp stock.c.up by
+//     hand (oai defers it) so restock reads keep_ahead off w.  The witness rides its own %req:witness,
+//      minted LAST so it observes the settled state.  Idle till live.
 MusuStock_sides_up(w) {
     w.i({reached: "step_2"})
-    let stock = w.i({Stock: 1, name: 'radiostock', cap: 12, made: 0})
+    let stock = w.oai({Stock: 1, name: 'radiostock', cap: 12, made: 0, req: 1})
     stock.c.up = w
     stock.i({cursor: 1, client: 'fast', at: 0})
     stock.i({cursor: 1, client: 'slow', at: 0})
     stock.oai({req: 'restock', eternal: 1})
+    w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.MusuStock_witness(w); req.sc.ok = 1 })
 
 },
 // MusuStock_go_live — beat 3: arm restock.  The next pump fills the buffer keep_ahead deep (made->5)
@@ -366,15 +359,6 @@ MusuStock_advance(w, client, n) {
     if (at > cap) at = cap
     cur.sc.at = at
     cur.bump()
-
-},
-// MusuStock_pump — pump every %Stock each pass; stock.do() runs its %req:restock.  The consumers were
-//  advanced at dispatch, so restock reacts to the new leading edge in the SAME pass.  Needs stock.c.up
-//   (stamped in sides_up) for the child req to pump.
-async MusuStock_pump(w) {
-    for (const stock of w.o({Stock: 1})) {
-        await stock.do()
-    }
 
 },
 // MusuStock_witness — the readable assertions, polled each pass; structural + idempotent, the beat in
@@ -448,24 +432,25 @@ async MusuLive_drive(w, req) {
         if (n === 4) this.MusuLive_follow(w)
         if (n === 5) this.MusuLive_end(w)
     }
-    await this.MusuLive_pump(w)
-    this.MusuLive_witness(w)
     await this.MusuLive_order(w)
 
 },
 // MusuLive_sides_up — beat 2: a %Terminal with an %inbox (where the wire drops %Chunk) and a %Player
 //  reading it, cross-linked (player.c.term / term.c.player) with c.up stamped so req_progress reads the
-//   window|live_back off w.  Seed the player's %req:progress.  Idle till live.
+//   window|live_back off w.  The %Player is a typed serial-req (oai Player,…,req → req_Player, swept by
+//    w); the %Terminal stays passive (it only holds the inbox).  Seed the player's %req:progress; the
+//     witness rides its own %req:witness, minted LAST so it observes the settled decode.  Idle till live.
 MusuLive_sides_up(w) {
     w.i({reached: "step_2"})
     let term = w.i({Terminal: 1, name: 'omega'})
     term.c.up = w
     term.i({inbox: 1})
-    let player = w.i({Player: 1, name: 'ear', playhead: -1, decoded: -1})
+    let player = w.oai({Player: 1, name: 'ear', playhead: -1, decoded: -1, req: 1})
     player.c.up = w
     player.c.term = term
     term.c.player = player
     player.oai({req: 'progress', eternal: 1})
+    w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.MusuLive_witness(w); req.sc.ok = 1 })
 
 },
 // MusuLive_deliver — the wire drops chunks seq lo..hi into the inbox; delivered chunks are what the
@@ -519,14 +504,6 @@ MusuLive_play(w, n) {
     let head = +(player.sc.playhead ?? -1)
     player.sc.playhead = head + n
     player.bump()
-
-},
-// MusuLive_pump — pump every %Player; player.do() runs %req:progress.  Delivery + play happened at
-//  dispatch, so the decode reacts to the new edge/playhead in the same pass.
-async MusuLive_pump(w) {
-    for (const player of w.o({Player: 1})) {
-        await player.do()
-    }
 
 },
 // MusuLive_witness — structural + idempotent, the beat in the VALUE.  Unique names so they never
@@ -598,19 +575,18 @@ async MusuWear_drive(w, req) {
         if (n === 4) this.MusuWear_age_first(w)
         if (n === 5) this.MusuWear_age_more(w)
     }
-    await this.MusuWear_pump(w)
-    this.MusuWear_witness(w)
     await this.MusuWear_order(w)
 
 },
 // MusuWear_sides_up — beat 2: a %Stock pool of 7 %Record (seq 0..6, played/idle 0) and the spine's
-//  %req:reap.  Shrink the wear thresholds on w so the sweep fires within a few beats; c.up stamped so
-//   req_reap reads them off w.
+//  %req:reap.  Shrink the wear thresholds on w so the sweep fires within a few beats.  The pool %Stock
+//   is a typed serial-req (oai Stock,…,req → req_Stock, swept by w); c.up stamped (oai defers it) so
+//    req_reap reads the thresholds off w.  The witness rides its own %req:witness, minted LAST.
 MusuWear_sides_up(w) {
     w.i({reached: "step_2"})
     w.sc.wear_enough = 2
     w.sc.wear_delay = 3
-    let pool = w.i({Stock: 1, name: 'records'})
+    let pool = w.oai({Stock: 1, name: 'records', req: 1})
     pool.c.up = w
     let seq = 0
     while (seq < 7) {
@@ -618,6 +594,7 @@ MusuWear_sides_up(w) {
         seq = seq + 1
     }
     pool.oai({req: 'reap', eternal: 1})
+    w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.MusuWear_witness(w); req.sc.ok = 1 })
 
 },
 // MusuWear_heard — beat 3: records 0,1,2 are heard enough (played 2) but only just stopped (idle 0) --
@@ -656,12 +633,6 @@ MusuWear_age_more(w) {
     recs[3].sc.played = 2
     recs[3].sc.idle = 3
     pool.bump()
-
-},
-async MusuWear_pump(w) {
-    for (const pool of w.o({Stock: 1})) {
-        await pool.do()
-    }
 
 },
 // MusuWear_witness — structural + idempotent.  worn = wore_out count; kept_worn = live records that are

@@ -926,6 +926,18 @@
             ] },
         },
         {
+            // Equipment Wafts (%equip — Keep | Cluster | Credence | GhostList): backstage
+            //  fixtures whose guts churn every tick (a Keep's WaftTimes ledger, the cluster's
+            //  Aim watchers) and are never test signal.  Fold the subtree — emit the Waft's
+            //  own line so the snap still shows the equipment is present, prune below it.
+            //   dontSnap not skip keeps the header, and an equip Waft can still enWaft to its
+            //    OWN home: this rule only governs the enclosing w:Lies snap.
+            //  Hardcoded, not a stored %lematch Entcase — a fixed structural rule nobody edits
+            //   as C (you only reach for %lematch when the rule is C** you want enWaft-able).
+            matching_any: [{ sc_has: { Waft: 1, equip: 1 } }],
+            means: { dontSnap: true },
+        },
+        {
             // ttlilt timers carry until_ts — an absolute wall-clock deadline (now + ttl,
             //  set in Hovercraft when a req arms a timed pause).  It is non-deterministic
             //   every run, like %mo: a snap should diff on the presence/shape of the pause,
@@ -1010,6 +1022,10 @@
         D.sc.objecties = q.objecties
         D.sc.copy = { ...n.sc }
         D.sc.snap_line = lines.join("\n")
+        // a folded node (the dontSnap means above, or the %dontSnap flag) leaves a trace, so
+        //  the snap shows its subtree was omitted on PURPOSE, not absent.  No child count —
+        //   that would churn the very line we fold to keep stable (a Keep's ledger only grows).
+        if (q.dontSnap || n.sc.dontSnap) D.sc.snap_line += '   /* subtree omitted (dontSnap) */'
         if (q.mung?.length) { D.c.munged ??= []; D.c.munged.push(q.mung) }
         if (q.thence?.length) T.sc.thence_matching = q.thence
     },

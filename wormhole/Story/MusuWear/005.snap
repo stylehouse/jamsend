@@ -6,7 +6,7 @@ Snap:H
         self,round=11	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
-        Stock,name:records
+        Stock,name:records,req=2,ok
           Record,seq=0,played=2,idle=3,wore_out
           Record,seq,played=2,idle=3,wore_out
           Record,seq=2,played=2,idle=3
@@ -15,6 +15,7 @@ Snap:H
           Record,seq=5,played=0,idle=0
           Record,seq=6,played=0,idle=0
           req:reap,eternal,ok
+        req:witness,eternal,ok
         witnessed:stockpiled
         reached:step_3
         witnessed:heardenough

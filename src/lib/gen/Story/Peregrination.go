@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Peregrination(): string { return '01d7e14b7e285d68' },
+    Ghostmeta_Ghost_Story_Peregrination(): string { return '92cd131866b408e5' },
 
 
 // PereStaple — the Peeroleum p2p test (the outer test layer), and the first of a
@@ -168,10 +168,13 @@ async Lake_proof_drive(w, req) {
             await this.Lake_storm_redial_arm(w)
         } else if (n === 29) {
             await this.Lake_multicast_arm(w)
+        } else if (n === 31) {
+            await this.Lake_corrupt_redial_arm(w)
         }
     }
     await this.Lake_pump_handshakes(w)
     this.Lake_proof_witness(w)
+    this.Lake_proof_see(w)
     await this.Lake_order(w)
 
 },
@@ -731,6 +734,43 @@ async Lake_storm_redial_arm(w) {
     await this.Peeroleum_deliver(w, mk(s4))
 
 },
+// Lake_corrupt_redial_arm — step 31: a CORRUPT frame re-supplied DURING a re-dial faults via verify, is NOT
+//  lost in the reset, and does not wedge the good tail behind it (reset ∘ verify ∘ ordering — the first of the
+//   handover's "not yet braided" list, the verify twin of Lake_storm_redial_arm's reset ∘ dedup ∘ ordering).
+//    Same deterministic awaited-deliver spine: a fresh LOSSY link (Cyn/Dax), %Ud on Dax.  Deliver s1 (cursor
+//     → s1); deliver s3,s4 with s2 MISSING → they gap-buffer in Dax.c.held.  reset_handshake (the re-dial) clears
+//      held+buffered, KEEPS %Ud + cursor.last.  Now re-supply s2 CORRUPT (bad body_hash): the kept cursor admits
+//       it as last+1 (a corrupt frame still BURNS its slot, never re-requested), req_unemit's sha256 verify
+//        rejects it → %faulty,bad-body-hash, the handler never runs for s2.  Re-supply s3,s4 good → the next
+//         contiguous seqs dispatch normally.  End: faulty carries bad-body-hash, inseq.last reached s4, only
+//          s1+s3+s4 handled (s2 burned, unhandled) — corruption mid-re-dial faults cleanly, the reset did not
+//           swallow it, the good tail still drained.  All synchronous → seen at step 31.
+async Lake_corrupt_redial_arm(w) {
+    w.i({reached: "step_31"})
+    let [CynPier, DaxPier] = await this.Lake_link(w, 'cyn', 'dax')
+    let Daxport = this.Lake_port(DaxPier)
+    Daxport.reliable = false
+    DaxPier.i({Ud: 1, pubkey: 'cyn'})
+    this.Peeroleum_on(w, 'test_credial', (cw, pier, frame) => { pier.c.cr_counts = pier.c.cr_counts || {}; let k = frame.header.seq; pier.c.cr_counts[k] = (pier.c.cr_counts[k] || 0) + 1 })
+    let s1 = this.Pier_next_seq(CynPier)
+    let s2 = this.Pier_next_seq(CynPier)
+    let s3 = this.Pier_next_seq(CynPier)
+    let s4 = this.Pier_next_seq(CynPier)
+    CynPier.c.cr_seqs = [s1, s2, s3, s4]
+    let bytes = new Uint8Array([9, 10, 11, 12])
+    let bad = '0'.repeat(64)   // 64 hex chars; the real sha256 of the body won't match → bad-body-hash
+    let mk = (s) => { return {header: {type: 'test_credial', from: 'cyn', to: 'dax', seq: s}} }
+    await this.Peeroleum_deliver(w, mk(s1))     // cursor → s1
+    await this.Peeroleum_deliver(w, mk(s3))     // s2 MISSING → gap-buffer in Dax.c.held
+    await this.Peeroleum_deliver(w, mk(s4))     // gap-buffer
+    DaxPier.c.cr_held_before = (DaxPier.c.held && Object.keys(DaxPier.c.held).length) || 0
+    this.Peeroleum_reset_handshake(DaxPier)     // the re-dial: clears held + buffered, KEEPS %Ud + cursor.last
+    DaxPier.c.cr_held_after = (DaxPier.c.held && Object.keys(DaxPier.c.held).length) || 0
+    await this.Peeroleum_deliver(w, {header: {type: 'test_credial', from: 'cyn', to: 'dax', seq: s2, body_hash: bad, body_len: bytes.length}, buffer: bytes})  // CORRUPT s2: burns its slot, verify faults
+    await this.Peeroleum_deliver(w, mk(s3))     // good tail re-supplied → dispatches in order
+    await this.Peeroleum_deliver(w, mk(s4))
+
+},
 // ══ multicast — publish-subscribe over a claimed @channel (spec §18) ══
 // The product motivation: a high-bandwidth publisher relaying to many listeners uploads ONCE to a topic and
 //  the relay fans it out — not one addressed copy per listener.  This proves the floor: claim an @name,
@@ -955,6 +995,28 @@ Lake_proof_witness(w) {
     let claimed3 = this.Lake_peering(w, 'pab')?.oa({owns:'@radio'})
     let offered3 = this.Lake_peering(w, 'sib2')?.oa({subscribed:'@radio'})
     if (allgot3 && noupload3 && claimed3 && offered3 && !(w.oa({witnessed: "multicast"}))) w.i({witnessed: "multicast"})
+
+},
+// Lake_proof_see — PereProof's once-noticed narration: the Seeing layer, the legible twin of Lake_proof_witness.
+//  Polled each pass like the witness, but instead of a step-numbered %witnessed:* latch it emits a readable
+//   %see SENTENCE, once, the first pass its truth holds (idempotent on the sentence value).  The sentence IS the
+//    assertion — the run reads back as a transcript, no step number to decode.  New braids land their assertion
+//     HERE; Lake_proof_witness keeps the recorded 2-30 gate untouched while this shape is tried.
+Lake_proof_see(w) {
+    // step 31 (corrupt_redial): a corrupt frame re-supplied DURING the re-dial faulted via verify (bad-body-hash
+    //  on Dax), was not swallowed by the reset (held tail real then cleared — cr_held_before >= 2, after 0), and
+    //   the good frames behind it still drained EXACTLY once (cursor reached s4, the corrupt s2 burned its slot
+    //    unhandled).  Five readings AND-ed, the same structural shape the witness uses — only the OUTPUT is a sentence.
+    let DaxPier = this.Lake_pier(w, 'dax')
+    let crfaulty = DaxPier && DaxPier.o({faulty:1})[0]
+    let crfaulterr = crfaulty && crfaulty.o({unemit:1})[0]?.sc.error
+    let crseqs = this.Lake_pier(w, 'cyn')?.c.cr_seqs
+    let crc = DaxPier && DaxPier.c.cr_counts
+    let crheld = DaxPier && DaxPier.c.cr_held_before
+    let crcleared = DaxPier && DaxPier.c.cr_held_after === 0
+    let crrecovered = !!(DaxPier && DaxPier.c.inseq && crseqs && DaxPier.c.inseq.last >= crseqs[3])
+    let crgood = !!(crc && crseqs && crc[crseqs[0]] === 1 && crc[crseqs[2]] === 1 && crc[crseqs[3]] === 1 && crc[crseqs[1]] == null)
+    if (crfaulterr === 'bad-body-hash' && crheld >= 2 && crcleared && crrecovered && crgood && !(w.oa({see: 'corrupt mid-re-dial frame faulted not lost — good tail recovered'}))) w.i({see: 'corrupt mid-re-dial frame faulted not lost — good tail recovered'})
 
 },
 // Lake_order — keep the Run snap readable: float THIS Book's peer world (A:PereStaple | A:PereProof,

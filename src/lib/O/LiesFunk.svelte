@@ -276,7 +276,8 @@ await M.eatfunc({
     async Lies_aim_setup(w: TheC): Promise<void> {
         const H = this as House
         const cluster = w.oai({ Waft: 'Cluster' }, { Aim: 1 })
-        cluster.sc.dontSnap ??= 1
+        cluster.sc.dontSnap ??= 1          // rebuilt each boot — never persisted (spec/Cluster_design)
+        cluster.sc.equip    ??= 'Cluster'  // out of the cursor's way: no nib, no focus — a backstage fixture
         for (const kind of ['Runner', 'Relay']) cluster.oai({ Funkcion: kind })
         await (H as any).Lies_instantiate_funkcions(w, cluster)   // binds each kind's run + registers the pump
     },
@@ -289,6 +290,13 @@ await M.eatfunc({
         if (!w.c.aim_setup) { w.c.aim_setup = true; void H.Lies_aim_setup(w) }
         const on = H.Lies_role(w) === 'editor' || H.Lies_role(w) === 'runner'
         const cluster = w.o({ Waft: 'Cluster' })[0] as TheC | undefined
+        // born collapsed — seed the Cluster's minimised into the Keep ONCE, the first time the
+        //  Keep meets it (the WaftTimes-absence gate).  Keep-backed so it persists though the
+        //   Cluster Waft is dontSnap; once-only so a later session honours a user expand instead
+        //    of re-collapsing.  keep is undefined off-editor, so this is editor-only by nature.
+        const keep = H.Lies_keep(w) as TheC | undefined
+        if (cluster && keep && !keep.oa({ WaftTimes: 1, of_Waft: 'Cluster' }))
+            H.Lies_keep_cfg_set(w, 'Cluster', 'minimised', 1)
         const kinds = ['Runner', 'Relay']
         for (let i = 0; i < kinds.length; i++) {
             const kind = kinds[i]

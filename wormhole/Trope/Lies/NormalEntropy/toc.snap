@@ -31,16 +31,3 @@ Waft:Trope/Lies/NormalEntropy,boring,dontSnap
       lematch,Change
         lematch,compile,dige,secs,dim,pending
           means,spayer,re:secs={NUM},tol:band,factor=0.52,slack=0.2
-    Entcase:Keep_WaftTimes-times
-      lematch,Waft:Keep
-        lematch,WaftTimes,of_Waft,discovered_at,accessed_at
-          {"means":1,"spayer":1,"re":"discovered_at={NUM},accessed_at={NUM}","tol":"any"}
-    Entcase:Keep_WaftTimes-cursor-at
-      lematch,Waft:Keep
-        lematch,WaftTimes,of_Waft
-          lematch,Cursor,what,at
-            {"means":1,"spayer":1,"re":"at={NUM}","tol":"any"}
-    Entcase:Keep_own-cursor-at
-      lematch,Waft:Keep
-        lematch,Cursor,waft,at
-          {"means":1,"spayer":1,"re":"at={NUM}","tol":"any"}

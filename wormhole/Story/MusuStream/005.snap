@@ -6,9 +6,7 @@ Snap:H
         self,round=11	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
-        Caster,name:alpha,total=12,preview=4,next=12,live
-          req:cast,eternal,ok
-        Terminal,name:omega,ack=11,want
+        Terminal,name:omega,req=2,ack=11,want,ok
           inbox
             Chunk,seq=0,kind:preview
             Chunk,seq,kind:preview
@@ -23,6 +21,9 @@ Snap:H
             Chunk,seq=10,kind:stream
             Chunk,seq=11,kind:stream
           req:streamability,eternal,ok
+        Caster,name:alpha,total=12,preview=4,next=12,req=3,live,ok
+          req:cast,eternal,ok
+        req:witness,eternal,ok
         witnessed:linked
         reached:step_3
         witnessed:previewed

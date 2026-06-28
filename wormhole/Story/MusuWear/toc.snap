@@ -4,22 +4,24 @@ story:MusuWear
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.036
+    TimeTotal:beliefs,avg=0.041
       sample=0.044,at=1782392674
       sample=0.017,at=1782393435
       sample=0.043,at=1782393447
       sample=0.043,at=1782393453
       sample=0.037,at=1782396646
       sample=0.03,at=1782625633
-    TimeTotal:step,avg=0.007
+      sample=0.075,at=1782630737
+    TimeTotal:step,avg=0.008
       sample=0.009,at=1782392674
       sample=0.003,at=1782393435
       sample=0.009,at=1782393447
       sample=0.009,at=1782393453
       sample=0.007,at=1782396646
       sample=0.006,at=1782625633
+      sample=0.015,at=1782630737
   step,dige:12da3a7f44c39c5f
-  step=2,dige:093772a9b9b1796e
-  step=3,dige:cc64760443bd8d16
-  step=4,dige:d87f4302e82f8717
-  step=5,dige:8eaf8906122a74ca
+  step=2,dige:3d4eb827ef8e8b4a
+  step=3,dige:1653920978e38d14
+  step=4,dige:122cdc50c3a8183e
+  step=5,dige:b2fb36585a72124e

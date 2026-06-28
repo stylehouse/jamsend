@@ -6,8 +6,9 @@ Snap:H
         self,round=7	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
-        Stock,name:radiostock,cap=12,made=0
+        Stock,name:radiostock,cap=12,made=0,req=2,ok
           cursor,client:fast,at=0
           cursor,client:slow,at=0
           req:restock,eternal,ok
+        req:witness,eternal,ok
         witnessed:stocked

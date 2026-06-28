@@ -6,9 +6,10 @@ Snap:H
         self,round=8	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
-        Caster,name:alpha,total=12,preview=4,next=0
-          req:cast,eternal,ok
-        Terminal,name:omega
+        Terminal,name:omega,req=2,ok
           inbox
           req:streamability,eternal,ok
+        Caster,name:alpha,total=12,preview=4,next=0,req=3,ok
+          req:cast,eternal,ok
+        req:witness,eternal,ok
         witnessed:linked

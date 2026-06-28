@@ -1,5 +1,5 @@
-Waft:GhostList,lists,seeded=1781603839925,O_defaulted
-  Funkcion:dirlist,interval_ms=8000,walked_at=1782542020398
+Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
+  Funkcion:dirlist,interval_ms=8000,walked_at=1782638267774
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
