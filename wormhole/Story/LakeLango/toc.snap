@@ -16,6 +16,7 @@ story:LakeLango
       sample=0.037,at=1782728136
       sample=0.034,at=1782730356
       sample=0.039,at=1782730747
+      sample=0.067,at=1782731770
     TimeTotal:step,avg=0.064
       sample=0.144,at=1782719436
       sample=0.092,at=1782720118
@@ -23,4 +24,5 @@ story:LakeLango
       sample=0.037,at=1782728136
       sample=0.034,at=1782730356
       sample=0.039,at=1782730747
+      sample=0.067,at=1782731770
   step,dige:b288ed1b3ef7a719

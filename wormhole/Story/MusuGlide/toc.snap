@@ -4,11 +4,17 @@ story:MusuGlide
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=4.252
+    TimeTotal:beliefs,avg=4.272
       sample=4.252,at=1782722184
-    TimeTotal:step,avg=1.063
+      sample=4.284,at=1782731255
+      sample=4.275,at=1782731284
+      sample=4.275,at=1782731288
+    TimeTotal:step,avg=1.068
       sample=1.063,at=1782722184
-  step,dige:0000000000000000
-  step=2,dige:0000000000000002
-  step=3,dige:0000000000000003
-  step=4,dige:0000000000000004
+      sample=1.071,at=1782731255
+      sample=1.069,at=1782731284
+      sample=1.069,at=1782731288
+  step,dige:8444ec93bfdd049b
+  step=2,dige:b58591c5c8881f32
+  step=3,dige:d0cb400d5a288a8e
+  step=4,dige:3aee34f78f097673

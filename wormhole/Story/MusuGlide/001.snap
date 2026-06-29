@@ -1,0 +1,7 @@
+Snap:H
+  H:MusuGlide,Run
+    A:MusuGlide
+      self,round	{"mung":["age"]}
+      w:MusuGlide
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

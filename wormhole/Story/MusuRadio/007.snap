@@ -1,0 +1,12 @@
+Snap:H
+  H:MusuRadio,Run
+    A:MusuRadio
+      self,round=7	{"mung":["age"]}
+      w:MusuRadio
+        self,round=7	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        record,name:synth-220hz,artist:Synth,title:220Hz,nchunks=100,seconds=5
+        record,name:synth-262hz,artist:Synth,title:262Hz,nchunks=100,seconds=5
+        record,name:synth-330hz,artist:Synth,title:330Hz,nchunks=100,seconds=5
+        record,name:synth-392hz,artist:Synth,title:392Hz,nchunks=100,seconds=5
+        Radio,name:on-air,track:262Hz,spin=9,playhead=100,spins=10,helped=10

@@ -1,9 +1,28 @@
 Credulation,of_Book:MusuGlide
-  run=0,at=1782722185.344,ok=0,ok_pct=0,mode:check
+  run=0,at=1782731256.622,ok=0,ok_pct=0,mode:check
     uses:Ghost_N_Peeroleum,dige:1bb4df8687a8d30b
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:a9bf42ff80d08a94
-    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
+    uses:Ghost_N_Tyrant,dige:74cf06ee9a34e2cb
     uses:Ghost_Story_Peregrination,dige:b33cab6322ef6320
-    uses:Ghost_M_Radiola,dige:74cf06ee9a34e2cb
-    uses:Ghost_Story_Musuation,dige:d49f8817fdbd884d
+    uses:Ghost_M_Radiola,dige:32b321bfc1e909b5
+    uses:Ghost_M_Crate,dige:f562e6fc0e7d9b66
+    uses:Ghost_Story_Musuation,dige:c92bf4b4c12e6f63
+  run,at=1782731285.574,ok=0,ok_pct=0,mode:check
+    uses:Ghost_N_Peeroleum,dige:1bb4df8687a8d30b
+    uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
+    uses:Ghost_N_Tribunal,dige:a9bf42ff80d08a94
+    uses:Ghost_N_Tyrant,dige:74cf06ee9a34e2cb
+    uses:Ghost_Story_Peregrination,dige:b33cab6322ef6320
+    uses:Ghost_M_Radiola,dige:32b321bfc1e909b5
+    uses:Ghost_M_Crate,dige:f562e6fc0e7d9b66
+    uses:Ghost_Story_Musuation,dige:c92bf4b4c12e6f63
+  run=2,at=1782731289.674,ok=0,ok_pct=0,mode:check
+    uses:Ghost_N_Peeroleum,dige:1bb4df8687a8d30b
+    uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
+    uses:Ghost_N_Tribunal,dige:a9bf42ff80d08a94
+    uses:Ghost_N_Tyrant,dige:74cf06ee9a34e2cb
+    uses:Ghost_Story_Peregrination,dige:b33cab6322ef6320
+    uses:Ghost_M_Radiola,dige:32b321bfc1e909b5
+    uses:Ghost_M_Crate,dige:f562e6fc0e7d9b66
+    uses:Ghost_Story_Musuation,dige:c92bf4b4c12e6f63

@@ -1,0 +1,8 @@
+Snap:H
+  H:MusuGlide,Run
+    A:MusuGlide
+      self,round=2	{"mung":["age"]}
+      w:MusuGlide
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        glidesig,kind:baseline,gaps=15,underran=23,min_rate,final_rate,flips=0,bits=5.17

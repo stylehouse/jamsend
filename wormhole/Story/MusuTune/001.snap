@@ -1,0 +1,7 @@
+Snap:H
+  H:MusuTune,Run
+    A:MusuTune
+      self,round	{"mung":["age"]}
+      w:MusuTune
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

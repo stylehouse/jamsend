@@ -1,0 +1,12 @@
+Snap:H
+  H:MusuTune,Run
+    A:MusuTune
+      self,round=4	{"mung":["age"]}
+      w:MusuTune
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        tune,kind:result,start_w=12.8,best_w=8.3,low=0.05,high=0.18,floor=0.87,tuned_drop=5,none_drop=8,inv_drop=8,min_rate=0.87,recovered
+        witnessed:helps
+        witnessed:descended
+        witnessed:backs_off
+        witnessed:recovers

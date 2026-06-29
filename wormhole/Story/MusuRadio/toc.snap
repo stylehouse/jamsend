@@ -3,12 +3,19 @@ story:MusuRadio
   Plan
   Opt
     For
+  TimeSpool
+    TimeTotal:beliefs,avg=61.449
+      sample=61.449,at=1782731449
+      sample=61.449,at=1782731672
+    TimeTotal:step,avg=6.828
+      sample=6.828,at=1782731449
+      sample=6.828,at=1782731672
   step,dige:285dbe809a010513
-  step=2,dige:0000000000000002
-  step=3,dige:0000000000000003
-  step=4,dige:0000000000000004
-  step=5,dige:0000000000000005
-  step=6,dige:0000000000000006
-  step=7,dige:0000000000000007
-  step=8,dige:0000000000000008
-  step=9,dige:0000000000000009
+  step=2,dige:3d52a23c71cb3acd
+  step=3,dige:cb927791fe9b1eed
+  step=4,dige:a387ad8de44f708c
+  step=5,dige:5dde0ad9539e9eb8
+  step=6,dige:d4127c989baf4ce5
+  step=7,dige:438cc917cc11965d
+  step=8,dige:30e660774efd001a
+  step=9,dige:ea7ff7676d9fde35
