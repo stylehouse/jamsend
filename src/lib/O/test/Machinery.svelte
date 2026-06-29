@@ -290,12 +290,17 @@
     },
 //#endregion
 //#region LakeLango
-    // P3 channel gate — the %Lango source terminal (Backbone_plan P3 "The Lango channel").  In-system
-    //  Story, NOT a scratch spec: a Prep fires e_Lies_lango_selftest, which mints %Langos onto a Waft's
-    //   req:Waftica carrier via H.lango and proves the minimal channel — mint, same-kind out-compete,
-    //    different-kind coexist.  (The /landing ack + yoink are designed-not-built — no consumer yet;
-    //     most %Lango is fire-and-forget anyway.)  Reads no focus (req:Langoer isn't built); markers
-    //      under LangoGate, the snap-fixture diff is the gate.
+    // P3 gate — the %Lango channel AND its receiver (Backbone_plan P3 "The Lango channel" +
+    //  "req:Langoer").  In-system Story, NOT a scratch spec: a Prep fires e_Lies_lango_selftest,
+    //   which mints %Langos via H.lango onto each source Waft's req:Waftica carrier, then drives
+    //    req:Langoer (req:Keeping's receiver hat) over them.  Proves BOTH halves:
+    //     SOURCE  — mint · same-kind out-compete (newest-wins) · different-kind coexist.
+    //     RECEIVER — a Cursor Lango BECOMES focus (req:Langoer,focus); an %equip source never wins
+    //                even when its Cursor is newer (background never steals the foreground); the
+    //                globally-newest foregroundable Cursor wins across carriers (the seq tiebreak).
+    //   Langoer STANDS BESIDE the old .sc.active path — it records its verdict, writes no live focus
+    //    (that cut is owner-supervised, :9091).  Markers under LangoGate; the snap-fixture diff —
+    //     with the per-Lango `seq` munged (its base churns) and equip Wafts folded — is the gate.
 
     Run_A_LakeLango(this: House) {
         const H = this
@@ -310,22 +315,67 @@
         const gate = w.oai({ LangoGate: 1 })
         const gl = w.o({ Waft: 'GhostList' })[0] as TheC | undefined
         if (gl) gl.sc.dontSnap = 1                                  // fold the volatile GhostList list
-        // a source Waft (equip → backstage, folds from the snap); its carrier hosts the Langos.
+        const carrier_of = (waft: string) =>
+            (w.o({ Funkcions: 1 })[0]?.o({ req: 'Waftica', waft }) ?? [])[0] as TheC | undefined
+
+        // a FOREGROUNDABLE source first (no equip) — its Cursor is the OLDEST of the run (seq-low),
+        //  so the later equip Cursor is strictly NEWER: the equip filter, not recency, is what must
+        //   keep it out of focus below.
+        const fore = w.oai({ Waft: 'LangoFore' })
+        await H.lango(w, fore, { kind: 'Cursor', to: 'Waft:LangoFore/What:a' })
+
+        // the SOURCE half, on an %equip Waft (backstage → its OWN subtree folds, but its carrier's
+        //  Langos still snap): mint · out-compete · coexist.
         const src = w.oai({ Waft: 'LangoW' }, { equip: 'Lango' })
-        const carrier_of = () => (w.o({ Funkcions: 1 })[0]?.o({ req: 'Waftica', waft: 'LangoW' }) ?? [])[0] as TheC | undefined
         // (1) mint — H.lango puts ONE %Lango,Cursor on the source's carrier, carrying its target.
         await H.lango(w, src, { kind: 'Cursor', to: 'Waft:LangoW/What:x' })
-        const cur1 = carrier_of()?.o({ Lango: 'Cursor' }) as TheC[] | undefined
+        const cur1 = carrier_of('LangoW')?.o({ Lango: 'Cursor' }) as TheC[] | undefined
         if (cur1?.length === 1 && cur1[0].sc.to === 'Waft:LangoW/What:x') gate.i({ lango_mints_on_carrier: 1 })
         // (2) out-compete — a newer Cursor Lango supersedes: still ONE, target updated (newest-wins).
         await H.lango(w, src, { kind: 'Cursor', to: 'Waft:LangoW/What:y' })
-        const cur2 = carrier_of()?.o({ Lango: 'Cursor' }) as TheC[] | undefined
+        const cur2 = carrier_of('LangoW')?.o({ Lango: 'Cursor' }) as TheC[] | undefined
         if (cur2?.length === 1 && cur2[0].sc.to === 'Waft:LangoW/What:y') gate.i({ same_kind_out_competes: 1 })
         // (3) a different kind coexists — a %Lango,Lens sits beside the Cursor (a level-set sub-type).
         await H.lango(w, src, { kind: 'Lens', to: 'Runner' })
-        const c3 = carrier_of()
+        const c3 = carrier_of('LangoW')
         if ((c3?.o({ Lango: 'Cursor' }) as TheC[]).length === 1 && (c3?.o({ Lango: 'Lens' }) as TheC[]).length === 1)
             gate.i({ different_kind_coexists: 1 })
+
+        // the RECEIVER half — seed req:Langoer (req:Keeping's receiver hat) and drive it over the
+        //  observable Langos.  {w} so upto_w resolves; the do_fn is req_Langoer (name convention).
+        const langoer = w.oai({ req: 'Langoer', eternal: 1 }, { w })
+        await H.req_Langoer(langoer)
+        // a Cursor Lango BECOMES focus: the foregroundable LangoFore is the verdict.
+        if (langoer.sc.focus === 'LangoFore') gate.i({ cursor_lango_drives_focus: 1 })
+        // LangoW's Cursor (seq-high, the NEWEST so far) is on an %equip source → it must NOT win:
+        //  background never steals the foreground, even when newer (the resume-want boomerang).
+        const langoW_has_cursor = (carrier_of('LangoW')?.o({ Lango: 'Cursor' }) as TheC[] | undefined)?.length === 1
+        if (langoW_has_cursor && langoer.sc.focus !== 'LangoW') gate.i({ equip_source_never_focuses: 1 })
+
+        // the seq tiebreak ACROSS carriers — a second foregroundable Cursor, now the globally-newest,
+        //  takes the foreground (out-compete only orders within one carrier; seq orders between them).
+        const fore2 = w.oai({ Waft: 'LangoFore2' })
+        await H.lango(w, fore2, { kind: 'Cursor', to: 'Waft:LangoFore2/What:b' })
+        await H.req_Langoer(langoer)
+        if (langoer.sc.focus === 'LangoFore2') gate.i({ newest_fg_cursor_wins: 1 })
+
+        // THE boomerang policy — a `cold` resume Cursor, even the NEWEST of all, must NOT unseat a
+        //  deliberate move: a background re-open can't steal the user's focus.  Mint a cold Cursor
+        //   on a fresh fg Waft with the highest seq; the verdict must STAY LangoFore2 (the deliberate
+        //    leader).  This is the receiver's half of the boomerang fix, proven before the live cut.
+        const resume = w.oai({ Waft: 'LangoResume' })
+        await H.lango(w, resume, { kind: 'Cursor', to: 'Waft:LangoResume/What:c', cold: true })
+        await H.req_Langoer(langoer)
+        if (langoer.sc.focus === 'LangoFore2') gate.i({ deliberate_beats_newer_cold: 1 })
+
+        // THE CUT (Move 4) — req_Langoer now DRIVES the session focus from its verdict: the
+        //  winning Waft actually HOLDS .sc.active (and Lies_focus_waft + the desire/acquire lock
+        //   follow it), not just the recorded req:Langoer,focus.  The boomerang fix observable
+        //    end-to-end — the foreground follows the deliberate verdict, LangoFore2, where before
+        //     the lock froze on the arbitrary first Waft while the verdict said otherwise.
+        const won = w.o({ Waft: 'LangoFore2' })[0] as TheC | undefined
+        if (won?.sc.active && langoer.sc.focus === 'LangoFore2') gate.i({ cut_drives_active: 1 })
+
         gate.bump_version(); w.bump_version()
     },
 //#endregion

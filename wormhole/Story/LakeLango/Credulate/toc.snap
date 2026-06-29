@@ -5,14 +5,14 @@ Credulate,of_Book:LakeLango
   GhostInclude:Ghost_N_Tyrant,dige:74cf06ee9a34e2cb
   GhostInclude:Ghost_Story_Peregrination,dige:b33cab6322ef6320
   GhostInclude:Ghost_M_Radiola,dige:32b321bfc1e909b5
-  GhostInclude:Ghost_M_Crate,dige:60052a65ddb67c27
-  GhostInclude:Ghost_Story_Musuation,dige:7a86a1a50f47ac9b
-  last_ok,at=1782735835.717,ok_pct
+  GhostInclude:Ghost_M_Crate,dige:26bb31d6774eef6c
+  GhostInclude:Ghost_Story_Musuation,dige:401178bf70c8b1b4
+  last_ok,at=1782742793.684,ok_pct
     uses:Ghost_N_Peeroleum,dige:1bb4df8687a8d30b
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:a9bf42ff80d08a94
     uses:Ghost_N_Tyrant,dige:74cf06ee9a34e2cb
     uses:Ghost_Story_Peregrination,dige:b33cab6322ef6320
     uses:Ghost_M_Radiola,dige:32b321bfc1e909b5
-    uses:Ghost_M_Crate,dige:60052a65ddb67c27
-    uses:Ghost_Story_Musuation,dige:7a86a1a50f47ac9b
+    uses:Ghost_M_Crate,dige:26bb31d6774eef6c
+    uses:Ghost_Story_Musuation,dige:401178bf70c8b1b4

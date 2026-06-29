@@ -197,17 +197,30 @@ await M.eatfunc({
     //       what.to = the target locator (P2 Lies_resolve_locator-resolvable), the doc's `target`.
     //   OUT-COMPETE: a new Lango of the same kind on this terminal drops the prior — newest-wins
     //    (the same-Interest supersede); the cross-Interest race is the receiver's (req:Langoer).
-    //   READ BY NOTHING until req:Keeping's receiver hat lands — additive, never touches focus.
-    //    The carrier's per-tick walk steps over a %Lango (no funk.c.run), so it sits inert.
+    //   seq — a per-w monotonic ordering token (the counter rides off-snap on w.c.lango_seq;
+    //    the value is SNAPPED on the Lango so it's observable).  It is what lets the receiver pick
+    //     the globally-NEWEST Cursor across DIFFERENT carriers (out-compete only orders within one
+    //      carrier).  Its base churns with boot cursor activity → munged in fixtures, the standard
+    //       age/at pattern (Story.svelte story_matching), so structure stays the gate, value forgiven.
+    //   READ BY req:Langoer (Lies_langoer_focus) — the receiver hat reads the observable Cursor
+    //    Langos and derives focus from them.  Still ADDITIVE on the live path: lango only mints +
+    //     records; Langoer only records its verdict (req:Langoer,focus), neither yet writes the
+    //      session .sc.active (that cut is owner-supervised).  The carrier's per-tick walk steps
+    //       over a %Lango (no funk.c.run), so the Lango itself never "runs".
     //   The /landing,req ack (the remote's reqyoncile-back) + yoink (a source cancel — likely a
     //    close-button on an Interest) are DESIGNED but unbuilt (Backbone_plan P3): wait until a
     //     consumer needs them, don't scaffold ahead.
-    async lango(w: TheC, source: TheC, what: { kind: string, to?: string }): Promise<TheC> {
+    async lango(w: TheC, source: TheC, what: { kind: string, to?: string, cold?: boolean }): Promise<TheC> {
         const H = this as House
         const carrier = await H.Lies_ensure_waftica(w, source)
         for (const prior of carrier.o({ Lango: what.kind }) as TheC[]) carrier.drop(prior)   // out-compete
         const lango = carrier.i({ Lango: what.kind })
         if (what.to) lango.sc.to = what.to
+        if (what.cold) lango.sc.cold = 1 as any                  // a resume/boot move (not deliberate): the
+        else delete lango.sc.cold                                //  receiver ranks it BELOW any deliberate
+        //                                                          Cursor regardless of seq (the boomerang rule)
+        w.c.lango_seq = ((w.c.lango_seq as number) ?? 0) + 1     // global ordering source, off-snap
+        lango.sc.seq  = w.c.lango_seq as any                     // snapped (observable); munged in fixtures
         lango.c.source = source                                  // origin backlink, off-snap
         carrier.bump_version()
         return lango
@@ -340,8 +353,10 @@ await M.eatfunc({
     Lies_aim(w: TheC): void {
         const H = this as any
         if (!w.c.aim_setup) { w.c.aim_setup = true; void H.Lies_aim_setup(w) }
-        const on = H.Lies_role(w) === 'editor' || H.Lies_role(w) === 'runner'
+        const role = H.Lies_role(w)
+        const on = role === 'editor' || role === 'runner'
         const cluster = w.o({ Waft: 'Cluster' })[0] as TheC | undefined
+        const bag = H.Lies_lens_bag() as TheC
         // born collapsed — seed the Cluster's minimised into the Keep ONCE, the first time the
         //  Keep meets it (the WaftTimes-absence gate).  Keep-backed so it persists though the
         //   Cluster Waft is dontSnap; once-only so a later session honours a user expand instead
@@ -349,17 +364,55 @@ await M.eatfunc({
         const keep = H.Lies_keep(w) as TheC | undefined
         if (cluster && keep && !keep.oa({ WaftTimes: 1, of_Waft: 'Cluster' }))
             H.Lies_keep_cfg_set(w, 'Cluster', 'minimised', 1)
-        const kinds = ['Runner', 'Relay']
-        for (let i = 0; i < kinds.length; i++) {
-            const kind = kinds[i]
-            if (on) {
-                if (!(H.Lies_lens_bag() as TheC).oa({ Lens: 'Brink', of_Funkcion: kind })) {
-                    const funk = cluster?.o({ Funkcion: kind })[0] as TheC | undefined
-                    const lens = H.Lies_lens_suggest('Brink', kind, { altitude: 20 + i * 5 }, funk) as TheC
+
+        // Relay — a single face, both roles (the relay carrier's own health).
+        if (on) {
+            if (!bag.oa({ Lens: 'Brink', of_Funkcion: 'Relay' })) {
+                const funk = cluster?.o({ Funkcion: 'Relay' })[0] as TheC | undefined
+                const lens = H.Lies_lens_suggest('Brink', 'Relay', { altitude: 25 }, funk) as TheC
+                lens.c.w = w
+            }
+        } else H.Lies_lens_dismiss('Brink', 'Relay')
+
+        // Runner — the MULTIPLIED face:
+        //  • runner role: one face →EDITOR (the single peer it reports to), as before (no pub).
+        //  • editor role: ONE face per %Runner roster entry (keyed by pub), so an editor coordinating
+        //     a grid sees every advertised runner, each with its OWN identity.  Reaped as the roster
+        //      changes; the legacy single (no-pub) Runner is retired so they never double-show.
+        //   Each lens keeps of_Funkcion:'Runner' (LensHost resolves comp_Brink off it) + a pub
+        //    discriminator (the Lens dock's each-key folds pub in, so duplicates don't clash).
+        const allRunner = () => bag.o({ Lens: 'Brink', of_Funkcion: 'Runner' }) as TheC[]
+        if (role === 'runner') {
+            for (const l of allRunner()) if (l.sc.pub) { bag.drop(l); bag.bump_version() }   // editor crumbs, if any
+            if (!allRunner().some(l => !l.sc.pub)) {
+                const funk = cluster?.o({ Funkcion: 'Runner' })[0] as TheC | undefined
+                const lens = H.Lies_lens_suggest('Brink', 'Runner', { altitude: 20 }, funk) as TheC
+                lens.c.w = w
+            }
+        } else if (role === 'editor') {
+            const roster = w.o({ Runner: 1 }) as TheC[]
+            if (roster.length) {                                            // advertised runners → one face each
+                const pubs = new Set(roster.map(r => r.sc.Runner as string))
+                for (const l of allRunner()) {                              // drop the legacy single + departed pubs
+                    const p = l.sc.pub as string | undefined
+                    if (!p || !pubs.has(p)) { bag.drop(l); bag.bump_version() }
+                }
+                for (const r of roster) {                                   // one lens per advertised pub
+                    const pub = r.sc.Runner as string
+                    let lens = (bag.o({ Lens: 'Brink', of_Funkcion: 'Runner', pub })[0]) as TheC | undefined
+                    if (!lens) { lens = bag.oai({ Lens: 'Brink', of_Funkcion: 'Runner', pub }, { altitude: 20 }) as TheC; bag.bump_version() }
+                    lens.c.w = w
+                    lens.c.runner = r                                       // the roster entry the face reads
+                }
+            } else {                                                        // none advertised yet — keep the legacy
+                for (const l of allRunner()) if (l.sc.pub) { bag.drop(l); bag.bump_version() }   //  single-pair face,
+                if (!allRunner().some(l => !l.sc.pub)) {                     //  so a plain ?B= runner (no ?I, no
+                    const funk = cluster?.o({ Funkcion: 'Runner' })[0] as TheC | undefined        //  advertise) still shows
+                    const lens = H.Lies_lens_suggest('Brink', 'Runner', { altitude: 20 }, funk) as TheC
                     lens.c.w = w
                 }
-            } else H.Lies_lens_dismiss('Brink', kind)
-        }
+            }
+        } else for (const l of allRunner()) { bag.drop(l); bag.bump_version() }
     },
 
     // ── Lies_instantiate_funkcions ────────────────────────────────────────────────

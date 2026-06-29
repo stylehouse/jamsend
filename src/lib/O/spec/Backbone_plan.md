@@ -368,6 +368,76 @@ source needs it. *(Name `Waftica` still soft.)*
 > 4. **Make focus visible:** retire the session-only `.sc.active` (a `SESSION_KEY`, `Text.svelte:349`)
 >    for a snapped particle Langoer derives — the observability fix the boomerang's invisibility argues for.
 
+> **BUILT (2026-06-30) — req:Langoer the receiver, standing BESIDE the old path; live-runner green.**
+> The consumer the channel was waiting for now exists and is proven productive — a `%Lango` finally
+> *becomes something*:
+> - `H.lango` gains a per-`w` monotonic **`seq`** (counter off-snap on `w.c.lango_seq`, value SNAPPED
+>   on each Lango) — the cross-carrier "globally-newest wins" tiebreak (out-compete only orders within
+>   one carrier). Munged in fixtures via a new `Lango`→`seq` rule in `Story.svelte` `story_matching`
+>   (its base churns with boot cursor activity, like `round`/`at`).
+> - **`Lies_langoer_focus(w)`** (`Lies.svelte`, beside `Lies_focus_waft`) — PURE read: gather every
+>   `%Lango/%Cursor` on the `req:Waftica` carriers, pick the highest-`seq` whose **source Waft is
+>   foregroundable (not `%equip`)**. Reads only snapped fields (`carrier.sc.waft`, `cursor.sc.seq`), so
+>   it survives reload. The two filters earn their keep: equip → *background never steals foreground*
+>   (the resume-want boomerang's mechanism); `seq` orders across carriers.
+> - **`req_Langoer(req)`** — `req:Keeping`'s receiver hat (string-req → name-convention do_fn): each
+>   tick records the winner as its OWN snapped verdict `req:Langoer,focus:<waft>`. **It does NOT yet
+>   write `.sc.active`** — stands beside the old want-resolver claim, observing, zero live-focus risk.
+>   `Lies_set_active_waft`'s docstring now points at it as the arbiter.
+> - **The boomerang POLICY is now IN the arbiter (proven, not yet wired).** `H.lango` learned `cold`
+>   (a resume/boot Cursor, snapped flag). `Lies_langoer_focus` ranks in three tiers: equip never wins ·
+>   **a deliberate (non-cold) Cursor outranks any `cold` one regardless of seq** · newest within a kind.
+>   So mid-session a deliberate move outranks a later cold re-open (no boomerang); on boot only cold
+>   Cursors exist → newest cold wins → the remembered spot resumes. This is the receiver's half of the
+>   boomerang fix — the genuinely-hard focus policy — encoded and proven BEFORE any live-focus cut.
+>   *Why not the live cut here:* a naive "cold yields to any active foreground" guard breaks boot-resume
+>   (acquire sets `active` to an arbitrary first-Waft before the cold resume lands); the correct policy
+>   needs the deliberate-vs-cold distinction above, and flipping it on live still wants `:9091` eyes.
+> - **Gate mutated + live-runner GREEN:** `LakeLango` gained a foregroundable source (`LangoFore`) +
+>   the receiver half — 4 new markers `cursor_lango_drives_focus` · `equip_source_never_focuses` (the
+>   equip Cursor is *newer* yet loses) · `newest_fg_cursor_wins` · `deliberate_beats_newer_cold` (a
+>   newest-of-all `cold` Cursor does NOT unseat the deliberate leader). Re-recorded via `runner_ask.mjs
+>   accept` (on-disk `001.snap` matches the live got_snap byte-for-byte; step dige
+>   `a692157e3cff7709`). The snap makes the **divergence legible**: the old `req:desire` locked
+>   `Waft:LangoFore` (arbitrary first-Waft) while `req:Langoer` says `focus:LangoFore2` (newest intent)
+>   — the boomerang in miniature, with Langoer right. Adding foregroundable Wafts also *woke* the real
+>   focus machinery (acquire finished, timemachine seeded, two `Interest:Trail` in A:Lang) — state now
+>   flows to Lang. Type-clean (no new svelte-check errors in the 4 edited files); uncommitted.
+> - **FEED + SEED BUILT (2026-06-30) — Moves 2 + the auto-seed, still observe-only.**
+>   (i) the global cursor feed is live: `Lies_resolve_wants` (the single want-land seam, where every
+>      cursor move funnels) now mints a Cursor `%Lango` on the landed Waft's carrier via `H.lango(w,
+>      landed, {kind:'Cursor', to, cold})`, `cold` riding straight from the want kind (`kind:'cold'`
+>      resume/boot → cold Cursor). (ii) `req:Langoer` is auto-seeded on every `w:Lies` and driven right
+>      after the resolver, so its verdict is fresh same-tick. **Still observe-only** — Langoer records
+>      `req:Langoer,focus`; `Lies_set_active_waft` stays the authoritative `.sc.active` write. Type-clean;
+>      LakeLango stays green (its synthetic `w:Lies` has no Keep/wants, so the feed no-ops there and the
+>      auto-seed merges with the selftest's manual `req:Langoer` — a no-regression, not a positive proof).
+>   **Owed:** the feed shifts every *real-editor* `w:Lies` snap (Cursor Langos + the `req:Langoer` line),
+>      so the editor Books (Lake\*, Editron) need a re-record — the accepted "we only break snaps" cost.
+>      Positive proof that the feed mints from a real want (vs. the no-op LakeLango case) wants a runner
+>      free of the StoryTimes sweep, which was cycling MusuCrate/Radiola.g and overriding `become_book`.
+>      *(w:MusuCrate has no w:Lies, so the Musu\* reds are unrelated — their own WIP, not this feed.)*
+> - **(iii) THE CUT — BUILT (2026-06-30), conservative, in-system green; LIVE acceptance pending.**
+>   `req_Langoer` now DRIVES `.sc.active` from its verdict, through the `Lies_set_active_waft`
+>   chokepoint — Keeping the authoritative caller (Move 4). **Conservative guard** (not a blunt
+>   sole-writer): it re-asserts `win` only when the current focus is itself Lango-backed (the
+>   cold-resume boomerang case — that resume minted a cold Cursor) or nothing is focused; a focus
+>   set eagerly with NO Cursor Lango (a Liesui tab-click, a `+Now` moment) is respected, so a naive
+>   sole-writer's *opposite* regression (yanking a deliberate-but-Lango-less focus toward a stray
+>   cold Lango) can't happen. **In-system proof:** LakeLango's `cut_drives_active` marker — the snap
+>   now shows `Waft:LangoFore2,active` and the desire/acquire lock following the verdict to
+>   `LangoFore2`, where before the lock froze on the arbitrary first Waft while the verdict said
+>   otherwise (the boomerang-in-miniature, now resolved). Re-recorded green (dige `38679b1bef1225ee`).
+>   **LIVE acceptance still owed** (`:9091`, the owner): focus moved to B *stays* B (no boomerang to
+>   Radiola.g); boot still resumes the remembered Waft. **RESIDUAL — the full sole-writer:** make the
+>   Lango-less deliberate sites (Liesui tab, `+Now`) emit a `click` want so they mint a deliberate
+>   Cursor Lango; then the recorded verdict and live focus never diverge and the guard drops to an
+>   unconditional write. **OWED — fleet re-record:** the feed (req:Langoer + Cursor Langos) AND the
+>   cut (`.sc.active` + the verdict-following desire lock — snap_H keeps session keys) shift every
+>   real-editor `w:Lies` snap; the editor Books (Lake\*, Editron) need re-recording. Best done after
+>   the live acceptance confirms the cut behaves, to avoid a double re-record. *(Practical note: an
+>   auto-sweep keeps grabbing the runner — a clean fleet re-record needs it stable/idle.)*
+
 **What `waft_roster` keeps vs sheds** *(rideable #6 made concrete)*. The wire stays; the
 reducer hollows out. `interest_reconcile` lives at `Interest.svelte:111`, mixed in via
 `M.eatfunc` — invisible to grep / `svelte-check` (the "does not exist on type House" noise),

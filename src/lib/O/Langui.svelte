@@ -351,7 +351,18 @@
 
     // expanded: makes cm-scroller take 80vh instead of the default 50vh.
     // V button in bar — same Λ/V rotation idiom as Storui's diff-panel expand.
-    let expanded = $state(false)
+    //   PERSISTED on the Keep (Lies_keep_pref, a global pane pref) so a tall editor
+    //    survives reload.  PROJECTED, not local $state — the button writes the Keep, this
+    //     re-derives off it (mirrors Waft.svelte's `minimised`).  w:Lies is reached the same
+    //      way the runner-leg effect does: the shared %examining particle's .c.w.  No Keep
+    //       yet (early boot | runner) ⇒ collapsed default.
+    let lies_w = $derived(H.ave.ob({ examining: 1 })[0]?.c?.w as TheC | undefined)
+    let expanded = $derived((() => {
+        const w = lies_w
+        if (!w) return false
+        void (w.o({ Waft: 'Keep' })[0]?.version ?? w.version)   // re-derive when the Keep loads|changes
+        return !!H.Lies_keep_pref_get(w, 'lte_expanded')
+    })())
 
     // ── signal $effect ────────────────────────────────────────────────────────
     //   Reads H.ave for lang_actions and active path.
@@ -1713,7 +1724,7 @@
         <!-- V button: expand editor to 80vh / collapse to 50vh.
              Λ (upside-down V) when expanded — same idiom as Storui's diff panel. -->
         <button class="lte-expand-btn" class:open={expanded}
-                onclick={() => expanded = !expanded}
+                onclick={() => { if (lies_w) H.Lies_keep_pref_set(lies_w, 'lte_expanded', expanded ? undefined : 1) }}
                 title="{expanded ? 'collapse editor' : 'expand editor'}">V</button>
     </div>
     {/if}

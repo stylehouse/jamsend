@@ -10,7 +10,7 @@ import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Musuation(): string { return '7a86a1a50f47ac9b' },
+    Ghostmeta_Ghost_Story_Musuation(): string { return 'cfdb09d6c6f21eae' },
 
 // Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Music_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
@@ -172,8 +172,17 @@ Musu_measure(pcm) {
             H -= p * Math.log2(p)
         }
     }
+    // gaps — only a SUSTAINED delivery dropout counts, so real music's dynamics don't read as gaps.  A
+    //  window (~50ms) is "silent" below FLOOR (lowered to 0.001 — a true hole renders exact zeros, where
+    //   even quiet music sits well above), and a gap is only counted once a RUN of 5 silent windows in a
+    //    row (≈250ms) forms — then each further silent window adds to it, so the count stays duration-
+    //     proportional (glide shortening a gap still shows).  Musical quiet (brief, or above the floor) is
+    //      ignored; a real ≥250ms silence is what scores.  // TODO refine: per-window vs perceptual floor.
     let W = 2400
+    let FLOOR = 0.001
+    let RUN = 5
     let gaps = 0
+    let run = 0
     i = 0
     while (i < pcm.length) {
         let e = 0
@@ -183,7 +192,14 @@ Musu_measure(pcm) {
             e += pcm[j] * pcm[j]
             j = j + 1
         }
-        if (Math.sqrt(e / Math.max(1, end - i)) < 0.005) gaps += 1
+        let silent = Math.sqrt(e / Math.max(1, end - i)) < FLOOR
+        if (silent) {
+            run = run + 1
+            if (run === RUN) gaps = gaps + RUN
+            else if (run > RUN) gaps = gaps + 1
+        } else {
+            run = 0
+        }
         i = i + W
     }
     return { bits: +H.toFixed(2), rms: +Math.sqrt(sumSq / Math.max(1, pcm.length)).toFixed(4), gaps: gaps }
@@ -1426,6 +1442,7 @@ async Musu_render_offline(total, profile, gp, stock, keep, ctrl) {
     let dipped = 0
     let recovered = 0
     let underran = 0
+    let gap_secs = 0
     let plan = []
     let s = 0
     while (s < total) {
@@ -1453,7 +1470,14 @@ async Musu_render_offline(total, profile, gp, stock, keep, ctrl) {
         if (dipped && rate >= 0.99) recovered = 1
         final_rate = rate
         let at = Math.max(end, t)
-        if (s > 0 && at > end + 0.0005) underran = underran + 1
+        // COVERAGE = the expected-play timeline.  `at > end` means a chunk starts AFTER the previous one
+        //  finished — an UNCOVERED span where the track is officially playing but nothing sounds: a real
+        //   delivery dropout.  Its duration is the honest gap; musical quiet sits INSIDE a covered span and
+        //    never counts.  (This is the higher-level rep — no rms floor / 5-in-a-row guessing needed.)
+        if (s > 0 && at > end + 0.0005) {
+            underran = underran + 1
+            gap_secs = gap_secs + (at - end)
+        }
         plan.push({ at: at, rate: rate, seq: s })
         end = at + chunkdur / rate
         s = s + 1
@@ -1475,7 +1499,10 @@ async Musu_render_offline(total, profile, gp, stock, keep, ctrl) {
     let rendered = await ctx.startRendering()
     let pcm = rendered.getChannelData(0)
     let sig = this.Musu_measure(pcm)
-    return { bits: sig.bits, rms: sig.rms, gaps: sig.gaps, underran: underran, min_rate: +min_rate.toFixed(3), final_rate: +final_rate.toFixed(3), flips: flips, recovered: recovered, end: +end.toFixed(3), buffer: keep ? rendered : null }
+    // gaps from COVERAGE (uncovered playback time, in 50ms units), NOT the rms floor — so real-music
+    //  dynamics never read as gaps.  bits/rms stay from the real rendered PCM (entropy/level).
+    let gaps = Math.round(gap_secs / 0.05)
+    return { bits: sig.bits, rms: sig.rms, gaps: gaps, underran: underran, min_rate: +min_rate.toFixed(3), final_rate: +final_rate.toFixed(3), flips: flips, recovered: recovered, end: +end.toFixed(3), buffer: keep ? rendered : null }
 
 },
 // Musu_wreckage — "show-wreckage" as ONE number to descend.  Silent gaps hurt most (the dropout you hear),
@@ -1736,16 +1763,17 @@ MusuRadio_witness(w) {
 },
 //#endregion
 
-//#region crate — REAL MUSIC: pseudo-randomly buffer ./testsounds/ and stream it for real
-// ══ MusuCrate — the realness the synth Books couldn't give: actual files, decoded, streamed ════════
-//  Buffers a few REAL tracks from /testsounds (served via static/, fetched + decoded gesture-free through
-//   OfflineAudioContext — the Wormhole rw_op is text-only so binary can't ride it), then streams each with
-//    Glide vs no-control on a real perturbation and measures the difference.  The snap is no longer an empty
-//     picture: it carries the actual %record rows — title, real seconds, real loudness, real dropout counts.
-//      This is where real-music problems surface (codec support, decode of big files, real dynamics).
-//        beat 2  BUFFER  — pseudo-randomly fetch+decode 3 real tracks (seeded prandle pick over the manifest)
-//        beat 3  STREAM  — render each ~6s with Glide and with no-control; record real dropouts per track
-//        beat 4  witness — real_records / playable / helps  (red if FLAC won't decode — a real finding)
+//#region crate — REAL MUSIC: a VISIBLE rastock builds itself from ./testsounds, then we stream it
+// ══ MusuCrate — watch req:rastock desire, the reads come back, the records get made ════════════════
+//  Real nested music (artist/album/track) served via static/, fetched + decoded from the start (Offline
+//   AudioContext, gesture-free; OPFS avoided — it can get fatal).  The point is the PROCESS is visible:
+//    a `rastock` particle DESIRES `want` records and fills one notch per beat — each beat ISSUES a read
+//     (a %reading goes out), the prior read COMES BACK (off-snap payload), and a %record gets MADE with real
+//      artist/album/title/seconds/loudness.  Then we stream each glide-vs-none.  The snap narrates it all.
+//        beat 2     OPEN    — stand up rastock (want=4, pool=N) + issue the first read
+//        beats 3-6  FILL    — harvest what came back (a %record), issue the next read; rastock grows visibly
+//        beat 7     STREAM  — render each record glide-vs-none (real dropouts)
+//        beat 8     witness — real_records / playable / helps
 MusuCrate(A,w) {
     w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
         await this.MusuCrate_drive(w,req)
@@ -1753,8 +1781,9 @@ MusuCrate(A,w) {
 
     })
 },
-// MusuCrate_drive — needs both fetch AND OfflineAudioContext (skip headless); per-beat dispatch off step_n
-//  (req-local did_step, set before the real fetch/decode await so a re-pump can't re-enter the beat).
+// MusuCrate_drive — needs fetch + OfflineAudioContext (skip where there's no Web Audio).  Per-beat dispatch
+//  off step_n (req-local did_step).  Reads are issued one beat and harvested the next — they resolve in the
+//   gap between beats (a fetch+decode is far quicker than a step's quiescence).
 async MusuCrate_drive(w, req) {
     if (typeof OfflineAudioContext === 'undefined' || typeof fetch === 'undefined') {
         if (!w.oa({skipped: 'no_audio'})) w.i({skipped: 'no_audio'})
@@ -1763,30 +1792,104 @@ async MusuCrate_drive(w, req) {
     let n = (this.c.run)?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
-        if (n === 2) await this.MusuCrate_buffer(w)
-        if (n === 3) await this.MusuCrate_play(w)
-        if (n === 4) this.MusuCrate_witness(w)
+        if (n === 2) await this.MusuCrate_open(w)
+        if (n >= 3 && n <= 6) await this.MusuCrate_fill(w)
+        if (n === 7) await this.MusuCrate_play(w)
+        if (n === 8) this.MusuCrate_witness(w)
     }
     await this.Musu_float(w)
 
 },
-// MusuCrate_buffer — beat 2: seed prandle (reproducible pick), pseudo-randomly fetch + decode 3 real tracks
-//  from /testsounds into %record rows (real seconds/loudness/title on the snap).
-async MusuCrate_buffer(w) {
+// MusuCrate_open — beat 2: erect the whole platform's visible filaments (so the snap IS the roadmap), then
+//  seed prandle, stand up the rastock with its desires, and send the first read out.
+async MusuCrate_open(w) {
+    this.MusuCrate_filaments(w)
     this.Musu_seed(31337)
-    let recs = await this.Crate_fetch_some(w, '/testsounds', 3)
-    w.i({report: 1, buffered: recs.length})
+    let ra = await this.Crate_rastock_start(w, '/testsounds', 4)
+    this.Crate_rastock_issue(ra)
 
 },
-// MusuCrate_play — beat 3: stream each buffered track's first ~6s through Glide AND no-control (offline
-//  render, gesture-free), recording real dropout counts per record and tallying where Glide won.
+// MusuCrate_filaments — the OVERALL streaming platform laid out as a visible particle tree: each %stage is a
+//  filament of the pipe, `built` where real data already flows through it, and every refinement is a visible
+//   %todo row so the snap doubles as the build map.  This is the long project's skeleton — fill the stages in,
+//    strike the todos off.  (No commas in todo text — the peel parser splits on them; use / or — .)
+MusuCrate_filaments(w) {
+    let plat = w.oai({platform: 1, name: 'jamsend'})
+    plat.c.up = w
+    // 1 — COLLECTION: walk a music library into a track list.  (real: static-served /testsounds + manifest)
+    let col = plat.oai({stage: 1, of: 1, name: 'Collection', built: 1})
+    col.oai({todo: 'directory-tree walk (meander) over nested artist/album/track'})
+    col.oai({todo: 'real source via Wormhole bin_read or a library — not a static symlink'})
+    col.oai({todo: 'metadata from tags (music-metadata) not just the filename'})
+    // 2 — RASTOCK: desire + fill records from the collection.  (real: rastock_start/issue/harvest)
+    let ras = plat.oai({stage: 1, of: 2, name: 'Rastock', built: 1})
+    ras.oai({todo: 'preview (first ~1/3 decoded) then stream (the rest) on demand'})
+    ras.oai({todo: 'host as %Good in LiesStore (the req:Store IO pump)'})
+    ras.oai({todo: 'idle-reap: drop a %Good once a consumer left it idle (mirror recordWear)'})
+    // 3 — PLAYER: decode + play + cope.  (real: Audiolet voice + Glide rate-slew + offline render/measure)
+    let ply = plat.oai({stage: 1, of: 3, name: 'Player', built: 1})
+    ply.oai({done: 'gap-detector: COVERAGE model — uncovered playback time is the dropout; musical quiet ignored'})
+    ply.oai({todo: 'coverage per-Cell once the Mixer lands — each Cell its own expected-play timeline'})
+    ply.oai({todo: 'concealment ladder: repeat-last-frame / reverse-pingpong / crossfade-on-seam'})
+    ply.oai({todo: 'audible real-time playback through the online voice (gesture-gated)'})
+    // 4 — LIVE EDGE: stay behind the broadcast frontier.  (TODO: not built)
+    let le = plat.oai({stage: 1, of: 4, name: 'LiveEdge'})
+    le.oai({todo: 'real broadcast cursor + stay-behind margin (Radios check_live_edge_delta)'})
+    le.oai({todo: 'Glide backs off the live edge — wire frontier to the real cursor not a sim'})
+    // 5 — PIER: stream peer-to-peer over the real transport.  (TODO: the synapse — designed not built)
+    let pier = plat.oai({stage: 1, of: 5, name: 'Pier'})
+    pier.oai({todo: 'cast -> listen over the REAL transport via w.c.on.audiochunk (Peeroleum)'})
+    pier.oai({todo: 'coherently perturbable link (latency/jitter/loss) + the listener copes'})
+    pier.oai({todo: 'multicast: one caster fans out to many listeners (Peeroleum @channel)'})
+    // 6 — MIXER (cells): the cellular music world — many sound-sources at once, pitch/rate-bent to mix.
+    let mix = plat.oai({stage: 1, of: 6, name: 'Mixer'})
+    mix.oai({todo: 'N Cells = N Audiolets into ONE SoundSystem — they sum at the destination'})
+    mix.oai({todo: 'per-Cell pitch/rate bend (playbackRate + detune) to beatmatch two tracks'})
+    mix.oai({todo: 'per-Cell gain — crossfade one Cell out as another comes in'})
+    mix.oai({todo: 'per-Cell expected-play timeline — coverage/gaps judged per Cell not globally'})
+    // 7 — DJ CUE (live C** replication to a phone): the headset deck, monitor + sync before the mix.
+    let cue = plat.oai({stage: 1, of: 7, name: 'DJ-cue'})
+    cue.oai({todo: 'live-replicate the Mixer C** to a phone via the Pier (particle-state sync)'})
+    cue.oai({todo: 'phone renders the OTHER Cell pre-fader — the headset monitor'})
+    cue.oai({todo: 'beatmatch: bend the cued Cell rate to align then bring it into the main mix'})
+    // 8 — MESH (replicas + edges): the whole platform is ONE sync that sees itself in several places, with
+    //  the edges between them.  Each client a replica of the C** state; each link an %edge with a cost.
+    //   DJ-cue / listener / mixer are all just this — routing along edges.
+    let mesh = plat.oai({stage: 1, of: 8, name: 'Mesh'})
+    mesh.oai({todo: 'N client replicas of the C** state — the sync sees itself in several places'})
+    mesh.oai({todo: '%edge per link: webrtc peer-edge (cheap) vs relay-edge (uplink) — each a cost'})
+    mesh.oai({todo: 'content routes along the CHEAPEST edges — not always back through the relay'})
+    // 9 — STRETCH (multicast over the mesh): a relay-only peer sends ONCE; a webrtc-peered client forwards
+    //  it locally so the uplink/relay stays quiet.  The multicast domain stretches over the peer edges.
+    let stretch = plat.oai({stage: 1, of: 9, name: 'Stretch'})
+    stretch.oai({todo: 'relay sends once to one peer — it fans out over webrtc to the rest (cut relay fan-out)'})
+    stretch.oai({todo: 'two webrtc peers share a third relay-only peer content — domain stretches'})
+    stretch.oai({todo: 'cafe: many clients one quiet uplink — the local mesh carries the rest'})
+    stretch.oai({todo: 'build on Peeroleum @channel multicast — turn relay-fanout into peer-forwarding'})
+    return plat
+
+},
+// MusuCrate_fill — beats 3-6: harvest the read that came back into a %record, then issue the next.  Each
+//  beat the rastock grows by one — the snap shows a new record (real metadata) and the next read pending.
+async MusuCrate_fill(w) {
+    let ra = w.o({rastock: 1})[0]
+    if (!ra) return
+    await this.Crate_rastock_harvest(ra)
+    this.Crate_rastock_issue(ra)
+
+},
+// MusuCrate_play — beat 7: stream each gathered record glide-vs-none (offline render), record real dropouts
+//  per record + tally where Glide won.
 async MusuCrate_play(w) {
-    let recs = w.o({record: 1})
+    let ra = w.o({rastock: 1})[0]
+    if (!ra) return
+    await this.Crate_rastock_harvest(ra)
+    let recs = ra.o({record: 1})
     let rep = w.oai({report: 1})
     let helped = 0
     let played = 0
     for (const rec of recs) {
-        let nch = Math.min(120, +(rec.sc.nchunks ?? 0))
+        let nch = +(rec.sc.nchunks ?? 0)
         if (nch < 8) continue
         let stock = this.Crate_radiostock(rec)
         let prof = this.Musu_profile(nch, 777 + played)
@@ -1796,8 +1899,6 @@ async MusuCrate_play(w) {
         let nd = +(none.gaps ?? 0) + +(none.underran ?? 0)
         rec.sc.glide_drop = gd
         rec.sc.none_drop = nd
-        rec.sc.glide_gaps = g.gaps
-        rec.sc.none_gaps = none.gaps
         rec.bump()
         if (gd < nd) helped = helped + 1
         played = played + 1
@@ -1807,18 +1908,20 @@ async MusuCrate_play(w) {
     rep.bump()
 
 },
-// MusuCrate_witness — the realness, EARNED.  red if FLAC didn't decode (real_records) or Glide didn't help
+// MusuCrate_witness — the realness, EARNED.  red if nothing decoded (real_records) or Glide didn't help
 //  real audio (helps) -- not satisfiable by synth or arithmetic.
 MusuCrate_witness(w) {
-    let recs = w.o({record: 1})
+    let ra = w.o({rastock: 1})[0]
+    if (!ra) return
+    let recs = ra.o({record: 1})
     let rep = w.o({report: 1})[0]
     let real = recs.filter(r => r.sc.real && +(r.sc.nchunks ?? 0) > 8).length
     let secs_ok = recs.filter(r => +(r.sc.seconds ?? 0) >= 1).length
     let helped = +(rep?.sc.helped ?? 0)
-    // real_records: real audio files actually fetched + DECODED to PCM (goes red if the codec is unsupported).
-    if (real >= 1 && !(w.oa({witnessed: "real_records"}))) w.i({witnessed: "real_records"})
+    // real_records: real audio files actually fetched + DECODED to PCM (red if the codec is unsupported).
+    if (real >= 2 && !(w.oa({witnessed: "real_records"}))) w.i({witnessed: "real_records"})
     // playable: the decoded tracks have real durations (not empty/corrupt buffers).
-    if (secs_ok >= 1 && !(w.oa({witnessed: "playable"}))) w.i({witnessed: "playable"})
+    if (secs_ok >= 2 && !(w.oa({witnessed: "playable"}))) w.i({witnessed: "playable"})
     // helps: Glide cut real dropouts vs no-control on REAL music (at least one track) -- the claim that matters.
     if (helped >= 1 && !(w.oa({witnessed: "helps"}))) w.i({witnessed: "helps"})
 },

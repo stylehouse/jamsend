@@ -968,6 +968,17 @@
             means: { munging: [{ these_sc: { until_ts: 1 }, type: 'time' }] },
         },
         {
+            // %Lango source terminals — the per-w ordering token `seq` (Backbone_plan P3) is a
+            //  monotonic counter bumped on every mint; its BASE churns run-to-run with whatever
+            //   boot cursor activity preceded the step (and headless boots in fewer ticks than a
+            //    browser), so a kept seq=N flakes the gate like `round`/`at`.  Mung the value: the
+            //     structure (which Lango on which carrier, its `to` target) stays the gate, only
+            //      the ordering value is forgiven.  req:Langoer's verdict (req:Langoer,focus) is
+            //       seq-INDEPENDENT (it names the winning Waft), so it still diffs.
+            matching_any: [{ sc_has: { Lango: 1 } }],
+            means: { munging: [{ these_sc: { seq: 1 }, type: 'count' }] },
+        },
+        {
             // Story work particle itself — any object ref on w that wasn't caught
             // by the rules above (The, toc_loaded, wh, run_path, etc.) is left to
             // the objectify() fallback in story_process_node, which puts it into

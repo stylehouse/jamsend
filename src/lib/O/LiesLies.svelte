@@ -265,6 +265,9 @@
                 //     the sync inbox: the cluster sign rides the consumer payload, so the spine ferries it
                 //      opaque and never needs to know about trust.
                 on('ghost_compile', (cw, _p, fr) => { void H.Lies_ghost_compile_recv(cw, fr); return true })
+                // advertise: a runner-on-the-grid (?I=) announcing itself — {from prepub, friendly,
+                //  ready, book}. The editor keeps a %Runner roster keyed by prepub, one Runner Brink each.
+                on('advertise', (cw, _p, fr) => { H.Lies_advertise_recv(cw, fr); return true })
             }
             // ping/pong heartbeat — both roles echo a ping and record a pong, so the real
             //  envelope path is provable (and shown by the badge), not just relay control.
@@ -719,6 +722,11 @@
             //  can drive it OFF the belief loop too — liveness must not ride think, or a quiesced peer
             //   stops pinging and the far watchdog flaps it (the LATENCY SWAMP symptom).
             H.Lies_keepalive(w)
+            // The grid presence beacon runs ONLY in-think (NOT in keepalive's off-think timer): advertise
+            //  is non-ephemeral, so it books a %outbox/emit — a snap-tree mutation that must stay under the
+            //   mutex.  Throttled, runner-only.  (Promoting advertise to an ephemeral beacon — no outbox,
+            //    like ping — is the clean follow-up; it needs a spine edit + the pinned_stable re-copy.)
+            ;(H as any).Lies_advertise(w)
         },
         // Lies_keepalive — the channel keepalive: the three-state liveness watchdog + the ping cadence.
         //  Touches ONLY .c + the ws (the ping is ephemeral → books no %outbox/emit, so no snap-tree
@@ -794,6 +802,49 @@
             //   examining/watch_c).  roai drops+recreates the child, bumping w:Lies, so the $effect
             //    re-runs and the badge's "● runner 414ms" actually ticks instead of freezing.
             await w.roai({ channel_peer: peer }, { rtt, last: Date.now() })
+        },
+
+        // ── advertise — a runner-on-the-grid announces itself to the editor (the bootstrap
+        //   coordinator).  This is the GRID-layer half: identity (Auto) → reachable → on the grid.
+        //   The editor's roster is what a foreman (or a punter) later picks a runner from; for now
+        //    it just lights a Runner Brink per known pub.  Role-addressed to 'editor' (the relay
+        //     fans every runner→editor frame to the one editor socket; the `from` prepub says WHO),
+        //      so it works for N runners even before per-pub to:<pub> dispatch lands.
+        // Lies_advertise — runner emit, throttled ~8s, piggy-backed on the keepalive cadence so it
+        //  rides the same independent timer that survives a think-quiesce.  No identity (a ?B= runner
+        //   with no ?I) ⇒ nothing to advertise AS (the roster keys on prepub) → skip.
+        Lies_advertise(w: TheC) {
+            const H = this as House
+            if (H.Lies_role(w) !== 'runner') return
+            if (!H.Lies_channel_live(w)) return
+            const self = (H as any).Clustation_self?.(w) as { prepub: string, friendly?: string } | undefined
+            if (!self?.prepub) return
+            const now = Date.now()
+            if (w.c.last_advertise && now - (w.c.last_advertise as number) < 15000) return   // ~15s beacon
+            w.c.last_advertise = now
+            ;(H as any).Peeroleum_send_consumer(w, 'advertise', {
+                from: self.prepub,
+                friendly: self.friendly ?? '',
+                ready: 1,                                   // reachable on the grid (book='' ⇒ free/idle)
+                book: (H.top_House().c.book as string) ?? '',
+            })
+        },
+        // Lies_advertise_recv — editor stamps/refreshes a %Runner roster entry, keyed by the runner's
+        //  prepub (its unique identity → its own Brink).  dontSnap: a runtime fixture, rebuilt from
+        //   beacons each session, never persisted.  ready/book ride snap-clean (1|absent, value|delete).
+        //    The single-pair %channel_peer is left untouched — the multiplied Brink reads THIS roster.
+        Lies_advertise_recv(w: TheC, fr: any) {
+            const H = this as House
+            if (H.Lies_role(w) !== 'editor') return
+            const from = String(fr?.from ?? '').trim()
+            if (!from) return
+            const now = Date.now()
+            const r = w.oai({ Runner: from }, { dontSnap: 1, last_heard: now }) as TheC
+            r.sc.last_heard = now
+            if (fr?.friendly) r.sc.friendly = String(fr.friendly); else delete r.sc.friendly
+            if (fr?.book)     r.sc.book     = String(fr.book);     else delete r.sc.book
+            if (fr?.ready)    r.sc.ready    = 1;                   else delete r.sc.ready
+            w.bump_version()
         },
         //#endregion
 

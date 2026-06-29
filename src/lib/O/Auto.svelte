@@ -54,6 +54,8 @@
     import LibraryRun       from "$lib/O/ui/LibraryRun.svelte"
     import { now_in_seconds, now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte";
     import { boot_param }   from "$lib/boot"
+    import { Idento }       from "$lib/Y.svelte"
+    import { prepubOf }     from "$lib/p2p/cluster_trust"
 
     const DEFAULT_BOOKS = ['LeafJuggle', 'LeafFarm', 'StuffFlipping', 'LakeSurfer']
     const HEAD = 'Present'
@@ -79,6 +81,142 @@
         }
         return C
     },
+
+//#region identity — Clustation, the next layer of "Automatically becoming who it is"
+    // The cluster IDENTITY layer. A %Identity is the per-?I self: it OWNS a %Peering (our real pub
+    //  address — 1:1 in the common case) and the trust it earns. It is the CONCRETION of a persisted
+    //   identity-thang (the Thangs `identities` table, Peeroleum_spec §10) — the live particle a Dexie
+    //    row hydrates into. The signing key rides on the %Identity (.c.keys — a secret, never sc, never
+    //     encoded); Lies_cluster_idento reads the ACTIVE one, so the relay `hello` (LiesLies) binds
+    //      prepubOf(pub)→our socket and to:<pub> routes to a VERIFIED Id — the address Waft:Cluster lists.
+    //   ?I=<tag> resume (mint first time) · ?I=new always-fresh fork · absent ⇒ inert (legacy key path).
+    //    Lives in Auto because deciding our identity IS Auto's job (role/page → who, now → which key).
+
+    // Clustation_mint — a fresh ed25519 keypair, the codebase way (Idento), as a storable
+    //  {pub, key, prepub, friendly}. pub/key are full hex; prepub is the 16-hex routing address
+    //   (= header.from / the %Peering name / the to:<pub> target).
+    async Clustation_mint(this: House, friendly?: string) {
+        const ido = new Idento()
+        await ido.generateKeys()
+        const f = ido.freeze()                       // { pub, key } hex
+        const prepub = ido.pretty_pubkey()           // 16-hex
+        return { pub: f.pub as string, key: f.key as string, prepub, friendly: friendly ?? `id-${prepub.slice(0, 6)}` }
+    },
+
+    // Clustation_ensure_identity — resolve ?I= and stand up the active %Identity (+ its %Peering)
+    //  under A:Clustation, persisted as an `identities` Thang. Idempotent per session (the Auto
+    //   caller guards on H.c.identity_up). Async, but no liveQuery race: thang_add/thang_peek hit
+    //    Dexie directly and the %Identity is concreted here-and-now, not awaited off a subscription.
+    async Clustation_ensure_identity(this: House, H?: House): Promise<boolean> {
+        H = (H ?? this) as House
+        const param = boot_param('I')
+        if (!param) return true                       // no identity layer requested — done
+        // The Thangs persistence helpers are deposited by a sibling ghost; if the boot tick beat
+        //  that mount, report not-done so the caller retries next pass (don't latch).
+        if (typeof (H as any).thang_add !== 'function' || typeof (H as any).thang_peek !== 'function') return false
+        const A  = H.o({ A: 'Clustation' })[0] || H.i({ A: 'Clustation' })
+        const wT = A.o({ w: 'Thangs', thangs: 'identities' })[0]
+                || A.i({ w: 'Thangs', thangs: 'identities' })
+        wT.c.up = A
+
+        let tag: string
+        let stored: { pub: string; key: string; prepub: string; friendly?: string } | undefined
+        if (param === 'new') {
+            stored = await (H as any).Clustation_mint()
+            tag = stored!.prepub                       // a fresh identity is named by its own prepub
+            await (H as any).thang_add(wT, tag, stored)
+        } else {
+            tag = param
+            const peeked = await (H as any).thang_peek('identities', tag)
+            if (peeked?.pub && peeked?.key) stored = peeked
+            else { stored = await (H as any).Clustation_mint(tag); await (H as any).thang_add(wT, tag, stored) }
+        }
+
+        ;(H as any).Clustation_concrete(A, tag, stored!)
+        console.log(`🪪 Identity ${param === 'new' ? 'minted' : 'active'} ${tag} (${stored!.prepub})`)
+        return true
+    },
+
+    // Clustation_concrete — make `stored` the live, ACTIVE %Identity under A:Clustation, owning its
+    //  %Peering (the pub address, 1:1).  Keys ride on .c (a secret: never sc, never encoded); the
+    //   active flag rides 1/absent so it stays snap-clean, and only ONE %Identity is active at a time.
+    //    The single concretion both the ?I= mint|peek (ensure_identity) and the .env adopt (IdHatch)
+    //     funnel through, so a key from either source becomes the same first-class object.
+    Clustation_concrete(this: House, A: TheC, tag: string, stored: { pub: string; key: string; prepub: string; friendly?: string }): TheC {
+        for (const old of A.o({ Identity: 1 }) as TheC[]) delete old.sc.active
+        const ident = A.oai({ Identity: tag }) as TheC
+        ident.c.up = A
+        ident.c.keys = { pub: stored.pub, key: stored.key }
+        ident.sc.prepub = stored.prepub
+        if (stored.friendly) ident.sc.friendly = stored.friendly
+        ident.sc.active = 1
+        const peering = ident.oai({ Peering: 1, name: stored.prepub }) as TheC
+        peering.c.up = ident
+        ;(this as House).c.active_identity = ident
+        return ident
+    },
+
+    // Clustation_adopt — take an EXTERNAL keypair (a pasted .env.cluster-<role> — IdHatch) and make
+    //  it a first-class %Identity, exactly as ?I= does for a minted|peeked one.  Persists it to the
+    //   `identities` Thang (named by prepub) so it survives reload, then concretes + activates it.
+    //    Returns false if the Thangs persistence isn't mounted yet (caller can retry).  This is the
+    //     migration: the cluster key stops living in the bare .stashed.cluster_idento slot.
+    async Clustation_adopt(this: House, keypair: { pub: string; key: string }, friendly?: string, H?: House): Promise<boolean> {
+        H = (H ?? this) as House
+        if (typeof (H as any).thang_add !== 'function') return false
+        const prepub = prepubOf(keypair.pub)
+        const stored = { pub: keypair.pub, key: keypair.key, prepub, friendly: friendly ?? `id-${prepub.slice(0, 6)}` }
+        const A  = H.o({ A: 'Clustation' })[0] || H.i({ A: 'Clustation' })
+        const wT = A.o({ w: 'Thangs', thangs: 'identities' })[0] || A.i({ w: 'Thangs', thangs: 'identities' })
+        wT.c.up = A
+        await (H as any).thang_add(wT, prepub, stored)
+        ;(H as any).Clustation_concrete(A, prepub, stored)
+        console.log(`🪪 Identity adopted ${prepub} (${stored.friendly})`)
+        return true
+    },
+
+    // Clustation_clear — deactivate the active %Identity (the IdHatch "Clear").  Leaves the persisted
+    //  Thang in place (a switch-away, not a delete) — re-selectable by ?I=<prepub> or re-adopt.
+    Clustation_clear(this: House, H?: House): void {
+        H = (H ?? this) as House
+        const top = (H.top_House?.() ?? H) as House
+        const A = (top.o({ A: 'Clustation' }) as TheC[])[0]
+        if (A) for (const id of A.o({ Identity: 1 }) as TheC[]) delete id.sc.active
+        delete (top.c as any).active_identity
+    },
+
+    // Clustation_active_identity — the ACTIVE %Identity's signing key {pub, key}, or undefined.
+    //  Read by Lies_cluster_idento. Prefers the stamped ref; falls back to the %Identity,active
+    //   flag so a re-mixed method (HMR) still resolves.
+    Clustation_active_identity(this: House, H?: House): { pub: string; key: string } | undefined {
+        H = (H ?? this) as House
+        const top = (H.top_House?.() ?? H) as House
+        let ident = (top.c as any)?.active_identity as TheC | undefined
+        if (!ident) {
+            const A = (top.o({ A: 'Clustation' }) as TheC[])[0]
+            ident = A && (A.o({ Identity: 1 }) as TheC[]).find(i => i.sc.active)
+        }
+        const keys = (ident?.c as any)?.keys as { pub?: string; key?: string } | undefined
+        return keys?.pub && keys?.key ? { pub: keys.pub, key: keys.key } : undefined
+    },
+
+    // Clustation_self — the active %Identity's PUBLIC face {prepub, friendly}, or undefined. The
+    //  advertise frame's payload (no secret): prepub = our to:<pub> routing address (= %Peering name),
+    //   friendly = the human label. Read off the same active %Identity as the signing key, so what we
+    //    advertise is exactly who we sign as.
+    Clustation_self(this: House, H?: House): { prepub: string; friendly?: string } | undefined {
+        H = (H ?? this) as House
+        const top = (H.top_House?.() ?? H) as House
+        let ident = (top.c as any)?.active_identity as TheC | undefined
+        if (!ident) {
+            const A = (top.o({ A: 'Clustation' }) as TheC[])[0]
+            ident = A && (A.o({ Identity: 1 }) as TheC[]).find(i => i.sc.active)
+        }
+        const prepub = ident?.sc.prepub as string | undefined
+        return prepub ? { prepub, friendly: ident?.sc.friendly as string | undefined } : undefined
+    },
+
+//#endregion
 
 //#region w:Auto
     async Auto(A: TheC, w: TheC, e?: TheC) {
@@ -138,6 +276,7 @@
             //  so a boot tick that raced the ghost mount retries next pass instead of latching empty.
             if (await (H as any).Clustation_ensure_identity(H)) H.c.identity_up = true
         }
+
 
         // ── Library page region (book browser + disk-backed Library) ──────────
         //   Wholly skipped on the `run` page (any ?B/?E boot): a runner runs the one Book it was

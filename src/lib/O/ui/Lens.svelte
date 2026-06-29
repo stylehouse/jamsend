@@ -45,7 +45,7 @@
                     <button class="lens-brink-side" onclick={() => lefted = !lefted}
                         title={lefted ? 'send the cluster dock to the right of Lies' : 'send the cluster dock to the left of Lies'}>{lefted ? '⟩' : '⟨'}</button>
                 </div>
-                {#each panels as p (p.sc.of_Funkcion)}
+                {#each panels as p (p.sc.of_Funkcion + ':' + (p.sc.pub ?? ''))}
                     <div class="lens-slot">
                         <LensHost {H} lens={p} />
                     </div>

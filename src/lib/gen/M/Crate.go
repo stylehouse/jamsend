@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Crate(): string { return '60052a65ddb67c27' },
+    Ghostmeta_Ghost_M_Crate(): string { return '601118a6174d31d5' },
 
 // Crate.g — rifling through a music collection.  A modern port of the old Directory.svelte tree-walk +
 //  Agency.svelte's meander() random-walk, redesigned for THIS platform: raw File System Access API (no
@@ -236,6 +236,141 @@ async Crate_fetch_some(w, base, n) {
         if (rec) recs.push(rec)
     }
     return recs
+
+},
+// ── req:rastock — the radiostock builder, as a VISIBLE process ─────────────────────────────────────
+//  Mirrors Radios' radiostock: a thing that DESIRES `want` records and fills itself by reading the
+//   collection.  Driven one notch per Story beat (so each snap narrates a stage): ISSUE a read (a %reading
+//    goes out), the read COMES BACK (fetch+decode resolves onto the %reading's .c, off-snap), a %record gets
+//     MADE (real artist/album/title/seconds/loudness).  want/have/pool + the in-flight %reading + the
+//      %record rows all snap — the picture finally describes what's happening.
+
+// Crate_meta_from_path — real artist/album/title from a nested path "Artist/Album/NN Title.ext".
+Crate_meta_from_path(path) {
+    let segs = path.split('/')
+    let file = segs[segs.length - 1]
+    let dot = file.lastIndexOf('.')
+    let stem = (dot < 0) ? file : file.slice(0, dot)
+    let clean = stem.replace(/_/g, ' ').trim()
+    let parts = clean.split(' - ')
+    let title = parts[parts.length - 1].replace(/^[0-9]+\s+/, '').trim()
+    let artist = (segs.length >= 3) ? segs[0] : (parts.length > 1 ? parts[0].trim() : '')
+    let album = (segs.length >= 3) ? segs[1] : ((segs.length === 2) ? segs[0] : '')
+    return { artist: artist, album: album, title: title }
+
+},
+// Crate_enc_path — encode a nested path for fetch (each segment; keep the slashes).
+Crate_enc_path(path) {
+    let out = []
+    for (const s of path.split('/')) out.push(encodeURIComponent(s))
+    return out.join('/')
+
+},
+// Crate_fetch_payload — fetch ONE served track (nested path) and decode it FROM THE START (Offline
+//  AudioContext — no gesture, robust for mp3/flac), keep the first ~PREVIEW chunks (decode-from-start is the
+//   preview), derive loudness + path metadata.  Returns a plain payload (no particle) or null on failure.
+async Crate_fetch_payload(base, path) {
+    if (typeof OfflineAudioContext === 'undefined' || typeof fetch === 'undefined') return null
+    let res = null
+    try {
+        res = await fetch(base + '/' + this.Crate_enc_path(path))
+    } catch (er) {
+        return null
+    }
+    if (!res || !res.ok) return null
+    let raw = await res.arrayBuffer()
+    let ctx = new OfflineAudioContext(1, 1, 48000)
+    let decoded = null
+    try {
+        decoded = await ctx.decodeAudioData(raw)
+    } catch (er) {
+        return null
+    }
+    let data = decoded.getChannelData(0)
+    let CHUNK = 2400
+    let PREVIEW = 240
+    let chunks = []
+    let i = 0
+    while (i < data.length && chunks.length < PREVIEW) {
+        chunks.push(data.slice(i, Math.min(data.length, i + CHUNK)))
+        i = i + CHUNK
+    }
+    let sumSq = 0
+    let j = 0
+    while (j < i) {
+        sumSq += data[j] * data[j]
+        j = j + 1
+    }
+    let rms = Math.sqrt(sumSq / Math.max(1, i))
+    let meta = this.Crate_meta_from_path(path)
+    return { chunks: chunks, seconds: +decoded.duration.toFixed(2), loudness: +rms.toFixed(4), artist: meta.artist, album: meta.album, title: meta.title, nchunks: chunks.length }
+
+},
+// Crate_rastock_start — stand up the rastock with its desires (want) + the manifest (names ride .c).
+async Crate_rastock_start(w, base, want) {
+    let names = await this.Crate_manifest(base)
+    let ra = w.i({rastock: 1, base: base, want: want, have: 0, pool: names.length})
+    ra.c.up = w
+    ra.c.names = names
+    return ra
+
+},
+// Crate_rastock_issue — send ONE read out: pick a pseudo-random track, mark a %reading (visible, pending),
+//  and kick the async fetch+decode that lands the payload on the %reading's .c when it returns.  Won't
+//   over-issue beyond `want` (records + in-flight reads).
+Crate_rastock_issue(ra) {
+    let names = ra.c.names
+    if (!names || !names.length) return
+    if (ra.o({record: 1}).length + ra.o({reading: 1}).length >= +(ra.sc.want ?? 0)) return
+    // dedup: don't re-read a path already in flight or already recorded (prandle can collide).
+    let taken = {}
+    for (const rd of ra.o({reading: 1})) taken[rd.sc.path] = 1
+    for (const rc of ra.o({record: 1})) taken[rc.sc.name] = 1
+    let path = null
+    let tries = 0
+    while (tries < 16) {
+        tries = tries + 1
+        let p = names[this.prandle(names.length)]
+        if (!taken[p]) {
+            path = p
+            break
+        }
+    }
+    if (!path) return
+    let rd = ra.i({reading: 1, path: path})
+    rd.c.up = ra
+    this.Crate_read_into(ra.sc.base, path, rd)
+
+},
+// Crate_read_into — the async leg: fetch+decode, stash the payload on rd.c.result, mark %back, bump so the
+//  next snap shows it returned.  Fire-and-forget; the next beat's harvest turns it into a record.
+async Crate_read_into(base, path, rd) {
+    let res = await this.Crate_fetch_payload(base, path)
+    rd.c.result = res || null
+    rd.sc.back = 1
+    rd.bump()
+
+},
+// Crate_rastock_harvest — turn reads that CAME BACK into %record rows (real metadata), drop the spent
+//  %reading, update have.  Returns how many records it made this pass.
+async Crate_rastock_harvest(ra) {
+    let made = 0
+    for (const rd of ra.o({reading: 1})) {
+        if (!rd.sc.back) continue
+        let res = rd.c.result
+        if (res) {
+            let rec = ra.i({record: 1, name: rd.sc.path, artist: res.artist, album: res.album, title: res.title, loudness: res.loudness, seconds: res.seconds, nchunks: res.nchunks, real: 1})
+            rec.c.up = ra
+            rec.c.chunks = res.chunks
+            made = made + 1
+        } else {
+            ra.i({missed: rd.sc.path})
+        }
+        ra.rm({reading: 1, path: rd.sc.path})
+    }
+    // r() (tracked) not raw ra.sc.have= — re-mutating an existing sc key raw doesn't re-dige into the snap.
+    await ra.r({have: ra.o({record: 1}).length})
+    return made
 },
 //#endregion
 

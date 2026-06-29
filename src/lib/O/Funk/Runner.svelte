@@ -49,19 +49,37 @@
     let channel_live   = $state(false)
     let now            = $state(Date.now())
 
+    // editor MULTIPLIED mode: when the suggester stamps lens.c.runner, this face monitors ONE
+    //  advertised runner (its %Runner roster entry: pub + friendly + last_heard + ready + book),
+    //   not the single-pair %channel_peer.  An editor coordinating a grid mounts one of these per pub.
+    let is_roster  = $derived(!!lens?.c?.runner)
+    let r_pub      = $state('')
+    let r_friendly = $state('')
+    let r_heard    = $state(0)
+    let r_ready    = $state(false)
+    let r_book     = $state('')
+
     const _tick = setInterval(() => { now = Date.now() }, 1000)
     onDestroy(() => clearInterval(_tick))
 
     $effect(() => {
         const w = (lens?.c?.w ?? H.ave.ob({ examining: 1 })[0]?.c?.w) as TheC | undefined
         if (!w) return
-        w.ob()   // track w:Lies version (bumps on pong roai + the ambient heartbeat)
+        w.ob()   // track w:Lies version (bumps on pong roai, advertise stamp + the ambient heartbeat)
+        const rn = lens?.c?.runner as TheC | undefined
         H.clear(async () => {
             peers        = w.o({ channel_peer: 1 }) as TheC[]
             run_phase    = w.c?.run_phase
             role         = (H as any).Lies_role?.(w) ?? ''
             channel_live = !!(H as any).Lies_channel_live?.(w)
             now          = Date.now()
+            if (rn) {
+                r_pub      = (rn.sc.Runner as string) ?? ''
+                r_friendly = (rn.sc.friendly as string) ?? ''
+                r_heard    = Number(rn.sc.last_heard ?? 0)
+                r_ready    = !!rn.sc.ready
+                r_book     = (rn.sc.book as string) ?? ''
+            }
         })
     })
 
@@ -109,8 +127,30 @@
     let phase_live = $derived(!!run_phase && now - (run_phase.at as number) < 30000)
     let phase_view = $derived(run_phase ? PHASE_VIEW[run_phase.phase as string] : undefined)
     let phase_pct  = $derived(run_phase?.total ? Math.min(100, Math.round((Number(run_phase.n ?? 0) / Number(run_phase.total)) * 100)) : null)
+
+    // roster-mode link — liveness off the advertise beacon (cadence ~15s; allow ~2 missed before
+    //  "silent", never heard ⇒ "dialing").  free = on the grid, no book; else running its book.
+    let r_age_s = $derived(r_heard ? Math.round((now - r_heard) / 1000) : null)
+    let r_live  = $derived(r_heard > 0 && now - r_heard < 45000)
+    let r_title = $derived(r_friendly || (r_pub ? r_pub.slice(0, 8) : '?'))
+    let r_link  = $derived(
+        !r_heard ? { glyph: '◌', cls: 'dial',   text: 'dialing' }
+      : r_live   ? { glyph: '●', cls: 'live',   text: r_book ? `running ${base(r_book)}` : 'free' }
+      :            { glyph: '◍', cls: 'silent', text: `silent ${r_age_s ?? 0}s` }
+    )
 </script>
 
+{#if is_roster}
+    <!-- one advertised runner on the grid (editor multiplied view) — its own identity, its own liveness -->
+    <div class="rp">
+        <div class="rp-hd">runner · {r_pub ? r_pub.slice(0, 8) : '?'}</div>
+        <div class="rp-link rp-{r_link.cls}" title={`advertised runner ${r_pub}${r_ready ? ' — ready' : ''}`}>
+            <span class="rp-dot">{r_link.glyph}</span>
+            <span class="rp-role">{r_title}</span>
+            <span class="rp-txt">{r_link.text}</span>
+        </div>
+    </div>
+{:else}
 <div class="rp">
     <div class="rp-hd">runner</div>
     <div class="rp-link rp-{link.cls}" title="endpoint liveness — the ping/pong heartbeat (Lies_heartbeat)">
@@ -131,6 +171,7 @@
         </div>
     {/if}
 </div>
+{/if}
 
 <style>
     .rp {

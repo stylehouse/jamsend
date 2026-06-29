@@ -10,20 +10,40 @@ Snap:H
           lango_mints_on_carrier
           same_kind_out_competes
           different_kind_coexists
-        Waft:LangoW,equip:Lango	{"dontSnap":1}
+          cursor_lango_drives_focus
+          equip_source_never_focuses
+          newest_fg_cursor_wins
+          deliberate_beats_newer_cold
+          cut_drives_active
+        Waft:LangoFore
         Funkcions
+          req:Waftica,waft:LangoFore,eternal,ok
+            Lango:Cursor,to:Waft:LangoFore/What:a	{"mung":["seq"]}
           req:Waftica,waft:LangoW,eternal,ok
-            Lango:Cursor,to:Waft:LangoW/What:y
-            Lango:Lens,to:Runner
+            Lango:Cursor,to:Waft:LangoW/What:y	{"mung":["seq"]}
+            Lango:Lens,to:Runner	{"mung":["seq"]}
+          req:Waftica,waft:LangoFore2,eternal,ok
+            Lango:Cursor,to:Waft:LangoFore2/What:b	{"mung":["seq"]}
+          req:Waftica,waft:LangoResume,eternal,ok
+            Lango:Cursor,to:Waft:LangoResume/What:c,cold	{"mung":["seq"]}
+        Waft:LangoW,equip:Lango	{"dontSnap":1}
+        req:Langoer,eternal,focus:LangoFore2,ok	{"ref":{"w":"%w:Lies"}}
+        Waft:LangoFore2,active
+        Waft:LangoResume
         examining	{"loopy":0}
+          req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
         req:Cortex,eternal,maz=5,ok
         req:Store,eternal,maz=7,ok
         req:desire
-          req:acquire,maz=9
+          req:acquire,maz=9,finished
+          Waft:LangoFore2	{"ref":{"src":"%Waft:LangoFore2, active:1"}}
+        o_elvis:Lies_desire_play
+        o_elvis:Lies_desire_pause
+        o_elvis:Lies_desire_step
         req:git
         req:wants
         o_elvis:dock_askies
-        see:🗂 0 docs
+        see:🗂 0 docs · 3 Wafts
     A:Lang
       self,round=2	{"mung":["age"]}
       w:Lang
@@ -34,6 +54,12 @@ Snap:H
           lematch	{"ref":{"sc_has":"Object()"}}
             lematch	{"ref":{"sc_has":"Object()"}}
         Languinio,no_doc	{"loopy":1}
+          Interest:Trail,waft:LangoFore,face:NaviCado,presence:active,state:pending
+            cursor,what:LangoFore,doc:LangoFore/doc0,depth=0
+          Interest:Trail,waft:LangoFore2,face:NaviCado,presence:active,state:pending
+            cursor,what:LangoFore2,doc:LangoFore2/doc0,depth=0
+          Interest:Trail,waft:LangoResume,face:NaviCado,presence:active,state:pending
+            cursor,what:LangoResume,doc:LangoResume/doc0,depth=0
         req:workon,auto_push	{"ref":{"w":"%w:Lang"}}
           req:understanding,maz=3,permanent,sig:0:0:0:0,finished
           req:ingredients,maz=2,permanent,sig:,finished

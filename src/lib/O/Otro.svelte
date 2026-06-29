@@ -37,11 +37,17 @@
     //      LOCAL h — never read $state H inside the effect (the self-retrigger OOM trap above).
     const editor_book = boot_param('E')
     const book        = boot_param('B')
+    const on_grid     = boot_param('I')   // ?I=<tag> ALONE (no ?E/?B) — an idle runner-on-the-grid
     $effect(() => {
         const h = new House({ name: 'Mundo' })
         h.c.toplevel = toplevel
         if (editor_book) { h.c.book = editor_book; h.c.boot_role = 'editor' }
         else if (book)   { h.c.book = book;        h.c.boot_role = 'runner' }
+        // ?I= with no Book: a runner-on-the-grid.  Same runner role as ?B= (Creduler + channel), but
+        //  NO H.c.book — so no Story starts at boot; the tab idles connected until the editor hands it
+        //   a become_book.  /Otro?I=new is the whole on-ramp; the identity layer (Auto) does the rest.
+        //  (?E=/?B= still win: an editor or booked runner that ALSO carries ?I just gains an identity.)
+        else if (on_grid) {                        h.c.boot_role = 'runner' }
         H = h
         setTimeout(() => {
             houses = [H]

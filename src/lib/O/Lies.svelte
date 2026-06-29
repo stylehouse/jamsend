@@ -900,6 +900,15 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
         await H.Lies_resolve_wants(w)
 
+        // req:Langoer — the focus ARBITER (Backbone_plan P3), auto-seeded on every w:Lies and
+        //  driven right after the resolver mints this tick's Cursor Lango, so its verdict
+        //   (req:Langoer,focus) is fresh same-tick AND its focus write lands the same tick.
+        //    It records the focus it derives and (Move 4, the cut) drives .sc.active from it,
+        //     conservatively — see req_Langoer.  Seeded with {w} so upto_w resolves directly
+        //      (mirrors req:workon).
+        const langoer = await w.oai({ req: 'Langoer', eternal: 1 }, { w })
+        await H.req_Langoer(langoer)
+
         // pump once more: Lies_resolve_wants | a pull may have just warmed a dock
         //  %Good via Lies_provide_dock, but req:Store already ran earlier this tick
         //   (maz:7).  Re-driving lets the read start its Wormhole IO in the same
@@ -972,6 +981,20 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const doc_path = H.Waft_src_doc_path(src)
         if (doc_path) await H.Lies_provide_dock(w, doc_path)   // speculative push — warm the %Good
 
+        // Feed the %Lango channel (Backbone_plan P3 Move 2): every resolved want mints a
+        //  Cursor Lango on the landed Waft's carrier, cold riding from the want kind — a
+        //   resume/boot move (kind:'cold') that req:Langoer's arbiter lets a deliberate
+        //    focus outrank.  This (deliberate clicks) is what beats a cold-resume's Cursor in
+        //     req_Langoer's verdict — the boomerang fix.  The eager .sc.active claim above is
+        //      the instant land; Langoer re-asserts the verdict over it each tick (the cut).
+        //       Skips a phantom land (no Waft) — a Lango needs a source Waft to hang on.
+        if (landed)
+            await H.lango(w, landed, {
+                kind: 'Cursor',
+                to:   doc_path ?? waft_key,
+                cold: newest.sc.kind === 'cold',
+            })
+
         await H.Lies_i_Spotlight(examining, src, waft_key)
     },
 
@@ -983,6 +1006,12 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //      same delete-all-then-set — consolidated so req:Langoer has ONE place to
     //       govern "which Waft wins", not a scattered free-for-all (the boomerang's
     //        root: focus re-decided from ~5 writers with no arbiter — Backbone_plan P3).
+    //   The arbiter now drives it (req_Langoer + Lies_langoer_focus, below): each tick it
+    //    derives the foreground from the observable Cursor Langos and, when the current focus is
+    //     Lango-backed (the cold-resume boomerang case), re-asserts the verdict THROUGH this
+    //      chokepoint — Langoer the authoritative caller (Backbone_plan P3 Move 4, the cut).
+    //   The eager callers below still set focus for instant UI response (and to hold a Lango-less
+    //    foreground Langoer deliberately won't touch); Langoer corrects them only when warranted.
     //   %active is session-only (never snapped); callers bump after, as they always did.
     Lies_set_active_waft(w: TheC, waft: TheC): void {
         for (const other of w.o({ Waft: 1 }) as TheC[]) delete other.sc.active
@@ -1009,6 +1038,90 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         return wafts.find(wf => wf.sc.active)
             ?? (cur_waft ? wafts.find(wf => wf.sc.Waft === cur_waft) : undefined)
             ?? wafts[0]
+    },
+
+    // ── Lies_langoer_focus — the Lango receiver's verdict, PURE (no writes) ────
+    //
+    //   req:Langoer's eye: read every observable %Lango/%Cursor on the Waftica
+    //    carriers and pick the one that should hold the foreground — the highest-seq
+    //     (globally-newest, across carriers) whose SOURCE Waft is foregroundable
+    //      (not %equip).  This is the arbiter the boomerang argues for: ONE seq-ordered
+    //       decision read off observable snapped state, vs the old free-for-all where
+    //        .sc.active was re-asserted from ~5 unarbitrated writers (Backbone_plan P3).
+    //   Three rules, in order, decide the winner:
+    //    - %equip Wafts (Keep/Cluster) never win → BACKGROUND NEVER STEALS THE FOREGROUND.
+    //    - a DELIBERATE (non-cold) Cursor outranks any `cold` resume/boot Cursor, regardless of
+    //       seq — THE boomerang rule: a background re-open's cold Cursor cannot out-compete the
+    //        user's deliberate focus.  (On boot only cold Cursors exist → the cold branch wins →
+    //         the remembered spot resumes; mid-session a deliberate move outranks a later cold
+    //          re-open → no boomerang.)
+    //    - within the same cold-ness, the highest `seq` (globally-newest, across carriers) wins;
+    //       out-compete already left ≤1 Cursor per carrier, so the per-carrier pick is just [0].
+    //   Reads only SNAPPED fields (carrier.sc.waft, cursor.sc.seq/.cold, the Waft lookup), so it
+    //    survives a reload where the .c refs are gone.  Returns the winning Waft, or undefined when
+    //     no Cursor names a foregroundable Waft (no candidates → focus unchanged).
+    Lies_langoer_focus(w: TheC): TheC | undefined {
+        const funks = w.o({ Funkcions: 1 })[0] as TheC | undefined
+        if (!funks) return undefined
+        let win: TheC | undefined, win_seq = -1, win_cold = true
+        for (const carrier of funks.o({ req: 'Waftica' }) as TheC[]) {
+            const cursor = carrier.o({ Lango: 'Cursor' })[0] as TheC | undefined   // ≤1 (out-compete)
+            if (!cursor) continue
+            const path = carrier.sc.waft as string | undefined
+            const src  = path ? (w.o({ Waft: path })[0] as TheC | undefined) : undefined
+            if (!src || src.sc.equip) continue                  // background never steals foreground
+            const seq  = Number(cursor.sc.seq ?? 0)
+            const cold = !!cursor.sc.cold
+            const better = win_cold && !cold ? true             // first deliberate unseats a cold leader
+                         : !win_cold && cold ? false            // a cold never unseats a deliberate leader
+                         : seq > win_seq                         // same cold-ness → newest wins
+            if (better) { win = src; win_seq = seq; win_cold = cold }
+        }
+        return win
+    },
+
+    // ── req_Langoer — req:Keeping's RECEIVER HAT (Backbone_plan P3 "req:Langoer") ──
+    //
+    //   The consumer the %Lango channel was waiting for.  Each tick it reads the
+    //    observable Cursor Langos (Lies_langoer_focus) and records the winner as its OWN
+    //     snapped verdict — req:Langoer,focus:<waft-path>.  So a Lango finally BECOMES
+    //      something to Lang: the arbiter's focus decision, legible in the snap (where
+    //       today's focus, the session-only .sc.active, is invisible — exactly why the
+    //        boomerang is slippery).
+    //   THE CUT (Backbone_plan P3 Move 4 — 2026-06-30): Langoer now DRIVES the session focus
+    //    from its verdict, CONSERVATIVELY.  It re-asserts `win` as .sc.active only when the
+    //     CURRENT focus is itself Lango-backed (a focus that arrived through the feed — the
+    //      cold-resume boomerang is exactly this case) or when nothing is focused.  A focus set
+    //       eagerly WITHOUT a Cursor Lango (a Liesui tab-click | a +Now moment that emitted no
+    //        want) is RESPECTED — Langoer will not yank it toward a stray cold Lango.  So the
+    //         cold-resume boomerang is corrected each tick, yet no deliberate-but-Lango-less
+    //          foreground is stolen (the regression a naive sole-writer would cause).
+    //   It reuses the Lies_set_active_waft chokepoint, so Langoer is now its authoritative
+    //    caller; the write no-ops once `win` already holds .sc.active (session-only, unsnapped).
+    //   RESIDUAL (the full sole-writer): make the Lango-less deliberate sites (Liesui tab, +Now)
+    //    emit a `click` want so they mint a deliberate Cursor Lango — then the recorded verdict
+    //     and the live focus never diverge, and this guard can drop to an unconditional write.
+    //   eternal: re-arms each tick; the focus record bumps only when the verdict CHANGES.
+    async req_Langoer(req: TheC) {
+        const H   = this as House
+        const w   = H.upto_w(req)
+        const win = H.Lies_langoer_focus(w)
+        const key = win ? (win.sc.Waft as string) : undefined
+        if (key) { if (req.sc.focus !== key) { req.sc.focus = key as any; req.bump_version() } }
+        else if (req.sc.focus) { delete req.sc.focus; req.bump_version() }
+        // THE CUT — drive .sc.active from the verdict, but only over a Lango-backed (or empty)
+        //  focus: the cold-resume's Cursor Lango IS Lango-backed → corrected; a tab-click | +Now
+        //   that set focus with no want is left alone.  No-op once `win` already holds focus.
+        if (win && !win.sc.active) {
+            const active    = (w.o({ Waft: 1 }) as TheC[]).find(wf => wf.sc.active)
+            const funks     = w.o({ Funkcions: 1 })[0] as TheC | undefined
+            const a_carrier = active && funks
+                ? (funks.o({ req: 'Waftica', waft: active.sc.Waft as string })[0] as TheC | undefined)
+                : undefined
+            if (!active || a_carrier?.o({ Lango: 'Cursor' })[0])
+                { H.Lies_set_active_waft(w, win); w.bump_version() }
+        }
+        req.sc.ok = 1   // pass-local; eternal arbiter re-arms next tick
     },
 
     // ── The Keep — Waft:Keep, the workspace that remembers ──────────────────────
@@ -1060,6 +1173,24 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         if (val != null) wt.sc[key] = val
         else delete wt.sc[key]                               // 1-or-absent: open IS the absence
         keep.bump_version()   // ROOT bump so watch_c re-saves (a WaftTimes-only mutation won't)
+    },
+
+    //   Lies_keep_pref_get / _set — a GLOBAL (not per-Waft) preference, on the Keep ROOT.
+    //    For pane-level UI state that belongs to no single Waft — the editor's expand height,
+    //     say (Langui's V toggle).  Rides the Keep particle's own sc (1-or-absent), the one
+    //      place that already persists (the Keep's own snap), so the pref survives reload
+    //       without a phantom WaftTimes.  get is a RAW lookup (no migrate/bump) — $derived-safe;
+    //        absent ⇒ undefined, caller supplies the default.  Mutating the root IS the bump.
+    Lies_keep_pref_get(w: TheC, key: string): any {
+        const keep = w.o({ Waft: 'Keep' })[0] as TheC | undefined
+        return keep?.sc[key]
+    },
+    Lies_keep_pref_set(w: TheC, key: string, val: any): void {
+        const keep = w.o({ Waft: 'Keep' })[0] as TheC | undefined
+        if (!keep) return                                    // no Keep yet (early boot | runner) — drop
+        if (val != null) keep.sc[key] = val
+        else delete keep.sc[key]                             // 1-or-absent: collapsed IS the absence
+        keep.bump_version()
     },
 
     //   Lies_keep_note — accumulate a Waft into the ledger: discovered_at once, accessed_at
