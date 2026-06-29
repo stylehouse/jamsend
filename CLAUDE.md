@@ -80,6 +80,12 @@ A **snap** is the text serialisation of the C tree which Story makes between ste
      a traced phase; `dige` is the change-sensitivity|digest used to decide what
       is worth re-emitting. A test may flag itself out of Cyto to spare the
        graph noise.
+ New test assertions are authored as `%see:'sentence'` — a **once-noticed**,
+  self-describing claim emitted once the first pass a truth holds (no commas in
+   the sentence — the peel parser splits on them; use an em-dash). It supersedes
+    the older `%witnessed:step_N` latch (kept only for already-recorded gates);
+     the snap-fixture diff stays the gate and the place to notice un-asserted
+      detail.
 
 **Cyto** (Cyto.svelte, view in Cytui): the live Cytoscape view. `cyto_scan`
  walks the particles, `cytyle_classify` returns skip|invisible|compound,

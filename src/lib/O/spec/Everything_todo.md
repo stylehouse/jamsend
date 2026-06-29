@@ -123,6 +123,12 @@ Three overlapping forward designs:
 - **LiesCurse cull → LiesPoint** — cull unused LiesCurse, then refactor the
    locating + waking/activating of Points in Waft\*\* into a `LiesPoint` ghost
     (the Lies-side sibling of LangPoint), once Interests are fully landed.
+- **Click a Waft\*\*/Point to focus it** — a raw `%Point` sitting under a Waft→What→Doc should
+   be clickable to focus *that Point of its What as if its Pmirror were clicked* — route through
+    the existing Pmirror path (`e_Lang_point_navigate`: resolve → openness → scroll → report), not
+     a parallel one, so a bare Waft-tree Point and a minimap Pmirror land the same way. Natural
+      tenant of the `LiesPoint` ghost above (Waft-side Point activation); the Point-row onclick
+       just calls the navigate seam. No urgency — joins the wave. **[low · cold]**
 - **Relative locators (canonical Pointer)** — `method() / if something / etc =`
    name-paths, shortest-unambiguous, to disambiguate two `etc =` inside one
     method. TODO already squats in `LangPoint.svelte:78-99`; blocked on `%Map`

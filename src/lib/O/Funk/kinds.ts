@@ -16,16 +16,17 @@
 //                       component, no run) is a pure hoisted applet (e.g. IdHatch — comp_Panel only).
 //   The host knows only "mount the kind's component / comp_<LensKind>"; the kind owns the rest.
 //
-// The pump-vs-strike axis IS the Funkcion taxonomy: `run` present = a monitor (Storying,
-//  a verdict light); `run` absent = an action (Ballistics, a drum-pad struck on demand).
-//   Waft_spec §201 names the pumped half but leaves this distinction implicit; here it is
-//    just "does the kind declare a run".
+// The pump-vs-strike axis IS the Funkcion taxonomy: `run` present = a monitor pumped every
+//  tick (CreduFunk, journalling coherence); `run` absent = either an action struck on demand
+//   (Ballistics, a drum-pad) or a light driven by an event not a poll (Storying — Lies restamps
+//    it when a run_result lands, see Lies_reflect_storying).  Waft_spec §201 names the pumped
+//     half but leaves this distinction implicit; here it is just "does the kind declare a run".
 //
 // Add a kind: write O/Funk/<Kind>.svelte (a default component, + a `<kind>_run` export if
 //  it is pumped), then add one line here.
 
 import type { TheC } from "$lib/data/Stuff.svelte"
-import Storying, { storying_run } from "$lib/O/Funk/Storying.svelte"
+import Storying from "$lib/O/Funk/Storying.svelte"
 import Ballistics from "$lib/O/Funk/Ballistics.svelte"
 import StoryTimes, { storytimes_run } from "$lib/O/Funk/StoryTimes.svelte"
 import CreduFunk, { credufunk_run } from "$lib/O/Funk/CreduFunk.svelte"
@@ -51,7 +52,7 @@ export type FunkKind = {
 }
 
 export const FUNK_KINDS: Record<string, FunkKind> = {
-    Storying:   { run: storying_run,   component: Storying },   // monitor: a pumped verdict light
+    Storying:   { component: Storying },                       // verdict light — event-driven (Lies_reflect_storying), no pumped run
     Ballistics: { component: Ballistics },                      // action: a struck havoc drum-pad
     StoryTimes: { run: storytimes_run, component: StoryTimes }, // station: a struck run-all sweep, driven by a pumped tick
     CreduFunk:  { run: credufunk_run,  component: CreduFunk },  // container: holds Storying cells + journals their Credulates (coherence)

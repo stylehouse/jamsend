@@ -18,6 +18,51 @@ engine-facts, the heading-10 settled design, and the §7/§8 lifecycle bombs wer
 
 ## Status — start here
 
+**This session — PereProof step 31 (`corrupt_redial`) + the `%see` assertion doctrine.** Two things landed,
+ one of them a way-of-working the next instance MUST adopt:
+- **The braid (step 31, `Lake_corrupt_redial_arm` in `Peregrination.g`): corruption DURING a re-dial** — the
+   first of the three "NOT yet braided" items below. It composes `reset ∘ verify ∘ ordering`: fresh lossy link
+    Cyn/Dax, deliver s1 (cursor→s1), gap-buffer s3/s4 with s2 MISSING, `Peeroleum_reset_handshake(DaxPier)`
+     (clears `c.held` + `c.inseq.buffered`, keeps `%Ud` + cursor `last`), then **re-supply s2 CORRUPT** (bad
+      `body_hash` → sha256 verify faults, burns its slot), then s3/s4 good → the tail drains exactly once. Proves
+       a corruption arriving mid-reconnect **faults cleanly** instead of getting lost in the reset.
+- **The assertion doctrine — `%see:'sentence'`, NOT `%witnessed:step_N` (going forward).** The human dislikes the
+   witness (`Lake_witness`/`%witnessed:step_N`): flat latches accreting *inside* the gated snap, opaque (`step_29`
+    means nothing without its `.g` comment), redundant with the real gate. **The existing `%witnessed:*` stay
+     (they're the recorded gate for steps 2–30 — do NOT churn them).** New assertions are authored as a legible
+      lens ON TOP of the snap:
+    - `%see:'sentence'` = **once-noticed** — a readable assertion emitted ONCE, the first pass a truth holds
+       (idempotent, never re-fires). The meaning is in the sentence, so a run reads back as a transcript of what
+        it proved. Bare `i %see:'…'` in a `Lake_*(w)` method compiles to `w.i({see:'…'})` → it rides the step
+         snap. NO commas/semicolons in the sentence (the peel parser splits on them) — use an em-dash, as in
+          `Tyrant.g`'s `w i %see:'y Tyrant — yyyyar!'`.
+    - the rest of the live state = **just an ordinary particle carrying whatever fields that test needs**,
+       reconciled each pass. There is NO fixed `%some`/`%kind`/`%state` vocabulary — those were the human rattling
+        off examples; do not reify them as real keys.
+    - **Why:** a targeted, self-describing assertion on top of the ocean beats confetti inside it; the snap-fixture
+       diff (the **ocean**) stays the gate AND the place to notice un-asserted detail.
+   Step 31's assertion is a new `Lake_proof_see(w)`, polled BESIDE `Lake_proof_witness` (the 2–30 gate untouched).
+    It emits `see:corrupt mid-re-dial frame faulted not lost — good tail recovered` onto `w` once all five
+     conditions hold. `%see` lands on the test world (no transient-status `%see` there → no blur).
+- **Verified headless: CredRunner `match: 31/31, surprises: []`** (`BOOK=PereProof node_modules/.bin/vitest run
+   -c scripts/Story_cli.vitest.config.mjs scripts/CredRunner.spec.ts`); LocalGen compile clean. The exact-vs-
+    forgiven split (e.g. `forgiven: [21,31]`) is just `self,round` munge noise and varies run-to-run — only
+     `match: N/N, surprises: []` is the gate.
+- **COMMITTED** (host committed it between sessions, `ef3bfaee` + the `.g`/gen/`toc` changes): `Peregrination.g`,
+   `src/lib/gen/Story/Peregrination.go`, `wormhole/Story/PereProof/{toc,031}.snap` are all in HEAD and consistent
+    (the committed gen carries the `%see` sentence). No loose step-31 state to re-record.
+- **`ghost-compile` may still be owed for a LIVE :9091 runner.** The gen `.go` is committed (a fresh boot picks it
+   up), but a long-lived runner that was up before the commit needs `npm run ghost-compile -- Ghost/Story/
+    Peregrination.g` (editor open on :9091) to HMR the new gen in.
+- **RECORDING-A-NEW-STEP GOTCHA (cost a churn-revert this session — read before adding any step):** CredRunner
+   `ACCEPT=1` re-records ALL steps — it rewrites every fixture's volatile `self,round` field AND writes the RAW
+    per-Step dige into `toc.snap`, which DIFFERS from the committed CANONICAL diges → it silently CORRUPTS the
+     2–30 gate with a 30-file diff. The gate forgives by **munge-matching the FIXTURE FILE** (the `{"mung":["age"]}`
+      tag on `self,round`), NOT by the toc dige. So to add ONE step, never ACCEPT — instead: (1) append the
+       `step=N,dige:…` line to `toc.snap`; (2) run a plain CHECK run; (3) copy `/tmp/Story_cli/<Book>/0NN.got.snap`
+        → `wormhole/Story/<Book>/0NN.snap`; (4) read that Step's dige out of `/tmp/Story_cli/<Book>/wstory.json`
+         (`node -e` — `python3` is not in the container) and set it in the toc line. Then a CHECK run shows N/N.
+
 **This session — the swarm refactor: ONE `w:PereStaple`, Peering+Pier as typed serial-reqs.** The test's
  per-peer `A:<Name>/w:Peeroleum` worlds are GONE; every node now lives under the ONE test world `w:PereStaple` as a
   `%Peering,name,req` (a typed serial-req, new do_fn **`req_Peering`**) holding its one `%Pier,pub,req` and
@@ -375,7 +420,9 @@ is **GONE** — the runner now **ACQUIRES the live spine via the Creduler**: `Cr
 - per beat, `PereStaple(A,w)` installs `%req:wrangle,eternal` whose do_fn `await`s `Lake_drive(w, req)`.
 - `Lake_drive` is the inner-step dispatch (step 2 `Lake_sides_up`, 3 `Lake_handshake`, 4/5/6 `Lake_trial_*`),
    off a req-local `req.c.did_step` — explicitly NOT `H.on_step` (see "Why NOT on_step" under heading 2).
-- `Lake_witness` polls each pass and stamps `%witnessed:step_N` by structural query.
+- `Lake_witness` polls each pass and stamps `%witnessed:step_N` by structural query. **(Legacy pattern — kept
+   for the recorded 2–30 gate, but NEW assertions use `%see:'sentence'` once-noticed; see the Status block and
+    `Lake_proof_see`.)**
 
 Driven by the **PereStaple Story** (`wormhole/Story/PereStaple/toc.snap`), whose Prep opens the
 **Ghost/Net/Easy** Waft overlay (`wormhole/Ghost/Net/Easy/toc.snap`) — its `.g` Docs are the manifest.
@@ -759,12 +806,14 @@ ghosts, Garden.g + Tyrant.g.
 - `wormhole/Story/PereStaple/toc.snap` — drives the **LIVENESS** Book (steps 2–22 after the split): 2–7
    spine/trial/binary, 8 heal, 11 stall, 16 silence, 19 redial. Fixtures `001–022.snap`; CredRunner 21/22 (step-3
     quiescence residual the lone miss). See "Two parallel Books" under heading M.
-- `wormhole/Story/PereProof/toc.snap` — drives the **CORRECTNESS** Book (steps 2–30, split off PereStaple): 2
+- `wormhole/Story/PereProof/toc.snap` — drives the **CORRECTNESS** Book (steps 2–31, split off PereStaple): 2
    corruption, 4 dedup, 6/7 reorder, 9 reset, 11 pre-Ud, 13/15 dedup-after-cull; the **combinatory braids** 17
     storm (drop+dup+gap), 21 corrupt-stream, 23/25 rededup, 27 storm_redial (the re-dial-mid-gap braid that found
-     the reset/buffered bug), and 29 multicast (claim + offer-handover + 3 subscribers + 1 publish → fan-out).
-      Fixtures `001–030.snap` recorded headless; CredRunner **30/30**, all 12 `%witnessed:*` fire (no handshake →
-       fully deterministic, no step-3 residual).
+     the reset/buffered bug), 29 multicast (claim + offer-handover + 3 subscribers + 1 publish → fan-out), and **31
+      corrupt_redial** (corruption mid-re-dial; the first proof in the new `%see` style — `Lake_proof_see`, not a
+       `%witnessed` latch). Fixtures `001–031.snap` recorded headless; CredRunner **31/31, surprises []** (no
+        handshake → fully deterministic, no step-3 residual). To add a step, see the RECORDING gotcha in the Status
+         block — never `ACCEPT=1` (it churns the whole 2–30 gate).
 - `src/lib/O/spec/Peeroleum_spec.md` — the pinned design (the floor). This file — the living progress.
 - `src/lib/O/spec/Covenant_design.md` — the cabinetry+party design sketch (Garden.g/Tyrant.g).
 
@@ -791,9 +840,18 @@ The proofs grew in two layers, deliberately in this order:
            one fact), keeping only the cursor `last`. The braid now witnesses full recovery (`%witnessed:storm_redial`):
             held cleared, cursor kept, the re-supplied tail admitted in order, every seq dispatched exactly once.
             **Spine change — browser-verify the editor↔runner channel + re-pin `pinned_stable/N/Peeroleum.go`.**
+  - **corrupt_redial (PereProof step 31)** `[x]` — a corruption that arrives DURING a re-dial. `reset ∘ verify ∘
+     ordering`. Cyn/Dax lossy link: deliver s1, gap-buffer s3/s4 (s2 missing), `reset_handshake` (held + buffered
+      cleared, `%Ud` + cursor kept), then re-supply s2 CORRUPT (`body_hash` mismatch → sha256 verify faults, burns
+       the slot), then s3/s4 good → tail drains exactly once. Proves the bad frame **faults, not lost-in-the-reset**.
+        First test authored in the new **`%see`** style (asserted by `Lake_proof_see`, not a `%witnessed` latch):
+         `see:corrupt mid-re-dial frame faulted not lost — good tail recovered`. CredRunner 31/31, surprises [].
+  > The bracketed numbers in the bullets ABOVE (40/44/46/50/32) are the **pre-split PereStaple** numbering and are
+  >  stale; the live PereProof step→arm map is in "Files in play" (`PereProof/toc.snap`: storm 17, corrupt-stream 21,
+  >   rededup 23/25, storm_redial 27, multicast 29, corrupt_redial 31).
 
 **NOT yet braided (the behaviour space, parked here as the user asked — pick the next braid):**
-- corruption DURING a stall/redial (does a bad frame mid-re-dial fault correctly, or get lost in the reset?);
+- ~~corruption DURING a stall/redial~~ **DONE — PereProof step 31 `corrupt_redial`** (see the braid above);
 - silence + retransmit racing (an inbound-silent peer whose outbox is still retransmitting — which latch wins?);
 - multi-peer crossfire (3+ peers on `w:PereStaple`, one lossy, one corrupt — the swarm-route by identity under load).
 

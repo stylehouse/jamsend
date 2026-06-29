@@ -26,6 +26,7 @@ import { _C, type TheC } from "$lib/data/Stuff.svelte"
 import { Selection, Travel } from "$lib/mostly/Selection.svelte"
 import { type House } from "$lib/O/Housing.svelte"
 import { FUNK_KINDS } from "$lib/O/Funk/kinds"
+import { storying_run } from "$lib/O/Funk/Storying.svelte"
 import { onMount } from "svelte"
 
 let { M } = $props()
@@ -192,6 +193,29 @@ await M.eatfunc({
         if (funks) await funks.do()
     },
 
+    // ── Lies_reflect_storying — push a Storying cell's verdict on a run_result EVENT ──────
+    //   storying_run computes a cell's light from the latest matching run_result.  It used to
+    //    be PUMPED: the carrier re-ran it on every Credence cell each tick, every one re-deriving
+    //     the same light and bailing unchanged — a poll faking an event.  Now it is event-driven —
+    //      when a run_result lands (Lies_run_result_recv) we restamp only the cells bound to it,
+    //       and on Waft load (Lies_instantiate_funkcions) we restamp that Waft's cells once from
+    //        the results already present.  Same verdict logic, fired on the change, not on a clock.
+    //   sel filters by the landed result (of_dock===path | of_Book===book); absent = every cell.
+    //    Walks every Waft in w — a Storying cell nests under a What / a CreduFunk, anywhere on it.
+    Lies_reflect_storying(w: TheC, sel?: { path?: string, book?: string }): void {
+        const match = (f: TheC) =>
+            !sel ? true
+            : (sel.path != null && f.sc.of_dock === sel.path) ||
+              (sel.book != null && f.sc.of_Book === sel.book)
+        const walk = (host: TheC, c: TheC) => {
+            for (const k of c.o() as TheC[]) {
+                if (k.sc.Funkcion === 'Storying' && match(k)) storying_run(host, k, w)
+                walk(host, k)
+            }
+        }
+        for (const waft of w.o({ Waft: 1 }) as TheC[]) walk(waft, waft)
+    },
+
     // ── Lens — the ambient hoisted-UI bag (dock + InterestStrip pop-outs) ──────────
     //   A Lens is plural by design: Lens:<LensKind>,of_Funkcion:<funk-kind>.  The Lens-KIND is
     //   the slot|intensity — Panel rides the bottom dock (the presence:always accreting stack
@@ -334,6 +358,10 @@ await M.eatfunc({
             funk.c.run = kind.run                                  // bind only — the carrier's walk runs it
         }
         await H.Lies_ensure_waftica(w, waft)                       // one carrier per Waft (was: one req per funk)
+        // Storying cells are NOT pumped (event-driven); seed each one's light once, now, from any
+        //  run_result already present — a freshly-loaded (or re-edited) board lights up immediately
+        //   instead of waiting on the next run.  Live updates come via Lies_reflect_storying on recv.
+        for (const funk of all) if (funk.sc.Funkcion === 'Storying') storying_run(waft, funk, w)
     },
 
     // ── GhostList_funkcion ──────────────────────────────────────────────────────
@@ -940,6 +968,10 @@ await M.eatfunc({
                 ...(frame.book   != null ? { book: frame.book }     : {}),
             })
             H.tlog(`📥 run_result: ${path} ${frame.ok ? 'green' : 'red'}${frame.done != null ? ` ${Math.round((frame.ok_pct ?? 0) * frame.done)}/${frame.done}` : ''}`)
+            // event-push the verdict onto the Storying cells bound to this result (replaces the
+            //  per-tick poll storying_run once was).  A dock run keys of_dock===path; a Book run
+            //   keys of_Book===book.  Cheap: only matching cells restamp, and only when one lands.
+            H.Lies_reflect_storying(w, { path, book: frame.book })
             return true
         },
 

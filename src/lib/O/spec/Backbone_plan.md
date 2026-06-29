@@ -157,9 +157,17 @@ source needs it. *(Name `Waftica` still soft.)*
 > `Lies_register_funkcion` in `LiesFunk.svelte` (per-Waft carrier + walk + stale-`req:Funkcion`
 > migration + `main:<kind>`), the two callers (`Lies_instantiate_funkcions`, `GhostList_funkcion`)
 > rewired, `Lies_aim_setup`'s cluster path inherits it. Behavior-preserving (same runs, same
-> order; the Storying poll still runs *inside* the walk). Files Svelte-compile clean; full
-> typecheck OOMs here (verify on host) and it's `:9091`-unverified — wants a green Credence run.
-> **Chunk 2 (Storying event-driven) not started.**
+> order; the Storying poll still runs *inside* the walk).
+> **Chunk 2 BUILT** — Storying dropped from `FUNK_KINDS` `run` (no longer pumped);
+> `Lies_reflect_storying(w, sel?)` walks `w`'s Wafts and restamps the matching Storying cells via
+> `storying_run`. Wired at the **one** landing site `Lies_run_result_recv` (`run_result` is created
+> nowhere else — `Lies_report_result` is the runner-emit, it stamps nothing) + a load-time pass in
+> `Lies_instantiate_funkcions` (a freshly-loaded/edited board lights up from results already
+> present). The 48 per-tick Storying scans are gone; CreduFunk/StoryTimes stay pumped (they read
+> `run_result` directly, independent of the poll). Both chunks Svelte-compile clean; full typecheck
+> OOMs here (verify on host) and they're `:9091`-unverified — want a green Credence run. Chunk 2
+> touches the `Editron` verdict wire, so that run is the gate. User confirms Storying|StoryTimes
+> works fine today (the baseline to preserve).
 
 **What `waft_roster` keeps vs sheds** *(rideable #6 made concrete)*. The wire stays; the
 reducer hollows out. `interest_reconcile` lives at `Interest.svelte:111`, mixed in via
@@ -240,9 +248,11 @@ reducer hollows out. `interest_reconcile` lives at `Interest.svelte:111`, mixed 
   a migration drops the stale `req:Funkcion`, it stamps `main:<kind>` — **Credence `Funkcions`
   48→1**. `req:Liesica` proved unnecessary — *no* run uses req machinery (Runner/Relay are plain
   `(host,funk,ww)`, like `storying_run`), so every Funkcion just rides its Waft's carrier walk.
-  **Chunk 2 pending:** Storying → event-driven (drop it from the walk, push at the two
-  run-landing sites) to kill the 48 per-tick scans; touches the verdict wire → its own review +
-  Credence run. Each chunk re-shapes the `Funkcions` snap → own commit. (P3 — landed at P0/P1.)
+  **Chunk 2 BUILT** (uncommitted, host-unverified): Storying dropped from the pumped `run`;
+  `Lies_reflect_storying` restamps the bound cells at the **one** landing site
+  (`Lies_run_result_recv` — `run_result` is created nowhere else) + a load-time pass on Waft load.
+  The 48 per-tick scans are gone; touches the verdict wire → wants a green Credence run. Each
+  chunk re-shapes the `Funkcions` snap → own commit. (P3 — landed at P0/P1.)
 - **The Shelver ledger** *(resolved — `%shelved` tombstones dropped; presence is the
   `Funkcion:Storying,of_Book` cells on the board)*. Trade: a hand-deleted Book re-files on the
   next sweep. Done in `Funk/Shelver.svelte`.

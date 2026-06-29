@@ -1,7 +1,8 @@
 <script module lang="ts">
     import type { TheC } from "$lib/data/Stuff.svelte"
 
-    // storying_run — the Storying kind's behaviour; Lies pumps it centrally (via the Waft's req:Waftica carrier).
+    // storying_run — the Storying kind's verdict computer.  NOT pumped: Lies calls it on an EVENT
+    //  (Lies_reflect_storying — when a run_result lands) and once on Waft load, never every tick.
     //   find the matching run_result:
     //     %of_Book → by book field, latest by at  (one Book runs several docks)
     //     %of_dock → by dock path
@@ -41,7 +42,7 @@
 
     let { H, funk, raw = false }: { H: House, funk: TheC, raw?: boolean } = $props()
 
-    // funk.c.verdict is stamped off-snap by storying_run (pumped in Lies); track funk.version.
+    // funk.c.verdict is stamped off-snap by storying_run (driven by Lies_reflect_storying when a run_result lands); track funk.version.
     let v     = $derived((() => { void funk.version; return (funk.c.verdict as any) ?? { phase: 'working' } })())
     let bound = $derived((funk.sc.of_Book ?? funk.sc.of_dock) as string | undefined)
     const leaf = (p: any) => String(p ?? '').split('/').pop()

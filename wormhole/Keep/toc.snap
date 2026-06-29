@@ -1,14 +1,12 @@
 Waft:Keep,equip:Keep
-  WaftTimes,of_Waft:Ghost/Net/Easy,discovered_at=1782449847030,accessed_at=1782708267645
-    Cursor,what:What:mock,at=1782626094989
-    Cursor,what:What:the peer,at=1782626095762
-    Cursor,what:What:webrtc-or-not,at=1782638110109
-  WaftTimes,of_Waft:Ghost/Music/Ality,discovered_at=1782449847030,accessed_at=1782708267748
-    Cursor,what:What:1 the spool,at=1782708268975
-  WaftTimes,of_Waft:Credence,discovered_at=1782550950085,accessed_at=1782708267997
+  WaftTimes,of_Waft:Ghost/Net/Easy,discovered_at=1782449847030,accessed_at=1782709037591
+    Cursor,what:What:the peer,at=1782708960439
+  WaftTimes,of_Waft:Ghost/Music/Ality,discovered_at=1782449847030,accessed_at=1782709038344
+    Cursor,what:What:2 the preview-stream handoff,at=1782709851238
+  WaftTimes,of_Waft:Credence,discovered_at=1782550950085,accessed_at=1782709038564
     Cursor,what:What:Musu,at=1782550950086
   Cursor,waft:Credence,at=1782550950085
   Cursor,waft:Ghost/Net/Easy,at=1782626094345
   Cursor,waft:Ghost/Music/Ality,at=1782626104095
-  WaftTimes,of_Waft:Cluster,minimised,discovered_at=1782641801641,accessed_at=1782708268080
+  WaftTimes,of_Waft:Cluster,minimised,discovered_at=1782641801641,accessed_at=1782709038691
   WaftTimes,of_Waft:Keep
