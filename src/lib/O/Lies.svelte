@@ -218,8 +218,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         // claim the session %active flag for the foregrounded Waft (clear the rest) so
         //  the per-tick acquire resolver desires IT — else the last +Now|ghost_pick
         //  %active stays sticky and drags focus back to it every trickle.
-        for (const other of w.o({ Waft: 1 }) as TheC[]) delete other.sc.active
-        waft.sc.active = 1
+        H.Lies_set_active_waft(w, waft)
         if (H.Lies_role(w) === 'editor') H.Lies_keep_mark_focus(w, path)   // Keep records focus → accessed_at + own %Cursor (auto-resume-last)
         w.bump_version()
         // resume the cursor where it last sat in THIS Waft (the Keep's per-Waft %Cursor) so a
@@ -306,8 +305,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         moment.i({ Doc: path })
         moment.c.up = aside; moment.c.waft = aside          // back-refs so the want can land before re-link
         await H.Waft_link_up(aside, aside)
-        for (const other of w.o({ Waft: 1 }) as TheC[]) delete other.sc.active
-        aside.sc.active = 1                                  // session-only active flag, mirrors +Now
+        H.Lies_set_active_waft(w, aside)                     // session-only active flag, mirrors +Now
         H.Lies_waft_save(w, aside)                           // persist — survives reload
         w.bump_version()
         H.i_elvisto(w, 'Lies_want', { src: moment, kind: 'cold' })
@@ -329,8 +327,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const H    = this as House
         const waft = H.Lies_spawn_look_waft(w)
         // active is session-only — not written to snap (encode root is {Waft:path} only)
-        for (const other of w.o({ Waft: 1 }) as TheC[]) delete other.sc.active
-        waft.sc.active = 1
+        H.Lies_set_active_waft(w, waft)
         w.bump_version()
     },
 
@@ -958,8 +955,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         //   skip %equip Wafts (the Keep is never a focus candidate) and the already-active no-op.
         const landed = w.o({ Waft: waft_key })[0] as TheC | undefined
         if (landed && !landed.sc.active && !landed.sc.equip) {
-            for (const other of w.o({ Waft: 1 }) as TheC[]) delete other.sc.active
-            landed.sc.active = 1
+            H.Lies_set_active_waft(w, landed)
             w.bump_version()
             // focus just MOVED to a new Waft → record it as the Keep's own latest %Cursor so
             //  boot auto-resume-last has something to return to.  Until now only an explicit
@@ -977,6 +973,20 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         if (doc_path) await H.Lies_provide_dock(w, doc_path)   // speculative push — warm the %Good
 
         await H.Lies_i_Spotlight(examining, src, waft_key)
+    },
+
+    // ── Lies_set_active_waft — THE single focus-WRITE chokepoint ─────────────
+    //
+    //   The write twin of Lies_focus_waft (the read selector): claim the session
+    //    %active flag for one Waft, clearing it on every other.  Five call sites
+    //     (open | Aside | +Now | want-land | the Liesui list) each hand-rolled the
+    //      same delete-all-then-set — consolidated so req:Langoer has ONE place to
+    //       govern "which Waft wins", not a scattered free-for-all (the boomerang's
+    //        root: focus re-decided from ~5 writers with no arbiter — Backbone_plan P3).
+    //   %active is session-only (never snapped); callers bump after, as they always did.
+    Lies_set_active_waft(w: TheC, waft: TheC): void {
+        for (const other of w.o({ Waft: 1 }) as TheC[]) delete other.sc.active
+        waft.sc.active = 1
     },
 
     // ── Lies_focus_waft — THE single "which Waft has focus" selector ─────────

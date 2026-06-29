@@ -56,6 +56,29 @@ Musu_synth(seq):
 Musu_silence():
     return new Float32Array(2400)
 
+// ── radiostock: the audio SOURCE seam (synth today; real directory-walked records | an override
+//  collection tomorrow).  The caster + the measure-Books pull chunks THROUGH this, so swapping in real
+//   records (or a test-fixture override) re-grounds EVERY audio test at once — no Book learns where its
+//    audio came from.  Mirrors Radios.svelte's radiostock, the catalog of records.
+// Musu_radiostock(kind) -> a stock descriptor.  'silence' is its own (zero) source; anything else is the
+//  default synth source UNLESS an override is installed (H.c.radiostock_override = a {chunk(seq)->Float32Array}
+//   or {chunks:[...]} the test collection fills).  The override is the "override radiostock" hook awaited
+//    for the real music-directory walk.
+Musu_radiostock(kind):
+    if (kind === 'silence') return { kind: 'silence' }
+    let over = H.c.radiostock_override
+    if (over) return over
+    return { kind: 'synth' }
+
+// Musu_stock_chunk(stock, seq) -> the PCM (Float32Array) for one chunk of the stock.  synth|silence are
+//  computed here; an override supplies chunk(seq) or a chunks[] array (e.g. decoded real records).
+Musu_stock_chunk(stock, seq):
+    if (!stock || stock.kind === 'synth') return this.Musu_synth(seq)
+    if (stock.kind === 'silence') return this.Musu_silence()
+    if (typeof stock.chunk === 'function') return stock.chunk(seq)
+    if (stock.chunks) return stock.chunks[seq % stock.chunks.length]
+    return this.Musu_synth(seq)
+
 // Musu_measure — end-of-pipe analysis (NOT byte-exact; a stream is dynamic).  bits = Shannon entropy/byte
 //  over the int16 histogram (noisy ≈7+, a \x00 stream ≈0); gaps = ~50ms windows that fell near-silent
 //   (an underrun hole or pure silence); rms = overall level.
@@ -127,7 +150,7 @@ async Musu_gat():
 //        each tick (frontier = audio left ahead of the playhead) and plays the next chunk at that rate —
 //         backing smoothly away from the live edge instead of slamming into silence.  Returns the coarse
 //          signal readout PLUS the rate trajectory (min_rate / final_rate / flips) the controller drew.
-async Musu_real_stream(gat, kind, total, deliver_ms, mute, glide):
+async Musu_real_stream(gat, kind, total, deliver_ms, mute, glide, stock):
     let AC = gat.AC
     if (!AC) return { bits: 0, rms: 0, gaps: 0, played: 0, of: total, underran: 0, min_rate: 1, final_rate: 1, flips: 0 }
     let aud = gat.new_audiolet()
@@ -149,7 +172,7 @@ async Musu_real_stream(gat, kind, total, deliver_ms, mute, glide):
     //  this chunk starts after a real silent gap — count it (never the first, which always starts at now).
     //   The chunk plays at the current Glide `rate` (rate<1 stretches it, advancing the playhead slower).
     let place_one = (seq) => {
-        let pcm = silent ? this.Musu_silence() : this.Musu_synth(seq)
+        let pcm = stock ? this.Musu_stock_chunk(stock, seq) : (silent ? this.Musu_silence() : this.Musu_synth(seq))
         let buf = aud.pcm_buffer(pcm, SR)
         let now = AC.currentTime
         let at = Math.max(end, now)
@@ -1079,7 +1102,8 @@ async MusuSignal_drive(w, req):
 //     H.c.musu_muted=1 (live, no recompile) to silence — once you confirm you hear it, we flip the default.
 async MusuSignal_run(w, gat, kind, total, deliver_ms):
     let mute = !!H.c.musu_muted
-    let out = await this.Musu_real_stream(gat, kind, total, deliver_ms, mute)
+    let stock = this.Musu_radiostock(kind)
+    let out = await this.Musu_real_stream(gat, kind, total, deliver_ms, mute, false, stock)
     w.i({signal: 1, kind: kind, bits: out.bits, gaps: out.gaps, rms: out.rms, played: out.played, of: out.of, underran: out.underran})
 
 // MusuSignal_witness — the assertions this Book EARNS (idempotent stamps).  The %signal lines are just
@@ -1157,7 +1181,8 @@ async MusuGlide_drive(w, req):
 //  leaving the coarse %glidesig,kind readout: gaps/underran + the rate trajectory (min/final/flips).
 async MusuGlide_run(w, gat, kind, glide):
     let mute = !!H.c.musu_muted
-    let out = await this.Musu_real_stream(gat, kind, 24, 90, mute, glide)
+    let stock = this.Musu_radiostock(kind)
+    let out = await this.Musu_real_stream(gat, kind, 24, 90, mute, glide, stock)
     w.i({glidesig: 1, kind: kind, gaps: out.gaps, underran: out.underran, min_rate: out.min_rate, final_rate: out.final_rate, flips: out.flips, bits: out.bits})
 
 // MusuGlide_witness — idempotent stamps the rate controller EARNS.  Reads the baseline vs glided readouts;

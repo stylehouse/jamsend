@@ -1,0 +1,33 @@
+# systemd unit for the trusted-command runner (Cluster_spec §3.7).
+#  Install: cp the bundled daemon + this unit + trusted-commands.sh per deploy/README.md, then
+#    sudo systemctl daemon-reload && sudo systemctl enable --now trusted-command-runner
+#
+#  This unit keeps the daemon up — and the daemon is, in turn, what OTHER units get restarted BY.
+#   Its recovery channel (the port below) MUST be reachable independently of the ssh reverse proxy it
+#    can restart (the bootstrap wrinkle, §3.7) — bind a direct port / a second path, never only
+#     behind the proxy it exists to recover.
+
+[Unit]
+Description=jamsend trusted-command runner — signed host control (Cluster_spec 3.7)
+After=network.target
+
+[Service]
+Type=simple
+# TRUSTED_CMD_PORT: the direct recovery port (independent of the ssh proxy). CLUSTER_TYRANT_PUB: the
+#  public root; unset ⇒ every request denied (fail-closed). Real values live in the EnvironmentFile.
+Environment=TRUSTED_CMD_SERVE=1
+Environment=TRUSTED_CMD_PORT=9099
+Environment=TRUSTED_CMD_SCRIPT=/opt/jamsend/trusted-commands.sh
+EnvironmentFile=-/etc/jamsend/trusted-command-runner.env
+ExecStart=/usr/bin/node /opt/jamsend/trusted-command-runner.mjs
+Restart=always
+RestartSec=2
+
+# Least privilege — but docker/systemctl/virsh need real privilege, so this runs as a user with
+#  exactly the sudo/group rights the allowlisted actions require (deploy/README.md), nothing broader.
+NoNewPrivileges=false
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

@@ -134,8 +134,7 @@
     // ── active / delete (need Lies to touch siblings) ─────────────────
     function set_waft_active(waft: TheC) {
         if (!Lies) return
-        for (const w of Lies.o({ Waft: 1 }) as TheC[]) delete w.sc.active
-        waft.sc.active = 1
+        H.Lies_set_active_waft(Lies, waft)
         Lies.bump_version()
     }
     function delete_waft(waft: TheC) {

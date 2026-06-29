@@ -8,7 +8,16 @@
 
 import { createServer, type Server } from 'node:http'
 import { WebSocket } from 'ws'
+import * as ed from '@noble/ed25519'
 import { attachRelay, type RelayHandle } from '../src/lib/server/relay'
+import { signHeader, prepubOf } from '../src/lib/p2p/cluster_trust'
+
+const enhex = ed.etc.bytesToHex
+async function mint() {
+	const priv = ed.utils.randomPrivateKey()
+	const pub = await ed.getPublicKeyAsync(priv)
+	return { privHex: enhex(priv), pubHex: enhex(pub) }
+}
 
 const log = (...a: any[]) => console.log(...a)
 let failures = 0
@@ -121,6 +130,43 @@ async function main() {
 	check('binary cross-relay deliver ALICE→BOB (over bridge)', binFwd)
 	const binFwdRow = bob.got.find((m) => m.buffer && m.header?.type === 'test_binary')
 	check('binary buffer intact (cross-relay)', !!binFwdRow && Buffer.compare(binFwdRow.buffer, payload) === 0)
+
+	// ── to:<pub> AUTHENTICATED binding (Cluster_spec §3.2).  A signed hello binds prepub(pub) → socket,
+	//  PROVING key-ownership — where ?addr= is an unauthenticated claim by contrast.  A frame to: that
+	//   prepub is then delivered to the verified holder; a hello with a bad self-sig binds NOTHING (so
+	//    an impostor can't re-bind someone else's address and steal their frames).
+	log('\n— to:<pub> signed-hello binding —')
+	const carolKey = await mint()
+	const carolAddr = prepubOf(carolKey.pubHex)
+	const carol = browser(editorPort, '')          // addr-less socket — binds ONLY via a signed hello
+	await carol.open
+	const cts = Date.now()
+	const csign = await signHeader({ control: 'hello', from: carolAddr, pub: carolKey.pubHex, ts: cts }, carolKey.privHex)
+	carol.send({ control: 'hello', from: carolAddr, pub: carolKey.pubHex, ts: cts, sign: csign })
+	const helloOk = await until(() => carol.ctrl.some((m) => m.control === 'hello_ok' && m.addr === carolAddr))
+	check('signed hello accepted (hello_ok, bound by verified prepub)', helloOk)
+
+	// ALICE addresses CAROL by her pub-derived addr → delivered to the verified holder.
+	alice.frame(carolAddr, 'dock_push', 20)
+	const toPub = await until(() => carol.got.some((m) => m.header?.to === carolAddr && m.header?.from === 'ALICE'))
+	check('to:<pub> delivers to the hello-bound socket', toPub)
+
+	// An impostor socket sends a hello for CAROL's pub but signs it with the WRONG key → rejected.
+	const evil = browser(editorPort, '')
+	await evil.open
+	const evilKey = await mint()
+	const ets = Date.now()
+	const esign = await signHeader({ control: 'hello', from: carolAddr, pub: carolKey.pubHex, ts: ets }, evilKey.privHex)
+	evil.send({ control: 'hello', from: carolAddr, pub: carolKey.pubHex, ts: ets, sign: esign })
+	const helloErr = await until(() => evil.ctrl.some((m) => m.control === 'hello_error'))
+	check('hello with a bad self-signature rejected (hello_error)', helloErr)
+
+	// CAROL's addr stays bound to CAROL alone — a frame to it must NOT reach the impostor socket.
+	const evilBefore = evil.got.length
+	alice.frame(carolAddr, 'dock_push', 21)
+	const carolGot21 = await until(() => carol.got.some((m) => m.header?.seq === 21 && m.header?.to === carolAddr))
+	check('to:<pub> still reaches the real holder after a forged hello', carolGot21)
+	check('impostor never bound — to:<pub> does not reach it', evil.got.length === evilBefore)
 
 	// Set-once errorific: BOB's server is already 'runner'; asking it to become 'editor' must error.
 	const ctrlBefore = bob.ctrl.length

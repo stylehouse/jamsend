@@ -295,6 +295,36 @@ source needs it. *(Name `Waftica` still soft.)*
 > Interest). **Also pending:** the click-push (`e:Lang_lango`, renamed 2026-06-29) becoming a
 > `H.lango` *caller* — minting a real `%Lango` instead of just seeding `workon.c.src` (first
 > hot-path touch), and step (b) the parity driver (owner-supervised).
+>
+> **The boomerang — req:Langoer's acceptance test (owner-reported 2026-06-29).** Live symptom:
+> focus "switches back to Radiola.g when I want to look at anything else, then boomerangs back for
+> one think() in ten." **Diagnosed** (static): focus is `Lies_focus_waft` leg-1 `.sc.active`, and
+> `req_timemachine` re-lands the cursor on it *every tick* (`Lies_desire_land_cursor`). `.sc.active`
+> was written from **5 scattered sites with no arbiter** (open · Aside · +Now · want-land · the
+> Liesui list), with a leg-3 fallback to `wafts[0]`. So a stray re-assertion (e.g. the Keep's
+> resume-`want` at `Lies_open_Waft` re-minting a `cold` want into a re-opened Waft) **or** a one-tick
+> active-gap → `wafts[0]` snaps focus back for a think. **NOT a Funkcion** — grep confirms nothing in
+> `Funk/`/`gen/` touches `want`/`Spotlight`/`active`, so the caster isn't grabbing focus directly;
+> it's purely the no-arbiter `.sc.active` free-for-all. This **is** the thing `req:Langoer` exists to
+> kill: one arbitrated which-wins. Acceptance test for step (b): *focus, once moved to B, stays B
+> across ticks — never falls back to `wafts[0]` and never gets out-competed by a background re-open.*
+>
+> **Write-chokepoint seeded (2026-06-29, behavior-preserving).** `Lies_set_active_waft(w, waft)` in
+> `Lies.svelte` (the write twin of `Lies_focus_waft`): the 5 hand-rolled `delete-all-then-set` sites
+> now funnel through it, so `req:Langoer` has **one** place to govern instead of a 5-site hunt (and
+> any active-*gap* boomerang dies — clear+set is now atomic in one call). Pure extraction (LakeLango
+> byte-identical bar the pre-existing flaky `round` + GhostList-read drift); callers keep their own
+> `bump_version()`. It does **not** yet fix the boomerang behaviorally — it's the chokepoint the fix
+> (Langoer governing *who* may claim active) will sit on.
+>
+> **Design note for the feed (discovered building toward it): a cursor `%Lango` is an *impulse* and
+> wants `.c`, not a snapped child.** `dontSnap` folds a node's *subtree*, **not the node itself** —
+> so an impulse minted as `carrier.i({Lango:'Cursor'})` would still print one line per Waft in every
+> fixture (fleet-wide churn). Per the design's "impulses drop / source mints into `.c`", the cursor
+> feed should hang the live impulse off `carrier.c.*` (queryable, out-competed, never encoded); the
+> Keep holds the persisted *level*. `H.lango`'s child-mint stays for **levels** (and the LakeLango
+> gate). This fork is why the feed wasn't wired yet — it's a real change to the channel's shape,
+> owner's call.
 
 **What `waft_roster` keeps vs sheds** *(rideable #6 made concrete)*. The wire stays; the
 reducer hollows out. `interest_reconcile` lives at `Interest.svelte:111`, mixed in via

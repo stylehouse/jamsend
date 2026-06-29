@@ -219,6 +219,13 @@ Frame-signing (2.1–2.7) answers *who sent this frame*. It does **not** answer 
   the baked tyrant pub (above). The ssh-proxied relay is acknowledged **fragile** — which is exactly why
    the trusted-command runner (3.7) must be able to restart *that proxy*, over a channel that survives it.
 
+**BUILT (2026-06-29, headless-verified):** the cert layer is real in `src/lib/p2p/cluster_trust.ts` —
+ `TrustCert`, `mintCert`/`verifyCert`/`resolveCapability` (fail-closed: wrong root, expired, tampered,
+  wildcard `*`, prepub-or-fullpub grantee), `loadTyrantPub`/`browserTyrantPub`. Minting CLI:
+   `scripts/mint-cluster-cert.ts` (`new-tyrant` mints the root `.env.cluster-tyrant`; `grant` signs a
+    cert). Proof: `scripts/cluster-cert-test.ts`. **Not yet wired:** the `%Trust` particle / hello-field
+     carriage and the app-level resolution at the runner (that's step 3's warn-and-allow → enforce).
+
 ---
 
 ## 3. The runner flock — Ids, addressing, the restart service
@@ -260,6 +267,15 @@ The relay binds each verified Idento pub → its socket on the signed hello, and
  frame whose `to` is a pub to that socket. This **generalises the `claims` map** (today `@channel →
   socket` for multicast) to the unicast identity case. This is the single primitive remote `%Rungo`
    needs: "send this run to runner X" = a frame `to:<runnerX.pub>`.
+
+**BUILT (2026-06-29, headless-verified):** the relay's `hello` control (`relay.ts handleHello`) does the
+ AUTHENTICATED bind — a peer signs `{control:hello,from,pub,ts}` with its key, the relay verifies the
+  self-sig (`verifyHeader` against the *claimed* pub) and binds `prepubOf(pub)` → socket, freed on
+   disconnect. `?addr=` (unauthenticated) still works for the un-migrated path. ts-freshness bounds
+    replay; a relay-issued nonce challenge is the noted hardening. Proof: the `to:<pub>` block in
+     `scripts/relay-test.ts` (verified bind, delivery, and a forged hello binds nothing — no hijack).
+      **Still client-side:** the browser/runner sending the signed hello on connect (`Tribunal.g`
+       Socket_real) — relay accepts it, no peer emits it yet.
 
 ### 3.3 The `Lies%runner` UI — the outer tab sorts itself out
 The runner tab needs a face to declare and manage what it is: pick/fork its `?I=` Idento, show role
@@ -327,6 +343,18 @@ This is the host-side twin of the in-app `restart_request` (3.6): the crash-quor
    survives the proxy being down (a direct port, a second ssh, or the daemon being what re-establishes
     the tunnel). **Keep the recovery channel independent of the thing being recovered** — or a single
      proxy death is unrecoverable without hands on the old box.
+
+**BUILT (2026-06-29, headless-verified):** all three parts. Daemon `scripts/trusted-command-runner.ts`
+ (pure `authorizeRequest`/`handleRequest` + an http server that starts only when run directly): checks,
+  fail-closed in order — tyrant configured → cert tyrant-signed & unexpired → grants `can:restart` →
+   request signed by the cert's grantee → command allowlisted → ts-fresh (±30s); only then exec. The
+    allowlist script `deploy/trusted-commands.sh` is the whole privileged surface (`restart-docker`/
+     `restart-proxy`/`snapshot-revert`, host names env-overridable + TO-CONFIRM). Unit
+      `deploy/trusted-command-runner.service` + `deploy/README.md` (install, bundle, the recovery-channel
+       rule). Proof: `scripts/cluster-cert-test.ts` asserts exec is NEVER called on any denial path.
+        **App-independent and deployable now** — the named first concrete build. **TO-CONFIRM before
+         enabling:** the real proxy unit name + docker service names + KVM domain/snapshot; the recovery
+          channel (direct port vs second ssh); the host account's least-privilege sudo/group grant.
 
 ### 3.8 `w:Wormhole` backing — FSA handle for editors, a file server for runners
 `w:Wormhole` is the world whose `/` is the **repository filesystem** (the `wormhole/**` tree —
@@ -428,11 +456,17 @@ What **EXISTS**: signed frames + relay (`claims`/`bind`/`deliverLocal`, r2r reco
   `become_book` + `Storyrun` + `run_phase` + the verdict wire; the trust substrate (heading 2.7); the
    Lens:Runner face (unverified); `ty/`'s restart pattern.
 
-What's **MISSING**: `to:<pub>` unicast addressing; `?I=<tag>` tab-fork + the `?Runner` role &
- self-assembling pool; the tyrant-rooted capability certs (app-level, 2.8); the daemonised docker boot;
-  allocation (app-level lease, *maybe* a relay-arbitrated mutex — 3.5); the **network `w:Wormhole`
-   backend** (repo IO without the FSA handle — 3.8); crash-quorum `restart_request`; the
-    distributed-Story conductor + the provisioning preamble + the coverage meter.
+**BUILT this session (2026-06-29, headless-verified — see 2.8 / 3.2 / 3.7):** the tyrant-rooted
+ capability-cert layer + minting CLI; the relay's signed-`hello` AUTHENTICATED `to:<pub>` binding
+  (relay-side); the **trusted-command runner** end-to-end (daemon + allowlist script + systemd unit +
+   deploy README). What remains for these is *wiring*, not invention — see the per-step notes.
+
+What's still **MISSING**: the CLIENT half of `to:<pub>` (a peer emitting the signed hello on connect)
+ and the `%Trust`/hello-field cert carriage + runner-side resolution; `?I=<tag>` tab-fork + the
+  `?Runner` role & self-assembling pool; the daemonised docker boot; allocation (app-level lease,
+   *maybe* a relay-arbitrated mutex — 3.5); the **network `w:Wormhole` backend** (repo IO without the
+    FSA handle — 3.8); crash-quorum `restart_request`; the distributed-Story conductor + the
+     provisioning preamble + the coverage meter.
 
 **The minimal path — remote `%Rungo` lands at step 3; everything after is the flock at scale:**
 
@@ -440,7 +474,9 @@ What's **MISSING**: `to:<pub>` unicast addressing; `?I=<tag>` tab-fork + the `?R
     `CLUSTER_TRUSTED_PUBS` (the migration gotcha, 2.6). Close the one substrate hop (recv-window
      trust-accept) when convenient.
 1. **`to:<pub>` addressing in the relay** — bind verified Idento→socket on signed hello;
-    `deliverLocal` by pub. Prove headless with `scripts/relay-test.ts` (two ws clients, point-to-point).
+    `deliverLocal` by pub. **Relay side DONE** (`relay.ts handleHello`, proven in `relay-test.ts`).
+     Remaining: the client emits the signed hello on connect (`Tribunal.g` Socket_real) keyed by its
+      `?I=` Idento — folds into step 2.
 2. **`?I=<tag>` tab-fork + the `?Runner` role** — resolve cluster Idento keyed by `?I=`; two tabs/two
     identities both bind and address each other; a `?Runner[=name]` tab registers into the
      self-assembling pool (3.0) and idles available.
@@ -463,10 +499,11 @@ What's **MISSING**: `to:<pub>` unicast addressing; `?I=<tag>` tab-fork + the `?R
 "Go around and build whatever first" = this dependency order: 1→2→3 is the critical path to a single
  focused remote runner; 4→5 makes it a managed flock; 6→7 turns the flock into the measurement rig.
 
-**Orthogonal, buildable now:** the **trusted-command runner** (3.7) — systemd unit + allowlist shell
- script + signed webservice — is host infra that needs no app change and **stabilises the fragile
-  staging/tyrant topology everything else rides on** (it can restart the relay's ssh proxy and the docker
-   service). A strong candidate for the *very first* concrete build, in parallel with step 1.
+**Orthogonal, buildable now → BUILT (2026-06-29):** the **trusted-command runner** (3.7) — systemd unit
+ + allowlist shell script + signed webservice — is host infra that needs no app change and **stabilises
+  the fragile staging/tyrant topology everything else rides on** (it can restart the relay's ssh proxy
+   and the docker service). It was the *very first* concrete build; what's left is host-specific
+    deployment config (the TO-CONFIRM list in `deploy/README.md`), not code.
 
 ---
 

@@ -274,6 +274,7 @@ export function attachRelay(
 			return
 		}
 		if (msg.control === 'gen_write') { void handleGenWrite(ws, msg); return }
+		if (msg.control === 'hello') { void handleHello(ws, msg); return }
 		// claim (publisher → relay): reserve an @channel.  First-come: granted if unclaimed or already this
 		//  socket's; a live foreign owner refuses (claim_error).  Recorded for the future crypto gate; publishing
 		//   is not enforced against it yet.  Tracked on the socket so its close releases the name.
@@ -328,6 +329,33 @@ export function attachRelay(
 			else relayLog(`runner_ack ${msg.op ?? '?'} corr=${msg.corr} — no asking socket (gone)`)
 			ackBack.delete(String(msg.corr))
 			return
+		}
+	}
+
+	// hello (peer → relay): AUTHENTICATED bind by Idento pub (Cluster_spec §3.2 — to:<pub> addressing).
+	//  `?addr=` is an UNAUTHENTICATED claim: any socket can open ?addr=BOB and start receiving BOB's
+	//   frames. A hello PROVES the sender holds the private key for `pub` by signing the hello header,
+	//    so the relay binds prepubOf(pub) → this socket only for the real key-holder. to:<pub> then
+	//     routes to a VERIFIED identity, not a self-asserted string. This is SELF-auth — the sign is
+	//      checked against the CLAIMED pub (a single-key set), orthogonal to gen_write's "is this a
+	//       TRUSTED flock signer". Add-only: ?addr= binding still works for the un-migrated path. ts
+	//        freshness bounds replay of a captured hello; a relay-issued nonce challenge is the
+	//         hardening follow-up (a captured hello can still re-bind within the 30s window).
+	async function handleHello(ws: WebSocket, msg: any) {
+		const pub = typeof msg.pub === 'string' ? msg.pub : ''
+		const fresh = typeof msg.ts === 'number' && Math.abs(Date.now() - msg.ts) < 30_000
+		const header = { control: 'hello', from: msg.from, pub, ts: msg.ts, sign: msg.sign }
+		const signer = pub ? await verifyHeader(header, [pub]) : null
+		if (signer === pub && pub && fresh) {
+			const addr = prepubOf(pub)
+			bind(addr, ws)
+			;((ws as any).bound ??= new Set<string>()).add(addr)
+			try { ws.send(JSON.stringify({ control: 'hello_ok', addr })) } catch {}
+			relayLog(`🪪 hello bound ${addr} (verified self-sig)`)
+		} else {
+			const reason = !pub ? 'no pub' : !fresh ? 'stale (ts skew)' : 'bad self-signature'
+			try { ws.send(JSON.stringify({ control: 'hello_error', reason })) } catch {}
+			relayLog(`✗ hello REJECTED (${reason})${pub ? ' for ' + prepubOf(pub) : ''}`)
 		}
 	}
 
@@ -456,6 +484,8 @@ export function attachRelay(
 			if (subs) for (const ch of subs) unbind(ch, ws)
 			const owns = (ws as any).owns as Set<string> | undefined         // and free any @name it claimed, so it can be re-claimed
 			if (owns) for (const ch of owns) if (claims.get(ch) === ws) claims.delete(ch)
+			const bound = (ws as any).bound as Set<string> | undefined       // release every pub-addr this socket bound via a signed hello
+			if (bound) for (const a of bound) unbind(a, ws)
 		}
 		ws.on('close', (code: number) => {
 			drop()
