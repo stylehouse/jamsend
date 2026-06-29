@@ -55,7 +55,7 @@ The cluster reincarnates a **legacy garden** the human built before the particle
 | **`OverPiering` / `%Hath`** — "all known peers, joined from every data source" (the who-exists directory) | the relay's **bind table** of verified Idento→socket (the modern roster) |
 | **`Ringing` / `RingUp`** — a contact attempt | dial a peer over relay→WebRTC; `ring✗` = the failed-connect tag |
 | **`Ping`** — onlinity | the LIVE/SLUGGISH/DEAD liveness the app already computes |
-| **`give_them_trust`** (trust grants from Feature checkboxes) | the tyrant-rooted **capability certs** (`can:run-code`, app-level — 2.8); the flat `CLUSTER_TRUSTED_PUBS` set is its degenerate one-level form |
+| **`give_them_trust`** (trust grants from Feature checkboxes) | membership of the **trusted flock** (`CLUSTER_TRUSTED_PUBS`, 2.2) — a trusted pub may do everything (2.8); finer per-action grants, if ever, are app-level Tyrant-ghost particles, not certs |
 | **active-terminal migration / Id hop-over** | mint a fresh tag-Idento, re-grant, re-bind at relay, drain the old (3.1) |
 
 So "Trusting" is not new invention — it is the garden's membership/contact/trust machine, rebuilt
@@ -68,8 +68,8 @@ So "Trusting" is not new invention — it is the garden's membership/contact/tru
 > This is the former `ClusterTrust_handover.md`, kept intact because it is load-bearing and a
 >  memory-less instance needs it verbatim. Most of it is DONE (heading 2.7). It exists so that the
 >   privileged frames a flock sends — `gen_write`, `restart_request` — are **signed by a cluster key
->    and verified against the trusted flock**; unsigned/foreign frames are dropped. (Capability — *what*
->     an Id may do — is a separate, app-level layer; see 2.8.)
+>    and verified against the trusted flock**; unsigned/foreign frames are dropped. A sender in the
+>     flock may do everything — there is no separate capability layer (2.8).
 
 ### 2.1 The threat & the end state
 `gen_write` (the editor shipping a compiled `.go` down its relay socket → Node writes it to
@@ -97,6 +97,21 @@ So "Trusting" is not new invention — it is the garden's membership/contact/tru
    from cluster_trust**: Identos = public addresses, no secrecy; cluster_trust = secret signing keys.
 - `src/lib/server/relay.ts` — the `/relay` forwarder; `header.sign` already crosses the wire (binary
    frame `[header JSON]\n[raw buffer]`, header cleartext so the relay routes on `to`; signed ≠ encrypted).
+
+**The `.env*` inventory — where the keys actually live** (all gitignored, `.env.*`; `gen-cluster-identos`
+ mints + SPLITS them so no host holds a key it doesn't own):
+- **`.env.cluster-pubs`** — *PUBLIC*. `CLUSTER_TRUSTED_PUBS` = comma-list of the flock's full pubkeys.
+   Distribute everywhere; `env_file` into every verifier; `vite.config.ts` bakes it to
+    `VITE_CLUSTER_TRUSTED_PUBS` for the browser. **This list IS the authority** (2.8) — in it ⇒ trusted.
+- **`.env.cluster-<role>`** — *SECRET, one per role*: `CLUSTER_IDENTO_<ROLE>_KEY` (+ `_PUB`). Three roles
+   today — `editor` (addr `214f8a4e…`), `runner` (`9d2498e3…`), `claude` (`e63cdcca…`). Each file goes to
+    that role's host ALONE and is `env_file`d into ONLY that service (docker-compose), so no container
+     holds a foreign role's private key.
+- **The browser** can't read node env files: it holds its role key out-of-band in the top House's Dexie
+   `.stashed.cluster_idento` via the 🪪 Id hatch (`IdHatch.svelte` — paste a `.env.cluster-<role>`).
+- **To add/rotate a role:** `vite-node -c scripts/compile.vite.config.ts scripts/gen-cluster-identos.ts
+   [roles…] [--force]`, then hand each `.env.cluster-<role>` to its host alone, keep `.env.cluster-pubs`
+    everywhere. `--force` rotates every key (breaks live peers holding the old set — do it deliberately).
 
 ### 2.3 The signing contract
 A privileged frame's signed unit is its **header** (addressing + intent + a body commitment), never
@@ -135,12 +150,12 @@ A privileged frame's signed unit is its **header** (addressing + intent + a body
 | `gen_write`        | control frame → relay writes disk | node (cli)      | **relay** (node)      |
 | `dock_push`        | routed envelope (`Peeroleum_on`)  | editor/cli      | runner (recv window)  |
 | `this-dock-updated`| routed envelope                   | editor          | recipients (recv win) |
-| `claim`/`release`  | routed envelope (`Peeroleum_on`)  | editor/runner   | relay arbitrates + recipients — *only if a contended mutex needs it; else app-level (3.5/2.8)* |
+| `claim`/`release`  | routed envelope (`Peeroleum_on`)  | editor/runner   | relay arbitrates + recipients — *only if a contended mutex needs it; else app-level (3.5)* |
 | `restart_request`  | control frame → host reset socket | relay/supervisor| host supervisor       |
 
 `gen_write` is the RCE; verifying it in the relay is the highest-value, self-contained fix. These
- frames authenticate *who sent what*; they do **not** decide *what an Id may do* — that capability
-  question (allocate, run code, honour a `%Rungo`) is **app-level** and deliberately frame-less (2.8).
+ frames authenticate *who sent what* — and *who* is the whole story: a sender in the trusted flock may
+  do everything (allocate, run code, honour a `%Rungo`); there is no separate capability layer (2.8).
 
 **Signed `gen_write` shape (the wire contract the relay gate verifies):**
 ```
@@ -183,48 +198,20 @@ Turning on enforcement = setting `CLUSTER_TRUSTED_PUBS`. The moment it's set, th
    payload sign; if trusted, treat as Ud-ok). Also open: cli signed `gen_write` for remote runners;
     the **PereEditrogression** demonstration test.
 
-### 2.8 Third-party trust — the tyrant root, capability certs, **app-level** (not a new privileged frame)
-Frame-signing (2.1–2.7) answers *who sent this frame*. It does **not** answer *what is this Id allowed
- to do* — allocate a runner, claim a `%Rungo`, **run code**. That is a separate question, and it stays
-  **app-level on purpose**: no new privileged frame, no relay enforcement. Everyone hangs out on the
-   same relay network; capability is resolved by reading certificates, peer to peer.
+### 2.8 Capability = membership of the trusted flock (no certs)
+*Who sent this* is the **whole** authorization. There is **no capability-cert layer, no tyrant, no trust
+ tokens.** (A third-party tyrant-rooted cert chain was prototyped on 2026-06-29 and **removed the same
+  day** as needless ceremony — the human's call: *"we don't need new cluster certs."*) The model is dead
+   simple: **a sender whose pub is in `CLUSTER_TRUSTED_PUBS` (2.2) may do everything** — run code,
+    allocate a runner, honour a `%Rungo`, ask for a host restart. Anyone not in the flock is dropped.
+     Knowing the sender (a verified frame signature, 2.3) **is** the permission check.
 
-**The model — the old `trust`/`trusted` concept reborn:**
-- One **tyrant pubkey** is the root of trust, published well-known (baked like `CLUSTER_TRUSTED_PUBS` —
-   that flat set is just the degenerate, one-level form of this).
-- The tyrant signs a **trust cert** — `{grantee:<pub>, can:['run-code', …], not_after, sign:<tyrant>}` —
-   delegating a capability to a grantee Id. *"Probably just for the one other"*: a **shallow chain**,
-    one hop deep, not a deep PKI.
-- A peer about to act (a runner about to honour a `%Rungo`, an editor about to allocate) **presents its
-   cert**; the recipient **resolves the chain back to the tyrant root** and grants or denies. The
-    capability that matters first is **`can:run-code`** — the trust|trusted gate the garden had.
-- Resolution is pure verification over public keys (ed25519 like `verifyHeader`, + `not_after`), so any
-   peer checks it **offline** against the baked tyrant pub. The tyrant is contacted only to **mint** a
-    cert, never to **check** one.
-
-**Where it rides:** in the app-level payload of ordinary routed envelopes (a `%Trust` particle, a cert
- field on the hello), ferried opaque by the spine exactly like `this-dock-updated` (2.7). Spine and
-  relay stay capability-blind; the Story/runner layer does the resolving — keeping the leverage in the
-   app, where the runner already lives (3.0). **Only runners need the tyrant** (3.0); ordinary peers
-    never dial it.
-
-**App-level resolution vs hard host gates.** Most capability use is cooperative and app-level (a runner
- deciding it may honour a `%Rungo`). But the *same* cert also gates **genuine privileged host actions** —
-  `can:restart` at the trusted-command runner (3.7) — which is a real **fail-closed** enforcement point:
-   it verifies the cert *before* running anything. Same cert model, harder consequence; the difference is
-    who is trusting whom.
-
-**Where the tyrant lives (DECIDED):** on **staging — the old computer — reached via the relay over an ssh
- reverse proxy.** It is **online for minting** (sign/rotate certs), but **checking stays offline** against
-  the baked tyrant pub (above). The ssh-proxied relay is acknowledged **fragile** — which is exactly why
-   the trusted-command runner (3.7) must be able to restart *that proxy*, over a channel that survives it.
-
-**BUILT (2026-06-29, headless-verified):** the cert layer is real in `src/lib/p2p/cluster_trust.ts` —
- `TrustCert`, `mintCert`/`verifyCert`/`resolveCapability` (fail-closed: wrong root, expired, tampered,
-  wildcard `*`, prepub-or-fullpub grantee), `loadTyrantPub`/`browserTyrantPub`. Minting CLI:
-   `scripts/mint-cluster-cert.ts` (`new-tyrant` mints the root `.env.cluster-tyrant`; `grant` signs a
-    cert). Proof: `scripts/cluster-cert-test.ts`. **Not yet wired:** the `%Trust` particle / hello-field
-     carriage and the app-level resolution at the runner (that's step 3's warn-and-allow → enforce).
+This is deliberately coarse, and right for now: the flock is a handful of keys the human controls
+ (editor / runner / claude today). The near-term direction is **a real cluster soon, still with no
+  tokens** — just knowing the sender and verifying their signed emissions. If a finer per-action grant is
+   ever wanted, it belongs as **app-level particles** in the Tyrant ghost — `Ghost/N/Tyrant.g` already
+    models trust the garden way (`%trust,grants` + maz-ordered `%req:policy` leaves), crypto deferred —
+     **not** a new privileged frame and **not** certs. Until then: trusted = trusted.
 
 ---
 
@@ -238,17 +225,17 @@ The operations layer that rides the trust substrate: a grid of Chrome app-server
 The runner is **not** a privileged separate process; it is an **app-level role**, a stowaway in an
  ordinary Chrome tab. It boots the same app everyone else does and then *starts most of it* — it hosts
   the **EntropyProfiles**, acquires the spine, drives Books. That it has huge leverage (it can run code,
-   hand out `%Rungo`) is exactly why its right to do so is gated by an app-level **capability cert**
-    (2.8), not by being a special binary. Same network, same spine; **trust, not privilege**, separates
-     a runner from a tab.
+   hand out `%Rungo`) — but its right to do so is just **membership of the trusted flock** (2.8), not a
+    special binary and not a cert. Same network, same spine; **being a trusted pub, not privilege**,
+     separates a runner from a tab.
 
 **`?Runner` (optionally `?Runner=<name>`)** is the boot mode that *makes* a tab a runner — the dedicated
  successor to "a tab becomes a runner via `?B=`". A named runner **registers into a self-assembling
-  pool** under that name; an unnamed one takes an auto-name. Registration = announce presence + present
-   the `can:run-code` cert (2.8) → land in the roster (the modern `OverPiering`), idle and available for
-    allocation. **Only runners dial the tyrant** to fetch/verify that cert; ordinary peers never need
-     to — the tyrant connection is a runner concern, not a universal one. The pool then self-assembles:
-      runners come online, check in, and a multi-runner Story musters its cast from whoever answered (5).
+  pool** under that name; an unnamed one takes an auto-name. Registration = announce presence (signed by
+   a flock key, 2.3) → land in the roster (the modern `OverPiering`), idle and available for allocation.
+    No tyrant, no cert to fetch — a runner is trusted because its pub is in the flock (2.8). The pool then
+     self-assembles: runners come online, check in, and a multi-runner Story musters its cast from
+      whoever answered (5).
 
 ### 3.1 `?I=<tag>` — fork identity at the TAB, not the OS profile
 Today: *role* from `?E=`/`?B=` (`Lies_role`); *signing key* = the top House's
@@ -296,10 +283,10 @@ The hard problem (`ty/README.md`): Chrome app-servers hold **File System Access 
 **The New Stuff (this doc's testbed, heading 4):** *little dockers full of Chrome*, for tests that
  don't need a human-granted handle (the swarm sim peers carry their own fixtures, not an OPFS mount),
   so the handle-survival problem mostly **dissolves** — a crashed container just gets a fresh one. The
-   inner→host channel stays a plain message (`RESTART:<name>`), portable from the Unix socket to an
-    http/ws endpoint the docker supervisor exposes — which is the **trusted-command runner** (3.7). A
-     runner that needs the *real* repository (not just sim fixtures) replaces the handle with the
-      **network Wormhole backend** (3.8), not nothing.
+   inner→host channel stays a plain message (`RESTART:<name>`) on `ty/`'s Unix socket
+    (`chrome_launcher.sock`, `ty/launcher.py`) — the **host-exec socket** (3.7), extended with more
+     allowlisted commands as needed. A runner that needs the *real* repository (not just sim fixtures)
+      replaces the handle with the **network Wormhole backend** (3.8), not nothing.
 
 ### 3.5 Claim / lease — the one primitive in three hats
 Runner-affinity ("the editor owns this runner"), the distributed mutex ("whoever does mutexes"), and
@@ -320,41 +307,28 @@ The human wants a **quorum** ("restart when most of ~7 tabs have crashed"), not 
     handles and shunts work to disposable worker tabs over WebRTC) is exactly the **handle-holder +
      disposable-worker** split: the holder is one Idento, the workers another.
 
-### 3.7 The trusted-command runner — signed host control, on either host
-The general primitive under *"be allowed to contact a webservice to restart the docker service / the ssh
- reverse proxy"*: a small **host daemon** on each host (the old staging box **and** the new machine) that
-  accepts a **signed request** and runs **one of a fixed allowlist of trusted commands** — nothing else.
-   Three parts, all to build:
-- a **systemd unit** that keeps the daemon up (and is itself the thing other units get restarted *by*);
-- the daemon = a tiny **webservice** (http/ws) that **verifies the request's capability before acting** —
-   a tyrant-rooted cert/signature granting `can:restart` (2.8); a real fail-closed enforcement point;
-- a **shell script** mapping an allowlisted command name → its action (`restart-docker <svc>`,
-   `restart-proxy`, later `snapshot-revert`). The script *is* the whole privileged surface: narrow,
-    auditable, **no arbitrary input** — the caller picks a name from a list, never sends a command.
+### 3.7 Host-exec — the `chrome_launcher.sock` lineage (no certs)
+When the app needs to act on the **host** — restart a crashed Chrome profile, bounce the docker service
+ or the ssh reverse proxy — it can't do that from a browser tab. The mechanism already exists in `ty/`:
+  a tiny **host daemon** on a **Unix socket** (`/tmp/jamsend-supervisor/chrome_launcher.sock`,
+   `ty/launcher.py`, kept up by `ty/jamsend-launcher.service`) that accepts a plain text command
+    (`RESTART:<profile>`) and runs **one of a fixed set of actions** — nothing else. `ty/virtreset.py`
+     is the sibling that does `virsh snapshot-revert`. The allowlist *is* the whole privileged surface:
+      the caller picks a **name**, never sends a command.
 
-This is the host-side twin of the in-app `restart_request` (3.6): the crash-quorum frame, a human, or a
- peer holding the cert calls the webservice; the daemon checks the cap and runs the script. It
-  **generalises** `ty/`'s `virtreset.py` (which only did `virsh snapshot-revert`) to any allowlisted
-   action on any host.
+**The trust boundary is the socket, not a cert.** The socket is host-local (chmod 666 so the docker
+ bridge can write it); reaching it means you are already on the host or in a bridged container the human
+  set up. The in-app path: the app emits a `restart_request` (3.6) down its relay, and a small host-side
+   bridge writes the line to the socket. Because every privileged relay frame is **signed and verified
+    against the trusted flock** (2.3), *who may ask for a restart* is already answered — a trusted pub
+     may; no `can:restart` cert, no tyrant, no per-action capability (2.8).
 
-**The bootstrap wrinkle (the fragility flagged).** The tyrant is on **staging, reached via the relay over
- an ssh reverse proxy** — and one thing this runner must restart is *that very proxy*. So the
-  trusted-command webservice **cannot sit only behind the proxy it recovers**: it needs a path that
-   survives the proxy being down (a direct port, a second ssh, or the daemon being what re-establishes
-    the tunnel). **Keep the recovery channel independent of the thing being recovered** — or a single
-     proxy death is unrecoverable without hands on the old box.
-
-**BUILT (2026-06-29, headless-verified):** all three parts. Daemon `scripts/trusted-command-runner.ts`
- (pure `authorizeRequest`/`handleRequest` + an http server that starts only when run directly): checks,
-  fail-closed in order — tyrant configured → cert tyrant-signed & unexpired → grants `can:restart` →
-   request signed by the cert's grantee → command allowlisted → ts-fresh (±30s); only then exec. The
-    allowlist script `deploy/trusted-commands.sh` is the whole privileged surface (`restart-docker`/
-     `restart-proxy`/`snapshot-revert`, host names env-overridable + TO-CONFIRM). Unit
-      `deploy/trusted-command-runner.service` + `deploy/README.md` (install, bundle, the recovery-channel
-       rule). Proof: `scripts/cluster-cert-test.ts` asserts exec is NEVER called on any denial path.
-        **App-independent and deployable now** — the named first concrete build. **TO-CONFIRM before
-         enabling:** the real proxy unit name + docker service names + KVM domain/snapshot; the recovery
-          channel (direct port vs second ssh); the host account's least-privilege sudo/group grant.
+**To build (a `chrome_launcher.sock` successor):** extend the socket's command vocabulary beyond
+ `RESTART:<profile>` to the other host actions wanted (`restart-docker <svc>`, `restart-proxy`), each an
+  allowlisted name; add the relay→socket bridge so a quorum `restart_request` (3.6) lands as a socket
+   line. **The bootstrap wrinkle:** one action may restart the ssh reverse proxy the relay rides, so the
+    bridge/socket must be reachable on a path that survives that proxy being down (a direct port or a
+     second ssh) — keep the recovery channel independent of the thing it recovers.
 
 ### 3.8 `w:Wormhole` backing — FSA handle for editors, a file server for runners
 `w:Wormhole` is the world whose `/` is the **repository filesystem** (the `wormhole/**` tree —
@@ -456,13 +430,13 @@ What **EXISTS**: signed frames + relay (`claims`/`bind`/`deliverLocal`, r2r reco
   `become_book` + `Storyrun` + `run_phase` + the verdict wire; the trust substrate (heading 2.7); the
    Lens:Runner face (unverified); `ty/`'s restart pattern.
 
-**BUILT this session (2026-06-29, headless-verified — see 2.8 / 3.2 / 3.7):** the tyrant-rooted
- capability-cert layer + minting CLI; the relay's signed-`hello` AUTHENTICATED `to:<pub>` binding
-  (relay-side); the **trusted-command runner** end-to-end (daemon + allowlist script + systemd unit +
-   deploy README). What remains for these is *wiring*, not invention — see the per-step notes.
+**BUILT (2026-06-29, headless-verified — see 3.2):** the relay's signed-`hello` AUTHENTICATED `to:<pub>`
+ binding (relay-side, `relay.ts handleHello`, proven in `relay-test.ts`). *(A capability-cert layer +
+  minting CLI + a cert-gated host daemon were also prototyped this day and then **removed** — the trusted
+   flock is the authority, no certs; see 2.8 / 3.7.)*
 
-What's still **MISSING**: the CLIENT half of `to:<pub>` (a peer emitting the signed hello on connect)
- and the `%Trust`/hello-field cert carriage + runner-side resolution; `?I=<tag>` tab-fork + the
+What's still **MISSING**: the CLIENT half of `to:<pub>` (a peer emitting the signed hello on connect);
+ `?I=<tag>` tab-fork + the
   `?Runner` role & self-assembling pool; the daemonised docker boot; allocation (app-level lease,
    *maybe* a relay-arbitrated mutex — 3.5); the **network `w:Wormhole` backend** (repo IO without the
     FSA handle — 3.8); crash-quorum `restart_request`; the distributed-Story conductor + the
@@ -482,14 +456,13 @@ What's still **MISSING**: the CLIENT half of `to:<pub>` (a peer emitting the sig
      self-assembling pool (3.0) and idles available.
 3. **One daemonised runner in a docker** — image boots Chrome→app `?Runner=runnerA&?I=runnerA`,
     auto-acquires, binds, registers. Open the editor, see runnerA in the roster, hand it a Book via
-     `become_book` addressed `to:runnerA`, get the verdict back. (Capability-cert gating of "may it run
-      this?" can **warn-and-allow first**, like gen_write did, then enforce once a tyrant cert is minted
-       — 2.8.) Prereq: its `w:Wormhole` on the **network backend** (3.8) — a headless container holds no
-        FSA handle. **← remote `%Rungo`, minimal.**
+     `become_book` addressed `to:runnerA`, get the verdict back. ("May it run this?" is just "is the
+      sender a trusted pub?" — 2.8; no cert.) Prereq: its `w:Wormhole` on the **network backend** (3.8) —
+       a headless container holds no FSA handle. **← remote `%Rungo`, minimal.**
 4. **The flock + claim/lease + Lies%runner UI** — spawn N containers / N `?I=` links; editor claims
     one (lease); liveness + "spawn N links" + "become runner" in the Lens:Runner face.
-5. **Crash-quorum restart** — relay tallies DEAD, emits `restart_request` to the **trusted-command
-    runner** (3.7), ty/'s socket ported to a signed http/ws webservice.
+5. **Crash-quorum restart** — relay tallies DEAD, emits `restart_request` (3.6) to the host-exec
+    **`chrome_launcher.sock`** (3.7) via a relay→socket bridge.
 6. **Distributed Story + coverage meter** — a Story across the flock (heading 5) whose base Book
     **provisions first** (muster-or-fail check-in) then runs sub-books in unison, with the delivery-
      coverage metric (heading 6). This doubles as the Tier-3 real-transport harness.
@@ -499,11 +472,10 @@ What's still **MISSING**: the CLIENT half of `to:<pub>` (a peer emitting the sig
 "Go around and build whatever first" = this dependency order: 1→2→3 is the critical path to a single
  focused remote runner; 4→5 makes it a managed flock; 6→7 turns the flock into the measurement rig.
 
-**Orthogonal, buildable now → BUILT (2026-06-29):** the **trusted-command runner** (3.7) — systemd unit
- + allowlist shell script + signed webservice — is host infra that needs no app change and **stabilises
-  the fragile staging/tyrant topology everything else rides on** (it can restart the relay's ssh proxy
-   and the docker service). It was the *very first* concrete build; what's left is host-specific
-    deployment config (the TO-CONFIRM list in `deploy/README.md`), not code.
+**Orthogonal, buildable now:** the **host-exec socket** (3.7) — extend `ty/`'s `chrome_launcher.sock`
+ with the docker/proxy restart actions + a relay→socket bridge. Host infra that needs no app change,
+  **stabilising the fragile staging topology everything else rides on**. (A cert-gated http daemon was
+   prototyped here and removed — the socket *is* the trust boundary; 3.7 / 2.8.)
 
 ---
 
@@ -518,14 +490,12 @@ What's still **MISSING**: the CLIENT half of `to:<pub>` (a peer emitting the sig
    priority? How does a lease expire/transfer on editor disconnect?
 - **The substrate recv-window hop** (2.7): when the spine accepts cluster-trusted pre-Ud frames,
    cli→editor and conductor→fresh-runner both unlock — sequence it before step 3 if cli is the conductor.
-- **Allocation: app-level lease or relay mutex?** (3.5/2.8) Does affinity/ownership stay an app-level
-   agreement gated by certs, with the relay arbitrating only a genuinely contended mutex — or is the
-    relay-arbitrated `%Claim` worth building uniformly? Leaning app-level per the "no new privileged
-     frames" stance.
-- **Where the tyrant lives — DECIDED** (2.8): staging/old computer, online-for-minting via the
-   ssh-proxied relay, checking stays offline. The live-open question is now the **recovery channel** for
-    the trusted-command runner (3.7): a direct port, a second ssh, or self-healing tunnel — it must not
-     depend on the proxy it exists to restart.
+- **Allocation: app-level lease or relay mutex?** (3.5) Does affinity/ownership stay an app-level
+   agreement, with the relay arbitrating only a genuinely contended mutex — or is the relay-arbitrated
+    `%Claim` worth building uniformly? Leaning app-level per the "no new privileged frames" stance.
+- **Host-exec recovery channel** (3.7): the `chrome_launcher.sock` bridge may need to restart the ssh
+   reverse proxy the relay rides — so it must be reachable on a path that survives that proxy (a direct
+    port, a second ssh, or a self-healing tunnel), never only behind the proxy it exists to restart.
 - **`?Runner=<name>` vs `?I=<tag>`** (3.0/3.1): is the runner name the Idento tag itself, or a separate
    human-friendly pool label over a distinct key? Affects hop-over and re-registration under the same name.
 - **Wormhole network-backend protocol** (3.8): WebDAV, SFTP-behind-a-proxy, or a bespoke ws|http file

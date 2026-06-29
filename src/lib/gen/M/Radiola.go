@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radiola(): string { return '74cf06ee9a34e2cb' },
+    Ghostmeta_Ghost_M_Radiola(): string { return '32b321bfc1e909b5' },
 
 //#region radiola
 // Radiola — the music-piracy spine, reborn on Housing+req (spec: src/lib/O/spec/Music_todo.md).
@@ -306,11 +306,14 @@ Radiola_skip(term) {
 //  only "state" so the hysteresis band can hold.  Quick to back off (min toward FLOOR — safety), gradual
 //   to recover (climb by STEP once there's slack — smoothness).  Schmitt band [LOW, HIGH] kills chatter:
 //    engage below LOW, release above HIGH, hold between.  ended -> nothing to back away from -> full speed.
-Glide_decide(frontier, cur, ended) {
-    let LOW = 0.12
-    let HIGH = 0.30
-    let FLOOR = 0.80
-    let STEP = 0.05
+// `p` (optional) is the tunable parameter set {low, high, floor, step} — Glide carries no state, so the
+//  SAME pure curve is what a gradient/coordinate descent sweeps to find the params that cause the least
+//   show-wreckage on a given perturbation.  Omit p and the hand-picked defaults stand (prod / MusuGlide).
+Glide_decide(frontier, cur, ended, p) {
+    let LOW = (p && p.low != null) ? p.low : 0.12
+    let HIGH = (p && p.high != null) ? p.high : 0.30
+    let FLOOR = (p && p.floor != null) ? p.floor : 0.80
+    let STEP = (p && p.step != null) ? p.step : 0.05
     if (ended) return 1
     if (frontier < LOW) {
         let want = FLOOR + (1 - FLOOR) * Math.max(0, frontier) / LOW

@@ -1,5 +1,8 @@
 {
   "$schema": "https://json-schema.org/claude-code-settings.json",
+  "env": {
+    "TZ": "Pacific/Auckland"
+  },
   "permissions": {
     "deny": [
       "Bash(git commit:*)",

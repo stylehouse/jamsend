@@ -10,7 +10,7 @@ import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Musuation(): string { return '05537fc571c5bb4a' },
+    Ghostmeta_Ghost_Story_Musuation(): string { return '7effa0d2046af468' },
 
 // Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Music_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
@@ -1302,6 +1302,250 @@ MusuGlide_witness(w) {
     //  stream gapped meaningfully LESS than the no-glide baseline: backing off the edge concealed the
     //   shortfall.  Tied to glided audio being real (gbits>=4) so a dead graph can't pass by reading zero.
     if (bgaps - ggaps >= 2 && bgaps > 0 && gbits >= 4 && !(w.oa({witnessed: "fewer_gaps"}))) w.i({witnessed: "fewer_gaps"})
+},
+//#endregion
+
+//#region tune — REAL-AUDIO family #3: gradient/coordinate descent of the stream params to least wreckage
+// ══ MusuTune — the SELF-TUNING Glide-shower (the new realistic standard) ══════════════════════════
+//  THE STANDARD this Book sets, all four legs the user asked for:
+//   • DETERMINISM — seed H.prng (prandle) per run, so the perturbation is identical every trial; with the
+//      offline render below, the whole Book is reproducible (stable snaps, no wall-clock jitter to band).
+//   • REAL WEB AUDIO, NO FAKING — every measurement is taken off audio an OfflineAudioContext actually
+//      rendered (the full PCM, measured by Musu_measure), never cursor arithmetic.
+//   • TIMELAPSE vs REAL TIME, made explicit — the DESCENT renders through an OfflineAudioContext: real
+//      Web Audio computed faster-than-real-time and deterministically (the "x8 timelapse"), because the
+//       search needs ~40 trials and wall-clock would make that minutes.  The SHOWCASE then plays the
+//        tuned render through the ONLINE AudioContext at real time, so you HEAR the result (slow is fine).
+//   • DESCEND TO LEAST WRECKAGE — Glide's params are data (Glide_decide(p)); coordinate descent sweeps
+//      them on a fixed perturbation toward the least "show-wreckage" (gaps + underruns + pitch-drop).
+//  Browser-only (no OfflineAudioContext headless → skips).  Books only; runs in the Lies%runner.
+//   beat 2  DESCEND  — seed, build a warm→starve→recover perturbation, coordinate-descend Glide's params
+//                       over deterministic offline renders; record start vs best wreckage + the tuned params
+//   beat 3  SHOW     — render the tuned result once more and PLAY it real-time (audible) through the voice
+//   beat 4  witness  — descended / improved / backs_off / recovers  (deterministic, so the snap is stable)
+
+// Musu_seed — make this House's prandle stream reproducible from one number (xoshiro-ish state on H.prng).
+//  THE per-Story-run determinism hook: seed once and every prandle() draw downstream is fixed.
+Musu_seed(n) { const H = this;
+    let a = (n | 0) || 1
+    let b = (Math.imul(n, 2654435761) >>> 0) || 2
+    let c = (Math.imul(n, 40503) >>> 0) || 3
+    let d = ((n ^ 2654435769) >>> 0) || 4
+    H.prng = [a, b, c, d]
+
+},
+// Musu_profile — a realistic per-chunk delivery schedule (ms between arrivals) with three phases so Glide
+//  has a full arc to handle: WARM (20ms < 50ms playback → buffer builds, full speed), STARVE (95ms →
+//   frontier drains, Glide must back off), RECOVER (25ms → frontier rebuilds, Glide climbs back MID-stream).
+//    Jitter is seeded (prandle) so the profile is identical across descent trials — the only variable is
+//     the params being tuned, which is what makes the comparison fair.
+Musu_profile(total, seed) {
+    this.Musu_seed(seed)
+    let prof = []
+    let s = 0
+    while (s < total) {
+        let phase = s / total
+        let base = 20
+        if (phase >= 0.33 && phase < 0.66) base = 95
+        if (phase >= 0.66) base = 25
+        let jit = this.prandle(24) - 12
+        prof.push(Math.max(5, base + jit))
+        s = s + 1
+    }
+    return prof
+
+},
+// Musu_render_offline — DETERMINISTIC TIMELAPSE.  Walk the delivery schedule on a virtual clock (chunk s
+//  arrives at the cumulative profile time; plays at max(timeline-end, arrival) at the Glide rate for the
+//   current frontier), lay every chunk on an OfflineAudioContext at that start + rate, render the whole
+//    graph at once, and MEASURE the real rendered PCM.  No setTimeout, no AC wall clock → byte-stable, and
+//     fast enough to call dozens of times in a descent.  Returns the measure (+ the buffer if `keep`, for
+//      the audible showcase).  `recovered` = the rate dipped below 0.9 then climbed back to full MID-stream.
+async Musu_render_offline(total, profile, gp, stock, keep) {
+    let SR = 48000
+    let CHUNK = 2400
+    let chunkdur = CHUNK / SR
+    let end = 0
+    let t = 0
+    let rate = 1
+    let min_rate = 1
+    let final_rate = 1
+    let flips = 0
+    let last_dir = 0
+    let dipped = 0
+    let recovered = 0
+    let underran = 0
+    let plan = []
+    let s = 0
+    while (s < total) {
+        t = t + (profile[s] / 1000)
+        let frontier = end - t
+        let nr = this.Glide_decide(frontier, rate, false, gp)
+        if (nr < rate - 1e-9) {
+            if (last_dir >= 0) flips = flips + 1
+            last_dir = -1
+        }
+        if (nr > rate + 1e-9) {
+            if (last_dir <= 0) flips = flips + 1
+            last_dir = 1
+        }
+        rate = nr
+        if (rate < min_rate) min_rate = rate
+        if (rate < 0.9) dipped = 1
+        if (dipped && rate >= 0.99) recovered = 1
+        final_rate = rate
+        let at = Math.max(end, t)
+        if (s > 0 && at > end + 0.0005) underran = underran + 1
+        plan.push({ at: at, rate: rate, seq: s })
+        end = at + chunkdur / rate
+        s = s + 1
+    }
+    let len = Math.ceil((end + 0.05) * SR)
+    let ctx = new OfflineAudioContext(1, len, SR)
+    let g = ctx.createGain()
+    g.connect(ctx.destination)
+    for (const p of plan) {
+        let pcm = this.Musu_stock_chunk(stock, p.seq)
+        let buf = ctx.createBuffer(1, pcm.length, SR)
+        buf.copyToChannel(pcm, 0)
+        let src = ctx.createBufferSource()
+        src.buffer = buf
+        src.playbackRate.value = p.rate
+        src.connect(g)
+        src.start(p.at)
+    }
+    let rendered = await ctx.startRendering()
+    let pcm = rendered.getChannelData(0)
+    let sig = this.Musu_measure(pcm)
+    return { bits: sig.bits, rms: sig.rms, gaps: sig.gaps, underran: underran, min_rate: +min_rate.toFixed(3), final_rate: +final_rate.toFixed(3), flips: flips, recovered: recovered, end: +end.toFixed(3), buffer: keep ? rendered : null }
+
+},
+// Musu_wreckage — "show-wreckage" as ONE number to descend.  Silent gaps hurt most (the dropout you hear),
+//  then underruns, then the pitch-drop discomfort of slowing (how far below 1.0), and a flat penalty for
+//   never recovering.  Lower is better.  Weights are the policy; tune them to taste.
+Musu_wreckage(m) {
+    let gaps = +(m.gaps ?? 0)
+    let under = +(m.underran ?? 0)
+    let drop = (1 - +(m.min_rate ?? 1)) * 10
+    let unrec = (m.recovered ? 0 : 5)
+    return gaps * 3 + under + drop + unrec
+
+},
+// Musu_descend — derivative-free DESCENT (coordinate / pattern search; the loss is a black-box audio render,
+//  not differentiable) over Glide's params toward least show-wreckage on a FIXED perturbation.  Each trial
+//   is one deterministic offline render, so trials are comparable and the search is reproducible.  Starts
+//    from a deliberately-untuned point so the descent visibly works; returns best params + before/after.
+async Musu_descend(total, profile, stock) {
+    let gp = { low: 0.05, high: 0.18, floor: 0.92, step: 0.05 }
+    let def_m = await this.Musu_render_offline(total, profile, gp, stock, false)
+    let bestw = this.Musu_wreckage(def_m)
+    let start_w = bestw
+    let best_m = def_m
+    let knobs = [
+        { k: 'low', d: 0.03, lo: 0.03, hi: 0.30 },
+        { k: 'high', d: 0.05, lo: 0.15, hi: 0.60 },
+        { k: 'floor', d: 0.05, lo: 0.55, hi: 0.95 },
+    ]
+    let rounds = 0
+    let improved = 1
+    while (improved && rounds < 6) {
+        improved = 0
+        rounds = rounds + 1
+        for (const kn of knobs) {
+            for (const dir of [1, -1]) {
+                let v = gp[kn.k] + dir * kn.d
+                if (v < kn.lo) v = kn.lo
+                if (v > kn.hi) v = kn.hi
+                if (v === gp[kn.k]) continue
+                let trial = { low: gp.low, high: gp.high, floor: gp.floor, step: gp.step }
+                trial[kn.k] = v
+                let m = await this.Musu_render_offline(total, profile, trial, stock, false)
+                let wv = this.Musu_wreckage(m)
+                if (wv < bestw - 1e-9) {
+                    bestw = wv
+                    gp = trial
+                    best_m = m
+                    improved = 1
+                }
+            }
+        }
+    }
+    return { gp: gp, start_w: +start_w.toFixed(2), best_w: +bestw.toFixed(2), rounds: rounds, measure: best_m, def_measure: def_m }
+
+},
+// Musu_play_buffer — play a pre-rendered buffer through the real online voice at real time (audible unless
+//  H.c.musu_muted).  AudioBuffers are context-agnostic, so the OfflineAudioContext render plays here as-is.
+Musu_play_buffer(gat, buffer) { const H = this;
+    let aud = gat.new_audiolet()
+    aud.tap()
+    if (H.c.musu_muted) aud.mute()
+    aud.schedule(buffer, gat.AC.currentTime + 0.05)
+
+},
+MusuTune(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuTune_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// MusuTune_drive — OfflineAudioContext gate (skip headless), then per-beat dispatch off step_n (req-local
+//  did_step, set before any await so a re-pump never double-runs the descent).
+async MusuTune_drive(w, req) {
+    if (typeof OfflineAudioContext === 'undefined') {
+        if (!w.oa({skipped: 'no_audio'})) w.i({skipped: 'no_audio'})
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuTune_run(w)
+        if (n === 3) await this.MusuTune_show(w)
+        if (n === 4) this.MusuTune_witness(w)
+    }
+    await this.Musu_float(w)
+
+},
+// MusuTune_run — beat 2: seed + build the perturbation, DESCEND Glide's params over deterministic offline
+//  renders, stash the result on w.c.tune and record the coarse %tune readout for the snap.
+async MusuTune_run(w) {
+    let total = 36
+    let prof = this.Musu_profile(total, 1337)
+    let stock = this.Musu_radiostock('synth')
+    let res = await this.Musu_descend(total, prof, stock)
+    w.c.tune = res
+    w.i({tune: 1, kind: 'result', start_w: res.start_w, best_w: res.best_w, rounds: res.rounds, low: +res.gp.low.toFixed(3), high: +res.gp.high.toFixed(3), floor: +res.gp.floor.toFixed(3), gaps: res.measure.gaps, def_gaps: res.def_measure.gaps, min_rate: res.measure.min_rate, recovered: res.measure.recovered})
+
+},
+// MusuTune_show — beat 3: render the TUNED params once more and play it real-time so you hear the smoothed
+//  result.  Needs the online voice (Musu_gat); silent if there's no gesture-unlocked context.
+async MusuTune_show(w) {
+    let gat = await this.Musu_gat()
+    if (!gat) return
+    let res = w.c.tune
+    if (!res) return
+    let total = 36
+    let prof = this.Musu_profile(total, 1337)
+    let r = await this.Musu_render_offline(total, prof, res.gp, this.Musu_radiostock('synth'), true)
+    if (r.buffer) this.Musu_play_buffer(gat, r.buffer)
+
+},
+// MusuTune_witness — deterministic (offline render), so these snap stable without entropy bands.
+MusuTune_witness(w) {
+    let r = w.o({tune: 1, kind: 'result'})[0]
+    if (!r) return
+    let startw = +(r.sc.start_w ?? 0)
+    let bestw = +(r.sc.best_w ?? 9999)
+    let minr = +(r.sc.min_rate ?? 1)
+    let rec = +(r.sc.recovered ?? 0)
+    // descended: the coordinate search REDUCED show-wreckage from the untuned start -- the headline.
+    if (bestw < startw && !(w.oa({witnessed: "descended"}))) w.i({witnessed: "descended"})
+    // improved: and by a meaningful margin, not float noise.
+    if (startw - bestw >= 1 && !(w.oa({witnessed: "improved"}))) w.i({witnessed: "improved"})
+    // backs_off: the tuned controller engaged under the starve (rate dipped below full speed).
+    if (minr < 0.99 && !(w.oa({witnessed: "backs_off"}))) w.i({witnessed: "backs_off"})
+    // recovers: rate climbed back to full speed MID-stream once delivery recovered (the realistic arc).
+    if (rec >= 1 && !(w.oa({witnessed: "recovers"}))) w.i({witnessed: "recovers"})
 },
 //#endregion
 

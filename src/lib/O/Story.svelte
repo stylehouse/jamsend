@@ -926,6 +926,26 @@
             ] },
         },
         {
+            // GhostList's dirlist read — req:Store records reading the GhostList Good with a
+            //  content `dige` that fingerprints the ghost-pile DIRECTORY LISTING.  That listing
+            //   genuinely changes whenever the wormhole gains|loses a dir (a new Story Book, a
+            //    Credulate folder), so the dige flaked the gate run-to-run for EVERY Book that
+            //     folds the GhostList Waft (dontSnapGhostList) — yet the listing is the same
+            //      test-irrelevant churn those Books already fold at the Waft.  Spay tol:any
+            //       forgives the VALUE (grafts got→exp) while keeping the line, so no fixture
+            //        re-records and the read stays observable.  SCOPED by the parent Good's
+            //         waft_path, so LakeSurprise's REAL content reads still gate on their dige
+            //          (the rule above deliberately keeps every other read's dige).
+            matching_any: [{ sc_has: { Good: 1, waft_path: 'GhostList' } }],
+            means: { thence_matching: [
+                { matching_any: [{ sc_has: { known: 1, kind: 'read' } }],
+                  means: {
+                      munging: [{ these_sc: { at: 1 }, type: 'time' }],
+                      spay: { re: 'dige:[0-9a-f]+', tol: 'any' },
+                  } },
+            ] },
+        },
+        {
             // Equipment Wafts (%equip — Keep | Cluster | Credence | GhostList): backstage
             //  fixtures whose guts churn every tick (a Keep's WaftTimes ledger, the cluster's
             //  Aim watchers) and are never test signal.  Fold the subtree — emit the Waft's

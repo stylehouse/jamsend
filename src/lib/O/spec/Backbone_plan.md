@@ -317,14 +317,24 @@ source needs it. *(Name `Waftica` still soft.)*
 > `bump_version()`. It does **not** yet fix the boomerang behaviorally — it's the chokepoint the fix
 > (Langoer governing *who* may claim active) will sit on.
 >
-> **Design note for the feed (discovered building toward it): a cursor `%Lango` is an *impulse* and
-> wants `.c`, not a snapped child.** `dontSnap` folds a node's *subtree*, **not the node itself** —
-> so an impulse minted as `carrier.i({Lango:'Cursor'})` would still print one line per Waft in every
-> fixture (fleet-wide churn). Per the design's "impulses drop / source mints into `.c`", the cursor
-> feed should hang the live impulse off `carrier.c.*` (queryable, out-competed, never encoded); the
-> Keep holds the persisted *level*. `H.lango`'s child-mint stays for **levels** (and the LakeLango
-> gate). This fork is why the feed wasn't wired yet — it's a real change to the channel's shape,
-> owner's call.
+> **Design note for the feed — the cursor `%Lango` is OBSERVABLE (snapped), NOT hidden in `.c`.**
+> *(Corrected 2026-06-29 — owner: "things should be observable; we don't treat the architecture
+> showing up in snaps as noise pollution." The earlier ".c / impulse-drop" lean was treating real
+> focus state as noise = backwards.)* The cursor move mints a normal snapped `%Lango/%Cursor` on the
+> source terminal via `H.lango` **as built** — **out-compete bounds it** (one Cursor per Waft carrier,
+> newest-wins, never accumulates); its ordering `seq` is the one non-deterministic field → **mung it**
+> in fixtures (the standard `age`/`at` pattern), so the structure stays visible while the snap stays
+> deterministic. Re-recording fixtures to show the Langos is *real focus state becoming legible* — a
+> feature, **especially since today's `.sc.active` is a `SESSION_KEY` (`Text.svelte`), omitted from
+> the snap entirely**, which is exactly why the boomerang is slippery (no snap line shows the flag
+> flicker). `req:Langoer` then arbitrates off the **observable** Langos (highest `seq` wins,
+> foregroundables only), not a hidden free-for-all. "Impulses drop" was only ever about the **Keep**
+> not hoarding every twitch (it persists the cursor *level*/resume-point) — never about hiding the
+> live intent. `.c` is for refs/backlinks that can't encode (`lango.c.source`), not for keeping state
+> out of view. **Net: no `.c`, no `dontSnap` — just call `H.lango` from the seam (with a `seq`); the
+> '.c fork' dissolves.** Open (the better question): should focus itself stop being the invisible
+> session-only `.sc.active` and become a *visible* particle Langoer derives from the Langos? — yes,
+> the heart of step (b).
 
 **What `waft_roster` keeps vs sheds** *(rideable #6 made concrete)*. The wire stays; the
 reducer hollows out. `interest_reconcile` lives at `Interest.svelte:111`, mixed in via

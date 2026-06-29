@@ -56,6 +56,7 @@
         'Ghost/Story/Peregrination.g',  // the p2p test — first of a new kind; more pile on here
         
         'Ghost/M/Radiola.g',            // music-piracy spine — the ACK-backpressure spool (slice 1)
+        'Ghost/M/Crate.g',              // crate-digging — walk a music collection → records → the radiostock override
         'Ghost/Story/Musuation.g',      // the Musu* tests — MusuStaple; more pile on here
     ]
 
