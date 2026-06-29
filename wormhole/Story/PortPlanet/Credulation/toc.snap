@@ -1,6 +1,9 @@
 Credulation,of_Book:PortPlanet
-  run=0,at=1782305448.94,ok,ok_pct,mode:check
-    uses:Ghost_N_Peeroleum,dige:0268875eea0d929c
-    uses:Ghost_N_Tribunal,dige:683d031e368194c6
-    uses:Ghost_Story_Peregrination,dige:cbcb91135c98b814
+  run=0,at=1782707995.651,ok,ok_pct,mode:check
+    uses:Ghost_N_Peeroleum,dige:1bb4df8687a8d30b
+    uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
+    uses:Ghost_N_Tribunal,dige:a9bf42ff80d08a94
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
+    uses:Ghost_Story_Peregrination,dige:92cd131866b408e5
+    uses:Ghost_M_Radiola,dige:03dc3be514cf3dd2
+    uses:Ghost_Story_Musuation,dige:dd2f6aa225174296

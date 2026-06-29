@@ -3,13 +3,8 @@ story:MusuSignal
   Plan
   Opt
     For
-  TimeSpool
-    TimeTotal:beliefs,avg=0.114
-      sample=0.146,at=1782705557
-      sample=0.083,at=1782706282
-    TimeTotal:step,avg=0.039
-      sample=0.049,at=1782705557
-      sample=0.028,at=1782706282
-  step,dige:8c700f205f70f1f3
-  step=2,dige:0ab845d43b29e8fa
-  step=3,dige:5ef8e55e90aa3c5a
+  step,dige:lie
+  step=2,dige:lie
+  step=3,dige:lie
+  step=4,dige:lie
+  step=5,dige:lie

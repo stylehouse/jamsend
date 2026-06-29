@@ -18,6 +18,149 @@
 //   dispatched by the WORLD NAME (do_fn_for reads w.sc.w), so w:MusuStaple -> MusuStaple(A,w); name the
 //    world anything else and the handler silently never fires.
 
+//#region reality — the streaming + audio mechanics BENEATH the tests (shared, real software; NO test
+//  scaffolding here, NO per-Book scenario).  The cursor spine is Radiola.g; this region is the AUDIO
+//   (synth/measure) + the rate-driven live-stream pump that actually STARVES.  A Book composes these from
+//    the outside; it never reaches inside them.
+// Musu_synth — generate one CHUNK of real PCM: an A-ish chord under a slow envelope + a seeded per-seq
+//  dither (deterministic, no Math.random) so the byte histogram spreads (~7 bits/byte).  Float32Array
+//   (object → rides .c, never .sc); base = seq*CHUNK → one continuous stream, no seams.
+Musu_synth(seq):
+    let CHUNK = 2400
+    let SR = 48000
+    let buf = new Float32Array(CHUNK)
+    let base = seq * CHUNK
+    let r = (((seq + 1) * 2654435761) >>> 0)
+    let partials = [220, 277.18, 329.63, 415.30]
+    let i = 0
+    while (i < CHUNK) {
+        let t = (base + i) / SR
+        let s = 0
+        for (const f of partials) s += Math.sin(2 * Math.PI * f * t)
+        s = (s / partials.length) * (0.4 + 0.3 * Math.sin(2 * Math.PI * 0.7 * t))
+        r = (r * 1664525 + 1013904223) >>> 0
+        s += (r / 4294967296 - 0.5) * 0.03
+        buf[i] = Math.max(-1, Math.min(1, s))
+        i = i + 1
+    }
+    return buf
+
+// Musu_silence — a CHUNK of zeros: the negative-control payload (proves the gate has teeth) and what a
+//  starved playhead renders when it outruns the decode frontier (an underrun hole).
+Musu_silence():
+    return new Float32Array(2400)
+
+// Musu_measure — end-of-pipe analysis (NOT byte-exact; a stream is dynamic).  bits = Shannon entropy/byte
+//  over the int16 histogram (noisy ≈7+, a \x00 stream ≈0); gaps = ~50ms windows that fell near-silent
+//   (an underrun hole or pure silence); rms = overall level.
+Musu_measure(pcm):
+    let bytes = new Uint8Array(pcm.length * 2)
+    let dv = new DataView(bytes.buffer)
+    let sumSq = 0
+    let i = 0
+    while (i < pcm.length) {
+        let s = Math.max(-1, Math.min(1, pcm[i]))
+        dv.setInt16(i * 2, Math.round(s * 32767) | 0, true)
+        sumSq += s * s
+        i = i + 1
+    }
+    let hist = new Array(256).fill(0)
+    i = 0
+    while (i < bytes.length) {
+        hist[bytes[i]] += 1
+        i = i + 1
+    }
+    let H = 0
+    for (const c of hist) {
+        if (c) {
+            let p = c / bytes.length
+            H -= p * Math.log2(p)
+        }
+    }
+    let W = 2400
+    let gaps = 0
+    i = 0
+    while (i < pcm.length) {
+        let e = 0
+        let end = Math.min(pcm.length, i + W)
+        let j = i
+        while (j < end) {
+            e += pcm[j] * pcm[j]
+            j = j + 1
+        }
+        if (Math.sqrt(e / Math.max(1, end - i)) < 0.005) gaps += 1
+        i = i + W
+    }
+    return { bits: +H.toFixed(2), rms: +Math.sqrt(sumSq / Math.max(1, pcm.length)).toFixed(4), gaps: gaps }
+
+// Musu_stream — REALITY: drive ONE live stream for up to `ticks` ticks.  Each tick the WIRE delivers
+//  `feed` chunks (the live edge advances at the DELIVERY rate), req_progress decodes ahead (the Radiola
+//   spine, staying live_back behind the edge), then the LISTENER plays `play` chunks — rendering each
+//    played seq's PCM, or SILENCE when the playhead has OUTRUN the decode frontier (an underrun: the
+//     source couldn't be fed fast enough, the playhead hit the live edge).  Pre-buffers: the playhead
+//      doesn't start until something is decoded (real listening).  THE failure mode, real + deterministic.
+//       Returns { pcm, played, underran }.  payload(seq) = Musu_synth | Musu_silence.
+async Musu_stream(w, term, player, ticks, feed, play, total, payload):
+    let inbox = term.o({inbox: 1})[0]
+    let delivered = 0
+    let head = -1
+    let rendered = []
+    let underran = 0
+    let tick = 0
+    while (tick < ticks && head < total - 1) {
+        let f = 0
+        while (f < feed && delivered < total) {
+            let ch = inbox.i({Chunk: 1, seq: delivered})
+            ch.c.pcm = payload(delivered)
+            delivered = delivered + 1
+            f = f + 1
+        }
+        if (delivered >= total) term.sc.ended = 1
+        await player.do()
+        let decoded = +(player.sc.decoded ?? -1)
+        let p = 0
+        while (p < play && head < total - 1) {
+            if (decoded < 0) break
+            head = head + 1
+            player.sc.playhead = head
+            if (head <= decoded) {
+                let ch = inbox.o({Chunk: 1, seq: head})[0]
+                rendered.push((ch && ch.c.pcm) ? ch.c.pcm : this.Musu_silence())
+            } else {
+                rendered.push(this.Musu_silence())
+                underran = underran + 1
+            }
+            p = p + 1
+        }
+        tick = tick + 1
+    }
+    let n = 0
+    for (const c of rendered) n += c.length
+    let pcm = new Float32Array(n)
+    let o = 0
+    for (const c of rendered) {
+        pcm.set(c, o)
+        o += c.length
+    }
+    return { pcm: pcm, played: head + 1, underran: underran }
+//#endregion
+
+//#region testkit — generic Book scaffolding (NOT reality, NOT a scenario): how a Book is driven and how
+//  its Run snap is kept readable.  Shared by every Book.
+// Musu_float — float A:<book> to the front of H/* so the Run snap reads top-down.  Generalised off the
+//  world's own name (w.sc.w === the Book), so every Book shares this ONE — no per-Book _order copy.
+async Musu_float(w):
+    let book = w?.sc?.w
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === book) ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+//#endregion
+
+//#region slices — one mechanism each, the deterministic tick Books (Staple/Stream/Stock/Live/Wear/Skip)
+
 // We do NOT use H.on_step (its one H-global did_on_step_n is claimed by whichever caller spills first).
 //  Musu_drive keeps a req-local did_step instead, immune to any other caller — the Pere* lesson.
 MusuStaple(A,w):
@@ -716,6 +859,9 @@ async MusuSkip_order(w):
     await this.place({}, ordered)
 
 
+//#endregion
+
+//#region composite — features combined into one world (multi-client fan-out)
 // ══ MusuCrowd — the multi-client fan-out (one source, many independent listeners) ════════════════
 //  The cascade's payoff made visible.  One source delivered to TWO listeners as two independent
 //   %Caster spools (fast + slow), each backpressured by ITS OWN terminal's ack.  Nowhere is there a
@@ -823,177 +969,85 @@ async MusuCrowd_order(w):
     await this.place({}, ordered)
 
 
-// ══ MusuSignal — REAL-AUDIO family #1: does the music pipeline carry SIGNAL? ══════════════════════
-//  The seven tick Books witness cursor arithmetic with no clock.  This is the other regime: drive the
-//   SAME spine (req_cast spool → req_progress decode) but push GENERATED PCM through it and MEASURE the
-//    rendered signal at the end.  We synth the source ourselves (a deterministic chord+dither); opening
-//     the real /music library is a separate concern, elsewhere.  The snap is NOT the detailed Chunk/aud
-//      C** (noise on a real run) — it is a COARSE readout: a phase, a position, and the end-of-pipe
-//       analysis (consistently noisy = entropy bits; no gaps = no silent window).  Drives the spine
-//        DIRECTLY — a straight pipeline is code, not a swept req (the caster/player carry their work-leaf
-//         but no req: sentinel).  NEXT in the family: the real MUTED Web-Audio graph (browser, an IMPORT'd
-//          capability) + wall-clock pacing (3s snaps, plays-a-while, skip).  This one proves the pipeline.
-//       beat 2  stand up source(48)→inbox→player, live
-//       beat 3  walk the whole stream through, measure → the %signal readout
+//#endregion
+
+//#region realaudio — the wall-clock SIGNAL family (real streaming, coarse readout, a measured gate)
+// ══ MusuSignal — REAL-AUDIO family #1: a real live stream that can STARVE ═════════════════════════
+//  A REAL streaming situation, not a hand-cranked walk: the WIRE delivers chunks at a DELIVERY rate, the
+//   listener plays at a PLAYBACK rate, and req_progress (the Radiola spine) decodes ahead staying
+//    live_back behind the live edge.  When delivery can't keep up, the playhead OUTRUNS the decode
+//     frontier — it hits the live edge and renders silence: an underrun, the real failure mode.  All the
+//      mechanics live in the reality region (Musu_stream/synth/measure); this Book just composes three
+//       streams and witnesses the difference.  Manipulations dispatched by on_step (numbered steps).
+//        beat 2  HEALTHY  (feed 3 / play 1)  → delivery outruns playback → smooth, gapless, complete
+//        beat 3  STARVED  (feed 1 / play 3)  → playback outruns delivery → live edge hit → underrun+gaps
+//        beat 4  SILENCE  (control)          → zero payload through the SAME pipe → ~0 entropy
+//        beat 5  witness  streams / noisy / starves / silent / separable  (real props; degrade → red)
 MusuSignal(A,w):
     w oai %req:wrangle,eternal
         await &MusuSignal_drive,w,req
         req%ok = 1
 
+// MusuSignal_drive — dispatch the numbered manipulations via on_step (the H-global step gate; one Book
+//  runs at a time here, so no caller collision).  Each beat runs ONE stream through the reality at its
+//   feed/play rates; the witness reads all three afterward.
 async MusuSignal_drive(w, req):
-    let n = (this.c.run)?.c.step_n
-    if (n != null && n !== req.c.did_step) {
-        req.c.did_step = n
-        if (n === 2) this.MusuSignal_sides_up(w)
-        if (n === 3) await this.MusuSignal_run(w)
-    }
-    await this.MusuSignal_order(w)
+    await this.on_step({
+        2: () => this.MusuSignal_run(w, 'healthy', 3, 1),
+        3: () => this.MusuSignal_run(w, 'starved', 1, 3),
+        4: () => this.MusuSignal_run(w, 'silence', 3, 1),
+        5: () => this.MusuSignal_witness(w),
+    })
+    await this.Musu_float(w)
 
-// MusuSignal_sides_up — beat 2: the one-listener spine, live from the start.  The caster carries its
-//  %req:cast and the player its %req:progress, but NEITHER is a req: serial — MusuSignal_run drives them
-//   directly.  c.up stamped so the spine reads w's window|live_back knobs.
-MusuSignal_sides_up(w):
-    w i reached:step_2
-    let term = w.i({Terminal: 1, name: 'omega'})
+// MusuSignal_run — stand up a fresh live spine (Terminal+inbox+Player, named by KIND), drive it through
+//  Musu_stream at the given feed/play rates, MEASURE the rendered audio, PRUNE the spine, and leave only
+//   the coarse %signal,kind readout (bits/gaps/played/underran).  'silence' uses the zero payload.  The
+//    spine is driven directly — a straight pipeline is code, not a swept req (the player carries its
+//     %req:progress work-leaf, no req: sentinel).
+async MusuSignal_run(w, kind, feed, play):
+    let total = 48
+    let term = w.i({Terminal: 1, name: kind})
     term.c.up = w
     term.i({inbox: 1})
-    let caster = w.i({Caster: 1, name: 'source', total: 48, next: 0, live: 1})
-    caster.c.up = w
-    caster.c.term = term
-    let player = w.i({Player: 1, name: 'ear', playhead: -1, decoded: -1, live: 1})
+    let player = w.i({Player: 1, name: kind, playhead: -1, decoded: -1, live: 1})
     player.c.up = w
     player.c.term = term
     term.c.player = player
-    caster.oai({req: 'cast', eternal: 1})
     player.oai({req: 'progress', eternal: 1})
+    let payload = (kind === 'silence') ? (s) => this.Musu_silence() : (s) => this.Musu_synth(s)
+    let out = await this.Musu_stream(w, term, player, 200, feed, play, total, payload)
+    let sig = this.Musu_measure(out.pcm)
+    // prune the whole spine — the signal is measured; keep only the coarse %signal,kind readout.
+    await w.rm(term)
+    await w.rm(player)
+    w.i({signal: 1, kind: kind, bits: sig.bits, gaps: sig.gaps, played: out.played, of: total, underran: out.underran})
 
-// MusuSignal_run — beat 3: walk the playhead through the whole stream.  Each tick: advance ack+playhead,
-//  pump req_cast (spool into the inbox), attach the synth PCM to each delivered %Chunk (.c.pcm — an
-//   object, NEVER .sc), pump req_progress (decode into %aud), and render every reached aud's PCM.  At the
-//    end MEASURE the rendered signal and write the coarse readout.
-async MusuSignal_run(w):
-    let total = 48
-    let term = w.o({Terminal: 1})[0]
-    let inbox = term && term.o({inbox: 1})[0]
-    let caster = w.o({Caster: 1})[0]
-    let player = w.o({Player: 1})[0]
-    if (!term || !inbox || !caster || !player) return
-    let played = new Set()
-    let rendered = []
-    let head = -1
-    while (head < total - 1) {
-        head = head + 1
-        term.sc.ack = head
-        player.sc.playhead = head
-        if (+(caster.sc.next ?? 0) >= total) term.sc.ended = 1
-        await caster.do()
-        for (const ch of inbox.o({Chunk: 1})) {
-            if (!ch.c.pcm) ch.c.pcm = this.MusuSignal_synth(+(ch.sc.seq ?? 0))
-        }
-        await player.do()
-        for (const aud of player.o({aud: 1})) {
-            let seq = +(aud.sc.seq ?? -1)
-            if (seq < 0 || seq > head || played.has(seq)) continue
-            let ch = inbox.o({Chunk: 1}).find(c => +(c.sc.seq ?? -1) === seq)
-            if (ch && ch.c.pcm) {
-                rendered.push(ch.c.pcm)
-                played.add(seq)
-                if (played.size === 1) w.i({event: 'buffered'})
-            }
-        }
-    }
-    let n = 0
-    for (const c of rendered) n += c.length
-    let pcm = new Float32Array(n)
-    let o = 0
-    for (const c of rendered) {
-        pcm.set(c, o)
-        o += c.length
-    }
-    let sig = this.MusuSignal_measure(pcm)
-    // mute the transient detail: the signal is measured, so the 48 %Chunk + 48 %aud are spent noise —
-    //  prune them to leave only the coarse readout (and they go nondeterministic once timing is real).
-    await inbox.rm({Chunk: 1})
-    await player.rm({aud: 1})
-    w.i({event: 'drained'})
-    player.sc.phase = 'drained'
-    player.sc.at = played.size
-    player.sc.of = total
-    let s = w.oai({signal: 1})
-    s.sc.bits = sig.bits
-    s.sc.gaps = sig.gaps
-    s.sc.rms = sig.rms
-
-// MusuSignal_synth — generate one %Chunk of PCM: an A-ish chord under a slow envelope + a seeded per-seq
-//  dither (deterministic, no Math.random) so the byte histogram spreads (~7 bits/byte).  Returns a
-//   Float32Array (an object → rides .c, never .sc).  base = seq*CHUNK → one continuous stream, no seams.
-MusuSignal_synth(seq):
-    let CHUNK = 2400
-    let SR = 48000
-    let buf = new Float32Array(CHUNK)
-    let base = seq * CHUNK
-    let r = (((seq + 1) * 2654435761) >>> 0)
-    let partials = [220, 277.18, 329.63, 415.30]
-    let i = 0
-    while (i < CHUNK) {
-        let t = (base + i) / SR
-        let s = 0
-        for (const f of partials) s += Math.sin(2 * Math.PI * f * t)
-        s = (s / partials.length) * (0.4 + 0.3 * Math.sin(2 * Math.PI * 0.7 * t))
-        r = (r * 1664525 + 1013904223) >>> 0
-        s += (r / 4294967296 - 0.5) * 0.03
-        buf[i] = Math.max(-1, Math.min(1, s))
-        i = i + 1
-    }
-    return buf
-
-// MusuSignal_measure — the end-of-pipeline analysis (NOT byte-exact — a real run is nondeterministic).
-//  bits = Shannon entropy/byte over the int16 histogram (consistently noisy ≈ 7+; a \x00 stream ≈ 0).
-//   gaps = ~50ms windows that fell near-silent (a dropout left a hole).  rms = overall level.
-MusuSignal_measure(pcm):
-    let bytes = new Uint8Array(pcm.length * 2)
-    let dv = new DataView(bytes.buffer)
-    let sumSq = 0
-    let i = 0
-    while (i < pcm.length) {
-        let s = Math.max(-1, Math.min(1, pcm[i]))
-        dv.setInt16(i * 2, Math.round(s * 32767) | 0, true)
-        sumSq += s * s
-        i = i + 1
-    }
-    let hist = new Array(256).fill(0)
-    i = 0
-    while (i < bytes.length) {
-        hist[bytes[i]] += 1
-        i = i + 1
-    }
-    let H = 0
-    for (const c of hist) {
-        if (c) {
-            let p = c / bytes.length
-            H -= p * Math.log2(p)
-        }
-    }
-    let W = 2400
-    let gaps = 0
-    i = 0
-    while (i < pcm.length) {
-        let e = 0
-        let end = Math.min(pcm.length, i + W)
-        let j = i
-        while (j < end) {
-            e += pcm[j] * pcm[j]
-            j = j + 1
-        }
-        if (Math.sqrt(e / Math.max(1, end - i)) < 0.005) gaps += 1
-        i = i + W
-    }
-    return { bits: +H.toFixed(2), rms: +Math.sqrt(sumSq / Math.max(1, pcm.length)).toFixed(4), gaps: gaps }
-
-async MusuSignal_order(w):
-    let As = H.o({A: 1})
-    if (!As.length) return
-    let first = (a) => (a.sc.A === 'MusuSignal') ? 0 : 1
-    let sorted = [...As].sort((a, b) => first(a) - first(b))
-    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
-    await this.place({}, ordered)
+// MusuSignal_witness — the assertions this Book EARNS (idempotent stamps).  The %signal lines are just
+//  numbers; THESE are the test — degrade the spine and a witness drops, so the step goes red.  Healthy
+//   proves it CAN stream cleanly; starved proves it FAILS the real way (hits the live edge); silence
+//    gives the noisy-witness teeth (the SAME pipe reads ~0 on zeros).
+MusuSignal_witness(w):
+    let h = w.o({signal: 1, kind: 'healthy'})[0]
+    let s = w.o({signal: 1, kind: 'starved'})[0]
+    let z = w.o({signal: 1, kind: 'silence'})[0]
+    if (!h || !s || !z) return
+    let hbits = +(h.sc.bits ?? 0)
+    let hgaps = +(h.sc.gaps ?? -1)
+    let hunder = +(h.sc.underran ?? -1)
+    let hplayed = +(h.sc.played ?? 0)
+    let hof = +(h.sc.of ?? 0)
+    let sunder = +(s.sc.underran ?? 0)
+    let sgaps = +(s.sc.gaps ?? 0)
+    let zbits = +(z.sc.bits ?? 99)
+    // streams: fed fast enough, it played the whole stream with NO underrun and NO gap.
+    if (hplayed === hof && hunder === 0 && hgaps === 0 && hof > 0 && !(oa %witnessed:streams)) i %witnessed:streams
+    // noisy: the rendered audio carries real entropy, not a \x00 stream.
+    if (hbits >= 4 && !(oa %witnessed:noisy)) i %witnessed:noisy
+    // starves: fed too slow, the playhead HIT THE LIVE EDGE -- underruns left silent gaps.  THE failure.
+    if (sunder > 0 && sgaps > 0 && !(oa %witnessed:starves)) i %witnessed:starves
+    // silent: the silence control reads ~0 entropy through the SAME pipe -- the gate has teeth.
+    if (zbits < 0.5 && !(oa %witnessed:silent)) i %witnessed:silent
+    // separable: healthy and silence are clearly distinguishable -- the noisy-witness isn't vacuous.
+    if (hbits - zbits > 3 && !(oa %witnessed:separable)) i %witnessed:separable
+//#endregion

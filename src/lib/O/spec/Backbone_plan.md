@@ -139,9 +139,10 @@ a Funkcion actually needs:
   against projected-on properties", the property is `kind`). Cheap, mostly idle. Its
   once-a-tick walk also runs the *throttled pollers* that want a tick but no handshake —
   Shelver's 5-min walk, StoryTimes' sweep, CreduFunk — so they need no own req either.
-- **`req:Liesica,funk_id` — only genuine handshake monitors.** Runner/Relay's peer pings
-  actually use req finish/ttlilt/deps machinery, so they stay real per-Funkcion reqs. Few, and
-  they live in the cluster Waft, not the test boards.
+- **`req:Liesica` — checked, unnecessary.** Runner/Relay's runs use *no* req machinery (no
+  `finish`/`ttlilt`/`doai`) — they're plain `(host,funk,ww)` like `storying_run`. So every
+  Funkcion just rides its Waft's `req:Waftica` walk; *no* per-Funkcion req survives. (Name kept
+  noted only in case a future monitor genuinely needs a handshake req.)
 
 **Net for Credence: 48 → 1** (`req:Waftica,waft:Credence`; the board's Storying cells
 event-driven, its Shelver/StoryTimes stations walked by Waftica, no Runner/Relay there). `c.up`
@@ -150,7 +151,15 @@ is free — `Funkcions.c.up = w` already stamped (`:159`). The one non-Waft host
 block re-shapes → a Story-snap re-record at landing (its own commit), and the Storying
 event-push touches the verdict wire (`Editron` Phase 1) so it wants a green Credence run after.
 Independent of `req:Keeping` → landable at P0/P1; drawn here because P3 is where the Lango
-source needs it. *(Names `Waftica`/`Liesica` still soft.)*
+source needs it. *(Name `Waftica` still soft.)*
+
+> **Status (2026-06-29).** **Chunk 1 BUILT** — `Lies_ensure_waftica` replaces
+> `Lies_register_funkcion` in `LiesFunk.svelte` (per-Waft carrier + walk + stale-`req:Funkcion`
+> migration + `main:<kind>`), the two callers (`Lies_instantiate_funkcions`, `GhostList_funkcion`)
+> rewired, `Lies_aim_setup`'s cluster path inherits it. Behavior-preserving (same runs, same
+> order; the Storying poll still runs *inside* the walk). Files Svelte-compile clean; full
+> typecheck OOMs here (verify on host) and it's `:9091`-unverified — wants a green Credence run.
+> **Chunk 2 (Storying event-driven) not started.**
 
 **What `waft_roster` keeps vs sheds** *(rideable #6 made concrete)*. The wire stays; the
 reducer hollows out. `interest_reconcile` lives at `Interest.svelte:111`, mixed in via
@@ -226,12 +235,14 @@ reducer hollows out. `interest_reconcile` lives at `Interest.svelte:111`, mixed 
   open is whether the *source* keeps an origin trace + whether there's a Keep-side Lango
   ledger (lean: source mints into `.c`, levels copy to the Keep, impulses drop), and whether
   the channel rides the same wire as `req:waft_roster`. (P3, above.)
-- **The carrier / de-req-ifying the pump** *(resolved — Storying & mirrors event-driven, zero
-  reqs; one `req:Waftica,waft:<path>` per Waft owns `%Lango` + walks the throttled pollers;
-  `req:Liesica,funk_id` only for handshake monitors → Credence 48→1)*. Open sub-bits: the names
-  (`Waftica`/`Liesica`), and it re-shapes every `Funkcions` snap block + touches the verdict
-  wire → a Story-snap re-record + green Credence run at landing (own commit). (P3 — landable at
-  P0/P1.)
+- **The carrier / de-req-ifying the pump.** **Chunk 1 BUILT** (uncommitted, host-unverified):
+  one `req:Waftica,waft:<path>` per Waft; its walk runs every `funk.c.run` (behavior-preserving),
+  a migration drops the stale `req:Funkcion`, it stamps `main:<kind>` — **Credence `Funkcions`
+  48→1**. `req:Liesica` proved unnecessary — *no* run uses req machinery (Runner/Relay are plain
+  `(host,funk,ww)`, like `storying_run`), so every Funkcion just rides its Waft's carrier walk.
+  **Chunk 2 pending:** Storying → event-driven (drop it from the walk, push at the two
+  run-landing sites) to kill the 48 per-tick scans; touches the verdict wire → its own review +
+  Credence run. Each chunk re-shapes the `Funkcions` snap → own commit. (P3 — landed at P0/P1.)
 - **The Shelver ledger** *(resolved — `%shelved` tombstones dropped; presence is the
   `Funkcion:Storying,of_Book` cells on the board)*. Trade: a hand-deleted Book re-files on the
   next sweep. Done in `Funk/Shelver.svelte`.

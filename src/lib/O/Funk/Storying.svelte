@@ -1,7 +1,7 @@
 <script module lang="ts">
     import type { TheC } from "$lib/data/Stuff.svelte"
 
-    // storying_run — the Storying kind's behaviour; Lies pumps it centrally (one req:Funkcion per cell).
+    // storying_run — the Storying kind's behaviour; Lies pumps it centrally (via the Waft's req:Waftica carrier).
     //   find the matching run_result:
     //     %of_Book → by book field, latest by at  (one Book runs several docks)
     //     %of_dock → by dock path

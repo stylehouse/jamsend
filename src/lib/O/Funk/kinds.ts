@@ -3,7 +3,7 @@
 // A %Funkcion embed's mainkey VALUE is its kind (Funkcion:Storying, Funkcion:dirlist,
 //  …); the embed rides the snap, the runtime is bound per kind.  Each kind is a
 //   self-contained module providing up to three halves:
-//     run       — the behaviour, pumped centrally by Lies every tick (one req:Funkcion).
+//     run       — the behaviour, pumped centrally by Lies every tick (via the Waft's req:Waftica carrier).
 //                 OPTIONAL: a kind with no `run` is an ACTION, not a MONITOR — it is never
 //                  pumped; it just renders and reacts to a click (e.g. Ballistics).
 //     component — the INLINE face, mounted by FunkHost inside the Waft (the in-document cell).

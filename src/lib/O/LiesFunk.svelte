@@ -16,8 +16,8 @@
 //   LiesStore/LiesHold/LiesCurse/LiesLies — file placement is purely organisational.
 //
 //   The four regions:
-//     Waft_dip            — the Waft address space (c.Dip), what funk_id keys on
-//     Funkcions           — instantiate / register / central per-tick pump
+//     Waft_dip            — the Waft address space (c.Dip), the per-Waft** id
+//     Funkcions           — instantiate / bind / one req:Waftica carrier per Waft
 //     Ballistics          — the action Funkcions: strike-on-demand + self-arm
 //     editor↔runner       — run intent (Esc / Book cell) + the verdict wire back
 //                            (may grow into Cred*_result|verdict|instruct, §Editron)
@@ -140,49 +140,52 @@ await M.eatfunc({
 //#endregion
 //#region Funkcions — instantiate / register / central per-tick pump
 
-    // ── Funkcions — Lies-side, no LE ──────────────────────────────────────────
-    //   A Funkcion is behaviour on funk.c.run riding a Waft directly
-    //   (Waft/Funkcion:$name — no Seem, no req inside the Waft).  Its hosting req
-    //   lives centrally in Lies/Funkcions as req:Funkcion (one per Funkcion); the
-    //   Funkcion spawns|knows its own req via Lies_register_funkcion.  Lies_pump_-
-    //   funkcions runs them all once per tick (funks.do()).  A Funkcion isn't really
-    //   req-like — it's behaviour hung on a req host — so the per-tick driver is wired
-    //   as an explicit do_fn (doai), NOT the req_$name convention: it runs funk.c.run
-    //   and sets sc.ok, re-running every tick but staying inspectable.  run is
-    //   (host, funk, ...args) — host is the Waft, args carry through (e.g. the w a
-    //   walker lists against), all read off req.c so a re-register refreshes them.
-    async Lies_register_funkcion(w: TheC, host: TheC, funk: TheC, ...args: any[]): Promise<TheC> {
+    // ── Funkcions — one carrier per Waft (req:Waftica) ─────────────────────────
+    //   A Funkcion is behaviour on funk.c.run riding a Waft directly (Waft/Funkcion:$name —
+    //    no Seem, no req inside the Waft).  It is NOT itself req-like: a Storying light or a
+    //     peer ping is plain synchronous behaviour, not a tree of handshake moves — so a
+    //      Funkcion gets NO req of its own.  Instead each Waft has exactly one carrier,
+    //       req:Waftica,waft:<path>, in Lies/Funkcions; its do_fn walks the Waft subtree once
+    //        per tick and runs every funk.c.run it finds.  (Was: one req:Funkcion per Funkcion
+    //         — a board of 48 cells snapped 48 eternal reqs; this collapses them to one per
+    //          Waft, and a migration drops the stale req:Funkcion on first ensure.)
+    //   The carrier also carries main:<kind> — the Waft's dominant Funkcion, for the face|Lens
+    //    layer — and is the home a later %Lango/excitement layer hangs on (the Waft's attention
+    //     I/O).  run is (host, funk, w) — host is the Waft, w the world it lists against.
+    async Lies_ensure_waftica(w: TheC, waft: TheC): Promise<TheC> {
         const funks = w.oai({ Funkcions: 1 })
-        // funks is a plain container, so the A/w-spine c.up wiring never reaches it;
-        //  point it at w so funks.do()'s _req_do_one can climb to the House to reach
-        //  do_fn_for, which returns the req's wired do_fn (funks → w → A → House).
+        // funks is a plain container, so the A/w-spine c.up wiring never reaches it; point it
+        //  at w so funks.do()'s _req_do_one can climb to the House (funks → w → A → House).
         funks.c.up = w
-        // funk_id keys the req — a plain scalar, NOT the Waft|Funkcion mainkeys (those
-        //  are type-tags a tree-walk reads to detect wafts|funkcions; using them as req
-        //  sc keys makes the walk misread this req).  The waft|funk are .c refs.
-        //  Identity is the funk's structural **Dip** (`c.Dip`, the waftid slot Waft_dip
-        //   stamps on every Waft** particle) — reliably present, since Waft_dip runs right
-        //    before instantiate on both the load and the UI-add path.  Generic and
-        //     collision-free for sibling cells of one kind (a board of Funkcion:Storying),
-        //      with no kind-specific keys leaking into this host.  Fall back to kind (+ any
-        //       binding) for a funk whose host isn't a dipped Waft — e.g. the trail Funkcion,
-        //        which rides a Seem.
-        const dip     = funk.c.Dip as string | undefined
-        const bind    = (funk.sc.of_Book ?? funk.sc.of_dock ?? '') as string
-        const funk_id = `${host.sc.Waft}/${dip ?? (funk.sc.Funkcion + (bind ? '/' + bind : ''))}`
-        const fr = await funks.oai({ req: 'Funkcion', funk_id, eternal: 1 })
-        fr.c.host = host
-        fr.c.funk = funk
-        fr.c.run_args = args
-        // wire the behaviour as a do_fn (one-shot; doai no-ops on re-register, but the
-        //  .c refs above are refreshed each call so the wired closure reads current).
-        ;(await funks.doai({ req: 'Funkcion', funk_id, eternal: 1 }))?.(async (req: TheC) => {
-            const run = (req.c.funk as TheC | undefined)?.c.run as
-                ((host: TheC, funk: TheC, ...a: any[]) => void | Promise<void>) | undefined
-            if (run && req.c.host) await run(req.c.host as TheC, req.c.funk as TheC, ...((req.c.run_args as any[]) ?? []))
-            req.sc.ok = 1   // pass-local; eternal req re-arms next tick
+        // migration: drop the legacy per-Funkcion reqs — the Waftica subsumes them.  Fires on
+        //  the first ensure of any Waft (funks is shared per-w); idempotent once they are gone.
+        const stale = funks.o({ req: 'Funkcion' }) as TheC[]
+        if (stale.length) { for (const old of stale) funks.drop(old); funks.bump_version() }
+        const path = waft.sc.Waft as string
+        const wf   = await funks.oai({ req: 'Waftica', waft: path, eternal: 1 })
+        wf.c.waft  = waft
+        // main:<kind> — the dominant Funkcion's kind: a flagged %Funkcion,main child, else the
+        //  cell whose kind matches the Waft's snapped kind (P1); absent → a pure base carrier.
+        const funkc = waft.o({ Funkcion: 1 }) as TheC[]
+        const main  = (funkc.find(f => f.sc.main) ?? funkc.find(f => f.sc.Funkcion === waft.sc.kind))?.sc.Funkcion
+        if (main) wf.sc.main = main as string; else delete wf.sc.main
+        // the carrier's pump — walk the Waft subtree, run each bound funk.c.run once.  Wired
+        //  once (doai no-ops on re-ensure); reads req.c.waft so a reload refreshes the host ref.
+        ;(await funks.doai({ req: 'Waftica', waft: path, eternal: 1 }))?.(async (req: TheC) => {
+            const host = req.c.waft as TheC | undefined
+            if (host) {
+                const run_all = async (c: TheC) => {
+                    for (const k of c.o() as TheC[]) {
+                        const run = k.c.run as ((h: TheC, f: TheC, ww: TheC) => void | Promise<void>) | undefined
+                        if (run) await run(host, k, w)
+                        await run_all(k)
+                    }
+                }
+                await run_all(host)
+            }
+            req.sc.ok = 1   // pass-local; eternal carrier re-arms next tick
         })
-        return fr
+        return wf
     },
     async Lies_pump_funkcions(w: TheC) {
         const funks = w.o({ Funkcions: 1 })[0] as TheC | undefined
@@ -279,7 +282,7 @@ await M.eatfunc({
         cluster.sc.dontSnap ??= 1          // rebuilt each boot — never persisted (spec/Cluster_design)
         cluster.sc.equip    ??= 'Cluster'  // out of the cursor's way: no nib, no focus — a backstage fixture
         for (const kind of ['Runner', 'Relay']) cluster.oai({ Funkcion: kind })
-        await (H as any).Lies_instantiate_funkcions(w, cluster)   // binds each kind's run + registers the pump
+        await (H as any).Lies_instantiate_funkcions(w, cluster)   // binds each kind's run + ensures the carrier
     },
     //   Hoist (or retire) the cluster Brinks by role — called every heartbeat.  editor|runner
     //    means a remote relationship exists, so the endpoint faces are worth showing; otherwise
@@ -328,15 +331,15 @@ await M.eatfunc({
             if (funk.c.run) continue                               // already bound (dirlist / prior load)
             const kind = FUNK_KINDS[funk.sc.Funkcion as string]   // the kind owns the behaviour
             if (!kind?.run) continue                               // unknown, or an action kind (no pumped run)
-            funk.c.run = kind.run
-            await H.Lies_register_funkcion(w, waft, funk, w)
+            funk.c.run = kind.run                                  // bind only — the carrier's walk runs it
         }
+        await H.Lies_ensure_waftica(w, waft)                       // one carrier per Waft (was: one req per funk)
     },
 
     // ── GhostList_funkcion ──────────────────────────────────────────────────────
     //   Install the GhostList's dirlist behaviour on funk.c.run (off-snap), riding the
-    //   Waft directly (Waft/Funkcion:dirlist — no Seem), and register its central
-    //   req:Funkcion in Lies/Funkcions.  Idempotent — installs|registers once.
+    //   Waft directly (Waft/Funkcion:dirlist — no Seem), and ensure its Waft's Waftica
+    //   carrier in Lies/Funkcions.  Idempotent — installs|ensures once.
     async GhostList_funkcion(gl: TheC, w: TheC): Promise<TheC> {
         const funk = gl.oai({ Funkcion: 'dirlist' })
         funk.sc.interval_ms ??= 8000
@@ -402,7 +405,7 @@ await M.eatfunc({
                 if (changed) host.bump_version()            // bump|render only on real change
             }
         }
-        await H.Lies_register_funkcion(w, gl, funk, w)   // the Funkcion spawns its central req
+        await H.Lies_ensure_waftica(w, gl)   // the GhostList Waft's carrier walks + runs this dirlist
         return funk
     },
 
