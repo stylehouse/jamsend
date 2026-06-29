@@ -1042,10 +1042,11 @@
         D.sc.objecties = q.objecties
         D.sc.copy = { ...n.sc }
         D.sc.snap_line = lines.join("\n")
-        // a folded node (the dontSnap means above, or the %dontSnap flag) leaves a trace, so
-        //  the snap shows its subtree was omitted on PURPOSE, not absent.  No child count —
-        //   that would churn the very line we fold to keep stable (a Keep's ledger only grows).
-        if (q.dontSnap || n.sc.dontSnap) D.sc.snap_line += '   /* subtree omitted (dontSnap) */'
+        // a folded node leaves a trace so the snap shows its subtree was omitted on PURPOSE, not
+        //  absent — but as a snapped flag, not prose: enLine stamps objecties.dontSnap=1 for a
+        //   means fold (rides beside loopy → {"dontSnap":1}), and the %dontSnap node-flag already
+        //    surfaces dontSnap:1 in its stringies.  No child count — that would churn the very
+        //     line we fold to keep stable (a Keep's ledger only grows).
         if (q.mung?.length) { D.c.munged ??= []; D.c.munged.push(q.mung) }
         if (q.thence?.length) T.sc.thence_matching = q.thence
     },

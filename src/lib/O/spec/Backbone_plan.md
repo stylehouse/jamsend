@@ -335,6 +335,38 @@ source needs it. *(Name `Waftica` still soft.)*
 > '.c fork' dissolves.** Open (the better question): should focus itself stop being the invisible
 > session-only `.sc.active` and become a *visible* particle Langoer derives from the Langos? — yes,
 > the heart of step (b).
+>
+> **Handover (2026-06-29 — the way out from here).** *Arc:* this session laid the **prerequisites**
+> for `req:Langoer` (the observable focus arbiter) — the `H.lango` channel, the `e:Lang_lango` rename,
+> the `Lies_set_active_waft` write-chokepoint — and corrected one **value**: focus state must be
+> OBSERVABLE (snapped), not hidden in `.c`. The organ itself is still ahead.
+>
+> **THE BOMB — our gates were green in a BUBBLE.** Every "Lake\* GREEN 1/1" above was
+> `scripts/Story_cli_run.mjs`: a headless node+jsdom boot that reads the wormhole off disk, loads the
+> GhostList, and quiesces at `round=8`. A **real** Lies%runner request — `scripts/runner_ask.mjs run
+> LakeLango`, the live browser runner over `/relay` (owner banned the headless CLI) — quiesces at
+> `round=4` with NO GhostList and `acquire` unfinished, so the same fixtures go **ALL-RED** (the
+> GhostList Good/dirlist-Funkcion/desire-Waft/o_elvis + boot-progress diverge — though the test
+> *markers themselves pass*). **Verify via `runner_ask.mjs`, never Story_cli** (now canonical in
+> `CLAUDE.md`). The GhostList dige-spay I added to `Story.svelte` this session is a band-aid on the
+> headless-only symptom — reconsider/drop it once the gate is real.
+>
+> **NEXT MOVES (in order):**
+> 1. **Re-establish the Lake\* gates on the LIVE runner.** Either fold the WHOLE GhostList footprint
+>    (Good + dirlist Funkcion + desire-Waft + o_elvis, and normalize `acquire,finished` + the Waft
+>    count) so the snap is environment-independent (headless ≡ live) — better, because the GhostList
+>    load is the extra work that diverges them, so folding also makes headless quiesce early like the
+>    runner — OR re-record fixtures from the live runner. Until this, **no Lake\* gate is trustworthy.**
+> 2. **Wire the observable cursor feed:** `Lies_i_Spotlight` → `H.lango(w, sourceWaft, {kind:'Cursor',
+>    to, seq})` — snapped, out-competed, `seq` munged. The `to` is a P2 `Lies_resolve_locator` locator
+>    (`Waft:<key>/<mainkey>:<value>`, built like `%FromWhat` at `Lies.svelte:302`).
+> 3. **Build `req:Langoer`** = `req:Keeping`'s receiver hat: read the observable Cursor Langos, pick
+>    the highest-`seq` foregroundable, drive `Lies_set_active_waft` (the chokepoint). Candidate
+>    quick-win to try BEFORE the full organ: **kind-gate the want-resolver's active-claim**
+>    (`Lies.svelte` ~958) so a background `cold` resume-want can't out-claim the user's foreground —
+>    likely THE boomerang. (Live-focus → verify on a real runner.)
+> 4. **Make focus visible:** retire the session-only `.sc.active` (a `SESSION_KEY`, `Text.svelte:349`)
+>    for a snapped particle Langoer derives — the observability fix the boomerang's invisibility argues for.
 
 **What `waft_roster` keeps vs sheds** *(rideable #6 made concrete)*. The wire stays; the
 reducer hollows out. `interest_reconcile` lives at `Interest.svelte:111`, mixed in via

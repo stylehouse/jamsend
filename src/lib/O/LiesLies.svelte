@@ -214,6 +214,25 @@
             //    role on the relay makes a repeat become with the same role a safe no-op.)
             if (port?.on_open) {
                 port.on_open(() => { try { H.tlog(`🛰 ws SEND control:become role=${role}`); port.ws?.send(JSON.stringify({ control: 'become', role })) } catch { /* relay down — reconnect re-dials */ } })
+                // Authenticated identity bind — beside `become`, both re-fire on every (re)connect. Where
+                //  `become` binds our ?addr= role (unauthenticated — any socket could claim it), `hello`
+                //   PROVES identity: a signed {control:hello,from,pub,ts} lets the relay bind prepubOf(pub)→
+                //    this socket for the real key-holder, so a to:<pub> frame routes to a VERIFIED Id, not a
+                //     self-asserted string. (relay.ts handleHello checks the self-sig + ts-freshness.)
+                //  The cluster KEY lives consumer-side (Lies_cluster_idento → top-House stashed), read LIVE
+                //   each open so an Id switch re-binds the new identity without a reload.
+                //  No key ⇒ skip: the unsigned ?addr= path still carries (add-only); errors swallowed —
+                //   relay down → reconnect re-dials, ?addr= meanwhile carries.
+                port.on_open(async () => {
+                    const idento = H.Lies_cluster_idento(w)
+                    if (!idento?.pub || !idento?.key) return
+                    try {
+                        const header = { control: 'hello', from: prepubOf(idento.pub), pub: idento.pub, ts: Date.now() }
+                        const sign = await signHeader(header, idento.key)
+                        port.ws?.send(JSON.stringify({ ...header, sign }))
+                        H.tlog(`🪪 ws SEND control:hello ${header.from}`)
+                    } catch { /* no key | relay down — reconnect re-dials, ?addr= meanwhile carries */ }
+                })
             }
             ;(H as any).Tribunal_activate_websocket(w)
 

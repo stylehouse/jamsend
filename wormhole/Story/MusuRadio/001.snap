@@ -1,0 +1,7 @@
+Snap:H
+  H:MusuRadio,Run
+    A:MusuRadio
+      self,round	{"mung":["age"]}
+      w:MusuRadio
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

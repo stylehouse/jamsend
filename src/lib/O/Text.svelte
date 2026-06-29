@@ -788,6 +788,11 @@
 
         const objecties: Record<string, any> = {}
         if (q.loopy !== undefined) objecties.loopy = q.loopy   // shallowest/original appearance of a repeated C
+        // dontSnap: a means folded this node's subtree away (EntropyArrest §5).  The marker
+        //  rides in objecties beside loopy — a snapped flag is 1, never a freeform comment — so
+        //   the line reads {"dontSnap":1}, not "/* … */".  (The %dontSnap node-flag case already
+        //    surfaces dontSnap:1 in stringies, so it needs no extra marker.)
+        if (q.dontSnap) objecties.dontSnap = 1
         if (Object.keys(ref).length) objecties.ref = ref
         if (mung.length) objecties.mung = mung
         if (undef.length) objecties.undef = undef

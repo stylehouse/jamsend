@@ -10,6 +10,7 @@ Waft:Ghost/Music/Ality,active
     Funkcion:Storying,of_Book:MusuSignal
     Funkcion:Storying,of_Book:MusuGlide
     Funkcion:Storying,of_Book:MusuTune
+    Funkcion:Storying,of_Book:MusuRadio
   What:the machine
     What:1 the spool
       Doc:Ghost/M/Radiola.g
@@ -105,6 +106,12 @@ Waft:Ghost/Music/Ality,active
       Point,method:Musu_descend
       Point,method:Musu_render_offline
       Point,method:MusuTune_witness
+    What:MusuRadio (~a minute of live activity over ready synth records)
+      Doc:Ghost/Story/Musuation.g
+      Point,method:Musu_synth_records
+      Point,method:MusuRadio_play
+      Point,method:MusuRadio_stream
+      Point,method:MusuRadio_witness
   What:the source it reimagines
     Doc:src/lib/ghost/Radios.svelte
     Point,method:listening

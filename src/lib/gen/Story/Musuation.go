@@ -10,7 +10,7 @@ import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Musuation(): string { return '7effa0d2046af468' },
+    Ghostmeta_Ghost_Story_Musuation(): string { return 'c92bf4b4c12e6f63' },
 
 // Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Music_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
@@ -92,6 +92,57 @@ Musu_stock_chunk(stock, seq) {
     if (typeof stock.chunk === 'function') return stock.chunk(seq)
     if (stock.chunks) return stock.chunks[seq % stock.chunks.length]
     return this.Musu_synth(seq)
+
+},
+// Musu_synth_tone — Musu_synth generalised to any ROOT, so a handful of records sound distinct (different
+//  chords) — the dither keeps the byte histogram wide.  One CHUNK of Float32 PCM.
+Musu_synth_tone(seq, root) {
+    let CHUNK = 2400
+    let SR = 48000
+    let buf = new Float32Array(CHUNK)
+    let base = seq * CHUNK
+    let r = (((seq + 1) * 2654435761) >>> 0)
+    let partials = [root, root * 1.26, root * 1.5, root * 2]
+    let i = 0
+    while (i < CHUNK) {
+        let t = (base + i) / SR
+        let sm = 0
+        for (const f of partials) sm += Math.sin(2 * Math.PI * f * t)
+        sm = (sm / partials.length) * (0.4 + 0.3 * Math.sin(2 * Math.PI * 0.7 * t))
+        r = (r * 1664525 + 1013904223) >>> 0
+        sm += (r / 4294967296 - 0.5) * 0.03
+        buf[i] = Math.max(-1, Math.min(1, sm))
+        i = i + 1
+    }
+    return buf
+
+},
+// Musu_synth_records — instantly mint `n` READY %record sources, each a distinct synth timbre and `secs`
+//  long, with all PCM pre-synthesised on c.chunks.  SAME shape Crate_decode produces, so they feed the
+//   radiostock identically to real files (Crate_radiostock(rec) wraps either) — but with zero files, zero
+//    decode, zero wait.  Returns the records.
+Musu_synth_records(w, n, secs) {
+    let SR = 48000
+    let CHUNK = 2400
+    let roots = [220, 261.63, 329.63, 392, 440, 174.61]
+    let recs = []
+    let k = 0
+    while (k < n) {
+        let root = roots[k % roots.length]
+        let nchunks = Math.ceil(secs * SR / CHUNK)
+        let chunks = []
+        let s = 0
+        while (s < nchunks) {
+            chunks.push(this.Musu_synth_tone(s, root))
+            s = s + 1
+        }
+        let rec = w.i({ record: 1, name: 'synth-' + Math.round(root) + 'hz', artist: 'Synth', title: Math.round(root) + 'Hz', nchunks: nchunks, seconds: +secs.toFixed(2) })
+        rec.c.up = w
+        rec.c.chunks = chunks
+        recs.push(rec)
+        k = k + 1
+    }
+    return recs
 
 },
 // Musu_measure — end-of-pipe analysis (NOT byte-exact; a stream is dynamic).  bits = Shannon entropy/byte
@@ -1361,7 +1412,7 @@ Musu_profile(total, seed) {
 //    graph at once, and MEASURE the real rendered PCM.  No setTimeout, no AC wall clock → byte-stable, and
 //     fast enough to call dozens of times in a descent.  Returns the measure (+ the buffer if `keep`, for
 //      the audible showcase).  `recovered` = the rate dipped below 0.9 then climbed back to full MID-stream.
-async Musu_render_offline(total, profile, gp, stock, keep) {
+async Musu_render_offline(total, profile, gp, stock, keep, ctrl) {
     let SR = 48000
     let CHUNK = 2400
     let chunkdur = CHUNK / SR
@@ -1380,7 +1431,14 @@ async Musu_render_offline(total, profile, gp, stock, keep) {
     while (s < total) {
         t = t + (profile[s] / 1000)
         let frontier = end - t
-        let nr = this.Glide_decide(frontier, rate, false, gp)
+        // ctrl picks the controller under test: 'none' = NO control (rate pinned 1.0, the baseline a real
+        //  test must beat); 'invert' = the WRONG controller (speeds UP into a starve — must come out WORSE
+        //   than none, proving the dropout metric has teeth); default = real Glide.
+        let nr = 1
+        if (ctrl !== 'none') {
+            let g = this.Glide_decide(frontier, rate, false, gp)
+            nr = (ctrl === 'invert') ? Math.max(0.5, 2 - g) : g
+        }
         if (nr < rate - 1e-9) {
             if (last_dir >= 0) flips = flips + 1
             last_dir = -1
@@ -1506,15 +1564,23 @@ async MusuTune_drive(w, req) {
     await this.Musu_float(w)
 
 },
-// MusuTune_run — beat 2: seed + build the perturbation, DESCEND Glide's params over deterministic offline
-//  renders, stash the result on w.c.tune and record the coarse %tune readout for the snap.
+// MusuTune_run — beat 2: seed + build the perturbation, DESCEND Glide's params, then render the SAME link
+//  three ways to earn a REAL claim — tuned Glide, NO control (rate 1.0), and an INVERTED controller — and
+//   record each one's real-rendered dropout count (gaps + underruns).  The witness reads the DIFFERENTIAL,
+//    not the optimiser's own objective.
 async MusuTune_run(w) {
     let total = 36
     let prof = this.Musu_profile(total, 1337)
     let stock = this.Musu_radiostock('synth')
     let res = await this.Musu_descend(total, prof, stock)
+    let none = await this.Musu_render_offline(total, prof, res.gp, stock, false, 'none')
+    let inv = await this.Musu_render_offline(total, prof, res.gp, stock, false, 'invert')
+    let tuned = res.measure
     w.c.tune = res
-    w.i({tune: 1, kind: 'result', start_w: res.start_w, best_w: res.best_w, rounds: res.rounds, low: +res.gp.low.toFixed(3), high: +res.gp.high.toFixed(3), floor: +res.gp.floor.toFixed(3), gaps: res.measure.gaps, def_gaps: res.def_measure.gaps, min_rate: res.measure.min_rate, recovered: res.measure.recovered})
+    let tuned_drop = +(tuned.gaps ?? 0) + +(tuned.underran ?? 0)
+    let none_drop = +(none.gaps ?? 0) + +(none.underran ?? 0)
+    let inv_drop = +(inv.gaps ?? 0) + +(inv.underran ?? 0)
+    w.i({tune: 1, kind: 'result', start_w: res.start_w, best_w: res.best_w, low: +res.gp.low.toFixed(3), high: +res.gp.high.toFixed(3), floor: +res.gp.floor.toFixed(3), tuned_drop: tuned_drop, none_drop: none_drop, inv_drop: inv_drop, min_rate: tuned.min_rate, recovered: tuned.recovered})
 
 },
 // MusuTune_show — beat 3: render the TUNED params once more and play it real-time so you hear the smoothed
@@ -1530,22 +1596,143 @@ async MusuTune_show(w) {
     if (r.buffer) this.Musu_play_buffer(gat, r.buffer)
 
 },
-// MusuTune_witness — deterministic (offline render), so these snap stable without entropy bands.
+// MusuTune_witness — deterministic (offline render), so these snap stable without entropy bands.  The
+//  headline is now a DIFFERENTIAL against no-control, not the optimiser's own objective: an inverted (bad)
+//   Glide makes `helps` go RED, where the old `descended` survived it.
 MusuTune_witness(w) {
     let r = w.o({tune: 1, kind: 'result'})[0]
     if (!r) return
     let startw = +(r.sc.start_w ?? 0)
     let bestw = +(r.sc.best_w ?? 9999)
+    let td = +(r.sc.tuned_drop ?? 9999)
+    let nd = +(r.sc.none_drop ?? 0)
+    let id = +(r.sc.inv_drop ?? 0)
     let minr = +(r.sc.min_rate ?? 1)
     let rec = +(r.sc.recovered ?? 0)
-    // descended: the coordinate search REDUCED show-wreckage from the untuned start -- the headline.
+    // helps: THE proof -- tuned Glide caused FEWER real-rendered dropouts than NO control (rate=1.0) on the
+    //  SAME link.  Goes red if Glide is useless OR harmful (the inverted controller fails this) -- not a
+    //   tautology of the optimiser.  nd>0 guards a link that wouldn't have dropped anyway.
+    if (td < nd && nd > 0 && !(w.oa({witnessed: "helps"}))) w.i({witnessed: "helps"})
+    // discriminates: the INVERTED controller is WORSE than no control -- so the dropout metric has teeth;
+    //  it isn't satisfied by any rate-fiddling, the DIRECTION of control matters.
+    if (id > nd && !(w.oa({witnessed: "discriminates"}))) w.i({witnessed: "discriminates"})
+    // descended: the coordinate search reduced its objective from the untuned start (the search ran -- a
+    //  secondary check now, NOT the headline; on its own it proves only that an optimiser optimises).
     if (bestw < startw && !(w.oa({witnessed: "descended"}))) w.i({witnessed: "descended"})
-    // improved: and by a meaningful margin, not float noise.
-    if (startw - bestw >= 1 && !(w.oa({witnessed: "improved"}))) w.i({witnessed: "improved"})
     // backs_off: the tuned controller engaged under the starve (rate dipped below full speed).
     if (minr < 0.99 && !(w.oa({witnessed: "backs_off"}))) w.i({witnessed: "backs_off"})
     // recovers: rate climbed back to full speed MID-stream once delivery recovered (the realistic arc).
     if (rec >= 1 && !(w.oa({witnessed: "recovers"}))) w.i({witnessed: "recovers"})
+},
+//#endregion
+
+//#region radio — REAL-AUDIO family #4: ~a minute of live activity over a few ready synth records
+// ══ MusuRadio — the watchable showcase: a synth radio set you SEE (and hear, if unlocked) for ~a minute ═
+//  GESTURE-FREE so it always runs (the bug before: it gated every beat on the online voice, which stays
+//   suspended with no user click, so the Book did nothing and its steps collapsed).  Each track's audio is
+//    RENDERED + measured through an OfflineAudioContext (no gesture, real PCM); the %Radio playhead animates
+//     over the track's real seconds so a MINUTE of activity unfolds in the live view; and IF a gesture has
+//      unlocked the voice it also plays audibly.  Real claim, not just motion: each track is rendered with
+//       Glide AND with no-control, and `helps` asserts Glide cut real dropouts on most tracks.
+//        beat 2     LOAD   — mint 4 ready synth records (distinct timbres)
+//        beats 3-8  ON-AIR — spin records; render glide-vs-none offline; animate the playhead ~real-time
+//        beat 9     witness — ready / a_minute / many_tracks / helps
+MusuRadio(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuRadio_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// MusuRadio_drive — OfflineAudioContext gate (skip only where there's NO Web Audio, e.g. headless); NOT
+//  gated on the online voice, so a missing gesture no longer makes the Book do nothing.  Per-beat dispatch
+//   off step_n (req-local did_step, set before the real-time await so a re-pump can't re-enter a beat).
+async MusuRadio_drive(w, req) {
+    if (typeof OfflineAudioContext === 'undefined') {
+        if (!w.oa({skipped: 'no_audio'})) w.i({skipped: 'no_audio'})
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.MusuRadio_load(w)
+        if (n >= 3 && n <= 8) await this.MusuRadio_play(w, 9)
+        if (n === 9) this.MusuRadio_witness(w)
+    }
+    await this.Musu_float(w)
+
+},
+// MusuRadio_load — beat 2: a few instantly-ready synth records + the on-air %Radio state particle.
+MusuRadio_load(w) {
+    this.Musu_synth_records(w, 4, 5)
+    let radio = w.oai({Radio: 1, name: 'on-air'})
+    radio.c.up = w
+    radio.c.elapsed = 0
+
+},
+// MusuRadio_play — one on-air SLICE (~`secs` of wall clock): spin records in turn.  Per track: render it
+//  offline BOTH with Glide and with no-control (gesture-free, real PCM) to tally `helped`; animate the
+//   %Radio playhead over the track's real seconds so the live view MOVES; and IF a gesture unlocked the
+//    voice, play it audibly.  Accumulates spins/helped/elapsed across beats.  Wall clock via performance.now
+//     — the online AC clock needs a gesture, this doesn't, so the show runs either way.
+async MusuRadio_play(w, secs) {
+    let recs = w.o({record: 1})
+    if (!recs.length) return
+    let radio = w.oai({Radio: 1, name: 'on-air'})
+    let gat = await this.Musu_gat()
+    let t0 = performance.now()
+    let spin = +(radio.sc.spins ?? 0)
+    let helped = +(radio.sc.helped ?? 0)
+    while ((performance.now() - t0) / 1000 < secs && spin < 40) {
+        let rec = recs[spin % recs.length]
+        let nch = +(rec.sc.nchunks ?? 100)
+        let stock = this.Crate_radiostock(rec)
+        let prof = this.Musu_profile(nch, 4242 + spin)
+        let g = await this.Musu_render_offline(nch, prof, null, stock, !!gat, 'glide')
+        let none = await this.Musu_render_offline(nch, prof, null, stock, false, 'none')
+        if ((+(g.gaps) + +(g.underran)) < (+(none.gaps) + +(none.underran))) helped = helped + 1
+        radio.sc.track = rec.sc.title
+        radio.sc.spin = spin
+        radio.bump()
+        if (gat && g.buffer) this.Musu_play_buffer(gat, g.buffer)
+        await this.MusuRadio_animate(radio, nch, +(rec.sc.seconds ?? 5))
+        spin = spin + 1
+    }
+    radio.sc.spins = spin
+    radio.sc.helped = helped
+    radio.c.elapsed = (radio.c.elapsed || 0) + (performance.now() - t0) / 1000
+    radio.bump()
+
+},
+// MusuRadio_animate — advance the visible playhead 0..nch over ~`secs` of wall clock, bumping for Cyto so
+//  the minute of activity is watchable.  (The audio was rendered offline; this is its playback timeline.)
+async MusuRadio_animate(radio, nch, secs) {
+    let steps = 16
+    let i = 0
+    while (i < steps) {
+        i = i + 1
+        radio.sc.playhead = Math.round(nch * i / steps)
+        radio.bump()
+        await new Promise(r => setTimeout(r, (secs * 1000) / steps))
+    }
+
+},
+// MusuRadio_witness — coarse + timing-robust (the show varies run-to-run; the booleans don't).
+MusuRadio_witness(w) {
+    let radio = w.o({Radio: 1})[0]
+    if (!radio) return
+    let elapsed = (radio.c.elapsed || 0)
+    let spins = +(radio.sc.spins ?? 0)
+    let helped = +(radio.sc.helped ?? 0)
+    let recs = w.o({record: 1}).length
+    // ready: a few synth records were instantly available (no files, no decode).
+    if (recs >= 3 && !(w.oa({witnessed: "ready"}))) w.i({witnessed: "ready"})
+    // a_minute: roughly a minute of real wall-clock activity unfolded.
+    if (elapsed >= 45 && !(w.oa({witnessed: "a_minute"}))) w.i({witnessed: "a_minute"})
+    // many_tracks: a SET played -- multiple records spun across the minute, not one stuck loop.
+    if (spins >= 6 && !(w.oa({witnessed: "many_tracks"}))) w.i({witnessed: "many_tracks"})
+    // helps: across the set, Glide cut real-rendered dropouts vs NO control on most tracks (not just motion).
+    if (helped >= 3 && !(w.oa({witnessed: "helps"}))) w.i({witnessed: "helps"})
 },
 //#endregion
 

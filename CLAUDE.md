@@ -141,3 +141,28 @@ Show the arc, not just the diff.
   injected methods the House type doesn't declare). Don't worry about the total; it
    even drifts run-to-run from the incremental cache. To judge whether an edit
     regressed, grep the check output for the *edited file's* line range, not the sum.
+
+## Running a Story Book: a real Lies%runner request, never headless
+
+Verify a Book by asking a LIVE runner to run it — not a headless boot.
+ A runner is meant to be always available: a browser tab on :9091 booted as a
+  runner (`?B=<Book>`), reachable over the same `/relay` websocket the editor uses.
+
+`scripts/runner_ask.mjs` is the CLI to it (request|reply correlated by corr, like
+ `ghost_compile.ts` but targeting the runner; reply is the live world, real wall
+  clock, real AudioContext muted). `RUNNER_URL` defaults to `http://172.17.0.1:9091`
+   (the dev server as seen from this container; `http://localhost:9091` on the host).
+  - `node scripts/runner_ask.mjs ping`               — liveness `{role,channel,running}`
+  - `node scripts/runner_ask.mjs run <Book> --watch` — become_book + poll to done|failed
+  - `node scripts/runner_ask.mjs state`              — verdict + phase/n/total
+  - `node scripts/runner_ask.mjs steps`              — per-Step ok|caveat|dige
+  - `node scripts/runner_ask.mjs snap <n>`           — one Step's live got_snap
+  - `node scripts/runner_ask.mjs rungos`             — held runs, each addressable `@uid`
+ Exit 1 when a `--watch` run finishes red, so it scripts. `story_repl.mjs` is the
+  interactive twin (`@uid` addresses a held run).
+
+Do NOT verify with `scripts/Story_cli_run.mjs` (the headless node+jsdom boot). It
+ has real disk access, so it loads the GhostList off the wormhole and quiesces at a
+  DIFFERENT depth than a live runner — its fixtures match *itself* but go all-red on
+   the real runner (the GhostList footprint + boot-progress diverge). A green there is
+    a bubble, not a gate; recorded fixtures must come from the live runner too.
