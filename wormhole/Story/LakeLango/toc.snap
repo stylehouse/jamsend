@@ -1,0 +1,18 @@
+story:LakeLango
+  Styles
+  Plan
+    Prep
+      i_elvisto:Lies,e:Lies_lango_selftest
+  Opt
+    For
+      w:Lies
+        dontSnapGhostList
+    quiesce_snap_time=0.4
+  TimeSpool
+    TimeTotal:beliefs,avg=0.118
+      sample=0.144,at=1782719436
+      sample=0.092,at=1782720118
+    TimeTotal:step,avg=0.118
+      sample=0.144,at=1782719436
+      sample=0.092,at=1782720118
+  step,dige:b288ed1b3ef7a719

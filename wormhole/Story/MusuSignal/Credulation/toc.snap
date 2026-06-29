@@ -1,9 +1,17 @@
 Credulation,of_Book:MusuSignal
-  run=0,at=1782714596.276,ok,ok_pct,mode:check
+  run=0,at=1782722069.144,ok=0,ok_pct=0.2,mode:check
     uses:Ghost_N_Peeroleum,dige:1bb4df8687a8d30b
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:a9bf42ff80d08a94
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
-    uses:Ghost_Story_Peregrination,dige:92cd131866b408e5
-    uses:Ghost_M_Radiola,dige:03dc3be514cf3dd2
-    uses:Ghost_Story_Musuation,dige:e5643e278f1a1dbc
+    uses:Ghost_Story_Peregrination,dige:b33cab6322ef6320
+    uses:Ghost_M_Radiola,dige:74cf06ee9a34e2cb
+    uses:Ghost_Story_Musuation,dige:d49f8817fdbd884d
+  run,at=1782722080.627,ok=0,ok_pct=0.2,mode:check
+    uses:Ghost_N_Peeroleum,dige:1bb4df8687a8d30b
+    uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
+    uses:Ghost_N_Tribunal,dige:a9bf42ff80d08a94
+    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
+    uses:Ghost_Story_Peregrination,dige:b33cab6322ef6320
+    uses:Ghost_M_Radiola,dige:74cf06ee9a34e2cb
+    uses:Ghost_Story_Musuation,dige:d49f8817fdbd884d

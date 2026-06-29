@@ -127,7 +127,7 @@ and any regression bisects to a single phase. A `LakeKeep`-style Book is the gat
   what)` minting the `/%Lango` **source terminal** onto the causing Waft's carrier (`i_elvis_req`
   shape, off-snap), with the **yoink / out-compete** lifecycle (later-Lango-wins within an
   Interest; the cross-Interest race deferred to `req:Langoer`). Today's click-push
-  (`e_Lang_workon_update` — `Keeping_spec.md` D3) becomes one caller of it, the input term.
+  (`e:Lang_lango` — `Keeping_spec.md` D3) becomes one caller of it, the input term.
   Gate with its own Book. *(b)* **The parity driver — owner-supervised** — stand `req:Keeping`
   up deriving focus + convergence from the kind-table (P1) and resolver (P2), `desire`/`acquire`/
   `timemachine`/`workon` left present but **inert-checked**: assert Keeping reaches the *same*
@@ -280,6 +280,21 @@ source needs it. *(Name `Waftica` still soft.)*
 > OOMs here (verify on host) and they're `:9091`-unverified — want a green Credence run. Chunk 2
 > touches the `Editron` verdict wire, so that run is the gate. User confirms Storying|StoryTimes
 > works fine today (the baseline to preserve).
+>
+> **Channel BUILT (2026-06-29) — step (a), the decided half, kept minimal.** `H.lango(w, source,
+> what)` in `LiesFunk.svelte` (beside `Lies_ensure_waftica`): mints a `%Lango,<kind>` (with `what.to`
+> the target locator) onto the source Waft's `req:Waftica` carrier (the **source terminal**),
+> out-competing any same-kind prior (newest-wins). **Reads no focus** — the carrier walk steps over a
+> `%Lango` (no `funk.c.run`), so it's pure additive scaffold until `req:Langoer` reads it. Gated by
+> **`Story:LakeLango`** (`Run_A_LakeLango` + `e_Lies_lango_selftest` in `test/Machinery.svelte`,
+> recorded `node scripts/Story_cli_run.mjs LakeLango --accept`): GREEN 1/1, three markers under
+> `LangoGate` (mint · same-kind out-compete · different-kind coexist), the terminal end-state in
+> `001.snap` the gate. Svelte-compile clean (the green run proves it). **Deliberately NOT built — no
+> consumer yet, and most `%Lango` is fire-and-forget:** the `/landing,req` ack + its `lango_land`
+> reqyoncile (the *rare* ack), and `lango_yoink` (a source cancel — likely a close-button on an
+> Interest). **Also pending:** the click-push (`e:Lang_lango`, renamed 2026-06-29) becoming a
+> `H.lango` *caller* — minting a real `%Lango` instead of just seeding `workon.c.src` (first
+> hot-path touch), and step (b) the parity driver (owner-supervised).
 
 **What `waft_roster` keeps vs sheds** *(rideable #6 made concrete)*. The wire stays; the
 reducer hollows out. `interest_reconcile` lives at `Interest.svelte:111`, mixed in via

@@ -19,6 +19,7 @@ Waft:Credence
       Funkcion:Storying,of_Book:MusuCrowd
     What:realaudio
       Funkcion:Storying,of_Book:MusuSignal
+      Funkcion:Storying,of_Book:MusuGlide
   What:Lake
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:LakeSurfer
@@ -29,6 +30,7 @@ Waft:Credence
     Funkcion:Storying,of_Book:LakeLocate
     Funkcion:Storying,of_Book:LakeFunk
     Funkcion:Storying,of_Book:LakeKeep
+    Funkcion:Storying,of_Book:LakeLango
   What:Leaf
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:LeafFarm

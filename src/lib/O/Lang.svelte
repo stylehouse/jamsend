@@ -68,7 +68,7 @@
     //   w/{req:'workon'}  — open-ended, one per Lang instance.  do_fn req_workon is the thin
     //     per-tick driver: roai's each stage with its input signature (un-finishing a
     //      %permanent stage on drift), then pumps the pipeline; invalidation cascades forward.
-    //     c.src  latest cursored TheC (stashed by e_Lang_workon_update)
+    //     c.src  latest cursored TheC (stashed by e:Lang_lango, the cursor Lango)
     //     /{req:'understanding',maz:3}  re-arm LE + flush; sets %Interest.  c.armed_src =
     //        identity-keyed re-arm gate (memoised); sc.what = cursored What|path label.
     //     /{req:'ingredients',maz:2}    the wanted %Goods, from %Interest
@@ -112,7 +112,7 @@
     //     a per-bookmark subcontainer under model/**.
     //
     // ── State flows (takes / makes; ← source; "below" = full inline doc at the handler) ──
-    //   e:Lang_workon_update ← Lies_i_Spotlight (each cursor move): e%src → workon.c.src; think
+    //   e:Lang_lango ← Lies_i_Spotlight (each cursor move = a %Lango/%Cursor): e%src → workon.c.src; think
     //   req_workon (per-tick driver): src, %LE ver+U_serial, dock+dige → per-stage sig; roai's
     //     it (un-finishes %permanent on drift); pumps the 3-stage pipeline
     //   req:understanding (the %Waft|%LE boundary): src,%LE,origin_dirty → %Interest (clone root,

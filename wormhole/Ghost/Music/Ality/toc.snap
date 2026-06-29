@@ -6,6 +6,9 @@ Waft:Ghost/Music/Ality,active
     Funkcion:Storying,of_Book:MusuLive
     Funkcion:Storying,of_Book:MusuWear
     Funkcion:Storying,of_Book:MusuSkip
+    Funkcion:Storying,of_Book:MusuCrowd
+    Funkcion:Storying,of_Book:MusuSignal
+    Funkcion:Storying,of_Book:MusuGlide
   What:the machine
     What:1 the spool
       Doc:Ghost/M/Radiola.g
@@ -31,10 +34,35 @@ Waft:Ghost/Music/Ality,active
     What:6 skip-track
       Doc:Ghost/M/Radiola.g
       Point,method:Radiola_skip
+  What:the real audio — REAL muted Web Audio now drives MusuSignal (was cursor-sim)
+    What:the reused voice (SoundSystem + Audiolet)
+      Doc:src/lib/p2p/ftp/Audio.svelte.ts
+      Point,text:class Audiolet
+      Point,text:setupAudiolet
+      Point,text:getFloatTimeDomainData
+      Point,text:pcm_buffer
+      Point,text:unmute
+    What:the reality region (synth + measure + device + stream)
+      Doc:Ghost/Story/Musuation.g
+      Point,method:Musu_gat
+      Point,method:Musu_real_stream
+      Point,method:Musu_synth
+      Point,method:Musu_measure
+      Point,method:Musu_silence
+    What:Glide — live-edge rate slew + hysteresis (re-models Radios 0.8x)
+      Doc:Ghost/M/Radiola.g
+      Point,method:Glide_decide
+      Doc:src/lib/p2p/ftp/Audio.svelte.ts
+      Point,text:playbackRate
+      Point,text:linearRampToValueAtTime
+      Doc:Ghost/Story/Musuation.g
+      Point,method:MusuGlide_drive
+      Point,method:MusuGlide_witness
   What:the tests
     What:MusuStaple (the spool)
       Doc:Ghost/Story/Musuation.g
-      Point,method:Run_A_MusuStaple
+      Point,method:MusuStaple
+      Point,method:Musu_sides_up
       Point,method:Musu_drive
       Point,method:Musu_witness
     What:MusuStream (the handoff)
@@ -57,6 +85,20 @@ Waft:Ghost/Music/Ality,active
       Doc:Ghost/Story/Musuation.g
       Point,method:MusuSkip_drive
       Point,method:MusuSkip_witness
+    What:MusuCrowd (multi-client fan-out)
+      Doc:Ghost/Story/Musuation.g
+      Point,method:MusuCrowd_drive
+      Point,method:MusuCrowd_witness
+    What:MusuSignal (real-audio starvation — the listener's naff time)
+      Doc:Ghost/Story/Musuation.g
+      Point,method:MusuSignal_drive
+      Point,method:MusuSignal_run
+      Point,method:MusuSignal_witness
+    What:MusuGlide (live-edge rate control — backs off then recovers)
+      Doc:Ghost/Story/Musuation.g
+      Point,method:MusuGlide_drive
+      Point,method:MusuGlide_run
+      Point,method:MusuGlide_witness
   What:the source it reimagines
     Doc:src/lib/ghost/Radios.svelte
     Point,method:listening

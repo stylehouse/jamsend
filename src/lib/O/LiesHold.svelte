@@ -40,20 +40,20 @@ let { M } = $props()
 onMount(async () => {
 await M.eatfunc({
 
-//#region entry — the cursor seam
-    // ── e:Lang_workon_update ────────────────────────────────────────────
+//#region entry — the cursor Lango lands
+    // ── e:Lang_lango ────────────────────────────────────────────────────
     //
-    //   Fired by Lies_i_Spotlight on every cursor move.  Stashes the new src
-    //   on workon.c.src and pokes a think — the workon driver converges from there.
-    //   All checkout | furnish | graft | encode logic lives in the workon stages.
+    //   The Lang-side receiver of a %Lango/%Cursor (Backbone_plan P3 "The Lango
+    //    channel"): Lies_i_Spotlight mints the move-the-show intent and feebly
+    //     fires it here on every cursor move.  Stashes the new src on workon.c.src
+    //      and pokes a think — req:workon (the Langoer convergence hat) settles
+    //       from there.  All checkout | furnish | graft | encode lives in its stages.
     //
-    //   < design direction: replace with e:operate{LE,op:'pull',src} so cursor
-    //     moves and LE resync share one event.  A pull on an already-armed src
-    //     is a cheap noop in req:understanding (armed_src identity check), so the
-    //     extra specificity of this dedicated handler buys little.
+    //   < only the Cursor kind routes here today; a Lens | mode Lango wanting a
+    //     different convergence would land on its own e:Lang_lango_* twin.
     //
     //   e.sc: { src: TheC }
-    async e_Lang_workon_update(A: TheC, w: TheC, e: TheC) {
+    async e_Lang_lango(A: TheC, w: TheC, e: TheC) {
         const H      = this as House
         const src    = e.sc.src as TheC | undefined
         if (!src) return

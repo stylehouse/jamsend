@@ -914,8 +914,9 @@ The next frontier is NOT another one-off braid — it is the **PENCILED WORRY** 
    a coordinator that asks for a docker/libvirt restart when a crash-quorum of tabs dies, and an Id hop-over. The
     OPERATIONS half (the `?I=` fork param, the `Lies%runner` UI, the restart/resume service the inner sockets to —
      lifted from `ty/`: `virtreset.py` + the puppeteer `watchdog.js` + KVM snapshot-revert so File System Access
-      handles survive) lives in **`spec/ClusterTrust_handover.md` → "The runner fleet"**. The SPINE half — what
-       Peeroleum must invent — is small and mostly ONE primitive:
+      handles survive — now succeeded by *dockerised Chrome* for real-isolation sims) lives in
+       **`spec/Cluster_spec.md`** (the cluster spec: trust substrate + runner flock + the testbed + the build order
+        to remote `%Rungo`). The SPINE half — what Peeroleum must invent — is small and mostly ONE primitive:
 - **`?I=` identity selection** wired into the spine beside the role param. Today role is `?E=`/`?B=` (`Lies_role`)
    and the cluster Idento rides `House.stashed`. Add `?I=<tag>` to select WHICH forked Idento *this tab* uses, minted/
     loaded from `stashed` keyed by the tag — so one browser profile can host many separable runner tabs (open a flock

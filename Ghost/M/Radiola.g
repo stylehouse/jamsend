@@ -266,3 +266,29 @@ Radiola_skip(term):
     }
     term.bump()
 //#endregion
+
+//#region glide — graceful live-edge rate control (code + data, NOT a req pile)
+// Radios.svelte's ONLY adaptive trick (Radios.svelte:344) HARD-sets playbackRate=0.8 within 3.141s of the
+//  live edge and NEVER recovers — a permanent pitch drop, no ramp, no hysteresis (it even computes a delta
+//   it never uses).  Glide is that idea done right, and it is exactly the kind of abstract modelling that
+//    wants to stay plain code+data: a PURE decision (no state of its own, no %req, no sweep) mapping how
+//     much audio is left ahead of the playhead — `frontier`, in seconds — to a playback rate.  The caller
+//      owns the trajectory (min/final rate, flips); Glide is just the curve.  Reused by the Musu tests now
+//       and by req_progress in prod later — the player CONSULTS it, never piles reqs under it.
+// Glide_decide(frontier, cur, ended) -> rate in [FLOOR, 1].  `cur` is the current rate, passed in as the
+//  only "state" so the hysteresis band can hold.  Quick to back off (min toward FLOOR — safety), gradual
+//   to recover (climb by STEP once there's slack — smoothness).  Schmitt band [LOW, HIGH] kills chatter:
+//    engage below LOW, release above HIGH, hold between.  ended -> nothing to back away from -> full speed.
+Glide_decide(frontier, cur, ended):
+    let LOW = 0.12
+    let HIGH = 0.30
+    let FLOOR = 0.80
+    let STEP = 0.05
+    if (ended) return 1
+    if (frontier < LOW) {
+        let want = FLOOR + (1 - FLOOR) * Math.max(0, frontier) / LOW
+        return Math.min(cur, want)
+    }
+    if (frontier > HIGH) return Math.min(1, cur + STEP)
+    return cur
+//#endregion

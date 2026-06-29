@@ -82,7 +82,7 @@ The "what's focused and live" job is spread across four reqs with no shared owne
 | `req:desire` | `w` | the snap-visible **Waft lock** (thinned to a wrapper) + seeds the playback engine | per-tick wrapper |
 | `req:acquire` | `desire` (maz:9) | the **one-shot boot gate** — holds until a Waft is present, then locks focus + seeds, `desire.finish(acquire)` | one-shot |
 | `req:timemachine` | `%examining` | per-tick **cursor-land** on focus (`Lies_desire_land_cursor`, keeps lock honest) **AND** **playback** (play/pause/step/auto-advance → `%want,kind:step`) | per-tick |
-| `req:workon` | `w` | the **dock-convergence pipeline**: understanding → ingredients → instrumentation, keyed on `workon.c.src` (Lang-seeded via `e_Lang_workon_update`) | per-tick, sig-gated stages |
+| `req:workon` | `w` | the **dock-convergence pipeline**: understanding → ingredients → instrumentation, keyed on `workon.c.src` (Lang-seeded via `e:Lang_lango`, the cursor Lango) | per-tick, sig-gated stages |
 
 The selector `Lies_focus_waft(w)` (`.sc.active` → cursor's-waft → first non-`%boring`)
 is already the single truth for *which* Waft — both the acquire seed and the
@@ -133,7 +133,7 @@ exactly as `Lies_focus_waft` does now.
 
 ### Step 4's `src` — one design choice inside the choice
 
-`workon.c.src` is **Lang-seeded** today (`e_Lang_workon_update`). Once Keeping
+`workon.c.src` is **Lang-seeded** today (`e:Lang_lango`). Once Keeping
 resolves focus itself, it *could* derive `src` from the focus Waft's cursor
 (`examining/Spotlight.src`) and stop depending on Lang's push — they should already
 be the same particle (the active dock = the cursored dock). **Recommend: keep
@@ -164,8 +164,8 @@ wrong Waft. The `.sc.active` want-land covers *moves*, not *cold starts*. Keep s
 Keeping and Interest meet at every step; here it is in detail.
 
 - **The `%Lango` edge (inward → resolver).** A UI:Waft click is a cursor move: Lies
-  fires the push-what's-focused event — call it **`%Lango`** (today
-  `e_Lang_workon_update`) — a bare "look at this, move the show here" naming NO specific
+  fires the push-what's-focused event — the cursor **`%Lango`** (now named
+  `e:Lang_lango`) — a bare "look at this, move the show here" naming NO specific
   Interest. Keeping *resolves* one for it: focus (step 2) → converge (step 4), where the
   understanding stage's `Lang_set_interest` brings the foreground Interest + its LE into
   being. So `%Lango` is the inward signal; `%Interest`/`ActiveInterest` are the outward
@@ -319,8 +319,8 @@ alongside, not after. (timemachine's hidden complexity is the argument *for* thi
 - **D2 — scope:** all at once — spine + kind-table (#1) + minimise (#3).
 - **D3 — the `%Lango` push (was step-4 `src`):** KEEP Lang's push. It's the bare
   "look-at-this, move the show here" signal — mostly fired from Lies on a UI:Waft click —
-  naming no Interest; Keeping resolves one. **Introduce the term `%Lango`** for this
-  push-what's-focused event (today `e_Lang_workon_update`), gently.
+  naming no Interest; Keeping resolves one. **The term `%Lango` is now in code** — this
+  push-what's-focused event is `e:Lang_lango` (2026-06-29).
 - **D4 — doc home:** standalone `Keeping_spec.md`; borders `Cluster_design.md`.
 - **D5 — name:** `req:Keeping` confirmed.
 - **D6 — kind-table home:** on the **Waft**, realized as `{capability flags + an

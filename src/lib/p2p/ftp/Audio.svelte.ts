@@ -131,15 +131,30 @@ export class Audiolet {
         return b
     }
     // lay one decoded buffer on the timeline to start at AC-time `when`, onto the tapped gainNode;
-    //  returns the time it ends.  Schedule the next at this end and the stream is seamless; schedule
-    //   it LATE (delivery fell behind playback, when > the prior end) and a REAL silent gap opens that
-    //    the analyser reads — the underrun, produced by the audio clock, not by cursor arithmetic.
-    schedule(decoded: AudioBuffer, when: number): number {
+    //  returns the time it ENDS (in AC-seconds).  Schedule the next at this end and the stream is
+    //   seamless; schedule it LATE (delivery fell behind, when > the prior end) and a REAL silent gap
+    //    opens that the analyser reads — the underrun, produced by the audio clock not cursor arithmetic.
+    //  `rate` plays the buffer slower/faster (and lower/higher — playbackRate shifts pitch, same as
+    //   Radios.svelte:344): at rate<1 the chunk lasts `duration/rate`, so the returned end is later —
+    //    the playhead advances slower, backing away from the live edge.  Glide_decide picks the rate.
+    schedule(decoded: AudioBuffer, when: number, rate = 1): number {
         let src = this.gat.AC!.createBufferSource()
         src.buffer = decoded
+        src.playbackRate.value = rate
         src.connect(this.gainNode)
         src.start(when)
-        return when + decoded.duration
+        return when + decoded.duration / rate
+    }
+    // smooth gain ramp toward `to` over `secs` on gainNode — the TAPPED, pre-mute stage, so a fade IS
+    //  measurable by the analyser (unlike mute(), which zeroes the downstream gainNode2 on purpose).
+    //   linearRamp needs an anchor, so pin the current value at `now` first.  The building block for
+    //    fade-to-silence on a long gap and fade-back-in on recovery (the gap-fill ladder, next slice).
+    fade(to: number, secs: number) {
+        let g = this.gainNode.gain
+        let t = this.gat.AC!.currentTime
+        g.cancelScheduledValues(t)
+        g.setValueAtTime(g.value, t)
+        g.linearRampToValueAtTime(to, t + secs)
     }
     // < use this
     close() {

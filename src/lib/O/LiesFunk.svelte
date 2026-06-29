@@ -188,6 +188,31 @@ await M.eatfunc({
         })
         return wf
     },
+
+    // ── lango — the universal attention-event setter (Backbone_plan P3 "The Lango channel") ──
+    //   A %Lango = an intent to do something with a piece of the source, tracked over time.
+    //    lango mints it onto the SOURCE Waft's one carrier (req:Waftica) — the source terminal,
+    //     i_elvis_req-shaped: where i_elvis_req hangs a req the reply rides back on, this hangs
+    //      the %Lango itself.  what.kind sub-types it (Cursor = "move the show here" | Lens | mode);
+    //       what.to = the target locator (P2 Lies_resolve_locator-resolvable), the doc's `target`.
+    //   OUT-COMPETE: a new Lango of the same kind on this terminal drops the prior — newest-wins
+    //    (the same-Interest supersede); the cross-Interest race is the receiver's (req:Langoer).
+    //   READ BY NOTHING until req:Keeping's receiver hat lands — additive, never touches focus.
+    //    The carrier's per-tick walk steps over a %Lango (no funk.c.run), so it sits inert.
+    //   The /landing,req ack (the remote's reqyoncile-back) + yoink (a source cancel — likely a
+    //    close-button on an Interest) are DESIGNED but unbuilt (Backbone_plan P3): wait until a
+    //     consumer needs them, don't scaffold ahead.
+    async lango(w: TheC, source: TheC, what: { kind: string, to?: string }): Promise<TheC> {
+        const H = this as House
+        const carrier = await H.Lies_ensure_waftica(w, source)
+        for (const prior of carrier.o({ Lango: what.kind }) as TheC[]) carrier.drop(prior)   // out-compete
+        const lango = carrier.i({ Lango: what.kind })
+        if (what.to) lango.sc.to = what.to
+        lango.c.source = source                                  // origin backlink, off-snap
+        carrier.bump_version()
+        return lango
+    },
+
     async Lies_pump_funkcions(w: TheC) {
         const funks = w.o({ Funkcions: 1 })[0] as TheC | undefined
         if (funks) await funks.do()
@@ -472,7 +497,7 @@ await M.eatfunc({
     //
     //   < KNOWN RACE / deferred: firing synchronously here races a cold dock
     //     open — the cursor move that engages the What also kicks the dock open
-    //     (Lang_workon_update → Dock_open), which settles over later req:Store
+    //     (e:Lang_lango → Dock_open), which settles over later req:Store
     //     ticks, so a limb that reads the active doc (surprise_read) can fire
     //     before the %Good has content and silently no-op with no retry.  The
     //     proper home is the tick pump at a run-level: the Funkcion pump runs in

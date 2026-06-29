@@ -10,7 +10,7 @@ import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Musuation(): string { return '3e14310012fb0f0d' },
+    Ghostmeta_Ghost_Story_Musuation(): string { return 'd49f8817fdbd884d' },
 
 // Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Music_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
@@ -138,10 +138,13 @@ async Musu_gat() { const H = this;
 //    is seamless; deliver slower and `now` overtakes the end — a REAL silent gap, the underrun, opened by
 //     the audio clock (no cursor anywhere).  An analyser tapped PRE-mute is sampled every ~20ms, so the
 //      measurement reads the true output (gaps and all) whether or not it is audible.  kind 'silence'
-//       feeds zero buffers — the negative control down the SAME pipe.  Returns the coarse signal readout.
-async Musu_real_stream(gat, kind, total, deliver_ms, mute) {
+//       feeds zero buffers — the negative control down the SAME pipe.  `glide` ON consults Glide_decide
+//        each tick (frontier = audio left ahead of the playhead) and plays the next chunk at that rate —
+//         backing smoothly away from the live edge instead of slamming into silence.  Returns the coarse
+//          signal readout PLUS the rate trajectory (min_rate / final_rate / flips) the controller drew.
+async Musu_real_stream(gat, kind, total, deliver_ms, mute, glide) {
     let AC = gat.AC
-    if (!AC) return { bits: 0, rms: 0, gaps: 0, played: 0, of: total, underran: 0 }
+    if (!AC) return { bits: 0, rms: 0, gaps: 0, played: 0, of: total, underran: 0, min_rate: 1, final_rate: 1, flips: 0 }
     let aud = gat.new_audiolet()
     let analyser = aud.tap()
     if (mute) aud.mute()
@@ -150,15 +153,23 @@ async Musu_real_stream(gat, kind, total, deliver_ms, mute) {
     let end = AC.currentTime
     let scheduled = 0
     let underran = 0
+    // the Glide trajectory — plain data the CALLER owns (the policy in Radiola.g is stateless): `rate` is
+    //  the live playback rate, min_rate/final_rate/flips are what the controller drew over the run.
+    let rate = 1
+    let min_rate = 1
+    let final_rate = 1
+    let flips = 0
+    let last_dir = 0
     // deliver+schedule one chunk: a `now` past the timeline end means delivery fell behind playback, so
     //  this chunk starts after a real silent gap — count it (never the first, which always starts at now).
+    //   The chunk plays at the current Glide `rate` (rate<1 stretches it, advancing the playhead slower).
     let place_one = (seq) => {
         let pcm = silent ? this.Musu_silence() : this.Musu_synth(seq)
         let buf = aud.pcm_buffer(pcm, SR)
         let now = AC.currentTime
         let at = Math.max(end, now)
         if (scheduled > 0 && at > end + 0.0005) underran = underran + 1
-        end = aud.schedule(buf, at)
+        end = aud.schedule(buf, at, rate)
         scheduled = scheduled + 1
     }
     let frames = []
@@ -170,6 +181,23 @@ async Musu_real_stream(gat, kind, total, deliver_ms, mute) {
     while (guard < cap) {
         guard = guard + 1
         let now = AC.currentTime
+        // recompute the rate BEFORE delivering, so this tick's chunk lands at the fresh rate.  frontier =
+        //  seconds of scheduled audio still ahead of the playhead; the controller slows as it nears zero.
+        if (glide) {
+            let frontier = end - now
+            let nr = this.Glide_decide(frontier, rate, delivered >= total)
+            if (nr < rate - 1e-9) {
+                if (last_dir >= 0) flips = flips + 1
+                last_dir = -1
+            }
+            if (nr > rate + 1e-9) {
+                if (last_dir <= 0) flips = flips + 1
+                last_dir = 1
+            }
+            rate = nr
+            if (rate < min_rate) min_rate = rate
+            final_rate = rate
+        }
         while (delivered < total && now >= next_deliver) {
             place_one(delivered)
             delivered = delivered + 1
@@ -194,7 +222,7 @@ async Musu_real_stream(gat, kind, total, deliver_ms, mute) {
         o += f.length
     }
     let sig = this.Musu_measure(pcm)
-    return { bits: sig.bits, rms: sig.rms, gaps: sig.gaps, played: scheduled, of: total, underran: underran }
+    return { bits: sig.bits, rms: sig.rms, gaps: sig.gaps, played: scheduled, of: total, underran: underran, min_rate: +min_rate.toFixed(3), final_rate: +final_rate.toFixed(3), flips: flips }
 },
 //#endregion
 
@@ -1175,6 +1203,78 @@ MusuSignal_witness(w) {
     if (zbits < 0.5 && !(w.oa({witnessed: "silent"}))) w.i({witnessed: "silent"})
     // separable: healthy and silence are clearly distinguishable -- the noisy-witness isn't vacuous.
     if (hbits - zbits > 3 && !(w.oa({witnessed: "separable"}))) w.i({witnessed: "separable"})
+},
+//#endregion
+
+//#region glide — REAL-AUDIO family #2: graceful live-edge rate control (the Glide policy)
+// ══ MusuGlide — does backing off the live edge actually help? ═════════════════════════════════════
+//  Same starved delivery (90ms/chunk vs 50ms playback) run TWICE through the real voice: once raw, once
+//   with Glide ON (Radiola.g Glide_decide consulted each tick — slow toward the 0.80 floor as the audio
+//    ahead of the playhead runs out, climb back when there's slack).  The witness is a DIFFERENTIAL: the
+//     glided run must gap LESS than the raw baseline (Glide concealed the shortfall), while the rate it
+//      drew shows it backed off (min<1) and CAME BACK (final=1) — fixing Radios' permanent-0.8 drop —
+//       without chattering (the Schmitt band held).  Browser-only (no AudioContext headless → it skips).
+//        beat 2  BASELINE  starved, NO glide  → the damage: gaps, underruns
+//        beat 3  GLIDED    same starve, glide → fewer gaps; rate dipped to the floor then recovered
+//        beat 4  witness   backs_off / recovers / smooth / fewer_gaps  (degrade Glide → a witness drops)
+MusuGlide(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuGlide_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// MusuGlide_drive — the real device first (skip headless), then per-beat dispatch off the run's step_n
+//  tracked on req.c.did_step (req-local, immune to on_step's H-global — the Pere* lesson).  did_step is
+//   set BEFORE the long audio await, so a re-pump during playback skips the if and never double-runs a beat.
+async MusuGlide_drive(w, req) {
+    let gat = await this.Musu_gat()
+    if (!gat) {
+        if (!w.oa({skipped: 'no_audio'})) w.i({skipped: 'no_audio'})
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuGlide_run(w, gat, 'baseline', false)
+        if (n === 3) await this.MusuGlide_run(w, gat, 'glided', true)
+        if (n === 4) this.MusuGlide_witness(w)
+    }
+    await this.Musu_float(w)
+
+},
+// MusuGlide_run — one starved stream (90ms delivery, 24 chunks) through the real voice, glide on or off,
+//  leaving the coarse %glidesig,kind readout: gaps/underran + the rate trajectory (min/final/flips).
+async MusuGlide_run(w, gat, kind, glide) { const H = this;
+    let mute = !!H.c.musu_muted
+    let out = await this.Musu_real_stream(gat, kind, 24, 90, mute, glide)
+    w.i({glidesig: 1, kind: kind, gaps: out.gaps, underran: out.underran, min_rate: out.min_rate, final_rate: out.final_rate, flips: out.flips, bits: out.bits})
+
+},
+// MusuGlide_witness — idempotent stamps the rate controller EARNS.  Reads the baseline vs glided readouts;
+//  the headline (fewer_gaps) is analyser-backed + differential, the rest read the trajectory the policy drew.
+MusuGlide_witness(w) {
+    let base = w.o({glidesig: 1, kind: 'baseline'})[0]
+    let glid = w.o({glidesig: 1, kind: 'glided'})[0]
+    if (!base || !glid) return
+    let bgaps = +(base.sc.gaps ?? 0)
+    let ggaps = +(glid.sc.gaps ?? 999)
+    let gmin = +(glid.sc.min_rate ?? 1)
+    let gfinal = +(glid.sc.final_rate ?? 0)
+    let gflips = +(glid.sc.flips ?? 99)
+    let gbits = +(glid.sc.bits ?? 0)
+    // backs_off: under live-edge pressure the controller slowed below full speed toward the 0.80 floor --
+    //  it engaged instead of riding the edge into silence.  >=0.78 proves it stayed clamped, didn't run away.
+    if (gmin < 0.99 && gmin >= 0.78 && !(w.oa({witnessed: "backs_off"}))) w.i({witnessed: "backs_off"})
+    // recovers: it returned to full speed by the end -- NOT Radios' permanent 0.8 pitch-drop.  The whole
+    //  point of the re-model: back off, then come back.
+    if (gfinal >= 0.99 && !(w.oa({witnessed: "recovers"}))) w.i({witnessed: "recovers"})
+    // smooth: the Schmitt band held -- a handful of direction changes, not one per tick.  Hysteresis works.
+    if (gflips >= 1 && gflips <= 4 && !(w.oa({witnessed: "smooth"}))) w.i({witnessed: "smooth"})
+    // fewer_gaps: THE payoff -- analyser-backed + differential.  Fed at the SAME starved rate, the glided
+    //  stream gapped meaningfully LESS than the no-glide baseline: backing off the edge concealed the
+    //   shortfall.  Tied to glided audio being real (gbits>=4) so a dead graph can't pass by reading zero.
+    if (bgaps - ggaps >= 2 && bgaps > 0 && gbits >= 4 && !(w.oa({witnessed: "fewer_gaps"}))) w.i({witnessed: "fewer_gaps"})
 },
 //#endregion
 

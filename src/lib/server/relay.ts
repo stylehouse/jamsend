@@ -335,7 +335,7 @@ export function attachRelay(
 	//  frame: the editor settles optimistically (a localhost Node write is ~1ms and reliable);
 	//   a rejection or fs error is surfaced via relayLog, which already echoes to the browser
 	//    console.  Validates the browser-supplied path to gen/**.go under GEN_ROOT, no traversal.
-	//  AUTHENTICATION (cluster trust, ClusterTrust_handover.md): gen_write writes code Vite then
+	//  AUTHENTICATION (cluster trust, Cluster_spec.md §2): gen_write writes code Vite then
 	//   runs, so it is the relay's one RCE surface.  When the cluster flock is configured
 	//    (CLUSTER_TRUSTED_PUBS present) we ENFORCE: the frame must carry a `sign` over its header
 	//     ({control,path,from,body_hash}) by a trusted key, and body_hash must be sha256(body) —
@@ -348,7 +348,7 @@ export function attachRelay(
 		const body = typeof msg.body === 'string' ? msg.body : ''
 		// Every reject REPLIES to the sender (control:gen_write_error) as well as logging, so a
 		//  rejected compile surfaces as a real error in the editor — not a silent drop the editor's
-		//   optimistic settle never learns about (ClusterTrust_handover: "I WANT ERRORS").
+		//   optimistic settle never learns about (Cluster_spec §2: "I WANT ERRORS").
 		const reject = (reason: string) => {
 			relayLog(`✗ gen_write REJECTED ${rel || '(no path)'} — ${reason}`)
 			try { ws.send(JSON.stringify({ control: 'gen_write_error', path: rel, reason })) } catch {}

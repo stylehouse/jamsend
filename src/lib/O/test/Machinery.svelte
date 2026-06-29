@@ -289,6 +289,46 @@
         gate.bump_version(); w.bump_version()
     },
 //#endregion
+//#region LakeLango
+    // P3 channel gate — the %Lango source terminal (Backbone_plan P3 "The Lango channel").  In-system
+    //  Story, NOT a scratch spec: a Prep fires e_Lies_lango_selftest, which mints %Langos onto a Waft's
+    //   req:Waftica carrier via H.lango and proves the minimal channel — mint, same-kind out-compete,
+    //    different-kind coexist.  (The /landing ack + yoink are designed-not-built — no consumer yet;
+    //     most %Lango is fire-and-forget anyway.)  Reads no focus (req:Langoer isn't built); markers
+    //      under LangoGate, the snap-fixture diff is the gate.
+
+    Run_A_LakeLango(this: House) {
+        const H = this
+        H.i({ A: 'Lies'       }).i({ w: 'Lies' })
+        H.i({ A: 'Lang'       }).i({ w: 'Lang' })
+        H.i({ A: 'Pantheate'  }).i({ w: 'Pantheate' })
+        console.log(`🟦 ${H.name} LakeLango wired`)
+    },
+
+    async e_Lies_lango_selftest(this: House, _A: TheC, w: TheC, _e: TheC) {
+        const H = this
+        const gate = w.oai({ LangoGate: 1 })
+        const gl = w.o({ Waft: 'GhostList' })[0] as TheC | undefined
+        if (gl) gl.sc.dontSnap = 1                                  // fold the volatile GhostList list
+        // a source Waft (equip → backstage, folds from the snap); its carrier hosts the Langos.
+        const src = w.oai({ Waft: 'LangoW' }, { equip: 'Lango' })
+        const carrier_of = () => (w.o({ Funkcions: 1 })[0]?.o({ req: 'Waftica', waft: 'LangoW' }) ?? [])[0] as TheC | undefined
+        // (1) mint — H.lango puts ONE %Lango,Cursor on the source's carrier, carrying its target.
+        await H.lango(w, src, { kind: 'Cursor', to: 'Waft:LangoW/What:x' })
+        const cur1 = carrier_of()?.o({ Lango: 'Cursor' }) as TheC[] | undefined
+        if (cur1?.length === 1 && cur1[0].sc.to === 'Waft:LangoW/What:x') gate.i({ lango_mints_on_carrier: 1 })
+        // (2) out-compete — a newer Cursor Lango supersedes: still ONE, target updated (newest-wins).
+        await H.lango(w, src, { kind: 'Cursor', to: 'Waft:LangoW/What:y' })
+        const cur2 = carrier_of()?.o({ Lango: 'Cursor' }) as TheC[] | undefined
+        if (cur2?.length === 1 && cur2[0].sc.to === 'Waft:LangoW/What:y') gate.i({ same_kind_out_competes: 1 })
+        // (3) a different kind coexists — a %Lango,Lens sits beside the Cursor (a level-set sub-type).
+        await H.lango(w, src, { kind: 'Lens', to: 'Runner' })
+        const c3 = carrier_of()
+        if ((c3?.o({ Lango: 'Cursor' }) as TheC[]).length === 1 && (c3?.o({ Lango: 'Lens' }) as TheC[]).length === 1)
+            gate.i({ different_kind_coexists: 1 })
+        gate.bump_version(); w.bump_version()
+    },
+//#endregion
 
 
 

@@ -8,233 +8,319 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Tyrant(): string { return 'ed4fd88c7e2b904a' },
+    Ghostmeta_Ghost_N_Tyrant(): string { return '74cf06ee9a34e2cb' },
 
-// Tyrant — the cabinetry over the Peeroleum floor: identity & trust → admission.
-//  A clean-room rebirth of legacy Tyranny, in stho, riding the Peeroleum transport
-//   (the "linoleum floor") — it never touches a carrier, it emits through
-//    &Peeroleum_send and plugs a hear_<verb> handler into the inbox dispatch via the
-//     Peeroleum_on consumer seam, exactly like hello/trust. Design: Covenant_design.md.
+//#region radiola
+// Radiola — the music-piracy spine, reborn on Housing+req (spec: src/lib/O/spec/Music_todo.md).
+//  Slice 1 lifts ONE instance out of src/lib/ghost/Radios.svelte: the ACK-backpressure spool
+//   (its STAY_AHEAD_OF_ACK_SEQ caster loop) into a pure particle simulation — no audio, no
+//    WebRTC, just the cursor arithmetic the old eatfunc machine tangled with codecs and the wire.
+//   The spine defines the reusable mechanism; the scenario (who is cast at whom, how acks move)
+//    lives in the Book, Ghost/Story/Musuation.g — exactly as Peeroleum.g/Peregrination.g split.
 //
-//   M1 — trust over GIVEN identities (Alice+Bob magically provisioned: %Ud pre-stamped,
-//         no meeting). A bidirectional vouch exchange that settles on acks and yields an
-//          explicit %trust,grants on each Pier — the thing admission reads.
-//   M2 — policy-gated admission. A %req:join on a side's w whose `finished` is the AND of
-//         its policy leaves (proven ∧ trusted), maz-ordered; the admit leaf (lowest maz)
-//          runs only once both pass and stamps w/%member,signed — "on the network".
-//
-//   Meet + prove (earning %Ud rather than being given it) is the deeper M2, deferred —
-//    here %Ud is given, so the policy `proven` leaf reads the given %Ud. Inner steps:
-//     step 2  given sides + run %req:trust          ⇒ %witnessed:step_2 (both %trust,grants)
-//     step 3  arm %req:join + drive the policy gate ⇒ %witnessed:step_3 (both w/%member,signed)
+//  The convention a Caster follows (the Book stands these up):
+//   %Caster  .sc.total = how many %Chunk the source holds | .sc.next = next seq to spool |
+//             .sc.live = spool armed | .sc.preview = how many leading seq are the free preview
+//              (absent = the whole stock is free, slice-1 behaviour) | .c.term = the %Terminal it
+//               feeds | .c.up = w
+//   %Terminal .sc.ack = highest seq the listener has played (absent = none yet) |
+//             .sc.want = the listener has asked for the paid continuation (%want:stream, slice 2) |
+//              %inbox = where delivered %Chunk land (each %Chunk carries .sc.kind preview|stream
+//               once a preview is set) | .c.caster = the %Caster feeding it
 
-// Run_A_PereTyrant — the Book's Run recipe (Story_subHouse calls it to wire the Run),
-//  mirroring Run_A_PereStaple. Lay the single test actor + its w; the role is already
-//   'runner' (Auto/boot) — this just guards it. (Book/test name = PereTyrant, the Pere*
-//    family alongside PereStaple; the Tyrant_* helpers below keep the Tyrant name — that
-//     is the subsystem, exactly as PereStaple's wrangler drives Lake_* helpers.)
-Run_A_PereTyrant() {
-    this.c.role ??= 'runner'
-    this._i_drill(this, [{sc: {A: "PereTyrant"}}, {sc: {w: "PereTyrant"}}])
+// Radiola_window — how far the caster may run ahead of the terminal's ack: Radios.svelte's
+//  STAY_AHEAD_OF_ACK_SEQ. One knob, read off the world so a Book can shrink it for a tight snap.
+Radiola_window(w) {
+    return +(w.sc.window ?? 7)
 
 },
-// Per beat: install the eternal %req:wrangle whose do_fn drives the inner steps. Like
-//  PereStaple, we do NOT use H.on_step (it keys off one H-global did_on_step_n that a
-//   step-1 table claims when setup spills into step 2); Tyrant_drive keeps a req-local
-//    did_step instead.
-PereTyrant(A,w) {
-    w.i({see: 'y Tyrant — yyyyar!'})
-    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
-        await this.Tyrant_drive(w,req)
-        req.sc.ok = 1
+// req_Caster — the per-Caster pump, the cascade entry (twin of Peeroleum's req_Peering). The Book
+//  mints %Caster,name,req (oai + c.up=w stamped); the MAINKEY Caster names this handler and the serial
+//   req: plugs the Caster into the w-level sweep — so the ambient pump reaches each Caster with no Book
+//    hand-crank.  Job: pump this Caster's %req:cast (the spool, below), then stay a live member.
+async req_Caster(caster) {
+    await caster.do()
+    caster.sc.ok = 1
 
-    })
 },
-// Tyrant_drive — the wrangle's step dispatch. Fire a step's setup once (the first pass it
-//  sees a new run step_n, tracked on req.c.did_step), then pump + witness every pass after.
-async Tyrant_drive(w, req) {
-    let n = (this.c.run)?.c.step_n
-    if (n != null && n !== req.c.did_step) {
-        req.c.did_step = n
-        if (n === 2) {
-            this.Tyrant_sides_up(w)
-        } else if (n === 3) {
-            this.Tyrant_admit_arm(w)
+// req_cast — the spool, the heart of slice 1.  %req:cast,eternal rides a %Caster (oai wires
+//  req.c.up = the Caster); req_Caster drives it each pass, itself w-swept.  Each pass, while the
+//   next seq still fits the window — next <= terminal_ack + window — deliver one %Chunk into the
+//    terminal's inbox and advance the cursor.  The instant next runs past the window the loop
+//     delivers nothing and the req just re-arms: THAT absence of work is the backpressure (Radios'
+//      `if pr.seq > not_too_far_ahead: cool it`, now a req that finds nothing it may send rather
+//       than a hand-rolled spin guard).  Inert until the caster is %live (the Book's go-live beat).
+//  Slice 2 adds a SECOND gate inside the window: a %Caster with a .sc.preview boundary spools its
+//   leading preview seq for free, but withholds the paid continuation (seq >= preview, kind:stream)
+//    until the terminal sets .sc.want (Radios' streamability handoff).  No preview set -> the whole
+//     stock is free and nothing is tagged: slice-1 behaviour, byte-identical.
+async req_cast(req) {
+    let caster = req.c.up
+    if (caster && caster.sc.live) {
+        let term = caster.c.term
+        let inbox = term && term.o({inbox: 1})[0]
+        if (inbox) {
+            let win = this.Radiola_window(caster.c.up)
+            let total = +(caster.sc.total ?? 0)
+            let next = +(caster.sc.next ?? 0)
+            let ack = +(term.sc.ack ?? -1)
+            let start = next
+            let has_preview = caster.sc.preview != null   // opt-in; absent = all-free (slice 1)
+            let preview = +(caster.sc.preview ?? total)
+            let granted = term.sc.want                     // the listener asked for the stream
+            // spool every chunk inside the window; stop at the stock end, the window edge, or
+            //  (with a preview) the preview boundary until the continuation has been wanted.
+            while (next < total && next <= ack + win) {
+                if (has_preview && next >= preview && !granted) break
+                if (has_preview) {
+                    let kind = 'preview'
+                    if (next >= preview) kind = 'stream'
+                    inbox.i({Chunk: 1, seq: next, kind: kind})
+                }
+                if (!has_preview) inbox.i({Chunk: 1, seq: next})
+                next = next + 1
+            }
+            caster.sc.next = next
+            // animate only the slice-2 path: bump so the Cyto wave rides the cursor move (slice 1
+            //  stays bump-free, snap-neutral). The inbox.i inserts already bump the delivered nodes.
+            if (has_preview && next !== start) caster.bump()
         }
     }
-    await this.Tyrant_pump(w)
-    this.Tyrant_witness(w)
+    // re-armed each pass, like req_Pier — the gate is the window, not %ok.
+    req.sc.ok = 1
 
 },
-// Tyrant_sides_up — step 2: stand up both GIVEN sides directly (magic provisioning), pair
-//  their mock-ports, register the vouch receive handler, and seed %req:trust on each Pier.
-//   Mirrors PereStaple's Lake_sides_up, with two differences: %Ud is pre-stamped (so the
-//    spine's pre-Ud inbox gate lets a `vouch` frame through), and a `vouch` handler is
-//     registered via the Peeroleum_on consumer seam (no edit to the floor).
-Tyrant_sides_up(w) {
-    const H = this
-    w.i({reached: "step_2"})
-    // lay each side: actor + its w:Tyrant, a Peering named by us, a Pier named by the peer.
-    let {AliceA, Alicew} = this._i_drill_caps(this, [{sc: {A: "Alice"}, caps: [{as: "AliceA", key: "A", val: false}]}, {sc: {w: "Tyrant"}, caps: [{as: "Alicew", key: "w", val: false}]}])
-    let {BobA, Bobw} = this._i_drill_caps(this, [{sc: {A: "Bob"}, caps: [{as: "BobA", key: "A", val: false}]}, {sc: {w: "Tyrant"}, caps: [{as: "Bobw", key: "w", val: false}]}])
-    let AlicePeering = Alicew.i({Peering: 1, name: "alice"})
-    let BobPeering = Bobw.i({Peering: 1, name: "bob"})
-    // c.up: the belief walk wires A/w only, not the domain particles under w.  Stamp each
-    //  Peering→w by hand (i doesn't wire c.up); each Pier is minted with oai (the flock —
-    //   %Pier,pub:…,req), which wires Pier.c.up=Peering for us, so its %req:trust can pump.
-    AlicePeering.c.up = Alicew
-    BobPeering.c.up = Bobw
-    // the Pier flock: oai Pier,$pub,req — a per-peer Pier carrying the serialise sentinel
-    //  mints as %Pier,pub:…,req:N (mainkey Pier, dispatched by req_Pier).  We mint it ⇒ we
-    //   own its identity (no remote gut-swap), the security M1's trust then rides on.
-    let AlicePier = AlicePeering.oai({Pier: 1, pub: "bob", req: 1})
-    let BobPier = BobPeering.oai({Pier: 1, pub: "alice", req: 1})
-    // GIVEN identities (M1 skips meet+prove): %Ud pre-stamped, so a vouch frame clears the
-    //  spine's pre-Ud gate (which otherwise admits only hello|noop, spec §7.3).
-    AlicePier.i({Ud: 1, id: "bob"})
-    BobPier.i({Ud: 1, id: "alice"})
-    // mock transport on each side + pair the two ports (reuse the floor's mock carrier).
-    this.transport(AliceA,Alicew)
-    this.transport(BobA,Bobw)
-    this.Peeroleum_arm_whittle(Alicew)
-    this.Peeroleum_arm_whittle(Bobw)
-    let Aliceport = Alicew.o({active_transport: 1})[0].c.connection
-    let Bobport = Bobw.o({active_transport: 1})[0].c.connection
-    Aliceport.partner = Bobport; Bobport.partner = Aliceport
-    // register the `vouch` receive handler on each side (the consumer dispatch seam): the
-    //  serial inbox routes a verified vouch frame to hear_vouch inside the same lifecycle as
-    //   hello/trust. A closure off a frame is an object payload — a raw-JS seam.
-    H.Peeroleum_on(Alicew, 'vouch', (cw, cpier, cframe) => H.hear_vouch(cw, cpier, cframe))
-    H.Peeroleum_on(Bobw, 'vouch', (cw, cpier, cframe) => H.hear_vouch(cw, cpier, cframe))
-    // seed the trust exchange on each Pier; the first Tyrant_pump pass drives say_vouch.
-    AlicePier.oai({req: "trust"})
-    BobPier.oai({req: "trust"})
+// req_Terminal — the per-Terminal pump (cascade entry).  A Book that gives a Terminal listener-side
+//  work mints %Terminal,name,req; the w sweep reaches it and it pumps the Terminal's %req:streamability
+//   (below).  A passive Terminal (slice 1, inbox only) carries no req and is never dispatched here.
+async req_Terminal(term) {
+    await term.do()
+    term.sc.ok = 1
 
 },
-// Tyrant_admit_arm — step 3: seed %req:join on each side's w. The policy gate (req_join's
-//  maz-ordered leaves) finishes once trust granted at step 2 satisfies `trusted` and the
-//   given %Ud satisfies `proven`.
-Tyrant_admit_arm(w) {
-    w.i({reached: "step_3"})
-    let Alicew = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Tyrant"}, exactly: {w: true}}])
-    let Bobw = this._o_drill1(this, [{sc: {A: "Bob"}, exactly: {A: true}}, {sc: {w: "Tyrant"}, exactly: {w: true}}])
-    if (Alicew)
-        Alicew.oai({req: "join"})
-    if (Bobw)
-        Bobw.oai({req: "join"})
-
-},
-// Tyrant_pump — re-pump each side's nested reqs every pass: the PEERING (peering.do() runs
-//  the Pier flock via req_Pier, each Pier driving its own %req:trust) and the w's %req:join.
-//   Each inbound vouch's feebly_ponder brings the run back here, advancing the leaves as
-//    their protocol particles land.
-async Tyrant_pump(w) {
-    for (const side of ['Alice', 'Bob']) {
-        let peering = this._o_drill1(this, [{sc: {A: side}, exactly: {A: true}}, {sc: {w: "Tyrant"}, exactly: {w: true}}, {sc: {Peering: 1}}])
-        if (peering) await peering.do()
-        let sw = this._o_drill1(this, [{sc: {A: side}, exactly: {A: true}}, {sc: {w: "Tyrant"}, exactly: {w: true}}])
-        if (sw) await sw.do()
+// req_streamability — the listener side of the slice-2 handoff (Radios' `streamability` /
+//  want_streaming).  Rides a %Terminal (oai wires req.c.up = the Terminal); once the UN-played
+//   preview tail — preview - 1 - ack — drops to the want-floor (MIN_LEFT_TO_WANT_STREAMING, read
+//    off w as want_left, default 22), arm .sc.want so req_cast ungates the continuation.  One-way:
+//     the ask never un-asks.  Inert without a preview boundary (nothing can run low), so a slice-1
+//      terminal that carries no streamability req is wholly unaffected.
+req_streamability(req) {
+    let term = req.c.up
+    if (term && !term.sc.want) {
+        let caster = term.c.caster
+        if (caster && caster.sc.preview != null) {
+            let preview = +(caster.sc.preview)
+            let ack = +(term.sc.ack ?? -1)
+            let left = preview - 1 - ack
+            let floor = +((term.c.up)?.sc.want_left ?? 22)
+            if (left <= floor) {
+                term.sc.want = 1
+                term.bump()
+            }
+        }
     }
+    req.sc.ok = 1
 
 },
-// Tyrant_witness — the readable assertions, polled each pass (step rides in the value —
-//  `step` is the Story mainkey, so it can't be a key). Idempotent.
-Tyrant_witness(w) {
-    let AlicePier = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Tyrant"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
-    let BobPier = this._o_drill1(this, [{sc: {A: "Bob"}, exactly: {A: true}}, {sc: {w: "Tyrant"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
-    // step 2: both Piers granted trust (the bidirectional vouch exchange settled).
-    if (AlicePier?.o({trust:1})[0]?.sc.grants && BobPier?.o({trust:1})[0]?.sc.grants && !(w.oa({witnessed: "step_2"}))) w.i({witnessed: "step_2"})
-    // step 3: both sides admitted — w/%member,signed (the policy gate finished).
-    let Alicew = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Tyrant"}, exactly: {w: true}}])
-    let Bobw = this._o_drill1(this, [{sc: {A: "Bob"}, exactly: {A: true}}, {sc: {w: "Tyrant"}, exactly: {w: true}}])
-    if (Alicew?.o({member:1})[0]?.sc.signed && Bobw?.o({member:1})[0]?.sc.signed && !(w.oa({witnessed: "step_3"}))) w.i({witnessed: "step_3"})
+// ══ SLICE 3 — radiostock fan-out (Radios.svelte radiostock / KEEP_AHEAD) ══════════════════════
+//  A %Stock is a finite source of cap records (0..cap-1) that materialise as %Record children seq
+//   0..made-1 as they are produced; it feeds N %cursor consumers (Radios' consumers,of=radiostock),
+//    each .sc.at the next record that client wants (its playhead).  The stock keeps a buffer of
+//     produced records ahead of the listeners; the listeners draw from it at their own pace.
+
+// Radiola_keep_ahead — how many records the %Stock keeps produced ahead of the LEADING consumer:
+//  Radios.svelte's KEEP_AHEAD.  One knob, read off w so a Book can shrink it for a tight snap.
+Radiola_keep_ahead(w) {
+    return +(w.sc.keep_ahead ?? 5)
 
 },
-// ── M1: trust as an acked vouch exchange (spec §8 shape, vouch vocabulary) ─────
-// %req:trust owns two maz-ordered leaves under a %Pier: said_vouch (we emit our vouch,
-//  idempotent on the protocol particle) then heard_vouch (pure existence check on the far
-//   side's vouch). When heard lands, grant: stamp %trust,grants:full. Parent rolls up when
-//    both finish. The leaf is %Pier/%req:trust/%req:<leaf>, so its Pier is req.c.up.c.up.
-async req_trust(req) {
-    req.oai({req: "said_vouch", maz: 2})
-    req.oai({req: "heard_vouch"})
-    await req.do()
-    if (req.all_finished() && !req.sc.finished) (req.c.up).finish(req)
+// req_Stock — the per-Stock pump (cascade entry).  The Book mints %Stock,name,req; the w sweep reaches
+//  it and it pumps BOTH of the Stock's work-leaves in one do() — %req:restock (refill, below) and
+//   %req:reap (the wear sweep, slice 5).  The "two jobs" need no special handling: do() runs every child.
+async req_Stock(stock) {
+    await stock.do()
+    stock.sc.ok = 1
 
 },
-async req_said_vouch(req) {
-    let pier = req.c.up.c.up
-    let w = pier.c.up.c.up
-    this.say_vouch(w,pier)
-    let said = this._o_drill1(pier, [{sc: {protocol: 1}}, {sc: {vouch: 1}}, {sc: {said: 1}}])
-    if (said) (req.c.up).finish(req)
+// req_restock — the producer side of the fan-out (Radios' radiostock refill).  %req:restock,eternal
+//  rides a %Stock (oai wires req.c.up = the Stock); the Book pumps it each pass via stock.do().  Keep
+//   the stock keep_ahead records produced ahead of the LEADING cursor — the consumer nearest the
+//    frontier, since that one starves first; the laggards trail with more already in hand — bounded by
+//     the finite source (cap).  Each pass, while the lead is shallower than keep_ahead and the source
+//      isn't spent, mint one more %Record and advance made.  The instant the lead is satisfied OR made
+//       meets cap it mints nothing: THAT absence is the backpressure (Radios' "don't run the encoder if
+//        the stock is deep enough", now a req that finds nothing to make rather than a spin guard).
+//         Inert until the stock is %live (the Book's go-live beat).
+req_restock(req) {
+    let stock = req.c.up
+    if (stock && stock.sc.live) {
+        let cap = +(stock.sc.cap ?? 0)
+        let made = +(stock.sc.made ?? 0)
+        let keep = this.Radiola_keep_ahead(stock.c.up)
+        // the leading consumer = the highest cursor (consumed the most, fewest records still in hand);
+        //  staying ahead of IT automatically covers every slower consumer.
+        let lead = 0
+        for (const cur of stock.o({cursor: 1})) {
+            let at = +(cur.sc.at ?? 0)
+            if (at > lead) lead = at
+        }
+        let start = made
+        while (made < cap && made - lead < keep) {
+            stock.i({Record: 1, seq: made})
+            made = made + 1
+        }
+        stock.sc.made = made
+        // animate the stock accreting records: bump so the Cyto wave rides the new frontier.
+        if (made !== start) stock.bump()
+    }
+    // re-armed each pass; the gate is the keep_ahead lead and the cap, not %ok.
+    req.sc.ok = 1
 
 },
-async req_heard_vouch(req) {
-    let pier = req.c.up.c.up
-    let heard = this._o_drill1(pier, [{sc: {protocol: 1}}, {sc: {vouch: 1}}, {sc: {heard: 1}}])
-    if (heard)
-        this.Tyrant_grant(pier)
-        req.c.up.finish(req)
+// ══ SLICE 4 (prototype) — live-edge playback chain (Radios.svelte listening/progress/enqueue) ════
+//  A %Player decodes delivered %Chunk into an %aud linked list AHEAD of its playhead, but stays
+//   live_back behind the live edge (the newest delivered chunk) so a chunk arriving a beat late still
+//    has slack.  Inert till a Book stands up the player; the playhead is advanced by the consumer.
+Radiola_live_back(w) {
+    return +(w.sc.live_back ?? 3)
 
 },
-// say_vouch — write our half of the vouch protocol and emit one `vouch` frame to the peer;
-//  idempotent on the protocol particle so a re-pump never double-sends. seq is the per-Pier
-//   monotone outbound counter (Pier_next_seq, spec §7.1). Mirrors say_trust.
-say_vouch(w, pier) {
-    let proto = pier.oai({protocol: 1})
-    let vouch = proto.oai({vouch: 1})
-    if (vouch.oa({said:1})) return
-    let me = pier.c.up.sc.name
-    let seq = this.Pier_next_seq(pier)
-    vouch.i({said:1, seq})
-    this.Peeroleum_send(w,{header:{type:'vouch', from:me, to:pier.sc.pub, seq}})
+// req_Player — the per-Player pump (cascade entry).  The Book mints %Player,name,req; the w sweep
+//  reaches it and it pumps the Player's %req:progress (the decode-ahead, below).
+async req_Player(player) {
+    await player.do()
+    player.sc.ok = 1
 
 },
-// hear_vouch — the far side's vouch landed (verified + gated by the spine's pre-Ud inbox).
-//  Record %heard; the heard_vouch leaf grants on it. Returns true (M1 trusts the given
-//   identity; a real verify is a later layer). Registered via Peeroleum_on(w,'vouch',…).
-hear_vouch(w, pier, frame) {
-    pier.oai({protocol:1}).oai({vouch:1}).i({heard:1})
-    return true
+// req_progress — the decode-ahead producer.  Rides a %Player (oai wires req.c.up); read the terminal's
+//  %inbox of delivered %Chunk, find the live edge (highest delivered seq), and while the decode frontier
+//   is within the window of the playhead AND at least live_back behind the live edge, decode the next
+//    chunk: mint an %aud,seq and chain it (c.prev/c.next, tracked on player.c.tail to dodge the seq-as-1
+//     query wildcard).  The instant it would decode past live_edge - live_back it stops — hugging the
+//      live edge is the backpressure (a player underruns rather than races the wire).  Once the stream
+//       has ENDED (term.sc.ended) the margin drops to 0: a finished record decodes through to its last
+//        delivered chunk (nothing more is coming, so there is no live edge to stay behind).
+async req_progress(req) {
+    let player = req.c.up
+    if (player && player.sc.live) {
+        let term = player.c.term
+        let inbox = term && term.o({inbox: 1})[0]
+        if (inbox) {
+            let win = this.Radiola_window(player.c.up)
+            let back = this.Radiola_live_back(player.c.up)
+            let margin = (term.sc.ended) ? 0 : back     // ended -> drain to the last chunk, no margin
+            let head = +(player.sc.playhead ?? -1)
+            let front = +(player.sc.decoded ?? -1)
+            let live_edge = -1
+            for (const ch of inbox.o({Chunk: 1})) {
+                let s = +(ch.sc.seq ?? -1)
+                if (s > live_edge) live_edge = s
+            }
+            let start = front
+            let tail = player.c.tail
+            while (front < live_edge - margin && front < head + win) {
+                let seq = front + 1
+                let aud = player.i({aud: 1, seq: seq})
+                if (tail) {
+                    aud.c.prev = tail
+                    tail.c.next = aud
+                }
+                tail = aud
+                front = seq
+            }
+            player.c.tail = tail
+            player.sc.decoded = front
+            if (front !== start) player.bump()
+        }
+    }
+    req.sc.ok = 1
 
 },
-// Tyrant_grant — both directions vouched ⇒ stamp the trust grant on the Pier (the particle
-//  admission's `trusted` policy reads). Idempotent.
-Tyrant_grant(pier) {
-    pier.oai({trust: 1}, {grants: "full"})
+// ══ SLICE 5 (prototype) — record wear / GC (Radios.svelte raterminal_recordWear) ═════════════════
+//  Each %Record accretes wear as it is heard: .sc.played ticks while it is the one playing, .sc.idle
+//   ticks once another record takes over.  A record heard wear_enough then left idle wear_delay is
+//    worn out — tombstoned in place with %wore_out (so a re-offer reads as a re-run, not new) — but
+//     only while a floor of live records remains.  Makes nothing while none are over threshold.
+Radiola_wear_enough(w) {
+    return +(w.sc.wear_enough ?? 3)
 
 },
-// ── M2: policy-gated admission — a %req:join whose finished is the AND of its leaves ──
-// The elegant core (LiesStore phased-%req shape): %req:join on a side's w owns policy leaves
-//  (each finishes only when its condition holds) + an admit leaf at the lowest maz, so admit
-//   runs only after every policy passes. Settling %req:join IS being on the network.
-async req_join(req) {
-    req.oai({req: "policy", kind: "proven", maz: 3})
-    req.oai({req: "policy", kind: "trusted", maz: 2})
-    req.oai({req: "admit"})
-    await req.do()
-    if (req.all_finished() && !req.sc.finished) (req.c.up).finish(req)
+Radiola_wear_delay(w) {
+    return +(w.sc.wear_delay ?? 19)
 
 },
-// req_policy — one handler, kind-branched: a pure read of the particles M1/the given setup
-//  produced. proven = identity present (%Ud on the Pier); trusted = M1 granted (%trust,grants).
-//   The leaf is w/%req:join/%req:policy, so its w is req.c.up.c.up.
-req_policy(req) {
-    let w = req.c.up.c.up
-    let pier = w.o({Peering:1})[0]?.o({Pier:1})[0]
-    if (!pier) return
-    if (req.sc.kind === 'proven' && pier.oa({Ud:1})) (req.c.up).finish(req)
-    else if (req.sc.kind === 'trusted' && pier.o({trust:1})[0]?.sc.grants) (req.c.up).finish(req)
+// req_reap — the wear sweep.  Rides a %Stock | record pool (oai wires req.c.up); tombstone each record
+//  that is heard-enough, long-idle, not playing, not already worn — keeping at least a floor of live
+//   records (Radios reaps only once the pool is deep).  %wore_out is a flag, not a delete: the husk
+//    stays legible in the snap and Cyto, the way a real tombstone marks where a record used to be.
+req_reap(req) {
+    let pool = req.c.up
+    if (pool) {
+        let enough = this.Radiola_wear_enough(pool.c.up)
+        let delay = this.Radiola_wear_delay(pool.c.up)
+        let live = pool.o({Record: 1}).filter(r => !r.sc.wore_out)
+        let n = live.length
+        for (const re of live) {
+            if (n <= 5) break              // hold the floor (Radios reaps only a deep pool, >= 6)
+            let played = +(re.sc.played ?? 0)
+            let idle = +(re.sc.idle ?? 0)
+            if (played >= enough && idle >= delay && !re.sc.playing) {
+                re.sc.wore_out = 1
+                re.bump()
+                n = n - 1
+            }
+        }
+    }
+    req.sc.ok = 1
 
 },
-// req_admit — the gate cleared (lowest maz, so every policy already finished): sign and admit.
-req_admit(req) {
-    let w = req.c.up.c.up
-    w.oai({member: 1}, {signed: 1})
-    req.c.up.finish(req)
-
+// ══ SLICE 6 (prototype) — skip-track (Radios.svelte turn_knob/do_skip_track_fn) ══════════════════
+// Radiola_skip — a %Knob strike: the listener jumps mid-stream.  Advance the terminal's record cursor
+//  to the next record and reset the player's decode frontier so it re-decodes from the new record's
+//   head; the abandoned %aud chain is marked %stale (the wear sweep reaps it later).  The cursor move
+//    is the whole act — it re-points the spool|stock at the next record, the rest follows.
+Radiola_skip(term) {
+    let cur = +(term.sc.record ?? 0)
+    term.sc.record = cur + 1
+    let player = term.c.player
+    if (player) {
+        for (const aud of player.o({aud: 1})) aud.sc.stale = 1
+        player.sc.playhead = -1
+        player.sc.decoded = -1
+        delete player.c.tail
+        player.bump()
+    }
+    term.bump()
 },
+//#endregion
+
+//#region glide — graceful live-edge rate control (code + data, NOT a req pile)
+// Radios.svelte's ONLY adaptive trick (Radios.svelte:344) HARD-sets playbackRate=0.8 within 3.141s of the
+//  live edge and NEVER recovers — a permanent pitch drop, no ramp, no hysteresis (it even computes a delta
+//   it never uses).  Glide is that idea done right, and it is exactly the kind of abstract modelling that
+//    wants to stay plain code+data: a PURE decision (no state of its own, no %req, no sweep) mapping how
+//     much audio is left ahead of the playhead — `frontier`, in seconds — to a playback rate.  The caller
+//      owns the trajectory (min/final rate, flips); Glide is just the curve.  Reused by the Musu tests now
+//       and by req_progress in prod later — the player CONSULTS it, never piles reqs under it.
+// Glide_decide(frontier, cur, ended) -> rate in [FLOOR, 1].  `cur` is the current rate, passed in as the
+//  only "state" so the hysteresis band can hold.  Quick to back off (min toward FLOOR — safety), gradual
+//   to recover (climb by STEP once there's slack — smoothness).  Schmitt band [LOW, HIGH] kills chatter:
+//    engage below LOW, release above HIGH, hold between.  ended -> nothing to back away from -> full speed.
+Glide_decide(frontier, cur, ended) {
+    let LOW = 0.12
+    let HIGH = 0.30
+    let FLOOR = 0.80
+    let STEP = 0.05
+    if (ended) return 1
+    if (frontier < LOW) {
+        let want = FLOOR + (1 - FLOOR) * Math.max(0, frontier) / LOW
+        return Math.min(cur, want)
+    }
+    if (frontier > HIGH) return Math.min(1, cur + STEP)
+    return cur
+},
+//#endregion
+
 
     })
     })

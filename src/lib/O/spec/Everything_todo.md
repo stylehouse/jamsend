@@ -321,9 +321,11 @@ Editor→runner channel (version handshake → acquire-then-poll is "THE next ed
 
 ## Cluster-trust + ghost-compile — SHIPPED; residual TODO (low priority, parked)
 The authenticated relay (signed `gen_write` + `this_dock_updated`, browser trust exposed) and the
- ghost-compile feedback loop are done — the loop closes at ~2–5s ("is ok"). The two continuation briefs
-  `ClusterTrust_handover.md` + `GhostCompile_feedback_handover.md` are sublated into these lines and
-   **deletable once committed**. Nothing below is wanted right now (the cluster is "enough for atm"):
+ ghost-compile feedback loop are done — the loop closes at ~2–5s ("is ok"). The trust substrate brief
+  `ClusterTrust_handover.md` has been **renamed + expanded into `Cluster_spec.md`** (the live cluster spec:
+   trust substrate + runner flock + the dockerised real-isolation testbed toward remote `%Rungo`) — NOT
+    deletable, it grew. `GhostCompile_feedback_handover.md` is sublated into these lines and deletable once
+     committed. Nothing in the ghost-compile residuals below is wanted right now ("enough for atm"):
 - **`remote-local-ghost-compile`** (rename of the editor's `this_dock_updated` refresh — the name makes the
    strangeness plain: the `.g` is already on the editor's shared `/app` disk when the CLI asks, so this is a
     *local* compile *triggered* remotely, not a content push. A *purely* remote form — CodeMirror carrying

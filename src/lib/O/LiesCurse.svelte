@@ -74,8 +74,8 @@
     //
     //   Single seam for all cursor moves — called only from the wants resolver
     //   (§3e), never from a click handler directly.  Stamps %Spotlight with the
-    //   new src, bumps, then fires Lang_workon_update so w:Lang's req:workon
-    //   cluster resets and re-checkouts.
+    //   new src, bumps, then fires e:Lang_lango (the cursor Lango) so w:Lang's
+    //   req:workon cluster resets and re-checkouts.
     //
     //   §3a: src_Waft drops.  waft_key is derivable from src by waft_key_of
     //   (c.waft / c.up), so nothing stores it; readers call waft_key_of instead.
@@ -111,7 +111,7 @@
         await H.Lies_arm_engaged(examining, src)
 
         // feebly: a runner with no editor has no Lang to tell — the cursor still moves.
-        H.feebly_i_elvisto('Lang/Lang', 'Lang_workon_update', { src })
+        H.feebly_i_elvisto('Lang/Lang', 'Lang_lango', { src })
     },
 
 //#endregion

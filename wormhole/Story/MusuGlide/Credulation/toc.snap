@@ -1,5 +1,5 @@
-Credulation,of_Book:PereStaple
-  run=0,at=1782721873.462,ok,ok_pct,mode:check
+Credulation,of_Book:MusuGlide
+  run=0,at=1782722185.344,ok=0,ok_pct=0,mode:check
     uses:Ghost_N_Peeroleum,dige:1bb4df8687a8d30b
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:a9bf42ff80d08a94
