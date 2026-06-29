@@ -10,7 +10,7 @@ import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Musuation(): string { return 'c92bf4b4c12e6f63' },
+    Ghostmeta_Ghost_Story_Musuation(): string { return '7a86a1a50f47ac9b' },
 
 // Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Music_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
@@ -1733,6 +1733,94 @@ MusuRadio_witness(w) {
     if (spins >= 6 && !(w.oa({witnessed: "many_tracks"}))) w.i({witnessed: "many_tracks"})
     // helps: across the set, Glide cut real-rendered dropouts vs NO control on most tracks (not just motion).
     if (helped >= 3 && !(w.oa({witnessed: "helps"}))) w.i({witnessed: "helps"})
+},
+//#endregion
+
+//#region crate — REAL MUSIC: pseudo-randomly buffer ./testsounds/ and stream it for real
+// ══ MusuCrate — the realness the synth Books couldn't give: actual files, decoded, streamed ════════
+//  Buffers a few REAL tracks from /testsounds (served via static/, fetched + decoded gesture-free through
+//   OfflineAudioContext — the Wormhole rw_op is text-only so binary can't ride it), then streams each with
+//    Glide vs no-control on a real perturbation and measures the difference.  The snap is no longer an empty
+//     picture: it carries the actual %record rows — title, real seconds, real loudness, real dropout counts.
+//      This is where real-music problems surface (codec support, decode of big files, real dynamics).
+//        beat 2  BUFFER  — pseudo-randomly fetch+decode 3 real tracks (seeded prandle pick over the manifest)
+//        beat 3  STREAM  — render each ~6s with Glide and with no-control; record real dropouts per track
+//        beat 4  witness — real_records / playable / helps  (red if FLAC won't decode — a real finding)
+MusuCrate(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuCrate_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// MusuCrate_drive — needs both fetch AND OfflineAudioContext (skip headless); per-beat dispatch off step_n
+//  (req-local did_step, set before the real fetch/decode await so a re-pump can't re-enter the beat).
+async MusuCrate_drive(w, req) {
+    if (typeof OfflineAudioContext === 'undefined' || typeof fetch === 'undefined') {
+        if (!w.oa({skipped: 'no_audio'})) w.i({skipped: 'no_audio'})
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuCrate_buffer(w)
+        if (n === 3) await this.MusuCrate_play(w)
+        if (n === 4) this.MusuCrate_witness(w)
+    }
+    await this.Musu_float(w)
+
+},
+// MusuCrate_buffer — beat 2: seed prandle (reproducible pick), pseudo-randomly fetch + decode 3 real tracks
+//  from /testsounds into %record rows (real seconds/loudness/title on the snap).
+async MusuCrate_buffer(w) {
+    this.Musu_seed(31337)
+    let recs = await this.Crate_fetch_some(w, '/testsounds', 3)
+    w.i({report: 1, buffered: recs.length})
+
+},
+// MusuCrate_play — beat 3: stream each buffered track's first ~6s through Glide AND no-control (offline
+//  render, gesture-free), recording real dropout counts per record and tallying where Glide won.
+async MusuCrate_play(w) {
+    let recs = w.o({record: 1})
+    let rep = w.oai({report: 1})
+    let helped = 0
+    let played = 0
+    for (const rec of recs) {
+        let nch = Math.min(120, +(rec.sc.nchunks ?? 0))
+        if (nch < 8) continue
+        let stock = this.Crate_radiostock(rec)
+        let prof = this.Musu_profile(nch, 777 + played)
+        let g = await this.Musu_render_offline(nch, prof, null, stock, false, 'glide')
+        let none = await this.Musu_render_offline(nch, prof, null, stock, false, 'none')
+        let gd = +(g.gaps ?? 0) + +(g.underran ?? 0)
+        let nd = +(none.gaps ?? 0) + +(none.underran ?? 0)
+        rec.sc.glide_drop = gd
+        rec.sc.none_drop = nd
+        rec.sc.glide_gaps = g.gaps
+        rec.sc.none_gaps = none.gaps
+        rec.bump()
+        if (gd < nd) helped = helped + 1
+        played = played + 1
+    }
+    rep.sc.played = played
+    rep.sc.helped = helped
+    rep.bump()
+
+},
+// MusuCrate_witness — the realness, EARNED.  red if FLAC didn't decode (real_records) or Glide didn't help
+//  real audio (helps) -- not satisfiable by synth or arithmetic.
+MusuCrate_witness(w) {
+    let recs = w.o({record: 1})
+    let rep = w.o({report: 1})[0]
+    let real = recs.filter(r => r.sc.real && +(r.sc.nchunks ?? 0) > 8).length
+    let secs_ok = recs.filter(r => +(r.sc.seconds ?? 0) >= 1).length
+    let helped = +(rep?.sc.helped ?? 0)
+    // real_records: real audio files actually fetched + DECODED to PCM (goes red if the codec is unsupported).
+    if (real >= 1 && !(w.oa({witnessed: "real_records"}))) w.i({witnessed: "real_records"})
+    // playable: the decoded tracks have real durations (not empty/corrupt buffers).
+    if (secs_ok >= 1 && !(w.oa({witnessed: "playable"}))) w.i({witnessed: "playable"})
+    // helps: Glide cut real dropouts vs no-control on REAL music (at least one track) -- the claim that matters.
+    if (helped >= 1 && !(w.oa({witnessed: "helps"}))) w.i({witnessed: "helps"})
 },
 //#endregion
 

@@ -147,4 +147,70 @@ async Crate_radiostock_from(crate):
     let rec = await this.Crate_decode(blob)
     if (!rec) return null
     return this.Crate_radiostock(rec)
+
+// ── served-collection ingestion (the gesture-free real path) ──────────────────────────────────────
+//  The Wormhole rw_op is text-only and the OPFS seed doesn't carry arbitrary dirs, so binary audio can't
+//   ride it; a local share needs a picker gesture.  The path that actually works headless-of-gesture: the
+//    dev server serves static/ at /, so a collection symlinked there (e.g. static/testsounds → ../testsounds)
+//     is reachable by fetch().  fetch can't enumerate a dir, so the collection carries a manifest.json.
+// Crate_manifest(base) -> the filename list (base e.g. '/testsounds').  [] if unreachable.
+async Crate_manifest(base):
+    if (typeof fetch === 'undefined') return []
+    let res = await fetch(base + '/manifest.json')
+    if (!res.ok) return []
+    return await res.json()
+
+// Crate_fetch_record — REAL ingestion: fetch one served file (binary), DECODE it (FLAC/etc via
+//  OfflineAudioContext.decodeAudioData — no gesture), slice channel 0 into CHUNK Float32 pieces, stamp a
+//   %record with c.chunks + real seconds/loudness/filename-metadata.  Returns the record, or null + an
+//    %undecodable marker if the browser can't decode this codec (a real problem this surfaces, not hides).
+async Crate_fetch_record(w, base, name):
+    if (typeof OfflineAudioContext === 'undefined' || typeof fetch === 'undefined') return null
+    let res = await fetch(base + '/' + encodeURIComponent(name))
+    if (!res.ok) return null
+    let raw = await res.arrayBuffer()
+    let ctx = new OfflineAudioContext(1, 1, 48000)
+    let decoded = null
+    try {
+        decoded = await ctx.decodeAudioData(raw)
+    } catch (er) {
+        w.i({ undecodable: name })
+        return null
+    }
+    let data = decoded.getChannelData(0)
+    let CHUNK = 2400
+    let chunks = []
+    let i = 0
+    while (i < data.length) {
+        chunks.push(data.slice(i, Math.min(data.length, i + CHUNK)))
+        i = i + CHUNK
+    }
+    let sumSq = 0
+    let j = 0
+    while (j < data.length) {
+        sumSq += data[j] * data[j]
+        j = j + 1
+    }
+    let rms = Math.sqrt(sumSq / Math.max(1, data.length))
+    let meta = this.Crate_meta_from_name(name)
+    let rec = w.i({ record: 1, name: name, artist: meta.artist, title: meta.title, loudness: +rms.toFixed(4), seconds: +decoded.duration.toFixed(2), nchunks: chunks.length, real: 1 })
+    rec.c.up = w
+    rec.c.chunks = chunks
+    return rec
+
+// Crate_fetch_some — pseudo-randomly buffer `n` REAL records from a served collection (prandle pick over the
+//  manifest, like Radios' load_random_records), decoded + ready.  Caller seeds prandle for a reproducible
+//   set.  Returns the records actually decoded (fewer than n if some failed).
+async Crate_fetch_some(w, base, n):
+    let names = await this.Crate_manifest(base)
+    if (!names.length) return []
+    let recs = []
+    let tries = 0
+    while (recs.length < n && tries < n * 4) {
+        tries = tries + 1
+        let name = names[this.prandle(names.length)]
+        let rec = await this.Crate_fetch_record(w, base, name)
+        if (rec) recs.push(rec)
+    }
+    return recs
 //#endregion

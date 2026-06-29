@@ -1,0 +1,16 @@
+story:MusuCrate
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=1.069
+      sample=1.119,at=1782736322
+      sample=1.018,at=1782736356
+    TimeTotal:step,avg=0.268
+      sample=0.28,at=1782736322
+      sample=0.255,at=1782736356
+  step,dige:e0e5ef365f0904c8
+  step=2,dige:0000000000000002
+  step=3,dige:0000000000000003
+  step=4,dige:0000000000000004

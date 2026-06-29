@@ -53,6 +53,7 @@
     import { onMount }      from "svelte"
     import LibraryRun       from "$lib/O/ui/LibraryRun.svelte"
     import { now_in_seconds, now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte";
+    import { boot_param }   from "$lib/boot"
 
     const DEFAULT_BOOKS = ['LeafJuggle', 'LeafFarm', 'StuffFlipping', 'LakeSurfer']
     const HEAD = 'Present'
@@ -124,6 +125,18 @@
             //     Lies would never tick to load the spine → Story with no Run_A_<Book>.
             H.oai({ Creduler_pending: 1 })
             console.log('🧪 Creduler up — runner Lies outside Story')
+        }
+
+        // ?I=<tag> cluster identity — stand up the Clustation Identity layer on the top House: the
+        //  switchable, persisted %Identity (→ %Peering = our pub address) the relay `hello` signs
+        //   with. ?I=new mints fresh, ?I=<tag> resumes. Absent ⇒ the legacy .stashed/.env key path,
+        //    so this is inert until a peer is booted with ?I=. Editor or runner — anyone who
+        //     declares an Id. Awaited: the mint|peek is async, but settles before the channel needs
+        //      the key (Lies_channel_up's hello reads Lies_cluster_idento live each open).
+        if (boot_param('I') && !H.c.identity_up) {
+            // Latch only on success — ensure reports false if the Thangs helpers aren't mounted yet,
+            //  so a boot tick that raced the ghost mount retries next pass instead of latching empty.
+            if (await (H as any).Clustation_ensure_identity(H)) H.c.identity_up = true
         }
 
         // ── Library page region (book browser + disk-backed Library) ──────────

@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1782728089797
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1782732373708
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -122,6 +122,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/Peerily.svelte.ts,name:Peerily,noticed_at=1782715172769
     Doc:src/lib/O/Selection.svelte.ts,name:Selection,noticed_at=1782715172769
     Doc:src/lib/O/Stuff.svelte.ts,name:Stuff,noticed_at=1782715172769
+    Doc:src/lib/O/Clustation.svelte,name:Clustation,noticed_at=1782732373708
   open_dir:Ghost/M
   group:Ghost/M,dir:Ghost/M
     Doc:Ghost/M/Radiola.g,name:Radiola,noticed_at=1782393617713

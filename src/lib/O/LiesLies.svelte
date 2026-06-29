@@ -394,6 +394,11 @@
         //     no reload. A node client (runner/cli headless) instead reads its role key from the env.
         Lies_cluster_idento(w?: TheC): { pub: string; key: string } | undefined {
             const H = this as House
+            // The ?I= active %Identity (Clustation) wins when present — the switchable, persisted
+            //  cluster self. Falls through to the legacy single key (browser .stashed.cluster_idento
+            //   via the 🪪 hatch, then a node role env) so an un-migrated editor/runner is unaffected.
+            const active = (H as any).Clustation_active_identity?.(H)
+            if (active?.pub && active?.key) return active
             const id = ((H.top_House?.() as House | undefined)?.stashed as any)?.cluster_idento
             if (id?.pub && id?.key) return { pub: id.pub, key: id.key }
             const role = browserRole() ?? H.Lies_role(w)

@@ -43,6 +43,8 @@
     import Lies from "./Lies.svelte";
     import Interest from "./Interest.svelte";
     import Editron from "./Editron.svelte";
+    import Thangs from "./Thangs.svelte";
+    import Clustation from "./Clustation.svelte";
 
     let { H } = $props()   // H = H:Mundo (the real House)
 
@@ -68,6 +70,10 @@
 <Text  {M} />
 <!-- what are we working on, and memories drifting away -->
 <Auto  {M} />
+<!-- Dexie↔particle persistence (dormant until a w:Thangs worker is created) + the cluster
+     Identity layer it backs: %Identity → %Peering, selected by ?I=, feeding the relay hello -->
+<Thangs {M} />
+<Clustation {M} />
 <!-- < js weirdness: if you move this up below Matstyle, the elvis handlers receive $this as a first argument... -->
 <Lang      {M} />
 <Lies {M} />

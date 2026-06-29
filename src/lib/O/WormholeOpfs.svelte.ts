@@ -54,6 +54,21 @@ export class OpfsOverlayNav {
         return null
     }
 
+    // bin_read — read_file's binary twin: returns the raw bytes (no .text()), for audio etc.  Scratch
+    //  shadows seed, same as read_file.  The rw_op 'bin' handler parks this on req.c (off-snap, never snapped).
+    async bin_read(dir_path: string, filename: string): Promise<ArrayBuffer | null> {
+        const parts = dir_path.split('/').filter(Boolean)
+        for (const root of [this.scratch, this.seed]) {   // scratch shadows seed
+            const d = await walk(root, parts, false)
+            if (!d) continue
+            try {
+                const fh = await d.getFileHandle(filename)
+                return await (await fh.getFile()).arrayBuffer()
+            } catch { /* not in this layer — fall through */ }
+        }
+        return null
+    }
+
     async write_file(dir_path: string, filename: string, content: string): Promise<void> {
         const parts = dir_path.split('/').filter(Boolean)
         const d = await walk(this.scratch, parts, true)

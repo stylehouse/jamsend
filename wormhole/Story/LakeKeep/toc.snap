@@ -9,10 +9,12 @@ story:LakeKeep
         dontSnapGhostList
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=0.06
+    TimeTotal:beliefs,avg=0.069
       sample=0.087,at=1782715795
       sample=0.032,at=1782728171
-    TimeTotal:step,avg=0.06
+      sample=0.087,at=1782732005
+    TimeTotal:step,avg=0.069
       sample=0.087,at=1782715795
       sample=0.032,at=1782728171
+      sample=0.087,at=1782732005
   step,dige:1ea303f5b062aa6e

@@ -1903,6 +1903,12 @@ export class House extends StorableHousing {
                 if (op === 'read') {
                     const content = await nav.read_file(dir_path, filename)
                     done(content != null ? { content } : { not_found: true, content: '' })
+                } else if (op === 'bin') {
+                    // binary read — bytes can't ride sc (string-only / snapped), so park the ArrayBuffer on
+                    //  req.c.bin (off-snap) and reply only a small marker.  The consumer reads req.c.bin.
+                    const buffer = (nav as any).bin_read ? await (nav as any).bin_read(dir_path, filename) : null
+                    if (buffer != null) { req.c.bin = buffer; done({ ok: true, bytes: buffer.byteLength }) }
+                    else done({ not_found: true })
                 } else if (op === 'write') {
                     await nav.write_file(dir_path, filename, req.sc.rw_data as string)
                     done({ ok: true })
@@ -2038,6 +2044,25 @@ export class WormholeNav {
             return o.buffer
         })
         return new TextDecoder().decode(buf)
+    }
+
+    // bin_read — read_file's binary twin: the same chunk-concat, but returns the raw ArrayBuffer instead
+    //  of TextDecoder'ing it.  For audio and other binary.  The rw_op 'bin' handler parks the result on
+    //   req.c (sc is string-only — binary in a snap is a fatal encode), so bytes never reach a snap.
+    async bin_read(dir_path: string, filename: string): Promise<ArrayBuffer | null> {
+        const parts = dir_path.split('/').filter(Boolean)
+        const dir = await this.dir(...parts)
+        if (!dir) return null
+        if (!dir.expanded) await dir.expand()
+        if (!dir.files.find(f => f.name === filename)) return null
+        const reader = await dir.getReader(filename)
+        const chunks: ArrayBuffer[] = []
+        for await (const chunk of reader.iterate()) chunks.push(chunk)
+        return chunks.reduce((a, b) => {
+            const o = new Uint8Array(a.byteLength + b.byteLength)
+            o.set(new Uint8Array(a)); o.set(new Uint8Array(b), a.byteLength)
+            return o.buffer
+        }, new ArrayBuffer(0) as ArrayBuffer)
     }
 
     async write_file(dir_path: string, filename: string, content: string): Promise<void> {

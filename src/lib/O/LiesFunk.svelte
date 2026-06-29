@@ -734,6 +734,21 @@ await M.eatfunc({
                         if (on) stW.c.keep_snaps = 1; else delete stW.c.keep_snaps
                         result = { retain: on ? 1 : 0 }
                     }
+                } else if (op === 'accept') {
+                    // re-record from the LIVE runner: fire the same Accept-All the UI button does
+                    //  (Storui's i_elvisto 'story_accept_all') — every !ok step's live got_snap is promoted
+                    //   to the canonical NNN.snap and story_save writes it into the Book's wormhole dir.
+                    //    Closes the headless-only re-record gap (CLAUDE.md bans the Story_cli bubble): a
+                    //     Lake* gate now records against the real runner it must match.  Deferred (elvis),
+                    //      so the accept lands a tick later — re-run the Book to verify green.  Run one first.
+                    const stW = H.Lies_runner_story_w()
+                    if (!stW) { ok = false; result = { error: 'no Story world yet — run a Book first' } }
+                    else {
+                        const This = stW.c.This as TheC | undefined
+                        const bad  = (This ? (This.o({ Step: 1 }) as TheC[]) : []).filter(s => !s.sc.ok || s.sc.disk_ok === false)
+                        H.i_elvisto('Story/Story', 'story_accept_all', {})
+                        result = { accepting: bad.length, book: (stW.sc.Book as string) ?? null, note: 'dispatched — re-run to verify' }
+                    }
                 } else if (op === 'steps' || op === 'snap' || op === 'diff' || op === 'snaps' || op === 'trace') {
                     // the READ ops, served from ONE uniform per-step view: ask.uid → the record's frozen
                     //  pins (a past run that's "hanging in there"); no uid → the live This.  So every read

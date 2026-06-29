@@ -11,6 +11,7 @@ Waft:Ghost/Music/Ality,active
     Funkcion:Storying,of_Book:MusuGlide
     Funkcion:Storying,of_Book:MusuTune
     Funkcion:Storying,of_Book:MusuRadio
+    Funkcion:Storying,of_Book:MusuCrate
   What:the machine
     What:1 the spool
       Doc:Ghost/M/Radiola.g
@@ -110,8 +111,16 @@ Waft:Ghost/Music/Ality,active
       Doc:Ghost/Story/Musuation.g
       Point,method:Musu_synth_records
       Point,method:MusuRadio_play
-      Point,method:MusuRadio_stream
+      Point,method:MusuRadio_animate
       Point,method:MusuRadio_witness
+    What:MusuCrate (REAL music — fetch+decode ./testsounds and stream it)
+      Doc:Ghost/Story/Musuation.g
+      Point,method:MusuCrate_buffer
+      Point,method:MusuCrate_play
+      Point,method:MusuCrate_witness
+      Doc:Ghost/M/Crate.g
+      Point,method:Crate_fetch_record
+      Point,method:Crate_fetch_some
   What:the source it reimagines
     Doc:src/lib/ghost/Radios.svelte
     Point,method:listening
