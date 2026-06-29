@@ -1124,10 +1124,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         const wt   = keep?.o({ WaftTimes: 1, of_Waft: path })[0] as TheC | undefined
         const curs = (wt?.o({ Cursor: 1 }) as TheC[] | undefined) ?? []
         const loc  = curs[curs.length - 1]?.sc.what as string | undefined
-        if (!loc) return undefined
-        const i = loc.indexOf(':')
-        if (i < 0) return undefined
-        return H.Lies_locate_in_waft(waft, loc.slice(0, i), loc.slice(i + 1))
+        return H.Lies_resolve_locator(w, loc, waft)   // the within-Waft tail (What:<name> | Doc:<path>)
     },
 
     //   Lies_locate_in_waft — depth-first over %What (any depth) then %Doc, return the first
@@ -1144,6 +1141,54 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             for (const doc of container.o({ Doc: 1 }) as TheC[])
                 if (String((doc.sc as any).Doc) === val) return doc
         return undefined
+    },
+
+    //   Lies_resolve_locator — the ONE loose locator resolver (Keeping_spec rideable #7).  The three
+    //    forks that had each grown their own copy of "resolve a loose locator to a live particle"
+    //     converge here, so the Keep's cursor-locator doesn't drift a third (now a fourth) copy:
+    //      <mainkey>:<value>              within `scope` (a Waft|What), depth-first — the Keep cursor
+    //                                       tail, delegated to Lies_locate_in_waft (Lies_keep_resume_what)
+    //      Waft:<key>[/<mainkey>:<value>] name a Waft by VALUE, then resolve the tail inside it — the
+    //                                       %FromWhat Aside back-pop (Interest.md; write-only today,
+    //                                        this is the reader it was waiting for)
+    //      text:<word>                    loose case-insensitive substring over mainkey-values,
+    //                                       depth-first — the Text-Point bridge (a thin first cut; the
+    //                                        ranked def|call|comment Point search is its own subsystem)
+    //   LOOSE by contract: matches by value, never a hard path|ref, and NEVER throws — an unresolvable
+    //    locator returns undefined so the caller lands on first.  So a Waft rename DEGRADES a stored
+    //     locator (→ undefined) rather than blocking it; the rename-caretaking that re-points stored
+    //      locators is its own later pass (Keeping_spec #8).
+    Lies_resolve_locator(w: TheC, locator: string | undefined, scope?: TheC): TheC | undefined {
+        const H = this as House
+        if (!locator) return undefined
+        // text:<word> — the fuzzy Text-Point bridge (loose substring now; ranking is future work)
+        if (locator.startsWith('text:')) {
+            const word = locator.slice(5).toLowerCase()
+            if (!word) return undefined
+            const hit = (c: TheC): TheC | undefined => {
+                for (const k of c.o() as TheC[]) {
+                    const mk = H.mainkey(k)
+                    if (mk && String((k.sc as any)[mk] ?? '').toLowerCase().includes(word)) return k
+                    const inner = hit(k); if (inner) return inner
+                }
+                return undefined
+            }
+            for (const root of scope ? [scope] : w.o({ Waft: 1 }) as TheC[]) { const h = hit(root); if (h) return h }
+            return undefined
+        }
+        // Waft:<key>[/tail] — name the Waft by value, then resolve the tail within it
+        if (locator.startsWith('Waft:')) {
+            const slash = locator.indexOf('/')
+            const key   = slash < 0 ? locator.slice(5) : locator.slice(5, slash)
+            const waft  = w.o({ Waft: key })[0] as TheC | undefined
+            if (!waft || slash < 0) return waft
+            return H.Lies_resolve_locator(w, locator.slice(slash + 1), waft)
+        }
+        // <mainkey>:<value> — the within-scope tail (Keep cursor); needs a container to search
+        if (!scope) return undefined
+        const i = locator.indexOf(':')
+        if (i < 0) return undefined
+        return H.Lies_locate_in_waft(scope, locator.slice(0, i), locator.slice(i + 1))
     },
 
     //   Lies_keep_reopen — reopen every Waft in the ledger (idempotent via Lies_open_Waft's

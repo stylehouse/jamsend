@@ -1,0 +1,20 @@
+story:LakeLocate
+  Styles
+  Plan
+    Prep
+      i_elvisto:Lies,e:Lies_locate_selftest
+  Opt
+    For
+      w:Lies
+        dontSnapGhostList
+    quiesce_snap_time=0.4
+  TimeSpool
+    TimeTotal:beliefs,avg=0.192
+      sample=0.182,at=1782715174
+      sample=0.148,at=1782715344
+      sample=0.247,at=1782715511
+    TimeTotal:step,avg=0.192
+      sample=0.182,at=1782715174
+      sample=0.148,at=1782715344
+      sample=0.247,at=1782715511
+  step,dige:49102959a6c736ec

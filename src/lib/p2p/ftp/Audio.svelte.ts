@@ -93,6 +93,54 @@ export class Audiolet {
         this.gainNode.connect(this.gainNode2);
         this.gainNode.gain.value = 1;
     }
+
+    // ── self-measurement + mute: the one object this graph never had ──────────────
+    //  the graph is bufferSource -> gainNode -> gainNode2 -> destination; nothing ever
+    //   listened to it. a test that asserts "consistently noisy, no gaps" IS an analyser
+    //    tapped before the output, and a real test plays SILENTLY (mute the output stage,
+    //     the same `// don't hear it` setupRecorder does to gainNode2, but reversible).
+    analyser?: AnalyserNode
+    // tap off gainNode (pre-mute, the point the recorder taps) so the analyser reads the
+    //  real signal regardless of what gainNode2 does to the output. pure sink branch.
+    tap(fftSize=2048): AnalyserNode {
+        if (this.analyser) return this.analyser
+        this.analyser = this.gat.AC!.createAnalyser()
+        this.analyser.fftSize = fftSize
+        this.gainNode.connect(this.analyser)
+        return this.analyser
+    }
+    // one time-domain frame of the REAL PCM the graph is producing right now
+    sample(into?:Float32Array): Float32Array {
+        let a = this.tap()
+        let buf = into ?? new Float32Array(a.fftSize)
+        a.getFloatTimeDomainData(buf)
+        return buf
+    }
+    // mute the OUTPUT, keep the graph + analyser live (real playback, no sound).  MUST zero gainNode2,
+    //  NOT gainNode: the analyser taps gainNode (upstream), so zeroing gainNode would silence the tap and
+    //   a muted measurement would read 0 — every analyser-based witness would break.  Stay gain=0 (not
+    //    disconnect()) so the graph is still pulled and the analyser keeps updating while muted.
+    mute() { this.gainNode2.gain.value = 0 }
+    unmute() { this.gainNode2.gain.value = 1 }
+
+    // build a one-channel AudioBuffer from raw mono PCM (what a synth produces) — the decode-free
+    //  path into this voice: there's no codec round-trip to make for audio we already have as samples.
+    pcm_buffer(pcm: Float32Array, sampleRate = 48000): AudioBuffer {
+        let b = this.gat.AC!.createBuffer(1, pcm.length, sampleRate)
+        b.copyToChannel(pcm, 0)
+        return b
+    }
+    // lay one decoded buffer on the timeline to start at AC-time `when`, onto the tapped gainNode;
+    //  returns the time it ends.  Schedule the next at this end and the stream is seamless; schedule
+    //   it LATE (delivery fell behind playback, when > the prior end) and a REAL silent gap opens that
+    //    the analyser reads — the underrun, produced by the audio clock, not by cursor arithmetic.
+    schedule(decoded: AudioBuffer, when: number): number {
+        let src = this.gat.AC!.createBufferSource()
+        src.buffer = decoded
+        src.connect(this.gainNode)
+        src.start(when)
+        return when + decoded.duration
+    }
     // < use this
     close() {
         // Stop and disconnect all audio nodes

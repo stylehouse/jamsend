@@ -1,9 +1,10 @@
 Snap:H
   H:MusuSignal,Run
     A:MusuSignal
-      self,round=9	{"mung":["age"]}
+      self,round=10	{"mung":["age"]}
       w:MusuSignal
-        self,round=9	{"mung":["age"]}
+        self,round=10	{"mung":["age"]}
         req:wrangle,eternal,ok
         signal,kind:healthy,bits=7.62,gaps=0,played=48,of=48,underran=0
         signal,kind:starved,bits=0.3,gaps=47,played=48,of=48,underran=47
+        signal,kind:silence,bits=0,gaps=48,played=48,of=48,underran=0

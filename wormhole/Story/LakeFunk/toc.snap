@@ -1,0 +1,16 @@
+story:LakeFunk
+  Styles
+  Plan
+    Prep
+      i_elvisto:Lies,e:Lies_funk_selftest
+  Opt
+    For
+      w:Lies
+        dontSnapGhostList
+    quiesce_snap_time=0.4
+  TimeSpool
+    TimeTotal:beliefs,avg=0.085
+      sample=0.085,at=1782715976
+    TimeTotal:step,avg=0.085
+      sample=0.085,at=1782715976
+  step,dige:56a3e5a5cfe9a0c6

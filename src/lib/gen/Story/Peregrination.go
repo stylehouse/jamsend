@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Peregrination(): string { return '92cd131866b408e5' },
+    Ghostmeta_Ghost_Story_Peregrination(): string { return 'b33cab6322ef6320' },
 
 
 // PereStaple — the Peeroleum p2p test (the outer test layer), and the first of a
@@ -170,6 +170,10 @@ async Lake_proof_drive(w, req) {
             await this.Lake_multicast_arm(w)
         } else if (n === 31) {
             await this.Lake_corrupt_redial_arm(w)
+        } else if (n === 32) {
+            await this.Lake_silence_retx_arm(w)
+        } else if (n === 33) {
+            await this.Lake_crossfire_arm(w)
         }
     }
     await this.Lake_pump_handshakes(w)
@@ -771,6 +775,89 @@ async Lake_corrupt_redial_arm(w) {
     await this.Peeroleum_deliver(w, mk(s4))
 
 },
+// Lake_silence_retx_arm — step 32: SILENCE racing RETRANSMIT on ONE peer — the handover's "silence + retransmit
+//  racing (an inbound-silent peer whose outbox is still retransmitting — which latch wins?)".  Answer: NEITHER
+//   pre-empts the other — %silent (inbound, Lake_silence_arm) and %stalled (outbound, Lake_stall_arm) are
+//    INDEPENDENT one-shots that end up coexisting.  Fresh link (Ben/Amy): Ben HEARS once (an inbound frame stamps
+//     last_heard_tick — the silence sweep's gate), then his link blackholes.  His policy sets silence_dead:1 a tick
+//      TIGHTER than max_attempts:3, so on the FIRST sweep %silent latches while Ben's un-acked emit is STILL
+//       retransmitting (attempts climbing, not yet dead); two sweeps later the emit exhausts and %stalled joins it.
+//        Synchronous via explicit sweep calls (the deterministic twin of the per-beat Runstepped sweep) → all at 33.
+async Lake_silence_retx_arm(w) {
+    w.i({reached: "step_32"})
+    let [BenPier, AmyPier] = await this.Lake_link(w, 'ben', 'amy')
+    let Benport = this.Lake_port(BenPier)
+    Benport.reliable = false
+    // tight retx (exhausts in 3 attempts) + a SHORTER silence window (1 tick), both on Ben's Peering (per-Peering,
+    //  like the stall/silence arms) so silence latches MID-retransmit and no other peer of this run is touched.
+    BenPier.c.up.c.retx_policy = {base: 1, factor: 1, max_attempts: 3, cap: 1, silence_dead: 1}
+    // 1) HEARD once — one inbound frame stamps Ben's last_heard_tick (he WAS live); the silence sweep gates on it.
+    await this.Peeroleum_deliver(w, {header: {type: 'noop', from: 'amy', to: 'ben', seq: 1}})
+    BenPier.c.sr_heard = BenPier.c.last_heard_tick != null
+    // 2) the link goes dark — blackhole Ben's outbound so this emit and every resend is swallowed (never acked).
+    let s = this.Pier_next_seq(BenPier)
+    BenPier.c.sr_seq = s
+    let lossy = this.make_lossy_partner(this.Lake_port(AmyPier), {blackhole: [s]})
+    BenPier.c.lossy = lossy
+    Benport.partner = lossy
+    this.Peeroleum_send(w, {header: {type: 'noop', from: 'ben', to: 'amy', seq: s}})
+    // 3) FIRST sweep: the emit retransmits (attempts → 2, alive) AND silence_dead:1 fires → %silent latches NOW,
+    //     mid-retransmit.  Capture the race: silent up, the emit retransmitted but not yet stalled.
+    this.Peeroleum_retx_sweep(w)
+    this.Peeroleum_liveness_sweep(w)
+    let ob = BenPier.o({outbox: 1})[0]
+    let em = ob && ob.o({emit: 1}).find(e => e.sc.seq == s)
+    BenPier.c.sr_silent_mid_retx = !!(BenPier.oa({silent: 1}) && em && (em.c.attempts || 1) >= 2 && !BenPier.oa({stalled: 1}))
+    // 4) two more sweeps exhaust the emit (attempts reach 3) → %stalled joins %silent; capture both still held.
+    this.Peeroleum_retx_sweep(w)
+    this.Peeroleum_retx_sweep(w)
+    BenPier.c.sr_stalled = BenPier.oa({stalled: 1})
+    BenPier.c.sr_silent = BenPier.oa({silent: 1})
+
+},
+// Lake_crossfire_arm — step 33: MULTI-PEER CROSSFIRE — three identities under ONE w, their streams INTERLEAVED,
+//  one clean + one lossy + one corrupt, proving the swarm routes by identity so the three never cross-contaminate
+//   (the handover's last "not yet braided" item, and the swarm refactor's whole point — Peeroleum_route resolves
+//    {peering,pier} by from/to identity).  Three fresh links: Gar→Het (clean), Ime→Jad (a gap that HEALS), Kye→Lom
+//     (a corrupt frame that FAULTS).  The deliveries are shuffled across all three receivers — g1,i1,k1,g2,i3,k2✗,i2,k3
+//      — so the streams race.  End state, each in ISOLATION: Het dispatched g1+g2 (clean, no faulty); Jad's i2 arrived
+//       LATE so i3 gap-buffered then i2 filled it → i1+i2+i3 all dispatched in order (healed, no faulty); Lom's k2 was
+//        bad-body-hash → faulted+burned its slot, k1+k3 dispatched around it (corrupt, faulty:bad-body-hash).  Crucially
+//         the fault stayed on Lom — Het+Jad carry NO faulty — so identity-routing isolated the three under load.  All
+//          synchronous awaited delivers (no sweeps) → seen at step 33.
+async Lake_crossfire_arm(w) {
+    let [Gar, Het] = await this.Lake_link(w, 'gar', 'het')
+    let [Ime, Jad] = await this.Lake_link(w, 'ime', 'jad')
+    let [Kye, Lom] = await this.Lake_link(w, 'kye', 'lom')
+    w.i({reached: "step_33"})
+    Het.i({Ud: 1, pubkey: 'gar'})
+    Jad.i({Ud: 1, pubkey: 'ime'})
+    Lom.i({Ud: 1, pubkey: 'kye'})
+    this.Peeroleum_on(w, 'test_cross', (cw, pier, frame) => { pier.c.cf = pier.c.cf || {}; let k = frame.header.seq; pier.c.cf[k] = (pier.c.cf[k] || 0) + 1 })
+    let g1 = this.Pier_next_seq(Gar), g2 = this.Pier_next_seq(Gar)
+    let i1 = this.Pier_next_seq(Ime), i2 = this.Pier_next_seq(Ime), i3 = this.Pier_next_seq(Ime)
+    let k1 = this.Pier_next_seq(Kye), k2 = this.Pier_next_seq(Kye), k3 = this.Pier_next_seq(Kye)
+    Gar.c.cf_seqs = [g1, g2]; Ime.c.cf_seqs = [i1, i2, i3]; Kye.c.cf_seqs = [k1, k2, k3]
+    let mk = (frm, to, s) => { return {header: {type: 'test_cross', from: frm, to: to, seq: s}} }
+    let bytes = new Uint8Array([5, 6, 7, 8])
+    let bad = '0'.repeat(64)
+    let kbad = (s) => { return {header: {type: 'test_cross', from: 'kye', to: 'lom', seq: s, body_hash: bad, body_len: bytes.length}, buffer: bytes} }
+    // the crossfire: deliveries shuffled across the three identities so the streams genuinely interleave.
+    await this.Peeroleum_deliver(w, mk('gar', 'het', g1))   // clean
+    await this.Peeroleum_deliver(w, mk('ime', 'jad', i1))   // lossy stream: i1 in order
+    await this.Peeroleum_deliver(w, mk('kye', 'lom', k1))   // corrupt stream: k1 in order
+    await this.Peeroleum_deliver(w, mk('gar', 'het', g2))   // clean
+    await this.Peeroleum_deliver(w, mk('ime', 'jad', i3))   // i2 MISSING → i3 gap-buffers on Jad
+    await this.Peeroleum_deliver(w, kbad(k2))               // k2 CORRUPT → faults on Lom, burns its slot
+    await this.Peeroleum_deliver(w, mk('ime', 'jad', i2))   // i2 arrives late → fills the gap → i2+i3 drain
+    await this.Peeroleum_deliver(w, mk('kye', 'lom', k3))   // k3 good → dispatches past the burned k2
+    // captures — each receiver read in isolation; the fault must be Lom's alone.
+    Het.c.cf_clean = !!(Het.c.cf && Het.c.cf[g1] === 1 && Het.c.cf[g2] === 1) && !Het.o({faulty: 1})[0]
+    Jad.c.cf_healed = !!(Jad.c.cf && Jad.c.cf[i1] === 1 && Jad.c.cf[i2] === 1 && Jad.c.cf[i3] === 1) && !Jad.o({faulty: 1})[0]
+    let lomfault = Lom.o({faulty: 1})[0] && Lom.o({faulty: 1})[0].o({unemit: 1})[0]?.sc.error
+    Lom.c.cf_corrupt = !!(Lom.c.cf && Lom.c.cf[k1] === 1 && Lom.c.cf[k3] === 1 && Lom.c.cf[k2] == null && lomfault === 'bad-body-hash')
+
+},
 // ══ multicast — publish-subscribe over a claimed @channel (spec §18) ══
 // The product motivation: a high-bandwidth publisher relaying to many listeners uploads ONCE to a topic and
 //  the relay fans it out — not one addressed copy per listener.  This proves the floor: claim an @name,
@@ -1017,6 +1104,26 @@ Lake_proof_see(w) {
     let crrecovered = !!(DaxPier && DaxPier.c.inseq && crseqs && DaxPier.c.inseq.last >= crseqs[3])
     let crgood = !!(crc && crseqs && crc[crseqs[0]] === 1 && crc[crseqs[2]] === 1 && crc[crseqs[3]] === 1 && crc[crseqs[1]] == null)
     if (crfaulterr === 'bad-body-hash' && crheld >= 2 && crcleared && crrecovered && crgood && !(w.oa({see: 'corrupt mid-re-dial frame faulted not lost — good tail recovered'}))) w.i({see: 'corrupt mid-re-dial frame faulted not lost — good tail recovered'})
+    // step 32 (silence_retx): an inbound-silent peer whose outbox is still retransmitting — both carrier-down latches
+    //  coexist.  Ben heard once (sr_heard), %silent latched WHILE the emit was still retransmitting (sr_silent_mid_retx
+    //   — silent up, emit attempts >= 2, not yet stalled), then two sweeps later %stalled joined it (sr_stalled) with
+    //    %silent still held (sr_silent).  Neither latch pre-empted the other.
+    let BenPier = this.Lake_pier(w, 'ben')
+    let srheard = BenPier && BenPier.c.sr_heard
+    let srmid = BenPier && BenPier.c.sr_silent_mid_retx
+    let srstalled = BenPier && BenPier.c.sr_stalled
+    let srsilent = BenPier && BenPier.c.sr_silent
+    if (srheard && srmid && srstalled && srsilent && !(w.oa({see: 'silence latched mid-retransmit — then the stall joined it — both carrier-down signals coexist'}))) w.i({see: 'silence latched mid-retransmit — then the stall joined it — both carrier-down signals coexist'})
+    // step 33 (crossfire): three identities under one w, their streams interleaved — clean (Het), lossy-then-healed
+    //  (Jad, gap filled in order), corrupt-then-faulted (Lom, bad-body-hash burned k2, k1+k3 around it).  The fault
+    //   stayed Lom's alone (Het+Jad carry no faulty), so the swarm routed by identity and the three never cross-talked.
+    let cfHet = this.Lake_pier(w, 'het')
+    let cfJad = this.Lake_pier(w, 'jad')
+    let cfLom = this.Lake_pier(w, 'lom')
+    let cfclean = cfHet && cfHet.c.cf_clean
+    let cfhealed = cfJad && cfJad.c.cf_healed
+    let cfcorrupt = cfLom && cfLom.c.cf_corrupt
+    if (cfclean && cfhealed && cfcorrupt && !(w.oa({see: 'three interleaved streams routed by identity stayed isolated — clean delivered — lossy healed — corrupt faulted alone'}))) w.i({see: 'three interleaved streams routed by identity stayed isolated — clean delivered — lossy healed — corrupt faulted alone'})
 
 },
 // Lake_order — keep the Run snap readable: float THIS Book's peer world (A:PereStaple | A:PereProof,

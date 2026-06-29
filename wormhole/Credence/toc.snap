@@ -8,14 +8,17 @@ Waft:Credence
     Funkcion:Storying,of_Book:PereProof
   What:Musu
     Funkcion:StoryTimes
-    Funkcion:Storying,of_Book:MusuStaple
-    Funkcion:Storying,of_Book:MusuStream
-    Funkcion:Storying,of_Book:MusuStock
-    Funkcion:Storying,of_Book:MusuLive
-    Funkcion:Storying,of_Book:MusuWear
-    Funkcion:Storying,of_Book:MusuSkip
-    Funkcion:Storying,of_Book:MusuCrowd
-    Funkcion:Storying,of_Book:MusuSignal
+    What:slices
+      Funkcion:Storying,of_Book:MusuStaple
+      Funkcion:Storying,of_Book:MusuStream
+      Funkcion:Storying,of_Book:MusuStock
+      Funkcion:Storying,of_Book:MusuLive
+      Funkcion:Storying,of_Book:MusuWear
+      Funkcion:Storying,of_Book:MusuSkip
+    What:composite
+      Funkcion:Storying,of_Book:MusuCrowd
+    What:realaudio
+      Funkcion:Storying,of_Book:MusuSignal
   What:Lake
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:LakeSurfer
@@ -23,6 +26,9 @@ Waft:Credence
     Funkcion:Storying,of_Book:LakeFlush
     Funkcion:Storying,of_Book:LakeTiles
     Funkcion:Storying,of_Book:LakeSurprise
+    Funkcion:Storying,of_Book:LakeLocate
+    Funkcion:Storying,of_Book:LakeFunk
+    Funkcion:Storying,of_Book:LakeKeep
   What:Leaf
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:LeafFarm

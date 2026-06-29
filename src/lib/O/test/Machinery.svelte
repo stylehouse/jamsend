@@ -172,10 +172,122 @@
     },
 
 
+//#endregion
+//#region LakeLocate
+    // P2 keystone gate — the one loose locator resolver (Lies_resolve_locator, Keeping_spec #7).
+    //  In-system Story, NOT a scratch spec: a Prep fires e_Lies_locate_selftest, which builds a tiny
+    //   Waft tree on w:Lies, resolves each of the three locator forms + a rename, and emits a %see
+    //    self-describing claim per truth that holds.  The snap-fixture diff is the gate — a resolver
+    //     regression drops a %see line.
 
+    Run_A_LakeLocate(this: House) {
+        const H = this
+        H.i({ A: 'Lies'       }).i({ w: 'Lies' })
+        H.i({ A: 'Lang'       }).i({ w: 'Lang' })
+        H.i({ A: 'Pantheate'  }).i({ w: 'Pantheate' })
+        console.log(`🟦 ${H.name} LakeLocate wired`)
+    },
 
+    // the Prep handler — drive Lies_resolve_locator through its three forms + a rename, witnessing
+    //  each passing claim as a DURABLE marker under LocateGate (a `see` particle is the transient
+    //   Lies status line — it gets swept; a plain child snaps like any C).  Each marker's mainkey IS
+    //    the claim; the snap-fixture diff is the gate (a resolver regression drops a marker line).
+    e_Lies_locate_selftest(this: House, _A: TheC, w: TheC, _e: TheC) {
+        const H = this
+        const R = (loc: string, scope?: TheC) => H.Lies_resolve_locator(w, loc, scope)
+        // fold the auto-loaded GhostList — its Doc list is volatile (it drifts with every src file
+        //  add|remove) and this gate doesn't test it; dontSnap keeps the header line, hides the list.
+        const gl = w.o({ Waft: 'GhostList' })[0] as TheC | undefined
+        if (gl) gl.sc.dontSnap = 1
+        const gate = w.oai({ LocateGate: 1 })
+        // tree:  Waft:LocFoo / What:bar / Doc:baz   (+ sibling What:qux for the text form).  equip so
+        //  the test Wafts stay backstage — no Lang Interest sprouts around them, and their subtree
+        //   folds from the snap (the live tree the resolver walks is intact; LocateGate is the gate).
+        const foo = w.oai({ Waft: 'LocFoo' }, { equip: 'LocGate' })
+        const bar = foo.oai({ What: 'bar' }); bar.oai({ Doc: 'baz' })
+        foo.oai({ What: 'qux' })
+        if (R('What:bar', foo)?.sc.What === 'bar')              gate.i({ tail_resolves_What_in_scope: 1 })
+        if (R('Waft:LocFoo/Doc:baz')?.sc.Doc === 'baz')         gate.i({ path_resolves_nested_Doc: 1 })
+        if (R('text:qu', foo)?.sc.What === 'qux')               gate.i({ text_substring_matches: 1 })
+        // rename = drop + recreate under a new key (index-safe); the stale locator must DEGRADE
+        w.drop(foo)
+        const ren = w.oai({ Waft: 'LocRenamed' }, { equip: 'LocGate' }); ren.oai({ What: 'bar' })
+        if (R('Waft:LocFoo/What:bar') === undefined)            gate.i({ stale_locator_degrades_not_throws: 1 })
+        if (R('Waft:LocRenamed/What:bar')?.sc.What === 'bar')   gate.i({ renamed_key_resolves: 1 })
+        gate.bump_version(); w.bump_version()
+    },
+//#endregion
+//#region LakeKeep
+    // P1 verify gate — the kind foundation, reconciled to the %equip collapse + Chunk 1.  P1's goal
+    //  ("background kinds get a carrier they'd otherwise never get, before any focus") is met by the
+    //   per-Waft req:Waftica carrier: this drives the REAL instantiate→ensure_waftica path on a fresh
+    //    background (equip) Waft and witnesses the carrier, plus the equip focus-classification.  Same
+    //     in-system Story shape as LakeLocate; markers under KeepGate, snap-fixture diff is the gate.
 
+    Run_A_LakeKeep(this: House) {
+        const H = this
+        H.i({ A: 'Lies'       }).i({ w: 'Lies' })
+        H.i({ A: 'Lang'       }).i({ w: 'Lang' })
+        H.i({ A: 'Pantheate'  }).i({ w: 'Pantheate' })
+        console.log(`🟦 ${H.name} LakeKeep wired`)
+    },
 
+    async e_Lies_keep_selftest(this: House, _A: TheC, w: TheC, _e: TheC) {
+        const H  = this
+        const gate = w.oai({ KeepGate: 1 })
+        const gl = w.o({ Waft: 'GhostList' })[0] as TheC | undefined
+        if (gl) gl.sc.dontSnap = 1                                  // fold the volatile GhostList list
+        // (1) the P1 goal — a fresh BACKGROUND (equip) Waft, run through the real instantiate path,
+        //     gets a req:Waftica carrier (Chunk 1's per-Waft carrier; no focus needed).
+        const back = w.oai({ Waft: 'KeepBack' }, { equip: 'Back' })
+        await H.Lies_instantiate_funkcions(w, back)
+        const funks = w.o({ Funkcions: 1 })[0] as TheC | undefined
+        if (funks?.oa({ req: 'Waftica', waft: 'KeepBack' }))  gate.i({ background_Waft_gets_a_carrier: 1 })
+        // (2) carrier-at-load fires generally — the auto-loaded GhostList has its carrier too.
+        if (funks?.oa({ req: 'Waftica', waft: 'GhostList' })) gate.i({ loaded_Waft_gets_a_carrier: 1 })
+        // (3) %equip classification — the background Waft is OUT of the focus set, a plain one (GhostList) is IN.
+        const focusable = (w.o({ Waft: 1 }) as TheC[]).filter(wf => !wf.sc.equip)
+        if (gl && !focusable.includes(back) && focusable.includes(gl)) gate.i({ equip_out_plain_in_focus: 1 })
+        gate.bump_version(); w.bump_version()
+    },
+//#endregion
+//#region LakeFunk
+    // Chunk-2 gate — Storying is EVENT-DRIVEN, not pumped.  Drops `run` from FUNK_KINDS.Storying so
+    //  instantiate binds no per-tick poll; instead Lies_reflect_storying restamps a cell's verdict
+    //   when a run_result lands (Lies_run_result_recv's push).  This builds a Storying cell, confirms
+    //    it is unpumped, lands a green then a red run_result through reflect, and witnesses the verdict
+    //     flips — markers under FunkGate, snap-fixture diff is the gate.
+
+    Run_A_LakeFunk(this: House) {
+        const H = this
+        H.i({ A: 'Lies'       }).i({ w: 'Lies' })
+        H.i({ A: 'Lang'       }).i({ w: 'Lang' })
+        H.i({ A: 'Pantheate'  }).i({ w: 'Pantheate' })
+        console.log(`🟦 ${H.name} LakeFunk wired`)
+    },
+
+    async e_Lies_funk_selftest(this: House, _A: TheC, w: TheC, _e: TheC) {
+        const H = this
+        const gate = w.oai({ FunkGate: 1 })
+        const gl = w.o({ Waft: 'GhostList' })[0] as TheC | undefined
+        if (gl) gl.sc.dontSnap = 1
+        // a Waft holding a Storying cell bound to a dock path (equip → backstage, folds from the snap)
+        const waft = w.oai({ Waft: 'FunkW' }, { equip: 'Funk' })
+        const cell = waft.oai({ Funkcion: 'Storying', of_dock: 'FunkW/dockA' })
+        await H.Lies_instantiate_funkcions(w, waft)
+        // (1) NOT pumped — instantiate binds no funk.c.run on a Storying cell (Chunk 2 dropped it).
+        if (!cell.c.run) gate.i({ storying_cell_is_not_pumped: 1 })
+        // (2) a GREEN run_result lands → reflect restamps the verdict good (3/3).
+        await w.roai({ run_result: 1, path: 'FunkW/dockA' }, { ok: 1, ok_pct: 1, done: 3, at: 1 })
+        H.Lies_reflect_storying(w, { path: 'FunkW/dockA' })
+        const vg = cell.c.verdict as { phase?: string, total?: number } | undefined
+        if (vg?.phase === 'good' && vg?.total === 3) gate.i({ green_result_event_marks_verdict_good: 1 })
+        // (3) a RED run_result lands → reflect flips the verdict bad.
+        await w.roai({ run_result: 1, path: 'FunkW/dockA' }, { ok: 0, ok_pct: 0, done: 3, at: 2 })
+        H.Lies_reflect_storying(w, { path: 'FunkW/dockA' })
+        if ((cell.c.verdict as { phase?: string } | undefined)?.phase === 'bad') gate.i({ red_result_event_flips_verdict_bad: 1 })
+        gate.bump_version(); w.bump_version()
+    },
 //#endregion
 
 
@@ -225,7 +337,7 @@
 //
 // Historical particles drawn from antiquity give the codec a realistic spread
 // of sc shapes: negative integers (founding dates), multi-word strings that
-// stay in peel format, coloned strings that force JSON fallback, and multi-line
+// stay in peel format, comma-bearing values that force JSON fallback, and multi-line
 // block scalars tested through enLine + blockquote_these_sc.
 //
 // ── story_matching entry required (add to Story.svelte story_matching array) ────────
@@ -243,7 +355,7 @@
 // ── tests ────────────────────────────────────────────────────────────────────
 //
 //   1. round_trip          3-level empire tree: encode + decode, verify counts and values
-//   2. peel_vs_json        colon/comma in a value forces JSON for the whole line; safe values stay peel
+//   2. peel_vs_json        a comma in a value forces JSON; a colon in a value rides through peel
 //   3. bq_encode           enLine with blockquote_these_sc emits key: | lines; parent line omits the key
 //   4. bq_roundtrip        decode_wh_lines recovers block-scalar string verbatim, including trailing \n
 //   5. bq_no_newline       value not ending \n → bq_errors entry, key falls through to inline
@@ -282,21 +394,22 @@ async TextInca(A: TheC, w: TheC) {
  
     // ── 1. round_trip ─────────────────────────────────────────────────────
     // Two empires, each with Emperor and Event children.
-    // Colon in some label values forces JSON for those lines;
-    // all others stay in peel format.  Visible in snap_output.
+    // Some labels carry a colon, which rides through peel (decode splits each
+    //  comma-field on its first colon); every line stays peel and must round-trip.
+    // Visible in snap_output.
     {
         const romanC = _C({ Empire: 'Roman', founded: -753, fell: 476, capital: 'Rome' })
         romanC.i(_C({ Emperor: 1, name: 'Augustus',  reign_start: -27,  reign_end: 14  }))
         romanC.i(_C({ Emperor: 1, name: 'Trajan',    reign_start: 98,   reign_end: 117, note: 'Optimus' }))
         romanC.i(_C({ Emperor: 1, name: 'Hadrian',   reign_start: 117,  reign_end: 138 }))
         romanC.i(_C({ Event: 1,   year: 79,  label: 'Vesuvius' }))
-        // colon in label → this line encodes as JSON
+        // colon in label rides through peel (no comma to break the field)
         romanC.i(_C({ Event: 1,   year: 476, label: 'Romulus Augustulus deposed: end of Western Empire' }))
  
         const mongolC = _C({ Empire: 'Mongol', founded: 1206, fell: 1368, capital: 'Karakorum' })
         mongolC.i(_C({ Emperor: 1, name: 'GenghisKhan', reign_start: 1206, reign_end: 1227 }))
         mongolC.i(_C({ Emperor: 1, name: 'KublaiKhan',  reign_start: 1260, reign_end: 1294 }))
-        // colon again
+        // colon again — still peel
         mongolC.i(_C({ Event: 1, year: 1258, label: 'Sack of Baghdad: House of Wisdom destroyed' }))
  
         const rootC = _C({ Civilization: 1 })
@@ -330,8 +443,10 @@ async TextInca(A: TheC, w: TheC) {
     }
  
     // ── 2. peel_vs_json ───────────────────────────────────────────────────
-    // encode_stringies: /[:,\t\n]/ in any key or value → JSON for the whole line.
-    // Only Hastings is safe (all values alphanum or numeric).
+    // encode_stringies forces JSON only when a VALUE carries , \t \n (a KEY also
+    //  on :).  A colon INSIDE a value rides through peel — decode splits each
+    //   comma-field on its first colon only, so it can't mis-split.
+    // Marathon's comma forces JSON; Thermopylae's colon-in-value and Hastings stay peel.
     {
         const rootC = _C({ BattleLog: 1 })
         rootC.i(_C({ Battle: 'Thermopylae', year: -480, desc: 'Leonidas: 300 Spartans vs Xerxes' }))
@@ -341,12 +456,12 @@ async TextInca(A: TheC, w: TheC) {
         const { snap, errors } = await H.encode_wh_lines(rootC)
         const lines = snap.split('\n').filter(Boolean)
         // lines[0] = 'BattleLog:1', lines[1..3] = the battles
-        const thermo_json = lines[1]?.trimStart().startsWith('{')
+        const thermo_peel = lines[1]?.trimStart().startsWith('Battle:Thermopylae')
         const mara_json   = lines[2]?.trimStart().startsWith('{')
         const hast_peel   = lines[3]?.trimStart().startsWith('Battle:Hastings')
  
-        record('peel_vs_json', !errors.length && !!thermo_json && !!mara_json && !!hast_peel, {
-            thermo_json: thermo_json ? 1 : 0,
+        record('peel_vs_json', !errors.length && !!thermo_peel && !!mara_json && !!hast_peel, {
+            thermo_peel: thermo_peel ? 1 : 0,
             mara_json:   mara_json   ? 1 : 0,
             hast_peel:   hast_peel   ? 1 : 0,
             enc_errors:  errors.length,

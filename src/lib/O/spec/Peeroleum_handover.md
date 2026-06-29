@@ -806,14 +806,16 @@ ghosts, Garden.g + Tyrant.g.
 - `wormhole/Story/PereStaple/toc.snap` — drives the **LIVENESS** Book (steps 2–22 after the split): 2–7
    spine/trial/binary, 8 heal, 11 stall, 16 silence, 19 redial. Fixtures `001–022.snap`; CredRunner 21/22 (step-3
     quiescence residual the lone miss). See "Two parallel Books" under heading M.
-- `wormhole/Story/PereProof/toc.snap` — drives the **CORRECTNESS** Book (steps 2–31, split off PereStaple): 2
+- `wormhole/Story/PereProof/toc.snap` — drives the **CORRECTNESS** Book (steps 2–33, split off PereStaple): 2
    corruption, 4 dedup, 6/7 reorder, 9 reset, 11 pre-Ud, 13/15 dedup-after-cull; the **combinatory braids** 17
     storm (drop+dup+gap), 21 corrupt-stream, 23/25 rededup, 27 storm_redial (the re-dial-mid-gap braid that found
-     the reset/buffered bug), 29 multicast (claim + offer-handover + 3 subscribers + 1 publish → fan-out), and **31
+     the reset/buffered bug), 29 multicast (claim + offer-handover + 3 subscribers + 1 publish → fan-out), **31
       corrupt_redial** (corruption mid-re-dial; the first proof in the new `%see` style — `Lake_proof_see`, not a
-       `%witnessed` latch). Fixtures `001–031.snap` recorded headless; CredRunner **31/31, surprises []** (no
-        handshake → fully deterministic, no step-3 residual). To add a step, see the RECORDING gotcha in the Status
-         block — never `ACCEPT=1` (it churns the whole 2–30 gate).
+       `%witnessed` latch), **32 silence_retx** (inbound `%silent` + outbound `%stalled` coexist on one peer), and
+        **33 crossfire** (three interleaved identities — clean | gap-healed | corrupt-faulted — isolated by routing).
+         Fixtures `001–033.snap` recorded headless; CredRunner **33/33, surprises []** (no handshake → fully
+          deterministic, no step-3 residual). To add a step, see the RECORDING gotcha in the Status block — never
+          `ACCEPT=1` (it churns the whole 2–31 gate).
 - `src/lib/O/spec/Peeroleum_spec.md` — the pinned design (the floor). This file — the living progress.
 - `src/lib/O/spec/Covenant_design.md` — the cabinetry+party design sketch (Garden.g/Tyrant.g).
 
@@ -846,14 +848,37 @@ The proofs grew in two layers, deliberately in this order:
        the slot), then s3/s4 good → tail drains exactly once. Proves the bad frame **faults, not lost-in-the-reset**.
         First test authored in the new **`%see`** style (asserted by `Lake_proof_see`, not a `%witnessed` latch):
          `see:corrupt mid-re-dial frame faulted not lost — good tail recovered`. CredRunner 31/31, surprises [].
+  - **silence_retx (PereProof step 32)** `[x]` — SILENCE racing RETRANSMIT on ONE peer (the handover's "which latch
+     wins?"). Answer: **neither pre-empts the other** — `%silent` (inbound, the silence sweep) and `%stalled`
+      (outbound, the retx sweep) are independent one-shots that COEXIST. Ben/Amy fresh link: Ben hears once
+       (stamps `last_heard_tick` — the silence gate), the link blackholes, then `silence_dead:1` (a tick TIGHTER
+        than `max_attempts:3`) latches `%silent` on the FIRST sweep **while Ben's emit is still retransmitting**;
+         two sweeps later the emit exhausts and `%stalled` joins it. `silence ∘ retransmit`. Synchronous via explicit
+          `Peeroleum_retx_sweep`/`Peeroleum_liveness_sweep` calls (the deterministic twin of the per-beat sweep).
+           `%see` style: `see:silence latched mid-retransmit — then the stall joined it — both carrier-down signals
+            coexist`. CredRunner 32/32, surprises [] (snap deterministic but for the round-mung).
+  - **crossfire (PereProof step 33)** `[x]` — MULTI-PEER CROSSFIRE: three identities under one w, their streams
+     INTERLEAVED, one clean + one lossy + one corrupt, proving the swarm routes by identity so the three never
+      cross-contaminate (the swarm refactor's whole point — `Peeroleum_route` resolves `{peering,pier}` by from/to).
+       Gar→Het (clean), Ime→Jad (a gap that HEALS — i2 arrives late, i3 buffers, i2 fills → all dispatch in order),
+        Kye→Lom (k2 bad-body-hash FAULTS + burns its slot, k1+k3 dispatch around it). Deliveries shuffled
+         (g1·i1·k1·g2·i3·k2✗·i2·k3) so they race; end state each in ISOLATION, and **the fault stayed Lom's alone**
+          (Het+Jad carry no faulty). `%see`: `see:three interleaved streams routed by identity stayed isolated —
+           clean delivered — lossy healed — corrupt faulted alone`. Synchronous awaited delivers (no sweeps).
+            CredRunner 33/33, surprises [].
   > The bracketed numbers in the bullets ABOVE (40/44/46/50/32) are the **pre-split PereStaple** numbering and are
   >  stale; the live PereProof step→arm map is in "Files in play" (`PereProof/toc.snap`: storm 17, corrupt-stream 21,
-  >   rededup 23/25, storm_redial 27, multicast 29, corrupt_redial 31).
+  >   rededup 23/25, storm_redial 27, multicast 29, corrupt_redial 31, silence_retx 32, crossfire 33).
 
-**NOT yet braided (the behaviour space, parked here as the user asked — pick the next braid):**
-- ~~corruption DURING a stall/redial~~ **DONE — PereProof step 31 `corrupt_redial`** (see the braid above);
-- silence + retransmit racing (an inbound-silent peer whose outbox is still retransmitting — which latch wins?);
-- multi-peer crossfire (3+ peers on `w:PereStaple`, one lossy, one corrupt — the swarm-route by identity under load).
+**The behaviour-space combinatory braids are now COMPLETE — all three "not yet braided" items proven:**
+- ~~corruption DURING a stall/redial~~ **DONE — PereProof step 31 `corrupt_redial`** (the braid above);
+- ~~silence + retransmit racing~~ **DONE — PereProof step 32 `silence_retx`** (both latches coexist);
+- ~~multi-peer crossfire~~ **DONE — PereProof step 33 `crossfire`** (three identities isolated under interleaved load).
+
+The next frontier is NOT another one-off braid — it is the **PENCILED WORRY** below (the missing *logical* scenarios:
+ restart / seqinx rollover / asymmetric-link / mid-stream carrier death / graded loss — the mock CAN model these)
+  and the **Tier-3 two-origin real-transport harness** (timing/persistence, which the mock structurally cannot) —
+   the latter doubles as the runner-fleet grid (see "The runner fleet" above).
 
 > **PENCILED WORRY (the human, this session — look at next): the p2p layer is tested happy-path +
 >  binary-failure only, and the headless harness gives FALSE CONFIDENCE on exactly where p2p fails.**
@@ -882,6 +907,40 @@ The proofs grew in two layers, deliberately in this order:
       receive-side trust check already half-exists (`hear_trust` + the pre-Ud gate). First test: a frame from an
        untrusted/unfeatured peer is refused, the same `%error→%faulty` path corruption/pre-Ud already prove. Swap
         the carrier (req** → w → A) later if it grows weight; the test stays.
+
+**The runner fleet — the spine primitives to invent NOW (the long-term goal: a self-driving grid of runners).**
+ The vision (the human): a Selenium/KVM grid of Chrome app-servers running the app, a `Cluster/**` of forkable Ids,
+  a runner that a given editor *owns* (so `%Rungo` is handed to a runner that focuses on us, not a random shared one),
+   a coordinator that asks for a docker/libvirt restart when a crash-quorum of tabs dies, and an Id hop-over. The
+    OPERATIONS half (the `?I=` fork param, the `Lies%runner` UI, the restart/resume service the inner sockets to —
+     lifted from `ty/`: `virtreset.py` + the puppeteer `watchdog.js` + KVM snapshot-revert so File System Access
+      handles survive) lives in **`spec/ClusterTrust_handover.md` → "The runner fleet"**. The SPINE half — what
+       Peeroleum must invent — is small and mostly ONE primitive:
+- **`?I=` identity selection** wired into the spine beside the role param. Today role is `?E=`/`?B=` (`Lies_role`)
+   and the cluster Idento rides `House.stashed`. Add `?I=<tag>` to select WHICH forked Idento *this tab* uses, minted/
+    loaded from `stashed` keyed by the tag — so one browser profile can host many separable runner tabs (open a flock
+     by clicking N links, each a different `?I=`), where `ty/` needed a whole OS browser-profile per identity.
+- **Point-to-point Idento addressing.** The relay already has the pieces: `bind(addr, ws)` + `deliverLocal(to,…)` +
+   `@channel` claims. Bind each node's `Idento.pub` as its addr on the signed hello, route `to:<pub>`. The signing
+    layer (ClusterTrust) makes the addr trustworthy — an addr IS a verified identity.
+- **The signed claim/lease — the ONE primitive that unlocks most of the vision.** Generalise the relay's existing
+   `claims` map (`@channel → the socket that claimed the name`, already in prod for multicast) to arbitrary named
+    tokens leased by an Idento: a `%Claim,name,by,until` particle + `claim`/`release` frames in the ClusterTrust
+     privileged-frame table, verified in the recv window like `dock_push`. Then **runner-affinity** ("the focused
+      runner" = the editor's Idento holds the claim on runner R), the **distributed mutex** ("whoever does mutexes" =
+       whoever holds the named token), and the **restart-token** are all the SAME primitive wearing three hats.
+- **`%Rungo` → leased runner.** `Rungo` (run-authority token) + `Storyrun` + the verdict wire + `runner_ask`/
+   `story_repl` RPC already exist; handoff = route Rungo to the claim-holder instead of a shared `?B=` runner.
+- **Health-quorum → `restart_request`.** App-side liveness is LIVE/SLUGGISH/DEAD; the relay sees every socket. The
+   relay counts DEAD across the fleet and, past a quorum (the human's "most of 7 tabs crashed"), emits a control frame
+    bridged to the host's reset socket (`ty/`'s `/tmp/jamsend-supervisor/chrome_launcher.sock`, `RESTART:<profile>`).
+- **Lineage to mine for the lifecycle:** the legacy garden (`src/lib/ghost/Gardening.svelte`) already invented the
+   Id+Pier *process reality* — **`Idzeugnation`** (Id birth: asked/finished/dead/waits), **`Ringing`** (a contact
+    attempt + `Because` reasons), `OverPiering`/`%Hath` (the who-exists directory), `Ping` onlinity, trust grants,
+     active-terminal migration, whittling. Id hop-over = `Idzeugnation` reborn on the spine. Port these, don't reinvent.
+> Sequencing (the human): **get on with the spine now** (the claim/lease primitive + `?I=` + addressing are buildable
+>  on what we have — `relay-test.ts` already proves headless ws round-trips), and only stand up the bunches-of-runners
+>   grid at the natural time. The grid doubles as the Tier-3 two-origin harness the PENCILED WORRY says we still owe.
 
 **Real relay (the transport under all this).** The deterministic Story rides the clean mock + the adversary on
  PURPOSE — logical-tick replay, no wall-clock (so a Story replays identically). The real relay is the integration

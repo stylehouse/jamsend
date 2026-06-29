@@ -12,15 +12,15 @@ Snap:H
                Emperor,name:Trajan,reign_start=98,reign_end=117,note:Optimus
                Emperor,name:Hadrian,reign_start=117,reign_end=138
                Event,year=79,label:Vesuvius
-               {"Event":1,"year":476,"label":"Romulus Augustulus deposed: end of Western Empire"}
+               Event,year=476,label:Romulus Augustulus deposed: end of Western Empire
              Empire:Mongol,founded=1206,fell=1368,capital:Karakorum
                Emperor,name:GenghisKhan,reign_start=1206,reign_end=1227
                Emperor,name:KublaiKhan,reign_start=1260,reign_end=1294
-               {"Event":1,"year":1258,"label":"Sack of Baghdad: House of Wisdom destroyed"}
-        enc_test:peel_vs_json,ok,thermo_json,mara_json,hast_peel,enc_errors=0
+               Event,year=1258,label:Sack of Baghdad: House of Wisdom destroyed
+        enc_test:peel_vs_json,ok,thermo_peel,mara_json,hast_peel,enc_errors=0
          snap_output: |
            BattleLog
-             {"Battle":"Thermopylae","year":-480,"desc":"Leonidas: 300 Spartans vs Xerxes"}
+             Battle:Thermopylae,year=-480,desc:Leonidas: 300 Spartans vs Xerxes
              {"Battle":"Marathon","year":-490,"desc":"Athenians, Plataeans vs Persians"}
              Battle:Hastings,year=1066,victor:Norman
         enc_test:bq_encode,ok,line_count=5,bq_key,bq_body,parent_clean

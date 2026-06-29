@@ -44,12 +44,16 @@ and any regression bisects to a single phase. A `LakeKeep`-style Book is the gat
 
 ## P0 — clear the snags *(parallel, zero spine risk)*
 
-- **Defuse Lens bomb 1.** Runner/Brink panels get a local `setInterval`→`now` `$state`
-  (`onDestroy` cleanup) so liveness doesn't freeze off the `w` heartbeat. Unblocks every
-  hoisted panel. (`Lens_handover.md` §Bombs 1.)
-- **Delete the dead Sidetrack code** — `e_Lang_sprout_sidetrack` / `e_Lies_open_sidetrack`
-  / `interest_sprout_sidetrack` + the `tentative` save-exemption — *before* we touch
-  `interest_*`. (`Interest.md` top block.)
+- **Defuse Lens bomb 1.** ✅ **DONE already** (2026-06-29 audit) — `Runner.svelte:50-53` /
+  `Relay.svelte:31-33` already carry the local `now = $state` + `setInterval(1s)` + `onDestroy`
+  ticker (Relay comments it "the Runner-bomb fix"). Liveness no longer freezes off `w`. No work.
+- **Delete the dead Sidetrack code** — ⚠️ **NOT dead** (2026-06-29 audit). `interest_sprout_sidetrack`
+  *is* genuinely undefined (so `e_Lang_sprout_sidetrack` throws/no-ops), BUT **`LakeSurprise`
+  drives the path**: Prep 7 `e_Lang_sprout_sidetrack`, Prep 8 `e_Lies_open_sidetrack` (mints the
+  `Interestily/side` `tentative` Waft), Prep 9 foregrounds it. So this is NOT a clean removal —
+  it needs the two handlers + the `tentative` save-exemption deleted **and** LakeSurprise's
+  Preps 7–9 scrubbed + the Book re-recorded (the gate below is real). Own chunk; host green-run
+  tail. (`Interest.md` §14-15/§82-86 still mis-call it "dead code to delete" — correct on landing.)
 - **Gate:** LakeSurprise stays green; eyeball a Runner panel ageing past a run.
 
 ## P1 — the kind foundation *(finish + verify — `Keeping_spec.md` Phase 1 + gap 1)*
@@ -63,6 +67,31 @@ and any regression bisects to a single phase. A `LakeKeep`-style Book is the gat
 - **Gate:** `LakeKeep` asserts kind-classification + Keep `/**` in the snap, headless;
   `:9091` shows focus unchanged.
 
+> **Status (2026-06-29) — largely SUPERSEDED, like P0.** Two findings on contact:
+> (1) **`Lies_waft_kind`/`LIES_KIND_CAPS` are GONE** — the kind-table was collapsed to the one
+> **`%equip`** durable flag (2026-06-28); `equip:Keep`/`equip:Cluster` carry the type-name AND mean
+> "out of the cursor's way." The focus filter, Waft count, load-Good fold + want-land all already route
+> through `!wf.sc.equip` (`Lies.svelte:648/752/960/998`). So "route the Keep + focus filter through the
+> table" is **done** by the collapse.
+> (2) **The Goal — "background kinds get a carrier they'd otherwise never get" — is already met by the
+> P3-forerunner Chunk 1**: *every* Waft, background or not, gets a `req:Waftica` carrier at load
+> (`Lies_instantiate_funkcions` → `Lies_ensure_waftica`, fired from `Lies.svelte:755`). The kind-sweep
+> was the *means*; the goal arrived another way.
+> **What's genuinely left** is a true OWNER FORK, not a safe build: a snapped **`kind`** field (the
+> type-name for *foreground* Wafts too, distinct from the `%equip` attention-flag) would add a `kind:`
+> key to **every Waft in every Book's `toc.snap`** — a fleet-wide snap re-record — and its shape vs the
+> `%equip` collapse is the owner's call. Deferred to the owner (it's the face-wrangler's input — derive
+> faces from kind — not blocking P3). One dead remnant worth noting: the Waftica carrier's
+> `main:<kind>` inference reads `waft.sc.kind` (`LiesFunk.svelte:171`), which is never set today, so
+> that half is inert until the fork lands. **Verify half DONE: `Story:LakeKeep`** — an in-system Story
+> Book (`Run_A_LakeKeep` + `e_Lies_keep_selftest` in `test/Machinery.svelte`, recorded via
+> `Story_cli_run.mjs LakeKeep --accept`) over the *existing* equip/carrier behaviour. **Green**
+> (`match 1/1`), markers under `KeepGate`: `background_Waft_gets_a_carrier` (the P1 goal — a fresh
+> `equip` Waft, run through the real `instantiate→ensure_waftica`, gets its `req:Waftica`),
+> `loaded_Waft_gets_a_carrier` (the auto-loaded GhostList's carrier), `equip_out_plain_in_focus` (the
+> `%equip` focus-classification). So P1 is **functionally done + verified** bar the owner's snapped-`kind`
+> fork.
+
 ## P2 — the one resolver + loose locators *(keystone; standalone, parallel with P1)*
 
 - **Goal:** stop three locator forks drifting before the Keep's makes a fourth.
@@ -74,23 +103,54 @@ and any regression bisects to a single phase. A `LakeKeep`-style Book is the gat
   the three existing forks at it.
 - **Gate:** a `LakeLocate` micro-Book round-trips each locator form *plus a rename*, headless.
 
+> **Status (2026-06-29). BUILT + headless-green.** `Lies_resolve_locator(w, locator, scope?)`
+> (`Lies.svelte`, beside `Lies_locate_in_waft`) is the one resolver: `<mainkey>:<value>` in a scope
+> (delegates to `Lies_locate_in_waft`) · `Waft:<key>[/tail]` (Waft named by value, recurse the tail)
+> · `text:<word>` (loose substring over mainkey-values; the ranked def|call|comment search stays a
+> future subsystem). Loose by contract — matches by value, never throws, an unresolvable locator → undefined
+> (caller lands on first), so a rename degrades not blocks. **Only Fork 1 was a live repoint** —
+> `Lies_keep_resume_what` now goes through it; **`%FromWhat` was write-only** (Lies.svelte:305 writes,
+> nothing read it back), so the resolver is the *reader it was waiting for*, not a replacement; **`text:`
+> is born here.** Gate = **`Story:LakeLocate`** — a real in-system Story Book run by the actual runner
+> (`Run_A_LakeLocate` + the `e_Lies_locate_selftest` Prep handler in `test/Machinery.svelte`; recorded
+> via `node scripts/Story_cli_run.mjs LakeLocate --accept`). It drives the resolver through all three
+> forms + a rename and witnesses each passing claim as a durable marker under `LocateGate` — the
+> snap-fixture diff is the gate. **Green** (`match 1/1`), 73-line snap (GhostList + the equip test Wafts
+> folded). *(An earlier `scripts/LakeLocate.spec.ts` was scrapped — a scratch vitest spec is the
+> scattered-`.ts` anti-pattern; the gate belongs inside the machine.)* Uncommitted; `:9091`-unverified
+> (the resolver has no live consumer beyond Fork 1 yet — P3's Keeping is its first big caller).
+
 ## P3 — `req:Keeping` beside the old reqs *(parity, no cut — `Keeping_spec.md` Phase 2)*
 
-- **Build:** stand the driver up deriving focus + convergence from the kind-table (P1) and
-  resolver (P2). Leave `desire`/`acquire`/`timemachine`/`workon` present but
-  **inert-checked** — assert Keeping reaches the *same* focus + convergence as today, every
-  tick. App boots all pages. Introduce **`%Lango`** (the "move the show here" push, today
-  `e_Lang_workon_update` — `Keeping_spec.md` D3) as Keeping's input term.
-- **Gate:** `LakeKeep` grows a parity assertion (`old-focus == Keeping-focus`) across a
-  focus-switch + cursor-resume, headless.
+- **Build, in two steps.** *(a)* **The channel first** — the decided, low-risk piece (it
+  touches no live focus path until anyone reads it): one universal setter `H.lango(target,
+  what)` minting the `/%Lango` **source terminal** onto the causing Waft's carrier (`i_elvis_req`
+  shape, off-snap), with the **yoink / out-compete** lifecycle (later-Lango-wins within an
+  Interest; the cross-Interest race deferred to `req:Langoer`). Today's click-push
+  (`e_Lang_workon_update` — `Keeping_spec.md` D3) becomes one caller of it, the input term.
+  Gate with its own Book. *(b)* **The parity driver — owner-supervised** — stand `req:Keeping`
+  up deriving focus + convergence from the kind-table (P1) and resolver (P2), `desire`/`acquire`/
+  `timemachine`/`workon` left present but **inert-checked**: assert Keeping reaches the *same*
+  focus + convergence as today, every tick, app boots all pages. (Touches the live focus path →
+  not landed unsupervised.)
+- **Gate:** the channel Book asserts mint → yoink → out-compete on the terminal; then `LakeKeep`
+  grows the parity assertion (`old-focus == Keeping-focus`) across a focus-switch + cursor-resume,
+  headless.
+
+**What a `%Lango` is.** An **intent to do something with a piece of the source**, *tracked
+over time* — not an instantaneous setter call but a thing with a life: minted, contended,
+landed, reconciled, retired. Its **life and times play out in the KeepingInterest vortex**
+(the Keep×Interest off-snap side, §below) — that vortex *is* where Langos live; the source
+terminal is only where one is born and held.
 
 **The Lango channel — the form of `%Lango`.** `%Lango` generalises from the click-push to
 the **universal attention-event**, sub-typed (`%Lango/%Cursor`, `%Lango/%Lens`,
 `%Lango/%mode`) — so every editor move is one auditable event. One universal setter
 `H.lango(target, what)` is the single funnel — a **homing helper over `i_elvis`**: where
 `i_elvis_req` homes a *req* (the handle a reply rides back on), `H.lango` homes the
-*`%Lango`* itself, **one-way, no reply handle** — the only "answer" is the show actually
-moving, read back off the roster/Keep state. Every Lango originates **against a Waft**, and a
+*`%Lango`* itself, **one-way by default**, no reply handle — the only "answer" is the show
+actually moving, read back off the roster/Keep state; a Lango that genuinely needs to know
+*how* it landed grows the `/landing,req` ack below. Every Lango originates **against a Waft**, and a
 Waft has exactly **one carrier req** (next §) — so the source is always that carrier: a
 Funkcion mints onto its Waft's carrier; a `req:Keeping**` stage onto the carrier of the Waft
 it acts on; the **bare UI:Waft click** onto the same carrier (no special case — it's the
@@ -100,8 +160,11 @@ separate organ). That single convergence is where pull-policy lives — which In
 what the displaced focus does — and it hands the **levels** down to the Keep. Delivery rides
 the **one-way** machinery (the `req:waft_roster` pattern — `i_elvisto` + `reqyoncile`, no
 reply); the request/reply path (`o_elvis_req.finish` → `req.sc.reply` → `think{reqturn}`,
-`Housing.svelte.ts:645`) is the rare Lango that needs an ack (e.g. the concentric-resume
-content-wait). The Keep persists the **levels** (on-off standing state: foregrounded
+`Housing.svelte.ts:645`) is the rare Lango that needs an ack — and that ack has a **shape**:
+the source's `Lango,req` hosts a child **`/landing,req,maz=7`** that the *remote* side (the
+receiver, doing the actual landing) drives and **reqyonciles** back up to the `Lango,req` —
+*"this is how I landed."* Same handshake as `o_elvis_req`'s reply, expressed as a nested req
+in the maz stack rather than a cross-ghost elvis (e.g. the concentric-resume content-wait). The Keep persists the **levels** (on-off standing state: foregrounded
 Waft/What, plugged Lenses, layout) and resumes them; **impulses** (scroll, glance, one-shot
 navigate) are consumed and forgotten — the discriminator is the Waft-vs-Interest border
 (*"still true with no one looking?"*). The top of all Interests stays the **noun**
@@ -109,14 +172,60 @@ navigate) are consumed and forgotten — the discriminator is the Waft-vs-Intere
 in-flight Langos + excitement are just the Keep's off-snap side — Keep↔Interest + the
 channel is the whole machine.)*
 
-> **Open — decide at build.** The *receiver* is never in question: it's always a held req,
-> the convergence — `req:Langoer` = `req:Keeping`'s intake. What's open is the **residue**:
-> does the *source* keep its emitted Langos as an origin trace (mint into its req's `.c`,
-> off-snap) or fire and forget, and is there a Keep-side ledger of past Langos at all?
-> *Lean:* source mints into `.c` (cheap origin trace), receiver consumes, **levels copy to
-> the Keep, impulses drop** — the durable residue is the Keep's level state, no separate held
-> "Lango set." And: does the channel ride the *same* Lang-side standing req as `waft_roster`
-> (one wire, two payloads) or its own?
+> **Decided (2026-06-29, owner).** The *receiver* was never in question — always the held
+> convergence `req:Langoer` = `req:Keeping`'s intake. The **residue** is now settled two ways:
+> - **No Keep-side ledger of Langos.** The only durable Keep residue is the **level state**;
+>   the Keep's own `%Cursor` resurrects the **first bit** of a `%Lango` (which Waft/What to
+>   re-land on) — "the rest is wild": impulses (scroll, glance, the inner reach) are consumed
+>   and forgotten, never logged.
+> - **But the *source* keeps a live trace.** The causing Waft/Funkcion's `req**` (its Waftica
+>   carrier, next §) **hosts** the in-flight `/%Lango` as an *object* — a **source terminal**,
+>   shaped like `i_elvis_req`: where `i_elvis_req` hangs a `req` handle the reply rides back on,
+>   the terminal hangs the `%Lango` itself. Not fire-and-forget — a held thing with a
+>   **lifecycle**: it can be **yoinked** (the source cancels), **Ctrl-Z'd** (undo — TODO,
+>   gated on the minimap/Lens having focus, not CodeMirror), or **out-competed** — by another
+>   **Interest** (cross-Interest pull-policy, decided at `req:Langoer`) or by another `%Lango`
+>   in the **same** Interest (intra-Interest supersede). When it loses, it leaves no ledger —
+>   only whatever **level** it managed to push to the Keep.
+>
+> Still small-open: whether the channel rides the *same* Lang-side standing req as
+> `waft_roster` (one wire, two payloads) or its own — a delivery detail, settle at build.
+>
+> And a deeper seed, *not yet needed*: if a single Lango's **landing gets shared across too
+> many parties** (several Interests, several pieces of the source at once), there may need to
+> be an **algebra of where-to-do-what** — how the landing work is placed and divided. Park it
+> until a real case forces it; the maz-stack `/landing,req` is the hook it would grow on.
+
+**`req:Langoer` — the convergence, decided (2026-06-29).** Not a new organ — `req:Keeping`'s
+**receiver hat**, its steps 2→4 (`focus → land → converge`, `Keeping_spec.md`), named for the
+intake. It already exists *in embryo*: today's `Lies_focus_waft` (`Lies.svelte:990`) +
+`Lang_set_interest` (`LiesHold.svelte:489`) + `req:workon` (`LiesHold.svelte:83`) **are** it;
+Langoer just hands them the `%Lango` as their one input. The three open questions resolve off
+that existing machinery — the "bring forward what's most-like-it" rule, here literally:
+
+- **Which Interest wins (pull-policy) — the newest focus-Lango, among foregroundables only.**
+  `Lies_focus_waft` is *already* the sole selector: `.sc.active` (exactly one Waft bears it) →
+  the cursor's own Waft → first non-`equip`. A focus-Lango (`%Lango/%Cursor`) just sets its
+  target as the sole `.sc.active` (Keeping the sole writer) — so the **newest** focus-Lango
+  wins, *within* an Interest (the cursor moves) or *across* one (ActiveInterest hops). `equip`
+  Wafts (Keep/Cluster) are filtered out: **background never steals the foreground** (Upkeep/
+  Errand contend at the Brink, a different pole — [[upkeep-errand-brink]]). And **not every
+  Lango is a focus-pull**: `%Lango/%Lens` and `%Lango/%mode` set a *level on the current focus*
+  without moving it — only `%Lango/%Cursor` runs this pull-policy.
+- **What displaced focus does — demote-warm, never drop.** `Lang_set_interest` already does it:
+  the left foreground goes `locked → pending` (its cap collapses) but **keeps its own `%LE`**
+  (working clone intact) for an instant **crossfade-back**, stays in the roster (still a nib),
+  and its **level** is recorded to the Keep (`%Cursor` + `accessed_at`). So a *warm* return
+  re-lands off the live LE; a *cold* one off the ledger's "first bit". The loser recedes, loses
+  nothing — which is exactly why there's no Lango ledger: the level *is* the memory.
+- **One-wire-vs-two — dissolved: one owner, two intake faces.** The question presumed Langoer
+  is a wire. It isn't: `req:Keeping` owns *both* the attention-event intake (a `%Lango` →
+  focus/converge) *and* the roster-set intake (`interest_roster_sig` → `interest_reconcile`).
+  Different triggers, different steps, **one walk** — so it neither "shares the roster wire" nor
+  "runs its own": two faces of the one req. The source terminal's `/landing,req` ack reqyonciles
+  back **up that same walk**, landing in Keeping's converge band (the maz-low end of its 9→1
+  span, `Keeping_spec.md` — so the `maz=7` guess sits *between* the acquire-gate (9) and converge
+  (~1); pin the exact level at build).
 
 **The carrier — and most Funkcions need no req at all.** Today every Funkcion with a `run`
 mints its *own* eternal `req:Funkcion,funk_id:<Waft>/<dip>` into `w/Funkcions`
@@ -130,7 +239,10 @@ a Funkcion actually needs:
   `book`/`path`, restamp `funk.c.verdict`; a click already re-runs the Book. → **zero reqs**
   for Credence's 48, and 48 fewer full scans per tick. (Ballistics, Ting, IdHatch already have
   no `run` — same bucket.) This is just [[req-not-mandatory]]: plain synchronous reflection is
-  not a req.
+  not a req. **A Funkcion *at rest* is a mirror — no req.** The instant it has **excitement**
+  (a button click, an intention to *move the show*) that excitement *is* req-shaped — but it
+  still needs no req of its *own*: it hosts its `/%Lango` on the Waft's one carrier (next §),
+  the source terminal. Rest → none; excited → the carrier's terminal holds the live Lango.
 - **`req:Waftica,waft:<path>` — one per Waft.** The base carrier: **owns** the Waft's `%Lango`
   (clicks + Funkcion intentions — the source the channel needs, present for *every* Waft
   including Funkcion-less ones), is the manual-pump entry for the bucket above, and **carries**

@@ -129,6 +129,11 @@ Three overlapping forward designs:
      a parallel one, so a bare Waft-tree Point and a minimap Pmirror land the same way. Natural
       tenant of the `LiesPoint` ghost above (Waft-side Point activation); the Point-row onclick
        just calls the navigate seam. No urgency — joins the wave. **[low · cold]**
+- **Ctrl-Z over Langos (attention-undo)** — when the **minimap/Lens has focus** (not CodeMirror),
+   Ctrl-Z should undo *attention-moves* — the `%Lango`s — not text edits: pop the last landed
+    Lango and re-land the one before it. Needs the `%Lango` source-terminal + its `/landing`
+     reqyoncile trace (Backbone_plan P3) to exist first, so it's the natural undo-stack to walk.
+      Focus-gating is the whole trick (CodeMirror keeps its own undo). **[low · cold]**
 - **Relative locators (canonical Pointer)** — `method() / if something / etc =`
    name-paths, shortest-unambiguous, to disambiguate two `etc =` inside one
     method. TODO already squats in `LangPoint.svelte:78-99`; blocked on `%Map`

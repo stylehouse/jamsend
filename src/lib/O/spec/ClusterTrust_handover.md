@@ -202,3 +202,63 @@ container never loads or can read a foreign role's key. docker-compose.yml wires
   `.env.cluster-editor`/`-runner` to the staging editor / runner hosts; don't leave foreign role files here.
 - So: compose declares role only where a process *signs autonomously* (none yet) or for a *dedicated* browser
   deployment's default; verifiers just need the trusted pubs. Secrets stay node-side + the editor's .stashed (Id hatch).
+
+## The runner fleet — forking Ids (`?I=`), addressing, and the restart/resume service (the long-term goal)
+
+The destination (the human): a grid of Chrome app-servers running the app, a `Cluster/**` of **forkable Ids**, a
+ runner a given editor *owns* (so `%Rungo` is handed to a runner that **focuses on us**, not a random shared one a
+  Claude + a human both shoot runs at), a coordinator that asks for a **docker/libvirt restart** when a crash-quorum
+   of tabs dies, **two** such grids (they want restarting constantly), and an **Id hop-over** to a fresh identity.
+    This is the operations layer that rides the signing substrate above. The SPINE primitives it needs (the one
+     `claim`/`lease` frame, `?I=`, point-to-point `to:<pub>` addressing, the `restart_request` frame) are specced in
+      **`spec/Peeroleum_handover.md` → "The runner fleet — the spine primitives to invent NOW"**; this section is the
+       operations half.
+
+### `?I=` — fork identity at the TAB, not the OS profile
+Today: *role* from `?E=`/`?B=` (`Lies_role`); *signing key* = the top House's `.stashed.cluster_idento` (the 🪪 Id
+ hatch, `loadRoleKey`). Add **`?I=<tag>`** to select WHICH forked Idento *this tab* uses — minted/loaded from
+  `stashed` keyed by the tag. Then **one browser profile hosts many separable runner tabs**, and you **spawn a flock
+   by clicking N links**, each carrying a different `?I=`. This is the lightweight successor to `ty/`, which forked
+    identity at the OS level — a whole Chrome `--user-data-dir` per profile (`public,private,tyrant` in
+     `chrome-starter.py`/`watchdog.js`). The Idento + trust grants travel with the tag; **Id hop-over** = mint a fresh
+      tag-keyed Idento, re-grant, re-bind at the relay, drain the old (the garden's `Idzeugnation`, reborn).
+
+### The `Lies%runner` UI — the outer tab sorts itself out
+The runner tab needs a face to declare and manage what it is: pick/fork its `?I=` Idento, show its role
+ (editor|runner) + lease/claim status + liveness (LIVE/SLUGGISH/DEAD), and offer "become runner" / "fork a new Id" /
+  "spawn N runner links". This is a **`Lens:Runner`/Brink** tenant (the Lens:Runner face already exists, unverified —
+   see the Lens handover); the claim status is read from the `%Claim` particle the spine mints.
+
+### The restart/resume service the inner sockets to (lifted from `ty/`)
+The hard problem (`ty/README.md`): Chrome app-servers hold **File System Access Directory Handles** granted by a human
+ clicking "Allow"; they live in browser memory, so **any Chrome restart destroys them**. `ty/`'s answer was NOT to
+  restart Chrome but to run the whole Xvfb+Chrome stack inside a **KVM VM** and **revert to a healthy snapshot**
+   (`snap3`, taken once handles were granted): the handles survive in the VM's frozen memory and the dirs they point
+    at are **virtiofs** mounts from the host, so they're still there on wake. Two host services:
+- **`watchdog.js`** (puppeteer-core, in the VM): every 30s connects to each profile's CDP debug port (`PORT_BASE+i`),
+   runs `page.evaluate(() => true)` — a **crashed *tab*** is closed + reopened (no full restart); **Chrome unreachable**
+    writes `RESTART:<profile>` to a Unix socket. Per-profile cooldown 25s.
+- **`virtreset.py`** (on the host): listens on `/tmp/jamsend-supervisor/chrome_launcher.sock` (the VM writes it over
+   virtiofs), and on `RESTART:<profile>` does `virsh snapshot-revert … snap3`; ALSO polls VM **balloon memory** and
+    reverts before the guest OOMs (>90%); 120s revert cooldown; auto-reverts on host reboot if the VM isn't running.
+   A **docker** variant exists (`install-jamsend-supervisor.sh`) but "keeps losing handles" — the KVM-revert is the
+    "maybe well" one. The inner→host channel is a plain socket message (`RESTART:<name>`), trivially portable to an
+     http or ws endpoint for a non-VM (docker) deployment.
+
+### The crash-quorum → who asks for the restart
+`ty/` triggers per-profile (any one Chrome unreachable → a `RESTART`). The human wants a **quorum** ("restart when
+ most of ~7 tabs have crashed"). In the new world the **relay is the natural counter** — it already sees every socket
+  and the app already computes LIVE/SLUGGISH/DEAD; the relay tallies DEAD across the fleet and, past the quorum, emits
+   a `restart_request` control frame bridged to the host reset socket. The "stable filehandle Pier" vision in
+    `ty/README.md` (a tab that almost never crashes holds the handles and shunts work to a "progress-bar-of-failure"
+     series of work tabs, possibly a separate profile/Pier, WebRTC between them) is exactly the **focused-runner +
+      owned-handle** split this fleet wants — the handle-holder is one Idento, the disposable workers another.
+
+### Privileged-frame additions (the wire this implies — extend the table above)
+| frame            | path                              | signer          | verifier              |
+|------------------|-----------------------------------|-----------------|-----------------------|
+| `claim`/`release`| routed envelope (`Peeroleum_on`)  | editor/runner   | relay arbitrates + recipients (recv win) |
+| `restart_request`| control frame → host reset socket | relay/supervisor| host `virtreset`      |
+
+Point-to-point delivery uses `to:<Idento.pub>` (the relay binds each verified Idento as its addr on the signed hello),
+ reusing `bind`/`deliverLocal`; the `claims` map (today `@channel → socket`) generalises to the leased `%Claim` token.

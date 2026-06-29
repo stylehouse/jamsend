@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1782704068439
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1782715172769
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -18,6 +18,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     sub:Ghost/Story,name:Story
     sub:Ghost/test,name:test
     sub:Ghost/M,name:M
+    Doc:Ghost/wormhole-Ghost,name:wormhole-Ghost,noticed_at=1782715172769
   open_dir:Ghost/N
   group:Ghost/N,dir:Ghost/N
     Doc:Ghost/N/Peeroleum.g,name:Peeroleum,noticed_at=1781771905413
@@ -116,6 +117,9 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/LiesHold.svelte,name:LiesHold,noticed_at=1782348976323
     Doc:src/lib/O/LiesFunk.svelte,name:LiesFunk,noticed_at=1782355239589
     Doc:src/lib/O/LiesRun.svelte,name:LiesRun,noticed_at=1782360711895
+    Doc:src/lib/O/Peerily.svelte.ts,name:Peerily,noticed_at=1782715172769
+    Doc:src/lib/O/Selection.svelte.ts,name:Selection,noticed_at=1782715172769
+    Doc:src/lib/O/Stuff.svelte.ts,name:Stuff,noticed_at=1782715172769
   open_dir:Ghost/M
   group:Ghost/M,dir:Ghost/M
     Doc:Ghost/M/Radiola.g,name:Radiola,noticed_at=1782393617713

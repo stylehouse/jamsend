@@ -1,0 +1,16 @@
+story:LakeKeep
+  Styles
+  Plan
+    Prep
+      i_elvisto:Lies,e:Lies_keep_selftest
+  Opt
+    For
+      w:Lies
+        dontSnapGhostList
+    quiesce_snap_time=0.4
+  TimeSpool
+    TimeTotal:beliefs,avg=0.087
+      sample=0.087,at=1782715795
+    TimeTotal:step,avg=0.087
+      sample=0.087,at=1782715795
+  step,dige:1ea303f5b062aa6e

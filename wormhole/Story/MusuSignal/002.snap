@@ -1,14 +1,8 @@
 Snap:H
   H:MusuSignal,Run
     A:MusuSignal
-      self,round=6	{"mung":["age"]}
+      self,round=8	{"mung":["age"]}
       w:MusuSignal
-        self,round=6	{"mung":["age"]}
+        self,round=8	{"mung":["age"]}
         req:wrangle,eternal,ok
-        reached:step_2
-        Terminal,name:omega
-          inbox
-        Caster,name:source,total=48,next=0,live
-          req:cast,eternal
-        Player,name:ear,playhead=-1,decoded=-1,live
-          req:progress,eternal
+        signal,kind:healthy,bits=7.62,gaps=0,played=48,of=48,underran=0
