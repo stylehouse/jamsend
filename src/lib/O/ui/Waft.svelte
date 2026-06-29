@@ -30,6 +30,7 @@
     import { tick }         from "svelte"
     import EncodingSplatter from "$lib/O/ui/EncodingSplatter.svelte"
     import PeelInput        from "$lib/O/ui/PeelInput.svelte"
+    import Waft             from "./Waft.svelte"                      // self-import for the recursive sub-Waft render (replaces deprecated <svelte:self>)
     import FunkHost          from "$lib/O/Funk/FunkHost.svelte"     // generic host for %Funkcion embeds (kind-dispatched) — incl. a Waft's BIG main face
     import { FUNK_KINDS }     from "$lib/O/Funk/kinds"               // registry: which kinds have a live component
     import Orb                from "$lib/O/ui/micro/Orb.svelte"      // shared edit/crud toggle (ui/micro/)
@@ -708,7 +709,7 @@
 
     <!-- sub-Wafts (recursive) -->
     {#each sub_wafts as sw (sw.sc.Waft)}
-        <svelte:self {H} {w} waft={sw} depth={depth + 1} {examining}
+        <Waft {H} {w} waft={sw} depth={depth + 1} {examining}
             {on_active} {on_delete} />
     {/each}
 

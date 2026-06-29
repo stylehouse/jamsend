@@ -2,6 +2,7 @@
     import type { Snippet } from "svelte";
     import type { DirectoryListing, FileListing } from "./Directory.svelte";
     import Scrollability from "../ui/Scrollability.svelte";
+    import FileList from "./FileList.svelte";   // self-import for the recursive sub-directory render (replaces deprecated <svelte:self>)
 
     type args = {
         list: DirectoryListing,
@@ -64,7 +65,7 @@
                                 </div>
                                 {#if dir.expanded}
                                     <div class="item dir expanded">
-                                        <svelte:self list={dir} />
+                                        <FileList list={dir} />
                                     </div>
                                 {/if}
                             {/each}

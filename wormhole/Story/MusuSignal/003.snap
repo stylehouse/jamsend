@@ -1,0 +1,17 @@
+Snap:H
+  H:MusuSignal,Run
+    A:MusuSignal
+      self,round=7	{"mung":["age"]}
+      w:MusuSignal
+        self,round=7	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Terminal,name:omega,ack=47,ended
+          inbox
+        Caster,name:source,total=48,next=48,live
+          req:cast,eternal,ok
+        Player,name:ear,playhead=47,decoded=47,live,phase:drained,at=48,of=48
+          req:progress,eternal,ok
+        event:buffered
+        event:drained
+        signal,bits=7.62,gaps=0,rms=0.1719

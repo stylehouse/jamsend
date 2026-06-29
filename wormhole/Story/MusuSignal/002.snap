@@ -1,0 +1,14 @@
+Snap:H
+  H:MusuSignal,Run
+    A:MusuSignal
+      self,round=6	{"mung":["age"]}
+      w:MusuSignal
+        self,round=6	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Terminal,name:omega
+          inbox
+        Caster,name:source,total=48,next=0,live
+          req:cast,eternal
+        Player,name:ear,playhead=-1,decoded=-1,live
+          req:progress,eternal

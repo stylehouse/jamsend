@@ -35,13 +35,16 @@
             if (k.sc.Funkcion === "Storying" && k.sc.of_Book) on_board.add(k.sc.of_Book as string)
             scan(k) } }
         scan(host)
+        // migration: retire any legacy %shelved tombstones from older snaps — presence is on_board now,
+        //  so they are dead weight.  One-shot: once dropped they never return (we no longer mint them).
+        const legacy = funk.o({ shelved: 1 }) as TheC[]
+        if (legacy.length) { for (const s of legacy) funk.drop(s); funk.bump_version(); host.bump_version() }
         // the shelves we file BY PREFIX = the existing What:<X> groups (Misc stays the fallback, never a target).
         const shelves = (host.o({ What: 1 }) as TheC[]).map(s => s.sc.What as string).filter(Boolean)
-        // the ledger of Books THIS Shelver filed before — so a Book the human then deleted from the
-        //  board never boomerangs back.  Persisted as %shelved children (the only snap footprint).
-        const filed = new Set((funk.o({ shelved: 1 }) as TheC[]).map(s => s.sc.shelved as string))
-
-        const plan = shelver_plan(books, on_board, shelves, filed)
+        // no %shelved ledger — presence IS the Storying cells on the board (on_board).  The cost: a Book the
+        //  human deletes from the board re-files on the next sweep (it reads as new again).  That is the deal
+        //   for a zero-footprint Shelver — to banish a Book you mark its shelf, you do not keep a tombstone.
+        const plan = shelver_plan(books, on_board, shelves)
         for (const { book, shelf } of plan) {
             const fresh = !host.oa({ What: shelf })
             // the catch-all is born %inline — a crowded bucket reads best as flowed chips, not a tall column
@@ -49,26 +52,26 @@
             const what  = host.oai({ What: shelf }, fresh && shelf === MISC ? { inline: 1 } : {})
             if (fresh) what.i({ Funkcion: "StoryTimes" })   // a shelf the Shelver mints gets its own run-all station
             what.i({ Funkcion: "Storying", of_Book: book })
-            funk.i({ shelved: book })                       // remember we filed it
         }
-        funk.c.walked_at  = now
-        funk.c.last_count = books.length
+        funk.c.walked_at   = now
+        funk.c.last_count  = books.length
+        funk.c.board_count = on_board.size + plan.length // off-snap tally for the face (replaces the %shelved count)
         funk.bump_version()                              // refresh the inline tally (off-snap count)
         if (plan.length) host.bump_version()             // a real filing → watch_c saves the toc + binds the new cells
     }
 
     // shelver_plan — the PURE filing decision, factored out so it tests headless (no House, no IO).
     //   books     — every Book dir under wormhole/Story.
-    //   on_board  — Books already represented anywhere on the board (incl. a manual Toy placement).
+    //   on_board  — Books already represented anywhere on the board (incl. a manual Toy placement);
+    //                presence here is the ONLY gate now — no separate %shelved tombstone.
     //   shelves   — existing What:<X> names; a Book files under the LONGEST one that prefixes its name.
-    //   filed     — the ledger; a removed-by-hand Book stays here, so we never re-file it.
-    //   yields one {book, shelf} per Book new to the board AND never auto-filed; shelf = best prefix | Misc.
+    //   yields one {book, shelf} per Book not yet on the board; shelf = best prefix | Misc.
     export function shelver_plan(
-        books: string[], on_board: Set<string>, shelves: string[], filed: Set<string>,
+        books: string[], on_board: Set<string>, shelves: string[],
     ): { book: string, shelf: string }[] {
         const out: { book: string, shelf: string }[] = []
         for (const book of [...books].sort()) {
-            if (on_board.has(book) || filed.has(book)) continue
+            if (on_board.has(book)) continue
             const hit = shelves
                 .filter(x => x && x !== MISC && book.startsWith(x))
                 .sort((a, b) => b.length - a.length)[0]
@@ -87,20 +90,20 @@
     let { funk, raw = false }: { H?: House, w?: TheC, funk: TheC, raw?: boolean } = $props()
 
     let count = $derived((() => { void funk.version; return Number(funk.c.last_count ?? 0) })())
-    let filed = $derived((() => { void funk.version; return (funk.o({ shelved: 1 }) as TheC[]).length })())
+    let board = $derived((() => { void funk.version; return Number(funk.c.board_count ?? 0) })())
 
     // rescan: drop the throttle so the next pump tick walks at once (the central pump ticks every beat).
     function rescan() { funk.c.walked_at = 0; funk.bump_version() }
 </script>
 
 {#if raw}
-    <div class="sh-raw">Funkcion:Shelver — {filed} auto-filed</div>
+    <div class="sh-raw">Funkcion:Shelver — {board} on board</div>
 {:else}
     <button class="sh" onclick={rescan}
         title="Shelver · files new wormhole/Story Books onto this board by name-prefix (else What:Misc), leaving hand-placed cells be · click to rescan now">
         <span class="sh-ico">📚</span>
         <span class="sh-name">Shelver</span>
-        <span class="sh-sum">{count} books · {filed} filed</span>
+        <span class="sh-sum">{count} books · {board} on board</span>
     </button>
 {/if}
 

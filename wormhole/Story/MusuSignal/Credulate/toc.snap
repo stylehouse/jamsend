@@ -1,4 +1,4 @@
-Credulate,of_Book:PereStaple
+Credulate,of_Book:MusuSignal
   GhostInclude:Ghost_N_Peeroleum,dige:1bb4df8687a8d30b
   GhostInclude:Ghost_N_Reliable,dige:48e8948c7d8da3ed
   GhostInclude:Ghost_N_Tribunal,dige:a9bf42ff80d08a94
@@ -6,7 +6,7 @@ Credulate,of_Book:PereStaple
   GhostInclude:Ghost_Story_Peregrination,dige:92cd131866b408e5
   GhostInclude:Ghost_M_Radiola,dige:03dc3be514cf3dd2
   GhostInclude:Ghost_Story_Musuation,dige:808c6b2be401dc6b
-  last_ok,at=1782705664.81,ok_pct
+  last_ok,at=1782706282.506,ok_pct
     uses:Ghost_N_Peeroleum,dige:1bb4df8687a8d30b
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:a9bf42ff80d08a94

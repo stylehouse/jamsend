@@ -1,29 +1,6 @@
 Waft:Credence
   Funkcion:StoryTimes,all:1
   Funkcion:Shelver
-    shelved:Editron
-    shelved:Interesting
-    shelved:LakeSurprise
-    shelved:MundaneStation
-    shelved:MundaneStaying
-    shelved:MusuCrowd
-    shelved:PeeringLive
-    shelved:Peeringinst
-    shelved:PereProof
-    shelved:PorPlan
-    shelved:PortPain
-    shelved:PotPlan
-    shelved:PotPlaner
-    shelved:PotPlanet
-    shelved:PotPlant
-    shelved:ReactiveWaft
-    shelved:Snapmigrating
-    shelved:Snaptesting
-    shelved:TextInca
-    shelved:Understandication
-    shelved:Understandity
-    shelved:Understandium
-    shelved:LinkLater
   What:Pere
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:PereStaple
@@ -38,6 +15,7 @@ Waft:Credence
     Funkcion:Storying,of_Book:MusuWear
     Funkcion:Storying,of_Book:MusuSkip
     Funkcion:Storying,of_Book:MusuCrowd
+    Funkcion:Storying,of_Book:MusuSignal
   What:Lake
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:LakeSurfer

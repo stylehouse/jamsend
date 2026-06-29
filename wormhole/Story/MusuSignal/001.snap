@@ -1,0 +1,7 @@
+Snap:H
+  H:MusuSignal,Run
+    A:MusuSignal
+      self,round=5	{"mung":["age"]}
+      w:MusuSignal
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok

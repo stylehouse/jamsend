@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Musuation(): string { return 'fa4cb8d045a8825f' },
+    Ghostmeta_Ghost_Story_Musuation(): string { return '808c6b2be401dc6b' },
 
 // Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Music_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
@@ -894,6 +894,190 @@ async MusuCrowd_order(w) { const H = this;
     let As = H.o({A: 1})
     if (!As.length) return
     let first = (a) => (a.sc.A === 'MusuCrowd') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+
+},
+// ══ MusuSignal — REAL-AUDIO family #1: does the music pipeline carry SIGNAL? ══════════════════════
+//  The seven tick Books witness cursor arithmetic with no clock.  This is the other regime: drive the
+//   SAME spine (req_cast spool → req_progress decode) but push GENERATED PCM through it and MEASURE the
+//    rendered signal at the end.  We synth the source ourselves (a deterministic chord+dither); opening
+//     the real /music library is a separate concern, elsewhere.  The snap is NOT the detailed Chunk/aud
+//      C** (noise on a real run) — it is a COARSE readout: a phase, a position, and the end-of-pipe
+//       analysis (consistently noisy = entropy bits; no gaps = no silent window).  Drives the spine
+//        DIRECTLY — a straight pipeline is code, not a swept req (the caster/player carry their work-leaf
+//         but no req: sentinel).  NEXT in the family: the real MUTED Web-Audio graph (browser, an IMPORT'd
+//          capability) + wall-clock pacing (3s snaps, plays-a-while, skip).  This one proves the pipeline.
+//       beat 2  stand up source(48)→inbox→player, live
+//       beat 3  walk the whole stream through, measure → the %signal readout
+MusuSignal(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuSignal_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async MusuSignal_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.MusuSignal_sides_up(w)
+        if (n === 3) await this.MusuSignal_run(w)
+    }
+    await this.MusuSignal_order(w)
+
+},
+// MusuSignal_sides_up — beat 2: the one-listener spine, live from the start.  The caster carries its
+//  %req:cast and the player its %req:progress, but NEITHER is a req: serial — MusuSignal_run drives them
+//   directly.  c.up stamped so the spine reads w's window|live_back knobs.
+MusuSignal_sides_up(w) {
+    w.i({reached: "step_2"})
+    let term = w.i({Terminal: 1, name: 'omega'})
+    term.c.up = w
+    term.i({inbox: 1})
+    let caster = w.i({Caster: 1, name: 'source', total: 48, next: 0, live: 1})
+    caster.c.up = w
+    caster.c.term = term
+    let player = w.i({Player: 1, name: 'ear', playhead: -1, decoded: -1, live: 1})
+    player.c.up = w
+    player.c.term = term
+    term.c.player = player
+    caster.oai({req: 'cast', eternal: 1})
+    player.oai({req: 'progress', eternal: 1})
+
+},
+// MusuSignal_run — beat 3: walk the playhead through the whole stream.  Each tick: advance ack+playhead,
+//  pump req_cast (spool into the inbox), attach the synth PCM to each delivered %Chunk (.c.pcm — an
+//   object, NEVER .sc), pump req_progress (decode into %aud), and render every reached aud's PCM.  At the
+//    end MEASURE the rendered signal and write the coarse readout.
+async MusuSignal_run(w) {
+    let total = 48
+    let term = w.o({Terminal: 1})[0]
+    let inbox = term && term.o({inbox: 1})[0]
+    let caster = w.o({Caster: 1})[0]
+    let player = w.o({Player: 1})[0]
+    if (!term || !inbox || !caster || !player) return
+    let played = new Set()
+    let rendered = []
+    let head = -1
+    while (head < total - 1) {
+        head = head + 1
+        term.sc.ack = head
+        player.sc.playhead = head
+        if (+(caster.sc.next ?? 0) >= total) term.sc.ended = 1
+        await caster.do()
+        for (const ch of inbox.o({Chunk: 1})) {
+            if (!ch.c.pcm) ch.c.pcm = this.MusuSignal_synth(+(ch.sc.seq ?? 0))
+        }
+        await player.do()
+        for (const aud of player.o({aud: 1})) {
+            let seq = +(aud.sc.seq ?? -1)
+            if (seq < 0 || seq > head || played.has(seq)) continue
+            let ch = inbox.o({Chunk: 1}).find(c => +(c.sc.seq ?? -1) === seq)
+            if (ch && ch.c.pcm) {
+                rendered.push(ch.c.pcm)
+                played.add(seq)
+                if (played.size === 1) w.i({event: 'buffered'})
+            }
+        }
+    }
+    let n = 0
+    for (const c of rendered) n += c.length
+    let pcm = new Float32Array(n)
+    let o = 0
+    for (const c of rendered) {
+        pcm.set(c, o)
+        o += c.length
+    }
+    let sig = this.MusuSignal_measure(pcm)
+    // mute the transient detail: the signal is measured, so the 48 %Chunk + 48 %aud are spent noise —
+    //  prune them to leave only the coarse readout (and they go nondeterministic once timing is real).
+    await inbox.rm({Chunk: 1})
+    await player.rm({aud: 1})
+    w.i({event: 'drained'})
+    player.sc.phase = 'drained'
+    player.sc.at = played.size
+    player.sc.of = total
+    let s = w.oai({signal: 1})
+    s.sc.bits = sig.bits
+    s.sc.gaps = sig.gaps
+    s.sc.rms = sig.rms
+
+},
+// MusuSignal_synth — generate one %Chunk of PCM: an A-ish chord under a slow envelope + a seeded per-seq
+//  dither (deterministic, no Math.random) so the byte histogram spreads (~7 bits/byte).  Returns a
+//   Float32Array (an object → rides .c, never .sc).  base = seq*CHUNK → one continuous stream, no seams.
+MusuSignal_synth(seq) {
+    let CHUNK = 2400
+    let SR = 48000
+    let buf = new Float32Array(CHUNK)
+    let base = seq * CHUNK
+    let r = (((seq + 1) * 2654435761) >>> 0)
+    let partials = [220, 277.18, 329.63, 415.30]
+    let i = 0
+    while (i < CHUNK) {
+        let t = (base + i) / SR
+        let s = 0
+        for (const f of partials) s += Math.sin(2 * Math.PI * f * t)
+        s = (s / partials.length) * (0.4 + 0.3 * Math.sin(2 * Math.PI * 0.7 * t))
+        r = (r * 1664525 + 1013904223) >>> 0
+        s += (r / 4294967296 - 0.5) * 0.03
+        buf[i] = Math.max(-1, Math.min(1, s))
+        i = i + 1
+    }
+    return buf
+
+},
+// MusuSignal_measure — the end-of-pipeline analysis (NOT byte-exact — a real run is nondeterministic).
+//  bits = Shannon entropy/byte over the int16 histogram (consistently noisy ≈ 7+; a \x00 stream ≈ 0).
+//   gaps = ~50ms windows that fell near-silent (a dropout left a hole).  rms = overall level.
+MusuSignal_measure(pcm) {
+    let bytes = new Uint8Array(pcm.length * 2)
+    let dv = new DataView(bytes.buffer)
+    let sumSq = 0
+    let i = 0
+    while (i < pcm.length) {
+        let s = Math.max(-1, Math.min(1, pcm[i]))
+        dv.setInt16(i * 2, Math.round(s * 32767) | 0, true)
+        sumSq += s * s
+        i = i + 1
+    }
+    let hist = new Array(256).fill(0)
+    i = 0
+    while (i < bytes.length) {
+        hist[bytes[i]] += 1
+        i = i + 1
+    }
+    let H = 0
+    for (const c of hist) {
+        if (c) {
+            let p = c / bytes.length
+            H -= p * Math.log2(p)
+        }
+    }
+    let W = 2400
+    let gaps = 0
+    i = 0
+    while (i < pcm.length) {
+        let e = 0
+        let end = Math.min(pcm.length, i + W)
+        let j = i
+        while (j < end) {
+            e += pcm[j] * pcm[j]
+            j = j + 1
+        }
+        if (Math.sqrt(e / Math.max(1, end - i)) < 0.005) gaps += 1
+        i = i + W
+    }
+    return { bits: +H.toFixed(2), rms: +Math.sqrt(sumSq / Math.max(1, pcm.length)).toFixed(4), gaps: gaps }
+
+},
+async MusuSignal_order(w) { const H = this;
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'MusuSignal') ? 0 : 1
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)

@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,walked_at=1782638267774
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1782704068439
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -62,6 +62,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/spec/Cluster_design.md,name:Cluster_design.md,noticed_at=1782381240813
     Doc:src/lib/O/spec/Runner_talk_TODO.md,name:Runner_talk_TODO.md,noticed_at=1782456500569
     Doc:src/lib/O/spec/Keeping_spec.md,name:Keeping_spec.md,noticed_at=1782542020398
+    Doc:src/lib/O/spec/Backbone_plan.md,name:Backbone_plan.md,noticed_at=1782704068439
   open_dir:src/lib/O
   group:src/lib/O,dir:src/lib/O
     sub:src/lib/O/D,name:D
