@@ -1,0 +1,10 @@
+Snap:H
+  H:MusuMix,Run
+    A:MusuMix
+      self,round=4	{"mung":["age"]}
+      w:MusuMix
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Mix,name:deck,mix_rms=0.15331,soloA_rms=0.1061,soloB_rms=0.09599
+        Cell,deck:A,bpm=120,root=110,nchunks=200,measured_bpm=119.7
+        Cell,deck:B,bpm=96,root=147,nchunks=200,measured_bpm=95.3,match_rate=1.25,matched_bpm=119.7

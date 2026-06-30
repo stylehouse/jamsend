@@ -1,0 +1,7 @@
+Snap:H
+  H:MusuMesh,Run
+    A:MusuMesh
+      self,round	{"mung":["age"]}
+      w:MusuMesh
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

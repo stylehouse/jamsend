@@ -384,9 +384,10 @@ Built (`Peeroleum.g` + the wrangler's port-pairing). The two things that make it
 - **Delivery is `post_do(() => partner.recv(frame))`** — instant, but bounced **into the beliefs mutex**
    (inside Atime), so a full hello+trust round-trip completes within a step, deterministically. No ICE/SDP/
     second-measured timers.
-- **No timestamps reach particles**, so snaps are stable with no munging. The meddle hook sits on the mock
-   `%active_transport` exactly as it will on real ones, so corruption tests written against mock port
-    straight across.
+- **No timestamps reach particles**, so snaps are stable with no munging. The meddle hook (heading 6, **still
+   unbuilt** — §14.1) is *designed* to sit on the mock `%active_transport` exactly as it will on real ones, so
+    corruption tests written against the mock will port straight across. (Today's corruption proofs hand-craft a
+     bad `body_hash` on the receive side instead — `Peregrination.g`; the send-side meddle-wrap is the open piece.)
 
 ---
 
@@ -410,7 +411,7 @@ Tracked rung-by-rung in `Peeroleum_handover.md` (the `[x]`/`[~]`/`[ ]` checklist
 
 ---
 
-## 18. Multicast — topics over a claimed `@channel`  (built; headless-witnessed PereStaple step 53)
+## 18. Multicast — topics over a claimed `@channel`  (built; :9091-verified, PereProof step 29)
 
 The need: a high-bandwidth publisher (a phone relaying audio to 100 listeners) must **not** upload 100
  copies, one addressed to each Pier, nor even hold all 100 addresses. It uploads **once** to a *topic* and
@@ -454,9 +455,10 @@ The need: a high-bandwidth publisher (a phone relaying audio to 100 listeners) m
  frame fans into the in-process relay by calling `Peeroleum_deliver(w, frame)` once, and the `@`-branch
   scans the Peerings under `w` that subscribed (`peering.c.subs[channel]`) — in production a `w` is one
    identity so exactly one matches; the co-resident test swarm holds N under one `w`, so the scan fans out
-    to all N, the same multiplication the relay does across N sockets. Witnessed at **PereStaple step 53**
-     (`Lake_multicast_arm` → `%witnessed:multicast`): one publish, three subscribers land `%mcast` exactly
-      once, the publisher books no emit, the claim + the offer-driven subscribe both hold.
+    to all N, the same multiplication the relay does across N sockets. Witnessed at **PereProof step 29**
+     (`Lake_multicast_arm` → `%witnessed:multicast`; renumbered from the old PereStaple-53 in the Book split):
+      one publish, three subscribers land `%mcast` exactly once, the publisher books no emit, the claim + the
+       offer-driven subscribe both hold.
 
 **The realised spine calls** (all in `Ghost/N/Peeroleum.g`): `Peeroleum_claim(w,peering,channel)`,
  `Peeroleum_subscribe(w,peering,channel,fn)`, `Peeroleum_publish(w,peering,channel,type,body)` (returns the

@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Crate(): string { return '601118a6174d31d5' },
+    Ghostmeta_Ghost_M_Crate(): string { return 'a8d9444a5048fc8b' },
 
 // Crate.g — rifling through a music collection.  A modern port of the old Directory.svelte tree-walk +
 //  Agency.svelte's meander() random-walk, redesigned for THIS platform: raw File System Access API (no
@@ -342,12 +342,14 @@ Crate_rastock_issue(ra) {
     this.Crate_read_into(ra.sc.base, path, rd)
 
 },
-// Crate_read_into — the async leg: fetch+decode, stash the payload on rd.c.result, mark %back, bump so the
-//  next snap shows it returned.  Fire-and-forget; the next beat's harvest turns it into a record.
+// Crate_read_into — the async leg: fetch+decode, stash the payload on rd.c.result, mark back (OFF-snap on
+//  rd.c.back, NOT rd.sc.back).  Off-snap is deliberate: the flag flips at decode-completion time, which
+//   RACES the beat snaps (a fast decode lands before its beat's snap → the %reading dige flickers run-to-
+//    run).  Off-snap, a %reading always snaps as just its path (deterministic); drain/harvest read c.back.
 async Crate_read_into(base, path, rd) {
     let res = await this.Crate_fetch_payload(base, path)
     rd.c.result = res || null
-    rd.sc.back = 1
+    rd.c.back = 1
     rd.bump()
 
 },
@@ -356,7 +358,13 @@ async Crate_read_into(base, path, rd) {
 async Crate_rastock_harvest(ra) {
     let made = 0
     for (const rd of ra.o({reading: 1})) {
-        if (!rd.sc.back) continue
+        if (!rd.c.back) continue
+        // a lingering reading whose path is ALREADY a record (its removal from a prior pass hadn't landed
+        //  before this pass re-saw it) — drop it, never double-record.
+        if (ra.oa({record: 1, name: rd.sc.path})) {
+            await ra.rm({reading: 1, path: rd.sc.path})
+            continue
+        }
         let res = rd.c.result
         if (res) {
             let rec = ra.i({record: 1, name: rd.sc.path, artist: res.artist, album: res.album, title: res.title, loudness: res.loudness, seconds: res.seconds, nchunks: res.nchunks, real: 1})
@@ -366,11 +374,36 @@ async Crate_rastock_harvest(ra) {
         } else {
             ra.i({missed: rd.sc.path})
         }
-        ra.rm({reading: 1, path: rd.sc.path})
+        // AWAIT the removal.  An un-awaited rm leaves the reading in-flight: the NEXT beat re-harvests it
+        //  into a DUPLICATE record, AND its replace transaction is still open when the have-write below runs
+        //   -> "nested replace() transactions" throws -> harvest throws -> MusuCrate_play never makes report.
+        await ra.rm({reading: 1, path: rd.sc.path})
     }
-    // r() (tracked) not raw ra.sc.have= — re-mutating an existing sc key raw doesn't re-dige into the snap.
-    await ra.r({have: ra.o({record: 1}).length})
+    // raw sc write + bump — the proven MusuStock_advance pattern (cur.sc.at = …; cur.bump()) re-diges into
+    //  the snap.  NOT r({have:N}): called with one arg it builds pattern {have:1} then i({have:N}), which
+    //   CREATES a stray child %have particle and never touches ra.sc.have — the old "fix" that left have=0
+    //    on the rastock AND a phantom %have child, while its replace collided with the loop's rm above.
+    ra.sc.have = ra.o({record: 1}).length
+    ra.bump()
     return made
+
+},
+// Crate_rastock_drain — wait until every in-flight %reading has come back (c.back) or a budget elapses.
+//  The reads are fired concurrently and a real mp3 decode can outlast a few quick beats, so WITHOUT this
+//   the record COUNT at witness time is a race (have=2 one run, 3 the next — same tracks, same order, just
+//    how many landed).  Draining before the final harvest makes the count deterministic (= want), so the
+//     snap is stable and the Book is acceptable.  performance.now() (real wall clock — fine in the runner).
+async Crate_rastock_drain(ra, ms) {
+    let budget = ms || 20000
+    let t0 = performance.now()
+    while ((performance.now() - t0) < budget) {
+        let pending = 0
+        for (const rd of ra.o({reading: 1})) {
+            if (!rd.c.back) pending = pending + 1
+        }
+        if (pending === 0) return
+        await new Promise(r => setTimeout(r, 50))
+    }
 },
 //#endregion
 

@@ -8,24 +8,34 @@ Waft:Credence
     Funkcion:Storying,of_Book:PereProof
   What:Musu
     Funkcion:StoryTimes
-    What:slices
-      Funkcion:Storying,of_Book:MusuStaple
-      Funkcion:Storying,of_Book:MusuStream
-      Funkcion:Storying,of_Book:MusuStock
-      Funkcion:Storying,of_Book:MusuLive
-      Funkcion:Storying,of_Book:MusuWear
-      Funkcion:Storying,of_Book:MusuSkip
-    What:composite
-      Funkcion:Storying,of_Book:MusuCrowd
-    What:realaudio
-      Funkcion:Storying,of_Book:MusuSignal
-      Funkcion:Storying,of_Book:MusuGlide
-      Funkcion:Storying,of_Book:MusuTune
-      Funkcion:Storying,of_Book:MusuRadio
-    Funkcion:Storying,of_Book:MusuCrate
-    Funkcion:Storying,of_Book:MusuMesh
-    Funkcion:Storying,of_Book:MusuMix
-    Funkcion:Storying,of_Book:MusuCue
+    What:cursor models
+      What:slices
+        Funkcion:Storying,of_Book:MusuStaple
+        Funkcion:Storying,of_Book:MusuStream
+        Funkcion:Storying,of_Book:MusuStock
+        Funkcion:Storying,of_Book:MusuLive
+        Funkcion:Storying,of_Book:MusuWear
+        Funkcion:Storying,of_Book:MusuSkip
+      What:composite
+        Funkcion:Storying,of_Book:MusuCrowd
+    What:real audio
+      What:signal
+        Funkcion:Storying,of_Book:MusuSignal
+      What:rate control
+        Funkcion:Storying,of_Book:MusuGlide
+        Funkcion:Storying,of_Book:MusuTune
+        Funkcion:Storying,of_Book:MusuEdge
+      What:showcase
+        Funkcion:Storying,of_Book:MusuRadio
+    What:real music
+      Funkcion:Storying,of_Book:MusuCrate
+    What:the platform
+      What:mixer cells
+        Funkcion:Storying,of_Book:MusuMix
+        Funkcion:Storying,of_Book:MusuCue
+      What:the network
+        Funkcion:Storying,of_Book:MusuMesh
+        Funkcion:Storying,of_Book:MusuPier
   What:Lake
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:LakeSurfer
@@ -70,3 +80,4 @@ Waft:Credence
     Funkcion:Storying,of_Book:Understandication
     Funkcion:Storying,of_Book:Understandity
     Funkcion:Storying,of_Book:Understandium
+    Funkcion:Storying,of_Book:Engage

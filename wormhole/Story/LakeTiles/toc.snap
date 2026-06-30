@@ -34,28 +34,28 @@ story:LakeTiles
         nowriting:^Ghost
         dontSnapGhostList
   TimeSpool
-    TimeTotal:beliefs,avg=3.002
-      sample=3.956,at=1782748382
-      sample=2.901,at=1782748407
-      sample=3.46,at=1782749644
-      sample=3.707,at=1782792213
-      sample=3.707,at=1782792232
-      sample=2.608,at=1782792260
-      sample=2.466,at=1782792531
-      sample=2.355,at=1782792688
+    TimeTotal:beliefs,avg=1.608
       sample=2.182,at=1782792709
       sample=2.674,at=1782792731
-    TimeTotal:step,avg=0.334
-      sample=0.44,at=1782748382
-      sample=0.322,at=1782748407
-      sample=0.384,at=1782749644
-      sample=0.412,at=1782792213
-      sample=0.412,at=1782792232
-      sample=0.29,at=1782792260
-      sample=0.274,at=1782792531
-      sample=0.262,at=1782792688
+      sample=1.338,at=1782794131
+      sample=1.139,at=1782794644
+      sample=1.008,at=1782794660
+      sample=1.138,at=1782794700
+      sample=1.155,at=1782794780
+      sample=1.688,at=1782794855
+      sample=2.723,at=1782794877
+      sample=1.036,at=1782794895
+    TimeTotal:step,avg=0.179
       sample=0.242,at=1782792709
       sample=0.297,at=1782792731
+      sample=0.149,at=1782794131
+      sample=0.127,at=1782794644
+      sample=0.112,at=1782794660
+      sample=0.126,at=1782794700
+      sample=0.128,at=1782794780
+      sample=0.188,at=1782794855
+      sample=0.303,at=1782794877
+      sample=0.115,at=1782794895
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
     Entcase:Ting_Point-last
@@ -66,13 +66,13 @@ story:LakeTiles
       lematch,Point:theCompiledStuff,doc:Ghost/test/Story/Lake/LakeTiles.g
         lematch,say,at
           means,spayer,re:say.+at..?{INT},tol:any
-  step,dige:e2a15331ad28e22f
-  step=2,dige:67340ef72111d32a
-  step=3,dige:91ae738e88b8c67d
-  step=4,dige:e7572ab338ab9bd1
+  step,dige:3a82c072fb5349b5
+  step=2,dige:d1e672b32fd6e331
+  step=3,dige:d7c80c57d3e0f29a
+  step=4,dige:d5e3a7c44c689e35
     note,bug:Cyto edge problems with Leg/PeelGroup/Leg the other PeelGroup alone
-  step=5,dige:85b0b58014e43a23
-  step=6,dige:60a58a8b08e00e2f
-  step=7,dige:d58e4a19ee41fc92
-  step=8,dige:b567bb7e677b7d26
-  step=9,dige:6d5cee981b229349
+  step=5,dige:c94c9cbb512c8a05
+  step=6,dige:c1f25a6fcba266e0
+  step=7,dige:48ce0d1e5ff4e8e9
+  step=8,dige:ca9a1c53d4e85d8c
+  step=9,dige:d82b4fc1113fe23d

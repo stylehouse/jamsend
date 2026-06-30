@@ -453,7 +453,9 @@ What's still **MISSING**: the CLIENT half of `to:<pub>` (a peer emitting the sig
       `?I=` Idento — folds into step 2.
 2. **`?I=<tag>` tab-fork + the `?Runner` role** — resolve cluster Idento keyed by `?I=`; two tabs/two
     identities both bind and address each other; a `?Runner[=name]` tab registers into the
-     self-assembling pool (3.0) and idles available.
+     self-assembling pool (3.0) and idles available. *(The editor half — `Peeroleum_send_to` +
+      roster→Pier promotion + per-Pier inseq baseline, and the engagement lease it carries — is
+       detailed for the Lies/editor owner in [Engage_integration.md](Engage_integration.md).)*
 3. **One daemonised runner in a docker** — image boots Chrome→app `?Runner=runnerA&?I=runnerA`,
     auto-acquires, binds, registers. Open the editor, see runnerA in the roster, hand it a Book via
      `become_book` addressed `to:runnerA`, get the verdict back. ("May it run this?" is just "is the

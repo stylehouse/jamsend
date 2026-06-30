@@ -1,0 +1,21 @@
+Snap:H
+  H:MusuMesh,Run
+    A:MusuMesh
+      self,round=3	{"mung":["age"]}
+      w:MusuMesh
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        mesh,name:cafe,clients=3
+          node,id:source,relay_only
+          node,id:cafe0
+          node,id:cafe1
+          node,id:cafe2
+          edge,a:source,b:cafe0,kind:relay,cost=10
+          edge,a:source,b:cafe1,kind:relay,cost=10
+          edge,a:source,b:cafe2,kind:relay,cost=10
+          edge,a:cafe0,b:cafe1,kind:peer,cost
+          edge,a:cafe0,b:cafe2,kind:peer,cost
+          edge,a:cafe1,b:cafe2,kind:peer,cost
+        reached:step_3
+        route,from:X,to:Z,cost=2,relays=0,hops=2

@@ -12,28 +12,28 @@ story:LakeSurfer
         dontSnapGhostList
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=1.031
-      sample=1.043,at=1782748855
-      sample=1.043,at=1782748858
-      sample=1.043,at=1782748859
-      sample=1.752,at=1782748870
+    TimeTotal:beliefs,avg=0.677
       sample=0.894,at=1782748879
       sample=0.635,at=1782749652
       sample=1.245,at=1782792324
       sample=1.245,at=1782792326
       sample=0.652,at=1782792336
       sample=0.762,at=1782792540
-    TimeTotal:step,avg=0.516
-      sample=0.522,at=1782748855
-      sample=0.522,at=1782748858
-      sample=0.522,at=1782748859
-      sample=0.876,at=1782748870
+      sample=0.625,at=1782794006
+      sample=0.237,at=1782794904
+      sample=0.239,at=1782794911
+      sample=0.24,at=1782794919
+    TimeTotal:step,avg=0.339
       sample=0.447,at=1782748879
       sample=0.317,at=1782749652
       sample=0.623,at=1782792324
       sample=0.623,at=1782792326
       sample=0.326,at=1782792336
       sample=0.381,at=1782792540
+      sample=0.313,at=1782794006
+      sample=0.118,at=1782794904
+      sample=0.12,at=1782794911
+      sample=0.12,at=1782794919
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
   step,dige:ca76a2a729a99cf6

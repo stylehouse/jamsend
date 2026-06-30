@@ -15,6 +15,8 @@ Waft:Ghost/Music/Ality,active
     Funkcion:Storying,of_Book:MusuMix
     Funkcion:Storying,of_Book:MusuMesh
     Funkcion:Storying,of_Book:MusuCue
+    Funkcion:Storying,of_Book:MusuEdge
+    Funkcion:Storying,of_Book:MusuPier
   What:the machine
     What:1 the spool
       Doc:Ghost/M/Radiola.g
@@ -156,6 +158,22 @@ Waft:Ghost/Music/Ality,active
       Point,method:MusuCue_witness
       Doc:Ghost/M/Mixer.g
       Point,method:Mix_align
+    What:MusuEdge (the live edge — hold a safe low-latency margin off the broadcast frontier)
+      Doc:Ghost/Story/Musuation.g
+      Point,method:MusuEdge_run
+      Point,method:Musu_render_liveedge
+      Point,method:MusuEdge_witness
+      Doc:Ghost/M/Radiola.g
+      Point,method:LiveEdge_decide
+    What:MusuPier (the synapse — real audio frames over the Peeroleum transport / loss-healed)
+      Doc:Ghost/Story/Musuation.g
+      Point,method:MusuPier_setup
+      Point,method:MusuPier_send_audio
+      Point,method:MusuPier_perturb
+      Point,method:MusuPier_witness
+      Doc:Ghost/N/Peeroleum.g
+      Point,method:Peeroleum_send
+      Point,method:Peeroleum_on
   What:the source it reimagines
     Doc:src/lib/ghost/Radios.svelte
     Point,method:listening

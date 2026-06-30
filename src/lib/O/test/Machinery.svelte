@@ -414,6 +414,58 @@
         gate.bump_version(); w.bump_version()
     },
 //#endregion
+//#region Engage
+    // Engage gate — the runner-engagement layer (Engage_integration C2 + C1).  Same in-system Story
+    //  shape as LakeKeep: a Prep fires e_Lies_engage_selftest, which stands up the PRODUCTION dispatch
+    //   topology (one Peering, two Piers — the shape no swarm Book exercises, since the co-resident
+    //    swarm runs one Pier per Peering) plus a Waft:Cluster/%HostedIdentity registry, drives the
+    //     addressed-dispatch primitive + the favoured-runner lookup, and emits a marker per truth that
+    //      holds.  Markers under EngageGate; the snap-fixture diff is the gate.  (C3's busy/free is a
+    //       role-gated advertise + a Svelte Brink — browser-verified, not gated here.)  Peeroleum is a
+    //        Creduler-acquired spine, so the C2 block guards on its presence — live runner ⇒ present.
+
+    Run_A_Engage(this: House) {
+        const H = this
+        H.i({ A: 'Lies'       }).i({ w: 'Lies' })
+        H.i({ A: 'Lang'       }).i({ w: 'Lang' })
+        H.i({ A: 'Pantheate'  }).i({ w: 'Pantheate' })
+        console.log(`🟦 ${H.name} Engage wired`)
+    },
+
+    async e_Lies_engage_selftest(this: House, _A: TheC, w: TheC, _e: TheC) {
+        const H = this
+        const gate = w.oai({ EngageGate: 1 })
+        const gl = w.o({ Waft: 'GhostList' })[0] as TheC | undefined
+        if (gl) gl.sc.dontSnap = 1
+        // ── C2: addressed dispatch.  One Peering (a single identity), two Piers (two runners on the
+        //     grid).  dontSnap the Peering so the topology + its outbox emit fold from the fixture —
+        //      the EngageGate markers are the gate, the plumbing is just scaffolding.
+        if (typeof (H as any).Peeroleum_send_to === 'function') {
+            const peering = w.oai({ Peering: 1, name: 'editor' }, { dontSnap: 1 }) as TheC; peering.c.up = w
+            const pa = peering.oai({ Pier: 1, pub: 'AAA' }) as TheC; pa.c.up = peering
+            const pb = peering.oai({ Pier: 1, pub: 'BBB' }) as TheC; pb.c.up = peering
+            const seq    = (H as any).Peeroleum_send_to(w, 'BBB', 'become_book', { book: 'X' })
+            const emitsB = (pb.o({ outbox: 1 })[0]?.o({ emit: 1 }) ?? []) as TheC[]
+            const emitsA = (pa.o({ outbox: 1 })[0]?.o({ emit: 1 }) ?? []) as TheC[]
+            if (seq === 1 && pb.c.seq === 1 && emitsB.length === 1) gate.i({ send_to_routes_to_addressed_pier: 1 })
+            if ((pa.c.seq ?? 0) === 0 && emitsA.length === 0)       gate.i({ send_to_leaves_other_pier_untouched: 1 })
+            if ((H as any).Peeroleum_send_to(w, 'ZZZ', 'become_book', { book: 'X' }) === undefined) gate.i({ send_to_unknown_pub_is_undefined: 1 })
+            // promotion — Lies_runner_pier mints a Ud-stamped Pier keyed by prepub, c.up wired, idempotent.
+            const cc = H.Lies_runner_pier(w, 'CCC') as TheC | undefined
+            if (cc?.sc.pub === 'CCC' && !!cc?.oa({ Ud: 1 }) && cc?.c.up === peering)            gate.i({ runner_pier_promotes_trusted: 1 })
+            if (H.Lies_runner_pier(w, 'CCC') === cc && H.Lies_runner_pier(w, 'BBB') === pb)      gate.i({ runner_pier_idempotent: 1 })
+        }
+        // ── C1: the favoured-runner lookup over the Waft:Cluster/%HostedIdentity registry — a READ,
+        //     no frame, no receiver.  Set favourite_client directly (advertise_recv mirrors it live).
+        //      equip the Cluster Waft so the registry folds from the fixture like the real one.
+        const cl = w.oai({ Waft: 'Cluster' }, { equip: 'Engage' }) as TheC
+        ;(cl.oai({ HostedIdentity: 'RUNX' }) as TheC).sc.favourite_client = 'CLIENTY'
+        cl.oai({ HostedIdentity: 'RUNZ' })   // unclaimed — favours nobody
+        if (H.Lies_favoured_runner(w, 'CLIENTY') === 'RUNX')   gate.i({ favoured_runner_resolves_host: 1 })
+        if (H.Lies_favoured_runner(w, 'NOBODY') === undefined) gate.i({ favoured_runner_unfavoured_undefined: 1 })
+        gate.bump_version(); w.bump_version()
+    },
+//#endregion
 
 
 

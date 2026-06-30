@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Radiola(): string { return '32b321bfc1e909b5' },
+    Ghostmeta_Ghost_M_Radiola(): string { return 'c38a79b40dc8f9e6' },
 
 //#region radiola
 // Radiola — the music-piracy spine, reborn on Housing+req (spec: src/lib/O/spec/Music_todo.md).
@@ -321,6 +321,29 @@ Glide_decide(frontier, cur, ended, p) {
     }
     if (frontier > HIGH) return Math.min(1, cur + STEP)
     return cur
+
+},
+// LiveEdge_decide(margin, cur, target, p) -> rate.  Glide's TWIN at the OTHER end of the stream: Glide
+//  guards the delivered buffer running DRY (frontier ahead of the playhead); this guards the playhead
+//   catching the LIVE BROADCAST EDGE (margin = seconds the playhead sits BEHIND the newest produced chunk).
+//    A listener that chases low latency by playing fast shrinks the margin; reach zero and it outruns the
+//     edge — the next chunk isn't produced yet, a stall.  So: way behind (margin > HIGH) → chase (FAST > 1)
+//      to cut latency; near the edge (margin < LOW) → back off (SLOW = Radios' 0.8 within 3.141s) to rebuild
+//       the margin; in the band → a gentle chase (1.05) that drifts toward the edge so the throttle keeps
+//        working.  The result is a SAFE low-latency margin that oscillates near `target` (the throttle
+//         firing repeatedly, not once), never overrunning.  A TIGHT band (HIGH = target + 0.1) keeps the
+//          oscillation near the target so the back-off is genuinely exercised — a wide band would let the
+//           CHASE coast for most of a run and engage the throttle only at the very end.  `target` sets the
+//            band; p overrides {low, high, fast, chase, slow}.  Pure + stateless like Glide.
+LiveEdge_decide(margin, cur, target, p) {
+    let HIGH = (p && p.high != null) ? p.high : target + 0.1
+    let LOW = (p && p.low != null) ? p.low : target
+    let FAST = (p && p.fast != null) ? p.fast : 1.5
+    let CHASE = (p && p.chase != null) ? p.chase : 1.2
+    let SLOW = (p && p.slow != null) ? p.slow : 0.8
+    if (margin > HIGH) return FAST
+    if (margin < LOW) return SLOW
+    return CHASE
 },
 //#endregion
 

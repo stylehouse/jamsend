@@ -1,0 +1,21 @@
+Snap:H
+  H:MusuCue,Run
+    A:MusuCue
+      self,round=6	{"mung":["age"]}
+      w:MusuCue
+        self,round=6	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Cue,name:deck,mix_rms=0.15331,solo_rms=0.1061
+        Cell,deck:A,bpm=120,root=110,nchunks=200,measured_bpm=119.7,on_air
+        Cell,deck:B,bpm=96,root=147,nchunks=200,measured_bpm=95.3,on_air
+        phone,name:headset,link_kind:peer,link_relays=0,align_before=0.21,align_after=0.888
+          Cell,deck:A,bpm=120,root=110,nchunks=200,replica
+          Cell,deck:B,bpm=96,root=147,nchunks=200,replica,monitor_bpm=95.3,match_rate=1.25,matched_bpm=119.7
+        witnessed:replicated
+        witnessed:cued_offair
+        witnessed:monitor_real
+        witnessed:cued_matched
+        witnessed:synced
+        witnessed:brought_in
+        reached:step_6

@@ -1690,70 +1690,32 @@ async MusuCrate_open(w):
     let ra = await this.Crate_rastock_start(w, '/testsounds', 4)
     this.Crate_rastock_issue(ra)
 
-// MusuCrate_filaments — the OVERALL streaming platform laid out as a visible particle tree: each %stage is a
-//  filament of the pipe, `built` where real data already flows through it, and every refinement is a visible
-//   %todo row so the snap doubles as the build map.  This is the long project's skeleton — fill the stages in,
-//    strike the todos off.  (No commas in todo text — the peel parser splits on them; use / or — .)
+// MusuCrate_filaments — the OVERALL streaming platform as a COMPACT structured map: one %stage row per
+//  pipe filament (of/name/built), nothing more.  The per-stage refinements (the todo/done detail that used
+//   to crowd this snap) now live in spec/Radio_spec.md (§5) — the platform's destination doc; the platform
+//    particle carries a `spec` pointer to it.  Keep this a clean nine-row skeleton; itemise in the spec.
 MusuCrate_filaments(w):
-    let plat = w.oai({platform: 1, name: 'jamsend'})
+    let plat = w.oai({platform: 1, name: 'jamsend', spec: 'src/lib/O/spec/Radio_spec.md'})
     plat.c.up = w
-    // 1 — COLLECTION: walk a music library into a track list.  (real: static-served /testsounds + manifest)
-    let col = plat.oai({stage: 1, of: 1, name: 'Collection', built: 1})
-    col.oai({todo: 'directory-tree walk (meander) over nested artist/album/track'})
-    col.oai({todo: 'real source via Wormhole bin_read or a library — not a static symlink'})
-    col.oai({todo: 'metadata from tags (music-metadata) not just the filename'})
-    // 2 — RASTOCK: desire + fill records from the collection.  (real: rastock_start/issue/harvest)
-    let ras = plat.oai({stage: 1, of: 2, name: 'Rastock', built: 1})
-    ras.oai({todo: 'preview (first ~1/3 decoded) then stream (the rest) on demand'})
-    ras.oai({todo: 'host as %Good in LiesStore (the req:Store IO pump)'})
-    ras.oai({todo: 'idle-reap: drop a %Good once a consumer left it idle (mirror recordWear)'})
-    // 3 — PLAYER: decode + play + cope.  (real: Audiolet voice + Glide rate-slew + offline render/measure)
-    let ply = plat.oai({stage: 1, of: 3, name: 'Player', built: 1})
-    ply.oai({done: 'gap-detector: COVERAGE model — uncovered playback time is the dropout; musical quiet ignored'})
-    ply.oai({todo: 'coverage per-Cell once the Mixer lands — each Cell its own expected-play timeline'})
-    ply.oai({todo: 'concealment ladder: repeat-last-frame / reverse-pingpong / crossfade-on-seam'})
-    ply.oai({todo: 'audible real-time playback through the online voice (gesture-gated)'})
-    // 4 — LIVE EDGE: stay behind the broadcast frontier.  (TODO: not built)
-    let le = plat.oai({stage: 1, of: 4, name: 'LiveEdge'})
-    le.oai({todo: 'real broadcast cursor + stay-behind margin (Radios check_live_edge_delta)'})
-    le.oai({todo: 'Glide backs off the live edge — wire frontier to the real cursor not a sim'})
-    // 5 — PIER: stream peer-to-peer over the real transport.  (TODO: the synapse — designed not built)
-    let pier = plat.oai({stage: 1, of: 5, name: 'Pier'})
-    pier.oai({todo: 'cast -> listen over the REAL transport via w.c.on.audiochunk (Peeroleum)'})
-    pier.oai({todo: 'coherently perturbable link (latency/jitter/loss) + the listener copes'})
-    pier.oai({todo: 'multicast: one caster fans out to many listeners (Peeroleum @channel)'})
-    // 6 — MIXER (cells): the cellular music world — many sound-sources at once, pitch/rate-bent to mix.
-    let mix = plat.oai({stage: 1, of: 6, name: 'Mixer', built: 1})
-    mix.oai({done: 'N Cells render-summed into ONE OfflineAudioContext — they add at the destination (Mixer.g + MusuMix)'})
-    mix.oai({done: 'beat detection (onset env + autocorrelation) + beatmatch — bend B by bpmA/bpmB — proven by re-measure'})
-    mix.oai({done: 'equal-power crossfade holds loudness across the seam where a linear fade dips'})
-    mix.oai({todo: 'live online voice: N real Audiolets summing in real time (gesture-gated) not just offline'})
-    mix.oai({todo: 'per-Cell expected-play timeline — coverage/gaps judged per Cell not globally'})
-    // 7 — DJ CUE (live C** replication to a phone): the headset deck, monitor + sync before the mix.
-    let cue = plat.oai({stage: 1, of: 7, name: 'DJ-cue', built: 1})
-    cue.oai({done: 'phone replica holds the cell descriptors + re-renders the off-air deck from synced state (MusuCue)'})
-    cue.oai({done: 'beatmatch the cued deck → beat-GRID alignment jumps (onset cross-correlation) → bring into the mix'})
-    cue.oai({todo: 'real C** sync over the Pier transport — the descriptor replication is modelled not socket-backed'})
-    // 8 — MESH (replicas + edges): the whole platform is ONE sync that sees itself in several places, with
-    //  the edges between them.  Each client a replica of the C** state; each link an %edge with a cost.
-    //   DJ-cue / listener / mixer are all just this — routing along edges.
-    let mesh = plat.oai({stage: 1, of: 8, name: 'Mesh', built: 1})
-    mesh.oai({done: '%node replicas + %edge per link (peer/relay each a cost) — graph model (Mesh.g + MusuMesh)'})
-    mesh.oai({done: 'content routes the CHEAPEST edges — Dijkstra picks a 2-hop peer path over a costly relay'})
-    mesh.oai({todo: 'real C** state replication over the transport — model is deterministic not yet socket-backed'})
-    // 9 — STRETCH (multicast over the mesh): a relay-only peer sends ONCE; a webrtc-peered client forwards
-    //  it locally so the uplink/relay stays quiet.  The multicast domain stretches over the peer edges.
-    let stretch = plat.oai({stage: 1, of: 9, name: 'Stretch', built: 1})
-    stretch.oai({done: 'min-cost broadcast tree: relay crossed ONCE then webrtc-forwarded (Mesh.g + MusuMesh)'})
-    stretch.oai({done: 'cafe stays quiet: naive uplink = N clients but the stretch uplink stays 1 at any crowd size'})
-    stretch.oai({todo: 'build on Peeroleum @channel multicast — turn relay-fanout into peer-forwarding (needs 2 runners)'})
+    plat.oai({stage: 1, of: 1, name: 'Collection', built: 1})
+    plat.oai({stage: 1, of: 2, name: 'Rastock', built: 1})
+    plat.oai({stage: 1, of: 3, name: 'Player', built: 1})
+    plat.oai({stage: 1, of: 4, name: 'LiveEdge', built: 1})
+    plat.oai({stage: 1, of: 5, name: 'Pier', built: 1})
+    plat.oai({stage: 1, of: 6, name: 'Mixer', built: 1})
+    plat.oai({stage: 1, of: 7, name: 'DJ-cue', built: 1})
+    plat.oai({stage: 1, of: 8, name: 'Mesh', built: 1})
+    plat.oai({stage: 1, of: 9, name: 'Stretch', built: 1})
     return plat
 
-// MusuCrate_fill — beats 3-6: harvest the read that came back into a %record, then issue the next.  Each
-//  beat the rastock grows by one — the snap shows a new record (real metadata) and the next read pending.
+// MusuCrate_fill — beats 3-6: DRAIN the outstanding read (wait for it to land), harvest it into a %record,
+//  then issue the next.  Draining per beat makes the fill GRADUAL *and* deterministic — exactly one more
+//   record each beat (3→1, 4→2, 5→3, 6→4) regardless of decode timing, instead of a race over how many
+//    landed by snap.  The snap still shows the desires → the read in flight → the records being made.
 async MusuCrate_fill(w):
     let ra = w.o({rastock: 1})[0]
     if (!ra) return
+    await this.Crate_rastock_drain(ra, 20000)
     await this.Crate_rastock_harvest(ra)
     this.Crate_rastock_issue(ra)
 
@@ -1762,6 +1724,9 @@ async MusuCrate_fill(w):
 async MusuCrate_play(w):
     let ra = w.o({rastock: 1})[0]
     if (!ra) return
+    // drain first: wait for every issued read to land, so the record count is deterministic (= want) and
+    //  the snap is stable — without this, have=2 one run / 3 the next (decode-timing race).
+    await this.Crate_rastock_drain(ra, 20000)
     await this.Crate_rastock_harvest(ra)
     let recs = ra.o({record: 1})
     let rep = w.oai({report: 1})
@@ -2160,8 +2125,11 @@ async MusuCue_drive(w, req):
         if (n === 3) await this.MusuCue_monitor(w)
         if (n === 4) await this.MusuCue_match(w)
         if (n === 5) await this.MusuCue_bring_in(w)
-        if (n === 6) this.MusuCue_witness(w)
+        if (n === 6) w.i({reached: 'step_6'})
     }
+    // POLL the witness every pass: cued_offair must latch while deck B is still OFF-air (beats 2-4); a
+    //  single-shot read at beat 6 misses it because bring_in (beat 5) has by then flagged B on-air.
+    this.MusuCue_witness(w)
     await this.MusuCue_order(w)
 
 // MusuCue_setup — beat 2: the deck (on-air %Cell A playing, cued %Cell B off-air, on_air flags), then a
@@ -2292,6 +2260,338 @@ async MusuCue_order(w):
     let As = H.o({A: 1})
     if (!As.length) return
     let first = (a) => (a.sc.A === 'MusuCue') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+//#endregion
+
+//#region edge — REAL-AUDIO family #6: the LIVE EDGE (stage 4) — stay behind the broadcast frontier
+// ══ MusuEdge — does the listener hold a safe low-latency margin off the live edge? ═════════════════
+//  Glide's twin at the OTHER end (Radiola.g LiveEdge_decide).  A LIVE source produces chunk s at wall
+//   time s·chunkdur; the listener plays BEHIND that, `margin` seconds back.  Chasing low latency (playing
+//    fast) shrinks the margin; reach the edge and the next chunk isn't produced yet — a stall, a real gap.
+//     Rendered deterministically through an OfflineAudioContext (the virtual production clock, no wall
+//      clock).  The witness is a DIFFERENTIAL: a no-control fast chase OVERRUNS the edge (stalls, gaps),
+//       while the controller holds a safe margin near the target AND keeps latency low — the throttle
+//        (0.8, Radios' check_live_edge_delta) earning its keep.  Browser-only (skips headless).
+//         beat 2  BASELINE  — a fixed fast chase (rate 1.5), NO control → overruns the edge, stalls, gaps
+//         beat 3  CONTROLLED— LiveEdge_decide holds the margin near target → zero overruns, low latency
+//         beat 4  witness   — holds_margin / backs_off / low_latency / baseline_overruns / fewer_gaps
+MusuEdge(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuEdge_drive,w,req
+        req%ok = 1
+
+// MusuEdge_drive — OfflineAudioContext gate (skip headless), then per-beat dispatch off step_n (req-local
+//  did_step, set before any await so a re-pump never re-runs a render).
+async MusuEdge_drive(w, req):
+    if (typeof OfflineAudioContext === 'undefined') {
+        if (!w.oa({skipped: 'no_audio'})) w.i({skipped: 'no_audio'})
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuEdge_run(w, 'baseline', false)
+        if (n === 3) await this.MusuEdge_run(w, 'controlled', true)
+        if (n === 4) this.MusuEdge_witness(w)
+    }
+    await this.Musu_float(w)
+
+// MusuEdge_run — render one live-edge listener over `total` chunks (controlled or a fixed fast chase) and
+//  leave its %edgesig,kind readout: min_margin / final_margin / overruns / gaps + the rate trajectory.
+async MusuEdge_run(w, kind, controlled):
+    let total = 200
+    let stock = this.Musu_radiostock('synth')
+    let out = await this.Musu_render_liveedge(total, stock, controlled, 1.5)
+    w.i({edgesig: 1, kind: kind, min_margin: out.min_margin, final_margin: out.final_margin, overruns: out.overruns, throttles: out.throttles, gaps: out.gaps, min_rate: out.min_rate, bits: out.bits})
+
+// Musu_render_liveedge — DETERMINISTIC live-edge render.  A virtual production clock: chunk s is live at
+//  s·chunkdur.  The listener starts START seconds behind live and plays each chunk at the controller's (or
+//   a fixed) rate; `margin` = how far behind live the playhead sits.  If the playhead reaches a chunk before
+//    it's produced (margin would go negative) it STALLS to the production time — an overrun, a real silent
+//     gap (coverage).  Every chunk is laid on an OfflineAudioContext at its play time + rate and the whole
+//      graph rendered + measured, so bits/rms are real audio and the gaps are the genuine stalls.
+async Musu_render_liveedge(total, stock, controlled, fixed_rate):
+    let SR = 48000
+    let CHUNK = 2400
+    let chunkdur = CHUNK / SR
+    let START = 0.9
+    let target = 0.6
+    let W = START
+    let rate = 1
+    let min_margin = START
+    let final_margin = START
+    let overruns = 0
+    let gap_secs = 0
+    let min_rate = 1
+    let throttles = 0
+    let plan = []
+    let s = 0
+    while (s < total) {
+        let prod = s * chunkdur
+        let margin = W - prod
+        if (margin < 0) {
+            gap_secs = gap_secs + (-margin)
+            W = prod
+            margin = 0
+            overruns = overruns + 1
+        }
+        if (controlled) {
+            rate = this.LiveEdge_decide(margin, rate, target, null)
+        } else {
+            rate = fixed_rate
+        }
+        // throttles = how many chunks the controller backed OFF (rate < 1) -- the back-off must be
+        //  exercised MANY times across the run (Schmitt oscillation near the target), not brushed once.
+        if (rate < 0.999) throttles = throttles + 1
+        if (rate < min_rate) min_rate = rate
+        if (margin < min_margin) min_margin = margin
+        final_margin = margin
+        plan.push({ at: W, rate: rate, seq: s })
+        W = W + chunkdur / rate
+        s = s + 1
+    }
+    let end = W + 0.05
+    let len = Math.ceil(end * SR)
+    let ctx = new OfflineAudioContext(1, len, SR)
+    let g = ctx.createGain()
+    g.connect(ctx.destination)
+    for (const p of plan) {
+        let pcm = this.Musu_stock_chunk(stock, p.seq)
+        let buf = ctx.createBuffer(1, pcm.length, SR)
+        buf.copyToChannel(pcm, 0)
+        let src = ctx.createBufferSource()
+        src.buffer = buf
+        src.playbackRate.value = p.rate
+        src.connect(g)
+        src.start(p.at)
+    }
+    let rendered = await ctx.startRendering()
+    let sig = this.Musu_measure(rendered.getChannelData(0))
+    let gaps = Math.round(gap_secs / 0.05)
+    return { bits: sig.bits, rms: sig.rms, gaps: gaps, overruns: overruns, throttles: throttles, min_margin: +min_margin.toFixed(3), final_margin: +final_margin.toFixed(3), min_rate: +min_rate.toFixed(3) }
+
+// MusuEdge_witness — the live-edge controller, earned.  Structural + differential; idempotent stamps at beat 4.
+MusuEdge_witness(w):
+    let base = w.o({edgesig: 1, kind: 'baseline'})[0]
+    let ctl = w.o({edgesig: 1, kind: 'controlled'})[0]
+    if (!base || !ctl) return
+    let c_over = +(ctl.sc.overruns ?? 99)
+    let c_min = +(ctl.sc.min_margin ?? -9)
+    let c_final = +(ctl.sc.final_margin ?? 9)
+    let c_minrate = +(ctl.sc.min_rate ?? 1)
+    let c_throttles = +(ctl.sc.throttles ?? 0)
+    let c_gaps = +(ctl.sc.gaps ?? 99)
+    let c_bits = +(ctl.sc.bits ?? 0)
+    let b_over = +(base.sc.overruns ?? 0)
+    let b_gaps = +(base.sc.gaps ?? 0)
+    // holds_margin: the controlled listener NEVER outran the live edge (zero stalls) AND kept a real safety
+    //  margin (min stayed >= 0.3s behind live).  An overrunning controller clamps margin to 0 on the stall
+    //   -> min < 0.3 -> reds, so the 0.3 floor genuinely discriminates (not the old >=0 which the clamp made
+    //    always-true).
+    if (c_over === 0 && c_min >= 0.3 && !(oa %witnessed:holds_margin)) i %witnessed:holds_margin
+    // backs_off: it engaged the throttle (0.8, Radios' check_live_edge_delta) MANY times across the run --
+    //  a real Schmitt oscillation near the target, not a single brush at the end.  Counting the events (not
+    //   just min_rate) makes this robust to the run length: a controller that throttles once would red here.
+    if (c_throttles >= 8 && c_minrate <= 0.85 && !(oa %witnessed:backs_off)) i %witnessed:backs_off
+    // low_latency: it achieved LOW latency -- the final margin settled well below the 0.9s start, in a tight
+    //  healthy band -- not safety-by-sitting-far-back.  THE load-bearing discriminator: a play-always-slow
+    //   controller passes holds_margin+backs_off but its margin grows unbounded and FAILS this.
+    if (c_final >= 0.2 && c_final <= 1.0 && !(oa %witnessed:low_latency)) i %witnessed:low_latency
+    // baseline_overruns: THE negative control -- the no-control fast chase OVERRAN the edge (stalled many
+    //  times).  Without the controller, chasing latency breaks; this is the failure it prevents.
+    if (b_over > 0 && !(oa %witnessed:baseline_overruns)) i %witnessed:baseline_overruns
+    // fewer_gaps: the payoff -- the controlled run stalled far LESS than the baseline (the stall total from
+    //  the production-clock model), while c_bits>=4 confirms real audio actually rendered (a dead/silent
+    //   graph reads 0 bits and reds this).  NB the gap count is the model's stall total; bits is what ties
+    //    to the OfflineAudioContext render.
+    if (b_gaps - c_gaps >= 3 && b_gaps > 0 && c_bits >= 4 && !(oa %witnessed:fewer_gaps)) i %witnessed:fewer_gaps
+
+async MusuEdge_order(w):
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'MusuEdge') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+//#endregion
+
+//#region pier — the SYNAPSE (stage 5): real audio frames over the real Peeroleum transport
+// ══ MusuPier — do audio chunks cross a REAL transport link, in order, and survive packet loss? ════
+//  The piece every other Musu Book LARPed: a real wire.  Real PCM (Musu_synth → bytes) is sent as
+//   %audiochunk frames over the REAL Peeroleum spine (Ghost/N/Peeroleum.g) between two Piers stood up by
+//    Lake_link (Peregrination.g) on the mock carrier — the SAME deliver→inseq→retransmit path PereProof
+//     proves under loss, headless.  Each frame carries a sha256 body_hash req_unemit verifies before the
+//      listener's handler ever sees it, so a crossing is integrity-checked end to end.  Then a lossy link
+//       DROPS a chunk and the retransmit sweep heals it — the listener still gets the complete in-order
+//        stream.  NO Web Audio here (the payload is bytes, the proof is order/integrity/heal) — so unlike
+//         the render Books this runs the network spine, not an OfflineAudioContext.  // VERIFY ON A LIVE
+//          RUNNER: this composes the transport machinery (can't be node-validated like the pure-DSP Books).
+//           beat 2  LINK    — Lake_link a clean pair + a lossy pair; register the %audiochunk handler; arm
+//           beat 3  CAST    — send 5 real audio chunks (in order) + 1 corrupt frame the gate must reject
+//           beat 4  PERTURB — over the lossy link drop one chunk's seq + send 4 → one is lost in transit
+//           beat 5  SETTLE  — the retransmit sweep re-sends the dropped chunk across the step boundaries
+//           beat 6  witness — linked / crossed / verified / dropped_then_healed
+MusuPier(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuPier_drive,w,req
+        req%ok = 1
+
+// MusuPier_drive — needs the Peeroleum spine (Lake_link / Peeroleum_send / Peeroleum_on), which the
+//  Creduler loads before the M/ ghosts, so it's on H.  NO audio gate (the payload is bytes).  Per-beat
+//   dispatch off step_n (req-local did_step).  The clean cast lands synchronously (mock post_do); the
+//    heal needs step boundaries (Peeroleum_arm_whittle advances retx_tick on Runstepped), hence the
+//     SETTLE beat between PERTURB and the witness.
+async MusuPier_drive(w, req):
+    if (typeof this.Lake_link !== 'function' || typeof this.Peeroleum_send !== 'function') {
+        if (!w.oa({skipped: 'no_transport'})) w.i({skipped: 'no_transport'})
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuPier_setup(w)
+        if (n === 3) await this.MusuPier_cast(w)
+        if (n === 4) await this.MusuPier_perturb(w)
+        if (n === 5) w.i({reached: 'step_5'})
+        if (n === 6) w.i({reached: 'step_6'})
+    }
+    // POLL the witness every pass (like the Musu family) — robust to exactly when the retransmit heal lands,
+    //  rather than a single-shot read at one beat that reds permanently if the heal is a think late.
+    this.MusuPier_witness(w)
+    await this.MusuPier_order(w)
+
+// MusuPier_setup — beat 2: stand up a CLEAN pair (caster→listener) and a LOSSY pair (sender→hearer), arm
+//  the retransmit/cull sweeps, stamp proven identity (Ud) so app frames pass the pre-Ud gate, register ONE
+//   %audiochunk handler (it accumulates per-Pier, so it serves both links), and tighten the retx policy so
+//    the heal lands within a couple of step boundaries.  Piers ride w.c off-snap for the witness.
+async MusuPier_setup(w):
+    w i reached:step_2
+    let clean = await this.Lake_link(w, 'caster', 'listener')
+    let lossy = await this.Lake_link(w, 'sender', 'hearer')
+    w.c.tx = clean[0]
+    w.c.rx = clean[1]
+    w.c.ltx = lossy[0]
+    w.c.lrx = lossy[1]
+    this.Peeroleum_arm_whittle(w)
+    w.c.retx_policy = { base: 1, factor: 2, max_attempts: 6, cap: 8 }
+    // proven identity both ends of both links (skip the handshake; app frames need Ud, ack the round trip).
+    clean[1].i({ Ud: 1, pubkey: 'caster' })
+    clean[0].i({ Ud: 1, pubkey: 'listener' })
+    lossy[1].i({ Ud: 1, pubkey: 'sender' })
+    lossy[0].i({ Ud: 1, pubkey: 'hearer' })
+    // ONE receive handler for the %audiochunk type, keyed on the world; it accumulates the arrived seqs on
+    //  the receiving Pier (per-Pier, so both listeners are kept apart).  req_unemit has already verified the
+    //   body_hash before calling this, so anything here arrived integrity-checked + in order.
+    this.Peeroleum_on(w, 'audiochunk', (cw, pier, frame) => {
+        pier.c.audio = pier.c.audio || []
+        pier.c.audio.push(frame.header.seq)
+        pier.bump()
+        return true
+    })
+
+// MusuPier_audio_bytes — real PCM for chunk `idx` as raw bytes (Float32 → Uint8), the payload that crosses.
+MusuPier_audio_bytes(idx):
+    let pcm = this.Musu_synth(idx)
+    let bytes = new Uint8Array(pcm.length * 4)
+    bytes.set(new Uint8Array(pcm.buffer))
+    return bytes
+
+// MusuPier_send_audio — send ONE real audio chunk over a Pier: digest the bytes, take the next per-stream
+//  seq, emit the %audiochunk frame (binary on frame.buffer).  Returns the seq.
+async MusuPier_send_audio(w, tx, from, to, idx):
+    let bytes = this.MusuPier_audio_bytes(idx)
+    let bh = await this.Peeroleum_body_digest(bytes)
+    let seq = this.Pier_next_seq(tx)
+    this.Peeroleum_send(w, { header: { type: 'audiochunk', from: from, to: to, seq: seq, body_hash: bh, body_len: bytes.length }, buffer: bytes })
+    return seq
+
+// MusuPier_send_corrupt — send a frame whose body_hash is WRONG (the digest of DIFFERENT bytes), so
+//  req_unemit's sha256 verify fails and the frame is faulted (%faulty) — the handler never runs, the seq
+//   never reaches the listener.  The real end-to-end integrity-rejection probe.  Returns the seq.
+async MusuPier_send_corrupt(w, tx, from, to):
+    let bytes = this.MusuPier_audio_bytes(0)
+    let other = this.MusuPier_audio_bytes(1)
+    let bad = await this.Peeroleum_body_digest(other)
+    let seq = this.Pier_next_seq(tx)
+    this.Peeroleum_send(w, { header: { type: 'audiochunk', from: from, to: to, seq: seq, body_hash: bad, body_len: bytes.length }, buffer: bytes })
+    return seq
+
+// MusuPier_cast — beat 3: cast 5 real audio chunks over the CLEAN link.  The mock carrier delivers them
+//  synchronously in send order; req_unemit verifies each body_hash and the handler accumulates seqs 1..5
+//   on the listener Pier.
+async MusuPier_cast(w):
+    w i reached:step_3
+    let tx = w.c.tx
+    if (!tx) return
+    let i = 0
+    while (i < 5) {
+        await this.MusuPier_send_audio(w, tx, 'caster', 'listener', i)
+        i = i + 1
+    }
+    // then ONE corrupt frame (a wrong body_hash) -- the transport's integrity gate must REJECT it: it never
+    //  reaches the listener.  Sent LAST + over the reliable clean link (no inseq) so it can't block the good
+    //   frames; its seq lands on w.c so the witness can assert it's absent from what arrived.
+    w.c.corrupt_seq = await this.MusuPier_send_corrupt(w, tx, 'caster', 'listener')
+
+// MusuPier_perturb — beat 4: over the LOSSY link, engage seq discipline (reliable=false both ends), wrap
+//  the hearer's port to DROP the next seq, then send 4 chunks.  The dropped chunk's emit goes un-acked, so
+//   Peeroleum_retx_sweep re-sends it on the coming step boundaries (the SETTLE beat) until it lands — the
+//    network-healing floor PereProof proves.  The lossy wrapper rides ltx.c for the witness.
+async MusuPier_perturb(w):
+    w i reached:step_4
+    let ltx = w.c.ltx
+    let lrx = w.c.lrx
+    if (!ltx || !lrx) return
+    this.Lake_port(ltx).reliable = false
+    this.Lake_port(lrx).reliable = false
+    let drop_seq = (ltx.c.seq || 0) + 2
+    let lossy = this.make_lossy_partner(this.Lake_port(lrx), { drop: [drop_seq] })
+    ltx.c.lossy = lossy
+    this.Lake_port(ltx).partner = lossy
+    let i = 0
+    while (i < 4) {
+        await this.MusuPier_send_audio(w, ltx, 'sender', 'hearer', i)
+        i = i + 1
+    }
+
+// MusuPier_witness — the synapse, earned.  Structural + differential; idempotent stamps polled every pass.
+MusuPier_witness(w):
+    let rx = w.c.rx
+    let lrx = w.c.lrx
+    let ltx = w.c.ltx
+    if (!rx || !lrx || !ltx) return
+    let got = rx.c.audio || []
+    let lgot = lrx.c.audio || []
+    let in_order = (arr) => {
+        let k = 1
+        while (k < arr.length) {
+            if (arr[k] <= arr[k - 1]) return false
+            k = k + 1
+        }
+        return true
+    }
+    let dropped = (ltx.c.lossy && ltx.c.lossy.dropped) ? ltx.c.lossy.dropped.length : 0
+    // linked: both links stood up -- a Pier each side with a paired mock carrier (Lake_link wired the ports).
+    if (this.Lake_port(w.c.tx) && this.Lake_port(rx) && this.Lake_port(ltx) && !(oa %witnessed:linked)) i %witnessed:linked
+    // crossed: all 5 real audio chunks reached the listener over the real transport, IN ORDER (seqs 1..5).
+    //  A counter can't fake this -- the handler only runs after req_unemit verifies the body_hash + inseq.
+    if (got.length >= 5 && got[0] === 1 && in_order(got) && !(oa %witnessed:crossed)) i %witnessed:crossed
+    // verified: a frame sent with a WRONG body_hash was REJECTED by the transport's integrity gate -- its
+    //  seq never reached the listener (absent from got) while the 5 good frames did.  A real end-to-end proof
+    //   that the sha256 verify faults corruption in the delivery path (not just a digest unit test).
+    let corrupt = w.c.corrupt_seq
+    if (corrupt != null && got.indexOf(corrupt) < 0 && got.length >= 5 && !(oa %witnessed:verified)) i %witnessed:verified
+    // dropped_then_healed: THE headline -- a chunk was DROPPED in transit (the lossy wrapper swallowed it)
+    //  yet the hearer still received the COMPLETE in-order stream (all 4), because the retransmit sweep
+    //   re-sent it.  Loss happened AND was healed -- the real network floor, not a clean-path tautology.
+    if (dropped > 0 && lgot.length >= 4 && in_order(lgot) && !(oa %witnessed:dropped_then_healed)) i %witnessed:dropped_then_healed
+
+async MusuPier_order(w):
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'MusuPier') ? 0 : 1
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)

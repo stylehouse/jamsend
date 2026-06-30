@@ -1,0 +1,25 @@
+Snap:H
+  H:MusuPier,Run
+    A:MusuPier
+      self,round=2	{"mung":["age"]}
+      w:MusuPier
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Peering,name:caster,req=2,ok
+          Pier,pub:listener,req=2,ok
+            Ud,pubkey:listener
+          active_transport,type:mock,open
+        Peering,name:listener,req=3,ok
+          Pier,pub:caster,req=2,ok
+            Ud,pubkey:caster
+          active_transport,type:mock,open
+        Peering,name:sender,req=4,ok
+          Pier,pub:hearer,req=2,ok
+            Ud,pubkey:hearer
+          active_transport,type:mock,open
+        Peering,name:hearer,req=5,ok
+          Pier,pub:sender,req=2,ok
+            Ud,pubkey:sender
+          active_transport,type:mock,open
+        witnessed:linked

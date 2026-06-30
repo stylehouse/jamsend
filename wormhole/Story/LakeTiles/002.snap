@@ -36,18 +36,18 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1782792193708,kind:cold
-          want=1782792193759,kind:cold
-          want=1782792193916,kind:cold,resolved
+          want=1782794120126,kind:cold
+          want=1782794120176,kind:cold
+          want=1782794120328,kind:cold,resolved
         o_elvis:dock_askies
         req:Langoer,eternal,focus:Story/LakeTiles/Waftily,ok	{"ref":{"w":"%w:Lies"}}
         see:🗂 1 doc · 1 Waft
     A:Lang
-      self,round=20	{"mung":["age"]}
+      self,round=19	{"mung":["age"]}
       w:Lang
         Opt
           txtsyntaxdump
-        self,round=20	{"mung":["age"]}
+        self,round=19	{"mung":["age"]}
         model,cyto_dir
           Line=5,line_from=74,line_to=98,str:    let la = i hut/$toot,the_bm_bm_98_132
             Name,from=78,to=81,str:let
@@ -145,7 +145,7 @@ Snap:H
                 def,method:captureOutTiles,line=280,rel_from=11930,rel_to=11946
                 def,magic,method:IMPORT,line=291,rel_from=12461,rel_to=12468
                 def,magic,method:RENDER,line=295,rel_from=12597,rel_to=12604
-              time,compile=0.078,all=2.279,write=0.001
+              time,compile=0.054,all=0.684,write=0
               Output,gen_path:gen/test/Story/Lake/LakeTiles.go,dige:0081e1baa09c1d90,source_dige:0177ce9ea65ef69a
                source: |
                  <script lang="ts">
@@ -531,7 +531,7 @@ Snap:H
           Change
             backend,dige:0177c
             storage,dige:0177c
-            compile,dige:0177c,secs=0.078,dim,pending
+            compile,dige:0177c,secs=0.054,dim,pending
         req:workon,auto_push	{"ref":{"w":"%w:Lang"}}
           req:understanding,maz=3,permanent,sig:1:13:0:0,what:labelofaWhat,finished
           req:ingredients,maz=2,permanent,sig:Ghost/test/Story/Lake/LakeTiles.g,finished

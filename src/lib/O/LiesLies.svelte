@@ -828,14 +828,22 @@
             const now = Date.now()
             if (w.c.last_advertise && now - (w.c.last_advertise as number) < 15000) return   // ~15s beacon
             w.c.last_advertise = now
+            const eng = (H as any).Lies_engagement?.(w) as { client?: string; status?: string } | undefined
             ;(H as any).Peeroleum_send_consumer(w, 'advertise', {
                 from: self.prepub,
                 friendly: self.friendly ?? '',
                 ready: 1,                                   // reachable on the grid (book='' ⇒ free/idle)
                 book: (H.top_House().c.book as string) ?? '',
-                // sticky soft-affinity: whose client (by pub) favours this runner.  Set by an editor
-                //  `favour` frame, persisted in the runner's identity Thang, restored on boot to top.c
-                //   — so it rides every beacon and a CLI can prefer its own runner. '' ⇒ unclaimed.
+                // overall engagement: the client (by pub) holding this runner's LIVE lease right now, so
+                //  the editor's Brink shows busy/free and a fleet allocator can skip an engaged runner
+                //   without a round-trip.  '' ⇒ free (no lease, or released/timed-out).  `book` is the
+                //    finer "busy-with-something" (a Book actually running); `engaged` is the coarser
+                //     reservation that outlives a single run (the 10min think-between-runs window).
+                engaged: (eng && eng.status === 'active') ? (eng.client ?? '') : '',
+                // soft-affinity: whose client (by pub) this runner favours.  NOT set by a frame — it's a
+                //  property the editor reads off the Waft:Cluster/%HostedIdentity registry (C1: the client
+                //   looks up the HostedIdentity favouring its own Identity); the beacon just carries the
+                //    runner's current view of it.  '' ⇒ unclaimed.
                 favourite_client: (H.top_House().c.favourite_client as string) ?? '',
             })
         },
@@ -854,11 +862,40 @@
             if (fr?.friendly) r.sc.friendly = String(fr.friendly); else delete r.sc.friendly
             if (fr?.book)     r.sc.book     = String(fr.book);     else delete r.sc.book
             if (fr?.ready)    r.sc.ready    = 1;                   else delete r.sc.ready
+            // overall engagement (the live lease's client pub) — busy/free for the Brink + a lease-aware
+            //  allocator.  '' or absent ⇒ free.
+            if (fr?.engaged)  r.sc.engaged  = String(fr.engaged);  else delete r.sc.engaged
             // the runner's sticky favourite_client (a client pub) — captured so the Brink can show WHO
             //  owns it; the CLI reads the same marker off the live runner, not this editor-only roster.
             if (fr?.favourite_client) r.sc.favourite_client = String(fr.favourite_client)
             else                      delete r.sc.favourite_client
+            // mirror into the Waft:Cluster/%HostedIdentity registry (the C1 home): the %Runner roster is
+            //  dontSnap liveness, the registry is the tracked representation a client READS to find "the
+            //   runner that favours me" (Lies_favoured_runner).  Auto-vivifies on first advertise; carries
+            //    the favourite_client the runner declares (the SET is the identity-hosting layer's, not a
+            //     frame — there is no `favour` receiver).  '' ⇒ unclaimed.
+            const cluster = w.o({ Waft: 'Cluster' })[0] as TheC | undefined
+            if (cluster) {
+                const hi = cluster.oai({ HostedIdentity: from }, { dontSnap: 1 }) as TheC
+                if (fr?.friendly)         hi.sc.friendly         = String(fr.friendly)
+                if (fr?.favourite_client) hi.sc.favourite_client = String(fr.favourite_client)
+                else                      delete hi.sc.favourite_client
+            }
             w.bump_version()
+        },
+
+        // Lies_favoured_runner — the C1 lookup: which runner is reserved as THIS client's?  Scan the
+        //  Waft:Cluster/%HostedIdentity registry for the entry that favours `client` (default: our own
+        //   prepub) and return its pub — the to:<prepub> dispatch target (feed Lies_send_become_book's
+        //    `to`).  Read-only: no frame, no receiver.  The favour is a property the runner declares (its
+        //     favourite_client, mirrored here off the beacon); the client just looks up who favours it.
+        Lies_favoured_runner(w: TheC, client?: string): string | undefined {
+            const H = this as House
+            const me = client ?? (H as any).Clustation_self?.(w)?.prepub
+            if (!me) return undefined
+            const cluster = w.o({ Waft: 'Cluster' })[0] as TheC | undefined
+            const hi = (cluster?.o({ HostedIdentity: 1 }) as TheC[] | undefined)?.find(h => h.sc.favourite_client === me)
+            return hi?.sc.HostedIdentity as string | undefined
         },
 
         // Lies_channel_cull — run the §7.4 outbox/inbox archive (Peeroleum_runstepped) on the ambient

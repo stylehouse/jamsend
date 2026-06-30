@@ -1,8 +1,20 @@
 story:MusuMesh
   Styles
-  step,dige:0000000000000001
-  step=2,dige:0000000000000002
-  step=3,dige:0000000000000003
-  step=4,dige:0000000000000004
-  step=5,dige:0000000000000005
-  step=6,dige:0000000000000006
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.024
+      sample=0.026,at=1782800904
+      sample=0.026,at=1782800932
+      sample=0.02,at=1782800942
+    TimeTotal:step,avg=0.004
+      sample=0.004,at=1782800904
+      sample=0.004,at=1782800932
+      sample=0.003,at=1782800942
+  step,dige:b8f29b29390ed46f
+  step=2,dige:07926f244faae91b
+  step=3,dige:5f82634b317a4354
+  step=4,dige:d67061424f07c175
+  step=5,dige:658f42ea0578f5dc
+  step=6,dige:cbf681c539628bea

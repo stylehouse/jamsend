@@ -1,0 +1,8 @@
+Snap:H
+  H:MusuEdge,Run
+    A:MusuEdge
+      self,round=2	{"mung":["age"]}
+      w:MusuEdge
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        edgesig,kind:baseline,min_margin=0,final_margin=0,overruns=145,throttles=0,gaps=48,min_rate,bits=5.88

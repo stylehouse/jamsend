@@ -1,0 +1,26 @@
+story:MusuPier
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.111
+      sample=0.109,at=1782801065
+      sample=0.105,at=1782801122
+      sample=0.138,at=1782801145
+      sample=0.111,at=1782801236
+      sample=0.111,at=1782801256
+      sample=0.094,at=1782801266
+    TimeTotal:step,avg=0.019
+      sample=0.018,at=1782801065
+      sample=0.018,at=1782801122
+      sample=0.023,at=1782801145
+      sample=0.018,at=1782801236
+      sample=0.018,at=1782801256
+      sample=0.016,at=1782801266
+  step,dige:3f89b5f9dd5239d0
+  step=2,dige:87d495623c631437
+  step=3,dige:7dd4fb5f51ab7873
+  step=4,dige:b0a1dde4c1042580
+  step=5,dige:26efceb6c8e24181
+  step=6,dige:724fb44fbf768c37

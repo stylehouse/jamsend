@@ -1,0 +1,20 @@
+story:Engage
+  Styles
+  Plan
+    Prep
+      i_elvisto:Lies,e:Lies_engage_selftest
+  Opt
+    For
+      w:Lies
+        dontSnapGhostList
+    quiesce_snap_time=0.4
+  TimeSpool
+    TimeTotal:beliefs,avg=0.098
+      sample=0.112,at=1782805836
+      sample=0.03,at=1782806171
+      sample=0.152,at=1782806208
+    TimeTotal:step,avg=0.098
+      sample=0.112,at=1782805836
+      sample=0.03,at=1782806171
+      sample=0.152,at=1782806208
+  step,dige:c80246d9c3536c11

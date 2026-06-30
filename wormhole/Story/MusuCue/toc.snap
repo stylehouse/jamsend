@@ -1,8 +1,24 @@
 story:MusuCue
   Styles
-  step,dige:0000000000000001
-  step=2,dige:0000000000000002
-  step=3,dige:0000000000000003
-  step=4,dige:0000000000000004
-  step=5,dige:0000000000000005
-  step=6,dige:0000000000000006
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.396
+      sample=0.279,at=1782800953
+      sample=0.409,at=1782801368
+      sample=0.409,at=1782801380
+      sample=0.381,at=1782801387
+      sample=0.503,at=1782801395
+    TimeTotal:step,avg=0.066
+      sample=0.047,at=1782800953
+      sample=0.068,at=1782801368
+      sample=0.068,at=1782801380
+      sample=0.063,at=1782801387
+      sample=0.084,at=1782801395
+  step,dige:40754ca4dabbf9ee
+  step=2,dige:62774a01ada5d5c1
+  step=3,dige:f9f13e685fba7d1a
+  step=4,dige:59b6f2c703114e4b
+  step=5,dige:46ab91818e90e1de
+  step=6,dige:cd8ab085bdb83304

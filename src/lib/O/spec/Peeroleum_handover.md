@@ -18,14 +18,21 @@ engine-facts, the heading-10 settled design, and the §7/§8 lifecycle bombs wer
 
 ## Status — start here
 
-**This session — PereProof step 31 (`corrupt_redial`) + the `%see` assertion doctrine.** Two things landed,
- one of them a way-of-working the next instance MUST adopt:
-- **The braid (step 31, `Lake_corrupt_redial_arm` in `Peregrination.g`): corruption DURING a re-dial** — the
-   first of the three "NOT yet braided" items below. It composes `reset ∘ verify ∘ ordering`: fresh lossy link
-    Cyn/Dax, deliver s1 (cursor→s1), gap-buffer s3/s4 with s2 MISSING, `Peeroleum_reset_handshake(DaxPier)`
-     (clears `c.held` + `c.inseq.buffered`, keeps `%Ud` + cursor `last`), then **re-supply s2 CORRUPT** (bad
-      `body_hash` → sha256 verify faults, burns its slot), then s3/s4 good → the tail drains exactly once. Proves
-       a corruption arriving mid-reconnect **faults cleanly** instead of getting lost in the reset.
+**Latest — PereProof steps 31–33, the three correctness braids, + the `%see` assertion doctrine.** All three
+ braids landed green + committed; PereProof now runs **1–33**. The doctrine is a way-of-working the next
+  instance MUST adopt:
+- **Braid 1 (step 31, `Lake_corrupt_redial_arm` in `Peregrination.g`): corruption DURING a re-dial.** Composes
+   `reset ∘ verify ∘ ordering`: fresh lossy link Cyn/Dax, deliver s1 (cursor→s1), gap-buffer s3/s4 with s2
+    MISSING, `Peeroleum_reset_handshake(DaxPier)` (clears `c.held` + `c.inseq.buffered`, keeps `%Ud` + cursor
+     `last`), then **re-supply s2 CORRUPT** (bad `body_hash` → sha256 verify faults, burns its slot), then s3/s4
+      good → the tail drains exactly once. Proves a corruption arriving mid-reconnect **faults cleanly** instead
+       of getting lost in the reset. `%see:'corrupt mid-re-dial frame faulted not lost — good tail recovered'`.
+- **Braids 2+3 (steps 32–33, `Lake_silence_retx_arm` / `Lake_crossfire_arm`).** Step 32 = silence-meets-stall:
+   `%see:'silence latched mid-retransmit — then the stall joined it — both carrier-down signals coexist'`
+    (the inbound-silence keepalive latch and the outbound `%stalled` rollup hold at once). Step 33 = crossfire,
+     three interleaved streams routed by identity: `%see:'three interleaved streams routed by identity stayed
+      isolated — clean delivered — lossy healed — corrupt faulted alone'`. Both ride the once-noticed `%see`
+       style below; both committed with their `032/033.snap` fixtures.
 - **The assertion doctrine — `%see:'sentence'`, NOT `%witnessed:step_N` (going forward).** The human dislikes the
    witness (`Lake_witness`/`%witnessed:step_N`): flat latches accreting *inside* the gated snap, opaque (`step_29`
     means nothing without its `.g` comment), redundant with the real gate. **The existing `%witnessed:*` stay
@@ -41,16 +48,16 @@ engine-facts, the heading-10 settled design, and the §7/§8 lifecycle bombs wer
         off examples; do not reify them as real keys.
     - **Why:** a targeted, self-describing assertion on top of the ocean beats confetti inside it; the snap-fixture
        diff (the **ocean**) stays the gate AND the place to notice un-asserted detail.
-   Step 31's assertion is a new `Lake_proof_see(w)`, polled BESIDE `Lake_proof_witness` (the 2–30 gate untouched).
-    It emits `see:corrupt mid-re-dial frame faulted not lost — good tail recovered` onto `w` once all five
-     conditions hold. `%see` lands on the test world (no transient-status `%see` there → no blur).
-- **Verified headless: CredRunner `match: 31/31, surprises: []`** (`BOOK=PereProof node_modules/.bin/vitest run
-   -c scripts/Story_cli.vitest.config.mjs scripts/CredRunner.spec.ts`); LocalGen compile clean. The exact-vs-
-    forgiven split (e.g. `forgiven: [21,31]`) is just `self,round` munge noise and varies run-to-run — only
-     `match: N/N, surprises: []` is the gate.
-- **COMMITTED** (host committed it between sessions, `ef3bfaee` + the `.g`/gen/`toc` changes): `Peregrination.g`,
-   `src/lib/gen/Story/Peregrination.go`, `wormhole/Story/PereProof/{toc,031}.snap` are all in HEAD and consistent
-    (the committed gen carries the `%see` sentence). No loose step-31 state to re-record.
+   The assertions are `Lake_proof_see(w)`, polled BESIDE `Lake_proof_witness` (the 2–30 *witnessed* gate
+    untouched) — one `%see` sentence per braid (steps 31–33), emitted onto `w` once that braid's conditions all
+     hold. `%see` lands on the test world (no transient-status `%see` there → no blur).
+- **Verified headless: CredRunner `match: 33/33, surprises: []`** (re-confirmed this preen pass — `BOOK=PereProof
+   node_modules/.bin/vitest run -c scripts/Story_cli.vitest.config.mjs scripts/CredRunner.spec.ts`); LocalGen
+    compile clean. The exact-vs-forgiven split (e.g. `forgiven: [1..31,33]`) is just `self,round` munge noise and
+     varies run-to-run — only `match: N/N, surprises: []` is the gate.
+- **COMMITTED** (host committed between sessions, from `ef3bfaee` on): `Peregrination.g`,
+   `src/lib/gen/Story/Peregrination.go`, and `wormhole/Story/PereProof/{toc,031,032,033}.snap` are all in HEAD
+    and consistent (the committed gen carries the three `%see` sentences). No loose step 31–33 state to re-record.
 - **`ghost-compile` may still be owed for a LIVE :9091 runner.** The gen `.go` is committed (a fresh boot picks it
    up), but a long-lived runner that was up before the commit needs `npm run ghost-compile -- Ghost/Story/
     Peregrination.g` (editor open on :9091) to HMR the new gen in.
@@ -494,6 +501,12 @@ envelope (mechanism: spec §4/§7). Step-driven (inner steps start at 2): `Lake_
 in the *value*). The `toc.snap` carries one `step,…` line per inner step; the diges are **lie diges** until a
 run records them.
 
+> **SUPERSEDED actor shape (swarm refactor — see the Status block).** The per-side `A:Alice`/`A:Bob`, each its
+>  own `w:Peeroleum`, is GONE: every node now lives under ONE `w:PereStaple` as a `%Peering,name,req` (a typed
+>   serial-req, `req_Peering`) owning its `%Pier,pub,req` and its own carrier — `Lake_sides_up`→`Lake_peer`/
+>    `Lake_link`. The mechanisms below (the `on_step` bug, the snap-fold knobs) still hold; only the actor
+>     shape changed.
+
 - **Why NOT `H.on_step` (a real bug, fixed):** `on_step` keys off one H-global `did_on_step_n`. When
    cold-compile/include spills into step 2, the step-1 path still runs and claims step 2 → the wrangle's
     step-2 setup is **starved** (tell: a step-3 snap with `%reached:step_3` but no `A:Alice`/`A:Bob`). Fix:
@@ -507,10 +520,12 @@ run records them.
 The four leaf do_fns + say/hear exchange + frame dispatch (`Peeroleum.g`), plus the wrangler's per-pass
 re-pump + step-3 witness (`Peregrination.g`). Mechanism (leaf existence-checks, say/hear, dual-init,
 cross-side short-circuit) is **spec §8**; the c.up bomb is **spec §8**. Status-only bombs that stay here:
-- **Re-pump lives in the wrangler, NOT reqdo_sweep.** The handshake is nested (`Pier/Peering/w`), below
-   reqdo_sweep's w-level reach, so `Lake_pump_handshakes` (each pass) drives it; delete it and the leaves
-    freeze after step-3 seeding. (Production will pump via the per-Pier worker once `req_p2paddy` seeds the
-     handshake — spec §11.2/§11.3 — but the test wrangler lays sides directly and drives them.)
+- **Re-pump — SUPERSEDED by the swarm refactor (see Status).** With `%Peering` now a typed req, `w.do()`
+   cascades `req_Peering`→`req_Pier`→handshake, so the ambient reqdo_sweep reaches the WHOLE flock from `w` —
+    the old "re-pump MUST live in the wrangler, below reqdo's w-reach" no longer holds. `Lake_pump_handshakes`
+     is KEPT belt-and-braces (pumps each Peering) but is no longer the only driver, and `oai` now wires
+      `Peering.c.up=w`/`Pier.c.up=Peering` so the hand-stamped `.c.up` is gone too. (Production pumps via the
+       per-Pier worker once `req_p2paddy` seeds the handshake — spec §11.2/§11.3.)
 - **The step holds open via `post_do`/`feebly_ponder` — no ttlilt needed.** Each `Peeroleum_send` `post_do`s
    a delivery; each `Peeroleum_deliver` `feebly_ponder`s → think → `Lake_drive` → `Lake_pump_handshakes` →
     `pier.do()`, so the round-trip self-drives to completion in one step. If an in-app run ever snaps
@@ -731,11 +746,12 @@ PereStaple had grown to 54 linear steps; the human asked to split it so the two 
     `001–022.snap` are UNCHANGED by the split (the proof peers only ever appeared at step 25+, so 2–22 snaps are
      byte-identical) — kept, no re-record. CredRunner: **21/22** (the lone miss is the known step-3 quiescence
       residual). The old `023–054.snap` are DELETED (those proofs moved to PereProof, renumbered).
-- **PereProof — the CORRECTNESS arc (steps 2–30).** Corruption, dedup, reorder, reset, pre-Ud, dedup-cull, the
-   combinatory braids (storm / corrupt-stream / rededup / storm-redial), and multicast — "does the floor stay
-    correct under adversarial input." Dispatch `Lake_proof_drive`, witness `Lake_proof_witness`. Fixtures
-     `wormhole/Story/PereProof/001–030.snap` recorded headless (it has NO handshake, so no step-3 residual —
-      fully deterministic). CredRunner: **30/30**, all 12 `witnessed:*` fire.
+- **PereProof — the CORRECTNESS arc (steps 1–33).** Corruption, dedup, reorder, reset, pre-Ud, dedup-cull,
+   multicast (step 29), and the late combinatory braids (corrupt-redial / silence-retx / crossfire, steps
+    31–33) — "does the floor stay correct under adversarial input." Dispatch `Lake_proof_drive`; witnessed
+     2–30 by `Lake_proof_witness` (`%witnessed:*`), asserted 31–33 by `Lake_proof_see` (`%see:'sentence'`).
+      Fixtures `wormhole/Story/PereProof/001–033.snap` recorded headless (it has NO handshake, so no step-3
+       residual — fully deterministic). CredRunner: **33/33, surprises: []** (re-confirmed this preen pass).
 - **Mechanics + gotchas.** Both Books live in the SAME `Peregrination.g` (already a CREDULER_GHOST — no manifest
    change); the `Lake_*` ARM methods are SHARED, only the dispatch + witness split. The world MUST be named
     `w:PereProof` (the per-beat handler `PereProof(A,w)` is dispatched BY THE W-NAME — the same footgun the

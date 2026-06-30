@@ -1,0 +1,7 @@
+Snap:H
+  H:MusuMix,Run
+    A:MusuMix
+      self,round	{"mung":["age"]}
+      w:MusuMix
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

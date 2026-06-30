@@ -58,6 +58,7 @@
     let r_heard    = $state(0)
     let r_ready    = $state(false)
     let r_book     = $state('')
+    let r_engaged  = $state('')   // the client pub holding this runner's live lease ('' ⇒ free)
 
     const _tick = setInterval(() => { now = Date.now() }, 1000)
     onDestroy(() => clearInterval(_tick))
@@ -79,6 +80,7 @@
                 r_heard    = Number(rn.sc.last_heard ?? 0)
                 r_ready    = !!rn.sc.ready
                 r_book     = (rn.sc.book as string) ?? ''
+                r_engaged  = (rn.sc.engaged as string) ?? ''
             }
         })
     })
@@ -129,13 +131,17 @@
     let phase_pct  = $derived(run_phase?.total ? Math.min(100, Math.round((Number(run_phase.n ?? 0) / Number(run_phase.total)) * 100)) : null)
 
     // roster-mode link — liveness off the advertise beacon (cadence ~15s; allow ~2 missed before
-    //  "silent", never heard ⇒ "dialing").  free = on the grid, no book; else running its book.
+    //  "silent", never heard ⇒ "dialing").  Three on-grid states: running its book ▸ engaged (reserved,
+    //   idle between runs) ▸ free.  `engaged` rides the beacon (the lease's client), so the editor reads
+    //    busy/free without a round-trip.
     let r_age_s = $derived(r_heard ? Math.round((now - r_heard) / 1000) : null)
     let r_live  = $derived(r_heard > 0 && now - r_heard < 45000)
     let r_title = $derived(r_friendly || (r_pub ? r_pub.slice(0, 8) : '?'))
     let r_link  = $derived(
         !r_heard ? { glyph: '◌', cls: 'dial',   text: 'dialing' }
-      : r_live   ? { glyph: '●', cls: 'live',   text: r_book ? `running ${base(r_book)}` : 'free' }
+      : r_live   ? (r_book    ? { glyph: '●', cls: 'live',    text: `running ${base(r_book)}` }
+                  : r_engaged ? { glyph: '◑', cls: 'engaged', text: 'engaged' }
+                  :             { glyph: '●', cls: 'live',    text: 'free' })
       :            { glyph: '◍', cls: 'silent', text: `silent ${r_age_s ?? 0}s` }
     )
 </script>
@@ -144,7 +150,7 @@
     <!-- one advertised runner on the grid (editor multiplied view) — its own identity, its own liveness -->
     <div class="rp">
         <div class="rp-hd">runner · {r_pub ? r_pub.slice(0, 8) : '?'}</div>
-        <div class="rp-link rp-{r_link.cls}" title={`advertised runner ${r_pub}${r_ready ? ' — ready' : ''}`}>
+        <div class="rp-link rp-{r_link.cls}" title={`advertised runner ${r_pub}${r_ready ? ' — ready' : ''}${r_engaged ? ` — engaged by ${r_engaged.slice(0, 8)}` : ''}`}>
             <span class="rp-dot">{r_link.glyph}</span>
             <span class="rp-role">{r_title}</span>
             <span class="rp-txt">{r_link.text}</span>
@@ -186,7 +192,8 @@
     .rp-dot { font-size: 12px; line-height: 1; }
     .rp-role { color: #c4ccea; }
     .rp-txt { font-variant-numeric: tabular-nums; }
-    .rp-live   .rp-dot { color: #6ad0a0; }
+    .rp-live    .rp-dot { color: #6ad0a0; }
+    .rp-engaged .rp-dot { color: #7aa0d8; }   /* reserved (lease held), idle between runs */
     .rp-silent .rp-dot { color: #d8b86a; }
     .rp-dial   .rp-dot { color: #889; }
     .rp-down   .rp-dot { color: #e06c75; }

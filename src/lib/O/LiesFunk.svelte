@@ -692,14 +692,38 @@ await M.eatfunc({
 
         // Lies_send_become_book — editor emit, mirrors Lies_send_rungo (same direction, the
         //  rungo channel).  Returns false when the channel is down so the caller can say so.
-        Lies_send_become_book(w: TheC, book: string): boolean {
+        //   `to` (a runner prepub, Engage_integration C2) addresses ONE runner on the grid: promote a
+        //    Pier for it and ship to:<prepub>; absent, the legacy single-address role broadcast.
+        Lies_send_become_book(w: TheC, book: string, to?: string): boolean {
             const H = this as House
-            if (!H.Lies_is_editor(w)) return false
+            if (!H.Lies_is_editor(w) || !H.Lies_channel_live(w)) return false
+            if (to) {
+                if (!H.Lies_runner_pier(w, to)) return false
+                ;(H as any).Peeroleum_send_to(w, to, 'become_book', { book })
+                H.tlog(`📤 become_book → runner ${to}: ${book}`)
+                return true
+            }
             const pier = (w.o({ Peering: 1 })[0] as TheC | undefined)?.o({ Pier: 1 })[0] as TheC | undefined
-            if (!pier || !H.Lies_channel_live(w)) return false
+            if (!pier) return false
             ;(H as any).Peeroleum_send_consumer(w, 'become_book', { book })
             H.tlog(`📤 become_book → runner: ${book}`)
             return true
+        },
+
+        // Lies_runner_pier — find-or-PROMOTE the editor's Pier to a specific runner (by prepub), so an
+        //  addressed become_book/rungo has a Pier to allocate seq on and route to.  Mirrors Lies_channel_up's
+        //   seed (oai Pier + c.up + Ud) but keyed by the runner's identity, not the role string 'runner'.
+        //    Trust-everything-v1 over the reliable relay ⇒ no handshake: stamp Ud and the inbox accepts.
+        Lies_runner_pier(w: TheC, pub: string): TheC | undefined {
+            const peering = w.o({ Peering: 1 })[0] as TheC | undefined
+            if (!peering || !pub) return undefined
+            let pier = (peering.o({ Pier: 1 }) as TheC[]).find(p => p.sc.pub === pub)
+            if (!pier) {
+                pier = peering.oai({ Pier: 1, pub }) as TheC
+                pier.c.up = peering
+                pier.oai({ Ud: 1 })   // satisfy the inbox pre-Ud gate (trust-everything v1, no handshake)
+            }
+            return pier
         },
 
         // Lies_become_book_recv — runner receives the command and drives the run.
@@ -887,23 +911,41 @@ await M.eatfunc({
             return true
         },
 
-        // ── runner engagement: the soft lease a client holds over a runner (the "don't run into each
-        //   other's runners" gate).  Lives on Mundo (top_House().c.engagement), ABOVE the Story world,
-        //    so it survives a Story_reset — a hang-up tears down the run, not the representation.  Shape:
-        //     { client, status:'active'|'released'|'timed_out', at, book? }.  No background timer:
-        //      'timed_out' is computed lazily — an 'active' lease older than the TTL (10min, room for
-        //       Claude to think between runs) is stale, so a new client may take it.  favourite_client is
-        //        the SEPARATE sticky soft-prefer (set by the editor); engagement is the hard don't-steal.
+        // ── runner engagement: the loose, EXCLUSIVE lease a client holds over a runner (the "don't run
+        //   into each other's runners" gate).  A singular `Engagement` PARTICLE on Mundo —
+        //    `top/Engagement,client,status,at,of_Book` (of_$k convention) — VISIBLE in the tree, not a
+        //     hidden .c blob: whose-runner-this-is is meant to be observable.  A child of Mundo, so it
+        //      outlives a Story_reset — a hang-up tears down the run, not the representation.  Exclusive
+        //       by VISIBILITY (others see whose it is), not a hard lock: easy to break out of, the
+        //        completed Storyrun objects are the durable truth, the orchestrator handles contention.
+        //         status: 'active'|'released' (+ 'timed_out' folded in lazily — no timer, an 'active'
+        //          lease older than the TTL (10min, room for Claude to think between runs) reads stale,
+        //           so a new client may take it).  favourite_client is the SEPARATE soft-prefer (→ the
+        //            Waft:Cluster/%HostedIdentity registry, the Lies-agent's); this is the don't-steal.
         Lies_engage_ttl(): number { return 10 * 60 * 1000 },   // the think-between-runs window
+
+        // Lies_engage_c — the singular Engagement particle on Mundo (find; mint when create=true).
+        Lies_engage_c(create = false): TheC | undefined {
+            const top = (this as House).top_House()
+            const e = top.o({ Engagement: 1 })[0] as TheC | undefined
+            if (e || !create) return e
+            const fresh = top.i({ Engagement: 1 }) as TheC
+            top.bump_version()
+            return fresh
+        },
 
         // Lies_engagement — the lease as the runner sees it NOW, with timed_out folded in (read-only).
         Lies_engagement(w: TheC): { client: string, status: string, at: number, book?: string, age_ms: number, stale: boolean } | undefined {
             const H = this as House
-            const e = H.top_House().c.engagement as any
-            if (!e?.client) return undefined
-            const age = Date.now() - (e.at ?? 0)
-            const stale = e.status === 'active' && age > H.Lies_engage_ttl()
-            return { client: e.client, status: stale ? 'timed_out' : e.status, at: e.at, book: e.book, age_ms: age, stale }
+            const e = H.Lies_engage_c()
+            const client = e?.sc.client as string | undefined
+            if (!e || !client) return undefined
+            const at     = Number(e.sc.at ?? 0)
+            const status = (e.sc.status as string) || 'active'
+            const book   = e.sc.of_Book as string | undefined
+            const age    = Date.now() - at
+            const stale  = status === 'active' && age > H.Lies_engage_ttl()
+            return { client, status: stale ? 'timed_out' : status, at, book, age_ms: age, stale }
         },
 
         // Lies_engage_check — may `client` take the runner now?  Free unless ANOTHER client holds a
@@ -919,33 +961,42 @@ await M.eatfunc({
         // Lies_engage — stamp client's active lease.  If the client CHANGED, GC the prior client's runs
         //  (their uids go unreachable → the GC'd-run message) so the newcomer starts clean.
         Lies_engage(w: TheC, client: string, book?: string): void {
-            const H = this as House
-            const top = H.top_House()
-            const prev = top.c.engagement as any
-            if (prev?.client && prev.client !== client) H.Lies_engage_gc(w, prev.client)
-            top.c.engagement = { client, status: 'active', at: Date.now(), ...(book ? { book } : {}) }
+            const H  = this as House
+            const ec = H.Lies_engage_c(true)!
+            const prev = ec.sc.client as string | undefined
+            if (prev && prev !== client) H.Lies_engage_gc(w, prev)
+            ec.sc.client = client
+            ec.sc.status = 'active'
+            ec.sc.at     = Date.now()
+            if (book) ec.sc.of_Book = book; else delete ec.sc.of_Book
+            H.top_House().bump_version()
         },
 
         // Lies_engage_touch — heartbeat: any activity from the holder refreshes the lease clock, so it
-        //  only times out after the TTL of genuine silence.  No-op from a non-holder.
+        //  only times out after the TTL of genuine silence.  No-op from a non-holder.  No bump — a clock
+        //   nudge read on demand by the next runner_ask, not a structural change worth a snap.
         Lies_engage_touch(w: TheC, client: string): void {
-            const e = (this as House).top_House().c.engagement as any
-            if (e && e.client === client && e.status === 'active') e.at = Date.now()
+            const e = (this as House).Lies_engage_c()
+            if (e && e.sc.client === client && e.sc.status === 'active') e.sc.at = Date.now()
         },
 
         // Lies_engage_release — a clean hang-up: mark released (KEPT, so "was it you?" still answers),
         //  GC the runs, and tear the Story world down to H:Mundo via quitStory.  The runner idles, reusable.
         Lies_engage_release(w: TheC, client: string): void {
             const H = this as House
-            const e = H.top_House().c.engagement as any
-            if (!e || e.client !== client) return
-            e.status = 'released'; e.at = Date.now()
+            const e = H.Lies_engage_c()
+            if (!e || e.sc.client !== client) return
+            e.sc.status = 'released'
+            e.sc.at     = Date.now()
+            H.top_House().bump_version()
             H.Lies_engage_gc(w, client)
             H.top_House().i_elvisto('Auto/Auto', 'quitStory', {})
         },
 
         // Lies_engage_gc — drop every held run-record (+ its pins) and record WHO triggered it, so a
         //  later `@uid` on a vanished run gets a precise "garbage-collected by <who>" message, not a miss.
+        //   (last_gc stays a transient .c breadcrumb — diagnostic, not lease state; the Engagement
+        //    particle is overwritten with the new client the same tick.)
         Lies_engage_gc(w: TheC, by: string): void {
             for (const s of w.o({ Storyrun: 1 }) as TheC[]) w.drop(s)
             delete w.c.active_rungo

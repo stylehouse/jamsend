@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return '1bb4df8687a8d30b' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return '239f6da06c21e2f6' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -243,6 +243,24 @@ Peeroleum_send_consumer(w, type, body) {
     let me = pier.c.up.sc.name
     let seq = this.Pier_next_seq(pier)
     this.Peeroleum_send(w, Object.assign({ header: { type, from: me, to: pier.sc.pub, seq } }, body || {}))
+    return seq
+
+},
+// Peeroleum_send_to — the ADDRESSED consumer emit (Engage_integration C2): like Peeroleum_send_consumer
+//  but picks the Pier by its %pub instead of [0], so an editor holding N runner Piers under its one
+//   Peering talks to ONE chosen runner. header.to = that runner's prepub; the relay routes to:<prepub>
+//    to its hello-verified socket (a role-broadcast `to:'runner'` can't single one out). Pier-by-pub is
+//     the same select Peeroleum_route already does on inbound (piers.find pub === other). The Pier must
+//      already exist — the editor promotes a roster entry first (Lies_runner_pier); no Pier ⇒ undefined,
+//       and the caller says "no such runner". Returns the seq so the caller can watch its emit go %acked.
+Peeroleum_send_to(w, to, type, body) {
+    let peering = w.o({Peering:1})[0]
+    if (!peering) return
+    let pier = peering.o({Pier:1}).find(p => p.sc.pub === to)
+    if (!pier) return
+    let me = peering.sc.name
+    let seq = this.Pier_next_seq(pier)
+    this.Peeroleum_send(w, Object.assign({ header: { type, from: me, to, seq } }, body || {}))
     return seq
 
 },
