@@ -365,13 +365,18 @@ Peeroleum_carrier(peering, w):
 Peeroleum_send(w, frame):
     let h = frame.header
     let {peering, pier} = this.Peeroleum_route(w, h, 'from')
-    // ack, the heartbeat (ping/pong), AND run_phase (the transient progress blip) book no outbox
-    //  emit: an ack is light (spec §7.2); ping/pong/run_phase are fire-and-forget — booking them
-    //   piles %emit rows nothing reliably culls between Story steps. Only real app/protocol frames
+    // ack, the heartbeat (ping/pong), run_phase (the progress blip) AND advertise (the grid presence
+    //  beacon) book no outbox emit: an ack is light (spec §7.2); the rest are fire-and-forget — booking
+    //   them piles %emit rows nothing reliably culls between Story steps. Only real app/protocol frames
     //    are tracked. (run_phase MUST be ephemeral: it is never acked, so a booked emit would never
     //     cull — and the ack it would otherwise draw re-wakes the runner's Story drive, wedging
-    //      quiescence into an endless step_stall loop.)
-    let ephemeral = (h.type === 'ack' || h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase')
+    //      quiescence into an endless step_stall loop.  advertise is ephemeral for the TWIN reason: a
+    //       booked emit is a snap mutation, so it could only fire IN-THINK — a quiesced/idle runner then
+    //        stops beaconing and drops off the editor's roster though it's still alive (its pings ride the
+    //         off-think keepalive).  As a beacon it's self-healing: the relay ws is reliable+ordered, so
+    //          first-contact still lands and a lost beat is replaced ~15s later — app-level acks buy
+    //           nothing.  Ephemeral lets the off-think keepalive emit it, so an idle runner stays visible.)
+    let ephemeral = (h.type === 'ack' || h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase' || h.type === 'advertise')
     if (pier && !ephemeral) {
         // a binary frame records body_hash + body_len on its emit so the snap shows
         //  "a test_binary of N bytes, hash X, sent" (the body itself rides off-snap on the frame).
@@ -430,12 +435,15 @@ async Peeroleum_deliver(w, frame):
     //    so feebly_ponder-ing on it would re-wake a quiescing Story drive into the step_stall wedge.
     //     This is robust to the PEER's behaviour: the runner ignores acks that advance nothing here.
     if (h.type === 'ack') { if (H.Peeroleum_take_ack(w, pier, h)) H.feebly_ponder(); return }
-    // ping/pong (heartbeat) AND run_phase (progress blip) are ephemeral: dispatch straight to the
-    //  registered handler, like an ack — NO inbox booking (so they never stack in the snap) and NO
-    //   ack-back. The ack-back is the killer: a run_phase that gets acked sends the ack to the
-    //    runner, whose Peeroleum_deliver feebly_ponders → re-wakes its Story drive so the step never
-    //     quiesces → step_stall fires → another run_phase → another ack → an endless wedge (the 48s).
-    if (h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, pier, frame); H.feebly_ponder(); return }
+    // ping/pong (heartbeat), run_phase (progress blip) AND advertise (grid presence beacon) are
+    //  ephemeral: dispatch straight to the registered handler, like an ack — NO inbox booking (so they
+    //   never stack in the snap) and NO ack-back. The ack-back is the killer: a run_phase that gets
+    //    acked sends the ack to the runner, whose Peeroleum_deliver feebly_ponders → re-wakes its Story
+    //     drive so the step never quiesces → step_stall fires → another run_phase → another ack → an
+    //      endless wedge (the 48s).  advertise joins them so a beacon never books/acks either — and the
+    //       feebly_ponder is safe because advertise is editor-inbound only (runners send it to:'editor';
+    //        the editor has no Story drive to re-wedge), and it nudges Lies_aim to refresh the roster Brink.
+    if (h.type === 'ping' || h.type === 'pong' || h.type === 'run_phase' || h.type === 'advertise') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, pier, frame); H.feebly_ponder(); return }
     // The inbox is a serial %req drain: a booked frame is a %req:unemit (discriminated by the sender's
     //  per-Pier seq) and inbox.do() runs each unemit-req's do_fn (req_unemit) one at a time, in arrival
     //   order, awaiting each — that IS the serial async drain, so the hand-rolled %queued/%handling lock

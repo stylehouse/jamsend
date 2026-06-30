@@ -436,33 +436,23 @@ await M.eatfunc({
         //    discriminator (the Lens dock's each-key folds pub in, so duplicates don't clash).
         const allRunner = () => bag.o({ Lens: 'Brink', of_Funkcion: 'Runner' }) as TheC[]
         if (role === 'runner') {
-            for (const l of allRunner()) if (l.sc.pub) { bag.drop(l); bag.bump_version() }   // editor crumbs, if any
-            if (!allRunner().some(l => !l.sc.pub)) {
+            for (const l of allRunner()) if (l.sc.pub || l.sc.rack) { bag.drop(l); bag.bump_version() }   // editor crumbs, if any
+            if (!allRunner().some(l => !l.sc.pub && !l.sc.rack)) {
                 const lens = H.Lies_lens_suggest('Brink', 'Runner', { altitude: 20 }) as TheC   // no singleton funk
                 lens.c.w = w
             }
         } else if (role === 'editor') {
-            const roster = w.o({ Runner: 1 }) as TheC[]
-            if (roster.length) {                                            // advertised runners → one face each
-                const pubs = new Set(roster.map(r => r.sc.Runner as string))
-                for (const l of allRunner()) {                              // drop the legacy single + departed pubs
-                    const p = l.sc.pub as string | undefined
-                    if (!p || !pubs.has(p)) { bag.drop(l); bag.bump_version() }
-                }
-                for (const r of roster) {                                   // one lens per advertised pub
-                    const pub = r.sc.Runner as string
-                    let lens = (bag.o({ Lens: 'Brink', of_Funkcion: 'Runner', pub })[0]) as TheC | undefined
-                    if (!lens) { lens = bag.oai({ Lens: 'Brink', of_Funkcion: 'Runner', pub }, { altitude: 20 }) as TheC; bag.bump_version() }
-                    lens.c.w = w
-                    lens.c.runner = r                                       // the roster entry the face reads
-                }
-            } else {                                                        // none advertised yet — keep the legacy
-                for (const l of allRunner()) if (l.sc.pub) { bag.drop(l); bag.bump_version() }   //  single-pair face,
-                if (!allRunner().some(l => !l.sc.pub)) {                     //  so a plain ?B= runner (no ?I, no
-                    const lens = H.Lies_lens_suggest('Brink', 'Runner', { altitude: 20 }) as TheC   //  advertise) still shows
-                    lens.c.w = w
-                }
-            }
+            // the editor ALWAYS shows the RUNNER rack — the roster it dispatches to — even when empty.
+            //  Never the single-pair →RUNNER face: that's a runner's view of ITS editor, meaningless on
+            //   an editor (the "editor →RUNNER" banality).  rack:'all' is a STRING discriminator — a
+            //    numeric 1 here is a query wildcard that never persisted as a literal, so the face read
+            //     lens.sc.rack as absent and fell through to the single-pair face.  A connected
+            //      no-identity ?B= runner (can't advertise a pub) still shows: the rack falls back to
+            //       the live single-pair peer.
+            for (const l of allRunner()) if (l.sc.rack !== 'all') { bag.drop(l); bag.bump_version() }   // drop legacy single + per-pub
+            let lens = (bag.o({ Lens: 'Brink', of_Funkcion: 'Runner', rack: 'all' })[0]) as TheC | undefined
+            if (!lens) { lens = bag.oai({ Lens: 'Brink', of_Funkcion: 'Runner', rack: 'all' }, { altitude: 20 }) as TheC; bag.bump_version() }
+            lens.c.w = w                                                // the rack reads the whole %Runner roster off w itself
         } else for (const l of allRunner()) { bag.drop(l); bag.bump_version() }
     },
 
@@ -734,8 +724,10 @@ await M.eatfunc({
             const book = e.sc.book as string | undefined
             if (!book) return
             if (H.Lies_is_editor(w)) {
-                const sent = H.Lies_send_become_book(w, book)
-                H.tlog(`🎬 editor become_book → ${book} ${sent ? '(sent)' : '(channel down — no runner)'}`)
+                const pick = H.Lies_dispatch_target(w)   // {to} ▸ {} broadcast ▸ {exhausted} hold
+                if (pick.exhausted) { H.Lies_queue_run(w, book); H.tlog(`⏸ all runners busy — held ${book}`); return }
+                const sent = H.Lies_send_become_book(w, book, pick.to)
+                H.tlog(`🎬 editor become_book → ${book} ${pick.to ? `@${pick.to.slice(0, 8)}` : '(broadcast)'} ${sent ? '(sent)' : '(channel down — no runner)'}`)
             } else {
                 H.Lies_become_book_drive(w, book)   // runner, or a bare dev Lies with a co-resident Run
             }
@@ -751,6 +743,10 @@ await M.eatfunc({
             if (to) {
                 if (!H.Lies_runner_pier(w, to)) return false
                 ;(H as any).Peeroleum_send_to(w, to, 'become_book', { book })
+                // light the ☎ on this runner's rack slot — a job in flight, awaiting its ack.  Cleared when
+                //  the runner advertises a `book` (it picked up + started → ▶), in Lies_advertise_recv.
+                const r = w.oai({ Runner: to }, { dontSnap: 1 }) as TheC
+                r.sc.sent = book; r.sc.sent_at = Date.now(); w.bump_version()
                 H.tlog(`📤 become_book → runner ${to}: ${book}`)
                 return true
             }
@@ -834,6 +830,12 @@ await M.eatfunc({
                         running: sr ? { book: sr.sc.Storyrun, phase: sr.sc.phase, uid: sr.sc.uid } : null,
                         favourite_client: (H.top_House().c.favourite_client as string) ?? '',
                         engagement: H.Lies_engagement(w) ?? null,   // who holds the lease (don't-steal)
+                        // identity + advertise diagnostics: a runner with no %Identity (self:null) NEVER
+                        //  beacons (Lies_advertise early-returns), so it's "connected — no identity" on the
+                        //   editor.  advertising = would the beacon fire now; last_advertise = ms of the last beat.
+                        self:           (H as any).Clustation_self?.(w)?.prepub ?? null,
+                        advertising:    !!(H.Lies_is_runner(w) && H.Lies_channel_live(w) && (H as any).Clustation_self?.(w)?.prepub),
+                        last_advertise: (w.c.last_advertise as number) ?? null,
                     }
                 } else if (op === 'run') {
                     // engage the runner for THIS client first (the don't-steal gate): refuse if another
@@ -1393,8 +1395,10 @@ await M.eatfunc({
         Lies_storytimes_dispatch(w: TheC, book: string): boolean {
             const H = this as House
             if (H.Lies_is_editor(w)) {
-                const sent = H.Lies_send_become_book(w, book)
-                H.tlog(`🎟 StoryTimes → ${book} ${sent ? '(sent)' : '(channel down — no runner)'}`)
+                const pick = H.Lies_dispatch_target(w)
+                if (pick.exhausted) { H.Lies_queue_run(w, book); H.tlog(`⏸ all runners busy — held ${book}`); return false }
+                const sent = H.Lies_send_become_book(w, book, pick.to)
+                H.tlog(`🎟 StoryTimes → ${book} ${pick.to ? `@${pick.to.slice(0, 8)}` : '(broadcast)'} ${sent ? '(sent)' : '(channel down — no runner)'}`)
                 return sent
             }
             H.Lies_become_book_drive(w, book)                        // bare dev Lies with a co-resident Run

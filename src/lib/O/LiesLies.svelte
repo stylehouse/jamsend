@@ -740,10 +740,9 @@
             //  can drive it OFF the belief loop too — liveness must not ride think, or a quiesced peer
             //   stops pinging and the far watchdog flaps it (the LATENCY SWAMP symptom).
             H.Lies_keepalive(w)
-            // The grid presence beacon runs ONLY in-think (NOT in keepalive's off-think timer): advertise
-            //  is non-ephemeral, so it books a %outbox/emit — a snap-tree mutation that must stay under the
-            //   mutex.  Throttled, runner-only.
-            ;(H as any).Lies_advertise(w)
+            // (the grid presence beacon — Lies_advertise — now rides Lies_keepalive's OFF-think timer,
+            //  not here: it was made ephemeral (Peeroleum_send), so it books no %outbox/emit and survives a
+            //   think-quiesce, keeping an idle runner on the editor's roster instead of dropping off it.)
             // Cull the channel's acked backlog (the §7.4 whittle).  That whittle is normally armed at Story
             //  step boundaries (Peregrination), but THIS channel lives outside any Story (no sc.Run → no
             //   _resolve_runstepped on it), so nothing else fires it and every app frame's acked emit would
@@ -789,6 +788,11 @@
                 w.c.last_sluggish = now
                 H.Lies_relay_note(w, `◍ peer sluggish — ${Math.round((now - last) / 1000)}s since pong, still hearing it (not reconnecting)`, false)
             }
+            // the grid presence beacon rides HERE (off-think), independent of the 6s ping-dedup return
+            //  below: now ephemeral (books no %outbox/emit), so it's safe off the mutex and keeps firing
+            //   when the runner's think quiesces — an idle runner that only pings would otherwise vanish
+            //    from the editor's roster.  Runner-only + ~15s self-throttled inside Lies_advertise.
+            ;(H as any).Lies_advertise(w)
             if (w.c.last_ping && now - (w.c.last_ping as number) < 6000) return
             w.c.last_ping = now
             H.Lies_ping(w)
@@ -856,11 +860,11 @@
                 //    finer "busy-with-something" (a Book actually running); `engaged` is the coarser
                 //     reservation that outlives a single run (the 10min think-between-runs window).
                 engaged: (eng && eng.status === 'active') ? (eng.client ?? '') : '',
-                // soft-affinity: whose client (by pub) this runner favours.  NOT set by a frame — it's a
-                //  property the editor reads off the Waft:Cluster/%HostedIdentity registry (C1: the client
-                //   looks up the HostedIdentity favouring its own Identity); the beacon just carries the
-                //    runner's current view of it.  '' ⇒ unclaimed.
-                favourite_client: (H.top_House().c.favourite_client as string) ?? '',
+                // (no favourite_client on the beacon: the editor sources it from the Waft:Cluster/
+                //  %HostedIdentity registry — advertise_recv reads hi.sc.favourite_client and ignores any
+                //   wire copy — so broadcasting it to every client each beat was dead weight.  The
+                //    point-to-point ping reply still reports it on demand.  The general fix is the
+                //     dige-sync TODO below, which collapses this whole hand-kept field list.)
             })
         },
         // Lies_advertise_recv — editor stamps/refreshes a %Runner roster entry, keyed by the runner's
@@ -876,43 +880,43 @@
             const r = w.oai({ Runner: from }, { dontSnap: 1, last_heard: now }) as TheC
             r.sc.last_heard = now
             if (fr?.friendly) r.sc.friendly = String(fr.friendly); else delete r.sc.friendly
-            if (fr?.book)     r.sc.book     = String(fr.book);     else delete r.sc.book
+            if (fr?.book)   { r.sc.book = String(fr.book); delete r.sc.sent }   // running ⇒ a dispatched call connected → ▶ (clears the ☎)
+            else              delete r.sc.book
             if (fr?.ready)    r.sc.ready    = 1;                   else delete r.sc.ready
             // overall engagement (the live lease's client pub) — busy/free for the Brink + a lease-aware
             //  allocator.  '' or absent ⇒ free.
             if (fr?.engaged)  r.sc.engaged  = String(fr.engaged);  else delete r.sc.engaged
-            // the runner's sticky favourite_client (a client pub) — captured so the Brink can show WHO
-            //  owns it; the CLI reads the same marker off the live runner, not this editor-only roster.
-            if (fr?.favourite_client) r.sc.favourite_client = String(fr.favourite_client)
-            else                      delete r.sc.favourite_client
-            // mirror into the Waft:Cluster/%HostedIdentity registry (the C1 home): the %Runner roster is
-            //  dontSnap liveness, the registry is the tracked representation a client READS to find "the
-            //   runner that favours me" (Lies_favoured_runner).  Auto-vivifies on first advertise; carries
-            //    the favourite_client the runner declares (the SET is the identity-hosting layer's, not a
-            //     frame — there is no `favour` receiver).  '' ⇒ unclaimed.
+            // favourite_client is a DURABLE registry fact (Waft:Cluster/%HostedIdentity) — the
+            //  soft-affinity of whose client pub this runner is reserved for.  It is written THERE
+            //   directly (a doctored snap today, a favour command later) and only READ here.  An
+            //    advertise beacon carries NO authority over it, so this handler must never set or
+            //     delete it from the beacon — that delete was the clobber: an empty beacon wiped the home.
             const cluster = w.o({ Waft: 'Cluster' })[0] as TheC | undefined
+            let hi: TheC | undefined
             if (cluster) {
-                // the registry PERSISTS now — stable identity facts only (pub, friendly, favourite_client);
-                //  the volatile liveness (ready|book|engaged|last_heard) stays on the dontSnap %Runner roster.
-                const hi = cluster.oai({ HostedIdentity: from }) as TheC
-                if (hi.sc.role !== 'runner') hi.sc.role = 'runner'   // an advertiser IS a runner — identifies who's a runner
-                if (fr?.friendly)         hi.sc.friendly         = String(fr.friendly)
-                if (fr?.favourite_client) hi.sc.favourite_client = String(fr.favourite_client)
-                else                      delete hi.sc.favourite_client
-            } else {
-                // the registry isn't loaded yet — an advertise beat the Good pipeline at boot.  Re-read it
-                //  (idempotent: one Good per path) so wormhole/Cluster/toc.snap lands: a returning runner is
-                //   already IN there with its durable facts, and a brand-new one mirrors on the next ~15s beacon.
-                H.i_elvisto(w, 'Lies_open_Waft', { path: 'Cluster' })
-            }
+                // the registry PERSISTS — stable identity facts (pub, role, friendly).  oai() find-or-
+                //  creates the entry; liveness (ready|book|engaged|last_heard) stays on the roster.
+                hi = cluster.oai({ HostedIdentity: from }) as TheC
+                if (hi.sc.role !== 'runner') hi.sc.role = 'runner'   // an advertiser IS a runner
+                if (fr?.friendly) hi.sc.friendly = String(fr.friendly)
+            }                                                        // favourite_client left untouched
+            // mirror the durable favour onto the dontSnap roster so the Brink + Lies_dispatch_target
+            //  (both read the live roster) reflect it — sourced from the REGISTRY, never the beacon.
+            if (hi?.sc.favourite_client) r.sc.favourite_client = String(hi.sc.favourite_client)
+            else                         delete r.sc.favourite_client
+            //  (when the registry hasn't loaded yet — an advertise beat the Good pipeline at boot — the
+            //   vivify above is skipped this beacon; aim_setup loads Cluster within the tick and the next
+            //    ~15s advertise lands the entry, so no explicit re-read is needed.)
+            if (!fr?.book) H.Lies_drain_runs(w)   // this runner looks free — let a held (exhausted-queue) job go
             w.bump_version()
         },
 
         // Lies_favoured_runner — the C1 lookup: which runner is reserved as THIS client's?  Scan the
         //  Waft:Cluster/%HostedIdentity registry for the entry that favours `client` (default: our own
         //   prepub) and return its pub — the to:<prepub> dispatch target (feed Lies_send_become_book's
-        //    `to`).  Read-only: no frame, no receiver.  The favour is a property the runner declares (its
-        //     favourite_client, mirrored here off the beacon); the client just looks up who favours it.
+        //    `to`).  Read-only: no frame, no receiver.  The favour is a DURABLE registry fact on the
+        //     runner's Waft:Cluster/%HostedIdentity — written there directly, never mirrored off the
+        //      beacon; the client just looks up who favours it.
         Lies_favoured_runner(w: TheC, client?: string): string | undefined {
             const H = this as House
             const me = client ?? (H as any).Clustation_self?.(w)?.prepub
@@ -920,6 +924,70 @@
             const cluster = w.o({ Waft: 'Cluster' })[0] as TheC | undefined
             const hi = (cluster?.o({ HostedIdentity: 1 }) as TheC[] | undefined)?.find(h => h.sc.favourite_client === me)
             return hi?.sc.HostedIdentity as string | undefined
+        },
+
+        // Lies_dispatch_target — choose ONE runner for a click-to-run, so a job stops BROADCASTING to the
+        //  whole grid (the "two runners both ran it" bug).  Walks the Waft:Cluster directory (the durable,
+        //   TRUSTED identities — role:runner) in order, reading live busy/favour off the %Runner roster.  The
+        //    owner's policy: go down the registry, take the LATEST trusted runner that ISN'T busy, PREFERRING
+        //     one not reserved as another client's favourite.  Tiers (lowest wins; the latest in directory order
+        //      breaks ties): 0 free & favours-me · 1 free & unclaimed · 2 free but ANOTHER client's favourite ·
+        //       3 busy (last resort — still beats broadcasting to all).  A just-dispatched runner (a fresh ☎,
+        //        no book yet) counts as busy, so a BURST of jobs spreads across runners (multi-job→multi-runner).
+        //   A manual aim (w.c.aim_runner) overrides.  undefined ⇒ no live runner → caller broadcasts (lone runner).
+        //   Returns {to} (a free runner to ring), {} (no live runner at all → caller broadcasts, fine for a
+        //    lone runner), or {exhausted} (runners exist but ALL busy → HOLD the job, never steal a running
+        //     one — the no-tailspin/no-clobber rule; Lies_queue_run/Lies_drain_runs pick it up when one frees).
+        Lies_dispatch_target(w: TheC): { to?: string; exhausted?: boolean } {
+            const H   = this as House
+            if (H.Lies_role(w) !== 'editor') return {}
+            const me  = H.Lies_self(w)?.prepub
+            const now = Date.now()
+            const roster = w.o({ Runner: 1 }) as TheC[]
+            const slot   = (pub?: string) => roster.find(r => r.sc.Runner === pub)
+            // candidates in DIRECTORY order (trusted identities); fall back to live-roster order pre-registry-load
+            const cluster = w.o({ Waft: 'Cluster' })[0] as TheC | undefined
+            const dirPubs = cluster
+                ? (cluster.o({ HostedIdentity: 1 }) as TheC[]).filter(h => h.sc.role === 'runner').map(h => h.sc.HostedIdentity as string)
+                : roster.map(r => r.sc.Runner as string)
+            const live  = (r?: TheC) => !!r && Number(r.sc.last_heard ?? 0) > 0 && now - Number(r.sc.last_heard) < 45000
+            const cands = dirPubs.map(pub => ({ pub, r: slot(pub) })).filter(c => live(c.r))
+            if (!cands.length) return {}                                         // nobody live → broadcast (lone runner)
+            const aim = w.c.aim_runner as string | undefined
+            if (aim && cands.some(c => c.pub === aim)) return { to: aim }        // the user's hand overrides
+            // a runner is OUT of the pool if it's running a book, holds a lease, OR we just rang it (a fresh ☎,
+            //  no ack yet) — so a BURST spreads across runners, and we never double-book one mid-run.
+            const busy = (r?: TheC) => !!(r?.sc.book || r?.sc.engaged
+                || (r?.sc.sent && now - Number(r?.sc.sent_at ?? 0) < 30000))
+            const free = cands.filter(c => !busy(c.r))
+            if (!free.length) return { exhausted: true }                         // all live runners busy → hold, don't steal
+            const tier = (c: { pub: string, r?: TheC }) => {                     // among FREE: mine ▸ unclaimed ▸ other's-favourite
+                const f = c.r?.sc.favourite_client as string | undefined
+                return f && f !== me ? 2 : f === me ? 0 : 1
+            }
+            let best: { pub: string } | undefined, bestTier = 9
+            for (const c of free) { const t = tier(c); if (t <= bestTier) { bestTier = t; best = c } }    // <= ⇒ latest wins ties
+            return { to: best!.pub }
+        },
+
+        // Lies_queue_run / Lies_drain_runs — the exhausted-runners backstop.  When dispatch is exhausted (every
+        //  live runner busy) the job is HELD on w.c.pending_runs instead of stealing a busy one or broadcasting;
+        //   advertise_recv drains the oldest when a runner's beacon shows it freed.  Per-client best-effort: two
+        //    editors racing for the last free runner can still double-book in the ~15s advertise window — true
+        //     cross-client fairness wants the relay-arbitrated lease (Cluster_spec §2/§5), which isn't built.
+        Lies_queue_run(w: TheC, book: string) {
+            const q = (w.c.pending_runs ??= []) as string[]
+            if (!q.includes(book)) q.push(book)
+        },
+        Lies_drain_runs(w: TheC) {
+            const H = this as House
+            const q = (w.c.pending_runs ?? []) as string[]
+            if (!q.length) return
+            const pick = H.Lies_dispatch_target(w)
+            if (pick.exhausted || pick.to === undefined) return   // still no free runner → keep waiting (no tailspin)
+            const book = q.shift() as string
+            H.Lies_send_become_book(w, book, pick.to)
+            H.tlog(`▶ drained held run ${book} → @${pick.to.slice(0, 8)} (${q.length} left)`)
         },
 
         // Lies_channel_cull — run the §7.4 outbox/inbox archive (Peeroleum_runstepped) on the ambient

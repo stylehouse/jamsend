@@ -46,19 +46,22 @@ A handoff brief, not a changelog. Destination first, then the knowledge that bit
 The container interleaves two KINDS: the `%HostedIdentity` directory and the cluster-service watcher
  Funkcions (`Funkcion:Relay`, `Funkcion:Runner`). They are not the same thing.
 - **`Funkcion:Relay`** = a cluster-wide singleton service (the relay carrier's own health) — legitimately
-   of-the-cluster, KEEP. Maybe it wants its own visual group (or its own Waft) so it doesn't read as a
-    directory row. STILL OPEN: the visual grouping.
-- **`Funkcion:Runner` (singleton) — RETIRED (2026-06-30).** It was the proto `%Aim` leftover; "Runner" is a
-   FACET of a per-peer `%HostedIdentity` (role:runner), not a cluster singleton. `Lies_cluster_decorate`
-    (LiesFunk ~361) now mints ONLY `Funkcion:Relay`, and actively DROPS a stale `Funkcion:Runner` a prior
-     build left (self-healing migration — the watch_c save then drops its snap line; the live editor's HMR
-      already cleaned `wormhole/Cluster/toc.snap`). The two `Lies_aim` funk lookups
-       (`cluster.o({Funkcion:'Runner'})`, runner-side single face + editor empty-roster fallback) are gone —
-        those faces now hoist with no singleton funk, reading liveness straight off `w:Lies` (they lose only
-         the fade-out transition toast `funk.c.latest`, which §1's real `%Aim` rebuild will restore).
-- **STILL OPEN:** the editor's multiplied Runner faces already derive from the `%Runner` roster
-   (`lens.c.runner`); the directory→faces wiring is otherwise complete. What remains is the Relay visual
-    grouping and any "describe the latest event" `%Aim` caption — owner-supervised at the live Brink.
+   of-the-cluster, KEEP. The Brink want (owner, 2026-06-30): collapse it to ONE LINE — `🛰 relay up` — not
+    the verbose endpoint panel; it's a carrier-health pilot light, not a directory row.
+- **`Funkcion:Runner` (singleton) — RETIRED (2026-06-30).** It was a proto leftover; "Runner" is a FACET of
+   a per-peer `%HostedIdentity` (role:runner), not a cluster singleton. `Lies_cluster_decorate` (LiesFunk
+    ~361) now mints ONLY `Funkcion:Relay`, and actively DROPS a stale `Funkcion:Runner` a prior build left
+     (self-healing migration — the watch_c save then drops its snap line; the live editor's HMR already
+      cleaned `wormhole/Cluster/toc.snap`). The two `Lies_aim` funk lookups (`cluster.o({Funkcion:'Runner'})`,
+       runner-side single face + editor empty-roster fallback) are gone — those faces hoist with no singleton
+        funk, reading liveness straight off `w:Lies` (they lose only the fade-out transition toast
+         `funk.c.latest`; bringing a per-runner "last event" caption back is optional polish, NOT a planned
+          layer — "%Aim" is a retired word, don't reach for it).
+- **STILL OPEN — the editor's Runner rack layout.** The multiplied Runner faces already derive from the
+   `%Runner` roster (`lens.c.runner`). The Brink want: stack them TOGETHER inside one "RUNNER"-titled box
+    (not N inline panels), each row keyed by `pub` + its job state (see §2a) — drop the banal single-pair
+     `→RUNNER (live)` line on the editor side. Touches the per-pub lens hoisting (`Lies_aim` ~439-453) →
+      one rack lens reading the whole roster. Owner-supervised at the live Brink.
 
 ### 2. The live runner rack — activation states, Pier culling, server-rack Brink
 - **Activation ladder.** Today liveness is a FLAT window: advertised runners `r_live = now - last_heard <
@@ -70,12 +73,45 @@ The container interleaves two KINDS: the `%HostedIdentity` directory and the clu
     `Lies_runner_pier`); culling a dead Pier is NOT removing the durable `%HostedIdentity`. The directory
      entry outlives the connection; only the transport + the `%Runner` live-presence get reaped.
 - **Server-rack Brink.** The editor multiplies one `Lens:Brink,of_Funkcion:Runner,pub:<X>` per roster
-   entry (`Lies_aim` ~411-434, `lens.c.runner` = the `%Runner`). Needs a clean stacked layout — the Lens
-    posable/altitude work, see [Lens_posable_TODO.md](Lens_posable_TODO.md).
-- **Boot-race re-read (DONE 2026-06-30).** `Lies_advertise_recv` (LiesLies) now kicks
-   `Lies_open_Waft{path:'Cluster'}` when the registry isn't loaded yet — an advertise that beats the Good
-    pipeline at boot no longer silently drops the runner; the snap loads (a returning runner is already in
-     it) and the next ~15s beacon mirrors a fresh one.
+   entry (`Lies_aim` ~439-453, `lens.c.runner` = the `%Runner`). Needs a clean stacked layout — see §1's
+    "RUNNER box" want + the Lens posable/altitude work, [Lens_posable_TODO.md](Lens_posable_TODO.md).
+- **Boot-race re-read — REVERTED 2026-06-30.** An earlier pass kicked `Lies_open_Waft{Cluster}` from
+   `advertise_recv` when the registry wasn't loaded. It was DEAD in the live case (the editor always has
+    Cluster loaded by the time an advertise lands) and redundant (the vivify branch populates + persists —
+     three `HostedIdentity` rows on disk prove it). Removed; the boot-race self-heals on the next ~15s beacon.
+
+### 2a. Per-prepub dispatch + the job board (☎→▶) — DONE 2026-06-30 (LIVE-VERIFY OWED)
+**The real "two runners both ran it" root:** EVERY dispatch was role-addressed BROADCAST — `e_Lies_become_book`
+ → `Lies_send_become_book(w, book)` with no `to` → the single `Pier:runner` → the relay fans it to ALL runner
+  sockets. The `to:<prepub>` primitive (C2: `Lies_runner_pier` + `Peeroleum_send_to`) existed but no caller used it.
+- **`Lies_dispatch_target(w)`** (LiesLies) picks ONE runner, walking the `Waft:Cluster` directory (trusted
+   identities, role:runner) and reading live busy/favour off the `%Runner` roster. Owner's policy: the LATEST
+    trusted, NOT-busy runner, preferring one not reserved as another client's favourite. Tiers among FREE:
+     mine ▸ unclaimed ▸ other-client's-favourite; a fresh ☎ (just-dispatched, no ack) counts as busy so a
+      burst SPREADS. Returns `{to}` (ring it) · `{}` (nobody live → caller broadcasts, fine for a lone runner) ·
+       **`{exhausted}`** (runners exist but ALL busy → **HOLD, never steal a running one** — the no-tailspin rule).
+- **Exhausted-runners backstop:** `Lies_queue_run` holds the book on `w.c.pending_runs`; `Lies_advertise_recv`
+   calls `Lies_drain_runs` when a runner's beacon shows it freed, shipping the oldest held job. No clobber, no
+    spin. **Per-client best-effort only** — two editors racing for the last free runner can double-book in the
+     ~15s advertise window; true cross-client fairness wants the relay-arbitrated LEASE (Cluster_spec §2/§5,
+      seeded by the `engaged` field), NOT built.
+- **Threaded `to`** into `e_Lies_become_book` + `Lies_storytimes_dispatch` (LiesFunk) — the Book-cell click
+   path (`Storying.svelte` `of_Book` → `Lies_become_book`). **STILL BROADCASTS:** the `of_dock` → `Lies_run_arm`
+    → `Lies_send_rungo` path (LiesLies:335, `Peeroleum_send_consumer`) — rungo carries a SEQ (run-authority),
+     so its per-prepub variant needs the seq allocated on the runner's Pier; do it carefully.
+- **The job board:** `Lies_send_become_book`'s `to` branch stamps `r.sc.sent`/`sent_at` on the runner's
+   `%Runner` slot (the ☎); `Lies_advertise_recv` clears `sent` when that runner advertises a `book` (→ ▶). The
+    face (`Funk/Runner.svelte` roster mode) shows `▶ playing X` ▸ `☎ calling X` (30s ring) ▸ dialing/free/engaged/silent.
+- **`scripts/runner_ask.mjs` courts via the registry:** new `runners` op LISTS the registry (it deLines
+   `wormhole/Cluster/toc.snap` directly — no eatfunc to import); `--runner=<prepub|prefix|friendly>` addresses
+    ONE runner (`to:<prepub>` not `to:'runner'`) and **INSISTS** (retries IT on busy/silence, never failover —
+     the OPPOSITE of the editor allocator, for repeatable targeted testing). No flag ⇒ legacy role broadcast.
+- **LIVE-VERIFY OWED (owner, :9091):** two ?I= runners, click a Book cell → exactly ONE shows ☎ then ▶, the
+   other stays free; a 3rd click with both busy → "held", drains when one frees. Confirms `to:<prepub>` routes
+    to the hello-bound socket (not both).
+- **STILL TO BUILD — the RUNNER box (§1):** the editor still hoists N per-pub `Lens:Brink` panels (`Lies_aim`
+   ~444-458). Want: ONE rack lens reading the whole roster → a titled "RUNNER" box, a row per pub. Relay
+    one-liner is DONE (`Funk/Relay.svelte` — header dropped, `🛰 relay up` at rest).
 
 ### 3. Cursor not resuming (bug — built but not firing)
 The machinery is all there: `Lies_keep_mark_focus` records the Keep's latest `%Cursor` (`Lies.svelte:222,

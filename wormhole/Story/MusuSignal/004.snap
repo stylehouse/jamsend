@@ -5,6 +5,6 @@ Snap:H
       w:MusuSignal
         self,round=4	{"mung":["age"]}
         req:wrangle,eternal,ok
-        signal,kind:healthy,bits=7.6,gaps=0,rms=0.1696,played=24,of=24,underran=0
-        signal,kind:starved,bits=3.38,gaps=76,rms=0.0991,played=24,of=24,underran=23
-        signal,kind:silence,bits=0,gaps=50,rms=0,played=24,of=24,underran=0
+        signal,kind:healthy,bits=7.41,gaps=0,rms=0.1643,played=24,of=24,underran=0
+        signal,kind:starved,bits=3.33,gaps=46,rms=0.0967,played=24,of=24,underran=23
+        signal,kind:silence,bits=0,gaps=0,rms=0,played=24,of=24,underran=0

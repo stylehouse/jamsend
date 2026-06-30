@@ -5,5 +5,5 @@ Snap:H
       w:MusuGlide
         self,round=3	{"mung":["age"]}
         req:wrangle,eternal,ok
-        glidesig,kind:baseline,gaps=15,underran=23,min_rate,final_rate,flips=0,bits=5.17
-        glidesig,kind:glided,gaps=5,underran=23,min_rate=0.8,final_rate,flips=2,bits=6.11
+        glidesig,kind:baseline,gaps=4,underran=5,min_rate,final_rate,flips=0,recovered=0,bits=7.14
+        glidesig,kind:glided,gaps,underran=2,min_rate=0.8,final_rate,flips=4,recovered,bits=7.47

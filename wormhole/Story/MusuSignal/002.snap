@@ -5,4 +5,4 @@ Snap:H
       w:MusuSignal
         self,round=2	{"mung":["age"]}
         req:wrangle,eternal,ok
-        signal,kind:healthy,bits=7.6,gaps=0,rms=0.1696,played=24,of=24,underran=0
+        signal,kind:healthy,bits=7.41,gaps=0,rms=0.1643,played=24,of=24,underran=0

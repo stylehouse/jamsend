@@ -10,7 +10,7 @@ import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Musuation(): string { return '637765a9144b0231' },
+    Ghostmeta_Ghost_Story_Musuation(): string { return 'cd42a72e0b6d5bcd' },
 
 // Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Music_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
@@ -1230,35 +1230,42 @@ MusuSignal(A,w) {
 
     })
 },
-// MusuSignal_drive — first the REAL audio device (skip cleanly with no Web Audio: a headless runner has
-//  no AudioContext), then dispatch the numbered beats via on_step (the H-global step gate; one Book runs
-//   at a time here, so no caller collision).  Each beat plays ONE real stream at its delivery rate; the
-//    witness reads all three afterward.  deliver_ms < a chunk's 50ms play = seamless; > 50ms = it starves.
+// MusuSignal_drive — gesture-free OfflineAudioContext gate (skip only where there's NO Web Audio at all,
+//  e.g. a node boot), then dispatch the numbered beats via on_step.  Each beat RENDERS one stream offline
+//   at its delivery rate and measures the real rendered PCM; the witness reads all three afterward.  Was
+//    the ONLINE real-time voice (Musu_real_stream + Musu_gat) — but a headless/dockerised runner has no
+//     gesture-unlocked audio device, so the online context renders SILENCE (bits=0 everywhere) and every
+//      witness drops.  OfflineAudioContext renders real audio on ANY runner, deterministically — the same
+//       gesture-free path MusuTune/Mix/Edge use.  (Audible real-time playback now lives in MusuRadio.)
+//        deliver_ms < a chunk's 50ms play = seamless; > 50ms = it starves (coverage gaps open).
 async MusuSignal_drive(w, req) {
-    let gat = await this.Musu_gat()
-    if (!gat) {
+    if (typeof OfflineAudioContext === 'undefined') {
         if (!w.oa({skipped: 'no_audio'})) w.i({skipped: 'no_audio'})
         return
     }
     await this.on_step({
-        2: async () => this.MusuSignal_run(w, gat, 'healthy', 24, 30),
-        3: async () => this.MusuSignal_run(w, gat, 'starved', 24, 150),
-        4: async () => this.MusuSignal_run(w, gat, 'silence', 24, 30),
+        2: async () => this.MusuSignal_run(w, 'healthy', 24, 30),
+        3: async () => this.MusuSignal_run(w, 'starved', 24, 150),
+        4: async () => this.MusuSignal_run(w, 'silence', 24, 30),
         5: () => this.MusuSignal_witness(w),
     })
     await this.Musu_float(w)
 
 },
-// MusuSignal_run — play ONE real stream of `total` synth chunks at the given delivery rate through the
-//  real voice, MEASURE what the analyser actually heard, and leave only the coarse %signal,kind readout
-//   (bits/gaps/rms/played/underran).  No Terminal/Player/Chunk particles — the spine IS the audio graph
-//    now, transient on the Audiolet, not cursors on the C-tree.  Default AUDIBLE for the first verify; set
-//     H.c.musu_muted=1 (live, no recompile) to silence — once you confirm you hear it, we flip the default.
-async MusuSignal_run(w, gat, kind, total, deliver_ms) { const H = this;
-    let mute = !!H.c.musu_muted
+// MusuSignal_run — RENDER one stream of `total` synth chunks at a uniform `deliver_ms` delivery through an
+//  OfflineAudioContext (no Glide — ctrl 'none', rate pinned 1.0), MEASURE the real rendered PCM, and leave
+//   the coarse %signal,kind readout (bits/gaps/rms/underran).  Gesture-free + deterministic, so it reads
+//    real entropy on every runner.  `of`/`played` are `total` (the witness only needs of>0).
+async MusuSignal_run(w, kind, total, deliver_ms) {
+    let prof = []
+    let i = 0
+    while (i < total) {
+        prof.push(deliver_ms)
+        i = i + 1
+    }
     let stock = this.Musu_radiostock(kind)
-    let out = await this.Musu_real_stream(gat, kind, total, deliver_ms, mute, false, stock)
-    w.i({signal: 1, kind: kind, bits: out.bits, gaps: out.gaps, rms: out.rms, played: out.played, of: out.of, underran: out.underran})
+    let out = await this.Musu_render_offline(total, prof, null, stock, false, 'none')
+    w.i({signal: 1, kind: kind, bits: out.bits, gaps: out.gaps, rms: out.rms, played: total, of: total, underran: out.underran})
 
 },
 // MusuSignal_witness — the assertions this Book EARNS (idempotent stamps).  The %signal lines are just
@@ -1317,32 +1324,36 @@ MusuGlide(A,w) {
 
     })
 },
-// MusuGlide_drive — the real device first (skip headless), then per-beat dispatch off the run's step_n
-//  tracked on req.c.did_step (req-local, immune to on_step's H-global — the Pere* lesson).  did_step is
-//   set BEFORE the long audio await, so a re-pump during playback skips the if and never double-runs a beat.
+// MusuGlide_drive — gesture-free OfflineAudioContext gate (skip only where there's NO Web Audio), then
+//  per-beat dispatch off step_n (req-local did_step).  Was the ONLINE real-time voice (Musu_real_stream),
+//   which renders SILENCE on a headless/dockerised runner (no gesture-unlocked device) → fewer_gaps/recovers
+//    drop on bits=0.  Now renders offline like MusuTune — real audio + deterministic on any runner.
 async MusuGlide_drive(w, req) {
-    let gat = await this.Musu_gat()
-    if (!gat) {
+    if (typeof OfflineAudioContext === 'undefined') {
         if (!w.oa({skipped: 'no_audio'})) w.i({skipped: 'no_audio'})
         return
     }
     let n = (this.c.run)?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
-        if (n === 2) await this.MusuGlide_run(w, gat, 'baseline', false)
-        if (n === 3) await this.MusuGlide_run(w, gat, 'glided', true)
+        if (n === 2) await this.MusuGlide_run(w, 'baseline', false)
+        if (n === 3) await this.MusuGlide_run(w, 'glided', true)
         if (n === 4) this.MusuGlide_witness(w)
     }
     await this.Musu_float(w)
 
 },
-// MusuGlide_run — one starved stream (90ms delivery, 24 chunks) through the real voice, glide on or off,
-//  leaving the coarse %glidesig,kind readout: gaps/underran + the rate trajectory (min/final/flips).
-async MusuGlide_run(w, gat, kind, glide) { const H = this;
-    let mute = !!H.c.musu_muted
+// MusuGlide_run — RENDER one stream offline over a warm→starve→recover delivery profile (Musu_profile,
+//  seeded → identical for both runs, so only Glide differs), glide on ('glide') or off ('none'), leaving
+//   the %glidesig,kind readout: gaps/underran + the rate trajectory (min/final/flips).  The recover phase
+//    is what lets Glide CLIMB BACK to full speed (final_rate→1), the differential `recovers` proves.
+async MusuGlide_run(w, kind, glide) {
+    let total = 36
+    let prof = this.Musu_profile(total, 4242)
     let stock = this.Musu_radiostock(kind)
-    let out = await this.Musu_real_stream(gat, kind, 24, 90, mute, glide, stock)
-    w.i({glidesig: 1, kind: kind, gaps: out.gaps, underran: out.underran, min_rate: out.min_rate, final_rate: out.final_rate, flips: out.flips, bits: out.bits})
+    let ctrl = glide ? 'glide' : 'none'
+    let out = await this.Musu_render_offline(total, prof, null, stock, false, ctrl)
+    w.i({glidesig: 1, kind: kind, gaps: out.gaps, underran: out.underran, min_rate: out.min_rate, final_rate: out.final_rate, flips: out.flips, recovered: out.recovered, bits: out.bits})
 
 },
 // MusuGlide_witness — idempotent stamps the rate controller EARNS.  Reads the baseline vs glided readouts;
@@ -1356,13 +1367,15 @@ MusuGlide_witness(w) {
     let gmin = +(glid.sc.min_rate ?? 1)
     let gfinal = +(glid.sc.final_rate ?? 0)
     let gflips = +(glid.sc.flips ?? 99)
+    let grec = +(glid.sc.recovered ?? 0)
     let gbits = +(glid.sc.bits ?? 0)
     // backs_off: under live-edge pressure the controller slowed below full speed toward the 0.80 floor --
     //  it engaged instead of riding the edge into silence.  >=0.78 proves it stayed clamped, didn't run away.
     if (gmin < 0.99 && gmin >= 0.78 && !(w.oa({witnessed: "backs_off"}))) w.i({witnessed: "backs_off"})
-    // recovers: it returned to full speed by the end -- NOT Radios' permanent 0.8 pitch-drop.  The whole
-    //  point of the re-model: back off, then come back.
-    if (gfinal >= 0.99 && !(w.oa({witnessed: "recovers"}))) w.i({witnessed: "recovers"})
+    // recovers: it dipped below 0.9 then CLIMBED BACK to full speed MID-stream once delivery recovered --
+    //  NOT Radios' permanent 0.8 pitch-drop.  The `recovered` flag (Musu_render_offline) is the proven
+    //   signal (cf MusuTune); reading final_rate alone misses a recover that completes before the last chunk.
+    if (grec >= 1 && !(w.oa({witnessed: "recovers"}))) w.i({witnessed: "recovers"})
     // smooth: the Schmitt band held -- a handful of direction changes, not one per tick.  Hysteresis works.
     if (gflips >= 1 && gflips <= 4 && !(w.oa({witnessed: "smooth"}))) w.i({witnessed: "smooth"})
     // fewer_gaps: THE payoff -- analyser-backed + differential.  Fed at the SAME starved rate, the glided

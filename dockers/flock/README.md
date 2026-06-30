@@ -69,9 +69,13 @@ Only one *watched* cluster at a time (those host ports are fixed). Unwatched clu
    relay-side + verified, but **no peer emits the signed hello yet** (`Tribunal.g`
     `Socket_real`). Until then runners are reachable but not individually addressable —
      the flock can stand up, but the conductor can't yet say "this part on alpha-2."
-- **Repo IO.** Runners that need the *real* repository (not just sim fixtures) need the
-   **network Wormhole backend** (§3.8) — a headless container has no FSA handle. Sim
-    Books that carry their own fixtures (Peeroleum family) are fine today.
+- **Repo IO is grant-gated.** A headless container has **no FSA handle** (DirectoryAccess
+   is off the table — by design, not a fight to win), so a runner that needs the *real*
+    repository uses the **network Wormhole backend** (§3.8) — and it must **beg the editor
+     for access through the Brink** first: signed `WormholeBeg → to:<editor.pub>`, surfaced
+      as a Brink grant tenant, approved into a leased signed capability; the editor then
+       proxies its own handle (the `gen_write` precedent, generalised + grant-gated). Sim
+        Books that carry their own fixtures (Peeroleum family) need none of this today.
 - **Crash-quorum restart** (§3.6) + the **host-exec socket** successor (§3.7) — a relay
    `restart_request` past a DEAD-quorum bridged to a host socket line — is unbuilt; for
     now restart is manual (`flock.sh restart`).

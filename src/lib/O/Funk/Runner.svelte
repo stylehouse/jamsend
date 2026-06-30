@@ -49,16 +49,12 @@
     let channel_live   = $state(false)
     let now            = $state(Date.now())
 
-    // editor MULTIPLIED mode: when the suggester stamps lens.c.runner, this face monitors ONE
-    //  advertised runner (its %Runner roster entry: pub + friendly + last_heard + ready + book),
-    //   not the single-pair %channel_peer.  An editor coordinating a grid mounts one of these per pub.
-    let is_roster  = $derived(!!lens?.c?.runner)
-    let r_pub      = $state('')
-    let r_friendly = $state('')
-    let r_heard    = $state(0)
-    let r_ready    = $state(false)
-    let r_book     = $state('')
-    let r_engaged  = $state('')   // the client pub holding this runner's live lease ('' ⇒ free)
+    // editor RACK mode: when the suggester stamps lens.sc.rack, this ONE face reads the whole %Runner
+    //  roster off w:Lies and renders a single titled "RUNNER" box — a row per advertised runner (its
+    //   pub + friendly + liveness) — instead of the editor mounting one panel per pub.  The single-pair
+    //    {:else} mode below still serves a runner (→EDITOR) and a plain ?B= editor with none advertised.
+    let is_rack = $derived(!!lens?.sc?.rack)
+    let rack = $state<{ pub: string, friendly: string, heard: number, ready: boolean, book: string, engaged: string, sent: string, sent_at: number }[]>([])
 
     const _tick = setInterval(() => { now = Date.now() }, 1000)
     onDestroy(() => clearInterval(_tick))
@@ -67,21 +63,23 @@
         const w = (lens?.c?.w ?? H.ave.ob({ examining: 1 })[0]?.c?.w) as TheC | undefined
         if (!w) return
         w.ob()   // track w:Lies version (bumps on pong roai, advertise stamp + the ambient heartbeat)
-        const rn = lens?.c?.runner as TheC | undefined
+        const rack_mode = !!lens?.sc?.rack
         H.clear(async () => {
             peers        = w.o({ channel_peer: 1 }) as TheC[]
             run_phase    = w.c?.run_phase
             role         = (H as any).Lies_role?.(w) ?? ''
             channel_live = !!(H as any).Lies_channel_live?.(w)
             now          = Date.now()
-            if (rn) {
-                r_pub      = (rn.sc.Runner as string) ?? ''
-                r_friendly = (rn.sc.friendly as string) ?? ''
-                r_heard    = Number(rn.sc.last_heard ?? 0)
-                r_ready    = !!rn.sc.ready
-                r_book     = (rn.sc.book as string) ?? ''
-                r_engaged  = (rn.sc.engaged as string) ?? ''
-            }
+            if (rack_mode) rack = (w.o({ Runner: 1 }) as TheC[]).map(rn => ({
+                pub:      (rn.sc.Runner as string) ?? '',
+                friendly: (rn.sc.friendly as string) ?? '',
+                heard:    Number(rn.sc.last_heard ?? 0),
+                ready:    !!rn.sc.ready,
+                book:     (rn.sc.book as string) ?? '',
+                engaged:  (rn.sc.engaged as string) ?? '',
+                sent:     (rn.sc.sent as string) ?? '',
+                sent_at:  Number(rn.sc.sent_at ?? 0),
+            }))
         })
     })
 
@@ -130,31 +128,49 @@
     let phase_view = $derived(run_phase ? PHASE_VIEW[run_phase.phase as string] : undefined)
     let phase_pct  = $derived(run_phase?.total ? Math.min(100, Math.round((Number(run_phase.n ?? 0) / Number(run_phase.total)) * 100)) : null)
 
-    // roster-mode link — liveness off the advertise beacon (cadence ~15s; allow ~2 missed before
-    //  "silent", never heard ⇒ "dialing").  Three on-grid states: running its book ▸ engaged (reserved,
-    //   idle between runs) ▸ free.  `engaged` rides the beacon (the lease's client), so the editor reads
-    //    busy/free without a round-trip.
-    let r_age_s = $derived(r_heard ? Math.round((now - r_heard) / 1000) : null)
-    let r_live  = $derived(r_heard > 0 && now - r_heard < 45000)
-    let r_title = $derived(r_friendly || (r_pub ? r_pub.slice(0, 8) : '?'))
-    let r_link  = $derived(
-        !r_heard ? { glyph: '◌', cls: 'dial',   text: 'dialing' }
-      : r_live   ? (r_book    ? { glyph: '●', cls: 'live',    text: `running ${base(r_book)}` }
-                  : r_engaged ? { glyph: '◑', cls: 'engaged', text: 'engaged' }
-                  :             { glyph: '●', cls: 'live',    text: 'free' })
-      :            { glyph: '◍', cls: 'silent', text: `silent ${r_age_s ?? 0}s` }
-    )
+    // a runner's at-a-glance link, off the advertise beacon (cadence ~15s; allow ~2 missed before
+    //  "silent", never heard ⇒ "dialing").  States: a job WE rang but it hasn't picked up → ☎ (30s) ▸
+    //   playing its book → ▶ ▸ engaged (reserved, idle between runs) ▸ free ▸ silent.  book/engaged/sent
+    //    all ride the roster entry, so the editor reads busy/free off the beacon, no round-trip.
+    const runner_link = (v: { heard: number, book: string, engaged: string, sent: string, sent_at: number }) => {
+        const sent_live = !!v.sent && (!v.sent_at || now - v.sent_at < 30000)
+        const live      = v.heard > 0 && now - v.heard < 45000
+        const age       = v.heard ? Math.round((now - v.heard) / 1000) : 0
+        return v.book    ? { glyph: '▶', cls: 'live',    text: `playing ${base(v.book)}` }   // acked + running → the play button
+             : sent_live ? { glyph: '☎', cls: 'sent',    text: `calling ${base(v.sent)}` }   // job in flight — ringing
+             : !v.heard  ? { glyph: '◌', cls: 'dial',    text: 'dialing' }
+             : live      ? (v.engaged ? { glyph: '◑', cls: 'engaged', text: 'engaged' }
+                                      : { glyph: '●', cls: 'live',    text: 'free' })
+             :             { glyph: '◍', cls: 'silent', text: `silent ${age}s` }
+    }
 </script>
 
-{#if is_roster}
-    <!-- one advertised runner on the grid (editor multiplied view) — its own identity, its own liveness -->
+{#if is_rack}
+    <!-- the RUNNER box: every advertised runner as a row (friendly|pub · liveness), one titled panel
+         instead of N inline ones.  No →EDITOR carrier line here — that's the Relay's job; this is the
+         roster, the editor's view of who it can dispatch to. -->
     <div class="rp">
-        <div class="rp-hd">runner · {r_pub ? r_pub.slice(0, 8) : '?'}</div>
-        <div class="rp-link rp-{r_link.cls}" title={`advertised runner ${r_pub}${r_ready ? ' — ready' : ''}${r_engaged ? ` — engaged by ${r_engaged.slice(0, 8)}` : ''}`}>
-            <span class="rp-dot">{r_link.glyph}</span>
-            <span class="rp-role">{r_title}</span>
-            <span class="rp-txt">{r_link.text}</span>
-        </div>
+        <div class="rp-hd">runner{rack.length ? ` · ${rack.length}` : ''}</div>
+        {#if rack.length}
+            {#each rack as v (v.pub)}
+                {@const lk = runner_link(v)}
+                <div class="rp-link rp-{lk.cls}" title={`runner ${v.pub}${v.ready ? ' — ready' : ''}${v.engaged ? ` — engaged by ${v.engaged.slice(0, 8)}` : ''}`}>
+                    <span class="rp-dot">{lk.glyph}</span>
+                    <span class="rp-role">{v.friendly || (v.pub ? v.pub.slice(0, 8) : '?')}</span>
+                    <span class="rp-txt">{lk.text}</span>
+                </div>
+            {/each}
+        {:else if live_face.length}
+            <!-- a runner connected on the single-pair channel but advertising no identity (a ?B= runner,
+                 no ?I) — it can't claim a roster row, but it's live, so show it lives. -->
+            <div class="rp-link rp-live" title="a connected runner with no cluster identity (?B=, can't advertise a pub)">
+                <span class="rp-dot">●</span>
+                <span class="rp-role">peer</span>
+                <span class="rp-txt">connected — no identity</span>
+            </div>
+        {:else}
+            <div class="rp-empty">no runners advertised</div>
+        {/if}
     </div>
 {:else}
 <div class="rp">
@@ -193,6 +209,7 @@
     .rp-role { color: #c4ccea; }
     .rp-txt { font-variant-numeric: tabular-nums; }
     .rp-live    .rp-dot { color: #6ad0a0; }
+    .rp-sent    .rp-dot { color: #79b0d0; }   /* ☎ a dispatched job ringing — not yet acked */
     .rp-engaged .rp-dot { color: #7aa0d8; }   /* reserved (lease held), idle between runs */
     .rp-silent .rp-dot { color: #d8b86a; }
     .rp-dial   .rp-dot { color: #889; }
@@ -200,6 +217,7 @@
     .rp-clash  .rp-dot { color: #e06c75; }
     .rp-down  .rp-txt, .rp-clash .rp-txt { color: #d68a90; }
     .rp-latest { font-size: 9.5px; color: #6a7398; }
+    .rp-empty { font-size: 10px; color: #5a6488; font-style: italic; }
     .rp-ago { color: #4e5676; }
     .rp-phase { display: flex; align-items: center; gap: 5px; color: #b6a8cc; }
     .rp-phase.stall { color: #d8b86a; }

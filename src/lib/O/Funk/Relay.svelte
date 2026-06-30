@@ -67,7 +67,8 @@
 </script>
 
 <div class="rl">
-    <div class="rl-hd">relay</div>
+    <!-- ONE LINE at rest (🛰 relay up) — a carrier pilot light, not a panel; the "relay" header was
+         redundant with the link text.  The event log unfurls only while something's happening, then fades. -->
     <div class="rl-link rl-{link.cls}" title="relay/socket carrier — is the websocket to the relay live (Lies_channel_live)">
         <span class="rl-dot">{link.glyph}</span>
         <span class="rl-txt">{link.text}</span>

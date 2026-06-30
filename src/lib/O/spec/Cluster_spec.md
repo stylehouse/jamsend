@@ -358,6 +358,46 @@ When the app needs to act on the **host** — restart a crashed Chrome profile, 
   run-output goes back over the verdict wire + `Storyrun` pins, never to the shared tree? Leaning
    reader-mostly; settle before building (8).
 
+**The access grant — beg through the Brink.** The network backend is **not open**: a runner
+ holding no FSA handle (headless; OPFS illegal under the `?I=` boot) must be **granted** Wormhole
+  access, never just take it. The protocol: the runner emits a signed **`WormholeBeg`**
+   `to:<editor.pub>` ("runner `<pub>`/`<tag>` requests Wormhole — read | read+write"); it surfaces
+    at the editor's **Brink** as a pending grant (a Lens/Brink tenant beside Runner/Upkeep —
+     *"alpha-2 begs Wormhole · [grant ro] [grant rw] [deny]"*), where a human decides, or an
+      auto-policy waves through a known `favourite_client`. Approval mints a **leased, signed
+       capability** — the §3.5 `claim`/`lease` primitive in a fourth hat (Wormhole-access, not
+        ownership/mutex/restart): `%Grant,for:<runner.pub>,scope:Wormhole,mode,until`. This is the
+         **`disk_gated`/FaceSucker share gate generalised**: today the human grants the *local* tab
+          disk; now the human grants a *remote* runner repo IO, from the Brink. Enforcement lives at
+           the Wormhole **service**, not advice: it serves repo-IO frames from `<runner.pub>` only
+            while a live grant exists, and the grant is revocable + expiring.
+
+**Who serves it — first cut: the editor proxies its own handle.** The editor is already the disk
+ authority (it holds the FSA handle and does `gen_write`/`ghost_update` to disk on behalf of
+  compiles). The cheap first backend reuses that: granted runners read the repo *through the editor*
+   over the relay — the `gen_write` precedent generalised to full, grant-gated repo IO, no new host
+    service, and it matches "beg **from the editor**." The standalone host file service (3.8 network
+     backend) is the **editor-less robustness upgrade** — for a daemonised flock with no editor
+      present to proxy or to click *grant*.
+
+**The editor's backing can be OPFS — robust shared session storage.** The fragility (handles dying on
+ restart, §3.4) only ever had to be solved *once*, at the **one editor where a human is**, not on N
+  headless runners. And the editor needn't even use the fragile directory handle: **OPFS works *from the
+   editor*** (origin-persistent, survives restart, `navigator.storage.persist()` pins it) as a durable
+    store — `method:opfs` — while `method:fsa` is reserved for when a runner genuinely needs the *real
+     repo files* on host disk. Every granted runner proxies the **one** editor store, so they share a
+      single `/` for free — and because the editor is then the **sole mutator**, it serialises the
+       runners' writes into its backing, so the multi-writer clobber problem (the §3.8 open decision)
+        **dissolves**: shared read+write becomes viable, not just read-only.
+
+**The proxy streams binary, all the way.** Repo and scratch data is binary and large (audio, images,
+ gen `.go`, fixtures), so the `remoteWormhole` channel is a **chunked binary stream** — reusing the same
+  stream machinery that carries audio (the Peeroleum `offer_stream` path), never a base64-in-JSON RPC. A
+   read streams chunks editor→runner, a write streams runner→editor, backpressure-aware; nothing buffers
+    a whole file as text. So the Wormhole IO API is **stream-shaped on both backends** (an FSA
+     `FileSystemFileHandle` and an OPFS handle both yield streams), and `method:remoteWormhole` is just
+      that stream piped over the relay — the editor's chosen backing invisible beneath it.
+
 ---
 
 ## 4. The real-isolation testbed — dockerised Chrome
@@ -504,5 +544,14 @@ What's still **MISSING**: the CLIENT half of `to:<pub>` (a peer emitting the sig
    service reusing the gen_write/`ghost_update` precedent? The browser can't speak raw FTP — pick one
     the runner Chrome can actually reach.
 - **The Wormhole writer problem** (3.8): do shared-`/` runners **write** (→ per-`?I=` namespacing +
-   coordination) or stay **read-only** (output via the verdict wire + `Storyrun` pins)? Leaning
-    read-only; decide before building the backend.
+   coordination) or stay **read-only** (output via the verdict wire + `Storyrun` pins)? **Largely
+    dissolved** if all IO funnels through one editor store (3.8): the editor is the sole mutator and
+     serialises the runners' writes, so shared read+write is viable — only app-level logical clobber
+      (two runners writing the same path) still needs coordination.
+- **Wormhole server: editor-proxy vs host service** (3.8): first cut = the editor proxies its FSA
+   handle to granted runners (reuse, but needs an editor present); the standalone host file service is
+    the editor-less upgrade. Build the grant + editor-proxy first, host service when the flock must run
+     with nobody home.
+- **Wormhole-grant = a fourth lease hat or its own frame?** (3.5/3.8): is `%Grant,scope:Wormhole` the
+   same relay-arbitrated `%Claim`/lease as affinity/mutex/restart, or an app-level grant the two peers
+    agree over the spine (the "no new privileged frames" stance)? Leaning app-level, Brink-surfaced.

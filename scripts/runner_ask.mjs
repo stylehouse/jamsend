@@ -13,6 +13,10 @@
 //    node scripts/runner_ask.mjs ping                    # liveness {role,channel,running}
 //    node scripts/runner_ask.mjs run MusuLive            # kick a run (returns immediately)
 //    node scripts/runner_ask.mjs run MusuLive --watch    # kick + poll state until done|failed
+//    node scripts/runner_ask.mjs runners                 # list the Waft:Cluster registry (prepub  friendly  ★fav)
+//    node scripts/runner_ask.mjs run MusuLive --runner=49dee9   # court ONE runner by prepub|prefix|friendly and
+//                                                          #  INSIST: retry IT on busy/silence (never failover);
+//                                                           #   no --runner ⇒ legacy role broadcast (first to ack)
 //    node scripts/runner_ask.mjs state [--watch]         # verdict + phase/n/total
 //    node scripts/runner_ask.mjs steps                   # per-Step ok/caveat/dige
 //    node scripts/runner_ask.mjs snap 3                  # one Step's got_snap (the live world serialisation)
@@ -36,18 +40,63 @@
 import { WebSocket } from 'ws'
 import { readFileSync } from 'node:fs'
 
-const OPS = ['ping', 'run', 'state', 'steps', 'snap', 'rungos', 'accept', 'release']
+const OPS = ['ping', 'run', 'state', 'steps', 'snap', 'rungos', 'accept', 'release', 'runners']
+
+// ── court a runner via Waft:Cluster ──────────────────────────────────────────────────────────
+//  deLines the registry snap (wormhole/Cluster/toc.snap — the durable HostedIdentity directory the editor
+//   builds from advertise beacons) so we can address ONE runner BY PREPUB (to:<prepub>) instead of the role
+//    broadcast to:'runner' that fans to EVERY runner.  No eatfunc to import here (Lies_dispatch_target is
+//     ghost-swallowed) and we don't need full deWaft — just the flat indent+comma lines:
+//      `HostedIdentity:<prepub>,role:runner,friendly:…`.  (Editor-side the auto-allocator tries-another-if-busy;
+//       the CLI does the OPPOSITE — it INSISTS on the one runner you name, for repeatable targeted testing.)
+function clusterRunners() {
+	let txt
+	try { txt = readFileSync(new URL('../wormhole/Cluster/toc.snap', import.meta.url), 'utf8') } catch { return [] }
+	const out = []
+	for (const raw of txt.split('\n')) {
+		const line = raw.trim()
+		if (!line.startsWith('HostedIdentity:')) continue
+		const parts = line.split(',')
+		const pub = parts[0].slice('HostedIdentity:'.length)
+		const props = {}
+		for (const p of parts.slice(1)) { const i = p.indexOf(':'); if (i > 0) props[p.slice(0, i)] = p.slice(i + 1) }
+		if (props.role === 'runner') out.push({ pub, friendly: props.friendly, favourite_client: props.favourite_client })
+	}
+	return out
+}
+// resolve --runner <id> (exact prepub ▸ prefix ▸ friendly) to a prepub; no id ⇒ the LATEST runner in the directory.
+function resolveRunner(id) {
+	const rs = clusterRunners()
+	if (!id) return rs[rs.length - 1]?.pub
+	return (rs.find(r => r.pub === id) ?? rs.find(r => r.pub.startsWith(id)) ?? rs.find(r => r.friendly === id))?.pub
+}
 const argv  = process.argv.slice(2)
-const flags = new Set(argv.filter(a => a.startsWith('--')))
+const flags = new Set(argv.filter(a => a.startsWith('--') && !a.startsWith('--runner=')))
 const uidTok = argv.find(a => a.startsWith('@'))             // @uid → target a HELD run's frozen pins
 const uid    = uidTok ? uidTok.slice(1) : undefined
+const runnerSel = (argv.find(a => a.startsWith('--runner=')) ?? '').split('=')[1]   // --runner=<prepub|prefix|friendly>
 const pos   = argv.filter(a => !a.startsWith('-') && !a.startsWith('@'))
 const op    = pos[0]
 const arg   = pos[1]
 const watch = flags.has('--watch')
 if (!op || !OPS.includes(op)) {
-	console.error('usage: node scripts/runner_ask.mjs <ping|run <Book>|state|steps|snap <n>|rungos|accept|release> [@uid] [--watch]')
+	console.error('usage: node scripts/runner_ask.mjs <ping|run <Book>|state|steps|snap <n>|rungos|accept|release|runners> [@uid] [--runner=<id>] [--watch]')
 	process.exit(2)
+}
+// `runners` — list the Waft:Cluster registry (no relay needed); a discovery aid for --runner=<id>.
+if (op === 'runners') {
+	const rs = clusterRunners()
+	if (!rs.length) { console.error('no runners in wormhole/Cluster/toc.snap (none advertised yet, or the editor never wrote it)'); process.exit(1) }
+	for (const r of rs) console.log(`${r.pub}${r.friendly ? `  ${r.friendly}` : ''}${r.favourite_client ? `  ★${r.favourite_client.slice(0, 8)}` : ''}`)
+	process.exit(0)
+}
+// TARGET — who to address.  --runner=<id> courts ONE runner by prepub (insist, no failover); else the legacy
+//  role broadcast 'runner' (the relay fans it; whichever acks first answers).
+let TARGET = 'runner'
+if (runnerSel !== undefined) {
+	const pub = resolveRunner(runnerSel)
+	if (!pub) { console.error(`✗ --runner=${runnerSel || '(latest)'}: no matching runner in wormhole/Cluster/toc.snap — try \`runners\``); process.exit(2) }
+	TARGET = pub
 }
 if (op === 'run' && !arg)  { console.error('run needs a Book: node scripts/runner_ask.mjs run <Book>'); process.exit(2) }
 if (op === 'snap' && !arg) { console.error('snap needs a step number: node scripts/runner_ask.mjs snap <n>'); process.exit(2) }
@@ -96,7 +145,7 @@ function sendAsk(ws, theAsk) {
 		}
 		const timer = setTimeout(() => settle({ ok: false, error: `no reply in ${Math.round(TIMEOUT_MS / 1000)}s (runner not connected or half-open?)` }), TIMEOUT_MS)
 		ws.on('message', onMsg)
-		ws.send(JSON.stringify({ header: { type: 'runner_ask', from: cliAddr, to: 'runner', seq: Date.now(), corr }, ask: theAsk, corr }))
+		ws.send(JSON.stringify({ header: { type: 'runner_ask', from: cliAddr, to: TARGET, seq: Date.now(), corr }, ask: theAsk, corr }))
 	})
 }
 
@@ -106,7 +155,17 @@ const opened = await new Promise((resolve) => { const wd = setTimeout(() => reso
 if (!opened) { console.error(`✗ relay ${WS_URL}: connect timeout (5s) — is the dev server up and ?B= a runner booted?`); process.exit(1) }
 
 let exitCode = 0
-const reply = await sendAsk(ws, ask)
+// INSIST: when courting a named runner (--runner=), DON'T failover — retry the SAME target on a busy refusal
+//  or silence (an occupied or half-open runner), up to RUNNER_INSIST_TRIES.  The role broadcast stays single-shot.
+const INSIST = runnerSel !== undefined ? Number(process.env.RUNNER_INSIST_TRIES || 5) : 1
+let reply
+for (let attempt = 1; ; attempt++) {
+	reply = await sendAsk(ws, ask)
+	const stuck = reply.control !== 'runner_ack' || reply.ok === false
+	if (!stuck || attempt >= INSIST) break
+	console.error(`… runner ${TARGET.slice(0, 8)} ${reply.ok === false ? `refused (${reply.result?.error ?? 'busy'})` : 'silent'} — insisting ${attempt}/${INSIST}`)
+	await new Promise(r => setTimeout(r, Number(process.env.RUNNER_INSIST_MS || 3000)))
+}
 if (reply.control !== 'runner_ack') { console.error(`✗ ${op}: ${reply.error ?? 'no reply'}`); exitCode = 1 }
 else if (op === 'snap' && reply.result?.got_snap) {
 	console.error(`snap: Step ${reply.result.n} ok=${reply.result.ok} dige=${reply.result.dige}`)
