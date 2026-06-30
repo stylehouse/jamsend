@@ -57,6 +57,8 @@
         
         'Ghost/M/Radiola.g',            // music-piracy spine — the ACK-backpressure spool (slice 1)
         'Ghost/M/Crate.g',              // crate-digging — walk a music collection → records → the radiostock override
+        'Ghost/M/Mixer.g',              // cellular mixer — beat detection, beatmatch, multi-cell sum, crossfade (stage 6)
+        'Ghost/M/Mesh.g',               // the sync that sees itself — replicas/edges, cheapest-route, multicast stretch (8+9)
         'Ghost/Story/Musuation.g',      // the Musu* tests — MusuStaple; more pile on here
     ]
 
@@ -724,9 +726,13 @@
             H.Lies_keepalive(w)
             // The grid presence beacon runs ONLY in-think (NOT in keepalive's off-think timer): advertise
             //  is non-ephemeral, so it books a %outbox/emit — a snap-tree mutation that must stay under the
-            //   mutex.  Throttled, runner-only.  (Promoting advertise to an ephemeral beacon — no outbox,
-            //    like ping — is the clean follow-up; it needs a spine edit + the pinned_stable re-copy.)
+            //   mutex.  Throttled, runner-only.
             ;(H as any).Lies_advertise(w)
+            // Cull the channel's acked backlog (the §7.4 whittle).  That whittle is normally armed at Story
+            //  step boundaries (Peregrination), but THIS channel lives outside any Story (no sc.Run → no
+            //   _resolve_runstepped on it), so nothing else fires it and every app frame's acked emit would
+            //    pile up.  Peeroleum_runstepped has no Story dependency — drive it here when the backlog grows.
+            ;(H as any).Lies_channel_cull(w)
         },
         // Lies_keepalive — the channel keepalive: the three-state liveness watchdog + the ping cadence.
         //  Touches ONLY .c + the ws (the ping is ephemeral → books no %outbox/emit, so no snap-tree
@@ -827,6 +833,10 @@
                 friendly: self.friendly ?? '',
                 ready: 1,                                   // reachable on the grid (book='' ⇒ free/idle)
                 book: (H.top_House().c.book as string) ?? '',
+                // sticky soft-affinity: whose client (by pub) favours this runner.  Set by an editor
+                //  `favour` frame, persisted in the runner's identity Thang, restored on boot to top.c
+                //   — so it rides every beacon and a CLI can prefer its own runner. '' ⇒ unclaimed.
+                favourite_client: (H.top_House().c.favourite_client as string) ?? '',
             })
         },
         // Lies_advertise_recv — editor stamps/refreshes a %Runner roster entry, keyed by the runner's
@@ -844,7 +854,31 @@
             if (fr?.friendly) r.sc.friendly = String(fr.friendly); else delete r.sc.friendly
             if (fr?.book)     r.sc.book     = String(fr.book);     else delete r.sc.book
             if (fr?.ready)    r.sc.ready    = 1;                   else delete r.sc.ready
+            // the runner's sticky favourite_client (a client pub) — captured so the Brink can show WHO
+            //  owns it; the CLI reads the same marker off the live runner, not this editor-only roster.
+            if (fr?.favourite_client) r.sc.favourite_client = String(fr.favourite_client)
+            else                      delete r.sc.favourite_client
             w.bump_version()
+        },
+
+        // Lies_channel_cull — run the §7.4 outbox/inbox archive (Peeroleum_runstepped) on the ambient
+        //  channel, which has no Story step boundary to fire it.  Gated on the acked|done BACKLOG so it
+        //   doesn't churn the snap every tick: it sweeps only once enough settled emits|unemits have piled
+        //    (acked %outbox/emit → %outbox/recent, done %inbox/unemit → %inbox/recent, both capped 20).
+        //     In-think (a do-pass mutation, like the other heartbeat work), so drop/i are safe.
+        Lies_channel_cull(w: TheC) {
+            const H = this as any
+            if (typeof H.Peeroleum_runstepped !== 'function') return   // spine not deposited yet
+            let backlog = 0
+            for (const peering of w.o({ Peering: 1 }) as TheC[]) {
+                for (const pier of peering.o({ Pier: 1 }) as TheC[]) {
+                    const ob = pier.o({ outbox: 1 })[0] as TheC | undefined
+                    if (ob) backlog += (ob.o({ emit: 1 }) as TheC[]).filter(e => e.sc.acked).length
+                    const ib = pier.o({ inbox: 1 })[0] as TheC | undefined
+                    if (ib) backlog += (ib.o({ req: 'unemit' }) as TheC[]).filter(u => u.sc.done).length
+                }
+            }
+            if (backlog > 12) H.Peeroleum_runstepped(w)
         },
         //#endregion
 

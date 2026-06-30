@@ -236,18 +236,53 @@
         const H  = this
         const gate = w.oai({ KeepGate: 1 })
         const gl = w.o({ Waft: 'GhostList' })[0] as TheC | undefined
-        if (gl) gl.sc.dontSnap = 1                                  // fold the volatile GhostList list
+        if (gl) gl.sc.dontSnap = 1                                  // fold a volatile GhostList IF a headless boot loaded one
         // (1) the P1 goal — a fresh BACKGROUND (equip) Waft, run through the real instantiate path,
         //     gets a req:Waftica carrier (Chunk 1's per-Waft carrier; no focus needed).
         const back = w.oai({ Waft: 'KeepBack' }, { equip: 'Back' })
         await H.Lies_instantiate_funkcions(w, back)
+        // a PLAIN (non-equip) loaded Waft, SELF-MANUFACTURED so carrier-at-load (2) + equip-classification
+        //  (3) fire on a LIVE ?B= runner too — the ambient GhostList only auto-loads under the (now-banned)
+        //   headless boot, so leaning on it made the gate headless-only.  KeepLoad stands in for it.
+        const load = w.oai({ Waft: 'KeepLoad' })
+        await H.Lies_instantiate_funkcions(w, load)
         const funks = w.o({ Funkcions: 1 })[0] as TheC | undefined
         if (funks?.oa({ req: 'Waftica', waft: 'KeepBack' }))  gate.i({ background_Waft_gets_a_carrier: 1 })
-        // (2) carrier-at-load fires generally — the auto-loaded GhostList has its carrier too.
-        if (funks?.oa({ req: 'Waftica', waft: 'GhostList' })) gate.i({ loaded_Waft_gets_a_carrier: 1 })
-        // (3) %equip classification — the background Waft is OUT of the focus set, a plain one (GhostList) is IN.
+        // (2) carrier-at-load fires generally — the plain loaded Waft has its carrier too.
+        if (funks?.oa({ req: 'Waftica', waft: 'KeepLoad' })) gate.i({ loaded_Waft_gets_a_carrier: 1 })
+        // (3) %equip classification — the background Waft is OUT of the focus set, a plain one (KeepLoad) is IN.
         const focusable = (w.o({ Waft: 1 }) as TheC[]).filter(wf => !wf.sc.equip)
-        if (gl && !focusable.includes(back) && focusable.includes(gl)) gate.i({ equip_out_plain_in_focus: 1 })
+        if (!focusable.includes(back) && focusable.includes(load)) gate.i({ equip_out_plain_in_focus: 1 })
+        // (4) P5 — the (scope,id,key) LAYOUT SERVICE round-trips on the Keep, one per scope.  Ensure
+        //     a Keep exists (Persist owns it live; here we mint the equip particle), set one value per
+        //      scope, then read it back through a FRESH (reopen-like) raw get — the value rides snapped
+        //       Keep sc, so the same get a post-reload client runs returns it.
+        const keep = w.oai({ Waft: 'Keep' }, { equip: 'Keep' })
+        H.Lies_keep_layout_set(w, 'waft',   'KeepLoad', 'minimised',    1)
+        H.Lies_keep_layout_set(w, 'lens',   'Brink',    'pose',         'TR')
+        H.Lies_keep_layout_set(w, 'global', '',         'lte_expanded', 1)
+        if (H.Lies_keep_layout_get(w, 'waft',   'KeepLoad', 'minimised')    === 1)    gate.i({ layout_waft_round_trips: 1 })
+        if (H.Lies_keep_layout_get(w, 'lens',   'Brink',    'pose')         === 'TR') gate.i({ layout_lens_round_trips: 1 })
+        if (H.Lies_keep_layout_get(w, 'global', '',         'lte_expanded') === 1)    gate.i({ layout_global_round_trips: 1 })
+        // (5) the set is COALESCED — re-setting the SAME value is a no-op (no ROOT bump), so an
+        //     ave→Keep mirror can't feed a write loop back.
+        const keep_v = keep.version
+        H.Lies_keep_layout_set(w, 'global', '', 'lte_expanded', 1)
+        if (keep.version === keep_v) gate.i({ layout_set_coalesces: 1 })
+        // (6) P6 CURSOR-MEMORY mechanism — the Keep records WHERE in a Waft the cursor sat
+        //     (Lies_keep_note_cursor) and resolves it back on re-open (Lies_keep_resume_what), so a
+        //      re-foreground re-lands on the LAST What, not the Waft's first.  The LIVE wiring is
+        //       role-gated to the editor (Lies_role is undefined inside a Story Run), so the gate
+        //        drives the two Keep functions directly, proving the record→resolve mechanism the
+        //         foreground leans on (Lies.svelte e_Lies_foreground_waft, the resume branch).
+        const memw = w.oai({ Waft: 'KeepMem' })
+        const mw1  = memw.i({ What: 'first' })
+        const mw2  = memw.i({ What: 'second' })
+        H.Lies_keep_note(w, 'KeepMem')                         // mint the WaftTimes the %Cursor rides
+        H.Lies_keep_note_cursor(w, 'KeepMem', mw2)             // the cursor last sat on the SECOND What
+        const resumed = H.Lies_keep_resume_what(w, memw, 'KeepMem')
+        if (resumed === mw2) gate.i({ cursor_memory_resumes_last_what: 1 })
+        if (resumed !== mw1) gate.i({ cursor_memory_not_first_what:   1 })
         gate.bump_version(); w.bump_version()
     },
 //#endregion

@@ -9,12 +9,24 @@ story:LakeLocate
         dontSnapGhostList
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=0.192
+    TimeTotal:beliefs,avg=0.131
       sample=0.182,at=1782715174
       sample=0.148,at=1782715344
       sample=0.247,at=1782715511
-    TimeTotal:step,avg=0.192
+      sample=0.14,at=1782748019
+      sample=0.14,at=1782748035
+      sample=0.14,at=1782748037
+      sample=0.071,at=1782748042
+      sample=0.065,at=1782749723
+      sample=0.045,at=1782792605
+    TimeTotal:step,avg=0.131
       sample=0.182,at=1782715174
       sample=0.148,at=1782715344
       sample=0.247,at=1782715511
-  step,dige:49102959a6c736ec
+      sample=0.14,at=1782748019
+      sample=0.14,at=1782748035
+      sample=0.14,at=1782748037
+      sample=0.071,at=1782748042
+      sample=0.065,at=1782749723
+      sample=0.045,at=1782792605
+  step,dige:f374da5ec5bbb107

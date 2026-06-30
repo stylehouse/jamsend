@@ -67,44 +67,44 @@ story:LakeNets
     quiesce_snap_time=0.4
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=1.416
-      sample=1.295,at=1782305644
-      sample=1.18,at=1782305719
-      sample=1.268,at=1782305903
-      sample=1.307,at=1782306039
-      sample=1.307,at=1782306060
-      sample=1.724,at=1782306101
-      sample=0.816,at=1782363220
-      sample=0.819,at=1782363298
+    TimeTotal:beliefs,avg=2.111
       sample=2.22,at=1782537792
       sample=2.22,at=1782539777
-    TimeTotal:step,avg=0.109
-      sample=0.1,at=1782305644
-      sample=0.091,at=1782305719
-      sample=0.098,at=1782305903
-      sample=0.101,at=1782306039
-      sample=0.101,at=1782306060
-      sample=0.133,at=1782306101
-      sample=0.063,at=1782363220
-      sample=0.063,at=1782363298
+      sample=2.163,at=1782748486
+      sample=2.163,at=1782748510
+      sample=2.301,at=1782748541
+      sample=2.441,at=1782749680
+      sample=1.922,at=1782792359
+      sample=1.922,at=1782792364
+      sample=2.012,at=1782792395
+      sample=1.75,at=1782792566
+    TimeTotal:step,avg=0.162
       sample=0.171,at=1782537792
       sample=0.171,at=1782539777
+      sample=0.166,at=1782748486
+      sample=0.166,at=1782748510
+      sample=0.177,at=1782748541
+      sample=0.188,at=1782749680
+      sample=0.148,at=1782792359
+      sample=0.148,at=1782792364
+      sample=0.155,at=1782792395
+      sample=0.135,at=1782792566
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
     Entcase:wants_want
       lematch,req:wants
         lematch,want,kind
           means,spayer,re:want={INT}.kind,tol:band,factor=1.5
-  step,dige:0d1ee9724cb7803b
-  step=2,dige:01955f4c5bfbcbd6
-  step=3,dige:8f0d2f52c442c2ea
-  step=4,dige:f67073952908a219
-  step=5,dige:f3bbab976ce5c1ac
-  step=6,dige:6a6156ad6512010d
-  step=7,dige:7c8edb101f334c2b
-  step=8,dige:2a8d83b5c1e525b5
-  step=9,dige:c1dc27ec14388124
-  step=10,dige:9404126932cfab32
-  step=11,dige:0fdaf356f76a02d0
-  step=12,dige:0449083e10985849
-  step=13,dige:f7e5373351b95b6c
+  step,dige:44ff027aef25ad9c
+  step=2,dige:a8e4103ee2db216f
+  step=3,dige:4ae30af964f5955c
+  step=4,dige:8457917c707f9b6e
+  step=5,dige:7da8441c09c43718
+  step=6,dige:b2540a9e6849c2cb
+  step=7,dige:04a1a53cc826d6bb
+  step=8,dige:03bf4308c4f392b8
+  step=9,dige:81d88dd64d75e068
+  step=10,dige:e232ab8c252d6d0a
+  step=11,dige:0696943929a311ef
+  step=12,dige:8607ff30f910ca09
+  step=13,dige:b2063a02eb3f6407

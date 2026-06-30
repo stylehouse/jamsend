@@ -133,6 +133,15 @@
         }
 
         ;(H as any).Clustation_concrete(A, tag, stored!)
+        // ?I=new minted a fresh self — rewrite the URL to ?I=<prepub> so this tab BECOMES that identity:
+        //  a reload now RESUMES it (the peek branch finds the Thang we just stored under <prepub>) instead
+        //   of minting yet another fresh one.  ?I=<tag> already resumes, so only 'new' needs the rewrite.
+        //    replaceState (not assign) — no navigation, just the address bar + a reload's worth of memory.
+        if (param === 'new' && typeof window !== 'undefined' && window.history?.replaceState) {
+            const url = new URL(window.location.href)
+            url.searchParams.set('I', stored!.prepub)
+            window.history.replaceState(null, '', url.toString())
+        }
         console.log(`🪪 Identity ${param === 'new' ? 'minted' : 'active'} ${tag} (${stored!.prepub})`)
         return true
     },
@@ -382,6 +391,10 @@
                 ?? (H.c.book as string | undefined)
             if (bname) picks_a_book(bname)
         }
+        // ── quitStory elvis ── a clean hang-up (Lies_engage_release): tear the Story world down to
+        //   H:Mundo and stay IDLE — no rebuild (unlike resetStory).  The runner keeps its
+        //    representation (identity, favourite_client, engagement lease on Mundo.c); only the run dies.
+        for (const ev of this.o_elvis(w, 'quitStory')) { void ev; H.auto_teardown_story() }
 
         const active = Li ? (Li.o({ Book: 1 }) as TheC[]).find(b => b.sc.active) : undefined
         // ── storyFinished elvis ───────────────────────────────────────────────
@@ -465,20 +478,8 @@
         // signal Otro to re-open its restore window
         H.top_House().c.restore_window_until = Date.now() + 3000
 
-        // stop + drop existing H:Story if present
-        const existing = H.o({ H: 'Story' })[0] as House | undefined
-        if (existing) {
-            // Stop every drive before teardown.  run particles live under w under A
-            //  (S.i({A}).i({w}).i({run})), so the walk must go through the actor
-            //   level — the old loop iterated existing.o({w:1}) directly and so found
-            //    no w (the `throw "forgot A"` flagged that skipped A:), throwing on
-            //     every re-activation (Book-switch / Story_reset from-start).
-            for (const A of existing.o({ A: 1 }) as TheC[])
-                for (const w2 of A.o({ w: 1 }) as TheC[])
-                    for (const run of w2.o({ run: 1 }) as TheC[]) run.c.driving = false
-            existing.stop()
-            H.drop(existing)
-        }
+        // stop + drop existing H:Story if present (shared with the quitStory hang-up path)
+        H.auto_teardown_story()
 
         // create fresh Story house in a post_do so ghosts are available
         H.post_do(async () => {
@@ -491,6 +492,23 @@
             S.i_elvisto(S, 'think')
             console.log(`▶ Story subHouse created for ${bname}`)
         }, { see: `activate ${bname}` })
+    },
+
+    // auto_teardown_story — stop every drive and drop H:Story, leaving only H:Mundo.  Shared by
+    //  auto_reset_story (which then rebuilds) and the quitStory elvis (a clean hang-up that stays
+    //   idle).  No-op when no Story world is up.  The run is gone; Mundo's representation stays.
+    auto_teardown_story() {
+        const H = this as House
+        const existing = H.o({ H: 'Story' })[0] as House | undefined
+        if (!existing) return
+        // Stop every drive before teardown.  run particles live under w under A
+        //  (S.i({A}).i({w}).i({run})), so the walk must go through the actor level — iterating
+        //   existing.o({w:1}) directly skips A: and trips the `throw "forgot A"`.
+        for (const A of existing.o({ A: 1 }) as TheC[])
+            for (const w2 of A.o({ w: 1 }) as TheC[])
+                for (const run of w2.o({ run: 1 }) as TheC[]) run.c.driving = false
+        existing.stop()
+        H.drop(existing)
     },
 
 //#region Story stats sync

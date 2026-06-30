@@ -1,10 +1,10 @@
 Waft:Keep,equip:Keep,lte_expanded
-  WaftTimes,of_Waft:Ghost/Net/Easy,discovered_at=1782449847030,accessed_at=1782744866929,minimised
+  WaftTimes,of_Waft:Ghost/Net/Easy,discovered_at=1782449847030,accessed_at=1782746680742,minimised
     Cursor,what:What:Security,at=1782722282865
-  WaftTimes,of_Waft:Ghost/Music/Ality,discovered_at=1782449847030,accessed_at=1782744867265
-    Cursor,what:What:MusuSignal (real-audio starvation — the listener's naff time),at=1782744883902
-  WaftTimes,of_Waft:Credence,discovered_at=1782550950085,accessed_at=1782744867379
+  WaftTimes,of_Waft:Ghost/Music/Ality,discovered_at=1782449847030,accessed_at=1782746680795
+    Cursor,what:What:1 the spool,at=1782746682058
+  WaftTimes,of_Waft:Credence,discovered_at=1782550950085,accessed_at=1782746680842
     Cursor,what:What:Musu,at=1782550950086
   Cursor,waft:Ghost/Music/Ality,at=1782744861882
-  WaftTimes,of_Waft:Cluster,discovered_at=1782641801641,accessed_at=1782744867421,minimised
+  WaftTimes,of_Waft:Cluster,discovered_at=1782641801641,accessed_at=1782746680892
   WaftTimes,of_Waft:Keep

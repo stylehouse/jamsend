@@ -34,28 +34,28 @@ story:LakeTiles
         nowriting:^Ghost
         dontSnapGhostList
   TimeSpool
-    TimeTotal:beliefs,avg=1.788
-      sample=1.187,at=1782368855
-      sample=1.05,at=1782532834
-      sample=1.703,at=1782533379
-      sample=1.152,at=1782533534
-      sample=1.152,at=1782533605
-      sample=2.812,at=1782535411
-      sample=1.931,at=1782535487
-      sample=2.343,at=1782539804
-      sample=2.231,at=1782541565
-      sample=2.322,at=1782541775
-    TimeTotal:step,avg=0.199
-      sample=0.132,at=1782368855
-      sample=0.117,at=1782532834
-      sample=0.189,at=1782533379
-      sample=0.128,at=1782533534
-      sample=0.128,at=1782533605
-      sample=0.312,at=1782535411
-      sample=0.215,at=1782535487
-      sample=0.26,at=1782539804
-      sample=0.248,at=1782541565
-      sample=0.258,at=1782541775
+    TimeTotal:beliefs,avg=3.002
+      sample=3.956,at=1782748382
+      sample=2.901,at=1782748407
+      sample=3.46,at=1782749644
+      sample=3.707,at=1782792213
+      sample=3.707,at=1782792232
+      sample=2.608,at=1782792260
+      sample=2.466,at=1782792531
+      sample=2.355,at=1782792688
+      sample=2.182,at=1782792709
+      sample=2.674,at=1782792731
+    TimeTotal:step,avg=0.334
+      sample=0.44,at=1782748382
+      sample=0.322,at=1782748407
+      sample=0.384,at=1782749644
+      sample=0.412,at=1782792213
+      sample=0.412,at=1782792232
+      sample=0.29,at=1782792260
+      sample=0.274,at=1782792531
+      sample=0.262,at=1782792688
+      sample=0.242,at=1782792709
+      sample=0.297,at=1782792731
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
     Entcase:Ting_Point-last
@@ -66,13 +66,13 @@ story:LakeTiles
       lematch,Point:theCompiledStuff,doc:Ghost/test/Story/Lake/LakeTiles.g
         lematch,say,at
           means,spayer,re:say.+at..?{INT},tol:any
-  step,dige:ffd34cee580e880f
-  step=2,dige:cc3363715ff7af97
-  step=3,dige:768d11055b4bcb13
-  step=4,dige:269c86e7a825539b
+  step,dige:e2a15331ad28e22f
+  step=2,dige:67340ef72111d32a
+  step=3,dige:91ae738e88b8c67d
+  step=4,dige:e7572ab338ab9bd1
     note,bug:Cyto edge problems with Leg/PeelGroup/Leg the other PeelGroup alone
-  step=5,dige:4460eab890967893
-  step=6,dige:9796e471802dd930
-  step=7,dige:aad129452bcaf898
-  step=8,dige:4d182f27f73633d6
-  step=9,dige:371b4aca1368854d
+  step=5,dige:85b0b58014e43a23
+  step=6,dige:60a58a8b08e00e2f
+  step=7,dige:d58e4a19ee41fc92
+  step=8,dige:b567bb7e677b7d26
+  step=9,dige:6d5cee981b229349

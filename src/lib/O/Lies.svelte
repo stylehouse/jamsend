@@ -1193,6 +1193,46 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         keep.bump_version()
     },
 
+    //   Lies_keep_layout_host / _get / _set — the ONE (scope,id,key)→value LAYOUT service
+    //    (Backbone_plan P5).  A pose | view-state lives on the Keep so it survives reload, and a
+    //     client names a (scope, id, key) triple through this one front door rather than reaching
+    //      for a store.  THREE scopes, three homes under the one snapped Keep particle —
+    //        'global'  id ignored     → the Keep ROOT sc          (global chrome: the editor expand)
+    //        'waft'    id=<Waft path> → WaftTimes,of_Waft:<id>    (per-Waft: minimise | scroll)
+    //        'lens'    id=<Lens id>   → Layout,of_Lens:<id>       (per-Lens: Brink pose | minimap_open)
+    //      (the 'waft'|'global' homes are the same the cfg|pref stores above use — this is the unified
+    //       door over them plus the new per-Lens Layout home; the typed stores stay for current callers
+    //        until P6 migrates them onto this.)  get is a RAW lookup (no migrate/bump) → $derived-safe;
+    //         absent ⇒ undefined so the caller supplies the default.  set is COALESCED — a write equal
+    //          to the stored value is a no-op (no bump), so an ave→Keep mirror can't feed a write loop
+    //           back (the write-only-on-user-change discipline that keeps the live↔snap loop from
+    //            oscillating).  A flag rides 1-or-absent (null|undefined val deletes); set bumps the Keep
+    //             ROOT so the top-only watch_c re-saves even for a WaftTimes|Layout CHILD mutation.
+    Lies_keep_layout_host(w: TheC, scope: string, id: string, make = false): TheC | undefined {
+        const keep = w.o({ Waft: 'Keep' })[0] as TheC | undefined
+        if (!keep) return undefined
+        if (scope === 'global') return keep
+        if (scope === 'waft')   return make ? keep.oai({ WaftTimes: 1, of_Waft: id })
+                                            : keep.o({ WaftTimes: 1, of_Waft: id })[0] as TheC | undefined
+        if (scope === 'lens')   return make ? keep.oai({ Layout: 1, of_Lens: id })
+                                            : keep.o({ Layout: 1, of_Lens: id })[0] as TheC | undefined
+        return undefined
+    },
+    Lies_keep_layout_get(w: TheC, scope: string, id: string, key: string): any {
+        return (this as House).Lies_keep_layout_host(w, scope, id)?.sc[key]
+    },
+    Lies_keep_layout_set(w: TheC, scope: string, id: string, key: string, val: any): void {
+        const H    = this as House
+        const keep = w.o({ Waft: 'Keep' })[0] as TheC | undefined
+        if (!keep) return                                    // no Keep yet (early boot | runner) — drop
+        const want = val != null ? val : undefined
+        if (H.Lies_keep_layout_get(w, scope, id, key) === want) return   // coalesce — no feedback loop
+        const host = H.Lies_keep_layout_host(w, scope, id, true)!
+        if (want != null) host.sc[key] = want
+        else delete host.sc[key]                             // 1-or-absent: the default IS the absence
+        keep.bump_version()
+    },
+
     //   Lies_keep_note — accumulate a Waft into the ledger: discovered_at once, accessed_at
     //    now.  No-op until the Keep has loaded (early boot opens catch up on next focus).
     Lies_keep_note(w: TheC, path: string): TheC | undefined {

@@ -1,0 +1,172 @@
+// Mesh.g — the whole platform as ONE sync that sees itself in several places, with the EDGES between them.
+//  Stages 8 (Mesh) + 9 (Stretch) of the jamsend platform (Musuation.g MusuCrate_filaments).  Each client
+//   is a replica of the C** state; each link is an %edge with a COST and a KIND:
+//     'peer'  — a webrtc link between two clients (cheap; local; the cafe's LAN).
+//     'relay' — the uplink out to the relay server (expensive; the metered/quiet link to conserve).
+//  Content should route along the CHEAPEST edges, not always back through the relay — and a relay-only
+//   peer's content should cross the relay ONCE and then forward over webrtc (the multicast STRETCH), so a
+//    cafe full of clients keeps its uplink quiet.
+//
+//  WHAT'S REAL vs MODELLED: the routing + the cost accounting here are the REAL algorithms the live system
+//   will use (Dijkstra cheapest-path; a minimum-cost broadcast tree; counting relay traversals).  The
+//    TRANSPORT is modelled (no sockets) so the policy is deterministically testable in one runner — the
+//     same way Radiola's spool was proven on cursors before Peeroleum carried it.  The real-transport cut
+//      is the Peeroleum @channel multicast (publish once → relay fans out → a peer re-forwards locally);
+//       that lands when two runners can verify it.  Pure verbs, no %req, no scenario.
+
+//#region mesh
+
+// Mesh_build — assemble a graph from a plain spec: nodes (each {id, relay_only?}) and undirected edges
+//  (each {a, b, kind, cost}).  Returns {nodes, ids, adj} where adj[id] = [{to, kind, cost}, ...] both ways.
+//   relay_only marks a peer reachable ONLY across a relay edge (behind NAT) — the source in the cafe case.
+Mesh_build(spec):
+    let nodes = {}
+    let ids = []
+    for (const nd of spec.nodes) {
+        nodes[nd.id] = { id: nd.id, relay_only: nd.relay_only ? 1 : 0 }
+        ids.push(nd.id)
+    }
+    let adj = {}
+    for (const id of ids) adj[id] = []
+    for (const e of spec.edges) {
+        adj[e.a].push({ to: e.b, kind: e.kind, cost: e.cost })
+        adj[e.b].push({ to: e.a, kind: e.kind, cost: e.cost })
+    }
+    return { nodes: nodes, ids: ids, adj: adj }
+
+// Mesh_route — Dijkstra cheapest path `from`→`to` over edge costs.  Returns {path:[ids], cost, relays}
+//  where relays = how many RELAY-kind edges the path crosses (the uplink hops it costs).  null if
+//   unreachable.  No priority queue (graphs are tiny — a cafe, not the internet); a linear min-scan over
+//    the unsettled set is plenty and keeps it legible.
+Mesh_route(graph, from, to):
+    let dist = {}
+    let prev = {}
+    let done = {}
+    for (const id of graph.ids) dist[id] = Infinity
+    dist[from] = 0
+    let guard = 0
+    while (guard < graph.ids.length + 1) {
+        guard = guard + 1
+        // pick the nearest unsettled node.
+        let u = null
+        let best = Infinity
+        for (const id of graph.ids) {
+            if (done[id]) continue
+            if (dist[id] < best) {
+                best = dist[id]
+                u = id
+            }
+        }
+        if (u == null) break
+        done[u] = 1
+        if (u === to) break
+        for (const e of graph.adj[u]) {
+            let nd = dist[u] + e.cost
+            if (nd < dist[e.to]) {
+                dist[e.to] = nd
+                prev[e.to] = { from: u, kind: e.kind, cost: e.cost }
+            }
+        }
+    }
+    if (dist[to] === Infinity) return null
+    // walk prev back to source, counting relay-kind hops.
+    let path = [to]
+    let relays = 0
+    let cur = to
+    while (cur !== from) {
+        let p = prev[cur]
+        if (!p) return null
+        if (p.kind === 'relay') relays = relays + 1
+        path.unshift(p.from)
+        cur = p.from
+    }
+    return { path: path, cost: +dist[to].toFixed(3), relays: relays }
+
+// Mesh_broadcast_naive — the un-stretched baseline: the source delivers a SEPARATE copy to every other
+//  node, each over its own cheapest path (everyone independently pulls from where the content is).  Tally
+//   the total cost and — the number that matters — total RELAY traversals: in the cafe case the source is
+//    relay-only, so every client's path crosses the uplink, and the relay carries the content N times.
+//     Returns {reached, relays, cost, per:{id:route}}.
+Mesh_broadcast_naive(graph, source):
+    let relays = 0
+    let cost = 0
+    let reached = 0
+    let per = {}
+    for (const id of graph.ids) {
+        if (id === source) continue
+        let r = this.Mesh_route(graph, source, id)
+        per[id] = r
+        if (r) {
+            reached = reached + 1
+            relays = relays + r.relays
+            cost = cost + r.cost
+        }
+    }
+    return { reached: reached, relays: relays, cost: +cost.toFixed(3), per: per }
+
+// Mesh_broadcast_stretch — THE STRETCH: a single minimum-cost broadcast TREE rooted at the source.  The
+//  content flows out ONCE per edge of the tree — each node receives from its cheapest already-reached
+//   neighbour (Prim's tree, grown by cheapest connecting edge).  Because a webrtc peer-edge is far cheaper
+//    than the relay uplink, once ONE cafe client has the content over the relay the rest receive it over
+//     webrtc — so the relay edge is traversed ONCE, not once-per-client.  The multicast domain "stretches"
+//      over the peer edges.  Returns {reached, relays, cost, tree:[{from,to,kind,cost}]}.
+Mesh_broadcast_stretch(graph, source):
+    let intree = {}
+    intree[source] = 1
+    let tree = []
+    let relays = 0
+    let cost = 0
+    let guard = 0
+    while (guard < graph.ids.length) {
+        guard = guard + 1
+        // cheapest edge from the reached set to an unreached node.
+        let pick = null
+        for (const id of graph.ids) {
+            if (!intree[id]) continue
+            for (const e of graph.adj[id]) {
+                if (intree[e.to]) continue
+                if (!pick || e.cost < pick.cost) pick = { from: id, to: e.to, kind: e.kind, cost: e.cost }
+            }
+        }
+        if (!pick) break
+        intree[pick.to] = 1
+        tree.push(pick)
+        cost = cost + pick.cost
+        if (pick.kind === 'relay') relays = relays + 1
+    }
+    let reached = 0
+    for (const id of graph.ids) if (intree[id] && id !== source) reached = reached + 1
+    return { reached: reached, relays: relays, cost: +cost.toFixed(3), tree: tree }
+
+// Mesh_cafe_spec — the canonical cafe scenario as a spec (the user's case): a relay-only SOURCE (behind
+//  NAT) and `clients` cafe clients.  Each client has a costly relay/uplink edge to the source AND cheap
+//   webrtc peer-edges to the other clients (a local full mesh).  Feeding this to naive vs stretch shows the
+//    uplink carrying the content N times vs once.  RELAY_COST ≫ PEER_COST is the whole point.
+Mesh_cafe_spec(clients):
+    let RELAY_COST = 10
+    let PEER_COST = 1
+    let n = clients || 3
+    let nodes = [{ id: 'source', relay_only: 1 }]
+    let edges = []
+    let names = []
+    let i = 0
+    while (i < n) {
+        let id = 'cafe' + i
+        names.push(id)
+        nodes.push({ id: id })
+        // the uplink: every client can reach the relay-only source, but it costs.
+        edges.push({ a: 'source', b: id, kind: 'relay', cost: RELAY_COST })
+        i = i + 1
+    }
+    // the local webrtc full mesh between cafe clients (cheap).
+    let a = 0
+    while (a < names.length) {
+        let b = a + 1
+        while (b < names.length) {
+            edges.push({ a: names[a], b: names[b], kind: 'peer', cost: PEER_COST })
+            b = b + 1
+        }
+        a = a + 1
+    }
+    return { nodes: nodes, edges: edges }
+//#endregion

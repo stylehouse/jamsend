@@ -21,13 +21,22 @@
 //    node scripts/runner_ask.mjs accept                  # RE-RECORD: accept the live run's steps as the new
 //                                                          #  fixture (the Accept-All button, over the wire) —
 //                                                           #   the only sanctioned re-record path (never headless)
+//    node scripts/runner_ask.mjs release                 # hang up: drop our engagement lease + GC the runs,
+//                                                          #  tearing the runner's Story world down to H:Mundo (idle)
+//
+//  ENGAGEMENT: `run` takes a soft 10-min lease on the runner, keyed by this CLI's stable client id (the
+//   claude cluster prepub from .env.cluster-claude, or RUNNER_CLIENT).  A second client is refused while the
+//    lease is live ("don't run into each other's runners"); the same client re-attaches.  ping/state report
+//     the lease + favourite_client.  After a `release` (or 10-min idle timeout), `@uid` on a reaped run says
+//      it was garbage-collected, not a bare miss.
 //
 //  RUNNER_URL overrides the relay origin (default http://172.17.0.1:9091 — the runner dev server as seen
 //   from the claude container; use http://localhost:9091 if running on the host).  Exit 1 when a --watch
 //    run finishes red (outcome not ok) or the request errors, else 0 — so it scripts.
 import { WebSocket } from 'ws'
+import { readFileSync } from 'node:fs'
 
-const OPS = ['ping', 'run', 'state', 'steps', 'snap', 'rungos', 'accept']
+const OPS = ['ping', 'run', 'state', 'steps', 'snap', 'rungos', 'accept', 'release']
 const argv  = process.argv.slice(2)
 const flags = new Set(argv.filter(a => a.startsWith('--')))
 const uidTok = argv.find(a => a.startsWith('@'))             // @uid → target a HELD run's frozen pins
@@ -37,13 +46,28 @@ const op    = pos[0]
 const arg   = pos[1]
 const watch = flags.has('--watch')
 if (!op || !OPS.includes(op)) {
-	console.error('usage: node scripts/runner_ask.mjs <ping|run <Book>|state|steps|snap <n>|rungos|accept> [@uid] [--watch]')
+	console.error('usage: node scripts/runner_ask.mjs <ping|run <Book>|state|steps|snap <n>|rungos|accept|release> [@uid] [--watch]')
 	process.exit(2)
 }
 if (op === 'run' && !arg)  { console.error('run needs a Book: node scripts/runner_ask.mjs run <Book>'); process.exit(2) }
 if (op === 'snap' && !arg) { console.error('snap needs a step number: node scripts/runner_ask.mjs snap <n>'); process.exit(2) }
 
-const ask = { op }
+// clientId — the stable identity the runner records as the engagement holder (its don't-steal lease).
+//  Prefer the claude cluster prepub (.env.cluster-claude → CLUSTER_IDENTO_CLAUDE_PUB, first 16 hex) so the
+//   lease is STABLE across invocations — the runner can tell "was it you?" and let us re-attach to our own
+//    held runner instead of refusing.  Override with RUNNER_CLIENT; fall back to a fixed tag if no key.
+function clientId() {
+	if (process.env.RUNNER_CLIENT) return process.env.RUNNER_CLIENT
+	try {
+		const env = readFileSync(new URL('../.env.cluster-claude', import.meta.url), 'utf8')
+		const m = env.match(/CLUSTER_IDENTO_CLAUDE_PUB=([0-9a-fA-F]{16,})/)
+		if (m) return m[1].slice(0, 16)
+	} catch { /* no key file — fall through */ }
+	return 'claude-cli'
+}
+const CLIENT = clientId()
+
+const ask = { op, client: CLIENT }
 if (op === 'run')  ask.book = arg
 if (op === 'snap') ask.n = Number(arg)
 if (uid) ask.uid = uid
@@ -87,9 +111,13 @@ if (reply.control !== 'runner_ack') { console.error(`✗ ${op}: ${reply.error ??
 else if (op === 'snap' && reply.result?.got_snap) {
 	console.error(`snap: Step ${reply.result.n} ok=${reply.result.ok} dige=${reply.result.dige}`)
 	process.stdout.write(reply.result.got_snap.endsWith('\n') ? reply.result.got_snap : reply.result.got_snap + '\n')
+} else if (reply.ok === false) {
+	// a refused/failed op — surface the runner's reason on stderr (busy lease, GC'd run, unknown Book…)
+	console.error(`✗ ${op}: ${reply.result?.error ?? 'failed'}`)
+	if (reply.result?.engagement) console.error(`  lease: ${JSON.stringify(reply.result.engagement)}`)
+	exitCode = 1
 } else {
 	console.log(`${op}: ${JSON.stringify({ ok: reply.ok, ...reply.result })}`)
-	if (reply.ok === false) exitCode = 1
 }
 
 // --watch (run|state): poll state until the Storyrun phase settles done|failed, narrating each change.

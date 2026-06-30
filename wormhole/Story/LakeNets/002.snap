@@ -41,6 +41,9 @@ Snap:H
               Doc:Ghost/test/Story/Lake/LakeAntecedents.g
               Point,method:Peeroleum
               Point,method:Harbour
+        Funkcions
+          req:Waftica,waft:Story/LakeNets/Waftily,eternal,ok
+            Lango:Cursor,to:Ghost/test/Story/Lake/LakeAmeliorations.g,cold	{"mung":["seq"]}
         req:desire
           req:acquire,maz=9,finished
           Waft:Story/LakeNets/Waftily	{"ref":{"src":"%Waft:Story/LakeNets/Waftily, active:1"}}
@@ -49,10 +52,11 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1782537774094,kind:cold
-          want=1782537774145,kind:cold
-          want=1782537774297,kind:cold,resolved
+          want=1782792342901,kind:cold
+          want=1782792342950,kind:cold
+          want=1782792343153,kind:cold,resolved
         o_elvis:dock_askies
+        req:Langoer,eternal,focus:Story/LakeNets/Waftily,ok	{"ref":{"w":"%w:Lies"}}
         see:🗂 1 doc · 1 Waft
     A:Lang
       self,round=15	{"mung":["age"]}
@@ -73,7 +77,7 @@ Snap:H
             Compile
               Map
                 def,method:LakeNetherland,line=2,rel_from,rel_to=16
-              time,compile=0.004,all=0.294
+              time,compile=0.003,all=0.273
               Output,gen_path:gen/test/Story/Lake/LakeAmeliorations.go,dige:66dc96483acf789c,source_dige:5243d16758eb710b
                source: |
                  <script lang="ts">
@@ -117,7 +121,7 @@ Snap:H
           Change
             backend,dige:5243d
             storage,dige:5243d
-            compile,dige:5243d,secs=0.004,dim,pending
+            compile,dige:5243d,secs=0.003,dim,pending
         req:workon,auto_push=0	{"ref":{"w":"%w:Lang"}}
           req:understanding,maz=3,permanent,sig:1:13:1:0,what:story,finished
           req:ingredients,maz=2,permanent,sig:Ghost/test/Story/Lake/LakeAmeliorations.g,finished

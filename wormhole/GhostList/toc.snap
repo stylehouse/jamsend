@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1782737757128
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1782747097002
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -128,3 +128,5 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
   group:Ghost/M,dir:Ghost/M
     Doc:Ghost/M/Radiola.g,name:Radiola,noticed_at=1782393617713
     Doc:Ghost/M/Crate.g,name:Crate,noticed_at=1782728089797
+    Doc:Ghost/M/Mixer.g,name:Mixer,noticed_at=1782747044367
+    Doc:Ghost/M/Mesh.g,name:Mesh,noticed_at=1782747097002

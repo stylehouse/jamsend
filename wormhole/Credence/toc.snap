@@ -23,6 +23,9 @@ Waft:Credence
       Funkcion:Storying,of_Book:MusuTune
       Funkcion:Storying,of_Book:MusuRadio
     Funkcion:Storying,of_Book:MusuCrate
+    Funkcion:Storying,of_Book:MusuMesh
+    Funkcion:Storying,of_Book:MusuMix
+    Funkcion:Storying,of_Book:MusuCue
   What:Lake
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:LakeSurfer

@@ -12,6 +12,9 @@ Waft:Ghost/Music/Ality,active
     Funkcion:Storying,of_Book:MusuTune
     Funkcion:Storying,of_Book:MusuRadio
     Funkcion:Storying,of_Book:MusuCrate
+    Funkcion:Storying,of_Book:MusuMix
+    Funkcion:Storying,of_Book:MusuMesh
+    Funkcion:Storying,of_Book:MusuCue
   What:the machine
     What:1 the spool
       Doc:Ghost/M/Radiola.g
@@ -121,6 +124,38 @@ Waft:Ghost/Music/Ality,active
       Doc:Ghost/M/Crate.g
       Point,method:Crate_fetch_record
       Point,method:Crate_fetch_some
+    What:MusuMix (the cellular mixer — beat detection / beatmatch / multi-cell sum / crossfade)
+      Doc:Ghost/Story/Musuation.g
+      Point,method:MusuMix_load
+      Point,method:MusuMix_match
+      Point,method:MusuMix_mix
+      Point,method:MusuMix_fade
+      Point,method:MusuMix_witness
+      Doc:Ghost/M/Mixer.g
+      Point,method:Mix_tempo
+      Point,method:Mix_beatmatch
+      Point,method:Mix_render_sum
+      Point,method:Mix_crossfade
+    What:MusuMesh (the sync that sees itself — replicas / cheapest-route / multicast stretch)
+      Doc:Ghost/Story/Musuation.g
+      Point,method:MusuMesh_build
+      Point,method:MusuMesh_cast
+      Point,method:MusuMesh_scale
+      Point,method:MusuMesh_witness
+      Doc:Ghost/M/Mesh.g
+      Point,method:Mesh_route
+      Point,method:Mesh_broadcast_naive
+      Point,method:Mesh_broadcast_stretch
+      Point,method:Mesh_cafe_spec
+    What:MusuCue (the DJ headset — replica phone monitors the off-air deck / beatmatches / brings it in)
+      Doc:Ghost/Story/Musuation.g
+      Point,method:MusuCue_setup
+      Point,method:MusuCue_monitor
+      Point,method:MusuCue_match
+      Point,method:MusuCue_bring_in
+      Point,method:MusuCue_witness
+      Doc:Ghost/M/Mixer.g
+      Point,method:Mix_align
   What:the source it reimagines
     Doc:src/lib/ghost/Radios.svelte
     Point,method:listening

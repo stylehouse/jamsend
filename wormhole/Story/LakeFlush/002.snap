@@ -1,12 +1,12 @@
 Snap:H
   H:LakeFlush,Run
     A:Lies
-      self,round=22	{"mung":["age"]}
+      self,round=23	{"mung":["age"]}
       w:Lies
         Opt
           nowriting
           dontSnapGhostList
-        self,round=22	{"mung":["age"]}
+        self,round=23	{"mung":["age"]}
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/LakeFlush/Waftily/toc.snap,waft_path:Story/LakeFlush/Waftily
             known,dige:5b0ee5288a2a7085,kind:read	{"mung":["at"]}
@@ -18,7 +18,7 @@ Snap:H
           req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
           Spotlight	{"ref":{"src":"%What:peer"}}
         req:Cortex,eternal,maz=5,ok
-        Waft:Story/LakeFlush/Waftily
+        Waft:Story/LakeFlush/Waftily,active
           What:foundations
             What:story
               Doc:Ghost/test/Story/Lake/LakeAmeliorations.g
@@ -42,28 +42,32 @@ Snap:H
             What:peer
               Doc:Ghost/test/Story/Lake/LakeAntecedents.g
               Point,method:Peeroleum
+        Funkcions
+          req:Waftica,waft:Story/LakeFlush/Waftily,eternal,ok
+            Lango:Cursor,to:Ghost/test/Story/Lake/LakeAntecedents.g	{"mung":["seq"]}
         req:desire
           req:acquire,maz=9,finished
-          Waft:Story/LakeFlush/Waftily	{"ref":{"src":"%Waft:Story/LakeFlush/Waftily"}}
+          Waft:Story/LakeFlush/Waftily	{"ref":{"src":"%Waft:Story/LakeFlush/Waftily, active:1"}}
         o_elvis:Lies_desire_play
         o_elvis:Lies_desire_pause
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1782306399312,kind:cold
-          want=1782306399364,kind:cold
-          want=1782306399514,kind:cold
-          want=1782306401505,kind:test,resolved
+          want=1782792468774,kind:cold
+          want=1782792468821,kind:cold
+          want=1782792469031,kind:cold
+          want=1782792471234,kind:test,resolved
         o_elvis:dock_askies
+        req:Langoer,eternal,focus:Story/LakeFlush/Waftily,ok	{"ref":{"w":"%w:Lies"}}
         log:gen_write,path:gen/test/Story/Lake/LakeAntecedents.go,dige:e9aa19c1
         see:🗂 2 docs · 1 Waft
     A:Lang
-      self,round=25	{"mung":["age"]}
+      self,round=24	{"mung":["age"]}
       w:Lang
         Opt
           txtsyntaxdump
           nogen
-        self,round=25	{"mung":["age"]}
+        self,round=24	{"mung":["age"]}
         model,cyto_dir
         docks
           dock:Ghost/test/Story/Lake/LakeAmeliorations.g
@@ -75,7 +79,7 @@ Snap:H
             Compile
               Map
                 def,method:LakeNetherland,line=2,rel_from,rel_to=16
-              time,compile=0.002,all=0.253
+              time,compile=0.001,all=0.252
               Output,gen_path:gen/test/Story/Lake/LakeAmeliorations.go,dige:66dc96483acf789c,source_dige:5243d16758eb710b
                source: |
                  <script lang="ts">
@@ -117,7 +121,7 @@ Snap:H
                 def,method:transport,line=5,rel_from=65,rel_to=75
                 def,method:PeerJS,line=7,rel_from=108,rel_to=115
                 def,method:Socket,line=9,rel_from=145,rel_to=152
-              time,compile=0.002,all=0.145
+              time,compile=0.001,all=0.208
               Output,gen_path:gen/test/Story/Lake/LakeAntecedents.go,dige:e9aa19c131ec60a2,source_dige:69f9fd8539393ad7
                source: |
                  <script lang="ts">
@@ -163,14 +167,14 @@ Snap:H
           lematch	{"ref":{"sc_has":"Object()"}}
             lematch	{"ref":{"sc_has":"Object()"}}
         Languinio	{"loopy":2}
-          Interest:Trail,waft:Story/LakeFlush/Waftily,lens:NaviCado,presence:active,state:locked,in_Doc:Ghost/test/Story/Lake/LakeAntecedents.g	{"ref":{"src":"%What:peer"}}
+          Interest:Trail,waft:Story/LakeFlush/Waftily,face:NaviCado,presence:active,state:locked,in_Doc:Ghost/test/Story/Lake/LakeAntecedents.g	{"ref":{"src":"%What:peer"}}
             cursor,what:Story/LakeFlush/Waftily,doc:Story/LakeFlush/Waftily/doc0,depth=0
             MapReport,n_def=4,n_call=0,n_region=0,n_cf=0
           ActiveInterest,kind:Trail,waft:Story/LakeFlush/Waftily
           Change
             backend,dige:69f9f
             storage,dige:69f9f
-            compile,dige:69f9f,secs=0.002,dim,pending
+            compile,dige:69f9f,secs=0.001,dim,pending
           dock,active	{"loopy":0,"hid":1}
         req:workon,auto_push	{"ref":{"w":"%w:Lang"}}
           req:understanding,maz=3,permanent,sig:2:13:0:0,what:peer,finished

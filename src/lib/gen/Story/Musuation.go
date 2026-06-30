@@ -10,7 +10,7 @@ import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Musuation(): string { return 'cfdb09d6c6f21eae' },
+    Ghostmeta_Ghost_Story_Musuation(): string { return '74ef68fcddf20d3d' },
 
 // Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Music_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
@@ -1842,30 +1842,30 @@ MusuCrate_filaments(w) {
     pier.oai({todo: 'coherently perturbable link (latency/jitter/loss) + the listener copes'})
     pier.oai({todo: 'multicast: one caster fans out to many listeners (Peeroleum @channel)'})
     // 6 — MIXER (cells): the cellular music world — many sound-sources at once, pitch/rate-bent to mix.
-    let mix = plat.oai({stage: 1, of: 6, name: 'Mixer'})
-    mix.oai({todo: 'N Cells = N Audiolets into ONE SoundSystem — they sum at the destination'})
-    mix.oai({todo: 'per-Cell pitch/rate bend (playbackRate + detune) to beatmatch two tracks'})
-    mix.oai({todo: 'per-Cell gain — crossfade one Cell out as another comes in'})
+    let mix = plat.oai({stage: 1, of: 6, name: 'Mixer', built: 1})
+    mix.oai({done: 'N Cells render-summed into ONE OfflineAudioContext — they add at the destination (Mixer.g + MusuMix)'})
+    mix.oai({done: 'beat detection (onset env + autocorrelation) + beatmatch — bend B by bpmA/bpmB — proven by re-measure'})
+    mix.oai({done: 'equal-power crossfade holds loudness across the seam where a linear fade dips'})
+    mix.oai({todo: 'live online voice: N real Audiolets summing in real time (gesture-gated) not just offline'})
     mix.oai({todo: 'per-Cell expected-play timeline — coverage/gaps judged per Cell not globally'})
     // 7 — DJ CUE (live C** replication to a phone): the headset deck, monitor + sync before the mix.
-    let cue = plat.oai({stage: 1, of: 7, name: 'DJ-cue'})
-    cue.oai({todo: 'live-replicate the Mixer C** to a phone via the Pier (particle-state sync)'})
-    cue.oai({todo: 'phone renders the OTHER Cell pre-fader — the headset monitor'})
-    cue.oai({todo: 'beatmatch: bend the cued Cell rate to align then bring it into the main mix'})
+    let cue = plat.oai({stage: 1, of: 7, name: 'DJ-cue', built: 1})
+    cue.oai({done: 'phone replica holds the cell descriptors + re-renders the off-air deck from synced state (MusuCue)'})
+    cue.oai({done: 'beatmatch the cued deck → beat-GRID alignment jumps (onset cross-correlation) → bring into the mix'})
+    cue.oai({todo: 'real C** sync over the Pier transport — the descriptor replication is modelled not socket-backed'})
     // 8 — MESH (replicas + edges): the whole platform is ONE sync that sees itself in several places, with
     //  the edges between them.  Each client a replica of the C** state; each link an %edge with a cost.
     //   DJ-cue / listener / mixer are all just this — routing along edges.
-    let mesh = plat.oai({stage: 1, of: 8, name: 'Mesh'})
-    mesh.oai({todo: 'N client replicas of the C** state — the sync sees itself in several places'})
-    mesh.oai({todo: '%edge per link: webrtc peer-edge (cheap) vs relay-edge (uplink) — each a cost'})
-    mesh.oai({todo: 'content routes along the CHEAPEST edges — not always back through the relay'})
+    let mesh = plat.oai({stage: 1, of: 8, name: 'Mesh', built: 1})
+    mesh.oai({done: '%node replicas + %edge per link (peer/relay each a cost) — graph model (Mesh.g + MusuMesh)'})
+    mesh.oai({done: 'content routes the CHEAPEST edges — Dijkstra picks a 2-hop peer path over a costly relay'})
+    mesh.oai({todo: 'real C** state replication over the transport — model is deterministic not yet socket-backed'})
     // 9 — STRETCH (multicast over the mesh): a relay-only peer sends ONCE; a webrtc-peered client forwards
     //  it locally so the uplink/relay stays quiet.  The multicast domain stretches over the peer edges.
-    let stretch = plat.oai({stage: 1, of: 9, name: 'Stretch'})
-    stretch.oai({todo: 'relay sends once to one peer — it fans out over webrtc to the rest (cut relay fan-out)'})
-    stretch.oai({todo: 'two webrtc peers share a third relay-only peer content — domain stretches'})
-    stretch.oai({todo: 'cafe: many clients one quiet uplink — the local mesh carries the rest'})
-    stretch.oai({todo: 'build on Peeroleum @channel multicast — turn relay-fanout into peer-forwarding'})
+    let stretch = plat.oai({stage: 1, of: 9, name: 'Stretch', built: 1})
+    stretch.oai({done: 'min-cost broadcast tree: relay crossed ONCE then webrtc-forwarded (Mesh.g + MusuMesh)'})
+    stretch.oai({done: 'cafe stays quiet: naive uplink = N clients but the stretch uplink stays 1 at any crowd size'})
+    stretch.oai({todo: 'build on Peeroleum @channel multicast — turn relay-fanout into peer-forwarding (needs 2 runners)'})
     return plat
 
 },
@@ -1924,6 +1924,528 @@ MusuCrate_witness(w) {
     if (secs_ok >= 2 && !(w.oa({witnessed: "playable"}))) w.i({witnessed: "playable"})
     // helps: Glide cut real dropouts vs no-control on REAL music (at least one track) -- the claim that matters.
     if (helped >= 1 && !(w.oa({witnessed: "helps"}))) w.i({witnessed: "helps"})
+},
+//#endregion
+
+//#region mix — REAL-AUDIO family #5: the CELLULAR mixer (stage 6) — two decks beatmatched + crossfaded
+// ══ MusuMix — does the deck actually beatmatch and crossfade REAL audio? ═══════════════════════════
+//  Two Cells (Ghost/M/Mixer.g): deck A a 120-bpm beat-track, deck B a 96-bpm one (distinct roots), each
+//   carrying a real kick on its beat grid.  Every claim is measured off audio an OfflineAudioContext
+//    rendered — tempo RECOVERED by autocorrelation (not the number we synthesised with), the beatmatch
+//     PROVEN by bending B and re-measuring it at A's tempo, the mix shown to SUM two cells, and the
+//      crossfade shown to hold its loudness (equal-power) where a linear fade would dip.  Deterministic
+//       (synth + offline render, no wall clock) so the snap is stable.  Browser-only (skips headless).
+//        beat 2  LOAD   — synth deck A (120) + deck B (96); recover each tempo from rendered PCM
+//        beat 3  MATCH  — beatmatch B to A (rate=bpmA/bpmB); RE-RENDER B at that rate; re-measure → A's bpm
+//        beat 4  MIX    — render the SUM of both cells + each solo; the mix carries more energy (they add)
+//        beat 5  FADE   — crossfade A↦B equal-power vs linear; equal holds flat, linear dips in the middle
+//        beat 6  witness — two_tracks / tempo_detected / beatmatched / cells_sum / crossfade_holds /
+//                           crossfade_discriminates  (degrade any DSP leg → a witness drops, the step reds)
+//  NOTE: %witnessed latches (not %see) for uniformity with the 11 sibling Musu* Books; the snap-fixture
+//   diff is the gate.  The witnesses are structural + DIFFERENTIAL — no single number we typed satisfies them.
+MusuMix(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuMix_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// MusuMix_drive — OfflineAudioContext gate (skip headless), then per-beat dispatch off step_n (req-local
+//  did_step, set before any await so a re-pump never re-runs a render).
+async MusuMix_drive(w, req) {
+    if (typeof OfflineAudioContext === 'undefined') {
+        if (!w.oa({skipped: 'no_audio'})) w.i({skipped: 'no_audio'})
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuMix_load(w)
+        if (n === 3) await this.MusuMix_match(w)
+        if (n === 4) await this.MusuMix_mix(w)
+        if (n === 5) await this.MusuMix_fade(w)
+        if (n === 6) this.MusuMix_witness(w)
+    }
+    await this.Musu_float(w)
+
+},
+// MusuMix_load — beat 2: synth two beat-tracks as %Cell particles (chunks ride .c, bpm/root snap), then
+//  RECOVER each cell's tempo from its real PCM with Mix_tempo (autocorrelation) — the measured bpm is what
+//   the rest of the Book uses, never the synth target, so a broken detector shows immediately.
+async MusuMix_load(w) {
+    let deck = w.oai({Mix: 1, name: 'deck'})
+    deck.c.up = w
+    this.MusuMix_cell(w, 'A', 200, 120, 110)
+    this.MusuMix_cell(w, 'B', 200, 96, 147)
+
+},
+// MusuMix_cell — one deck: synth `nchunks` of beat-track at `bpm`/`root`, stamp a %Cell (chunks on .c), and
+//  measure its tempo off the flattened PCM.  measured_bpm is the recovered reading.
+MusuMix_cell(w, deck, nchunks, bpm, root) {
+    let chunks = this.Mix_synth_beat(nchunks, bpm, root)
+    let pcm = this.Mix_pcm_of(chunks, 0)
+    let measured = this.Mix_tempo(pcm, 48000)
+    let cell = w.i({Cell: 1, deck: deck, bpm: bpm, root: root, nchunks: nchunks, measured_bpm: measured})
+    cell.c.up = w
+    cell.c.chunks = chunks
+    return cell
+
+},
+// MusuMix_match — beat 3: compute the beatmatch rate from the RECOVERED tempos, bend deck B by it through a
+//  REAL OfflineAudioContext resample, and re-measure the bent audio — it must now read A's tempo.  Stamps
+//   the rate + the matched reading on cell B (the differential proof lives in the witness).
+async MusuMix_match(w) {
+    let a = w.o({Cell: 1, deck: 'A'})[0]
+    let b = w.o({Cell: 1, deck: 'B'})[0]
+    if (!a || !b) return
+    let rate = this.Mix_beatmatch(+(a.sc.measured_bpm ?? 0), +(b.sc.measured_bpm ?? 0))
+    let bent = await this.Mix_render_rate(b.c.chunks, rate)
+    let matched = bent ? this.Mix_tempo(bent, 48000) : 0
+    b.sc.match_rate = rate
+    b.sc.matched_bpm = matched
+    b.c.bent = bent
+    b.bump()
+
+},
+// MusuMix_mix — beat 4: render the SUM of both cells (deck B beatmatched) through one OfflineAudioContext —
+//  exactly how N Audiolets sum at one destination — and each cell solo.  The mix RMS must exceed either
+//   solo's (two uncorrelated sources add).  Stamps the three levels on the %Mix headline.
+async MusuMix_mix(w) {
+    let a = w.o({Cell: 1, deck: 'A'})[0]
+    let b = w.o({Cell: 1, deck: 'B'})[0]
+    let deck = w.o({Mix: 1})[0]
+    if (!a || !b || !deck) return
+    let rate = +(b.sc.match_rate ?? 1)
+    let mixed = await this.Mix_render_sum([{ chunks: a.c.chunks, rate: 1, gain: 1 }, { chunks: b.c.chunks, rate: rate, gain: 1 }])
+    let soloA = await this.Mix_render_sum([{ chunks: a.c.chunks, rate: 1, gain: 1 }])
+    let soloB = await this.Mix_render_sum([{ chunks: b.c.chunks, rate: rate, gain: 1 }])
+    deck.sc.mix_rms = mixed ? this.Mix_rms(mixed) : 0
+    deck.sc.soloA_rms = soloA ? this.Mix_rms(soloA) : 0
+    deck.sc.soloB_rms = soloB ? this.Mix_rms(soloB) : 0
+    deck.bump()
+
+},
+// MusuMix_fade — beat 5: crossfade deck A's tail into deck B's head over ~2s, BOTH ways (equal-power and
+//  linear), and reduce each to its midpoint-vs-edges loudness ratio.  Equal-power holds (~1.0); linear dips
+//   (~0.7) — the negative control proving the equal-power law isn't vacuous.  Stamps both ratios.
+async MusuMix_fade(w) {
+    let a = w.o({Cell: 1, deck: 'A'})[0]
+    let b = w.o({Cell: 1, deck: 'B'})[0]
+    let deck = w.o({Mix: 1})[0]
+    if (!a || !b || !deck) return
+    let N = 40 * 2400
+    let pa = this.Mix_pcm_of(a.c.chunks, 0)
+    let pb = this.Mix_pcm_of(b.c.chunks, 0)
+    let a_tail = pa.slice(Math.max(0, pa.length - N))
+    let b_head = pb.slice(0, N)
+    let equal = this.Mix_crossfade(a_tail, b_head, 'equal')
+    let linear = this.Mix_crossfade(a_tail, b_head, 'linear')
+    deck.sc.equal_dip = this.Mix_thirds_dip(equal)
+    deck.sc.linear_dip = this.Mix_thirds_dip(linear)
+    deck.bump()
+
+},
+// MusuMix_witness — the DSP claims, earned.  Structural + differential; idempotent stamps polled at beat 6.
+MusuMix_witness(w) {
+    let a = w.o({Cell: 1, deck: 'A'})[0]
+    let b = w.o({Cell: 1, deck: 'B'})[0]
+    let deck = w.o({Mix: 1})[0]
+    if (!a || !b || !deck) return
+    let ma = +(a.sc.measured_bpm ?? 0)
+    let mb = +(b.sc.measured_bpm ?? 0)
+    let matched = +(b.sc.matched_bpm ?? 0)
+    let mix = +(deck.sc.mix_rms ?? 0)
+    let sa = +(deck.sc.soloA_rms ?? 0)
+    let sb = +(deck.sc.soloB_rms ?? 0)
+    let eq = +(deck.sc.equal_dip ?? 0)
+    let lin = +(deck.sc.linear_dip ?? 1)
+    let bigger = sa > sb ? sa : sb
+    // two_tracks: two cells loaded, each with a recovered (non-zero) tempo.
+    if (ma > 0 && mb > 0 && !(w.oa({witnessed: "two_tracks"}))) w.i({witnessed: "two_tracks"})
+    // tempo_detected: autocorrelation recovered BOTH synthesised tempos within tolerance (A≈120, B≈96) --
+    //  real beat detection off rendered PCM, not the numbers we synthesised with.
+    if (Math.abs(ma - 120) <= 10 && Math.abs(mb - 96) <= 10 && !(w.oa({witnessed: "tempo_detected"}))) w.i({witnessed: "tempo_detected"})
+    // beatmatched: bending B by bpmA/bpmB and RE-RENDERING it makes it measure at A's tempo (|matched-A|<=10)
+    //  while raw B was clearly DIFFERENT (|B-A|>=12) -- the match isn't trivially already-aligned.  Differential.
+    if (Math.abs(matched - ma) <= 10 && Math.abs(mb - ma) >= 12 && !(w.oa({witnessed: "beatmatched"}))) w.i({witnessed: "beatmatched"})
+    // cells_sum: the mix carries meaningfully MORE energy than either deck alone -- two cells actually summed
+    //  at the destination (not one masking the other).  > the louder solo by a real margin.
+    if (mix > bigger * 1.1 && bigger > 0 && !(w.oa({witnessed: "cells_sum"}))) w.i({witnessed: "cells_sum"})
+    // crossfade_holds: the equal-power crossfade keeps its loudness UP across the seam (deterministic ≈0.87)
+    //  -- it does NOT collapse the way a linear fade does.  This isn't a flat ≈1.0 (real beat-tracks have
+    //   kicks at different phases in each third, so material energy varies); the clean gain-law proof is the
+    //    DIFFERENTIAL in crossfade_discriminates.  0.8 floor sits between equal-power (0.87) and linear (0.71)
+    //     so degrading the law to linear reds this too.
+    if (eq >= 0.8 && !(w.oa({witnessed: "crossfade_holds"}))) w.i({witnessed: "crossfade_holds"})
+    // crossfade_discriminates: THE gain-law proof -- a LINEAR fade of the SAME material dips in the middle
+    //  (≤0.8) where equal-power held, and the gap is real (≥0.1).  The negative control with teeth: swap the
+    //   equal-power law for linear and BOTH this and crossfade_holds red.
+    if (lin <= 0.8 && eq - lin >= 0.1 && !(w.oa({witnessed: "crossfade_discriminates"}))) w.i({witnessed: "crossfade_discriminates"})
+
+},
+async MusuMix_order(w) { const H = this;
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'MusuMix') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+},
+//#endregion
+
+//#region mesh — the SYNC THAT SEES ITSELF in several places (stages 8 + 9): replicas, edges, the stretch
+// ══ MusuMesh — does content route the CHEAPEST edges + does multicast stretch keep the uplink quiet? ══
+//  Pure graph (Ghost/M/Mesh.g) — no Web Audio, runs in any runner — proving the ROUTING POLICY the live
+//   transport will ride: each client a replica, each link an %edge with a cost + kind (peer=cheap webrtc,
+//    relay=costly uplink).  The cafe case the user described: a relay-only source feeding N cafe clients
+//     that are webrtc-peered locally.  Naive delivery crosses the uplink once PER client; the multicast
+//      STRETCH (a min-cost broadcast tree) crosses it ONCE and forwards over webrtc — the uplink stays
+//       quiet no matter how full the cafe gets.  Deterministic, so the snap is stable.  The TRANSPORT is
+//        modelled here; the real-socket cut is Peeroleum @channel multicast across two runners.
+//         beat 2  BUILD   — the cafe topology (1 relay-only source + 3 peered clients) as %node/%edge rows
+//         beat 3  ROUTE   — a 2-hop peer path is chosen over a direct costly relay edge (Dijkstra by cost)
+//         beat 4  CAST    — naive broadcast vs stretch on the cafe: uplink crossings N vs 1, total cost down
+//         beat 5  SCALE   — a bigger cafe (6 clients): naive uplink = 6, stretch uplink stays 1
+//         beat 6  witness — topology / routes_cheapest / all_reached / stretch_cuts_relay / cheaper / scales
+MusuMesh(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuMesh_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// MusuMesh_drive — no audio gate (pure graph).  Per-beat dispatch off step_n (req-local did_step).
+async MusuMesh_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.MusuMesh_build(w)
+        if (n === 3) this.MusuMesh_route(w)
+        if (n === 4) this.MusuMesh_cast(w)
+        if (n === 5) this.MusuMesh_scale(w)
+        if (n === 6) this.MusuMesh_witness(w)
+    }
+    await this.MusuMesh_order(w)
+
+},
+// MusuMesh_build — beat 2: build the cafe graph (3 clients) and lay it out as visible particles — a %mesh
+//  with a %node per replica (the relay-only source flagged) and an %edge per link (kind + cost) — so the
+//   snap shows the topology.  The graph object rides w.c (off-snap; the algorithms read it).
+MusuMesh_build(w) {
+    w.i({reached: "step_2"})
+    let spec = this.Mesh_cafe_spec(3)
+    let graph = this.Mesh_build(spec)
+    w.c.graph = graph
+    let mesh = w.oai({mesh: 1, name: 'cafe', clients: 3})
+    mesh.c.up = w
+    for (const nd of spec.nodes) {
+        let node = mesh.oai({node: 1, id: nd.id})
+        if (nd.relay_only) node.sc.relay_only = 1
+    }
+    for (const e of spec.edges) mesh.i({edge: 1, a: e.a, b: e.b, kind: e.kind, cost: e.cost})
+
+},
+// MusuMesh_route — beat 3: a focused routing demo — three nodes where a direct relay edge (cost 10) competes
+//  with a two-hop peer path (1+1).  Dijkstra must pick the peer path, avoiding the uplink.  Stamps the chosen
+//   path cost + relay-hop count on a %route row.
+MusuMesh_route(w) {
+    w.i({reached: "step_3"})
+    let spec = { nodes: [{ id: 'X' }, { id: 'Y' }, { id: 'Z' }], edges: [{ a: 'X', b: 'Z', kind: 'relay', cost: 10 }, { a: 'X', b: 'Y', kind: 'peer', cost: 1 }, { a: 'Y', b: 'Z', kind: 'peer', cost: 1 }] }
+    let g = this.Mesh_build(spec)
+    let r = this.Mesh_route(g, 'X', 'Z')
+    let row = w.oai({route: 1, from: 'X', to: 'Z'})
+    row.c.up = w
+    row.sc.cost = r ? r.cost : -1
+    row.sc.relays = r ? r.relays : -1
+    row.sc.hops = r ? (r.path.length - 1) : -1
+    row.bump()
+
+},
+// MusuMesh_cast — beat 4: broadcast the source's content to the whole cafe two ways and record the cost of
+//  each.  naive = a copy per client over its cheapest path (every path crosses the uplink); stretch = one
+//   min-cost broadcast tree (uplink once, then webrtc forwarding).  Stamps relays/cost/reached per strategy.
+MusuMesh_cast(w) {
+    w.i({reached: "step_4"})
+    let graph = w.c.graph
+    if (!graph) return
+    let naive = this.Mesh_broadcast_naive(graph, 'source')
+    let stretch = this.Mesh_broadcast_stretch(graph, 'source')
+    let mesh = w.oai({mesh: 1, name: 'cafe'})
+    let bn = mesh.oai({broadcast: 1, kind: 'naive'})
+    bn.sc.relays = naive.relays
+    bn.sc.cost = naive.cost
+    bn.sc.reached = naive.reached
+    let bs = mesh.oai({broadcast: 1, kind: 'stretch'})
+    bs.sc.relays = stretch.relays
+    bs.sc.cost = stretch.cost
+    bs.sc.reached = stretch.reached
+    // NEGATIVE CONTROL: the SAME 3 clients but relay-only (NO webrtc peer edges) — there's nothing to
+    //  forward over, so the stretch tree is FORCED onto relay edges and CANNOT cut the uplink (relays
+    //   stay == naive).  This is what gives stretch_cuts_relay teeth: the saving is the peer edges, not
+    //    the algorithm always returning 1.  Without this, "stretch_relays===1" only ever ran on a graph
+    //     rigged to produce it.
+    let ctrl_nodes = [{ id: 'source', relay_only: 1 }, { id: 'c0' }, { id: 'c1' }, { id: 'c2' }]
+    let ctrl_edges = [{ a: 'source', b: 'c0', kind: 'relay', cost: 10 }, { a: 'source', b: 'c1', kind: 'relay', cost: 10 }, { a: 'source', b: 'c2', kind: 'relay', cost: 10 }]
+    let ctrl_g = this.Mesh_build({ nodes: ctrl_nodes, edges: ctrl_edges })
+    let ctrl_naive = this.Mesh_broadcast_naive(ctrl_g, 'source')
+    let ctrl_stretch = this.Mesh_broadcast_stretch(ctrl_g, 'source')
+    let ctrl = mesh.oai({broadcast: 1, kind: 'control_no_peers'})
+    ctrl.sc.naive_relays = ctrl_naive.relays
+    ctrl.sc.stretch_relays = ctrl_stretch.relays
+    mesh.bump()
+
+},
+// MusuMesh_scale — beat 5: a bigger cafe (6 clients) — recompute both strategies' uplink crossings.  Naive
+//  grows with the crowd (6); stretch stays pinned at 1.  This is the headline of the whole feature: the
+//   uplink is quiet regardless of how many clients arrive.  Stamps a %scale row.
+MusuMesh_scale(w) {
+    w.i({reached: "step_5"})
+    let spec = this.Mesh_cafe_spec(6)
+    let g = this.Mesh_build(spec)
+    let naive = this.Mesh_broadcast_naive(g, 'source')
+    let stretch = this.Mesh_broadcast_stretch(g, 'source')
+    let row = w.oai({scale: 1, clients: 6})
+    row.c.up = w
+    row.sc.naive_relays = naive.relays
+    row.sc.stretch_relays = stretch.relays
+    row.sc.reached = stretch.reached
+    row.bump()
+
+},
+// MusuMesh_witness — the routing policy, earned.  Structural + differential; idempotent stamps at beat 6.
+MusuMesh_witness(w) {
+    let mesh = w.o({mesh: 1, name: 'cafe'})[0]
+    if (!mesh) return
+    let route = w.o({route: 1})[0]
+    let scale = w.o({scale: 1})[0]
+    let bn = mesh.o({broadcast: 1, kind: 'naive'})[0]
+    let bs = mesh.o({broadcast: 1, kind: 'stretch'})[0]
+    let ctrl = mesh.o({broadcast: 1, kind: 'control_no_peers'})[0]
+    let nodes = mesh.o({node: 1}).length
+    let relay_only = mesh.o({node: 1}).filter(n => n.sc.relay_only).length
+    let kinds = {}
+    for (const e of mesh.o({edge: 1})) kinds[e.sc.kind] = 1
+    // topology: the cafe graph stood up -- a relay-only source, peers, and BOTH edge kinds (peer + relay).
+    if (nodes >= 4 && relay_only >= 1 && kinds['peer'] && kinds['relay'] && !(w.oa({witnessed: "topology"}))) w.i({witnessed: "topology"})
+    if (!route || !bn || !bs || !scale) return
+    let rcost = +(route.sc.cost ?? -1)
+    let rrelays = +(route.sc.relays ?? -1)
+    let nrel = +(bn.sc.relays ?? 0)
+    let nreached = +(bn.sc.reached ?? 0)
+    let srel = +(bs.sc.relays ?? 0)
+    let sreached = +(bs.sc.reached ?? 0)
+    let ncost = +(bn.sc.cost ?? 0)
+    let scost = +(bs.sc.cost ?? 0)
+    let sc_naive = +(scale.sc.naive_relays ?? 0)
+    let sc_stretch = +(scale.sc.stretch_relays ?? 0)
+    // routes_cheapest: the 2-hop peer path (cost 2, zero relay hops) was chosen over the direct relay edge
+    //  (cost 10) -- Dijkstra routes by cost and avoids the uplink when peers are cheaper.
+    if (rcost === 2 && rrelays === 0 && !(w.oa({witnessed: "routes_cheapest"}))) w.i({witnessed: "routes_cheapest"})
+    // all_reached: BOTH strategies delivered to every client (3) -- the stretch tree doesn't strand anyone.
+    if (nreached === 3 && sreached === 3 && !(w.oa({witnessed: "all_reached"}))) w.i({witnessed: "all_reached"})
+    // stretch_cuts_relay: THE headline -- naive crosses the uplink once per client (3) while the stretch
+    //  crosses it ONCE.  The multicast domain stretched over the webrtc edges.
+    if (nrel === 3 && srel === 1 && !(w.oa({witnessed: "stretch_cuts_relay"}))) w.i({witnessed: "stretch_cuts_relay"})
+    // cheaper: the uplink saving shows in the total cost too -- the stretch broadcast costs strictly less.
+    if (scost < ncost && scost > 0 && !(w.oa({witnessed: "cheaper"}))) w.i({witnessed: "cheaper"})
+    // scales: at a 6-client cafe the naive uplink load grows to 6 while the stretch stays pinned at 1 --
+    //  the quiet-uplink property holds regardless of crowd size.
+    if (sc_naive === 6 && sc_stretch === 1 && !(w.oa({witnessed: "scales"}))) w.i({witnessed: "scales"})
+    // no_free_lunch: the NEGATIVE CONTROL -- on a relay-only topology (no peer edges) the stretch CANNOT
+    //  cut the uplink (stretch_relays === naive_relays === 3).  This is what makes stretch_cuts_relay a real
+    //   discriminator: the saving comes from the webrtc peer edges, not from the algorithm always yielding 1.
+    if (ctrl && +(ctrl.sc.naive_relays) === 3 && +(ctrl.sc.stretch_relays) === 3 && !(w.oa({witnessed: "no_free_lunch"}))) w.i({witnessed: "no_free_lunch"})
+
+},
+async MusuMesh_order(w) { const H = this;
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'MusuMesh') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+},
+//#endregion
+
+//#region cue — the DJ HEADSET (stage 7): live C** replication to a phone that monitors + beatmatches
+// ══ MusuCue — can a phone replica monitor the off-air deck and bring it into sync? ═════════════════
+//  The user's headset deck: the on-air deck (A, 120) plays to the room; a second deck (B, 96) is CUED —
+//   monitored only in the DJ's headphones, off the room PA.  The phone is a REPLICA of the deck's C**
+//    state over a cheap local peer-edge (Mesh stage 8): it holds COPIES of the cell descriptors and
+//     RE-RENDERS the off-air deck from that synced state (proving the replication carries enough to
+//      render — the chunks never cross the wire, just the descriptor).  Then it beatmatches B to A and
+//       the beat-GRID alignment (onset-envelope cross-correlation, Mixer.g Mix_align) JUMPS — the cued
+//        track is genuinely in sync, not merely the same tempo — before it's brought into the main mix.
+//         Deterministic; browser-only (skips headless).  Composes Mixer.g (beat/match/align) + Mesh.g (edge).
+//          beat 2  CUE     — on-air A + cued B; a phone replica holds copies of both + a peer-edge link
+//          beat 3  MONITOR — the phone RE-SYNTHS the off-air deck from its replicated descriptor + measures
+//                             it; reads the initial (loose) grid alignment to the on-air deck
+//          beat 4  MATCH   — beatmatch the cued deck (bend + re-render + re-measure); alignment TIGHTENS
+//          beat 5  BRING-IN— the synced deck crosses into the main mix (render the sum — both decks present)
+//          beat 6  witness — replicated / cued_offair / monitor_real / cued_matched / synced / brought_in
+MusuCue(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuCue_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// MusuCue_drive — OfflineAudioContext gate (skip headless), then per-beat dispatch off step_n (req-local
+//  did_step, set before any await so a re-pump never re-runs a render).
+async MusuCue_drive(w, req) {
+    if (typeof OfflineAudioContext === 'undefined') {
+        if (!w.oa({skipped: 'no_audio'})) w.i({skipped: 'no_audio'})
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.MusuCue_setup(w)
+        if (n === 3) await this.MusuCue_monitor(w)
+        if (n === 4) await this.MusuCue_match(w)
+        if (n === 5) await this.MusuCue_bring_in(w)
+        if (n === 6) this.MusuCue_witness(w)
+    }
+    await this.MusuCue_order(w)
+
+},
+// MusuCue_setup — beat 2: the deck (on-air %Cell A playing, cued %Cell B off-air, on_air flags), then a
+//  %phone replica holding COPIES of both cell descriptors (separate particles, scalar state only — no
+//   chunks) over a cheap local peer-edge (Mesh_build).  This is the C**-replication seam: what the phone
+//    needs to render the off-air deck is just {bpm, root, nchunks}, synced over the peer link.
+MusuCue_setup(w) {
+    w.i({reached: "step_2"})
+    let deck = w.oai({Cue: 1, name: 'deck'})
+    deck.c.up = w
+    let a = this.MusuCue_cell(w, 'A', 200, 120, 110, 1)
+    let b = this.MusuCue_cell(w, 'B', 200, 96, 147, 0)
+    // the phone: a replica over a peer-edge (local webrtc, cheap), holding copies of the cell descriptors.
+    let link = this.Mesh_build({ nodes: [{ id: 'deck' }, { id: 'phone' }], edges: [{ a: 'deck', b: 'phone', kind: 'peer', cost: 1 }] })
+    w.c.link = link
+    let r = this.Mesh_route(link, 'deck', 'phone')
+    let phone = w.oai({phone: 1, name: 'headset'})
+    phone.c.up = w
+    phone.sc.link_kind = link.adj['deck'][0].kind
+    phone.sc.link_relays = r ? r.relays : -1
+    for (const cell of w.o({Cell: 1})) {
+        let copy = phone.i({Cell: 1, deck: cell.sc.deck, bpm: cell.sc.bpm, root: cell.sc.root, nchunks: cell.sc.nchunks, replica: 1})
+        copy.c.up = phone
+    }
+
+},
+// MusuCue_cell — one deck cell: synth a beat-track (chunks on .c), measure its tempo, flag on_air.
+MusuCue_cell(w, deck, nchunks, bpm, root, on_air) {
+    let chunks = this.Mix_synth_beat(nchunks, bpm, root)
+    let measured = this.Mix_tempo(this.Mix_pcm_of(chunks, 0), 48000)
+    let cell = w.i({Cell: 1, deck: deck, bpm: bpm, root: root, nchunks: nchunks, measured_bpm: measured})
+    if (on_air) cell.sc.on_air = 1
+    cell.c.up = w
+    cell.c.chunks = chunks
+    return cell
+
+},
+// MusuCue_monitor — beat 3: the phone RE-SYNTHS the off-air (cued) deck purely from its replicated
+//  descriptor (no access to the deck's chunks — proves the sync carries enough to render), measures its
+//   tempo, and reads the initial beat-grid alignment to the on-air deck (loose: different tempos drift).
+async MusuCue_monitor(w) {
+    let phone = w.o({phone: 1})[0]
+    let onair = w.o({Cell: 1, deck: 'A'})[0]
+    if (!phone || !onair) return
+    let cued = phone.o({Cell: 1, deck: 'B'})[0]
+    if (!cued) return
+    let chunks = this.Mix_synth_beat(+(cued.sc.nchunks ?? 0), +(cued.sc.bpm ?? 0), +(cued.sc.root ?? 0))
+    let pcm = this.Mix_pcm_of(chunks, 0)
+    cued.c.chunks = chunks
+    cued.sc.monitor_bpm = this.Mix_tempo(pcm, 48000)
+    let al = this.Mix_align(this.Mix_pcm_of(onair.c.chunks, 0), pcm)
+    phone.sc.align_before = al.strength
+    phone.bump()
+    cued.bump()
+
+},
+// MusuCue_match — beat 4: beatmatch the cued deck to the on-air tempo — bend it through a REAL resample
+//  (Mix_render_rate), re-measure the bent audio, and recompute the grid alignment.  Same tempo + same
+//   downbeat → the cross-correlation peak sharpens: the cued track is now in sync, not just in tempo.
+async MusuCue_match(w) {
+    let phone = w.o({phone: 1})[0]
+    let onair = w.o({Cell: 1, deck: 'A'})[0]
+    if (!phone || !onair) return
+    let cued = phone.o({Cell: 1, deck: 'B'})[0]
+    if (!cued || !cued.c.chunks) return
+    let rate = this.Mix_beatmatch(+(onair.sc.measured_bpm ?? 0), +(cued.sc.monitor_bpm ?? 0))
+    let bent = await this.Mix_render_rate(cued.c.chunks, rate)
+    cued.c.bent = bent
+    cued.sc.match_rate = rate
+    cued.sc.matched_bpm = bent ? this.Mix_tempo(bent, 48000) : 0
+    let al = bent ? this.Mix_align(this.Mix_pcm_of(onair.c.chunks, 0), bent) : { strength: 0 }
+    phone.sc.align_after = al.strength
+    phone.bump()
+    cued.bump()
+
+},
+// MusuCue_bring_in — beat 5: the synced cued deck crosses into the main mix.  Render the SUM of the on-air
+//  deck + the beatmatched cued deck (both present) and flag the cued cell on_air now — the headset cue is
+//   done, it's in the room.  Mix RMS carrying both proves it actually joined (not replaced).
+async MusuCue_bring_in(w) {
+    let phone = w.o({phone: 1})[0]
+    let onair = w.o({Cell: 1, deck: 'A'})[0]
+    let deck = w.o({Cue: 1})[0]
+    if (!phone || !onair || !deck) return
+    let cued = phone.o({Cell: 1, deck: 'B'})[0]
+    if (!cued) return
+    let rate = +(cued.sc.match_rate ?? 1)
+    let mixed = await this.Mix_render_sum([{ chunks: onair.c.chunks, rate: 1, gain: 1 }, { chunks: cued.c.chunks, rate: rate, gain: 1 }])
+    let soloA = await this.Mix_render_sum([{ chunks: onair.c.chunks, rate: 1, gain: 1 }])
+    deck.sc.mix_rms = mixed ? this.Mix_rms(mixed) : 0
+    deck.sc.solo_rms = soloA ? this.Mix_rms(soloA) : 0
+    let cuedB = w.o({Cell: 1, deck: 'B'})[0]
+    if (cuedB) cuedB.sc.on_air = 1
+    deck.bump()
+
+},
+// MusuCue_witness — the headset, earned.  Structural + differential; idempotent stamps polled at beat 6.
+MusuCue_witness(w) {
+    let phone = w.o({phone: 1})[0]
+    let deck = w.o({Cue: 1})[0]
+    if (!phone || !deck) return
+    let onair = w.o({Cell: 1, deck: 'A'})[0]
+    let cued_deck = w.o({Cell: 1, deck: 'B'})[0]
+    let pa = phone.o({Cell: 1, deck: 'A'})[0]
+    let pb = phone.o({Cell: 1, deck: 'B'})[0]
+    if (!onair || !cued_deck || !pa || !pb) return
+    let before = +(phone.sc.align_before ?? 0)
+    let after = +(phone.sc.align_after ?? 0)
+    let mon = +(pb.sc.monitor_bpm ?? 0)
+    let matched = +(pb.sc.matched_bpm ?? 0)
+    let ma = +(onair.sc.measured_bpm ?? 0)
+    let mix = +(deck.sc.mix_rms ?? 0)
+    let solo = +(deck.sc.solo_rms ?? 0)
+    // replicated: the phone holds copies of BOTH cells matching the deck's descriptors, as SEPARATE
+    //  particles (replica flag, its own refs) -- the C** scalar state synced over the peer-edge.
+    if (pa.sc.replica && pb.sc.replica && +(pa.sc.bpm) === +(onair.sc.bpm) && +(pb.sc.nchunks) === +(cued_deck.sc.nchunks) && pb !== cued_deck && !(w.oa({witnessed: "replicated"}))) w.i({witnessed: "replicated"})
+    // cued_offair: the link is a cheap LOCAL peer-edge (zero relay hops) and the cued deck is the OFF-air
+    //  one (B, not the on-air A) -- the headset monitors what the room can't hear.
+    if (phone.sc.link_kind === 'peer' && +(phone.sc.link_relays) === 0 && onair.sc.on_air && !cued_deck.sc.on_air && !(w.oa({witnessed: "cued_offair"}))) w.i({witnessed: "cued_offair"})
+    // monitor_real: the phone RE-SYNTHED the off-air deck from its replicated descriptor and recovered its
+    //  tempo (~96) -- it rendered from synced state, never touching the deck's own chunks.
+    if (Math.abs(mon - 96) <= 10 && !(w.oa({witnessed: "monitor_real"}))) w.i({witnessed: "monitor_real"})
+    // cued_matched: bending the cued deck makes it measure the on-air tempo (|matched-A|<=10).
+    if (Math.abs(matched - ma) <= 10 && ma > 0 && !(w.oa({witnessed: "cued_matched"}))) w.i({witnessed: "cued_matched"})
+    // synced: THE headline -- beat-grid alignment JUMPED after beatmatch (cross-correlation before≈loose,
+    //  after≈locked).  Same tempo AND same downbeat: genuinely in sync, not merely matched.  Differential.
+    if (after - before >= 0.1 && after >= 0.6 && !(w.oa({witnessed: "synced"}))) w.i({witnessed: "synced"})
+    // brought_in: the synced deck joined the main mix -- the mix carries more energy than the on-air deck
+    //  alone (both decks present, not one replacing the other).
+    if (mix > solo * 1.1 && solo > 0 && !(w.oa({witnessed: "brought_in"}))) w.i({witnessed: "brought_in"})
+
+},
+async MusuCue_order(w) { const H = this;
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'MusuCue') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
 },
 //#endregion
 

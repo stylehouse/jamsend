@@ -741,30 +741,51 @@ await M.eatfunc({
         async Lies_runner_ask_recv(w: TheC, frame: any): Promise<boolean> {
             const H    = this as House
             const corr = (frame?.corr ?? frame?.header?.corr) as string | undefined
-            const ask  = (frame?.ask ?? {}) as { op?: string, book?: string, n?: number, ns?: number[], on?: boolean, uid?: string }
+            const ask  = (frame?.ask ?? {}) as { op?: string, book?: string, n?: number, ns?: number[], on?: boolean, uid?: string, client?: string }
             const op   = ask.op
             if (!corr || !op) return false
+            // who's asking — the client's stable cluster id (ask.client, from .env.cluster-claude) when it
+            //  identifies itself, else the relay `from` addr.  Drives the engagement lease (don't-steal).
+            const client = String(ask.client ?? frame?.header?.from ?? 'anon')
             let ok = true
             let result: any = {}
             try {
+                H.Lies_engage_touch(w, client)   // any activity from the holder keeps its lease alive
                 if (op === 'ping') {
                     const sr = H.Lies_rungo_record(w)
                     result = {
                         role:    H.Lies_is_runner(w) ? 'runner' : 'editor',
                         channel: H.Lies_channel_live(w) ? 'up' : 'down',
                         running: sr ? { book: sr.sc.Storyrun, phase: sr.sc.phase, uid: sr.sc.uid } : null,
+                        favourite_client: (H.top_House().c.favourite_client as string) ?? '',
+                        engagement: H.Lies_engagement(w) ?? null,   // who holds the lease (don't-steal)
                     }
                 } else if (op === 'run') {
-                    // drive the Book, then hand back the fresh run's uid — the addressable handle the CLI
-                    //  keeps so it can `@uid` this run's snap/diff/trace after it lands (the run is async;
-                    //   the record is already open via Lies_runner_begin, so its uid is readable now).
+                    // engage the runner for THIS client first (the don't-steal gate): refuse if another
+                    //  client holds a live lease; else stamp our lease (GC'ing any prior client's runs) and
+                    //   drive the Book.  Hand back the fresh run's uid — the addressable `@uid` handle the
+                    //    CLI keeps for snap/diff/trace once it lands (the record opens now, the run is async).
                     if (!ask.book) { ok = false; result = { error: 'run needs a Book' } }
-                    else { H.Lies_become_book_drive(w, ask.book); result = { accepted: true, book: ask.book, uid: H.Lies_rungo_record(w)?.sc.uid ?? null } }
+                    else {
+                        const chk = H.Lies_engage_check(w, client)
+                        if (!chk.ok) { ok = false; result = { error: chk.reason, engagement: H.Lies_engagement(w) ?? null } }
+                        else {
+                            H.Lies_engage(w, client, ask.book)
+                            H.Lies_become_book_drive(w, ask.book)
+                            result = { accepted: true, book: ask.book, uid: H.Lies_rungo_record(w)?.sc.uid ?? null, engaged: client }
+                        }
+                    }
+                } else if (op === 'release') {
+                    // a clean hang-up: mark the lease released (kept, so "was it you?" still answers), GC the
+                    //  runs, and tear the Story world down to H:Mundo — the runner idles, reusable by anyone.
+                    H.Lies_engage_release(w, client)
+                    result = { released: 1, engagement: H.Lies_engagement(w) ?? null }
                 } else if (op === 'state') {
                     const sr = H.Lies_rungo_record(w)
                     result = {
                         outcome: (H as any).Cred_run_outcome() ?? null,
                         run: sr ? { book: sr.sc.Storyrun, phase: sr.sc.phase, uid: sr.sc.uid, n: sr.sc.n ?? null, total: sr.sc.total ?? null, done: sr.sc.done ?? null } : null,
+                        engagement: H.Lies_engagement(w) ?? null,
                     }
                 } else if (op === 'rungos') {
                     // the runs the runner is "hanging in there" with — each addressable by uid.  pinned =
@@ -812,11 +833,15 @@ await M.eatfunc({
                     const steps = H.Lies_rungo_steps(w, ask)
                     if (ask.uid && !steps.length) {
                         // a uid that matches a record but has no pins = the run is still going (pins land at
-                        //  verdict); a uid that matches nothing = a typo / GC'd run.  Say which.
+                        //  verdict); a uid that matches nothing = a typo, or a GC'd run — if a hang-up/re-engage
+                        //   reaped it, say so (and by whom + when), not a bare miss.
                         ok = false
+                        const gc = H.top_House().c.last_gc as { by?: string, at?: number } | undefined
                         result = rec
                             ? { error: `run "${ask.uid}" (${rec.sc.Storyrun}) is ${rec.sc.phase} — not pinned yet; drop @uid for the live run, or wait for it to land` }
-                            : { error: `no held run "${ask.uid}" (try op:rungos)` }
+                            : (gc
+                                ? { error: `run "${ask.uid}" was garbage-collected — the runner was re-engaged${gc.by ? ` by ${String(gc.by).slice(0, 8)}` : ''}${gc.at ? ` ${Math.round((Date.now() - gc.at) / 1000)}s ago` : ''}; its snaps are gone (try op:rungos for current runs)` }
+                                : { error: `no held run "${ask.uid}" (try op:rungos)` })
                     }
                     else if (op === 'steps') {
                         result = {
@@ -860,6 +885,71 @@ await M.eatfunc({
             }
             H.tlog(`📥 runner_ask ${op}${ask.book ? ` ${ask.book}` : ''} → ${ok ? 'ok' : 'err'}`)
             return true
+        },
+
+        // ── runner engagement: the soft lease a client holds over a runner (the "don't run into each
+        //   other's runners" gate).  Lives on Mundo (top_House().c.engagement), ABOVE the Story world,
+        //    so it survives a Story_reset — a hang-up tears down the run, not the representation.  Shape:
+        //     { client, status:'active'|'released'|'timed_out', at, book? }.  No background timer:
+        //      'timed_out' is computed lazily — an 'active' lease older than the TTL (10min, room for
+        //       Claude to think between runs) is stale, so a new client may take it.  favourite_client is
+        //        the SEPARATE sticky soft-prefer (set by the editor); engagement is the hard don't-steal.
+        Lies_engage_ttl(): number { return 10 * 60 * 1000 },   // the think-between-runs window
+
+        // Lies_engagement — the lease as the runner sees it NOW, with timed_out folded in (read-only).
+        Lies_engagement(w: TheC): { client: string, status: string, at: number, book?: string, age_ms: number, stale: boolean } | undefined {
+            const H = this as House
+            const e = H.top_House().c.engagement as any
+            if (!e?.client) return undefined
+            const age = Date.now() - (e.at ?? 0)
+            const stale = e.status === 'active' && age > H.Lies_engage_ttl()
+            return { client: e.client, status: stale ? 'timed_out' : e.status, at: e.at, book: e.book, age_ms: age, stale }
+        },
+
+        // Lies_engage_check — may `client` take the runner now?  Free unless ANOTHER client holds a
+        //  still-live (non-stale) active lease.  released | timed_out | same-client all → free.
+        Lies_engage_check(w: TheC, client: string): { ok: boolean, reason?: string } {
+            const H = this as House
+            const e = H.Lies_engagement(w)
+            if (!e || e.status !== 'active' || e.client === client) return { ok: true }
+            const left = Math.max(0, H.Lies_engage_ttl() - e.age_ms)
+            return { ok: false, reason: `runner busy — engaged by ${String(e.client).slice(0, 8)} ${Math.round(e.age_ms / 1000)}s ago${e.book ? ` (${e.book})` : ''}; frees in ${Math.ceil(left / 60000)}m if idle` }
+        },
+
+        // Lies_engage — stamp client's active lease.  If the client CHANGED, GC the prior client's runs
+        //  (their uids go unreachable → the GC'd-run message) so the newcomer starts clean.
+        Lies_engage(w: TheC, client: string, book?: string): void {
+            const H = this as House
+            const top = H.top_House()
+            const prev = top.c.engagement as any
+            if (prev?.client && prev.client !== client) H.Lies_engage_gc(w, prev.client)
+            top.c.engagement = { client, status: 'active', at: Date.now(), ...(book ? { book } : {}) }
+        },
+
+        // Lies_engage_touch — heartbeat: any activity from the holder refreshes the lease clock, so it
+        //  only times out after the TTL of genuine silence.  No-op from a non-holder.
+        Lies_engage_touch(w: TheC, client: string): void {
+            const e = (this as House).top_House().c.engagement as any
+            if (e && e.client === client && e.status === 'active') e.at = Date.now()
+        },
+
+        // Lies_engage_release — a clean hang-up: mark released (KEPT, so "was it you?" still answers),
+        //  GC the runs, and tear the Story world down to H:Mundo via quitStory.  The runner idles, reusable.
+        Lies_engage_release(w: TheC, client: string): void {
+            const H = this as House
+            const e = H.top_House().c.engagement as any
+            if (!e || e.client !== client) return
+            e.status = 'released'; e.at = Date.now()
+            H.Lies_engage_gc(w, client)
+            H.top_House().i_elvisto('Auto/Auto', 'quitStory', {})
+        },
+
+        // Lies_engage_gc — drop every held run-record (+ its pins) and record WHO triggered it, so a
+        //  later `@uid` on a vanished run gets a precise "garbage-collected by <who>" message, not a miss.
+        Lies_engage_gc(w: TheC, by: string): void {
+            for (const s of w.o({ Storyrun: 1 }) as TheC[]) w.drop(s)
+            delete w.c.active_rungo
+            ;(this as House).top_House().c.last_gc = { by, at: Date.now() }
         },
 
         // Lies_runner_story_w — the live w:Story world (where This/Steps + the run state live, the same

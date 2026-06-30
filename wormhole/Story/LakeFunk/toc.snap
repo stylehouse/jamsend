@@ -9,10 +9,22 @@ story:LakeFunk
         dontSnapGhostList
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=0.058
+    TimeTotal:beliefs,avg=0.099
       sample=0.085,at=1782715976
       sample=0.03,at=1782728182
-    TimeTotal:step,avg=0.058
+      sample=0.191,at=1782747944
+      sample=0.191,at=1782747963
+      sample=0.08,at=1782747969
+      sample=0.091,at=1782747980
+      sample=0.081,at=1782749727
+      sample=0.046,at=1782792610
+    TimeTotal:step,avg=0.099
       sample=0.085,at=1782715976
       sample=0.03,at=1782728182
-  step,dige:56a3e5a5cfe9a0c6
+      sample=0.191,at=1782747944
+      sample=0.191,at=1782747963
+      sample=0.08,at=1782747969
+      sample=0.091,at=1782747980
+      sample=0.081,at=1782749727
+      sample=0.046,at=1782792610
+  step,dige:1e391f7674249afa

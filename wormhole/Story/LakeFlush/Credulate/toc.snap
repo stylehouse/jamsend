@@ -5,5 +5,18 @@ Credulate,of_Book:LakeFlush
   GhostInclude:Ghost_N_Tyrant,dige:74cf06ee9a34e2cb
   GhostInclude:Ghost_Story_Peregrination,dige:b33cab6322ef6320
   GhostInclude:Ghost_M_Radiola,dige:32b321bfc1e909b5
-  GhostInclude:Ghost_M_Crate,dige:26bb31d6774eef6c
-  GhostInclude:Ghost_Story_Musuation,dige:628f972aa9300dc7
+  GhostInclude:Ghost_M_Crate,dige:601118a6174d31d5
+  GhostInclude:Ghost_M_Mixer,dige:d406f4ef61aefac3
+  GhostInclude:Ghost_M_Mesh,dige:286eb98843f6e7f9
+  GhostInclude:Ghost_Story_Musuation,dige:74ef68fcddf20d3d
+  last_ok,at=1782792601.779,ok_pct
+    uses:Ghost_N_Peeroleum,dige:1bb4df8687a8d30b
+    uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
+    uses:Ghost_N_Tribunal,dige:a9bf42ff80d08a94
+    uses:Ghost_N_Tyrant,dige:74cf06ee9a34e2cb
+    uses:Ghost_Story_Peregrination,dige:b33cab6322ef6320
+    uses:Ghost_M_Radiola,dige:32b321bfc1e909b5
+    uses:Ghost_M_Crate,dige:601118a6174d31d5
+    uses:Ghost_M_Mixer,dige:d406f4ef61aefac3
+    uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
+    uses:Ghost_Story_Musuation,dige:74ef68fcddf20d3d
