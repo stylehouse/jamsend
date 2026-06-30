@@ -4,14 +4,16 @@ story:MusuCrowd
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.061
+    TimeTotal:beliefs,avg=0.05
       sample=0.074,at=1782542652
       sample=0.057,at=1782625663
       sample=0.051,at=1782634831
-    TimeTotal:step,avg=0.012
+      sample=0.017,at=1782826386
+    TimeTotal:step,avg=0.01
       sample=0.015,at=1782542652
       sample=0.011,at=1782625663
       sample=0.01,at=1782634831
+      sample=0.003,at=1782826386
   step,dige:ff093534fbb863a7
   step=2,dige:17fc7b79b110298e
   step=3,dige:c9f833349228e32e

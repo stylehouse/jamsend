@@ -122,7 +122,13 @@
         }
     })
 
-    //#region gaze restoration
+    //#region gaze restoration  — DISABLED
+    // Auto-seek to the last-gazed House once boot settles fired too late and yanked the
+    //  viewport just as you'd started reading — annoying every startup.  The whole restore
+    //   path is commented out (manual scroll only).  We still RECORD gazed_house_path in
+    //    scrollToHouseIdx, and Auto/LibraryRun still set restore_window_until — those writes
+    //     are now inert (no consumer).  Uncomment to bring the auto-scroll back.
+    /*
     // Track which House ips have appeared so we can detect newcomers.
     // Within RESTORE_WINDOW_MS of Mundo starting (or a resetStory elvis), if
     // the gazed ip turns up in all_House, seek to it.
@@ -171,6 +177,7 @@
             scrollToHouseIpStable(target.c.ip)
         }, 50)
     })
+    */
 
     // Phase 1: poll fn() until two consecutive reads match (layout settled).
     // Phase 2: wait confirm_ms, read once more, must still match.

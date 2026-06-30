@@ -257,6 +257,10 @@
                 //   routes back by corr — NOT a Peeroleum envelope (the CLI is no peer), same as the
                 //    editor's ghost_compile_ack.  Browser-side twin of become_book for real-time runs.
                 on('runner_ask', (cw, _p, fr) => { void H.Lies_runner_ask_recv(cw, fr); return true })
+                // remote Wormhole (method:remoteWormhole): the editor offers us a signed %Grant, and
+                //  replies to our rw-ops.  We hold the grant + present it back (Funk/Grant.ts; LiesFunk).
+                on('grant_offer',    (cw, _p, fr) => { void H.Lies_grant_offer_recv(cw, fr); return true })
+                on('wormhole_reply', (cw, _p, fr) => { H.Lies_wormhole_reply_recv(cw, fr); return true })
             } else {
                 on('run_result', (cw, _p, fr) => H.Lies_run_result_recv(cw, fr))
                 on('run_phase',  (cw, _p, fr) => H.Lies_run_phase_recv(cw, fr))
@@ -270,6 +274,10 @@
                 // advertise: a runner-on-the-grid (?I=) announcing itself — {from prepub, friendly,
                 //  ready, book}. The editor keeps a %Runner roster keyed by prepub, one Runner Brink each.
                 on('advertise', (cw, _p, fr) => { H.Lies_advertise_recv(cw, fr); return true })
+                // remote Wormhole (method:remoteWormhole): a runner begs for disk access, then sends
+                //  rw-ops carrying its %Grant; we verify the grant and serve from OUR own handle (LiesFunk).
+                on('wormhole_beg', (cw, _p, fr) => { H.Lies_wormhole_beg_recv(cw, fr); return true })
+                on('wormhole_req', (cw, _p, fr) => { void H.Lies_wormhole_req_recv(cw, fr); return true })
             }
             // ping/pong heartbeat — both roles echo a ping and record a pong, so the real
             //  envelope path is provable (and shown by the badge), not just relay control.
@@ -867,48 +875,94 @@
                 //     dige-sync TODO below, which collapses this whole hand-kept field list.)
             })
         },
-        // Lies_advertise_recv — editor stamps/refreshes a %Runner roster entry, keyed by the runner's
-        //  prepub (its unique identity → its own Brink).  dontSnap: a runtime fixture, rebuilt from
-        //   beacons each session, never persisted.  ready/book ride snap-clean (1|absent, value|delete).
-        //    The single-pair %channel_peer is left untouched — the multiplied Brink reads THIS roster.
+        // Lies_advertise_recv — the runner→editor presence beacon lands here, on the EPHEMERAL route,
+        //  which dispatches OFF-think (no mutex held).  So this does the bare minimum that's lock-safe:
+        //   park the beacon on w.c.beacons (pure .c, no snap-tree mutation).  The in-think Lies_runner_roster
+        //    (a Lies_aim do-pass, under the mutex) folds it into the durable registry + the SNAPPED %Runner,
+        //     where minting a snapped particle is safe.  The route's feebly_ponder nudges that think, so a
+        //      fresh runner appears within the tick; the ~15s cadence keeps it refreshed.  (Keyed by prepub,
+        //       the latest beacon per runner overwrites — bounded by the fleet size, GC'd when it goes stale.)
         Lies_advertise_recv(w: TheC, fr: any) {
             const H = this as House
             if (H.Lies_role(w) !== 'editor') return
             const from = String(fr?.from ?? '').trim()
             if (!from) return
+            const beacons = (w.c.beacons ??= {}) as Record<string, any>
+            beacons[from] = {
+                last_heard: Date.now(),
+                friendly:   fr?.friendly ? String(fr.friendly) : '',
+                ready:      !!fr?.ready,
+                book:       fr?.book ? String(fr.book) : '',
+                // overall engagement (the live lease's client pub) — busy/free for the Brink + a lease-aware
+                //  allocator.  '' ⇒ free.  favourite_client is NOT on the beacon: it's a registry-only fact
+                //   (Waft:Cluster/%HostedIdentity), read by the projection, never written from the wire.
+                engaged:    fr?.engaged ? String(fr.engaged) : '',
+            }
+            // no snap mutation, no bump here — the in-think projection owns the snapped tree.
+        },
+
+        // Lies_runner_roster — the editor's live VIEW of the grid, projected IN-THINK (a Lies_aim do-pass,
+        //  under the mutex) from two sources: the durable Waft:Cluster/%HostedIdentity directory (WHO is a
+        //   runner) and the off-think advertise beacons parked on w.c.beacons (each runner's latest live
+        //    state).  Mints ONE snapped w:Lies/%Runner per registered runner — 1:1 with the registry — so the
+        //     editor's SNAP legibly carries who it talks to and what each is doing, not just the oblique
+        //      single-pair %channel_peer.  Volatile timing rides OFF-snap (.c.last_heard / .c.sent) so the
+        //       ~15s beacon doesn't churn the snap; the PROVEN facets (ready|book|engaged) ride snapped and
+        //        flip only on a real transition.  A runner LEAVES the roster only when its registry entry is
+        //         forgotten (the directory is authority); going silent just lapses its live grant (clears
+        //          ready|book|engaged) while the identity stays known — that's the "only grants are lost"
+        //           whittle.  Minting|dropping a snapped particle is safe here under the mutex.
+        Lies_runner_roster(w: TheC, cluster: TheC) {
+            const H = this as House
+            if (H.Lies_role(w) !== 'editor') return
             const now = Date.now()
-            const r = w.oai({ Runner: from }, { dontSnap: 1, last_heard: now }) as TheC
-            r.sc.last_heard = now
-            if (fr?.friendly) r.sc.friendly = String(fr.friendly); else delete r.sc.friendly
-            if (fr?.book)   { r.sc.book = String(fr.book); delete r.sc.sent }   // running ⇒ a dispatched call connected → ▶ (clears the ☎)
-            else              delete r.sc.book
-            if (fr?.ready)    r.sc.ready    = 1;                   else delete r.sc.ready
-            // overall engagement (the live lease's client pub) — busy/free for the Brink + a lease-aware
-            //  allocator.  '' or absent ⇒ free.
-            if (fr?.engaged)  r.sc.engaged  = String(fr.engaged);  else delete r.sc.engaged
-            // favourite_client is a DURABLE registry fact (Waft:Cluster/%HostedIdentity) — the
-            //  soft-affinity of whose client pub this runner is reserved for.  It is written THERE
-            //   directly (a doctored snap today, a favour command later) and only READ here.  An
-            //    advertise beacon carries NO authority over it, so this handler must never set or
-            //     delete it from the beacon — that delete was the clobber: an empty beacon wiped the home.
-            const cluster = w.o({ Waft: 'Cluster' })[0] as TheC | undefined
-            let hi: TheC | undefined
-            if (cluster) {
-                // the registry PERSISTS — stable identity facts (pub, role, friendly).  oai() find-or-
-                //  creates the entry; liveness (ready|book|engaged|last_heard) stays on the roster.
-                hi = cluster.oai({ HostedIdentity: from }) as TheC
-                if (hi.sc.role !== 'runner') hi.sc.role = 'runner'   // an advertiser IS a runner
-                if (fr?.friendly) hi.sc.friendly = String(fr.friendly)
-            }                                                        // favourite_client left untouched
-            // mirror the durable favour onto the dontSnap roster so the Brink + Lies_dispatch_target
-            //  (both read the live roster) reflect it — sourced from the REGISTRY, never the beacon.
-            if (hi?.sc.favourite_client) r.sc.favourite_client = String(hi.sc.favourite_client)
-            else                         delete r.sc.favourite_client
-            //  (when the registry hasn't loaded yet — an advertise beat the Good pipeline at boot — the
-            //   vivify above is skipped this beacon; aim_setup loads Cluster within the tick and the next
-            //    ~15s advertise lands the entry, so no explicit re-read is needed.)
-            if (!fr?.book) H.Lies_drain_runs(w)   // this runner looks free — let a held (exhausted-queue) job go
-            w.bump_version()
+            const LIVE_MS = 45000
+            const beacons = (w.c.beacons ?? {}) as Record<string, { last_heard: number, friendly?: string, ready?: boolean, book?: string, engaged?: string }>
+            let changed = false
+            // a beacon from a never-seen runner NAMES it in the durable registry (role:runner + friendly).
+            //  The beacon carries no authority over favourite_client — left untouched (registry-only).
+            for (const pub of Object.keys(beacons)) {
+                const b  = beacons[pub]
+                const hi = cluster.oai({ HostedIdentity: pub }) as TheC
+                if (hi.sc.role !== 'runner')                     { hi.sc.role = 'runner'; changed = true }
+                if (b.friendly && hi.sc.friendly !== b.friendly) { hi.sc.friendly = b.friendly; changed = true }
+            }
+            // ONE snapped Runner per registered runner: mirror the durable identity, fold the live beacon.
+            const runners = (cluster.o({ HostedIdentity: 1 }) as TheC[]).filter(h => h.sc.role === 'runner')
+            const known   = new Set<string>()
+            for (const hi of runners) {
+                const pub = hi.sc.HostedIdentity as string
+                known.add(pub)
+                const r = w.oai({ Runner: pub }) as TheC                    // snapped: the editor's view of this runner exists
+                // durable identity, mirrored from the registry (Brink + allocator both read this one place)
+                if (hi.sc.friendly) { if (r.sc.friendly !== hi.sc.friendly) { r.sc.friendly = String(hi.sc.friendly); changed = true } }
+                else if (r.sc.friendly) { delete r.sc.friendly; changed = true }
+                if (hi.sc.favourite_client) { if (r.sc.favourite_client !== hi.sc.favourite_client) { r.sc.favourite_client = String(hi.sc.favourite_client); changed = true } }
+                else if (r.sc.favourite_client) { delete r.sc.favourite_client; changed = true }
+                // live beacon → off-snap last_heard + the snapped proven facets.  Bump on a last_heard
+                //  ADVANCE too (changed=true): it's .c (off-snap) so the bump only wakes the rack's $effect
+                //   to refresh the heard-age — it adds NOTHING to the snap, so no churn.  Without it, a
+                //    steadily-live runner re-advertising the same state never bumps and the row falsely
+                //     flips to "silent" once the rack's cached heard ages past the window.
+                const b = beacons[pub]
+                if (b && b.last_heard > Number(r.c.last_heard ?? 0)) { r.c.last_heard = b.last_heard; changed = true }
+                const live = Number(r.c.last_heard ?? 0) > 0 && now - Number(r.c.last_heard) < LIVE_MS
+                if (live && b) {
+                    if (b.book)    { if (r.sc.book !== b.book) { r.sc.book = b.book; changed = true } delete r.c.sent }   // running ⇒ a dispatched call connected → ▶ (clears the ☎)
+                    else if (r.sc.book)    { delete r.sc.book; changed = true }
+                    if (b.ready)   { if (r.sc.ready !== 1) { r.sc.ready = 1; changed = true } } else if (r.sc.ready)   { delete r.sc.ready; changed = true }
+                    if (b.engaged) { if (r.sc.engaged !== b.engaged) { r.sc.engaged = b.engaged; changed = true } } else if (r.sc.engaged) { delete r.sc.engaged; changed = true }
+                } else if (!live) {
+                    // silent past the window — clear the live claims so the snap never lies that an unheard
+                    //  runner is still ready|running.  Identity persists; only the grant lapses.
+                    if (r.sc.ready || r.sc.book || r.sc.engaged) { delete r.sc.ready; delete r.sc.book; delete r.sc.engaged; changed = true }
+                    if (b) delete beacons[pub]   // expired beacon consumed; the registry keeps the runner known
+                }
+            }
+            // a Runner LEAVES only when its registry entry is forgotten — the directory is the authority.
+            for (const r of w.o({ Runner: 1 }) as TheC[]) if (!known.has(r.sc.Runner as string)) { w.drop(r); changed = true }
+            if (changed) w.bump_version()
+            H.Lies_drain_runs(w)   // a freed runner may release a held (exhausted-queue) job — drive in-think
         },
 
         // Lies_favoured_runner — the C1 lookup: which runner is reserved as THIS client's?  Scan the
@@ -950,7 +1004,7 @@
             const dirPubs = cluster
                 ? (cluster.o({ HostedIdentity: 1 }) as TheC[]).filter(h => h.sc.role === 'runner').map(h => h.sc.HostedIdentity as string)
                 : roster.map(r => r.sc.Runner as string)
-            const live  = (r?: TheC) => !!r && Number(r.sc.last_heard ?? 0) > 0 && now - Number(r.sc.last_heard) < 45000
+            const live  = (r?: TheC) => !!r && Number(r.c.last_heard ?? 0) > 0 && now - Number(r.c.last_heard) < 45000
             const cands = dirPubs.map(pub => ({ pub, r: slot(pub) })).filter(c => live(c.r))
             if (!cands.length) return {}                                         // nobody live → broadcast (lone runner)
             const aim = w.c.aim_runner as string | undefined
@@ -958,7 +1012,7 @@
             // a runner is OUT of the pool if it's running a book, holds a lease, OR we just rang it (a fresh ☎,
             //  no ack yet) — so a BURST spreads across runners, and we never double-book one mid-run.
             const busy = (r?: TheC) => !!(r?.sc.book || r?.sc.engaged
-                || (r?.sc.sent && now - Number(r?.sc.sent_at ?? 0) < 30000))
+                || (r?.c.sent && now - Number(r?.c.sent_at ?? 0) < 30000))
             const free = cands.filter(c => !busy(c.r))
             if (!free.length) return { exhausted: true }                         // all live runners busy → hold, don't steal
             const tier = (c: { pub: string, r?: TheC }) => {                     // among FREE: mine ▸ unclaimed ▸ other's-favourite

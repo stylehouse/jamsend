@@ -69,13 +69,19 @@ Only one *watched* cluster at a time (those host ports are fixed). Unwatched clu
    relay-side + verified, but **no peer emits the signed hello yet** (`Tribunal.g`
     `Socket_real`). Until then runners are reachable but not individually addressable —
      the flock can stand up, but the conductor can't yet say "this part on alpha-2."
-- **Repo IO is grant-gated.** A headless container has **no FSA handle** (DirectoryAccess
-   is off the table — by design, not a fight to win), so a runner that needs the *real*
-    repository uses the **network Wormhole backend** (§3.8) — and it must **beg the editor
-     for access through the Brink** first: signed `WormholeBeg → to:<editor.pub>`, surfaced
-      as a Brink grant tenant, approved into a leased signed capability; the editor then
-       proxies its own handle (the `gen_write` precedent, generalised + grant-gated). Sim
-        Books that carry their own fixtures (Peeroleum family) need none of this today.
+- **Repo IO is grant-gated — BUILT (2026-07-01), :9091-unverified.** A headless container has
+   **no FSA handle** (DirectoryAccess is off the table — by design), so boot a runner that needs the
+    *real* repo with **`&disk=proxy`** (e.g. `?I=alpha-1&disk=proxy`): it acquires a
+     **`method:remoteWormhole`** backend, **begging the editor through the channel** (`wormhole_beg`).
+      The operator clicks **grant 🛰️** on that runner's row in the editor's **Rundar** rack; the editor
+       mints a signed **`%Grant`** (`Funk/Grant.ts`), the runner holds it (local `.stashed`, survives a
+        bot self-heal) and presents it back with every rw-op, which the editor verifies + serves from its
+         own handle. Until granted, the runner's reads park (the intended gum-up). Range reads
+          (`read_range`) keep a big asset from crossing whole. See Cluster_spec "beg through the Brink"
+           for the deltas (base64 v1; single-runner addressing until the spine is re-pinned). Sim Books
+            that carry their own fixtures (Peeroleum family) need none of this — boot them WITHOUT
+             `&disk=proxy`. To wire it into the flock, add `&disk=proxy` to `bot.js`'s URL for runners
+              that drive real-code Books.
 - **Crash-quorum restart** (§3.6) + the **host-exec socket** successor (§3.7) — a relay
    `restart_request` past a DEAD-quorum bridged to a host socket line — is unbuilt; for
     now restart is manual (`flock.sh restart`).

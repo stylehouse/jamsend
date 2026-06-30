@@ -4,23 +4,29 @@ story:MusuTune
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.526
-      sample=0.43,at=1782728209
-      sample=0.424,at=1782728216
+    TimeTotal:beliefs,avg=0.711
       sample=0.342,at=1782729432
       sample=0.451,at=1782731296
       sample=0.451,at=1782731378
       sample=0.844,at=1782820886
       sample=0.741,at=1782820906
-    TimeTotal:step,avg=0.132
-      sample=0.107,at=1782728209
-      sample=0.106,at=1782728216
+      sample=0.858,at=1782825788
+      sample=1.169,at=1782826078
+      sample=0.744,at=1782826085
+      sample=0.756,at=1782826146
+      sample=0.756,at=1782826148
+    TimeTotal:step,avg=0.178
       sample=0.086,at=1782729432
       sample=0.113,at=1782731296
       sample=0.113,at=1782731378
       sample=0.211,at=1782820886
       sample=0.185,at=1782820906
+      sample=0.215,at=1782825788
+      sample=0.292,at=1782826078
+      sample=0.186,at=1782826085
+      sample=0.189,at=1782826146
+      sample=0.189,at=1782826148
   step,dige:be7807ce17e42a13
-  step=2,dige:35ad19eafa5050dc
-  step=3,dige:587255ddedf9315d
-  step=4,dige:fe086dab571b0b1a
+  step=2,dige:609b1650194b0562
+  step=3,dige:7a1394fc9fd65ff2
+  step=4,dige:d0807e2c8ef17258

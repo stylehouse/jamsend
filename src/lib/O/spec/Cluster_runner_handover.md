@@ -12,6 +12,10 @@ A handoff brief, not a changelog. Destination first, then the knowledge that bit
    ride alongside (resume-last, and scroll-as-line). The directory feeds the engagement/dispatch layer
     (favourite_client → `to:<prepub>`).
 
+**→ Networking agent: read §5.** The load-bearing fix — making runners individually *pingable* (per-runner
+ channel, `to:role`→`to:<pub>` migration) instead of faking per-runner liveness off a sparse 15s beacon — is
+  its own self-contained brief at §5. The rack UI is already built to consume it.
+
 ## DONE — the arc to here (load-bearing, not exhaustive)
 
 - **Cluster is a first-class PERSISTED Waft.** Opened ONLY through the Good pipeline (`Lies_aim_setup` →
@@ -127,6 +131,78 @@ Persist the scroll position of the latest Cursor's editor as a **LINE number** (
  survives a different zoom/wrap), on the Keep's `%Cursor` beside the per-Waft cursor (the cursor model near
   `Lies.svelte:1000`). Reopening then restores What + scroll-line. Read the top visible line on blur/cursor-
    record from the CodeMirror view (Lang side); restore via a line `scrollIntoView` on open.
+
+### 5. The per-runner CHANNEL — make runners individually pingable (THE networking refactor, → networking agent)
+This is the load-bearing fix the rack has been faking around. Owner's review (2026-07-01): *"the beacon is
+ the only per-runner signal — this sounds totally insane, refactor it."* Correct. It is a band-aid bolted onto
+  a transport that was built **point-to-point** (one editor ↔ one runner) and never grew up to N runners.
+
+**The bomb (why it's like this).** Two collapse points, both keyed by ROLE not prepub:
+- **Outbound:** `Peeroleum_send_consumer(w,type,body)` (gen `Peeroleum.go:240`) hardwires to `Pier[0]` — the
+   single `Pier:1,pub:'runner'` (the role string, `LiesLies:207`). The relay then FANS that one frame to every
+    runner socket. The C2 work (`Peeroleum_send_to(w,pub,…)` gen:256 + `Lies_runner_pier(w,pub)` LiesFunk:918,
+     find-or-promote a Pier keyed by real prepub) added per-runner addressing — but **only `become_book` uses it.**
+- **Inbound:** any runner frame stamps ONE `channel_peer:runner` slot (`Lies_heard`/`Lies_pong_recv`,
+   `LiesLies:729/825/838`), keyed by the role string. So N runners' pongs/phases/results all land on the SAME
+    liveness reading; the editor cannot tell which runner spoke. There is no literal `to:'runner'` to grep —
+     the collapse is structural (send_consumer→Pier[0], demux→channel_peer:role).
+
+**Consequence (the symptom that sent us here):** per-runner liveness has exactly ONE source — the **advertise
+ beacon** (`Lies_advertise`, ~15s, `LiesLies:842`). Everything per-runner (the roster rows, busy/free, dispatch
+  eligibility) rides that sparse beacon. So under any socket wobble the 15s beacon is the first frame dropped
+   while the 1s ping survives → rows read **offline** while the channel reads **live** (the "offline + phantom
+    anon" the rack showed). Liveness must NOT live on a directory announce.
+
+**The frame audit** (`E→R` editor→runner, `R→E` runner→editor):
+
+| frame | dir | today | target |
+| --- | --- | --- | --- |
+| `become_book` | E→R | `to:<pub>` ✓ (C2) | keep |
+| `ping`/`pong` | E↔R | send_consumer (ONE ping, ONE channel_peer) | **`to:<pub>` per runner**; pong carries `from:<pub>` → editor stamps THAT runner's liveness. The core change. |
+| `rungo` | E→R | send_consumer | `to:<pub>` — carries a SEQ (run-authority), so allocate the seq **on the runner's Pier**, carefully (`LiesLies:351`) |
+| `run_phase` | R→E | send_consumer | `to:'editor'` is fine (one editor) BUT add `from:<pub>` + editor **demux per runner** |
+| `run_result` | R→E | send_consumer | `from:<pub>` + correlate verdict→(runner,book) (feeds C3) |
+| `advertise` | R→E | `to:'editor'` | keep — but **DEMOTE to a pure directory announce** (I exist + friendly/book/engaged), NOT the liveness heartbeat |
+| `ghost_compile`/`grant_offer`/`wormhole_*` | E↔R | send_consumer | decide per frame: compile is for whoever-edits (broadcast OK); grant/wormhole_reply → `to:<pub>`; begs → `from:<pub>` demux |
+
+**The asymmetry to hold in your head:** `E→R` needs per-pub **addressing** (`to:<pub>`); `R→E` needs per-pub
+ **attribution** (`from:<pub>` + editor demux). The single editor is fine as a target; the rot is that inbound
+  frames neither carry nor are demuxed by `from`, and outbound pings hit one collapsed address.
+
+**The target model.** Each roster runner gets a promoted Pier (`Lies_runner_pier`); the editor pings each Pier
+ individually on the keepalive cadence; the pong returns `from:<pub>` and the editor stamps that runner's
+  liveness **straight onto its `%Runner` row** (`.c.last_heard`/rtt — the snapped 1:1 roster built 2026-07-01 is
+   already the home; `Funk/Rundar.svelte` reads it). Now liveness is REAL per-runner ping, advertise is demoted
+    to directory+job-state, and the sparse-beacon fragility is gone.
+
+**Staged next moves (smallest-first; (a) alone kills the symptom):**
+- **(a) per-runner ping/pong.** Editor pings each promoted Pier `to:<pub>`; pong carries `from`; editor writes
+   the sender's `%Runner.c.last_heard`+rtt. The roster goes live off real pings; the beacon stops being
+    load-bearing. *This is the whole user complaint, fixed.*
+- **(b) `from:<pub>` on `run_phase`/`run_result` + editor demux** → per-runner progress + (runner,book) verdict.
+- **(c) `rungo` per-pub** with the seq allocated on the runner's Pier (run-authority — do carefully).
+- **(d) Pier culling + per-Pier inseq baseline** — §2's cull (dead transport, keep the durable HostedIdentity)
+   and the `inseq-reload-baseline` cold-cursor fix, which multiplies across N Piers (each Pier its own cursor).
+- **(e) demote `advertise`** to a directory announce once (a) carries liveness.
+
+**The UI is already waiting on this, not the other way round.** `Funk/Rundar.svelte`'s rack reads each runner's
+ liveness off its `%Runner` row; the moment (a) feeds real per-runner ping liveness into those rows, the rack is
+  correct with **zero** further UI work. Don't gold-plate the rack against the broken model — fix the model.
+
+**Confirming field data (2026-07-01, stable socket — the flap was unrelated HMR churn).** With the editor
+ socket steady, two roster runners STILL read `offline` — proving it's the model, not the flap. Probed each
+  prepub directly with `runner_ask --runner=<pub>` (which sends `to:<pub>`):
+- `to:49dee91d` → **answered** (`self:null, advertising:false`). REACHABLE — `to:<pub>` routing works — but it
+   reports no identity and never advertises, so its row sits `offline` though it's live. **A real sub-bug:** it's
+    hello-bound at the relay as `49dee91d` (the editor can reach that prepub) yet runtime `Clustation_self`
+     returns null → advertise suppressed. The hello-bind identity (`Lies_cluster_idento`, signs hello) and the
+      advertise/display identity (`Clustation_self` → `active_identity`/`%Identity,active`) are resolved by
+       DIFFERENT paths and have DIVERGED. Reconcile them, or §5(a) sidesteps it entirely (ping liveness doesn't
+        need the runner to self-identify — the relay already knows the prepub from hello).
+- `to:77e2fe94` → **no answer** (timed out). NOT connected — a stale directory entry.
+So the beacon model renders "gone" (77e2fe94) and "here but quiet" (49dee91d) IDENTICALLY as `offline`; a
+ per-runner ping (§5a) tells them apart in one round-trip. And `to:<pub>` already routing to a live socket is
+  the proof the foundation for (a) is sound — it's wiring the ping/pong onto it, not inventing transport.
 
 ## Carried (not this thread, but on the board)
 - **Shortfall A — generic-C** Waft view** (→ another agent). `ui/Waft.svelte` renders only the `ITEM_TYPES`

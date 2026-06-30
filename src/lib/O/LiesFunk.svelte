@@ -27,6 +27,8 @@ import { Selection, Travel } from "$lib/mostly/Selection.svelte"
 import { type House } from "$lib/O/Housing.svelte"
 import { FUNK_KINDS } from "$lib/O/Funk/kinds"
 import { storying_run } from "$lib/O/Funk/Storying.svelte"
+import { mint_grant, verify_grant, grant_to_C, grant_of_C, type GrantAtom } from "$lib/O/Funk/Grant"
+import { RemoteWormholeNav, buf_to_b64 } from "$lib/O/RemoteWormholeNav.svelte"
 import { onMount } from "svelte"
 
 let { M } = $props()
@@ -400,6 +402,152 @@ await M.eatfunc({
         }
         if (changed) cluster.bump_version()   // tracked: a raw delete|assign alone wouldn't fire watch_c → no save
     },
+
+    // ── remote Wormhole (method:remoteWormhole) — the editor proxies its disk to begging runners ──
+    //   A &disk=proxy runner has NO local tree (headless Chrome, DirectoryAccess off the table, OPFS
+    //    illegal under a dev boot).  It BEGS the editor through the channel; the operator GRANTS it a
+    //     signed %Grant (Funk/Grant.ts) off the editor's Rundar rack; the runner holds the grant and
+    //      presents it back with every rw-op, which the editor re-verifies and serves against its OWN
+    //       handle.  See spec/Cluster_spec.md "beg through the Brink".  All four verbs are additive
+    //        Peeroleum frames (no .g spine change); bytes ride base64 for now (TODO: binary frame).
+
+    // the held grant atom for THIS runner.  Bootstrap home is local .stashed — durable per Chrome
+    //  profile, readable on restart WITHOUT a working nav (the Waft:Cluster copy can't bootstrap: it
+    //   loads through the very Wormhole the grant unlocks).  Waft:Cluster carries the registry copy.
+    Lies_wormhole_grant(w: TheC): GrantAtom | undefined {
+        const H = this as House
+        const held = (H.top_House()?.stashed as any)?.wormhole_grant as GrantAtom | undefined
+        if (held?.sign) return held
+        const cluster = w.o({ Waft: 'Cluster' })[0] as TheC | undefined
+        const me = (H as any).Lies_self?.(w)?.prepub as string | undefined
+        const row = me ? (cluster?.o({ HostedIdentity: me })[0] as TheC | undefined) : undefined
+        const n = row?.o({ Grant: 'remoteWormhole' })[0] as TheC | undefined
+        return n ? grant_of_C(n) : undefined
+    },
+
+    // EDITOR: mint+sign a remoteWormhole %Grant for a runner (by its roster prepub) and offer it.
+    //  Triggered from the Rundar rack's per-runner grant control.  by === our cluster pub, so our own
+    //   serve later trusts it.  mode 'rw' (default) | 'ro'.  No `until` — grants are infinite by design.
+    async Lies_grant_wormhole(w: TheC, runner_prepub: string, mode: string = 'rw'): Promise<void> {
+        const H = this as House
+        const idento = H.Lies_cluster_idento(w)
+        if (!idento) { (H as any).tlog?.('🛰️ cannot grant remoteWormhole — editor has no cluster key (🪪 hatch)'); return }
+        const atom = await mint_grant(idento, runner_prepub, 'remoteWormhole', { mode })
+        H.Peeroleum_send_consumer(w, 'grant_offer', { grant: atom })   // role-broadcast; the runner filters by `for`
+        w.oai({ Runner: runner_prepub }, { granted_wormhole: 1 })      // reflect on the rack (dontSnap roster row)
+        const row = w.o({ Runner: runner_prepub })[0] as TheC | undefined
+        if (row?.sc.begs_wormhole) { delete row.sc.begs_wormhole; w.bump_version() }
+    },
+
+    // RUNNER: receive an offered %Grant, verify it, persist it (local + registry), install the nav.
+    async Lies_grant_offer_recv(w: TheC, frame: any): Promise<void> {
+        const H = this as House
+        const atom = frame?.grant as GrantAtom | undefined
+        if (!atom?.sign) return
+        // accept a grant addressed to ANY of our identity tiers (the editor granted on the advertise
+        //  prepub = Clustation_self; the registry keys on Lies_self — usually the same, tolerate both).
+        const ids = [(H as any).Lies_self?.(w)?.prepub, (H as any).Clustation_self?.(w)?.prepub].filter(Boolean) as string[]
+        if (ids.length && !ids.includes(atom.for)) return              // not for us (broadcast → filter)
+        const me = ids[0]
+        try { await verify_grant(atom) } catch (e) { (H as any).tlog?.(`🛰️ grant_offer bad sig: ${e}`); return }
+        const top = H.top_House()
+        if (top?.stashed) (top.stashed as any).wormhole_grant = atom    // bootstrap-durable, survives restart
+        const cluster = w.o({ Waft: 'Cluster' })[0] as TheC | undefined  // registry copy (best-effort, once loaded)
+        if (cluster && me) {
+            const row = cluster.oai({ HostedIdentity: me }) as TheC
+            for (const old of row.o({ Grant: 'remoteWormhole' }) as TheC[]) row.drop(old)
+            grant_to_C(row, atom)
+            cluster.bump_version()
+        }
+        H.Lies_remote_wormhole_install(w)                              // a grant arrived — wire the nav now
+    },
+
+    // EDITOR: a runner begs for access — flag its roster row so the rack offers a grant control.
+    Lies_wormhole_beg_recv(w: TheC, frame: any): void {
+        const from = String(frame?.from ?? '').trim()   // the beacon prepub (body), matching advertise_recv
+        if (from) w.oai({ Runner: from }, { begs_wormhole: 1 })
+    },
+
+    // EDITOR: serve one rw-op for a runner — verify the presented grant, then run it against OUR nav.
+    async Lies_wormhole_req_recv(w: TheC, frame: any): Promise<void> {
+        const H = this as House
+        const reply = (body: Record<string, unknown>) => H.Peeroleum_send_consumer(w, 'wormhole_reply', { corr: frame?.corr, ...body })
+        try {
+            const idento = H.Lies_cluster_idento(w)
+            if (!idento) return void reply({ error: 'editor has no cluster key' })
+            const claim = await verify_grant(frame.grant as GrantAtom)        // throws on a bad/forged sig
+            if (claim.to !== 'remoteWormhole') return void reply({ error: `grant is for ${claim.to}` })
+            if (claim.by !== idento.pub)        return void reply({ error: 'grant not issued by this editor' })
+            // TODO: revocation-corpus check (a signed %NotGrant for {by, for, remoteWormhole})
+            const nav = H.top_House().o({ A: 'Wormhole' })[0]?.c.nav as any
+            if (!nav) return void reply({ error: 'editor wormhole nav not ready' })
+            const { op, dir_path, filename } = frame
+            if (op === 'read') {
+                const c = await nav.read_file(dir_path, filename)
+                reply(c != null ? { content: c } : { not_found: true })
+            } else if (op === 'bin') {
+                const b = nav.bin_read ? await nav.bin_read(dir_path, filename) : null
+                reply(b ? { bytes_b64: buf_to_b64(b) } : { not_found: true })
+            } else if (op === 'read_range') {
+                const off = Number(frame.offset ?? 0)
+                const len = frame.len ? Number(frame.len) : undefined
+                const r = nav.read_range ? await nav.read_range(dir_path, filename, off, len) : null
+                reply(r ? { bytes_b64: buf_to_b64(r.buffer), size: String(r.size) } : { not_found: true })
+            } else if (op === 'list') {
+                const dl = await nav.dir(...String(dir_path).split('/').filter(Boolean))
+                if (!dl) reply({ not_found: true })
+                else {
+                    await dl.expand()
+                    reply({ entries: [
+                        ...dl.directories.map((d: any) => ({ name: d.name, is_dir: true })),
+                        ...dl.files.map((f: any) => ({ name: f.name, is_dir: false })),
+                    ] })
+                }
+            } else if (op === 'write') {
+                if (claim.mode === 'ro') return void reply({ error: 'grant is read-only' })
+                await nav.write_file(dir_path, filename, frame.data)
+                reply({ ok: true })
+            } else reply({ error: `unknown op ${op}` })
+        } catch (e) { reply({ error: String(e) }) }
+    },
+
+    // RUNNER: a reply landed — hand it to the pending request on our remote nav (matched by corr).
+    Lies_wormhole_reply_recv(w: TheC, frame: any): void {
+        const H = this as House
+        const nav = H.top_House().o({ A: 'Wormhole' })[0]?.c.nav as any
+        if (nav?.is_remote && frame?.corr) nav._resolve(frame.corr, frame)
+    },
+
+    // RUNNER: install the method:remoteWormhole nav onto A:Wormhole once a grant is held.  Idempotent.
+    Lies_remote_wormhole_install(w: TheC): boolean {
+        const H = this as House
+        const A = H.top_House().o({ A: 'Wormhole' })[0] as TheC | undefined
+        if (!A) return false
+        if ((A.c.nav as any)?.is_remote) return true
+        if (!H.Lies_wormhole_grant(w)) return false
+        A.c.nav = new RemoteWormholeNav(H, w, () => H.Lies_wormhole_grant(w))
+        if (w.c.wormhole_state !== 'ready') { w.c.wormhole_state = 'ready'; w.bump_version() }
+        H.main(true)                                                  // nav appeared — re-pump parked reads
+        return true
+    },
+
+    // RUNNER: the acquire driver, pumped from Lies_aim each heartbeat while &disk=proxy and ungranted.
+    //  Installs the nav if a grant is held, else begs the editor (throttled).  Until the nav installs,
+    //   every rw-op returns "nav not ready" and Lies waits on its Wafts — the intended gum-up.
+    Lies_remote_wormhole_step(w: TheC): void {
+        const H = this as House
+        if (H.Lies_remote_wormhole_install(w)) return
+        if (w.c.wormhole_state !== 'begging') { w.c.wormhole_state = 'begging'; w.bump_version() }
+        if (!H.Lies_channel_live(w)) return
+        const now = Date.now()
+        if (now - Number(w.c.wormhole_beg_at ?? 0) < 4000) return
+        w.c.wormhole_beg_at = now
+        // carry our prepub in the BODY (as the advertise beacon does) so the editor flags the SAME
+        //  %Runner roster row the rack renders — keyed on the beacon prepub, not header.from.
+        const me = (H as any).Clustation_self?.(w)?.prepub ?? (H as any).Lies_self?.(w)?.prepub
+        H.Peeroleum_send_consumer(w, 'wormhole_beg', { want: 'remoteWormhole', from: me })
+    },
+
     //   Hoist (or retire) the cluster Brinks by role — called every heartbeat.  editor|runner
     //    means a remote relationship exists, so the endpoint faces are worth showing; otherwise
     //     they're dropped.  Each Brink backlinks its w (the monitored Lies); the Relay face also
@@ -416,7 +564,11 @@ await M.eatfunc({
         //  the Good pipeline).  equip is stamped here so it survives the place() that the Good load
         //   does; no longer seeded minimised — an equip registry shows its /* (the %HostedIdentity
         //    children, who we + the cluster claim to be) like any Waft.
-        if (cluster) { H.Lies_cluster_decorate(w, cluster); H.Lies_cluster_claim_self(w) }
+        if (cluster) { H.Lies_cluster_decorate(w, cluster); H.Lies_cluster_claim_self(w); if (role === 'editor') H.Lies_runner_roster(w, cluster) }
+
+        // &disk=proxy runner: drive the remote-Wormhole acquire (beg→grant→install) HERE, where the
+        //  channel + Waft:Cluster live; DirectoryOpener only reflects A.c.nav.  No-op once installed.
+        if (role === 'runner' && H.top_House().c.disk_proxy) H.Lies_remote_wormhole_step(w)
 
         // Relay — a single face, both roles (the relay carrier's own health).
         if (on) {
@@ -427,18 +579,20 @@ await M.eatfunc({
             }
         } else H.Lies_lens_dismiss('Brink', 'Relay')
 
-        // Runner — the MULTIPLIED face:
-        //  • runner role: one face →EDITOR (the single peer it reports to), as before (no pub).
-        //  • editor role: ONE face per %Runner roster entry (keyed by pub), so an editor coordinating
-        //     a grid sees every advertised runner, each with its OWN identity.  Reaped as the roster
-        //      changes; the legacy single (no-pub) Runner is retired so they never double-show.
-        //   Each lens keeps of_Funkcion:'Runner' (LensHost resolves comp_Brink off it) + a pub
-        //    discriminator (the Lens dock's each-key folds pub in, so duplicates don't clash).
-        const allRunner = () => bag.o({ Lens: 'Brink', of_Funkcion: 'Runner' }) as TheC[]
+        // Rundar — the runner RADAR (renamed from Runner: it started point-to-point, then we sludged the
+        //  fleet rack into it; the new name carries the multiplicity).  TWO modes off ONE kind:
+        //   • runner role: one single-pair face →EDITOR (the one peer it reports to), no rack.
+        //   • editor role: ONE rack face reading the whole snapped w:Lies/%Runner roster (1:1 with the
+        //      %HostedIdentity registry) — every runner the editor can dispatch to, each with its identity.
+        //   Self-migration: any legacy of_Funkcion:'Runner' lens a prior build left is dropped here so the
+        //    old name never lingers beside the new (Lies_aim drops|remints every tick, so a reload isn't
+        //     even needed).
+        for (const l of bag.o({ Lens: 'Brink', of_Funkcion: 'Runner' }) as TheC[]) { bag.drop(l); bag.bump_version() }   // legacy name → gone
+        const allRundar = () => bag.o({ Lens: 'Brink', of_Funkcion: 'Rundar' }) as TheC[]
         if (role === 'runner') {
-            for (const l of allRunner()) if (l.sc.pub || l.sc.rack) { bag.drop(l); bag.bump_version() }   // editor crumbs, if any
-            if (!allRunner().some(l => !l.sc.pub && !l.sc.rack)) {
-                const lens = H.Lies_lens_suggest('Brink', 'Runner', { altitude: 20 }) as TheC   // no singleton funk
+            for (const l of allRundar()) if (l.sc.pub || l.sc.rack) { bag.drop(l); bag.bump_version() }   // editor crumbs, if any
+            if (!allRundar().some(l => !l.sc.pub && !l.sc.rack)) {
+                const lens = H.Lies_lens_suggest('Brink', 'Rundar', { altitude: 20 }) as TheC   // no singleton funk
                 lens.c.w = w
             }
         } else if (role === 'editor') {
@@ -447,13 +601,13 @@ await M.eatfunc({
             //   an editor (the "editor →RUNNER" banality).  rack:'all' is a STRING discriminator — a
             //    numeric 1 here is a query wildcard that never persisted as a literal, so the face read
             //     lens.sc.rack as absent and fell through to the single-pair face.  A connected
-            //      no-identity ?B= runner (can't advertise a pub) still shows: the rack falls back to
-            //       the live single-pair peer.
-            for (const l of allRunner()) if (l.sc.rack !== 'all') { bag.drop(l); bag.bump_version() }   // drop legacy single + per-pub
-            let lens = (bag.o({ Lens: 'Brink', of_Funkcion: 'Runner', rack: 'all' })[0]) as TheC | undefined
-            if (!lens) { lens = bag.oai({ Lens: 'Brink', of_Funkcion: 'Runner', rack: 'all' }, { altitude: 20 }) as TheC; bag.bump_version() }
+            //      no-identity ?B= runner (can't advertise a pub) still shows: the rack folds in the live
+            //       single-pair peer as an anonymous row.
+            for (const l of allRundar()) if (l.sc.rack !== 'all') { bag.drop(l); bag.bump_version() }   // drop legacy single + per-pub
+            let lens = (bag.o({ Lens: 'Brink', of_Funkcion: 'Rundar', rack: 'all' })[0]) as TheC | undefined
+            if (!lens) { lens = bag.oai({ Lens: 'Brink', of_Funkcion: 'Rundar', rack: 'all' }, { altitude: 20 }) as TheC; bag.bump_version() }
             lens.c.w = w                                                // the rack reads the whole %Runner roster off w itself
-        } else for (const l of allRunner()) { bag.drop(l); bag.bump_version() }
+        } else for (const l of allRundar()) { bag.drop(l); bag.bump_version() }
     },
 
     // ── Lies_instantiate_funkcions ────────────────────────────────────────────────
@@ -745,8 +899,8 @@ await M.eatfunc({
                 ;(H as any).Peeroleum_send_to(w, to, 'become_book', { book })
                 // light the ☎ on this runner's rack slot — a job in flight, awaiting its ack.  Cleared when
                 //  the runner advertises a `book` (it picked up + started → ▶), in Lies_advertise_recv.
-                const r = w.oai({ Runner: to }, { dontSnap: 1 }) as TheC
-                r.sc.sent = book; r.sc.sent_at = Date.now(); w.bump_version()
+                const r = w.oai({ Runner: to }) as TheC          // snapped now (1:1 with the registry); the ☎ rides off-snap
+                r.c.sent = book; r.c.sent_at = Date.now(); w.bump_version()
                 H.tlog(`📤 become_book → runner ${to}: ${book}`)
                 return true
             }

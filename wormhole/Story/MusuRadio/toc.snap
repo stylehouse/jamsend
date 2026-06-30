@@ -4,12 +4,14 @@ story:MusuRadio
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=61.449
+    TimeTotal:beliefs,avg=61.509
       sample=61.449,at=1782731449
       sample=61.449,at=1782731672
-    TimeTotal:step,avg=6.828
+      sample=61.63,at=1782828347
+    TimeTotal:step,avg=6.835
       sample=6.828,at=1782731449
       sample=6.828,at=1782731672
+      sample=6.848,at=1782828347
   step,dige:285dbe809a010513
   step=2,dige:3d52a23c71cb3acd
   step=3,dige:cb927791fe9b1eed

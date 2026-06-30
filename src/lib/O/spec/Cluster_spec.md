@@ -398,6 +398,36 @@ When the app needs to act on the **host** — restart a crashed Chrome profile, 
      `FileSystemFileHandle` and an OPFS handle both yield streams), and `method:remoteWormhole` is just
       that stream piped over the relay — the editor's chosen backing invisible beneath it.
 
+**BUILT (2026-07-01, :9091-UNVERIFIED).** The beg→grant→serve spine is in, type-clean, at the new end:
+ - **`%Grant` crypto atom** — `src/lib/O/Funk/Grant.ts`. A self-contained, signed capability (`to,by,for,
+    time,sign` + opt `mode`), modelled on Peerily's `grant_trust`/`verify_trust`/`say_trust` (Peerily is
+     out of bounds — REPLICATED, not reached into) but carrying its own grantor/grantee so it verifies off
+      any connection. **No `until`** — grants are infinite by design (click-to-renew trains rubber-stamping +
+       adds operator noise); revocation is a signed `%NotGrant` (`mint_revoke`, seed only). The **swap-out**
+        is `grant_to_C`/`grant_of_C` (atom ⇄ a `%Grant` particle you leave around in `Waft:Cluster`).
+ - **`method:remoteWormhole` backend** — `src/lib/O/RemoteWormholeNav.svelte.ts`. The third nav behind the
+    same `read_file/write_file/dir/bin_read/read_range` contract, round-tripping rw-ops to the editor.
+ - **Partial/range reads** — `read_range(dir,file,offset,len)` on both local navs (OPFS + FSA, via
+    `file.slice`) and the rw_op dispatch; only the requested WINDOW of a 1.4GB asset ever crosses.
+ - **The four verbs** (additive Peeroleum frames, no `.g` spine change) in LiesFunk + registered in LiesLies:
+    `wormhole_beg`→roster flag, `grant_offer` (editor mints from the **Rundar rack** per-runner *grant 🛰️*
+     button), `wormhole_req`→editor verifies (`by===self`) + serves from its own nav, `wormhole_reply`. The
+      runner's **Rundar** RUNNER indicator shows the acquire status. `&disk=proxy` (Otro) swaps the
+       FaceSucker for `req`-less acquire (Lies_aim drives beg→install; DirectoryOpener only reflects A.c.nav;
+        ungranted ⇒ "nav not ready" ⇒ Lies waits — the intended gum-up).
+ - **Bootstrap** — the held grant's durable home is the runner's local `.stashed` (per Chrome profile,
+    survives a docker restart, readable with NO nav); `Waft:Cluster` keeps the registry copy. This breaks
+     the circular dep (Waft:Cluster itself loads *through* the Wormhole the grant unlocks).
+
+**Deltas / owed.** (a) Bytes ride **base64-in-JSON** for now, not the chunked binary `offer_stream` — correct
+ but a 33% tax (range keeps the window small); migrating the audio decoder to `read_range` is the "develop
+  partial decode now" follow-up. (b) `wormhole_reply`/`grant_offer` are **role-broadcast + corr/`for`-filtered**
+   (single-runner-safe) because the editor's **frozen spine lacks `Peeroleum_send_to`** — N-runner addressing
+    needs a spine re-pin. (c) The editor serve calls its nav **directly**, bypassing the rw_queue, so a remote
+     **write** can race the editor's own (reads are safe) — funnel writes through the queue, or grant `ro`.
+      (d) Revocation-corpus check at serve is a TODO. (e) `for` is a **prepub** (the editor never holds the
+       runner's full pub under trust-everything v1). Verify live on the docker flock + an editor on :9091.
+
 ---
 
 ## 4. The real-isolation testbed — dockerised Chrome

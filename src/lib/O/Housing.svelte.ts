@@ -1747,6 +1747,14 @@ export class House extends StorableHousing {
         //      FaceSucker demanding a share, and the open_dir action above (the only way in) is
         //       what dismisses it.  boot_role is set only for E|B, so a plain demo is unaffected.
         if (H.top_House().c.boot_role) {
+            // &disk=proxy runner: NO FaceSucker — the real tree arrives over the channel from a trusted
+            //  editor (method:remoteWormhole).  w:Lies drives the beg→grant→install (Lies_remote_wormhole_step
+            //   off Lies_aim); here we only REFLECT A.c.nav.  Until it installs, A.c.nav stays unset, every
+            //    rw-op returns "nav not ready", and Lies waits on its Wafts — the intended gum-up.
+            if (H.top_House().c.disk_proxy && H.top_House().c.boot_role === 'runner') {
+                const installed = (A.c.nav as any)?.is_remote
+                return w.i({ see: installed ? '🛰️ remote Wormhole (editor-proxied)' : '🛰️ begging editor for Wormhole access…' })
+            }
             H.top_House().c.disk_gated = true
             return w.i({ see: `📁 open a share — OPFS disabled under ?${H.top_House().c.boot_role === 'editor' ? 'E' : 'B'}=` })
         }
@@ -1909,6 +1917,14 @@ export class House extends StorableHousing {
                     const buffer = (nav as any).bin_read ? await (nav as any).bin_read(dir_path, filename) : null
                     if (buffer != null) { req.c.bin = buffer; done({ ok: true, bytes: buffer.byteLength }) }
                     else done({ not_found: true })
+                } else if (op === 'read_range') {
+                    // seekable binary read — the window's bytes park on req.c.bin (off-snap, like bin);
+                    //  reply carries the byte count, the offset, and the file's total size (for seeking).
+                    const offset = Number(req.sc.rw_offset ?? 0)
+                    const len    = req.sc.rw_len != null ? Number(req.sc.rw_len) : undefined
+                    const r = (nav as any).read_range ? await (nav as any).read_range(dir_path, filename, offset, len) : null
+                    if (r) { req.c.bin = r.buffer; done({ ok: true, bytes: r.buffer.byteLength, offset, size: r.size }) }
+                    else done({ not_found: true })
                 } else if (op === 'write') {
                     await nav.write_file(dir_path, filename, req.sc.rw_data as string)
                     done({ ok: true })
@@ -2063,6 +2079,20 @@ export class WormholeNav {
             o.set(new Uint8Array(a)); o.set(new Uint8Array(b), a.byteLength)
             return o.buffer
         }, new ArrayBuffer(0) as ArrayBuffer)
+    }
+
+    // read_range — bin_read's SEEKABLE twin: bytes [offset, offset+len) only, never the whole file.
+    //  Reaches the FSA File via the DirectoryListing handle and slices it (len omitted ⇒ to EOF),
+    //   returning the window + total size so a consumer can jump into the middle of a big asset.
+    async read_range(dir_path: string, filename: string, offset: number, len?: number): Promise<{ buffer: ArrayBuffer, size: number } | null> {
+        const parts = dir_path.split('/').filter(Boolean)
+        const dir = await this.dir(...parts)
+        if (!dir) return null
+        if (!dir.expanded) await dir.expand()
+        if (!dir.files.find(f => f.name === filename)) return null
+        const file = await (await (dir as any).handle.getFileHandle(filename)).getFile()
+        const end = len == null ? file.size : Math.min(file.size, offset + len)
+        return { buffer: await file.slice(offset, end).arrayBuffer(), size: file.size }
     }
 
     async write_file(dir_path: string, filename: string, content: string): Promise<void> {

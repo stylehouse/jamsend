@@ -5,8 +5,9 @@ Snap:H
       w:MusuTune
         self,round=4	{"mung":["age"]}
         req:wrangle,eternal,ok
-        tune,kind:result,start_w=12.8,best_w=8.3,low=0.05,high=0.18,floor=0.87,tuned_drop=5,none_drop=8,inv_drop=8,min_rate=0.87,recovered
+        tune,kind:result,start_w=21.8,best_w=10.8,low=0.08,high=0.23,floor=0.82,tuned_drop=5,none_drop=9,inv_drop=12,min_rate=0.82,recovered
         witnessed:helps
+        witnessed:discriminates
         witnessed:descended
         witnessed:backs_off
         witnessed:recovers

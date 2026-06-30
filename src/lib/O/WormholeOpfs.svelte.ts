@@ -69,6 +69,23 @@ export class OpfsOverlayNav {
         return null
     }
 
+    // read_range — bin_read's SEEKABLE twin: bytes [offset, offset+len) only, never the whole file
+    //  (a 1.4GB asset must not slurp).  File.slice over the OPFS file handle reads just the window;
+    //   len omitted ⇒ to EOF.  Returns the window + the file's total size so a consumer can seek.
+    async read_range(dir_path: string, filename: string, offset: number, len?: number): Promise<{ buffer: ArrayBuffer, size: number } | null> {
+        const parts = dir_path.split('/').filter(Boolean)
+        for (const root of [this.scratch, this.seed]) {   // scratch shadows seed
+            const d = await walk(root, parts, false)
+            if (!d) continue
+            try {
+                const file = await (await d.getFileHandle(filename)).getFile()
+                const end = len == null ? file.size : Math.min(file.size, offset + len)
+                return { buffer: await file.slice(offset, end).arrayBuffer(), size: file.size }
+            } catch { /* not in this layer — fall through */ }
+        }
+        return null
+    }
+
     async write_file(dir_path: string, filename: string, content: string): Promise<void> {
         const parts = dir_path.split('/').filter(Boolean)
         const d = await walk(this.scratch, parts, true)

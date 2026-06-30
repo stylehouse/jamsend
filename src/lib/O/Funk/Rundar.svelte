@@ -25,13 +25,15 @@
 </script>
 
 <script lang="ts">
-    // Runner — the endpoint monitor, hoisted as a Lens:Brink (a tenant of the Liesui-pinned dock).
-    //  It reads the live channel state on a w:Lies — the peer's
-    //   liveness off %channel_peer (role + rtt + last, stamped by Lies_pong_recv on the ping/pong
-    //    heartbeat), whether the socket carries at all (Lies_channel_live), and the in-flight
-    //     run_phase blip — and shows, at a glance, whether the remote endpoint is up and what its
-    //      run is doing.  Suggested by Lies_heartbeat whenever this instance holds an editor|runner
-    //       role; the Aim layer will later point one of these at each endpoint it orchestrates.
+    // Rundar — the runner RADAR (was Runner; renamed for the fleet multiplicity).  Hoisted as a Lens:Brink
+    //  (a tenant of the Liesui-pinned dock), it has TWO modes off one kind:
+    //   • editor RACK (lens.sc.rack): the snapped w:Lies/%Runner roster — ONE row per known runner (1:1
+    //      with the %HostedIdentity registry) plus the anonymous single-pair peer — the grid the editor
+    //       dispatches to, each runner with its own liveness|book|engaged.
+    //   • runner single-pair (no rack): a runner's view of its ONE editor — the %channel_peer liveness
+    //      (role + rtt + last, stamped by Lies_pong_recv on the ping/pong heartbeat), whether the socket
+    //       carries (Lies_channel_live), and the in-flight run_phase blip.
+    //  Suggested by Lies_aim whenever this instance holds an editor|runner role.
     import { onDestroy }   from 'svelte'
     import type { House } from "$lib/O/Housing.svelte"
     import type { TheC }  from "$lib/data/Stuff.svelte"
@@ -49,12 +51,15 @@
     let channel_live   = $state(false)
     let now            = $state(Date.now())
 
-    // editor RACK mode: when the suggester stamps lens.sc.rack, this ONE face reads the whole %Runner
-    //  roster off w:Lies and renders a single titled "RUNNER" box — a row per advertised runner (its
-    //   pub + friendly + liveness) — instead of the editor mounting one panel per pub.  The single-pair
-    //    {:else} mode below still serves a runner (→EDITOR) and a plain ?B= editor with none advertised.
+    // editor RACK mode: when the suggester stamps lens.sc.rack, this ONE face reads the whole snapped
+    //  %Runner roster off w:Lies (1:1 with the %HostedIdentity registry, projected by Lies_runner_roster)
+    //   and renders a single titled box — a row per known runner + the anon single-pair peer.  The
+    //    single-pair {:else} mode below serves a runner's view of its editor (→EDITOR).
     let is_rack = $derived(!!lens?.sc?.rack)
-    let rack = $state<{ pub: string, friendly: string, heard: number, ready: boolean, book: string, engaged: string, sent: string, sent_at: number }[]>([])
+    let rack = $state<{ pub: string, friendly: string, heard: number, ready: boolean, book: string, engaged: string, sent: string, sent_at: number, begs: boolean, granted: boolean }[]>([])
+    // the live w:Lies (for the rack's grant control) + this runner's remote-Wormhole acquire state.
+    let w_lies = $state<TheC | undefined>(undefined)
+    let wormhole_state = $state('')
 
     const _tick = setInterval(() => { now = Date.now() }, 1000)
     onDestroy(() => clearInterval(_tick))
@@ -62,6 +67,7 @@
     $effect(() => {
         const w = (lens?.c?.w ?? H.ave.ob({ examining: 1 })[0]?.c?.w) as TheC | undefined
         if (!w) return
+        w_lies = w
         w.ob()   // track w:Lies version (bumps on pong roai, advertise stamp + the ambient heartbeat)
         const rack_mode = !!lens?.sc?.rack
         H.clear(async () => {
@@ -69,16 +75,22 @@
             run_phase    = w.c?.run_phase
             role         = (H as any).Lies_role?.(w) ?? ''
             channel_live = !!(H as any).Lies_channel_live?.(w)
+            wormhole_state = (w.c?.wormhole_state as string) ?? ''   // remote-Wormhole acquire (runner)
             now          = Date.now()
+            // the snapped %Runner carries the STABLE facts in .sc (friendly|ready|book|engaged, 1:1 with the
+            //  registry); the VOLATILE timing (last_heard, the ☎ sent/sent_at) rides .c off-snap, so the snap
+            //   doesn't churn on the ~15s beacon.  Read both halves here.
             if (rack_mode) rack = (w.o({ Runner: 1 }) as TheC[]).map(rn => ({
                 pub:      (rn.sc.Runner as string) ?? '',
                 friendly: (rn.sc.friendly as string) ?? '',
-                heard:    Number(rn.sc.last_heard ?? 0),
+                heard:    Number(rn.c?.last_heard ?? 0),
                 ready:    !!rn.sc.ready,
                 book:     (rn.sc.book as string) ?? '',
                 engaged:  (rn.sc.engaged as string) ?? '',
-                sent:     (rn.sc.sent as string) ?? '',
-                sent_at:  Number(rn.sc.sent_at ?? 0),
+                sent:     (rn.c?.sent as string) ?? '',
+                sent_at:  Number(rn.c?.sent_at ?? 0),
+                begs:     !!rn.sc.begs_wormhole,      // begging for remote Wormhole (disk proxy)
+                granted:  !!rn.sc.granted_wormhole,   // we granted it
             }))
         })
     })
@@ -128,6 +140,23 @@
     let phase_view = $derived(run_phase ? PHASE_VIEW[run_phase.phase as string] : undefined)
     let phase_pct  = $derived(run_phase?.total ? Math.min(100, Math.round((Number(run_phase.n ?? 0) / Number(run_phase.total)) * 100)) : null)
 
+    // the single-pair channel peer as an ANONYMOUS runner row — ONLY when the roster is genuinely EMPTY
+    //  (we know of NO identified runner): a pure ?B= runner connected with no ?I, no pub to claim.  We do
+    //   NOT borrow the global run_phase to caption it: run_phase is the editor's ONE collapsed "latest
+    //    blip" (often a local Doc/compile path like Radiola.g — a ghost source — NOT this peer's Story
+    //     %w), so attributing it to the anon peer was a lie.  When identified runners EXIST but none reads
+    //      fresh, show NO anon — the live channel is one of THEM with a stale beacon (see stale_hint), not
+    //       a different anonymous runner.
+    let any_live_runner = $derived(rack.some(v => v.heard && now - v.heard < 45000))
+    let anon = $derived.by(() => {
+        if (!is_rack || rack.length || !live_face.length) return null
+        return { glyph: '●', cls: 'live', text: 'connected — no identity' }
+    })
+    // the channel CARRIES but no known runner's beacon is fresh: they're connected (ping/pong, ~1s) yet
+    //  their advertise (~15s) isn't landing — the signature of a flapping editor socket dropping the
+    //   sparse beacon while the frequent ping slips through.  Surface it instead of faking liveness.
+    let stale_hint = $derived(is_rack && rack.length > 0 && !any_live_runner && live_face.length > 0)
+
     // a runner's at-a-glance link, off the advertise beacon (cadence ~15s; allow ~2 missed before
     //  "silent", never heard ⇒ "dialing").  States: a job WE rang but it hasn't picked up → ☎ (30s) ▸
     //   playing its book → ▶ ▸ engaged (reserved, idle between runs) ▸ free ▸ silent.  book/engaged/sent
@@ -138,7 +167,7 @@
         const age       = v.heard ? Math.round((now - v.heard) / 1000) : 0
         return v.book    ? { glyph: '▶', cls: 'live',    text: `playing ${base(v.book)}` }   // acked + running → the play button
              : sent_live ? { glyph: '☎', cls: 'sent',    text: `calling ${base(v.sent)}` }   // job in flight — ringing
-             : !v.heard  ? { glyph: '◌', cls: 'dial',    text: 'dialing' }
+             : !v.heard  ? { glyph: '○', cls: 'dial',    text: 'offline' }                   // known (in the registry) but not heard this session
              : live      ? (v.engaged ? { glyph: '◑', cls: 'engaged', text: 'engaged' }
                                       : { glyph: '●', cls: 'live',    text: 'free' })
              :             { glyph: '◍', cls: 'silent', text: `silent ${age}s` }
@@ -146,30 +175,42 @@
 </script>
 
 {#if is_rack}
-    <!-- the RUNNER box: every advertised runner as a row (friendly|pub · liveness), one titled panel
-         instead of N inline ones.  No →EDITOR carrier line here — that's the Relay's job; this is the
-         roster, the editor's view of who it can dispatch to. -->
+    <!-- the RUNNER rack (Rundar): the editor's snapped roster, ONE row per %HostedIdentity(role:runner) —
+         friendly|pub · liveness — plus the anonymous single-pair peer (a ?B= runner with no identity) if it
+         isn't already one of the identified rows.  No →EDITOR carrier line here — that's the Relay's job. -->
     <div class="rp">
-        <div class="rp-hd">runner{rack.length ? ` · ${rack.length}` : ''}</div>
-        {#if rack.length}
-            {#each rack as v (v.pub)}
-                {@const lk = runner_link(v)}
-                <div class="rp-link rp-{lk.cls}" title={`runner ${v.pub}${v.ready ? ' — ready' : ''}${v.engaged ? ` — engaged by ${v.engaged.slice(0, 8)}` : ''}`}>
-                    <span class="rp-dot">{lk.glyph}</span>
-                    <span class="rp-role">{v.friendly || (v.pub ? v.pub.slice(0, 8) : '?')}</span>
-                    <span class="rp-txt">{lk.text}</span>
-                </div>
-            {/each}
-        {:else if live_face.length}
-            <!-- a runner connected on the single-pair channel but advertising no identity (a ?B= runner,
-                 no ?I) — it can't claim a roster row, but it's live, so show it lives. -->
-            <div class="rp-link rp-live" title="a connected runner with no cluster identity (?B=, can't advertise a pub)">
-                <span class="rp-dot">●</span>
-                <span class="rp-role">peer</span>
-                <span class="rp-txt">connected — no identity</span>
+        <div class="rp-hd">runner{(rack.length + (anon ? 1 : 0)) ? ` · ${rack.length + (anon ? 1 : 0)}` : ''}</div>
+        {#each rack as v (v.pub)}
+            {@const lk = runner_link(v)}
+            <div class="rp-link rp-{lk.cls}" title={`runner ${v.pub}${v.ready ? ' — ready' : ''}${v.engaged ? ` — engaged by ${v.engaged.slice(0, 8)}` : ''}`}>
+                <span class="rp-dot">{lk.glyph}</span>
+                <span class="rp-role">{v.friendly || (v.pub ? v.pub.slice(0, 8) : '?')}</span>
+                <span class="rp-txt">{lk.text}</span>
+                <!-- remote-Wormhole grant control: a begging runner gets a grant button; a granted one a tick.
+                     mint+sign a %Grant (Lies_grant_wormhole) keyed by this runner's prepub (v.pub). -->
+                {#if v.granted}
+                    <span class="rp-grant on" title="remote Wormhole granted (method:remoteWormhole)">🛰️</span>
+                {:else if v.begs}
+                    <button class="rp-grant" title="grant this runner remote-Wormhole disk-proxy access"
+                            onclick={() => w_lies && (H as any).Lies_grant_wormhole(w_lies, v.pub)}>grant 🛰️</button>
+                {/if}
             </div>
-        {:else}
-            <div class="rp-empty">no runners advertised</div>
+        {/each}
+        {#if anon}
+            <!-- a runner connected on the single-pair channel but advertising no identity (a ?B= runner,
+                 no ?I) — no roster row (no pub to key on), and shown ONLY when no identified runner is known. -->
+            <div class="rp-link rp-{anon.cls}" title="a connected runner with no cluster identity (?B=, can't advertise a pub — boot it ?I= to roster it)">
+                <span class="rp-dot">{anon.glyph}</span>
+                <span class="rp-role">anon</span>
+                <span class="rp-txt">{anon.text}</span>
+            </div>
+        {/if}
+        {#if stale_hint}
+            <!-- the runners are connected but their identity beacons aren't landing (flapping socket) -->
+            <div class="rp-stale" title="the channel carries (ping/pong) but the ~15s advertise beacons aren't landing — usually a flapping socket. The runners above are connected; their identity just isn't refreshing.">◍ channel live · beacons stale</div>
+        {/if}
+        {#if !rack.length && !anon}
+            <div class="rp-empty">no runners</div>
         {/if}
     </div>
 {:else}
@@ -184,6 +225,14 @@
         <!-- a transition TOAST: the last state-change, fading out after 5s (not a persistent
              growing-age line — that read as a broken gauge). -->
         <div class="rp-latest">↪ {latest.state} {Math.round((now - latest.at) / 1000)}s ago</div>
+    {/if}
+    {#if wormhole_state}
+        <!-- &disk=proxy acquire status: this runner has no local tree and is acquiring a
+             method:remoteWormhole backend from the editor (beg → grant → install). -->
+        <div class="rp-grant-status rp-{wormhole_state === 'ready' ? 'live' : 'silent'}"
+             title="remote Wormhole (method:remoteWormhole) — the editor proxies the real tree">
+            {wormhole_state === 'ready' ? '🛰️ Wormhole granted' : '🛰️ begging for Wormhole…'}
+        </div>
     {/if}
     {#if phase_live && phase_view}
         <div class="rp-phase" class:stall={run_phase.phase === 'step_stall'} class:done={run_phase.phase === 'all_done'}>
@@ -218,6 +267,12 @@
     .rp-down  .rp-txt, .rp-clash .rp-txt { color: #d68a90; }
     .rp-latest { font-size: 9.5px; color: #6a7398; }
     .rp-empty { font-size: 10px; color: #5a6488; font-style: italic; }
+    .rp-stale { font-size: 9.5px; color: #d8b86a; }   /* connected but advertise beacons not landing */
+    .rp-grant { margin-left: auto; font-size: 9.5px; cursor: pointer; background: #2c3358;
+        color: #b8c2ee; border: 1px solid #3d4680; border-radius: 4px; padding: 0 5px; line-height: 15px; }
+    .rp-grant:hover { background: #3a437a; }
+    .rp-grant.on { background: none; border: none; cursor: default; padding: 0; }
+    .rp-grant-status { font-size: 9.5px; color: #6a7398; }
     .rp-ago { color: #4e5676; }
     .rp-phase { display: flex; align-items: center; gap: 5px; color: #b6a8cc; }
     .rp-phase.stall { color: #d8b86a; }

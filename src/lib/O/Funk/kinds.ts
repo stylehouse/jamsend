@@ -32,7 +32,7 @@ import StoryTimes, { storytimes_run } from "$lib/O/Funk/StoryTimes.svelte"
 import CreduFunk, { credufunk_run } from "$lib/O/Funk/CreduFunk.svelte"
 import Shelver, { shelver_run } from "$lib/O/Funk/Shelver.svelte"
 import IdHatch from "$lib/O/Funk/IdHatch.svelte"
-import Runner, { runner_run } from "$lib/O/Funk/Runner.svelte"
+import Rundar, { runner_run } from "$lib/O/Funk/Rundar.svelte"
 import Relay, { relay_run } from "$lib/O/Funk/Relay.svelte"
 import Upkeep from "$lib/O/Funk/Upkeep.svelte"
 import DocTing from "$lib/O/Funk/DocTing.svelte"
@@ -58,7 +58,7 @@ export const FUNK_KINDS: Record<string, FunkKind> = {
     CreduFunk:  { run: credufunk_run,  component: CreduFunk },  // container: holds Storying cells + journals their Credulates (coherence)
     Shelver:    { run: shelver_run,    component: Shelver },    // librarian: walks wormhole/Story, auto-files new Books onto its board by prefix
     IdHatch:    { comp_Panel: IdHatch },                        // face-only: the cluster-identity hatch, a global Lens:Panel
-    Runner:     { run: runner_run, comp_Brink: Runner },        // %Aim watcher: the peer ping (%channel_peer), hoisted as Lens:Brink
+    Rundar:     { run: runner_run, comp_Brink: Rundar },        // %Aim runner-RADAR: editor's fleet rack (1:1 %HostedIdentity roster) + a runner's single-pair editor view, hoisted as Lens:Brink
     Relay:      { run: relay_run,  comp_Brink: Relay },         // %Aim watcher: the relay ping (channel carrier), hoisted as Lens:Brink
     Upkeep:     { comp_Brink: Upkeep },                         // %Upkeep ledger: live %Errands (compiles, sweeps) hoisted as Lens:Brink
     Ting:       { component: DocTing },                         // big face: the attention-Ting histogram — a taker Waft's main Funkcion (data in H.ave)
