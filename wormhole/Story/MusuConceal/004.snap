@@ -1,0 +1,10 @@
+Snap:H
+  H:MusuConceal,Run
+    A:MusuConceal
+      self,round=4	{"mung":["age"]}
+      w:MusuConceal
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        conceal,mode:silence,silent=4,bits=6.39,seam=0.0007
+        conceal,mode:repeat,silent=0,bits=7.32,seam=0.0436
+        conceal,mode:pingpong,silent=0,bits=7.32,seam=0

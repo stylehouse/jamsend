@@ -554,6 +554,41 @@
         return false
     },
 
+    // expecting(w, name, secs, async_fn) — the clearly time-expecting layer over ttlilt.
+    //   "I expect up to `secs` for this async meaning to land; snap when it resolves, or an
+    //    in-progress picture at ~secs (poll-bounded ±TICK_MS)."
+    //
+    //   NON-BLOCKING: think() returns immediately — the work runs off the Atime mutex, not holding
+    //    it for its whole extent the way a bare `await` inside an (eternal) do_fn does.  A FINISHING
+    //     child %req:name is hung on w purely to host the ttlilt (the req/req/ttlilt shape — a ttlilt
+    //      must ride a req that can finish, and the wrangle is eternal).  i_req_ttlilt advises Story to
+    //       hold the snap.  Two outcomes, exactly the two Story polls for:
+    //        • RESOLVE (causal) — async_fn settles → reqyoncile(finished) finishes the req out-of-time
+    //           → next poll sees no live ttlilt → snap the resolved state.  This is the deterministic
+    //            path: size `secs` above the worst case and the picture is always the completed one.
+    //        • TIMEOUT — async_fn overruns `secs` → the ttlilt times out → Story snaps an in-progress
+    //           picture and on_step_ending('timeout').  The bounded escape, NOT the normal path.
+    //   The no-op do_fn keeps the req from being pumped to a premature finish; only the resolve drives it.
+    //   Caller does NOT await this (think must return); returns the req for callers that want the ref.
+    expecting(w: TheC, name: string, secs: number, async_fn: () => Promise<any>): TheC {
+        const H = this as House
+        const req = w.oai({ req: name }) as TheC   // named finishing child (oai sets c.up = w)
+        req.c.do_fn = () => {}                       // held open — only the resolve below finishes it
+        H.i_req_ttlilt(req, secs)
+        // settle once, defensively.  A late Promise — a slow async resolving AFTER the run tore the world
+        //  down, or a stray double-call — must never drive a finished or detached req: guard on %finished
+        //   and a live c.up before reqyoncile.  (Finish on error too, so a throw never wedges the snap open.)
+        const settle = () => {
+            if (req.sc.finished || !req.c.up) return
+            H.reqyoncile(req, { finished: 1 })
+        }
+        Promise.resolve()
+            .then(async_fn)
+            .then(settle)
+            .catch((e) => { H.trace?.('ttlilt', `expecting ${name} threw: ${String(e)}`); settle() })
+        return req
+    },
+
 //#endregion
 
 

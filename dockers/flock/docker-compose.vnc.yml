@@ -1,0 +1,11 @@
+# Overlay to WATCH one cluster's runners over noVNC in a browser.
+#   docker compose -f docker-compose.yml -f docker-compose.vnc.yml -p <cluster> up -d --build
+#   (flock.sh vnc <cluster> does exactly this.)
+#
+# Only ONE watched cluster at a time — these host ports are fixed, so a second
+#  watched cluster would clash. Unwatched clusters publish nothing and coexist freely.
+#   Open http://localhost:7901 / :7902 / :7903 (no password).
+services:
+  r1-droid: { ports: ["7901:7901"] }
+  r2-droid: { ports: ["7902:7902"] }
+  r3-droid: { ports: ["7903:7903"] }

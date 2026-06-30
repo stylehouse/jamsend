@@ -1,0 +1,7 @@
+Snap:H
+  H:MusuConceal,Run
+    A:MusuConceal
+      self,round	{"mung":["age"]}
+      w:MusuConceal
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

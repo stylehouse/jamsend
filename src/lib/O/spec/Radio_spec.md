@@ -115,8 +115,9 @@ Decode + play + cope. Real Audiolet voice; Glide rate-slew; OfflineAudioContext 
 - [done] gap-detector: the **coverage** model — uncovered playback time is the dropout; musical quiet
    ignored.
 - [todo] coverage *per-Cell* once the Mixer lands — each Cell its own expected-play timeline.
-- [todo] concealment ladder: repeat-last-frame / reverse-pingpong / crossfade-on-seam (needs
-   `reverse_buffer` + `slice_buffer` primitives).
+- [done] concealment ladder: a gap fills with repeat-last-frame or reverse-pingpong instead of dropping
+   to silence; reverse-pingpong's seam is continuous where repeat clicks (`Mix_reverse` + MusuConceal).
+- [todo] crossfade-on-seam concealment (the third rung) + wire concealment into the live Glide path.
 - [todo] audible real-time playback through the online voice (gesture-gated).
 
 ### 4 — LiveEdge  *(Book: MusuEdge · Radiola.g LiveEdge_decide)*  **[built]**
@@ -181,7 +182,7 @@ All under `Ghost/Story/Musuation.g`, dispatched per-beat off `step_n`, witnessed
 | Stage | Book | the headline witness |
 |---|---|---|
 | Collection/Rastock | MusuCrate | real_records · playable · helps |
-| Player | MusuSignal · MusuGlide · MusuTune | streams/starves · fewer_gaps · helps |
+| Player | MusuSignal · MusuGlide · MusuTune · MusuConceal | streams/starves · fewer_gaps · repeat_fills · smoother |
 | LiveEdge | MusuEdge | holds_margin · backs_off · low_latency · baseline_overruns |
 | Pier | MusuPier | crossed · verified · dropped_then_healed |
 | Mixer | MusuMix | tempo_detected · beatmatched · cells_sum · crossfade_discriminates |

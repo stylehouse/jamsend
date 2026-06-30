@@ -1,4 +1,4 @@
-Credulate,of_Book:MusuCrate
+Credulate,of_Book:MusuConceal
   GhostInclude:Ghost_N_Peeroleum,dige:239f6da06c21e2f6
   GhostInclude:Ghost_N_Reliable,dige:48e8948c7d8da3ed
   GhostInclude:Ghost_N_Tribunal,dige:a9bf42ff80d08a94
@@ -9,7 +9,7 @@ Credulate,of_Book:MusuCrate
   GhostInclude:Ghost_M_Mixer,dige:a4a24e00de642d18
   GhostInclude:Ghost_M_Mesh,dige:286eb98843f6e7f9
   GhostInclude:Ghost_Story_Musuation,dige:637765a9144b0231
-  last_ok,at=1782811215.534,ok_pct
+  last_ok,at=1782811349.156,ok_pct
     uses:Ghost_N_Peeroleum,dige:239f6da06c21e2f6
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:a9bf42ff80d08a94

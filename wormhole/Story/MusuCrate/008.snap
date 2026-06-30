@@ -1,9 +1,9 @@
 Snap:H
   H:MusuCrate,Run
     A:MusuCrate
-      self,round=8	{"mung":["age"]}
+      self,round=13	{"mung":["age"]}
       w:MusuCrate
-        self,round=8	{"mung":["age"]}
+        self,round=13	{"mung":["age"]}
         req:wrangle,eternal,ok
         platform,name:jamsend,spec:src/lib/O/spec/Radio_spec.md
           stage,of,name:Collection,built
@@ -20,6 +20,10 @@ Snap:H
           record,name:Big Blood/Big_Blood_-_Fight_for_Your_Dinner_Vol_I/Big_Blood_-_07_-_Sick_With_Information.mp3,artist:Big Blood,album:Big_Blood_-_Fight_for_Your_Dinner_Vol_I,title:Sick With Information,loudness=0.054,seconds=297.64,nchunks=240,real,glide_drop=40,none_drop=50
           record,name:Big Blood/Double Days I/Big_Blood_-_01_-_On_Waterfalls_Head.mp3,artist:Big Blood,album:Double Days I,title:On Waterfalls Head,loudness=0.1807,seconds=139.7,nchunks=240,real,glide_drop=38,none_drop=48
           record,name:Big Blood/Double Days I/Big_Blood_-_08_-_Babies_Looking_Weird.mp3,artist:Big Blood,album:Double Days I,title:Babies Looking Weird,loudness=0.1599,seconds=155.92,nchunks=240,real,glide_drop=40,none_drop=51
+        req:fill_3,finished
+        req:fill_4,finished
+        req:fill_5,finished
+        req:fill_6,finished
         report,played=4,helped=4
         witnessed:real_records
         witnessed:playable

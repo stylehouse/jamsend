@@ -1,0 +1,127 @@
+# dockers/flock/docker-compose.yml — a FLOCK: one cluster of Chrome app-runners.
+#   The real-isolation testbed of Cluster_spec §4: each runner is a CONTAINER running
+#    a real Chrome running the app, booted as an ?I=<cluster>-<n> idle runner against
+#     the dev server. It auto-acquires the spine via Creduler, binds to the relay, and
+#      idles awaiting %Rungo. A flock of these is the swarm a distributed Story musters.
+#
+#   Lineage: copied + adapted from ty/droidlounge (the abandoned prod pier-scraper). The
+#    droid+bot pair stays; the bot no longer scrapes prod — it babysits a runner tab.
+#
+#   MULTIPLE CLUSTERS coexist as separate compose PROJECTS — that is how "clusters come
+#    and go" without colliding:
+#        CLUSTER=alpha docker compose -p alpha up -d --build
+#        CLUSTER=beta  docker compose -p beta  up -d --build
+#    each gets its own bridge network + container names + per-cluster Chrome profiles.
+#     Nothing is published to the host by default, so any number of clusters run side by
+#      side with zero port arbitration. To WATCH one, layer docker-compose.vnc.yml
+#       (see flock.sh vnc) — published noVNC ports are unique to one watched cluster.
+#
+#   GRACEFUL RESTART without dropping work: `docker compose -p <cluster> restart` cycles
+#    only that cluster's chromes; other clusters never notice (separate projects). A
+#     bounced runner does NOT lose work, because work does not live in the tab:
+#       - its Idento + %HostedIdentity persist in the per-cluster Chrome profile volume,
+#          so it re-binds to the relay as the SAME runner (sticky favourite_client holds);
+#       - in-flight runs live in durable Storyrun records pinned on OTHER peers / the
+#          relay, addressable @uid — the orchestrator re-musters or resumes from there.
+#     So a restart is a re-announce, not a reset.
+
+x-droid: &droid
+  image: seleniarm/standalone-chromium:latest      # real Chrome + Xvfb + noVNC, arm/x86
+  restart: unless-stopped
+  stop_grace_period: 2s
+  shm_size: 2gb
+  mem_limit: 1.5g
+  extra_hosts:
+    - "host.docker.internal:host-gateway"          # reach the host dev server (:9091)
+  environment: &droid-env
+    START_XVFB: "true"
+    VNC_NO_PASSWORD: "1"
+    SCREEN_WIDTH: "1100"
+    SCREEN_HEIGHT: "900"
+    NODE_MAX_SESSIONS: "1"                          # one tab per droid — one runner identity
+    SE_NODE_SESSION_TIMEOUT: "86400"
+    SE_SESSION_REQUEST_TIMEOUT: "3600"
+    SE_EVENT_BUS_HOST: "127.0.0.1"
+    CHROME_FLAGS: "--use-fake-ui-for-media-stream --use-fake-device-for-media-stream --no-sandbox --autoplay-policy=no-user-gesture-required --hide-crash-restore-bubble --unlimited-storage --disable-gpu --disable-software-rasterizer --disable-dev-shm-usage --disable-features=VizDisplayCompositor --force-device-scale-factor=1"
+  healthcheck:
+    test: ["CMD", "curl", "-f", "http://localhost:4444/wd/hub/status"]
+    interval: 3s
+    timeout: 5s
+    retries: 4
+    start_period: 6s
+
+x-bot: &bot
+  restart: unless-stopped
+  stop_grace_period: 2s
+  mem_limit: 0.4g
+  build:
+    context: .
+    dockerfile_inline: |
+      FROM node:20-alpine
+      WORKDIR /app
+      RUN npm install selenium-webdriver@4
+      CMD ["node", "/app/flock/bot.js"]
+  volumes:
+    - .:/app/flock
+  environment: &bot-env
+    CLUSTER: "${CLUSTER:-flock}"
+    TARGET_BASE: "${TARGET_BASE:-http://host.docker.internal:9091}"
+
+services:
+
+  # --- runner 1 ---
+  r1-droid:
+    <<: *droid
+    environment:
+      <<: *droid-env
+      DISPLAY: ":101"
+      SE_VNC_PORT: "5901"
+      SE_NO_VNC_PORT: "7901"
+    volumes:
+      - ./.env.chrome-profiles/${CLUSTER:-flock}-1:/home/seluser/chrome-profile
+  r1-bot:
+    <<: *bot
+    depends_on: { r1-droid: { condition: service_healthy } }
+    environment:
+      <<: *bot-env
+      SELENIUM_REMOTE_URL: "http://r1-droid:4444/wd/hub"
+      DISPLAY: ":101.0"
+      RUNNER_N: "1"
+
+  # --- runner 2 ---
+  r2-droid:
+    <<: *droid
+    environment:
+      <<: *droid-env
+      DISPLAY: ":102"
+      SE_VNC_PORT: "5902"
+      SE_NO_VNC_PORT: "7902"
+    volumes:
+      - ./.env.chrome-profiles/${CLUSTER:-flock}-2:/home/seluser/chrome-profile
+  r2-bot:
+    <<: *bot
+    depends_on: { r2-droid: { condition: service_healthy } }
+    environment:
+      <<: *bot-env
+      SELENIUM_REMOTE_URL: "http://r2-droid:4444/wd/hub"
+      DISPLAY: ":102.0"
+      RUNNER_N: "2"
+
+  # --- runner 3 ---
+  r3-droid:
+    <<: *droid
+    environment:
+      <<: *droid-env
+      DISPLAY: ":103"
+      SE_VNC_PORT: "5903"
+      SE_NO_VNC_PORT: "7903"
+    volumes:
+      - ./.env.chrome-profiles/${CLUSTER:-flock}-3:/home/seluser/chrome-profile
+  r3-bot:
+    <<: *bot
+    depends_on: { r3-droid: { condition: service_healthy } }
+    environment:
+      <<: *bot-env
+      SELENIUM_REMOTE_URL: "http://r3-droid:4444/wd/hub"
+      DISPLAY: ":103.0"
+      RUNNER_N: "3"

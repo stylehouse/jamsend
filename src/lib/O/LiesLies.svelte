@@ -413,6 +413,22 @@
             return key && pub ? { pub, key } : undefined
         },
 
+        // Lies_self — WHO WE ARE on the cluster: our prepub (+ friendly when known), the single
+        //  answer claim_self / advertise / the relay hello should all agree on.  Resolves the SAME
+        //   identity we sign with — Clustation_self (the ?I= %Identity, which also carries friendly)
+        //    first, else the legacy key behind Lies_cluster_idento (.stashed via the 🪪 hatch, or a
+        //     node role env) reduced to its prepub.  This second tier is the fix for the empty
+        //      registry: an un-migrated editor (a stashed key, no ?I=) HAS a signing identity but
+        //       Clustation_self can't see it, so it never claimed itself.  undefined ⇒ no identity at
+        //        all (nothing to claim — a ?B= runner with no ?I and no env key).
+        Lies_self(w?: TheC): { prepub: string; friendly?: string } | undefined {
+            const H = this as House
+            const face = (H as any).Clustation_self?.(w) as { prepub?: string; friendly?: string } | undefined
+            if (face?.prepub) return { prepub: face.prepub, friendly: face.friendly }
+            const idento = H.Lies_cluster_idento(w)
+            return idento?.pub ? { prepub: prepubOf(idento.pub) } : undefined
+        },
+
         // Lies_send_ghost_compile — hand the cluster the dock-involved compile job for a .g (the in-app
         //  twin of scripts/ghost_compile.ts; uncalled today, kept as the wired in-app send site). The
         //   signed unit is a self-contained {type,from,path,dige} in the CONSUMER PAYLOAD (not the spine
@@ -876,10 +892,18 @@
             //     frame — there is no `favour` receiver).  '' ⇒ unclaimed.
             const cluster = w.o({ Waft: 'Cluster' })[0] as TheC | undefined
             if (cluster) {
-                const hi = cluster.oai({ HostedIdentity: from }, { dontSnap: 1 }) as TheC
+                // the registry PERSISTS now — stable identity facts only (pub, friendly, favourite_client);
+                //  the volatile liveness (ready|book|engaged|last_heard) stays on the dontSnap %Runner roster.
+                const hi = cluster.oai({ HostedIdentity: from }) as TheC
+                if (hi.sc.role !== 'runner') hi.sc.role = 'runner'   // an advertiser IS a runner — identifies who's a runner
                 if (fr?.friendly)         hi.sc.friendly         = String(fr.friendly)
                 if (fr?.favourite_client) hi.sc.favourite_client = String(fr.favourite_client)
                 else                      delete hi.sc.favourite_client
+            } else {
+                // the registry isn't loaded yet — an advertise beat the Good pipeline at boot.  Re-read it
+                //  (idempotent: one Good per path) so wormhole/Cluster/toc.snap lands: a returning runner is
+                //   already IN there with its durable facts, and a brand-new one mirrors on the next ~15s beacon.
+                H.i_elvisto(w, 'Lies_open_Waft', { path: 'Cluster' })
             }
             w.bump_version()
         },

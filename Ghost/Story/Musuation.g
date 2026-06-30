@@ -1676,7 +1676,7 @@ async MusuCrate_drive(w, req):
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) await this.MusuCrate_open(w)
-        if (n >= 3 && n <= 6) await this.MusuCrate_fill(w)
+        if (n >= 3 && n <= 6) await this.MusuCrate_fill(w, n)
         if (n === 7) await this.MusuCrate_play(w)
         if (n === 8) this.MusuCrate_witness(w)
     }
@@ -1708,25 +1708,27 @@ MusuCrate_filaments(w):
     plat.oai({stage: 1, of: 9, name: 'Stretch', built: 1})
     return plat
 
-// MusuCrate_fill — beats 3-6: DRAIN the outstanding read (wait for it to land), harvest it into a %record,
-//  then issue the next.  Draining per beat makes the fill GRADUAL *and* deterministic — exactly one more
-//   record each beat (3→1, 4→2, 5→3, 6→4) regardless of decode timing, instead of a race over how many
-//    landed by snap.  The snap still shows the desires → the read in flight → the records being made.
-async MusuCrate_fill(w):
+// MusuCrate_fill — beats 3-6: issue ONE read, then `expecting` (the ttlilt layer) advises Story to hold
+//  the snap until that read lands + harvests into a %record.  Non-blocking: think returns, the work runs
+//   off the Atime mutex, and the CAUSAL resolve (the decode landing) makes the fill GRADUAL *and*
+//    deterministic — exactly one more record each beat (3→1 4→2 5→3 6→4), no decode-timing race over the
+//     snap, and no 20s mutex hold.  (If a decode ever overran 25s the ttlilt would snap an in-progress
+//      picture instead — the bounded escape.)  `fill_<n>` is a fresh finishing req per beat.
+async MusuCrate_fill(w, n):
     let ra = w.o({rastock: 1})[0]
     if (!ra) return
-    await this.Crate_rastock_drain(ra, 20000)
-    await this.Crate_rastock_harvest(ra)
     this.Crate_rastock_issue(ra)
+    this.expecting(w, 'fill_' + n, 25, async () => {
+        await this.Crate_rastock_drain(ra, 25000)
+        await this.Crate_rastock_harvest(ra)
+    })
 
 // MusuCrate_play — beat 7: stream each gathered record glide-vs-none (offline render), record real dropouts
-//  per record + tally where Glide won.
+//  per record + tally where Glide won.  By now every fill beat's `expecting` has resolved (each held the
+//   snap until its read landed), so all `want` records exist; the harvest here is a defensive no-op.
 async MusuCrate_play(w):
     let ra = w.o({rastock: 1})[0]
     if (!ra) return
-    // drain first: wait for every issued read to land, so the record count is deterministic (= want) and
-    //  the snap is stable — without this, have=2 one run / 3 the next (decode-timing race).
-    await this.Crate_rastock_drain(ra, 20000)
     await this.Crate_rastock_harvest(ra)
     let recs = ra.o({record: 1})
     let rep = w.oai({report: 1})
@@ -2592,6 +2594,137 @@ async MusuPier_order(w):
     let As = H.o({A: 1})
     if (!As.length) return
     let first = (a) => (a.sc.A === 'MusuPier') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+//#endregion
+
+//#region conceal — the CONCEALMENT LADDER (Player stage 3): fill a gap, don't drop to silence
+// ══ MusuConceal — does concealing a dropout beat plain silence? ════════════════════════════════════
+//  When delivery stalls, the naive playout drops to SILENCE for the missing frames (the audible hole).
+//   The concealment ladder fills the gap instead: repeat-last-frame, or reverse-pingpong (play the last
+//    frame backwards — its reversed copy STARTS at the sample the last frame ENDED on, so the seam is
+//     continuous where a repeat clicks).  Pure PCM ops — deterministic, no Web Audio — measured on the
+//      built playout: a concealed gap has NO silent windows where silence had them, the fill is real
+//       audio, and reverse-pingpong's seam is smoother than repeat's.  The next real Player capability
+//        after Glide (which backs off the edge; this fills the hole when one opens anyway).
+//         beat 2  SILENCE  — the naive playout: gaps drop to silence (the damage)
+//         beat 3  REPEAT   — fill each gap with the last frame (no silence, but a seam click)
+//         beat 4  PINGPONG — fill with the reversed last frame (no silence, continuous seam)
+//         beat 5  witness  — has_gaps / repeat_fills / pingpong_fills / real_fill / smoother
+MusuConceal(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuConceal_drive,w,req
+        req%ok = 1
+
+// MusuConceal_drive — pure (no Web Audio gate).  Per-beat dispatch off step_n (req-local did_step).
+async MusuConceal_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.MusuConceal_measure(w, 'silence')
+        if (n === 3) this.MusuConceal_measure(w, 'repeat')
+        if (n === 4) this.MusuConceal_measure(w, 'pingpong')
+        if (n === 5) this.MusuConceal_witness(w)
+    }
+    await this.MusuConceal_order(w)
+
+// MusuConceal_build — build the playout PCM for `mode` over a fixed 20-slot pattern with gaps at slots
+//  6,7,13,14 (deterministic).  A non-gap slot plays the next real synth frame; a gap slot drops to
+//   silence | repeats the last frame | plays its reverse.  Returns {pcm, seam_at} where seam_at is the
+//    first-gap sample index (where the fill meets the preceding frame).
+MusuConceal_build(mode):
+    let CHUNK = 2400
+    let slots = 20
+    let gap = { 6: 1, 7: 1, 13: 1, 14: 1 }
+    let chunks = this.Mix_synth_beat(16, 120, 110)
+    let out = []
+    let realIdx = 0
+    let last = null
+    let first_gap = -1
+    let s = 0
+    while (s < slots) {
+        if (gap[s]) {
+            if (first_gap < 0) first_gap = s
+            if (mode === 'repeat') {
+                out.push(last || new Float32Array(CHUNK))
+            } else if (mode === 'pingpong') {
+                out.push(last ? this.Mix_reverse(last) : new Float32Array(CHUNK))
+            } else {
+                out.push(new Float32Array(CHUNK))
+            }
+        } else {
+            let c = chunks[realIdx % chunks.length]
+            realIdx = realIdx + 1
+            last = c
+            out.push(c)
+        }
+        s = s + 1
+    }
+    let pcm = new Float32Array(out.length * CHUNK)
+    let i = 0
+    while (i < out.length) {
+        pcm.set(out[i], i * CHUNK)
+        i = i + 1
+    }
+    return { pcm: pcm, seam_at: first_gap * CHUNK }
+
+// MusuConceal_silent_windows — count ~50ms windows that fell to silence (RMS < 0.001).  A naive gap
+//  leaves these; a filled gap has none.
+MusuConceal_silent_windows(pcm):
+    let W = 2400
+    let n = 0
+    let i = 0
+    while (i + W <= pcm.length) {
+        let e = 0
+        let j = i
+        while (j < i + W) {
+            e += pcm[j] * pcm[j]
+            j = j + 1
+        }
+        if (Math.sqrt(e / Math.max(1, W)) < 0.001) n = n + 1
+        i = i + W
+    }
+    return n
+
+// MusuConceal_measure — build a mode's playout, measure its silent windows + entropy + the first-gap seam
+//  jump (|fill[0] - preceding[end]|), and stamp a %conceal,mode row.  The seam is the click a repeat makes
+//   and a reverse-pingpong avoids.
+MusuConceal_measure(w, mode):
+    let r = this.MusuConceal_build(mode)
+    let sig = this.Musu_measure(r.pcm)
+    let seam = (r.seam_at > 0) ? +Math.abs(r.pcm[r.seam_at] - r.pcm[r.seam_at - 1]).toFixed(4) : 0
+    w.i({ conceal: 1, mode: mode, silent: this.MusuConceal_silent_windows(r.pcm), bits: sig.bits, seam: seam })
+
+// MusuConceal_witness — the ladder, earned.  Structural + differential; idempotent stamps at beat 5.
+MusuConceal_witness(w):
+    let raw = w.o({conceal: 1, mode: 'silence'})[0]
+    let rep = w.o({conceal: 1, mode: 'repeat'})[0]
+    let png = w.o({conceal: 1, mode: 'pingpong'})[0]
+    if (!raw || !rep || !png) return
+    let raw_s = +(raw.sc.silent ?? 0)
+    let rep_s = +(rep.sc.silent ?? 9)
+    let png_s = +(png.sc.silent ?? 9)
+    let rep_b = +(rep.sc.bits ?? 0)
+    let png_b = +(png.sc.bits ?? 0)
+    let rep_seam = +(rep.sc.seam ?? 0)
+    let png_seam = +(png.sc.seam ?? 9)
+    // has_gaps: the naive playout really dropped to silence at the gaps -- there's a hole to conceal.
+    if (raw_s >= 4 && !(oa %witnessed:has_gaps)) i %witnessed:has_gaps
+    // repeat_fills: repeating the last frame removed the silence (fewer silent windows than raw, down to 0).
+    if (rep_s < raw_s && rep_s === 0 && !(oa %witnessed:repeat_fills)) i %witnessed:repeat_fills
+    // pingpong_fills: reverse-pingpong also removed the silence.
+    if (png_s === 0 && raw_s > 0 && !(oa %witnessed:pingpong_fills)) i %witnessed:pingpong_fills
+    // real_fill: the concealment is REAL audio (entropy ~7), not silence relabelled.
+    if (rep_b >= 4 && png_b >= 4 && !(oa %witnessed:real_fill)) i %witnessed:real_fill
+    // smoother: reverse-pingpong's seam is continuous (≈0) where a plain repeat JUMPS -- the negative
+    //  control with teeth (repeat fills the hole but clicks; pingpong fills it cleanly).
+    if (png_seam < rep_seam && rep_seam > 0.01 && !(oa %witnessed:smoother)) i %witnessed:smoother
+
+async MusuConceal_order(w):
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'MusuConceal') ? 0 : 1
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)

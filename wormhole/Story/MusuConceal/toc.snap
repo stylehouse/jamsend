@@ -1,0 +1,23 @@
+story:MusuConceal
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.06
+      sample=0.077,at=1782811317
+      sample=0.077,at=1782811333
+      sample=0.077,at=1782811335
+      sample=0.042,at=1782811341
+      sample=0.026,at=1782811348
+    TimeTotal:step,avg=0.012
+      sample=0.015,at=1782811317
+      sample=0.015,at=1782811333
+      sample=0.015,at=1782811335
+      sample=0.008,at=1782811341
+      sample=0.005,at=1782811348
+  step,dige:0356959dc97ccc11
+  step=2,dige:d3de8ce05286bdca
+  step=3,dige:edb61b54d878f77f
+  step=4,dige:814b1d3bf5dd1b06
+  step=5,dige:226d9fd377f58d4d

@@ -17,6 +17,7 @@ Waft:Ghost/Music/Ality,active
     Funkcion:Storying,of_Book:MusuCue
     Funkcion:Storying,of_Book:MusuEdge
     Funkcion:Storying,of_Book:MusuPier
+    Funkcion:Storying,of_Book:MusuConceal
   What:the machine
     What:1 the spool
       Doc:Ghost/M/Radiola.g
@@ -174,6 +175,13 @@ Waft:Ghost/Music/Ality,active
       Doc:Ghost/N/Peeroleum.g
       Point,method:Peeroleum_send
       Point,method:Peeroleum_on
+    What:MusuConceal (the concealment ladder — fill a gap with repeat / reverse-pingpong not silence)
+      Doc:Ghost/Story/Musuation.g
+      Point,method:MusuConceal_build
+      Point,method:MusuConceal_measure
+      Point,method:MusuConceal_witness
+      Doc:Ghost/M/Mixer.g
+      Point,method:Mix_reverse
   What:the source it reimagines
     Doc:src/lib/ghost/Radios.svelte
     Point,method:listening

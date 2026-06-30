@@ -765,6 +765,15 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                 H.feebly_i_elvisto('Lang/Lang', 'Lies_waft_mutated', { waft_key: waft.sc.Waft })
             })
 
+            // From nothing: a not_found Waft starts empty in memory (content === null) — in the
+            //  editor, write its initial snap NOW so its wormhole home comes into being on disk
+            //   immediately, rather than waiting on some later mutation's watch_c to first create
+            //    the file.  EDITOR-ONLY + writes-enabled: a Book runs on a runner under `nowriting`,
+            //     where a save becomes a snapped %log:waft_save want — gating both ways keeps this
+            //      out of every recorded fixture.  (Decorated registries like Cluster mutate on
+            //       decorate anyway, so this only matters for an opened-but-untouched Waft.)
+            if (content === null && H.Lies_role(w) === 'editor' && !H.Lies_nowriting(w, path)) H.Lies_waft_save(w, waft)
+
             w.bump_version()
             console.log(`🗂 Waft:${path} opened (${waft.o({ Doc: 1 }).length} docs)`)
         }

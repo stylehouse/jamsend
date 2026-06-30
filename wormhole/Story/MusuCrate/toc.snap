@@ -4,33 +4,33 @@ story:MusuCrate
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=5.972
-      sample=2.487,at=1782803601
-      sample=6.381,at=1782803725
-      sample=6.446,at=1782803743
-      sample=7.195,at=1782803760
-      sample=6.364,at=1782803932
-      sample=6.554,at=1782803948
-      sample=6.085,at=1782803963
-      sample=6.085,at=1782803977
-      sample=5.157,at=1782803998
-      sample=6.961,at=1782806067
-    TimeTotal:step,avg=0.747
-      sample=0.311,at=1782803601
-      sample=0.798,at=1782803725
-      sample=0.806,at=1782803743
-      sample=0.899,at=1782803760
-      sample=0.796,at=1782803932
-      sample=0.819,at=1782803948
-      sample=0.761,at=1782803963
-      sample=0.761,at=1782803977
-      sample=0.645,at=1782803998
-      sample=0.87,at=1782806067
+    TimeTotal:beliefs,avg=1.833
+      sample=1.722,at=1782810294
+      sample=1.967,at=1782810406
+      sample=1.967,at=1782810409
+      sample=1.673,at=1782810424
+      sample=1.961,at=1782810442
+      sample=1.875,at=1782810458
+      sample=1.835,at=1782810520
+      sample=1.696,at=1782810533
+      sample=1.671,at=1782810642
+      sample=1.964,at=1782811215
+    TimeTotal:step,avg=0.229
+      sample=0.215,at=1782810294
+      sample=0.246,at=1782810406
+      sample=0.246,at=1782810409
+      sample=0.209,at=1782810424
+      sample=0.245,at=1782810442
+      sample=0.234,at=1782810458
+      sample=0.229,at=1782810520
+      sample=0.212,at=1782810533
+      sample=0.209,at=1782810642
+      sample=0.245,at=1782811215
   step,dige:e0e5ef365f0904c8
   step=2,dige:88350042ce2e999a
-  step=3,dige:f7c59277327a4ad2
-  step=4,dige:f0e452b6e6683357
-  step=5,dige:cf45b1c7f68669e2
-  step=6,dige:5445e8eb7c2d24e8
-  step=7,dige:51bb24a17a8c88dd
-  step=8,dige:8f19841892f40db8
+  step=3,dige:2d5517789c334a09
+  step=4,dige:7b9077fcb88fc2de
+  step=5,dige:c64e973890913858
+  step=6,dige:0cdcfc899aa1b7ea
+  step=7,dige:c12827ab004fbb02
+  step=8,dige:6ccd5052925f2e1e

@@ -68,6 +68,39 @@ NOT a Thang, and NOT on `%Identity`/`%Peering`. It lives on the identity's **rep
     up whose-pub-is-whose. Its whole purpose is small and concrete: **the same tab runs the same Story
      every time** — a sticky tab↔Story affinity — so the allocator and the CLI keep returning to their
       own runner. Standing up that registry is the bit more for you to do in the Lies/editor machine.
+
+**What `Waft:Cluster` IS — the shape (the spec never names it, so it confuses):**
+- **`%equip` is a real, BUILT mechanism — `Keep` and `Cluster` are THE two `%equip` Wafts.** `equip:'<name>'`
+   (an sc key, `Lies.svelte`) = a *backstage fixture*: out of the cursor's way, never a focus candidate, no
+    nib, its guts fold from the snap, and **background-never-steals-foreground** (the boomerang focus arbiter
+     skips `%equip` Wafts — `Lies.svelte:1052/1072`). `Lies_keep` stamps `equip:'Keep'`; `Lies_aim` already
+      stamps `equip:'Cluster'` (`LiesFunk:345`). Both are `/*` containers — directories of children. So
+       "Keep + Cluster, `/*`, `%equip`" is the EXISTING design, just never written down.
+- **`Waft:Cluster/*` holds `%HostedIdentity,<pub>`** — one per identity ANY node knows (its own + everyone
+   it's heard of): what a runner / editor / claude **claims to be**, and the directory peers **find each
+    other through**. (Beside the `%Aim` already living there.)
+- **`%HostedIdentity` is NOT a dontSnap mirror of the `%Runner` beacon roster** — but right now
+   (`LiesLies:879`, `oai({HostedIdentity:from},{dontSnap:1})` rebuilt each advertise) it's wired exactly that
+    way, which makes it a redundant copy of `%Runner`. That collapse is almost certainly the confusion. The
+     intended split:
+  - **`%Runner`** = *live presence* — dontSnap, rebuilt from beacons: who's advertising NOW + ready/book/
+     last_heard. Keep as-is.
+  - **`%HostedIdentity`** = the *persistent directory* — WHO EXISTS + their sticky facts (identity, friendly,
+     **favourite_client**), independent of whether they're advertising this second. This is what makes
+      `favourite_client` survive a reload ("same tab runs the same Story") and what lets a node be found when
+       it's off the beacon. The two are complementary — **join** them at the Brink (HostedIdentity = who;
+        `%Runner` = live-now).
+- **`favourite_client` is therefore a DURABLE field on the runner's `%HostedIdentity`** (valued = the client
+   pub it's reserved for; `Lies_favoured_runner` already reads "which HostedIdentity favours me"). Its SET is
+    someone WRITING that durable entry — the editor blessing a runner, or the runner self-claiming — **not**
+     the `top.c.favourite_client → beacon → dontSnap-mirror` path, which never gets set (the original gap, and
+      it *stays* a gap while HostedIdentity is only the beacon copy). Dexie backs the write durable
+       (`%Identity` in Dexie → `%HostedIdentity` the in-tree representation).
+- **The dontSnap-vs-persist split (the "split the cluster Waft" wrinkle):** `Waft:Cluster` carries transient
+   bits (the `%Aim`, UI open-state — dontSnap) AND now wants durable bits (the directory + sticky prefs). They
+    can't share one `dontSnap` flag — split it: the directory persists (snaps / rides Dexie), the live overlay
+     stays dontSnap.
+
 - **Rewire the source:** the advertise beacon already carries `favourite_client` (`Lies_advertise`,
    LiesLies:839) → roster (`Lies_advertise_recv`, :859). Point its source at the runner's own
     `Waft:Cluster` HostedIdentity entry, not `top.c.favourite_client`, once that registry exists.

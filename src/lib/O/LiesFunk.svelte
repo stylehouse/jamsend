@@ -337,19 +337,74 @@ await M.eatfunc({
     //     channel_up) — each a pumped run (kinds.ts) that stamps its latest transition, surfaced
     //      as a Lens:Brink hoisted into the Liesui-pinned dock.  Mature %Aim (a traffic-light
     //       aggregate, the relay control:log ring-buffer, a navigable fixture) layers onto this.
-    //   The Waft is a runtime fixture (dontSnap) for now, reconstructed each boot from setup.
-    async Lies_aim_setup(w: TheC): Promise<void> {
+    //   The Aim watcher Funkcions are runtime fixtures (dontSnap, rebuilt each boot); the Waft itself
+    //    PERSISTS — Waft:Cluster /%HostedIdentity is the durable registry of who's claimed/been seen.
+    Lies_aim_setup(w: TheC): void {
         const H = this as House
-        const cluster = w.oai({ Waft: 'Cluster' }, { Aim: 1 })
-        cluster.sc.dontSnap ??= 1          // rebuilt each boot — never persisted (spec/Cluster_design)
-        cluster.sc.equip    ??= 'Cluster'  // out of the cursor's way: no nib, no focus — a backstage fixture
-        for (const kind of ['Runner', 'Relay']) cluster.oai({ Funkcion: kind })
-        await (H as any).Lies_instantiate_funkcions(w, cluster)   // binds each kind's run + ensures the carrier
+        // Cluster is a FIRST-CLASS PERSISTED Waft — open it through the Good pipeline
+        //  (LiesPersist loads wormhole/Cluster/toc.snap, or creates-from-nothing + registers
+        //   its watch_c save), exactly like the GhostList|Keep.  Decoration (equip, the runtime
+        //    watcher Funkcions, the self-claim) lands on the LOADED Waft in Lies_cluster_decorate —
+        //     NOT a second oai'd copy: a directly-minted Cluster had no Good|watch_c, so the Good
+        //      load's fresh empty place() clobbered its equip + /%HostedIdentity and no save ever
+        //       fired (nothing reached disk).  One creation path, one watch_c, one home.
+        H.i_elvisto(w, 'Lies_open_Waft', { path: 'Cluster' })
+    },
+
+    // ── Lies_cluster_decorate ────────────────────────────────────────────────────────
+    //   Idempotent dressing of the LOADED Cluster Waft (per-tick from Lies_aim, once it
+    //    arrives from the Good pipeline).  equip PERSISTS — a backstage fixture (no nib|focus),
+    //     yet its /%HostedIdentity registry is durable.  The Runner|Relay watcher Funkcions are
+    //      dontSnap runtime fixtures (rebuilt each boot, live state on .c) so only the registry
+    //       persists, not their volatile transitions; minting one binds its run on the watch_c,
+    //        and we kick instantiate at once so the Brink face reads funk.c.latest this tick.
+    Lies_cluster_decorate(w: TheC, cluster: TheC): void {
+        const H = this as House
+        cluster.sc.equip ??= 'Cluster'
+        let changed = false, minted = false
+        // Runner was never a cluster singleton — it is a FACET of each %HostedIdentity (role:runner),
+        //  and the Brink faces derive from the advertise roster (the %Runner liveness + the registry).
+        //   The old autoviv'd Funkcion:Runner was just proto-%Aim noise; drop a stale one a prior build
+        //    left (self-healing migration — the save then drops its snap line) and never re-mint it.
+        //     Keep ONLY Relay: the relay carrier's own health, legitimately of-the-cluster.
+        for (const stale of cluster.o({ Funkcion: 'Runner' }) as TheC[]) { cluster.drop(stale); changed = true }
+        const f = cluster.oai({ Funkcion: 'Relay' }) as TheC
+        if (!f.sc.dontSnap) { f.sc.dontSnap = 1; changed = minted = true }
+        if (changed) cluster.bump_version()   // tracked so the drop|mint reaches watch_c → the snap
+        if (minted)  void H.Lies_instantiate_funkcions(w, cluster)
+    },
+
+    // Lies_cluster_claim_self — name OURSELVES in the Waft:Cluster /%HostedIdentity registry, keyed by
+    //  our prepub via Lies_self (ALL identity tiers — the ?I= %Identity OR the legacy stashed key — so an
+    //   un-migrated tab still names itself).  We stamp our ROLE (editor|runner — "who's a runner") + friendly.
+    //  `self` is NOT stored: the registry is ONE shared directory (everyone we know), so WHO-is-me is
+    //   viewer-relative — it depends on which identity THIS tab runs as, and that changes (a stashed key,
+    //    then an ?I=).  Readers derive it live (entry.HostedIdentity === Lies_self(w).prepub).  We also SCRUB
+    //     any stale persisted `self` an older build left — the "everyone thinks they're self" mess (two tabs,
+    //      or one tab across two identities, each writing self to the shared file).  Peers are NOT minted here:
+    //       a Pier is keyed by the peer ROLE in the local mock (LiesLies:207 `pub: peer`), not a real prepub —
+    //        mirroring Piers spawned the spurious HostedIdentity:runner|editor.  Real peers arrive via the
+    //         advertise beacon (Lies_advertise_recv, real prepubs).
+    Lies_cluster_claim_self(w: TheC): void {
+        const H = this as House
+        const cluster = w.o({ Waft: 'Cluster' })[0] as TheC | undefined
+        if (!cluster) return
+        let changed = false
+        for (const hi of cluster.o({ HostedIdentity: 1 }) as TheC[]) if (hi.sc.self) { delete hi.sc.self; changed = true }
+        const self = (H as any).Lies_self?.(w) as { prepub?: string; friendly?: string } | undefined
+        if (self?.prepub) {
+            const me   = cluster.oai({ HostedIdentity: self.prepub }) as TheC   // oai mints+bumps on first sight
+            const role = H.Lies_role(w)
+            if (me.sc.role !== role)                                   { me.sc.role = role; changed = true }
+            if (self.friendly && me.sc.friendly !== self.friendly)     { me.sc.friendly = self.friendly; changed = true }
+        }
+        if (changed) cluster.bump_version()   // tracked: a raw delete|assign alone wouldn't fire watch_c → no save
     },
     //   Hoist (or retire) the cluster Brinks by role — called every heartbeat.  editor|runner
     //    means a remote relationship exists, so the endpoint faces are worth showing; otherwise
-    //     they're dropped.  Each Brink backlinks its w (the monitored Lies) + funk cell, so the
-    //      face reads the live state and the watcher's funk.c.latest.  Setup runs once (guarded).
+    //     they're dropped.  Each Brink backlinks its w (the monitored Lies); the Relay face also
+    //      carries its funk cell (the carrier-health watcher's funk.c.latest), while the Runner
+    //       faces read state straight off w|the roster — no singleton funk.  Setup runs once (guarded).
     Lies_aim(w: TheC): void {
         const H = this as any
         if (!w.c.aim_setup) { w.c.aim_setup = true; void H.Lies_aim_setup(w) }
@@ -357,13 +412,11 @@ await M.eatfunc({
         const on = role === 'editor' || role === 'runner'
         const cluster = w.o({ Waft: 'Cluster' })[0] as TheC | undefined
         const bag = H.Lies_lens_bag() as TheC
-        // born collapsed — seed the Cluster's minimised into the Keep ONCE, the first time the
-        //  Keep meets it (the WaftTimes-absence gate).  Keep-backed so it persists though the
-        //   Cluster Waft is dontSnap; once-only so a later session honours a user expand instead
-        //    of re-collapsing.  keep is undefined off-editor, so this is editor-only by nature.
-        const keep = H.Lies_keep(w) as TheC | undefined
-        if (cluster && keep && !keep.oa({ WaftTimes: 1, of_Waft: 'Cluster' }))
-            H.Lies_keep_cfg_set(w, 'Cluster', 'minimised', 1)
+        // dress + self-claim the LOADED Cluster (both idempotent, both no-op until it arrives from
+        //  the Good pipeline).  equip is stamped here so it survives the place() that the Good load
+        //   does; no longer seeded minimised — an equip registry shows its /* (the %HostedIdentity
+        //    children, who we + the cluster claim to be) like any Waft.
+        if (cluster) { H.Lies_cluster_decorate(w, cluster); H.Lies_cluster_claim_self(w) }
 
         // Relay — a single face, both roles (the relay carrier's own health).
         if (on) {
@@ -385,8 +438,7 @@ await M.eatfunc({
         if (role === 'runner') {
             for (const l of allRunner()) if (l.sc.pub) { bag.drop(l); bag.bump_version() }   // editor crumbs, if any
             if (!allRunner().some(l => !l.sc.pub)) {
-                const funk = cluster?.o({ Funkcion: 'Runner' })[0] as TheC | undefined
-                const lens = H.Lies_lens_suggest('Brink', 'Runner', { altitude: 20 }, funk) as TheC
+                const lens = H.Lies_lens_suggest('Brink', 'Runner', { altitude: 20 }) as TheC   // no singleton funk
                 lens.c.w = w
             }
         } else if (role === 'editor') {
@@ -407,8 +459,7 @@ await M.eatfunc({
             } else {                                                        // none advertised yet — keep the legacy
                 for (const l of allRunner()) if (l.sc.pub) { bag.drop(l); bag.bump_version() }   //  single-pair face,
                 if (!allRunner().some(l => !l.sc.pub)) {                     //  so a plain ?B= runner (no ?I, no
-                    const funk = cluster?.o({ Funkcion: 'Runner' })[0] as TheC | undefined        //  advertise) still shows
-                    const lens = H.Lies_lens_suggest('Brink', 'Runner', { altitude: 20 }, funk) as TheC
+                    const lens = H.Lies_lens_suggest('Brink', 'Runner', { altitude: 20 }) as TheC   //  advertise) still shows
                     lens.c.w = w
                 }
             }

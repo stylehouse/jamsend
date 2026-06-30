@@ -15,6 +15,8 @@ Snap:H
           stage,of=7,name:DJ-cue,built
           stage,of=8,name:Mesh,built
           stage,of=9,name:Stretch,built
-        rastock,base:/testsounds,want=4,have,pool=70
-          record,name:Big Blood/Big_Blood_-_Old_Time_Primitives/Big_Blood_-_05_-_Leviathan_Song_pt_I.mp3,artist:Big Blood,album:Big_Blood_-_Old_Time_Primitives,title:Leviathan Song pt I,loudness=0.0232,seconds=295.68,nchunks=240,real
+        rastock,base:/testsounds,want=4,have=0,pool=70
+          reading,path:Big Blood/Big_Blood_-_Old_Time_Primitives/Big_Blood_-_05_-_Leviathan_Song_pt_I.mp3
           reading,path:Big Blood/Big_Blood_-_Fight_for_Your_Dinner_Vol_I/Big_Blood_-_07_-_Sick_With_Information.mp3
+        req:fill_3
+          ttlilt	{"mung":["until_ts"]}

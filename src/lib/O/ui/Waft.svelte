@@ -221,7 +221,6 @@
     // ── reactive reads ────────────────────────────────────────────────
     let wkey          = $derived(waft.sc.Waft as string)
     let is_active     = $derived(!!waft.sc.active)
-    let waft_children = $derived((() => { void waft.version; return waft.o().filter((c: TheC) => !c.sc.Waft) as TheC[] })())
     let sub_wafts     = $derived((() => { void waft.version; return waft.o({ Waft: 1 }) as TheC[] })())
     let waft_mungs    = $derived((() => { void waft.version; return waft.o({ mung_error: 1 }) as TheC[] })())
     // a taker Waft (the attention Ting) keeps a flavour border; its FACE now rides a main
@@ -619,8 +618,10 @@
         }
     }
 
-    // raw_props: a generic plain-C row for a %Funkcion node in a What's editing presentation.
-    //   idle = the depeeled line; orb opens a PeelInput that peels straight back into the sc.
+    // raw_props: the generic plain-C row — used for any C with no ITEM_TYPE: a %Funkcion node
+    //   in a What's editing presentation, AND an un-schema'd Waft child (Keep's WaftTimes|Cursor,
+    //    Cluster's %HostedIdentity, …).  idle = the depeeled line; orb opens a PeelInput that
+    //     peels the typed text straight back into the sc — the mainkey is whatever you type.
     function raw_props(funk: TheC, container: TheC): PiProps {
         const open = editing.has(funk) && raw_edit_C.has(funk)
         const d    = raw_display(funk)
@@ -629,8 +630,8 @@
             open,
             display_val:  d.mk,
             display_sc:   d.sc,
-            mk_ph:        'Funkcion:Kind',
-            sc_ph:        'of_Book:Foo',
+            mk_ph:        'Key:value',
+            sc_ph:        'more:keys',
             mainkey:      open ? draft_mk : '',
             on_mk:        (v: string) => { draft_mk = v },
             sc_str:       open ? draft_sc : '',
@@ -743,12 +744,15 @@
 {/snippet}
 
 
-<!-- waftitem — the one wrapper for every Point/Doc/What in the tree.
-     Detects type from C.sc mainkey, reads C.o({}) for children,
-     renders .ls-item / .ls-item-hdr / .ls-items.
-     All per-type personality (CSS, child_types, spotlight) comes from ITEM_TYPES.
-     upC is the containing C — used for edit/delete keying and Doc dpath.
-     Type selection now lives in the PeelInput irow via on_crud.on_pick_type. -->
+<!-- waftitem — the one wrapper for ANY C in the tree.  A Waft is an indifferent medium,
+     so this dispatches three ways on the C and never hides a child:
+       %Funkcion        → its live face (FunkHost) or, mid-edit, the plain-C row;
+       a known ITEM_TYPE → Waft/What/Doc/Point personality from the table (CSS, children,
+                            spotlight, navigate, add-picker);
+       anything else     → the generic plain-C row + its recursed subtree (the {:else} below).
+     Detects type from C.sc mainkey, reads C.o({}) for children, renders
+     .ls-item / .ls-item-hdr / .ls-items.  upC is the containing C — used for edit/delete
+     keying and Doc dpath.  Type selection lives in the PeelInput irow via on_crud.on_pick_type. -->
 {#snippet waftitem(C: TheC, upC: TheC, funk_as_C: boolean, inline: boolean)}
     {#if C.sc?.Funkcion !== undefined}
         {@const fediting = editing.has(C) && raw_edit_C.has(C)}
@@ -800,6 +804,24 @@
                         {/each}
                     </div>
                 {/if}
+            {/if}
+        </div>
+    {:else}
+        <!-- generic C — mainkey is none of the ITEM_TYPES and it isn't a %Funkcion.
+             A Waft is an indifferent medium that holds any C, so an un-schema'd particle
+             (the Keep's WaftTimes|Cursor, the Cluster's %HostedIdentity, …) renders as a
+             plain editable C row — the same generic PeelInput a Funkcion edits through — and
+             recurses its child tree, so the whole /* shows instead of nothing.  No ITEM_TYPE
+             means no add-picker|spotlight|navigate; the orb edits the line, ✕ deletes. -->
+        {@const gitems = (() => { void C.version; return C.o() as TheC[] })()}
+        <div class="ls-item ls-item-c">
+            <div class="ls-item-hdr">{@render pi(raw_props(C, upC))}</div>
+            {#if gitems.length}
+                <div class="ls-items">
+                    {#each gitems as child (child)}
+                        {@render waftitem(child, C, false, false)}
+                    {/each}
+                </div>
             {/if}
         </div>
     {/if}
@@ -909,6 +931,9 @@
     .ls-inline-tog:hover { color: #8fa6d0; }
     /* a Funkcion edited as plain C — same muted register as a Point row */
     .ls-item-funkc :global(.pi-label) { color: #6a6a8a; }
+    /* a generic un-schema'd C (Keep/Cluster registry rows, …) — muted, raw-data register */
+    .ls-item-c :global(.pi-label)       { color: #5a6a7a; }
+    .ls-item-c :global(.pi-display-val) { color: #8a98a6; }
 
     /* a live Funkcion illusion with its edit orb beside it — a row by default,
        compact inline-flex inside an inlined What's flow */

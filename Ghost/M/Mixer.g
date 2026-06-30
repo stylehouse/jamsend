@@ -290,6 +290,19 @@ Mix_align(a_pcm, b_pcm):
     }
     return { strength: +best.toFixed(3), lag_ms: Math.round(bestlag / frame_rate * 1000) }
 
+// Mix_reverse — a time-reversed copy of a PCM buffer.  The building block for reverse-pingpong gap
+//  concealment: a reversed frame STARTS at the value the preceding frame ENDED on, so the seam is
+//   continuous (no click), where a plain repeat restarts the frame and jumps.  Pure.
+Mix_reverse(pcm):
+    let n = pcm.length
+    let out = new Float32Array(n)
+    let i = 0
+    while (i < n) {
+        out[i] = pcm[n - 1 - i]
+        i = i + 1
+    }
+    return out
+
 // Mix_unit — zero-mean, unit-norm a copy of the first `len` samples (the normalisation Mix_align's cross-
 //  correlation needs so `strength` is a true correlation in -1..1, not a level-dependent dot product).
 Mix_unit(e, len):

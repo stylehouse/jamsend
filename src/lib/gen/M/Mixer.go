@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Mixer(): string { return 'd406f4ef61aefac3' },
+    Ghostmeta_Ghost_M_Mixer(): string { return 'a4a24e00de642d18' },
 
 // Mixer.g — the CELLULAR music world: many sound-sources at once, pitch/rate-bent to mix.  Stage 6 of the
 //  jamsend platform (Musuation.g MusuCrate_filaments).  A "Cell" is one playing source (one Audiolet at
@@ -311,6 +311,20 @@ Mix_align(a_pcm, b_pcm) {
         lag = lag + 1
     }
     return { strength: +best.toFixed(3), lag_ms: Math.round(bestlag / frame_rate * 1000) }
+
+},
+// Mix_reverse — a time-reversed copy of a PCM buffer.  The building block for reverse-pingpong gap
+//  concealment: a reversed frame STARTS at the value the preceding frame ENDED on, so the seam is
+//   continuous (no click), where a plain repeat restarts the frame and jumps.  Pure.
+Mix_reverse(pcm) {
+    let n = pcm.length
+    let out = new Float32Array(n)
+    let i = 0
+    while (i < n) {
+        out[i] = pcm[n - 1 - i]
+        i = i + 1
+    }
+    return out
 
 },
 // Mix_unit — zero-mean, unit-norm a copy of the first `len` samples (the normalisation Mix_align's cross-
