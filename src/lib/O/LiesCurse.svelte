@@ -44,8 +44,9 @@
     // ── LiesCurse ─────────────────────────────────────────────────────────────
     //
     //   Fires every tick.  When the cursor has no target yet — i.e. the Waft
-    //   just finished loading for the first time — pick the first inhabited
-    //   %What, or the first %Doc if the Waft is fresh and has no Points yet.
+    //   just finished loading for the first time — pick the first leaf %What that
+    //   carries Points (the land Waft_cursor_first asserts), else the first
+    //   point-%Doc, else the first %Doc if the Waft is fresh with no Points yet.
     //
     //   Doc-switch following lives in e_Lies_active_doc_changed, fired directly
     //   from Lang_set_active_dock as an elvis — no watch_c loop.
@@ -56,13 +57,25 @@
 
         const spot = examining.o({ Spotlight: 1 })[0] as TheC | undefined
         if (!spot?.sc.src) {
-            const first = H.Lies_first_point_doc(w) ?? H.Lies_first_doc(w)
-            if (first) {
-                const up  = first.doc.c.up as TheC | undefined
-                const src = (up && up.sc.Waft === undefined) ? up : first.doc
-                // §3e — emit a cold want; the resolver opens the doc (Furnishing)
-                // and lands the cursor through the one seam.
-                H.i_elvisto(w, 'Lies_want', { src, kind: 'cold' })
+            // Prefer the first leaf %What with direct Points — the target the per-tick
+            //  Waft_cursor_first re-asserted every timemachine tick (Waft_cursor_candidates is
+            //   its shared collector).  A Waft whose Points hang off the %What (siblings of its
+            //    Doc, not under it) otherwise lands on a later loose point-%Doc — Lies_first_point_doc
+            //     needs the Point *under* the Doc — the LakeSurfer/LakeFunk regression once P4 dropped
+            //      the per-tick land.  Normal %What→%Doc→%Point resolves to the same %What the Doc's
+            //       `up` gave, so already-landed Books don't shift.  (Backbone_plan P4)
+            const leaf = H.Waft_cursor_candidates(w)[0]?.what as TheC | undefined
+            if (leaf) {
+                H.i_elvisto(w, 'Lies_want', { src: leaf, kind: 'cold' })
+            } else {
+                const first = H.Lies_first_point_doc(w) ?? H.Lies_first_doc(w)
+                if (first) {
+                    const up  = first.doc.c.up as TheC | undefined
+                    const src = (up && up.sc.Waft === undefined) ? up : first.doc
+                    // §3e — emit a cold want; the resolver opens the doc (Furnishing)
+                    // and lands the cursor through the one seam.
+                    H.i_elvisto(w, 'Lies_want', { src, kind: 'cold' })
+                }
             }
         }
     },

@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1782898670158
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1782906022320
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -71,6 +71,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/spec/Cluster_runner_handover.md,name:Cluster_runner_handover.md,noticed_at=1782811121344
     Doc:src/lib/O/spec/Coding_guide.md,name:Coding_guide.md,noticed_at=1782892710802
     Doc:src/lib/O/spec/Swarm_doc.md,name:Swarm_doc.md,noticed_at=1782896888679
+    Doc:src/lib/O/spec/Swarm_spec.md,name:Swarm_spec.md,noticed_at=1782906022320
   open_dir:src/lib/O
   group:src/lib/O,dir:src/lib/O
     sub:src/lib/O/D,name:D

@@ -749,6 +749,33 @@
             }
         },
 
+        // Lies_deliver_soon — coalesce inbound frames into ONE Atime drain instead of one post_do per
+        //  packet.  The real carrier (Tribunal on_message) used to wrap EVERY frame in H.post_do → H.todo,
+        //   drained one-per-50ms under the beliefs mutex — the pile that death-spiralled the editor at 100+
+        //    todos.  Instead: append to a per-w batch and, IF a drain isn't already queued, post ONE post_do
+        //     that drains the WHOLE batch in a single mutex pass.  Atime is KEPT — booked frames still book +
+        //      inbox.do() in arrival order (Peeroleum_deliver reused verbatim); we just stop paying the 50ms
+        //       gap per packet.  `inbound_draining` is the coalesce: a burst of N frames = ONE post_do.
+        //     (The tidier form is a first-class req:handle_inbound driven by reqyoncile — the same out-of-time
+        //      Atime re-entry — to build once the editor's healthy enough to ghost-compile; post_do carries
+        //       zero req-machinery risk, which is what a death-spiral fix wants.)
+        Lies_deliver_soon(w: TheC, frame: any) {
+            const H = this as House
+            ;((w.c.inbound_batch ??= []) as any[]).push(frame)
+            if (w.c.inbound_draining) return
+            w.c.inbound_draining = 1
+            H.post_do(async () => {
+                const batch = (w.c.inbound_batch ?? []) as any[]
+                w.c.inbound_batch = []
+                w.c.inbound_draining = 0   // cleared right after the snapshot (sync, atomic) so a frame arriving
+                                           //  DURING the drain lands in a fresh batch and queues its own post_do
+                for (const frame of batch) {
+                    try { await H.Peeroleum_deliver(w, frame) }
+                    catch (e) { console.warn('🛰 handle_inbound: deliver threw', e) }
+                }
+            }, { see: 'handle_inbound' })
+        },
+
         // req:rungo,seq — the parked run authority.  do_fn on w:Lies (runner): check every
         //  demand's live Ghostmeta against its wanted dige; fire when ALL match.  The give-up is
         //   WALL-CLOCK (the think loop re-pumps far faster than any ttlilt, so a try-counter

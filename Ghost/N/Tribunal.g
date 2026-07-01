@@ -137,28 +137,30 @@ Socket_real(w):
         reconnect() { try { if (ws) ws.close() } catch (e) {} },   // force a drop → onclose re-dials (for a half-open socket)
         close() { intentional = true; try { if (ws) ws.close() } catch (e) {} },
     }
-    let on_message = (ev) => H.post_do(async () => {
-        // A binary message is a buffer-carrying frame ([header JSON]\n[raw buffer]); decode it to
-        //  {header, buffer} and deliver. Control + no-buffer frames arrive as text JSON below.
+    // deliver_soon — hand an envelope frame to the coalescing batcher (Lies_deliver_soon: append to a per-w
+    //  batch + reqyoncile ONE req:handle_inbound, drained as a single Atime pass) instead of a post_do PER
+    //   packet.  Every inbound frame USED to ride its own H.post_do → H.todo, drained one-per-50ms under the
+    //    beliefs mutex — the pile that death-spiralled the editor.  Fallback to the old per-frame post_do if
+    //     the app half hasn't deposited Lies_deliver_soon yet (the boot window before LiesLies mounts).
+    let deliver_soon = (frame) => H.Lies_deliver_soon ? H.Lies_deliver_soon(w, frame) : H.post_do(async () => { await port.recv(frame) })
+    let on_message = (ev) => {
+        // A binary message is a buffer-carrying frame ([header JSON]\n[raw buffer]); decode it and batch it
+        //  (a booked frame — Peeroleum_deliver books + inbox.do() under the mutex, which the batcher provides).
         if (ev.data instanceof ArrayBuffer) {
             let frame
             try { frame = decode_binary(ev.data) } catch (e) { console.warn('🛰 ws RECV binary decode failed', e); return }
             let bh = frame.header
             console.log(`🛰 ws RECV ${bh.type} seq=${bh.seq} +buf=${frame.buffer.length} ← ${bh.from}`)
-            await port.recv(frame)
+            deliver_soon(frame)
             return
         }
         let frame
         try { frame = JSON.parse(ev.data) } catch (e) { return }
-        // The relay speaks two things over this one socket: Peeroleum envelopes (carry a
-        //  %header, routed by header.to) and its own control frames (role-confirm, error —
-        //   no header).  Only envelopes belong in the deliver path; a control frame has
-        //    nothing to deliver, so route it aside rather than dereference a missing header.
+        // The relay speaks two things over this one socket: Peeroleum envelopes (a %header, routed by header.to)
+        //  and its own control frames (role-confirm, error, log — no header).  A control frame has nothing to
+        //   DELIVER, so handle it INLINE here — never the belief queue.  control:log especially: the relay echoes
+        //    one per routing line, and post_do-ing a console note per packet was a death-spiral feeder.
         if (frame && frame.control) {
-            // The relay echoes its own server-side logs here (control:log) and the state of
-            //  the server↔server bridge (control:peer-relay) so both surface in THIS origin's
-            //   browser console — the server's own console.log is otherwise buried in the
-            //    dev-server terminal among svelte-check noise.
             if (frame.control === 'log') { note(frame.line); return }
             if (frame.control === 'peer-relay') {
                 let m = frame.up ? `🌉 relay bridge UP${frame.target ? ' → ' + frame.target : ''}` : `🌉 relay bridge DOWN — error=${frame.error || '?'}${frame.detail ? ' — ' + frame.detail : ''}`
@@ -171,8 +173,9 @@ Socket_real(w):
         }
         let h = frame && frame.header
         if (!noisy(h)) note(`🛰 ws RECV ${h ? h.type + ' seq=' + h.seq + ' ← ' + h.from : '(headerless, dropped)'}`)
-        await port.recv(frame)
-    })
+        // An envelope frame → the coalescing batcher (ONE Atime drain per cycle) instead of a post_do per packet.
+        deliver_soon(frame)
+    }
     let connect = () => {
         ws = new WebSocket(url)
         port.ws = ws
