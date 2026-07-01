@@ -9,6 +9,10 @@ Pair it with **`spec/Peeroleum_handover.md`** (the spine: frames, inseq, retx, f
  The shorthand is **Peeroleum + Trusting**: Peeroleum is the transport, *Trusting* is everything
   cluster — the reborn lineage of the old `MTrusting`/`Trusting`/`Gardening` garden (heading 1).
 
+The triad: this is **how it runs**; `Swarm_doc.md` is **who's on it** (the p2p social side — identity,
+ presence, sharing); `Radio_spec.md` is **what streams**. Identity begins here (the trust substrate, §2)
+  and becomes portable + social in `Swarm_doc`.
+
 ---
 
 ## 0. The north star — remote `%Rungo`, and why the whole edifice

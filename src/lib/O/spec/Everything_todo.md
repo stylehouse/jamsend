@@ -97,11 +97,11 @@ Three overlapping forward designs:
        recovery passes are empty stubs (#8).
    - **push verify false-positives** — a dropped unaccepted clone reads as a goner
       on the origin walk, so `req:push/%dirty` stays open for a push that landed;
-       fix = stamp `bD/was_disincluded` before `LE_replace_back` (LiesHold:896, still
+       fix = stamp `bD/was_disincluded` before `LE_replace_back` (LangHold:897, still
         comment-only) (#2).
    - **write-error stalls req:Codebit** — a write error never stamps `write_finished`,
       so the Codebit parks forever (LiesCortex write path) (#4).
-   - **`LE_available_ops` not stamped** — computed (LiesHold:1659) but never written
+   - **`LE_available_ops` not stamped** — computed (LangHold:1660) but never written
       to `%LE/%moves.sc.ops`, so NaviCado falls back to static ↑←→ buttons (#7).
    The rest of palmtree was cleanup-directions (req%mutated write-dedup, `req:desire`
     collapse, `req:Showing` as a real req) and resolved/vision items — let go with the file.

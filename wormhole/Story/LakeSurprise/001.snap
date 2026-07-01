@@ -1,12 +1,12 @@
 Snap:H
   H:LakeSurprise,Run
     A:Lies
-      self,round=15	{"mung":["age"]}
+      self,round=13	{"mung":["age"]}
       w:Lies
         Opt
           nowriting
           dontSnapGhostList
-        self,round=15	{"mung":["age"]}
+        self,round=13	{"mung":["age"]}
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/LakeSurprise/Interestily/toc.snap,waft_path:Story/LakeSurprise/Interestily
             known,dige:a7bcdaef04db3710,kind:read	{"mung":["at"]}
@@ -19,16 +19,12 @@ Snap:H
         Funkcions
           req:Waftica,waft:Story/LakeSurprise/Interestily,eternal,ok
             Lango:Cursor,to:Ghost/test/Story/Lake/LakeAntecedents.g,cold	{"mung":["seq"]}
-        req:desire
-          req:acquire,maz=9,finished
-          Waft:Story/LakeSurprise/Interestily	{"ref":{"src":"%Waft:Story/LakeSurprise/Interestily, active:1"}}
         o_elvis:Lies_desire_play
         o_elvis:Lies_desire_pause
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1782792401980,kind:cold
-          want=1782792402134,kind:cold,resolved
+          want=1782899888849,kind:cold,resolved
         o_elvis:dock_askies
         req:Langoer,eternal,focus:Story/LakeSurprise/Interestily,ok	{"ref":{"w":"%w:Lies"}}
         Waft:Story/LakeSurprise/Interestily,active
@@ -41,13 +37,13 @@ Snap:H
         log:gen_write,path:gen/test/Story/Lake/LakeAntecedents.go,dige:e9aa19c1
         see:🗂 1 doc · 2 Wafts
     A:Lang
-      self,round=14	{"mung":["age"]}
+      self,round=11	{"mung":["age"]}
       w:Lang
         Opt
           txtsyntaxdump
           nogen
           nopush
-        self,round=14	{"mung":["age"]}
+        self,round=11	{"mung":["age"]}
         model,cyto_dir
         docks
           dock:Ghost/test/Story/Lake/LakeAntecedents.g,active	{"loopy":0}
@@ -62,7 +58,7 @@ Snap:H
                 def,method:transport,line=5,rel_from=65,rel_to=75
                 def,method:PeerJS,line=7,rel_from=108,rel_to=115
                 def,method:Socket,line=9,rel_from=145,rel_to=152
-              time,compile=0.001,all=0.25
+              time,compile=0.008,all=0.197
               Output,gen_path:gen/test/Story/Lake/LakeAntecedents.go,dige:e9aa19c131ec60a2,source_dige:69f9fd8539393ad7
                source: |
                  <script lang="ts">
@@ -117,7 +113,7 @@ Snap:H
           Change
             backend,dige:69f9f
             storage,dige:69f9f
-            compile,dige:69f9f,secs=0.001,dim,pending
+            compile,dige:69f9f,secs=0.008,dim,pending
         req:workon,auto_push=0	{"ref":{"w":"%w:Lang"}}
           req:understanding,maz=3,permanent,sig:1:13:0:0,what:landing,finished
           req:ingredients,maz=2,permanent,sig:Ghost/test/Story/Lake/LakeAntecedents.g,finished

@@ -450,7 +450,7 @@ If a beat mismatches: restock keys off the **leading** (highest) cursor, not the
  a literal occurrence in the Doc itself (a word or phrase) rather than a named def/region. Mechanism:
  `Lang_resolve_point` (`LangRegions.svelte`) grew a `text:` branch — word-boundary exact, then
   substring, then loose case-insensitive — needing only `state.doc`, so it resolves even before a
-   compile; `Lang_point_spec` (+ the two inline twins in `Lang.svelte`/`LiesHold.svelte`) carry a
+   compile; `Lang_point_spec` (+ the two inline twins in `Lang.svelte`/`LangHold.svelte`) carry a
     `sc.text` as a `"text:"`-prefixed spec. (Headless-verified: `keep_ahead`/`want` (word-boundary,
      not inside `wanted`)/`STAY_AHEAD_OF_ACK_SEQ` resolve, a miss returns null. Browser click-through
       on `:9091` still owed.)

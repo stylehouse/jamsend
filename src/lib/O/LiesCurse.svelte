@@ -120,7 +120,7 @@
 
     // ── Lies_branch_what ─────────────────────────────────────────────────────
     //
-    //   Branch body — called from e_LE_operate (LiesHold) for op:'branch'.  Splices a new
+    //   Branch body — called from e_LE_operate (LangHold) for op:'branch'.  Splices a new
     //   sibling %What immediately after `what` in the parent's child list,
     //   seeds it from carry-over, stamps back-refs, saves, and emits a want.
     //   `op` flows through as the want kind.
@@ -158,7 +158,7 @@
 
     // ── Lies_dive_what ────────────────────────────────────────────────────────
     //
-    //   Dive body — called from e_LE_operate (LiesHold) for op:'dive'.  Creates a new child
+    //   Dive body — called from e_LE_operate (LangHold) for op:'dive'.  Creates a new child
     //   %What inside `what`, seeds from carry-over, and steps in.  The parent
     //   keeps its original Points intact — the carry-over is a copy, not a move.
     //   `op` flows through as the want kind.

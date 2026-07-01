@@ -15,10 +15,9 @@ Snap:H
           req:Waftica,waft:FunkW,eternal,ok
         run_result,path:FunkW/dockA,ok=0,ok_pct=0,done=3,at=2
         examining	{"loopy":0}
+          req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
         req:Cortex,eternal,maz=5,ok
         req:Store,eternal,maz=7,ok
-        req:desire
-          req:acquire,maz=9
         req:git
         req:wants
         o_elvis:dock_askies

@@ -41,6 +41,7 @@
     import Lang from "$lib/O/Lang.svelte";
     import Hovercraft from "./Hovercraft.svelte";
     import Lies from "./Lies.svelte";
+    import LiesKeep from "./LiesKeep.svelte";      // the Keep ledger (Waft:Keep) — extracted from Lies (Backbone P4/D7)
     import LangCurse from "./LangCurse.svelte";   // %Interest cluster + Lang↔Lies channel (D7 rename of Interest.svelte)
     import Editron from "./Editron.svelte";
     import Thangs from "./Thangs.svelte";
@@ -75,5 +76,7 @@
 <!-- < js weirdness: if you move this up below Matstyle, the elvis handlers receive $this as a first argument... -->
 <Lang      {M} />
 <Lies {M} />
+<!-- the Keep ledger (Waft:Keep) — attention store extracted from Lies (Backbone P4/D7) -->
+<LiesKeep {M} />
 <!-- Editron Book recipe (Run_A_Editron) + per-beat handler; booted via ?B=Editron -->
 <Editron {M} />

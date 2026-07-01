@@ -20,7 +20,7 @@ are no longer session-only — they persist through the Keep ledger and replay o
 "Per-(Interest, Waft) cursor-memory" TODOs are the Interest-side face of this same resume.
 
 Distilled from reading the live spine (`Lies.svelte` desire/acquire/timemachine/
-focus_waft/keep_*, `LiesHold.svelte` req:workon). Marked **today** vs **proposed**
+focus_waft/keep_*, `LangHold.svelte` req:workon). Marked **today** vs **proposed**
 so the two never blur on a re-read.
 
 ---

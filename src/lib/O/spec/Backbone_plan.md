@@ -199,7 +199,7 @@ channel is the whole machine.)*
 **`req:Langoer` — the convergence, decided (2026-06-29).** Not a new organ — `req:Keeping`'s
 **receiver hat**, its steps 2→4 (`focus → land → converge`, `Keeping_spec.md`), named for the
 intake. It already exists *in embryo*: today's `Lies_focus_waft` (`Lies.svelte:990`) +
-`Lang_set_interest` (`LiesHold.svelte:489`) + `req:workon` (`LiesHold.svelte:83`) **are** it;
+`Lang_set_interest` (`LangHold.svelte:490`) + `req:workon` (`LangHold.svelte:84`) **are** it;
 Langoer just hands them the `%Lango` as their one input. The three open questions resolve off
 that existing machinery — the "bring forward what's most-like-it" rule, here literally:
 

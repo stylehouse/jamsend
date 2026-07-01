@@ -6,14 +6,14 @@
 //   the Funkcions (monitor cells and action drum-pads), the Waft address space
 //   they key against, and the editor↔runner verdict wire a Funkcion cell fires
 //   and reads — all gathers here, gathered out of the Lies* modules that used to
-//   each own a slice (LiesStore, LiesHold, LiesCurse, LiesLies).  The Funk kinds
+//   each own a slice (LiesStore, LangHold, LiesCurse, LiesLies).  The Funk kinds
 //   themselves live under O/Funk/ (kinds.ts + one module per kind); this is the
 //   HOST runtime that instantiates, pumps, and strikes them, plus the Waft-shaped
 //   plumbing underneath.
 //
 //   Like its siblings this is a House mixin: no JS classes, methods on `this`,
 //   mixed into the one H.* table by M.eatfunc.  Mounted by Lies.svelte alongside
-//   LiesStore/LiesHold/LiesCurse/LiesLies — file placement is purely organisational.
+//   LiesStore/LangHold/LiesCurse/LiesLies — file placement is purely organisational.
 //
 //   The four regions:
 //     Waft_dip            — the Waft address space (c.Dip), the per-Waft** id

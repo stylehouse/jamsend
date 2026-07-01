@@ -1,6 +1,6 @@
 <script lang="ts">
 //#region Understandium
-// Understandium.svelte — stepped integration test for LiesHold.
+// Understandium.svelte — stepped integration test for LangHold.
 //   Each on_step entry exercises one phase of the LE lifecycle through a real
 //   %LiesEnd particle; Story snaps the result.  The sequence is:
 //

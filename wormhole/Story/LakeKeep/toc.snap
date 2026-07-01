@@ -9,26 +9,26 @@ story:LakeKeep
         dontSnapGhostList
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=0.082
-      sample=0.116,at=1782749505
-      sample=0.116,at=1782749536
-      sample=0.116,at=1782749538
-      sample=0.07,at=1782749543
-      sample=0.065,at=1782749548
-      sample=0.057,at=1782749736
-      sample=0.096,at=1782792619
+    TimeTotal:beliefs,avg=0.08
       sample=0.034,at=1782794097
       sample=0.097,at=1782832726
       sample=0.051,at=1782872662
-    TimeTotal:step,avg=0.082
-      sample=0.116,at=1782749505
-      sample=0.116,at=1782749536
-      sample=0.116,at=1782749538
-      sample=0.07,at=1782749543
-      sample=0.065,at=1782749548
-      sample=0.057,at=1782749736
-      sample=0.096,at=1782792619
+      sample=0.062,at=1782897341
+      sample=0.069,at=1782897773
+      sample=0.074,at=1782898862
+      sample=0.054,at=1782898942
+      sample=0.062,at=1782899636
+      sample=0.062,at=1782899648
+      sample=0.231,at=1782899945
+    TimeTotal:step,avg=0.08
       sample=0.034,at=1782794097
       sample=0.097,at=1782832726
       sample=0.051,at=1782872662
-  step,dige:31fdb1b9cf526cf8
+      sample=0.062,at=1782897341
+      sample=0.069,at=1782897773
+      sample=0.074,at=1782898862
+      sample=0.054,at=1782898942
+      sample=0.062,at=1782899636
+      sample=0.062,at=1782899648
+      sample=0.231,at=1782899945
+  step,dige:c73b039eb2437915

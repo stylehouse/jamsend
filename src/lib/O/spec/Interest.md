@@ -108,7 +108,7 @@ Real Waft **stances** (input to `interest_stance_of`):
   - `e_Lies_waft_mutated`: iterates **all** per-Interest LEs (`w.o({LE:1})` wildcards over them) and
      stales each whose target is in the mutated Waft.
   - Readers → active resolution: `LangGraft.svelte`, `Lang_Map_report`, `NaviCado.svelte` &
-     `DocMinimap.svelte` LE derives (`$derived.by` on `languinio.vers`). `LE_for()` (`LiesHold.svelte`, was `LiesEnd`):
+     `DocMinimap.svelte` LE derives (`$derived.by` on `languinio.vers`). `LE_for()` (`LangHold.svelte`, was `LiesEnd`):
       bare/`'Interest'` reason returns the active LE; named reasons (Undertaking) unchanged.
   - **Close → gone regression fixed Lang-side:** a giver whose Waft left the roster has its per-Interest
      LE retired (drop the clone + `c.LE`) so reconcile's gone-loop (which spares any `c.LE`-bearing

@@ -143,7 +143,7 @@
     import LangLang from "./LangLang.svelte";
     import LangGraft from "./LangGraft.svelte";
     import LangPoint from "./LangPoint.svelte";
-    import LiesHold from "./LiesHold.svelte";   // the Understanding home — dual-mounted so req:workon's do_fns are present wherever Lang runs
+    import LangHold from "./LangHold.svelte";   // the Understanding home — dual-mounted so req:workon's do_fns are present wherever Lang runs
 
     let { M } = $props()
 
@@ -988,7 +988,7 @@
             ?.(view, from, from)
     },
 
-    // Doc-from-src resolution lives in LiesHold as Waft_src_doc_path — one body
+    // Doc-from-src resolution lives in LangHold as Waft_src_doc_path — one body
     //   shared with Lies and LangGraft so the three can't drift.
 
 
@@ -1904,4 +1904,4 @@ perhaps we need loads of marks, on every Line, so we can see very well what chan
 <LangLang {M} />
 <LangGraft {M} />
 <LangPoint    {M} />
-<LiesHold {M} />
+<LangHold {M} />

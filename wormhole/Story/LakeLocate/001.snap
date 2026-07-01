@@ -14,10 +14,9 @@ Snap:H
           renamed_key_resolves
         Waft:LocRenamed,equip:LocGate	{"dontSnap":1}
         examining	{"loopy":0}
+          req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
         req:Cortex,eternal,maz=5,ok
         req:Store,eternal,maz=7,ok
-        req:desire
-          req:acquire,maz=9
         req:git
         req:wants
         o_elvis:dock_askies

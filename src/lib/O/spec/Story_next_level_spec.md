@@ -331,6 +331,46 @@ With the last-10 window already there, a simple slope over the spool tells you
 >  shows up as `surprise`, a human acknowledges it by adding a fuzz rule, it moves
 >   to `fuzz_rows`. The spool shows the surprise spike then the return to baseline.
 
+### 4.4 Conserving the *shared* delta — a corpus-wide spayer
+
+§4.2 classifies fuzz one line at a time, within one run. But a deliberate
+ refactor makes the *same* structural delta land in every step of every Book at
+  once. The P4 focus cutover is the worked example: it removed the identical
+   `req:desire / req:acquire / Waft:…,active` subtree from all ~11 Lies Books and
+    seeded `req:timemachine,playing=0` in its place — step after step, Book after
+     Book. Re-recording confirms that one delta N×M times by hand; each Accept
+      re-notices what the last already noticed.
+
+The idea: lift acknowledged non-determinism from a per-line class to a **shared
+ structural transformation**, recognised across steps *and* Books, and *conserve*
+  it — acknowledge the delta once, the diff engine absorbs it everywhere (renders
+   `Dif:conserved`, not `Dif:change`/`Dif:gone`), and the fleet re-record collapses
+    to a single confirmation instead of a red Book per fixture.
+
+Mechanism, reusing what exists:
+- **Anti-unify the diffs across the corpus.** Collect the `Dif:change`/`Dif:gone`/
+   `Dif:+` rows over the whole run set; the delta that appears in the same *shape*
+    across K Books — tolerant of small per-Book variance (a `finished` flag here,
+     whether `req:timemachine` was already snapped there) — is the shared
+      transformation. This is EntropyArrest §9's "anti-unify over Samples /
+       structural spayers", lifted from within-one-Waft to across-Books.
+- **Mint a corpus spayer.** Store the shared delta as a structural spay shared the
+   way entropy profiles already are — a `Wref:` into a `Trope/**` fragment (see
+    the shared-entropy Trope) so one edit repoints the fleet. `drop`/`dontSnap`
+     already erase a removed subtree; the new part is *matching the same removal
+      everywhere from one rule*, not a literal string per Book.
+- **Render the residual.** With the shared delta conserved, a Book's diff shows
+   only what is *not* shared — the real signal. In the P4 run that is exactly the
+    split seen by hand: LakeNets/LakeLocate carry *only* the shared delta (accept
+     blind), while LakeSurfer/LakeFunk carry it **plus** an un-shared re-anchor
+      (`Spotlight %What:itis → %Doc:…`, the Pmirror collapse, `what:?`) — which is
+       then the one thing a human should actually look at.
+
+So a deliberate refactor costs one acknowledgement, not a re-recorded fleet; and
+ the diff stops burying the genuinely-Book-specific change inside the wall of the
+  intended one. `surprise` (§4.3) becomes *surprise net of the conserved delta* —
+   the sharp failure signal survives the refactor instead of being swamped by it.
+
 ---
 
 ## 5. Ghosts — `gone` rows from `Snap:cont`

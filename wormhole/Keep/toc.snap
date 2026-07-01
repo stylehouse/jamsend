@@ -1,18 +1,18 @@
 Waft:Keep,equip:Keep,lte_expanded
-  WaftTimes,of_Waft:Ghost/Net/Easy,discovered_at=1782449847030,accessed_at=1782892928201
-    Cursor,what:What:the test,at=1782892930373
-  WaftTimes,of_Waft:Ghost/Music/Ality,discovered_at=1782449847030,accessed_at=1782892933064
-    Cursor,what:What:KEEP_AHEAD,at=1782892938688
-  WaftTimes,of_Waft:Credence,discovered_at=1782550950085,accessed_at=1782892928727
+  WaftTimes,of_Waft:Ghost/Net/Easy,discovered_at=1782449847030,accessed_at=1782898528228
+    Cursor,what:What:the test,at=1782898529782
+  WaftTimes,of_Waft:Ghost/Music/Ality,discovered_at=1782449847030,accessed_at=1782898531587
+    Cursor,what:What:KEEP_AHEAD,at=1782898536515
+  WaftTimes,of_Waft:Credence,discovered_at=1782550950085,accessed_at=1782898528581
     Cursor,what:What:Musu,at=1782550950086
-  Cursor,waft:Ghost/Music/Ality,at=1782892933064
-  WaftTimes,of_Waft:Cluster,discovered_at=1782641801641,accessed_at=1782892928917
+  Cursor,waft:Ghost/Music/Ality,at=1782898531587
+  WaftTimes,of_Waft:Cluster,discovered_at=1782641801641,accessed_at=1782898528643
   WaftTimes,of_Waft:Keep
-  WaftTimes,of_Waft:GhostList,discovered_at=1782807094692,accessed_at=1782892929073,minimised
+  WaftTimes,of_Waft:GhostList,discovered_at=1782807094692,accessed_at=1782898528775,minimised
   DocScroll,of_Doc:Ghost/N/Peeroleum.g
   DocScroll,of_Doc:Ghost/N/Tyrant.g
   DocScroll,of_Doc:Ghost/M/Radiola.g
   DocScroll,of_Doc:Ghost/Story/Musuation.g,scroll_line=2687
-  DocScroll,of_Doc:Ghost/Story/Peregrination.g,scroll_line=13
+  DocScroll,of_Doc:Ghost/Story/Peregrination.g,scroll_line=12
   DocScroll,of_Doc:src/lib/ghost/Radios.svelte,scroll_line=720
-  DocScroll,of_Doc:src/lib/O/spec/Music_todo.md,scroll_line=7
+  DocScroll,of_Doc:src/lib/O/spec/Music_todo.md,scroll_line=6

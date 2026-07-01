@@ -48,32 +48,27 @@ Snap:H
         Funkcions
           req:Waftica,waft:Story/LakeNets/Waftily,eternal,ok
             Lango:Cursor,to:Ghost/test/Story/Lake/LakeAmeliorations.g	{"mung":["seq"]}
-        req:desire
-          req:acquire,maz=9,finished
-          Waft:Story/LakeNets/Waftily	{"ref":{"src":"%Waft:Story/LakeNets/Waftily, active:1"}}
         o_elvis:Lies_desire_play
         o_elvis:Lies_desire_pause
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1782792342901,kind:cold
-          want=1782792342950,kind:cold
-          want=1782792343153,kind:cold
-          want=1782792352902,kind:next
-          want=1782792355081,kind:branch
-          want=1782792356395,kind:prev
-          want=1782792357712,kind:up,resolved
+          want=1782899376697,kind:cold
+          want=1782899385987,kind:next
+          want=1782899387974,kind:branch
+          want=1782899389154,kind:prev
+          want=1782899390359,kind:up,resolved
         o_elvis:dock_askies
         req:Langoer,eternal,focus:Story/LakeNets/Waftily,ok	{"ref":{"w":"%w:Lies"}}
         see:🗂 2 docs · 1 Waft
     A:Lang
-      self,round=53	{"mung":["age"]}
+      self,round=55	{"mung":["age"]}
       w:Lang
         Opt
           txtsyntaxdump
           nogen
           nopush
-        self,round=53	{"mung":["age"]}
+        self,round=55	{"mung":["age"]}
         model,cyto_dir
         docks
           dock:Ghost/test/Story/Lake/LakeAmeliorations.g,active	{"loopy":0}
@@ -85,7 +80,7 @@ Snap:H
             Compile
               Map
                 def,method:LakeNetherland,line=2,rel_from,rel_to=16
-              time,compile=0.003,all=0.273
+              time,compile=0.005,all=0.205
               Output,gen_path:gen/test/Story/Lake/LakeAmeliorations.go,dige:66dc96483acf789c,source_dige:5243d16758eb710b
                source: |
                  <script lang="ts">
@@ -129,7 +124,7 @@ Snap:H
                 def,method:transport,line=5,rel_from=65,rel_to=75
                 def,method:PeerJS,line=7,rel_from=108,rel_to=115
                 def,method:Socket,line=9,rel_from=145,rel_to=152
-              time,compile=0.002,all=0.156
+              time,compile=0.004,all=0.15
               Output,gen_path:gen/test/Story/Lake/LakeAntecedents.go,dige:e9aa19c131ec60a2,source_dige:69f9fd8539393ad7
                source: |
                  <script lang="ts">
@@ -182,7 +177,7 @@ Snap:H
           Change
             backend,dige:5243d
             storage,dige:5243d
-            compile,dige:5243d,secs=0.003
+            compile,dige:5243d,secs=0.005
           dock,active	{"loopy":0,"hid":1}
         req:workon,auto_push=0	{"ref":{"w":"%w:Lang"}}
           req:understanding,maz=3,permanent,sig:5:13:4:0,what:foundations,finished
@@ -221,9 +216,9 @@ Snap:H
         received,editorBegins,doc:Ghost/test/Story/Lake/LakeAntecedents.g
         received,editorBegins,doc:Ghost/test/Story/Lake/LakeAmeliorations.g
     A:Pantheate
-      self,round=14	{"mung":["age"]}
+      self,round=18	{"mung":["age"]}
       w:Pantheate
-        self,round=14	{"mung":["age"]}
+        self,round=18	{"mung":["age"]}
         o_elvis:Ghost_update_notify
     watched:ave
       examining	{"loopy":1,"hid":1}

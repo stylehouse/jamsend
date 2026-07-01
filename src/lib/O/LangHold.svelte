@@ -1,5 +1,6 @@
 <script lang="ts">
-// LiesHold.svelte — the Understanding hold (was LiesEnd; the two-Seem model).
+// LangHold.svelte — the Understanding hold (was LiesEnd → LiesHold; D7 rename to the Lang layer,
+//  the two-Seem model).  Dual-mounted by both Lies and Lang.
 //
 //   The whole live-editable model lives here now: the Seem primitives, the LE
 //   lifecycle, the push cluster — AND the per-tick convergence driver req:workon
@@ -595,12 +596,12 @@ await M.eatfunc({
 //   e:LE_operate / e:LE_mark are the direct implementations.
 //   e_Lang_LE_push is the durable push cluster (req:push|encode|replace|verify).
 //
-//   LiesHold is the right home for all of this: it owns %LE, the U/D sphere
+//   LangHold is the right home for all of this: it owns %LE, the U/D sphere
 //   protocol, the clone tree API, AND the req:workon driver that converges them.
 //   Lang now touches only at the edges — doc lifecycle, CM wiring (it still seeds
 //   req:workon in Lang_plan).  Lies touches at the cursor seam.
 //
-//   Mounting: LiesHold must be mounted by BOTH Lies.svelte and Lang.svelte.
+//   Mounting: LangHold must be mounted by BOTH Lies.svelte and Lang.svelte.
 //   All eatfunc calls mix into one H.* table — file placement is organisational.
 //   LiesCurse provides the branch/dive/stepping workers; this file owns all
 //   handler entry points.
@@ -1337,7 +1338,7 @@ await M.eatfunc({
 
 //#region helpers — LE API surface candidates
 //
-//   These three will migrate to LiesHold.svelte once the test confirms them.
+//   These three will migrate to LangHold.svelte once the test confirms them.
 //   They operate only on Seem:working's C tree and the U sphere — no D rewiring.
 
     // ── LE_add_clone ────────────────────────────────────────────────────────

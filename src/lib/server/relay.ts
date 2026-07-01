@@ -110,7 +110,18 @@ export function attachRelay(
 	function relayLog(line: string) {
 		const tag = `🛰 relay${selfHost ? '[' + selfHost + ']' : ''}${role ? '/' + role : ''}`
 		console.log(`${tag} ${line}`)
-		broadcastControl({ control: 'log', line: `${tag} ${line}` })
+		// control:log is the relay's routing narration surfaced in the browser console — but ONLY the
+		//  EDITOR is the debugging surface for it.  Broadcasting to EVERY local socket flooded each runner
+		//   tab's belief queue with frames it merely console-notes (a real death-spiral feeder).  Send it to
+		//    the editor-bound socket(s) alone; on a runner relay that set is empty, so runners stop drowning.
+		sendControlTo('editor', { control: 'log', line: `${tag} ${line}` })
+	}
+	// Send a control frame to the live local browser socket(s) bound under one addr (e.g. 'editor').
+	function sendControlTo(addr: string, obj: any) {
+		const set = locals.get(addr)
+		if (!set) return
+		const text = JSON.stringify(obj)
+		for (const ws of set) if (ws.readyState === WebSocket.OPEN) ws.send(text)
 	}
 	// Send a control frame to every live local browser socket (NOT the r2r peer link).
 	function broadcastControl(obj: any) {
