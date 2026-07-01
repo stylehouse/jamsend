@@ -2,7 +2,8 @@
 //  Stands up an editor relay and a runner relay on two localhost ports, wires three
 //   "browser" ws-clients, and asserts: same-origin delivery, cross-relay routing both
 //    directions (editor↔runner over the server-to-server bridge), set-once role (errorific),
-//     and that an unknown addressee is silently dropped (no crash).  Run:
+//     to:<pub> individuation vs to:runner broadcast (the anti-double-run contract), and that an
+//      unknown addressee is silently dropped (no crash).  Run:
 //        npx vite-node scripts/relay-test.ts
 //  Exits 0 on PASS, 1 on FAIL.
 
@@ -167,6 +168,39 @@ async function main() {
 	const carolGot21 = await until(() => carol.got.some((m) => m.header?.seq === 21 && m.header?.to === carolAddr))
 	check('to:<pub> still reaches the real holder after a forged hello', carolGot21)
 	check('impostor never bound — to:<pub> does not reach it', evil.got.length === evilBefore)
+
+	// ── individuation: to:<pub> is ONE runner, to:'runner' is ALL ─────────────────────────────────
+	//  The contract the "runs going to both runners" fix rests on.  Two runner sockets share the addr
+	//   'runner' (the broadcast bucket) AND each signed-hello-binds its OWN prepub (its individuated
+	//    address).  A directed rungo to:<prepubA> must reach A ALONE; a fallback broadcast to:'runner'
+	//     must reach BOTH.  If the relay ever collapses these two, silent double-runs return.
+	log('\n— individuation: to:<pub> is one runner, to:runner is all —')
+	const rk1 = await mint(), rk2 = await mint()
+	const rp1 = prepubOf(rk1.pubHex), rp2 = prepubOf(rk2.pubHex)
+	const run1 = browser(editorPort, 'runner') // both share the 'runner' broadcast bucket…
+	const run2 = browser(editorPort, 'runner')
+	await Promise.all([run1.open, run2.open])
+	// …and each proves its OWN prepub with a signed hello (its individuated addr)
+	const rt1 = Date.now()
+	run1.send({ control: 'hello', from: rp1, pub: rk1.pubHex, ts: rt1, sign: await signHeader({ control: 'hello', from: rp1, pub: rk1.pubHex, ts: rt1 }, rk1.privHex) })
+	const rt2 = Date.now()
+	run2.send({ control: 'hello', from: rp2, pub: rk2.pubHex, ts: rt2, sign: await signHeader({ control: 'hello', from: rp2, pub: rk2.pubHex, ts: rt2 }, rk2.privHex) })
+	await until(() => run1.ctrl.some((m) => m.control === 'hello_ok') && run2.ctrl.some((m) => m.control === 'hello_ok'))
+
+	// directed to:<prepub1> → run1 ALONE (run2 must NOT see it — the individuation)
+	const run2Before = run2.got.length
+	alice.frame(rp1, 'rungo', 30)
+	const indiv = await until(() => run1.got.some((m) => m.header?.seq === 30 && m.header?.to === rp1))
+	check('to:<pubA> reaches runner A', indiv)
+	await wait(120)
+	check('to:<pubA> does NOT reach runner B (individuated — no double-run)', run2.got.length === run2Before)
+
+	// broadcast to:'runner' → BOTH run1 and run2 (the deliberate fan-out)
+	alice.frame('runner', 'become_book', 31)
+	const bcastA = await until(() => run1.got.some((m) => m.header?.seq === 31 && m.header?.to === 'runner'))
+	const bcastB = await until(() => run2.got.some((m) => m.header?.seq === 31 && m.header?.to === 'runner'))
+	check('to:runner broadcasts to runner A', bcastA)
+	check('to:runner broadcasts to runner B', bcastB)
 
 	// Set-once errorific: BOB's server is already 'runner'; asking it to become 'editor' must error.
 	const ctrlBefore = bob.ctrl.length

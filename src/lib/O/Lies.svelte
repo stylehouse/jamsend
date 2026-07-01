@@ -215,6 +215,11 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         if (!path) throw 'e_Lies_foreground_waft: needs path'
         const waft = w.o({ Waft: path })[0] as TheC | undefined
         if (!waft) return
+        // deliberate: a user-driven foreground (nib|cap click) mints a DELIBERATE Cursor Lango — it
+        //  wins req:Langoer's verdict, so this foreground can't be out-competed by a stale Cursor
+        //   elsewhere.  A boot|timemachine RE-LAND passes no flag → cold, the safe default (a cold
+        //    Cursor loses the verdict, so a resume never steals a real foreground).
+        const deliberate = !!e.sc.deliberate
         // claim the session %active flag for the foregrounded Waft (clear the rest) so
         //  the per-tick acquire resolver desires IT — else the last +Now|ghost_pick
         //  %active stays sticky and drags focus back to it every trickle.
@@ -226,8 +231,8 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         //   wins over Lies_desire_land_cursor's land-on-first; fall back to it when nothing is
         //    remembered (fresh Waft | the locator no longer resolves | runner has no Keep).
         const resume = H.Lies_role(w) === 'editor' ? H.Lies_keep_resume_what(w, waft, path) : undefined
-        if (resume) H.i_elvisto(w, 'Lies_want', { src: resume, kind: 'cold' })
-        else await H.Lies_desire_land_cursor(w, waft, path)
+        if (resume) H.i_elvisto(w, 'Lies_want', { src: resume, kind: deliberate ? 'click' : 'cold' })
+        else await H.Lies_desire_land_cursor(w, waft, path, deliberate)
     },
 
     // ── e_Lies_open_sidetrack ──────────────────────────────────────────────
@@ -283,7 +288,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             //  (a later want wins over Lies_foreground_waft's land-on-first, which no-ops
             //   once the cursor is already inside the Waft).
             H.i_elvisto('Lang/Lang', 'Lang_foreground', { kind: 'Trail', waft: found.waft_key })
-            H.i_elvisto(w, 'Lies_want', { src: found.doc, kind: 'cold' })
+            H.i_elvisto(w, 'Lies_want', { src: found.doc, kind: 'click' })   // deliberate ghost-click → wins the verdict
             return
         }
 
@@ -308,14 +313,14 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         H.Lies_set_active_waft(w, aside)                     // session-only active flag, mirrors +Now
         H.Lies_waft_save(w, aside)                           // persist — survives reload
         w.bump_version()
-        H.i_elvisto(w, 'Lies_want', { src: moment, kind: 'cold' })
+        H.i_elvisto(w, 'Lies_want', { src: moment, kind: 'click' })   // deliberate ghost-throw → wins the verdict
     },
 
     // ── Lies_desire_land_cursor ───────────────────────────────────────────────
     //   Land cursor on the first navigable What in `waft`.
     //   No-op when the cursor is already inside this Waft.
-    async Lies_desire_land_cursor(w: TheC, waft: TheC, waft_key: string) {
-        await (this as House).Waft_cursor_first(w, waft, waft_key)
+    async Lies_desire_land_cursor(w: TheC, waft: TheC, waft_key: string, deliberate = false) {
+        await (this as House).Waft_cursor_first(w, waft, waft_key, deliberate)
     },
 
     // ── e_Lies_now_Waft ────────────────────────────────────────────────
@@ -323,11 +328,16 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //   Fired by the +Now button in Liesui.  Spawns or reuses the
     //   Waft:Look/YMD/HH slot for this hour, sets it active, clears
     //   active on all other Wafts.
-    e_Lies_now_Waft(A: TheC, w: TheC) {
+    async e_Lies_now_Waft(A: TheC, w: TheC) {
         const H    = this as House
         const waft = H.Lies_spawn_look_waft(w)
         // active is session-only — not written to snap (encode root is {Waft:path} only)
         H.Lies_set_active_waft(w, waft)
+        // +Now is a DELIBERATE focus onto a fresh Look slot — no What to land a want on, so mint the
+        //  Cursor Lango directly on its carrier (to: the Waft).  Keeps req:Langoer's verdict equal to
+        //   this eager set_active: without it +Now was Lango-less and a stale Cursor elsewhere out-ranked
+        //    it in the verdict — the residual the conservative guard was covering for.
+        await H.lango(w, waft, { kind: 'Cursor', to: waft.sc.Waft as string })
         w.bump_version()
     },
 

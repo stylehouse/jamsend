@@ -19,7 +19,18 @@
     let { H, w }: { H: House, w?: TheC } = $props()
     let waft = $derived(w?.o({ Waft: 'GhostList' })[0] as TheC | undefined)
 
-    let open = $state(true)
+    // open — the ghost-index panel collapse.  PROJECTED off the Keep (P5 layout service,
+    //  'global' chrome pref, Backbone P6) so the index remembers folded|open across a reload,
+    //   like DocTing's twin `open`.  `w` here IS w:Lies (it holds Waft:GhostList AND Waft:Keep),
+    //    so no %examining lookup.  Default OPEN → the CLOSED state rides the flag (absent ⇒ open).
+    let open = $derived((() => {
+        if (!w) return true
+        void (w.o({ Waft: 'Keep' })[0]?.version ?? w.version)   // re-derive when the Keep loads|changes
+        return !H.Lies_keep_layout_get(w, 'global', '', 'ghostlist_closed')
+    })())
+    const toggle_open = () => {
+        if (w) H.Lies_keep_layout_set(w, 'global', '', 'ghostlist_closed', open ? 1 : undefined)
+    }
 
     function basename(p: string): string {
         if (!p) return '·'
@@ -77,7 +88,7 @@
 {#if total}
 <div class="ghl">
     <div class="ghl-head">
-        <button class="ghl-toggle" onclick={() => open = !open}
+        <button class="ghl-toggle" onclick={toggle_open}
                 title="{open ? 'minimise' : 'expand'} the ghost index">
             <span class="ghl-chev">{open ? '▾' : '▸'}</span>
             <span class="ghl-label">ghosts</span>

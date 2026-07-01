@@ -95,7 +95,22 @@
     //  Credence Trail or the GhostList index doesn't claim the foreground switcher.
     let hot  = $derived(rows.filter(r => r.interesting))
     let cold = $derived(rows.filter(r => !r.interesting))
-    let show_cold = $state(false)
+
+    // show_cold — the "+N more" quiet-Interest toggle.  PROJECTED off the Keep (P5 layout
+    //  service, 'global' chrome pref, Backbone P6) so the strip remembers whether you keep the
+    //   quiet Interests unfolded across a reload.  Default folded, so the SHOWN state rides the
+    //    flag (1-or-absent: absent ⇒ folded).  w:Lies reached via the shared %examining .c.w,
+    //     same as Langui's `expanded`; no Keep (runner | early boot) ⇒ folded default.
+    let lies_w = $derived(H.ave.ob({ examining: 1 })[0]?.c?.w as TheC | undefined)
+    let show_cold = $derived((() => {
+        const w = lies_w
+        if (!w) return false
+        void (w.o({ Waft: 'Keep' })[0]?.version ?? w.version)   // re-derive when the Keep loads|changes
+        return !!H.Lies_keep_layout_get(w, 'global', '', 'isx_show_cold')
+    })())
+    const toggle_show_cold = () => {
+        if (lies_w) H.Lies_keep_layout_set(lies_w, 'global', '', 'isx_show_cold', show_cold ? undefined : 1)
+    }
 
     const foreground = (r: Row) =>
         H.i_elvisto('Lang/Lang', 'Lang_foreground', { kind: r.kind, ...(r.waft ? { waft: r.waft } : {}) })
@@ -148,7 +163,7 @@
              until clicked — they're reachable, just not claiming a foreground slot. -->
         <button class="isx-more" class:isx-more-open={show_cold}
                 title={show_cold ? 'hide the quiet Interests' : `${cold.length} quiet Interest${cold.length > 1 ? 's' : ''} (loaded, not engaged)`}
-                onclick={() => show_cold = !show_cold}>{show_cold ? '− less' : `+${cold.length} more`}</button>
+                onclick={toggle_show_cold}>{show_cold ? '− less' : `+${cold.length} more`}</button>
         {#if show_cold}
             {#each cold as r (r.key)}{@render cap(r)}{/each}
         {/if}

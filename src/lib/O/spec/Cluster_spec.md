@@ -126,6 +126,30 @@ So "Trusting" is not new invention — it is the garden's membership/contact/tru
    [roles…] [--force]`, then hand each `.env.cluster-<role>` to its host alone, keep `.env.cluster-pubs`
     everywhere. `--force` rotates every key (breaks live peers holding the old set — do it deliberately).
 
+### 2.2a Cold-start — standing up a cluster from nothing
+Every key in the cluster now traces to ONE act: opening the editor and clicking a button. No pre-seed
+ step, no `gen-cluster-identos` run in the normal path.
+
+1. **Open the editor cold:** `http://localhost:9092/Otro?E=Editron&I=new`. `?I=new` mints the editor's
+    `%Identity` — its signing key — and rewrites the URL to `?I=<prepub>` (bookmark THAT; it RESUMES the
+     same editor, whereas `?I=new` would mint another). `:9092` = the editor (the `EDITOR_URL` host);
+      `:9091` = the dev server where runners live.
+2. **🪪 Id page → “Set up cluster trust”** (`Lies_cluster_setup`) — the ONLY key-minting step: it FSA-writes
+    `.env.cluster-pubs` = `{this editor's pub, a freshly-minted claude pub}` and writes `.env.cluster-claude`
+     (the claude CLI's secret) if absent (an existing one is reused, never rotated out from under a live CLI).
+3. **Restart the dev server.** The relay reloads `CLUSTER_TRUSTED_PUBS` and Vite re-bakes
+    `VITE_CLUSTER_TRUSTED_PUBS` — both read the set only at start/build. The 🪪 trust line flips ⚠️→✅ and the
+     editor's `gen_write` compiles are authorised.
+4. **Runners join by URL** — `…:9091/Otro?I=<tag>` (grid-idle) or `?B=<Book>`. Each self-generates its own
+    `%Identity` (no key handed to it); remote disk access is an editor-signed `%Grant`, not set membership.
+     The **claude CLI** reads `.env.cluster-claude` to sign `ghost_compile`.
+
+So the editor cold-start generates every key that matters — its own, the claude CLI's, and the trusted
+ list — and runners mint their own. **`gen-cluster-identos` is thereby demoted to break-glass:** a
+  no-browser / CI cold-start (`… gen-cluster-identos editor claude`) or a deliberate `--force` rotation.
+   Nothing in the normal path calls it. Recommendation: KEEP it as the escape hatch (≈90 lines, the only
+    no-browser + only rotation path); delete only if a headless cold-start is truly never wanted.
+
 ### 2.3 The signing contract
 A privileged frame's signed unit is its **header** (addressing + intent + a body commitment), never
  the body bytes directly:
@@ -449,7 +473,10 @@ When the app needs to act on the **host** — restart a crashed Chrome profile, 
      can race the editor's own (reads are safe) — funnel writes through the queue, or grant `ro`. (d) Revocation-
       corpus check at serve is a TODO. (e) `for` is a **prepub**. (f) **PereBinary** (a Book diging a binary
        round-trip over the relay carrier) is the owed positive-path proof — the harness exercises binary send +
-        bad-hash reject but never diges received content. Verify live on the docker flock + an editor on :9091.
+        bad-hash reject but never diges received content. NB the **relay-level** binary round-trip (buffer-intact,
+         same-origin + over the r2r bridge) is now proven HEADLESS in `scripts/relay-test.ts`; PereBinary's remaining
+          gap is the **app-level** path — `Lies_send_binary_to` → `RemoteWormholeNav.frame_bytes` unpack → dige the
+           received content — which needs a live runner. Verify live on the docker flock + an editor on :9091.
 
 ---
 

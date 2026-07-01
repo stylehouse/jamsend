@@ -565,7 +565,7 @@
             ai.sc.kind = kind
             if (waft != null) ai.sc.waft = waft
             languinio.bump_version()   // strip + NaviCado re-derive the foreground at once
-            if (waft) H.i_elvisto('Lies/Lies', 'Lies_foreground_waft', { path: waft })
+            if (waft) H.i_elvisto('Lies/Lies', 'Lies_foreground_waft', { path: waft, deliberate: 1 })
         } else {
             // A Sidetrack's cursor is off_what (no What to check out) → foreground in place, as do
             //  light kinds (GhostList).  interest_foreground sets ActiveInterest for the social

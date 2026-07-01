@@ -25,7 +25,22 @@
 
     let { H }: { H: House } = $props()
 
-    let open = $state(true)
+    // w:Lies via the shared %examining .c.w (same reach as Langui) — the Keep home for the two
+    //  persisted view-states below (P5 layout service, 'global' chrome pref, Backbone P6).  No
+    //   Keep (runner | early boot) ⇒ the built-in defaults (open, time-sort).
+    let lies_w = $derived(H.ave.ob({ examining: 1 })[0]?.c?.w as TheC | undefined)
+
+    // open — the panel minimise.  Default OPEN, so the CLOSED state rides the flag (1-or-absent:
+    //  absent ⇒ open).  Projected off the Keep; toggle writes the closed-flag, this re-derives.
+    let open = $derived((() => {
+        const w = lies_w
+        if (!w) return true
+        void (w.o({ Waft: 'Keep' })[0]?.version ?? w.version)   // re-derive when the Keep loads|changes
+        return !H.Lies_keep_layout_get(w, 'global', '', 'ting_closed')
+    })())
+    const toggle_open = () => {
+        if (lies_w) H.Lies_keep_layout_set(lies_w, 'global', '', 'ting_closed', open ? 1 : undefined)
+    }
 
     let languinio: TheC | undefined = $state()
     $effect(() => {
@@ -44,8 +59,19 @@
     type Sort = 'heat' | 'freq' | 'region' | 'time'
     const SORTS: Sort[] = ['heat', 'freq', 'region', 'time']
     const SORT_GLYPH: Record<Sort, string> = { heat: '♨', freq: '#', region: '/', time: '⏱' }
-    let sort = $state<Sort>('time')   // the journey — oldest → newest — by default
-    function cycle_sort() { sort = SORTS[(SORTS.indexOf(sort) + 1) % SORTS.length] }
+    // sort — the 4-way cycle.  A VALUE not a flag, so it's stored literally; the default 'time'
+    //  (journey order, oldest → newest) rides as absent so the Keep stays clean until you pick
+    //   another.  Projected off the Keep (P5 layout service); cycle_sort writes the next value.
+    let sort: Sort = $derived((() => {
+        const w = lies_w
+        if (!w) return 'time'
+        void (w.o({ Waft: 'Keep' })[0]?.version ?? w.version)   // re-derive when the Keep loads|changes
+        return (H.Lies_keep_layout_get(w, 'global', '', 'ting_sort') as Sort) ?? 'time'
+    })())
+    function cycle_sort() {
+        const next = SORTS[(SORTS.indexOf(sort) + 1) % SORTS.length]
+        if (lies_w) H.Lies_keep_layout_set(lies_w, 'global', '', 'ting_sort', next === 'time' ? undefined : next)
+    }
 
     // haze the bottom edge when the cloud overflows its box (clipped content below).
     let scroller: HTMLElement | undefined = $state()
@@ -110,7 +136,7 @@
 {#if globs.length}
 <div class="ting" class:min={!open}>
     <div class="ting-head">
-        <button class="ting-toggle" onclick={() => open = !open}
+        <button class="ting-toggle" onclick={toggle_open}
                 title="{open ? 'minimise' : 'expand'} the attention trail">
             <span class="ting-chev">{open ? '▾' : '▸'}</span>
             <span class="ting-label">ting</span>

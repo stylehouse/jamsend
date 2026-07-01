@@ -266,6 +266,18 @@ So the beacon model renders "gone" (77e2fe94) and "here but quiet" (49dee91d) ID
  per-runner ping (§5a) tells them apart in one round-trip. And `to:<pub>` already routing to a live socket is
   the proof the foundation for (a) is sound — it's wiring the ping/pong onto it, not inventing transport.
 
+> **UPDATE 2026-07-01 (root cause found + fixed).** The `advertising:false` half is already RESOLVED —
+>  advertise now keys on `Lies_self`, not `Clustation_self` (§2a), so `49dee91d` advertises even with
+>   `Clustation_self` null; its row no longer sits `offline` for want of a beacon. The `Clustation_self
+>    returns null` half was NOT (only) a divergence of identity paths — it was a **call-site arg bug**:
+>     `Clustation_self(this, H?)` reaches the top House itself, but every caller passed the `w:Lies` particle
+>      (`Clustation_self?.(w)`), which lands in the `H?` param and breaks `top_House()` — so it returned
+>       `undefined` UNCONDITIONALLY, including inside `Lies_self`. Fixed at all 5 sites (call with no arg →
+>        the receiver House; IdHatch was the one correct site, passing `H`). So the ping diag was measuring the
+>         bug, not the runtime. After a runner RELOAD, re-probe: if `clustation_self` now matches `self`, there
+>          was never a real divergence to reconcile; if still null, THEN chase a genuine "no active %Identity
+>           concreted despite `?I=`" — but only then.
+
 ## Carried (not this thread, but on the board)
 - **Shortfall A — generic-C** Waft view** (→ another agent). `ui/Waft.svelte` renders only the `ITEM_TYPES`
    schema (Waft/What/Doc/Point) + Funkcion; unknown mainkeys (WaftTimes, Cursor, HostedIdentity) render

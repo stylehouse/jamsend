@@ -438,6 +438,31 @@ source needs it. *(Name `Waftica` still soft.)*
 >   the live acceptance confirms the cut behaves, to avoid a double re-record. *(Practical note: an
 >   auto-sweep keeps grabbing the runner — a clean fleet re-record needs it stable/idle.)*
 
+> **(iv) THE RESIDUAL — the emit half LANDED (2026-07-01); conservative guard KEPT; live-eyeball owed.**
+> The sole-writer's substantive half — make every DELIBERATE focus mint a DELIBERATE Cursor Lango, so
+> the verdict can never diverge from the eager `.sc.active` — is now cut across all the deliberate sites:
+> - **nib|cap foreground** (`e_Lies_foreground_waft`) takes a `deliberate` flag; `Lang.svelte`'s
+>   foreground-by-checkout passes `deliberate:1`, so a user foreground mints a `click` (non-cold) Cursor
+>   that wins the verdict — it can't be out-competed by a stale Cursor elsewhere. The boot|timemachine
+>   RE-LAND (`req_timemachine`→`Lies_foreground_waft`, and the per-tick `Lies_desire_land_cursor`) passes
+>   NO flag → stays cold (the safe default: a cold Cursor loses, so a resume never steals a real
+>   foreground). The flag threads `foreground_waft → Lies_desire_land_cursor → Waft_cursor_first`, all
+>   defaulting cold.
+> - **ghost-pick** (jump + throw-to-Aside) `cold`→`click` — a ghost-click is deliberate.
+> - **+Now** (`e_Lies_now_Waft`) mints a deliberate Cursor DIRECTLY via `H.lango` (the fresh Look slot has
+>   no What to land a want on) — it was the one genuinely Lango-LESS deliberate site.
+>
+> **Guard KEPT conservative** (NOT dropped to unconditional): with every deliberate focus now Lango-backed,
+> the conservative guard already behaves unconditionally where converted, yet still gracefully RESPECTS any
+> site left un-converted (a missed site → its focus stays, never stolen) — strictly safer than an
+> unconditional write. Dropping it to unconditional is a safe follow-up ONCE the live-eyeball confirms.
+> **Verified:** type-clean (the one `Lang:975` error is pre-existing, unrelated); LakeLango + LakeKeep +
+> LakeSurfer GREEN on the live runner (no machine regression — these synthetic worlds don't fire the
+> +Now/foreground/ghost-pick paths, so green = "didn't break the Langoer machine"). **OWED — live eyeball**
+> (only the real editor fires these paths): (1) foreground a nib/cap Waft after a deliberate click
+> elsewhere → it HOLDS (no pull-back); (2) +Now → the fresh slot takes+holds; (3) ghost-pick → jumps+holds;
+> (4) reload still resumes the remembered Waft (cold path unchanged); (5) no boomerang to Radiola.g.
+
 **What `waft_roster` keeps vs sheds** *(rideable #6 made concrete)*. The wire stays; the
 reducer hollows out. `interest_reconcile` lives at `Interest.svelte:111`, mixed in via
 `M.eatfunc` — invisible to grep / `svelte-check` (the "does not exist on type House" noise),
@@ -494,6 +519,35 @@ reducer hollows out. `interest_reconcile` lives at `Interest.svelte:111`, mixed 
   reload.
 - **Gate:** each client adds one step to `LakeKeep` / `LakeSurprise`; the growing set *is*
   the regression wall.
+
+> **Status (2026-07-01) — Lens layout clients: FIVE view-states / FOUR components landed
+> (type-clean; mechanism P5-gated).**
+> The pure chrome view-states that were session-only `$state` (lost on reload) now PROJECT off the
+> Keep through the P5 layout service (`Lies_keep_layout_get/set`, `'global'` scope), mirroring
+> Langui's shipped `expanded`: **Langui `minimap_open`** (closed-flag `lte_minimap_closed`),
+> **InterestStrip `show_cold`** (`isx_show_cold`), **DocTing `open`** (`ting_closed`) **+ `sort`**
+> (`ting_sort` — a *value* not a flag; default `'time'` rides as absent so the Keep stays clean
+> until you pick another), and **DocGhostList `open`** (`ghostlist_closed` — the ghost-index twin of
+> DocTing's collapse; it takes `w`=w:Lies as a prop so it skips the `%examining` lookup). The idiom
+> each time: convert the `$state` to a `$derived` reading
+> `Lies_keep_layout_get`, and route the button(s) through a toggle that `Lies_keep_layout_set`s the
+> **non-default** state (1-or-absent for a flag whose default is on → store the OFF/closed state; the
+> literal value for `sort`). **No `Lies.svelte`/service touch — pure leaf-component consumers**, so
+> zero risk to the focus core or the networking agent's in-flight `LiesFunk`/`LiesLies`. svelte-check
+> clean (only the baseline "does not exist on type House" eatfunc noise, identical to the
+> `Lies_keep_pref_*` calls sitting beside them). Browser-eyeball owed (owner); the
+> set→snap→reopen→get **mechanism is already P5-gated in `LakeKeep`**, and a Story selftest can't
+> mount a Svelte component, so no redundant per-client gate step was added.
+>
+> **NOT done — OWNER FORK: `Waft` capped/sidebyside.** The plan lists them, but `Waft.svelte:243`
+> carries an explicit contrary decision — *"capped|sidebyside stay ephemeral — render-only, never
+> reach the C/snap"* — made deliberately (per-Waft `minimised` persists *right beside* them, so
+> ephemeral-for-these-two was a considered per-flag choice, not an oversight). Persisting them is a
+> behavior change on a considered call → left for the owner to confirm before touching.
+> **Also skipped:** MiniWaft `orbed` (per-instance/transient — no single Keep home, and it may not
+> reach `w:Lies`) · Brink pose (the networking agent's `Rundar`). **Interest pop-back (3a/3b) stays
+> parked** — it writes `.sc.active`, the contested focus core (P4 / `req:Langoer` territory,
+> owner-supervised), not a pure layout client.
 
 ## P7 — dissolve `%Spotlight` *(separate, deferred — only after the Keep is the proven cursor-truth)*
 

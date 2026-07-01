@@ -390,9 +390,20 @@
         })
     })
 
-    // minimap_open: toggled by the "map" button in the bar.
-    // Toggle lives here so the button position doesn't move when the map opens.
-    let minimap_open = $state(true)
+    // minimap_open: toggled by the bar "map" button + the gutter chevron.  Now PROJECTED off
+    //  the Keep like `expanded` (defined just below, same lies_w) — bound to the P5 layout
+    //   service ('global' chrome pref, Backbone P6) so it survives reload.  Its default is OPEN,
+    //    so the CLOSED state is what rides the flag (1-or-absent: absent ⇒ open); the toggle
+    //     writes the closed-flag, this re-derives off it — no local $state to drift.
+    let minimap_open = $derived((() => {
+        const w = lies_w
+        if (!w) return true                                     // no Keep (early boot | runner) ⇒ open
+        void (w.o({ Waft: 'Keep' })[0]?.version ?? w.version)   // re-derive when the Keep loads|changes
+        return !H.Lies_keep_layout_get(w, 'global', '', 'lte_minimap_closed')
+    })())
+    const toggle_minimap = () => {
+        if (lies_w) H.Lies_keep_layout_set(lies_w, 'global', '', 'lte_minimap_closed', minimap_open ? 1 : undefined)
+    }
 
     // expanded: makes cm-scroller take 80vh instead of the default 50vh.
     // V button in bar — same Λ/V rotation idiom as Storui's diff-panel expand.
@@ -1769,7 +1780,7 @@
         <span class="lte-len">{((dock.c.text as string) ?? '').length}c</span>
         <!-- "map" button: toggles minimap overlay, active when open -->
         <button class="lte-map-btn" class:active={minimap_open}
-                onclick={() => minimap_open = !minimap_open}
+                onclick={toggle_minimap}
                 title="{minimap_open ? 'hide minimap' : 'show minimap'}">map</button>
         <!-- V button: expand editor to 80vh / collapse to 50vh.
              Λ (upside-down V) when expanded — same idiom as Storui's diff panel. -->
@@ -1788,7 +1799,7 @@
              Stays in place whether or not minimap is open.
              Points left (<) when closed, right (>) when open — same V char, ±90°. -->
         <button class="lte-mm-chevron" class:open={minimap_open}
-                onclick={() => minimap_open = !minimap_open}
+                onclick={toggle_minimap}
                 title="{minimap_open ? 'hide minimap' : 'show minimap'}">V</button>
         {#if minimap_open}
         <!-- lte-mm-host overlays the editor canvas; chevron floats over the top corner (z-index 3) -->

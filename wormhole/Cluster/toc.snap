@@ -1,5 +1,5 @@
 Waft:Cluster,equip:Cluster
   Funkcion:Relay,dontSnap
-  HostedIdentity:0de425eeaead0220,role:editor
-  HostedIdentity:49dee91d61a9de64,role:runner
-  HostedIdentity:77e2fe948a115962,role:runner,favourite_client:e63cdcca5aa80dbf
+  HostedIdentity:0de425eeaead0220,role:editor,friendly:id-0de425
+  HostedIdentity:49dee91d61a9de64,role:runner,friendly:id-49dee9
+  HostedIdentity:77e2fe948a115962,role:runner,favourite_client:e63cdcca5aa80dbf,friendly:id-77e2fe

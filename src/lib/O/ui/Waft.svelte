@@ -241,10 +241,25 @@
     //               flex-wrap row, so two adjacent half-Wafts pair onto one line by
     //               themselves — no parent bookkeeping, the wrap does the pairing.
     //   capped|sidebyside stay ephemeral — render-only, never reach the C/snap.
+    // On the runner there is no Keep to persist to, so minimise is session-local: a plain $state,
+    //  toggleable but NOT saved, seeded from the infra default below.
+    let local_min = $state<boolean | undefined>(undefined)
     let minimised  = $derived((() => {
-        void (w.o({ Waft: 'Keep' })[0]?.version ?? w.version)   // re-derive when the Keep changes|loads
-        return !!H.Lies_keep_cfg_get(w, wkey, 'minimised')
+        const keep = w.o({ Waft: 'Keep' })[0] as TheC | undefined
+        void (keep?.version ?? w.version)                       // re-derive when the Keep changes|loads
+        const stored = H.Lies_keep_cfg_get(w, wkey, 'minimised')
+        if (stored !== undefined) return !!stored              // an explicit persisted choice always wins
+        if (keep) return false                                 // editor, no flag → open (Lies_aim seeds %equip closed)
+        // no Keep at all (the runner): session-local, seeded from the BACKSTAGE INFRA default —
+        //  Trope/entropy profiles + dontSnap scaffolding start closed (not working surfaces), a
+        //   giver Waft starts open.  Toggleable in-session (toggle_minimised), just not persisted.
+        return local_min ?? !!(waft?.sc.boring || waft?.sc.dontSnap)
     })())
+    // toggle: persist through the Keep on the editor; fall back to session-local state on the runner.
+    const toggle_minimised = () => {
+        if (w.o({ Waft: 'Keep' })[0]) H.Lies_keep_cfg_set(w, wkey, 'minimised', minimised ? undefined : 1)
+        else local_min = !minimised
+    }
     let capped     = $state(false)
     let sidebyside = $state(false)
 
@@ -661,7 +676,7 @@
          All three are render-only and never reach the C/snap. -->
     <div class="ls-waft-ctl">
         <button class="ls-waft-btn" class:ls-waft-btn-on={minimised}
-                onclick={() => H.Lies_keep_cfg_set(w, wkey, 'minimised', minimised ? undefined : 1)}
+                onclick={toggle_minimised}
                 title="{minimised ? 'expand this Waft' : 'minimise this Waft'}">{minimised ? '▸' : '▾'}</button>
         {#if minimised}
             <span class="ls-waft-tab" title={wkey}>{wkey}</span>

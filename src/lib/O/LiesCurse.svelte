@@ -436,7 +436,7 @@
     //   No-op when the cursor is already inside this Waft.
     //   Called by the timemachine's land step and the acquire cold-start path.
     //   §3e: emits a want rather than setting the cursor directly.
-    async Waft_cursor_first(w: TheC, waft: TheC, waft_key: string) {
+    async Waft_cursor_first(w: TheC, waft: TheC, waft_key: string, deliberate = false) {
         const H         = this as House
         const examining = w.o({ examining: 1 })[0] as TheC | undefined
         if (!examining) return
@@ -482,7 +482,7 @@
         //     overnight because it'd swap a user-VERIFIED fix for an unverified one.  See the LakeSurfer note.)
         const target = (H.Lies_role(w) === 'editor' ? H.Lies_keep_resume_what(w, waft, waft_key) : undefined) ?? first
         if (!target) return
-        H.i_elvisto(w, 'Lies_want', { src: target, kind: 'cold' })
+        H.i_elvisto(w, 'Lies_want', { src: target, kind: deliberate ? 'click' : 'cold' })
     },
 
     // ── Waft_cursor_next_candidate ─────────────────────────────────────────────

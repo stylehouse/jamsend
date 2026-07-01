@@ -446,7 +446,7 @@ await M.eatfunc({
         if (!atom?.sign) return
         // accept a grant addressed to ANY of our identity tiers (the editor granted on the advertise
         //  prepub = Clustation_self; the registry keys on Lies_self — usually the same, tolerate both).
-        const ids = [(H as any).Lies_self?.(w)?.prepub, (H as any).Clustation_self?.(w)?.prepub].filter(Boolean) as string[]
+        const ids = [(H as any).Lies_self?.(w)?.prepub, (H as any).Clustation_self?.()?.prepub].filter(Boolean) as string[]
         if (ids.length && !ids.includes(atom.for)) return              // not for us (broadcast → filter)
         const me = ids[0]
         try { await verify_grant(atom) } catch (e) { (H as any).tlog?.(`🛰️ grant_offer bad sig: ${e}`); return }
@@ -571,7 +571,7 @@ await M.eatfunc({
         w.c.wormhole_beg_at = now
         // carry our prepub in the BODY (as the advertise beacon does) so the editor flags the SAME
         //  %Runner roster row the rack renders — keyed on the beacon prepub, not header.from.
-        const me = (H as any).Clustation_self?.(w)?.prepub ?? (H as any).Lies_self?.(w)?.prepub
+        const me = (H as any).Clustation_self?.()?.prepub ?? (H as any).Lies_self?.(w)?.prepub
         H.Peeroleum_send_consumer(w, 'wormhole_beg', { want: 'remoteWormhole', from: me })
     },
 
@@ -1036,7 +1036,7 @@ await M.eatfunc({
                         self:           (H as any).Lies_self?.(w)?.prepub ?? null,
                         advertising:    !!(H.Lies_is_runner(w) && H.Lies_channel_live(w) && (H as any).Lies_self?.(w)?.prepub),
                         last_advertise: (w.c.last_advertise as number) ?? null,
-                        clustation_self: (H as any).Clustation_self?.(w)?.prepub ?? null,   // the ?I= face (often null); kept to spot a divergence
+                        clustation_self: (H as any).Clustation_self?.()?.prepub ?? null,   // the active %Identity's ?I= face — null iff on a stashed/env key (no ?I=); a split from `self` is the signal
                     }
                 } else if (op === 'run') {
                     // engage the runner for THIS client first (the don't-steal gate): refuse if another

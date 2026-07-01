@@ -491,7 +491,7 @@
         //        all (nothing to claim — a ?B= runner with no ?I and no env key).
         Lies_self(w?: TheC): { prepub: string; friendly?: string } | undefined {
             const H = this as House
-            const face = (H as any).Clustation_self?.(w) as { prepub?: string; friendly?: string } | undefined
+            const face = (H as any).Clustation_self?.() as { prepub?: string; friendly?: string } | undefined
             if (face?.prepub) return { prepub: face.prepub, friendly: face.friendly }
             const idento = H.Lies_cluster_idento(w)
             return idento?.pub ? { prepub: prepubOf(idento.pub) } : undefined
@@ -1141,7 +1141,7 @@
         //      beacon; the client just looks up who favours it.
         Lies_favoured_runner(w: TheC, client?: string): string | undefined {
             const H = this as House
-            const me = client ?? (H as any).Clustation_self?.(w)?.prepub
+            const me = client ?? (H as any).Clustation_self?.()?.prepub
             if (!me) return undefined
             const cluster = w.o({ Waft: 'Cluster' })[0] as TheC | undefined
             const hi = (cluster?.o({ HostedIdentity: 1 }) as TheC[] | undefined)?.find(h => h.sc.favourite_client === me)
