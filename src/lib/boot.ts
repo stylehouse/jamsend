@@ -21,3 +21,20 @@ export function boot_param(name: string): string | undefined {
     }
     return undefined
 }
+
+// A persisted per-tab preference (localStorage, survives reload) — a sibling to the URL/env params
+//  above.  `hasAudioContext` is the durable INTENT set by IdHatch's tickbox: this tab AIMS to provide
+//   a real AudioContext (for real-time audio Books).  The LIVE fact is separate — whether a gat
+//    actually resumed — and stays ephemeral; this only records the aim, so Otro can demand the gesture
+//     up-front and a ticked runner lands audio-ready before dispatch sends it a Book.  Browser-guarded
+//      (no localStorage under node), defaults off; a flip takes effect on the next reload (like socklog).
+const AUDIO_KEY = 'hasAudioContext'
+export function has_audio(): boolean {
+    try { return typeof localStorage !== 'undefined' && localStorage.getItem(AUDIO_KEY) === '1' } catch { return false }
+}
+export function set_has_audio(on: boolean): void {
+    try {
+        if (typeof localStorage === 'undefined') return
+        if (on) localStorage.setItem(AUDIO_KEY, '1'); else localStorage.removeItem(AUDIO_KEY)
+    } catch { /* private-mode / disabled storage — the flag just won't persist */ }
+}

@@ -41,7 +41,7 @@
     import Lang from "$lib/O/Lang.svelte";
     import Hovercraft from "./Hovercraft.svelte";
     import Lies from "./Lies.svelte";
-    import Interest from "./Interest.svelte";
+    import LangCurse from "./LangCurse.svelte";   // %Interest cluster + Lang↔Lies channel (D7 rename of Interest.svelte)
     import Editron from "./Editron.svelte";
     import Thangs from "./Thangs.svelte";
 
@@ -64,7 +64,7 @@
 <Cyto      {M} />
 <Matstyle  {M} />
 <!-- %Interest cluster + Lang↔Lies channel reducers (pure logic; no elvis handlers) -->
-<Interest  {M} />
+<LangCurse {M} />
 <!-- pure text/diff utilities — depth_of, compute_diff, squish_context, enDif, deDif, etc. -->
 <Text  {M} />
 <!-- what are we working on, and memories drifting away -->

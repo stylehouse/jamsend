@@ -10,6 +10,7 @@
     import { onMount } from "svelte"
     import type { House } from "$lib/O/Housing.svelte"
     import { socklog_armed, socklog_arm } from "$lib/O/sockcap"
+    import { has_audio, set_has_audio } from "$lib/boot"
 
     // mounted as a Lens panel (LensHost) — the extra panel props (lens/funk/w) land in rest, ignored.
     let { H, ...rest }: { H: House } & Record<string, any> = $props()
@@ -20,6 +21,10 @@
     // per-tab diagnostic: arm the /relay socket capture (sockcap → wormhole/_socklog).  Persisted in
     //  localStorage so Otro reads it BEFORE the channel boots; a flip takes effect on the next reload.
     let socklog_on = $state(socklog_armed())
+    // The durable "this tab provides a real AudioContext" intent (IdHatch is where a tab becomes its
+    //  %Identity, so its capabilities are declared here too).  Persisted per-tab; the live audio gate
+    //   (Otro's "open share") is the runtime consequence — a ticked tab demands a gesture until AC_ready.
+    let audio_on = $state(has_audio())
 
     // The ACTIVE %Identity's public face {prepub, friendly}, polled live: the adopt lands via post_do
     //  on the tick (a C-tree mutation), which a derived off H.version wouldn't catch — and a fullscreen
@@ -85,6 +90,13 @@
             ? '📡 socklog ARMED — reload this tab to start capturing /relay traffic to wormhole/_socklog.'
             : 'socklog off — reload to stop capturing.'
     }
+    function toggle_audio() {
+        audio_on = !audio_on
+        set_has_audio(audio_on)
+        msg = audio_on
+            ? '🔊 this tab will provide AudioContext — reload, then tap “open share” once to grant the gesture.'
+            : 'audio intent off — reload; this tab no longer offers a real AudioContext.'
+    }
     function close() { (H as any).Lies_lens_dismiss?.('Panel', 'IdHatch') }
 </script>
 
@@ -112,7 +124,10 @@
                     title="capture this tab's /relay socket traffic to wormhole/_socklog — arms the tap on the next reload">
                     {socklog_on ? '☑' : '☐'} socklog capture
                 </button>
-                <!-- %hasAudioContext toggle to sit here once its behaviour is settled -->
+                <button class="flag" class:on={audio_on} onclick={toggle_audio}
+                    title="this tab aims to provide a real AudioContext for real-time audio Books — you tap “open share” once per load to grant the gesture">
+                    {audio_on ? '☑' : '☐'} 🔊 provide AudioContext
+                </button>
             </div>
             <p class="hint">Import an identity — paste a <code>.env.cluster-&lt;role&gt;</code> file (e.g. the
                 <code>.env.cluster-claude</code> the setup writes, or one shared from another host):</p>
