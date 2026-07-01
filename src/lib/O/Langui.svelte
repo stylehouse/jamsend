@@ -287,6 +287,51 @@
         if (push_quiet_timer || push_active_timer) flush_push_text('now')
     }
 
+    // ── persistent scroll-as-line (#11) ────────────────────────────────────────
+    //   scrollCache (above) restores pixel-exact scroll across a doc SWITCH within a session.  This
+    //    persists the top visible LINE on the Keep (Lies_keep_layout 'doc' scope) so a doc's scroll
+    //     also survives a RELOAD — and a different zoom|wrap, since a line resolves freshly where a
+    //      pixel offset rots.  Captured debounced on scroll + eagerly on departure; restored on a
+    //       FIRST-visit open (the reload case — no in-memory snapshot), deferred past CM's measure.
+    function top_visible_line(v: EditorView): number {
+        const r   = v.scrollDOM.getBoundingClientRect()
+        const pos = v.posAtCoords({ x: r.left + 2, y: r.top + 2 }, false)   // false: clamp to nearest, never null mid-measure
+        return pos == null ? 1 : v.state.doc.lineAt(pos).number
+    }
+    function save_scroll_line(path: string) {
+        if (!view || !path || !lies_w) return
+        const line = top_visible_line(view)
+        // line 1 (top) IS the default → store undefined so it deletes (1-or-absent); coalesces, no churn within a line.
+        H.Lies_keep_layout_set(lies_w, 'doc', path, 'scroll_line', line > 1 ? line : undefined)
+    }
+    let scroll_save_timer: ReturnType<typeof setTimeout> | null = null
+    function schedule_scroll_save() {
+        if (scroll_save_timer) clearTimeout(scroll_save_timer)
+        scroll_save_timer = setTimeout(() => { scroll_save_timer = null; save_scroll_line(active_path) }, 400)
+    }
+    // a remembered line waiting for its doc's text to arrive (a first-visit open races the dock content)
+    let pending_scroll: { path: string, line: number } | null = null
+    function arm_scroll_restore(path: string) {
+        if (!lies_w) { pending_scroll = null; return }
+        const line = H.Lies_keep_layout_get(lies_w, 'doc', path, 'scroll_line') as number | undefined
+        pending_scroll = (line && line > 1) ? { path, line } : null
+        try_apply_pending()
+    }
+    function try_apply_pending() {
+        if (!view || !pending_scroll) return
+        const { path, line } = pending_scroll
+        if (path !== active_path) { pending_scroll = null; return }   // the doc moved on — drop
+        if (view.state.doc.lines < 2) return                         // text not in yet — wait for disk-reload
+        pending_scroll = null
+        // defer past CM's post-setState measure pass — a SYNC scrollIntoView loses that race (the same
+        //  reason scrollCache uses scrollSnapshot, see its note); a frame later the heights have settled.
+        requestAnimationFrame(() => {
+            if (!view || active_path !== path) return
+            const pos = view.state.doc.line(Math.max(1, Math.min(line, view.state.doc.lines))).from
+            view.dispatch({ effects: EditorView.scrollIntoView(pos, { y: 'start' }) })
+        })
+    }
+
     // ── bookmark-position flush ───────────────────────────────────────────────
     //   flush_update_bookmarks_for_path(path): cancel the 800ms debounce and
     //   immediately send the live bookmark positions for `path` to the backend.
@@ -542,8 +587,10 @@
                 // doc's (possibly empty) bookmark list to the wrong dock.
                 flush_update_bookmarks_for_path(prev_path)
 
-                // Snapshot full scroll state before departing.
+                // Snapshot full scroll state before departing (pixel-exact, in-memory, session-scoped).
                 scrollCache.set(prev_path, view!.scrollSnapshot())
+                // #11: also persist the top LINE to the Keep, so a RELOAD (no in-memory snapshot) resumes here.
+                save_scroll_line(prev_path)
 
                 // Save departing EditorState (history, selection, decorations).
                 stateCache.set(prev_path, view!.state)
@@ -594,6 +641,7 @@
             // snapshot, so skip — CM will default to showing the top.
             const snap = scrollCache.get(arriving)
             if (snap) view!.dispatch({ effects: snap })
+            else      arm_scroll_restore(arriving)   // #11: first visit | reload (no in-memory snap) → the persisted line
 
             // Re-register view+state with backend so CM events carry the right doc.
             // Pass current bookmark + graft positions so the backend can reconcile dock
@@ -662,6 +710,7 @@
         spool_remember(active_path, incoming)
         const changes = diff_to_changes(live, incoming)
         if (changes.length) view.dispatch({ changes })
+        try_apply_pending()   // #11: a first-visit open's text may have just landed — apply a deferred scroll-line restore
     })
 
     // ── language reconfigure $effect ─────────────────────────────────────────
@@ -1530,6 +1579,7 @@
             EditorView.domEventHandlers({
                 copy: (e, v) => copy_clean(e, v, false),
                 cut:  (e, v) => copy_clean(e, v, true),
+                scroll: () => schedule_scroll_save(),   // #11: persist the top line (debounced) so a reload resumes scroll
             }),
             Keys,
             EditorView.updateListener.of((v: ViewUpdate) => {

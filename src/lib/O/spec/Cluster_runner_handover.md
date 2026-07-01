@@ -84,7 +84,15 @@ The container interleaves two KINDS: the `%HostedIdentity` directory and the clu
     Cluster loaded by the time an advertise lands) and redundant (the vivify branch populates + persists —
      three `HostedIdentity` rows on disk prove it). Removed; the boot-race self-heals on the next ~15s beacon.
 
-### 2a. Per-prepub dispatch + the job board (☎→▶) — DONE 2026-06-30 (LIVE-VERIFY OWED)
+### 2a. Per-prepub dispatch + the job board (☎→▶) — DONE 2026-06-30; rungo + the advertise ROOT fixed + LIVE-VERIFIED 2026-07-01
+> **2026-07-01 — the regression & its real root.** Dispatch silently fell back to BROADCAST again because
+>  `Lies_advertise` gated WHO-we-are on `Clustation_self` (the `?I=` %Identity), which is **null for a runner
+>   booted `?B=` with only a stashed/env cluster key** (no `?I=`). Such a runner hello-binds + is fully
+>    addressable, but never advertised → empty `%Runner` roster → `Lies_dispatch_target` returns `{}` → broadcast.
+>  **Fix:** advertise (and a new ping-borne liveness refresh) now use `Lies_self` (falls back to
+>   `prepubOf(cluster_idento.pub)` = the exact hello-bind prepub). This SOLVES the identity-divergence (§5 below)
+>    for dispatch. Plus `Lies_send_rungo` now individuates (next bullet). Live-verified via the socklog scaffold:
+>     `↑ to:runner rungo` → `↑ to:<pub> rungo` sticking to one runner; 0 broadcasts in steady state.
 **The real "two runners both ran it" root:** EVERY dispatch was role-addressed BROADCAST — `e_Lies_become_book`
  → `Lies_send_become_book(w, book)` with no `to` → the single `Pier:runner` → the relay fans it to ALL runner
   sockets. The `to:<prepub>` primitive (C2: `Lies_runner_pier` + `Peeroleum_send_to`) existed but no caller used it.
@@ -100,9 +108,14 @@ The container interleaves two KINDS: the `%HostedIdentity` directory and the clu
      ~15s advertise window; true cross-client fairness wants the relay-arbitrated LEASE (Cluster_spec §2/§5,
       seeded by the `engaged` field), NOT built.
 - **Threaded `to`** into `e_Lies_become_book` + `Lies_storytimes_dispatch` (LiesFunk) — the Book-cell click
-   path (`Storying.svelte` `of_Book` → `Lies_become_book`). **STILL BROADCASTS:** the `of_dock` → `Lies_run_arm`
-    → `Lies_send_rungo` path (LiesLies:335, `Peeroleum_send_consumer`) — rungo carries a SEQ (run-authority),
-     so its per-prepub variant needs the seq allocated on the runner's Pier; do it carefully.
+   path (`Storying.svelte` `of_Book` → `Lies_become_book`). **rungo now individuates too (2026-07-01):**
+    `Lies_send_rungo` routes via `Lies_rungo_target` (STICKY — manual aim ▸ `w.c.rungo_runner` ▸ deterministic
+     latest-in-directory) + `Peeroleum_send_to` (which allocates the seq on the runner's Pier — authority
+      preserved), BROADCAST fallback only when no runner is live (surfaced, never silent). `become_book` sets
+       `w.c.rungo_runner=to` so a recompile-rungo follows the runner the book was started on. A rungo FIRES the
+        run (`req_rungo`→`Lies_drive_run`), so a broadcast rungo made EVERY runner fire — this was the dominant
+         double-run carrier for compile-driven runs, now closed. Benign edge: a one-time consumer-seq→Pier-seq
+          jump at the switch can transient-double-fire on the ONE runner; self-heals on reload.
 - **The job board:** `Lies_send_become_book`'s `to` branch stamps `r.sc.sent`/`sent_at` on the runner's
    `%Runner` slot (the ☎); `Lies_advertise_recv` clears `sent` when that runner advertises a `book` (→ ▶). The
     face (`Funk/Runner.svelte` roster mode) shows `▶ playing X` ▸ `☎ calling X` (30s ring) ▸ dialing/free/engaged/silent.
@@ -110,9 +123,10 @@ The container interleaves two KINDS: the `%HostedIdentity` directory and the clu
    `wormhole/Cluster/toc.snap` directly — no eatfunc to import); `--runner=<prepub|prefix|friendly>` addresses
     ONE runner (`to:<prepub>` not `to:'runner'`) and **INSISTS** (retries IT on busy/silence, never failover —
      the OPPOSITE of the editor allocator, for repeatable targeted testing). No flag ⇒ legacy role broadcast.
-- **LIVE-VERIFY OWED (owner, :9091):** two ?I= runners, click a Book cell → exactly ONE shows ☎ then ▶, the
-   other stays free; a 3rd click with both busy → "held", drains when one frees. Confirms `to:<prepub>` routes
-    to the hello-bound socket (not both).
+- **LIVE-VERIFIED 2026-07-01** (socklog scaffold, two real runners): rungos route `↑ to:<pub>` to ONE runner
+   (relay forwards `→ <pub>`, not `→ runner`), sticky across recompiles; 0 broadcasts steady-state; advertise
+    flows from BOTH runner prepubs. Still owed by hand on :9091: the ☎→▶ job-board UI transitions + the
+     3rd-click-held/drain path (the dispatch ADDRESSING is proven; the board PRESENTATION isn't).
 - **STILL TO BUILD — the RUNNER box (§1):** the editor still hoists N per-pub `Lens:Brink` panels (`Lies_aim`
    ~444-458). Want: ONE rack lens reading the whole roster → a titled "RUNNER" box, a row per pub. Relay
     one-liner is DONE (`Funk/Relay.svelte` — header dropped, `🛰 relay up` at rest).
@@ -126,11 +140,59 @@ The machinery is all there: `Lies_keep_mark_focus` records the Keep's latest `%C
      `keep_resume_what` resolve the locator (or has the What moved/renamed)? is the cold Cursor being
       out-competed when it shouldn't be (the boot case, not mid-session)?
 
+**DIAGNOSED + FIXED 2026-07-01 (type-clean, :9091-verify owed — editor-boot behaviour).** It was the third
+ hypothesis, but the out-competitor wasn't a persisted Lango (those don't survive a live boot — `w:Lies` is
+  rebuilt fresh, Wafts re-open from the Keep ledger). It was the **per-tick timemachine**: `Waft_cursor_first`
+   (`LiesCurse.svelte:475`) — the seam `req_timemachine`→`Lies_desire_land_cursor` lands through every tick —
+    emitted its land-on-**first** as a `kind:'cold'` want, and `Lies_resolve_wants` is pure newest-`sc.want`-
+     timestamp-wins with NO kind priority (`Lies.svelte:954`). So in the window after the boot/foreground
+      resume emits its cold want (remembered What) but before it lands, the timemachine emits a NEWER cold
+       land-on-first want → it wins → the cursor sticks on the first leaf and the resume "dies." The locator
+        resolver and the recording were both fine. **Fix:** made `Waft_cursor_first` resume-aware — it now
+         targets `Lies_keep_resume_what(w,waft,key) ?? first`, so the timemachine and the foreground resume
+          want the SAME What and the race is harmless. **Editor-gated** (`Lies_role==='editor'`) so a runner
+           keeps deterministic land-on-first — a Story's cursor/snap must never depend on a Keep. `else`
+            (fresh Waft | unresolvable locator) ⇒ first, unchanged. Verify: reload editor with NO `?W=` → the
+             cursor lands on the last-focused What, not the Waft's first leaf. **Owner verified live 2026-07-01.**
+
+**OPEN follow-up (2026-07-01, overnight) — LakeSurfer red + a cleaner Story-safe variant.** Running the
+ editor-machine fleet on the live runner to check this fix for fixture regressions: **LakeKeep ✓ and LakeLango
+  ✓ green** with the fix, but **LakeSurfer is RED** (2/2 steps, `step1 dige 492278e76281af70` vs fixture
+   `ca76a2a729a99cf6`). Could NOT pin a clean baseline — the runner auto-resumes its own Book between requests,
+    rolling the held runs (`@uid`) out of the bounded-3 history before they can be diffed, AND a parallel agent
+     was live-editing the advertise/dispatch path (§2a) so the runner's code was a moving target. Evidence it's
+      **NOT this cursor fix**: it's red with BOTH the resume-aware variant AND a trial skip-variant, while the
+       two SIBLING editor-machine books (which also land cursors through this seam) stay green — a generic
+        cursor-landing regression would redden all three. Most likely pre-existing or from the parallel
+         advertise work. **TODO (owner): establish the baseline** — `git stash` the `LiesCurse.svelte` hunk,
+          run LakeSurfer; if green, this fix moved it (then re-record or adopt the variant); if red, pre-existing.
+   The **cleaner Story-safe variant** (a NOTE in `Waft_cursor_first`): instead of reading the Keep in the land
+    seam, SKIP the seam while an unresolved `%want` already targets this Waft — the boot/foreground resume want
+     (or a click) lands the cursor itself, so the redundant land-on-first that out-competed it is simply never
+      emitted. No Keep read ⇒ provably can't touch a Story's land-on-first. Not shipped overnight (it'd swap a
+       user-VERIFIED fix for an unverified one), but it's the better long-term shape if the Keep-read-in-land
+        path ever bites.
+
 ### 4. Save CodeMirror scroll as a line target (new want)
 Persist the scroll position of the latest Cursor's editor as a **LINE number** (NOT pixels/Q-factor — so it
  survives a different zoom/wrap), on the Keep's `%Cursor` beside the per-Waft cursor (the cursor model near
   `Lies.svelte:1000`). Reopening then restores What + scroll-line. Read the top visible line on blur/cursor-
    record from the CodeMirror view (Lang side); restore via a line `scrollIntoView` on open.
+
+**BUILT 2026-07-01 (type-clean, :9091-verify owed — editor scroll behaviour).** Keyed per-DOC (not on the
+ per-Waft `%Cursor`, which it sketched): a doc remembers its OWN scroll, race-free (Langui has the doc path
+  for both capture and restore), and it slots cleanly into the **P5 layout service** as a fourth scope —
+   `Lies_keep_layout_*(w, 'doc', <doc-path>, 'scroll_line', …)` → `Keep/DocScroll,of_Doc:<path>` (`Lies.svelte`
+    ~1227). The line resumes "What + scroll" all the same (cursor-resume opens the doc, this scrolls it).
+     Langui (`Langui.svelte`): `top_visible_line` via `posAtCoords` at the scroll viewport's top edge;
+      `save_scroll_line` (debounced 400ms on a new `scroll` domEventHandler + eager on doc-departure in the
+       switch `$effect`, coalesced, line-1 = absent); restore via `arm_scroll_restore`/`try_apply_pending` on a
+        FIRST-visit open (no in-memory `scrollCache` snapshot = the reload case), `pending_scroll` deferred
+         until the doc text lands (disk-reload `$effect`) and the `scrollIntoView` fired in a `requestAnimationFrame`
+          to clear CM's post-`setState` measure race (the same race that makes scrollCache use `scrollSnapshot`).
+           The in-memory `scrollCache` still owns pixel-exact within-session switches; this is its durable,
+            line-grained twin. Verify: scroll a doc, reload → it reopens at that line. Minor TODO: no prune of
+             `DocScroll` entries for docs dropped from the Keep ledger (bounded, low; a sweep is future).
 
 ### 5. The per-runner CHANNEL — make runners individually pingable (THE networking refactor, → networking agent)
 This is the load-bearing fix the rack has been faking around. Owner's review (2026-07-01): *"the beacon is

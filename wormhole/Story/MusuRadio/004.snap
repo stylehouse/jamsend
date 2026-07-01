@@ -5,8 +5,8 @@ Snap:H
       w:MusuRadio
         self,round=4	{"mung":["age"]}
         req:wrangle,eternal,ok
-        record,name:synth-220hz,artist:Synth,title:220Hz,nchunks=100,seconds=5
-        record,name:synth-262hz,artist:Synth,title:262Hz,nchunks=100,seconds=5
-        record,name:synth-330hz,artist:Synth,title:330Hz,nchunks=100,seconds=5
-        record,name:synth-392hz,artist:Synth,title:392Hz,nchunks=100,seconds=5
-        Radio,name:on-air,track:392Hz,spin=3,playhead=100,spins=4,helped=4
+        record,name:synth-220hz,artist:Synth,title:220Hz,nchunks=80,seconds=4
+        record,name:synth-262hz,artist:Synth,title:262Hz,nchunks=80,seconds=4
+        record,name:synth-330hz,artist:Synth,title:330Hz,nchunks=80,seconds=4
+        record,name:synth-392hz,artist:Synth,title:392Hz,nchunks=80,seconds=4
+        Radio,name:on-air,track:262Hz,spin,playhead=80,spins=2,helped=2

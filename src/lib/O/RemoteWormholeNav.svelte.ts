@@ -80,14 +80,17 @@ export class RemoteWormholeNav {
     async bin_read(dir_path: string, filename: string): Promise<ArrayBuffer | null> {
         const r = await this.send('bin', { dir_path, filename })
         if (r.error || r.not_found) return null
-        return b64_to_buf(r.bytes_b64)
+        return frame_bytes(r)
     }
 
     // the seekable read — only [offset, offset+len) crosses the wire.
     async read_range(dir_path: string, filename: string, offset: number, len?: number): Promise<{ buffer: ArrayBuffer, size: number } | null> {
         const r = await this.send('read_range', { dir_path, filename, offset: String(offset), len: len == null ? '' : String(len) })
         if (r.error || r.not_found) return null
-        return { buffer: b64_to_buf(r.bytes_b64), size: Number(r.size) }
+        const buffer = frame_bytes(r)
+        if (!buffer) return null
+        const size = Number(r.header?.size ?? r.size ?? buffer.byteLength)   // size rides the header on a binary reply
+        return { buffer, size }
     }
 
     // a DirectoryListing-shaped probe (the worker calls .expand() then reads .directories/.files).
@@ -103,6 +106,17 @@ export class RemoteWormholeNav {
             async expand() { /* already populated */ },
         }
     }
+}
+
+// the bytes off a reply: a binary frame carries them raw on frame.buffer (a Uint8Array view into the
+//  decoded [header]\n[buffer] — copy to an exact own ArrayBuffer); the degenerate path carries base64.
+function frame_bytes(r: any): ArrayBuffer | null {
+    if (r.buffer != null) {
+        const u8 = r.buffer instanceof Uint8Array ? r.buffer : new Uint8Array(r.buffer)
+        return u8.slice().buffer        // .slice() copies the exact window off the larger frame buffer
+    }
+    if (r.bytes_b64 != null) return b64_to_buf(r.bytes_b64)
+    return null
 }
 
 // ── base64 (chunked — a spread over a multi-MB Uint8Array blows the call stack) ───────────────

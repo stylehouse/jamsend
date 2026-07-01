@@ -1,16 +1,11 @@
 Credulate,of_Book:PereTyrant
-  GhostInclude:Ghost_N_Peeroleum,dige:1bb4df8687a8d30b
+  GhostInclude:Ghost_N_Peeroleum,dige:054dff5c07f2987b
   GhostInclude:Ghost_N_Reliable,dige:48e8948c7d8da3ed
   GhostInclude:Ghost_N_Tribunal,dige:a9bf42ff80d08a94
-  GhostInclude:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
-  GhostInclude:Ghost_Story_Peregrination,dige:01d7e14b7e285d68
-  GhostInclude:Ghost_M_Radiola,dige:03dc3be514cf3dd2
-  GhostInclude:Ghost_Story_Musuation,dige:f017d01b28e6cfe2
-  last_ok,at=1782623341.296,ok_pct
-    uses:Ghost_N_Peeroleum,dige:1bb4df8687a8d30b
-    uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
-    uses:Ghost_N_Tribunal,dige:a9bf42ff80d08a94
-    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
-    uses:Ghost_Story_Peregrination,dige:01d7e14b7e285d68
-    uses:Ghost_M_Radiola,dige:03dc3be514cf3dd2
-    uses:Ghost_Story_Musuation,dige:f017d01b28e6cfe2
+  GhostInclude:Ghost_N_Tyrant,dige:74cf06ee9a34e2cb
+  GhostInclude:Ghost_Story_Peregrination,dige:b33cab6322ef6320
+  GhostInclude:Ghost_M_Radiola,dige:c38a79b40dc8f9e6
+  GhostInclude:Ghost_M_Crate,dige:a8d9444a5048fc8b
+  GhostInclude:Ghost_M_Mixer,dige:a4a24e00de642d18
+  GhostInclude:Ghost_M_Mesh,dige:286eb98843f6e7f9
+  GhostInclude:Ghost_Story_Musuation,dige:cd42a72e0b6d5bcd

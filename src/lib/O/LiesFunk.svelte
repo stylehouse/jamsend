@@ -468,54 +468,81 @@ await M.eatfunc({
         if (from) w.oai({ Runner: from }, { begs_wormhole: 1 })
     },
 
+    // Lies_send_binary_to — an ADDRESSED binary frame: bytes ride frame.buffer (the [header]\n[raw buffer]
+    //  wire, body_hash-integrity — NO base64), app meta + corr ride the header.  Mirrors the spine's own
+    //   addressed emit (Peeroleum_send_to) + a binary frame (Peeroleum_body_digest + Pier_next_seq, the
+    //    test_binary pattern).  to = the recipient's prepub; needs the post-promote spine (send_to era).
+    async Lies_send_binary_to(w: TheC, to: string, type: string, meta: Record<string, unknown>, buf: ArrayBuffer): Promise<boolean> {
+        const H = this as House
+        const pier = H.Lies_runner_pier(w, to)
+        if (!pier) return false
+        const me    = (w.o({ Peering: 1 })[0] as TheC | undefined)?.sc.name
+        const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf)
+        const body_hash = await (H as any).Peeroleum_body_digest(bytes)
+        const seq = (H as any).Pier_next_seq(pier)
+        ;(H as any).Peeroleum_send(w, { header: { type, from: me, to, seq, body_hash, body_len: bytes.length, ...meta }, buffer: bytes })
+        return true
+    },
+
     // EDITOR: serve one rw-op for a runner — verify the presented grant, then run it against OUR nav.
+    //  Replies are ADDRESSED to the grantee (claim.for) via the post-promote send_to; bytes ride a binary
+    //   frame (Lies_send_binary_to), never base64.  Only the no-grantee-pub degenerate falls back to b64.
     async Lies_wormhole_req_recv(w: TheC, frame: any): Promise<void> {
         const H = this as House
-        const reply = (body: Record<string, unknown>) => H.Peeroleum_send_consumer(w, 'wormhole_reply', { corr: frame?.corr, ...body })
+        const to = (frame?.grant as GrantAtom)?.for as string | undefined   // the grantee runner's prepub
+        const replyJSON = (body: Record<string, unknown>) =>
+            to ? (H as any).Peeroleum_send_to(w, to, 'wormhole_reply', { corr: frame?.corr, ...body })
+               : H.Peeroleum_send_consumer(w, 'wormhole_reply', { corr: frame?.corr, ...body })   // unaddressed fallback
+        const replyBIN = (meta: Record<string, unknown>, buffer: ArrayBuffer) =>
+            to ? H.Lies_send_binary_to(w, to, 'wormhole_reply', { corr: frame?.corr, ...meta }, buffer)
+               : replyJSON({ ...meta, bytes_b64: buf_to_b64(buffer) })      // no grantee pub → degenerate b64
         try {
             const idento = H.Lies_cluster_idento(w)
-            if (!idento) return void reply({ error: 'editor has no cluster key' })
+            if (!idento) return void replyJSON({ error: 'editor has no cluster key' })
             const claim = await verify_grant(frame.grant as GrantAtom)        // throws on a bad/forged sig
-            if (claim.to !== 'remoteWormhole') return void reply({ error: `grant is for ${claim.to}` })
-            if (claim.by !== idento.pub)        return void reply({ error: 'grant not issued by this editor' })
+            if (claim.to !== 'remoteWormhole') return void replyJSON({ error: `grant is for ${claim.to}` })
+            if (claim.by !== idento.pub)        return void replyJSON({ error: 'grant not issued by this editor' })
             // TODO: revocation-corpus check (a signed %NotGrant for {by, for, remoteWormhole})
             const nav = H.top_House().o({ A: 'Wormhole' })[0]?.c.nav as any
-            if (!nav) return void reply({ error: 'editor wormhole nav not ready' })
+            if (!nav) return void replyJSON({ error: 'editor wormhole nav not ready' })
             const { op, dir_path, filename } = frame
             if (op === 'read') {
                 const c = await nav.read_file(dir_path, filename)
-                reply(c != null ? { content: c } : { not_found: true })
+                replyJSON(c != null ? { content: c } : { not_found: true })
             } else if (op === 'bin') {
                 const b = nav.bin_read ? await nav.bin_read(dir_path, filename) : null
-                reply(b ? { bytes_b64: buf_to_b64(b) } : { not_found: true })
+                b ? replyBIN({ bytes: b.byteLength }, b) : replyJSON({ not_found: true })
             } else if (op === 'read_range') {
                 const off = Number(frame.offset ?? 0)
                 const len = frame.len ? Number(frame.len) : undefined
                 const r = nav.read_range ? await nav.read_range(dir_path, filename, off, len) : null
-                reply(r ? { bytes_b64: buf_to_b64(r.buffer), size: String(r.size) } : { not_found: true })
+                r ? replyBIN({ size: String(r.size) }, r.buffer) : replyJSON({ not_found: true })
             } else if (op === 'list') {
                 const dl = await nav.dir(...String(dir_path).split('/').filter(Boolean))
-                if (!dl) reply({ not_found: true })
+                if (!dl) replyJSON({ not_found: true })
                 else {
                     await dl.expand()
-                    reply({ entries: [
+                    replyJSON({ entries: [
                         ...dl.directories.map((d: any) => ({ name: d.name, is_dir: true })),
                         ...dl.files.map((f: any) => ({ name: f.name, is_dir: false })),
                     ] })
                 }
             } else if (op === 'write') {
-                if (claim.mode === 'ro') return void reply({ error: 'grant is read-only' })
+                if (claim.mode === 'ro') return void replyJSON({ error: 'grant is read-only' })
                 await nav.write_file(dir_path, filename, frame.data)
-                reply({ ok: true })
-            } else reply({ error: `unknown op ${op}` })
-        } catch (e) { reply({ error: String(e) }) }
+                replyJSON({ ok: true })
+            } else replyJSON({ error: `unknown op ${op}` })
+        } catch (e) { replyJSON({ error: String(e) }) }
     },
 
-    // RUNNER: a reply landed — hand it to the pending request on our remote nav (matched by corr).
+    // RUNNER: a reply landed — hand it to the pending request on our remote nav (matched by corr).  A
+    //  binary reply carries corr in the HEADER (app meta rides there beside body_hash); a JSON reply on
+    //   the body — read both.  The whole frame (incl. frame.buffer) goes to the nav, which unpacks it.
     Lies_wormhole_reply_recv(w: TheC, frame: any): void {
         const H = this as House
         const nav = H.top_House().o({ A: 'Wormhole' })[0]?.c.nav as any
-        if (nav?.is_remote && frame?.corr) nav._resolve(frame.corr, frame)
+        const corr = frame?.corr ?? frame?.header?.corr
+        if (nav?.is_remote && corr) nav._resolve(corr, frame)
     },
 
     // RUNNER: install the method:remoteWormhole nav onto A:Wormhole once a grant is held.  Idempotent.
@@ -880,6 +907,22 @@ await M.eatfunc({
             if (H.Lies_is_editor(w)) {
                 const pick = H.Lies_dispatch_target(w)   // {to} ▸ {} broadcast ▸ {exhausted} hold
                 if (pick.exhausted) { H.Lies_queue_run(w, book); H.tlog(`⏸ all runners busy — held ${book}`); return }
+                if (pick.to === undefined) {
+                    // No live runner to individuate.  If ANY runner is KNOWN (registry or roster), this is the
+                    //  post-reconnect fold lag, NOT a lone runner — HOLD the run (Lies_drain_runs ships it the
+                    //   instant one goes live) rather than spray EVERY runner bound under 'runner' (the both-ran-it
+                    //    bug).  Only when NOTHING is known at all do we broadcast (a lone, possibly keyless,
+                    //     unregistered runner reachable only by the role address).
+                    const known   = (w.o({ Runner: 1 }) as TheC[]).length
+                    const cluster = w.o({ Waft: 'Cluster' })[0] as TheC | undefined
+                    const reg     = cluster ? (cluster.o({ HostedIdentity: 1 }) as TheC[]).filter(h => h.sc.role === 'runner').length : 0
+                    if (known || reg) {
+                        H.Lies_queue_run(w, book)
+                        H.tlog(`⏸ become_book held — runners known (${known}/${reg}) but none live yet: ${book}`)
+                        return
+                    }
+                    H.Lies_relay_note(w, `⚠ no runner known at all — broadcasting ${book} (lone/unregistered runner)`, true)
+                }
                 const sent = H.Lies_send_become_book(w, book, pick.to)
                 H.tlog(`🎬 editor become_book → ${book} ${pick.to ? `@${pick.to.slice(0, 8)}` : '(broadcast)'} ${sent ? '(sent)' : '(channel down — no runner)'}`)
             } else {
@@ -901,6 +944,7 @@ await M.eatfunc({
                 //  the runner advertises a `book` (it picked up + started → ▶), in Lies_advertise_recv.
                 const r = w.oai({ Runner: to }) as TheC          // snapped now (1:1 with the registry); the ☎ rides off-snap
                 r.c.sent = book; r.c.sent_at = Date.now(); w.bump_version()
+                w.c.rungo_runner = to   // a later recompile-rungo STICKS to the runner this book was started on (Lies_rungo_target)
                 H.tlog(`📤 become_book → runner ${to}: ${book}`)
                 return true
             }
@@ -984,12 +1028,15 @@ await M.eatfunc({
                         running: sr ? { book: sr.sc.Storyrun, phase: sr.sc.phase, uid: sr.sc.uid } : null,
                         favourite_client: (H.top_House().c.favourite_client as string) ?? '',
                         engagement: H.Lies_engagement(w) ?? null,   // who holds the lease (don't-steal)
-                        // identity + advertise diagnostics: a runner with no %Identity (self:null) NEVER
-                        //  beacons (Lies_advertise early-returns), so it's "connected — no identity" on the
-                        //   editor.  advertising = would the beacon fire now; last_advertise = ms of the last beat.
-                        self:           (H as any).Clustation_self?.(w)?.prepub ?? null,
-                        advertising:    !!(H.Lies_is_runner(w) && H.Lies_channel_live(w) && (H as any).Clustation_self?.(w)?.prepub),
+                        // identity + advertise diagnostics.  self = the ADDRESSABLE prepub we advertise as
+                        //  (Lies_self: the ?I= %Identity, else the stashed/env cluster key behind the relay
+                        //   hello) — NOT Clustation_self, which is null for a stashed/env-key runner that is
+                        //    nonetheless fully addressable + now advertising.  No prepub ⇒ truly no identity
+                        //     (can't be individuated).  advertising = would the beacon fire now.
+                        self:           (H as any).Lies_self?.(w)?.prepub ?? null,
+                        advertising:    !!(H.Lies_is_runner(w) && H.Lies_channel_live(w) && (H as any).Lies_self?.(w)?.prepub),
                         last_advertise: (w.c.last_advertise as number) ?? null,
+                        clustation_self: (H as any).Clustation_self?.(w)?.prepub ?? null,   // the ?I= face (often null); kept to spot a divergence
                     }
                 } else if (op === 'run') {
                     // engage the runner for THIS client first (the don't-steal gate): refuse if another
@@ -1551,8 +1598,15 @@ await M.eatfunc({
             if (H.Lies_is_editor(w)) {
                 const pick = H.Lies_dispatch_target(w)
                 if (pick.exhausted) { H.Lies_queue_run(w, book); H.tlog(`⏸ all runners busy — held ${book}`); return false }
+                if (pick.to === undefined) {
+                    // no live runner yet — HOLD if any is known (post-reconnect fold lag), don't spray all (see e_Lies_become_book)
+                    const known = (w.o({ Runner: 1 }) as TheC[]).length
+                    const cluster = w.o({ Waft: 'Cluster' })[0] as TheC | undefined
+                    const reg = cluster ? (cluster.o({ HostedIdentity: 1 }) as TheC[]).filter(h => h.sc.role === 'runner').length : 0
+                    if (known || reg) { H.Lies_queue_run(w, book); H.tlog(`⏸ StoryTimes held — runners known (${known}/${reg}) but none live yet: ${book}`); return false }
+                }
                 const sent = H.Lies_send_become_book(w, book, pick.to)
-                H.tlog(`🎟 StoryTimes → ${book} ${pick.to ? `@${pick.to.slice(0, 8)}` : '(broadcast)'} ${sent ? '(sent)' : '(channel down — no runner)'}`)
+                H.tlog(`🎟 StoryTimes → ${book} ${pick.to ? `@${pick.to.slice(0, 8)}` : '(broadcast — no runner known)'} ${sent ? '(sent)' : '(channel down — no runner)'}`)
                 return sent
             }
             H.Lies_become_book_drive(w, book)                        // bare dev Lies with a co-resident Run

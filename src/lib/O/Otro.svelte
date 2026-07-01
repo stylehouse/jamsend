@@ -10,6 +10,7 @@
     import NaviScroll from "./ui/NaviScroll.svelte";
     import { boot_param } from "$lib/boot";
     import FaceSucker from "$lib/p2p/ui/FaceSucker.svelte";
+    import { sockcap_install } from "$lib/O/sockcap";   // TEMP: relay-socket tap (dumped via Wormhole)
 
     //#region H:Mundo
     // ── all House construction inside $effect ─────────────────────────────────
@@ -42,6 +43,23 @@
     //  a trusted editor to proxy its disk (a headless flock runner; see Cluster_spec "beg through the
     //   Brink").  Stamped on the LOCAL h (never read $state H inside the effect — the OOM trap above).
     const disk_proxy  = boot_param('disk') === 'proxy'
+    // ── investigation scaffold (TEMP — remove once roster/dispatch is confirmed healthy) ──────────
+    //  Auto-reload a runner|editor tab every few minutes so fresh come-up + see-each-other handshakes
+    //   keep cycling unattended (no human at the tab).  Cluster boots only (?E=/?B=/?I=), never the
+    //    Library.  DEFAULT OFF now the dispatch fix is verified (was 3 during the investigation) — it
+    //     disrupts a human at the tab + accretes socklog files; re-enable with &watch=<minutes>.  The
+    //      socklog CAPTURE + Wormhole dump keeps running regardless, so on-demand checks need no reloads.
+    //       Identity + edits persist to Dexie/.stashed across a reload.
+    // tap the relay socket NOW (before the channel boots) on any cluster tab, so its traffic is captured
+    //  for the Wormhole dump.  Idempotent + browser-guarded inside.
+    if (editor_book || book || on_grid) sockcap_install()
+    const watch_min = (() => { const v = boot_param('watch'); return v == null ? 0 : Number(v) })()
+    if (typeof window !== 'undefined' && (editor_book || book || on_grid) && watch_min > 0) {
+        onMount(() => {
+            const id = setInterval(() => { try { location.reload() } catch {} }, watch_min * 60_000)
+            return () => clearInterval(id)
+        })
+    }
     $effect(() => {
         const h = new House({ name: 'Mundo' })
         h.c.toplevel = toplevel

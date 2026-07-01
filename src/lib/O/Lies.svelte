@@ -1205,7 +1205,7 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //   Lies_keep_layout_host / _get / _set — the ONE (scope,id,key)→value LAYOUT service
     //    (Backbone_plan P5).  A pose | view-state lives on the Keep so it survives reload, and a
     //     client names a (scope, id, key) triple through this one front door rather than reaching
-    //      for a store.  THREE scopes, three homes under the one snapped Keep particle —
+    //      for a store.  FOUR scopes, four homes under the one snapped Keep particle —
     //        'global'  id ignored     → the Keep ROOT sc          (global chrome: the editor expand)
     //        'waft'    id=<Waft path> → WaftTimes,of_Waft:<id>    (per-Waft: minimise | scroll)
     //        'lens'    id=<Lens id>   → Layout,of_Lens:<id>       (per-Lens: Brink pose | minimap_open)
@@ -1225,6 +1225,12 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
                                             : keep.o({ WaftTimes: 1, of_Waft: id })[0] as TheC | undefined
         if (scope === 'lens')   return make ? keep.oai({ Layout: 1, of_Lens: id })
                                             : keep.o({ Layout: 1, of_Lens: id })[0] as TheC | undefined
+        // 'doc' (#11): per-Doc scroll-as-LINE.  A DocScroll,of_Doc:<path> child holds `scroll_line` —
+        //  the editor's top visible line, so reopening a doc restores its scroll across a reload and a
+        //   different zoom|wrap (a line survives both; pixels don't).  Twin of Langui's in-memory,
+        //    pixel-exact scrollCache, which only spans a session.
+        if (scope === 'doc')    return make ? keep.oai({ DocScroll: 1, of_Doc: id })
+                                            : keep.o({ DocScroll: 1, of_Doc: id })[0] as TheC | undefined
         return undefined
     },
     Lies_keep_layout_get(w: TheC, scope: string, id: string, key: string): any {

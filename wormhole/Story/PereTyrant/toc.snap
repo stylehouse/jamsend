@@ -4,8 +4,7 @@ story:PereTyrant
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.058
-      sample=0.054,at=1782301476
+    TimeTotal:beliefs,avg=0.055
       sample=0.044,at=1782303771
       sample=0.1,at=1782305588
       sample=0.007,at=1782357976
@@ -15,8 +14,8 @@ story:PereTyrant
       sample=0.005,at=1782375808
       sample=0.111,at=1782539965
       sample=0.126,at=1782623341
-    TimeTotal:step,avg=0.019
-      sample=0.018,at=1782301476
+      sample=0.024,at=1782829830
+    TimeTotal:step,avg=0.018
       sample=0.015,at=1782303771
       sample=0.033,at=1782305588
       sample=0.002,at=1782357976
@@ -26,6 +25,7 @@ story:PereTyrant
       sample=0.002,at=1782375808
       sample=0.037,at=1782539965
       sample=0.042,at=1782623341
+      sample=0.008,at=1782829830
   step,dige:be4c6a89b00530f7
   step=2,dige:3de9296939511d19
   step=3,dige:2ab9e9e2d02b27b4

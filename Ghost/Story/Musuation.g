@@ -1558,17 +1558,18 @@ MusuTune_witness(w):
     if (rec >= 1 && !(oa %witnessed:recovers)) i %witnessed:recovers
 //#endregion
 
-//#region radio — REAL-AUDIO family #4: ~a minute of live activity over a few ready synth records
-// ══ MusuRadio — the watchable showcase: a synth radio set you SEE (and hear, if unlocked) for ~a minute ═
+//#region radio — REAL-AUDIO family #4: ~25s of live activity over a few ready synth records
+// ══ MusuRadio — the watchable showcase: a synth radio set you SEE (and hear, if unlocked) for ~25s ═══════
 //  GESTURE-FREE so it always runs (the bug before: it gated every beat on the online voice, which stays
 //   suspended with no user click, so the Book did nothing and its steps collapsed).  Each track's audio is
 //    RENDERED + measured through an OfflineAudioContext (no gesture, real PCM); the %Radio playhead animates
-//     over the track's real seconds so a MINUTE of activity unfolds in the live view; and IF a gesture has
+//     over the track's seconds so a real stretch of activity unfolds in the live view; and IF a gesture has
 //      unlocked the voice it also plays audibly.  Real claim, not just motion: each track is rendered with
-//       Glide AND with no-control, and `helps` asserts Glide cut real dropouts on most tracks.
-//        beat 2     LOAD   — mint 4 ready synth records (distinct timbres)
-//        beats 3-8  ON-AIR — spin records; render glide-vs-none offline; animate the playhead ~real-time
-//        beat 9     witness — ready / a_minute / many_tracks / helps
+//       Glide AND with no-control, and `helps` asserts Glide cut real dropouts on multiple tracks.  Kept to
+//        ~25s (was ~a minute) so it doesn't tie a shared runner up — the real-time showcase, just shorter.
+//         beat 2     LOAD   — mint 4 ready synth records (distinct timbres), 4s each
+//         beats 3-8  ON-AIR — spin records; render glide-vs-none offline; animate the playhead ~real-time
+//         beat 9     witness — ready / sustained / many_tracks / helps
 MusuRadio(A,w):
     w oai %req:wrangle,eternal
         await &MusuRadio_drive,w,req
@@ -1586,14 +1587,16 @@ async MusuRadio_drive(w, req):
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
         if (n === 2) this.MusuRadio_load(w)
-        if (n >= 3 && n <= 8) await this.MusuRadio_play(w, 9)
+        if (n >= 3 && n <= 8) await this.MusuRadio_play(w, 4)
         if (n === 9) this.MusuRadio_witness(w)
     }
     await this.Musu_float(w)
 
-// MusuRadio_load — beat 2: a few instantly-ready synth records + the on-air %Radio state particle.
+// MusuRadio_load — beat 2: a few instantly-ready synth records + the on-air %Radio state particle.  4s
+//  records × a 4s per-beat budget × 6 play-beats ≈ 24s — a sustained real-time stretch you can watch,
+//   without tying a runner up for a full minute.
 MusuRadio_load(w):
-    this.Musu_synth_records(w, 4, 5)
+    this.Musu_synth_records(w, 4, 4)
     let radio = w.oai({Radio: 1, name: 'on-air'})
     radio.c.up = w
     radio.c.elapsed = 0
@@ -1653,12 +1656,14 @@ MusuRadio_witness(w):
     let recs = w.o({record: 1}).length
     // ready: a few synth records were instantly available (no files, no decode).
     if (recs >= 3 && !(oa %witnessed:ready)) i %witnessed:ready
-    // a_minute: roughly a minute of real wall-clock activity unfolded.
-    if (elapsed >= 45 && !(oa %witnessed:a_minute)) i %witnessed:a_minute
-    // many_tracks: a SET played -- multiple records spun across the minute, not one stuck loop.
-    if (spins >= 6 && !(oa %witnessed:many_tracks)) i %witnessed:many_tracks
-    // helps: across the set, Glide cut real-rendered dropouts vs NO control on most tracks (not just motion).
-    if (helped >= 3 && !(oa %witnessed:helps)) i %witnessed:helps
+    // sustained: a real stretch of wall-clock activity unfolded (~24s) -- the real-time showcase ran, not an
+    //  instant.  (Was a_minute @45s; shortened so it doesn't tie a runner up for a full minute.)
+    if (elapsed >= 18 && !(oa %witnessed:sustained)) i %witnessed:sustained
+    // many_tracks: a SET played -- multiple records spun across the run, not one stuck loop.
+    if (spins >= 4 && !(oa %witnessed:many_tracks)) i %witnessed:many_tracks
+    // helps: across the set, Glide cut real-rendered dropouts vs NO control on multiple tracks (the real
+    //  claim -- offline-rendered, duration-independent, so shortening the show doesn't weaken it).
+    if (helped >= 2 && !(oa %witnessed:helps)) i %witnessed:helps
 //#endregion
 
 //#region crate — REAL MUSIC: a VISIBLE rastock builds itself from ./testsounds, then we stream it

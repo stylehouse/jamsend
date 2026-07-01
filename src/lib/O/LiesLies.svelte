@@ -38,6 +38,7 @@
     import type { House } from "$lib/O/Housing.svelte"
     import { onMount } from "svelte"
     import { signHeader, verifyHeader, prepubOf, sha256hex, loadRoleKey, browserTrustedPubs, browserRole } from "$lib/p2p/cluster_trust"
+    import { sockcap_lines, sockcap_count, SOCKCAP_BOOT } from "$lib/O/sockcap"   // TEMP: relay-socket dump
 
     let { M } = $props()
 
@@ -348,8 +349,67 @@
             const demands = (sc.demands ?? (sc.path && sc.dige ? [{ path: sc.path, dige: sc.dige }] : []))
                 .filter(d => d?.path && d?.dige)
             if (!demands.length) return
-            const seq = (H as any).Peeroleum_send_consumer(w, 'rungo', { demands })
-            H.tlog(`📤 rungo seq=${seq} → runner: ${demands.map(d => `${d.path}@${String(d.dige).slice(0, 8)}`).join(', ')}`)
+            // INDIVIDUATE: a rungo FIRES the run on whichever runner receives it (req_rungo → Lies_drive_run),
+            //  and every runner shares /app + HMR, so a BROADCAST rungo makes ALL of them fire at once — the
+            //   "Rungos going to both runners" bug.  Send to ONE runner (sticky: the one we're already running
+            //    on; Lies_rungo_target), and BROADCAST only as a fallback when none is live (a lone pre-roster
+            //     runner) — surfaced loudly so a broadcast is never silent.
+            const to  = H.Lies_rungo_target(w)
+            const lbl = demands.map(d => `${d.path}@${String(d.dige).slice(0, 8)}`).join(', ')
+            if (to) {
+                H.Lies_runner_pier(w, to)
+                const seq = (H as any).Peeroleum_send_to(w, to, 'rungo', { demands })
+                if (seq != null) { delete w.c.pending_rungo; H.tlog(`📤 rungo seq=${seq} → @${to.slice(0, 8)}: ${lbl}`); return }
+            }
+            // No live runner YET — the post-reconnect window: the channel is up but the just-arrived advertise
+            //  hasn't been folded into the roster's last_heard (in-think) yet, so Lies_rungo_target sees nobody.
+            //   HOLD the latest rungo and retry from Lies_drain_rungo (fires the instant the roster folds) —
+            //    NEVER broadcast to an unpopulated roster, which sprays EVERY runner (the very both-ran-it bug).
+            //     Latest supersedes; Lies_drain_rungo drops it after 60s if no runner ever appears.
+            w.c.pending_rungo = { demands, at: Date.now() }
+            H.tlog(`⏸ rungo held — no live runner yet: ${lbl}`)
+        },
+
+        // Lies_drain_rungo — re-attempt a HELD rungo (Lies_send_rungo parks it when no runner was live yet, e.g.
+        //  the post-reconnect fold lag).  Driven from Lies_runner_roster (the instant an advertise folds in) and
+        //   the heartbeat.  Individuates via Lies_rungo_target; NEVER broadcasts; drops after 60s with a surfaced
+        //    note (genuinely no runner — better than a zombie firing late or a spray to all).
+        Lies_drain_rungo(w: TheC) {
+            const H = this as House
+            if (!H.Lies_is_editor(w)) return
+            const p = w.c.pending_rungo as { demands: Array<{ path: string, dige: string }>, at: number } | undefined
+            if (!p) return
+            const lbl = p.demands.map(d => `${d.path}@${String(d.dige).slice(0, 8)}`).join(', ')
+            if (Date.now() - p.at > 60000) { delete w.c.pending_rungo; H.Lies_relay_note(w, `⚠ held rungo found no live runner in 60s — dropped (${lbl})`, true); return }
+            const to = H.Lies_rungo_target(w)
+            if (!to) return                       // still nobody live → keep holding
+            H.Lies_runner_pier(w, to)
+            const seq = (H as any).Peeroleum_send_to(w, to, 'rungo', { demands: p.demands })
+            if (seq != null) { delete w.c.pending_rungo; H.tlog(`▶ drained held rungo seq=${seq} → @${to.slice(0, 8)}: ${lbl}`) }
+        },
+
+        // Lies_rungo_target — which ONE runner a rungo fires on.  A rungo is a re-run of what the editor is
+        //  working on, so it must STICK to the runner already running it (else dispatch_target's free-first
+        //   pick bounces the run between runners each recompile — A busy ⇒ next rungo lands on B).  Order:
+        //    a live manual aim ▸ the sticky last target (set here + by become_book) ▸ a deterministic live
+        //     runner (latest in the trusted directory).  undefined ⇒ no live runner → caller broadcasts.
+        Lies_rungo_target(w: TheC): string | undefined {
+            const H = this as House
+            const now = Date.now()
+            const roster = w.o({ Runner: 1 }) as TheC[]
+            const live = (pub?: string) => { const r = roster.find(r => r.sc.Runner === pub); return !!r && Number(r.c.last_heard ?? 0) > 0 && now - Number(r.c.last_heard) < 45000 }
+            const aim = w.c.aim_runner as string | undefined
+            if (aim && live(aim)) return aim
+            const sticky = w.c.rungo_runner as string | undefined
+            if (sticky && live(sticky)) return sticky
+            const cluster = w.o({ Waft: 'Cluster' })[0] as TheC | undefined
+            const dirPubs = cluster
+                ? (cluster.o({ HostedIdentity: 1 }) as TheC[]).filter(h => h.sc.role === 'runner').map(h => h.sc.HostedIdentity as string)
+                : roster.map(r => r.sc.Runner as string)
+            const livePubs = dirPubs.filter(live)
+            const to = livePubs[livePubs.length - 1]   // latest in directory order — deterministic, so it sticks
+            if (to) w.c.rungo_runner = to
+            return to
         },
 
         // Lies_send_gen_write — ship a freshly-compiled .go straight down the editor's relay socket
@@ -756,6 +816,29 @@
             //   _resolve_runstepped on it), so nothing else fires it and every app frame's acked emit would
             //    pile up.  Peeroleum_runstepped has no Story dependency — drive it here when the backlog grows.
             ;(H as any).Lies_channel_cull(w)
+            ;(H as any).Lies_drain_rungo(w)   // editor-gated inside: drop a 60s-stale held rungo even with no Cluster Waft (where runner_roster doesn't run)
+            // TEMP investigation: persist the relay-socket capture to disk via the Wormhole, so the
+            //  traffic a human reads in DevTools is readable off /app too (and survives the &watch reload).
+            //   In-think (safe to mint the rw_op req); ~10s throttled; remove with the rest of the scaffold.
+            ;(H as any).Lies_dump_socklog(w)
+        },
+        // Lies_dump_socklog — write the browser's relay-socket ring (sockcap) to wormhole/_socklog/<role>-
+        //  <bootid>.jsonl.  One file per page life (SOCKCAP_BOOT), overwritten each beat, so a reload's
+        //   fresh life writes a NEW file and the pre-reload log is preserved.  Editor|runner browser tabs
+        //    only; ~10s throttle; reuses the rw_queue → Wormhole rw_op write (Auto.save_library pattern).
+        async Lies_dump_socklog(w: TheC) {
+            const H = this as House
+            if (typeof window === 'undefined') return
+            const role = H.Lies_role(w)
+            if (role !== 'editor' && role !== 'runner') return
+            if (!sockcap_count()) return
+            const now = Date.now()
+            if (w.c.last_socklog && now - (w.c.last_socklog as number) < 10000) return
+            w.c.last_socklog = now
+            const path = `wormhole/_socklog/${role}-${SOCKCAP_BOOT}.jsonl`
+            const rw   = w.oai({ rw_queue: 1 })
+            const req  = await rw.oai({ req: 1, rw_name: path, rw_op: 'write', rw_data: sockcap_lines() })
+            H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
         },
         // Lies_keepalive — the channel keepalive: the three-state liveness watchdog + the ping cadence.
         //  Touches ONLY .c + the ws (the ping is ephemeral → books no %outbox/emit, so no snap-tree
@@ -808,7 +891,12 @@
         Lies_ping(w: TheC) {
             const H = this as House
             if (!H.Lies_channel_live(w)) return
-            ;(H as any).Peeroleum_send_consumer(w, 'ping', { t: Date.now() })
+            // a runner stamps its addressable prepub (the hello-bind identity = Lies_self) on the ping:
+            //  the 5s ping is a faster, identity-robust liveness pulse than the 15s advertise, so the editor
+            //   keeps the runner's roster row fresh off the heartbeat (Lies_pong) — even between advertises,
+            //    and even for a runner that pings before its first advertise lands.
+            const from = H.Lies_role(w) === 'runner' ? H.Lies_self(w)?.prepub : undefined
+            ;(H as any).Peeroleum_send_consumer(w, 'ping', { t: Date.now(), ...(from ? { from } : {}) })
         },
         Lies_pong(w: TheC, fr: any) {   // echo a received ping straight back — AND the ping itself is
                                         //  proof the peer is alive, so stamp last_heard.  This is the
@@ -823,6 +911,19 @@
             ;(H as any).Peeroleum_send_consumer(w, 'pong', { t: fr?.t })   // echo first — keep the peer's RTT honest
             const peer = H.Lies_role(w) === 'editor' ? 'runner' : 'editor'
             w.oai({ channel_peer: peer }, { last_heard: Date.now() })      // oai: in-place merge, no transacting window (cf. pong_recv's roai)
+            // editor: a runner's ping carries its prepub → keep THAT runner's roster liveness fresh off the
+            //  5s heartbeat, not only the 15s advertise.  Off-think (no mutex held on the ephemeral route):
+            //   touch ONLY w.c.beacons (pure .c, like Lies_advertise_recv); the in-think Lies_runner_roster
+            //    names it + folds it to the snapped %Runner.  MERGE — never clobber a real advertise beacon's
+            //     book/engaged; only bump last_heard (mint a minimal ready beacon if first-heard).
+            if (peer === 'runner') {
+                const from = String(fr?.from ?? '').trim()
+                if (from) {
+                    const beacons = (w.c.beacons ??= {}) as Record<string, any>
+                    if (beacons[from]) beacons[from].last_heard = Date.now()
+                    else beacons[from] = { last_heard: Date.now(), ready: true }
+                }
+            }
             w.bump_version()                                                // wake the .ob() readers (Runner Brink, Langui card)
         },
         async Lies_pong_recv(w: TheC, fr: any) {   // our ping came home — the channel is proven
@@ -851,7 +952,14 @@
             const H = this as House
             if (H.Lies_role(w) !== 'runner') return
             if (!H.Lies_channel_live(w)) return
-            const self = (H as any).Clustation_self?.(w) as { prepub: string, friendly?: string } | undefined
+            // WHO we advertise AS must be the prepub the relay HELLO bound us under — else the editor
+            //  addresses to:<pub> nobody is bound to and the relay drops it.  Lies_self resolves that exact
+            //   identity: Clustation_self (the ?I= %Identity) when present, ELSE the stashed/env cluster key
+            //    behind the hello (prepubOf(cluster_idento.pub)).  Gating on Clustation_self ALONE stranded
+            //     every stashed/env-key runner (booted ?B= with no ?I=): it hello-binds + is fully addressable,
+            //      yet never advertised, so the editor's roster stayed empty and dispatch fell back to BROADCAST
+            //       (the "both runners ran it" regression).
+            const self = (H as any).Lies_self?.(w) as { prepub: string, friendly?: string } | undefined
             if (!self?.prepub) return
             const now = Date.now()
             if (w.c.last_advertise && now - (w.c.last_advertise as number) < 15000) return   // ~15s beacon
@@ -962,7 +1070,8 @@
             // a Runner LEAVES only when its registry entry is forgotten — the directory is the authority.
             for (const r of w.o({ Runner: 1 }) as TheC[]) if (!known.has(r.sc.Runner as string)) { w.drop(r); changed = true }
             if (changed) w.bump_version()
-            H.Lies_drain_runs(w)   // a freed runner may release a held (exhausted-queue) job — drive in-think
+            H.Lies_drain_runs(w)    // a freed runner may release a held (exhausted-queue) job — drive in-think
+            H.Lies_drain_rungo(w)   // a now-live runner takes a rungo HELD through the post-reconnect fold lag
         },
 
         // Lies_favoured_runner — the C1 lookup: which runner is reserved as THIS client's?  Scan the

@@ -471,8 +471,18 @@
             ?? docful[0]
             ?? (waft.o({ Doc: 1 }) as TheC[]).find(d => (d.o({ Point: 1 }) as TheC[]).length > 0)
             ?? waft.o({ Doc: 1 })[0] as TheC | undefined
-        if (!first) return
-        H.i_elvisto(w, 'Lies_want', { src: first, kind: 'cold' })
+        // Land on the Keep's REMEMBERED cursor for this Waft, falling back to first — the resume the live
+        //  editor wants (the boot/foreground cold-resume + the per-tick timemachine both land through here,
+        //   and a land-on-FIRST emitted in the window before the resume want resolves is NEWER, so it
+        //    out-competed the resume — "the cold-resume want dies"; targeting the remembered What makes the
+        //     race harmless).  EDITOR-gated so a runner keeps deterministic land-on-first (a Story's cursor/
+        //      snap never depends on a Keep); undefined ⇒ fresh Waft | unresolvable locator ⇒ first.
+        //   (NOTE 2026-07-01: a cleaner Story-safer variant — skip this seam entirely while a want is
+        //    pending for this Waft, no Keep read — is proposed in Cluster_runner_handover.md §3; not shipped
+        //     overnight because it'd swap a user-VERIFIED fix for an unverified one.  See the LakeSurfer note.)
+        const target = (H.Lies_role(w) === 'editor' ? H.Lies_keep_resume_what(w, waft, waft_key) : undefined) ?? first
+        if (!target) return
+        H.i_elvisto(w, 'Lies_want', { src: target, kind: 'cold' })
     },
 
     // ── Waft_cursor_next_candidate ─────────────────────────────────────────────

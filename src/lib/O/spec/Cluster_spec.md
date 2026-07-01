@@ -419,14 +419,24 @@ When the app needs to act on the **host** — restart a crashed Chrome profile, 
     survives a docker restart, readable with NO nav); `Waft:Cluster` keeps the registry copy. This breaks
      the circular dep (Waft:Cluster itself loads *through* the Wormhole the grant unlocks).
 
-**Deltas / owed.** (a) Bytes ride **base64-in-JSON** for now, not the chunked binary `offer_stream` — correct
- but a 33% tax (range keeps the window small); migrating the audio decoder to `read_range` is the "develop
-  partial decode now" follow-up. (b) `wormhole_reply`/`grant_offer` are **role-broadcast + corr/`for`-filtered**
-   (single-runner-safe) because the editor's **frozen spine lacks `Peeroleum_send_to`** — N-runner addressing
-    needs a spine re-pin. (c) The editor serve calls its nav **directly**, bypassing the rw_queue, so a remote
-     **write** can race the editor's own (reads are safe) — funnel writes through the queue, or grant `ro`.
-      (d) Revocation-corpus check at serve is a TODO. (e) `for` is a **prepub** (the editor never holds the
-       runner's full pub under trust-everything v1). Verify live on the docker flock + an editor on :9091.
+**SPINE PROMOTED + BINARY (2026-07-01).** The editor's pinned spine was promoted (`cp gen/N/{Peeroleum,
+ Tribunal}.go → p2p/pinned_stable/`, backup `/tmp/pin_*_jun23.go.bak`) — it now has `Peeroleum_send_to`
+  (per-pub addressing), `offer_stream`, multicast, retx/liveness sweeps. So **base64 is GONE**: a `bin`/
+   `read_range` reply now rides an **addressed binary frame** — `Lies_send_binary_to(w, claim.for, …)` puts
+    bytes on `frame.buffer` (the `[header]\n[raw buffer]` wire, body_hash-integrity, near-zero-copy), corr +
+     size in the header; `RemoteWormholeNav.frame_bytes` unpacks it (b64 only the no-grantee degenerate).
+      `wormhole_reply` is **addressed `to:<grantee.pub>`** (not broadcast).  CAVEAT: addressing uses `claim.for`
+       (the Clustation/advertise prepub); if it has diverged from the hello-bind prepub (the §5 identity sub-bug,
+        Cluster_runner_handover §2a) the reply won't route — reconcile, or §5(a) sidesteps it.
+
+**Deltas / owed.** (a) `grant_offer` is still **role-broadcast + `for`-filtered** (the runner that matches stores
+  it) — fine, but could go `to:<pub>` now too. (b) Whole-file reads still frame their window; **`offer_stream`**
+   (now available) is the upgrade for large sequential/seekable streaming + migrating the audio decoder to
+    `read_range`. (c) The editor serve calls its nav **directly**, bypassing the rw_queue, so a remote **write**
+     can race the editor's own (reads are safe) — funnel writes through the queue, or grant `ro`. (d) Revocation-
+      corpus check at serve is a TODO. (e) `for` is a **prepub**. (f) **PereBinary** (a Book diging a binary
+       round-trip over the relay carrier) is the owed positive-path proof — the harness exercises binary send +
+        bad-hash reject but never diges received content. Verify live on the docker flock + an editor on :9091.
 
 ---
 
