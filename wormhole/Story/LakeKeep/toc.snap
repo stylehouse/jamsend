@@ -9,8 +9,7 @@ story:LakeKeep
         dontSnapGhostList
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=0.082
-      sample=0.097,at=1782832726
+    TimeTotal:beliefs,avg=0.08
       sample=0.051,at=1782872662
       sample=0.062,at=1782897341
       sample=0.069,at=1782897773
@@ -20,8 +19,8 @@ story:LakeKeep
       sample=0.062,at=1782899648
       sample=0.231,at=1782899945
       sample=0.055,at=1782907430
-    TimeTotal:step,avg=0.082
-      sample=0.097,at=1782832726
+      sample=0.08,at=1782916101
+    TimeTotal:step,avg=0.08
       sample=0.051,at=1782872662
       sample=0.062,at=1782897341
       sample=0.069,at=1782897773
@@ -31,4 +30,5 @@ story:LakeKeep
       sample=0.062,at=1782899648
       sample=0.231,at=1782899945
       sample=0.055,at=1782907430
+      sample=0.08,at=1782916101
   step,dige:c73b039eb2437915

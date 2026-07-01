@@ -94,35 +94,35 @@ this consolidation: it proves focus already has one resolver; it just lacks one
 
 ---
 
-## `req:Keeping` — **proposed** shape
+## `req:Keeping` — proposed as one driver, **built (P3/P4) distributed**
 
-`req:Keeping` is `req:workon` renamed and widened. It absorbs `desire` + `acquire`,
-drops `timemachine`'s playback, demotes `timemachine`'s land into a sig-gated step,
-and pulls the Keep recording in off the event handlers. Per-tick walk:
+`req:Keeping` was proposed as `req:workon` renamed and widened — absorbing `desire` +
+`acquire`, dropping `timemachine`'s playback, demoting its land to a sig-gated step, and
+pulling the Keep recording off the event handlers. It was **not** built as one driver: the
+legs landed in the separate homes named below (each `→ home`). They are different *kinds* of
+thing — two reqs, one heartbeat, one seam, one event — which is why a flat `1. / 2.` numbering
+misread as a procedure. The legs:
 
 ```
-req:Keeping  (one per w; was req:workon)
-  1. boot           (was req:acquire, maz:9 gate — but STAGED, not a one-shot)
-        a heartbeat gated by w.c flags: open Waft:Keep (async load via req:Store), then
-        once it materialises resume from the ledger (Lies_keep_boot), THEN finish.
-        a naive one-shot finishes before the async Keep arrives → no resume (gap 2).
-  2. focus          waft = Lies_focus_waft(w)        — the .sc.active | cursor | first-non-boring selector
-        Keeping becomes the SOLE writer of .sc.active (6 sites set it today); .sc.active
-        and ActiveInterest become PROJECTIONS of the resolved focus, not rival truths.
-        record the snap-visible Waft lock (was desire's job; keep it honest)
-  3. land           ensure the cursor sits on `waft`  (was timemachine Job A)
-        SIG-GATED on focus-change — boot/reload/rename re-assert; steady-state no-op.
-        (the .sc.active want-land already keeps the cursor put; this only catches
-         the cases a want never fired for.)
-  4. converge       understanding → ingredients → instrumentation   (workon's stages, UNCHANGED)
-        on `waft`'s active dock (src). Step 2 resolves WHICH Waft (cheap); the
-        understanding stage here still PROJECTS that foreground outward via
-        Lang_set_interest (ActiveInterest + the per-Interest LE) — the outward half
-        of the attention channel, unchanged. Keeping owns "which"; convergence owns
-        "tell the view".  (foregrounding == the checkout — see The bigger frame.)
-  5. record         the WANT-LAND records cursor + accessed_at → Keep ledger
-        (Lies_resolve_wants → Lies_keep_note_cursor, on the event — not a tick poll;
-         Keeping's tick only reads. recording stays event-driven.)
+req:Keeping  (the CONCERN; realised across the homes below — not one particle)
+  boot      → Lies_keep_boot   a STAGED heartbeat (NOT a req; was req:acquire, maz:9 gate).
+        gated by w.c flags: open Waft:Keep (async load via req:Store), then once it
+        materialises resume from the ledger, THEN finish.  a naive one-shot finishes
+        before the async Keep arrives → no resume (gap 2).
+  focus     → req:Langoer      the SOLE .sc.active writer (was the Lies_focus_waft leg).
+        .sc.active + ActiveInterest are PROJECTIONS of the resolved focus, not rival
+        truths.  records the snap-visible Waft lock (was desire's job; keep it honest).
+  land      → LiesCurse + want-land   the cold-start + resolve seam (NOT a req; was
+        timemachine Job A).  SIG-GATED on focus-change — boot/reload/rename re-assert,
+        steady-state no-op.  (the want-land already keeps the cursor put; this only
+        catches the cases a want never fired for.)
+  converge  → req:workon       understanding → ingredients → instrumentation (UNCHANGED).
+        on `waft`'s active dock (src).  focus resolves WHICH Waft (cheap); the
+        understanding stage still PROJECTS that foreground outward via Lang_set_interest
+        (ActiveInterest + the per-Interest LE) — the outward half of the attention
+        channel.  Keeping owns "which"; convergence owns "tell the view".
+  record    → want-land        Lies_resolve_wants → Lies_keep_note_cursor, on the event
+        (not a tick poll; the tick only reads).  records cursor + accessed_at → Keep ledger.
 
   DROPPED: playback — play/pause/step/auto-advance.  "No sense of time on Lies."
 ```

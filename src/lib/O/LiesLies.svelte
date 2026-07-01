@@ -918,9 +918,10 @@
             const role = H.Lies_role(w)
             if (role !== 'editor' && role !== 'runner') return
             // OFF by default — this scaffold accretes a jsonl per page-life under wormhole/_socklog/.
-            //  Re-enable the on-disk dump for a networking-investigation session with ?socklog on the URL;
-            //   the in-memory sockcap ring keeps capturing regardless, so DevTools checks still work.
-            if (!new URLSearchParams(window.location.search).has('socklog')) return
+            //  It writes iff the sockcap tap was ARMED (Otro installs it on ?socklog / the 🪪 toggle /
+            //   ?watch): sockcap_count() stays 0 on an un-armed tab, so this early-returns.  (Was gated on
+            //    the URL ?socklog ALONE — which the 🪪 toggle doesn't set — so the toggle captured but never
+            //     dumped.  Now consistent with the capture arm.)
             if (!sockcap_count()) return
             const now = Date.now()
             if (w.c.last_socklog && now - (w.c.last_socklog as number) < 10000) return
