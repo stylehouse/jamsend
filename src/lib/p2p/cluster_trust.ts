@@ -3,7 +3,7 @@
 //  The authentication the relay/editor channel lacks today: a privileged frame (gen_write, the
 //   incoming dock_push) carries header.sign = ed25519(canonical-header) by a cluster KEY; a verifier
 //    checks it against CLUSTER_TRUSTED_PUBS and drops anything unsigned or foreign. This closes the
-//     unauthenticated-relay RCE — see scripts/gen-cluster-identos.ts for minting the flock.
+//     unauthenticated-relay RCE. The flock is minted by the editor's 🪪 "Set up cluster trust" (Lies_cluster_setup).
 //
 //  Importable by BOTH node (scripts/, src/lib/server/relay.ts) and the browser app — but only the
 //   PUBLIC half (loadTrustedPubs/verifyHeader) is browser-safe. A signer (signHeader) needs a private
@@ -62,7 +62,7 @@ export async function sha256hex(data: string): Promise<string> {
 	return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
-// Mint a fresh random cluster keypair (hex), the same shape gen-cluster-identos.ts writes. Browser-safe
+// Mint a fresh random cluster keypair (hex), the shape the .env.cluster-* files carry. Browser-safe
 //  (@noble is isomorphic; randomPrivateKey uses webcrypto getRandomValues). Used by the editor's
 //   in-app cluster-setup to generate the claude CLI key without a node round-trip.
 export async function mintClusterKey(): Promise<{ pub: string; key: string }> {

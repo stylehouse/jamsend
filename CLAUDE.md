@@ -6,6 +6,10 @@ Keep it current; it is the memory you would otherwise re-type into each fork.
 Distilled from a run of handover notes; only the durable shape was kept,
  not any single session's fixes or open threads. Correct anything stale.
 
+**Before touching the belief loop, `req`/`ttlilt`, the compile pipeline, or anything a Story
+ snaps: read `src/lib/O/spec/Coding_guide.md` — the non-obvious mechanics (wake ≠ hold, the
+  ttlilt rules, the all-holds compile→rerun chain, and "verify a timing fix by re-running").**
+
 ## What jamsend is
 
 A peer-to-peer music app: Svelte 5, served by the dev container on 9091,

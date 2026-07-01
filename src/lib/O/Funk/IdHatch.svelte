@@ -9,6 +9,7 @@
     import FaceSucker from "$lib/p2p/ui/FaceSucker.svelte"
     import { onMount } from "svelte"
     import type { House } from "$lib/O/Housing.svelte"
+    import { socklog_armed, socklog_arm } from "$lib/O/sockcap"
 
     // mounted as a Lens panel (LensHost) — the extra panel props (lens/funk/w) land in rest, ignored.
     let { H, ...rest }: { H: House } & Record<string, any> = $props()
@@ -16,6 +17,9 @@
 
     let pasted = $state('')
     let msg    = $state('')
+    // per-tab diagnostic: arm the /relay socket capture (sockcap → wormhole/_socklog).  Persisted in
+    //  localStorage so Otro reads it BEFORE the channel boots; a flip takes effect on the next reload.
+    let socklog_on = $state(socklog_armed())
 
     // The ACTIVE %Identity's public face {prepub, friendly}, polled live: the adopt lands via post_do
     //  on the tick (a C-tree mutation), which a derived off H.version wouldn't catch — and a fullscreen
@@ -74,6 +78,13 @@
         msg = '⏳ writing cluster-trust files via the Wormhole…'
         msg = (await (H as any).Lies_cluster_setup?.()) ?? '✗ cluster-setup unavailable'
     }
+    function toggle_socklog() {
+        socklog_on = !socklog_on
+        socklog_arm(socklog_on)
+        msg = socklog_on
+            ? '📡 socklog ARMED — reload this tab to start capturing /relay traffic to wormhole/_socklog.'
+            : 'socklog off — reload to stop capturing.'
+    }
     function close() { (H as any).Lies_lens_dismiss?.('Panel', 'IdHatch') }
 </script>
 
@@ -95,11 +106,18 @@
                     {/if}
                 </p>
             {/if}
-            <p>Paste a <code>.env.cluster-&lt;role&gt;</code> file — generate &amp; copy with:</p>
-            <pre>npx vite-node scripts/gen-cluster-identos.ts
-cat .env.cluster-editor | xclip -selection clipboard</pre>
+            <div class="flags">
+                <span class="flags-h">this tab:</span>
+                <button class="flag" class:on={socklog_on} onclick={toggle_socklog}
+                    title="capture this tab's /relay socket traffic to wormhole/_socklog — arms the tap on the next reload">
+                    {socklog_on ? '☑' : '☐'} socklog capture
+                </button>
+                <!-- %hasAudioContext toggle to sit here once its behaviour is settled -->
+            </div>
+            <p class="hint">Import an identity — paste a <code>.env.cluster-&lt;role&gt;</code> file (e.g. the
+                <code>.env.cluster-claude</code> the setup writes, or one shared from another host):</p>
             <textarea bind:value={pasted} rows="5"
-                placeholder="CLUSTER_IDENTO_EDITOR_KEY=…&#10;CLUSTER_IDENTO_EDITOR_PUB=…"></textarea>
+                placeholder="CLUSTER_IDENTO_CLAUDE_KEY=…&#10;CLUSTER_IDENTO_CLAUDE_PUB=…"></textarea>
             <div class="row">
                 <button onclick={apply} disabled={!pasted.trim()}>Set identity</button>
                 <button onclick={setup} disabled={!current} title="write .env.cluster-pubs (trust this editor + claude) + mint the claude key">Set up cluster trust</button>
@@ -119,8 +137,12 @@ cat .env.cluster-editor | xclip -selection clipboard</pre>
     .trust { font-size: 0.85rem; margin: 0; opacity: 0.9; }
     .trust.ok { color: #6cc070; }
     .trust.warn { color: #e0a030; }
-    .id-hatch pre { background: #0003; padding: 0.5rem; border-radius: 4px; font-size: 0.75rem; overflow-x: auto; }
-    .id-hatch textarea { width: 100%; font-family: monospace; font-size: 0.8rem; }
+    .hint { font-size: 0.8rem; opacity: 0.75; margin: 0; }
+    .flags { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; font-size: 0.8rem; }
+    .flags-h { opacity: 0.55; }
+    .flag { background: #14141c; border: 1px solid #333; border-radius: 4px; color: #99a; cursor: pointer; padding: 0.2rem 0.55rem; font-size: 0.8rem; font-family: monospace; }
+    .flag.on { color: #6cc070; border-color: #3a5a3a; }
+    .id-hatch textarea { width: 100%; font-family: monospace; font-size: 0.8rem; background: #000; color: #cfe0cf; border: 1px solid #333; border-radius: 4px; padding: 0.4rem; }
     .row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
     .row button { padding: 0.3rem 0.7rem; border: none; border-radius: 4px; background: #2196F3; color: white; cursor: pointer; }
     .row button:disabled { opacity: 0.4; cursor: default; }

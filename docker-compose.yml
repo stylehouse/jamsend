@@ -3,7 +3,7 @@
 # PAIRED WITH staging/docker-compose.yml — the EDITOR/staging instance on :9092 (the Editron IDE, a
 #  separate git worktree). The two are bridged at runtime by the relay's r2r link (the runner dials
 #   ws://172.17.0.1:9092/relay), so editor↔runner frames cross between them. CLUSTER TRUST spans the
-#    pair: the secret Idento flock is split per role (scripts/gen-cluster-identos.ts) — this side holds
+#    pair: the secret Idento flock is minted by the editor (🪪 Set up cluster trust) — this side holds
 #     `.env.cluster-pubs` (public, for the relay's gen_write verify + the VITE bake) and `.env.cluster-claude`
 #      (the CLI's signing key, masked from `app`); the editor side holds pubs too. Edit one of the pair and
 #       check the other still lines up (ports, relay bridge, cluster env). See that file's header.
@@ -55,7 +55,7 @@ services:
       # Cluster trust — PUBLIC pubs ONLY (no private key): the relay verifies gen_write against these
       #  and vite.config bakes them into VITE_CLUSTER_TRUSTED_PUBS for the browser. required:false so an
       #   un-minted cluster doesn't break `up` (relay warn-and-allows). The editor browser's OWN signing
-      #    key comes from localStorage, never from here. (gen with scripts/gen-cluster-identos.ts.)
+      #    key comes from localStorage, never from here. (minted by the editor's 🪪 Set up cluster trust.)
       - path: .env.cluster-pubs
         required: false
     tty: true

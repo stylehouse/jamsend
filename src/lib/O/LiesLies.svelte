@@ -437,7 +437,7 @@
             const trusted = browserTrustedPubs()
             const idento  = H.Lies_cluster_idento(w)
             if (trusted.length && !idento) {
-                const msg = `gen_write BLOCKED — cluster trust is enforced but this editor has no signing key. Click the 🪪 Id action and paste your .env.cluster-editor (mint it with scripts/gen-cluster-identos.ts). (An unsigned gen_write is fatally rejected by the relay.)`
+                const msg = `gen_write BLOCKED — cluster trust is enforced but this editor's identity isn't in the trusted set. Open the 🪪 Id action, make sure a ?I= identity is active, click "Set up cluster trust", then restart the dev server. (An unsigned gen_write is fatally rejected by the relay.)`
                 H.tlog(`❌ ${msg}`)
                 throw new Error(msg)
             }
@@ -890,6 +890,10 @@
             if (typeof window === 'undefined') return
             const role = H.Lies_role(w)
             if (role !== 'editor' && role !== 'runner') return
+            // OFF by default — this scaffold accretes a jsonl per page-life under wormhole/_socklog/.
+            //  Re-enable the on-disk dump for a networking-investigation session with ?socklog on the URL;
+            //   the in-memory sockcap ring keeps capturing regardless, so DevTools checks still work.
+            if (!new URLSearchParams(window.location.search).has('socklog')) return
             if (!sockcap_count()) return
             const now = Date.now()
             if (w.c.last_socklog && now - (w.c.last_socklog as number) < 10000) return

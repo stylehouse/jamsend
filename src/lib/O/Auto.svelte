@@ -246,8 +246,8 @@
             const wa = H.oai_enroll(H, { watched: 'actions' })
             // 'Id' hatch — a browser tab can't read the node-side .env.cluster-<role> files, so its
             //  cluster signing key lives on the top House's Dexie .stashed. This action toggles the IdHatch overlay where
-            //   you paste a role file (cat .env.cluster-editor | xclip → paste) to load it, or copy your
-            //    public identity. See scripts/gen-cluster-identos.ts.
+            //   you set an identity (?I= mints one, or paste a role file to import), run "Set up cluster
+            //    trust", or copy your public identity.
             wa.oai({ action: 1, role: 'identity' }, {
                 label: 'Id', icon: '🪪',
                 // hoist|drop the cluster-identity hatch as a Lens:Panel,of_Funkcion:IdHatch (the

@@ -90,16 +90,16 @@ So "Trusting" is not new invention — it is the garden's membership/contact/tru
      (`CLUSTER_IDENTO_<ROLE>_KEY`), `prepubOf(pub)` (16-hex address).
   - `sha256hex(data)` (browser+node, crypto.subtle) — the shared body-commitment digest.
   - `browserTrustedPubs()` / `browserRole()` — browser-side trust exposure.
-- `scripts/gen-cluster-identos.ts` — mints the SECRET flock (random ed25519 per role), SPLIT per
-   role: `.env.cluster-pubs` (PUBLIC) + `.env.cluster-<role>` (SECRET). All gitignored. Distribute
-    each role file to its host ALONE. `--force` rotates.
+- `scripts/gen-cluster-identos.ts` — **REMOVED 2026-07-01.** Key genesis is now the editor's 🪪 “Set up
+   cluster trust” (`Lies_cluster_setup`): it writes `.env.cluster-pubs` (PUBLIC) + mints `.env.cluster-claude`
+    (the only remaining SECRET role key). Runners self-mint via `?I=`; no per-role flock file is handed out.
 - `src/lib/p2p/Identos.ts` — the PUBLIC deterministic pool (peer NAMES for flock tests). **Distinct
    from cluster_trust**: Identos = public addresses, no secrecy; cluster_trust = secret signing keys.
 - `src/lib/server/relay.ts` — the `/relay` forwarder; `header.sign` already crosses the wire (binary
    frame `[header JSON]\n[raw buffer]`, header cleartext so the relay routes on `to`; signed ≠ encrypted).
 
-**The `.env*` inventory — where the keys actually live** (all gitignored, `.env.*`; `gen-cluster-identos`
- mints + SPLITS them so no host holds a key it doesn't own):
+**The `.env*` inventory — where the keys actually live** (all gitignored, `.env.*`; the editor's 🪪 setup
+ writes `.env.cluster-pubs` + mints `.env.cluster-claude`, so no host holds a key it doesn't own):
 > **2026-07-01 — the trusted set is now just {editor, claude}; runners are OUT.** The trusted set is the
 >  **code-push allowlist** and nothing else — the only two gates that read it are the relay's `gen_write`
 >   (compiled `.go` → disk = the RCE surface) and the editor's `ghost_compile` verify. Only the **editor**
@@ -109,8 +109,8 @@ So "Trusting" is not new invention — it is the garden's membership/contact/tru
 >       editor.pub`), NOT set membership. So: **drop `.env.cluster-editor` + `.env.cluster-runner`.** The
 >        editor now uses a `?I=` %Identity and SELF-PROVISIONS via IdHatch's **“Set up cluster trust”**
 >         (`Lies_cluster_setup`): it FSA-writes its own pub into `.env.cluster-pubs` and mints
->          `.env.cluster-claude` if absent. Runners self-generate (`?I=`). `gen-cluster-identos` now
->           defaults to just `claude`. **Both the relay AND the Vite bake read the set at start/build → a
+>          `.env.cluster-claude` if absent. Runners self-generate (`?I=`). (`gen-cluster-identos` has since
+>           been REMOVED — the editor is the sole genesis.) **Both the relay AND the Vite bake read the set at start/build → a
 >            dev-server RESTART is required after any change.** (The bullets below describe the pre-2026-07-01
 >             per-role-key model; kept for the docker/env_file mechanics, which still apply to `claude`.)
 - **`.env.cluster-pubs`** — *PUBLIC*. `CLUSTER_TRUSTED_PUBS` = comma-list of the flock's full pubkeys.
@@ -122,9 +122,10 @@ So "Trusting" is not new invention — it is the garden's membership/contact/tru
      holds a foreign role's private key.
 - **The browser** can't read node env files: it holds its role key out-of-band in the top House's Dexie
    `.stashed.cluster_idento` via the 🪪 Id hatch (`IdHatch.svelte` — paste a `.env.cluster-<role>`).
-- **To add/rotate a role:** `vite-node -c scripts/compile.vite.config.ts scripts/gen-cluster-identos.ts
-   [roles…] [--force]`, then hand each `.env.cluster-<role>` to its host alone, keep `.env.cluster-pubs`
-    everywhere. `--force` rotates every key (breaks live peers holding the old set — do it deliberately).
+- **To rotate a key (editor-driven now):** a new EDITOR identity is `?I=new` (then re-run “Set up cluster
+   trust” to rewrite `.env.cluster-pubs`); a fresh CLAUDE key is `rm .env.cluster-claude` then “Set up cluster
+    trust” again. Restart the dev server after either (relay + Vite re-read the set). Rotation breaks live peers
+     holding the old set — do it deliberately.
 
 ### 2.2a Cold-start — standing up a cluster from nothing
 Every key in the cluster now traces to ONE act: opening the editor and clicking a button. No pre-seed
@@ -145,10 +146,10 @@ Every key in the cluster now traces to ONE act: opening the editor and clicking 
      The **claude CLI** reads `.env.cluster-claude` to sign `ghost_compile`.
 
 So the editor cold-start generates every key that matters — its own, the claude CLI's, and the trusted
- list — and runners mint their own. **`gen-cluster-identos` is thereby demoted to break-glass:** a
-  no-browser / CI cold-start (`… gen-cluster-identos editor claude`) or a deliberate `--force` rotation.
-   Nothing in the normal path calls it. Recommendation: KEEP it as the escape hatch (≈90 lines, the only
-    no-browser + only rotation path); delete only if a headless cold-start is truly never wanted.
+ list — and runners mint their own. **`scripts/gen-cluster-identos.ts` was REMOVED 2026-07-01** — the editor
+  is the sole key genesis, and there is intentionally NO no-browser cold-start path any more (a cluster is
+   always born at an editor). Rotation is editor-driven too (see §2.2's rotate bullet); the previous
+    `--force` script path is gone.
 
 ### 2.3 The signing contract
 A privileged frame's signed unit is its **header** (addressing + intent + a body commitment), never

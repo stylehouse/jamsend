@@ -253,7 +253,7 @@
         // no Keep at all (the runner): session-local, seeded from the BACKSTAGE INFRA default —
         //  Trope/entropy profiles + dontSnap scaffolding start closed (not working surfaces), a
         //   giver Waft starts open.  Toggleable in-session (toggle_minimised), just not persisted.
-        return local_min ?? !!(waft?.sc.boring || waft?.sc.dontSnap)
+        return local_min ?? !!(waft?.sc.equip || waft?.sc.boring || waft?.sc.dontSnap)
     })())
     // toggle: persist through the Keep on the editor; fall back to session-local state on the runner.
     const toggle_minimised = () => {

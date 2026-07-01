@@ -2,8 +2,10 @@
 //  DevTools → Network is captured into a ring and can be DUMPED to disk via the Wormhole before an
 //   auto-reload wipes it (investigation scaffold; see Otro ?watch + Lies_dump_socklog).  ALMOST-GONER —
 //    the roster/dispatch bug it chased is fixed, but KEPT DELIBERATELY (owner's call) as close-up
-//     socket-traffic knowledge for future runner/relay debugging.  Safe to leave: dormant unless armed —
-//      the tap is cheap and the disk dump only fires when a ?watch=N reload is set.  Rip out if it intrudes.
+//     socket-traffic knowledge for future runner/relay debugging.  GENUINELY dormant unless armed: the tap
+//      installs (and only then does the dump write) ONLY on ?socklog, or implied by ?watch=N — a plain
+//       editor|runner tab captures NOTHING.  (Was always-on; that parked a full JSONL blob in an rw req
+//        every ~10s.)  Arm with ?socklog for on-demand capture.  Rip out if it intrudes.
 //
 //  Why a global WebSocket tap and not a Socket_real hook: Socket_real lives in the FROZEN editor spine
 //   (Tribunal.go, pinned) — untouchable from app code.  Wrapping the constructor + send catches EVERY
@@ -83,3 +85,15 @@ export function sockcap_lines(): string {
     return ring.map(c => JSON.stringify(c)).join('\n')
 }
 export function sockcap_count(): number { return ring.length }
+
+// Persistent ARM flag (per-browser, localStorage — readable SYNCHRONOUSLY at boot, before the House or the
+//  relay socket exist, which a particle|Dexie flag can't be).  Otro reads socklog_armed() to decide whether
+//   to sockcap_install() this boot; the 🪪 Id toggle flips it.  A flip takes effect on the NEXT reload — the
+//    tap has to be in place before the socket opens.
+const ARM_KEY = 'socklog'
+export function socklog_armed(): boolean {
+    try { return typeof localStorage !== 'undefined' && localStorage.getItem(ARM_KEY) === '1' } catch { return false }
+}
+export function socklog_arm(on: boolean): void {
+    try { if (on) localStorage.setItem(ARM_KEY, '1'); else localStorage.removeItem(ARM_KEY) } catch {}
+}

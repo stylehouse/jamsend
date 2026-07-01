@@ -452,8 +452,21 @@
         // coalesce rapid text changes — only the trailing edge triggers compile
         clearTimeout(dock.c.compile_timer as ReturnType<typeof setTimeout>)
         if (machine) {
-            // no wait: flag immediately, ponder will pick it up
-            dock.c.compile_ready = true
+            // machine|test edit: re-arm req:compile SYNCHRONOUSLY — do NOT just flag compile_ready and
+            //  lean on feebly_ponder + the next-tick compile_ready gate.  feebly_ponder only WAKES the
+            //   loop; it does not HOLD it open, so in the window before the gate re-fires the compile,
+            //    Story can go quiescent and SNAP with the stale compile output (and its stale downstream
+            //     Rundown rerun) — the flaky "didn't take the text manipulation" race.  Un-finishing
+            //      req:compile HERE makes it needs_work this pass, so the pending recompile holds the snap
+            //       open right through to the rerun's %ran record (Codebit-unfinished → BlatDo ttlilt take
+            //        it from there).  The gate stays the seam for the interactive (6s-timer) path below.
+            const com = La.o({ req: 'compile' })[0] as TheC | undefined
+            if (com) {
+                delete com.sc.firing
+                if (com.c.oncelers) delete (com.c.oncelers as any).firing
+                delete com.sc.finished
+                this.reqyoncile(La, {})
+            } else dock.c.compile_ready = true   // Languish's compile phase not minted yet → fall back to the gate
             H.feebly_ponder()
         } else {
             dock.c.compile_timer = setTimeout(() => {

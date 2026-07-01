@@ -48,6 +48,8 @@ The editor's compile (driven by `npm run ghost-compile`) runs the translator + s
 
 ## Open
 
+- `waft%equip|boring|dontSnap` -> `(waft?.sc.equip || waft?.sc.boring || waft?.sc.dontSnap)`
+
 - **post-IOing element accessor — `o req:handshake 0` / `-1` / ranges.** A query (`o`/`oa`/…) returns a
    list, and reaching one element is today raw JS: `pier.o({req:'handshake'})[0]`, then `.sc.finished`.
     The seam: **anything that is illegal JavaScript right after an IOing is the DSL's to claim.** A bare

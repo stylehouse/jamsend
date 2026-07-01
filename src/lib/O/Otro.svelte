@@ -10,7 +10,7 @@
     import NaviScroll from "./ui/NaviScroll.svelte";
     import { boot_param } from "$lib/boot";
     import FaceSucker from "$lib/p2p/ui/FaceSucker.svelte";
-    import { sockcap_install } from "$lib/O/sockcap";   // ALMOST-GONER: relay-socket tap (dumped via Wormhole) — sockcap.ts header
+    import { sockcap_install, socklog_armed } from "$lib/O/sockcap";   // ALMOST-GONER: relay-socket tap (dumped via Wormhole) — sockcap.ts header
 
     //#region H:Mundo
     // ── all House construction inside $effect ─────────────────────────────────
@@ -47,13 +47,14 @@
     //  Auto-reload a runner|editor tab every few minutes so fresh come-up + see-each-other handshakes
     //   keep cycling unattended (no human at the tab).  Cluster boots only (?E=/?B=/?I=), never the
     //    Library.  DEFAULT OFF now the dispatch fix is verified (was 3 during the investigation) — it
-    //     disrupts a human at the tab + accretes socklog files; re-enable with &watch=<minutes>.  The
-    //      socklog CAPTURE + Wormhole dump keeps running regardless, so on-demand checks need no reloads.
+    //     disrupts a human at the tab + accretes socklog files; re-enable with &watch=<minutes>.
     //       Identity + edits persist to Dexie/.stashed across a reload.
-    // tap the relay socket NOW (before the channel boots) on any cluster tab, so its traffic is captured
-    //  for the Wormhole dump.  Idempotent + browser-guarded inside.
-    if (editor_book || book || on_grid) sockcap_install()
     const watch_min = (() => { const v = boot_param('watch'); return v == null ? 0 : Number(v) })()
+    // tap the relay socket (before the channel boots) so its traffic is captured for the Wormhole dump —
+    //  ARMED opt-in ONLY: ?socklog (or implied by ?watch), never a plain tab.  OFF by default the tap never
+    //   installs, sockcap stays empty, and Lies_dump_socklog early-returns — so no _socklog files and no
+    //    rw-req blob every ~10s (which is what an always-on capture was parking in the snap).  Browser-guarded.
+    if ((editor_book || book || on_grid) && (boot_param('socklog') != null || socklog_armed() || watch_min > 0)) sockcap_install()
     if (typeof window !== 'undefined' && (editor_book || book || on_grid) && watch_min > 0) {
         onMount(() => {
             const id = setInterval(() => { try { location.reload() } catch {} }, watch_min * 60_000)
@@ -119,25 +120,60 @@
     //     the user opens one.  disk_gated lives on a plain .c (not $state), so a slow poll
     //      samples it — ample for a one-time gate dismiss, and free of House-reactivity guesswork.
     let disk_poll = $state(0)
+    // A gat (SoundSystem voice) that can't auto-start — no user gesture yet — fires
+    //  AudioContext_wanted; we collect the blocked ones.  That event IS the "expecting to need
+    //   AudioContext" signal: nothing fires it unless audio was actually attempted, so a runner
+    //    that never plays never grows an audio gate (most runners won't).  pending_gats is a plain
+    //     array sampled off the same slow poll as disk_gated — no House-reactivity guesswork.
+    let ac_poll = $state(0)
+    let pending_gats: any[] = []
     onMount(() => {
         const iv = setInterval(() => disk_poll++, 400)
-        return () => clearInterval(iv)
+        const on_want = (e: any) => {
+            const g = e?.detail?.gat
+            if (g && !g.AC_ready && !pending_gats.includes(g)) { pending_gats.push(g); ac_poll++ }
+        }
+        window.addEventListener('AudioContext_wanted', on_want)
+        return () => { clearInterval(iv); window.removeEventListener('AudioContext_wanted', on_want) }
     })
     let disk_gated  = $derived.by(() => { disk_poll; return !!H?.c.disk_gated })
+    let ac_wanted   = $derived.by(() => { disk_poll; ac_poll; return pending_gats.some(g => !g?.AC_ready) })
     let disk_role   = $derived(H?.c.boot_role === 'editor' ? 'Editor' : 'Runner')
     let share_error = $state('')
     let opening_share = $state(false)
-    // Reuse DirectoryOpener's own open_dir action (requestDirectoryAccess + nav reset + think) —
-    //  the single sanctioned way in, so the gate can't drift from the data layer's wiring.
+    // Bring a blocked gat to life: init() a fresh context, or AC_OK() a suspended one.  Kicked off
+    //  synchronously by open_share so the resume rides the click (Chrome keeps it suspended otherwise).
+    async function wake_gat(g: any): Promise<boolean> {
+        try {
+            if (!g) return false
+            if (!g.AC) { await g.init?.(); return !!g.AC_ready }
+            return !!(await g.AC_OK?.())
+        } catch { return false }
+    }
+    // ONE affordance for both permissions.  The FSA directory picker AND the audio resume must each
+    //  be *initiated* inside the click's user gesture, so we kick both off synchronously and await
+    //   after.  When a share is already open we skip the picker entirely — the tap just disperses the
+    //    audio gate (the "have FSA, need AC" case).  Reuses DirectoryOpener's own open_dir action so
+    //     the disk path can't drift from the data layer's wiring.
     async function open_share() {
         share_error = ''
         opening_share = true
-        try {
+        const wakes = pending_gats.map(wake_gat)          // AC resume|init — kicked off within the gesture
+        let disk_p: Promise<any> | null = null
+        if (disk_gated) {
             const act = H?.o({ watched: 'actions' })[0]?.o({ action: 1, role: 'open_dir' })[0]
-            if (!act?.sc.fn) { share_error = 'wormhole not ready yet — a moment'; return }
-            await act.sc.fn()
+            if (!act?.sc.fn) { share_error = 'wormhole not ready yet — a moment'; opening_share = false; return }
+            disk_p = act.sc.fn()                          // requestDirectoryAccess() — same gesture
+        }
+        try {
+            await Promise.all(wakes)
+            if (disk_p) await disk_p
         } catch (e) { share_error = String(e) }
-        finally { opening_share = false }
+        finally {
+            pending_gats = pending_gats.filter(g => !g?.AC_ready)
+            ac_poll++
+            opening_share = false
+        }
     }
 
     onDestroy(() => {
@@ -155,13 +191,20 @@
     }
 </script>
 
-{#if disk_gated}
+{#if disk_gated || ac_wanted}
     <FaceSucker altitude={77} fullscreen={true}>
         {#snippet content()}
             <div class="disk-gate">
-                <h2>{disk_role} needs a real folder</h2>
-                <p>OPFS is disabled while developing — open a shared directory so the
-                    machine reads &amp; writes the real project tree.</p>
+                {#if disk_gated}
+                    <h2>{disk_role} needs a real folder</h2>
+                    <p>OPFS is disabled while developing — open a shared directory so the
+                        machine reads &amp; writes the real project tree.{#if ac_wanted} The
+                        same tap also starts audio.{/if}</p>
+                {:else}
+                    <h2>{disk_role} needs a tap for sound</h2>
+                    <p>The share is already open; audio just needs one gesture to start
+                        (browser autoplay policy).</p>
+                {/if}
                 <button class="big" onclick={open_share} disabled={opening_share}>
                     {opening_share ? 'opening…' : '📂 open share'}
                 </button>
