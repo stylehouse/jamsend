@@ -23,6 +23,9 @@
     let poll = $state(0)
     onMount(() => { const iv = setInterval(() => poll++, 500); return () => clearInterval(iv) })
     let current = $derived.by(() => { void poll; return (H as any).Clustation_self?.(H) as { prepub: string; friendly?: string } | undefined })
+    // cluster-trust status of the active identity: is our pub in the CODE-PUSH allowlist (CLUSTER_TRUSTED_PUBS)?
+    //  Flips to trusted only after a dev-server restart re-bakes the file `Set up cluster trust` writes.
+    let trust = $derived.by(() => { void poll; return (H as any).Lies_cluster_trust_status?.() as { prepub?: string; in_set: boolean; configured: boolean } | undefined })
 
     // Pull the first CLUSTER_IDENTO_<ROLE>_KEY + its matching _PUB (and the ROLE, for a friendly) out
     //  of pasted .env text.
@@ -65,6 +68,12 @@
         ;(H as any).post_do(() => (H as any).Clustation_clear?.(H), { see: 'clear_identity' })
         msg = 'identity cleared (switched away — the saved key stays, re-selectable by ?I=<addr>).'
     }
+    // Write .env.cluster-pubs (trust THIS editor + claude) + mint .env.cluster-claude if absent, via the
+    //  editor's own FSA.  Rebuilds the trusted set to the two-entry model; runner pubs stay out (%Grant).
+    async function setup() {
+        msg = '⏳ writing cluster-trust files via the Wormhole…'
+        msg = (await (H as any).Lies_cluster_setup?.()) ?? '✗ cluster-setup unavailable'
+    }
     function close() { (H as any).Lies_lens_dismiss?.('Panel', 'IdHatch') }
 </script>
 
@@ -75,6 +84,17 @@
             <p class="cur">{current
                 ? `active: ${current.friendly ?? current.prepub} — addr ${current.prepub}…`
                 : "none — this tab can't sign privileged frames (gen_write, ghost_compile) or join the grid"}</p>
+            {#if current}
+                <p class="trust" class:ok={trust?.in_set} class:warn={trust?.configured && !trust?.in_set}>
+                    {#if !trust?.configured}
+                        ⓘ cluster trust not enforced (no CLUSTER_TRUSTED_PUBS) — the relay warn-and-allows compiles.
+                    {:else if trust?.in_set}
+                        ✅ trusted — your compiled writes (gen_write) are authorised.
+                    {:else}
+                        ⚠️ NOT in the trust flock — the relay will REJECT your compiles. “Set up cluster trust” adds you.
+                    {/if}
+                </p>
+            {/if}
             <p>Paste a <code>.env.cluster-&lt;role&gt;</code> file — generate &amp; copy with:</p>
             <pre>npx vite-node scripts/gen-cluster-identos.ts
 cat .env.cluster-editor | xclip -selection clipboard</pre>
@@ -82,6 +102,7 @@ cat .env.cluster-editor | xclip -selection clipboard</pre>
                 placeholder="CLUSTER_IDENTO_EDITOR_KEY=…&#10;CLUSTER_IDENTO_EDITOR_PUB=…"></textarea>
             <div class="row">
                 <button onclick={apply} disabled={!pasted.trim()}>Set identity</button>
+                <button onclick={setup} disabled={!current} title="write .env.cluster-pubs (trust this editor + claude) + mint the claude key">Set up cluster trust</button>
                 <button onclick={copyId} disabled={!current}>Copy my public id</button>
                 <button onclick={clear} disabled={!current}>Clear</button>
                 <button onclick={close}>Close</button>
@@ -95,6 +116,9 @@ cat .env.cluster-editor | xclip -selection clipboard</pre>
     .id-hatch { max-width: 40rem; display: flex; flex-direction: column; gap: 0.6rem; }
     .id-hatch h2 { margin: 0; }
     .cur { font-family: monospace; opacity: 0.8; }
+    .trust { font-size: 0.85rem; margin: 0; opacity: 0.9; }
+    .trust.ok { color: #6cc070; }
+    .trust.warn { color: #e0a030; }
     .id-hatch pre { background: #0003; padding: 0.5rem; border-radius: 4px; font-size: 0.75rem; overflow-x: auto; }
     .id-hatch textarea { width: 100%; font-family: monospace; font-size: 0.8rem; }
     .row { display: flex; gap: 0.5rem; flex-wrap: wrap; }

@@ -100,12 +100,25 @@ So "Trusting" is not new invention — it is the garden's membership/contact/tru
 
 **The `.env*` inventory — where the keys actually live** (all gitignored, `.env.*`; `gen-cluster-identos`
  mints + SPLITS them so no host holds a key it doesn't own):
+> **2026-07-01 — the trusted set is now just {editor, claude}; runners are OUT.** The trusted set is the
+>  **code-push allowlist** and nothing else — the only two gates that read it are the relay's `gen_write`
+>   (compiled `.go` → disk = the RCE surface) and the editor's `ghost_compile` verify. Only the **editor**
+>    (signs `gen_write`) and the **claude CLI** (signs `ghost_compile`) sign those, so only they need to be
+>     trusted. A **runner signs nothing the set verifies** (its `hello` is self-auth; advertise/ping/run_*
+>      are unsigned) and its disk access rides **`%Grant`** (per-runner, editor-signed, verified by `by ==
+>       editor.pub`), NOT set membership. So: **drop `.env.cluster-editor` + `.env.cluster-runner`.** The
+>        editor now uses a `?I=` %Identity and SELF-PROVISIONS via IdHatch's **“Set up cluster trust”**
+>         (`Lies_cluster_setup`): it FSA-writes its own pub into `.env.cluster-pubs` and mints
+>          `.env.cluster-claude` if absent. Runners self-generate (`?I=`). `gen-cluster-identos` now
+>           defaults to just `claude`. **Both the relay AND the Vite bake read the set at start/build → a
+>            dev-server RESTART is required after any change.** (The bullets below describe the pre-2026-07-01
+>             per-role-key model; kept for the docker/env_file mechanics, which still apply to `claude`.)
 - **`.env.cluster-pubs`** — *PUBLIC*. `CLUSTER_TRUSTED_PUBS` = comma-list of the flock's full pubkeys.
    Distribute everywhere; `env_file` into every verifier; `vite.config.ts` bakes it to
     `VITE_CLUSTER_TRUSTED_PUBS` for the browser. **This list IS the authority** (2.8) — in it ⇒ trusted.
-- **`.env.cluster-<role>`** — *SECRET, one per role*: `CLUSTER_IDENTO_<ROLE>_KEY` (+ `_PUB`). Three roles
-   today — `editor` (addr `214f8a4e…`), `runner` (`9d2498e3…`), `claude` (`e63cdcca…`). Each file goes to
-    that role's host ALONE and is `env_file`d into ONLY that service (docker-compose), so no container
+- **`.env.cluster-<role>`** — *SECRET, one per role*: `CLUSTER_IDENTO_<ROLE>_KEY` (+ `_PUB`). Post-2026-07-01
+   only `claude` remains a pre-minted role key; `editor`/`runner` are retired (see the note above). Each file
+    goes to that role's host ALONE and is `env_file`d into ONLY that service (docker-compose), so no container
      holds a foreign role's private key.
 - **The browser** can't read node env files: it holds its role key out-of-band in the top House's Dexie
    `.stashed.cluster_idento` via the 🪪 Id hatch (`IdHatch.svelte` — paste a `.env.cluster-<role>`).

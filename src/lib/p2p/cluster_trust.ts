@@ -62,6 +62,15 @@ export async function sha256hex(data: string): Promise<string> {
 	return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
+// Mint a fresh random cluster keypair (hex), the same shape gen-cluster-identos.ts writes. Browser-safe
+//  (@noble is isomorphic; randomPrivateKey uses webcrypto getRandomValues). Used by the editor's
+//   in-app cluster-setup to generate the claude CLI key without a node round-trip.
+export async function mintClusterKey(): Promise<{ pub: string; key: string }> {
+	const priv = ed.utils.randomPrivateKey()
+	const pub  = await ed.getPublicKeyAsync(priv)
+	return { pub: enhex(pub), key: enhex(priv) }
+}
+
 // Sign a header with a private key (hex). Returns the hex signature to set as header.sign.
 export async function signHeader(header: Record<string, unknown>, privHex: string): Promise<string> {
 	const sig = await ed.signAsync(enc(canonicalHeader(header)), dehex(privHex))

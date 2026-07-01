@@ -726,8 +726,11 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
 
             const content = good.c.content as string | null
             const waft: TheC = (() => {
-                if (content === null) {
-                    console.log(`🗂 Waft:${path} not found — starting empty`)
+                // present-but-blank reads the same as absent — an empty snap is "nothing yet",
+                //  not a decode failure (else deWaft fatals it as 'empty snap' → a spurious
+                //   EncodingSplatter the moment a share opens).  Mirrors the Library load (Auto).
+                if (content === null || !content.trim()) {
+                    console.log(`🗂 Waft:${path} ${content === null ? 'not found' : 'empty'} — starting empty`)
                     return _C({ Waft: path })
                 }
                 const { Waft, errors } = H.deWaft(content, path)

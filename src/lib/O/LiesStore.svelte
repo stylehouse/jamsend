@@ -674,10 +674,13 @@
         good:      TheC,
         waft_path: string,
     ): { Waft: TheC | undefined, errors: string[], not_found: boolean } {
-        if (good.c.content === null) {
+        // present-but-blank reads as not_found (start empty), not an 'empty snap' decode
+        //  error — the same call the Library + LiesPersist loads make.
+        const raw = good.c.content
+        if (raw === null || !String(raw ?? '').trim()) {
             return { Waft: undefined, errors: [], not_found: true }
         }
-        const snap = good.c.content as string ?? ''
+        const snap = raw as string
         const { Waft, errors } = (this as House).deWaft(snap, waft_path)
         return { Waft, errors, not_found: false }
     },

@@ -10,7 +10,7 @@
     import NaviScroll from "./ui/NaviScroll.svelte";
     import { boot_param } from "$lib/boot";
     import FaceSucker from "$lib/p2p/ui/FaceSucker.svelte";
-    import { sockcap_install } from "$lib/O/sockcap";   // TEMP: relay-socket tap (dumped via Wormhole)
+    import { sockcap_install } from "$lib/O/sockcap";   // ALMOST-GONER: relay-socket tap (dumped via Wormhole) — sockcap.ts header
 
     //#region H:Mundo
     // ── all House construction inside $effect ─────────────────────────────────

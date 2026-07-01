@@ -26,7 +26,12 @@ const enhex = ed.etc.bytesToHex
 const argv  = process.argv.slice(2)
 const force = argv.includes('--force')
 const roles = argv.filter(a => !a.startsWith('-'))
-if (!roles.length) roles.push('editor', 'runner', 'claude')
+// DEFAULT is now just `claude` (the CLI's signing key).  The EDITOR self-provisions via its in-app
+//  `Set up cluster trust` (IdHatch → Lies_cluster_setup): it uses a ?I= identity and FSA-writes its own
+//   pub into .env.cluster-pubs (and mints claude if absent), so no pre-minted editor key is needed.
+//    RUNNERS self-generate (?I=) + get disk access via %Grant — never a role key, never trusted-set
+//     membership.  Pass roles explicitly (e.g. `editor claude`) for a headless/CI cold-start.
+if (!roles.length) roles.push('claude')
 
 const ROLE_ENV = (r: string) => r.toUpperCase().replace(/[^A-Z0-9]/g, '_')
 const pubsFile = '.env.cluster-pubs'

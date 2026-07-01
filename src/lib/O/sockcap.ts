@@ -1,7 +1,9 @@
 // sockcap — a browser-side tap on the /relay WebSocket, so the socket traffic a human reads in
 //  DevTools → Network is captured into a ring and can be DUMPED to disk via the Wormhole before an
-//   auto-reload wipes it (investigation scaffold; see Otro &watch + Lies_dump_socklog).  TEMP — remove
-//    with the rest of the come-up-and-see-each-other diagnosis once the roster/dispatch is healthy.
+//   auto-reload wipes it (investigation scaffold; see Otro ?watch + Lies_dump_socklog).  ALMOST-GONER —
+//    the roster/dispatch bug it chased is fixed, but KEPT DELIBERATELY (owner's call) as close-up
+//     socket-traffic knowledge for future runner/relay debugging.  Safe to leave: dormant unless armed —
+//      the tap is cheap and the disk dump only fires when a ?watch=N reload is set.  Rip out if it intrudes.
 //
 //  Why a global WebSocket tap and not a Socket_real hook: Socket_real lives in the FROZEN editor spine
 //   (Tribunal.go, pinned) — untouchable from app code.  Wrapping the constructor + send catches EVERY

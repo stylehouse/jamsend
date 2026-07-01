@@ -1,13 +1,14 @@
 Waft:Keep,equip:Keep,lte_expanded
-  WaftTimes,of_Waft:Ghost/Net/Easy,discovered_at=1782449847030,accessed_at=1782868703211,minimised
-    Cursor,what:What:the peer,at=1782868704932
-  WaftTimes,of_Waft:Ghost/Music/Ality,discovered_at=1782449847030,accessed_at=1782868706873
-    Cursor,what:What:1 the spool,at=1782868709887
-  WaftTimes,of_Waft:Credence,discovered_at=1782550950085,accessed_at=1782868703624
+  WaftTimes,of_Waft:Ghost/Net/Easy,discovered_at=1782449847030,accessed_at=1782872378221,minimised
+    Cursor,what:What:the peer,at=1782872379865
+  WaftTimes,of_Waft:Ghost/Music/Ality,discovered_at=1782449847030,accessed_at=1782872382302
+    Cursor,what:What:1 the spool,at=1782872385301
+  WaftTimes,of_Waft:Credence,discovered_at=1782550950085,accessed_at=1782872378691
     Cursor,what:What:Musu,at=1782550950086
-  Cursor,waft:Ghost/Music/Ality,at=1782868706873
-  WaftTimes,of_Waft:Cluster,discovered_at=1782641801641,accessed_at=1782868703680
+  Cursor,waft:Ghost/Music/Ality,at=1782872382302
+  WaftTimes,of_Waft:Cluster,discovered_at=1782641801641,accessed_at=1782872378748
   WaftTimes,of_Waft:Keep
-  WaftTimes,of_Waft:GhostList,discovered_at=1782807094692,accessed_at=1782868703819,minimised
+  WaftTimes,of_Waft:GhostList,discovered_at=1782807094692,accessed_at=1782872378864,minimised
   DocScroll,of_Doc:Ghost/N/Peeroleum.g
   DocScroll,of_Doc:Ghost/N/Tyrant.g
+  DocScroll,of_Doc:Ghost/M/Radiola.g
