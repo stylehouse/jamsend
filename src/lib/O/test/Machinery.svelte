@@ -414,6 +414,104 @@
         gate.bump_version(); w.bump_version()
     },
 //#endregion
+//#region LakeWaftMap
+    // The Plank gate — WATCH Lies_waftmap_model group things (burst rows / shafts of light /
+    //  stacks of two / crumbs / seams), snap by snap, while Preps play the cursor and the
+    //   foreground around two fixture Wafts (TestEasy, TestDeep — they share LakeAntecedents.g,
+    //    the ×2 Doc) plus seeded calm ones.  The dump is a per-beat WORKER on its own
+    //     w:LakeWaftMap (a snap boundary): each beat it recomputes the model off the sibling
+    //      w:Lies and rebuilds the dump ONLY when the fingerprint changed, so the world
+    //       quiesces and the step snap always holds the grouping as-at quiesce — no Prep-order
+    //        race against want resolution.  The snap-fixture diff is the gate AND the design
+    //         surface: iterate the grouping algorithm by reading these snaps.
+
+    Run_A_LakeWaftMap(this: House) {
+        const H = this
+        H.i({ A: 'Lies'        }).i({ w: 'Lies' })
+        H.i({ A: 'Lang'        }).i({ w: 'Lang' })
+        H.i({ A: 'Pantheate'   }).i({ w: 'Pantheate' })
+        H.i({ A: 'LakeWaftMap' }).i({ w: 'LakeWaftMap' })   // the dump worker's world (w-name dispatch)
+        console.log(`🟦 ${H.name} LakeWaftMap wired`)
+    },
+
+    // the per-beat dump worker — dispatched by the w-name.  Reads the sibling w:Lies.
+    async LakeWaftMap(A: TheC, w: TheC) {
+        const H  = this as House
+        const wl = H.o({ A: 'Lies' })[0]?.o({ w: 'Lies' })[0] as TheC | undefined
+        if (!wl) return
+        const m = H.Lies_waftmap_model(wl, { budget: 12 })
+        // fingerprint — rebuild only on real change, else the version churn never quiesces
+        const fp = JSON.stringify({
+            rows: m.rows.map((r: any) => r.kind === 'stack'
+                ? ['stack', r.wafts.map((s: any) => s.title)]
+                : [r.title, +r.burst, +r.fg, +r.hot, +r.touched, +r.tuned, +r.board, r.enth,
+                   r.above, r.below, r.lo, r.hi, +r.show_all, r.colh,
+                   r.docs.map((d: any) => [d.title, d.cursor ? 1 : 0, d.shared ?? 0])]),
+            crumbs: m.crumbs.map((c: any) => c.title),
+            seams:  +m.bursting, chips: m.chips,
+        })
+        if (w.c.fp === fp) return
+        w.c.fp = fp
+        const gate = w.oai({ WaftMapGate: 1 })
+        const old  = gate.o({ plank: 1 })[0] as TheC | undefined
+        if (old) gate.drop(old)
+        const plank = gate.i({ plank: 1 })
+        plank.sc.chips = m.chips as any
+        for (const r of m.rows as any[]) {
+            if (r.kind === 'stack') { plank.i({ stack: r.wafts.map((s: any) => s.title).join('|') }); continue }
+            const sc: any = { row: r.title }
+            if (r.enth >= 2) sc.enth = r.enth   // 1|0 are legible from calm|stack; a snapped 1 rides as a bare flag
+
+            if (r.fg)      sc.fg = 1
+            if (r.hot)     sc.hot = 1
+            if (r.touched) sc.touched = 1
+            if (r.tuned)   sc.tuned = 1
+            if (r.board)   sc.board = 1
+            if (!r.burst)  sc.calm = 1
+            if (!r.loaded) sc.cold = 1
+            const rc = plank.i(sc)
+            if (r.burst) {
+                // the cluster shape: big Waft name + the Doc list (the UI folds it into
+                //  columns of r.colh) — ALL Docs when show_all (≤ the cap), the lit window
+                //   keyed `lit`, the rest `doc`; a capped list dumps only its window between
+                //    glowing above|below edges.  (The What** breadcrumb was ripped from the
+                //     map — keep it simple.)
+                if (r.above) rc.i({ above: r.above })
+                const docs: any[] = r.show_all ? r.docs : r.docs.slice(r.lo, r.hi)
+                const base       = r.show_all ? 0 : r.lo
+                docs.forEach((d: any, k: number) => {
+                    const i   = base + k
+                    const key = i >= r.lo && i < r.hi ? 'lit' : 'doc'
+                    const dsc: any = { [key]: d.title }
+                    if (d.cursor) dsc.cursor = 1
+                    if (d.shared) dsc.x = d.shared
+                    rc.i(dsc)
+                })
+                if (r.below) rc.i({ below: r.below })
+            } else if (r.docs.length) rc.sc.n = r.docs.length as any
+        }
+        for (const c of m.crumbs as any[]) plank.i({ crumb: c.title, of: H.Lies_waftmap_title(c.waft) })
+        if (m.bursting) plank.i({ seams: 1 })
+        gate.bump_version(); w.bump_version()
+    },
+
+    // the seed Prep — calm Wafts (stack fodder) + a touch memory on TestDeep: a carrier
+    //  %Lango,Cursor, the same feed a real cursor land mints, so TestDeep's shaft lights
+    //   WITHOUT foregrounding it (the kept-around-by-touch rule, sans the Ting).  CalmA gets
+    //   a HAND-TUNED enthusiasm (the Keep layout dial) — it must burst despite no touch, and
+    //    resist the budget demotion that catches TestDeep.
+    async e_Lies_waftmap_seed(this: House, _A: TheC, w: TheC, _e: TheC) {
+        const H = this
+        for (const name of ['CalmA', 'CalmB', 'CalmC', 'CalmD']) w.oai({ Waft: `Calm/${name}` })
+        const deep = w.o({ Waft: 'Story/LakeWaftMap/TestDeep' })[0] as TheC | undefined
+        if (deep) await H.lango(w, deep, { kind: 'Cursor', to: 'Ghost/test/Story/Lake/WaftMapPacked.g' })
+        w.oai({ Waft: 'Keep' }, { equip: 'Keep' })   // the layout service writes onto the Keep — mint it (LakeKeep's move)
+        H.Lies_keep_layout_set(w, 'waft', 'Calm/CalmA', 'enthusiasm', 2)
+        w.bump_version()
+        H.i_elvisto(w, 'think')
+    },
+
+//#endregion
 //#region Engage
     // Engage gate — the runner-engagement layer (Engage_integration C2 + C1).  Same in-system Story
     //  shape as LakeKeep: a Prep fires e_Lies_engage_selftest, which stands up the PRODUCTION dispatch

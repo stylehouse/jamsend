@@ -499,7 +499,7 @@ export class House extends StorableHousing {
         for (const h of this.all_House) {
             Object.assign(h, this.ghosts)
         }
-        this.tlog(`Got ghostsHaunt`)
+        // this.tlog(`Got ghostsHaunt`)
         // Every haunt is an HMR (or initial mount): fresh code + its Ghostmeta dige is now live.
         //  Run the guaranteed reaction here, in the core path, rather than behind the optional
         //   on_code_change hook — a parked %req:run_intent must re-check the moment its version

@@ -69,12 +69,22 @@ The editor↔runner loop is **responsive** and clicks **land**. Two root fixes d
 ---
 
 ## Loose ends (be honest)
-- **remoteWormhole backending: NEVER TESTED this session.** It was BUILT ("remote Wormhole pt1" in git; the
-   `%Grant`/`Lies_grant_wormhole`/`Lies_grant_offer_recv` machinery in LiesFunk, `&disk=proxy`,
-    `RemoteWormholeNav.frame_bytes`, addressed binary reply per `Cluster_spec §3.8`) — but I have **no evidence
-     any of it has been exercised**, live or headless. A runner with no local tree begging a trusted editor to
-      proxy its disk is unverified end-to-end. **Highest-value untested path.** Suggested first probe: a
-       `&disk=proxy` runner that reads one file through the granted nav, watched from the editor Brink.
+- **remoteWormhole backending: headless spine now PROVEN (2026-07-02); live end-to-end still owed.** It was
+   BUILT ("remote Wormhole pt1" in git; the `%Grant`/`Lies_grant_wormhole`/`Lies_grant_offer_recv` machinery
+    in LiesFunk, `&disk=proxy`, `RemoteWormholeNav.frame_bytes`, addressed binary reply per `Cluster_spec §3.8`)
+     with **no evidence any of it had ever run**. `scripts/RemoteWormhole.spec.ts` (the SendTo/relay-test
+      trusted-headless family — direct method calls, NEVER the Story belief loop, so clear of the false-green
+       trap) now exercises the FIRST run of: the %Grant crypto (mint/verify/tamper/forge/revoke, particle
+        swap-out↔in), the **app-level round-trip** — the REAL `Lies_wormhole_req_recv` serving a REAL
+         `RemoteWormholeNav` over an in-process loopback (read/list/**bin**/**read_range**/write + the ro-mode
+          gate + forged-grant + wrong-editor rejects, against a fake full-contract nav — NodeWormholeNav can't
+           stand in, it predates the binary verbs), and the runner lifecycle (`Lies_grant_offer_recv` verify→
+            persist(.stashed + Waft:Cluster)→install, `Lies_wormhole_grant` read-back, idempotent install,
+             broadcast filter + bad-sig drop). What the harness STUBS is the relay transport only — proven
+              separately by SendTo (pub routing) + relay-test (buffer-intact binary frame). **Still owed, live
+               :9091 only:** the real `&disk=proxy` boot quiescing to a granted nav, the real relay carrying the
+                addressed binary reply between two tabs, and the editor Brink watch. First live probe unchanged:
+                 a `&disk=proxy` runner reading one file through the granted nav, watched from the editor Brink.
 - **needAC dispatch-match NOT done** — `Lies_dispatch_target` ignores needAC, so a needAC Book can still land
    on a no-AC runner → 60s block. Needs the **audio-capability advertising** (Radio agent / Swarm §4: the
     runner advertises `audio`/`provides_audio`) + a `needAC ⇒ prefer audio runner` filter. Coupled — sequence
@@ -90,6 +100,7 @@ The editor↔runner loop is **responsive** and clicks **land**. Two root fixes d
 ## Next moves (in order)
 1. **Owner: verify on :9091** — restart the dev server (relay + spine + LiesLies), reload editor+runner. Watch
    H.todo stay low; clicks land; `↻ preempting` on a busy click; the needAC narration on a needAC Book run.
-2. **Test remoteWormhole** — the biggest unknown; a `&disk=proxy` runner + a granted read.
+2. **Test remoteWormhole** — headless spine now GREEN (`scripts/RemoteWormhole.spec.ts`); what remains is the
+   LIVE end-to-end: a `&disk=proxy` runner + a granted read, watched from the Brink (real boot + real relay).
 3. **Audio-capability advertising → needAC dispatch-match** (with the Radio agent).
 4. **The `from:<pub>` run_phase demux** — unblocks per-runner Brink (incl. "which runner needs AC").

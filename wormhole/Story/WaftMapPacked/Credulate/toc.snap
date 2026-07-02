@@ -1,4 +1,4 @@
-Credulate,of_Book:LakeNets
+Credulate,of_Book:WaftMapPacked
   GhostInclude:Ghost_N_Peeroleum,dige:054dff5c07f2987b
   GhostInclude:Ghost_N_Reliable,dige:ed4fd88c7e2b904a
   GhostInclude:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -9,7 +9,7 @@ Credulate,of_Book:LakeNets
   GhostInclude:Ghost_M_Mixer,dige:a4a24e00de642d18
   GhostInclude:Ghost_M_Mesh,dige:286eb98843f6e7f9
   GhostInclude:Ghost_Story_Musuation,dige:9405c506154a45b1
-  last_ok,at=1782991008.865,ok_pct
+  last_ok,at=1782988329.953,ok_pct
     uses:Ghost_N_Peeroleum,dige:054dff5c07f2987b
     uses:Ghost_N_Reliable,dige:ed4fd88c7e2b904a
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71

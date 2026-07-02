@@ -10,7 +10,7 @@ import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Musuation(): string { return '5fc38ffef828409d' },
+    Ghostmeta_Ghost_Story_Musuation(): string { return '9405c506154a45b1' },
 
 // Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Music_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
@@ -2812,6 +2812,321 @@ async MusuPier_order(w) { const H = this;
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)
+},
+//#endregion
+
+//#region bounce — TWO PIERS, TWO LIVE AUDIOCONTEXTS: A dribbles real Records to B, who skips + we hear it
+// ══ MusuBounce — Pier A plays real tracks and dribbles them over the wire to Pier B, who randomly skips
+//  some, and we RECORD B's actual sound — the first Book to fuse the transport spine with TWO live audio
+//   contexts (one per Pier).  The tracks are the deterministic pure-tone collection (phase 1, discovered
+//    via the Wormhole nav), so the frequency B's analyser reads back IS ground truth: each track is one
+//     known tone, so "did B hear track T" is "did B's spectral peak land on T's tone".  A's own analyser
+//      measures what A actually played (ground truth, not assumed); B's measures what crossed + survived
+//       the skip.  Real wall clock, real AudioContexts (muted — the analyser taps pre-mute), real Peeroleum
+//        frames (sha256-verified before B's handler sees them).  This is a needAC Book: it can't run without
+//         two live contexts, so it rides the pre-flight AC gate (Credence needAC:1) — secured BEFORE the run.
+//  STABLE-SNAP DISCIPLINE: what plays + which tracks are skipped is deterministic (sorted track list, SEEDED
+//   skip schedule), and each observable is quantised to its determinism-bearing essence — a tone LABEL (not
+//    raw Hz), a heard/not-heard boolean per track (not a duration).  Fine timing (exact ms, sample counts)
+//     is never snapped.  So the fixture is stable run-to-run even though the clock underneath is real.
+//         beat 2  SETUP  — two SoundSystems (one per Pier); Lake_link the wire; decode 3 real tracks; seed
+//         beat 3  BOUNCE — dribble A→B in real time; B skips its seeded set; sample both analysers @50ms
+//         beat 4  SETTLE — let the last scheduled buffers finish on B's timeline
+//         beat 5  witness — two_contexts / crossed / heard / matched / skip_observed
+MusuBounce(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuBounce_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// MusuBounce_drive — needs real Web Audio (two live contexts) AND the Peeroleum spine.  Skips cleanly where
+//  either is missing (jsdom / headless).  Per-beat dispatch off step_n (req-local did_step), Musu family style.
+async MusuBounce_drive(w, req) {
+    if (typeof AudioContext === 'undefined' || typeof this.Lake_link !== 'function' || typeof this.Peeroleum_send !== 'function') {
+        if (!w.oa({skipped: 'no_audio'})) w.i({skipped: 'no_audio'})
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuBounce_setup(w)
+        if (n === 3) await this.MusuBounce_bounce(w)
+        if (n === 4) w.i({reached: 'step_4'})
+        if (n === 5) this.MusuBounce_witness(w)
+    }
+    await this.Musu_float(w)
+
+},
+// MusuBounce_setup — beat 2: stand up the two independent live contexts (NOT the shared Musu_gat singleton —
+//  that one cache is the only thing that fights one-per-Pier), the real loopback wire (Lake_link, as MusuPier),
+//   the real tracks (discovered via the Wormhole nav, decoded, capped short), the SEEDED skip schedule, and
+//    B's receive handler.  B receives every chunk (integrity-checked) but only PLAYS the tracks it didn't skip.
+async MusuBounce_setup(w) {
+    w.i({reached: "step_2"})
+    let gatA = new SoundSystem({})
+    let gatB = new SoundSystem({})
+    await gatA.init()
+    await gatB.init()
+    if (!gatA.AC_ready || !gatB.AC_ready) {
+        if (!w.oa({skipped: 'no_audio'})) w.i({skipped: 'no_audio'})
+        return
+    }
+    w.c.gatA = gatA
+    w.c.gatB = gatB
+    let link = await this.Lake_link(w, 'DJ', 'Crowd')
+    w.c.tx = link[0]
+    w.c.rx = link[1]
+    this.Peeroleum_arm_whittle(w)
+    link[1].i({ Ud: 1, pubkey: 'DJ' })
+    link[0].i({ Ud: 1, pubkey: 'Crowd' })
+    // ground on REAL music discovered by walking the Wormhole nav (phase 1): first 3 tracks, ~1s each.
+    this.Musu_seed(20260702)
+    let nav = this.Crate_nav()
+    let recs = []
+    if (nav) {
+        let paths = await this.Crate_nav_paths(nav, 'testsounds')
+        let CAP = 20
+        let k = 0
+        while (k < paths.length && recs.length < 3) {
+            let p = await this.Crate_nav_payload(nav, 'testsounds', paths[k])
+            if (p && p.chunks && p.chunks.length >= 4) {
+                recs.push({ chunks: p.chunks.slice(0, CAP), title: p.title })
+            }
+            k = k + 1
+        }
+    }
+    w.c.records = recs
+    // seeded random skip schedule — reproducible (→ a stable snap) yet unpredictable, guaranteed to skip
+    //  SOME but not ALL (so both `matched` and `skip_observed` are assertable).
+    let skip = {}
+    let ti = 0
+    while (ti < recs.length) {
+        if (this.prandle(5) < 2) skip[ti] = 1
+        ti = ti + 1
+    }
+    if (Object.keys(skip).length === 0 && recs.length >= 2) skip[1] = 1
+    if (Object.keys(skip).length === recs.length && recs.length >= 1) {
+        skip = {}
+        skip[Math.min(1, recs.length - 1)] = 1
+    }
+    w.c.skip = skip
+    // B's receive handler: every chunk arrives integrity-checked (req_unemit verified body_hash first); B
+    //  ACKs it (the dribble pacing reads this) but only SCHEDULES the tracks it didn't skip onto its own
+    //   live context — a skipped track leaves a real hole in B's sound.
+    this.Peeroleum_on(w, 'bouncechunk', (cw, pier, frame) => {
+        if (pier !== w.c.rx) return true
+        w.c.acked = (w.c.acked || 0) + 1
+        w.c.crossed = (w.c.crossed || 0) + 1
+        let track = +frame.header.track
+        w.c.curtrack = track
+        if (w.c.skip && w.c.skip[track]) return true
+        let audB = w.c.audB
+        if (!audB || !w.c.gatB || !w.c.gatB.AC) return true
+        let pcm = this.Musu_bytes_pcm(frame.buffer)
+        let bnow = w.c.gatB.AC.currentTime
+        let at = Math.max(w.c.bend || bnow, bnow)
+        w.c.bend = audB.schedule(audB.pcm_buffer(pcm, 48000), at, 1)
+        return true
+    })
+
+},
+// MusuBounce_bounce — beat 3: run the real-time bounce, held by an expecting() ttlilt so Story snaps only
+//  once it lands (a few seconds of wall clock, well under the budget).
+async MusuBounce_bounce(w) {
+    w.i({reached: "step_3"})
+    if (!w.c.gatA || !w.c.gatB || !w.c.records || !w.c.records.length) return
+    await this.expecting(w, 'bounce', 25, async () => {
+        await this.Musu_bounce_run(w)
+    })
+
+},
+// Musu_bounce_run — the two-context real-time pump.  A schedules each chunk onto ITS live context (so A's
+//  analyser measures the true tone A played) AND dribbles the bytes over the wire (ack-gated, stay ≤7 ahead);
+//   B's handler schedules the un-skipped ones onto ITS context.  Every ~50ms both analysers are sampled, the
+//    spectral peak quantised to a known tone, and tallied per track (A) / per tone (B).  A skipped track's
+//     tone never accrues at B → the skip is visible in the recorded sound.
+async Musu_bounce_run(w) {
+    let gatA = w.c.gatA
+    let gatB = w.c.gatB
+    let SR = 48000
+    let audA = gatA.new_audiolet()
+    audA.tap(8192)
+    audA.mute()
+    let audB = gatB.new_audiolet()
+    audB.tap(8192)
+    audB.mute()
+    w.c.audA = audA
+    w.c.audB = audB
+    let anA = audA.analyser
+    let anB = audB.analyser
+    let tones = this.Musu_test_tones()
+    // A's flat send plan: every chunk tagged with its track index.
+    let plan = []
+    let ti = 0
+    for (const rec of w.c.records) {
+        for (const pcm of rec.chunks) plan.push({ track: ti, pcm: pcm })
+        ti = ti + 1
+    }
+    let aend = gatA.AC.currentTime
+    w.c.bend = gatB.AC.currentTime
+    let aTrack = {}
+    let bTones = {}
+    let sent = 0
+    let STAY = 7
+    let guard = 0
+    let cap = plan.length * 2 + 200
+    while (guard < cap) {
+        guard = guard + 1
+        if (sent < plan.length && (sent - (w.c.acked || 0)) <= STAY) {
+            let item = plan[sent]
+            let aat = Math.max(aend, gatA.AC.currentTime)
+            aend = audA.schedule(audA.pcm_buffer(item.pcm, SR), aat, 1)
+            await this.Musu_bounce_send(w, w.c.tx, 'DJ', 'Crowd', item.track, item.pcm)
+            w.c.acur = item.track
+            sent = sent + 1
+        }
+        let now = gatA.AC.currentTime
+        if (sent >= plan.length && now >= aend - 0.03 && now >= (w.c.bend || now) - 0.03) break
+        await new Promise(r => setTimeout(r, 50))
+        let ta = this.Musu_tone_of(this.Musu_peak(anA, SR), tones)
+        if (ta) {
+            let m = aTrack[w.c.acur || 0] || {}
+            m[ta] = (m[ta] || 0) + 1
+            aTrack[w.c.acur || 0] = m
+        }
+        let tb = this.Musu_tone_of(this.Musu_peak(anB, SR), tones)
+        if (tb) bTones[tb] = (bTones[tb] || 0) + 1
+    }
+    audA.close()
+    audB.close()
+    // per-track result: the tone A actually played (measured), whether B skipped it, whether B heard that tone.
+    let played = 0
+    let heard = 0
+    let silent_skips = 0
+    let ri = 0
+    for (const rec of w.c.records) {
+        let atone = this.Musu_argmax_key(aTrack[ri] || {})
+        let skipped = (w.c.skip && w.c.skip[ri]) ? 1 : 0
+        let bheard = (atone && bTones[atone] && bTones[atone] >= 2) ? 1 : 0
+        let row = w.i({ track: ri, tone: atone })
+        row.c.up = w
+        if (skipped) row.sc.skipped = 1
+        if (bheard) row.sc.heard = 1
+        row.bump()
+        if (!skipped) {
+            played = played + 1
+            if (bheard) heard = heard + 1
+        }
+        if (skipped && !bheard) silent_skips = silent_skips + 1
+        ri = ri + 1
+    }
+    let rep = w.oai({ report: 1 })
+    rep.c.up = w
+    rep.sc.crossed = w.c.crossed || 0
+    rep.sc.played = played
+    rep.sc.heard = heard
+    rep.sc.skipped = Object.keys(w.c.skip || {}).length
+    rep.sc.silent_skips = silent_skips
+    rep.bump()
+
+},
+// Musu_bounce_send — send ONE real audio chunk (a track's PCM) over Pier A: Float32→bytes, digest, next seq,
+//  emit the %bouncechunk frame (binary on frame.buffer, track id in the header).  Mirrors MusuPier_send_audio.
+async Musu_bounce_send(w, tx, from, to, track, pcm) {
+    let bytes = this.Musu_chunk_bytes(pcm)
+    let bh = await this.Peeroleum_body_digest(bytes)
+    let seq = this.Pier_next_seq(tx)
+    this.Peeroleum_send(w, { header: { type: 'bouncechunk', from: from, to: to, track: track, seq: seq, body_hash: bh, body_len: bytes.length }, buffer: bytes })
+    return seq
+
+},
+// Musu_chunk_bytes — a chunk's Float32 samples as raw bytes (the payload that crosses).  Same as MusuPier's.
+Musu_chunk_bytes(pcm) {
+    let bytes = new Uint8Array(pcm.length * 4)
+    bytes.set(new Uint8Array(pcm.buffer))
+    return bytes
+
+},
+// Musu_bytes_pcm — the inverse, on the receive side: raw bytes back to a Float32Array (aligned copy, so the
+//  Float32 view is safe regardless of the incoming byteOffset).
+Musu_bytes_pcm(bytes) {
+    let u8 = new Uint8Array(bytes.length)
+    u8.set(bytes)
+    return new Float32Array(u8.buffer)
+
+},
+// Musu_peak — the dominant frequency the analyser is hearing right now: argmax over the FFT magnitude bins
+//  (skip the DC bin), mapped to Hz.  Returns 0 for silence (no bin above the dB floor).
+Musu_peak(analyser, SR) {
+    let n = analyser.frequencyBinCount
+    let f = new Float32Array(n)
+    analyser.getFloatFrequencyData(f)
+    let best = 0
+    let bestv = -1e9
+    let i = 1
+    while (i < n) {
+        if (f[i] > bestv) {
+            bestv = f[i]
+            best = i
+        }
+        i = i + 1
+    }
+    if (bestv < -100) return 0
+    return best * SR / analyser.fftSize
+
+},
+// Musu_tone_of — quantise a measured frequency to the nearest KNOWN test tone (within ~30Hz), returning the
+//  rounded tone as a stable integer label (0 = no tone / silence / off-grid).  This is what makes the snap
+//   stable: analyser jitter within a tone's neighbourhood collapses to the one label.
+Musu_tone_of(freq, tones) {
+    if (!freq) return 0
+    let best = 0
+    let bestd = 1e9
+    for (const t of tones) {
+        let d = t > freq ? t - freq : freq - t
+        if (d < bestd) {
+            bestd = d
+            best = t
+        }
+    }
+    return bestd <= 30 ? Math.round(best) : 0
+
+},
+// Musu_argmax_key — the key of a {tone: count} tally with the highest count (as a number), or 0.
+Musu_argmax_key(m) {
+    let best = 0
+    let bestv = 0
+    for (const k of Object.keys(m)) {
+        if (m[k] > bestv) {
+            bestv = m[k]
+            best = +k
+        }
+    }
+    return best
+
+},
+// MusuBounce_witness — the claims, EARNED on real hardware.  Not satisfiable by synth, arithmetic, or one
+//  context: two live AudioContexts crossed real audio and one HEARD what the other played, minus the skips.
+MusuBounce_witness(w) {
+    let rep = w.o({ report: 1 })[0]
+    if (!rep) return
+    let crossed = +(rep.sc.crossed ?? 0)
+    let played = +(rep.sc.played ?? 0)
+    let heard = +(rep.sc.heard ?? 0)
+    let skipped = +(rep.sc.skipped ?? 0)
+    let silent = +(rep.sc.silent_skips ?? 0)
+    let two = w.c.gatA && w.c.gatB && w.c.gatA.AC && w.c.gatB.AC
+    // two_contexts: two INDEPENDENT live AudioContexts stood up, one per Pier (the thing nothing else does).
+    if (two && !(w.oa({witnessed: "two_contexts"}))) w.i({witnessed: "two_contexts"})
+    // crossed: real audio-chunk bytes crossed the real transport, each sha256-verified before B ever saw it.
+    if (crossed >= 3 && !(w.oa({witnessed: "crossed"}))) w.i({witnessed: "crossed"})
+    // heard: B's OWN analyser read back a played track's tone -- real sound out of the second Pier.
+    if (heard >= 1 && !(w.oa({witnessed: "heard"}))) w.i({witnessed: "heard"})
+    // matched: EVERY track B didn't skip was heard at B -- live end-to-end delivery, not a byte tautology.
+    if (played >= 1 && heard >= played && !(w.oa({witnessed: "matched"}))) w.i({witnessed: "matched"})
+    // skip_observed: a track B skipped is ABSENT from B's recorded sound -- the random skip is real, audible.
+    if (skipped >= 1 && silent >= 1 && !(w.oa({witnessed: "skip_observed"}))) w.i({witnessed: "skip_observed"})
 },
 //#endregion
 

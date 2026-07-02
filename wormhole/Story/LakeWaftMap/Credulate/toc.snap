@@ -1,7 +1,7 @@
-Credulate,of_Book:LakeTiles
+Credulate,of_Book:LakeWaftMap
   GhostInclude:Ghost_N_Peeroleum,dige:054dff5c07f2987b
   GhostInclude:Ghost_N_Reliable,dige:ed4fd88c7e2b904a
-  GhostInclude:Ghost_N_Tribunal,dige:054dff5c07f2987b
+  GhostInclude:Ghost_N_Tribunal,dige:df09d03ad06f3d71
   GhostInclude:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
   GhostInclude:Ghost_Story_Peregrination,dige:b33cab6322ef6320
   GhostInclude:Ghost_M_Radiola,dige:c38a79b40dc8f9e6

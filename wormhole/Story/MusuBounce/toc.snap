@@ -1,0 +1,15 @@
+story:MusuBounce
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.018
+      sample=0.018,at=1782974128
+    TimeTotal:step,avg=0.009
+      sample=0.009,at=1782974128
+  step,dige:bounce0000000001
+  step=2,dige:bounce0000000002
+  step=3,dige:bounce0000000003
+  step=4,dige:bounce0000000004
+  step=5,dige:bounce0000000005

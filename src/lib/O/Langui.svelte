@@ -553,19 +553,20 @@
     let ran_current = $derived(!!ran_dige && ran_dige === (_compile?.sc?.dige ?? ''))
 
     // ── runner phase, as the editor can see it ─────────────────────────────────
-    //   ''        — no runner live, no verdict: leg hidden.
+    //   ''        — NO VERDICT for this dock, ever: leg hidden.  A live runner alone is NOT
+    //               a phase — it used to read 'working' on every dock a runner never ran,
+    //               a permanent "awaiting src / running" on everything; the chip only earns
+    //               its place on a dock that is actually in the run loop (has a verdict).
     //   'good'    — current verdict, green.
     //   'bad'     — current verdict, red.
-    //   'working' — a runner is live but hasn't confirmed the compiled dige yet.  The
-    //               editor can't yet split "awaiting src" from "running" — that needs a
-    //               runner progress frame (run_phase over the channel); folded into one
-    //               working phase until then.
-    //   'stale'   — we hold an OLD verdict and nobody's currently running the new dige.
+    //   'working' — we hold an OLD verdict and a runner is live: plausibly re-running /
+    //               awaiting the new src.  (Splitting "awaiting src" from "running" needs a
+    //               runner progress frame — run_phase over the channel — folded until then.)
+    //   'stale'   — we hold an OLD verdict and no runner is on it.
     let runner_phase = $derived.by(() => {
         if (run_result && ran_current) return ran_ok ? 'good' : 'bad'
-        if (!!live_runners.length && !!_compile?.sc?.dige && !ran_current) return 'working'
-        if (run_result) return 'stale'
-        return live_runners.length ? 'working' : ''
+        if (run_result) return live_runners.length ? 'working' : 'stale'
+        return ''
     })
 
 

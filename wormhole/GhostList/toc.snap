@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1782976826950
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1782995677261
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -19,6 +19,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     sub:Ghost/test,name:test
     sub:Ghost/M,name:M
     Doc:Ghost/wormhole-Ghost,name:wormhole-Ghost,noticed_at=1782715172769
+    sub:Ghost/S,name:S
   open_dir:Ghost/N
   group:Ghost/N,dir:Ghost/N
     Doc:Ghost/N/Peeroleum.g,name:Peeroleum,noticed_at=1781771905413
@@ -29,6 +30,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
   group:Ghost/Story,dir:Ghost/Story
     Doc:Ghost/Story/Peregrination.g,name:Peregrination,noticed_at=1781771909101
     Doc:Ghost/Story/Musuation.g,name:Musuation,noticed_at=1782375234557
+    Doc:Ghost/Story/Swarmation.g,name:Swarmation,noticed_at=1782995677261
   open_dir:src/lib/O/spec
   group:src/lib/O/spec,dir:src/lib/O/spec
     Doc:src/lib/O/spec/ClusterTrust_handover.md,name:ClusterTrust_handover.md,noticed_at=1782180409139

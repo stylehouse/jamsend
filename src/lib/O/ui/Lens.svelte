@@ -8,12 +8,11 @@
     //   panel double-shows):
     //     • Otro mounts kind="Panel" — the global/fullscreen modals (e.g. IdHatch), fixed to the
     //       viewport bottom, accreting upward.
-    //     • Liesui mounts kind="Brink" — the cluster faces (Rundar/Relay/Sound…) of %Aim, FLOATING
-    //       inside the Lies backend box (.ls-ui, position:relative) over a zero-height sticky anchor, so
-    //       it reserves no flow space yet stays pinned to a corner of the scrollport as the list scrolls
-    //       — and is BOUND by .ls-ui, so it can never bleed onto the Langui editor below (nor float over
-    //       it: when Lies scrolls out of view the HUD leaves with it).  The Vexpandy COLLAPSES it to a
-    //       one-row MiniBrink summary; a side button perches it left↔right.
+    //     • Liesui mounts kind="Brink" — the cluster faces (Rundar/Relay/Sound…) of %Aim, a flex child
+    //       of Liesui's sticky base-shell (.ls-baseshell), which owns the pinned-at-the-foot-of-.ls-ui
+    //       positioning — BOUND by .ls-ui, so it can never bleed onto the Langui editor below (nor float
+    //       over it: when Lies scrolls out of view the HUD leaves with it).  The Vexpandy COLLAPSES it
+    //       to a one-row MiniBrink summary.
     //   Re-suggesting the same (kind, of_Funkcion) is the change-notice (oai merge + bump re-renders
     //   a face without tearing it down); altitude orders the stack.
     import type { House } from "$lib/O/Housing.svelte"

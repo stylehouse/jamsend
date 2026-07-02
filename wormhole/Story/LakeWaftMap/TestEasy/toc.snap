@@ -1,0 +1,22 @@
+Waft:Story/LakeWaftMap/TestEasy
+  What:openness
+    What:shaft
+      Doc:Ghost/test/Story/Lake/WaftMapShaft.g
+      Point,method:Shaft
+    What:bounce
+      Doc:Ghost/test/Story/Lake/WaftMapBounce.g
+      Point,method:Bounce
+  What:spilling
+    What:spill
+      Doc:Ghost/test/Story/Lake/WaftMapSpill.g
+      Point,method:Spill
+    What:crumb
+      Doc:Ghost/test/Story/Lake/WaftMapCrumb.g
+      Point,method:Crumb
+  What:packing
+    What:seams
+      Doc:Ghost/test/Story/Lake/WaftMapSeam.g
+      Point,method:Seam
+    What:shared
+      Doc:Ghost/test/Story/Lake/LakeAntecedents.g
+      Point,method:Peeroleum

@@ -17,10 +17,8 @@
 //   The corr embeds our prepub, so a role-broadcast 'wormhole_reply' (the frozen editor spine has no
 //    per-pub to:<pub> yet) only resolves on the runner that asked.
 //
-//  Bytes: bin/read_range bytes ride base64 in the reply JSON for now — correct, but a 33% tax the
-//   Cluster_spec rejects for file-sized payloads.  TODO: move bytes to the binary frame / offer_stream
-//    path (the spine already carries frame.buffer off-snap).  read_range keeps the transfer to the
-//     requested WINDOW regardless, so a 1.4GB asset never crosses whole.
+//  Bytes: bin/read_range replies are binary frames ([header JSON]\n[raw buffer]) — no base64 tax.
+//   read_range keeps the transfer to the requested WINDOW regardless, so a 1.4GB asset never crosses whole.
 
 import type { TheC } from '$lib/data/Stuff.svelte'
 import type { GrantAtom } from '$lib/O/Funk/Grant'
@@ -110,29 +108,13 @@ export class RemoteWormholeNav {
     }
 }
 
-// the bytes off a reply: a binary frame carries them raw on frame.buffer (a Uint8Array view into the
-//  decoded [header]\n[buffer] — copy to an exact own ArrayBuffer); the degenerate path carries base64.
+// the bytes off a binary reply: frame.buffer is a Uint8Array view into the decoded [header]\n[buffer]
+//  — copy to an exact own ArrayBuffer so callers own the memory.
 function frame_bytes(r: any): ArrayBuffer | null {
     if (r.buffer != null) {
         const u8 = r.buffer instanceof Uint8Array ? r.buffer : new Uint8Array(r.buffer)
         return u8.slice().buffer        // .slice() copies the exact window off the larger frame buffer
     }
-    if (r.bytes_b64 != null) return b64_to_buf(r.bytes_b64)
     return null
 }
 
-// ── base64 (chunked — a spread over a multi-MB Uint8Array blows the call stack) ───────────────
-const B64_CHUNK = 0x8000
-export function buf_to_b64(buf: ArrayBuffer): string {
-    const bytes = new Uint8Array(buf)
-    let s = ''
-    for (let i = 0; i < bytes.length; i += B64_CHUNK)
-        s += String.fromCharCode(...bytes.subarray(i, i + B64_CHUNK))
-    return btoa(s)
-}
-export function b64_to_buf(b64: string): ArrayBuffer {
-    const s = atob(b64 ?? '')
-    const bytes = new Uint8Array(s.length)
-    for (let i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i)
-    return bytes.buffer
-}

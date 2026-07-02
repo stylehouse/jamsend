@@ -1,0 +1,6 @@
+Snap:H
+  H:WaftMapPacked,Run
+    A:WaftMapPacked
+      self,round	{"mung":["age"]}
+      w:WaftMapPacked
+        self,round	{"mung":["age"]}

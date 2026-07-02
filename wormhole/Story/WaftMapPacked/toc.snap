@@ -1,0 +1,17 @@
+story:WaftMapPacked
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.004
+      sample=0.003,at=1782987727
+      sample=0.004,at=1782987735
+      sample=0.007,at=1782987886
+      sample=0.003,at=1782988329
+    TimeTotal:step,avg=0.004
+      sample=0.003,at=1782987727
+      sample=0.004,at=1782987735
+      sample=0.007,at=1782987886
+      sample=0.003,at=1782988329
+  step,dige:edb08ebe85892af6

@@ -61,6 +61,9 @@
         'Ghost/M/Mixer.g',              // cellular mixer — beat detection, beatmatch, multi-cell sum, crossfade (stage 6)
         'Ghost/M/Mesh.g',               // the sync that sees itself — replicas/edges, cheapest-route, multicast stretch (8+9)
         'Ghost/Story/Musuation.g',      // the Musu* tests — MusuStaple; more pile on here
+
+        'Ghost/S/Swarm.g',              // swarm spine — identity/page/pier + the Idzeug invite (Swarm_spec.md)
+        'Ghost/Story/Swarmation.g',     // the Swarm* tests — SwarmStaple; more pile on here
     ]
 
     onMount(async () => {
@@ -197,6 +200,7 @@
             const role = H.Lies_role(w)
             if (role !== 'editor' && role !== 'runner') return        // bare: no channel
             if (w.c.channel_up) return                                 // once
+            // undefined here is usually a miscompiled gen/N/Tribunal.go that DROPPED Socket_real (a bad editor ghost-compile does), NOT a timing race — grep the .go for it + recompile headless via LocalGen before theorising.
             if (typeof (H as any).Socket_real !== 'function') return   // transport ghosts absent
             if (typeof WebSocket === 'undefined') return               // not a browser (tests/node)
             const peer = role === 'editor' ? 'runner' : 'editor'

@@ -151,6 +151,77 @@ Clicks work (it's an ordinary inline Waft body, not fighting the z-40000 dock). 
 
 Type-clean; :9091-unverified (open `Waft:Keep` in an editor Run — the map is its body).
 
+## Plank v2 — openness (the current build, 2026-07-02)
+
+The word-cloud abdomen (vertical-rl leaf words) is gone — **no more vertical text**. The map is now
+ the **Waft\*\* path and breadcrumb UI**, and its grouping brain moved out of the component into
+  **`Lies_waftmap_model(w, {budget, force})`** (LiesFunk, pure read) so `Book:LakeWaftMap` can watch
+   the same model group things in its snaps and we iterate the algorithm by reading them.
+
+- **Burst rows** — the interesting Wafts: the **foreground** (the active Interest is the more
+  bursty Waft), any **cursor-touched** Waft (its `req:Waftica` carrier holds a `%Lango,Cursor` —
+   the global cursor feed `Lies_resolve_wants` mints on every land is the touch history; the
+    `Waft:Ting` tap-history is a later, additive source), and anything the UI **forces** (pinned,
+     or scrolled-to — an IntersectionObserver on the `[data-waft-col]` columns un-minimises a Waft
+      when you scroll to it).
+- **The cluster, kept simple** — a burst Waft is its **big name** with **columns of Docs**
+  beside it on a faint spine: 3-ish per column, 4 when it packs better (4→4, 7→4+3, 8→4+4 —
+   `colh_of`). Nice horizontal titles, never vertical text. The What\*\* breadcrumb was
+    built and **ripped back out** (owner: "this is just a map"); so was the ∨ close button
+     (a map gets no delete buttons). Chips are **width units** now — a cluster costs its
+      column count, not its Doc count — so one generous fg no longer demotes every touched
+       neighbour into a countless calm row (the "Ality wouldn't wake" bug).
+- **Openingness (`enth` 0..3)** — *how many Docs are listed from where you are*: 0 stacked ·
+  1 a calm single row (title + count) · 2 the 3-window from the cursor · 3 all of them (up to
+   ~30; past that the window + edges). Auto: fg→3, touched|forced→2, else 0 — **hot (an active
+    Interest) is NOT in the ladder**: every open plain Waft's Interest goes `presence:active`,
+     so it separates nothing (styling only; a lesson the Book's snap taught). The per-cluster
+      **dial** (`◌` auto → `○◔◑●`) hand-tunes it, persisted through the Keep layout service
+       (`'waft'` scope, key `enthusiasm`) — a tuned Waft is the user's word: never
+        budget-demoted, never auto-promoted. NB `Lies_keep_layout_set` needs the Keep Waft to
+         exist (mint `{Waft:'Keep'},{equip:'Keep'}` first in a Run — LakeKeep's move), and the
+          dial must go through **`e_Lies_waftmap_tune`** (an Atime elvis + re-think) — a direct
+           UItime Keep write never re-flushes past the map's flush-gated read, so it looks dead.
+- **The cursor, exactly** — glowing brackets `⟨around⟩` the cursor Doc; the crumb-tail `%What`
+  carries the cursor *colour* (no brackets on the breadcrumb) when the cursor sits on the What
+   itself. Brackets follow the *live* Spotlight; a remembered (carrier-Lango) cursor lights
+    its Doc without brackets.
+- **Glowing edges** — where a capped list continues past its window, that edge glows with the
+  count; **each click reveals 3 more** that way (fold resets). Clunky opening is fine:
+   `@formkit/auto-animate` was added, tried on the shelf, and pulled — it re-animated on every
+    regroup and made the map feel unfixed (the dep is still installed, unused). What actually
+     calmed the map: the model is read **flush-gated** (`H.ave.vers`, once per beliefs cycle),
+      **settled** (inside `H.clear()` — a raw `w.version` derive caught transacting
+       replace()-empty state every trickle think; see `reactivity_docs.md`), and
+        **fingerprint-guarded** (the template's state reassigns only on a real regroup).
+- **Prominence** — a **board** (a Waft carrying `Funkcion:Storying|StoryTimes` cells — the
+  Credence) rides at least calm (enth ≥ 1), never stacked, with its own laurel tint. Waft
+   titles take the last *lettered* path segment (`Ting/2026-07-02/160434` → "Ting").
+- **Stacks of two** — the enth-0 rest groups two-by-two, minimised. Click one to un-minimise
+  (pin). A **touched** Waft never stacks even when budget-demoted — it holds a calm row.
+- **The crumb harvest** (model + Book dump; the UI's breadcrumb is per-cluster now) — each
+  touched Waft's cursor Doc in discovery order (carrier Lango `seq`), the foreground's first.
+- **The mount** — the Plank flows in the **vertical gap at the bottom of Liesui**
+  (`.ls-plank-slot`, under all the Waft columns), no longer floating in the baseshell — that
+   sticky row is the Brink's alone now.
+- **Seams** — a chip budget; over it, non-fg burst rows demote bottom-up (light off, count on) and
+  the shell shows the strain (`⚠ seams`, an amber border) instead of overflowing. We *know* when
+   the Plank is bursting.
+- **Search bar** — find a file (model rows + the GhostList index); a hit either *lands*
+  (`Lies_ghost_pick`: jump if open, else today's Aside) or **implants** (`e_Lies_waftmap_implant`:
+   a fresh moment `%What` + `%Doc` planted into the Waft under work, cursor follows). File-name
+    match for now; text-content search is the open extension.
+- **NaviCado reactivation** — every cursor move re-lights the shaft (the model reads `%Spotlight`
+  + the carriers), so moving around visibly reactivates the map.
+
+**The gate: `Book:LakeWaftMap`** (Credence, the Lake shelf). Own `w:LakeWaftMap` world (a snap
+ boundary) whose per-beat worker re-dumps the model — fingerprint-guarded so it quiesces — as
+  `WaftMapGate/plank` particles (`row`/`whats,cursor`/`above`/`lit,cursor,x`/`below`/`stack`/
+   `crumb`/`seams`). Fixtures:
+   `Waft:Story/LakeWaftMap/TestEasy` + `TestDeep` (sharing `LakeAntecedents.g`, the ×2 Doc) +
+    seeded calm Wafts; Preps play `Lies_test_cursor`, `Lang_foreground`, a seeded touch Lango,
+     and a close. The per-step snap diff shows the grouping evolve — the iterate loop.
+
 ### Next (owner's vision, not yet built)
 - **The stem-join** — render the shared Wafts `Waft,Waft(ghosts…)Waft,Waft` StemHive-style (one Waft
   left, two right) instead of the flat region-capsule list. StemHive clusters by name-token; a Waft-set

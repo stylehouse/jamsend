@@ -29,7 +29,7 @@ import { FUNK_KINDS } from "$lib/O/Funk/kinds"
 import { storying_run } from "$lib/O/Funk/Storying.svelte"
 import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte"
 import { mint_grant, verify_grant, grant_to_C, grant_of_C, type GrantAtom } from "$lib/O/Funk/Grant"
-import { RemoteWormholeNav, buf_to_b64 } from "$lib/O/RemoteWormholeNav.svelte"
+import { RemoteWormholeNav } from "$lib/O/RemoteWormholeNav.svelte"
 import { onMount } from "svelte"
 
 let { M } = $props()
@@ -533,7 +533,7 @@ await M.eatfunc({
                : H.Peeroleum_send_consumer(w, 'wormhole_reply', { corr: frame?.corr, ...body })   // unaddressed fallback
         const replyBIN = (meta: Record<string, unknown>, buffer: ArrayBuffer) =>
             to ? H.Lies_send_binary_to(w, to, 'wormhole_reply', { corr: frame?.corr, ...meta }, buffer)
-               : replyJSON({ ...meta, bytes_b64: buf_to_b64(buffer) })      // no grantee pub → degenerate b64
+               : replyJSON({ error: 'grant has no for — cannot address binary reply' })
         try {
             const idento = H.Lies_cluster_idento(w)
             if (!idento) return void replyJSON({ error: 'editor has no cluster key' })
@@ -783,6 +783,244 @@ await M.eatfunc({
         }
         await H.Lies_ensure_waftica(w, gl)   // the GhostList Waft's carrier walks + runs this dirlist
         return funk
+    },
+
+//#endregion
+//#region WaftMap — the Plank grouping model (pure read; DocWaftMap + Book:LakeWaftMap share it)
+//
+//  The corpus grouped by ATTENTION.  Every Known|Loaded Waft becomes either a BURST row — the
+//   interesting ones: the foreground, any cursor-TOUCHED Waft (its carrier holds a %Lango,Cursor,
+//    the global cursor feed every resolved want mints), or one the UI forces (scrolled-to |
+//     pinned) — showing the cursor's shaft of light: the nearest ≤3 Docs as titled chips, the
+//      rest one +N tail; or it packs two-by-two into a STACK of non-interesting Wafts.
+//  Above the rows rides the crumb HARVEST — each touched Waft's cursor Doc in discovery order
+//   (carrier Lango seq), the foreground's first: the Waft** path and its breadcrumbs.
+//  A chip BUDGET decides bursting-at-the-seams: over budget, non-fg burst rows demote (light
+//   off, count on) bottom-up until it fits; still over ⇒ the seams flag stands and the UI shows
+//    the strain.  All shallow reads (no Point descent) — $derived-able off the version bumps the
+//     model touches internally, and deterministic inside a Story Run (no Keep, no clock).
+
+    // ── Lies_waftmap_title — a Doc|Waft path as a nice horizontal title ──────────────────────
+    //   The last LETTERED segment, not the bare tail — Ting/2026-07-02/160434 is "Ting", not
+    //    "160434" (the numbery date|time bits are the address, not the name — InterestStrip's
+    //     tail_name rule).
+    Lies_waftmap_title(path: string): string {
+        const segs = (path ?? '').split('/').filter(Boolean)
+        let base = segs[segs.length - 1] ?? '·'
+        for (let i = segs.length - 1; i >= 0; i--) if (/[a-z]/i.test(segs[i])) { base = segs[i]; break }
+        return base.replace(/\.[A-Za-z0-9]+$/, '').replace(/[_\-]+/g, ' ')
+    },
+
+    // ── Lies_waftmap_model — the one grouping pass ───────────────────────────────────────────
+    //   opts.force — Waft paths the UI holds open (scroll-visible | pinned): burst regardless.
+    //   opts.budget — the chip budget the Plank can hold before it is bursting at the seams.
+    Lies_waftmap_model(w: TheC, opts?: { budget?: number, force?: string[] }) {
+        const H      = this as House
+        const budget = opts?.budget ?? 18
+        const force  = new Set(opts?.force ?? [])
+        void w.version
+
+        // Attention — Languinio Interests: the fg Waft + the hot set (ordering|styling only)
+        const ave       = (H as any).ave ?? H.top_House().ave
+        const languinio = ave?.ob({ Languinio: 1 })[0] as TheC | undefined
+        void languinio?.vers
+        const fg  = languinio?.ob({ ActiveInterest: 1 })[0]?.sc.waft as string | undefined
+        const hot = new Set<string>()
+        for (const it of (languinio?.ob({ Interest: 1 }) ?? []) as TheC[])
+            if (it.sc.presence === 'active' && it.sc.state !== 'gone' && it.sc.waft) hot.add(it.sc.waft as string)
+
+        // The live cursor (%Spotlight) + the per-Waft touch memory (carrier %Lango,Cursor)
+        const spot_src  = w.o({ examining: 1 })[0]?.o({ Spotlight: 1 })[0]?.sc.src as TheC | undefined
+        const spot_waft = spot_src ? H.waft_key_of(spot_src) as string | undefined : undefined
+        const funks     = w.o({ Funkcions: 1 })[0] as TheC | undefined
+        void funks?.version
+        const touch = new Map<string, { to: string | undefined, seq: number }>()
+        for (const carrier of (funks?.o({ req: 'Waftica' }) ?? []) as TheC[]) {
+            const cur = carrier.o({ Lango: 'Cursor' })[0] as TheC | undefined
+            if (cur) touch.set(carrier.sc.waft as string,
+                               { to: cur.sc.to as string | undefined, seq: (cur.sc.seq as number) ?? 0 })
+        }
+
+        // Known (the Keep ledger — editor only, empty in a Run) + Loaded
+        const known = new Map<string, number | undefined>()
+        const keep  = w.o({ Waft: 'Keep' })[0] as TheC | undefined
+        void keep?.version
+        for (const wt of (keep?.o({ WaftTimes: 1 }) ?? []) as TheC[])
+            if (wt.sc.of_Waft) known.set(wt.sc.of_Waft as string, wt.sc.accessed_at as number | undefined)
+        const live = new Map<string, TheC>()
+        for (const wf of w.o({ Waft: 1 }) as TheC[]) live.set(wf.sc.Waft as string, wf)
+
+        // Docs per drillable Waft (discovery order, deduped) + the cross-Waft share index
+        type MDoc = { path: string, title: string, cursor?: 1, shared?: number }
+        const docWafts = new Map<string, Set<string>>()
+        const waftDocs = new Map<string, MDoc[]>()
+        for (const [path, wf] of live) {
+            if (wf.sc.equip || wf.sc.takes) continue
+            void wf.version
+            const seen = new Set<string>(); const docs: MDoc[] = []
+            H.Lies_walk_docs(wf, (d: TheC) => {
+                const dp = d.sc.Doc as string | undefined
+                if (dp && !seen.has(dp)) {
+                    seen.add(dp)
+                    docs.push({ path: dp, title: H.Lies_waftmap_title(dp) })
+                    let s = docWafts.get(dp); if (!s) docWafts.set(dp, s = new Set()); s.add(path)
+                }
+                return false
+            })
+            waftDocs.set(path, docs)
+        }
+        const shared = new Map<string, Set<string>>()
+        for (const [dp, s] of docWafts) if (s.size >= 2) shared.set(dp, s)
+        for (const docs of waftDocs.values())
+            for (const d of docs) { const s = shared.get(d.path); if (s) d.shared = s.size }
+
+        // The cursor Doc of a Waft: the live Spotlight when it sits here, else the touch memory
+        //  (a Lango `to` that is a doc path — `to` equal to the waft key is a bare Waft land).
+        const cursor_of = (path: string): string | undefined => {
+            if (path === spot_waft && spot_src) {
+                const dp = H.Waft_src_doc_path(spot_src) as string | undefined
+                if (dp) return dp
+            }
+            const to = touch.get(path)?.to
+            return to && to !== path ? to : undefined
+        }
+
+        // Column chunking — Docs stack in columns of 3-ish; 4 when it packs better (4 → one
+        //  of 4, 7 → 4+3, 8 → 4+4, 12 → 4+4+4)
+        const colh_of = (n: number) => n > 3 && (n % 3 === 1 || n % 4 === 0) ? 4 : 3
+
+        // The per-Waft ENTHUSIASM tune — a hand dial persisted through the Keep's layout service
+        //  ('waft' scope, key 'enthusiasm', 0..3); undefined = auto.  A tuned row is the user's
+        //   word: never budget-demoted, never auto-promoted.
+        const tune_of = (path: string): number | undefined => {
+            const v = H.Lies_keep_layout_get?.(w, 'waft', path, 'enthusiasm')
+            return typeof v === 'number' ? Math.max(0, Math.min(3, v)) : undefined
+        }
+
+        // Rows — classify to an OPENINGNESS ladder (how many Docs are listed from where you
+        //  are), light the shaft, order by it.
+        //  enth 3 = every Doc up to CAP (the fg default; past CAP the window + grow-by-3 edges
+        //   take over) · 2 = the 3-window from the cursor (touched|forced) · 1 = a single calm
+        //    row, title + count · 0 = stackable.  burst = enth ≥ 2.
+        const CAP = 30
+        type MRow = { kind: 'waft', path: string, title: string, loaded: boolean,
+                      stance: 'doc' | 'fixture' | 'sink' | 'cold',
+                      fg: boolean, hot: boolean, touched: boolean, forced: boolean, tuned: boolean,
+                      board: boolean, enth: number, seq: number, burst: boolean,
+                      cursor: string | undefined, show_all: boolean, colh: number,
+                      docs: MDoc[], lo: number, hi: number, above: number, below: number }
+        type MStack = { kind: 'stack', wafts: { path: string, title: string, loaded: boolean }[] }
+        const paths = new Set<string>([...live.keys(), ...known.keys()])
+        const rows: MRow[] = [...paths].map(path => {
+            const wf     = live.get(path)
+            const stance: MRow['stance'] = !wf ? 'cold' : wf.sc.equip ? 'fixture' : wf.sc.takes ? 'sink' : 'doc'
+            const docs   = waftDocs.get(path) ?? []
+            const t      = touch.get(path)
+            const is_fg  = fg === path
+            const forced = force.has(path)
+            // hot (an active Interest) is NOT in the ladder — every open plain Waft's Interest
+            //  goes presence:active, so it separates nothing; it stays as styling only.
+            //  A BOARD (a Waft carrying Storying|StoryTimes cells — the Credence) rides at
+            //   least calm: the workbench dashboard never disappears into a stack.
+            const board  = !!wf && !!(wf.o({ Funkcion: 'StoryTimes' })[0] ?? wf.o({ Funkcion: 'Storying' })[0])
+            const tune   = tune_of(path)
+            const auto   = is_fg ? 3 : (t || forced) ? 2 : board ? 1 : 0
+            const enth   = tune ?? auto
+            const cpath  = cursor_of(path)
+            // the shaft of light — a 3-Doc window around the cursor; soft start = the first 3
+            const ci = cpath ? docs.findIndex(d => d.path === cpath) : -1
+            const lo = ci <= 0 ? 0 : Math.min(ci - 1, Math.max(0, docs.length - 3))
+            const hi = Math.min(docs.length, lo + 3)
+            if (ci >= 0) docs[ci].cursor = 1
+            const show_all = enth >= 3 && docs.length <= CAP
+            return { kind: 'waft', path, title: H.Lies_waftmap_title(path), loaded: !!wf, stance,
+                     fg: is_fg, hot: hot.has(path), touched: !!t, forced, tuned: tune !== undefined,
+                     board, enth, seq: t?.seq ?? 0, burst: enth >= 2, cursor: cpath,
+                     show_all, colh: colh_of(docs.length),
+                     docs, lo, hi,
+                     above: show_all ? 0 : lo, below: show_all ? 0 : docs.length - hi }
+        })
+        rows.sort((a, b) =>
+            (+b.fg - +a.fg) || (+b.burst - +a.burst) || (b.enth - a.enth) || (b.seq - a.seq)
+            || (+b.hot - +a.hot)
+            || (+(b.docs.length > 0) - +(a.docs.length > 0)) || a.path.localeCompare(b.path))
+
+        // The seams — chips over budget demote burst rows bottom-up to calm (enth 1); never
+        //  the fg, never a forced or hand-tuned row.  A chip is a WIDTH unit now that Docs
+        //   ride in columns: title 1 + a chip per column + the grow edge — a grand show-all
+        //    cluster costs its column count, not its Doc count (12 Docs = 3 cols), so one
+        //     generous fg no longer demotes every touched neighbour into darkness.
+        const chips_of = (r: MRow) => {
+            if (!r.burst) return 1
+            const shown = r.show_all ? r.docs.length : (r.hi - r.lo)
+            return 1 + Math.ceil(shown / r.colh) + (r.above + r.below ? 1 : 0)
+        }
+        let chips    = rows.reduce((n, r) => n + chips_of(r), 0)
+        let bursting = false
+        for (let i = rows.length - 1; chips > budget && i >= 0; i--) {
+            const r = rows[i]
+            if (!r.burst || r.fg || r.forced || r.tuned) continue
+            chips -= chips_of(r) - 1; r.burst = false; r.enth = 1
+            bursting = true
+        }
+        if (chips > budget) bursting = true
+
+        // Emit: burst rows stand alone; enth 1 — and any TOUCHED row, even demoted (the touch
+        //  history keeps it around) — holds a single calm row; the enth-0 rest packs into
+        //   stacks of two
+        const out: Array<MRow | MStack> = []
+        let pend: MStack | undefined
+        for (const r of rows) {
+            if (r.burst || r.touched || r.enth >= 1) { out.push(r); continue }
+            if (!pend) { pend = { kind: 'stack', wafts: [] }; out.push(pend) }
+            pend.wafts.push({ path: r.path, title: r.title, loaded: r.loaded })
+            if (pend.wafts.length >= 2) pend = undefined
+        }
+
+        // The crumb harvest — touched Wafts' cursor Docs, discovery order (seq asc), fg's first
+        const crumbs = rows
+            .filter(r => r.cursor)
+            .sort((a, b) => (+b.fg - +a.fg) || (a.seq - b.seq))
+            .slice(0, 7)
+            .map(r => ({ waft: r.path, path: r.cursor as string, title: H.Lies_waftmap_title(r.cursor as string) }))
+
+        return { rows: out, crumbs, shared, chips, budget, bursting }
+    },
+
+    // ── e_Lies_waftmap_tune — the openingness dial, as an Atime move ──────────────────────────
+    //   The dial is a UItime click; writing the Keep straight from the handler mutated outside
+    //    Atime and nothing re-flushed (the map's model read is flush-gated on H.ave.vers), so
+    //     the dial looked dead.  This elvis does the layout write inside Atime and re-thinks —
+    //      the next flush carries it.  e.sc: { path, enth? } — enth absent clears back to auto.
+    async e_Lies_waftmap_tune(A: TheC, w: TheC, e: TheC) {
+        const H    = this as House
+        const path = e.sc.path as string | undefined
+        if (!path) return
+        if (!w.o({ Waft: 'Keep' })[0]) w.oai({ Waft: 'Keep' }, { equip: 'Keep' })
+        H.Lies_keep_layout_set(w, 'waft', path, 'enthusiasm', e.sc.enth as number | undefined)
+        H.i_elvisto(w, 'think')
+    },
+
+    // ── e_Lies_waftmap_implant — the search bar's "into the substrate" drop ───────────────────
+    //   Plant a repo file INTO the working Waft (the fg Interest's, else the first plain one) as
+    //    a fresh moment %What holding the %Doc, then cursor in — the search hit stops being a
+    //     visitor (that's Lies_ghost_pick's Aside) and joins the Waft under work.  e.sc: { path }
+    async e_Lies_waftmap_implant(A: TheC, w: TheC, e: TheC) {
+        const H    = this as House
+        const path = e.sc.path as string | undefined
+        if (!path) return
+        const ave  = (H as any).ave ?? H.top_House().ave
+        const fg   = ave?.ob({ Languinio: 1 })[0]?.ob({ ActiveInterest: 1 })[0]?.sc.waft as string | undefined
+        const waft = (fg ? w.o({ Waft: fg })[0] as TheC | undefined : undefined)
+            ?? (w.o({ Waft: 1 }) as TheC[]).find(wf => !wf.sc.equip && !wf.sc.takes)
+        if (!waft) return
+        const what = waft.i({ What: H.Lies_waftmap_title(path) })
+        what.c.up   = waft
+        what.c.waft = waft
+        what.i({ Doc: path })
+        waft.bump_version()
+        H.Lies_waft_save(w, waft)
+        H.i_elvisto(w, 'Lies_want', { src: what, kind: 'click' })
     },
 
 //#endregion
@@ -1155,6 +1393,13 @@ await M.eatfunc({
                 }
                 w.i({ generated: made, dir })
             })
+        },
+
+        // Musu_test_tones — the reference frequency set MusuBounce quantises a measured analyser peak back to
+        //  a stable tone label with.  SINGLE source of truth = TEST_TONES (what the generator laid down), so
+        //   the collection and the meter can never drift apart.  Just the freqs, ascending.
+        Musu_test_tones(): number[] {
+            return TEST_TONES.map(t => t.freq).sort((a, b) => a - b)
         },
 
         // Lies_runner_ask_recv — the runner answers an addr-less CLI's runner_ask (scripts/runner_ask.mjs):

@@ -38,6 +38,7 @@ Waft:Credence
         Funkcion:Storying,of_Book:MusuPier
     Funkcion:Storying,of_Book:MusuConceal
     Funkcion:Storying,of_Book:MusuGenerateTestsMusic
+    Funkcion:Storying,of_Book:MusuBounce
   What:Lake
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:LakeSurfer
@@ -49,6 +50,7 @@ Waft:Credence
     Funkcion:Storying,of_Book:LakeFunk
     Funkcion:Storying,of_Book:LakeKeep
     Funkcion:Storying,of_Book:LakeLango
+    Funkcion:Storying,of_Book:LakeWaftMap
   What:Leaf
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:LeafFarm
@@ -83,3 +85,5 @@ Waft:Credence
     Funkcion:Storying,of_Book:Understandity
     Funkcion:Storying,of_Book:Understandium
     Funkcion:Storying,of_Book:Engage
+    Funkcion:Storying,of_Book:WaftMapPacked
+    Funkcion:Storying,of_Book:SwarmStaple

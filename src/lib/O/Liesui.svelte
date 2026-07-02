@@ -244,17 +244,19 @@
 
     {/if}
 
+    <!-- the Plank — the WaftMap, IN FLOW: it fits neatly into the vertical gap at the bottom of
+         Liesui, under all the Waft columns (not floating over them — that was the baseshell cell,
+         now the Brink's alone).  Author chrome, off the runner. -->
+    {#if Lies && !H.Lies_is_runner(Lies)}
+        <div class="ls-plank-slot"><Plank {H} w={Lies} /></div>
+    {/if}
+
     <!-- the base shell — ONE row resting at the foot of Lies (a zero-height sticky anchor bounded in
          .ls-ui, so it stays pinned as the waft list scrolls yet never bleeds onto NaviCado nor floats
-         over Langui — it leaves with Lies when Lies scrolls away).  Holds the Plank (DocWaftMap word-
-         cloud, fills the left) and the Brink (%Aim cluster faces, right corner) as flex children, both
-         flowing INSIDE here rather than self-pinning, so they rest together.  Plank is author chrome
-         (off the runner); the Brink shows on every role. -->
+         over Langui — it leaves with Lies when Lies scrolls away).  Holds the Brink (%Aim cluster
+         faces, right corner), flowing INSIDE here rather than self-pinning. -->
     <div class="ls-baseshell">
         <div class="ls-baseshell-row">
-            {#if Lies && !H.Lies_is_runner(Lies)}
-                <div class="ls-baseshell-plank"><Plank {H} w={Lies} /></div>
-            {/if}
             <div class="ls-baseshell-brink"><Lens {H} kind="Brink" /></div>
         </div>
     </div>
@@ -281,16 +283,17 @@
         border: 1px solid #444; border-radius: 4px;
         background: #111; color: #ccc; min-width: 360px;
     }
-    /* the base shell — a zero-height sticky anchor at the foot of .ls-ui holding the Plank (left, fills)
-       and the Brink (right).  Bounded by .ls-ui: pinned while Lies is on screen, gone when it scrolls
-       away — never over Langui.  pointer-events:none on the shell so its empty stretch never blocks the
-       waft rows behind; the Plank/Brink content re-enables. */
+    /* the Plank slot — normal flow at the foot of the waft list, filling the gap. */
+    .ls-plank-slot { margin-top: 8px; }
+    /* the base shell — a zero-height sticky anchor at the foot of .ls-ui holding the Brink (right).
+       Bounded by .ls-ui: pinned while Lies is on screen, gone when it scrolls away — never over
+       Langui.  pointer-events:none on the shell so its empty stretch never blocks the waft rows
+       behind; the Brink content re-enables. */
     .ls-baseshell { position: sticky; bottom: 8px; height: 0; z-index: 7; pointer-events: none; }
     .ls-baseshell-row {
         position: absolute; left: 8px; right: 8px; bottom: 0;
         display: flex; align-items: flex-end; justify-content: flex-end; gap: 8px; pointer-events: none;
     }
-    .ls-baseshell-plank { flex: 1 1 auto; min-width: 0; position: relative; }
     .ls-baseshell-brink { flex: 0 0 auto; position: relative; }
     .ls-header { margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.4rem }
     .ls-header :global(.peel-input), .ls-header > :last-child { flex: 1 }

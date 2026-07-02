@@ -269,8 +269,10 @@ An identity **offers** things (audio, disk, compute) — "who can do what, who's
 
 - a **Swarm ghost family** `Ghost/S/*.g` — the third beside networking (`Ghost/N/`) and music
    (`Ghost/M/`), surfaced as **`Waft:Ghost/Swarm/*`** beside `Waft:Ghost/Net/*` and `Waft:Ghost/Music/*`.
+   **[now]** — `Ghost/S/Swarm.g`: keys / the account tree / the pruned page, the Idzeug (an unbound
+    Grant + nonce), the wire seam (in-process today, Peeroleum-shaped), hello→accept→seal, `%NotGrant`.
 - scenario verbs `Swarm_*`; the Story ghost `Ghost/Story/Swarmation.g` (mirroring `Peregrination.g` /
-   `Musuation.g`); the Book `SwarmStaple` (§9).
+   `Musuation.g`); the Book `SwarmStaple` (§9). **[now]** — both built + enrolled in `CREDULER_GHOSTS`.
 - **crypto reached via `IMPORT()`** — the `.g`→`.go` header pulls in `Grant.ts` / `Idento` / `cluster_trust`
    (a capability for real external deps, *not* an excuse to scatter logic — the invite/grant/UX logic
     itself stays in `.g`). The Idzeug is *composed* in `.g` from imported Grant atoms.
@@ -284,8 +286,10 @@ An identity **offers** things (audio, disk, compute) — "who can do what, who's
 ## 9. The Book — prove it end to end
 
 A Story, dispatched as usual: **`SwarmStaple`** (fixtures under `wormhole/Story/SwarmStaple/`), two
- sides up, driven per beat by an eternal `%req:wrangle` whose do_fn calls `Swarm_drive` (the
-  `PereStaple`/`MusuStaple` pattern; keep the world `w:SwarmStaple` or `do_fn_for` never runs it). Lay
+ sides up, driven per beat by an eternal `%req:wrangle` whose do_fn calls `SwarmStaple_drive` (the
+  `PereStaple`/`MusuStaple` pattern; keep the world `w:SwarmStaple` or `do_fn_for` never runs it).
+ **[now]** — built (beats 2–7, nine `%see` witnesses), headless-green and byte-deterministic (seeded
+  keys + pinned `w.sc.now`, only the Story's own `round=` wobbles); the live-runner record is owed. Lay
    the tree with `$:` captures the way the human sketched it (capture an `oai` into a `let` — a bare `$:`
     binds create-legs only, per the g-capture rule):
 

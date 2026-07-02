@@ -1,10 +1,10 @@
 <script lang="ts">
-    // Plank — the Waft-map's home: hosts DocWaftMap (the word-cloud abdomen of Waft|Doc nodes).  It
-    //  rests at the foot of Lies inside Liesui's shared BASE-SHELL (the .ls-baseshell-plank cell, filling
-    //   the left, with the Brink's %Aim faces in the right cell) — the shell owns the sticky-in-.ls-ui
-    //    positioning; this component just fills its cell and caps its own height.  Off-runner is the
-    //     caller's job (Liesui gates the mount) — the map is editor|author chrome.  DocWaftMap's own
-    //      content and layout are the map's concern, separate from where the Plank sits.
+    // Plank — the Waft-map's home: hosts DocWaftMap (the cluster map of Waft|Doc attention).  It
+    //  flows IN the vertical gap at the bottom of Liesui (the .ls-plank-slot), under all the Waft
+    //   columns — not floating over them (the old baseshell cell is the Brink's alone now).
+    //    Off-runner is the caller's job (Liesui gates the mount) — the map is editor|author
+    //     chrome.  DocWaftMap's own content and layout are the map's concern, separate from
+    //      where the Plank sits.
     import type { House } from "$lib/O/Housing.svelte"
     import type { TheC }  from "$lib/data/Stuff.svelte"
     import DocWaftMap from "$lib/O/Funk/DocWaftMap.svelte"
@@ -18,11 +18,8 @@
 
 <style>
     .plank {
-        /* positioning owned by Liesui's base-shell (the .ls-baseshell-plank cell) — this just fills it
-           and rests at the foot; caps height + scrolls if the cloud gets tall.  (Was a self-pinned
-           position:fixed HUD; now flows inside the shared shell beside the Brink.) */
+        /* in flow inside Liesui's .ls-plank-slot — it just fills the gap and grows with its
+           clusters; the Lies panel scrolls, no inner clip. */
         position: relative; width: 100%; min-width: 0;
-        max-height: 60vh; overflow: auto;
-        pointer-events: auto;
     }
 </style>

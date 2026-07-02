@@ -1,0 +1,11 @@
+Waft:Story/LakeWaftMap/TestDeep
+  What:hoard
+    What:packed
+      Doc:Ghost/test/Story/Lake/WaftMapPacked.g
+      Point,method:Packed
+    What:antecedents
+      Doc:Ghost/test/Story/Lake/LakeAntecedents.g
+      Point,method:transport
+    What:ameliorations
+      Doc:Ghost/test/Story/Lake/LakeAmeliorations.g
+      Point,method:LakeNetherland
