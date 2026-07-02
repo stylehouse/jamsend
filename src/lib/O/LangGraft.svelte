@@ -83,6 +83,7 @@
     //   red, strikethrough) so the user has a UI handle to fix a rename.
 
     import { onMount } from "svelte"
+    import { dig }     from "$lib/Y.svelte"
     import type { TheC } from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
 
@@ -259,8 +260,28 @@
         const fingerprint = points
             .map(pt => this.Lang_point_spec(pt) ?? '')
             .join(';')
-        // spot.version bumps when the cursor is re-resolved onto a new Spotlight
-        const cache_key = `${dock.version}:${job?.version ?? 0}:${spot?.version ?? 0}:${working?.version ?? 0}:${waft_key}|${fingerprint}`
+        // spot.version bumps when the cursor is re-resolved onto a new Spotlight.
+        //
+        // map_dige REPLACES the old `${dock.version}:${job.version}` terms.  Those bumped on
+        //  EVERY recompile even when nothing moved (a same-text reparse on a language switch, an
+        //   edit elsewhere in the doc), so the key ALWAYS missed after a compile and re-ran the
+        //    O(points × (defs+regions)) resolve for nothing.  Instead digest what the graft
+        //     actually consumes — each resolvable target's name, line and absolute span (the same
+        //      Lang_map_span Lang_ensure_graft reads) — so the key moves only when a def/region a
+        //       Point could anchor to genuinely shifts.  (Mirrors Lang_Map_report's Map_dige gate.)
+        // Hashed only ONCE per recompile (cached against job.version); the steady every-wake pass
+        //  reuses the cached digest and stays O(1), as before.
+        let map_dige = dock.c.graft_map_dige as string | undefined
+        if (dock.c.graft_map_v !== (job?.version ?? 0)) {
+            const map_serial = [...defs, ...regions].map(e => {
+                const s = this.Lang_map_span(regions, e)
+                return `${(e.sc.method ?? e.sc.label ?? '') as string}@${(e.sc.line as number) ?? 0}:${s.from}:${s.to}`
+            }).sort().join(';')
+            map_dige = await dig(map_serial)
+            dock.c.graft_map_v    = job?.version ?? 0
+            dock.c.graft_map_dige = map_dige
+        }
+        const cache_key = `${map_dige}:${spot?.version ?? 0}:${working?.version ?? 0}:${waft_key}|${fingerprint}`
         if (dock.c.graft_cache_key === cache_key) return
         dock.c.graft_cache_key = cache_key
 

@@ -26,7 +26,7 @@
     import type { House } from "$lib/O/Housing.svelte"
     import type { TheC }  from "$lib/data/Stuff.svelte"
 
-    let { H, lens, funk }: { H: House, lens?: TheC, funk?: TheC, w?: TheC } = $props()
+    let { H, lens, funk, mini = false }: { H: House, lens?: TheC, funk?: TheC, w?: TheC, mini?: boolean } = $props()
 
     let now = $state(Date.now())
     const _tick = setInterval(() => { now = Date.now() }, 1000)
@@ -66,6 +66,10 @@
         : { glyph: '⚠', cls: 'down', text: 'relay down' })
 </script>
 
+{#if mini}
+    <!-- collapsed MiniBrink: one carrier dot (🛰 up / ⚠ down). -->
+    <div class="rl-mini rl-{link.cls}" title={link.text}><span class="rl-dot">{link.glyph}</span></div>
+{:else}
 <div class="rl">
     <!-- ONE LINE at rest (🛰 relay up) — a carrier pilot light, not a panel; the "relay" header was
          redundant with the link text.  The event log unfurls only while something's happening, then fades. -->
@@ -81,6 +85,7 @@
         </div>
     {/if}
 </div>
+{/if}
 
 <style>
     .rl {
@@ -99,4 +104,7 @@
     .rl-log { margin-top: 4px; border-top: 1px solid #2c3450; padding-top: 3px; max-height: 9rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1px; }
     .rl-log-line { font-size: 9px; line-height: 1.25; color: #7c86ad; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .rl-log-line.important { color: #e7c06a; font-weight: bold; }
+    /* collapsed MiniBrink: one carrier dot; the rl-{cls} on the wrapper drives the existing dot colour. */
+    .rl-mini { display: flex; align-items: center; }
+    .rl-mini .rl-dot { font-size: 12px; line-height: 1; }
 </style>

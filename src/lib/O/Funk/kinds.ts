@@ -34,9 +34,11 @@ import Shelver, { shelver_run } from "$lib/O/Funk/Shelver.svelte"
 import IdHatch from "$lib/O/Funk/IdHatch.svelte"
 import Rundar, { runner_run } from "$lib/O/Funk/Rundar.svelte"
 import Relay, { relay_run } from "$lib/O/Funk/Relay.svelte"
+import Sound from "$lib/O/Funk/Sound.svelte"
 import Upkeep from "$lib/O/Funk/Upkeep.svelte"
 import DocTing from "$lib/O/Funk/DocTing.svelte"
 import DocGhostList from "$lib/O/Funk/DocGhostList.svelte"
+import DocWaftMap from "$lib/O/Funk/DocWaftMap.svelte"
 
 export type FunkKind = {
     run?:                (host: TheC, funk: TheC, ww: TheC) => void
@@ -47,6 +49,7 @@ export type FunkKind = {
     //  comp_<lens.Lens> off the Funkcion named by lens.of_Funkcion:
     comp_Panel?:         any   // → the global/fullscreen Lens dock in Otro (ui/Lens.svelte kind="Panel")
     comp_Brink?:         any   // → the Brink dock pinned inside Liesui (ui/Lens.svelte kind="Brink")
+    comp_MiniBrink?:     any   // → the collapsed Brink's one-row summary face (connectivity at a glance)
     comp_InterestSmall?: any   // → popped small in the InterestStrip
     comp_InterestBig?:   any   // → popped big in the InterestStrip
 }
@@ -58,9 +61,11 @@ export const FUNK_KINDS: Record<string, FunkKind> = {
     CreduFunk:  { run: credufunk_run,  component: CreduFunk },  // container: holds Storying cells + journals their Credulates (coherence)
     Shelver:    { run: shelver_run,    component: Shelver },    // librarian: walks wormhole/Story, auto-files new Books onto its board by prefix
     IdHatch:    { comp_Panel: IdHatch },                        // face-only: the cluster-identity hatch, a global Lens:Panel
-    Rundar:     { run: runner_run, comp_Brink: Rundar },        // %Aim runner-RADAR: editor's fleet rack (1:1 %HostedIdentity roster) + a runner's single-pair editor view, hoisted as Lens:Brink
-    Relay:      { run: relay_run,  comp_Brink: Relay },         // %Aim watcher: the relay ping (channel carrier), hoisted as Lens:Brink
+    Rundar:     { run: runner_run, comp_Brink: Rundar, comp_MiniBrink: Rundar }, // %Aim runner-RADAR: fleet rack (1:1 %HostedIdentity roster) + single-pair view, Lens:Brink; comp_MiniBrink = the collapsed one-row dots
+    Relay:      { run: relay_run,  comp_Brink: Relay,  comp_MiniBrink: Relay },   // %Aim watcher: the relay ping (channel carrier), Lens:Brink; comp_MiniBrink = one carrier dot
     Upkeep:     { comp_Brink: Upkeep },                         // %Upkeep ledger: live %Errands (compiles, sweeps) hoisted as Lens:Brink
+    Sound:      { comp_Brink: Sound, comp_MiniBrink: Sound },    // the "tap for sound" audio-gate beg — pops out of the MiniBrink (self-gates; invisible until a gat is blocked)
     Ting:       { component: DocTing },                         // big face: the attention-Ting histogram — a taker Waft's main Funkcion (data in H.ave)
     dirlist:    { component: DocGhostList },                    // big face: the GhostList ghost-index — the GhostList Waft's main Funkcion (run rides funk.c.run, installed off-snap by GhostList_funkcion)
+    waftmap:    { comp_Brink: DocWaftMap, comp_MiniBrink: DocWaftMap }, // the Plank: Waft navigator + Doc-relevance Venn; MiniBrink = compact chip glance (collapsed bar), Brink = full navigator (opened stack)
 }

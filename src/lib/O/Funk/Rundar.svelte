@@ -38,7 +38,7 @@
     import type { House } from "$lib/O/Housing.svelte"
     import type { TheC }  from "$lib/data/Stuff.svelte"
 
-    let { H, lens, funk }: { H: House, lens?: TheC, funk?: TheC, w?: TheC } = $props()
+    let { H, lens, funk, mini = false }: { H: House, lens?: TheC, funk?: TheC, w?: TheC, mini?: boolean } = $props()
 
     // the latest transition the watcher (runner_run) logged — a quiet caption under the link.
     let latest = $derived((funk?.vers && funk.c?.latest) as { state?: string, event?: string, at?: number } | undefined)
@@ -56,7 +56,7 @@
     //   and renders a single titled box — a row per known runner + the anon single-pair peer.  The
     //    single-pair {:else} mode below serves a runner's view of its editor (→EDITOR).
     let is_rack = $derived(!!lens?.sc?.rack)
-    let rack = $state<{ pub: string, friendly: string, heard: number, ready: boolean, book: string, engaged: string, sent: string, sent_at: number, begs: boolean, granted: boolean }[]>([])
+    let rack = $state<{ pub: string, heard: number, ready: boolean, book: string, engaged: string, sent: string, sent_at: number, begs: boolean, granted: boolean }[]>([])
     // the live w:Lies (for the rack's grant control) + this runner's remote-Wormhole acquire state.
     let w_lies = $state<TheC | undefined>(undefined)
     let wormhole_state = $state('')
@@ -82,7 +82,6 @@
             //   doesn't churn on the ~15s beacon.  Read both halves here.
             if (rack_mode) rack = (w.o({ Runner: 1 }) as TheC[]).map(rn => ({
                 pub:      (rn.sc.Runner as string) ?? '',
-                friendly: (rn.sc.friendly as string) ?? '',
                 heard:    Number(rn.c?.last_heard ?? 0),
                 ready:    !!rn.sc.ready,
                 book:     (rn.sc.book as string) ?? '',
@@ -148,8 +147,18 @@
     //      fresh, show NO anon — the live channel is one of THEM with a stale beacon (see stale_hint), not
     //       a different anonymous runner.
     let any_live_runner = $derived(rack.some(v => v.heard && now - v.heard < 45000))
+
+    // cull the stale-live from the DISPLAY: a runner we HEARD this session but that has gone silent
+    //  past OFFLINE_CULL_MS drops out of the rack, so dead icons don't accumulate.  Only the heard
+    //   ones cull on age — a never-heard-this-session identity (heard:0, e.g. a fresh editor reload
+    //    where last_heard rides .c off-snap and resets) stays as the durable roster ('offline'), else
+    //     every reload would blank the rack until the ~15s beacons re-land.  Display-only — the snapped
+    //      %Runner roster (owner-recorded, 1:1 with %HostedIdentity) is untouched.
+    const OFFLINE_CULL_MS = 5 * 60 * 1000
+    let rack_shown = $derived(rack.filter(v => !(v.heard && now - v.heard > OFFLINE_CULL_MS)))
+
     let anon = $derived.by(() => {
-        if (!is_rack || rack.length || !live_face.length) return null
+        if (!is_rack || rack_shown.length || !live_face.length) return null
         return { glyph: '●', cls: 'live', text: 'connected — no identity' }
     })
     // the channel CARRIES but no known runner's beacon is fresh: they're connected (ping/pong, ~1s) yet
@@ -174,17 +183,34 @@
     }
 </script>
 
-{#if is_rack}
+{#if mini}
+    <!-- collapsed MiniBrink: the whole rack (or the single-pair peer) as a one-row string of liveness
+         dots — connectivity at a glance, the Brink HUD's resting state. -->
+    {#if is_rack}
+        <div class="rp-mini" title="runners · {rack_shown.length} known{anon ? ' + anon' : ''}">
+            {#each rack_shown as v (v.pub)}
+                {@const lk = runner_link(v)}
+                <span class="rp-dot rp-{lk.cls}" title={`${v.pub || '?'} — ${lk.text}`}>{lk.glyph}</span>
+            {/each}
+            {#if anon}<span class="rp-dot rp-{anon.cls}" title={anon.text}>{anon.glyph}</span>{/if}
+            {#if !rack_shown.length && !anon}<span class="rp-mini-empty" title="no runners">○</span>{/if}
+        </div>
+    {:else}
+        <div class="rp-mini" title={link.text}>
+            <span class="rp-dot rp-{link.cls}">{link.glyph}</span>
+        </div>
+    {/if}
+{:else if is_rack}
     <!-- the RUNNER rack (Rundar): the editor's snapped roster, ONE row per %HostedIdentity(role:runner) —
          friendly|pub · liveness — plus the anonymous single-pair peer (a ?B= runner with no identity) if it
          isn't already one of the identified rows.  No →EDITOR carrier line here — that's the Relay's job. -->
     <div class="rp">
-        <div class="rp-hd">runner{(rack.length + (anon ? 1 : 0)) ? ` · ${rack.length + (anon ? 1 : 0)}` : ''}</div>
-        {#each rack as v (v.pub)}
+        <div class="rp-hd">runner{(rack_shown.length + (anon ? 1 : 0)) ? ` · ${rack_shown.length + (anon ? 1 : 0)}` : ''}</div>
+        {#each rack_shown as v (v.pub)}
             {@const lk = runner_link(v)}
             <div class="rp-link rp-{lk.cls}" title={`runner ${v.pub}${v.ready ? ' — ready' : ''}${v.engaged ? ` — engaged by ${v.engaged.slice(0, 8)}` : ''}`}>
                 <span class="rp-dot">{lk.glyph}</span>
-                <span class="rp-role">{v.friendly || (v.pub ? v.pub.slice(0, 8) : '?')}</span>
+                <span class="rp-role rp-pub" title={v.pub}>{v.pub || '?'}</span>
                 <span class="rp-txt">{lk.text}</span>
                 <!-- remote-Wormhole grant control: a begging runner gets a grant button; a granted one a tick.
                      mint+sign a %Grant (Lies_grant_wormhole) keyed by this runner's prepub (v.pub). -->
@@ -209,7 +235,7 @@
             <!-- the runners are connected but their identity beacons aren't landing (flapping socket) -->
             <div class="rp-stale" title="the channel carries (ping/pong) but the ~15s advertise beacons aren't landing — usually a flapping socket. The runners above are connected; their identity just isn't refreshing.">◍ channel live · beacons stale</div>
         {/if}
-        {#if !rack.length && !anon}
+        {#if !rack_shown.length && !anon}
             <div class="rp-empty">no runners</div>
         {/if}
     </div>
@@ -256,6 +282,8 @@
     .rp-link { display: flex; align-items: center; gap: 5px; }
     .rp-dot { font-size: 12px; line-height: 1; }
     .rp-role { color: #c4ccea; }
+    /* a runner's prepub, truncated by CSS to ~6 chars (no friendly label — the pub IS the name); full pub on hover */
+    .rp-pub { display: inline-block; max-width: 7ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; font-family: monospace; }
     .rp-txt { font-variant-numeric: tabular-nums; }
     .rp-live    .rp-dot { color: #6ad0a0; }
     .rp-sent    .rp-dot { color: #79b0d0; }   /* ☎ a dispatched job ringing — not yet acked */
@@ -280,4 +308,15 @@
     .rp-ph-g { font-size: 12px; }
     .rp-bar { flex: 1; height: 3px; background: #2a2a3a; border-radius: 2px; overflow: hidden; }
     .rp-bar-fill { display: block; height: 100%; background: #6a86c0; transition: width 0.3s; }
+    /* collapsed MiniBrink: a one-row string of dots.  The cls rides the dot span itself (the .rp-mini
+       ancestor carries none), so colour it directly rather than via the .rp-live .rp-dot descendant rule. */
+    .rp-mini { display: flex; align-items: center; gap: 3px; }
+    .rp-mini .rp-dot { font-size: 12px; line-height: 1; cursor: default; }
+    .rp-mini .rp-live    { color: #6ad0a0; }
+    .rp-mini .rp-sent    { color: #79b0d0; }
+    .rp-mini .rp-engaged { color: #7aa0d8; }
+    .rp-mini .rp-silent  { color: #d8b86a; }
+    .rp-mini .rp-dial    { color: #889; }
+    .rp-mini .rp-down, .rp-mini .rp-clash { color: #e06c75; }
+    .rp-mini-empty { color: #5a6488; font-size: 11px; }
 </style>

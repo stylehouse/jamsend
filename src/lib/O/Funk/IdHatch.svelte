@@ -31,7 +31,7 @@
     //   panel can well afford a slow poll.
     let poll = $state(0)
     onMount(() => { const iv = setInterval(() => poll++, 500); return () => clearInterval(iv) })
-    let current = $derived.by(() => { void poll; return (H as any).Clustation_self?.(H) as { prepub: string; friendly?: string } | undefined })
+    let current = $derived.by(() => { void poll; return (H as any).Clustation_self?.(H) as { prepub: string } | undefined })
     // cluster-trust status of the active identity: is our pub in the CODE-PUSH allowlist (CLUSTER_TRUSTED_PUBS)?
     //  Flips to trusted only after a dev-server restart re-bakes the file `Set up cluster trust` writes.
     let trust = $derived.by(() => { void poll; return (H as any).Lies_cluster_trust_status?.() as { prepub?: string; in_set: boolean; configured: boolean } | undefined })
@@ -59,7 +59,7 @@
         // Adopt on the tick (post_do): it mutates the C tree (A:Clustation, %Identity, %Peering) and
         //  awaits the Thangs persist — neither belongs in a raw click outside the mutex.
         ;(H as any).post_do(async () => {
-            const ok = await (H as any).Clustation_adopt?.(parsed.id, parsed.role || undefined)
+            const ok = await (H as any).Clustation_adopt?.(parsed.id)
             msg = ok
                 ? `✓ ${short}… adopted as an %Identity — signs now, persisted, on the grid. No reload.`
                 : '✗ identity layer not ready (Thangs not mounted) — Set again in a moment.'
@@ -105,7 +105,7 @@
         <div class="id-hatch">
             <h2>🪪 Cluster identity</h2>
             <p class="cur">{current
-                ? `active: ${current.friendly ?? current.prepub} — addr ${current.prepub}…`
+                ? `active: addr ${current.prepub}…`
                 : "none — this tab can't sign privileged frames (gen_write, ghost_compile) or join the grid"}</p>
             {#if current}
                 <p class="trust" class:ok={trust?.in_set} class:warn={trust?.configured && !trust?.in_set}>

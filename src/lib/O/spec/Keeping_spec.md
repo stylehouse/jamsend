@@ -37,6 +37,12 @@ of time (playback). Time is the Cursor's, not Lies'.
 
 ## The bigger frame — Lies ↔ Interest ↔ Lang
 
+> The consolidated one-page map of this whole model (the cursor's four roles, the redundancy census,
+> the glossary, the P7 collapse) now lives in **`Lies_handover.md`** — the design home. This spec
+> keeps the `req:Keeping` build detail; where they overlap, the handover is canonical. (`LiesHold` is
+> now `LangHold`; `req:Keeping` was built *distributed*, not as one particle — see the "built
+> distributed" section below.)
+
 Keeping is the *inward* half of one channel. Three observations set the altitude:
 
 **Interest and Keeping are the same attention channel from opposite ends.**

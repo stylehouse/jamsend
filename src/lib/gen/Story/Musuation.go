@@ -10,7 +10,7 @@ import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Musuation(): string { return '702114f07dba009a' },
+    Ghostmeta_Ghost_Story_Musuation(): string { return 'f79c3277f1116c14' },
 
 // Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Music_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
@@ -210,15 +210,14 @@ Musu_measure(pcm) {
 //   browser it inits the context (resumes a suspended one once the page has had a user gesture — the run
 //    click counts) and also fires AudioContext_wanted so the existing GatEnabler tap-to-unmute can help.
 async Musu_gat() { const H = this;
-    let g = H.c.musu_gat
+    let g = H.top_House().c.musu_gat
     if (g && g.AC_ready) return g
     if (typeof AudioContext === 'undefined') return null
     if (!g) {
         g = new SoundSystem({})
-        H.c.musu_gat = g
+        H.top_House().c.musu_gat = g
     }
     if (!g.AC_ready) {
-        if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('AudioContext_wanted', { detail: { gat: g } }))
         await g.init()
     }
     return g.AC_ready ? g : null

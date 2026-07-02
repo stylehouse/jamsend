@@ -489,10 +489,10 @@
         //      registry: an un-migrated editor (a stashed key, no ?I=) HAS a signing identity but
         //       Clustation_self can't see it, so it never claimed itself.  undefined ⇒ no identity at
         //        all (nothing to claim — a ?B= runner with no ?I and no env key).
-        Lies_self(w?: TheC): { prepub: string; friendly?: string } | undefined {
+        Lies_self(w?: TheC): { prepub: string } | undefined {
             const H = this as House
-            const face = (H as any).Clustation_self?.() as { prepub?: string; friendly?: string } | undefined
-            if (face?.prepub) return { prepub: face.prepub, friendly: face.friendly }
+            const face = (H as any).Clustation_self?.() as { prepub?: string } | undefined
+            if (face?.prepub) return { prepub: face.prepub }
             const idento = H.Lies_cluster_idento(w)
             return idento?.pub ? { prepub: prepubOf(idento.pub) } : undefined
         },
@@ -783,6 +783,10 @@
         //     50ms re-pump loop doesn't spam — and a Ghost_version_checkin advancing `live` is
         //      visible.  NOTE pump still leans on Ghost_version_checkin → feebly_ponder (Runtime-
         //       gated); the trickle-think strength is the planned fix for the "hangs after checkin".
+        // RUN-BEGIN 2/2 — req_rungo: currency-gated authority; waits for the exact compiled dige to be live
+        //  before firing (so a verdict provably matches the pushed source).  The other is
+        //   Lies_become_book_drive (LiesFunk): loose, run-now-by-name.  Two begin-paths is a dev ugliness
+        //    — converge ~mid-Jul 2026.
         async req_rungo(req: TheC) {
             const H   = this as House
             const w   = req.c.up as TheC
@@ -889,6 +893,10 @@
             //  Upkeep Brink by whether any %Errand (a compile, a sweep) is live, and reap settled
             //   ones.  Off the channel gate — a compile/sweep is local work that runs without a peer.
             ;(H as any).Lies_upkeep(w)
+            // The Plank (Waft navigator / Doc-relevance Venn): hoist it as a persistent editor Brink
+            //  tenant (one-shot idempotent, editor-only).  Not gated on work|liveness — a navigator is
+            //   always wanted; the Brink stays present in the editor so it's reachable at a glance.
+            ;(H as any).Lies_waftmap_ensure(w)
             // liveness + ping is split into Lies_keepalive so an INDEPENDENT timer (Lies_channel_up)
             //  can drive it OFF the belief loop too — liveness must not ride think, or a quiesced peer
             //   stops pinging and the far watchdog flaps it (the LATENCY SWAMP symptom).
@@ -1050,7 +1058,7 @@
             //     every stashed/env-key runner (booted ?B= with no ?I=): it hello-binds + is fully addressable,
             //      yet never advertised, so the editor's roster stayed empty and dispatch fell back to BROADCAST
             //       (the "both runners ran it" regression).
-            const self = (H as any).Lies_self?.(w) as { prepub: string, friendly?: string } | undefined
+            const self = (H as any).Lies_self?.(w) as { prepub: string } | undefined
             if (!self?.prepub) return
             const now = Date.now()
             if (w.c.last_advertise && now - (w.c.last_advertise as number) < 15000) return   // ~15s beacon
@@ -1058,7 +1066,6 @@
             const eng = (H as any).Lies_engagement?.(w) as { client?: string; status?: string } | undefined
             ;(H as any).Peeroleum_send_consumer(w, 'advertise', {
                 from: self.prepub,
-                friendly: self.friendly ?? '',
                 ready: 1,                                   // reachable on the grid (book='' ⇒ free/idle)
                 book: (H.top_House().c.book as string) ?? '',
                 // overall engagement: the client (by pub) holding this runner's LIVE lease right now, so
@@ -1089,7 +1096,6 @@
             const beacons = (w.c.beacons ??= {}) as Record<string, any>
             beacons[from] = {
                 last_heard: Date.now(),
-                friendly:   fr?.friendly ? String(fr.friendly) : '',
                 ready:      !!fr?.ready,
                 book:       fr?.book ? String(fr.book) : '',
                 // overall engagement (the live lease's client pub) — busy/free for the Brink + a lease-aware
@@ -1116,15 +1122,13 @@
             if (H.Lies_role(w) !== 'editor') return
             const now = Date.now()
             const LIVE_MS = 45000
-            const beacons = (w.c.beacons ?? {}) as Record<string, { last_heard: number, friendly?: string, ready?: boolean, book?: string, engaged?: string }>
+            const beacons = (w.c.beacons ?? {}) as Record<string, { last_heard: number, ready?: boolean, book?: string, engaged?: string }>
             let changed = false
-            // a beacon from a never-seen runner NAMES it in the durable registry (role:runner + friendly).
+            // a beacon from a never-seen runner NAMES it in the durable registry (role:runner).
             //  The beacon carries no authority over favourite_client — left untouched (registry-only).
             for (const pub of Object.keys(beacons)) {
-                const b  = beacons[pub]
                 const hi = cluster.oai({ HostedIdentity: pub }) as TheC
-                if (hi.sc.role !== 'runner')                     { hi.sc.role = 'runner'; changed = true }
-                if (b.friendly && hi.sc.friendly !== b.friendly) { hi.sc.friendly = b.friendly; changed = true }
+                if (hi.sc.role !== 'runner') { hi.sc.role = 'runner'; changed = true }
             }
             // ONE snapped Runner per registered runner: mirror the durable identity, fold the live beacon.
             const runners = (cluster.o({ HostedIdentity: 1 }) as TheC[]).filter(h => h.sc.role === 'runner')
@@ -1134,8 +1138,6 @@
                 known.add(pub)
                 const r = w.oai({ Runner: pub }) as TheC                    // snapped: the editor's view of this runner exists
                 // durable identity, mirrored from the registry (Brink + allocator both read this one place)
-                if (hi.sc.friendly) { if (r.sc.friendly !== hi.sc.friendly) { r.sc.friendly = String(hi.sc.friendly); changed = true } }
-                else if (r.sc.friendly) { delete r.sc.friendly; changed = true }
                 if (hi.sc.favourite_client) { if (r.sc.favourite_client !== hi.sc.favourite_client) { r.sc.favourite_client = String(hi.sc.favourite_client); changed = true } }
                 else if (r.sc.favourite_client) { delete r.sc.favourite_client; changed = true }
                 // live beacon → off-snap last_heard + the snapped proven facets.  Bump on a last_heard

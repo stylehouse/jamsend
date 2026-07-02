@@ -30,22 +30,17 @@ wormhole/Credence/toc.snap
 
 DONE. These two carry audible play steps (MusuRadio_play / MusuTune_show).
 
-## 3. The authority — it must go via `%rungo`
+## 3. Authority (staged)
 
-The run authority reads `needAC` and drives the securing BEFORE it lets the run begin. Today there are
- **two run-begin paths and they do not agree**:
+Stay on `become_book` for now (loose — runs whatever's live). The eventual want is `%rungo`: a
+ currency-gated authority that waits for the exact compiled dige before firing, so a verdict provably
+  matches the source you pushed (the controlled edit→compile→verify push) — needs fleet coordination we
+   don't have yet, ~mid-Jul 2026. The two begin-paths are a known dev ugliness, cross-noted in-source at
+    each begin-fn (`Lies_become_book_drive` / `req_rungo`). `Lies_secure_audio` (§5) is identical either
+     way, so staging wastes nothing.
 
-- `req_rungo` (LiesLies.svelte) — the run-AUTHORITY token (`req:rungo,seq`). Today it authorises
-   compile/run-**dock** demands (path/dige), fires via `Lies_drive_run`. **Book runs do NOT go through
-    it.**
-- `become_book` — how a Story Book actually launches: editor `Lies_send_become_book` → runner
-   `Lies_become_book_recv` → `Lies_become_book_drive`; AND `runner_ask run` → `Lies_become_book_drive`.
-    This path **bypasses `%rungo`**.
-
-**Decision for the agents (the core intersection):** unify so a Book run is authorised through `%rungo`
- too (the run authority is one thing), OR make `become_book` a thin carrier that still routes the
-  needAC-securing through the same authority logic. Either way, **the authority is the single place that
-   reads `needAC` and secures AC pre-run.** The user's intent: "it should go via `%rungo`."
+**Coupling:** land audio-capability advertising BEFORE the needAC dispatch-match — a needAC run must be
+ able to require an audio-advertising runner. Advertise first, then match.
 
 ## 4. The flow (target)
 

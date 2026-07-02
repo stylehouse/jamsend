@@ -265,7 +265,8 @@
 
 <style>
     .ls-ui {
-        position: relative;     /* anchors the bottom-right .ls-health card */
+        position: relative;     /* local positioning context; the Brink HUD is position:fixed now, so
+                                   it no longer needs this box to bound it. */
         font-size: 0.83rem; padding: 0.5rem;
         padding-bottom: 1.7rem; /* reserve a strip so the collapsed card never sits over a list row */
         border: 1px solid #444; border-radius: 4px;

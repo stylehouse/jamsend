@@ -140,6 +140,10 @@
     // event-driven only: the gate shows when a hard audio DEMAND fired AudioContext_wanted and the gat
     //  is still cold.  No proactive nag — a runner that never hits an audio-demanding step never sees it.
     let ac_wanted   = $derived.by(() => { disk_poll; ac_poll; return pending_gats.some(g => !g?.AC_ready) })
+    // under a dev boot (editor|runner) the Brink's Sound face pops the audio beg out of the MiniBrink,
+    //  so Otro doesn't ALSO seize the screen for the pure-audio case.  The disk-gate stays fullscreen (a
+    //   hard blocker) and its one tap still starts audio too; a boot with no Brink HUD keeps the fullscreen.
+    let ac_via_brink = $derived(H?.c.boot_role === 'editor' || H?.c.boot_role === 'runner')
     let disk_role   = $derived(H?.c.boot_role === 'editor' ? 'Editor' : 'Runner')
     let share_error = $state('')
     let opening_share = $state(false)
@@ -193,7 +197,7 @@
     }
 </script>
 
-{#if disk_gated || ac_wanted}
+{#if disk_gated || (ac_wanted && !ac_via_brink)}
     <FaceSucker altitude={77} fullscreen={true}>
         {#snippet content()}
             <div class="disk-gate">

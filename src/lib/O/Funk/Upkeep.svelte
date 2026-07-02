@@ -31,12 +31,15 @@
       : e.sc.phase === 'failed' ? '✗'
       : e.sc.kind  === 'sweep'  ? '⇶'
       : e.sc.kind  === 'compile'? '🔄'
+      : e.sc.kind  === 'audio'  ? '🎤'
       :                           '◌'
     const caption = (e: TheC) =>
         e.sc.kind === 'sweep'
             ? `${e.sc.label} · pass ${Number(e.sc.pass ?? 0)} · ${Number(e.sc.green ?? 0)}/${Number(e.sc.total ?? 0)}`
       : e.sc.kind === 'compile'
             ? `${e.sc.label}${e.sc.dige ? ' @ ' + String(e.sc.dige).slice(0, 8) : ''}`
+      : e.sc.kind === 'audio'
+            ? `needs AudioContext · ${e.sc.label}`
             : String(e.sc.label ?? e.sc.Errand)
 </script>
 

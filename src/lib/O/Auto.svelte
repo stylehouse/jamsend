@@ -93,14 +93,15 @@
     //    Lives in Auto because deciding our identity IS Auto's job (role/page → who, now → which key).
 
     // Clustation_mint — a fresh ed25519 keypair, the codebase way (Idento), as a storable
-    //  {pub, key, prepub, friendly}. pub/key are full hex; prepub is the 16-hex routing address
-    //   (= header.from / the %Peering name / the to:<pub> target).
-    async Clustation_mint(this: House, friendly?: string) {
+    //  {pub, key, prepub}. pub/key are full hex; prepub is the 16-hex routing address (= header.from /
+    //   the %Peering name / the to:<pub> target).  No friendly label — a tab IS its prepub, truncated by
+    //    CSS where shown; the human-label field was dead weight (the `id-<6hex>` default was just the prepub).
+    async Clustation_mint(this: House) {
         const ido = new Idento()
         await ido.generateKeys()
         const f = ido.freeze()                       // { pub, key } hex
         const prepub = ido.pretty_pubkey()           // 16-hex
-        return { pub: f.pub as string, key: f.key as string, prepub, friendly: friendly ?? `id-${prepub.slice(0, 6)}` }
+        return { pub: f.pub as string, key: f.key as string, prepub }
     },
 
     // Clustation_ensure_identity — resolve ?I= and stand up the active %Identity (+ its %Peering)
@@ -151,13 +152,12 @@
     //   active flag rides 1/absent so it stays snap-clean, and only ONE %Identity is active at a time.
     //    The single concretion both the ?I= mint|peek (ensure_identity) and the .env adopt (IdHatch)
     //     funnel through, so a key from either source becomes the same first-class object.
-    Clustation_concrete(this: House, A: TheC, tag: string, stored: { pub: string; key: string; prepub: string; friendly?: string }): TheC {
+    Clustation_concrete(this: House, A: TheC, tag: string, stored: { pub: string; key: string; prepub: string }): TheC {
         for (const old of A.o({ Identity: 1 }) as TheC[]) delete old.sc.active
         const ident = A.oai({ Identity: tag }) as TheC
         ident.c.up = A
         ident.c.keys = { pub: stored.pub, key: stored.key }
         ident.sc.prepub = stored.prepub
-        if (stored.friendly) ident.sc.friendly = stored.friendly
         ident.sc.active = 1
         const peering = ident.oai({ Peering: 1, name: stored.prepub }) as TheC
         peering.c.up = ident
@@ -170,17 +170,17 @@
     //   `identities` Thang (named by prepub) so it survives reload, then concretes + activates it.
     //    Returns false if the Thangs persistence isn't mounted yet (caller can retry).  This is the
     //     migration: the cluster key stops living in the bare .stashed.cluster_idento slot.
-    async Clustation_adopt(this: House, keypair: { pub: string; key: string }, friendly?: string, H?: House): Promise<boolean> {
+    async Clustation_adopt(this: House, keypair: { pub: string; key: string }, H?: House): Promise<boolean> {
         H = (H ?? this) as House
         if (typeof (H as any).thang_add !== 'function') return false
         const prepub = prepubOf(keypair.pub)
-        const stored = { pub: keypair.pub, key: keypair.key, prepub, friendly: friendly ?? `id-${prepub.slice(0, 6)}` }
+        const stored = { pub: keypair.pub, key: keypair.key, prepub }
         const A  = H.o({ A: 'Clustation' })[0] || H.i({ A: 'Clustation' })
         const wT = A.o({ w: 'Thangs', thangs: 'identities' })[0] || A.i({ w: 'Thangs', thangs: 'identities' })
         wT.c.up = A
         await (H as any).thang_add(wT, prepub, stored)
         ;(H as any).Clustation_concrete(A, prepub, stored)
-        console.log(`🪪 Identity adopted ${prepub} (${stored.friendly})`)
+        console.log(`🪪 Identity adopted ${prepub}`)
         return true
     },
 
@@ -209,11 +209,10 @@
         return keys?.pub && keys?.key ? { pub: keys.pub, key: keys.key } : undefined
     },
 
-    // Clustation_self — the active %Identity's PUBLIC face {prepub, friendly}, or undefined. The
-    //  advertise frame's payload (no secret): prepub = our to:<pub> routing address (= %Peering name),
-    //   friendly = the human label. Read off the same active %Identity as the signing key, so what we
-    //    advertise is exactly who we sign as.
-    Clustation_self(this: House, H?: House): { prepub: string; friendly?: string } | undefined {
+    // Clustation_self — the active %Identity's PUBLIC face {prepub}, or undefined.  The advertise frame's
+    //  payload (no secret): prepub = our to:<pub> routing address (= %Peering name).  Read off the same
+    //   active %Identity as the signing key, so what we advertise is exactly who we sign as.
+    Clustation_self(this: House, H?: House): { prepub: string } | undefined {
         H = (H ?? this) as House
         const top = (H.top_House?.() ?? H) as House
         let ident = (top.c as any)?.active_identity as TheC | undefined
@@ -222,7 +221,7 @@
             ident = A && (A.o({ Identity: 1 }) as TheC[]).find(i => i.sc.active)
         }
         const prepub = ident?.sc.prepub as string | undefined
-        return prepub ? { prepub, friendly: ident?.sc.friendly as string | undefined } : undefined
+        return prepub ? { prepub } : undefined
     },
 
 //#endregion

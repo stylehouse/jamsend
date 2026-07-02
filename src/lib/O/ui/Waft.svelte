@@ -669,6 +669,7 @@
 </script>
 
 <div class="ls-waft" style="margin-left: {depth * 14}px"
+     data-waft-col={wkey}
      class:ls-waft-active={is_active} class:ls-waft-ting={is_taker}
      class:ls-waft-half={sidebyside}>
 

@@ -9,20 +9,25 @@
     import type { TheC }  from "$lib/data/Stuff.svelte"
     import { FUNK_KINDS } from "$lib/O/Funk/kinds"
 
-    let { H, lens }: { H: House, lens: TheC } = $props()
+    let { H, lens, face, mini = false }: { H: House, lens: TheC, face?: string, mini?: boolean } = $props()
 
     let funk     = $derived(lens.c.funk as TheC | undefined)
-    let lensKind = $derived(lens.sc.Lens as string | undefined)         // Panel | InterestSmall | …
+    let lensKind = $derived(lens.sc.Lens as string | undefined)         // Panel | InterestSmall | Brink | …
+    // `face` overrides which comp_<kind> to mount for the SAME lens particle — e.g. the collapsed
+    //  Brink asks for the funk's comp_MiniBrink (a one-row summary) instead of its full comp_Brink.
+    let faceKind = $derived(face ?? lensKind)
     let funkKind = $derived((lens.sc.of_Funkcion ?? funk?.sc.Funkcion) as string | undefined)
-    let Face     = $derived((funkKind && lensKind
-                            ? (FUNK_KINDS[funkKind] as any)?.['comp_' + lensKind]
+    let Face     = $derived((funkKind && faceKind
+                            ? (FUNK_KINDS[funkKind] as any)?.['comp_' + faceKind]
                             : undefined) as any)
 </script>
 
 {#if Face}
-    <Face {H} {lens} {funk} w={funk?.c?.up} />
-{:else}
-    <div class="lens-bare">Lens:{lensKind ?? '?'}/of_Funkcion:{funkKind ?? '?'} — no face</div>
+    <Face {H} {lens} {funk} w={funk?.c?.up} {mini} />
+{:else if !mini}
+    <!-- a full-slot Lens with no face is a typo'd suggest — surface it; a MINI face that's absent is
+         expected (not every funk has a comp_MiniBrink), so render nothing. -->
+    <div class="lens-bare">Lens:{faceKind ?? '?'}/of_Funkcion:{funkKind ?? '?'} — no face</div>
 {/if}
 
 <style>

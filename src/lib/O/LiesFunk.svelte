@@ -34,6 +34,44 @@ import { onMount } from "svelte"
 
 let { M } = $props()
 
+// ── test-music generator engine (for the MusuTones Book — a one-off dev-setup Book, not a node script) ──
+//  Pure-tone tracks: the FREQUENCY IS THE LABEL, so the real-time race test decodes back which track
+//   played each 50ms.  Musical + well-spaced (≥110Hz apart) so an FFT bin never confuses two.  artist-title
+//    rides the filename ("Artist - Title.wav") — exactly what Crate_meta_from_name reads back.
+const TEST_TONES: Array<{ artist: string, title: string, freq: number, secs: number }> = [
+    { artist: 'The Sines',    title: 'Deep A',   freq: 220.00, secs: 4 },
+    { artist: 'The Sines',    title: 'Middle A', freq: 440.00, secs: 5 },
+    { artist: 'The Sines',    title: 'High A',   freq: 1760.0, secs: 3 },
+    { artist: 'Fourier Four', title: 'Query E',  freq: 329.63, secs: 4 },
+    { artist: 'Fourier Four', title: 'Echo E',   freq: 1318.5, secs: 4 },
+    { artist: 'DJ Oscillo',   title: 'Dorian D', freq: 587.33, secs: 6 },
+    { artist: 'DJ Oscillo',   title: 'Groove G', freq: 783.99, secs: 3 },
+    { artist: 'DJ Oscillo',   title: 'Cosmic C', freq: 1046.5, secs: 5 },
+]
+
+// wav_bytes — a mono 16-bit PCM WAV of a pure sine (20ms fade in/out to avoid clicks).  Binary encode is
+//  DSL-hostile, so it lives here (break-glass) and the .g Book orchestrates.  decodeAudioData reads it.
+function wav_bytes(freq: number, secs: number, sr = 48000): Uint8Array {
+    const n = Math.floor(sr * secs)
+    const fade = Math.min(Math.floor(sr * 0.02), Math.floor(n / 2))
+    const dataLen = n * 2
+    const buf = new ArrayBuffer(44 + dataLen)
+    const dv = new DataView(buf)
+    const wstr = (o: number, s: string) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)) }
+    wstr(0, 'RIFF'); dv.setUint32(4, 36 + dataLen, true); wstr(8, 'WAVE')
+    wstr(12, 'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true)
+    dv.setUint32(24, sr, true); dv.setUint32(28, sr * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true)
+    wstr(36, 'data'); dv.setUint32(40, dataLen, true)
+    for (let i = 0; i < n; i++) {
+        let env = 1
+        if (i < fade) env = i / fade
+        else if (i > n - fade) env = (n - i) / fade
+        const s = Math.sin(2 * Math.PI * freq * i / sr) * 0.6 * env
+        dv.setInt16(44 + i * 2, Math.max(-1, Math.min(1, s)) * 32767, true)
+    }
+    return new Uint8Array(buf)
+}
+
 // HAVOC_LIMBS — the havoc drum-machine's reusable behaviours, keyed by limb kind.
 //  Each limb pops a different part of the Lies/Store plumbing.  A Ballistics pad
 //  (Funkcion:Ballistics,kind:…) authored in a Waft is the per-test config; this is the
@@ -294,6 +332,19 @@ await M.eatfunc({
         else H.Lies_lens_suggest(lensKind, of_Funkcion, sc)
     },
 
+    //   Lies_waftmap_ensure — hoist the "Plank" (the Waft navigator / Doc-relevance Venn) as a
+    //    PERSISTENT editor Brink tenant.  Unlike the Aim faces (re-suggested per tick as liveness
+    //     shifts) or Upkeep (up only while an %Errand lives), the navigator is always wanted — so a
+    //      one-shot idempotent suggest, editor-only.  Face-only (no run, like Upkeep); no funk backlink
+    //       (it resolves w:Lies off examining).  altitude 30 sits it after the connectivity glances
+    //        (Sound 5 / Upkeep 10 / Rundar 20 / Relay 25).
+    Lies_waftmap_ensure(w: TheC): void {
+        const H = this as any
+        if (H.Lies_role(w) !== 'editor') return
+        if (!(H.Lies_lens_bag() as TheC).oa({ Lens: 'Brink', of_Funkcion: 'waftmap' }))
+            H.Lies_lens_suggest('Brink', 'waftmap', { altitude: 30 })
+    },
+
     // ── %Upkeep — the machine's background work-ledger (the opposite pole of %Interest) ──────
     //   %Upkeep is the quality of work the machine owes ITSELF — keeping endpoints up, Books green,
     //    ghosts compiled — surfaced at the Brink, never courting attention the way an %Interest does.
@@ -394,12 +445,11 @@ await M.eatfunc({
         if (!cluster) return
         let changed = false
         for (const hi of cluster.o({ HostedIdentity: 1 }) as TheC[]) if (hi.sc.self) { delete hi.sc.self; changed = true }
-        const self = (H as any).Lies_self?.(w) as { prepub?: string; friendly?: string } | undefined
+        const self = (H as any).Lies_self?.(w) as { prepub?: string } | undefined
         if (self?.prepub) {
             const me   = cluster.oai({ HostedIdentity: self.prepub }) as TheC   // oai mints+bumps on first sight
             const role = H.Lies_role(w)
-            if (me.sc.role !== role)                                   { me.sc.role = role; changed = true }
-            if (self.friendly && me.sc.friendly !== self.friendly)     { me.sc.friendly = self.friendly; changed = true }
+            if (me.sc.role !== role) { me.sc.role = role; changed = true }
         }
         if (changed) cluster.bump_version()   // tracked: a raw delete|assign alone wouldn't fire watch_c → no save
     },
@@ -606,6 +656,14 @@ await M.eatfunc({
                 lens.c.w = w
             }
         } else H.Lies_lens_dismiss('Brink', 'Relay')
+
+        // Sound — the "tap for sound" audio-gate beg (both roles).  Self-gates: the face is invisible
+        //  until a gat fires AudioContext_wanted, so it's suggested unconditionally when on and shows
+        //   only when audio is actually blocked.  altitude 5 = leftmost/interior-most in the mini row.
+        if (on) {
+            if (!bag.oa({ Lens: 'Brink', of_Funkcion: 'Sound' }))
+                H.Lies_lens_suggest('Brink', 'Sound', { altitude: 5 })
+        } else H.Lies_lens_dismiss('Brink', 'Sound')
 
         // Rundar — the runner RADAR (renamed from Runner: it started point-to-point, then we sludged the
         //  fleet rack into it; the new name carries the multiplicity).  TWO modes off ONE kind:
@@ -905,6 +963,7 @@ await M.eatfunc({
             const H    = this as House
             const book = e.sc.book as string | undefined
             if (!book) return
+            const needAC = !!e.sc.needAC   // carried from the Credence cell (of_Book,needAC:1) → secured pre-run
             if (H.Lies_is_editor(w)) {
                 const pick = H.Lies_dispatch_target(w)   // {to} ▸ {} broadcast ▸ {exhausted} preempt-our-runner
                 if (pick.exhausted) {
@@ -913,7 +972,7 @@ await M.eatfunc({
                     //   (StoryTimes keeps the hold/parallel-acquire path — that's the multi-run sweep, below.)
                     const pre = (H as any).Lies_preempt_target(w) as string | undefined
                     if (pre) {
-                        const sent = H.Lies_send_become_book(w, book, pre)
+                        const sent = H.Lies_send_become_book(w, book, pre, needAC)
                         H.tlog(`↻ all runners busy — preempting @${pre.slice(0, 8)} → ${book} ${sent ? '(re-instructed, prior run canceled)' : '(channel down)'}`)
                         return
                     }
@@ -935,10 +994,10 @@ await M.eatfunc({
                     }
                     H.Lies_relay_note(w, `⚠ no runner known at all — broadcasting ${book} (lone/unregistered runner)`, true)
                 }
-                const sent = H.Lies_send_become_book(w, book, pick.to)
+                const sent = H.Lies_send_become_book(w, book, pick.to, needAC)
                 H.tlog(`🎬 editor become_book → ${book} ${pick.to ? `@${pick.to.slice(0, 8)}` : '(broadcast)'} ${sent ? '(sent)' : '(channel down — no runner)'}`)
             } else {
-                H.Lies_become_book_drive(w, book)   // runner, or a bare dev Lies with a co-resident Run
+                H.Lies_become_book_drive(w, book, needAC)   // runner, or a bare dev Lies with a co-resident Run
             }
         },
 
@@ -946,12 +1005,12 @@ await M.eatfunc({
         //  rungo channel).  Returns false when the channel is down so the caller can say so.
         //   `to` (a runner prepub, Engage_integration C2) addresses ONE runner on the grid: promote a
         //    Pier for it and ship to:<prepub>; absent, the legacy single-address role broadcast.
-        Lies_send_become_book(w: TheC, book: string, to?: string): boolean {
+        Lies_send_become_book(w: TheC, book: string, to?: string, needAC = false): boolean {
             const H = this as House
             if (!H.Lies_is_editor(w) || !H.Lies_channel_live(w)) return false
             if (to) {
                 if (!H.Lies_runner_pier(w, to)) return false
-                ;(H as any).Peeroleum_send_to(w, to, 'become_book', { book })
+                ;(H as any).Peeroleum_send_to(w, to, 'become_book', { book, ...(needAC ? { needAC: 1 } : {}) })
                 // light the ☎ on this runner's rack slot — a job in flight, awaiting its ack.  Cleared when
                 //  the runner advertises a `book` (it picked up + started → ▶), in Lies_advertise_recv.
                 const r = w.oai({ Runner: to }) as TheC          // snapped now (1:1 with the registry); the ☎ rides off-snap
@@ -962,7 +1021,7 @@ await M.eatfunc({
             }
             const pier = (w.o({ Peering: 1 })[0] as TheC | undefined)?.o({ Pier: 1 })[0] as TheC | undefined
             if (!pier) return false
-            ;(H as any).Peeroleum_send_consumer(w, 'become_book', { book })
+            ;(H as any).Peeroleum_send_consumer(w, 'become_book', { book, ...(needAC ? { needAC: 1 } : {}) })
             H.tlog(`📤 become_book → runner: ${book}`)
             return true
         },
@@ -993,6 +1052,9 @@ await M.eatfunc({
             return true
         },
 
+        // RUN-BEGIN 1/2 — become_book: run a named Book at whatever's live (loose, fires now).  The other
+        //  is req_rungo (LiesLies): currency-gated, waits for an exact compiled dige.  Two begin-paths is a
+        //   dev ugliness — converge ~mid-Jul 2026 by folding this into a req:rungo,book branch.
         // Lies_become_book_drive — the runner's single run FRONT DOOR (become_book AND runner_ask both
         //  land here).  When the authority says this Book needAC (from Waft:Credence), SECURE the real
         //   voice FIRST — before the run begins — so the AC-wait is never inside a step's clock.  Then
@@ -1027,12 +1089,82 @@ await M.eatfunc({
             if (gat.AC_ready) return true
             if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('AudioContext_wanted', { detail: { gat } }))
             H.Lies_runner_phase(w, 'awaiting_audio', { book })   // Brink-complain up to the editor
+            H.Upkeep_errand(`needAC:${book}`, { kind: 'audio', label: book, phase: 'running' }); H.Lies_upkeep(w)   // 🎤 on the Brink while we beg
+            // spin the tab title so this runner announces itself in the tab strip while it begs — the
+            //  reliable cross-tab attention-grab when the editor can't focus a sibling it didn't spawn.
+            const spin = ['⠋','⠙','⠹','⠸','⠼','⠴','⠦','⠧','⠇','⠏']
+            const title0 = typeof document !== 'undefined' ? document.title : ''
+            let f = 0
             const deadline = Date.now() + 60000
+            let live = false
             while (Date.now() < deadline) {
-                if (gat.AC_ready) return true
+                if (gat.AC_ready) { live = true; break }
+                if (typeof document !== 'undefined') document.title = `${spin[f++ % spin.length]} needs audio · ${book}`
                 await new Promise(r => setTimeout(r, 300))
             }
-            return !!gat.AC_ready
+            if (typeof document !== 'undefined') document.title = title0   // restore
+            if (live) H.Lies_runner_phase(w, 'audio_secured', { book })   // UNBEG — clear the editor's beg the moment AC lands
+            H.Upkeep_errand(`needAC:${book}`, { kind: 'audio', label: book, phase: live ? 'ok' : 'failed' }); H.Lies_upkeep(w)
+            return live || !!gat.AC_ready
+        },
+
+        // Lies_audio_probe — one-shot fleet question: does an online AudioContext actually RUN here
+        //  (state, and does currentTime tick at WALL-CLOCK rate) and can an AnalyserNode HEAR a tone with
+        //   NO output device and NO gesture (the --autoplay-policy flag case)?  If yes to both, the real
+        //    delivery-race test can run on the flagged fleet unattended — no human, no gate.  If the
+        //     context stays suspended or doesn't tick real-time, the race needs a gesture (the gate).
+        //   Pure report — attempts resume() once but never begs; closes the context after ~1.5s.
+        async Lies_audio_probe(): Promise<any> {
+            if (typeof AudioContext === 'undefined') return { ok: 0, why: 'no AudioContext (jsdom/headless-node)' }
+            let ac: AudioContext | null = null
+            try {
+                ac = new AudioContext()
+                const t0 = ac.currentTime
+                try { await ac.resume() } catch {}
+                const state = ac.state
+                const osc = ac.createOscillator()
+                const an  = ac.createAnalyser(); an.fftSize = 2048
+                osc.frequency.value = 440
+                osc.connect(an); an.connect(ac.destination)
+                osc.start()
+                const wall0 = performance.now()
+                await new Promise(r => setTimeout(r, 1500))
+                const acEl   = ac.currentTime - t0
+                const wallEl = (performance.now() - wall0) / 1000
+                const buf = new Float32Array(an.fftSize)
+                an.getFloatTimeDomainData(buf)
+                let sumSq = 0; for (let i = 0; i < buf.length; i++) sumSq += buf[i] * buf[i]
+                const rms = Math.sqrt(sumSq / buf.length)
+                try { osc.stop() } catch {}
+                const realtime = acEl > 0.5 && Math.abs(acEl - wallEl) < 0.4
+                return {
+                    ok: 1, state,
+                    ac_elapsed: +acEl.toFixed(3), wall_elapsed: +wallEl.toFixed(3), realtime: realtime ? 1 : 0,
+                    rms: +rms.toFixed(5), heard: rms > 0.001 ? 1 : 0, sampleRate: ac.sampleRate,
+                }
+            } catch (e) { return { ok: 0, why: String(e) } }
+            finally { try { await ac?.close() } catch {} }
+        },
+
+        // Musu_gen_testsounds — the MusuTones Book's engine: synth every TEST_TONE as a WAV, write it into
+        //  the served static/testsounds/ (bin_write, on the granted dev-instance share) + a manifest.json,
+        //   so MusuCrate ingests them back gesture-free (Crate_manifest/Crate_fetch_record).  Held by an
+        //    expecting() ttlilt so Story snaps only once every file is written.  Needs a granted share.
+        Musu_gen_testsounds(w: TheC): TheC {
+            const H = this as House
+            return H.expecting(w, 'gen_testsounds', 30, async () => {
+                const nav = H.top_House().o({ A: 'Wormhole' })[0]?.c.nav as any
+                if (!nav?.bin_write) { w.i({ gen_error: 'no writable share — grant one (open share) first' }); return }
+                const dir = 'static/testsounds'
+                const manifest: any[] = []
+                for (const t of TEST_TONES) {
+                    const file = `${t.artist} - ${t.title}.wav`
+                    await nav.bin_write(dir, file, wav_bytes(t.freq, t.secs))
+                    manifest.push({ file, artist: t.artist, title: t.title, freq: t.freq, seconds: t.secs })
+                }
+                await nav.write_file(dir, 'manifest.json', JSON.stringify(manifest, null, 2))
+                w.i({ generated: manifest.length, dir })
+            })
         },
 
         // Lies_runner_ask_recv — the runner answers an addr-less CLI's runner_ask (scripts/runner_ask.mjs):
@@ -1081,6 +1213,8 @@ await M.eatfunc({
                         last_advertise: (w.c.last_advertise as number) ?? null,
                         clustation_self: (H as any).Clustation_self?.()?.prepub ?? null,   // the active %Identity's ?I= face — null iff on a stashed/env key (no ?I=); a split from `self` is the signal
                     }
+                } else if (op === 'probe') {
+                    result = await H.Lies_audio_probe()   // real-audio one-shot: real-time? analyser-heard? (fleet capability)
                 } else if (op === 'run') {
                     // engage the runner for THIS client first (the don't-steal gate): refuse if another
                     //  client holds a live lease; else stamp our lease (GC'ing any prior client's runs) and
@@ -1517,6 +1651,16 @@ await M.eatfunc({
             w.c.run_phase = { phase, n: frame.n, total: frame.total, secs: frame.secs, book: frame.book, path: frame.path, seq: frame.seq, at: Date.now() }
             w.bump_version()
             H.tlog(`📥 run_phase: ${phase}${frame.n != null ? ` ${frame.n}/${frame.total ?? '?'}` : ''}${frame.book ? ` [${frame.book}]` : ''}`)
+            // Brink-complain (editor): a runner begging for AudioContext pre-run surfaces on the Upkeep
+            //  Brink so the operator can go grant it.  awaiting_audio → 🎤 live; any later phase for the
+            //   same book settles it (story_begun = secured, audio_blocked = lapsed).  (Which runner: still
+            //    the single w.c.run_phase slot — per-runner attribution + the jump-link need the from:<pub> demux.)
+            const acKey = `needAC:${frame.book ?? ''}`
+            if (phase === 'awaiting_audio') {
+                H.Upkeep_errand(acKey, { kind: 'audio', label: frame.book ?? 'runner', phase: 'running' }); H.Lies_upkeep(w)
+            } else if ((H.Upkeep_bag() as TheC).oa({ Errand: acKey })) {
+                H.Upkeep_errand(acKey, { kind: 'audio', label: frame.book ?? 'runner', phase: phase === 'audio_blocked' ? 'failed' : 'ok' }); H.Lies_upkeep(w)
+            }
             return true
         },
 

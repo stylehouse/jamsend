@@ -2105,6 +2105,19 @@ export class WormholeNav {
         // invalidate parent so next dir() sees new file
         await dir.expand()
     }
+
+    // bin_write — write_file's BINARY twin: getWriter + write raw bytes (no TextEncoder), for audio and
+    //  other binary assets the text rw_op can't carry.  mkdirp's the path, same as write_file.  Used by the
+    //   test-music generator Book to lay pure-tone WAVs into a served collection (static/testsounds).
+    async bin_write(dir_path: string, filename: string, bytes: Uint8Array | ArrayBuffer): Promise<void> {
+        const parts = dir_path.split('/').filter(Boolean)
+        const dir = await this.mkdirp(...parts)
+        const writer = await dir.getWriter(filename)
+        await writer.write(bytes as BufferSource)
+        await writer.close()
+        this._cache.delete(parts.join('/'))
+        await dir.expand()
+    }
 }
 
 //#endregion

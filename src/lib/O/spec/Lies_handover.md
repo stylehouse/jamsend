@@ -99,6 +99,16 @@ and the Cursor `%Lango` (→ `req:Langoer`). P3 added the Lango and never retire
 > would be the odd one out, and the change would cost a ~40-snap re-record. The smell was that it was
 > undefined, not that it's short — and defining it, here and in the spec, is the fix.
 
+> **On the Waft stances (bearings).** `equip` and `takes` are *orthogonal* `%`-stances on a Waft
+> (`ui/Waft.svelte:12`), gating different things — don't conflate them into one "backstage" idea.
+> **`equip`** = a *fixture* (Keep / Cluster / GhostList): folds from the snap, out of the cursor's
+> way, **but persisted** (the Keep writes `wormhole/Keep`). **`takes`** = a session *sink* (the
+> Ting): receives globulated taps, **never persisted** — `Lies_waft_save` short-circuits on
+> `sc.takes`, so there is no `wormhole/Ting`. So the Ting is `takes`, not `equip` — correctly. There
+> is therefore **no single "document Wafts" set**: a relevance Lens *lists* all Wafts and *drills*
+> Docs only from `!equip && !takes`. (A `Lies_document_wafts` getter is deliberately un-enshrined —
+> one getter can't carry list-vs-drill.)
+
 ---
 
 ## 4. The drivers
@@ -120,9 +130,17 @@ and the Cursor `%Lango` (→ `req:Langoer`). P3 added the Lango and never retire
 **What they're for.** Stored Waft** is a flat list, and people don't navigate flat. A Lens distorts
 it into relevance: the GhostList promotes an in-group of Docs drawn from several Wafts and makes
 them quick to switch between. The ones still to build group Docs by the Waft they came from, and
-draw the *Venn* of Docs shared across Wafts. Storage stays flat and honest; the Lens is where it
-turns navigable — and *more Lenses* is much of what remains to build (as **components, not
-plumbing** — see below).
+draw the *Venn* of Docs shared across Wafts (**DocWaftMap**, sketched in `DocWaftMap_sketch.md`).
+Storage stays flat and honest; the Lens is where it turns navigable — and *more Lenses* is much of
+what remains to build (as **components, not plumbing** — see below).
+
+A relevance Lens layers three canonical tiers, none of them a tree-walk it invents: the **Known**
+roster (the Keep's `WaftTimes` ledger — every document Waft, loaded or not), the **Loaded** subset
+(`w.o({Waft:1})` minus `%equip`/`%takes` — the ones with a live Doc tree and a `%Map`), and the
+**Attention** highlight (the `Trail + Aside` Interests InterestStrip renders). Rows from Known,
+headings/Docs from Loaded, hotness from Attention — DocWaftMap doubles as a TOC/launcher (cold rows
+load-and-cursor on click); see `DocWaftMap_sketch.md`. The point: these sets are the model's to own,
+not the Lens's to re-decide.
 
 **The mechanism is trivial.** A Lens is just a Svelte component. Register it against a kind in
 `FUNK_KINDS` (`Funk/kinds.ts`) in one line — `dirlist: { component: DocGhostList }`,

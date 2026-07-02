@@ -40,7 +40,7 @@
 import { WebSocket } from 'ws'
 import { readFileSync } from 'node:fs'
 
-const OPS = ['ping', 'run', 'state', 'steps', 'snap', 'rungos', 'accept', 'release', 'runners']
+const OPS = ['ping', 'probe', 'run', 'state', 'steps', 'snap', 'rungos', 'accept', 'release', 'runners']
 
 // ── court a runner via Waft:Cluster ──────────────────────────────────────────────────────────
 //  deLines the registry snap (wormhole/Cluster/toc.snap — the durable HostedIdentity directory the editor
@@ -80,7 +80,7 @@ const op    = pos[0]
 const arg   = pos[1]
 const watch = flags.has('--watch')
 if (!op || !OPS.includes(op)) {
-	console.error('usage: node scripts/runner_ask.mjs <ping|run <Book>|state|steps|snap <n>|rungos|accept|release|runners> [@uid] [--runner=<id>] [--watch]')
+	console.error('usage: node scripts/runner_ask.mjs <ping|probe|run <Book>|state|steps|snap <n>|rungos|accept|release|runners> [@uid] [--runner=<id>] [--watch]')
 	process.exit(2)
 }
 // `runners` — list the Waft:Cluster registry (no relay needed); a discovery aid for --runner=<id>.
