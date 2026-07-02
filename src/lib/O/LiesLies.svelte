@@ -481,10 +481,9 @@
             return key && pub ? { pub, key } : undefined
         },
 
-        // Lies_self — WHO WE ARE on the cluster: our prepub (+ friendly when known), the single
-        //  answer claim_self / advertise / the relay hello should all agree on.  Resolves the SAME
-        //   identity we sign with — Clustation_self (the ?I= %Identity, which also carries friendly)
-        //    first, else the legacy key behind Lies_cluster_idento (.stashed via the 🪪 hatch, or a
+        // Lies_self — WHO WE ARE on the cluster: our prepub, the single answer claim_self / advertise /
+        //  the relay hello should all agree on.  Resolves the SAME identity we sign with — Clustation_self
+        //   (the ?I= %Identity) first, else the legacy key behind Lies_cluster_idento (.stashed via the 🪪 hatch, or a
         //     node role env) reduced to its prepub.  This second tier is the fix for the empty
         //      registry: an un-migrated editor (a stashed key, no ?I=) HAS a signing identity but
         //       Clustation_self can't see it, so it never claimed itself.  undefined ⇒ no identity at
@@ -893,10 +892,6 @@
             //  Upkeep Brink by whether any %Errand (a compile, a sweep) is live, and reap settled
             //   ones.  Off the channel gate — a compile/sweep is local work that runs without a peer.
             ;(H as any).Lies_upkeep(w)
-            // The Plank (Waft navigator / Doc-relevance Venn): hoist it as a persistent editor Brink
-            //  tenant (one-shot idempotent, editor-only).  Not gated on work|liveness — a navigator is
-            //   always wanted; the Brink stays present in the editor so it's reachable at a glance.
-            ;(H as any).Lies_waftmap_ensure(w)
             // liveness + ping is split into Lies_keepalive so an INDEPENDENT timer (Lies_channel_up)
             //  can drive it OFF the belief loop too — liveness must not ride think, or a quiesced peer
             //   stops pinging and the far watchdog flaps it (the LATENCY SWAMP symptom).

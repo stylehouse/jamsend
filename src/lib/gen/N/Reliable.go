@@ -8,137 +8,231 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Reliable(): string { return '48e8948c7d8da3ed' },
+    Ghostmeta_Ghost_N_Reliable(): string { return 'ed4fd88c7e2b904a' },
 
-// Reliable — the network-healing floor: an in-order, exactly-once stream over a lossy line.
-//  Pure cursor|ledger algebra, no particles of its own; the methods ride on H and the spine calls them.
-//   inseq is called from Peeroleum_deliver, retx from the outbox sweep off Runstepped.
-//  Dormant on the happy path — the clean mock never drops|dups|reorders, so a real run touches none of it.
-//   The adversary region below, or a retransmit re-sending a seq, is what first bends the stream.
-//  No wall-clock anywhere: the Story replays, so deadlines count logical ticks, sweep|carrier beats, never ms.
-//  The live gate is the in-app PereStaple run plus the heading-6 corruption tests.
+// Tyrant — the cabinetry over the Peeroleum floor: identity & trust → admission.
+//  A clean-room rebirth of legacy Tyranny, in stho, riding the Peeroleum transport
+//   (the "linoleum floor") — it never touches a carrier, it emits through
+//    &Peeroleum_send and plugs a hear_<verb> handler into the inbox dispatch via the
+//     Peeroleum_on consumer seam, exactly like hello/trust. Design: Covenant_design.md.
+//
+//   M1 — trust over GIVEN identities (Alice+Bob magically provisioned: %Ud pre-stamped,
+//         no meeting). A bidirectional vouch exchange that settles on acks and yields an
+//          explicit %trust,grants on each Pier — the thing admission reads.
+//   M2 — policy-gated admission. A %req:join on a side's w whose `finished` is the AND of
+//         its policy leaves (proven ∧ trusted), maz-ordered; the admit leaf (lowest maz)
+//          runs only once both pass and stamps w/%member,signed — "on the network".
+//
+//   Meet + prove (earning %Ud rather than being given it) is the deeper M2, deferred —
+//    here %Ud is given, so the policy `proven` leaf reads the given %Ud. Inner steps:
+//     step 2  given sides + run %req:trust          ⇒ %witnessed:step_2 (both %trust,grants)
+//     step 3  arm %req:join + drive the policy gate ⇒ %witnessed:step_3 (both w/%member,signed)
 
-// ── inbound: per-Pier sequence discipline, the correctness floor ──
-// It MUST precede retransmit: a re-sent or reordered frame dispatched twice corrupts state.
-//  The cursor st {last, buffered} rides pier.c, off-snap; `last` is the highest CONTIGUOUS seq delivered.
-//  A dup ≤ last stays caught even after its req:unemit was %done and culled, because `last` persists.
-//   That persistence closes the gap a bare oai-by-seq would leave open.
-
-// inseq_admit — fold an arriving seq into st, returning the ordered seqs ready to deliver now.
-//  An empty return means a dropped dup, or a gap held until it fills. Mutates st.
-inseq_admit(st, seq) {
-    if (!Number.isFinite(seq) || seq <= st.last) return []         // already delivered | too old → drop
-    if (st.buffered.includes(seq)) return []                       // already held → drop
-    if (seq > st.last + 1) { st.buffered.push(seq); return [] }    // gap ahead → buffer, deliver nothing yet
-    let out = [seq]
-    st.last = seq                                                  // contiguous → deliver it,
-    for (;;) {                                                     //  then drain the run a filled gap releases
-        let i = st.buffered.indexOf(st.last + 1)
-        if (i < 0) break
-        st.buffered.splice(i, 1)
-        st.last++
-        out.push(st.last)
-    }
-    return out
+// Run_A_PereTyrant — the Book's Run recipe (Story_subHouse calls it to wire the Run),
+//  mirroring Run_A_PereStaple. Lay the single test actor + its w; the role is already
+//   'runner' (Auto/boot) — this just guards it. (Book/test name = PereTyrant, the Pere*
+//    family alongside PereStaple; the Tyrant_* helpers below keep the Tyrant name — that
+//     is the subsystem, exactly as PereStaple's wrangler drives Lake_* helpers.)
+Run_A_PereTyrant() {
+    this.c.role ??= 'runner'
+    this._i_drill(this, [{sc: {A: "PereTyrant"}}, {sc: {w: "PereTyrant"}}])
 
 },
-// ── outbound: retransmit the un-acked ──
-// Peeroleum_send stashes emit.c.frame, sent_tick, and attempts; Peeroleum_retx_sweep rides the Runstepped
-//  boundary and drives retx_due, re-handing any due frame to the live transport.
-//   The peer's inseq dedups the re-send, so a frame that was merely slow costs nothing.
+// Per beat: install the eternal %req:wrangle whose do_fn drives the inner steps. Like
+//  PereStaple, we do NOT use H.on_step (it keys off one H-global did_on_step_n that a
+//   step-1 table claims when setup spills into step 2); Tyrant_drive keeps a req-local
+//    did_step instead.
+PereTyrant(A,w) {
+    w.i({see: 'y Tyrant — yyyyar!'})
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.Tyrant_drive(w,req)
+        req.sc.ok = 1
 
-// retx_delay — ticks to wait after the n-th send before the next; capped exponential backoff.
-retx_delay(attempts, p) {
-    let n = Math.max(1, attempts)
-    return Math.min(p.cap, p.base * Math.pow(p.factor, n - 1))
-
+    })
 },
-// retx_due — partition the un-acked emits {seq, sent_tick, attempts, acked} at logical-tick `now`.
-//  Window elapsed with tries left → resend; window elapsed but exhausted → dead.
-//   No-SACK: anything behind an unfillable gap dies too, so dead rolls on to faulty handling and reset.
-//  Policy is {base:2, factor:2, max_attempts:5, cap:16}.
-//  Pure — the caller bumps attempts and sent_tick when it actually re-sends.
-retx_due(emits, now, p) {
-    let resend = []
-    let dead = []
-    for (const e of emits) {
-        if (e.acked) continue
-        if (now - e.sent_tick < this.retx_delay(e.attempts, p)) continue
-        if (e.attempts >= p.max_attempts) {
-            dead.push(e.seq)
-        } else {
-            resend.push(e.seq)
+// Tyrant_drive — the wrangle's step dispatch. Fire a step's setup once (the first pass it
+//  sees a new run step_n, tracked on req.c.did_step), then pump + witness every pass after.
+async Tyrant_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) {
+            this.Tyrant_sides_up(w)
+        } else if (n === 3) {
+            this.Tyrant_admit_arm(w)
         }
     }
-    return { resend, dead }
+    await this.Tyrant_pump(w)
+    this.Tyrant_witness(w)
 
 },
-// ── the adversary: a deterministic lossy carrier, so a Story can exercise the sad path ──
-// The clean mock pairs ports verbatim and never fails, so healing code that never saw a lost frame is untested.
-//  This wraps a real partner port with a seeded, per-seq schedule.
-// Two invariants keep it a regression gate, not a flake:
-//  deterministic — an explicit per-seq list, never Math.random;
-//  replay-safe — delay counts logical ticks, since tick() rides carrier beats, never the wall.
-// A dropped seq is TRANSIENT: lost on its first transit, passed on every retransmit — so the retry HEALS it.
-//  That is the reliability test (drop → emit un-acked → retx re-sends → this time it lands).
-//  A permanent dead link is the separate `blackhole` knob: every transit lost, so the emit eventually goes %dead.
-// Reorder is not its own knob — it falls out of delay, since holding seq N past N+1 IS a reorder.
-//  drop → retransmit-heals, dup → dedup, delay → gap-buffer, blackhole → dead.
-// Test scaffolding, dormant until an adversarial Story hands a port through make_lossy_partner.
-
-// lossy_decide — PURE: decide blackhole | drop | dup | {delay} | pass for this seq.
-//  Precedence is blackhole > drop > dup > delay, so a seq in two buckets has one fate and the trace stays deterministic.
-lossy_decide(s, seq) {
-    if (s.blackhole?.includes(seq)) return 'blackhole'
-    if (s.drop?.includes(seq)) return 'drop'
-    if (s.dup?.includes(seq)) return 'dup'
-    let d = s.delay?.[seq]
-    if (d && d > 0) return { delay: d }
-    return 'pass'
-
-},
-// make_lossy_partner — wrap realPartner, whose .recv delivers into its Pier inbox, so recv applies the schedule.
-//  drop loses a seq's FIRST transit (seen[] counts transits), then passes the resend — the sender's emit
-//   goes un-acked, the retransmit re-sends, and this time it lands: a healed drop.
-//  blackhole loses every transit — the permanent-fault case.
-//  dup delivers twice, so inseq must collapse it; delay holds N ticks (the gap-buffer|reorder case).
-//  tick() advances the logical clock, releasing due frames in seq order.
-//  held, dropped, duped (the seqs it swallowed | sent twice — witness targets that survive the cull), clock are exposed.
-make_lossy_partner(realPartner, schedule) {
+// Tyrant_sides_up — step 2: stand up both GIVEN sides directly (magic provisioning), pair
+//  their mock-ports, register the vouch receive handler, and seed %req:trust on each Pier.
+//   Mirrors PereStaple's Lake_sides_up, with two differences: %Ud is pre-stamped (so the
+//    spine's pre-Ud inbox gate lets a `vouch` frame through), and a `vouch` handler is
+//     registered via the Peeroleum_on consumer seam (no edit to the floor).
+Tyrant_sides_up(w) {
     const H = this
-    let held = []
-    let clock = 0
-    let seen = {}
-    let dropped = []
-    let duped = []
-    let deliver = (f) => realPartner.recv(f)
-    return {
-        recv(frame) {
-            let seq = Number(frame?.header?.seq)
-            let action = H.lossy_decide(schedule, seq)
-            if (action === 'blackhole') { dropped.push(seq); return }
-            if (action === 'drop') {
-                seen[seq] = (seen[seq] || 0) + 1
-                if (seen[seq] === 1) { dropped.push(seq); return }
-                return deliver(frame)
-            }
-            // dup delivers the SAME frame twice in one transit — the receiver's inseq must collapse the
-            //  second (seq ≤ last → re-ack only). duped logs that the dup actually fired, so a dedup
-            //   witness can prove two arrived AND one dispatched (not merely that one was sent).
-            if (action === 'dup') { duped.push(seq); deliver(frame); deliver(frame); return }
-            if (typeof action === 'object') { held.push({ frame, due: clock + action.delay }); return }
-            return deliver(frame)
-        },
-        tick() {
-            clock++
-            let due = held.filter(h => h.due <= clock).sort((a, b) => a.due - b.due)
-            for (const h of due) { held.splice(held.indexOf(h), 1); deliver(h.frame) }
-        },
-        held,
-        dropped,
-        duped,
-        get clock() { return clock },
+    w.i({reached: "step_2"})
+    // lay each side: actor + its w:Tyrant, a Peering named by us, a Pier named by the peer.
+    let {AliceA, Alicew} = this._i_drill_caps(this, [{sc: {A: "Alice"}, caps: [{as: "AliceA", key: "A", val: false}]}, {sc: {w: "Tyrant"}, caps: [{as: "Alicew", key: "w", val: false}]}])
+    let {BobA, Bobw} = this._i_drill_caps(this, [{sc: {A: "Bob"}, caps: [{as: "BobA", key: "A", val: false}]}, {sc: {w: "Tyrant"}, caps: [{as: "Bobw", key: "w", val: false}]}])
+    let AlicePeering = Alicew.i({Peering: 1, name: "alice"})
+    let BobPeering = Bobw.i({Peering: 1, name: "bob"})
+    // c.up: the belief walk wires A/w only, not the domain particles under w.  Stamp each
+    //  Peering→w by hand (i doesn't wire c.up); each Pier is minted with oai (the flock —
+    //   %Pier,pub:…,req), which wires Pier.c.up=Peering for us, so its %req:trust can pump.
+    AlicePeering.c.up = Alicew
+    BobPeering.c.up = Bobw
+    // the Pier flock: oai Pier,$pub,req — a per-peer Pier carrying the serialise sentinel
+    //  mints as %Pier,pub:…,req:N (mainkey Pier, dispatched by req_Pier).  We mint it ⇒ we
+    //   own its identity (no remote gut-swap), the security M1's trust then rides on.
+    let AlicePier = AlicePeering.oai({Pier: 1, pub: "bob", req: 1})
+    let BobPier = BobPeering.oai({Pier: 1, pub: "alice", req: 1})
+    // GIVEN identities (M1 skips meet+prove): %Ud pre-stamped, so a vouch frame clears the
+    //  spine's pre-Ud gate (which otherwise admits only hello|noop, spec §7.3).
+    AlicePier.i({Ud: 1, id: "bob"})
+    BobPier.i({Ud: 1, id: "alice"})
+    // mock transport on each side + pair the two ports (reuse the floor's mock carrier).
+    this.transport(AliceA,Alicew)
+    this.transport(BobA,Bobw)
+    this.Peeroleum_arm_whittle(Alicew)
+    this.Peeroleum_arm_whittle(Bobw)
+    let Aliceport = Alicew.o({active_transport: 1})[0].c.connection
+    let Bobport = Bobw.o({active_transport: 1})[0].c.connection
+    Aliceport.partner = Bobport; Bobport.partner = Aliceport
+    // register the `vouch` receive handler on each side (the consumer dispatch seam): the
+    //  serial inbox routes a verified vouch frame to hear_vouch inside the same lifecycle as
+    //   hello/trust. A closure off a frame is an object payload — a raw-JS seam.
+    H.Peeroleum_on(Alicew, 'vouch', (cw, cpier, cframe) => H.hear_vouch(cw, cpier, cframe))
+    H.Peeroleum_on(Bobw, 'vouch', (cw, cpier, cframe) => H.hear_vouch(cw, cpier, cframe))
+    // seed the trust exchange on each Pier; the first Tyrant_pump pass drives say_vouch.
+    AlicePier.oai({req: "trust"})
+    BobPier.oai({req: "trust"})
+
+},
+// Tyrant_admit_arm — step 3: seed %req:join on each side's w. The policy gate (req_join's
+//  maz-ordered leaves) finishes once trust granted at step 2 satisfies `trusted` and the
+//   given %Ud satisfies `proven`.
+Tyrant_admit_arm(w) {
+    w.i({reached: "step_3"})
+    let Alicew = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Tyrant"}, exactly: {w: true}}])
+    let Bobw = this._o_drill1(this, [{sc: {A: "Bob"}, exactly: {A: true}}, {sc: {w: "Tyrant"}, exactly: {w: true}}])
+    if (Alicew)
+        Alicew.oai({req: "join"})
+    if (Bobw)
+        Bobw.oai({req: "join"})
+
+},
+// Tyrant_pump — re-pump each side's nested reqs every pass: the PEERING (peering.do() runs
+//  the Pier flock via req_Pier, each Pier driving its own %req:trust) and the w's %req:join.
+//   Each inbound vouch's feebly_ponder brings the run back here, advancing the leaves as
+//    their protocol particles land.
+async Tyrant_pump(w) {
+    for (const side of ['Alice', 'Bob']) {
+        let peering = this._o_drill1(this, [{sc: {A: side}, exactly: {A: true}}, {sc: {w: "Tyrant"}, exactly: {w: true}}, {sc: {Peering: 1}}])
+        if (peering) await peering.do()
+        let sw = this._o_drill1(this, [{sc: {A: side}, exactly: {A: true}}, {sc: {w: "Tyrant"}, exactly: {w: true}}])
+        if (sw) await sw.do()
     }
+
+},
+// Tyrant_witness — the readable assertions, polled each pass (step rides in the value —
+//  `step` is the Story mainkey, so it can't be a key). Idempotent.
+Tyrant_witness(w) {
+    let AlicePier = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Tyrant"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
+    let BobPier = this._o_drill1(this, [{sc: {A: "Bob"}, exactly: {A: true}}, {sc: {w: "Tyrant"}, exactly: {w: true}}, {sc: {Peering: 1}}, {sc: {Pier: 1}}])
+    // step 2: both Piers granted trust (the bidirectional vouch exchange settled).
+    if (AlicePier?.o({trust:1})[0]?.sc.grants && BobPier?.o({trust:1})[0]?.sc.grants && !(w.oa({witnessed: "step_2"}))) w.i({witnessed: "step_2"})
+    // step 3: both sides admitted — w/%member,signed (the policy gate finished).
+    let Alicew = this._o_drill1(this, [{sc: {A: "Alice"}, exactly: {A: true}}, {sc: {w: "Tyrant"}, exactly: {w: true}}])
+    let Bobw = this._o_drill1(this, [{sc: {A: "Bob"}, exactly: {A: true}}, {sc: {w: "Tyrant"}, exactly: {w: true}}])
+    if (Alicew?.o({member:1})[0]?.sc.signed && Bobw?.o({member:1})[0]?.sc.signed && !(w.oa({witnessed: "step_3"}))) w.i({witnessed: "step_3"})
+
+},
+// ── M1: trust as an acked vouch exchange (spec §8 shape, vouch vocabulary) ─────
+// %req:trust owns two maz-ordered leaves under a %Pier: said_vouch (we emit our vouch,
+//  idempotent on the protocol particle) then heard_vouch (pure existence check on the far
+//   side's vouch). When heard lands, grant: stamp %trust,grants:full. Parent rolls up when
+//    both finish. The leaf is %Pier/%req:trust/%req:<leaf>, so its Pier is req.c.up.c.up.
+async req_trust(req) {
+    req.oai({req: "said_vouch", maz: 2})
+    req.oai({req: "heard_vouch"})
+    await req.do()
+    if (req.all_finished() && !req.sc.finished) (req.c.up).finish(req)
+
+},
+async req_said_vouch(req) {
+    let pier = req.c.up.c.up
+    let w = pier.c.up.c.up
+    this.say_vouch(w,pier)
+    let said = this._o_drill1(pier, [{sc: {protocol: 1}}, {sc: {vouch: 1}}, {sc: {said: 1}}])
+    if (said) (req.c.up).finish(req)
+
+},
+async req_heard_vouch(req) {
+    let pier = req.c.up.c.up
+    let heard = this._o_drill1(pier, [{sc: {protocol: 1}}, {sc: {vouch: 1}}, {sc: {heard: 1}}])
+    if (heard)
+        this.Tyrant_grant(pier)
+        req.c.up.finish(req)
+
+},
+// say_vouch — write our half of the vouch protocol and emit one `vouch` frame to the peer;
+//  idempotent on the protocol particle so a re-pump never double-sends. seq is the per-Pier
+//   monotone outbound counter (Pier_next_seq, spec §7.1). Mirrors say_trust.
+say_vouch(w, pier) {
+    let proto = pier.oai({protocol: 1})
+    let vouch = proto.oai({vouch: 1})
+    if (vouch.oa({said:1})) return
+    let me = pier.c.up.sc.name
+    let seq = this.Pier_next_seq(pier)
+    vouch.i({said:1, seq})
+    this.Peeroleum_send(w,{header:{type:'vouch', from:me, to:pier.sc.pub, seq}})
+
+},
+// hear_vouch — the far side's vouch landed (verified + gated by the spine's pre-Ud inbox).
+//  Record %heard; the heard_vouch leaf grants on it. Returns true (M1 trusts the given
+//   identity; a real verify is a later layer). Registered via Peeroleum_on(w,'vouch',…).
+hear_vouch(w, pier, frame) {
+    pier.oai({protocol:1}).oai({vouch:1}).i({heard:1})
+    return true
+
+},
+// Tyrant_grant — both directions vouched ⇒ stamp the trust grant on the Pier (the particle
+//  admission's `trusted` policy reads). Idempotent.
+Tyrant_grant(pier) {
+    pier.oai({trust: 1}, {grants: "full"})
+
+},
+// ── M2: policy-gated admission — a %req:join whose finished is the AND of its leaves ──
+// The elegant core (LiesStore phased-%req shape): %req:join on a side's w owns policy leaves
+//  (each finishes only when its condition holds) + an admit leaf at the lowest maz, so admit
+//   runs only after every policy passes. Settling %req:join IS being on the network.
+async req_join(req) {
+    req.oai({req: "policy", kind: "proven", maz: 3})
+    req.oai({req: "policy", kind: "trusted", maz: 2})
+    req.oai({req: "admit"})
+    await req.do()
+    if (req.all_finished() && !req.sc.finished) (req.c.up).finish(req)
+
+},
+// req_policy — one handler, kind-branched: a pure read of the particles M1/the given setup
+//  produced. proven = identity present (%Ud on the Pier); trusted = M1 granted (%trust,grants).
+//   The leaf is w/%req:join/%req:policy, so its w is req.c.up.c.up.
+req_policy(req) {
+    let w = req.c.up.c.up
+    let pier = w.o({Peering:1})[0]?.o({Pier:1})[0]
+    if (!pier) return
+    if (req.sc.kind === 'proven' && pier.oa({Ud:1})) (req.c.up).finish(req)
+    else if (req.sc.kind === 'trusted' && pier.o({trust:1})[0]?.sc.grants) (req.c.up).finish(req)
+
+},
+// req_admit — the gate cleared (lowest maz, so every policy already finished): sign and admit.
+req_admit(req) {
+    let w = req.c.up.c.up
+    w.oai({member: 1}, {signed: 1})
+    req.c.up.finish(req)
 
 },
 

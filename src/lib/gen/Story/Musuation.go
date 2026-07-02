@@ -10,7 +10,7 @@ import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Musuation(): string { return 'f79c3277f1116c14' },
+    Ghostmeta_Ghost_Story_Musuation(): string { return '5fc38ffef828409d' },
 
 // Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Music_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
@@ -1780,10 +1780,11 @@ MusuRadio_witness(w) {
 },
 //#endregion
 
-//#region crate — REAL MUSIC: a VISIBLE rastock builds itself from ./testsounds, then we stream it
+//#region crate — REAL MUSIC: a VISIBLE rastock builds itself from testsounds/, then we stream it
 // ══ MusuCrate — watch req:rastock desire, the reads come back, the records get made ════════════════
-//  Real nested music (artist/album/track) served via static/, fetched + decoded from the start (Offline
-//   AudioContext, gesture-free; OPFS avoided — it can get fatal).  The point is the PROCESS is visible:
+//  Real music (flat or artist/album/track) DISCOVERED by walking the Wormhole nav (Crate_nav_paths — a
+//   granted FSA share, the OPFS cloud seed, or a runner's editor-proxied disk, all the same) then read +
+//    decoded through it (bin_read → OfflineAudioContext, gesture-free).  The point is the PROCESS is visible:
 //    a `rastock` particle DESIRES `want` records and fills one notch per beat — each beat ISSUES a read
 //     (a %reading goes out), the prior read COMES BACK (off-snap payload), and a %record gets MADE with real
 //      artist/album/title/seconds/loudness.  Then we stream each glide-vs-none.  The snap narrates it all.
@@ -1802,7 +1803,7 @@ MusuCrate(A,w) {
 //  off step_n (req-local did_step).  Reads are issued one beat and harvested the next — they resolve in the
 //   gap between beats (a fetch+decode is far quicker than a step's quiescence).
 async MusuCrate_drive(w, req) {
-    if (typeof OfflineAudioContext === 'undefined' || typeof fetch === 'undefined') {
+    if (typeof OfflineAudioContext === 'undefined') {
         if (!w.oa({skipped: 'no_audio'})) w.i({skipped: 'no_audio'})
         return
     }
@@ -1822,7 +1823,7 @@ async MusuCrate_drive(w, req) {
 async MusuCrate_open(w) {
     this.MusuCrate_filaments(w)
     this.Musu_seed(31337)
-    let ra = await this.Crate_rastock_start(w, '/testsounds', 4)
+    let ra = await this.Crate_rastock_start(w, 'testsounds', 4)
     this.Crate_rastock_issue(ra)
 
 },
@@ -1908,6 +1909,34 @@ MusuCrate_witness(w) {
     if (secs_ok >= 2 && !(w.oa({witnessed: "playable"}))) w.i({witnessed: "playable"})
     // helps: Glide cut real dropouts vs no-control on REAL music (at least one track) -- the claim that matters.
     if (helped >= 1 && !(w.oa({witnessed: "helps"}))) w.i({witnessed: "helps"})
+
+},
+// ══ MusuGenerateTestsMusic — one-off dev-setup Book: RENDER the deterministic pure-tone test-music
+//  collection (freq = the track's label) into testsounds/, REPLACING it as the canonical fixture so
+//   MusuCrate + the real-time race test run against known frequencies.  Engine = Musu_gen_testsounds
+//    (LiesFunk) — writes JUST each "Artist - Title.wav" via the granted share (no manifest; Crate walks the
+//     folder, the freq↔track map lives in code).  Strike ONCE on a dev instance with a share open.
+MusuGenerateTestsMusic(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuGenerateTestsMusic_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async MusuGenerateTestsMusic_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.Musu_gen_testsounds(w)
+    }
+    this.MusuGenerateTestsMusic_witness(w)
+
+},
+// MusuGenerateTestsMusic_witness — the collection landed once the engine stamped %generated on w.
+MusuGenerateTestsMusic_witness(w) {
+    let g = w.o({generated: 1})[0]
+    if (!g) return
+    if (!(w.oa({witnessed: "collection_rendered"}))) w.i({witnessed: "collection_rendered"})
 },
 //#endregion
 

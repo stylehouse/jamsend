@@ -118,38 +118,47 @@ re-organises the *attention roster*.
 - `src/lib/O/spec/Interest.md`; `Lies_handover.md` §1/§5; `Backbone_plan.md` — the one-move.
 - `DocGhostList.svelte` — reuse its `$derived`-off-snap *pattern* only, not its file-index data.
 
-## Built — a Brink tenant (the "Plank")
+## Built — a Funkcion in the Keep (concentric capsules)
 
-`O/Funk/DocWaftMap.svelte`, registered `waftmap: { comp_Brink, comp_MiniBrink }` in `kinds.ts` and
- hoisted persistently (editor-only) by `Lies_waftmap_ensure` from `Lies_heartbeat` (altitude 30, after
-  the connectivity glances). One component, two faces via the `mini` prop, as Rundar/Relay do:
+**The home is the Keep Waft's main Funkcion**, not a floating bar. Two earlier mounts were tried and
+ dropped: a **Brink Lens tenant** (never showed on the plain app — the hoist rode `Lies_heartbeat`,
+  which only runs for `?E=`/`?B=` Runs, and the Brink defaults collapsed) and a **fixed `ui/Plank.svelte`
+   bar** (it *showed* but was dead to clicks: the Brink's `.lens-dock` is `position:fixed; inset-x:0;
+    bottom:0; z-index:40000` — spanning the full viewport bottom above the Plank's 9490). Both deleted.
 
-- **`comp_MiniBrink`** — a compact one-row chip glance (foreground/hot/loaded Wafts, capped) on the
-  *collapsed* Brink bar. Always visible in the editor — the "Plank" at a glance.
-- **`comp_Brink`** — the full navigator (all Wafts + their Docs + the shared Venn) in the *opened* stack.
+Now: **`waftmap: { component: DocWaftMap }`** in `FUNK_KINDS`, embedded as `%Funkcion:waftmap,main`
+ under `Waft:Keep` (`Lies.svelte` persist phase, right after the GhostList block). `ui/Waft.svelte`'s
+  `main_funk` resolves it → **DocWaftMap is the Keep Waft's body**. *Open the Keep to see the map.*
 
-It resolves `w:Lies` itself off `H.top_House().ave` `examining.c.w` (a Brink face gets no funk backlink),
- so it needs no props but `mini`. `ui/Waft.svelte` carries `data-waft-col={wkey}` as the scroll target.
+- **Editor-only, off the runner, for free.** `Lies_keep_boot` is editor-gated (`Lies_role==='editor'`),
+   so `Waft:Keep` exists *only* in an editor Run. The embed's whole gate is `if (keep)` — a runner has
+    no Keep, a bare Lies has no Keep, both skip. No role check, no heartbeat. (And the Keep's ledger —
+     the **Known** tier — is editor-populated anyway, so an editor home is the *correct* one.)
+- **Concentric capsulation.** A Waft is a `.cap` capsule; expand it → its Docs are `.cap-doc` capsules
+   nested inside (`.cap-in`, an indented spine well); expand a Doc → its **guts** (the `%Map` region|def
+    headings, read lazily from `Doc→%Compile→%Map` only when open) flow inside. Boxes within boxes.
+- **No inner scroll.** The old `.pk-body { max-height; overflow-y:auto }` (the "scroll-on-hover") is
+   gone — as a Waft body it flows and the Lies panel scrolls.
 
-**Jump-scroll** (the star move): click a Waft → `scrollIntoView` its live cursor
- (`.ls-item-what-active`, the Spotlight) → re-click → the Waft's top → again → cursor, toggling. A
-  *pure viewport move* (non-destructive). Doc clicks stay the destructive land (`Lang_foreground` +
-   `Lies_want`, in the Waft you clicked under).
+Clicks work (it's an ordinary inline Waft body, not fighting the z-40000 dock). Data reads unchanged:
+ **Known** rows (`Keep/WaftTimes`) / **Loaded** Docs (`!equip && !takes` via `Lies_walk_docs`, now
+  keeping the Doc `c` ref for the guts) / **Attention** hotness (Languinio Interests).
 
-Decisions taken: cold-row = name-only + recency (click loads); Venn = region-list (`∩`-joined);
- shared-click = land in the clicked Waft; promote = filtered list. Set = **Known** rows
-  (`Keep/WaftTimes`) / **Loaded** Docs (`!equip && !takes` via `Lies_walk_docs`) / **Attention** hotness.
+**Jump-scroll** (the star move, the ⇱ button beside each loaded Waft): `scrollIntoView` its live cursor
+ (`.ls-item-what-active`, the Spotlight) → again → the Waft's top → again → cursor, toggling. A *pure
+  viewport move*. The Doc **→** button is the destructive land (`Lang_foreground` + `Lies_want`, in the
+   Waft you clicked under). The Waft/Doc header itself now expands the capsule (cold Waft → loads).
 
-Type-clean; :9091-unverified (bottom-right Brink bar shows the waft chips; Vexpandy opens the navigator).
+Type-clean; :9091-unverified (open `Waft:Keep` in an editor Run — the map is its body).
 
 ### Next (owner's vision, not yet built)
 - **The stem-join** — render the shared Wafts `Waft,Waft(ghosts…)Waft,Waft` StemHive-style (one Waft
-  left, two right) instead of the region-list. StemHive clusters by name-token; a Waft-set join needs
-  its cluster model fed pre-computed — a real design pass.
-- **Plank as a flow divider** — the layout where Liesui takes the top ¼, the Plank + Brink divide, and
-  the MiniMap dangles ⅗ down Langui's right. Today it's a fixed-corner Brink tenant, not a flow band.
+  left, two right) instead of the flat region-capsule list. StemHive clusters by name-token; a Waft-set
+  join needs its cluster model fed pre-computed — a real design pass.
 - **Jump-to-remembered-cursor** for a *non-foreground* Waft (needs per-particle DOM anchors; today only
   the foregrounded Waft has a live cursor marker, so others jump to top first).
-- **Metromapping** Lies → Plank → MiniMap together.
-- Cold-row `%Map` TOC caching — and mind the clash: `Map` is already `%Compile/%Map`'s mainkey, so a
-  headings cache must use a *distinct* mainkey (`Toc`/`Outline`) on the `WaftTimes` record.
+- Cold-row `%Map` TOC caching so an unloaded Waft shows its outline before load — and mind the clash:
+  `Map` is already `%Compile/%Map`'s mainkey, so a headings cache must use a *distinct* mainkey
+   (`Toc`/`Outline`) on the `WaftTimes` record.
+- (Parked) a floating presentation — if the map ever wants to hover always-visible again, the same
+  `waftmap` kind can grow a `comp_<Lens>` hoisted face beside the inline `component`; the Keep stays home.

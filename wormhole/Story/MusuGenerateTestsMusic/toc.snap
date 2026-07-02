@@ -1,0 +1,12 @@
+story:MusuGenerateTestsMusic
+  Styles
+  Plan
+  Opt
+    For
+  TimeSpool
+    TimeTotal:beliefs,avg=0.018
+      sample=0.018,at=1782974128
+    TimeTotal:step,avg=0.009
+      sample=0.009,at=1782974128
+  step,dige:1111111111111111
+  step=2,dige:2222222222222222

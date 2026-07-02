@@ -1,42 +1,35 @@
 <script lang="ts">
-    // DocWaftMap — the "Plank": a Waft navigator + Doc-relevance Lens, hoisted as a Brink tenant.
+    // DocWaftMap — the corpus navigator as a WORD-CLOUD ABDOMEN: one floating belly of nodes, Waft
+    //  nodes and Doc nodes mixed, each SIZED by relevance and running VERTICALLY (a true word cloud).
+    //   Mounted by ui/Plank.svelte, which floats it at the bottom of Liesui (stays up like the Brink).
     //
-    //   Two faces on one component (like Rundar/Relay), switched by `mini`:
-    //     comp_MiniBrink — a compact one-row chip glance of the foreground/hot Wafts, riding the
-    //                       COLLAPSED Brink bar (always visible; the "Plank" at a glance).
-    //     comp_Brink     — the full navigator (all Wafts + their Docs + the shared Venn) that
-    //                       unfurls when the Brink is opened.
+    //  Vertical titles without a broken layout: the cloud + each stem group flow with NORMAL
+    //   horizontal flex (predictable boxes); only the LEAF word carries `writing-mode: vertical-rl`,
+    //    so a node shrink-wraps into a tall narrow column while packing stays sane.
     //
-    //   GhostList reshapes a flat FILE list; this reshapes the flat Waft** into RELEVANCE.  Three
-    //   canonical tiers, none a fresh guess (Lies_handover §5):
-    //     Known     — the Keep ledger (Keep/WaftTimes,of_Waft): every Waft ever noted, LOADED OR NOT
-    //                  → the ROW list + recency.
-    //     Loaded    — w.o({Waft:1}) minus %equip (fixtures) minus %takes (the Ting sink): the only
-    //                  Wafts with a live %What → %Doc tree → the Docs drilled + the Venn.
-    //     Attention — the Languinio Interests (Trail+Aside), InterestStrip's roster → hotness.
-    //   List all, drill selectively.  All $derived off the live tree (off-snap, no re-parse).
+    //  STEMMING (StemHive-style): a Waft's Docs that share a leading token FOLD into one stem node —
+    //   Peeroleum.g + Peeroleum_spec.md + Peeroleum_handover.md → `Peeroleum (g|spec|handover)`, each
+    //    branch its own click.  A lone Doc stays a plain node.
     //
-    //   Jump-scroll (the star move): click a Waft → scroll the page to its cursor
-    //    (.ls-item-what-active, the Spotlight) — click again → the Waft's top — again → back to the
-    //     cursor, toggling.  A pure VIEWPORT move (non-destructive; keeps your cursor where it is);
-    //      Doc clicks are the destructive land (foreground + want).  A cold Waft loads on click.
-    //   NB the live cursor marker only exists in the foregrounded Waft; a non-foreground Waft has no
-    //    rendered cursor, so its first jump lands at the top (per-particle DOM anchors → a follow-up).
+    //  Three canonical tiers (Lies_handover §5): Known (Keep ledger → a Waft node even when cold) /
+    //   Loaded (!equip && !takes → its Docs join) / Attention (Languinio Interests → foreground is the
+    //    biggest node, hot next).  All $derived off the live tree (off-snap).
+    //
+    //  Hover reveals the Venn LIVE (hover a Waft → its Docs light; hover a shared Doc → its Wafts
+    //   light).  ∩ dims the singular Docs.  Click a Waft → jump-scroll (cursor⇄top, a pure viewport
+    //    move); click a Doc → the destructive land (foreground + want).  A cold Waft loads on click.
 
     import type { TheC }  from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
 
-    let { H, w: w_in, mini = false }: { H: House, w?: TheC, lens?: TheC, funk?: TheC, mini?: boolean } = $props()
+    let { H, w: w_in }: { H: House, w?: TheC } = $props()
 
-    // w:Lies — passed when embedded, else resolved off the ambient examining (a Brink face gets no
-    //  funk, so LensHost's w=funk.c.up is undefined) — the same door InterestStrip uses.
     let w = $derived.by(() => {
         if (w_in) return w_in
         const ave = H.top_House().ave; void ave.version
         return ave.ob({ examining: 1 })[0]?.c?.w as TheC | undefined
     })
 
-    // the Attention tier — the Languinio Interests (in ave, versioned via .vers/.ob)
     let languinio: TheC | undefined = $state()
     $effect(() => { languinio = H.top_House().ave.ob({ Languinio: 1 })[0] as TheC | undefined })
 
@@ -48,29 +41,29 @@
         return segs[segs.length - 1] ?? fallback
     }
     function basename(p: string): string { return p ? (p.split('/').pop() || p) : '·' }
+    function clip(s: string, n = 15): string { return s.length > n ? s.slice(0, n - 1) + '…' : s }
 
+    // stemSplit — a filename's leading token (the stem) + the rest (the branch).  Drops the extension
+    //  first; if there is no separator the whole base is the stem and the branch is empty (→ the ext).
+    function stemSplit(rawbase: string): { stem: string, branch: string } {
+        const ext   = rawbase.includes('.') ? rawbase.slice(rawbase.lastIndexOf('.') + 1) : ''
+        const noext = ext ? rawbase.slice(0, rawbase.length - ext.length - 1) : rawbase
+        const i = noext.search(/[_.\-]/)
+        const branch = i > 0 ? noext.slice(i + 1) : ''
+        return { stem: i > 0 ? noext.slice(0, i) : noext, branch: branch || ext || '·' }
+    }
+
+    type Doc = { path: string, c: TheC }
     type Row = {
-        path:        string
-        loaded:      boolean
-        drillable:   boolean
-        stance:      'doc' | 'fixture' | 'sink' | 'cold'
-        docs:        string[]
-        hot:         boolean
-        foreground:  boolean
-        accessed_at: number | undefined
-    }
-    type Model = {
-        rows:    Row[]
-        shared:  Map<string, Set<string>>
-        regions: { key: string, wafts: string[], docs: string[] }[]
+        path: string, loaded: boolean, drillable: boolean,
+        stance: 'doc' | 'fixture' | 'sink' | 'cold',
+        docs: Doc[], hot: boolean, foreground: boolean, accessed_at: number | undefined
     }
 
-    let model: Model = $derived.by(() => {
-        const empty: Model = { rows: [], shared: new Map(), regions: [] }
+    let model = $derived.by(() => {
+        const empty = { rows: [] as Row[], shared: new Map<string, Set<string>>() }
         if (!w) return empty
-        void w.version
-        void keep?.version
-        void languinio?.vers
+        void w.version; void keep?.version; void languinio?.vers
 
         const known = new Map<string, number | undefined>()
         for (const wt of (keep?.o({ WaftTimes: 1 }) ?? []) as TheC[]) {
@@ -88,14 +81,14 @@
         }
 
         const docWafts = new Map<string, Set<string>>()
-        const waftDocs = new Map<string, string[]>()
+        const waftDocs = new Map<string, Doc[]>()
         for (const [path, wf] of live) {
             if (wf.sc.equip || wf.sc.takes) continue
-            const docs: string[] = []
-            ;(H as any).Lies_walk_docs(wf, (d: TheC) => {   // eatfunc-injected, not on the House type
+            const docs: Doc[] = []
+            ;(H as any).Lies_walk_docs(wf, (d: TheC) => {
                 const dp = d.sc.Doc as string | undefined
                 if (dp) {
-                    docs.push(dp)
+                    docs.push({ path: dp, c: d })
                     let set = docWafts.get(dp); if (!set) docWafts.set(dp, set = new Set())
                     set.add(path)
                 }
@@ -110,56 +103,96 @@
             const equip = !!wf?.sc.equip, takes = !!wf?.sc.takes
             const drillable = !!wf && !equip && !takes
             const stance: Row['stance'] = !wf ? 'cold' : equip ? 'fixture' : takes ? 'sink' : 'doc'
-            return {
-                path, loaded: !!wf, drillable, stance,
-                docs: waftDocs.get(path) ?? [],
-                hot: hot.has(path), foreground: fg === path,
-                accessed_at: known.get(path),
-            }
+            return { path, loaded: !!wf, drillable, stance, docs: waftDocs.get(path) ?? [],
+                     hot: hot.has(path), foreground: fg === path, accessed_at: known.get(path) }
         })
         rows.sort((a, b) =>
-            (+b.foreground - +a.foreground) ||
-            (+b.hot - +a.hot) ||
+            (+b.foreground - +a.foreground) || (+b.hot - +a.hot) ||
             (+(b.docs.length > 0) - +(a.docs.length > 0)) ||
-            ((b.accessed_at ?? 0) - (a.accessed_at ?? 0)) ||
-            a.path.localeCompare(b.path))
+            ((b.accessed_at ?? 0) - (a.accessed_at ?? 0)) || a.path.localeCompare(b.path))
 
         const shared = new Map<string, Set<string>>()
-        const regionMap = new Map<string, { key: string, wafts: string[], docs: string[] }>()
-        for (const [dp, set] of docWafts) {
-            if (set.size < 2) continue
-            shared.set(dp, set)
-            const wafts = [...set].sort()
-            const key = wafts.join('│')
-            let r = regionMap.get(key); if (!r) regionMap.set(key, r = { key, wafts, docs: [] })
-            r.docs.push(dp)
-        }
-        const regions = [...regionMap.values()]
-            .sort((a, b) => (b.wafts.length - a.wafts.length) || (b.docs.length - a.docs.length) || a.key.localeCompare(b.key))
+        for (const [dp, set] of docWafts) if (set.size >= 2) shared.set(dp, set)
 
-        return { rows, shared, regions }
+        return { rows, shared }
     })
 
-    let mode     = $state<'by' | 'shared'>('by')
-    let promoted = $state<string | undefined>()
-    // jump — the per-Waft scroll toggle target: same path re-click flips cursor↔top.
+    // ── the cloud — Waft nodes, and their Docs folded into stem nodes ────────────────────────────
+    type Branch = { path: string, branch: string, share: Set<string> | undefined, size: number }
+    type CNode =
+        | { kind: 'waft', path: string, loaded: boolean, drillable: boolean, stance: Row['stance'],
+            hot: boolean, fg: boolean, size: number }
+        | { kind: 'doc',  path: string, waft: string, share: Set<string> | undefined, size: number, label: string }
+        | { kind: 'stem', waft: string, stem: string, size: number, branches: Branch[] }
+
+    function waftSize(r: Row): number {
+        const base = r.foreground ? 17 : r.hot ? 14 : r.loaded ? 11.5 : 10
+        return Math.round((base + Math.min(4, r.docs.length * 0.5)) * 10) / 10
+    }
+    function docSize(share: Set<string> | undefined): number {
+        return share ? Math.min(15, 11 + share.size) : 10.5   // the ghosts run a touch bigger than the labels
+    }
+
+    let cloud = $derived.by<CNode[]>(() => {
+        const out: CNode[] = []
+        const emitted = new Set<string>()
+        for (const r of model.rows) {
+            out.push({ kind: 'waft', path: r.path, loaded: r.loaded, drillable: r.drillable,
+                       stance: r.stance, hot: r.hot, fg: r.foreground, size: waftSize(r) })
+            if (!r.loaded || !r.drillable) continue
+
+            const groups = new Map<string, { path: string, branch: string, share: Set<string> | undefined }[]>()
+            for (const d of r.docs) {
+                if (emitted.has(d.path)) continue
+                emitted.add(d.path)
+                const { stem, branch } = stemSplit(basename(d.path))
+                const arr = groups.get(stem) ?? []
+                arr.push({ path: d.path, branch, share: model.shared.get(d.path) })
+                groups.set(stem, arr)
+            }
+            for (const [stem, members] of groups) {
+                if (members.length >= 2) {
+                    const branches: Branch[] = members.map(m => ({ ...m, size: docSize(m.share) }))
+                    out.push({ kind: 'stem', waft: r.path, stem, size: Math.max(...branches.map(b => b.size)), branches })
+                } else {
+                    const m = members[0]
+                    out.push({ kind: 'doc', path: m.path, waft: r.path, share: m.share,
+                               size: docSize(m.share), label: basename(m.path).replace(/\.[A-Za-z0-9]+$/, '') })
+                }
+            }
+        }
+        return out
+    })
+
+    let hoverWaft = $state<string | undefined>()
+    let hoverDoc  = $state<string | undefined>()
+    let emphasize = $state(false)
+
+    const wLit = (path: string) => hoverWaft === path || (!!hoverDoc && !!model.shared.get(hoverDoc)?.has(path))
+    const dLit = (waft: string, path: string) => hoverWaft === waft || hoverDoc === path
+
     let jump = $state<{ path?: string, mode?: 'cursor' | 'top' }>({})
 
-    // the mini glance — foreground/hot first, then anything loaded; capped so the collapsed bar
-    //  stays a one-row glance.  The overflow "+N" opens the full navigator (via the Brink Vexpandy,
-    //   which the user already knows) — here it's just a count.
-    let MINI_CAP = 6
-    let mini_rows = $derived(model.rows.filter(r => r.foreground || r.hot || r.loaded).slice(0, MINI_CAP))
-    let mini_more = $derived(Math.max(0, model.rows.filter(r => r.foreground || r.hot || r.loaded).length - MINI_CAP))
-    let doc_count = $derived(model.shared.size)
+    // The sticky-stacked H headings (Otro's .house-header.sticky, 1.75rem each) pin at the top of the
+    //  window; a raw scrollIntoView lands the target UNDER them.  Rather than offset the scroll by hand
+    //   (and lose the native viewport truth), we reserve the stack height as scroll-padding-top on the
+    //    scroll root — scrollIntoView then rests the target just BELOW the stack.  The stack above a
+    //     given target = the sticky headers that PRECEDE it in the document (their houses sit above).
+    const HEADER_REM = 1.75
+    function reserveStickyStack(target: HTMLElement) {
+        const root = (document.scrollingElement ?? document.documentElement) as HTMLElement
+        const headerPx = HEADER_REM * parseFloat(getComputedStyle(document.documentElement).fontSize)
+        let stacked = 0
+        for (const h of document.querySelectorAll('.house-header.sticky')) {
+            if (h.compareDocumentPosition(target) & Node.DOCUMENT_POSITION_FOLLOWING) stacked++
+        }
+        root.style.scrollPaddingTop = `${stacked * headerPx}px`
+    }
 
-    // ── interactions ────────────────────────────────────────────────────────────
-    // Jump-scroll a Waft column: cursor (the live Spotlight What) → top → cursor, toggling on
-    //  re-click.  A different Waft restarts at the cursor.  Cold → load (open + foreground).
     function jumpWaft(path: string, loaded: boolean) {
         if (typeof document === 'undefined') return
         const col = document.querySelector(`[data-waft-col="${CSS.escape(path)}"]`) as HTMLElement | null
-        if (!col || !loaded) {   // cold | not on the page — load + foreground; it scrolls into being
+        if (!col || !loaded) {
             H.i_elvisto('Lies/Lies', 'Lies_open_Waft', { path })
             H.i_elvisto('Lies/Lies', 'Lies_foreground_waft', { path, deliberate: 1 })
             return
@@ -170,11 +203,10 @@
                                           : (jump.mode === 'cursor' ? 'top' : 'cursor')
         jump = { path, mode: m }
         const target = (m === 'cursor' && cursorEl) ? cursorEl : col
+        reserveStickyStack(target)
         target.scrollIntoView({ behavior: 'smooth', block: m === 'cursor' ? 'center' : 'start', inline: 'center' })
     }
 
-    // Click a Doc → foreground its Waft and land the cursor on that Doc (the destructive move).
-    //  A shared Doc lands in the Waft you clicked under: re-find the live Doc particle in THAT Waft.
     function pickDoc(docPath: string, waftPath: string) {
         if (!w) return
         H.i_elvisto('Lang/Lang', 'Lang_foreground', { kind: 'Trail', waft: waftPath })
@@ -184,170 +216,159 @@
         if (doc) H.i_elvisto('Lies/Lies', 'Lies_want', { src: doc, kind: 'click' })
     }
 
-    function promote(key: string) { promoted = promoted === key ? undefined : key }
-
-    function dot(r: Row) { return r.foreground ? 'fg' : r.hot ? 'hot' : '' }
+    // Close a loaded Waft — drop it from the roster (it falls back to a cold/Known node, or vanishes
+    //  if it was never in the Keep ledger).  e_Lies_close_Waft does the drop + a re-think.
+    function closeWaft(path: string) {
+        jump = {}
+        H.i_elvisto('Lies/Lies', 'Lies_close_Waft', { path })
+    }
 </script>
 
-{#if w}
-    {#if mini}
-        <!-- compact glance on the collapsed Brink bar: hot/foreground Waft chips, jump-scroll on click -->
-        <div class="pk-mini" title="waft map — click a Waft to scroll to its cursor (again: top, again: cursor)">
-            <span class="pk-mini-tag">wafts</span>
-            {#each mini_rows as r (r.path)}
-                <button class="pk-chip pk-{dot(r)}" class:cold={!r.loaded}
-                        onclick={() => jumpWaft(r.path, r.loaded)}
-                        title={`${r.path} — jump-scroll (cursor ⇄ top)`}>{tail_name(r.path)}</button>
+<!-- the abdomen — a rounded belly clipping a cloud of VERTICAL Waft|Doc nodes -->
+<div class="abdomen" class:emph={emphasize}>
+    <div class="ab-head">
+        <span class="ab-name">waft map</span>
+        <span class="ab-n">{model.rows.length}</span>
+        {#if model.shared.size}
+            <button class="ab-shared" class:on={emphasize} onclick={() => emphasize = !emphasize}
+                    title="dim the singular Docs so the ones shared across Wafts stand out">∩ {model.shared.size}</button>
+        {/if}
+    </div>
+
+    {#if w}
+        <div class="ab-cloud" role="list" onmouseleave={() => { hoverWaft = undefined; hoverDoc = undefined }}>
+            {#each cloud as node (node.kind + '·' + (node.kind === 'stem' ? node.waft + '/' + node.stem : node.path))}
+                {#if node.kind === 'waft'}
+                    <span class="waft-grp">
+                        {#if node.loaded && node.drillable}
+                            <button class="waft-x" title="close this Waft (unload it)"
+                                    onclick={(e) => { e.stopPropagation(); closeWaft(node.path) }}>∨</button>
+                        {/if}
+                        <button class="nd nd-waft st-{node.stance}"
+                                class:hot={node.hot} class:fg={node.fg} class:cold={!node.loaded} class:lit={wLit(node.path)}
+                                style="font-size:{node.size}px"
+                                onmouseenter={() => hoverWaft = node.path}
+                                onclick={() => jumpWaft(node.path, node.loaded)}
+                                title={node.loaded ? `${node.path} — jump-scroll (cursor ⇄ top)` : `${node.path} — cold, click to load`}>
+                            {clip(tail_name(node.path))}{#if node.stance === 'sink'}<span class="mini">ting</span>{:else if node.stance === 'fixture'}<span class="mini">fix</span>{/if}
+                        </button>
+                    </span>
+                {:else if node.kind === 'doc'}
+                    <button class="nd nd-doc" class:shared={!!node.share} class:lit={dLit(node.waft, node.path)}
+                            class:faded={emphasize && !node.share}
+                            style="font-size:{node.size}px"
+                            onmouseenter={() => hoverDoc = node.path}
+                            onclick={() => pickDoc(node.path, node.waft)}
+                            title={node.share
+                                ? `${basename(node.path)} — shared: ${[...node.share].map(p => tail_name(p)).join(', ')}`
+                                : node.path}>
+                        {clip(node.label)}{#if node.share}<span class="badge">×{node.share.size}</span>{/if}
+                    </button>
+                {:else}
+                    <!-- a stem cluster: the stem word + its branch words, adjacent vertical columns -->
+                    <div class="stem" style="font-size:{node.size}px">
+                        <span class="stem-h">{clip(node.stem, 13)}</span>
+                        {#each node.branches as b (b.path)}
+                            <button class="stem-br" class:shared={!!b.share} class:lit={dLit(node.waft, b.path)}
+                                    class:faded={emphasize && !b.share}
+                                    style="font-size:{b.size}px"
+                                    onmouseenter={() => hoverDoc = b.path}
+                                    onclick={() => pickDoc(b.path, node.waft)}
+                                    title={b.share
+                                        ? `${basename(b.path)} — shared: ${[...b.share].map(p => tail_name(p)).join(', ')}`
+                                        : b.path}>
+                                {clip(b.branch, 12)}{#if b.share}<span class="badge">×{b.share.size}</span>{/if}
+                            </button>
+                        {/each}
+                    </div>
+                {/if}
             {/each}
-            {#if mini_more}<span class="pk-more" title="open the Brink for the full waft map">+{mini_more}</span>{/if}
         </div>
     {:else}
-        <!-- the full navigator (unfurled Brink stack) -->
-        <div class="pk">
-            <div class="pk-head">
-                <span class="pk-name">waft map</span>
-                <button class="pk-tab" class:on={mode === 'by'} onclick={() => mode = 'by'}
-                        title="one group per Waft, its Docs listed">by waft</button>
-                <button class="pk-tab" class:on={mode === 'shared'} onclick={() => mode = 'shared'}
-                        title="the Venn — Docs shared across ≥2 Wafts">shared{#if doc_count}<span class="pk-n">{doc_count}</span>{/if}</button>
-            </div>
-
-            {#if mode === 'by'}
-                <div class="pk-body">
-                    {#each model.rows as r (r.path)}
-                        <div class="pk-group" class:hot={r.hot} class:fg={r.foreground} class:cold={!r.loaded}>
-                            <div class="pk-grp-hd">
-                                <button class="pk-waft" onclick={() => jumpWaft(r.path, r.loaded)}
-                                        title={`${r.path} — jump-scroll (cursor ⇄ top)${r.loaded ? '' : ' · cold, click to load'}`}>
-                                    {#if dot(r)}<span class="pk-dot pk-{dot(r)}">●</span>{/if}{tail_name(r.path)}
-                                </button>
-                                {#if r.stance === 'fixture'}<span class="pk-stance" title="a backstage fixture (%equip)">fix</span>{/if}
-                                {#if r.stance === 'sink'}<span class="pk-stance" title="the session sink (%takes)">ting</span>{/if}
-                                {#if r.drillable && r.docs.length}<span class="pk-n">{r.docs.length}</span>{/if}
-                            </div>
-                            {#if r.drillable && r.docs.length}
-                                <div class="pk-docs">
-                                    {#each r.docs as dp (dp)}
-                                        {@const share = model.shared.get(dp)}
-                                        <button class="pk-doc" class:shared={!!share} onclick={() => pickDoc(dp, r.path)}
-                                                title={share ? `shared with: ${[...share].filter(p => p !== r.path).map(p => tail_name(p)).join(', ')}` : dp}>
-                                            {basename(dp)}{#if share}<span class="pk-badge">×{share.size}</span>{/if}
-                                        </button>
-                                    {/each}
-                                </div>
-                            {:else if !r.loaded}
-                                <div class="pk-cold">{r.accessed_at ? 'seen' : 'known'} · click to load</div>
-                            {/if}
-                        </div>
-                    {/each}
-                </div>
-            {:else}
-                <div class="pk-body">
-                    {#if !model.regions.length}
-                        <div class="pk-empty">no Docs shared across Wafts (load more, or they're all singular)</div>
-                    {/if}
-                    {#each model.regions as reg (reg.key)}
-                        <div class="pk-region" class:open={promoted === reg.key}>
-                            <button class="pk-reg-hd" onclick={() => promote(reg.key)}
-                                    title="promote these shared Docs into a switchable list">
-                                <span class="pk-reg-chev">{promoted === reg.key ? '▾' : '▸'}</span>
-                                <span class="pk-reg-set">
-                                    {#each reg.wafts as wp, i (wp)}{#if i}<span class="pk-amp"> ∩ </span>{/if}<!--
-                                     --><span class="pk-reg-waft" role="button" tabindex="0"
-                                              onmouseenter={() => jumpWaft(wp, true)} onclick={(e) => { e.stopPropagation(); jumpWaft(wp, true) }}
-                                              onkeydown={(e) => { if (e.key === 'Enter') jumpWaft(wp, true) }}
-                                              title={`${wp} — hover/click to scroll there`}>{tail_name(wp)}</span>{/each}
-                                </span>
-                                <span class="pk-n">{reg.docs.length}</span>
-                            </button>
-                            {#if promoted === reg.key}
-                                <div class="pk-docs">
-                                    {#each reg.docs as dp (dp)}
-                                        <button class="pk-doc shared" onclick={() => pickDoc(dp, reg.wafts[0])}
-                                                title={`${dp} — in ${reg.wafts.map(p => tail_name(p)).join(', ')}`}>
-                                            {basename(dp)}<span class="pk-badge">×{reg.wafts.length}</span>
-                                        </button>
-                                    {/each}
-                                </div>
-                            {/if}
-                        </div>
-                    {/each}
-                </div>
-            {/if}
-        </div>
+        <div class="ab-note">waiting for w:Lies…</div>
     {/if}
-{/if}
+</div>
 
 <style>
-    /* ── mini: the collapsed-Brink one-row glance (few em, chips grow interior) ── */
-    .pk-mini { display: flex; align-items: center; gap: 4px; font-family: monospace; max-width: 46vw; overflow: hidden; }
-    .pk-mini-tag { font-size: 8px; letter-spacing: 0.06em; text-transform: uppercase; color: #5a6488; }
-    .pk-chip {
-        background: rgba(120, 140, 180, 0.10); border: 1px solid hsla(210, 40%, 60%, 0.24);
-        border-radius: 3px; cursor: pointer; color: #b7c8e8; font-family: inherit; font-size: 10px;
-        line-height: 1.2; padding: 0 4px; white-space: nowrap;
+    /* the abdomen — a soft rounded belly (radial sheen up top), clipping its cloud so nothing spills */
+    .abdomen {
+        display: flex; flex-direction: column; gap: 5px; font-family: monospace;
+        padding: 8px 14px 6px; border-radius: 20px; overflow: hidden;
+        background: radial-gradient(135% 155% at 28% -12%, rgba(46, 50, 78, 0.80), rgba(12, 11, 19, 0.94) 66%);
+        border: 1px solid rgba(120, 140, 195, 0.28);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(8px);
     }
-    .pk-chip:hover { background: rgba(150, 180, 230, 0.22); color: #eaf1ff; }
-    .pk-chip.pk-hot { border-color: hsla(210, 60%, 68%, 0.55); color: #cfe6ff; }
-    .pk-chip.pk-fg  { border-color: rgba(196, 170, 238, 0.75); background: rgba(196, 170, 238, 0.16); color: #e7dcff; font-weight: 600; }
-    .pk-chip.cold   { color: rgba(150, 160, 180, 0.5); border-style: dashed; }
-    .pk-more { font-size: 9px; color: #6a6f80; }
-
-    /* ── full navigator ── */
-    .pk { display: flex; flex-direction: column; gap: 3px; font-family: monospace;
-          background: rgba(16, 14, 24, 0.96); border: 1px solid #2c3450; border-radius: 6px;
-          padding: 5px 7px; min-width: 15rem; max-width: 26rem; }
-    .pk-head { display: flex; align-items: center; gap: 5px; }
-    .pk-name { font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: #5a6488; margin-right: 2px; }
-    .pk-tab {
-        background: none; border: 1px solid rgba(150, 170, 200, 0.2); border-radius: 3px;
-        cursor: pointer; color: rgba(170, 190, 215, 0.6); font-family: inherit; font-size: 9px;
-        letter-spacing: 0.05em; padding: 1px 6px;
+    .ab-head { display: flex; align-items: center; gap: 7px; flex: none; }
+    .ab-name { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: #5a6488; }
+    .ab-n { font-size: 9px; color: rgba(150, 170, 200, 0.45); }
+    .ab-shared {
+        margin-left: auto; font-family: inherit; font-size: 9px; cursor: pointer;
+        padding: 1px 8px; border-radius: 10px;
+        border: 1px solid rgba(224, 180, 110, 0.3); background: none; color: rgba(224, 180, 110, 0.7);
     }
-    .pk-tab:hover { color: rgba(210, 225, 245, 0.95); border-color: rgba(170, 190, 220, 0.5); }
-    .pk-tab.on    { color: #cfe2ff; border-color: rgba(150, 180, 235, 0.7); background: rgba(120, 150, 220, 0.12); }
-    .pk-n { color: rgba(150, 170, 200, 0.45); margin-left: 4px; }
+    .ab-shared.on { background: rgba(224, 180, 110, 0.14); color: #e9c48a; border-color: rgba(224, 180, 110, 0.6); }
+    .ab-note { font-size: 9px; color: rgba(150, 160, 180, 0.55); font-style: italic; }
 
-    .pk-body { display: flex; flex-direction: column; gap: 5px; max-height: 44vh; overflow-y: auto; }
-
-    .pk-group { display: flex; flex-direction: column; gap: 1px; }
-    .pk-grp-hd { display: flex; align-items: center; gap: 5px; }
-    .pk-waft {
-        background: none; border: none; cursor: pointer; padding: 0; text-align: left;
-        color: rgba(150, 180, 220, 0.85); font-family: inherit; font-size: 10px; white-space: nowrap;
-    }
-    .pk-waft:hover { color: #cfe6ff; }
-    .pk-group.cold .pk-waft { color: rgba(140, 150, 170, 0.5); }
-    .pk-group.hot  .pk-waft { color: #cfe6ff; }
-    .pk-group.fg   .pk-waft { color: #e7dcff; font-weight: 600; }
-    .pk-dot { font-size: 7px; margin-right: 2px; vertical-align: middle; }
-    .pk-dot.pk-hot { color: rgba(140, 190, 240, 0.85); }
-    .pk-dot.pk-fg  { color: #c4aaee; }
-    .pk-stance {
-        font-size: 7px; letter-spacing: 0.05em; color: rgba(150, 160, 180, 0.5);
-        border: 1px solid rgba(150, 160, 180, 0.22); border-radius: 2px; padding: 0 3px;
+    /* the cloud — boxes flow HORIZONTALLY (row-wrap); the text inside each runs vertical.  Height and
+       scroll are owned by the Plank shell around us now, so the cloud just flows to fit — no inner clip
+       (which would HIDE nodes the shell means to scroll to). */
+    .ab-cloud {
+        display: flex; flex-flow: row wrap; align-items: flex-start; justify-content: center;
+        gap: 4px 7px;
     }
 
-    .pk-docs { display: flex; flex-wrap: wrap; gap: 2px 6px; margin-left: 10px; }
-    .pk-doc {
-        background: none; border: none; cursor: pointer; padding: 0;
-        color: rgba(160, 175, 195, 0.72); font-family: inherit; font-size: 10px; white-space: nowrap;
+    /* leaf words run vertically, then spun 180° so they read BOTTOM-TO-TOP (glyphs tilt the other
+       way).  writing-mode makes the box tall+narrow; the rotate flips the reading direction — the
+       one combo that works in Chromium (sideways-lr isn't supported there). */
+    .nd, .stem-h, .stem-br {
+        writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg);
     }
-    .pk-doc:hover { color: #dde8f5; }
-    .pk-doc.shared { color: #b7c8e8; }
-    .pk-badge { color: #e0b46e; font-size: 8px; margin-left: 1px; }
-    .pk-cold { margin-left: 10px; font-size: 8px; color: rgba(140, 150, 170, 0.4); font-style: italic; }
 
-    .pk-region { display: flex; flex-direction: column; gap: 1px; }
-    .pk-reg-hd {
-        display: flex; align-items: center; gap: 5px;
-        background: none; border: none; cursor: pointer; padding: 0; text-align: left;
-        color: rgba(170, 185, 215, 0.8); font-family: inherit; font-size: 10px;
+    /* a Waft node = a tiny ∨ close button stacked over the vertical name */
+    .waft-grp { display: inline-flex; flex-direction: column; align-items: center; gap: 0; }
+    .waft-x {
+        background: none; border: none; cursor: pointer; padding: 0; line-height: 1;
+        font-family: inherit; font-size: 8px; color: rgba(150, 170, 200, 0.32);
     }
-    .pk-reg-chev { width: 8px; color: rgba(150, 170, 200, 0.5); }
-    .pk-reg-set  { display: inline-flex; flex-wrap: wrap; align-items: baseline; }
-    .pk-amp { color: rgba(150, 170, 200, 0.4); }
-    .pk-reg-waft { cursor: pointer; }
-    .pk-reg-waft:hover { color: #cfe6ff; text-decoration: underline; }
-    .pk-empty { font-size: 9px; color: rgba(150, 160, 180, 0.5); font-style: italic; padding: 2px 0; }
+    .waft-x:hover { color: #ff9c9c; }
+
+    .nd {
+        background: none; border: none; cursor: pointer; padding: 1px 0; font-family: inherit;
+        white-space: nowrap; transition: color 0.12s, text-shadow 0.12s, opacity 0.12s;
+    }
+    .nd-waft { color: rgba(150, 182, 222, 0.9); font-weight: 600; letter-spacing: 0.02em; }
+    .nd-waft.hot  { color: #bfe0ff; }
+    .nd-waft.fg   { color: #e2d3ff; text-shadow: 0 0 12px rgba(196, 170, 238, 0.55); }
+    .nd-waft.cold { color: rgba(135, 145, 168, 0.5); font-weight: 400; }
+    .nd-waft.st-fixture, .nd-waft.st-sink { color: rgba(150, 160, 185, 0.55); font-weight: 400; }
+    .nd-waft:hover { color: #e8f2ff; text-shadow: 0 0 10px rgba(150, 190, 240, 0.5); }
+
+    .nd-doc { color: rgba(150, 166, 190, 0.62); }
+    .nd-doc.shared { color: #d9b578; }
+    .nd-doc:hover  { color: #e6eef8; }
+    .nd-doc.faded  { opacity: 0.26; }
+
+    .nd.lit      { color: #eaf3ff; text-shadow: 0 0 9px rgba(150, 200, 255, 0.6); }
+    .nd-doc.lit  { color: #ffe0a8; text-shadow: 0 0 9px rgba(224, 180, 110, 0.6); }
+
+    /* a stem cluster — the stem word + its branches as adjacent vertical columns in a faint pill */
+    .stem {
+        display: inline-flex; flex-flow: row nowrap; align-items: flex-start; gap: 2px;
+        padding: 1px 3px; border-radius: 8px; background: rgba(150, 165, 210, 0.06);
+        border: 1px solid rgba(140, 160, 205, 0.12);
+    }
+    .stem-h { color: rgba(170, 190, 220, 0.85); font-weight: 600; letter-spacing: 0.02em; }
+    .stem-br {
+        background: none; border: none; cursor: pointer; padding: 0; font-family: inherit;
+        white-space: nowrap; color: rgba(150, 166, 190, 0.62);
+        transition: color 0.12s, text-shadow 0.12s, opacity 0.12s;
+    }
+    .stem-br.shared { color: #d9b578; }
+    .stem-br:hover  { color: #e6eef8; }
+    .stem-br.faded  { opacity: 0.26; }
+    .stem-br.lit    { color: #ffe0a8; text-shadow: 0 0 9px rgba(224, 180, 110, 0.6); }
+
+    .badge { font-size: 0.72em; color: #e0b46e; opacity: 0.85; }
+    .mini  { font-size: 0.58em; opacity: 0.5; letter-spacing: 0.03em; }
 </style>

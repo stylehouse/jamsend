@@ -6,7 +6,7 @@ The high-level shape of the music-piracy platform and the functions we string to
    `stage,of,name,built` map and a pointer back here).
 
 The companion docs: `Music_todo.md` (the older running todo), `Hovercraft.design.md` (req/ttlilt),
- `EntropyArrest.md` (snap-noise taming + the caveat band the transport Books lean on). `Swarm_doc.md` is
+ `EntropyArrest.md` (snap-noise taming + the caveat band the transport Books lean on). `Swarm_spec.md` is
   the non-Radio half — the p2p social side (identity, presence, sharing) this streams over.
 
 ---

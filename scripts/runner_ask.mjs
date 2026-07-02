@@ -13,8 +13,8 @@
 //    node scripts/runner_ask.mjs ping                    # liveness {role,channel,running}
 //    node scripts/runner_ask.mjs run MusuLive            # kick a run (returns immediately)
 //    node scripts/runner_ask.mjs run MusuLive --watch    # kick + poll state until done|failed
-//    node scripts/runner_ask.mjs runners                 # list the Waft:Cluster registry (prepub  friendly  ★fav)
-//    node scripts/runner_ask.mjs run MusuLive --runner=49dee9   # court ONE runner by prepub|prefix|friendly and
+//    node scripts/runner_ask.mjs runners                 # list the Waft:Cluster registry (prepub  ★fav)
+//    node scripts/runner_ask.mjs run MusuLive --runner=49dee9   # court ONE runner by prepub|prefix and
 //                                                          #  INSIST: retry IT on busy/silence (never failover);
 //                                                           #   no --runner ⇒ legacy role broadcast (first to ack)
 //    node scripts/runner_ask.mjs state [--watch]         # verdict + phase/n/total
@@ -47,7 +47,7 @@ const OPS = ['ping', 'probe', 'run', 'state', 'steps', 'snap', 'rungos', 'accept
 //   builds from advertise beacons) so we can address ONE runner BY PREPUB (to:<prepub>) instead of the role
 //    broadcast to:'runner' that fans to EVERY runner.  No eatfunc to import here (Lies_dispatch_target is
 //     ghost-swallowed) and we don't need full deWaft — just the flat indent+comma lines:
-//      `HostedIdentity:<prepub>,role:runner,friendly:…`.  (Editor-side the auto-allocator tries-another-if-busy;
+//      `HostedIdentity:<prepub>,role:runner`.  (Editor-side the auto-allocator tries-another-if-busy;
 //       the CLI does the OPPOSITE — it INSISTS on the one runner you name, for repeatable targeted testing.)
 function clusterRunners() {
 	let txt
@@ -60,21 +60,37 @@ function clusterRunners() {
 		const pub = parts[0].slice('HostedIdentity:'.length)
 		const props = {}
 		for (const p of parts.slice(1)) { const i = p.indexOf(':'); if (i > 0) props[p.slice(0, i)] = p.slice(i + 1) }
-		if (props.role === 'runner') out.push({ pub, friendly: props.friendly, favourite_client: props.favourite_client })
+		if (props.role === 'runner') out.push({ pub, favourite_client: props.favourite_client })
 	}
 	return out
 }
-// resolve --runner <id> (exact prepub ▸ prefix ▸ friendly) to a prepub; no id ⇒ the LATEST runner in the directory.
+// resolve --runner <id> (exact prepub ▸ prefix) to a prepub; no id ⇒ the LATEST runner in the directory.
 function resolveRunner(id) {
 	const rs = clusterRunners()
 	if (!id) return rs[rs.length - 1]?.pub
-	return (rs.find(r => r.pub === id) ?? rs.find(r => r.pub.startsWith(id)) ?? rs.find(r => r.friendly === id))?.pub
+	return (rs.find(r => r.pub === id) ?? rs.find(r => r.pub.startsWith(id)))?.pub
+}
+// bookNeedsAC — read the Credence board (wormhole/Credence/toc.snap) for a Book's Storying cell, flat-line
+//  parsed like clusterRunners: `Funkcion:Storying,of_Book:<book>,…,needAC:1`.  So the CLI passes needAC for
+//   you EVEN IF you never read Credence → the runner secures AudioContext pre-run and the --watch below
+//    narrates the wait + the grant, instead of an audio step popping mid-run or the run silently blocking.
+function bookNeedsAC(book) {
+	if (!book) return false
+	let txt
+	try { txt = readFileSync(new URL('../wormhole/Credence/toc.snap', import.meta.url), 'utf8') } catch { return false }
+	for (const raw of txt.split('\n')) {
+		const line = raw.trim()
+		if (!line.startsWith('Funkcion:Storying')) continue
+		const parts = line.split(',')
+		if (parts.includes(`of_Book:${book}`) && parts.includes('needAC:1')) return true
+	}
+	return false
 }
 const argv  = process.argv.slice(2)
 const flags = new Set(argv.filter(a => a.startsWith('--') && !a.startsWith('--runner=')))
 const uidTok = argv.find(a => a.startsWith('@'))             // @uid → target a HELD run's frozen pins
 const uid    = uidTok ? uidTok.slice(1) : undefined
-const runnerSel = (argv.find(a => a.startsWith('--runner=')) ?? '').split('=')[1]   // --runner=<prepub|prefix|friendly>
+const runnerSel = (argv.find(a => a.startsWith('--runner=')) ?? '').split('=')[1]   // --runner=<prepub|prefix>
 const pos   = argv.filter(a => !a.startsWith('-') && !a.startsWith('@'))
 const op    = pos[0]
 const arg   = pos[1]
@@ -87,7 +103,7 @@ if (!op || !OPS.includes(op)) {
 if (op === 'runners') {
 	const rs = clusterRunners()
 	if (!rs.length) { console.error('no runners in wormhole/Cluster/toc.snap (none advertised yet, or the editor never wrote it)'); process.exit(1) }
-	for (const r of rs) console.log(`${r.pub}${r.friendly ? `  ${r.friendly}` : ''}${r.favourite_client ? `  ★${r.favourite_client.slice(0, 8)}` : ''}`)
+	for (const r of rs) console.log(`${r.pub}${r.favourite_client ? `  ★${r.favourite_client.slice(0, 8)}` : ''}`)
 	process.exit(0)
 }
 // TARGET — who to address.  --runner=<id> courts ONE runner by prepub (insist, no failover); else the legacy
@@ -117,7 +133,7 @@ function clientId() {
 const CLIENT = clientId()
 
 const ask = { op, client: CLIENT }
-if (op === 'run')  ask.book = arg
+if (op === 'run')  { ask.book = arg; if (bookNeedsAC(arg)) ask.needAC = 1 }   // Credence-read → runner secures AC pre-run
 if (op === 'snap') ask.n = Number(arg)
 if (uid) ask.uid = uid
 
@@ -177,17 +193,30 @@ else if (op === 'snap' && reply.result?.got_snap) {
 	exitCode = 1
 } else {
 	console.log(`${op}: ${JSON.stringify({ ok: reply.ok, ...reply.result })}`)
+	// A needAC Book stalls PRE-run asking for a gesture (the run record only opens once AC lands).  Surface
+	//  that — out of the blue if you never read Credence — so you know to go grant it in the runner tab.
+	if (op === 'run' && reply.result?.needAC) console.error(`🎤 ${arg} needs AudioContext — grant it in the runner tab${watch ? ' (watching for the grant below; blocks in ~60s if not)' : '; add --watch to see the grant, or it blocks in ~60s'}`)
 }
 
 // --watch (run|state): poll state until the Storyrun phase settles done|failed, narrating each change.
 if (watch && (op === 'run' || op === 'state') && reply.control === 'runner_ack') {
+	const needAC = !!reply.result?.needAC
 	const t0 = stamp
-	let last = ''
+	let last = '', acWaited = false
 	while (Date.now() - t0 < WATCH_MS) {
 		await new Promise(r => setTimeout(r, 700))
 		const s = await sendAsk(ws, { op: 'state' })
 		if (s.control !== 'runner_ack') { console.error(`✗ state: ${s.error}`); exitCode = 1; break }
 		const run = s.result?.run, out = s.result?.outcome
+		// needAC: no run record yet ⇒ still stalling for the AC gesture (Lies_become_book_drive opens the
+		//  record only AFTER AC is secured).  Keep the operator informed; cap the wait at ~65s (the runner's
+		//   own 60s window) rather than the full WATCH_MS, and report BLOCKED/untried on lapse.
+		if (needAC && !run) {
+			if (!acWaited) { acWaited = true; console.error(`⏳ ${arg} is WAITING FOR AudioContext permission — grant it in the runner tab`) }
+			if (Date.now() - t0 > 65000) { console.error(`⚠ AudioContext not granted within ~60s — run BLOCKED (untried, not a failure)`); exitCode = 1; break }
+			continue
+		}
+		if (acWaited && run) { acWaited = false; console.error(`✓ AudioContext granted — running`) }
 		const tag = run ? `${run.phase} ${run.n ?? '?'}/${run.total ?? '?'}` : 'no run'
 		if (tag !== last) { console.log(`… ${JSON.stringify({ run, outcome: out })}`); last = tag }
 		if (run && (run.phase === 'done' || run.phase === 'failed')) { exitCode = out && out.ok ? 0 : 1; break }

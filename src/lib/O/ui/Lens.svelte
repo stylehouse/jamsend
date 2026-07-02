@@ -8,11 +8,12 @@
     //   panel double-shows):
     //     • Otro mounts kind="Panel" — the global/fullscreen modals (e.g. IdHatch), fixed to the
     //       viewport bottom, accreting upward.
-    //     • Liesui mounts kind="Brink" — the cluster faces (Runner/Relay) of %Aim, FLOATING inside
-    //       the Lies backend box (.ls-ui, position:relative) over a zero-height sticky anchor, so it
-    //       reserves no flow space (its growing height never pushes the list) yet stays pinned to a
-    //       corner of the scrollport however the list scrolls.  Vexpandy re-perches it bottom↔top, a
-    //       side button right↔left.  Bounded by .ls-ui, so a Brink can never bleed onto the Langui editor.
+    //     • Liesui mounts kind="Brink" — the cluster faces (Rundar/Relay/Sound…) of %Aim, FLOATING
+    //       inside the Lies backend box (.ls-ui, position:relative) over a zero-height sticky anchor, so
+    //       it reserves no flow space yet stays pinned to a corner of the scrollport as the list scrolls
+    //       — and is BOUND by .ls-ui, so it can never bleed onto the Langui editor below (nor float over
+    //       it: when Lies scrolls out of view the HUD leaves with it).  The Vexpandy COLLAPSES it to a
+    //       one-row MiniBrink summary; a side button perches it left↔right.
     //   Re-suggesting the same (kind, of_Funkcion) is the change-notice (oai merge + bump re-renders
     //   a face without tearing it down); altitude orders the stack.
     import type { House } from "$lib/O/Housing.svelte"
@@ -31,23 +32,21 @@
     })())
 
     // Brink only.  open = the Vexpandy unfurls the full-face stack; collapsed (default) shows just the
-    //  grips bar + a one-row MiniBrink summary — connectivity at a glance.  The bar is position:fixed to
-    //   a viewport corner, so it survives scrolling above Lies (the old sticky-in-.ls-ui anchor didn't).
-    //    lefted = the side button perches it left↔right.
-    let open   = $state(false)
-    let lefted = $state(false)
+    //  grips bar + a one-row MiniBrink summary (connectivity at a glance).  The Brink is a flex child of
+    //   Liesui's shared base-shell now — the shell owns the sticky-at-the-foot positioning and puts the
+    //    Plank on the left, the Brink on the right, so there's no self-anchor and no left/right side button.
+    let open = $state(false)
 </script>
 
 {#if panels.length}
     {#if kind === 'Brink'}
-        <div class="lens-brink" class:lens-brink-left={lefted} class:lens-brink-open={open}>
+        <div class="lens-brink" class:lens-brink-open={open}>
             <div class="lens-brink-grips">
                 {#if !open}
-                    <!-- collapsed: the whole rack as a one-row MiniBrink summary, on the INTERIOR side of
-                         the grip buttons — a changing fleet width grows the row away from the screen edge,
-                         so the Vexpandy + side button stay pinned to the corner and always toggle-able.
-                         Same lens particles the pusher posits; LensHost mounts each funk's comp_MiniBrink
-                         face and skips a funk that has none. -->
+                    <!-- collapsed: the whole rack as a one-row MiniBrink summary, on the INTERIOR side of the
+                         Vexpandy — a changing fleet width grows the row leftward, away from the toggle, so the
+                         Vexpandy holds its spot and is always hit-able.  Same lens particles the pusher posits;
+                         LensHost mounts each funk's comp_MiniBrink face and skips a funk that has none. -->
                     <div class="lens-brink-mini">
                         {#each panels as p (p.sc.of_Funkcion + ':' + (p.sc.pub ?? ''))}
                             <LensHost {H} lens={p} face="MiniBrink" mini />
@@ -55,8 +54,6 @@
                     </div>
                 {/if}
                 <Vexpandy bind:expanded={open} />
-                <button class="lens-brink-side" onclick={() => lefted = !lefted}
-                    title={lefted ? 'perch the cluster dock on the right' : 'perch the cluster dock on the left'}>{lefted ? '⟩' : '⟨'}</button>
             </div>
             {#if open}
                 <div class="lens-brink-stack">
@@ -87,29 +84,21 @@
         display: flex; flex-direction: column-reverse; align-items: stretch;
         gap: 2px; pointer-events: none; z-index: 40000;
     }
-    /* Brink: a persistent cluster HUD FIXED to a viewport corner (bottom-right, or bottom-left when
-       lefted) — it survives scrolling above Lies, unlike the old sticky-in-.ls-ui anchor.
-         The grips bar (Vexpandy + side button + collapsed mini row) is the fixed one-row anchor and
-          NEVER moves — the faces float OFF it, so the guts growing can't shift the bar (no more
-           jump-up-its-own-height).
+    /* Brink: %Aim's cluster faces (Rundar/Relay/Sound…) — a flex child of Liesui's shared base-shell,
+       which owns the sticky-at-the-foot-of-.ls-ui positioning; the Brink just renders its bar + guts.
+         The grips bar (Vexpandy + collapsed mini row) is position:relative and one row tall — the guts
+          float OFF it (absolute, up), so a growing stack can't resize the bar (no jump-up-its-own-height).
          collapsed (default): grips bar + a one-row MiniBrink summary (connectivity at a glance).
-         open: the Vexpandy unfurls the full-face .lens-brink-stack just above the bar, growing UP and
-               away from it (never reaching Langui's NaviCado below).
-       z over the app but under the global Panel dock (IdHatch modals, 40000).  pointer-events:none on
-        the bar itself so its empty stretch never blocks the content behind; the buttons/faces re-enable. */
+         open: the stack unfurls just ABOVE the bar, growing UP into Lies (never down onto NaviCado). */
     .lens-brink {
-        position: fixed; right: 8px; bottom: 8px; z-index: 9500;
-        display: flex; justify-content: flex-end; align-items: center; gap: 4px;
+        position: relative;
+        display: flex; align-items: center; gap: 4px;
         pointer-events: none;
     }
-    .lens-brink-left { right: auto; left: 8px; justify-content: flex-start; }
     .lens-brink-grips {
         display: flex; align-items: center; gap: 4px; pointer-events: auto;
         background: rgba(14, 12, 20, 0.9); border: 1px solid #2c3450; border-radius: 6px; padding: 2px 5px;
     }
-    /* perched left: flip so the buttons hug the LEFT edge and the mini grows rightward (interior) —
-       the buttons always hug whichever edge the dock is pinned to, mini always on the interior side. */
-    .lens-brink-left .lens-brink-grips { flex-direction: row-reverse; }
     .lens-brink-mini { display: flex; align-items: center; gap: 6px; pointer-events: auto; }
     /* the guts: floated just above the grip bar (bottom:100%), right-aligned to it and growing UP.
        Height-capped + self-scrolling so a tall stack scrolls rather than climbing off-screen. */
@@ -119,13 +108,6 @@
         min-width: 14rem; max-width: 28rem; max-height: 60vh; overflow-y: auto;
         pointer-events: auto;
     }
-    .lens-brink-left .lens-brink-stack { right: auto; left: 0; }
-    .lens-brink-side {
-        font-family: monospace; font-size: 0.8rem; line-height: 1; cursor: pointer;
-        color: #5a6488; background: transparent; border: 1px solid #2c3450; border-radius: 3px;
-        padding: 0 0.3rem;
-    }
-    .lens-brink-side:hover { color: #8fa0d0; border-color: #44609e; }
     .lens-slot { pointer-events: auto; }
     :global(.lens-brink .vx-btn) { color: #5a6488; }
 </style>

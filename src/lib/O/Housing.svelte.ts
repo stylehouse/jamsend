@@ -2012,6 +2012,8 @@ export class WormholeNav {
 
     constructor(root: DirectoryListing) { this.root = root }
 
+    // dir_at — dir() from a single '/'-joined path string (avoids a spread-call at every discovery site).
+    async dir_at(path: string): Promise<DirectoryListing | null> { return this.dir(...path.split('/').filter(Boolean)) }
     // walk named path segments, expanding lazily
     async dir(...parts: string[]): Promise<DirectoryListing | null> {
         const key = parts.join('/')

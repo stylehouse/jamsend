@@ -95,6 +95,8 @@ export class OpfsOverlayNav {
         await w.close()
     }
 
+    // dir_at — dir() from a single '/'-joined path string (the discovery-site convenience).
+    async dir_at(path: string) { return this.dir(...path.split('/').filter(Boolean)) }
     // a DirectoryListing-shaped probe: the worker calls .expand() then reads
     //  .directories / .files (rw_op 'list').  expand() re-reads each call so a
     //   listing taken after a write isn't stale.

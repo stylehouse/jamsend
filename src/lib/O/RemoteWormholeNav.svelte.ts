@@ -93,6 +93,8 @@ export class RemoteWormholeNav {
         return { buffer, size }
     }
 
+    // dir_at — dir() from a single '/'-joined path string (the discovery-site convenience).
+    async dir_at(path: string) { return this.dir(...path.split('/').filter(Boolean)) }
     // a DirectoryListing-shaped probe (the worker calls .expand() then reads .directories/.files).
     //  The remote list is taken eagerly, so expand() is a no-op.
     async dir(...parts: string[]): Promise<{ name: string, directories: { name: string }[], files: { name: string }[], expand(): Promise<void> } | null> {

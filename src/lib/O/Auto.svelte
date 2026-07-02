@@ -121,7 +121,7 @@
         wT.c.up = A
 
         let tag: string
-        let stored: { pub: string; key: string; prepub: string; friendly?: string } | undefined
+        let stored: { pub: string; key: string; prepub: string } | undefined
         if (param === 'new') {
             stored = await (H as any).Clustation_mint()
             tag = stored!.prepub                       // a fresh identity is named by its own prepub

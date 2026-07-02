@@ -6,6 +6,23 @@ work would otherwise re-type into each session — keep it current, correct anyt
 
 Notation: `[x]` done · `[~]` started/scaffolded · `[ ]` not begun · `// <` a deliberate hole.
 
+**PRINCIPLE (2026-07-02, the belief-queue boundary — a bomb, kept up top).** The transport hands inbound
+ frames to the app via `Peeroleum_deliver`. Do **NOT** wrap each frame in its own `H.post_do` — that lands
+  one item per `ANSWER_CALLS_TICK_MS` (50ms) on `H.todo` under the beliefs mutex. At real frame rates
+   (ping/pong, `control:log` per relay routing line, run_phase per step × N runners) it **floods the queue and
+    puts a 50ms gap between every belief-loop action** — a death-spiral (observed: the editor at 117 todos,
+     ~6s backlog, and ghost-compile timing out *because* the editor couldn't drain). The floor:
+- **control frames** (no header — role/log/peer-relay) → handle **INLINE at the socket**, never the queue.
+- **envelope frames** → **COALESCE**: append to a per-w batch; if no drain is queued, ONE `post_do` drains the
+   WHOLE batch in a single Atime pass (`Lies_deliver_soon`, reusing `Peeroleum_deliver` in arrival order). N
+    frames → 1 drain slot; Atime kept (booked frames still book + `inbox.do()` in order). The tidy form is a
+     first-class `req:handle_inbound` driven by `reqyoncile` (out-of-time re-entry, coalesced via a pending
+      flag) — shipped as coalesced `post_do` for zero req-machinery risk under the spiral; upgrade when calm.
+- the **relay** must not broadcast its own `control:log` to every browser — only the **editor** (the one
+   debugging surface); a runner tab console-noting the editor's routing narration is pure flood.
+The Atime guarantee is *precious*, not free: batch into the belief loop, never flood it. (Impl:
+ `Tribunal.g on_message` + `LiesLies Lies_deliver_soon`; the re-pin dance in `Runner_quality_handover.md`.)
+
 **Two-frequency pair (read before editing either).** This is the HIGH-frequency half: live status,
 proofs, next moves, bombs, and the forward look — it changes every session. `Peeroleum_spec.md` is the
 LOW-frequency half: the settled design of the "linoleum floor" (particle layouts, frame envelope,

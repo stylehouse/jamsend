@@ -24,6 +24,7 @@
     import Vexpandy         from "$lib/O/ui/Vexpandy.svelte"
     import Actions         from "$lib/O/ui/Actions.svelte"
     import Lens            from "$lib/O/ui/Lens.svelte"
+    import Plank           from "$lib/O/ui/Plank.svelte"
     import { browserTrustedPubs } from "$lib/p2p/cluster_trust"
 
     let { H }: { H: House } = $props()
@@ -243,11 +244,20 @@
 
     {/if}
 
-    <!-- the Brink — %Aim's cluster faces (Runner peer-ping + Relay relay-ping) hoisted into a dock
-         pinned INSIDE this box, floating bottom-right (where the old .ls-health card sat), with a
-         Vexpandy that jumps it to the top of Lies.  It sublates the retired liveness card; the run
-         verdict stays in the header .ls-cred strip until %Aim grows a Credence face of its own. -->
-    <Lens {H} kind="Brink" />
+    <!-- the base shell — ONE row resting at the foot of Lies (a zero-height sticky anchor bounded in
+         .ls-ui, so it stays pinned as the waft list scrolls yet never bleeds onto NaviCado nor floats
+         over Langui — it leaves with Lies when Lies scrolls away).  Holds the Plank (DocWaftMap word-
+         cloud, fills the left) and the Brink (%Aim cluster faces, right corner) as flex children, both
+         flowing INSIDE here rather than self-pinning, so they rest together.  Plank is author chrome
+         (off the runner); the Brink shows on every role. -->
+    <div class="ls-baseshell">
+        <div class="ls-baseshell-row">
+            {#if Lies && !H.Lies_is_runner(Lies)}
+                <div class="ls-baseshell-plank"><Plank {H} w={Lies} /></div>
+            {/if}
+            <div class="ls-baseshell-brink"><Lens {H} kind="Brink" /></div>
+        </div>
+    </div>
 
     <!-- Cluster-identity alert — a SurprisePopup-style notice pinned to the bottom of the panel (by
          the runner/cluster status card), so a keyless editor — which can't sign gen_write and is
@@ -265,13 +275,23 @@
 
 <style>
     .ls-ui {
-        position: relative;     /* local positioning context; the Brink HUD is position:fixed now, so
-                                   it no longer needs this box to bound it. */
+        position: relative;     /* containing block for the base-shell's absolute row (Plank + Brink). */
         font-size: 0.83rem; padding: 0.5rem;
         padding-bottom: 1.7rem; /* reserve a strip so the collapsed card never sits over a list row */
         border: 1px solid #444; border-radius: 4px;
         background: #111; color: #ccc; min-width: 360px;
     }
+    /* the base shell — a zero-height sticky anchor at the foot of .ls-ui holding the Plank (left, fills)
+       and the Brink (right).  Bounded by .ls-ui: pinned while Lies is on screen, gone when it scrolls
+       away — never over Langui.  pointer-events:none on the shell so its empty stretch never blocks the
+       waft rows behind; the Plank/Brink content re-enables. */
+    .ls-baseshell { position: sticky; bottom: 8px; height: 0; z-index: 7; pointer-events: none; }
+    .ls-baseshell-row {
+        position: absolute; left: 8px; right: 8px; bottom: 0;
+        display: flex; align-items: flex-end; justify-content: flex-end; gap: 8px; pointer-events: none;
+    }
+    .ls-baseshell-plank { flex: 1 1 auto; min-width: 0; position: relative; }
+    .ls-baseshell-brink { flex: 0 0 auto; position: relative; }
     .ls-header { margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.4rem }
     .ls-header :global(.peel-input), .ls-header > :last-child { flex: 1 }
     .ls-role {

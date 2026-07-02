@@ -34,7 +34,7 @@ import { onMount } from "svelte"
 
 let { M } = $props()
 
-// ── test-music generator engine (for the MusuTones Book — a one-off dev-setup Book, not a node script) ──
+// ── test-music generator engine (for the MusuGenerateTestsMusic Book — a one-off dev-setup Book, not a node script) ──
 //  Pure-tone tracks: the FREQUENCY IS THE LABEL, so the real-time race test decodes back which track
 //   played each 50ms.  Musical + well-spaced (≥110Hz apart) so an FFT bin never confuses two.  artist-title
 //    rides the filename ("Artist - Title.wav") — exactly what Crate_meta_from_name reads back.
@@ -330,19 +330,6 @@ await M.eatfunc({
         const H = this as any
         if ((H.Lies_lens_bag() as TheC).oa({ Lens: lensKind, of_Funkcion })) H.Lies_lens_dismiss(lensKind, of_Funkcion)
         else H.Lies_lens_suggest(lensKind, of_Funkcion, sc)
-    },
-
-    //   Lies_waftmap_ensure — hoist the "Plank" (the Waft navigator / Doc-relevance Venn) as a
-    //    PERSISTENT editor Brink tenant.  Unlike the Aim faces (re-suggested per tick as liveness
-    //     shifts) or Upkeep (up only while an %Errand lives), the navigator is always wanted — so a
-    //      one-shot idempotent suggest, editor-only.  Face-only (no run, like Upkeep); no funk backlink
-    //       (it resolves w:Lies off examining).  altitude 30 sits it after the connectivity glances
-    //        (Sound 5 / Upkeep 10 / Rundar 20 / Relay 25).
-    Lies_waftmap_ensure(w: TheC): void {
-        const H = this as any
-        if (H.Lies_role(w) !== 'editor') return
-        if (!(H.Lies_lens_bag() as TheC).oa({ Lens: 'Brink', of_Funkcion: 'waftmap' }))
-            H.Lies_lens_suggest('Brink', 'waftmap', { altitude: 30 })
     },
 
     // ── %Upkeep — the machine's background work-ledger (the opposite pole of %Interest) ──────
@@ -657,10 +644,12 @@ await M.eatfunc({
             }
         } else H.Lies_lens_dismiss('Brink', 'Relay')
 
-        // Sound — the "tap for sound" audio-gate beg (both roles).  Self-gates: the face is invisible
-        //  until a gat fires AudioContext_wanted, so it's suggested unconditionally when on and shows
-        //   only when audio is actually blocked.  altitude 5 = leftmost/interior-most in the mini row.
-        if (on) {
+        // Sound — the "tap for sound" audio-gate beg.  ONLY on the EDITOR: it's the central control
+        //  panel where the human actually sits, so the audio nag belongs in ITS MiniBrink — not on a
+        //   runner appliance nobody's watching.  Self-gates: the face stays invisible until a gat fires
+        //    AudioContext_wanted, so it shows only when the editor tab's own audio is blocked.  altitude
+        //     5 = leftmost/interior-most in the mini row.
+        if (role === 'editor') {
             if (!bag.oa({ Lens: 'Brink', of_Funkcion: 'Sound' }))
                 H.Lies_lens_suggest('Brink', 'Sound', { altitude: 5 })
         } else H.Lies_lens_dismiss('Brink', 'Sound')
@@ -1146,24 +1135,25 @@ await M.eatfunc({
             finally { try { await ac?.close() } catch {} }
         },
 
-        // Musu_gen_testsounds — the MusuTones Book's engine: synth every TEST_TONE as a WAV, write it into
-        //  the served static/testsounds/ (bin_write, on the granted dev-instance share) + a manifest.json,
-        //   so MusuCrate ingests them back gesture-free (Crate_manifest/Crate_fetch_record).  Held by an
-        //    expecting() ttlilt so Story snaps only once every file is written.  Needs a granted share.
+        // Musu_gen_testsounds — the MusuGenerateTestsMusic Book's engine: synth every TEST_TONE as a WAV
+        //  into testsounds/ — write to the REAL dir (FSA won't follow the static/ symlink).  JUST the WAVs:
+        //   a real music collection is a folder of files, no sidecar.  Crate DISCOVERS it by walking the
+        //    Wormhole nav (Crate_nav_paths), and the freq↔track map lives in code (TEST_TONES) — so neither
+        //     a manifest.json nor a tones.json is needed.  This REPLACES the collection deterministically.
+        //      bin_write on the granted share; held by an expecting() ttlilt so Story snaps only once every
+        //       file is written.  Needs a writable share (no headless).
         Musu_gen_testsounds(w: TheC): TheC {
             const H = this as House
             return H.expecting(w, 'gen_testsounds', 30, async () => {
                 const nav = H.top_House().o({ A: 'Wormhole' })[0]?.c.nav as any
                 if (!nav?.bin_write) { w.i({ gen_error: 'no writable share — grant one (open share) first' }); return }
-                const dir = 'static/testsounds'
-                const manifest: any[] = []
+                const dir = 'testsounds'
+                let made = 0
                 for (const t of TEST_TONES) {
-                    const file = `${t.artist} - ${t.title}.wav`
-                    await nav.bin_write(dir, file, wav_bytes(t.freq, t.secs))
-                    manifest.push({ file, artist: t.artist, title: t.title, freq: t.freq, seconds: t.secs })
+                    await nav.bin_write(dir, `${t.artist} - ${t.title}.wav`, wav_bytes(t.freq, t.secs))
+                    made = made + 1
                 }
-                await nav.write_file(dir, 'manifest.json', JSON.stringify(manifest, null, 2))
-                w.i({ generated: manifest.length, dir })
+                w.i({ generated: made, dir })
             })
         },
 
@@ -1226,8 +1216,8 @@ await M.eatfunc({
                         if (!chk.ok) { ok = false; result = { error: chk.reason, engagement: H.Lies_engagement(w) ?? null } }
                         else {
                             H.Lies_engage(w, client, ask.book)
-                            H.Lies_become_book_drive(w, ask.book)
-                            result = { accepted: true, book: ask.book, uid: H.Lies_rungo_record(w)?.sc.uid ?? null, engaged: client }
+                            H.Lies_become_book_drive(w, ask.book, !!ask.needAC)   // CLI-carried needAC → secure AC pre-run (it read Credence for us)
+                            result = { accepted: true, book: ask.book, uid: H.Lies_rungo_record(w)?.sc.uid ?? null, engaged: client, needAC: !!ask.needAC }
                         }
                     }
                 } else if (op === 'release') {

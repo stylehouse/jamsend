@@ -38,7 +38,6 @@ import Sound from "$lib/O/Funk/Sound.svelte"
 import Upkeep from "$lib/O/Funk/Upkeep.svelte"
 import DocTing from "$lib/O/Funk/DocTing.svelte"
 import DocGhostList from "$lib/O/Funk/DocGhostList.svelte"
-import DocWaftMap from "$lib/O/Funk/DocWaftMap.svelte"
 
 export type FunkKind = {
     run?:                (host: TheC, funk: TheC, ww: TheC) => void
@@ -67,5 +66,4 @@ export const FUNK_KINDS: Record<string, FunkKind> = {
     Sound:      { comp_Brink: Sound, comp_MiniBrink: Sound },    // the "tap for sound" audio-gate beg — pops out of the MiniBrink (self-gates; invisible until a gat is blocked)
     Ting:       { component: DocTing },                         // big face: the attention-Ting histogram — a taker Waft's main Funkcion (data in H.ave)
     dirlist:    { component: DocGhostList },                    // big face: the GhostList ghost-index — the GhostList Waft's main Funkcion (run rides funk.c.run, installed off-snap by GhostList_funkcion)
-    waftmap:    { comp_Brink: DocWaftMap, comp_MiniBrink: DocWaftMap }, // the Plank: Waft navigator + Doc-relevance Venn; MiniBrink = compact chip glance (collapsed bar), Brink = full navigator (opened stack)
 }

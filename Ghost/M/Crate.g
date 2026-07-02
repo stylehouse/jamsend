@@ -148,111 +148,46 @@ async Crate_radiostock_from(crate):
     if (!rec) return null
     return this.Crate_radiostock(rec)
 
-// ── served-collection ingestion (the gesture-free real path) ──────────────────────────────────────
-//  The Wormhole rw_op is text-only and the OPFS seed doesn't carry arbitrary dirs, so binary audio can't
-//   ride it; a local share needs a picker gesture.  The path that actually works headless-of-gesture: the
-//    dev server serves static/ at /, so a collection symlinked there (e.g. static/testsounds → ../testsounds)
-//     is reachable by fetch().  fetch can't enumerate a dir, so the collection carries a manifest.json.
-// Crate_manifest(base) -> the filename list (base e.g. '/testsounds').  [] if unreachable.
-async Crate_manifest(base):
-    if (typeof fetch === 'undefined') return []
-    let res = await fetch(base + '/manifest.json')
-    if (!res.ok) return []
-    return await res.json()
+// ── nav discovery (the gesture-free real path, via the Wormhole) ────────────────────────────────────
+//  DISCOVER a filesystem full of music through the Wormhole nav — the one disk abstraction that spans
+//   every backend the same way: a locally-granted FSA share, the OPFS-cloud seed, OR a runner's editor-
+//    proxied RemoteWormholeNav.  All three answer dir_at(path).expand() → {directories,files} and
+//     bin_read(dir,file) → bytes, so a collection is WALKED like a real folder — no manifest.json, no fetch.
+// Crate_nav — the Wormhole's live nav (A:Wormhole/c.nav), or null before the disk is up.
+Crate_nav():
+    let A = this.top_House().o({ A: 'Wormhole' })[0]
+    return A ? (A.c.nav || null) : null
 
-// Crate_fetch_record — REAL ingestion: fetch one served file (binary), DECODE it (FLAC/etc via
-//  OfflineAudioContext.decodeAudioData — no gesture), slice channel 0 into CHUNK Float32 pieces, stamp a
-//   %record with c.chunks + real seconds/loudness/filename-metadata.  Returns the record, or null + an
-//    %undecodable marker if the browser can't decode this codec (a real problem this surfaces, not hides).
-async Crate_fetch_record(w, base, name):
-    if (typeof OfflineAudioContext === 'undefined' || typeof fetch === 'undefined') return null
-    let res = await fetch(base + '/' + encodeURIComponent(name))
-    if (!res.ok) return null
-    let raw = await res.arrayBuffer()
-    let ctx = new OfflineAudioContext(1, 1, 48000)
-    let decoded = null
-    try {
-        decoded = await ctx.decodeAudioData(raw)
-    } catch (er) {
-        w.i({ undecodable: name })
-        return null
-    }
-    let data = decoded.getChannelData(0)
-    let CHUNK = 2400
-    let chunks = []
-    let i = 0
-    while (i < data.length) {
-        chunks.push(data.slice(i, Math.min(data.length, i + CHUNK)))
-        i = i + CHUNK
-    }
-    let sumSq = 0
-    let j = 0
-    while (j < data.length) {
-        sumSq += data[j] * data[j]
-        j = j + 1
-    }
-    let rms = Math.sqrt(sumSq / Math.max(1, data.length))
-    let meta = this.Crate_meta_from_name(name)
-    let rec = w.i({ record: 1, name: name, artist: meta.artist, title: meta.title, loudness: +rms.toFixed(4), seconds: +decoded.duration.toFixed(2), nchunks: chunks.length, real: 1 })
-    rec.c.up = w
-    rec.c.chunks = chunks
-    return rec
-
-// Crate_fetch_some — pseudo-randomly buffer `n` REAL records from a served collection (prandle pick over the
-//  manifest, like Radios' load_random_records), decoded + ready.  Caller seeds prandle for a reproducible
-//   set.  Returns the records actually decoded (fewer than n if some failed).
-async Crate_fetch_some(w, base, n):
-    let names = await this.Crate_manifest(base)
-    if (!names.length) return []
-    let recs = []
-    let tries = 0
-    while (recs.length < n && tries < n * 4) {
-        tries = tries + 1
-        let name = names[this.prandle(names.length)]
-        let rec = await this.Crate_fetch_record(w, base, name)
-        if (rec) recs.push(rec)
-    }
-    return recs
-
-// ── req:rastock — the radiostock builder, as a VISIBLE process ─────────────────────────────────────
-//  Mirrors Radios' radiostock: a thing that DESIRES `want` records and fills itself by reading the
-//   collection.  Driven one notch per Story beat (so each snap narrates a stage): ISSUE a read (a %reading
-//    goes out), the read COMES BACK (fetch+decode resolves onto the %reading's .c, off-snap), a %record gets
-//     MADE (real artist/album/title/seconds/loudness).  want/have/pool + the in-flight %reading + the
-//      %record rows all snap — the picture finally describes what's happening.
-
-// Crate_meta_from_path — real artist/album/title from a nested path "Artist/Album/NN Title.ext".
-Crate_meta_from_path(path):
-    let segs = path.split('/')
-    let file = segs[segs.length - 1]
-    let dot = file.lastIndexOf('.')
-    let stem = (dot < 0) ? file : file.slice(0, dot)
-    let clean = stem.replace(/_/g, ' ').trim()
-    let parts = clean.split(' - ')
-    let title = parts[parts.length - 1].replace(/^[0-9]+\s+/, '').trim()
-    let artist = (segs.length >= 3) ? segs[0] : (parts.length > 1 ? parts[0].trim() : '')
-    let album = (segs.length >= 3) ? segs[1] : ((segs.length === 2) ? segs[0] : '')
-    return { artist: artist, album: album, title: title }
-
-// Crate_enc_path — encode a nested path for fetch (each segment; keep the slashes).
-Crate_enc_path(path):
+// Crate_nav_paths — walk `base` breadth-first, collecting every audio file's path RELATIVE to base
+//  (nested "Artist/Album/NN Title.ext" or flat "Artist - Title.ext").  Sorted for a deterministic pool
+//   (the backends don't all order their entries).  This IS the track list, discovered rather than declared.
+async Crate_nav_paths(nav, base):
     let out = []
-    for (const s of path.split('/')) out.push(encodeURIComponent(s))
-    return out.join('/')
-
-// Crate_fetch_payload — fetch ONE served track (nested path) and decode it FROM THE START (Offline
-//  AudioContext — no gesture, robust for mp3/flac), keep the first ~PREVIEW chunks (decode-from-start is the
-//   preview), derive loudness + path metadata.  Returns a plain payload (no particle) or null on failure.
-async Crate_fetch_payload(base, path):
-    if (typeof OfflineAudioContext === 'undefined' || typeof fetch === 'undefined') return null
-    let res = null
-    try {
-        res = await fetch(base + '/' + this.Crate_enc_path(path))
-    } catch (er) {
-        return null
+    let queue = ['']
+    let guard = 0
+    while (queue.length && guard < 4096) {
+        guard = guard + 1
+        let rel = queue.shift()
+        let dl = await nav.dir_at(rel ? (base + '/' + rel) : base)
+        if (!dl) continue
+        await dl.expand()
+        for (const f of dl.files) {
+            if (this.Crate_is_audio(this.Crate_ext(f.name))) out.push(rel ? (rel + '/' + f.name) : f.name)
+        }
+        for (const d of dl.directories) queue.push(rel ? (rel + '/' + d.name) : d.name)
     }
-    if (!res || !res.ok) return null
-    let raw = await res.arrayBuffer()
+    out.sort()
+    return out
+
+// Crate_nav_payload — read ONE track's bytes through the nav, decode FROM THE START (OfflineAudioContext —
+//  no gesture), keep the first ~PREVIEW chunks, derive loudness + path metadata.  The nav twin of the old
+//   fetch-based reader.  Returns a plain payload (no particle) or null on unreadable/undecodable.
+async Crate_nav_payload(nav, base, path):
+    if (typeof OfflineAudioContext === 'undefined' || !nav) return null
+    let parts = (base + '/' + path).split('/').filter(Boolean)
+    let filename = parts.pop()
+    let raw = await nav.bin_read(parts.join('/'), filename)
+    if (!raw) return null
     let ctx = new OfflineAudioContext(1, 1, 48000)
     let decoded = null
     try {
@@ -279,16 +214,39 @@ async Crate_fetch_payload(base, path):
     let meta = this.Crate_meta_from_path(path)
     return { chunks: chunks, seconds: +decoded.duration.toFixed(2), loudness: +rms.toFixed(4), artist: meta.artist, album: meta.album, title: meta.title, nchunks: chunks.length }
 
-// Crate_rastock_start — stand up the rastock with its desires (want) + the manifest (names ride .c).
+// ── req:rastock — the radiostock builder, as a VISIBLE process ─────────────────────────────────────
+//  Mirrors Radios' radiostock: a thing that DESIRES `want` records and fills itself by reading the
+//   collection.  Driven one notch per Story beat (so each snap narrates a stage): ISSUE a read (a %reading
+//    goes out), the read COMES BACK (read+decode resolves onto the %reading's .c, off-snap), a %record gets
+//     MADE (real artist/album/title/seconds/loudness).  want/have/pool + the in-flight %reading + the
+//      %record rows all snap — the picture finally describes what's happening.
+
+// Crate_meta_from_path — real artist/album/title from a nested path "Artist/Album/NN Title.ext".
+Crate_meta_from_path(path):
+    let segs = path.split('/')
+    let file = segs[segs.length - 1]
+    let dot = file.lastIndexOf('.')
+    let stem = (dot < 0) ? file : file.slice(0, dot)
+    let clean = stem.replace(/_/g, ' ').trim()
+    let parts = clean.split(' - ')
+    let title = parts[parts.length - 1].replace(/^[0-9]+\s+/, '').trim()
+    let artist = (segs.length >= 3) ? segs[0] : (parts.length > 1 ? parts[0].trim() : '')
+    let album = (segs.length >= 3) ? segs[1] : ((segs.length === 2) ? segs[0] : '')
+    return { artist: artist, album: album, title: title }
+
+// Crate_rastock_start — stand up the rastock with its desires (want) + the DISCOVERED track list (paths
+//  ride .c; the live nav rides .c too, so every read reaches the same disk the walk found them on).
 async Crate_rastock_start(w, base, want):
-    let names = await this.Crate_manifest(base)
+    let nav = this.Crate_nav()
+    let names = nav ? await this.Crate_nav_paths(nav, base) : []
     let ra = w.i({rastock: 1, base: base, want: want, have: 0, pool: names.length})
     ra.c.up = w
     ra.c.names = names
+    ra.c.nav = nav
     return ra
 
 // Crate_rastock_issue — send ONE read out: pick a pseudo-random track, mark a %reading (visible, pending),
-//  and kick the async fetch+decode that lands the payload on the %reading's .c when it returns.  Won't
+//  and kick the async read+decode that lands the payload on the %reading's .c when it returns.  Won't
 //   over-issue beyond `want` (records + in-flight reads).
 Crate_rastock_issue(ra):
     let names = ra.c.names
@@ -311,14 +269,14 @@ Crate_rastock_issue(ra):
     if (!path) return
     let rd = ra.i({reading: 1, path: path})
     rd.c.up = ra
-    this.Crate_read_into(ra.sc.base, path, rd)
+    this.Crate_read_into(ra.c.nav, ra.sc.base, path, rd)
 
-// Crate_read_into — the async leg: fetch+decode, stash the payload on rd.c.result, mark back (OFF-snap on
+// Crate_read_into — the async leg: read+decode, stash the payload on rd.c.result, mark back (OFF-snap on
 //  rd.c.back, NOT rd.sc.back).  Off-snap is deliberate: the flag flips at decode-completion time, which
 //   RACES the beat snaps (a fast decode lands before its beat's snap → the %reading dige flickers run-to-
 //    run).  Off-snap, a %reading always snaps as just its path (deterministic); drain/harvest read c.back.
-async Crate_read_into(base, path, rd):
-    let res = await this.Crate_fetch_payload(base, path)
+async Crate_read_into(nav, base, path, rd):
+    let res = await this.Crate_nav_payload(nav, base, path)
     rd.c.result = res || null
     rd.c.back = 1
     rd.bump()

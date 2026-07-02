@@ -1,19 +1,23 @@
 Waft:Keep,equip:Keep,lte_expanded,isx_show_cold
-  WaftTimes,of_Waft:Ghost/Net/Easy,discovered_at=1782449847030,accessed_at=1782970343901
-    Cursor,what:What:the peer,at=1782970343749
-  WaftTimes,of_Waft:Ghost/Music/Ality,discovered_at=1782449847030,accessed_at=1782970347899
-    Cursor,what:What:MusuConceal (the concealment ladder — fill a gap with repeat / reverse-pingpong not silence),at=1782970347899
-  WaftTimes,of_Waft:Credence,discovered_at=1782550950085,accessed_at=1782970344351
+  WaftTimes,of_Waft:Ghost/Net/Easy,discovered_at=1782449847030,accessed_at=1782978328813
+    Cursor,what:Doc:Ghost/Story/Peregrination.g,at=1782978330674
+  WaftTimes,of_Waft:Ghost/Music/Ality,discovered_at=1782449847030,accessed_at=1782978324039
+    Cursor,what:What:MusuCrate (REAL music — fetch+decode ./testsounds and stream it),at=1782978324039
+  WaftTimes,of_Waft:Credence,discovered_at=1782550950085,accessed_at=1782976826266
     Cursor,what:What:rate control,at=1782963865402
-  Cursor,waft:Ghost/Music/Ality,at=1782970347899
-  WaftTimes,of_Waft:Cluster,discovered_at=1782641801641,accessed_at=1782970344408
+  Cursor,waft:Ghost/Net/Easy,at=1782978328813
+  WaftTimes,of_Waft:Cluster,discovered_at=1782641801641,accessed_at=1782976826326
   WaftTimes,of_Waft:Keep
-  WaftTimes,of_Waft:GhostList,discovered_at=1782807094692,accessed_at=1782970344508,minimised
-  DocScroll,of_Doc:Ghost/N/Peeroleum.g
+  WaftTimes,of_Waft:GhostList,discovered_at=1782807094692,accessed_at=1782976826429,minimised
+  DocScroll,of_Doc:Ghost/N/Peeroleum.g,scroll_line=71
   DocScroll,of_Doc:Ghost/N/Tyrant.g
-  DocScroll,of_Doc:Ghost/M/Radiola.g,scroll_line=15
-  DocScroll,of_Doc:Ghost/Story/Musuation.g,scroll_line=2686
-  DocScroll,of_Doc:Ghost/Story/Peregrination.g,scroll_line=12
+  DocScroll,of_Doc:Ghost/M/Radiola.g,scroll_line=14
+  DocScroll,of_Doc:Ghost/Story/Musuation.g,scroll_line=2612
+  DocScroll,of_Doc:Ghost/Story/Peregrination.g,scroll_line=11
   DocScroll,of_Doc:src/lib/ghost/Radios.svelte,scroll_line=762
   DocScroll,of_Doc:src/lib/O/spec/Music_todo.md
-  WaftTimes,of_Waft:Ting/2026-07-02/160434,minimised,discovered_at=1782967448421,accessed_at=1782970344562
+  WaftTimes,of_Waft:Ting/2026-07-02/160434,discovered_at=1782967448421,accessed_at=1782976826484,minimised
+  DocScroll,of_Doc:src/lib/O/spec/Peeroleum_spec.md,scroll_line=405
+  DocScroll,of_Doc:src/lib/O/spec/Peeroleum_handover.md,scroll_line=27
+  DocScroll,of_Doc:src/lib/O/spec/Covenant_design.md,scroll_line=197
+  DocScroll,of_Doc:Ghost/M/Crate.g,scroll_line=28
