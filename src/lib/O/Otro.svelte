@@ -8,9 +8,8 @@
     import Stuffing from "$lib/data/Stuffing.svelte"
     import { onDestroy, onMount } from "svelte";
     import NaviScroll from "./ui/NaviScroll.svelte";
-    import { boot_param, has_audio } from "$lib/boot";
+    import { boot_param } from "$lib/boot";
     import FaceSucker from "$lib/p2p/ui/FaceSucker.svelte";
-    import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte";
     import { sockcap_install, socklog_armed } from "$lib/O/sockcap";   // ALMOST-GONER: relay-socket tap (dumped via Wormhole) — sockcap.ts header
 
     //#region H:Mundo
@@ -128,11 +127,6 @@
     //     array sampled off the same slow poll as disk_gated — no House-reactivity guesswork.
     let ac_poll = $state(0)
     let pending_gats: any[] = []
-    // A tab BLESSED "provide AudioContext" (IdHatch tickbox → localStorage, read once per load) demands
-    //  the gesture PROACTIVELY — the gate shows whenever its voice isn't live, before any Book runs and
-    //   again after a de-permit — so a ticked runner lands audio-ready ahead of dispatch.  Most tabs are
-    //    un-ticked → this stays false and the gate is purely the event-driven|disk path above.
-    const want_audio = typeof window !== 'undefined' && has_audio()
     onMount(() => {
         const iv = setInterval(() => disk_poll++, 400)
         const on_want = (e: any) => {
@@ -143,12 +137,9 @@
         return () => { clearInterval(iv); window.removeEventListener('AudioContext_wanted', on_want) }
     })
     let disk_gated  = $derived.by(() => { disk_poll; return !!H?.c.disk_gated })
-    let ac_wanted   = $derived.by(() => {
-        disk_poll; ac_poll
-        if (pending_gats.some(g => !g?.AC_ready)) return true          // something attempted audio + was blocked
-        if (want_audio) { const g = H?.c.musu_gat; return !g || !g.AC_ready }   // ticked tab: gate up until its voice is live
-        return false
-    })
+    // event-driven only: the gate shows when a hard audio DEMAND fired AudioContext_wanted and the gat
+    //  is still cold.  No proactive nag — a runner that never hits an audio-demanding step never sees it.
+    let ac_wanted   = $derived.by(() => { disk_poll; ac_poll; return pending_gats.some(g => !g?.AC_ready) })
     let disk_role   = $derived(H?.c.boot_role === 'editor' ? 'Editor' : 'Runner')
     let share_error = $state('')
     let opening_share = $state(false)
@@ -169,12 +160,7 @@
     async function open_share() {
         share_error = ''
         opening_share = true
-        // everything awaiting a gesture: the event-collected gats, plus a ticked tab's OWN voice
-        //  (H.c.musu_gat — the exact SoundSystem Musu Books play through), created here inside the
-        //   click so the AudioContext is born within the gesture (the surest way to have it resume).
-        const targets = new Set<any>(pending_gats)
-        if (want_audio && H) { H.c.musu_gat ??= new SoundSystem({}); targets.add(H.c.musu_gat) }
-        const wakes = [...targets].map(wake_gat)          // AC resume|init — kicked off within the gesture
+        const wakes = pending_gats.map(wake_gat)          // AC resume|init — kicked off within the gesture
         let disk_p: Promise<any> | null = null
         if (disk_gated) {
             const act = H?.o({ watched: 'actions' })[0]?.o({ action: 1, role: 'open_dir' })[0]

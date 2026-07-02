@@ -23,10 +23,10 @@ Waft:Credence
         Funkcion:Storying,of_Book:MusuSignal
       What:rate control
         Funkcion:Storying,of_Book:MusuGlide
-        Funkcion:Storying,of_Book:MusuTune
+        Funkcion:Storying,of_Book:MusuTune,needAC:1
         Funkcion:Storying,of_Book:MusuEdge
       What:showcase
-        Funkcion:Storying,of_Book:MusuRadio
+        Funkcion:Storying,of_Book:MusuRadio,needAC:1
     What:real music
       Funkcion:Storying,of_Book:MusuCrate
     What:the platform

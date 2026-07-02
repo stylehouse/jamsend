@@ -1224,6 +1224,27 @@
             return { to: best!.pub }
         },
 
+        // Lies_preempt_target — for a single INTERACTIVE click when every live runner is busy: rather than HOLD,
+        //  reuse the runner we already drove (the sticky aim|rungo_runner if still live, else a live runner
+        //   that's OURS by favourite_client, else any live one) and re-instruct it — its Story_reset cancels
+        //    the prior run.  A click means "run THIS now on my runner", not "queue behind a run I've moved
+        //     past".  StoryTimes (the multi-run sweep) keeps the hold/parallel-acquire path; this preempt is
+        //      the one-click case only, until a real multi-run gesture (cancel-via-Brink / Ctrl-click) exists.
+        Lies_preempt_target(w: TheC): string | undefined {
+            const H   = this as House
+            if (H.Lies_role(w) !== 'editor') return undefined
+            const me  = H.Lies_self(w)?.prepub
+            const now = Date.now()
+            const roster = w.o({ Runner: 1 }) as TheC[]
+            const live = (r?: TheC) => !!r && Number(r.c.last_heard ?? 0) > 0 && now - Number(r.c.last_heard) < 45000
+            const slot = (pub?: string) => roster.find(r => r.sc.Runner === pub)
+            const sticky = (w.c.aim_runner ?? w.c.rungo_runner) as string | undefined
+            if (sticky && live(slot(sticky))) return sticky                       // the one we last drove
+            const mine = roster.find(r => live(r) && r.sc.favourite_client === me)
+            if (mine) return mine.sc.Runner as string                            // else a live runner that's ours
+            return (roster.find(r => live(r))?.sc.Runner) as string | undefined  // else any live one (don't lose the click)
+        },
+
         // Lies_queue_run / Lies_drain_runs — the exhausted-runners backstop.  When dispatch is exhausted (every
         //  live runner busy) the job is HELD on w.c.pending_runs instead of stealing a busy one or broadcasting;
         //   advertise_recv drains the oldest when a runner's beacon shows it freed.  Per-client best-effort: two

@@ -194,5 +194,19 @@ if (watch && (op === 'run' || op === 'state') && reply.control === 'runner_ack')
 	}
 }
 
+// A watched RUN settled — do NOT auto-release: `release` GCs the run, so it would throw away exactly what
+//  you need to look at (a red run especially — the failing steps, the snap diffs).  Handing the runner
+//   back must be a deliberate act AFTER inspecting.  So just REMIND, with the exact commands — inspect
+//    first, release when genuinely done (which also frees it for the editor + other clients).
+if (watch && op === 'run') {
+	console.error('')
+	console.error(exitCode !== 0
+		? '  ⚠ run went RED — inspect BEFORE releasing (release throws the run away):'
+		: '  run settled — inspect if you want, then hand the runner back:')
+	console.error('      failing steps: node scripts/runner_ask.mjs steps')
+	console.error('      one step snap: node scripts/runner_ask.mjs snap <n>')
+	console.error('      release:       node scripts/runner_ask.mjs release   ← frees it for the editor')
+}
+
 try { ws.close() } catch {}
 process.exit(exitCode)

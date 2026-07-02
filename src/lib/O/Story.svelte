@@ -122,6 +122,7 @@
     import { now_in_seconds, now_in_seconds_with_ms }     from "$lib/p2p/Peerily.svelte"
     import { ANSWER_CALLS_TICK_MS, House } from "$lib/O/Housing.svelte"
     import Storui                       from "$lib/O/Storui.svelte"
+    import { SoundSystem }              from "$lib/p2p/ftp/Audio.svelte"
 
     let { M } = $props()
     let V = { Story: 1 }   // set Story: 1 here to enable drive/analysis debug logs
@@ -160,6 +161,35 @@
 
     The_step(w: TheC, n: number): TheC {
         return this.step_c(w.c.The, n, 'step')
+    },
+
+    // Story_demand_audio(w, secs, work) — the HARD audio demand.  A Book step whose ASSERTION needs the
+    //  real voice calls this (NOT the soft Musu_gat, which just returns null and the caller skips).  The
+    //   requirement is DISCOVERED by the call — Story needs no needs:audio tag on the Book.
+    //    live context  → run work(gat) now, held by expecting()'s ttlilt for its wall-clock extent.
+    //    cold context  → surface the "open share" gate on THIS tab (AudioContext_wanted, the very event
+    //      Otro's merged gate listens for) and SIT up to `secs` for a human to grant it:
+    //       granted in time → run work(gat) with the now-live voice (the test actually runs).
+    //       `secs` elapses  → set w.c.step_blocked → the step lands a distinct UNTRIED verdict
+    //         (!ok + error, nothing tried) — "couldn't run here", never "the audio delivery is broken".
+    //   Fire-and-forget (expecting is non-blocking, holds Story via the ttlilt); the caller need not await.
+    Story_demand_audio(w: TheC, secs: number, work: (gat: any) => Promise<any>): TheC {
+        const H = this as House
+        const top = H.top_House()
+        let gat = (top.c as any).musu_gat
+        if (typeof AudioContext !== 'undefined' && !gat) { gat = new SoundSystem({}); (top.c as any).musu_gat = gat }
+        if (gat && !gat.AC_ready && typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('AudioContext_wanted', { detail: { gat } }))
+        }
+        return H.expecting(w, 'audio_demand', secs, async () => {
+            const deadline = now_in_seconds_with_ms() + secs
+            while (now_in_seconds_with_ms() < deadline) {
+                if (gat && gat.AC_ready) break
+                await new Promise(r => setTimeout(r, 200))
+            }
+            if (gat && gat.AC_ready) await work(gat)
+            else (w.c as any).step_blocked = 'AudioContext not granted'
+        })
     },
 
     The_step_dige(w: TheC, n: number): string | undefined {
@@ -2071,6 +2101,30 @@
                 // first_snap is a session diff anchor paired with got_snap
                 if (!old.sc.got_snap)                 delete old.sc.first_snap
                 delete old.sc.exp_snap
+            }
+
+            // AUDIO-BLOCKED (a Story_demand_audio timed out this step): a step that DEMANDED the real
+            //  voice and wasn't granted one within its window.  A distinct verdict — !ok, carries the
+            //   error, but NOTHING WAS TRIED (no assertion ran) — so it reads as "couldn't run here",
+            //    never as "the audio delivery is broken".  Skip the dige compare entirely and drive on
+            //     (the runner doesn't halt on it).  step_blocked rides on w.c (off-snap), set inside the
+            //      demand's ttlilt just before it settled, so it's here before the snap.  Generic: any
+            //       w.c.step_blocked lands the untried verdict, audio is merely the first caller.
+            if ((w.c as any).step_blocked) {
+                const why = String((w.c as any).step_blocked)
+                ;(w.c as any).step_blocked = null
+                step.sc.got_snap = snap
+                step.sc.dige = got_dige
+                step.sc.ok = false
+                step.sc.untried = true
+                step.sc.error = why
+                delete step.sc.caveat
+                step.bump_version()
+                H.story_analysis(w)
+                await update_status(`⌛ ${H.pad(n)} — ${why}`, 'stop')
+                console.log(`⌛ Story: step ${H.pad(n)} blocked — ${why} (nothing tried)`)
+                await snap_step_finish()
+                return
             }
 
             if (run.sc.mode === 'new') {

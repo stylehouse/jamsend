@@ -27,6 +27,7 @@ import { Selection, Travel } from "$lib/mostly/Selection.svelte"
 import { type House } from "$lib/O/Housing.svelte"
 import { FUNK_KINDS } from "$lib/O/Funk/kinds"
 import { storying_run } from "$lib/O/Funk/Storying.svelte"
+import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte"
 import { mint_grant, verify_grant, grant_to_C, grant_of_C, type GrantAtom } from "$lib/O/Funk/Grant"
 import { RemoteWormholeNav, buf_to_b64 } from "$lib/O/RemoteWormholeNav.svelte"
 import { onMount } from "svelte"
@@ -905,8 +906,19 @@ await M.eatfunc({
             const book = e.sc.book as string | undefined
             if (!book) return
             if (H.Lies_is_editor(w)) {
-                const pick = H.Lies_dispatch_target(w)   // {to} ▸ {} broadcast ▸ {exhausted} hold
-                if (pick.exhausted) { H.Lies_queue_run(w, book); H.tlog(`⏸ all runners busy — held ${book}`); return }
+                const pick = H.Lies_dispatch_target(w)   // {to} ▸ {} broadcast ▸ {exhausted} preempt-our-runner
+                if (pick.exhausted) {
+                    // A single click means "run THIS now" — don't queue behind a run we've moved past.  Preempt
+                    //  the runner we already drove: send it the new book, its Story_reset cancels the old run.
+                    //   (StoryTimes keeps the hold/parallel-acquire path — that's the multi-run sweep, below.)
+                    const pre = (H as any).Lies_preempt_target(w) as string | undefined
+                    if (pre) {
+                        const sent = H.Lies_send_become_book(w, book, pre)
+                        H.tlog(`↻ all runners busy — preempting @${pre.slice(0, 8)} → ${book} ${sent ? '(re-instructed, prior run canceled)' : '(channel down)'}`)
+                        return
+                    }
+                    H.Lies_queue_run(w, book); H.tlog(`⏸ all runners busy + none to preempt — held ${book}`); return
+                }
                 if (pick.to === undefined) {
                     // No live runner to individuate.  If ANY runner is KNOWN (registry or roster), this is the
                     //  post-reconnect fold lag, NOT a lone runner — HOLD the run (Lies_drain_runs ships it the
@@ -977,19 +989,50 @@ await M.eatfunc({
             const book = frame?.book as string | undefined
             if (!book) return false
             H.tlog(`📥 become_book recv: ${book}`)
-            H.Lies_become_book_drive(w, book)
+            H.Lies_become_book_drive(w, book, !!frame?.needAC)
             return true
         },
 
-        // Lies_become_book_drive — open the durable run-record (Lies_runner_begin), stash the
-        //  awaiting_verdict{book} (so the finish reports a verdict for this Book), and resetStory onto it.
-        Lies_become_book_drive(w: TheC, book: string) {
+        // Lies_become_book_drive — the runner's single run FRONT DOOR (become_book AND runner_ask both
+        //  land here).  When the authority says this Book needAC (from Waft:Credence), SECURE the real
+        //   voice FIRST — before the run begins — so the AC-wait is never inside a step's clock.  Then
+        //    open the durable run-record, stash awaiting_verdict{book}, and resetStory onto it.
+        async Lies_become_book_drive(w: TheC, book: string, needAC = false) {
             const H = this as House
+            if (needAC && !(await H.Lies_secure_audio(w, book))) {
+                // not granted within the window — refuse to begin.  Nothing was tried; report blocked so
+                //  the run authority (%rungo / editor Brink) reads "couldn't run here", not a failure.
+                H.Lies_runner_phase(w, 'audio_blocked', { book })
+                H.tlog(`⌛ become_book ${book} blocked — AudioContext not granted (nothing tried)`)
+                return
+            }
             w.c.awaiting_verdict = { book }
             H.Lies_runner_begin(w, book)   // open the durable run-record (the become_book twin of rungo)
             H.top_House().i_elvisto('Auto/Auto', 'resetStory', { Book: book })
             H.Lies_runner_phase(w, 'story_begun', { book })   // blip: Run kicked (Book sweep / cell click)
             H.tlog(`🎬 become_book drive → ${book}`)
+        },
+
+        // Lies_secure_audio — the PRE-RUN AC gate.  Surfaces the request two ways (the user's split):
+        //  FaceSucker on THIS runner tab (AudioContext_wanted → Otro's "open share" gate) + a Brink-
+        //   complain up to the editor (the awaiting_audio phase up the run channel).  Then SITS up to 60s
+        //    for a human to grant the gesture — this is BEFORE the run, so no step clock is running.
+        //     Returns true once the voice is live, false if the window lapses (caller refuses to begin).
+        async Lies_secure_audio(w: TheC, book: string): Promise<boolean> {
+            const H = this as House
+            if (typeof AudioContext === 'undefined') return false   // no Web Audio here (jsdom) — can't
+            const top = H.top_House()
+            let gat = (top.c as any).musu_gat
+            if (!gat) { gat = new SoundSystem({}); (top.c as any).musu_gat = gat }
+            if (gat.AC_ready) return true
+            if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('AudioContext_wanted', { detail: { gat } }))
+            H.Lies_runner_phase(w, 'awaiting_audio', { book })   // Brink-complain up to the editor
+            const deadline = Date.now() + 60000
+            while (Date.now() < deadline) {
+                if (gat.AC_ready) return true
+                await new Promise(r => setTimeout(r, 300))
+            }
+            return !!gat.AC_ready
         },
 
         // Lies_runner_ask_recv — the runner answers an addr-less CLI's runner_ask (scripts/runner_ask.mjs):

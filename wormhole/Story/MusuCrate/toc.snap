@@ -4,8 +4,7 @@ story:MusuCrate
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=1.833
-      sample=1.722,at=1782810294
+    TimeTotal:beliefs,avg=1.84
       sample=1.967,at=1782810406
       sample=1.967,at=1782810409
       sample=1.673,at=1782810424
@@ -15,8 +14,8 @@ story:MusuCrate
       sample=1.696,at=1782810533
       sample=1.671,at=1782810642
       sample=1.964,at=1782811215
-    TimeTotal:step,avg=0.229
-      sample=0.215,at=1782810294
+      sample=1.788,at=1782920746
+    TimeTotal:step,avg=0.23
       sample=0.246,at=1782810406
       sample=0.246,at=1782810409
       sample=0.209,at=1782810424
@@ -26,6 +25,7 @@ story:MusuCrate
       sample=0.212,at=1782810533
       sample=0.209,at=1782810642
       sample=0.245,at=1782811215
+      sample=0.223,at=1782920746
   step,dige:e0e5ef365f0904c8
   step=2,dige:88350042ce2e999a
   step=3,dige:2d5517789c334a09
