@@ -1,15 +1,15 @@
 Waft:Keep,equip:Keep,lte_expanded,isx_show_cold
-  WaftTimes,of_Waft:Ghost/Net/Easy,discovered_at=1782449847030,accessed_at=1783063041163,enthusiasm=0
-    Cursor,what:What:the peer,at=1783063044286
-  WaftTimes,of_Waft:Ghost/Music/Ality,discovered_at=1782449847030,accessed_at=1783063040840,enthusiasm,minimised
+  WaftTimes,of_Waft:Ghost/Net/Easy,discovered_at=1782449847030,accessed_at=1783067291323,enthusiasm=0
+    Cursor,what:What:the peer,at=1783067295103
+  WaftTimes,of_Waft:Ghost/Music/Ality,discovered_at=1782449847030,accessed_at=1783067291002,enthusiasm,minimised
     Cursor,what:What:3 the radiostock fan-out,at=1783061982193
-  WaftTimes,of_Waft:Credence,discovered_at=1782550950085,accessed_at=1783063040895
+  WaftTimes,of_Waft:Credence,discovered_at=1782550950085,accessed_at=1783067291056
     Cursor,what:What:mixer cells,at=1783062582672
-  Cursor,waft:Ghost/Net/Easy,at=1783063041163
-  WaftTimes,of_Waft:Cluster,discovered_at=1782641801641,accessed_at=1783063040949
+  Cursor,waft:Ghost/Net/Easy,at=1783067291323
+  WaftTimes,of_Waft:Cluster,discovered_at=1782641801641,accessed_at=1783067291115
   WaftTimes,of_Waft:Keep
-  WaftTimes,of_Waft:GhostList,discovered_at=1782807094692,accessed_at=1783063041058,minimised
-  DocScroll,of_Doc:Ghost/N/Peeroleum.g
+  WaftTimes,of_Waft:GhostList,discovered_at=1782807094692,accessed_at=1783067291219,minimised
+  DocScroll,of_Doc:Ghost/N/Peeroleum.g,scroll_line=510
   DocScroll,of_Doc:Ghost/N/Tyrant.g
   DocScroll,of_Doc:Ghost/M/Radiola.g
   DocScroll,of_Doc:Ghost/Story/Musuation.g,scroll_line=2608
@@ -22,5 +22,5 @@ Waft:Keep,equip:Keep,lte_expanded,isx_show_cold
   DocScroll,of_Doc:Ghost/M/Crate.g,scroll_line=27
   DocScroll,of_Doc:src/lib/p2p/ftp/Audio.svelte.ts,scroll_line=19
   DocScroll,of_Doc:Ghost/N/Tribunal.g,scroll_line=3
-  WaftTimes,of_Waft:Aside/2026-07-03,discovered_at=1783055842350,accessed_at=1783063041109
+  WaftTimes,of_Waft:Aside/2026-07-03,discovered_at=1783055842350,accessed_at=1783067291272
     Cursor,what:What:1,at=1783057974563

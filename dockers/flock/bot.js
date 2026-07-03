@@ -40,6 +40,11 @@ async function initDriver() {
         '--disable-software-rasterizer', '--disable-features=VizDisplayCompositor',
         '--force-device-scale-factor=1', '--hide-crash-restore-bubble',
         '--use-fake-ui-for-media-stream',
+        // AudioContext starts RUNNING with no gesture — a headless runner can't be tapped, so
+        //  without this every needAC Book wedges at 🎤 awaiting_audio.  (The droid's CHROME_FLAGS
+        //   env is NOT consumed by selenium sessions — flags must ride here.)  The runner then
+        //    advertises ac:1 and needAC dispatch prefers it.
+        '--autoplay-policy=no-user-gesture-required',
     ]) options.addArguments(a)
     options.setUserPreferences({ exit_type: 'Normal', exited_cleanly: true,
         'profile.default_content_settings.popups': 0 })

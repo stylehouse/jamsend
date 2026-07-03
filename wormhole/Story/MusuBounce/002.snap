@@ -1,0 +1,16 @@
+Snap:H
+  H:MusuBounce,Run
+    A:MusuBounce
+      self,round=2	{"mung":["age"]}
+      w:MusuBounce
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Peering,name:DJ,req=2,ok
+          Pier,pub:Crowd,req=2,ok
+            Ud,pubkey:Crowd
+          active_transport,type:mock,open
+        Peering,name:Crowd,req=3,ok
+          Pier,pub:DJ,req=2,ok
+            Ud,pubkey:DJ
+          active_transport,type:mock,open

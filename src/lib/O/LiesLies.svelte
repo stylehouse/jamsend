@@ -778,6 +778,12 @@
         //       zero req-machinery risk, which is what a death-spiral fix wants.)
         Lies_deliver_soon(w: TheC, frame: any) {
             const H = this as House
+            // carrier-truth liveness, stamped HERE — the raw ws event, OFF-think — because every other
+            //  "heard" stamp (Lies_heard, the pong handler) rides the beliefs mutex: a think-starved tab
+            //   (a BACKGROUNDED editor under Chrome's timer throttling, or a genuine spiral) starves
+            //    those stamps while frames pour in fine, and the keepalive watchdog then declares a
+            //     healthy channel DEAD and re-dials it every throttle-tick.  This stamp can't starve.
+            w.c.socket_heard = Date.now()
             ;((w.c.inbound_batch ??= []) as any[]).push(frame)
             if (w.c.inbound_draining) return
             w.c.inbound_draining = 1
@@ -977,7 +983,11 @@
             //    leg freezes `last` while frames still arrive — that now reads SLUGGISH, never DEAD, so
             //     we no longer force-close a socket that is actively receiving mid-ghost_compile.
             const last  = Number(cp?.sc.last ?? 0)
-            const heard = Math.max(last, Number(cp?.sc.last_heard ?? 0))
+            // fold in socket_heard — the OFF-think raw-arrival stamp (Lies_deliver_soon).  last/last_heard
+            //  ride the beliefs mutex, so a think-starved-but-receiving tab (backgrounded editor under
+            //   Chrome timer throttling) read as silent and got its LIVE socket re-dialed every ~30-90s.
+            //    A frame that reached the ws IS the carrier working — never re-dial over think starvation.
+            const heard = Math.max(last, Number(cp?.sc.last_heard ?? 0), Number(w.c.socket_heard ?? 0))
             const DEAD_MS = 20000, SLUGGISH_MS = 9000
             if (heard && now - heard > DEAD_MS) {
                 if (!w.c.last_reconnect || now - (w.c.last_reconnect as number) > DEAD_MS) {

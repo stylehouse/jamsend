@@ -4,12 +4,20 @@ story:MusuBounce
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.018
+    TimeTotal:beliefs,avg=1.178
       sample=0.018,at=1782974128
-    TimeTotal:step,avg=0.009
+      sample=1.221,at=1783063732
+      sample=1.657,at=1783063924
+      sample=1.657,at=1783063978
+      sample=1.336,at=1783063996
+    TimeTotal:step,avg=0.236
       sample=0.009,at=1782974128
-  step,dige:bounce0000000001
-  step=2,dige:bounce0000000002
-  step=3,dige:bounce0000000003
-  step=4,dige:bounce0000000004
-  step=5,dige:bounce0000000005
+      sample=0.244,at=1783063732
+      sample=0.331,at=1783063924
+      sample=0.331,at=1783063978
+      sample=0.267,at=1783063996
+  step,dige:27129568c2f727ef
+  step=2,dige:cd4203f321303fc1
+  step=3,dige:9d00dc65a7e59a3c
+  step=4,dige:db01449f5b73d302
+  step=5,dige:75c142eb67605518

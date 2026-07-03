@@ -2641,24 +2641,37 @@ async MusuPier_order(w):
     await this.place({}, ordered)
 //#endregion
 
-//#region bounce — TWO PIERS, TWO LIVE AUDIOCONTEXTS: A dribbles real Records to B, who skips + we hear it
-// ══ MusuBounce — Pier A plays real tracks and dribbles them over the wire to Pier B, who randomly skips
-//  some, and we RECORD B's actual sound — the first Book to fuse the transport spine with TWO live audio
-//   contexts (one per Pier).  The tracks are the deterministic pure-tone collection (phase 1, discovered
-//    via the Wormhole nav), so the frequency B's analyser reads back IS ground truth: each track is one
-//     known tone, so "did B hear track T" is "did B's spectral peak land on T's tone".  A's own analyser
-//      measures what A actually played (ground truth, not assumed); B's measures what crossed + survived
-//       the skip.  Real wall clock, real AudioContexts (muted — the analyser taps pre-mute), real Peeroleum
-//        frames (sha256-verified before B's handler sees them).  This is a needAC Book: it can't run without
-//         two live contexts, so it rides the pre-flight AC gate (Credence needAC:1) — secured BEFORE the run.
-//  STABLE-SNAP DISCIPLINE: what plays + which tracks are skipped is deterministic (sorted track list, SEEDED
-//   skip schedule), and each observable is quantised to its determinism-bearing essence — a tone LABEL (not
-//    raw Hz), a heard/not-heard boolean per track (not a duration).  Fine timing (exact ms, sample counts)
-//     is never snapped.  So the fixture is stable run-to-run even though the clock underneath is real.
-//         beat 2  SETUP  — two SoundSystems (one per Pier); Lake_link the wire; decode 3 real tracks; seed
-//         beat 3  BOUNCE — dribble A→B in real time; B skips its seeded set; sample both analysers @50ms
-//         beat 4  SETTLE — let the last scheduled buffers finish on B's timeline
-//         beat 5  witness — two_contexts / crossed / heard / matched / skip_observed
+//#region bounce — TWO PIERS SHARING A COLLECTION: A offers Records to B (the info), streams them (the sound)
+// ══ MusuBounce — one Pier showing another its music collection.  This platform is about showing each other
+//  music-collection-conducive information, so the unit that crosses is a RECORD — culturally enriched (artist,
+//   title, album, seconds), not a nameless blob of audio.  Pier A holds a small collection; it OFFERS each
+//    Record to Pier B (the metadata crosses first — B's catalog card appears, the collection-info moment) and
+//     then STREAMS it (real audio over the wire, ~1-4s, played live on B's own context).  B declines some — a
+//      seeded skip, the crowd's taste — so those cross as info but stay silent.  We watch B's collection MIRROR
+//       fill Record by Record (live in Cyto, Opt/useCyto), and we HEAR what B actually got on its own context.
+//  This is the shape of a Selection.process() OF REPLICATION: B's collection MIRRORS A's, and each beat lands
+//   the next Record the mirror hasn't reached — the `neus` of a mirror pass.  cyto_scan already runs that walk
+//    (Se.process) over these very particles, so Cyto shows the algorithm seeing itself.  (Hand-rolled over C
+//     queries for now; lifting it onto a real Se whose D** mirror lives at the far Pier is the natural next turn.)
+//  NOT a Radios-style cursor: there is no sweeping playhead.  Each Record moves through STATES — offered →
+//   known → streamed → heard | skipped — and the snap catches each transition.  The beats are FINE (0.5-4s):
+//    an offer is a quick metadata crossing; a stream is a Record's worth of real audio.  So the run is a stream
+//     of small, legible snaps rather than one long opaque one.
+//  GROUNDS OF TRUTH: the Records are the deterministic pure-tone collection (phase 1, discovered via the
+//   Wormhole nav), so a Record's tone IS its label; A's analyser measures what A actually PLAYED, B's measures
+//    what SURVIVED the crossing + the skip; the metadata rides the sha256-verified body, so `metadata_intact`
+//     checks the cultural info arrived byte-faithful.  Real wall clock, real AudioContexts (muted — the tap is
+//      pre-mute).  needAC: self-secures on the run-click gesture (SoundSystem.init/resume), skips cleanly headless.
+//  STABLE-SNAP DISCIPLINE: which Records B skips is SEEDED; observables are quantised to their essence — a tone
+//   LABEL (not raw Hz), a heard/not boolean (not a duration), a discovered string field (artist/title).  Fine
+//    timing is never snapped, so the fixture holds run-to-run over a real clock.
+//         beat 2         SETUP  — two SoundSystems; Lake_link the wire; discover Records + metadata; seed skips;
+//                                  lay out A's full %collection + B's empty %collection + the %wire
+//         beat 3,5,7,9   OFFER  — ship Record ri's metadata across; B's catalog card appears (known) — the info
+//         beat 4,6,8,10  STREAM — play Record ri live on A + dribble it to B, who plays-or-skips on its own
+//                                  context; sample both analysers; the mirror Record goes heard | skipped
+//         beat 11        witness — two_contexts / shared / metadata_intact / crossed / heard / matched /
+//                                  skip_observed / distinct
 MusuBounce(A,w):
     w oai %req:wrangle,eternal
         await &MusuBounce_drive,w,req

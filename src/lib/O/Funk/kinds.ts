@@ -62,7 +62,7 @@ export const FUNK_KINDS: Record<string, FunkKind> = {
     IdHatch:    { comp_Panel: IdHatch },                        // face-only: the cluster-identity hatch, a global Lens:Panel
     Rundar:     { run: runner_run, comp_Brink: Rundar, comp_MiniBrink: Rundar }, // %Aim runner-RADAR: fleet rack (1:1 %HostedIdentity roster) + single-pair view, Lens:Brink; comp_MiniBrink = the collapsed one-row dots
     Relay:      { run: relay_run,  comp_Brink: Relay,  comp_MiniBrink: Relay },   // %Aim watcher: the relay ping (channel carrier), Lens:Brink; comp_MiniBrink = one carrier dot
-    Upkeep:     { comp_Brink: Upkeep },                         // %Upkeep ledger: live %Errands (compiles, sweeps) hoisted as Lens:Brink
+    Upkeep:     { comp_Brink: Upkeep, comp_MiniBrink: Upkeep }, // %Upkeep ledger: live %Errands (compiles, sweeps) hoisted as Lens:Brink; comp_MiniBrink = ONLY the audio beg, popping out of the collapse (the Sound-bubble idiom)
     Sound:      { comp_Brink: Sound, comp_MiniBrink: Sound },    // the "tap for sound" audio-gate beg — pops out of the MiniBrink (self-gates; invisible until a gat is blocked)
     Ting:       { component: DocTing },                         // big face: the attention-Ting histogram — a taker Waft's main Funkcion (data in H.ave)
     dirlist:    { component: DocGhostList },                    // big face: the GhostList ghost-index — the GhostList Waft's main Funkcion (run rides funk.c.run, installed off-snap by GhostList_funkcion)
