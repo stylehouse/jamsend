@@ -1,0 +1,28 @@
+Waft:Ghost/Swarm/Easy,active
+  Funkcion:CreduFunk
+    Funkcion:Storying,of_Book:SwarmStaple
+  What:the self
+    Doc:Ghost/S/Swarm.g
+    Point,method:Swarm_mint_keys
+    Point,method:Swarm_identity
+    Point,method:Swarm_page
+  What:the Idzeug
+    Doc:Ghost/S/Swarm.g
+    Point,method:Swarm_mint_idzeug
+    Point,method:Swarm_verify_idzeug
+  What:the handshake
+    Doc:Ghost/S/Swarm.g
+    Point,method:Swarm_redeem
+    Point,method:Swarm_hello
+    Point,method:Swarm_seal
+  What:revocation
+    Doc:Ghost/S/Swarm.g
+    Point,method:Swarm_revoke
+    Point,method:Swarm_pier_live
+  What:the test
+    Doc:Ghost/Story/Swarmation.g
+    Point,method:SwarmStaple_drive
+    Point,method:SwarmStaple_witness
+  What:the spec
+    Doc:src/lib/O/spec/Swarm_spec.md
+    Doc:src/lib/O/spec/Cluster_spec.md

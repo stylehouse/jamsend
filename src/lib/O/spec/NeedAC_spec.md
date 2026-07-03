@@ -3,6 +3,23 @@
 Status: DESIGN + partial build. Cross-boundary (Story-runner / Lies / Networking). This doc is the
  handoff so the Lies and Networking agents can wire their halves. Author: Story-runner side.
 
+> **UPDATE 2026-07-03 — §6 is CLOSED (uncommitted, :9091-verify owed).** All five gaps landed:
+>  §6.1 the click path carries the cell's needAC (`Storying.svelte` → `e_Lies_become_book`);
+>  §6.3 `runner_ask run` reads Credence and passes needAC; §6.4 the editor Brink shows
+>  `awaiting_audio`/`audio_blocked` as a 🎤 Upkeep errand (`Lies_run_phase_recv`).  And the §3
+>  coupling is now honoured — **advertise first, then match**: a runner's ~15s beacon carries
+>  `ac:1` when its AudioContext is gesture-unlocked (`Lies_advertise` probes the shared
+>  `top_House().c.musu_gat` cache), the roster folds it to a snapped `%Runner,ac` facet, and
+>  `Lies_dispatch_target(w, needAC)` PREFERS an ac-live runner above every favour tier — prefer,
+>  never require, so a fresh fleet (no AC granted anywhere yet) still dispatches and begs.  Held
+>  (`Lies_drain_runs`) and swept (StoryTimes) runs re-read the board via `Lies_book_needac(w, book)`
+>  since their queues carry only names.  §6.5 resolved DIFFERENTLY: `Musu_gat`'s soft-path
+>  `AudioContext_wanted` still fires, but the surface it reaches is now the small self-gating Sound
+>  Brink beg on both roles (the Otro fullscreen pop is suppressed under dev boots), which is the
+>  behaviour the de-nag wanted — a quiet ask, not a takeover; its cache was already canonical on
+>  `top_House().c.musu_gat`.  Still open: §3/§6.2 %rungo routing (staged by design, D1) and D3's
+>  lapse policy on the editor board.
+
 ## 1. Principle
 
 A Story whose ASSERTIONS need real audio (an online `AudioContext`) must have it secured **before the

@@ -5,7 +5,9 @@
 # Only ONE watched cluster at a time — these host ports are fixed, so a second
 #  watched cluster would clash. Unwatched clusters publish nothing and coexist freely.
 #   Open http://localhost:7901 / :7902 / :7903 (no password).
+#   Each droid serves noVNC on its own default port 7900 (containers are isolated,
+#    so no conflict) — fan to different host ports here.
 services:
-  r1-droid: { ports: ["7901:7901"] }
-  r2-droid: { ports: ["7902:7902"] }
-  r3-droid: { ports: ["7903:7903"] }
+  r1-droid: { ports: ["7901:7900"] }
+  r2-droid: { ports: ["7902:7900"] }
+  r3-droid: { ports: ["7903:7900"] }

@@ -5,10 +5,10 @@
     //    model group things in its snaps).  How many Docs list from where you are is the
     //     Waft's OPENINGNESS (enth 0..3): 0 stacked · 1 title+count · 2 the 3-window from
     //      the cursor · 3 all of them (up to ~30; past that the window + grow-by-3 edges).
-    //       Auto = fg 3 / touched 2 / board 1 / calm 0 (hot separates nothing — styling
-    //        only); the per-cluster dial hand-tunes it, persisted through the Keep layout
-    //         service via e_Lies_waftmap_tune (an Atime elvis — a direct UItime Keep write
-    //          never re-flushed, so the dial looked dead).  A tuned Waft is the user's word.
+    //       It's AUTOMATIC = fg 3 / touched 2 / board 1 / calm 0 (hot separates nothing —
+    //        styling only).  No hand dial, no pin: a Waft bursts when you're AT it (foreground,
+    //         cursor-touched, or scrolled to its column) and calms when you leave.  To see more
+    //          of a burst Waft click its glowing edge (+3).
     //  The cursor is EXACT: glowing brackets ⟨around⟩ the cursor Doc; window neighbours catch
     //   bounce light.  Where a capped list continues past its window, that EDGE glows with
     //    the count — each click reveals 3 more.  No delete buttons — this is just a map.
@@ -32,19 +32,13 @@
     })
 
     // ── UI attention feeding the model ────────────────────────────────────────
-    //   pinned  — stack clicks holding a Waft open (un-minimised) this session.
     //   visible — Waft columns currently scrolled into view (IntersectionObserver on the
-    //             [data-waft-col] nodes Liesui renders): scroll to the GhostList and its map
-    //             cluster un-minimises by itself.
+    //             [data-waft-col] nodes Liesui renders): a Waft bursts open in the map when you
+    //             scroll to it and re-calms when you leave.  No sticky pin — every Waft is
+    //             always present in the map, so there's nothing to hold "there".
     //   grown   — per-Waft extra reveal on a CAPPED list: each edge click adds 3 that way.
-    let pinned  = $state(new Set<string>())
     let visible = $state(new Set<string>())
     let grown   = $state(new Map<string, { up: number, down: number }>())
-    const togglePin = (path: string) => {
-        const next = new Set(pinned)
-        if (next.has(path)) next.delete(path); else next.add(path)
-        pinned = next
-    }
 
     $effect(() => {
         if (typeof document === 'undefined' || typeof IntersectionObserver === 'undefined') return
@@ -88,14 +82,14 @@
     $effect(() => {
         void H.ave.vers
         const ww    = w
-        const force = [...pinned, ...visible]
+        const force = [...visible]
         if (!ww) { model = undefined; model_fp = ''; return }
         H.clear(async () => {
             const m  = (H as any).Lies_waftmap_model(ww, { budget: 40, force }) as Model
             const fp = JSON.stringify({
                 rows: m.rows.map((r: any) => r.kind === 'stack'
                     ? ['s', r.wafts.map((s: any) => s.path)]
-                    : [r.path, r.enth, +r.fg, +r.hot, +r.touched, +r.tuned, +r.board,
+                    : [r.path, r.enth, +r.fg, +r.hot, +r.touched, +r.board,
                        r.lo, r.hi, +r.show_all, r.colh,
                        r.docs.map((d: any) => [d.path, d.cursor ? 1 : 0, d.shared ?? 0])]),
                 seams: +m.bursting, chips: m.chips,
@@ -136,13 +130,6 @@
         grown = next
     }
 
-    // ── the openingness dial — cycle auto → 0 → 1 → 2 → 3 → auto, through Atime ─────────────
-    const ENTH_GLYPH = ['○', '◔', '◑', '●']
-    function cycleEnth(r: any) {
-        const next = !r.tuned ? 0 : r.enth >= 3 ? undefined : r.enth + 1
-        H.i_elvisto('Lies/Lies', 'Lies_waftmap_tune', { path: r.path, enth: next })
-    }
-
     // ── hover Venn — a shared Doc lights its Wafts, a Waft lights its Docs ────
     let hoverWaft = $state<string | undefined>()
     let hoverDoc  = $state<string | undefined>()
@@ -170,10 +157,13 @@
         if (typeof document === 'undefined') return
         const col = document.querySelector(`[data-waft-col="${CSS.escape(path)}"]`) as HTMLElement | null
         if (!col || !loaded) {
+            // cold — open it and bring it to the foreground; that alone bursts it in the map
             H.i_elvisto('Lies/Lies', 'Lies_open_Waft', { path })
             H.i_elvisto('Lies/Lies', 'Lies_foreground_waft', { path, deliberate: 1 })
             return
         }
+        // loaded — jump-scroll to its column; scrolling it into view is what bursts it (the
+        //  IntersectionObserver marks it visible → forced), so there's no pin to set.
         const cursorEl = col.querySelector('.ls-item-what-active') as HTMLElement | null
         const fresh    = jump.path !== path
         const m: 'cursor' | 'top' = fresh ? (cursorEl ? 'cursor' : 'top')
@@ -268,13 +258,13 @@
              onmouseleave={() => { hoverWaft = undefined; hoverDoc = undefined }}>
             {#each model.rows as r (r.kind === 'stack' ? 'stack·' + r.wafts.map((s: any) => s.path).join('|') : r.path)}
                 {#if r.kind === 'stack'}
-                    <!-- a stack of two non-interesting Wafts — click one to un-minimise (pin) -->
+                    <!-- a stack of two non-interesting Wafts — click one to jump to it -->
                     <div class="pm-stack">
                         {#each r.wafts as s (s.path)}
                             <button class="pm-stack-w" class:cold={!s.loaded} class:lit={wLit(s.path)}
                                     onmouseenter={() => hoverWaft = s.path}
-                                    onclick={() => togglePin(s.path)}
-                                    title="{s.path} — stacked; click to un-minimise">{clip(s.title, 16)}</button>
+                                    onclick={() => jumpWaft(s.path, s.loaded)}
+                                    title="{s.path} — stacked; click to jump to it">{clip(s.title, 16)}</button>
                         {/each}
                     </div>
                 {:else}
@@ -289,15 +279,8 @@
                                     title={r.loaded ? `${r.path} — jump-scroll (cursor ⇄ top)` : `${r.path} — cold, click to load`}>
                                 {clip(r.title, 20)}
                             </button>
-                            <button class="pm-enth" class:tuned={r.tuned}
-                                    title="openingness {r.tuned ? r.enth + ' (hand-tuned)' : 'auto (' + r.enth + ')'} — how many Docs list from where you are; click to cycle"
-                                    onclick={() => cycleEnth(r)}>{r.tuned ? ENTH_GLYPH[r.enth] : '◌'}</button>
-                            {#if pinned.has(r.path)}
-                                <button class="pm-unpin" title="let it re-minimise"
-                                        onclick={() => togglePin(r.path)}>📌</button>
-                            {/if}
                             {#if !r.burst && r.docs.length}
-                                <span class="pm-n" title="{r.docs.length} Docs — openingness {r.enth}; dial up or visit to list them">{r.docs.length}</span>
+                                <span class="pm-n" title="{r.docs.length} Docs — scroll to it (or click the name to jump) to list them">{r.docs.length}</span>
                             {/if}
                         </div>
                         {#if r.burst}
@@ -412,7 +395,6 @@
     .pm-card.board .pm-waft { color: #cfe6b8; text-shadow: 0 0 9px rgba(170, 220, 130, 0.35); }
 
     .pm-head { display: flex; align-items: center; gap: 3px; }
-    .pm-unpin { background: none; border: none; cursor: pointer; font-size: 8px; padding: 0; opacity: 0.7; }
 
     /* the big Waft name */
     .pm-waft {
@@ -426,15 +408,6 @@
     .pm-card.cold  .pm-waft { color: rgba(135, 145, 168, 0.55); font-weight: 400; }
     .pm-waft:hover, .pm-waft.lit { color: #e8f2ff; text-shadow: 0 0 10px rgba(150, 190, 240, 0.5); }
     .pm-n { font-size: 9px; color: rgba(150, 165, 195, 0.5); }
-
-    /* the openingness dial — ◌ auto, ○◔◑● tuned 0..3 */
-    .pm-enth {
-        background: none; border: none; cursor: pointer; padding: 0 1px; line-height: 1;
-        font-family: inherit; font-size: 9px; color: rgba(150, 170, 205, 0.4);
-        transition: color 0.12s;
-    }
-    .pm-enth:hover { color: #cfe0f5; }
-    .pm-enth.tuned { color: rgba(224, 190, 130, 0.8); }
 
     /* the Doc area — columns of colh Docs, a faint spine on its left */
     .pm-docs {

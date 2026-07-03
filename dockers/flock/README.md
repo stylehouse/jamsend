@@ -71,7 +71,7 @@ Only one *watched* cluster at a time (those host ports are fixed). Unwatched clu
      the flock can stand up, but the conductor can't yet say "this part on alpha-2."
 - **Repo IO is grant-gated — BUILT (2026-07-01), :9091-unverified.** A headless container has
    **no FSA handle** (DirectoryAccess is off the table — by design), so boot a runner that needs the
-    *real* repo with **`&disk=proxy`** (e.g. `?I=alpha-1&disk=proxy`): it acquires a
+    *real* repo with **`&remoteWormhole=1`** (e.g. `?I=alpha-1&remoteWormhole=1`; was `&disk=proxy`): it acquires a
      **`method:remoteWormhole`** backend, **begging the editor through the channel** (`wormhole_beg`).
       The operator clicks **grant 🛰️** on that runner's row in the editor's **Rundar** rack; the editor
        mints a signed **`%Grant`** (`Funk/Grant.ts`), the runner holds it (local `.stashed`, survives a
@@ -80,8 +80,8 @@ Only one *watched* cluster at a time (those host ports are fixed). Unwatched clu
           (`read_range`) keep a big asset from crossing whole. See Cluster_spec "beg through the Brink"
            for the deltas (base64 v1; single-runner addressing until the spine is re-pinned). Sim Books
             that carry their own fixtures (Peeroleum family) need none of this — boot them WITHOUT
-             `&disk=proxy`. To wire it into the flock, add `&disk=proxy` to `bot.js`'s URL for runners
-              that drive real-code Books.
+             `&remoteWormhole=1`. To wire it into the flock, add `&remoteWormhole=1` to `bot.js`'s URL
+              for runners that drive real-code Books.
 - **Crash-quorum restart** (§3.6) + the **host-exec socket** successor (§3.7) — a relay
    `restart_request` past a DEAD-quorum bridged to a host socket line — is unbuilt; for
     now restart is manual (`flock.sh restart`).

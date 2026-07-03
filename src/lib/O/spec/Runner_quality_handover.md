@@ -69,38 +69,28 @@ The editor↔runner loop is **responsive** and clicks **land**. Two root fixes d
 ---
 
 ## Loose ends (be honest)
-- **remoteWormhole backending: headless spine now PROVEN (2026-07-02); live end-to-end still owed.** It was
-   BUILT ("remote Wormhole pt1" in git; the `%Grant`/`Lies_grant_wormhole`/`Lies_grant_offer_recv` machinery
-    in LiesFunk, `&disk=proxy`, `RemoteWormholeNav.frame_bytes`, addressed binary reply per `Cluster_spec §3.8`)
-     with **no evidence any of it had ever run**. `scripts/RemoteWormhole.spec.ts` (the SendTo/relay-test
-      trusted-headless family — direct method calls, NEVER the Story belief loop, so clear of the false-green
-       trap) now exercises the FIRST run of: the %Grant crypto (mint/verify/tamper/forge/revoke, particle
-        swap-out↔in), the **app-level round-trip** — the REAL `Lies_wormhole_req_recv` serving a REAL
-         `RemoteWormholeNav` over an in-process loopback (read/list/**bin**/**read_range**/write + the ro-mode
-          gate + forged-grant + wrong-editor rejects, against a fake full-contract nav — NodeWormholeNav can't
-           stand in, it predates the binary verbs), and the runner lifecycle (`Lies_grant_offer_recv` verify→
-            persist(.stashed + Waft:Cluster)→install, `Lies_wormhole_grant` read-back, idempotent install,
-             broadcast filter + bad-sig drop). What the harness STUBS is the relay transport only — proven
-              separately by SendTo (pub routing) + relay-test (buffer-intact binary frame). **Still owed, live
-               :9091 only:** the real `&disk=proxy` boot quiescing to a granted nav, the real relay carrying the
-                addressed binary reply between two tabs, and the editor Brink watch. First live probe unchanged:
-                 a `&disk=proxy` runner reading one file through the granted nav, watched from the editor Brink.
-- **needAC dispatch-match NOT done** — `Lies_dispatch_target` ignores needAC, so a needAC Book can still land
-   on a no-AC runner → 60s block. Needs the **audio-capability advertising** (Radio agent / Swarm §4: the
-    runner advertises `audio`/`provides_audio`) + a `needAC ⇒ prefer audio runner` filter. Coupled — sequence
-     the advertising first.
+- **remoteWormhole: live end-to-end tested manually (2026-07-03).** The `%Grant`/`Lies_grant_wormhole`/
+   `Lies_grant_offer_recv` machinery in LiesFunk, `&remoteWormhole=1` (was `&disk=proxy`), `RemoteWormholeNav`, binary replies via
+    `Lies_send_binary_to` — all built and live-probed. The headless spec (`scripts/RemoteWormhole.spec.ts`)
+     was deleted (wrong form — must be a Story Book). Binary-only: the `buf_to_b64` / `bytes_b64` fallback
+      path was also removed (grant.for is always set; the degenerate `!to` branch was dead). Formal test
+       is still owed as a Story Book (two-peer Pere* pattern).
+- **needAC dispatch-match — BUILT 2026-07-03 (uncommitted, :9091-verify owed).** Advertise-then-match,
+   per NeedAC_spec §3: the runner's beacon carries `ac:1` when its AudioContext is gesture-unlocked
+    (probing the shared `top_House().c.musu_gat` cache), the roster folds it to a snapped `%Runner,ac`
+     facet (Rundar tooltips show "AC live"), and `Lies_dispatch_target(w, needAC)` prefers an ac-live
+      runner above every favour tier — prefer, never require (a fresh no-AC fleet must still get the beg).
+       Held/swept runs re-read the board via `Lies_book_needac` since their queues carry bare names.
 - **Per-runner run_phase attribution (`from:<pub>` demux) — flagged ~4×, still not done.** `w.c.run_phase` is
-   a single slot → the editor Brink can say "*a* runner needs AC" but not *which* tab. NeedAC's §6.4 is the
-    concrete reason to finally land it; it also cleans up the run_phase clobber generally.
+   a single slot → the editor Brink can say "*a* runner needs AC" but not *which* tab. Cleans up run_phase
+    clobber generally; a nice-to-have rather than a gate.
 - **The `req:handle_inbound`/reqyoncile form** of the batcher (bomb #1) — the first-class version; I shipped
    coalesced-post_do. Owner sketched "out-of-time types" — worth building once things are calm.
 - **Carried from earlier:** one-sided-ping dedup (Gardening pattern), `Book:PereBinary` (owed live-runner
    fixtures for the app-level binary content-dige; relay-level round-trip already proven in `relay-test.ts`).
 
 ## Next moves (in order)
-1. **Owner: verify on :9091** — restart the dev server (relay + spine + LiesLies), reload editor+runner. Watch
-   H.todo stay low; clicks land; `↻ preempting` on a busy click; the needAC narration on a needAC Book run.
-2. **Test remoteWormhole** — headless spine now GREEN (`scripts/RemoteWormhole.spec.ts`); what remains is the
-   LIVE end-to-end: a `&disk=proxy` runner + a granted read, watched from the Brink (real boot + real relay).
-3. **Audio-capability advertising → needAC dispatch-match** (with the Radio agent).
-4. **The `from:<pub>` run_phase demux** — unblocks per-runner Brink (incl. "which runner needs AC").
+1. **Owner: verify remoteWormhole on :9091** — `&remoteWormhole=1` runner + a granted read, watched from the Brink.
+2. ~~needAC dispatch-match~~ **BUILT 2026-07-03** (see loose ends above) — verify by running MusuTune against
+   a two-runner fleet where only one tab has granted AC: the ▶ should land on that one.
+3. **The `from:<pub>` run_phase demux** — per-runner Brink attribution; nice-to-have.

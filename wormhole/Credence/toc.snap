@@ -6,6 +6,9 @@ Waft:Credence
     Funkcion:Storying,of_Book:PereStaple
     Funkcion:Storying,of_Book:PereTyrant
     Funkcion:Storying,of_Book:PereProof
+  What:Swarm
+    Funkcion:StoryTimes
+    Funkcion:Storying,of_Book:SwarmStaple
   What:Musu
     Funkcion:StoryTimes
     What:cursor models
@@ -86,4 +89,3 @@ Waft:Credence
     Funkcion:Storying,of_Book:Understandium
     Funkcion:Storying,of_Book:Engage
     Funkcion:Storying,of_Book:WaftMapPacked
-    Funkcion:Storying,of_Book:SwarmStaple

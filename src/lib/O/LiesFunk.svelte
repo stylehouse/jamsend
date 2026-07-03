@@ -442,7 +442,7 @@ await M.eatfunc({
     },
 
     // ── remote Wormhole (method:remoteWormhole) — the editor proxies its disk to begging runners ──
-    //   A &disk=proxy runner has NO local tree (headless Chrome, DirectoryAccess off the table, OPFS
+    //   A &remoteWormhole=1 runner has NO local tree (headless Chrome, DirectoryAccess off the table, OPFS
     //    illegal under a dev boot).  It BEGS the editor through the channel; the operator GRANTS it a
     //     signed %Grant (Funk/Grant.ts) off the editor's Rundar rack; the runner holds the grant and
     //      presents it back with every rw-op, which the editor re-verifies and serves against its OWN
@@ -596,7 +596,7 @@ await M.eatfunc({
         return true
     },
 
-    // RUNNER: the acquire driver, pumped from Lies_aim each heartbeat while &disk=proxy and ungranted.
+    // RUNNER: the acquire driver, pumped from Lies_aim each heartbeat while &remoteWormhole=1 and ungranted.
     //  Installs the nav if a grant is held, else begs the editor (throttled).  Until the nav installs,
     //   every rw-op returns "nav not ready" and Lies waits on its Wafts — the intended gum-up.
     Lies_remote_wormhole_step(w: TheC): void {
@@ -631,9 +631,9 @@ await M.eatfunc({
         //    children, who we + the cluster claim to be) like any Waft.
         if (cluster) { H.Lies_cluster_decorate(w, cluster); H.Lies_cluster_claim_self(w); if (role === 'editor') H.Lies_runner_roster(w, cluster) }
 
-        // &disk=proxy runner: drive the remote-Wormhole acquire (beg→grant→install) HERE, where the
+        // &remoteWormhole=1 runner: drive the remote-Wormhole acquire (beg→grant→install) HERE, where the
         //  channel + Waft:Cluster live; DirectoryOpener only reflects A.c.nav.  No-op once installed.
-        if (role === 'runner' && H.top_House().c.disk_proxy) H.Lies_remote_wormhole_step(w)
+        if (role === 'runner' && H.top_House().c.remote_wormhole) H.Lies_remote_wormhole_step(w)
 
         // Relay — a single face, both roles (the relay carrier's own health).
         if (on) {
@@ -644,12 +644,14 @@ await M.eatfunc({
             }
         } else H.Lies_lens_dismiss('Brink', 'Relay')
 
-        // Sound — the "tap for sound" audio-gate beg.  ONLY on the EDITOR: it's the central control
-        //  panel where the human actually sits, so the audio nag belongs in ITS MiniBrink — not on a
-        //   runner appliance nobody's watching.  Self-gates: the face stays invisible until a gat fires
-        //    AudioContext_wanted, so it shows only when the editor tab's own audio is blocked.  altitude
-        //     5 = leftmost/interior-most in the mini row.
-        if (role === 'editor') {
+        // Sound — the "tap for sound" audio-gate beg, on BOTH roles' Brinks: an AudioContext grant is
+        //  per-TAB (the resume must ride a gesture IN the tab that owns the context), so each tab can
+        //   only beg for ITSELF — the editor for its own audio (the central control panel, where the
+        //    human sits), and a runner for its needAC runs (its old surface, the Otro fullscreen gate,
+        //     is suppressed under dev boots — without this beg a blocked runner has NO grant surface
+        //      and needAC just times out).  Self-gates: the face stays invisible until a gat fires
+        //       AudioContext_wanted.  altitude 5 = leftmost/interior-most in the mini row.
+        if (role === 'editor' || role === 'runner') {
             if (!bag.oa({ Lens: 'Brink', of_Funkcion: 'Sound' }))
                 H.Lies_lens_suggest('Brink', 'Sound', { altitude: 5 })
         } else H.Lies_lens_dismiss('Brink', 'Sound')
@@ -889,14 +891,6 @@ await M.eatfunc({
         //  of 4, 7 → 4+3, 8 → 4+4, 12 → 4+4+4)
         const colh_of = (n: number) => n > 3 && (n % 3 === 1 || n % 4 === 0) ? 4 : 3
 
-        // The per-Waft ENTHUSIASM tune — a hand dial persisted through the Keep's layout service
-        //  ('waft' scope, key 'enthusiasm', 0..3); undefined = auto.  A tuned row is the user's
-        //   word: never budget-demoted, never auto-promoted.
-        const tune_of = (path: string): number | undefined => {
-            const v = H.Lies_keep_layout_get?.(w, 'waft', path, 'enthusiasm')
-            return typeof v === 'number' ? Math.max(0, Math.min(3, v)) : undefined
-        }
-
         // Rows — classify to an OPENINGNESS ladder (how many Docs are listed from where you
         //  are), light the shaft, order by it.
         //  enth 3 = every Doc up to CAP (the fg default; past CAP the window + grow-by-3 edges
@@ -905,7 +899,7 @@ await M.eatfunc({
         const CAP = 30
         type MRow = { kind: 'waft', path: string, title: string, loaded: boolean,
                       stance: 'doc' | 'fixture' | 'sink' | 'cold',
-                      fg: boolean, hot: boolean, touched: boolean, forced: boolean, tuned: boolean,
+                      fg: boolean, hot: boolean, touched: boolean, forced: boolean,
                       board: boolean, enth: number, seq: number, burst: boolean,
                       cursor: string | undefined, show_all: boolean, colh: number,
                       docs: MDoc[], lo: number, hi: number, above: number, below: number }
@@ -922,10 +916,12 @@ await M.eatfunc({
             //  goes presence:active, so it separates nothing; it stays as styling only.
             //  A BOARD (a Waft carrying Storying|StoryTimes cells — the Credence) rides at
             //   least calm: the workbench dashboard never disappears into a stack.
-            const board  = !!wf && !!(wf.o({ Funkcion: 'StoryTimes' })[0] ?? wf.o({ Funkcion: 'Storying' })[0])
-            const tune   = tune_of(path)
-            const auto   = is_fg ? 3 : (t || forced) ? 2 : board ? 1 : 0
-            const enth   = tune ?? auto
+            //  BACKSTAGE stances (the Ting sink, the equip fixtures) cap at calm on a mere
+            //   TOUCH — cursoring through the Ting once shouldn't leave it prominent forever;
+            //    a deliberate force (pin | scroll-to) or the fg still bursts them.
+            const board     = !!wf && !!(wf.o({ Funkcion: 'StoryTimes' })[0] ?? wf.o({ Funkcion: 'Storying' })[0])
+            const backstage = stance === 'sink' || stance === 'fixture'
+            const enth      = is_fg ? 3 : forced ? 2 : t ? (backstage ? 1 : 2) : board ? 1 : 0
             const cpath  = cursor_of(path)
             // the shaft of light — a 3-Doc window around the cursor; soft start = the first 3
             const ci = cpath ? docs.findIndex(d => d.path === cpath) : -1
@@ -934,7 +930,7 @@ await M.eatfunc({
             if (ci >= 0) docs[ci].cursor = 1
             const show_all = enth >= 3 && docs.length <= CAP
             return { kind: 'waft', path, title: H.Lies_waftmap_title(path), loaded: !!wf, stance,
-                     fg: is_fg, hot: hot.has(path), touched: !!t, forced, tuned: tune !== undefined,
+                     fg: is_fg, hot: hot.has(path), touched: !!t, forced,
                      board, enth, seq: t?.seq ?? 0, burst: enth >= 2, cursor: cpath,
                      show_all, colh: colh_of(docs.length),
                      docs, lo, hi,
@@ -946,7 +942,7 @@ await M.eatfunc({
             || (+(b.docs.length > 0) - +(a.docs.length > 0)) || a.path.localeCompare(b.path))
 
         // The seams — chips over budget demote burst rows bottom-up to calm (enth 1); never
-        //  the fg, never a forced or hand-tuned row.  A chip is a WIDTH unit now that Docs
+        //  the fg, never a forced (pinned|scrolled-to) row.  A chip is a WIDTH unit now that Docs
         //   ride in columns: title 1 + a chip per column + the grow edge — a grand show-all
         //    cluster costs its column count, not its Doc count (12 Docs = 3 cols), so one
         //     generous fg no longer demotes every touched neighbour into darkness.
@@ -959,7 +955,7 @@ await M.eatfunc({
         let bursting = false
         for (let i = rows.length - 1; chips > budget && i >= 0; i--) {
             const r = rows[i]
-            if (!r.burst || r.fg || r.forced || r.tuned) continue
+            if (!r.burst || r.fg || r.forced) continue
             chips -= chips_of(r) - 1; r.burst = false; r.enth = 1
             bursting = true
         }
@@ -985,20 +981,6 @@ await M.eatfunc({
             .map(r => ({ waft: r.path, path: r.cursor as string, title: H.Lies_waftmap_title(r.cursor as string) }))
 
         return { rows: out, crumbs, shared, chips, budget, bursting }
-    },
-
-    // ── e_Lies_waftmap_tune — the openingness dial, as an Atime move ──────────────────────────
-    //   The dial is a UItime click; writing the Keep straight from the handler mutated outside
-    //    Atime and nothing re-flushed (the map's model read is flush-gated on H.ave.vers), so
-    //     the dial looked dead.  This elvis does the layout write inside Atime and re-thinks —
-    //      the next flush carries it.  e.sc: { path, enth? } — enth absent clears back to auto.
-    async e_Lies_waftmap_tune(A: TheC, w: TheC, e: TheC) {
-        const H    = this as House
-        const path = e.sc.path as string | undefined
-        if (!path) return
-        if (!w.o({ Waft: 'Keep' })[0]) w.oai({ Waft: 'Keep' }, { equip: 'Keep' })
-        H.Lies_keep_layout_set(w, 'waft', path, 'enthusiasm', e.sc.enth as number | undefined)
-        H.i_elvisto(w, 'think')
     },
 
     // ── e_Lies_waftmap_implant — the search bar's "into the substrate" drop ───────────────────
@@ -1192,7 +1174,7 @@ await M.eatfunc({
             if (!book) return
             const needAC = !!e.sc.needAC   // carried from the Credence cell (of_Book,needAC:1) → secured pre-run
             if (H.Lies_is_editor(w)) {
-                const pick = H.Lies_dispatch_target(w)   // {to} ▸ {} broadcast ▸ {exhausted} preempt-our-runner
+                const pick = H.Lies_dispatch_target(w, needAC)   // {to} ▸ {} broadcast ▸ {exhausted} preempt-our-runner; needAC prefers an ac-live runner
                 if (pick.exhausted) {
                     // A single click means "run THIS now" — don't queue behind a run we've moved past.  Preempt
                     //  the runner we already drove: send it the new book, its Story_reset cancels the old run.
@@ -1264,6 +1246,8 @@ await M.eatfunc({
             if (!pier) {
                 pier = peering.oai({ Pier: 1, pub }) as TheC
                 pier.c.up = peering
+                pier.c.promoted_at = Date.now()   // birth stamp (off-snap) — the roster's transport reaper
+                                                  //  won't cull a just-rung Pier whose runner hasn't answered yet
                 pier.oai({ Ud: 1 })   // satisfy the inbox pre-Ud gate (trust-everything v1, no handshake)
             }
             return pier
@@ -2013,12 +1997,27 @@ await M.eatfunc({
             return (node?.sc?.What as string) ?? 'all'
         },
 
+        // Lies_book_needac — does this Book need a live AudioContext?  The durable fact rides its
+        //  %Storying cell (Funkcion:Storying,of_Book:<book>,needAC:1 — the Credence board), which a
+        //   cell CLICK carries on the event (Storying.svelte) — but a held (Lies_drain_runs) or swept
+        //    (StoryTimes) run carries only the Book's name, so those paths re-read the board here at
+        //     dispatch time and get the same pre-run securing.  Absent cell ⇒ false (no gate).
+        Lies_book_needac(w: TheC, book: string): boolean {
+            let found = false
+            const walk = (c: TheC) => { for (const k of c.o() as TheC[]) {
+                if (k.sc.Funkcion === 'Storying' && k.sc.of_Book === book && k.sc.needAC) { found = true; return }
+                walk(k); if (found) return } }
+            for (const waft of w.o({ Waft: 1 }) as TheC[]) { walk(waft); if (found) break }
+            return found
+        },
+
         // dispatch one become_book the way a Storying Book-cell click does — editor ships the frame,
         //  a bare/co-resident Lies drives locally.
         Lies_storytimes_dispatch(w: TheC, book: string): boolean {
             const H = this as House
+            const needAC = H.Lies_book_needac(w, book)   // the sweep queue holds bare names — the board says which need AC
             if (H.Lies_is_editor(w)) {
-                const pick = H.Lies_dispatch_target(w)
+                const pick = H.Lies_dispatch_target(w, needAC)
                 if (pick.exhausted) { H.Lies_queue_run(w, book); H.tlog(`⏸ all runners busy — held ${book}`); return false }
                 if (pick.to === undefined) {
                     // no live runner yet — HOLD if any is known (post-reconnect fold lag), don't spray all (see e_Lies_become_book)
@@ -2027,11 +2026,11 @@ await M.eatfunc({
                     const reg = cluster ? (cluster.o({ HostedIdentity: 1 }) as TheC[]).filter(h => h.sc.role === 'runner').length : 0
                     if (known || reg) { H.Lies_queue_run(w, book); H.tlog(`⏸ StoryTimes held — runners known (${known}/${reg}) but none live yet: ${book}`); return false }
                 }
-                const sent = H.Lies_send_become_book(w, book, pick.to)
+                const sent = H.Lies_send_become_book(w, book, pick.to, needAC)
                 H.tlog(`🎟 StoryTimes → ${book} ${pick.to ? `@${pick.to.slice(0, 8)}` : '(broadcast — no runner known)'} ${sent ? '(sent)' : '(channel down — no runner)'}`)
                 return sent
             }
-            H.Lies_become_book_drive(w, book)                        // bare dev Lies with a co-resident Run
+            H.Lies_become_book_drive(w, book, needAC)                // bare dev Lies with a co-resident Run
             return true
         },
 

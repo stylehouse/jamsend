@@ -101,8 +101,13 @@
     .rl-up   .rl-dot { color: #6ad0a0; }
     .rl-down .rl-dot { color: #e06c75; }
     .rl-down .rl-txt { color: #d68a90; }
-    .rl-log { margin-top: 4px; border-top: 1px solid #2c3450; padding-top: 3px; max-height: 9rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1px; }
-    .rl-log-line { font-size: 9px; line-height: 1.25; color: #7c86ad; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rl-log { margin-top: 4px; border-top: 1px solid #2c3450; padding-top: 3px; max-height: 9rem; overflow: auto; display: flex; flex-direction: column; gap: 1px;
+        scrollbar-width: thin; }                              /* Firefox's whole "tiny" vocabulary */
+    .rl-log::-webkit-scrollbar { width: 4px; height: 4px; }   /* literals — var() doesn't reach scrollbar pseudos */
+    .rl-log::-webkit-scrollbar-thumb { background: #3a4570; border-radius: 2px; }
+    /* a log line never wraps NOR truncates: width:max-content lets it run past the box, and the box
+       scrolls sideways to read it (the ellipsis used to eat the interesting tail of a routing line). */
+    .rl-log-line { font-size: 9px; line-height: 1.25; color: #7c86ad; white-space: nowrap; width: max-content; }
     .rl-log-line.important { color: #e7c06a; font-weight: bold; }
     /* collapsed MiniBrink: one carrier dot; the rl-{cls} on the wrapper drives the existing dot colour. */
     .rl-mini { display: flex; align-items: center; }

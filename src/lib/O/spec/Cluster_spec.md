@@ -454,7 +454,7 @@ When the app needs to act on the **host** — restart a crashed Chrome profile, 
  - **The four verbs** (additive Peeroleum frames, no `.g` spine change) in LiesFunk + registered in LiesLies:
     `wormhole_beg`→roster flag, `grant_offer` (editor mints from the **Rundar rack** per-runner *grant 🛰️*
      button), `wormhole_req`→editor verifies (`by===self`) + serves from its own nav, `wormhole_reply`. The
-      runner's **Rundar** RUNNER indicator shows the acquire status. `&disk=proxy` (Otro) swaps the
+      runner's **Rundar** RUNNER indicator shows the acquire status. `&remoteWormhole=1` (Otro; was `&disk=proxy`) swaps the
        FaceSucker for `req`-less acquire (Lies_aim drives beg→install; DirectoryOpener only reflects A.c.nav;
         ungranted ⇒ "nav not ready" ⇒ Lies waits — the intended gum-up).
  - **Bootstrap** — the held grant's durable home is the runner's local `.stashed` (per Chrome profile,

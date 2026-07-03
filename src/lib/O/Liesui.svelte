@@ -278,10 +278,15 @@
 <style>
     .ls-ui {
         position: relative;     /* containing block for the base-shell's absolute row (Plank + Brink). */
+        display: flex; flex-direction: column;  /* so the base-shell's margin-top:auto can bottom it
+                                                   when min-height stretches past the content */
         font-size: 0.83rem; padding: 0.5rem;
         padding-bottom: 1.7rem; /* reserve a strip so the collapsed card never sits over a list row */
         border: 1px solid #444; border-radius: 4px;
         background: #111; color: #ccc; min-width: 360px;
+        min-height: 20em;       /* a near-empty Lies (a runner tab, no docks) still leaves the Brink
+                                   headroom — its stack unfurls UP from the foot, and a too-short box
+                                    would push the open guts off the top of the screen. */
     }
     /* the Plank slot — normal flow at the foot of the waft list, filling the gap. */
     .ls-plank-slot { margin-top: 8px; }
@@ -289,7 +294,12 @@
        Bounded by .ls-ui: pinned while Lies is on screen, gone when it scrolls away — never over
        Langui.  pointer-events:none on the shell so its empty stretch never blocks the waft rows
        behind; the Brink content re-enables. */
-    .ls-baseshell { position: sticky; bottom: 8px; height: 0; z-index: 7; pointer-events: none; }
+    .ls-baseshell {
+        position: sticky; bottom: 8px; height: 0; z-index: 7; pointer-events: none;
+        margin-top: auto;   /* under-filled box (min-height > content): eat the free space ABOVE, so the
+                               shell rests at the box's FOOT — sticky alone never pushes it down there,
+                                it only lifts it when the foot scrolls past the viewport. */
+    }
     .ls-baseshell-row {
         position: absolute; left: 8px; right: 8px; bottom: 0;
         display: flex; align-items: flex-end; justify-content: flex-end; gap: 8px; pointer-events: none;

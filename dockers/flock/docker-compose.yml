@@ -72,56 +72,48 @@ services:
   # --- runner 1 ---
   r1-droid:
     <<: *droid
-    environment:
-      <<: *droid-env
-      DISPLAY: ":101"
-      SE_VNC_PORT: "5901"
-      SE_NO_VNC_PORT: "7901"
     volumes:
-      - ./.env.chrome-profiles/${CLUSTER:-flock}-1:/home/seluser/chrome-profile
+      - r1-profile:/home/seluser/.config
   r1-bot:
     <<: *bot
     depends_on: { r1-droid: { condition: service_healthy } }
     environment:
       <<: *bot-env
       SELENIUM_REMOTE_URL: "http://r1-droid:4444/wd/hub"
-      DISPLAY: ":101.0"
       RUNNER_N: "1"
 
   # --- runner 2 ---
   r2-droid:
     <<: *droid
-    environment:
-      <<: *droid-env
-      DISPLAY: ":102"
-      SE_VNC_PORT: "5902"
-      SE_NO_VNC_PORT: "7902"
     volumes:
-      - ./.env.chrome-profiles/${CLUSTER:-flock}-2:/home/seluser/chrome-profile
+      - r2-profile:/home/seluser/.config
   r2-bot:
     <<: *bot
     depends_on: { r2-droid: { condition: service_healthy } }
     environment:
       <<: *bot-env
       SELENIUM_REMOTE_URL: "http://r2-droid:4444/wd/hub"
-      DISPLAY: ":102.0"
       RUNNER_N: "2"
 
   # --- runner 3 ---
   r3-droid:
     <<: *droid
-    environment:
-      <<: *droid-env
-      DISPLAY: ":103"
-      SE_VNC_PORT: "5903"
-      SE_NO_VNC_PORT: "7903"
     volumes:
-      - ./.env.chrome-profiles/${CLUSTER:-flock}-3:/home/seluser/chrome-profile
+      - r3-profile:/home/seluser/.config
   r3-bot:
     <<: *bot
     depends_on: { r3-droid: { condition: service_healthy } }
     environment:
       <<: *bot-env
       SELENIUM_REMOTE_URL: "http://r3-droid:4444/wd/hub"
-      DISPLAY: ":103.0"
       RUNNER_N: "3"
+
+volumes:
+  # named volumes scoped to the compose project (prefixed tahi_/alpha_/etc by Docker),
+  #  so clusters never collide. Mounted at /home/seluser/.config — a path that already
+  #   exists in the image owned by seluser — so Docker initialises the volume with the
+  #    right ownership (no --user-data-dir, no root-owned dir, no permissions fight).
+  #   Chromium profile (identity / .stashed / IndexedDB) persists across restarts.
+  r1-profile:
+  r2-profile:
+  r3-profile:

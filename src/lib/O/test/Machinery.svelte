@@ -444,7 +444,7 @@
         const fp = JSON.stringify({
             rows: m.rows.map((r: any) => r.kind === 'stack'
                 ? ['stack', r.wafts.map((s: any) => s.title)]
-                : [r.title, +r.burst, +r.fg, +r.hot, +r.touched, +r.tuned, +r.board, r.enth,
+                : [r.title, +r.burst, +r.fg, +r.hot, +r.touched, +r.board, r.enth,
                    r.above, r.below, r.lo, r.hi, +r.show_all, r.colh,
                    r.docs.map((d: any) => [d.title, d.cursor ? 1 : 0, d.shared ?? 0])]),
             crumbs: m.crumbs.map((c: any) => c.title),
@@ -465,7 +465,6 @@
             if (r.fg)      sc.fg = 1
             if (r.hot)     sc.hot = 1
             if (r.touched) sc.touched = 1
-            if (r.tuned)   sc.tuned = 1
             if (r.board)   sc.board = 1
             if (!r.burst)  sc.calm = 1
             if (!r.loaded) sc.cold = 1
@@ -497,16 +496,12 @@
 
     // the seed Prep — calm Wafts (stack fodder) + a touch memory on TestDeep: a carrier
     //  %Lango,Cursor, the same feed a real cursor land mints, so TestDeep's shaft lights
-    //   WITHOUT foregrounding it (the kept-around-by-touch rule, sans the Ting).  CalmA gets
-    //   a HAND-TUNED enthusiasm (the Keep layout dial) — it must burst despite no touch, and
-    //    resist the budget demotion that catches TestDeep.
+    //   WITHOUT foregrounding it (the kept-around-by-touch rule, sans the Ting).
     async e_Lies_waftmap_seed(this: House, _A: TheC, w: TheC, _e: TheC) {
         const H = this
         for (const name of ['CalmA', 'CalmB', 'CalmC', 'CalmD']) w.oai({ Waft: `Calm/${name}` })
         const deep = w.o({ Waft: 'Story/LakeWaftMap/TestDeep' })[0] as TheC | undefined
         if (deep) await H.lango(w, deep, { kind: 'Cursor', to: 'Ghost/test/Story/Lake/WaftMapPacked.g' })
-        w.oai({ Waft: 'Keep' }, { equip: 'Keep' })   // the layout service writes onto the Keep — mint it (LakeKeep's move)
-        H.Lies_keep_layout_set(w, 'waft', 'Calm/CalmA', 'enthusiasm', 2)
         w.bump_version()
         H.i_elvisto(w, 'think')
     },

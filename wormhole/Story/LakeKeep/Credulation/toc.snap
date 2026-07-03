@@ -1,12 +1,14 @@
 Credulation,of_Book:LakeKeep
-  run=0,at=1782916101.1,ok,ok_pct,mode:check
+  run=0,at=1783003075.948,ok,ok_pct,mode:check
     uses:Ghost_N_Peeroleum,dige:054dff5c07f2987b
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
-    uses:Ghost_N_Tyrant,dige:74cf06ee9a34e2cb
+    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
     uses:Ghost_Story_Peregrination,dige:b33cab6322ef6320
     uses:Ghost_M_Radiola,dige:c38a79b40dc8f9e6
-    uses:Ghost_M_Crate,dige:a8d9444a5048fc8b
+    uses:Ghost_M_Crate,dige:11ebd2379db3e308
     uses:Ghost_M_Mixer,dige:a4a24e00de642d18
     uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
-    uses:Ghost_Story_Musuation,dige:702114f07dba009a
+    uses:Ghost_Story_Musuation,dige:9405c506154a45b1
+    uses:Ghost_S_Swarm,dige:58e37974ff3b4626
+    uses:Ghost_Story_Swarmation,dige:798103493976eb49

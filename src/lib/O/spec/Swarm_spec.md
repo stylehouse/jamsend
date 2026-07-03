@@ -118,7 +118,10 @@ The load-bearing requirement: **an identity and its friends are precious to thei
       path, **no config**. **[want]**
 3. **Export / import blob** — the account (or one contact) as an encodable snap you can copy in|out — the
     reincarnation of the old `thawEnteredStashed` "paste JSON to import a Peering stashed object", now
-     over the C-snap. Surfaced in the 🪪 hatch (§10). **[want]**
+     over the C-snap. Surfaced in the 🪪 hatch (§10). **[now]** for the verbs — `Swarm_export` (a JSON
+      envelope `{v, kind, snap, keys?}`; `keys` only on a deliberate secret export) / `Swarm_import` →
+       `Swarm_graft` (identity-keyed find-or-merge, so a re-import never duplicates); export→import→
+        re-export is byte-identical, gated by the Book (§9). The 🪪 surface is still owed.
 
 **The stream rule** (owner, 2026-07-01): **Dexie AND disk — write-through Dexie→disk continuously;
  unless Dexie is empty, in which case seed Dexie from disk.**
@@ -228,7 +231,11 @@ Grants are infinite; **unfriending** is a signed `%NotGrant` (`mint_revoke`), ke
 Sharing "my page" shares `%Peering`'s **own** face (friendly, caps) — **never its `%Pier` children**
  (your contact list is private). Prune with a `SWARM_PROTOCOL` `omit_sc`/skip-subtree over `%Pier`
   (the `enWaft` mechanism, `Text.svelte`). The Idzeug carries only that pruned page + the grants; the
-   secret `.c.keys` never encodes at all.
+   secret `.c.keys` never encodes at all. **[now]** — `Swarm_protocol(kind)`: session keys (`online`…)
+    omitted, `mail`|`rebuff` husks skipped, and kind `page` additionally skips `%Pier` + `%Idzeug` +
+     `%SocialGraph` (the spend ledger and the graph are as private as the contacts). NB skip rules
+      match by `sc_has` presence, not `mk` — `lematch` reads an mk entry as match-all (footgun,
+       noted in the `.g`).
 
 ### 6.6 Beyond the base handshake
 

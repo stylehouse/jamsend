@@ -1,25 +1,25 @@
 Waft:Keep,equip:Keep,lte_expanded,isx_show_cold
-  WaftTimes,of_Waft:Ghost/Net/Easy,discovered_at=1782449847030,accessed_at=1782999557360,enthusiasm
-    Cursor,what:What:the test,at=1782999559864
-  WaftTimes,of_Waft:Ghost/Music/Ality,discovered_at=1782449847030,accessed_at=1782999539437,enthusiasm=3
-    Cursor,what:What:the machine,at=1782999539437
-  WaftTimes,of_Waft:Credence,discovered_at=1782550950085,accessed_at=1782999534182
+  WaftTimes,of_Waft:Ghost/Net/Easy,discovered_at=1782449847030,accessed_at=1783044431644,enthusiasm=0
+    Cursor,what:What:the peer,at=1783044434700
+  WaftTimes,of_Waft:Ghost/Music/Ality,discovered_at=1782449847030,accessed_at=1783044430889,enthusiasm
+    Cursor,what:What:MusuLive (live-edge playback),at=1783005214558
+  WaftTimes,of_Waft:Credence,discovered_at=1782550950085,accessed_at=1783044431135
     Cursor,what:What:rate control,at=1782980420950
-  Cursor,waft:Ghost/Net/Easy,at=1782999557360
-  WaftTimes,of_Waft:Cluster,discovered_at=1782641801641,accessed_at=1782999534279
+  Cursor,waft:Ghost/Net/Easy,at=1783044431644
+  WaftTimes,of_Waft:Cluster,discovered_at=1782641801641,accessed_at=1783044431267
   WaftTimes,of_Waft:Keep
-  WaftTimes,of_Waft:GhostList,discovered_at=1782807094692,accessed_at=1782999534478
+  WaftTimes,of_Waft:GhostList,discovered_at=1782807094692,accessed_at=1783044431456
   DocScroll,of_Doc:Ghost/N/Peeroleum.g
   DocScroll,of_Doc:Ghost/N/Tyrant.g
   DocScroll,of_Doc:Ghost/M/Radiola.g
-  DocScroll,of_Doc:Ghost/Story/Musuation.g,scroll_line=2614
+  DocScroll,of_Doc:Ghost/Story/Musuation.g,scroll_line=2608
   DocScroll,of_Doc:Ghost/Story/Peregrination.g
   DocScroll,of_Doc:src/lib/ghost/Radios.svelte,scroll_line=761
-  DocScroll,of_Doc:src/lib/O/spec/Music_todo.md,scroll_line=8
-  WaftTimes,of_Waft:Ting/2026-07-02/160434,discovered_at=1782967448421,accessed_at=1782999534572,minimised
-  DocScroll,of_Doc:src/lib/O/spec/Peeroleum_spec.md,scroll_line=405
-  DocScroll,of_Doc:src/lib/O/spec/Peeroleum_handover.md,scroll_line=26
+  DocScroll,of_Doc:src/lib/O/spec/Music_todo.md,scroll_line=7
+  WaftTimes,of_Waft:Ting/2026-07-02/160434,discovered_at=1782967448421,accessed_at=1783044431524,minimised
+  DocScroll,of_Doc:src/lib/O/spec/Peeroleum_spec.md,scroll_line=404
+  DocScroll,of_Doc:src/lib/O/spec/Peeroleum_handover.md,scroll_line=25
   DocScroll,of_Doc:src/lib/O/spec/Covenant_design.md,scroll_line=197
   DocScroll,of_Doc:Ghost/M/Crate.g,scroll_line=27
   DocScroll,of_Doc:src/lib/p2p/ftp/Audio.svelte.ts,scroll_line=19
-  DocScroll,of_Doc:Ghost/N/Tribunal.g,scroll_line=4
+  DocScroll,of_Doc:Ghost/N/Tribunal.g,scroll_line=3

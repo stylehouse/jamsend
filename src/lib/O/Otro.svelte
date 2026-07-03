@@ -39,10 +39,11 @@
     const editor_book = boot_param('E')
     const book        = boot_param('B')
     const on_grid     = boot_param('I')   // ?I=<tag> ALONE (no ?E/?B) — an idle runner-on-the-grid
-    // &disk=proxy: this tab has NO local tree — it acquires a method:remoteWormhole backend, begging
-    //  a trusted editor to proxy its disk (a headless flock runner; see Cluster_spec "beg through the
-    //   Brink").  Stamped on the LOCAL h (never read $state H inside the effect — the OOM trap above).
-    const disk_proxy  = boot_param('disk') === 'proxy'
+    // &remoteWormhole=1: this tab has NO local tree — it acquires a method:remoteWormhole backend,
+    //  begging a trusted editor to proxy its disk (a headless flock runner; see Cluster_spec "beg
+    //   through the Brink").  Stamped on the LOCAL h (never read $state H inside the effect — the
+    //    OOM trap above).  (Was &disk=proxy.)
+    const remote_wormhole = boot_param('remoteWormhole') != null
     // ── investigation scaffold (TEMP — remove once roster/dispatch is confirmed healthy) ──────────
     //  Auto-reload a runner|editor tab every few minutes so fresh come-up + see-each-other handshakes
     //   keep cycling unattended (no human at the tab).  Cluster boots only (?E=/?B=/?I=), never the
@@ -71,7 +72,7 @@
         //   a become_book.  /Otro?I=new is the whole on-ramp; the identity layer (Auto) does the rest.
         //  (?E=/?B= still win: an editor or booked runner that ALSO carries ?I just gains an identity.)
         else if (on_grid) {                        h.c.boot_role = 'runner' }
-        if (disk_proxy) h.c.disk_proxy = true
+        if (remote_wormhole) h.c.remote_wormhole = true
         H = h
         setTimeout(() => {
             houses = [H]

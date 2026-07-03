@@ -221,6 +221,15 @@
                     T.sc.not = 1
                     return
                 }
+                // skip rules bite HERE, in the dive that BUILDS the traversal — pass 2's forward()
+                //  visits flat, so a pass-2 T.sc.not can't prune below a node (the stub comment
+                //   below says as much).  lematch is the skip authority (the same rules enLine
+                //    sees); a skipped node and its whole subtree never enter the traversal —
+                //     without this the children leak and RE-PARENT one level up on decode.
+                if (opt?.matching?.length && (n as any).lematch(opt.matching).skip) {
+                    T.sc.not = 1
+                    return
+                }
                 ref_count.set(n, (ref_count.get(n) ?? 0) + 1)
                 if (d < (ref_min_d.get(n) ?? Infinity)) ref_min_d.set(n, d)
             },
@@ -290,6 +299,10 @@
                 loopy: is_repeated ? ref_seen.get(n) : undefined,
             }
             const lines = H.enLine(n, q)
+
+            // A skip normally never reaches here (pass 1 pruned it from the traversal); kept as
+            //  the belt to the dive's braces — a skipped line must not push.
+            if (q.skip) return
 
             if (q.objecties?.mung?.length) {
                 const path_str = T.c.path
@@ -753,6 +766,11 @@
                 ref[k] = objectify(v)
                 continue
             }
+            // omit_sc — the silent session-key drop enWaft documents (active, created_at, …).
+            //  Collected above since forever but never applied until now — which is why saved
+            //   Waft tocs carried `active` (a session-only flag per Lies.svelte) onto disk.
+            //    Recorded on q.omitted so encode_wh_lines' muted_log stays informational.
+            if (omit_keys[k]) { (q.omitted ??= []).push(k); continue }
             const is_munged = mr.munging.find(r => Object.hasOwn(r.these_sc, k)) || spay_drop_keys[k]
             if (is_munged) { mung.push(k); continue }
             // An undefined value is not a clean scalar — inlining it would drop the key

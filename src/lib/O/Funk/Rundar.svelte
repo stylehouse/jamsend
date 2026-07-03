@@ -56,7 +56,7 @@
     //   and renders a single titled box — a row per known runner + the anon single-pair peer.  The
     //    single-pair {:else} mode below serves a runner's view of its editor (→EDITOR).
     let is_rack = $derived(!!lens?.sc?.rack)
-    let rack = $state<{ pub: string, heard: number, ready: boolean, book: string, engaged: string, sent: string, sent_at: number, begs: boolean, granted: boolean }[]>([])
+    let rack = $state<{ pub: string, heard: number, ready: boolean, book: string, engaged: string, sent: string, sent_at: number, begs: boolean, granted: boolean, ac: boolean }[]>([])
     // the live w:Lies (for the rack's grant control) + this runner's remote-Wormhole acquire state.
     let w_lies = $state<TheC | undefined>(undefined)
     let wormhole_state = $state('')
@@ -90,6 +90,7 @@
                 sent_at:  Number(rn.c?.sent_at ?? 0),
                 begs:     !!rn.sc.begs_wormhole,      // begging for remote Wormhole (disk proxy)
                 granted:  !!rn.sc.granted_wormhole,   // we granted it
+                ac:       !!rn.sc.ac,                 // its AudioContext is gesture-unlocked (needAC dispatch prefers it)
             }))
         })
     })
@@ -166,20 +167,25 @@
     //   sparse beacon while the frequent ping slips through.  Surface it instead of faking liveness.
     let stale_hint = $derived(is_rack && rack.length > 0 && !any_live_runner && live_face.length > 0)
 
-    // a runner's at-a-glance link, off the advertise beacon (cadence ~15s; allow ~2 missed before
-    //  "silent", never heard ⇒ "dialing").  States: a job WE rang but it hasn't picked up → ☎ (30s) ▸
-    //   playing its book → ▶ ▸ engaged (reserved, idle between runs) ▸ free ▸ silent.  book/engaged/sent
-    //    all ride the roster entry, so the editor reads busy/free off the beacon, no round-trip.
+    // a runner's at-a-glance link — the activation LADDER: liveness rides the runner's OWN ~5s ping
+    //  (ping-borne last_heard, not the sparse ~15s advertise), so it grades into rungs instead of one
+    //   flat cutoff:
+    //     talking (<15s ≈ 2 missed pings) ▸ lagging (<45s — heard lately but pings stopped landing;
+    //      the keepalive timer survives a think-quiesce, so this is real wobble, not idleness) ▸
+    //       silent (the roster lapses book|engaged claims at this same window) ▸ offline (never heard
+    //        this session — known in the registry only).  Job state outranks the rung while it can
+    //         honestly claim: ▶ playing its book ▸ ☎ a job WE rang, unacked (30s).
     const runner_link = (v: { heard: number, book: string, engaged: string, sent: string, sent_at: number }) => {
         const sent_live = !!v.sent && (!v.sent_at || now - v.sent_at < 30000)
-        const live      = v.heard > 0 && now - v.heard < 45000
-        const age       = v.heard ? Math.round((now - v.heard) / 1000) : 0
-        return v.book    ? { glyph: '▶', cls: 'live',    text: `playing ${base(v.book)}` }   // acked + running → the play button
-             : sent_live ? { glyph: '☎', cls: 'sent',    text: `calling ${base(v.sent)}` }   // job in flight — ringing
-             : !v.heard  ? { glyph: '○', cls: 'dial',    text: 'offline' }                   // known (in the registry) but not heard this session
-             : live      ? (v.engaged ? { glyph: '◑', cls: 'engaged', text: 'engaged' }
-                                      : { glyph: '●', cls: 'live',    text: 'free' })
-             :             { glyph: '◍', cls: 'silent', text: `silent ${age}s` }
+        const age  = v.heard ? Math.round((now - v.heard) / 1000) : 0
+        const rung = !v.heard ? 'offline' : now - v.heard < 15000 ? 'talking' : now - v.heard < 45000 ? 'lagging' : 'silent'
+        return rung === 'offline' ? { glyph: '○', cls: 'dial',    text: 'offline' }
+             : rung === 'silent'  ? { glyph: '◍', cls: 'silent',  text: `silent ${age}s` }
+             : v.book             ? { glyph: '▶', cls: 'live',    text: `playing ${base(v.book)}` }
+             : sent_live          ? { glyph: '☎', cls: 'sent',    text: `calling ${base(v.sent)}` }
+             : rung === 'lagging' ? { glyph: '◔', cls: 'lagging', text: `lagging ${age}s` }
+             : v.engaged          ? { glyph: '◑', cls: 'engaged', text: 'engaged' }
+             :                      { glyph: '●', cls: 'live',    text: 'free' }
     }
 </script>
 
@@ -190,7 +196,12 @@
         <div class="rp-mini" title="runners · {rack_shown.length} known{anon ? ' + anon' : ''}">
             {#each rack_shown as v (v.pub)}
                 {@const lk = runner_link(v)}
-                <span class="rp-dot rp-{lk.cls}" title={`${v.pub || '?'} — ${lk.text}`}>{lk.glyph}</span>
+                <span class="rp-dot rp-{lk.cls}" title={`${v.pub || '?'} — ${lk.text}${v.ac ? ' · AC live' : ''}`}>{lk.glyph}</span>
+                {#if v.begs && !v.granted}
+                    <!-- an ACTIONABLE beg must survive the collapse: grant remote-Wormhole right off the mini row -->
+                    <button class="rp-grant rp-grant-mini" title={`${v.pub} begs remote-Wormhole disk access — click to grant`}
+                            onclick={() => w_lies && (H as any).Lies_grant_wormhole(w_lies, v.pub)}>🛰</button>
+                {/if}
             {/each}
             {#if anon}<span class="rp-dot rp-{anon.cls}" title={anon.text}>{anon.glyph}</span>{/if}
             {#if !rack_shown.length && !anon}<span class="rp-mini-empty" title="no runners">○</span>{/if}
@@ -198,6 +209,12 @@
     {:else}
         <div class="rp-mini" title={link.text}>
             <span class="rp-dot rp-{link.cls}">{link.glyph}</span>
+            {#if wormhole_state}
+                <!-- the runner's remote-Wormhole acquire state survives the collapse too: begging pulses
+                     amber until the editor grants (the grant CLICK lives on the editor's rack). -->
+                <span class="rp-dot rp-{wormhole_state === 'ready' ? 'live' : 'silent'}"
+                      title={wormhole_state === 'ready' ? 'remote Wormhole granted' : 'begging the editor for remote-Wormhole disk access'}>🛰</span>
+            {/if}
         </div>
     {/if}
 {:else if is_rack}
@@ -208,7 +225,7 @@
         <div class="rp-hd">runner{(rack_shown.length + (anon ? 1 : 0)) ? ` · ${rack_shown.length + (anon ? 1 : 0)}` : ''}</div>
         {#each rack_shown as v (v.pub)}
             {@const lk = runner_link(v)}
-            <div class="rp-link rp-{lk.cls}" title={`runner ${v.pub}${v.ready ? ' — ready' : ''}${v.engaged ? ` — engaged by ${v.engaged.slice(0, 8)}` : ''}`}>
+            <div class="rp-link rp-{lk.cls}" title={`runner ${v.pub}${v.ready ? ' — ready' : ''}${v.engaged ? ` — engaged by ${v.engaged.slice(0, 8)}` : ''}${v.ac ? ' — AC live (a needAC Book lands here first)' : ''}`}>
                 <span class="rp-dot">{lk.glyph}</span>
                 <span class="rp-role rp-pub" title={v.pub}>{v.pub || '?'}</span>
                 <span class="rp-txt">{lk.text}</span>
@@ -253,7 +270,7 @@
         <div class="rp-latest">↪ {latest.state} {Math.round((now - latest.at) / 1000)}s ago</div>
     {/if}
     {#if wormhole_state}
-        <!-- &disk=proxy acquire status: this runner has no local tree and is acquiring a
+        <!-- &remoteWormhole=1 acquire status: this runner has no local tree and is acquiring a
              method:remoteWormhole backend from the editor (beg → grant → install). -->
         <div class="rp-grant-status rp-{wormhole_state === 'ready' ? 'live' : 'silent'}"
              title="remote Wormhole (method:remoteWormhole) — the editor proxies the real tree">
@@ -288,6 +305,7 @@
     .rp-live    .rp-dot { color: #6ad0a0; }
     .rp-sent    .rp-dot { color: #79b0d0; }   /* ☎ a dispatched job ringing — not yet acked */
     .rp-engaged .rp-dot { color: #7aa0d8; }   /* reserved (lease held), idle between runs */
+    .rp-lagging .rp-dot { color: #c2c47c; }   /* heard lately, pings not landing — between live and silent */
     .rp-silent .rp-dot { color: #d8b86a; }
     .rp-dial   .rp-dot { color: #889; }
     .rp-down   .rp-dot { color: #e06c75; }
@@ -315,8 +333,12 @@
     .rp-mini .rp-live    { color: #6ad0a0; }
     .rp-mini .rp-sent    { color: #79b0d0; }
     .rp-mini .rp-engaged { color: #7aa0d8; }
+    .rp-mini .rp-lagging { color: #c2c47c; }
     .rp-mini .rp-silent  { color: #d8b86a; }
     .rp-mini .rp-dial    { color: #889; }
     .rp-mini .rp-down, .rp-mini .rp-clash { color: #e06c75; }
     .rp-mini-empty { color: #5a6488; font-size: 11px; }
+    /* the mini grant beg: same chip as .rp-grant, shrunk to ride the dot row (no margin-left:auto —
+       it sits beside its runner's dot, not at the row's far edge) */
+    .rp-grant-mini { margin-left: 0; font-size: 10px; line-height: 13px; padding: 0 3px; }
 </style>

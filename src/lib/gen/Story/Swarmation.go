@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Swarmation(): string { return '798103493976eb49' },
+    Ghostmeta_Ghost_Story_Swarmation(): string { return '79cfda846cb277d3' },
 
 // Swarmation.g — the Swarm* social-side tests, in the Musu* mould (spec: Swarm_spec.md §9). The
 //  file is the artifact; SwarmStaple is the Book identity. The Creduler loads this ghost live
@@ -27,6 +27,8 @@
 //   beat 6  the replay — Carol redeems the SPENT Idzeug → rejected (single-use, the nonce is spent)
 //   beat 7  revocation — Alice %NotGrants Bob's Music → her Pier retires at use (Bob's still
 //            stands: revocation propagation is a later slice)
+//   beat 8  the round trip — Alice's account exports (secret included) → imports into a fresh
+//            container → re-exports byte-identical; the whole §4 robustness claim at the model layer
 //
 // CONVENTION (Musu*): no Run_A_ recipe — Story_subHouse stands up A:SwarmStaple/w:SwarmStaple by
 //  default. The world MUST be named after the Book (do_fn_for dispatches by w.sc.w) or the
@@ -53,6 +55,7 @@ async SwarmStaple_drive(w, req) {
         if (n === 5) await this.SwarmStaple_seal(w)
         if (n === 6) await this.SwarmStaple_replay(w)
         if (n === 7) await this.SwarmStaple_revoke(w)
+        if (n === 8) await this.SwarmStaple_roundtrip(w)
     }
     await this.SwarmStaple_pump(w)
     await this.SwarmStaple_order(w)
@@ -145,6 +148,29 @@ async SwarmStaple_revoke(w) {
     await this.Swarm_revoke(w, alice, pier, 'Music')
 
 },
+// beat 8 — the robustness claim: export Alice's whole account (secret included) → import into a
+//  fresh container → re-export. Byte-identical means the Pier, both grants, the spend ledger, the
+//   %NotGrant, and the graph all survived — and the keys re-thaw onto .c. The verdict lands as a
+//    %roundtrip particle (the exports are async, so the sync witness reads the stamp, not the act).
+async SwarmStaple_roundtrip(w) {
+    w.i({reached: "step_8"})
+    w.sc.now = 1751500060
+    let alice = this.SwarmStaple_ident(w, 'Alice')
+    let blob = await this.Swarm_export(alice, { secret: 1 })
+    let vault = w.oai({ Account: 1, of: 'AliceVault' })
+    vault.c.up = w
+    let back = this.Swarm_import(vault, blob)
+    let blob2 = await this.Swarm_export(back, { secret: 1 })
+    if (blob2 === blob) {
+        w.i({ roundtrip: 'identical', bytes: String(blob.length) })
+    } else {
+        // stamp the first divergence window — a differ must be READABLE in the snap, not a rerun
+        let at = 0
+        while (at < blob.length && blob[at] === blob2[at]) at = at + 1
+        w.i({ roundtrip: 'differs', bytes: String(blob.length), at: String(at), a: blob.slice(at, at + 40), b: blob2.slice(at, at + 40) })
+    }
+
+},
 // ── the witness — %see once-noticed claims, polled every pass (structural + idempotent) ──────
 SwarmStaple_witness(w) {
     let alice = this.SwarmStaple_ident(w, 'Alice')
@@ -176,6 +202,9 @@ SwarmStaple_witness(w) {
     if (carol && carol.o({ rebuff: 'rejected_spent' })[0] && !carolPier && !(w.oa({see: 'the Idzeug is single-use — a second redeem finds the nonce spent and is rebuffed'}))) w.i({see: 'the Idzeug is single-use — a second redeem finds the nonce spent and is rebuffed'})
     // beat 7: revocation at use — Alice's Pier retires under its %NotGrant while Bob's still stands.
     if (aPier && bPier && aPier.o({ NotGrant: 'Music' })[0] && !this.Swarm_pier_live(aPier, 'Music') && this.Swarm_pier_live(bPier, 'Music') && !(w.oa({see: 'a NotGrant under the Pier retires it at use — the other end stands until told'}))) w.i({see: 'a NotGrant under the Pier retires it at use — the other end stands until told'})
+    // beat 8: the round trip — restored twin holds the Pier and the keys, and the blobs matched.
+    let restored = w.o({ Account: 1, of: 'AliceVault' })[0]?.o({ Identity: 1 })[0]
+    if (restored && this.Swarm_peering(restored)?.o({ Pier: 1, pub: bob.sc.prepub })[0] && restored.c.keys?.key && w.o({ roundtrip: 'identical' })[0] && !(w.oa({see: 'the account survives export and import byte for byte — Pier and grants and keys intact'}))) w.i({see: 'the account survives export and import byte for byte — Pier and grants and keys intact'})
 
 },
 // SwarmStaple_order — keep the Run snap readable: float A:SwarmStaple to the front of H/*.

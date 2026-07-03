@@ -27,6 +27,13 @@ const REQ_TIMEOUT_MS = 20_000
 
 export class RemoteWormholeNav {
     is_remote = true                 // the DirectoryOpener / Wormhole seam recognises this
+    // Atime-async: this backend's promises settle off an INBOUND frame (wormhole_reply), whose
+    //  delivery itself needs Atime — so an op must never be awaited under the beliefs mutex
+    //   (the await would starve the very reply it waits on; every op sits its full REQ_TIMEOUT
+    //    with the machine seized).  The Wormhole actor reads this flag and runs the op OFF
+    //     Atime, finishing the req on the pass after it settles.  Disk navs (FSA/OPFS) resolve
+    //      from the disk event loop, independent of Atime, and stay inline-awaitable.
+    atime_async = true
     is_opfs_github = false
     label = 'remoteWormhole'
     private H: any

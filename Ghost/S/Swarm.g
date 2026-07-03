@@ -278,3 +278,81 @@ Swarm_pier_live(pier, feature):
     let nots = pier.o({ NotGrant: feature })
     return !nots.some(n => grants.some(g => n.sc.by === g.sc.by && n.sc.for === g.sc.for))
 //#endregion
+
+//#region portability — export | import (§4 pt 3: the "copy their snap in|out", thawEnteredStashed reborn)
+//  The account's PORTABLE form is its C-snap — one blob that is the backup, the device-move, and the
+//   shareable contact, depending on what you point it at. A JSON envelope {v, kind, snap, keys?}
+//    rides over the enWaft snap; `keys` only when the owner asks for a SECRET export of their own
+//     %Identity (the snap itself never carries the key — .c never encodes).
+
+// Swarm_protocol — the SWARM_PROTOCOL rule set (§6.5): the Swarm vocabulary with session keys
+//  omitted (online is the relay's truth, never the snap's), wire husks and rebuffs skipped.
+//   kind 'page' additionally SKIPS %Pier + %Idzeug + %SocialGraph — the shareable face is the
+//    Peering's OWN fields; the contact list, the spend ledger, and the graph are private.
+//  GOTCHA — skip rules must match by sc_has presence, NOT entry.mk: lematch (which decides skip)
+//   doesn't know mk and reads such entries as match-ALL (matches(undefined) is vacuously true) —
+//    an mk-keyed skip rule skips the whole tree to an empty snap. mk entries stay fine for
+//     omit_sc/blockquote means (enLine's own collector is mk-aware). Mainkeys are exclusive, so
+//      an sc_has presence probe on the mainkey IS an mk match.
+Swarm_protocol(kind):
+    let SESSION = { online: 1, active: 1, created_at: 1, new: 1, not_found: 1 }
+    let skips = ['mail', 'rebuff']
+    if (kind === 'page') skips = [...skips, 'Pier', 'Idzeug', 'SocialGraph']
+    let rules = []
+    for (const mk of ['Account', 'Identity', 'Peering', 'Pier', 'Grant', 'NotGrant', 'Idzeug', 'SocialGraph', 'Edge', 'cap']) {
+        if (!skips.includes(mk)) rules.push({ matching_any: [{ mk: mk }], means: { omit_sc: SESSION } })
+    }
+    for (const mk of skips) {
+        let probe = {}
+        probe[mk] = 1
+        rules.push({ matching_any: [{ sc_has: probe }], means: { skip: 1 } })
+    }
+    return rules
+
+// Swarm_export — a subtree as ONE pasteable blob. The root's mainkey names the kind: an %Identity
+//  is an `account`, a %Pier a `contact`, a %Peering a `page` (pruned). opt.secret on an account
+//   folds .c.keys into the envelope — a REAL backup: guard the blob like the key it carries.
+async Swarm_export(n, opt):
+    let mk = Object.keys(n.sc)[0]
+    let kind = mk === 'Identity' ? 'account' : (mk === 'Pier' ? 'contact' : 'page')
+    let out = await this.enWaft(n, { matching: this.Swarm_protocol(kind) })
+    if (out.errors?.length) throw 'Swarm_export: ' + out.errors.join('; ')
+    let env = { v: '1', kind: kind, snap: out.snap }
+    if (opt?.secret && mk === 'Identity' && n.c.keys) env.keys = { pub: n.c.keys.pub, key: n.c.keys.key }
+    return JSON.stringify(env)
+
+// Swarm_import — paste a blob, get particles: decode the snap and GRAFT it into `container`,
+//  idempotently. An envelope with keys restores signing power onto .c.keys (never via the snap).
+Swarm_import(container, blob):
+    let env = JSON.parse(blob)
+    let got = this.decode_wh_lines(env.snap)
+    if (!got.C) throw 'Swarm_import: ' + (got.errors?.join('; ') || 'bad snap')
+    let n = this.Swarm_graft(container, got.C)
+    if (env.keys?.pub) {
+        n.c.keys = { pub: env.keys.pub, key: env.keys.key }
+        n.sc.prepub = env.keys.pub.slice(0, 16)
+    }
+    return n
+
+// Swarm_graft — fold a DECODED subtree into a live parent. Each node is found by its mainkey +
+//  IDENTITY KEYS (the table below) so a re-import MERGES onto the twin instead of duplicating;
+//   an unknown mainkey falls back to whole-sc match (exact re-import still merges). A fresh node
+//    is created with the node's FULL sc in one i() — key order survives, so export→import→export
+//     is byte-identical.
+Swarm_graft(parent, node):
+    let ID = { Identity: [], Peering: ['name'], Pier: ['pub'], Grant: ['sign'], NotGrant: ['sign'], Idzeug: [], SocialGraph: [], Edge: ['a', 'b'], Account: ['of'] }
+    let mk = Object.keys(node.sc)[0]
+    let find = {}
+    find[mk] = node.sc[mk]
+    for (const k of (ID[mk] ?? Object.keys(node.sc).slice(1))) find[k] = node.sc[k]
+    let twin = parent.o(find)[0]
+    if (twin) {
+        for (const k of Object.keys(node.sc)) twin.sc[k] = node.sc[k]
+        twin.bump()
+    } else {
+        twin = parent.i({ ...node.sc })
+    }
+    twin.c.up = parent
+    for (const child of node.o()) this.Swarm_graft(twin, child)
+    return twin
+//#endregion

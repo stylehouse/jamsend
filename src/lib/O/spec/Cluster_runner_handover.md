@@ -68,6 +68,14 @@ The container interleaves two KINDS: the `%HostedIdentity` directory and the clu
       one rack lens reading the whole roster. Owner-supervised at the live Brink.
 
 ### 2. The live runner rack — activation states, Pier culling, server-rack Brink
+> **UPDATE 2026-07-03 — both remaining halves BUILT (uncommitted, :9091-verify owed).** The ladder rides the
+>  ping-borne last_heard (§2a's liveness refresh): `Rundar.runner_link` grades talking(<15s)▸lagging(<45s)▸
+>   silent▸offline instead of the flat 45s. The Pier reaper lives in `Lies_runner_roster` (in-think): a
+>    promoted Pier whose runner is silent past 5min (the display-cull age) is dropped — %HostedIdentity and
+>     the %Runner row stay; safe because the reliable carrier books straight (no inseq cursor to wedge) and
+>      re-promotion is one oai. `Lies_runner_pier` stamps `c.promoted_at` so a probe at a dead directory
+>       entry isn't reaped mid-ring. Grant begs (remote-Wormhole + the Sound/AC beg, now BOTH roles — an AC
+>        grant is per-tab) survive the MiniBrink collapse.
 - **Activation ladder.** Today liveness is a FLAT window: advertised runners `r_live = now - last_heard <
    45000` (`Funk/Runner.svelte:138`, ~2 missed 15s adverts); the single-pair channel uses 7s
     (`Runner.svelte:96`). The want: a real ladder — *advert-seen → ready → talking-regularly* — instead of

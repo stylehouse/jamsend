@@ -221,7 +221,7 @@ await M.eatfunc({
         if (!keep) return
         let times  = keep.o({ WaftTimes: 1 }) as TheC[]
         if (!times.length) {
-            for (const path of ['Ghost/Net/Easy', 'Ghost/Music/Ality']) H.Lies_keep_note(w, path)
+            for (const path of ['Ghost/Net/Easy', 'Ghost/Music/Ality', 'Ghost/Swarm/Easy']) H.Lies_keep_note(w, path)
             times = keep.o({ WaftTimes: 1 }) as TheC[]
         }
         for (const wt of times)

@@ -1747,11 +1747,11 @@ export class House extends StorableHousing {
         //      FaceSucker demanding a share, and the open_dir action above (the only way in) is
         //       what dismisses it.  boot_role is set only for E|B, so a plain demo is unaffected.
         if (H.top_House().c.boot_role) {
-            // &disk=proxy runner: NO FaceSucker — the real tree arrives over the channel from a trusted
+            // &remoteWormhole=1 runner: NO FaceSucker — the real tree arrives over the channel from a trusted
             //  editor (method:remoteWormhole).  w:Lies drives the beg→grant→install (Lies_remote_wormhole_step
             //   off Lies_aim); here we only REFLECT A.c.nav.  Until it installs, A.c.nav stays unset, every
             //    rw-op returns "nav not ready", and Lies waits on its Wafts — the intended gum-up.
-            if (H.top_House().c.disk_proxy && H.top_House().c.boot_role === 'runner') {
+            if (H.top_House().c.remote_wormhole && H.top_House().c.boot_role === 'runner') {
                 const installed = (A.c.nav as any)?.is_remote
                 return w.i({ see: installed ? '🛰️ remote Wormhole (editor-proxied)' : '🛰️ begging editor for Wormhole access…' })
             }
@@ -1810,6 +1810,24 @@ export class House extends StorableHousing {
     // op: 'write_snap' → writes wh_data to NNN.snap
     //                    reply: { ok: true }
     
+    // Wormhole_park — run one queue op OFF Atime, for an Atime-async backend (nav.atime_async:
+    //  method:remoteWormhole, whose promises settle off an INBOUND frame that itself needs Atime
+    //   to deliver — so an inline await under the beliefs mutex starves its own reply, and every
+    //    op sits its full timeout with the machine seized).  Launch once — one op in flight per
+    //     queue, preserving do()'s serial order — stash the settled reply on the wrapper's .c
+    //      (off-snap; mutating .c from a promise outside the mutex is the A.c.cloud_* pattern),
+    //       wake a pass, and hand the reply to done() on that later pass, back inside Atime.
+    Wormhole_park(queue: TheC, wrap: TheC, run_op: () => Promise<any>, done: (reply: any) => void) {
+        if (wrap.c.reply) { done(wrap.c.reply); return }
+        if (wrap.c.inflight || queue.c.inflight) return   // ours still settling, or another op holds the slot
+        queue.c.inflight = wrap
+        wrap.c.inflight = run_op().then(r => r ?? {}, e => ({ error: String(e) })).then(reply => {
+            wrap.c.reply = reply
+            if (queue.c.inflight === wrap) queue.c.inflight = undefined
+            ;(this as House).main(true)
+        })
+    }
+
     async Wormhole(A: TheC, w: TheC, e: TheC, AT: TheC, wT: TheC) {
         if (!A.c.nav && A.c.DL) {
             const DL = A.c.DL
@@ -1837,42 +1855,46 @@ export class House extends StorableHousing {
             const req    = fs_req.c.for as TheC
             const finish = fs_req.c.finish as Function | undefined
             if (!finish) return
-    
+
             const nav  = A.c.nav as WormholeNav | undefined
             const path = `wormhole/${req.sc.wh_path as string}`
             const op   = req.sc.wh_op   as string
             const pad  = (n: number) => String(n).padStart(3, '0')
-    
+
             const done = (reply: any) => { finish(reply); fs_req.sc.finished = 1 }
-    
+
             if (!nav) { w.i({ see: '📭 nav not ready' }); return }
-    
-            try {
-                if (op === 'read_toc') {
-                    let snap = await nav.read_file(path, 'toc.snap')
-    
-                    done(snap ? { toc_snap: snap } : { not_found: true, toc_snap: '' })
-    
-                } else if (op === 'write_toc') {
-                    await nav.write_file(path, 'toc.snap', req.sc.wh_data as string)
-                    done({ ok: true })
-    
-                } else if (op === 'read_snap') {
-                    const n   = req.sc.wh_step as number
-                    const raw = await nav.read_file(path, `${pad(n)}.snap`)
-                    done(raw ? { snap: raw } : { not_found: true })
-    
-                } else if (op === 'write_snap') {
-                    const n = req.sc.wh_step as number
-                    await nav.write_file(path, `${pad(n)}.snap`, req.sc.wh_data as string)
-                    done({ ok: true })
-    
-                } else {
-                    done({ error: `unknown op: ${op}` })
+
+            const run_op = async (): Promise<any> => {
+                try {
+                    if (op === 'read_toc') {
+                        let snap = await nav.read_file(path, 'toc.snap')
+                        return snap ? { toc_snap: snap } : { not_found: true, toc_snap: '' }
+
+                    } else if (op === 'write_toc') {
+                        await nav.write_file(path, 'toc.snap', req.sc.wh_data as string)
+                        return { ok: true }
+
+                    } else if (op === 'read_snap') {
+                        const n   = req.sc.wh_step as number
+                        const raw = await nav.read_file(path, `${pad(n)}.snap`)
+                        return raw ? { snap: raw } : { not_found: true }
+
+                    } else if (op === 'write_snap') {
+                        const n = req.sc.wh_step as number
+                        await nav.write_file(path, `${pad(n)}.snap`, req.sc.wh_data as string)
+                        return { ok: true }
+
+                    } else {
+                        return { error: `unknown op: ${op}` }
+                    }
+                } catch (err) {
+                    return { error: String(err) }
                 }
-            } catch (err) {
-                done({ error: String(err) })
             }
+
+            if ((nav as any).atime_async) this.Wormhole_park(fs, fs_req, run_op, done)
+            else done(await run_op())
         })
         // drop settled wrappers so the queue doesn't accrete (do() never drops)
         ;(fs.o({ req: 1, finished: 1 }) as TheC[]).forEach(fr => fs.drop(fr))
@@ -1903,54 +1925,59 @@ export class House extends StorableHousing {
 
             if (!nav) { done({ error: '📭 nav not ready' }); return }
 
-            try {
-                const parts    = name.split('/').filter(Boolean)
-                const filename = parts.pop()!
-                const dir_path = parts.join('/')
+            const run_op = async (): Promise<any> => {
+                try {
+                    const parts    = name.split('/').filter(Boolean)
+                    const filename = parts.pop()!
+                    const dir_path = parts.join('/')
 
-                if (op === 'read') {
-                    const content = await nav.read_file(dir_path, filename)
-                    done(content != null ? { content } : { not_found: true, content: '' })
-                } else if (op === 'bin') {
-                    // binary read — bytes can't ride sc (string-only / snapped), so park the ArrayBuffer on
-                    //  req.c.bin (off-snap) and reply only a small marker.  The consumer reads req.c.bin.
-                    const buffer = (nav as any).bin_read ? await (nav as any).bin_read(dir_path, filename) : null
-                    if (buffer != null) { req.c.bin = buffer; done({ ok: true, bytes: buffer.byteLength }) }
-                    else done({ not_found: true })
-                } else if (op === 'read_range') {
-                    // seekable binary read — the window's bytes park on req.c.bin (off-snap, like bin);
-                    //  reply carries the byte count, the offset, and the file's total size (for seeking).
-                    const offset = Number(req.sc.rw_offset ?? 0)
-                    const len    = req.sc.rw_len != null ? Number(req.sc.rw_len) : undefined
-                    const r = (nav as any).read_range ? await (nav as any).read_range(dir_path, filename, offset, len) : null
-                    if (r) { req.c.bin = r.buffer; done({ ok: true, bytes: r.buffer.byteLength, offset, size: r.size }) }
-                    else done({ not_found: true })
-                } else if (op === 'write') {
-                    await nav.write_file(dir_path, filename, req.sc.rw_data as string)
-                    done({ ok: true })
-                } else if (op === 'list') {
-                    // rw_dir is the full directory path — no filename to pop.
-                    //   expand() re-fetches from the filesystem each time so
-                    //   listings aren't stale when called after writes.
-                    const rw_dir  = req.sc.rw_dir as string
-                    const dparts  = rw_dir.split('/').filter(Boolean)
-                    const dl      = await nav.dir(...dparts)
-                    if (!dl) {
-                        done({ not_found: true })
-                    } else {
+                    if (op === 'read') {
+                        const content = await nav.read_file(dir_path, filename)
+                        return content != null ? { content } : { not_found: true, content: '' }
+                    } else if (op === 'bin') {
+                        // binary read — bytes can't ride sc (string-only / snapped), so park the ArrayBuffer on
+                        //  req.c.bin (off-snap) and reply only a small marker.  The consumer reads req.c.bin.
+                        const buffer = (nav as any).bin_read ? await (nav as any).bin_read(dir_path, filename) : null
+                        if (buffer != null) { req.c.bin = buffer; return { ok: true, bytes: buffer.byteLength } }
+                        return { not_found: true }
+                    } else if (op === 'read_range') {
+                        // seekable binary read — the window's bytes park on req.c.bin (off-snap, like bin);
+                        //  reply carries the byte count, the offset, and the file's total size (for seeking).
+                        const offset = Number(req.sc.rw_offset ?? 0)
+                        const len    = req.sc.rw_len != null ? Number(req.sc.rw_len) : undefined
+                        const r = (nav as any).read_range ? await (nav as any).read_range(dir_path, filename, offset, len) : null
+                        if (r) { req.c.bin = r.buffer; return { ok: true, bytes: r.buffer.byteLength, offset, size: r.size } }
+                        return { not_found: true }
+                    } else if (op === 'write') {
+                        await nav.write_file(dir_path, filename, req.sc.rw_data as string)
+                        return { ok: true }
+                    } else if (op === 'list') {
+                        // rw_dir is the full directory path — no filename to pop.
+                        //   expand() re-fetches from the filesystem each time so
+                        //   listings aren't stale when called after writes.
+                        const rw_dir  = req.sc.rw_dir as string
+                        const dparts  = rw_dir.split('/').filter(Boolean)
+                        const dl      = await nav.dir(...dparts)
+                        if (!dl) return { not_found: true }
                         await dl.expand()
                         const entries = [
                             ...dl.directories.map(d => ({ name: d.name, is_dir: true  })),
                             ...dl.files      .map(f => ({ name: f.name, is_dir: false })),
                         ]
-                        done({ entries })
+                        return { entries }
+                    } else {
+                        return { error: `unknown rw op: ${op}` }
                     }
-                } else {
-                    done({ error: `unknown rw op: ${op}` })
+                } catch (err) {
+                    return { error: String(err) }
                 }
-            } catch (err) {
-                done({ error: String(err) })
             }
+
+            // An Atime-async backend must never be awaited here — this whole actor runs under the
+            //  beliefs mutex, and its replies arrive as inbound frames that need that mutex to
+            //   deliver (Wormhole_park's header tells the full story).  Disk navs stay inline.
+            if ((nav as any).atime_async) this.Wormhole_park(rw, rw_req, run_op, done)
+            else done(await run_op())
         })
         ;(rw.o({ req: 1, finished: 1 }) as TheC[]).forEach(rr => rw.drop(rr))
 

@@ -1073,6 +1073,12 @@
                 //    finer "busy-with-something" (a Book actually running); `engaged` is the coarser
                 //     reservation that outlives a single run (the 10min think-between-runs window).
                 engaged: (eng && eng.status === 'active') ? (eng.client ?? '') : '',
+                // audio capability — this tab's AudioContext is gesture-unlocked (the Musu_gat/
+                //  Lies_secure_audio cache on top_House().c; the Sound Brink grant resumes that same
+                //   cached context).  Present-or-absent like a snapped boolean; a needAC dispatch
+                //    prefers an ac-live runner so the run doesn't stall ~60s begging for a gesture
+                //     (NeedAC_spec §3: advertise first, then match).
+                ...((H.top_House().c as any).musu_gat?.AC_ready ? { ac: 1 } : {}),
                 // (no favourite_client on the beacon: the editor sources it from the Waft:Cluster/
                 //  %HostedIdentity registry — advertise_recv reads hi.sc.favourite_client and ignores any
                 //   wire copy — so broadcasting it to every client each beat was dead weight.  The
@@ -1101,6 +1107,7 @@
                 //  allocator.  '' ⇒ free.  favourite_client is NOT on the beacon: it's a registry-only fact
                 //   (Waft:Cluster/%HostedIdentity), read by the projection, never written from the wire.
                 engaged:    fr?.engaged ? String(fr.engaged) : '',
+                ac:         !!fr?.ac,   // AudioContext gesture-unlocked over there — the needAC dispatch facet
             }
             // no snap mutation, no bump here — the in-think projection owns the snapped tree.
         },
@@ -1121,7 +1128,7 @@
             if (H.Lies_role(w) !== 'editor') return
             const now = Date.now()
             const LIVE_MS = 45000
-            const beacons = (w.c.beacons ?? {}) as Record<string, { last_heard: number, ready?: boolean, book?: string, engaged?: string }>
+            const beacons = (w.c.beacons ?? {}) as Record<string, { last_heard: number, ready?: boolean, book?: string, engaged?: string, ac?: boolean }>
             let changed = false
             // a beacon from a never-seen runner NAMES it in the durable registry (role:runner).
             //  The beacon carries no authority over favourite_client — left untouched (registry-only).
@@ -1152,15 +1159,35 @@
                     else if (r.sc.book)    { delete r.sc.book; changed = true }
                     if (b.ready)   { if (r.sc.ready !== 1) { r.sc.ready = 1; changed = true } } else if (r.sc.ready)   { delete r.sc.ready; changed = true }
                     if (b.engaged) { if (r.sc.engaged !== b.engaged) { r.sc.engaged = b.engaged; changed = true } } else if (r.sc.engaged) { delete r.sc.engaged; changed = true }
+                    if (b.ac)      { if (r.sc.ac !== 1) { r.sc.ac = 1; changed = true } } else if (r.sc.ac) { delete r.sc.ac; changed = true }
                 } else if (!live) {
                     // silent past the window — clear the live claims so the snap never lies that an unheard
                     //  runner is still ready|running.  Identity persists; only the grant lapses.
-                    if (r.sc.ready || r.sc.book || r.sc.engaged) { delete r.sc.ready; delete r.sc.book; delete r.sc.engaged; changed = true }
+                    if (r.sc.ready || r.sc.book || r.sc.engaged || r.sc.ac) { delete r.sc.ready; delete r.sc.book; delete r.sc.engaged; delete r.sc.ac; changed = true }
                     if (b) delete beacons[pub]   // expired beacon consumed; the registry keeps the runner known
                 }
             }
             // a Runner LEAVES only when its registry entry is forgotten — the directory is the authority.
             for (const r of w.o({ Runner: 1 }) as TheC[]) if (!known.has(r.sc.Runner as string)) { w.drop(r); changed = true }
+            // the transport reaper — a promoted Pier (Lies_runner_pier, the addressed transport minted on
+            //  dispatch) is SESSION machinery: once its runner has been silent past PIER_CULL_MS it is an
+            //   address to nobody, so reap it.  Only the transport lets go — the durable %HostedIdentity
+            //    (directory) and the %Runner row (identity view; its live claims already lapsed at LIVE_MS)
+            //     both stay — and it lets go at the same age the rack culls the icon from display.
+            //      Re-promotion on the next dispatch is one oai (trust-everything-v1, no handshake) and the
+            //       reliable carrier books straight (no inseq cursor to wedge), so a cull costs nothing.
+            //        promoted_at covers a Pier rung toward a runner that never answered (a probe at a stale
+            //         directory entry) — heard-time alone would reap it before the call stopped ringing.
+            const PIER_CULL_MS = 5 * 60 * 1000
+            const peering = w.o({ Peering: 1 })[0] as TheC | undefined
+            if (peering) for (const pier of (peering.o({ Pier: 1 }) as TheC[])) {
+                const pub = pier.sc.pub as string | undefined
+                if (!pub || pub === 'runner' || pub === 'editor') continue   // the role Pier IS the channel — never reaped here
+                const heard = Number((w.o({ Runner: pub })[0] as TheC | undefined)?.c.last_heard ?? 0)
+                const rung  = Number(pier.c.promoted_at ?? 0)
+                if (now - Math.max(heard, rung) <= PIER_CULL_MS) continue
+                peering.drop(pier); changed = true
+            }
             if (changed) w.bump_version()
             H.Lies_drain_runs(w)    // a freed runner may release a held (exhausted-queue) job — drive in-think
             H.Lies_drain_rungo(w)   // a now-live runner takes a rungo HELD through the post-reconnect fold lag
@@ -1190,10 +1217,16 @@
         //       3 busy (last resort — still beats broadcasting to all).  A just-dispatched runner (a fresh ☎,
         //        no book yet) counts as busy, so a BURST of jobs spreads across runners (multi-job→multi-runner).
         //   A manual aim (w.c.aim_runner) overrides.  undefined ⇒ no live runner → caller broadcasts (lone runner).
+        //   `needAC` (a %Storying,needAC Book): PREFER an ac-live runner (its advertised AudioContext is
+        //    already gesture-unlocked) over every favour tier — an AC-cold runner stalls the run up to 60s
+        //     on a human gesture, which is worse than borrowing another client's favourite.  PREFER, never
+        //      require: with no ac-live runner free we still dispatch (the runner's Sound Brink begs + the
+        //       editor sees 🎤 awaiting_audio) — requiring would deadlock a fresh fleet where no tab has
+        //        been granted AC yet, since the beg IS how the first grant happens.
         //   Returns {to} (a free runner to ring), {} (no live runner at all → caller broadcasts, fine for a
         //    lone runner), or {exhausted} (runners exist but ALL busy → HOLD the job, never steal a running
         //     one — the no-tailspin/no-clobber rule; Lies_queue_run/Lies_drain_runs pick it up when one frees).
-        Lies_dispatch_target(w: TheC): { to?: string; exhausted?: boolean } {
+        Lies_dispatch_target(w: TheC, needAC = false): { to?: string; exhausted?: boolean } {
             const H   = this as House
             if (H.Lies_role(w) !== 'editor') return {}
             const me  = H.Lies_self(w)?.prepub
@@ -1218,7 +1251,8 @@
             if (!free.length) return { exhausted: true }                         // all live runners busy → hold, don't steal
             const tier = (c: { pub: string, r?: TheC }) => {                     // among FREE: mine ▸ unclaimed ▸ other's-favourite
                 const f = c.r?.sc.favourite_client as string | undefined
-                return f && f !== me ? 2 : f === me ? 0 : 1
+                const base = f && f !== me ? 2 : f === me ? 0 : 1
+                return needAC && !c.r?.sc.ac ? base + 4 : base                   // needAC: every ac-live tier beats every ac-cold one
             }
             let best: { pub: string } | undefined, bestTier = 9
             for (const c of free) { const t = tier(c); if (t <= bestTier) { bestTier = t; best = c } }    // <= ⇒ latest wins ties
@@ -1259,10 +1293,11 @@
             const H = this as House
             const q = (w.c.pending_runs ?? []) as string[]
             if (!q.length) return
-            const pick = H.Lies_dispatch_target(w)
+            const needAC = !!H.Lies_book_needac?.(w, q[0])   // a held run carries only the name — re-read the board's %Storying,needAC
+            const pick = H.Lies_dispatch_target(w, needAC)
             if (pick.exhausted || pick.to === undefined) return   // still no free runner → keep waiting (no tailspin)
             const book = q.shift() as string
-            H.Lies_send_become_book(w, book, pick.to)
+            H.Lies_send_become_book(w, book, pick.to, needAC)
             H.tlog(`▶ drained held run ${book} → @${pick.to.slice(0, 8)} (${q.length} left)`)
         },
 
