@@ -316,9 +316,15 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             return wk && mk ? `Waft:${wk}/${mk}:${(cur_src.sc as any)[mk]}` : undefined
         })()
         // reuse the day's moment for this Doc — repeated deliveries into the same ghost
-        //  accumulate their Points on ONE What (the day's research trail), not a pile
-        const prior  = (aside.o({ What: 1 }) as TheC[]).find(m => (m.o({ Doc: path }) as TheC[]).length > 0)
-        const moment = prior ?? aside.i({ What: 1 })
+        //  accumulate their Points on ONE What (the day's research trail), not a pile.
+        //  A FRESH moment gets a SERIAL (What:1, What:2, …): every moment minted as What:1
+        //   was indistinguishable, so a %FromWhat locator (`Waft:Aside/YMD/What:N`) could
+        //    never address one.  max+1 (not count+1) so a deleted moment's number is never
+        //     reissued to mean something else.
+        const moments = aside.o({ What: 1 }) as TheC[]
+        const prior   = moments.find(m => (m.o({ Doc: path }) as TheC[]).length > 0)
+        const serial  = 1 + Math.max(0, ...moments.map(m => Number((m.sc as any).What) || 0))
+        const moment  = prior ?? aside.i({ What: serial })
         if (!prior) {
             if (fromWhat) moment.sc.FromWhat = fromWhat
             moment.i({ Doc: path })

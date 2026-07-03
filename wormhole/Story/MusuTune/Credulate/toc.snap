@@ -8,10 +8,10 @@ Credulate,of_Book:MusuTune
   GhostInclude:Ghost_M_Crate,dige:cdfe160ed23b1583
   GhostInclude:Ghost_M_Mixer,dige:a4a24e00de642d18
   GhostInclude:Ghost_M_Mesh,dige:286eb98843f6e7f9
-  GhostInclude:Ghost_Story_Musuation,dige:91abf28ec3db2f64
+  GhostInclude:Ghost_Story_Musuation,dige:ac8c5b7dc1441aea
   GhostInclude:Ghost_S_Swarm,dige:8dc83ba7f424731a
   GhostInclude:Ghost_Story_Swarmation,dige:79cfda846cb277d3
-  last_ok,at=1783064501.804,ok_pct
+  last_ok,at=1783082150.401,ok_pct
     uses:Ghost_N_Peeroleum,dige:054dff5c07f2987b
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -21,6 +21,6 @@ Credulate,of_Book:MusuTune
     uses:Ghost_M_Crate,dige:cdfe160ed23b1583
     uses:Ghost_M_Mixer,dige:a4a24e00de642d18
     uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
-    uses:Ghost_Story_Musuation,dige:91abf28ec3db2f64
+    uses:Ghost_Story_Musuation,dige:ac8c5b7dc1441aea
     uses:Ghost_S_Swarm,dige:8dc83ba7f424731a
     uses:Ghost_Story_Swarmation,dige:79cfda846cb277d3

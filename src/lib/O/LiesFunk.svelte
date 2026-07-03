@@ -30,6 +30,7 @@ import { storying_run } from "$lib/O/Funk/Storying.svelte"
 import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte"
 import { mint_grant, verify_grant, grant_to_C, grant_of_C, type GrantAtom } from "$lib/O/Funk/Grant"
 import { RemoteWormholeNav } from "$lib/O/RemoteWormholeNav.svelte"
+import { Dexie } from "dexie"
 import { onMount } from "svelte"
 
 let { M } = $props()
@@ -1034,6 +1035,10 @@ await M.eatfunc({
 //   encode fatal).  A scan PASS is polite: it indexes whatever %Goods have landed and requests
 //    at most READ_BUDGET new reads — the searchbar nudges passes while it's open, so the index
 //     converges over a few seconds the first time and is dige-gated per doc after that.
+//  A Dexie table (db 'stemdex', one projection row per doc, dige inside) makes that first
+//   time ONCE PER REPO, not once per session: the first pass warms the whole index from IDB,
+//    then disk truth re-scans only the dige-movers.  Strictly an accelerator — absent or
+//     failing IDB (node runner) degrades to the old cold scan, never to an error.
 //  Known drift: an open dock's unsaved buffer isn't seen (disk truth only).  The precise live
 //   layer for open docks — their compiled %Map defs — is the follow-up, not this pass.
 
@@ -1057,48 +1062,96 @@ await M.eatfunc({
             post:  new Map(),   // stem → Map<path, line[]>            (the freetext postings)
             defs:  new Map(),   // name.toLowerCase() → [{ name, kind, path, line }]
             props: new Map(),   // prop.toLowerCase() → [{ name, path, lines[] }]
-            total: 0, done: 0, missing: 0, pass: 0,
+            total: 0, done: 0, missing: 0, pass: 0,   // (+ scanning, warmed — pass-machinery flags)
         }
         return c.stemdex
     },
 
-    // ── Lies_stemdex_scan_text — index ONE doc's text (sync; replaces any prior entry) ────────
-    Lies_stemdex_scan_text(dex: any, path: string, dige: string, text: string) {
-        const H = this as House
-        // drop the old projection first, so a re-scan never doubles
-        const old = dex.docs.get(path)
-        if (old) {
-            for (const s of old.stems) { const p = dex.post.get(s); p?.delete(path); if (p && !p.size) dex.post.delete(s) }
-            for (const k of old.defs)  { const l = (dex.defs.get(k)  ?? []).filter((e: any) => e.path !== path); l.length ? dex.defs.set(k, l)  : dex.defs.delete(k) }
-            for (const k of old.props) { const l = (dex.props.get(k) ?? []).filter((e: any) => e.path !== path); l.length ? dex.props.set(k, l) : dex.props.delete(k) }
+    // ── Lies_stemdex_db — the Dexie cache: one row per doc, the SAME projection row that
+    //    Lies_stemdex_scan_text builds, keyed by path with the dige inside — so a fresh
+    //     session's first search warms from IDB instantly instead of re-reading the repo
+    //      through the store.  Browser-only ACCELERATOR: no indexedDB (a node runner) →
+    //       undefined, and every caller try/catches — the cache can slow a first search
+    //        when absent, never break one.  (When Stemdex_spec §3 lands, the row unit
+    //         shrinks from doc to region shard; same table, same shape-per-row idea.)
+    Lies_stemdex_db(): any {
+        if (typeof indexedDB === 'undefined') return undefined
+        const g = globalThis as any                        // one handle across HMR remixes
+        if (!g.__stemdex_db) {
+            const db = new Dexie('stemdex') as any
+            db.version(1).stores({ doc: 'path' })          // PK only; the row body is the projection
+            g.__stemdex_db = db
         }
+        return g.__stemdex_db
+    },
+
+    // ── Lies_stemdex_drop — remove one doc's projection from every index map ─────────────────
+    Lies_stemdex_drop(dex: any, path: string) {
+        const old = dex.docs.get(path)
+        if (!old) return
+        for (const s of old.stems) { const p = dex.post.get(s); p?.delete(path); if (p && !p.size) dex.post.delete(s) }
+        for (const k of old.defs)  { const l = (dex.defs.get(k)  ?? []).filter((e: any) => e.path !== path); l.length ? dex.defs.set(k, l)  : dex.defs.delete(k) }
+        for (const k of old.props) { const l = (dex.props.get(k) ?? []).filter((e: any) => e.path !== path); l.length ? dex.props.set(k, l) : dex.props.delete(k) }
+        dex.docs.delete(path)
+    },
+
+    // ── Lies_stemdex_adopt — splice ONE projection row into the index (drop-then-insert,
+    //    one sync block per doc: swap-don't-clear at the row grain).  The row is the
+    //     persistable shape — a fresh scan and a Dexie cache hit adopt IDENTICALLY.
+    Lies_stemdex_adopt(dex: any, row: any) {
+        this.Lies_stemdex_drop(dex, row.path)
+        const doc = { dige: row.dige, title: row.title, lines: row.lines,
+                      stems: Object.keys(row.post ?? {}), defs: [] as string[], props: [] as string[] }
+        for (const d of row.defs_e ?? []) {
+            const k = String(d.name).toLowerCase()
+            if (!doc.defs.includes(k)) doc.defs.push(k)
+            const l = dex.defs.get(k) ?? []
+            l.push({ name: d.name, kind: d.kind, path: row.path, line: d.line })
+            dex.defs.set(k, l)
+        }
+        for (const p of row.props_e ?? []) {
+            const k = String(p.name).toLowerCase()
+            if (!doc.props.includes(k)) doc.props.push(k)
+            const l = dex.props.get(k) ?? []
+            l.push({ name: p.name, path: row.path, lines: p.lines })
+            dex.props.set(k, l)
+        }
+        for (const s of doc.stems) {
+            let pm = dex.post.get(s)
+            if (!pm) dex.post.set(s, pm = new Map())
+            pm.set(row.path, row.post[s])
+        }
+        dex.docs.set(row.path, doc)
+    },
+
+    // ── Lies_stemdex_scan_text — index ONE doc's text; returns the projection ROW ────────────
+    //   Tokenises into a plain, structured-cloneable row (path, dige, title, clipped lines,
+    //    postings, def|prop entries), then adopts it — the caller persists the same row to
+    //     the Dexie cache, so what IDB replays later is literally what this scan produced.
+    Lies_stemdex_scan_text(dex: any, path: string, dige: string, text: string): any {
+        const H = this as House
         const TOKEN    = /[A-Z]+(?![a-z])|[A-Z][a-z]+|[a-z]+|[0-9]+/g   // StemHive's camel|snake splitter
         const RESERVED = new Set(['if', 'for', 'while', 'switch', 'catch', 'return', 'else', 'do',
             'new', 'typeof', 'await', 'async', 'function', 'super', 'import', 'export', 'const',
             'let', 'var', 'delete', 'void', 'in', 'of', 'case', 'throw', 'try', 'yield', 'with'])
-        const lines = text.split('\n')
-        const entry = { dige, title: H.Lies_waftmap_title(path), lines: [] as string[],
-                        stems: [] as string[], defs: [] as string[], props: [] as string[] }
-        const my_post = new Map<string, number[]>()
-        const push_def = (name: string, line: number, kind: string) => {
-            const k = name.toLowerCase()
-            if (!entry.defs.includes(k)) entry.defs.push(k)
-            const l = dex.defs.get(k) ?? []
-            l.push({ name, kind, path, line })
-            dex.defs.set(k, l)
-        }
+        const lines_in = text.split('\n')
+        const row = { path, dige, title: H.Lies_waftmap_title(path), lines: [] as string[],
+                      post: {} as Record<string, number[]>,
+                      defs_e:  [] as { name: string, kind: string, line: number }[],
+                      props_e: [] as { name: string, lines: number[] }[] }
+        const my_post  = new Map<string, number[]>()
+        const my_props = new Map<string, { name: string, lines: number[] }>()
+        const push_def  = (name: string, line: number, kind: string) => row.defs_e.push({ name, kind, line })
         const push_prop = (name: string, line: number) => {
             const k = name.toLowerCase()
-            let l = dex.props.get(k)
-            if (!l) dex.props.set(k, l = [])
-            let e = l.find((x: any) => x.path === path)
-            if (!e) { l.push(e = { name, path, lines: [] }); entry.props.push(k) }
+            let e = my_props.get(k)
+            if (!e) my_props.set(k, e = { name, lines: [] })
             if (e.lines.length < 4 && e.lines[e.lines.length - 1] !== line) e.lines.push(line)
         }
         const is_md = /\.md$/i.test(path)
-        for (let i = 0; i < lines.length; i++) {
-            const raw = lines[i], ln = i + 1
-            entry.lines.push(raw.length > 120 ? raw.slice(0, 120) : raw)   // clipped, for snippets
+        for (let i = 0; i < lines_in.length; i++) {
+            const raw = lines_in[i], ln = i + 1
+            row.lines.push(raw.length > 120 ? raw.slice(0, 120) : raw)   // clipped, for snippets
             for (const m of raw.matchAll(TOKEN)) {
                 const word = m[0]
                 if (word.length < 2 || /^\d+$/.test(word)) continue
@@ -1120,13 +1173,10 @@ await M.eatfunc({
             for (const m of raw.matchAll(/(?:\bsc|\.c)\.([A-Za-z_$][\w$]*)/g)) push_prop(m[1], ln)
             for (const m of raw.matchAll(/(?<![\w%$])%([A-Za-z]\w+)/g))        push_prop(m[1], ln)
         }
-        for (const [s, ls] of my_post) {
-            let p = dex.post.get(s)
-            if (!p) dex.post.set(s, p = new Map())
-            p.set(path, ls)
-        }
-        entry.stems = [...my_post.keys()]
-        dex.docs.set(path, entry)
+        for (const [s, ls] of my_post) row.post[s] = ls
+        row.props_e = [...my_props.values()]
+        this.Lies_stemdex_adopt(dex, row)
+        return row
     },
 
     // ── e_Lies_stemdex_scan — one polite pass: index landed %Goods, request a few more ────────
@@ -1140,6 +1190,20 @@ await M.eatfunc({
         if (dex.scanning) return
         dex.scanning = true
         try {
+            const db = H.Lies_stemdex_db()
+            // WARM once per session: starting to search touches the whole cache — every
+            //  projection row loads in one bulk IDB read and adopts as-is, so the very
+            //   first query answers from yesterday's index; disk truth then trickles in
+            //    and any doc whose dige moved re-scans below.  A stale cache heals, an
+            //     absent|failing one only means a slower first search.
+            if (!dex.warmed && db) {
+                dex.warmed = true
+                try {
+                    const rows = await db.doc.toArray()
+                    for (const row of rows) if (!dex.docs.has(row.path)) H.Lies_stemdex_adopt(dex, row)
+                } catch (err) { console.warn('🐝 stemdex cache warm failed', err) }
+            }
+
             // the roster: every Doc in every loaded Waft + the whole GhostList
             const paths = new Set<string>()
             for (const waft of w.o({ Waft: 1 }) as TheC[])
@@ -1159,6 +1223,7 @@ await M.eatfunc({
             const READ_BUDGET = 24, SCAN_BUDGET = 8
             const store = await H.LiesStore_req(w)
             let asked = 0, scanned = 0, done = 0, missing = 0
+            const fresh: any[] = []                                      // this pass's rows → the cache
             for (const path of paths) {
                 const good    = store.o({ Good: 1, type: 'text/Doc', path })[0] as TheC | undefined
                 const content = good?.c.content as string | null | undefined
@@ -1172,11 +1237,22 @@ await M.eatfunc({
                 if (!prior || prior.dige !== dige) {
                     if (scanned >= SCAN_BUDGET) continue                 // not yet done — next pass
                     scanned++
-                    H.Lies_stemdex_scan_text(dex, path, dige, content)
+                    fresh.push(H.Lies_stemdex_scan_text(dex, path, dige, content))
                 }
                 done++
             }
             dex.total = paths.size; dex.done = done; dex.missing = missing; dex.pass++
+
+            // persist this pass's work; prune cache rows whose doc left the corpus — but
+            //  only against a REAL roster (a half-booted GhostList must not empty the cache)
+            if (db) try {
+                if (fresh.length) await db.doc.bulkPut(fresh)
+                if (paths.size > 50) {
+                    const gone = [...dex.docs.keys()].filter(p => !paths.has(p))
+                    for (const p of gone) H.Lies_stemdex_drop(dex, p)
+                    if (gone.length) await db.doc.bulkDelete(gone)
+                }
+            } catch (err) { console.warn('🐝 stemdex cache save failed', err) }
         } finally { dex.scanning = false }
     },
 

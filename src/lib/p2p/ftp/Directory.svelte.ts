@@ -261,9 +261,15 @@ export class DirectoryListing {
     
     async expand() {
         if (!this.handle) throw erring('No directory access')
-        // if already expanded, it means return
-        this.files = []
-        this.directories = []
+        // Build ASIDE, assign once at the end — swap, don't clear.  This loop crosses an
+        //  await per entry, and .files|.directories are read concurrently (WormholeNav
+        //   walks, the editor serving several runners' wh ops at once): a reader landing
+        //    mid-expand must see a complete listing — old or new — never the cleared
+        //     intermediate.  [] here read as not_found for a file that EXISTS, which
+        //      upstream turned a recorded Story Book into 'new' mode and clobbered its
+        //       toc.snap fixture with a Step-less re-record.
+        const files: FileListing[] = []
+        const directories: DirectoryListing[] = []
         // < tabulates|reduces into a Selection later
         for await (const entry of this.handle.values()) {
             try {
@@ -273,14 +279,18 @@ export class DirectoryListing {
                 }
                 if (entry.kind === 'file') {
                     const file = await entry.getFile();
-                    this.files.push(new FileListing({
+                    files.push(new FileListing({
                         ...generally,
                         size: file.size,
                         modified: new Date(file.lastModified),
                     }));
                 } else {
                     // < dirs don't have mtime. put a cache of Stuff in each one?
-                    this.directories.push(new DirectoryListing({
+                    // reuse the existing child listing: cached walkers (WormholeNav._cache)
+                    //  and open UIs keep their object, its expanded state, its own children
+                    const prior = this.directories.find(d => d.name === entry.name)
+                    if (prior) { prior.handle = entry; directories.push(prior) }
+                    else directories.push(new DirectoryListing({
                         handle: entry,
                         ...generally,
                     }));
@@ -289,8 +299,8 @@ export class DirectoryListing {
                 console.warn(`Skipping problematic entry ${entry.name}:`, err);
             }
         }
-        this.files = this.files.sort(sort_by_name)
-        this.directories = this.directories.sort(sort_by_name)
+        this.files = files.sort(sort_by_name)
+        this.directories = directories.sort(sort_by_name)
         this.expanded = true
         return this
     }

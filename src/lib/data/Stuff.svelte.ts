@@ -1138,6 +1138,9 @@ export class Stuffing {
     groups: Map<string, Stuffusion> = $state(new Map())
     started = $state(false)
     matchy?: Matchy
+    // self_row: the single row is the %Stuff particle ITSELF (its own k:v), not its children —
+    //  how a leaf or structural particle renders as a stuffing (Cyto chunk self-mode)
+    self_row?: boolean
 
     constructor(Stuff: Stuff, matchy?: Matchy) {
         this.Stuff = Stuff
@@ -1147,6 +1150,7 @@ export class Stuffing {
 
     // matchy-aware row selection from %Stuff
     get_matching_rows(): TheN {
+        if (this.self_row) return [this.Stuff as unknown as TheC]
         let matches = this.matchy?.see || []
         if (!matches.length) matches = [{}]
         let N: TheN = []

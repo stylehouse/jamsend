@@ -14,6 +14,12 @@ Companions: `reactivity_docs.md` (the time discipline everything below obeys),
   (`sc.key` | `.c.key` | `%Notation` — the particle vocabulary), **stems** (camel|snake-split
    tokens, lightly stemmed; postings stem → path → lines).  `e_Lies_stemdex_scan` is a polite
     pass (≤24 store reads + ≤8 whole-file scans, dige-gated per doc, awaited — limbs in Atime);
+     a **Dexie cache** (db `stemdex`, one projection row per doc, dige inside) warms the whole
+      index on the first pass — the first search of a session answers from yesterday's index
+       while disk truth trickles in and re-scans only the dige-movers; rows persist at
+        pass-end (bulkPut) and prune with the roster.  Strictly an accelerator: no IDB (node
+         runner) → the old cold scan.  When §3's regions land, the cached row unit shrinks
+          from doc to region shard — same table, same row-shape idea;
      `Lies_search` is a pure sync query (exact ▸ prefix ▸ substring name tiers; AND-across-
       tokens freetext ranked by hit mass).  Fed from the `%Good text/Doc` disk cache only —
        covers every doc in the loaded Wafts + the whole GhostList, opened or not; %Goods are

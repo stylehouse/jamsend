@@ -20,8 +20,8 @@
     import Lens       from "$lib/O/ui/Lens.svelte"
     import Stuffing   from "$lib/data/Stuffing.svelte"
     import Searchbar  from "$lib/O/ui/Searchbar.svelte"
-    import FaceSucker from "$lib/p2p/ui/FaceSucker.svelte"
-    import { onDestroy, onMount } from "svelte"
+    import BootGate   from "$lib/O/ui/BootGate.svelte"
+    import { onDestroy } from "svelte"
     import { boot_param } from "$lib/boot"
 
     //#region H:Mundo — construction, mirroring Otro
@@ -55,56 +55,6 @@
     let houses: House[] = $state([])
 
     onDestroy(() => { H?.stop() })
-    //#endregion
-
-    //#region gates — disk + audio (Otro's mechanics)
-    // Under a dev boot the OPFS-from-github shadow disk is illegal; DirectoryOpener raises
-    //  H.c.disk_gated until a real share opens.  Unlike Otro we do NOT suppress the pure-
-    //   audio gate for editor boots: the Brink's Sound face lives INSIDE Liesui, and Lies
-    //    hides in this room — so the fullscreen tap is the only reachable beg.
-    let disk_poll = $state(0)
-    let ac_poll   = $state(0)
-    let pending_gats: any[] = []
-    onMount(() => {
-        const iv = setInterval(() => disk_poll++, 400)
-        const on_want = (e: any) => {
-            const g = e?.detail?.gat
-            if (g && !g.AC_ready && !pending_gats.includes(g)) { pending_gats.push(g); ac_poll++ }
-        }
-        window.addEventListener('AudioContext_wanted', on_want)
-        return () => { clearInterval(iv); window.removeEventListener('AudioContext_wanted', on_want) }
-    })
-    let disk_gated = $derived.by(() => { disk_poll; return !!H?.c.disk_gated })
-    let ac_wanted  = $derived.by(() => { disk_poll; ac_poll; return pending_gats.some(g => !g?.AC_ready) })
-    let share_error   = $state('')
-    let opening_share = $state(false)
-    async function wake_gat(g: any): Promise<boolean> {
-        try {
-            if (!g) return false
-            if (!g.AC) { await g.init?.(); return !!g.AC_ready }
-            return !!(await g.AC_OK?.())
-        } catch { return false }
-    }
-    async function open_share() {
-        share_error = ''
-        opening_share = true
-        const wakes = pending_gats.map(wake_gat)          // AC resume|init — within the gesture
-        let disk_p: Promise<any> | null = null
-        if (disk_gated) {
-            const act = H?.o({ watched: 'actions' })[0]?.o({ action: 1, role: 'open_dir' })[0]
-            if (!act?.sc.fn) { share_error = 'wormhole not ready yet — a moment'; opening_share = false; return }
-            disk_p = act.sc.fn()                          // requestDirectoryAccess() — same gesture
-        }
-        try {
-            await Promise.all(wakes)
-            if (disk_p) await disk_p
-        } catch (e) { share_error = String(e) }
-        finally {
-            pending_gats = pending_gats.filter(g => !g?.AC_ready)
-            ac_poll++
-            opening_share = false
-        }
-    }
     //#endregion
 
     //#region the room's own state
@@ -156,28 +106,9 @@
     //#endregion
 </script>
 
-{#if disk_gated || ac_wanted}
-    <FaceSucker altitude={77} fullscreen={true}>
-        {#snippet content()}
-            <div class="bw-gate">
-                {#if disk_gated}
-                    <h2>the room needs a real folder</h2>
-                    <p>OPFS is disabled while developing — open a shared directory so the
-                        machine reads &amp; writes the real project tree.{#if ac_wanted} The
-                        same tap also starts audio.{/if}</p>
-                {:else}
-                    <h2>the room needs a tap for sound</h2>
-                    <p>The share is already open; audio just needs one gesture to start
-                        (browser autoplay policy).</p>
-                {/if}
-                <button class="big" onclick={open_share} disabled={opening_share}>
-                    {opening_share ? 'opening…' : '📂 open share'}
-                </button>
-                {#if share_error}<p class="bw-gate-err">{share_error}</p>{/if}
-            </div>
-        {/snippet}
-    </FaceSucker>
-{/if}
+<!-- the shared boot gate; audio begs fullscreen here — the Brink (its usual home) lives
+     inside Liesui, and Lies hides in this room -->
+<BootGate {H} who="the room" audio_fullscreen={true} />
 
 <div class="bw">
     <!-- the top bar: room name · the H** toc · Lies summon · the searchbar -->
@@ -364,16 +295,4 @@
     }
     .bw-pin-x:hover { color: #ff9a9a; }
 
-    /* the fullscreen gate (disk|audio) — Otro's, restyled for the dark room */
-    .bw-gate {
-        position: absolute; inset: 0;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        gap: 1rem; text-align: center; color: #d7edff; padding: 2rem;
-        font-family: monospace;
-    }
-    .bw-gate h2 { margin: 0; font-size: 1.5rem; }
-    .bw-gate p  { max-width: 28rem; opacity: 0.8; }
-    .bw-gate button.big { font-size: 1.35rem; padding: 0.7em 1.2em; cursor: pointer; }
-    .bw-gate button:disabled { opacity: 0.5; cursor: default; }
-    .bw-gate-err { color: #ff8a8a; font-size: 0.9rem; }
 </style>

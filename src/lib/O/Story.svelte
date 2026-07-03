@@ -1479,7 +1479,22 @@
             if (!H.i_elvis_req(w, 'Wormhole', 'wh_op', { req: toc_req }))
                 return w.i({ see: '⏳ toc...' })
 
-            const toc_snap = toc_req.sc.reply?.toc_snap ?? ''
+            // A FAILED read must never decode as an empty toc: decode('') flips the run
+            //  to 'new' mode, and the next story_save writes a Step-less skeleton over
+            //   the recorded fixture (that clobber shipped 2026-07-04 — a proxy runner's
+            //    read_toc raced the editor's DirectoryListing.expand and got not_found
+            //     for a Book that was on disk).  error → drop the req and re-ask, loudly,
+            //      forever; the first not_found → re-ask ONCE to confirm before accepting
+            //       new-Book status.  A genuinely new Book pays one extra round-trip.
+            const reply = toc_req.sc.reply
+            if (reply?.error || (reply?.not_found && !run.c.toc_notfound_once)) {
+                if (reply?.not_found) run.c.toc_notfound_once = true
+                wh.drop(toc_req)
+                return w.i({ see: reply?.error
+                    ? `📭 toc read failed: ${reply.error} — retrying`
+                    : '📭 toc not found — confirming...' })
+            }
+            const toc_snap = reply?.toc_snap ?? ''
             H.decode_toc_snap(toc_snap, w)   // fills The + pre-creates hollow This/{Step:N}
 
             const step_count = (w.c.The)?.o({ step: 1 }).length ?? 0

@@ -1604,6 +1604,11 @@ export class House extends StorableHousing {
     stuffing_registry: Map<string, StuffingEntry> = new Map()
     _stuffing_pending = false
     register_stuffing(path: string, C: TheC, handler: () => void): () => void {
+        // the registry is a Map — a path COLLISION (two mounted Stuffings deliberately sharing
+        //  one Modusmem stash, eg same-key sibling chunks in Cyto) would overwrite the earlier
+        //   entry and its handler never fires again: a permanently EMPTY Stuffing.  The stash
+        //    may be shared; the registration may not — individuate the key.
+        while (this.stuffing_registry.has(path)) path += "'"
         const entry: StuffingEntry = { path, C, handler, last_matrix: [] }
         this.stuffing_registry.set(path, entry)
         if (!this._stuffing_pending) {
@@ -2079,7 +2084,13 @@ export class WormholeNav {
         const dir = await this.dir(...parts)
         if (!dir) return null
         if (!dir.expanded) await dir.expand()
-        if (!dir.files.find(f => f.name === filename)) return null
+        if (!dir.files.find(f => f.name === filename)) {
+            // the cached listing may predate the file (written since by another op|tab) —
+            //  re-list once before answering not_found: a false "no" here is DESTRUCTIVE
+            //   upstream (Story reads an absent toc as a NEW Book and re-records over it)
+            await dir.expand()
+            if (!dir.files.find(f => f.name === filename)) return null
+        }
         const reader = await dir.getReader(filename)
         const chunks: ArrayBuffer[] = []
         for await (const chunk of reader.iterate()) chunks.push(chunk)

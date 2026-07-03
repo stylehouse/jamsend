@@ -52,17 +52,19 @@
         clear()
     }
 
-    // ── the hive — every matched name with its full path, ONE list sorted by path ─────────
+    // ── the hive — every matched name with its full path: ƒ functions FIRST, then %
+    //    properties, then ≈ freetext; sorted by path within each kind ─────────────────────
     //   the point spec per hit kind: a def navigates by NAME (exact-def first, ranked
     //    fallback); a prop|text hit rides the literal text: Point bridge (pre-compile, any doc)
     const hive = $derived.by(() => {
         if (!results) return []
         const rows: any[] = []
-        for (const h of results.defs  ?? []) rows.push({ ...h, glyph: 'ƒ', point: h.name })
-        for (const h of results.props ?? []) rows.push({ ...h, glyph: '%', point: 'text:' + h.name })
-        for (const h of results.texts ?? []) rows.push({ ...h, glyph: '≈', name: h.title,
+        for (const h of results.defs  ?? []) rows.push({ ...h, glyph: 'ƒ', rank: 0, point: h.name })
+        for (const h of results.props ?? []) rows.push({ ...h, glyph: '%', rank: 1, point: 'text:' + h.name })
+        for (const h of results.texts ?? []) rows.push({ ...h, glyph: '≈', rank: 2, name: h.title,
                                                          point: 'text:' + (q.trim().split(/\s+/)[0] ?? '') })
-        rows.sort((a, b) => String(a.path).localeCompare(String(b.path)) || ((a.line ?? 0) - (b.line ?? 0)))
+        rows.sort((a, b) => (a.rank - b.rank)
+            || String(a.path).localeCompare(String(b.path)) || ((a.line ?? 0) - (b.line ?? 0)))
         return rows
     })
 

@@ -3331,10 +3331,15 @@ async Repli_sent_se(w, library, pier):
 //  Idempotent + cheap — MusuReplica runs it every beat so the tree tracks collections growing.
 //   The tree itself is stuffed at birth (it is homogeneous meta by construction) but never walked —
 //    the report card folds into one chunk without counting itself.
+//  GATED on the Book opt %crushCyto (toc Opt/For/w:<Book>/crushCyto, pushed into w/%Opt at
+//   settingoff): the whole machinery — stamps, skin, tree — stays off unless the Book asks,
+//    so no other test's graph or snap ever meets it.
 Repli_crush_scan(w):
+    if (!w.o({ Opt: 1 })[0]?.oa({ crushCyto: 1 })) return null
     let tree = w.oai({ Crush_Tree: 1 })
     tree.c.up = w
     if (!tree.sc.stuff) { tree.sc.stuff = 1; tree.bump() }
+    tree.c.stuffy = 1
     this.Repli_crush_walk(tree, w, '', 0)
     return tree
 
@@ -3342,13 +3347,20 @@ Repli_crush_scan(w):
 //  are walked THROUGH; a crushed container's subtree is NOT descended (folded here = folded in the
 //   Cyto walk, the same cut).  `at` accumulates name-ish keys so the same container kind under two
 //    Piers earns two distinct Ds (DJ.Crowd.outbox vs Crowd.DJ.outbox).
+//  EVERYTHING the walk touches gets c.stuffy (a c-side presentation flag, never snapped) — folded
+//   chunks included: c.stuffy IS the crushCyto skin in Cyto (self-row stuffings for spine + leaves,
+//    children-Stuffing where %stuff rides beside it), so a plain un-crushed %stuff elsewhere keeps
+//     the classic labelled look (%Pier, reached:step_2, a lone Ud — all stuffings here).
 Repli_crush_walk(tree, node, at, d):
     if (d > 8) return
     for (const c of node.o()) {
         let mk = Object.keys(c.sc)[0]
         if (mk === 'Crush_Tree') continue
         let nameish = c.sc.name || c.sc.pub || c.sc.pier || c.sc.id || ''
-        if (mk === 'w' || mk === 'H' || mk === 'A' || mk === 'Peering' || mk === 'Pier' || mk === 'req') {
+        // Opt rides with the spine: it is equipment (the pushed Book opts), not data — folding it
+        //  would count a phantom chunk in the report card (and crowd the ≤9 single-digit %see).
+        if (mk === 'w' || mk === 'H' || mk === 'A' || mk === 'Peering' || mk === 'Pier' || mk === 'req' || mk === 'Opt') {
+            c.c.stuffy = 1
             let oat = nameish ? (at ? at + '.' + nameish : '' + nameish) : at
             this.Repli_crush_walk(tree, c, oat, d + 1)
             continue
@@ -3356,6 +3368,7 @@ Repli_crush_walk(tree, node, at, d):
         let verdict = this.Repli_crushable(c)
         if (verdict) {
             if (!c.sc.stuff) { c.sc.stuff = 1; c.bump() }
+            c.c.stuffy = 1
             let ident = (at ? at + '.' : '') + mk + (nameish ? '.' + nameish : '')
             let D = tree.oai({ Crush: ident })
             D.c.up = tree
@@ -3365,6 +3378,7 @@ Repli_crush_walk(tree, node, at, d):
             D.c.crushed = c
             continue
         }
+        c.c.stuffy = 1
         this.Repli_crush_walk(tree, c, at, d + 1)
     }
 

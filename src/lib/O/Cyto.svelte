@@ -468,6 +468,9 @@
                     //  the live particle rides the wave entry's .c (stamped in make_wave from source_n).
                     C.sc.overlay_kind = nd.overlay_kind
                     if (nd.overlay_bg) C.sc.overlay_bg = nd.overlay_bg
+                    // self-mode stuffing (show the particle itself, not children) — from the DRAWN n,
+                    //  not source_n, so stuff_of peeks (children of another tree) keep their meaning
+                    if (nd.overlay_self) C.sc.overlay_self = 1
                 }
 
                 // a stuffed container FOLDS: this node hosts the Stuffing overlay (the ×N groups) and
@@ -489,7 +492,13 @@
                     // uplinks forming trees of / ness
                     if (parentC.sc.cyto_node && !parentC.sc.isCompound) {
                         C.i({cyto_edge:1,scan_id,
-                            source:parentC, label:"/", target:C})
+                            source:parentC, label:"/", target:C,
+                            // the crushed skin pulls its wiring TOGETHER and makes it VISIBLE:
+                            //  shorter fcose ideal_length, and a fatter brighter line than the
+                            //   base 1.2px #2a2a2a which vanishes between the big chunk ovals.
+                            ...(n.c.stuffy ? { ideal_length: 40,
+                                style: { width: 2.5, 'line-color': '#6688aa', opacity: 0.8 } } : {}),
+                        })
                     }
                 }
             },
@@ -657,19 +666,44 @@
         //   carries the real material. No overlay_str — the 'stuff' kind tells Cytui to mount the
         //    component, not paint text. source_n rides the wave entry's .c to reach the live particle.
         //  descent is suppressed in cyto_scan (T.sc.no_further) — the subtree rides as the overlay's
-        //   folded ×N groups, never as graph nodes.  The label carries the fold size for zoomed-out
-        //    reading (the overlay hides below zoom 0.3, the label doesn't).
-        //  The node is an OVAL slightly wider than the Stuffing riding on it: the overlay is
-        //   transparent + self-sizing and Cytui's reposition grows the oval to wrap it (width/height
-        //    here are only the birth size; the auto-sizer owns them after).  The border takes the
-        //     mainkey's Matstyle colour so a chunk reads as its class even zoomed out.
-        if (n.sc.stuff != null) {
+        //   folded ×N groups, never as graph nodes.  In the classic skin the label carries the fold
+        //    size for zoomed-out reading (the overlay hides below zoom 0.3, the label doesn't).
+        //  The node is an OVAL just peeking out the sides of the Stuffing riding on it: the overlay
+        //   is transparent + self-sizing and Cytui's size_stuff_node grows the oval to it (width/
+        //    height here are only the birth size).  The border takes the mainkey's Matstyle colour
+        //     so a chunk reads as its class even zoomed out.
+        //  Two skins:
+        //   c.stuffy — the CRUSHED-WORLD skin, gated behind the Book opt %crushCyto: only the
+        //    (itself opt-gated) crusher stamps it, on EVERYTHING it touches — folded chunks
+        //     included — so this look never leaks into other Books' graphs (Leaf* check that
+        //      Cyto basically works).  No heading (the Stuffing IS the words); sc.stuff beside
+        //       it = FOLDED (Stuffing of the children, descent suppressed), without = the
+        //        particle ITSELF as one row (overlay_self).
+        //   plain sc.stuff — the classic labelled stuff-chunk (AwFloat's stuff_of peeks etc).
+        if (n.sc.stuff != null || n.c.stuffy) {
             const key = this.mainkey(n)
             let border = '#266ed9'
             const stylesC = w.c.Styles as TheC | null | undefined
             if (key && stylesC) {
                 const ms = this.matstyle_get_or_create(stylesC, key)
                 border = (this.ms_css(ms)['background-color'] as string) ?? border
+            }
+            if (n.c.stuffy) {
+                const folded = n.sc.stuff != null
+                return {
+                    label: '',
+                    overlay_kind: 'stuff',
+                    ...(folded ? {} : { overlay_self: 1 }),
+                    style: {
+                        'background-color': '#04202a',
+                        'background-opacity': 0.85,
+                        'border-width': 2,
+                        'border-color': border,
+                        shape: 'ellipse',
+                        width:  folded ? 220 : 110,
+                        height: folded ? 120 : 44,
+                    },
+                }
             }
             return {
                 label: `${key} ×${n.o().length}`,
@@ -1122,6 +1156,9 @@
                         wave.i({ edge_upsert: 1, id: eid, ...etc,
                             source: C.sc.source_id, target: C.sc.target_id,
                             style:  C.sc.style ?? {},
+                            // flat on the entry too — Cytui's apply() reads ed.sc.ideal_length;
+                            //  the data:{} object only feeds the snap encoder's data children.
+                            ...(C.sc.ideal_length != null ? { ideal_length: C.sc.ideal_length } : {}),
                             data: sex({},C.sc,['ideal_length'])
                         })
                     } else if (style_ch) {
@@ -1157,6 +1194,7 @@
                     if (C.sc.overlay_str)  etc.overlay_str  = C.sc.overlay_str
                     if (C.sc.overlay_kind) etc.overlay_kind = C.sc.overlay_kind
                     if (C.sc.overlay_bg)   etc.overlay_bg   = C.sc.overlay_bg
+                    if (C.sc.overlay_self) etc.overlay_self = C.sc.overlay_self
                     const entry = wave.i({ upsert: 1, id, ...etc })
                     // ferry the LIVE particle to Cytui for a component overlay (eg 'stuff' → mount a
                     //  Stuffing of it). A .c ref, never encoded — it rides the in-process graph channel.
@@ -1170,6 +1208,7 @@
                         ...(C.sc.overlay_str  ? { overlay_str:  C.sc.overlay_str  } : {}),
                         ...(C.sc.overlay_kind ? { overlay_kind: C.sc.overlay_kind } : {}),
                         ...(C.sc.overlay_bg   ? { overlay_bg:   C.sc.overlay_bg   } : {}),
+                        ...(C.sc.overlay_self ? { overlay_self: C.sc.overlay_self } : {}),
                     })
                     if (C.sc.overlay_kind === 'stuff' && C.c.source_n) entry.c.source_n = C.c.source_n
                 }

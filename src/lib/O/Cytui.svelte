@@ -372,7 +372,25 @@
     //  particle, mounted into the overlay div. source_n is the live particle, ferried on the wave entry's
     //   .c (Cyto.make_wave). House IS the Modus, so a per-node mem (H.imem) keeps each Stuffing's
     //    registration distinct in the refresh climb. H is passed (imperative mount has no Svelte context).
-    function create_stuff_overlay(id: string, source_n: TheC | undefined, bg?: string) {
+    // stuff_stash_key: a STABLE identity for a chunk's Modusmem, so Stuffing openness
+    //  (mem 'openness' → .stashed) survives re-scans and reloads — scan ids don't.  Built from
+    //   the particle's mainkey:value plus up to three c.up ancestors' name-ish bits
+    //    (DJ/Crowd.outbox ≠ Crowd/DJ.outbox).  Same-key siblings (eg awaitbuf reqs) still
+    //     collide — they share one stash and toggle together; acceptable until it isn't.
+    function stuff_stash_key(n: TheC): string {
+        const bit = (p: any) => {
+            const mk = Object.keys(p.sc ?? {})[0] ?? '?'
+            const v  = p.sc?.[mk]
+            const nm = (v !== 1 && v != null) ? v : (p.sc?.name ?? p.sc?.pub ?? p.sc?.pier ?? p.sc?.id ?? '')
+            return nm !== '' ? `${mk}:${nm}` : mk
+        }
+        const parts: string[] = []
+        let p: any = n, d = 0
+        while (p && d < 4) { parts.unshift(bit(p)); p = p.c?.up; d++ }
+        return parts.join('/')
+    }
+
+    function create_stuff_overlay(id: string, source_n: TheC | undefined, bg?: string, self_mode?: boolean) {
         if (!overlay_container || !source_n) return
         if (overlays.has(id)) return   // already mounted — the Stuffing self-refreshes via register_stuffing
         const el = document.createElement('div')
@@ -383,8 +401,8 @@
         overlays.set(id, el)
         // seed the zoom-scaled font BEFORE the first measure, else the observer sizes off 16px
         if (cy) el.style.fontSize = `${Math.max(6, 12 * cy.zoom())}px`
-        const mem = (H as any).imem('cytostuff:' + id)
-        const app = mount(Stuffing, { target: el, props: { stuff: source_n, mem, H } })
+        const mem = (H as any).imem('cytostuff:' + stuff_stash_key(source_n))
+        const app = mount(Stuffing, { target: el, props: { stuff: source_n, mem, H, self_row: !!self_mode } })
         // grow the node when the Stuffing's rendered size changes — content events only (commits,
         //  zoom font steps), not render frames, so the layout can settle between waves (waitCyto).
         const ro = new ResizeObserver(() => size_stuff_node(id, el))
@@ -392,10 +410,11 @@
         stuff_mounts.set(id, { app, ro })
     }
 
-    // size_stuff_node: the oval slightly wider than the Stuffing riding on it.  Converts the
-    //  overlay's rendered size to model units and pads it so the ellipse wraps the content
-    //   corners.  The delta gate keeps zoom-driven observer fires (content px scale ~linearly
-    //    with zoom → model size ~constant) from writing styles at all.
+    // size_stuff_node: the oval stays REASONABLE — it just peeks out the sides of the Stuffing
+    //  (a small fixed wing each side) and sits slightly SHORTER than the content, so the Stuffing
+    //   reads as the material and the oval as its rim.  Model units (rendered px / zoom).  The
+    //    delta gate keeps zoom-driven observer fires (content px ~linear with zoom → model size
+    //     ~constant) from writing styles at all.
     function size_stuff_node(id: string, el: HTMLElement) {
         if (!cy) return
         const node = cy.getElementById(id)
@@ -403,8 +422,15 @@
         const zoom = cy.zoom()
         const cw = el.offsetWidth, ch = el.offsetHeight
         if (!(zoom > 0) || cw < 5) return
-        const want_w = Math.round((cw / zoom) * 1.3 + 12)
-        const want_h = Math.round((ch / zoom) * 1.35 + 10)
+        // re-center on the node too — the overlay grows from its top-left, so a content-size
+        //  change (a group toggled open, a zoom font step) skews it off the node until the next
+        //   pan/zoom.  This is the content-event twin of reposition_overlays' centering; the
+        //    node's center doesn't move when we restyle its size, so current pos is right.
+        const pos = node.renderedPosition()
+        el.style.left = `${pos.x - cw / 2}px`
+        el.style.top  = `${pos.y - ch / 2}px`
+        const want_w = Math.round(cw / zoom + 26)
+        const want_h = Math.max(18, Math.round((ch / zoom) * 0.92))
         if (Math.abs(node.width() - want_w) > 6 || Math.abs(node.height() - want_h) > 6)
             node.style({ width: want_w, height: want_h })
     }
@@ -562,7 +588,8 @@
             const overlay_kind = nd.sc.overlay_kind as string | undefined
             const overlay_bg   = nd.sc.overlay_bg   as string | undefined
             if (overlay_kind === 'stuff') {
-                create_stuff_overlay(id, (nd as any).c?.source_n as TheC | undefined, overlay_bg)
+                create_stuff_overlay(id, (nd as any).c?.source_n as TheC | undefined, overlay_bg,
+                    !!nd.sc.overlay_self)
             } else if (overlay_str != null) {
                 create_overlay(id, overlay_str, overlay_kind ?? 'code', overlay_bg)
             }
@@ -998,10 +1025,16 @@
     height: max-content;
     max-width: 520px;
 }
-/* the outer Stuffing pill would double the chunk's chrome — the oval IS the pill now.
-   !important outguns the component-scoped .stuffing rule; nested Stuffings keep theirs. */
+/* the outer Stuffing keeps its SOLID background (visual clarity — the rows must not blend
+   into edges and nodes behind the chunk); only its border goes, so the chunk's chrome is the
+   oval's Matstyle rim alone.  !important outguns the component-scoped .stuffing rule;
+   nested Stuffings keep theirs. */
 :global(.stuff-overlay > .stuffing) {
-    background: transparent !important;
     border: none !important;
+}
+/* the Stuffing's toggles stay CLICKABLE (expand bits; openness persists via Modusmem stash) while
+   everything else passes through to the oval for dragging — buttons are the interaction surface. */
+:global(.stuff-overlay button) {
+    pointer-events: auto;
 }
 </style>

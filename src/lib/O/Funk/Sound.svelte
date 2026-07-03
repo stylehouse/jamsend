@@ -39,7 +39,13 @@
     // map first (creates the resume|init promises within the gesture), await after — the gesture rule.
     function wake() {
         const wakes = pending.map(wake_gat)
-        Promise.all(wakes).finally(() => { pending = pending.filter(g => !g?.AC_ready); tick++ })
+        Promise.all(wakes).finally(() => {
+            const woke = pending.some(g => g?.AC_ready)
+            pending = pending.filter(g => !g?.AC_ready); tick++
+            // tell the editor our AudioContext is live NOW — a runner re-advertises ac:1 instantly
+            //  instead of waiting for the next ~5s keepalive to notice the flip (a no-op on an editor).
+            if (woke) (H as any).Lies_ac_nudge?.()
+        })
     }
 </script>
 

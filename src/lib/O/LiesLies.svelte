@@ -254,6 +254,19 @@
                         H.tlog(`🪪 ws SEND control:hello ${header.from}`)
                     } catch { /* no key | relay down — reconnect re-dials, ?addr= meanwhile carries */ }
                 })
+                // The moment the socket OPENS — first connect AND every reconnect — fire an immediate
+                //  ping + (runner) advertise so the peer clears its "dialing ◌" face within one RTT
+                //   instead of waiting out the 5s keepalive tick (ping) or the 15s beacon (advertise).
+                //    Clear the throttles first: a reconnect's stale last_ping/last_advertise would gate
+                //     the very re-announce the returning socket most needs to send.  Stamp socket_heard
+                //      too — a fresh open IS the carrier working, so the stale-heard watchdog on the next
+                //       keepalive tick doesn't mistake this brand-new socket for a DEAD one and re-dial it.
+                //    NOT routed through Lies_keepalive: that would run the DEAD/SLUGGISH watchdog against
+                //     the stale pre-drop `heard` and could spuriously tear the socket we just brought up.
+                port.on_open(() => {
+                    w.c.last_ping = 0; w.c.last_advertise = 0; w.c.socket_heard = Date.now()
+                    try { H.Lies_ping(w); (H as any).Lies_advertise(w) } catch { /* next tick */ }
+                })
             }
             ;(H as any).Tribunal_activate_websocket(w)
 
@@ -1088,8 +1101,16 @@
             const self = (H as any).Lies_self?.(w) as { prepub: string } | undefined
             if (!self?.prepub) return
             const now = Date.now()
-            if (w.c.last_advertise && now - (w.c.last_advertise as number) < 15000) return   // ~15s beacon
+            // AudioContext gesture-lock state — advertised as the `ac` facet (a needAC dispatch prefers an
+            //  ac-live runner).  A CHANGE here (the human just tapped "tap for sound", or it lapsed) JUMPS
+            //   the ~15s throttle: re-advertise NOW so the editor's roster ac facet / needAC beg clears
+            //    within a keepalive tick instead of up to 15s later.  (Generalises — any material facet
+            //     worth clearing fast can jump the beacon the same way; ac is the one that stalls a run.)
+            const ac_now     = !!(H.top_House().c as any).musu_gat?.AC_ready
+            const ac_changed = ac_now !== !!w.c.last_ac_sent
+            if (!ac_changed && w.c.last_advertise && now - (w.c.last_advertise as number) < 15000) return   // ~15s beacon
             w.c.last_advertise = now
+            w.c.last_ac_sent = ac_now
             const eng = (H as any).Lies_engagement?.(w) as { client?: string; status?: string } | undefined
             ;(H as any).Peeroleum_send_consumer(w, 'advertise', {
                 from: self.prepub,
@@ -1106,7 +1127,7 @@
                 //   cached context).  Present-or-absent like a snapped boolean; a needAC dispatch
                 //    prefers an ac-live runner so the run doesn't stall ~60s begging for a gesture
                 //     (advertise first, then match — the needAC arc: spec/Runner_quality_handover.md).
-                ...((H.top_House().c as any).musu_gat?.AC_ready ? { ac: 1 } : {}),
+                ...(ac_now ? { ac: 1 } : {}),
                 // (no favourite_client on the beacon: the editor sources it from the Waft:Cluster/
                 //  %HostedIdentity registry — advertise_recv reads hi.sc.favourite_client and ignores any
                 //   wire copy — so broadcasting it to every client each beat was dead weight.  The
@@ -1114,6 +1135,19 @@
                 //     dige-sync TODO below, which collapses this whole hand-kept field list.)
             })
         },
+        // Lies_ac_nudge — the Sound Brink calls this the instant a gesture unlocks (or an init settles)
+        //  the AudioContext, so the runner re-advertises ac:1 to the editor NOW rather than waiting for
+        //   the next ~5s keepalive to notice the flip (Lies_advertise's ac_changed jump).  Self-locates
+        //    w:Lies — the Sound face's own `w` isn't the channel world — and clears the throttle so the
+        //     re-advertise fires this beat; a no-op off a runner channel (advertise is runner-gated).
+        Lies_ac_nudge() {
+            const H = this as House
+            const w = ((H.o({ A: 'Lies' })[0] ?? H.top_House().o({ A: 'Lies' })[0]) as TheC | undefined)?.o({ w: 'Lies' })[0] as TheC | undefined
+            if (!w) return
+            w.c.last_advertise = 0                 // bypass the 15s beacon throttle
+            ;(H as any).Lies_advertise(w)
+        },
+
         // Lies_advertise_recv — the runner→editor presence beacon lands here, on the EPHEMERAL route,
         //  which dispatches OFF-think (no mutex held).  So this does the bare minimum that's lock-safe:
         //   park the beacon on w.c.beacons (pure .c, no snap-tree mutation).  The in-think Lies_runner_roster

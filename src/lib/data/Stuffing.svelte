@@ -7,13 +7,16 @@
     import Stuffusion from './Stuffusion.svelte'
     import { getContext, setContext } from 'svelte'
 
-    let { mem, stuff, matchy, M, H: H_prop }: {
+    let { mem, stuff, matchy, M, H: H_prop, self_row }: {
         mem: Modusmem,
         stuff: Stuff,
         matchy?: Matchy,
         hide?: Array<TheUniversal>,
         M?: Modus,
         H?: House,
+        // self_row: show the %stuff particle ITSELF as the single row (its k:v), not its
+        //  children — the look of a leaf/structural particle rendered as a stuffing (Cyto chunks)
+        self_row?: boolean,
     } = $props()
     mem = mem.further("Stuffing")
 
@@ -28,6 +31,7 @@
     //   H.check_stuffings drives the first one so we land in the same H.clear() flush
     //   as sibling Stuffings mounting in this tick.
     let stuffing = new Stuffing(stuff, matchy)
+    stuffing.self_row = !!self_row
 
     let spinner = $state(false)
     // re-register when %stuff prop changes (different C handed in by parent).
@@ -35,9 +39,10 @@
     $effect(() => {
         const S = stuff
         if (!S) return
-        // key the registry by the mem's keys-path, distinct per mounted Stuffing — mem.path is
-        //  undefined (Modusmem carries .keys, not .path), which collides the moment more than one
-        //   Stuffing registers (eg one per Cyto node). reading .keys stays in-bounds (no lib/mostly).
+        // key the registry by the mem's keys-path — mem.path is undefined (Modusmem carries .keys,
+        //  not .path). Two mounts may SHARE a keys-path (same-key sibling chunks in Cyto sharing a
+        //   stash); register_stuffing individuates colliding keys itself, so both stay refreshed.
+        //    reading .keys stays in-bounds (no lib/mostly).
         const deregister = H.register_stuffing(mem.keys.join('/'), S, () => {
             // called inside H.clear() — sibling Stuffings also committing in this flush.
             // < pure compute outside of any reactive scope, then atomic %state write

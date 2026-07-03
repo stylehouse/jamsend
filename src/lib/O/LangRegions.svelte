@@ -556,31 +556,49 @@
 
     // e_Lang_point_navigate — full resolve → openness → scroll → report cycle for a
     //  Point spec.  Called from e_Dock_open (when e.sc.point present) and directly from
-    //  Liesui on a Point-row click.  e.sc: { point: string, doc?: string }
+    //  Liesui on a Point-row click.  e.sc: { point: string, doc?: string, tries?: number }
+    //   A point can OUTRUN a freshly-opened dock: the CodeMirror view hasn't mounted yet,
+    //    and a named def needs the %Map a first compile hasn't produced — resolving then
+    //     goes nowhere, and the doc just shows its resumed position ("a random place").
+    //      While the miss is plausibly transient, re-ask a few beats later (bounded,
+    //       backing off ≈7s total — enough for view-mount + a first compile); a retry
+    //        DROPS if the user has moved to another dock meanwhile.
     async e_Lang_point_navigate(A: TheC, w: TheC, e: TheC) {
         const H    = this
         const spec = e.sc.point as string | undefined
         if (!spec) return
+        const tries = (e.sc.tries as number) ?? 0
+        const again = () => {
+            if (tries >= 6) return false
+            setTimeout(() => H.i_elvisto('Lang/Lang', 'Lang_point_navigate',
+                { point: spec, doc: e.sc.doc, tries: tries + 1 }), 350 * (tries + 1))
+            return true
+        }
 
         const dock  = this.Lang_active_dock(w)
-        if (!dock) return
+        if (!dock) { again(); return }
+        if (e.sc.doc && dock.sc.dock !== e.sc.doc) return   // stale retry — the user moved on
         const view  = dock.c.view  as EditorView | undefined
         const path  = dock.sc.dock as string
+        if (!view) { again(); return }                      // fresh open — CM not mounted yet
         // Reindex against the CURRENT text before resolving, so a Point lands even on a
         //  doc edited since the last compile (no waiting on req:compile's ~6s settle).
         //  Points-only: a .g reindex re-runs GEN, too heavy for a nav gesture, so a .g
         //  resolves against its last settled Map as before.
-        if (view && !H.Lies_gen_path(path) && H.Lang_points_only(path))
+        if (!H.Lies_gen_path(path) && H.Lang_points_only(path))
             await H.Lang_compile_dock(w, dock, view.state)
         // Resolve + build regions in the Map's frame (Lang_index_state, pinned to the live
         //  view by the reindex), so result.from and the fold|selection share one frame.
         const state = this.Lang_index_state(dock)
-        if (!view || !state) return
+        if (!state) { again(); return }
 
         const result = this.Lang_resolve_point(state, dock, spec)
 
         if (!result) {
-            // No compiled index — ask user to compile first.
+            // a named spec with NO %Map yet = the compile is still coming — retry, not report
+            const has_map = !!(dock.o({ Compile: 1 })[0] as TheC | undefined)?.o({ Map: 1 })[0]
+            if (!has_map && !spec.startsWith('text:') && again()) return
+            // No compiled index (and retries spent) — ask user to compile first.
             w.i({ see: `⏳ Point '${spec}': no index yet — run compile first` })
             H.i_elvisto('Lies/Lies', 'Lies_point_issues', {
                 doc:    dock.sc.dock  as string,
