@@ -4,9 +4,11 @@ A continuation brief, not a changelog. The session's throughline: the runner mac
  clicks getting lost, the editor death-spiralling — and we made it **snappy and honest**. The load-bearing
   knowledge is the *why* below; the diffs are all uncommitted in the working tree for the human.
 
-Companions: `Cluster_runner_handover.md` (the networking half this extends), `NeedAC_spec.md` (the audio
- gate, cross-agent), `Swarm_spec.md` (identity/social, formerly Swarm_doc — RENAMED), `Peeroleum_handover.md`
-  (the spine — the packet-batching principle below was folded into its top).
+Companions: `Cluster_runner_handover.md` (the networking half this extends), `Swarm_spec.md`
+ (identity/social, formerly Swarm_doc — RENAMED), `Peeroleum_handover.md` (the spine — the
+  packet-batching principle below was folded into its top).  `NeedAC_spec.md` was FINISHED and
+   DELETED 2026-07-03 — the audio gate is built end-to-end (marker → dispatch-match → pre-run
+    securing → Brink surfacing); its design tails live in the loose ends below.
 
 ---
 
@@ -75,12 +77,25 @@ The editor↔runner loop is **responsive** and clicks **land**. Two root fixes d
      was deleted (wrong form — must be a Story Book). Binary-only: the `buf_to_b64` / `bytes_b64` fallback
       path was also removed (grant.for is always set; the degenerate `!to` branch was dead). Formal test
        is still owed as a Story Book (two-peer Pere* pattern).
-- **needAC dispatch-match — BUILT 2026-07-03 (uncommitted, :9091-verify owed).** Advertise-then-match,
-   per NeedAC_spec §3: the runner's beacon carries `ac:1` when its AudioContext is gesture-unlocked
+- **needAC dispatch-match — BUILT 2026-07-03 (:9091-verify owed).** Advertise-then-match:
+   the runner's beacon carries `ac:1` when its AudioContext is gesture-unlocked
     (probing the shared `top_House().c.musu_gat` cache), the roster folds it to a snapped `%Runner,ac`
      facet (Rundar tooltips show "AC live"), and `Lies_dispatch_target(w, needAC)` prefers an ac-live
       runner above every favour tier — prefer, never require (a fresh no-AC fleet must still get the beg).
        Held/swept runs re-read the board via `Lies_book_needac` since their queues carry bare names.
+- **needAC design tails (folded from the deleted `NeedAC_spec.md`).** (a) **%rungo routing** — the
+   eventual run-authority that waits for the exact compiled dige before firing, so a verdict provably
+    matches the pushed source; staged BY DESIGN (~mid-Jul 2026, needs fleet coordination); the two
+     begin-paths are cross-noted in-source at `Lies_become_book_drive` / `req_rungo`, and
+      `Lies_secure_audio` is identical either way so the staging wastes nothing. (b) **Lapse policy**
+       — a 60s `audio_blocked` lapse currently just reports blocked/UNTRIED; retry/park/drop on the
+        editor board is undecided. The UNTRIED semantics are the load-bearing part: `!ok` + error +
+         *nothing tried* — it must read "couldn't run here" (⌛/grey), NEVER "the audio delivery is
+          broken", so a no-AC runner doesn't smear a needAC Book red. (c) **`^^What/RunnerAdvice`**
+           — promoting the flat `%Storying,needAC` marker to a heritable What-limb advice; deferred.
+            (d) **Cross-tab focus** — Brink-complain + runner self-signal (title flash / favicon /
+             `setAppBadge`); true click-to-focus of an independently-launched tab needs a service
+              worker + Notification; only editor-OPENED tabs can be `target`-focused.
 - **Per-runner run_phase attribution (`from:<pub>` demux) — flagged ~4×, still not done.** `w.c.run_phase` is
    a single slot → the editor Brink can say "*a* runner needs AC" but not *which* tab. Cleans up run_phase
     clobber generally; a nice-to-have rather than a gate.

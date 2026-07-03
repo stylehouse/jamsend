@@ -21,8 +21,15 @@ function relayPlugin(): PluginOption {
 //  localhost-only, the secure posture: a stray public hostname is refused, not served.
 //  (Read straight off process.env, not Vite's loadEnv, because /app/.env is a directory
 //   here and loadEnv would trip over it.)
-const allowedHosts = (process.env.ALLOWED_HOSTS ?? '')
-	.split(',').map(h => h.trim()).filter(Boolean);
+//  host.docker.internal is ALWAYS allowed on top of the env list: it's how a flock runner
+//  container reaches the host dev server (dockers/flock TARGET_BASE). It's a Docker-internal
+//  alias — functionally localhost-from-a-container, not a public domain — so it widens no
+//  public surface. IP-literal Hosts (e.g. the bridge gateway 172.17.0.1 the CLI uses) need
+//  no allowlist entry; Vite always serves those.
+const allowedHosts = [
+	'host.docker.internal',
+	...(process.env.ALLOWED_HOSTS ?? '').split(',').map(h => h.trim()).filter(Boolean),
+];
 
 export default defineConfig({
 	plugins: [sveltekit(), relayPlugin()],

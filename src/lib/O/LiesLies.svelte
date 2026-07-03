@@ -201,7 +201,21 @@
             if (role !== 'editor' && role !== 'runner') return        // bare: no channel
             if (w.c.channel_up) return                                 // once
             // undefined here is usually a miscompiled gen/N/Tribunal.go that DROPPED Socket_real (a bad editor ghost-compile does), NOT a timing race — grep the .go for it + recompile headless via LocalGen before theorising.
-            if (typeof (H as any).Socket_real !== 'function') return   // transport ghosts absent
+            //  LOUD, not silent: this guard once swallowed a cross-wired Tribunal.go (Peeroleum's compile
+            //   output under Tribunal's Ghostmeta — Creduler reads "ready", Socket_real never deposits) for a
+            //    whole session of "relay down" with zero telltale.  During the boot window the ghosts really
+            //     are still mounting, so the note is throttled + starts after a grace beat — a healthy boot
+            //      connects before it ever fires; a wedge rings the Relay Brink every 15s.
+            if (typeof (H as any).Socket_real !== 'function') {
+                const now = Date.now()
+                w.c.no_socket_since ??= now
+                if (now - (w.c.no_socket_since as number) > 15000
+                    && (!w.c.no_socket_note || now - (w.c.no_socket_note as number) > 15000)) {
+                    w.c.no_socket_note = now
+                    H.Lies_relay_note(w, `⚠ channel wanted but Socket_real is undefined — transport ghost not deposited (miscompiled gen/N/Tribunal.go? grep it for Socket_real, recompile via LocalGen)`, true)
+                }
+                return   // transport ghosts absent
+            }
             if (typeof WebSocket === 'undefined') return               // not a browser (tests/node)
             const peer = role === 'editor' ? 'runner' : 'editor'
 
@@ -933,7 +947,11 @@
             const now = Date.now()
             if (w.c.last_socklog && now - (w.c.last_socklog as number) < 10000) return
             w.c.last_socklog = now
-            const path = `wormhole/_socklog/${role}-${SOCKCAP_BOOT}.jsonl`
+            // name carries role + our prepub (the pub) so a fleet of runners writes distinguishable
+            //  files (was role+bootid only — three flock runners were indistinguishable). 'anon' until
+            //   the identity stands up.
+            const pub  = (H as any).Lies_self?.(w)?.prepub ?? 'anon'
+            const path = `wormhole/_socklog/${role}-${pub}-${SOCKCAP_BOOT}.jsonl`
             const rw   = w.oai({ rw_queue: 1 })
             const req  = await rw.oai({ req: 1, rw_name: path, rw_op: 'write', rw_data: sockcap_lines() })
             H.i_elvis_req(w, 'Wormhole', 'rw_op', { req })
@@ -1077,7 +1095,7 @@
                 //  Lies_secure_audio cache on top_House().c; the Sound Brink grant resumes that same
                 //   cached context).  Present-or-absent like a snapped boolean; a needAC dispatch
                 //    prefers an ac-live runner so the run doesn't stall ~60s begging for a gesture
-                //     (NeedAC_spec §3: advertise first, then match).
+                //     (advertise first, then match — the needAC arc: spec/Runner_quality_handover.md).
                 ...((H.top_House().c as any).musu_gat?.AC_ready ? { ac: 1 } : {}),
                 // (no favourite_client on the beacon: the editor sources it from the Waft:Cluster/
                 //  %HostedIdentity registry — advertise_recv reads hi.sc.favourite_client and ignores any

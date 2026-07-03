@@ -157,8 +157,8 @@ already thin.
   and an ambient background-work tenant (Upkeep) also hand-writes its own suggest/dismiss lifecycle —
   but that's the tenant's behaviour, not the Lens.
 - **Stale bits:** the `Rundar` kind wants a clearer name (**RunnerRadar**); dead
-  `InterestSmall`/`InterestBig` scaffolding; and `Lens_handover.md` still points at the deleted
-  `Funk/Runner.svelte`.
+  `InterestSmall`/`InterestBig` scaffolding.  (`Lens_handover.md` was finished, folded into
+  `Lens_posable_TODO.md`, and deleted 2026-07-03.)
 
 **Settled scope.** Lies knows exactly two host roles — *runner* and *editor*. No directory of other
 hosts we've seen or connected to; that stays out of the Lies world, by choice.

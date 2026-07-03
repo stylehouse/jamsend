@@ -444,7 +444,7 @@
         const fp = JSON.stringify({
             rows: m.rows.map((r: any) => r.kind === 'stack'
                 ? ['stack', r.wafts.map((s: any) => s.title)]
-                : [r.title, +r.burst, +r.fg, +r.hot, +r.touched, +r.board, r.enth,
+                : [r.title, +r.burst, +r.fg, +r.hot, +r.touched, +r.boring, +r.board, r.enth,
                    r.above, r.below, r.lo, r.hi, +r.show_all, r.colh,
                    r.docs.map((d: any) => [d.title, d.cursor ? 1 : 0, d.shared ?? 0])]),
             crumbs: m.crumbs.map((c: any) => c.title),
@@ -465,6 +465,7 @@
             if (r.fg)      sc.fg = 1
             if (r.hot)     sc.hot = 1
             if (r.touched) sc.touched = 1
+            if (r.boring)  sc.boring = 1
             if (r.board)   sc.board = 1
             if (!r.burst)  sc.calm = 1
             if (!r.loaded) sc.cold = 1
@@ -494,12 +495,15 @@
         gate.bump_version(); w.bump_version()
     },
 
-    // the seed Prep — calm Wafts (stack fodder) + a touch memory on TestDeep: a carrier
-    //  %Lango,Cursor, the same feed a real cursor land mints, so TestDeep's shaft lights
-    //   WITHOUT foregrounding it (the kept-around-by-touch rule, sans the Ting).
+    // the seed Prep — a touch memory on TestDeep (a carrier %Lango,Cursor, the same feed a real
+    //  cursor land mints, so TestDeep's shaft lights WITHOUT foregrounding it) + calm Wafts of
+    //   both kinds: CalmA|CalmB are plain CONTENT (each a discernible calm row), CalmC|CalmD
+    //    carry %boring (equipment that recedes into a stack) — so one snap shows both the
+    //     content-never-shrinks rule and the boring-only-stacks rule.
     async e_Lies_waftmap_seed(this: House, _A: TheC, w: TheC, _e: TheC) {
         const H = this
-        for (const name of ['CalmA', 'CalmB', 'CalmC', 'CalmD']) w.oai({ Waft: `Calm/${name}` })
+        for (const name of ['CalmA', 'CalmB']) w.oai({ Waft: `Calm/${name}` })
+        for (const name of ['CalmC', 'CalmD']) w.oai({ Waft: `Calm/${name}` }, { boring: 1 })
         const deep = w.o({ Waft: 'Story/LakeWaftMap/TestDeep' })[0] as TheC | undefined
         if (deep) await H.lango(w, deep, { kind: 'Cursor', to: 'Ghost/test/Story/Lake/WaftMapPacked.g' })
         w.bump_version()

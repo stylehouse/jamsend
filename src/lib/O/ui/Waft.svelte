@@ -236,11 +236,14 @@
     //                 memory lives in the Keep's ledger, NOT on the Waft, so it survives reload
     //                  (even the dontSnap Cluster) and the Keep owns it.  absent = open; an
     //                   %equip fixture is seeded collapsed in the Keep (Lies_aim).
-    //   capped:     Vexpany — cap the body at 10em and let it scroll, vs. infinite height.
+    //   capstate:   the body height stance.  'tall' (default) caps at ~half the screen and
+    //               scrolls inside — one huge Waft can't eat the page, and the cursor-follow
+    //                effect below keeps the working row in view.  'tight' is the old Vexpany
+    //                 10em park; 'free' is infinite growth (the old default, now the opt-out).
     //   sidebyside: halve this Waft's width.  The parent list (.ls-waft-section) is a
     //               flex-wrap row, so two adjacent half-Wafts pair onto one line by
     //               themselves — no parent bookkeeping, the wrap does the pairing.
-    //   capped|sidebyside stay ephemeral — render-only, never reach the C/snap.
+    //   capstate|sidebyside stay ephemeral — render-only, never reach the C/snap.
     // On the runner there is no Keep to persist to, so minimise is session-local: a plain $state,
     //  toggleable but NOT saved, seeded from the infra default below.
     let local_min = $state<boolean | undefined>(undefined)
@@ -260,8 +263,37 @@
         if (w.o({ Waft: 'Keep' })[0]) H.Lies_keep_cfg_set(w, wkey, 'minimised', minimised ? undefined : 1)
         else local_min = !minimised
     }
-    let capped     = $state(false)
+    let capstate   = $state<'tall' | 'tight' | 'free'>('tall')
+    const cycle_cap = () => capstate = capstate === 'tall' ? 'tight' : capstate === 'tight' ? 'free' : 'tall'
     let sidebyside = $state(false)
+    let body_el    = $state<HTMLElement | undefined>(undefined)
+
+    // ── cursor-follow ─────────────────────────────────────────────────
+    //   When the Spotlight MOVES to a new src under THIS Waft (nearest Waft owns the scroll),
+    //    nudge the glowing What row into the body's scroll window.  Reactivity discipline
+    //     (reactivity_docs): subscribe on vers only, re-read the settled tree inside H.clear —
+    //      a bare read here can catch a transacting (momentarily empty) state.  And the scroll
+    //       is scrollTop math on the BODY ALONE — never scrollIntoView, which also scrolls the
+    //        window, so every trickle think() yanked the page (the "impossible to run tests"
+    //         regression).  The page must never move except by the user's own hand.
+    let last_spot: any = undefined
+    $effect(() => {
+        void examining?.vers
+        H.clear(async () => {
+            const spot = examining?.o?.({ Spotlight: 1 })?.[0] as any
+            const src  = spot?.sc.src
+            if (!src || src === last_spot) return           // only a real cursor MOVE scrolls
+            last_spot = src
+            let node: any = src
+            while (node && node.sc?.Waft === undefined) node = node.c?.up
+            if (node !== waft) return
+            const row = body_el?.querySelector('.ls-item-what-active') as HTMLElement | null
+            if (!row || !body_el) return
+            const bt = body_el.getBoundingClientRect(), rt = row.getBoundingClientRect()
+            if      (rt.top    < bt.top)    body_el.scrollTop += rt.top - bt.top - 8
+            else if (rt.bottom > bt.bottom) body_el.scrollTop += rt.bottom - bt.bottom + 8
+        })
+    })
 
     // Embedded applets (%Funkcion) render through FunkHost — the kind module owns the
     //  pad/light, the strike, and the armed glow.  See O/Funk/.
@@ -686,13 +718,16 @@
         <button class="ls-waft-btn" class:ls-waft-btn-on={sidebyside}
                 onclick={() => sidebyside = !sidebyside}
                 title="{sidebyside ? 'full width' : 'side-by-side (half width; pairs with a neighbour)'}">▥</button>
-        <button class="ls-waft-btn" class:ls-waft-btn-on={capped}
-                onclick={() => capped = !capped}
-                title="{capped ? 'uncap height (infinite)' : 'cap height at 10em (Vexpany)'}">{capped ? '⤢' : '⤡'}</button>
+        <button class="ls-waft-btn" class:ls-waft-btn-on={capstate !== 'tall'}
+                onclick={cycle_cap}
+                title="{capstate === 'tall' ? 'height: capped at ~half the screen — click for tight (10em)'
+                      : capstate === 'tight' ? 'height: tight (10em) — click for free (infinite)'
+                      : 'height: free (infinite) — click to re-cap'}">{capstate === 'tall' ? '⤡' : capstate === 'tight' ? '▁' : '⤢'}</button>
     </div>
 
     {#if !minimised}
-    <div class="ls-waft-body" class:ls-waft-capped={capped} class:scrollbig={capped}>
+    <div class="ls-waft-body scrollbig" bind:this={body_el}
+         class:ls-waft-capped={capstate === 'tight'} class:ls-waft-free={capstate === 'free'}>
 
     {#if main_funk && !raw}
         <!-- a main-Funkcion Waft renders that Funkcion's BIG face (the close-up Lens —
@@ -899,8 +934,11 @@
         min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         padding-left: 0.2rem;
     }
-    /* Vexpany — cap the body height and let it scroll instead of growing forever */
-    .ls-waft-capped { max-height: 10em; overflow: auto; }
+    /* every body is height-capped by default — a huge Waft scrolls inside itself
+       (cursor-follow keeps the glowing row in view) instead of eating the page */
+    .ls-waft-body   { max-height: 55vh; overflow: auto; }
+    .ls-waft-capped { max-height: 10em; }   /* Vexpany — the tight park */
+    .ls-waft-free   { max-height: none; }   /* infinite growth — the old default, now opt-in */
     /* side-by-side — half width; the flex-wrap parent pairs two halves onto one row */
     .ls-waft-half { flex: 1 1 calc(50% - 0.3rem); min-width: 0; }
 

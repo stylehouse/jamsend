@@ -9,11 +9,13 @@
     import type { TheC }  from "$lib/data/Stuff.svelte"
     import DocWaftMap from "$lib/O/Funk/DocWaftMap.svelte"
 
-    let { H, w }: { H: House, w?: TheC } = $props()
+    // search — the universal searchbar's live result set (Liesui threads it through), so the
+    //  map can hang the hits off its Doc chips.  Pure UI plumbing; undefined = no search live.
+    let { H, w, search }: { H: House, w?: TheC, search?: any } = $props()
 </script>
 
 <div class="plank">
-    <DocWaftMap {H} {w} />
+    <DocWaftMap {H} {w} {search} />
 </div>
 
 <style>

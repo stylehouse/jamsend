@@ -155,15 +155,25 @@ Type-clean; :9091-unverified (open `Waft:Keep` in an editor Run — the map is i
 
 The word-cloud abdomen (vertical-rl leaf words) is gone — **no more vertical text**. The map is now
  the **Waft\*\* path and breadcrumb UI**, and its grouping brain moved out of the component into
-  **`Lies_waftmap_model(w, {budget, force})`** (LiesFunk, pure read) so `Book:LakeWaftMap` can watch
+  **`Lies_waftmap_model(w, {budget})`** (LiesFunk, pure read) so `Book:LakeWaftMap` can watch
    the same model group things in its snaps and we iterate the algorithm by reading them.
 
 - **Burst rows** — the interesting Wafts: the **foreground** (the active Interest is the more
-  bursty Waft), any **cursor-touched** Waft (its `req:Waftica` carrier holds a `%Lango,Cursor` —
-   the global cursor feed `Lies_resolve_wants` mints on every land is the touch history; the
-    `Waft:Ting` tap-history is a later, additive source), and whatever you're **scrolled to** (an
-     IntersectionObserver on the `[data-waft-col]` columns forces a Waft to burst while its column
-      is in view, and lets it re-calm when you leave — there is no sticky pin).
+  bursty Waft — and a map name-click *is* how you foreground one), and any **cursor-touched**
+   content Waft (its `req:Waftica` carrier holds a `%Lango,Cursor` — the global cursor feed
+    `Lies_resolve_wants` mints on every land is the touch history; the `Waft:Ting` tap-history is
+     a later, additive source). *No scroll-force, no pin* — an early IntersectionObserver on the
+      `[data-waft-col]` GhostList columns bursted whatever was scrolled into view, but the
+       GhostList is incidental equipment you don't meaningfully scroll *at*, so that signal was
+        ripped out (owner: "did I ask for that?"). What bursts a Waft is attention, full stop.
+- **Boring vs content** — the load-bearing distinction the map now draws. **Boring** = equipment
+  that just sits there: the ghost index `GhostList`, the shared entropy profile `NormalEntropy`
+   (both boring *by name* in `BORING_WAFTS` — later they can carry `%boring` at the source and
+    drop the list), the **backstage stances** (the `Waft:Ting` sink, the `equip` fixtures like
+     Keep), or anything explicitly marked **`%boring`** (`sc.boring`). Boring Wafts — and
+      **cold/closed** ones (known but not loaded) — are the **only** things that stack. Real
+       **content** (a loaded, non-boring Waft) is always at *least* a discernible calm row, so a
+        plain `Ality` never shrinks to a `GhostList`-sized nub (the bug that prompted this).
 - **The cluster, kept simple** — a burst Waft is its **big name** with **columns of Docs**
   beside it on a faint spine: 3-ish per column, 4 when it packs better (4→4, 7→4+3, 8→4+4 —
    `colh_of`). Nice horizontal titles, never vertical text. The What\*\* breadcrumb was
@@ -172,17 +182,16 @@ The word-cloud abdomen (vertical-rl leaf words) is gone — **no more vertical t
       column count, not its Doc count — so one generous fg no longer demotes every touched
        neighbour into a countless calm row (the "Ality wouldn't wake" bug).
 - **Openingness (`enth` 0..3)** — *how many Docs are listed from where you are*: 0 stacked ·
-  1 a calm single row (title + count) · 2 the 3-window from the cursor · 3 all of them (up to
-   ~30; past that the window + edges). It is **purely automatic**: fg→3, touched|forced→2,
-    board→1, else 0 — **hot (an active Interest) is NOT in the ladder**: every open plain Waft's
-     Interest goes `presence:active`, so it separates nothing (styling only; a lesson the Book's
-      snap taught). There is **no hand dial** — a per-cluster `enthusiasm` tuner (glyph + a Keep
-       layout write via an Atime elvis) was built and **ripped back out** (owner: "doesn't work,
-        and I don't truly want it"). It was redundant with the two gestures that remain: to wake
-         a calm Waft you **scroll to it** (or **click its name** to jump there — either way its
-          column comes into view and it bursts), and to see more of a burst Waft you **click its
-           glowing edge** (+3). Nothing about the map now touches the
-           Keep layout service.
+  1 a discernible calm row (title + count) · 2 the 3-window from the cursor · 3 all of them (up
+   to ~30; past that the window + edges). It is **purely automatic from attention**: fg → 3, a
+    **touched content** Waft → 2, **plain content + the board** → 1, **boring equipment or a
+     cold/closed** Waft → 0 (stacked). **hot (an active Interest) is NOT in the ladder**: every
+      open Waft goes `presence:active`, so it separates nothing (styling only; a lesson the
+       Book's snap taught). There is **no hand dial** — a per-cluster `enthusiasm` tuner (glyph +
+        a Keep layout write via an Atime elvis) was built and **ripped back out** (owner:
+         "doesn't work, and I don't truly want it") — the map touches the Keep layout service
+          nowhere now. The gestures that remain: **click a name** to foreground+jump there (which
+           is what bursts it), and **click a glowing edge** to reveal 3 more Docs.
 - **The cursor, exactly** — glowing brackets `⟨around⟩` the cursor Doc; the crumb-tail `%What`
   carries the cursor *colour* (no brackets on the breadcrumb) when the cursor sits on the What
    itself. Brackets follow the *live* Spotlight; a remembered (carrier-Lango) cursor lights
@@ -196,17 +205,20 @@ The word-cloud abdomen (vertical-rl leaf words) is gone — **no more vertical t
        replace()-empty state every trickle think; see `reactivity_docs.md`), and
         **fingerprint-guarded** (the template's state reassigns only on a real regroup).
 - **Prominence** — a **board** (a Waft carrying `Funkcion:Storying|StoryTimes` cells — the
-  Credence) rides at least calm (enth ≥ 1), never stacked, with its own laurel tint. Waft
-   titles take the last *lettered* path segment (`Ting/2026-07-02/160434` → "Ting").
-   **Backstage stances cap on touch**: a sink (Ting) or fixture merely cursored-through caps
-    at calm — touch never decays, so without the cap one visit left the Ting prominent
-     forever; the fg and a deliberate force (pin | scroll-to) still burst them.
-- **Waking follows attention** — no pin, no dial. A map name-click **jump-scrolls** to the
-  Waft's column; that scroll brings the column into view, which is what bursts it (via the
-   IntersectionObserver `visible` force). A cold Waft's name-click opens + foregrounds it (fg →
-    burst). It re-calms when you scroll away — every Waft is always in the map regardless.
-- **Stacks of two** — the enth-0 rest groups two-by-two, minimised. Click one to jump to it. A
-  **touched** Waft never stacks even when budget-demoted — it holds a calm row.
+  Credence) is content: at least a calm row, never stacked, with its own laurel tint. Waft
+   titles take the last *lettered* path segment (`Ting/2026-07-02/160434` → "Ting"). The
+    **Ting** itself is a sink → **boring** → it stacks even when cursored-through (touch never
+     decays, so a merely-touched Ting must not linger prominent; only *foregrounding* it — going
+      there — shows it). This subsumes the older "backstage caps on touch" rule.
+- **Waking is foregrounding** — no pin, no dial, no scroll-force. A map name-click **foregrounds**
+  the Waft (a cold one is opened first) and jump-scrolls there; foregrounding → fg → the cluster
+   bursts open. So the map is a *navigator* — going somewhere is what wakes it — and it holds no
+    scroll/pin state of its own. It re-calms when the foreground moves on.
+- **Stacks of two** — the enth-0 boring|cold Wafts group two-by-two, minimised. Click one to
+  foreground+jump to it. A touched **content** Waft never stacks — even budget-demoted it keeps a
+   calm row; a boring one (the Ting) stacks regardless of touch. Chips are **width units** — a
+    stacked (enth-0) row is compact and costs **nothing**, so an equipment shelf never trips the
+     seams by itself; a burst cluster costs its column count, calm rows 1 each.
 - **The crumb harvest** (model + Book dump; the UI's breadcrumb is per-cluster now) — each
   touched Waft's cursor Doc in discovery order (carrier Lango `seq`), the foreground's first.
 - **The mount** — the Plank flows in the **vertical gap at the bottom of Liesui**

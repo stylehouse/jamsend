@@ -2720,6 +2720,12 @@ async MusuBounce_setup(w):
         }
     }
     w.c.records = recs
+    // no collection on disk (generator never run, or empty share) → SKIP cleanly, don't red.  It's a setup
+    //  gap, not a failure — the same shape MusuCrate/MusuPier use for a missing capability.
+    if (!recs.length) {
+        if (!w.oa({skipped: 'no_tracks'})) w.i({skipped: 'no_tracks'})
+        return
+    }
     // seeded random skip schedule — reproducible (→ a stable snap) yet unpredictable, guaranteed to skip
     //  SOME but not ALL (so both `matched` and `skip_observed` are assertable).
     let skip = {}
@@ -2790,7 +2796,11 @@ async Musu_bounce_run(w):
         ti = ti + 1
     }
     let aend = gatA.AC.currentTime
+    // reset the per-run wire counters (they live on w.c, read by the STAY gate + the crossed break) so a
+    //  re-run on a reused world can't inherit a stale ack/cross count and mis-pace or mis-witness.
     w.c.bend = gatB.AC.currentTime
+    w.c.acked = 0
+    w.c.crossed = 0
     let aTrack = {}
     let bTones = {}
     let sent = 0
@@ -2808,7 +2818,11 @@ async Musu_bounce_run(w):
             sent = sent + 1
         }
         let now = gatA.AC.currentTime
-        if (sent >= plan.length && now >= aend - 0.03 && now >= (w.c.bend || now) - 0.03) break
+        // done only once EVERY frame is sent AND received (acked) AND both timelines have drained.  The
+        //  acked gate makes `crossed` deterministic: without it, a skipped LAST track's frames can still be
+        //   in-flight at break (bend doesn't advance for a track B didn't schedule), so crossed would race
+        //    below plan.length run-to-run.  aend/bend cover the audible tail.
+        if (sent >= plan.length && (w.c.acked || 0) >= plan.length && now >= aend - 0.03 && now >= (w.c.bend || now) - 0.03) break
         await new Promise(r => setTimeout(r, 50))
         let ta = this.Musu_tone_of(this.Musu_peak(anA, SR), tones)
         if (ta) {

@@ -1,7 +1,7 @@
 Snap:H
   H:MusuSkip,Run
     A:MusuSkip
-      self,round=7	{"mung":["age"]}
+      self,round	{"mung":["age"]}
       w:MusuSkip
-        self,round=7	{"mung":["age"]}
+        self,round	{"mung":["age"]}
         req:wrangle,eternal,ok

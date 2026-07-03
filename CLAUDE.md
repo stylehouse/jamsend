@@ -165,6 +165,11 @@ Verify a Book by asking a LIVE runner to run it — not a headless boot.
  Exit 1 when a `--watch` run finishes red, so it scripts. `story_repl.mjs` is the
   interactive twin (`@uid` addresses a held run).
 
+A runner that won't connect ("relay down", no ws attempt in the Network tab): read
+ `src/lib/O/spec/Runner_network.md` — the boot→channel map, what each Brink badge asserts,
+  and the diagnostic ladder (cross-wired `gen/N/Tribunal.go` first — the editor staying
+   green while every runner is down IS that tell).
+
 Do NOT verify with `scripts/Story_cli_run.mjs` (the headless node+jsdom boot). It
  has real disk access, so it loads the GhostList off the wormhole and quiesces at a
   DIFFERENT depth than a live runner — its fixtures match *itself* but go all-red on

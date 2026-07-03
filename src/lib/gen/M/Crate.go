@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Crate(): string { return '11ebd2379db3e308' },
+    Ghostmeta_Ghost_M_Crate(): string { return 'cdfe160ed23b1583' },
 
 // Crate.g — rifling through a music collection.  A modern port of the old Directory.svelte tree-walk +
 //  Agency.svelte's meander() random-walk, redesigned for THIS platform: raw File System Access API (no
@@ -175,6 +175,13 @@ async Crate_radiostock_from(crate) {
 //    proxied RemoteWormholeNav.  All three answer dir_at(path).expand() → {directories,files} and
 //     bin_read(dir,file) → bytes, so a collection is WALKED like a real folder — no manifest.json, no fetch.
 // Crate_nav — the Wormhole's live nav (A:Wormhole/c.nav), or null before the disk is up.
+// CAVEAT: the discovery below (Crate_nav_paths / Crate_nav_payload) awaits the nav INLINE.  Safe for the
+//  LOCAL backends (FSA share / OPFS cloud) — their promises settle off the disk event loop, independent of
+//   Atime.  But a REMOTE nav (RemoteWormholeNav, atime_async) settles off an INBOUND relay frame whose
+//    delivery itself needs Atime, so awaiting it under the beliefs mutex would starve the reply (20s timeout,
+//     machine seized — the deadlock atime_async exists to avoid).  For the fleet path this must instead go via
+//      the Wormhole rw_op actor (op:list / op:bin), which parks off-Atime (Wormhole_park) — a TODO, not built
+//       (untestable without a remote runner).  Today's verification runner is a local share, so inline is fine.
 Crate_nav() {
     let A = this.top_House().o({ A: 'Wormhole' })[0]
     return A ? (A.c.nav || null) : null

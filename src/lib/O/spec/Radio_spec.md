@@ -97,12 +97,18 @@ Legend: **[built]** real data/logic flows through it; **[done]** a specific refi
  owed. The Book that proves each stage is named; all are green on the live `:9091` runner (accepted
   fixtures) unless noted.
 
-### 1 — Collection  *(Book: MusuCrate · Ghost/M/Crate.g)*  **[built]**
-Walk a music library into a track list. Real today via static-served `/testsounds` + a `manifest.json`.
-- [todo] directory-tree walk (`meander`) over nested artist/album/track (the `Crate_meander` path —
-   exists for FileSystemHandle, not wired into the served-collection path).
-- [todo] a real source via Wormhole `bin_read` or a library — not a static symlink.
+### 1 — Collection  *(Book: MusuCrate · Ghost/M/Crate.g)*  **[built]**  *(fixture pending re-record after the 2026-07-02 nav pivot)*
+Walk a music library into a track list. Real today by DISCOVERING it through the Wormhole nav: `Crate_nav_paths`
+ BFS-walks `dir_at().expand()` → `{directories,files}`, `Crate_nav_payload` reads bytes via `bin_read` +
+  OfflineAudioContext decode. Backend-agnostic across the FSA share / OPFS cloud / editor-proxied runner. No
+   manifest, no fetch — a collection is a folder of files, like real music.
+- [done] directory-tree walk over nested artist/album/track (`Crate_nav_paths`, sorted for determinism).
+- [done] a real source via Wormhole `bin_read` — not a static symlink or served fetch.
 - [todo] metadata from tags (music-metadata) not just the filename.
+- [todo] the picker path (`Crate_open`/`Crate_meander` over a raw FileSystemHandle) for an arbitrary user
+   library OUTSIDE the project tree — still the raw-handle route, not yet unified onto the nav.
+- [caveat] discovery awaits the nav INLINE — fine for local navs, but a remote `atime_async` nav must route
+   via the rw_op actor (see the caveat in Crate.g `Crate_nav`). Fleet-path TODO.
 
 ### 2 — Rastock  *(Book: MusuCrate · Crate.g)*  **[built]**
 Desire `want` records and fill from the collection, visibly: issue a `%reading` → it comes back → a

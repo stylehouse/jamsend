@@ -4,14 +4,16 @@ story:PereProof
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=2.544
+    TimeTotal:beliefs,avg=2.465
       sample=2.76,at=1782603884
       sample=2.562,at=1782623381
       sample=2.31,at=1782641872
-    TimeTotal:step,avg=0.084
+      sample=2.227,at=1783063355
+    TimeTotal:step,avg=0.08
       sample=0.092,at=1782603884
       sample=0.085,at=1782623381
       sample=0.075,at=1782641872
+      sample=0.067,at=1783063355
   step,dige:2b47705062f8bd28
   step=2,dige:bdd4925163038acc
   step=3,dige:1c73da90f22fb363

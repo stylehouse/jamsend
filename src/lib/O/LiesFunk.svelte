@@ -762,6 +762,9 @@ await M.eatfunc({
                 const group   = host.oai({ group: dir })             // GhostList/<dir>/…
                 group.sc.dir  = dir
                 for (const e of entries) {
+                    // a mid-write atomic-rename artifact (NAME.EXT.tmp.PID.HEX) is never a Doc —
+                    //  skipping it here (not just pruning later) means it never even flashes in
+                    if (/\.tmp\.\d+\.[0-9a-f]+$/i.test(e.name)) continue
                     const path = `${dir}/${e.name}`
                     if (e.is_dir) {                                  // a subdir — click opens it
                         if (!group.oa({ sub: path })) changed = true
@@ -775,7 +778,14 @@ await M.eatfunc({
                         if (fresh) { changed = true; if (seeded) d.sc.noticed_at = now }
                     }
                 }
-                // < prune sub|Doc entries whose dir|file vanished; oai-only is fine for now.
+                // prune the goners — a file|dir that left the listing leaves the list (a deleted
+                //  spec was lingering as a phantom Doc, feeding the search index dead paths).
+                //   The dirlist REFLECTS the disk; it is not a ledger.
+                const on_disk = new Set(entries.map(e => `${dir}/${e.name}`))
+                for (const d of group.o({ Doc: 1 }) as TheC[])
+                    if (!on_disk.has(d.sc.Doc as string)) { group.drop(d); changed = true }
+                for (const s of group.o({ sub: 1 }) as TheC[])
+                    if (!on_disk.has(s.sc.sub as string)) { group.drop(s); changed = true }
             }
             if (!pending) {
                 funk.sc.walked_at = now
@@ -814,12 +824,10 @@ await M.eatfunc({
     },
 
     // ── Lies_waftmap_model — the one grouping pass ───────────────────────────────────────────
-    //   opts.force — Waft paths the UI holds open (scroll-visible | pinned): burst regardless.
     //   opts.budget — the chip budget the Plank can hold before it is bursting at the seams.
-    Lies_waftmap_model(w: TheC, opts?: { budget?: number, force?: string[] }) {
+    Lies_waftmap_model(w: TheC, opts?: { budget?: number }) {
         const H      = this as House
         const budget = opts?.budget ?? 18
-        const force  = new Set(opts?.force ?? [])
         void w.version
 
         // Attention — Languinio Interests: the fg Waft + the hot set (ordering|styling only)
@@ -894,12 +902,16 @@ await M.eatfunc({
         // Rows — classify to an OPENINGNESS ladder (how many Docs are listed from where you
         //  are), light the shaft, order by it.
         //  enth 3 = every Doc up to CAP (the fg default; past CAP the window + grow-by-3 edges
-        //   take over) · 2 = the 3-window from the cursor (touched|forced) · 1 = a single calm
-        //    row, title + count · 0 = stackable.  burst = enth ≥ 2.
+        //   take over) · 2 = the 3-window from the cursor (a touched content Waft) · 1 = a single
+        //    discernible calm row, title + count (plain content + the board) · 0 = stackable,
+        //     reserved for BORING equipment and cold/closed Wafts.  burst = enth ≥ 2.
         const CAP = 30
+        // Equipment that is BORING by name — always-present machinery, never content.  (A Waft
+        //  can also carry an explicit %boring; the backstage stances count too — see below.)
+        const BORING_WAFTS = new Set(['GhostList', 'NormalEntropy'])
         type MRow = { kind: 'waft', path: string, title: string, loaded: boolean,
                       stance: 'doc' | 'fixture' | 'sink' | 'cold',
-                      fg: boolean, hot: boolean, touched: boolean, forced: boolean,
+                      fg: boolean, hot: boolean, touched: boolean, boring: boolean,
                       board: boolean, enth: number, seq: number, burst: boolean,
                       cursor: string | undefined, show_all: boolean, colh: number,
                       docs: MDoc[], lo: number, hi: number, above: number, below: number }
@@ -911,17 +923,19 @@ await M.eatfunc({
             const docs   = waftDocs.get(path) ?? []
             const t      = touch.get(path)
             const is_fg  = fg === path
-            const forced = force.has(path)
-            // hot (an active Interest) is NOT in the ladder — every open plain Waft's Interest
-            //  goes presence:active, so it separates nothing; it stays as styling only.
-            //  A BOARD (a Waft carrying Storying|StoryTimes cells — the Credence) rides at
-            //   least calm: the workbench dashboard never disappears into a stack.
-            //  BACKSTAGE stances (the Ting sink, the equip fixtures) cap at calm on a mere
-            //   TOUCH — cursoring through the Ting once shouldn't leave it prominent forever;
-            //    a deliberate force (pin | scroll-to) or the fg still bursts them.
-            const board     = !!wf && !!(wf.o({ Funkcion: 'StoryTimes' })[0] ?? wf.o({ Funkcion: 'Storying' })[0])
-            const backstage = stance === 'sink' || stance === 'fixture'
-            const enth      = is_fg ? 3 : forced ? 2 : t ? (backstage ? 1 : 2) : board ? 1 : 0
+            const board  = !!wf && !!(wf.o({ Funkcion: 'StoryTimes' })[0] ?? wf.o({ Funkcion: 'Storying' })[0])
+            // BORING = the equipment that just sits there, sort of like a ghost of infrastructure:
+            //  the ghost index (GhostList), the shared entropy profile (NormalEntropy), the
+            //   backstage stances (the Ting sink, the equip fixtures like Keep), or anything
+            //    explicitly marked %boring.  Boring Wafts — and cold/closed ones — are the ONLY
+            //     things that stack; real CONTENT is always at least a discernible calm row, so a
+            //      plain Waft (Ality) never shrinks to a GhostList-sized nub.  (hot — an active
+            //       Interest — is NOT in the ladder: every open Waft goes presence:active,
+            //        separating nothing; it stays styling only.)
+            const boring = !!wf?.sc.boring || BORING_WAFTS.has(path) || stance === 'sink' || stance === 'fixture'
+            //  fg → all Docs · a touched content Waft → the 3-window · plain content + the board →
+            //   a discernible calm row · boring equipment or a cold/closed Waft → stacked.
+            const enth   = is_fg ? 3 : (!wf || boring) ? 0 : t ? 2 : 1
             const cpath  = cursor_of(path)
             // the shaft of light — a 3-Doc window around the cursor; soft start = the first 3
             const ci = cpath ? docs.findIndex(d => d.path === cpath) : -1
@@ -930,7 +944,7 @@ await M.eatfunc({
             if (ci >= 0) docs[ci].cursor = 1
             const show_all = enth >= 3 && docs.length <= CAP
             return { kind: 'waft', path, title: H.Lies_waftmap_title(path), loaded: !!wf, stance,
-                     fg: is_fg, hot: hot.has(path), touched: !!t, forced,
+                     fg: is_fg, hot: hot.has(path), touched: !!t, boring,
                      board, enth, seq: t?.seq ?? 0, burst: enth >= 2, cursor: cpath,
                      show_all, colh: colh_of(docs.length),
                      docs, lo, hi,
@@ -941,12 +955,13 @@ await M.eatfunc({
             || (+b.hot - +a.hot)
             || (+(b.docs.length > 0) - +(a.docs.length > 0)) || a.path.localeCompare(b.path))
 
-        // The seams — chips over budget demote burst rows bottom-up to calm (enth 1); never
-        //  the fg, never a forced (pinned|scrolled-to) row.  A chip is a WIDTH unit now that Docs
-        //   ride in columns: title 1 + a chip per column + the grow edge — a grand show-all
-        //    cluster costs its column count, not its Doc count (12 Docs = 3 cols), so one
-        //     generous fg no longer demotes every touched neighbour into darkness.
+        // The seams — chips over budget demote burst rows bottom-up to calm (enth 1); never the
+        //  fg.  A chip is a WIDTH unit now that Docs ride in columns: title 1 + a chip per column
+        //   + the grow edge — a grand show-all cluster costs its column count, not its Doc count
+        //    (12 Docs = 3 cols).  A stacked enth-0 row (boring|cold) is compact — it costs
+        //     nothing, so a shelf full of equipment never trips the seams by itself.
         const chips_of = (r: MRow) => {
+            if (r.enth === 0) return 0
             if (!r.burst) return 1
             const shown = r.show_all ? r.docs.length : (r.hi - r.lo)
             return 1 + Math.ceil(shown / r.colh) + (r.above + r.below ? 1 : 0)
@@ -955,19 +970,18 @@ await M.eatfunc({
         let bursting = false
         for (let i = rows.length - 1; chips > budget && i >= 0; i--) {
             const r = rows[i]
-            if (!r.burst || r.fg || r.forced) continue
+            if (!r.burst || r.fg) continue
             chips -= chips_of(r) - 1; r.burst = false; r.enth = 1
             bursting = true
         }
         if (chips > budget) bursting = true
 
-        // Emit: burst rows stand alone; enth 1 — and any TOUCHED row, even demoted (the touch
-        //  history keeps it around) — holds a single calm row; the enth-0 rest packs into
-        //   stacks of two
+        // Emit: every enth ≥ 1 row stands alone (a burst cluster, or a discernible calm content
+        //  row); only the enth-0 BORING equipment and cold/closed Wafts pack into stacks of two
         const out: Array<MRow | MStack> = []
         let pend: MStack | undefined
         for (const r of rows) {
-            if (r.burst || r.touched || r.enth >= 1) { out.push(r); continue }
+            if (r.enth >= 1) { out.push(r); continue }
             if (!pend) { pend = { kind: 'stack', wafts: [] }; out.push(pend) }
             pend.wafts.push({ path: r.path, title: r.title, loaded: r.loaded })
             if (pend.wafts.length >= 2) pend = undefined
@@ -1003,6 +1017,222 @@ await M.eatfunc({
         waft.bump_version()
         H.Lies_waft_save(w, waft)
         H.i_elvisto(w, 'Lies_want', { src: what, kind: 'click' })
+    },
+
+//#endregion
+//#region Stemdex — scan|stem every Doc for the universal search (methods · properties · freetext)
+//
+//  The corpus, readable by TEXT.  A lazy index over every Doc the machine knows — the loaded
+//   Waft trees plus the whole GhostList roster — fed from the %Good disk cache (req:Store), so
+//    it never reaches into the Lang docks and covers docs nobody has opened.  Three vocabularies
+//     per doc, extracted in one scan of its text:
+//      defs   — method|function definitions (line-start `name(…) {`, `function name`, arrow
+//                consts; .md headings ride as defs too, so a spec's sections hit by name)
+//      props  — the particle vocabulary: `sc.key` | `.c.key` accessors and `%Notation` marks
+//      stems  — every camel|snake-split token, lightly stemmed (plural|ing|ed|er stripped)
+//  All off-snap on w.c.stemdex (Maps are runtime brain, never truth; an object in sc is an
+//   encode fatal).  A scan PASS is polite: it indexes whatever %Goods have landed and requests
+//    at most READ_BUDGET new reads — the searchbar nudges passes while it's open, so the index
+//     converges over a few seconds the first time and is dige-gated per doc after that.
+//  Known drift: an open dock's unsaved buffer isn't seen (disk truth only).  The precise live
+//   layer for open docks — their compiled %Map defs — is the follow-up, not this pass.
+
+    // ── Lies_stem — one word to its light stem ────────────────────────────────────────────────
+    //   Lowercase + a conservative suffix strip (ies→y; ings|ers|eds|es|s).  The scan and the
+    //    query both stem with THIS, so internal consistency is the contract, not linguistics.
+    Lies_stem(word: string): string {
+        let s = word.toLowerCase()
+        if (s.length > 4) {
+            if (/ies$/.test(s)) s = s.slice(0, -3) + 'y'
+            else s = s.replace(/(?:ings?|ers?|eds?|es|s)$/, '')
+        }
+        return s
+    },
+
+    // ── Lies_stemdex — the index handle (no scan here; e_Lies_stemdex_scan feeds it) ──────────
+    Lies_stemdex(w: TheC): any {
+        const c = w.c as any
+        c.stemdex ??= {
+            docs:  new Map(),   // path → { dige, title, lines[clipped], stems[], defs[], props[] }
+            post:  new Map(),   // stem → Map<path, line[]>            (the freetext postings)
+            defs:  new Map(),   // name.toLowerCase() → [{ name, kind, path, line }]
+            props: new Map(),   // prop.toLowerCase() → [{ name, path, lines[] }]
+            total: 0, done: 0, missing: 0, pass: 0,
+        }
+        return c.stemdex
+    },
+
+    // ── Lies_stemdex_scan_text — index ONE doc's text (sync; replaces any prior entry) ────────
+    Lies_stemdex_scan_text(dex: any, path: string, dige: string, text: string) {
+        const H = this as House
+        // drop the old projection first, so a re-scan never doubles
+        const old = dex.docs.get(path)
+        if (old) {
+            for (const s of old.stems) { const p = dex.post.get(s); p?.delete(path); if (p && !p.size) dex.post.delete(s) }
+            for (const k of old.defs)  { const l = (dex.defs.get(k)  ?? []).filter((e: any) => e.path !== path); l.length ? dex.defs.set(k, l)  : dex.defs.delete(k) }
+            for (const k of old.props) { const l = (dex.props.get(k) ?? []).filter((e: any) => e.path !== path); l.length ? dex.props.set(k, l) : dex.props.delete(k) }
+        }
+        const TOKEN    = /[A-Z]+(?![a-z])|[A-Z][a-z]+|[a-z]+|[0-9]+/g   // StemHive's camel|snake splitter
+        const RESERVED = new Set(['if', 'for', 'while', 'switch', 'catch', 'return', 'else', 'do',
+            'new', 'typeof', 'await', 'async', 'function', 'super', 'import', 'export', 'const',
+            'let', 'var', 'delete', 'void', 'in', 'of', 'case', 'throw', 'try', 'yield', 'with'])
+        const lines = text.split('\n')
+        const entry = { dige, title: H.Lies_waftmap_title(path), lines: [] as string[],
+                        stems: [] as string[], defs: [] as string[], props: [] as string[] }
+        const my_post = new Map<string, number[]>()
+        const push_def = (name: string, line: number, kind: string) => {
+            const k = name.toLowerCase()
+            if (!entry.defs.includes(k)) entry.defs.push(k)
+            const l = dex.defs.get(k) ?? []
+            l.push({ name, kind, path, line })
+            dex.defs.set(k, l)
+        }
+        const push_prop = (name: string, line: number) => {
+            const k = name.toLowerCase()
+            let l = dex.props.get(k)
+            if (!l) dex.props.set(k, l = [])
+            let e = l.find((x: any) => x.path === path)
+            if (!e) { l.push(e = { name, path, lines: [] }); entry.props.push(k) }
+            if (e.lines.length < 4 && e.lines[e.lines.length - 1] !== line) e.lines.push(line)
+        }
+        const is_md = /\.md$/i.test(path)
+        for (let i = 0; i < lines.length; i++) {
+            const raw = lines[i], ln = i + 1
+            entry.lines.push(raw.length > 120 ? raw.slice(0, 120) : raw)   // clipped, for snippets
+            for (const m of raw.matchAll(TOKEN)) {
+                const word = m[0]
+                if (word.length < 2 || /^\d+$/.test(word)) continue
+                const s = H.Lies_stem(word)
+                if (s.length < 2) continue
+                let arr = my_post.get(s)
+                if (!arr) my_post.set(s, arr = [])
+                if (arr.length < 6 && arr[arr.length - 1] !== ln) arr.push(ln)
+            }
+            if (is_md) {
+                const h = /^#{1,6}\s+(.+)/.exec(raw)
+                if (h) push_def(h[1].trim(), ln, 'heading')
+            } else {
+                const m = /^\s*(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/.exec(raw)
+                    ?? /^\s*(?:export\s+)?(?:public\s+|private\s+|static\s+|async\s+)*([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*(?::[^{;=\n]+)?\{\s*$/.exec(raw)
+                    ?? /^\s*(?:export\s+)?(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?\(/.exec(raw)
+                if (m && !RESERVED.has(m[1])) push_def(m[1], ln, 'def')
+            }
+            for (const m of raw.matchAll(/(?:\bsc|\.c)\.([A-Za-z_$][\w$]*)/g)) push_prop(m[1], ln)
+            for (const m of raw.matchAll(/(?<![\w%$])%([A-Za-z]\w+)/g))        push_prop(m[1], ln)
+        }
+        for (const [s, ls] of my_post) {
+            let p = dex.post.get(s)
+            if (!p) dex.post.set(s, p = new Map())
+            p.set(path, ls)
+        }
+        entry.stems = [...my_post.keys()]
+        dex.docs.set(path, entry)
+    },
+
+    // ── e_Lies_stemdex_scan — one polite pass: index landed %Goods, request a few more ────────
+    //   Nudge this repeatedly (the searchbar does, while open); each pass indexes every
+    //    text/Doc %Good that has landed since the last one, and asks the store for at most
+    //     READ_BUDGET unseen paths — so a whole-repo first scan converges over a few passes
+    //      without flooding the store pump.  e.sc: {} — idempotent, dige-gated per doc.
+    async e_Lies_stemdex_scan(A: TheC, w: TheC, e: TheC) {
+        const H   = this as House
+        const dex = H.Lies_stemdex(w)
+        if (dex.scanning) return
+        dex.scanning = true
+        try {
+            // the roster: every Doc in every loaded Waft + the whole GhostList
+            const paths = new Set<string>()
+            for (const waft of w.o({ Waft: 1 }) as TheC[])
+                H.Lies_walk_docs(waft, (d: TheC) => { if (d.sc.Doc) paths.add(d.sc.Doc as string); return false })
+            const gl = w.o({ Waft: 'GhostList' })[0] as TheC | undefined
+            for (const g of (gl?.o({ group: 1 }) ?? []) as TheC[])
+                for (const d of g.o({ Doc: 1 }) as TheC[]) if (d.sc.Doc) paths.add(d.sc.Doc as string)
+            for (const p of [...paths])                                  // generated output is not source
+                if (p.includes('/gen/') && p.endsWith('.go')) paths.delete(p)
+
+            // Two budgets keep a pass polite: READ_BUDGET new store reads (IO), SCAN_BUDGET
+            //  fresh text scans (CPU — a whole-file split+regex is the thumpy part; the
+            //   region-partitioned incremental scan is Stemdex_spec.md's destination).
+            //  Reads are AWAITED — a floating promise mutates the store outside Atime
+            //   (reactivity_docs: keep your limbs within Atime), which is exactly the
+            //    vanish-for-an-instant class of bug.
+            const READ_BUDGET = 24, SCAN_BUDGET = 8
+            const store = await H.LiesStore_req(w)
+            let asked = 0, scanned = 0, done = 0, missing = 0
+            for (const path of paths) {
+                const good    = store.o({ Good: 1, type: 'text/Doc', path })[0] as TheC | undefined
+                const content = good?.c.content as string | null | undefined
+                if (content === undefined) {                             // not landed — maybe ask
+                    if (asked < READ_BUDGET) { asked++; await H.LiesStore_read_good(w, 'text/Doc', path) }
+                    continue
+                }
+                if (content === null || content.length > 400_000) { missing++; continue }
+                const dige  = ((good!.o({ known: 1 })[0] as TheC | undefined)?.sc.dige as string) ?? ''
+                const prior = dex.docs.get(path)
+                if (!prior || prior.dige !== dige) {
+                    if (scanned >= SCAN_BUDGET) continue                 // not yet done — next pass
+                    scanned++
+                    H.Lies_stemdex_scan_text(dex, path, dige, content)
+                }
+                done++
+            }
+            dex.total = paths.size; dex.done = done; dex.missing = missing; dex.pass++
+        } finally { dex.scanning = false }
+    },
+
+    // ── Lies_search — the universal query: methods ▸ properties ▸ freetext ────────────────────
+    //   Pure sync read over the stemdex (fire Lies_stemdex_scan to feed it).  Grouped, ranked,
+    //    capped; every hit carries {path, title, line} so a click can Dock_open straight to it.
+    Lies_search(w: TheC, q: string, cap = 8): any {
+        const H   = this as House
+        const dex = (w.c as any).stemdex
+        const out = { defs: [] as any[], props: [] as any[], texts: [] as any[],
+                      done: dex?.done ?? 0, total: dex?.total ?? 0 }
+        const needle = q.trim().toLowerCase()
+        if (!dex || needle.length < 2) return out
+
+        // names — exact ▸ prefix ▸ substring tiers, stable within a tier
+        const pick_names = (m: Map<string, any[]>, into: any[], flat: (e: any) => any) => {
+            const tiers: any[][] = [[], [], []]
+            for (const [k, l] of m) {
+                const t = k === needle ? 0 : k.startsWith(needle) ? 1 : k.includes(needle) ? 2 : -1
+                if (t >= 0) tiers[t].push(...l)
+            }
+            for (const tier of tiers) for (const e of tier) { if (into.length >= cap) return; into.push(flat(e)) }
+        }
+        const title_of = (path: string) => dex.docs.get(path)?.title ?? path
+        const snip_at  = (path: string, line: number) => (dex.docs.get(path)?.lines[line - 1] ?? '').trim()
+        pick_names(dex.defs,  out.defs,  (e) => ({ name: e.name, kind: e.kind, path: e.path,
+            title: title_of(e.path), line: e.line, snippet: snip_at(e.path, e.line) }))
+        pick_names(dex.props, out.props, (e) => ({ name: e.name, path: e.path,
+            title: title_of(e.path), line: e.lines[0], lines: e.lines }))
+
+        // freetext — every query token must land in a doc (stem exact | prefix); rank by hit mass
+        const tokens = [...needle.matchAll(/[a-z0-9]+/g)].map(m => H.Lies_stem(m[0])).filter(s => s.length >= 2)
+        if (tokens.length) {
+            let per_doc: Map<string, { count: number, line: number }> | undefined
+            for (const tok of tokens) {
+                const docs_for = new Map<string, { count: number, line: number }>()
+                for (const [s, posting] of dex.post) {
+                    if (s !== tok && !(tok.length >= 3 && s.startsWith(tok))) continue
+                    for (const [path, ls] of posting) {
+                        const got = docs_for.get(path)
+                        if (got) got.count += ls.length
+                        else docs_for.set(path, { count: ls.length, line: ls[0] })
+                    }
+                }
+                if (!per_doc) { per_doc = docs_for; continue }
+                for (const p of [...per_doc.keys()]) {                   // AND across tokens
+                    const v = docs_for.get(p)
+                    if (!v) per_doc.delete(p)
+                    else per_doc.get(p)!.count += v.count
+                }
+            }
+            const ranked = [...(per_doc ?? new Map())].sort((a: any, b: any) => b[1].count - a[1].count).slice(0, cap)
+            for (const [path, v] of ranked as any)
+                out.texts.push({ path, title: title_of(path), line: v.line, count: v.count, snippet: snip_at(path, v.line) })
+        }
+        return out
     },
 
 //#endregion

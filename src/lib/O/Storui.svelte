@@ -256,7 +256,7 @@
             if (H.top_House().is_house_visible?.(H)) {
                 // Storui is already in the viewport — no popup needed.
                 // Just open the resnapped step and focus the strip for keyboard nav.
-                if (n != null) setTimeout(() => { pick(n!); strip_el?.focus() }, 0)
+                if (n != null) setTimeout(() => { pick(n!); strip_el?.focus({ preventScroll: true }) }, 0)
             } else {
                 popup_expanded = true
                 popup_open     = true
@@ -661,7 +661,7 @@
         setTimeout(() => {
             H.top_House().scroll_to_house?.(H)
             if (n != null) pick(n)
-            strip_el?.focus()
+            strip_el?.focus({ preventScroll: true })   // scroll_to_house owns the viewport; don't double-scroll
         }, 50)
     }
 
@@ -867,12 +867,15 @@
     // failed step, stash restore), return focus to the strip so arrow keys work.
     // Guards: if focus is already inside .sr the user is driving — don't interrupt.
     //         if last_user_pick is set the user chose a step and owns focus.
+    // preventScroll: a bare focus() scrolls the strip into view — i.e. yanks the
+    //   whole page to Story every time a step fails. We only want the keyboard
+    //   target, never the viewport jump; the user scrolls to Story if they care.
     $effect(() => {
         void display.open_at   // subscribe
         if (!display.open_at) return
         if (last_user_pick != null) return   // user is driving — don't steal focus
         if (sr_el && !sr_el.contains(document.activeElement)) {
-            setTimeout(() => strip_el?.focus(), 0)
+            setTimeout(() => strip_el?.focus({ preventScroll: true }), 0)
         }
     })
 
@@ -1049,7 +1052,9 @@
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-<div class="sr" class:expanded bind:this={sr_el} tabindex="-1" onkeydown={handle_story_key}>
+<!-- expanded only bites when a step panel is actually open — otherwise the 90vh
+     rule would leave Storui a tall empty box just for the pip strip. -->
+<div class="sr" class:expanded={expanded && displayed_at != null} bind:this={sr_el} tabindex="-1" onkeydown={handle_story_key}>
 
     {#if !This}
         <div class="sr-empty">no Story</div>

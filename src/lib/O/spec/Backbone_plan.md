@@ -585,8 +585,8 @@ reducer hollows out. `interest_reconcile` lives at `Interest.svelte:111`, mixed 
 **Deferred by design — parked, not gaps (don't build until pulled forward):**
 - **Excitement / awakeness levels** — the gradient math (rise, the MRU budget on the awake
   set, the escalation threshold) is black-boxed; it's numbers on the active Interests/Langos
-  off the Keep, read by the convergence. Slots into P6's excitement dial. (`Lens_handover.md`,
-  `Lens_posable_TODO.md` §2.)
+  off the Keep, read by the convergence. Slots into P6's excitement dial. (`Lens_posable_TODO.md`
+  — the excite scheme + Near TODO 2.)
 - **Escalation policy** — when a backgrounded Funkcion raises its own tide, badge vs pop vs
   steal-focus, scaled to budget; `surprise_read` is the one built instance. (`Interest.md` §4.)
 - **Full rename-caretaking** — P2's loose locators are the *stopgap* (match by value, never

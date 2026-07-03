@@ -13,7 +13,7 @@ never confirmed. A dead/half-open editor should be **legible** (the CLI says why
 
 Framing that emerged this session: **claude (the CLI) is just another peer.** The relay is a peer,
 the runner is a peer, the CLI joins briefly to ask for a compile. They all want modelling as
-endpoints (the `%Aim` Waft — see spec/Lens_handover.md) with an UP/DOWN and a log of what they're
+endpoints (the `%Aim` Waft — see spec/Lens_posable_TODO.md §"The %Aim residue") with an UP/DOWN and a log of what they're
 doing. The whole feedback effort is one instance of "make every peer legible."
 
 ## The state in one line — TURNING POINT
@@ -172,7 +172,7 @@ The feedback machine + lag fix landed in `7fdb8126` "fix remote compile lag" and
  (`Lang.svelte` e_Lang_dock_content force_active branch, `LangCompiling.svelte` `Lang_compile_dock`
   stateOverride + `Lang_compile_source_state`, `scripts/LakeRace.*`, `scripts/ghost_compile.ts`,
    `src/lib/server/relay.ts`, `LiesLies.svelte`, `Tribunal.go` + channel/Brink). The `%Aim`/Brink half
-    rides in `spec/Lens_handover.md`. Tree is clean. Bomb #6 ("hard-reload after editing a ghost") is
+    rides in `spec/Lens_posable_TODO.md` (§"The %Aim residue"). Tree is clean. Bomb #6 ("hard-reload after editing a ghost") is
      corrected — [[hmr-remixes-ghost-methods]]; methods re-mix on HMR.
 
 ---

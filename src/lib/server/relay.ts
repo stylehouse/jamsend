@@ -245,6 +245,21 @@ export function attachRelay(
 		}, delay)
 	}
 
+	// A DROP is a real connectivity fault — a frame reached this relay addressed to someone with
+	//  NO live local socket, so it is discarded. That is worth a WARNING, not a lost-in-the-noise
+	//   info line: a single drop may be a connect race, but a REPEATING drop to the same addr is a
+	//    wedged channel (the upload-only bug). Escalate: ⚠ on the first drop to an addr, then every
+	//     Nth repeat, so it keeps complaining loudly without becoming a per-ping firehose. Reset the
+	//      counter when that addr next delivers, so a healed channel goes quiet and a re-break re-warns.
+	const dropCounts = new Map<string, number>()
+	function noteDeliver(to: string) { if (dropCounts.has(to)) dropCounts.delete(to) }
+	function warnDrop(where: string, to: string, kind: string, why: string) {
+		const n = (dropCounts.get(to) ?? 0) + 1
+		dropCounts.set(to, n)
+		if (n === 1 || n % 20 === 0)
+			relayLog(`⚠ DROPPED ${where} ${kind} → '${to}' ×${n} — ${why}. Frames addressed to '${to}' are being discarded (no live socket bound here); that side's inbound is DEAD.`)
+	}
+
 	// A frame from a BROWSER socket: deliver local, else forward ONCE to the peer relay. payload
 	//  is a string (text JSON frame) or a Buffer (binary [header JSON]\n[buffer]) — routed the same
 	//   way, by header.to; the binary buffer tail is never inspected.
@@ -257,9 +272,9 @@ export function attachRelay(
 		//   dropped heartbeat is the symptom worth seeing (and only happens while unbridged).
 		const loud = bin ? true : !NOISY.has(frameType(payload as string))
 		const kind = bin ? frameKindBin(payload as Buffer) : frameKind(payload as string)
-		if (deliverLocal(to, payload)) { if (loud) relayLog(`→ ${to} ${kind} (local)`); return 'local' }
+		if (deliverLocal(to, payload)) { noteDeliver(to); if (loud) relayLog(`→ ${to} ${kind} (local)`); return 'local' }
 		if (peerLink && peerLink.readyState === WebSocket.OPEN) { peerLink.send(payload); if (loud) relayLog(`→ ${to} ${kind} (forwarded over bridge)`); return 'bridge' }
-		relayLog(`→ ${to} ${kind} DROPPED (no local socket, ${peerLink ? 'bridge not OPEN' : 'no bridge'})`)
+		warnDrop('browser', to, kind, peerLink ? 'bridge not OPEN' : 'no bridge + no local socket')
 		return 'dropped'
 	}
 
@@ -270,12 +285,24 @@ export function attachRelay(
 		if (!to) return
 		const loud = bin ? true : !NOISY.has(frameType(payload as string))
 		const kind = bin ? frameKindBin(payload as Buffer) : frameKind(payload as string)
-		if (deliverLocal(to, payload)) { if (loud) relayLog(`← bridge → ${to} ${kind} (local)`) }
-		else relayLog(`← bridge → ${to} ${kind} DROPPED (no local socket for ${to})`)
+		if (deliverLocal(to, payload)) { noteDeliver(to); if (loud) relayLog(`← bridge → ${to} ${kind} (local)`) }
+		else warnDrop('bridge→', to, kind, 'arrived over the r2r bridge but no local socket is bound')
 	}
 
 	function handleControl(ws: WebSocket, msg: any) {
 		if (msg.control === 'become' && (msg.role === 'editor' || msg.role === 'runner')) {
+			// Bind this socket under its ROLE addr so role-addressed frames actually reach it —
+			//  the editor↔runner ping/pong keepalive (and any to:'runner'/'editor' traffic) is
+			//   addressed by role, and without a binding every such frame DROPS at deliverLocal
+			//    ("no local socket for runner" — the upload-only channel).  This is what the
+			//     ?addr=<role> query was meant to guarantee; binding here makes it robust even
+			//      when the socket didn't (or couldn't) carry ?addr=.  Independent of the set-once
+			//       relay ROLE below (which only decides who dials the r2r bridge): a socket whose
+			//        become LOSES the role race must still be reachable at to:<role>, so bind first,
+			//         unconditionally, and track it for unbind on close (drop()).
+			bind(msg.role, ws)
+			;((ws as any).roleBound ??= new Set<string>()).add(msg.role)
+			relayLog(`🎭 become ${msg.role} — bound addr=${msg.role} (locals: ${[...locals.keys()].join(',')})`)
 			try {
 				setRole(msg.role)
 				ws.send(JSON.stringify({ control: 'role', role }))
@@ -497,6 +524,8 @@ export function attachRelay(
 			if (owns) for (const ch of owns) if (claims.get(ch) === ws) claims.delete(ch)
 			const bound = (ws as any).bound as Set<string> | undefined       // release every pub-addr this socket bound via a signed hello
 			if (bound) for (const a of bound) unbind(a, ws)
+			const roleBound = (ws as any).roleBound as Set<string> | undefined  // release the role addr(s) bound via `become`
+			if (roleBound) for (const a of roleBound) unbind(a, ws)
 		}
 		ws.on('close', (code: number) => {
 			drop()

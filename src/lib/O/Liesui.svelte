@@ -25,6 +25,7 @@
     import Actions         from "$lib/O/ui/Actions.svelte"
     import Lens            from "$lib/O/ui/Lens.svelte"
     import Plank           from "$lib/O/ui/Plank.svelte"
+    import Searchbar       from "$lib/O/ui/Searchbar.svelte"
     import { browserTrustedPubs } from "$lib/p2p/cluster_trust"
 
     let { H }: { H: House } = $props()
@@ -54,6 +55,11 @@
     // Cred — the runner's verdict per dock (%run_result, stamped by Lies_run_result_recv on the
     //  editor's w:Lies): ok/errors/dige.  The header's credibility readout reads these.
     let run_results: TheC[] = $state([])
+
+    // search_live — the universal searchbar's current result set ({q, defs, props, texts}),
+    //  threaded down the Plank so DocWaftMap hangs the hits off its Doc chips.  Plain local
+    //   $state — UI-to-UI plumbing, never a particle.
+    let search_live: any = $state(undefined)
 
     // examining — the %examining particle from Lies's w, placed in watched:ave.
     // Passed down to Waft and DocRow; DocRow derives is_examining from it.
@@ -159,6 +165,9 @@
         {#if role}
             <span class="ls-role ls-role-{role}" title={ROLE_TITLE[role]}>{role}</span>
         {/if}
+        {#if Lies && !H.Lies_is_runner(Lies)}
+            <Searchbar {H} w={Lies} onresults={(r: any) => search_live = r} />
+        {/if}
         <PeelInput
             label="Waft"
             open={waft_form_open}
@@ -248,7 +257,7 @@
          Liesui, under all the Waft columns (not floating over them — that was the baseshell cell,
          now the Brink's alone).  Author chrome, off the runner. -->
     {#if Lies && !H.Lies_is_runner(Lies)}
-        <div class="ls-plank-slot"><Plank {H} w={Lies} /></div>
+        <div class="ls-plank-slot"><Plank {H} w={Lies} search={search_live} /></div>
     {/if}
 
     <!-- the base shell — ONE row resting at the foot of Lies (a zero-height sticky anchor bounded in

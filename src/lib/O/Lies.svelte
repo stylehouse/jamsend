@@ -712,6 +712,24 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     async LiesPersist(A: TheC, w: TheC): Promise<boolean> {
         const H = this as House
 
+        // ── editor↔runner channel FIRST — the connection must not wait on disk ──
+        //   Stand up the Peeroleum consumer once, for explicit editor|runner Runs only.
+        //    Bare Lies (plain app, Machinery tests) open no socket — the standups return
+        //     early on role/transport/browser guards.  transport_up includes the transport
+        //      ghosts' .go so Socket_real lands on H; channel_up then opens the ws on a
+        //       following tick (it no-ops until then).
+        //   This block rides ABOVE the Waft loop deliberately: it used to sit at the tail,
+        //    after `return false` exits for any unlanded Waft %Good — but a runner's disk can
+        //     BE the channel (method:remoteWormhole), so channel-after-disk was a deadlock:
+        //      the read gums up the tick, the standup below it never runs, the ws is never
+        //       dialed, and the read it was waiting on can never land.  Connection first;
+        //        disk settles through it.
+        if (H.Lies_is_editor(w) || H.Lies_is_runner(w)) {
+            H.Lies_transport_up(w)
+            H.Lies_channel_up(w)
+            H.Lies_heartbeat(w)   // periodic ping → pong proves the channel carries
+        }
+
         // ── provision Waft containers from wormhole ───────────────────────────
         //   Good,type:text/Waft (keyed by snap_path) replaces the old open_waft_req
         //   marker.  good.c.content !== undefined means "already loaded" — the same
@@ -808,17 +826,6 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
         if (!H.Lies_is_runner(w) && !H.o_Opt_val(w, 'dontSnapGhostList')) {
             const gl = H.Lies_ghostlist(w)             // undefined while it loads
             if (gl) await H.GhostList_funkcion(gl, w)
-        }
-
-        // Editor↔runner channel: stand up the Peeroleum consumer once, for explicit
-        //  editor|runner Runs only.  Bare Lies (plain app, Machinery tests) open no
-        //   socket — the standups return early on role/transport/browser guards.
-        //  transport_up includes the transport ghosts' .go so Socket_real lands on H;
-        //   channel_up then opens the ws on a following tick (it no-ops until then).
-        if (H.Lies_is_editor(w) || H.Lies_is_runner(w)) {
-            H.Lies_transport_up(w)
-            H.Lies_channel_up(w)
-            H.Lies_heartbeat(w)   // periodic ping → pong proves the channel carries
         }
 
         return true   // Waft layer settled — LiesRealised may proceed

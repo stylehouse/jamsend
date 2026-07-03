@@ -1,55 +1,11 @@
 story:LakeWaftMap
   Styles
   Plan
-    Prep
-      i_elvisto:Lies,e:Lies_open_Waft
-        esc:path,v:Story/LakeWaftMap/TestEasy
-      i_elvisto:Lies,e:Lies_open_Waft
-        esc:path,v:Story/LakeWaftMap/TestDeep
-    Prep=2
-      i_elvisto:Lies,e:Lies_waftmap_seed
-    Prep=3
-      i_elvisto:Lies,e:Lies_test_cursor
-        esc:waft_key,v:Story/LakeWaftMap/TestEasy
-        esc:what_path,v:packing/seams
-    Prep=4
-      i_elvisto:Lang,e:Lang_foreground
-        esc:kind,v:Trail
-        esc:waft,v:Story/LakeWaftMap/TestDeep
-    Prep=5
-      i_elvisto:Lies,e:Lies_test_cursor
-        esc:waft_key,v:Story/LakeWaftMap/TestDeep
-        esc:what_path,v:hoard/antecedents
-    Prep=6
-      i_elvisto:Lies,e:Lies_close_Waft
-        esc:path,v:Story/LakeWaftMap/TestDeep
   Opt
     For
-      w:Lies
-        nowriting
-        dontSnapGhostList
-      w:Lang
-        txtsyntaxdump
-        nogen
-        nopush
-    quiesce_snap_time=0.4
-  EntropyProfile,Wref:Trope/Lies/NormalEntropy
   TimeSpool
-    TimeTotal:beliefs,avg=2.689
-      sample=2.632,at=1782988430
-      sample=2.124,at=1782988804
-      sample=3.899,at=1782989360
-      sample=2.464,at=1782989833
-      sample=2.324,at=1782989876
-    TimeTotal:step,avg=0.448
-      sample=0.439,at=1782988430
-      sample=0.354,at=1782988804
-      sample=0.65,at=1782989360
-      sample=0.411,at=1782989833
-      sample=0.387,at=1782989876
-  step,dige:0000000000000000
-  step=2,dige:0000000000000000
-  step=3,dige:0000000000000000
-  step=4,dige:0000000000000000
-  step=5,dige:0000000000000000
-  step=6,dige:0000000000000000
+    TimeTotal:beliefs,avg=0.081
+      sample=0.081,at=1783057729
+    TimeTotal:step,avg=0.081
+      sample=0.081,at=1783057729
+  step,dige:7b7cdaa605fc6a42

@@ -5,17 +5,19 @@
     //    model group things in its snaps).  How many Docs list from where you are is the
     //     Waft's OPENINGNESS (enth 0..3): 0 stacked · 1 title+count · 2 the 3-window from
     //      the cursor · 3 all of them (up to ~30; past that the window + grow-by-3 edges).
-    //       It's AUTOMATIC = fg 3 / touched 2 / board 1 / calm 0 (hot separates nothing —
-    //        styling only).  No hand dial, no pin: a Waft bursts when you're AT it (foreground,
-    //         cursor-touched, or scrolled to its column) and calms when you leave.  To see more
-    //          of a burst Waft click its glowing edge (+3).
+    //       It's AUTOMATIC from ATTENTION: fg → 3, a cursor-touched content Waft → 2, plain
+    //        content + the board → a discernible calm row (1), BORING equipment (GhostList,
+    //         NormalEntropy, the Ting sink, fixtures) and cold/closed Wafts → 0 (stacked).  No
+    //          hand dial, no pin.  Clicking a name FOREGROUNDS the Waft (that's what bursts it)
+    //           and jump-scrolls there; to see more of a burst Waft click its glowing edge (+3).
     //  The cursor is EXACT: glowing brackets ⟨around⟩ the cursor Doc; window neighbours catch
     //   bounce light.  Where a capped list continues past its window, that EDGE glows with
     //    the count — each click reveals 3 more.  No delete buttons — this is just a map.
     //     (auto-animate was tried and pulled — it made the map feel unfixed; the fingerprint
     //      gate below keeps the DOM still between real regroups, and clunky opening is fine.
     //       The What** breadcrumb was tried and ripped — keep it simple.)
-    //  Non-interesting Wafts stack two by two; touched ones never stack (a calm single row).
+    //  Only boring|cold Wafts stack (two by two); content is always at least a calm row, so a
+    //   plain Ality never shrinks to a GhostList-sized nub.
     //  The search bar finds a file: land (jump-or-Aside via Lies_ghost_pick) or IMPLANT it
     //   into the Waft under work.  NaviCado moves feed straight back in — every land
     //    re-lights the shaft.
@@ -23,7 +25,9 @@
     import type { TheC }  from "$lib/data/Stuff.svelte"
     import type { House } from "$lib/O/Housing.svelte"
 
-    let { H, w: w_in }: { H: House, w?: TheC } = $props()
+    // search — the universal searchbar's live result set ({q, defs, props, texts}), threaded
+    //  down from Liesui through the Plank.  Hits whose Doc has a chip ON the map hang under it.
+    let { H, w: w_in, search }: { H: House, w?: TheC, search?: any } = $props()
 
     let w = $derived.by(() => {
         if (w_in) return w_in
@@ -31,39 +35,32 @@
         return ave.ob({ examining: 1 })[0]?.c?.w as TheC | undefined
     })
 
-    // ── UI attention feeding the model ────────────────────────────────────────
-    //   visible — Waft columns currently scrolled into view (IntersectionObserver on the
-    //             [data-waft-col] nodes Liesui renders): a Waft bursts open in the map when you
-    //             scroll to it and re-calms when you leave.  No sticky pin — every Waft is
-    //             always present in the map, so there's nothing to hold "there".
-    //   grown   — per-Waft extra reveal on a CAPPED list: each edge click adds 3 that way.
-    let visible = $state(new Set<string>())
-    let grown   = $state(new Map<string, { up: number, down: number }>())
-
-    $effect(() => {
-        if (typeof document === 'undefined' || typeof IntersectionObserver === 'undefined') return
-        const io = new IntersectionObserver(entries => {
-            let changed = false
-            const next = new Set(visible)
-            for (const en of entries) {
-                const path = (en.target as HTMLElement).dataset.waftCol
-                if (!path) continue
-                if (en.isIntersecting && !next.has(path)) { next.add(path); changed = true }
-                if (!en.isIntersecting && next.has(path)) { next.delete(path); changed = true }
-            }
-            if (changed) visible = next
-        }, { threshold: 0.15 })
-        // the column set drifts as Wafts open|close — re-observe on a slow idle sweep rather
-        //  than deriving off the model (which the observer itself feeds — no loop wanted)
-        const seen = new Set<Element>()
-        const sweep = () => {
-            for (const el of document.querySelectorAll('[data-waft-col]'))
-                if (!seen.has(el)) { seen.add(el); io.observe(el) }
+    // ── search hang — the searchbar's hits, dangling off their Doc chips ──────
+    //   path → up-to-3 rows {glyph, name|snippet, line, point}.  A hit lands in the map's
+    //    spatial frame (under the chip you already know), not only in the dropdown; a click
+    //     is the same land-on-it contract the searchbar uses (ghost_pick + Dock_open point).
+    const hang = $derived.by(() => {
+        const m = new Map<string, any[]>()
+        if (!search?.q) return m
+        const add = (h: any, glyph: string, point?: string) => {
+            const l = m.get(h.path) ?? []
+            if (l.length < 3) { l.push({ ...h, glyph, point }); m.set(h.path, l) }
         }
-        sweep()
-        const t = setInterval(sweep, 2000)
-        return () => { clearInterval(t); io.disconnect() }
+        for (const h of search.defs  ?? []) add(h, 'ƒ', h.name)
+        for (const h of search.props ?? []) add(h, '%', 'text:' + h.name)
+        for (const h of search.texts ?? []) add(h, '≈', 'text:' + (String(search.q).split(/\s+/)[0] ?? ''))
+        return m
     })
+    const pickHang = (path: string, point?: string) => {
+        H.i_elvisto('Lies/Lies', 'Lies_ghost_pick', { path })
+        if (point) H.i_elvisto('Lang/Lang', 'Dock_open', { path, point })
+    }
+
+    // ── UI attention feeding the model ────────────────────────────────────────
+    //   grown — per-Waft extra reveal on a CAPPED list: each edge click adds 3 that way.  (What
+    //           bursts a Waft is its ATTENTION — foreground | cursor-touch — decided in the
+    //           model, not the UI; the map itself holds no scroll/pin state now.)
+    let grown = $state(new Map<string, { up: number, down: number }>())
 
     // ── the model — flush-gated, settled, fingerprint-calmed ──────────────────
     //   Deriving straight off w.version re-ran on EVERY Atime bump (every trickle think) and
@@ -78,23 +75,32 @@
         shared: Map<string, Set<string>>, chips: number, budget: number, bursting: boolean
     }
     let model = $state<Model | undefined>()
+    let model_err = $state('')
     let model_fp = ''
     $effect(() => {
         void H.ave.vers
         const ww    = w
-        const force = [...visible]
         if (!ww) { model = undefined; model_fp = ''; return }
         H.clear(async () => {
-            const m  = (H as any).Lies_waftmap_model(ww, { budget: 40, force }) as Model
-            const fp = JSON.stringify({
-                rows: m.rows.map((r: any) => r.kind === 'stack'
-                    ? ['s', r.wafts.map((s: any) => s.path)]
-                    : [r.path, r.enth, +r.fg, +r.hot, +r.touched, +r.board,
-                       r.lo, r.hi, +r.show_all, r.colh,
-                       r.docs.map((d: any) => [d.path, d.cursor ? 1 : 0, d.shared ?? 0])]),
-                seams: +m.bursting, chips: m.chips,
-            })
-            if (fp !== model_fp) { model_fp = fp; model = m }
+            // a dead model must be SEEN — an uncaught throw here left the map silently empty
+            //  for a whole session (the H.clear callback dies, model never assigns, and the
+            //   frame renders with nothing in it and no reason why).  Catch and WEAR the error.
+            try {
+                const m  = (H as any).Lies_waftmap_model(ww, { budget: 40 }) as Model
+                const fp = JSON.stringify({
+                    rows: m.rows.map((r: any) => r.kind === 'stack'
+                        ? ['s', r.wafts.map((s: any) => s.path)]
+                        : [r.path, r.enth, +r.fg, +r.hot, +r.touched, +r.boring, +r.board,
+                           r.lo, r.hi, +r.show_all, r.colh,
+                           r.docs.map((d: any) => [d.path, d.cursor ? 1 : 0, d.shared ?? 0])]),
+                    seams: +m.bursting, chips: m.chips,
+                })
+                if (fp !== model_fp) { model_fp = fp; model = m }
+                model_err = ''
+            } catch (err: any) {
+                model_err = String(err?.message ?? err)
+                console.error('🗺 Lies_waftmap_model died:', err)
+            }
         })
     })
 
@@ -155,15 +161,13 @@
 
     function jumpWaft(path: string, loaded: boolean) {
         if (typeof document === 'undefined') return
+        // clicking a Waft in the map takes you THERE — foreground it (a cold one is opened
+        //  first).  Foregrounding is what bursts it open in the map (fg → all Docs), so there is
+        //   no scroll-force or pin: the map is a navigator, and going somewhere is what wakes it.
+        if (!loaded) H.i_elvisto('Lies/Lies', 'Lies_open_Waft', { path })
+        H.i_elvisto('Lies/Lies', 'Lies_foreground_waft', { path, deliberate: 1 })
         const col = document.querySelector(`[data-waft-col="${CSS.escape(path)}"]`) as HTMLElement | null
-        if (!col || !loaded) {
-            // cold — open it and bring it to the foreground; that alone bursts it in the map
-            H.i_elvisto('Lies/Lies', 'Lies_open_Waft', { path })
-            H.i_elvisto('Lies/Lies', 'Lies_foreground_waft', { path, deliberate: 1 })
-            return
-        }
-        // loaded — jump-scroll to its column; scrolling it into view is what bursts it (the
-        //  IntersectionObserver marks it visible → forced), so there's no pin to set.
+        if (!col) return
         const cursorEl = col.querySelector('.ls-item-what-active') as HTMLElement | null
         const fresh    = jump.path !== path
         const m: 'cursor' | 'top' = fresh ? (cursorEl ? 'cursor' : 'top')
@@ -232,6 +236,7 @@
     <div class="pm-top">
         <span class="pm-name">waft map</span>
         {#if model?.bursting}<span class="pm-seams" title="bursting at the seams — calm rows demoted ({model.chips}/{model.budget} chips)">⚠ seams</span>{/if}
+        {#if model_err}<span class="pm-seams" title="Lies_waftmap_model threw — the map is stale|empty until it heals">⚠ {model_err}</span>{/if}
         <div class="pm-search">
             <input class="pm-q" bind:value={q} placeholder="find a file…" />
             {#if hits.length}
@@ -304,6 +309,17 @@
                                                             : d.path}>
                                                     {#if d.cursor}<span class="pm-brkt">⟨</span>{/if}{clip(d.title)}{#if d.cursor}<span class="pm-brkt">⟩</span>{/if}{#if d.shared}<span class="pm-badge">×{d.shared}</span>{/if}
                                                 </button>
+                                                {@const hh_list = hang.get(d.path)}
+                                                {#if hh_list?.length}
+                                                    <div class="pm-hang">
+                                                        {#each hh_list as hh (hh.glyph + (hh.name ?? '') + hh.line)}
+                                                            <button class="pm-hang-hit" onclick={() => pickHang(d.path, hh.point)}
+                                                                    title="{d.path}:{hh.line} — open & land on it">
+                                                                <span class="pm-hang-g">{hh.glyph}</span>{hh.name ?? hh.snippet}<span class="pm-hang-l">:{hh.line}</span>
+                                                            </button>
+                                                        {/each}
+                                                    </div>
+                                                {/if}
                                             {/each}
                                         </div>
                                     {/each}
@@ -322,7 +338,7 @@
             {/each}
         </div>
     {:else}
-        <div class="pm-note">waiting for w:Lies…</div>
+        <div class="pm-note">{model_err ? `map model error — ${model_err}` : 'waiting for w:Lies…'}</div>
     {/if}
 </div>
 
@@ -361,6 +377,18 @@
         background: rgba(14, 15, 25, 0.97); border: 1px solid rgba(120, 140, 195, 0.3);
         border-radius: 8px; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
     }
+    /* search hang — searchbar hits dangling under their Doc chip */
+    .pm-hang { display: flex; flex-direction: column; margin: 0 0 2px 10px;
+               border-left: 1px solid rgba(150, 190, 240, 0.25); }
+    .pm-hang-hit {
+        background: none; border: none; cursor: pointer; text-align: left;
+        font-family: inherit; font-size: 9px; color: #9fb3d8; padding: 0 4px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;
+    }
+    .pm-hang-hit:hover { color: #e8f0ff; background: rgba(120, 150, 210, 0.14); }
+    .pm-hang-g { color: rgba(150, 190, 240, 0.6); margin-right: 3px; }
+    .pm-hang-l { color: rgba(110, 125, 155, 0.6); }
+
     .pm-hit { display: flex; align-items: center; gap: 2px; }
     .pm-hit-go {
         flex: 1; text-align: left; background: none; border: none; cursor: pointer;

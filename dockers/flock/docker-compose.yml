@@ -26,7 +26,29 @@
 #     So a restart is a re-announce, not a reset.
 
 x-droid: &droid
-  image: seleniarm/standalone-chromium:latest      # real Chrome + Xvfb + noVNC, arm/x86
+  image: flock-droid:local                          # thin layer over the seleniarm base (below)
+  build:
+    context: .
+    # Pre-create a seluser-OWNED profile dir. A Docker named volume mounted onto a path
+    #  inherits that path's ownership from the image (Docker copies the mountpoint's
+    #   perms to a fresh volume) — so mounting rN-profile here gives Chrome, which runs
+    #    as seluser, a WRITABLE persistent profile. Skip this and the volume lands
+    #     root-owned → Chrome can't write it → "cannot create default profile directory"
+    #      / "DevToolsActivePort file doesn't exist" and Chrome exits at startup.
+    dockerfile_inline: |
+      FROM seleniarm/standalone-chromium:latest
+      USER root
+      RUN mkdir -p /home/seluser/chrome-data && chown seluser:seluser /home/seluser/chrome-data
+      # Wrap chromium so EVERY launch first clears a stale Singleton{Lock,Cookie,Socket}
+      #  left in the persistent profile by an unclean exit (container bounce / kill / OOM).
+      #   Without this Chrome aborts at startup — "Failed to create .../SingletonLock:
+      #    File exists" — and the runner never boots. Must be droid-side: the bot is a
+      #     SEPARATE container and can't reach this volume to clear it itself. One Chrome
+      #      per droid (NODE_MAX_SESSIONS=1), so there is never a live owner to protect.
+      RUN mv /usr/bin/chromium /usr/bin/chromium.real \
+       && printf '#!/bin/sh\nrm -f /home/seluser/chrome-data/Singleton* 2>/dev/null || true\nexec /usr/bin/chromium.real "$@"\n' > /usr/bin/chromium \
+       && chmod +x /usr/bin/chromium
+      USER 1200
   restart: unless-stopped
   stop_grace_period: 2s
   shm_size: 2gb
@@ -73,7 +95,7 @@ services:
   r1-droid:
     <<: *droid
     volumes:
-      - r1-profile:/home/seluser/.config
+      - r1-profile:/home/seluser/chrome-data
   r1-bot:
     <<: *bot
     depends_on: { r1-droid: { condition: service_healthy } }
@@ -86,7 +108,7 @@ services:
   r2-droid:
     <<: *droid
     volumes:
-      - r2-profile:/home/seluser/.config
+      - r2-profile:/home/seluser/chrome-data
   r2-bot:
     <<: *bot
     depends_on: { r2-droid: { condition: service_healthy } }
@@ -99,7 +121,7 @@ services:
   r3-droid:
     <<: *droid
     volumes:
-      - r3-profile:/home/seluser/.config
+      - r3-profile:/home/seluser/chrome-data
   r3-bot:
     <<: *bot
     depends_on: { r3-droid: { condition: service_healthy } }
@@ -110,10 +132,10 @@ services:
 
 volumes:
   # named volumes scoped to the compose project (prefixed tahi_/alpha_/etc by Docker),
-  #  so clusters never collide. Mounted at /home/seluser/.config — a path that already
-  #   exists in the image owned by seluser — so Docker initialises the volume with the
-  #    right ownership (no --user-data-dir, no root-owned dir, no permissions fight).
-  #   Chromium profile (identity / .stashed / IndexedDB) persists across restarts.
+  #  so clusters never collide. Mounted at /home/seluser/chrome-data — the seluser-owned
+  #   dir the thin image layer creates — so the volume inherits seluser ownership and
+  #    Chrome's --user-data-dir there is WRITABLE and PERSISTENT (identity / .stashed /
+  #     IndexedDB survive a restart, so a bounce re-announces rather than resets).
   r1-profile:
   r2-profile:
   r3-profile:

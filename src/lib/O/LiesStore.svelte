@@ -891,10 +891,30 @@
         // already provisioned this session
         if (good.c.content !== undefined) return good
 
+        // ── the 10s self-check: a read that hasn't settled is a FAULT to narrate, not a silence ──
+        //  The per-dispatch machinery (ttlilt re-arm, Wormhole dedup) retries forever and quietly; a
+        //   human watching "⏳ loading Waft" learns nothing for minutes.  So: stamp when we FIRST
+        //    wanted this %Good, and once it's 10s overdue complain every ~10s — loudly, with the path,
+        //     the elapsed, and the last actual error (landed by land_good's error branch) — to both the
+        //      console and the w (the same `see` surface the ⏳ line rides).  Cleared on landing.
+        good.c.asked_at ??= Date.now()
+        const waited = Date.now() - (good.c.asked_at as number)
+        if (waited > 10_000 && !((good.c.complained_at as number) > Date.now() - 10_000)) {
+            good.c.complained_at = Date.now()
+            const why = good.c.last_error
+                ? `last error: ${good.c.last_error} (×${good.c.error_count})`
+                : 'no reply landed at all — transport? grant? editor nav?'
+            console.warn(`🗂⚠ read STUCK ${Math.round(waited / 1000)}s: ${path} — ${why}`)
+            w.i({ see: `⚠ read stuck ${Math.round(waited / 1000)}s: ${path} — ${why}` })
+        }
+
         const req = await H.LiesStore_read(w, path)
         if (!req.sc.finished) return good   // c.content still undefined → caller waits
 
         await H.LiesStore_land_good(good, req.sc.reply)
+        if (good.c.content === undefined) return good   // {error} reply — refused to land, still loading
+        delete good.c.asked_at; delete good.c.complained_at
+        delete good.c.last_error; delete good.c.error_count
         H.LiesStore_drain_good(good)
         return good
     },
@@ -908,6 +928,18 @@
     async LiesStore_land_good(good: TheC, reply: any): Promise<void> {
         const content   = reply?.content as string | undefined
         const not_found = !!reply?.not_found
+
+        // An {error} reply is a FAILED read, not a result — it must never land (it used to fall
+        //  through to content '' , silently loading an errored read as an EMPTY file: the Cluster
+        //   Waft "loads" blank, identity vanishes, and nothing complains).  Leave c.content
+        //    undefined (still-loading — the read machinery re-dispatches) and remember the error
+        //     off-snap so the read_good watchdog can name it when it complains.
+        if (reply?.error) {
+            good.c.last_error  = String(reply.error)
+            good.c.error_count = (Number(good.c.error_count) || 0) + 1
+            console.warn(`🗂⚠ read FAILED (kept loading, will retry): ${good.sc.path} — ${good.c.last_error} (×${good.c.error_count})`)
+            return
+        }
 
         good.c.content = not_found ? null : (content ?? '')
         if (not_found) {

@@ -225,8 +225,8 @@ Graduated to prod (gate LakeSurprise); the real Lang↔Lies channel is live.  Th
    its **cursoring gate** (good multi-view code cursoring first) now live in `Interest.md` FUTURE.
 - **The Lens as a posable UI-container** (the old "generalissimo") — the torus/Decor vision is in
    `Lens_posable_TODO.md`; the Interest-strip-menu facet (per-kind menus, chip→PeelInput) stays in
-    `Interest.md` FUTURE.  The Brink shipped (Runner/Relay/Upkeep faces, sticky + 4-corner perch —
-     `Lens_handover.md`), so the container now has a pulling consumer (no longer purely speculative).
+    `Interest.md` FUTURE.  The Brink shipped (Rundar/Relay/Sound/Upkeep faces, sticky + 4-corner perch
+     — `Lens_posable_TODO.md`), so the container now has a pulling consumer (no longer purely speculative).
 - **Runner status panel out of Lang into Lies — DONE.** The old `.lte-health` minimap-hoverer is now
    the Brink in Liesui (Vexpandy + a side-button to perch left/right); see the Lens docs.
 - Escalate-target tightening (DONE) and the self-arming havoc-limb race (parked on the Funkcion-pump

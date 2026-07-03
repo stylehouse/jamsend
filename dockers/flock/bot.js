@@ -26,14 +26,16 @@ let driver = null
 async function initDriver() {
     const options = new chrome.Options()
     const display = process.env.DISPLAY || ':99.0'
-    // No --user-data-dir: Chromium uses its default ~/.config/chromium, which lives in
-    //  a named volume the droid mounts at /home/seluser/.config — that path already exists
-    //   in the image owned by seluser, so Docker initialises the volume with the right
-    //    ownership (no root-owned dir, no "cannot create default profile directory" error).
-    //   Singleton lock cleanup (from an unclean exit) is handled by the prefs we inject:
-    //    exit_type:Normal + exited_cleanly:true convinces Chrome it shut down cleanly.
+    // --user-data-dir is EXPLICIT and persistent: a remote chromedriver given prefs but
+    //  no user-data-dir mints its own throwaway temp profile — so identity would NOT
+    //   survive a restart. We point it at /home/seluser/chrome-data, the seluser-owned
+    //    dir the droid image creates and the rN-profile volume mounts onto (writable +
+    //     persistent). A stale SingletonLock from an unclean exit is cleared droid-side by
+    //      the chromium wrapper in docker-compose.yml (not here — the bot is a separate
+    //       container and can't reach that volume). The prefs below only hush the bubble.
     for (const a of [
         `--display=${display}`,
+        '--user-data-dir=/home/seluser/chrome-data',
         '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
         '--disable-software-rasterizer', '--disable-features=VizDisplayCompositor',
         '--force-device-scale-factor=1', '--hide-crash-restore-bubble',

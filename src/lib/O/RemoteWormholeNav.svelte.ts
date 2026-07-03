@@ -52,15 +52,24 @@ export class RemoteWormholeNav {
     }
 
     // one request → its matching reply.  The reply arrives via Lies_wormhole_reply_recv → _resolve.
+    //  Self-checking: a healthy round-trip is ~300ms, so silence is a fault worth narrating — warn at
+    //   10s while still waiting (don't wait the full timeout mute), and let the timeout NAME the op +
+    //    path so "timed out" is actionable, not generic.
     private send(op: string, params: Record<string, unknown>): Promise<any> {
         const grant = this.grant_of()
         if (!grant) return Promise.reject('remoteWormhole: no grant held')
         const corr = this.corr()
+        const what = `${op} ${[params.dir_path, params.filename].filter(Boolean).join('/')}`
         const p = new Promise<any>((resolve, reject) => this.pending.set(corr, { resolve, reject }))
         this.H.Peeroleum_send_consumer(this.w, 'wormhole_req', { corr, grant, op, ...params })
+        const t10 = setTimeout(() => {
+            if (this.pending.has(corr))
+                console.warn(`🕳⚠ remoteWormhole ${what} — no reply for 10s (normal is ~300ms; channel? editor serve? corr ${corr})`)
+        }, 10_000)
         setTimeout(() => {
+            clearTimeout(t10)
             const e = this.pending.get(corr)
-            if (e) { this.pending.delete(corr); e.reject(`remoteWormhole: ${op} timed out`) }
+            if (e) { this.pending.delete(corr); e.reject(`remoteWormhole: ${what} timed out after ${REQ_TIMEOUT_MS / 1000}s (no wormhole_reply — editor offline / grant refused / reply lost)`) }
         }, REQ_TIMEOUT_MS)
         return p
     }

@@ -4,6 +4,10 @@ story:SwarmStaple
   Opt
     For
   TimeSpool
+    TimeTotal:beliefs,avg=0.089
+      sample=0.089,at=1783063285
+    TimeTotal:step,avg=0.011
+      sample=0.011,at=1783063285
   step,dige:0
   step=2,dige:0
   step=3,dige:0

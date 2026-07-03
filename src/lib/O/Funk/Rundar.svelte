@@ -271,10 +271,15 @@
     {/if}
     {#if wormhole_state}
         <!-- &remoteWormhole=1 acquire status: this runner has no local tree and is acquiring a
-             method:remoteWormhole backend from the editor (beg → grant → install). -->
-        <div class="rp-grant-status rp-{wormhole_state === 'ready' ? 'live' : 'silent'}"
-             title="remote Wormhole (method:remoteWormhole) — the editor proxies the real tree">
-            {wormhole_state === 'ready' ? '🛰️ Wormhole granted' : '🛰️ begging for Wormhole…'}
+             method:remoteWormhole backend from the editor (beg → grant → install).  The grant is a
+             DURABLE signed atom (stashed, survives reload) — deliberately not connection state — so
+             "grant held" can be true while the relay is down; say so instead of a bare "granted"
+             that reads as "working" beside a ✕ relay face. -->
+        <div class="rp-grant-status rp-{wormhole_state === 'ready' && channel_live ? 'live' : 'silent'}"
+             title="remote Wormhole (method:remoteWormhole) — the editor proxies the real tree; the grant is a durable signed atom, presented per-op over the relay channel">
+            {wormhole_state === 'ready'
+                ? (channel_live ? '🛰️ Wormhole granted' : '🛰️ Wormhole grant held — relay down, ops stall')
+                : '🛰️ begging for Wormhole…'}
         </div>
     {/if}
     {#if phase_live && phase_view}
