@@ -27,7 +27,10 @@
 
     // search — the universal searchbar's live result set ({q, defs, props, texts}), threaded
     //  down from Liesui through the Plank.  Hits whose Doc has a chip ON the map hang under it.
-    let { H, w: w_in, search }: { H: House, w?: TheC, search?: any } = $props()
+    // onhover — reports the Waft key under the mouse up to Liesui, so the searchbar's
+    //  StemHive can glow its member rows (the map's own hover Venn stays local).
+    let { H, w: w_in, search, onhover }: {
+        H: House, w?: TheC, search?: any, onhover?: (waft?: string) => void } = $props()
 
     let w = $derived.by(() => {
         if (w_in) return w_in
@@ -51,10 +54,8 @@
         for (const h of search.texts ?? []) add(h, '≈', 'text:' + (String(search.q).split(/\s+/)[0] ?? ''))
         return m
     })
-    const pickHang = (path: string, point?: string) => {
-        H.i_elvisto('Lies/Lies', 'Lies_ghost_pick', { path })
-        if (point) H.i_elvisto('Lang/Lang', 'Dock_open', { path, point })
-    }
+    const pickHang = (path: string, point?: string) =>
+        H.i_elvisto('Lies/Lies', 'Lies_ghost_pick', { path, point })   // point ⇒ Aside-recorded delivery
 
     // ── UI attention feeding the model ────────────────────────────────────────
     //   grown — per-Waft extra reveal on a CAPPED list: each edge click adds 3 that way.  (What
@@ -62,14 +63,18 @@
     //           model, not the UI; the map itself holds no scroll/pin state now.)
     let grown = $state(new Map<string, { up: number, down: number }>())
 
-    // ── the model — flush-gated, settled, fingerprint-calmed ──────────────────
-    //   Deriving straight off w.version re-ran on EVERY Atime bump (every trickle think) and
-    //    could catch transacting state (a replace() starts empty — reactivity_docs' "things
-    //     that vanish for a tiny moment, all the time"), so rows flickered.  The doc's
-    //      pattern instead: subscribe to the FLUSH-GATED H.ave.vers (bumps once per beliefs
-    //       cycle), read the settled tree inside H.clear() (the UItime mutex), and only
-    //        reassign the state the template reads when the grouping FINGERPRINT moved —
-    //         between real changes the DOM sees nothing at all.
+    // ── the model — settled read, fingerprint-calmed ──────────────────────────
+    //   The template must NOT derive straight off tree reads: a read outside H.clear() can
+    //    catch transacting state (a replace() starts empty — reactivity_docs' "things that
+    //     vanish for a tiny moment, all the time"), so rows flickered.  The doc's pattern:
+    //      subscribe on vers, read the settled tree inside H.clear() (the UItime mutex), and
+    //       only reassign the state the template reads when the grouping FINGERPRINT moved —
+    //        between real changes the DOM sees nothing at all.
+    //   The vers to subscribe on is w:Lies ITSELF — it bumps every think, and the fp gate
+    //    absorbs that churn.  (H.ave.vers is NOT a per-beliefs beacon: ave only bumps when a
+    //     watched channel's own child-set changes, i.e. boot enrollment — subscribing to it
+    //      alone ran this effect once at mount, before any Waft landed, and the map stayed
+    //       silently empty forever.  That regression cost a session; hence both signals.)
     type Model = {
         rows: any[], crumbs: { waft: string, path: string, title: string }[],
         shared: Map<string, Set<string>>, chips: number, budget: number, bursting: boolean
@@ -78,9 +83,10 @@
     let model_err = $state('')
     let model_fp = ''
     $effect(() => {
-        void H.ave.vers
+        void H.ave.vers                                  // boot — channels enrolling as ghosts land
         const ww    = w
         if (!ww) { model = undefined; model_fp = ''; return }
+        void ww.vers                                     // live — w:Lies bumps every think
         H.clear(async () => {
             // a dead model must be SEEN — an uncaught throw here left the map silently empty
             //  for a whole session (the H.clear callback dies, model never assigns, and the
@@ -260,14 +266,14 @@
 
     {#if model}
         <div class="pm-rows" role="list"
-             onmouseleave={() => { hoverWaft = undefined; hoverDoc = undefined }}>
+             onmouseleave={() => { hoverWaft = undefined; hoverDoc = undefined; onhover?.(undefined) }}>
             {#each model.rows as r (r.kind === 'stack' ? 'stack·' + r.wafts.map((s: any) => s.path).join('|') : r.path)}
                 {#if r.kind === 'stack'}
                     <!-- a stack of two non-interesting Wafts — click one to jump to it -->
                     <div class="pm-stack">
                         {#each r.wafts as s (s.path)}
                             <button class="pm-stack-w" class:cold={!s.loaded} class:lit={wLit(s.path)}
-                                    onmouseenter={() => hoverWaft = s.path}
+                                    onmouseenter={() => { hoverWaft = s.path; onhover?.(s.path) }}
                                     onclick={() => jumpWaft(s.path, s.loaded)}
                                     title="{s.path} — stacked; click to jump to it">{clip(s.title, 16)}</button>
                         {/each}
@@ -279,7 +285,7 @@
                          class:calm={!r.burst} class:grand={r.enth >= 3} class:board={r.board}>
                         <div class="pm-head">
                             <button class="pm-waft" class:lit={wLit(r.path)}
-                                    onmouseenter={() => hoverWaft = r.path}
+                                    onmouseenter={() => { hoverWaft = r.path; onhover?.(r.path) }}
                                     onclick={() => jumpWaft(r.path, r.loaded)}
                                     title={r.loaded ? `${r.path} — jump-scroll (cursor ⇄ top)` : `${r.path} — cold, click to load`}>
                                 {clip(r.title, 20)}

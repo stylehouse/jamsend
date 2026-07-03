@@ -35,7 +35,7 @@
     import { FUNK_KINDS }     from "$lib/O/Funk/kinds"               // registry: which kinds have a live component
     import Orb                from "$lib/O/ui/micro/Orb.svelte"      // shared edit/crud toggle (ui/micro/)
 
-    let { H, w, waft, depth = 0, on_active, on_delete, examining }: {
+    let { H, w, waft, depth = 0, on_active, on_delete, examining, on_hover }: {
         H:         House
         w:         TheC          // Lies's w particle — for live state downstream
         waft:      TheC
@@ -43,6 +43,10 @@
         on_active: (waft: TheC) => void
         on_delete: (waft: TheC) => void
         examining?: TheC         // from Liesui; derives Spotlight glow targets
+        on_hover?: (waft_key?: string) => void   // reports mouse-over up to Liesui (the
+                                                 //  searchbar's StemHive glows member rows);
+                                                 //  top-level only — Liesui doesn't thread it
+                                                 //  into the recursive sub-Waft render
     } = $props()
 
     // ── item-type descriptor table ────────────────────────────────────
@@ -701,9 +705,11 @@
 </script>
 
 <div class="ls-waft" style="margin-left: {depth * 14}px"
-     data-waft-col={wkey}
+     data-waft-col={wkey} role="group"
      class:ls-waft-active={is_active} class:ls-waft-ting={is_taker}
-     class:ls-waft-half={sidebyside}>
+     class:ls-waft-half={sidebyside}
+     onmouseenter={() => on_hover?.(wkey)}
+     onmouseleave={() => on_hover?.(undefined)}>
 
     <!-- control bar — view toggles that ride beside the ghost|data disillusioner.
          All three are render-only and never reach the C/snap. -->

@@ -30,8 +30,13 @@ Waft:Credence
         Funkcion:Storying,of_Book:MusuEdge
       What:showcase
         Funkcion:Storying,of_Book:MusuRadio,needAC:1
+      What:concealment
+        Funkcion:Storying,of_Book:MusuConceal
     What:real music
       Funkcion:Storying,of_Book:MusuCrate
+      What:replication
+        Funkcion:Storying,of_Book:MusuBounce
+        Funkcion:Storying,of_Book:MusuReplica
     What:the platform
       What:mixer cells
         Funkcion:Storying,of_Book:MusuMix
@@ -39,9 +44,7 @@ Waft:Credence
       What:the network
         Funkcion:Storying,of_Book:MusuMesh
         Funkcion:Storying,of_Book:MusuPier
-    Funkcion:Storying,of_Book:MusuConceal
     Funkcion:Storying,of_Book:MusuGenerateTestsMusic
-    Funkcion:Storying,of_Book:MusuBounce
   What:Lake
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:LakeSurfer
@@ -89,3 +92,4 @@ Waft:Credence
     Funkcion:Storying,of_Book:Understandium
     Funkcion:Storying,of_Book:Engage
     Funkcion:Storying,of_Book:WaftMapPacked
+    Funkcion:Storying,of_Book:Educarium

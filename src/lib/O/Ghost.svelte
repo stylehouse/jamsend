@@ -44,6 +44,7 @@
     import LiesKeep from "./LiesKeep.svelte";      // the Keep ledger (Waft:Keep) — extracted from Lies (Backbone P4/D7)
     import LangCurse from "./LangCurse.svelte";   // %Interest cluster + Lang↔Lies channel (D7 rename of Interest.svelte)
     import Editron from "./Editron.svelte";
+    import Educarium from "$lib/L/Educarium.svelte";   // BigWordland's Book recipe — Editron's sibling, living in L/
     import Thangs from "./Thangs.svelte";
 
     let { H } = $props()   // H = H:Mundo (the real House)
@@ -80,3 +81,6 @@
 <LiesKeep {M} />
 <!-- Editron Book recipe (Run_A_Editron) + per-beat handler; booted via ?B=Editron -->
 <Editron {M} />
+<!-- Educarium Book recipe (Run_A_Educarium) — the BigWordland room's editor, ?E=Educarium
+     (and /BigWordland's default); same machine as Editron, its own observable boot story -->
+<Educarium {M} />

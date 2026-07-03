@@ -1,10 +1,14 @@
 Credulation,of_Book:PereStaple
-  run=0,at=1782741387.41,ok,ok_pct,mode:check
-    uses:Ghost_N_Peeroleum,dige:1bb4df8687a8d30b
+  run=0,at=1783076342.096,ok,ok_pct,mode:check
+    uses:Ghost_N_Peeroleum,dige:054dff5c07f2987b
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
-    uses:Ghost_N_Tribunal,dige:a9bf42ff80d08a94
-    uses:Ghost_N_Tyrant,dige:74cf06ee9a34e2cb
+    uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
+    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
     uses:Ghost_Story_Peregrination,dige:b33cab6322ef6320
-    uses:Ghost_M_Radiola,dige:32b321bfc1e909b5
-    uses:Ghost_M_Crate,dige:26bb31d6774eef6c
-    uses:Ghost_Story_Musuation,dige:1e93cf113217d7b1
+    uses:Ghost_M_Radiola,dige:c38a79b40dc8f9e6
+    uses:Ghost_M_Crate,dige:cdfe160ed23b1583
+    uses:Ghost_M_Mixer,dige:a4a24e00de642d18
+    uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
+    uses:Ghost_Story_Musuation,dige:b02db57bef6aa407
+    uses:Ghost_S_Swarm,dige:8dc83ba7f424731a
+    uses:Ghost_Story_Swarmation,dige:79cfda846cb277d3

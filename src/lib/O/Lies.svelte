@@ -269,30 +269,40 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
     //       string back-ref to what we were looking at, separable from the Aside (the
     //       "stringy cheese", deliberately not a hard C ref) — then activate that Waft
     //       and land the cursor on the new What so the ghost opens off the Trail.
+    //   A pick WITH a point is a search DELIVERY, not a click: it always lands in
+    //    today's Aside — the visit gets RECORDED — reusing the day's moment for this
+    //     Doc if one stands, with the Point riding under the %Doc ({Point:1,method})
+    //      so the delivery stays re-navigable after the dropdown is gone.  Trail homes
+    //       are never point-polluted: a Point under a curated What feeds the LE
+    //        checkout extent and openness folding, so those stay the human's to place.
+    //   e.sc: { path, point? }
     async e_Lies_ghost_pick(A: TheC, w: TheC, e: TheC) {
-        const H    = this as House
-        const path = e.sc.path as string | undefined
+        const H     = this as House
+        const path  = e.sc.path  as string | undefined
+        const point = e.sc.point as string | undefined
         if (!path) return
 
-        let found: { doc: TheC, waft_key: string } | undefined
-        for (const wf of w.o({ Waft: 1 }) as TheC[]) {
-            const st = H.interest_stance_of(wf)
-            if (st !== 'active' && st !== 'aside') continue       // a real home only — givers + today's Aside; skip lister/taker/tentative
-            let hit: TheC | undefined
-            H.Lies_walk_docs(wf, (d: TheC) => { if ((d.sc.Doc as string) === path) { hit = d; return true } return false })
-            if (hit) { found = { doc: hit, waft_key: wf.sc.Waft as string }; break }
+        if (!point) {
+            let found: { doc: TheC, waft_key: string } | undefined
+            for (const wf of w.o({ Waft: 1 }) as TheC[]) {
+                const st = H.interest_stance_of(wf)
+                if (st !== 'active' && st !== 'aside') continue       // a real home only — givers + today's Aside; skip lister/taker/tentative
+                let hit: TheC | undefined
+                H.Lies_walk_docs(wf, (d: TheC) => { if ((d.sc.Doc as string) === path) { hit = d; return true } return false })
+                if (hit) { found = { doc: hit, waft_key: wf.sc.Waft as string }; break }
+            }
+
+            if (found) {
+                // jump: foreground that Trail for the strip, then land precisely on its Doc
+                //  (a later want wins over Lies_foreground_waft's land-on-first, which no-ops
+                //   once the cursor is already inside the Waft).
+                H.i_elvisto('Lang/Lang', 'Lang_foreground', { kind: 'Trail', waft: found.waft_key })
+                H.i_elvisto(w, 'Lies_want', { src: found.doc, kind: 'click' })   // deliberate ghost-click → wins the verdict
+                return
+            }
         }
 
-        if (found) {
-            // jump: foreground that Trail for the strip, then land precisely on its Doc
-            //  (a later want wins over Lies_foreground_waft's land-on-first, which no-ops
-            //   once the cursor is already inside the Waft).
-            H.i_elvisto('Lang/Lang', 'Lang_foreground', { kind: 'Trail', waft: found.waft_key })
-            H.i_elvisto(w, 'Lies_want', { src: found.doc, kind: 'click' })   // deliberate ghost-click → wins the verdict
-            return
-        }
-
-        // throw into today's Aside as a new moment What, seeded with the ghost + FromWhat
+        // throw into today's Aside as a moment What, seeded with the ghost + FromWhat
         const aside    = H.Lies_spawn_aside_waft(w)
         // FromWhat — a loose `Waft:<key>/<mainkey>:<value>` locator of where we came from,
         //  matchable by mainkey+value (the cheap find), deliberately a string not a hard C
@@ -305,15 +315,22 @@ Point:vague / stack-trace search — Point:'story_save / if runH' as a fuzzy loc
             const mk = H.mainkey(cur_src)
             return wk && mk ? `Waft:${wk}/${mk}:${(cur_src.sc as any)[mk]}` : undefined
         })()
-        const moment   = aside.i({ What: 1 })
-        if (fromWhat) moment.sc.FromWhat = fromWhat
-        moment.i({ Doc: path })
-        moment.c.up = aside; moment.c.waft = aside          // back-refs so the want can land before re-link
+        // reuse the day's moment for this Doc — repeated deliveries into the same ghost
+        //  accumulate their Points on ONE What (the day's research trail), not a pile
+        const prior  = (aside.o({ What: 1 }) as TheC[]).find(m => (m.o({ Doc: path }) as TheC[]).length > 0)
+        const moment = prior ?? aside.i({ What: 1 })
+        if (!prior) {
+            if (fromWhat) moment.sc.FromWhat = fromWhat
+            moment.i({ Doc: path })
+            moment.c.up = aside; moment.c.waft = aside      // back-refs so the want can land before re-link
+        }
+        if (point) await (moment.o({ Doc: path })[0] as TheC).oai({ Point: 1, method: point })
         await H.Waft_link_up(aside, aside)
         H.Lies_set_active_waft(w, aside)                     // session-only active flag, mirrors +Now
         H.Lies_waft_save(w, aside)                           // persist — survives reload
         w.bump_version()
         H.i_elvisto(w, 'Lies_want', { src: moment, kind: 'click' })   // deliberate ghost-throw → wins the verdict
+        if (point) H.i_elvisto('Lang/Lang', 'Dock_open', { path, point })   // and land ON it
     },
 
     // ── Lies_desire_land_cursor ───────────────────────────────────────────────

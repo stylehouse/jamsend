@@ -315,7 +315,7 @@
     let overlays: Map<string, HTMLElement> = new Map()
     // stuff-overlays mount a LIVE Stuffing component into the node's overlay div.
     //  track the mounted instance so we can unmount it when the node leaves the graph.
-    let stuff_mounts: Map<string, { app: any }> = new Map()
+    let stuff_mounts: Map<string, { app: any, ro?: ResizeObserver }> = new Map()
     // Background color per node id — used when updating so we don't
     // re-read the node style on every tick
     let overlay_bgs: Map<string, string> = new Map()
@@ -378,12 +378,35 @@
         const el = document.createElement('div')
         el.className = 'cyto-overlay stuff-overlay'
         el.dataset.nodeId = id
-        if (bg) { el.style.backgroundColor = bg; overlay_bgs.set(id, bg) }
+        // no bg fill — the overlay is transparent; the oval node beneath is the backdrop.
         overlay_container.appendChild(el)
         overlays.set(id, el)
+        // seed the zoom-scaled font BEFORE the first measure, else the observer sizes off 16px
+        if (cy) el.style.fontSize = `${Math.max(6, 12 * cy.zoom())}px`
         const mem = (H as any).imem('cytostuff:' + id)
         const app = mount(Stuffing, { target: el, props: { stuff: source_n, mem, H } })
-        stuff_mounts.set(id, { app })
+        // grow the node when the Stuffing's rendered size changes — content events only (commits,
+        //  zoom font steps), not render frames, so the layout can settle between waves (waitCyto).
+        const ro = new ResizeObserver(() => size_stuff_node(id, el))
+        ro.observe(el)
+        stuff_mounts.set(id, { app, ro })
+    }
+
+    // size_stuff_node: the oval slightly wider than the Stuffing riding on it.  Converts the
+    //  overlay's rendered size to model units and pads it so the ellipse wraps the content
+    //   corners.  The delta gate keeps zoom-driven observer fires (content px scale ~linearly
+    //    with zoom → model size ~constant) from writing styles at all.
+    function size_stuff_node(id: string, el: HTMLElement) {
+        if (!cy) return
+        const node = cy.getElementById(id)
+        if (!node.length) return
+        const zoom = cy.zoom()
+        const cw = el.offsetWidth, ch = el.offsetHeight
+        if (!(zoom > 0) || cw < 5) return
+        const want_w = Math.round((cw / zoom) * 1.3 + 12)
+        const want_h = Math.round((ch / zoom) * 1.35 + 10)
+        if (Math.abs(node.width() - want_w) > 6 || Math.abs(node.height() - want_h) > 6)
+            node.style({ width: want_w, height: want_h })
     }
 
     function update_overlay(id: string, str: string, bg?: string) {
@@ -399,7 +422,7 @@
 
     function remove_overlay(id: string) {
         const sm = stuff_mounts.get(id)
-        if (sm) { try { unmount(sm.app) } catch (e) {} ; stuff_mounts.delete(id) }
+        if (sm) { sm.ro?.disconnect(); try { unmount(sm.app) } catch (e) {} ; stuff_mounts.delete(id) }
         const el = overlays.get(id)
         if (!el) return
         el.remove()
@@ -416,6 +439,21 @@
             if (!node.length) { remove_overlay(id); continue }
 
             const pos = node.renderedPosition()
+
+            // stuff overlays size THEMSELVES (width/height: max-content) — here we only center
+            //  them on the node.  Growing the NODE to wrap the content happens in size_stuff_node,
+            //   driven by a ResizeObserver on the overlay (content-change events), NEVER from this
+            //    per-frame path — a node.style() write per render frame kept the layout perpetually
+            //     energised, so a waitCyto Book never saw the wave settle and wedged between steps.
+            if (el.classList.contains('stuff-overlay')) {
+                el.style.fontSize = `${Math.max(6, 12 * zoom)}px`
+                el.style.display  = zoom < 0.3 ? 'none' : ''
+                const cw = el.offsetWidth, ch = el.offsetHeight
+                el.style.left = `${pos.x - cw / 2}px`
+                el.style.top  = `${pos.y - ch / 2}px`
+                continue
+            }
+
             const w   = node.renderedWidth()
             const h   = node.renderedHeight()
 
@@ -429,7 +467,7 @@
     }
 
     function clear_all_overlays() {
-        for (const [, sm] of stuff_mounts) { try { unmount(sm.app) } catch (e) {} }
+        for (const [, sm] of stuff_mounts) { sm.ro?.disconnect(); try { unmount(sm.app) } catch (e) {} }
         stuff_mounts.clear()
         for (const [id, el] of overlays) el.remove()
         overlays.clear()
@@ -485,6 +523,11 @@
         for (const nd of wave.o({ upsert: 1 }) as TheC[]) {
             const id = nd.sc.id as string
             const el = cy.getElementById(id)
+            // the auto-sizer owns a stuff node's width/height after creation (reposition grows
+            //  the oval around the live Stuffing) — a wave re-applying the birth size would snap
+            //   the chunk back every tick.
+            const nds = nd.sc.style as Record<string,any>
+            if (nd.sc.overlay_kind === 'stuff' && el.length && nds) { delete nds.width; delete nds.height }
             const { anim, imm } = split_style(nd.sc.style as Record<string,any>)
             if (el.length) {
                 const new_parent = nd.sc.new_parent as string | null | undefined
@@ -943,14 +986,22 @@
 }
 
 /* ── stuff overlay: a live Stuffing component mounted inside a %stuff node ── */
-/* pointer-events:all so the Stuffing is interactive (clicks/scroll don't pan the
-   graph); overflow:auto so a tall Stuffing scrolls within the node box. Override
-   the base .cyto-overlay centering — the Stuffing lays out from the top-left. */
+/* pointer-events:none — the OVAL NODE beneath takes clicks and drags (pointer-events:all
+   made the chunk undraggable). Transparent + scrollbarless: the overlay sizes to its
+   content (max-content — reposition_overlays does NOT force width/height on it; it grows
+   the NODE to wrap us instead), and the oval provides the backdrop + Matstyle border. */
 :global(.stuff-overlay) {
-    pointer-events: all;
-    overflow: auto;
-    align-items: flex-start;
-    justify-content: flex-start;
-    border-radius: 4px;
+    pointer-events: none;
+    overflow: hidden;
+    background: transparent;
+    width: max-content;
+    height: max-content;
+    max-width: 520px;
+}
+/* the outer Stuffing pill would double the chunk's chrome — the oval IS the pill now.
+   !important outguns the component-scoped .stuffing rule; nested Stuffings keep theirs. */
+:global(.stuff-overlay > .stuffing) {
+    background: transparent !important;
+    border: none !important;
 }
 </style>

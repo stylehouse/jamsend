@@ -1229,7 +1229,11 @@
         // Cyto is opt-in (Opt/useCyto).  Without it this Story has no Cyto of its own
         // (e.g. only Lang's Cyto is active, or none). Skip the cytowave block entirely —
         // it's not part of the model being tested, and waiting for it adds ~2s per step.
-        if (!H.The_Opt_val(w, 'useCyto')) {
+        //  Opt/dontSnapCyto folds the cytowave the same way while KEEPING the live Cyto
+        //   commissioned (it still scans, animates, and gates waitCyto) — the graph is a view,
+        //    not the subject, so a Book that wants to watch it needn't freeze the derived node
+        //     positions into every fixture.
+        if (!H.The_Opt_val(w, 'useCyto') || H.The_Opt_val(w, 'dontSnapCyto')) {
             return this.enL({ d: 0, stringies: { Snap: 'H' } }) + '\n' + h_block
         }
 
@@ -2419,8 +2423,14 @@
         //     tracked and the snap stays consistent.
         if (this.The_Opt_val(w, 'useCyto')) {
             await this.i_actions_to_C(Opt, 'waitCyto', { label: 'waitCyto' })
+            // dontSnapCyto: keep the live Cyto (watch the graph animate) but fold its cytowave
+            //  channel out of the fixture, so got_snap stops freezing volatile node positions.
+            //   Like waitCyto it only means anything with useCyto on, so it rides the same gate;
+            //    when useCyto is off the rm() below sweeps a now-meaningless button away.
+            await this.i_actions_to_C(Opt, 'dontSnapCyto', { label: 'dontSnapCyto' })
         } else {
             await wa.rm({ action: 1, role: 'waitCyto' })
+            await wa.rm({ action: 1, role: 'dontSnapCyto' })
         }
         // trickle: when toggled on, stores the current Book name (not boolean true).
         // This means only this Book gets the trickle treatment — other Books in

@@ -4,13 +4,14 @@
     import { onMount } from "svelte"
 
 import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte.ts"
+import { Selection } from "$lib/mostly/Selection.svelte.ts"
 
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Musuation(): string { return '91abf28ec3db2f64' },
+    Ghostmeta_Ghost_Story_Musuation(): string { return 'ac8c5b7dc1441aea' },
 
 // Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Music_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
@@ -3141,6 +3142,684 @@ MusuBounce_witness(w) {
     if (played >= 1 && heard >= played && !(w.oa({witnessed: "matched"}))) w.i({witnessed: "matched"})
     // skip_observed: a track B skipped is ABSENT from B's recorded sound -- the random skip is real, audible.
     if (skipped >= 1 && silent >= 1 && !(w.oa({witnessed: "skip_observed"}))) w.i({witnessed: "skip_observed"})
+},
+//#endregion
+
+//#region repli — the PAGINATED STREAMING C** REPLICATION protocol (shared real software, first user below)
+// ══ A general system for replicating a C** of scalars + buffers from one Pier to another, paginatedly.  You
+//  start by COMMUNICATING ABOUT a thing — ship a particle's HEAD (its identity + a few scalars) as an enWaft-
+//   shaped line fragment — and then DEAL OUT the rest of its content on demand.  The bulk (a track's audio) is
+//    a %Stream child whose bytes are PULLED page by page: the receiver's mirror asks `want from:N`, the sender
+//     answers a page whose lines carry objecties.buffer=<id> and whose bytes ride a nearby frame tagged
+//      header.bufferid=<id>.  The receiver holds the incoming deLines structure and reconciles each
+//       objecties.buffer against the arrived buffer frame, WARNING if bytes it was promised don't turn up
+//        promptly (they're sent together — ~150k for the first couple of chunks).
+//  THE FORMAT looks mostly like enWaft's storage form (enL per particle, tab-objecties) but STREAMY: each
+//   fragment is a partial UPDATE the mirror merges, not a one-shot snapshot.  Each arriving particle is a
+//    "replace of itself": UPSERT by default (o()-locate, then mutate; else create — like oai), BUT the line
+//     carries more than identity, so the sender declares the LOCATORY keys in objecties.loc (the rest are
+//      merge props — the latter half of an oai()'s args) and any non-default intent in objecties.op
+//       (dupe = force a new particle; delete = locate and remove).  The unicode-marker idea lives here, in
+//        objecties, rather than as a magic key inside the data.
+//  THE Se (the "sent" walk) is a REAL Selection.process per library (Repli_sent_se): its D** mirror rides
+//   under its OWN name %Sent_Tree/%Sent — beside %Tree and %Cyto_Tree — tracking how much of each Record is
+//    where (the sender's tree reads what it has SENT off rec.c.sent; the far Pier's tree reads what has
+//     ARRIVED off its mirror %Stream — "the adjusted reality of how much is where", a tree per side).
+//      The resolved neus|goners ARE the protocol's drive: a Record newly in a library offers itself
+//       (library.c.repli_on_neu), a withdrawn one retires by an op:delete line (library.c.repli_on_goner).
+//        The trees are %dontSnap — the D basis re-traces every pass by construction, so the fixture gates on
+//         the replicated Records (the subject) while Cyto + the witnesses read the live mirror.
+
+// ─── encode: a C** subtree → enWaft-shaped line fragment (+ a bufmap of out-of-band buffer pages) ───
+
+// Repli_loc_keys — the default locatory split: the mainkey, plus a following id-ish key (id|name|seq|pier|kind)
+//  if present.  Everything after those is a merge prop.  A source particle may override via .c.repli_loc.
+Repli_loc_keys(keys) {
+    if (!keys.length) return []
+    if (keys.length > 1 && ['id', 'name', 'seq', 'pier', 'kind'].includes(keys[1])) return [keys[0], keys[1]]
+    return [keys[0]]
+
+},
+// Repli_lines_of — recurse a subtree, one enL line per particle.  objecties.loc names the locatory keys;
+//  objecties.op carries a non-default change intent (dupe|delete) off .c.repli_op; a particle whose bytes are
+//   staged on .c.page_bytes is a BUFFER LEAF — it gets objecties.buffer=<fresh per-Pier id> and its bytes are
+//    registered in bufmap.list to ride as a page frame.  (bufmap.tx.c.bufseq mints globally-unique buffer ids.)
+Repli_lines_of(node, d, out, bufmap) {
+    let sc = node.sc || {}
+    let keys = Object.keys(sc)
+    let stringies = {}
+    for (const k of keys) stringies[k] = sc[k]
+    let objecties = {}
+    objecties.loc = (node.c && node.c.repli_loc) ? node.c.repli_loc : this.Repli_loc_keys(keys)
+    if (node.c && node.c.repli_op) objecties.op = node.c.repli_op
+    if (node.c && node.c.page_bytes) {
+        let id = (bufmap.tx.c.bufseq = (bufmap.tx.c.bufseq || 0) + 1)
+        objecties.buffer = id
+        bufmap.list.push({ id: id, bytes: node.c.page_bytes })
+        node.c.page_bytes = null
+    }
+    out.push(this.enL({ d: d, stringies: stringies, objecties: objecties }))
+    for (const child of node.o()) this.Repli_lines_of(child, d + 1, out, bufmap)
+    return out
+
+},
+// Repli_fragment — the whole fragment for a node: { text, bufmap }.  `tx` is the sending Pier (its bufseq
+//  mints buffer ids).
+Repli_fragment(node, tx) {
+    let out = []
+    let bufmap = { list: [], tx: tx }
+    this.Repli_lines_of(node, 0, out, bufmap)
+    return { text: out.join('\n'), bufmap: bufmap }
+
+},
+// ─── decode: MERGE an enWaft-shaped fragment into a mirror tree (streamy upsert, not a snapshot) ───
+// Repli_merge — parse the lines; at each depth find the parent on a small stack; for each line split its
+//  stringies into a locatory `pattern` (objecties.loc) and merge `props` (the rest), then UPSERT: locate by
+//   pattern under parent → mutate with props if found, else create; objecties.op overrides (dupe = always
+//    create; delete = locate + remove).  Surface objecties.buffer as .c.await_buffer for the page reconciler.
+//     Returns the touched mirror particles.
+async Repli_merge(mirrorTop, text) {
+    let lines = (text || '').split('\n')
+    let stack = [{ d: -1, c: mirrorTop }]
+    let touched = []
+    for (const raw of lines) {
+        if (!raw.trim()) continue
+        let parsed = this.deL(raw)
+        if (!parsed) continue
+        while (stack.length > 1 && stack[stack.length - 1].d >= parsed.d) stack.pop()
+        let parent = stack[stack.length - 1].c
+        let sc = parsed.stringies || {}
+        let objs = parsed.objecties || {}
+        let keys = Object.keys(sc)
+        if (!keys.length) continue
+        let locKeys = Array.isArray(objs.loc) ? objs.loc : keys
+        let pattern = {}
+        let props = {}
+        for (const k of keys) {
+            let isloc = locKeys.includes(k)
+            if (isloc) pattern[k] = sc[k]
+            if (!isloc) props[k] = sc[k]
+        }
+        let op = objs.op
+        if (op === 'delete') {
+            await parent.rm(pattern)
+            continue
+        }
+        let c = null
+        if (op === 'dupe') {
+            c = parent.i({ ...pattern, ...props })
+        } else {
+            let found = parent.o(pattern)[0]
+            if (found) {
+                c = found
+                for (const k of Object.keys(props)) {
+                    if (c.sc[k] !== props[k]) c.sc[k] = props[k]
+                }
+            } else {
+                c = parent.i({ ...pattern, ...props })
+            }
+        }
+        c.c.up = parent
+        if (objs.buffer != null) c.c.await_buffer = objs.buffer
+        c.bump()
+        stack.push({ d: parsed.d, c: c })
+        touched.push(c)
+    }
+    return touched
+
+},
+// ─── buffer pages: Float32 chunks ⇄ bytes (mirrors Musu_chunk_bytes / Musu_bytes_pcm, for a range) ───
+// Repli_pack_chunks — a contiguous run of Float32 chunks [from,end) → one Uint8Array page.
+Repli_pack_chunks(chunks, from, end) {
+    let total = 0
+    let i = from
+    while (i < end) { total = total + chunks[i].length; i = i + 1 }
+    let out = new Uint8Array(total * 4)
+    let off = 0
+    i = from
+    while (i < end) {
+        out.set(new Uint8Array(chunks[i].buffer, chunks[i].byteOffset, chunks[i].length * 4), off)
+        off = off + chunks[i].length * 4
+        i = i + 1
+    }
+    return out
+
+},
+// Repli_unpack_page — a page's bytes back to one Float32Array (aligned copy, byteOffset-safe).
+Repli_unpack_page(bytes) {
+    let u8 = new Uint8Array(bytes.length)
+    u8.set(bytes)
+    return new Float32Array(u8.buffer)
+
+},
+// ─── sender (Pier A) ───
+// Repli_send_lines — emit a repli_lines frame (the enWaft text as the sha256-verified body) plus one
+//  repli_page frame per buffer the fragment referenced (objecties.buffer=id ↔ header.bufferid=id).  The pages
+//   follow the lines immediately — they should arrive together (the receiver's awaitbuf warns if they don't).
+async Repli_send_lines(w, tx, from, to, text, bufmap) {
+    let body = new TextEncoder().encode(text)
+    let bh = await this.Peeroleum_body_digest(body)
+    let seq = this.Pier_next_seq(tx)
+    this.Peeroleum_send(w, { header: { type: 'repli_lines', from: from, to: to, seq: seq, body_hash: bh, body_len: body.length }, buffer: body })
+    for (const page of (bufmap.list || [])) {
+        let ph = await this.Peeroleum_body_digest(page.bytes)
+        let pseq = this.Pier_next_seq(tx)
+        this.Peeroleum_send(w, { header: { type: 'repli_page', from: from, to: to, seq: pseq, bufferid: page.id, body_hash: ph, body_len: page.bytes.length }, buffer: page.bytes })
+    }
+
+},
+// Repli_offer — communicate about a Record: ship its head (the %Record + its %Stream handle, have:0) as a
+//  repli_lines frame.  No bytes yet — the catalog card, the collection-info moment.
+async Repli_offer(w, tx, from, to, rec) {
+    let frag = this.Repli_fragment(rec, tx)
+    await this.Repli_send_lines(w, tx, from, to, frag.text, frag.bufmap)
+
+},
+// Repli_retire — un-communicate about a Record: one op:delete line locates it at the mirror and removes it.
+//  The goner twin of Repli_offer — a withdrawal crosses the wire the same way an offer did.
+async Repli_retire(w, tx, from, to, id) {
+    let line = this.enL({ d: 0, stringies: { Record: 1, id: id }, objecties: { loc: ['Record', 'id'], op: 'delete' } })
+    await this.Repli_send_lines(w, tx, from, to, line, { list: [] })
+
+},
+// Repli_find_record — locate a source Record by id in A's library.
+Repli_find_record(w, id) {
+    let lib = w.c.repli_src
+    if (!lib) return null
+    return lib.o({ Record: 1, id: id })[0]
+
+},
+// Repli_serve_want — A got a `want id/stream/from_idx`: take the page [from_idx, from_idx+PAGE) of the
+//  Record's chunks, stage the bytes, and ship a lean page fragment (Record identity + a %Stream update whose
+//   have advances and whose objecties.buffer carries the bytes).  drop_next fakes a lost page (the warn test):
+//    the lines still cross but the buffer frame is withheld, so B's awaitbuf goes overdue.
+async Repli_serve_want(w, pier, frame) {
+    if (pier !== w.c.tx) return
+    let h = frame.header
+    let rec = this.Repli_find_record(w, h.id)
+    if (!rec) return
+    let chunks = rec.c.chunks || []
+    let from = +(h.from_idx || 0)
+    if (from >= chunks.length) return
+    let PAGE = 2
+    let end = Math.min(from + PAGE, chunks.length)
+    let bytes = this.Repli_pack_chunks(chunks, from, end)
+    rec.c.sent = end
+    // build the lean page fragment by hand (Record identity line + a %Stream update line).
+    let id = (pier.c.bufseq = (pier.c.bufseq || 0) + 1)
+    let out = []
+    out.push(this.enL({ d: 0, stringies: { Record: 1, id: rec.sc.id }, objecties: { loc: ['Record', 'id'] } }))
+    let sline = { Stream: 1, name: h.stream, total: chunks.length, have: end, page_from: from, page_to: end }
+    let drop = w.c.repli_drop && w.c.repli_drop === (rec.sc.id + ':' + from)
+    // the lines PROMISE the buffer either way (objecties.buffer=id); a drop withholds only the BYTES frame,
+    //  so B opens an awaitbuf that never lands — the missing-buffer condition the reconciler must warn on.
+    let sobj = { loc: ['Stream', 'name'], buffer: id }
+    out.push(this.enL({ d: 1, stringies: sline, objecties: sobj }))
+    let bufmap = { list: drop ? [] : [{ id: id, bytes: bytes }] }
+    await this.Repli_send_lines(w, pier, h.to, h.from, out.join('\n'), bufmap)
+
+},
+// ─── receiver (Pier B) ───
+// Repli_mirror_lib — B's growing MIRROR collection (find-or-create).
+Repli_mirror_lib(w) {
+    let lib = w.oai({ Library: 1, pier: 'Crowd' })
+    lib.c.up = w
+    return lib
+
+},
+// Repli_recv_lines — B got a repli_lines frame: decode + merge into the mirror; for every merged particle that
+//  referenced objecties.buffer, open a holding %req:awaitbuf under the Pier (the extra unemit processing).
+async Repli_recv_lines(w, pier, frame) {
+    if (pier !== w.c.rx) return
+    let text = new TextDecoder().decode(frame.buffer)
+    let lib = this.Repli_mirror_lib(w)
+    let touched = await this.Repli_merge(lib, text)
+    for (const c of touched) {
+        if (c.c.await_buffer != null) this.Repli_open_awaitbuf(w, pier, c, c.c.await_buffer)
+    }
+    w.c.repli_tick = (w.c.repli_tick || 0) + 1
+
+},
+// Repli_recv_page — B got a repli_page frame (bytes already sha256-verified by req_unemit): stash by bufferid
+//  and reconcile against any mirror particle waiting on it.
+Repli_recv_page(w, pier, frame) {
+    if (pier !== w.c.rx) return
+    let id = frame.header.bufferid
+    pier.c.bufs = pier.c.bufs || {}
+    pier.c.bufs[id] = frame.buffer
+    this.Repli_attach_page(w, pier, id, frame.buffer)
+
+},
+// Repli_open_awaitbuf — the holding req: finishes when the page's bytes arrive (attaching them to the mirror's
+//  buffer) and WARNS if they're overdue (the page should have come WITH the lines).  If the page already
+//   arrived (page-before-lines), attach immediately.
+Repli_open_awaitbuf(w, pier, mirror, id) {
+    pier.c.awaiting = pier.c.awaiting || {}
+    pier.c.awaiting[id] = mirror
+    let req = pier.oai({ req: 'awaitbuf', bufferid: id })
+    req.c.up = pier
+    req.c.mirror = mirror
+    if (req.c.armed == null) req.c.armed = (w.c.repli_tick || 0)
+    let set = pier.doai({ req: 'awaitbuf', bufferid: id })
+    if (set) set(async (rq) => { this.Repli_awaitbuf_do(w, pier, rq) })
+    if (pier.c.bufs && pier.c.bufs[id] != null) this.Repli_attach_page(w, pier, id, pier.c.bufs[id])
+
+},
+// Repli_attach_page — attach a page's bytes to the awaiting mirror particle (as a Float32 page on .c.pages),
+//  clear the wait, and finish the holding req.
+Repli_attach_page(w, pier, id, bytes) {
+    pier.c.awaiting = pier.c.awaiting || {}
+    let mirror = pier.c.awaiting[id]
+    if (!mirror) return
+    let pcm = this.Repli_unpack_page(bytes)
+    mirror.c.pages = mirror.c.pages || []
+    mirror.c.pages.push(pcm)
+    mirror.c.await_buffer = null
+    mirror.sc.got = (+(mirror.sc.got || 0)) + 1
+    mirror.bump()
+    delete pier.c.awaiting[id]
+    let req = pier.o({ req: 'awaitbuf', bufferid: id })[0]
+    if (req) {
+        req.sc.landed = 1
+        req.bump()
+        this.reqyoncile(req, { finished: 1 })
+    }
+
+},
+// Repli_awaitbuf_do — pumped each pass while the req is open: attach if the bytes are here now, else WARN once
+//  the promised page is overdue (a few ticks).  The reconcile itself is driven by Repli_attach_page on arrival;
+//   this do_fn is the timeout warner.
+Repli_awaitbuf_do(w, pier, req) {
+    let id = req.sc.bufferid
+    if (pier.c.bufs && pier.c.bufs[id] != null) {
+        this.Repli_attach_page(w, pier, id, pier.c.bufs[id])
+        return
+    }
+    // count unfulfilled pumps (robust to lines having stopped) — warn once the promised page is overdue.
+    req.c.waited = (req.c.waited || 0) + 1
+    if (req.c.waited > 1 && !req.oa({ warned: 1 })) {
+        req.i({ warned: 'buffer_late' })
+        req.bump()
+    }
+
+},
+// Repli_want_next — B asks A for the next page of a Record's stream (the PULL).
+async Repli_want_next(w, rx, from, to, id, stream, fromIdx) {
+    let body = new TextEncoder().encode('want')
+    let bh = await this.Peeroleum_body_digest(body)
+    let seq = this.Pier_next_seq(rx)
+    this.Peeroleum_send(w, { header: { type: 'repli_want', from: from, to: to, id: id, stream: stream, from_idx: fromIdx, seq: seq, body_hash: bh, body_len: body.length }, buffer: body })
+
+},
+// Repli_arm — register the three handlers (both directions share w.c.on, so each disambiguates by which Pier
+//  the frame arrived at: A serves wants at w.c.tx; B receives lines/pages at w.c.rx).
+async Repli_arm(w) {
+    this.Peeroleum_on(w, 'repli_want', async (cw, pier, frame) => { await this.Repli_serve_want(w, pier, frame); return true })
+    this.Peeroleum_on(w, 'repli_lines', async (cw, pier, frame) => { await this.Repli_recv_lines(w, pier, frame); return true })
+    this.Peeroleum_on(w, 'repli_page', (cw, pier, frame) => { this.Repli_recv_page(w, pier, frame); return true })
+
+},
+// Repli_sent_se — the D** progress mirror as a REAL Selection.process: one Se per library
+//  (library.c.sent_se), one %Sent_Tree per side (keyed pier:), a %Sent D per Record carrying
+//   have/total/got.  Each pass re-traces the D basis; resolve() pairs a %Sent with its last-pass
+//    self by id (counts changing is continuity — no resolve_strict), so the UNPAIRED ends are the
+//     protocol's events: a neu %Sent = a Record newly here → library.c.repli_on_neu (the offer);
+//      a goner = a Record withdrawn → library.c.repli_on_goner (the retire).
+//       The hooks ride the LIBRARY (not w): the far Pier's mirror runs the same Se hook-free —
+//        its records appearing is replication arriving, not something to re-offer.
+async Repli_sent_se(w, library, pier) {
+    let se = library.c.sent_se
+    if (!se) { se = new Selection(); library.c.sent_se = se }
+    // the tree is STABLE (snap header line + Cyto anchor + witness read) and %dontSnap at birth —
+    //  its %Sent basis re-mints every pass by construction, exactly the churn a fixture shouldn't gate on.
+    let tree = w.oai({ Sent_Tree: 1, pier: pier, dontSnap: 1 })
+    tree.c.up = w
+    // est_D_T throws D~T on a topD still holding last pass's Travel; Housing's organise dodges it by
+    //  re-r()ing a fresh topD each pass.  We keep the C stable for the readers above, so we forget
+    //   the Travel in place instead — the same freshness, without a new tree identity each pass.
+    tree.c.T = null
+    await se.process({
+        n: library,
+        process_D: tree,
+        match_sc: {},
+        trace_sc: { Sent: 1 },
+        each_fn: async (D, n, T) => {
+            // depth 0 is the library: walk its Records; a Record is a leaf of this walk
+            //  (its %Stream is read at trace time, not traveled).
+            if (T.c.path.length - 1 === 0) {
+                T.sc.more = n.o({ Record: 1 })
+            } else {
+                T.sc.more = []
+            }
+        },
+        trace_fn: async (uD, n, T) => {
+            let stream = n.o({ Stream: 1 })[0]
+            // the sender's truth is what it has SERVED (rec.c.sent); the mirror's is what has ARRIVED
+            //  (%Stream have) — each side's tree reads its own adjusted reality.
+            let have = 0
+            if (n.c.sent != null) { have = +n.c.sent } else { have = stream ? +(stream.sc.have || 0) : 0 }
+            let D = uD.i({ Sent: 1, id: n.sc.id, name: n.sc.title || n.sc.id,
+                have: have,
+                total: stream ? +(stream.sc.total || 0) : 0,
+                got: +(stream ? (stream.sc.got || 0) : 0) })
+            D.c.rec = n
+            n.c.Sent_D = D
+            return D
+        },
+        resolved_fn: async (T, N, goners, neus) => {
+            if (T.c.path.length - 1 !== 0) return
+            for (const b of neus) {
+                if (library.c.repli_on_neu) { await library.c.repli_on_neu(b, library) }
+            }
+            for (const a of goners) {
+                if (library.c.repli_on_goner) { await library.c.repli_on_goner(a, library) }
+            }
+        },
+    })
+    return tree
+},
+//#endregion
+
+//#region crush — fold the big homogeneous collections behind ONE stuffed chunk each
+// ══ the data-crusher ══════════════════════════════════════════════════════════════════════════
+//  A replica world is mostly CONFETTI: 16 emits + 16 unemits per pier side, a Record per tone —
+//   drawn raw the graph is too big to read a label of.  The crush folds it: ANY non-structural
+//    container with children is stamped %stuff — Cyto then draws
+//     it as one chunk hosting a live Stuffing overlay (the ×N fold — Housing's stuffing awareness
+//      drives the grouping + refresh) and stops its walk there (descent suppressed at a stuffed
+//       node).  Beside the stamps a %Crush_Tree D** records what folded where — hand-rolled, and
+//        unlike %Sent_Tree (now a real Se — Repli_sent_se above) it STAYS hand-rolled for now: a Se's
+//         D** mirrors the walk it traveled (a D per visited node), while this report is deliberately
+//          FLAT (a %Crush per crushed container only) — lifting it means redesigning the report's
+//           shape, not swapping the scan.  The analysis rides the snap, so the Book diffs it and the
+//            witness %sees it.
+
+// Repli_crush_scan — one pass: walk w**, stamp %stuff on crushable containers, refresh %Crush_Tree.
+//  Idempotent + cheap — MusuReplica runs it every beat so the tree tracks collections growing.
+//   The tree itself is stuffed at birth (it is homogeneous meta by construction) but never walked —
+//    the report card folds into one chunk without counting itself.
+Repli_crush_scan(w) {
+    let tree = w.oai({ Crush_Tree: 1 })
+    tree.c.up = w
+    if (!tree.sc.stuff) { tree.sc.stuff = 1; tree.bump() }
+    this.Repli_crush_walk(tree, w, '', 0)
+    return tree
+
+},
+// Repli_crush_walk — recurse; structural mainkeys stay graph (the skeleton must remain readable) but
+//  are walked THROUGH; a crushed container's subtree is NOT descended (folded here = folded in the
+//   Cyto walk, the same cut).  `at` accumulates name-ish keys so the same container kind under two
+//    Piers earns two distinct Ds (DJ.Crowd.outbox vs Crowd.DJ.outbox).
+Repli_crush_walk(tree, node, at, d) { const H = this;
+    if (d > 8) return
+    for (const c of node.o()) {
+        let mk = Object.keys(c.sc)[0]
+        if (mk === 'Crush_Tree') continue
+        let nameish = c.sc.name || c.sc.pub || c.sc.pier || c.sc.id || ''
+        if (mk === 'w' || mk === 'H' || mk === 'A' || mk === 'Peering' || mk === 'Pier' || mk === 'req') {
+            let oat = nameish ? (at ? at + '.' + nameish : '' + nameish) : at
+            this.Repli_crush_walk(tree, c, oat, d + 1)
+            continue
+        }
+        let verdict = this.Repli_crushable(c)
+        if (verdict) {
+            if (!c.sc.stuff) { c.sc.stuff = 1; c.bump() }
+            let ident = (at ? at + '.' : '') + mk + (nameish ? '.' + nameish : '')
+            let D = tree.oai({ Crush: ident })
+            D.c.up = tree
+            D.sc.kind = verdict.kind
+            D.sc.n = verdict.n
+            D.bump()
+            D.c.crushed = c
+            continue
+        }
+        this.Repli_crush_walk(tree, c, at, d + 1)
+    }
+
+},
+// Repli_crushable — the rule: fold ANY non-structural container with children.  Even a weakly
+//  motivated Stuffing (mixed keys, one row per group) reads better as one chunk than as confetti —
+//   we scoop up ALL the C**.  kind = the dominant child mainkey (informational), n = child count.
+//    (The first cut gated on MANY-and-HOMOGENEOUS — ≥3 children, one mainkey ≥80% — too shy.)
+Repli_crushable(c) {
+    let N = c.o()
+    if (N.length < 1) return null
+    let counts = {}
+    for (const k of N) {
+        let mk = Object.keys(k.sc)[0]
+        counts[mk] = (counts[mk] || 0) + 1
+    }
+    let kind = null
+    let kn = 0
+    for (const mk of Object.keys(counts)) {
+        if (counts[mk] > kn) { kind = mk; kn = counts[mk] }
+    }
+    return { kind: kind, n: N.length }
+},
+//#endregion
+
+//#region replica — MusuReplica: the paginated streaming C** replication, DEMONSTRATED on two Piers
+// ══ MusuReplica — A shows B its music collection using the repli protocol above.  A holds a little library
+//  of real-PCM Records; it OFFERS each Record's head (the collection card — identity + metadata) so B's mirror
+//   catalog appears, then B PULLS the audio page by page (want from:N → a page whose lines advance the %Stream
+//    and whose objecties.buffer carries the bytes).  B reassembles the buffer, the %Sent_Tree tracks how much
+//     of each Record is where, and a deliberately DROPPED page proves the missing-buffer WARN.  Everything is
+//      deterministic + AC-free — the protocol is the subject, so the snap is a stable stream of the mirror
+//       filling (live in Cyto, Opt/useCyto).  The audio-proof (B plays its replicated copy) is the easy cherry
+//        on top once this is green.
+//         beat 2      SETUP  — Lake_link the wire; A synthesises 3 real-PCM Records + %Stream handles; arm repli
+//         beat 3      OFFER  — A's Se pass finds 3 neu Records → each offers itself (repli_on_neu) → B's
+//                              mirror catalog appears: replication driven by NOTICING, not by a loop
+//         beat 4      DROP   — B wants rec2's page but A withholds the BYTES (keeps the promise) → B's awaitbuf
+//                              never lands: the missing-buffer warn (given many beats to fire before witness)
+//         beat 5..10  PULL   — B wants each next page of rec0/rec1 (want-once cursor); A pages; B reassembles;
+//                              the Crowd-side Se tracks; rx.do() pumps B's awaitbuf reconcilers/warner each beat
+//         beat 11     settle — let the last pages land + the tracker refresh
+//         beat 12     witness — offered / metadata_intact / paged / reconciled / complete / bytes_faithful /
+//                               tracked / warns_missing + the crush %sees (traffic folds / libraries fold /
+//                               dozens into chunks / live-graph-really-folded)
+//         beat 13     RETIRE — A withdraws rec2 (the record whose page it dropped) → A's Se pass finds the
+//                              goner → an op:delete line retires it at B: un-replication is replication too
+//         beat 14     witness — retired (surgical removal at the mirror) + the Se-drive %sees (neus offered /
+//                               goner retired)
+//         every beat  crush  — Repli_crush_scan folds the growing collections (%stuff + %Crush_Tree),
+//                              so the Cyto stays readable while the traffic piles up
+MusuReplica(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuReplica_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// MusuReplica_drive — needs the Peeroleum spine (skips cleanly headless).  One protocol action per beat off
+//  step_n (req-local did_step), Musu family style.  Pull beats 4-9 share MusuReplica_pull (a want-once cursor
+//   makes the extra beats safe settle passes).
+async MusuReplica_drive(w, req) {
+    if (typeof this.Lake_link !== 'function' || typeof this.Peeroleum_send !== 'function') {
+        if (!w.oa({ skipped: 'no_transport' })) w.i({ skipped: 'no_transport' })
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuReplica_setup(w)
+        if (n === 3) await this.MusuReplica_offer(w)
+        if (n === 4) await this.MusuReplica_drop(w)
+        if (n >= 5 && n <= 10) await this.MusuReplica_pull(w)
+        if (n === 11) await this.MusuReplica_settle(w)
+        if (n >= 2) this.Repli_crush_scan(w)
+        if (n === 12) this.MusuReplica_witness(w)
+        if (n === 13) await this.MusuReplica_retire(w)
+        if (n === 14) await this.MusuReplica_witness_retire(w)
+    }
+    await this.Musu_float(w)
+
+},
+// MusuReplica_setup — stand up the two Piers over the loopback, arm the repli handlers, and build A's SOURCE
+//  library: 3 Records of real synth PCM (6 chunks each), each with a %Stream handle at have:0.  The chunks are
+//   the payload the protocol carries; their exact content doesn't matter to replication (bytes are bytes).
+async MusuReplica_setup(w) {
+    w.i({reached: "step_2"})
+    let link = await this.Lake_link(w, 'DJ', 'Crowd')
+    w.c.tx = link[0]
+    w.c.rx = link[1]
+    this.Peeroleum_arm_whittle(w)
+    link[1].i({ Ud: 1, pubkey: 'DJ' })
+    link[0].i({ Ud: 1, pubkey: 'Crowd' })
+    this.Repli_arm(w)
+    let src = w.oai({ Library: 1, pier: 'DJ' })
+    src.c.up = w
+    w.c.repli_src = src
+    let ti = 0
+    while (ti < 3) {
+        let chunks = []
+        let s = 0
+        while (s < 6) { chunks.push(this.Musu_synth(ti * 6 + s)); s = s + 1 }
+        let rec = src.i({ Record: 1, id: 'rec' + ti, title: 'Tone-' + ti, artist: 'Synthetic', seconds: 0.3, nchunks: 6 })
+        rec.c.up = src
+        rec.c.chunks = chunks
+        let stream = rec.i({ Stream: 1, name: 'audio', total: 6, have: 0, sr: 48000 })
+        stream.c.up = rec
+        ti = ti + 1
+    }
+
+},
+// MusuReplica_offer — arm the source library's Se hooks and run its first pass: every Record is a neu
+//  to a fresh tree, so each OFFERS ITSELF (and any later goner will retire itself) — the manual offer
+//   loop replaced by the Se noticing.  The hooks count what they drove (w.c.repli_neus|repli_goners)
+//    so the witness can claim the drive was the Se's, not a leftover loop's.
+async MusuReplica_offer(w) {
+    w.i({reached: "step_3"})
+    if (!w.c.repli_src) return
+    let src = w.c.repli_src
+    src.c.repli_on_neu = async (D, library) => {
+        w.c.repli_neus = (w.c.repli_neus || 0) + 1
+        if (D.c.rec) { await this.Repli_offer(w, w.c.tx, 'DJ', 'Crowd', D.c.rec) }
+    }
+    src.c.repli_on_goner = async (D, library) => {
+        w.c.repli_goners = (w.c.repli_goners || 0) + 1
+        await this.Repli_retire(w, w.c.tx, 'DJ', 'Crowd', D.sc.id)
+    }
+    await this.Repli_sent_se(w, src, 'DJ')
+
+},
+// MusuReplica_pull — B pulls the next audio page of rec0/rec1 (a want-once cursor advances at send, so the
+//  extra pull beats are harmless settle passes) and refreshes the %Sent_Tree progress mirror.
+async MusuReplica_pull(w) {
+    let lib = this.Repli_mirror_lib(w)
+    w.c.pull_cursor = w.c.pull_cursor || {}
+    for (const id of ['rec0', 'rec1']) {
+        let cur = w.c.pull_cursor[id] || 0
+        if (cur < 6) {
+            await this.Repli_want_next(w, w.c.rx, 'Crowd', 'DJ', id, 'audio', cur)
+            w.c.pull_cursor[id] = cur + 2
+        }
+    }
+    if (w.c.rx) await w.c.rx.do()
+    await this.Repli_sent_se(w, lib, 'Crowd')
+
+},
+// MusuReplica_drop — the WARN test: B wants rec2's first page, but A is told to withhold the bytes (repli_drop),
+//  so the lines cross (have advances) while the promised buffer never does — B's awaitbuf goes overdue + warns.
+async MusuReplica_drop(w) {
+    w.i({reached: "step_4"})
+    w.c.repli_drop = 'rec2:0'
+    await this.Repli_want_next(w, w.c.rx, 'Crowd', 'DJ', 'rec2', 'audio', 0)
+    await this.Repli_sent_se(w, this.Repli_mirror_lib(w), 'Crowd')
+
+},
+// MusuReplica_settle — a quiet beat so the last pages land and the tracker + awaitbuf reconcilers catch up.
+async MusuReplica_settle(w) {
+    w.i({reached: "step_11"})
+    if (w.c.rx) await w.c.rx.do()
+    await this.Repli_sent_se(w, this.Repli_mirror_lib(w), 'Crowd')
+
+},
+// MusuReplica_witness — the protocol, earned.  All deterministic + AC-free: metadata crossed byte-faithful,
+//  pages pulled + reassembled to the exact sample count, progress tracked, and a dropped buffer detected.
+MusuReplica_witness(w) {
+    let lib = this.Repli_mirror_lib(w)
+    let recs = lib.o({ Record: 1 })
+    let rec0 = lib.o({ Record: 1, id: 'rec0' })[0]
+    let s0 = rec0 ? rec0.o({ Stream: 1 })[0] : null
+    let src0 = w.c.repli_src ? w.c.repli_src.o({ Record: 1, id: 'rec0' })[0] : null
+    let tree = w.o({ Sent_Tree: 1, pier: 'Crowd' })[0]
+    let rx = w.c.rx
+    // offered: B's catalog mirrors all 3 source Records — the collection info crossed.
+    if (recs.length >= 3 && !(w.oa({witnessed: "offered"}))) w.i({witnessed: "offered"})
+    // metadata_intact: rec0's title survived the crossing byte-faithful (the cultural info, not garbled).
+    if (rec0 && src0 && rec0.sc.title === src0.sc.title && !(w.oa({witnessed: "metadata_intact"}))) w.i({witnessed: "metadata_intact"})
+    // paged: rec0's %Stream have advanced past the offer's 0 — pages of content crossed.
+    if (s0 && +(s0.sc.have || 0) > 0 && !(w.oa({witnessed: "paged"}))) w.i({witnessed: "paged"})
+    // reconciled: a page's objecties.buffer resolved to real bytes attached at the mirror (got > 0).
+    if (s0 && +(s0.sc.got || 0) > 0 && !(w.oa({witnessed: "reconciled"}))) w.i({witnessed: "reconciled"})
+    // complete: rec0 fully replicated — have==total and every page's bytes reassembled (3 pages of 2 chunks).
+    if (s0 && +(s0.sc.have || 0) === +(s0.sc.total || 0) && +(s0.sc.total || 0) > 0 && s0.c.pages && s0.c.pages.length >= 3 && !(w.oa({witnessed: "complete"}))) w.i({witnessed: "complete"})
+    // bytes_faithful: rec0's reassembled pages hold EXACTLY the source's sample count — the buffer crossed whole.
+    let got_samples = 0
+    if (s0 && s0.c.pages) { for (const p of s0.c.pages) got_samples = got_samples + p.length }
+    let want_samples = 0
+    if (src0 && src0.c.chunks) { for (const c of src0.c.chunks) want_samples = want_samples + c.length }
+    if (want_samples > 0 && got_samples === want_samples && !(w.oa({witnessed: "bytes_faithful"}))) w.i({witnessed: "bytes_faithful"})
+    // tracked: the Crowd-side %Sent_Tree (a real Selection.process's D**) reports arrival — a %Sent, have>0.
+    let anySent = tree ? tree.o({ Sent: 1 }).some(d => +(d.sc.have || 0) > 0) : false
+    if (anySent && !(w.oa({witnessed: "tracked"}))) w.i({witnessed: "tracked"})
+    // warns_missing: rec2's dropped page left an awaitbuf that never landed (and warned) — the reconciler
+    //  detected the promised buffer that never arrived.  Read the fact directly, not just the warn stamp.
+    let stuck = rx ? rx.o({ req: 'awaitbuf' }).some(r => !r.oa({ landed: 1 })) : false
+    let warned = rx ? rx.o({ req: 'awaitbuf' }).some(r => r.oa({ warned: 1 })) : false
+    if ((stuck || warned) && !(w.oa({witnessed: "warns_missing"}))) w.i({witnessed: "warns_missing"})
+    // ── the crush, analysed — the replica's confetti folds into big chunks of classification ─────
+    //  %see claims (once-noticed).  The first three read the model: stamps + the %Crush_Tree report
+    //   card.  The last reads cyto_folded — the LIVE graph's own c-side stamp, only ever written by a
+    //    real Cyto walk stopping at the chunk — so it is the one that dies if descent suppression is
+    //     deleted (and dies headless too — which is the point: record on a live runner).
+    let ct = w.o({ Crush_Tree: 1 })[0]
+    let crushes = ct ? ct.o({ Crush: 1 }) : []
+    let folded = 0
+    for (const cd of crushes) folded = folded + +(cd.sc.n || 0)
+    let boxes = []
+    for (const pg of w.o({ Peering: 1 })) {
+        for (const pier of pg.o({ Pier: 1 })) {
+            boxes.push(...pier.o({ outbox: 1 }))
+            boxes.push(...pier.o({ inbox: 1 }))
+        }
+    }
+    let libs = w.o({ Library: 1 })
+    if (boxes.length >= 4 && boxes.every(b => b.sc.stuff) && !(w.oa({see: 'the wire traffic folds — each inbox and outbox rides as one stuffed chunk'}))) w.i({see: 'the wire traffic folds — each inbox and outbox rides as one stuffed chunk'})
+    if (libs.length >= 2 && libs.every(l => l.sc.stuff) && !(w.oa({see: 'both libraries fold — a Record chunk each side of the wire'}))) w.i({see: 'both libraries fold — a Record chunk each side of the wire'})
+    if (folded >= 24 && crushes.length > 0 && crushes.length <= 9 && !(w.oa({see: 'dozens of little bits fold into single-digit chunks of classification'}))) w.i({see: 'dozens of little bits fold into single-digit chunks of classification'})
+    let srcl = w.c.repli_src
+    if (srcl && srcl.c.cyto_folded != null && !(w.oa({see: 'the live graph stops at a stuffed chunk — the fold is real not cosmetic'}))) w.i({see: 'the live graph stops at a stuffed chunk — the fold is real not cosmetic'})
+
+},
+// MusuReplica_retire — A withdraws rec2 from its library (the record whose page it dropped) and lets the
+//  Se find out: the pass pairs rec0/rec1 and leaves rec2's %Sent unclaimed — the goner — so repli_on_goner
+//   fires and an op:delete line retires it at B.  The withdrawal crosses the same wire the offer did.
+async MusuReplica_retire(w) {
+    w.i({reached: "step_13"})
+    let src = w.c.repli_src
+    if (!src) return
+    await src.rm({ Record: 1, id: 'rec2' })
+    await this.Repli_sent_se(w, src, 'DJ')
+    if (w.c.rx) await w.c.rx.do()
+    await this.Repli_sent_se(w, this.Repli_mirror_lib(w), 'Crowd')
+
+},
+// MusuReplica_witness_retire — the withdrawal, earned.  The removal at the mirror is SURGICAL (rec2 gone,
+//  the other two intact with their bytes) and the drive was the Se's own noticing (the hook counters).
+async MusuReplica_witness_retire(w) {
+    if (w.c.rx) await w.c.rx.do()
+    let lib = this.Repli_mirror_lib(w)
+    let recs = lib.o({ Record: 1 })
+    let gone = !lib.oa({ Record: 1, id: 'rec2' })
+    // retired: exactly the withdrawn Record vanished from B's mirror — the op:delete located and removed
+    //  it and nothing else.
+    if (gone && recs.length === 2 && !(w.oa({witnessed: "retired"}))) w.i({witnessed: "retired"})
+    // the Se-drive claims: the offers and the retire were REACTIONS to the Se's neus|goners — the counters
+    //  only ever bump inside the hooks the resolved pass calls.
+    if ((w.c.repli_neus || 0) >= 3 && !(w.oa({see: 'the Se noticed each new Record and the offer followed — replication driven by noticing'}))) w.i({see: 'the Se noticed each new Record and the offer followed — replication driven by noticing'})
+    if ((w.c.repli_goners || 0) >= 1 && gone && !(w.oa({see: 'the Se noticed the withdrawn Record and an op:delete line retired it at the mirror'}))) w.i({see: 'the Se noticed the withdrawn Record and an op:delete line retired it at the mirror'})
 },
 //#endregion
 

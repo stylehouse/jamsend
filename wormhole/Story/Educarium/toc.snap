@@ -1,0 +1,12 @@
+story:Educarium
+  Styles
+  Plan
+  Opt
+    For
+    trickle
+  TimeSpool
+    TimeTotal:beliefs,avg=1.577
+      sample=1.577,at=1783079205
+    TimeTotal:step,avg=1.577
+      sample=1.577,at=1783079205
+  step,dige:0000000000000000

@@ -18,6 +18,8 @@ Waft:Ghost/Music/Ality,active
     Funkcion:Storying,of_Book:MusuEdge
     Funkcion:Storying,of_Book:MusuPier
     Funkcion:Storying,of_Book:MusuConceal
+    Funkcion:Storying,of_Book:MusuBounce
+    Funkcion:Storying,of_Book:MusuReplica
   What:the machine
     What:1 the spool
       Doc:Ghost/M/Radiola.g
@@ -182,6 +184,56 @@ Waft:Ghost/Music/Ality,active
       Point,method:MusuConceal_witness
       Doc:Ghost/M/Mixer.g
       Point,method:Mix_reverse
+    What:MusuBounce (two-context audio bounce — the seed MusuReplica grew from)
+      Doc:Ghost/Story/Musuation.g
+      Point,method:MusuBounce_setup
+      Point,method:MusuBounce_bounce
+      Point,method:MusuBounce_witness
+    What:MusuReplica (paginated streaming C** replication — offer a %Record then deal out its %Stream page by page)
+      Doc:Ghost/Story/Musuation.g
+      Point,method:MusuReplica_drive
+      Point,method:MusuReplica_offer
+      Point,method:MusuReplica_pull
+      Point,method:MusuReplica_drop
+      Point,method:MusuReplica_retire
+      Point,method:MusuReplica_witness
+      Point,method:Repli_fragment
+      Point,method:Repli_merge
+      Point,method:Repli_serve_want
+      Point,method:Repli_recv_lines
+      Point,method:Repli_retire
+      Point,method:Repli_sent_se
+  What:Pier reality (spec §9 — the replication goes real)
+    Doc:src/lib/O/spec/Music_todo.md
+    Point,text:9.1
+    What:the real library (FSA share gate → Records off /music)
+      Doc:Ghost/Story/Musuation.g
+      Point,method:MusuCrate_buffer
+      Doc:Ghost/M/Crate.g
+      Point,method:Crate_fetch_record
+    What:Selections sendable to Piers (the oldest note meets the Se)
+      Doc:src/lib/mostly/Selection.svelte.ts
+      Point,text:sendable
+      Doc:Ghost/Story/Musuation.g
+      Point,method:Repli_sent_se
+      Point,method:Repli_lines_of
+    What:the pull rides the playhead (replication rate = listening rate)
+      Doc:Ghost/M/Radiola.g
+      Point,method:req_streamability
+      Doc:Ghost/Story/Musuation.g
+      Point,method:Repli_want_next
+    What:availability map + multi-source (a tree per peer routes the want)
+      Doc:Ghost/M/Mesh.g
+      Point,method:Mesh_route
+      Doc:Ghost/Story/Musuation.g
+      Point,method:Repli_serve_want
+    What:wear makes the mirror a cache
+      Doc:Ghost/M/Radiola.g
+      Point,method:req_reap
+    What:the Keep gates what enters (grants before wants)
+      Doc:Ghost/S/Swarm.g
+      Point,text:verify_grant
+      Doc:src/lib/O/spec/Backbone_plan.md
   What:the source it reimagines
     Doc:src/lib/ghost/Radios.svelte
     Point,method:listening

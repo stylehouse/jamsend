@@ -11,11 +11,14 @@
 
     // search — the universal searchbar's live result set (Liesui threads it through), so the
     //  map can hang the hits off its Doc chips.  Pure UI plumbing; undefined = no search live.
-    let { H, w, search }: { H: House, w?: TheC, search?: any } = $props()
+    // onhover — the map's Waft-under-mouse, reported back up (the searchbar's StemHive glows
+    //  its member rows).  Same plumbing, opposite direction.
+    let { H, w, search, onhover }: {
+        H: House, w?: TheC, search?: any, onhover?: (waft?: string) => void } = $props()
 </script>
 
 <div class="plank">
-    <DocWaftMap {H} {w} {search} />
+    <DocWaftMap {H} {w} {search} {onhover} />
 </div>
 
 <style>

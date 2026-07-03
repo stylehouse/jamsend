@@ -1,0 +1,25 @@
+Snap:H
+  H:MusuReplica,Run
+    A:MusuReplica
+      self,round=2	{"mung":["age"]}
+      w:MusuReplica
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Peering,name:DJ,req=2,ok
+          Pier,pub:Crowd,req=2,ok
+            Ud,pubkey:Crowd
+          active_transport,type:mock,open
+        Peering,name:Crowd,req=3,ok
+          Pier,pub:DJ,req=2,ok
+            Ud,pubkey:DJ
+          active_transport,type:mock,open
+        Library,pier:DJ,stuff
+          Record,id:rec0,title:Tone-0,artist:Synthetic,seconds=0.3,nchunks=6
+            Stream,name:audio,total=6,have=0,sr=48000
+          Record,id:rec1,title:Tone-1,artist:Synthetic,seconds=0.3,nchunks=6
+            Stream,name:audio,total=6,have=0,sr=48000
+          Record,id:rec2,title:Tone-2,artist:Synthetic,seconds=0.3,nchunks=6
+            Stream,name:audio,total=6,have=0,sr=48000
+        Crush_Tree,stuff
+          Crush:Library.DJ,kind:Record,n=3

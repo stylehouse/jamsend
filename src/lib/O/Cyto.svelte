@@ -470,6 +470,15 @@
                     if (nd.overlay_bg) C.sc.overlay_bg = nd.overlay_bg
                 }
 
+                // a stuffed container FOLDS: this node hosts the Stuffing overlay (the ×N groups) and
+                //  the walk stops here — its subtree stays out of the graph.  cyto_folded (c-side,
+                //   never snapped) is the live graph's own stamp that the fold really happened — a Book
+                //    can witness it, where %stuff alone only proves a crusher stamped intent.
+                if (n.sc.stuff != null) {
+                    T.sc.no_further = 'stuffed'
+                    n.c.cyto_folded = Se.c.tick
+                }
+
                 // special cases of node typing:
                 // the non-first duplicate refs get:
                 if (T.sc.loopy) C.sc.loopy = 1
@@ -647,21 +656,33 @@
         //  (Cytui). The cytoscape node is just a sized host box with a matching bg; the overlay
         //   carries the real material. No overlay_str — the 'stuff' kind tells Cytui to mount the
         //    component, not paint text. source_n rides the wave entry's .c to reach the live particle.
-        //  < descent is NOT yet suppressed — a stuffed container's children also render as nodes (TODO).
+        //  descent is suppressed in cyto_scan (T.sc.no_further) — the subtree rides as the overlay's
+        //   folded ×N groups, never as graph nodes.  The label carries the fold size for zoomed-out
+        //    reading (the overlay hides below zoom 0.3, the label doesn't).
+        //  The node is an OVAL slightly wider than the Stuffing riding on it: the overlay is
+        //   transparent + self-sizing and Cytui's reposition grows the oval to wrap it (width/height
+        //    here are only the birth size; the auto-sizer owns them after).  The border takes the
+        //     mainkey's Matstyle colour so a chunk reads as its class even zoomed out.
         if (n.sc.stuff != null) {
-            const bg = '#04202a'
+            const key = this.mainkey(n)
+            let border = '#266ed9'
+            const stylesC = w.c.Styles as TheC | null | undefined
+            if (key && stylesC) {
+                const ms = this.matstyle_get_or_create(stylesC, key)
+                border = (this.ms_css(ms)['background-color'] as string) ?? border
+            }
             return {
-                label: '',
+                label: `${key} ×${n.o().length}`,
                 overlay_kind: 'stuff',
-                overlay_bg:   bg,
                 style: {
-                    'background-color': bg,
-                    'border-width': 1,
-                    'border-color': '#266ed9',
-                    shape: 'round-rectangle',
-                    width:  200,
-                    height: 130,
-                    color: '#266ed9',
+                    'background-color': '#04202a',
+                    'background-opacity': 0.85,
+                    'border-width': 2,
+                    'border-color': border,
+                    shape: 'ellipse',
+                    width:  260,
+                    height: 140,
+                    color: border,
                     'font-size': '9px',
                     'text-valign': 'top',
                     'text-halign': 'center',

@@ -60,6 +60,10 @@
     //  threaded down the Plank so DocWaftMap hangs the hits off its Doc chips.  Plain local
     //   $state — UI-to-UI plumbing, never a particle.
     let search_live: any = $state(undefined)
+    // hover_waft — the Waft key under the mouse (editor-column Waft roots + the Plank map's
+    //  chips report in), threaded to the searchbar so its StemHive glows the member rows.
+    //   Same plumbing family as search_live, opposite direction.
+    let hover_waft: string | undefined = $state(undefined)
 
     // examining — the %examining particle from Lies's w, placed in watched:ave.
     // Passed down to Waft and DocRow; DocRow derives is_examining from it.
@@ -166,7 +170,7 @@
             <span class="ls-role ls-role-{role}" title={ROLE_TITLE[role]}>{role}</span>
         {/if}
         {#if Lies && !H.Lies_is_runner(Lies)}
-            <Searchbar {H} w={Lies} onresults={(r: any) => search_live = r} />
+            <Searchbar {H} w={Lies} hover={hover_waft} onresults={(r: any) => search_live = r} />
         {/if}
         <PeelInput
             label="Waft"
@@ -232,7 +236,8 @@
                 <WaftComp {H} w={Lies} {waft} depth={0}
                     {examining}
                     on_active={set_waft_active}
-                    on_delete={delete_waft} />
+                    on_delete={delete_waft}
+                    on_hover={(k?: string) => hover_waft = k} />
             {/each}
         </div>
     {:else}
@@ -257,7 +262,8 @@
          Liesui, under all the Waft columns (not floating over them — that was the baseshell cell,
          now the Brink's alone).  Author chrome, off the runner. -->
     {#if Lies && !H.Lies_is_runner(Lies)}
-        <div class="ls-plank-slot"><Plank {H} w={Lies} search={search_live} /></div>
+        <div class="ls-plank-slot"><Plank {H} w={Lies} search={search_live}
+                                          onhover={(k?: string) => hover_waft = k} /></div>
     {/if}
 
     <!-- the base shell — ONE row resting at the foot of Lies (a zero-height sticky anchor bounded in

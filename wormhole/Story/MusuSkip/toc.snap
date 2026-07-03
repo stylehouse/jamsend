@@ -4,8 +4,12 @@ story:MusuSkip
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.004
+    TimeTotal:beliefs,avg=0.007
       sample=0.004,at=1783047719
-    TimeTotal:step,avg=0.004
+      sample=0.006,at=1783076037
+      sample=0.011,at=1783080295
+    TimeTotal:step,avg=0.007
       sample=0.004,at=1783047719
+      sample=0.006,at=1783076037
+      sample=0.011,at=1783080295
   step,dige:5fd5d2fc5d80e380

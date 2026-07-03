@@ -475,3 +475,83 @@ The rename rows (`KEEP_AHEAD`→`keep_ahead`, `preview`→`radiopreview`) are th
   Next layer: spaced phrases (the snap value needs quoting/escaping — single tokens are robust today)
    and an in-app *auto-discovery* that mints bridge Points from a live two-Doc token-intersection
     (done here at author-time by a script; the live minter is the follow-up).
+
+---
+
+## 9. Pier reality — taking Repli from the loopback to the world
+
+The replication protocol is real (Repli_* + the Se, §6/MusuReplica — live-green 2026-07-03), but its
+ world is a demo: two Piers in one w, three synthetic Records, a beat-loop pull. This section is the
+  idea set for making Piers REAL — each idea grows from a seam that already exists, named so a session
+   can pick one up and go. The oldest statement of the destination sits at the top of
+    `src/lib/mostly/Selection.svelte.ts` ("Selections are then sendable to particular Piers. So it
+     mostly moves whole folders... replicate the meaningful folder structure above the selected
+      stuff") — written before the Se existed; now the %Sent_Tree IS a Selection, so the sentence can
+       finally mean something executable.
+
+**9.1 The real library.** A's `%Library` today is `Musu_synth` output; reality is the `/music` mount
+ (read-only) arriving through the FSA share gate (`H.c.disk_gated` + `open_dir` — the granted-share
+  path, since ?E=/?B= boots forbid the OPFS shadow disk). A walk mints `%Record`s from files (id =
+   path-hash, title/artist off tags or path parts) with `%Stream` handles that decode lazily —
+    `MusuCrate` already fetch+decodes real audio, so the decode seam exists; what's new is the
+     LIBRARY as a Se over a folder tree ("hierarchise FileLists"), whose neus|goners are files
+      appearing|vanishing on disk. The same `repli_on_neu` hook then offers REAL music with zero new
+       protocol.
+
+**9.2 Selections sendable to Piers.** The share unit is not the library, it's a SELECTION of it — a
+ genre, an artist folder, an occasion. Concretely: a `%Share,label:<name>` particle holding a match
+  (what subset) and a to (which Pier|channel), whose own Se runs over just that subset — its neus
+   offer, its goners retire (unshare without delete: the record leaves the SELECTION, not the
+    library). `Repli_lines_of` already recurses a subtree, so the meaningful folder structure above
+     the selected stuff replicates for free — the mirror sees `genre/artist/album/track`, not a flat
+      pile.
+
+**9.3 The pull rides the playhead.** MusuReplica pulls on a beat loop; a real listener pulls because
+ they are LISTENING. Radiola already has the exact shape — `req_streamability` arms `%want:stream`
+  when the un-played tail drops to the `want_left` floor — so the want-cursor should key off the
+   playhead + keep_ahead, making replication rate = listening rate (the anti-hoard: you fetch what
+    you play, plus a safe margin — the same live-edge margin MusuEdge holds).
+
+**9.4 Catalog gossip over multicast.** Offers today are unicast `to:'Crowd'`; the relay already fans
+ out `to:@channel` topics (Peeroleum multicast, PereProof step 29). An offer published once to
+  `@<cluster>` reaches every subscriber; a Pier arriving late gets the current catalog as its
+   subscribe baseline and live neus after — the Se's noticing becomes the cluster's noticing.
+
+**9.5 A %Sent_Tree per peer — the availability map.** In the demo, one tree per side. In a swarm, A
+ keeps a tree PER KNOWN PEER (`Sent_Tree,pier:<pub>`): "how much of each Record is where" becomes the
+  routing table. `Mesh_route` (cheapest-route, MusuMesh) can then answer "who do I want page N from"
+   — multi-source pulls, different pages from different holders, the torrent shape grown from parts
+    we already run.
+
+**9.6 Wear makes the mirror a cache.** MusuWear reaps worn records; applied to a mirror, `got`
+ REGRESSES when pages are reaped — and the Se's pairing already carries continuity (bD), so a
+  regression is visible history, not a fresh unknown. Replication stops meaning "copy forever" and
+   starts meaning "lease-shaped cache": re-pullable, wearable, honest about what is actually held.
+
+**9.7 The Keep gates what enters.** Repli verifies bytes (sha256 per frame) but not INTENT. The
+ cluster-trust layer (signed frames, the cluster Idento) says who a Pier IS; the Keep (attention ×
+  crypto × acceptance) decides what it ACCEPTS: a mirror is quarantine until kept. Swarm.g already
+   mints|verifies grants — a `want` without a grant for that Share is refused; an offer is an
+    invitation, not an obligation. This is where music-sharing stops being promiscuous replication
+     and becomes consent all the way down.
+
+**9.8 The tree is the resume.** A reconnecting Pier must not re-pull from zero. The %Sent_Tree
+ persists (it is C**, it can snap — dontSnap is per-fixture hygiene, not a persistence ban), so
+  `want from:have` resumes where the wire broke — the same baseline-adoption shape that fixed the
+   inseq reload. The D** with continuity IS the cursor state; no separate bookkeeping to invent.
+
+**9.9 Retire as a first-class social act.** op:delete crossing the wire (MusuReplica beat 13) means
+ a shared thing can be WITHDRAWN — mistakes, rights, dedup, moderation. Generalised: a goner in a
+  Share retires at subscribers of that Share only; a goner in the library retires everywhere. The
+   un-replication path is tested and symmetric with the offer — keep it that way as the semantics
+    grow.
+
+**9.10 The audio-proof cherry.** Deferred from MusuReplica deliberately: B PLAYS its replicated
+ copy on its own (muted, tapped) context — MusuBounce already runs two contexts. The first full
+  end-to-end: a real file picked on A (9.1), offered through a Share (9.2), pulled at listening rate
+   (9.3), heard at B. That demo IS the app; everything above it is how it stays honest at swarm
+    scale.
+
+The order that suggests itself: 9.1 (real library) → 9.10's spine (offer→pull→play with one real
+ file) → 9.2 (Shares) → 9.4 (multicast) → then 9.5–9.8 as the swarm grows peers. 9.7 (Keep) tracks
+  `spec/Backbone_plan.md` — don't fork its design here.

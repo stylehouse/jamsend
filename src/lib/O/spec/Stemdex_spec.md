@@ -18,8 +18,16 @@ Companions: `reactivity_docs.md` (the time discipline everything below obeys),
       tokens freetext ranked by hit mass).  Fed from the `%Good text/Doc` disk cache only —
        covers every doc in the loaded Wafts + the whole GhostList, opened or not; %Goods are
         confirmed off-snap, and contents staying in `.c` is the session's snippet store.
-`ui/Searchbar.svelte` ('/' summons) + the DocWaftMap hang render it; a hit click is
- `Lies_ghost_pick` + `Dock_open{path, point}` (def NAME or the `text:` Point bridge).
+`ui/Searchbar.svelte` ('/' summons) + the DocWaftMap hang render it.  The panel is the
+ **StemHive**: one flat list, every matched name with its FULL path, sorted by path (the
+  path is the structure; ƒ|%|≈ glyphs ride the rows).  Mousing over a Waft — editor column
+   or Plank chip — glows the member rows (hover threads through Liesui; membership is a
+    settled walk under `H.clear`).  A hit click is ONE elvisto, `Lies_ghost_pick{path,
+     point}` (def NAME or the `text:` Point bridge): a pick WITH a point is a search
+      DELIVERY — always recorded in today's Aside, reusing the day's moment %What for that
+       Doc, the Point riding under the %Doc as `{Point:1, method}` — then the want lands and
+        `Dock_open` scrolls to it.  Trail homes are never point-polluted (a Point under a
+         curated What feeds the LE checkout extent).
 
 ## 2. Principle — track ALL change, don't re-derive
 

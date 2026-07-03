@@ -1,0 +1,8 @@
+Waft:Aside/2026-07-04,aside
+  What,FromWhat:Waft:Ghost/Net/Easy/Doc:src/lib/O/spec/Peeroleum_spec.md
+    Doc:Ghost/N/Peeroleum.g
+      Point,method:text:emit
+      Point,method:text:unemit
+  What,FromWhat:Waft:Aside/2026-07-04/What:1
+    Doc:Ghost/Story/Peregrination.g
+      Point,method:text:emit
