@@ -1,0 +1,7 @@
+Snap:H
+  H:SwarmSteal,Run
+    A:SwarmSteal
+      self,round	{"mung":["age"]}
+      w:SwarmSteal
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

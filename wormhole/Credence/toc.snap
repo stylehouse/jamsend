@@ -9,8 +9,8 @@ Waft:Credence
   What:Swarm,desc:the social sharing layer — signed invites reciprocal grants revocation and portable accounts
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:SwarmStaple
-    Funkcion:Storying,of_Book:SwarmWire,brand_new:1
-    Funkcion:Storying,of_Book:SwarmSteal,brand_new:1
+    Funkcion:Storying,of_Book:SwarmWire
+    Funkcion:Storying,of_Book:SwarmSteal
   What:Musu,desc:the music-piracy streaming platform — from cursor spool to real-audio mesh
     Funkcion:StoryTimes
     What:cursor models,desc:pure cursor-arithmetic simulations of the streaming spine — no audio no wire

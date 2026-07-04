@@ -1,0 +1,12 @@
+Snap:H
+  H:SwarmSteal,Run
+    A:SwarmSteal
+      self,round=2	{"mung":["age"]}
+      w:SwarmSteal,now=1751700000
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Account,of:Alice
+          Identity:32c1ce7a059129d1,prepub:32c1ce7a059129d1,friendly:Alice
+            Peering,name:32c1ce7a059129d1,friendly:Alice
+        req:witness,eternal,ok
+        see:Alice stands alone — her key-derived name is her one address

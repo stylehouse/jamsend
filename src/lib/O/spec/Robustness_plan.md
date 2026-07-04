@@ -168,17 +168,42 @@ capability-probed at the seam (and the seam says which capability is missing, no
 
 ## The prioritized plan (execute in this order)
 
-- **P0 — authoritative-absence at `land_good`** (Organ 3). *Acceptance:* a transient/unconfirmed `not_found`
-  for Cluster/Keep/GhostList/Library/EntropyProfile can never wipe the durable snap; the toc's `notfound_once`
-  re-ask becomes the shared read contract. **This is the thread that started the whole session.**
-- **P1 — Peeroleum never acks unhandled/undelivered** (Organ 2). *Acceptance:* an unregistered frame type →
-  `%faulty`/warn, not `ok`; a drop over a dead transport does **not** return a "sent" seq (caller HOLDs).
-- **P1 — clear the `channel_up`/`transport_up` latches** (Organ 1). *Acceptance:* an HMR remix that strips
-  `Socket_real` re-stands-up the channel instead of wedging "relay down".
-- **P2 — identity collapse 9 → 2** (Organ 4). *Acceptance:* `grant.for` is a full pub, routing derives
-  `prepubOf` at send, the two-tier union is deleted, and a `channel_up` assertion fires if advertise ≠ hello.
-  Retires H1-H6 by construction.
-- **P2 — wormhole `bin_write` + nav precedence** (Organ 5, below).
+> **Landed 2026-07-04** (this session, all parse/compile-clean; `:9091`-unverified — verify each on a live
+> runner via `runner_ask`): ✅ P0 land_good · ✅ P1 latches · ✅ P1 ack-surface (warn only) · ✅ P2 nav-precedence
+> · ✅ Organ 4 / H5 assertion (diagnostic). **Remaining:** the identity collapse's *behavioral* core (Organ 4
+> parts 1-3) — staged deliberately, see the note under it.
+
+- **P0 — authoritative-absence at `land_good`** ✅ **DONE** (Organ 3). `LiesStore_land_good` now takes the read
+  req and re-asks ONCE before trusting a `not_found` (deduped per-req across the Phase-2 + read_good land sites);
+  a single transient `not_found` for a registry Waft never lands as absence, so it can't wipe the durable snap.
+  Docs (`text/Doc`) are exempt (a not_found doc = "new blank file", and a one-shot cold subscribe must not hang).
+  `Auto.svelte` Library got the same re-confirm on its own `rw` queue. *Acceptance met.* **This is the thread that
+  started the whole session.**
+- **P1 — Peeroleum never acks unhandled/undelivered** ⚠️ **PARTIAL** (Organ 2). Done: an unregistered frame type
+  now **warns loudly** (`Peeroleum.g` req_unemit; gen recompiled via LocalGen). *Deferred:* the "mark `%faulty`,
+  don't-ack" escalation — it would **retx-wedge** the conditionally-registered handlers (`test_*`, `repli_*`,
+  `audiochunk`, `stream_offer`) if any legit send-without-handler type exists, so it needs a live run to prove
+  safe first. The drop-returns-seq case turned out already-covered (`Lies_send_rungo` gates on `channel_live`
+  and rungo is booked → Reliable.g retx redelivers), so no change there.
+- **P1 — clear the `channel_up`/`transport_up` latches** ✅ **DONE** (Organ 1). `Lies_channel_up` / `Lies_transport_up`
+  now reconcile the latch against the live transport ghost: if `Socket_real` has vanished (a remix the socket's own
+  auto-reconnect can't fix), CLEAR the latch and re-stand-up (idempotent — `Peeroleum_on` is keyed by type, enroll
+  is `oa`-guarded, keepalive timer guarded). A merely-disconnected ws does NOT flap it. *Acceptance met.*
+- **P2 — identity collapse 9 → 2** 🔶 **STAGED** (Organ 4, the deep fix). Done: the H5 **assertion** — `Lies_self`
+  now warns when the advertised prepub ≠ the signing-key prepub (diagnostic, non-behavioral). **NOT yet done and
+  deliberately held:** parts 1-3 (auto-adopt the legacy tier + delete the `?? legacy` forks; `prepub` as a pure
+  derivation; `grant.for` = full pub with `prepubOf` derived at send; apply to `replyBIN`). These are a *coherent
+  set* that only makes sense done together, and they rewrite load-bearing routing/identity — a blind pass risks
+  re-breaking the wormhole/routing just made to work. **Do them as one focused pass WITH a live runner in the
+  loop: after each stage, `runner_ask ping` (routing intact) + a grant round-trip (wormhole intact).** Retires
+  H1-H6 by construction.
+- **P2 — wormhole nav precedence** ✅ **DONE** (Organ 5). `Lies_remote_wormhole_install` + `_reconcile` now PREFER
+  a granted local share (`A.c.DL`) over the editor proxy — the heartbeat no longer clobbers a just-granted
+  `WormholeNav(DL)`; the badge shows a third `local` state honestly (Rundar). Granting FSA on a `&remoteWormhole=1`
+  tab now "just works" and unlocks `bin_write` for free. *Acceptance met.*
+- **P2 — wormhole `bin_write` over the proxy** ⏸️ **DEFERRED** (Organ 5, below). Not urgent — `testsounds/` exists
+  on disk, and nav-precedence (above) unblocks binary writes via a granted local share. The genuinely-headless
+  path (option b — binary frames both directions, corr-matched) rides the P2 identity/wormhole pass.
 
 ---
 

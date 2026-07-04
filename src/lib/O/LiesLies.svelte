@@ -199,7 +199,24 @@
             const H = this as House
             const role = H.Lies_role(w)
             if (role !== 'editor' && role !== 'runner') return        // bare: no channel
-            if (w.c.channel_up) return                                 // once
+
+            // Reconcile the latch against the live transport ghost — don't just trust it.  channel_up
+            //  is stamped once at standup; if a later HMR remix (or a torn-down sub-House) strips
+            //   Socket_real off H, the socket's OWN auto-reconnect can't save us — there is no
+            //    transport ghost left to reconnect — and a bare `if (channel_up) return` would keep
+            //     asserting "up" forever over a dead channel (the "relay down" wedge, Robustness_plan
+            //      Organ 1).  So if the latch is set but the transport ghost has vanished, CLEAR it and
+            //       fall through to re-stand-up once the ghost re-deposits (Peeroleum_on is keyed by
+            //        type, so re-registering handlers is idempotent; the keepalive timer is guarded).
+            //   A merely-DISCONNECTED ws is NOT this case: Socket_real stays a function across a
+            //    reconnect and on_open re-fires become/hello — we must not flap channel_up during normal
+            //     backoff, only when the ghost itself is gone.
+            if (w.c.channel_up && typeof (H as any).Socket_real !== 'function') {
+                H.tlog(`🔌 channel_up latch stale — Socket_real vanished (remix?) — re-standing-up`)
+                delete w.c.channel_up
+                delete w.c.no_socket_since; delete w.c.no_socket_note
+            }
+            if (w.c.channel_up) return                                 // genuinely up
             // undefined here is usually a miscompiled gen/N/Tribunal.go that DROPPED Socket_real (a bad editor ghost-compile does), NOT a timing race — grep the .go for it + recompile headless via LocalGen before theorising.
             //  LOUD, not silent: this guard once swallowed a cross-wired Tribunal.go (Peeroleum's compile
             //   output under Tribunal's Ghostmeta — Creduler reads "ready", Socket_real never deposits) for a
@@ -339,9 +356,14 @@
         //         deposit lands, then opens the ws on a following tick.
         async Lies_transport_up(w: TheC) {
             const H = this as House
-            if (w.c.transport_up) return
             const role = H.Lies_role(w)
             if (role !== 'editor') return   // EDITOR-only: the runner gets the live spine via CREDULER_GHOSTS
+            // Reconcile the latch (mirrors Lies_channel_up, Robustness_plan Organ 1): transport_up gates
+            //  the one-time enroll of the FROZEN spine that PROVIDES Socket_real.  If a remix strips that
+            //   ghost, a stale transport_up would block the re-enroll that would bring it back — so clear
+            //    the latch when the ghost has vanished and let the idempotent enroll (oa-guarded) re-run.
+            if (w.c.transport_up && typeof (H as any).Socket_real !== 'function') delete w.c.transport_up
+            if (w.c.transport_up) return
             if (typeof WebSocket === 'undefined') return               // not a browser
             w.c.transport_up = true
 
@@ -521,10 +543,21 @@
         //        all (nothing to claim — a ?B= runner with no ?I and no env key).
         Lies_self(w?: TheC): { prepub: string } | undefined {
             const H = this as House
-            const face = (H as any).Clustation_self?.() as { prepub?: string } | undefined
-            if (face?.prepub) return { prepub: face.prepub }
             const idento = H.Lies_cluster_idento(w)
-            return idento?.pub ? { prepub: prepubOf(idento.pub) } : undefined
+            const key_prepub = idento?.pub ? prepubOf(idento.pub) : undefined
+            const face = (H as any).Clustation_self?.() as { prepub?: string } | undefined
+            if (face?.prepub) {
+                // H5 assertion (Robustness_plan Organ 4): the prepub we ADVERTISE / claim (this stored
+                //  face) MUST equal the prepub of the key we SIGN + hello-bind with — the relay binds our
+                //   socket under prepubOf(signing pub), so if the two diverge, every to:<us> reply routes
+                //    to a socket bound under a DIFFERENT prepub and is silently lost (H1's cousin).  Nothing
+                //     enforced this before — the collapse makes prepub a pure derivation; until then, at
+                //      least surface the divergence loudly instead of letting it drop replies in the dark.
+                if (key_prepub && key_prepub !== face.prepub)
+                    console.warn(`🪪⚠ identity divergence: advertised prepub ${face.prepub} ≠ signing-key prepub ${key_prepub} — to:<us> frames will misroute (Robustness_plan Organ 4/H5)`)
+                return { prepub: face.prepub }
+            }
+            return key_prepub ? { prepub: key_prepub } : undefined
         },
 
         // Lies_cluster_trust_status — the readout behind the IdHatch trust line + the setup gate.  The

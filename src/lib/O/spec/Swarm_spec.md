@@ -344,14 +344,16 @@ What it proves — each a differential witness with teeth (`%see:'sentence'` onc
 Run on the **live `:9091` runner** (`runner_ask.mjs run SwarmStaple --watch` → `snap <n>` → accept),
  **never headless** (CLAUDE.md). SwarmStaple is **live-recorded green 8/8** (2026-07-04). A second Book,
   **`SwarmWire`** (beats 2–5), proves the SAME handshake as real Peeroleum frames — stations by prepub,
-   authenticate-first, hello/accept/reject through the real outbox→inbox lifecycle — headless-green,
-    live record owed. A third Book, **`SwarmSteal`** (beats 2–6), proves the ADDRESS layer (§3): one key
+   authenticate-first, hello/accept/reject through the real outbox→inbox lifecycle — **live-recorded
+    green 5/5** (2026-07-04; step 2 fuzz-tagged, its beat-2 handshake seed is mid-flight at the snap).
+     A third Book, **`SwarmSteal`** (beats 2–6), proves the ADDRESS layer (§3): one key
      in many places — cooperative sibling tabs splitting roles music|encode, a foreign claimant raising
       *Identity Stolen*, and *Steal Back* re-presenting at `<prepub>_2` (past the thief and the siblings,
-       same key). Its state is NON-monotonic (the address changes, `stolen` toggles), so each `%see`
-        anchors on the durable residue — the persistent `%Stolen` husk, the suffixed address, the roles
-         — a sharper turn of [[see-is-not-a-latch]]. Headless-green 5/5 + byte-deterministic; live record
-          owed. The two-real-browsers version is the distributed-Story upgrade `Cluster_spec §5`
+       same key). Each `%see` is a per-beat OBSERVATION gated to its step (`n === K`, live truth) so it
+        appears once and DROPS as the story moves on — the drop is the signal (step 4's *stolen* gives
+         way to step 5's cleared alarm); a persisting `%see` is the old `%witnessed` latch noise reborn.
+          **live-recorded green 6/6** (2026-07-04, caveat:0).
+          The two-real-browsers version is the distributed-Story upgrade `Cluster_spec §5`
            describes.
 
 ---

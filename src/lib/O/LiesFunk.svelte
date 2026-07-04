@@ -643,6 +643,17 @@ await M.eatfunc({
         const H = this as House
         const A = H.top_House().o({ A: 'Wormhole' })[0] as TheC | undefined
         if (!A) return false
+        // PREFER a granted local share.  A real directory handle (A.c.DL, set by DirectoryOpener when
+        //  the operator opens a share) is strictly MORE capable than the editor proxy — direct disk, the
+        //   FULL nav contract (incl. bin_write, which RemoteWormholeNav lacks), lower latency.  So if a
+        //    local share is open on this &remoteWormhole=1 tab, stand the proxy DOWN: tear any remote nav
+        //     so the Wormhole worker rebuilds WormholeNav(DL) over the local handle, and never re-install
+        //      the proxy on top of it.  Without this the heartbeat reconcile clobbered a just-granted local
+        //       nav every tick — "granting FSA on a remoteWormhole tab did nothing" (Robustness_plan Organ 5).
+        if (A.c.DL) {
+            if ((A.c.nav as any)?.is_remote) { A.c.nav = undefined; A.bump_version(); H.main(true) }
+            return true   // local share owns the nav; WormholeNav(DL) (re)builds in the Wormhole worker
+        }
         if ((A.c.nav as any)?.is_remote) return true
         A.c.nav = new RemoteWormholeNav(H, w, () => H.Lies_wormhole_grant(w))
         H.main(true)                                                  // nav appeared — re-pump parked reads
@@ -673,6 +684,24 @@ await M.eatfunc({
         try {
             // flush a grant that arrived before .stashed had loaded
             const top = H.top_House()
+
+            // A granted LOCAL share supersedes the whole remote dance — prefer it and skip begging.
+            //  install() tears any remote nav so WormholeNav(DL) rebuilds; the badge says so honestly
+            //   ('local' — a THIRD crypto-axis value beside absent|invalid|valid) rather than "begging"
+            //    while the local share quietly works (Robustness_plan Organ 5, nav precedence).
+            const A = top?.o({ A: 'Wormhole' })[0] as TheC | undefined
+            if (A?.c.DL) {
+                H.Lies_remote_wormhole_install(w)
+                if (w.c.wormhole_grant_status !== 'local') {
+                    w.c.wormhole_grant_status = 'local'
+                    w.c.wormhole_grant_reason = 'local share open — remote proxy stood down'
+                    w.c.wormhole_state = 'ready'
+                    w.bump_version()
+                    console.log('🛰️→📁 remoteWormhole: local share open — preferring it over the editor proxy')
+                }
+                return
+            }
+
             const pending = w.c.pending_grant as GrantAtom | undefined
             if (pending?.sign && top?.stashed && !(top.stashed as any).wormhole_grant) {
                 (top.stashed as any).wormhole_grant = pending; delete w.c.pending_grant
@@ -2262,6 +2291,7 @@ await M.eatfunc({
             // event-push the verdict onto the Storying cells bound to this result (replaces the
             //  per-tick poll storying_run once was).  A dock run keys of_dock===path; a Book run
             //   keys of_Book===book.  Cheap: only matching cells restamp, and only when one lands.
+            H.Lies_call_connected(w, frame.book)   // a verdict is the definitive ack — clears the ☎ if a fast Story's story_begun was dropped
             H.Lies_reflect_storying(w, { path, book: frame.book })
             return true
         },
@@ -2274,6 +2304,7 @@ await M.eatfunc({
             const H = this as House
             const phase = frame?.phase as string | undefined
             if (!phase) return false
+            H.Lies_call_connected(w, frame.book)   // any phase blip (story_begun leads) proves the ☎'d call picked up → clear it
             w.c.run_phase = { phase, n: frame.n, total: frame.total, secs: frame.secs, book: frame.book, path: frame.path, seq: frame.seq, at: Date.now() }
             w.bump_version()
             H.tlog(`📥 run_phase: ${phase}${frame.n != null ? ` ${frame.n}/${frame.total ?? '?'}` : ''}${frame.book ? ` [${frame.book}]` : ''}`)
@@ -2288,6 +2319,24 @@ await M.eatfunc({
                 H.Upkeep_errand(acKey, { kind: 'audio', label: frame.book ?? 'runner', phase: phase === 'audio_blocked' ? 'failed' : 'ok' }); H.Lies_upkeep(w)
             }
             return true
+        },
+
+        // Lies_call_connected — the runner we rang for `book` has now PROVEN it picked up: a run_phase
+        //  blip (story_begun first, then step_done×N) or the final run_result landed.  Clear the ☎
+        //   (r.c.sent) on its rack slot at once — it disappears the moment the Story starts, not after
+        //    the 30s ring-out.  The advertise path clears it too (a beacon that catches the runner
+        //     running the book → ▶), but advertise is a ~15s LAST-WRITER-WINS snapshot: a FAST Story
+        //      (e.g. PortPlan, a quick req test) starts AND finishes between beacons, so the snapshot
+        //       never catches `book` set and the ☎ rings the full timeout.  A phase|result frame is the
+        //        definitive non-coalescing ack; dispatch is 1 book → 1 runner (w.c.rungo_runner sticks),
+        //         so match the ☎ by book.
+        Lies_call_connected(w: TheC, book?: string): void {
+            if (!book) return
+            let changed = false
+            for (const r of w.o({ Runner: 1 }) as TheC[]) {
+                if (r.c.sent === book) { delete r.c.sent; delete r.c.sent_at; changed = true }
+            }
+            if (changed) w.bump_version()
         },
 
 //#endregion

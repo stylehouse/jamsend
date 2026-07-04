@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Swarmation(): string { return 'da7b0ceb1240d618' },
+    Ghostmeta_Ghost_Story_Swarmation(): string { return 'fe5cba472157518d' },
 
 // Swarmation.g — the Swarm* social-side tests, in the Musu* mould (spec: Swarm_spec.md §9). The
 //  file is the artifact; SwarmStaple is the Book identity. The Creduler loads this ghost live
@@ -257,26 +257,25 @@ async SwarmWire_drive(w, req) {
 //  prepubs (each side a %Peering,name flock with a mock carrier), the step-boundary whittle armed
 //   once, and the swarm frame kinds registered on the world. No swarm traffic yet.
 async SwarmWire_link_up(w) {
-    w.i({reached: "step_2"})
     w.sc.now = 1751600000
     let alice = await this.SwarmStaple_person(w, 'Alice')
     let bob = await this.SwarmStaple_person(w, 'Bob')
     await this.Lake_link(w, alice.sc.prepub, bob.sc.prepub)
     this.Peeroleum_arm_whittle(w)
     this.Swarm_arm(w)
+    // seed %req:handshake NOW (the generic twin of Lake_handshake, which hardcodes its names) so the
+    //  link authenticates over steps 2→3 — frames settle across think passes, so an early seed makes
+    //   "authenticated by beat 3" deterministic and, crucially, provable BEFORE the beat-4 swarm frames.
+    for (const peering of w.o({ Peering: 1 })) {
+        for (const pier of peering.o({ Pier: 1 })) pier.oai({ req: 'handshake' })
+    }
     w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.SwarmWire_witness(w); req.sc.ok = 1 })
 
 },
-// beat 3 — authenticate the link: seed %req:handshake on every station's Pier (the generic twin
-//  of Lake_handshake, which hardcodes its names) and pump once; the leaves advance as frames cross.
+// beat 3 — the authenticated beat: pump each station once more; by now both handshakes have reached
+//  finished (seeded at beat 2), so the witness confirms the link is trusted before any swarm frame.
 async SwarmWire_handshake(w) {
-    w.i({reached: "step_3"})
-    for (const peering of w.o({ Peering: 1 })) {
-        for (const pier of peering.o({ Pier: 1 })) {
-            pier.oai({ req: 'handshake' })
-        }
-        await peering.do()
-    }
+    for (const peering of w.o({ Peering: 1 })) await peering.do()
 
 },
 // beat 4 — the seal, over the wire: Alice mints (fresh nonce, pinned clock), Bob redeems — the
@@ -284,7 +283,6 @@ async SwarmWire_handshake(w) {
 //   %Pier with the cross-signed grants. Deliverance chose the spine on its own: the stations
 //    exist, so the mail fallback never fires.
 async SwarmWire_seal(w) {
-    w.i({reached: "step_4"})
     w.sc.now = 1751600030
     let alice = this.SwarmStaple_ident(w, 'Alice')
     w.c.iz = await this.Swarm_mint_idzeug(w, alice, { Music: 1, genre: 'Classical' }, 'wire_1')
@@ -294,42 +292,35 @@ async SwarmWire_seal(w) {
 // beat 5 — the replay, over the wire: the same blob again — Alice's spend ledger refuses, and the
 //  refusal crosses back as a pier_reject frame Bob surfaces as %rebuff.
 async SwarmWire_replay(w) {
-    w.i({reached: "step_5"})
     w.sc.now = 1751600040
     await this.Swarm_redeem(w, this.SwarmStaple_ident(w, 'Bob'), w.c.iz)
 
 },
-// SwarmWire_witness — %see claims over the WIRE's truths (the model claims stay the staple's).
-//  A %see is NOT a latch: w_forgets_problems wipes {see:1} from the world at EVERY think, and the
-//   witness re-mints each claim while its truth holds — so a condition must read DURABLE state.
-//    Frame passage therefore reads the spine's whole trace: a live inbox %req:unemit,done (sc.to =
-//     the frame type) OR the %recent husk the step-boundary whittle moved it into.
+// SwarmWire_witness — each %see is a per-beat OBSERVATION gated to its step (n === K), read live at
+//  that beat and let DROP after (a %see is wiped every think — the gate stops it re-minting past its
+//   beat, so the fixture shows one fresh claim per step, not an accumulating ledger). A crossed frame
+//    reads as its live inbox %req:unemit,done (sc.to = the frame type) at the very step it lands.
 SwarmWire_witness(w) {
+    let n = (this.c.run)?.c.step_n
     let alice = this.SwarmStaple_ident(w, 'Alice')
     let bob = this.SwarmStaple_ident(w, 'Bob')
     if (!alice || !bob) return
     let stations = w.o({ Peering: 1 })
     // beat 2: two stations + the swarm kinds armed on the world.
-    if (stations.length >= 2 && w.c.on?.pier_hello && !(w.oa({see: 'two stations stand on the spine — the swarm frame kinds armed on the world'}))) w.i({see: 'two stations stand on the spine — the swarm frame kinds armed on the world'})
+    if (n === 2 && stations.length >= 2 && w.c.on?.pier_hello && !(w.oa({see: 'two stations stand on the spine — the swarm frame kinds armed on the world'}))) w.i({see: 'two stations stand on the spine — the swarm frame kinds armed on the world'})
     let aPier = stations.find(p => p.sc.name === alice.sc.prepub)?.o({ Pier: 1 })[0]
     let bPier = stations.find(p => p.sc.name === bob.sc.prepub)?.o({ Pier: 1 })[0]
     if (!aPier || !bPier) return
     // beat 3: authenticated both ways BEFORE any swarm frame crossed.
-    if (this.Peeroleum_peer_ready(aPier) && this.Peeroleum_peer_ready(bPier) && !(w.oa({see: 'the link authenticated first — hello and trust both ways before any swarm frame'}))) w.i({see: 'the link authenticated first — hello and trust both ways before any swarm frame'})
-    // beat 4a: the hello and the accept each crossed as a real DONE inbox item (or its whittled husk).
-    let heard = (pier, kind) => {
-        let inbox = pier.o({ inbox: 1 })[0]
-        if (!inbox) return false
-        if (inbox.o({ req: 'unemit' }).some(u => u.sc.to === kind && u.sc.done)) return true
-        return !!inbox.o({ recent: 1 })[0]?.o({ unemit: 1 }).some(u => u.sc.type === kind)
-    }
-    if (heard(aPier, 'pier_hello') && heard(bPier, 'pier_accept') && !(w.oa({see: 'pier_hello and pier_accept crossed as real frames — booked through outbox and inbox'}))) w.i({see: 'pier_hello and pier_accept crossed as real frames — booked through outbox and inbox'})
-    // beat 4b: the friendship sealed over the wire — each account's %Pier carries the OTHER's grant.
+    if (n === 3 && this.Peeroleum_peer_ready(aPier) && this.Peeroleum_peer_ready(bPier) && !(w.oa({see: 'the link authenticated first — hello and trust both ways before any swarm frame'}))) w.i({see: 'the link authenticated first — hello and trust both ways before any swarm frame'})
+    // beat 4: the hello and accept each crossed as a real DONE inbox item, and the friendship sealed.
+    let heard = (pier, kind) => pier.o({ inbox: 1 })[0]?.o({ req: 'unemit' }).some(u => u.sc.to === kind && u.sc.done)
+    if (n === 4 && heard(aPier, 'pier_hello') && heard(bPier, 'pier_accept') && !(w.oa({see: 'pier_hello and pier_accept crossed as real frames — booked through outbox and inbox'}))) w.i({see: 'pier_hello and pier_accept crossed as real frames — booked through outbox and inbox'})
     let aGot = this.Swarm_peering(alice)?.o({ Pier: 1, pub: bob.sc.prepub })[0]?.o({ Grant: 'Music', by: bob.c.keys?.pub })[0]
     let bGot = this.Swarm_peering(bob)?.o({ Pier: 1, pub: alice.sc.prepub })[0]?.o({ Grant: 'Music', by: alice.c.keys?.pub })[0]
-    if (aGot && bGot && !(w.oa({see: 'the friendship sealed over the wire — mutual Music grants at both ends'}))) w.i({see: 'the friendship sealed over the wire — mutual Music grants at both ends'})
+    if (n === 4 && aGot && bGot && !(w.oa({see: 'the friendship sealed over the wire — mutual Music grants at both ends'}))) w.i({see: 'the friendship sealed over the wire — mutual Music grants at both ends'})
     // beat 5: the refusal crossed back — a pier_reject frame heard at Bob and surfaced as %rebuff.
-    if (heard(bPier, 'pier_reject') && bob.o({ rebuff: 'rejected_spent' })[0] && !(w.oa({see: 'the spent nonce refuses over the wire too — a pier_reject crossed back'}))) w.i({see: 'the spent nonce refuses over the wire too — a pier_reject crossed back'})
+    if (n === 5 && heard(bPier, 'pier_reject') && bob.o({ rebuff: 'rejected_spent' })[0] && !(w.oa({see: 'the spent nonce refuses over the wire too — a pier_reject crossed back'}))) w.i({see: 'the spent nonce refuses over the wire too — a pier_reject crossed back'})
 
 },
 // SwarmWire_order — float A:SwarmWire to the front of H/* so the Run snap stays readable.
@@ -380,10 +371,9 @@ async SwarmSteal_drive(w, req) {
     await this.SwarmSteal_order(w)
 
 },
-// beat 2 — Alice stands: one %Identity holding its bare prepub as the primary address. Witness rides
-//  its own swept req, minted last so it observes each pass's settled state.
+// beat 2 — Alice stands: one %Identity holding its bare prepub as its only address. Witness rides its
+//  own swept req, minted last so it observes each pass's settled state.
 async SwarmSteal_stand(w) {
-    w.i({reached: "step_2"})
     w.sc.now = 1751700000
     await this.SwarmStaple_person(w, 'Alice')
     w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.SwarmSteal_witness(w); req.sc.ok = 1 })
@@ -393,7 +383,6 @@ async SwarmSteal_stand(w) {
 //  among them), and the places split the work — THIS place plays music, a sibling encodes. A known
 //   sibling claiming our name is co-presence, not a theft — note_theft returns false, no alarm raised.
 async SwarmSteal_siblings(w) {
-    w.i({reached: "step_3"})
     w.sc.now = 1751700010
     let alice = this.SwarmStaple_ident(w, 'Alice')
     this.Swarm_take_role(alice, 'music')
@@ -405,7 +394,6 @@ async SwarmSteal_siblings(w) {
 // beat 4 — the theft: a place we do NOT recognize claims Alice's name. Not a sibling → Identity Stolen
 //  (the flag rises and a durable %Stolen,by:remote_copy husk lands for the banner).
 async SwarmSteal_theft(w) {
-    w.i({reached: "step_4"})
     w.sc.now = 1751700020
     let alice = this.SwarmStaple_ident(w, 'Alice')
     this.Swarm_note_theft(alice, 'remote_copy', 1751700020)
@@ -414,47 +402,44 @@ async SwarmSteal_theft(w) {
 // beat 5 — Steal Back: concede the bare name, jump past the thief (bare) and the siblings (_1, _3) to
 //  the next free suffix — <prepub>_2 — SAME key. The alarm clears; the %Stolen husk stays as history.
 async SwarmSteal_steal_back(w) {
-    w.i({reached: "step_5"})
     w.sc.now = 1751700030
     let alice = this.SwarmStaple_ident(w, 'Alice')
     let prepub = alice.sc.prepub
     w.c.new_addr = this.Swarm_steal_back(alice, [prepub, prepub + '_1', prepub + '_3'])
 
 },
-// beat 6 — identity ≠ address: the key never moved. Alice's page (pub + prepub) is unchanged from
-//  beat 2 while her address is now _2 — stamp the proof durably so the sync witness reads the fact.
+// beat 6 — identity ≠ address: Alice re-presents (online) at the new address — her key-derived NAME is
+//  unchanged while she is reachable at _2, so a Pier still verifies her by pub.
 async SwarmSteal_verify(w) {
-    w.i({reached: "step_6"})
     w.sc.now = 1751700040
     let alice = this.SwarmStaple_ident(w, 'Alice')
-    let page = this.Swarm_page(alice)
-    w.i({ stealback: 'verified', pub: page.pub, prepub: page.prepub, address: this.Swarm_address(alice) })
+    this.Swarm_online(alice, true)
 
 },
-// ── the witness — %see over the MONOTONIC residue of each beat (this Book's state is NON-monotonic:
-//  the address changes and `stolen` toggles, so a claim must NOT read the live flag/address that will
-//   flip — it reads the durable %Stolen husk that PERSISTS past the flag, the suffixed address that
-//    STAYS after Steal Back, and the roles/roster that never retract. The see-is-not-a-latch rule with
-//     teeth: w_forgets_problems wipes {see:1} every think, so a once-true-then-false claim vanishes.
+// ── the witness — each %see is a per-beat OBSERVATION, gated to its own step (n === K) and reading the
+//  LIVE truth of that beat, so it appears once and DROPS when the story moves on. %see is NOT a latch:
+//   w_forgets_problems wipes {see:1} every think, and that is the FEATURE — do not re-mint a claim past
+//    its beat (a persisting %see is the old %witnessed noise reborn). The drop is the signal — step 4's
+//     `stolen` reads TRUE live and step 5's cleared flag reads FALSE, and the beat-gate keeps the
+//      no-alarm claim from flickering back when the flag clears. [[see-is-not-a-latch]] corrected.
 SwarmSteal_witness(w) {
+    let n = (this.c.run)?.c.step_n
     let alice = this.SwarmStaple_ident(w, 'Alice')
     if (!alice) return
     let peering = this.Swarm_peering(alice)
     if (!peering) return
     let prepub = alice.sc.prepub
-    // beat 2: the canonical name is the key-derived prepub — the primary place (name never moves).
-    if (peering.sc.name === prepub && !(w.oa({see: 'one identity holds its key-derived prepub as its canonical name — the primary place'}))) w.i({see: 'one identity holds its key-derived prepub as its canonical name — the primary place'})
-    // beat 3: cooperative tabs — a known sibling left NO theft husk and the places split the work.
+    // beat 2: Alice stands alone — her key-derived name is her ONE address, no siblings yet.
+    if (n === 2 && peering.sc.name === prepub && this.Swarm_address(alice) === prepub && !peering.o({ Sibling: 1 }).length && !(w.oa({see: 'Alice stands alone — her key-derived name is her one address'}))) w.i({see: 'Alice stands alone — her key-derived name is her one address'})
+    // beat 3: cooperative tabs — a known sibling raised NO alarm and the places split the work.
     let sib = peering.o({ Sibling: 'tab_encode' })[0]
-    if (sib && peering.sc.role === 'music' && sib.sc.role === 'encode' && !peering.o({ Stolen: 'tab_encode' })[0] && !(w.oa({see: 'sibling tabs of one key are cooperative — no theft alarm — and split the work — one plays music one encodes'}))) w.i({see: 'sibling tabs of one key are cooperative — no theft alarm — and split the work — one plays music one encodes'})
-    // beat 4: a claimant that is NOT one of our tabs left a durable theft mark — Identity Stolen.
-    let theft = peering.o({ Stolen: 'remote_copy' })[0]
-    if (theft && !this.Swarm_is_sibling(alice, 'remote_copy') && !(w.oa({see: 'a claimant that is not one of our tabs raises Identity Stolen — a remote copy contesting the name'}))) w.i({see: 'a claimant that is not one of our tabs raises Identity Stolen — a remote copy contesting the name'})
+    if (n === 3 && sib && peering.sc.role === 'music' && sib.sc.role === 'encode' && !this.Swarm_stolen(alice) && !(w.oa({see: 'sibling tabs of one key cooperate — no theft alarm — and split the work — one plays music one encodes'}))) w.i({see: 'sibling tabs of one key cooperate — no theft alarm — and split the work — one plays music one encodes'})
+    // beat 4: a claimant that is NOT one of our tabs raises the LIVE alarm — Identity Stolen.
+    if (n === 4 && this.Swarm_stolen(alice) && peering.o({ Stolen: 'remote_copy' })[0] && !this.Swarm_is_sibling(alice, 'remote_copy') && !(w.oa({see: 'a claimant that is not one of our tabs raises Identity Stolen — a remote copy contesting the name'}))) w.i({see: 'a claimant that is not one of our tabs raises Identity Stolen — a remote copy contesting the name'})
     // beat 5: Steal Back re-presented at the next free suffix past thief + siblings and cleared the alarm.
-    if (this.Swarm_address(alice) === prepub + '_2' && !this.Swarm_stolen(alice) && !(w.oa({see: 'Steal Back jumps past the thief and the siblings to prepub_2 and clears the alarm'}))) w.i({see: 'Steal Back jumps past the thief and the siblings to prepub_2 and clears the alarm'})
-    // beat 6: identity is not address — the page pub is unchanged so a Pier still verifies her at _2.
-    let vd = w.o({ stealback: 'verified' })[0]
-    if (vd && vd.sc.pub === alice.c.keys.pub && vd.sc.prepub === prepub && vd.sc.address === prepub + '_2' && !(w.oa({see: 'identity is not address — the key never moved — a Pier still verifies her at prepub_2'}))) w.i({see: 'identity is not address — the key never moved — a Pier still verifies her at prepub_2'})
+    if (n === 5 && this.Swarm_address(alice) === prepub + '_2' && !this.Swarm_stolen(alice) && !(w.oa({see: 'Steal Back jumps past the thief and the siblings to prepub_2 and clears the alarm'}))) w.i({see: 'Steal Back jumps past the thief and the siblings to prepub_2 and clears the alarm'})
+    // beat 6: identity is not address — the canonical name never moved while she is reachable at _2.
+    if (n === 6 && peering.sc.name === prepub && this.Swarm_address(alice) === prepub + '_2' && peering.sc.online && !(w.oa({see: 'identity is not address — the key never moved — a Pier still verifies her at prepub_2'}))) w.i({see: 'identity is not address — the key never moved — a Pier still verifies her at prepub_2'})
 
 },
 // SwarmSteal_order — float A:SwarmSteal to the front of H/* so the Run snap stays readable.

@@ -1,0 +1,15 @@
+Snap:H
+  H:SwarmSteal,Run
+    A:SwarmSteal
+      self,round=5	{"mung":["age"]}
+      w:SwarmSteal,now=1751700030
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Account,of:Alice
+          Identity:32c1ce7a059129d1,prepub:32c1ce7a059129d1,friendly:Alice
+            Peering,name:32c1ce7a059129d1,friendly:Alice,role:music,address:32c1ce7a059129d1_2
+              Sibling:tab_encode,address:32c1ce7a059129d1_1,role:encode
+              Sibling:tab_spare,address:32c1ce7a059129d1_3,role:serve
+              Stolen:remote_copy,at:1751700020
+        req:witness,eternal,ok
+        see:Steal Back jumps past the thief and the siblings to prepub_2 and clears the alarm

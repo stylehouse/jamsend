@@ -4043,28 +4043,75 @@ async MusuMitosis_drive(w, req):
         if (n === 11) this.MusuMitosis_witness(w)
     }
 
-MusuMitosis_seed(w):
-    let alpha = w.i({ cell: 'alpha' })
-    for (let k = 0; k < 5; k++) alpha.i({ spore: 'a' + k })
-    let beta = w.i({ cell: 'beta' })
-    for (let k = 0; k < 3; k++) beta.i({ spore: 'b' + k })
+// ── the NZ flora vocabulary ───────────────────────────────────────────────
+//  fixed lists ARE the determinism (no randomness in this Book): genera name the
+//   cells, epithets name the species (the spores), forms name the nested sub-taxa.
+//    Real Aotearoa plants — Coprosma, Hebe-in-Veronica, tōtara, beech (Nothofagus).
+Botany_genera():
+    return ['Coprosma','Veronica','Pittosporum','Metrosideros','Podocarpus','Nothofagus','Phormium','Pseudopanax','Olearia','Dracophyllum','Kunzea','Leptospermum']
+Botany_epithets():
+    return ['robusta','propinqua','rhamnoides','grandifolia','lucida','tenuifolium','excelsa','totara','fusca','tenax','crassifolius','colensoi','australis','divaricata','microphylla','serrata','montana','linearis']
+Botany_forms():
+    return ['var. montana','var. prostrata','f. viridis','subsp. australis']
 
-// grow: every cell gains two spores; then AT MOST ONE cell past 8 spores splits — half its spores
-//  move to the next unused name.  One division per beat keeps the animation readable; the fixed
-//   name list is both the determinism and the size cap (no names left = the colony stops dividing).
+// plant one taxon; depth>0 gives it two nested sub-taxa (a bifurcating frond —
+//  self-similar), so a chunk's interior is fractal "here and there" rather than a
+//   flat row of names.  Depth is tiny and count-driven, so it textures the tree
+//    without the combinatorial blow-up of a full recursion.
+Botany_plant(container, epithet, depth):
+    let taxon = container.i({ spore: epithet })
+    if (depth > 0) {
+        let forms = this.Botany_forms()
+        this.Botany_plant(taxon, epithet + ' ' + forms[0], depth - 1)
+        this.Botany_plant(taxon, epithet + ' ' + forms[1], depth - 1)
+    }
+    return taxon
+
+// found a genus (a cell) with k species; the odd one carries a nested form — the
+//  phylogeny "here and there" that gives each chunk its self-similar texture.
+MusuMitosis_found(w, genus, k):
+    let cell = w.i({ cell: genus })
+    let eps = this.Botany_epithets()
+    let gi = this.Botany_genera().indexOf(genus)
+    if (gi < 0) gi = 0
+    for (let s = 0; s < k; s++) this.Botany_plant(cell, eps[(gi * 3 + s) % eps.length], s % 2)
+    return cell
+
+MusuMitosis_seed(w):
+    this.MusuMitosis_found(w, 'Coprosma', 5)
+    this.MusuMitosis_found(w, 'Veronica', 3)
+
+// grow: every genus gains two species this beat; the first species of each sprouts
+//  a form (and if it has one already, a sub-form) — the phylogeny deepening like a
+//   frond unfurling.  Then AT MOST ONE genus past 8 species speciates: half its
+//    species found a new genus (a new voronoi cell divides into being).  One
+//     division per beat keeps it readable; the genera list caps the radiation.
 MusuMitosis_grow(w, n):
-    let names = ['alpha','beta','gamma','delta','epsilon','zeta','eta','theta']
+    let genera = this.Botany_genera()
+    let eps = this.Botany_epithets()
+    let forms = this.Botany_forms()
     let cells = w.o({ cell: 1 })
     for (const c of cells) {
-        c.i({ spore: c.sc.cell + '-' + n + 'a' })
-        c.i({ spore: c.sc.cell + '-' + n + 'b' })
+        let base = c.o({ spore: 1 }).length
+        c.i({ spore: eps[(n * 2 + base) % eps.length] })
+        c.i({ spore: eps[(n * 2 + base + 1) % eps.length] })
+    }
+    for (const c of cells) {
+        let first = c.o({ spore: 1 })[0]
+        if (!first) continue
+        let sub = first.o({ spore: 1 })
+        if (!sub.length) {
+            first.i({ spore: first.sc.spore + ' ' + forms[n % forms.length] })
+        } else {
+            sub[0].i({ spore: sub[0].sc.spore + ' ' + forms[(n + 1) % forms.length] })
+        }
     }
     cells = w.o({ cell: 1 })
     for (const c of cells) {
         let spores = c.o({ spore: 1 })
         if (spores.length < 8) continue
         let used = w.o({ cell: 1 }).map(x => x.sc.cell)
-        let name = names.find(nm => !used.includes(nm))
+        let name = genera.find(nm => !used.includes(nm))
         if (!name) break
         let neu = w.i({ cell: name })
         let half = spores.slice(0, Math.floor(spores.length / 2))
@@ -4084,7 +4131,7 @@ MusuMitosis_die(w):
 MusuMitosis_witness(w):
     let cells = w.o({ cell: 1 })
     let folded = cells.filter(c => c.sc.stuff != null)
-    if (cells.length >= 4 && (w.c.mitosis_splits || 0) >= 2 && !(oa %see:'the colony divided — more cells now than were seeded and each new one born of a split')) i %see:'the colony divided — more cells now than were seeded and each new one born of a split'
-    if (w.c.mitosis_died && !cells.find(c => c.sc.cell === w.c.mitosis_died) && !(oa %see:'a cell died mid-run and stayed dead — its territory went back to the colony')) i %see:'a cell died mid-run and stayed dead — its territory went back to the colony'
-    if (cells.length && folded.length === cells.length && !(oa %see:'every living cell is crush-folded behind one chunk for the graph')) i %see:'every living cell is crush-folded behind one chunk for the graph'
+    if (cells.length >= 4 && (w.c.mitosis_splits || 0) >= 2 && !(oa %see:'the flora radiated — more genera now than were founded and each new one split off an over-full parent')) i %see:'the flora radiated — more genera now than were founded and each new one split off an over-full parent'
+    if (w.c.mitosis_died && !cells.find(c => c.sc.cell === w.c.mitosis_died) && !(oa %see:'a genus went extinct mid-run and stayed gone — its range reclaimed by its neighbours')) i %see:'a genus went extinct mid-run and stayed gone — its range reclaimed by its neighbours'
+    if (cells.length && folded.length === cells.length && !(oa %see:'every living genus is crush-folded behind one chunk for the graph')) i %see:'every living genus is crush-folded behind one chunk for the graph'
 //#endregion

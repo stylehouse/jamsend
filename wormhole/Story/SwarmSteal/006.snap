@@ -1,0 +1,15 @@
+Snap:H
+  H:SwarmSteal,Run
+    A:SwarmSteal
+      self,round=6	{"mung":["age"]}
+      w:SwarmSteal,now=1751700040
+        self,round=6	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Account,of:Alice
+          Identity:32c1ce7a059129d1,prepub:32c1ce7a059129d1,friendly:Alice
+            Peering,name:32c1ce7a059129d1,friendly:Alice,role:music,address:32c1ce7a059129d1_2,online
+              Sibling:tab_encode,address:32c1ce7a059129d1_1,role:encode
+              Sibling:tab_spare,address:32c1ce7a059129d1_3,role:serve
+              Stolen:remote_copy,at:1751700020
+        req:witness,eternal,ok
+        see:identity is not address — the key never moved — a Pier still verifies her at prepub_2

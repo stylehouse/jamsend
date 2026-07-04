@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return '054dff5c07f2987b' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return 'f66bad6f34913e3c' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -584,7 +584,9 @@ async req_unemit(req) {
         if (h.type === 'hello') ok = (await H.hear_hello(w, pier, frame)) !== false
         else if (h.type === 'trust') ok = (await H.hear_trust(w, pier, frame)) !== false
         else if (on) ok = (await on(w, pier, frame)) !== false
-        // else (noop, or an unregistered type): nothing to deliver — done, then acked.
+        else if (h.type !== 'noop') console.warn(`🛰⚠ Peeroleum: NO handler for frame type '${h.type}' from ${h.from} — acked but the work is LOST (typo'd handler? an editor-only frame reached a runner or vice-versa?). Robustness_plan Organ 2 — escalate to faulty/dont-ack once a live run proves no legit send-without-handler type retx-wedges.`)
+        // else (noop): nothing to deliver — legitimately done, then acked.  An UNREGISTERED type now
+        //  warns loudly above (was a silent ack — the "lies upward" bug); delivery is unchanged for now.
     }
     if (ok) {
         req.sc.done = 1

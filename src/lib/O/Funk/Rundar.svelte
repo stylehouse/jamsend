@@ -218,8 +218,9 @@
             {#if grant_status || wormhole_state}
                 <!-- the runner's remote-Wormhole crypto verdict survives the collapse too: valid+live=green,
                      valid+silent=amber (grant good, editor mute), invalid=red (refused), absent=amber (begging). -->
-                <span class="rp-dot rp-{grant_status === 'invalid' ? 'bad' : grant_status === 'valid' && channel_live ? 'live' : 'silent'}"
+                <span class="rp-dot rp-{grant_status === 'invalid' ? 'bad' : (grant_status === 'valid' && channel_live) || grant_status === 'local' ? 'live' : 'silent'}"
                       title={grant_status === 'invalid' ? `INVALID grant — ${grant_reason}; re-begging`
+                           : grant_status === 'local' ? 'local share open — remote proxy stood down'
                            : grant_status === 'valid' ? (channel_live ? 'remote Wormhole granted · crypto valid' : 'grant valid · editor not answering')
                            : 'begging the editor for remote-Wormhole disk access'}>🛰</span>
             {/if}
@@ -292,6 +293,11 @@
             <div class="rp-grant-status rp-{channel_live ? 'live' : 'silent'}"
                  title="remote Wormhole (method:remoteWormhole) — a cryptographically valid signed grant, presented per-op over the relay channel">
                 {channel_live ? '🛰️ Wormhole granted · crypto valid' : '🛰️ grant valid · editor not answering — ops stall'}
+            </div>
+        {:else if grant_status === 'local'}
+            <div class="rp-grant-status rp-live"
+                 title="a local directory share is open on this remoteWormhole tab — it is strictly more capable (direct disk, bin_write) so the editor proxy stood down; disk reads/writes go through the local handle, no grant needed">
+                📁 local share · remote proxy stood down
             </div>
         {:else}
             <div class="rp-grant-status rp-silent"

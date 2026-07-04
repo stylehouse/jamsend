@@ -25,10 +25,12 @@ story:MusuMitosis
       w:MusuMitosis
         crushCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.052
+    TimeTotal:beliefs,avg=0.053
       sample=0.052,at=1783148808
+      sample=0.054,at=1783158346
     TimeTotal:step,avg=0.005
       sample=0.005,at=1783148808
+      sample=0.005,at=1783158346
   step,dige:lie
   step=2,dige:lie
   step=3,dige:lie

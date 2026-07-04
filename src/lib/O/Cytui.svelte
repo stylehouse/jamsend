@@ -559,10 +559,60 @@
         voronoi_timer = setTimeout(() => { voronoi_timer = null; morph_voronoi() }, 80)
     }
 
+    // ── flower-wireframe nuclei ──────────────────────────────────────────────
+    //  orderless siblings (no edges among them) grid-jitter under fcose: nothing
+    //  but mutual repulsion holds them, so they shuffle in a twitchy lattice and
+    //  the cells riding them never sit still.  The cure is a radial singularity —
+    //  a hidden hub per parent that every free child star-edges to, so the sim
+    //  seats them as petals around a centre (a flower wireframe that voronois into
+    //  a clean rosette).  Pure cytoscape scaffold: never in C**, never snapped,
+    //  invisible, and skipped by both the tessellator and the rack.
+    const NUC_MIN = 3
+    const is_nucleus = (node: any) => !!node.data('nucleus')
+
+    function install_nuclei() {
+        if (!cy) return
+        cy.elements('.nucleus, .nucleus-edge').remove()   // wipe last generation
+        if (!voronoi_on) return
+        // gather truly free (edgeless) real nodes, grouped by their parent — those
+        //  are the orderless ones; anything already wired keeps its own structure
+        const groups = new Map<string, any[]>()
+        cy.nodes().forEach((node: any) => {
+            if (node.isParent() || is_nucleus(node) || node.degree(false) > 0) return
+            const pid = node.parent().id() || ''
+            if (!groups.has(pid)) groups.set(pid, [])
+            groups.get(pid)!.push(node)
+        })
+        for (const [pid, kids] of groups) {
+            if (kids.length < NUC_MIN) continue
+            const nid = `nuc:${pid || '__root__'}`
+            const data: any = { id: nid, nucleus: 1, label: '' }
+            if (pid) data.parent = pid
+            const hub = cy.add({ group: 'nodes', classes: 'nucleus', data })
+            // seat the hub at the group's centroid so the petals fold in, not lurch
+            let cx = 0, cyy = 0
+            for (const k of kids) { const p = k.position(); cx += p.x; cyy += p.y }
+            hub.position({ x: cx / kids.length, y: cyy / kids.length })
+            for (const k of kids) {
+                // petal radius grows with the chunk's own box so big Stuffings sit
+                //  clear of the hub instead of cramming (leaves keep the tight 70)
+                const child = overlays.get(k.id())?.firstElementChild as HTMLElement | null
+                const r = child
+                    ? 55 + 0.5 * Math.hypot(child.offsetWidth, child.offsetHeight)
+                    : 70
+                cy.add({ group: 'edges', classes: 'nucleus-edge',
+                    data: { id: `${nid}>${k.id()}`, source: nid, target: k.id(),
+                            ideal_length: Math.round(r), nucleus: 1 } })
+            }
+        }
+    }
+
     function toggle_voronoi() {
         voronoi_pref = !voronoi_on
         const st = (H as any).stashed
         if (st) st.Cyto_voronoi = voronoi_pref
+        install_nuclei()              // grow (on) or dissolve (off) the flower hubs
+        relayout(300)                 // let the sim re-settle around / without them
         if (voronoi_pref) { reposition_overlays(); morph_voronoi() }
         else clear_voronoi()
     }
@@ -631,8 +681,10 @@
             if (!node.length || !node.visible()) continue
             const p = node.renderedPosition()
             const child = overlays.get(id)?.firstElementChild as HTMLElement | null
-            const hw = Math.max(24, (child?.offsetWidth  ?? node.renderedWidth())  / 2)
-            const hh = Math.max(16, (child?.offsetHeight ?? node.renderedHeight()) / 2)
+            // every chunk claims a floor box even when its content is a sliver, so a
+            //  one-row Stuffing still earns a real cell instead of a hairline splinter
+            const hw = Math.max(40, (child?.offsetWidth  ?? node.renderedWidth())  / 2)
+            const hh = Math.max(30, (child?.offsetHeight ?? node.renderedHeight()) / 2)
             seeds.push({ id, x: p.x, y: p.y, hw: Math.min(hw, 260), hh: Math.min(hh, 200), node })
         }
         if (seeds.length < 2) return null
@@ -644,7 +696,7 @@
         //  follow their children).  Rendered-coords writes at quiet cadence, so
         //  the rack re-racks after every settle and stays docked through pans.
         const rack = cy.nodes().filter((node: any) =>
-            !node.isParent() && !stuff_mounts.has(node.id()))
+            !node.isParent() && !is_nucleus(node) && !stuff_mounts.has(node.id()))
         rack.sort((a: any, b: any) =>
             String(a.data('label') ?? a.id()).localeCompare(String(b.data('label') ?? b.id())))
         const per_col = Math.max(1, Math.floor((HH - 50) / 34))
@@ -1163,6 +1215,7 @@
         if (wave.o({ upsert:      1 }).length
          || wave.o({ remove:      1 }).length
          || wave.o({ edge_upsert: 1 }).length) {
+            install_nuclei()   // (re)seat the flower hubs so the sim settles radial
             relayout(ms)
         } else {
             // no layout needed — bring overlays back now instead of waiting
@@ -1295,6 +1348,13 @@
                 },
                 { selector: 'node:selected',
                   style: { 'border-width': 2, 'border-color': '#79b' } },
+                // flower-wireframe scaffold — a layout-only hub + its spokes, kept
+                //  invisible and inert (events:'no' so taps pass through to real nodes)
+                { selector: '.nucleus',
+                  style: { width: 1, height: 1, opacity: 0,
+                           'background-opacity': 0, label: '', events: 'no' } },
+                { selector: '.nucleus-edge',
+                  style: { opacity: 0, width: 0.5, events: 'no' } },
                 {
                     selector: 'edge',
                     style: {
@@ -1569,6 +1629,8 @@
    in with it.  (Found by eye on the live tab; ~288px.) */
 :global(.stuff-overlay > .stuffing > .content) {
     max-width: 18em;
+    min-width: 3.5em;    /* every chunk has body — no hairline slivers */
+    min-height: 2em;
 }
 /* the outer Stuffing keeps its SOLID background (visual clarity — the rows must not blend
    into edges and nodes behind the chunk); only its border goes, so the chunk's chrome is the

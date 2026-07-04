@@ -1,0 +1,14 @@
+Snap:H
+  H:SwarmSteal,Run
+    A:SwarmSteal
+      self,round=3	{"mung":["age"]}
+      w:SwarmSteal,now=1751700010
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Account,of:Alice
+          Identity:32c1ce7a059129d1,prepub:32c1ce7a059129d1,friendly:Alice
+            Peering,name:32c1ce7a059129d1,friendly:Alice,role:music
+              Sibling:tab_encode,address:32c1ce7a059129d1_1,role:encode
+              Sibling:tab_spare,address:32c1ce7a059129d1_3,role:serve
+        req:witness,eternal,ok
+        see:sibling tabs of one key cooperate — no theft alarm — and split the work — one plays music one encodes

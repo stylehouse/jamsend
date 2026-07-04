@@ -316,7 +316,22 @@
                     return w.i({ see: '⏳ Library (waiting for storage)…' })
                 }
 
-                // not_found, or present-but-empty, both mean "no library yet" → defaults.
+                // AUTHORITATIVE ABSENCE — a not_found must be re-confirmed before it seeds
+                //  DEFAULT_BOOKS over a real Library.  A transient not_found (storage not warm,
+                //   a proxy racing a dir-expand) is byte-identical to a genuinely-absent file, and
+                //    autovivify→auto_save_library would then overwrite the durable Library with the
+                //     defaults.  So the FIRST not_found drops the req and re-asks once; only a SECOND
+                //      consecutive not_found is trusted (mirrors the toc's notfound_once and the
+                //       shared read contract in LiesStore_land_good — Robustness_plan Organ 3).  A
+                //        present-but-empty file (content:'' , not not_found) is a CONFIRMED read and
+                //         still seeds defaults — the disk really has an empty Library.
+                if (reply?.not_found && !w.c.Li_notfound_once) {
+                    w.c.Li_notfound_once = true
+                    rw.drop(req)
+                    return w.i({ see: '📭 Library not found — confirming…' })
+                }
+
+                // not_found (confirmed), or present-but-empty, both mean "no library yet" → defaults.
                 const empty = !(reply?.content ?? '').trim()
                 const { C: Li_new, errors } =
                     (reply?.not_found || empty)

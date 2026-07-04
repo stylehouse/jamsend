@@ -489,7 +489,8 @@
             if (path) {
                 for (const good of req.o({ Good: 1, path }) as TheC[]) {
                     if (good.c.content !== undefined) continue   // already landed
-                    await H.LiesStore_land_good(good, rd.sc.reply)
+                    await H.LiesStore_land_good(good, rd)
+                    if (good.c.content === undefined) continue    // unconfirmed not_found / error — re-asks
                     H.LiesStore_drain_good(good)
                 }
             }
@@ -826,9 +827,13 @@
     //   req:Store/Good,type:'text/Waft'|'text/Doc'|'text/plain',path:...
     //     c.content          — the content (string now, buffer later); OFF-SNAP,
     //                          since it may be large|binary.  Three states:
-    //                            undefined → not read yet (still loading)
-    //                            null      → confirmed not_found
+    //                            undefined → not read yet (still loading, OR a not_found
+    //                                        being re-confirmed — see land_good)
+    //                            null      → CONFIRMED not_found (two consecutive not_found
+    //                                        round-trips — a single transient one never lands)
     //                            string    → the content
+    //     notfound_rounds    — off-snap: how many consecutive not_found round-trips seen so
+    //                          far (the authoritative-absence probe); cleared once content lands
     //     known              — dige + kind:read|write + at  (the snapped fingerprint)
     //     not_found:1        — snapped flag mirroring c.content===null
     //     subscribe,Aw,wake  — one-shot handback registration: when content lands,
@@ -913,8 +918,8 @@
         const req = await H.LiesStore_read(w, path)
         if (!req.sc.finished) return good   // c.content still undefined → caller waits
 
-        await H.LiesStore_land_good(good, req.sc.reply)
-        if (good.c.content === undefined) return good   // {error} reply — refused to land, still loading
+        await H.LiesStore_land_good(good, req)
+        if (good.c.content === undefined) return good   // {error} / unconfirmed not_found — refused to land, still loading
         delete good.c.asked_at; delete good.c.complained_at
         delete good.c.last_error; delete good.c.error_count
         H.LiesStore_drain_good(good)
@@ -927,7 +932,12 @@
     //   fingerprint on /known.  The dige is awaited so it is in place before any
     //   subscriber reads the %Good.  Idempotent — a %Good already landed is left
     //   alone (caller guards on c.content !== undefined, but double-call is safe).
-    async LiesStore_land_good(good: TheC, reply: any): Promise<void> {
+    //
+    //   Takes the whole read req (not just its reply) so the authoritative-absence
+    //    guard below can dedup a not_found across the two land sites — Phase 2 and
+    //     read_good both land the SAME finished req within a tick.
+    async LiesStore_land_good(good: TheC, req: TheC): Promise<void> {
+        const reply     = (req?.sc as any)?.reply
         const content   = reply?.content as string | undefined
         const not_found = !!reply?.not_found
 
@@ -943,16 +953,51 @@
             return
         }
 
-        good.c.content = not_found ? null : (content ?? '')
+        // AUTHORITATIVE ABSENCE — a not_found is only trusted after a re-ask confirms it.
+        //  A transient not_found (a proxy runner racing the editor's dir-expand, the remote
+        //   Wormhole forwarding a bare not_found, a listing not yet warm) is byte-identical to a
+        //    genuinely-absent file — but landing it as absence (null) lets that empty overwrite the
+        //     durable snap: the Cluster/Keep/Library wipe this whole thread began with.  So the
+        //      FIRST not_found does NOT land — content stays undefined (still-loading), Phase 2's
+        //       two-pass drops the finished req, and a genuinely-fresh disk read re-dispatches; only
+        //        a SECOND consecutive not_found round-trip is confirmed absence.  Count DISTINCT
+        //         round-trips, not land calls: both land sites hit the same finished req in a tick,
+        //          so stamp the req off-snap — a double-land counts once.  A genuinely-new file pays
+        //           one extra round-trip.  (This is the toc's notfound_once re-ask, promoted from a
+        //            per-caller band-aid into the shared read contract — see Robustness_plan Organ 3.)
+        //  EXEMPT: a text/Doc.  A dock's absence is not authoritative durable state — a not_found doc
+        //   legitimately means "no file yet, open it blank", its writes are already guarded by
+        //    source_check / surprise_read, and it may be read one-shot (a cold %subscribe with no
+        //     re-poll to drive a second look), so it lands at once and never hangs.  Only the registry
+        //      Wafts (Cluster / Keep / GhostList / Library / EntropyProfile — all provisioned by a
+        //       per-tick loop) carry the authoritative-absence guard, and they are exactly the ones a
+        //        false empty would overwrite.
         if (not_found) {
+            if (good.sc.type !== 'text/Doc') {
+                if (!req.c.nf_counted) {
+                    req.c.nf_counted = 1
+                    good.c.notfound_rounds = (Number(good.c.notfound_rounds) || 0) + 1
+                }
+                if ((Number(good.c.notfound_rounds) || 0) < 2) {
+                    good.c.last_error = 'not_found (unconfirmed — re-asking to confirm absence)'
+                    return   // leave c.content undefined → the read re-dispatches for a second look
+                }
+            }
+            good.c.content    = null   // absent (confirmed for a registry Waft; immediate for a dock)
             good.sc.not_found = 1
-        } else {
-            delete good.sc.not_found
-            const known   = good.oai({ known: 1 })
-            known.sc.dige = await dig(good.c.content as string)
-            known.sc.kind = 'read'
-            known.sc.at   = Date.now() / 1000
+            delete good.c.notfound_rounds
+            good.bump_version()
+            return
         }
+
+        // content landed — a real read supersedes any pending not_found probe
+        delete good.c.notfound_rounds
+        good.c.content = content ?? ''
+        delete good.sc.not_found
+        const known   = good.oai({ known: 1 })
+        known.sc.dige = await dig(good.c.content as string)
+        known.sc.kind = 'read'
+        known.sc.at   = Date.now() / 1000
         good.bump_version()
     },
 
