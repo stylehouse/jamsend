@@ -1,0 +1,44 @@
+Snap:H
+  H:SwarmStaple,Run
+    A:SwarmStaple
+      self,round=5	{"mung":["age"]}
+      w:SwarmStaple,now=1751500030
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Account,of:Alice
+          Identity:32c1ce7a059129d1,prepub:32c1ce7a059129d1,friendly:Alice
+            Peering,name:32c1ce7a059129d1,friendly:Alice,online
+              Idzeug:staple_1,to:Music,genre:Classical,spent
+              Pier,pub:6eb0df4e976acef2,friendly:Bob,since:1751500030
+                Peering,name:6eb0df4e976acef2,friendly:Bob,pub:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7
+                Grant:Music,by:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7,for:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213,time:1751500030,sign:974b3cbebf8ff3583c9ac387ec5e2d7f031ba4e56332b584f3033964986d84e6cda7dd2c3cd206c08913acdf055b0516ff250a76e84e5c12c64447f3cdffd005,genre:Classical
+                Grant:Music,by:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213,for:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7,time:1751500030,sign:a364d08bbd007b4338f48e6c3d4cf3abe807e5430592a50389c7171b08fcc31266953ba130d2f24bb1c1fc70c2b08a8e1711f368c193bd0166b7f4e99c316408,genre:Classical
+            mail
+              frame:pier_hello,did
+            SocialGraph
+              Edge,a:32c1ce7a059129d1,b:6eb0df4e976acef2,at:1751500030
+        Account,of:Bob
+          Identity:6eb0df4e976acef2,prepub:6eb0df4e976acef2,friendly:Bob
+            Peering,name:6eb0df4e976acef2,friendly:Bob,online
+              Pier,pub:32c1ce7a059129d1,friendly:Alice,since:1751500030
+                Peering,name:32c1ce7a059129d1,friendly:Alice,pub:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213
+                Grant:Music,by:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213,for:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7,time:1751500030,sign:a364d08bbd007b4338f48e6c3d4cf3abe807e5430592a50389c7171b08fcc31266953ba130d2f24bb1c1fc70c2b08a8e1711f368c193bd0166b7f4e99c316408,genre:Classical
+                Grant:Music,by:6eb0df4e976acef25d4523b8bef9182ce7eb05281a75547a38664491350917a7,for:32c1ce7a059129d1128f07bf3f8bc3f4c48a3ba3d06160eeb77b0a3dc280a213,time:1751500030,sign:974b3cbebf8ff3583c9ac387ec5e2d7f031ba4e56332b584f3033964986d84e6cda7dd2c3cd206c08913acdf055b0516ff250a76e84e5c12c64447f3cdffd005,genre:Classical
+            rebuff:forged,say:verify_grant: bad signature to:Music by:32c1ce7a059129d1
+            rebuff:offline,say:32c1ce7a059129d1
+            mail
+              frame:pier_accept,did
+            SocialGraph
+              Edge,a:6eb0df4e976acef2,b:32c1ce7a059129d1,at:1751500030
+        req:witness,eternal,ok
+        reached:step_3
+        reached:step_4
+        reached:step_5
+        see:two selves stand — each an Identity owning its Peering page — keys ride .c only
+        see:Alice holds a single-use Idzeug — an unbound Music grant scoped to Classical
+        see:a tampered Idzeug fails verification — one flipped signature byte and it is rejected
+        see:redeeming with the inviter offline fails — the Idzeug is proof of receipt not an offline token
+        see:Bob imported the page of Alice — the stashed Peering reborn under his Pier
+        see:each Pier carries a Music grant the OTHER signed — Classical only — reciprocity sealed
+        see:the friendship is an edge logged in the social graph at both ends

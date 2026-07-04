@@ -11,7 +11,7 @@ import { mint_grant, verify_grant, grant_to_C, mint_revoke } from "$lib/O/Funk/G
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '8dc83ba7f424731a' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '04273dc8e0ff821c' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -135,12 +135,15 @@ async Swarm_verify_idzeug(iz) {
 //#endregion
 
 //#region wire — the deliverance seam
-//  Deliverance is a SEAM, not a commitment: today a frame drops into the target account's %mail
-//   in-process (deterministic — Swarm_spec §9); the Peeroleum to:<pub> frame is the drop-in
-//    replacement (Cluster_spec §3) and nothing above this seam changes. Delivered frames stay as
-//     husks (%frame,did) — the handshake leaves a legible trace in the snap.
+//  Deliverance is a SEAM with two wires under it. The REAL one is the Peeroleum spine: when the
+//   sender's identity holds a transport station in w (a %Peering,name:<prepub> flock), a swarm
+//    frame rides the one envelope as an ADDITIVE type — outbox/ack/retransmit/dedup for free, and
+//     the pre-Ud gate means it only ever crosses an AUTHENTICATED link (Cluster_spec §3). The
+//      fallback is the in-process %mail drop (deterministic — Swarm_spec §9) for transportless
+//       worlds; delivered frames stay as husks (%frame,did) so the handshake leaves a legible
+//        trace either way. Nothing above this seam knows which wire carried it.
 
-// Swarm_account_of — the in-process routing table: the identity in w whose prepub this is.
+// Swarm_account_of — the local-recipient resolution: the identity in w whose prepub this is.
 Swarm_account_of(w, prepub) {
     for (const acct of w.o({ Account: 1 })) {
         let ident = acct.o({ Identity: 1 }).find(i => i.sc.prepub === prepub)
@@ -149,18 +152,45 @@ Swarm_account_of(w, prepub) {
     return null
 
 },
-// Swarm_deliver — drop a frame at a page, false if the holder is unreachable (offline|unknown).
-//  The frame object rides .c.frame (never encoded); the kind alone is the snapped face.
-Swarm_deliver(w, prepub, frame) {
+// Swarm_deliver — carry a frame from `ident` to the page at `prepub`; false = unreachable.
+//  Transport first: my station's %Pier for them carries it as a real frame (never falling
+//   through — an unready link is unreachable, not a reason to whisper locally). No station →
+//    the in-process mail drop, gated on the target's online flag. The frame object rides
+//     .c.frame|the envelope (never snapped); the kind alone is the visible face.
+Swarm_deliver(w, ident, prepub, frame) {
     if (!prepub) return false
-    let ident = this.Swarm_account_of(w, prepub)
-    if (!ident) return false
-    if (!this.Swarm_peering(ident)?.sc?.online) return false
-    let inbox = ident.oai({ mail: 1 })
-    inbox.c.up = ident
+    let station = w.o({ Peering: 1 }).find(p => p.sc.name === ident.sc.prepub)
+    let route = station && station.o({ Pier: 1 }).find(p => p.sc.pub === prepub)
+    if (route) {
+        if (!this.Peeroleum_peer_ready(route)) return false
+        let seq = this.Pier_next_seq(route)
+        this.Peeroleum_send(w, { header: { type: frame.kind, from: ident.sc.prepub, to: prepub, seq: seq }, swarm: frame })
+        return true
+    }
+    let target = this.Swarm_account_of(w, prepub)
+    if (!target) return false
+    if (!this.Swarm_peering(target)?.sc?.online) return false
+    let inbox = target.oai({ mail: 1 })
+    inbox.c.up = target
     let m = inbox.i({ frame: frame.kind })
     m.c.frame = frame
     return true
+
+},
+// Swarm_arm — register the swarm frame kinds on the world's Peeroleum on-registry (additive
+//  frames, ZERO spine change): an inbound pier_hello|pier_accept|pier_reject resolves its LOCAL
+//   recipient by header.to and lands in the SAME handshake verbs the mail wire feeds. Once per w.
+async Swarm_arm(w) {
+    if (!w.c.on) w.c.on = {}
+    let hear = async (w2, pier, frame) => {
+        let ident = this.Swarm_account_of(w2, frame.header.to)
+        if (!ident) return false
+        if (frame.header.type === 'pier_hello') await this.Swarm_hello(w2, ident, frame.swarm)
+        if (frame.header.type === 'pier_accept') await this.Swarm_accept(w2, ident, frame.swarm)
+        if (frame.header.type === 'pier_reject') this.Swarm_rejected(w2, ident, frame.swarm)
+        return true
+    }
+    for (const kind of ['pier_hello', 'pier_accept', 'pier_reject']) w.c.on[kind] = hear
 
 },
 // Swarm_pump — handle an identity's undone mail (a Book's drive calls this each pass; production
@@ -201,7 +231,7 @@ async Swarm_redeem(w, ident, iz) {
     }
     let grant = await mint_grant(ident.c.keys, claim.by, claim.to, this.Swarm_iz_params(claim), this.Swarm_now(w))
     let hello = { kind: 'pier_hello', iz: iz, page: this.Swarm_page(ident), grant: grant }
-    if (!this.Swarm_deliver(w, claim.prepub, hello)) {
+    if (!this.Swarm_deliver(w, ident, claim.prepub, hello)) {
         this.Swarm_rebuff(ident, 'offline', claim.prepub)
         return null
     }
@@ -220,7 +250,7 @@ async Swarm_redeem(w, ident, iz) {
 async Swarm_hello(w, ident, frame) {
     let deny = (why) => {
         this.Swarm_rebuff(ident, 'hello_' + why, frame.page?.prepub)
-        this.Swarm_deliver(w, frame.page?.prepub, { kind: 'pier_reject', why: why, prepub: ident.sc.prepub })
+        this.Swarm_deliver(w, ident, frame.page?.prepub, { kind: 'pier_reject', why: why, prepub: ident.sc.prepub })
         return null
     }
     let claim
@@ -237,7 +267,7 @@ async Swarm_hello(w, ident, frame) {
     record.sc.spent = 1
     let mine = await mint_grant(ident.c.keys, frame.page.pub, claim.to, this.Swarm_iz_params(claim), this.Swarm_now(w))
     let pier = this.Swarm_seal(w, ident, frame.page, frame.grant, mine)
-    this.Swarm_deliver(w, frame.page.prepub, { kind: 'pier_accept', grant: mine, page: this.Swarm_page(ident) })
+    this.Swarm_deliver(w, ident, frame.page.prepub, { kind: 'pier_accept', grant: mine, page: this.Swarm_page(ident) })
     return pier
 
 },

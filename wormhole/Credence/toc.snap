@@ -9,6 +9,7 @@ Waft:Credence
   What:Swarm
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:SwarmStaple
+    Funkcion:Storying,of_Book:SwarmWire
   What:Musu
     Funkcion:StoryTimes
     What:cursor models
@@ -33,7 +34,9 @@ Waft:Credence
       What:concealment
         Funkcion:Storying,of_Book:MusuConceal
     What:real music
+      Funkcion:Storying,of_Book:MusuGenerateTestsMusic
       Funkcion:Storying,of_Book:MusuCrate
+      Funkcion:Storying,of_Book:MusuReco
       What:replication
         Funkcion:Storying,of_Book:MusuBounce
         Funkcion:Storying,of_Book:MusuReplica
@@ -44,8 +47,7 @@ Waft:Credence
       What:the network
         Funkcion:Storying,of_Book:MusuMesh
         Funkcion:Storying,of_Book:MusuPier
-    Funkcion:Storying,of_Book:MusuGenerateTestsMusic
-    Funkcion:Storying,of_Book:MusuReco
+    Funkcion:Storying,of_Book:MusuMitosis
   What:Lake
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:LakeSurfer

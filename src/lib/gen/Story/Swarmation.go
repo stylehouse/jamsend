@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Swarmation(): string { return '79cfda846cb277d3' },
+    Ghostmeta_Ghost_Story_Swarmation(): string { return 'f33801d78b12d9bf' },
 
 // Swarmation.g — the Swarm* social-side tests, in the Musu* mould (spec: Swarm_spec.md §9). The
 //  file is the artifact; SwarmStaple is the Book identity. The Creduler loads this ghost live
@@ -212,6 +212,131 @@ async SwarmStaple_order(w) { const H = this;
     let As = H.o({A: 1})
     if (!As.length) return
     let first = (a) => (a.sc.A === 'SwarmStaple') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+
+},
+// ══ SwarmWire — the SECOND Book: the SAME handshake riding the REAL Peeroleum spine ══════════════
+//  SwarmStaple proves the MODEL (grants, nonce, revocation, portability) over the in-process mail
+//   wire; SwarmWire proves the WIRE: pier_hello|pier_accept|pier_reject as additive frames through
+//    the real outbox→carrier→inbox lifecycle (mock carriers, the PereStaple shape — Lake_link is
+//     reused verbatim, transport stations named by the swarm PREPUBS so the deliver seam routes
+//      1:1). The pre-Ud gate is part of the claim: no swarm frame crosses before the link
+//       authenticates. Same fixed selves as the staple; its own world w:SwarmWire (dispatch is by
+//        WORLD NAME — the usual bomb).
+//   beat 2  two stations stand on the spine (Lake_link by prepub) + accounts + the frame kinds armed
+//   beat 3  the transport handshake completes both ways — only NOW may a swarm frame cross
+//   beat 4  Alice mints — Bob redeems — hello and accept cross as REAL acked frames — mutual %Pier
+//   beat 5  Bob replays the spent Idzeug — the pier_reject crosses back over the same wire
+
+SwarmWire(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.SwarmWire_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// SwarmWire_drive — beat dispatch (req-local did_step), then the per-pass tail: pump every
+//  station's handshake reqs (Lake_pump_handshakes is generic over w's %Peerings) and re-sort.
+async SwarmWire_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.SwarmWire_link_up(w)
+        if (n === 3) await this.SwarmWire_handshake(w)
+        if (n === 4) await this.SwarmWire_seal(w)
+        if (n === 5) await this.SwarmWire_replay(w)
+    }
+    await this.Lake_pump_handshakes(w)
+    await this.SwarmWire_order(w)
+
+},
+// beat 2 — the stations: the same fixed selves as the staple, then ONE Lake_link between their
+//  prepubs (each side a %Peering,name flock with a mock carrier), the step-boundary whittle armed
+//   once, and the swarm frame kinds registered on the world. No swarm traffic yet.
+async SwarmWire_link_up(w) {
+    w.i({reached: "step_2"})
+    w.sc.now = 1751600000
+    let alice = await this.SwarmStaple_person(w, 'Alice')
+    let bob = await this.SwarmStaple_person(w, 'Bob')
+    await this.Lake_link(w, alice.sc.prepub, bob.sc.prepub)
+    this.Peeroleum_arm_whittle(w)
+    this.Swarm_arm(w)
+    w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.SwarmWire_witness(w); req.sc.ok = 1 })
+
+},
+// beat 3 — authenticate the link: seed %req:handshake on every station's Pier (the generic twin
+//  of Lake_handshake, which hardcodes its names) and pump once; the leaves advance as frames cross.
+async SwarmWire_handshake(w) {
+    w.i({reached: "step_3"})
+    for (const peering of w.o({ Peering: 1 })) {
+        for (const pier of peering.o({ Pier: 1 })) {
+            pier.oai({ req: 'handshake' })
+        }
+        await peering.do()
+    }
+
+},
+// beat 4 — the seal, over the wire: Alice mints (fresh nonce, pinned clock), Bob redeems — the
+//  hello rides his station's outbox to her inbox, her accept rides back, both accounts land a
+//   %Pier with the cross-signed grants. Deliverance chose the spine on its own: the stations
+//    exist, so the mail fallback never fires.
+async SwarmWire_seal(w) {
+    w.i({reached: "step_4"})
+    w.sc.now = 1751600030
+    let alice = this.SwarmStaple_ident(w, 'Alice')
+    w.c.iz = await this.Swarm_mint_idzeug(w, alice, { Music: 1, genre: 'Classical' }, 'wire_1')
+    await this.Swarm_redeem(w, this.SwarmStaple_ident(w, 'Bob'), w.c.iz)
+
+},
+// beat 5 — the replay, over the wire: the same blob again — Alice's spend ledger refuses, and the
+//  refusal crosses back as a pier_reject frame Bob surfaces as %rebuff.
+async SwarmWire_replay(w) {
+    w.i({reached: "step_5"})
+    w.sc.now = 1751600040
+    await this.Swarm_redeem(w, this.SwarmStaple_ident(w, 'Bob'), w.c.iz)
+
+},
+// SwarmWire_witness — %see claims over the WIRE's truths (the model claims stay the staple's).
+//  A %see is NOT a latch: w_forgets_problems wipes {see:1} from the world at EVERY think, and the
+//   witness re-mints each claim while its truth holds — so a condition must read DURABLE state.
+//    Frame passage therefore reads the spine's whole trace: a live inbox %req:unemit,done (sc.to =
+//     the frame type) OR the %recent husk the step-boundary whittle moved it into.
+SwarmWire_witness(w) {
+    let alice = this.SwarmStaple_ident(w, 'Alice')
+    let bob = this.SwarmStaple_ident(w, 'Bob')
+    if (!alice || !bob) return
+    let stations = w.o({ Peering: 1 })
+    // beat 2: two stations + the swarm kinds armed on the world.
+    if (stations.length >= 2 && w.c.on?.pier_hello && !(w.oa({see: 'two stations stand on the spine — the swarm frame kinds armed on the world'}))) w.i({see: 'two stations stand on the spine — the swarm frame kinds armed on the world'})
+    let aPier = stations.find(p => p.sc.name === alice.sc.prepub)?.o({ Pier: 1 })[0]
+    let bPier = stations.find(p => p.sc.name === bob.sc.prepub)?.o({ Pier: 1 })[0]
+    if (!aPier || !bPier) return
+    // beat 3: authenticated both ways BEFORE any swarm frame crossed.
+    if (this.Peeroleum_peer_ready(aPier) && this.Peeroleum_peer_ready(bPier) && !(w.oa({see: 'the link authenticated first — hello and trust both ways before any swarm frame'}))) w.i({see: 'the link authenticated first — hello and trust both ways before any swarm frame'})
+    // beat 4a: the hello and the accept each crossed as a real DONE inbox item (or its whittled husk).
+    let heard = (pier, kind) => {
+        let inbox = pier.o({ inbox: 1 })[0]
+        if (!inbox) return false
+        if (inbox.o({ req: 'unemit' }).some(u => u.sc.to === kind && u.sc.done)) return true
+        return !!inbox.o({ recent: 1 })[0]?.o({ unemit: 1 }).some(u => u.sc.type === kind)
+    }
+    if (heard(aPier, 'pier_hello') && heard(bPier, 'pier_accept') && !(w.oa({see: 'pier_hello and pier_accept crossed as real frames — booked through outbox and inbox'}))) w.i({see: 'pier_hello and pier_accept crossed as real frames — booked through outbox and inbox'})
+    // beat 4b: the friendship sealed over the wire — each account's %Pier carries the OTHER's grant.
+    let aGot = this.Swarm_peering(alice)?.o({ Pier: 1, pub: bob.sc.prepub })[0]?.o({ Grant: 'Music', by: bob.c.keys?.pub })[0]
+    let bGot = this.Swarm_peering(bob)?.o({ Pier: 1, pub: alice.sc.prepub })[0]?.o({ Grant: 'Music', by: alice.c.keys?.pub })[0]
+    if (aGot && bGot && !(w.oa({see: 'the friendship sealed over the wire — mutual Music grants at both ends'}))) w.i({see: 'the friendship sealed over the wire — mutual Music grants at both ends'})
+    // beat 5: the refusal crossed back — a pier_reject frame heard at Bob and surfaced as %rebuff.
+    if (heard(bPier, 'pier_reject') && bob.o({ rebuff: 'rejected_spent' })[0] && !(w.oa({see: 'the spent nonce refuses over the wire too — a pier_reject crossed back'}))) w.i({see: 'the spent nonce refuses over the wire too — a pier_reject crossed back'})
+
+},
+// SwarmWire_order — float A:SwarmWire to the front of H/* so the Run snap stays readable.
+async SwarmWire_order(w) { const H = this;
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'SwarmWire') ? 0 : 1
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)

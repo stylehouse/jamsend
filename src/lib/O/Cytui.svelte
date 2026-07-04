@@ -329,9 +329,16 @@
             overlay_quiet_timer = null
             if (!overlay_container) return
             reposition_overlays()
-            compute_voronoi()   // cells follow the settled layout, same quiet cadence
             motion_hidden = false
-            overlay_container.classList.remove('overlays-hidden')
+            if (voronoi_on) {
+                // walls morph to the settled layout (divisions play out); the
+                //  Stuffings reveal when the morph lands — they belong to the
+                //  NEW cells, not the in-between shapes
+                morph_voronoi(() => overlay_container?.classList.remove('overlays-hidden'))
+            } else {
+                if (vcells.length) clear_voronoi()
+                overlay_container.classList.remove('overlays-hidden')
+            }
         }, OVERLAY_QUIET_MS)
     }
 
@@ -420,7 +427,7 @@
     //     ~constant) from writing styles at all.
     function size_stuff_node(id: string, el: HTMLElement) {
         if (!cy) return
-        // in voronoi mode the CELL owns the overlay's size (compute_voronoi stretches it),
+        // in voronoi mode the CELL owns the overlay's size (paint_final stretches it),
         //  so growing the node from el size here would feed the cell back into its own
         //   weight — a runaway loop.  Node sizes freeze at their last content-driven
         //    values (still the layout/weight input); content changes just re-tessellate.
@@ -530,20 +537,47 @@
     let saw_stuffy    = $state(false)                  // auto-arm: crushed world present
     const voronoi_on  = $derived(voronoi_pref ?? saw_stuffy)
     let vcells        = $state<{ id: string, d: string, color: string }[]>([])
-    let motion_hidden = $state(false)                  // cells hide with the overlays during motion
+    let vtips         = $state<{ id: string, x: number, y: number, color: string }[]>([])
+    let vregion_w     = $state(0)                      // veil covers only the tessellated region (rack stays bright)
+    let motion_hidden = $state(false)                  // cells fade with the overlays during motion
     let voronoi_timer: ReturnType<typeof setTimeout> | null = null
+
+    // ── morph engine ─────────────────────────────────────────────────────────
+    //  cells never blink between quiet states — they MORPH: every polygon is
+    //  resampled to a fixed point count so any shape tweens to any other by
+    //  plain point interpolation.  A newborn cell starts collapsed on its seed
+    //  and grows out of the surrounding territory (a division); a dead cell
+    //  shrinks to a point (apoptosis) while the survivors' walls slide in.
+    const MORPH_MS   = 480
+    const RESAMPLE_N = 44
+    let shown_pts:   Map<string, {x:number,y:number}[]> = new Map()
+    let shown_color: Map<string, string> = new Map()
+    let morph_raf = 0
 
     function voronoi_soon() {
         if (voronoi_timer) clearTimeout(voronoi_timer)
-        voronoi_timer = setTimeout(() => { voronoi_timer = null; compute_voronoi() }, 80)
+        voronoi_timer = setTimeout(() => { voronoi_timer = null; morph_voronoi() }, 80)
     }
 
     function toggle_voronoi() {
         voronoi_pref = !voronoi_on
         const st = (H as any).stashed
         if (st) st.Cyto_voronoi = voronoi_pref
-        if (voronoi_pref) { reposition_overlays(); compute_voronoi() }
+        if (voronoi_pref) { reposition_overlays(); morph_voronoi() }
         else clear_voronoi()
+    }
+
+    // segment p→q against wall a→b; returns the crossing point or null
+    function seg_hit(p: {x:number,y:number}, q: {x:number,y:number},
+                     a: {x:number,y:number}, b: {x:number,y:number}) {
+        const rx = q.x - p.x, ry = q.y - p.y
+        const sx = b.x - a.x, sy = b.y - a.y
+        const den = rx * sy - ry * sx
+        if (Math.abs(den) < 1e-9) return null
+        const t = ((a.x - p.x) * sy - (a.y - p.y) * sx) / den
+        const u = ((a.x - p.x) * ry - (a.y - p.y) * rx) / den
+        if (t < 0 || t > 1 || u < 0 || u > 1) return null
+        return { x: p.x + rx * t, y: p.y + ry * t }
     }
 
     // Sutherland–Hodgman against one wall: keep the side the seed is on,
@@ -564,61 +598,275 @@
         return out
     }
 
-    function compute_voronoi() {
-        if (!cy || !container) return
-        if (!voronoi_on) { if (vcells.length) clear_voronoi(); return }
-        const W = container.clientWidth, HH = container.clientHeight
-        if (!W || !HH) return
+    // one cell's computed geometry — voronoi_layout() makes these, paint_final()
+    //  turns them into pixels and morph_voronoi() tweens between generations
+    type VCell = {
+        id: string, seed: {x:number,y:number}, inset: {x:number,y:number}[],
+        acx: number, acy: number, color: string, node: any,
+        // the molding affine (symmetric, unit-mean) + the fitted scale
+        T11: number, T12: number, T22: number, fit: number,
+    }
 
-        // seeds = the stuff-chunk nodes, in rendered coordinates.  For a couple
-        //  dozen seeds the O(n²) half-plane intersection is exact and instant —
-        //   no geometry dependency needed.
-        const seeds: { id: string, x: number, y: number, r: number, node: any }[] = []
+    // support of the content box under the molding transform, in direction n̂ —
+    //  the one formula both the wall-placement and the fit use:
+    //   T maps (±w/2, ±h/2); the box's farthest reach along n̂ is
+    //   |n̂·T·(w/2,0)| + |n̂·T·(0,h/2)|
+    function box_support(nx: number, ny: number, hw: number, hh: number,
+                         T11 = 1, T12 = 0, T22 = 1) {
+        return Math.abs(nx * T11 + ny * T12) * hw + Math.abs(nx * T12 + ny * T22) * hh
+    }
+
+    function voronoi_layout(): { cells: VCell[], seeds: any[], CW: number } | null {
+        if (!cy || !container || !voronoi_on) return null
+        const W = container.clientWidth, HH = container.clientHeight
+        if (!W || !HH) return null
+
+        // seeds = the stuff-chunk nodes in rendered coordinates, each carrying
+        //  its content box (the Stuffing's natural size — transforms don't
+        //  touch offsetWidth, so this is feedback-free).  For a couple dozen
+        //  seeds the O(n²) half-plane intersection is exact and instant.
+        const seeds: { id: string, x: number, y: number, hw: number, hh: number, node: any }[] = []
         for (const id of stuff_mounts.keys()) {
             const node = cy.getElementById(id)
             if (!node.length || !node.visible()) continue
             const p = node.renderedPosition()
-            seeds.push({ id, x: p.x, y: p.y, r: Math.max(24, node.renderedWidth() / 2), node })
+            const child = overlays.get(id)?.firstElementChild as HTMLElement | null
+            const hw = Math.max(24, (child?.offsetWidth  ?? node.renderedWidth())  / 2)
+            const hh = Math.max(16, (child?.offsetHeight ?? node.renderedHeight()) / 2)
+            seeds.push({ id, x: p.x, y: p.y, hw: Math.min(hw, 260), hh: Math.min(hh, 200), node })
         }
-        if (seeds.length < 2) { vcells = []; return }
+        if (seeds.length < 2) return null
+
+        // ── the rack: haul the un-fitting subset aside ────────────────────────
+        //  nodes that aren't sense-making cells (the spine equipment — Piers,
+        //  reqs, Opt…) leave the tessellation area for a column pinned at the
+        //  right edge: an un-veiled subgraph aside.  Compounds stay put (they
+        //  follow their children).  Rendered-coords writes at quiet cadence, so
+        //  the rack re-racks after every settle and stays docked through pans.
+        const rack = cy.nodes().filter((node: any) =>
+            !node.isParent() && !stuff_mounts.has(node.id()))
+        rack.sort((a: any, b: any) =>
+            String(a.data('label') ?? a.id()).localeCompare(String(b.data('label') ?? b.id())))
+        const per_col = Math.max(1, Math.floor((HH - 50) / 34))
+        const n_cols  = rack.length ? Math.ceil(rack.length / per_col) : 0
+        rack.forEach((node: any, i: number) => {
+            const col = Math.floor(i / per_col), row = i % per_col
+            node.renderedPosition({ x: W - 65 - col * 72, y: 40 + row * 34 })
+        })
+        const CW = Math.max(W * 0.55, W - (n_cols ? 130 + (n_cols - 1) * 72 : 0))
 
         const GAP = 4
-        const cells: typeof vcells = []
-        const placed = new Set<string>()
+        const cells: VCell[] = []
         for (const s of seeds) {
-            let poly = [{ x: 0, y: 0 }, { x: W, y: 0 }, { x: W, y: HH }, { x: 0, y: HH }]
+            let poly = [{ x: 0, y: 0 }, { x: CW, y: 0 }, { x: CW, y: HH }, { x: 0, y: HH }]
             for (const o of seeds) {
                 if (o === s) continue
                 const dx = o.x - s.x, dy = o.y - s.y
                 const d = Math.hypot(dx, dy)
                 if (d < 1) continue
-                // the power-diagram wall between weighted seeds (the radical axis)
-                const t  = (d * d + s.r * s.r - o.r * o.r) / (2 * d)
+                // ANISOTROPIC power wall: each seed's radius toward this pair is
+                //  its content box's support in the pair direction (tempered) —
+                //  wide chunks push their walls out sideways, tall ones push
+                //  vertically, so the cell sympathises with its content's shape
                 const ux = dx / d, uy = dy / d
+                const rs = 12 + 0.5 * box_support(ux, uy, s.hw, s.hh)
+                const ro = 12 + 0.5 * box_support(ux, uy, o.hw, o.hh)
+                const t  = (d * d + rs * rs - ro * ro) / (2 * d)
                 poly = clip_halfplane(poly, { x: s.x + ux * t, y: s.y + uy * t }, { x: ux, y: uy })
                 if (poly.length < 3) break
             }
             if (poly.length < 3) continue   // swallowed by a heavier neighbour
 
-            // gutter: pull every vertex a few px toward the centroid so the
-            //  walls read as gaps between cells rather than shared strokes
-            const ccx = poly.reduce((a, p) => a + p.x, 0) / poly.length
-            const ccy = poly.reduce((a, p) => a + p.y, 0) / poly.length
+            // gutter: pull every vertex a few px toward the (vertex-mean) middle
+            //  so shared walls read as gaps rather than double strokes
+            const vmx = poly.reduce((a, p) => a + p.x, 0) / poly.length
+            const vmy = poly.reduce((a, p) => a + p.y, 0) / poly.length
             const inset = poly.map(p => {
-                const dx = p.x - ccx, dy = p.y - ccy, dd = Math.hypot(dx, dy)
+                const dx = p.x - vmx, dy = p.y - vmy, dd = Math.hypot(dx, dy)
                 const k = dd > GAP ? 1 - GAP / dd : 0
-                return { x: ccx + dx * k, y: ccy + dy * k }
+                return { x: vmx + dx * k, y: vmy + dy * k }
             })
-            const d_attr = 'M' + inset.map(p => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join('L') + 'Z'
-            cells.push({ id: s.id, d: d_attr, color: s.node.style('border-color') as string })
-            placed.add(s.id)
 
-            // stretch the Stuffing into the cell: the overlay takes the cell's
-            //  bbox and clips to the polygon; the flex centering keeps the rows
-            //   around the middle, and anything larger clips evenly at the walls
-            const el = overlays.get(s.id)
+            // ── polygon moments → the molding affine ─────────────────────────
+            //  exact area centroid and covariance via the shoelace-extended
+            //  second moments; the covariance's eigenframe is the cell's own
+            //  shape (long axis φ, elongation √(λ1/λ2)).  The molding T is the
+            //  SYMMETRIC unit-area stretch along that frame, blended and capped
+            //  ("a little") — it skews/stretches the Stuffing toward the cell's
+            //  shape without rotating text upside-down.
+            let A2 = 0, sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0
+            for (let i = 0; i < inset.length; i++) {
+                const p = inset[i], q = inset[(i + 1) % inset.length]
+                const cr = p.x * q.y - q.x * p.y
+                A2  += cr
+                sx  += (p.x + q.x) * cr
+                sy  += (p.y + q.y) * cr
+                sxx += (p.x * p.x + p.x * q.x + q.x * q.x) * cr
+                syy += (p.y * p.y + p.y * q.y + q.y * q.y) * cr
+                sxy += (p.x * q.y + 2 * p.x * p.y + 2 * q.x * q.y + q.x * p.y) * cr
+            }
+            const A = A2 / 2
+            let acx = vmx, acy = vmy, T11 = 1, T12 = 0, T22 = 1
+            if (Math.abs(A) > 1) {
+                acx = sx / (6 * A); acy = sy / (6 * A)
+                const cxx = sxx / (12 * A) - acx * acx
+                const cyy = syy / (12 * A) - acy * acy
+                const cxy = sxy / (24 * A) - acx * acy
+                const mean = (cxx + cyy) / 2
+                const dev  = Math.hypot((cxx - cyy) / 2, cxy)
+                const l1 = mean + dev, l2 = Math.max(mean - dev, 1e-6)
+                const phi = 0.5 * Math.atan2(2 * cxy, cxx - cyy)
+                let rho = Math.sqrt(Math.sqrt(l1 / l2))       // eigen ratio of EXTENTS is √(λ1/λ2)
+                rho = 1 + (Math.min(rho, 1.8) - 1) * 0.55     // "a little": blend + cap
+                const a1 = Math.sqrt(rho), a2i = 1 / Math.sqrt(rho)
+                const cs = Math.cos(phi), sn = Math.sin(phi)
+                T11 = a1 * cs * cs + a2i * sn * sn
+                T22 = a1 * sn * sn + a2i * cs * cs
+                T12 = (a1 - a2i) * cs * sn
+            }
+
+            // ── maximal fit under the molding ────────────────────────────────
+            //  same closed form as the plain fit, with T folded into the
+            //  support: for each wall, s·support_T(n̂) ≤ room(centroid→wall)
+            let smax = 3.2
+            for (let k = 0; k < inset.length; k++) {
+                const a = inset[k], b = inset[(k + 1) % inset.length]
+                let nx = b.y - a.y, ny = -(b.x - a.x)
+                const nl = Math.hypot(nx, ny)
+                if (nl < 1e-6) continue
+                nx /= nl; ny /= nl
+                let room = (a.x - acx) * nx + (a.y - acy) * ny
+                if (room < 0) { nx = -nx; ny = -ny; room = -room }
+                const denom = box_support(nx, ny, s.hw, s.hh, T11, T12, T22)
+                if (denom > 1e-6) smax = Math.min(smax, room / denom)
+            }
+            const fit = Math.max(0.5, smax * 0.92)
+
+            cells.push({ id: s.id, seed: { x: s.x, y: s.y }, inset, acx, acy,
+                color: s.node.style('border-color') as string, node: s.node,
+                T11, T12, T22, fit })
+        }
+        return { cells, seeds, CW }
+    }
+
+    const poly_d = (pts: {x:number,y:number}[]) =>
+        'M' + pts.map(p => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join('L') + 'Z'
+
+    // uniform arc-length resample to N points, so any polygon tweens to any other
+    function resample(poly: {x:number,y:number}[], N: number) {
+        const at: number[] = []
+        let total = 0
+        for (let i = 0; i < poly.length; i++) {
+            const a = poly[i], b = poly[(i + 1) % poly.length]
+            at.push(total); total += Math.hypot(b.x - a.x, b.y - a.y)
+        }
+        if (total < 1e-6) return Array.from({ length: N }, () => ({ ...poly[0] }))
+        const out: {x:number,y:number}[] = []
+        let seg = 0
+        for (let k = 0; k < N; k++) {
+            const want = (k / N) * total
+            while (seg < poly.length - 1 && at[seg + 1] <= want) seg++
+            const a = poly[seg], b = poly[(seg + 1) % poly.length]
+            const len = Math.hypot(b.x - a.x, b.y - a.y) || 1
+            const t = (want - at[seg]) / len
+            out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t })
+        }
+        return out
+    }
+
+    // rotate the sample ring so it pairs with the previous generation minimally —
+    //  without this a cell would "spin" to a new start vertex every morph
+    function align_ring(pts: {x:number,y:number}[], ref: {x:number,y:number}[]) {
+        let best = 0, best_d = Infinity
+        for (let r = 0; r < pts.length; r++) {
+            let d = 0
+            for (let i = 0; i < pts.length; i += 4) {   // stride-4 sample is plenty
+                const p = pts[(i + r) % pts.length], q = ref[i]
+                d += (p.x - q.x) * (p.x - q.x) + (p.y - q.y) * (p.y - q.y)
+            }
+            if (d < best_d) { best_d = d; best = r }
+        }
+        return best ? [...pts.slice(best), ...pts.slice(0, best)] : pts
+    }
+
+    // ── paint_final: the vectorised rest state ────────────────────────────────
+    //  cell outlines with the edge-braces IN the path (a brace is a notch of
+    //  the border itself, cusp-tip pointing into the cell at the crossing —
+    //  tightly coupled: it moves, scales and dies with its wall), a tip dot in
+    //  the OTHER end's colour, the Stuffing stretched+molded into the cell.
+    function paint_final(L: { cells: VCell[], seeds: any[], CW: number }) {
+        const crossings = new Map<string, { wall: number, t: number, m: {x:number,y:number}, color: string }[]>()
+        const cell_by_id = new Map(L.cells.map(c => [c.id, c]))
+        cy.edges().forEach((e: any) => {
+            const sid = e.source().id(), tid = e.target().id()
+            for (const [own, other] of [[sid, tid], [tid, sid]] as [string, string][]) {
+                const c = cell_by_id.get(own)
+                if (!c) continue
+                const on_node = cy.getElementById(other)
+                if (!on_node.length) continue
+                const q = on_node.renderedPosition()
+                for (let k = 0; k < c.inset.length; k++) {
+                    const a = c.inset[k], b = c.inset[(k + 1) % c.inset.length]
+                    const h = seg_hit(c.seed, q, a, b)
+                    if (!h) continue
+                    const wl = Math.hypot(b.x - a.x, b.y - a.y) || 1
+                    const t = Math.hypot(h.x - a.x, h.y - a.y) / wl
+                    const color = cell_by_id.has(other)
+                        ? on_node.style('border-color') as string
+                        : on_node.style('background-color') as string
+                    const list = crossings.get(own) ?? []
+                    list.push({ wall: k, t, m: h, color })
+                    crossings.set(own, list)
+                    break   // convex + seed inside → one exit wall
+                }
+            }
+        })
+
+        const D = 8
+        const P = (px: number, py: number) => `${px.toFixed(1)} ${py.toFixed(1)}`
+        const cells: typeof vcells = []
+        const tips: typeof vtips = []
+        for (const c of L.cells) {
+            const cross = (crossings.get(c.id) ?? []).sort((x, y) => x.wall - y.wall || x.t - y.t)
+            let d = `M${P(c.inset[0].x, c.inset[0].y)}`
+            for (let k = 0; k < c.inset.length; k++) {
+                const a = c.inset[k], b = c.inset[(k + 1) % c.inset.length]
+                const wlen = Math.hypot(b.x - a.x, b.y - a.y) || 1
+                const wv = { x: (b.x - a.x) / wlen, y: (b.y - a.y) / wlen }
+                let nx = wv.y, ny = -wv.x
+                if ((c.acx - a.x) * nx + (c.acy - a.y) * ny < 0) { nx = -nx; ny = -ny }
+                const BL = Math.min(13, wlen * 0.3)
+                let along = 0   // distance already consumed on this wall
+                if (BL >= 5) for (const cr of cross) {
+                    if (cr.wall !== k) continue
+                    const at = cr.t * wlen
+                    if (at - BL < along + 2 || at + BL > wlen - 2) continue
+                    // walk to the notch, then the brace: two cubics leaving the
+                    //  wall smoothly and meeting in a cusp at depth D — the
+                    //  border itself curls into the cell and back
+                    const s1x = cr.m.x - wv.x * BL, s1y = cr.m.y - wv.y * BL
+                    const s2x = cr.m.x + wv.x * BL, s2y = cr.m.y + wv.y * BL
+                    const tpx = cr.m.x + nx * D,    tpy = cr.m.y + ny * D
+                    d += `L${P(s1x, s1y)}`
+                       + `C${P(s1x + wv.x * BL * 0.55, s1y + wv.y * BL * 0.55)} `
+                       +    `${P(tpx - nx * D * 0.6 - wv.x * BL * 0.05, tpy - ny * D * 0.6 - wv.y * BL * 0.05)} `
+                       +    `${P(tpx, tpy)}`
+                       + `C${P(tpx - nx * D * 0.6 + wv.x * BL * 0.05, tpy - ny * D * 0.6 + wv.y * BL * 0.05)} `
+                       +    `${P(s2x - wv.x * BL * 0.55, s2y - wv.y * BL * 0.55)} `
+                       +    `${P(s2x, s2y)}`
+                    along = at + BL
+                    tips.push({ id: `${c.id}·${k}·${at.toFixed(0)}`,
+                        x: cr.m.x + nx * (D + 3), y: cr.m.y + ny * (D + 3), color: cr.color })
+                }
+                d += `L${P(b.x, b.y)}`
+            }
+            d += 'Z'
+            cells.push({ id: c.id, d, color: c.color })
+
+            // ── the Stuffing, stretched and molded into its cell ─────────────
+            const el = overlays.get(c.id)
             if (el) {
-                const xs = inset.map(p => p.x), ys = inset.map(p => p.y)
+                const xs = c.inset.map(p => p.x), ys = c.inset.map(p => p.y)
                 const bx = Math.min(...xs), by = Math.min(...ys)
                 const bw = Math.max(...xs) - bx, bh = Math.max(...ys) - by
                 el.style.left     = `${bx.toFixed(1)}px`
@@ -626,27 +874,119 @@
                 el.style.width    = `${bw.toFixed(1)}px`
                 el.style.height   = `${bh.toFixed(1)}px`
                 el.style.maxWidth = 'none'
-                el.style.clipPath = 'polygon(' + inset.map(p =>
+                el.style.clipPath = 'polygon(' + c.inset.map(p =>
                     `${(p.x - bx).toFixed(1)}px ${(p.y - by).toFixed(1)}px`).join(',') + ')'
+                const child = el.firstElementChild as HTMLElement | null
+                if (child) {
+                    const a = (c.fit * c.T11).toFixed(3), b2 = (c.fit * c.T12).toFixed(3)
+                    const d2 = (c.fit * c.T22).toFixed(3)
+                    const tx = c.acx - (bx + bw / 2), ty = c.acy - (by + bh / 2)
+                    child.style.transform = `translate(${tx.toFixed(1)}px, ${ty.toFixed(1)}px)`
+                        + ` matrix(${a}, ${b2}, ${b2}, ${d2}, 0, 0)`
+                }
             }
         }
         // a seed whose cell got swallowed falls back to plain node-centering
-        for (const s of seeds) {
-            if (placed.has(s.id)) continue
+        for (const s of L.seeds) {
+            if (cell_by_id.has(s.id)) continue
             const el = overlays.get(s.id)
             if (!el) continue
             el.style.clipPath = ''; el.style.width = ''; el.style.height = ''; el.style.maxWidth = ''
+            const inner = el.firstElementChild as HTMLElement | null
+            if (inner) inner.style.transform = ''
             el.style.left = `${s.x - el.offsetWidth / 2}px`
             el.style.top  = `${s.y - el.offsetHeight / 2}px`
         }
         vcells = cells
+        vtips = tips
+    }
+
+    // ── morph_voronoi: tween shown → next generation, then paint the rest state ──
+    function morph_voronoi(on_done?: () => void) {
+        const L = voronoi_layout()
+        if (!L) {
+            if (vcells.length || vtips.length) clear_voronoi()
+            on_done?.()
+            return
+        }
+        vregion_w = L.CW
+
+        const targets = new Map<string, {x:number,y:number}[]>()
+        const starts  = new Map<string, {x:number,y:number}[]>()
+        for (const c of L.cells) {
+            let pts = resample(c.inset, RESAMPLE_N)
+            const prev = shown_pts.get(c.id)
+            if (prev && prev.length === RESAMPLE_N) {
+                pts = align_ring(pts, prev)
+                starts.set(c.id, prev)
+            } else {
+                // BIRTH: the new cell grows out of its seed point — division
+                starts.set(c.id, Array.from({ length: RESAMPLE_N }, () => ({ x: c.seed.x, y: c.seed.y })))
+            }
+            targets.set(c.id, pts)
+            shown_color.set(c.id, c.color)
+        }
+        // DEATH: a shown cell with no target shrinks to its own middle
+        const dying: { id: string, from: {x:number,y:number}[], cx: number, cy: number, color: string }[] = []
+        for (const [id, pts] of shown_pts) {
+            if (targets.has(id)) continue
+            const cx = pts.reduce((a, p) => a + p.x, 0) / pts.length
+            const cyy = pts.reduce((a, p) => a + p.y, 0) / pts.length
+            dying.push({ id, from: pts, cx, cy: cyy, color: shown_color.get(id) ?? '#888' })
+        }
+
+        // nothing moved and nobody was born or died → skip straight to paint
+        let still = dying.length === 0
+        if (still) for (const c of L.cells) {
+            const a = starts.get(c.id)!, b = targets.get(c.id)!
+            for (let i = 0; i < RESAMPLE_N; i += 4) {
+                if (Math.abs(a[i].x - b[i].x) > 1.5 || Math.abs(a[i].y - b[i].y) > 1.5) { still = false; break }
+            }
+            if (!still) break
+        }
+        if (still) { for (const c of L.cells) shown_pts.set(c.id, targets.get(c.id)!); paint_final(L); on_done?.(); return }
+
+        cancelAnimationFrame(morph_raf)
+        vtips = []   // tips re-arrive with the settled walls
+        const t0 = performance.now()
+        const frame = (now: number) => {
+            const k = Math.min(1, (now - t0) / MORPH_MS)
+            const e = 1 - Math.pow(1 - k, 3)
+            const cur: typeof vcells = []
+            for (const c of L.cells) {
+                const a = starts.get(c.id)!, b = targets.get(c.id)!
+                const pts = a.map((p, i) => ({
+                    x: p.x + (b[i].x - p.x) * e, y: p.y + (b[i].y - p.y) * e }))
+                shown_pts.set(c.id, pts)
+                cur.push({ id: c.id, d: poly_d(pts), color: c.color })
+            }
+            for (const dc of dying) {
+                const pts = dc.from.map(p => ({
+                    x: p.x + (dc.cx - p.x) * e, y: p.y + (dc.cy - p.y) * e }))
+                cur.push({ id: dc.id, d: poly_d(pts), color: dc.color })
+            }
+            vcells = cur
+            if (k < 1) { morph_raf = requestAnimationFrame(frame) }
+            else {
+                for (const dc of dying) { shown_pts.delete(dc.id); shown_color.delete(dc.id) }
+                paint_final(L)
+                on_done?.()
+            }
+        }
+        morph_raf = requestAnimationFrame(frame)
     }
 
     function clear_voronoi() {
+        cancelAnimationFrame(morph_raf)
         vcells = []
+        vtips = []
+        shown_pts.clear()
+        shown_color.clear()
         for (const el of overlays.values()) {
             if (!el.classList.contains('stuff-overlay')) continue
             el.style.clipPath = ''; el.style.width = ''; el.style.height = ''; el.style.maxWidth = ''
+            const inner = el.firstElementChild as HTMLElement | null
+            if (inner) inner.style.transform = ''
         }
         reposition_overlays()
     }
@@ -1044,14 +1384,18 @@
         <!-- voronoi layer between the canvas and the HTML overlays: the veil dims
              the raw graph so the cells (and the Stuffings stretched into them)
              carry the reading; it hides with the overlays during motion. -->
-        <svg class="cytui-voronoi" style:visibility={motion_hidden ? 'hidden' : 'visible'}>
+        <svg class="cytui-voronoi" style:opacity={motion_hidden ? 0 : 1}>
             {#if voronoi_on && vcells.length}
-                <rect class="cytui-veil" width="100%" height="100%" />
+                <rect class="cytui-veil" width={vregion_w || '100%'} height="100%" />
                 {#each vcells as cell (cell.id)}
                     <path d={cell.d}
                         fill={cell.color} fill-opacity="0.13"
                         stroke={cell.color} stroke-opacity="0.6" stroke-width="1.5"
                         stroke-linejoin="round" />
+                {/each}
+                {#each vtips as tip (tip.id)}
+                    <circle cx={tip.x} cy={tip.y} r="2.4"
+                        fill={tip.color} fill-opacity="0.95" />
                 {/each}
             {/if}
         </svg>
@@ -1110,6 +1454,7 @@
     inset: 0;
     width: 100%; height: 100%;
     pointer-events: none;
+    transition: opacity 0.25s ease;
 }
 .cytui-voronoi .cytui-veil {
     fill: #070707;
@@ -1211,6 +1556,12 @@
     width: max-content;
     height: max-content;
     max-width: 520px;
+}
+/* the mounted Stuffing must keep its NATURAL size even when the voronoi mode
+   pins the overlay to a cell bbox (flex would shrink it to the container and
+   spoil the maximal-fit measure — offsetWidth has to stay the content size). */
+:global(.stuff-overlay > *) {
+    flex: none;
 }
 /* the outer Stuffing keeps its SOLID background (visual clarity — the rows must not blend
    into edges and nodes behind the chunk); only its border goes, so the chunk's chrome is the

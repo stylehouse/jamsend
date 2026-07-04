@@ -1101,33 +1101,26 @@
             const self = (H as any).Lies_self?.(w) as { prepub: string } | undefined
             if (!self?.prepub) return
             const now = Date.now()
-            // AudioContext gesture-lock state — advertised as the `ac` facet (a needAC dispatch prefers an
-            //  ac-live runner).  A CHANGE here (the human just tapped "tap for sound", or it lapsed) JUMPS
-            //   the ~15s throttle: re-advertise NOW so the editor's roster ac facet / needAC beg clears
-            //    within a keepalive tick instead of up to 15s later.  (Generalises — any material facet
-            //     worth clearing fast can jump the beacon the same way; ac is the one that stalls a run.)
-            const ac_now     = !!(H.top_House().c as any).musu_gat?.AC_ready
-            const ac_changed = ac_now !== !!w.c.last_ac_sent
-            if (!ac_changed && w.c.last_advertise && now - (w.c.last_advertise as number) < 15000) return   // ~15s beacon
+            // The beacon's MATERIAL facets — what the editor's roster + allocator (Lies_dispatch_target)
+            //  act on: book (a Book running), engaged (this runner's live lease-holder — dispatch SKIPS an
+            //   engaged runner and tiers by it), ac (AudioContext unlocked — a needAC run prefers it).  A
+            //    CHANGE to any of the three JUMPS the ~15s throttle, so a tap-for-sound / run start|end /
+            //     lease take|release reaches the editor within a keepalive tick, not up to 15s.  Steady
+            //      state (nothing changed) still beacons at ~15s — the sig-compare is the only gate added.
+            const eng     = (H as any).Lies_engagement?.(w) as { client?: string; status?: string } | undefined
+            const book    = (H.top_House().c.book as string) ?? ''
+            const engaged = (eng && eng.status === 'active') ? (eng.client ?? '') : ''
+            const ac_now  = !!(H.top_House().c as any).musu_gat?.AC_ready
+            const sig     = `${book}|${engaged}|${ac_now ? 1 : 0}`
+            if (sig === w.c.last_adv_sig && w.c.last_advertise && now - (w.c.last_advertise as number) < 15000) return
             w.c.last_advertise = now
-            w.c.last_ac_sent = ac_now
-            const eng = (H as any).Lies_engagement?.(w) as { client?: string; status?: string } | undefined
+            w.c.last_adv_sig = sig
             ;(H as any).Peeroleum_send_consumer(w, 'advertise', {
                 from: self.prepub,
-                ready: 1,                                   // reachable on the grid (book='' ⇒ free/idle)
-                book: (H.top_House().c.book as string) ?? '',
-                // overall engagement: the client (by pub) holding this runner's LIVE lease right now, so
-                //  the editor's Brink shows busy/free and a fleet allocator can skip an engaged runner
-                //   without a round-trip.  '' ⇒ free (no lease, or released/timed-out).  `book` is the
-                //    finer "busy-with-something" (a Book actually running); `engaged` is the coarser
-                //     reservation that outlives a single run (the 10min think-between-runs window).
-                engaged: (eng && eng.status === 'active') ? (eng.client ?? '') : '',
-                // audio capability — this tab's AudioContext is gesture-unlocked (the Musu_gat/
-                //  Lies_secure_audio cache on top_House().c; the Sound Brink grant resumes that same
-                //   cached context).  Present-or-absent like a snapped boolean; a needAC dispatch
-                //    prefers an ac-live runner so the run doesn't stall ~60s begging for a gesture
-                //     (advertise first, then match — the needAC arc: spec/Runner_quality_handover.md).
-                ...(ac_now ? { ac: 1 } : {}),
+                ready: 1,                        // reachable on the grid (book='' ⇒ free/idle)
+                book,                            // a Book actually running — the finer "busy-with-something"
+                engaged,                         // the live lease-holder's pub; '' ⇒ free (dispatch skips + tiers on this)
+                ...(ac_now ? { ac: 1 } : {}),    // AudioContext gesture-unlocked (a needAC dispatch prefers it)
                 // (no favourite_client on the beacon: the editor sources it from the Waft:Cluster/
                 //  %HostedIdentity registry — advertise_recv reads hi.sc.favourite_client and ignores any
                 //   wire copy — so broadcasting it to every client each beat was dead weight.  The

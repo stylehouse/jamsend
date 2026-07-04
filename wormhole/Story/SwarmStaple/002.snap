@@ -1,0 +1,16 @@
+Snap:H
+  H:SwarmStaple,Run
+    A:SwarmStaple
+      self,round=2	{"mung":["age"]}
+      w:SwarmStaple,now=1751500000
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Account,of:Alice
+          Identity:32c1ce7a059129d1,prepub:32c1ce7a059129d1,friendly:Alice
+            Peering,name:32c1ce7a059129d1,friendly:Alice
+        Account,of:Bob
+          Identity:6eb0df4e976acef2,prepub:6eb0df4e976acef2,friendly:Bob
+            Peering,name:6eb0df4e976acef2,friendly:Bob
+        req:witness,eternal,ok
+        see:two selves stand — each an Identity owning its Peering page — keys ride .c only

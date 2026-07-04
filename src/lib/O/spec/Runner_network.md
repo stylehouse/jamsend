@@ -51,19 +51,16 @@ The one-page map of the stack that took a session of logging to see. Read this F
 - Per (re)open, via `on_open`: `control:become` (role bind, unauthenticated) then signed
    `control:hello` (identity bind — `Lies_cluster_idento` read live each open, so an Id switch
     rebinds without a reload).
-- **How fast the far side learns about us — the announce cadence** (2026-07-04, "fire back pronto").
-   Steady state: a **ping** every ~5s (identity-borne liveness pulse — clears the editor's
-    "dialing"/"silent" face) and an **advertise** every ~15s (the fuller beacon: `ready|book|
-     engaged|ac` — the roster facts). Two shortcuts keep the editor from lagging a real change:
-   - **on open**: `on_open` also fires an immediate ping + advertise (throttles cleared, `socket_heard`
-      stamped so the watchdog doesn't tear the fresh socket), so a (re)connect clears "dialing" within
-       one RTT, not up to a 5s tick. NOT routed through `Lies_keepalive` — that would run the
-        DEAD/SLUGGISH watchdog against the stale pre-drop `heard`.
-   - **on a facet change**: `Lies_advertise` compares `ac` (AudioContext gesture-lock) to the
-      last-sent value and JUMPS the 15s throttle when it flips — so tapping "tap for sound" on the
-       runner clears the editor's cold-`ac`/needAC beg within a keepalive tick. `Lies_ac_nudge` (called
-        from the Sound Brink's `wake()`) makes it instant on the tap; the ≤5s keepalive path is the
-         backstop. The ping does NOT carry `ac`, by design — only the advertise does.
+- **Announce cadence — how fast the far side learns about us** (2026-07-04). Steady state: a **ping**
+   ~5s (liveness → clears "dialing"/"silent") and an **advertise** ~15s (`ready|book|engaged|ac` — the
+    roster facts). Two shortcuts beat the throttle: (a) **on open**, `on_open` fires an immediate ping +
+     advertise (throttles cleared, `socket_heard` stamped so the watchdog won't tear the fresh socket;
+      NOT via `Lies_keepalive`, whose DEAD check would fire on stale pre-drop `heard`) → a (re)connect
+       clears "dialing" in one RTT; (b) **on a facet change**, `Lies_advertise` re-beacons at once when
+        `book|engaged|ac` differs from last sent (a `sig` compare) → a run start|end, lease take|release,
+         or tap-for-sound reaches the editor's roster + allocator (`Lies_dispatch_target`) within a
+          keepalive tick, not 15s. `Lies_ac_nudge` (from the Sound Brink) makes the AC case instant; the
+           ping never carries these facets, only the advertise does.
 
 ## What each Brink badge actually asserts
 

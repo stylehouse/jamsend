@@ -42,14 +42,22 @@ story:MusuReco
       style:background-color,v:#bd429e
     matstyle:parked_want
       style:background-color,v:#89d04e
+    matstyle:Opt
+      style:background-color,v:#1f35a3
+    matstyle:crushCyto
+      style:background-color,v:#a6483a
+    matstyle:Crush_Tree
+      style:background-color,v:#36c974
   Plan
   Opt
     waitCyto
     useCyto
     dontSnapCyto
     For
+      w:MusuReco
+        crushCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.394
+    TimeTotal:beliefs,avg=0.395
       sample=0.287,at=1783111431
       sample=0.314,at=1783111707
       sample=0.316,at=1783111755
@@ -57,6 +65,9 @@ story:MusuReco
       sample=0.411,at=1783112144
       sample=0.472,at=1783112220
       sample=0.472,at=1783112226
+      sample=0.431,at=1783131472
+      sample=0.309,at=1783132301
+      sample=0.453,at=1783132773
     TimeTotal:step,avg=0.036
       sample=0.026,at=1783111431
       sample=0.029,at=1783111707
@@ -65,6 +76,9 @@ story:MusuReco
       sample=0.037,at=1783112144
       sample=0.043,at=1783112220
       sample=0.043,at=1783112226
+      sample=0.039,at=1783131472
+      sample=0.028,at=1783132301
+      sample=0.041,at=1783132773
   step,dige:3dbd760e21c9003f
   step=2,dige:ccd32f76dbb85dec
   step=3,dige:ad78d3c0f6f77959

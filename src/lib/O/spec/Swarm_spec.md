@@ -217,7 +217,10 @@ An **Idzeug** is a single-use, signed invite carrying the inviter's page, the **
 The nonce is spent; the Idzeug **proves receipt, it does not stand in for an absent party** — redeeming
  with the inviter offline simply fails. `pier_hello`/`pier_accept` are **additive Peeroleum frames** (no
   spine change) — the pattern the built Wormhole `wormhole_beg`→`grant_offer`→`wormhole_req`→
-   `wormhole_reply` already uses.
+   `wormhole_reply` already uses. **[now]** — `Swarm_arm(w)` registers the three kinds on the spine's
+    `w.c.on[type]` registry; `Swarm_deliver` routes transport-first when the sender holds a station
+     (a `%Peering,name:<prepub>` flock), so the same verbs ride a real authenticated link (the pre-Ud
+      gate) with ack/retransmit/dedup for free — gated by the **`SwarmWire`** Book (§9).
 
 ### 6.4 Revocation
 
@@ -325,8 +328,11 @@ What it proves — each a differential witness with teeth (`%see:'sentence'` onc
 - **auto-mint** — no `?I=`, empty Dexie, empty disk → an `%Identity,active:1` appears (§5).
 
 Run on the **live `:9091` runner** (`runner_ask.mjs run SwarmStaple --watch` → `snap <n>` → accept),
- **never headless** (CLAUDE.md). The handshake is in-process/deterministic for now; the two-real-browsers
-  version is the distributed-Story upgrade `Cluster_spec §5` describes.
+ **never headless** (CLAUDE.md). SwarmStaple is **live-recorded green 8/8** (2026-07-04). A second Book,
+  **`SwarmWire`** (beats 2–5), proves the SAME handshake as real Peeroleum frames — stations by prepub,
+   authenticate-first, hello/accept/reject through the real outbox→inbox lifecycle — headless-green,
+    live record owed. The two-real-browsers version is the distributed-Story upgrade `Cluster_spec §5`
+     describes.
 
 ---
 

@@ -11,7 +11,7 @@ import { Selection } from "$lib/mostly/Selection.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Musuation(): string { return '091f5e861351e4cc' },
+    Ghostmeta_Ghost_Story_Musuation(): string { return '6c7ce9775ebbe7e4' },
 
 // Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Music_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
@@ -4250,6 +4250,84 @@ async MusuConceal_order(w) { const H = this;
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)
+},
+//#endregion
+
+//#region mitosis — watch the cells divide
+// ══ MusuMitosis — a colony that grows and splits: the voronoi render watched dividing ══════════════
+//  A demo-gauge Book for the crushed voronoi cells: cell:<name> containers of %spore children live
+//   DIRECTLY under w (no umbrella container — the crusher folds any content container so an umbrella
+//    would swallow the whole colony as ONE chunk).  Each beat every cell gains spores; a cell past
+//     the split threshold DIVIDES (half its spores leave for a fresh cell — a new voronoi cell births
+//      inside the parent's territory); one cell dies mid-run (apoptosis — its territory reclaimed).
+//       Deterministic throughout: growth is count-driven, names come off a fixed list, no randomness.
+//        No transport and no audio — this Book runs anywhere a runner does.
+MusuMitosis(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.MusuMitosis_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async MusuMitosis_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.MusuMitosis_seed(w)
+        if (n >= 3 && n <= 10) this.MusuMitosis_grow(w, n)
+        if (n === 8) this.MusuMitosis_die(w)
+        if (n >= 2) this.Repli_crush_scan(w)
+        if (n === 11) this.MusuMitosis_witness(w)
+    }
+
+},
+MusuMitosis_seed(w) {
+    let alpha = w.i({ cell: 'alpha' })
+    for (let k = 0; k < 5; k++) alpha.i({ spore: 'a' + k })
+    let beta = w.i({ cell: 'beta' })
+    for (let k = 0; k < 3; k++) beta.i({ spore: 'b' + k })
+
+},
+// grow: every cell gains two spores; then AT MOST ONE cell past 8 spores splits — half its spores
+//  move to the next unused name.  One division per beat keeps the animation readable; the fixed
+//   name list is both the determinism and the size cap (no names left = the colony stops dividing).
+MusuMitosis_grow(w, n) {
+    let names = ['alpha','beta','gamma','delta','epsilon','zeta','eta','theta']
+    let cells = w.o({ cell: 1 })
+    for (const c of cells) {
+        c.i({ spore: c.sc.cell + '-' + n + 'a' })
+        c.i({ spore: c.sc.cell + '-' + n + 'b' })
+    }
+    cells = w.o({ cell: 1 })
+    for (const c of cells) {
+        let spores = c.o({ spore: 1 })
+        if (spores.length < 8) continue
+        let used = w.o({ cell: 1 }).map(x => x.sc.cell)
+        let name = names.find(nm => !used.includes(nm))
+        if (!name) break
+        let neu = w.i({ cell: name })
+        let half = spores.slice(0, Math.floor(spores.length / 2))
+        for (const sp of half) { neu.i({ spore: sp.sc.spore }); sp.drop(sp) }
+        w.c.mitosis_splits = (w.c.mitosis_splits || 0) + 1
+        break
+    }
+
+},
+// die: apoptosis — the smallest cell drops out; its voronoi territory goes back to the neighbours.
+MusuMitosis_die(w) {
+    let cells = w.o({ cell: 1 })
+    if (cells.length < 3) return
+    let smallest = [...cells].sort((a, b) => a.o({ spore: 1 }).length - b.o({ spore: 1 }).length)[0]
+    w.c.mitosis_died = smallest.sc.cell
+    smallest.drop(smallest)
+
+},
+MusuMitosis_witness(w) {
+    let cells = w.o({ cell: 1 })
+    let folded = cells.filter(c => c.sc.stuff != null)
+    if (cells.length >= 4 && (w.c.mitosis_splits || 0) >= 2 && !(w.oa({see: 'the colony divided — more cells now than were seeded and each new one born of a split'}))) w.i({see: 'the colony divided — more cells now than were seeded and each new one born of a split'})
+    if (w.c.mitosis_died && !cells.find(c => c.sc.cell === w.c.mitosis_died) && !(w.oa({see: 'a cell died mid-run and stayed dead — its territory went back to the colony'}))) w.i({see: 'a cell died mid-run and stayed dead — its territory went back to the colony'})
+    if (cells.length && folded.length === cells.length && !(w.oa({see: 'every living cell is crush-folded behind one chunk for the graph'}))) w.i({see: 'every living cell is crush-folded behind one chunk for the graph'})
 },
 //#endregion
 
