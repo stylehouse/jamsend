@@ -38,7 +38,8 @@ This is the **remote-local-ghost-compile** form, and the name earns its strangen
        `http://172.17.0.1:9092`); the editor needs its cluster key (🪪 Id hatch) for its own `gen_write`
         to be accepted, claude needs `.env.cluster-claude` to sign. A *purely* remote form — CodeMirror
          carrying the edit over the wire, no shared disk — could exist but doesn't.
-   See `GhostCompile_feedback_handover.md`.
+   See `Everything_todo.md` §"Cluster-trust + ghost-compile — SHIPPED" (the residuals; the old
+    `GhostCompile_feedback_handover.md` swamp-analysis lives in git history).
 
 ### compile PASS ≠ it runs
 The editor's compile (driven by `npm run ghost-compile`) runs the translator + syntax gates, so a

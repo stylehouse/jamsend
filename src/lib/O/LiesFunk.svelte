@@ -561,14 +561,46 @@ await M.eatfunc({
         return true
     },
 
+    // Lies_send_binary_consumer — the RUNNER→editor CONSUMER twin of Lies_send_binary_to.  The runner has
+    //  ONE consumer Pier (pointed at the editor, the same one wormhole_req/grant_beg ride), so there is no
+    //   `to` to choose — send over pier[0], to = its pub.  Bytes ride frame.buffer (raw, body_hash-integrity,
+    //    OFF-snap); app meta (corr, grant, op, dir_path, filename) rides the header, exactly as the editor's
+    //     addressed binary reply does.  This is the write direction the JSON consumer body can't carry without
+    //      a base64 tax + a bloated snapped outbox emit — used by RemoteWormholeNav.bin_write.
+    //  Returns the emit's seq (like Peeroleum_send_consumer) so the caller can watch its %outbox/emit go
+    //   %acked — the nav's ack-gated re-emit reads it; undefined if there's no Pier yet.
+    async Lies_send_binary_consumer(w: TheC, type: string, meta: Record<string, unknown>, buf: ArrayBuffer | Uint8Array): Promise<number | undefined> {
+        const H = this as House
+        const peering = w.o({ Peering: 1 })[0] as TheC | undefined
+        const pier    = peering?.o({ Pier: 1 })[0] as TheC | undefined
+        if (!peering || !pier) return undefined
+        const me    = peering.sc.name
+        const to    = (pier.sc as any).pub
+        const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf)
+        const body_hash = await (H as any).Peeroleum_body_digest(bytes)
+        const seq = (H as any).Pier_next_seq(pier) as number
+        ;(H as any).Peeroleum_send(w, { header: { type, from: me, to, seq, body_hash, body_len: bytes.length, ...meta }, buffer: bytes })
+        return seq
+    },
+
     // EDITOR: serve one rw-op for a runner — verify the presented grant, then run it against OUR nav.
     //  Replies are ADDRESSED to the grantee (claim.for) via the post-promote send_to; bytes ride a binary
     //   frame (Lies_send_binary_to), never base64.  Only the no-grantee-pub degenerate falls back to b64.
     async Lies_wormhole_req_recv(w: TheC, frame: any): Promise<void> {
         const H = this as House
-        const to = (frame?.grant as GrantAtom)?.for as string | undefined   // the grant's minted-for prepub
-        const cc = String(frame?.corr ?? '').slice(-6)
-        console.log(`🛰️← wormhole_req op=${frame?.op} ${[frame?.dir_path, frame?.filename].filter(Boolean).join('/')} corr=…${cc} for=${String(to ?? '?').slice(0, 8)}`)   // DIAG: did the serve handler fire?
+        // A JSON wormhole_req carries its app meta at the top level (Peeroleum_send_consumer Object.assigns
+        //  the body beside `header`).  A BINARY req (op:'bin_write') carries the bytes on frame.buffer and
+        //   its meta on the HEADER instead (Lies_send_binary_consumer) — so read either, header as the
+        //    fallback.  One handler then serves both shapes; only the bin_write branch touches frame.buffer.
+        const hdr = frame?.header || {}
+        const grant    = (frame?.grant ?? hdr.grant) as GrantAtom | undefined
+        const corr     = frame?.corr ?? hdr.corr
+        const op       = frame?.op ?? hdr.op
+        const dir_path = frame?.dir_path ?? hdr.dir_path
+        const filename = frame?.filename ?? hdr.filename
+        const to = grant?.for as string | undefined   // the grant's minted-for prepub
+        const cc = String(corr ?? '').slice(-6)
+        console.log(`🛰️← wormhole_req op=${op} ${[dir_path, filename].filter(Boolean).join('/')} corr=…${cc} for=${String(to ?? '?').slice(0, 8)}`)   // DIAG: did the serve handler fire?
         // Reply by CONSUMER BROADCAST, corr-matched — NOT addressed to claim.for.  claim.for is the identity
         //  the grant was MINTED for, which can be a DIFFERENT tier (Lies_self vs Clustation_self) than the one
         //   the runner hello-binds / the relay routes on — so `to:claim.for` silently routed to NOBODY and every
@@ -578,24 +610,23 @@ await M.eatfunc({
         //       path grant_offer rides (editor→runner consumer broadcast, proven to land).
         const replyJSON = (body: Record<string, unknown>) => {
             console.log(`🛰️→ wormhole_reply corr=…${cc} ${body.error ? `ERROR ${body.error}` : body.not_found ? 'not_found' : body.ok ? 'ok' : body.entries ? `${(body.entries as any[]).length} entries` : `content ${String(body.content ?? '').length}c`}`)   // DIAG: what did we answer?
-            return H.Peeroleum_send_consumer(w, 'wormhole_reply', { corr: frame?.corr, ...body })
+            return H.Peeroleum_send_consumer(w, 'wormhole_reply', { corr, ...body })
         }
         // Binary replies still need an address (a raw buffer can't ride the consumer JSON body); they carry the
         //  same claim.for tier risk (TODO: corr-route binaries too).  For now reads/lists reply JSON, which the
         //   broadcast covers — the Cluster toc + all source reads are `read`|`list`, so this unblocks them.
         const replyBIN = (meta: Record<string, unknown>, buffer: ArrayBuffer) =>
-            to ? H.Lies_send_binary_to(w, to, 'wormhole_reply', { corr: frame?.corr, ...meta }, buffer)
+            to ? H.Lies_send_binary_to(w, to, 'wormhole_reply', { corr, ...meta }, buffer)
                : replyJSON({ error: 'grant has no for — cannot address binary reply' })
         try {
             const idento = H.Lies_cluster_idento(w)
             if (!idento) return void replyJSON({ error: 'editor has no cluster key' })
-            const claim = await verify_grant(frame.grant as GrantAtom)        // throws on a bad/forged sig
+            const claim = await verify_grant(grant as GrantAtom)        // throws on a bad/forged sig
             if (claim.to !== 'remoteWormhole') return void replyJSON({ error: `grant is for ${claim.to}` })
             if (claim.by !== idento.pub)        return void replyJSON({ error: 'grant not issued by this editor' })
             // TODO: revocation-corpus check (a signed %NotGrant for {by, for, remoteWormhole})
             const nav = H.top_House().o({ A: 'Wormhole' })[0]?.c.nav as any
             if (!nav) return void replyJSON({ error: 'editor wormhole nav not ready' })
-            const { op, dir_path, filename } = frame
             if (op === 'read') {
                 const c = await nav.read_file(dir_path, filename)
                 replyJSON(c != null ? { content: c } : { not_found: true })
@@ -620,6 +651,16 @@ await M.eatfunc({
             } else if (op === 'write') {
                 if (claim.mode === 'ro') return void replyJSON({ error: 'grant is read-only' })
                 await nav.write_file(dir_path, filename, frame.data)
+                replyJSON({ ok: true })
+            } else if (op === 'bin_write') {
+                // the binary write direction: the runner sent a raw frame (frame.buffer), we lay it on OUR
+                //  disk via the same nav.bin_write a local generator would use.  Reply is a tiny JSON {ok}.
+                if (claim.mode === 'ro') return void replyJSON({ error: 'grant is read-only' })
+                if (!nav.bin_write)      return void replyJSON({ error: 'editor nav cannot bin_write' })
+                const buf = frame.buffer
+                if (buf == null)         return void replyJSON({ error: 'bin_write: frame carried no buffer' })
+                const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf)
+                await nav.bin_write(dir_path, filename, bytes)
                 replyJSON({ ok: true })
             } else replyJSON({ error: `unknown op ${op}` })
         } catch (e) { replyJSON({ error: String(e) }) }
@@ -1798,7 +1839,11 @@ await M.eatfunc({
         //       file is written.  Needs a writable share (no headless).
         Musu_gen_testsounds(w: TheC): TheC {
             const H = this as House
-            return H.expecting(w, 'gen_testsounds', 30, async () => {
+            // 120s budget, not 30: eight ~400KB binary writes, each mkdirp+getWriter+write+a full dir
+            //  expand() (Housing.bin_write), legitimately overran the old 30 and left the req timing out
+            //   MID-WRITE (a live ttlilt in the snap, no `generated`) even when the WAVs were landing.
+            //    A live ttlilt in ANY snap means an expecting() TIMED OUT — never the normal path.
+            return H.expecting(w, 'gen_testsounds', 120, async () => {
                 const nav = H.top_House().o({ A: 'Wormhole' })[0]?.c.nav as any
                 // Honest diagnosis: a MISSING nav is "grant a share"; a nav that just lacks bin_write is a
                 //  CAPABILITY gap, not a permission one — say which, so a &remoteWormhole runner (share IS
@@ -1806,10 +1851,23 @@ await M.eatfunc({
                 if (!nav)           { w.i({ gen_error: 'no writable share — grant one (open share) first' }); return }
                 if (!nav.bin_write) { w.i({ gen_error: `${nav.label ?? 'this backend'} can't write binary yet (remote Wormhole has no bin_write) — run on a local-share runner, or wire bin_write through the wormhole` }); return }
                 const dir = 'testsounds'
+                // A DEAD share handle (the dir deleted out from under a granted FSA share, or a grant lost
+                //  across a reload) makes bin_write HANG — neither resolve nor throw — which used to surface
+                //   only as an opaque timed-out ttlilt with zero files.  Bound each write so a stall becomes a
+                //    NAMED gen_error (re-open the share), and one bad write can't wedge the whole batch.
+                const bounded = (p: Promise<any>, what: string) => Promise.race([
+                    p, new Promise((_r, rej) => setTimeout(() => rej(new Error(`${what} did not complete in 15s`)), 15_000)),
+                ])
                 let made = 0
                 for (const t of TEST_TONES) {
-                    await nav.bin_write(dir, `${t.artist} - ${t.title}.wav`, wav_bytes(t.freq, t.secs))
-                    made = made + 1
+                    const name = `${t.artist} - ${t.title}.wav`
+                    try {
+                        await bounded(nav.bin_write(dir, name, wav_bytes(t.freq, t.secs)), `bin_write ${name}`)
+                        made = made + 1
+                    } catch (e) {
+                        w.i({ gen_error: `write stalled at ${name} (${String(e)}) — the disk share looks dead; re-open/re-grant it (open share) and re-run` })
+                        return
+                    }
                 }
                 w.i({ generated: made, dir })
             })
@@ -1956,7 +2014,7 @@ await M.eatfunc({
                     else if (op === 'steps') {
                         result = {
                             book, uid,
-                            steps: steps.map(s => ({ n: s.n, ok: s.ok, caveat: s.caveat, dige: s.dige })),
+                            steps: steps.map(s => ({ n: s.n, ok: s.ok, caveat: s.caveat, untried: s.untried, error: s.error, dige: s.dige })),
                             done: steps.length, ok: steps.length > 0 && steps.every(s => !!s.ok),
                         }
                     } else if (op === 'snaps') {
@@ -2191,6 +2249,7 @@ await M.eatfunc({
                 const n = Number(s.sc.Step)
                 return {
                     n, ok: s.sc.ok ? 1 : 0, caveat: s.sc.caveat ? 1 : 0, dige: s.sc.dige,
+                    untried: s.sc.untried ? 1 : 0, error: s.sc.error ?? null,
                     got_snap: s.sc.got_snap ?? null, exp_snap: s.sc.exp_snap ?? exps[n] ?? null,
                     trace: Array.isArray(s.sc.Run_trace) ? s.sc.Run_trace : null,
                 }
@@ -2253,6 +2312,7 @@ await M.eatfunc({
                         const n = Number(s.sc.Step)
                         pins[n] = {
                             n, ok: s.sc.ok ? 1 : 0, caveat: s.sc.caveat ? 1 : 0, dige: s.sc.dige,
+                            untried: s.sc.untried ? 1 : 0, error: s.sc.error ?? null,
                             got_snap: s.sc.got_snap ?? null, exp_snap: s.sc.exp_snap ?? exps[n] ?? null,
                             trace: Array.isArray(s.sc.Run_trace) ? s.sc.Run_trace : null,
                         }

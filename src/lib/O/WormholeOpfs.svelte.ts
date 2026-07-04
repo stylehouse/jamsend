@@ -95,6 +95,19 @@ export class OpfsOverlayNav {
         await w.close()
     }
 
+    // bin_write — write_file's BINARY twin: the SAME scratch-layer write, but raw bytes (createWritable
+    //  takes a BufferSource directly, no TextEncoder).  Completes the contract so all THREE backends
+    //   (FSA WormholeNav, remote RemoteWormholeNav, this cloud overlay) can write binary — no backend is a
+    //    partial nav that surfaces "can't write binary" three layers away for a WAV-writing Book.
+    async bin_write(dir_path: string, filename: string, bytes: Uint8Array | ArrayBuffer): Promise<void> {
+        const parts = dir_path.split('/').filter(Boolean)
+        const d = await walk(this.scratch, parts, true)
+        const fh = await d!.getFileHandle(filename, { create: true })
+        const w = await fh.createWritable()
+        await w.write(bytes as BufferSource)
+        await w.close()
+    }
+
     // dir_at — dir() from a single '/'-joined path string (the discovery-site convenience).
     async dir_at(path: string) { return this.dir(...path.split('/').filter(Boolean)) }
     // a DirectoryListing-shaped probe: the worker calls .expand() then reads

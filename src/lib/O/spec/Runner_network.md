@@ -141,3 +141,96 @@ The one-page map of the stack that took a session of logging to see. Read this F
  runner's ws bound, consumer dispatch alive. It reports `{role, channel, self, advertising}`.
   `state`/`steps`/`rungos` ride the same path. If `ping` times out but the editor works, think
    failure mode 1 (runner-only transport) before anything else.
+
+## Hardening — four spin-outs (open, 2026-07-05)
+
+A and B harden **liveness** (tolerate a sleepy tab / keep it warm). C and D came out of the
+ 2026-07-05 socklog dig (`wormhole/_socklog/`) and harden **wire correctness** and **standup**.
+
+**A. The fatal "tab is dead" timeout belongs to the networking layer, not the CLI.**
+ The layer already owns a *graded* liveness verdict, and it's a good one: `Lies_keepalive`
+  (`LiesLies.svelte:1037`) reads **SLUGGISH at 9s** (`SLUGGISH_MS` — heard *something* inbound but the
+   pong is late: the peer is busy / think-quiesced, and the doc's own rule is *do not tear it*) and
+    **DEAD at 20s** (`DEAD_MS` — nothing inbound at all: the carrier really is gone, re-dial); the
+     editor's roster then lapses a runner's live claims at **45s** (`LIVE_MS`, `:1218`) and culls its
+      Pier at 5min. So "how long until dead?" is already answered — **20s of total silence** — and
+       answered with a busy-but-alive band deliberately sitting beneath it. The `runner_ask --watch`
+        false-RED is exactly the bug of *ignoring* this: its 8s per-poll bail fires *below even
+         SLUGGISH*, declaring death before the layer would call the peer merely sluggish. The cure is
+          not a bigger magic number in the script — it is to make liveness **one verdict the CLI reads
+           too**: factor the SLUGGISH/DEAD/LIVE thresholds into a single place (a `Lies_liveness(w)`
+            verdict fn, or at minimum exported constants) so the rack, the reaper, and `runner_ask`
+             share one definition of dead, and `--watch` tolerates missed polls up to `DEAD_MS` before
+              reporting failure. During an active run there is also *positive* evidence a raw timeout
+               throws away: `run_phase` step_done blips and advancing `Storyrun` state mean alive — the
+                watch loop should reset its death-clock on **progress**, not only on a poll answering.
+                 Net: fatal = *20s of no answer AND no state progress*, sourced from the layer's own
+                  constant, never an 8s number invented in a script.
+
+**B. Make the runner tab less go-to-sleepy — audio-keepalive first, PWA for the fleet.**
+ The root of the missed-ping / false-DEAD churn is the browser itself: a backgrounded tab gets its
+  timers throttled (the off-think keepalive `setInterval` clamped), then the Page Lifecycle machinery
+   can *freeze* and even *discard* it — a runner that is alive but hidden reads SLUGGISH→DEAD through no
+    fault of the spine. Cheapest, highest-leverage lever: a **silent keepalive AudioContext node** (a
+     muted oscillator → `gain(0)` → destination). A tab playing media is flagged as such by the browser
+      and exempted from the worst timer-throttling and is far less likely to be frozen or discarded —
+       and it aligns with what we already have, since a runner granted AC (the `needAC` gate) is
+        *already* the tab we most want kept warm; the muted node costs ~nothing. Next, wire the **Page
+         Lifecycle API**: on `resume` / `visibilitychange`-visible, fire the same instant re-ping +
+          re-advertise the socket `on_open` already does (`LiesLies.svelte:283`), so a thaw clears
+           "silent" in one RTT instead of waiting a keepalive tick; and on `freeze`, emit an "I'm going
+            cold" advertise so the editor marks the runner *parked* rather than lying DEAD. For a real
+             runner **fleet**, promote to an **installed PWA** (manifest + a thin service worker,
+              standalone window): installed PWAs are throttled less aggressively and are much less likely
+               to be discarded under memory pressure, and they give a stable home for many runner
+                windows; `navigator.wakeLock` only helps while visible and `periodicSync` support is
+                 thin, so neither is load-bearing. The honest caveat: none of this *defeats* background
+                  throttling — a hidden tab will still be slowed. That is why A and B are complementary,
+                   not either/or: **A makes us tolerant of a sleepy tab (never false-red / false-dead),
+                    B makes the tab less sleepy.** Ship the audio-keepalive as the cheap 80%; the PWA is
+                     the fleet-grade hardening for when we run many runners at once.
+
+**C. The reconnect-epoch seq collision — re-ack a dup + reset the Pier epoch (spine; the *real* cure is
+ editor-side, so it waits on the next re-pin).**
+ Wire-confirmed 2026-07-05: a runner that **reloads** restarts its per-Pier outbound seq LOW, but the
+  editor's Pier for it is REUSED (the editor didn't reload) and still remembers the old high-water. The
+   fresh `wormhole_req seq=6` hits an already-`%finished` `%req:unemit` at that seq (`Peeroleum_book_unemit`'s
+    `oai({req:'unemit',seq,type})` *finds* it instead of creating one), `inbox.do()` skips it as done, and
+     the ack is emitted *inside* `req_unemit` — so the frame is dropped with **no ack, no reply, no trace**.
+      The read then dead-waited the full 20s `REQ_TIMEOUT` and only self-healed once the seq organically
+       climbed past the stale high-water (observed: recovered at `seq=14`). This is the epoch gap the
+        Peeroleum spec flags under heading 8: a frame's identity is `(epoch, seq)`, but only `seq` is checked.
+  - **Shipped (runner-side, no re-pin):** `RemoteWormholeNav.send` now does an **ack-gated re-emit** — every
+     `RETRY_MS`=4s, if the last emit's `%outbox/emit` is *not* `%acked` (the collision, or a real loss) it
+      re-emits with a **fresh seq** (climbs past the high-water; same corr so the reply still matches; ops are
+       idempotent so a double-land is harmless); if it *is* acked it just waits (the request landed, the reply
+        is merely slow — re-sending a 400 KB `bin_write` would be waste). A 20s mute stall → a ~4-8s loud
+         self-heal (`🕳↻` / `🕳…`). This already removes the user-visible symptom.
+  - **Owed (editor-side, FROZEN `pinned_stable` — needs a re-pin, do NOT do blind):** (i) **re-ack a
+     delivered-dup on the reliable path** — the *lossy* inseq path already re-acks a dup (`Peeroleum_deliver`,
+      the `seq ≤ last` branch), but the reliable path leans on the `oai`-dedup and never re-acks, so the stale
+       colliding emit also retx's forever; (ii) **reset the Pier's inbox/inseq epoch on a re-hello**, so a
+        genuinely-new post-reconnect request is not mistaken for a dup — the *real* cure for the missing REPLY.
+   **Gotcha — (i) and (ii) must compose:** re-ack *alone*, combined with the shipped ack-gated retry, makes the
+    runner **dead-wait** (it sees "acked → landed → wait", but the reply never comes because the frame was
+     still dropped as a dup). Lab it as a **PereProof** step: `Lake_reset_arm` (`Peregrination.g:500`) already
+      builds the exact stale state (`inbox unemit seq:7,done:1` + `inseq.last:7`); the missing case is the
+       *asymmetric* reconnect where only ONE side reset. Build the step **at** the re-pin, not before — a green
+        test guarding code the editor doesn't yet run is an orphan.
+
+**D. `channel_up` once-guard — the "highest-leverage" claim is OVERSTATED; residual fix is small and optional.**
+ Traced 2026-07-05. `Lies_channel_up` (`LiesLies.svelte:198`) runs every `LiesPersist` pass; `if (w.c.channel_up)
+  return` (`:219`) makes it a no-op after the first standup. The relayed advice — *"the once-guard makes every
+   other runner fix land unreliably"* — does **not** hold against the code: every frame handler is **pure
+    dispatch to a live `H.Lies_*` method** (`:302-334`), so a method-body fix (handler logic *and* spine methods
+     like `req_unemit`) lands on HMR via re-mix **regardless** of the guard. The once-guard blocks only
+      re-**standup**: adding/removing a handler *type*, re-opening the socket, re-laying the Pier, re-arming the
+       keepalive — structural changes that do need a full reload. The two *documented real* failures are already
+        handled: `Socket_real` vanished (the P1 reconcile, `:214`) and never-deposited / cross-wired gen (the
+         loud throttled note, `:226`). **Residual fix, if wanted:** split the idempotent `on(...)` registration
+          block (cheap — `Peeroleum_on` overwrites `w.c.on[type]`) to run every call, from the once-only socket
+           standup (keep guarded), so a new/changed handler *type* re-registers on the next pass without a
+            reload. Small, bounded, low-urgency — **not** the load-bearing lever the one-liner implied. (Also
+             note: `channel_up` is Lies-layer, above the mock-carrier spine the Pere Books drive — so it can't
+              be a PereProof step; its isolation proof would be a small Lies-layer harness, if it's ever worth
+               one, which the trace says it isn't yet.)

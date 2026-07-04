@@ -244,9 +244,9 @@ Crate_meta_from_path(path):
 
 // Crate_rastock_start — stand up the rastock with its desires (want) + the DISCOVERED track list (paths
 //  ride .c; the live nav rides .c too, so every read reaches the same disk the walk found them on).
-async Crate_rastock_start(w, base, want):
+async Crate_rastock_start(w, base, want, names):
     let nav = this.Crate_nav()
-    let names = nav ? await this.Crate_nav_paths(nav, base) : []
+    if (!names) names = nav ? await this.Crate_nav_paths(nav, base) : []
     let ra = w.i({rastock: 1, base: base, want: want, have: 0, pool: names.length})
     ra.c.up = w
     ra.c.names = names

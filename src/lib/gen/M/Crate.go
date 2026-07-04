@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Crate(): string { return '088e0473cdef6eac' },
+    Ghostmeta_Ghost_M_Crate(): string { return 'bc0a951bac07d872' },
 
 // Crate.g — rifling through a music collection.  A modern port of the old Directory.svelte tree-walk +
 //  Agency.svelte's meander() random-walk, redesigned for THIS platform: raw File System Access API (no
@@ -269,9 +269,9 @@ Crate_meta_from_path(path) {
 },
 // Crate_rastock_start — stand up the rastock with its desires (want) + the DISCOVERED track list (paths
 //  ride .c; the live nav rides .c too, so every read reaches the same disk the walk found them on).
-async Crate_rastock_start(w, base, want) {
+async Crate_rastock_start(w, base, want, names) {
     let nav = this.Crate_nav()
-    let names = nav ? await this.Crate_nav_paths(nav, base) : []
+    if (!names) names = nav ? await this.Crate_nav_paths(nav, base) : []
     let ra = w.i({rastock: 1, base: base, want: want, have: 0, pool: names.length})
     ra.c.up = w
     ra.c.names = names

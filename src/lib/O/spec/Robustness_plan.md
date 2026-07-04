@@ -201,9 +201,24 @@ capability-probed at the seam (and the seam says which capability is missing, no
   a granted local share (`A.c.DL`) over the editor proxy — the heartbeat no longer clobbers a just-granted
   `WormholeNav(DL)`; the badge shows a third `local` state honestly (Rundar). Granting FSA on a `&remoteWormhole=1`
   tab now "just works" and unlocks `bin_write` for free. *Acceptance met.*
-- **P2 — wormhole `bin_write` over the proxy** ⏸️ **DEFERRED** (Organ 5, below). Not urgent — `testsounds/` exists
-  on disk, and nav-precedence (above) unblocks binary writes via a granted local share. The genuinely-headless
-  path (option b — binary frames both directions, corr-matched) rides the P2 identity/wormhole pass.
+- **P2 — wormhole `bin_write` over the proxy** ✅ **DONE 2026-07-05** (Organ 5, option **b**). A genuinely-headless
+  `&remoteWormhole=1` runner (no local share) can now write binary over the wormhole:
+    - `RemoteWormholeNav.bin_write` → `send('bin_write', {dir_path,filename}, bytes)` (a new buffer-carrying `send`).
+    - `Lies_send_binary_consumer` (LiesFunk) — the runner→editor CONSUMER twin of `Lies_send_binary_to`: raw bytes
+      on `frame.buffer` (body_hash-integrity, OFF-snap — no base64 tax, no bloated snapped emit), app meta on the header.
+    - `Lies_wormhole_req_recv` now reads meta from the header (binary) OR top-level (JSON), and has an `op:'bin_write'`
+      branch that lays `frame.buffer` on the editor's disk via its own `nav.bin_write`; reply is a tiny JSON `{ok}`.
+  Reuses the PROVEN symmetric binary path (the editor's frozen `pinned_stable` spine already body_hash-verifies inbound
+  binaries + dispatches to the registered handler — same path the runner receives `wormhole_reply` binaries on). NO `.g`
+  change (all live O/ modules). **`:9091`-UNVERIFIED** — needs the runner tab + editor tab reloaded to instantiate the new
+  nav class + serve branch, then `runner_ask run MusuGenerateTestsMusic --watch`. The binary-*reply* corr-route (H1 residue)
+  is still a TODO; unaffected here (bin_write's reply is JSON).
+- **QA + full-contract parity** ✅ **DONE 2026-07-05** (Organ 5, "no partial nav"). QA of the above found the SAME
+  subset gap in the *other* backends and closed them, so the 7-method contract (`read_file · write_file · bin_read ·
+  bin_write · read_range · dir · dir_at`) is now uniform across **all four** navs, not just remote:
+  `OpfsOverlayNav` (cloud) gained `bin_write`; `NodeWormholeNav` (harness) gained `bin_read` / `bin_write` /
+  `read_range` (a real fd window, not slurp-then-slice) / `dir_at`. Grep-confirmed no caller invokes any method
+  outside the seven. Browser navs svelte-check-clean, node backend tsc-clean.
 
 ---
 

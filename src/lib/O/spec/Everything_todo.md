@@ -324,8 +324,8 @@ The authenticated relay (signed `gen_write` + `this_dock_updated`, browser trust
  ghost-compile feedback loop are done — the loop closes at ~2–5s ("is ok"). The trust substrate brief
   `ClusterTrust_handover.md` has been **renamed + expanded into `Cluster_spec.md`** (the live cluster spec:
    trust substrate + runner flock + the dockerised real-isolation testbed toward remote `%Rungo`) — NOT
-    deletable, it grew. `GhostCompile_feedback_handover.md` is sublated into these lines and deletable once
-     committed. Nothing in the ghost-compile residuals below is wanted right now ("enough for atm"):
+    deletable, it grew. `GhostCompile_feedback_handover.md` was sublated into these lines and has now been
+     **deleted** (its §"swamp underneath" survives in git history). Nothing in the ghost-compile residuals below is wanted right now ("enough for atm"):
 - **`remote-local-ghost-compile`** (rename of the editor's `this_dock_updated` refresh — the name makes the
    strangeness plain: the `.g` is already on the editor's shared `/app` disk when the CLI asks, so this is a
     *local* compile *triggered* remotely, not a content push. A *purely* remote form — CodeMirror carrying

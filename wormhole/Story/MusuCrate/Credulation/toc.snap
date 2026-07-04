@@ -1,14 +1,40 @@
 Credulation,of_Book:MusuCrate
-  run=0,at=1783157282.346,ok=0,ok_pct=0.13,mode:check
-    uses:Ghost_N_Peeroleum,dige:054dff5c07f2987b
+  run=0,at=1783170333.037,ok=0,ok_pct=0.13,mode:check
+    uses:Ghost_N_Peeroleum,dige:f66bad6f34913e3c
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
     uses:Ghost_Story_Peregrination,dige:b33cab6322ef6320
     uses:Ghost_M_Radiola,dige:c38a79b40dc8f9e6
-    uses:Ghost_M_Crate,dige:088e0473cdef6eac
+    uses:Ghost_M_Crate,dige:bc0a951bac07d872
     uses:Ghost_M_Mixer,dige:a4a24e00de642d18
     uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
-    uses:Ghost_Story_Musuation,dige:8359ccafd65bac12
+    uses:Ghost_Story_Musuation,dige:3c8d88ba0471e58a
     uses:Ghost_S_Swarm,dige:5903f24bde1fb0d7
-    uses:Ghost_Story_Swarmation,dige:da7b0ceb1240d618
+    uses:Ghost_Story_Swarmation,dige:fe5cba472157518d
+  run,at=1783170451.812,ok=0,ok_pct=0.13,mode:check
+    uses:Ghost_N_Peeroleum,dige:f66bad6f34913e3c
+    uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
+    uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
+    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
+    uses:Ghost_Story_Peregrination,dige:b33cab6322ef6320
+    uses:Ghost_M_Radiola,dige:c38a79b40dc8f9e6
+    uses:Ghost_M_Crate,dige:bc0a951bac07d872
+    uses:Ghost_M_Mixer,dige:a4a24e00de642d18
+    uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
+    uses:Ghost_Story_Musuation,dige:b6a24cf6dadf3d33
+    uses:Ghost_S_Swarm,dige:5903f24bde1fb0d7
+    uses:Ghost_Story_Swarmation,dige:fe5cba472157518d
+  run=2,at=1783170955.777,ok=0,ok_pct=0.13,mode:check
+    uses:Ghost_N_Peeroleum,dige:f66bad6f34913e3c
+    uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
+    uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
+    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
+    uses:Ghost_Story_Peregrination,dige:b33cab6322ef6320
+    uses:Ghost_M_Radiola,dige:c38a79b40dc8f9e6
+    uses:Ghost_M_Crate,dige:bc0a951bac07d872
+    uses:Ghost_M_Mixer,dige:a4a24e00de642d18
+    uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
+    uses:Ghost_Story_Musuation,dige:b64fd681e2ac521f
+    uses:Ghost_S_Swarm,dige:5903f24bde1fb0d7
+    uses:Ghost_Story_Swarmation,dige:fe5cba472157518d
