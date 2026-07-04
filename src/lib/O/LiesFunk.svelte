@@ -566,10 +566,23 @@ await M.eatfunc({
     //   frame (Lies_send_binary_to), never base64.  Only the no-grantee-pub degenerate falls back to b64.
     async Lies_wormhole_req_recv(w: TheC, frame: any): Promise<void> {
         const H = this as House
-        const to = (frame?.grant as GrantAtom)?.for as string | undefined   // the grantee runner's prepub
-        const replyJSON = (body: Record<string, unknown>) =>
-            to ? (H as any).Peeroleum_send_to(w, to, 'wormhole_reply', { corr: frame?.corr, ...body })
-               : H.Peeroleum_send_consumer(w, 'wormhole_reply', { corr: frame?.corr, ...body })   // unaddressed fallback
+        const to = (frame?.grant as GrantAtom)?.for as string | undefined   // the grant's minted-for prepub
+        const cc = String(frame?.corr ?? '').slice(-6)
+        console.log(`🛰️← wormhole_req op=${frame?.op} ${[frame?.dir_path, frame?.filename].filter(Boolean).join('/')} corr=…${cc} for=${String(to ?? '?').slice(0, 8)}`)   // DIAG: did the serve handler fire?
+        // Reply by CONSUMER BROADCAST, corr-matched — NOT addressed to claim.for.  claim.for is the identity
+        //  the grant was MINTED for, which can be a DIFFERENT tier (Lies_self vs Clustation_self) than the one
+        //   the runner hello-binds / the relay routes on — so `to:claim.for` silently routed to NOBODY and every
+        //    reply vanished (editor RECVs wormhole_req, emits 0 wormhole_reply; the 20s-timeout stall).  The
+        //     runner matches replies by corr on its nav (Lies_wormhole_reply_recv → nav._resolve), so a broadcast
+        //      reaches the right runner regardless of tier; other runners drop an unknown corr.  Same reliable
+        //       path grant_offer rides (editor→runner consumer broadcast, proven to land).
+        const replyJSON = (body: Record<string, unknown>) => {
+            console.log(`🛰️→ wormhole_reply corr=…${cc} ${body.error ? `ERROR ${body.error}` : body.not_found ? 'not_found' : body.ok ? 'ok' : body.entries ? `${(body.entries as any[]).length} entries` : `content ${String(body.content ?? '').length}c`}`)   // DIAG: what did we answer?
+            return H.Peeroleum_send_consumer(w, 'wormhole_reply', { corr: frame?.corr, ...body })
+        }
+        // Binary replies still need an address (a raw buffer can't ride the consumer JSON body); they carry the
+        //  same claim.for tier risk (TODO: corr-route binaries too).  For now reads/lists reply JSON, which the
+        //   broadcast covers — the Cluster toc + all source reads are `read`|`list`, so this unblocks them.
         const replyBIN = (meta: Record<string, unknown>, buffer: ArrayBuffer) =>
             to ? H.Lies_send_binary_to(w, to, 'wormhole_reply', { corr: frame?.corr, ...meta }, buffer)
                : replyJSON({ error: 'grant has no for — cannot address binary reply' })
@@ -1758,7 +1771,11 @@ await M.eatfunc({
             const H = this as House
             return H.expecting(w, 'gen_testsounds', 30, async () => {
                 const nav = H.top_House().o({ A: 'Wormhole' })[0]?.c.nav as any
-                if (!nav?.bin_write) { w.i({ gen_error: 'no writable share — grant one (open share) first' }); return }
+                // Honest diagnosis: a MISSING nav is "grant a share"; a nav that just lacks bin_write is a
+                //  CAPABILITY gap, not a permission one — say which, so a &remoteWormhole runner (share IS
+                //   granted, can write text, no binary) isn't told to "open a share" it already has.
+                if (!nav)           { w.i({ gen_error: 'no writable share — grant one (open share) first' }); return }
+                if (!nav.bin_write) { w.i({ gen_error: `${nav.label ?? 'this backend'} can't write binary yet (remote Wormhole has no bin_write) — run on a local-share runner, or wire bin_write through the wormhole` }); return }
                 const dir = 'testsounds'
                 let made = 0
                 for (const t of TEST_TONES) {

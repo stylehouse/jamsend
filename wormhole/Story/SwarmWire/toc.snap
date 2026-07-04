@@ -4,6 +4,12 @@ story:SwarmWire
   Opt
     For
   TimeSpool
+    TimeTotal:beliefs,avg=0.226
+      sample=0.26,at=1783157968
+      sample=0.191,at=1783158121
+    TimeTotal:step,avg=0.045
+      sample=0.052,at=1783157968
+      sample=0.038,at=1783158121
   step,dige:0
   step=2,dige:0
   step=3,dige:0

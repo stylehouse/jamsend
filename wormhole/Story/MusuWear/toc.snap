@@ -13,6 +13,7 @@ story:MusuWear
       sample=0.03,at=1782625633
       sample=0.075,at=1782630737
       sample=0.019,at=1782826371
+      sample=0.043,at=1783157833
     TimeTotal:step,avg=0.008
       sample=0.009,at=1782392674
       sample=0.003,at=1782393435
@@ -22,6 +23,7 @@ story:MusuWear
       sample=0.006,at=1782625633
       sample=0.015,at=1782630737
       sample=0.004,at=1782826371
+      sample=0.009,at=1783157833
   step,dige:12da3a7f44c39c5f
   step=2,dige:3d4eb827ef8e8b4a
   step=3,dige:1653920978e38d14

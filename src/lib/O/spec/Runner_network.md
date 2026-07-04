@@ -1,5 +1,11 @@
 # Runner_network.md — how a runner gets (and keeps) its relay connection
 
+> **The "relay down" wedge has a named root cause: latched channel state.** `w.c.channel_up`
+> (`LiesLies.svelte:319`) and `w.c.transport_up` (`:346`) are **set once and cleared nowhere** — an
+> HMR remix that strips `Socket_real` leaves the latch asserting "up" while standup never re-runs.
+> Fix = derive from `Socket_real` presence / clear-on-teardown. See `Robustness_plan.md` (Organ 1) for
+> the full latched-flag audit and the prioritized cure.
+
 The one-page map of the stack that took a session of logging to see. Read this FIRST when a
  runner sits at "relay down". Depth lives elsewhere: `Peeroleum_spec.md` (envelope/spine),
   `Wire_spec.md` (framing), `Cluster_spec.md` (identity/trust/grants/leases),

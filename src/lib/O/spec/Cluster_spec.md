@@ -13,6 +13,15 @@ The triad: this is **how it runs**; `Swarm_spec.md` is **who's on it** (the p2p 
  presence, sharing); `Radio_spec.md` is **what streams**. Identity begins here (the trust substrate, §2)
   and becomes portable + social in `Swarm_spec`.
 
+> **The identity model needs collapsing (9 divergable tiers → 2).** The 2026-07-04 grant saga traced
+> three separate bugs (reply-routing drop, grant for-check flap, duplicate roster rows) to one root: a
+> peer has ~9 notions of "who am I", everything re-samples a `Clustation ?? stashed` fork at run time,
+> and the grant's `for` is a **16-hex prepub frozen at mint** against a tier that can drift. The full
+> tier table, the H1-H6 divergence hazards, and the 9→2 collapse plan (kill the two-tier fork; `prepub`
+> = one pure derivation; grant `for` = full pub with the address derived at send; trust flock stays
+> orthogonal) live in **`Robustness_plan.md` (Organ 4)** — the plan of record. Remote-Wormhole
+> `bin_write` (the missing nav-contract op) + nav precedence are in the same doc's live-specimen section.
+
 ---
 
 ## 0. The north star — remote `%Rungo`, and why the whole edifice

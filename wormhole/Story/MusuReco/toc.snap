@@ -57,8 +57,7 @@ story:MusuReco
       w:MusuReco
         crushCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.395
-      sample=0.287,at=1783111431
+    TimeTotal:beliefs,avg=2.377
       sample=0.314,at=1783111707
       sample=0.316,at=1783111755
       sample=0.488,at=1783112031
@@ -68,8 +67,8 @@ story:MusuReco
       sample=0.431,at=1783131472
       sample=0.309,at=1783132301
       sample=0.453,at=1783132773
-    TimeTotal:step,avg=0.036
-      sample=0.026,at=1783111431
+      sample=20.104,at=1783156973
+    TimeTotal:step,avg=0.216
       sample=0.029,at=1783111707
       sample=0.029,at=1783111755
       sample=0.044,at=1783112031
@@ -79,6 +78,7 @@ story:MusuReco
       sample=0.039,at=1783131472
       sample=0.028,at=1783132301
       sample=0.041,at=1783132773
+      sample=1.828,at=1783156973
   step,dige:3dbd760e21c9003f
   step=2,dige:ccd32f76dbb85dec
   step=3,dige:ad78d3c0f6f77959

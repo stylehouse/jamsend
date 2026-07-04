@@ -219,6 +219,25 @@ Each witness is differential or has a negative control with teeth (an inverted c
    MusuGenerateTestsMusic) that still travels the whole real pipeline: nav walk → bin_read → decodeAudioData.
     `/music` is real but per-machine — never fixture-stable; use it for listening, not for gates.
 
+**[todo] Consolidation — many of these Books are scaffolding, not keepers.** Most Musu* Books were built to
+ prove ONE aspect of an algorithm as it was written (a rate curve, a fill mode, a spin, a cursor advance).
+  That isolation earned its keep *during construction* — but the mature state is a small set of tests that
+   exercise the whole algorithm in ONE real-context place, with the trivial single-aspect proofs folded in
+    and retired. The signal a Book is scaffolding: its witnesses are soft (something exists / time passed /
+     N happened) or its one hard claim is already made by a real integration Book. Concretely:
+- **MusuRadio is the first to retire.** Its only differential claim (`helps` — Glide beats no-control)
+   duplicates MusuGlide (and, on real music, MusuCrate); its other witnesses (`ready`/`sustained`/
+    `many_tracks`) are soft; and its genuinely unique bit — real-time audible playback — is unwitnessable
+     on a muted, gesture-gated runner. It's a demo in a test's clothing. Fold its intent into **MusuReco's
+      audio-proof** (B *plays* its byte-exact real replica through the unlocked voice — §9.10, the demo that
+       IS the app): one honest Book, real supply chain AND real playback, replaces the synth showcase.
+- **The rate-control / slice family stays — for now.** Signal/Glide/Tune/Edge/Stock/Stream/Conceal each
+   isolate one mechanism on a CONTROLLED signal (Conceal's seam measurement, Glide's Schmitt band) where
+    determinism is a feature, not a limitation. They are keepers *until* a real-audio integration Book
+     exercises the same mechanisms end-to-end on real music over the real transport — at which point re-audit
+      each: does it still prove something the integration Book doesn't? If not, retire it too. The aim is
+       fewer, realer Books — not a museum of micro-proofs.
+
 ---
 
 ## 7. Open frontiers (the real remaining work)
