@@ -110,10 +110,16 @@ Walk a music library into a track list. Real today by DISCOVERING it through the
 - [caveat] discovery awaits the nav INLINE — fine for local navs, but a remote `atime_async` nav must route
    via the rw_op actor (see the caveat in Crate.g `Crate_nav`). Fleet-path TODO.
 
-### 2 — Rastock  *(Book: MusuCrate · Crate.g)*  **[built]**
+### 2 — Rastock  *(Books: MusuCrate / MusuReco · Crate.g)*  **[built]**
 Desire `want` records and fill from the collection, visibly: issue a `%reading` → it comes back → a
  `%record` is made. `rastock_start/issue/read_into/harvest`.
-- [todo] preview (first ~1/3 decoded) then stream (the rest) on demand.
+- [done] the preview→stream split: `Crate_transcode_begin/release` — decode ONCE, release the frontier
+   progressively (`%preview` children name each span), and the repli serve side streams AS IT GROWS: a
+    fixed-stride want the frontier hasn't reached PARKS (`%parked_want`) and `Repli_serve_parked` answers
+     it the moment a release passes it. Streaming starts with the FIRST full page, never waits for the set.
+- [done] the recommendation layer: `Repli_recommend` — a `%Reco` note is knowledge attached to the
+   `%Record` (the C** IS the knowledge graph), carried in the SAME offer fragment; the gate is you may
+    only recommend a Record you've STARTED (≥1 transcoded chunk).
 - [todo] host as a `%Good` in LiesStore (the `req:Store` IO pump).
 - [todo] idle-reap: drop a `%Good` once a consumer has left it idle (mirror `recordWear`).
 
@@ -189,6 +195,7 @@ All under `Ghost/Story/Musuation.g`, dispatched per-beat off `step_n`, witnessed
 | Stage | Book | the headline witness |
 |---|---|---|
 | Collection/Rastock | MusuCrate | real_records · playable · helps |
+| Rastock preview→stream + reco | MusuReco | recommended · refused_unstarted · started_early · outran_then_served · complete · real_music |
 | Player | MusuSignal · MusuGlide · MusuTune · MusuConceal | streams/starves · fewer_gaps · repeat_fills · smoother |
 | LiveEdge | MusuEdge | holds_margin · backs_off · low_latency · baseline_overruns |
 | Pier | MusuPier | crossed · verified · dropped_then_healed |
@@ -199,6 +206,12 @@ All under `Ghost/Story/Musuation.g`, dispatched per-beat off `step_n`, witnessed
 Each witness is differential or has a negative control with teeth (an inverted controller, a relay-only
  topology, a linear crossfade, a wrong-hash frame) — adversarially reviewed so a number we typed can't
   satisfy it.
+
+**Audio-source policy:** seeded synth records for pure-protocol / tick Books (instant, nav-free — the
+ payload's content is not the subject, e.g. MusuReplica); `testsounds/` for any Book whose CLAIM involves
+  files, decode, or transcode (MusuCrate, MusuReco) — it is deterministic generated music (pure tones via
+   MusuGenerateTestsMusic) that still travels the whole real pipeline: nav walk → bin_read → decodeAudioData.
+    `/music` is real but per-machine — never fixture-stable; use it for listening, not for gates.
 
 ---
 

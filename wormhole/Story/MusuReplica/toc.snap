@@ -53,39 +53,39 @@ story:MusuReplica
     useCyto
     dontSnapCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.362
-      sample=0.545,at=1783075514
-      sample=0.527,at=1783075665
-      sample=0.603,at=1783076408
-      sample=0.374,at=1783080426
-      sample=0.225,at=1783086752
-      sample=0.316,at=1783086899
+    TimeTotal:beliefs,avg=0.256
       sample=0.22,at=1783087066
       sample=0.254,at=1783108833
       sample=0.273,at=1783109383
       sample=0.283,at=1783109431
-    TimeTotal:step,avg=0.027
-      sample=0.045,at=1783075514
-      sample=0.044,at=1783075665
-      sample=0.043,at=1783076408
-      sample=0.027,at=1783080426
-      sample=0.016,at=1783086752
-      sample=0.023,at=1783086899
+      sample=0.264,at=1783109785
+      sample=0.264,at=1783109841
+      sample=0.269,at=1783109870
+      sample=0.277,at=1783109930
+      sample=0.198,at=1783110577
+      sample=0.261,at=1783112181
+    TimeTotal:step,avg=0.018
       sample=0.016,at=1783087066
       sample=0.018,at=1783108833
       sample=0.019,at=1783109383
       sample=0.02,at=1783109431
-  step,dige:50568e7a78216459
-  step=2,dige:3991f35c1792a27f
-  step=3,dige:160fdbc74fe1c55d
-  step=4,dige:6f20e60415245276
-  step=5,dige:29bad666271a325d
-  step=6,dige:af5d5e5ad48fcb2b
-  step=7,dige:56d35d8dd5bab744
-  step=8,dige:2f5f1558750090ef
-  step=9,dige:ffb234165dfefb50
-  step=10,dige:e48d19752c5b5c3d
-  step=11,dige:77ed71e00307db90
-  step=12,dige:ca94e6c2a30a53e6
-  step=13,dige:lie
-  step=14,dige:lie
+      sample=0.019,at=1783109785
+      sample=0.019,at=1783109841
+      sample=0.019,at=1783109870
+      sample=0.02,at=1783109930
+      sample=0.014,at=1783110577
+      sample=0.019,at=1783112181
+  step,dige:b74244526b42c964
+  step=2,dige:d252cf59d701f7d6
+  step=3,dige:90b44ddf1c253bb6
+  step=4,dige:3f344666c0c15270
+  step=5,dige:363affc74c13f235
+  step=6,dige:fb16ac5aea215c96
+  step=7,dige:2027abf170329283
+  step=8,dige:7ce1ae589ea1bfce
+  step=9,dige:2d5627f9669fd1d3
+  step=10,dige:f8752833840633f4
+  step=11,dige:13ff2b681a44953e
+  step=12,dige:1f6ff4514734b54b
+  step=13,dige:2a55427248931839
+  step=14,dige:f87ee8c45f0050c2

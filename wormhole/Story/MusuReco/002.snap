@@ -1,0 +1,21 @@
+Snap:H
+  H:MusuReco,Run
+    A:MusuReco
+      self,round=2	{"mung":["age"]}
+      w:MusuReco
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Peering,name:DJ,req=2,ok
+          Pier,pub:Crowd,req=2,ok
+            Ud,pubkey:Crowd
+          active_transport,type:mock,open
+        Peering,name:Crowd,req=3,ok
+          Pier,pub:DJ,req=2,ok
+            Ud,pubkey:DJ
+          active_transport,type:mock,open
+        Library,pier:DJ
+          Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=5,loudness=0.4231,nchunks=100,real
+            Stream,name:audio,total=100,have=0,sr=48000
+          Record,id:trk1,title:Dorian D,artist:DJ Oscillo,seconds=6,loudness=0.4233,nchunks=120,real
+            Stream,name:audio,total=120,have=0,sr=48000

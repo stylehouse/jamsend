@@ -1,9 +1,11 @@
 Snap:H
   H:MusuReplica,Run
     A:MusuReplica
-      self,round=15	{"mung":["age"]}
+      self,round=14	{"mung":["age"]}
       w:MusuReplica
-        self,round=15	{"mung":["age"]}
+        Opt
+          crushCyto
+        self,round=14	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Peering,name:DJ,req=2,ok
@@ -18,7 +20,7 @@ Snap:H
               emit=6,type:repli_page,seq=6,sent,body_hash:6758c814fa64781c9fd2b2b295952bdd776f1b0ca2c5a941ac99a8978987693f,body_len=19200,acked
               emit=7,type:repli_lines,seq=7,sent,body_hash:453065ceceaa2320d71f330c649191afe53b7e42e5437dc69320654cd03e1014,body_len=132,acked
               emit=8,type:repli_page,seq=8,sent,body_hash:6116e70369c0d589a0a4ea46e154989128cf79a8610a4f107c891fc85444df42,body_len=19200,acked
-            inbox
+            inbox,stuff
               req:unemit,seq,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
               req:unemit,seq=2,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
               req:unemit,seq=3,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
@@ -54,11 +56,14 @@ Snap:H
         Crush_Tree,stuff
           Crush:Library.DJ,kind:Record,n=3
           Crush:DJ.Crowd.outbox,kind:emit,n=4
+          Crush:Sent_Tree.DJ,kind:Sent,n=3
           Crush:Crowd.DJ.inbox,kind:req,n=4
-          Crush:Library.Crowd,kind:Record,n=3
-          Crush:Sent_Tree,kind:Sent,n=3
           Crush:Crowd.DJ.outbox,kind:emit,n=3
+          Crush:Library.Crowd,kind:Record,n=3
+          Crush:Sent_Tree.Crowd,kind:Sent,n=3
+          Crush:DJ.Crowd.inbox,kind:req,n
         reached:step_3
+        Sent_Tree,pier:DJ,dontSnap,stuff
         Library,pier:Crowd,stuff
           Record,id:rec0,title:Tone-0,artist:Synthetic,seconds=0.3,nchunks=6
             Stream,name:audio,total=6,have=2,sr=48000,page_from=0,page_to=2,got
@@ -67,7 +72,4 @@ Snap:H
           Record,id:rec2,title:Tone-2,artist:Synthetic,seconds=0.3,nchunks=6
             Stream,name:audio,total=6,have=2,sr=48000,page_from=0,page_to=2
         reached:step_4
-        Sent_Tree,stuff
-          Sent,id:rec0,name:Tone-0,have=0,total=6,got=0
-          Sent,id:rec1,name:Tone-1,have=0,total=6,got=0
-          Sent,id:rec2,name:Tone-2,have=2,total=6,got=0
+        Sent_Tree,pier:Crowd,dontSnap,stuff

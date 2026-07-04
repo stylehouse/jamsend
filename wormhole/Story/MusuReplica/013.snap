@@ -1,11 +1,11 @@
 Snap:H
   H:MusuReplica,Run
     A:MusuReplica
-      self,round=23	{"mung":["age"]}
+      self,round=30	{"mung":["age"]}
       w:MusuReplica
         Opt
           crushCyto
-        self,round=23	{"mung":["age"]}
+        self,round=30	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Peering,name:DJ,req=2,ok
@@ -28,6 +28,7 @@ Snap:H
               emit=14,type:repli_page,seq=14,sent,body_hash:534b8205964c3389621cd65f61045283a8c229635975556747b45bd72ef75d7f,body_len=19200,acked
               emit=15,type:repli_lines,seq=15,sent,body_hash:6daa7e34a0d057c6e21e3749051bad303b2c0fb57b4679f7cb8be45fd2717de9,body_len=132,acked
               emit=16,type:repli_page,seq=16,sent,body_hash:1a7cb2b5cae7347bc59e915fdd53a34d981faae1a298f6511e3f431802bf0ab5,body_len=19200,acked
+              emit=17,type:repli_lines,seq=17,sent,body_hash:a7aa3d996b0562f21db04d42ef6856dcd03dedf79e969402ff87bed229e5d193,body_len=52,acked
             inbox,stuff
               req:unemit,seq,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
               req:unemit,seq=2,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
@@ -57,6 +58,7 @@ Snap:H
               req:unemit,seq=14,type:repli_page,body_hash:534b8205964c3389621cd65f61045283a8c229635975556747b45bd72ef75d7f,body_len=19200,done,to:repli_page,finished
               req:unemit,seq=15,type:repli_lines,body_hash:6daa7e34a0d057c6e21e3749051bad303b2c0fb57b4679f7cb8be45fd2717de9,body_len=132,done,to:repli_lines,finished
               req:unemit,seq=16,type:repli_page,body_hash:1a7cb2b5cae7347bc59e915fdd53a34d981faae1a298f6511e3f431802bf0ab5,body_len=19200,done,to:repli_page,finished
+              req:unemit,seq=17,type:repli_lines,body_hash:a7aa3d996b0562f21db04d42ef6856dcd03dedf79e969402ff87bed229e5d193,body_len=52,done,to:repli_lines,finished
             outbox,stuff
               emit,type:repli_want,seq,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
               emit=2,type:repli_want,seq=2,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
@@ -79,8 +81,6 @@ Snap:H
             Stream,name:audio,total=6,have=0,sr=48000
           Record,id:rec1,title:Tone-1,artist:Synthetic,seconds=0.3,nchunks=6
             Stream,name:audio,total=6,have=0,sr=48000
-          Record,id:rec2,title:Tone-2,artist:Synthetic,seconds=0.3,nchunks=6
-            Stream,name:audio,total=6,have=0,sr=48000
         Crush_Tree,stuff
           Crush:Library.DJ,kind:Record,n=3
           Crush:DJ.Crowd.outbox,kind:emit,n=16
@@ -97,7 +97,15 @@ Snap:H
             Stream,name:audio,total=6,have=6,sr=48000,page_from=4,page_to=6,got=3
           Record,id:rec1,title:Tone-1,artist:Synthetic,seconds=0.3,nchunks=6
             Stream,name:audio,total=6,have=6,sr=48000,page_from=4,page_to=6,got=3
-          Record,id:rec2,title:Tone-2,artist:Synthetic,seconds=0.3,nchunks=6
-            Stream,name:audio,total=6,have=2,sr=48000,page_from=0,page_to=2
         reached:step_4
         Sent_Tree,pier:Crowd,dontSnap,stuff
+        reached:step_11
+        witnessed:offered
+        witnessed:metadata_intact
+        witnessed:paged
+        witnessed:reconciled
+        witnessed:complete
+        witnessed:bytes_faithful
+        witnessed:tracked
+        witnessed:warns_missing
+        reached:step_13

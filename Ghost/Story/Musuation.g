@@ -2967,6 +2967,10 @@ MusuBounce_witness(w):
 //      header.bufferid=<id>.  The receiver holds the incoming deLines structure and reconciles each
 //       objecties.buffer against the arrived buffer frame, WARNING if bytes it was promised don't turn up
 //        promptly (they're sent together — ~150k for the first couple of chunks).
+//  THE PULL IS EAGER: a want that outruns the transcode frontier (a Record still being made serveable)
+//   PARKS as a %parked_want and is answered the moment the frontier passes it — streaming starts with the
+//    FIRST transcoded slice, never waiting for the preview set.  And a %Reco (a note about a Record — the
+//     knowledge graph around the thing) rides the SAME offer fragment as the Record it annotates.
 //  THE FORMAT looks mostly like enWaft's storage form (enL per particle, tab-objecties) but STREAMY: each
 //   fragment is a partial UPDATE the mirror merges, not a one-shot snapshot.  Each arriving particle is a
 //    "replace of itself": UPSERT by default (o()-locate, then mutate; else create — like oai), BUT the line
@@ -3126,6 +3130,61 @@ async Repli_retire(w, tx, from, to, id):
     let line = this.enL({ d: 0, stringies: { Record: 1, id: id }, objecties: { loc: ['Record', 'id'], op: 'delete' } })
     await this.Repli_send_lines(w, tx, from, to, line, { list: [] })
 
+// Repli_recommend — communicate about a Record WITH a word about it: the %Reco note is knowledge attached
+//  to the Record (the C** around a Record IS the knowledge graph), so the ONE offer fragment carries the
+//   thing and what's said about it together — record head + %Stream + %preview set + %Reco, all as lines.
+//    THE GATE: a Pier may only recommend a Record it has STARTED (≥1 transcoded chunk serveable) — no
+//     hyping music you cannot begin to stream.  Returns the %Reco, or null refused.  (Keep notes comma-
+//      free: a comma tips encode_stringies into its JSON fallback — roundtrips fine but ugly in the snap.)
+async Repli_recommend(w, tx, from, to, rec, note, by):
+    if (!rec || !rec.c.chunks || !rec.c.chunks.length) return null
+    let reco = rec.oai({ Reco: 1, by: by })
+    reco.c.up = rec
+    reco.sc.note = note
+    reco.bump()
+    await this.Repli_offer(w, tx, from, to, rec)
+    return reco
+
+// Repli_page_ready — can [from, from+PAGE) serve NOW?  Yes when the full page is transcoded; a SHORT
+//  page only at the true end of a COMPLETE record (chunks reached the promise), so the stride stays
+//   aligned while the transcoder runs and pipelined offsets never overlap.
+Repli_page_ready(rec, from, PAGE):
+    let chunks = rec.c.chunks || []
+    let promised = +(rec.sc.nchunks || 0)
+    let complete = chunks.length >= promised
+    if (from >= chunks.length) return false
+    if (!complete && (from + PAGE) > chunks.length) return false
+    return true
+
+// Repli_park_want — a want that outran the transcode frontier waits VISIBLY: a %parked_want under the
+//  serving Pier (a plain particle, not a %req — there is nothing to pump; the transcoder's advance is the
+//   event that serves it).  oai keeps a re-asked offset one particle; w.c.repli_parked counts fresh parks
+//    for the witnesses.  from_idx rides as a string so a literal query never trips the {k:1} wildcard.
+Repli_park_want(w, pier, h):
+    let p = pier.oai({ parked_want: 1, id: h.id, stream: h.stream, from_idx: '' + (+(h.from_idx || 0)) })
+    p.c.up = pier
+    if (!p.c.counted) {
+        p.c.counted = 1
+        p.c.reply_to = h.from
+        p.c.reply_from = h.to
+        w.c.repli_parked = (w.c.repli_parked || 0) + 1
+    }
+
+// Repli_serve_parked — the transcoder advanced: every parked want whose page is NOW ready re-enters
+//  Repli_serve_want with its remembered addressing, and the spent %parked_want goes; the rest keep
+//   waiting.  Call after each Crate_transcode_release (the Book does; the app would hang it off the
+//    encoder's progress).
+async Repli_serve_parked(w, pier):
+    if (!pier) return
+    let PAGE = +(w.c.repli_page || 2)
+    for (const p of pier.o({ parked_want: 1 })) {
+        let rec = this.Repli_find_record(w, p.sc.id)
+        if (!rec || !this.Repli_page_ready(rec, +(p.sc.from_idx), PAGE)) continue
+        await this.Repli_serve_want(w, pier, { header: { id: p.sc.id, stream: p.sc.stream, from_idx: +(p.sc.from_idx), from: p.c.reply_to, to: p.c.reply_from } })
+        w.c.repli_unparked = (w.c.repli_unparked || 0) + 1
+        await pier.rm({ parked_want: 1, id: p.sc.id, from_idx: '' + (+(p.sc.from_idx)) })
+    }
+
 // Repli_find_record — locate a source Record by id in A's library.
 Repli_find_record(w, id):
     let lib = w.c.repli_src
@@ -3136,6 +3195,8 @@ Repli_find_record(w, id):
 //  Record's chunks, stage the bytes, and ship a lean page fragment (Record identity + a %Stream update whose
 //   have advances and whose objecties.buffer carries the bytes).  drop_next fakes a lost page (the warn test):
 //    the lines still cross but the buffer frame is withheld, so B's awaitbuf goes overdue.
+//     PAGE is a knob (w.c.repli_page, default 2 chunks); a want the transcode frontier hasn't reached
+//      PARKS rather than fails (see Repli_page_ready / Repli_park_want).
 async Repli_serve_want(w, pier, frame):
     if (pier !== w.c.tx) return
     let h = frame.header
@@ -3143,8 +3204,15 @@ async Repli_serve_want(w, pier, frame):
     if (!rec) return
     let chunks = rec.c.chunks || []
     let from = +(h.from_idx || 0)
-    if (from >= chunks.length) return
-    let PAGE = 2
+    let PAGE = +(w.c.repli_page || 2)
+    // the frontier: pages are FIXED-STRIDE while the transcode runs (a short page would skew every later
+    //  offset a pipelining puller pre-asked for), so a want whose FULL page isn't transcoded yet doesn't
+    //   fail — it PARKS, and Repli_serve_parked answers it the moment the frontier passes.  Eager by
+    //    construction: the first full page serves the moment it exists; nobody waits for the set.
+    if (!this.Repli_page_ready(rec, from, PAGE)) {
+        if (from < +(rec.sc.nchunks || 0)) this.Repli_park_want(w, pier, h)
+        return
+    }
     let end = Math.min(from + PAGE, chunks.length)
     let bytes = this.Repli_pack_chunks(chunks, from, end)
     rec.c.sent = end
@@ -3152,7 +3220,9 @@ async Repli_serve_want(w, pier, frame):
     let id = (pier.c.bufseq = (pier.c.bufseq || 0) + 1)
     let out = []
     out.push(this.enL({ d: 0, stringies: { Record: 1, id: rec.sc.id }, objecties: { loc: ['Record', 'id'] } }))
-    let sline = { Stream: 1, name: h.stream, total: chunks.length, have: end, page_from: from, page_to: end }
+    // total is the PROMISE (sc.nchunks), not the frontier — a mid-transcode page must not shrink the
+    //  mirror's idea of the whole track (its pull window clamps on total).
+    let sline = { Stream: 1, name: h.stream, total: +(rec.sc.nchunks || chunks.length), have: end, page_from: from, page_to: end }
     let drop = w.c.repli_drop && w.c.repli_drop === (rec.sc.id + ':' + from)
     // the lines PROMISE the buffer either way (objecties.buffer=id); a drop withholds only the BYTES frame,
     //  so B opens an awaitbuf that never lands — the missing-buffer condition the reconciler must warn on.
@@ -3614,6 +3684,198 @@ async MusuReplica_witness_retire(w):
     //  only ever bump inside the hooks the resolved pass calls.
     if ((w.c.repli_neus || 0) >= 3 && !(oa %see:'the Se noticed each new Record and the offer followed — replication driven by noticing')) i %see:'the Se noticed each new Record and the offer followed — replication driven by noticing'
     if ((w.c.repli_goners || 0) >= 1 && gone && !(oa %see:'the Se noticed the withdrawn Record and an op:delete line retired it at the mirror')) i %see:'the Se noticed the withdrawn Record and an op:delete line retired it at the mirror'
+//#endregion
+
+//#region reco — the RECOMMENDATION arc: a note rides the knowledge graph, previews stream as they transcode
+// ══ MusuReco — a Pier RECOMMENDS music it has started, and the listener streams it off the transcoder's
+//  bow wave.  The %Reco note is knowledge attached to the %Record (the C** around a Record IS the knowledge
+//   graph), so ONE offer fragment carries the thing and what's said about it together.  THE GATE: you may
+//    only recommend a Record you've STARTED (≥1 transcoded chunk — Repli_recommend refuses otherwise).  And
+//     the stream begins with the FIRST preview while the transcoder still runs: a want that outruns the
+//      frontier PARKS (%parked_want) and serves the moment the frontier passes — nobody waits for the set.
+//       REAL MUSIC: the tracks are testsounds/ files walked off the Wormhole nav and decoded (the MusuCrate
+//        path) — the transcode is a real decode released progressively, not synth conjured in-run.
+//         beat 2      SETUP     — link DJ/Crowd, arm repli; nav-walk testsounds; two UN-transcoded real
+//                                 Records (trk0/trk1: full decode staged, NOTHING released, total promised)
+//         beat 3      RECOMMEND — trk1 refused (not started: the gate has teeth); trk0 releases its first
+//                                 preview then earns its %Reco — the offer carries Record + %Stream +
+//                                 %preview + %Reco in one fragment
+//         beat 4      REACT     — B sees the reco in its mirror and pulls AT ONCE; first audio lands while
+//                                 A's transcode is barely begun (early:before_transcode_done); the chase
+//                                 outruns the frontier and parks
+//         beats 5-8   CHASE     — each beat the transcoder releases a slice, the parked want serves, B pulls
+//                                 to the new frontier and parks again: the client rides the bow wave
+//         beat 9      FINISH    — the transcoder completes; the last parked want serves; B pulls to total
+//         beat 10     settle    — the tail lands
+//         beat 11     witness   — recommended / refused_unstarted / started_early / outran_then_served /
+//                                 complete / real_music (+ the %see claims)
+MusuReco(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuReco_drive,w,req
+        req%ok = 1
+
+// MusuReco_drive — needs the Peeroleum spine AND Web Audio (the tracks really decode).  One protocol
+//  action per beat off step_n (req-local did_step), Musu family style.
+async MusuReco_drive(w, req):
+    if (typeof this.Lake_link !== 'function' || typeof this.Peeroleum_send !== 'function') {
+        if (!w.oa({ skipped: 'no_transport' })) w.i({ skipped: 'no_transport' })
+        return
+    }
+    if (typeof OfflineAudioContext === 'undefined') {
+        if (!w.oa({ skipped: 'no_audio' })) w.i({ skipped: 'no_audio' })
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.MusuReco_setup(w)
+        if (n === 3) await this.MusuReco_recommend(w)
+        if (n === 4) await this.MusuReco_react(w)
+        if (n >= 5 && n <= 8) await this.MusuReco_chase(w)
+        if (n === 9) await this.MusuReco_finish(w)
+        if (n === 10) await this.MusuReco_settle(w)
+        if (n >= 2) this.Repli_crush_scan(w)
+        if (n === 11) this.MusuReco_witness(w)
+    }
+    await this.Musu_float(w)
+
+// MusuReco_setup — the two Piers over the loopback + A's library of REAL tracks: the first two of the
+//  sorted testsounds walk, decoded through the nav (the MusuCrate path) but UN-transcoded — the decode
+//   waits on c.raw_chunks, nothing serveable yet.  PAGE=10 so a track is a handful of pages, not fifty.
+async MusuReco_setup(w):
+    w i reached:step_2
+    let link = await this.Lake_link(w, 'DJ', 'Crowd')
+    w.c.tx = link[0]
+    w.c.rx = link[1]
+    this.Peeroleum_arm_whittle(w)
+    link[1].i({ Ud: 1, pubkey: 'DJ' })
+    link[0].i({ Ud: 1, pubkey: 'Crowd' })
+    this.Repli_arm(w)
+    w.c.repli_page = 10
+    let src = w.oai({ Library: 1, pier: 'DJ' })
+    src.c.up = w
+    w.c.repli_src = src
+    let nav = this.Crate_nav()
+    let paths = nav ? await this.Crate_nav_paths(nav, 'testsounds') : []
+    if (paths.length < 2) {
+        if (!w.oa({ skipped: 'no_collection' })) w.i({ skipped: 'no_collection' })
+        return
+    }
+    await this.Crate_transcode_begin(src, nav, 'testsounds', paths[0], 'trk0')
+    await this.Crate_transcode_begin(src, nav, 'testsounds', paths[1], 'trk1')
+
+// MusuReco_recommend — beat 3: the gate refuses trk1 (nothing transcoded — and NOTHING of trk1 ever
+//  crosses, the negative control); trk0 releases its first preview and only then earns its recommendation.
+async MusuReco_recommend(w):
+    w i reached:step_3
+    let src = w.c.repli_src
+    if (!src) return
+    let t0 = src.o({ Record: 1, id: 'trk0' })[0]
+    let t1 = src.o({ Record: 1, id: 'trk1' })[0]
+    if (!t0 || !t1) return
+    let refused = await this.Repli_recommend(w, w.c.tx, 'DJ', 'Crowd', t1, 'untranscoded tease', 'DJ')
+    if (!refused) w.i({ refused: 'not_started' })
+    this.Crate_transcode_release(t0, 12)
+    await this.Repli_recommend(w, w.c.tx, 'DJ', 'Crowd', t0, 'this one grows — stay past the second chord', 'DJ')
+
+// MusuReco_pull — B pipelines a WINDOW of stride-aligned wants ahead of the mirror's have, fire-and-
+//  forget: frames deliver via the carrier's post_do (the H.todo queue), so trips complete in the beat's
+//   SETTLING, never inside this do_fn — observing progress synchronously is the wrong shape.  Want-once
+//    per offset — a parked want is A's to fulfil, never re-asked — so no page is ever served twice and
+//     the byte count stays exact.  The mirror %Stream's own have IS the cursor base (the resume shape).
+async MusuReco_pull(w):
+    let lib = this.Repli_mirror_lib(w)
+    let rec = lib.o({ Record: 1, id: 'trk0' })[0]
+    if (!rec) return
+    let s = rec.o({ Stream: 1 })[0]
+    if (!s) return
+    let PAGE = +(w.c.repli_page || 2)
+    let WINDOW = 4
+    w.c.reco_wanted = w.c.reco_wanted || {}
+    let have = +(s.sc.have || 0)
+    let total = +(s.sc.total || 0)
+    let k = 0
+    while (k < WINDOW) {
+        let from = have + k * PAGE
+        k = k + 1
+        if (total > 0 && from >= total) break
+        if (w.c.reco_wanted[from]) continue
+        w.c.reco_wanted[from] = 1
+        await this.Repli_want_next(w, w.c.rx, 'Crowd', 'DJ', 'trk0', 'audio', from)
+    }
+    // the eager claim, CAPTURED at its moment: audio has reached B while A's transcode still runs.
+    let src0 = w.c.repli_src ? w.c.repli_src.o({ Record: 1, id: 'trk0' })[0] : null
+    if (+(s.sc.got || 0) > 0 && src0 && !src0.sc.transcoded && !w.oa({ early: 'before_transcode_done' })) w.i({ early: 'before_transcode_done' })
+
+// MusuReco_react — beat 4: B finds the reco in its mirror (the knowledge arrived, so the listening starts)
+//  and pulls at once — into a transcode that has barely begun.
+async MusuReco_react(w):
+    w i reached:step_4
+    let lib = this.Repli_mirror_lib(w)
+    let rec = lib.o({ Record: 1, id: 'trk0' })[0]
+    let reco = rec ? rec.o({ Reco: 1 })[0] : null
+    if (!reco) return
+    w.c.reco_heard = 1
+    await this.MusuReco_pull(w)
+
+// MusuReco_chase — beats 5-8: the transcoder releases a slice, the parked wants the fresh frontier now
+//  covers serve, and B slides its want-window forward (and parks again at the new frontier) — the client
+//   rides the transcoder's bow wave.
+async MusuReco_chase(w):
+    let src0 = w.c.repli_src ? w.c.repli_src.o({ Record: 1, id: 'trk0' })[0] : null
+    if (!src0) return
+    this.Crate_transcode_release(src0, 12)
+    await this.Repli_serve_parked(w, w.c.tx)
+    await this.MusuReco_pull(w)
+
+// MusuReco_finish — beat 9: the transcoder completes (the rest releases in one slab), every parked want
+//  serves, and B's window covers the tail.
+async MusuReco_finish(w):
+    w i reached:step_9
+    let src0 = w.c.repli_src ? w.c.repli_src.o({ Record: 1, id: 'trk0' })[0] : null
+    if (!src0) return
+    this.Crate_transcode_release(src0, 9999)
+    await this.Repli_serve_parked(w, w.c.tx)
+    await this.MusuReco_pull(w)
+
+// MusuReco_settle — beat 10: the window's last stretch (the final wants ride this beat's settling).
+async MusuReco_settle(w):
+    w i reached:step_10
+    await this.MusuReco_pull(w)
+
+// MusuReco_witness — the arc, earned.  Deterministic: the note byte-faithful at the mirror, the gate's
+//  refusal with nothing crossed, first audio BEFORE the transcode finished, wants parked then all served,
+//   the reassembled samples exactly the decode's, and the tracks really files (real:1 only the nav path
+//    stamps).
+MusuReco_witness(w):
+    let src = w.c.repli_src
+    let src0 = src ? src.o({ Record: 1, id: 'trk0' })[0] : null
+    let lib = this.Repli_mirror_lib(w)
+    let rec = lib.o({ Record: 1, id: 'trk0' })[0]
+    let reco = rec ? rec.o({ Reco: 1 })[0] : null
+    let sreco = src0 ? src0.o({ Reco: 1 })[0] : null
+    let s = rec ? rec.o({ Stream: 1 })[0] : null
+    // recommended: the reco crossed INSIDE the record's fragment — B holds the note, byte-faithful.
+    if (reco && sreco && reco.sc.note === sreco.sc.note && reco.sc.by === 'DJ' && !(oa %witnessed:recommended)) i %witnessed:recommended
+    // refused_unstarted: the gate held — the un-started track was refused AND nothing of it crossed.
+    if (w.oa({ refused: 'not_started' }) && !lib.oa({ Record: 1, id: 'trk1' }) && !(oa %witnessed:refused_unstarted)) i %witnessed:refused_unstarted
+    // started_early: audio reached B while A's transcode still ran (captured at its moment, beat 4).
+    if (w.oa({ early: 'before_transcode_done' }) && !(oa %witnessed:started_early)) i %witnessed:started_early
+    // outran_then_served: the chase parked wants at the frontier and every one was later served.
+    let parked_left = w.c.tx ? w.c.tx.o({ parked_want: 1 }).length : 99
+    if ((w.c.repli_parked || 0) >= 2 && (w.c.repli_unparked || 0) >= 2 && parked_left === 0 && !(oa %witnessed:outran_then_served)) i %witnessed:outran_then_served
+    // complete: the whole track crossed — have==total and the reassembled samples EXACTLY match the decode.
+    let got_samples = 0
+    if (s && s.c.pages) { for (const p of s.c.pages) got_samples = got_samples + p.length }
+    let want_samples = 0
+    if (src0 && src0.c.raw_chunks) { for (const c of src0.c.raw_chunks) want_samples = want_samples + c.length }
+    if (s && +(s.sc.have || 0) === +(s.sc.total || 0) && +(s.sc.total || 0) > 0 && want_samples > 0 && got_samples === want_samples && !(oa %witnessed:complete)) i %witnessed:complete
+    // real_music: the tracks are decoded FILES off the nav walk — real flag, real duration, real artist.
+    if (src0 && src0.sc.real && +(src0.sc.seconds || 0) >= 2 && (src0.sc.artist || '') !== '' && !(oa %witnessed:real_music)) i %witnessed:real_music
+    // the claims, once-noticed.
+    if (reco && sreco && reco.sc.note === sreco.sc.note && !(oa %see:'the note crossed with the record — one fragment carried the knowledge and the thing')) i %see:'the note crossed with the record — one fragment carried the knowledge and the thing'
+    if (w.oa({ early: 'before_transcode_done' }) && s && +(s.sc.have || 0) === +(s.sc.total || 0) && !(oa %see:'streaming began while the transcode still ran — nobody waited for the preview set')) i %see:'streaming began while the transcode still ran — nobody waited for the preview set'
+    if ((w.c.repli_unparked || 0) >= 2 && parked_left === 0 && !(oa %see:'a want that outran the transcoder parked and was served when the frontier passed it')) i %see:'a want that outran the transcoder parked and was served when the frontier passed it'
 //#endregion
 
 //#region conceal — the CONCEALMENT LADDER (Player stage 3): fill a gap, don't drop to silence

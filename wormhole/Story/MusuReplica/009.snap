@@ -1,9 +1,11 @@
 Snap:H
   H:MusuReplica,Run
     A:MusuReplica
-      self,round=29	{"mung":["age"]}
+      self,round=24	{"mung":["age"]}
       w:MusuReplica
-        self,round=29	{"mung":["age"]}
+        Opt
+          crushCyto
+        self,round=24	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Peering,name:DJ,req=2,ok
@@ -82,12 +84,14 @@ Snap:H
         Crush_Tree,stuff
           Crush:Library.DJ,kind:Record,n=3
           Crush:DJ.Crowd.outbox,kind:emit,n=16
+          Crush:Sent_Tree.DJ,kind:Sent,n=3
           Crush:Crowd.DJ.inbox,kind:req,n=16
-          Crush:Library.Crowd,kind:Record,n=3
-          Crush:Sent_Tree,kind:Sent,n=3
           Crush:Crowd.DJ.outbox,kind:emit,n=7
+          Crush:Library.Crowd,kind:Record,n=3
+          Crush:Sent_Tree.Crowd,kind:Sent,n=3
           Crush:DJ.Crowd.inbox,kind:req,n=7
         reached:step_3
+        Sent_Tree,pier:DJ,dontSnap,stuff
         Library,pier:Crowd,stuff
           Record,id:rec0,title:Tone-0,artist:Synthetic,seconds=0.3,nchunks=6
             Stream,name:audio,total=6,have=6,sr=48000,page_from=4,page_to=6,got=3
@@ -96,7 +100,4 @@ Snap:H
           Record,id:rec2,title:Tone-2,artist:Synthetic,seconds=0.3,nchunks=6
             Stream,name:audio,total=6,have=2,sr=48000,page_from=0,page_to=2
         reached:step_4
-        Sent_Tree,stuff
-          Sent,id:rec0,name:Tone-0,have=6,total=6,got=3
-          Sent,id:rec1,name:Tone-1,have=6,total=6,got=3
-          Sent,id:rec2,name:Tone-2,have=2,total=6,got=0
+        Sent_Tree,pier:Crowd,dontSnap,stuff

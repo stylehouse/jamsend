@@ -1,9 +1,7 @@
 Snap:H
-  H:MusuReplica,Run
-    A:MusuReplica
+  H:MusuReco,Run
+    A:MusuReco
       self,round	{"mung":["age"]}
-      w:MusuReplica
-        Opt
-          crushCyto
+      w:MusuReco
         self,round	{"mung":["age"]}
         req:wrangle,eternal,ok

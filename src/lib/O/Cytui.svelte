@@ -329,12 +329,15 @@
             overlay_quiet_timer = null
             if (!overlay_container) return
             reposition_overlays()
+            compute_voronoi()   // cells follow the settled layout, same quiet cadence
+            motion_hidden = false
             overlay_container.classList.remove('overlays-hidden')
         }, OVERLAY_QUIET_MS)
     }
 
     function hide_overlays_now() {
         if (!overlay_container) return
+        motion_hidden = true
         overlay_container.classList.add('overlays-hidden')
         if (overlay_quiet_timer) { clearTimeout(overlay_quiet_timer); overlay_quiet_timer = null }
     }
@@ -417,6 +420,11 @@
     //     ~constant) from writing styles at all.
     function size_stuff_node(id: string, el: HTMLElement) {
         if (!cy) return
+        // in voronoi mode the CELL owns the overlay's size (compute_voronoi stretches it),
+        //  so growing the node from el size here would feed the cell back into its own
+        //   weight — a runaway loop.  Node sizes freeze at their last content-driven
+        //    values (still the layout/weight input); content changes just re-tessellate.
+        if (voronoi_on) { voronoi_soon(); return }
         const node = cy.getElementById(id)
         if (!node.length) return
         const zoom = cy.zoom()
@@ -501,6 +509,149 @@
     }
 
 //#endregion
+//#region voronoi
+
+    // ── Voronoi cells render mode ─────────────────────────────────────────────
+    //
+    //  Cyto stays the LAYOUT engine — fcose decides where the chunks want to
+    //  sit — and the render becomes an interpretation of that result: each
+    //  stuff-chunk seeds a cell at its node's rendered position, weighted by
+    //  node size (a power diagram, so a big chunk claims proportionally more
+    //  room), and its Stuffing stretches into the cell.  Adjacency reads as
+    //  shared WALLS instead of wires: an SVG layer between the cy canvas and
+    //  the HTML overlays draws the cells over a veil that dims the raw graph.
+    //
+    //  Pure pixels: no cy style writes, no wave or snap involvement, so no
+    //  Book can see this mode (Leaf* keep checking Cyto basically works).
+    //  It auto-arms when a wave ferries a crusher-stamped particle (c.stuffy —
+    //  only the %crushCyto-gated crusher mints those) and the ◈ bar button
+    //  overrides either way, remembered in the stash as Cyto_voronoi.
+    let voronoi_pref  = $state<boolean | null>(null)   // user override; null = auto
+    let saw_stuffy    = $state(false)                  // auto-arm: crushed world present
+    const voronoi_on  = $derived(voronoi_pref ?? saw_stuffy)
+    let vcells        = $state<{ id: string, d: string, color: string }[]>([])
+    let motion_hidden = $state(false)                  // cells hide with the overlays during motion
+    let voronoi_timer: ReturnType<typeof setTimeout> | null = null
+
+    function voronoi_soon() {
+        if (voronoi_timer) clearTimeout(voronoi_timer)
+        voronoi_timer = setTimeout(() => { voronoi_timer = null; compute_voronoi() }, 80)
+    }
+
+    function toggle_voronoi() {
+        voronoi_pref = !voronoi_on
+        const st = (H as any).stashed
+        if (st) st.Cyto_voronoi = voronoi_pref
+        if (voronoi_pref) { reposition_overlays(); compute_voronoi() }
+        else clear_voronoi()
+    }
+
+    // Sutherland–Hodgman against one wall: keep the side the seed is on,
+    //  ie every p with dot(p − m, dir) <= 0.
+    function clip_halfplane(poly: {x:number,y:number}[],
+                            m: {x:number,y:number}, dir: {x:number,y:number}) {
+        const out: {x:number,y:number}[] = []
+        for (let k = 0; k < poly.length; k++) {
+            const a = poly[k], b = poly[(k + 1) % poly.length]
+            const da = (a.x - m.x) * dir.x + (a.y - m.y) * dir.y
+            const db = (b.x - m.x) * dir.x + (b.y - m.y) * dir.y
+            if (da <= 0) out.push(a)
+            if ((da <= 0) !== (db <= 0)) {
+                const t = da / (da - db)
+                out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t })
+            }
+        }
+        return out
+    }
+
+    function compute_voronoi() {
+        if (!cy || !container) return
+        if (!voronoi_on) { if (vcells.length) clear_voronoi(); return }
+        const W = container.clientWidth, HH = container.clientHeight
+        if (!W || !HH) return
+
+        // seeds = the stuff-chunk nodes, in rendered coordinates.  For a couple
+        //  dozen seeds the O(n²) half-plane intersection is exact and instant —
+        //   no geometry dependency needed.
+        const seeds: { id: string, x: number, y: number, r: number, node: any }[] = []
+        for (const id of stuff_mounts.keys()) {
+            const node = cy.getElementById(id)
+            if (!node.length || !node.visible()) continue
+            const p = node.renderedPosition()
+            seeds.push({ id, x: p.x, y: p.y, r: Math.max(24, node.renderedWidth() / 2), node })
+        }
+        if (seeds.length < 2) { vcells = []; return }
+
+        const GAP = 4
+        const cells: typeof vcells = []
+        const placed = new Set<string>()
+        for (const s of seeds) {
+            let poly = [{ x: 0, y: 0 }, { x: W, y: 0 }, { x: W, y: HH }, { x: 0, y: HH }]
+            for (const o of seeds) {
+                if (o === s) continue
+                const dx = o.x - s.x, dy = o.y - s.y
+                const d = Math.hypot(dx, dy)
+                if (d < 1) continue
+                // the power-diagram wall between weighted seeds (the radical axis)
+                const t  = (d * d + s.r * s.r - o.r * o.r) / (2 * d)
+                const ux = dx / d, uy = dy / d
+                poly = clip_halfplane(poly, { x: s.x + ux * t, y: s.y + uy * t }, { x: ux, y: uy })
+                if (poly.length < 3) break
+            }
+            if (poly.length < 3) continue   // swallowed by a heavier neighbour
+
+            // gutter: pull every vertex a few px toward the centroid so the
+            //  walls read as gaps between cells rather than shared strokes
+            const ccx = poly.reduce((a, p) => a + p.x, 0) / poly.length
+            const ccy = poly.reduce((a, p) => a + p.y, 0) / poly.length
+            const inset = poly.map(p => {
+                const dx = p.x - ccx, dy = p.y - ccy, dd = Math.hypot(dx, dy)
+                const k = dd > GAP ? 1 - GAP / dd : 0
+                return { x: ccx + dx * k, y: ccy + dy * k }
+            })
+            const d_attr = 'M' + inset.map(p => `${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join('L') + 'Z'
+            cells.push({ id: s.id, d: d_attr, color: s.node.style('border-color') as string })
+            placed.add(s.id)
+
+            // stretch the Stuffing into the cell: the overlay takes the cell's
+            //  bbox and clips to the polygon; the flex centering keeps the rows
+            //   around the middle, and anything larger clips evenly at the walls
+            const el = overlays.get(s.id)
+            if (el) {
+                const xs = inset.map(p => p.x), ys = inset.map(p => p.y)
+                const bx = Math.min(...xs), by = Math.min(...ys)
+                const bw = Math.max(...xs) - bx, bh = Math.max(...ys) - by
+                el.style.left     = `${bx.toFixed(1)}px`
+                el.style.top      = `${by.toFixed(1)}px`
+                el.style.width    = `${bw.toFixed(1)}px`
+                el.style.height   = `${bh.toFixed(1)}px`
+                el.style.maxWidth = 'none'
+                el.style.clipPath = 'polygon(' + inset.map(p =>
+                    `${(p.x - bx).toFixed(1)}px ${(p.y - by).toFixed(1)}px`).join(',') + ')'
+            }
+        }
+        // a seed whose cell got swallowed falls back to plain node-centering
+        for (const s of seeds) {
+            if (placed.has(s.id)) continue
+            const el = overlays.get(s.id)
+            if (!el) continue
+            el.style.clipPath = ''; el.style.width = ''; el.style.height = ''; el.style.maxWidth = ''
+            el.style.left = `${s.x - el.offsetWidth / 2}px`
+            el.style.top  = `${s.y - el.offsetHeight / 2}px`
+        }
+        vcells = cells
+    }
+
+    function clear_voronoi() {
+        vcells = []
+        for (const el of overlays.values()) {
+            if (!el.classList.contains('stuff-overlay')) continue
+            el.style.clipPath = ''; el.style.width = ''; el.style.height = ''; el.style.maxWidth = ''
+        }
+        reposition_overlays()
+    }
+
+//#endregion
 //#region apply
 
     function apply(wave: TheC, dur: number) {
@@ -525,6 +676,7 @@
             console.log(`wave%absolute removes and re-adds the entire graph`)
             cy.elements().remove()
             clear_all_overlays()
+            saw_stuffy = false   // a fresh graph re-decides the voronoi auto-arm
         }
 
         // 1. remove stale edges
@@ -588,8 +740,11 @@
             const overlay_kind = nd.sc.overlay_kind as string | undefined
             const overlay_bg   = nd.sc.overlay_bg   as string | undefined
             if (overlay_kind === 'stuff') {
-                create_stuff_overlay(id, (nd as any).c?.source_n as TheC | undefined, overlay_bg,
-                    !!nd.sc.overlay_self)
+                const src = (nd as any).c?.source_n as TheC | undefined
+                // c.stuffy exists ONLY under the %crushCyto-gated crusher — a crushed
+                //  world auto-arms the voronoi render (voronoi_pref still overrides)
+                if ((src as any)?.c?.stuffy) saw_stuffy = true
+                create_stuff_overlay(id, src, overlay_bg, !!nd.sc.overlay_self)
             } else if (overlay_str != null) {
                 create_overlay(id, overlay_str, overlay_kind ?? 'code', overlay_bg)
             }
@@ -773,6 +928,8 @@
 
     // ── cytoscape init ────────────────────────────────────────────────────────
     onMount(() => {
+        const stashed_v = (H as any).stashed?.Cyto_voronoi
+        if (typeof stashed_v === 'boolean') voronoi_pref = stashed_v
         cy = cytoscape({
             container,
             style: [
@@ -860,6 +1017,8 @@
         {/if}
         <button onclick={() => relayout(300)}>⟳</button>
         <button onclick={() => cy?.fit(cy.nodes(), 16)}>⊞</button>
+        <button class="v-toggle" class:on={voronoi_on} onclick={toggle_voronoi}
+            title="voronoi cells — Cyto lays out, cells render">◈</button>
         <span class="cytui-dur">⏱ {grawave_dur}s</span>
     </div>
     {#if matstyles.length}
@@ -882,6 +1041,20 @@
     {/if}
     <div class="cytui-graph-wrap">
         <div class="cytui-graph" bind:this={container}></div>
+        <!-- voronoi layer between the canvas and the HTML overlays: the veil dims
+             the raw graph so the cells (and the Stuffings stretched into them)
+             carry the reading; it hides with the overlays during motion. -->
+        <svg class="cytui-voronoi" style:visibility={motion_hidden ? 'hidden' : 'visible'}>
+            {#if voronoi_on && vcells.length}
+                <rect class="cytui-veil" width="100%" height="100%" />
+                {#each vcells as cell (cell.id)}
+                    <path d={cell.d}
+                        fill={cell.color} fill-opacity="0.13"
+                        stroke={cell.color} stroke-opacity="0.6" stroke-width="1.5"
+                        stroke-linejoin="round" />
+                {/each}
+            {/if}
+        </svg>
         <!-- overlay container sits over the cy canvas, pointer-events:none
              so graph interactions pass through. Individual .cm-hole overlays
              opt back in with pointer-events:all for future CodeMirror input. -->
@@ -931,6 +1104,20 @@
 .cytui-graph {
     position: absolute;
     inset: 0;
+}
+.cytui-voronoi {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+}
+.cytui-voronoi .cytui-veil {
+    fill: #070707;
+    opacity: 0.5;
+}
+.cytui-bar button.v-toggle.on {
+    color: #7ab0d4;
+    border-color: #2a3a4a;
 }
 .cytui-overlays {
     position: absolute;

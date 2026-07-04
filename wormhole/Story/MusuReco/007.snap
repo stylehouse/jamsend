@@ -1,0 +1,78 @@
+Snap:H
+  H:MusuReco,Run
+    A:MusuReco
+      self,round=19	{"mung":["age"]}
+      w:MusuReco
+        self,round=19	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Peering,name:DJ,req=2,ok
+          Pier,pub:Crowd,req=2,ok
+            Ud,pubkey:Crowd
+            outbox
+              emit,type:repli_lines,seq,sent,body_hash:cd8594fa622480b330369b9d02d6a6a0179a584e645c806cfbf348feac0a03df,body_len=322,acked
+              emit=2,type:repli_lines,seq=2,sent,body_hash:1e13ad3cb6d3a635e3093bafbcaa1534100ab684dc33b0d4f7911c8cc58b8edb,body_len=136,acked
+              emit=3,type:repli_page,seq=3,sent,body_hash:3581afbf3720621a9f7c3ace87384d9a6f711ff9e25300b7edf6c4f7c6d731eb,body_len=96000,acked
+              emit=4,type:repli_lines,seq=4,sent,body_hash:8c5cc829b4ba37f295def530ce3a9e12409f324e19ded448ca371051bd0a2112,body_len=137,acked
+              emit=5,type:repli_page,seq=5,sent,body_hash:2a0eec3335dd83bda513748e895f93dc12e5565d6b031c933d9ec8d7a6ed769f,body_len=96000,acked
+              emit=6,type:repli_lines,seq=6,sent,body_hash:fc297d982d8346ee68248f250bf23df62a2e6e35a6b3f62f130d90380cf96a5e,body_len=137,acked
+              emit=7,type:repli_page,seq=7,sent,body_hash:5c5de5e50848052bc078d190e0fcc10ca6449803e89c8e9be41d226e5d04e547,body_len=96000,acked
+              emit=8,type:repli_lines,seq=8,sent,body_hash:bd785eac5c1e8a291987a23e62d3e258223d9e17a94f18762918bb859e8fbb2f,body_len=137,acked
+              emit=9,type:repli_page,seq=9,sent,body_hash:0756a64aa11c199f5721e28c982a0e2358f10c4aa453298073e7f04b1a78ff44,body_len=96000,acked
+            inbox
+              req:unemit,seq,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
+              req:unemit,seq=2,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
+              req:unemit,seq=3,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
+              req:unemit,seq=4,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
+              req:unemit,seq=5,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
+              req:unemit,seq=6,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
+              req:unemit,seq=7,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
+            parked_want,id:trk0,stream:audio,from_idx:40
+            parked_want,id:trk0,stream:audio,from_idx:50
+            parked_want,id:trk0,stream:audio,from_idx:60
+          active_transport,type:mock,open
+        Peering,name:Crowd,req=3,ok
+          Pier,pub:DJ,req=2,ok
+            Ud,pubkey:DJ
+            inbox
+              req:unemit,seq,type:repli_lines,body_hash:cd8594fa622480b330369b9d02d6a6a0179a584e645c806cfbf348feac0a03df,body_len=322,done,to:repli_lines,finished
+              req:unemit,seq=2,type:repli_lines,body_hash:1e13ad3cb6d3a635e3093bafbcaa1534100ab684dc33b0d4f7911c8cc58b8edb,body_len=136,done,to:repli_lines,finished
+              req:unemit,seq=3,type:repli_page,body_hash:3581afbf3720621a9f7c3ace87384d9a6f711ff9e25300b7edf6c4f7c6d731eb,body_len=96000,done,to:repli_page,finished
+              req:unemit,seq=4,type:repli_lines,body_hash:8c5cc829b4ba37f295def530ce3a9e12409f324e19ded448ca371051bd0a2112,body_len=137,done,to:repli_lines,finished
+              req:unemit,seq=5,type:repli_page,body_hash:2a0eec3335dd83bda513748e895f93dc12e5565d6b031c933d9ec8d7a6ed769f,body_len=96000,done,to:repli_page,finished
+              req:unemit,seq=6,type:repli_lines,body_hash:fc297d982d8346ee68248f250bf23df62a2e6e35a6b3f62f130d90380cf96a5e,body_len=137,done,to:repli_lines,finished
+              req:unemit,seq=7,type:repli_page,body_hash:5c5de5e50848052bc078d190e0fcc10ca6449803e89c8e9be41d226e5d04e547,body_len=96000,done,to:repli_page,finished
+              req:unemit,seq=8,type:repli_lines,body_hash:bd785eac5c1e8a291987a23e62d3e258223d9e17a94f18762918bb859e8fbb2f,body_len=137,done,to:repli_lines,finished
+              req:unemit,seq=9,type:repli_page,body_hash:0756a64aa11c199f5721e28c982a0e2358f10c4aa453298073e7f04b1a78ff44,body_len=96000,done,to:repli_page,finished
+            outbox
+              emit,type:repli_want,seq,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
+              emit=2,type:repli_want,seq=2,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
+              emit=3,type:repli_want,seq=3,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
+              emit=4,type:repli_want,seq=4,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
+              emit=5,type:repli_want,seq=5,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
+              emit=6,type:repli_want,seq=6,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
+              emit=7,type:repli_want,seq=7,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
+            req:awaitbuf,bufferid,landed,finished
+            req:awaitbuf,bufferid=2,landed,finished
+            req:awaitbuf,bufferid=3,landed,finished
+            req:awaitbuf,bufferid=4,landed,finished
+          active_transport,type:mock,open
+        Library,pier:DJ
+          Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=5,loudness=0.4231,nchunks=100,real
+            Stream,name:audio,total=100,have=0,sr=48000
+            preview,seq=0,from=0,to=12
+            Reco,by:DJ,note:this one grows — stay past the second chord
+            preview,seq,from=12,to=24
+            preview,seq=2,from=24,to=36
+            preview,seq=3,from=36,to=48
+          Record,id:trk1,title:Dorian D,artist:DJ Oscillo,seconds=6,loudness=0.4233,nchunks=120,real
+            Stream,name:audio,total=120,have=0,sr=48000
+        reached:step_3
+        refused:not_started
+        Library,pier:Crowd
+          Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=5,loudness=0.4231,nchunks=100,real
+            Stream,name:audio,total=100,have=40,sr=48000,page_from=30,page_to=40,got=4
+            preview,seq=0,from=0,to=12
+            Reco,by:DJ,note:this one grows — stay past the second chord
+        reached:step_4
+        early:before_transcode_done

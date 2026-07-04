@@ -13,7 +13,8 @@
 //
 //  WHAT MODERNISED vs the old code: old DL.expand()/n.sc.DL  → handle.values() + c.handle; old
 //   parseBuffer(music-metadata) + LoudnessMeter(LUFS)        → filename metadata + coarse RMS (proper
-//    metadata/LUFS + the .webms disk cache + preview/stream split stay with the bigger Records→ghost job).
+//    metadata/LUFS + the .webms disk cache stay with the bigger Records→ghost job; the preview/stream
+//     split is Crate_transcode_* below — decode once, release progressively, stream the frontier).
 
 //#region crate
 
@@ -338,4 +339,55 @@ async Crate_rastock_drain(ra, ms):
         if (pending === 0) return
         await new Promise(r => setTimeout(r, 50))
     }
+
+// ── the preview→stream transcoder (stage 2's split: Radio_spec §5.2) ─────────────────────────────────
+//  A real track becomes a stream the moment its FIRST slice is transcoded, not when the whole set is
+//   done: decode ONCE (the full PCM waits on c.raw_chunks — the transcoder's input), then RELEASE it
+//    forward slice by slice into c.chunks (the serveable stream).  Each release mints a %preview child
+//     naming the span — the modern form of the old Radios %record/*%preview set — and the repli serve
+//      side streams the frontier as it grows (a want past it parks; Repli_serve_parked catches it up).
+
+// Crate_transcode_begin — read + decode ONE real track through the nav (bin_read → OfflineAudioContext,
+//  gesture-free) into an UN-transcoded %Record under `lib`: real path metadata, the full decode staged
+//   on c.raw_chunks, c.chunks EMPTY (nothing released yet), and a %Stream that PROMISES the full total.
+//    real:1 is only ever stamped here — a synth record can't earn it.  null on unreadable/undecodable.
+async Crate_transcode_begin(lib, nav, base, path, id):
+    let res = await this.Crate_nav_payload(nav, base, path)
+    if (!res) return null
+    let rec = lib.oai({ Record: 1, id: id })
+    rec.c.up = lib
+    rec.sc.title = res.title
+    rec.sc.artist = res.artist
+    rec.sc.seconds = res.seconds
+    rec.sc.loudness = res.loudness
+    rec.sc.nchunks = res.nchunks
+    rec.sc.real = 1
+    rec.c.raw_chunks = res.chunks
+    rec.c.chunks = []
+    let stream = rec.oai({ Stream: 1, name: 'audio' })
+    stream.c.up = rec
+    stream.sc.total = res.nchunks
+    stream.sc.have = 0
+    stream.sc.sr = 48000
+    rec.bump()
+    return rec
+
+// Crate_transcode_release — move the frontier: up to `n` more decoded chunks join rec.c.chunks and ONE
+//  %preview child names the released span.  sc.transcoded stamps (1, never 0) once the frontier reaches
+//   the promise.  Returns the new frontier.  The caller drives the pace (a Book per beat; the app off a
+//    real encoder's progress) and follows with Repli_serve_parked so outrun wants catch up.
+Crate_transcode_release(rec, n):
+    let raw = rec.c.raw_chunks || []
+    if (!rec.c.chunks) rec.c.chunks = []
+    let chunks = rec.c.chunks
+    let from = chunks.length
+    if (from >= raw.length) return from
+    let end = Math.min(from + n, raw.length)
+    let i = from
+    while (i < end) { chunks.push(raw[i]); i = i + 1 }
+    let pv = rec.i({ preview: 1, seq: rec.o({ preview: 1 }).length, from: from, to: end })
+    pv.c.up = rec
+    if (end >= raw.length) rec.sc.transcoded = 1
+    rec.bump()
+    return end
 //#endregion

@@ -203,6 +203,17 @@ Waft:Ghost/Music/Ality,active
       Point,method:Repli_recv_lines
       Point,method:Repli_retire
       Point,method:Repli_sent_se
+    What:MusuReco (a %Reco rides the knowledge graph — recommend started music and stream it off the transcoder's bow wave)
+      Doc:Ghost/Story/Musuation.g
+      Point,method:MusuReco_drive
+      Point,method:MusuReco_pull
+      Point,method:Repli_recommend
+      Point,method:Repli_page_ready
+      Point,method:Repli_park_want
+      Point,method:Repli_serve_parked
+      Doc:Ghost/M/Crate.g
+      Point,method:Crate_transcode_begin
+      Point,method:Crate_transcode_release
   What:Pier reality (spec §9 — the replication goes real)
     Doc:src/lib/O/spec/Music_todo.md
     Point,text:9.1

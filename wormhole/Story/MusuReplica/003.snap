@@ -3,6 +3,8 @@ Snap:H
     A:MusuReplica
       self,round=6	{"mung":["age"]}
       w:MusuReplica
+        Opt
+          crushCyto
         self,round=6	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
@@ -32,7 +34,9 @@ Snap:H
         Crush_Tree,stuff
           Crush:Library.DJ,kind:Record,n=3
           Crush:DJ.Crowd.outbox,kind:emit,n=3
+          Crush:Sent_Tree.DJ,kind:Sent,n=3
         reached:step_3
+        Sent_Tree,pier:DJ,dontSnap,stuff
         Library,pier:Crowd
           Record,id:rec0,title:Tone-0,artist:Synthetic,seconds=0.3,nchunks=6
             Stream,name:audio,total=6,have=0,sr=48000
