@@ -322,6 +322,76 @@
     // Container div for all overlays — sits over the cy canvas with pointer-events:none
     let overlay_container: HTMLDivElement
     let overlay_quiet_timer: ReturnType<typeof setTimeout> | null = null
+    // the reveal is a LATCH, not a per-morph callback: a morph in flight can be
+    //  superseded (a ResizeObserver re-fires as a Stuffing re-renders after zoom,
+    //   calling morph_voronoi() with no callback), which used to drop the pending
+    //    reveal — the Stuffings then stayed hidden until a drag re-armed it.  Any
+    //     morph that reaches its settled paint clears this latch, so whoever lands
+    //      last does the reveal.
+    let overlays_want_show = false
+    function settle_overlay_show() {
+        if (overlays_want_show && overlay_container) {
+            overlay_container.classList.remove('overlays-hidden')
+            overlays_want_show = false
+        }
+    }
+
+    // ── adaptive drag rendering ───────────────────────────────────────────────
+    //  the cheap path hides EVERY overlay the instant a drag starts.  But a
+    //   capable machine can keep them live for the whole drag — so instead of
+    //    hiding on grab, we keep them rendered and repaint each frame, MEASURING
+    //     the repaint cost.  If a frame blows the budget the machine can't keep
+    //      up, so we shed to the hide-all path for the rest of this drag (re-probed
+    //       fresh on the next grab — no permanent lock-out, it self-heals if the
+    //        graph shrinks or the box speeds up).  This is the "monitor performance
+    //         at high|low visual quality" the graph asked for, per-drag.
+    let dragging = false
+    let drag_raf = 0
+    let repos_cost_ema = 0
+    const KEEP_BUDGET_MS = 9        // per-frame repaint budget before we shed quality
+
+    function start_live_drag() {
+        dragging = true
+        repos_cost_ema = 0          // re-probe this machine fresh each drag
+        motion_hidden = false
+        overlays_want_show = false  // we're showing live, not via the settle latch
+        overlay_container?.classList.remove('overlays-hidden')
+        cancelAnimationFrame(morph_raf)   // a settle-morph must not fight the drag
+        cancelAnimationFrame(drag_raf)
+        drag_raf = requestAnimationFrame(drag_frame)
+    }
+
+    function drag_frame() {
+        if (!dragging || !overlay_container) return
+        const t0 = performance.now()
+        if (voronoi_on) voronoi_paint_now()   // cells + clipped Stuffings track live
+        else reposition_overlays()
+        const cost = performance.now() - t0
+        repos_cost_ema = repos_cost_ema ? repos_cost_ema * 0.8 + cost * 0.2 : cost
+        if (repos_cost_ema > KEEP_BUDGET_MS) {
+            // can't keep up — fall back to the cheap hide-all for the rest of the drag
+            console.log(`🎚️ motion quality: shed to hide-all (repaint ${repos_cost_ema.toFixed(1)}ms > ${KEEP_BUDGET_MS}ms)`)
+            dragging = false
+            hide_overlays_now()
+            return
+        }
+        drag_raf = requestAnimationFrame(drag_frame)
+    }
+
+    function end_live_drag() {
+        if (dragging) { dragging = false; cancelAnimationFrame(drag_raf) }
+        show_overlays_soon()
+    }
+
+    // repaint the voronoi at the CURRENT positions with no tween — the live-drag
+    //  twin of morph_voronoi's settled paint (used per frame while a node is dragged)
+    function voronoi_paint_now() {
+        const L = voronoi_layout()
+        if (!L) { if (vcells.length || vtips.length) clear_voronoi(); return }
+        vregion_w = L.CW
+        for (const c of L.cells) shown_pts.set(c.id, resample(c.inset, RESAMPLE_N))
+        paint_final(L)
+    }
 
     function show_overlays_soon() {
         if (overlay_quiet_timer) clearTimeout(overlay_quiet_timer)
@@ -332,9 +402,10 @@
             motion_hidden = false
             if (voronoi_on) {
                 // walls morph to the settled layout (divisions play out); the
-                //  Stuffings reveal when the morph lands — they belong to the
-                //  NEW cells, not the in-between shapes
-                morph_voronoi(() => overlay_container?.classList.remove('overlays-hidden'))
+                //  Stuffings reveal when the morph lands (via the latch) — they
+                //  belong to the NEW cells, not the in-between shapes
+                overlays_want_show = true
+                morph_voronoi()
             } else {
                 if (vcells.length) clear_voronoi()
                 overlay_container.classList.remove('overlays-hidden')
@@ -345,6 +416,7 @@
     function hide_overlays_now() {
         if (!overlay_container) return
         motion_hidden = true
+        overlays_want_show = false   // a fresh hide cancels any pending reveal
         overlay_container.classList.add('overlays-hidden')
         if (overlay_quiet_timer) { clearTimeout(overlay_quiet_timer); overlay_quiet_timer = null }
     }
@@ -850,6 +922,7 @@
         const crossings = new Map<string, { wall: number, t: number, m: {x:number,y:number}, color: string }[]>()
         const cell_by_id = new Map(L.cells.map(c => [c.id, c]))
         cy.edges().forEach((e: any) => {
+            if (e.data('nucleus')) return   // flower spokes are scaffold, not adjacency
             const sid = e.source().id(), tid = e.target().id()
             for (const [own, other] of [[sid, tid], [tid, sid]] as [string, string][]) {
                 const c = cell_by_id.get(own)
@@ -954,11 +1027,12 @@
     }
 
     // ── morph_voronoi: tween shown → next generation, then paint the rest state ──
-    function morph_voronoi(on_done?: () => void) {
+    function morph_voronoi() {
+        if (dragging) return   // live-drag owns the repaint; don't fight it
         const L = voronoi_layout()
         if (!L) {
             if (vcells.length || vtips.length) clear_voronoi()
-            on_done?.()
+            settle_overlay_show()
             return
         }
         vregion_w = L.CW
@@ -996,7 +1070,7 @@
             }
             if (!still) break
         }
-        if (still) { for (const c of L.cells) shown_pts.set(c.id, targets.get(c.id)!); paint_final(L); on_done?.(); return }
+        if (still) { for (const c of L.cells) shown_pts.set(c.id, targets.get(c.id)!); paint_final(L); settle_overlay_show(); return }
 
         cancelAnimationFrame(morph_raf)
         vtips = []   // tips re-arrive with the settled walls
@@ -1022,7 +1096,7 @@
             else {
                 for (const dc of dying) { shown_pts.delete(dc.id); shown_color.delete(dc.id) }
                 paint_final(L)
-                on_done?.()
+                settle_overlay_show()
             }
         }
         morph_raf = requestAnimationFrame(frame)
@@ -1296,6 +1370,16 @@
                 idealEdgeLength: (e: any) => e.data('ideal_length') ?? 80,
                 edgeElasticity:  0.45, nodeRepulsion: () => 4000,
                 ...constraints }
+            // radial smudge: with the flower on, the nuclei pull orderless nodes
+            //  INTO a central hub — so we push back with stronger repulsion, wider
+            //   separation and relaxed gravity, and the rosette breathes outward
+            //    into an airy centre you can zoom into instead of a crowded knot.
+            if (voronoi_on) {
+                opts.nodeRepulsion  = () => 9000
+                opts.nodeSeparation = 60
+                opts.gravity        = 0.12
+                opts.gravityCompound = 0.5
+            }
         } else if (layout_name === 'cose-bilkent') {
             opts = { name: 'cose-bilkent', ...common, idealEdgeLength: 80, nodeRepulsion: 4500 }
         } else if (layout_name === 'cola') {
@@ -1372,8 +1456,8 @@
         // toggle on the container. A debounced timer brings them back
         // once the user stops moving things. This makes heavy graphs
         // feel snappy even though we have many positioned DOM elements.
-        cy.on('grab',        () => hide_overlays_now())
-        cy.on('free',        () => show_overlays_soon())
+        cy.on('grab',        () => start_live_drag())
+        cy.on('free',        () => end_live_drag())
         cy.on('pan zoom',    () => { hide_overlays_now(); show_overlays_soon() })
         cy.on('layoutstart', () => hide_overlays_now())
         cy.on('layoutstop',  () => show_overlays_soon())

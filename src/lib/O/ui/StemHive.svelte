@@ -114,67 +114,64 @@
         return null
     }
 
+    // Names cluster ONLY IN SOURCE ORDER: a cluster is a maximal run of ADJACENT names
+    //  sharing one edge-anchored stem.  Walking left→right and never reaching over an
+    //  intervening name keeps the hive's vertical order identical to the file's — so a
+    //  stem's scattered occurrences stay put instead of being dragged together, and the
+    //  viewport puck (which spans the on-screen chips top→bottom) stays tight.
     let clusters = $derived.by<Cluster[]>(() => {
-        const toks = new Map<string, Tok[]>()
-        items.forEach(it => toks.set(it.id, tokenise(it.label)))
-        const index = new Map<string, number>()
-        items.forEach((it, i) => index.set(it.id, i))
+        const n = items.length
+        if (!n) return []
 
-        let remaining = [...items]
+        // per name: its edge-anchored token-runs (anchored at the name's START or END
+        //  only, never an awkward interior stem) keyed lowercased → token length.  An
+        //  intersection of these sets across a run of names is exactly the stems they
+        //  ALL share, and the length lets us anchor on the longest.
+        const runs = items.map(it => {
+            const ts = tokenise(it.label)
+            const set = new Map<string, number>()
+            for (let len = 1; len <= ts.length; len++) {
+                const ks = key_of(ts, 0, len)
+                if (!set.has(ks)) set.set(ks, len)
+                const e = ts.length - len
+                if (e > 0) { const ke = key_of(ts, e, len); if (!set.has(ke)) set.set(ke, len) }
+            }
+            return set
+        })
+
         const out: Cluster[] = []
-
-        while (remaining.length) {
-            // Every CONTIGUOUS token-run (n-gram) across the remaining names, counted
-            // once per name, tracking how many names carry it and how long it is.  We
-            // anchor on the LONGEST shared run — Idzeugi_advice beats bare Idzeugi
-            // (bigger stem better) — breaking ties toward the run more names share.
-            const grams = new Map<string, { names: number, tokens: number }>()
-            for (const it of remaining) {
-                const ts = toks.get(it.id)!
-                const seen = new Set<string>()
-                for (let i = 0; i < ts.length; i++) {
-                    for (let j = i; j < ts.length; j++) {
-                        // only runs anchored at the name's start or end count — an
-                        // interior run would split into an awkward both-sided stem
-                        if (i !== 0 && j !== ts.length - 1) continue
-                        const key = ts.slice(i, j + 1).map(t => t.text.toLowerCase()).join(RUN_SEP)
-                        if (seen.has(key)) continue
-                        seen.add(key)
-                        const g = grams.get(key)
-                        if (g) g.names++
-                        else grams.set(key, { names: 1, tokens: j - i + 1 })
-                    }
-                }
+        let i = 0
+        while (i < n) {
+            // grow the contiguous run [i..j] while SOME stem stays shared by all of it;
+            //  the moment the next name shares nothing, the run ends at j.
+            let shared = new Map(runs[i])
+            let j = i
+            while (j + 1 < n) {
+                const next = new Map<string, number>()
+                for (const [k, len] of shared) if (runs[j + 1].has(k)) next.set(k, len)
+                if (next.size === 0) break
+                shared = next
+                j++
             }
-            let bestKey = '', bestTokens = 0, bestNames = 1
-            for (const [key, g] of grams) {
-                if (g.names < 2) continue
-                if (g.tokens > bestTokens || (g.tokens === bestTokens && g.names > bestNames)) {
-                    bestKey = key; bestTokens = g.tokens; bestNames = g.names
-                }
-            }
-
-            if (!bestKey) {
-                // nothing shared left — each remaining name is its own bare cluster
-                for (const it of remaining) {
-                    out.push({
-                        anchor: it.label,
-                        members: [{ id: it.id, label: it.label, prefix: '', suffix: '', bare: true }],
-                        order: index.get(it.id)!,
-                    })
-                }
-                break
-            }
+            // anchor on the LONGEST surviving stem — Idzeugi_advice beats bare Idzeugi.
+            //  A lone name keeps its whole self (its longest run) as the anchor and so
+            //  renders bare, exactly as a singleton should.
+            let bestKey = '', bestTokens = 0
+            for (const [k, len] of shared) if (len > bestTokens) { bestKey = k; bestTokens = len }
 
             const members: Member[] = []
-            const rest: typeof remaining = []
             let anchor_text = ''
-            let order = Infinity
-            for (const it of remaining) {
-                const ts   = toks.get(it.id)!
+            for (let m = i; m <= j; m++) {
+                const it   = items[m]
+                const ts   = tokenise(it.label)
                 const span = run_span(ts, bestKey, bestTokens)
-                if (!span) { rest.push(it); continue }
-                order = Math.min(order, index.get(it.id)!)
+                // bestKey is in `shared`, so every member carries it — but a stem string
+                //  can be ambiguous under the empty join, so fall back to bare if the
+                //  slice doesn't line up rather than dropping the chip.
+                if (!span) {
+                    members.push({ id: it.id, label: it.label, prefix: '', suffix: '', bare: true })
+                    continue
+                }
                 const prefix = it.label.slice(0, span.start)
                 const suffix = it.label.slice(span.end)
                 // first member's slice keeps the anchor's real casing + inner separators
@@ -184,11 +181,9 @@
                     bare: prefix === '' && suffix === '',
                 })
             }
-            out.push({ anchor: anchor_text, members, order })
-            remaining = rest
+            out.push({ anchor: anchor_text || items[i].label, members, order: i })
+            i = j + 1
         }
-
-        out.sort((a, b) => a.order - b.order)
         return out
     })
 

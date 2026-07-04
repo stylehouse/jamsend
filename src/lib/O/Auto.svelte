@@ -273,6 +273,20 @@
             console.log('🧪 Creduler up — runner Lies outside Story')
         }
 
+        // ── audio keep-awake ──────────────────────────────────────────────────
+        //   A backgrounded runner tab the browser puts to sleep stops answering the relay — the "runner
+        //    went quiet" failure class.  Once this runner HOLDS a granted AudioContext (needAC secured its
+        //     voice, or any AC_ready), pin a silent keep-awake source (SoundSystem.keep_awake) so the
+        //      browser flags the tab "playing media" and spares it the freeze/discard.  Idempotent (the
+        //       gat guards a second osc), so it is fine to (re-)assert every tick — it also re-attaches if
+        //        an HMR/close tore the node down.  We only ATTACH to an already-granted context; we never
+        //         force one (no gesture here → the AC-grant flow is untouched).  Editor / library tabs
+        //          never need it — only a booted runner must stay warm in the background.
+        if (H.c.boot_role === 'runner') {
+            const gat = (H.top_House().c as any).musu_gat
+            if (gat?.AC_ready) gat.keep_awake?.()
+        }
+
         // ?I=<tag> cluster identity — stand up the Clustation Identity layer on the top House: the
         //  switchable, persisted %Identity (→ %Peering = our pub address) the relay `hello` signs
         //   with. ?I=new mints fresh, ?I=<tag> resumes. Absent ⇒ the legacy .stashed/.env key path,

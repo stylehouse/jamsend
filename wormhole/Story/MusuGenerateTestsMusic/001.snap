@@ -1,0 +1,7 @@
+Snap:H
+  H:MusuGenerateTestsMusic,Run
+    A:MusuGenerateTestsMusic
+      self,round	{"mung":["age"]}
+      w:MusuGenerateTestsMusic
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

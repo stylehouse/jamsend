@@ -38,6 +38,9 @@
     import type { House } from "$lib/O/Housing.svelte"
     import { onMount } from "svelte"
     import { signHeader, verifyHeader, prepubOf, sha256hex, loadRoleKey, browserTrustedPubs, browserRole, mintClusterKey } from "$lib/p2p/cluster_trust"
+    // the channel-liveness thresholds live in ONE place now (shared with the runner_ask CLI, which
+    //  can't import a .ts) — see runner_liveness.mjs.  Was three inline literals that could drift.
+    import { SLUGGISH_MS, DEAD_MS, LIVE_MS, PIER_CULL_MS } from "$lib/O/runner_liveness.mjs"
     import { sockcap_lines, sockcap_count, SOCKCAP_BOOT } from "$lib/O/sockcap"   // TEMP: relay-socket dump
 
     let { M } = $props()
@@ -342,6 +345,9 @@
             if (typeof setInterval === 'function' && !w.c.keepalive_timer) {
                 w.c.keepalive_timer = setInterval(() => { try { (H as any).Lies_keepalive(w) } catch { /* next tick */ } }, 5000)
             }
+            // Page Lifecycle warmth (freeze/resume) rides the SAME once-per-channel lifetime as the keepalive
+            //  timer above — a frozen tab's setInterval pauses, so these browser events are the wake/sleep edges.
+            ;(H as any).Lies_lifecycle_hook(w)
             H.tlog(`🔌 Lies channel up [${role}] addr=${role} → ${peer}`)
         },
 
@@ -1034,8 +1040,7 @@
             //   Chrome timer throttling) read as silent and got its LIVE socket re-dialed every ~30-90s.
             //    A frame that reached the ws IS the carrier working — never re-dial over think starvation.
             const heard = Math.max(last, Number(cp?.sc.last_heard ?? 0), Number(w.c.socket_heard ?? 0))
-            const DEAD_MS = 20000, SLUGGISH_MS = 9000
-            if (heard && now - heard > DEAD_MS) {
+            if (heard && now - heard > DEAD_MS) {   // DEAD_MS/SLUGGISH_MS imported from runner_liveness.mjs
                 if (!w.c.last_reconnect || now - (w.c.last_reconnect as number) > DEAD_MS) {
                     const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
                     if (port?.reconnect) {
@@ -1144,7 +1149,8 @@
             const book    = (H.top_House().c.book as string) ?? ''
             const engaged = (eng && eng.status === 'active') ? (eng.client ?? '') : ''
             const ac_now  = !!(H.top_House().c as any).musu_gat?.AC_ready
-            const sig     = `${book}|${engaged}|${ac_now ? 1 : 0}`
+            const fsa_now = (H as any).Lies_has_fsa(w) as boolean   // a local FSA share is granted (A.c.DL) — not the remoteWormhole proxy
+            const sig     = `${book}|${engaged}|${ac_now ? 1 : 0}|${fsa_now ? 1 : 0}`
             if (sig === w.c.last_adv_sig && w.c.last_advertise && now - (w.c.last_advertise as number) < 15000) return
             w.c.last_advertise = now
             w.c.last_adv_sig = sig
@@ -1154,6 +1160,7 @@
                 book,                            // a Book actually running — the finer "busy-with-something"
                 engaged,                         // the live lease-holder's pub; '' ⇒ free (dispatch skips + tiers on this)
                 ...(ac_now ? { ac: 1 } : {}),    // AudioContext gesture-unlocked (a needAC dispatch prefers it)
+                ...(fsa_now ? { fsa: 1 } : {}),  // a local FSA share is open (a needsFSA dispatch prefers it; a proxy-only runner refuses)
                 // (no favourite_client on the beacon: the editor sources it from the Waft:Cluster/
                 //  %HostedIdentity registry — advertise_recv reads hi.sc.favourite_client and ignores any
                 //   wire copy — so broadcasting it to every client each beat was dead weight.  The
@@ -1172,6 +1179,55 @@
             if (!w) return
             w.c.last_advertise = 0                 // bypass the 15s beacon throttle
             ;(H as any).Lies_advertise(w)
+        },
+
+        // ── Page Lifecycle warmth — the OTHER half of runner warmth (SoundSystem.keep_awake pins the tab
+        //   "playing media"; THIS closes the gap when the browser freezes/backgrounds it anyway).  A frozen
+        //    tab's setInterval keepalive PAUSES: it stops pinging, `now` stalls, and on the far side the
+        //     editor's roster ages this runner toward silent.  Two Page-Lifecycle events, listened for ONCE
+        //      per channel (both roles; the advertise halves self-gate to runner):
+        //   • resume / visibilitychange→visible — we're back: clear the ping/advertise throttles and run one
+        //      keepalive pass NOW (it re-dials if the sleep outran DEAD_MS — `now` jumps past it on wake — else
+        //       it re-pings + re-advertises), plus an explicit reconnect if the ws didn't survive the sleep.
+        //   • freeze — about to suspend: a last-gasp cold advertise so the editor drops our grant THIS beat
+        //      instead of inferring it ~45s later, and dispatch stops ringing a runner that can't answer.
+        //  Listeners are never removed — same tab-lifetime as the keepalive setInterval that never clears.
+        Lies_lifecycle_hook(w: TheC) {
+            const H = this as House
+            if (typeof document === 'undefined' || !document.addEventListener) return
+            if (w.c.lifecycle_hooked) return
+            w.c.lifecycle_hooked = true
+            const back = () => {
+                const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
+                // socket didn't survive the sleep → re-dial NOW (on_open re-announces); don't wait out scheduleRedial.
+                if (port?.ws && port.ws.readyState !== WebSocket.OPEN && port.reconnect) { try { port.reconnect() } catch { /* redial races on its own */ } }
+                // survived (or racing the redial) → un-throttle + one keepalive pass: watchdog re-dials a sleep
+                //  that outran DEAD_MS, else it re-pings + re-advertises so the editor re-lists us within a beat.
+                w.c.last_ping = 0; w.c.last_advertise = 0
+                try { (H as any).Lies_keepalive(w) } catch { /* next tick */ }
+            }
+            document.addEventListener('resume', back)                                 // Page Lifecycle: un-frozen
+            document.addEventListener('visibilitychange', () => {                      // the reliably-fired twin
+                if (document.visibilityState === 'visible') back()
+            })
+            document.addEventListener('freeze', () => { try { (H as any).Lies_going_cold(w) } catch { /* suspending */ } })
+        },
+        // Lies_going_cold — the 'freeze' last gasp.  The browser is about to SUSPEND this tab (a backgrounded
+        //  phone/laptop runner): the keepalive setInterval pauses, so pings stop and the editor would keep us in
+        //   the dispatch pool for up to LIVE_MS (45s) — a blind window where a click rings a runner that can't
+        //    answer.  Beat it: ONE advertise with ready:0 → Lies_advertise_recv parks a not-ready beacon, the
+        //     in-think roster clears r.sc.ready (line ~1252), and the pickers (dispatch_target/preempt_target)
+        //      skip a not-ready runner THIS beat.  Runner-only (advertise is); SYNCHRONOUS (freeze is the last
+        //       code before suspend — no next tick to defer to); best-effort (a send that doesn't flush before
+        //        suspend is no worse than the old silent-timeout).  Sent RAW (not via Lies_advertise) so it
+        //         bypasses the sig/throttle; resume's back() clears last_advertise, so ready:1 restores on wake.
+        Lies_going_cold(w: TheC) {
+            const H = this as House
+            if (H.Lies_role(w) !== 'runner') return
+            if (!H.Lies_channel_live(w)) return
+            const self = (H as any).Lies_self?.(w) as { prepub: string } | undefined
+            if (!self?.prepub) return
+            ;(H as any).Peeroleum_send_consumer(w, 'advertise', { from: self.prepub, ready: 0, book: '', engaged: '' })
         },
 
         // Lies_advertise_recv — the runner→editor presence beacon lands here, on the EPHEMERAL route,
@@ -1196,6 +1252,7 @@
                 //   (Waft:Cluster/%HostedIdentity), read by the projection, never written from the wire.
                 engaged:    fr?.engaged ? String(fr.engaged) : '',
                 ac:         !!fr?.ac,   // AudioContext gesture-unlocked over there — the needAC dispatch facet
+                fsa:        !!fr?.fsa,  // a local FSA share is open over there — the needsFSA dispatch facet
             }
             // no snap mutation, no bump here — the in-think projection owns the snapped tree.
         },
@@ -1215,8 +1272,7 @@
             const H = this as House
             if (H.Lies_role(w) !== 'editor') return
             const now = Date.now()
-            const LIVE_MS = 45000
-            const beacons = (w.c.beacons ?? {}) as Record<string, { last_heard: number, ready?: boolean, book?: string, engaged?: string, ac?: boolean }>
+            const beacons = (w.c.beacons ?? {}) as Record<string, { last_heard: number, ready?: boolean, book?: string, engaged?: string, ac?: boolean, fsa?: boolean }>
             let changed = false
             // a beacon from a never-seen runner NAMES it in the durable registry (role:runner).
             //  The beacon carries no authority over favourite_client — left untouched (registry-only).
@@ -1248,10 +1304,11 @@
                     if (b.ready)   { if (r.sc.ready !== 1) { r.sc.ready = 1; changed = true } } else if (r.sc.ready)   { delete r.sc.ready; changed = true }
                     if (b.engaged) { if (r.sc.engaged !== b.engaged) { r.sc.engaged = b.engaged; changed = true } } else if (r.sc.engaged) { delete r.sc.engaged; changed = true }
                     if (b.ac)      { if (r.sc.ac !== 1) { r.sc.ac = 1; changed = true } } else if (r.sc.ac) { delete r.sc.ac; changed = true }
+                    if (b.fsa)     { if (r.sc.fsa !== 1) { r.sc.fsa = 1; changed = true } } else if (r.sc.fsa) { delete r.sc.fsa; changed = true }
                 } else if (!live) {
                     // silent past the window — clear the live claims so the snap never lies that an unheard
                     //  runner is still ready|running.  Identity persists; only the grant lapses.
-                    if (r.sc.ready || r.sc.book || r.sc.engaged || r.sc.ac) { delete r.sc.ready; delete r.sc.book; delete r.sc.engaged; delete r.sc.ac; changed = true }
+                    if (r.sc.ready || r.sc.book || r.sc.engaged || r.sc.ac || r.sc.fsa) { delete r.sc.ready; delete r.sc.book; delete r.sc.engaged; delete r.sc.ac; delete r.sc.fsa; changed = true }
                     if (b) delete beacons[pub]   // expired beacon consumed; the registry keeps the runner known
                 }
             }
@@ -1266,7 +1323,6 @@
             //       reliable carrier books straight (no inseq cursor to wedge), so a cull costs nothing.
             //        promoted_at covers a Pier rung toward a runner that never answered (a probe at a stale
             //         directory entry) — heard-time alone would reap it before the call stopped ringing.
-            const PIER_CULL_MS = 5 * 60 * 1000
             const peering = w.o({ Peering: 1 })[0] as TheC | undefined
             if (peering) for (const pier of (peering.o({ Pier: 1 }) as TheC[])) {
                 const pub = pier.sc.pub as string | undefined
@@ -1314,7 +1370,7 @@
         //   Returns {to} (a free runner to ring), {} (no live runner at all → caller broadcasts, fine for a
         //    lone runner), or {exhausted} (runners exist but ALL busy → HOLD the job, never steal a running
         //     one — the no-tailspin/no-clobber rule; Lies_queue_run/Lies_drain_runs pick it up when one frees).
-        Lies_dispatch_target(w: TheC, needAC = false): { to?: string; exhausted?: boolean } {
+        Lies_dispatch_target(w: TheC, needAC = false, needsFSA = false): { to?: string; exhausted?: boolean } {
             const H   = this as House
             if (H.Lies_role(w) !== 'editor') return {}
             const me  = H.Lies_self(w)?.prepub
@@ -1327,7 +1383,11 @@
                 ? (cluster.o({ HostedIdentity: 1 }) as TheC[]).filter(h => h.sc.role === 'runner').map(h => h.sc.HostedIdentity as string)
                 : roster.map(r => r.sc.Runner as string)
             const live  = (r?: TheC) => !!r && Number(r.c.last_heard ?? 0) > 0 && now - Number(r.c.last_heard) < 45000
-            const cands = dirPubs.map(pub => ({ pub, r: slot(pub) })).filter(c => live(c.r))
+            // live AND ready: a runner that advertised ready:0 (Page-Lifecycle 'freeze', Lies_going_cold) is
+            //  HEARD (its cold beacon just landed) but declared not-taking-work — skip it NOW, ~45s before the
+            //   live-gate alone would.  Every normally-live runner carries ready:1 (advertise/ping → roster), so
+            //    this bites ONLY a going-cold runner; it is a no-op for every existing flow.
+            const cands = dirPubs.map(pub => ({ pub, r: slot(pub) })).filter(c => live(c.r) && !!c.r?.sc.ready)
             if (!cands.length) return {}                                         // nobody live → broadcast (lone runner)
             const aim = w.c.aim_runner as string | undefined
             if (aim && cands.some(c => c.pub === aim)) return { to: aim }        // the user's hand overrides
@@ -1339,10 +1399,12 @@
             if (!free.length) return { exhausted: true }                         // all live runners busy → hold, don't steal
             const tier = (c: { pub: string, r?: TheC }) => {                     // among FREE: mine ▸ unclaimed ▸ other's-favourite
                 const f = c.r?.sc.favourite_client as string | undefined
-                const base = f && f !== me ? 2 : f === me ? 0 : 1
-                return needAC && !c.r?.sc.ac ? base + 4 : base                   // needAC: every ac-live tier beats every ac-cold one
+                let base = f && f !== me ? 2 : f === me ? 0 : 1
+                if (needAC   && !c.r?.sc.ac)  base += 4                          // needAC: every ac-live tier beats every ac-cold one
+                if (needsFSA && !c.r?.sc.fsa) base += 8                          // needsFSA outranks AC: a proxy-only runner is the worst pick (a needsFSA Book refuses there)
+                return base
             }
-            let best: { pub: string } | undefined, bestTier = 9
+            let best: { pub: string } | undefined, bestTier = 99                 // ceiling above the max stacked penalty (2+4+8)
             for (const c of free) { const t = tier(c); if (t <= bestTier) { bestTier = t; best = c } }    // <= ⇒ latest wins ties
             return { to: best!.pub }
         },
@@ -1359,7 +1421,9 @@
             const me  = H.Lies_self(w)?.prepub
             const now = Date.now()
             const roster = w.o({ Runner: 1 }) as TheC[]
-            const live = (r?: TheC) => !!r && Number(r.c.last_heard ?? 0) > 0 && now - Number(r.c.last_heard) < 45000
+            // live AND ready — never reuse a going-cold runner (ready:0, Lies_going_cold) even for a preempt:
+            //  a frozen tab can't run the click, so falling through to broadcast/undefined beats ringing it.
+            const live = (r?: TheC) => !!r && Number(r.c.last_heard ?? 0) > 0 && now - Number(r.c.last_heard) < 45000 && !!r.sc.ready
             const slot = (pub?: string) => roster.find(r => r.sc.Runner === pub)
             const sticky = (w.c.aim_runner ?? w.c.rungo_runner) as string | undefined
             if (sticky && live(slot(sticky))) return sticky                       // the one we last drove
@@ -1381,11 +1445,12 @@
             const H = this as House
             const q = (w.c.pending_runs ?? []) as string[]
             if (!q.length) return
-            const needAC = !!H.Lies_book_needac?.(w, q[0])   // a held run carries only the name — re-read the board's %Storying,needAC
-            const pick = H.Lies_dispatch_target(w, needAC)
+            const needAC   = !!H.Lies_book_needac?.(w, q[0])     // a held run carries only the name — re-read the board's %Storying,needAC
+            const needsFSA = !!H.Lies_book_needsfsa?.(w, q[0])   // …and needsFSA (routes to a local-disk runner)
+            const pick = H.Lies_dispatch_target(w, needAC, needsFSA)
             if (pick.exhausted || pick.to === undefined) return   // still no free runner → keep waiting (no tailspin)
             const book = q.shift() as string
-            H.Lies_send_become_book(w, book, pick.to, needAC)
+            H.Lies_send_become_book(w, book, pick.to, needAC, needsFSA)
             H.tlog(`▶ drained held run ${book} → @${pick.to.slice(0, 8)} (${q.length} left)`)
         },
 

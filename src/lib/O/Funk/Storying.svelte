@@ -59,7 +59,7 @@
     //   editor ships the frame, runner does resetStory{Book}).  Either way ack optimistically.
     function strike() {
         if (funk.sc.of_dock)      H.i_elvisto('Lies/Lies', 'Lies_run_arm',     { path: funk.sc.of_dock as string })
-        else if (funk.sc.of_Book) H.i_elvisto('Lies/Lies', 'Lies_become_book', { book: funk.sc.of_Book as string, needAC: funk.sc.needAC })
+        else if (funk.sc.of_Book) H.i_elvisto('Lies/Lies', 'Lies_become_book', { book: funk.sc.of_Book as string, needAC: funk.sc.needAC, needsFSA: funk.sc.needsFSA })
         funk.c.verdict = { ...(funk.c.verdict as any ?? {}), phase: 'working' }
         funk.bump_version()
     }

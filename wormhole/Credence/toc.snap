@@ -36,10 +36,10 @@ Waft:Credence
         Funkcion:Storying,of_Book:MusuConceal
     What:real music,desc:real track files walked from testsounds and decoded to PCM
       Funkcion:Storying,of_Book:MusuGenerateTestsMusic,brand_new:1
-      Funkcion:Storying,of_Book:MusuCrate
-      Funkcion:Storying,of_Book:MusuReco
+      Funkcion:Storying,of_Book:MusuCrate,needMusic:1
+      Funkcion:Storying,of_Book:MusuReco,needMusic:1
       What:replication,desc:paginated C** replication of a music library across two Piers
-        Funkcion:Storying,of_Book:MusuBounce
+        Funkcion:Storying,of_Book:MusuBounce,needMusic:1
         Funkcion:Storying,of_Book:MusuReplica
     What:the platform,desc:real transport and DJ-deck software beneath the streaming stack
       What:mixer cells,desc:beatmatch and crossfade real-audio decks — plus a monitored DJ cue

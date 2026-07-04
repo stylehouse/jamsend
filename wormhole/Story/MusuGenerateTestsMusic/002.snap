@@ -1,0 +1,18 @@
+Snap:H
+  H:MusuGenerateTestsMusic,Run
+    A:MusuGenerateTestsMusic
+      self,round=3	{"mung":["age"]}
+      w:MusuGenerateTestsMusic
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        req:gen_testsounds,finished
+        generated=8,dir:testsounds
+          wav:The Sines - Deep A.wav
+          wav:The Sines - Middle A.wav
+          wav:The Sines - High A.wav
+          wav:Fourier Four - Query E.wav
+          wav:Fourier Four - Echo E.wav
+          wav:DJ Oscillo - Dorian D.wav
+          wav:DJ Oscillo - Groove G.wav
+          wav:DJ Oscillo - Cosmic C.wav
+        witnessed:collection_rendered

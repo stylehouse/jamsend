@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783165854860
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783178992837
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -53,7 +53,6 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/spec/Wormhole_backends_handover.md,name:Wormhole_backends_handover.md,noticed_at=1782180409139
     Doc:src/lib/O/spec/reactivity_docs.md,name:reactivity_docs.md,noticed_at=1782180409139
     Doc:src/lib/O/spec/stho_primer.md,name:stho_primer.md,noticed_at=1782180409139
-    Doc:src/lib/O/spec/GhostCompile_feedback_handover.md,name:GhostCompile_feedback_handover.md,noticed_at=1782213118877
     Doc:src/lib/O/spec/Lang_handover.md,name:Lang_handover.md,noticed_at=1782287148306
     Doc:src/lib/O/spec/Lens_posable_TODO.md,name:Lens_posable_TODO.md,noticed_at=1782364945395
     Doc:src/lib/O/spec/Music_todo.md,name:Music_todo.md,noticed_at=1782375234557
@@ -73,6 +72,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/spec/Runner_network.md,name:Runner_network.md,noticed_at=1783047540868
     Doc:src/lib/O/spec/Stemdex_spec.md,name:Stemdex_spec.md,noticed_at=1783057968719
     Doc:src/lib/O/spec/Robustness_plan.md,name:Robustness_plan.md,noticed_at=1783165854860
+    Doc:src/lib/O/spec/PWA_install_handover.md,name:PWA_install_handover.md,noticed_at=1783178992837
   open_dir:src/lib/O
   group:src/lib/O,dir:src/lib/O
     sub:src/lib/O/D,name:D
@@ -122,6 +122,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/LangCurse.svelte,name:LangCurse,noticed_at=1782894116496
     Doc:src/lib/O/LangHold.svelte,name:LangHold,noticed_at=1782897064868
     Doc:src/lib/O/LiesKeep.svelte,name:LiesKeep,noticed_at=1782897927957
+    Doc:src/lib/O/runner_liveness.mjs,name:runner_liveness.mjs,noticed_at=1783177000219
   open_dir:Ghost/M
   group:Ghost/M,dir:Ghost/M
     Doc:Ghost/M/Radiola.g,name:Radiola,noticed_at=1782393617713

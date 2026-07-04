@@ -139,7 +139,11 @@ say_trust(w, pier):
 // hear_hello — verify their key starts-with the pub we expect, record %heard +
 //  the proven pubkey, set %Ud (their identity, survives resets — spec §6), and
 //   if we have not said yet, say now (the single-initiator path; a no-op under the
-//    symmetric dual-init). A failed verify writes nothing — the gap is the result
+//    symmetric dual-init). A failed verify writes nothing — the gap is the resulthear
+_hello
+_trust
+Pier_next_seq
+
 //     (spec §8: a corrupt hello that never arrives is the test passing).
 // Returns true on a clean verify, false on reject — the serial inbox handler
 //  (req_unemit) stamps %error on a false (the deliver-failure path, spec

@@ -1,5 +1,8 @@
 <script module lang="ts">
     import type { TheC as TheCm } from "$lib/data/Stuff.svelte"
+    // liveness thresholds from the ONE shared home (also read by the reaper + the runner_ask CLI) —
+    //  so the rack's "live" window and its cull age can't drift from what the roster actually enforces.
+    import { LIVE_MS, PIER_CULL_MS } from "$lib/O/runner_liveness.mjs"
     // runner_run — the Runner Funkcion's pumped watcher (Lies pumps it once a tick, like
     //  storying_run).  Pure C-tree, no H: it reads the peer ping (%channel_peer, stamped by
     //   Lies_pong_recv) off w:Lies and, on a liveness TRANSITION (dialing→silent→live), stamps
@@ -153,7 +156,7 @@
     //     %w), so attributing it to the anon peer was a lie.  When identified runners EXIST but none reads
     //      fresh, show NO anon — the live channel is one of THEM with a stale beacon (see stale_hint), not
     //       a different anonymous runner.
-    let any_live_runner = $derived(rack.some(v => v.heard && now - v.heard < 45000))
+    let any_live_runner = $derived(rack.some(v => v.heard && now - v.heard < LIVE_MS))
 
     // cull the stale-live from the DISPLAY: a runner we HEARD this session but that has gone silent
     //  past OFFLINE_CULL_MS drops out of the rack, so dead icons don't accumulate.  Only the heard
@@ -161,7 +164,7 @@
     //    where last_heard rides .c off-snap and resets) stays as the durable roster ('offline'), else
     //     every reload would blank the rack until the ~15s beacons re-land.  Display-only — the snapped
     //      %Runner roster (owner-recorded, 1:1 with %HostedIdentity) is untouched.
-    const OFFLINE_CULL_MS = 5 * 60 * 1000
+    const OFFLINE_CULL_MS = PIER_CULL_MS   // deliberately the SAME age the reaper culls the Pier (LiesLies Lies_runner_roster) — the icon and its transport let go together
     let rack_shown = $derived(rack.filter(v => !(v.heard && now - v.heard > OFFLINE_CULL_MS)))
 
     let anon = $derived.by(() => {
@@ -184,7 +187,7 @@
     const runner_link = (v: { heard: number, book: string, engaged: string, sent: string, sent_at: number }) => {
         const sent_live = !!v.sent && (!v.sent_at || now - v.sent_at < 30000)
         const age  = v.heard ? Math.round((now - v.heard) / 1000) : 0
-        const rung = !v.heard ? 'offline' : now - v.heard < 15000 ? 'talking' : now - v.heard < 45000 ? 'lagging' : 'silent'
+        const rung = !v.heard ? 'offline' : now - v.heard < 15000 ? 'talking' : now - v.heard < LIVE_MS ? 'lagging' : 'silent'
         return rung === 'offline' ? { glyph: '○', cls: 'dial',    text: 'offline' }
              : rung === 'silent'  ? { glyph: '◍', cls: 'silent',  text: `silent ${age}s` }
              : v.book             ? { glyph: '▶', cls: 'live',    text: `playing ${base(v.book)}` }

@@ -574,7 +574,7 @@
     }
 
     // Viewport indicator — a glowing margin puck sitting EXACTLY over the method
-    //  buttons whose header line is currently on screen, plus the key of the region the
+    //  buttons whose SPAN overlaps the visible range, plus the key of the region the
     //  viewport top is in (for the zoom-up).  The old scroll-fraction puck can't align
     //  with the hive (its vertical layout no longer maps 1:1 to source lines), so we
     //  read the editor's visible line range, find the on-screen methods, and span the
@@ -618,12 +618,15 @@
             foldedRanges(v.state).between(0, doc.length, (f, t) => { folds.push({ from: f, to: t }) })
             const in_fold = (pos: number) => folds.some(fr => pos > fr.from && pos < fr.to)
 
-            // puck — span the DOM rects of the methods whose header is on screen
+            // puck — span the DOM rects of the methods whose SPAN overlaps the viewport.
+            //  Testing the whole [from..to] span (not just the header offset) keeps the
+            //  puck lit in the middle of a big method, where the header has scrolled off
+            //  the top: it overlaps as long as its body still straddles the visible range.
             const lmmTop = lmm.getBoundingClientRect().top
             const scRect = sc.getBoundingClientRect()
             let top = Infinity, bot = -Infinity
             for (const d of all_defs) {
-                if (d.from < fromPos || d.from > toPos) continue
+                if (d.to < fromPos || d.from > toPos) continue
                 if (in_fold(d.from)) continue
                 const el = strip.querySelector(`[data-mid="${d.from}"]`) as HTMLElement | null
                 if (!el) continue

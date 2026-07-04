@@ -11,7 +11,7 @@ import { Selection } from "$lib/mostly/Selection.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Musuation(): string { return 'b64fd681e2ac521f' },
+    Ghostmeta_Ghost_Story_Musuation(): string { return '01fbc99095e75a68' },
 
 // Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Music_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
@@ -330,59 +330,6 @@ async Musu_float(w) { const H = this;
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)
-
-},
-// Musu_require_collection — the real-music Books' PRECONDITION (MusuCrate/MusuReco/MusuBounce): the `base`
-//  collection must hold at least `need` tracks, else there is nothing to decode.  Three block cases, each
-//   LATCHES w.c.collection_missing and sets w.c.step_blocked DIRECTLY — the generic UNTRIED verdict snap_step
-//    lands (the SAME field Story_demand_audio's timeout uses: "couldn't run here", never a false green), set
-//     directly so it works the moment the gen HMRs (no dependency on a freshly-added House method re-mixing):
-//      (1) no nav at all, (2) the walk STALLED (a remote atime_async proxy starving under the belief mutex, or
-//       an editor-down remote share — bounded so the Book aborts with a message, never hangs empty), (3) too
-//        few tracks.  Returns the discovered paths, or null when it blocked.  Requirement DISCOVERED by the call.
-async Musu_require_collection(w, base, need) {
-    let nav = this.Crate_nav()
-    if (!nav) {
-        w.c.collection_missing = 'no disk share yet — run Story:MusuGenerateTestsMusic first (grant a share)'
-        w.c.step_blocked = w.c.collection_missing
-        return null
-    }
-    let paths = await this.Musu_walk_bounded(nav, base, 8)
-    if (paths == null) {
-        w.c.collection_missing = 'cannot reach the ' + base + ' collection (disk/editor not responding) — run Story:MusuGenerateTestsMusic first'
-        w.c.step_blocked = w.c.collection_missing
-        return null
-    }
-    if (paths.length < need) {
-        w.c.collection_missing = 'no ' + base + ' collection (' + paths.length + '/' + need + ' tracks) — run Story:MusuGenerateTestsMusic first'
-        w.c.step_blocked = w.c.collection_missing
-        return null
-    }
-    return paths
-
-},
-// Musu_walk_bounded — Crate_nav_paths raced against `secs`: a STALLED nav (a remote atime_async proxy whose
-//  reply starves under the belief mutex, or an editor-down remote share) resolves to null instead of hanging
-//   the Book empty forever.  The setTimeout fires while the drive is async-suspended (the event loop is free at
-//    the await), so the race escapes even when the nav's own reply can't be serviced.  An empty [] stays [] —
-//     only a genuine stall returns null.
-async Musu_walk_bounded(nav, base, secs) {
-    let walk = this.Crate_nav_paths(nav, base)
-    let timer = new Promise(function(res) { setTimeout(function() { res(null) }, secs * 1000) })
-    let paths = await Promise.race([walk, timer])
-    if (paths == null) return null
-    return paths
-
-},
-// Musu_collection_gate — re-assert a latched missing-collection block at the TOP of a real-music drive, EVERY
-//  beat: step_blocked clears per snap, so a one-shot block marks only ONE step untried — re-asserting marks the
-//   WHOLE run untried with the same "generate first" pointer.  No walk (reads the latch).  Returns 1 when
-//    blocked (the drive bails this beat), else nothing.
-Musu_collection_gate(w) {
-    if (w.c.collection_missing) {
-        w.c.step_blocked = w.c.collection_missing
-        return 1
-    }
 },
 //#endregion
 
@@ -1861,7 +1808,6 @@ async MusuCrate_drive(w, req) {
         if (!w.oa({skipped: 'no_audio'})) w.i({skipped: 'no_audio'})
         return
     }
-    if (this.Musu_collection_gate(w)) return
     let n = (this.c.run)?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
@@ -1876,11 +1822,9 @@ async MusuCrate_drive(w, req) {
 // MusuCrate_open — beat 2: erect the whole platform's visible filaments (so the snap IS the roadmap), then
 //  seed prandle, stand up the rastock with its desires, and send the first read out.
 async MusuCrate_open(w) {
-    let paths = await this.Musu_require_collection(w, 'testsounds', 4)
-    if (!paths) return
     this.MusuCrate_filaments(w)
     this.Musu_seed(31337)
-    let ra = await this.Crate_rastock_start(w, 'testsounds', 4, paths)
+    let ra = await this.Crate_rastock_start(w, 'testsounds', 4)
     this.Crate_rastock_issue(ra)
 
 },
@@ -2904,7 +2848,6 @@ async MusuBounce_drive(w, req) {
         if (!w.oa({skipped: 'no_audio'})) w.i({skipped: 'no_audio'})
         return
     }
-    if (this.Musu_collection_gate(w)) return
     let n = (this.c.run)?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
@@ -2922,8 +2865,6 @@ async MusuBounce_drive(w, req) {
 //    B's receive handler.  B receives every chunk (integrity-checked) but only PLAYS the tracks it didn't skip.
 async MusuBounce_setup(w) {
     w.i({reached: "step_2"})
-    let paths = await this.Musu_require_collection(w, 'testsounds', 1)
-    if (!paths) return
     let gatA = new SoundSystem({})
     let gatB = new SoundSystem({})
     await gatA.init()
@@ -2944,18 +2885,21 @@ async MusuBounce_setup(w) {
     this.Musu_seed(20260702)
     let nav = this.Crate_nav()
     let recs = []
-    let CAP = 20
-    let k = 0
-    while (k < paths.length && recs.length < 3) {
-        let p = await this.Crate_nav_payload(nav, 'testsounds', paths[k])
-        if (p && p.chunks && p.chunks.length >= 4) {
-            recs.push({ chunks: p.chunks.slice(0, CAP), title: p.title })
+    if (nav) {
+        let paths = await this.Crate_nav_paths(nav, 'testsounds')
+        let CAP = 20
+        let k = 0
+        while (k < paths.length && recs.length < 3) {
+            let p = await this.Crate_nav_payload(nav, 'testsounds', paths[k])
+            if (p && p.chunks && p.chunks.length >= 4) {
+                recs.push({ chunks: p.chunks.slice(0, CAP), title: p.title })
+            }
+            k = k + 1
         }
-        k = k + 1
     }
     w.c.records = recs
-    // paths held ≥1 track but none decoded (files present yet unreadable) → a DIFFERENT gap than a missing
-    //  collection; keep the soft skip (not the "generate first" block, which would misdiagnose it).
+    // no collection on disk (generator never run, or empty share) → SKIP cleanly, don't red.  It's a setup
+    //  gap, not a failure — the same shape MusuCrate/MusuPier use for a missing capability.
     if (!recs.length) {
         if (!w.oa({skipped: 'no_tracks'})) w.i({skipped: 'no_tracks'})
         return
@@ -4012,7 +3956,6 @@ async MusuReco_drive(w, req) {
         if (!w.oa({ skipped: 'no_audio' })) w.i({ skipped: 'no_audio' })
         return
     }
-    if (this.Musu_collection_gate(w)) return
     let n = (this.c.run)?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
@@ -4036,8 +3979,6 @@ async MusuReco_drive(w, req) {
 //      exact-sample check.
 async MusuReco_setup(w) {
     w.i({reached: "step_2"})
-    let paths = await this.Musu_require_collection(w, 'testsounds', 2)
-    if (!paths) return
     let link = await this.Lake_link(w, 'DJ', 'Crowd')
     w.c.tx = link[0]
     w.c.rx = link[1]
@@ -4050,6 +3991,11 @@ async MusuReco_setup(w) {
     src.c.up = w
     w.c.repli_src = src
     let nav = this.Crate_nav()
+    let paths = nav ? await this.Crate_nav_paths(nav, 'testsounds') : []
+    if (paths.length < 2) {
+        if (!w.oa({ skipped: 'no_collection' })) w.i({ skipped: 'no_collection' })
+        return
+    }
     await this.Crate_transcode_begin(src, nav, 'testsounds', paths[0], 'trk0')
     await this.Crate_transcode_begin(src, nav, 'testsounds', paths[1], 'trk1')
 

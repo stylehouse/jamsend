@@ -40,15 +40,16 @@ let { M } = $props()
 //  Pure-tone tracks: the FREQUENCY IS THE LABEL, so the real-time race test decodes back which track
 //   played each 50ms.  Musical + well-spaced (≥110Hz apart) so an FFT bin never confuses two.  artist-title
 //    rides the filename ("Artist - Title.wav") — exactly what Crate_meta_from_name reads back.
+//  Real-length (60-80s each) so streaming/preview/restock behave against a proper track, not a 4s stub.
 const TEST_TONES: Array<{ artist: string, title: string, freq: number, secs: number }> = [
-    { artist: 'The Sines',    title: 'Deep A',   freq: 220.00, secs: 4 },
-    { artist: 'The Sines',    title: 'Middle A', freq: 440.00, secs: 5 },
-    { artist: 'The Sines',    title: 'High A',   freq: 1760.0, secs: 3 },
-    { artist: 'Fourier Four', title: 'Query E',  freq: 329.63, secs: 4 },
-    { artist: 'Fourier Four', title: 'Echo E',   freq: 1318.5, secs: 4 },
-    { artist: 'DJ Oscillo',   title: 'Dorian D', freq: 587.33, secs: 6 },
-    { artist: 'DJ Oscillo',   title: 'Groove G', freq: 783.99, secs: 3 },
-    { artist: 'DJ Oscillo',   title: 'Cosmic C', freq: 1046.5, secs: 5 },
+    { artist: 'The Sines',    title: 'Deep A',   freq: 220.00, secs: 72 },
+    { artist: 'The Sines',    title: 'Middle A', freq: 440.00, secs: 64 },
+    { artist: 'The Sines',    title: 'High A',   freq: 1760.0, secs: 80 },
+    { artist: 'Fourier Four', title: 'Query E',  freq: 329.63, secs: 68 },
+    { artist: 'Fourier Four', title: 'Echo E',   freq: 1318.5, secs: 60 },
+    { artist: 'DJ Oscillo',   title: 'Dorian D', freq: 587.33, secs: 76 },
+    { artist: 'DJ Oscillo',   title: 'Groove G', freq: 783.99, secs: 66 },
+    { artist: 'DJ Oscillo',   title: 'Cosmic C', freq: 1046.5, secs: 78 },
 ]
 
 // wav_bytes — a mono 16-bit PCM WAV of a pure sine (20ms fade in/out to avoid clicks).  Binary encode is
@@ -1645,16 +1646,17 @@ await M.eatfunc({
             const H    = this as House
             const book = e.sc.book as string | undefined
             if (!book) return
-            const needAC = !!e.sc.needAC   // carried from the Credence cell (of_Book,needAC:1) → secured pre-run
+            const needAC   = !!e.sc.needAC     // carried from the Credence cell (of_Book,needAC:1) → secured pre-run
+            const needsFSA = !!e.sc.needsFSA   // ditto (of_Book,needsFSA:1) → routes to an fsa-live runner, proxy refuses
             if (H.Lies_is_editor(w)) {
-                const pick = H.Lies_dispatch_target(w, needAC)   // {to} ▸ {} broadcast ▸ {exhausted} preempt-our-runner; needAC prefers an ac-live runner
+                const pick = H.Lies_dispatch_target(w, needAC, needsFSA)   // {to} ▸ {} broadcast ▸ {exhausted} preempt-our-runner; needAC/needsFSA prefer a capable runner
                 if (pick.exhausted) {
                     // A single click means "run THIS now" — don't queue behind a run we've moved past.  Preempt
                     //  the runner we already drove: send it the new book, its Story_reset cancels the old run.
                     //   (StoryTimes keeps the hold/parallel-acquire path — that's the multi-run sweep, below.)
                     const pre = (H as any).Lies_preempt_target(w) as string | undefined
                     if (pre) {
-                        const sent = H.Lies_send_become_book(w, book, pre, needAC)
+                        const sent = H.Lies_send_become_book(w, book, pre, needAC, needsFSA)
                         H.tlog(`↻ all runners busy — preempting @${pre.slice(0, 8)} → ${book} ${sent ? '(re-instructed, prior run canceled)' : '(channel down)'}`)
                         return
                     }
@@ -1676,10 +1678,10 @@ await M.eatfunc({
                     }
                     H.Lies_relay_note(w, `⚠ no runner known at all — broadcasting ${book} (lone/unregistered runner)`, true)
                 }
-                const sent = H.Lies_send_become_book(w, book, pick.to, needAC)
+                const sent = H.Lies_send_become_book(w, book, pick.to, needAC, needsFSA)
                 H.tlog(`🎬 editor become_book → ${book} ${pick.to ? `@${pick.to.slice(0, 8)}` : '(broadcast)'} ${sent ? '(sent)' : '(channel down — no runner)'}`)
             } else {
-                H.Lies_become_book_drive(w, book, needAC)   // runner, or a bare dev Lies with a co-resident Run
+                H.Lies_become_book_drive(w, book, needAC, needsFSA)   // runner, or a bare dev Lies with a co-resident Run
             }
         },
 
@@ -1687,12 +1689,13 @@ await M.eatfunc({
         //  rungo channel).  Returns false when the channel is down so the caller can say so.
         //   `to` (a runner prepub, Engage_integration C2) addresses ONE runner on the grid: promote a
         //    Pier for it and ship to:<prepub>; absent, the legacy single-address role broadcast.
-        Lies_send_become_book(w: TheC, book: string, to?: string, needAC = false): boolean {
+        Lies_send_become_book(w: TheC, book: string, to?: string, needAC = false, needsFSA = false): boolean {
             const H = this as House
             if (!H.Lies_is_editor(w) || !H.Lies_channel_live(w)) return false
+            const caps = { ...(needAC ? { needAC: 1 } : {}), ...(needsFSA ? { needsFSA: 1 } : {}) }   // capability facets carried to the runner
             if (to) {
                 if (!H.Lies_runner_pier(w, to)) return false
-                ;(H as any).Peeroleum_send_to(w, to, 'become_book', { book, ...(needAC ? { needAC: 1 } : {}) })
+                ;(H as any).Peeroleum_send_to(w, to, 'become_book', { book, ...caps })
                 // light the ☎ on this runner's rack slot — a job in flight, awaiting its ack.  Cleared when
                 //  the runner advertises a `book` (it picked up + started → ▶), in Lies_advertise_recv.
                 const r = w.oai({ Runner: to }) as TheC          // snapped now (1:1 with the registry); the ☎ rides off-snap
@@ -1703,7 +1706,7 @@ await M.eatfunc({
             }
             const pier = (w.o({ Peering: 1 })[0] as TheC | undefined)?.o({ Pier: 1 })[0] as TheC | undefined
             if (!pier) return false
-            ;(H as any).Peeroleum_send_consumer(w, 'become_book', { book, ...(needAC ? { needAC: 1 } : {}) })
+            ;(H as any).Peeroleum_send_consumer(w, 'become_book', { book, ...caps })
             H.tlog(`📤 become_book → runner: ${book}`)
             return true
         },
@@ -1732,7 +1735,7 @@ await M.eatfunc({
             const book = frame?.book as string | undefined
             if (!book) return false
             H.tlog(`📥 become_book recv: ${book}`)
-            H.Lies_become_book_drive(w, book, !!frame?.needAC)
+            H.Lies_become_book_drive(w, book, !!frame?.needAC, !!frame?.needsFSA)
             return true
         },
 
@@ -1743,14 +1746,35 @@ await M.eatfunc({
         //  land here).  When the authority says this Book needAC (from Waft:Credence), SECURE the real
         //   voice FIRST — before the run begins — so the AC-wait is never inside a step's clock.  Then
         //    open the durable run-record, stash awaiting_verdict{book}, and resetStory onto it.
-        async Lies_become_book_drive(w: TheC, book: string, needAC = false) {
+        async Lies_become_book_drive(w: TheC, book: string, needAC = false, needsFSA = false) {
             const H = this as House
+            // the needsFSA gate (FIRST — a proxy-only runner can secure nothing usefully): a disk-heavy Book
+            //  must run on a LOCAL FSA share, never the remoteWormhole proxy (each read/write there crosses a
+            //   belief-loop beat, so a per-beat Book overruns its budget — MusuCrate).  Only the proxy here ⇒
+            //    REFUSE cleanly (nothing tried, not a failure) so the authority re-routes to an fsa-live runner.
+            if (needsFSA && !H.Lies_has_fsa(w)) {
+                H.Lies_runner_phase(w, 'fsa_blocked', { book })
+                H.tlog(`⌛ become_book ${book} blocked — needs a local FSA share; this runner has only the remote proxy (nothing tried)`)
+                return
+            }
             if (needAC && !(await H.Lies_secure_audio(w, book))) {
                 // not granted within the window — refuse to begin.  Nothing was tried; report blocked so
                 //  the run authority (%rungo / editor Brink) reads "couldn't run here", not a failure.
                 H.Lies_runner_phase(w, 'audio_blocked', { book })
                 H.tlog(`⌛ become_book ${book} blocked — AudioContext not granted (nothing tried)`)
                 return
+            }
+            // the needMusic twin: a real-music Book needs its testsounds collection on disk BEFORE it begins
+            //  (the walk takes a while / a stalled remote share must not sit inside a step's clock).  Refuse
+            //   cleanly with the EXACT reason (no_share | stalled | no_directory) — nothing tried, not a failure.
+            if (H.Lies_book_needmusic(w, book)) {
+                const sec = await H.Lies_secure_collection(w, book, 'testsounds', 1)
+                if (!sec.ok) {
+                    H.Lies_runner_phase(w, 'collection_blocked', { book })
+                    H.Upkeep_errand(`needMusic:${book}`, { kind: 'disk', label: `${book} — ${sec.why}`, phase: 'failed' }); H.Lies_upkeep(w)
+                    H.tlog(`⌛ become_book ${book} blocked — ${sec.why} (${sec.reason}; nothing tried)`)
+                    return
+                }
             }
             w.c.awaiting_verdict = { book }
             H.Lies_runner_begin(w, book)   // open the durable run-record (the become_book twin of rungo)
@@ -1790,6 +1814,59 @@ await M.eatfunc({
             if (live) H.Lies_runner_phase(w, 'audio_secured', { book })   // UNBEG — clear the editor's beg the moment AC lands
             H.Upkeep_errand(`needAC:${book}`, { kind: 'audio', label: book, phase: live ? 'ok' : 'failed' }); H.Lies_upkeep(w)
             return live || !!gat.AC_ready
+        },
+
+        // Lies_book_needmusic — does this Book need the testsounds collection on disk? the needMusic twin of
+        //  Lies_book_needac.  Reads %Storying,of_Book:<book>,needMusic off the loaded Credence board; absent
+        //   ⇒ false (no gate).  Same board-walk as needAC so held/swept runs (bare Book name) re-read it here.
+        Lies_book_needmusic(w: TheC, book: string): boolean {
+            let found = false
+            const walk = (c: TheC) => { for (const k of c.o() as TheC[]) {
+                if (k.sc.Funkcion === 'Storying' && k.sc.of_Book === book && k.sc.needMusic) { found = true; return }
+                walk(k); if (found) return } }
+            for (const waft of w.o({ Waft: 1 }) as TheC[]) { walk(waft); if (found) break }
+            return found
+        },
+
+        // Lies_book_needsfsa — does this Book need a LOCAL FSA share (fast disk), not the slow remoteWormhole
+        //  proxy?  The needsFSA twin of Lies_book_needac / needmusic: reads %Storying,of_Book:<book>,needsFSA
+        //   off the loaded Credence board.  A disk-heavy, timing-sensitive Book (bin_read/bin_write per beat —
+        //    each hop across the proxy costs a belief-loop beat, so a per-beat Book overruns its budget, cf
+        //     MusuCrate/MusuGenerateTestsMusic) declares it, so dispatch routes it to an fsa-live runner and a
+        //      proxy-only runner REFUSES it rather than dragging every read through the ~beat-latency wormhole.
+        Lies_book_needsfsa(w: TheC, book: string): boolean {
+            let found = false
+            const walk = (c: TheC) => { for (const k of c.o() as TheC[]) {
+                if (k.sc.Funkcion === 'Storying' && k.sc.of_Book === book && k.sc.needsFSA) { found = true; return }
+                walk(k); if (found) return } }
+            for (const waft of w.o({ Waft: 1 }) as TheC[]) { walk(waft); if (found) break }
+            return found
+        },
+
+        // Lies_has_fsa — does THIS runner hold a real local FSA share (a granted DirectoryHandle on A:Wormhole,
+        //  A.c.DL → WormholeNav(DL)), as opposed to the RemoteWormholeNav proxy (is_remote) or no nav at all?
+        //   The capability behind needsFSA: the advertise beacon publishes it (fsa:1) and the become gate reads it.
+        Lies_has_fsa(_w: TheC): boolean {
+            const H = this as House
+            return !!(H.top_House().o({ A: 'Wormhole' })[0] as TheC | undefined)?.c.DL
+        },
+
+        // Lies_secure_collection — the PRE-RUN COLLECTION gate, the needMusic twin of Lies_secure_audio: a
+        //  real-music Book must have decodable tracks on disk BEFORE it begins (the walk takes a while, and a
+        //   stalled remote share must never sit inside a step's clock — same reason needAC secures audio first).
+        //    Returns {ok}, or a STANDARD reason — three DISTINCT conditions, never merged into one fuzzy line:
+        //     no_share     — no nav/share granted at all (open a share)
+        //     stalled      — the walk timed out: a remote atime_async proxy not answering (bounded, never hangs)
+        //     no_directory — the walk ANSWERED but the collection isn't there (< need tracks → run the generator)
+        async Lies_secure_collection(w: TheC, book: string, base: string, need: number): Promise<{ ok: boolean, reason?: string, why?: string }> {
+            const H = this as House
+            const nav = (H as any).Crate_nav?.()
+            if (!nav) return { ok: false, reason: 'no_share', why: 'no disk share granted — open a share first' }
+            const timer = new Promise<null>(res => setTimeout(() => res(null), 8000))
+            const paths = await Promise.race([(H as any).Crate_nav_paths(nav, base) as Promise<string[]>, timer])
+            if (paths == null)       return { ok: false, reason: 'stalled', why: `the ${base} share is not responding (remote proxy timed out) — check the share/editor` }
+            if (paths.length < need) return { ok: false, reason: 'no_directory', why: `no ${base} collection (${paths.length}/${need} tracks) — run Story:MusuGenerateTestsMusic first` }
+            return { ok: true }
         },
 
         // Lies_audio_probe — one-shot fleet question: does an online AudioContext actually RUN here
@@ -1839,10 +1916,11 @@ await M.eatfunc({
         //       file is written.  Needs a writable share (no headless).
         Musu_gen_testsounds(w: TheC): TheC {
             const H = this as House
-            // 120s budget, not 30: eight ~400KB binary writes, each mkdirp+getWriter+write+a full dir
-            //  expand() (Housing.bin_write), legitimately overran the old 30 and left the req timing out
-            //   MID-WRITE (a live ttlilt in the snap, no `generated`) even when the WAVs were landing.
-            //    A live ttlilt in ANY snap means an expecting() TIMED OUT — never the normal path.
+            // 120s budget (generous): the eight WAV writes now fire as ONE parallel window (below), so the
+            //  batch settles in ~a single wormhole round-trip, well under budget — the ceiling only catches a
+            //   genuinely dead share.  (The old SERIAL loop cost eight belief-loop beats and overran even 120s
+            //    on a freshly-reloaded runner paying the seq-collision retry tax — a live ttlilt in the snap,
+            //     no `generated`.  A live ttlilt in ANY snap means an expecting() TIMED OUT — never the normal path.)
             return H.expecting(w, 'gen_testsounds', 120, async () => {
                 const nav = H.top_House().o({ A: 'Wormhole' })[0]?.c.nav as any
                 // Honest diagnosis: a MISSING nav is "grant a share"; a nav that just lacks bin_write is a
@@ -1858,18 +1936,30 @@ await M.eatfunc({
                 const bounded = (p: Promise<any>, what: string) => Promise.race([
                     p, new Promise((_r, rej) => setTimeout(() => rej(new Error(`${what} did not complete in 15s`)), 15_000)),
                 ])
-                let made = 0
-                for (const t of TEST_TONES) {
+                // ONE window, not a serial round-trip per file.  Over the wormhole each write settles a
+                //  belief-loop beat LATER (transport frames ride post_do — a do_fn can't observe a round trip
+                //   intra-beat), so eight SERIAL awaits cost eight beats of latency — enough to overrun the
+                //    budget once the fresh-reload seq-collision retry tax is added on top.  Fire all eight at
+                //     once (each its own corr; the editor drains them serially but the RUNNER waits ONE window,
+                //      not eight) so the whole batch settles in ~a single round-trip.  allSettled so a single
+                //       dead write names itself in the gen_error without sinking the ones that landed.
+                const writes = TEST_TONES.map(t => {
                     const name = `${t.artist} - ${t.title}.wav`
-                    try {
-                        await bounded(nav.bin_write(dir, name, wav_bytes(t.freq, t.secs)), `bin_write ${name}`)
-                        made = made + 1
-                    } catch (e) {
-                        w.i({ gen_error: `write stalled at ${name} (${String(e)}) — the disk share looks dead; re-open/re-grant it (open share) and re-run` })
-                        return
-                    }
+                    return { name, run: bounded(nav.bin_write(dir, name, wav_bytes(t.freq, t.secs)), `bin_write ${name}`) }
+                })
+                const settled = await Promise.allSettled(writes.map(x => x.run))
+                const failed  = writes.filter((_, i) => settled[i].status === 'rejected')
+                if (failed.length) {
+                    // enumerate the stalled files by name (a `stalled:<name>` child each), not a bare count —
+                    //  the snap should say WHICH writes died so a re-open/re-grant is targeted, not guesswork.
+                    const e = w.i({ gen_error: `${failed.length}/${settled.length} writes stalled — the disk share looks dead; re-open/re-grant it (open share) and re-run` })
+                    for (const f of failed) e.i({ stalled: f.name })
+                    return
                 }
-                w.i({ generated: made, dir })
+                // enumerate what landed (a `wav:<name>` child each) beside the count, so the snap shows the
+                //  actual collection, not just "generated:8".
+                const g = w.i({ generated: settled.length, dir })
+                for (const x of writes) g.i({ wav: x.name })
             })
         },
 
@@ -1939,8 +2029,8 @@ await M.eatfunc({
                         if (!chk.ok) { ok = false; result = { error: chk.reason, engagement: H.Lies_engagement(w) ?? null } }
                         else {
                             H.Lies_engage(w, client, ask.book)
-                            H.Lies_become_book_drive(w, ask.book, !!ask.needAC)   // CLI-carried needAC → secure AC pre-run (it read Credence for us)
-                            result = { accepted: true, book: ask.book, uid: H.Lies_rungo_record(w)?.sc.uid ?? null, engaged: client, needAC: !!ask.needAC }
+                            H.Lies_become_book_drive(w, ask.book, !!ask.needAC, !!ask.needsFSA)   // CLI-carried caps → secure AC / gate FSA pre-run (it read Credence for us)
+                            result = { accepted: true, book: ask.book, uid: H.Lies_rungo_record(w)?.sc.uid ?? null, engaged: client, needAC: !!ask.needAC, needsFSA: !!ask.needsFSA }
                         }
                     }
                 } else if (op === 'release') {
@@ -2531,9 +2621,10 @@ await M.eatfunc({
         //  a bare/co-resident Lies drives locally.
         Lies_storytimes_dispatch(w: TheC, book: string): boolean {
             const H = this as House
-            const needAC = H.Lies_book_needac(w, book)   // the sweep queue holds bare names — the board says which need AC
+            const needAC   = H.Lies_book_needac(w, book)     // the sweep queue holds bare names — the board says which need AC
+            const needsFSA = H.Lies_book_needsfsa(w, book)   // …and which need a local FSA share (proxy runners refuse)
             if (H.Lies_is_editor(w)) {
-                const pick = H.Lies_dispatch_target(w, needAC)
+                const pick = H.Lies_dispatch_target(w, needAC, needsFSA)
                 if (pick.exhausted) { H.Lies_queue_run(w, book); H.tlog(`⏸ all runners busy — held ${book}`); return false }
                 if (pick.to === undefined) {
                     // no live runner yet — HOLD if any is known (post-reconnect fold lag), don't spray all (see e_Lies_become_book)
@@ -2542,11 +2633,11 @@ await M.eatfunc({
                     const reg = cluster ? (cluster.o({ HostedIdentity: 1 }) as TheC[]).filter(h => h.sc.role === 'runner').length : 0
                     if (known || reg) { H.Lies_queue_run(w, book); H.tlog(`⏸ StoryTimes held — runners known (${known}/${reg}) but none live yet: ${book}`); return false }
                 }
-                const sent = H.Lies_send_become_book(w, book, pick.to, needAC)
+                const sent = H.Lies_send_become_book(w, book, pick.to, needAC, needsFSA)
                 H.tlog(`🎟 StoryTimes → ${book} ${pick.to ? `@${pick.to.slice(0, 8)}` : '(broadcast — no runner known)'} ${sent ? '(sent)' : '(channel down — no runner)'}`)
                 return sent
             }
-            H.Lies_become_book_drive(w, book, needAC)                // bare dev Lies with a co-resident Run
+            H.Lies_become_book_drive(w, book, needAC, needsFSA)      // bare dev Lies with a co-resident Run
             return true
         },
 

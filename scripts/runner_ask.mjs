@@ -39,6 +39,9 @@
 //    run finishes red (outcome not ok) or the request errors, else 0 — so it scripts.
 import { WebSocket } from 'ws'
 import { readFileSync } from 'node:fs'
+// the SHARED liveness thresholds + verdict — the same numbers the ghost (LiesLies.svelte) reads,
+//  so the CLI can no longer drift to a worse death criterion than the layer it's questioning.
+import { DEAD_MS, SLUGGISH_MS, liveness } from '../src/lib/O/runner_liveness.mjs'
 
 const OPS = ['ping', 'probe', 'run', 'state', 'steps', 'snap', 'rungos', 'accept', 'release', 'runners']
 
@@ -83,6 +86,22 @@ function bookNeedsAC(book) {
 		if (!line.startsWith('Funkcion:Storying')) continue
 		const parts = line.split(',')
 		if (parts.includes(`of_Book:${book}`) && parts.includes('needAC:1')) return true
+	}
+	return false
+}
+
+// bookNeedsFSA — the needsFSA twin of bookNeedsAC: `Funkcion:Storying,of_Book:<book>,…,needsFSA:1`.  So the
+//  CLI carries needsFSA even if you never read Credence → the editor routes the run to an fsa-live runner and
+//   a proxy-only runner refuses it (a disk-heavy Book must not crawl every read through the remoteWormhole hop).
+function bookNeedsFSA(book) {
+	if (!book) return false
+	let txt
+	try { txt = readFileSync(new URL('../wormhole/Credence/toc.snap', import.meta.url), 'utf8') } catch { return false }
+	for (const raw of txt.split('\n')) {
+		const line = raw.trim()
+		if (!line.startsWith('Funkcion:Storying')) continue
+		const parts = line.split(',')
+		if (parts.includes(`of_Book:${book}`) && parts.includes('needsFSA:1')) return true
 	}
 	return false
 }
@@ -133,13 +152,16 @@ function clientId() {
 const CLIENT = clientId()
 
 const ask = { op, client: CLIENT }
-if (op === 'run')  { ask.book = arg; if (bookNeedsAC(arg)) ask.needAC = 1 }   // Credence-read → runner secures AC pre-run
+if (op === 'run')  { ask.book = arg; if (bookNeedsAC(arg)) ask.needAC = 1; if (bookNeedsFSA(arg)) ask.needsFSA = 1 }   // Credence-read → runner secures AC / routes to an FSA runner pre-run
 if (op === 'snap') ask.n = Number(arg)
 if (uid) ask.uid = uid
 
 const HTTP       = process.env.RUNNER_URL || 'http://172.17.0.1:9091'
 const WS_URL     = HTTP.replace(/^http/, 'ws').replace(/\/$/, '') + '/relay'
-const TIMEOUT_MS = Number(process.env.RUNNER_ASK_TIMEOUT_MS || 8000)
+// a single request waits just PAST sluggish before giving up — the old 8s was BELOW sluggish
+//  (9s), so a busy-but-alive tab read as no-reply.  The `--watch` loop below then budgets a whole
+//   DEAD_MS of accumulated silence (across polls) before it calls the runner dead.
+const TIMEOUT_MS = Number(process.env.RUNNER_ASK_TIMEOUT_MS || (SLUGGISH_MS + 3000))
 const WATCH_MS   = Number(process.env.RUNNER_WATCH_MS || 120000)
 const stamp      = Date.now()
 const cliAddr    = `runcli-${stamp}`   // ephemeral addr — relay LOGS the connect/disconnect; reply is corr-routed
@@ -196,6 +218,7 @@ else if (op === 'snap' && reply.result?.got_snap) {
 	// A needAC Book stalls PRE-run asking for a gesture (the run record only opens once AC lands).  Surface
 	//  that — out of the blue if you never read Credence — so you know to go grant it in the runner tab.
 	if (op === 'run' && reply.result?.needAC) console.error(`🎤 ${arg} needs AudioContext — grant it in the runner tab${watch ? ' (watching for the grant below; blocks in ~60s if not)' : '; add --watch to see the grant, or it blocks in ~60s'}`)
+	if (op === 'run' && reply.result?.needsFSA) console.error(`📁 ${arg} needs a local FSA share — the editor routes it to an fsa-live runner; a proxy-only runner refuses (open a share there if it blocks)`)
 }
 
 // --watch (run|state): poll state until the Storyrun phase settles done|failed, narrating each change.
@@ -203,10 +226,28 @@ if (watch && (op === 'run' || op === 'state') && reply.control === 'runner_ack')
 	const needAC = !!reply.result?.needAC
 	const t0 = stamp
 	let last = '', acWaited = false
+	// the death-clock: `heard` = last time the tab answered a poll, `progress` = last time the run
+	//  moved a step.  A single missed poll is NOT death — a sluggish (busy) tab can skip one 12s
+	//   probe.  Only DEAD_MS (20s) of accumulated silence AND no forward progress is red, judged by
+	//    the SHARED liveness() verdict.  Forward progress resets the clock (a run stepping IS life).
+	let heard = Date.now(), progress = Date.now(), quietNoted = 0
 	while (Date.now() - t0 < WATCH_MS) {
 		await new Promise(r => setTimeout(r, 700))
 		const s = await sendAsk(ws, { op: 'state' })
-		if (s.control !== 'runner_ack') { console.error(`✗ state: ${s.error}`); exitCode = 1; break }
+		if (s.control !== 'runner_ack') {
+			const now = Date.now()
+			if (liveness({ now, heard, progress }) === 'dead') {
+				const quiet = Math.round((now - Math.max(heard, progress)) / 1000)
+				console.error(`✗ runner DEAD — silent ${quiet}s (> ${DEAD_MS / 1000}s) with no progress — giving up`)
+				exitCode = 1; break
+			}
+			if (now - quietNoted > 4000) {   // a busy tab within the DEAD budget: narrate, keep waiting
+				quietNoted = now
+				console.error(`… runner quiet ${Math.round((now - Math.max(heard, progress)) / 1000)}s/${DEAD_MS / 1000}s (busy?) — still waiting`)
+			}
+			continue
+		}
+		heard = Date.now()
 		const run = s.result?.run, out = s.result?.outcome
 		// needAC: no run record yet ⇒ still stalling for the AC gesture (Lies_become_book_drive opens the
 		//  record only AFTER AC is secured).  Keep the operator informed; cap the wait at ~65s (the runner's
@@ -218,7 +259,7 @@ if (watch && (op === 'run' || op === 'state') && reply.control === 'runner_ack')
 		}
 		if (acWaited && run) { acWaited = false; console.error(`✓ AudioContext granted — running`) }
 		const tag = run ? `${run.phase} ${run.n ?? '?'}/${run.total ?? '?'}` : 'no run'
-		if (tag !== last) { console.log(`… ${JSON.stringify({ run, outcome: out })}`); last = tag }
+		if (tag !== last) { console.log(`… ${JSON.stringify({ run, outcome: out })}`); last = tag; progress = Date.now() }   // a step advanced ⇒ reset the death-clock
 		if (run && (run.phase === 'done' || run.phase === 'failed')) { exitCode = out && out.ok ? 0 : 1; break }
 	}
 }

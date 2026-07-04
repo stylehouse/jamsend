@@ -9,16 +9,55 @@ export class SoundSystem {
     M: Modus
 
     AC: AudioContext | null = $state(null)
+    // audio keep-awake — a silent, always-running source that flags this tab as "playing media" so the
+    //  browser spares it the worst background-throttle|freeze|discard (a backgrounded runner tab that the
+    //   OS puts to sleep stops answering the relay — the "runner went quiet" failure class).  This is the
+    //    OS/tab-liveness keep-awake, DISTINCT from the CHANNEL keepalive (LiesLies' 5s ping/advertise).
+    //     The live nodes ride the instance (this SoundSystem lives on top.c.musu_gat — .c, never snapped
+    //      or encoded); gain=0 mirrors Audiolet.mute so it is inaudible and never touches the music path.
+    awakeOsc:  OscillatorNode | null = null
+    awakeGain: GainNode | null = null
     constructor(opt) {
         Object.assign(this,opt)
     }
     close() {
+        this.keep_awake_stop()
         if (this.AC) {
             // Close the AudioContext
             this.AC.close().catch(console.error);
             this.AC = null;
         }
         this.AC_ready = false;
+    }
+
+    // keep_awake — pin the silent keep-awake source onto the ALREADY-GRANTED AudioContext.  Idempotent
+    //  (one osc, ever) so it is safe to call every tick.  No context yet ⇒ no-op: we only ATTACH to a
+    //   context that already exists, never force one (that would need a user gesture — not our job here).
+    //    gain=0 is the same mute idiom Audiolet.mute uses, kept as a live source so the graph is pulled
+    //     and the browser keeps the tab flagged as playing media.
+    keep_awake() {
+        if (!this.AC) return          // no granted context — nothing to hold open (don't force a gesture)
+        if (this.awakeOsc) return     // already holding — idempotent
+        try {
+            const osc  = this.AC.createOscillator();
+            const gain = this.AC.createGain();
+            gain.gain.value = 0;      // muted: inaudible, no interference with the real streaming graph
+            osc.connect(gain);
+            gain.connect(this.AC.destination);
+            osc.start();
+            this.awakeOsc  = osc;
+            this.awakeGain = gain;
+        } catch (er) {
+            console.error("keep_awake attach failed:", er);
+        }
+    }
+    // keep_awake_stop — release the silent source (the runner role ended, or the context is closing).
+    keep_awake_stop() {
+        try { this.awakeOsc?.stop() } catch { /* already stopped */ }
+        this.awakeOsc?.disconnect();
+        this.awakeGain?.disconnect();
+        this.awakeOsc  = null;
+        this.awakeGain = null;
     }
     now() {
         return this.AC?.currentTime || 0
