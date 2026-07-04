@@ -35,8 +35,7 @@ Waft:Credence
       What:concealment,desc:filling a dropout with real audio beats dropping to silence
         Funkcion:Storying,of_Book:MusuConceal
     What:real music,desc:real track files walked from testsounds and decoded to PCM
-      Funkcion:Storying,of_Book:MusuGenerateTestsMusic,brand_new:1
-      Funkcion:Storying,of_Book:MusuCrate,needMusic:1
+      Funkcion:Storying,of_Book:MusuGenerateTestsMusic,brand_new:1,needsFSA:1
       Funkcion:Storying,of_Book:MusuReco,needMusic:1
       What:replication,desc:paginated C** replication of a music library across two Piers
         Funkcion:Storying,of_Book:MusuBounce,needMusic:1

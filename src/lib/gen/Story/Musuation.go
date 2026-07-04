@@ -11,7 +11,7 @@ import { Selection } from "$lib/mostly/Selection.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Musuation(): string { return '01fbc99095e75a68' },
+    Ghostmeta_Ghost_Story_Musuation(): string { return '80f72675ccd6d1d7' },
 
 // Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Music_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
@@ -1781,140 +1781,10 @@ MusuRadio_witness(w) {
 },
 //#endregion
 
-//#region crate — REAL MUSIC: a VISIBLE rastock builds itself from testsounds/, then we stream it
-// ══ MusuCrate — watch req:rastock desire, the reads come back, the records get made ════════════════
-//  Real music (flat or artist/album/track) DISCOVERED by walking the Wormhole nav (Crate_nav_paths — a
-//   granted FSA share, the OPFS cloud seed, or a runner's editor-proxied disk, all the same) then read +
-//    decoded through it (bin_read → OfflineAudioContext, gesture-free).  The point is the PROCESS is visible:
-//    a `rastock` particle DESIRES `want` records and fills one notch per beat — each beat ISSUES a read
-//     (a %reading goes out), the prior read COMES BACK (off-snap payload), and a %record gets MADE with real
-//      artist/album/title/seconds/loudness.  Then we stream each glide-vs-none.  The snap narrates it all.
-//        beat 2     OPEN    — stand up rastock (want=4, pool=N) + issue the first read
-//        beats 3-6  FILL    — harvest what came back (a %record), issue the next read; rastock grows visibly
-//        beat 7     STREAM  — render each record glide-vs-none (real dropouts)
-//        beat 8     witness — real_records / playable / helps
-MusuCrate(A,w) {
-    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
-        await this.MusuCrate_drive(w,req)
-        req.sc.ok = 1
-
-    })
-},
-// MusuCrate_drive — needs fetch + OfflineAudioContext (skip where there's no Web Audio).  Per-beat dispatch
-//  off step_n (req-local did_step).  Reads are issued one beat and harvested the next — they resolve in the
-//   gap between beats (a fetch+decode is far quicker than a step's quiescence).
-async MusuCrate_drive(w, req) {
-    if (typeof OfflineAudioContext === 'undefined') {
-        if (!w.oa({skipped: 'no_audio'})) w.i({skipped: 'no_audio'})
-        return
-    }
-    let n = (this.c.run)?.c.step_n
-    if (n != null && n !== req.c.did_step) {
-        req.c.did_step = n
-        if (n === 2) await this.MusuCrate_open(w)
-        if (n >= 3 && n <= 6) await this.MusuCrate_fill(w, n)
-        if (n === 7) await this.MusuCrate_play(w)
-        if (n === 8) this.MusuCrate_witness(w)
-    }
-    await this.Musu_float(w)
-
-},
-// MusuCrate_open — beat 2: erect the whole platform's visible filaments (so the snap IS the roadmap), then
-//  seed prandle, stand up the rastock with its desires, and send the first read out.
-async MusuCrate_open(w) {
-    this.MusuCrate_filaments(w)
-    this.Musu_seed(31337)
-    let ra = await this.Crate_rastock_start(w, 'testsounds', 4)
-    this.Crate_rastock_issue(ra)
-
-},
-// MusuCrate_filaments — the OVERALL streaming platform as a COMPACT structured map: one %stage row per
-//  pipe filament (of/name/built), nothing more.  The per-stage refinements (the todo/done detail that used
-//   to crowd this snap) now live in spec/Radio_spec.md (§5) — the platform's destination doc; the platform
-//    particle carries a `spec` pointer to it.  Keep this a clean nine-row skeleton; itemise in the spec.
-MusuCrate_filaments(w) {
-    let plat = w.oai({platform: 1, name: 'jamsend', spec: 'src/lib/O/spec/Radio_spec.md'})
-    plat.c.up = w
-    plat.oai({stage: 1, of: 1, name: 'Collection', built: 1})
-    plat.oai({stage: 1, of: 2, name: 'Rastock', built: 1})
-    plat.oai({stage: 1, of: 3, name: 'Player', built: 1})
-    plat.oai({stage: 1, of: 4, name: 'LiveEdge', built: 1})
-    plat.oai({stage: 1, of: 5, name: 'Pier', built: 1})
-    plat.oai({stage: 1, of: 6, name: 'Mixer', built: 1})
-    plat.oai({stage: 1, of: 7, name: 'DJ-cue', built: 1})
-    plat.oai({stage: 1, of: 8, name: 'Mesh', built: 1})
-    plat.oai({stage: 1, of: 9, name: 'Stretch', built: 1})
-    return plat
-
-},
-// MusuCrate_fill — beats 3-6: issue ONE read, then `expecting` (the ttlilt layer) advises Story to hold
-//  the snap until that read lands + harvests into a %record.  Non-blocking: think returns, the work runs
-//   off the Atime mutex, and the CAUSAL resolve (the decode landing) makes the fill GRADUAL *and*
-//    deterministic — exactly one more record each beat (3→1 4→2 5→3 6→4), no decode-timing race over the
-//     snap, and no 20s mutex hold.  (If a decode ever overran 25s the ttlilt would snap an in-progress
-//      picture instead — the bounded escape.)  `fill_<n>` is a fresh finishing req per beat.
-async MusuCrate_fill(w, n) {
-    let ra = w.o({rastock: 1})[0]
-    if (!ra) return
-    this.Crate_rastock_issue(ra)
-    this.expecting(w, 'fill_' + n, 25, async () => {
-        await this.Crate_rastock_drain(ra, 25000)
-        await this.Crate_rastock_harvest(ra)
-    })
-
-},
-// MusuCrate_play — beat 7: stream each gathered record glide-vs-none (offline render), record real dropouts
-//  per record + tally where Glide won.  By now every fill beat's `expecting` has resolved (each held the
-//   snap until its read landed), so all `want` records exist; the harvest here is a defensive no-op.
-async MusuCrate_play(w) {
-    let ra = w.o({rastock: 1})[0]
-    if (!ra) return
-    await this.Crate_rastock_harvest(ra)
-    let recs = ra.o({record: 1})
-    let rep = w.oai({report: 1})
-    let helped = 0
-    let played = 0
-    for (const rec of recs) {
-        let nch = +(rec.sc.nchunks ?? 0)
-        if (nch < 8) continue
-        let stock = this.Crate_radiostock(rec)
-        let prof = this.Musu_profile(nch, 777 + played)
-        let g = await this.Musu_render_offline(nch, prof, null, stock, false, 'glide')
-        let none = await this.Musu_render_offline(nch, prof, null, stock, false, 'none')
-        let gd = +(g.gaps ?? 0) + +(g.underran ?? 0)
-        let nd = +(none.gaps ?? 0) + +(none.underran ?? 0)
-        rec.sc.glide_drop = gd
-        rec.sc.none_drop = nd
-        rec.bump()
-        if (gd < nd) helped = helped + 1
-        played = played + 1
-    }
-    rep.sc.played = played
-    rep.sc.helped = helped
-    rep.bump()
-
-},
-// MusuCrate_witness — the realness, EARNED.  red if nothing decoded (real_records) or Glide didn't help
-//  real audio (helps) -- not satisfiable by synth or arithmetic.
-MusuCrate_witness(w) {
-    let ra = w.o({rastock: 1})[0]
-    if (!ra) return
-    let recs = ra.o({record: 1})
-    let rep = w.o({report: 1})[0]
-    let real = recs.filter(r => r.sc.real && +(r.sc.nchunks ?? 0) > 8).length
-    let secs_ok = recs.filter(r => +(r.sc.seconds ?? 0) >= 1).length
-    let helped = +(rep?.sc.helped ?? 0)
-    // real_records: real audio files actually fetched + DECODED to PCM (red if the codec is unsupported).
-    if (real >= 2 && !(w.oa({witnessed: "real_records"}))) w.i({witnessed: "real_records"})
-    // playable: the decoded tracks have real durations (not empty/corrupt buffers).
-    if (secs_ok >= 2 && !(w.oa({witnessed: "playable"}))) w.i({witnessed: "playable"})
-    // helps: Glide cut real dropouts vs no-control on REAL music (at least one track) -- the claim that matters.
-    if (helped >= 1 && !(w.oa({witnessed: "helps"}))) w.i({witnessed: "helps"})
-
-},
+//#region real-music-gen — the one-off dev-setup Book that RENDERS the deterministic test collection
 // ══ MusuGenerateTestsMusic — one-off dev-setup Book: RENDER the deterministic pure-tone test-music
-//  collection (freq = the track's label) into testsounds/, REPLACING it as the canonical fixture so
-//   MusuCrate + the real-time race test run against known frequencies.  Engine = Musu_gen_testsounds
+//  collection (freq = the track's label) into testsounds/, REPLACING it as the canonical fixture so the
+//   real-music Books + the real-time race test run against known frequencies.  Engine = Musu_gen_testsounds
 //    (LiesFunk) — writes JUST each "Artist - Title.wav" via the granted share (no manifest; Crate walks the
 //     folder, the freq↔track map lives in code).  Strike ONCE on a dev instance with a share open.
 MusuGenerateTestsMusic(A,w) {
@@ -2899,7 +2769,7 @@ async MusuBounce_setup(w) {
     }
     w.c.records = recs
     // no collection on disk (generator never run, or empty share) → SKIP cleanly, don't red.  It's a setup
-    //  gap, not a failure — the same shape MusuCrate/MusuPier use for a missing capability.
+    //  gap, not a failure — the same shape MusuPier and others use for a missing capability.
     if (!recs.length) {
         if (!w.oa({skipped: 'no_tracks'})) w.i({skipped: 'no_tracks'})
         return
@@ -3922,7 +3792,7 @@ async MusuReplica_witness_retire(w) {
 //    only recommend a Record you've STARTED (≥1 transcoded chunk — Repli_recommend refuses otherwise).  And
 //     the stream begins with the FIRST preview while the transcoder still runs: a want that outruns the
 //      frontier PARKS (%parked_want) and serves the moment the frontier passes — nobody waits for the set.
-//       REAL MUSIC: the tracks are testsounds/ files walked off the Wormhole nav and decoded (the MusuCrate
+//       REAL MUSIC: the tracks are testsounds/ files walked off the Wormhole nav and decoded (the real-decode
 //        path) — the transcode is a real decode released progressively, not synth conjured in-run.
 //         beat 2      SETUP     — link DJ/Crowd, arm repli; nav-walk testsounds; two UN-transcoded real
 //                                 Records (trk0/trk1: full decode staged, NOTHING released, total promised)
@@ -3972,7 +3842,7 @@ async MusuReco_drive(w, req) {
 
 },
 // MusuReco_setup — the two Piers over the loopback + A's library of REAL tracks: the first two of the
-//  sorted testsounds walk, decoded through the nav (the MusuCrate path) but UN-transcoded — the decode
+//  sorted testsounds walk, decoded through the nav (the real-decode path) but UN-transcoded — the decode
 //   waits on c.raw_chunks, nothing serveable yet.  PAGE=8 deliberately does NOT divide trk0's 100 chunks,
 //    so its final page is a SHORT [96,100) of 4 — the partial-final-page path of a real (arbitrary-length)
 //     track, not an aligned demo.  That makes `complete` a real proof: a broken partial page fails the

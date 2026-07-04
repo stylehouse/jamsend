@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Crate(): string { return 'bc0a951bac07d872' },
+    Ghostmeta_Ghost_M_Crate(): string { return '6e06ff89b4267aee' },
 
 // Crate.g — rifling through a music collection.  A modern port of the old Directory.svelte tree-walk +
 //  Agency.svelte's meander() random-walk, redesigned for THIS platform: raw File System Access API (no
@@ -265,109 +265,6 @@ Crate_meta_from_path(path) {
     let artist = (segs.length >= 3) ? segs[0] : (parts.length > 1 ? parts[0].trim() : '')
     let album = (segs.length >= 3) ? segs[1] : ((segs.length === 2) ? segs[0] : '')
     return { artist: artist, album: album, title: title }
-
-},
-// Crate_rastock_start — stand up the rastock with its desires (want) + the DISCOVERED track list (paths
-//  ride .c; the live nav rides .c too, so every read reaches the same disk the walk found them on).
-async Crate_rastock_start(w, base, want, names) {
-    let nav = this.Crate_nav()
-    if (!names) names = nav ? await this.Crate_nav_paths(nav, base) : []
-    let ra = w.i({rastock: 1, base: base, want: want, have: 0, pool: names.length})
-    ra.c.up = w
-    ra.c.names = names
-    ra.c.nav = nav
-    return ra
-
-},
-// Crate_rastock_issue — send ONE read out: pick a pseudo-random track, mark a %reading (visible, pending),
-//  and kick the async read+decode that lands the payload on the %reading's .c when it returns.  Won't
-//   over-issue beyond `want` (records + in-flight reads).
-Crate_rastock_issue(ra) {
-    let names = ra.c.names
-    if (!names || !names.length) return
-    if (ra.o({record: 1}).length + ra.o({reading: 1}).length >= +(ra.sc.want ?? 0)) return
-    // dedup: don't re-read a path already in flight or already recorded (prandle can collide).
-    let taken = {}
-    for (const rd of ra.o({reading: 1})) taken[rd.sc.path] = 1
-    for (const rc of ra.o({record: 1})) taken[rc.sc.name] = 1
-    let path = null
-    let tries = 0
-    while (tries < 16) {
-        tries = tries + 1
-        let p = names[this.prandle(names.length)]
-        if (!taken[p]) {
-            path = p
-            break
-        }
-    }
-    if (!path) return
-    let rd = ra.i({reading: 1, path: path})
-    rd.c.up = ra
-    this.Crate_read_into(ra.c.nav, ra.sc.base, path, rd)
-
-},
-// Crate_read_into — the async leg: read+decode, stash the payload on rd.c.result, mark back (OFF-snap on
-//  rd.c.back, NOT rd.sc.back).  Off-snap is deliberate: the flag flips at decode-completion time, which
-//   RACES the beat snaps (a fast decode lands before its beat's snap → the %reading dige flickers run-to-
-//    run).  Off-snap, a %reading always snaps as just its path (deterministic); drain/harvest read c.back.
-async Crate_read_into(nav, base, path, rd) {
-    let res = await this.Crate_nav_payload(nav, base, path)
-    rd.c.result = res || null
-    rd.c.back = 1
-    rd.bump()
-
-},
-// Crate_rastock_harvest — turn reads that CAME BACK into %record rows (real metadata), drop the spent
-//  %reading, update have.  Returns how many records it made this pass.
-async Crate_rastock_harvest(ra) {
-    let made = 0
-    for (const rd of ra.o({reading: 1})) {
-        if (!rd.c.back) continue
-        // a lingering reading whose path is ALREADY a record (its removal from a prior pass hadn't landed
-        //  before this pass re-saw it) — drop it, never double-record.
-        if (ra.oa({record: 1, name: rd.sc.path})) {
-            await ra.rm({reading: 1, path: rd.sc.path})
-            continue
-        }
-        let res = rd.c.result
-        if (res) {
-            let rec = ra.i({record: 1, name: rd.sc.path, artist: res.artist, album: res.album, title: res.title, loudness: res.loudness, seconds: res.seconds, nchunks: res.nchunks, real: 1})
-            rec.c.up = ra
-            rec.c.chunks = res.chunks
-            made = made + 1
-        } else {
-            ra.i({missed: rd.sc.path})
-        }
-        // AWAIT the removal.  An un-awaited rm leaves the reading in-flight: the NEXT beat re-harvests it
-        //  into a DUPLICATE record, AND its replace transaction is still open when the have-write below runs
-        //   -> "nested replace() transactions" throws -> harvest throws -> MusuCrate_play never makes report.
-        await ra.rm({reading: 1, path: rd.sc.path})
-    }
-    // raw sc write + bump — the proven MusuStock_advance pattern (cur.sc.at = …; cur.bump()) re-diges into
-    //  the snap.  NOT r({have:N}): called with one arg it builds pattern {have:1} then i({have:N}), which
-    //   CREATES a stray child %have particle and never touches ra.sc.have — the old "fix" that left have=0
-    //    on the rastock AND a phantom %have child, while its replace collided with the loop's rm above.
-    ra.sc.have = ra.o({record: 1}).length
-    ra.bump()
-    return made
-
-},
-// Crate_rastock_drain — wait until every in-flight %reading has come back (c.back) or a budget elapses.
-//  The reads are fired concurrently and a real mp3 decode can outlast a few quick beats, so WITHOUT this
-//   the record COUNT at witness time is a race (have=2 one run, 3 the next — same tracks, same order, just
-//    how many landed).  Draining before the final harvest makes the count deterministic (= want), so the
-//     snap is stable and the Book is acceptable.  performance.now() (real wall clock — fine in the runner).
-async Crate_rastock_drain(ra, ms) {
-    let budget = ms || 20000
-    let t0 = performance.now()
-    while ((performance.now() - t0) < budget) {
-        let pending = 0
-        for (const rd of ra.o({reading: 1})) {
-            if (!rd.c.back) pending = pending + 1
-        }
-        if (pending === 0) return
-        await new Promise(r => setTimeout(r, 50))
-    }
 
 },
 // ── the preview→stream transcoder (stage 2's split: Radio_spec §5.2) ─────────────────────────────────

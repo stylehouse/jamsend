@@ -1,7 +1,4 @@
 <script lang="ts">
-    import Intro from "$lib/p2p/Intro.svelte";
-
-
-    
+    import Mound from "$lib/V/Mound.svelte";
 </script>
-<Intro />
+<Mound />

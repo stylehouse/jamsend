@@ -1,5 +1,5 @@
 // Mixer.g — the CELLULAR music world: many sound-sources at once, pitch/rate-bent to mix.  Stage 6 of the
-//  jamsend platform (Musuation.g MusuCrate_filaments).  A "Cell" is one playing source (one Audiolet at
+//  jamsend platform (Radio_spec §5, the platform stages).  A "Cell" is one playing source (one Audiolet at
 //   run time; here a {chunks,rate,gain} descriptor an OfflineAudioContext renders).  N Cells sum at the
 //    one destination — that's the mix.  This ghost is the REAL software the DJ deck rides: beat detection,
 //     beatmatch (the rate that aligns two tempos), the multi-cell sum render, and an equal-power crossfade.

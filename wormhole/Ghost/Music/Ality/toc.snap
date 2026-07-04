@@ -11,7 +11,6 @@ Waft:Ghost/Music/Ality,active
     Funkcion:Storying,of_Book:MusuGlide
     Funkcion:Storying,of_Book:MusuTune
     Funkcion:Storying,of_Book:MusuRadio
-    Funkcion:Storying,of_Book:MusuCrate
     Funkcion:Storying,of_Book:MusuMix
     Funkcion:Storying,of_Book:MusuMesh
     Funkcion:Storying,of_Book:MusuCue
@@ -121,14 +120,6 @@ Waft:Ghost/Music/Ality,active
       Point,method:MusuRadio_play
       Point,method:MusuRadio_animate
       Point,method:MusuRadio_witness
-    What:MusuCrate (REAL music — fetch+decode ./testsounds and stream it)
-      Doc:Ghost/Story/Musuation.g
-      Point,method:MusuCrate_buffer
-      Point,method:MusuCrate_play
-      Point,method:MusuCrate_witness
-      Doc:Ghost/M/Crate.g
-      Point,method:Crate_fetch_record
-      Point,method:Crate_fetch_some
     What:MusuMix (the cellular mixer — beat detection / beatmatch / multi-cell sum / crossfade)
       Doc:Ghost/Story/Musuation.g
       Point,method:MusuMix_load
@@ -219,9 +210,8 @@ Waft:Ghost/Music/Ality,active
     Point,text:9.1
     What:the real library (FSA share gate → Records off /music)
       Doc:Ghost/Story/Musuation.g
-      Point,method:MusuCrate_buffer
       Doc:Ghost/M/Crate.g
-      Point,method:Crate_fetch_record
+      Point,method:Crate_transcode_begin
     What:Selections sendable to Piers (the oldest note meets the Se)
       Doc:src/lib/mostly/Selection.svelte.ts
       Point,text:sendable

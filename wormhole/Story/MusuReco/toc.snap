@@ -48,6 +48,8 @@ story:MusuReco
       style:background-color,v:#a6483a
     matstyle:Crush_Tree
       style:background-color,v:#36c974
+    matstyle:skipped
+      style:background-color,v:#af43db
   Plan
   Opt
     waitCyto
@@ -57,8 +59,7 @@ story:MusuReco
       w:MusuReco
         crushCyto
   TimeSpool
-    TimeTotal:beliefs,avg=2.386
-      sample=0.316,at=1783111755
+    TimeTotal:beliefs,avg=2.359
       sample=0.488,at=1783112031
       sample=0.411,at=1783112144
       sample=0.472,at=1783112220
@@ -68,8 +69,8 @@ story:MusuReco
       sample=0.453,at=1783132773
       sample=20.104,at=1783156973
       sample=0.404,at=1783174191
-    TimeTotal:step,avg=0.217
-      sample=0.029,at=1783111755
+      sample=0.051,at=1783181079
+    TimeTotal:step,avg=0.215
       sample=0.044,at=1783112031
       sample=0.037,at=1783112144
       sample=0.043,at=1783112220
@@ -79,6 +80,7 @@ story:MusuReco
       sample=0.041,at=1783132773
       sample=1.828,at=1783156973
       sample=0.037,at=1783174191
+      sample=0.005,at=1783181079
   step,dige:3dbd760e21c9003f
   step=2,dige:ccd32f76dbb85dec
   step=3,dige:ad78d3c0f6f77959

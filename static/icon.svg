@@ -1,0 +1,47 @@
+<svg width="512" height="512" viewBox="0 0 512 512" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>jamsend — a monolith on the ceiling of a hall, seen from below</title>
+  <defs>
+    <!-- cosmic halo the slab is silhouetted against, high on the ceiling -->
+    <radialGradient id="halo" cx="50%" cy="30%" r="62%">
+      <stop offset="0%"  stop-color="#26386a" stop-opacity="0.85"/>
+      <stop offset="42%" stop-color="#141d38" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#06070c" stop-opacity="0"/>
+    </radialGradient>
+    <!-- the slab face: darker at the far (top) end, faintly lit at the near end -->
+    <linearGradient id="slab" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#080910"/>
+      <stop offset="100%" stop-color="#181b26"/>
+    </linearGradient>
+    <!-- soft glow at the far edge (the classic alignment shine) -->
+    <radialGradient id="align" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"  stop-color="#eaf0ff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#eaf0ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- full-bleed dark ground so the icon stays solid under a maskable crop -->
+  <rect width="512" height="512" fill="#06070c"/>
+  <rect width="512" height="512" fill="url(#halo)"/>
+
+  <!-- hall converging to a vanishing point high overhead: you are on your back looking up -->
+  <g stroke="#2c3c66" stroke-width="1.4" opacity="0.30">
+    <line x1="8"   y1="512" x2="256" y2="110"/>
+    <line x1="120" y1="512" x2="256" y2="110"/>
+    <line x1="256" y1="512" x2="256" y2="110"/>
+    <line x1="392" y1="512" x2="256" y2="110"/>
+    <line x1="504" y1="512" x2="256" y2="110"/>
+    <line x1="8"   y1="356" x2="256" y2="110"/>
+    <line x1="504" y1="356" x2="256" y2="110"/>
+  </g>
+
+  <!-- the alignment shine behind the slab's far end -->
+  <ellipse cx="256" cy="160" rx="70" ry="18" fill="url(#align)"/>
+
+  <!-- the monolith, foreshortened: near end (bottom) large, far end (top) receding -->
+  <polygon points="208,452 304,452 270,162 242,162" fill="url(#slab)"/>
+  <!-- cool rim so the black slab reads against the dark hall -->
+  <polygon points="208,452 304,452 270,162 242,162" fill="none" stroke="#6f82ad" stroke-width="1.5" opacity="0.45"/>
+  <!-- brighter light-catching long edge, and the crisp far top edge -->
+  <line x1="208" y1="452" x2="242" y2="162" stroke="#93a6cf" stroke-width="1.6" opacity="0.55"/>
+  <line x1="242" y1="162" x2="270" y2="162" stroke="#eaf0ff" stroke-width="2" opacity="0.75"/>
+</svg>

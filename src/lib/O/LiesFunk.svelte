@@ -54,7 +54,12 @@ const TEST_TONES: Array<{ artist: string, title: string, freq: number, secs: num
 
 // wav_bytes — a mono 16-bit PCM WAV of a pure sine (20ms fade in/out to avoid clicks).  Binary encode is
 //  DSL-hostile, so it lives here (break-glass) and the .g Book orchestrates.  decodeAudioData reads it.
-function wav_bytes(freq: number, secs: number, sr = 48000): Uint8Array {
+//  8kHz sample rate is DELIBERATE, not a stub: the highest tone is 1760Hz, so Nyquist (4kHz) keeps 2.3x
+//   headroom — the sines are captured losslessly, yet the files are ~6x smaller than 48kHz (a 70s track is
+//    ~1.1MB, not ~6.7MB).  That matters because these tracks travel the beat-latency wormhole to the
+//     consumer Books (MusuReco/MusuBounce) and a fat file overruns a step's budget.  Consumers decodeAudioData
+//      + resample to the context rate anyway, and MusuBounce's peak still lands on the true fundamental.
+function wav_bytes(freq: number, secs: number, sr = 8000): Uint8Array {
     const n = Math.floor(sr * secs)
     const fade = Math.min(Math.floor(sr * 0.02), Math.floor(n / 2))
     const dataLen = n * 2
@@ -1750,7 +1755,7 @@ await M.eatfunc({
             const H = this as House
             // the needsFSA gate (FIRST — a proxy-only runner can secure nothing usefully): a disk-heavy Book
             //  must run on a LOCAL FSA share, never the remoteWormhole proxy (each read/write there crosses a
-            //   belief-loop beat, so a per-beat Book overruns its budget — MusuCrate).  Only the proxy here ⇒
+            //   belief-loop beat, so a per-beat Book overruns its budget).  Only the proxy here ⇒
             //    REFUSE cleanly (nothing tried, not a failure) so the authority re-routes to an fsa-live runner.
             if (needsFSA && !H.Lies_has_fsa(w)) {
                 H.Lies_runner_phase(w, 'fsa_blocked', { book })
@@ -1832,7 +1837,7 @@ await M.eatfunc({
         //  proxy?  The needsFSA twin of Lies_book_needac / needmusic: reads %Storying,of_Book:<book>,needsFSA
         //   off the loaded Credence board.  A disk-heavy, timing-sensitive Book (bin_read/bin_write per beat —
         //    each hop across the proxy costs a belief-loop beat, so a per-beat Book overruns its budget, cf
-        //     MusuCrate/MusuGenerateTestsMusic) declares it, so dispatch routes it to an fsa-live runner and a
+        //     MusuGenerateTestsMusic) declares it, so dispatch routes it to an fsa-live runner and a
         //      proxy-only runner REFUSES it rather than dragging every read through the ~beat-latency wormhole.
         Lies_book_needsfsa(w: TheC, book: string): boolean {
             let found = false

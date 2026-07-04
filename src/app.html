@@ -4,6 +4,18 @@
 		<meta charset="utf-8" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+		<!-- PWA install: the manifest carries name/icons/start_url for Android + desktop.
+		     iOS ignores the manifest's display/name and reads the apple-* meta instead, so
+		     both are needed.  apple-touch-icon points at the SVG for engines that accept it;
+		     a raster monolith PNG for iOS is still owed (see spec/PWA_install_handover.md). -->
+		<link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
+		<meta name="theme-color" content="#06070c" />
+		<link rel="apple-touch-icon" href="%sveltekit.assets%/icon.svg" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		<meta name="apple-mobile-web-app-title" content="jamsend" />
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover" style="background:black;">

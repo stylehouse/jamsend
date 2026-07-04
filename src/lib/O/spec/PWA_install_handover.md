@@ -4,6 +4,34 @@ Spun out of the runner-warmth work (task #35). The audio-keepalive half already 
  (`SoundSystem.keep_awake` + the Auto runner gate) — this is the OTHER half, the one that's
   genuinely handoverable as its own chunk because it barely touches the runner internals.
 
+## Status — 2026-07-05: the code half is BUILT; the origin gate is not
+
+The **manifest + service worker + iOS meta + Media Session** all landed (steps 2–4 below), so
+ the app is code-complete for install. What is NOT done is **step 1 — a secure HTTPS origin a
+  phone can reach** (the hard 80%, host/infra + a real phone, not writable from the container),
+   so nobody has actually seen "Add to Home Screen" yet. It is UNVERIFIED on a device.
+- `static/manifest.webmanifest` — NEW. `start_url:"/"` (the app; see #5 — chose the user-facing
+   motive over the fleet-runner one; flip to `/?I=` or `/?B=<Book>` for a phone runner).
+- `static/icon.svg` — NEW. A 2001 monolith seen from below on the ceiling of a hall. Square,
+   full-bleed dark, safe-zone-clear so it doubles as the `maskable` icon.
+- `src/app.html` — `<link rel="manifest">`, `theme-color`, and the `apple-mobile-web-app-*` +
+   `apple-touch-icon` meta (iOS reads these, not the manifest).
+- `src/service-worker.js` — NEW, minimal + inert (SvelteKit auto-registers it). A bare `fetch`
+   handler that intercepts nothing: satisfies installability, caches NOTHING, never touches
+    `/relay` or peerjs. If it ever misbehaves on the dev fleet, set `kit.serviceWorker.register:
+     false` and register it behind a prod/standalone check.
+- Media Session (the lockscreen card) — WIRED in `src/lib/ghost/Radios.svelte`: set on each new
+   `%nowPlaying` (`i_nowPlaying`), cleared on teardown (`close_nowPlaying`), `nexttrack`→`turn_knob`.
+    Feature-detected, so it no-ops on the node/jsdom Story boot and on desktop engines without it.
+
+**Still owed (two items):**
+1. **The HTTPS phone-reachable origin + `ALLOWED_HOSTS`** — step 1, the real gate (below).
+2. **Raster icons** — the container has NO rasterizer (rsvg/inkscape/imagemagick/sharp all
+    absent), so PNG export was deferred. `icon.svg` covers Chrome/Android/desktop install, but
+     **iOS `apple-touch-icon` needs a real 180×180 PNG** (and 192/512 maskable PNGs are the belt-
+      and-braces). Export them from `icon.svg` — a Story Book is the reproducible home per the
+       "utilities are Books" rule. Until then iOS install falls back to a page screenshot.
+
 ## The destination (two motives, one manifest)
 
 The human wants jamsend **on their phone** — ideally on the lockscreen, would settle for the
@@ -72,16 +100,20 @@ Both are served by the same thing: a web app manifest + a minimal service worker
 
 ## The next move (smallest first)
 
-1. Stand up an HTTPS origin the phone can reach (tunnel is fastest to prove the concept), add its
-    host to `ALLOWED_HOSTS`, confirm the app loads on the phone over HTTPS. — the gate for everything.
-2. Add the manifest + iOS meta + a 192/512 icon; confirm the phone offers **Add to Home Screen** and
-    the installed icon opens standalone. — the homescreen win, done.
-3. Add the minimal service worker; confirm the install is "real" (installable criteria met).
-4. Wire `navigator.mediaSession` metadata to the real playback start/stop; confirm the **lockscreen
-    now-playing card** appears while a track plays. — the "lockscreen" win, honestly delivered.
+1. **← YOU ARE HERE.** Stand up an HTTPS origin the phone can reach (tunnel is fastest to prove the
+    concept), add its host to `ALLOWED_HOSTS`, confirm the app loads on the phone over HTTPS. — the
+     gate for everything. Then verify the install artifacts already in the tree end-to-end.
+2. ~~Add the manifest + iOS meta + a 192/512 icon~~ — DONE (`static/manifest.webmanifest`,
+    `src/app.html`, `static/icon.svg`), EXCEPT the iOS raster PNG (no rasterizer; see Status). Once
+     step 1 is up: confirm the phone offers **Add to Home Screen** and the icon opens standalone.
+3. ~~Add the minimal service worker~~ — DONE (`src/service-worker.js`). Confirm the install is "real"
+    (installable criteria met) once served over HTTPS.
+4. ~~Wire `navigator.mediaSession` to real playback start/stop~~ — DONE (`Radios.svelte`). Confirm the
+    **lockscreen now-playing card** appears while a real track plays (NOT from `keep_awake`).
 
-Steps 2–4 are each an afternoon. Step 1 is the one that can eat a day and is where the secure-context
- and auth constraints bite — do it first, in the open, and don't let it hide behind the easy parts.
+Step 1 is the one that can eat a day and is where the secure-context and auth constraints bite — it's
+ now the ONLY thing between here and a homescreen icon, so do it in the open and don't let it hide.
+  Export the iOS raster PNG (a Story Book) alongside it.
 
 ## What this is NOT
 

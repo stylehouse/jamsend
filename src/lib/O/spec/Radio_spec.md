@@ -97,7 +97,7 @@ Legend: **[built]** real data/logic flows through it; **[done]** a specific refi
  owed. The Book that proves each stage is named; all are green on the live `:9091` runner (accepted
   fixtures) unless noted.
 
-### 1 — Collection  *(Book: MusuCrate · Ghost/M/Crate.g)*  **[built]**  *(fixture pending re-record after the 2026-07-02 nav pivot)*
+### 1 — Collection  *(Books: MusuGenerateTestsMusic writes · MusuReco reads · Ghost/M/Crate.g)*  **[built]**  *(MusuCrate retired 2026-07-05 — redundant, folded into MusuReco+MusuGlide)*
 Walk a music library into a track list. Real today by DISCOVERING it through the Wormhole nav: `Crate_nav_paths`
  BFS-walks `dir_at().expand()` → `{directories,files}`, `Crate_nav_payload` reads bytes via `bin_read` +
   OfflineAudioContext decode. Backend-agnostic across the FSA share / OPFS cloud / editor-proxied runner. No
@@ -110,7 +110,7 @@ Walk a music library into a track list. Real today by DISCOVERING it through the
 - [caveat] discovery awaits the nav INLINE — fine for local navs, but a remote `atime_async` nav must route
    via the rw_op actor (see the caveat in Crate.g `Crate_nav`). Fleet-path TODO.
 
-### 2 — Rastock  *(Books: MusuCrate / MusuReco · Crate.g)*  **[built]**
+### 2 — Rastock  *(Book: MusuReco · Crate.g)*  **[built]**  *(MusuCrate + its Crate_rastock helpers retired 2026-07-05)*
 Desire `want` records and fill from the collection, visibly: issue a `%reading` → it comes back → a
  `%record` is made. `rastock_start/issue/read_into/harvest`.
 - [done] the preview→stream split: `Crate_transcode_begin/release` — decode ONCE, release the frontier
@@ -200,7 +200,7 @@ All under `Ghost/Story/Musuation.g`, dispatched per-beat off `step_n`, witnessed
 
 | Stage | Book | the headline witness |
 |---|---|---|
-| Collection/Rastock | MusuCrate | real_records · playable · helps |
+| Collection/Rastock | MusuReco / MusuGenerateTestsMusic | real_music · complete *(MusuCrate retired)* |
 | Rastock preview→stream + reco | MusuReco | recommended · refused_unstarted · started_early · outran_then_served · complete · real_music |
 | Player | MusuSignal · MusuGlide · MusuTune · MusuConceal | streams/starves · fewer_gaps · repeat_fills · smoother |
 | LiveEdge | MusuEdge | holds_margin · backs_off · low_latency · baseline_overruns |

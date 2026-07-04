@@ -36,6 +36,43 @@
     V.tx = 0
     V.rastream = 0
 
+    // ── Media Session — the lockscreen now-playing card ───────────────────────────
+    //  While a REAL track is producing sound, navigator.mediaSession puts a now-playing
+    //  card (title/artist + a skip button) on the phone lockscreen and in the
+    //  notification shade.  It is raised by actual playback only — never by the silent
+    //  gain-0 keep_awake oscillator, which carries no track.  Set on each new
+    //  %nowPlaying, cleared when playback tears down.  Feature-detected, so it no-ops
+    //  where the API (or navigator) is absent, e.g. the node/jsdom Story boot.
+    let _media_next_wired = false
+    function mediaSession_now(re: TheC, onNext: () => void) {
+        if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return
+        const meta = (re?.sc?.meta ?? {}) as { artist?: string, album?: string, title?: string }
+        try {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title:  meta.title  || (re?.sc?.title as string) || 'jamsend',
+                artist: meta.artist || '',
+                album:  meta.album  || '',
+                // no cover art is pulled from tracks yet (Records.svelte reads only
+                //  artist/album/title/year), so fall back to the app icon.
+                artwork: [{ src: '/icon.svg', sizes: 'any', type: 'image/svg+xml' }],
+            })
+            navigator.mediaSession.playbackState = 'playing'
+            if (!_media_next_wired) {
+                // forward-skip (turn_knob) is the only transport radio has; leave the
+                //  rest unset so the card only offers what actually works.
+                navigator.mediaSession.setActionHandler('nexttrack', () => onNext())
+                _media_next_wired = true
+            }
+        } catch { /* MediaMetadata unsupported → leave the card as-is */ }
+    }
+    function mediaSession_off() {
+        if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return
+        try {
+            navigator.mediaSession.metadata = null
+            navigator.mediaSession.playbackState = 'none'
+        } catch { /* no-op */ }
+    }
+
     onMount(async () => {
     await M.eatfunc({
 
@@ -656,6 +693,8 @@
                 au.sc.aud?.close()
             }
         }
+        // drop the lockscreen card; i_nowPlaying re-raises it for the next track
+        mediaSession_off()
     },
     async i_nowPlaying(A,w,he,re) {
         await this.close_nowPlaying(A,w)
@@ -663,6 +702,8 @@
         let no = await w.r({nowPlaying:1},{nowPlaying:he,uri:re.sc.uri,enid:re.sc.enid,
             ...re.sc.meta
         })
+        // raise the lockscreen now-playing card for this track (skip → turn_knob)
+        mediaSession_now(re, () => this.turn_knob())
         // this structure is just for cyto excitement, hosted here for moment accuracy
         await this.cytotermi_nowSnaking_i(A,w)
 

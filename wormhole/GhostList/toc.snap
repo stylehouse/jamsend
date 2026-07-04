@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783178992837
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783184181747
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -14,6 +14,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/boot.ts,name:boot,noticed_at=1781760628629
     sub:src/lib/server,name:server
     sub:src/lib/L,name:L
+    sub:src/lib/V,name:V
   group:Ghost,dir:Ghost
     sub:Ghost/N,name:N
     sub:Ghost/Story,name:Story
