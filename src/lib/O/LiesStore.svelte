@@ -891,15 +891,17 @@
         // already provisioned this session
         if (good.c.content !== undefined) return good
 
-        // ── the 10s self-check: a read that hasn't settled is a FAULT to narrate, not a silence ──
+        // ── the 5s self-check: a read that hasn't settled is a FAULT to narrate, not a silence ──
         //  The per-dispatch machinery (ttlilt re-arm, Wormhole dedup) retries forever and quietly; a
         //   human watching "⏳ loading Waft" learns nothing for minutes.  So: stamp when we FIRST
-        //    wanted this %Good, and once it's 10s overdue complain every ~10s — loudly, with the path,
-        //     the elapsed, and the last actual error (landed by land_good's error branch) — to both the
-        //      console and the w (the same `see` surface the ⏳ line rides).  Cleared on landing.
+        //    wanted this %Good, and once it's 5s overdue (a foundational doc SHOULD arrive in well under
+        //     that — past it is suspicious) complain, then re-complain every ~10s so it nags without
+        //      spamming — loudly, with the path, the elapsed, and the last actual error (landed by
+        //       land_good's error branch) — to both the console and the w.  Cleared on landing.  The
+        //        UI twin is Liesui's stuck-download alert, derived off these same markers.
         good.c.asked_at ??= Date.now()
         const waited = Date.now() - (good.c.asked_at as number)
-        if (waited > 10_000 && !((good.c.complained_at as number) > Date.now() - 10_000)) {
+        if (waited > 5_000 && !((good.c.complained_at as number) > Date.now() - 10_000)) {
             good.c.complained_at = Date.now()
             const why = good.c.last_error
                 ? `last error: ${good.c.last_error} (×${good.c.error_count})`

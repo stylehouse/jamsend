@@ -324,8 +324,8 @@ Swarm_pier_live(pier, feature):
 //     omit_sc/blockquote means (enLine's own collector is mk-aware). Mainkeys are exclusive, so
 //      an sc_has presence probe on the mainkey IS an mk match.
 Swarm_protocol(kind):
-    let SESSION = { online: 1, active: 1, created_at: 1, new: 1, not_found: 1 }
-    let skips = ['mail', 'rebuff']
+    let SESSION = { online: 1, active: 1, created_at: 1, new: 1, not_found: 1, stolen: 1, address: 1, role: 1 }
+    let skips = ['mail', 'rebuff', 'Sibling', 'Stolen']
     if (kind === 'page') skips = [...skips, 'Pier', 'Idzeug', 'SocialGraph']
     let rules = []
     for (const mk of ['Account', 'Identity', 'Peering', 'Pier', 'Grant', 'NotGrant', 'Idzeug', 'SocialGraph', 'Edge', 'cap']) {
@@ -384,4 +384,84 @@ Swarm_graft(parent, node):
     twin.c.up = parent
     for (const child of node.o()) this.Swarm_graft(twin, child)
     return twin
+//#endregion
+
+//#region places — one key, N addresses (§3: siblings, the stolen name, Steal Back)
+//  The identity≠address split. `ident.sc.prepub` is the immutable key-derived NAME; a %Peering also
+//   holds a session ADDRESS — bare <prepub> is the primary place, <prepub>_1 / _2 a NON-first them.
+//    (name stays canonical so deliver-routing and the byte-identical export never move with a suffix.)
+//  Local tabs of ONE identity are cooperative SIBLINGS — the Dexie-liveQuery "these are all our tabs"
+//   roster, modeled here as %Sibling records; they split the work (one plays music, one encodes) so a
+//    tab that leaks or crashes every 6 hours never takes the whole identity down. A claimant that is
+//     NOT a known sibling is a THEFT: a remote copy of your key contesting your name. Steal Back
+//      concedes the bare name and jumps to the next free suffix — SAME key — so your Piers still verify
+//       you (a page's `pub` is the truth; the address is only where you're reachable this session).
+//  All session-local: `stolen`/`address`/`role` and the %Sibling/%Stolen husks are omitted from every
+//   export (Swarm_protocol) — a backup is the canonical identity, never a moment's reachability.
+
+// Swarm_address — the session address this place currently HOLDS. Defaults to the canonical name;
+//  becomes <prepub>_N after a Steal Back.
+Swarm_address(ident):
+    let peering = this.Swarm_peering(ident)
+    return peering?.sc?.address ?? peering?.sc?.name
+
+// Swarm_next_suffix — the next free <prepub>_N not among `taken` (the addresses we can see held). The
+//  bare <prepub> is the primary; suffixes start at _1. The relay's "taken — jump to _1" done locally.
+Swarm_next_suffix(prepub, taken):
+    let held = new Set(taken || [])
+    let n = 1
+    while (held.has(prepub + '_' + n)) n = n + 1
+    return prepub + '_' + n
+
+// Swarm_sibling — record a cooperative co-holder of THIS identity: another tab/place (a row of the
+//  Dexie-liveQuery roster). `place` is the tab's own token, `address` the name it holds, `role` its job.
+Swarm_sibling(ident, place, address, role):
+    let peering = this.Swarm_peering(ident)
+    let sib = peering.oai({ Sibling: place })
+    sib.c.up = peering
+    if (address) sib.sc.address = address
+    if (role) sib.sc.role = role
+    sib.bump()
+    return sib
+
+// Swarm_is_sibling — is `place` one of our known tabs? (the cooperative-vs-theft discriminator).
+Swarm_is_sibling(ident, place):
+    return !!this.Swarm_peering(ident)?.o({ Sibling: place })[0]
+
+// Swarm_take_role — this place's job among the tabs (music | encode | serve …). Only one tab plays
+//  music; another encodes; the big role hands off one by one for robustness (§3).
+Swarm_take_role(ident, role):
+    let peering = this.Swarm_peering(ident)
+    peering.sc.role = role
+    peering.bump()
+
+// Swarm_note_theft — a claimant `by` is holding our name as of `at`. A KNOWN sibling is cooperative
+//  co-presence (no alarm — return false); anyone else is a THEFT: raise the page's `stolen` flag and
+//   leave a durable %Stolen,by/at husk the warning banner reads. Returns true when it alarmed.
+Swarm_note_theft(ident, by, at):
+    if (this.Swarm_is_sibling(ident, by)) return false
+    let peering = this.Swarm_peering(ident)
+    peering.sc.stolen = 1
+    let husk = peering.oai({ Stolen: by })
+    husk.c.up = peering
+    husk.sc.at = String(at ?? this.Swarm_now(H))
+    husk.bump()
+    peering.bump()
+    return true
+
+// Swarm_stolen — is our name currently contested by an unrecognized place? (the banner's gate).
+Swarm_stolen(ident):
+    return !!this.Swarm_peering(ident)?.sc?.stolen
+
+// Swarm_steal_back — concede the contested name and re-present at the next free suffix, SAME key.
+//  `taken` is every address we can see held (the thief's + our siblings'); we jump past all of them,
+//   clear the alarm, and return the new address. The re-hello/re-advertise under it is the caller's
+//    next move — the %Stolen husk stays as history.
+Swarm_steal_back(ident, taken):
+    let peering = this.Swarm_peering(ident)
+    let addr = this.Swarm_next_suffix(ident.sc.prepub, taken)
+    peering.sc.address = addr
+    delete peering.sc.stolen
+    peering.bump()
+    return addr
 //#endregion

@@ -1563,6 +1563,13 @@
 :global(.stuff-overlay > *) {
     flex: none;
 }
+/* cap the chunk's content at a portrait-ish width so a wide crush wraps into a
+   taller block that molds into a cell far better than a long thin strip — the
+   overlay is width:max-content, so the 18em ceiling here pulls the whole oval
+   in with it.  (Found by eye on the live tab; ~288px.) */
+:global(.stuff-overlay > .stuffing > .content) {
+    max-width: 18em;
+}
 /* the outer Stuffing keeps its SOLID background (visual clarity — the rows must not blend
    into edges and nodes behind the chunk); only its border goes, so the chunk's chrome is the
    oval's Matstyle rim alone.  !important outguns the component-scoped .stuffing rule;

@@ -28,7 +28,8 @@ import { type House } from "$lib/O/Housing.svelte"
 import { FUNK_KINDS } from "$lib/O/Funk/kinds"
 import { storying_run } from "$lib/O/Funk/Storying.svelte"
 import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte"
-import { mint_grant, verify_grant, grant_to_C, grant_of_C, type GrantAtom } from "$lib/O/Funk/Grant"
+import { mint_grant, verify_grant, type GrantAtom } from "$lib/O/Funk/Grant"
+import { browserTrustedPubs } from "$lib/p2p/cluster_trust"
 import { RemoteWormholeNav } from "$lib/O/RemoteWormholeNav.svelte"
 import { Dexie } from "dexie"
 import { onMount } from "svelte"
@@ -289,7 +290,13 @@ await M.eatfunc({
               (sel.book != null && f.sc.of_Book === sel.book)
         const walk = (host: TheC, c: TheC) => {
             for (const k of c.o() as TheC[]) {
-                if (k.sc.Funkcion === 'Storying' && match(k)) storying_run(host, k, w)
+                if (k.sc.Funkcion === 'Storying' && match(k)) {
+                    storying_run(host, k, w)
+                    // brand_new clears on the FIRST green verdict — a Book proven for the first time is no
+                    //  longer new.  Fired here (the run_result EVENT), NOT in storying_run (off-snap) nor a
+                    //   pump; delete is query+snap-safe, and the authored board bakes the removal on commit.
+                    if (k.sc.brand_new && (k.c.verdict as any)?.phase === 'good') { delete k.sc.brand_new; k.bump_version() }
+                }
                 walk(host, k)
             }
         }
@@ -450,18 +457,51 @@ await M.eatfunc({
     //       handle.  See spec/Cluster_spec.md "beg through the Brink".  All four verbs are additive
     //        Peeroleum frames (no .g spine change); bytes ride base64 for now (TODO: binary frame).
 
-    // the held grant atom for THIS runner.  Bootstrap home is local .stashed — durable per Chrome
-    //  profile, readable on restart WITHOUT a working nav (the Waft:Cluster copy can't bootstrap: it
-    //   loads through the very Wormhole the grant unlocks).  Waft:Cluster carries the registry copy.
+    // the held grant atom for THIS runner.  ONE durable home: local .stashed (per Chrome profile,
+    //  readable on restart WITHOUT a working nav — the Waft:Cluster copy can't bootstrap, it loads
+    //   THROUGH the very Wormhole the grant unlocks, and it can be wiped by an empty registry read).
+    //    So .stashed is the sole authority; the registry is display-only and NEVER read back as a
+    //     grant (that fallback was the second home whose wipe made the grant "disappear").
     Lies_wormhole_grant(w: TheC): GrantAtom | undefined {
         const H = this as House
         const held = (H.top_House()?.stashed as any)?.wormhole_grant as GrantAtom | undefined
-        if (held?.sign) return held
-        const cluster = w.o({ Waft: 'Cluster' })[0] as TheC | undefined
-        const me = (H as any).Lies_self?.(w)?.prepub as string | undefined
-        const row = me ? (cluster?.o({ HostedIdentity: me })[0] as TheC | undefined) : undefined
-        const n = row?.o({ Grant: 'remoteWormhole' })[0] as TheC | undefined
-        return n ? grant_of_C(n) : undefined
+        return held?.sign ? held : undefined
+    },
+
+    // ── the crypto VERDICT on a HELD grant — the "does it work or not" signal, computed LOCALLY ──
+    //   Three-valued, no round-trip: absent (nothing held) · invalid (fails crypto — untrusted issuer
+    //    or bad signature) · valid.  verify_grant checks the ed25519 sig for the claimed `by`;
+    //     browserTrustedPubs asserts `by` is one of OUR editors (a valid sig from a stranger is not a
+    //      grant WE honour — though the editor also serves only grants it signed itself, so this is belt).
+    //   DELIBERATELY IDENTITY-STABLE: it does NOT re-check `for` (which runner it was granted TO).  That
+    //    belongs at ACCEPTANCE (grant_offer_recv), ONCE.  Re-litigating it here every heartbeat DISCARDED
+    //     a perfectly good grant the instant Lies_self/Clustation_self blipped to a different|undefined
+    //      prepub — the "begs forever, never stores" flap.  Reconcile must only ask "is the grant I hold
+    //       still cryptographically real", never "who am I this millisecond".
+    async Lies_wormhole_verdict(_w: TheC, atom: GrantAtom | undefined): Promise<{ status: 'absent' | 'invalid' | 'valid', reason?: string }> {
+        if (!atom?.sign) return { status: 'absent' }
+        const trusted = browserTrustedPubs()
+        if (trusted.length && !trusted.includes(atom.by))
+            return { status: 'invalid', reason: `issuer ${String(atom.by).slice(0, 8)}… is not a trusted editor` }
+        try { await verify_grant(atom) } catch { return { status: 'invalid', reason: 'bad signature' } }
+        return { status: 'valid' }
+    },
+
+    // ── stamp the crypto verdict where the UI + the acquire loop read it — honestly ──────────────
+    //   Two axes, never merged (owner call): wormhole_grant_status is the CRYPTO axis (absent|invalid|
+    //    valid); liveness (channel up? ops landing?) stays separate on the badge.  wormhole_state is
+    //     derived DOWNSTREAM of the verdict — 'ready' ONLY for a cryptographically valid grant, so the
+    //      badge can never say "granted" over a dead grant.  Idempotent: writes + a version bump only on
+    //       a real change, with a one-line console trail on transitions (the signal, logged somewhere).
+    Lies_wormhole_status_set(w: TheC, status: 'absent' | 'invalid' | 'valid', reason?: string): void {
+        const prev = w.c.wormhole_grant_status as string | undefined
+        if (prev === status && w.c.wormhole_grant_reason === reason) return
+        w.c.wormhole_grant_status = status
+        w.c.wormhole_grant_reason = reason
+        w.c.wormhole_state = status === 'valid' ? 'ready' : 'begging'   // honest: 'ready' ⇒ crypto-valid, full stop
+        w.bump_version()
+        if (prev && prev !== status)
+            console.log(`🛰️ remoteWormhole grant: ${prev} → ${status}${reason ? ` (${reason})` : ''}`)
     },
 
     // EDITOR: mint+sign a remoteWormhole %Grant for a runner (by its roster prepub) and offer it.
@@ -478,27 +518,25 @@ await M.eatfunc({
         if (row?.sc.begs_wormhole) { delete row.sc.begs_wormhole; w.bump_version() }
     },
 
-    // RUNNER: receive an offered %Grant, verify it, persist it (local + registry), install the nav.
+    // RUNNER: receive an offered %Grant — verify it crypto-first, then persist it to the ONE durable
+    //  home (.stashed) and reconcile.  We never durably store a grant that doesn't verify (no forged
+    //   atom in our store), and we no longer write a registry copy — .stashed is the sole authority;
+    //    Lies_wormhole_reconcile re-derives everything (badge, nav, re-beg) from it each heartbeat.
     async Lies_grant_offer_recv(w: TheC, frame: any): Promise<void> {
         const H = this as House
         const atom = frame?.grant as GrantAtom | undefined
         if (!atom?.sign) return
-        // accept a grant addressed to ANY of our identity tiers (the editor granted on the advertise
-        //  prepub = Clustation_self; the registry keys on Lies_self — usually the same, tolerate both).
-        const ids = [(H as any).Lies_self?.(w)?.prepub, (H as any).Clustation_self?.()?.prepub].filter(Boolean) as string[]
-        if (ids.length && !ids.includes(atom.for)) return              // not for us (broadcast → filter)
-        const me = ids[0]
-        try { await verify_grant(atom) } catch (e) { (H as any).tlog?.(`🛰️ grant_offer bad sig: ${e}`); return }
+        // ADDRESSED-TO-US filter — the ONE place `for` is checked (grant_offer is a role-broadcast; the
+        //  editor keys `for` on our advertise prepub).  Tolerate both identity tiers.  Done HERE, once,
+        //   not in the per-heartbeat verdict (see Lies_wormhole_verdict's note on the discard flap).
+        const mine = [(H as any).Lies_self?.(w)?.prepub, (H as any).Clustation_self?.()?.prepub].filter(Boolean) as string[]
+        if (mine.length && !mine.includes(atom.for)) return             // a grant for a different runner
+        const { status, reason } = await H.Lies_wormhole_verdict(w, atom)   // issuer + signature
+        if (status !== 'valid') { if (status === 'invalid') (H as any).tlog?.(`🛰️⚠ ignored offered grant — ${reason}`); return }
         const top = H.top_House()
-        if (top?.stashed) (top.stashed as any).wormhole_grant = atom    // bootstrap-durable, survives restart
-        const cluster = w.o({ Waft: 'Cluster' })[0] as TheC | undefined  // registry copy (best-effort, once loaded)
-        if (cluster && me) {
-            const row = cluster.oai({ HostedIdentity: me }) as TheC
-            for (const old of row.o({ Grant: 'remoteWormhole' }) as TheC[]) row.drop(old)
-            grant_to_C(row, atom)
-            cluster.bump_version()
-        }
-        H.Lies_remote_wormhole_install(w)                              // a grant arrived — wire the nav now
+        if (top?.stashed) (top.stashed as any).wormhole_grant = atom     // durable, survives restart
+        else w.c.pending_grant = atom                                    // .stashed not loaded yet — reconcile flushes it
+        void H.Lies_remote_wormhole_reconcile(w)                         // verify+install now (don't wait a heartbeat)
     },
 
     // EDITOR: a runner begs for access — flag its roster row so the rack offers a grant control.
@@ -584,34 +622,79 @@ await M.eatfunc({
         if (nav?.is_remote && corr) nav._resolve(corr, frame)
     },
 
-    // RUNNER: install the method:remoteWormhole nav onto A:Wormhole once a grant is held.  Idempotent.
+    // RUNNER: wire the method:remoteWormhole nav onto A:Wormhole.  Idempotent.  The grant is assumed
+    //  already crypto-VALID (the reconcile verifies before calling here) — install no longer sets
+    //   wormhole_state (that's the verdict's job, via Lies_wormhole_status_set), so state can never
+    //    drift from crypto truth.
     Lies_remote_wormhole_install(w: TheC): boolean {
         const H = this as House
         const A = H.top_House().o({ A: 'Wormhole' })[0] as TheC | undefined
         if (!A) return false
         if ((A.c.nav as any)?.is_remote) return true
-        if (!H.Lies_wormhole_grant(w)) return false
         A.c.nav = new RemoteWormholeNav(H, w, () => H.Lies_wormhole_grant(w))
-        if (w.c.wormhole_state !== 'ready') { w.c.wormhole_state = 'ready'; w.bump_version() }
         H.main(true)                                                  // nav appeared — re-pump parked reads
         return true
     },
 
-    // RUNNER: the acquire driver, pumped from Lies_aim each heartbeat while &remoteWormhole=1 and ungranted.
-    //  Installs the nav if a grant is held, else begs the editor (throttled).  Until the nav installs,
-    //   every rw-op returns "nav not ready" and Lies waits on its Wafts — the intended gum-up.
-    Lies_remote_wormhole_step(w: TheC): void {
+    // RUNNER: tear the remote nav back down (a grant died / was refused).  Reads then PARK on a missing
+    //  nav — the same pre-grant gum-up — instead of a zombie nav presenting a dead grant into 20s timeouts.
+    Lies_remote_wormhole_uninstall(w: TheC): void {
         const H = this as House
-        if (H.Lies_remote_wormhole_install(w)) return
-        if (w.c.wormhole_state !== 'begging') { w.c.wormhole_state = 'begging'; w.bump_version() }
-        if (!H.Lies_channel_live(w)) return
-        const now = Date.now()
-        if (now - Number(w.c.wormhole_beg_at ?? 0) < 4000) return
-        w.c.wormhole_beg_at = now
-        // carry our prepub in the BODY (as the advertise beacon does) so the editor flags the SAME
-        //  %Runner roster row the rack renders — keyed on the beacon prepub, not header.from.
-        const me = (H as any).Clustation_self?.()?.prepub ?? (H as any).Lies_self?.(w)?.prepub
-        H.Peeroleum_send_consumer(w, 'wormhole_beg', { want: 'remoteWormhole', from: me })
+        const A = H.top_House().o({ A: 'Wormhole' })[0] as TheC | undefined
+        if (A && (A.c.nav as any)?.is_remote) { A.c.nav = undefined; A.bump_version() }
+    },
+
+    // RUNNER: the acquire RECONCILER, pumped from Lies_aim each heartbeat while &remoteWormhole=1.
+    //  ONE honest state machine off the crypto verdict — no sticky "installed once" flag:
+    //    valid   → nav installed, state 'ready'.
+    //    absent  → nav torn down, state 'begging', beg the editor (throttled).
+    //    invalid → nav torn down, the forged/stale grant DISCARDED from .stashed (owner call: refuse +
+    //               re-beg, don't keep presenting it), state 'begging', beg for a fresh one.
+    //  So a wiped/expired/foreign grant self-heals: it flips the badge back, drops the nav, re-begs, and
+    //   the operator's next grant lands durably — no reload.  Async (verify is ed25519); a re-entrancy
+    //    guard + a verify-cache (skip re-verifying an unchanged atom) keep it cheap on the heartbeat.
+    async Lies_remote_wormhole_reconcile(w: TheC): Promise<void> {
+        const H = this as House
+        if (w.c.wh_reconciling) return
+        w.c.wh_reconciling = true
+        try {
+            // flush a grant that arrived before .stashed had loaded
+            const top = H.top_House()
+            const pending = w.c.pending_grant as GrantAtom | undefined
+            if (pending?.sign && top?.stashed && !(top.stashed as any).wormhole_grant) {
+                (top.stashed as any).wormhole_grant = pending; delete w.c.pending_grant
+            }
+            const atom = H.Lies_wormhole_grant(w)
+
+            // verify-cache: an unchanged, already-valid atom skips the re-verify — just keep the nav wired.
+            if (atom && w.c.wh_verified_sign === atom.sign && w.c.wormhole_grant_status === 'valid') {
+                H.Lies_remote_wormhole_install(w)
+                return
+            }
+            const { status, reason } = await H.Lies_wormhole_verdict(w, atom)
+            w.c.wh_verified_sign = atom?.sign
+            H.Lies_wormhole_status_set(w, status, reason)
+
+            if (status === 'valid') { H.Lies_remote_wormhole_install(w); return }
+
+            if (status === 'invalid') {
+                if ((top?.stashed as any)?.wormhole_grant) delete (top!.stashed as any).wormhole_grant
+                delete w.c.wh_verified_sign
+                console.warn(`🛰️⚠ discarding INVALID remoteWormhole grant — ${reason}; re-begging`)
+            }
+            H.Lies_remote_wormhole_uninstall(w)                      // no valid grant → park reads, don't zombie-serve
+
+            if (!H.Lies_channel_live(w)) return
+            const now = Date.now()
+            if (now - Number(w.c.wormhole_beg_at ?? 0) < 4000) return
+            w.c.wormhole_beg_at = now
+            // carry our prepub in the BODY (as the advertise beacon does) so the editor flags the SAME
+            //  %Runner roster row the rack renders — keyed on the beacon prepub, not header.from.
+            const me = (H as any).Clustation_self?.()?.prepub ?? (H as any).Lies_self?.(w)?.prepub
+            H.Peeroleum_send_consumer(w, 'wormhole_beg', { want: 'remoteWormhole', from: me })
+        } finally {
+            w.c.wh_reconciling = false
+        }
     },
 
     //   Hoist (or retire) the cluster Brinks by role — called every heartbeat.  editor|runner
@@ -632,9 +715,10 @@ await M.eatfunc({
         //    children, who we + the cluster claim to be) like any Waft.
         if (cluster) { H.Lies_cluster_decorate(w, cluster); H.Lies_cluster_claim_self(w); if (role === 'editor') H.Lies_runner_roster(w, cluster) }
 
-        // &remoteWormhole=1 runner: drive the remote-Wormhole acquire (beg→grant→install) HERE, where the
-        //  channel + Waft:Cluster live; DirectoryOpener only reflects A.c.nav.  No-op once installed.
-        if (role === 'runner' && H.top_House().c.remote_wormhole) H.Lies_remote_wormhole_step(w)
+        // &remoteWormhole=1 runner: reconcile the remote-Wormhole grant (verify → install | re-beg) HERE,
+        //  where the channel + .stashed live; DirectoryOpener only reflects A.c.nav.  Honest every tick —
+        //   a grant that dies flips the badge back and re-begs, no sticky "granted".  Fire-and-forget (async).
+        if (role === 'runner' && H.top_House().c.remote_wormhole) void H.Lies_remote_wormhole_reconcile(w)
 
         // Relay — a single face, both roles (the relay carrier's own health).
         if (on) {

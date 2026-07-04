@@ -305,3 +305,118 @@ async SwarmWire_order(w):
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)
+
+
+// ══ SwarmSteal — the THIRD Book: one key, many places — cooperation, theft, and Steal Back ═══════════
+//  SwarmStaple proves the MODEL and SwarmWire the WIRE; SwarmSteal proves the ADDRESS — §3's
+//   identity≠address split. Alice is ONE identity in several places. Sibling tabs of the SAME key are
+//    COOPERATIVE (the Dexie-liveQuery "these are all our tabs" roster) and split the work — one plays
+//     music, one encodes — so a 6-hour leak never takes it all down. A claimant that is NOT one of our
+//      tabs is a THEFT: a remote copy contesting the name → Identity Stolen. Steal Back concedes the
+//       bare name and re-presents at the next free suffix (<prepub>_2 here — a sibling already holds
+//        _1), SAME key, so Alice's Piers still verify her. No wire — model layer only; own world
+//         w:SwarmSteal (dispatch by world name, the usual bomb). Same fixed Alice as the staple.
+//   beat 2  Alice stands — one identity holding its key-derived prepub as its canonical name
+//   beat 3  two sibling tabs join (the roster) — no alarm — and the tabs split roles music|encode
+//   beat 4  a foreign place (not one of our tabs) claims Alice's name → Identity Stolen
+//   beat 5  Steal Back → Alice re-presents at <prepub>_2 (past thief + siblings) — the alarm clears
+//   beat 6  the key never moved — identity ≠ address — the page's pub still verifies her at _2
+
+SwarmSteal(A,w):
+    w oai %req:wrangle,eternal
+        await &SwarmSteal_drive,w,req
+        req%ok = 1
+
+// SwarmSteal_drive — beat dispatch (req-local did_step), then re-sort. No pump: SwarmSteal is all
+//  model-layer (no mail, no frames) so there is nothing to deliver between beats.
+async SwarmSteal_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.SwarmSteal_stand(w)
+        if (n === 3) await this.SwarmSteal_siblings(w)
+        if (n === 4) await this.SwarmSteal_theft(w)
+        if (n === 5) await this.SwarmSteal_steal_back(w)
+        if (n === 6) await this.SwarmSteal_verify(w)
+    }
+    await this.SwarmSteal_order(w)
+
+// beat 2 — Alice stands: one %Identity holding its bare prepub as the primary address. Witness rides
+//  its own swept req, minted last so it observes each pass's settled state.
+async SwarmSteal_stand(w):
+    w i reached:step_2
+    w.sc.now = 1751700000
+    await this.SwarmStaple_person(w, 'Alice')
+    w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.SwarmSteal_witness(w); req.sc.ok = 1 })
+
+// beat 3 — the cooperative tabs: two siblings of the SAME key join the roster (one holding _1, one _3
+//  among them), and the places split the work — THIS place plays music, a sibling encodes. A known
+//   sibling claiming our name is co-presence, not a theft — note_theft returns false, no alarm raised.
+async SwarmSteal_siblings(w):
+    w i reached:step_3
+    w.sc.now = 1751700010
+    let alice = this.SwarmStaple_ident(w, 'Alice')
+    this.Swarm_take_role(alice, 'music')
+    this.Swarm_sibling(alice, 'tab_encode', alice.sc.prepub + '_1', 'encode')
+    this.Swarm_sibling(alice, 'tab_spare', alice.sc.prepub + '_3', 'serve')
+    this.Swarm_note_theft(alice, 'tab_encode', 1751700010)
+
+// beat 4 — the theft: a place we do NOT recognize claims Alice's name. Not a sibling → Identity Stolen
+//  (the flag rises and a durable %Stolen,by:remote_copy husk lands for the banner).
+async SwarmSteal_theft(w):
+    w i reached:step_4
+    w.sc.now = 1751700020
+    let alice = this.SwarmStaple_ident(w, 'Alice')
+    this.Swarm_note_theft(alice, 'remote_copy', 1751700020)
+
+// beat 5 — Steal Back: concede the bare name, jump past the thief (bare) and the siblings (_1, _3) to
+//  the next free suffix — <prepub>_2 — SAME key. The alarm clears; the %Stolen husk stays as history.
+async SwarmSteal_steal_back(w):
+    w i reached:step_5
+    w.sc.now = 1751700030
+    let alice = this.SwarmStaple_ident(w, 'Alice')
+    let prepub = alice.sc.prepub
+    w.c.new_addr = this.Swarm_steal_back(alice, [prepub, prepub + '_1', prepub + '_3'])
+
+// beat 6 — identity ≠ address: the key never moved. Alice's page (pub + prepub) is unchanged from
+//  beat 2 while her address is now _2 — stamp the proof durably so the sync witness reads the fact.
+async SwarmSteal_verify(w):
+    w i reached:step_6
+    w.sc.now = 1751700040
+    let alice = this.SwarmStaple_ident(w, 'Alice')
+    let page = this.Swarm_page(alice)
+    w.i({ stealback: 'verified', pub: page.pub, prepub: page.prepub, address: this.Swarm_address(alice) })
+
+// ── the witness — %see over the MONOTONIC residue of each beat (this Book's state is NON-monotonic:
+//  the address changes and `stolen` toggles, so a claim must NOT read the live flag/address that will
+//   flip — it reads the durable %Stolen husk that PERSISTS past the flag, the suffixed address that
+//    STAYS after Steal Back, and the roles/roster that never retract. The see-is-not-a-latch rule with
+//     teeth: w_forgets_problems wipes {see:1} every think, so a once-true-then-false claim vanishes.
+SwarmSteal_witness(w):
+    let alice = this.SwarmStaple_ident(w, 'Alice')
+    if (!alice) return
+    let peering = this.Swarm_peering(alice)
+    if (!peering) return
+    let prepub = alice.sc.prepub
+    // beat 2: the canonical name is the key-derived prepub — the primary place (name never moves).
+    if (peering.sc.name === prepub && !(oa %see:'one identity holds its key-derived prepub as its canonical name — the primary place')) i %see:'one identity holds its key-derived prepub as its canonical name — the primary place'
+    // beat 3: cooperative tabs — a known sibling left NO theft husk and the places split the work.
+    let sib = peering.o({ Sibling: 'tab_encode' })[0]
+    if (sib && peering.sc.role === 'music' && sib.sc.role === 'encode' && !peering.o({ Stolen: 'tab_encode' })[0] && !(oa %see:'sibling tabs of one key are cooperative — no theft alarm — and split the work — one plays music one encodes')) i %see:'sibling tabs of one key are cooperative — no theft alarm — and split the work — one plays music one encodes'
+    // beat 4: a claimant that is NOT one of our tabs left a durable theft mark — Identity Stolen.
+    let theft = peering.o({ Stolen: 'remote_copy' })[0]
+    if (theft && !this.Swarm_is_sibling(alice, 'remote_copy') && !(oa %see:'a claimant that is not one of our tabs raises Identity Stolen — a remote copy contesting the name')) i %see:'a claimant that is not one of our tabs raises Identity Stolen — a remote copy contesting the name'
+    // beat 5: Steal Back re-presented at the next free suffix past thief + siblings and cleared the alarm.
+    if (this.Swarm_address(alice) === prepub + '_2' && !this.Swarm_stolen(alice) && !(oa %see:'Steal Back jumps past the thief and the siblings to prepub_2 and clears the alarm')) i %see:'Steal Back jumps past the thief and the siblings to prepub_2 and clears the alarm'
+    // beat 6: identity is not address — the page pub is unchanged so a Pier still verifies her at _2.
+    let vd = w.o({ stealback: 'verified' })[0]
+    if (vd && vd.sc.pub === alice.c.keys.pub && vd.sc.prepub === prepub && vd.sc.address === prepub + '_2' && !(oa %see:'identity is not address — the key never moved — a Pier still verifies her at prepub_2')) i %see:'identity is not address — the key never moved — a Pier still verifies her at prepub_2'
+
+// SwarmSteal_order — float A:SwarmSteal to the front of H/* so the Run snap stays readable.
+async SwarmSteal_order(w):
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'SwarmSteal') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)

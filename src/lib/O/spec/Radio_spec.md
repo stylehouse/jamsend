@@ -120,8 +120,14 @@ Desire `want` records and fill from the collection, visibly: issue a `%reading` 
 - [done] the recommendation layer: `Repli_recommend` — a `%Reco` note is knowledge attached to the
    `%Record` (the C** IS the knowledge graph), carried in the SAME offer fragment; the gate is you may
     only recommend a Record you've STARTED (≥1 transcoded chunk).
-- [todo] host as a `%Good` in LiesStore (the `req:Store` IO pump).
-- [todo] idle-reap: drop a `%Good` once a consumer has left it idle (mirror `recordWear`).
+- [principle] the Repli C** stream is NOT hosted as a `%Good`. It is its own delivery model: a replicated
+   *landscape of a single type* (C) with explicit frontiers | paginations and defined methods of navigating
+    them — you WALK it, you don't `GET` it. `%Good`/`req:Store` is the legacy request-response RPC floor
+     (GET /something); the C** stream is the elegant alternative and must stay orthogonal to it, never fold
+      into it. Delivery, availability ("how much is where" — the `%Sent_Tree`), pagination and retirement
+       all live in the stream's own vocabulary, not in a Good's fetch-and-cache.
+- [todo] idle-reap: drop a replicated Record once a consumer has left it idle — via the stream's OWN wear
+   (a goner in the Se — §9.6 "wear makes the mirror a cache"), NOT a `%Good` eviction.
 
 ### 3 — Player  *(Books: MusuSignal / MusuGlide / MusuTune)*  **[built]**
 Decode + play + cope. Real Audiolet voice; Glide rate-slew; OfflineAudioContext render + measure.

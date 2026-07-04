@@ -159,7 +159,7 @@
     //      {Doc:'Ghost/foo.g'}           → { val:'Ghost/foo.g', sc:'' }
     //   What val falls back to '·' when both empty so the row has a visible click target.
     //   Internal state keys (active, new, not_found) are excluded from sc extras.
-    const DISPLAY_SKIP = new Set(['active', 'new', 'not_found'])
+    const DISPLAY_SKIP = new Set(['active', 'new', 'not_found', 'desc'])
     function item_to_display(c: TheC, t: ItemType): { val: string; sc: string } {
         const sc_obj = c.sc as Record<string, any>
         const mk_key = ITEM_TYPES[t].mk_key
@@ -841,7 +841,7 @@
         {@const show_tog       = is_what && (has_funk_child(C) || what_inlined(C))}
         {@const child_as_C     = is_what ? editing_struct : funk_as_C}
         <div class="{td.item_cls} {dyn_cls}">
-            <div class="ls-item-hdr">
+            <div class="ls-item-hdr" class:ls-hdr-desc={!!C.sc?.desc && !editing.has(C)}>
                 <!-- a Funkcion-bearing What carries the inline⇄edit toggle as part of its
                      illusion: ✎ flips to the editable bullet C**, ◉ restores the live inline flow. -->
                 {#if show_tog}
@@ -849,6 +849,9 @@
                         title={editing_struct ? 'show the live Funkcions inline' : 'edit as plain C'}>{editing_struct ? '◉' : '✎'}</button>
                 {/if}
                 {@render pi(item_props(C, upC, t, dpath))}
+                <!-- a one-line desc (e.g. a Credence What:desc naming what the group tests) sits to the
+                     RIGHT of the label with a margin; kept out of the inline peel via DISPLAY_SKIP. -->
+                {#if C.sc?.desc}<span class="ls-desc" title={C.sc.desc as string}>{C.sc.desc}</span>{/if}
             </div>
             {#if td.child_types}
                 {#if editing.has(C) && (add_type_C.has(C) || add_raw_C.has(C))}
@@ -947,6 +950,17 @@
     .ls-waft-free   { max-height: none; }   /* infinite growth — the old default, now opt-in */
     /* side-by-side — half width; the flex-wrap parent pairs two halves onto one row */
     .ls-waft-half { flex: 1 1 calc(50% - 0.3rem); min-width: 0; }
+
+    /* a group's one-line desc (Credence What:desc) — muted italic, a fixed 5em to the right of the
+       label.  the two-class selector out-specifies the .ls-item-hdr :global(.pi-wrap) flex:1 rule so
+       the label shrinks to content width — otherwise the 5em reads from a full-width label (miles across). */
+    .ls-item-hdr.ls-hdr-desc :global(.pi-wrap) { flex: 0 1 auto; }
+    .ls-item-hdr.ls-hdr-desc :global(.pi-row)  { flex: 0 1 auto; }
+    .ls-desc {
+        flex: 0 1 auto; min-width: 0; margin-left: 5em;
+        font-size: 0.86rem; color: #7a7a8c; font-style: italic; line-height: 1.3;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
 
     /* taker Waft (the Ting) — the histogram switcheroo + its toggle */
     .ls-waft-ting { border-color: #4a3a2a; }

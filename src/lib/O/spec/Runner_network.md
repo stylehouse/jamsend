@@ -67,13 +67,21 @@ The one-page map of the stack that took a session of logging to see. Read this F
 - Relay face **"⚠ relay down"** / Rundar **"→EDITOR (no channel)"** — `Lies_channel_live(w)`:
    `w.c.channel_up` stamped AND the active transport holds a connection. It speaks about OUR
     socket, nothing else.
-- **"🛰️ Wormhole granted"** — `wormhole_state === 'ready'`: a `%Grant` atom is HELD and the
-   remote nav installed. The grant is a **durable signed atom** (top-House `.stashed` — survives
-    reload; registry copy in `Waft:Cluster`). That is by design, not a bug: `Grant.ts`'s whole
-     doctrine is that *no connection state is trusted as authority — the signature is*. So
-      grant-held + relay-down is a REAL, reachable state (a stashed grant from yesterday, socket
-       not yet up); the badge now says "grant held — relay down, ops stall" in that case instead
-        of a bare "granted" beside a ✕.
+- **The remote-Wormhole badge — TWO AXES, never merged** (`Lies_remote_wormhole_reconcile`, per
+   heartbeat). The badge reads `w.c.wormhole_grant_status` (the CRYPTO verdict) + `channel_live`
+    (liveness), and NEVER a sticky "installed once" flag:
+  - **crypto axis** `wormhole_grant_status` ∈ `absent | invalid | valid`, computed locally by
+     `Lies_wormhole_verdict` — `verify_grant` (ed25519 sig) + `browserTrustedPubs` (issuer is one of
+      OUR editors) + `for` pins it to this runner. `invalid` (forged / stale / foreign) is a LOUD red
+       "⚠ INVALID grant", the atom is discarded from `.stashed` and the runner RE-BEGS (owner call:
+        refuse, don't present it). `wormhole_state === 'ready'` is now *derived* — it means crypto-valid,
+         full stop, so the badge can never say "granted" over a dead grant.
+  - **liveness axis** `channel_live`: a valid grant + silent editor reads **"🛰️ grant valid · editor
+     not answering — ops stall"**, not a bare "granted". Grant-held + relay-down is a real state.
+  - **ONE durable home**: top-House `.stashed` (survives reload), the sole authority. There is no
+     `Waft:Cluster` grant copy any more — that best-effort second home could be wiped by an empty
+      registry read, making the grant "disappear" while the badge lied "granted"; it is gone.
+      `Lies_wormhole_grant` reads `.stashed` only; a wiped/expired grant self-heals (re-beg → re-grant).
 
 ## Failure modes, with the diagnostic ladder
 

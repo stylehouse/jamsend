@@ -60,6 +60,10 @@
     // the live w:Lies (for the rack's grant control) + this runner's remote-Wormhole acquire state.
     let w_lies = $state<TheC | undefined>(undefined)
     let wormhole_state = $state('')
+    // the CRYPTO axis of the remote-Wormhole grant (absent|invalid|valid) + its reason — kept SEPARATE
+    //  from liveness (channel_live) so the badge never says "granted" over a dead grant.
+    let grant_status = $state('')
+    let grant_reason = $state('')
 
     const _tick = setInterval(() => { now = Date.now() }, 1000)
     onDestroy(() => clearInterval(_tick))
@@ -76,6 +80,8 @@
             role         = (H as any).Lies_role?.(w) ?? ''
             channel_live = !!(H as any).Lies_channel_live?.(w)
             wormhole_state = (w.c?.wormhole_state as string) ?? ''   // remote-Wormhole acquire (runner)
+            grant_status   = (w.c?.wormhole_grant_status as string) ?? ''
+            grant_reason   = (w.c?.wormhole_grant_reason as string) ?? ''
             now          = Date.now()
             // the snapped %Runner carries the STABLE facts in .sc (friendly|ready|book|engaged, 1:1 with the
             //  registry); the VOLATILE timing (last_heard, the ☎ sent/sent_at) rides .c off-snap, so the snap
@@ -209,11 +215,13 @@
     {:else}
         <div class="rp-mini" title={link.text}>
             <span class="rp-dot rp-{link.cls}">{link.glyph}</span>
-            {#if wormhole_state}
-                <!-- the runner's remote-Wormhole acquire state survives the collapse too: begging pulses
-                     amber until the editor grants (the grant CLICK lives on the editor's rack). -->
-                <span class="rp-dot rp-{wormhole_state === 'ready' ? 'live' : 'silent'}"
-                      title={wormhole_state === 'ready' ? 'remote Wormhole granted' : 'begging the editor for remote-Wormhole disk access'}>🛰</span>
+            {#if grant_status || wormhole_state}
+                <!-- the runner's remote-Wormhole crypto verdict survives the collapse too: valid+live=green,
+                     valid+silent=amber (grant good, editor mute), invalid=red (refused), absent=amber (begging). -->
+                <span class="rp-dot rp-{grant_status === 'invalid' ? 'bad' : grant_status === 'valid' && channel_live ? 'live' : 'silent'}"
+                      title={grant_status === 'invalid' ? `INVALID grant — ${grant_reason}; re-begging`
+                           : grant_status === 'valid' ? (channel_live ? 'remote Wormhole granted · crypto valid' : 'grant valid · editor not answering')
+                           : 'begging the editor for remote-Wormhole disk access'}>🛰</span>
             {/if}
         </div>
     {/if}
@@ -269,18 +277,28 @@
              growing-age line — that read as a broken gauge). -->
         <div class="rp-latest">↪ {latest.state} {Math.round((now - latest.at) / 1000)}s ago</div>
     {/if}
-    {#if wormhole_state}
-        <!-- &remoteWormhole=1 acquire status: this runner has no local tree and is acquiring a
-             method:remoteWormhole backend from the editor (beg → grant → install).  The grant is a
-             DURABLE signed atom (stashed, survives reload) — deliberately not connection state — so
-             "grant held" can be true while the relay is down; say so instead of a bare "granted"
-             that reads as "working" beside a ✕ relay face. -->
-        <div class="rp-grant-status rp-{wormhole_state === 'ready' && channel_live ? 'live' : 'silent'}"
-             title="remote Wormhole (method:remoteWormhole) — the editor proxies the real tree; the grant is a durable signed atom, presented per-op over the relay channel">
-            {wormhole_state === 'ready'
-                ? (channel_live ? '🛰️ Wormhole granted' : '🛰️ Wormhole grant held — relay down, ops stall')
-                : '🛰️ begging for Wormhole…'}
-        </div>
+    {#if grant_status || wormhole_state}
+        <!-- &remoteWormhole=1 grant status — TWO AXES, never merged:
+             • crypto (grant_status): absent → begging · invalid → a forged/stale/foreign atom, refused ·
+               valid → we hold a cryptographically real grant.  This is the "does the crypto work" signal.
+             • liveness (channel_live): even a VALID grant can't serve if the relay/editor is silent.
+             A valid grant + dead channel says exactly that, not a bare "granted" that lies as "working". -->
+        {#if grant_status === 'invalid'}
+            <div class="rp-grant-status rp-bad" role="alert"
+                 title={`the held remote-Wormhole grant failed crypto verification — ${grant_reason}. It is refused and NOT used; the runner is re-begging for a fresh one.`}>
+                ⚠ INVALID Wormhole grant{grant_reason ? ` — ${grant_reason}` : ''} · re-begging
+            </div>
+        {:else if grant_status === 'valid'}
+            <div class="rp-grant-status rp-{channel_live ? 'live' : 'silent'}"
+                 title="remote Wormhole (method:remoteWormhole) — a cryptographically valid signed grant, presented per-op over the relay channel">
+                {channel_live ? '🛰️ Wormhole granted · crypto valid' : '🛰️ grant valid · editor not answering — ops stall'}
+            </div>
+        {:else}
+            <div class="rp-grant-status rp-silent"
+                 title="no valid remote-Wormhole grant held — begging the editor for disk access (grant it from the editor's runner rack)">
+                🛰️ begging for Wormhole…
+            </div>
+        {/if}
     {/if}
     {#if phase_live && phase_view}
         <div class="rp-phase" class:stall={run_phase.phase === 'step_stall'} class:done={run_phase.phase === 'all_done'}>
@@ -315,6 +333,7 @@
     .rp-dial   .rp-dot { color: #889; }
     .rp-down   .rp-dot { color: #e06c75; }
     .rp-clash  .rp-dot { color: #e06c75; }
+    .rp-bad    .rp-dot { color: #e06c75; }   /* an INVALID (forged/stale/foreign) grant — refused */
     .rp-down  .rp-txt, .rp-clash .rp-txt { color: #d68a90; }
     .rp-latest { font-size: 9.5px; color: #6a7398; }
     .rp-empty { font-size: 10px; color: #5a6488; font-style: italic; }
@@ -324,6 +343,9 @@
     .rp-grant:hover { background: #3a437a; }
     .rp-grant.on { background: none; border: none; cursor: default; padding: 0; }
     .rp-grant-status { font-size: 9.5px; color: #6a7398; }
+    .rp-grant-status.rp-live   { color: #6ad0a0; }                    /* valid + channel live — actually working */
+    .rp-grant-status.rp-silent { color: #d8b86a; }                    /* valid but editor mute, or begging */
+    .rp-grant-status.rp-bad    { color: #e06c75; font-weight: bold; } /* crypto INVALID — loud, refused */
     .rp-ago { color: #4e5676; }
     .rp-phase { display: flex; align-items: center; gap: 5px; color: #b6a8cc; }
     .rp-phase.stall { color: #d8b86a; }

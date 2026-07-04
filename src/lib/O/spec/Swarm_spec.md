@@ -98,9 +98,23 @@ A `to:<pub>` envelope resolves to whoever currently **holds** that Peering's add
    answer **forfeits the name** and it can be rebound. `// <` surfacing that forfeit as an error the
     owner actually sees is unbuilt.
 
-All **[want]**. The relay-side authenticated bind of a signed `hello` → `prepubOf(pub)` → socket already
- exists (`Cluster_spec §3.2`, **[now]**); the suffixing, the challenge, and the local mutex are the new
-  work.
+The relay-side authenticated bind of a signed `hello` → `prepubOf(pub)` → socket already exists
+ (`Cluster_spec §3.2`, **[now]**). The **identity≠address split + the cooperative-vs-theft distinction +
+  Steal Back** are now **[now]** at the MODEL layer — `Swarm.g`'s *places* region: `Swarm_address`
+   (session address, defaults to the canonical `name`, becomes `<prepub>_N` after a steal-back),
+    `Swarm_next_suffix` (relay's "taken — jump to the next free suffix" done locally), `Swarm_sibling`/
+     `Swarm_is_sibling` (the Dexie-liveQuery "these are all our tabs" roster, modeled as `%Sibling`
+      records), `Swarm_take_role` (the tabs split the work — one plays music, one encodes — so a 6-hour
+       leak never takes it all down), `Swarm_note_theft` (a KNOWN sibling is cooperative co-presence, no
+        alarm; anyone else raises `%Peering.sc.stolen` + a durable `%Stolen,by/at` husk the banner
+         reads), `Swarm_stolen`, and `Swarm_steal_back`. Proved end to end by the **`SwarmSteal`** Book
+          (§9). Session-local by construction: `stolen`/`address`/`role` and the `%Sibling`/`%Stolen`
+           husks are omitted from every export (a backup is the canonical identity, never a moment's
+            reachability). Still **[want]**: the actual browser wiring — Dexie `liveQuery` feeding the
+             sibling roster, the relay's *are-you-alive* challenge and name-forfeit, and the relay
+              surfacing a duplicate-`hello` collision (today the `to:<pub>` bind is silently additive —
+               two sockets for one pub coexist; the `@channel` "taken" refusal is the template) — plus
+                the `Identity Stolen` / `Steal Back` **UI** banner over these verbs.
 
 ---
 
@@ -331,8 +345,14 @@ Run on the **live `:9091` runner** (`runner_ask.mjs run SwarmStaple --watch` →
  **never headless** (CLAUDE.md). SwarmStaple is **live-recorded green 8/8** (2026-07-04). A second Book,
   **`SwarmWire`** (beats 2–5), proves the SAME handshake as real Peeroleum frames — stations by prepub,
    authenticate-first, hello/accept/reject through the real outbox→inbox lifecycle — headless-green,
-    live record owed. The two-real-browsers version is the distributed-Story upgrade `Cluster_spec §5`
-     describes.
+    live record owed. A third Book, **`SwarmSteal`** (beats 2–6), proves the ADDRESS layer (§3): one key
+     in many places — cooperative sibling tabs splitting roles music|encode, a foreign claimant raising
+      *Identity Stolen*, and *Steal Back* re-presenting at `<prepub>_2` (past the thief and the siblings,
+       same key). Its state is NON-monotonic (the address changes, `stolen` toggles), so each `%see`
+        anchors on the durable residue — the persistent `%Stolen` husk, the suffixed address, the roles
+         — a sharper turn of [[see-is-not-a-latch]]. Headless-green 5/5 + byte-deterministic; live record
+          owed. The two-real-browsers version is the distributed-Story upgrade `Cluster_spec §5`
+           describes.
 
 ---
 

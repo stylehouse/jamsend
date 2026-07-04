@@ -88,6 +88,29 @@
         })
     })
 
+    // Stuck downloads — a Good under the Lies Store whose content never landed (c.content still
+    //  undefined) after a few seconds is SUSPICIOUS.  On a runner it means a wormhole read isn't
+    //   coming back — no grant, editor not replying, transport down — and the run is silently
+    //    stalling with nothing to show.  The read machinery retries forever and quietly; the only
+    //     other report is a console line and a %see nobody renders.  So surface it HERE, in the tab
+    //      a human actually looks at.  Derived off `now` (bumps each tick) so it ages live; reads the
+    //       markers LiesStore_read_good already stamps on the Good (.c.asked_at / .c.last_error).
+    const stuck_loads = $derived.by(() => {
+        void now
+        const store = Lies?.o({ req: 'Store' })[0] as TheC | undefined
+        if (!store) return [] as { path: string, secs: number, why: string }[]
+        const t = Date.now()
+        return (store.o({ Good: 1 }) as TheC[])
+            .filter(g => g.c.content === undefined && t - Number(g.c.asked_at ?? t) > 5000)
+            .map(g => ({
+                path: g.sc.path as string,
+                secs: Math.round((t - Number(g.c.asked_at)) / 1000),
+                why:  g.c.last_error
+                    ? `last error: ${g.c.last_error} (×${g.c.error_count})`
+                    : 'no reply yet — transport? grant? editor nav?',
+            }))
+    })
+
     // ── role badge ────────────────────────────────────────────────────
     // The instance's Lies flavour, surfaced ALWAYS-ON (not just as empty-state filler) so a
     //  runner tab is never mistaken for an editor and vice-versa.  w%runner / w%editor are
@@ -288,6 +311,19 @@
         </div>
     {/if}
 
+    <!-- Stuck downloads — a foundational Good (Waft:Cluster, a Book's own Waft) that hasn't come back
+         in a few seconds.  On a runner this IS the silent stall: the wormhole read isn't landing and the
+         run is going nowhere.  Better a loud "can't download X" than a tab that just sits there. -->
+    {#each stuck_loads as s (s.path)}
+        <div class="ls-stuck" role="alert"
+             title="a wormhole/disk read hasn't returned — the read machinery keeps retrying, but nothing is arriving">
+            <span class="ls-stuck-hd">⚠ can't download</span>
+            <code class="ls-stuck-path">{s.path}</code>
+            <span class="ls-stuck-age">stuck {s.secs}s</span>
+            <span class="ls-stuck-why">{s.why}</span>
+        </div>
+    {/each}
+
 </div>
 
 <style>
@@ -341,6 +377,18 @@
     }
     .ls-nokey-hd { font-weight: bold; }
     .ls-nokey :global(.btn) { font-size: 1.15rem; padding: 0.2rem 0.6rem; }
+    /* Stuck-download alert — red-shifted twin of ls-nokey (a fetch that never returns, not a config gap). */
+    .ls-stuck {
+        position: sticky; bottom: 0; z-index: 5;
+        margin: 0.3rem 0 0; padding: 0.45rem 0.7rem; border-radius: 5px; font-size: 0.85rem;
+        display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;
+        color: #f2a0a0; background: #2a0d0d; border: 1px solid rgba(242, 160, 160, 0.5);
+        box-shadow: 0 -2px 14px rgba(0,0,0,0.5);
+    }
+    .ls-stuck-hd   { font-weight: bold; }
+    .ls-stuck-path { color: #f0c674; background: rgba(0,0,0,0.35); padding: 0.05rem 0.3rem; border-radius: 3px; }
+    .ls-stuck-age  { font-variant-numeric: tabular-nums; opacity: 0.9; }
+    .ls-stuck-why  { flex: 1 1 100%; opacity: 0.75; font-size: 0.78rem; }
     .ls-cred {
         display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center;
         margin-bottom: 0.4rem; padding: 0.2rem 0.3rem; border-radius: 3px;

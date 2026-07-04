@@ -2,6 +2,7 @@ Waft:Ghost/Swarm/Easy,active
   Funkcion:CreduFunk
     Funkcion:Storying,of_Book:SwarmStaple
     Funkcion:Storying,of_Book:SwarmWire
+    Funkcion:Storying,of_Book:SwarmSteal
   What:the self
     Doc:Ghost/S/Swarm.g
     Point,method:Swarm_mint_keys
@@ -20,6 +21,11 @@ Waft:Ghost/Swarm/Easy,active
     Doc:Ghost/S/Swarm.g
     Point,method:Swarm_revoke
     Point,method:Swarm_pier_live
+  What:the places
+    Doc:Ghost/S/Swarm.g
+    Point,method:Swarm_note_theft
+    Point,method:Swarm_steal_back
+    Point,method:Swarm_next_suffix
   What:the test
     Doc:Ghost/Story/Swarmation.g
     Point,method:SwarmStaple_drive

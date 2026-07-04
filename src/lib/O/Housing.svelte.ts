@@ -301,7 +301,13 @@ abstract class StorableHousing extends Housing {
         }, AMBIENT_MAIN_TICK_MS)
 
         $effect(() => {
-            if (this.stashed && Object.keys(this.stashed).length) save()
+            if (!this.stashed || !Object.keys(this.stashed).length) return
+            // Deep-read the whole thing so this effect re-runs on ANY nested change — not only a key
+            //  add/remove.  Object.keys alone missed a value OVERWRITE (re-granting the same key, e.g.
+            //   stashed.wormhole_grant = <fresh atom>), so an updated grant never re-persisted.  save()
+            //    still dedups on _last_written, so the extra stringify is cheap and idempotent.
+            void JSON.stringify(this.stashed)
+            save()
         })
 
         $effect(() => {

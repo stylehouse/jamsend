@@ -2971,6 +2971,10 @@ MusuBounce_witness(w):
 //   PARKS as a %parked_want and is answered the moment the frontier passes it — streaming starts with the
 //    FIRST transcoded slice, never waiting for the preview set.  And a %Reco (a note about a Record — the
 //     knowledge graph around the thing) rides the SAME offer fragment as the Record it annotates.
+//  PRINCIPLE (owner, 2026-07-04): this is a SINGULARITY for elegant data delivery — a landscape of ONE
+//   type (C) with clearly defined frontiers | paginations and methods of navigating them.  It is NOT a
+//    %Good and must never fold into one: %Good/req:Store is the legacy request-response RPC floor
+//     (GET /something); the C** stream is the elegant alternative.  You WALK the landscape, you don't GET it.
 //  THE FORMAT looks mostly like enWaft's storage form (enL per particle, tab-objecties) but STREAMY: each
 //   fragment is a partial UPDATE the mirror merges, not a one-shot snapshot.  Each arriving particle is a
 //    "replace of itself": UPSERT by default (o()-locate, then mutate; else create — like oai), BUT the line
@@ -3741,7 +3745,10 @@ async MusuReco_drive(w, req):
 
 // MusuReco_setup — the two Piers over the loopback + A's library of REAL tracks: the first two of the
 //  sorted testsounds walk, decoded through the nav (the MusuCrate path) but UN-transcoded — the decode
-//   waits on c.raw_chunks, nothing serveable yet.  PAGE=10 so a track is a handful of pages, not fifty.
+//   waits on c.raw_chunks, nothing serveable yet.  PAGE=8 deliberately does NOT divide trk0's 100 chunks,
+//    so its final page is a SHORT [96,100) of 4 — the partial-final-page path of a real (arbitrary-length)
+//     track, not an aligned demo.  That makes `complete` a real proof: a broken partial page fails the
+//      exact-sample check.
 async MusuReco_setup(w):
     w i reached:step_2
     let link = await this.Lake_link(w, 'DJ', 'Crowd')
@@ -3751,7 +3758,7 @@ async MusuReco_setup(w):
     link[1].i({ Ud: 1, pubkey: 'DJ' })
     link[0].i({ Ud: 1, pubkey: 'Crowd' })
     this.Repli_arm(w)
-    w.c.repli_page = 10
+    w.c.repli_page = 8
     let src = w.oai({ Library: 1, pier: 'DJ' })
     src.c.up = w
     w.c.repli_src = src
@@ -3778,11 +3785,15 @@ async MusuReco_recommend(w):
     this.Crate_transcode_release(t0, 12)
     await this.Repli_recommend(w, w.c.tx, 'DJ', 'Crowd', t0, 'this one grows — stay past the second chord', 'DJ')
 
-// MusuReco_pull — B pipelines a WINDOW of stride-aligned wants ahead of the mirror's have, fire-and-
-//  forget: frames deliver via the carrier's post_do (the H.todo queue), so trips complete in the beat's
-//   SETTLING, never inside this do_fn — observing progress synchronously is the wrong shape.  Want-once
-//    per offset — a parked want is A's to fulfil, never re-asked — so no page is ever served twice and
-//     the byte count stays exact.  The mirror %Stream's own have IS the cursor base (the resume shape).
+// MusuReco_pull — B expresses interest in the WHOLE remaining stream: one want per stride offset from the
+//  mirror's have to total, want-once.  Fire-and-forget — frames deliver via the carrier's post_do (the
+//   H.todo queue), so trips complete in the beat's SETTLING, never inside this do_fn (observing progress
+//    synchronously is the wrong shape; see the pull-loop that degraded to one-page-per-beat).  The FLOW
+//     CONTROL is the parking, not a re-ask: the server serves what its transcode frontier covers and PARKS
+//      the rest, draining the parks as it advances.  So the client asks once and the frontier paces
+//       delivery — walking the landscape, not polling for the next page.  Want-once keeps every page
+//        single-served (exact bytes); have stays stride-aligned (it advances a full PAGE per page, the
+//         short final page only at total) so `from` never straddles the page grid.
 async MusuReco_pull(w):
     let lib = this.Repli_mirror_lib(w)
     let rec = lib.o({ Record: 1, id: 'trk0' })[0]
@@ -3790,18 +3801,16 @@ async MusuReco_pull(w):
     let s = rec.o({ Stream: 1 })[0]
     if (!s) return
     let PAGE = +(w.c.repli_page || 2)
-    let WINDOW = 4
     w.c.reco_wanted = w.c.reco_wanted || {}
     let have = +(s.sc.have || 0)
     let total = +(s.sc.total || 0)
-    let k = 0
-    while (k < WINDOW) {
-        let from = have + k * PAGE
-        k = k + 1
-        if (total > 0 && from >= total) break
-        if (w.c.reco_wanted[from]) continue
-        w.c.reco_wanted[from] = 1
-        await this.Repli_want_next(w, w.c.rx, 'Crowd', 'DJ', 'trk0', 'audio', from)
+    let from = have
+    while (total > 0 && from < total) {
+        if (!w.c.reco_wanted[from]) {
+            w.c.reco_wanted[from] = 1
+            await this.Repli_want_next(w, w.c.rx, 'Crowd', 'DJ', 'trk0', 'audio', from)
+        }
+        from = from + PAGE
     }
     // the eager claim, CAPTURED at its moment: audio has reached B while A's transcode still runs.
     let src0 = w.c.repli_src ? w.c.repli_src.o({ Record: 1, id: 'trk0' })[0] : null

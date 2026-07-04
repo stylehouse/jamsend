@@ -45,6 +45,13 @@
     // funk.c.verdict is stamped off-snap by storying_run (driven by Lies_reflect_storying when a run_result lands); track funk.version.
     let v     = $derived((() => { void funk.version; return (funk.c.verdict as any) ?? { phase: 'working' } })())
     let bound = $derived((funk.sc.of_Book ?? funk.sc.of_dock) as string | undefined)
+    // brand_new — a Book that has NEVER recorded a green run wears ✦ NEW until its first green.
+    //  Authored as %brand_new (rides `1`) on the board's Storying cell; Lies_reflect_storying strips
+    //   it on the first green verdict.  Never-green is the DURABLE truth (no NNN.snap on disk) and
+    //    'working' can't carry it — run_result is TTL'd, so a fresh board reads every cell as working.
+    let is_new = $derived((() => { void funk.version; return !!funk.sc.brand_new })())
+    // the light shown: a real red|green verdict always wins; else NEW if never-green; else awaiting.
+    let disp   = $derived(v.phase === 'good' ? 'good' : v.phase === 'bad' ? 'bad' : is_new ? 'new' : 'working')
     const leaf = (p: any) => String(p ?? '').split('/').pop()
 
     // A dock cell fires the "run it now" intent Esc does (Lies_run_arm → runner runs off the
@@ -61,10 +68,11 @@
 {#if raw}
     <div class="fk-raw">Funkcion:{funk.sc.Funkcion}{bound ? ` → ${bound}` : ''}</div>
 {:else}
-    <button class="fk fk-{v.phase}" onclick={strike}
-        title="Credence cell · click to run · {bound ?? 'unbound'} — {v.phase === 'good' ? `green, ${v.pass}/${v.total} steps` : v.phase === 'bad' ? `red, ${v.pass}/${v.total} steps` : 'awaiting a run'}{v.dige ? ` @ ${String(v.dige).slice(0,8)}` : ''}">
-        <span class="fk-ico">{v.phase === 'good' ? '✓' : v.phase === 'bad' ? '✗' : '◴'}</span>
+    <button class="fk fk-{disp}" onclick={strike}
+        title="Credence cell · click to run · {bound ?? 'unbound'} — {disp === 'good' ? `green, ${v.pass}/${v.total} steps` : disp === 'bad' ? `red, ${v.pass}/${v.total} steps` : disp === 'new' ? 'never recorded a green run — brand new' : 'awaiting a run'}{v.dige ? ` @ ${String(v.dige).slice(0,8)}` : ''}">
+        <span class="fk-ico">{disp === 'good' ? '✓' : disp === 'bad' ? '✗' : disp === 'new' ? '✦' : '◴'}</span>
         <span class="fk-name">{funk.sc.of_Book ?? funk.sc.Funkcion}</span>
+        {#if disp === 'new'}<span class="fk-newtag">NEW</span>{/if}
         {#if v.total}<span class="fk-steps">{v.pass}/{v.total}</span>{/if}
         {#if funk.sc.of_dock}<span class="fk-dock">{leaf(funk.sc.of_dock)}</span>{/if}
     </button>
@@ -90,6 +98,10 @@
     .fk-bad     { border-color: rgba(255, 136, 136, 0.4); background: rgba(255, 136, 136, 0.08); color: #f88; }
     .fk-bad     .fk-name { color: #f9a; }
     .fk-working { border-color: #3a3420; color: #c4a86a; }
+    /* brand-new: never recorded a green run — amber ✦ with a NEW pill, distinct from ◴ working. */
+    .fk-new     { border-color: rgba(224, 176, 96, 0.5); background: rgba(224, 176, 96, 0.09); color: #e0b060; }
+    .fk-new     .fk-name { color: #f0c887; }
+    .fk-newtag  { font-size: 0.6rem; font-weight: bold; letter-spacing: 0.05em; color: #1a1408; background: #e0b060; padding: 0.02rem 0.28rem; border-radius: 3px; }
     .fk-raw {
         font-family: monospace; font-size: 0.74rem; color: #8a7a5a; padding: 0.1rem 0.2rem;
     }
