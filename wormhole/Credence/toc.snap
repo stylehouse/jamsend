@@ -47,6 +47,7 @@ Waft:Credence
       What:the network,desc:audio frames and content routing over the real Peeroleum transport
         Funkcion:Storying,of_Book:MusuMesh
         Funkcion:Storying,of_Book:MusuPier
+    Funkcion:Storying,of_Book:MusuMitosis
   What:Lake,desc:the editor machine — the Lies compile-run pipeline over Docs Wafts and focus
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:LakeSurfer
@@ -79,8 +80,8 @@ Waft:Credence
     Funkcion:Storying,of_Book:AwFloat,brand_new:1
     What:Voro,desc:the Voronoi-Cyto render — Cyto's force layout reinterpreted as power-diagram cells with the crushed Stuffings molded into a rosette
       Funkcion:StoryTimes
-      Funkcion:Storying,of_Book:MusuMitosis
-      Funkcion:Storying,of_Book:MusuScape
+      Funkcion:Storying,of_Book:VoroMitosis,brand_new:1
+      Funkcion:Storying,of_Book:VoroScape,brand_new:1
   What:Misc,inline:1,desc:editor codecs LangHold-checkout peering export ttl-waits and reactive-Waft stability
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:Editron
@@ -99,5 +100,3 @@ Waft:Credence
     Funkcion:Storying,of_Book:Engage
     Funkcion:Storying,of_Book:WaftMapPacked
     Funkcion:Storying,of_Book:Educarium,brand_new:1
-    Funkcion:Storying,of_Book:VoroMitosis
-    Funkcion:Storying,of_Book:VoroScape

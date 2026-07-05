@@ -1,0 +1,89 @@
+Snap:H
+  H:VoroMitosis,Run
+    A:VoroMitosis
+      self,round=9	{"mung":["age"]}
+      w:VoroMitosis
+        self,round=9	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        cell:Coprosma
+          Coprosma:rhamnoides
+            Coprosma:rhamnoides var. prostrata
+          Coprosma:propinqua
+          Coprosma:rhamnoides
+          Coprosma:tenuifolium
+          Coprosma:excelsa
+          Coprosma:tenuifolium
+          Coprosma:excelsa
+        cell:Veronica
+          Veronica:lucida
+          Veronica:grandifolia
+          Veronica:lucida
+          Veronica:totara
+          Veronica:fusca
+        cell:Pittosporum
+          Pittosporum:robusta
+            Pittosporum:robusta var. prostrata
+              Pittosporum:robusta var. prostrata subsp. australis
+              Pittosporum:robusta var. prostrata var. montana
+              Pittosporum:robusta var. prostrata var. prostrata
+              Pittosporum:robusta var. prostrata f. viridis
+          Pittosporum:propinqua
+          Pittosporum:rhamnoides
+          Pittosporum:grandifolia
+          Pittosporum:microphylla
+          Pittosporum:serrata
+          Pittosporum:robusta
+          Pittosporum:propinqua
+          Pittosporum:lucida
+          Pittosporum:tenuifolium
+          Pittosporum:fusca
+          Pittosporum:tenax
+          Pittosporum:australis
+          Pittosporum:divaricata
+        cell:Metrosideros
+          Metrosideros:grandifolia
+            Metrosideros:grandifolia f. viridis
+              Metrosideros:grandifolia f. viridis var. montana
+              Metrosideros:grandifolia f. viridis var. prostrata
+              Metrosideros:grandifolia f. viridis f. viridis
+          Metrosideros:lucida
+          Metrosideros:tenuifolium
+          Metrosideros:tenax
+          Metrosideros:montana
+          Metrosideros:linearis
+          Metrosideros:rhamnoides
+          Metrosideros:grandifolia
+          Metrosideros:excelsa
+          Metrosideros:totara
+          Metrosideros:crassifolius
+          Metrosideros:colensoi
+        cell:Podocarpus
+          Podocarpus:lucida
+            Podocarpus:lucida subsp. australis
+              Podocarpus:lucida subsp. australis var. prostrata
+              Podocarpus:lucida subsp. australis f. viridis
+          Podocarpus:colensoi
+          Podocarpus:australis
+          Podocarpus:serrata
+          Podocarpus:robusta
+          Podocarpus:propinqua
+          Podocarpus:lucida
+          Podocarpus:tenuifolium
+          Podocarpus:fusca
+          Podocarpus:tenax
+        cell:Nothofagus
+          Nothofagus:crassifolius
+            Nothofagus:crassifolius var. montana
+              Nothofagus:crassifolius var. montana f. viridis
+          Nothofagus:divaricata
+          Nothofagus:microphylla
+          Nothofagus:linearis
+          Nothofagus:rhamnoides
+          Nothofagus:grandifolia
+          Nothofagus:excelsa
+          Nothofagus:totara
+        cell:Phormium
+          Phormium:robusta
+          Phormium:linearis
+          Phormium:robusta
+          Phormium:grandifolia

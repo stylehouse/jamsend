@@ -8,6 +8,8 @@ The high-level shape of the music-piracy platform and the functions we string to
 The companion docs: `Music_todo.md` (the older running todo), `Hovercraft.design.md` (req/ttlilt),
  `EntropyArrest.md` (snap-noise taming + the caveat band the transport Books lean on). `Swarm_spec.md` is
   the non-Radio half — the p2p social side (identity, presence, sharing) this streams over.
+   `Radio_scape_handover.md` is the live session brief for the **scape** (§8) — the Voro layer, the demo
+    Books, and the road to Sounditron.
 
 ---
 
@@ -262,18 +264,52 @@ The MVP that ties it together: a real caster on the Pier streaming a real `%reco
 
 Where §1-7 build the *stream*, the **scape** is the *view*: the whole thing as a Cyto graph tessellated into
  **Voronoi stained-glass cells** (Cytui ◈ mode — power-diagram cells coloured by Matstyle; the render is pure
-  pixels, so no Book sees it — `voronoi-cells-render`). `lib/V/BigSoundland.svelte` (was Mound) is its toplevel (the `/` route
-   Piracy-scape); the owner's destination is "Voronoi stained glass graphs of music."
+  pixels, so no Book sees it — `voronoi-cells-render`). `lib/V/BigSoundland.svelte` (was Mound) is its toplevel
+   (the `/` route Piracy-scape); the owner's destination is "Voronoi stained glass graphs of music."
+    *Session-continuation brief for this whole area: `Radio_scape_handover.md`.*
 
-- **MusuMitosis** (`Musuation.g`) — the render's first gauge: abstract NZ-flora cells that grow, divide, and
-   die, crush-folded so each genus is one pane. Watched dividing.
-- **MusuScape** (`Musuation.g` `//#region scape`, live-green 6/6) — the MUSIC twin, with the graph structure
+**The crush is now a decoupled luxury layer.** The fold that turns a big graph into a few Stuffing chunks
+ (`Voro_crush_scan / _walk / _crushable / _clear`) MOVED out of `Musuation.g` into its own family home
+  **`Ghost/V/Voro.g`**, enrolled in `CREDULER_GHOSTS` (runner-only — the editor never loads it, so ◈ imposition
+   stands down there). Every stamp is **c-side and snap-blind**: `c.stuff` = the fold (Cyto suppresses descent
+    past it), `c.stuffy` = the crushed skin — NOTHING is written to `.sc`, so a Story that folds records exactly
+     what it would unfolded. There is **no `%Crush_Tree` and no `%Opt`** any more: fold totals come back as a
+      live `{folded,count}` return from `Voro_crush_scan(w)`; the demo Books arm the crush **c-side**
+       (`w.c.crush_wanted=1`) rather than a `%crushCyto` opt, so nothing is pushed to `w/%Opt` (crushCyto was
+        the only For/w: opt, so dropping it drops the whole node). **◈ imposes** the crush on ANY graph
+         (`Cyto_crush{on:1}` → `e_Cyto_crush` arms `Scannable.c.crush_wanted` → the crusher runs before each
+          scan; off strips via `Voro_crush_clear`). MusuReplica keeps its `%crushCyto` opt and calls the shared
+           crusher cross-ghost — the imposition example, and the reason it re-records with the two Voro Books.
+
+**The two demo Books, renamed into the Voro family** (world-name dispatch is ghost-agnostic — `do_fn_for`
+ reads `w.sc.w`, so `VoroMitosis(A,w)` in Voro.g just runs; the world MUST be named after the Book):
+- **VoroMitosis** (was MusuMitosis) — the render's first gauge: abstract NZ-flora cells that grow, divide,
+   and die, crush-folded so each **genus** is one pane. Species are keyed **by genus** (`{Coprosma:'robusta'}`,
+    not a flat `%spore` pile), so the fold's Stuffing groups by genus and a speciation split re-keys the
+     daughter to its new genus. Watched dividing.
+- **VoroScape** (was MusuScape, was live-green 6/6 pre-rename) — the MUSIC twin, with the graph structure
    Mitosis lacks: `%Artist,name / %Track,title` panes (the library), `%Peer,name / %Share,track` (a friend
     and the tracks they share — a share is an EDGE onto a real track), and a **hub** (a track many friends
      share = the power-diagram weight — a hit blazes, a deep cut is a sliver). The graph re-weights LIVE as
       friends come and go; the crush folds every pane at the last beat so the voronoi arms.
-- **BigSoundland** (was Mound; `/` and `/BigSoundland`) boots the machine as a **runner on a music Book** (default MusuScape → becoming Sounditron, `?B=` overrides) and
-   renders the Cyto UI full-bleed — the run rests in the stained-glass state. **First cut, browser-verify
-    OWED.** NEXT: a LIVE gather (real library + real Piers off the Swarm side, `Swarm_spec §6`) in place of the
-     seeded Book, and a bespoke Voro surface; open owner call — a runner boot joins the relay flock (fine for a
-      live Piracy-scape, but `boot_role='editor'` if `/` shouldn't spawn a grid runner).
+- Both now live in `wormhole/Story/Voro{Mitosis,Scape}`; **fixtures were cleared for a fresh live re-record**
+   (owed, with MusuReplica — the rename + the c-side flip invalidated the old snaps). Registered in Credence
+    `What:Voro` (both `brand_new:1`).
+
+**BigSoundland** (was Mound; `/` and `/BigSoundland`) boots the machine as a **runner on a music Book**
+ (default **VoroScape**, `?B=` overrides) and renders the Cyto UI full-bleed — the run rests in the
+  stained-glass state. It is **becoming Sounditron** — the sound twin of Educarium/Editron: a central
+   diagnostic Book (NOT a Musu* test, NO Lies+Lang) that lurks in the background, probes the real audio +
+    networking environment ("is a track playing? are my people online?"), and surfaces coherent errors so a
+     user becomes a reporting test-probe. **First cut, browser-verify OWED** — the `/` tab stalls at Creduler
+      spine-load with no identity/share/relay, so BigSoundland.svelte shows a diagnostic surface (boot state +
+       the Story-runner UI) while the glass hasn't gathered. NEXT: a LIVE gather (real library via the Crate
+        nav + real Piers off the Swarm side, `Swarm_spec §6`) in place of the seeded Book, and a bespoke Voro
+         surface; open owner call — a runner boot joins the relay flock (fine for a live Piracy-scape, but
+          `boot_role='editor'` if `/` shouldn't spawn a grid runner).
+
+**Cytui scape UI (2026-07-05):** a **Vexpandy** V-toggle sits in the ◈ bar — it doubles the graph height
+ (50vh↔100vh via `class:tall`) and re-fits (`cy.resize()` + `cy.fit`) after the toggle. The layout wave was
+  also changed to keep the overlays/cells LIVE through the animation (reusing the drag-frame budget self-heal
+   via a `live_layout` flag) instead of hiding them until settle — **owner DISPUTES this holds; UNVERIFIED,
+    verify on a live runner or revert** (`Cytui.svelte` `start_live_layout` / `stop_live_layout`).

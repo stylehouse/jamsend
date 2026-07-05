@@ -17,18 +17,28 @@ story:VoroMitosis
     dontSnapCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.092
+    TimeTotal:beliefs,avg=0.057
       sample=0.092,at=1783236975
-    TimeTotal:step,avg=0.008
+      sample=0.048,at=1783237683
+      sample=0.062,at=1783237754
+      sample=0.05,at=1783237774
+      sample=0.046,at=1783238623
+      sample=0.046,at=1783239919
+    TimeTotal:step,avg=0.005
       sample=0.008,at=1783236975
-  step,dige:098e7ce6a990b59b
-  step=2,dige:842b238963a451f1
-  step=3,dige:95d10bd933fbda25
-  step=4,dige:d1ec37c8a51a2b8a
-  step=5,dige:996fbd3aa44e9ef9
-  step=6,dige:9b9629417a5d3277
-  step=7,dige:e770b26d394d1383
-  step=8,dige:e43b56e88a05375a
-  step=9,dige:5138b7ce8b54bda0
-  step=10,dige:d0826c16787d57c3
-  step=11,dige:d0110ce695362e4b
+      sample=0.004,at=1783237683
+      sample=0.006,at=1783237754
+      sample=0.005,at=1783237774
+      sample=0.004,at=1783238623
+      sample=0.004,at=1783239919
+  step,dige:9eb579214a9df3ce
+  step=2,dige:3a06cc53529bea87
+  step=3,dige:42b634192aaaa6d8
+  step=4,dige:3c2a9d932b4e9ce9
+  step=5,dige:90d2df1540cb6b61
+  step=6,dige:6e5898723dcde7be
+  step=7,dige:6d1a9ca3da88b70e
+  step=8,dige:2ef55b8d5019d4f0
+  step=9,dige:ba2563e0c84ccfbb
+  step=10,dige:7bfb7f73bd842382
+  step=11,dige:f90e36ca74f23329

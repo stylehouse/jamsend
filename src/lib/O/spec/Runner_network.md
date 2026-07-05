@@ -1,5 +1,8 @@
 # Runner_network.md — how a runner gets (and keeps) its relay connection
 
+> **SLATED TO FOLD into `Cluster_spec.md` §3** (the runner flock). Authoritative until then; the
+> consolidation plan + order live in `Robustness_plan.md` (Closeout section, top).
+
 > **The "relay down" wedge has a named root cause: latched channel state.** `w.c.channel_up`
 > (`LiesLies.svelte:319`) and `w.c.transport_up` (`:346`) are **set once and cleared nowhere** — an
 > HMR remix that strips `Socket_real` leaves the latch asserting "up" while standup never re-runs.

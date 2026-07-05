@@ -1,0 +1,35 @@
+Snap:H
+  H:VoroMitosis,Run
+    A:VoroMitosis
+      self,round=5	{"mung":["age"]}
+      w:VoroMitosis
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        cell:Coprosma
+          Coprosma:lucida
+            Coprosma:lucida var. prostrata
+          Coprosma:colensoi
+          Coprosma:australis
+          Coprosma:serrata
+          Coprosma:montana
+          Coprosma:serrata
+          Coprosma:montana
+        cell:Veronica
+          Veronica:crassifolius
+          Veronica:divaricata
+          Veronica:microphylla
+          Veronica:linearis
+          Veronica:robusta
+        cell:Pittosporum
+          Pittosporum:robusta
+            Pittosporum:robusta var. prostrata
+          Pittosporum:propinqua
+          Pittosporum:rhamnoides
+          Pittosporum:grandifolia
+          Pittosporum:microphylla
+          Pittosporum:serrata
+        cell:Metrosideros
+          Metrosideros:grandifolia
+          Metrosideros:lucida
+          Metrosideros:tenuifolium
+          Metrosideros:tenax

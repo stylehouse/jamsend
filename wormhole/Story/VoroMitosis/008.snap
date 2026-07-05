@@ -1,0 +1,72 @@
+Snap:H
+  H:VoroMitosis,Run
+    A:VoroMitosis
+      self,round=8	{"mung":["age"]}
+      w:VoroMitosis
+        self,round=8	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        cell:Coprosma
+          Coprosma:rhamnoides
+          Coprosma:propinqua
+          Coprosma:rhamnoides
+          Coprosma:tenuifolium
+          Coprosma:excelsa
+        cell:Veronica
+          Veronica:robusta
+            Veronica:robusta var. montana
+          Veronica:linearis
+          Veronica:robusta
+          Veronica:grandifolia
+          Veronica:lucida
+          Veronica:grandifolia
+          Veronica:lucida
+        cell:Pittosporum
+          Pittosporum:robusta
+            Pittosporum:robusta var. prostrata
+              Pittosporum:robusta var. prostrata subsp. australis
+              Pittosporum:robusta var. prostrata var. montana
+              Pittosporum:robusta var. prostrata var. prostrata
+          Pittosporum:propinqua
+          Pittosporum:rhamnoides
+          Pittosporum:grandifolia
+          Pittosporum:microphylla
+          Pittosporum:serrata
+          Pittosporum:robusta
+          Pittosporum:propinqua
+          Pittosporum:lucida
+          Pittosporum:tenuifolium
+          Pittosporum:fusca
+          Pittosporum:tenax
+        cell:Metrosideros
+          Metrosideros:grandifolia
+            Metrosideros:grandifolia f. viridis
+              Metrosideros:grandifolia f. viridis var. montana
+              Metrosideros:grandifolia f. viridis var. prostrata
+          Metrosideros:lucida
+          Metrosideros:tenuifolium
+          Metrosideros:tenax
+          Metrosideros:montana
+          Metrosideros:linearis
+          Metrosideros:rhamnoides
+          Metrosideros:grandifolia
+          Metrosideros:excelsa
+          Metrosideros:totara
+        cell:Podocarpus
+          Podocarpus:lucida
+            Podocarpus:lucida subsp. australis
+              Podocarpus:lucida subsp. australis var. prostrata
+          Podocarpus:colensoi
+          Podocarpus:australis
+          Podocarpus:serrata
+          Podocarpus:robusta
+          Podocarpus:propinqua
+          Podocarpus:lucida
+          Podocarpus:tenuifolium
+        cell:Nothofagus
+          Nothofagus:crassifolius
+            Nothofagus:crassifolius var. montana
+          Nothofagus:divaricata
+          Nothofagus:microphylla
+          Nothofagus:linearis
+          Nothofagus:rhamnoides
+          Nothofagus:grandifolia

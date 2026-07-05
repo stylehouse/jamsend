@@ -5,6 +5,33 @@
 > (latched state · silent failure · no-single-source-of-truth · identity model) converged on
 > **one disease**. This is the plan of record for curing it. Owner said "we'll do whatever it takes."
 
+## Closeout — verify, then fold this + `Runner*` into `Cluster_spec.md`
+
+> **This doc is being retired.** `Robustness_plan.md` + the `Runner*` family (`Runner_network.md`,
+> `Runner_quality_handover.md`, `Runner_talk_TODO.md`) fold into **`Cluster_spec.md`** — one home for the
+> trust · runner-flock · transport · identity story. Target: the 6 cluster/runner/robustness docs → `Cluster_spec.md`
+> (reconciling `Cluster_runner_handover.md` in too). This section is the *path*, not the fold — execute in order,
+> don't blind-merge. (Owner 2026-07-05: reduce docs; everything coherent within `Cluster*`.)
+
+**Step 0 — the gate (do FIRST): one live-runner verification pass.** This doc's remaining job is tracking the
+`:9091`-UNVERIFIED items landed 2026-07-04/05 (see "The prioritized plan" below). Verify them and that job ends —
+which is what *lets* the doc retire. One runner session, in order:
+1. **retry fires** — proxy runner, reload it mid-run, watch `🕳↻` / `📊 …retried≥1` self-heal in ~4-8s (not a 20s stall). → `Runner_network.md` §Hardening-C + memory `reconnect-epoch-seq-collision`.
+2. **needsFSA routes** — an FSA runner *takes* `MusuGenerateTestsMusic`; a proxy runner refuses `fsa_blocked`. → memory `needsfsa-dispatch-gate` (has NO doc home — give it one in Cluster §3 during the fold).
+3. **P0/P1/P2 landed** — re-confirm each live (`land_good` re-ask · latch clear-on-`Socket_real`-vanish · nav-precedence badge). → "The prioritized plan" below.
+4. **crush masking** — MusuReco's `recent` husk must not hide a dropped frame (Organ 2, in the *rendering* layer): **decide whether the husk keeps `body_hash`/`acked` on the recent window BEFORE re-recording**, or the ack-blindness freezes into the fixture. → memory `musureplica-crush`, `Radio_spec.md` §6.
+
+**Migration map** — where each doc lands in `Cluster_spec.md`:
+- `Runner_network.md` (layers · who-dials · Brink badges · failure-ladder · spin-outs A/B/C/D) → **§3 the runner flock**, as a "connection substrate" subsection; the CLI-proving bits → §3.3 `Lies%runner`.
+- `Runner_quality_handover.md` (belief-queue coalesce · click-preempt) → **§3** (runner-machine quality).
+- `Runner_talk_TODO.md` (drive→examine→accept a live runner over the relay) → **§5 distributed Story** + §3.3.
+- `Robustness_plan.md` organs → their Cluster §homes: **Organ 1** latch → §3 · **Organ 2** silent-success → §1/§2 (the Peeroleum ack) · **Organ 4** identity 9→2 → §2/§3 (it *is* the identity model) · **Organ 5** partial-interface → §3.8 (`w:Wormhole` backing). The **assert-vs-derive disease** graduates to a stated *principle* at the head of §2.
+- **Exception — Organ 3** (single-source-of-truth / the `land_good` wipe) is **app-wide, not cluster-only**: keep it a short stub here, or lift the principle into `CLAUDE.md`; do NOT force it into `Cluster*`.
+
+**Order** (once Step 0 is green): fold the three `Runner*` → `Cluster §3`/§5 and delete them → distribute the four cluster-shaped organs + graduate the principle → delete `Robustness_plan.md` (bar the Organ-3 stub) → reconcile `Cluster_runner_handover.md` into `Cluster_spec.md`. **End state: `Cluster_spec.md` is the single home; `Robustness*`/`Runner*` are gone.**
+
+---
+
 ## The disease (one sentence)
 
 **State is *asserted* instead of *derived*, and boundaries are *trusted* instead of *confirmed*.**

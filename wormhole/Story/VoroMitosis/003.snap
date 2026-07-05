@@ -1,0 +1,29 @@
+Snap:H
+  H:VoroMitosis,Run
+    A:VoroMitosis
+      self,round=3	{"mung":["age"]}
+      w:VoroMitosis
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        cell:Coprosma
+          Coprosma:robusta
+            Coprosma:robusta subsp. australis
+          Coprosma:propinqua
+            Coprosma:propinqua var. montana
+            Coprosma:propinqua var. prostrata
+          Coprosma:rhamnoides
+          Coprosma:grandifolia
+            Coprosma:grandifolia var. montana
+            Coprosma:grandifolia var. prostrata
+          Coprosma:lucida
+          Coprosma:colensoi
+          Coprosma:australis
+        cell:Veronica
+          Veronica:grandifolia
+            Veronica:grandifolia subsp. australis
+          Veronica:lucida
+            Veronica:lucida var. montana
+            Veronica:lucida var. prostrata
+          Veronica:tenuifolium
+          Veronica:tenax
+          Veronica:crassifolius

@@ -1,0 +1,7 @@
+Snap:H
+  H:VoroMitosis,Run
+    A:VoroMitosis
+      self,round	{"mung":["age"]}
+      w:VoroMitosis
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok
