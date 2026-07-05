@@ -3,5 +3,7 @@ Snap:H
     A:MusuReco
       self,round	{"mung":["age"]}
       w:MusuReco
+        Opt
+          crushCyto
         self,round	{"mung":["age"]}
         req:wrangle,eternal,ok

@@ -4,10 +4,7 @@ story:MusuGenerateTestsMusic
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.194
-      sample=0.139,at=1783184608
-      sample=0.135,at=1783184659
-      sample=0.209,at=1783185692
+    TimeTotal:beliefs,avg=0.196
       sample=0.252,at=1783185739
       sample=0.29,at=1783185781
       sample=0.207,at=1783186465
@@ -15,10 +12,10 @@ story:MusuGenerateTestsMusic
       sample=0.163,at=1783186609
       sample=0.199,at=1783186620
       sample=0.173,at=1783187441
-    TimeTotal:step,avg=0.097
-      sample=0.07,at=1783184608
-      sample=0.068,at=1783184659
-      sample=0.104,at=1783185692
+      sample=0.184,at=1783221533
+      sample=0.184,at=1783221539
+      sample=0.134,at=1783221543
+    TimeTotal:step,avg=0.098
       sample=0.126,at=1783185739
       sample=0.145,at=1783185781
       sample=0.103,at=1783186465
@@ -26,5 +23,8 @@ story:MusuGenerateTestsMusic
       sample=0.082,at=1783186609
       sample=0.1,at=1783186620
       sample=0.086,at=1783187441
-  step,dige:9cecc0b2a2c5e551
-  step=2,dige:12163f25fd808ce4
+      sample=0.092,at=1783221533
+      sample=0.092,at=1783221539
+      sample=0.067,at=1783221543
+  step,dige:635a1afde8bfc801
+  step=2,dige:5d7bdf139a06c7d1

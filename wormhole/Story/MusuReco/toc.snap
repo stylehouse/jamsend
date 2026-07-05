@@ -53,42 +53,41 @@ story:MusuReco
   Plan
   Opt
     waitCyto
-    useCyto
     dontSnapCyto
     For
       w:MusuReco
         crushCyto
   TimeSpool
-    TimeTotal:beliefs,avg=2.359
-      sample=0.488,at=1783112031
-      sample=0.411,at=1783112144
-      sample=0.472,at=1783112220
-      sample=0.472,at=1783112226
-      sample=0.431,at=1783131472
-      sample=0.309,at=1783132301
-      sample=0.453,at=1783132773
-      sample=20.104,at=1783156973
-      sample=0.404,at=1783174191
-      sample=0.051,at=1783181079
-    TimeTotal:step,avg=0.215
-      sample=0.044,at=1783112031
-      sample=0.037,at=1783112144
-      sample=0.043,at=1783112220
-      sample=0.043,at=1783112226
-      sample=0.039,at=1783131472
-      sample=0.028,at=1783132301
-      sample=0.041,at=1783132773
-      sample=1.828,at=1783156973
-      sample=0.037,at=1783174191
-      sample=0.005,at=1783181079
-  step,dige:3dbd760e21c9003f
-  step=2,dige:ccd32f76dbb85dec
-  step=3,dige:ad78d3c0f6f77959
-  step=4,dige:cbc173ad196130d9
-  step=5,dige:7d525b33fc16e085
-  step=6,dige:cf1a29dc4a6f9d1d
-  step=7,dige:014b3137bbeff6e5
-  step=8,dige:c55be628f5bcc0af
-  step=9,dige:7c350929fdca3c1b
-  step=10,dige:b6a50c3957802f74
-  step=11,dige:224632b33aa38dff
+    TimeTotal:beliefs,avg=1.292
+      sample=1.335,at=1783221604
+      sample=1.335,at=1783221605
+      sample=1.335,at=1783221606
+      sample=1.335,at=1783221607
+      sample=1.335,at=1783221609
+      sample=1.335,at=1783221609
+      sample=1.335,at=1783221610
+      sample=1.335,at=1783221611
+      sample=1.159,at=1783221657
+      sample=1.078,at=1783221760
+    TimeTotal:step,avg=0.117
+      sample=0.121,at=1783221604
+      sample=0.121,at=1783221605
+      sample=0.121,at=1783221606
+      sample=0.121,at=1783221607
+      sample=0.121,at=1783221609
+      sample=0.121,at=1783221609
+      sample=0.121,at=1783221610
+      sample=0.121,at=1783221611
+      sample=0.105,at=1783221657
+      sample=0.098,at=1783221760
+  step,dige:b2edec1166833935
+  step=2,dige:5ae20d3ed3e35721
+  step=3,dige:a21d90be59143942
+  step=4,dige:fe051d18d5fe6c17
+  step=5,dige:e16145cadc4ad768
+  step=6,dige:bbb1b53c1752ab56
+  step=7,dige:5906667fb0681a8e
+  step=8,dige:df238a55a3efbd7f
+  step=9,dige:476686586153459e
+  step=10,dige:81a37e469915e174
+  step=11,dige:d36269edd1955f56

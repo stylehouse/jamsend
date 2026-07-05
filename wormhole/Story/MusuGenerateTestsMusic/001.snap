@@ -5,3 +5,6 @@ Snap:H
       w:MusuGenerateTestsMusic
         self,round	{"mung":["age"]}
         req:wrangle,eternal,ok
+        req:gen_testsounds
+          ttlilt	{"mung":["until_ts"]}
+        generating=8,dir:testsounds
