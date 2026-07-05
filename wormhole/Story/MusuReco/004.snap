@@ -1,18 +1,17 @@
 Snap:H
   H:MusuReco,Run
     A:MusuReco
-      self,round=16	{"mung":["age"]}
+      self,round=17	{"mung":["age"]}
       w:MusuReco
-        Opt
-          crushCyto
-        self,round=16	{"mung":["age"]}
+        self,round=17	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Peering,name:DJ,req=2,ok
           Pier,pub:Crowd,req=2,ok
             Ud,pubkey:Crowd
-            outbox,stuff
-              emit,type:repli_lines,seq,sent,body_hash:74378263a1673f692726c4e53979546fd81f10b44423df9629bf4893b7cbc49e,body_len=322,acked
+            outbox
+              recent
+                emit,type:repli_lines,seq
               emit=2,type:repli_lines,seq=2,sent,body_hash:b189aaeb8ad0f62bb201dd67d943abad94c147c513c7206b1ad18428cd9dc497,body_len=134,acked
               emit=3,type:repli_page,seq=3,sent,body_hash:959ff994853f630888b91928676bf73864c4d2f924256ed6d98d4350336af734,body_len=76800,acked
             inbox
@@ -79,11 +78,12 @@ Snap:H
         Peering,name:Crowd,req=3,ok
           Pier,pub:DJ,req=2,ok
             Ud,pubkey:DJ
-            inbox,stuff
-              req:unemit,seq,type:repli_lines,body_hash:74378263a1673f692726c4e53979546fd81f10b44423df9629bf4893b7cbc49e,body_len=322,done,to:repli_lines,finished
+            inbox
+              recent
+                unemit,type:repli_lines,seq
               req:unemit,seq=2,type:repli_lines,body_hash:b189aaeb8ad0f62bb201dd67d943abad94c147c513c7206b1ad18428cd9dc497,body_len=134,done,to:repli_lines,finished
               req:unemit,seq=3,type:repli_page,body_hash:959ff994853f630888b91928676bf73864c4d2f924256ed6d98d4350336af734,body_len=76800,done,to:repli_page,finished
-            outbox,stuff
+            outbox
               emit,type:repli_want,seq,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
               emit=2,type:repli_want,seq=2,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
               emit=3,type:repli_want,seq=3,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
@@ -116,22 +116,16 @@ Snap:H
               emit=30,type:repli_want,seq=30,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
             req:awaitbuf,bufferid,landed,finished
           active_transport,type:mock,open
-        Library,pier:DJ,stuff
+        Library,pier:DJ
           Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real
             Stream,name:audio,total=240,have=0,sr=48000
             preview,seq=0,from=0,to=12
             Reco,by:DJ,note:this one grows — stay past the second chord
           Record,id:trk1,title:Dorian D,artist:DJ Oscillo,seconds=76,loudness=0.424,nchunks=240,real
             Stream,name:audio,total=240,have=0,sr=48000
-        Crush_Tree,stuff
-          Crush:Library.DJ,kind:Record,n=2
-          Crush:DJ.Crowd.outbox,kind:emit,n
-          Crush:Crowd.DJ.inbox,kind:req,n
-          Crush:Crowd.DJ.outbox,kind:emit,n=30
-          Crush:Library.Crowd,kind:Record,n
         reached:step_3
         refused:not_started
-        Library,pier:Crowd,stuff
+        Library,pier:Crowd
           Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real
             Stream,name:audio,total=240,have=8,sr=48000,page_from=0,page_to=8,got
             preview,seq=0,from=0,to=12

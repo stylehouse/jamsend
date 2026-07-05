@@ -3,8 +3,6 @@ Snap:H
     A:MusuReco
       self,round=2	{"mung":["age"]}
       w:MusuReco
-        Opt
-          crushCyto
         self,round=2	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
@@ -16,10 +14,8 @@ Snap:H
           Pier,pub:DJ,req=2,ok
             Ud,pubkey:DJ
           active_transport,type:mock,open
-        Library,pier:DJ,stuff
+        Library,pier:DJ
           Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real
             Stream,name:audio,total=240,have=0,sr=48000
           Record,id:trk1,title:Dorian D,artist:DJ Oscillo,seconds=76,loudness=0.424,nchunks=240,real
             Stream,name:audio,total=240,have=0,sr=48000
-        Crush_Tree,stuff
-          Crush:Library.DJ,kind:Record,n=2

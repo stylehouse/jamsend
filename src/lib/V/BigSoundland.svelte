@@ -18,6 +18,13 @@
     //    with no ?I= identity, no granted share, no relay engagement may never acquire it → no Story,
     //     no Cyto.  So when the glass isn't up we show the DIAGNOSTIC below — the Story runner UI (once
     //      it stands up) plus the live House/Creduler state — to scan out what's wrong with the main bit.
+    //
+    //  THE ▦ SPRAWL — the way OUT of the single glass face: the glass is full-bleed (one Cyto UI), so
+    //   once it draws every OTHER H** UI vanishes.  ▦ (in the header) toggles a sprawl of EVERY House's
+    //    UIs dumped in order down one page (Cyto included) — the gutsy multi-UI interface, twin of
+    //     /BigWordland's ▦.  Persisted in the stash (BigSoundland_sprawl) so the choice sticks.  Note the
+    //      SEPARATE fullscreen gate: BootGate's FaceSucker (disk-share / audio tap) — cleared by GRANTING,
+    //       not by ▦; if it's covering the screen, open the folder / tap for sound to get past it.
     import Ghost      from "$lib/O/Ghost.svelte"
     import { keyser } from "$lib/data/Stuff.svelte"
     import BootGate   from "$lib/O/ui/BootGate.svelte"
@@ -67,17 +74,68 @@
         story_stood:   houses.some(h => h !== H),   // any House beyond Mundo ⇒ the Story world stood up
         houses,
     }))
+
+    // ── the way OUT of the glass ────────────────────────────────────────────────────────────
+    // The glass is a single full-bleed face (one Cyto UI); once it draws, every OTHER H** UI is
+    //  gone.  The ▦ sprawl is the escape hatch back to the gutsy interface: EVERY House's UIs
+    //   dumped in order down the page (Cyto included, as one panel among many), so you can reach
+    //    the run controls / Brink / anything the run mounted.  A workspace choice, so it lives in
+    //     the stash (reactive $state on the House, like BigWordland's) and survives a reload.
+    let sprawl = $derived(!!H?.stashed?.BigSoundland_sprawl)
+    function toggle_sprawl() {
+        if (!H?.stashed) return
+        if (H.stashed.BigSoundland_sprawl) delete H.stashed.BigSoundland_sprawl
+        else H.stashed.BigSoundland_sprawl = 1
+    }
+    // every UI the run has mounted, across all Houses, Cyto and all — the sprawl's content.
+    //  Pantheate-include is FOLDED OUT: LiesCortex notifies Pantheate on EVERY compile, so a many-
+    //   dock Book mounts many identical include shims — noise, not run output (the real landing is
+    //    Pantheate/BlastPit; the real cure is to sprout only from the %rungo run path — deferred,
+    //     sensitive Lies/Run work).  We drop them but keep a count so nothing is hidden silently.
+    let sprawl_view = $derived.by(() => {
+        const uis: { house: any, ui: any }[] = []
+        let pantheate = 0
+        for (const house of houses) {
+            void house.UIs.version
+            for (const ui of house.UIs.ob({ UI: 1 })) {
+                if (ui.sc.UI === 'Pantheate-include') { pantheate++; continue }
+                uis.push({ house, ui })
+            }
+        }
+        return { uis, pantheate }
+    })
 </script>
 
 <BootGate {H} who="the piracy-scape" audio_fullscreen={true} />
 
 <main class="mound">
     <header class="scape-top">
-        <span class="scape-name" title="BigSoundland — the music scape: Voronoi stained glass graphs of music (the / route)">◈ BigSoundland</span>
+        <span class="scape-name" title="BigSoundland — the music scape: Voronoi stained glass graphs of music (the /BigSoundland route)">◈ BigSoundland</span>
         <span class="scape-book">{book}</span>
+        <button class="scape-sprawl-btn" class:on={sprawl}
+                title={sprawl
+                    ? 'sprawl: every House’s UIs dumped in order — click to drop back to the glass'
+                    : 'sprawl — the way out of the glass: dump every House’s UIs down one page'}
+                onclick={toggle_sprawl}>▦</button>
     </header>
 
-    {#if cyto}
+    {#if sprawl}
+        <!-- the gutsy sprawl — every House's UIs in order, the escape from the single glass face -->
+        <section class="scape-sprawl">
+            {#each sprawl_view.uis as { house, ui } (keyser(ui.sc))}
+                <div class="diag-ui">
+                    <span class="diag-tag">{house.name} · {ui.sc.UI}</span>
+                    <svelte:component this={ui.sc.component} H={house} />
+                </div>
+            {/each}
+            {#if sprawl_view.pantheate}
+                <div class="diag-line diag-folded">{sprawl_view.pantheate}× Pantheate-include folded (per-compile artifact — the run lands in Pantheate/BlastPit)</div>
+            {/if}
+            {#if !sprawl_view.uis.length && !sprawl_view.pantheate}
+                <div class="diag-line">nothing mounted yet — the run hasn't produced any UI to sprawl</div>
+            {/if}
+        </section>
+    {:else if cyto}
         {#key keyser(cyto.ui.sc)}
             <section class="scape-glass">
                 <svelte:component this={cyto.ui.sc.component} H={cyto.house} />
@@ -134,7 +192,24 @@
         color: #9fb2d8; text-shadow: 0 0 14px rgba(140, 170, 230, 0.4);
     }
     .scape-book { font-size: 0.75rem; color: rgba(150, 170, 205, 0.6); }
+    /* ▦ the way out of the glass — flip to the gutsy sprawl of every House's UIs */
+    .scape-sprawl-btn {
+        margin-left: auto;
+        background: none; border: 1px solid rgba(120, 140, 195, 0.25); border-radius: 6px;
+        cursor: pointer; font-family: inherit; font-size: 0.85rem; line-height: 1;
+        color: rgba(150, 170, 205, 0.7); padding: 0.15rem 0.5rem;
+        transition: color 0.12s, background 0.12s, border-color 0.12s;
+    }
+    .scape-sprawl-btn:hover { color: #e4ecff; border-color: rgba(150, 190, 240, 0.5); }
+    .scape-sprawl-btn.on { color: #cfe0ff; background: rgba(120, 150, 210, 0.16); border-color: rgba(150, 190, 240, 0.45); }
     .scape-glass { flex: 1; min-height: 0; position: relative; }
+
+    /* the gutsy sprawl — every House's UIs stacked down one scrollable page */
+    .scape-sprawl {
+        flex: 1; min-height: 0; overflow: auto;
+        display: flex; flex-direction: column; gap: 1.6rem;
+        padding: 1rem;
+    }
 
     /* the boot diagnostic — shown while the glass hasn't gathered */
     .scape-diag {
@@ -146,6 +221,7 @@
         display: flex; align-items: baseline; gap: 0.5rem;
         font-size: 0.82rem; color: rgba(180, 195, 225, 0.75); line-height: 1.4;
     }
+    .diag-folded { opacity: 0.55; font-style: italic; font-size: 0.74rem; }
     .diag-dot {
         width: 0.5rem; height: 0.5rem; border-radius: 50%; flex: none;
         background: rgba(200, 160, 90, 0.8);   /* amber = pre-run */

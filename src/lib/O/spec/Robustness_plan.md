@@ -239,7 +239,10 @@ capability-probed at the seam (and the seam says which capability is missing, no
   role-addressed reply/pong/offer; socklog-proven starvation). All editor→runner frames are now ADDRESSED to a
   prepub — replies to the corr's asker, pong to the pinger, grant_offer to the grantee, ghost_compile fanned to
   the roster — the "roles divide, addresses deliver" model, `Cluster_spec.md §3.2a`. No residue left in this organ.
-  *All edits parse/svelte-check clean; verify live per the recipe.*
+  *All edits parse/svelte-check clean.* **✅ VERIFIED live 2026-07-05** (bridge runner `49dee91d`, editor reloaded):
+  `ping` → `self === clustation_self` (routing intact), and the exact A/B — MusuReco `failed 0/11` against the
+  pre-reload editor (starved, no `%Good` landed) flipped to `done 11/11 100%` (2 fuzz-ok caveats) with the addressed
+  replies live. The wormhole-read chain (grant → addressed `wormhole_reply` reaching the corr's asker) works end to end.
 - **P2 — wormhole nav precedence** ✅ **DONE** (Organ 5). `Lies_remote_wormhole_install` + `_reconcile` now PREFER
   a granted local share (`A.c.DL`) over the editor proxy — the heartbeat no longer clobbers a just-granted
   `WormholeNav(DL)`; the badge shows a third `local` state honestly (Rundar). Granting FSA on a `&remoteWormhole=1`

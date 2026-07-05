@@ -1,17 +1,15 @@
 Snap:H
   H:MusuReco,Run
     A:MusuReco
-      self,round=5	{"mung":["age"]}
+      self,round=4	{"mung":["age"]}
       w:MusuReco
-        Opt
-          crushCyto
-        self,round=5	{"mung":["age"]}
+        self,round=4	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Peering,name:DJ,req=2,ok
           Pier,pub:Crowd,req=2,ok
             Ud,pubkey:Crowd
-            outbox,stuff
+            outbox
               emit,type:repli_lines,seq,sent,body_hash:74378263a1673f692726c4e53979546fd81f10b44423df9629bf4893b7cbc49e,body_len=322,acked
           active_transport,type:mock,open
         Peering,name:Crowd,req=3,ok
@@ -20,16 +18,13 @@ Snap:H
             inbox
               req:unemit,seq,type:repli_lines,body_hash:74378263a1673f692726c4e53979546fd81f10b44423df9629bf4893b7cbc49e,body_len=322,done,to:repli_lines,finished
           active_transport,type:mock,open
-        Library,pier:DJ,stuff
+        Library,pier:DJ
           Record,id:trk0,title:Cosmic C,artist:DJ Oscillo,seconds=78,loudness=0.424,nchunks=240,real
             Stream,name:audio,total=240,have=0,sr=48000
             preview,seq=0,from=0,to=12
             Reco,by:DJ,note:this one grows — stay past the second chord
           Record,id:trk1,title:Dorian D,artist:DJ Oscillo,seconds=76,loudness=0.424,nchunks=240,real
             Stream,name:audio,total=240,have=0,sr=48000
-        Crush_Tree,stuff
-          Crush:Library.DJ,kind:Record,n=2
-          Crush:DJ.Crowd.outbox,kind:emit,n
         reached:step_3
         refused:not_started
         Library,pier:Crowd

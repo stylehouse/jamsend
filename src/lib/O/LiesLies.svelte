@@ -378,6 +378,14 @@
                 //  rw-ops carrying its %Grant; we verify the grant and serve from OUR own handle (LiesFunk).
                 on('wormhole_beg', (cw, _p, fr) => { H.Lies_wormhole_beg_recv(cw, fr); return true })
                 on('wormhole_req', (cw, _p, fr) => { void H.Lies_wormhole_req_recv(cw, fr); return true })
+                // reactap: an addr-less CLI (scripts/reactap.mjs) asks THIS editor for a reactivity
+                //  census.  Rides the runner_ask corr rails (the relay corr-remembers only
+                //   ghost_compile + runner_ask asks) — the editor serves ONLY op:reactap; any other
+                //    op landing here is misaddressed and swallowed (the CLI times out, as today).
+                on('runner_ask', (cw, _p, fr) => {
+                    if (fr?.ask?.op === 'reactap') void (H as any).Lies_reactap_recv(cw, fr)
+                    return true
+                })
             }
             // ping/pong heartbeat — both roles echo a ping and record a pong, so the real
             //  envelope path is provable (and shown by the badge), not just relay control.

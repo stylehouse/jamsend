@@ -1,5 +1,5 @@
 // Housing.svelte.ts
-import { keyser, objectify, TheC, type TheUniversal } from "$lib/data/Stuff.svelte.ts";
+import { keyser, objectify, REACTAP, TheC, type TheUniversal } from "$lib/data/Stuff.svelte.ts";
 import { Selection, type TheD, type Travel } from "$lib/mostly/Selection.svelte.ts";
 import { DirectoryListing, FileSystemHandler } from "$lib/p2p/ftp/Directory.svelte";
 import { now_in_seconds_with_ms } from "$lib/p2p/Peerily.svelte";
@@ -922,6 +922,7 @@ export class House extends StorableHousing {
     // Phase 2 — attend(): walk T** and dispatch to Work instances.
     // -------------------------------------------------------------------------
     async beliefs(e?: TheC) {
+        if (REACTAP.on) REACTAP.thinks++   // census: bumps-per-think needs the denominator
         if (e) this._expand_Aw(e)
         V.organise && console.log(`beliefs() e%${e ? keyser(e.sc) : 'none'}`)
 

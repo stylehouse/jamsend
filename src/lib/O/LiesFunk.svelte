@@ -22,7 +22,7 @@
 //     editor↔runner       — run intent (Esc / Book cell) + the verdict wire back
 //                            (may grow into Cred*_result|verdict|instruct, §Editron)
 
-import { _C, type TheC } from "$lib/data/Stuff.svelte"
+import { _C, REACTAP, type TheC } from "$lib/data/Stuff.svelte"
 import { Selection, Travel } from "$lib/mostly/Selection.svelte"
 import { type House } from "$lib/O/Housing.svelte"
 import { FUNK_KINDS } from "$lib/O/Funk/kinds"
@@ -2050,6 +2050,9 @@ await M.eatfunc({
             const ask  = (frame?.ask ?? {}) as { op?: string, book?: string, n?: number, ns?: number[], on?: boolean, uid?: string, client?: string }
             const op   = ask.op
             if (!corr || !op) return false
+            // reactap — the reactivity census, forwarded to the shared handler: NO lease touch (a
+            //  census only READS the tree; everything below is run-driving and stays engagement-gated).
+            if (op === 'reactap') return (H as any).Lies_reactap_recv(w, frame)
             // who's asking — the client's stable cluster id (ask.client, from .env.cluster-claude) when it
             //  identifies itself, else the relay `from` addr.  Drives the engagement lease (don't-steal).
             const client = String(ask.client ?? frame?.header?.from ?? 'anon')
@@ -2201,6 +2204,99 @@ await M.eatfunc({
                 try { ws.send(JSON.stringify({ control: 'runner_ack', corr, op, ok, result })) } catch { /* CLI falls back to timeout */ }
             }
             H.tlog(`📥 runner_ask ${op}${ask.book ? ` ${ask.book}` : ''} → ${ok ? 'ok' : 'err'}`)
+            return true
+        },
+
+        // Lies_reactap_recv — the REACTIVITY census (scripts/reactap.mjs): arm the Stuff.svelte.ts
+        //  bump tap (REACTAP) for a bounded window, then report which particles' versions moved —
+        //   per-habitat (nearest Waft) totals + the top bumpers, each with the first-sighting stack
+        //    naming WHO bumps it.  For chasing idle churn: over an idle window a fat count IS the
+        //     re-render driver.
+        //  Rides the runner_ask/runner_ack corr rails (relay.ts corr-remembers only ghost_compile +
+        //   runner_ask asks; an own frame type would mean a relay edit + dev-server restart) — the
+        //    EDITOR registers on('runner_ask') serving ONLY this op (LiesLies), the runner forwards
+        //     op:'reactap' here from Lies_runner_ask_recv.  No engagement lease: a census only reads.
+        //  The report walk reads X.z raw OFF the beliefs mutex — a mid-transaction replace() could
+        //   momentarily hide a subtree and mislabel a path.  Diagnostics-grade; acceptable.
+        async Lies_reactap_recv(w: TheC, frame: any): Promise<boolean> {
+            const H    = this as House
+            const corr = (frame?.corr ?? frame?.header?.corr) as string | undefined
+            if (!corr) return false
+            const ms = Math.min(Math.max(Number(frame?.ask?.ms ?? 5000), 250), 30000)
+            let ok = true
+            let result: any = {}
+            try {
+                if (REACTAP.on) { ok = false; result = { error: 'a reactap window is already armed' } }
+                else {
+                    REACTAP.counts = new Map(); REACTAP.thinks = 0; REACTAP.on = 1
+                    await new Promise(r => setTimeout(r, ms))
+                    REACTAP.on = 0
+                    const counts = REACTAP.counts!; REACTAP.counts = null
+                    // parent map — ONE walk down the C tree (X.z = the member rows) from Mundo + the
+                    //  watch channels (H.ave & co are roots of their own, beside the Mundo tree).
+                    const roots: any[] = [H.top_House(), (H as any).ave, (H as any).UIs, (H as any).actions, (H as any).graph].filter(Boolean)
+                    const parent = new Map<any, any>()
+                    const seen = new Set<any>(roots)
+                    const walk = [...roots]
+                    while (walk.length) {
+                        const n = walk.pop()
+                        for (const ch of (n?.X?.z ?? [])) {
+                            if (!ch?.sc || seen.has(ch)) continue
+                            seen.add(ch); parent.set(ch, n); walk.push(ch)
+                        }
+                    }
+                    const label = (n: any) => {
+                        const k = n?.sc ? Object.keys(n.sc)[0] : undefined
+                        if (!k) return '?'
+                        const v = n.sc[k]
+                        return v === 1 || v == null ? `%${k}` : `${k}:${String(v).slice(0, 32)}`
+                    }
+                    const path = (n: any) => {
+                        const parts = [label(n)]
+                        for (let p = parent.get(n), d = 0; p && d < 12; p = parent.get(p), d++) parts.unshift(label(p))
+                        return parts.join('/') + (seen.has(n) ? '' : ' (off-tree)')
+                    }
+                    // habitat — the census rollup: WHICH WAFT keeps bumping.  Nearest Waft ancestor;
+                    //  else the nearest w; else the topmost label (H:Mundo | a watch channel | off-tree).
+                    const habitat = (n: any) => {
+                        let w_ = '', root = label(n)
+                        for (let p = n, d = 0; p && d < 24; p = parent.get(p), d++) {
+                            if (p.sc?.Waft) return 'Waft:' + p.sc.Waft
+                            if (p.sc?.w) w_ = label(p)
+                            root = label(p)
+                        }
+                        return w_ || (seen.has(n) ? root : '(off-tree)')
+                    }
+                    // the sample stack, trimmed to the caller frames: drop the tap's own, strip the
+                    //  dev-server origin + the vite ?t= cache-bust so lines read file.svelte:line:col.
+                    const frames = (s?: string) => (s ?? '').split('\n')
+                        .filter(l => / at /.test(' ' + l) && !/bump_version|REACTAP|Xify/.test(l))
+                        .slice(0, 4)
+                        .map(l => l.trim().replace(/https?:\/\/[^/\s]+/g, '').replace(/\?t=\d+/g, ''))
+                    const rows = [...counts.entries()]
+                        .map(([n, e]) => ({ count: e.count, path: path(n), habitat: habitat(n), who: frames(e.stack) }))
+                        .sort((a, b) => b.count - a.count)
+                    const wafts: Record<string, number> = {}
+                    for (const r of rows) wafts[r.habitat] = (wafts[r.habitat] ?? 0) + r.count
+                    result = {
+                        ms, thinks: REACTAP.thinks,
+                        bumps: rows.reduce((s, r) => s + r.count, 0),
+                        particles: rows.length,
+                        wafts: Object.entries(wafts).sort((a, b) => b[1] - a[1]).map(([habitat, count]) => ({ habitat, count })),
+                        rows: rows.slice(0, 60),
+                        dropped: Math.max(0, rows.length - 60),   // no silent caps — the CLI narrates
+                    }
+                }
+            } catch (e) {
+                ok = false; result = { error: String((e as Error)?.message ?? e) }
+                REACTAP.on = 0; REACTAP.counts = null
+            }
+            const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any
+            const ws   = port?.ws as any
+            if (ws && ws.readyState === 1 /* OPEN */) {
+                try { ws.send(JSON.stringify({ control: 'runner_ack', corr, op: 'reactap', ok, result })) } catch { /* CLI falls back to timeout */ }
+            }
+            H.tlog(`📥 reactap ${ms}ms → ${ok ? `${result.bumps} bumps / ${result.particles} particles / ${result.thinks} thinks` : `err ${result.error}`}`)
             return true
         },
 

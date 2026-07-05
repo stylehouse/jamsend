@@ -58,11 +58,34 @@ use cases:
       =cut 
 `;
 
+// REACTAP — the reactivity census tap (scripts/reactap.mjs asks; Lies_reactap_recv arms + reports).
+//  Disarmed cost is ONE property read per bump.  Armed (a bounded window), every ROOT-X bump counts
+//   against its host particle — the root serial is the only one a `void C.version` subscriber sees,
+//    so child-x index bumps are non-events and skip — with ONE sample stack at first sight, naming
+//     WHO bumps it.  For chasing idle churn: a particle with a fat count over an idle window IS the
+//      re-render driver.  The socklog sibling for reactivity: socklog watches the wire, this the tree.
+export const REACTAP = {
+    on: 0,
+    thinks: 0,   // beliefs() passes during the window (Housing increments) — the bumps-per-think denominator
+    counts: null as Map<any, { count: number, stack?: string }> | null,
+    hit(host: any) {
+        const m = this.counts
+        if (!m) return
+        const e = m.get(host)
+        if (e) e.count++
+        else m.set(host, { count: 1, stack: new Error().stack ?? undefined })
+    },
+}
+
 // storage class with methods
 export class TheX {
     // we may be inside another X
     //  aka an x, as in X...x
     up?: TheX;
+
+    // the owning particle, stamped on ROOT X's only (StuffIO.Xify | Stuff.resume_X) — child x's
+    //  have up, never host.  Lets REACTAP name whose version moved without an up-walk per bump.
+    host?: any
 
     // by the usual names:
     k?: {}
@@ -74,6 +97,7 @@ export class TheX {
     serial_i = $state(1)
     bump_version() {
         this.serial_i = this.serial_i*1 + 1
+        if (REACTAP.on && this.host) REACTAP.hit(this.host)
     }
 
     // X/$k +$n
@@ -168,6 +192,7 @@ class StuffIO {
     Xify() {
         if (this.X) return
         this.X ||= new TheX()
+        this.X.host = this   // REACTAP: the fresh root X knows its particle
         // X is being created fresh — if replace() is mid-flight,
         // inherit the version so observers don't miss a beat
         if (this.X_before) {
@@ -792,6 +817,7 @@ export class Stuff extends TimeOffice {
     resume_X(a,b) {
         if (!b.c.Isness) {
             b.X = a.X
+            if (b.X) b.X.host = b   // the resumed root X follows its new owner (REACTAP)
         }
     }
     // forget C/* - everything in this C

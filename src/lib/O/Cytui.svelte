@@ -348,6 +348,7 @@
     //         at high|low visual quality" the graph asked for, per-drag.
     let dragging = false
     let live_layout = false        // the wave/relayout animation drives the same live-repaint loop
+    let live_motion = false        // a pan / scroll-to-zoom gesture drives it too, self-stopping on quiet
     let drag_raf = 0
     let repos_cost_ema = 0
     const KEEP_BUDGET_MS = 9        // per-frame repaint budget before we shed quality
@@ -364,7 +365,7 @@
     }
 
     function drag_frame() {
-        if ((!dragging && !live_layout) || !overlay_container) return
+        if ((!dragging && !live_layout && !live_motion) || !overlay_container) return
         const t0 = performance.now()
         if (voronoi_on) voronoi_paint_now()   // cells + clipped Stuffings track live
         else reposition_overlays()
@@ -373,7 +374,7 @@
         if (repos_cost_ema > KEEP_BUDGET_MS) {
             // can't keep up — fall back to the cheap hide-all for the rest of this motion
             console.log(`🎚️ motion quality: shed to hide-all (repaint ${repos_cost_ema.toFixed(1)}ms > ${KEEP_BUDGET_MS}ms)`)
-            dragging = false; live_layout = false
+            dragging = false; live_layout = false; live_motion = false
             hide_overlays_now()
             return
         }
@@ -408,6 +409,39 @@
     function stop_live_layout() {
         live_layout = false
         if (!dragging) cancelAnimationFrame(drag_raf)
+    }
+
+    // A pan or a scroll-to-zoom is motion too — keep the Stuffing overlays (and
+    //  the voronoi cells with their clipped Stuffings) LIVE and tracking through
+    //   the whole gesture, exactly like a drag or a layout wave, instead of
+    //    blanking them until the wheel rests.  A wheel-zoom fires a BURST of
+    //     'zoom' events with no natural stop (unlike layoutstop): the first arms
+    //      the shared live loop, every event pushes the quiet-timer out, and
+    //       OVERLAY_QUIET_MS after the last one we stop the loop and let
+    //        show_overlays_soon settle the final positions.  Same per-frame budget
+    //         self-heal as the drag — a machine that can't repaint in time sheds
+    //          to hide-all for the rest of the gesture.
+    let motion_quiet_timer: ReturnType<typeof setTimeout> | null = null
+    function pan_zoom_motion() {
+        if (dragging || live_layout) return   // a drag / layout already owns the live loop
+        if (!live_motion) {
+            paint_overlays_now()      // seat everyone at current positions BEFORE revealing — no flash
+            live_motion = true
+            repos_cost_ema = 0        // re-probe the machine fresh for this gesture
+            motion_hidden = false
+            overlays_want_show = false
+            overlay_container?.classList.remove('overlays-hidden')
+            cancelAnimationFrame(morph_raf)
+            cancelAnimationFrame(drag_raf)
+            drag_raf = requestAnimationFrame(drag_frame)
+        }
+        if (motion_quiet_timer) clearTimeout(motion_quiet_timer)
+        motion_quiet_timer = setTimeout(() => {
+            motion_quiet_timer = null
+            live_motion = false
+            if (!dragging && !live_layout) cancelAnimationFrame(drag_raf)
+            show_overlays_soon()
+        }, OVERLAY_QUIET_MS)
     }
 
     // repaint the voronoi at the CURRENT positions with no tween — the live-drag
@@ -1526,14 +1560,15 @@
         })
 
         // ── overlay visibility gating ────────────────────────────────
-        // During motion (drag, pan, zoom, layout) we don't try to keep
-        // overlays in sync — we hide them entirely via one CSS class
-        // toggle on the container. A debounced timer brings them back
-        // once the user stops moving things. This makes heavy graphs
-        // feel snappy even though we have many positioned DOM elements.
+        // Every motion — a node drag, a background pan, a scroll-to-zoom,
+        // a layout wave — drives the SAME live-repaint loop (drag_frame):
+        // the overlays stay visible and track their nodes frame by frame.
+        // A per-frame budget self-heal sheds to the cheap hide-all only if
+        // a machine can't repaint in time; a debounced timer settles the
+        // final positions once the user stops moving.
         cy.on('grab',        () => start_live_drag())
         cy.on('free',        () => end_live_drag())
-        cy.on('pan zoom',    () => { hide_overlays_now(); show_overlays_soon() })
+        cy.on('pan zoom',    () => pan_zoom_motion())
         cy.on('layoutstart', () => start_live_layout())
         cy.on('layoutstop',  () => { stop_live_layout(); show_overlays_soon() })
         // ── click-to-identify ─────────────────────────────────────────────────

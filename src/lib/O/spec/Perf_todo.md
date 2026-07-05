@@ -116,6 +116,9 @@ The biggest wall-clock number in interactive use is the deliberate **6 s
 
 ## Proposed track: high-frequency "snappings" + an in-flight console
 
+**(First piece landed: the `reactap` census — a bump-count window, not yet a snap stream;
+ see the Status log, 2026-07-05.)**
+
 A second, opt-in cadence *beside* the Story-step snap: **super-intensely-often
  snappings** on any system we designate — e.g. taken **between event handlings**,
   armed **once some designated C\*\* exists** — that you can **remote into and
@@ -157,6 +160,14 @@ Open questions:
 
 ## Status log
 
+- **2026-07-05** — reactap: the reactivity CENSUS landed (the observation track's first piece —
+   the socklog sibling for the tree).  `REACTAP` (Stuff.svelte.ts) taps ROOT-X bumps — the only
+    serial a `void C.version` subscriber sees; disarmed cost is one property read per bump — and
+     keeps ONE first-sighting stack per particle (who bumps it).  `Lies_reactap_recv` (LiesFunk)
+      arms a bounded window and reports per-habitat (nearest Waft) totals + the top bumpers;
+       `scripts/reactap.mjs` is the CLI, riding the runner_ask corr rails so the relay needed no
+        change.  For §5: run it against the IDLE editor — a fat count over an idle window IS a
+         re-render driver, named with its stack.
 - **2026-07-02** — §6 graft cache key: replaced `dock.version:job.version` in
    `LangGraft.svelte`'s `graft_cache_key` with a content digest of the resolvable
     targets' consumed spans (name@line:from:to over defs+regions), hashed only once
