@@ -166,9 +166,9 @@ Verify a Book by asking a LIVE runner to run it — not a headless boot.
   interactive twin (`@uid` addresses a held run).
 
 A runner that won't connect ("relay down", no ws attempt in the Network tab): read
- `src/lib/O/spec/Runner_network.md` — the boot→channel map, what each Brink badge asserts,
-  and the diagnostic ladder (cross-wired `gen/N/Tribunal.go` first — the editor staying
-   green while every runner is down IS that tell).
+ `src/lib/O/spec/Cluster_spec.md` §3.2b (boot→channel map, standup guards) + §3.3 (Brink
+  badges + the diagnostic ladder) — cross-wired `gen/N/Tribunal.go` first, the editor staying
+   green while every runner is down IS that tell.
 
 Do NOT verify with `scripts/Story_cli_run.mjs` (the headless node+jsdom boot). It
  has real disk access, so it loads the GhostList off the wormhole and quiesces at a

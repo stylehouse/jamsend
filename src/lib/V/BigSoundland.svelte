@@ -28,6 +28,8 @@
     import Ghost      from "$lib/O/Ghost.svelte"
     import { keyser } from "$lib/data/Stuff.svelte"
     import BootGate   from "$lib/O/ui/BootGate.svelte"
+    import Actions    from "$lib/O/ui/Actions.svelte"
+    import Lens       from "$lib/O/ui/Lens.svelte"
     import { boot_param } from "$lib/boot"
     import { boot_qualand } from "$lib/O/BigQualand.svelte"
 
@@ -87,23 +89,49 @@
         if (H.stashed.BigSoundland_sprawl) delete H.stashed.BigSoundland_sprawl
         else H.stashed.BigSoundland_sprawl = 1
     }
-    // every UI the run has mounted, across all Houses, Cyto and all — the sprawl's content.
-    //  Pantheate-include is FOLDED OUT: LiesCortex notifies Pantheate on EVERY compile, so a many-
-    //   dock Book mounts many identical include shims — noise, not run output (the real landing is
-    //    Pantheate/BlastPit; the real cure is to sprout only from the %rungo run path — deferred,
-    //     sensitive Lies/Run work).  We drop them but keep a count so nothing is hidden silently.
+    // every UI the run has mounted, GROUPED by House (Cyto and all) — the sprawl's content.
+    //  Grouping gives each House one anchor the jump-to-H chips scroll to, plus its own heading in
+    //   the dump.  Pantheate-include is DROPPED silently: on a runner these are the Creduler's
+    //    acquire shims — Creduler_ensure enrols one UI:Pantheate-include per CREDULER_GHOST
+    //     (Lies_ghost_set) purely so the mounted .go's onMount deposits that ghost's methods; they
+    //      render nothing (UIless spine plumbing), so they'd only clutter the page with empty
+    //       sections.  Not worth a line — we skip them and sprawl the real UIs.
     let sprawl_view = $derived.by(() => {
-        const uis: { house: any, ui: any }[] = []
-        let pantheate = 0
+        const groups: { house: any, uis: any[] }[] = []
         for (const house of houses) {
             void house.UIs.version
+            const uis: any[] = []
             for (const ui of house.UIs.ob({ UI: 1 })) {
-                if (ui.sc.UI === 'Pantheate-include') { pantheate++; continue }
-                uis.push({ house, ui })
+                if (ui.sc.UI === 'Pantheate-include') continue   // UIless spine plumbing — skip
+                uis.push(ui)
             }
+            if (uis.length) groups.push({ house, uis })
         }
-        return { uis, pantheate }
+        return { groups }
     })
+
+    // ── the sprawl's own toc: jump-to-H chips + an action row (BigWordland's parity) ──────────
+    // The sprawl dumps every House down one page; the chips are a JUMP toc — click a House and its
+    //  section scrolls to the base of the sticky top bar (scroll-margin-top clears the bar height).
+    //   The same click makes that House `active`, so the ⚙ cog beside it opens ITS action rack in
+    //    the row below the bar.  That row rides IN FLOW (not sticky) so it scrolls away with the
+    //     page, exactly like BigWordland's .bw-panel.  All of it shows only while sprawling.
+    let view = $state<string | undefined>(undefined)   // the user's picked House (ip); undefined ⇒ auto
+    let active_ip = $derived(
+        view
+        ?? cyto?.house.c.ip                       // default to the graph House — the interesting one
+        ?? houses[houses.length - 1]?.c.ip
+    )
+    let active = $derived(houses.find(h => h.c.ip === active_ip))
+    let show_actions = $state(false)               // the action rack hides until the ⚙ cog asks
+
+    function depth_of(house: any): number {        // H** depth reads as chip indent
+        return ((house.c?.ip as string | undefined)?.split('_').length ?? 1) - 1
+    }
+    function jump_to(ip: string) {                 // pick the House + scroll its section into view
+        view = ip
+        document.getElementById('sp-' + ip)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
 </script>
 
 <BootGate {H} who="the piracy-scape" audio_fullscreen={true} />
@@ -112,6 +140,23 @@
     <header class="scape-top">
         <span class="scape-name" title="BigSoundland — the music scape: Voronoi stained glass graphs of music (the /BigSoundland route)">◈ BigSoundland</span>
         <span class="scape-book">{book}</span>
+        {#if sprawl}
+            <!-- the jump toc — one chip per House with UIs; click scrolls to its section + arms its actions -->
+            <nav class="scape-toc">
+                {#each sprawl_view.groups as { house } (house.c.ip)}
+                    <button class="scape-h" style="--d: {depth_of(house)}"
+                            class:active={active_ip === house.c.ip}
+                            class:off={!house.started}
+                            onclick={() => jump_to(house.c.ip)}
+                            title="{house.name} — jump to its UIs">{house.name}</button>
+                    {#if active_ip === house.c.ip}
+                        <button class="scape-cog" class:on={show_actions}
+                                onclick={() => show_actions = !show_actions}
+                                title="{house.name} — {house.actions.ob({ action: 1 }).length} action buttons">⚙</button>
+                    {/if}
+                {/each}
+            </nav>
+        {/if}
         <button class="scape-sprawl-btn" class:on={sprawl}
                 title={sprawl
                     ? 'sprawl: every House’s UIs dumped in order — click to drop back to the glass'
@@ -119,19 +164,30 @@
                 onclick={toggle_sprawl}>▦</button>
     </header>
 
+    <!-- the active House's action rack — in flow beneath the bar, scrolls away with the page (sprawl only) -->
+    {#if sprawl && show_actions && active}
+        <div class="scape-panel">
+            <span class="scape-panel-name">{active.name}{#if !active.started}<span class="scape-off">off</span>{/if}</span>
+            <Actions N={active.actions.ob({ action: 1 })} />
+        </div>
+    {/if}
+
     {#if sprawl}
-        <!-- the gutsy sprawl — every House's UIs in order, the escape from the single glass face -->
+        <!-- the gutsy sprawl — every House's UIs in order, the escape from the single glass face.
+             Grouped by House so each carries a jump anchor (id=sp-<ip>) the toc chips scroll to. -->
         <section class="scape-sprawl">
-            {#each sprawl_view.uis as { house, ui } (keyser(ui.sc))}
-                <div class="diag-ui">
-                    <span class="diag-tag">{house.name} · {ui.sc.UI}</span>
-                    <svelte:component this={ui.sc.component} H={house} />
+            {#each sprawl_view.groups as { house, uis } (house.c.ip)}
+                <div class="scape-house" id={'sp-' + house.c.ip}>
+                    <div class="scape-house-name" class:off={!house.started}>{house.name}</div>
+                    {#each uis as ui (keyser(ui.sc))}
+                        <div class="diag-ui">
+                            <span class="diag-tag">{house.name} · {ui.sc.UI}</span>
+                            <svelte:component this={ui.sc.component} H={house} />
+                        </div>
+                    {/each}
                 </div>
             {/each}
-            {#if sprawl_view.pantheate}
-                <div class="diag-line diag-folded">{sprawl_view.pantheate}× Pantheate-include folded (per-compile artifact — the run lands in Pantheate/BlastPit)</div>
-            {/if}
-            {#if !sprawl_view.uis.length && !sprawl_view.pantheate}
+            {#if !sprawl_view.groups.length}
                 <div class="diag-line">nothing mounted yet — the run hasn't produced any UI to sprawl</div>
             {/if}
         </section>
@@ -170,6 +226,14 @@
     {/if}
 </main>
 
+<!-- the global Panel Lens — hosts the fullscreen/global modals (the 🪪 IdHatch cluster-identity
+     hatch, altitude:88).  Otro + BigWordland mount this; without it the Mundo 🪪 action toggles
+      the lens particle but nothing renders it — the popup never shows.  Needed to see/switch which
+       cluster Identity this runner is using. -->
+{#if H}
+    <Lens {H} kind="Panel" />
+{/if}
+
 {#if H}
     <Ghost {H} />
 {/if}
@@ -182,9 +246,13 @@
         color: #e7ecf5;
         font-family: system-ui, sans-serif;
     }
+    /* the top bar — STICKY so it stays put while the sprawl scrolls the document beneath it
+       (the glass/diag modes fit the viewport, so nothing scrolls there and sticky is inert) */
     .scape-top {
-        display: flex; align-items: baseline; gap: 0.8rem;
+        position: sticky; top: 0; z-index: 60;
+        display: flex; align-items: baseline; gap: 0.8rem; flex-wrap: wrap;
         padding: 0.5rem 1rem;
+        background: rgba(5, 6, 11, 0.92); backdrop-filter: blur(4px);
         border-bottom: 1px solid rgba(120, 140, 195, 0.16);
     }
     .scape-name {
@@ -192,6 +260,40 @@
         color: #9fb2d8; text-shadow: 0 0 14px rgba(140, 170, 230, 0.4);
     }
     .scape-book { font-size: 0.75rem; color: rgba(150, 170, 205, 0.6); }
+
+    /* the jump toc — chips that scroll to each House's section (sprawl only) */
+    .scape-toc { display: flex; align-items: baseline; gap: 0.15rem; flex-wrap: wrap; min-width: 0; }
+    .scape-h {
+        background: none; border: none; cursor: pointer; font-family: monospace;
+        font-size: 0.74rem; color: rgba(150, 170, 205, 0.75);
+        padding: 0.1rem 0.45rem; border-radius: 6px;
+        margin-left: calc(var(--d) * 0.55rem);   /* H** depth reads as indent */
+        transition: color 0.12s, background 0.12s;
+    }
+    .scape-h:hover  { color: #e4ecff; background: rgba(120, 150, 210, 0.12); }
+    .scape-h.active { color: #cfe0ff; background: rgba(120, 150, 210, 0.18); }
+    .scape-h.off    { color: rgba(200, 110, 110, 0.6); }
+    /* ⚙ beside the active chip — toggles that House's action rack in the row below */
+    .scape-cog {
+        background: none; border: none; cursor: pointer; font-family: inherit;
+        font-size: 0.78rem; line-height: 1; color: rgba(180, 195, 225, 0.55);
+        padding: 0.1rem 0.25rem; border-radius: 6px; flex: none;
+        transition: color 0.12s, background 0.12s, transform 0.2s;
+    }
+    .scape-cog:hover { color: #e4ecff; background: rgba(120, 150, 210, 0.14); }
+    .scape-cog.on    { color: #cfe0ff; background: rgba(120, 150, 210, 0.18); transform: rotate(40deg); }
+
+    /* the active House's action rack — dropped just under the bar, IN FLOW (not sticky) so its
+       height pushes the sprawl down and it scrolls away with the page (BigWordland's .bw-panel) */
+    .scape-panel {
+        position: relative; z-index: 1;
+        display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+        padding: 0.45rem 0.9rem; margin: 0.4rem 1rem 0;
+        background: rgba(16, 19, 30, 0.96);
+        border: 1px solid rgba(150, 190, 240, 0.25); border-radius: 10px;
+    }
+    .scape-panel-name { font-size: 0.8rem; color: #cfe0ff; }
+    .scape-off { color: #e05a5a; font-size: 0.75em; margin-left: 0.4em; }
     /* ▦ the way out of the glass — flip to the gutsy sprawl of every House's UIs */
     .scape-sprawl-btn {
         margin-left: auto;
@@ -204,12 +306,23 @@
     .scape-sprawl-btn.on { color: #cfe0ff; background: rgba(120, 150, 210, 0.16); border-color: rgba(150, 190, 240, 0.45); }
     .scape-glass { flex: 1; min-height: 0; position: relative; }
 
-    /* the gutsy sprawl — every House's UIs stacked down one scrollable page */
+    /* the gutsy sprawl — every House's UIs stacked down the page.  DOCUMENT-SCROLLED (no inner
+       overflow, no min-height:0): the flex item grows to its content, .mound grows past 100vh,
+        and the whole page scrolls under the sticky top bar — so the action row (in flow) scrolls
+         away with it and the content's top sits flush at the bar's base. */
     .scape-sprawl {
-        flex: 1; min-height: 0; overflow: auto;
+        flex: 1;
         display: flex; flex-direction: column; gap: 1.6rem;
         padding: 1rem;
     }
+    /* one House's block — its heading + its UIs; scroll-margin clears the sticky bar on a jump */
+    .scape-house { display: flex; flex-direction: column; gap: 1.6rem; scroll-margin-top: 6rem; }
+    .scape-house-name {
+        font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+        color: rgba(150, 170, 205, 0.6); font-family: monospace;
+        border-bottom: 1px dashed rgba(120, 140, 195, 0.18); padding-bottom: 0.25rem;
+    }
+    .scape-house-name.off { color: rgba(200, 110, 110, 0.6); }
 
     /* the boot diagnostic — shown while the glass hasn't gathered */
     .scape-diag {
@@ -221,7 +334,6 @@
         display: flex; align-items: baseline; gap: 0.5rem;
         font-size: 0.82rem; color: rgba(180, 195, 225, 0.75); line-height: 1.4;
     }
-    .diag-folded { opacity: 0.55; font-style: italic; font-size: 0.74rem; }
     .diag-dot {
         width: 0.5rem; height: 0.5rem; border-radius: 50%; flex: none;
         background: rgba(200, 160, 90, 0.8);   /* amber = pre-run */

@@ -65,13 +65,16 @@ The whole point of the recent work: the crush stopped being a music-test fixture
     nav (`Radio_spec §5.1`) + real Piers off the Swarm side (`Swarm_spec §6`), NO Lies+Lang, a background
      probe that surfaces coherent audio/network errors. This is the real destination; the demo Books were
       the render's gauges.
-4. **Offered, unbuilt** (owner's call): per-genus chunk COLOUR (colour a fold by its dominant child
-    mainkey) and fold-count→node-size accentuation — the `{folded,count}` stat is now available to drive it.
+4. **The grind list is `Voro_todo.md`** — render polish and the bigger render ideas (wrap-width from
+    the cell, angle, fold colour|size, family outlines, crush-harder grouping, in-cell microcosms,
+     pinch|spread, the SVG Stuffing rebuild) live there now, briefed for cold pickup with the
+      metaphysics up top. Per-genus colour + fold-count size are its tasks 3.
 
-## The disputed thread — be honest
+## The disputed thread — RESOLVED
 
-The owner **disputes** the claim "Stuffings stay visible while animating" (the `start_live_layout` change).
- It is **UNVERIFIED**: I asserted it from the code path, not from watching a live runner. Before building
-  on it, either watch the overlays through a VoroScape wave on `:9091` and confirm (or refute) it, or
-   revert `start_live_layout`/`stop_live_layout` back to `hide_overlays_now()` on `layoutstart`. This is
-    exactly the assert-vs-verify trap `Robustness_plan.md` names — do not carry the claim forward as fact.
+The `start_live_layout` claim ("Stuffings stay visible while animating") stood UNVERIFIED for a
+ session; the owner then confirmed it from the live tab — "in other conditions it stays beautifully
+  glidy" (2026-07-06) — while reporting the one gap: scroll-to-zoom still blanked them. The zoom/pan
+   path now drives the same live loop (`pan_zoom_motion`), and the settle-jump it exposed (the
+    reposition-to-node flash between gesture end and re-mold) is fixed by `reposition_overlays`
+     skipping cell-molded Stuffings. The zoom path is the remaining browser-unverified bit.

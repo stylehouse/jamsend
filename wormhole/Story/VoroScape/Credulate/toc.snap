@@ -1,5 +1,5 @@
 Credulate,of_Book:VoroScape
-  GhostInclude:Ghost_N_Peeroleum,dige:f66bad6f34913e3c
+  GhostInclude:Ghost_N_Peeroleum,dige:6c15c73b769f24af
   GhostInclude:Ghost_N_Reliable,dige:48e8948c7d8da3ed
   GhostInclude:Ghost_N_Tribunal,dige:df09d03ad06f3d71
   GhostInclude:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
@@ -13,8 +13,8 @@ Credulate,of_Book:VoroScape
   GhostInclude:Ghost_S_Swarm,dige:5903f24bde1fb0d7
   GhostInclude:Ghost_Story_Swarmation,dige:fe5cba472157518d
   GhostInclude:Ghost_V_Voro,dige:c7227025a11ae05e
-  last_ok,at=1783255295.441,ok_pct
-    uses:Ghost_N_Peeroleum,dige:f66bad6f34913e3c
+  last_ok,at=1783259504.821,ok_pct
+    uses:Ghost_N_Peeroleum,dige:6c15c73b769f24af
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a

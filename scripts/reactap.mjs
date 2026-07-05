@@ -23,7 +23,11 @@ const flags  = new Set(argv.filter(a => a.startsWith('--')))
 const ms     = Number(argv.find(a => /^\d+$/.test(a)) ?? 5000)
 const TARGET = flags.has('--runner') ? 'runner' : 'editor'
 
-const HTTP   = process.env.RUNNER_URL || 'http://172.17.0.1:9091'
+// TARGET-dependent default origin: the reply is a raw control frame the RELAY corr-routes back to
+//  the asking socket — corr memory is per-relay and acks do NOT cross the r2r bridge — so the CLI
+//   must connect to the SAME relay its target tab is bound to: runner = the dev instance (:9091),
+//    editor = the staging instance (:9092; see staging/docker-compose.yml).  RUNNER_URL overrides.
+const HTTP   = process.env.RUNNER_URL || (TARGET === 'editor' ? 'http://172.17.0.1:9092' : 'http://172.17.0.1:9091')
 const WS_URL = HTTP.replace(/^http/, 'ws').replace(/\/$/, '') + '/relay'
 const stamp  = Date.now()
 const corr   = `rt-${stamp}`
@@ -36,7 +40,7 @@ if (!opened) { console.error(`✗ relay ${WS_URL}: connect timeout (5s) — is t
 
 const reply = await new Promise((resolve) => {
 	// the window runs REMOTELY before the ack, so the wait is ms + slack (a tab mid-think can lag the arm)
-	const timer = setTimeout(() => resolve({ ok: false, error: `no reply in ${Math.round((ms + 15000) / 1000)}s — is an ${TARGET} tab open on :9091?` }), ms + 15000)
+	const timer = setTimeout(() => resolve({ ok: false, error: `no reply in ${Math.round((ms + 15000) / 1000)}s — is a ${TARGET} tab open on ${HTTP}?` }), ms + 15000)
 	ws.on('message', (data) => {
 		let m; try { m = JSON.parse(String(data)) } catch { return }
 		if (m.corr !== corr) return                                  // relay control:log + other corrs — ignore

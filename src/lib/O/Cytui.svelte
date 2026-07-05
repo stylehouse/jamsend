@@ -620,6 +620,13 @@
             //    per-frame path — a node.style() write per render frame kept the layout perpetually
             //     energised, so a waitCyto Book never saw the wave settle and wedged between steps.
             if (el.classList.contains('stuff-overlay')) {
+                // a cell-molded Stuffing (clipPath = its cell) is paint_final's to move —
+                //  node-centering it here is the visible jump-to-the-node-and-back between
+                //   a gesture settling and the morph re-molding it.  Leave it seated in its
+                //    cell; clear_voronoi strips the clipPath before it repositions, and the
+                //     swallowed-cell fallback clears its own, so an unmolded Stuffing still
+                //      centers normally below.
+                if (el.style.clipPath) continue
                 el.style.fontSize = `${Math.max(6, 12 * zoom)}px`
                 el.style.display  = zoom < 0.3 ? 'none' : ''
                 const cw = el.offsetWidth, ch = el.offsetHeight
@@ -687,15 +694,15 @@
     })
     const voronoi_on  = $derived(voronoi_pref ?? saw_stuffy)
     // ── the scroll visor ──────────────────────────────────────────────────────
-    //  A glass pane over the rightmost quarter of the graph.  It exists only to
+    //  A glass pane over the right edge of the graph.  It exists only to
     //   intercept the wheel: a wheel that lands on the visor never reaches cy's
     //    canvas underneath, so cy can't zoom and the browser scrolls the PAGE
     //     instead — a hand-free gutter to scroll past a graph that would
     //      otherwise eat the wheel.  It also blocks a drag (pointer-events:auto),
     //       so no node gets grabbed there; the graph is handled from the open
-    //        left three-quarters.  Invisible at rest (it must not obscure the
-    //         graph); a wheel lights the glass and it fades away after — the visor
-    //          shows itself only while it is doing its job, then vanishes.
+    //        left.  Invisible at rest (it must not obscure the graph); a wheel
+    //         lights the glass and it fades away after — the visor shows itself
+    //          only while it is doing its job, then vanishes.
     let visor_lit     = $state(false)
     let visor_timer: ReturnType<typeof setTimeout> | null = null
     // NB: no preventDefault — letting the default wheel action stand is exactly
@@ -708,6 +715,42 @@
     let vcells        = $state<{ id: string, d: string, color: string }[]>([])
     let vtips         = $state<{ id: string, x: number, y: number, color: string }[]>([])
     let vregion_w     = $state(0)                      // veil covers only the tessellated region (rack stays bright)
+    // the visor and the rack strip AGREE in voronoi mode: cells tessellate
+    //  [0, CW] and the equipment rack lives beyond CW, so the glass sits exactly
+    //   over the rack — every cell stays handleable and the scroll gutter is the
+    //    strip that was never theirs.  A floor keeps a usable gutter when no rack
+    //     column spawned; the plain graph (no rack) keeps the quarter.
+    const visor_width = $derived(voronoi_on && vregion_w
+        ? `max(12%, calc(100% - ${vregion_w}px))` : '25%')
+    // ── the wheel-button grip ─────────────────────────────────────────────────
+    //  middle-click-drag pans: grab the whole viewport by the wheel button, from
+    //   ANYWHERE — over a node (cy only grabs on the primary button, so no
+    //    fight), even through the visor glass (the event bubbles up to the
+    //     wrap).  Pointer capture rides the gesture outside the frame, and
+    //      cy.panBy fires 'pan', so the live-overlay loop tracks it like any
+    //       other motion.  preventDefault stops the browser's own middle-button
+    //        autoscroll from starting underneath.
+    function middle_pan_down(e: PointerEvent) {
+        if (e.button !== 1 || !cy) return
+        e.preventDefault()
+        const el = e.currentTarget as HTMLElement
+        el.setPointerCapture(e.pointerId)
+        el.style.cursor = 'move'
+        let px = e.clientX, py = e.clientY
+        const move = (ev: PointerEvent) => {
+            cy?.panBy({ x: ev.clientX - px, y: ev.clientY - py })
+            px = ev.clientX; py = ev.clientY
+        }
+        const up = () => {
+            el.style.cursor = ''
+            el.removeEventListener('pointermove', move)
+            el.removeEventListener('pointerup', up)
+            el.removeEventListener('pointercancel', up)
+        }
+        el.addEventListener('pointermove', move)
+        el.addEventListener('pointerup', up)
+        el.addEventListener('pointercancel', up)
+    }
     let motion_hidden = $state(false)                  // cells fade with the overlays during motion
     let voronoi_timer: ReturnType<typeof setTimeout> | null = null
 
@@ -1636,7 +1679,7 @@
             />
         </div>
     {/if}
-    <div class="cytui-graph-wrap">
+    <div class="cytui-graph-wrap" onpointerdown={middle_pan_down}>
         <div class="cytui-graph" bind:this={container}></div>
         <!-- voronoi layer between the canvas and the HTML overlays: the veil dims
              the raw graph so the cells (and the Stuffings stretched into them)
@@ -1656,12 +1699,14 @@
                 {/each}
             {/if}
         </svg>
-        <!-- scroll visor: a glass pane over the rightmost quarter.  Sits above
+        <!-- scroll visor: a glass pane over the right edge — the rack strip in
+             voronoi mode, the rightmost quarter on a plain graph.  Sits above
              the cy canvas (later in DOM, no z-index) so it intercepts the wheel
              (cy never zooms → the page scrolls) and blocks a drag from grabbing a
              node — the graph is handled from the open left.  Lights on a wheel,
              then vanishes.  Below the overlays so a cm-hole still opts to the top. -->
         <div class="cytui-visor" class:lit={visor_lit} onwheel={visor_wheel}
+             style:width={visor_width}
              title="scroll gutter — the graph is handled on the left"></div>
         <!-- overlay container sits over the cy canvas, pointer-events:none
              so graph interactions pass through. Individual .cm-hole overlays

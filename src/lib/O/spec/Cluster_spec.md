@@ -13,14 +13,14 @@ The triad: this is **how it runs**; `Swarm_spec.md` is **who's on it** (the p2p 
  presence, sharing); `Radio_spec.md` is **what streams**. Identity begins here (the trust substrate, §2)
   and becomes portable + social in `Swarm_spec`.
 
-> **The identity model needs collapsing (9 divergable tiers → 2).** The 2026-07-04 grant saga traced
-> three separate bugs (reply-routing drop, grant for-check flap, duplicate roster rows) to one root: a
-> peer has ~9 notions of "who am I", everything re-samples a `Clustation ?? stashed` fork at run time,
-> and the grant's `for` is a **16-hex prepub frozen at mint** against a tier that can drift. The full
-> tier table, the H1-H6 divergence hazards, and the 9→2 collapse plan (kill the two-tier fork; `prepub`
-> = one pure derivation; grant `for` = full pub with the address derived at send; trust flock stays
-> orthogonal) live in **`Robustness_plan.md` (Organ 4)** — the plan of record. Remote-Wormhole
-> `bin_write` (the missing nav-contract op) + nav precedence are in the same doc's live-specimen section.
+> **This doc is now the single home** for the cluster/runner/robustness story. The old `Runner_network.md`,
+> `Runner_quality_handover.md`, `Runner_talk_TODO.md`, and `Cluster_runner_handover.md` folded in here
+> (§3.2b substrate · §3.3 badges/CLI/ladder · §3.9 quality+liveness · §5 drive→examine→accept) and were
+> deleted 2026-07-06; the retired `Robustness_plan.md`'s five hardening organs distributed to their §homes
+> (the assert-vs-derive **principle** → head of §2; Organ 1 latch → §3.2b; Organ 2 ack → §1; Organ 4
+> identity 9→2 → §3.2a, **DONE + verified**; Organ 5 nav-contract → §3.8), leaving only the app-wide
+> **Organ 3** (authoritative-absence) as a stub in `Robustness_plan.md`. Remote-Wormhole `bin_write` + nav
+> precedence: §3.8.
 
 ---
 
@@ -74,6 +74,19 @@ The cluster reincarnates a **legacy garden** the human built before the particle
 So "Trusting" is not new invention — it is the garden's membership/contact/trust machine, rebuilt
  on a transport that now actually works. Keep the names where they still fit; they carry meaning.
 
+**The delivery-honesty contract (Robustness Organ 2 — confirm, don't ack-and-hope).** The spine must
+ **never ack undelivered or unhandled work, never return a "sent" seq on a dead transport, and surface every
+  drop** — a silent success over dropped work is how a lost frame masquerades as a delivered one. The
+   specimens the audit named: an unregistered frame type ACKed as handled (`Peeroleum.g` req_unemit); a
+    transport drop that still hands the caller a "sent" seq (`:393`); async handlers acked true synchronously
+     (`LiesLies.svelte:291-312`); an unknown/late corr dropped so a slow-but-arrived reply looks lost
+      (`RemoteWormholeNav`). *Landed:* an unregistered frame type now **warns loudly**; the drop-returns-seq
+       case turned out already-safe (`Lies_send_rungo` gates on `channel_live`, the rungo is booked and
+        `Reliable.g` retx's). *Still owed (deferred, needs live proof):* marking a faulty frame `%faulty` and
+         **not** acking it — held back because it would retx-wedge conditionally-registered handlers
+          (`test_*`/`repli_*`/`audiochunk`/`stream_offer`). The positive template already in the tree:
+           `LiesStore.svelte`'s stuck-read watchdog escalates+nags, and `land_good` refuses an `{error}` body.
+
 ---
 
 ## 2. The trust substrate (the signing layer — ALREADY BUILT)
@@ -83,6 +96,19 @@ So "Trusting" is not new invention — it is the garden's membership/contact/tru
 >   privileged frames a flock sends — `gen_write`, `restart_request` — are **signed by a cluster key
 >    and verified against the trusted flock**; unsigned/foreign frames are dropped. A sender in the
 >     flock may do everything — there is no separate capability layer (2.8).
+
+**The principle this whole layer is built on (assert vs derive, trust vs confirm).** *State is asserted
+ instead of derived, and boundaries are trusted instead of confirmed* — that one shape was the root of the
+  2026-07 grant saga (the badge *asserted* "granted" instead of *deriving* it from a live crypto verdict;
+   the runner *trusted* an unconfirmed `not_found` and wiped the registry; the editor *trusted* `claim.for`
+    as a routable address instead of *deriving* it at send; a reconcile *re-asserted* an identity invariant
+     on a hot path and dropped a good grant on a blip). The cure is always the same: **derive from the live
+      source at point of use (or reconcile against it every tick), and make every boundary answer a
+       three-valued question — yes / no / couldn't-tell — so "couldn't-tell" can never masquerade as "no".**
+        The signing layer below is the trust-vs-confirm half; the identity collapse (§3.2a), the latch
+         reconcile (§3.2b), and the authoritative-absence read (Organ 3, kept in `Robustness_plan.md`) are the
+          derive-not-assert half. *(Distilled from the retired `Robustness_plan.md` — its five organs folded
+           into their §homes here; only the app-wide Organ 3 stayed behind as a stub.)*
 
 ### 2.1 The threat & the end state
 `gen_write` (the editor shipping a compiled `.go` down its relay socket → Node writes it to
@@ -316,8 +342,10 @@ The relay binds each verified Idento pub → its socket on the signed hello, and
        Socket_real) — relay accepts it, no peer emits it yet.
 
 ### 3.2a The identity model — one key, one derived address (the 9→2 collapse)
-**BUILT 2026-07-05** (was Robustness_plan Organ 4, the "9 divergable tiers" deep fix; `:9091`-verify
- owed). A peer used to hold ~9 notions of "who am I" and re-sample a two-tier fork (`Clustation_self ??
+**BUILT + VERIFIED live 2026-07-05/06** (was Robustness_plan Organ 4, the "9 divergable tiers" deep fix).
+ Verified on the bridge runner `49dee91d`: `ping` gives `self === clustation_self` (routing intact), and
+  MusuReco flipped `failed 0/11` (starved) → `done 11/11` once the addressed replies were live. A peer used to
+   hold ~9 notions of "who am I" and re-sample a two-tier fork (`Clustation_self ??
   stashed`) at the moment each ran — so the prepub it *advertised* could drift from the prepub the relay
    *hello-bound* it under, and every `to:<us>` frame silently misrouted (the 20s stall, "both runners ran
     it", the grant for-check flap). The collapse:
@@ -383,11 +411,116 @@ Load-bearing: `LiesLies.svelte` (`Lies_self`, `Lies_channel_up` hello, `Lies_adv
   `Lies_wormhole_req_recv`), `Auto.svelte` (boot adopt), `Funk/Grant.ts` (`mint_grant` already took the full
    pub — the bug was the caller), `p2p/cluster_trust.ts` (`prepubOf`).
 
-### 3.3 The `Lies%runner` UI — the outer tab sorts itself out
+### 3.2b The connection substrate — how the channel stands up and stays honest
+*(Folded from the retired `Runner_network.md`; the diagnostic ladder that reads these layers lives in §3.3.)*
+
+**The boot→channel layer map, bottom-up.** Four layers stack a live runner onto the relay:
+1. **`/relay`** (`server/relay.ts`) — the node forwarder. Routes by `header.to`; `become <role>` sets a role
+    slot once; a signed `hello` binds `prepubOf(pub)`→socket (§3.2); an r2r bridge cross-links two relays;
+     executes verified `gen_write`. Frames are `[header JSON]\n[raw buffer]`, header cleartext so it can route.
+2. **`Socket_real`** (`Tribunal.g`) — the client. Dials `ws?addr=role`, backoff-reconnects, buffers real
+    frames and drops ephemerals (ping·pong·ack·run_phase); `on_open` re-fires every reconnect (so become+hello
+     are re-sent each time).
+3. **`Lies_channel_up`** (`LiesLies.svelte`) — the consumer. Installs the **per-role frame-handler table**
+    (runner handlers / editor handlers / both) and stamps `channel_up`; an off-think keepalive rides here.
+4. **top** — advertise → the `%Runner` roster; engage `to:<prepub>`; `wormhole_req`/`reply` carrying a signed
+    `%Grant`. The per-role handler roster (which frame types each role answers) is the unique shape to preserve.
+
+**Standup sits ABOVE the disk loop** (2026-07-03 invariant): `Lies_channel_up` runs from the TOP of
+ `LiesPersist`, above the Waft `%Good` loop — *connection first; disk settles through it*. This ordering fixed
+  a channel-after-disk deadlock; keep the invariant even though the reorder itself is long done.
+
+**The four standup guards, in order** (the walk the ladder in §3.3 references): role ≠ editor|runner → skip;
+ `channel_up` already stamped → skip (idempotent); `Socket_real` not a function → **ring the Relay Brink**
+  (guard 3, the "never-deposited/cross-wired gen" tell); no `WebSocket` global → skip. Each open re-sends
+   `control:become` then a signed `control:hello`, re-reading `Lies_cluster_idento` **live** so an Id switch
+    rebinds without a reload.
+
+**The LIVE-vs-FROZEN asymmetry — the cross-wired-gen tell.** A runner rides **live** `gen/N/*.go`; the editor
+ rides the **frozen** `p2p/pinned_stable/*.go`. So a broken `gen/N/Tribunal.go` breaks EVERY runner while the
+  editor stays green — *editor-green-while-all-runners-down IS the tell* (diagnosis ladder, §3.3). It also means
+   the editor-receives direction (e.g. the reconnect-epoch cure) can't be isolate-tested from a runner.
+
+**Announce cadence.** Ping ~5s (liveness only, never carries facets); advertise ~15s (`ready|book|engaged|ac`
+ facets, re-beacons early on a facet change via a `sig` compare). On socket open, fire an immediate ping +
+  advertise directly (NOT via the keepalive, whose DEAD-check would trip on a stale `last_heard`). `Lies_ac_nudge`
+   (Sound Brink) makes an AudioContext unlock advertise instantly.
+
+**Latched flags must reconcile, never assert-once (Robustness Organ 1).** A fact stored as a set-once boolean
+ keeps asserting a dead truth after the thing it described tears down. The canonical specimen: `channel_up` /
+  `transport_up` — set once, and an HMR strip of `Socket_real` left the latch saying "up" while standup never
+   re-ran (*the "relay down" wedge*). *Cure & landed:* derive-or-reconcile against the live transport each
+    heartbeat — `Lies_channel_up`/`_transport_up` now CLEAR the latch and re-stand-up when `Socket_real`
+     **vanished** (a merely-disconnected ws does not flap it). The correct template to copy elsewhere:
+      `Auto.svelte`'s `identity_up`, which latches **only on success** and retries until it works; and
+       `wormhole_state`, derived downstream of the crypto verdict every heartbeat (§3.8). *Still-open backlog*
+        (same set-once disease, lower stakes): `Runner.sc.granted_wormhole`, `H.c.creduler_up`,
+         `run.c.toc_loaded`, the snapped `sub.sc.subscribed`, and the Cyto/Thangs/Keep `*_done` UI latches —
+          each wants a clear-on-teardown or derive-every-tick.
+
+### 3.3 The `Lies%runner` UI + the `runner_ask` CLI — badges, the rack, the diagnostic ladder
+*(Folded from `Runner_network.md` (badges + ladder + CLI proof) and `Cluster_runner_handover.md` (the rack).)*
+
 The runner tab needs a face to declare and manage what it is: pick/fork its `?I=` Idento, show role
  (editor|runner) + lease/claim status + liveness (LIVE/SLUGGISH/DEAD), offer "become runner" / "fork
   a new Id" / "spawn N runner links". A **`Lens:Runner`/Brink** tenant (the Lens:Runner face exists,
-   unverified — see the Lens handover); claim status reads the `%Claim` particle the spine mints.
+   unverified — see the Lens handover); claim status reads the `%Claim` particle the spine mints. The prepub
+    **is** the name — Rundar shows it CSS-truncated ~6ch (`.rp-pub`, full pub on hover); the old `%friendly`
+     alias was **killed** (any `friendly` left in Dexie/`toc.snap` is dead data that ages out).
+
+**The editor's RUNNER rack** is ONE server-rack lens over the whole `%Runner` roster — a row per pub with its
+ job-state — not a single `→RUNNER (live)` pair line. Job-board face states: `sc.sent`/`sent_at` set on dispatch
+  = ☎ **calling**; cleared to ▶ **playing** when the runner advertises a `book`; else **dialing** / **free** /
+   **engaged** / **silent**. This rides the directory/presence split: **`%HostedIdentity,<prepub>`** = durable
+    directory (persists role/`favourite_client`, keyed by real prepub) vs **`%Runner,<prepub>`** = live presence
+     (dontSnap, rebuilt from beacons — `last_heard`/ready/book/engaged, never persisted). `self` is DERIVED and
+      viewer-relative: the registry is ONE shared file, so a reader computes `entry === Lies_self(w).prepub`
+       (a stale persisted `self` is scrubbed).
+
+**Brink badges — two axes that must never merge.**
+- **channel** (`Lies_channel_live` = `channel_up` ∧ transport-connected, OUR socket only): "→EDITOR (no
+   channel)" = relay-down for us.
+- **remote-Wormhole** carries TWO independent axes: the **crypto** axis `grant_status` (absent | invalid |
+   valid, via `Lies_wormhole_verdict` — ed25519 `verify_grant` + `browserTrustedPubs` issuer + `for` == this
+    runner; **invalid = loud red, discard + re-beg**; `'ready'` is *derived*, never latched) and the **liveness**
+     axis `channel_live` ("grant valid · editor not answering"). A valid-but-unanswered grant and an
+      invalid-grant are different failures and get different badges. Durable-home rule: the grant's sole
+       authority is the top-House `.stashed` (survives reload); the old `Waft:Cluster` grant copy was REMOVED
+        (an empty-registry read could wipe it) — a wiped grant self-heals re-beg→re-grant.
+
+**The `runner_ask` CLI — how you prove and drive a runner over the relay.** `scripts/runner_ask.mjs`
+ (interactive twin `scripts/story_repl.mjs`) rides the same `/relay` the editor uses: it registers on
+  `on('runner_ask')`, and the relay corr-routes `runner_ask`→runner and the `{control:'runner_ack',corr}`
+   reply→CLI **by corr** (no address needed — a lone-Pier short-circuit + reliable-carrier no-inseq path lets an
+    address-less CLI reach the one runner). Read ops: `ping` (one green round-trip proves relay-up + ws-bound +
+     consumer-dispatch-alive; reports `{role,channel,self,advertising,clustation_self}`), `state`, `steps`,
+      `snap <n>`, `rungos`, `runners` (lists the registry off `toc.snap`), plus `retain`/`trace`/`diff`;
+       `--runner=<pub|prefix>` addresses ONE and **insists** (retry, never failover — the deliberate inverse of
+        the editor's allocator, for repeatable targeted testing). `run <Book>` mints a fresh `uid`.
+
+**The diagnostic ladder** (when a runner won't behave). *The editor staying green while every runner is down is
+ itself the tell — suspect cross-wired gen first.*
+- **Mode 1 — cross-wired gen** (the top suspect). "Creduler ready — N ghost(s) live" proves only that each
+   Ghostmeta answers a dige, NOT that the right methods were deposited. Ladder: Network tab shows zero `/relay`
+    dial attempts → walk the four standup guards (§3.2b); `grep -c Socket_real …/gen/N/Tribunal.go` ≥3 = healthy,
+     1 = cross-wired; run the duplicate-dige sweep; headless-recompile via the `LocalGen.spec.ts` vitest command
+      (self-heals through HMR re-mix, no reload). Upstream cause still OPEN: the compile-source-as-param seam that
+       can write one dock's output to another's `gen_path`.
+- **Mode 3 — error-lands-as-empty** (OPEN; the Organ 3 shape at the wormhole seam). `land_good` mapping
+   `{error}`→`content:''` makes a failed read indistinguishable from a genuinely empty one → "Waft:Cluster empty"
+    silently resets a registry. Ought to park-and-retry (leave `c.content` undefined). `Wormhole_park` serialises
+     one op in-flight per queue, so a degraded down-channel crawls at ~20s/op.
+- **Mode 4 — begun-wedge.** `become_book` accepted but `phase:begun` forever for EVERY Book = a tab-level fault
+   (stuck `%Creduler_pending` / a dead Auto elvis), not a per-Book one; differential-test with a known-green Book
+    (MusuSkip). `runner_ask` has no reload op — a wedged tab needs a human reload.
+- **Mode 5 — watchdog states.** `Lies_keepalive` reads LIVE / SLUGGISH / DEAD; **only DEAD re-dials**;
+   SLUGGISH (heard-but-no-pong) must NOT tear the socket.
+
+**Open CLI ops** (the drive/examine/accept surface — protocol in §5): `op:'hold',at:<n>` / `op:'release'` (pause
+ at a step mid-drive, needs a `req:Step`); on-demand snap at any tick; `op:'accept'` (the one *write* op, signed
+  under the cluster Idento, relay-opaque + runner-verifies — the live analog of `CredRunner ACCEPT=1`);
+   `forget <uid>`; and re-registering `on('runner_ask')` outside the `channel_up` once-guard so HMR can hot-swap
+    a new handler.
 
 ### 3.4 The restart/resume service (the docker successor to `ty/`)
 The hard problem (`ty/README.md`): Chrome app-servers hold **File System Access Directory Handles**
@@ -544,21 +677,81 @@ When the app needs to act on the **host** — restart a crashed Chrome profile, 
    `read_range` reply now rides an **addressed binary frame** — `Lies_send_binary_to(w, claim.for, …)` puts
     bytes on `frame.buffer` (the `[header]\n[raw buffer]` wire, body_hash-integrity, near-zero-copy), corr +
      size in the header; `RemoteWormholeNav.frame_bytes` unpacks it (b64 only the no-grantee degenerate).
-      `wormhole_reply` is **addressed `to:<grantee.pub>`** (not broadcast).  CAVEAT: addressing uses `claim.for`
-       (the Clustation/advertise prepub); if it has diverged from the hello-bind prepub (the §5 identity sub-bug,
-        Cluster_runner_handover §2a) the reply won't route — reconcile, or §5(a) sidesteps it.
+      `wormhole_reply` is **addressed** (not broadcast). **The routing is now derived, not frozen** (the
+       2026-07-05/06 address+role fix, §3.2a): the reply goes to the corr's **asker** prepub
+        (`corr = ${Lies_self.prepub}-${ts}-${n}`, the live hello-bound tab asking now), fallback
+         `prepubOf(grant.for)`, then broadcast only for a lone-runner grid — so the old `claim.for`-diverged-
+          from-hello-bind caveat is retired. JSON and binary replies route identically.
 
-**Deltas / owed.** (a) `grant_offer` is still **role-broadcast + `for`-filtered** (the runner that matches stores
-  it) — fine, but could go `to:<pub>` now too. (b) Whole-file reads still frame their window; **`offer_stream`**
-   (now available) is the upgrade for large sequential/seekable streaming + migrating the audio decoder to
-    `read_range`. (c) The editor serve calls its nav **directly**, bypassing the rw_queue, so a remote **write**
-     can race the editor's own (reads are safe) — funnel writes through the queue, or grant `ro`. (d) Revocation-
-      corpus check at serve is a TODO. (e) `for` is a **prepub**. (f) **PereBinary** (a Book diging a binary
-       round-trip over the relay carrier) is the owed positive-path proof — the harness exercises binary send +
-        bad-hash reject but never diges received content. NB the **relay-level** binary round-trip (buffer-intact,
-         same-origin + over the r2r bridge) is now proven HEADLESS in `scripts/relay-test.ts`; PereBinary's remaining
-          gap is the **app-level** path — `Lies_send_binary_to` → `RemoteWormholeNav.frame_bytes` unpack → dige the
-           received content — which needs a live runner. Verify live on the docker flock + an editor on :9091.
+**The full nav contract is a hard invariant (Robustness Organ 5 — errors name the real cause, no partial
+ interfaces).** A backend either implements the **whole 7-method contract** — `read_file · write_file ·
+  bin_read · bin_write · read_range · dir · dir_at` — or is explicitly **capability-probed at the seam** (the
+   seam says *which capability is missing*, never a misleading "no writable share — grant one" three layers
+    away from the real cause). Landed: all four navs (FSA / remote / OPFS-overlay / node) now carry the full
+     contract; `RemoteWormholeNav.bin_write` writes binary over the proxy (a headless `&remoteWormhole=1`
+      runner with no local share can write to the editor's disk); nav-precedence prefers a granted **local**
+       share (`A.c.DL`) over the editor proxy, and the badge shows an honest `local` state.
+
+**Deltas / owed.** (a) `grant_offer` is now **addressed `to:<grantee.pub>`** (was role-broadcast); the
+  `%HostedIdentity`/`%Runner` row stores the full `pub` and grants `for = full pub` (§3.2a). (b) Whole-file
+   reads still frame their window; **`offer_stream`** (now available) is the upgrade for large sequential/
+    seekable streaming + migrating the audio decoder to `read_range`. (c) The editor serve calls its nav
+     **directly**, bypassing the rw_queue, so a remote **write** can race the editor's own (reads are safe) —
+      funnel writes through the queue, or grant `ro`. (d) Revocation-corpus check at serve is a TODO. (f)
+       **PereBinary** (a Book diging a binary round-trip over the relay carrier) is the owed positive-path
+        proof — the harness exercises binary send + bad-hash reject but never diges received content. NB the
+         **relay-level** binary round-trip (buffer-intact, same-origin + over the r2r bridge) is proven HEADLESS
+          in `scripts/relay-test.ts`; PereBinary's remaining gap is the **app-level** path — `Lies_send_binary_to`
+           → `RemoteWormholeNav.frame_bytes` unpack → dige the received content — which needs a live runner.
+            Verify live on the docker flock + an editor on :9091.
+
+### 3.9 The runner machine — dispatch quality and liveness
+*(Folded from `Runner_quality_handover.md` and the liveness architecture in `Cluster_runner_handover.md`.)*
+
+**Belief-queue coalescing — the perf lesson.** A 117-todo death-spiral traced to per-frame belief churn. The
+ fix is three-way: the relay's `control:log` goes only to editor-bound sockets (not every tab); `Tribunal.g`
+  `on_message` routes control-frames inline vs enveloping binary through `Lies_deliver_soon`; and
+   `Lies_deliver_soon` **per-`w` batch-coalesces** N frames into a single `post_do` drain via
+    `Peeroleum_deliver` (Atime preserved; the design choice is coalesce-in-post_do, not reqyoncile-per-frame).
+     The first two ride the **pinned spine** (recompile + re-pin `pinned_stable/Tribunal.go`).
+
+**Click-preempt dispatch.** A single interactive click **preempts** — `Lies_preempt_target` sends a fresh
+ `become_book` to the sticky `aim_runner`/`rungo_runner` and `Story_reset` cancels the prior run — instead of
+  queueing behind it. StoryTimes keeps the hold/parallel-acquire path for non-interactive fan-out.
+
+**needAC (audio) dispatch-match.** A beacon carries `ac:1` when its AudioContext is gesture-unlocked (probing
+ `top_House().c.musu_gat`); the roster folds an `%Runner,ac` facet (Rundar "AC live"); `Lies_dispatch_target(w,
+  needAC)` **prefers** an ac-live runner above every favour tier — *prefer, never require*. `runner_ask run`
+   reads Credence (`bookNeedsAC`) and passes `needAC`, failing fast (~60s, not a 120s hang) rather than smearing
+    a no-AC runner red. The load-bearing rule for the verdict: a run that ends `!ok` with nothing tried and an
+     error must read **"couldn't run here"** (⌛/grey), NEVER "audio delivery broken" — a no-AC runner must not
+      paint a needAC Book red. `Lies_secure_audio` opens the run record only AFTER AC is granted, so *"the run
+       record appeared"* IS the grant signal the CLI leans on.
+
+**The liveness architecture still owed** (the address+role work fixed routing but kept the beacon as the
+ heartbeat): promote **per-runner ping/pong** to the liveness *source* (stamp `%Runner.last_heard`/rtt from
+  pong) and **demote `advertise`** to a pure directory+job-state announce; attribute `from:<pub>` on
+   `run_phase`/`run_result` so the editor can **demux** which tab needs AC (today `w.c.run_phase` is a single
+    slot → the Brink says "*a* runner needs AC", not which); and carry a per-Pier inseq-reload baseline across
+     all N Piers. Plus the **activation ladder** (talking <15s ▸ lagging <45s ▸ silent ▸ offline, replacing the
+      flat 45s window) and a **Pier-culling reaper** that reaps a dead `%Runner` presence + its transport/Pier
+       (silent > 5min, `promoted_at` guarding a mid-ring probe) while KEEPING the durable `%HostedIdentity`.
+        These want ONE shared `Lies_liveness(w)` verdict feeding rack + reaper + `runner_ask` (SLUGGISH ~9s,
+         DEAD ~20s, roster LIVE ~45s, Pier cull ~5min), resetting the death-clock on any `run_phase`/`Storyrun`
+          progress — which also kills the `--watch` 8s false-RED bug (it bailed below SLUGGISH). Net fatal =
+           20s of no-answer AND no progress. (Tab sleepiness is the twin problem: a muted keepalive
+            AudioContext + Page-Lifecycle resume→re-ping / freeze→"going cold" advertise; installed-PWA for a
+             real fleet — see the warmth memory.)
+
+**The dispatch allocator** (§3.5 lease in its dispatch hat): `Lies_dispatch_target` picks the latest trusted
+ not-busy runner by tier (mine ▸ unclaimed ▸ another's favourite; a freshly-`sent` ☎ counts as busy) and
+  returns `{to}` | `{}` | `{exhausted}` — where **exhausted = HOLD, never steal** (no tailspin), backstopped by
+   `Lies_queue_run`/`Lies_drain_runs`. `favourite_client` READ (`Lies_favoured_runner`) is built; the SET path
+    (editor blesses / runner self-claims into `%HostedIdentity,favourite_client`) is open.
+
+**Rendering gap** (§8): `ui/Waft.svelte` renders only `ITEM_TYPES`, so unknown mainkeys
+ (`HostedIdentity`/`Cursor`/`WaftTimes`) render **nothing** (no `{:else}` in `waftitem`) — which is why
+  Cluster/Keep show no `/*`. Needs a generic fallback row.
 
 ---
 
@@ -604,6 +797,22 @@ The conductor addresses each part `to:<runner.pub>` (3.2), collects verdicts, an
       **interrogate any one remote via the CLI** (`scripts/Story_cli_runner.svelte` headless, or the
        live Lens:Runner face) to read its local snap. A distributed Story is thus: *provision
         (muster-or-fail) → run sub-books in unison → aggregate + interrogate.*
+
+**Drive → examine → accept, over the relay** *(folded from `Runner_talk_TODO.md`)*. The point is to
+ interrogate and steer a live runner from a CLI with **no human at :9091** — the same addressless round-trip
+  `ghost_compile`/`gen_write` use. A run holds as a durable record: `Storyrun:<ident>,uid` (uid = 8-hex),
+   whose per-Step pins ride `sr.c.pins` — a Record keyed by `n` of `{n,ok,caveat,dige,got_snap,exp_snap,
+    trace}`, **off-snap and refs-not-copies** (bounded to the last ~3, GC'd, `active_rungo` names the live one).
+     `Lies_runner_begin`/`_verdict` + `Lies_rungo_record`/`_steps` + `Lies_runner_this` are the readers;
+      `exp_snap` fills from `Step.sc.exp_snap ?? w:Story.c.exp_snaps[n]`. The examine ops (`snaps`/`retain`/
+       `trace`/temporal `diff <n> prev|<m>`) are built (see §3.3's `runner_ask` surface).
+
+Still open on this surface: **breakpoint** (`op:'hold',at:<n>` / `op:'release'` — pause *at* a step mid-drive,
+ §4.2 fuzz classifier as the condition; needs a `req:Step`); on-demand snap at any tick (read a wedge mid-step);
+  **`op:'accept'`** — the one *write* op, `book,step?`, **signed under the cluster Idento** (`cluster_trust.ts
+   signHeader`), relay-opaque and runner-verified — the live-socket analog of headless `CredRunner ACCEPT=1`/
+    Resnapture, gated on the accept/diff review; `forget <uid>`/`forget all`; and a truly diskless *runner*
+     needs its `exp` snaps seeded into the `become_book` payload (no local disk to read fixtures from).
 
 ---
 

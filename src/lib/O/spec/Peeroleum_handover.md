@@ -21,7 +21,7 @@ Notation: `[x]` done · `[~]` started/scaffolded · `[ ]` not begun · `// <` a 
 - the **relay** must not broadcast its own `control:log` to every browser — only the **editor** (the one
    debugging surface); a runner tab console-noting the editor's routing narration is pure flood.
 The Atime guarantee is *precious*, not free: batch into the belief loop, never flood it. (Impl:
- `Tribunal.g on_message` + `LiesLies Lies_deliver_soon`; the re-pin dance in `Runner_quality_handover.md`.)
+ `Tribunal.g on_message` + `LiesLies Lies_deliver_soon`; the re-pin dance in `Cluster_spec.md` §3.9.)
 
 **Two-frequency pair (read before editing either).** This is the HIGH-frequency half: live status,
 proofs, next moves, bombs, and the forward look — it changes every session. `Peeroleum_spec.md` is the

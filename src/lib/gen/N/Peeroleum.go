@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_N_Peeroleum(): string { return 'f66bad6f34913e3c' },
+    Ghostmeta_Ghost_N_Peeroleum(): string { return '89f7731b8ad5fae2' },
 
 //#region ologist
 // Peeroleum — the particle-only p2p spine (spec: src/lib/O/spec/Peeroleum_spec.md).
@@ -464,6 +464,16 @@ async Peeroleum_deliver(w, frame) {
         H.feebly_ponder()
         return
     }
+    // an addr-less CLI ask (runner_ask.mjs / reactap.mjs / ghost_compile.ts — exactly the two types
+    //  the relay corr-remembers) is NOT a peer envelope: its `from` is an ephemeral reply addr, never
+    //   a Pier, and the reply is a raw control frame the relay corr-routes back.  So dispatch it by
+    //    TYPE here, BEFORE routing, ephemeral-style (no inbox booking, no ack-back — there is no Pier
+    //     to ack through, and a CLI never retransmits, it just times out).  Routing these was the bug:
+    //      an EDITOR holds N runner Piers, so pub===from missed → the frame hit `if (!pier) return` and
+    //       vanished; the single-Pier runner only ever matched by luck through Peeroleum_route's
+    //        length===1 arm (then booked into its inbox).  By type, it lands whether this node holds
+    //         0, 1, or N Piers, editor or runner alike.
+    if (h.type === 'runner_ask' || h.type === 'ghost_compile') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, null, frame); return }
     let {peering, pier} = this.Peeroleum_route(w, h, 'to')
     if (!pier) return
     // inbound-silence liveness (Reliable.g twin of the outbound %stalled): stamp the LOGICAL tick we last

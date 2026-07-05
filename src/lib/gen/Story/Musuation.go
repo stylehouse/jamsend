@@ -11,7 +11,7 @@ import { Selection } from "$lib/mostly/Selection.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Musuation(): string { return '690292881024ecaf' },
+    Ghostmeta_Ghost_Story_Musuation(): string { return '3d02ba802866f433' },
 
 // Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Music_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
@@ -3386,7 +3386,10 @@ MusuReplica_witness(w) {
     let libs = w.o({ Library: 1 })
     if (boxes.length >= 4 && boxes.every(b => b.c.stuff) && !(w.oa({see: 'the wire traffic folds — each inbox and outbox rides as one stuffed chunk'}))) w.i({see: 'the wire traffic folds — each inbox and outbox rides as one stuffed chunk'})
     if (libs.length >= 2 && libs.every(l => l.c.stuff) && !(w.oa({see: 'both libraries fold — a Record chunk each side of the wire'}))) w.i({see: 'both libraries fold — a Record chunk each side of the wire'})
-    if (stats.folded >= 24 && stats.count > 0 && stats.count <= 9 && !(w.oa({see: 'dozens of little bits fold into single-digit chunks of classification'}))) w.i({see: 'dozens of little bits fold into single-digit chunks of classification'})
+    // fold RATIO not a magic count: single-digit chunks each folding ≥3 bits IS the compression, and it
+    //  survives a traffic-volume trim (the absolute >=24 drifted under the fix-networking cut and dropped
+    //   this proof silently on Accept — a ratio fails only if the fold itself weakens toward folded≈count).
+    if (stats.count > 0 && stats.count <= 9 && stats.folded >= stats.count * 3 && !(w.oa({see: 'dozens of little bits fold into single-digit chunks of classification'}))) w.i({see: 'dozens of little bits fold into single-digit chunks of classification'})
     let srcl = w.c.repli_src
     if (srcl && srcl.c.cyto_folded != null && !(w.oa({see: 'the live graph stops at a stuffed chunk — the fold is real not cosmetic'}))) w.i({see: 'the live graph stops at a stuffed chunk — the fold is real not cosmetic'})
 

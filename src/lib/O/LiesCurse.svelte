@@ -491,7 +491,7 @@
         //     race harmless).  EDITOR-gated so a runner keeps deterministic land-on-first (a Story's cursor/
         //      snap never depends on a Keep); undefined ⇒ fresh Waft | unresolvable locator ⇒ first.
         //   (NOTE 2026-07-01: a cleaner Story-safer variant — skip this seam entirely while a want is
-        //    pending for this Waft, no Keep read — is proposed in Cluster_runner_handover.md §3; not shipped
+        //    pending for this Waft, no Keep read — was proposed in the (retired) Cluster_runner_handover; not shipped
         //     overnight because it'd swap a user-VERIFIED fix for an unverified one.  See the LakeSurfer note.)
         const target = (H.Lies_role(w) === 'editor' ? H.Lies_keep_resume_what(w, waft, waft_key) : undefined) ?? first
         if (!target) return

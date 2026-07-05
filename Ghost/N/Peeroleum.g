@@ -139,11 +139,7 @@ say_trust(w, pier):
 // hear_hello — verify their key starts-with the pub we expect, record %heard +
 //  the proven pubkey, set %Ud (their identity, survives resets — spec §6), and
 //   if we have not said yet, say now (the single-initiator path; a no-op under the
-//    symmetric dual-init). A failed verify writes nothing — the gap is the resulthear
-_hello
-_trust
-Pier_next_seq
-
+//    symmetric dual-init). A failed verify writes nothing — the gap is the result
 //     (spec §8: a corrupt hello that never arrives is the test passing).
 // Returns true on a clean verify, false on reject — the serial inbox handler
 //  (req_unemit) stamps %error on a false (the deliver-failure path, spec
@@ -426,15 +422,17 @@ async Peeroleum_deliver(w, frame):
         H.feebly_ponder()
         return
     }
-    let {peering, pier} = this.Peeroleum_route(w, h, 'to')
     // an addr-less CLI ask (runner_ask.mjs / reactap.mjs / ghost_compile.ts — exactly the two types
-    //  the relay corr-remembers): its from is an ephemeral reply addr, NEVER a Pier — the reply is a
-    //   raw control frame the relay corr-routes back, no envelope.  Serve it instead of dropping: an
-    //    EDITOR holds N runner Piers, so the route's pub===from find misses; the single-Pier runner
-    //     only ever matched through the length===1 arm.  Dispatch straight to the registered handler,
-    //      ephemeral-style — no inbox booking, no ack-back (no Pier to ack through; a CLI never
-    //       retransmits, it just times out).
-    if (!pier && (h.type === 'runner_ask' || h.type === 'ghost_compile')) { let on = w.c.on && w.c.on[h.type]; if (on) on(w, null, frame); return }
+    //  the relay corr-remembers) is NOT a peer envelope: its `from` is an ephemeral reply addr, never
+    //   a Pier, and the reply is a raw control frame the relay corr-routes back.  So dispatch it by
+    //    TYPE here, BEFORE routing, ephemeral-style (no inbox booking, no ack-back — there is no Pier
+    //     to ack through, and a CLI never retransmits, it just times out).  Routing these was the bug:
+    //      an EDITOR holds N runner Piers, so pub===from missed → the frame hit `if (!pier) return` and
+    //       vanished; the single-Pier runner only ever matched by luck through Peeroleum_route's
+    //        length===1 arm (then booked into its inbox).  By type, it lands whether this node holds
+    //         0, 1, or N Piers, editor or runner alike.
+    if (h.type === 'runner_ask' || h.type === 'ghost_compile') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, null, frame); return }
+    let {peering, pier} = this.Peeroleum_route(w, h, 'to')
     if (!pier) return
     // inbound-silence liveness (Reliable.g twin of the outbound %stalled): stamp the LOGICAL tick we last
     //  heard ANYTHING on this Pier — every frame, acks included (an ack is the cheapest liveness proof, so
