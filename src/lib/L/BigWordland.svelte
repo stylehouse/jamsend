@@ -35,7 +35,7 @@
     //  room supplies only its knobs — the editor Book, the editor role — and reads H + houses back.
     //  The OOM trap (assign H once, never read it in the construction effect) is baked in over there.
     const editor_book = boot_param('E') || 'Educarium'
-    const q = boot_qualand({ book: editor_book, role: 'editor' })
+    const q = boot_qualand({ book: editor_book, role: 'word' })
     let H      = $derived(q.H)
     let houses = $derived(q.houses)
     //#endregion

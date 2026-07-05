@@ -39,7 +39,7 @@
     //#region H:Mundo — the shared boot lives in BigQualand now (the aufheben's common bit): this
     //  scape supplies only its knobs — a music Book, the runner role (run it so the graph forms and
     //   crush-folds to glass) — and reads H + houses back.  The OOM trap is baked in over there.
-    const q = boot_qualand({ book, role: 'runner' })
+    const q = boot_qualand({ book, role: 'sound' })
     let H      = $derived(q.H)
     let houses = $derived(q.houses)
     //#endregion
@@ -55,15 +55,34 @@
         return undefined
     })
 
-    // the diagnostic surface — every NON-Cyto UI the run has produced so far (the Story runner UI
-    //  above all, which shows phase / step / see-assertions / verdict / errors), so you watch the
-    //   machine come up (or fail to) instead of a blank "gathering the glass…".
+    // the spine shims — the load-bearing plumbing.  A runner ACQUIRES each spine ghost by enrolling a
+    //  UI:Pantheate-include (Creduler_ensure → Lies_ghost_set, one per CREDULER_GHOST); but the ghost's
+    //   METHODS (Socket_real, the envelope spine, …) only land when that shim's COMPONENT MOUNTS and its
+    //    onMount eatfunc runs ("a UIless run renders nothing, so onMount never fires" — LiesLies).  So
+    //     these MUST be in the DOM regardless of which view is up: they render nothing, but if the view
+    //      starves them the runner never gets its transport — guard 3 (Socket_real !== 'function') fires,
+    //       the Relay Brink reads "down", it never even dials, Creduler_pending never clears, no Story.
+    //        Mounted hidden OUTSIDE the glass/diag/sprawl switch so the view choice can't starve the boot
+    //         — a persisted `sprawl` (which doesn't render them) used to do exactly that.
+    let spine_shims = $derived.by(() => {
+        const out: { house: any, ui: any }[] = []
+        for (const house of houses) {
+            void house.UIs.version
+            for (const ui of house.UIs.ob({ UI: 'Pantheate-include' })) out.push({ house, ui })
+        }
+        return out
+    })
+
+    // the diagnostic surface — every real NON-Cyto UI the run has produced so far (the Story runner UI
+    //  above all, which shows phase / step / see-assertions / verdict / errors), so you watch the machine
+    //   come up (or fail to) instead of a blank "gathering the glass…".  Pantheate-include is excluded —
+    //    it's the spine plumbing above, always-mounted hidden, not diagnostic content.
     let run_uis = $derived.by(() => {
         const out: { house: any, ui: any }[] = []
         for (const house of houses) {
             void house.UIs.version
             for (const ui of house.UIs.ob({ UI: 1 })) {
-                if (ui.sc.UI !== 'Cyto') out.push({ house, ui })
+                if (ui.sc.UI !== 'Cyto' && ui.sc.UI !== 'Pantheate-include') out.push({ house, ui })
             }
         }
         return out
@@ -226,6 +245,18 @@
     {/if}
 </main>
 
+<!-- the spine shims: ALWAYS mounted, hidden (see the spine_shims comment).  They render nothing but
+     their onMount deposits each acquired ghost's methods (Socket_real, the envelope spine, …).  Kept
+      OUT of the view switch so the view choice — a persisted sprawl above all — can never starve the
+       boot: no shim mount ⇒ no transport ⇒ "relay down, not trying" ⇒ no Story. -->
+{#if H}
+    <div class="spine-shims" aria-hidden="true">
+        {#each spine_shims as { house, ui } (keyser(ui.sc))}
+            <svelte:component this={ui.sc.component} H={house} />
+        {/each}
+    </div>
+{/if}
+
 <!-- the global Panel Lens — hosts the fullscreen/global modals (the 🪪 IdHatch cluster-identity
      hatch, altitude:88).  Otro + BigWordland mount this; without it the Mundo 🪪 action toggles
       the lens particle but nothing renders it — the popup never shows.  Needed to see/switch which
@@ -246,6 +277,9 @@
         color: #e7ecf5;
         font-family: system-ui, sans-serif;
     }
+    /* the spine shims mount here but never paint — they exist only for their onMount (method deposit).
+       display:none still mounts them + fires onMount; it just spares any stray markup a layout. */
+    .spine-shims { display: none; }
     /* the top bar — STICKY so it stays put while the sprawl scrolls the document beneath it
        (the glass/diag modes fit the viewport, so nothing scrolls there and sticky is inert) */
     .scape-top {

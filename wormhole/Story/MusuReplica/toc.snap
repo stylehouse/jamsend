@@ -52,8 +52,7 @@ story:MusuReplica
     useCyto
     dontSnapCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.273
-      sample=0.198,at=1783110577
+    TimeTotal:beliefs,avg=0.301
       sample=0.261,at=1783112181
       sample=0.252,at=1783131420
       sample=0.254,at=1783169000
@@ -63,8 +62,8 @@ story:MusuReplica
       sample=0.224,at=1783256989
       sample=0.313,at=1783259411
       sample=0.328,at=1783260141
-    TimeTotal:step,avg=0.019
-      sample=0.014,at=1783110577
+      sample=0.484,at=1783264998
+    TimeTotal:step,avg=0.022
       sample=0.019,at=1783112181
       sample=0.018,at=1783131420
       sample=0.018,at=1783169000
@@ -74,6 +73,7 @@ story:MusuReplica
       sample=0.016,at=1783256989
       sample=0.022,at=1783259411
       sample=0.023,at=1783260141
+      sample=0.035,at=1783264998
   step,dige:b74244526b42c964
   step=2,dige:79a249d5be1dee10
   step=3,dige:20876322ce5142ea

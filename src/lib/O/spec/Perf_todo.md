@@ -109,54 +109,25 @@ The biggest wall-clock number in interactive use is the deliberate **6 s
 2. **Content-digest graft's cache key** like its neighbor `Lang_Map_report` — kills
     an O(points×regions) rerun on every same-structure recompile. **(§status: done, unverified.)**
 3. **Trickle → single-wake** (already specced at `Editron.md:307`): replace the
-    150 ms busy-polls with one paced safety fire once ttlilt expiry can re-pump.
+    150 ms busy-polls with one paced safety fire once ttlilt expiry can re-pump. The **req-side twin** — have
+     an inner `req**`'s `finish()` re-pump `do()` on the ancestor chain (poll→event, killing the per-level
+      150 ms of §4's descent) — is developed as `Story_future_directions.md` §3 Technique B, with the snap
+       tension it must respect.
 4. **dige-gate `organise`/`attend`** so an unchanged tree isn't fully re-walked.
-5. Longer game: collapse the 12-13-hop chain — the `N × 50 ms` floor caps everything.
+5. Longer game: collapse the 12-13-hop chain — the `N × 50 ms` floor caps everything. **Examined in
+    `Story_future_directions.md` §3** (time-sliced greedy drain + observation-driven targeted collapse; the
+     deepest lever — it attacks the 50 ms × N *and* the per-pass O(N) × N together).
 6. Digest-gate `Lang_build_mapules` the way `Lang_Map_report` is.
 
-## Proposed track: high-frequency "snappings" + an in-flight console
+## Moved out: the observation track + the hop-chain collapse
 
-**(First piece landed: the `reactap` census — a bump-count window, not yet a snap stream;
- see the Status log, 2026-07-05.)**
-
-A second, opt-in cadence *beside* the Story-step snap: **super-intensely-often
- snappings** on any system we designate — e.g. taken **between event handlings**,
-  armed **once some designated C\*\* exists** — that you can **remote into and
-   look at + manipulate** the live editor via an **in-flight Story console**.
-
-Why it belongs here: today the only structured snap of the C tree is the
- between-steps Story snap (`snap_H`/`story_snap`, `Story.svelte:1071`), which is a
-  full-tree Travel+encode — too heavy and too coarse to fire between event handlers.
-   The want is a *lighter, denser* observation track: a scoped snap (a subtree, not
-    all of H) fired at a fine cadence on nominated systems, cheap enough to run
-     between handlings without becoming a §3-style per-pass tax.
-
-Design constraints it must respect (from the diagnosis above):
-- **Scoped, not whole-tree.** Snap only the designated C\*\* subtree (Travel from a
-   named root), never all of H — else it becomes another O(N)-per-beat tax.
-- **Off the snap pump.** The observations are diagnostic; they ride `.c`/`H.ave`
-   (like Cyto's `source_n`, like run pins), never `.sc` — no encode cost, no snap
-    pollution.
-- **Armed by presence, gated to designated systems.** "Once some C\*\* exists"
-   = arm when a marker particle is present; "any system we designate" = an explicit
-    opt-in flag per w/host, not global. Default off.
-- **Between-handlings cadence, not per-tick.** Hook the observation to the
-   event-handling boundary (the `answer_calls` drain edge), not the 3 s heartbeat —
-    this is the "intensely often" the Story-step snap can't give.
-- **Remote + manipulable.** The console rides the same `/relay` websocket the
-   editor/runner already share (`runner_ask.mjs` is the request/reply precedent);
-    it should both *read* the dense snap stream and *inject* mutations (an in-flight
-     REPL against the live world), the interactive twin of `story_repl.mjs`.
-
-Open questions:
-- Cadence knob: per-handling vs. a fine timer (e.g. sub-heartbeat) vs. change-gated
-   on the designated subtree's version.
-- Retention: a ring buffer of the last N dense snaps (cf. the run-pin `KEEP` cap,
-   `LiesFunk.svelte:1324`) so you can scrub, not just see now.
-- Where the console mounts: a Lens/Brink face (the ambient dock layer) vs. a
-   separate remote surface.
-- Cost ceiling: a hard cap + a `log()` when it drops, so the observation track can
-   never itself become the sluggishness it's meant to diagnose.
+Two forward-looking sections left this doc for **`Story_future_directions.md`** (2026-07-06) — they are
+ build-ready design, not the causal map + concrete levers this doc keeps:
+- **The high-frequency "snappings" + in-flight console** → `Story_future_directions.md` §2. (Its first
+   piece, the `reactap` census, landed — see the Status log below.)
+- **Lever #5's examination — collapsing the elvisto hop chain** → `Story_future_directions.md` §3
+   (observe → reconstruct the slow chain → collapse; grounded in the `answer_calls` 50 ms throttle vs the
+    UItime "one pass later" deferral).
 
 ## Status log
 

@@ -24,27 +24,27 @@ story:VoroScape
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.023
-      sample=0.025,at=1783249287
-      sample=0.032,at=1783249704
-      sample=0.021,at=1783250090
-      sample=0.018,at=1783250396
-      sample=0.019,at=1783250431
-      sample=0.027,at=1783251866
-      sample=0.024,at=1783252917
-      sample=0.026,at=1783255295
-      sample=0.024,at=1783259422
-      sample=0.017,at=1783259504
+      sample=0.025,at=1783260808
+      sample=0.024,at=1783261224
+      sample=0.024,at=1783261342
+      sample=0.018,at=1783262188
+      sample=0.018,at=1783262231
+      sample=0.032,at=1783262281
+      sample=0.021,at=1783263362
+      sample=0.02,at=1783263912
+      sample=0.02,at=1783263956
+      sample=0.023,at=1783264102
     TimeTotal:step,avg=0.004
-      sample=0.004,at=1783249287
-      sample=0.005,at=1783249704
-      sample=0.003,at=1783250090
-      sample=0.003,at=1783250396
-      sample=0.003,at=1783250431
-      sample=0.004,at=1783251866
-      sample=0.004,at=1783252917
-      sample=0.004,at=1783255295
-      sample=0.004,at=1783259422
-      sample=0.003,at=1783259504
+      sample=0.004,at=1783260808
+      sample=0.004,at=1783261224
+      sample=0.004,at=1783261342
+      sample=0.003,at=1783262188
+      sample=0.003,at=1783262231
+      sample=0.005,at=1783262281
+      sample=0.004,at=1783263362
+      sample=0.003,at=1783263912
+      sample=0.003,at=1783263956
+      sample=0.004,at=1783264102
   step,dige:0f496734bbbf6982
   step=2,dige:41cfc5aa787d7014
   step=3,dige:92e6118851663bcb

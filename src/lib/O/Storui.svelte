@@ -841,6 +841,25 @@
         if (H.stashed) H.stashed.pip_user_engaged_until = 0
         H.i_elvisto('Story/Story', 'story_sel', { open_at: null })
     }
+    // story_nav: pip-stepping for OTHER surfaces — Cytui's focused canvas rides
+    //  this for its ←/→ keys.  Published as a runtime ref on H.c (never
+    //   encoded); re-published every mount so an HMR remount can't strand a
+    //    stale closure.  It routes through pick(), so to the re-assert effect a
+    //     remote step is indistinguishable from our own pip click — no fight —
+    //      and Cyto_seek fires off display.open_at as usual.  With nothing open
+    //       it enters at the END (the frontier side), so a first ← walks
+    //        backward through the run from where it finished.
+    function story_nav(dir: number) {
+        if (!display.steps.length) return
+        const idx  = display.steps.findIndex(ts => ts.n === display.open_at)
+        const next = idx < 0 ? display.steps[display.steps.length - 1]
+                             : display.steps[idx + dir]
+        if (next) pick(next.n)
+    }
+    $effect(() => {
+        H.c.story_nav = story_nav
+        return () => { if (H.c.story_nav === story_nav) delete H.c.story_nav }
+    })
     $effect(() => {
         displayed_at   // subscribe
         diff_mode = null

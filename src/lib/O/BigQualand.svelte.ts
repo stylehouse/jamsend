@@ -27,7 +27,12 @@ import { onDestroy } from "svelte"
 
 export type QualandOpts = {
     book: string                       // the Book Auto activates (editor Book, or a music Book)
-    role: 'editor' | 'runner'          // 'editor' = compile+write, no run (the room); 'runner' = run it
+    // the cluster/identity ROLE of the page.  FOUR values, but they collapse to TWO machine boot_roles:
+    //  'word'|'editor' → editor (compile+write, the room); 'sound'|'runner' → runner (run it).  The finer
+    //   word|sound is carried as H.c.id_role and drives the auto-assumed identity (a /BigSoundland tab is
+    //    always the 'sound' identity, /BigWordland always 'word').  It NEVER reaches the machine, which
+    //     only ever sees editor|runner — the whole spine's role checks stay two-valued.
+    role: 'editor' | 'runner' | 'word' | 'sound'
 }
 
 export type Qualand = {
@@ -50,7 +55,11 @@ export function boot_qualand(opts: QualandOpts): Qualand {
         const h = new House({ name: 'Mundo' })
         h.c.toplevel  = 'Auto'         // the Library/Story owner activates the Book
         h.c.book      = opts.book
-        h.c.boot_role = opts.role
+        // the machine only knows editor|runner; word→editor, sound→runner.  The finer role rides id_role
+        //  for the identity layer, and assume_identity tells Auto this page always mints/resumes one.
+        h.c.boot_role = (opts.role === 'sound' || opts.role === 'runner') ? 'runner' : 'editor'
+        ;(h.c as any).id_role = opts.role
+        ;(h.c as any).assume_identity = true
         H = h
         setTimeout(() => { houses = [H] }, 1)
     })

@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783258987985
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783264802306
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -59,20 +59,16 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/spec/Lang_handover.md,name:Lang_handover.md,noticed_at=1782287148306
     Doc:src/lib/O/spec/Lens_posable_TODO.md,name:Lens_posable_TODO.md,noticed_at=1782364945395
     Doc:src/lib/O/spec/Music_todo.md,name:Music_todo.md,noticed_at=1782375234557
-    Doc:src/lib/O/spec/Runner_talk_TODO.md,name:Runner_talk_TODO.md,noticed_at=1782456500569
     Doc:src/lib/O/spec/Keeping_spec.md,name:Keeping_spec.md,noticed_at=1782542020398
     Doc:src/lib/O/spec/Backbone_plan.md,name:Backbone_plan.md,noticed_at=1782704068439
     Doc:src/lib/O/spec/Cluster_spec.md,name:Cluster_spec.md,noticed_at=1782719405545
     Doc:src/lib/O/spec/Engage_integration.md,name:Engage_integration.md,noticed_at=1782794992015
     Doc:src/lib/O/spec/Radio_spec.md,name:Radio_spec.md,noticed_at=1782801574293
-    Doc:src/lib/O/spec/Cluster_runner_handover.md,name:Cluster_runner_handover.md,noticed_at=1782811121344
     Doc:src/lib/O/spec/Coding_guide.md,name:Coding_guide.md,noticed_at=1782892710802
     Doc:src/lib/O/spec/Swarm_spec.md,name:Swarm_spec.md,noticed_at=1782906022320
     Doc:src/lib/O/spec/Lies_handover.md,name:Lies_handover.md,noticed_at=1782915816289
     Doc:src/lib/O/spec/DocWaftMap_sketch.md,name:DocWaftMap_sketch.md,noticed_at=1782963863709
     Doc:src/lib/O/spec/Perf_todo.md,name:Perf_todo.md,noticed_at=1782964492065
-    Doc:src/lib/O/spec/Runner_quality_handover.md,name:Runner_quality_handover.md,noticed_at=1782976826950
-    Doc:src/lib/O/spec/Runner_network.md,name:Runner_network.md,noticed_at=1783047540868
     Doc:src/lib/O/spec/Stemdex_spec.md,name:Stemdex_spec.md,noticed_at=1783057968719
     Doc:src/lib/O/spec/Robustness_plan.md,name:Robustness_plan.md,noticed_at=1783165854860
     Doc:src/lib/O/spec/PWA_install_handover.md,name:PWA_install_handover.md,noticed_at=1783178992837

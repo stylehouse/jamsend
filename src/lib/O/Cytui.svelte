@@ -694,42 +694,51 @@
     })
     const voronoi_on  = $derived(voronoi_pref ?? saw_stuffy)
     // ── the scroll visor ──────────────────────────────────────────────────────
-    //  A glass pane over the right edge of the graph.  It exists only to
-    //   intercept the wheel: a wheel that lands on the visor never reaches cy's
-    //    canvas underneath, so cy can't zoom and the browser scrolls the PAGE
-    //     instead — a hand-free gutter to scroll past a graph that would
-    //      otherwise eat the wheel.  It also blocks a drag (pointer-events:auto),
-    //       so no node gets grabbed there; the graph is handled from the open
-    //        left.  Invisible at rest (it must not obscure the graph); a wheel
-    //         lights the glass and it fades away after — the visor shows itself
-    //          only while it is doing its job, then vanishes.
+    //  A strip over the right edge where the wheel scrolls the PAGE instead of
+    //   zooming the graph — a hand-free gutter past a graph that would otherwise
+    //    eat the wheel.  The visor element itself is pure pixels now
+    //     (pointer-events:none): it only LIGHTS while the gutter is doing its
+    //      job, then fades to nothing.  The actual stealing happens in
+    //       visor_guard below, capture-phase on the wrap — so clicks and drags
+    //        in the strip land on whatever is beneath; a cell there stays fully
+    //         handleable, nothing is untouchable glass any more.
     let visor_lit     = $state(false)
     let visor_timer: ReturnType<typeof setTimeout> | null = null
-    // NB: no preventDefault — letting the default wheel action stand is exactly
-    //  what scrolls the page.  We only light the glass.
-    function visor_wheel() {
+    // a fixed fifth of the wrap: wide enough to catch a natural scroll gesture,
+    //  and costless to the cells beneath now that only the wheel is claimed
+    const VISOR_FRAC  = 0.2
+    function visor_light() {
         visor_lit = true
         if (visor_timer) clearTimeout(visor_timer)
         visor_timer = setTimeout(() => { visor_lit = false }, 140)
     }
+    // capture-phase wheel guard on the wrap: inside the strip, stopPropagation
+    //  keeps the event from ever reaching cy's canvas (capture on the ancestor
+    //   beats cy's own container listener), so cy can't zoom — and NO
+    //    preventDefault, because the browser's default page scroll is exactly
+    //     the point.  Stand-down: when the page has nowhere to scroll (a
+    //      full-bleed toplevel like BigSoundland — the graph IS the page),
+    //       stealing the wheel would serve nobody, so the strip lets cy zoom.
+    //        The page's own shape is the switch; no prop, no mode.
+    function visor_guard(e: WheelEvent) {
+        const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+        if (e.clientX < r.right - r.width * VISOR_FRAC) return
+        const doc = document.scrollingElement ?? document.documentElement
+        if (doc.scrollHeight <= doc.clientHeight) return
+        e.stopPropagation()
+        visor_light()
+    }
     let vcells        = $state<{ id: string, d: string, color: string }[]>([])
     let vtips         = $state<{ id: string, x: number, y: number, color: string }[]>([])
-    let vregion_w     = $state(0)                      // veil covers only the tessellated region (rack stays bright)
-    // the visor and the rack strip AGREE in voronoi mode: cells tessellate
-    //  [0, CW] and the equipment rack lives beyond CW, so the glass sits exactly
-    //   over the rack — every cell stays handleable and the scroll gutter is the
-    //    strip that was never theirs.  A floor keeps a usable gutter when no rack
-    //     column spawned; the plain graph (no rack) keeps the quarter.
-    const visor_width = $derived(voronoi_on && vregion_w
-        ? `max(12%, calc(100% - ${vregion_w}px))` : '25%')
+    let vregion_w     = $state(0)                      // veil covers the tessellated region ([0, CW] — the full width unless the shelved rack returns)
     // ── the wheel-button grip ─────────────────────────────────────────────────
     //  middle-click-drag pans: grab the whole viewport by the wheel button, from
     //   ANYWHERE — over a node (cy only grabs on the primary button, so no
-    //    fight), even through the visor glass (the event bubbles up to the
-    //     wrap).  Pointer capture rides the gesture outside the frame, and
-    //      cy.panBy fires 'pan', so the live-overlay loop tracks it like any
-    //       other motion.  preventDefault stops the browser's own middle-button
-    //        autoscroll from starting underneath.
+    //    fight), visor strip included (the visor is pointer-events:none, and the
+    //     wheel guard only claims wheels).  Pointer capture rides the gesture
+    //      outside the frame, and cy.panBy fires 'pan', so the live-overlay
+    //       loop tracks it like any other motion.  preventDefault stops the
+    //        browser's own middle-button autoscroll from starting underneath.
     function middle_pan_down(e: PointerEvent) {
         if (e.button !== 1 || !cy) return
         e.preventDefault()
@@ -750,6 +759,29 @@
         el.addEventListener('pointermove', move)
         el.addEventListener('pointerup', up)
         el.addEventListener('pointercancel', up)
+    }
+    // ── story stepping from the canvas ───────────────────────────────────────
+    //  the graph is a story surface too: with the canvas selected, ←/→ walk the
+    //   story pips exactly like Storui's strip does.  The keys ride Storui's OWN
+    //    pick() via the H.c.story_nav ref it publishes (a runtime ref, never
+    //     encoded) — so the diff panel, Cyto_seek and the graph wave all follow
+    //      as one, and Storui's re-assert effect sees its own echo, not a rival
+    //       server jump.  No Storui mounted → the ref is absent and the keys
+    //        fall through untouched.
+    //  cy preventDefaults its mousedown, so a click on the canvas never focuses
+    //   the wrap natively — wrap_pointerdown parks focus by hand (preventScroll:
+    //    selecting the canvas must not yank the viewport to it).
+    let wrap_el = $state<HTMLElement | null>(null)
+    function wrap_pointerdown(e: PointerEvent) {
+        wrap_el?.focus({ preventScroll: true })
+        middle_pan_down(e)
+    }
+    function wrap_key(e: KeyboardEvent) {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+        const nav = (H as any).c?.story_nav
+        if (!nav) return
+        e.preventDefault()
+        nav(e.key === 'ArrowRight' ? 1 : -1)
     }
     let motion_hidden = $state(false)                  // cells fade with the overlays during motion
     let voronoi_timer: ReturnType<typeof setTimeout> | null = null
@@ -913,23 +945,29 @@
         }
         if (seeds.length < 2) return null
 
-        // ── the rack: haul the un-fitting subset aside ────────────────────────
-        //  nodes that aren't sense-making cells (the spine equipment — Piers,
-        //  reqs, Opt…) leave the tessellation area for a column pinned at the
-        //  right edge: an un-veiled subgraph aside.  Compounds stay put (they
-        //  follow their children).  Rendered-coords writes at quiet cadence, so
-        //  the rack re-racks after every settle and stays docked through pans.
-        const rack = cy.nodes().filter((node: any) =>
-            !node.isParent() && !is_nucleus(node) && !stuff_mounts.has(node.id()))
-        rack.sort((a: any, b: any) =>
-            String(a.data('label') ?? a.id()).localeCompare(String(b.data('label') ?? b.id())))
-        const per_col = Math.max(1, Math.floor((HH - 50) / 34))
-        const n_cols  = rack.length ? Math.ceil(rack.length / per_col) : 0
-        rack.forEach((node: any, i: number) => {
-            const col = Math.floor(i / per_col), row = i % per_col
-            node.renderedPosition({ x: W - 65 - col * 72, y: 40 + row * 34 })
-        })
-        const CW = Math.max(W * 0.55, W - (n_cols ? 130 + (n_cols - 1) * 72 : 0))
+        // ── the rack, SHELVED ─────────────────────────────────────────────────
+        //  hauled non-cell equipment (Piers, reqs, Opt…) into a label-sorted
+        //  column at the right edge, shrinking the tessellation to [0, CW].
+        //  Shelved: the scape reads better with the oddballs simply seated
+        //  where fcose put them, under the veil among the cells.  Kept behind
+        //  the flag (not deleted) as the seed of a future in|out-group process
+        //  option; while it is off, no pixel geometry pushes into the layout
+        //  AT ALL — the old "one sanctioned exception" is zero exceptions.
+        const RACK_ON = false as boolean
+        let CW = W
+        if (RACK_ON) {
+            const rack = cy.nodes().filter((node: any) =>
+                !node.isParent() && !is_nucleus(node) && !stuff_mounts.has(node.id()))
+            rack.sort((a: any, b: any) =>
+                String(a.data('label') ?? a.id()).localeCompare(String(b.data('label') ?? b.id())))
+            const per_col = Math.max(1, Math.floor((HH - 50) / 34))
+            const n_cols  = rack.length ? Math.ceil(rack.length / per_col) : 0
+            rack.forEach((node: any, i: number) => {
+                const col = Math.floor(i / per_col), row = i % per_col
+                node.renderedPosition({ x: W - 65 - col * 72, y: 40 + row * 34 })
+            })
+            CW = Math.max(W * 0.55, W - (n_cols ? 130 + (n_cols - 1) * 72 : 0))
+        }
 
         const GAP = 4
         const cells: VCell[] = []
@@ -1679,7 +1717,12 @@
             />
         </div>
     {/if}
-    <div class="cytui-graph-wrap" onpointerdown={middle_pan_down}>
+    <!-- tabindex=-1: clicking the canvas parks keyboard focus here (via
+         wrap_pointerdown — cy eats the native focus click) so ←/→ can walk the
+         story pips; role=application tells AT the arrows are app-handled.
+         onwheelcapture is the visor guard — see the scroll-visor region. -->
+    <div class="cytui-graph-wrap" bind:this={wrap_el} tabindex="-1" role="application"
+         onpointerdown={wrap_pointerdown} onkeydown={wrap_key} onwheelcapture={visor_guard}>
         <div class="cytui-graph" bind:this={container}></div>
         <!-- voronoi layer between the canvas and the HTML overlays: the veil dims
              the raw graph so the cells (and the Stuffings stretched into them)
@@ -1699,15 +1742,13 @@
                 {/each}
             {/if}
         </svg>
-        <!-- scroll visor: a glass pane over the right edge — the rack strip in
-             voronoi mode, the rightmost quarter on a plain graph.  Sits above
-             the cy canvas (later in DOM, no z-index) so it intercepts the wheel
-             (cy never zooms → the page scrolls) and blocks a drag from grabbing a
-             node — the graph is handled from the open left.  Lights on a wheel,
-             then vanishes.  Below the overlays so a cm-hole still opts to the top. -->
-        <div class="cytui-visor" class:lit={visor_lit} onwheel={visor_wheel}
-             style:width={visor_width}
-             title="scroll gutter — the graph is handled on the left"></div>
+        <!-- scroll visor: the lit indicator for the wheel gutter over the right
+             strip.  Pure pixels (pointer-events:none) — the wrap's capture-phase
+             visor_guard does the actual wheel-stealing, so everything beneath
+             the strip stays clickable and draggable.  Lights while a wheel is
+             being gutter'd, then vanishes. -->
+        <div class="cytui-visor" class:lit={visor_lit}
+             style:width={`${VISOR_FRAC * 100}%`}></div>
         <!-- overlay container sits over the cy canvas, pointer-events:none
              so graph interactions pass through. Individual .cm-hole overlays
              opt back in with pointer-events:all for future CodeMirror input. -->
@@ -1761,6 +1802,9 @@
 .cytui-graph-wrap {
     flex: 1; min-height: 0;
     position: relative;
+    /* focusable (story-stepping keys land here) but never ringed — selecting
+       the canvas is a quiet act; the pip strip shows where the story is */
+    outline: none;
 }
 .cytui-graph {
     position: absolute;
@@ -1788,19 +1832,18 @@
     overflow: hidden;
 }
 
-/* The scroll visor — a glass pane over the rightmost quarter of the graph.
-   pointer-events:auto is the whole point: a wheel here is caught by the visor,
-   never by cy's canvas beneath, so cy can't zoom and the browser scrolls the
-   page; a drag here can't grab a node either.  Invisible at rest so it never
-   obscures the graph — .lit fades it in on a wheel, and removing .lit lets the
-   slow transition carry it back to nothing (the "vanish").  The glass is the
-   same blue as the ◈/voronoi accent; ns-resize hints the strip is for scrolling. */
+/* The scroll visor — the lit indicator over the wheel-gutter strip.
+   pointer-events:none: the visor never takes an event itself (the wrap's
+   capture-phase visor_guard steals wheels positionally), so cells and nodes
+   under the strip stay fully handleable.  Invisible at rest so it never
+   obscures the graph — .lit fades it in while a wheel is being gutter'd, and
+   removing .lit lets the slow transition carry it back to nothing (the
+   "vanish").  The glass is the same blue as the ◈/voronoi accent. */
 .cytui-visor {
     position: absolute;
     top: 0; right: 0;
-    width: 25%; height: 100%;
-    pointer-events: auto;
-    cursor: ns-resize;
+    height: 100%;
+    pointer-events: none;
     opacity: 0;
     transition: opacity 0.5s ease;
     background: linear-gradient(to right, transparent, rgba(120,176,212,0.06));

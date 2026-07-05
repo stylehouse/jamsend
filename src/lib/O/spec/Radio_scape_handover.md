@@ -30,9 +30,15 @@ The whole point of the recent work: the crush stopped being a music-test fixture
     `{folded,count}` return; the demo Books arm it via `w.c.crush_wanted=1`, not a `%crushCyto` opt.
 - **◈ imposes** on any graph (`Cyto_crush{on:1}` → `e_Cyto_crush` → `Scannable.c.crush_wanted`). MusuReplica
    is the imposition example (keeps the `%crushCyto` opt, calls the shared crusher cross-ghost).
-- **Cytui UI (this session):** a **Vexpandy** V-toggle in the ◈ bar doubles height (50vh↔100vh, `class:tall`)
-   and re-fits after; the layout wave was changed to keep overlays/cells live through the animation
-    (`start_live_layout`). Both code-complete + typecheck clean; browser-unverified.
+- **Cytui UI:** a **Vexpandy** V-toggle in the ◈ bar doubles height (50vh↔100vh, `class:tall`)
+   and re-fits after; the layout wave keeps overlays/cells live through the animation
+    (`start_live_layout`), and pan/zoom ride the same live loop. The **rack is shelved**
+     (`RACK_ON = false` in `voronoi_layout()` — oddballs sit where fcose put them, cells
+      tessellate the full width); the **visor** is a pass-through indicator whose wheel-steal
+       lives in `visor_guard` (capture-phase on the wrap, stands down when the page can't
+        scroll — so full-bleed BigSoundland wheel-zooms with no prop). **←/→ on the focused
+         canvas** step the story pips via Storui's published `H.c.story_nav`. All
+          code-complete + typecheck clean; browser-unverified.
 - **Credence** `What:Voro` lists `VoroMitosis` + `VoroScape` (both `brand_new:1`); the stray `Musu*` names
    are cleared.
 

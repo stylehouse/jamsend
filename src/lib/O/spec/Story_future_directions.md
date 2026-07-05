@@ -118,3 +118,138 @@ Because that is the `%witnessed`-latch anti-pattern reborn: durable observation 
    reachability in `H**`; an emission off-pump is invisible to the snap anyway — probably out of scope.)
 - Multi-run churn: a held/swept run's seen-set vs a fresh run's — reconcile like the rest of the run
    record (`storyrun-run-record`), or leave per-run.
+
+---
+
+## 2 — High-frequency "snappings" + an in-flight console
+
+*(Moved here from `Perf_todo.md` 2026-07-06 — it is a Story-runner observation feature, not a perf lever.
+ Its first piece, the `reactap` reactivity census, has landed; see `Perf_todo.md`'s Status log + the
+  `reactap-reactivity-census` memory.)*
+
+A second, opt-in cadence *beside* the Story-step snap: **super-intensely-often snappings** on any system we
+ designate — e.g. taken **between event handlings**, armed **once some designated C\*\* exists** — that you
+  can **remote into and look at + manipulate** the live editor via an **in-flight Story console**.
+
+Why it belongs to the Story machinery: today the only structured snap of the C tree is the between-steps
+ Story snap (`snap_H`/`story_snap`, `Story.svelte:1071`), which is a full-tree Travel+encode — too heavy and
+  too coarse to fire between event handlers. The want is a *lighter, denser* observation track: a scoped snap
+   (a subtree, not all of H) fired at a fine cadence on nominated systems, cheap enough to run between
+    handlings without becoming a per-pass tax (the §3-shaped tax in `Perf_todo.md`).
+
+Design constraints it must respect:
+- **Scoped, not whole-tree.** Snap only the designated C\*\* subtree (Travel from a named root), never all of
+   H — else it becomes another O(N)-per-beat tax.
+- **Off the snap pump.** The observations are diagnostic; they ride `.c`/`H.ave` (like Cyto's `source_n`, like
+   run pins), never `.sc` — no encode cost, no snap pollution.
+- **Armed by presence, gated to designated systems.** "Once some C\*\* exists" = arm when a marker particle is
+   present; "any system we designate" = an explicit opt-in flag per w/host, not global. Default off.
+- **Between-handlings cadence, not per-tick.** Hook the observation to the event-handling boundary (the
+   `answer_calls` drain edge), not the 3 s heartbeat — this is the "intensely often" the Story-step snap can't
+    give.
+- **Remote + manipulable.** The console rides the same `/relay` websocket the editor/runner already share
+   (`runner_ask.mjs` is the request/reply precedent); it should both *read* the dense snap stream and *inject*
+    mutations (an in-flight REPL against the live world), the interactive twin of `story_repl.mjs`.
+
+Open questions:
+- Cadence knob: per-handling vs. a fine timer (sub-heartbeat) vs. change-gated on the designated subtree's
+   version.
+- Retention: a ring buffer of the last N dense snaps (cf. the run-pin `KEEP` cap, `LiesFunk.svelte:1324`) so
+   you can scrub, not just see now.
+- Where the console mounts: a Lens/Brink face (the ambient dock layer) vs. a separate remote surface.
+- Cost ceiling: a hard cap + a `log()` when it drops, so the observation track can never itself become the
+   sluggishness it's meant to diagnose.
+
+---
+
+## 3 — Collapsing the elvisto hop chain (observe → collapse)
+
+*(The "longer game" lever #5 from `Perf_todo.md`, examined here because its instrument is §2's observation
+ track — the arc is one thing: **observe densely → reconstruct the slow chain → collapse it**.)*
+
+### The floor being attacked
+
+An edit→compile→run threads **~12-13 `i_elvisto` hops** (~8 compile + ~4-5 run), and each hop pays a full
+ `ANSWER_CALLS_TICK_MS` = **50 ms** (`Housing.svelte.ts:20`). A logically-instant chain therefore pays
+  `N × 50 ms` ≈ 0.6-1 s of pure latency floor before *any* O(N) work. Worse, each hop is also a separate
+   `beliefs()` pass — so it drags the four unconditional O(N) tree-walks (`Perf_todo.md` §3) along with it.
+    **Collapsing the chain is the only lever that attacks both floors at once:** kill the 50 ms × N *and* the
+     per-pass O(N) × N.
+
+### The two things in the drain, kept apart
+
+1. **The "one pass later" is a correctness deferral, not the 50 ms.** `i_elvisto` builds `e` immediately but
+    pushes it to the todo only at **UItime** (`this.clear(async … _push_todo(e))`, `Housing.svelte.ts:579-583`)
+     — so the scheduler's mutations land before the target runs. This deferral is *load-bearing* and must
+      survive any collapse.
+2. **The 50 ms is a separate throttle.** `answer_calls` shifts ONE item, processes it under the beliefs mutex,
+    then `setTimeout(…, 50 ms)` before it re-fires on the next `todo_version` bump (`:817-824`, drain at `:836`).
+     This gap exists so "rapid-fire todo pushes don't pile up" and to yield to the browser — it is **not** a
+      correctness barrier. It is the collapsible part.
+
+### The trigger isn't causality — it's *gallop confidence*
+
+Field observation: during a settle the todo doesn't hold a tidy causal chain one hop at a time — it holds
+ **20-40 elvises churning for a while, earlier ones replacing themselves** (the `while todo[0]=='think'` merge
+  at `:843` collapsing re-posted `think`s) as the machine rattles. That depth is not causal fan-out; it is the
+   **trickle re-arm** (every waiting req's own 150 ms `think` poke, `Perf_todo.md` §2) plus the **eternal
+    re-arm** (`sc.ok` cleared every pass so eternal reqs re-run, §4) piling up. So the earlier framing — "you
+     can't see a serial chain in the queue" — is a red herring for the real workload: **you don't need to prove
+      a causal relation.** When the queue is deep and sustained and nothing is painting, you are *convinced you
+       are galloping*, and every one of those pokes is "make progress" work you may as well drain flat-out.
+        Draining them one-per-50 ms is pure imposed latency on a machine that is visibly mid-settle.
+
+### Technique A — gallop-tighten (queue-depth, causality-agnostic)
+
+The blunt, general lever: watch todo depth over a window (a `reactap` sibling — `reactap` already measures the
+ bump churn, the sister signal). When it's **deep + sustained** (clearly settling) switch the drain from
+  50 ms-gated to **greedy to a wall-clock budget** (drain back-to-back, then yield to paint), and relax back to
+   the 50 ms gate the moment it drains shallow. No per-edge marking, no chain reconstruction — just "we're
+    rattling hard, drain it." The UItime deferral (1) still runs between items, so correctness holds; you only
+     stop paying wall-clock you were spending to protect a paint that isn't happening anyway.
+
+### Technique B — finish → re-pump the upper req (poll becomes event)
+
+The structural lever, aimed at the Lies stack's *depth* (`Perf_todo.md` §4: Store `maz:7` → Cortex `maz:5` →
+ Codebit `maz:2` → Rundown `maz:1`). `do()` (`Stuff.svelte.ts:647`) descends multiple maz levels in one pass —
+  **but halts the moment a level bows out on a ttlilt** (`level.some(needs_work) → return`). Re-entry from the
+   top then waits for the next `think`, which today is driven by the **150 ms trickle**, not by the child. So
+    each async level costs a trickle-quantum of latency: arm ttlilt → bow out → …150 ms…→ re-enter → descend
+     one more level. Your idea: when the awaited inner req** **`finish()`es** (`:682`), have the finish itself
+      **re-pump `do()` on the ancestor chain** immediately, instead of waiting for the poll. That turns §2's
+       busy-poll and §4's one-level-per-pass into an **event-driven up-walk** — which is exactly `Perf_todo.md`
+        lever #3 ("trickle → single-wake") seen from the req side: the gate-clearer re-pumps, so the trickle can
+         retire to a bare safety fire. This is where the Lies+Lang speed-up you're picturing actually comes from
+          — the deep stack stops paying 150 ms per level to notice its own children finishing.
+
+### The governing constraint — the snap *wants* the gallop (your hesitation, promoted)
+
+This is the real reason it was left loose, and it's correct to guard. The **ttlilt is the snap-timing advisor**,
+ not just a pacer (`ttlilt-not-a-keepalive`, `ttlilt-in-snap-means-timeout`): the discrete pass-boundaries are
+  what let Story — and the §2 dense track — watch the world settle in consistent, mutex-frozen states. Pull the
+   gallop tight enough and the settle becomes one atomic jump: fast, but the intermediate states never become
+    observable. The reconciliation, so speed and observability stop fighting over one clock:
+- **The step-snap fires at *quiescence*, not per pass.** Story's `poll_step` snaps when the world goes
+   needs_work-free; whether that took 10 loose passes or 2 tight ones, the step boundary is the same logical
+    point — just reached sooner. So tightening is **safe for, and only speeds, step-snaps** (and arguably makes
+     quiescence-detection *cleaner* — fewer half-settled windows to mistake for done).
+- **What's actually at stake is *intermediate* observability** — a Story asserting mid-settle, or the dense
+   observation track watching the descent. That is precisely what §2 is *for*. So: let a system that wants to
+    watch its gallop keep it loose (or watch via the §2 track); tighten everything else.
+- **Therefore both techniques are gated the §2 way** — default-off, **designated-system opt-in** (tighten only
+   under a marked root). Lies+Lang settle opts in (nothing needs to snap its internal maz-descent); a Book that
+    asserts on mid-settle progress does not.
+
+### Scope + guardrails
+
+- **The cross-machine rungo hop never collapses** — that latency is the network RTT, not the gate. Only the
+   *local* hops (the ~8 compile, the local run hops, the Lies-stack descent) are in play.
+- **Never re-pump past real async work.** Technique B fires on `finish()` — i.e. *after* the awaited work
+   actually completed — so it never busy-spins a still-running compile/disk read; it just removes the poll
+    latency between "done" and "parent notices."
+- Hard wall-clock budget with a `log()` when it clips, so the collapse can never itself become the stall it
+   removes; prove each in isolation on one settle first (`fight-back-on-core-changes` — this is the belief loop;
+    read `src/lib/O/spec/Coding_guide.md` on wake≠hold + the ttlilt rules before touching `answer_calls`/`do()`).
+- **Payoff:** flattening the gate during a gallop + event-driving the up-walk saves the `N × 50 ms`/150 ms
+   pacing *and* the per-pass O(N) tax (§3) × the passes removed — the deepest lever in the perf map, and the one
+    that most directly speeds Lies+Lang.

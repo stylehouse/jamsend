@@ -95,6 +95,11 @@
         { k: 'engaged', kind: 'text', read: (H, w) => { const e = H.Lies_engagement?.(w); return (e && e.status === 'active') ? (e.client ?? '') : '' } },
         { k: 'ac',      kind: 'flag', read: (H, _w) => !!H.top_House().c.musu_gat?.AC_ready },
         { k: 'fsa',     kind: 'flag', read: (H, w) => !!H.Lies_has_fsa(w) },   // a LOCAL FSA share (A.c.DL) — not the remoteWormhole proxy
+        // the page-role of a boot_qualand toplevel (sound|word|runner|editor): the roster labels the peer
+        //  by KIND so you read "sound" instead of eyeballing its prepub.  A non-toplevel runner (an /Otro
+        //   Story runner) has no id_role ⇒ reads '' ⇒ absent, so this adds nothing to their snap — only a
+        //    Big*land tab advertises a role.  Text-verbatim-or-absent, appended (never reorder the table).
+        { k: 'role',    kind: 'text', read: (H, _w) => (H.top_House().c.id_role as string) ?? '' },
     ]
 
     onMount(async () => {

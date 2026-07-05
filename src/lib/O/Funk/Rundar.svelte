@@ -59,7 +59,7 @@
     //   and renders a single titled box — a row per known runner + the anon single-pair peer.  The
     //    single-pair {:else} mode below serves a runner's view of its editor (→EDITOR).
     let is_rack = $derived(!!lens?.sc?.rack)
-    let rack = $state<{ pub: string, heard: number, ready: boolean, book: string, engaged: string, sent: string, sent_at: number, begs: boolean, granted: boolean, ac: boolean }[]>([])
+    let rack = $state<{ pub: string, heard: number, ready: boolean, book: string, engaged: string, sent: string, sent_at: number, begs: boolean, granted: boolean, ac: boolean, role: string }[]>([])
     // the live w:Lies (for the rack's grant control) + this runner's remote-Wormhole acquire state.
     let w_lies = $state<TheC | undefined>(undefined)
     let wormhole_state = $state('')
@@ -100,6 +100,7 @@
                 begs:     !!rn.sc.begs_wormhole,      // begging for remote Wormhole (disk proxy)
                 granted:  !!rn.sc.granted_wormhole,   // we granted it
                 ac:       !!rn.sc.ac,                 // its AudioContext is gesture-unlocked (needAC dispatch prefers it)
+                role:     (rn.sc.role as string) ?? '',   // the page-role a Big*land tab advertises (sound|word) — label by kind
             }))
         })
     })
@@ -205,7 +206,7 @@
         <div class="rp-mini" title="runners · {rack_shown.length} known{anon ? ' + anon' : ''}">
             {#each rack_shown as v (v.pub)}
                 {@const lk = runner_link(v)}
-                <span class="rp-dot rp-{lk.cls}" title={`${v.pub || '?'} — ${lk.text}${v.ac ? ' · AC live' : ''}`}>{lk.glyph}</span>
+                <span class="rp-dot rp-{lk.cls}" title={`${v.role ? v.role + ' · ' : ''}${v.pub || '?'} — ${lk.text}${v.ac ? ' · AC live' : ''}`}>{lk.glyph}</span>
                 {#if v.begs && !v.granted}
                     <!-- an ACTIONABLE beg must survive the collapse: grant remote-Wormhole right off the mini row -->
                     <button class="rp-grant rp-grant-mini" title={`${v.pub} begs remote-Wormhole disk access — click to grant`}
@@ -237,8 +238,9 @@
         <div class="rp-hd">runner{(rack_shown.length + (anon ? 1 : 0)) ? ` · ${rack_shown.length + (anon ? 1 : 0)}` : ''}</div>
         {#each rack_shown as v (v.pub)}
             {@const lk = runner_link(v)}
-            <div class="rp-link rp-{lk.cls}" title={`runner ${v.pub}${v.ready ? ' — ready' : ''}${v.engaged ? ` — engaged by ${v.engaged.slice(0, 8)}` : ''}${v.ac ? ' — AC live (a needAC Book lands here first)' : ''}`}>
+            <div class="rp-link rp-{lk.cls}" title={`runner ${v.role ? v.role + ' ' : ''}${v.pub}${v.ready ? ' — ready' : ''}${v.engaged ? ` — engaged by ${v.engaged.slice(0, 8)}` : ''}${v.ac ? ' — AC live (a needAC Book lands here first)' : ''}`}>
                 <span class="rp-dot">{lk.glyph}</span>
+                {#if v.role}<span class="rp-kind" title="page-role — a {v.role} toplevel">{v.role}</span>{/if}
                 <span class="rp-role rp-pub" title={v.pub}>{v.pub || '?'}</span>
                 <span class="rp-txt">{lk.text}</span>
                 <!-- remote-Wormhole grant control: a begging runner gets a grant button; a granted one a tick.
@@ -333,6 +335,13 @@
     .rp-role { color: #c4ccea; }
     /* a runner's prepub, truncated by CSS to ~6 chars (no friendly label — the pub IS the name); full pub on hover */
     .rp-pub { display: inline-block; max-width: 7ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; font-family: monospace; }
+    /* the page-role chip — sound|word|runner|editor: a Big*land tab's KIND, read at a glance instead of its prepub */
+    .rp-kind {
+        font-size: 9px; letter-spacing: 0.04em; text-transform: uppercase;
+        color: #cdbcf0; background: rgba(120, 100, 190, 0.22);
+        border: 1px solid rgba(150, 130, 210, 0.4); border-radius: 4px;
+        padding: 0 4px; line-height: 14px; flex: none;
+    }
     .rp-txt { font-variant-numeric: tabular-nums; }
     .rp-live    .rp-dot { color: #6ad0a0; }
     .rp-sent    .rp-dot { color: #79b0d0; }   /* ☎ a dispatched job ringing — not yet acked */

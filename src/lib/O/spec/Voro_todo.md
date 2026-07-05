@@ -10,9 +10,11 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
 
 1. **Cyto is the layout engine; Voro is an interpretation of its result.** fcose decides
     where the chunks sit; cells, walls, moldings are derived pixels. Pixel geometry never
-     pushes back into the layout. The one sanctioned exception is the rack (equipment
-      nodes parked at the right edge, in `voronoi_layout()`) — it moves NON-cell nodes
-       only. The cautionary tale is `size_stuff_node()`'s voronoi guard: growing a node
+     pushes back into the layout — ZERO exceptions. (The rack — equipment nodes
+      column-packed at the right edge — used to be the one sanctioned exception; it is
+       SHELVED behind `RACK_ON = false` in `voronoi_layout()`, kept as the seed of a
+        future in|out-group process option. The oddballs just sit where fcose put them.)
+       The cautionary tale is `size_stuff_node()`'s voronoi guard: growing a node
         from its own cell's size is a feedback runaway.
 2. **Nothing render-side is ever snapped.** c-side (`n.c.*`) or component `$state` only;
     no `%keys`, no `sc` writes, no wave participation. A Book underneath must never be
@@ -44,14 +46,18 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
 
 ## Where things live
 
-- `src/lib/O/Cytui.svelte` `#region voronoi` — `voronoi_layout()` (seeds → rack → power
-   walls → polygon moments → molding affine T → fit), `paint_final()` (walls, notch
-    braces, tips; molds each Stuffing via left/top/size/clipPath + a child transform),
-     `morph_voronoi()` (generation tween; birth from seed, death to centre),
-      `box_support()` (the one support formula walls and fit share).
+- `src/lib/O/Cytui.svelte` `#region voronoi` — `voronoi_layout()` (seeds → power
+   walls → polygon moments → molding affine T → fit; the shelved rack rides a false
+    flag here), `paint_final()` (walls, notch braces, tips; molds each Stuffing via
+     left/top/size/clipPath + a child transform), `morph_voronoi()` (generation tween;
+      birth from seed, death to centre), `box_support()` (the one support formula
+       walls and fit share).
 - Motion: `drag_frame()` (the shared live-repaint loop + per-frame budget self-heal),
-   `pan_zoom_motion()`, `show_overlays_soon()` (the settle), the visor + `middle_pan_down`
-    (the hand-safety layer: wheel gutter over the rack strip, middle-drag pans).
+   `pan_zoom_motion()`, `show_overlays_soon()` (the settle), `visor_guard` (capture-phase
+    wheel steal over the right strip — pass-through for clicks/drags, stands down when
+     the page can't scroll, so full-bleed toplevels wheel-zoom), `middle_pan_down`
+      (middle-drag pans), `wrap_key` (←/→ walk the story pips from the focused canvas,
+       riding Storui's `H.c.story_nav`).
 - Overlays: `#region overlays` — `stuff_mounts` holds live mounted Stuffing components;
    `reposition_overlays()` deliberately SKIPS a cell-molded Stuffing (clipPath set):
     `paint_final` owns those. Preserve that ownership split.
@@ -170,6 +176,7 @@ Rebuild Stuffing rendering in SVG with graph-native neighbour awareness: rows/tu
 2. `.g` touched? `npm run ghost-compile -- Ghost/V/Voro.g` with the editor tab open.
 3. `node scripts/runner_ask.mjs run VoroMitosis --watch`, then `VoroScape` — green, and
     the diges/fixtures UNCHANGED (a fixture diff = metaphysics §2 violated).
-4. Eyes on the tab: drag a node, wheel-zoom, middle-drag pan, run a wave — the
-    Stuffings stay seated and glidy throughout; no oscillation at rest.
+4. Eyes on the tab: drag a node, wheel-zoom, middle-drag pan, click the canvas and
+    ←/→ through the pips, run a wave — the Stuffings stay seated and glidy
+     throughout; no oscillation at rest.
 5. Leave everything uncommitted; the human reviews and commits on the host.

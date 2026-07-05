@@ -229,6 +229,34 @@
         return prepub ? { prepub, nick: (ident!.sc.nick as string) || cluster_name(prepub) } : undefined
     },
 
+    // Clustation_ensure_default — "this page always has an identity."  When a toplevel opts in
+    //  (boot_qualand stamps H.c.id_role + assume_identity) and no ?I= was given and none is active yet,
+    //   RESUME the identity stored under this page's ROLE (sound|word|runner|editor), or mint a fresh one
+    //    and store it under that role.  So /BigSoundland is always the 'sound' identity and /BigWordland
+    //     always 'word', each stable across reloads (persisted in the identities Thang keyed by ROLE — the
+    //      key itself is a fresh random mint, the role is only the storage/display name, so nothing is
+    //       derived from the role and it can't be impersonated).  A ?I= or a legacy adopt both WIN (they
+    //        run first and leave an active identity); this only fills the gap of a bare page.  Retry-not-
+    //         latch if the Thangs persistence ghost raced this boot tick.
+    async Clustation_ensure_default(this: House, H?: House): Promise<boolean> {
+        H = (H ?? this) as House
+        const role = (H.c as any).id_role as string | undefined
+        if (!role) return true                                           // page didn't opt in
+        if ((H as any).Clustation_active_identity?.(H)) return true       // already have one — leave it
+        if (typeof (H as any).thang_add !== 'function' || typeof (H as any).thang_peek !== 'function') return false
+        const A  = H.o({ A: 'Clustation' })[0] || H.i({ A: 'Clustation' })
+        const wT = A.o({ w: 'Thangs', thangs: 'identities' })[0] || A.i({ w: 'Thangs', thangs: 'identities' })
+        wT.c.up = A
+        let stored = await (H as any).thang_peek('identities', role) as { pub: string; key: string; prepub: string } | undefined
+        if (!(stored?.pub && stored?.key)) {
+            stored = await (H as any).Clustation_mint()
+            await (H as any).thang_add(wT, role, stored)
+        }
+        ;(H as any).Clustation_concrete(A, role, stored!)
+        console.log(`🪪 Identity ${role} ${cluster_name(stored!.prepub)} (${stored!.prepub}) — page default`)
+        return true
+    },
+
 //#endregion
 
 //#region w:Auto
@@ -316,6 +344,14 @@
             if (legacy?.pub && legacy?.key && !(H as any).Clustation_active_identity?.(H)) {
                 if (await (H as any).Clustation_adopt(legacy, H)) H.c.identity_adopted = true
             } else H.c.identity_adopted = true   // nothing to adopt (or a ?I= is active) — don't re-scan
+        }
+
+        // "This page always has an identity" — a boot_qualand toplevel (H.c.assume_identity) with no ?I=
+        //  and nothing adopted above resumes|mints its ROLE identity (H.c.id_role).  ?I= and the legacy
+        //   adopt both win (they leave an active identity, which Clustation_ensure_default then skips);
+        //    this only fills a bare page's gap.  Latch on success only (retry if Thangs raced the tick).
+        if ((H.c as any).assume_identity && !boot_param('I') && !H.c.identity_default) {
+            if (await (H as any).Clustation_ensure_default(H)) H.c.identity_default = true
         }
 
 
