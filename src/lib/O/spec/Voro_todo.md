@@ -76,6 +76,36 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
 Grades: **GRIND** = mechanical against this brief; **GRIND+** = needs local judgment;
  **DESIGN-FIRST** = write a short design note and get it agreed before code.
 
+### Round-2 fixes — LANDED 2026-07-06 (browser-unverified)
+
+Two quick reaches off the owner's first eyes-on pass:
+- **`%Opt` hidden in the graph.** `cytyle_classify` now `skip`s `%Opt` (Cyto.svelte) —
+   the `Opt/crushCyto` nodes the owner still saw were config scaffolding (VoroMitosis's
+    toc declares a vestigial `Opt/crushCyto` even though the seed arms via
+     `w.c.crush_wanted`; MusuReplica keeps its opt for real). The crusher already
+      ignored `%Opt`; the view hides it too now, universally. The model still carries
+       the opt (it gates MusuReplica's crush) — only the render drops it. Optional
+        follow-up: delete the vestigial `Opt/crushCyto` from VoroMitosis's toc during
+         the owed re-record, so the demo is pure `crush_wanted`.
+- **Stuffing width → max-width only.** paint_final forced `child.style.width`, so a
+   short line measured as a full box and the affine scaled that wide box down → tiny
+    text + dead gap (the owner's exact report). Now `width:''` (keeps `.cytui-stuff`
+     max-content shrink-to-fit) + `maxWidth` as the wrap ceiling only, lowered 480→360.
+      The mold scales the TEXT, not the padding.
+
+### 9. Sensible intensity: hover around ~9 panes — GRIND+ (tuning, live eyes) — TODO
+
+The owner's first full render read as "too much in one screenful … try to hover around a
+ sensible intensity … aim for 9 families or so." Density, not correctness. Needs live
+  calibration (can't judge "sensible" from reading), hence TODO. Two knobs:
+- Demo-data cap: `VoroMitosis` grows to 12 genera + speciation splits — trim the
+   `Botany_genera` pool / cap active genera near ~9 so the colony hovers at a readable
+    count (pure demo data, re-record owed anyway).
+- Crush aggressiveness: once the co-crush of scattered leaves lands (task 5 open item),
+   the loose `%witnessed`/`%reached`/`%req` collapse into single panes, which is most of
+    the screenful — that alone should pull the density down toward the target. Calibrate
+     the two together with eyes on the tab.
+
 ### 1. Wrap width from the cell — GRIND+ — BUILT 2026-07-06 (browser-unverified)
 
 Done as specified below: `paint_final` hands the child a 24px-quantised width off the
@@ -131,6 +161,27 @@ Done, via post-hoc edge attribution instead of a clip_halfplane rewrite: every c
     disjoint faint segments (visually identical to a traced loop, immune to topology
      surprises). ⬡ toggle, stash `Cyto_families`, default on.
 
+**OPEN — the hull never SHOWS on VoroMitosis (2026-07-06).** Confirmed by reading, not
+ eyes: every genus cell sits DIRECTLY under `w` (the crush folds `cell:<genus>`; its
+  parent is the run world), so `family_of` — which returns the compound ancestor one
+   below the outermost (`anc[anc.length-2]`) — gets `anc.length===1` and returns null
+    for every cell. `vfams` stays empty. A hull needs ≥2 cells sharing an INTERMEDIATE
+     cyto-compound between them and `w`. The owner's hunch ("put child notes in some
+      %Coprosma so I can see it") is aimed one level off: the built hull groups sibling
+       CELLS, not a single cell's interior — nesting inside Coprosma deepens that ONE
+        cell's fold, it doesn't give two cells a shared parent. Two routes to demo it,
+         both more than a quick reach (hence TODO):
+- Route A (data, lowest core-risk): group genera into botanical FAMILIES in
+   `VoroMitosis_seed` — a compound container per family holding 2–4 `cell:<genus>`
+    (Rubiaceae⊃Coprosma, Plantaginaceae⊃Veronica+Hebe…). BUT the only mainkey
+     `cytyle_classify` treats as a cyto-compound is `w:`, so the family container would
+      have to be a `w:<Family>` sub-world — and minting inert `w:`s inside a run world
+       rubs the "mint w only for isolation/snap-boundary" rule; verify the reqdo_sweep
+        no-ops on them before trusting it.
+- Route B (core): teach `cytyle_classify` a generic grouping compound (a `group:`/
+   `clade:` mainkey → 'compound', with make_wave parenting to match). Cleaner model, but
+    a shared-core change — prove in isolation first ([[fight-back-on-core-changes]]).
+
 Outline all the cells of each direct child of w — e.g. everything under `Pier/**` gets
  one shared outer outline — but only for families with real structure: at least
   `w/*/*` depth, where a `%witnessed` child does NOT count as structure.
@@ -151,6 +202,16 @@ Built: `Voro_swarmable` in Voro.g — a STRUCTURAL container whose children are 
      representative + Cyto walk support — design that with task 6's microcosm, the
       machinery overlaps), and the ≥0.8-dominant loosening if strict homogeneity
        proves too shy on real traffic.
+
+**OPEN — co-crush scattered same-mainkey leaves (2026-07-06 owner ask).** The owner
+ wants `%witnessed` and `%reached` "crushed further — together into one cell+Stuffing
+  each": all the loose `%witnessed` leaves collapse to ONE cell, all `%reached` to
+   another. That is exactly the leaf-sibling-GANG above — `Voro_swarmable` today only
+    folds a container whose CHILDREN are homogeneous; these are homogeneous leaves with
+     NO container, scattered directly under `w`. Folding them needs the ghost to gather
+      siblings by mainkey and mint a synthetic fold node (the elected representative) to
+       hang `c.stuff`/`c.stuffy` on — new machinery (overlaps task 6). The owner flagged
+        it "a lot more work" and agrees; deferred, tracked here.
 
 `Voro_crushable` wants same-ish children, so `%witnessed:$different_stuff` (same key,
  different sentences — they aren't resolving as same) and swarms of `%req:awaitbuf`

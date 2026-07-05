@@ -4,6 +4,9 @@ A toggleable mode where the wheel does not zoom the camera but sculpts THAT LOCA
  wheel-toward pulls the neighbourhood under the cursor together, wheel-away spreads
   it — a gravity brush over the glass.
 
+On mobile devices it might be a two-fingered pinch gesture... Where the two points
+are vertically aligned it could mean pinch|spread, horizontally means zoom.
+
 ## The gesture
 
 - Falloff: gaussian, `w_i = exp(−d_i² / 2σ²)`, σ ≈ 140px (about one cell), cut off

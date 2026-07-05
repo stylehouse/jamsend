@@ -649,6 +649,11 @@
             || s.wave_data || s.refs || s.snap_node || s.snap_root
             || s.housed || s.run || s.Se || s.inst || s.began_wanting
             || s.CytoStep || s.CytoWave || s.tracing || s.Dip
+            // %Opt is settings scaffolding (e.g. the %crushCyto opt a Book pushes
+            //  into w at settingoff, or MusuReplica's kept opt) — config, never
+            //   flora.  The crusher already ignores it; the view hides it too, so
+            //    the graph reads as pure data.  skip drops its config-leaf subtree.
+            || s.Opt
             || s.snapshot || s.cyto_edge_root || s.cyto_z) return 'skip'
         // cyto_fold: a grouping container for constraints/edges. Walked through
         // (so its cyto_cons / cyto_edge children are still emitted), but nothing

@@ -57,6 +57,7 @@
         'Ghost/N/Reliable.g',           // network-healing floor — inbound seq + retransmit + the lossy-carrier adversary
         'Ghost/N/Tribunal.g',           // carriers — mock / webrtc / websocket relay
         'Ghost/N/Tyrant.g',             // cabinetry — trust + policy-gated admission (rides the floor)
+        'Ghost/N/Repli.g',              // paginated streaming C** replication — offer/pull/pages, above the transport spine (ex-Musuation reality)
         'Ghost/Story/Peregrination.g',  // the p2p test — first of a new kind; more pile on here
         
         'Ghost/M/Radiola.g',            // music-piracy spine — the ACK-backpressure spool (slice 1)

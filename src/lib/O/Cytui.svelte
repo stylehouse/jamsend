@@ -1330,17 +1330,20 @@
                 const child = el.firstElementChild as HTMLElement | null
                 if (child) {
                     // wrap width FROM the cell: hand the content the cell's own
-                    //  horizontal proportion so the text re-flows to it instead
-                    //   of one fixed box being scaled.  DAMPED (metaphysics §6):
-                    //    quantised to 24px steps, re-applied only on a >15%
-                    //     move, and only here at settle cadence — the child's
-                    //      size feeds the next tessellation as seed weight, and
-                    //       an undamped loop oscillates.
-                    const targ = Math.max(96, Math.min(480,
+                    //  horizontal proportion as a WRAP CEILING only — max-width,
+                    //   never width.  Forcing width made a short line measure as a
+                    //    full box: the affine then scaled that wide box down to
+                    //     the cell, so the text came out tiny with a dead gap after
+                    //      it.  max-width alone lets .cytui-stuff keep its
+                    //       max-content shrink-to-fit, so the box hugs the text and
+                    //        the mold scales the TEXT, not the padding.  DAMPED
+                    //         (metaphysics §6): quantised to 24px, re-applied only
+                    //          on a >15% move, only here at settle cadence.
+                    const targ = Math.max(96, Math.min(360,
                         Math.round((bw * 0.86 - 24) / 24) * 24))
                     const prev = wrap_applied.get(c.id) ?? 0
                     if (Math.abs(targ - prev) / (prev || targ) > 0.15) {
-                        child.style.width    = `${targ}px`
+                        child.style.width    = ''            // ← keep max-content; never a fixed box
                         child.style.maxWidth = `${targ}px`
                         wrap_applied.set(c.id, targ)
                     }
