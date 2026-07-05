@@ -129,6 +129,11 @@ can't feed a write loop).
 
 ## Organ 4 — The identity model: 9 divergable tiers → collapse to 2  ← the deep fix
 
+> ✅ **DONE 2026-07-05.** The collapse shipped — its living writeup (the built model, the routing invariant,
+>  corr-route vs corr-broadcast, the `${prepub}_2` two-tabs open note) is **`Cluster_spec.md §3.2a`**. What
+>   follows is the ANATOMY that drove it — the H1-H6 hypotheses, kept as the diagnostic archive of *why* each
+>    piece exists, not a live TODO.
+
 Root of **three** separate bugs this session (reply-routing drop, grant for-check flap, duplicate roster rows).
 A peer has ~9 notions of "who am I", and everything re-samples a two-tier fork (`Clustation ?? stashed`) *at the
 moment it runs* — except the grant's `for`, **frozen at mint against a tier that can drift**.
@@ -196,9 +201,10 @@ capability-probed at the seam (and the seam says which capability is missing, no
 ## The prioritized plan (execute in this order)
 
 > **Landed 2026-07-04** (this session, all parse/compile-clean; `:9091`-unverified — verify each on a live
-> runner via `runner_ask`): ✅ P0 land_good · ✅ P1 latches · ✅ P1 ack-surface (warn only) · ✅ P2 nav-precedence
-> · ✅ Organ 4 / H5 assertion (diagnostic). **Remaining:** the identity collapse's *behavioral* core (Organ 4
-> parts 1-3) — staged deliberately, see the note under it.
+> runner via `runner_ask`): ✅ P0 land_good · ✅ P1 latches · ✅ P1 ack-surface (warn only) · ✅ P2 nav-precedence.
+> **Landed 2026-07-05:** ✅ P2 wormhole `bin_write` + full-contract parity · ✅ **P2 identity collapse 9→2 — the
+> WHOLE set** (Organ 4 parts 1-3, no longer staged; canonical writeup migrated to `Cluster_spec.md §3.2a`).
+> **Remaining P1:** the Peeroleum mark-`%faulty` escalation (Organ 2, needs a live run to prove safe).
 
 - **P0 — authoritative-absence at `land_good`** ✅ **DONE** (Organ 3). `LiesStore_land_good` now takes the read
   req and re-asks ONCE before trusting a `not_found` (deduped per-req across the Phase-2 + read_good land sites);
@@ -216,14 +222,24 @@ capability-probed at the seam (and the seam says which capability is missing, no
   now reconcile the latch against the live transport ghost: if `Socket_real` has vanished (a remix the socket's own
   auto-reconnect can't fix), CLEAR the latch and re-stand-up (idempotent — `Peeroleum_on` is keyed by type, enroll
   is `oa`-guarded, keepalive timer guarded). A merely-disconnected ws does NOT flap it. *Acceptance met.*
-- **P2 — identity collapse 9 → 2** 🔶 **STAGED** (Organ 4, the deep fix). Done: the H5 **assertion** — `Lies_self`
-  now warns when the advertised prepub ≠ the signing-key prepub (diagnostic, non-behavioral). **NOT yet done and
-  deliberately held:** parts 1-3 (auto-adopt the legacy tier + delete the `?? legacy` forks; `prepub` as a pure
-  derivation; `grant.for` = full pub with `prepubOf` derived at send; apply to `replyBIN`). These are a *coherent
-  set* that only makes sense done together, and they rewrite load-bearing routing/identity — a blind pass risks
-  re-breaking the wormhole/routing just made to work. **Do them as one focused pass WITH a live runner in the
-  loop: after each stage, `runner_ask ping` (routing intact) + a grant round-trip (wormhole intact).** Retires
-  H1-H6 by construction.
+- **P2 — identity collapse 9 → 2** ✅ **DONE 2026-07-05** (Organ 4, the deep fix; `:9091`-verify owed). The full
+  set landed in one focused pass — **the canonical writeup is now `Cluster_spec.md §3.2a`; this bullet is the
+  changelog, that section is the truth.** Parts: (1) **`Lies_self` is a pure derivation** of the one signing key
+  (`prepubOf(Lies_cluster_idento.pub)`) — the `Clustation_self ?? legacy` fork is gone, so advertised prepub ≡
+  hello-bound prepub *by construction* (the old H5 warn is retired — structurally can't diverge); boot
+  **auto-adopts** a bare `.stashed` key into a first-class `%Identity`. (2) The H5 warn graduated to a **fatal
+  invariant at `channel_up`** — on divergence it screams, rings the Relay Brink, and sets `w.c.identity_diverged`
+  so `Lies_advertise` **refuses to publish an address we can't receive on** (not a hard throw — that would abort
+  the hello). (3) **`grant.for` = grantee's FULL pub** (verifiable, form-matches `by`): the beacon now carries the
+  full `pub`, the editor stores it on the roster row and grants against it (feature-detected — old beacons still
+  get a prepub grant); routing derives `to = prepubOf(claim.for)` at send (kills the H1/`replyBIN` residue), safe
+  because `prepubOf` is a pure prefix so `prepubOf(prepub) === prepub`. Retires H1-H5 by construction; the tolerant
+  for-check stays tolerant for identity-switch resilience. **Follow-up landed same day:** the corr-broadcast belt
+  itself was falsified live (the relay role addr is ONE socket, not a fan-out — a second runner tab ate every
+  role-addressed reply/pong/offer; socklog-proven starvation). All editor→runner frames are now ADDRESSED to a
+  prepub — replies to the corr's asker, pong to the pinger, grant_offer to the grantee, ghost_compile fanned to
+  the roster — the "roles divide, addresses deliver" model, `Cluster_spec.md §3.2a`. No residue left in this organ.
+  *All edits parse/svelte-check clean; verify live per the recipe.*
 - **P2 — wormhole nav precedence** ✅ **DONE** (Organ 5). `Lies_remote_wormhole_install` + `_reconcile` now PREFER
   a granted local share (`A.c.DL`) over the editor proxy — the heartbeat no longer clobbers a just-granted
   `WormholeNav(DL)`; the badge shows a third `local` state honestly (Rundar). Granting FSA on a `&remoteWormhole=1`

@@ -3,7 +3,7 @@
   "short_name": "jamsend",
   "description": "peer-to-peer music",
   "id": "/",
-  "start_url": "/",
+  "start_url": "/BigSoundland",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",

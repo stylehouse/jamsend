@@ -1,5 +1,6 @@
 <script lang="ts">
-    // BigSoundland — the music-half toplevel (lib/V/), the / route (and /BigSoundland by name).  The
+    // BigSoundland — the music-half toplevel (lib/V/), the /BigSoundland route (the bare / 404s now —
+    //  bots hammer it, so the root boots nothing; see routes/+page.ts).  The
     //  destination (owner): "Voronoi stained glass graphs of music" — the Cyto graph of a music world
     //   tessellated into stained-glass cells (Cytui's ◈ voronoi mode, power-diagram cells coloured by
     //    Matstyle).  Sibling to /BigWordland; both boot the SAME machine (BigQualand's boot_qualand) —

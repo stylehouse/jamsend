@@ -296,7 +296,7 @@ Where §1-7 build the *stream*, the **scape** is the *view*: the whole thing as 
    (owed, with MusuReplica — the rename + the c-side flip invalidated the old snaps). Registered in Credence
     `What:Voro` (both `brand_new:1`).
 
-**BigSoundland** (was Mound; `/` and `/BigSoundland`) boots the machine as a **runner on a music Book**
+**BigSoundland** (was Mound; the `/BigSoundland` route — the bare `/` 404s now, bots hammer it) boots the machine as a **runner on a music Book**
  (default **VoroScape**, `?B=` overrides) and renders the Cyto UI full-bleed — the run rests in the
   stained-glass state. It is **becoming Sounditron** — the sound twin of Educarium/Editron: a central
    diagnostic Book (NOT a Musu* test, NO Lies+Lang) that lurks in the background, probes the real audio +

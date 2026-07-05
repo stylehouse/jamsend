@@ -40,10 +40,15 @@
     // group → its subdirs (clickable to open) and its file items (clickable to goto).
     //  subs come first, sorted; ids are full paths.  file label is the stem the
     //  Funkcion already stripped of its source suffix.
-    let open_set = $derived.by(() => {
+    // open_set — the opened subdirs.  DIGEST-GATED (like groups below): waft.version bumps
+    //  EVERY trickle think whether or not the index changed, so a raw `new Set` here would be
+    //   a fresh reference each tick — churning every consumer (and clamping the list scroll to
+    //    0).  Derive a stable string first; mint the Set only when that string actually moves.
+    let open_dige = $derived.by(() => {
         void waft?.version
-        return new Set(((waft?.o({ open_dir: 1 }) ?? []) as TheC[]).map(o => o.sc.open_dir as string))
+        return ((waft?.o({ open_dir: 1 }) ?? []) as TheC[]).map(o => o.sc.open_dir as string).sort().join('\n')
     })
+    let open_set = $derived(new Set(open_dige ? open_dige.split('\n') : []))
     // groups indent by path depth (relative to the shallowest), so an opened subdir's
     //  group sits as a child under its parent — the flat list reads as a tree.  An
     //  opened dir is kept even when empty, so a click always gives feedback.
@@ -53,10 +58,28 @@
     const GLOW = 'color: #ffd86b; text-shadow: 0 0 6px rgba(255,216,107,0.85);'
     type Item  = { id: string, label: string }
     type Group = { dir: string, depth: number, subs: Item[], items: Item[], styles: Map<string, string> }
+    // groups — DIGEST-GATED.  Because waft.version bumps every trickle think, a raw $derived
+    //  rebuilds these arrays + freshness Maps each tick, hands StemHive fresh props, and re-lays
+    //   the whole list — the 30%-idle re-render, and what resets the .ghl-groups scroll.  Build
+    //    once, then return the SAME array reference when a content signature is unchanged, so
+    //     total, the {#each}, StemHive and the scroll all stay put between ticks.  The signature
+    //      folds a per-minute bucket so the 24h "fresh" glow still ages without a per-tick rebuild.
+    let groups_memo: { dige: string, val: Group[] } = { dige: '\x00', val: [] }
     let groups: Group[] = $derived.by(() => {
         void waft?.version
         const now = Date.now()
-        const gs = ((waft?.o({ group: 1 }) ?? []) as TheC[]).map(g => {
+        const raw = (waft?.o({ group: 1 }) ?? []) as TheC[]
+        // CHEAP signature straight off the particles — on the common (unchanged) tick this is the
+        //  ONLY work: nothing gets built.  Folds open_dige and a per-minute bucket, so an opened
+        //   dir or the ageing 24h glow still forces the rebuild below; a rename|add|drop shifts it too.
+        const dige = Math.floor(now / 60000) + '\n' + open_dige + '\n' + raw.map(g =>
+            `${g.sc.dir}#` +
+            (g.o({ sub: 1 }) as TheC[]).map(s => `${s.sc.sub}~${s.sc.name}`).join(',') + '#' +
+            (g.o({ Doc: 1 }) as TheC[]).map(d => `${d.sc.Doc}~${d.sc.name}~${d.sc.noticed_at ?? ''}`).join(',')
+        ).join('|')
+        if (dige === groups_memo.dige) return groups_memo.val   // unchanged ⇒ stable ref, no churn
+        // MISS — the index really moved: do the heavier shape-build once and cache it.
+        const gs = raw.map(g => {
             const docs = g.o({ Doc: 1 }) as TheC[]
             return {
                 dir:   g.sc.dir as string,
@@ -73,7 +96,9 @@
         .filter(g => g.subs.length || g.items.length || open_set.has(g.dir))
         .sort((a, b) => a.dir.localeCompare(b.dir))
         const base = gs.length ? Math.min(...gs.map(g => g.depth)) : 0
-        return gs.map(g => ({ ...g, depth: g.depth - base }))
+        const built = gs.map(g => ({ ...g, depth: g.depth - base }))
+        groups_memo = { dige, val: built }
+        return built
     })
     let total = $derived(groups.reduce((s, g) => s + g.items.length, 0))
 

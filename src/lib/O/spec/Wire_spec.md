@@ -104,8 +104,8 @@ A wire's wake can **lay more wires.** In both regimes this is already the native
     §2, "req** are extra legs, self-recursive because req** nest"). Finished legs are
      captured as leaves but never expanded (§4 there) — the walk re-lays live legs each
       beat, so the leg-tree prunes itself. (Accuracy: req-as-more-legs is §2's *design*;
-       today it rides the **`V.req_legs`** verification track — `assert_req_legs` checks
-        the walk's set against the live scan — while the live pump is `reqdo_sweep`,
+       today it is PARKED behind **`V.req_legs=0`** (the leg-laying hooks stay, but the
+        per-beat `assert_req_legs` walk-vs-scan check was dropped) — the live pump is `reqdo_sweep`,
          post-attend, not the walk's `finito_fn`. The walk-carrier is the target, not yet
           the sole live path.)
 - **UItime** — a parent `$effect`, when it runs, constructs child `$effect`s. Svelte

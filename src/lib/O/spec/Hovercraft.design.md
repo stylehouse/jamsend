@@ -495,13 +495,16 @@ Diverged from the plan, deliberately:
     so an un-stripped match would miss it).  Reqs roai'd|moai'd with maz:1 (eg
     MachPeerily watch_error, binary received) depend on this.
 
-### Verification track (still gated, not the live pump)
+### Verification track (hooks parked, not the live pump)
 
-V.req_legs (Housing) makes organise lay req** as walk more-legs and runs
- assert_req_legs (walk's req set vs the reqy_recurse %req-children scan).  This is
- the parallel check toward the eventual reqdo-via-walk cutover; the live work does
- NOT depend on it.  reqy_recurse + i_Story_o_req_ttlilt now scan %req children
- directly (both old + new reqs), so they need no flag.
+V.req_legs (Housing) makes organise lay req** as walk more-legs; req_T_legs reads the
+ walk's req set back out.  This is groundwork toward the eventual reqdo-via-walk cutover;
+ the live work does NOT depend on it.  It is now PARKED at 0 — the per-beat assert_req_legs
+ check (walk's set vs the reqy_recurse %req-children scan) was DROPPED, since it re-walked
+ all T** and reqy_recurse'd every w each beat purely to confirm equivalence: a pure tax on
+ the hot path.  The gated hooks remain (inert at 0); flip to 1 and re-add a walk-vs-climb
+ check to resume.  reqy_recurse + i_Story_o_req_ttlilt scan %req children directly (both old
+ + new reqs), so they need no flag.
 
 ### Done migrating
 

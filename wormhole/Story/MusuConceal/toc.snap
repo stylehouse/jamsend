@@ -4,18 +4,20 @@ story:MusuConceal
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.06
+    TimeTotal:beliefs,avg=0.07
       sample=0.077,at=1782811317
       sample=0.077,at=1782811333
       sample=0.077,at=1782811335
       sample=0.042,at=1782811341
       sample=0.026,at=1782811348
-    TimeTotal:step,avg=0.012
+      sample=0.122,at=1783246908
+    TimeTotal:step,avg=0.014
       sample=0.015,at=1782811317
       sample=0.015,at=1782811333
       sample=0.015,at=1782811335
       sample=0.008,at=1782811341
       sample=0.005,at=1782811348
+      sample=0.024,at=1783246908
   step,dige:0356959dc97ccc11
   step=2,dige:d3de8ce05286bdca
   step=3,dige:edb61b54d878f77f

@@ -315,6 +315,74 @@ The relay binds each verified Idento pub → its socket on the signed hello, and
       **Still client-side:** the browser/runner sending the signed hello on connect (`Tribunal.g`
        Socket_real) — relay accepts it, no peer emits it yet.
 
+### 3.2a The identity model — one key, one derived address (the 9→2 collapse)
+**BUILT 2026-07-05** (was Robustness_plan Organ 4, the "9 divergable tiers" deep fix; `:9091`-verify
+ owed). A peer used to hold ~9 notions of "who am I" and re-sample a two-tier fork (`Clustation_self ??
+  stashed`) at the moment each ran — so the prepub it *advertised* could drift from the prepub the relay
+   *hello-bound* it under, and every `to:<us>` frame silently misrouted (the 20s stall, "both runners ran
+    it", the grant for-check flap). The collapse:
+
+- **One signing key, one derived address.** `Lies_cluster_idento` is the SOLE key resolver (Clustation-
+   active `??` `.stashed` `??` node env, in that precedence). `Lies_self` is now a **pure derivation** of
+    it: `prepub = prepubOf(idento.pub)` — and `prepubOf` is a pure prefix (`pub.slice(0,16)`). Because the
+     relay hello-binds under `prepubOf(idento.pub)` too, **advertised prepub ≡ hello-bound prepub by
+      construction** — they can't diverge. The old `Clustation_self` face survives only as the cosmetic
+       **nick** (never routed on). At boot an un-migrated peer holding only a bare `.stashed.cluster_idento`
+        is auto-`Clustation_adopt`ed into a first-class `%Identity` (routing was already correct; this just
+         makes it visible to the roster/IdHatch/registry).
+- **The fatal invariant (the loud gate the collapse earns).** At the hello send (`Lies_channel_up`), assert
+   `Lies_self(w).prepub === prepubOf(idento.pub)`. It can't fire in healthy code — it's there to catch a
+    *regression* (a re-introduced identity tier) at the exact seam, LOUDLY, not as a silent black hole. Not a
+     hard throw (that would abort the hello and strand us worse): it screams, rings the Relay Brink, and sets
+      `w.c.identity_diverged` — which `Lies_advertise` honours by **refusing to advertise an address we can't
+       receive on**. Self-heals when an Id switch re-aligns.
+- **A grant's `for` is the grantee's FULL pub, not a truncated prepub.** A 16-hex prepub can't verify a sig,
+   so a prepub-`for` was a bare matching string, not an identity — the property that let it drift (Organ
+    4/H2). The advertise beacon now carries the full `pub` beside `from` (the prepub); the editor stores it
+     on the `%HostedIdentity`/`%Runner` row and mints `grant.for = full pub` (form-matches `by`, so a %Grant
+      is verifiable end to end). **Routing derives `to = prepubOf(claim.for)` at SEND** — never a frozen atom
+       — and since `prepubOf(prepub) === prepub`, one expression addresses both new full-pub grants and old
+        prefix grants. Fully **feature-detected + back-compatible**: an old beacon (no `pub`) → the editor
+         grants the prepub as before; the runner's for-check accepts either via `prepubOf(atom.for)`.
+
+**Roles divide, addresses deliver — the mature address+role model.** A **role** (editor|runner) is a
+ *kind*: it gates behavior, filters candidates, decides WHO should act. An **address** (the prepub) is an
+  *identity*: it decides WHICH socket a frame lands on. The relay binds **one socket per addr** — `become
+   runner` is a single slot, not a subscription — so a role is only a safe *delivery* target while it is
+    structurally singular (the one editor on its relay). The moment a second runner binds the role locally,
+     every role-addressed frame silently lands on it and the other runner starves. **Observed 2026-07-05**
+      (the live specimen, socklog-proven): a bridge runner wedged at `begun` — its every `wormhole_req`
+       served by the editor, all 286 `wormhole_reply`s eaten `(local)` by a role-thief tab; its pongs stolen
+        too, so its watchdog read DEAD and flapped the socket every ~35s. The corr-*broadcast* design here
+         assumed role frames fan out to all runner sockets — the relay never honoured that.
+ The rule, post-fix: **every editor→runner frame is addressed to a prepub** (the `become_book` pattern —
+  pick by role from the roster, deliver by address); the role slot survives only as the identity-less
+   fallback. Concretely:
+- **wormhole replies (JSON + binary)** — addressed to the **asker**, read off the corr it minted
+   (`corr = ${Lies_self.prepub}-${ts}-${n}`, RemoteWormholeNav): the LIVE hello-bound identity of the tab
+    asking now, bridge-routable, immune to an Id switch since grant-mint. Fallback `prepubOf(grant.for)`,
+     then broadcast (an identity-less `r-…` corr on a lone-runner grid). JSON and binary now route
+      identically — the old corr-broadcast-vs-corr-route split is retired.
+- **pong** — echoed to the pinger's `from` prepub (editor-side). A stolen pong froze the victim's RTT slot
+   and tripped its 20s DEAD watchdog: the flap was self-inflicted starvation, not a bad socket.
+- **grant_offer** — addressed to the grantee (it's the roster key we granted by).
+- **ghost_compile** — fanned out addressed to EVERY roster runner (a recompile is for all of them; the one
+   role slot delivered it to one, leaving the rest on stale gen). Broadcast only with an empty roster.
+ Runner→editor traffic (`advertise`/`ping`/`run_phase`/`wormhole_req`) stays role-addressed: one editor per
+  relay, structurally singular — the case role delivery is FOR.
+
+**Open — two tabs on the SAME `%Identity`.** Reusing one `?I=<tag>` in two tabs mints two peers on the same
+ prepub → they collide on the relay bind (last hello wins; the other goes dark). Intended resolution: detect
+  the sibling **via Dexie `liveQuery`** (both tabs share the IndexedDB) and have the loser take an address
+   like `${prepub}_2` — a per-tab suffix on the shared identity, so both are reachable without forking a whole
+    new key. `Swarm.g` already mints `${pub}_N` blocks for the swarm case; the same suffix scheme applies
+     here. Unbuilt; the `_N` same-key-vs-ephemeral question is shared with the Radiobuddies discovery work.
+
+Load-bearing: `LiesLies.svelte` (`Lies_self`, `Lies_channel_up` hello, `Lies_advertise`/`_recv`,
+ `Lies_runner_roster`), `LiesFunk.svelte` (`Lies_grant_wormhole`, `Lies_grant_offer_recv`,
+  `Lies_wormhole_req_recv`), `Auto.svelte` (boot adopt), `Funk/Grant.ts` (`mint_grant` already took the full
+   pub — the bug was the caller), `p2p/cluster_trust.ts` (`prepubOf`).
+
 ### 3.3 The `Lies%runner` UI — the outer tab sorts itself out
 The runner tab needs a face to declare and manage what it is: pick/fork its `?I=` Idento, show role
  (editor|runner) + lease/claim status + liveness (LIVE/SLUGGISH/DEAD), offer "become runner" / "fork

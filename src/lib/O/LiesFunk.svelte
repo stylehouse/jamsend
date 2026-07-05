@@ -29,7 +29,7 @@ import { FUNK_KINDS } from "$lib/O/Funk/kinds"
 import { storying_run } from "$lib/O/Funk/Storying.svelte"
 import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte"
 import { mint_grant, verify_grant, type GrantAtom } from "$lib/O/Funk/Grant"
-import { browserTrustedPubs } from "$lib/p2p/cluster_trust"
+import { browserTrustedPubs, prepubOf } from "$lib/p2p/cluster_trust"
 import { RemoteWormholeNav } from "$lib/O/RemoteWormholeNav.svelte"
 import { Dexie } from "dexie"
 import { onMount } from "svelte"
@@ -524,10 +524,22 @@ await M.eatfunc({
         const H = this as House
         const idento = H.Lies_cluster_idento(w)
         if (!idento) { (H as any).tlog?.('🛰️ cannot grant remoteWormhole — editor has no cluster key (🪪 hatch)'); return }
-        const atom = await mint_grant(idento, runner_prepub, 'remoteWormhole', { mode })
-        H.Peeroleum_send_consumer(w, 'grant_offer', { grant: atom })   // role-broadcast; the runner filters by `for`
-        w.oai({ Runner: runner_prepub }, { granted_wormhole: 1 })      // reflect on the rack (dontSnap roster row)
         const row = w.o({ Runner: runner_prepub })[0] as TheC | undefined
+        // Grant against the runner's FULL pub when its beacon advertised one (Organ 4 part 3): a full-pub
+        //  `for` is cryptographically verifiable + form-matches `by`, and routing still derives
+        //   prepubOf(for) at send.  Fall back to the prepub for an OLD runner (no pub on its beacon) — the
+        //    runner's for-check tolerates both, so this is a clean feature-detect, no fleet-wide flag day.
+        const grantee = (row?.sc.pub as string) || runner_prepub
+        const atom = await mint_grant(idento, grantee, 'remoteWormhole', { mode })
+        // Offer ADDRESSED to the grantee (we hold its prepub — it's the roster key): a role-broadcast
+        //  offer is ONE relay slot, so with two runners the wrong one eats it and "grant" silently does
+        //   nothing for the runner you clicked (roles-divide/addresses-deliver).  Broadcast only as the
+        //    no-Pier fallback (channel down mid-click); the runner's `for`-filter still guards either way.
+        if ((H as any).Lies_runner_pier(w, runner_prepub))
+            (H as any).Peeroleum_send_to(w, runner_prepub, 'grant_offer', { grant: atom })
+        else
+            H.Peeroleum_send_consumer(w, 'grant_offer', { grant: atom })
+        w.oai({ Runner: runner_prepub }, { granted_wormhole: 1 })      // reflect on the rack (dontSnap roster row)
         if (row?.sc.begs_wormhole) { delete row.sc.begs_wormhole; w.bump_version() }
     },
 
@@ -539,11 +551,13 @@ await M.eatfunc({
         const H = this as House
         const atom = frame?.grant as GrantAtom | undefined
         if (!atom?.sign) return
-        // ADDRESSED-TO-US filter — the ONE place `for` is checked (grant_offer is a role-broadcast; the
-        //  editor keys `for` on our advertise prepub).  Tolerate both identity tiers.  Done HERE, once,
-        //   not in the per-heartbeat verdict (see Lies_wormhole_verdict's note on the discard flap).
-        const mine = [(H as any).Lies_self?.(w)?.prepub, (H as any).Clustation_self?.()?.prepub].filter(Boolean) as string[]
-        if (mine.length && !mine.includes(atom.for)) return             // a grant for a different runner
+        // ADDRESSED-TO-US filter — the ONE place `for` is checked (grant_offer is a role-broadcast).  `for`
+        //  is now the grantee's FULL pub (new editor) or its prepub (old); prepubOf collapses both to our
+        //   routing address, which Lies_self derives from the same signing key the relay bound us under —
+        //    so ONE comparison covers every tier (Organ 4: the old "tolerate both Clustation/legacy tiers"
+        //     union is retired).  Done HERE, once, not in the per-heartbeat verdict (see Lies_wormhole_verdict).
+        const me = (H as any).Lies_self?.(w)?.prepub as string | undefined
+        if (me && atom.for && prepubOf(atom.for) !== me) return          // a grant for a different runner
         const { status, reason } = await H.Lies_wormhole_verdict(w, atom)   // issuer + signature
         if (status !== 'valid') { if (status === 'invalid') (H as any).tlog?.(`🛰️⚠ ignored offered grant — ${reason}`); return }
         const top = H.top_House()
@@ -611,23 +625,39 @@ await M.eatfunc({
         const op       = frame?.op ?? hdr.op
         const dir_path = frame?.dir_path ?? hdr.dir_path
         const filename = frame?.filename ?? hdr.filename
-        const to = grant?.for as string | undefined   // the grant's minted-for prepub
+        // WHO asked — the reply address, in the roles-divide/ADDRESSES-DELIVER model (Cluster_spec
+        //  §3.2a/b).  Best: the corr's leading segment IS the asker's LIVE prepub (RemoteWormholeNav
+        //   mints corr = `${Lies_self.prepub}-${ts}-${n}`) — the hello-bound identity of the exact tab
+        //    asking NOW, bridge-routable, immune to an Id switch since the grant was minted.  Fallback:
+        //     prepubOf(grant.for) (the minted-for identity; prepubOf is a pure prefix so it handles a
+        //      full-pub or prefix `for` alike).  NEVER the role slot: `to:"runner"` is ONE relay
+        //       binding, and with two runners the OTHER one silently eats every reply (the 2026-07-05
+        //        starvation: bridge runner wedged at `begun`, all 286 replies delivered to the local
+        //         role-thief as unknown-corr drops).
+        const corr0 = String(corr ?? '').split('-')[0]
+        const asker = /^[0-9a-f]{16}$/.test(corr0) ? corr0 : undefined
+        const to = asker ?? (grant?.for ? prepubOf(grant.for as string) : undefined)
         const cc = String(corr ?? '').slice(-6)
         console.log(`🛰️← wormhole_req op=${op} ${[dir_path, filename].filter(Boolean).join('/')} corr=…${cc} for=${String(to ?? '?').slice(0, 8)}`)   // DIAG: did the serve handler fire?
-        // Reply by CONSUMER BROADCAST, corr-matched — NOT addressed to claim.for.  claim.for is the identity
-        //  the grant was MINTED for, which can be a DIFFERENT tier (Lies_self vs Clustation_self) than the one
-        //   the runner hello-binds / the relay routes on — so `to:claim.for` silently routed to NOBODY and every
-        //    reply vanished (editor RECVs wormhole_req, emits 0 wormhole_reply; the 20s-timeout stall).  The
-        //     runner matches replies by corr on its nav (Lies_wormhole_reply_recv → nav._resolve), so a broadcast
-        //      reaches the right runner regardless of tier; other runners drop an unknown corr.  Same reliable
-        //       path grant_offer rides (editor→runner consumer broadcast, proven to land).
+        // Reply ADDRESSED to the asker (`to:<asker prepub>`, corr-matched) — never the role slot.  The
+        //  historical consumer-broadcast here was a workaround for the pre-collapse tier drift ("to:claim.for
+        //   routed to NOBODY"), and it leaned on an assumption the relay never honoured: that a role frame
+        //    fans out to ALL runner sockets ("other runners drop an unknown corr").  The relay binds ONE
+        //     socket per addr — so the moment a second runner bound `runner` locally, it ate every reply and
+        //      the bridge runner starved at `begun` (2026-07-05).  Addressed delivery is the become_book
+        //       path, proven across the bridge.  Broadcast survives ONLY as the identity-less-asker fallback
+        //        (an old runner minting 'r-…' corrs on a single-runner grid).
         const replyJSON = (body: Record<string, unknown>) => {
-            console.log(`🛰️→ wormhole_reply corr=…${cc} ${body.error ? `ERROR ${body.error}` : body.not_found ? 'not_found' : body.ok ? 'ok' : body.entries ? `${(body.entries as any[]).length} entries` : `content ${String(body.content ?? '').length}c`}`)   // DIAG: what did we answer?
+            console.log(`🛰️→ wormhole_reply ${asker ? `@${asker.slice(0, 8)}` : 'broadcast'} corr=…${cc} ${body.error ? `ERROR ${body.error}` : body.not_found ? 'not_found' : body.ok ? 'ok' : body.entries ? `${(body.entries as any[]).length} entries` : `content ${String(body.content ?? '').length}c`}`)   // DIAG: what did we answer, and to whom?
+            if (asker && (H as any).Lies_runner_pier(w, asker))
+                return (H as any).Peeroleum_send_to(w, asker, 'wormhole_reply', { corr, ...body })
             return H.Peeroleum_send_consumer(w, 'wormhole_reply', { corr, ...body })
         }
-        // Binary replies still need an address (a raw buffer can't ride the consumer JSON body); they carry the
-        //  same claim.for tier risk (TODO: corr-route binaries too).  For now reads/lists reply JSON, which the
-        //   broadcast covers — the Cluster toc + all source reads are `read`|`list`, so this unblocks them.
+        // Binary replies ride the same address (`to` = asker-first, grant-derived fallback) on the raw-
+        //  bytes frame.  With the asker's LIVE prepub off the corr, JSON and binary replies now route
+        //   identically — the H1 residue (a frozen minted-for atom addressing the binary) is gone; the
+        //    only remaining exposure is an identity-less asker ('r-…' corr) whose grant.for is ALSO
+        //     stale — a peer that can't happen post-collapse (Lies_self always derives).
         const replyBIN = (meta: Record<string, unknown>, buffer: ArrayBuffer) =>
             to ? H.Lies_send_binary_to(w, to, 'wormhole_reply', { corr, ...meta }, buffer)
                : replyJSON({ error: 'grant has no for — cannot address binary reply' })

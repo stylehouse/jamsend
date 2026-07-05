@@ -10,7 +10,12 @@ import { Dexie, liveQuery, type EntityTable } from 'dexie';
 const V: Record<string, any> = {}
 V.organise =  0  // set >0 to enable answer_calls/beliefs/organise logs
 V.beliefs = 0
-V.req_legs = 1   // set >0 to walk req** as the transient level (more-legs); see assert_req_legs
+V.req_legs = 0   // >0 lays req** as the walk's transient level (more-legs) in organise().  PARKED
+                 //  at 0: the legs were only ever read back by the migration assertion, and laying
+                 //   them taxes every beat — so keep the hooks (get_scheme_level / get_next_levels /
+                 //    each_fn / req_T_legs, all V.req_legs-gated, now inert) but stop paying for them
+                 //     until a real consumer moves off the %req-children scan onto the walk.  Flip to
+                 //      1 (and re-add a walk-vs-climb check) to resume that migration dimension.
 
 export const ANSWER_CALLS_TICK_MS = 50
 export const AMBIENT_MAIN_TICK_MS = 200
@@ -921,7 +926,6 @@ export class House extends StorableHousing {
         V.organise && console.log(`beliefs() e%${e ? keyser(e.sc) : 'none'}`)
 
         await this.organise(e)
-        await this.assert_req_legs()
         await this.attend(e)
         // supervise the pump on a think beat — tug along this beat's reqs for any
         //  host that has migrated off reqy (no antiquated reqs).  A targeted
@@ -1341,51 +1345,18 @@ export class House extends StorableHousing {
         return next ? [next] : []
     }
 
-    // every req the walk reached this beat: T** filtered to the transient level.
-    //  the walk's view of the reqs, to verify it matches the %req-children scan.
+    // req_T_legs — every req the walk reached this beat: T** filtered to the transient
+    //  level.  The read-back HOOK for the req**-as-legs dimension: where a consumer that
+    //   moved off the %req-children scan onto the walk would read the walk's reqs.  Kept but
+    //    inert while V.req_legs is 0 (no legs are laid, so it returns []).  The per-beat
+    //     walk-vs-climb migration assertion that used to call it was dropped — it re-walked
+    //      the whole T** and reqy_recurse'd every w each beat purely to confirm equivalence.
     async req_T_legs(): Promise<TheC[]> {
         const reqs: TheC[] = []
         await this.Se.c.T?.forward((T: Travel) => {
             if (T.sc.level?.ark === 'req') reqs.push(T.sc.n as TheC)
         })
         return reqs
-    }
-
-    // migration assertion: when the walk lays req** (V.req_legs on), it should
-    //  reach the same live reqs as the direct %req-children scan (reqy_recurse).
-    //  Once it stays clean the consumers can move from the scan onto the walk.
-    //   Scheme-hosted reqs (Lang docks) are walk-only — the scan doesn't descend
-    //   those subtrees — so expect those as a known walk-only difference.
-    async assert_req_legs(): Promise<void> {
-        if (!V.req_legs) return
-        try {
-            // self-announce once, so a silent beat doesn't read as "not wired".
-            if (!V._req_legs_armed) { V._req_legs_armed = 1; console.log(`req_legs assertion armed`) }
-            const viaWalk = new Set<TheC>(await this.req_T_legs())
-            const viaClimb = new Set<TheC>()
-            const ws: TheC[] = []
-            await this.Se.c.T?.forward((T: Travel) => {
-                if (T.sc.level?.ark === 'w') ws.push(T.sc.n as TheC)
-            })
-            for (const w of ws) {
-                await (this as any).reqy_recurse(w, { each_fn: async (req: TheC) => {
-                    if (!req.sc.finished) viaClimb.add(req)
-                }})
-            }
-            const onlyClimb = [...viaClimb].filter(r => !viaWalk.has(r))
-            const onlyWalk  = [...viaWalk].filter(r => !viaClimb.has(r))
-            if (onlyClimb.length || onlyWalk.length) {
-                console.warn(`req_legs mismatch — climb-only:${onlyClimb.length} walk-only:${onlyWalk.length}`, {
-                    onlyClimb: onlyClimb.map(r => keyser(r.sc)),
-                    onlyWalk:  onlyWalk.map(r => keyser(r.sc)),
-                })
-            }
-            // success is silent: the count oscillates 0↔N every beat, so a "✓ N" line
-            //  per change just floods the console.  The assertion still runs (the walk
-            //   lays req** regardless of logging) — only a climb/walk mismatch is worth a line.
-        } catch (err) {
-            console.warn(`req_legs assertion errored (non-fatal):`, err)
-        }
     }
 
     // -------------------------------------------------------------------------

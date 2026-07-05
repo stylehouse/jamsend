@@ -51,6 +51,7 @@ Each `beliefs()` pass does O(N)-over-particles work with **no change/dige gate**
    recurse EVERY beat, and it's ON** (`V.req_legs = 1`, `Housing.svelte.ts:13`;
     body `:1353`). Its comment admits "the count oscillates 0↔N every beat." Pure
      diagnostic churn on the hot path — the standout "shouldn't be on" finding.
+      **(RESOLVED — assertion dropped, `V.req_legs` parked at 0; see lever #1.)**
 - `attend()` — nested, **O(A × N)** (`Housing.svelte.ts:1017`, inner forward `:1038`).
 - `reqdo_sweep` + every-w handler dispatch + `self_timekeeping` per A/w.
 
@@ -103,6 +104,8 @@ The biggest wall-clock number in interactive use is the deliberate **6 s
 
 1. **Turn off `V.req_legs` in production** (`Housing.svelte.ts:13`) — deletes an
     entire O(N) tree-walk-per-beat for zero functional change. Biggest ratio.
+    **(§status: DONE — `V.req_legs = 0` and `assert_req_legs()` dropped outright; the
+    leg-laying hooks stay gated + inert for the parked walk-carrier migration. :9091-unverified.)**
 2. **Content-digest graft's cache key** like its neighbor `Lang_Map_report` — kills
     an O(points×regions) rerun on every same-structure recompile. **(§status: done, unverified.)**
 3. **Trickle → single-wake** (already specced at `Editron.md:307`): replace the

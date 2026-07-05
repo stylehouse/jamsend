@@ -295,6 +295,26 @@
                 port.on_open(async () => {
                     const idento = H.Lies_cluster_idento(w)
                     if (!idento?.pub || !idento?.key) return
+                    // FATAL invariant (Robustness_plan Organ 4/H5 — the loud gate the 9→2 collapse earns):
+                    //  the prepub we HELLO-BIND under (prepubOf signing pub) MUST equal the prepub we
+                    //   ADVERTISE / the editor keys grants + dispatch on (Lies_self).  With Lies_self now a
+                    //    pure derivation of THIS same key they are equal by construction — so this never
+                    //     fires in healthy code; it exists to catch a REGRESSION (a re-introduced identity
+                    //      tier) at the exact seam, LOUDLY, instead of a silent black hole where every
+                    //       to:<us> frame routes to a socket bound under a different prepub (the 20s stall,
+                    //        "both runners ran it").  Deliberately NOT a hard throw — that would abort the
+                    //         hello and strand us worse; instead we scream, ring the Relay Brink, and set a
+                    //          flag Lies_advertise honours so we REFUSE to publish an address we can't
+                    //           receive on.  Self-heals: an Id switch that re-aligns clears the flag.
+                    const bound = prepubOf(idento.pub)
+                    const advertised = (H as any).Lies_self?.(w)?.prepub
+                    if (advertised && advertised !== bound) {
+                        w.c.identity_diverged = true
+                        console.error(`🪪🔥 IDENTITY DIVERGENCE: advertised ${advertised} ≠ hello-bound ${bound} — to:<us> frames misroute; refusing to advertise (Robustness_plan Organ 4/H5)`)
+                        H.Lies_relay_note(w, `🪪🔥 identity divergence: advertised ${advertised} ≠ hello-bound ${bound} — a re-introduced identity tier? every to:<us> reply is being dropped`, true)
+                    } else if (w.c.identity_diverged) {
+                        delete w.c.identity_diverged   // re-aligned (e.g. an Id switch settled)
+                    }
                     try {
                         const header = { control: 'hello', from: prepubOf(idento.pub), pub: idento.pub, ts: Date.now() }
                         const sign = await signHeader(header, idento.key)
@@ -569,29 +589,18 @@
         },
 
         // Lies_self — WHO WE ARE on the cluster: our prepub, the single answer claim_self / advertise /
-        //  the relay hello should all agree on.  Resolves the SAME identity we sign with — Clustation_self
-        //   (the ?I= %Identity) first, else the legacy key behind Lies_cluster_idento (.stashed via the 🪪 hatch, or a
-        //     node role env) reduced to its prepub.  This second tier is the fix for the empty
-        //      registry: an un-migrated editor (a stashed key, no ?I=) HAS a signing identity but
-        //       Clustation_self can't see it, so it never claimed itself.  undefined ⇒ no identity at
-        //        all (nothing to claim — a ?B= runner with no ?I and no env key).
+        //  the relay hello all agree on BY CONSTRUCTION.  It is a PURE DERIVATION of the ONE signing key
+        //   (Lies_cluster_idento — Clustation-active ?? .stashed ?? node env, in that precedence): the
+        //    relay hello-binds our socket under prepubOf(signing pub) (Lies_channel_up), so deriving the
+        //     advertise / grant-`for` / roster address from that SAME pub makes "advertised prepub" and
+        //      "hello-bound prepub" identical — they cannot drift (Robustness_plan Organ 4, the 9→2
+        //       collapse; retires the old Clustation_self ?? legacy two-tier fork that let H5 diverge at
+        //        bootstrap).  undefined ⇒ no identity at all (a ?B= runner with no ?I and no env key).
+        //   NOTE: prepub is the routing FACE; Clustation_self still owns the cosmetic nick (never routed on).
         Lies_self(w?: TheC): { prepub: string } | undefined {
             const H = this as House
             const idento = H.Lies_cluster_idento(w)
-            const key_prepub = idento?.pub ? prepubOf(idento.pub) : undefined
-            const face = (H as any).Clustation_self?.() as { prepub?: string } | undefined
-            if (face?.prepub) {
-                // H5 assertion (Robustness_plan Organ 4): the prepub we ADVERTISE / claim (this stored
-                //  face) MUST equal the prepub of the key we SIGN + hello-bind with — the relay binds our
-                //   socket under prepubOf(signing pub), so if the two diverge, every to:<us> reply routes
-                //    to a socket bound under a DIFFERENT prepub and is silently lost (H1's cousin).  Nothing
-                //     enforced this before — the collapse makes prepub a pure derivation; until then, at
-                //      least surface the divergence loudly instead of letting it drop replies in the dark.
-                if (key_prepub && key_prepub !== face.prepub)
-                    console.warn(`🪪⚠ identity divergence: advertised prepub ${face.prepub} ≠ signing-key prepub ${key_prepub} — to:<us> frames will misroute (Robustness_plan Organ 4/H5)`)
-                return { prepub: face.prepub }
-            }
-            return key_prepub ? { prepub: key_prepub } : undefined
+            return idento?.pub ? { prepub: prepubOf(idento.pub) } : undefined
         },
 
         // Lies_cluster_trust_status — the readout behind the IdHatch trust line + the setup gate.  The
@@ -665,8 +674,20 @@
             const dige   = H.LiesStore_good_of(w, 'text/Doc', path)?.o({ known: 1 })[0]?.sc.dige as string | undefined
             const signed = { type: 'ghost_compile', from: prepubOf(idento.pub), path, dige }
             const sign   = await signHeader(signed, idento.key)
-            ;(H as any).Peeroleum_send_consumer(w, 'ghost_compile', { dock: signed, sign })
-            H.tlog(`📤 ghost_compile → ${path} @ ${dige ?? '?'} [signed ${prepubOf(idento.pub)}]`)
+            // FAN OUT addressed to every roster runner (roles-divide/addresses-deliver): a recompile is
+            //  for ALL runners, but the consumer role-broadcast delivers to ONE relay slot — with two
+            //   runners the other silently keeps running STALE gen (a red run blamed on the test, the
+            //    cross-wire family).  The roster knows every runner's prepub; send to EACH (a dead row's
+            //     frames just book on its Pier until the reaper culls).  Broadcast only when the roster
+            //      is empty — the lone identity-less runner that never advertised.
+            const rows = (w.o({ Runner: 1 }) as TheC[]).map(r => String(r.sc.Runner)).filter(p => /^[0-9a-f]{16}$/.test(p))
+            if (rows.length) {
+                for (const p of rows) if ((H as any).Lies_runner_pier(w, p)) (H as any).Peeroleum_send_to(w, p, 'ghost_compile', { dock: signed, sign })
+                H.tlog(`📤 ghost_compile → ${path} @ ${dige ?? '?'} [signed ${prepubOf(idento.pub)}] → ${rows.length} runner${rows.length > 1 ? 's' : ''}`)
+            } else {
+                ;(H as any).Peeroleum_send_consumer(w, 'ghost_compile', { dock: signed, sign })
+                H.tlog(`📤 ghost_compile → ${path} @ ${dige ?? '?'} [signed ${prepubOf(idento.pub)}] (broadcast — no roster)`)
+            }
             return true
         },
 
@@ -1113,7 +1134,18 @@
                                         //        a fresh last_heard beside a stale `last` IS the half-open
                                         //         diagnosis, legibly — no off-snap connection-ref guessing.
             const H = this as House
-            ;(H as any).Peeroleum_send_consumer(w, 'pong', { t: fr?.t })   // echo first — keep the peer's RTT honest
+            // Echo ADDRESSED to the pinger when it identified itself (roles-divide/addresses-deliver,
+            //  Cluster_spec §3.2a/b): a role-slot pong (`to:"runner"`) is ONE relay binding, so with two
+            //   runners the other one eats every pong — the starved runner's RTT slot freezes, its 20s
+            //    watchdog reads DEAD, and it tears down + re-dials a perfectly healthy socket (the
+            //     2026-07-05 flap: 3 sockets in 3 minutes).  The ping's `from` carries the pinger's live
+            //      prepub; editor-side, promote its Pier and answer IT.  Role broadcast stays for the
+            //       runner→editor direction (one editor per relay) and an identity-less pinger.
+            const pinger = String(fr?.from ?? '').trim()
+            if (H.Lies_role(w) === 'editor' && /^[0-9a-f]{16}$/.test(pinger) && (H as any).Lies_runner_pier(w, pinger))
+                (H as any).Peeroleum_send_to(w, pinger, 'pong', { t: fr?.t })   // echo first — keep the peer's RTT honest
+            else
+                (H as any).Peeroleum_send_consumer(w, 'pong', { t: fr?.t })
             const peer = H.Lies_role(w) === 'editor' ? 'runner' : 'editor'
             w.oai({ channel_peer: peer }, { last_heard: Date.now() })      // oai: in-place merge, no transacting window (cf. pong_recv's roai)
             // editor: a runner's ping carries its prepub → keep THAT runner's roster liveness fresh off the
@@ -1166,6 +1198,10 @@
             //       (the "both runners ran it" regression).
             const self = (H as any).Lies_self?.(w) as { prepub: string } | undefined
             if (!self?.prepub) return
+            // Honour the channel_up divergence gate (Robustness_plan Organ 4/H5): if the prepub we'd
+            //  advertise ≠ the one the relay hello-bound us under, publishing it makes us a black hole
+            //   (the editor addresses to:<us> a socket bound elsewhere) — better silent than misrouting.
+            if (w.c.identity_diverged) return
             const now = Date.now()
             // The beacon's MATERIAL facets — what the editor's roster + allocator (Lies_dispatch_target)
             //  act on: book (a Book running), engaged (this runner's live lease-holder — dispatch SKIPS an
@@ -1190,7 +1226,13 @@
             //    registry — advertise_recv reads hi.sc.favourite_client and ignores any wire copy.)
             const facets: Record<string, any> = {}
             for (const f of RUNNER_FACETS) { if (!f.read) continue; if (f.kind === 'text') facets[f.k] = vals[f.k]; else if (vals[f.k]) facets[f.k] = 1 }
-            ;(H as any).Peeroleum_send_consumer(w, 'advertise', { from: self.prepub, ready: 1, ...facets })
+            // Carry our FULL pub beside the prepub (Robustness_plan Organ 4, part 3): `from` stays the
+            //  prepub (the routing key the editor's roster is built on), and `pub` lets the editor mint a
+            //   grant whose `for` is a VERIFIABLE full pub (form-matches `by`) instead of an unverifiable
+            //    16-hex string.  prepub = prepubOf(pub) so they never disagree; an OLD editor ignores the
+            //     extra key (grants the prepub as before — feature-detected, fully back-compatible).
+            const full_pub = H.Lies_cluster_idento(w)?.pub
+            ;(H as any).Peeroleum_send_consumer(w, 'advertise', { from: self.prepub, ...(full_pub ? { pub: full_pub } : {}), ready: 1, ...facets })
         },
         // Lies_ac_nudge — the Sound Brink calls this the instant a gesture unlocks (or an init settles)
         //  the AudioContext, so the runner re-advertises ac:1 to the editor NOW rather than waiting for
@@ -1276,6 +1318,7 @@
             const beacons = (w.c.beacons ??= {}) as Record<string, any>
             const b: Record<string, any> = { last_heard: Date.now() }
             for (const f of RUNNER_FACETS) b[f.k] = f.kind === 'text' ? (fr?.[f.k] ? String(fr[f.k]) : '') : !!fr?.[f.k]
+            if (fr?.pub) b.pub = String(fr.pub)   // the runner's FULL pub (Organ 4 part 3) — prepubOf(pub) === from
             beacons[from] = b
             // no snap mutation, no bump here — the in-think projection owns the snapped tree.
         },
@@ -1295,13 +1338,18 @@
             const H = this as House
             if (H.Lies_role(w) !== 'editor') return
             const now = Date.now()
-            const beacons = (w.c.beacons ?? {}) as Record<string, { last_heard: number, ready?: boolean, book?: string, engaged?: string, ac?: boolean, fsa?: boolean }>
+            const beacons = (w.c.beacons ?? {}) as Record<string, { last_heard: number, pub?: string, ready?: boolean, book?: string, engaged?: string, ac?: boolean, fsa?: boolean }>
             let changed = false
             // a beacon from a never-seen runner NAMES it in the durable registry (role:runner).
             //  The beacon carries no authority over favourite_client — left untouched (registry-only).
             for (const pub of Object.keys(beacons)) {
                 const hi = cluster.oai({ HostedIdentity: pub }) as TheC
                 if (hi.sc.role !== 'runner') { hi.sc.role = 'runner'; changed = true }
+                // Record the runner's FULL pub (Organ 4 part 3) beside its prepub key, so a grant we mint
+                //  for it carries a verifiable `for` (prepubOf(pub) === the HostedIdentity key).  Durable
+                //   identity fact, not a live facet — set once, never cleared on silence.
+                const fp = beacons[pub]?.pub as string | undefined
+                if (fp && hi.sc.pub !== fp) { hi.sc.pub = fp; changed = true }
             }
             // ONE snapped Runner per registered runner: mirror the durable identity, fold the live beacon.
             const runners = (cluster.o({ HostedIdentity: 1 }) as TheC[]).filter(h => h.sc.role === 'runner')
@@ -1313,6 +1361,9 @@
                 // durable identity, mirrored from the registry (Brink + allocator both read this one place)
                 if (hi.sc.favourite_client) { if (r.sc.favourite_client !== hi.sc.favourite_client) { r.sc.favourite_client = String(hi.sc.favourite_client); changed = true } }
                 else if (r.sc.favourite_client) { delete r.sc.favourite_client; changed = true }
+                // the FULL pub (Organ 4 part 3): mirror registry → row so Lies_grant_wormhole can mint a
+                //  grant whose `for` is verifiable.  Absent for an OLD runner (no `pub` on its beacon).
+                if (hi.sc.pub) { if (r.sc.pub !== hi.sc.pub) { r.sc.pub = String(hi.sc.pub); changed = true } }
                 // live beacon → off-snap last_heard + the snapped proven facets.  Bump on a last_heard
                 //  ADVANCE too (changed=true): it's .c (off-snap) so the bump only wakes the rack's $effect
                 //   to refresh the heard-age — it adds NOTHING to the snap, so no churn.  Without it, a

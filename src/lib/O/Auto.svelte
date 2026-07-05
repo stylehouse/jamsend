@@ -304,6 +304,20 @@
             if (await (H as any).Clustation_ensure_identity(H)) H.c.identity_up = true
         }
 
+        // Legacy migration (Robustness_plan Organ 4, the 9→2 collapse): a peer holding only a bare
+        //  .stashed.cluster_idento (the pre-%Identity home — a 🪪-hatch paste that skipped adopt, or an
+        //   older session) has a signing key Clustation_self can't see.  Lies_self derives its address from
+        //    Lies_cluster_idento so ROUTING is already correct, but the roster / IdHatch / registry only
+        //     surface first-class %Identity objects — so adopt the stashed key into one, ONCE, so an
+        //      un-migrated editor/runner stops looking identity-less.  Skip when a ?I= identity is already
+        //       active (it wins); retry next pass if Thangs persistence isn't mounted yet (don't latch empty).
+        if (!boot_param('I') && !H.c.identity_adopted) {
+            const legacy = ((H.top_House?.() as House | undefined)?.stashed as any)?.cluster_idento
+            if (legacy?.pub && legacy?.key && !(H as any).Clustation_active_identity?.(H)) {
+                if (await (H as any).Clustation_adopt(legacy, H)) H.c.identity_adopted = true
+            } else H.c.identity_adopted = true   // nothing to adopt (or a ?I= is active) — don't re-scan
+        }
+
 
         // ── Library page region (book browser + disk-backed Library) ──────────
         //   Wholly skipped on the `run` page (any ?B/?E boot): a runner runs the one Book it was
