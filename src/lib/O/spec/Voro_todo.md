@@ -64,13 +64,23 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
 - `src/lib/data/Stuffing.svelte` — the Stuffing component itself.
 - `Ghost/V/Voro.g` — crush policy + the demo Books `VoroMitosis` / `VoroScape` (a Book's
    world and method share the Book's name EXACTLY, or dispatch silently no-ops).
+- Toggles on the ◈ bar (all stash prefs, metaphysics §4): ◈ voronoi, ❝ properCellable
+   (wordy loners — %see — get a self-row Stuffing and thereby a cell; default follows
+    voronoi mode; rides `node_src`, the live particle now ferried on EVERY wave
+     upsert's `.c`), ⬡ family hulls (`Cyto_families`, default on), Vexpandy tall.
+- Design notes awaiting agreement: `Voro_microcosm.md` (task 6), `Voro_pinch.md`
+   (task 7), `Voro_svg_stuffing.md` (task 8).
 
 ## The tasks
 
 Grades: **GRIND** = mechanical against this brief; **GRIND+** = needs local judgment;
  **DESIGN-FIRST** = write a short design note and get it agreed before code.
 
-### 1. Wrap width from the cell — GRIND+
+### 1. Wrap width from the cell — GRIND+ — BUILT 2026-07-06 (browser-unverified)
+
+Done as specified below: `paint_final` hands the child a 24px-quantised width off the
+ cell bbox, >15% hysteresis (`wrap_applied`), settle cadence only. Watch for the §6
+  oscillation check before calling it verified.
 
 Today the Stuffing renders at its natural max-content width and `paint_final` scales
  that fixed box into the cell (fit·T). Invert it: the CELL should hand the content a
@@ -83,7 +93,11 @@ Today the Stuffing renders at its natural max-content width and `paint_final` sc
    Quantise the target (say 24px steps) and only re-wrap when it moves by >15%, at
     settle cadence only. Watch a resting graph for a full minute: zero oscillation.
 
-### 2. Angle: a long cell wants a long Stuffing — GRIND+
+### 2. Angle: a long cell wants a long Stuffing — GRIND+ — BUILT 2026-07-06 (browser-unverified)
+
+Done: the molding composes R(θ)·S — |θ| ≤ 20°, snapped to 0 below 8°, gated on real
+ elongation (>1.18) so a round cell's φ noise never tilts text; `box_support` grew a
+  T21 (defaulting to T12, so symmetric callers unchanged).
 
 The molding T is symmetric today — a deliberate no-rotation choice so text never
  tilts. Relax it a LITTLE: rotate the Stuffing toward the cell's long axis φ with hard
@@ -93,7 +107,11 @@ The molding T is symmetric today — a deliberate no-rotation choice so text nev
    fine, `box_support()` already takes a general T, so the fit stays correct for free).
 - Do after task 1; angle without re-wrap just tilts a wrong-shaped box.
 
-### 3. Fold colour by dominant kind + fold-count size — GRIND
+### 3. Fold colour by dominant kind + fold-count size — GRIND — BUILT 2026-07-06 (browser-unverified)
+
+Done: the crusher stamps `c.fold_kind`/`c.fold_n` (`Voro_stamp_fold`, gen recompiled
+ via LocalGen); Cytui's `cell_color` reads the kind's Matstyle READ-ONLY (o() query,
+  border-colour fallback) and the seed floor lifts by `log2(1+n)·9`.
 
 The crusher already returns the dominant child mainkey (`kind`) and the fold count.
 - Colour: a fold's cell should carry its dominant KIND's colour, not the fold node's
@@ -104,7 +122,14 @@ The crusher already returns the dominant child mainkey (`kind`) and the fold cou
 - Both stats are live returns from `Voro_crush_scan`; if they need to ride to Cytui,
    they ride on `.c`, never `.sc`.
 
-### 4. Family outlines: the w/** hulls — GRIND+ (toggleable)
+### 4. Family outlines: the w/** hulls — GRIND+ (toggleable) — BUILT 2026-07-06 (browser-unverified)
+
+Done, via post-hoc edge attribution instead of a clip_halfplane rewrite: every cut's
+ line is kept and each final wall midpoint-tested against them (`edge_src` on VCell —
+  the SVG-Stuffing spec reuses it as free adjacency). Families = cells grouped by the
+   compound ancestor one below the w root, ≥2 members; boundary walls stroked as
+    disjoint faint segments (visually identical to a traced loop, immune to topology
+     surprises). ⬡ toggle, stash `Cyto_families`, default on.
 
 Outline all the cells of each direct child of w — e.g. everything under `Pier/**` gets
  one shared outer outline — but only for families with real structure: at least
@@ -116,7 +141,16 @@ Outline all the cells of each direct child of w — e.g. everything under `Pier/
       stroke (distinct colour per family, well behind the cell strokes).
 - A ◈-bar toggle, stash-remembered (`Cyto_families`), metaphysics §4.
 
-### 5. Crush harder: group the un-same — GRIND+ (crusher policy, .g work)
+### 5. Crush harder: group the un-same — GRIND+ (crusher policy, .g work) — PART-BUILT 2026-07-06
+
+Built: `Voro_swarmable` in Voro.g — a STRUCTURAL container whose children are a
+ homogeneous swarm (≥3, all one noisy mainkey: req|witnessed|see) folds as the
+  group's chunk (w/H/A never fold); stamps ride `Voro_stamp_fold` like any fold.
+   Gen recompiled (LocalGen; the editor path was down). STILL OPEN: leaf swarms
+    directly under w/A with no foldable parent (a sibling GANG needs an elected
+     representative + Cyto walk support — design that with task 6's microcosm, the
+      machinery overlaps), and the ≥0.8-dominant loosening if strict homogeneity
+       proves too shy on real traffic.
 
 `Voro_crushable` wants same-ish children, so `%witnessed:$different_stuff` (same key,
  different sentences — they aren't resolving as same) and swarms of `%req:awaitbuf`
@@ -129,7 +163,12 @@ Outline all the cells of each direct child of w — e.g. everything under `Pier/
     just get them folded and the graph tidier.
 - Verify on VoroMitosis: the genus panes must still read; fixtures must not move.
 
-### 6. Composite shapes: layout WITHIN a cell + zoom-recursion — DESIGN-FIRST
+### 6. Composite shapes: layout WITHIN a cell + zoom-recursion — DESIGN-FIRST — NOTE WRITTEN
+
+`Voro_microcosm.md` (2026-07-06): no second w:Cyto, no channels — crunch on subsets
+ in-pixel (the crush only suppressed descent; members are `fold.o()` away). Carves
+  (a) grid microcosm, (b) hysteretic zoom-swap, (c) pixel-capped recursion. Await
+   owner agreement, then build (a).
 
 Can the composite shapes be custom — i.e. lay a fold's members out INSIDE its cell (a
  microcosm: mini grid or mini force pass in the cell's own frame), instead of one flat
@@ -141,7 +180,11 @@ Can the composite shapes be custom — i.e. lay a fold's members out INSIDE its 
 - Write the design note first: coordinate frames, when the mini-layout runs (settle
    only), and how it stays inside the budget self-heal.
 
-### 7. Scroll = pinch|spread the locale — DESIGN-FIRST (toggleable)
+### 7. Scroll = pinch|spread the locale — DESIGN-FIRST (toggleable) — NOTE WRITTEN
+
+`Voro_pinch.md` (2026-07-06): gaussian brush (σ≈140px) via model-position writes
+ through cy, guarded off running layouts, riding pan_zoom_motion; fcose undoes the
+  sculpt and the note says so plainly (fine for a play-mode). Await agreement.
 
 A mode where the wheel does not zoom the camera but contracts|spreads THAT LOCALE of
  nodes — wheel toward pulls the neighbourhood under the cursor together, wheel away
@@ -154,7 +197,13 @@ A mode where the wheel does not zoom the camera but contracts|spreads THAT LOCAL
    (does the next wave undo the sculpting? probably yes — say so, and decide whether
     that is fine for a play-mode).
 
-### 8. The SVG-native Stuffing rebuild — DESIGN-FIRST (the big one)
+### 8. The SVG-native Stuffing rebuild — DESIGN-FIRST (the big one) — SPEC WRITTEN
+
+`Voro_svg_stuffing.md` (2026-07-06): tuple model (rows with stable rids, monospace
+ char-metrics so NO DOM-measure feedback), per-shared-wall greedy matching over the
+  task-4 `edge_src` adjacency, band placement (walls never move for rows), SVG text
+   paint, settle-only budget, `Cyto_svgstuff` side-by-side migration. Await
+    agreement before any build.
 
 Rebuild Stuffing rendering in SVG with graph-native neighbour awareness: rows/tuples
  as SVG text the tessellation itself places, so shared-wall neighbours can EDGE

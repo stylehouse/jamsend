@@ -1226,9 +1226,11 @@
                     if (C.sc.overlay_bg)   etc.overlay_bg   = C.sc.overlay_bg
                     if (C.sc.overlay_self) etc.overlay_self = C.sc.overlay_self
                     const entry = wave.i({ upsert: 1, id, ...etc })
-                    // ferry the LIVE particle to Cytui for a component overlay (eg 'stuff' → mount a
-                    //  Stuffing of it). A .c ref, never encoded — it rides the in-process graph channel.
-                    if (C.sc.overlay_kind === 'stuff' && C.c.source_n) entry.c.source_n = C.c.source_n
+                    // ferry the LIVE particle to Cytui on EVERY upsert (not just 'stuff') — a .c ref,
+                    //  never encoded, riding the in-process graph channel.  Cytui-local skins classify
+                    //   off it (properCellable mounts a %see its own Stuffing) without the snapped
+                    //    wave ever learning; component overlays ('stuff') read it as before.
+                    if (C.c.source_n) entry.c.source_n = C.c.source_n
                 } else if (style_ch || label_ch !== null || par_ch !== null) {
                     const entry = wave.i({ upsert: 1, id, ...etc,
                         ...(style_ch          ? { style:      style_ch         } : {}),
@@ -1240,7 +1242,7 @@
                         ...(C.sc.overlay_bg   ? { overlay_bg:   C.sc.overlay_bg   } : {}),
                         ...(C.sc.overlay_self ? { overlay_self: C.sc.overlay_self } : {}),
                     })
-                    if (C.sc.overlay_kind === 'stuff' && C.c.source_n) entry.c.source_n = C.c.source_n
+                    if (C.c.source_n) entry.c.source_n = C.c.source_n
                 }
             },
  

@@ -1,5 +1,5 @@
 Credulation,of_Book:VoroMitosis
-  run=0,at=1783264241.024,ok,ok_pct,mode:check
+  run=0,at=1783268524.382,ok,ok_pct,mode:check
     uses:Ghost_N_Peeroleum,dige:89f7731b8ad5fae2
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -13,4 +13,4 @@ Credulation,of_Book:VoroMitosis
     uses:Ghost_Story_Musuation,dige:3d02ba802866f433
     uses:Ghost_S_Swarm,dige:5903f24bde1fb0d7
     uses:Ghost_Story_Swarmation,dige:fe5cba472157518d
-    uses:Ghost_V_Voro,dige:c7227025a11ae05e
+    uses:Ghost_V_Voro,dige:07c503eee218bfab

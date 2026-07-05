@@ -693,6 +693,68 @@
         requestAnimationFrame(() => { cy?.resize(); cy?.fit(cy.nodes(), 16) })
     })
     const voronoi_on  = $derived(voronoi_pref ?? saw_stuffy)
+    // ── properCellable ────────────────────────────────────────────────────────
+    //  a wordy loner particle — a %see claim above all, one long sentence on a
+    //   24px oval — is unreadable as a bare node (it used to land in the rack;
+    //    the rack is shelved, so now it just sits there, still unreadable).
+    //  properCellable mounts each one a self-row Stuffing exactly like a
+    //   crushed chunk gets — and thereby a voronoi CELL too, since any
+    //    stuff-mount seeds the tessellation.  Entirely render-side off the
+    //     node's source_n (which now rides EVERY wave upsert on .c): the wave
+    //      carries no overlay_kind for these, so no snap can tell.
+    //  A workspace pref (stash Cyto_properCellable, metaphysics §4); default
+    //   follows the voronoi mode — glass wants every pane readable, the plain
+    //    graph stays lean.  proper_mounted tracks OUR mounts so toggling off
+    //     never strips a wave-owned (crusher) Stuffing.
+    const PROPER_KINDS  = new Set(['see'])
+    let proper_pref     = $state<boolean | null>(null)   // user override; null = follow voronoi
+    const proper_on     = $derived(proper_pref ?? voronoi_on)
+    const proper_mounted = new Set<string>()
+    // node_src: every upserted node's live particle — lets a toggle flip
+    //  re-classify EXISTING nodes without waiting for a wave
+    const node_src = new Map<string, TheC>()
+    const is_proper = (n: TheC | undefined) =>
+        !!n && PROPER_KINDS.has(Object.keys(n.sc ?? {})[0] ?? '')
+    function proper_sync() {
+        if (!cy) return
+        for (const [id, src] of node_src) {
+            if (!is_proper(src)) continue
+            const node = cy.getElementById(id)
+            if (!node.length) continue
+            if (proper_on && !overlays.has(id)) {
+                create_stuff_overlay(id, src, undefined, true)
+                proper_mounted.add(id)
+                node.style('label', '')    // the Stuffing IS the words — the cy label would bleed through
+            } else if (!proper_on && proper_mounted.has(id)) {
+                remove_overlay(id)
+                proper_mounted.delete(id)
+                try { node.removeStyle('label') } catch {}
+            }
+        }
+        reposition_overlays()
+        if (voronoi_on) voronoi_soon()
+    }
+    function toggle_proper() {
+        proper_pref = !proper_on
+        const stp = (H as any).stashed
+        if (stp) stp.Cyto_properCellable = proper_pref
+        proper_sync()
+    }
+    // ── family hulls (Cyto_families) ─────────────────────────────────────────
+    //  one faint shared outline per house: the cells of one compound family
+    //   (Pier/**, an Artist's tracks…) get their union boundary stroked as a
+    //    second, well-back line.  Pure pixels at settle cadence; stash pref.
+    let families_pref   = $state<boolean | null>(null)
+    const families_on   = $derived(families_pref ?? true)
+    let vfams           = $state<{ id: string, d: string, color: string }[]>([])
+    const FAM_COLORS    = ['#8b6bb7', '#5b9a77', '#b78a5b', '#5b8ab7', '#b75b7a', '#7ab75b']
+    function toggle_families() {
+        families_pref = !families_on
+        const stf = (H as any).stashed
+        if (stf) stf.Cyto_families = families_pref
+        if (!families_on) vfams = []
+        else voronoi_soon()
+    }
     // ── the scroll visor ──────────────────────────────────────────────────────
     //  A strip over the right edge where the wheel scrolls the PAGE instead of
     //   zooming the graph — a hand-free gutter past a graph that would otherwise
@@ -869,6 +931,7 @@
         }
         install_nuclei()              // grow (on) or dissolve (off) the flower hubs
         relayout(300)                 // let the sim re-settle around / without them
+        proper_sync()                 // properCellable's default follows the mode
         if (voronoi_pref) { reposition_overlays(); morph_voronoi() }
         else clear_voronoi()
     }
@@ -909,17 +972,24 @@
     type VCell = {
         id: string, seed: {x:number,y:number}, inset: {x:number,y:number}[],
         acx: number, acy: number, color: string, node: any,
-        // the molding affine (symmetric, unit-mean) + the fitted scale
-        T11: number, T12: number, T22: number, fit: number,
+        // the molding affine (a symmetric eigenframe stretch, now composed with
+        //  a capped legibility rotation, so T21 ≠ T12 in general) + fitted scale
+        T11: number, T12: number, T21: number, T22: number, fit: number,
+        // per-wall provenance: edge k (inset[k]→inset[k+1]) was cut by this
+        //  neighbouring seed id, or null for the frame — the family hulls
+        //   read it to find which walls face OUTSIDE the family
+        edge_src: (string | null)[],
     }
 
     // support of the content box under the molding transform, in direction n̂ —
     //  the one formula both the wall-placement and the fit use:
     //   T maps (±w/2, ±h/2); the box's farthest reach along n̂ is
     //   |n̂·T·(w/2,0)| + |n̂·T·(0,h/2)|
+    //  T21 defaults to T12 so every symmetric caller stays exact; the rotated
+    //   molding passes its true T21.
     function box_support(nx: number, ny: number, hw: number, hh: number,
-                         T11 = 1, T12 = 0, T22 = 1) {
-        return Math.abs(nx * T11 + ny * T12) * hw + Math.abs(nx * T12 + ny * T22) * hh
+                         T11 = 1, T12 = 0, T22 = 1, T21 = T12) {
+        return Math.abs(nx * T11 + ny * T21) * hw + Math.abs(nx * T12 + ny * T22) * hh
     }
 
     function voronoi_layout(): { cells: VCell[], seeds: any[], CW: number } | null {
@@ -938,9 +1008,14 @@
             const p = node.renderedPosition()
             const child = overlays.get(id)?.firstElementChild as HTMLElement | null
             // every chunk claims a floor box even when its content is a sliver, so a
-            //  one-row Stuffing still earns a real cell instead of a hairline splinter
-            const hw = Math.max(40, (child?.offsetWidth  ?? node.renderedWidth())  / 2)
-            const hh = Math.max(30, (child?.offsetHeight ?? node.renderedHeight()) / 2)
+            //  one-row Stuffing still earns a real cell instead of a hairline splinter.
+            //  A bigger FAMILY claims a bigger cell: the fold count (c.fold_n, stamped
+            //   by the crusher, read via node_src) lifts the floor on a gentle log
+            //    scale — c-side only, and floor-only so measured content still rules.
+            const fn   = (node_src.get(id) as any)?.c?.fold_n as number | undefined
+            const lift = fn ? Math.log2(1 + fn) * 9 : 0
+            const hw = Math.max(40 + lift,       (child?.offsetWidth  ?? node.renderedWidth())  / 2)
+            const hh = Math.max(30 + lift * 0.6, (child?.offsetHeight ?? node.renderedHeight()) / 2)
             seeds.push({ id, x: p.x, y: p.y, hw: Math.min(hw, 260), hh: Math.min(hh, 200), node })
         }
         if (seeds.length < 2) return null
@@ -973,6 +1048,10 @@
         const cells: VCell[] = []
         for (const s of seeds) {
             let poly = [{ x: 0, y: 0 }, { x: CW, y: 0 }, { x: CW, y: HH }, { x: 0, y: HH }]
+            // every applied cut, kept for post-hoc edge attribution: a final
+            //  edge lying on a cutter's line was cut by that neighbour (family
+            //   hulls need to know which walls face OUTSIDE the family)
+            const cuts: { px: number, py: number, nx: number, ny: number, id: string }[] = []
             for (const o of seeds) {
                 if (o === s) continue
                 const dx = o.x - s.x, dy = o.y - s.y
@@ -986,10 +1065,23 @@
                 const rs = 12 + 0.5 * box_support(ux, uy, s.hw, s.hh)
                 const ro = 12 + 0.5 * box_support(ux, uy, o.hw, o.hh)
                 const t  = (d * d + rs * rs - ro * ro) / (2 * d)
-                poly = clip_halfplane(poly, { x: s.x + ux * t, y: s.y + uy * t }, { x: ux, y: uy })
+                const mx = s.x + ux * t, my = s.y + uy * t
+                poly = clip_halfplane(poly, { x: mx, y: my }, { x: ux, y: uy })
+                cuts.push({ px: mx, py: my, nx: ux, ny: uy, id: o.id })
                 if (poly.length < 3) break
             }
             if (poly.length < 3) continue   // swallowed by a heavier neighbour
+
+            // attribute each final edge to the cut whose line contains it
+            //  (midpoint within ε of the line); null = the frame.  O(edges·cuts)
+            //   over a handful of each — noise next to the clipping itself.
+            const edge_src: (string | null)[] = poly.map((p, k) => {
+                const q = poly[(k + 1) % poly.length]
+                const mx2 = (p.x + q.x) / 2, my2 = (p.y + q.y) / 2
+                for (const c of cuts)
+                    if (Math.abs((mx2 - c.px) * c.nx + (my2 - c.py) * c.ny) < 0.5) return c.id
+                return null
+            })
 
             // gutter: pull every vertex a few px toward the (vertex-mean) middle
             //  so shared walls read as gaps rather than double strokes
@@ -1020,7 +1112,7 @@
                 sxy += (p.x * q.y + 2 * p.x * p.y + 2 * q.x * q.y + q.x * p.y) * cr
             }
             const A = A2 / 2
-            let acx = vmx, acy = vmy, T11 = 1, T12 = 0, T22 = 1
+            let acx = vmx, acy = vmy, T11 = 1, T12 = 0, T21 = 0, T22 = 1
             if (Math.abs(A) > 1) {
                 acx = sx / (6 * A); acy = sy / (6 * A)
                 const cxx = sxx / (12 * A) - acx * acx
@@ -1031,12 +1123,26 @@
                 const l1 = mean + dev, l2 = Math.max(mean - dev, 1e-6)
                 const phi = 0.5 * Math.atan2(2 * cxy, cxx - cyy)
                 let rho = Math.sqrt(Math.sqrt(l1 / l2))       // eigen ratio of EXTENTS is √(λ1/λ2)
+                const elong = rho                             // pre-blend elongation, gates the tilt
                 rho = 1 + (Math.min(rho, 1.8) - 1) * 0.55     // "a little": blend + cap
                 const a1 = Math.sqrt(rho), a2i = 1 / Math.sqrt(rho)
                 const cs = Math.cos(phi), sn = Math.sin(phi)
-                T11 = a1 * cs * cs + a2i * sn * sn
-                T22 = a1 * sn * sn + a2i * cs * cs
-                T12 = (a1 - a2i) * cs * sn
+                // the symmetric eigenframe stretch (no rotation yet)
+                const S11 = a1 * cs * cs + a2i * sn * sn
+                const S22 = a1 * sn * sn + a2i * cs * cs
+                const S12 = (a1 - a2i) * cs * sn
+                // a long cell wants a long Stuffing: rotate the molding toward
+                //  the long axis φ, a LITTLE, under hard legibility caps —
+                //   |θ| ≤ 20°, snapped to 0 below 8° (a barely-tilted line reads
+                //    worse than a straight one), and only when the cell is
+                //     genuinely elongated (a near-circular cell's φ is noise).
+                //      Text tilts; it never turns.
+                const MAXR = Math.PI / 9, SNAP = Math.PI / 22.5
+                let th = elong > 1.18 ? Math.max(-MAXR, Math.min(MAXR, phi)) : 0
+                if (Math.abs(th) < SNAP) th = 0
+                const rc = Math.cos(th), rn = Math.sin(th)
+                T11 = rc * S11 - rn * S12; T12 = rc * S12 - rn * S22
+                T21 = rn * S11 + rc * S12; T22 = rn * S12 + rc * S22
             }
 
             // ── maximal fit under the molding ────────────────────────────────
@@ -1051,16 +1157,43 @@
                 nx /= nl; ny /= nl
                 let room = (a.x - acx) * nx + (a.y - acy) * ny
                 if (room < 0) { nx = -nx; ny = -ny; room = -room }
-                const denom = box_support(nx, ny, s.hw, s.hh, T11, T12, T22)
+                const denom = box_support(nx, ny, s.hw, s.hh, T11, T12, T22, T21)
                 if (denom > 1e-6) smax = Math.min(smax, room / denom)
             }
             const fit = Math.max(0.5, smax * 0.92)
 
             cells.push({ id: s.id, seed: { x: s.x, y: s.y }, inset, acx, acy,
-                color: s.node.style('border-color') as string, node: s.node,
-                T11, T12, T22, fit })
+                color: cell_color(s.id, s.node), node: s.node,
+                T11, T12, T21, T22, fit, edge_src })
         }
         return { cells, seeds, CW }
+    }
+
+    // a fold's cell carries its dominant KIND's colour (c.fold_kind, stamped by
+    //  the crusher, read via node_src) — looked up READ-ONLY in the Styles
+    //   container (metaphysics §5: a render path must never autovivify a style;
+    //    o() only, no get_or_create).  Fallback: the node's own border colour,
+    //     which is the fold's OWN mainkey's Matstyle from cyto_nstyle.
+    function cell_color(id: string, node: any): string {
+        const kind = (node_src.get(id) as any)?.c?.fold_kind as string | undefined
+        if (kind) {
+            try {
+                const stylesC = (H as any).Awo('Cyto')?.c?.Styles
+                const ms = stylesC?.o({ matstyle: kind })[0]
+                const bg = ms ? (H as any).ms_css(ms)['background-color'] : null
+                if (bg) return bg as string
+            } catch {}
+        }
+        return node.style('border-color') as string
+    }
+
+    // the family of a cell: the compound ancestor one below the outermost (the
+    //  outermost is the w container itself).  A cell sitting directly under w
+    //   has no family; siblings of one house share one hull.
+    function family_of(node: any): string | null {
+        const anc = node.ancestors().toArray()
+        if (anc.length < 2) return null
+        return anc[anc.length - 2].id()
     }
 
     const poly_d = (pts: {x:number,y:number}[]) =>
@@ -1108,6 +1241,9 @@
     //  the border itself, cusp-tip pointing into the cell at the crossing —
     //  tightly coupled: it moves, scales and dies with its wall), a tip dot in
     //  the OTHER end's colour, the Stuffing stretched+molded into the cell.
+    // wrap_applied: the last wrap width handed to each cell's content —
+    //  the hysteresis memory that keeps the measure→wrap→measure loop damped
+    const wrap_applied = new Map<string, number>()
     function paint_final(L: { cells: VCell[], seeds: any[], CW: number }) {
         const crossings = new Map<string, { wall: number, t: number, m: {x:number,y:number}, color: string }[]>()
         const cell_by_id = new Map(L.cells.map(c => [c.id, c]))
@@ -1193,14 +1329,69 @@
                     `${(p.x - bx).toFixed(1)}px ${(p.y - by).toFixed(1)}px`).join(',') + ')'
                 const child = el.firstElementChild as HTMLElement | null
                 if (child) {
-                    const a = (c.fit * c.T11).toFixed(3), b2 = (c.fit * c.T12).toFixed(3)
-                    const d2 = (c.fit * c.T22).toFixed(3)
+                    // wrap width FROM the cell: hand the content the cell's own
+                    //  horizontal proportion so the text re-flows to it instead
+                    //   of one fixed box being scaled.  DAMPED (metaphysics §6):
+                    //    quantised to 24px steps, re-applied only on a >15%
+                    //     move, and only here at settle cadence — the child's
+                    //      size feeds the next tessellation as seed weight, and
+                    //       an undamped loop oscillates.
+                    const targ = Math.max(96, Math.min(480,
+                        Math.round((bw * 0.86 - 24) / 24) * 24))
+                    const prev = wrap_applied.get(c.id) ?? 0
+                    if (Math.abs(targ - prev) / (prev || targ) > 0.15) {
+                        child.style.width    = `${targ}px`
+                        child.style.maxWidth = `${targ}px`
+                        wrap_applied.set(c.id, targ)
+                    }
+                    const a  = (c.fit * c.T11).toFixed(3), b12 = (c.fit * c.T12).toFixed(3)
+                    const b21 = (c.fit * c.T21).toFixed(3), d2 = (c.fit * c.T22).toFixed(3)
                     const tx = c.acx - (bx + bw / 2), ty = c.acy - (by + bh / 2)
+                    // CSS matrix(a,b,c,d) is column-major: x' = a·x + c·y, y' = b·x + d·y
                     child.style.transform = `translate(${tx.toFixed(1)}px, ${ty.toFixed(1)}px)`
-                        + ` matrix(${a}, ${b2}, ${b2}, ${d2}, 0, 0)`
+                        + ` matrix(${a}, ${b21}, ${b12}, ${d2}, 0, 0)`
                 }
             }
         }
+
+        // ── family hulls: one faint shared outline per house ─────────────────
+        //  group the cells by compound family; a wall whose cutter is INSIDE
+        //   the family is interior (skipped), everything else — foreign cell,
+        //    frame — is boundary and gets stroked.  Disjoint segments, not a
+        //     traced loop: visually identical, and immune to topology surprises.
+        //  Mid-morph the hulls run one generation stale (they only repaint here
+        //   at settle) — a faint sub-500ms ghost, accepted.
+        const fams: typeof vfams = []
+        if (families_on && L.cells.length > 2) {
+            const fam_of = new Map<string, string>()
+            for (const c of L.cells) {
+                const f = family_of(c.node)
+                if (f) fam_of.set(c.id, f)
+            }
+            const groups = new Map<string, VCell[]>()
+            for (const c of L.cells) {
+                const f = fam_of.get(c.id)
+                if (!f) continue
+                if (!groups.has(f)) groups.set(f, [])
+                groups.get(f)!.push(c)
+            }
+            let fi = 0
+            for (const [fid, members] of groups) {
+                fi++
+                if (members.length < 2) continue   // a family of one is just its cell
+                const inside = new Set(members.map(m => m.id))
+                let d = ''
+                for (const m of members)
+                    for (let k = 0; k < m.inset.length; k++) {
+                        const srcid = m.edge_src[k]
+                        if (srcid && inside.has(srcid)) continue   // interior wall
+                        const a = m.inset[k], b = m.inset[(k + 1) % m.inset.length]
+                        d += `M${P(a.x, a.y)}L${P(b.x, b.y)}`
+                    }
+                if (d) fams.push({ id: fid, d, color: FAM_COLORS[fi % FAM_COLORS.length] })
+            }
+        }
+        vfams = fams
         // a seed whose cell got swallowed falls back to plain node-centering
         for (const s of L.seeds) {
             if (cell_by_id.has(s.id)) continue
@@ -1208,7 +1399,8 @@
             if (!el) continue
             el.style.clipPath = ''; el.style.width = ''; el.style.height = ''; el.style.maxWidth = ''
             const inner = el.firstElementChild as HTMLElement | null
-            if (inner) inner.style.transform = ''
+            if (inner) { inner.style.transform = ''; inner.style.width = ''; inner.style.maxWidth = '' }
+            wrap_applied.delete(s.id)
             el.style.left = `${s.x - el.offsetWidth / 2}px`
             el.style.top  = `${s.y - el.offsetHeight / 2}px`
         }
@@ -1296,13 +1488,15 @@
         cancelAnimationFrame(morph_raf)
         vcells = []
         vtips = []
+        vfams = []
         shown_pts.clear()
         shown_color.clear()
+        wrap_applied.clear()
         for (const el of overlays.values()) {
             if (!el.classList.contains('stuff-overlay')) continue
             el.style.clipPath = ''; el.style.width = ''; el.style.height = ''; el.style.maxWidth = ''
             const inner = el.firstElementChild as HTMLElement | null
-            if (inner) inner.style.transform = ''
+            if (inner) { inner.style.transform = ''; inner.style.width = ''; inner.style.maxWidth = '' }
         }
         reposition_overlays()
     }
@@ -1333,6 +1527,8 @@
             cy.elements().remove()
             clear_all_overlays()
             saw_stuffy = false   // a fresh graph re-decides the voronoi auto-arm
+            node_src.clear()
+            proper_mounted.clear()
         }
 
         // 1. remove stale edges
@@ -1350,6 +1546,8 @@
             if (!migrating.has(rid)) {
                 cy.getElementById(rid).remove()
                 remove_overlay(rid)
+                node_src.delete(rid)
+                proper_mounted.delete(rid)
             }
         }
  
@@ -1395,14 +1593,23 @@
             const overlay_str  = nd.sc.overlay_str  as string | undefined
             const overlay_kind = nd.sc.overlay_kind as string | undefined
             const overlay_bg   = nd.sc.overlay_bg   as string | undefined
+            const src = (nd as any).c?.source_n as TheC | undefined
+            if (src) node_src.set(id, src)   // rides every upsert now — the render-side classifiers read it
             if (overlay_kind === 'stuff') {
-                const src = (nd as any).c?.source_n as TheC | undefined
                 // c.stuffy exists ONLY under the %crushCyto-gated crusher — a crushed
                 //  world auto-arms the voronoi render (voronoi_pref still overrides)
                 if ((src as any)?.c?.stuffy) saw_stuffy = true
+                proper_mounted.delete(id)    // wave-owned now; toggling proper off must not strip it
                 create_stuff_overlay(id, src, overlay_bg, !!nd.sc.overlay_self)
             } else if (overlay_str != null) {
                 create_overlay(id, overlay_str, overlay_kind ?? 'code', overlay_bg)
+            } else if (proper_on && is_proper(src)) {
+                // properCellable: a wordy loner (%see) gets a self-row Stuffing —
+                //  and thereby a cell — Cytui-local; the wave carried no
+                //   overlay_kind for it, so no snap can tell
+                create_stuff_overlay(id, src, undefined, true)
+                proper_mounted.add(id)
+                cy.getElementById(id).style('label', '')
             }
         }
  
@@ -1597,8 +1804,15 @@
     onMount(() => {
         const stashed_v = (H as any).stashed?.Cyto_voronoi
         if (typeof stashed_v === 'boolean') voronoi_pref = stashed_v
+        const stashed_p = (H as any).stashed?.Cyto_properCellable
+        if (typeof stashed_p === 'boolean') proper_pref = stashed_p
+        const stashed_f = (H as any).stashed?.Cyto_families
+        if (typeof stashed_f === 'boolean') families_pref = stashed_f
         cy = cytoscape({
             container,
+            // a livelier wheel: the default 1 needs a whole spin to move; the
+            //  scape wants a flick to matter (owner request 2026-07-06)
+            wheelSensitivity: 2,
             style: [
                 {
                     selector: 'node',
@@ -1694,6 +1908,10 @@
         <button onclick={() => cy?.fit(cy.nodes(), 16)}>⊞</button>
         <button class="v-toggle" class:on={voronoi_on} onclick={toggle_voronoi}
             title="voronoi cells — Cyto lays out, cells render">◈</button>
+        <button class="v-toggle" class:on={proper_on} onclick={toggle_proper}
+            title="properCellable — wordy loners (%see) get a Stuffing, and a cell in voronoi mode">❝</button>
+        <button class="v-toggle" class:on={families_on} onclick={toggle_families}
+            title="family hulls — one faint shared outline per compound house">⬡</button>
         <span class="cytui-vx" title="taller — double the graph height (50vh ↔ 100vh), then re-fit">
             <Vexpandy bind:expanded={tall} />
         </span>
@@ -1730,6 +1948,12 @@
         <svg class="cytui-voronoi" style:opacity={motion_hidden ? 0 : 1}>
             {#if voronoi_on && vcells.length}
                 <rect class="cytui-veil" width={vregion_w || '100%'} height="100%" />
+                <!-- family hulls: behind the cell strokes, faint — a house reads
+                     as one glassworks pane-group without shouting -->
+                {#each vfams as fam (fam.id)}
+                    <path d={fam.d} fill="none" stroke={fam.color}
+                        stroke-opacity="0.38" stroke-width="2.5" stroke-linecap="round" />
+                {/each}
                 {#each vcells as cell (cell.id)}
                     <path d={cell.d}
                         fill={cell.color} fill-opacity="0.13"

@@ -54,21 +54,58 @@ Voro_crush_walk(node, d, stats):
     for (const c of node.o()) {
         let mk = Object.keys(c.sc)[0]
         if (mk === 'w' || mk === 'H' || mk === 'A' || mk === 'Peering' || mk === 'Pier' || mk === 'req' || mk === 'Opt') {
+            let swarm = this.Voro_swarmable(c, mk)
+            if (swarm) {
+                this.Voro_stamp_fold(c, swarm, stats)
+                continue
+            }
             c.c.stuffy = 1
             this.Voro_crush_walk(c, d + 1, stats)
             continue
         }
         let verdict = this.Voro_crushable(c)
         if (verdict) {
-            c.c.stuff = 1
-            c.c.stuffy = 1
-            stats.count = stats.count + 1
-            stats.folded = stats.folded + verdict.n
+            this.Voro_stamp_fold(c, verdict, stats)
             continue
         }
         c.c.stuffy = 1
         this.Voro_crush_walk(c, d + 1, stats)
     }
+
+// Voro_stamp_fold — the one place a fold is stamped: the two view flags plus the fold's LIVE
+//  descriptors (c.fold_kind the dominant child mainkey, c.fold_n the child count) — all c-side,
+//   never snapped.  Cytui reads them via the node's source_n: the kind colours the cell (a fold
+//    wears what is INSIDE it) and the count lifts its seed-weight floor (a bigger family claims
+//     a bigger cell).
+Voro_stamp_fold(c, verdict, stats):
+    c.c.stuff = 1
+    c.c.stuffy = 1
+    c.c.fold_kind = verdict.kind
+    c.c.fold_n = verdict.n
+    stats.count = stats.count + 1
+    stats.folded = stats.folded + verdict.n
+
+// Voro_swarmable — the crush-harder loosening: a STRUCTURAL container normally stays graph (the
+//  skeleton must remain readable), but when its children are a homogeneous SWARM of one noisy
+//   mainkey (>= 3 kids, all %req / %witnessed / %see — same key, varying value, never resolving
+//    as same) the container folds as the group's chunk: the swarm reads as one pane whose
+//     Stuffing rows show the spread, instead of confetti littering the graph.  w/H/A never fold
+//      (they ARE the skeleton).  Strict homogeneity for now — a mixed structural container keeps
+//       its children in the graph.
+Voro_swarmable(c, mk):
+    if (mk === 'w' || mk === 'H' || mk === 'A') return null
+    let N = c.o()
+    if (N.length < 3) return null
+    let noisy = { req: 1, witnessed: 1, see: 1 }
+    let kinds = {}
+    for (const k of N) {
+        let kmk = Object.keys(k.sc)[0]
+        kinds[kmk] = (kinds[kmk] || 0) + 1
+    }
+    let names = Object.keys(kinds)
+    if (names.length !== 1) return null
+    if (!noisy[names[0]]) return null
+    return { kind: names[0], n: N.length }
 
 // Voro_crushable — the rule: fold ANY non-structural container with children.  Even a weakly
 //  motivated Stuffing (mixed keys, one row per group) reads better as one chunk than as confetti.
@@ -95,6 +132,8 @@ Voro_crush_clear(node, d):
     if ((d || 0) > 12) return
     delete node.c.stuff
     delete node.c.stuffy
+    delete node.c.fold_kind
+    delete node.c.fold_n
     for (const c of node.o()) this.Voro_crush_clear(c, (d || 0) + 1)
 //#endregion
 

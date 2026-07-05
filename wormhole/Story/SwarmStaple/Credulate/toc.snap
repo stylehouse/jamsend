@@ -1,5 +1,5 @@
 Credulate,of_Book:SwarmStaple
-  GhostInclude:Ghost_N_Peeroleum,dige:f66bad6f34913e3c
+  GhostInclude:Ghost_N_Peeroleum,dige:89f7731b8ad5fae2
   GhostInclude:Ghost_N_Reliable,dige:48e8948c7d8da3ed
   GhostInclude:Ghost_N_Tribunal,dige:df09d03ad06f3d71
   GhostInclude:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
@@ -9,12 +9,12 @@ Credulate,of_Book:SwarmStaple
   GhostInclude:Ghost_M_Crate,dige:c05f526599e015af
   GhostInclude:Ghost_M_Mixer,dige:d5597b5a4132d7f3
   GhostInclude:Ghost_M_Mesh,dige:286eb98843f6e7f9
-  GhostInclude:Ghost_Story_Musuation,dige:690292881024ecaf
+  GhostInclude:Ghost_Story_Musuation,dige:3d02ba802866f433
   GhostInclude:Ghost_S_Swarm,dige:5903f24bde1fb0d7
   GhostInclude:Ghost_Story_Swarmation,dige:fe5cba472157518d
-  GhostInclude:Ghost_V_Voro,dige:c7227025a11ae05e
-  last_ok,at=1783257377.854,ok_pct
-    uses:Ghost_N_Peeroleum,dige:f66bad6f34913e3c
+  GhostInclude:Ghost_V_Voro,dige:07c503eee218bfab
+  last_ok,at=1783265664.72,ok_pct
+    uses:Ghost_N_Peeroleum,dige:89f7731b8ad5fae2
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
@@ -24,7 +24,7 @@ Credulate,of_Book:SwarmStaple
     uses:Ghost_M_Crate,dige:c05f526599e015af
     uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3
     uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
-    uses:Ghost_Story_Musuation,dige:690292881024ecaf
+    uses:Ghost_Story_Musuation,dige:3d02ba802866f433
     uses:Ghost_S_Swarm,dige:5903f24bde1fb0d7
     uses:Ghost_Story_Swarmation,dige:fe5cba472157518d
-    uses:Ghost_V_Voro,dige:c7227025a11ae05e
+    uses:Ghost_V_Voro,dige:07c503eee218bfab

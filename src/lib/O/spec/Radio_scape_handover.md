@@ -71,10 +71,15 @@ The whole point of the recent work: the crush stopped being a music-test fixture
     nav (`Radio_spec §5.1`) + real Piers off the Swarm side (`Swarm_spec §6`), NO Lies+Lang, a background
      probe that surfaces coherent audio/network errors. This is the real destination; the demo Books were
       the render's gauges.
-4. **The grind list is `Voro_todo.md`** — render polish and the bigger render ideas (wrap-width from
-    the cell, angle, fold colour|size, family outlines, crush-harder grouping, in-cell microcosms,
-     pinch|spread, the SVG Stuffing rebuild) live there now, briefed for cold pickup with the
-      metaphysics up top. Per-genus colour + fold-count size are its tasks 3.
+4. **The grind list is `Voro_todo.md`** — and most of it LANDED 2026-07-06 (all browser-unverified):
+    tasks 1-4 BUILT (wrap-width from the cell, capped molding angle, fold colour|size off
+     `c.fold_kind`/`c.fold_n`, ⬡ family hulls via `edge_src`), task 5 part-built
+      (`Voro_swarmable` folds homogeneous noisy swarms under structural containers; gen recompiled
+       via LocalGen — the editor tab was down, so the live flock still runs the OLD crusher until
+        reload). Tasks 6/7/8 have design notes awaiting agreement: `Voro_microcosm.md` (no second
+         w:Cyto — microcosms crunch subsets in-pixel), `Voro_pinch.md`, `Voro_svg_stuffing.md`.
+          Also new: ❝ properCellable (a %see gets a Stuffing + cell; `source_n` now rides every
+           wave upsert), wheelSensitivity 2, the rack shelved behind `RACK_ON=false`.
 
 ## The disputed thread — RESOLVED
 
