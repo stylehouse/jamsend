@@ -35,7 +35,7 @@ Waft:Credence
       What:concealment,desc:filling a dropout with real audio beats dropping to silence
         Funkcion:Storying,of_Book:MusuConceal
     What:real music,desc:real track files walked from testsounds and decoded to PCM
-      Funkcion:Storying,of_Book:MusuGenerateTestsMusic,brand_new:1,needsFSA:1
+      Funkcion:Storying,of_Book:MusuGenerateTestsMusic,needsFSA:1
       Funkcion:Storying,of_Book:MusuReco,needMusic:1
       What:replication,desc:paginated C** replication of a music library across two Piers
         Funkcion:Storying,of_Book:MusuBounce,needMusic:1
@@ -80,8 +80,8 @@ Waft:Credence
     Funkcion:Storying,of_Book:AwFloat,brand_new:1
     What:Voro,desc:the Voronoi-Cyto render — Cyto's force layout reinterpreted as power-diagram cells with the crushed Stuffings molded into a rosette
       Funkcion:StoryTimes
-      Funkcion:Storying,of_Book:VoroMitosis,brand_new:1
-      Funkcion:Storying,of_Book:VoroScape,brand_new:1
+      Funkcion:Storying,of_Book:VoroMitosis
+      Funkcion:Storying,of_Book:VoroScape
   What:Misc,inline:1,desc:editor codecs LangHold-checkout peering export ttl-waits and reactive-Waft stability
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:Editron

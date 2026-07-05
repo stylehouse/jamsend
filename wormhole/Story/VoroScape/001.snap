@@ -1,0 +1,7 @@
+Snap:H
+  H:VoroScape,Run
+    A:VoroScape
+      self,round	{"mung":["age"]}
+      w:VoroScape
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

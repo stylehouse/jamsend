@@ -60,6 +60,7 @@
         'Ghost/Story/Peregrination.g',  // the p2p test — first of a new kind; more pile on here
         
         'Ghost/M/Radiola.g',            // music-piracy spine — the ACK-backpressure spool (slice 1)
+        'Ghost/M/Sound.g',              // audio engine — synth PCM / measure-entropy / the starving live-stream pump (ex-Musuation reality)
         'Ghost/M/Crate.g',              // crate-digging — walk a music collection → records → the radiostock override
         'Ghost/M/Mixer.g',              // cellular mixer — beat detection, beatmatch, multi-cell sum, crossfade (stage 6)
         'Ghost/M/Mesh.g',               // the sync that sees itself — replicas/edges, cheapest-route, multicast stretch (8+9)

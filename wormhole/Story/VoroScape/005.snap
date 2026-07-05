@@ -1,0 +1,20 @@
+Snap:H
+  H:VoroScape,Run
+    A:VoroScape
+      self,round=5	{"mung":["age"]}
+      w:VoroScape
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Artist,name:Moonlit
+          Track,title:Tide
+          Track,title:Halo
+        Artist,name:Fernway
+          Track,title:Root
+          Track,title:Frond
+        Artist,name:Voxhall
+          Track,title:Echo
+        Peer,name:Bo
+          Share,track:Tide
+          Share,track:Root
+          Share,track:Echo
+        see:a friend leaves and the hub cools — the shared track drops to one and a track only she lit goes dark

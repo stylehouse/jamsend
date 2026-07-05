@@ -6,7 +6,7 @@
 //      Pure verbs — no %req self-installs, no scenario; a Book or the live deck CALLS these (the "code and
 //       data, separately" doctrine — beatmatch is arithmetic over rendered audio, not a req pile).
 //
-//  WHY synth-with-a-beat: tempo detection needs ONSETS to find.  Musu_synth is a held chord (no beat), so
+//  WHY synth-with-a-beat: tempo detection needs ONSETS to find.  Sound_synth is a held chord (no beat), so
 //   Mix_synth_beat lays a percussive kick on a real beat grid under a quiet tonal bed.  Then Mix_tempo
 //    actually RECOVERS the bpm from rendered PCM, and beatmatch is a falsifiable claim (bend B by bpmA/bpmB
 //     and B re-measures at bpmA), not an assertion about numbers we typed.

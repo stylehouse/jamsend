@@ -1,0 +1,16 @@
+Snap:H
+  H:VoroScape,Run
+    A:VoroScape
+      self,round=2	{"mung":["age"]}
+      w:VoroScape
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Artist,name:Moonlit
+          Track,title:Tide
+          Track,title:Halo
+        Artist,name:Fernway
+          Track,title:Root
+          Track,title:Frond
+        Artist,name:Voxhall
+          Track,title:Echo
+        see:the library stands — three artists and five tracks — a shelf of glass with no light through it yet

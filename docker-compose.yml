@@ -120,8 +120,8 @@ services:
       #   runc create the target as a directory, which then cannot take the mount.
       #   Create the blank once with: touch .blank   (it is safe to commit).
       #  To hide all of ty/ instead, replace these two with: - /app/ty
-      - ./.claude/.blank:/app/ty/.env.chrome-profiles:ro
-      - ./.claude/.blank:/app/ty/droidlounge/.env.chrome-profiles:ro
+      - ./.claude/.blankdir:/app/ty/.env.chrome-profiles:ro
+      - ./.claude/.blankdir:/app/ty/droidlounge/.env.chrome-profiles:ro
     environment:
       - CLAUDE_CONFIG_DIR=/home/node/.claude
     env_file:

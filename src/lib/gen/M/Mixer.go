@@ -8,17 +8,17 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Mixer(): string { return 'a4a24e00de642d18' },
+    Ghostmeta_Ghost_M_Mixer(): string { return 'd5597b5a4132d7f3' },
 
 // Mixer.g — the CELLULAR music world: many sound-sources at once, pitch/rate-bent to mix.  Stage 6 of the
-//  jamsend platform (Musuation.g MusuCrate_filaments).  A "Cell" is one playing source (one Audiolet at
+//  jamsend platform (Radio_spec §5, the platform stages).  A "Cell" is one playing source (one Audiolet at
 //   run time; here a {chunks,rate,gain} descriptor an OfflineAudioContext renders).  N Cells sum at the
 //    one destination — that's the mix.  This ghost is the REAL software the DJ deck rides: beat detection,
 //     beatmatch (the rate that aligns two tempos), the multi-cell sum render, and an equal-power crossfade.
 //      Pure verbs — no %req self-installs, no scenario; a Book or the live deck CALLS these (the "code and
 //       data, separately" doctrine — beatmatch is arithmetic over rendered audio, not a req pile).
 //
-//  WHY synth-with-a-beat: tempo detection needs ONSETS to find.  Musu_synth is a held chord (no beat), so
+//  WHY synth-with-a-beat: tempo detection needs ONSETS to find.  Sound_synth is a held chord (no beat), so
 //   Mix_synth_beat lays a percussive kick on a real beat grid under a quiet tonal bed.  Then Mix_tempo
 //    actually RECOVERS the bpm from rendered PCM, and beatmatch is a falsifiable claim (bend B by bpmA/bpmB
 //     and B re-measures at bpmA), not an assertion about numbers we typed.

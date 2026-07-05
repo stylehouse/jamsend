@@ -1,7 +1,7 @@
 // Crate.g — rifling through a music collection.  A modern port of the old Directory.svelte tree-walk +
 //  Agency.svelte's meander() random-walk, redesigned for THIS platform: raw File System Access API (no
 //   lib/p2p DirectoryListing/DirectoryShare), C particles for the tree, and a feed straight into the
-//    radiostock OVERRIDE seam (Ghost/Story/Musuation.g Musu_stock_chunk reads {kind, chunks}) so the
+//    radiostock OVERRIDE seam (Ghost/M/Sound.g Sound_stock_chunk reads {kind, chunks}) so the
 //     audio Books stream REAL records instead of synth.  Pure verbs — no %req self-installs here; a Book
 //      or the app CALLS these on demand.
 //
@@ -132,7 +132,7 @@ Crate_meta_from_name(name):
     return { artist: base.slice(0, dash), title: base.slice(dash + 3) }
 
 // Crate_radiostock — wrap a decoded %record's chunks as a radiostock SOURCE for the override seam
-//  (Musu_stock_chunk reads {kind, chunks}).  Set H.c.radiostock_override = this and every audio Book
+//  (Sound_stock_chunk reads {kind, chunks}).  Set H.c.radiostock_override = this and every audio Book
 //   streams THIS real track instead of synth.  null if the record isn't decoded.
 Crate_radiostock(rec):
     let chunks = rec && rec.c.chunks

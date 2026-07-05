@@ -1,0 +1,20 @@
+Snap:H
+  H:VoroScape,Run
+    A:VoroScape
+      self,round=6	{"mung":["age"]}
+      w:VoroScape
+        self,round=6	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Artist,name:Moonlit
+          Track,title:Tide
+          Track,title:Halo
+        Artist,name:Fernway
+          Track,title:Root
+          Track,title:Frond
+        Artist,name:Voxhall
+          Track,title:Echo
+        Peer,name:Bo
+          Share,track:Tide
+          Share,track:Root
+          Share,track:Echo
+        see:the crush folds every artist and friend into one stuffed pane — the graph of music arms as stained glass

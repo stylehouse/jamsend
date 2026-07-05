@@ -14,6 +14,8 @@
     //    · ONE House's UIs at a time, fullscreen — except UI:Lies, which stays hidden even in
     //       its own view until called up (the ⌐Lies chip), and UI:Pantheate-include (the
     //        editor-compile artifact), suppressed until it sprouts from a real run.
+    //    · a ▦ toggle escapes back to the ORIGINAL view — the sprawl: EVERY House's UIs dumped
+    //       in order down one page (Lies rides too).  The choice lives in the stash, so it sticks.
     //    · the universal searchbar rides the top bar; a hit can be PINNED into the loose
     //      space at the right of the code — the pin rail.  (Folding pins into the
     //      DocMinimap proper is the natural next hop; the rail IS that space for now.)
@@ -50,6 +52,17 @@
     )
     let active = $derived(houses.find(h => h.c.ip === active_ip))
 
+    // sprawl — the escape hatch back to the ORIGINAL view: every House's UIs dumped in
+    //  order down one gutsy page, no switcher filter.  A workspace choice, so it lives in
+    //   the stash (reactive $state on the House, like showC) and survives a reload; the ▦
+    //    button in the top bar toggles it.  1-or-absent, matching toggle_C.
+    let sprawl = $derived(!!H?.stashed?.BigWordland_sprawl)
+    function toggle_sprawl() {
+        if (!H?.stashed) return
+        if (H.stashed.BigWordland_sprawl) delete H.stashed.BigWordland_sprawl
+        else H.stashed.BigWordland_sprawl = 1
+    }
+
     // the action-button rack hides until the ⚙ cog beside the active chip asks for it
     let show_actions = $state(false)
 
@@ -71,7 +84,8 @@
     //     switch to the House that owns them.
     function ui_hidden(kind: string): boolean {
         if (kind === 'Pantheate-include') return true
-        if (kind === 'Lies') return !show_lies
+        // Lies stays folded unless summoned — but the sprawl dumps everything, so it rides too
+        if (kind === 'Lies') return !(show_lies || sprawl)
         return false
     }
 
@@ -127,6 +141,11 @@
                 {/if}
             {/each}
         </div>
+        <button class="bw-sprawl-btn" class:on={sprawl}
+                title={sprawl
+                    ? 'sprawl: every House’s UIs dumped in order — click for the one-thing switcher'
+                    : 'sprawl — dump every House’s UIs down one page (the original view)'}
+                onclick={toggle_sprawl}>▦</button>
         <button class="bw-lies-chip" class:on={show_lies}
                 title="call Lies up — the straight Liesui, hidden by default in the room"
                 onclick={() => show_lies = !show_lies}>⌐ Lies</button>
@@ -148,9 +167,10 @@
         </div>
     {/if}
 
-    <!-- the room — ONE House fullscreen (the show-one-thing view); Lies only when called up -->
-    <div class="bw-room" class:bw-railed={pins.length > 0}>
-        {#each houses.filter(h => h.c.ip === active_ip) as house (house.c.ip)}
+    <!-- the room — ONE House fullscreen (the show-one-thing view), OR the sprawl: every
+         House's UIs dumped in order down the page.  Lies only when called up (or in sprawl). -->
+    <div class="bw-room" class:bw-railed={pins.length > 0} class:bw-sprawl={sprawl}>
+        {#each (sprawl ? houses : houses.filter(h => h.c.ip === active_ip)) as house (house.c.ip)}
             {#each house.UIs.ob({ UI: 1 }) as uiC (keyser(uiC.sc))}
                 {#if !ui_hidden(uiC.sc.UI)}
                     <section class="bw-piece" class:bw-piece-lies={uiC.sc.UI === 'Lies'}>
@@ -248,6 +268,16 @@
         pointer-events: none; white-space: nowrap;
     }
 
+    /* ▦ the sprawl toggle — flip between the one-thing switcher and the dump-it-all page */
+    .bw-sprawl-btn {
+        background: none; border: 1px solid rgba(120, 140, 195, 0.25); border-radius: 6px;
+        cursor: pointer; font-family: inherit; font-size: 0.78rem; line-height: 1;
+        color: rgba(150, 170, 205, 0.7); padding: 0.1rem 0.4rem; flex: none;
+        transition: color 0.12s, background 0.12s, border-color 0.12s;
+    }
+    .bw-sprawl-btn:hover { color: #e4ecff; border-color: rgba(150, 190, 240, 0.5); }
+    .bw-sprawl-btn.on { color: #cfe0ff; background: rgba(120, 150, 210, 0.16); border-color: rgba(150, 190, 240, 0.45); }
+
     .bw-lies-chip {
         background: none; border: 1px solid rgba(120, 140, 195, 0.25); border-radius: 6px;
         cursor: pointer; font-family: inherit; font-size: 0.74rem;
@@ -257,9 +287,11 @@
     .bw-lies-chip.on { color: #cfe0ff; background: rgba(120, 150, 210, 0.16); }
     .bw-search { flex: 1; min-width: 14rem; max-width: 34rem; margin-left: auto; }
 
-    /* the opened House's panel — its button rack, dropped just under the toc */
+    /* the opened House's panel — its button rack, dropped just under the toc.  IN NORMAL FLOW
+       (not sticky): its height PUSHES the room below it down, instead of floating over the UI
+        and covering it once you scroll into the editor.  It scrolls away with the page. */
     .bw-panel {
-        position: sticky; top: 2.4rem; z-index: 55;
+        position: relative; z-index: 1;
         display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
         padding: 0.45rem 0.7rem; margin: 0.4rem 0;
         background: rgba(18, 19, 30, 0.96);

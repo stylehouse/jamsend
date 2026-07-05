@@ -6,6 +6,8 @@ story:AwFloat
       meta:label,fmt:%s,keys:w
     matstyle:see
       style:background-color,v:#2fb155
+    matstyle:peek
+      style:background-color,v:#8e29d6
   Plan
   Opt
     For
@@ -15,8 +17,10 @@ story:AwFloat
       sample=0.005,at=1782448668
       sample=0.005,at=1782449510
       sample=0.003,at=1782450780
+      sample=0.001,at=1783244240
     TimeTotal:step,avg=0.004
       sample=0.005,at=1782448668
       sample=0.005,at=1782449510
       sample=0.003,at=1782450780
+      sample=0.001,at=1783244240
   step,dige:a0a0a0a0a0a0a0a0

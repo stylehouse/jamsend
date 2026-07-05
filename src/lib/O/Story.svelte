@@ -164,7 +164,7 @@
     },
 
     // Story_demand_audio(w, secs, work) — the HARD audio demand.  A Book step whose ASSERTION needs the
-    //  real voice calls this (NOT the soft Musu_gat, which just returns null and the caller skips).  The
+    //  real voice calls this (NOT the soft Sound_gat, which just returns null and the caller skips).  The
     //   requirement is DISCOVERED by the call — Story needs no needs:audio tag on the Book.
     //    live context  → run work(gat) now, held by expecting()'s ttlilt for its wall-clock extent.
     //    cold context  → surface the "open share" gate on THIS tab (AudioContext_wanted, the very event

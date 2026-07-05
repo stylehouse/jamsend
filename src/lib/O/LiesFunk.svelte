@@ -290,6 +290,7 @@ await M.eatfunc({
     //   sel filters by the landed result (of_dock===path | of_Book===book); absent = every cell.
     //    Walks every Waft in w — a Storying cell nests under a What / a CreduFunk, anywhere on it.
     Lies_reflect_storying(w: TheC, sel?: { path?: string, book?: string }): void {
+        const H = this as House
         const match = (f: TheC) =>
             !sel ? true
             : (sel.path != null && f.sc.of_dock === sel.path) ||
@@ -300,8 +301,14 @@ await M.eatfunc({
                     storying_run(host, k, w)
                     // brand_new clears on the FIRST green verdict — a Book proven for the first time is no
                     //  longer new.  Fired here (the run_result EVENT), NOT in storying_run (off-snap) nor a
-                    //   pump; delete is query+snap-safe, and the authored board bakes the removal on commit.
-                    if (k.sc.brand_new && (k.c.verdict as any)?.phase === 'good') { delete k.sc.brand_new; k.bump_version() }
+                    //   pump; delete is query+snap-safe.  Then PERSIST the vanish: enWaft+save the host Waft
+                    //    so the ✦NEW stays gone across a reload instead of waiting on a hand-commit of the
+                    //     board.  Lies_waft_save throttles per Waft path, so a board that greens several
+                    //      cells in one pass collapses to a single write.
+                    if (k.sc.brand_new && (k.c.verdict as any)?.phase === 'good') {
+                        delete k.sc.brand_new; k.bump_version()
+                        H.Lies_waft_save(w, host)
+                    }
                 }
                 walk(host, k)
             }

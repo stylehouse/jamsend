@@ -11,7 +11,7 @@ import { Selection } from "$lib/mostly/Selection.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Musuation(): string { return 'dfb009b8293054f2' },
+    Ghostmeta_Ghost_Story_Musuation(): string { return '690292881024ecaf' },
 
 // Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Music_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
@@ -36,287 +36,10 @@ import { Selection } from "$lib/mostly/Selection.svelte.ts"
 // Reuse the REAL audio voice (the same SoundSystem/Audiolet the streaming app plays through), not a
 //  fresh graph.  Its gainNode->gainNode2->destination chain gives mute for free (gainNode2=0), and the
 //   tap()/pcm_buffer()/schedule() added beside it let synth PCM ride the real clock + a real analyser.
-//#region reality — the streaming + audio mechanics BENEATH the tests (shared, real software; NO test
-//  scaffolding here, NO per-Book scenario).  The cursor spine is Radiola.g; this region is the AUDIO
-//   (synth/measure) + the rate-driven live-stream pump that actually STARVES.  A Book composes these from
-//    the outside; it never reaches inside them.
-// Musu_synth — generate one CHUNK of real PCM: an A-ish chord under a slow envelope + a seeded per-seq
-//  dither (deterministic, no Math.random) so the byte histogram spreads (~7 bits/byte).  Float32Array
-//   (object → rides .c, never .sc); base = seq*CHUNK → one continuous stream, no seams.
-Musu_synth(seq) {
-    let CHUNK = 2400
-    let SR = 48000
-    let buf = new Float32Array(CHUNK)
-    let base = seq * CHUNK
-    let r = (((seq + 1) * 2654435761) >>> 0)
-    let partials = [220, 277.18, 329.63, 415.30]
-    let i = 0
-    while (i < CHUNK) {
-        let t = (base + i) / SR
-        let s = 0
-        for (const f of partials) s += Math.sin(2 * Math.PI * f * t)
-        s = (s / partials.length) * (0.4 + 0.3 * Math.sin(2 * Math.PI * 0.7 * t))
-        r = (r * 1664525 + 1013904223) >>> 0
-        s += (r / 4294967296 - 0.5) * 0.03
-        buf[i] = Math.max(-1, Math.min(1, s))
-        i = i + 1
-    }
-    return buf
-
-},
-// Musu_silence — a CHUNK of zeros: the negative-control payload (proves the gate has teeth) and what a
-//  starved playhead renders when it outruns the decode frontier (an underrun hole).
-Musu_silence() {
-    return new Float32Array(2400)
-
-},
-// ── radiostock: the audio SOURCE seam (synth today; real directory-walked records | an override
-//  collection tomorrow).  The caster + the measure-Books pull chunks THROUGH this, so swapping in real
-//   records (or a test-fixture override) re-grounds EVERY audio test at once — no Book learns where its
-//    audio came from.  Mirrors Radios.svelte's radiostock, the catalog of records.
-// Musu_radiostock(kind) -> a stock descriptor.  'silence' is its own (zero) source; anything else is the
-//  default synth source UNLESS an override is installed (H.c.radiostock_override = a {chunk(seq)->Float32Array}
-//   or {chunks:[...]} the test collection fills).  The override is the "override radiostock" hook awaited
-//    for the real music-directory walk.
-Musu_radiostock(kind) { const H = this;
-    if (kind === 'silence') return { kind: 'silence' }
-    let over = H.c.radiostock_override
-    if (over) return over
-    return { kind: 'synth' }
-
-},
-// Musu_stock_chunk(stock, seq) -> the PCM (Float32Array) for one chunk of the stock.  synth|silence are
-//  computed here; an override supplies chunk(seq) or a chunks[] array (e.g. decoded real records).
-Musu_stock_chunk(stock, seq) {
-    if (!stock || stock.kind === 'synth') return this.Musu_synth(seq)
-    if (stock.kind === 'silence') return this.Musu_silence()
-    if (typeof stock.chunk === 'function') return stock.chunk(seq)
-    if (stock.chunks) return stock.chunks[seq % stock.chunks.length]
-    return this.Musu_synth(seq)
-
-},
-// Musu_synth_tone — Musu_synth generalised to any ROOT, so a handful of records sound distinct (different
-//  chords) — the dither keeps the byte histogram wide.  One CHUNK of Float32 PCM.
-Musu_synth_tone(seq, root) {
-    let CHUNK = 2400
-    let SR = 48000
-    let buf = new Float32Array(CHUNK)
-    let base = seq * CHUNK
-    let r = (((seq + 1) * 2654435761) >>> 0)
-    let partials = [root, root * 1.26, root * 1.5, root * 2]
-    let i = 0
-    while (i < CHUNK) {
-        let t = (base + i) / SR
-        let sm = 0
-        for (const f of partials) sm += Math.sin(2 * Math.PI * f * t)
-        sm = (sm / partials.length) * (0.4 + 0.3 * Math.sin(2 * Math.PI * 0.7 * t))
-        r = (r * 1664525 + 1013904223) >>> 0
-        sm += (r / 4294967296 - 0.5) * 0.03
-        buf[i] = Math.max(-1, Math.min(1, sm))
-        i = i + 1
-    }
-    return buf
-
-},
-// Musu_synth_records — instantly mint `n` READY %record sources, each a distinct synth timbre and `secs`
-//  long, with all PCM pre-synthesised on c.chunks.  SAME shape Crate_decode produces, so they feed the
-//   radiostock identically to real files (Crate_radiostock(rec) wraps either) — but with zero files, zero
-//    decode, zero wait.  Returns the records.
-Musu_synth_records(w, n, secs) {
-    let SR = 48000
-    let CHUNK = 2400
-    let roots = [220, 261.63, 329.63, 392, 440, 174.61]
-    let recs = []
-    let k = 0
-    while (k < n) {
-        let root = roots[k % roots.length]
-        let nchunks = Math.ceil(secs * SR / CHUNK)
-        let chunks = []
-        let s = 0
-        while (s < nchunks) {
-            chunks.push(this.Musu_synth_tone(s, root))
-            s = s + 1
-        }
-        let rec = w.i({ record: 1, name: 'synth-' + Math.round(root) + 'hz', artist: 'Synth', title: Math.round(root) + 'Hz', nchunks: nchunks, seconds: +secs.toFixed(2) })
-        rec.c.up = w
-        rec.c.chunks = chunks
-        recs.push(rec)
-        k = k + 1
-    }
-    return recs
-
-},
-// Musu_measure — end-of-pipe analysis (NOT byte-exact; a stream is dynamic).  bits = Shannon entropy/byte
-//  over the int16 histogram (noisy ≈7+, a \x00 stream ≈0); gaps = ~50ms windows that fell near-silent
-//   (an underrun hole or pure silence); rms = overall level.
-Musu_measure(pcm) {
-    let bytes = new Uint8Array(pcm.length * 2)
-    let dv = new DataView(bytes.buffer)
-    let sumSq = 0
-    let i = 0
-    while (i < pcm.length) {
-        let s = Math.max(-1, Math.min(1, pcm[i]))
-        dv.setInt16(i * 2, Math.round(s * 32767) | 0, true)
-        sumSq += s * s
-        i = i + 1
-    }
-    let hist = new Array(256).fill(0)
-    i = 0
-    while (i < bytes.length) {
-        hist[bytes[i]] += 1
-        i = i + 1
-    }
-    let H = 0
-    for (const c of hist) {
-        if (c) {
-            let p = c / bytes.length
-            H -= p * Math.log2(p)
-        }
-    }
-    // gaps — only a SUSTAINED delivery dropout counts, so real music's dynamics don't read as gaps.  A
-    //  window (~50ms) is "silent" below FLOOR (lowered to 0.001 — a true hole renders exact zeros, where
-    //   even quiet music sits well above), and a gap is only counted once a RUN of 5 silent windows in a
-    //    row (≈250ms) forms — then each further silent window adds to it, so the count stays duration-
-    //     proportional (glide shortening a gap still shows).  Musical quiet (brief, or above the floor) is
-    //      ignored; a real ≥250ms silence is what scores.  // TODO refine: per-window vs perceptual floor.
-    let W = 2400
-    let FLOOR = 0.001
-    let RUN = 5
-    let gaps = 0
-    let run = 0
-    i = 0
-    while (i < pcm.length) {
-        let e = 0
-        let end = Math.min(pcm.length, i + W)
-        let j = i
-        while (j < end) {
-            e += pcm[j] * pcm[j]
-            j = j + 1
-        }
-        let silent = Math.sqrt(e / Math.max(1, end - i)) < FLOOR
-        if (silent) {
-            run = run + 1
-            if (run === RUN) gaps = gaps + RUN
-            else if (run > RUN) gaps = gaps + 1
-        } else {
-            run = 0
-        }
-        i = i + W
-    }
-    return { bits: +H.toFixed(2), rms: +Math.sqrt(sumSq / Math.max(1, pcm.length)).toFixed(4), gaps: gaps }
-
-},
-// Musu_gat — the REAL audio device, stood up once and cached on H.c (object → never snapped).  Returns
-//  null where there is no Web Audio (jsdom / a headless CredRunner) so a Book can skip cleanly; in the
-//   browser it inits the context (resumes a suspended one once the page has had a user gesture — the run
-//    click counts) and also fires AudioContext_wanted so the existing GatEnabler tap-to-unmute can help.
-async Musu_gat() { const H = this;
-    let g = H.top_House().c.musu_gat
-    if (g && g.AC_ready) return g
-    if (typeof AudioContext === 'undefined') return null
-    if (!g) {
-        g = new SoundSystem({})
-        H.top_House().c.musu_gat = g
-    }
-    if (!g.AC_ready) {
-        await g.init()
-    }
-    return g.AC_ready ? g : null
-
-},
-// Musu_real_stream — REALITY, now literal: play `total` synth chunks through the real voice and measure
-//  what the graph ACTUALLY produced.  A chunk is "delivered" every `deliver_ms` of WALL CLOCK and laid on
-//   the AudioContext timeline at max(timeline-end, now): deliver faster than a chunk plays and the stream
-//    is seamless; deliver slower and `now` overtakes the end — a REAL silent gap, the underrun, opened by
-//     the audio clock (no cursor anywhere).  An analyser tapped PRE-mute is sampled every ~20ms, so the
-//      measurement reads the true output (gaps and all) whether or not it is audible.  kind 'silence'
-//       feeds zero buffers — the negative control down the SAME pipe.  `glide` ON consults Glide_decide
-//        each tick (frontier = audio left ahead of the playhead) and plays the next chunk at that rate —
-//         backing smoothly away from the live edge instead of slamming into silence.  Returns the coarse
-//          signal readout PLUS the rate trajectory (min_rate / final_rate / flips) the controller drew.
-async Musu_real_stream(gat, kind, total, deliver_ms, mute, glide, stock) {
-    let AC = gat.AC
-    if (!AC) return { bits: 0, rms: 0, gaps: 0, played: 0, of: total, underran: 0, min_rate: 1, final_rate: 1, flips: 0 }
-    let aud = gat.new_audiolet()
-    let analyser = aud.tap()
-    if (mute) aud.mute()
-    let SR = 48000
-    let silent = (kind === 'silence')
-    let end = AC.currentTime
-    let scheduled = 0
-    let underran = 0
-    // the Glide trajectory — plain data the CALLER owns (the policy in Radiola.g is stateless): `rate` is
-    //  the live playback rate, min_rate/final_rate/flips are what the controller drew over the run.
-    let rate = 1
-    let min_rate = 1
-    let final_rate = 1
-    let flips = 0
-    let last_dir = 0
-    // deliver+schedule one chunk: a `now` past the timeline end means delivery fell behind playback, so
-    //  this chunk starts after a real silent gap — count it (never the first, which always starts at now).
-    //   The chunk plays at the current Glide `rate` (rate<1 stretches it, advancing the playhead slower).
-    let place_one = (seq) => {
-        let pcm = stock ? this.Musu_stock_chunk(stock, seq) : (silent ? this.Musu_silence() : this.Musu_synth(seq))
-        let buf = aud.pcm_buffer(pcm, SR)
-        let now = AC.currentTime
-        let at = Math.max(end, now)
-        if (scheduled > 0 && at > end + 0.0005) underran = underran + 1
-        end = aud.schedule(buf, at, rate)
-        scheduled = scheduled + 1
-    }
-    let frames = []
-    let delivered = 0
-    let next_deliver = AC.currentTime
-    let sample_ms = 20
-    let guard = 0
-    let cap = Math.ceil((total * deliver_ms + 1500) / sample_ms) + 50
-    while (guard < cap) {
-        guard = guard + 1
-        let now = AC.currentTime
-        // recompute the rate BEFORE delivering, so this tick's chunk lands at the fresh rate.  frontier =
-        //  seconds of scheduled audio still ahead of the playhead; the controller slows as it nears zero.
-        if (glide) {
-            let frontier = end - now
-            let nr = this.Glide_decide(frontier, rate, delivered >= total)
-            if (nr < rate - 1e-9) {
-                if (last_dir >= 0) flips = flips + 1
-                last_dir = -1
-            }
-            if (nr > rate + 1e-9) {
-                if (last_dir <= 0) flips = flips + 1
-                last_dir = 1
-            }
-            rate = nr
-            if (rate < min_rate) min_rate = rate
-            final_rate = rate
-        }
-        while (delivered < total && now >= next_deliver) {
-            place_one(delivered)
-            delivered = delivered + 1
-            next_deliver = next_deliver + deliver_ms / 1000
-        }
-        // done once every chunk is delivered and the last has finished — break BEFORE this pass's sample
-        //  so post-stream silence never counts as a gap (leading silence is skipped too: the first sample
-        //   is taken AFTER the first await, by when a buffer is already sounding).
-        if (delivered >= total && now >= end - 0.03) break
-        await new Promise(r => setTimeout(r, sample_ms))
-        let f = new Float32Array(analyser.fftSize)
-        analyser.getFloatTimeDomainData(f)
-        frames.push(f)
-    }
-    aud.close()
-    let n = 0
-    for (const f of frames) n += f.length
-    let pcm = new Float32Array(n)
-    let o = 0
-    for (const f of frames) {
-        pcm.set(f, o)
-        o += f.length
-    }
-    let sig = this.Musu_measure(pcm)
-    return { bits: sig.bits, rms: sig.rms, gaps: sig.gaps, played: scheduled, of: total, underran: underran, min_rate: +min_rate.toFixed(3), final_rate: +final_rate.toFixed(3), flips: flips }
-},
-//#endregion
+// ── the AUDIO ENGINE moved out to Ghost/M/Sound.g (Radiobuddies regroup — spec/Radiobuddies_handover.md
+//  §5): the Musu_* "reality" verbs are now Sound_*, called cross-ghost — this.Sound_synth / _silence /
+//   _radiostock / _stock_chunk / _synth_tone / _synth_records / _measure / _gat / _real_stream.  (Musu_float
+//    below is NOT part of that slab — it is testkit snap-ordering, so it kept its Musu_ prefix and stayed.)
 
 //#region testkit — generic Book scaffolding (NOT reality, NOT a scenario): how a Book is driven and how
 //  its Run snap is kept readable.  Shared by every Book.
@@ -1216,7 +939,7 @@ async MusuCrowd_order(w) { const H = this;
 //   an analyser (tapped PRE-mute) measures what the graph ACTUALLY produced.  A chunk is delivered every
 //    `deliver_ms` of wall clock; deliver slower than a chunk plays (50ms) and `now` overtakes the timeline
 //     end — a REAL silent gap the analyser reads, the underrun, opened by the audio clock not a cursor.
-//      All the mechanics live in the reality region (Musu_gat/real_stream/synth/measure); this Book just
+//      All the mechanics live in Ghost/M/Sound.g (Sound_gat/real_stream/synth/measure); this Book just
 //       plays three streams and witnesses the difference.  Dispatched by on_step; BROWSER-ONLY (no
 //        AudioContext headless → the Book skips with %skipped:no_audio).  Audible on first verify, then mute.
 //         beat 2  HEALTHY  (deliver 30ms)  → delivery outruns 50ms playback → smooth, gapless, complete
@@ -1233,7 +956,7 @@ MusuSignal(A,w) {
 // MusuSignal_drive — gesture-free OfflineAudioContext gate (skip only where there's NO Web Audio at all,
 //  e.g. a node boot), then dispatch the numbered beats via on_step.  Each beat RENDERS one stream offline
 //   at its delivery rate and measures the real rendered PCM; the witness reads all three afterward.  Was
-//    the ONLINE real-time voice (Musu_real_stream + Musu_gat) — but a headless/dockerised runner has no
+//    the ONLINE real-time voice (Sound_real_stream + Sound_gat) — but a headless/dockerised runner has no
 //     gesture-unlocked audio device, so the online context renders SILENCE (bits=0 everywhere) and every
 //      witness drops.  OfflineAudioContext renders real audio on ANY runner, deterministically — the same
 //       gesture-free path MusuTune/Mix/Edge use.  (Audible real-time playback now lives in MusuRadio.)
@@ -1263,7 +986,7 @@ async MusuSignal_run(w, kind, total, deliver_ms) {
         prof.push(deliver_ms)
         i = i + 1
     }
-    let stock = this.Musu_radiostock(kind)
+    let stock = this.Sound_radiostock(kind)
     let out = await this.Musu_render_offline(total, prof, null, stock, false, 'none')
     w.i({signal: 1, kind: kind, bits: out.bits, gaps: out.gaps, rms: out.rms, played: total, of: total, underran: out.underran})
 
@@ -1325,7 +1048,7 @@ MusuGlide(A,w) {
     })
 },
 // MusuGlide_drive — gesture-free OfflineAudioContext gate (skip only where there's NO Web Audio), then
-//  per-beat dispatch off step_n (req-local did_step).  Was the ONLINE real-time voice (Musu_real_stream),
+//  per-beat dispatch off step_n (req-local did_step).  Was the ONLINE real-time voice (Sound_real_stream),
 //   which renders SILENCE on a headless/dockerised runner (no gesture-unlocked device) → fewer_gaps/recovers
 //    drop on bits=0.  Now renders offline like MusuTune — real audio + deterministic on any runner.
 async MusuGlide_drive(w, req) {
@@ -1350,7 +1073,7 @@ async MusuGlide_drive(w, req) {
 async MusuGlide_run(w, kind, glide) {
     let total = 36
     let prof = this.Musu_profile(total, 4242)
-    let stock = this.Musu_radiostock(kind)
+    let stock = this.Sound_radiostock(kind)
     let ctrl = glide ? 'glide' : 'none'
     let out = await this.Musu_render_offline(total, prof, null, stock, false, ctrl)
     w.i({glidesig: 1, kind: kind, gaps: out.gaps, underran: out.underran, min_rate: out.min_rate, final_rate: out.final_rate, flips: out.flips, recovered: out.recovered, bits: out.bits})
@@ -1391,7 +1114,7 @@ MusuGlide_witness(w) {
 //   • DETERMINISM — seed H.prng (prandle) per run, so the perturbation is identical every trial; with the
 //      offline render below, the whole Book is reproducible (stable snaps, no wall-clock jitter to band).
 //   • REAL WEB AUDIO, NO FAKING — every measurement is taken off audio an OfflineAudioContext actually
-//      rendered (the full PCM, measured by Musu_measure), never cursor arithmetic.
+//      rendered (the full PCM, measured by Sound_measure), never cursor arithmetic.
 //   • TIMELAPSE vs REAL TIME, made explicit — the DESCENT renders through an OfflineAudioContext: real
 //      Web Audio computed faster-than-real-time and deterministically (the "x8 timelapse"), because the
 //       search needs ~40 trials and wall-clock would make that minutes.  The SHOWCASE then plays the
@@ -1500,7 +1223,7 @@ async Musu_render_offline(total, profile, gp, stock, keep, ctrl) {
     let g = ctx.createGain()
     g.connect(ctx.destination)
     for (const p of plan) {
-        let pcm = this.Musu_stock_chunk(stock, p.seq)
+        let pcm = this.Sound_stock_chunk(stock, p.seq)
         let buf = ctx.createBuffer(1, pcm.length, SR)
         buf.copyToChannel(pcm, 0)
         let src = ctx.createBufferSource()
@@ -1511,7 +1234,7 @@ async Musu_render_offline(total, profile, gp, stock, keep, ctrl) {
     }
     let rendered = await ctx.startRendering()
     let pcm = rendered.getChannelData(0)
-    let sig = this.Musu_measure(pcm)
+    let sig = this.Sound_measure(pcm)
     // gaps from COVERAGE (uncovered playback time, in 50ms units), NOT the rms floor — so real-music
     //  dynamics never read as gaps.  bits/rms stay from the real rendered PCM (entropy/level).
     let gaps = Math.round(gap_secs / 0.05)
@@ -1611,7 +1334,7 @@ async MusuTune_drive(w, req) {
 async MusuTune_run(w) {
     let total = 36
     let prof = this.Musu_profile(total, 1337)
-    let stock = this.Musu_radiostock('synth')
+    let stock = this.Sound_radiostock('synth')
     let res = await this.Musu_descend(total, prof, stock)
     let none = await this.Musu_render_offline(total, prof, res.gp, stock, false, 'none')
     let inv = await this.Musu_render_offline(total, prof, res.gp, stock, false, 'invert')
@@ -1624,15 +1347,15 @@ async MusuTune_run(w) {
 
 },
 // MusuTune_show — beat 3: render the TUNED params once more and play it real-time so you hear the smoothed
-//  result.  Needs the online voice (Musu_gat); silent if there's no gesture-unlocked context.
+//  result.  Needs the online voice (Sound_gat); silent if there's no gesture-unlocked context.
 async MusuTune_show(w) {
-    let gat = await this.Musu_gat()
+    let gat = await this.Sound_gat()
     if (!gat) return
     let res = w.c.tune
     if (!res) return
     let total = 36
     let prof = this.Musu_profile(total, 1337)
-    let r = await this.Musu_render_offline(total, prof, res.gp, this.Musu_radiostock('synth'), true)
+    let r = await this.Musu_render_offline(total, prof, res.gp, this.Sound_radiostock('synth'), true)
     if (r.buffer) this.Musu_play_buffer(gat, r.buffer)
 
 },
@@ -1707,7 +1430,7 @@ async MusuRadio_drive(w, req) {
 //  records × a 4s per-beat budget × 6 play-beats ≈ 24s — a sustained real-time stretch you can watch,
 //   without tying a runner up for a full minute.
 MusuRadio_load(w) {
-    this.Musu_synth_records(w, 4, 4)
+    this.Sound_synth_records(w, 4, 4)
     let radio = w.oai({Radio: 1, name: 'on-air'})
     radio.c.up = w
     radio.c.elapsed = 0
@@ -1722,7 +1445,7 @@ async MusuRadio_play(w, secs) {
     let recs = w.o({record: 1})
     if (!recs.length) return
     let radio = w.oai({Radio: 1, name: 'on-air'})
-    let gat = await this.Musu_gat()
+    let gat = await this.Sound_gat()
     let t0 = performance.now()
     let spin = +(radio.sc.spins ?? 0)
     let helped = +(radio.sc.helped ?? 0)
@@ -2376,7 +2099,7 @@ async MusuEdge_drive(w, req) {
 //  leave its %edgesig,kind readout: min_margin / final_margin / overruns / gaps + the rate trajectory.
 async MusuEdge_run(w, kind, controlled) {
     let total = 200
-    let stock = this.Musu_radiostock('synth')
+    let stock = this.Sound_radiostock('synth')
     let out = await this.Musu_render_liveedge(total, stock, controlled, 1.5)
     w.i({edgesig: 1, kind: kind, min_margin: out.min_margin, final_margin: out.final_margin, overruns: out.overruns, throttles: out.throttles, gaps: out.gaps, min_rate: out.min_rate, bits: out.bits})
 
@@ -2433,7 +2156,7 @@ async Musu_render_liveedge(total, stock, controlled, fixed_rate) {
     let g = ctx.createGain()
     g.connect(ctx.destination)
     for (const p of plan) {
-        let pcm = this.Musu_stock_chunk(stock, p.seq)
+        let pcm = this.Sound_stock_chunk(stock, p.seq)
         let buf = ctx.createBuffer(1, pcm.length, SR)
         buf.copyToChannel(pcm, 0)
         let src = ctx.createBufferSource()
@@ -2443,7 +2166,7 @@ async Musu_render_liveedge(total, stock, controlled, fixed_rate) {
         src.start(p.at)
     }
     let rendered = await ctx.startRendering()
-    let sig = this.Musu_measure(rendered.getChannelData(0))
+    let sig = this.Sound_measure(rendered.getChannelData(0))
     let gaps = Math.round(gap_secs / 0.05)
     return { bits: sig.bits, rms: sig.rms, gaps: gaps, overruns: overruns, throttles: throttles, min_margin: +min_margin.toFixed(3), final_margin: +final_margin.toFixed(3), min_rate: +min_rate.toFixed(3) }
 
@@ -2497,7 +2220,7 @@ async MusuEdge_order(w) { const H = this;
 
 //#region pier — the SYNAPSE (stage 5): real audio frames over the real Peeroleum transport
 // ══ MusuPier — do audio chunks cross a REAL transport link, in order, and survive packet loss? ════
-//  The piece every other Musu Book LARPed: a real wire.  Real PCM (Musu_synth → bytes) is sent as
+//  The piece every other Musu Book LARPed: a real wire.  Real PCM (Sound_synth → bytes) is sent as
 //   %audiochunk frames over the REAL Peeroleum spine (Ghost/N/Peeroleum.g) between two Piers stood up by
 //    Lake_link (Peregrination.g) on the mock carrier — the SAME deliver→inseq→retransmit path PereProof
 //     proves under loss, headless.  Each frame carries a sha256 body_hash req_unemit verifies before the
@@ -2575,7 +2298,7 @@ async MusuPier_setup(w) {
 },
 // MusuPier_audio_bytes — real PCM for chunk `idx` as raw bytes (Float32 → Uint8), the payload that crosses.
 MusuPier_audio_bytes(idx) {
-    let pcm = this.Musu_synth(idx)
+    let pcm = this.Sound_synth(idx)
     let bytes = new Uint8Array(pcm.length * 4)
     bytes.set(new Uint8Array(pcm.buffer))
     return bytes
@@ -2729,7 +2452,7 @@ async MusuBounce_drive(w, req) {
     await this.Musu_float(w)
 
 },
-// MusuBounce_setup — beat 2: stand up the two independent live contexts (NOT the shared Musu_gat singleton —
+// MusuBounce_setup — beat 2: stand up the two independent live contexts (NOT the shared Sound_gat singleton —
 //  that one cache is the only thing that fights one-per-Pier), the real loopback wire (Lake_link, as MusuPier),
 //   the real tracks (discovered via the Wormhole nav, decoded, capped short), the SEEDED skip schedule, and
 //    B's receive handler.  B receives every chunk (integrity-checked) but only PLAYS the tracks it didn't skip.
@@ -3551,7 +3274,7 @@ async MusuReplica_setup(w) {
     while (ti < 3) {
         let chunks = []
         let s = 0
-        while (s < 6) { chunks.push(this.Musu_synth(ti * 6 + s)); s = s + 1 }
+        while (s < 6) { chunks.push(this.Sound_synth(ti * 6 + s)); s = s + 1 }
         let rec = src.i({ Record: 1, id: 'rec' + ti, title: 'Tone-' + ti, artist: 'Synthetic', seconds: 0.3, nchunks: 6 })
         rec.c.up = src
         rec.c.chunks = chunks
@@ -4003,7 +3726,7 @@ MusuConceal_silent_windows(pcm) {
 //   and a reverse-pingpong avoids.
 MusuConceal_measure(w, mode) {
     let r = this.MusuConceal_build(mode)
-    let sig = this.Musu_measure(r.pcm)
+    let sig = this.Sound_measure(r.pcm)
     let seam = (r.seam_at > 0) ? +Math.abs(r.pcm[r.seam_at] - r.pcm[r.seam_at - 1]).toFixed(4) : 0
     w.i({ conceal: 1, mode: mode, silent: this.MusuConceal_silent_windows(r.pcm), bits: sig.bits, seam: seam })
 

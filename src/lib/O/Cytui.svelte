@@ -637,16 +637,40 @@
     //  luxury layer lands on any graph and the Story underneath never knows.
     let voronoi_pref  = $state<boolean | null>(null)   // user override; null = auto
     let saw_stuffy    = $state(false)                  // auto-arm: crushed world present
-    let tall          = $state(false)                  // Vexpandy: 50vh → 100vh (twice the height)
+    // Vexpandy: 50vh → 100vh (twice the height).  Pure pixels like voronoi_pref,
+    //  and remembered the same way — in the stash as Cyto_tall — so the taller
+    //   frame survives a re-scan and a reload (the height is a workspace choice,
+    //    not per-graph state).
+    let tall          = $state(!!(H as any).stashed?.Cyto_tall)
     // re-fit the graph after the height toggles so the frame fills the new box
     //  — skip the initial settle, only re-fit on an actual user toggle.
     let tall_settled = false
     $effect(() => {
-        void tall
+        const st = (H as any).stashed
+        if (st) st.Cyto_tall = tall
         if (!tall_settled) { tall_settled = true; return }
         requestAnimationFrame(() => { cy?.resize(); cy?.fit(cy.nodes(), 16) })
     })
     const voronoi_on  = $derived(voronoi_pref ?? saw_stuffy)
+    // ── the scroll visor ──────────────────────────────────────────────────────
+    //  A glass pane over the rightmost quarter of the graph.  It exists only to
+    //   intercept the wheel: a wheel that lands on the visor never reaches cy's
+    //    canvas underneath, so cy can't zoom and the browser scrolls the PAGE
+    //     instead — a hand-free gutter to scroll past a graph that would
+    //      otherwise eat the wheel.  It also blocks a drag (pointer-events:auto),
+    //       so no node gets grabbed there; the graph is handled from the open
+    //        left three-quarters.  Invisible at rest (it must not obscure the
+    //         graph); a wheel lights the glass and it fades away after — the visor
+    //          shows itself only while it is doing its job, then vanishes.
+    let visor_lit     = $state(false)
+    let visor_timer: ReturnType<typeof setTimeout> | null = null
+    // NB: no preventDefault — letting the default wheel action stand is exactly
+    //  what scrolls the page.  We only light the glass.
+    function visor_wheel() {
+        visor_lit = true
+        if (visor_timer) clearTimeout(visor_timer)
+        visor_timer = setTimeout(() => { visor_lit = false }, 140)
+    }
     let vcells        = $state<{ id: string, d: string, color: string }[]>([])
     let vtips         = $state<{ id: string, x: number, y: number, color: string }[]>([])
     let vregion_w     = $state(0)                      // veil covers only the tessellated region (rack stays bright)
@@ -1597,6 +1621,13 @@
                 {/each}
             {/if}
         </svg>
+        <!-- scroll visor: a glass pane over the rightmost quarter.  Sits above
+             the cy canvas (later in DOM, no z-index) so it intercepts the wheel
+             (cy never zooms → the page scrolls) and blocks a drag from grabbing a
+             node — the graph is handled from the open left.  Lights on a wheel,
+             then vanishes.  Below the overlays so a cm-hole still opts to the top. -->
+        <div class="cytui-visor" class:lit={visor_lit} onwheel={visor_wheel}
+             title="scroll gutter — the graph is handled on the left"></div>
         <!-- overlay container sits over the cy canvas, pointer-events:none
              so graph interactions pass through. Individual .cm-hole overlays
              opt back in with pointer-events:all for future CodeMirror input. -->
@@ -1675,6 +1706,29 @@
     inset: 0;
     pointer-events: none;
     overflow: hidden;
+}
+
+/* The scroll visor — a glass pane over the rightmost quarter of the graph.
+   pointer-events:auto is the whole point: a wheel here is caught by the visor,
+   never by cy's canvas beneath, so cy can't zoom and the browser scrolls the
+   page; a drag here can't grab a node either.  Invisible at rest so it never
+   obscures the graph — .lit fades it in on a wheel, and removing .lit lets the
+   slow transition carry it back to nothing (the "vanish").  The glass is the
+   same blue as the ◈/voronoi accent; ns-resize hints the strip is for scrolling. */
+.cytui-visor {
+    position: absolute;
+    top: 0; right: 0;
+    width: 25%; height: 100%;
+    pointer-events: auto;
+    cursor: ns-resize;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    background: linear-gradient(to right, transparent, rgba(120,176,212,0.06));
+    border-left: 1px solid rgba(120,176,212,0.22);
+}
+.cytui-visor.lit {
+    opacity: 1;
+    transition: opacity 0.08s ease;
 }
 
 /* overlays-hidden: set during drag/pan/zoom/layout so we don't repaint
