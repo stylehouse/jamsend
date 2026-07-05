@@ -3,6 +3,7 @@ Snap:H
     A:Understandium
       self,round=5	{"mung":["age"]}
       w:Understandium
+        self,round=5	{"mung":["age"]}
         tally,passed=13,failed=0
         LE	{"ref":{"target":"%What:1, label:routing"}}
           Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}
@@ -28,11 +29,9 @@ Snap:H
             Point,method:Lang_doc_from_event
             What,label:deeper
               Point,method:inner_secret
-        self,round=5	{"mung":["age"]}
         see:step 5 local meaning
           wrote_unshowing_onto:e_Dock_open
           PASS,t:clone sc stays clean (no unshowing in .sc)
           PASS,t:%unshowing readable on the U node
           PASS,t:U is a separate %Understandable node hung under D
           PASS,t:%unshowing not on source %Point
-    mo:main,interval=3.6	{"mung":["id"]}

@@ -33,10 +33,9 @@ Snap:H
           goners:0,neus:3
           neu:e_Dock_open
           neu:Lang_doc_from_event
-          {"neu":"What:deeper"}
+          neu:What:deeper
           {"PASS":1,"t":"arm+pull: 3 neus, 0 goners"}
           {"PASS":1,"t":"deeper cloned, inner_secret not in U"}
           PASS,t:Seem/%News not piling — exactly one per Seem
-          {"PASS":1,"t":"origin News: 3 neus"}
-          {"PASS":1,"t":"working News: 3 neus"}
-    mo:main,interval=3.6	{"mung":["id"]}
+          PASS,t:origin News: 3 neus
+          PASS,t:working News: 3 neus

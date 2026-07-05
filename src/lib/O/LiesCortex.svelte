@@ -274,11 +274,17 @@
         // The Pantheate split: an editor-flavoured Run compiles + writes the .go
         //  but must NOT take it up — mounting would make the editor run the very
         //   code it is only meant to edit.  So the mount-notify is gated off when
-        //    the Run's role is editor (H.c.role); a runner Run and a bare Lies (the
-        //     plain app, the Machinery tests) both still mount.  The .go is already
-        //      on disk for the runner to pick up; the settle below still fires so the
-        //       editor's compile job closes and its lint/translation view updates.
-        if (req.sc.source_dige && !H.Lies_is_editor()) {
+        //    the Run's role is editor (H.c.role).  Beyond that it is OPT-IN via
+        //     Opt/For/w:Lies/wantPantheate: without the opt, every compile anywhere
+        //      (a runner's re-compile, a remote gen_write) dynamic-imported the fresh
+        //       .go into the compiling tab — module memory churn for a mount nobody
+        //        reads.  A Book that RUNS its compile must opt in: req:run_method
+        //         blocks on req:include, which only this notify mints (LakeTiles);
+        //          so must one testing the include-confirm mechanics (LakeSurfer).
+        //           The .go is on disk either way; the settle below still fires so the
+        //            compile job closes and lint/translation views update.
+        if (req.sc.source_dige && !H.Lies_is_editor()
+            && H.o_Opt_val(cortex.c.up as TheC, 'wantPantheate')) {
             H.i_elvisto('Pantheate/Pantheate', 'Ghost_update_notify', {
                 include:     gen_path,
                 path,

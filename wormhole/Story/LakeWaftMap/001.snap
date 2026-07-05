@@ -1,23 +1,165 @@
 Snap:H
   H:LakeWaftMap,Run
     A:Lies
-      self,round=5	{"mung":["age"]}
+      self,round=46	{"mung":["age"]}
       w:Lies
-        self,round=5	{"mung":["age"]}
+        self,round=46	{"mung":["age"]}
         examining	{"loopy":0}
           req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
         Opt
         req:Cortex,eternal,maz=5,ok
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/GhostList/toc.snap,waft_path:GhostList
-          req:LiesStore_read,rw_name:wormhole/GhostList/toc.snap,rw_op:read
-            req_sent
-            ttlilt,waiting:LiesStore_read	{"mung":["until_ts"]}
+            known,dige:4b2739b32c92a761,kind:read	{"mung":["at"]}
         req:git
         req:wants
         o_elvis:dock_askies
         req:Langoer,eternal,ok	{"ref":{"w":"%w:Lies"}}
-        see:⏳ loading Waft:GhostList…
+        Waft:GhostList,lists,O_defaulted,minimised	{"mung":["seeded"]}
+          Funkcion:dirlist,interval_ms=8000,main	{"mung":["walked_at"]}
+          group:src/lib,dir:src/lib
+            sub:src/lib/O,name:O
+            sub:src/lib/data,name:data
+            sub:src/lib/gen,name:gen
+            sub:src/lib/ghost,name:ghost
+            sub:src/lib/mostly,name:mostly
+            sub:src/lib/p2p,name:p2p
+            Doc:src/lib/FTrusting.svelte,name:FTrusting
+            Doc:src/lib/MTrusting.svelte,name:MTrusting
+            Doc:src/lib/Trust.svelte.ts,name:Trust
+            Doc:src/lib/Y.svelte.ts,name:Y
+            Doc:src/lib/boot.ts,name:boot	{"mung":["noticed_at"]}
+            sub:src/lib/server,name:server
+            sub:src/lib/L,name:L
+            sub:src/lib/V,name:V
+            Doc:src/lib/cluster_name.ts,name:cluster_name	{"mung":["noticed_at"]}
+          group:Ghost,dir:Ghost
+            sub:Ghost/N,name:N
+            sub:Ghost/Story,name:Story
+            sub:Ghost/test,name:test
+            sub:Ghost/M,name:M
+            sub:Ghost/S,name:S
+            sub:Ghost/V,name:V
+          open_dir:Ghost/N
+          group:Ghost/N,dir:Ghost/N
+            Doc:Ghost/N/Peeroleum.g,name:Peeroleum	{"mung":["noticed_at"]}
+            Doc:Ghost/N/Tribunal.g,name:Tribunal	{"mung":["noticed_at"]}
+            Doc:Ghost/N/Tyrant.g,name:Tyrant	{"mung":["noticed_at"]}
+            Doc:Ghost/N/Reliable.g,name:Reliable	{"mung":["noticed_at"]}
+          open_dir:Ghost/Story
+          group:Ghost/Story,dir:Ghost/Story
+            Doc:Ghost/Story/Peregrination.g,name:Peregrination	{"mung":["noticed_at"]}
+            Doc:Ghost/Story/Musuation.g,name:Musuation	{"mung":["noticed_at"]}
+            Doc:Ghost/Story/Swarmation.g,name:Swarmation	{"mung":["noticed_at"]}
+          open_dir:src/lib/O/spec
+          group:src/lib/O/spec,dir:src/lib/O/spec
+            Doc:src/lib/O/spec/Covenant_design.md,name:Covenant_design.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Editron.md,name:Editron.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/EntropyArrest.md,name:EntropyArrest.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Everything_todo.md,name:Everything_todo.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Hovercraft.design.md,name:Hovercraft.design.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Interest.md,name:Interest.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/LangCompiler_TODO.md,name:LangCompiler_TODO.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/LangSolver_report.md,name:LangSolver_report.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/LiesEnd_spec.md,name:LiesEnd_spec.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/NOTATION.md,name:NOTATION.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Peeroleum_handover.md,name:Peeroleum_handover.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Peeroleum_spec.md,name:Peeroleum_spec.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Story_cli_docs.md,name:Story_cli_docs.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Story_next_level_spec.md,name:Story_next_level_spec.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Waft_spec.md,name:Waft_spec.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Waft_styling_todo.md,name:Waft_styling_todo.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Wire_spec.md,name:Wire_spec.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Wormhole_backends_handover.md,name:Wormhole_backends_handover.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/reactivity_docs.md,name:reactivity_docs.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/stho_primer.md,name:stho_primer.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Lang_handover.md,name:Lang_handover.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Lens_posable_TODO.md,name:Lens_posable_TODO.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Music_todo.md,name:Music_todo.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Runner_talk_TODO.md,name:Runner_talk_TODO.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Keeping_spec.md,name:Keeping_spec.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Backbone_plan.md,name:Backbone_plan.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Cluster_spec.md,name:Cluster_spec.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Engage_integration.md,name:Engage_integration.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Radio_spec.md,name:Radio_spec.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Cluster_runner_handover.md,name:Cluster_runner_handover.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Coding_guide.md,name:Coding_guide.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Swarm_spec.md,name:Swarm_spec.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Lies_handover.md,name:Lies_handover.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/DocWaftMap_sketch.md,name:DocWaftMap_sketch.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Perf_todo.md,name:Perf_todo.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Runner_quality_handover.md,name:Runner_quality_handover.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Runner_network.md,name:Runner_network.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Stemdex_spec.md,name:Stemdex_spec.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Robustness_plan.md,name:Robustness_plan.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/PWA_install_handover.md,name:PWA_install_handover.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Story_future_directions.md,name:Story_future_directions.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Radio_scape_handover.md,name:Radio_scape_handover.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Radiobuddies_handover.md,name:Radiobuddies_handover.md	{"mung":["noticed_at"]}
+          open_dir:src/lib/O
+          group:src/lib/O,dir:src/lib/O
+            sub:src/lib/O/D,name:D
+            sub:src/lib/O/Funk,name:Funk
+            sub:src/lib/O/lang,name:lang
+            sub:src/lib/O/shelved,name:shelved
+            sub:src/lib/O/spec,name:spec
+            sub:src/lib/O/test,name:test
+            sub:src/lib/O/ui,name:ui
+            Doc:src/lib/O/Auto.svelte,name:Auto	{"mung":["noticed_at"]}
+            Doc:src/lib/O/Cyto.svelte,name:Cyto	{"mung":["noticed_at"]}
+            Doc:src/lib/O/Cytui.svelte,name:Cytui	{"mung":["noticed_at"]}
+            Doc:src/lib/O/Editron.svelte,name:Editron	{"mung":["noticed_at"]}
+            Doc:src/lib/O/Ghost.svelte,name:Ghost	{"mung":["noticed_at"]}
+            Doc:src/lib/O/Housing.svelte.ts,name:Housing	{"mung":["noticed_at"]}
+            Doc:src/lib/O/Hovercraft.svelte,name:Hovercraft	{"mung":["noticed_at"]}
+            Doc:src/lib/O/Lang.svelte,name:Lang	{"mung":["noticed_at"]}
+            Doc:src/lib/O/LangCompiling.svelte,name:LangCompiling	{"mung":["noticed_at"]}
+            Doc:src/lib/O/LangGraft.svelte,name:LangGraft	{"mung":["noticed_at"]}
+            Doc:src/lib/O/LangLang.svelte,name:LangLang	{"mung":["noticed_at"]}
+            Doc:src/lib/O/LangPoint.svelte,name:LangPoint	{"mung":["noticed_at"]}
+            Doc:src/lib/O/LangRegions.svelte,name:LangRegions	{"mung":["noticed_at"]}
+            Doc:src/lib/O/LangSion.svelte,name:LangSion	{"mung":["noticed_at"]}
+            Doc:src/lib/O/LangWhatwhere.svelte,name:LangWhatwhere	{"mung":["noticed_at"]}
+            Doc:src/lib/O/Langui.svelte,name:Langui	{"mung":["noticed_at"]}
+            Doc:src/lib/O/Lies.svelte,name:Lies	{"mung":["noticed_at"]}
+            Doc:src/lib/O/LiesCortex.svelte,name:LiesCortex	{"mung":["noticed_at"]}
+            Doc:src/lib/O/LiesCurse.svelte,name:LiesCurse	{"mung":["noticed_at"]}
+            Doc:src/lib/O/LiesLies.svelte,name:LiesLies	{"mung":["noticed_at"]}
+            Doc:src/lib/O/LiesStore.svelte,name:LiesStore	{"mung":["noticed_at"]}
+            Doc:src/lib/O/Liesui.svelte,name:Liesui	{"mung":["noticed_at"]}
+            Doc:src/lib/O/MachPeerily.svelte,name:MachPeerily	{"mung":["noticed_at"]}
+            Doc:src/lib/O/Matstyle.svelte,name:Matstyle	{"mung":["noticed_at"]}
+            Doc:src/lib/O/Otro.svelte,name:Otro	{"mung":["noticed_at"]}
+            Doc:src/lib/O/Storui.svelte,name:Storui	{"mung":["noticed_at"]}
+            Doc:src/lib/O/Story.svelte,name:Story	{"mung":["noticed_at"]}
+            Doc:src/lib/O/Text.svelte,name:Text	{"mung":["noticed_at"]}
+            Doc:src/lib/O/Thang.svelte,name:Thang	{"mung":["noticed_at"]}
+            Doc:src/lib/O/ThangShelf.svelte,name:ThangShelf	{"mung":["noticed_at"]}
+            Doc:src/lib/O/Thangs.svelte,name:Thangs	{"mung":["noticed_at"]}
+            Doc:src/lib/O/WormholeOpfs.svelte.ts,name:WormholeOpfs	{"mung":["noticed_at"]}
+            Doc:src/lib/O/stho.ts,name:stho	{"mung":["noticed_at"]}
+            Doc:src/lib/O/LiesFunk.svelte,name:LiesFunk	{"mung":["noticed_at"]}
+            Doc:src/lib/O/LiesRun.svelte,name:LiesRun	{"mung":["noticed_at"]}
+            Doc:src/lib/O/RemoteWormholeNav.svelte.ts,name:RemoteWormholeNav	{"mung":["noticed_at"]}
+            Doc:src/lib/O/sockcap.ts,name:sockcap	{"mung":["noticed_at"]}
+            Doc:src/lib/O/LangCurse.svelte,name:LangCurse	{"mung":["noticed_at"]}
+            Doc:src/lib/O/LangHold.svelte,name:LangHold	{"mung":["noticed_at"]}
+            Doc:src/lib/O/LiesKeep.svelte,name:LiesKeep	{"mung":["noticed_at"]}
+            Doc:src/lib/O/runner_liveness.mjs,name:runner_liveness.mjs	{"mung":["noticed_at"]}
+            Doc:src/lib/O/BigQualand.svelte.ts,name:BigQualand	{"mung":["noticed_at"]}
+          open_dir:Ghost/M
+          group:Ghost/M,dir:Ghost/M
+            Doc:Ghost/M/Radiola.g,name:Radiola	{"mung":["noticed_at"]}
+            Doc:Ghost/M/Crate.g,name:Crate	{"mung":["noticed_at"]}
+            Doc:Ghost/M/Mixer.g,name:Mixer	{"mung":["noticed_at"]}
+            Doc:Ghost/M/Mesh.g,name:Mesh	{"mung":["noticed_at"]}
+            Doc:Ghost/M/Sound.g,name:Sound	{"mung":["noticed_at"]}
+        Funkcions
+          req:Waftica,waft:GhostList,eternal,main:dirlist,ok
+        o_elvis:Lies_desire_play
+        o_elvis:Lies_desire_pause
+        o_elvis:Lies_desire_step
+        see:🗂 0 docs · 1 Waft
     A:Lang
       self,round=2	{"mung":["age"]}
       w:Lang
@@ -28,6 +170,8 @@ Snap:H
           lematch	{"ref":{"sc_has":"Object()"}}
             lematch	{"ref":{"sc_has":"Object()"}}
         Languinio,no_doc	{"loopy":1}
+          Interest:GhostList,waft:GhostList,face:DocGhostList,presence:active,state:pending
+            cursor,doc:GhostList/doc0
         req:workon,auto_push	{"ref":{"w":"%w:Lang"}}
           req:understanding,maz=3,permanent,sig:0:0:0:0,finished
           req:ingredients,maz=2,permanent,sig:,finished
@@ -46,6 +190,7 @@ Snap:H
         self,round=2	{"mung":["age"]}
         WaftMapGate
           plank,chips=0
+            stack:GhostList
     watched:ave
       examining	{"loopy":0,"hid":1}
       Languinio,no_doc	{"loopy":1,"hid":1}
@@ -61,4 +206,3 @@ Snap:H
       action,role:compo,label:compo,icon:compo,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:nogen,label:nogen,icon:nogen,cls:toggle-off	{"ref":{"fn":"Function()"}}
       action,role:softgen,label:softgen,icon:softgen,cls:toggle-off	{"ref":{"fn":"Function()"}}
-    ttlilt,of_w:Lies,waiting:LiesStore_read	{"ref":{"req":"%req:LiesStore_read, rw_name:wormhole/GhostList/toc.snap, rw_op:read"},"mung":["until_ts"]}

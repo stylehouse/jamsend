@@ -3,6 +3,7 @@ Snap:H
     A:Understandium
       self,round=3	{"mung":["age"]}
       w:Understandium
+        self,round=3	{"mung":["age"]}
         tally,passed=8,failed=0
         LE	{"ref":{"target":"%What:1, label:routing"}}
           Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}
@@ -30,9 +31,7 @@ Snap:H
             What,label:deeper
               Point,method:inner_secret
             Point,method:fresh_point
-        self,round=3	{"mung":["age"]}
         see:step 3 source add
           goners:0,neus:1
           neu:fresh_point
           PASS,t:1 neu on source add
-    mo:main,interval=3.6	{"mung":["id"]}

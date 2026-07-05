@@ -19,8 +19,6 @@ story:Understandium
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.085
-      sample=0.053,at=1780206014
-      sample=0.053,at=1780206029
       sample=0.054,at=1780206722
       sample=0.11,at=1780528501
       sample=0.099,at=1780529551
@@ -29,16 +27,21 @@ story:Understandium
       sample=0.097,at=1781080035
       sample=0.079,at=1781587241
       sample=0.107,at=1781610192
-  step,dige:bb4a7a4b8b9ca65d
-  step=2,dige:2b3d90a95152bdfb
-  step=3,dige:55b051a2d2b00ca0
-  step=4,dige:ea049b7045ac3f4f
-  step=5,dige:9b7eff614e4ec247
-  step=6,dige:0188bc2806e6eb35
-  step=7,dige:de50e20f40fa8d16
-  step=8,dige:48749b4f6875ed84
-  step=9,dige:3fad58631fcedc9e
-  step=10,dige:7a0000b428049a03
-  step=11,dige:a4553bf2cc8bd32b
-  step=12,dige:4b6dd3caabd0e49b
-  step=13,dige:4f57d48599931ae6
+      sample=0.055,at=1783255924
+      sample=0.055,at=1783255932
+    TimeTotal:step,avg=0.004
+      sample=0.004,at=1783255924
+      sample=0.004,at=1783255932
+  step,dige:f7427544f99f3476
+  step=2,dige:91b02579a8f588b3
+  step=3,dige:84a115e09cb1b9cc
+  step=4,dige:e55975326bdcf085
+  step=5,dige:9336728635bd0a4f
+  step=6,dige:3143722a9f68853e
+  step=7,dige:396b40c556944b46
+  step=8,dige:e5f19fa8440c927c
+  step=9,dige:1132b2f44a1c192f
+  step=10,dige:48340ed95113f203
+  step=11,dige:e9e376088b0b99c4
+  step=12,dige:44aa314628bfadc8
+  step=13,dige:5f1f87b23f70c455

@@ -3,6 +3,7 @@ Snap:H
     A:Understandium
       self,round=4	{"mung":["age"]}
       w:Understandium
+        self,round=4	{"mung":["age"]}
         tally,passed=9,failed=0
         LE	{"ref":{"target":"%What:1, label:routing"}}
           Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}
@@ -28,9 +29,7 @@ Snap:H
             Point,method:Lang_doc_from_event
             What,label:deeper
               Point,method:inner_secret
-        self,round=4	{"mung":["age"]}
         see:step 4 source drop
           goners:1,neus:0
           goner:fresh_point
           PASS,t:1 goner on source drop
-    mo:main,interval=3.6	{"mung":["id"]}

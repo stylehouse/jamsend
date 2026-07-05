@@ -46,12 +46,11 @@ Snap:H
           neu:e_Dock_open
           neu:Lang_doc_from_event
           neu:path_guard
-          {"neu":"What:routing_detail"}
+          neu:What:routing_detail
           clone_method:e_Dock_open
           clone_method:Lang_doc_from_event
           clone_method:path_guard
           clone_label:routing_detail
-          {"PASS":1,"t":"arm routing: 4 neus (3 Points + nested What)"}
+          PASS,t:arm routing: 4 neus (3 Points + nested What)
           PASS,t:routing_detail cloned shallow — inner Points not in clones
           PASS,t:path_guard present in working set
-    mo:main,interval=3.6	{"mung":["id"]}

@@ -20,8 +20,7 @@ story:MundaneStaying
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.056
-      sample=0.061,at=1781594530
+    TimeTotal:beliefs,avg=0.058
       sample=0.042,at=1781594885
       sample=0.057,at=1781594939
       sample=0.068,at=1781595050
@@ -31,8 +30,10 @@ story:MundaneStaying
       sample=0.059,at=1781608053
       sample=0.092,at=1781710740
       sample=0.024,at=1781897136
-    TimeTotal:step,avg=0.008
+      sample=0.078,at=1783256077
+    TimeTotal:step,avg=0.017
       sample=0.008,at=1781897136
+      sample=0.026,at=1783256077
   step,dige:33c50d750bfb954d
   step=2,dige:318a0052d83cf66f
   step=3,dige:e813bca6ff3d0bfb

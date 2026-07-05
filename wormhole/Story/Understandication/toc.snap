@@ -8,10 +8,7 @@ story:Understandication
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.151
-      sample=0.443,at=1780236180
-      sample=0.091,at=1780247785
-      sample=0.065,at=1780249359
+    TimeTotal:beliefs,avg=0.108
       sample=0.12,at=1780249409
       sample=0.131,at=1780528472
       sample=0.131,at=1780528488
@@ -19,17 +16,24 @@ story:Understandication
       sample=0.123,at=1781079998
       sample=0.12,at=1781587232
       sample=0.164,at=1781612756
-  step,dige:62eaef1ace7fb631
-  step=2,dige:87c0d4cb8133beac
-  step=3,dige:31bef7e7ae6f4a84
-  step=4,dige:fbb707875bf4ba95
-  step=5,dige:50ff9e56797ffb79
-  step=6,dige:fbb46c272456a70f
-  step=7,dige:7c19daed9f4c8edb
-  step=8,dige:7190e0db3c28b6a3
-  step=9,dige:e66361a4c40198ff
-  step=10,dige:de617f8f1ff841f1
-  step=11,dige:592970882b97fbd3
-  step=12,dige:52ceaf9b39066e5b
-  step=13,dige:6b1fa669d93d0114
-  step=14,dige:729579388dfcaa76
+      sample=0.056,at=1783255954
+      sample=0.056,at=1783255961
+      sample=0.056,at=1783255965
+    TimeTotal:step,avg=0.004
+      sample=0.004,at=1783255954
+      sample=0.004,at=1783255961
+      sample=0.004,at=1783255965
+  step,dige:02ec98e9f815fd83
+  step=2,dige:9e8a727c71bcf6c1
+  step=3,dige:392d0452c0035ccf
+  step=4,dige:d0a2ca4ecdb2f59c
+  step=5,dige:4eefaaada702a64a
+  step=6,dige:e30f09e195413e7a
+  step=7,dige:55f69174eeb89f2c
+  step=8,dige:0fabcd778a3f699e
+  step=9,dige:2f2edabcbdfc0869
+  step=10,dige:b36f6ad0071d8542
+  step=11,dige:aad07ef9d17cef53
+  step=12,dige:c3809f5abcc32f6b
+  step=13,dige:a5d40e1a9d3a9f62
+  step=14,dige:abb161e6f6f4a154

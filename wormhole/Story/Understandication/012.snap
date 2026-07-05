@@ -3,6 +3,7 @@ Snap:H
     A:Understandication
       self,round=12	{"mung":["age"]}
       w:Understandication
+        self,round=12	{"mung":["age"]}
         tally,passed=39,failed=0
         LE	{"ref":{"target":"%What:1, label:routing"}}
           State
@@ -42,7 +43,6 @@ Snap:H
               Point,method:write_gen
               Point,method:notify_Pantheate
             Point,method:codegen_pass
-        self,round=12	{"mung":["age"]}
         see:step 12 wander compile add push back
           codegen_on_compilation:1
           PASS,t:codegen_pass landed on compilation
@@ -51,4 +51,3 @@ Snap:H
           routing_clone:pipeline_start
           PASS,t:codegen_pass not in routing after wander back
           PASS,t:e_Dock_open back in routing clones
-    mo:main,interval=3.6	{"mung":["id"]}

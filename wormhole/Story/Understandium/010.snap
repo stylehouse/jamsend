@@ -3,6 +3,7 @@ Snap:H
     A:Understandium
       self,round=10	{"mung":["age"]}
       w:Understandium
+        self,round=10	{"mung":["age"]}
         tally,passed=25,failed=0
         LE	{"ref":{"target":"%What:1, label:second"}}
           State
@@ -30,15 +31,14 @@ Snap:H
           What,label:second
             Point,method:alpha2
             Point,method:beta
-        self,round=10	{"mung":["age"]}
         see:step 10 strict fork
           default_rename,goners:0,neus:0
-          {"PASS":1,"t":"default: rename is a survivor (no diff)"}
+          PASS,t:default: rename is a survivor (no diff)
           strict_rename
             goners:1,neus:1
             goner:e_Dock_open
             neu:e_Dock_open_v2
-          {"PASS":1,"t":"resolve_strict: rename is goner + neu"}
+          PASS,t:resolve_strict: rename is goner + neu
         LE2	{"ref":{"target":"%What:1, label:routing"}}
           Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}
             Demonstrations:origin
@@ -63,4 +63,3 @@ Snap:H
             Point,method:Lang_doc_from_event
             What,label:deeper
               Point,method:inner_secret
-    mo:main,interval=3.6	{"mung":["id"]}

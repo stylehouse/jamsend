@@ -427,6 +427,14 @@ async Peeroleum_deliver(w, frame):
         return
     }
     let {peering, pier} = this.Peeroleum_route(w, h, 'to')
+    // an addr-less CLI ask (runner_ask.mjs / reactap.mjs / ghost_compile.ts — exactly the two types
+    //  the relay corr-remembers): its from is an ephemeral reply addr, NEVER a Pier — the reply is a
+    //   raw control frame the relay corr-routes back, no envelope.  Serve it instead of dropping: an
+    //    EDITOR holds N runner Piers, so the route's pub===from find misses; the single-Pier runner
+    //     only ever matched through the length===1 arm.  Dispatch straight to the registered handler,
+    //      ephemeral-style — no inbox booking, no ack-back (no Pier to ack through; a CLI never
+    //       retransmits, it just times out).
+    if (!pier && (h.type === 'runner_ask' || h.type === 'ghost_compile')) { let on = w.c.on && w.c.on[h.type]; if (on) on(w, null, frame); return }
     if (!pier) return
     // inbound-silence liveness (Reliable.g twin of the outbound %stalled): stamp the LOGICAL tick we last
     //  heard ANYTHING on this Pier — every frame, acks included (an ack is the cheapest liveness proof, so

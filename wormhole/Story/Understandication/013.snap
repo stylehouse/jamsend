@@ -3,6 +3,7 @@ Snap:H
     A:Understandication
       self,round=13	{"mung":["age"]}
       w:Understandication
+        self,round=13	{"mung":["age"]}
         tally,passed=41,failed=0
         LE	{"ref":{"target":"%What:1, label:routing"}}
           State
@@ -42,11 +43,9 @@ Snap:H
               Point,method:write_gen
               Point,method:notify_Pantheate
             Point,method:codegen_pass
-        self,round=13	{"mung":["age"]}
         see:step 13 accepted_clones helper
           total_clones:4
           accepted_after_drops:2
           PASS,t:accepted_clones excludes both dropped
           accepted_restored:4
           PASS,t:accepted_clones restores after clearing unaccepted
-    mo:main,interval=3.6	{"mung":["id"]}

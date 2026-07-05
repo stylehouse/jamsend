@@ -3,6 +3,7 @@ Snap:H
     A:Understandication
       self,round=4	{"mung":["age"]}
       w:Understandication
+        self,round=4	{"mung":["age"]}
         tally,passed=11,failed=0
         LE	{"ref":{"target":"%What:1, label:routing"}}
           State
@@ -40,10 +41,8 @@ Snap:H
             What,label:compilation_detail
               Point,method:write_gen
               Point,method:notify_Pantheate
-        self,round=4	{"mung":["age"]}
         see:step 4 wander back routing
           goners:0,neus:4
-          {"PASS":1,"t":"routing: 4 neus after re-arm (fresh sphere)"}
+          PASS,t:routing: 4 neus after re-arm (fresh sphere)
           PASS,t:no unshowing bled from compilation U
           PASS,t:e_Dock_open back in clones
-    mo:main,interval=3.6	{"mung":["id"]}

@@ -14,9 +14,7 @@ story:Understandity
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.015
-      sample=0.004,at=1780130188
-      sample=0.004,at=1780130192
+    TimeTotal:beliefs,avg=0.016
       sample=0.004,at=1780130195
       sample=0.004,at=1780130197
       sample=0.044,at=1780131191
@@ -25,4 +23,9 @@ story:Understandity
       sample=0.013,at=1780132202
       sample=0.022,at=1781587254
       sample=0.022,at=1781587291
-  step,dige:861d5d9fb5550954
+      sample=0.011,at=1783255937
+      sample=0.011,at=1783255943
+    TimeTotal:step,avg=0.011
+      sample=0.011,at=1783255937
+      sample=0.011,at=1783255943
+  step,dige:d8baf649439f0b58

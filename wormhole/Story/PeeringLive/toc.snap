@@ -12,20 +12,26 @@ story:PeeringLive
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.628
-      sample=0.517,at=1779845622
-      sample=0.474,at=1779845668
-      sample=0.752,at=1780021915
-      sample=0.708,at=1780023433
-      sample=0.665,at=1780414856
+    TimeTotal:beliefs,avg=0.481
       sample=0.469,at=1780415581
       sample=0.659,at=1780415730
       sample=0.659,at=1780415748
       sample=0.756,at=1780418675
       sample=0.618,at=1780418703
-  step,dige:aec8244e6819d6e5
-  step=2,dige:853d887d558d273a
-  step=3,dige:594d7ecf84994a82
-  step=4,dige:a7c800fed5fa60ef
-  step=5,dige:0b0ed67bb95ee95a
-  step=6,dige:8a8ec4fefe5d867e
+      sample=0.362,at=1783256106
+      sample=0.362,at=1783256202
+      sample=0.362,at=1783256205
+      sample=0.29,at=1783256222
+      sample=0.269,at=1783256233
+    TimeTotal:step,avg=0.055
+      sample=0.06,at=1783256106
+      sample=0.06,at=1783256202
+      sample=0.06,at=1783256205
+      sample=0.048,at=1783256222
+      sample=0.045,at=1783256233
+  step,dige:450fb60e44282dc9
+  step=2,dige:f347888fd508b130
+  step=3,dige:19f8a8771c4bde21
+  step=4,dige:45a2cbdeafa7c319
+  step=5,dige:682a43290923459d
+  step=6,dige:7ff36752ce82f3f4

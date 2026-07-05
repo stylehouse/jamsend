@@ -3,6 +3,7 @@ Snap:H
     A:Understandium
       self,round=9	{"mung":["age"]}
       w:Understandium
+        self,round=9	{"mung":["age"]}
         tally,passed=23,failed=0
         LE	{"ref":{"target":"%What:1, label:second"}}
           State
@@ -26,17 +27,15 @@ Snap:H
             Point,method:Lang_doc_from_event
             What,label:deeper
               Point,method:inner_secret
-        self,round=9	{"mung":["age"]}
         see:step 9 rearm
           goners:0,neus:2
           neu:alpha
           neu:beta
           now_holding:alpha
           now_holding:beta
-          {"PASS":1,"t":"re-arm: U holds the new target Points"}
+          PASS,t:re-arm: U holds the new target Points
           PASS,t:no meaning on any new clone's companion U
         second_src
           What,label:second
             Point,method:alpha
             Point,method:beta
-    mo:main,interval=3.6	{"mung":["id"]}

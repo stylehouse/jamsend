@@ -30,8 +30,7 @@ story:Snaptesting
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.009
-      sample=0.005,at=1780629009
+    TimeTotal:beliefs,avg=0.01
       sample=0.005,at=1780629015
       sample=0.009,at=1781080154
       sample=0.009,at=1781080161
@@ -41,10 +40,12 @@ story:Snaptesting
       sample=0.008,at=1781982880
       sample=0.008,at=1781982883
       sample=0.012,at=1781982915
+      sample=0.012,at=1783255985
     TimeTotal:step,avg=0.01
       sample=0.007,at=1781980340
       sample=0.015,at=1781982836
       sample=0.008,at=1781982880
       sample=0.008,at=1781982883
       sample=0.012,at=1781982915
+      sample=0.012,at=1783255985
   step,dige:9457325c53440d8c

@@ -1,22 +1,20 @@
 Snap:H
   H:PeeringLive,Run
     A:PeeringLive
-      self,round=22	{"mung":["age"]}
+      self,round=20	{"mung":["age"]}
       w:PeeringLive
+        self,round=20	{"mung":["age"]}
         req:p2pman,finished
           req:init,finished
-        self,round=22	{"mung":["age"]}
-        {"see":"PeeringLive  open:3/3"}
+        see:PeeringLive  open:3/3
     A:Bearing
-      self,round=25	{"mung":["age"]}
+      self,round=20	{"mung":["age"]}
       w:Bearing
+        self,round=20	{"mung":["age"]}
         req:listen,finished
           req:keygen,maz=3,finished	{"ref":{"Id":"Idento()"}}
           req:register,maz=2,finished
           req:listening,finished
-          log
-            msg:keygen started
-            msg:keygen done
         Peerily
         Peering,name:bearing,prepub:7acf614d876d69a4
           prepri:923f9316	{"ref":{"Id":"Idento()"}}
@@ -30,17 +28,14 @@ Snap:H
           req:said_trust,maz=2,demand=1500,finished
           req:heard_trust,demand=1500,finished
         Pier,pub:8cbc667bb0c8e748,name:8cbc667bb0c8e748
-        self,round=25	{"mung":["age"]}
     A:Nearing
-      self,round=24	{"mung":["age"]}
+      self,round=20	{"mung":["age"]}
       w:Nearing
+        self,round=20	{"mung":["age"]}
         req:listen,finished
           req:keygen,maz=3,finished	{"ref":{"Id":"Idento()"}}
           req:register,maz=2,finished
           req:listening,finished
-          log
-            msg:keygen started
-            msg:keygen done
         Peerily
         Peering,name:nearing,prepub:8cbc667bb0c8e748
           prepri:b4c5b5e9	{"ref":{"Id":"Idento()"}}
@@ -51,20 +46,15 @@ Snap:H
           req:heard_hello,maz=3,demand=800,finished
           req:said_trust,maz=2,demand=1500,finished
           req:heard_trust,demand=1500,finished
-        self,round=24	{"mung":["age"]}
     A:Tearing
-      self,round=24	{"mung":["age"]}
+      self,round=20	{"mung":["age"]}
       w:Tearing
+        self,round=20	{"mung":["age"]}
         req:listen,finished
           req:keygen,maz=3,finished	{"ref":{"Id":"Idento()"}}
           req:register,maz=2,finished
           req:listening,finished
-          log
-            msg:keygen started
-            msg:keygen done
         Peerily
         Peering,name:tearing,prepub:962af4326c28f29b
           prepri:386df6d9	{"ref":{"Id":"Idento()"}}
           open
-        self,round=24	{"mung":["age"]}
-    mo:main,interval=3.6	{"mung":["id"]}

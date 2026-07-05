@@ -11,34 +11,38 @@ Snap:H
         Peering,name:DJ,req=2,ok
           Pier,pub:Crowd,req=2,ok
             Ud,pubkey:Crowd
-            outbox,stuff
-              emit,type:repli_lines,seq,sent,body_hash:e23f64572fa552ca3804b14820503a487347e4de494ceb12d504f5bd7bc9e3d9,body_len=160,acked
-              emit=2,type:repli_lines,seq=2,sent,body_hash:10ebc47d04f51634a25f62703d7941e6e7de1e53b786be43f2a8b9d634cfd016,body_len=160,acked
-              emit=3,type:repli_lines,seq=3,sent,body_hash:4b3b462e8a76d5ed04a3cbda574a28d19e4c3f6fb8af357e9ab1b89dafa1e192,body_len=160,acked
-              emit=4,type:repli_lines,seq=4,sent,body_hash:743e6fa00fc179e7518374e2d9d1140bdc680617a6a4d1ea89844914d0d39563,body_len=132,acked
+            outbox
+              recent
+                emit,type:repli_lines,seq
+                emit=2,type:repli_lines,seq=2
+                emit=3,type:repli_lines,seq=3
+                emit=4,type:repli_lines,seq=4
               emit=5,type:repli_lines,seq=5,sent,body_hash:eacaacb9368f1ab3529dbd134f40ef60b38aac434e1750abd632714354dc56ea,body_len=132,acked
               emit=6,type:repli_page,seq=6,sent,body_hash:6758c814fa64781c9fd2b2b295952bdd776f1b0ca2c5a941ac99a8978987693f,body_len=19200,acked
               emit=7,type:repli_lines,seq=7,sent,body_hash:453065ceceaa2320d71f330c649191afe53b7e42e5437dc69320654cd03e1014,body_len=132,acked
               emit=8,type:repli_page,seq=8,sent,body_hash:6116e70369c0d589a0a4ea46e154989128cf79a8610a4f107c891fc85444df42,body_len=19200,acked
-            inbox,stuff
-              req:unemit,seq,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
+            inbox
+              recent
+                unemit,type:repli_want,seq
               req:unemit,seq=2,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
               req:unemit,seq=3,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
           active_transport,type:mock,open
         Peering,name:Crowd,req=3,ok
           Pier,pub:DJ,req=2,ok
             Ud,pubkey:DJ
-            inbox,stuff
-              req:unemit,seq,type:repli_lines,body_hash:e23f64572fa552ca3804b14820503a487347e4de494ceb12d504f5bd7bc9e3d9,body_len=160,done,to:repli_lines,finished
-              req:unemit,seq=2,type:repli_lines,body_hash:10ebc47d04f51634a25f62703d7941e6e7de1e53b786be43f2a8b9d634cfd016,body_len=160,done,to:repli_lines,finished
-              req:unemit,seq=3,type:repli_lines,body_hash:4b3b462e8a76d5ed04a3cbda574a28d19e4c3f6fb8af357e9ab1b89dafa1e192,body_len=160,done,to:repli_lines,finished
-              req:unemit,seq=4,type:repli_lines,body_hash:743e6fa00fc179e7518374e2d9d1140bdc680617a6a4d1ea89844914d0d39563,body_len=132,done,to:repli_lines,finished
+            inbox
+              recent
+                unemit,type:repli_lines,seq
+                unemit=2,type:repli_lines,seq=2
+                unemit=3,type:repli_lines,seq=3
+                unemit=4,type:repli_lines,seq=4
               req:unemit,seq=5,type:repli_lines,body_hash:eacaacb9368f1ab3529dbd134f40ef60b38aac434e1750abd632714354dc56ea,body_len=132,done,to:repli_lines,finished
               req:unemit,seq=6,type:repli_page,body_hash:6758c814fa64781c9fd2b2b295952bdd776f1b0ca2c5a941ac99a8978987693f,body_len=19200,done,to:repli_page,finished
               req:unemit,seq=7,type:repli_lines,body_hash:453065ceceaa2320d71f330c649191afe53b7e42e5437dc69320654cd03e1014,body_len=132,done,to:repli_lines,finished
               req:unemit,seq=8,type:repli_page,body_hash:6116e70369c0d589a0a4ea46e154989128cf79a8610a4f107c891fc85444df42,body_len=19200,done,to:repli_page,finished
-            outbox,stuff
-              emit,type:repli_want,seq,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
+            outbox
+              recent
+                emit,type:repli_want,seq
               emit=2,type:repli_want,seq=2,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
               emit=3,type:repli_want,seq=3,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
             req:awaitbuf,bufferid
@@ -46,25 +50,16 @@ Snap:H
             req:awaitbuf,bufferid=2,landed,finished
             req:awaitbuf,bufferid=3,landed,finished
           active_transport,type:mock,open
-        Library,pier:DJ,stuff
+        Library,pier:DJ
           Record,id:rec0,title:Tone-0,artist:Synthetic,seconds=0.3,nchunks=6
             Stream,name:audio,total=6,have=0,sr=48000
           Record,id:rec1,title:Tone-1,artist:Synthetic,seconds=0.3,nchunks=6
             Stream,name:audio,total=6,have=0,sr=48000
           Record,id:rec2,title:Tone-2,artist:Synthetic,seconds=0.3,nchunks=6
             Stream,name:audio,total=6,have=0,sr=48000
-        Crush_Tree,stuff
-          Crush:Library.DJ,kind:Record,n=3
-          Crush:DJ.Crowd.outbox,kind:emit,n=4
-          Crush:Sent_Tree.DJ,kind:Sent,n=3
-          Crush:Crowd.DJ.inbox,kind:req,n=4
-          Crush:Crowd.DJ.outbox,kind:emit,n=3
-          Crush:Library.Crowd,kind:Record,n=3
-          Crush:Sent_Tree.Crowd,kind:Sent,n=3
-          Crush:DJ.Crowd.inbox,kind:req,n
         reached:step_3
-        Sent_Tree,pier:DJ,dontSnap,stuff
-        Library,pier:Crowd,stuff
+        Sent_Tree,pier:DJ,dontSnap
+        Library,pier:Crowd
           Record,id:rec0,title:Tone-0,artist:Synthetic,seconds=0.3,nchunks=6
             Stream,name:audio,total=6,have=2,sr=48000,page_from=0,page_to=2,got
           Record,id:rec1,title:Tone-1,artist:Synthetic,seconds=0.3,nchunks=6
@@ -72,4 +67,4 @@ Snap:H
           Record,id:rec2,title:Tone-2,artist:Synthetic,seconds=0.3,nchunks=6
             Stream,name:audio,total=6,have=2,sr=48000,page_from=0,page_to=2
         reached:step_4
-        Sent_Tree,pier:Crowd,dontSnap,stuff
+        Sent_Tree,pier:Crowd,dontSnap

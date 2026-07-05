@@ -21,12 +21,12 @@ Snap:H
             goners:0,neus:3
             neu:e_Dock_open
             neu:Lang_doc_from_event
-            {"neu":"What:deeper"}
+            neu:What:deeper
             {"PASS":1,"t":"first pull: 3 neus, 0 goners"}
             {"PASS":1,"t":"deeper cloned, inner_secret not"}
           repull_unchanged
             goners:0,neus:0
-            {"PASS":1,"t":"unchanged source: no-diff"}
+            PASS,t:unchanged source: no-diff
           after_add
             goners:0,neus:1
             neu:fresh_point
@@ -42,7 +42,7 @@ Snap:H
           PASS,t:edit landed on the source
         C_post_push_nodiff
           goners:0,neus:0
-          {"PASS":1,"t":"clean push then pull: empty diff"}
+          PASS,t:clean push then pull: empty diff
         D_local_meanings
           goners:0,neus:0
           PASS,t:re-pull stays no-diff with %showing present
@@ -61,7 +61,7 @@ Snap:H
               Point,method:Lang_doc_from_event
               What,label:deeper
             goners:0,neus:0
-            {"PASS":1,"t":"default: a rename is a survivor (no diff)"}
+            PASS,t:default: a rename is a survivor (no diff)
           strict_rename
             src
               What,label:routing
@@ -76,6 +76,5 @@ Snap:H
             goners:1,neus:1
             goner:e_Dock_open
             neu:e_Dock_open_v2
-            {"PASS":1,"t":"resolve_strict: the same rename is goner + neu"}
+            PASS,t:resolve_strict: the same rename is goner + neu
         VERDICT:ALL_GREEN,passed:14
-    mo:main,interval=3.6	{"mung":["id"]}

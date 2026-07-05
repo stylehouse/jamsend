@@ -16,8 +16,7 @@ story:ReactiveWaft
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.048
-      sample=0.038,at=1778674502
+    TimeTotal:beliefs,avg=0.047
       sample=0.038,at=1778674516
       sample=0.029,at=1778674756
       sample=0.044,at=1778675257
@@ -27,8 +26,10 @@ story:ReactiveWaft
       sample=0.046,at=1781080360
       sample=0.071,at=1781608048
       sample=0.096,at=1782630239
-    TimeTotal:step,avg=0.016
+      sample=0.031,at=1783256021
+    TimeTotal:step,avg=0.011
       sample=0.016,at=1782630239
+      sample=0.005,at=1783256021
   step,dige:913c74ed8c754a50
   step=2,dige:460548cce7f2f318
   step=3,dige:e85c363b3a053759

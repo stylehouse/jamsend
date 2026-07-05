@@ -1,31 +1,30 @@
 Snap:H
   H:PeeringLive,Run
     A:PeeringLive
-      self,round=31	{"mung":["age"]}
+      self,round=29	{"mung":["age"]}
       w:PeeringLive
+        self,round=29	{"mung":["age"]}
         req:p2pman,finished
           req:init,finished
         req:emit_corruption,target:Tearing,eternal
-          req:wrap_emit,finished:true
-          req,corruption:publicKey,finished	{"ref":{"meddle_fn":"Function()"}}
+          req:wrap_emit,finished
+          req:1,corruption:publicKey,finished	{"loopy":0,"ref":{"meddle_fn":"Function()"}}
+          req,corruption,meddle_fn,finished	{"loopy":0,"hid":1}
         req:step_4,Destep,finished
           req:watch_error,finished
-        timeSatisfied
-        req:step_5,Destep,finished
+        req:step_5,Destep
           req:send_hello,maz=2,finished
-          req:watch_error,finished
-        self,round=31	{"mung":["age"]}
-        {"see":"PeeringLive  open:3/3"}
+          req:watch_error
+        see:PeeringLive  open:3/3
+        timeDoubt
     A:Bearing
-      self,round=35	{"mung":["age"]}
+      self,round=29	{"mung":["age"]}
       w:Bearing
+        self,round=29	{"mung":["age"]}
         req:listen,finished
           req:keygen,maz=3,finished	{"ref":{"Id":"Idento()"}}
           req:register,maz=2,finished
           req:listening,finished
-          log
-            msg:keygen started
-            msg:keygen done
         Peerily
         Peering,name:bearing,prepub:7acf614d876d69a4
           prepri:923f9316	{"ref":{"Id":"Idento()"}}
@@ -43,25 +42,19 @@ Snap:H
           protocol_faulty
             Unemit_Error
               error:not them!
-              error:invalid signature
-              error:invalid signature
-              error:invalid signature
         req:handshake,target:962af4326c28f29b,finished
           req:said_hello,maz=4,demand=800,finished
           req:heard_hello,maz=3,demand=800,finished
           req:said_trust,maz=2,demand=1500,finished
           req:heard_trust,demand=1500,finished
-        self,round=35	{"mung":["age"]}
     A:Nearing
-      self,round=33	{"mung":["age"]}
+      self,round=29	{"mung":["age"]}
       w:Nearing
+        self,round=29	{"mung":["age"]}
         req:listen,finished
           req:keygen,maz=3,finished	{"ref":{"Id":"Idento()"}}
           req:register,maz=2,finished
           req:listening,finished
-          log
-            msg:keygen started
-            msg:keygen done
         Peerily
         Peering,name:nearing,prepub:8cbc667bb0c8e748
           prepri:b4c5b5e9	{"ref":{"Id":"Idento()"}}
@@ -72,17 +65,14 @@ Snap:H
           req:heard_hello,maz=3,demand=800,finished
           req:said_trust,maz=2,demand=1500,finished
           req:heard_trust,demand=1500,finished
-        self,round=33	{"mung":["age"]}
     A:Tearing
-      self,round=34	{"mung":["age"]}
+      self,round=29	{"mung":["age"]}
       w:Tearing
+        self,round=29	{"mung":["age"]}
         req:listen,finished
           req:keygen,maz=3,finished	{"ref":{"Id":"Idento()"}}
           req:register,maz=2,finished
           req:listening,finished
-          log
-            msg:keygen started
-            msg:keygen done
         Peerily
         Peering,name:tearing,prepub:962af4326c28f29b
           prepri:386df6d9	{"ref":{"Id":"Idento()"}}
@@ -96,5 +86,3 @@ Snap:H
           req:said_trust,maz=2,demand=1500,finished
           req:heard_trust,demand=1500,finished
         Pier,pub:7acf614d876d69a4,name:7acf614d876d69a4
-        self,round=34	{"mung":["age"]}
-    mo:main,interval=3.6	{"mung":["id"]}

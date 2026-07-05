@@ -1,16 +1,17 @@
 Snap:H
   H:PeeringLive,Run
     A:PeeringLive
-      self,round=14	{"mung":["age"]}
+      self,round=13	{"mung":["age"]}
       w:PeeringLive
+        self,round=13	{"mung":["age"]}
         req:p2pman,finished
           req:init,finished
-        self,round=14	{"mung":["age"]}
-        {"see":"PeeringLive  open:3/3"}
+        see:PeeringLive  open:3/3
         timeDoubt
     A:Bearing
-      self,round=16	{"mung":["age"]}
+      self,round=13	{"mung":["age"]}
       w:Bearing
+        self,round=13	{"mung":["age"]}
         req:listen,finished
           req:keygen,maz=3,finished	{"ref":{"Id":"Idento()"}}
           req:register,maz=2,finished
@@ -22,10 +23,10 @@ Snap:H
         Peering,name:bearing,prepub:7acf614d876d69a4
           prepri:923f9316	{"ref":{"Id":"Idento()"}}
           open
-        self,round=16	{"mung":["age"]}
     A:Nearing
-      self,round=16	{"mung":["age"]}
+      self,round=13	{"mung":["age"]}
       w:Nearing
+        self,round=13	{"mung":["age"]}
         req:listen,finished
           req:keygen,maz=3,finished	{"ref":{"Id":"Idento()"}}
           req:register,maz=2,finished
@@ -37,10 +38,10 @@ Snap:H
         Peering,name:nearing,prepub:8cbc667bb0c8e748
           prepri:b4c5b5e9	{"ref":{"Id":"Idento()"}}
           open
-        self,round=16	{"mung":["age"]}
     A:Tearing
-      self,round=16	{"mung":["age"]}
+      self,round=13	{"mung":["age"]}
       w:Tearing
+        self,round=13	{"mung":["age"]}
         req:listen,finished
           req:keygen,maz=3,finished	{"ref":{"Id":"Idento()"}}
           req:register,maz=2,finished
@@ -52,5 +53,3 @@ Snap:H
         Peering,name:tearing,prepub:962af4326c28f29b
           prepri:386df6d9	{"ref":{"Id":"Idento()"}}
           open
-        self,round=16	{"mung":["age"]}
-    mo:main,interval=3.6	{"mung":["id"]}

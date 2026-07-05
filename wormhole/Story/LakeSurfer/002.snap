@@ -1,11 +1,12 @@
 Snap:H
   H:LakeSurfer,Run
     A:Lies
-      self,round=13	{"mung":["age"]}
+      self,round=12	{"mung":["age"]}
       w:Lies
         Opt
           dontSnapGhostList
-        self,round=13	{"mung":["age"]}
+          wantPantheate
+        self,round=12	{"mung":["age"]}
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/Story/LakeSurfer/Waftily/toc.snap,waft_path:Story/LakeSurfer/Waftily
             known,dige:4304b2cef25b6d74,kind:read	{"mung":["at"]}
@@ -45,16 +46,16 @@ Snap:H
         o_elvis:Lies_desire_step
         req:git
         req:wants
-          want=1782907313503,kind:cold,resolved
+          want=1783254966317,kind:cold,resolved
         o_elvis:dock_askies
         req:Langoer,eternal,focus:Story/LakeSurfer/Waftily,ok	{"ref":{"w":"%w:Lies"}}
         see:🗂 1 doc · 1 Waft
     A:Lang
-      self,round=13	{"mung":["age"]}
+      self,round=14	{"mung":["age"]}
       w:Lang
         Opt
           txtsyntaxdump
-        self,round=13	{"mung":["age"]}
+        self,round=14	{"mung":["age"]}
         model,cyto_dir
         docks
           dock:Ghost/test/Story/Lake/Idzeuzia.g,active	{"loopy":0}
@@ -251,7 +252,7 @@ Snap:H
                 controlflow,keyword:if,title:(Idzeug.stashed.nRepeating) {,line=750,via:claim_Idzeug_number,rel_from=3627,rel_to=3630
                 controlflow,keyword:if,title:(N.includes(n)) return false,line=755,via:claim_Idzeug_number,rel_from=3748,rel_to=3751
                 def,method:ier_is_Good,line=763,rel_from=4005,rel_to=4017
-              time,compile=0.066,all=0.882,write=0
+              time,compile=0.063,all=0.561,write=0
               Output,gen_path:gen/test/Story/Lake/Idzeuzia.go,dige:dbe210c73e58de4d,source_dige:f894a5ff10d26203
                source: |
                  <script lang="ts">
@@ -1294,7 +1295,7 @@ Snap:H
           Change
             backend,dige:f894a
             storage,dige:f894a
-            compile,dige:f894a,secs=0.066,dim,pending
+            compile,dige:f894a,secs=0.063,dim,pending
         req:workon,auto_push	{"ref":{"w":"%w:Lang"}}
           req:understanding,maz=3,permanent,sig:1:13:0:0,what:itis,finished
           req:ingredients,maz=2,permanent,sig:Ghost/test/Story/Lake/Idzeuzia.g,finished

@@ -1,20 +1,21 @@
 Snap:H
   H:MusuReplica,Run
     A:MusuReplica
-      self,round=10	{"mung":["age"]}
+      self,round=9	{"mung":["age"]}
       w:MusuReplica
         Opt
           crushCyto
-        self,round=10	{"mung":["age"]}
+        self,round=9	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Peering,name:DJ,req=2,ok
           Pier,pub:Crowd,req=2,ok
             Ud,pubkey:Crowd
-            outbox,stuff
-              emit,type:repli_lines,seq,sent,body_hash:e23f64572fa552ca3804b14820503a487347e4de494ceb12d504f5bd7bc9e3d9,body_len=160,acked
-              emit=2,type:repli_lines,seq=2,sent,body_hash:10ebc47d04f51634a25f62703d7941e6e7de1e53b786be43f2a8b9d634cfd016,body_len=160,acked
-              emit=3,type:repli_lines,seq=3,sent,body_hash:4b3b462e8a76d5ed04a3cbda574a28d19e4c3f6fb8af357e9ab1b89dafa1e192,body_len=160,acked
+            outbox
+              recent
+                emit,type:repli_lines,seq
+                emit=2,type:repli_lines,seq=2
+                emit=3,type:repli_lines,seq=3
               emit=4,type:repli_lines,seq=4,sent,body_hash:743e6fa00fc179e7518374e2d9d1140bdc680617a6a4d1ea89844914d0d39563,body_len=132,acked
             inbox
               req:unemit,seq,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
@@ -22,34 +23,27 @@ Snap:H
         Peering,name:Crowd,req=3,ok
           Pier,pub:DJ,req=2,ok
             Ud,pubkey:DJ
-            inbox,stuff
-              req:unemit,seq,type:repli_lines,body_hash:e23f64572fa552ca3804b14820503a487347e4de494ceb12d504f5bd7bc9e3d9,body_len=160,done,to:repli_lines,finished
-              req:unemit,seq=2,type:repli_lines,body_hash:10ebc47d04f51634a25f62703d7941e6e7de1e53b786be43f2a8b9d634cfd016,body_len=160,done,to:repli_lines,finished
-              req:unemit,seq=3,type:repli_lines,body_hash:4b3b462e8a76d5ed04a3cbda574a28d19e4c3f6fb8af357e9ab1b89dafa1e192,body_len=160,done,to:repli_lines,finished
+            inbox
+              recent
+                unemit,type:repli_lines,seq
+                unemit=2,type:repli_lines,seq=2
+                unemit=3,type:repli_lines,seq=3
               req:unemit,seq=4,type:repli_lines,body_hash:743e6fa00fc179e7518374e2d9d1140bdc680617a6a4d1ea89844914d0d39563,body_len=132,done,to:repli_lines,finished
-            outbox,stuff
+            outbox
               emit,type:repli_want,seq,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked
             req:awaitbuf,bufferid
               warned:buffer_late
           active_transport,type:mock,open
-        Library,pier:DJ,stuff
+        Library,pier:DJ
           Record,id:rec0,title:Tone-0,artist:Synthetic,seconds=0.3,nchunks=6
             Stream,name:audio,total=6,have=0,sr=48000
           Record,id:rec1,title:Tone-1,artist:Synthetic,seconds=0.3,nchunks=6
             Stream,name:audio,total=6,have=0,sr=48000
           Record,id:rec2,title:Tone-2,artist:Synthetic,seconds=0.3,nchunks=6
             Stream,name:audio,total=6,have=0,sr=48000
-        Crush_Tree,stuff
-          Crush:Library.DJ,kind:Record,n=3
-          Crush:DJ.Crowd.outbox,kind:emit,n=3
-          Crush:Sent_Tree.DJ,kind:Sent,n=3
-          Crush:Crowd.DJ.inbox,kind:req,n=3
-          Crush:Crowd.DJ.outbox,kind:emit,n
-          Crush:Library.Crowd,kind:Record,n=3
-          Crush:Sent_Tree.Crowd,kind:Sent,n=3
         reached:step_3
-        Sent_Tree,pier:DJ,dontSnap,stuff
-        Library,pier:Crowd,stuff
+        Sent_Tree,pier:DJ,dontSnap
+        Library,pier:Crowd
           Record,id:rec0,title:Tone-0,artist:Synthetic,seconds=0.3,nchunks=6
             Stream,name:audio,total=6,have=0,sr=48000
           Record,id:rec1,title:Tone-1,artist:Synthetic,seconds=0.3,nchunks=6
@@ -57,4 +51,4 @@ Snap:H
           Record,id:rec2,title:Tone-2,artist:Synthetic,seconds=0.3,nchunks=6
             Stream,name:audio,total=6,have=2,sr=48000,page_from=0,page_to=2
         reached:step_4
-        Sent_Tree,pier:Crowd,dontSnap,stuff
+        Sent_Tree,pier:Crowd,dontSnap

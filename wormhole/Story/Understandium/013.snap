@@ -3,6 +3,7 @@ Snap:H
     A:Understandium
       self,round=13	{"mung":["age"]}
       w:Understandium
+        self,round=13	{"mung":["age"]}
         tally,passed=35,failed=0
         LE	{"ref":{"target":"%What:1, label:second"}}
           State
@@ -50,11 +51,9 @@ Snap:H
             News:working,goners=0,neus=0
           State
           {"encode":1,"snap_origin":"Point,method:one\nPoint,method:two_EDITED\n","snap_working":"Point,method:one\nPoint,method:two_EDITED\n","dirty":"0"}
-        self,round=13	{"mung":["age"]}
         see:step 13 encode-compare after push
           {"snap_origin":"Point,method:one\nPoint,method:two_EDITED\n","snap_working":"Point,method:one\nPoint,method:two_EDITED\n","dirty":"0"}
           PASS,t:clean after push
           PASS,t:snaps equal after push
           PASS,t:no push_dirty on LE3
         VERDICT:ALL_GREEN,passed:35
-    mo:main,interval=3.6	{"mung":["id"]}

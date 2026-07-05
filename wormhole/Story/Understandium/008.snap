@@ -3,6 +3,7 @@ Snap:H
     A:Understandium
       self,round=8	{"mung":["age"]}
       w:Understandium
+        self,round=8	{"mung":["age"]}
         tally,passed=21,failed=0
         LE	{"ref":{"target":"%What:1, label:routing"}}
           Seem:origin	{"ref":{"Se":"Selection()","opt":"Object()","C":"%What:1, label:routing","topD":"%Demonstrations:origin"}}
@@ -29,9 +30,7 @@ Snap:H
             Point,method:Lang_doc_from_event
             What,label:deeper
               Point,method:inner_secret
-        self,round=8	{"mung":["age"]}
         see:step 8 deep resume
           deep_point:inner_secret
           PASS,t:nested %What survived the push
           PASS,t:deep /%What/%Point resumed (never moved)
-    mo:main,interval=3.6	{"mung":["id"]}

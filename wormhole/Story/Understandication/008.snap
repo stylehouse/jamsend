@@ -3,6 +3,7 @@ Snap:H
     A:Understandication
       self,round=8	{"mung":["age"]}
       w:Understandication
+        self,round=8	{"mung":["age"]}
         tally,passed=26,failed=0
         LE	{"ref":{"target":"%What:1, label:routing"}}
           State,stale,changey
@@ -45,10 +46,8 @@ Snap:H
             What,label:compilation_detail
               Point,method:write_gen
               Point,method:notify_Pantheate
-        self,round=8	{"mung":["age"]}
         see:step 8 encode-compare with unaccepted
           dirty:1
           PASS,t:path_guard absent from working snap
           PASS,t:path_guard present in origin snap
           PASS,t:dirty because of virtual delete
-    mo:main,interval=3.6	{"mung":["id"]}

@@ -52,10 +52,7 @@ story:MusuReplica
     useCyto
     dontSnapCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.26
-      sample=0.273,at=1783109383
-      sample=0.283,at=1783109431
-      sample=0.264,at=1783109785
+    TimeTotal:beliefs,avg=0.267
       sample=0.264,at=1783109841
       sample=0.269,at=1783109870
       sample=0.277,at=1783109930
@@ -63,10 +60,10 @@ story:MusuReplica
       sample=0.261,at=1783112181
       sample=0.252,at=1783131420
       sample=0.254,at=1783169000
-    TimeTotal:step,avg=0.018
-      sample=0.019,at=1783109383
-      sample=0.02,at=1783109431
-      sample=0.019,at=1783109785
+      sample=0.322,at=1783252337
+      sample=0.322,at=1783252390
+      sample=0.251,at=1783253743
+    TimeTotal:step,avg=0.019
       sample=0.019,at=1783109841
       sample=0.019,at=1783109870
       sample=0.02,at=1783109930
@@ -74,17 +71,20 @@ story:MusuReplica
       sample=0.019,at=1783112181
       sample=0.018,at=1783131420
       sample=0.018,at=1783169000
+      sample=0.023,at=1783252337
+      sample=0.023,at=1783252390
+      sample=0.018,at=1783253743
   step,dige:b74244526b42c964
-  step=2,dige:d252cf59d701f7d6
-  step=3,dige:90b44ddf1c253bb6
-  step=4,dige:3f344666c0c15270
-  step=5,dige:363affc74c13f235
-  step=6,dige:fb16ac5aea215c96
-  step=7,dige:2027abf170329283
-  step=8,dige:7ce1ae589ea1bfce
-  step=9,dige:2d5627f9669fd1d3
-  step=10,dige:f8752833840633f4
-  step=11,dige:13ff2b681a44953e
-  step=12,dige:1f6ff4514734b54b
-  step=13,dige:2a55427248931839
-  step=14,dige:f87ee8c45f0050c2
+  step=2,dige:79a249d5be1dee10
+  step=3,dige:20876322ce5142ea
+  step=4,dige:3af1ae94304c103e
+  step=5,dige:fc6c4ba79b412d40
+  step=6,dige:fdc479e908e09a9b
+  step=7,dige:71cdbe2281aea817
+  step=8,dige:729422f4a36a21d7
+  step=9,dige:716cc614b4d01c33
+  step=10,dige:49d8758d31d86e6c
+  step=11,dige:d33330f1c3538d0e
+  step=12,dige:686a2d49e7c7dfa6
+  step=13,dige:a73db85c5ff56368
+  step=14,dige:40ca4fc088ee67f1

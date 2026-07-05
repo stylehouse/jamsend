@@ -3,6 +3,7 @@ Snap:H
     A:Understandication
       self,round=14	{"mung":["age"]}
       w:Understandication
+        self,round=14	{"mung":["age"]}
         tally,passed=43,failed=0
         LE	{"ref":{"target":"%What:1, label:routing"}}
           State
@@ -42,9 +43,7 @@ Snap:H
               Point,method:write_gen
               Point,method:notify_Pantheate
             Point,method:codegen_pass
-        self,round=14	{"mung":["age"]}
         see:step 14 unshowing wander hygiene
           PASS,t:no unshowing on fresh routing clones after re-arm wander
           PASS,t:Lang_compile unshowing never in routing sphere
         VERDICT:ALL_GREEN,passed:43
-    mo:main,interval=3.6	{"mung":["id"]}

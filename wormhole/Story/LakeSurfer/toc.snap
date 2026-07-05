@@ -10,31 +10,32 @@ story:LakeSurfer
         txtsyntaxdump
       w:Lies
         dontSnapGhostList
+        wantPantheate
     quiesce_snap_time=0.4
   TimeSpool
-    TimeTotal:beliefs,avg=0.614
-      sample=0.552,at=1782905590
-      sample=0.539,at=1782907317
-      sample=0.539,at=1782907338
-      sample=0.589,at=1782907359
-      sample=1.036,at=1782915645
-      sample=0.44,at=1782956747
+    TimeTotal:beliefs,avg=0.508
       sample=0.503,at=1782959290
       sample=0.908,at=1782968192
       sample=0.109,at=1783040859
       sample=0.924,at=1783040881
-    TimeTotal:step,avg=0.307
-      sample=0.276,at=1782905590
-      sample=0.27,at=1782907317
-      sample=0.27,at=1782907338
-      sample=0.295,at=1782907359
-      sample=0.518,at=1782915645
-      sample=0.22,at=1782956747
+      sample=0.645,at=1783254913
+      sample=0.645,at=1783254928
+      sample=0.309,at=1783254956
+      sample=0.29,at=1783254969
+      sample=0.29,at=1783254985
+      sample=0.456,at=1783254996
+    TimeTotal:step,avg=0.254
       sample=0.251,at=1782959290
       sample=0.454,at=1782968192
       sample=0.054,at=1783040859
       sample=0.462,at=1783040881
+      sample=0.323,at=1783254913
+      sample=0.323,at=1783254928
+      sample=0.155,at=1783254956
+      sample=0.145,at=1783254969
+      sample=0.145,at=1783254985
+      sample=0.228,at=1783254996
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
-  step,dige:d6d7ec8b0e86acb6
-  step=2,dige:7eff8501ac4f0a49
+  step,dige:a4e072fea48ea375
+  step=2,dige:9acdaeac88efe997

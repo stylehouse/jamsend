@@ -3,6 +3,7 @@ Snap:H
     A:Understandium
       self,round=12	{"mung":["age"]}
       w:Understandium
+        self,round=12	{"mung":["age"]}
         tally,passed=32,failed=0
         LE	{"ref":{"target":"%What:1, label:second"}}
           State
@@ -50,10 +51,8 @@ Snap:H
             News:working,goners=0,neus=0
           State,changey
           {"encode":1,"snap_origin":"Point,method:one\nPoint,method:two\n","snap_working":"Point,method:one\nPoint,method:two_EDITED\n","dirty":"1"}
-        self,round=12	{"mung":["age"]}
         see:step 12 encode-compare dirty
           {"snap_origin":"Point,method:one\nPoint,method:two\n","snap_working":"Point,method:one\nPoint,method:two_EDITED\n","dirty":"1"}
           PASS,t:dirty after clone edit
           PASS,t:snaps differ
           PASS,t:encode record replaced (still one)
-    mo:main,interval=3.6	{"mung":["id"]}
