@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783184181747
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783218536078
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -15,12 +15,14 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     sub:src/lib/server,name:server
     sub:src/lib/L,name:L
     sub:src/lib/V,name:V
+    Doc:src/lib/cluster_name.ts,name:cluster_name,noticed_at=1783186025647
   group:Ghost,dir:Ghost
     sub:Ghost/N,name:N
     sub:Ghost/Story,name:Story
     sub:Ghost/test,name:test
     sub:Ghost/M,name:M
     sub:Ghost/S,name:S
+    sub:Ghost/V,name:V
   open_dir:Ghost/N
   group:Ghost/N,dir:Ghost/N
     Doc:Ghost/N/Peeroleum.g,name:Peeroleum,noticed_at=1781771905413
@@ -74,6 +76,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/spec/Stemdex_spec.md,name:Stemdex_spec.md,noticed_at=1783057968719
     Doc:src/lib/O/spec/Robustness_plan.md,name:Robustness_plan.md,noticed_at=1783165854860
     Doc:src/lib/O/spec/PWA_install_handover.md,name:PWA_install_handover.md,noticed_at=1783178992837
+    Doc:src/lib/O/spec/Story_future_directions.md,name:Story_future_directions.md,noticed_at=1783185074390
   open_dir:src/lib/O
   group:src/lib/O,dir:src/lib/O
     sub:src/lib/O/D,name:D

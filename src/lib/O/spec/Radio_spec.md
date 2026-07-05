@@ -2,8 +2,8 @@
 
 The high-level shape of the music-piracy platform and the functions we string together to build it.
  This is the *destination* document: what each stage IS, what's built, and the refinements still owed
-  (itemised — pulled out of the `MusuCrate_filaments` test snap, which now only carries the compact
-   `stage,of,name,built` map and a pointer back here).
+  (itemised here — the stage Books' test snaps carry only the compact `stage,of,name,built`
+   map and a pointer back to this doc).
 
 The companion docs: `Music_todo.md` (the older running todo), `Hovercraft.design.md` (req/ttlilt),
  `EntropyArrest.md` (snap-noise taming + the caveat band the transport Books lean on). `Swarm_spec.md` is
@@ -215,7 +215,7 @@ Each witness is differential or has a negative control with teeth (an inverted c
 
 **Audio-source policy:** seeded synth records for pure-protocol / tick Books (instant, nav-free — the
  payload's content is not the subject, e.g. MusuReplica); `testsounds/` for any Book whose CLAIM involves
-  files, decode, or transcode (MusuCrate, MusuReco) — it is deterministic generated music (pure tones via
+  files, decode, or transcode (MusuReco) — it is deterministic generated music (pure tones via
    MusuGenerateTestsMusic) that still travels the whole real pipeline: nav walk → bin_read → decodeAudioData.
     `/music` is real but per-machine — never fixture-stable; use it for listening, not for gates.
 
@@ -226,7 +226,7 @@ Each witness is differential or has a negative control with teeth (an inverted c
     and retired. The signal a Book is scaffolding: its witnesses are soft (something exists / time passed /
      N happened) or its one hard claim is already made by a real integration Book. Concretely:
 - **MusuRadio is the first to retire.** Its only differential claim (`helps` — Glide beats no-control)
-   duplicates MusuGlide (and, on real music, MusuCrate); its other witnesses (`ready`/`sustained`/
+   duplicates MusuGlide; its other witnesses (`ready`/`sustained`/
     `many_tracks`) are soft; and its genuinely unique bit — real-time audible playback — is unwitnessable
      on a muted, gesture-gated runner. It's a demo in a test's clothing. Fold its intent into **MusuReco's
       audio-proof** (B *plays* its byte-exact real replica through the unlocked voice — §9.10, the demo that
@@ -255,3 +255,25 @@ The deterministic / single-runner models are built. What's left needs real plumb
 
 The MVP that ties it together: a real caster on the Pier streaming a real `%record` to two webrtc-peered
  listeners through one relay-only source — the cafe, end to end. Everything above is a tested rung toward it.
+
+---
+
+## 8. The scape — the graph of music, seen as stained glass
+
+Where §1-7 build the *stream*, the **scape** is the *view*: the whole thing as a Cyto graph tessellated into
+ **Voronoi stained-glass cells** (Cytui ◈ mode — power-diagram cells coloured by Matstyle; the render is pure
+  pixels, so no Book sees it — `voronoi-cells-render`). `lib/V/Mound.svelte` is its toplevel (the `/` route
+   Piracy-scape); the owner's destination is "Voronoi stained glass graphs of music."
+
+- **MusuMitosis** (`Musuation.g`) — the render's first gauge: abstract NZ-flora cells that grow, divide, and
+   die, crush-folded so each genus is one pane. Watched dividing.
+- **MusuScape** (`Musuation.g` `//#region scape`, live-green 6/6) — the MUSIC twin, with the graph structure
+   Mitosis lacks: `%Artist,name / %Track,title` panes (the library), `%Peer,name / %Share,track` (a friend
+    and the tracks they share — a share is an EDGE onto a real track), and a **hub** (a track many friends
+     share = the power-diagram weight — a hit blazes, a deep cut is a sliver). The graph re-weights LIVE as
+      friends come and go; the crush folds every pane at the last beat so the voronoi arms.
+- **Mound** now boots the machine as a **runner on a music Book** (default MusuScape, `?B=` overrides) and
+   renders the Cyto UI full-bleed — the run rests in the stained-glass state. **First cut, browser-verify
+    OWED.** NEXT: a LIVE gather (real library + real Piers off the Swarm side, `Swarm_spec §6`) in place of the
+     seeded Book, and a bespoke Voro surface; open owner call — a runner boot joins the relay flock (fine for a
+      live Piracy-scape, but `boot_role='editor'` if `/` shouldn't spawn a grid runner).

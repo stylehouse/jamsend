@@ -493,7 +493,7 @@ The replication protocol is real (Repli_* + the Se, §6/MusuReplica — live-gre
  (read-only) arriving through the FSA share gate (`H.c.disk_gated` + `open_dir` — the granted-share
   path, since ?E=/?B= boots forbid the OPFS shadow disk). A walk mints `%Record`s from files (id =
    path-hash, title/artist off tags or path parts) with `%Stream` handles that decode lazily —
-    `MusuCrate` already fetch+decodes real audio, so the decode seam exists; what's new is the
+    `MusuReco` (via `Crate_transcode_*`) already fetch+decodes real audio, so the decode seam exists; what's new is the
      LIBRARY as a Se over a folder tree ("hierarchise FileLists"), whose neus|goners are files
       appearing|vanishing on disk. The same `repli_on_neu` hook then offers REAL music with zero new
        protocol.

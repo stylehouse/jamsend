@@ -11,7 +11,7 @@ The **manifest + service worker + iOS meta + Media Session** all landed (steps 2
   phone can reach** (the hard 80%, host/infra + a real phone, not writable from the container),
    so nobody has actually seen "Add to Home Screen" yet. It is UNVERIFIED on a device.
 - `static/manifest.webmanifest` — NEW. `start_url:"/"` (the app; see #5 — chose the user-facing
-   motive over the fleet-runner one; flip to `/?I=` or `/?B=<Book>` for a phone runner).
+   motive over the fleet-runner one; flip to `/Otro?I=` or `/Otro?B=<Book>` for a phone runner).
 - `static/icon.svg` — NEW. A 2001 monolith seen from below on the ceiling of a hall. Square,
    full-bleed dark, safe-zone-clear so it doubles as the `maskable` icon.
 - `src/app.html` — `<link rel="manifest">`, `theme-color`, and the `apple-mobile-web-app-*` +
@@ -86,8 +86,8 @@ Both are served by the same thing: a web app manifest + a minimal service worker
 **5. Decide what the installed icon opens (`start_url`).**
  There are two toplevels: `src/routes/Otro` (the app) and `src/routes/BigWordland` (the big-room
   editor). A phone install almost certainly wants the *app*, not a headless runner — but if the goal
-   is a always-on phone RUNNER in the fleet, `start_url` could be `/?B=<Book>` (boots a runner) or
-    `/?I=<tag>` (an idle grid runner, per the Clustation memory). This is a product decision; name it
+   is a always-on phone RUNNER in the fleet, `start_url` could be `/Otro?B=<Book>` (boots a runner) or
+    `/Otro?I=<tag>` (an idle grid runner, per the Clustation memory — roles boot on /Otro, not /). This is a product decision; name it
      explicitly in the manifest and say which you chose and why.
 
 ## The pieces (all real paths)

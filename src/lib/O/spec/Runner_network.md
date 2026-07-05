@@ -218,19 +218,11 @@ A and B harden **liveness** (tolerate a sleepy tab / keep it warm). C and D came
        *asymmetric* reconnect where only ONE side reset. Build the step **at** the re-pin, not before — a green
         test guarding code the editor doesn't yet run is an orphan.
 
-**D. `channel_up` once-guard — the "highest-leverage" claim is OVERSTATED; residual fix is small and optional.**
- Traced 2026-07-05. `Lies_channel_up` (`LiesLies.svelte:198`) runs every `LiesPersist` pass; `if (w.c.channel_up)
-  return` (`:219`) makes it a no-op after the first standup. The relayed advice — *"the once-guard makes every
-   other runner fix land unreliably"* — does **not** hold against the code: every frame handler is **pure
-    dispatch to a live `H.Lies_*` method** (`:302-334`), so a method-body fix (handler logic *and* spine methods
-     like `req_unemit`) lands on HMR via re-mix **regardless** of the guard. The once-guard blocks only
-      re-**standup**: adding/removing a handler *type*, re-opening the socket, re-laying the Pier, re-arming the
-       keepalive — structural changes that do need a full reload. The two *documented real* failures are already
-        handled: `Socket_real` vanished (the P1 reconcile, `:214`) and never-deposited / cross-wired gen (the
-         loud throttled note, `:226`). **Residual fix, if wanted:** split the idempotent `on(...)` registration
-          block (cheap — `Peeroleum_on` overwrites `w.c.on[type]`) to run every call, from the once-only socket
-           standup (keep guarded), so a new/changed handler *type* re-registers on the next pass without a
-            reload. Small, bounded, low-urgency — **not** the load-bearing lever the one-liner implied. (Also
-             note: `channel_up` is Lies-layer, above the mock-carrier spine the Pere Books drive — so it can't
-              be a PereProof step; its isolation proof would be a small Lies-layer harness, if it's ever worth
-               one, which the trace says it isn't yet.)
+**D. `channel_up` once-guard — traced 2026-07-05, verdict OVERSTATED, no action.**
+ The relayed *"highest-leverage"* claim (the once-guard — `Lies_channel_up`, `LiesLies.svelte:219` — makes other
+  runner fixes land unreliably) does **not** hold: frame handlers are pure dispatch to live `H.Lies_*` methods
+   (`:302-334`), so a method-body fix lands on HMR via re-mix regardless of the guard. The guard blocks only
+    re-**standup**, whose two real failures are already handled (`Socket_real`-vanished P1 reconcile `:214`;
+     cross-wired gen note `:226`). Optional residual, if ever wanted: split the idempotent `on(...)` registration
+      to run every pass so a changed handler *type* re-registers without a reload — small, bounded, not
+       load-bearing. (Lies-layer, above the mock-carrier spine — so not a PereProof step.)

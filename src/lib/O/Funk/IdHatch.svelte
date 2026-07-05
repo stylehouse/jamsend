@@ -26,12 +26,12 @@
     //   (Otro's "open share") is the runtime consequence — a ticked tab demands a gesture until AC_ready.
     let audio_on = $state(has_audio())
 
-    // The ACTIVE %Identity's public face {prepub, friendly}, polled live: the adopt lands via post_do
+    // The ACTIVE %Identity's public face {prepub, nick}, polled live: the adopt lands via post_do
     //  on the tick (a C-tree mutation), which a derived off H.version wouldn't catch — and a fullscreen
     //   panel can well afford a slow poll.
     let poll = $state(0)
     onMount(() => { const iv = setInterval(() => poll++, 500); return () => clearInterval(iv) })
-    let current = $derived.by(() => { void poll; return (H as any).Clustation_self?.(H) as { prepub: string } | undefined })
+    let current = $derived.by(() => { void poll; return (H as any).Clustation_self?.(H) as { prepub: string; nick?: string } | undefined })
     // cluster-trust status of the active identity: is our pub in the CODE-PUSH allowlist (CLUSTER_TRUSTED_PUBS)?
     //  Flips to trusted only after a dev-server restart re-bakes the file `Set up cluster trust` writes.
     let trust = $derived.by(() => { void poll; return (H as any).Lies_cluster_trust_status?.() as { prepub?: string; in_set: boolean; configured: boolean } | undefined })
@@ -105,7 +105,7 @@
         <div class="id-hatch">
             <h2>🪪 Cluster identity</h2>
             <p class="cur">{current
-                ? `active: addr ${current.prepub}…`
+                ? `active: ${current.nick ?? ''} · addr ${current.prepub}…`
                 : "none — this tab can't sign privileged frames (gen_write, ghost_compile) or join the grid"}</p>
             {#if current}
                 <p class="trust" class:ok={trust?.in_set} class:warn={trust?.configured && !trust?.in_set}>

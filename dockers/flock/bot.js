@@ -16,10 +16,14 @@ const targetBase  = process.env.TARGET_BASE || 'http://host.docker.internal:9091
 const cluster     = process.env.CLUSTER || 'flock'
 const runnerN     = process.env.RUNNER_N || '1'
 const tag         = `${cluster}-${runnerN}`
-// ?I=<tag> ALONE boots an idle runner on the grid (no ?B=) — the tag keys the forked
-//  Idento (§3.1). &remoteWormhole=1 acquires disk access from a trusted editor via the
-//   grant protocol (no VNC needed — the grant button is in the editor's Rundar rack).
-const url         = `${targetBase}/?I=${encodeURIComponent(tag)}&remoteWormhole=1`
+// /Otro is the toplevel that reads the role params (?E=/?B=/?I=) and stands up the
+//  identity + runner machinery — the / route is the Mound app page and boots no role.
+//   ?I=<tag> ALONE boots an idle runner on the grid (no ?B=); the tag keys the forked
+//    Idento (§3.1) and — because it RESUMES from this bot's persistent profile — the
+//     reborn tab keeps the SAME identity across a self-heal (a bare ?I=new would re-mint
+//      every crash).  &remoteWormhole=1 acquires disk access from a trusted editor via the
+//       grant protocol (no VNC needed — the grant button is in the editor's Rundar rack).
+const url         = `${targetBase}/Otro?I=${encodeURIComponent(tag)}&remoteWormhole=1`
 const HEARTBEAT_MS = 15 * 1000
 let driver = null
 

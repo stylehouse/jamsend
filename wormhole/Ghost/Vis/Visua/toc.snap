@@ -1,0 +1,20 @@
+Waft:Ghost/Vis/Visua,active
+  Funkcion:CreduFunk
+    Funkcion:Storying,of_Book:MusuMitosis
+    Funkcion:Storying,of_Book:MusuScape
+    Funkcion:Storying,of_Book:MusuReco
+    Funkcion:Storying,of_Book:MusuReplica
+  What:the home
+    Doc:Ghost/V/Voro.g
+    Point,method:Voro_books
+    Point,method:Voro_render_map
+  What:the render
+    Doc:src/lib/O/Cytui.svelte
+    Doc:src/lib/O/Cyto.svelte
+  What:the crush
+    Doc:Ghost/Story/Musuation.g
+    Point,method:MusuMitosis_seed
+    Point,method:Botany_plant
+    Point,method:Repli_crush_scan
+  What:the spec
+    Doc:Ghost/V/Voro.g

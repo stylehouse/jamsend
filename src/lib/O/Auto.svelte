@@ -56,6 +56,7 @@
     import { boot_param }   from "$lib/boot"
     import { Idento }       from "$lib/Y.svelte"
     import { prepubOf }     from "$lib/p2p/cluster_trust"
+    import { cluster_name } from "$lib/cluster_name"
 
     const DEFAULT_BOOKS = ['LeafJuggle', 'LeafFarm', 'StuffFlipping', 'LakeSurfer']
     const HEAD = 'Present'
@@ -143,7 +144,7 @@
             url.searchParams.set('I', stored!.prepub)
             window.history.replaceState(null, '', url.toString())
         }
-        console.log(`🪪 Identity ${param === 'new' ? 'minted' : 'active'} ${tag} (${stored!.prepub})`)
+        console.log(`🪪 Identity ${param === 'new' ? 'minted' : 'active'} ${cluster_name(stored!.prepub)} (${stored!.prepub})`)
         return true
     },
 
@@ -158,6 +159,9 @@
         ident.c.up = A
         ident.c.keys = { pub: stored.pub, key: stored.key }
         ident.sc.prepub = stored.prepub
+        // cosmetic handle: a memorable face for the roster, derived from the prepub (which stays
+        //  the real address).  Snap-clean scalar string; every mint|adopt funnels through here.
+        ident.sc.nick = cluster_name(stored.prepub)
         ident.sc.active = 1
         const peering = ident.oai({ Peering: 1, name: stored.prepub }) as TheC
         peering.c.up = ident
@@ -209,10 +213,11 @@
         return keys?.pub && keys?.key ? { pub: keys.pub, key: keys.key } : undefined
     },
 
-    // Clustation_self — the active %Identity's PUBLIC face {prepub}, or undefined.  The advertise frame's
-    //  payload (no secret): prepub = our to:<pub> routing address (= %Peering name).  Read off the same
-    //   active %Identity as the signing key, so what we advertise is exactly who we sign as.
-    Clustation_self(this: House, H?: House): { prepub: string } | undefined {
+    // Clustation_self — the active %Identity's PUBLIC face {prepub, nick}, or undefined.  prepub =
+    //  our to:<pub> routing address (= %Peering name), the only thing the advertise frame carries (no
+    //   secret); nick is the cosmetic handle (derived, never routed on).  Read off the same active
+    //    %Identity as the signing key, so what we advertise is exactly who we sign as.
+    Clustation_self(this: House, H?: House): { prepub: string; nick: string } | undefined {
         H = (H ?? this) as House
         const top = (H.top_House?.() ?? H) as House
         let ident = (top.c as any)?.active_identity as TheC | undefined
@@ -221,7 +226,7 @@
             ident = A && (A.o({ Identity: 1 }) as TheC[]).find(i => i.sc.active)
         }
         const prepub = ident?.sc.prepub as string | undefined
-        return prepub ? { prepub } : undefined
+        return prepub ? { prepub, nick: (ident!.sc.nick as string) || cluster_name(prepub) } : undefined
     },
 
 //#endregion

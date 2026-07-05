@@ -69,6 +69,31 @@
         'Ghost/Story/Swarmation.g',     // the Swarm* tests — SwarmStaple; more pile on here
     ]
 
+    // ── RUNNER_FACETS — a runner's advertised self-state, as ONE ordered list ──────────────────────
+    //   Every projection of a runner's live state used to be a separate hand-kept field list: the
+    //    advertise BUILD + its throttle SIG (Lies_advertise), the advertise_recv UNPACK, and the
+    //     roster's live-FOLD + dead-CLEAR (Lies_runner_roster) — five sites that all had to grow
+    //      together (threading `fsa` through was the last such five-place edit, and the source of the
+    //       dige-sync TODO the advertise comment used to point at).  This table is the single source:
+    //        a new facet is one row here, and every site derives from it.
+    //   • `read` names the facet's LIVE source on the runner (null ⇒ received + projected only).
+    //   • `kind` 'flag' rides the wire + snaps as 1-or-absent (a boolean capability); 'text' rides +
+    //      snaps verbatim-or-absent (an identity/name — book, the engaged client's pub).
+    //   • ORDER is load-bearing: the roster folds in THIS order, so a fresh %Runner row's sc-key order
+    //      (hence its snap text — the encoder walks sc in insertion order) stays byte-identical to the
+    //       old hand-written block.  Do NOT reorder; append.
+    //   • `ready` is the beacon's inherent "I'm reachable" bit: received + projected like a facet, but
+    //      it has NO `read` (a live advertise always means ready:1; Lies_going_cold sends ready:0) and
+    //       it is EXCLUDED from the sig (it never changes in steady state, so it must not trip the
+    //        throttle) — hence the `if (f.read)` guard on the advertise/sig side.
+    const RUNNER_FACETS: { k: string; kind: 'flag' | 'text'; read: ((H: any, w: any) => any) | null }[] = [
+        { k: 'book',    kind: 'text', read: (H, _w) => (H.top_House().c.book as string) ?? '' },
+        { k: 'ready',   kind: 'flag', read: null },
+        { k: 'engaged', kind: 'text', read: (H, w) => { const e = H.Lies_engagement?.(w); return (e && e.status === 'active') ? (e.client ?? '') : '' } },
+        { k: 'ac',      kind: 'flag', read: (H, _w) => !!H.top_House().c.musu_gat?.AC_ready },
+        { k: 'fsa',     kind: 'flag', read: (H, w) => !!H.Lies_has_fsa(w) },   // a LOCAL FSA share (A.c.DL) — not the remoteWormhole proxy
+    ]
+
     onMount(async () => {
     await M.eatfunc({
 
@@ -1145,28 +1170,24 @@
             //    CHANGE to any of the three JUMPS the ~15s throttle, so a tap-for-sound / run start|end /
             //     lease take|release reaches the editor within a keepalive tick, not up to 15s.  Steady
             //      state (nothing changed) still beacons at ~15s — the sig-compare is the only gate added.
-            const eng     = (H as any).Lies_engagement?.(w) as { client?: string; status?: string } | undefined
-            const book    = (H.top_House().c.book as string) ?? ''
-            const engaged = (eng && eng.status === 'active') ? (eng.client ?? '') : ''
-            const ac_now  = !!(H.top_House().c as any).musu_gat?.AC_ready
-            const fsa_now = (H as any).Lies_has_fsa(w) as boolean   // a local FSA share is granted (A.c.DL) — not the remoteWormhole proxy
-            const sig     = `${book}|${engaged}|${ac_now ? 1 : 0}|${fsa_now ? 1 : 0}`
+            // Read every self-facet from its live source ONCE (RUNNER_FACETS is the single list; `read`
+            //  names each source).  The SIG is the self-facets joined — a CHANGE to any JUMPS the ~15s
+            //   throttle, so a tap-for-sound / run start|end / lease take|release reaches the editor within
+            //    a keepalive tick, not up to 15s.  `ready` has no read (always 1) so it's out of the sig and
+            //     never trips the throttle; steady state (nothing changed) still beacons at ~15s.
+            const vals: Record<string, any> = {}
+            for (const f of RUNNER_FACETS) if (f.read) vals[f.k] = f.read(H, w)
+            const sig = RUNNER_FACETS.filter(f => f.read).map(f => f.kind === 'flag' ? (vals[f.k] ? 1 : 0) : (vals[f.k] ?? '')).join('|')
             if (sig === w.c.last_adv_sig && w.c.last_advertise && now - (w.c.last_advertise as number) < 15000) return
             w.c.last_advertise = now
             w.c.last_adv_sig = sig
-            ;(H as any).Peeroleum_send_consumer(w, 'advertise', {
-                from: self.prepub,
-                ready: 1,                        // reachable on the grid (book='' ⇒ free/idle)
-                book,                            // a Book actually running — the finer "busy-with-something"
-                engaged,                         // the live lease-holder's pub; '' ⇒ free (dispatch skips + tiers on this)
-                ...(ac_now ? { ac: 1 } : {}),    // AudioContext gesture-unlocked (a needAC dispatch prefers it)
-                ...(fsa_now ? { fsa: 1 } : {}),  // a local FSA share is open (a needsFSA dispatch prefers it; a proxy-only runner refuses)
-                // (no favourite_client on the beacon: the editor sources it from the Waft:Cluster/
-                //  %HostedIdentity registry — advertise_recv reads hi.sc.favourite_client and ignores any
-                //   wire copy — so broadcasting it to every client each beat was dead weight.  The
-                //    point-to-point ping reply still reports it on demand.  The general fix is the
-                //     dige-sync TODO below, which collapses this whole hand-kept field list.)
-            })
+            // Encode the self-facets onto the wire: a text always rides (even '' — book/engaged); a flag
+            //  rides as 1-or-omitted (keeps the frame small — ac/fsa).  ready:1 is the reachability bit.
+            //   (No favourite_client on the beacon: the editor sources it from the Waft:Cluster/%HostedIdentity
+            //    registry — advertise_recv reads hi.sc.favourite_client and ignores any wire copy.)
+            const facets: Record<string, any> = {}
+            for (const f of RUNNER_FACETS) { if (!f.read) continue; if (f.kind === 'text') facets[f.k] = vals[f.k]; else if (vals[f.k]) facets[f.k] = 1 }
+            ;(H as any).Peeroleum_send_consumer(w, 'advertise', { from: self.prepub, ready: 1, ...facets })
         },
         // Lies_ac_nudge — the Sound Brink calls this the instant a gesture unlocks (or an init settles)
         //  the AudioContext, so the runner re-advertises ac:1 to the editor NOW rather than waiting for
@@ -1227,7 +1248,10 @@
             if (!H.Lies_channel_live(w)) return
             const self = (H as any).Lies_self?.(w) as { prepub: string } | undefined
             if (!self?.prepub) return
-            ;(H as any).Peeroleum_send_consumer(w, 'advertise', { from: self.prepub, ready: 0, book: '', engaged: '' })
+            // ready:0 with every facet OMITTED: advertise_recv folds a not-ready beacon with all facets
+            //  cleared (a missing text reads '', a missing flag reads false), so the roster drops the grant
+            //   THIS beat — and adding a facet never touches this line (it clears by omission, per RUNNER_FACETS).
+            ;(H as any).Peeroleum_send_consumer(w, 'advertise', { from: self.prepub, ready: 0 })
         },
 
         // Lies_advertise_recv — the runner→editor presence beacon lands here, on the EPHEMERAL route,
@@ -1242,18 +1266,14 @@
             if (H.Lies_role(w) !== 'editor') return
             const from = String(fr?.from ?? '').trim()
             if (!from) return
+            // Park the beacon: last_heard + each facet decoded per RUNNER_FACETS (text → value-or-'',
+            //  flag → boolean).  favourite_client is NOT read from the wire — it's a registry-only fact
+            //   (Waft:Cluster/%HostedIdentity), folded by the projection.  Beacon key order is irrelevant
+            //    here (pure .c, never encoded); only the snapped %Runner the roster mints carries order.
             const beacons = (w.c.beacons ??= {}) as Record<string, any>
-            beacons[from] = {
-                last_heard: Date.now(),
-                ready:      !!fr?.ready,
-                book:       fr?.book ? String(fr.book) : '',
-                // overall engagement (the live lease's client pub) — busy/free for the Brink + a lease-aware
-                //  allocator.  '' ⇒ free.  favourite_client is NOT on the beacon: it's a registry-only fact
-                //   (Waft:Cluster/%HostedIdentity), read by the projection, never written from the wire.
-                engaged:    fr?.engaged ? String(fr.engaged) : '',
-                ac:         !!fr?.ac,   // AudioContext gesture-unlocked over there — the needAC dispatch facet
-                fsa:        !!fr?.fsa,  // a local FSA share is open over there — the needsFSA dispatch facet
-            }
+            const b: Record<string, any> = { last_heard: Date.now() }
+            for (const f of RUNNER_FACETS) b[f.k] = f.kind === 'text' ? (fr?.[f.k] ? String(fr[f.k]) : '') : !!fr?.[f.k]
+            beacons[from] = b
             // no snap mutation, no bump here — the in-think projection owns the snapped tree.
         },
 
@@ -1299,17 +1319,34 @@
                 if (b && b.last_heard > Number(r.c.last_heard ?? 0)) { r.c.last_heard = b.last_heard; changed = true }
                 const live = Number(r.c.last_heard ?? 0) > 0 && now - Number(r.c.last_heard) < LIVE_MS
                 if (live && b) {
-                    if (b.book)    { if (r.sc.book !== b.book) { r.sc.book = b.book; changed = true } delete r.c.sent }   // running ⇒ a dispatched call connected → ▶ (clears the ☎)
-                    else if (r.sc.book)    { delete r.sc.book; changed = true }
-                    if (b.ready)   { if (r.sc.ready !== 1) { r.sc.ready = 1; changed = true } } else if (r.sc.ready)   { delete r.sc.ready; changed = true }
-                    if (b.engaged) { if (r.sc.engaged !== b.engaged) { r.sc.engaged = b.engaged; changed = true } } else if (r.sc.engaged) { delete r.sc.engaged; changed = true }
-                    if (b.ac)      { if (r.sc.ac !== 1) { r.sc.ac = 1; changed = true } } else if (r.sc.ac) { delete r.sc.ac; changed = true }
-                    if (b.fsa)     { if (r.sc.fsa !== 1) { r.sc.fsa = 1; changed = true } } else if (r.sc.fsa) { delete r.sc.fsa; changed = true }
+                    // Project each facet per RUNNER_FACETS, IN its declared order (= the snap's sc-key order,
+                    //  since the encoder walks sc in insertion order): a flag lands 1-or-absent, a text lands
+                    //   value-or-absent, and a beacon that dropped a facet clears it — so the snapped %Runner
+                    //    never lies about a runner's live state.  A `book` set means a dispatched call
+                    //     connected → ▶, so it also clears the ☎ (r.c.sent).
+                    const sc = r.sc as any
+                    for (const f of RUNNER_FACETS) {
+                        const v = (b as any)[f.k]
+                        if (f.kind === 'flag') { if (v) { if (sc[f.k] !== 1) { sc[f.k] = 1; changed = true } } else if (sc[f.k]) { delete sc[f.k]; changed = true } }
+                        else                   { if (v) { if (sc[f.k] !== v) { sc[f.k] = v; changed = true } } else if (sc[f.k]) { delete sc[f.k]; changed = true } }
+                        if (f.k === 'book' && v) delete r.c.sent
+                    }
                 } else if (!live) {
                     // silent past the window — clear the live claims so the snap never lies that an unheard
-                    //  runner is still ready|running.  Identity persists; only the grant lapses.
-                    if (r.sc.ready || r.sc.book || r.sc.engaged || r.sc.ac || r.sc.fsa) { delete r.sc.ready; delete r.sc.book; delete r.sc.engaged; delete r.sc.ac; delete r.sc.fsa; changed = true }
-                    if (b) delete beacons[pub]   // expired beacon consumed; the registry keeps the runner known
+                    //  runner is still ready|running.  Identity persists (unless anonymous, GC'd just below).
+                    const sc = r.sc as any
+                    if (RUNNER_FACETS.some(f => sc[f.k])) { for (const f of RUNNER_FACETS) delete sc[f.k]; changed = true }
+                    if (b) delete beacons[pub]   // expired beacon consumed
+                    // EPHEMERAL-identity GC — the "two runners, like before" leak-stop.  An ANONYMOUS runner
+                    //  (no durable favourite_client binding) that isn't live is cruft: a prior session booted a
+                    //   fresh cluster identity (?I=new / a re-minted stashed key), advertised once, and left a
+                    //    role:runner entry the "never forgotten" registry kept forever — so the rack showed dead
+                    //     ghosts beside the one live runner.  FORGET it (registry entry + its %Runner row).  A
+                    //      BOUND runner (a client's favourite) is KEPT as 'offline' — that relationship is the
+                    //       whole reason to remember it durably.  Skip one with a ☎ in flight (r.c.sent).  Self-
+                    //        heals: a genuinely-live runner re-advertises within ~15s and re-registers; a dead one
+                    //         never returns.  (The full durable directory / session-roster split is task #8.)
+                    if (!hi.sc.favourite_client && !r.c.sent) { cluster.drop(hi); known.delete(pub); w.drop(r); changed = true }
                 }
             }
             // a Runner LEAVES only when its registry entry is forgotten — the directory is the authority.

@@ -1,0 +1,27 @@
+Snap:H
+  H:MusuScape,Run
+    A:MusuScape
+      self,round=6	{"mung":["age"]}
+      w:MusuScape
+        Opt
+          crushCyto
+        self,round=6	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Artist,name:Moonlit,stuff
+          Track,title:Tide
+          Track,title:Halo
+        Artist,name:Fernway,stuff
+          Track,title:Root
+          Track,title:Frond
+        Artist,name:Voxhall,stuff
+          Track,title:Echo
+        Peer,name:Bo,stuff
+          Share,track:Tide
+          Share,track:Root
+          Share,track:Echo
+        Crush_Tree,stuff
+          Crush:Artist.Moonlit,kind:Track,n=2
+          Crush:Artist.Fernway,kind:Track,n=2
+          Crush:Artist.Voxhall,kind:Track,n
+          Crush:Peer.Bo,kind:Share,n=3
+        see:the crush folds every artist and friend into one stuffed pane — the graph of music arms as stained glass

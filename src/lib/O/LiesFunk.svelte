@@ -1948,23 +1948,40 @@ await M.eatfunc({
                 //     once (each its own corr; the editor drains them serially but the RUNNER waits ONE window,
                 //      not eight) so the whole batch settles in ~a single round-trip.  allSettled so a single
                 //       dead write names itself in the gen_error without sinking the ones that landed.
+                // A live DESCRIPTIVE anchor, stamped BEFORE the first await (this microtask, which drains
+                //  before Story's next poll) so EVERY snap taken while the batch is in flight tells the story
+                //   — N files being written into `dir` — instead of the bare `ttlilt` it showed before.  The
+                //    root cause of "why isn't this rendering": the callback used to stamp nothing until the
+                //     very end (`generated`, gated behind ALL eight writes landing after the allSettled await),
+                //      so an in-progress or timed-out snap looked empty though the Book was working fine.  Each
+                //       write, as it lands, names itself under here (%file_written:<name>), so the anchor's
+                //        children ARE the live progress bar — `generating:8` with three %file_written under it
+                //         reads "8 wanted, 3 down".  On completion the anchor is retired for the durable
+                //          `generated` the witness gates on.  (The general shape — surfacing progress from
+                //           inside a mid-flight req rather than a bare hold — is the %see-everywhere sweep
+                //            sketched in spec/Story_future_directions.md.)
+                const prog = w.i({ generating: TEST_TONES.length, dir })
                 const writes = TEST_TONES.map(t => {
                     const name = `${t.artist} - ${t.title}.wav`
-                    return { name, run: bounded(nav.bin_write(dir, name, wav_bytes(t.freq, t.secs)), `bin_write ${name}`) }
+                    const run = bounded(nav.bin_write(dir, name, wav_bytes(t.freq, t.secs)), `bin_write ${name}`)
+                        .then(r => { prog.i({ file_written: name }); return r })
+                    return { name, run }
                 })
                 const settled = await Promise.allSettled(writes.map(x => x.run))
                 const failed  = writes.filter((_, i) => settled[i].status === 'rejected')
                 if (failed.length) {
-                    // enumerate the stalled files by name (a `stalled:<name>` child each), not a bare count —
-                    //  the snap should say WHICH writes died so a re-open/re-grant is targeted, not guesswork.
+                    // retire the live anchor and say WHICH writes died (a `stalled:<name>` child each), not a
+                    //  bare count — so a re-open/re-grant is targeted, not guesswork.
+                    w.drop(prog)
                     const e = w.i({ gen_error: `${failed.length}/${settled.length} writes stalled — the disk share looks dead; re-open/re-grant it (open share) and re-run` })
                     for (const f of failed) e.i({ stalled: f.name })
                     return
                 }
-                // enumerate what landed (a `wav:<name>` child each) beside the count, so the snap shows the
-                //  actual collection, not just "generated:8".
+                // done: retire the live `generating` anchor and stamp the durable completion the witness gates
+                //  on — count, dir, and each file by name — so the SETTLED snap is fully descriptive too.
+                w.drop(prog)
                 const g = w.i({ generated: settled.length, dir })
-                for (const x of writes) g.i({ wav: x.name })
+                for (const x of writes) g.i({ file_written: x.name })
             })
         },
 

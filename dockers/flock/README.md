@@ -47,9 +47,11 @@ Only one *watched* cluster at a time (those host ports are fixed). Unwatched clu
 
 ## How a runner boots
 
-`bot.js` opens `${TARGET_BASE}/?I=<cluster>-<n>` (default `TARGET_BASE=http://host.docker.internal:9091`).
- `?I=<tag>` **alone** (no `?B=`) puts the tab on the grid as an idle runner; the tag keys
-  the forked Idento (§3.1). The app then auto-acquires the spine via Creduler
+`bot.js` opens `${TARGET_BASE}/Otro?I=<cluster>-<n>` (default `TARGET_BASE=http://host.docker.internal:9091`).
+ `/Otro` is the toplevel that reads the role params (the `/` route is the Mound app page and
+  boots no role). `?I=<tag>` **alone** (no `?B=`) puts the tab on the grid as an idle runner;
+   the tag keys the forked Idento (§3.1), and a stable per-bot tag RESUMES the same identity
+    from the mounted profile across a self-heal (a bare `?I=new` would re-mint every crash). The app then auto-acquires the spine via Creduler
    (`CREDULER_GHOSTS`, gated by `%Creduler_pending`) and idles awaiting `%Rungo`. Confirm
     liveness out-of-band with `scripts/runner_ask.mjs` over the same `/relay`.
 

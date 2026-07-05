@@ -1681,7 +1681,7 @@ async MusuGenerateTestsMusic_drive(w, req):
     let n = (this.c.run)?.c.step_n
     if (n != null && n !== req.c.did_step) {
         req.c.did_step = n
-        if (n === 2) this.Musu_gen_testsounds(w)
+        if (n === 1) this.Musu_gen_testsounds(w)
     }
     this.MusuGenerateTestsMusic_witness(w)
 
@@ -4012,4 +4012,119 @@ MusuMitosis_witness(w):
     if (cells.length >= 4 && (w.c.mitosis_splits || 0) >= 2 && !(oa %see:'the flora radiated — more genera now than were founded and each new one split off an over-full parent')) i %see:'the flora radiated — more genera now than were founded and each new one split off an over-full parent'
     if (w.c.mitosis_died && !cells.find(c => c.sc.cell === w.c.mitosis_died) && !(oa %see:'a genus went extinct mid-run and stayed gone — its range reclaimed by its neighbours')) i %see:'a genus went extinct mid-run and stayed gone — its range reclaimed by its neighbours'
     if (cells.length && folded.length === cells.length && !(oa %see:'every living genus is crush-folded behind one chunk for the graph')) i %see:'every living genus is crush-folded behind one chunk for the graph'
+//#endregion
+
+//#region scape — the GRAPH OF MUSIC rendered as voronoi stained glass
+// ══ MusuScape — a music library becomes a graph when friends share it, and the crush folds it to glass ══
+//  The music twin of MusuMitosis (which watched abstract flora divide).  Here the cells are MUSIC and the
+//   edges are SOCIAL: %Artist panes hold their %Track songs; %Peer panes each %Share tracks from the
+//    library — and a share is an EDGE from a friend onto a real track.  A track many friends share is a
+//     HUB: its pane claims more room (the power-diagram weight the voronoi reads off a big node).  A track
+//      nobody shares is a sliver; a deep cut nobody touches goes dark.  So the stained glass is not a flat
+//       shelf — some panes blaze (the hits), some are slivers (the deep cuts), and the light moves live as
+//        friends come and go.  Like MusuMitosis: cells live DIRECTLY under w (the crusher folds any content
+//         container, so an umbrella would swallow the whole scape as ONE chunk); no transport, no audio,
+//          count-driven determinism (fixed lists, no randomness) — runs anywhere a runner does.
+//   beat 2  the library stands — three artists and their five tracks — a shelf, no friends, no light yet
+//   beat 3  a friend (Bo) arrives and shares — every share is an edge onto a REAL track — a graph is born
+//   beat 4  a second friend (Ada) shares the same track — it lights up as a HUB (weight 2) above the singles
+//   beat 5  Ada leaves — the hub cools LIVE (2 -> 1) and a track she alone lit goes dark (1 -> 0)
+//   beat 6  the crush folds every artist and friend into one stuffed pane — the graph arms as stained glass
+MusuScape(A,w):
+    w oai %req:wrangle,eternal
+        await &MusuScape_drive,w,req
+        req%ok = 1
+
+async MusuScape_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.MusuScape_library(w)
+        if (n === 3) this.MusuScape_peer(w, 'Bo', ['Tide', 'Root', 'Echo'])
+        if (n === 4) this.MusuScape_peer(w, 'Ada', ['Tide', 'Halo'])
+        if (n === 5) this.MusuScape_leave(w, 'Ada')
+        if (n === 6) this.Repli_crush_scan(w)
+    }
+    this.MusuScape_witness(w)
+    await this.MusuScape_order(w)
+
+// beat 2 — the library: three artists, each an %Artist pane holding its %Track songs (five in all).  The
+//  crushable rule folds any container with children, so each artist becomes one voronoi pane; the tracks
+//   ride inside it (a pane's interior).  No peers yet — a shelf, not a graph.
+MusuScape_library(w):
+    let moon = w.i({ Artist: 1, name: 'Moonlit' })
+    moon.i({ Track: 1, title: 'Tide' })
+    moon.i({ Track: 1, title: 'Halo' })
+    let fern = w.i({ Artist: 1, name: 'Fernway' })
+    fern.i({ Track: 1, title: 'Root' })
+    fern.i({ Track: 1, title: 'Frond' })
+    let vox = w.i({ Artist: 1, name: 'Voxhall' })
+    vox.i({ Track: 1, title: 'Echo' })
+
+// a friend joins and shares tracks off the library — each %Share is an EDGE from the %Peer pane onto a
+//  track by its title.  (A share names a track; MusuScape_dangling proves it names a REAL one.)
+MusuScape_peer(w, name, tracks):
+    let p = w.i({ Peer: 1, name: name })
+    for (const t of tracks) p.i({ Share: 1, track: t })
+    return p
+
+// a friend leaves — their pane drops out and their shares go with it (apoptosis, MusuMitosis's death twin):
+//  a track they alone shared goes dark, a hub they helped light cools by one.
+MusuScape_leave(w, name):
+    let p = w.o({ Peer: 1 }).find(x => x.sc.name === name)
+    if (p) p.drop(p)
+
+// every track title in the library (walk the artists' panes).
+MusuScape_titles(w):
+    let titles = []
+    for (const a of w.o({ Artist: 1 })) for (const t of a.o({ Track: 1 })) titles.push(t.sc.title)
+    return titles
+
+// a share that names no real track is a DANGLING pane — a bug in the graph.  Zero is the health check.
+MusuScape_dangling(w):
+    let titles = this.MusuScape_titles(w)
+    let bad = 0
+    for (const p of w.o({ Peer: 1 })) for (const s of p.o({ Share: 1 })) if (!titles.includes(s.sc.track)) bad = bad + 1
+    return bad
+
+// the HUB weight of a track: how many distinct friends share it.  This is the power-diagram weight the
+//  voronoi reads off the pane's rendered size — a hit blazes, a deep cut is a sliver, zero is dark.
+MusuScape_hub(w, title):
+    let count = 0
+    for (const p of w.o({ Peer: 1 })) if (p.o({ Share: 1 }).some(s => s.sc.track === title)) count = count + 1
+    return count
+
+// ── the witness — each %see is a per-beat OBSERVATION gated to its step (n === K) reading the LIVE truth
+//  of that beat, so it appears once and DROPS as the story moves on.  The drop IS the signal: beat 4's
+//   "it lights up as a hub" (weight 2) gives way to beat 5's "the hub cools" (weight 1) — the same track,
+//    re-weighted live.  Do NOT persist a claim past its beat (that is the old %witnessed noise reborn —
+//     [[see-is-not-a-latch]]).
+MusuScape_witness(w):
+    let n = (this.c.run)?.c.step_n
+    let artists = w.o({ Artist: 1 })
+    let tracks = []
+    for (const a of artists) for (const t of a.o({ Track: 1 })) tracks.push(t)
+    let peers = w.o({ Peer: 1 })
+    // beat 2: the library stands — three artists, five tracks, no friends: a shelf with no light through it.
+    if (n === 2 && artists.length === 3 && tracks.length === 5 && !peers.length && !(oa %see:'the library stands — three artists and five tracks — a shelf of glass with no light through it yet')) i %see:'the library stands — three artists and five tracks — a shelf of glass with no light through it yet'
+    // beat 3: a friend shares — every share edges onto a REAL track (no dangling) — the shelf is now a graph.
+    if (n === 3 && peers.length === 1 && this.MusuScape_dangling(w) === 0 && this.MusuScape_hub(w, 'Tide') === 1 && !(oa %see:'a friend arrives and shares — every share is an edge onto a real track — the shelf becomes a graph')) i %see:'a friend arrives and shares — every share is an edge onto a real track — the shelf becomes a graph'
+    // beat 4: two friends on one track — it lights up as a HUB (weight 2) above the singles and the deep cut.
+    if (n === 4 && peers.length === 2 && this.MusuScape_hub(w, 'Tide') === 2 && this.MusuScape_hub(w, 'Root') === 1 && this.MusuScape_hub(w, 'Frond') === 0 && !(oa %see:'two friends share one track — it lights up as a hub — its pane claims more room while a deep cut stays a sliver')) i %see:'two friends share one track — it lights up as a hub — its pane claims more room while a deep cut stays a sliver'
+    // beat 5: a friend leaves — the hub cools LIVE (2 -> 1) and a track she alone lit goes dark (1 -> 0).
+    if (n === 5 && peers.length === 1 && this.MusuScape_hub(w, 'Tide') === 1 && this.MusuScape_hub(w, 'Halo') === 0 && !(oa %see:'a friend leaves and the hub cools — the shared track drops to one and a track only she lit goes dark')) i %see:'a friend leaves and the hub cools — the shared track drops to one and a track only she lit goes dark'
+    // beat 6: the crush folds every artist and friend into one stuffed pane — the graph arms as stained glass.
+    let folded_a = artists.filter(a => a.sc.stuff != null)
+    let folded_p = peers.filter(p => p.sc.stuff != null)
+    let tree = w.o({ Crush_Tree: 1 })[0]
+    if (n === 6 && tree && tree.sc.stuff != null && artists.length && folded_a.length === artists.length && peers.length && folded_p.length === peers.length && !(oa %see:'the crush folds every artist and friend into one stuffed pane — the graph of music arms as stained glass')) i %see:'the crush folds every artist and friend into one stuffed pane — the graph of music arms as stained glass'
+
+// float A:MusuScape to the front of H/* so the Run snap stays readable (MusuSkip_order's twin).
+async MusuScape_order(w):
+    let As = H.o({ A: 1 })
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'MusuScape') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
 //#endregion

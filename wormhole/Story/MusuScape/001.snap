@@ -1,0 +1,9 @@
+Snap:H
+  H:MusuScape,Run
+    A:MusuScape
+      self,round	{"mung":["age"]}
+      w:MusuScape
+        Opt
+          crushCyto
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

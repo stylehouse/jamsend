@@ -1,0 +1,22 @@
+Snap:H
+  H:MusuScape,Run
+    A:MusuScape
+      self,round=3	{"mung":["age"]}
+      w:MusuScape
+        Opt
+          crushCyto
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Artist,name:Moonlit
+          Track,title:Tide
+          Track,title:Halo
+        Artist,name:Fernway
+          Track,title:Root
+          Track,title:Frond
+        Artist,name:Voxhall
+          Track,title:Echo
+        Peer,name:Bo
+          Share,track:Tide
+          Share,track:Root
+          Share,track:Echo
+        see:a friend arrives and shares — every share is an edge onto a real track — the shelf becomes a graph

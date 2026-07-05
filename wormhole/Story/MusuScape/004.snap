@@ -1,0 +1,25 @@
+Snap:H
+  H:MusuScape,Run
+    A:MusuScape
+      self,round=4	{"mung":["age"]}
+      w:MusuScape
+        Opt
+          crushCyto
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Artist,name:Moonlit
+          Track,title:Tide
+          Track,title:Halo
+        Artist,name:Fernway
+          Track,title:Root
+          Track,title:Frond
+        Artist,name:Voxhall
+          Track,title:Echo
+        Peer,name:Bo
+          Share,track:Tide
+          Share,track:Root
+          Share,track:Echo
+        Peer,name:Ada
+          Share,track:Tide
+          Share,track:Halo
+        see:two friends share one track — it lights up as a hub — its pane claims more room while a deep cut stays a sliver
