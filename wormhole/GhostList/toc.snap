@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783218536078
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783231145270
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -127,6 +127,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/LangHold.svelte,name:LangHold,noticed_at=1782897064868
     Doc:src/lib/O/LiesKeep.svelte,name:LiesKeep,noticed_at=1782897927957
     Doc:src/lib/O/runner_liveness.mjs,name:runner_liveness.mjs,noticed_at=1783177000219
+    Doc:src/lib/O/BigQualand.svelte.ts,name:BigQualand,noticed_at=1783231145270
   open_dir:Ghost/M
   group:Ghost/M,dir:Ghost/M
     Doc:Ghost/M/Radiola.g,name:Radiola,noticed_at=1782393617713

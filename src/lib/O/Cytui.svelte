@@ -30,6 +30,7 @@
     import { now_in_seconds_with_ms } from '$lib/p2p/Peerily.svelte';
     import MatstyleEditor from './ui/MatstyleEditor.svelte'
     import Stuffing from '$lib/data/Stuffing.svelte'
+    import Vexpandy from '$lib/O/ui/Vexpandy.svelte'
     let matstyles = $state<TheC[]>([])
     let ms_palette: string[] = []
     let ms_shapes: string[]  = []
@@ -346,6 +347,7 @@
     //        graph shrinks or the box speeds up).  This is the "monitor performance
     //         at high|low visual quality" the graph asked for, per-drag.
     let dragging = false
+    let live_layout = false        // the wave/relayout animation drives the same live-repaint loop
     let drag_raf = 0
     let repos_cost_ema = 0
     const KEEP_BUDGET_MS = 9        // per-frame repaint budget before we shed quality
@@ -362,16 +364,16 @@
     }
 
     function drag_frame() {
-        if (!dragging || !overlay_container) return
+        if ((!dragging && !live_layout) || !overlay_container) return
         const t0 = performance.now()
         if (voronoi_on) voronoi_paint_now()   // cells + clipped Stuffings track live
         else reposition_overlays()
         const cost = performance.now() - t0
         repos_cost_ema = repos_cost_ema ? repos_cost_ema * 0.8 + cost * 0.2 : cost
         if (repos_cost_ema > KEEP_BUDGET_MS) {
-            // can't keep up — fall back to the cheap hide-all for the rest of the drag
+            // can't keep up — fall back to the cheap hide-all for the rest of this motion
             console.log(`🎚️ motion quality: shed to hide-all (repaint ${repos_cost_ema.toFixed(1)}ms > ${KEEP_BUDGET_MS}ms)`)
-            dragging = false
+            dragging = false; live_layout = false
             hide_overlays_now()
             return
         }
@@ -381,6 +383,31 @@
     function end_live_drag() {
         if (dragging) { dragging = false; cancelAnimationFrame(drag_raf) }
         show_overlays_soon()
+    }
+
+    // the wave/relayout is ALSO motion — keep the overlays (and the voronoi cells with
+    //  their clipped Stuffings) LIVE and tracking through the whole animation instead of
+    //   hiding them until it settles.  Reuses the drag_frame budget self-heal: the owner
+    //    runs software graphics and confirmed per-frame repaint keeps up; if a frame ever
+    //     blows budget it sheds to hide-all for the rest of that layout, same as a drag.
+    function paint_overlays_now() {
+        if (voronoi_on) voronoi_paint_now(); else reposition_overlays()
+    }
+    function start_live_layout() {
+        if (dragging || live_layout) return   // a manual drag already owns the live loop
+        paint_overlays_now()          // seat everyone (incl. freshly-created overlays) BEFORE revealing — no 0,0 flash
+        live_layout = true
+        repos_cost_ema = 0            // re-probe the machine fresh each layout
+        motion_hidden = false
+        overlays_want_show = false    // we're showing live, not via the settle latch
+        overlay_container?.classList.remove('overlays-hidden')
+        cancelAnimationFrame(morph_raf)   // a settle-morph must not fight the live layout
+        cancelAnimationFrame(drag_raf)
+        drag_raf = requestAnimationFrame(drag_frame)
+    }
+    function stop_live_layout() {
+        live_layout = false
+        if (!dragging) cancelAnimationFrame(drag_raf)
     }
 
     // repaint the voronoi at the CURRENT positions with no tween — the live-drag
@@ -603,10 +630,22 @@
     //  Pure pixels: no cy style writes, no wave or snap involvement, so no
     //  Book can see this mode (Leaf* keep checking Cyto basically works).
     //  It auto-arms when a wave ferries a crusher-stamped particle (c.stuffy —
-    //  only the %crushCyto-gated crusher mints those) and the ◈ bar button
-    //  overrides either way, remembered in the stash as Cyto_voronoi.
+    //  only the Voro crusher mints those, Ghost/V/Voro.g) and the ◈ bar button
+    //  overrides either way, remembered in the stash as Cyto_voronoi.  On a
+    //  world whose Book never crushed, ◈ goes further and IMPOSES the crush
+    //  (Cyto_crush → the crusher runs before each scan, all c-side) — the
+    //  luxury layer lands on any graph and the Story underneath never knows.
     let voronoi_pref  = $state<boolean | null>(null)   // user override; null = auto
     let saw_stuffy    = $state(false)                  // auto-arm: crushed world present
+    let tall          = $state(false)                  // Vexpandy: 50vh → 100vh (twice the height)
+    // re-fit the graph after the height toggles so the frame fills the new box
+    //  — skip the initial settle, only re-fit on an actual user toggle.
+    let tall_settled = false
+    $effect(() => {
+        void tall
+        if (!tall_settled) { tall_settled = true; return }
+        requestAnimationFrame(() => { cy?.resize(); cy?.fit(cy.nodes(), 16) })
+    })
     const voronoi_on  = $derived(voronoi_pref ?? saw_stuffy)
     let vcells        = $state<{ id: string, d: string, color: string }[]>([])
     let vtips         = $state<{ id: string, x: number, y: number, color: string }[]>([])
@@ -679,10 +718,22 @@
         }
     }
 
+    let crush_imposed = false         // we asked Cyto_crush to fold this world (◈ on an un-crushed graph)
+
     function toggle_voronoi() {
         voronoi_pref = !voronoi_on
         const st = (H as any).stashed
         if (st) st.Cyto_voronoi = voronoi_pref
+        // the luxury layer: an un-crushed world (no Book opt ever stamped chunks) gets the
+        //  crush IMPOSED — Cyto re-scans with the Voro crusher armed, the chunks arrive on
+        //   the next wave and the morph divides them in.  All c-side; snaps stay blind.
+        if (voronoi_pref && !saw_stuffy) {
+            crush_imposed = true
+            H.i_elvisto('Cyto/Cyto', 'Cyto_crush', { on: 1 })
+        } else if (!voronoi_pref && crush_imposed) {
+            crush_imposed = false
+            H.i_elvisto('Cyto/Cyto', 'Cyto_crush', {})   // absence = off (snapped-boolean rule)
+        }
         install_nuclei()              // grow (on) or dissolve (off) the flower hubs
         relayout(300)                 // let the sim re-settle around / without them
         if (voronoi_pref) { reposition_overlays(); morph_voronoi() }
@@ -1459,8 +1510,8 @@
         cy.on('grab',        () => start_live_drag())
         cy.on('free',        () => end_live_drag())
         cy.on('pan zoom',    () => { hide_overlays_now(); show_overlays_soon() })
-        cy.on('layoutstart', () => hide_overlays_now())
-        cy.on('layoutstop',  () => show_overlays_soon())
+        cy.on('layoutstart', () => start_live_layout())
+        cy.on('layoutstop',  () => { stop_live_layout(); show_overlays_soon() })
         // ── click-to-identify ─────────────────────────────────────────────────
         // Tap any node or edge to log its id / parent / data / style. Useful for
         // finding mystery greys (which are usually n particles falling through
@@ -1493,7 +1544,7 @@
     })
 </script>
 
-<div class="cytui">
+<div class="cytui" class:tall={tall}>
     <div class="cytui-bar">
         <span class="cytui-status">{status}</span>
         {#if seek_warning}
@@ -1503,6 +1554,9 @@
         <button onclick={() => cy?.fit(cy.nodes(), 16)}>⊞</button>
         <button class="v-toggle" class:on={voronoi_on} onclick={toggle_voronoi}
             title="voronoi cells — Cyto lays out, cells render">◈</button>
+        <span class="cytui-vx" title="taller — double the graph height (50vh ↔ 100vh), then re-fit">
+            <Vexpandy bind:expanded={tall} />
+        </span>
         <span class="cytui-dur">⏱ {grawave_dur}s</span>
     </div>
     {#if matstyles.length}
@@ -1559,6 +1613,14 @@
     font-family: 'Berkeley Mono','Fira Code',ui-monospace,monospace;
     font-size: 11px; color: #aaa;
 }
+/* Vexpandy: the V-toggle doubles the graph height (owner re-fits after). */
+.cytui.tall { height: 100vh; }
+/* the Vexpandy V sits inline in the bar — strip the boxed bar-button skin
+   (.cytui-bar button {…}) off the nested .vx-btn so it reads as a clean
+   rotating V, not a framed button. */
+.cytui-vx { display: inline-flex; align-items: center; }
+.cytui-vx :global(.vx-btn),
+.cytui-vx :global(.vx-btn:hover) { background: none; border: none; padding: 0; }
 .cytui-bar {
     display: flex; align-items: center; gap: 5px;
     padding: 4px 8px; background: #0f0f0f;

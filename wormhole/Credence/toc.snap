@@ -79,7 +79,7 @@ Waft:Credence
     Funkcion:Storying,of_Book:AwFloat,brand_new:1
     What:Voro,desc:the Voronoi-Cyto render — Cyto's force layout reinterpreted as power-diagram cells with the crushed Stuffings molded into a rosette
       Funkcion:StoryTimes
-      Funkcion:Storying,of_Book:MusuMitosis,brand_new:1
+      Funkcion:Storying,of_Book:MusuMitosis
       Funkcion:Storying,of_Book:MusuScape
   What:Misc,inline:1,desc:editor codecs LangHold-checkout peering export ttl-waits and reactive-Waft stability
     Funkcion:StoryTimes
@@ -99,3 +99,5 @@ Waft:Credence
     Funkcion:Storying,of_Book:Engage
     Funkcion:Storying,of_Book:WaftMapPacked
     Funkcion:Storying,of_Book:Educarium,brand_new:1
+    Funkcion:Storying,of_Book:VoroMitosis
+    Funkcion:Storying,of_Book:VoroScape

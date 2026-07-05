@@ -1,0 +1,6 @@
+Snap:H
+  H:MusuMitosis,Run
+    A:MusuMitosis
+      self,round	{"mung":["age"]}
+      w:MusuMitosis
+        self,round	{"mung":["age"]}

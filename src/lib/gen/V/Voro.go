@@ -8,44 +8,393 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Voro(): string { return 'b61ed85526f9fa87' },
+    Ghostmeta_Ghost_V_Voro(): string { return 'c7227025a11ae05e' },
 
 // Voro.g — the Vis family home: the Voronoi-Cyto render (Ghost/V/, Waft:Ghost/Vis/Visua).
 //  A late sibling to networking (N), music (M) and society (S).  But where THOSE are spines the
-//   runner RUNS, Vis is a lens the runner LOOKS THROUGH — so there is almost no runtime here.
-//    The render itself lives in the widget (src/lib/O/Cytui.svelte) because it is pixels over the
-//     live Cytoscape canvas, not particles; this ghost is the family's prose home and its
-//      canonical reference data, and the Waft:Ghost/Vis/Visua overlay hangs the real Docs
-//       (Cytui, Cyto, the crush in Musuation.g) off the Points below.
+//   runner RUNS, Vis is a lens the runner LOOKS THROUGH — so the runtime here is small and
+//    view-shaped: the CRUSH policy (below) that decides what folds, plus the family's own two demo
+//     Books (VoroMitosis, VoroScape).  The pixels stay in the widget (src/lib/O/Cytui.svelte)
+//      because they are SVG over the live Cytoscape canvas, not particles.
 //
 // The idea (see also the memory voronoi-cells-render):
 //  Cyto stays the LAYOUT engine — fcose decides where the crushed chunks want to sit — and the
-//   render REINTERPRETS that result.  Each %stuff chunk seeds a cell at its node's rendered
+//   render REINTERPRETS that result.  Each crushed chunk seeds a cell at its node's rendered
 //    position, weighted by its content box (a power diagram, so a big chunk claims more room),
-//     and its Stuffing is molded into the cell.  Adjacency reads as shared WALLS not wires: an
-//      SVG layer between the canvas and the HTML overlays draws the cells over a dimming veil.
+//     and its Stuffing is molded into the cell.  Adjacency reads as shared WALLS not wires.
 //  Orderless siblings would grid-jitter under a pure force sim, so a hidden NUCLEUS per parent
 //   gathers them into a radial flower (a rosette that voronois cleanly) — scaffold only, never a
-//    cell, never snapped.  It auto-arms when a wave ferries a crusher-stamped particle (c.stuffy,
-//     minted only by the %crushCyto-gated crusher); the ◈ bar button overrides either way.
-//
-// The render pipeline (all in Cytui.svelte): voronoi_layout → install_nuclei (the flower) →
-//  morph_voronoi (the cell-division tween) / voronoi_paint_now (the live-drag twin) → paint_final
-//   (the vectorised rest state: cells, edge-braces IN the border, the molded Stuffing).
+//    cell, never snapped.  It auto-arms when a wave ferries a crusher-stamped particle (c.stuffy);
+//     the ◈ bar button overrides either way — and on a world whose Book never crushed, ◈ IMPOSES
+//      the crush (e_Cyto_crush arms c.crush_wanted on the scan root; Cyto then runs the crusher
+//       below before every scan).  The whole layer is a LUXURY: switch it on over any graph,
+//        switch it off, and the Story underneath never knows.
+
+//#region crush — fold big homogeneous collections behind ONE stuffed chunk each (all c-side)
+// ══ the data-crusher (grew up as Repli_crush_* in Musuation.g; the Vis family owns it now) ═════
+//  A busy world is mostly CONFETTI — 16 emits + 16 unemits per pier side, a Record per tone —
+//   drawn raw the graph is too big to read a label of.  The crush folds it: ANY non-structural
+//    container with children is stamped c.stuff — Cyto then draws it as one chunk hosting a live
+//     Stuffing overlay (the ×N fold) and stops its walk there (descent suppressed at a stuffed
+//      node).
+//  ALL stamps are c-side (c.stuff the fold, c.stuffy the skin) — NEVER snapped, so NOTHING the
+//   crush does reaches a got_snap.  The crush is a VIEW someone switches on, and a view must not
+//    change what a Story records.  There is NO report particle any more (the old flat %Crush_Tree
+//     is gone — it was the one thing the crush still snapped): the fold TOTALS a proof Book wants
+//      come back as live stats from the scan, read off the c-side stamps, never modelled.
+//  GATED on the Book opt %crushCyto (toc Opt/For/w:<Book>/crushCyto, pushed into w/%Opt at
+//   settingoff) OR the scan-root's c.crush_wanted (a Voro demo Book arms it in setup; the ◈
+//    button arms it via Cyto's e_Cyto_crush to impose the layer on a world that never asked).
+
+// Voro_crush_scan — one pass: walk w**, stamp the c-side folds, RETURN live stats {folded,count}
+//  (folded = total children hidden behind chunks, count = number of chunks).  Idempotent + cheap —
+//   a Book's drive runs it every beat and a witness re-runs it for fresh totals.
+Voro_crush_scan(w) {
+    if (!w.o({ Opt: 1 })[0]?.oa({ crushCyto: 1 }) && !w.c.crush_wanted) return null
+    let stats = { folded: 0, count: 0 }
+    this.Voro_crush_walk(w, 0, stats)
+    return stats
+
+},
+// Voro_crush_walk — recurse; structural mainkeys stay graph (the skeleton must remain readable) but
+//  are walked THROUGH; a crushed container's subtree is NOT descended (folded here = folded in the
+//   Cyto walk, the same cut).  EVERYTHING the walk touches gets c.stuffy (the presentation skin) —
+//    c.stuffy IS the crushed look in Cyto (self-row stuffings for spine + leaves, children-Stuffing
+//     where c.stuff rides beside it); a plain snapped %stuff elsewhere (Machinery peeks, stuff_of)
+//      keeps the classic labelled look untouched.
+Voro_crush_walk(node, d, stats) { const H = this;
+    if (d > 8) return
+    for (const c of node.o()) {
+        let mk = Object.keys(c.sc)[0]
+        if (mk === 'w' || mk === 'H' || mk === 'A' || mk === 'Peering' || mk === 'Pier' || mk === 'req' || mk === 'Opt') {
+            c.c.stuffy = 1
+            this.Voro_crush_walk(c, d + 1, stats)
+            continue
+        }
+        let verdict = this.Voro_crushable(c)
+        if (verdict) {
+            c.c.stuff = 1
+            c.c.stuffy = 1
+            stats.count = stats.count + 1
+            stats.folded = stats.folded + verdict.n
+            continue
+        }
+        c.c.stuffy = 1
+        this.Voro_crush_walk(c, d + 1, stats)
+    }
+
+},
+// Voro_crushable — the rule: fold ANY non-structural container with children.  Even a weakly
+//  motivated Stuffing (mixed keys, one row per group) reads better as one chunk than as confetti.
+//   kind = the dominant child mainkey (a nav aid — the chunk's "what's inside"), n = child count.
+Voro_crushable(c) {
+    let N = c.o()
+    if (N.length < 1) return null
+    let counts = {}
+    for (const k of N) {
+        let mk = Object.keys(k.sc)[0]
+        counts[mk] = (counts[mk] || 0) + 1
+    }
+    let kind = null
+    let kn = 0
+    for (const mk of Object.keys(counts)) {
+        if (counts[mk] > kn) { kind = mk; kn = counts[mk] }
+    }
+    return { kind: kind, n: N.length }
+
+},
+// Voro_crush_clear — the ◈ un-imposition: walk everything and strip the two view stamps.
+//  c-side deletes only, so it is snap- and query-safe anywhere; a Book-opted world just
+//   re-stamps next beat (its drive calls the scan), which is the right outcome.
+Voro_crush_clear(node, d) {
+    if ((d || 0) > 12) return
+    delete node.c.stuff
+    delete node.c.stuffy
+    for (const c of node.o()) this.Voro_crush_clear(c, (d || 0) + 1)
+},
+//#endregion
+
+//#region mitosis — VoroMitosis: watch the flora divide (the pure crush demo, no music no wire)
+// ══ VoroMitosis — a colony that grows and splits: the voronoi render watched dividing ════════════
+//  A demo-gauge Book for the crushed voronoi cells: cell:<genus> containers live DIRECTLY under w
+//   (no umbrella container — the crusher folds any content container, so an umbrella would swallow
+//    the whole colony as ONE chunk).  Each cell's species are keyed BY THE GENUS ({Coprosma:'robusta'}
+//     not a flat pile of %spore) so the fold's Stuffing groups them by genus, and a genus reads as
+//      its own clade.  Each beat every cell gains species; a cell past the split threshold DIVIDES
+//       (half its species leave for a fresh genus — a new voronoi cell births inside the parent's
+//        territory, re-keyed to the daughter genus); one cell dies mid-run (apoptosis — its
+//         territory reclaimed).  Deterministic throughout: growth is count-driven, names off fixed
+//          lists, no randomness.  No transport and no audio — runs anywhere a runner does.
+//  The crush is armed C-SIDE (w.c.crush_wanted, set in seed) — NOT the %crushCyto opt — so nothing
+//   about the fold (no %Opt, no report) ever reaches the snap; the model is pure flora.
+VoroMitosis(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.VoroMitosis_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async VoroMitosis_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VoroMitosis_seed(w)
+        if (n >= 3 && n <= 10) this.VoroMitosis_grow(w, n)
+        if (n === 8) this.VoroMitosis_die(w)
+        if (n >= 2) this.Voro_crush_scan(w)
+        if (n === 11) this.VoroMitosis_witness(w)
+    }
+
+},
+// ── the NZ flora vocabulary ───────────────────────────────────────────────
+//  fixed lists ARE the determinism (no randomness in this Book): genera name the
+//   cells AND key their species, epithets name the species, forms name the nested
+//    sub-taxa.  Real Aotearoa plants — Coprosma, Hebe-in-Veronica, tōtara, beech.
+Botany_genera() {
+    return ['Coprosma','Veronica','Pittosporum','Metrosideros','Podocarpus','Nothofagus','Phormium','Pseudopanax','Olearia','Dracophyllum','Kunzea','Leptospermum']
+},
+Botany_epithets() {
+    return ['robusta','propinqua','rhamnoides','grandifolia','lucida','tenuifolium','excelsa','totara','fusca','tenax','crassifolius','colensoi','australis','divaricata','microphylla','serrata','montana','linearis']
+},
+Botany_forms() {
+    return ['var. montana','var. prostrata','f. viridis','subsp. australis']
+
+},
+// plant one taxon, KEYED BY ITS GENUS ({Coprosma:'robusta'}) so siblings group; depth>0 gives it
+//  two nested sub-taxa (a bifurcating frond — self-similar), so a chunk's interior is fractal
+//   "here and there" rather than a flat row of names.  Count-driven depth, no blow-up.
+Botany_plant(container, genus, epithet, depth) {
+    let sc = {}
+    sc[genus] = epithet
+    let taxon = container.i(sc)
+    if (depth > 0) {
+        let forms = this.Botany_forms()
+        this.Botany_plant(taxon, genus, epithet + ' ' + forms[0], depth - 1)
+        this.Botany_plant(taxon, genus, epithet + ' ' + forms[1], depth - 1)
+    }
+    return taxon
+
+},
+// found a genus (a cell) with k species keyed by the genus; the odd one carries a nested form —
+//  the phylogeny "here and there" that gives each chunk its self-similar texture.
+VoroMitosis_found(w, genus, k) {
+    let cell = w.i({ cell: genus })
+    let eps = this.Botany_epithets()
+    let gi = this.Botany_genera().indexOf(genus)
+    if (gi < 0) gi = 0
+    for (let s = 0; s < k; s++) this.Botany_plant(cell, genus, eps[(gi * 3 + s) % eps.length], s % 2)
+    return cell
+
+},
+VoroMitosis_seed(w) {
+    w.c.crush_wanted = 1
+    this.VoroMitosis_found(w, 'Coprosma', 5)
+    this.VoroMitosis_found(w, 'Veronica', 3)
+
+},
+// grow: every genus gains two species this beat (keyed by that genus); the first species of each
+//  sprouts a form (and if it has one already, a sub-form) — the phylogeny deepening like a frond
+//   unfurling.  Then AT MOST ONE genus past 8 species speciates: half its species found a new
+//    genus, RE-KEYED to the daughter genus (a new voronoi cell divides into being).  One division
+//     per beat keeps it readable; the genera list caps the radiation.
+VoroMitosis_grow(w, n) {
+    let genera = this.Botany_genera()
+    let eps = this.Botany_epithets()
+    let forms = this.Botany_forms()
+    let cells = w.o({ cell: 1 })
+    for (const c of cells) {
+        let g = c.sc.cell
+        let base = c.o().length
+        this.Botany_plant(c, g, eps[(n * 2 + base) % eps.length], 0)
+        this.Botany_plant(c, g, eps[(n * 2 + base + 1) % eps.length], 0)
+    }
+    for (const c of cells) {
+        let g = c.sc.cell
+        let first = c.o()[0]
+        if (!first) continue
+        let sub = first.o()
+        if (!sub.length) {
+            this.Botany_plant(first, g, first.sc[g] + ' ' + forms[n % forms.length], 0)
+        } else {
+            this.Botany_plant(sub[0], g, sub[0].sc[g] + ' ' + forms[(n + 1) % forms.length], 0)
+        }
+    }
+    cells = w.o({ cell: 1 })
+    for (const c of cells) {
+        let g = c.sc.cell
+        let species = c.o()
+        if (species.length < 8) continue
+        let used = w.o({ cell: 1 }).map(x => x.sc.cell)
+        let name = genera.find(nm => !used.includes(nm))
+        if (!name) break
+        let neu = w.i({ cell: name })
+        let half = species.slice(0, Math.floor(species.length / 2))
+        for (const sp of half) {
+            let sc = {}
+            sc[name] = sp.sc[g]      // re-key to the daughter genus, keep the epithet
+            neu.i(sc)
+            sp.drop(sp)
+        }
+        w.c.mitosis_splits = (w.c.mitosis_splits || 0) + 1
+        break
+    }
+
+},
+// die: apoptosis — the smallest cell drops out; its voronoi territory goes back to the neighbours.
+VoroMitosis_die(w) {
+    let cells = w.o({ cell: 1 })
+    if (cells.length < 3) return
+    let smallest = [...cells].sort((a, b) => a.o().length - b.o().length)[0]
+    w.c.mitosis_died = smallest.sc.cell
+    smallest.drop(smallest)
+
+},
+VoroMitosis_witness(w) {
+    let cells = w.o({ cell: 1 })
+    let folded = cells.filter(c => c.c.stuff != null)
+    if (cells.length >= 4 && (w.c.mitosis_splits || 0) >= 2 && !(w.oa({see: 'the flora radiated — more genera now than were founded and each new one split off an over-full parent'}))) w.i({see: 'the flora radiated — more genera now than were founded and each new one split off an over-full parent'})
+    if (w.c.mitosis_died && !cells.find(c => c.sc.cell === w.c.mitosis_died) && !(w.oa({see: 'a genus went extinct mid-run and stayed gone — its range reclaimed by its neighbours'}))) w.i({see: 'a genus went extinct mid-run and stayed gone — its range reclaimed by its neighbours'})
+    if (cells.length && folded.length === cells.length && !(w.oa({see: 'every living genus is crush-folded behind one chunk keyed to its own name'}))) w.i({see: 'every living genus is crush-folded behind one chunk keyed to its own name'})
+},
+//#endregion
+
+//#region scape — VoroScape: the GRAPH OF MUSIC rendered as voronoi stained glass
+// ══ VoroScape — a music library becomes a graph when friends share it, and the crush folds it to glass ══
+//  The music twin of VoroMitosis (which watched abstract flora divide).  Here the cells are MUSIC and the
+//   edges are SOCIAL: %Artist panes hold their %Track songs; %Peer panes each %Share tracks from the
+//    library — and a share is an EDGE from a friend onto a real track.  A track many friends share is a
+//     HUB: its pane claims more room (the power-diagram weight the voronoi reads off a big node).  A track
+//      nobody shares is a sliver; a deep cut nobody touches goes dark.  So the stained glass is not a flat
+//       shelf — some panes blaze (the hits), some are slivers (the deep cuts), and the light moves live as
+//        friends come and go.  Like VoroMitosis: cells live DIRECTLY under w (the crusher folds any content
+//         container, so an umbrella would swallow the whole scape as ONE chunk); crush armed c-side (no opt,
+//          nothing modelled), no transport, no audio, count-driven determinism — runs anywhere a runner does.
+//   beat 2  the library stands — three artists and their five tracks — a shelf, no friends, no light yet
+//   beat 3  a friend (Bo) arrives and shares — every share is an edge onto a REAL track — a graph is born
+//   beat 4  a second friend (Ada) shares the same track — it lights up as a HUB (weight 2) above the singles
+//   beat 5  Ada leaves — the hub cools LIVE (2 -> 1) and a track she alone lit goes dark (1 -> 0)
+//   beat 6  the crush folds every artist and friend into one stuffed pane — the graph arms as stained glass
+VoroScape(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.VoroScape_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async VoroScape_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VoroScape_library(w)
+        if (n === 3) this.VoroScape_peer(w, 'Bo', ['Tide', 'Root', 'Echo'])
+        if (n === 4) this.VoroScape_peer(w, 'Ada', ['Tide', 'Halo'])
+        if (n === 5) this.VoroScape_leave(w, 'Ada')
+        if (n === 6) this.Voro_crush_scan(w)
+    }
+    this.VoroScape_witness(w)
+    await this.VoroScape_order(w)
+
+},
+// beat 2 — the library: three artists, each an %Artist pane holding its %Track songs (five in all).  The
+//  crushable rule folds any container with children, so each artist becomes one voronoi pane; the tracks
+//   ride inside it (a pane's interior).  No peers yet — a shelf, not a graph.  crush armed here (n===2).
+VoroScape_library(w) {
+    w.c.crush_wanted = 1
+    let moon = w.i({ Artist: 1, name: 'Moonlit' })
+    moon.i({ Track: 1, title: 'Tide' })
+    moon.i({ Track: 1, title: 'Halo' })
+    let fern = w.i({ Artist: 1, name: 'Fernway' })
+    fern.i({ Track: 1, title: 'Root' })
+    fern.i({ Track: 1, title: 'Frond' })
+    let vox = w.i({ Artist: 1, name: 'Voxhall' })
+    vox.i({ Track: 1, title: 'Echo' })
+
+},
+// a friend joins and shares tracks off the library — each %Share is an EDGE from the %Peer pane onto a
+//  track by its title.  (A share names a track; VoroScape_dangling proves it names a REAL one.)
+VoroScape_peer(w, name, tracks) {
+    let p = w.i({ Peer: 1, name: name })
+    for (const t of tracks) p.i({ Share: 1, track: t })
+    return p
+
+},
+// a friend leaves — their pane drops out and their shares go with it (apoptosis, VoroMitosis's death twin):
+//  a track they alone shared goes dark, a hub they helped light cools by one.
+VoroScape_leave(w, name) {
+    let p = w.o({ Peer: 1 }).find(x => x.sc.name === name)
+    if (p) p.drop(p)
+
+},
+// every track title in the library (walk the artists' panes).
+VoroScape_titles(w) {
+    let titles = []
+    for (const a of w.o({ Artist: 1 })) for (const t of a.o({ Track: 1 })) titles.push(t.sc.title)
+    return titles
+
+},
+// a share that names no real track is a DANGLING pane — a bug in the graph.  Zero is the health check.
+VoroScape_dangling(w) {
+    let titles = this.VoroScape_titles(w)
+    let bad = 0
+    for (const p of w.o({ Peer: 1 })) for (const s of p.o({ Share: 1 })) if (!titles.includes(s.sc.track)) bad = bad + 1
+    return bad
+
+},
+// the HUB weight of a track: how many distinct friends share it.  This is the power-diagram weight the
+//  voronoi reads off the pane's rendered size — a hit blazes, a deep cut is a sliver, zero is dark.
+VoroScape_hub(w, title) {
+    let count = 0
+    for (const p of w.o({ Peer: 1 })) if (p.o({ Share: 1 }).some(s => s.sc.track === title)) count = count + 1
+    return count
+
+},
+// ── the witness — each %see is a per-beat OBSERVATION gated to its step (n === K) reading the LIVE truth
+//  of that beat, so it appears once and DROPS as the story moves on.  The drop IS the signal: beat 4's
+//   "it lights up as a hub" (weight 2) gives way to beat 5's "the hub cools" (weight 1) — the same track,
+//    re-weighted live.  Do NOT persist a claim past its beat (that is the old %witnessed noise reborn).
+VoroScape_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    let artists = w.o({ Artist: 1 })
+    let tracks = []
+    for (const a of artists) for (const t of a.o({ Track: 1 })) tracks.push(t)
+    let peers = w.o({ Peer: 1 })
+    // beat 2: the library stands — three artists, five tracks, no friends: a shelf with no light through it.
+    if (n === 2 && artists.length === 3 && tracks.length === 5 && !peers.length && !(w.oa({see: 'the library stands — three artists and five tracks — a shelf of glass with no light through it yet'}))) w.i({see: 'the library stands — three artists and five tracks — a shelf of glass with no light through it yet'})
+    // beat 3: a friend shares — every share edges onto a REAL track (no dangling) — the shelf is now a graph.
+    if (n === 3 && peers.length === 1 && this.VoroScape_dangling(w) === 0 && this.VoroScape_hub(w, 'Tide') === 1 && !(w.oa({see: 'a friend arrives and shares — every share is an edge onto a real track — the shelf becomes a graph'}))) w.i({see: 'a friend arrives and shares — every share is an edge onto a real track — the shelf becomes a graph'})
+    // beat 4: two friends on one track — it lights up as a HUB (weight 2) above the singles and the deep cut.
+    if (n === 4 && peers.length === 2 && this.VoroScape_hub(w, 'Tide') === 2 && this.VoroScape_hub(w, 'Root') === 1 && this.VoroScape_hub(w, 'Frond') === 0 && !(w.oa({see: 'two friends share one track — it lights up as a hub — its pane claims more room while a deep cut stays a sliver'}))) w.i({see: 'two friends share one track — it lights up as a hub — its pane claims more room while a deep cut stays a sliver'})
+    // beat 5: a friend leaves — the hub cools LIVE (2 -> 1) and a track she alone lit goes dark (1 -> 0).
+    if (n === 5 && peers.length === 1 && this.VoroScape_hub(w, 'Tide') === 1 && this.VoroScape_hub(w, 'Halo') === 0 && !(w.oa({see: 'a friend leaves and the hub cools — the shared track drops to one and a track only she lit goes dark'}))) w.i({see: 'a friend leaves and the hub cools — the shared track drops to one and a track only she lit goes dark'})
+    // beat 6: the crush folds every artist and friend into one stuffed pane — the graph arms as stained glass.
+    let folded_a = artists.filter(a => a.c.stuff != null)
+    let folded_p = peers.filter(p => p.c.stuff != null)
+    if (n === 6 && artists.length && folded_a.length === artists.length && peers.length && folded_p.length === peers.length && !(w.oa({see: 'the crush folds every artist and friend into one stuffed pane — the graph of music arms as stained glass'}))) w.i({see: 'the crush folds every artist and friend into one stuffed pane — the graph of music arms as stained glass'})
+
+},
+// float A:VoroScape to the front of H/* so the Run snap stays readable (MusuSkip_order's twin).
+async VoroScape_order(w) { const H = this;
+    let As = H.o({ A: 1 })
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'VoroScape') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+},
+//#endregion
 
 //#region reference — the canonical Voro sets, as data (a nav aid + a future sweep target)
 
-// Voro_books — the Books that exercise this render: each opts %crushCyto, so the crush stamps
-//  c.stuffy and the voronoi mode auto-arms.  MusuMitosis is the pure demo (a cell colony that
-//   divides — an NZ-flora phylogeny); MusuScape folds a shared library to glass; MusuReco and
-//    MusuReplica fold real streaming/replication data.
+// Voro_books — the Books that exercise this render (crush + voronoi auto-arm).  VoroMitosis and
+//  VoroScape live HERE (crush armed c-side, nothing modelled); MusuReplica (Ghost/Story/Musuation.g)
+//   still opts %crushCyto and folds real replication traffic, reading fold totals off Voro_crush_scan.
 Voro_books() {
-    return ['MusuMitosis', 'MusuScape', 'MusuReco', 'MusuReplica']
+    return ['VoroMitosis', 'VoroScape', 'MusuReplica']
 
 },
-// Voro_render_map — the Cytui render stages in order, so a reader can walk the pipeline.
+// Voro_render_map — the stages in order (this ghost's crush, then Cytui's pixels), to walk the pipeline.
 Voro_render_map() {
-    return ['voronoi_layout', 'install_nuclei', 'morph_voronoi', 'voronoi_paint_now', 'paint_final']
+    return ['Voro_crush_scan', 'voronoi_layout', 'install_nuclei', 'morph_voronoi', 'voronoi_paint_now', 'paint_final']
 
 },
 //#endregion

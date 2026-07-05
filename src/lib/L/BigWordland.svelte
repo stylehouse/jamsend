@@ -5,10 +5,15 @@
     //    · ?E=<Book> parametrises which editor Book boots, DEFAULTING to Educarium — the
     //      Editron-shaped recipe living beside this file (L/Educarium.svelte).  No ?B/?I
     //      here: runners board through /Otro; this room is author chrome.
-    //    · a toc of H** across the top — every House a chip; click one to drop open its
-    //      panel (the Actions button rack + the C** dump toggle).  No NaviScroll.
-    //    · ONE BIG SET of H.UIs at once, loose in the room — except UI:Lies, which hides
-    //      until called up (the ⌐Lies chip) and then renders all straight as it has been.
+    //    · a toc of H** across the top — Mundo · Story · Educarium (the Run named after the
+    //      book) · … — each a chip.  This is a SWITCHER, not a spread: clicking a chip makes
+    //       that House the ONE fullscreen view (the show-one-thing policy).  Opens on Educarium
+    //        (⇒ Langui, its editor UI); click Story to watch the runner, Mundo for the root.
+    //    · a ⚙ cog rides beside the ACTIVE chip only; it toggles that House's action-button
+    //       rack (+ the C** dump) — the buttons stay hidden until you ask, so the room is calm.
+    //    · ONE House's UIs at a time, fullscreen — except UI:Lies, which stays hidden even in
+    //       its own view until called up (the ⌐Lies chip), and UI:Pantheate-include (the
+    //        editor-compile artifact), suppressed until it sprouts from a real run.
     //    · the universal searchbar rides the top bar; a hit can be PINNED into the loose
     //      space at the right of the code — the pin rail.  (Folding pins into the
     //      DocMinimap proper is the natural next hop; the rail IS that space for now.)
@@ -21,52 +26,33 @@
     import Stuffing   from "$lib/data/Stuffing.svelte"
     import Searchbar  from "$lib/O/ui/Searchbar.svelte"
     import BootGate   from "$lib/O/ui/BootGate.svelte"
-    import { onDestroy } from "svelte"
     import { boot_param } from "$lib/boot"
+    import { boot_qualand } from "$lib/O/BigQualand.svelte"
 
-    //#region H:Mundo — construction, mirroring Otro
-    let H: House = $state(null!)
-    // Computed ONCE out here, and set on the LOCAL `h` below — NEVER as `H.c.x = …` inside
-    //  the $effect: reading the $state H there makes the effect depend on H, which it also
-    //  reassigns, so it self-retriggers forever, allocating a House every tick → the tab
-    //  OOMs to multi-GB (Otro's hard-won note; same trap, same cure).
+    //#region H:Mundo — the shared boot (the aufheben's common bit) lives in BigQualand now; this
+    //  room supplies only its knobs — the editor Book, the editor role — and reads H + houses back.
+    //  The OOM trap (assign H once, never read it in the construction effect) is baked in over there.
     const editor_book = boot_param('E') || 'Educarium'
-    $effect(() => {
-        const h = new House({ name: 'Mundo' })
-        h.c.toplevel  = 'Auto'          // the Library/Story owner activates the Book
-        h.c.book      = editor_book
-        h.c.boot_role = 'editor'        // this room only ever boots the editor role
-        H = h
-        setTimeout(() => { houses = [H] }, 1)
-    })
-
-    let setup_done = $state(false)
-    $effect(() => {
-        if (!H?.started || setup_done) return
-        setup_done = true
-        H.may_begin()
-        setTimeout(() => { houses = H.all_House }, 1)
-        H.i_elvisto(H, 'think')
-    })
-    $effect(() => {
-        if (!setup_done) return
-        houses = H.all_House
-    })
-    let houses: House[] = $state([])
-
-    onDestroy(() => { H?.stop() })
+    const q = boot_qualand({ book: editor_book, role: 'editor' })
+    let H      = $derived(q.H)
+    let houses = $derived(q.houses)
     //#endregion
 
     //#region the room's own state
-    // toc of H** — which House's panel is dropped open (one at a time; click again to fold)
-    let open_panel = $state<string | undefined>(undefined)
-    function childrenOf(house: House): House[] {           // ip-based, as NaviScroll derives it
-        const ip = (house as any)?.c?.ip
-        if (!ip) return []
-        const depth = ip.split('_').length
-        return houses.filter(h => (h as any).c?.ip?.startsWith(ip + '_')
-                               && (h as any).c.ip.split('_').length === depth + 1)
-    }
+    // the fullscreen switcher.  `view` is the user's explicit pick (a House ip); undefined means
+    //  "auto", which resolves to the Educarium Run (opens on the editor, Langui) or, before it
+    //   stands up, the deepest House so the boot is visible.  `active` is the House shown.
+    let view = $state<string | undefined>(undefined)
+    let active_ip = $derived(
+        view
+        ?? houses.find(h => h.name === editor_book)?.c.ip
+        ?? houses[houses.length - 1]?.c.ip
+    )
+    let active = $derived(houses.find(h => h.c.ip === active_ip))
+
+    // the action-button rack hides until the ⚙ cog beside the active chip asks for it
+    let show_actions = $state(false)
+
     function depth_of(house: House): number {
         return (((house as any).c?.ip as string | undefined)?.split('_').length ?? 1) - 1
     }
@@ -77,6 +63,17 @@
 
     // Lies hides unless called up — then it renders all straight as it has been
     let show_lies = $state(false)
+
+    // UI:Pantheate-include is an editor-compile artifact (LiesCortex notifies Pantheate on every
+    //  compile, so a 2-dock Waft mounts two): suppressed everywhere until it sprouts from a real
+    //   %rungo run.  Lies is handled separately (show_lies).  Nothing else is hidden — Story/Cyto
+    //    are simply on other Houses, so the show-one-thing view already leaves them off unless you
+    //     switch to the House that owns them.
+    function ui_hidden(kind: string): boolean {
+        if (kind === 'Pantheate-include') return true
+        if (kind === 'Lies') return !show_lies
+        return false
+    }
 
     // the Lies House + w for the searchbar (and pin deliveries): whichever House's ave
     //  carries %examining — the same seam Liesui reads
@@ -117,12 +114,17 @@
         <div class="bw-toc">
             {#each houses as house (house.c.ip)}
                 <button class="bw-h" style="--d: {depth_of(house)}"
-                        class:open={open_panel === house.c.ip}
+                        class:active={active_ip === house.c.ip}
                         class:off={!house.started}
-                        onclick={() => open_panel = open_panel === house.c.ip ? undefined : house.c.ip}
-                        title="{house.name} — {house.actions.ob({ action: 1 }).length} buttons; click for its panel">
-                    {house.name}{#if house.todo.length}<span class="bw-todo">{house.todo.length}</span>{/if}
+                        onclick={() => view = house.c.ip}
+                        title="{house.name} — show it fullscreen">
+                    <span class="bw-h-name">{house.name}{#if house.todo.length}<span class="bw-todo">{house.todo.length}</span>{/if}</span>
                 </button>
+                {#if active_ip === house.c.ip}
+                    <button class="bw-cog" class:on={show_actions}
+                            onclick={() => show_actions = !show_actions}
+                            title="{house.name} — {house.actions.ob({ action: 1 }).length} action buttons">⚙</button>
+                {/if}
             {/each}
         </div>
         <button class="bw-lies-chip" class:on={show_lies}
@@ -133,24 +135,24 @@
         {/if}
     </div>
 
-    <!-- the opened House's panel — play with its buttons -->
-    {#each houses.filter(h => h.c.ip === open_panel) as house (house.c.ip)}
+    <!-- the active House's action rack — up only when the ⚙ cog asks -->
+    {#if show_actions && active}
         <div class="bw-panel">
-            <span class="bw-panel-name">{house.name}{#if !house.started}<span class="bw-off">off</span>{/if}</span>
-            <Actions N={house.actions.ob({ action: 1 })} />
-            {#if house.stashed}
-                <button class="bw-cstar" class:on={house.stashed.showC}
+            <span class="bw-panel-name">{active.name}{#if !active.started}<span class="bw-off">off</span>{/if}</span>
+            <Actions N={active.actions.ob({ action: 1 })} />
+            {#if active.stashed}
+                <button class="bw-cstar" class:on={active.stashed.showC}
                         title="show this House's C** (Stuffing) tree in the room"
-                        onclick={() => toggle_C(house)}>C**</button>
+                        onclick={() => toggle_C(active)}>C**</button>
             {/if}
         </div>
-    {/each}
+    {/if}
 
-    <!-- the room — one big set of H.UIs at once; Lies only when called up -->
+    <!-- the room — ONE House fullscreen (the show-one-thing view); Lies only when called up -->
     <div class="bw-room" class:bw-railed={pins.length > 0}>
-        {#each houses as house (house.c.ip)}
+        {#each houses.filter(h => h.c.ip === active_ip) as house (house.c.ip)}
             {#each house.UIs.ob({ UI: 1 }) as uiC (keyser(uiC.sc))}
-                {#if uiC.sc.UI !== 'Lies' || show_lies}
+                {#if !ui_hidden(uiC.sc.UI)}
                     <section class="bw-piece" class:bw-piece-lies={uiC.sc.UI === 'Lies'}>
                         <span class="bw-tag">{house.name} · {uiC.sc.UI}</span>
                         <svelte:component this={uiC.sc.component} H={house} />
@@ -200,7 +202,7 @@
         min-height: 100vh; box-sizing: border-box;
         background: radial-gradient(120% 130% at 30% -10%, #191a26, #0b0b12 70%);
         color: #b8c2d8; font-family: monospace;
-        padding: 0 1.2rem 4rem;
+        padding: 0;   /* full-bleed — the UI takes the whole screen (body margin:0 in app.css frees the viewport edge) */
     }
 
     /* top bar — room name, the H** toc, Lies summon, search */
@@ -224,10 +226,27 @@
         margin-left: calc(var(--d) * 0.55rem);   /* H** depth reads as indent */
         transition: color 0.12s, background 0.12s;
     }
-    .bw-h:hover { color: #e4ecff; background: rgba(120, 150, 210, 0.12); }
-    .bw-h.open  { color: #ffe0a8; background: rgba(224, 180, 110, 0.12); }
-    .bw-h.off   { color: rgba(200, 110, 110, 0.6); }
-    .bw-todo { font-size: 0.68em; color: #e0965a; margin-left: 0.25em; }
+    .bw-h:hover  { color: #e4ecff; background: rgba(120, 150, 210, 0.12); }
+    .bw-h.active { color: #ffe0a8; background: rgba(224, 180, 110, 0.14); }
+    .bw-h.off    { color: rgba(200, 110, 110, 0.6); }
+    /* the ⚙ cog — rides beside the active chip only; toggles that House's action rack */
+    .bw-cog {
+        background: none; border: none; cursor: pointer; font-family: inherit;
+        font-size: 0.8rem; line-height: 1; color: rgba(180, 195, 225, 0.55);
+        padding: 0.1rem 0.25rem; border-radius: 6px; flex: none;
+        transition: color 0.12s, background 0.12s, transform 0.2s;
+    }
+    .bw-cog:hover { color: #e4ecff; background: rgba(120, 150, 210, 0.14); }
+    .bw-cog.on    { color: #ffe0a8; background: rgba(224, 180, 110, 0.16); transform: rotate(40deg); }
+    /* the todo count rides as an EXPONENT floated off the end of the name — position:absolute so it
+       is OUT OF FLOW: a flashing count never re-sizes the chip, so the toc no longer shoves the
+       margin-left:auto searchbar (the vibrate).  left:100% pins it just past the last letter. */
+    .bw-h-name { position: relative; }
+    .bw-todo {
+        position: absolute; left: 100%; top: -0.35em;
+        font-size: 0.6em; line-height: 1; color: #e0965a;
+        pointer-events: none; white-space: nowrap;
+    }
 
     .bw-lies-chip {
         background: none; border: 1px solid rgba(120, 140, 195, 0.25); border-radius: 6px;
@@ -256,8 +275,11 @@
     .bw-cstar:hover { opacity: 0.75; }
     .bw-cstar.on { opacity: 1; }
 
-    /* the room body — pieces floating with air between them */
-    .bw-room { display: flex; flex-direction: column; gap: 2.2rem; padding-top: 1.4rem; }
+    /* the room body — ONE House fullscreen; its pieces stack, filling the space below the top bar */
+    .bw-room {
+        display: flex; flex-direction: column; gap: 2.2rem; padding-top: 1.4rem;
+        min-height: calc(100vh - 3rem);
+    }
     .bw-room.bw-railed { padding-right: 15rem; }   /* leave the loose space loose */
     .bw-piece { position: relative; min-width: 0; }
     .bw-tag {

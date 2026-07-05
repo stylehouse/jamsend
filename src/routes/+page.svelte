@@ -1,4 +1,4 @@
 <script lang="ts">
-    import Mound from "$lib/V/Mound.svelte";
+    import BigSoundland from "$lib/V/BigSoundland.svelte";
 </script>
-<Mound />
+<BigSoundland />

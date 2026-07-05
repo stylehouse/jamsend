@@ -11,7 +11,7 @@ import { Selection } from "$lib/mostly/Selection.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Musuation(): string { return '1f69724e1c1955bc' },
+    Ghostmeta_Ghost_Story_Musuation(): string { return 'dfb009b8293054f2' },
 
 // Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Music_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
@@ -3468,97 +3468,12 @@ async Repli_sent_se(w, library, pier) {
 },
 //#endregion
 
-//#region crush — fold the big homogeneous collections behind ONE stuffed chunk each
-// ══ the data-crusher ══════════════════════════════════════════════════════════════════════════
-//  A replica world is mostly CONFETTI: 16 emits + 16 unemits per pier side, a Record per tone —
-//   drawn raw the graph is too big to read a label of.  The crush folds it: ANY non-structural
-//    container with children is stamped %stuff — Cyto then draws
-//     it as one chunk hosting a live Stuffing overlay (the ×N fold — Housing's stuffing awareness
-//      drives the grouping + refresh) and stops its walk there (descent suppressed at a stuffed
-//       node).  Beside the stamps a %Crush_Tree D** records what folded where — hand-rolled, and
-//        unlike %Sent_Tree (now a real Se — Repli_sent_se above) it STAYS hand-rolled for now: a Se's
-//         D** mirrors the walk it traveled (a D per visited node), while this report is deliberately
-//          FLAT (a %Crush per crushed container only) — lifting it means redesigning the report's
-//           shape, not swapping the scan.  The analysis rides the snap, so the Book diffs it and the
-//            witness %sees it.
-
-// Repli_crush_scan — one pass: walk w**, stamp %stuff on crushable containers, refresh %Crush_Tree.
-//  Idempotent + cheap — MusuReplica runs it every beat so the tree tracks collections growing.
-//   The tree itself is stuffed at birth (it is homogeneous meta by construction) but never walked —
-//    the report card folds into one chunk without counting itself.
-//  GATED on the Book opt %crushCyto (toc Opt/For/w:<Book>/crushCyto, pushed into w/%Opt at
-//   settingoff): the whole machinery — stamps, skin, tree — stays off unless the Book asks,
-//    so no other test's graph or snap ever meets it.
-Repli_crush_scan(w) {
-    if (!w.o({ Opt: 1 })[0]?.oa({ crushCyto: 1 })) return null
-    let tree = w.oai({ Crush_Tree: 1 })
-    tree.c.up = w
-    if (!tree.sc.stuff) { tree.sc.stuff = 1; tree.bump() }
-    tree.c.stuffy = 1
-    this.Repli_crush_walk(tree, w, '', 0)
-    return tree
-
-},
-// Repli_crush_walk — recurse; structural mainkeys stay graph (the skeleton must remain readable) but
-//  are walked THROUGH; a crushed container's subtree is NOT descended (folded here = folded in the
-//   Cyto walk, the same cut).  `at` accumulates name-ish keys so the same container kind under two
-//    Piers earns two distinct Ds (DJ.Crowd.outbox vs Crowd.DJ.outbox).
-//  EVERYTHING the walk touches gets c.stuffy (a c-side presentation flag, never snapped) — folded
-//   chunks included: c.stuffy IS the crushCyto skin in Cyto (self-row stuffings for spine + leaves,
-//    children-Stuffing where %stuff rides beside it), so a plain un-crushed %stuff elsewhere keeps
-//     the classic labelled look (%Pier, reached:step_2, a lone Ud — all stuffings here).
-Repli_crush_walk(tree, node, at, d) { const H = this;
-    if (d > 8) return
-    for (const c of node.o()) {
-        let mk = Object.keys(c.sc)[0]
-        if (mk === 'Crush_Tree') continue
-        let nameish = c.sc.name || c.sc.pub || c.sc.pier || c.sc.id || ''
-        // Opt rides with the spine: it is equipment (the pushed Book opts), not data — folding it
-        //  would count a phantom chunk in the report card (and crowd the ≤9 single-digit %see).
-        if (mk === 'w' || mk === 'H' || mk === 'A' || mk === 'Peering' || mk === 'Pier' || mk === 'req' || mk === 'Opt') {
-            c.c.stuffy = 1
-            let oat = nameish ? (at ? at + '.' + nameish : '' + nameish) : at
-            this.Repli_crush_walk(tree, c, oat, d + 1)
-            continue
-        }
-        let verdict = this.Repli_crushable(c)
-        if (verdict) {
-            if (!c.sc.stuff) { c.sc.stuff = 1; c.bump() }
-            c.c.stuffy = 1
-            let ident = (at ? at + '.' : '') + mk + (nameish ? '.' + nameish : '')
-            let D = tree.oai({ Crush: ident })
-            D.c.up = tree
-            D.sc.kind = verdict.kind
-            D.sc.n = verdict.n
-            D.bump()
-            D.c.crushed = c
-            continue
-        }
-        c.c.stuffy = 1
-        this.Repli_crush_walk(tree, c, at, d + 1)
-    }
-
-},
-// Repli_crushable — the rule: fold ANY non-structural container with children.  Even a weakly
-//  motivated Stuffing (mixed keys, one row per group) reads better as one chunk than as confetti —
-//   we scoop up ALL the C**.  kind = the dominant child mainkey (informational), n = child count.
-//    (The first cut gated on MANY-and-HOMOGENEOUS — ≥3 children, one mainkey ≥80% — too shy.)
-Repli_crushable(c) {
-    let N = c.o()
-    if (N.length < 1) return null
-    let counts = {}
-    for (const k of N) {
-        let mk = Object.keys(k.sc)[0]
-        counts[mk] = (counts[mk] || 0) + 1
-    }
-    let kind = null
-    let kn = 0
-    for (const mk of Object.keys(counts)) {
-        if (counts[mk] > kn) { kind = mk; kn = counts[mk] }
-    }
-    return { kind: kind, n: N.length }
-},
-//#endregion
+// the data-crusher GREW UP here (Repli_crush_scan/walk/crushable) and MOVED to Ghost/V/Voro.g —
+//  the Vis family owns the fold policy now, as Voro_crush_scan/walk/crushable/clear.  Two things
+//   changed in the move: every stamp went c-side (c.stuff the fold, c.stuffy the skin — a view must
+//    not change what a Story records), and the %Crush_Tree report particle was DROPPED (it was the
+//     one thing the crush still snapped) — the fold totals a witness wants come back as live stats
+//      {folded,count} from Voro_crush_scan.  MusuReplica reads those; the two demo Books live in Voro.g.
 
 //#region replica — MusuReplica: the paginated streaming C** replication, DEMONSTRATED on two Piers
 // ══ MusuReplica — A shows B its music collection using the repli protocol above.  A holds a little library
@@ -3584,8 +3499,8 @@ Repli_crushable(c) {
 //                              goner → an op:delete line retires it at B: un-replication is replication too
 //         beat 14     witness — retired (surgical removal at the mirror) + the Se-drive %sees (neus offered /
 //                               goner retired)
-//         every beat  crush  — Repli_crush_scan folds the growing collections (%stuff + %Crush_Tree),
-//                              so the Cyto stays readable while the traffic piles up
+//         every beat  crush  — Voro_crush_scan (Ghost/V/Voro.g) folds the growing collections c-side
+//                              (nothing modelled — the witness reads live {folded,count} stats), so the Cyto stays readable
 MusuReplica(A,w) {
     w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
         await this.MusuReplica_drive(w,req)
@@ -3609,7 +3524,7 @@ async MusuReplica_drive(w, req) {
         if (n === 4) await this.MusuReplica_drop(w)
         if (n >= 5 && n <= 10) await this.MusuReplica_pull(w)
         if (n === 11) await this.MusuReplica_settle(w)
-        if (n >= 2) this.Repli_crush_scan(w)
+        if (n >= 2) this.Voro_crush_scan(w)   // c-side fold; the witness reads live stats + stamps
         if (n === 12) this.MusuReplica_witness(w)
         if (n === 13) await this.MusuReplica_retire(w)
         if (n === 14) await this.MusuReplica_witness_retire(w)
@@ -3732,14 +3647,12 @@ MusuReplica_witness(w) {
     let warned = rx ? rx.o({ req: 'awaitbuf' }).some(r => r.oa({ warned: 1 })) : false
     if ((stuck || warned) && !(w.oa({witnessed: "warns_missing"}))) w.i({witnessed: "warns_missing"})
     // ── the crush, analysed — the replica's confetti folds into big chunks of classification ─────
-    //  %see claims (once-noticed).  The first three read the model: stamps + the %Crush_Tree report
-    //   card.  The last reads cyto_folded — the LIVE graph's own c-side stamp, only ever written by a
-    //    real Cyto walk stopping at the chunk — so it is the one that dies if descent suppression is
-    //     deleted (and dies headless too — which is the point: record on a live runner).
-    let ct = w.o({ Crush_Tree: 1 })[0]
-    let crushes = ct ? ct.o({ Crush: 1 }) : []
-    let folded = 0
-    for (const cd of crushes) folded = folded + +(cd.sc.n || 0)
+    //  %see claims (once-noticed).  The first three read the c-side fold stamps (c.stuff) and the live
+    //   {folded,count} the scan returns — NOTHING modelled, the crush leaves no snap trace.  The last
+    //    reads cyto_folded — the LIVE graph's own c-side stamp, only ever written by a real Cyto walk
+    //     stopping at the chunk — so it is the one that dies if descent suppression is deleted (and
+    //      dies headless too — which is the point: record on a live runner).
+    let stats = this.Voro_crush_scan(w) || { folded: 0, count: 0 }
     let boxes = []
     for (const pg of w.o({ Peering: 1 })) {
         for (const pier of pg.o({ Pier: 1 })) {
@@ -3748,9 +3661,9 @@ MusuReplica_witness(w) {
         }
     }
     let libs = w.o({ Library: 1 })
-    if (boxes.length >= 4 && boxes.every(b => b.sc.stuff) && !(w.oa({see: 'the wire traffic folds — each inbox and outbox rides as one stuffed chunk'}))) w.i({see: 'the wire traffic folds — each inbox and outbox rides as one stuffed chunk'})
-    if (libs.length >= 2 && libs.every(l => l.sc.stuff) && !(w.oa({see: 'both libraries fold — a Record chunk each side of the wire'}))) w.i({see: 'both libraries fold — a Record chunk each side of the wire'})
-    if (folded >= 24 && crushes.length > 0 && crushes.length <= 9 && !(w.oa({see: 'dozens of little bits fold into single-digit chunks of classification'}))) w.i({see: 'dozens of little bits fold into single-digit chunks of classification'})
+    if (boxes.length >= 4 && boxes.every(b => b.c.stuff) && !(w.oa({see: 'the wire traffic folds — each inbox and outbox rides as one stuffed chunk'}))) w.i({see: 'the wire traffic folds — each inbox and outbox rides as one stuffed chunk'})
+    if (libs.length >= 2 && libs.every(l => l.c.stuff) && !(w.oa({see: 'both libraries fold — a Record chunk each side of the wire'}))) w.i({see: 'both libraries fold — a Record chunk each side of the wire'})
+    if (stats.folded >= 24 && stats.count > 0 && stats.count <= 9 && !(w.oa({see: 'dozens of little bits fold into single-digit chunks of classification'}))) w.i({see: 'dozens of little bits fold into single-digit chunks of classification'})
     let srcl = w.c.repli_src
     if (srcl && srcl.c.cyto_folded != null && !(w.oa({see: 'the live graph stops at a stuffed chunk — the fold is real not cosmetic'}))) w.i({see: 'the live graph stops at a stuffed chunk — the fold is real not cosmetic'})
 
@@ -3835,7 +3748,6 @@ async MusuReco_drive(w, req) {
         if (n >= 5 && n <= 8) await this.MusuReco_chase(w)
         if (n === 9) await this.MusuReco_finish(w)
         if (n === 10) await this.MusuReco_settle(w)
-        if (n >= 2) this.Repli_crush_scan(w)
         if (n === 11) this.MusuReco_witness(w)
     }
     await this.Musu_float(w)
@@ -4126,262 +4038,6 @@ async MusuConceal_order(w) { const H = this;
     let As = H.o({A: 1})
     if (!As.length) return
     let first = (a) => (a.sc.A === 'MusuConceal') ? 0 : 1
-    let sorted = [...As].sort((a, b) => first(a) - first(b))
-    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
-    await this.place({}, ordered)
-},
-//#endregion
-
-//#region mitosis — watch the cells divide
-// ══ MusuMitosis — a colony that grows and splits: the voronoi render watched dividing ══════════════
-//  A demo-gauge Book for the crushed voronoi cells: cell:<name> containers of %spore children live
-//   DIRECTLY under w (no umbrella container — the crusher folds any content container so an umbrella
-//    would swallow the whole colony as ONE chunk).  Each beat every cell gains spores; a cell past
-//     the split threshold DIVIDES (half its spores leave for a fresh cell — a new voronoi cell births
-//      inside the parent's territory); one cell dies mid-run (apoptosis — its territory reclaimed).
-//       Deterministic throughout: growth is count-driven, names come off a fixed list, no randomness.
-//        No transport and no audio — this Book runs anywhere a runner does.
-MusuMitosis(A,w) {
-    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
-        await this.MusuMitosis_drive(w,req)
-        req.sc.ok = 1
-
-    })
-},
-async MusuMitosis_drive(w, req) {
-    let n = (this.c.run)?.c.step_n
-    if (n != null && n !== req.c.did_step) {
-        req.c.did_step = n
-        if (n === 2) this.MusuMitosis_seed(w)
-        if (n >= 3 && n <= 10) this.MusuMitosis_grow(w, n)
-        if (n === 8) this.MusuMitosis_die(w)
-        if (n >= 2) this.Repli_crush_scan(w)
-        if (n === 11) this.MusuMitosis_witness(w)
-    }
-
-},
-// ── the NZ flora vocabulary ───────────────────────────────────────────────
-//  fixed lists ARE the determinism (no randomness in this Book): genera name the
-//   cells, epithets name the species (the spores), forms name the nested sub-taxa.
-//    Real Aotearoa plants — Coprosma, Hebe-in-Veronica, tōtara, beech (Nothofagus).
-Botany_genera() {
-    return ['Coprosma','Veronica','Pittosporum','Metrosideros','Podocarpus','Nothofagus','Phormium','Pseudopanax','Olearia','Dracophyllum','Kunzea','Leptospermum']
-},
-Botany_epithets() {
-    return ['robusta','propinqua','rhamnoides','grandifolia','lucida','tenuifolium','excelsa','totara','fusca','tenax','crassifolius','colensoi','australis','divaricata','microphylla','serrata','montana','linearis']
-},
-Botany_forms() {
-    return ['var. montana','var. prostrata','f. viridis','subsp. australis']
-
-},
-// plant one taxon; depth>0 gives it two nested sub-taxa (a bifurcating frond —
-//  self-similar), so a chunk's interior is fractal "here and there" rather than a
-//   flat row of names.  Depth is tiny and count-driven, so it textures the tree
-//    without the combinatorial blow-up of a full recursion.
-Botany_plant(container, epithet, depth) {
-    let taxon = container.i({ spore: epithet })
-    if (depth > 0) {
-        let forms = this.Botany_forms()
-        this.Botany_plant(taxon, epithet + ' ' + forms[0], depth - 1)
-        this.Botany_plant(taxon, epithet + ' ' + forms[1], depth - 1)
-    }
-    return taxon
-
-},
-// found a genus (a cell) with k species; the odd one carries a nested form — the
-//  phylogeny "here and there" that gives each chunk its self-similar texture.
-MusuMitosis_found(w, genus, k) {
-    let cell = w.i({ cell: genus })
-    let eps = this.Botany_epithets()
-    let gi = this.Botany_genera().indexOf(genus)
-    if (gi < 0) gi = 0
-    for (let s = 0; s < k; s++) this.Botany_plant(cell, eps[(gi * 3 + s) % eps.length], s % 2)
-    return cell
-
-},
-MusuMitosis_seed(w) {
-    this.MusuMitosis_found(w, 'Coprosma', 5)
-    this.MusuMitosis_found(w, 'Veronica', 3)
-
-},
-// grow: every genus gains two species this beat; the first species of each sprouts
-//  a form (and if it has one already, a sub-form) — the phylogeny deepening like a
-//   frond unfurling.  Then AT MOST ONE genus past 8 species speciates: half its
-//    species found a new genus (a new voronoi cell divides into being).  One
-//     division per beat keeps it readable; the genera list caps the radiation.
-MusuMitosis_grow(w, n) {
-    let genera = this.Botany_genera()
-    let eps = this.Botany_epithets()
-    let forms = this.Botany_forms()
-    let cells = w.o({ cell: 1 })
-    for (const c of cells) {
-        let base = c.o({ spore: 1 }).length
-        c.i({ spore: eps[(n * 2 + base) % eps.length] })
-        c.i({ spore: eps[(n * 2 + base + 1) % eps.length] })
-    }
-    for (const c of cells) {
-        let first = c.o({ spore: 1 })[0]
-        if (!first) continue
-        let sub = first.o({ spore: 1 })
-        if (!sub.length) {
-            first.i({ spore: first.sc.spore + ' ' + forms[n % forms.length] })
-        } else {
-            sub[0].i({ spore: sub[0].sc.spore + ' ' + forms[(n + 1) % forms.length] })
-        }
-    }
-    cells = w.o({ cell: 1 })
-    for (const c of cells) {
-        let spores = c.o({ spore: 1 })
-        if (spores.length < 8) continue
-        let used = w.o({ cell: 1 }).map(x => x.sc.cell)
-        let name = genera.find(nm => !used.includes(nm))
-        if (!name) break
-        let neu = w.i({ cell: name })
-        let half = spores.slice(0, Math.floor(spores.length / 2))
-        for (const sp of half) { neu.i({ spore: sp.sc.spore }); sp.drop(sp) }
-        w.c.mitosis_splits = (w.c.mitosis_splits || 0) + 1
-        break
-    }
-
-},
-// die: apoptosis — the smallest cell drops out; its voronoi territory goes back to the neighbours.
-MusuMitosis_die(w) {
-    let cells = w.o({ cell: 1 })
-    if (cells.length < 3) return
-    let smallest = [...cells].sort((a, b) => a.o({ spore: 1 }).length - b.o({ spore: 1 }).length)[0]
-    w.c.mitosis_died = smallest.sc.cell
-    smallest.drop(smallest)
-
-},
-MusuMitosis_witness(w) {
-    let cells = w.o({ cell: 1 })
-    let folded = cells.filter(c => c.sc.stuff != null)
-    if (cells.length >= 4 && (w.c.mitosis_splits || 0) >= 2 && !(w.oa({see: 'the flora radiated — more genera now than were founded and each new one split off an over-full parent'}))) w.i({see: 'the flora radiated — more genera now than were founded and each new one split off an over-full parent'})
-    if (w.c.mitosis_died && !cells.find(c => c.sc.cell === w.c.mitosis_died) && !(w.oa({see: 'a genus went extinct mid-run and stayed gone — its range reclaimed by its neighbours'}))) w.i({see: 'a genus went extinct mid-run and stayed gone — its range reclaimed by its neighbours'})
-    if (cells.length && folded.length === cells.length && !(w.oa({see: 'every living genus is crush-folded behind one chunk for the graph'}))) w.i({see: 'every living genus is crush-folded behind one chunk for the graph'})
-},
-//#endregion
-
-//#region scape — the GRAPH OF MUSIC rendered as voronoi stained glass
-// ══ MusuScape — a music library becomes a graph when friends share it, and the crush folds it to glass ══
-//  The music twin of MusuMitosis (which watched abstract flora divide).  Here the cells are MUSIC and the
-//   edges are SOCIAL: %Artist panes hold their %Track songs; %Peer panes each %Share tracks from the
-//    library — and a share is an EDGE from a friend onto a real track.  A track many friends share is a
-//     HUB: its pane claims more room (the power-diagram weight the voronoi reads off a big node).  A track
-//      nobody shares is a sliver; a deep cut nobody touches goes dark.  So the stained glass is not a flat
-//       shelf — some panes blaze (the hits), some are slivers (the deep cuts), and the light moves live as
-//        friends come and go.  Like MusuMitosis: cells live DIRECTLY under w (the crusher folds any content
-//         container, so an umbrella would swallow the whole scape as ONE chunk); no transport, no audio,
-//          count-driven determinism (fixed lists, no randomness) — runs anywhere a runner does.
-//   beat 2  the library stands — three artists and their five tracks — a shelf, no friends, no light yet
-//   beat 3  a friend (Bo) arrives and shares — every share is an edge onto a REAL track — a graph is born
-//   beat 4  a second friend (Ada) shares the same track — it lights up as a HUB (weight 2) above the singles
-//   beat 5  Ada leaves — the hub cools LIVE (2 -> 1) and a track she alone lit goes dark (1 -> 0)
-//   beat 6  the crush folds every artist and friend into one stuffed pane — the graph arms as stained glass
-MusuScape(A,w) {
-    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
-        await this.MusuScape_drive(w,req)
-        req.sc.ok = 1
-
-    })
-},
-async MusuScape_drive(w, req) {
-    let n = (this.c.run)?.c.step_n
-    if (n != null && n !== req.c.did_step) {
-        req.c.did_step = n
-        if (n === 2) this.MusuScape_library(w)
-        if (n === 3) this.MusuScape_peer(w, 'Bo', ['Tide', 'Root', 'Echo'])
-        if (n === 4) this.MusuScape_peer(w, 'Ada', ['Tide', 'Halo'])
-        if (n === 5) this.MusuScape_leave(w, 'Ada')
-        if (n === 6) this.Repli_crush_scan(w)
-    }
-    this.MusuScape_witness(w)
-    await this.MusuScape_order(w)
-
-},
-// beat 2 — the library: three artists, each an %Artist pane holding its %Track songs (five in all).  The
-//  crushable rule folds any container with children, so each artist becomes one voronoi pane; the tracks
-//   ride inside it (a pane's interior).  No peers yet — a shelf, not a graph.
-MusuScape_library(w) {
-    let moon = w.i({ Artist: 1, name: 'Moonlit' })
-    moon.i({ Track: 1, title: 'Tide' })
-    moon.i({ Track: 1, title: 'Halo' })
-    let fern = w.i({ Artist: 1, name: 'Fernway' })
-    fern.i({ Track: 1, title: 'Root' })
-    fern.i({ Track: 1, title: 'Frond' })
-    let vox = w.i({ Artist: 1, name: 'Voxhall' })
-    vox.i({ Track: 1, title: 'Echo' })
-
-},
-// a friend joins and shares tracks off the library — each %Share is an EDGE from the %Peer pane onto a
-//  track by its title.  (A share names a track; MusuScape_dangling proves it names a REAL one.)
-MusuScape_peer(w, name, tracks) {
-    let p = w.i({ Peer: 1, name: name })
-    for (const t of tracks) p.i({ Share: 1, track: t })
-    return p
-
-},
-// a friend leaves — their pane drops out and their shares go with it (apoptosis, MusuMitosis's death twin):
-//  a track they alone shared goes dark, a hub they helped light cools by one.
-MusuScape_leave(w, name) {
-    let p = w.o({ Peer: 1 }).find(x => x.sc.name === name)
-    if (p) p.drop(p)
-
-},
-// every track title in the library (walk the artists' panes).
-MusuScape_titles(w) {
-    let titles = []
-    for (const a of w.o({ Artist: 1 })) for (const t of a.o({ Track: 1 })) titles.push(t.sc.title)
-    return titles
-
-},
-// a share that names no real track is a DANGLING pane — a bug in the graph.  Zero is the health check.
-MusuScape_dangling(w) {
-    let titles = this.MusuScape_titles(w)
-    let bad = 0
-    for (const p of w.o({ Peer: 1 })) for (const s of p.o({ Share: 1 })) if (!titles.includes(s.sc.track)) bad = bad + 1
-    return bad
-
-},
-// the HUB weight of a track: how many distinct friends share it.  This is the power-diagram weight the
-//  voronoi reads off the pane's rendered size — a hit blazes, a deep cut is a sliver, zero is dark.
-MusuScape_hub(w, title) {
-    let count = 0
-    for (const p of w.o({ Peer: 1 })) if (p.o({ Share: 1 }).some(s => s.sc.track === title)) count = count + 1
-    return count
-
-},
-// ── the witness — each %see is a per-beat OBSERVATION gated to its step (n === K) reading the LIVE truth
-//  of that beat, so it appears once and DROPS as the story moves on.  The drop IS the signal: beat 4's
-//   "it lights up as a hub" (weight 2) gives way to beat 5's "the hub cools" (weight 1) — the same track,
-//    re-weighted live.  Do NOT persist a claim past its beat (that is the old %witnessed noise reborn —
-//     [[see-is-not-a-latch]]).
-MusuScape_witness(w) {
-    let n = (this.c.run)?.c.step_n
-    let artists = w.o({ Artist: 1 })
-    let tracks = []
-    for (const a of artists) for (const t of a.o({ Track: 1 })) tracks.push(t)
-    let peers = w.o({ Peer: 1 })
-    // beat 2: the library stands — three artists, five tracks, no friends: a shelf with no light through it.
-    if (n === 2 && artists.length === 3 && tracks.length === 5 && !peers.length && !(w.oa({see: 'the library stands — three artists and five tracks — a shelf of glass with no light through it yet'}))) w.i({see: 'the library stands — three artists and five tracks — a shelf of glass with no light through it yet'})
-    // beat 3: a friend shares — every share edges onto a REAL track (no dangling) — the shelf is now a graph.
-    if (n === 3 && peers.length === 1 && this.MusuScape_dangling(w) === 0 && this.MusuScape_hub(w, 'Tide') === 1 && !(w.oa({see: 'a friend arrives and shares — every share is an edge onto a real track — the shelf becomes a graph'}))) w.i({see: 'a friend arrives and shares — every share is an edge onto a real track — the shelf becomes a graph'})
-    // beat 4: two friends on one track — it lights up as a HUB (weight 2) above the singles and the deep cut.
-    if (n === 4 && peers.length === 2 && this.MusuScape_hub(w, 'Tide') === 2 && this.MusuScape_hub(w, 'Root') === 1 && this.MusuScape_hub(w, 'Frond') === 0 && !(w.oa({see: 'two friends share one track — it lights up as a hub — its pane claims more room while a deep cut stays a sliver'}))) w.i({see: 'two friends share one track — it lights up as a hub — its pane claims more room while a deep cut stays a sliver'})
-    // beat 5: a friend leaves — the hub cools LIVE (2 -> 1) and a track she alone lit goes dark (1 -> 0).
-    if (n === 5 && peers.length === 1 && this.MusuScape_hub(w, 'Tide') === 1 && this.MusuScape_hub(w, 'Halo') === 0 && !(w.oa({see: 'a friend leaves and the hub cools — the shared track drops to one and a track only she lit goes dark'}))) w.i({see: 'a friend leaves and the hub cools — the shared track drops to one and a track only she lit goes dark'})
-    // beat 6: the crush folds every artist and friend into one stuffed pane — the graph arms as stained glass.
-    let folded_a = artists.filter(a => a.sc.stuff != null)
-    let folded_p = peers.filter(p => p.sc.stuff != null)
-    let tree = w.o({ Crush_Tree: 1 })[0]
-    if (n === 6 && tree && tree.sc.stuff != null && artists.length && folded_a.length === artists.length && peers.length && folded_p.length === peers.length && !(w.oa({see: 'the crush folds every artist and friend into one stuffed pane — the graph of music arms as stained glass'}))) w.i({see: 'the crush folds every artist and friend into one stuffed pane — the graph of music arms as stained glass'})
-
-},
-// float A:MusuScape to the front of H/* so the Run snap stays readable (MusuSkip_order's twin).
-async MusuScape_order(w) { const H = this;
-    let As = H.o({ A: 1 })
-    if (!As.length) return
-    let first = (a) => (a.sc.A === 'MusuScape') ? 0 : 1
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)

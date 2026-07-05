@@ -262,7 +262,7 @@ The MVP that ties it together: a real caster on the Pier streaming a real `%reco
 
 Where §1-7 build the *stream*, the **scape** is the *view*: the whole thing as a Cyto graph tessellated into
  **Voronoi stained-glass cells** (Cytui ◈ mode — power-diagram cells coloured by Matstyle; the render is pure
-  pixels, so no Book sees it — `voronoi-cells-render`). `lib/V/Mound.svelte` is its toplevel (the `/` route
+  pixels, so no Book sees it — `voronoi-cells-render`). `lib/V/BigSoundland.svelte` (was Mound) is its toplevel (the `/` route
    Piracy-scape); the owner's destination is "Voronoi stained glass graphs of music."
 
 - **MusuMitosis** (`Musuation.g`) — the render's first gauge: abstract NZ-flora cells that grow, divide, and
@@ -272,7 +272,7 @@ Where §1-7 build the *stream*, the **scape** is the *view*: the whole thing as 
     and the tracks they share — a share is an EDGE onto a real track), and a **hub** (a track many friends
      share = the power-diagram weight — a hit blazes, a deep cut is a sliver). The graph re-weights LIVE as
       friends come and go; the crush folds every pane at the last beat so the voronoi arms.
-- **Mound** now boots the machine as a **runner on a music Book** (default MusuScape, `?B=` overrides) and
+- **BigSoundland** (was Mound; `/` and `/BigSoundland`) boots the machine as a **runner on a music Book** (default MusuScape → becoming Sounditron, `?B=` overrides) and
    renders the Cyto UI full-bleed — the run rests in the stained-glass state. **First cut, browser-verify
     OWED.** NEXT: a LIVE gather (real library + real Piers off the Swarm side, `Swarm_spec §6`) in place of the
      seeded Book, and a bespoke Voro surface; open owner call — a runner boot joins the relay flock (fine for a

@@ -20,6 +20,7 @@ button, select {
 
 body {
     color: green;
+    margin: 0;   /* override the user-agent stylesheet's default 8px body margin — the app fills the viewport edge-to-edge */
 }
 
 button:hover {

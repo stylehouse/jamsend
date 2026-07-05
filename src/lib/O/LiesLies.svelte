@@ -67,6 +67,8 @@
 
         'Ghost/S/Swarm.g',              // swarm spine — identity/page/pier + the Idzeug invite (Swarm_spec.md)
         'Ghost/Story/Swarmation.g',     // the Swarm* tests — SwarmStaple; more pile on here
+
+        'Ghost/V/Voro.g',               // the Vis lens — the crush fold policy (Musu drives + ◈ imposition call it)
     ]
 
     // ── RUNNER_FACETS — a runner's advertised self-state, as ONE ordered list ──────────────────────

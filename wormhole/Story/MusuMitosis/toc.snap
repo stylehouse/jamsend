@@ -1,44 +1,11 @@
 story:MusuMitosis
   Styles
-    matstyle:w
-      style:background-color,v:#8f3232
-      meta:is_compound,v
-      meta:label,fmt:%s,keys:w
-    matstyle:Opt
-      style:background-color,v:#2fb155
-    matstyle:crushCyto
-      style:background-color,v:#8e29d6
-    matstyle:req
-      style:background-color,v:#c5b759
-    matstyle:cell
-      style:background-color,v:#298699
-    matstyle:Crush_Tree
-      style:background-color,v:#bc2476
-    matstyle:see
-      style:background-color,v:#61bd42
   Plan
   Opt
-    waitCyto
-    useCyto
-    dontSnapCyto
     For
-      w:MusuMitosis
-        crushCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.053
-      sample=0.052,at=1783148808
-      sample=0.054,at=1783158346
-    TimeTotal:step,avg=0.005
-      sample=0.005,at=1783148808
-      sample=0.005,at=1783158346
-  step,dige:lie
-  step=2,dige:lie
-  step=3,dige:lie
-  step=4,dige:lie
-  step=5,dige:lie
-  step=6,dige:lie
-  step=7,dige:lie
-  step=8,dige:lie
-  step=9,dige:lie
-  step=10,dige:lie
-  step=11,dige:lie
+    TimeTotal:beliefs,avg=0.006
+      sample=0.006,at=1783236876
+    TimeTotal:step,avg=0.006
+      sample=0.006,at=1783236876
+  step,dige:9a278c2f0968b4c9

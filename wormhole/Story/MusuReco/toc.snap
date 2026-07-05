@@ -44,19 +44,12 @@ story:MusuReco
       style:background-color,v:#89d04e
     matstyle:Opt
       style:background-color,v:#1f35a3
-    matstyle:crushCyto
-      style:background-color,v:#a6483a
-    matstyle:Crush_Tree
-      style:background-color,v:#36c974
     matstyle:skipped
       style:background-color,v:#af43db
   Plan
   Opt
     waitCyto
     dontSnapCyto
-    For
-      w:MusuReco
-        crushCyto
   TimeSpool
     TimeTotal:beliefs,avg=1.292
       sample=1.335,at=1783221604

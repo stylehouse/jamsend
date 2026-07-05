@@ -177,6 +177,31 @@
         ;(this as House).o({ watched: 'graph' })[0]?.bump_version()
     },
 
+    // ── e_Cyto_crush ─────────────────────────────────────────────────────
+    // The ◈ imposition (Cytui's bar button, on a world whose Book never opted %crushCyto):
+    //  arm c.crush_wanted on the scan root and re-scan — cyto_update_wave then runs the Voro
+    //   crusher before every scan while the flag rides, and dropping it strips the stamps.
+    //    All view, all c-side: the luxury layer lands on ANY graph without touching what its
+    //     Story snaps.  Needs Voro.g on H (CREDULER_GHOSTS — so runners); elsewhere it logs
+    //      and stands down, leaving the render to draw whatever chunks already exist.
+    async e_Cyto_crush(A: TheC, w: TheC, e: TheC) {
+        const H = this as House
+        const scan = w.c.Scannable as TheC | undefined
+        if (!scan) return
+        if (e?.sc.on) {
+            if (typeof (H as any).Voro_crush_scan !== 'function')
+                return console.log('◈ crush unavailable — Voro.g is not loaded on this House (runner spine only)')
+            scan.c.crush_wanted = 1
+        } else {
+            delete scan.c.crush_wanted
+            ;(H as any).Voro_crush_clear?.(scan)
+        }
+        // force a fresh scan + an absolute wave past the same-step guard so the (un)fold shows now
+        const last = w.c.last_step_n as number | undefined
+        delete w.c.last_step_n
+        await this.cyto_update_wave(w, last ?? 1, true)
+    },
+
 //#region cyto_update_wave
     async cyto_update_wave(w: TheC, incoming_step_n?: number, absolute = false): Promise<boolean> {
         const H    = this as House
@@ -194,6 +219,9 @@
 
         // TRIGGER 1: new step from client → scan + archive
         if (incoming_step_n !== undefined && !same_step_n || !w.c.supports_seek) {
+            // ◈ imposition: a crush the VIEW asked for (e_Cyto_crush), not the Book — re-stamp
+            //  before each scan so newborn particles fold too.  c-side only; no snap sees it.
+            if (scan.c.crush_wanted) (H as any).Voro_crush_scan?.(scan)
             const topC = await this.cyto_scan(w, scan)
             await this.cyto_assign_ids(w, topC)
             await this.cyto_scan_refs(w, topC)
@@ -474,10 +502,12 @@
                 }
 
                 // a stuffed container FOLDS: this node hosts the Stuffing overlay (the ×N groups) and
-                //  the walk stops here — its subtree stays out of the graph.  cyto_folded (c-side,
-                //   never snapped) is the live graph's own stamp that the fold really happened — a Book
-                //    can witness it, where %stuff alone only proves a crusher stamped intent.
-                if (n.sc.stuff != null) {
+                //  the walk stops here — its subtree stays out of the graph.  Two fold stamps: snapped
+                //   sc.stuff (the classic hand-placed chunk — Machinery peeks, stuff_of) and c-side
+                //    c.stuff (the Voro crusher, Ghost/V/Voro.g — a view stamp no snap ever sees).
+                //     cyto_folded (c-side, never snapped) is the live graph's own receipt that the fold
+                //      really happened — a Book can witness it, where a stamp alone only proves intent.
+                if (n.sc.stuff != null || n.c.stuff) {
                     T.sc.no_further = 'stuffed'
                     n.c.cyto_folded = Se.c.tick
                 }
@@ -673,12 +703,12 @@
         //    height here are only the birth size).  The border takes the mainkey's Matstyle colour
         //     so a chunk reads as its class even zoomed out.
         //  Two skins:
-        //   c.stuffy — the CRUSHED-WORLD skin, gated behind the Book opt %crushCyto: only the
-        //    (itself opt-gated) crusher stamps it, on EVERYTHING it touches — folded chunks
-        //     included — so this look never leaks into other Books' graphs (Leaf* check that
-        //      Cyto basically works).  No heading (the Stuffing IS the words); sc.stuff beside
-        //       it = FOLDED (Stuffing of the children, descent suppressed), without = the
-        //        particle ITSELF as one row (overlay_self).
+        //   c.stuffy — the CRUSHED-WORLD skin: only the Voro crusher (Ghost/V/Voro.g — gated on
+        //    the Book opt %crushCyto or the ◈ imposition's c.crush_wanted) stamps it, on
+        //     EVERYTHING it touches — folded chunks included — so this look never leaks into
+        //      other Books' graphs (Leaf* check that Cyto basically works).  No heading (the
+        //       Stuffing IS the words); c.stuff beside it = FOLDED (Stuffing of the children,
+        //        descent suppressed), without = the particle ITSELF as one row (overlay_self).
         //   plain sc.stuff — the classic labelled stuff-chunk (AwFloat's stuff_of peeks etc).
         if (n.sc.stuff != null || n.c.stuffy) {
             const key = this.mainkey(n)
@@ -689,7 +719,7 @@
                 border = (this.ms_css(ms)['background-color'] as string) ?? border
             }
             if (n.c.stuffy) {
-                const folded = n.sc.stuff != null
+                const folded = n.sc.stuff != null || n.c.stuff != null
                 return {
                     label: '',
                     overlay_kind: 'stuff',
