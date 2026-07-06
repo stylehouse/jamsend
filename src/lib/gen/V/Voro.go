@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Voro(): string { return '568883d4812515e9' },
+    Ghostmeta_Ghost_V_Voro(): string { return '5db441f0f2d8a256' },
 
 // Voro.g — the Vis family home: the Voronoi-Cyto render (Ghost/V/, Waft:Ghost/Vis/Visua).
 //  A late sibling to networking (N), music (M) and society (S).  But where THOSE are spines the
@@ -91,13 +91,19 @@ Voro_crush_pass(w, level) {
 Voro_crush_walk(node, d, stats, level) { const H = this;
     if (d > 8) return
     let loose = {}
+    let spilled = 0
     for (const c of node.o()) {
         let mk = Object.keys(c.sc)[0]
         if (mk === 'Opt') continue
+        // ANY pop intent among the children marks this locale as being surfed — the
+        //  remaining leaves then gang at min 2 (the spill relax), because "a few pop
+        //   out, the REST stays one pane" is the surf's contract.
+        if (c.c.popped || c.c.popped_open) spilled = spilled + 1
         if (c.c.popped && c.o().length < 1) {
-            // a leaf someone SURFED OUT of its gang (Vtuff_pop) — never re-gangs; it stands
-            //  as its own node until ◈ un-imposes.  A popped leaf that later grows children
-            //   re-enters the ordinary rules (the guard is leaf-only).
+            // a leaf someone SURFED OUT of its gang|fold (Vtuff_pop) — never re-gangs; it stands
+            //  as its own node until un-popped or ◈ un-imposes.  A popped leaf that later grows
+            //   children re-enters the ordinary rules (the guard is leaf-only; a popped
+            //    CONTAINER folds as its own pane below, which is a node all the same).
             this.Voro_unstamp(c)
             c.c.stuffy = 1
             stats.visible = stats.visible + 1
@@ -143,7 +149,7 @@ Voro_crush_walk(node, d, stats, level) { const H = this;
         stats.visible = stats.visible + 1
         this.Voro_crush_walk(c, d + 1, stats, level)
     }
-    this.Voro_gang_fold(loose, stats, level)
+    this.Voro_gang_fold(loose, stats, level, spilled > 0)
 
 },
 // Voro_gang_fold — the CO-CRUSH of scattered same-mainkey leaves (the owner's "%witnessed and
@@ -155,10 +161,15 @@ Voro_crush_walk(node, d, stats, level) { const H = this;
 //       shows every member's row via Cytui's mirror (the rep itself has no children).  NOTHING
 //        is minted or reparented in the model — election is pure c-side stamps, so no snap and
 //         no fixture can ever see a gang.
-Voro_gang_fold(loose, stats, level) {
+// spill: siblings of a popped node gang at min 2 REGARDLESS of mainkey noisiness — they
+//  were one pane a moment ago, and the surf's contract is "a few pop out, the REST stays
+//   one pane", not "the rest confettis because Leptospermum isn't a noisy family".
+Voro_gang_fold(loose, stats, level, spill) {
     for (const mk of Object.keys(loose)) {
         let gang = loose[mk]
-        if (gang.length >= this.Voro_gang_min(mk, level)) {
+        let min = this.Voro_gang_min(mk, level)
+        if (spill && min > 2) min = 2
+        if (gang.length >= min) {
             let rep = gang[0]
             delete rep.c.represented
             rep.c.stuff = 1
@@ -243,6 +254,7 @@ Voro_swarmable(c, mk) { const H = this;
     let noisy = { req: 1, witnessed: 1, see: 1, reached: 1 }
     let kinds = {}
     for (const k of N) {
+        if (k.c.popped || k.c.popped_open) return null
         let kmk = Object.keys(k.sc)[0]
         kinds[kmk] = (kinds[kmk] || 0) + 1
     }
@@ -255,12 +267,19 @@ Voro_swarmable(c, mk) { const H = this;
 // Voro_crushable — the rule: fold ANY non-structural container with children.  Even a weakly
 //  motivated Stuffing (mixed keys, one row per group) reads better as one chunk than as confetti.
 //   kind = the dominant child mainkey (a nav aid — the chunk's "what's inside"), n = child count.
+//    A POPPED CHILD refuses the fold: someone surfed that child out, and a shut pane would
+//     swallow it silently (Cyto's no_further stops at a stuffed node, so the popped stamp
+//      alone changes nothing — the pane MUST open for the child to reach the graph).  The
+//       container then descends as a plain hub node; its remaining leaves re-gang at min 2
+//        (the spill relax in Voro_gang_fold) and the scan's own parent→child `/` edges draw
+//         the family explosion for free.
 Voro_crushable(c) {
     if (c.c.popped_open) return null
     let N = c.o()
     if (N.length < 1) return null
     let counts = {}
     for (const k of N) {
+        if (k.c.popped || k.c.popped_open) return null
         let mk = Object.keys(k.sc)[0]
         counts[mk] = (counts[mk] || 0) + 1
     }
@@ -353,84 +372,188 @@ Vtuff_ident(m) {
     return t
 
 },
-// Vtuff_default — the generic distiller: the Stuffusion|Stuffziad|Stuffziado compression re-said
-//  as rows.  A small family speaks per-member; a big one gets its title, its SHARED facts (a key
-//   with one distinct value across everyone — one row says it once), its SPREADS (a key with few
-//    distinct values — chips with counts, most-common first), and a /*N dip to surf the rest out
-//     into the graph.  A presence-only key everyone carries (the mainkey's 1) says nothing — skipped.
+// Vtuff_member_bit — the SHORT distinguishing bit of a member inside a pane whose title already
+//  names the family: the mainkey's VALUE when it carries one ({Olearia:'figaro'} → 'figaro'),
+//   else a naming key, else the bare mainkey.  ' /*N' marks children to dig.
+Vtuff_member_bit(m) {
+    let mk = Object.keys(m.sc)[0]
+    let v = m.sc[mk]
+    let t = null
+    if (v !== 1 && v != null) t = '' + v
+    if (t == null) {
+        let names = ['name', 'title', 'text', 'nick', 'label']
+        for (const k of names) {
+            if (k !== mk && typeof m.sc[k] === 'string') { t = m.sc[k]; break }
+        }
+    }
+    if (t == null) t = mk
+    let sub = m.o().length
+    if (sub) t = t + ' /*' + sub
+    return t
+
+},
+// Vtuff_default — the generic distiller.  A HOMOGENEOUS family (one mainkey) never repeats
+//  itself: the title names the family ONCE ('Olearia  ×4') and one list row carries the members
+//   as clickable chips of just their distinguishing bit ('figaro | tenuifolium | +2' — the
+//    owner's "Olearia: this|that|etc" form); shared facts and spreads of the OTHER keys ride
+//     below.  A MIXED small family speaks per-member (each row a pop-out handle), and a tiny one
+//      Travels the openness ONE level — a member's own few children indent under it (row:sub,
+//       poppable too): the same-graph seed of recursion, depth capped where the pixels are.
+//        A MIXED big family gets facts|spreads.  A presence-only key everyone carries (the
+//         mainkey's 1) says nothing — skipped.
 Vtuff_default(root, members, src) {
-    root.i({ Vrow: 1, row: 'title', text: this.Vtuff_ident(src) + '  ×' + members.length, wgt: 2 })
-    if (members.length <= 5) {
+    let kinds = {}
+    for (const m of members) {
+        kinds[Object.keys(m.sc)[0]] = 1
+    }
+    let homo = Object.keys(kinds).length === 1
+    let title = this.Vtuff_ident(src)
+    if (src.c.gang) {
+        // a gang rep's own ident reads as ONE member ('Olearia: figaro ×4' looks like 4
+        //  figaros) — the family name alone is the honest title.
+        title = src.c.fold_kind || Object.keys(kinds)[0]
+    }
+    root.i({ Vrow: 1, row: 'title', text: title + '  ×' + members.length, wgt: 2 })
+    if (homo) {
+        let r = root.i({ Vrow: 1, row: 'list', text: '', wgt: 1 })
+        let shown = members
+        if (members.length > 9) shown = members.slice(0, 9)
+        for (const m of shown) {
+            let b = r.i({ Vbit: 1, text: this.Vtuff_member_bit(m), n: 1 })
+            b.c.member = m
+        }
+        if (members.length > shown.length) r.i({ Vbit: 1, text: '+' + (members.length - shown.length), n: 0 })
+        this.Vtuff_keyrows(root, members, Object.keys(kinds)[0])
+    } else if (members.length <= 5) {
         for (const m of members) {
             let t = this.Vtuff_ident(m)
             let sub = m.o().length
             if (sub) t = t + ' /*' + sub
             let r = root.i({ Vrow: 1, row: 'member', text: t, wgt: 1 })
             r.c.member = m
+            if (members.length <= 3 && sub && sub <= 3) {
+                for (const k of m.o()) {
+                    let sr = root.i({ Vrow: 1, row: 'sub', text: '· ' + this.Vtuff_ident(k), wgt: 1 })
+                    sr.c.member = k
+                }
+            }
         }
     } else {
-        let keys = []
-        let seen = {}
-        for (const m of members) {
-            for (const k of Object.keys(m.sc)) {
-                if (!seen[k]) { seen[k] = 1; keys.push(k) }
-            }
-        }
-        for (const k of keys) {
-            let vals = {}
-            let order = []
-            let have = 0
-            for (const m of members) {
-                if (!Object.prototype.hasOwnProperty.call(m.sc, k)) continue
-                have = have + 1
-                let v = '' + m.sc[k]
-                if (vals[v] == null) { vals[v] = 0; order.push(v) }
-                vals[v] = vals[v] + 1
-            }
-            if (!have) continue
-            if (order.length === 1) {
-                if (order[0] === '1') {
-                    if (have < members.length) root.i({ Vrow: 1, row: 'fact', text: k + ' ×' + have, wgt: 1 })
-                } else {
-                    root.i({ Vrow: 1, row: 'fact', text: k + ': ' + order[0], wgt: 1 })
-                }
-                continue
-            }
-            order.sort((a, b) => vals[b] - vals[a])
-            let r = root.i({ Vrow: 1, row: 'spread', text: k, wgt: 1 })
-            let chips = order
-            if (order.length > 4) chips = order.slice(0, 3)
-            for (const v of chips) r.i({ Vbit: 1, text: v, n: vals[v] })
-            if (order.length > chips.length) r.i({ Vbit: 1, text: '+' + (order.length - chips.length), n: 0 })
-        }
+        this.Vtuff_keyrows(root, members, null)
     }
     let dip = root.i({ Vrow: 1, row: 'dip', text: '/*' + members.length, wgt: 1 })
     dip.c.members = members
 
 },
+// Vtuff_keyrows — shared facts + spreads over the members' keys, skipping `skip` (the family
+//  mainkey when homogeneous — the title and list already said it; a spread repeating it is the
+//   'cell: Olearia ×4' then 'Olearia: figaro' stutter the owner flagged).  A key with ONE
+//    distinct value across everyone says it once (fact); a varying key shows value chips with
+//     counts, most-common first, capped with a visible tail.
+Vtuff_keyrows(root, members, skip) {
+    let keys = []
+    let seen = {}
+    for (const m of members) {
+        for (const k of Object.keys(m.sc)) {
+            if (!seen[k]) { seen[k] = 1; keys.push(k) }
+        }
+    }
+    for (const k of keys) {
+        if (k === skip) continue
+        let vals = {}
+        let order = []
+        let have = 0
+        for (const m of members) {
+            if (!Object.prototype.hasOwnProperty.call(m.sc, k)) continue
+            have = have + 1
+            let v = '' + m.sc[k]
+            if (vals[v] == null) { vals[v] = 0; order.push(v) }
+            vals[v] = vals[v] + 1
+        }
+        if (!have) continue
+        if (order.length === 1) {
+            if (order[0] === '1') {
+                if (have < members.length) root.i({ Vrow: 1, row: 'fact', text: k + ' ×' + have, wgt: 1 })
+            } else {
+                root.i({ Vrow: 1, row: 'fact', text: k + ': ' + order[0], wgt: 1 })
+            }
+            continue
+        }
+        order.sort((a, b) => vals[b] - vals[a])
+        let r = root.i({ Vrow: 1, row: 'spread', text: k, wgt: 1 })
+        let chips = order
+        if (order.length > 4) chips = order.slice(0, 3)
+        for (const v of chips) r.i({ Vbit: 1, text: v, n: vals[v] })
+        if (order.length > chips.length) r.i({ Vbit: 1, text: '+' + (order.length - chips.length), n: 0 })
+    }
+
+},
 // Vtuff_pop — the /*N surf, the owner's "locate|create nodes popping up in the graph around it,
-//  not in the Stuffing** itself".  A GANG MEMBER pops out as its own node (c.popped — the walk
-//   leaves it loose from now on); the dip on a gang dissolves the whole gang the same way; the
-//    dip on a container FOLD unfurls it (c.popped_open — it never folds|swarms again this
-//     session).  All c-side INTENT stamps: crush passes respect them, the ◈ un-imposition
-//      (Voro_crush_clear) forgets them.  Then one wave re-scans, so the graph grows the new
-//       nodes right where the pane sits — fcose pulls family next to family.
+//  not in the Stuffing** itself" — now UNDER CONTROL (the owner's poke): a MEMBER row|chip pops
+//   that ONE out (any depth — Vtuff_pop_stamp unfurls the container chain between it and the
+//    graph); the DIP spills a REASONABLE FEW — the top-K by subtree weight — and the REST stays
+//     one pane (the spill relax in Voro_gang_fold re-gangs the remainder at min 2); a pane of
+//      K+1 or fewer just opens whole.  All c-side INTENT stamps: crush passes respect them,
+//       Vtuff_unpop (right-click the node) or the ◈ un-imposition forgets them.  Then one wave
+//        re-scans — the graph grows the new nodes right where the pane sits, and the scan's own
+//         parent→child `/` edges wire an unfurled fold's family explosion for free.
 async Vtuff_pop(src, member) {
     if (member) {
-        member.c.popped = 1
-        delete member.c.represented
-    } else if (src.c.gang) {
-        for (const m of src.c.gang) {
-            m.c.popped = 1
-            delete m.c.represented
-        }
+        this.Vtuff_pop_stamp(src, member)
     } else {
-        src.c.popped_open = 1
-        this.Voro_unstamp(src)
+        let members = src.c.gang || src.o()
+        let K = 3
+        if (members.length <= K + 1) {
+            if (src.c.gang) {
+                for (const m of src.c.gang) this.Vtuff_pop_stamp(src, m)
+            } else {
+                src.c.popped_open = 1
+                this.Voro_unstamp(src)
+            }
+        } else {
+            let ranked = members.slice()
+            ranked.sort((a, b) => b.o().length - a.o().length)
+            for (let i = 0; i < K; i++) this.Vtuff_pop_stamp(src, ranked[i])
+        }
     }
     delete src.c.vtuffing
     delete src.c.vtuffing_sig
     let w = src
+    while (w && !(w.sc && w.sc.w)) w = w.c.up
+    if (w && this.cyto_update_wave) await this.cyto_update_wave(w)
+
+},
+// Vtuff_pop_stamp — one node surfed out: c.popped on the node itself, c.popped_open on every
+//  container between it and the pane (a grandchild's whole chain must unfurl for the scan to
+//   reach it — Voro_crushable|swarmable refuse a fold whose child is popped|popped_open), and
+//    c.represented dropped so a ganged member draws again.
+Vtuff_pop_stamp(src, member) {
+    member.c.popped = 1
+    delete member.c.represented
+    let p = member.c.up
+    let guard = 0
+    while (p && p !== src && guard < 8) {
+        p.c.popped_open = 1
+        this.Voro_unstamp(p)
+        p = p.c.up
+        guard = guard + 1
+    }
+
+},
+// Vtuff_unpop — fold-me-back, the pop's inverse: forget the intents on a node (and one level of
+//  its children, so right-clicking an unfurled HUB folds its whole family back), then wave — the
+//   next authoritative pass re-folds|re-gangs by the ordinary rules.  Gesture: right-click the
+//    popped node (Cytui cxttap).
+async Vtuff_unpop(n) {
+    delete n.c.popped
+    delete n.c.popped_open
+    for (const c of n.o()) {
+        delete c.c.popped
+        delete c.c.popped_open
+    }
+    delete n.c.vtuffing
+    delete n.c.vtuffing_sig
+    let w = n
     while (w && !(w.sc && w.sc.w)) w = w.c.up
     if (w && this.cyto_update_wave) await this.cyto_update_wave(w)
 },
@@ -495,12 +618,33 @@ Botany_forms() {
     return ['var. montana','var. prostrata','f. viridis','subsp. australis']
 
 },
+// a cheap deterministic hash (FNV-1a) — this Book carries NO randomness (fixtures must be
+//  byte-stable), so "some but not all" comes from hashing a taxon's OWN name, never Math.random.
+Voro_hash(s) {
+    let h = 2166136261
+    for (let i = 0; i < s.length; i++) {
+        h = Math.imul(h ^ s.charCodeAt(i), 16777619)
+    }
+    return h >>> 0
+
+},
 // plant one taxon, KEYED BY ITS GENUS ({Coprosma:'robusta'}) so siblings group; depth>0 gives it
 //  two nested sub-taxa (a bifurcating frond — self-similar), so a chunk's interior is fractal
 //   "here and there" rather than a flat row of names.  Count-driven depth, no blow-up.
+//    A deterministic SPRINKLE of botanical traits rides some taxa (not all): %woodystem on ~1/3
+//     (a presence-fact — 'woodystem ×N'), a %habit of three values on ~1/2 (a spread — chips), a
+//      rare %endemic on ~1/6.  So a genus pane stops being one column of epithets and grows shared
+//       facts + a spread the Vtuffing distiller can speak.  Genus stays the FIRST key (the mainkey).
 Botany_plant(container, genus, epithet, depth) {
     let sc = {}
     sc[genus] = epithet
+    let hsh = this.Voro_hash(genus + '|' + epithet)
+    if (hsh % 3 === 0) sc.woodystem = 1
+    if (hsh % 2 === 1) {
+        let habits = ['tree', 'shrub', 'vine']
+        sc.habit = habits[this.Voro_hash(epithet) % 3]
+    }
+    if (hsh % 6 === 0) sc.endemic = 1
     let taxon = container.i(sc)
     if (depth > 0) {
         let forms = this.Botany_forms()
@@ -638,13 +782,26 @@ async VoroScape_drive(w, req) {
 VoroScape_library(w) {
     w.c.crush_wanted = 1
     let moon = w.i({ Artist: 1, name: 'Moonlit' })
-    moon.i({ Track: 1, title: 'Tide' })
-    moon.i({ Track: 1, title: 'Halo' })
+    this.VoroScape_track(moon, 'Tide')
+    this.VoroScape_track(moon, 'Halo')
     let fern = w.i({ Artist: 1, name: 'Fernway' })
-    fern.i({ Track: 1, title: 'Root' })
-    fern.i({ Track: 1, title: 'Frond' })
+    this.VoroScape_track(fern, 'Root')
+    this.VoroScape_track(fern, 'Frond')
     let vox = w.i({ Artist: 1, name: 'Voxhall' })
-    vox.i({ Track: 1, title: 'Echo' })
+    this.VoroScape_track(vox, 'Echo')
+
+},
+// a track with a deterministic SPRINKLE of musical facets (the music twin of Botany's traits —
+//  no randomness, hashed off the title): a %year of three vintages (a spread — chips), %live on
+//   ~1/2 and %remaster on ~1/3 (presence-facts).  So an Artist pane says more than a column of titles.
+VoroScape_track(artist, title) {
+    let sc = { Track: 1, title: title }
+    let hsh = this.Voro_hash('Track|' + title)
+    let years = ['1998', '2007', '2019']
+    sc.year = years[hsh % 3]
+    if ((Math.floor(hsh / 4)) % 2 === 0) sc.live = 1
+    if (hsh % 3 === 0) sc.remaster = 1
+    artist.i(sc)
 
 },
 // a friend joins and shares tracks off the library — each %Share is an EDGE from the %Peer pane onto a

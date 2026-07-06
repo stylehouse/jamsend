@@ -1,5 +1,5 @@
 Credulation,of_Book:MusuReplica
-  run=0,at=1783309600.711,ok=0,ok_pct=0.93,mode:check
+  run=0,at=1783343842.724,ok,ok_pct,mode:check
     uses:Ghost_N_Peeroleum,dige:89f7731b8ad5fae2
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -11,11 +11,11 @@ Credulation,of_Book:MusuReplica
     uses:Ghost_M_Crate,dige:c05f526599e015af
     uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3
     uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
-    uses:Ghost_Story_Musuation,dige:9c081cdcd8f03b82
+    uses:Ghost_Story_Musuation,dige:1f8a462618f0e609
     uses:Ghost_S_Swarm,dige:5903f24bde1fb0d7
     uses:Ghost_Story_Swarmation,dige:fe5cba472157518d
-    uses:Ghost_V_Voro,dige:be317524fbbc3d2d
-  run,at=1783312211.725,ok=0,ok_pct=0.93,mode:check
+    uses:Ghost_V_Voro,dige:f6bab4441a4f0443
+  run,at=1783343872.412,ok=0,ok_pct=0.21,mode:check
     uses:Ghost_N_Peeroleum,dige:89f7731b8ad5fae2
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -27,7 +27,7 @@ Credulation,of_Book:MusuReplica
     uses:Ghost_M_Crate,dige:c05f526599e015af
     uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3
     uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
-    uses:Ghost_Story_Musuation,dige:9c081cdcd8f03b82
+    uses:Ghost_Story_Musuation,dige:1f8a462618f0e609
     uses:Ghost_S_Swarm,dige:5903f24bde1fb0d7
     uses:Ghost_Story_Swarmation,dige:fe5cba472157518d
-    uses:Ghost_V_Voro,dige:7d977719148a2bb1
+    uses:Ghost_V_Voro,dige:f6bab4441a4f0443

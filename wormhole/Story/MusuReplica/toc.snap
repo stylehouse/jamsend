@@ -44,6 +44,10 @@ story:MusuReplica
       style:background-color,v:#89d04e
     matstyle:crushCyto
       style:background-color,v:#1f35a3
+    matstyle:log
+      style:background-color,v:#a6483a
+    matstyle:msg
+      style:background-color,v:#36c974
   Plan
   Opt
     For
@@ -51,29 +55,30 @@ story:MusuReplica
         crushCyto
     useCyto
     dontSnapCyto
+    waitCyto
   TimeSpool
-    TimeTotal:beliefs,avg=0.415
-      sample=0.313,at=1783259411
-      sample=0.328,at=1783260141
-      sample=0.484,at=1783264998
-      sample=0.251,at=1783266185
+    TimeTotal:beliefs,avg=0.387
       sample=0.325,at=1783266278
       sample=0.204,at=1783266335
       sample=1.479,at=1783278361
       sample=0.353,at=1783288804
       sample=0.19,at=1783309600
       sample=0.226,at=1783312211
-    TimeTotal:step,avg=0.03
-      sample=0.022,at=1783259411
-      sample=0.023,at=1783260141
-      sample=0.035,at=1783264998
-      sample=0.018,at=1783266185
+      sample=0.348,at=1783336780
+      sample=0.343,at=1783337988
+      sample=0.207,at=1783343842
+      sample=0.2,at=1783343870
+    TimeTotal:step,avg=0.028
       sample=0.023,at=1783266278
       sample=0.015,at=1783266335
       sample=0.106,at=1783278361
       sample=0.025,at=1783288804
       sample=0.014,at=1783309600
       sample=0.016,at=1783312211
+      sample=0.025,at=1783336780
+      sample=0.025,at=1783337988
+      sample=0.015,at=1783343842
+      sample=0.014,at=1783343870
   step,dige:b74244526b42c964
   step=2,dige:79a249d5be1dee10
   step=3,dige:20876322ce5142ea

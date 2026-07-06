@@ -891,8 +891,8 @@
     //     slanted walls instead of a bbox grid.  Runs in BOTH cadences (the tree is cached
     //      .g-side, the fit is pure math) so the rows persist through a drag.  ▤ toggles the
     //       whole swap; member|dip rows are the pop-out surf (Vtuff_pop).
-    type MicroChip = { text: string, n: number }
-    type MicroRow  = { text: string, kind: string, x: number, y: number, w: number, h: number,
+    type MicroChip = { text: string, n: number, member?: TheC }
+    type MicroRow  = { text: string, kind: string, x: number, y: number, w: number, h: number, fs: number,
                        color: string | null, chips?: MicroChip[], member?: TheC, dip?: boolean }
     type VtuffDesc = { text: string, kind: string, color?: string | null,
                        chips?: MicroChip[], member?: TheC, dip?: boolean }
@@ -936,7 +936,7 @@
                 if (kind === 'title') d.color = kind_tint(src?.c?.fold_kind)
                 if (kind === 'dip') d.dip = true
                 const bits = r.o() as any[]
-                if (bits.length) d.chips = bits.map((b: any) => ({ text: String(b.sc.text ?? ''), n: (b.sc.n as number) ?? 0 }))
+                if (bits.length) d.chips = bits.map((b: any) => ({ text: String(b.sc.text ?? ''), n: (b.sc.n as number) ?? 0, member: b.c.member }))
                 out.push(d)
             }
             return out
@@ -976,12 +976,21 @@
 
     // slab-fit: stack the rows down the cell, each row clamped to the polygon's chord at its
     //  band (top and bottom chords intersected — conservative, so slanted walls never clip
-    //   text).  Too many rows → keep title + head + dip and say "+K more" (no silent caps).
+    //   text).  A `list` row is 2D: its chips WRAP into as many lines as the cell's width
+    //   affords (no longer one clipped column), so its height counts for several units.  Too
+    //    many rows → keep title + head + dip and say "+K more" (no silent caps).
     function micro_fit(inset: {x:number,y:number}[], descs: VtuffDesc[],
                        bx: number, by: number, bh: number): MicroRow[] {
         if (!descs.length) return []
         const usable = bh * 0.88
-        const hof = (d: VtuffDesc) => (d.kind === 'title' ? 1.35 : 1)
+        // column capacity from the widest chord (the cell's belly) vs a typical chip width —
+        //  drives how many lines a wrapping chip list needs.
+        const midC = poly_chord(inset, by + bh / 2)
+        const availW = midC ? Math.max(40, (midC[1] - midC[0]) - 12) : bh
+        const CHIPW = 62
+        const cols  = Math.max(1, Math.floor(availW / CHIPW))
+        const listLines = (d: VtuffDesc) => Math.min(5, Math.max(1, Math.ceil((d.chips?.length ?? 1) / cols)))
+        const hof = (d: VtuffDesc) => (d.kind === 'title' ? 1.35 : d.kind === 'list' ? listLines(d) : 1)
         const sum = (list: VtuffDesc[]) => list.reduce((s, d) => s + hof(d), 0)
         let unit = usable / sum(descs)
         unit = Math.max(12, Math.min(20, unit))
@@ -991,7 +1000,7 @@
             const dip   = descs.filter(d => d.dip)
             const mid   = descs.filter(d => d.kind !== 'title' && !d.dip)
             let keep = mid.length
-            while (keep > 0 && unit * (sum(title) + sum(dip) + keep + 1) > usable + 1) keep--
+            while (keep > 0 && unit * (sum(title) + sum(dip) + sum(mid.slice(0, keep)) + 1) > usable + 1) keep--
             const dropped = mid.length - keep
             shown = [...title, ...mid.slice(0, keep),
                      ...(dropped ? [{ text: `+${dropped} more`, kind: 'fact' } as VtuffDesc] : []), ...dip]
@@ -1000,12 +1009,14 @@
         const rows: MicroRow[] = []
         for (const d of shown) {
             const h = unit * hof(d)
-            const c1 = poly_chord(inset, y + h * 0.15)
-            const c2 = poly_chord(inset, y + h * 0.85)
+            const c1 = poly_chord(inset, y + h * 0.12)
+            const c2 = poly_chord(inset, y + h * 0.88)
             if (c1 && c2) {
                 const x0 = Math.max(c1[0], c2[0]) + 6, x1 = Math.min(c1[1], c2[1]) - 6
+                // font-size rides the single LINE height, not a tall list block's total
+                const fs = (d.kind === 'title' ? unit * 1.35 : unit) * 0.62
                 if (x1 - x0 >= 36) rows.push({
-                    text: d.text, kind: d.kind, x: x0 - bx, y: y - by, w: x1 - x0, h,
+                    text: d.text, kind: d.kind, x: x0 - bx, y: y - by, w: x1 - x0, h, fs,
                     color: d.color ?? null, chips: d.chips, member: d.member, dip: d.dip })
             }
             y += h
@@ -1013,12 +1024,13 @@
         return rows
     }
 
-    // the /*N surf — a member|dip row clicked pops nodes out INTO THE GRAPH (Vtuff_pop stamps
-    //  c.popped|c.popped_open and waves a re-scan), never expands inside the pane.
-    function micro_click(id: string, row: MicroRow) {
+    // the /*N surf — a member row|chip clicked pops THAT node out INTO THE GRAPH; the dip
+    //  (member undefined) spills the top-K.  Vtuff_pop stamps the c.popped|c.popped_open
+    //   intents and waves a re-scan — never expands inside the pane.
+    function micro_click(id: string, member?: TheC) {
         const src = node_src.get(id) as any
         if (!src) return
-        ;(H as any).Vtuff_pop?.(src, row.member)
+        ;(H as any).Vtuff_pop?.(src, member)
     }
     let vregion_w     = $state(0)                      // veil covers the tessellated region ([0, CW] — the full width unless the shelved rack returns)
     // ── the wheel-button grip ─────────────────────────────────────────────────
@@ -2238,6 +2250,22 @@
                 e.data()
             )
         })
+        // ── un-pop: right-click folds a surfed node back ──────────────────────
+        //  The pop's inverse gesture (Vtuff_pop's stamps are sticky by design —
+        //   crush passes respect them until someone says fold-me-back).  Fires
+        //    only on a node that is itself popped|popped_open or is the hub of
+        //     popped children; everything else right-clicks as normal.
+        cy.on('cxttap', 'node', (evt) => {
+            const src = node_src.get(evt.target.id()) as any
+            if (!src?.c) return
+            let hit = src.c.popped || src.c.popped_open
+            if (!hit && typeof src.o === 'function')
+                for (const c of src.o() as any[]) if (c.c?.popped || c.c?.popped_open) { hit = true; break }
+            if (hit) (H as any).Vtuff_unpop?.(src)
+        })
+        // the browser context menu would cover the graph on every cxttap — suppress it
+        //  over the canvas only (the bar and panes above keep theirs).
+        cy.container()?.addEventListener('contextmenu', (e: Event) => e.preventDefault())
 
         // rebuild from scratch on HMR
         H.i_elvisto('Cyto/Cyto', 'Cyto_wipe', {})
@@ -2348,12 +2376,19 @@
                              class="cytui-micro-row {row.kind}" class:hot
                              style:left={`${row.x.toFixed(1)}px`} style:top={`${row.y.toFixed(1)}px`}
                              style:width={`${row.w.toFixed(1)}px`} style:height={`${row.h.toFixed(1)}px`}
-                             style:font-size={`${(row.h * 0.62).toFixed(1)}px`}
+                             style:font-size={`${row.fs.toFixed(1)}px`}
+                             style:align-items={row.kind === 'list' ? 'flex-start' : 'center'}
                              style:color={row.color ?? ''}
-                             onclick={hot ? () => micro_click(mc.id, row) : undefined}>
+                             onclick={hot ? () => micro_click(mc.id, row.member) : undefined}>
                             <span class="t">{row.text}</span>
+                            <!-- a chip carrying a member is its OWN pop-out handle (the
+                                 homogeneous list form: 'figaro' pops figaro) -->
                             {#each row.chips ?? [] as chip, ci (ci)}
-                                <span class="chip">{chip.text}{chip.n > 1 ? ` ×${chip.n}` : ''}</span>
+                                <svelte:element this={chip.member ? 'button' : 'span'}
+                                     role={chip.member ? 'button' : undefined}
+                                     class="chip" class:hot={chip.member != null}
+                                     onclick={chip.member ? (e: Event) => { e.stopPropagation(); micro_click(mc.id, chip.member) } : undefined}>
+                                    {chip.text}{chip.n > 1 ? ` ×${chip.n}` : ''}</svelte:element>
                             {/each}
                         </svelte:element>
                     {/each}
@@ -2595,6 +2630,17 @@
 }
 .cytui-micro-row.fact .t { opacity: 0.85; }
 .cytui-micro-row.spread .t { opacity: 0.55; }
+/* the homogeneous list form ('figaro · tenuifolium · +2') — the family said once in the
+   title, the members as chips.  WRAPS into a 2D grid that fills the cell's belly instead
+   of one clipped column (micro_fit gives the row height for the wrapped lines). */
+.cytui-micro-row.list {
+    gap: 0.3em 0.35em;
+    flex-wrap: wrap;
+    white-space: normal;
+    align-content: flex-start;
+    overflow: hidden;
+}
+.cytui-micro-row.sub { padding-left: 1.2em; opacity: 0.72; }
 .cytui-micro-row .chip {
     flex: none;
     border: 1px solid #3d5a72;
@@ -2603,7 +2649,15 @@
     font-size: 0.82em;
     line-height: 1.5;
     background: rgba(7, 12, 16, 0.55);
+    color: inherit;
+    font-family: inherit;
 }
+/* a member-bearing chip is its own pop-out handle */
+.cytui-micro-row .chip.hot {
+    pointer-events: auto;
+    cursor: pointer;
+}
+.cytui-micro-row .chip.hot:hover { text-shadow: 0 0 7px currentColor; border-color: currentColor; }
 /* member|dip rows are the pop-out surf — clickable, everything else stays glass */
 .cytui-micro-row.hot {
     pointer-events: auto;

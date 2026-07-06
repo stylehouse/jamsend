@@ -24,13 +24,20 @@ Minted with `new TheC(...)` and reachable from nothing — snap inclusion is
     calls cost one sum.
 
     %Vtuffing,of:<fold kind>,n:<members>          (c.src → the fold|gang rep)
-      /%Vrow,row:title,text:'Artist · Moonlit  ×5',wgt:2
+      /%Vrow,row:title,text:'Olearia  ×4',wgt:2    a gang titles by FAMILY NAME alone
+                                                    (the rep's own ident reads as one member)
+      /%Vrow,row:list,text:''                      HOMOGENEOUS family: members as chips
+         /%Vbit,text:'figaro',n:1                   of just their distinguishing bit
+         /%Vbit,text:'tenuifolium /*3',n:1           (Vtuff_member_bit; c.member — each
+         /%Vbit,text:'+2',n:0                         chip its own pop-out handle)
       /%Vrow,row:fact,text:'artist: Neil Young'    a key EVERYONE agrees on, said once
-      /%Vrow,row:spread,text:'title'               a key that varies
-         /%Vbit,text:'Tide',n:2                    value chips, most-common first,
-         /%Vbit,text:'+3',n:0                       capped at 4 with a visible tail
-      /%Vrow,row:member,text:'Track · Halo'        per-member when the family ≤ 5
+      /%Vrow,row:spread,text:'title'               a key that varies (Vtuff_keyrows skips
+         /%Vbit,text:'Tide',n:2                     the family mainkey when homogeneous —
+         /%Vbit,text:'+3',n:0                        no 'Olearia ×4' then 'Olearia:' stutter)
+      /%Vrow,row:member,text:'Track · Halo'        per-member when a MIXED family ≤ 5
                                                     (c.member — the pop-out handle)
+      /%Vrow,row:sub,text:'· cell: Coprosma'       depth-1 openness: a tiny member's own
+                                                    children indent under it (poppable too)
       /%Vrow,row:dip,text:'/*12'                   the surf handle (c.members)
 
 `Vtuff_default` is the generic distiller (the Stuffusion|Stuffziad|Stuffziado
@@ -52,6 +59,13 @@ The cells are half-plane intersections — CONVEX — so the widest horizontal c
    slanted walls instead of a bbox grid, and never clips.  Title rows run 1.35× the
     unit height; too many rows keeps title + head + dip and says `+K more` (no silent
      caps).  Overflow within a row ellipsizes.
+
+A **`list` row is 2D** (the owner's "all this Stuffing data is one column!"): its
+ chips WRAP into a grid that fills the cell's belly.  `micro_fit` reads the column
+  capacity from the widest chord (÷ a ~62px chip) and gives the list row that many
+   LINES of height (capped 5); the chips `flex-wrap` to fill it, top-aligned.  Each
+    row's font-size rides the single-LINE height (`row.fs`), not a tall block's total,
+     so a wrapped list stays the same type size as its neighbours.
 
 Runs in **both cadences** — the tree is cached and the fit is pure math — so the rows
  track a drag live.  (They used to vanish: the swap dimmed the Stuffing to 0 AND hid
@@ -81,22 +95,66 @@ A SWAPPED (vtuffing) cell also takes the Stuffing's chrome — a dotted rim
 Open: to PIN a kind's colour, author its Matstyle swatch (that wins over the hue);
  a Matstyle-seeded or perceptually-even palette is the eventual calibration.
 
+## Two modes of recursion (owner's carve, 2026-07-06)
+
+**Mode A — into the SAME graph.**  Digging stays in the one cytoscape space: pop a
+ few nodes out (the surf, bounded), and Travel the Vtuffing openness DOWN — a pane
+  shows its members' own children as indented sub-rows before anything pops at all.
+   One layout, one zoom, one camera; the crusher stays the single governor of how
+    much is on the board.  **This is the mode we aim at first.**
+
+**Mode B — a SUBGRAPH within a cell.**  A head|tails split: the cell keeps a title
+ band (head) and hosts a whole nested layout in its body (tails) — a genuinely
+  different node set laid out in the cell's own frame.  Honest feasibility: cytoscape
+   will NOT nest layouts natively — one cy instance is one layout space, and compound
+    nodes share the global layout rather than running their own.  Mode B therefore
+     means either a second cy instance per open cell (heavy: its own canvas, events,
+      camera — plus routing zoom between outer and inner) or a hand-rolled mini-force
+       pass we run ourselves inside the polygon (feasible — the chord fit already
+        owns the geometry — but it's a layout engine we'd be writing).  Deferred
+         until mode A saturates; when it comes, the head|tails carve is right.
+
+**The wandering-landscape problem** (real Music collections): dive in and in, and the
+ trailing graph behind should DISINCLUDE.  Mode A's answer is the crusher as a
+  focus-and-context governor: pop intents mark where attention is; what the surf left
+   behind long ago is exactly what the escalating passes fold first.  The design
+    sketch — intents age (a beat-stamp on c.popped), the gravity brush refreshes the
+     stamps of what it touches, and the governor's escalation folds the STALEST
+      intents back before anything else.  Nothing built yet (intents are currently
+       immortal until un-pop|◈); the aging is the first thing to add when a real
+        collection makes the board sprawl.
+
 ## The /*N surf — pop out, never expand in
 
 The Stuffzipper's `/*N` inside a pane expands nested Stuffings IN the pane.  The
  owner's call: at pane scale, digging should **locate|create nodes popping up in the
-  graph around it, not in the Stuffing\*\* itself**.  So member|dip rows are buttons →
-   `Vtuff_pop(src, member?)`:
+  graph around it, not in the Stuffing\*\* itself**.  So member|dip rows — and list
+   chips — are buttons → `Vtuff_pop(src, member?)`.  Brought UNDER CONTROL after the
+    owner's "is that under control?" (v1's dip was all-or-nothing, and popping a
+     single member of a FOLD pane was a silent no-op — the shut pane swallowed it):
 
-- a **gang member** row pops that member out (`c.popped`): the crush walk leaves a
-   popped leaf loose forever after — its own node, beside its old gang;
-- the **dip on a gang** dissolves the whole gang the same way;
-- the **dip on a container fold** unfurls it (`c.popped_open`): `Voro_crushable` and
-   `Voro_swarmable` both refuse it from then on.
+- a **member** (row or chip, any depth) pops THAT node out: `c.popped` on it,
+   `c.popped_open` up the container chain between it and the pane (`Vtuff_pop_stamp`
+    — a grandchild's whole chain must unfurl for the scan to reach it);
+- the **dip** spills a REASONABLE FEW — the top-K=3 by subtree weight — and the
+   rest stays one pane: `Voro_crushable`|`Voro_swarmable` refuse a fold with a
+    popped|popped_open child, so the container descends as a plain HUB node, the
+     scan's own parent→child `/` edges draw the family explosion for free (the
+      "exploding edge, through the graph medium"), and the remaining leaves re-gang
+       at min 2 (the SPILL RELAX in `Voro_gang_fold` — "the rest stays one pane"
+        must not depend on the mainkey being noisy).  A pane of ≤ K+1 opens whole;
+- **un-pop** — right-click (`cxttap`) a popped node, or the hub of popped children,
+   folds it back (`Vtuff_unpop` forgets the intents; the next pass re-folds by the
+    ordinary rules).  The browser context menu is suppressed over the canvas only.
 
 All c-side INTENT stamps: authoritative passes respect them, `Voro_crush_clear` (the
- ◈ un-imposition) forgets them.  After stamping, one `cyto_update_wave` re-scans, so
-  the graph grows the nodes right where the pane sits.
+ ◈ un-imposition) forgets them wholesale.  After stamping, one `cyto_update_wave`
+  re-scans, so the graph grows the nodes right where the pane sits.
+
+Still floating: a popped GANG member directly under `w` gets no edge to its old gang
+ (w is compound — the scan's `/` edges only leave plain parents).  The bond wants a
+  tiny CORE seam — a generic `n.c.bond` ref that `cyto_scan_refs` draws as a blue
+   edge — which is core-touch: isolation-proof first, not a Voro-side patch.
 
 ## Toggles (the ▤)
 
@@ -131,29 +189,31 @@ Captured from the live-tab review, in the owner's words + the intended behaviour
 2. **The exploding edge — child↔parent through the graph medium.**  *"before we
     couldn't easily draw an edge from an expanded-within child `w/C/*` to its parent,
      but now we can lever it all through the graph medium!"* (the `/*1` lucida under
-      the ×12 %Leptospermum).  When a child pops out (via #1 or the surf), draw a
-       synthetic edge popped→parent so the unfurl reads as a family explosion, not
-        orphan nodes.  The popped node already holds `c.up`; the edge is c-side
-         (source_n backlink, no encode), coloured by family.  **Owner is keenest to
-          pin this one.**  `[scan]` (edge injection) — the drawing is `[pane]`.
+      the ×12 %Leptospermum).  **MOSTLY FREE, 2026-07-06:** a fold that spills keeps
+       its container as a plain HUB node, and the scan's own parent→child `/` edges
+        (Cyto.svelte's non-compound-parent rule) wire hub→popped and hub→remainder-pane
+         with no new code.  REMAINING: a gang directly under `w` has no hub (w is
+          compound, no edges leave it) — the popped↔old-gang bond wants a tiny core
+           seam, a generic `n.c.bond` ref drawn as a blue edge in `cyto_scan_refs`.
+            Core-touch: isolation-proof first.  `[core]`, small
 
-3. **The pop-out surf, under control.**  *"the svgStuffings pop back to being regular
-    Stuffings when clicked huh? is that under control?"*  Half.  Only member|dip rows
-     are hot: a **member** row pops ONE member out (`c.popped`) and the pane stays
-      with the rest — good; the **dip** is all-or-nothing (dissolves the whole gang /
-       unfurls the container via `c.popped_open`), which is what reads as "the whole
-        pane reverted".  Pin: the dip should spill a *reasonable few* (tie to #1's
-         cap), and there must be an **un-pop** (fold-me-back) gesture — today only ◈
-          off (crush_clear) forgets the stamps.  `[pane]` + `[scan]`
+3. **The pop-out surf, under control.** — **BUILT 2026-07-06.**  Member pops now work
+    at ANY depth (v1 silently no-opped on fold members — the shut pane swallowed the
+     stamp; `Voro_crushable`|`swarmable` now refuse a fold with popped|popped_open
+      children and `Vtuff_pop_stamp` unfurls the chain).  The dip spills the top-K=3
+       by subtree weight, the REST re-gangs at min 2 (the spill relax) — "a few pop
+        out, the rest stays one pane".  Un-pop = right-click the popped node or its
+         hub (`Vtuff_unpop`).  REMAINS: eyes-on + intent AGING (see the
+          wandering-landscape note above).
 
-4. **The list form — stop repeating the mainkey.**  *"`cell: Olearia x4` … then
-    `Olearia:figaro` — repeating ourselves.  the whole thing should look like
-     `Olearia: this | that | etc | tenuifolium` — we can figure out how many of a big
-      list to pull out much better now."*  When members share a mainkey, hoist it
-       once as a heading and list only the distinguishing values, pipe-joined and
-        count-capped (`+N`).  A new `Vtuff_default` policy → a `row:list` kind
-         (heading + inline pipe values); the renderer wraps the pipe text to the
-          chord.  Supersedes per-member rows for a homogeneous family.  `[pane]`
+4. **The list form — stop repeating the mainkey.** — **BUILT 2026-07-06.**  A
+    homogeneous family says the mainkey ONCE in the title ('Olearia  ×4' — and a gang
+     titles by family name alone, not the rep's ident which read as one member) and
+      lists members as `row:list` CHIPS of just their distinguishing bit
+       (`Vtuff_member_bit`: mainkey value, else naming key), capped 6 with a `+N`
+        tail — each chip its OWN pop-out handle.  `Vtuff_keyrows` skips the family
+         mainkey so no spread repeats it.  REMAINS: "how many of a big list to pull
+          out" is a flat 6 — could scale with the cell's chord budget.
 
 5. **Family hull — touching, or roped, and per-family coloured.**  *"the voronoi
     cells that are supposed to be a hull aren't touching! could be a reason to run
@@ -165,13 +225,23 @@ Captured from the live-tab review, in the owner's words + the intended behaviour
           hull is a solid boundary, not a lasso across the board.  Gated behind #1
            (no families spill yet on VoroScape).  `[scan]`-adjacent (layout params)
 
-6. **Fit-to-shape, refined.**  *"more fit-to-shape text columns, pretty good how it
-    is."*  Keep tuning the chord fit; a wide cell could split into columns; `MICRO_Z
-     = 300` and the 12–20px band are first guesses, live-eyes calibration owed.
-      `kind_hue` collisions (see Colour).  `[pane]`
+6. **Fit-to-shape, columns.** — **list wrap BUILT 2026-07-07** (owner's "all this
+    Stuffing data is one column!"): a `list` row now wraps its chips into a 2D grid
+     sized to the cell's chord capacity.  REMAINS: fact/spread/member rows still stack
+      one-per-line (a wide cell could flow THOSE into columns too); `MICRO_Z = 300`
+       and the 12–20px band are first guesses, live-eyes calibration owed.  `[pane]`
 
-7. **Recursion** (was open c): a member row whose particle is itself a fold could
-    host a nested fit — pixel-capped.  Lower priority than #1–#5.  `[pane]`
+   *Demo data (2026-07-07):* the panes had nothing but one repeated key to show, so a
+    deterministic trait SPRINKLE now rides the Books (`Voro_hash`, no randomness —
+     fixtures stay byte-stable): VoroMitosis taxa get `%woodystem` ~⅓, a `%habit` of
+      tree|shrub|vine ~½ (intrinsic to the epithet), `%endemic` ~⅙; VoroScape tracks
+       get a `%year` spread + `%live`/`%remaster` facts.  So the distiller has facts
+        and spreads to speak, not just the list.  (Re-record picks these up.)
+
+7. **Recursion** (was open c): see "Two modes of recursion" above.  Mode A's seed is
+    BUILT (depth-1 `row:sub` openness for tiny mixed families); deepening it further
+     (recursive fits, openness-per-pane memory) is `[pane]`; mode B (a subgraph in a
+      cell) is deferred until A saturates.
 
 8. **Redirecting the real Stuffzipper** inside molded (non-swapped) panes to the same
     pop-out — a core-component change (Stuffzipper serves every Stuffing everywhere),

@@ -374,6 +374,47 @@ A big new UI is coming — an account page, a friends list, an invite control, p
 Keep the model clean — one snappable account Waft, one particle per contact with a pruned public face,
  one signed struct per invite, one atom per grant — and the toplevel page becomes a later, cheap view.
 
+### 10.1 The Invite front door — building now (online-scan)  **[2026-07-07 decision]**
+
+The owner wants the QR invite maker back ("monkey business vibe") as the front door to *get music
+ onto a phone*: point a phone camera at an on-screen QR, and the phone gains a `%Pier` to pull from.
+  Claim model = **online scan** (both present — the coffeeshop case), which is exactly what the
+   built handshake already is (§6.3 both-online); no offline-bearer-token design (that needed the
+    removed Tyrant).
+
+**Naming.** User-facing this is an **Invite** (drop "Idzeug"). The signed crypto verbs stay
+ `Swarm_*_idzeug` for now — renaming a green, signature-bearing handshake is a deliberate later pass,
+  not a drive-by (the wire blob param stays `?Iz=`).
+
+**The identity is already the right shape — no parallel self to mint.** Auto's `Clustation_concrete`
+ stands up the active `%Identity` with `.c.keys` (ed25519 `{pub,key}`) *owning* a `%Peering` + a
+  `prepub` — precisely what `Swarm_mint_idzeug(w, ident, …)` consumes (`ident.c.keys`,
+   `Swarm_peering(ident)`, `Swarm_page(ident)`). Verified: `Lies_cluster_idento(w)` returns that same
+    `{pub,key}` and *already* mints grants through the same `Grant.ts` `mint_grant` (`LiesFunk.svelte`
+     ~:533). The "one signing key, one derived address" collapse (Cluster_spec §3.2a) means **the live
+      cluster self IS the Swarm inviter** — the front door mints from `A:Clustation`'s active
+       `%Identity`, it does not create a new one.
+
+**Three pieces (the whole front door):**
+1. **Mint from the live self** — resolve the active `%Identity` under `A:Clustation`, `Swarm_arm(w)`
+    the cluster world once (register the swarm frame kinds on its Peeroleum on-registry), then
+     `Swarm_mint_idzeug(w, self, {Music:1}, nonce)` → the `?Iz=` URL.
+2. **Render the QR** — `src/lib/O/ui/micro/InviteQR.svelte`, mirroring the proven
+    `p2p/ui/ShareButton.svelte` usage of `svelte-qrcode` (already a dependency). Self-contained:
+     `value` = the `?Iz=` URL, shows the QR + the copyable link. Mounts through an existing seam (a
+      Lens Panel or the 🪪 IdHatch), **no new toplevel page**.
+3. **Redeem on open** — the boot layer reads `?Iz=<blob>` (beside `?I=`/`?B=`/`?E=`) and calls
+    `Swarm_redeem(w, self, iz)` against the live self → `Swarm_seal` births the `%Pier`. Online-scan:
+     the inviter is present, so the redeem's dial-home succeeds.
+
+**Still single-use** (one nonce, spent at redeem). Multi-use / serial-numbered / feature-selectable
+ invites (the legacy `nRepeating`/`Upper_Number`) remain §6.2 **[want]** — the real build gap once the
+  front door lands.
+
+**Prove before the live panel.** A Book (extend `SwarmWire`, or a sibling) that mints from a
+ live-shaped `%Identity` → redeems on a second self → asserts a `%Pier` born + `%Music` grant
+  attached, is the regression witness; mount the live QR panel + `?Iz=` boot handler after it's green.
+
 ---
 
 ## 11. The lineage map — old garden → reborn

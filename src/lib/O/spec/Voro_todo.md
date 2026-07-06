@@ -263,10 +263,17 @@ Built: `Voro_swarmable` in Voro.g — a STRUCTURAL container whose children are 
 - COLOUR (owner "restore the stained glass; where's this teal from?"): cell colour is
    `kind_glass` = Matstyle swatch → else a per-kind hue floor (`kind_hue`), never the
     single teal fold-border again; swapped cells wear a dotted rim; rows use `kind_tint`.
-- NOT built — see `Voro_vtuffing.md` §"next moves" for the tuned-up big-think agenda:
-   #1 spill `w/*/**` into the graph, #2 the exploding child→parent edge (owner keenest),
-    #3 surf under control + un-pop, #4 the `Olearia: this|that|etc` list form, #5 hull
-     layout-nudge, #6 fit refine, #7 recursion.
+- ROUND 2 (2026-07-06, owner review): #3 surf UNDER CONTROL (any-depth member pop via
+   Vtuff_pop_stamp chain-unfurl — v1 fold-member pop was a silent no-op; bounded dip
+    top-K=3 + spill relax re-gangs the rest at min 2; un-pop = right-click, Vtuff_unpop)
+     + #4 LIST FORM (homogeneous → title once + member-bit chips, each a pop handle;
+      Vtuff_keyrows skips the family mainkey) + depth-1 row:sub openness + the fold-hub
+       explosion edges arrive free from the scan's non-compound-parent `/` rule.
+- Two modes of recursion carved (same-graph vs subgraph-in-cell; mode A first, intent
+   AGING sketched for the wandering-landscape problem) — `Voro_vtuffing.md`.
+- NOT built — `Voro_vtuffing.md` §"next moves": #1 spill `w/*/**` auto (top-K governor),
+   #2 the under-w gang bond edge (core seam, small), #5 hull layout-nudge, #6 fit
+    refine, #7 deeper recursion, #9 the single worked window.
 
 Can the composite shapes be custom — i.e. lay a fold's members out INSIDE its cell (a
  microcosm: mini grid or mini force pass in the cell's own frame), instead of one flat

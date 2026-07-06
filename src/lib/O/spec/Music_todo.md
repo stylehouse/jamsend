@@ -555,3 +555,59 @@ The replication protocol is real (Repli_* + the Se, §6/MusuReplica — live-gre
 The order that suggests itself: 9.1 (real library) → 9.10's spine (offer→pull→play with one real
  file) → 9.2 (Shares) → 9.4 (multicast) → then 9.5–9.8 as the swarm grows peers. 9.7 (Keep) tracks
   `spec/Backbone_plan.md` — don't fork its design here.
+
+## 10. Klepto mode — the heist points at a Pier
+
+Today the unit of want is a Record: offer → want → pages, pulled at listening rate (9.3). **Klepto
+ inverts the aim: point the heist at the Pier itself** — "everything you have" — and the mirror is
+  the destination. The catalog is already the offer set (9.4's subscribe baseline); klepto walks it
+   and pulls at HEIST rate — what the wire and disk afford, not the playhead — `Repli_want_next`
+    grown a second gear. `Repli_mirror_lib` is the seed; mirror-everything is its grown-up form.
+
+**Many kleptos, one read.** A Pier heisted by N must not do N disk sweeps. The host serves the heist
+ as a BROADCAST: one sequential sweep of the library, each page read ONCE and published to a heist
+  `@channel` (`Peeroleum_offer_stream` — the established 1:1 Pier hands each arriving klepto the
+   stream pointer; bulk rides multicast, spec §18). Everyone present rides the same bow wave — the
+    shape MusuReco already proves (stream off the transcoder's bow wave) — and a latecomer tunes in
+     live, then backfills the pages it missed with ordinary 1:1 wants (the per-peer %Sent_Tree, 9.5,
+      knows exactly which). The host is a radio station whose playlist is "my library, in order"; a
+       klepto is a tuner with a backfill cursor. Disk IO is O(library), not O(library × N).
+
+**The cafe tree.** Kleptos co-located on a LAN (the coffeeshop) should cost the WAN one copy: the
+ source sends into the LAN once; the receiver relays to two, who relay to two. `Mesh_broadcast_stretch`
+  IS this tree (minimum-cost broadcast rooted at the source) and `Mesh_cafe_spec` is the canonical
+   scenario, already written — the missing rung is DETECTION: how do Piers learn they're co-located?
+    The honest first answer is the relay's-eye view — two Piers behind the same public IP share a NAT,
+     and the relay already sees every address; it stamps same-origin groups. (Finer, later: RTT
+      clustering — sub-5ms neighbours; ICE local candidates are mDNS-obfuscated and need a real
+       probe.) Same-origin → cheap LAN edges in the Mesh graph → stretch computes the tree → pages
+        route down it.
+
+**Klepto is not exempt from consent.** The heist takes everything OFFERED, not everything held —
+ grants (9.7) bound the catalog a klepto even sees, and wear (9.6) makes the mirror a cache, not a
+  hoard. The name is cheeky; the Keep still gates.
+
+**The rungs, in order:**
+
+1. **Heist v1, loopback** — a Book: point the heist at the DJ Pier, mirror everything at heist rate,
+    assert the whole-library mirror byte-faithful (`body_hash` per Record). Extends MusuReplica's
+     world; no new wire.
+2. **The cohort** — 2+ kleptos on one host: one page-stream on a heist @channel; assert the host
+    emitted each page ONCE while every mirror completes. This is the rung that finally forces the
+     wire real (§10.1): the first Book whose claim is ABOUT shared delivery, so a by-reference mock
+      flatters it — run it over 2+ real runners with real Piers (brief §6's milestone).
+3. **The cafe** — same-public-IP detection at the relay + stretch routing; assert the WAN edge
+    carried one copy while every LAN klepto completes.
+
+### 10.1 How real is the wire today (honest ledger)
+
+The PROTOCOL is real — frames, seq, inseq/retransmit, sha256 `body_hash` per page, paging,
+ park/serve, op:delete — the same verbs the product will run. The WIRE under the Books is not:
+  `Lake_link` pairs two in-process ports (`porta.partner = portb`) and the mock carries
+   `frame.buffer` BY REFERENCE — no serialization, no real loss (adversaries INJECT loss:
+    whittle/perturb), no congestion, no NAT. Peeroleum's own comments name the deferred seam:
+     serialization is "the carrier's job — `Socket_real/relay`". Meanwhile the machinery itself
+      (dispatch, r2r, gen_write) DOES run the real `/relay` websocket all day — real reconnects,
+       real seq gaps (the inseq baseline bug was real networking pain). So: real protocol, tame
+        wire; the WebRTC datachannel path the streaming app uses is untested by any Book. Rung 2
+         above is the designated forcing function.

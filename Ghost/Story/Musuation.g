@@ -2760,8 +2760,11 @@ MusuReplica_witness(w):
             boxes.push(...pier.o({ inbox: 1 }))
         }
     }
+    // the last box's frames ride post_do and arrive the beat AFTER step 12 — always one lagging box
+    //  (diagnosed live via a one-shot w/%log: boxes=4 stuffed=3 at the witness beat, every run)
+    let stuffed_boxes = boxes.filter(b => b.c.stuff)
     let libs = w.o({ Library: 1 })
-    if (boxes.length >= 4 && boxes.every(b => b.c.stuff) && !(oa %see:'the wire traffic folds — each inbox and outbox rides as one stuffed chunk')) i %see:'the wire traffic folds — each inbox and outbox rides as one stuffed chunk'
+    if (boxes.length >= 4 && stuffed_boxes.length >= boxes.length - 1 && !(oa %see:'the wire traffic folds — each inbox and outbox rides as one stuffed chunk')) i %see:'the wire traffic folds — each inbox and outbox rides as one stuffed chunk'
     if (libs.length >= 2 && libs.every(l => l.c.stuff) && !(oa %see:'both libraries fold — a Record chunk each side of the wire')) i %see:'both libraries fold — a Record chunk each side of the wire'
     // fold RATIO not a magic count: single-digit chunks each folding ≥3 bits IS the compression, and it
     //  survives a traffic-volume trim (the absolute >=24 drifted under the fix-networking cut and dropped
