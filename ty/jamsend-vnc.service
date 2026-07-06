@@ -1,0 +1,39 @@
+[Unit]
+Description=x11vnc serving the real jamsend desktop (:0) — for manual FSA grants
+# Replaces the old three-part HEADLESS stack (jamsend-xvfb + jamsend-wm + jamsend-x11vnc
+#  on :10). Serving the REAL console desktop is what makes the native "open share" file
+#   picker actually work: a real DE brings the dbus session + xdg-desktop-portal backend +
+#    window focus that the bare Xvfb :10 never had (there the picker just flickered and
+#     threw "The user aborted a request" / AbortError). Less to run, and it grants FSA.
+# Wait for the display manager so :0 exists before we attach.
+After=display-manager.service graphical.target
+Wants=display-manager.service
+
+[Service]
+# Runs as root so -auth guess can read the display-manager's cookie for :0.
+# Performance (the first cut's -wait 80 -defer 20 was ≈12 fps and felt sluggish on LAN):
+#  -wait 10 -defer 1      poll up to 100x/s, coalesce only 1ms → snappy cursor/typing/scroll
+#  -threads               threaded libvncserver — smoother client I/O
+#  -ncache 10 -ncache_cr  client-side pixel cache (window moves/scroll reuse cached tiles). Costs
+#                          a tall off-screen scratch strip the viewer draws BELOW the desktop —
+#                          harmless, just scroll past it. Drop these two if that bugs you.
+#  XDAMAGE stays ON (default): only CHANGED regions are read — essential while -noshm is in play.
+# -noshm: no MIT shared memory. Attaching an SHM segment to :0 across the root/owner boundary is
+#  denied (BadAccess on X_ShmAttach). This is the RELIABLE-but-slower choice; the FASTER choice is
+#   to run as the session owner so SHM works — see the commented alternative below.
+# -localhost: bind loopback ONLY, so the SSH tunnel (ty/desktop-viewer.sh) is the sole way in.
+ExecStart=/usr/bin/x11vnc -display :0 -auth guess -noshm -localhost -nopw -forever -shared -threads -ncache 10 -ncache_cr -wait 10 -defer 1 -rfbport 5900
+# FASTER alternative — run as the desktop owner (uid 1000) so MIT-SHM works and -noshm drops. SHM
+#  turns each framebuffer read from an X-protocol pull into a memcpy: the single biggest win. It
+#   needs uid 1000 to READ the display's auth cookie, so set User + an -auth path it can read (its
+#    own session cookie — often ~/.Xauthority or /run/user/1000/…). If x11vnc then can't attach,
+#     revert to the root + -noshm line above.
+#   User=1000
+#   ExecStart=/usr/bin/x11vnc -display :0 -auth /home/s/.Xauthority -localhost -nopw -forever -shared -threads -ncache 10 -ncache_cr -wait 10 -defer 1 -rfbport 5900
+# If -auth guess fails at boot (fires before the DM settles, or an unusual DM), swap it for
+#  the explicit cookie path that worked when you ran it by hand, e.g. -auth /var/run/lightdm/root/:0
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=graphical.target
