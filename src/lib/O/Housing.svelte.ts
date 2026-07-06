@@ -21,6 +21,33 @@ export const ANSWER_CALLS_TICK_MS = 50
 export const AMBIENT_MAIN_TICK_MS = 200
 // see also reset_interval() 3600ms
 
+V.gallop = 1     // Technique A master switch — flip to 0 (+ HMR) to disarm for an A/B arm
+
+// Technique A — gallop-tighten (Story_future_directions.md §3; Perf_todo.md re-rank #A).
+//  When H.todo is OCCUPIED at gate after gate the machine is visibly mid-settle, and the
+//   50 ms drain gate between items is pure imposed latency (~49% of a measured LakeFlush
+//    step — Perf_todo status 2026-07-07pm).  MEASURED queue shape (LakeFlush step 1): a
+//     settle is a serial DRIP — each hop posts the next at UItime, so depth stays ~1 and
+//      a standing-depth trigger never fires; the §3 "20-40 deep" sketch is the occupancy
+//       integrated over time, not a standing pile.  So the trigger is sustained OCCUPANCY
+//        (an item waiting at GALLOP_SUSTAIN consecutive drain gates), with standing depth
+//         ≥ GALLOP_DEPTH as an engage-now fast path.  A c.gallop-marked House (opt-in,
+//          designated-system: Story marks each Run unless the Book carries
+//           The/Opt/{no_gallop:1}) drains such a settle at GALLOP_TICK_MS instead,
+//            relaxing back the moment the todo runs dry.  Each item still runs in its own
+//             macrotask under the beliefs mutex, so i_elvisto's UItime targeting lands
+//              between items and paint gets its opportunities — correctness rides the
+//               mutex and the one-pass-later deferral, never the gate length (§3 "the two
+//                things in the drain, kept apart").  The step-snap is unaffected:
+//                 quiescence is a trailing-edge timeout (poll_step), so the snap moves
+//                  earlier, not different.
+export const GALLOP_TICK_MS = 4        // near-greedy; ≈ the browser's nested-timer clamp floor
+export const GALLOP_DEPTH = 6          // standing depth at/above here = engage NOW (fast path)
+export const GALLOP_SUSTAIN = 4        // consecutive occupied gates (~200 ms at the 50 ms gate) to engage
+                                       //  (2 was A/B'd 2026-07-07: no win — LakeFlush noise-identical,
+                                       //   MusuGlide worse/bimodal.  4 is measured-best AND more cautious.)
+export const GALLOP_BUDGET_MS = 400    // max tightened burst; then one full-gate breather (clip)
+
 type CMatrix = Array<{ C: TheC, version: number }>
 interface StuffingEntry {
     path: string
@@ -681,7 +708,8 @@ export class House extends StorableHousing {
         const tag = e.sc.fn
             ? `fn:${e.sc.see ?? '?'}`
             : `${e.sc.elvis ?? '?'}${e.sc.Aw ? '/' + e.sc.Aw : ''}`
-        H.trace('todo', tag)
+        // +N = queue depth after this push — the gallop detector's raw signal, measurable
+        H.trace('todo', `${tag} +${H.todo.length + 1}`)
         H.todo.push(e)
         H.todo_version++
     }
@@ -821,7 +849,48 @@ export class House extends StorableHousing {
                 // < have to go through that $effect() again if
                 this.todo_version++
             }
-        }, ANSWER_CALLS_TICK_MS);
+        }, this._gallop_gate_ms());
+    }
+
+    // Technique A state — see the GALLOP_* constants up top.  Plain fields, no reactivity.
+    _gallop_streak = 0     // consecutive drain gates that found an item waiting
+    _gallop_on = false     // currently draining tightened
+    _gallop_burst_at = 0   // performance.now() this tightened burst began (for the budget clip)
+
+    // _gallop_sample: occupancy sample + engage/disengage, called from _really_answer_calls
+    //  at the shift boundary with the PRE-shift depth.  Only real drain attempts sample —
+    //   a gate that lands mid-cycle (beliefs mutex held) must NOT read the momentary empty
+    //    between hop N finishing and hop N+1's UItime targeting, or a serial chain would
+    //     flap the gallop off every item.
+    _gallop_sample(depth: number) {
+        if (!V.gallop || !this.c.gallop) {
+            this._gallop_streak = 0
+            this._gallop_on = false
+            return
+        }
+        this._gallop_streak = depth ? this._gallop_streak + 1 : 0
+        if (depth >= GALLOP_DEPTH) this._gallop_streak = Math.max(this._gallop_streak, GALLOP_SUSTAIN)
+        const engaged = this._gallop_streak >= GALLOP_SUSTAIN
+        if (engaged && !this._gallop_on) {
+            this._gallop_burst_at = performance.now()
+            this.trace('gallop', `on todo:${depth}`)
+        }
+        if (!engaged && this._gallop_on) this.trace('gallop', `off todo:${depth}`)
+        this._gallop_on = engaged
+    }
+
+    // _gallop_gate_ms: choose a drain-gate's length off the current gallop state.
+    //  Unmarked House (no c.gallop) = the stock 50 ms gate, byte-identical behaviour.
+    _gallop_gate_ms(): number {
+        if (!this._gallop_on) return ANSWER_CALLS_TICK_MS
+        // budget: a burst never monopolises the thread past GALLOP_BUDGET_MS — one
+        //  full-gate breather (paint, timers), then the burst clock restarts
+        if (performance.now() - this._gallop_burst_at > GALLOP_BUDGET_MS) {
+            this._gallop_burst_at = performance.now()
+            this.trace('gallop', `clip todo:${this.todo.length}`)
+            return ANSWER_CALLS_TICK_MS
+        }
+        return GALLOP_TICK_MS
     }
 
 
@@ -830,9 +899,12 @@ export class House extends StorableHousing {
         let H = this.top_House()
         if (H.c._mutex_beliefs) {
             V.organise && console.log(`answer_calls: H:${this.name} beliefs mutex locked (by H:${H.name}), yielding`)
-            setTimeout(() => this.answer_calls(), ANSWER_CALLS_TICK_MS)
+            // mid-gallop an item's work outlasts the 4 ms gate, so this retry is the
+            //  common re-drive — retry tight or the gallop pays 50 ms per item anyway
+            setTimeout(() => this.answer_calls(), this._gallop_on ? GALLOP_TICK_MS : ANSWER_CALLS_TICK_MS)
             return
         }
+        this._gallop_sample(this.todo.length)   // pre-shift occupancy, mutex known free
         let e = this.todo.shift()
         if (!e) return
         // we should come back to the rest of them

@@ -1827,6 +1827,13 @@
         //   Falls back to the default 1.5×TICK threshold when absent.
         const quiesce_snap_time = H.The_Opt_val(w, 'quiesce_snap_time') ?? (TICK_MS / 1000) * 1.5
 
+        // gallop-tighten opt-in (Technique A, Housing GALLOP_*): this Run's drain may go
+        //  near-greedy while its todo is deep+sustained.  Presence-keyed opt-OUT — a Book
+        //   asserting on mid-settle progress sets The/Opt/{no_gallop:1} to keep the loose
+        //    50 ms cadence (a snapped `gallop:0` would read back as truthy "0" — avoid).
+        if (H.The_Opt_val(w, 'no_gallop')) delete Run.c.gallop
+        else Run.c.gallop = 1
+
         const update_status = async (label: string, cls = 'default') => {
             const wa = () => H.o({ watched: 'actions' })[0]
             await wa()?.r({ action: 1, role: 'status' }, { label, cls, disabled: true })

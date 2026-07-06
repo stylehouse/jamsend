@@ -108,7 +108,8 @@ The old ranking below was written from the causal map (structure), not from meas
    answer_calls DRAIN GATE ~49% · a fixed ~428 ms trailing QUIESCENCE guard ~22% · tight belief work
     ~18% · the 150 ms TRICKLE ~11%.**  So:
 - **#A (was Technique A / old lever #5) is THE lever** — collapsing the 50 ms per-item drain gate attacks
-   the biggest slice.  Promote it.
+   the biggest slice.  Promote it.  **(§status 2026-07-07 eve: BUILT, −13/−14% measured; two
+    cadence-sensitive Books unresolved — see the log.)**
 - **The ~428 ms/step quiescence guard is a NEW candidate** (old ranking missed it): a contiguous idle wait
    after `beliefs/done`, ~428 ms in *every* step (the design assumed ~75 ms).  Understand `poll_step`'s
     trailing timer / any ttlilt it waits out before building — could be ~2.5 s across a 7-step Book.
@@ -155,6 +156,42 @@ Two forward-looking sections left this doc for **`Story_future_directions.md`** 
 
 ## Status log
 
+- **2026-07-07 (eve)** — **Technique A BUILT + MEASURED** (branch `perf/gallop-tighten`, stacked on
+   `perf/mapules-digest-gate` for the trace/perf_ab tooling): the answer_calls drain gallop-tightens,
+    50 ms → 4 ms gate (`GALLOP_TICK_MS`), while the todo shows **sustained occupancy** — an item
+     waiting at `GALLOP_SUSTAIN=4` consecutive drain gates; standing depth ≥6 is an engage-now fast
+      path — disengaging the moment it runs dry, with a `GALLOP_BUDGET_MS=400` full-gate breather
+       clip.  Gating: `V.gallop` (module debug switch) + `c.gallop` per House; Story marks every
+        `Run.c.gallop` in story_drive unless the Book carries `The/Opt/{no_gallop:1}` (presence-keyed
+         — a snapped `gallop:0` reads back as truthy `"0"`).  Editor Mundo unmarked so far.  The
+          intended end-state (human, 2026-07-07): a **universal House function**, flipped on
+           permanently once mature — the knob stays as the debug out.
+  - **The §3 design sketch's trigger was WRONG, and one trace said so:** a Book settle's queue is a
+     serial DRIP — each elvisto hop posts the next at UItime, depth 1-3 peaking 5 (push-depth now
+      tagged `+N` on every `todo` trace event) — so the sketch's "20-40 deep" standing pile never
+       exists and a depth trigger NEVER fires.  Rebuilt as occupancy-over-time, sampled at the shift
+        boundary with PRE-shift depth (a gate landing mid-cycle must not read the momentary empty
+         between hop N and hop N+1's targeting, or a chain flaps the gallop off every item).  The
+          mutex-yield retry tightens too — mid-gallop an item's work outlasts the 4 ms gate, so that
+           retry is the common re-drive.
+  - **A/B (perf_ab warm medians, n=5/arm, all runs green):** LakeFlush 11.85 s → 10.31 s (**−13%**),
+     MusuGlide 3.67 s → 3.15 s (**−14%**).  Step-1 trace: the mid-gap (drain-gate) bucket collapsed
+      1026 ms → 429 ms; the residual is engage lag + trickle dry-outs.  `GALLOP_SUSTAIN=2` was tried
+       and REJECTED — LakeFlush noise-identical, MusuGlide worse/bimodal; 4 is measured-best AND more
+        cautious.  The ~430 ms/step trailing quiescence guard is untouched by the gallop and is now
+         the largest single slice — next lever.
+  - **FLEET: 46/65 green armed.**  17 reds are red DISARMED too (proven by a reds-only control sweep:
+     env/sandbox — dead FSA grant after HMR reloads, empty /music, peerless Books — or legit main
+      churn; diagnosis in progress).  **TWO are gallop-CAUSED and robustly so (0/6 armed, 6/6
+       disarmed): LakeTiles (steps 4-5) + LakeWaftMap.**  The step-4 diff names the mechanism: the
+        fixture asserts a WARMED point (`heat=4.478,held,long` + its `{"say":…}` child, first→last
+         spanning ~3.2 s) and the galloped settle quiesces at ~1.7 s, snapping the point just-born
+          (`heat=0.98`, no say).  Genuinely **earlier AND different** — these Books' snaps observe
+           mid-settle warming, the exact cadence-sensitive class §3's opt-out is for.  NOT fixable by
+            re-record (the warmed state is a wall-clock race under gallop); they need either
+             `The/Opt/{no_gallop:1}` marks (first check whether an Opt line leaks into their step
+              snaps) or their warming assertions rethought.  UNRESOLVED — the branch is not
+               pull-ready until decided.
 - **2026-07-07 (pm)** — TRACE GAP-ANALYSIS reprioritised the levers.  Exposed the existing per-step
    beliefs-cycle trace over the CLI (`runner_ask trace <n>` — the runner-side `trace` op already served
     it; only the CLI OPS list lacked it) and wrote `scripts/trace_gaps.mjs` to bucket the inter-event

@@ -201,6 +201,11 @@ Field observation: during a settle the todo doesn't hold a tidy causal chain one
 
 ### Technique A — gallop-tighten (queue-depth, causality-agnostic)
 
+*(BUILT 2026-07-07, branch `perf/gallop-tighten` — but the trigger below proved wrong on the first
+ trace: the settle queue is a serial drip (depth 1-3), never "20-40 deep"; the shipped trigger is
+  sustained OCCUPANCY over consecutive drain gates.  See `Perf_todo.md`'s status log, incl. the
+   LakeTiles finding that "earlier, not different" fails for snaps that observe mid-settle warming.)*
+
 The blunt, general lever: watch todo depth over a window (a `reactap` sibling — `reactap` already measures the
  bump churn, the sister signal). When it's **deep + sustained** (clearly settling) switch the drain from
   50 ms-gated to **greedy to a wall-clock budget** (drain back-to-back, then yield to paint), and relax back to
