@@ -117,7 +117,8 @@ The biggest wall-clock number in interactive use is the deliberate **6 s
 5. Longer game: collapse the 12-13-hop chain — the `N × 50 ms` floor caps everything. **Examined in
     `Story_future_directions.md` §3** (time-sliced greedy drain + observation-driven targeted collapse; the
      deepest lever — it attacks the 50 ms × N *and* the per-pass O(N) × N together).
-6. Digest-gate `Lang_build_mapules` the way `Lang_Map_report` is.
+6. Digest-gate `Lang_build_mapules` the way `Lang_Map_report` is. **(§status: DONE —
+    branch `perf/mapules-digest-gate`, verified live; see the Status log.)**
 
 ## Moved out: the observation track + the hop-chain collapse
 
@@ -131,6 +132,17 @@ Two forward-looking sections left this doc for **`Story_future_directions.md`** 
 
 ## Status log
 
+- **2026-07-06** — §6 `Lang_build_mapules` content gate (lever #6, branch
+   `perf/mapules-digest-gate`): two-tier like LangGraft's — digest of every Map entry
+    (kind|key|depth|line|class|span|region_path) PLUS the dock text (body spans/line
+     geometry consume it — Map_dige alone is too weak here, Mapulen carry absolute
+      offsets), hashed once per recompile (cached on dock.c against job.version), O(1)
+       every other wake; same digest → the standing Mapulen survive, no empty+rebuild+
+        dock-bump.  Verified LIVE on the :9091 runner: LakeTiles 6/6 green, LakeLango
+         green; census mid-run dropped ~3.3k→~2.5k bumps/think (coarse — window-phase
+          sensitive).  NOTE: LakeWaftMap is RED at step 1 (error:null, fixture shape)
+           on THIS BRANCH **AND on unmodified main** — pre-existing, not this lever;
+            needs its own chase.
 - **2026-07-05** — reactap: the reactivity CENSUS landed (the observation track's first piece —
    the socklog sibling for the tree).  `REACTAP` (Stuff.svelte.ts) taps ROOT-X bumps — the only
     serial a `void C.version` subscriber sees; disarmed cost is one property read per bump — and

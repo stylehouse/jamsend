@@ -716,23 +716,56 @@
     // ── Lang_build_mapules — %Compile/%Map → dock/%Navicade (the Mapulen) ──────
     //   The generic overview layer: one Mapule per Map entry (%kind,key,path,depth + off-snap
     //   closures) so a UI navigates knowing nothing Lang — the minimap + capsule strip read
-    //   Mapulen, never %Map.  Rebuilt each compile (offsets move every edit), so its .c closures
-    //   never go stale.
+    //   Mapulen, never %Map.  Rebuilt when the consumed content moves (offsets move every edit),
+    //   so its .c closures never go stale; the standing Mapulen survive a same-content wake.
     //     m.c.goto()              unfold + select + centre, via dock.c.seek (Langui owns dispatch).
     //     m.c.is_pointedat(specs) is this entry a working Point.  The UI passes the spec set it
     //                              derived from LE.vers, so a Point toggle re-derives without
     //                              rebuilding the Mapulen.
     //   Region Mapulen also carry band geometry so the minimap parses no //#region itself:
     //     sc.end_line  last line of the region body;   m.c.fold()  toggle-fold the body.
-    Lang_build_mapules(w: TheC, dock: TheC) {
-        const Map_C    = dock.o({ Compile: 1 })[0]?.o({ Map: 1 })[0] as TheC | undefined
+    //   Content-gated like LangGraft's graft_cache_key: the build consumes (text, Map entries +
+    //    spans), so the digest covers BOTH — Map_dige alone (structure, no offsets) is too weak
+    //     here.  Hashed once per recompile (cached against job.version, dock.c so it never
+    //      snaps); every other wake is O(1).  Same consumed content ⇒ byte-identical Mapulen,
+    //       and every reader (DocMinimap, the capsule strip) pulls off the standing particles,
+    //        so skipping the rebuild is invisible except for the churn it deletes.
+    async Lang_build_mapules(w: TheC, dock: TheC) {
+        const job      = dock.o({ Compile: 1 })[0] as TheC | undefined
+        const Map_C    = job?.o({ Map: 1 })[0] as TheC | undefined
+        const text     = (dock.c.text as string) ?? ''
+
+        // tier 1 — recompute the consumed-content digest only when a compile landed.
+        //  Text rides job.version: an edit lands as a recompile before the Map's spans
+        //   are fresh, so between edit and compile the standing (consistent) Mapulen
+        //    are the right thing to keep anyway.
+        let dige = dock.c.mapules_dige as string | undefined
+        if (dock.c.mapules_map_v !== (job?.version ?? 0) || dige == null) {
+            const regions = (Map_C?.o({ region: 1 }) ?? []) as TheC[]
+            const serial = ((Map_C?.o({}) ?? []) as TheC[]).map(e => {
+                const s    = e.sc
+                const kind = s.def ? 'def' : s.call ? 'call'
+                           : s.region ? 'region' : s.controlflow ? 'cf' : '?'
+                const key  = String(s.method ?? s.label ?? s.keyword ?? '')
+                const span = this.Lang_map_span(regions, e)
+                const rpath = ((e.c.region_path as string[] | undefined) ?? []).join('/')
+                return `${kind}|${key}|${(s.depth as number) ?? 0}|${(s.line as number) ?? 0}`
+                     + `|${(s.class ?? '') as string}|${span.from}:${span.to}|${rpath}`
+            }).join('\n')
+            dige = await dig(serial + String.fromCharCode(0) + text)
+            dock.c.mapules_map_v = job?.version ?? 0
+            dock.c.mapules_dige  = dige
+        }
+        // tier 2 — same consumed content as the standing Mapulen: leave them.
+        if (dock.c.mapules_built_dige === dige) return
+        dock.c.mapules_built_dige = dige
+
         const navicade = dock.oai({ Navicade: 1 })
         navicade.empty()
         if (!Map_C) { navicade.bump_version(); dock.bump_version(); return }
 
         // doc geometry — char offset of each line's end + the line count.  The Mapulen carry
         //  the finished spans so the UI never parses //#region or maps lines to chars itself.
-        const text  = (dock.c.text as string) ?? ''
         const lines = text.split('\n')
         const total = lines.length || 1
         const line_end = new Array<number>(total + 2)   // 1-indexed; [n] = end char of line n

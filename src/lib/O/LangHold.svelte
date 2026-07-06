@@ -438,9 +438,10 @@ await M.eatfunc({
         await H.Lang_Map_report(w, dock)
 
         // build the generic overview layer next to %Compile — the minimap and the
-        // capsule strip navigate Mapulen, not %Map.  Rebuilt every compile so its
-        // goto offsets track the latest text.
-        H.Lang_build_mapules(w, dock)
+        // capsule strip navigate Mapulen, not %Map.  Content-gated (text + Map spans,
+        // hashed once per compile) so a same-content wake keeps the standing Mapulen;
+        // goto offsets still track the latest text because any offset drift moves the digest.
+        await H.Lang_build_mapules(w, dock)
 
         H.Langspinner(w, 'grafted', true)
         workon.finish(req)
