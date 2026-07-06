@@ -19,6 +19,12 @@ In the sandbox, `CLAUDE.md`'s "never stage/commit/push" rule is **relaxed** — 
 - **Never merge into / push the construction site's `main` yourself.** The pull is the human's gate. You own
    the branch; they own the merge.
 - Commit messages: normal discipline, end with the `Co-Authored-By: Claude …` trailer per `CLAUDE.md`.
+- **`wormhole/` noise: git-reset it regularly; never let it ride into a commit by accident.** The live
+   runner/editor constantly rewrite the tracked `wormhole/**/toc.snap`s just by being on — those dirty files
+    are churn, not work. The construction-site instance commits everything all the time, so any stale
+     `wormhole/` hunks you commit become pull conflicts. Discipline: **stage by explicit path, only what you
+      really mean** (a fixture deliberately re-recorded via a Story Accept *is* commitworthy); `git checkout
+       -- wormhole/` the rest before the human pulls.
 - Everything else in `CLAUDE.md` still holds (the data model, the ghost machinery, the verify-live rule below).
 
 ## The setup this assumes (the cheap path, not the built one)

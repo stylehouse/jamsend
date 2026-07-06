@@ -5,10 +5,7 @@
   },
   "permissions": {
     "deny": [
-      "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(git reset:*)",
-      "Bash(git restore:*)",
       "Read(./.env)",
       "Read(./.env.*)",
       "Read(./ty/.env.chrome-profiles)",
