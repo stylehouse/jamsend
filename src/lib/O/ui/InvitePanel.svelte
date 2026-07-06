@@ -6,8 +6,9 @@
     //     as a scannable QR. The inviter stays on this screen; the invite is online-scan (the
     //      handshake needs both present — a photographed QR is dead after its first scan).
     //   LAND — this page was OPENED from a scanned ?Iz= link: verify the blob, show who's
-    //    inviting, and offer JOIN. The redeem must reach the inviter (Swarm_deliver's station
-    //     precondition), so with no live link it says so instead of pretending.
+    //    inviting, and offer JOIN — which stands our own station, promotes a %Pier to the
+    //     inviter's prepub, and redeems over the REAL relay (Swarm_spec §10.1's frontier rung:
+    //      the two BigSoundlands become for each other).
     //  The mint→URL→parse→seal→spent arc is PROVEN by Book SwarmInvite (green, deterministic);
     //   this panel is only the eyes and buttons over those verbs.
     import InviteQR from "$lib/O/ui/micro/InviteQR.svelte"
@@ -22,6 +23,34 @@
         try { return typeof H?.Swarm_live_self === 'function' ? H.Swarm_live_self() : null } catch { return null }
     })
 
+    // ── STATION — being on this page IS being at the door ─────────────────────────────────────
+    // Stand the live station (w:Swarm, the prepub-addressed relay socket + the armed swarm frame
+    //  kinds) as soon as the self exists: the inviter must be dialable BEFORE anyone scans, and
+    //   the landing side reuses the same standup. Swarm_station_up returns null while the
+    //    transport ghosts are still depositing, so this retries on version bumps until it takes.
+    let stood = $state(false)
+    $effect(() => {
+        void H?.version
+        if (stood || !self || typeof H?.Swarm_station_up !== 'function') return
+        const w = H.Swarm_station_world?.()
+        if (w && H.Swarm_station_up(w, self)) stood = true
+    })
+
+    // ── FRIENDS — the sealed %Piers under the self's page, on both faces ──────────────────────
+    let friends = $derived.by(() => {
+        void H?.version
+        try {
+            if (!self || typeof H?.Swarm_peering !== 'function') return []
+            return (H.Swarm_peering(self)?.o({ Pier: 1 }) ?? []) as any[]
+        } catch { return [] }
+    })
+
+    const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
+    async function wait_for<T>(fn: () => T | null | undefined, ms: number): Promise<T | null> {
+        for (let t = 0; t < ms; t += 200) { const v = fn(); if (v) return v; await sleep(200) }
+        return null
+    }
+
     // ── MINT ──────────────────────────────────────────────────────────────────────────────────
     let url = $state('')
     let err = $state('')
@@ -35,6 +64,10 @@
     async function mint() {
         err = ''
         try {
+            // the door must be dialable before anyone scans — force the station standup here too
+            //  (idempotent; the $effect usually beat us to it)
+            const w = H.Swarm_station_world?.()
+            if (w && typeof H.Swarm_station_up === 'function' && H.Swarm_station_up(w, self)) stood = true
             // nonce: random hex live (a Book pins its own); the spend ledger rides the %Peering
             const nonce = Array.from(crypto.getRandomValues(new Uint8Array(6)), b => b.toString(16).padStart(2, '0')).join('')
             url = await H.Swarm_invite_url(null, self, { Music: 1 }, nonce, location.origin + location.pathname)
@@ -54,27 +87,29 @@
             .then((claim: any) => invite = claim)
             .catch((e: any) => iz_err = 'the invite did not verify — ' + String(e).slice(0, 80))
     })
-    // Swarm_deliver's precondition, scanned honestly: a station of OUR prepub somewhere in the
-    //  H** worlds (the relay link the hello would ride). None ⇒ join explains instead of failing.
-    function station_world(): any {
-        const top = H?.top_House?.() ?? H
-        for (const house of (top?.all_House ?? (top ? [top] : []))) {
-            for (const A of house.o({ A: 1 })) {
-                for (const w of A.o({ w: 1 })) {
-                    if (w.o({ Peering: 1 }).find((p: any) => p.sc.name === self?.sc?.prepub)) return w
-                }
-            }
-        }
-        return null
-    }
+    // JOIN — the frontier rung, live: our own station up, a %Pier promoted to the inviter's
+    //  prepub, the ws open + hello-bound, then the proven redeem. The seal (their pier_accept)
+    //   lands asynchronously — watch for the account %Pier so "joined" means SEALED, not just
+    //    "hello sent".
     async function join() {
         joined = ''
-        const w = station_world()
-        if (!w) { joined = '⚠ no live link to the inviter yet — the relay station is not up on this page'; return }
+        const w = H.Swarm_station_world?.()
+        if (!w || !H.Swarm_station_up(w, self)) { joined = '⚠ the transport ghosts are still booting — try again in a moment'; return }
+        H.Swarm_station_pier(w, self, invite.prepub)
+        joined = '… dialing the inviter'
+        const port = () => w.o({ transport: 1, type: 'websocket' })[0]?.c?.port
+        if (!await wait_for(() => port()?.ws?.readyState === 1 || null, 8000)) {
+            joined = '⚠ the relay did not answer — is the dev server reachable from this tab?'
+            return
+        }
+        await sleep(400)   // one beat for the signed hello-bind to land at the relay
         const claim = await H.Swarm_redeem(w, self, iz)
-        joined = claim
-            ? '✓ joined — a Pier to ' + (claim.friendly || claim.prepub) + ' is standing'
-            : '✗ the inviter refused or is offline — the rebuff rides the identity'
+        if (!claim) { joined = '✗ the inviter refused or is unreachable — the rebuff rides the identity'; return }
+        joined = '… hello delivered — waiting for the seal'
+        const sealed = await wait_for(() => H.Swarm_peering(self)?.o({ Pier: 1, pub: invite.prepub })[0], 8000)
+        joined = sealed
+            ? '✓ joined — ' + (claim.friendly || claim.prepub) + ' is a music Pier now'
+            : '… hello delivered, but no accept yet — is the inviter tab still open?'
     }
 </script>
 
@@ -108,6 +143,14 @@
     {:else}
         <span class="ip-note">⏳ identity…</span>
     {/if}
+    {#if friends.length}
+        <!-- the sealed friendships — each a %Pier under our page, its Music grant the proof -->
+        <div class="ip-friends">
+            {#each friends as p (p.sc.pub)}
+                <span class="ip-friend" title={p.sc.pub}>⚯ {p.sc.friendly || p.sc.pub}{p.o({ Grant: 'Music' })[0] ? ' · ⇄ Music' : ''}</span>
+            {/each}
+        </div>
+    {/if}
 </div>
 
 {#if url && big}
@@ -138,6 +181,11 @@
     .ip-act:hover { border-color: #77a; color: #fff; }
     .ip-note { font-size: 0.72rem; color: #889; max-width: 22rem; }
     .ip-row { display: flex; gap: 0.4rem; }
+    .ip-friends { display: flex; flex-direction: column; gap: 0.25rem; align-self: center; }
+    .ip-friend {
+        font-size: 0.75rem; color: #cb9; white-space: nowrap;
+        padding: 0.1rem 0.5rem; border: 1px solid #443a2a; border-radius: 5px; background: #1c1812;
+    }
 
     /* ── the full-screen face ── a warm amber-tan radial, lightest where the QR sits */
     .ip-overlay {

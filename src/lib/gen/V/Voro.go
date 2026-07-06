@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Voro(): string { return 'ff1f461c9da11a4c' },
+    Ghostmeta_Ghost_V_Voro(): string { return 'e17568e23ffe429a' },
 
 // Voro.g — the Vis family home: the Voronoi-Cyto render (Ghost/V/, Waft:Ghost/Vis/Visua).
 //  A late sibling to networking (N), music (M) and society (S).  But where THOSE are spines the
@@ -99,11 +99,18 @@ Voro_crush_walk(node, d, stats, level) { const H = this;
         //  remaining leaves then gang at min 2 (the spill relax), because "a few pop
         //   out, the REST stays one pane" is the surf's contract.
         if (c.c.popped || c.c.popped_open) spilled = spilled + 1
-        if (c.c.popped && c.o().length < 1) {
-            // a leaf someone SURFED OUT of its gang|fold (Vtuff_pop) — never re-gangs; it stands
-            //  as its own node until un-popped or ◈ un-imposes.  A popped leaf that later grows
-            //   children re-enters the ordinary rules (the guard is leaf-only; a popped
-            //    CONTAINER folds as its own pane below, which is a node all the same).
+        // TINY = a leaf or a small all-leaf frond (≤3 children): it rides its mainkey's
+        //  gang instead of claiming a pane of its own — the owner's "bigger looser" board;
+        //   a two-form species is a chip with a /*N glyph, not a cell.  A gang that fails
+        //    to form falls back per-member in Voro_gang_fold (a tiny container folds as its
+        //     own little pane THERE, so a lone artist keeps its cell).
+        let kids = c.o()
+        let tiny = kids.length < 1 || (kids.length <= 3 && !kids.some(k => k.o().length > 0))
+        if (c.c.popped && tiny) {
+            // a tiny someone SURFED OUT of its gang|fold (Vtuff_pop) — never re-gangs; it
+            //  stands as its own node until un-popped or ◈ un-imposes.  One that later grows
+            //   a deep frond re-enters the ordinary rules (a popped DEEP container folds as
+            //    its own pane below, which is a node all the same).
             this.Voro_unstamp(c)
             c.c.stuffy = 1
             stats.visible = stats.visible + 1
@@ -133,7 +140,7 @@ Voro_crush_walk(node, d, stats, level) { const H = this;
             this.Voro_crush_walk(c, d + 1, stats, level)
             continue
         }
-        if (c.o().length < 1) {
+        if (tiny) {
             if (!loose[mk]) loose[mk] = []
             loose[mk].push(c)
             continue
@@ -187,6 +194,14 @@ Voro_gang_fold(loose, stats, level, spill) {
             stats.visible = stats.visible + 1
         } else {
             for (const c of gang) {
+                // no gang formed: a tiny CONTAINER falls back to its own fold pane (a lone
+                //  artist keeps its cell); a plain leaf stands as itself.
+                let verdict = null
+                if (c.o().length > 0) verdict = this.Voro_crushable(c)
+                if (verdict) {
+                    this.Voro_stamp_fold(c, verdict, stats)
+                    continue
+                }
                 this.Voro_unstamp(c)
                 c.c.stuffy = 1
                 stats.visible = stats.visible + 1
@@ -428,7 +443,9 @@ Vtuff_default(root, members, src) {
     if (homo) {
         let r = root.i({ Vrow: 1, row: 'list', text: '', wgt: 1 })
         let shown = members
-        if (members.length > 9) shown = members.slice(0, 9)
+        // generous — the phi spiral packs ~25 comfortably; the renderer's fit is the real
+        //  gate (the owner: "give it until we have problems fitting everything in").
+        if (members.length > 25) shown = members.slice(0, 25)
         for (const m of shown) {
             let bsc = { Vbit: 1, text: this.Vtuff_member_bit(m), n: 1 }
             let bsub = m.o().length
@@ -584,15 +601,16 @@ async Vtuff_unpop(n) {
 
 //#region mitosis — VoroMitosis: watch the flora divide (the pure crush demo, no music no wire)
 // ══ VoroMitosis — a colony that grows and splits: the voronoi render watched dividing ════════════
-//  A demo-gauge Book for the crushed voronoi cells: cell:<genus> containers live DIRECTLY under w
-//   (no umbrella container — the crusher folds any content container, so an umbrella would swallow
-//    the whole colony as ONE chunk).  Each cell's species are keyed BY THE GENUS ({Coprosma:'robusta'}
-//     not a flat pile of %spore) so the fold's Stuffing groups them by genus, and a genus reads as
-//      its own clade.  Each beat every cell gains species; a cell past the split threshold DIVIDES
-//       (half its species leave for a fresh genus — a new voronoi cell births inside the parent's
-//        territory, re-keyed to the daughter genus); one cell dies mid-run (apoptosis — its
-//         territory reclaimed).  Deterministic throughout: growth is count-driven, names off fixed
-//          lists, no randomness.  No transport and no audio — runs anywhere a runner does.
+//  A demo-gauge Book for the crushed voronoi cells.  The flora is a BIGGER LOOSER w/*: every
+//   species sits DIRECTLY under w keyed by its genus ({Coprosma:'robusta'}) — NO container is
+//    modelled at all (the owner: "why does it even say cell? that's their technical term, not
+//     data").  The hierarchy the old cell:<genus> containers hand-built is exactly what the
+//      crusher DISCOVERS: a hundred loose taxa blow the governor's budget, it escalates, and
+//       same-genus leaves gang behind one representative pane each — the machine earns the
+//        clades.  Each beat every genus gains species; a genus past the split threshold DIVIDES
+//         (half its species re-key to a fresh genus — a new cell births); one genus dies mid-run
+//          (apoptosis — its territory reclaimed).  Deterministic throughout: growth count-driven,
+//           names off fixed lists, no randomness.  No transport, no audio — runs anywhere.
 //  The crush is armed C-SIDE (w.c.crush_wanted, set in seed) — NOT the %crushCyto opt — so nothing
 //   about the fold (no %Opt, no report) ever reaches the snap; the model is pure flora.
 VoroMitosis(A,w) {
@@ -626,10 +644,10 @@ Botany_genera() {
 
 },
 // the botanical FAMILY of a genus — real NZ taxonomy, the demo material for the ⬡ family
-//  hulls: it rides each genus cell's c.vfamily (c-side, snap-blind — the model stays pure
-//   flora) and Cytui's family_of groups cells that share it into one faint hull.  Every
-//    genus cell sits DIRECTLY under w, so without this tag no hull can ever form there
-//     (no intermediate cyto-compound exists to group by).
+//  hulls: it rides each TAXON's c.vfamily (c-side, snap-blind — the model stays pure flora)
+//   so whichever taxon a gang elects as rep carries it, and Cytui's family_of groups the
+//    genus panes that share it into one rope hull.  The flora sits DIRECTLY under w, so
+//     without this tag no hull can ever form there (no cyto-compound exists to group by).
 Botany_family(genus) {
     let fams = { Coprosma: 'Rubiaceae', Veronica: 'Plantaginaceae', Metrosideros: 'Myrtaceae', Kunzea: 'Myrtaceae', Leptospermum: 'Myrtaceae', Pittosporum: 'Pittosporaceae', Podocarpus: 'Podocarpaceae', Olearia: 'Asteraceae', Brachyglottis: 'Asteraceae', Nothofagus: 'Nothofagaceae', Phormium: 'Asphodelaceae', Dracophyllum: 'Ericaceae' }
     return fams[genus] || 'incertae sedis'
@@ -669,6 +687,7 @@ Botany_plant(container, genus, epithet, depth) {
     }
     if (hsh % 6 === 0) sc.endemic = 1
     let taxon = container.i(sc)
+    taxon.c.vfamily = this.Botany_family(genus)
     if (depth > 0) {
         let forms = this.Botany_forms()
         this.Botany_plant(taxon, genus, epithet + ' ' + forms[0], depth - 1)
@@ -677,16 +696,29 @@ Botany_plant(container, genus, epithet, depth) {
     return taxon
 
 },
-// found a genus (a cell) with k species keyed by the genus; the odd one carries a nested form —
-//  the phylogeny "here and there" that gives each chunk its self-similar texture.
+// the LIVE GENERA census: the distinct genus mainkeys among w's loose flora, each with its
+//  taxa.  There is NO container to ask any more — the census walks the data exactly the way
+//   the crusher does (by mainkey).  Machinery under w (%req wrangle, %see claims) is not flora
+//    and doesn't count.
+VoroMitosis_taxa(w) {
+    let genera = this.Botany_genera()
+    let by = {}
+    for (const c of w.o()) {
+        let mk = Object.keys(c.sc)[0]
+        if (!genera.includes(mk)) continue
+        if (!by[mk]) by[mk] = []
+        by[mk].push(c)
+    }
+    return by
+
+},
+// found a genus: k species planted LOOSE under w keyed by the genus; the odd one carries a
+//  nested form — the phylogeny "here and there" that gives each gang its self-similar texture.
 VoroMitosis_found(w, genus, k) {
-    let cell = w.i({ cell: genus })
-    cell.c.vfamily = this.Botany_family(genus)
     let eps = this.Botany_epithets()
     let gi = this.Botany_genera().indexOf(genus)
     if (gi < 0) gi = 0
-    for (let s = 0; s < k; s++) this.Botany_plant(cell, genus, eps[(gi * 3 + s) % eps.length], s % 2)
-    return cell
+    for (let s = 0; s < k; s++) this.Botany_plant(w, genus, eps[(gi * 3 + s) % eps.length], s % 2)
 
 },
 VoroMitosis_seed(w) {
@@ -695,25 +727,24 @@ VoroMitosis_seed(w) {
     this.VoroMitosis_found(w, 'Veronica', 3)
 
 },
-// grow: every genus gains two species this beat (keyed by that genus); the first species of each
-//  sprouts a form (and if it has one already, a sub-form) — the phylogeny deepening like a frond
-//   unfurling.  Then AT MOST ONE genus past 8 species speciates: half its species found a new
-//    genus, RE-KEYED to the daughter genus (a new voronoi cell divides into being).  One division
-//     per beat keeps it readable; the genera list caps the radiation.
+// grow: every genus gains two loose species this beat; the first species of each sprouts a form
+//  (and if it has one already, a sub-form) — the phylogeny deepening like a frond unfurling, and
+//   the deepened taxon eventually outgrowing tiny-ness into its own little pane beside the gang.
+//    Then AT MOST ONE genus past 8 species speciates: half its species RE-KEY to a daughter genus
+//     (planted fresh under the new mainkey — a new cell gangs into being).  One division per beat
+//      keeps it readable; the genera list caps the radiation.
 VoroMitosis_grow(w, n) {
     let genera = this.Botany_genera()
     let eps = this.Botany_epithets()
     let forms = this.Botany_forms()
-    let cells = w.o({ cell: 1 })
-    for (const c of cells) {
-        let g = c.sc.cell
-        let base = c.o().length
-        this.Botany_plant(c, g, eps[(n * 2 + base) % eps.length], 0)
-        this.Botany_plant(c, g, eps[(n * 2 + base + 1) % eps.length], 0)
+    let by = this.VoroMitosis_taxa(w)
+    for (const g of Object.keys(by)) {
+        let base = by[g].length
+        this.Botany_plant(w, g, eps[(n * 2 + base) % eps.length], 0)
+        this.Botany_plant(w, g, eps[(n * 2 + base + 1) % eps.length], 0)
     }
-    for (const c of cells) {
-        let g = c.sc.cell
-        let first = c.o()[0]
+    for (const g of Object.keys(by)) {
+        let first = by[g][0]
         if (!first) continue
         let sub = first.o()
         if (!sub.length) {
@@ -722,21 +753,16 @@ VoroMitosis_grow(w, n) {
             this.Botany_plant(sub[0], g, sub[0].sc[g] + ' ' + forms[(n + 1) % forms.length], 0)
         }
     }
-    cells = w.o({ cell: 1 })
-    for (const c of cells) {
-        let g = c.sc.cell
-        let species = c.o()
+    by = this.VoroMitosis_taxa(w)
+    for (const g of Object.keys(by)) {
+        let species = by[g]
         if (species.length < 8) continue
-        let used = w.o({ cell: 1 }).map(x => x.sc.cell)
+        let used = Object.keys(by)
         let name = genera.find(nm => !used.includes(nm))
         if (!name) break
-        let neu = w.i({ cell: name })
-        neu.c.vfamily = this.Botany_family(name)
         let half = species.slice(0, Math.floor(species.length / 2))
         for (const sp of half) {
-            let sc = {}
-            sc[name] = sp.sc[g]      // re-key to the daughter genus, keep the epithet
-            neu.i(sc)
+            this.Botany_plant(w, name, sp.sc[g], 0)    // re-key to the daughter genus, keep the epithet
             sp.drop(sp)
         }
         w.c.mitosis_splits = (w.c.mitosis_splits || 0) + 1
@@ -744,21 +770,23 @@ VoroMitosis_grow(w, n) {
     }
 
 },
-// die: apoptosis — the smallest cell drops out; its voronoi territory goes back to the neighbours.
+// die: apoptosis — the smallest genus drops out entirely; its territory goes back to the neighbours.
 VoroMitosis_die(w) {
-    let cells = w.o({ cell: 1 })
-    if (cells.length < 3) return
-    let smallest = [...cells].sort((a, b) => a.o().length - b.o().length)[0]
-    w.c.mitosis_died = smallest.sc.cell
-    smallest.drop(smallest)
+    let by = this.VoroMitosis_taxa(w)
+    let names = Object.keys(by)
+    if (names.length < 3) return
+    names.sort((a, b) => by[a].length - by[b].length)
+    w.c.mitosis_died = names[0]
+    for (const sp of by[names[0]]) sp.drop(sp)
 
 },
 VoroMitosis_witness(w) {
-    let cells = w.o({ cell: 1 })
-    let folded = cells.filter(c => c.c.stuff != null)
-    if (cells.length >= 4 && (w.c.mitosis_splits || 0) >= 2 && !(w.oa({see: 'the flora radiated — more genera now than were founded and each new one split off an over-full parent'}))) w.i({see: 'the flora radiated — more genera now than were founded and each new one split off an over-full parent'})
-    if (w.c.mitosis_died && !cells.find(c => c.sc.cell === w.c.mitosis_died) && !(w.oa({see: 'a genus went extinct mid-run and stayed gone — its range reclaimed by its neighbours'}))) w.i({see: 'a genus went extinct mid-run and stayed gone — its range reclaimed by its neighbours'})
-    if (cells.length && folded.length === cells.length && !(w.oa({see: 'every living genus is crush-folded behind one chunk keyed to its own name'}))) w.i({see: 'every living genus is crush-folded behind one chunk keyed to its own name'})
+    let by = this.VoroMitosis_taxa(w)
+    let names = Object.keys(by)
+    if (names.length >= 4 && (w.c.mitosis_splits || 0) >= 2 && !(w.oa({see: 'the flora radiated — more genera now than were founded and each new one split off an over-full parent'}))) w.i({see: 'the flora radiated — more genera now than were founded and each new one split off an over-full parent'})
+    if (w.c.mitosis_died && !by[w.c.mitosis_died] && !(w.oa({see: 'a genus went extinct mid-run and stayed gone — its range reclaimed by its neighbours'}))) w.i({see: 'a genus went extinct mid-run and stayed gone — its range reclaimed by its neighbours'})
+    let ganged = names.filter(g => by[g].some(sp => sp.c.gang))
+    if (names.length && ganged.length === names.length && !(w.oa({see: 'the loose flora ganged itself by genus — one representative pane each and no container ever modelled'}))) w.i({see: 'the loose flora ganged itself by genus — one representative pane each and no container ever modelled'})
 },
 //#endregion
 

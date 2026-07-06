@@ -71,12 +71,15 @@ The cells are half-plane intersections — CONVEX — so the widest horizontal c
     unit height; too many rows keeps title + head + dip and says `+K more` (no silent
      caps).  Overflow within a row ellipsizes.
 
-A **`list` row is 2D** (the owner's "all this Stuffing data is one column!"): its
- chips WRAP into a grid that fills the cell's belly.  `micro_fit` reads the column
-  capacity from the widest chord (÷ a ~62px chip) and gives the list row that many
-   LINES of height (capped 5); the chips `flex-wrap` to fill it, top-aligned.  Each
-    row's font-size rides the single-LINE height (`row.fs`), not a tall block's total,
-     so a wrapped list stays the same type size as its neighbours.
+A **`list` row is a PHI SPIRAL** (the owner, specifically: "use a phi spiral like the
+ seeds in a sunflower to grid things up").  The list claims the pane's LEFTOVER height
+  (title|facts|dip take their bands; the spiral gets the belly) and each chip k sits at
+   Vogel's sunflower point — r ∝ √(k+0.5), θ = k·137.508° — squeezed anisotropically to
+    the row box.  The SAME golden angle the kind-hues step by: neighbours never queue
+     up, so text chips scatter evenly with no grid to fight the slanted walls; the
+      pane's clip-path trims any overflow.  The engine sends up to 25 members (+N tail
+       beyond — "give it until we have problems fitting everything in"); each row's
+        font-size rides the unit (`row.fs`), not the tall spiral block.
 
 Runs in **both cadences** — the tree is cached and the fit is pure math — so the rows
  track a drag live.  (They used to vanish: the swap dimmed the Stuffing to 0 AND hid

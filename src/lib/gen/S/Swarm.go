@@ -5,13 +5,14 @@
 
 import { Idento } from "$lib/Y.svelte.ts"
 import { mint_grant, verify_grant, grant_to_C, mint_revoke } from "$lib/O/Funk/Grant.ts"
+import { signHeader } from "$lib/p2p/cluster_trust"
 
     let { H } = $props()
 
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '555adac4efbe6d60' },
+    Ghostmeta_Ghost_S_Swarm(): string { return '897d9cd237fd685e' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -184,11 +185,17 @@ Swarm_iz_of_url(href) {
 //        trace either way. Nothing above this seam knows which wire carried it.
 
 // Swarm_account_of — the local-recipient resolution: the identity in w whose prepub this is.
+//  The account tree in w is the Books' arrangement; a LIVE station world carries no accounts —
+//   there the recipient can only be the machine's one live self (A:Clustation's active identity),
+//    so fall through to it when the prepub matches. Book prepubs are seeded, never the live
+//     random one, so the fallback can't cross-resolve a test frame.
 Swarm_account_of(w, prepub) {
     for (const acct of w.o({ Account: 1 })) {
         let ident = acct.o({ Identity: 1 }).find(i => i.sc.prepub === prepub)
         if (ident) return ident
     }
+    let self = this.Swarm_live_self()
+    if (self && self.sc.prepub === prepub) return self
     return null
 
 },
@@ -202,7 +209,13 @@ Swarm_deliver(w, ident, prepub, frame) {
     let station = w.o({ Peering: 1 }).find(p => p.sc.name === ident.sc.prepub)
     let route = station && station.o({ Pier: 1 }).find(p => p.sc.pub === prepub)
     if (route) {
-        if (!this.Peeroleum_peer_ready(route)) return false
+        // readiness: the Book wire runs the FULL per-Pier handshake, so peer_ready is the gate
+        //  there. A LIVE station (v1 — the Lies-channel precedent) never seeds that handshake:
+        //   it is trust-stamped at promotion and its link auth is the relay's signed hello-bind,
+        //    so there a live carrier IS readiness. Books never set station_up — fixtures see the
+        //     strict gate unchanged. The real per-Pier handshake at the door is the owed upgrade.
+        let ready = this.Peeroleum_peer_ready(route) || (w.c.station_up && !!this.Peeroleum_carrier(station, w))
+        if (!ready) return false
         let seq = this.Pier_next_seq(route)
         this.Peeroleum_send(w, { header: { type: frame.kind, from: ident.sc.prepub, to: prepub, seq: seq }, swarm: frame })
         return true
@@ -255,6 +268,73 @@ Swarm_rebuff(ident, why, say) {
 },
 //#endregion
 
+//#region station — the LIVE relay standup (§10.1 the frontier rung: two BigSoundlands become for each other)
+//  The Books' wire is Lake_link's mock pair; THIS is the production twin — one real websocket to
+//   our own-origin /relay, addressed by PREPUB, never by role. No `become` is ever sent: the
+//    editor|runner role table stays untouched (a second role claimant eats the fleet's
+//     role-addressed frames — roles divide, addresses deliver). Reachability is the ?addr=
+//      bind (Socket_real dials ?addr=<our Peering name> = our prepub) upgraded by the SIGNED
+//       relay hello, so a to:<prepub> frame routes to the proven key-holder.
+
+// Swarm_station_world — the canonical oai spot for the live transport world: w:Swarm under
+//  A:Clustation, beside the identity it serves. Its OWN world so the transport slots
+//   (%transport/%active_transport) and the w.c.on registry never collide with w:Lies's channel.
+Swarm_station_world() {
+    let A = this.top_House().o({ A: 'Clustation' })[0]
+    if (!A) return null
+    let w = A.oai({ w: 'Swarm' })
+    w.c.up = A
+    return w
+
+},
+// Swarm_station_up — idempotent: stand the station %Peering named our prepub (BEFORE Socket_real,
+//  which reads the first Peering's name as its ?addr=), arm the swarm frame kinds, dial the relay,
+//   and hello-bind our key on every (re)open. Returns the station, or null while the transport
+//    ghosts haven't deposited (the boot window) — the caller just asks again.
+async Swarm_station_up(w, ident) {
+    if (!w || !ident?.c?.keys) return null
+    let station = w.o({ Peering: 1 }).find(p => p.sc.name === ident.sc.prepub)
+    if (station && w.c.station_up) return station
+    if (typeof this.Socket_real !== 'function') return null
+    if (typeof WebSocket === 'undefined') return null
+    station = w.oai({ Peering: 1, name: ident.sc.prepub })
+    station.c.up = w
+    this.Swarm_arm(w)
+    this.Socket_real(w)
+    let port = w.o({ transport: 1, type: 'websocket' })[0]?.c.port
+    if (port?.on_open) {
+        port.on_open(async () => {
+            // the authenticated bind (relay.ts handleHello): sign {control,from,pub,ts} with the
+            //  identity key so the relay routes to:<prepub> to the REAL key-holder, not whoever
+            //   claimed the ?addr=. Re-fires on every reconnect. Failure = relay down; the
+            //    socket's own backoff re-dials and this hook re-runs.
+            try {
+                let header = { control: 'hello', from: ident.sc.prepub, pub: ident.c.keys.pub, ts: Date.now() }
+                let sign = await signHeader(header, ident.c.keys.key)
+                port.ws?.send(JSON.stringify(Object.assign({}, header, { sign: sign })))
+            } catch (e) { console.warn('⨳ station hello failed (relay down?)', e) }
+        })
+    }
+    this.Tribunal_activate_websocket(w)
+    w.c.station_up = 1
+    return station
+
+},
+// Swarm_station_pier — promote first-contact into a transport route: the station's %Pier keyed by
+//  their prepub, %Ud stamped (v1 trust — the pre-Ud inbox gate books their frames; the swarm layer
+//   above re-verifies every signature itself). The Lies_runner_pier shape. No-op without a station,
+//    so the Books' mail-wire worlds (and their fixtures) never see it.
+Swarm_station_pier(w, ident, prepub) {
+    if (!w || !ident || !prepub) return null
+    let station = w.o({ Peering: 1 }).find(p => p.sc.name === ident.sc.prepub)
+    if (!station) return null
+    let pier = station.oai({ Pier: 1, pub: prepub })
+    pier.c.up = station
+    pier.oai({ Ud: 1 })
+    return pier
+},
+//#endregion
+
 //#region handshake — live, both online (§6.3)
 
 // Swarm_redeem — the invitee opens the ?Iz= link WHILE ONLINE: verify the signature, then prove
@@ -288,6 +368,11 @@ async Swarm_redeem(w, ident, iz) {
 //    reciprocal grant, mint our BOUND grant, import their page as a %Pier, log the graph edge, and
 //     answer pier_accept. Every deny answers pier_reject so the redeemer sees why.
 async Swarm_hello(w, ident, frame) {
+    // live first-contact: promote a transport %Pier for the caller the moment the door hears them —
+    //  the pier_accept (and every deny's pier_reject) needs a route to ride back on. No-op without
+    //   a station (the Books' mail wire), so fixtures never see it. Yes, a junk hello also mints
+    //    its caller a Pier — bounded one-per-prepub; the v1 dev-relay surface (spec §10.1).
+    this.Swarm_station_pier(w, ident, frame.page?.prepub)
     let deny = (why) => {
         this.Swarm_rebuff(ident, 'hello_' + why, frame.page?.prepub)
         this.Swarm_deliver(w, ident, frame.page?.prepub, { kind: 'pier_reject', why: why, prepub: ident.sc.prepub })

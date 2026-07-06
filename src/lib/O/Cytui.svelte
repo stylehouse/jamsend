@@ -891,7 +891,7 @@
     //     slanted walls instead of a bbox grid.  Runs in BOTH cadences (the tree is cached
     //      .g-side, the fit is pure math) so the rows persist through a drag.  ▤ toggles the
     //       whole swap; member|dip rows are the pop-out surf (Vtuff_pop).
-    type MicroChip = { text: string, n: number, member?: TheC, sub?: number }
+    type MicroChip = { text: string, n: number, member?: TheC, sub?: number, px?: number, py?: number }
     type MicroRow  = { text: string, kind: string, x: number, y: number, w: number, h: number, fs: number,
                        color: string | null, tag?: string, sub?: number,
                        chips?: MicroChip[], member?: TheC, dip?: boolean }
@@ -993,45 +993,60 @@
 
     // slab-fit: stack the rows down the cell, each row clamped to the polygon's chord at its
     //  band (top and bottom chords intersected — conservative, so slanted walls never clip
-    //   text).  A `list` row is 2D: its chips WRAP into as many lines as the cell's width
-    //   affords (no longer one clipped column), so its height counts for several units.  Too
-    //    many rows → keep title + head + dip and say "+K more" (no silent caps).
+    //   text).  The `list` row claims the pane's LEFTOVER height and lays its chips on a PHI
+    //    SPIRAL — the sunflower's seed packing (chip k at r ∝ √k, θ = k·137.508°, the SAME
+    //     golden angle the kind-hues step by), squeezed to the row's box; the pane's clip-path
+    //      trims any slant overflow.  Too many rows → keep title + head + dip and say "+K
+    //       more" (no silent caps).
     function micro_fit(inset: {x:number,y:number}[], descs: VtuffDesc[],
                        bx: number, by: number, bh: number): MicroRow[] {
         if (!descs.length) return []
         const usable = bh * 0.88
-        // column capacity from the widest chord (the cell's belly) vs a typical chip width —
-        //  drives how many lines a wrapping chip list needs.
-        const midC = poly_chord(inset, by + bh / 2)
-        const availW = midC ? Math.max(40, (midC[1] - midC[0]) - 12) : bh
-        const CHIPW = 62
-        const cols  = Math.max(1, Math.floor(availW / CHIPW))
-        const listLines = (d: VtuffDesc) => Math.min(5, Math.max(1, Math.ceil((d.chips?.length ?? 1) / cols)))
-        const hof = (d: VtuffDesc) => (d.kind === 'title' ? 1.35 : d.kind === 'list' ? listLines(d) : 1)
-        const sum = (list: VtuffDesc[]) => list.reduce((s, d) => s + hof(d), 0)
-        let unit = usable / sum(descs)
+        const list = descs.find(d => d.kind === 'list' && d.chips?.length)
+        const hof = (d: VtuffDesc) => (d.kind === 'title' ? 1.35 : 1)   // the list is sized OUT of band
+        const sum = (l: VtuffDesc[]) => l.reduce((s, d) => s + (d === list ? 0 : hof(d)), 0)
+        // reserve spiral room in the unit maths: ~1 unit per 4 chips, floored at 2, capped at 7
+        const reserve = list ? Math.max(2, Math.min(7, (list.chips!.length + 3) / 4)) : 0
+        let unit = usable / (sum(descs) + reserve)
         unit = Math.max(12, Math.min(20, unit))
         let shown = descs
-        if (unit * sum(descs) > usable + 1) {
+        if (unit * (sum(descs) + reserve) > usable + 1) {
             const title = descs.filter(d => d.kind === 'title')
             const dip   = descs.filter(d => d.dip)
-            const mid   = descs.filter(d => d.kind !== 'title' && !d.dip)
+            const mid   = descs.filter(d => d.kind !== 'title' && !d.dip && d !== list)
             let keep = mid.length
-            while (keep > 0 && unit * (sum(title) + sum(dip) + sum(mid.slice(0, keep)) + 1) > usable + 1) keep--
+            while (keep > 0 && unit * (sum(title) + sum(dip) + keep + reserve + 1) > usable + 1) keep--
             const dropped = mid.length - keep
-            shown = [...title, ...mid.slice(0, keep),
+            shown = [...title, ...(list ? [list] : []), ...mid.slice(0, keep),
                      ...(dropped ? [{ text: `+${dropped} more`, kind: 'fact' } as VtuffDesc] : []), ...dip]
         }
-        let y = by + Math.max(bh * 0.06, (bh - unit * sum(shown)) / 2)
+        const bandH = unit * sum(shown)
+        const listH = list ? Math.max(unit, usable - bandH) : 0
+        let y = by + Math.max(bh * 0.06, (bh - bandH - listH) / 2)
         const rows: MicroRow[] = []
         for (const d of shown) {
-            const h = unit * hof(d)
+            const h = d === list ? listH : unit * hof(d)
             const c1 = poly_chord(inset, y + h * 0.12)
             const c2 = poly_chord(inset, y + h * 0.88)
             if (c1 && c2) {
                 const x0 = Math.max(c1[0], c2[0]) + 6, x1 = Math.min(c1[1], c2[1]) - 6
-                // font-size rides the single LINE height, not a tall list block's total
+                // font-size rides the UNIT, not a tall spiral block's total height
                 const fs = (d.kind === 'title' ? unit * 1.35 : unit) * 0.62
+                if (d === list) {
+                    // ── the phi spiral (owner's ask: "like the seeds in a sunflower") ──
+                    //  Vogel's model on the unit disc, anisotropically squeezed into the
+                    //   row box — golden-angle neighbours never queue up, so text chips
+                    //    scatter evenly with no grid to fight the slanted walls.
+                    const chips = d.chips!
+                    const GA = Math.PI * (3 - Math.sqrt(5))
+                    const R = Math.sqrt(Math.max(0.5, chips.length - 0.5))
+                    const rx = (x1 - x0) / 2 * 0.82, ry = h / 2 * 0.76
+                    chips.forEach((ch, k) => {
+                        const rr = Math.sqrt(k + 0.5) / R
+                        ch.px = (x1 - x0) / 2 + Math.cos(k * GA) * rr * rx
+                        ch.py = h / 2 + Math.sin(k * GA) * rr * ry
+                    })
+                }
                 if (x1 - x0 >= 36) rows.push({
                     text: d.text, kind: d.kind, x: x0 - bx, y: y - by, w: x1 - x0, h, fs,
                     color: d.color ?? null, tag: d.tag, sub: d.sub,
@@ -2410,6 +2425,9 @@
                                 <svelte:element this={chip.member ? 'button' : 'span'}
                                      role={chip.member ? 'button' : undefined}
                                      class="chip" class:hot={chip.member != null}
+                                     class:seed={chip.px != null}
+                                     style:left={chip.px != null ? `${chip.px.toFixed(1)}px` : undefined}
+                                     style:top={chip.py != null ? `${chip.py.toFixed(1)}px` : undefined}
                                      onclick={chip.member ? (e: Event) => { e.stopPropagation(); micro_click(mc.id, chip.member) } : undefined}>
                                     {chip.text}{chip.n > 1 ? ` ×${chip.n}` : ''}{#if chip.sub}<span class="subn">/*{chip.sub}</span>{/if}</svelte:element>
                             {/each}
@@ -2653,15 +2671,24 @@
 }
 .cytui-micro-row.fact .t { opacity: 0.85; }
 .cytui-micro-row.spread .t { opacity: 0.55; }
-/* the homogeneous list form ('figaro · tenuifolium · +2') — the family said once in the
-   title, the members as chips.  WRAPS into a 2D grid that fills the cell's belly instead
-   of one clipped column (micro_fit gives the row height for the wrapped lines). */
+/* the homogeneous list form — the family said once in the title, the members as chips
+   SEEDED ON A PHI SPIRAL filling the cell's belly (micro_fit computes Vogel positions;
+   .seed chips sit absolutely, centre-anchored).  flex-wrap stays as the fallback for
+   any un-seeded chip row (spreads keep their inline chips). */
 .cytui-micro-row.list {
+    position: relative;
     gap: 0.3em 0.35em;
     flex-wrap: wrap;
     white-space: normal;
     align-content: flex-start;
+    overflow: visible;
+}
+.cytui-micro-row .chip.seed {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    max-width: 11em;
     overflow: hidden;
+    text-overflow: ellipsis;
 }
 .cytui-micro-row.sub { padding-left: 1.2em; opacity: 0.72; }
 /* the TYPE badge: the mainkey drawn as metaphysics, not prose — a small outlined chip in

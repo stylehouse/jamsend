@@ -433,6 +433,22 @@ async Peeroleum_deliver(w, frame):
     //         0, 1, or N Piers, editor or runner alike.
     if (h.type === 'runner_ask' || h.type === 'ghost_compile') { let on = w.c.on && w.c.on[h.type]; if (on) on(w, null, frame); return }
     let {peering, pier} = this.Peeroleum_route(w, h, 'to')
+    // first-contact: a pier_hello arrives BY DESIGN from a prepub no %Pier exists for yet — the
+    //  invite front door (Swarm_spec §6.3/§10.1). The Pier/Ud booking discipline can't apply to a
+    //   caller we haven't met, and doesn't need to: the Idzeug echoed inside is its own credential
+    //    (Swarm_hello re-verifies the signature before anything seals). Dispatch to the registered
+    //     handler (armed by Swarm_arm) — the handler promotes the %Pier — then ack through the
+    //      fresh route so the caller's outbox emit retires. A pier this node ALREADY holds falls
+    //       through to the normal booked path below; every other no-pier frame still drops.
+    if (!pier && h.type === 'pier_hello') {
+        let on = w.c.on && w.c.on[h.type]
+        if (!on) return
+        await on(w, null, frame)
+        let now = this.Peeroleum_route(w, h, 'to')
+        if (now.pier) this.Peeroleum_send(w, {header: {type: 'ack', from: h.to, to: h.from, ack: h.seq}})
+        H.feebly_ponder()
+        return
+    }
     if (!pier) return
     // inbound-silence liveness (Reliable.g twin of the outbound %stalled): stamp the LOGICAL tick we last
     //  heard ANYTHING on this Pier — every frame, acks included (an ack is the cheapest liveness proof, so

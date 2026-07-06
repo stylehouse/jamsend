@@ -277,6 +277,16 @@ Built: `Voro_swarmable` in Voro.g — a STRUCTURAL container whose children are 
      lilac `/*N` `sub` glyph on rows AND chips; 2D list wrap; deterministic trait
       sprinkle on both Books' data (`Voro_hash` — %woodystem/%habit/%endemic,
        %year/%live/%remaster) so panes have facts|spreads to speak.
+- ROUND 4 (2026-07-07, owner review): VoroMitosis FLATTENED — the cell:<genus>
+   containers were technical vocabulary leaking into data ("why does it even say
+    cell?"); flora now a bigger looser w/* of {Genus:'epithet'} leaves and the CRUSHER
+     discovers the clades (governor escalates past 15 visible → genus gangs; beats 2-3
+      run genuinely loose first).  Crusher: TINY all-leaf fronds (≤3) gang as chips
+       instead of claiming panes (fallback: an ungangable tiny container still folds —
+        lone artists keep cells).  List cap 9→25; chips seed a PHI SPIRAL (Vogel
+         r∝√k θ=k·137.508° — the kind-hue golden angle) filling the pane's belly.
+          vfamily rides every taxon now (hulls survive the flatten).  NOTE: MusuReplica
+           crush-husk counts may drift from the tiny-gang evolution — check before Accept.
 - Two modes of recursion carved (same-graph vs subgraph-in-cell; mode A first, intent
    AGING sketched for the wandering-landscape problem) — `Voro_vtuffing.md`.
 - NOT built — `Voro_vtuffing.md` §"next moves": #1 spill `w/*/**` auto (top-K governor),
