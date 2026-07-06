@@ -215,6 +215,19 @@ An **Idzeug** is a single-use, signed invite carrying the inviter's page, the **
    stripping the fragment off). Copy-paste, a link, or a QR — all the same blob.
 - **once** — single-use; the nonce is spent on the one live redeem.
 - `// <` handling the **legacy** set of Idzeugs (the old garden's format) — owed, deferred.
+   The concrete shape (surveyed 2026-07-07, `Tyranny.svelte` + `Trust.svelte.ts`): an old link is a
+    URL **hash-fragment** `#<13-#-pad><prepub>-<advice>-<sign>` — prepub is the 16-hex address, advice
+     a peel-encoded `{name, n}` (`.`-sep, `~`-hier, spaces as `+`), sign an ed25519 over the string
+      (sometimes truncated to 16). Its spend ledger (`taken_n[]`, `nRepeating`, `Upper_Number`) and the
+       identity KEY that signed it live in the old garden's **Dexie** (`Trusting.OurIdzeugs`,
+        `OurPier.stashed`) — nothing on disk, nothing in particles. And an old claim granted the
+         hardcoded `'ftp'` trust atom, NOT a Feature grant — do not transcode it as `Music`.
+   So "support the old Idzeugs" = two rungs: (1) **dual-parse at the door** — the boot layer also
+    reads the `#`-fragment shape and rebuilds a claim addressed to its prepub (cheap, pure); (2) a
+     **one-time migrator** that lifts the old Dexie ledger + keys into `%Idzeug` records under the
+      live `%Peering` — without which the door can only say `deny('unknown')`, honestly: the maker's
+       ledger IS the validity (§10.1). Verification against the OLD signing key requires that key
+        migrated too — an old link whose key never moved is dead, and should say so.
 
 ### 6.3 The handshake — live, both online
 
@@ -430,16 +443,31 @@ The owner wants the QR invite maker back ("monkey business vibe") as the front d
        exists; only the `%req:meet`-shaped door step is new.
  The single-use nonce stays the floor under all of it: policy can only make the door STRICTER.
 
-**The frontier rung — the two BigSoundlands become for each other.** The panel's join stops today at
- "no live link to the inviter" — honest, because `Swarm_deliver` needs a STATION: a `%Peering` named
-  our prepub holding a `%Pier` to theirs. Both tabs already dial the same relay with the SAME key
-   the swarm signs with (the §3.2a collapse), so the rung is small and all on the join side:
-    resolve the cluster world → promote a Pier to `claim.prepub` (`Lies_runner_pier`'s
-     oai-Pier + c.up + Ud shape, keyed by the inviter's prepub) → `Swarm_arm(w)` so
-      pier_hello|accept|reject land in the handshake verbs → `Swarm_redeem` as today. Then two
-       BigSoundland tabs — two laptops in the cafe — seal a friendship over the real relay, and the
-        Repli pull (`Music_todo §9`) has a real Pier to ride. Needs a live pair of tabs to verify;
-         build it against them, not blind.
+**The frontier rung — the two BigSoundlands become for each other. [BUILT 2026-07-07]** The
+ discovery that shaped it: a /BigSoundland tab never dialed the relay at ALL (`boot_qualand` sets
+  `boot_role`, never `c.role`, so `Lies_channel_up` never fires) — and it must NOT dial as a role:
+   a second `become runner` socket eats the fleet's role-addressed frames (the roles-divide wedge).
+    So the station is role-LESS: `Swarm_station_up(w, ident)` (Swarm.g `#region station`) dials
+     `?addr=<prepub>` (Socket_real reads the first Peering's name), sends NO `become`, and
+      hello-binds the identity key on every (re)open — `to:<prepub>` then routes to the proven
+       key-holder. The station lives on its own `w:Swarm` under `A:Clustation`
+        (`Swarm_station_world`), clear of w:Lies's channel slots. Three companion moves:
+ - **first-contact at the spine** — a `pier_hello` arrives BY DESIGN from a prepub with no `%Pier`
+    yet, and `Peeroleum_deliver` dropped it at the no-pier gate. One additive branch (beside the
+     `runner_ask` by-type precedent): no-pier + `pier_hello` + a registered handler ⇒ dispatch, then
+      ack through the route the handler just promoted. Every other no-pier frame still drops.
+ - **promotion at the door** — `Swarm_hello` now `Swarm_station_pier`s its caller (the
+    `Lies_runner_pier` shape: oai-Pier + c.up + Ud) so the accept — and every deny's reject — has a
+     route back. No-op in station-less worlds, so Book fixtures never see it.
+ - **live readiness** — station piers never run the Book wire's per-Pier handshake (the Lies
+    channel's v1 precedent), so `Swarm_deliver` counts a live carrier as ready when `station_up`;
+     Books keep the strict `peer_ready` gate. The REAL per-Pier handshake at the door is the owed
+      upgrade (first-contact for the spine's own `hello` would need the same no-pier thinking).
+ The panel (`InvitePanel`) stands the station on page-presence (being on the page IS being at the
+  door), and join = promote → wait-for-open → redeem → watch for the SEAL (the account `%Pier`),
+   shown as a friends row on both faces. Verified live: SwarmStaple/SwarmWire/SwarmInvite all green
+    post-change (station code provably inert in Book worlds). Owed: the owner's two-tab eyeball,
+     and a first-contact Book beat (asymmetric stations — Lake_link only builds pairs).
 
 ---
 

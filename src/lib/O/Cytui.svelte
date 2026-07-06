@@ -1059,11 +1059,52 @@
 
     // the /*N surf — a member row|chip clicked pops THAT node out INTO THE GRAPH; the dip
     //  (member undefined) spills the top-K.  Vtuff_pop stamps the c.popped|c.popped_open
-    //   intents and waves a re-scan — never expands inside the pane.
+    //   intents and waves a re-scan — never expands inside the pane.  LOUD when the verb
+    //    isn't aboard (an OLD gen makes every /*N a silent dead end — say why).
     function micro_click(id: string, member?: TheC) {
         const src = node_src.get(id) as any
         if (!src) return
-        ;(H as any).Vtuff_pop?.(src, member)
+        const pop = (H as any).Vtuff_pop
+        if (!pop) { console.warn('▤ Vtuff_pop not aboard — this tab runs an old gen; reload to arm the /*N surf'); return }
+        pop.call(H, src, member)
+    }
+
+    // ── 📻 the radio: attention as a supplied service (north star — spec/Voro_vtuffing.md) ──
+    //  The .g tuner (Voro_drift_tick) ages the trail shut, picks the next locale, opens it a
+    //   little; here we keep the dwell clock and GLIDE the camera onto whatever it returns.
+    //    Touching the dial (grab|pan|zoom that isn't our own glide) holds the tuner off for
+    //     15s — the listener's hand always outranks the program director.
+    let radio_pref = $state<boolean | null>(null)
+    const radio_on = $derived(radio_pref ?? false)
+    let radio_timer: ReturnType<typeof setInterval> | null = null
+    let radio_gliding = false
+    let radio_hold_until = 0
+    const RADIO_DWELL = 7000
+    function radio_tick() {
+        if (!cy || document.hidden || Date.now() < radio_hold_until) return
+        const drift = (H as any).Voro_drift_tick
+        if (!drift) { console.warn('📻 Voro_drift_tick not aboard — reload the tab for the new gen'); return }
+        let w: any
+        try { w = (H as any).Awo('Cyto') } catch { return }
+        if (!w) return
+        Promise.resolve(drift.call(H, w)).then((focus: any) => {
+            if (!focus || !cy) return
+            for (const [id, src] of node_src) if (src === focus) {
+                const ele = cy.$id(id)
+                if (!ele?.length) return
+                radio_gliding = true
+                cy.animate({ fit: { eles: ele.closedNeighborhood(), padding: 70 } },
+                    { duration: 2400, easing: 'ease-in-out-cubic', complete: () => { radio_gliding = false } })
+                return
+            }
+        })
+    }
+    function toggle_radio() {
+        radio_pref = !radio_on
+        const stv = (H as any).stashed
+        if (stv) stv.Cyto_radio = radio_pref
+        if (radio_timer) { clearInterval(radio_timer); radio_timer = null }
+        if (radio_pref) { radio_tick(); radio_timer = setInterval(radio_tick, RADIO_DWELL) }
     }
     let vregion_w     = $state(0)                      // veil covers the tessellated region ([0, CW] — the full width unless the shelved rack returns)
     // ── the wheel-button grip ─────────────────────────────────────────────────
@@ -2205,6 +2246,8 @@
         if (typeof stashed_b === 'boolean') brush_pref = stashed_b
         const stashed_t = (H as any).stashed?.Cyto_vtuffing
         if (typeof stashed_t === 'boolean') vtuffing_pref = stashed_t
+        const stashed_r = (H as any).stashed?.Cyto_radio
+        if (stashed_r === true) { radio_pref = true; radio_timer = setInterval(radio_tick, RADIO_DWELL) }
         cy = cytoscape({
             container,
             // a livelier wheel: the default 1 needs a whole spin to move; the
@@ -2261,6 +2304,8 @@
         cy.on('grab',        () => start_live_drag())
         cy.on('free',        () => end_live_drag())
         cy.on('pan zoom',    () => pan_zoom_motion())
+        // touching the dial: any motion that isn't the radio's own glide holds the tuner off
+        cy.on('grab pan zoom', () => { if (!radio_gliding) radio_hold_until = Date.now() + 15000 })
         cy.on('layoutstart', () => start_live_layout())
         cy.on('layoutstop',  () => { stop_live_layout(); show_overlays_soon() })
         // ── click-to-identify ─────────────────────────────────────────────────
@@ -2305,6 +2350,7 @@
         H.i_elvisto('Cyto/Cyto', 'Cyto_wipe', {})
         return () => {
             lay?.stop()
+            if (radio_timer) { clearInterval(radio_timer); radio_timer = null }
             clear_all_overlays()
             cy?.destroy()
         }
@@ -2329,6 +2375,8 @@
             title="gravity brush — wheel pinches|spreads the locale under the cursor (Ctrl+wheel still zooms)">🌀</button>
         <button class="v-toggle" class:on={vtuffing_on} onclick={toggle_vtuffing}
             title="vtuffing — a big-enough pane swaps its molded Stuffing for member rows fitted to the cell (off = Stuffings always)">▤</button>
+        <button class="v-toggle" class:on={radio_on} onclick={toggle_radio}
+            title="radio — the graph plays you: a tuner drifts attention pane to pane and opens each a little (touch anything to hold it off)">📻</button>
         <span class="cytui-vx" title="taller — double the graph height (50vh ↔ 100vh), then re-fit">
             <Vexpandy bind:expanded={tall} />
         </span>

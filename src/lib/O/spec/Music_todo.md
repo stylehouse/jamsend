@@ -516,6 +516,16 @@ The replication protocol is real (Repli_* + the Se, §6/MusuReplica — live-gre
     `<share>/.jamsend/downloads/<friend>/…` (possibly `<username>/`), so what came from whom stays
      legible on plain disk and a wipe of one friendship is one `rm -r`.
 
+**9.1c IveGotMusic — the reachable-music tally (owner 2026-07-07).** Once two BigSoundlands seal
+ (the §10.1 front door — LIVE now), a friend's collection should COUNT: "the music I've got" =
+  my library + every sealed `%Pier`'s counted collection, shown as one number that grows when a
+   friendship does — the front door's payoff made visible. NOT the full tree: after the seal, each
+    side offers a tiny **collection summary** (a Repli husk — counts by genre/artist, no Records;
+     the `Repli_crush_scan` husk shape already masks bodies) that rides the same wire and lands
+      under the `%Pier` as `%IveGot,count,by:` facts. The BigSoundland face (and Voro's scape) read
+       the tally off the Piers — a Pier with music is a BIGGER cell. The full pull (9.2's
+        Selections) stays deliberate; the tally is the appetite for it.
+
 **9.2 Selections sendable to Piers.** The share unit is not the library, it's a SELECTION of it — a
  genre, an artist folder, an occasion. Concretely: a `%Share,label:<name>` particle holding a match
   (what subset) and a to (which Pier|channel), whose own Se runs over just that subset — its neus

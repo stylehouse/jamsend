@@ -289,9 +289,16 @@ Built: `Voro_swarmable` in Voro.g — a STRUCTURAL container whose children are 
            crush-husk counts may drift from the tiny-gang evolution — check before Accept.
 - Two modes of recursion carved (same-graph vs subgraph-in-cell; mode A first, intent
    AGING sketched for the wandering-landscape problem) — `Voro_vtuffing.md`.
-- NOT built — `Voro_vtuffing.md` §"next moves": #1 spill `w/*/**` auto (top-K governor),
-   #2 the under-w gang bond edge (core seam, small), #5 hull layout-nudge, #6 fit
-    refine, #7 deeper recursion, #9 the single worked window.
+- ROUND 5 (2026-07-07): 📻 THE RADIO v1 built (`Voro_drift_tick` + Cytui dwell clock,
+   stash `Cyto_radio` default off) — ages oldest auto locale shut / scores next focus
+    (size+freshness+nearness+hash taste, 4th-hop free jump) / opens it a little
+     (`popped_auto` — a human's pop never aged) / camera glides; dial-touch = 15s
+      holdoff.  SUBSUMES the auto-spill agenda item.  `Voro_vtuffing.md` retitled THE
+       SYSTEM DOC — §North stars (radio + the C-arc TUNNEL projection design) leads it.
+- NOT built — `Voro_vtuffing.md` §"next moves": #2 the under-w gang bond edge (core
+   seam, small), #5 hull layout-nudge, #6 fit refine, #7 deeper recursion, #9 the
+    single worked window; §North stars: radio taste/dwell/audio-coupling/Book, the
+     tunnel entire.
 
 Can the composite shapes be custom — i.e. lay a fold's members out INSIDE its cell (a
  microcosm: mini grid or mini force pass in the cell's own frame), instead of one flat

@@ -1,4 +1,72 @@
-# Vtuffing — the pane-content engine (what a big cell SAYS)
+# The Voro system — Vtuffing, the crush, the radio (system documentation)
+
+What began as a pane-content note is the system doc now (owner's ask).  Bottom-up:
+ the **crush** folds a world into stained-glass voronoi panes; **Vtuffing** decides
+  what a pane SAYS; the **surf** pops things back out into the graph; the **radio**
+   drives your attention around all of it.  The north stars come first — they are
+    where this is going and every seam below should be read as rigging for them.
+
+## ⭐ North stars
+
+### 📻 The radio — attention as a supplied service
+
+The owner, verbatim: *"automagically drifting towards some subset of stuff, and
+ there's an algorithm that shifts your actual attention around that area as it wants
+  to, as in supplying a radio listener."*  jamsend is a music app; a graph of music
+   you must drive is a library, but one that plays YOU is a radio — the lean-back
+    mode is the product.
+
+**v1 IS BUILT** (`Voro_drift_tick`, 📻 on the ◈ bar, dwell ~7s): each tick it **ages**
+ the oldest auto-opened locale shut (the trail behind the listener disincludes
+  itself — the wandering-landscape answer), **chooses** the next focus (family size +
+   freshness that starves revisits + nearness to the current focus for the "around
+    that area" pull; a hash jitter as taste; every 4th hop a free jump — station
+     drift, not a random walk), **opens** it a little (the bounded dip, stamped
+      `popped_auto` so the tuner only ever ages its OWN openings — a human's pop is
+       never touched), and the view **glides** the camera onto it.  Touching the dial
+        (any grab|pan|zoom that isn't the glide) holds the tuner off 15s.
+         Note: the radio SUBSUMES the old "auto-spill w/\*/\*\*" agenda item —
+          open-a-little + age-behind IS the bounded spill governor.
+
+**What the full radio still needs:**
+1. **Taste beyond jitter** — score off real signals: VoroScape's hub weights (%Share
+    counts), listen history, dose_drives-style decay; the hash stays as tiebreak.
+2. **Dwell modulation** — linger where the listener lingers (pointer heat over a pane
+    feeds back into dwell length; leaving early is a skip signal).
+3. **Audio coupling** — in jamsend proper the tuner TUNES: the focus pane's tracks
+    feed actual playback; graph drift = the playlist.  This is the product seam.
+4. **A Story Book** — the .g half is deterministic (seq-driven, no wall clock);
+    a Book that ticks the tuner N times and %sees the visit trail proves it.
+5. **Aging generalised** — beat-stamped intents + the gravity brush refreshing what
+    it touches, so the governor folds the stalest attention first everywhere.
+
+### 🕳 The tunnel — the graph on the wall of a tube (like a C)
+
+The owner: *"drifting down a tunnel... cytoscape computed not in 2d but around us on
+ the wall of a tube we're drifting down... then the solidity (families, C\*\*) would
+  be on the left... like a C."*
+
+Design: cytoscape KEEPS computing 2D — we re-project the plane onto a cylinder wall.
+ One axis becomes angle, the other becomes depth: `x → θ` over an OPEN arc (~250°, so
+  the cross-section literally reads as the letter **C** — and everything here is a C),
+   `y → z` down the tube.  **Solidity on the left**: order the 1D θ-axis by structural
+    weight — families and the C\*\* spine take the left arc (the C's back), loose
+     confetti scatters rightward toward the opening.  **Drifting down = the radio**:
+      the tuner's dwell advance IS the z-motion; focus panes swell as you pass them.
+
+**What the tunnel needs:**
+1. A **stable 1D ordering** of families along θ (the hull machinery already knows the
+    families; ordering by fold mass gives the left-solid C-spine).
+2. A **projection layer** between cy positions and the screen.  Two candidates:
+    CSS 3D per-overlay transforms (perspective + rotateY per node — REUSES the live
+     DOM Stuffings and SVG as-is, cheap to arm behind a toggle) vs a canvas/WebGL
+      repaint (crisper at depth, but the live HTML panes die).  Start CSS 3D.
+3. A **camera** = `{z, roll}` state + fog LOD (panes far down-tube dim into the dark —
+    depth is also the aging axis: what's behind you has folded).
+4. The **voronoi on the unrolled strip** — cells stay convex under the unroll, so the
+    chord fit and the phi spiral survive untouched; only the final placement warps.
+5. **Pointer inverse-mapping** (screen → tube → plane) so the surf and the dial keep
+    working inside the projection.
 
 The microcosm cards (Voro_microcosm.md a+b) underexpressed: a VoroScape pane the size
  of a hand said "Track" three times, because the card text was the member's mainkey
@@ -173,7 +241,8 @@ Still floating: a popped GANG member directly under `w` gets no edge to its old 
 ## Toggles (the ▤) — and ONE swap rule
 
 Every modulation has a bar toggle: ◈ voronoi, ❝ properCellable, ⬡ family hulls,
- 🌀 gravity brush, **▤ vtuffing** (stash `Cyto_vtuffing`, default on).
+ 🌀 gravity brush, **▤ vtuffing** (stash `Cyto_vtuffing`, default on), **📻 radio**
+  (stash `Cyto_radio`, default OFF — it moves the camera).
 
 **▤ on = the engine owns EVERY fold pane; ▤ off = molded Stuffings always.**  v1
  swapped per-cell above a zoom threshold with per-cell hysteresis MEMORY — two
@@ -198,14 +267,12 @@ Captured from the live-tab review, in the owner's words + the intended behaviour
    first** ([[fight-back-on-core-changes]]).  This is the review artifact: beat it,
     then crank the big-think.
 
-1. **Spill the deeper levels — `w/*/**` into the graph.**  *"there are no w/*/** on
-    this graph — only the w/* … if we could have a reasonable amount of them spill
-     out that'd be great."*  Today only the scan frame's DIRECT children become
-      nodes; grandchildren hide inside crushed panes.  Want: a bounded descent that
-       pops the top-K most-interesting children of each parent out as their own
-        nodes (auto `popped_open`, capped per parent so the graph doesn't explode),
-         the rest staying crushed.  This is the population the family hull wraps.
-          `[scan]`
+1. **Spill the deeper levels — `w/*/**` into the graph.** — **SUBSUMED BY THE RADIO
+    (2026-07-07).**  The tuner's open-a-little (`Vtuff_pop` bounded dip, auto-tagged)
+     + age-behind (oldest auto locale folds back) IS the bounded spill governor the
+      item wanted — 📻 on and the deeper levels breathe in and out of the graph as
+       attention passes.  A manual always-spilled mode could still ride the same
+        stamps later if wanted.  See §North stars.
 
 2. **The exploding edge — child↔parent through the graph medium.**  *"before we
     couldn't easily draw an edge from an expanded-within child `w/C/*` to its parent,

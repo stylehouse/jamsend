@@ -292,6 +292,9 @@ Voro_crush_clear(node, d):
     if ((d || 0) > 12) return
     delete node.c.stuff
     delete node.c.stuffy
+    delete node.c.drift_seq
+    delete node.c.drift_opens
+    delete node.c.drift_focus
     delete node.c.fold_kind
     delete node.c.fold_n
     delete node.c.gang
@@ -299,6 +302,8 @@ Voro_crush_clear(node, d):
     delete node.c.crush_level
     delete node.c.popped
     delete node.c.popped_open
+    delete node.c.popped_auto
+    delete node.c.drift_seen
     delete node.c.vtuffing
     delete node.c.vtuffing_sig
     for (const c of node.o()) this.Voro_crush_clear(c, (d || 0) + 1)
@@ -509,23 +514,24 @@ Vtuff_keyrows(root, members, skip):
 //       Vtuff_unpop (right-click the node) or the ◈ un-imposition forgets them.  Then one wave
 //        re-scans — the graph grows the new nodes right where the pane sits, and the scan's own
 //         parent→child `/` edges wire an unfurled fold's family explosion for free.
-async Vtuff_pop(src, member):
+async Vtuff_pop(src, member, auto):
     if (member) {
-        this.Vtuff_pop_stamp(src, member)
+        this.Vtuff_pop_stamp(src, member, auto)
     } else {
         let members = src.c.gang || src.o()
         let K = 3
         if (members.length <= K + 1) {
             if (src.c.gang) {
-                for (const m of src.c.gang) this.Vtuff_pop_stamp(src, m)
+                for (const m of src.c.gang) this.Vtuff_pop_stamp(src, m, auto)
             } else {
                 src.c.popped_open = 1
+                if (auto) src.c.popped_auto = 1
                 this.Voro_unstamp(src)
             }
         } else {
             let ranked = members.slice()
             ranked.sort((a, b) => b.o().length - a.o().length)
-            for (let i = 0; i < K; i++) this.Vtuff_pop_stamp(src, ranked[i])
+            for (let i = 0; i < K; i++) this.Vtuff_pop_stamp(src, ranked[i], auto)
         }
     }
     delete src.c.vtuffing
@@ -537,14 +543,18 @@ async Vtuff_pop(src, member):
 // Vtuff_pop_stamp — one node surfed out: c.popped on the node itself, c.popped_open on every
 //  container between it and the pane (a grandchild's whole chain must unfurl for the scan to
 //   reach it — Voro_crushable|swarmable refuse a fold whose child is popped|popped_open), and
-//    c.represented dropped so a ganged member draws again.
-Vtuff_pop_stamp(src, member):
+//    c.represented dropped so a ganged member draws again.  `auto` rides c.popped_auto beside
+//     the intent: the RADIO's own openings (Voro_drift) age back shut; a HUMAN's never do —
+//      manual intent outranks the tuner.
+Vtuff_pop_stamp(src, member, auto):
     member.c.popped = 1
+    if (auto) member.c.popped_auto = 1
     delete member.c.represented
     let p = member.c.up
     let guard = 0
     while (p && p !== src && guard < 8) {
         p.c.popped_open = 1
+        if (auto) p.c.popped_auto = 1
         this.Voro_unstamp(p)
         p = p.c.up
         guard = guard + 1
@@ -557,15 +567,89 @@ Vtuff_pop_stamp(src, member):
 async Vtuff_unpop(n):
     delete n.c.popped
     delete n.c.popped_open
+    delete n.c.popped_auto
     for (const c of n.o()) {
         delete c.c.popped
         delete c.c.popped_open
+        delete c.c.popped_auto
     }
     delete n.c.vtuffing
     delete n.c.vtuffing_sig
     let w = n
     while (w && !(w.sc && w.sc.w)) w = w.c.up
     if (w && this.cyto_update_wave) await this.cyto_update_wave(w)
+//#endregion
+
+//#region drift — 📻 the radio: attention as a supplied service (v1)
+// ══ Voro_drift — the graph plays YOU: a tuner that walks attention around the board ═══════════
+//  The owner's ask (2026-07-07): "automagically drifting towards some subset of stuff...
+//   an algorithm that shifts your actual attention around that area as it wants to, as in
+//    supplying a radio listener."  This is a NORTH STAR of the whole system — the full design
+//     lives in spec/Voro_vtuffing.md §North stars.  v1 here is the smallest true tuner; each
+//      TICK (the view's dwell cadence, ~7s, 📻 on the ◈ bar) it:
+//       1) AGES — the oldest auto-opened locale folds back shut (the wandering-landscape
+//          answer: the trail behind the listener disincludes itself),
+//       2) CHOOSES — the next focus among the fold|gang panes, scored by family size +
+//          freshness (starves revisits) + NEARNESS to the current focus (same vfamily or
+//           same parent: the "around that area" pull), plus a deterministic hash jitter
+//            standing in for taste; every 4th hop drops the nearness bonus (station drift,
+//             not a random walk),
+//       3) OPENS it a little — the bounded dip, stamped popped_auto so the tuner only ever
+//          ages away its OWN openings; a human's pop is never touched,
+//      and returns the focus C for the view to glide its camera onto.  Everything c-side;
+//       no Book arms the radio, so no snap ever sees it.  The radio SUBSUMES the old "auto-
+//        spill w/*/**" agenda item: open-a-little + age-behind IS the bounded spill governor.
+
+// the tunable panes: fold|gang reps down to a shallow depth (below that the tuner would
+//  be picking at what a pane already says better).
+Voro_drift_candidates(w):
+    let out = []
+    this.Voro_drift_scan(w, 0, out)
+    return out
+Voro_drift_scan(node, d, out):
+    if (d > 3) return
+    for (const c of node.o()) {
+        if (c.c.stuff) {
+            out.push(c)
+            continue
+        }
+        if (!c.c.represented) this.Voro_drift_scan(c, d + 1, out)
+    }
+
+async Voro_drift_tick(w):
+    if (!w.c.crush_wanted && !w.o({ Opt: 1 })[0]?.oa({ crushCyto: 1 })) return null
+    w.c.drift_seq = (w.c.drift_seq || 0) + 1
+    let seq = w.c.drift_seq
+    let opens = w.c.drift_opens || []
+    if (opens.length > 3) {
+        let old = opens.shift()
+        if (old && (old.c.popped_auto || old.o().some(k => k.c.popped_auto))) await this.Vtuff_unpop(old)
+    }
+    w.c.drift_opens = opens
+    let cands = this.Voro_drift_candidates(w)
+    if (!cands.length) return null
+    let cur = w.c.drift_focus
+    let free = seq % 4 === 0
+    let best = null
+    let bs = -1
+    for (const c of cands) {
+        let s = Math.min(9, c.c.fold_n || 1)
+        let last = c.c.drift_seen || 0
+        s = s + Math.min(12, (seq - last) * 2)
+        if (!free && cur && c !== cur) {
+            if (c.c.vfamily && cur.c && c.c.vfamily === cur.c.vfamily) s = s + 6
+            if (cur.c && c.c.up === cur.c.up) s = s + 4
+        }
+        if (c === cur) s = s - 8
+        s = s + (this.Voro_hash(Object.keys(c.sc)[0] + ':' + seq) % 5)
+        if (s > bs) { bs = s; best = c }
+    }
+    if (!best) return null
+    best.c.drift_seen = seq
+    w.c.drift_focus = best
+    await this.Vtuff_pop(best, null, 1)
+    opens.push(best)
+    return best
 //#endregion
 
 //#region mitosis — VoroMitosis: watch the flora divide (the pure crush demo, no music no wire)
