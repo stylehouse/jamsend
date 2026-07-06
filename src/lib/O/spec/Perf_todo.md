@@ -139,6 +139,17 @@ Two forward-looking sections left this doc for **`Story_future_directions.md`** 
 
 ## Status log
 
+- **2026-07-07** — built `scripts/perf_ab.mjs`, the PERF instrument the lever-#4 autopsy called for:
+   warm the runner (discard cold run), then time N settles back-to-back on the SAME warm runner and
+    report the **median** (robust to stalls) + spread + green-count.  A/B a lever by running one arm per
+     flag state (HMR between), comparing medians — never single runs, never fresh-vs-degraded sweeps.
+      Proven working; median is stable (LakeTiles ~14.2s, MusuGlide ~3.24s across batches).  It also
+       surfaced the escalation of the drift finding: **after heavy session use the runner develops
+        intermittent multi-second stalls (~1/5 runs)** — short Books stay green-but-slow, long Books
+         (LakeTiles) sometimes trip a stall into a step-timeout RED (4/6 green).  Median survives this;
+          CORRECTNESS signal does not.  A fresh :9091 tab reload clears it (human-only).  Lesson for the
+           high-risk levers (Technique A/B): get clean correctness signal on a FRESH runner — a stall-red
+            is indistinguishable from a real wake≠hold race, which is exactly what those levers risk.
 - **2026-07-06** — lever #4 (`organise`/`attend` dige-gate) **tried and ABANDONED** (branch
    `perf/organise-gate`, discarded — never merged).  The gate: watermark = positional serial of every
     walked node's `version` (read off the standing `Se.c.T.sc.N`, House's own version excluded because
