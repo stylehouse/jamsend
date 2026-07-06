@@ -34,6 +34,31 @@ The runner-fleet infra (`Cluster_spec.md` §3.4 restart service / host-exec sock
    tab-state — the dumb stand-in for the Mode-4 human-reload (`runner_ask` has no reload op) and the §3.4
     restart service. Coarse, but "regularly enough."
 
+## Standing it up on one box (the self-contained recipe)
+
+Editor + runner on ONE dev server, no r2r bridge to staging — the singular-role clean case (one editor, one
+ runner, one relay). Checklist, in order:
+
+1. **Free `172.17.0.1:9091` — an SSH tunnel squats it, not a docker.** `ty/jamsend-dev-ssh-tunnel.service`
+    (`ssh -N -R 172.17.0.1:9091:172.17.0.1:9091 wi`) is a **`systemctl --user`** unit — so it's invisible to the
+     *system* `systemctl status` (that "could not be found" is the tell); find it under `systemctl --user
+      status`. It exposes dev across to `wi`/prod and collides with docker-compose.yml's `- "172.17.0.1:9091:9091"`
+       publish. Either **`systemctl --user stop/disable jamsend-dev-ssh-tunnel`**, or keep it and **publish dev
+        on `127.0.0.1:9091` only** (comment the `172.17.0.1:9091:9091` line) — a same-origin local editor+runner
+         only need localhost, and localhost is a secure context so WebRTC is happy.
+2. **Two same-origin tabs → give them distinct `?I=<tag>`.** Collapsing to one server means editor (`?E=`) and
+    runner (`?B=`) share the origin, hence the **Dexie `.stashed` store**. Distinct `?I=` tags key distinct
+     identities out of that shared store; reuse one (or let both default) and they mint two peers on the *same*
+      prepub → relay bind collision, last-hello-wins, the other goes dark (the `${prepub}_2` open case,
+       `Cluster_spec.md` §3.2a). They also share Keep/registry state — usually fine, just know it.
+3. **Grant the runner its own FSA** (the manual click) → `needsFSA` Books run locally with no wormhole proxy,
+    since both tabs see the same `wormhole/**`.
+4. **Cluster trust:** the editor self-provisions (🪪 *Set up cluster trust* → `Lies_cluster_setup`), or the
+    relay warn-and-allows un-minted — either is fine for a sandbox.
+5. **Music mount** (`jamsend-mount-verify`): `/music` must actually bind-mount, or real-audio Books (MusuReco &
+    friends) go red. The perf/engallop levers need no `/music`, so this can wait — but fix it before you run the
+     full fleet to prove a gallop change.
+
 ## Verification still comes from a LIVE runner — headless is still banned
 
 `[[verify-via-live-runner]]` holds unchanged: `scripts/runner_ask.mjs` against the live :9091 runner is the

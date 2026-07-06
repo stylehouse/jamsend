@@ -118,10 +118,13 @@ services:
       #    which carries no such overlay, still reads the real values.
       #  A regular empty file is used, not /dev/null: a char-device source makes
       #   runc create the target as a directory, which then cannot take the mount.
-      #   Create the blank once with: touch .blank   (it is safe to commit).
+      #   The mask is the git-tracked empty file .claude/.blank (line 38's cluster-claude
+      #    mask uses it too). It MUST be a file, not a dir: a dir source makes runc try to
+      #     mkdir over the image's file and fail ("not a directory"), which is what the stray
+      #      .claude/.blankdir/ directory did until 2026-07-06.
       #  To hide all of ty/ instead, replace these two with: - /app/ty
-      - ./.claude/.blankdir:/app/ty/.env.chrome-profiles:ro
-      - ./.claude/.blankdir:/app/ty/droidlounge/.env.chrome-profiles:ro
+      - ./.claude/.blank:/app/ty/.env.chrome-profiles:ro
+      - ./.claude/.blank:/app/ty/droidlounge/.env.chrome-profiles:ro
     environment:
       - CLAUDE_CONFIG_DIR=/home/node/.claude
     env_file:
