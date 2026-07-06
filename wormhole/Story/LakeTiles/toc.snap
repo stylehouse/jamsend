@@ -27,6 +27,7 @@ story:LakeTiles
         esc:match,v:UltraThung
         esc:replacement,v:thung
   Opt
+    no_gallop
     For
       w:Lang
         txtsyntaxdump

@@ -2,6 +2,7 @@ story:LakeWaftMap
   Styles
   Plan
   Opt
+    no_gallop
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.855

@@ -180,18 +180,22 @@ Two forward-looking sections left this doc for **`Story_future_directions.md`** 
        and REJECTED — LakeFlush noise-identical, MusuGlide worse/bimodal; 4 is measured-best AND more
         cautious.  The ~430 ms/step trailing quiescence guard is untouched by the gallop and is now
          the largest single slice — next lever.
-  - **FLEET: 46/65 green armed.**  17 reds are red DISARMED too (proven by a reds-only control sweep:
-     env/sandbox — dead FSA grant after HMR reloads, empty /music, peerless Books — or legit main
-      churn; diagnosis in progress).  **TWO are gallop-CAUSED and robustly so (0/6 armed, 6/6
-       disarmed): LakeTiles (steps 4-5) + LakeWaftMap.**  The step-4 diff names the mechanism: the
-        fixture asserts a WARMED point (`heat=4.478,held,long` + its `{"say":…}` child, first→last
-         spanning ~3.2 s) and the galloped settle quiesces at ~1.7 s, snapping the point just-born
-          (`heat=0.98`, no say).  Genuinely **earlier AND different** — these Books' snaps observe
-           mid-settle warming, the exact cadence-sensitive class §3's opt-out is for.  NOT fixable by
-            re-record (the warmed state is a wall-clock race under gallop); they need either
-             `The/Opt/{no_gallop:1}` marks (first check whether an Opt line leaks into their step
-              snaps) or their warming assertions rethought.  UNRESOLVED — the branch is not
-               pull-ready until decided.
+  - **FLEET: 46/65 green armed.**  17 reds reproduce DISARMED too (reds-only control sweep) → NOT this
+     lever: 2 unauthored stubs, 2 runner-killers (peering standup wedges the tab — MusuBounce/Editron),
+      2 audio-timeouts (empty /music), a stale-fixture wave from the Voro-guts Cytui rewrite (not
+       re-recorded), + wrong/ordering fixtures.  Full triage in `Fleet_reds_report.md` (untracked).
+  - **TWO were gallop-CAUSED and robustly so (0/6 armed, 6/6 disarmed): LakeTiles (steps 4-5) +
+     LakeWaftMap** — now **RESOLVED** via `The/Opt/{no_gallop:1}`.  The step-4 diff named the mechanism:
+      the fixture asserts a WARMED point (`heat=4.478,held,long` + its `{"say":…}` child, first→last
+       spanning ~3.2 s; LakeTiles even carries an `EntropyArrest` tol:any matcher for the heat/first/last
+        numbers) and the galloped settle quiesces at ~1.7 s, snapping the point just-born (`heat=0.98`,
+         no say/held/long).  Genuinely **earlier AND different** — these Books observe mid-settle warming,
+          the cadence-sensitive class §3's opt-out is for.  NOT re-recordable (the warmed state is a
+           wall-clock race under gallop).  `The/Opt` is toc-only (under `The`, not the per-step `Snap:H`),
+            so the mark is a one-line toc change with ZERO step-dige churn; verified both Books GREEN armed
+             after marking, and the mark round-trips through a live re-encode.  **Branch is now
+              fleet-green (modulo the pre-existing env/stale reds) and pull-ready.**  Under the intended
+               universal-on end-state, `no_gallop` is the permanent opt-out for warming-observer Books.
 - **2026-07-07 (pm)** — TRACE GAP-ANALYSIS reprioritised the levers.  Exposed the existing per-step
    beliefs-cycle trace over the CLI (`runner_ask trace <n>` — the runner-side `trace` op already served
     it; only the CLI OPS list lacked it) and wrote `scripts/trace_gaps.mjs` to bucket the inter-event
