@@ -46,7 +46,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 //  so the CLI can no longer drift to a worse death criterion than the layer it's questioning.
 import { DEAD_MS, SLUGGISH_MS, liveness } from '../src/lib/O/runner_liveness.mjs'
 
-const OPS = ['ping', 'probe', 'run', 'state', 'steps', 'snap', 'rungos', 'accept', 'release', 'runners']
+const OPS = ['ping', 'probe', 'run', 'state', 'steps', 'snap', 'trace', 'rungos', 'accept', 'release', 'runners']
 
 // ── court a runner via Waft:Cluster ──────────────────────────────────────────────────────────
 //  deLines the registry snap (wormhole/Cluster/toc.snap — the durable HostedIdentity directory the editor
@@ -139,6 +139,7 @@ if (runnerSel !== undefined) {
 }
 if (op === 'run' && !arg)  { console.error('run needs a Book: node scripts/runner_ask.mjs run <Book>'); process.exit(2) }
 if (op === 'snap' && !arg) { console.error('snap needs a step number: node scripts/runner_ask.mjs snap <n>'); process.exit(2) }
+if (op === 'trace' && !arg) { console.error('trace needs a step number: node scripts/runner_ask.mjs trace <n>  (the step\'s beliefs-cycle trace + causal|timeout quiescent label)'); process.exit(2) }
 
 // clientId — the stable identity the runner records as the engagement holder (its don't-steal lease).
 //  Prefer the claude cluster prepub (.env.cluster-claude → CLUSTER_IDENTO_CLAUDE_PUB, first 16 hex) so the
@@ -157,7 +158,7 @@ const CLIENT = clientId()
 
 const ask = { op, client: CLIENT }
 if (op === 'run')  { ask.book = arg; if (bookNeedsAC(arg)) ask.needAC = 1; if (bookNeedsFSA(arg)) ask.needsFSA = 1 }   // Credence-read → runner secures AC / routes to an FSA runner pre-run
-if (op === 'snap') ask.n = Number(arg)
+if (op === 'snap' || op === 'trace') ask.n = Number(arg)
 if (uid) ask.uid = uid
 
 const HTTP       = process.env.RUNNER_URL || 'http://172.17.0.1:9091'

@@ -100,7 +100,23 @@ The biggest wall-clock number in interactive use is the deliberate **6 s
    (`Langui.svelte:259`; the "80ms throttle" comment at `Lang.svelte:406` is stale).
     Separable from shakeout; machine/test mode drops it to 30 ms.
 
-## Ranked levers (cheapest ratio first)
+## RE-RANKED 2026-07-07 by the trace gap-analysis (measure, don't guess)
+
+The old ranking below was written from the causal map (structure), not from measured wall-clock.
+ The `runner_ask trace <n>` + `scripts/trace_gaps.mjs` breakdown of a real Lies+Lang settle (LakeFlush)
+  moves the priorities — see the Status log for numbers.  **Per step, the wall-clock splits ≈: the 50 ms
+   answer_calls DRAIN GATE ~49% · a fixed ~428 ms trailing QUIESCENCE guard ~22% · tight belief work
+    ~18% · the 150 ms TRICKLE ~11%.**  So:
+- **#A (was Technique A / old lever #5) is THE lever** — collapsing the 50 ms per-item drain gate attacks
+   the biggest slice.  Promote it.
+- **The ~428 ms/step quiescence guard is a NEW candidate** (old ranking missed it): a contiguous idle wait
+   after `beliefs/done`, ~428 ms in *every* step (the design assumed ~75 ms).  Understand `poll_step`'s
+    trailing timer / any ttlilt it waits out before building — could be ~2.5 s across a 7-step Book.
+- **Technique B (old lever #3 req-side twin) is DEMOTED** — the trickle is only ~11% of a step, and the
+   maz descent is *already* mostly event-driven (`Hovercraft.svelte:281` `if (req.sc.finished) await
+    host.do()`).  Small win, highest risk; do it last, if at all.
+
+## Ranked levers (cheapest ratio first) — original structural ranking, see RE-RANK above
 
 1. **Turn off `V.req_legs` in production** (`Housing.svelte.ts:13`) — deletes an
     entire O(N) tree-walk-per-beat for zero functional change. Biggest ratio.
@@ -139,6 +155,20 @@ Two forward-looking sections left this doc for **`Story_future_directions.md`** 
 
 ## Status log
 
+- **2026-07-07 (pm)** — TRACE GAP-ANALYSIS reprioritised the levers.  Exposed the existing per-step
+   beliefs-cycle trace over the CLI (`runner_ask trace <n>` — the runner-side `trace` op already served
+    it; only the CLI OPS list lacked it) and wrote `scripts/trace_gaps.mjs` to bucket the inter-event
+     gaps.  On LakeFlush (first Lies+Lang settle measured this way), **step 1 = 1984 ms across 103 events**:
+       - **~982 ms (49%) in ~43 ms "mid" gaps** = the `ANSWER_CALLS_TICK_MS=50` drain gate draining ~28
+          todo items one-per-50 ms.  → **Technique A (greedy-to-budget drain) is the biggest lever.**
+       - **~428 ms (22%) in ONE contiguous `beliefs/done → quiescent/0.428` gap** — a fixed trailing
+          quiescence wait, ~428 ms in EVERY step (steps 1/5/7 all show it), 6× the ~75 ms the design
+           assumes.  ×7 steps ≈ 3 s of a ~12 s Book.  **NEW candidate lever — needs `poll_step` read.**
+       - **~348 ms (18%)** tight belief work; **~225 ms (11%)** trickle (Technique B's whole target —
+          small, and the descent is already mostly event-driven per `Hovercraft.svelte:281`).
+     Lesson (again): measuring the premise before building redirected effort off Technique B (11%) onto
+      Technique A (49%).  Same discipline that killed lever #4.  Method: warm-runner caveat aside, the
+       gap STRUCTURE (proportions) is consistent across steps, so the ranking is robust to one sample.
 - **2026-07-07** — built `scripts/perf_ab.mjs`, the PERF instrument the lever-#4 autopsy called for:
    warm the runner (discard cold run), then time N settles back-to-back on the SAME warm runner and
     report the **median** (robust to stalls) + spread + green-count.  A/B a lever by running one arm per
