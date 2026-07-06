@@ -113,7 +113,14 @@ The biggest wall-clock number in interactive use is the deliberate **6 s
      an inner `req**`'s `finish()` re-pump `do()` on the ancestor chain (poll→event, killing the per-level
       150 ms of §4's descent) — is developed as `Story_future_directions.md` §3 Technique B, with the snap
        tension it must respect.
-4. **dige-gate `organise`/`attend`** so an unchanged tree isn't fully re-walked.
+4. ~~**dige-gate `organise`/`attend`** so an unchanged tree isn't fully re-walked.~~ **ABANDONED —
+    tried on branch `perf/organise-gate`, discarded 2026-07-06.  Zero upside ceiling by construction:
+     the idle census shows **~0 think beats** (organise() barely runs at rest), and during active
+      settling every beat makes progress so a version-watermark always moves — the gate can NEVER fire
+       when it would help.  The only beats it fires are ttlilt-spins, where skipping organise() strips
+        the freshly-rebuilt `Se.c.T` that `attend`/`snap_H`/`reqdo` all read that same beat → stall.
+         organise() is not a pure function of walked-node versions; it has load-bearing side effects.
+          See the Status log for the full autopsy + the measurement-methodology findings it surfaced.**
 5. Longer game: collapse the 12-13-hop chain — the `N × 50 ms` floor caps everything. **Examined in
     `Story_future_directions.md` §3** (time-sliced greedy drain + observation-driven targeted collapse; the
      deepest lever — it attacks the 50 ms × N *and* the per-pass O(N) × N together).
@@ -132,6 +139,37 @@ Two forward-looking sections left this doc for **`Story_future_directions.md`** 
 
 ## Status log
 
+- **2026-07-06** — lever #4 (`organise`/`attend` dige-gate) **tried and ABANDONED** (branch
+   `perf/organise-gate`, discarded — never merged).  The gate: watermark = positional serial of every
+    walked node's `version` (read off the standing `Se.c.T.sc.N`, House's own version excluded because
+     `reset_interval`'s `{mo:'main'}` replace churns it every tick; `n.c.walk_id` tags so a reminted ref
+      can't alias a stale mark); skip `Se.process` when the mark is unchanged.  Type-clean, LakeTiles
+       9/9 on the gated code.  **Why abandoned — the upside ceiling is zero by construction:** the idle
+        reactap census shows **0 think beats / 5 s** (organise() barely runs at rest — the idle bumps are
+         peer-channel `Lies_heard` + `reset_interval`, not think→beliefs→organise), so there is no idle
+          walk to save; and during active settling *every* beat makes progress, so the version watermark
+           moves every beat and the gate can never fire when it would help.  The only beats it DOES fire
+            are ttlilt-spin beats — and there, skipping organise() removes the freshly-rebuilt `Se.c.T`
+             that `attend`, Story's `snap_H`, and `reqdo_sweep` all consume that same beat → progress
+              stalls until a trickle/heartbeat wake.  organise() is a *side-effecting* walk, not a pure
+               function of walked-node versions.  Zero benefit + unproven safety = not worth shipping.
+  - **The valuable yield was the measurement autopsy** (keep these for testing levers #3 / Technique A|B):
+    1. **Cold-start ≈ 2.5×.** The FIRST run of a Book after an HMR reload (or idle gap) is ~2.5× slower
+        than warm — Understandium at gate=0 measured **21 s → 8 s → 8 s** across three back-to-back runs.
+         A sweep launched right after an edit runs its early Books cold.
+    2. **Long-runner drift.** A live runner degrades over a 65-Book sweep, so a **fresh-runner baseline vs
+        post-sweep-branch** wall-clock diff is confounded (the branch sweep's +122 s total was mostly this
+         + cold-start, NOT the code — proven by re-running the "regressed" Books with the gate DISARMED and
+          seeing the same slowness).
+    3. **PeeringLive is FLAKY**, not a lever regression: red 3/4 at gate=0 (green 1/4) — a live-peering
+        step-1 race (wake≠hold on the editor/channel state).  The baseline's single GREEN sample was luck.
+         Treat it (and any live-peering Book) as flaky; gate on `ok` across ≥3 warm runs, never 1.
+    4. **Testing protocol for the real-upside levers:** warm the runner first (discard run 1), interleave
+        A/B on the SAME warm runner with n≥3 per arm, and never compare a fresh sweep against a degraded
+         one.  A full 65-Book fresh-vs-branch diff is a coarse *correctness* net (verdict flips), NOT a
+          perf instrument.
+  - Corollary: lever #6's committed perf number ("census ~3.3k→~2.5k bumps") is **correctness-solid but
+     perf-soft** under these same confounds; its LakeFlush content-gated greens are the real gate.
 - **2026-07-06** — §6 `Lang_build_mapules` content gate (lever #6, branch
    `perf/mapules-digest-gate`): two-tier like LangGraft's — digest of every Map entry
     (kind|key|depth|line|class|span|region_path) PLUS the dock text (body spans/line
