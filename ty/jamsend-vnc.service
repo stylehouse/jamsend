@@ -22,16 +22,16 @@ Wants=display-manager.service
 #  denied (BadAccess on X_ShmAttach). This is the RELIABLE-but-slower choice; the FASTER choice is
 #   to run as the session owner so SHM works — see the commented alternative below.
 # -localhost: bind loopback ONLY, so the SSH tunnel (ty/desktop-viewer.sh) is the sole way in.
-ExecStart=/usr/bin/x11vnc -display :0 -auth guess -noshm -localhost -nopw -forever -shared -threads -ncache 10 -ncache_cr -wait 10 -defer 1 -rfbport 5900
-# FASTER alternative — run as the desktop owner (uid 1000) so MIT-SHM works and -noshm drops. SHM
-#  turns each framebuffer read from an X-protocol pull into a memcpy: the single biggest win. It
-#   needs uid 1000 to READ the display's auth cookie, so set User + an -auth path it can read (its
-#    own session cookie — often ~/.Xauthority or /run/user/1000/…). If x11vnc then can't attach,
-#     revert to the root + -noshm line above.
+ExecStart=/usr/bin/x11vnc -display :0 -auth /run/user/1000/gdm/Xauthority -noshm -localhost -nopw -forever -shared -threads -ncache 10 -ncache_cr -wait 10 -defer 1 -rfbport 5900
+# ^ PROVEN on this box (gdm session): root + the explicit gdm cookie + -noshm. -auth guess does NOT
+#   work for :0 here. Cookie path is host/DM-specific (gdm → /run/user/<uid>/gdm/Xauthority; lightdm
+#    → /var/run/lightdm/root/:0). Find it from the running Xorg's -auth arg if it differs.
+#
+# FASTER alternative — that gdm cookie is owned by uid 1000, so run x11vnc AS the owner and MIT-SHM
+#  works: drop -noshm and each framebuffer read becomes a memcpy (the single biggest speed win). Swap
+#   the two lines above for these; if x11vnc then can't attach :0, revert to the proven line.
 #   User=1000
-#   ExecStart=/usr/bin/x11vnc -display :0 -auth /home/s/.Xauthority -localhost -nopw -forever -shared -threads -ncache 10 -ncache_cr -wait 10 -defer 1 -rfbport 5900
-# If -auth guess fails at boot (fires before the DM settles, or an unusual DM), swap it for
-#  the explicit cookie path that worked when you ran it by hand, e.g. -auth /var/run/lightdm/root/:0
+#   ExecStart=/usr/bin/x11vnc -display :0 -auth /run/user/1000/gdm/Xauthority -localhost -nopw -forever -shared -threads -ncache 10 -ncache_cr -wait 10 -defer 1 -rfbport 5900
 Restart=always
 RestartSec=5
 

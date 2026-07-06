@@ -58,6 +58,15 @@ Editor + runner on ONE dev server, no r2r bridge to staging — the singular-rol
 5. **Music mount** (`jamsend-mount-verify`): `/music` must actually bind-mount, or real-audio Books (MusuReco &
     friends) go red. The perf/engallop levers need no `/music`, so this can wait — but fix it before you run the
      full fleet to prove a gallop change.
+6. **Silence the r2r bridge — it's for TWO servers and you have one.** The relay's runner-role end dials
+    `EDITOR_RELAY` (default `ws://172.17.0.1:9092/relay?r2r=1`, `relay.ts:45`) to bridge to a *separate*
+     editor-server. A collapsed one-box has no `:9092`, so it redials and connection-refuses — harmless noise;
+      local editor↔runner routing needs no bridge (that's *why* "runner finds editor fine"). Point `EDITOR_RELAY`
+       at SELF in `.env.local` — `ws://172.17.0.1:9091/relay?r2r=1` — and the relay's self-dial guard
+        (`relay.ts:181`) cleanly declines to bridge, killing the redial loop. Restart the dev server after. This
+         is a DIFFERENT var from `EDITOR_URL` in `.env.cluster-pubs` (the ghost-compile CLI / editor-notify
+          target) — don't confuse them; leave `EDITOR_URL` unless you actually run `ghost-compile`, then point it
+           local too (`http://172.17.0.1:9091`).
 
 ## Verification still comes from a LIVE runner — headless is still banned
 

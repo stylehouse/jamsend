@@ -14,7 +14,11 @@ SSH_PID=$!
 trap "kill $SSH_PID" EXIT
 sleep 1
 # LAN tuning: bandwidth is plentiful, CPU/latency is the bottleneck — so spend bytes to save both.
-#  Low compression, high JPEG quality, Tight encoding. These are TigerVNC vncviewer flags; if yours
-#   is TightVNC/RealVNC the flags differ — override or blank it:  VNCOPTS= ty/desktop-viewer.sh <host>
-VNCOPTS="${VNCOPTS:--PreferredEncoding Tight -CompressLevel 1 -QualityLevel 9}"
-vncviewer $VNCOPTS localhost:5900
+#  Low compression, high JPEG quality, tight+copyrect encoding. These are TightVNC Viewer (1.3.x)
+#   flags — what's installed here. (TigerVNC differs: -PreferredEncoding Tight -CompressLevel 1
+#    -QualityLevel 9.) Run with NOVNCOPTS=1 to pass none (e.g. a viewer that rejects these).
+if [ -n "$NOVNCOPTS" ]; then
+    vncviewer localhost:5900
+else
+    vncviewer -encodings "tight copyrect" -compresslevel 1 -quality 9 localhost:5900
+fi
