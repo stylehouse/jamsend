@@ -1,4 +1,13 @@
-# Voro_svg_stuffing — the SVG-native Stuffing rebuild (Voro_todo task 8, design)
+# Voro_svg_stuffing — the "single worked window": cross-wall row alignment (a LAYER on Vtuffing)
+
+> **Read `Voro_vtuffing.md` first — it is the BUILT engine.**  Vtuffing distils each
+>  pane's rows (`Vtuff_build`) and fits them INDEPENDENTLY to its own cell; it's the
+>   "svgStuffing" on screen today.  THIS doc is the unbuilt NEXT layer: make
+>    neighbouring panes' rows EDGE TOGETHER across the shared wall so the tessellation
+>     — not just the pane — places the rows.  It RIDES ON Vtuffing's row model, it does
+>      not replace it.  (Originally framed as a from-scratch "SVG-native rebuild" before
+>       the engine existed; that framing is superseded — the substrate is Vtuffing now.)
+>        This is agenda #9 in `Voro_vtuffing.md`.
 
 ## The problem
 
@@ -14,7 +23,9 @@ Today a Stuffing is an HTML box molded into its cell as a WHOLE: `paint_final` s
 ## The tuple model
 
 A Stuffing's content becomes structured rows, derived from the SAME live particle
- (nothing new modelled, metaphysics §2):
+ (nothing new modelled, metaphysics §2).  **This IS Vtuffing's row model** — `Vtuff_build`
+  already emits exactly these rows (title|fact|spread|member|dip); this layer only adds
+   the `rid` identity + cross-wall matching on top of what the engine already produces:
 
     Row   = { key, value, kind, weight, rid }
     Group = { head, rows: Row[] }         // the ×N groups the HTML Stuffing shows

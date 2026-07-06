@@ -68,9 +68,14 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
    (wordy loners — %see — get a self-row Stuffing and thereby a cell; default follows
     voronoi mode; rides `node_src`, the live particle now ferried on EVERY wave
      upsert's `.c`), ⬡ family hulls (`Cyto_families`, default on), 🌀 gravity brush
-      (`Cyto_gravity_brush`, default off), Vexpandy tall.
+      (`Cyto_gravity_brush`, default off), ▤ vtuffing swap (`Cyto_vtuffing`, default
+       on — off = molded Stuffings at every zoom), Vexpandy tall.
 - Design notes: `Voro_microcosm.md` (task 6 — (a)+(b) built), `Voro_pinch.md` (task 7 —
-   built), `Voro_svg_stuffing.md` (task 8 — still awaiting agreement, NOT built).
+   built), `Voro_vtuffing.md` (the microcosm cards grown into the pane-content ENGINE —
+    Vtuff_build's layout C** + the chord fit + the /*N pop-out surf, built 2026-07-06),
+     `Voro_svg_stuffing.md` (task 8 — the cross-wall alignment LAYER ON vtuffing, NOT a
+      rival rebuild; Vtuff_build IS its row model, the unbuilt part is the shared-wall
+       matching = vtuffing agenda #9; await agreement).
 
 ## The tasks
 
@@ -182,6 +187,15 @@ The earlier diagnosis stands as the why: every genus cell sits directly under `w
  the ancestor route alone could never fire there — the owner's "%Coprosma child notes"
   hunch was one level off (hulls group sibling CELLS, not one cell's interior).
 
+**Restyled 2026-07-06 — the chunky rope.** The owner looked and saw no hull; two causes:
+- the stroke (2.5px @ 0.38, UNDER the cell strokes, on the SAME inset walls) was a
+   sub-pixel fringe — literally invisible even when a family grouped. Now a two-pass
+    rope: 11px @ 0.30 body + 4.5px @ 0.55 core, rounded caps, same disjoint segments.
+- data-side, the worlds on screen had no ≥2-cell family yet: VoroScape's folds sit
+   directly under w BY DESIGN (no hull expected); VoroMitosis's `c.vfamily` stamps ride
+    the NEW gen — the tab reload + re-run is the gate. Myrtaceae's trio radiates in
+     around beat 7+.
+
 Outline all the cells of each direct child of w — e.g. everything under `Pier/**` gets
  one shared outer outline — but only for families with real structure: at least
   `w/*/*` depth, where a `%witnessed` child does NOT count as structure.
@@ -229,22 +243,30 @@ Built: `Voro_swarmable` in Voro.g — a STRUCTURAL container whose children are 
     just get them folded and the graph tidier.
 - Verify on VoroMitosis: the genus panes must still read; fixtures must not move.
 
-### 6. Composite shapes: layout WITHIN a cell + zoom-recursion — (a)+(b) BUILT 2026-07-06 (browser-unverified)
+### 6. Composite shapes: layout WITHIN a cell + zoom-recursion — (a)+(b) BUILT, then REBUILT as VTUFFING 2026-07-06
 
-`Voro_microcosm.md`: no second w:Cyto, no channels — crunch on subsets in-pixel.
- Owner green-lit the attempt 2026-07-06; carves (a)+(b) landed in `paint_final`:
-- (a) grid microcosm: a fold's members (`c.gang` or `fold.o()`) render as row-cards in
-   a mini grid inside the cell — SETTLE ONLY (`paint_final(L, settled)`;
-    `voronoi_paint_now` passes false, so the drag budget never pays), char-estimate
-     card sizes (no DOM measure — §6), clipped to the cell polygon, capped at 24 cards
-      with a visible `+N more` tail. Card colour = member kind's Matstyle, read-only.
-       v1 grid is bbox-aligned, pulled 10% in from the walls; the eigenframe-φ
-        alignment from the note is a refinement, not built.
-- (b) hysteretic zoom-swap: depth = √(rendered cell area) (zoom is already folded into
-   rendered px); above MICRO_Z=300 the molded Stuffing crossfades out (opacity, 200ms)
-    and the card grid fades in — ×1.15 up / ×0.85 down so a breathing zoom never flaps.
-- NOT built: (c) recursion (pixel-capped inner cells), member click-to-identify. The
-   cards are pointer-events:none v1.
+`Voro_microcosm.md` carved it; the owner's eyes-on verdict on the v1 card grid
+ ("woefully underexpressing — they just say Track") turned it into an ENGINE —
+  `Voro_vtuffing.md` is now the living note:
+- CONTENT: `Vtuff_build` (Ghost/V/Voro.g) distils members into a free layout C**
+   (title | shared facts | spreads-with-chips | member rows | the /*N dip) — cached
+    by count+versions, extensible per fold-kind via `Vtuff_of_<kind>`.  Cytui only
+     normalises + fits; a TS fallback speaks plainly until the new gen boots.
+- FIT: rows chord-fitted to the CONVEX cell polygon (`poly_chord`/`micro_fit`) — text
+   follows the slanted walls; overflow keeps title+head+dip and says `+K more`.
+- (b) hysteretic zoom-swap unchanged: depth = √(rendered cell area), MICRO_Z=300,
+   ×1.15/×0.85, 200ms crossfade.  Now BOTH cadences (cache + pure math) so the rows
+    ride a drag live — the v1 vanish-mid-gesture is gone.  ▤ toggles the whole swap.
+- The /*N surf: member|dip rows are buttons → `Vtuff_pop` pops nodes OUT INTO THE
+   GRAPH (c.popped / c.popped_open intent stamps, crusher respects, ◈-clear forgets)
+    — never expands inside the pane.
+- COLOUR (owner "restore the stained glass; where's this teal from?"): cell colour is
+   `kind_glass` = Matstyle swatch → else a per-kind hue floor (`kind_hue`), never the
+    single teal fold-border again; swapped cells wear a dotted rim; rows use `kind_tint`.
+- NOT built — see `Voro_vtuffing.md` §"next moves" for the tuned-up big-think agenda:
+   #1 spill `w/*/**` into the graph, #2 the exploding child→parent edge (owner keenest),
+    #3 surf under control + un-pop, #4 the `Olearia: this|that|etc` list form, #5 hull
+     layout-nudge, #6 fit refine, #7 recursion.
 
 Can the composite shapes be custom — i.e. lay a fold's members out INSIDE its cell (a
  microcosm: mini grid or mini force pass in the cell's own frame), instead of one flat
@@ -279,13 +301,15 @@ A mode where the wheel does not zoom the camera but contracts|spreads THAT LOCAL
    (does the next wave undo the sculpting? probably yes — say so, and decide whether
     that is fine for a play-mode).
 
-### 8. The SVG-native Stuffing rebuild — DESIGN-FIRST (the big one) — SPEC WRITTEN
+### 8. The single worked window: cross-wall row alignment — a LAYER on Vtuffing — DESIGN-FIRST
 
-`Voro_svg_stuffing.md` (2026-07-06): tuple model (rows with stable rids, monospace
- char-metrics so NO DOM-measure feedback), per-shared-wall greedy matching over the
-  task-4 `edge_src` adjacency, band placement (walls never move for rows), SVG text
-   paint, settle-only budget, `Cyto_svgstuff` side-by-side migration. Await
-    agreement before any build.
+**Reframed 2026-07-06:** this is NOT a separate "SVG-native rebuild" — the Vtuffing
+ engine (task 6, BUILT) is now the substrate.  `Vtuff_build` already emits the rows;
+  task 8 is the unbuilt NEXT layer that makes NEIGHBOURING panes' rows EDGE TOGETHER
+   across the shared wall (= vtuffing agenda #9).  `Voro_svg_stuffing.md` re-headed to
+    say so; its deep design (tuple model with stable rids, per-shared-wall greedy match
+     over task-4 `edge_src`, band placement, SVG-text paint, settle budget) all stands.
+      Await agreement before any build.
 
 Rebuild Stuffing rendering in SVG with graph-native neighbour awareness: rows/tuples
  as SVG text the tessellation itself places, so shared-wall neighbours can EDGE

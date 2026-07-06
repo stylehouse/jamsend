@@ -80,6 +80,15 @@ Voro_crush_walk(node, d, stats, level):
     for (const c of node.o()) {
         let mk = Object.keys(c.sc)[0]
         if (mk === 'Opt') continue
+        if (c.c.popped && c.o().length < 1) {
+            // a leaf someone SURFED OUT of its gang (Vtuff_pop) — never re-gangs; it stands
+            //  as its own node until ◈ un-imposes.  A popped leaf that later grows children
+            //   re-enters the ordinary rules (the guard is leaf-only).
+            this.Voro_unstamp(c)
+            c.c.stuffy = 1
+            stats.visible = stats.visible + 1
+            continue
+        }
         if (mk === 'w' || mk === 'H' || mk === 'A' || mk === 'Peering' || mk === 'Pier' || mk === 'req') {
             if (level >= 2 && (mk === 'Peering' || mk === 'Pier') && c.o().length >= 2) {
                 let verdict = this.Voro_crushable(c)
@@ -114,6 +123,8 @@ Voro_crush_walk(node, d, stats, level):
             this.Voro_stamp_fold(c, verdict, stats)
             continue
         }
+        // not a fold this pass (today that means popped_open) — shed any stale fold stamps
+        this.Voro_unstamp(c)
         c.c.stuffy = 1
         stats.visible = stats.visible + 1
         this.Voro_crush_walk(c, d + 1, stats, level)
@@ -179,6 +190,8 @@ Voro_unstamp(c):
     delete c.c.fold_n
     delete c.c.gang
     delete c.c.represented
+    delete c.c.vtuffing
+    delete c.c.vtuffing_sig
 
 // Voro_stamp_fold — the one place a fold is stamped: the two view flags plus the fold's LIVE
 //  descriptors (c.fold_kind the dominant child mainkey, c.fold_n the child count) — all c-side,
@@ -204,6 +217,7 @@ Voro_stamp_fold(c, verdict, stats):
 //      (they ARE the skeleton).  Strict homogeneity for now — a mixed structural container keeps
 //       its children in the graph.
 Voro_swarmable(c, mk):
+    if (c.c.popped_open) return null
     if (mk === 'w' || mk === 'H' || mk === 'A') return null
     let N = c.o()
     if (N.length < 3) return null
@@ -222,6 +236,7 @@ Voro_swarmable(c, mk):
 //  motivated Stuffing (mixed keys, one row per group) reads better as one chunk than as confetti.
 //   kind = the dominant child mainkey (a nav aid — the chunk's "what's inside"), n = child count.
 Voro_crushable(c):
+    if (c.c.popped_open) return null
     let N = c.o()
     if (N.length < 1) return null
     let counts = {}
@@ -248,7 +263,151 @@ Voro_crush_clear(node, d):
     delete node.c.gang
     delete node.c.represented
     delete node.c.crush_level
+    delete node.c.popped
+    delete node.c.popped_open
+    delete node.c.vtuffing
+    delete node.c.vtuffing_sig
     for (const c of node.o()) this.Voro_crush_clear(c, (d || 0) + 1)
+//#endregion
+
+//#region vtuffing — the pane-content engine: a fold|gang's members distilled into a layout C**
+// ══ Vtuffing — what a pane SAYS (the microcosm cards grew up; they used to say one word) ═══════
+//  The molded Stuffing was rich; the card grid that replaced it at depth said "Track".  Vtuffing
+//   is the data pipeline between them: Vtuff_build reads a fold|gang's members and distils them
+//    into a small LAYOUT TREE — a FREE C** (new TheC, reachable from nothing, so no snap and no
+//     encode ever sees it) whose rows say what the members share, how they spread, and where to
+//      dig.  The renderer (Cytui's micro layer) stays dumb: it walks rows and fits text into the
+//       cell polygon.  The smarts live HERE, .g-side, and extend the Waft way: define
+//        Vtuff_of_<fold kind> on any ghost and that kind's panes author their own rows.
+//
+//  The tree:  %Vtuffing,of:<kind>,n:<members>            (c.src backlinks the fold|gang rep)
+//               /%Vrow,row:title,text:'Artist: Moonlit  ×5',wgt:2
+//               /%Vrow,row:fact,text:'artist: Neil Young'   — a key EVERYONE agrees on, said once
+//               /%Vrow,row:spread,text:'title'              — a key that varies, chips below
+//                  /%Vbit,text:'Tide',n:2                   — value chips with counts
+//               /%Vrow,row:member,text:'Track · Halo'       — per-member when the family is small
+//                                                             (c.member — the pop-out handle)
+//               /%Vrow,row:dip,text:'/*12'                  — the surf handle (c.members)
+
+// Vtuff_build — the cached entry: members = the gang, else the fold's children.  The cache
+//  (c.vtuffing) is keyed by a cheap signature — member count + summed versions — so a beat that
+//   changes nothing returns the same tree, per-frame render calls cost one sum, and any content
+//    drift rebuilds.  Returns null on a non-fold (the renderer then leaves the pane alone).
+Vtuff_build(src):
+    let members = src.c.gang || (src.c.stuff && src.o()) || null
+    if (!members || !members.length) return null
+    let sig = members.length
+    for (const m of members) sig = sig + (m.version || 0)
+    if (src.c.vtuffing && src.c.vtuffing_sig === sig) return src.c.vtuffing
+    let kind = src.c.fold_kind || 'stuff'
+    let root = new TheC({ c: {}, sc: { Vtuffing: 1, of: kind, n: members.length } })
+    root.c.src = src
+    let hook = this['Vtuff_of_' + kind]
+    if (hook) {
+        hook.call(this, root, members, src)
+    } else {
+        this.Vtuff_default(root, members, src)
+    }
+    src.c.vtuffing = root
+    src.c.vtuffing_sig = sig
+    return root
+
+// Vtuff_ident — one short line of identity for a particle: the mainkey (with its value when the
+//  value carries meaning), sweetened by a naming key when one rides along.  {cell:'Coprosma'}
+//   reads 'cell: Coprosma'; {Track:1,title:'Tide'} reads 'Track · Tide'.
+Vtuff_ident(m):
+    let mk = Object.keys(m.sc)[0]
+    let v = m.sc[mk]
+    let t = mk
+    if (v !== 1 && v != null) t = mk + ': ' + v
+    let names = ['name', 'title', 'text', 'nick', 'label']
+    for (const k of names) {
+        if (k !== mk && typeof m.sc[k] === 'string') {
+            t = t + ' · ' + m.sc[k]
+            break
+        }
+    }
+    return t
+
+// Vtuff_default — the generic distiller: the Stuffusion|Stuffziad|Stuffziado compression re-said
+//  as rows.  A small family speaks per-member; a big one gets its title, its SHARED facts (a key
+//   with one distinct value across everyone — one row says it once), its SPREADS (a key with few
+//    distinct values — chips with counts, most-common first), and a /*N dip to surf the rest out
+//     into the graph.  A presence-only key everyone carries (the mainkey's 1) says nothing — skipped.
+Vtuff_default(root, members, src):
+    root.i({ Vrow: 1, row: 'title', text: this.Vtuff_ident(src) + '  ×' + members.length, wgt: 2 })
+    if (members.length <= 5) {
+        for (const m of members) {
+            let t = this.Vtuff_ident(m)
+            let sub = m.o().length
+            if (sub) t = t + ' /*' + sub
+            let r = root.i({ Vrow: 1, row: 'member', text: t, wgt: 1 })
+            r.c.member = m
+        }
+    } else {
+        let keys = []
+        let seen = {}
+        for (const m of members) {
+            for (const k of Object.keys(m.sc)) {
+                if (!seen[k]) { seen[k] = 1; keys.push(k) }
+            }
+        }
+        for (const k of keys) {
+            let vals = {}
+            let order = []
+            let have = 0
+            for (const m of members) {
+                if (!Object.prototype.hasOwnProperty.call(m.sc, k)) continue
+                have = have + 1
+                let v = '' + m.sc[k]
+                if (vals[v] == null) { vals[v] = 0; order.push(v) }
+                vals[v] = vals[v] + 1
+            }
+            if (!have) continue
+            if (order.length === 1) {
+                if (order[0] === '1') {
+                    if (have < members.length) root.i({ Vrow: 1, row: 'fact', text: k + ' ×' + have, wgt: 1 })
+                } else {
+                    root.i({ Vrow: 1, row: 'fact', text: k + ': ' + order[0], wgt: 1 })
+                }
+                continue
+            }
+            order.sort((a, b) => vals[b] - vals[a])
+            let r = root.i({ Vrow: 1, row: 'spread', text: k, wgt: 1 })
+            let chips = order
+            if (order.length > 4) chips = order.slice(0, 3)
+            for (const v of chips) r.i({ Vbit: 1, text: v, n: vals[v] })
+            if (order.length > chips.length) r.i({ Vbit: 1, text: '+' + (order.length - chips.length), n: 0 })
+        }
+    }
+    let dip = root.i({ Vrow: 1, row: 'dip', text: '/*' + members.length, wgt: 1 })
+    dip.c.members = members
+
+// Vtuff_pop — the /*N surf, the owner's "locate|create nodes popping up in the graph around it,
+//  not in the Stuffing** itself".  A GANG MEMBER pops out as its own node (c.popped — the walk
+//   leaves it loose from now on); the dip on a gang dissolves the whole gang the same way; the
+//    dip on a container FOLD unfurls it (c.popped_open — it never folds|swarms again this
+//     session).  All c-side INTENT stamps: crush passes respect them, the ◈ un-imposition
+//      (Voro_crush_clear) forgets them.  Then one wave re-scans, so the graph grows the new
+//       nodes right where the pane sits — fcose pulls family next to family.
+async Vtuff_pop(src, member):
+    if (member) {
+        member.c.popped = 1
+        delete member.c.represented
+    } else if (src.c.gang) {
+        for (const m of src.c.gang) {
+            m.c.popped = 1
+            delete m.c.represented
+        }
+    } else {
+        src.c.popped_open = 1
+        this.Voro_unstamp(src)
+    }
+    delete src.c.vtuffing
+    delete src.c.vtuffing_sig
+    let w = src
+    while (w && !(w.sc && w.sc.w)) w = w.c.up
+    if (w && this.cyto_update_wave) await this.cyto_update_wave(w)
 //#endregion
 
 //#region mitosis — VoroMitosis: watch the flora divide (the pure crush demo, no music no wire)
@@ -521,6 +680,6 @@ Voro_books():
 
 // Voro_render_map — the stages in order (this ghost's crush, then Cytui's pixels), to walk the pipeline.
 Voro_render_map():
-    return ['Voro_crush_scan', 'voronoi_layout', 'install_nuclei', 'morph_voronoi', 'voronoi_paint_now', 'paint_final']
+    return ['Voro_crush_scan', 'Vtuff_build', 'voronoi_layout', 'install_nuclei', 'morph_voronoi', 'voronoi_paint_now', 'paint_final']
 
 //#endregion

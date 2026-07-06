@@ -1,16 +1,16 @@
 Snap:H
   H:LakeWaftMap,Run
     A:Lies
-      self,round=46	{"mung":["age"]}
+      self,round=6	{"mung":["age"]}
       w:Lies
-        self,round=46	{"mung":["age"]}
+        self,round=6	{"mung":["age"]}
         examining	{"loopy":0}
           req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
         Opt
         req:Cortex,eternal,maz=5,ok
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/GhostList/toc.snap,waft_path:GhostList
-            known,dige:4b2739b32c92a761,kind:read	{"mung":["at"]}
+            known,dige:c9c186702acb7fa3,kind:read	{"mung":["at"]}
         req:git
         req:wants
         o_elvis:dock_askies
@@ -46,6 +46,7 @@ Snap:H
             Doc:Ghost/N/Tribunal.g,name:Tribunal	{"mung":["noticed_at"]}
             Doc:Ghost/N/Tyrant.g,name:Tyrant	{"mung":["noticed_at"]}
             Doc:Ghost/N/Reliable.g,name:Reliable	{"mung":["noticed_at"]}
+            Doc:Ghost/N/Repli.g,name:Repli	{"mung":["noticed_at"]}
           open_dir:Ghost/Story
           group:Ghost/Story,dir:Ghost/Story
             Doc:Ghost/Story/Peregrination.g,name:Peregrination	{"mung":["noticed_at"]}
@@ -76,26 +77,27 @@ Snap:H
             Doc:src/lib/O/spec/Lang_handover.md,name:Lang_handover.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Lens_posable_TODO.md,name:Lens_posable_TODO.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Music_todo.md,name:Music_todo.md	{"mung":["noticed_at"]}
-            Doc:src/lib/O/spec/Runner_talk_TODO.md,name:Runner_talk_TODO.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Keeping_spec.md,name:Keeping_spec.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Backbone_plan.md,name:Backbone_plan.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Cluster_spec.md,name:Cluster_spec.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Engage_integration.md,name:Engage_integration.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Radio_spec.md,name:Radio_spec.md	{"mung":["noticed_at"]}
-            Doc:src/lib/O/spec/Cluster_runner_handover.md,name:Cluster_runner_handover.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Coding_guide.md,name:Coding_guide.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Swarm_spec.md,name:Swarm_spec.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Lies_handover.md,name:Lies_handover.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/DocWaftMap_sketch.md,name:DocWaftMap_sketch.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Perf_todo.md,name:Perf_todo.md	{"mung":["noticed_at"]}
-            Doc:src/lib/O/spec/Runner_quality_handover.md,name:Runner_quality_handover.md	{"mung":["noticed_at"]}
-            Doc:src/lib/O/spec/Runner_network.md,name:Runner_network.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Stemdex_spec.md,name:Stemdex_spec.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Robustness_plan.md,name:Robustness_plan.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/PWA_install_handover.md,name:PWA_install_handover.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Story_future_directions.md,name:Story_future_directions.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Radio_scape_handover.md,name:Radio_scape_handover.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Radiobuddies_handover.md,name:Radiobuddies_handover.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Voro_todo.md,name:Voro_todo.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Voro_microcosm.md,name:Voro_microcosm.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Voro_svg_stuffing.md,name:Voro_svg_stuffing.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Voro_pinch.md,name:Voro_pinch.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Voro_vtuffing.md,name:Voro_vtuffing.md	{"mung":["noticed_at"]}
           open_dir:src/lib/O
           group:src/lib/O,dir:src/lib/O
             sub:src/lib/O/D,name:D

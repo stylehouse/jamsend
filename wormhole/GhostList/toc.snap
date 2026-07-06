@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783288979997
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783333919726
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -80,6 +80,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/spec/Voro_microcosm.md,name:Voro_microcosm.md,noticed_at=1783265841594
     Doc:src/lib/O/spec/Voro_svg_stuffing.md,name:Voro_svg_stuffing.md,noticed_at=1783265884788
     Doc:src/lib/O/spec/Voro_pinch.md,name:Voro_pinch.md,noticed_at=1783265905223
+    Doc:src/lib/O/spec/Voro_vtuffing.md,name:Voro_vtuffing.md,noticed_at=1783333919726
   open_dir:src/lib/O
   group:src/lib/O,dir:src/lib/O
     sub:src/lib/O/D,name:D

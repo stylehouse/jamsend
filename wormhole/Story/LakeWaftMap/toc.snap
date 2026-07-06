@@ -4,14 +4,20 @@ story:LakeWaftMap
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=1.747
+    TimeTotal:beliefs,avg=1.066
       sample=0.081,at=1783057729
       sample=3.389,at=1783252477
       sample=3.389,at=1783253694
       sample=0.13,at=1783253712
-    TimeTotal:step,avg=1.747
+      sample=0.192,at=1783333920
+      sample=0.142,at=1783334309
+      sample=0.142,at=1783334315
+    TimeTotal:step,avg=1.066
       sample=0.081,at=1783057729
       sample=3.389,at=1783252477
       sample=3.389,at=1783253694
       sample=0.13,at=1783253712
-  step,dige:3c5d3fb2102bf751
+      sample=0.192,at=1783333920
+      sample=0.142,at=1783334309
+      sample=0.142,at=1783334315
+  step,dige:e90887de253a2499

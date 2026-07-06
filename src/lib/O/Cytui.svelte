@@ -451,7 +451,7 @@
         if (!L) { if (vcells.length || vtips.length) clear_voronoi(); return }
         vregion_w = L.CW
         for (const c of L.cells) shown_pts.set(c.id, resample(c.inset, RESAMPLE_N))
-        paint_final(L, false)   // live cadence — the microcosm only rebuilds at settle
+        paint_final(L)   // live cadence — vtuffing rows track too (cached tree + chord math)
     }
 
     function show_overlays_soon() {
@@ -875,7 +875,7 @@
         cy.endBatch()
         pan_zoom_motion()   // the brush is just another motion
     }
-    let vcells        = $state<{ id: string, d: string, color: string }[]>([])
+    let vcells        = $state<{ id: string, d: string, color: string, swapped?: boolean }[]>([])
     let vtips         = $state<{ id: string, x: number, y: number, color: string }[]>([])
     // ── the microcosm (task 6a/6b, Voro_microcosm.md) ─────────────────────────
     //  a big-enough cell swaps its molded Stuffing for its fold's MEMBERS laid
@@ -884,10 +884,142 @@
     //     fold.o() (or c.gang) away from the live particle we already hold.
     //  Settle-only (the live painter never pays for it), char-estimate card
     //   sizes (no DOM measure — metaphysics §6), clipped to the cell polygon.
-    type MicroCard = { text: string, color: string, x: number, y: number, w: number, h: number }
-    let vmicro       = $state<{ id: string, x: number, y: number, w: number, h: number, clip: string, cards: MicroCard[] }[]>([])
-    let micro_hidden = $state(false)   // live motion hides the layer (it repaints only at settle)
+    // ── vtuffing: what a big pane SAYS (rows from Voro.g's Vtuff_build, fitted to the cell) ──
+    //  The engine distils a fold|gang's members into a layout C** (title | shared facts |
+    //   spreads-with-chips | member rows | the /*N dip); here we normalise that tree to plain
+    //    row descriptors and CHORD-FIT them into the convex cell polygon — text follows the
+    //     slanted walls instead of a bbox grid.  Runs in BOTH cadences (the tree is cached
+    //      .g-side, the fit is pure math) so the rows persist through a drag.  ▤ toggles the
+    //       whole swap; member|dip rows are the pop-out surf (Vtuff_pop).
+    type MicroChip = { text: string, n: number }
+    type MicroRow  = { text: string, kind: string, x: number, y: number, w: number, h: number,
+                       color: string | null, chips?: MicroChip[], member?: TheC, dip?: boolean }
+    type VtuffDesc = { text: string, kind: string, color?: string | null,
+                       chips?: MicroChip[], member?: TheC, dip?: boolean }
+    let vmicro       = $state<{ id: string, x: number, y: number, w: number, h: number, clip: string, rows: MicroRow[] }[]>([])
     let micro_on_ids = new Set<string>()   // hysteresis memory: which cells are swapped in
+    let vtuffing_pref = $state<boolean | null>(null)
+    const vtuffing_on = $derived(vtuffing_pref ?? true)
+    function toggle_vtuffing() {
+        vtuffing_pref = !vtuffing_on
+        const stv = (H as any).stashed
+        if (stv) stv.Cyto_vtuffing = vtuffing_pref
+        if (!vtuffing_on) {
+            for (const id of micro_on_ids) { const mel = overlays.get(id); if (mel) mel.style.opacity = '' }
+            micro_on_ids = new Set(); vmicro = []
+        } else voronoi_soon()
+    }
+
+    // one short identity line — the TS twin of Voro.g's Vtuff_ident, for the fallback
+    //  rows an OLD gen serves until the tab reload deposits Vtuff_build.
+    function ident_ts(m: any): string {
+        const mk = Object.keys(m?.sc ?? {})[0] ?? '?'
+        const v = m?.sc?.[mk]
+        let t = (v === 1 || v == null) ? mk : `${mk}: ${v}`
+        for (const k of ['name', 'title', 'text', 'nick', 'label'])
+            if (k !== mk && typeof m?.sc?.[k] === 'string') { t += ` · ${m.sc[k]}`; break }
+        return t
+    }
+
+    // rows for a pane: the Vtuffing tree normalised to descriptors — or, before the new gen
+    //  boots, a plain fallback (title + member idents + dip) so panes never say just "Track".
+    function vtuff_rows(src: any): VtuffDesc[] {
+        const build = (H as any).Vtuff_build
+        if (build) {
+            const root = build.call(H, src)
+            if (!root) return []
+            const out: VtuffDesc[] = []
+            for (const r of root.o() as any[]) {
+                const kind = (r.sc.row as string) ?? 'fact'
+                const d: VtuffDesc = { text: String(r.sc.text ?? ''), kind }
+                if (r.c.member) { d.member = r.c.member; d.color = kind_tint(Object.keys(r.c.member.sc ?? {})[0]) }
+                if (kind === 'title') d.color = kind_tint(src?.c?.fold_kind)
+                if (kind === 'dip') d.dip = true
+                const bits = r.o() as any[]
+                if (bits.length) d.chips = bits.map((b: any) => ({ text: String(b.sc.text ?? ''), n: (b.sc.n as number) ?? 0 }))
+                out.push(d)
+            }
+            return out
+        }
+        const members: any[] | null = src?.c?.gang ?? (src?.c?.stuff && typeof src.o === 'function' ? src.o() : null)
+        if (!members?.length) return []
+        const out: VtuffDesc[] = [{ text: `${ident_ts(src)}  ×${members.length}`, kind: 'title', color: kind_tint(src?.c?.fold_kind) }]
+        const CAP = 8
+        for (const m of members.slice(0, CAP)) {
+            const sub = typeof m.o === 'function' ? m.o().length : 0
+            out.push({ text: ident_ts(m) + (sub ? ` /*${sub}` : ''), kind: 'member', member: m,
+                       color: kind_tint(Object.keys(m.sc ?? {})[0]) })
+        }
+        if (members.length > CAP) out.push({ text: `+${members.length - CAP} more`, kind: 'fact' })
+        out.push({ text: `/*${members.length}`, kind: 'dip', dip: true })
+        return out
+    }
+
+    // the widest horizontal chord of a CONVEX polygon at height y (the cells are half-plane
+    //  intersections, so one interval always) — the whole fit leans on this.
+    function poly_chord(poly: {x:number,y:number}[], y: number): [number, number] | null {
+        let x0 = Infinity, x1 = -Infinity, hit = false
+        for (let i = 0; i < poly.length; i++) {
+            const a = poly[i], b = poly[(i + 1) % poly.length]
+            if ((a.y - y) * (b.y - y) > 0) continue
+            const dy = b.y - a.y
+            if (Math.abs(dy) < 1e-6) { x0 = Math.min(x0, a.x, b.x); x1 = Math.max(x1, a.x, b.x) }
+            else {
+                const x = a.x + (b.x - a.x) * (y - a.y) / dy
+                x0 = Math.min(x0, x); x1 = Math.max(x1, x)
+            }
+            hit = true
+        }
+        if (!hit || x1 <= x0) return null
+        return [x0, x1]
+    }
+
+    // slab-fit: stack the rows down the cell, each row clamped to the polygon's chord at its
+    //  band (top and bottom chords intersected — conservative, so slanted walls never clip
+    //   text).  Too many rows → keep title + head + dip and say "+K more" (no silent caps).
+    function micro_fit(inset: {x:number,y:number}[], descs: VtuffDesc[],
+                       bx: number, by: number, bh: number): MicroRow[] {
+        if (!descs.length) return []
+        const usable = bh * 0.88
+        const hof = (d: VtuffDesc) => (d.kind === 'title' ? 1.35 : 1)
+        const sum = (list: VtuffDesc[]) => list.reduce((s, d) => s + hof(d), 0)
+        let unit = usable / sum(descs)
+        unit = Math.max(12, Math.min(20, unit))
+        let shown = descs
+        if (unit * sum(descs) > usable + 1) {
+            const title = descs.filter(d => d.kind === 'title')
+            const dip   = descs.filter(d => d.dip)
+            const mid   = descs.filter(d => d.kind !== 'title' && !d.dip)
+            let keep = mid.length
+            while (keep > 0 && unit * (sum(title) + sum(dip) + keep + 1) > usable + 1) keep--
+            const dropped = mid.length - keep
+            shown = [...title, ...mid.slice(0, keep),
+                     ...(dropped ? [{ text: `+${dropped} more`, kind: 'fact' } as VtuffDesc] : []), ...dip]
+        }
+        let y = by + Math.max(bh * 0.06, (bh - unit * sum(shown)) / 2)
+        const rows: MicroRow[] = []
+        for (const d of shown) {
+            const h = unit * hof(d)
+            const c1 = poly_chord(inset, y + h * 0.15)
+            const c2 = poly_chord(inset, y + h * 0.85)
+            if (c1 && c2) {
+                const x0 = Math.max(c1[0], c2[0]) + 6, x1 = Math.min(c1[1], c2[1]) - 6
+                if (x1 - x0 >= 36) rows.push({
+                    text: d.text, kind: d.kind, x: x0 - bx, y: y - by, w: x1 - x0, h,
+                    color: d.color ?? null, chips: d.chips, member: d.member, dip: d.dip })
+            }
+            y += h
+        }
+        return rows
+    }
+
+    // the /*N surf — a member|dip row clicked pops nodes out INTO THE GRAPH (Vtuff_pop stamps
+    //  c.popped|c.popped_open and waves a re-scan), never expands inside the pane.
+    function micro_click(id: string, row: MicroRow) {
+        const src = node_src.get(id) as any
+        if (!src) return
+        ;(H as any).Vtuff_pop?.(src, row.member)
+    }
     let vregion_w     = $state(0)                      // veil covers the tessellated region ([0, CW] — the full width unless the shelved rack returns)
     // ── the wheel-button grip ─────────────────────────────────────────────────
     //  middle-click-drag pans: grab the whole viewport by the wheel button, from
@@ -1279,12 +1411,43 @@
         return null
     }
 
+    // deterministic per-kind HUE — the stained-glass floor.  A kind with no
+    //  authored Matstyle STILL earns its own hue, so the mosaic never collapses
+    //   to one colour.  ("Where's the teal from?" — the old fallback was the fold
+    //    node's single default border #79b, so every un-swatched fold went the
+    //     same blue-grey.)  A raw hash of the name clusters (14 genera → five
+    //      purples); instead each distinct kind takes the next GOLDEN-ANGLE slot
+    //       (137.5° apart → maximal spread even for a handful), the fam_seq
+    //        pattern the hulls already use.  Order-dependent but cosmetic.
+    const kind_slot = new Map<string, number>()
+    let kind_seq = 0
+    function kind_hue(kind: string | undefined): number | null {
+        if (!kind) return null
+        if (!kind_slot.has(kind)) kind_slot.set(kind, kind_seq++)
+        return Math.round((kind_slot.get(kind)! * 137.508) % 360)
+    }
+    // the glass colour of a cell: an authored Matstyle swatch first (the purple
+    //  you dotted), else the kind's own stained-glass hue — saturated, because
+    //   the cell fill is translucent.  null only for a truly kind-less cell.
+    function kind_glass(kind: string | undefined): string | null {
+        const ms = kind_color(kind); if (ms) return ms
+        const h = kind_hue(kind); return h == null ? null : `hsl(${h}, 58%, 56%)`
+    }
+    // a lighter tint of the SAME hue, for pane text (rows) — readable on the dark glass.
+    function kind_tint(kind: string | undefined): string | null {
+        const ms = kind_color(kind); if (ms) return ms
+        const h = kind_hue(kind); return h == null ? null : `hsl(${h}, 44%, 74%)`
+    }
+
     // a fold's cell carries its dominant KIND's colour (c.fold_kind, stamped by
-    //  the crusher, read via node_src).  Fallback: the node's own border colour,
-    //   which is the fold's OWN mainkey's Matstyle from cyto_nstyle.
+    //  the crusher, read via node_src); a plain cell carries its OWN mainkey's.
+    //   Either way it goes through kind_glass, so an un-swatched kind still joins
+    //    the stained glass by hue instead of falling to the teal node border.
     function cell_color(id: string, node: any): string {
-        const kind = (node_src.get(id) as any)?.c?.fold_kind as string | undefined
-        return kind_color(kind) ?? (node.style('border-color') as string)
+        const src = node_src.get(id) as any
+        const g = kind_glass(src?.c?.fold_kind as string | undefined); if (g) return g
+        const own = src?.sc ? Object.keys(src.sc)[0] as string : undefined
+        return kind_glass(own) ?? (node.style('border-color') as string)
     }
 
     // the family of a cell, for the ⬡ hulls — three answers, in priority order:
@@ -1364,7 +1527,7 @@
     // wrap_applied: the last wrap width handed to each cell's content —
     //  the hysteresis memory that keeps the measure→wrap→measure loop damped
     const wrap_applied = new Map<string, number>()
-    function paint_final(L: { cells: VCell[], seeds: any[], CW: number }, settled = true) {
+    function paint_final(L: { cells: VCell[], seeds: any[], CW: number }) {
         const crossings = new Map<string, { wall: number, t: number, m: {x:number,y:number}, color: string }[]>()
         const cell_by_id = new Map(L.cells.map(c => [c.id, c]))
         cy.edges().forEach((e: any) => {
@@ -1516,23 +1679,23 @@
         }
         vfams = fams
 
-        // ── the microcosm swap (6b's hysteretic zoom-threshold) ──────────────
+        // ── the vtuffing swap (6b's hysteretic zoom-threshold, grown an engine) ──
         //  depth = √(rendered cell area) — how much of the cell is on screen
         //   (inset is already in rendered px, so zoom is folded in).  Above
-        //    MICRO_Z the Stuffing crossfades out and the member grid fades in;
-        //     ×1.15 up / ×0.85 down so a breathing zoom never flaps.  SETTLE
-        //      ONLY: the per-frame live painter passes settled=false and skips
-        //       straight to hiding the layer — the drag budget never pays.
-        if (settled) {
+        //    MICRO_Z the molded Stuffing crossfades out and the pane speaks in
+        //     Vtuffing rows chord-fitted to its polygon; ×1.15 up / ×0.85 down
+        //      so a breathing zoom never flaps.  BOTH cadences: the tree is
+        //       cached .g-side and the fit is pure math, so the rows track a
+        //        drag live instead of vanishing (the pane used to go blank —
+        //         its Stuffing dimmed AND its cards hidden).  ▤ turns the whole
+        //          swap off.
+        if (vtuffing_on) {
             const MICRO_Z = 300
             const micro: typeof vmicro = []
             const next_on = new Set<string>()
             for (const c of L.cells) {
                 const src = node_src.get(c.id) as any
-                const members: TheC[] | null =
-                    (src?.c?.gang as TheC[] | undefined)
-                    ?? (src?.c?.stuff && typeof src.o === 'function' ? src.o() as TheC[] : null)
-                if (!members?.length) continue
+                if (!src?.c?.gang && !src?.c?.stuff) continue
                 let area2 = 0
                 for (let i = 0; i < c.inset.length; i++) {
                     const p = c.inset[i], q = c.inset[(i + 1) % c.inset.length]
@@ -1541,51 +1704,34 @@
                 const px = Math.sqrt(Math.abs(area2) / 2)
                 const was = micro_on_ids.has(c.id)
                 if (!(was ? px > MICRO_Z * 0.85 : px > MICRO_Z * 1.15)) continue
+                const descs = vtuff_rows(src)
+                if (!descs.length) continue
                 next_on.add(c.id)
                 const xs = c.inset.map(p => p.x), ys = c.inset.map(p => p.y)
                 const bx = Math.min(...xs), by = Math.min(...ys)
                 const bw = Math.max(...xs) - bx, bh = Math.max(...ys) - by
-                // cards: one per member, capped with a visible +N tail (no silent caps)
-                const CAP = 24
-                const show = members.slice(0, CAP)
-                const texts = show.map(m => {
-                    const mk = Object.keys(m.sc ?? {})[0] ?? '?'
-                    const v = (m.sc as any)?.[mk]
-                    const deep = typeof m.o === 'function' ? m.o().length : 0
-                    const t = (v === 1 || v == null) ? mk : String(v)
-                    return { t: deep ? `${t} +${deep}` : t, mk }
-                })
-                if (members.length > CAP) texts.push({ t: `+${members.length - CAP} more`, mk: '' })
-                // mini grid in the cell's bbox, pulled 10% in from the walls so
-                //  corner cards survive the polygon clip; columns follow the
-                //   cell's aspect (the eigenframe-φ alignment can come later)
-                const k = texts.length
-                const cols = Math.max(1, Math.ceil(Math.sqrt(k * (bh > 0 ? bw / bh : 1))))
-                const rows = Math.ceil(k / cols)
-                const gx = bw * 0.10, gy = bh * 0.10
-                const slot_w = (bw - 2 * gx) / cols, slot_h = (bh - 2 * gy) / rows
-                const cards: MicroCard[] = texts.map((tx, i) => {
-                    const col = i % cols, row = Math.floor(i / cols)
-                    const cw = Math.max(24, Math.min(slot_w - 4, 14 + tx.t.length * 5.6))
-                    const ch = Math.min(Math.max(12, slot_h - 6), 16)
-                    return { text: tx.t, color: kind_color(tx.mk) ?? '#3d5a72',
-                        x: gx + col * slot_w + (slot_w - cw) / 2,
-                        y: gy + row * slot_h + (slot_h - ch) / 2, w: cw, h: ch }
-                })
+                const rows = micro_fit(c.inset, descs, bx, by, bh)
+                if (!rows.length) continue
                 micro.push({ id: c.id, x: bx, y: by, w: bw, h: bh,
                     clip: 'polygon(' + c.inset.map(p =>
                         `${(p.x - bx).toFixed(1)}px ${(p.y - by).toFixed(1)}px`).join(',') + ')',
-                    cards })
+                    rows })
             }
-            // crossfade: dim the molded Stuffing of every micro'd cell; restore leavers
+            // crossfade: dim the molded Stuffing of every swapped cell; restore leavers
             for (const id of next_on) { const mel = overlays.get(id); if (mel) mel.style.opacity = '0' }
             for (const id of micro_on_ids) if (!next_on.has(id)) {
                 const mel = overlays.get(id); if (mel) mel.style.opacity = ''
             }
             micro_on_ids = next_on
             vmicro = micro
-            micro_hidden = false
-        } else micro_hidden = true
+            // a swapped cell wears the Stuffing's chrome (dotted rim + fuller
+            //  glass) so the pane still reads as a Stuffing, not a flat panel.
+            for (const cc of cells) cc.swapped = next_on.has(cc.id)
+        } else if (micro_on_ids.size || vmicro.length) {
+            for (const id of micro_on_ids) { const mel = overlays.get(id); if (mel) mel.style.opacity = '' }
+            micro_on_ids = new Set()
+            vmicro = []
+        }
 
         // a seed whose cell got swallowed falls back to plain node-centering
         for (const s of L.seeds) {
@@ -2011,6 +2157,8 @@
         if (typeof stashed_f === 'boolean') families_pref = stashed_f
         const stashed_b = (H as any).stashed?.Cyto_gravity_brush
         if (typeof stashed_b === 'boolean') brush_pref = stashed_b
+        const stashed_t = (H as any).stashed?.Cyto_vtuffing
+        if (typeof stashed_t === 'boolean') vtuffing_pref = stashed_t
         cy = cytoscape({
             container,
             // a livelier wheel: the default 1 needs a whole spin to move; the
@@ -2117,6 +2265,8 @@
             title="family hulls — one faint shared outline per compound house">⬡</button>
         <button class="v-toggle" class:on={brush_pref} onclick={toggle_brush}
             title="gravity brush — wheel pinches|spreads the locale under the cursor (Ctrl+wheel still zooms)">🌀</button>
+        <button class="v-toggle" class:on={vtuffing_on} onclick={toggle_vtuffing}
+            title="vtuffing — a big-enough pane swaps its molded Stuffing for member rows fitted to the cell (off = Stuffings always)">▤</button>
         <span class="cytui-vx" title="taller — double the graph height (50vh ↔ 100vh), then re-fit">
             <Vexpandy bind:expanded={tall} />
         </span>
@@ -2153,17 +2303,27 @@
         <svg class="cytui-voronoi" style:opacity={motion_hidden ? 0 : 1}>
             {#if voronoi_on && vcells.length}
                 <rect class="cytui-veil" width={vregion_w || '100%'} height="100%" />
-                <!-- family hulls: behind the cell strokes, faint — a house reads
-                     as one glassworks pane-group without shouting -->
+                <!-- family hulls: behind the cell strokes, a chunky ROPE — the
+                     boundary walls of one house lashed together.  Two passes over
+                     the same segments (a wide soft body + a narrower bright core)
+                     because a thin faint line here lies exactly ON the cell
+                     strokes and disappears under them. -->
                 {#each vfams as fam (fam.id)}
                     <path d={fam.d} fill="none" stroke={fam.color}
-                        stroke-opacity="0.38" stroke-width="2.5" stroke-linecap="round" />
+                        stroke-opacity="0.30" stroke-width="11" stroke-linecap="round" />
+                    <path d={fam.d} fill="none" stroke={fam.color}
+                        stroke-opacity="0.55" stroke-width="4.5" stroke-linecap="round" />
                 {/each}
                 {#each vcells as cell (cell.id)}
+                    <!-- a swapped (vtuffing) cell wears the Stuffing's tabletty
+                         dotted rim + a fuller glass fill; plain cells keep the
+                         thin solid stroke.  Colour is the kind's swatch|hue. -->
                     <path d={cell.d}
-                        fill={cell.color} fill-opacity="0.13"
-                        stroke={cell.color} stroke-opacity="0.6" stroke-width="1.5"
-                        stroke-linejoin="round" />
+                        fill={cell.color} fill-opacity={cell.swapped ? 0.2 : 0.13}
+                        stroke={cell.color} stroke-opacity={cell.swapped ? 0.85 : 0.6}
+                        stroke-width={cell.swapped ? 1.75 : 1.5}
+                        stroke-dasharray={cell.swapped ? '1.5 3' : undefined}
+                        stroke-linecap="round" stroke-linejoin="round" />
                 {/each}
                 {#each vtips as tip (tip.id)}
                     <circle cx={tip.x} cy={tip.y} r="2.4"
@@ -2171,19 +2331,31 @@
                 {/each}
             {/if}
         </svg>
-        <!-- microcosm layer: a big-enough cell swaps its molded Stuffing for its
-             fold's members laid out as row-cards IN the cell (settle-only, clipped
-             to the cell polygon, hysteretic zoom-swap — Voro_microcosm.md a+b).
-             Pure pixels; hides during motion like the cells do. -->
-        <div class="cytui-micro-layer" style:opacity={motion_hidden || micro_hidden ? 0 : 1}>
+        <!-- vtuffing layer: a big-enough cell swaps its molded Stuffing for the
+             engine's rows (Voro.g Vtuff_build — title | shared facts | spreads
+             with chips | members | the /*N dip), chord-fitted to the cell
+             polygon and clipped by it.  Tracks BOTH cadences, so the rows ride
+             a drag live.  member|dip rows are buttons: the surf pops nodes out
+             into the graph (Vtuff_pop), never expands inside the pane. -->
+        <div class="cytui-micro-layer" style:opacity={motion_hidden ? 0 : 1}>
             {#each vmicro as mc (mc.id)}
                 <div class="cytui-micro" style:left={`${mc.x}px`} style:top={`${mc.y}px`}
                      style:width={`${mc.w}px`} style:height={`${mc.h}px`} style:clip-path={mc.clip}>
-                    {#each mc.cards as card, ci (ci)}
-                        <div class="cytui-micro-card"
-                             style:left={`${card.x.toFixed(1)}px`} style:top={`${card.y.toFixed(1)}px`}
-                             style:width={`${card.w.toFixed(1)}px`} style:height={`${card.h.toFixed(1)}px`}
-                             style:border-color={card.color}>{card.text}</div>
+                    {#each mc.rows as row, ri (ri)}
+                        {@const hot = row.member != null || row.dip}
+                        <svelte:element this={hot ? 'button' : 'div'}
+                             role={hot ? 'button' : undefined}
+                             class="cytui-micro-row {row.kind}" class:hot
+                             style:left={`${row.x.toFixed(1)}px`} style:top={`${row.y.toFixed(1)}px`}
+                             style:width={`${row.w.toFixed(1)}px`} style:height={`${row.h.toFixed(1)}px`}
+                             style:font-size={`${(row.h * 0.62).toFixed(1)}px`}
+                             style:color={row.color ?? ''}
+                             onclick={hot ? () => micro_click(mc.id, row) : undefined}>
+                            <span class="t">{row.text}</span>
+                            {#each row.chips ?? [] as chip, ci (ci)}
+                                <span class="chip">{chip.text}{chip.n > 1 ? ` ×${chip.n}` : ''}</span>
+                            {/each}
+                        </svelte:element>
                     {/each}
                 </div>
             {/each}
@@ -2390,7 +2562,7 @@
     transition: opacity 0.2s ease;
 }
 
-/* ── microcosm: member row-cards laid out inside a big-enough cell ────────── */
+/* ── vtuffing: engine rows chord-fitted inside a big-enough cell ──────────── */
 .cytui-micro-layer {
     position: absolute;
     inset: 0;
@@ -2398,19 +2570,51 @@
     transition: opacity 0.25s ease;
 }
 .cytui-micro { position: absolute; }
-.cytui-micro-card {
+.cytui-micro-row {
     position: absolute;
-    border: 1px solid;
-    border-radius: 3px;
-    background: rgba(7, 12, 16, 0.82);
-    color: #cbd3da;
-    font-size: 9px;
-    line-height: 1.3;
-    padding: 1px 3px;
+    display: flex;
+    align-items: center;
+    gap: 0.45em;
     overflow: hidden;
     white-space: nowrap;
-    text-overflow: ellipsis;
+    color: #c3d0da;
+    background: none;
+    border: none;
+    padding: 0;
+    text-align: left;
     box-sizing: border-box;
+}
+.cytui-micro-row .t {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 0 1 auto;
+}
+.cytui-micro-row.title {
+    font-weight: 600;
+    letter-spacing: 0.03em;
+}
+.cytui-micro-row.fact .t { opacity: 0.85; }
+.cytui-micro-row.spread .t { opacity: 0.55; }
+.cytui-micro-row .chip {
+    flex: none;
+    border: 1px solid #3d5a72;
+    border-radius: 1em;
+    padding: 0 0.5em;
+    font-size: 0.82em;
+    line-height: 1.5;
+    background: rgba(7, 12, 16, 0.55);
+}
+/* member|dip rows are the pop-out surf — clickable, everything else stays glass */
+.cytui-micro-row.hot {
+    pointer-events: auto;
+    cursor: pointer;
+    font: inherit;
+    font-size: inherit;
+}
+.cytui-micro-row.hot:hover .t { text-shadow: 0 0 7px currentColor; }
+.cytui-micro-row.dip {
+    opacity: 0.75;
+    color: rgb(156, 140, 217);  /* the Stuffzipper /*N lilac — the same handle, new outcome */
 }
 /* the mounted Stuffing must keep its NATURAL size even when the voronoi mode
    pins the overlay to a cell bbox (flex would shrink it to the container and
