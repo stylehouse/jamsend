@@ -183,7 +183,7 @@ Two forward-looking sections left this doc for **`Story_future_directions.md`** 
   - **FLEET: 46/65 green armed.**  17 reds reproduce DISARMED too (reds-only control sweep) → NOT this
      lever: 2 unauthored stubs, 2 runner-killers (peering standup wedges the tab — MusuBounce/Editron),
       2 audio-timeouts (empty /music), a stale-fixture wave from the Voro-guts Cytui rewrite (not
-       re-recorded), + wrong/ordering fixtures.  Full triage in `Fleet_reds_report.md` (untracked).
+       re-recorded), + wrong/ordering fixtures.  Full triage in `spec/Fleet_reds_report.md`.
   - **TWO were gallop-CAUSED and robustly so (0/6 armed, 6/6 disarmed): LakeTiles (steps 4-5) +
      LakeWaftMap** — now **RESOLVED** via `The/Opt/{no_gallop:1}`.  The step-4 diff named the mechanism:
       the fixture asserts a WARMED point (`heat=4.478,held,long` + its `{"say":…}` child, first→last
