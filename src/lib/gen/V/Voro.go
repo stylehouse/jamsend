@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Voro(): string { return '07c503eee218bfab' },
+    Ghostmeta_Ghost_V_Voro(): string { return '7d977719148a2bb1' },
 
 // Voro.g — the Vis family home: the Voronoi-Cyto render (Ghost/V/, Waft:Ghost/Vis/Visua).
 //  A late sibling to networking (N), music (M) and society (S).  But where THOSE are spines the
@@ -46,13 +46,39 @@
 //   settingoff) OR the scan-root's c.crush_wanted (a Voro demo Book arms it in setup; the ◈
 //    button arms it via Cyto's e_Cyto_crush to impose the layer on a world that never asked).
 
-// Voro_crush_scan — one pass: walk w**, stamp the c-side folds, RETURN live stats {folded,count}
-//  (folded = total children hidden behind chunks, count = number of chunks).  Idempotent + cheap —
-//   a Book's drive runs it every beat and a witness re-runs it for fresh totals.
+// Voro_crush_scan — the INTENSITY GOVERNOR (the owner's "hover around a sensible intensity,
+//  aim for 9 families or so").  Each pass is authoritative (it stamps AND unstamps, so a level
+//   change or a shrunken graph self-corrects) and counts stats.visible — the nodes the Cyto walk
+//    will actually draw (folds, gang reps, loose leaves, walked-through structure; w/H/A and
+//     represented members don't count).  Too dense → escalate the crush level and re-pass; too sparse
+//      → relax, but never back past the ceiling.  The level rides w.c.crush_level (c-side) as
+//       hysteresis across beats, so the graph doesn't flap between levels while it grows.
+//  RETURN shape: {folded,count} keep their RECORDED meaning (container folds only — MusuReplica's
+//   ratio %see reads them); gang folds ride separately as {gangs,ganged}, plus {visible,level}.
 Voro_crush_scan(w) {
     if (!w.o({ Opt: 1 })[0]?.oa({ crushCyto: 1 }) && !w.c.crush_wanted) return null
-    let stats = { folded: 0, count: 0 }
-    this.Voro_crush_walk(w, 0, stats)
+    let level = w.c.crush_level || 0
+    let stats = this.Voro_crush_pass(w, level)
+    while (stats.visible > 15 && level < 2) {
+        level = level + 1
+        stats = this.Voro_crush_pass(w, level)
+    }
+    while (level > 0 && stats.visible < 6) {
+        let trial = this.Voro_crush_pass(w, level - 1)
+        if (trial.visible > 15) {
+            stats = this.Voro_crush_pass(w, level)
+            break
+        }
+        level = level - 1
+        stats = trial
+    }
+    w.c.crush_level = level
+    return stats
+
+},
+Voro_crush_pass(w, level) {
+    let stats = { folded: 0, count: 0, gangs: 0, ganged: 0, visible: 0, level: level }
+    this.Voro_crush_walk(w, 0, stats, level)
     return stats
 
 },
@@ -62,18 +88,39 @@ Voro_crush_scan(w) {
 //    c.stuffy IS the crushed look in Cyto (self-row stuffings for spine + leaves, children-Stuffing
 //     where c.stuff rides beside it); a plain snapped %stuff elsewhere (Machinery peeks, stuff_of)
 //      keeps the classic labelled look untouched.
-Voro_crush_walk(node, d, stats) { const H = this;
+Voro_crush_walk(node, d, stats, level) { const H = this;
     if (d > 8) return
+    let loose = {}
     for (const c of node.o()) {
         let mk = Object.keys(c.sc)[0]
-        if (mk === 'w' || mk === 'H' || mk === 'A' || mk === 'Peering' || mk === 'Pier' || mk === 'req' || mk === 'Opt') {
+        if (mk === 'Opt') continue
+        if (mk === 'w' || mk === 'H' || mk === 'A' || mk === 'Peering' || mk === 'Pier' || mk === 'req') {
+            if (level >= 2 && (mk === 'Peering' || mk === 'Pier') && c.o().length >= 2) {
+                let verdict = this.Voro_crushable(c)
+                if (verdict) {
+                    this.Voro_stamp_fold(c, verdict, stats)
+                    continue
+                }
+            }
             let swarm = this.Voro_swarmable(c, mk)
             if (swarm) {
                 this.Voro_stamp_fold(c, swarm, stats)
                 continue
             }
+            if (mk === 'req' && c.o().length < 1) {
+                if (!loose[mk]) loose[mk] = []
+                loose[mk].push(c)
+                continue
+            }
+            this.Voro_unstamp(c)
             c.c.stuffy = 1
-            this.Voro_crush_walk(c, d + 1, stats)
+            if (mk !== 'w' && mk !== 'H' && mk !== 'A') stats.visible = stats.visible + 1
+            this.Voro_crush_walk(c, d + 1, stats, level)
+            continue
+        }
+        if (c.o().length < 1) {
+            if (!loose[mk]) loose[mk] = []
+            loose[mk].push(c)
             continue
         }
         let verdict = this.Voro_crushable(c)
@@ -82,8 +129,73 @@ Voro_crush_walk(node, d, stats) { const H = this;
             continue
         }
         c.c.stuffy = 1
-        this.Voro_crush_walk(c, d + 1, stats)
+        stats.visible = stats.visible + 1
+        this.Voro_crush_walk(c, d + 1, stats, level)
     }
+    this.Voro_gang_fold(loose, stats, level)
+
+},
+// Voro_gang_fold — the CO-CRUSH of scattered same-mainkey leaves (the owner's "%witnessed and
+//  %reached crushed further — together into one cell+Stuffing each").  Leaves with no foldable
+//   parent gather by mainkey; a big enough gang ELECTS its first member as representative — the
+//    rep wears the fold stamps plus c.gang (the live member list, runtime refs on .c only) and
+//     the rest are c.represented (their row already shows in the rep's pane, so the Cyto walk
+//      skips them to avoid drawing it twice; cytyle_classify reads the stamp).  The rep's pane
+//       shows every member's row via Cytui's mirror (the rep itself has no children).  NOTHING
+//        is minted or reparented in the model — election is pure c-side stamps, so no snap and
+//         no fixture can ever see a gang.
+Voro_gang_fold(loose, stats, level) {
+    for (const mk of Object.keys(loose)) {
+        let gang = loose[mk]
+        if (gang.length >= this.Voro_gang_min(mk, level)) {
+            let rep = gang[0]
+            delete rep.c.represented
+            rep.c.stuff = 1
+            rep.c.stuffy = 1
+            rep.c.fold_kind = mk
+            rep.c.fold_n = gang.length
+            rep.c.gang = gang
+            for (let gi = 1; gi < gang.length; gi++) {
+                this.Voro_unstamp(gang[gi])
+                gang[gi].c.represented = 1
+                gang[gi].c.stuffy = 1
+            }
+            stats.gangs = stats.gangs + 1
+            stats.ganged = stats.ganged + gang.length
+            stats.visible = stats.visible + 1
+        } else {
+            for (const c of gang) {
+                this.Voro_unstamp(c)
+                c.c.stuffy = 1
+                stats.visible = stats.visible + 1
+            }
+        }
+    }
+
+},
+// Voro_gang_min — how many scattered leaves of one mainkey make a gang.  The NOISY families
+//  (assertion/req confetti) gang at 3, loosening to 2 when the governor escalates; any other
+//   mainkey only gangs under escalation (level >= 1, at 3) — at rest an unusual leaf pair
+//    stays two honest nodes.
+Voro_gang_min(mk, level) {
+    let noisy = { req: 1, witnessed: 1, see: 1, reached: 1 }
+    if (noisy[mk]) {
+        if (level >= 1) return 2
+        return 3
+    }
+    if (level >= 1) return 3
+    return 99
+
+},
+// Voro_unstamp — the authoritative-pass eraser: anything the walk decides is NOT a fold this
+//  pass sheds every fold/gang stamp it may carry from an earlier pass or level.  c-side deletes
+//   only; stuffy is re-set by the caller where it applies.
+Voro_unstamp(c) {
+    delete c.c.stuff
+    delete c.c.fold_kind
+    delete c.c.fold_n
+    delete c.c.gang
+    delete c.c.represented
 
 },
 // Voro_stamp_fold — the one place a fold is stamped: the two view flags plus the fold's LIVE
@@ -92,12 +204,15 @@ Voro_crush_walk(node, d, stats) { const H = this;
 //    wears what is INSIDE it) and the count lifts its seed-weight floor (a bigger family claims
 //     a bigger cell).
 Voro_stamp_fold(c, verdict, stats) {
+    delete c.c.gang
+    delete c.c.represented
     c.c.stuff = 1
     c.c.stuffy = 1
     c.c.fold_kind = verdict.kind
     c.c.fold_n = verdict.n
     stats.count = stats.count + 1
     stats.folded = stats.folded + verdict.n
+    stats.visible = stats.visible + 1
 
 },
 // Voro_swarmable — the crush-harder loosening: a STRUCTURAL container normally stays graph (the
@@ -111,7 +226,7 @@ Voro_swarmable(c, mk) { const H = this;
     if (mk === 'w' || mk === 'H' || mk === 'A') return null
     let N = c.o()
     if (N.length < 3) return null
-    let noisy = { req: 1, witnessed: 1, see: 1 }
+    let noisy = { req: 1, witnessed: 1, see: 1, reached: 1 }
     let kinds = {}
     for (const k of N) {
         let kmk = Object.keys(k.sc)[0]
@@ -151,6 +266,9 @@ Voro_crush_clear(node, d) {
     delete node.c.stuffy
     delete node.c.fold_kind
     delete node.c.fold_n
+    delete node.c.gang
+    delete node.c.represented
+    delete node.c.crush_level
     for (const c of node.o()) this.Voro_crush_clear(c, (d || 0) + 1)
 },
 //#endregion
@@ -191,8 +309,21 @@ async VoroMitosis_drive(w, req) {
 //  fixed lists ARE the determinism (no randomness in this Book): genera name the
 //   cells AND key their species, epithets name the species, forms name the nested
 //    sub-taxa.  Real Aotearoa plants — Coprosma, Hebe-in-Veronica, tōtara, beech.
+//  ORDER MATTERS for the ⬡ hull demo: radiation founds new genera in list order (one split
+//   per beat reaches roughly index 9), so the multi-genus FAMILIES — Myrtaceae's trio and
+//    Asteraceae's pair — sit early enough to all be alive at once and hull together.
 Botany_genera() {
-    return ['Coprosma','Veronica','Pittosporum','Metrosideros','Podocarpus','Nothofagus','Phormium','Pseudopanax','Olearia','Dracophyllum','Kunzea','Leptospermum']
+    return ['Coprosma','Veronica','Metrosideros','Kunzea','Leptospermum','Pittosporum','Podocarpus','Olearia','Brachyglottis','Nothofagus','Phormium','Dracophyllum']
+
+},
+// the botanical FAMILY of a genus — real NZ taxonomy, the demo material for the ⬡ family
+//  hulls: it rides each genus cell's c.vfamily (c-side, snap-blind — the model stays pure
+//   flora) and Cytui's family_of groups cells that share it into one faint hull.  Every
+//    genus cell sits DIRECTLY under w, so without this tag no hull can ever form there
+//     (no intermediate cyto-compound exists to group by).
+Botany_family(genus) {
+    let fams = { Coprosma: 'Rubiaceae', Veronica: 'Plantaginaceae', Metrosideros: 'Myrtaceae', Kunzea: 'Myrtaceae', Leptospermum: 'Myrtaceae', Pittosporum: 'Pittosporaceae', Podocarpus: 'Podocarpaceae', Olearia: 'Asteraceae', Brachyglottis: 'Asteraceae', Nothofagus: 'Nothofagaceae', Phormium: 'Asphodelaceae', Dracophyllum: 'Ericaceae' }
+    return fams[genus] || 'incertae sedis'
 },
 Botany_epithets() {
     return ['robusta','propinqua','rhamnoides','grandifolia','lucida','tenuifolium','excelsa','totara','fusca','tenax','crassifolius','colensoi','australis','divaricata','microphylla','serrata','montana','linearis']
@@ -220,6 +351,7 @@ Botany_plant(container, genus, epithet, depth) {
 //  the phylogeny "here and there" that gives each chunk its self-similar texture.
 VoroMitosis_found(w, genus, k) {
     let cell = w.i({ cell: genus })
+    cell.c.vfamily = this.Botany_family(genus)
     let eps = this.Botany_epithets()
     let gi = this.Botany_genera().indexOf(genus)
     if (gi < 0) gi = 0
@@ -269,6 +401,7 @@ VoroMitosis_grow(w, n) {
         let name = genera.find(nm => !used.includes(nm))
         if (!name) break
         let neu = w.i({ cell: name })
+        neu.c.vfamily = this.Botany_family(name)
         let half = species.slice(0, Math.floor(species.length / 2))
         for (const sp of half) {
             let sc = {}

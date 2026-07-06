@@ -229,10 +229,15 @@ This is the real reason it was left loose, and it's correct to guard. The **ttli
   what let Story — and the §2 dense track — watch the world settle in consistent, mutex-frozen states. Pull the
    gallop tight enough and the settle becomes one atomic jump: fast, but the intermediate states never become
     observable. The reconciliation, so speed and observability stop fighting over one clock:
-- **The step-snap fires at *quiescence*, not per pass.** Story's `poll_step` snaps when the world goes
-   needs_work-free; whether that took 10 loose passes or 2 tight ones, the step boundary is the same logical
-    point — just reached sooner. So tightening is **safe for, and only speeds, step-snaps** (and arguably makes
-     quiescence-detection *cleaner* — fewer half-settled windows to mistake for done).
+- **The step-snap fires at *quiescence*, and quiescence is a trailing-edge timeout — not a pass count.**
+   `poll_step` (`Story.svelte:1979-1982`) calls it quiescent when `Run.todo` is EMPTY **and** it's been
+    `quiesce_snap_time` (~`TICK_MS × 1.5` ≈ 75 ms) since the last cycle finished **and** no ttlilt is held.
+     Nothing in that counts passes or measures interior drain speed. So tighten the gallop and you reach
+      empty-todo *sooner*, then the same ~75 ms trailing guard fires: the snap moves **earlier, not
+       different** — and the `!ttlilt_held()` term still holds it open for a req that genuinely has more to do.
+        No new false-quiescence class appears (a req with more work either has todo pending or holds a ttlilt),
+         and the `rekick` watchdog (`:1996`) that drives a stalled todo still stands. This is why the tension is
+          smaller than it first looks: **step-snaps are safe and only get faster.**
 - **What's actually at stake is *intermediate* observability** — a Story asserting mid-settle, or the dense
    observation track watching the descent. That is precisely what §2 is *for*. So: let a system that wants to
     watch its gallop keep it loose (or watch via the §2 track); tighten everything else.

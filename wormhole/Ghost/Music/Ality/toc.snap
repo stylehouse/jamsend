@@ -52,13 +52,13 @@ Waft:Ghost/Music/Ality,active
       Point,text:getFloatTimeDomainData
       Point,text:pcm_buffer
       Point,text:unmute
-    What:the reality region (synth + measure + device + stream)
-      Doc:Ghost/Story/Musuation.g
-      Point,method:Musu_gat
-      Point,method:Musu_real_stream
-      Point,method:Musu_synth
-      Point,method:Musu_measure
-      Point,method:Musu_silence
+    What:the audio engine — now Ghost/M/Sound.g (synth + measure + device + stream)
+      Doc:Ghost/M/Sound.g
+      Point,method:Sound_gat
+      Point,method:Sound_real_stream
+      Point,method:Sound_synth
+      Point,method:Sound_measure
+      Point,method:Sound_silence
     What:Glide — live-edge rate slew + hysteresis (re-models Radios 0.8x)
       Doc:Ghost/M/Radiola.g
       Point,method:Glide_decide
@@ -68,6 +68,40 @@ Waft:Ghost/Music/Ality,active
       Doc:Ghost/Story/Musuation.g
       Point,method:MusuGlide_drive
       Point,method:MusuGlide_witness
+  What:the replication spine — now Ghost/N/Repli.g (offer a %Record then deal its %Stream page by page)
+    What:fragment + merge — a C** subtree becomes wire lines and back
+      Doc:Ghost/N/Repli.g
+      Point,method:Repli_lines_of
+      Point,method:Repli_fragment
+      Point,method:Repli_merge
+    What:the sender side — offer / recommend / retire / send lines / send the Se
+      Doc:Ghost/N/Repli.g
+      Point,method:Repli_offer
+      Point,method:Repli_recommend
+      Point,method:Repli_retire
+      Point,method:Repli_send_lines
+      Point,method:Repli_sent_se
+    What:pages — pack / unpack / ready / want-next
+      Doc:Ghost/N/Repli.g
+      Point,method:Repli_pack_chunks
+      Point,method:Repli_unpack_page
+      Point,method:Repli_page_ready
+      Point,method:Repli_want_next
+    What:serve + park — a want with no record yet waits for it
+      Doc:Ghost/N/Repli.g
+      Point,method:Repli_serve_want
+      Point,method:Repli_park_want
+      Point,method:Repli_serve_parked
+    What:the receiver — recv-lines / recv-page / await-buffer
+      Doc:Ghost/N/Repli.g
+      Point,method:Repli_recv_lines
+      Point,method:Repli_recv_page
+      Point,method:Repli_open_awaitbuf
+      Point,method:Repli_attach_page
+      Point,method:Repli_awaitbuf_do
+    What:the pump — arm the protocol each beat
+      Doc:Ghost/N/Repli.g
+      Point,method:Repli_arm
   What:the tests
     What:MusuStaple (the spool)
       Doc:Ghost/Story/Musuation.g
@@ -188,6 +222,7 @@ Waft:Ghost/Music/Ality,active
       Point,method:MusuReplica_drop
       Point,method:MusuReplica_retire
       Point,method:MusuReplica_witness
+      Doc:Ghost/N/Repli.g
       Point,method:Repli_fragment
       Point,method:Repli_merge
       Point,method:Repli_serve_want
@@ -198,6 +233,7 @@ Waft:Ghost/Music/Ality,active
       Doc:Ghost/Story/Musuation.g
       Point,method:MusuReco_drive
       Point,method:MusuReco_pull
+      Doc:Ghost/N/Repli.g
       Point,method:Repli_recommend
       Point,method:Repli_page_ready
       Point,method:Repli_park_want
@@ -215,18 +251,18 @@ Waft:Ghost/Music/Ality,active
     What:Selections sendable to Piers (the oldest note meets the Se)
       Doc:src/lib/mostly/Selection.svelte.ts
       Point,text:sendable
-      Doc:Ghost/Story/Musuation.g
+      Doc:Ghost/N/Repli.g
       Point,method:Repli_sent_se
       Point,method:Repli_lines_of
     What:the pull rides the playhead (replication rate = listening rate)
       Doc:Ghost/M/Radiola.g
       Point,method:req_streamability
-      Doc:Ghost/Story/Musuation.g
+      Doc:Ghost/N/Repli.g
       Point,method:Repli_want_next
     What:availability map + multi-source (a tree per peer routes the want)
       Doc:Ghost/M/Mesh.g
       Point,method:Mesh_route
-      Doc:Ghost/Story/Musuation.g
+      Doc:Ghost/N/Repli.g
       Point,method:Repli_serve_want
     What:wear makes the mirror a cache
       Doc:Ghost/M/Radiola.g

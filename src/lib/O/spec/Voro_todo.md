@@ -67,9 +67,10 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
 - Toggles on the ◈ bar (all stash prefs, metaphysics §4): ◈ voronoi, ❝ properCellable
    (wordy loners — %see — get a self-row Stuffing and thereby a cell; default follows
     voronoi mode; rides `node_src`, the live particle now ferried on EVERY wave
-     upsert's `.c`), ⬡ family hulls (`Cyto_families`, default on), Vexpandy tall.
-- Design notes awaiting agreement: `Voro_microcosm.md` (task 6), `Voro_pinch.md`
-   (task 7), `Voro_svg_stuffing.md` (task 8).
+     upsert's `.c`), ⬡ family hulls (`Cyto_families`, default on), 🌀 gravity brush
+      (`Cyto_gravity_brush`, default off), Vexpandy tall.
+- Design notes: `Voro_microcosm.md` (task 6 — (a)+(b) built), `Voro_pinch.md` (task 7 —
+   built), `Voro_svg_stuffing.md` (task 8 — still awaiting agreement, NOT built).
 
 ## The tasks
 
@@ -93,18 +94,22 @@ Two quick reaches off the owner's first eyes-on pass:
      max-content shrink-to-fit) + `maxWidth` as the wrap ceiling only, lowered 480→360.
       The mold scales the TEXT, not the padding.
 
-### 9. Sensible intensity: hover around ~9 panes — GRIND+ (tuning, live eyes) — TODO
+### 9. Sensible intensity: hover around ~9 panes — BUILT 2026-07-06 (browser-unverified)
 
-The owner's first full render read as "too much in one screenful … try to hover around a
- sensible intensity … aim for 9 families or so." Density, not correctness. Needs live
-  calibration (can't judge "sensible" from reading), hence TODO. Two knobs:
-- Demo-data cap: `VoroMitosis` grows to 12 genera + speciation splits — trim the
-   `Botany_genera` pool / cap active genera near ~9 so the colony hovers at a readable
-    count (pure demo data, re-record owed anyway).
-- Crush aggressiveness: once the co-crush of scattered leaves lands (task 5 open item),
-   the loose `%witnessed`/`%reached`/`%req` collapse into single panes, which is most of
-    the screenful — that alone should pull the density down toward the target. Calibrate
-     the two together with eyes on the tab.
+The owner's "too much in one screenful … aim for 9 families or so", built as an
+ INTENSITY GOVERNOR in the crusher (the owner's own hunch — "hook into the underlying
+  Cyto_scan process quite early" — landed one seam earlier still, in `Voro_crush_scan`,
+   which already runs before every scan): each crush pass is now AUTHORITATIVE (stamps
+    and unstamps, so level changes and shrinking graphs self-correct) and counts
+     `stats.visible` — the nodes the Cyto walk will actually draw. Too dense (>15) →
+      escalate the crush level and re-pass; too sparse (<6) → relax, never back past the
+       ceiling. The level rides `w.c.crush_level` (c-side hysteresis across beats).
+- Level 0: today's rules + noisy-leaf gangs (≥3). Level 1: gangs loosen (noisy ≥2, any
+   mainkey ≥3). Level 2: `Peering`/`Pier` structural containers fold whole (≥2 kids).
+- `{folded,count}` keep their RECORDED meaning (container folds only — MusuReplica's
+   ratio `%see` reads them); gangs ride separately as `{gangs,ganged}` + `{visible,level}`.
+- Still owed: live-eyes calibration of the 15/6 band and MICRO_Z once the tab reloads —
+   the numbers are first guesses, judged only by watching.
 
 ### 1. Wrap width from the cell — GRIND+ — BUILT 2026-07-06 (browser-unverified)
 
@@ -161,26 +166,21 @@ Done, via post-hoc edge attribution instead of a clip_halfplane rewrite: every c
     disjoint faint segments (visually identical to a traced loop, immune to topology
      surprises). ⬡ toggle, stash `Cyto_families`, default on.
 
-**OPEN — the hull never SHOWS on VoroMitosis (2026-07-06).** Confirmed by reading, not
- eyes: every genus cell sits DIRECTLY under `w` (the crush folds `cell:<genus>`; its
-  parent is the run world), so `family_of` — which returns the compound ancestor one
-   below the outermost (`anc[anc.length-2]`) — gets `anc.length===1` and returns null
-    for every cell. `vfams` stays empty. A hull needs ≥2 cells sharing an INTERMEDIATE
-     cyto-compound between them and `w`. The owner's hunch ("put child notes in some
-      %Coprosma so I can see it") is aimed one level off: the built hull groups sibling
-       CELLS, not a single cell's interior — nesting inside Coprosma deepens that ONE
-        cell's fold, it doesn't give two cells a shared parent. Two routes to demo it,
-         both more than a quick reach (hence TODO):
-- Route A (data, lowest core-risk): group genera into botanical FAMILIES in
-   `VoroMitosis_seed` — a compound container per family holding 2–4 `cell:<genus>`
-    (Rubiaceae⊃Coprosma, Plantaginaceae⊃Veronica+Hebe…). BUT the only mainkey
-     `cytyle_classify` treats as a cyto-compound is `w:`, so the family container would
-      have to be a `w:<Family>` sub-world — and minting inert `w:`s inside a run world
-       rubs the "mint w only for isolation/snap-boundary" rule; verify the reqdo_sweep
-        no-ops on them before trusting it.
-- Route B (core): teach `cytyle_classify` a generic grouping compound (a `group:`/
-   `clade:` mainkey → 'compound', with make_wave parenting to match). Cleaner model, but
-    a shared-core change — prove in isolation first ([[fight-back-on-core-changes]]).
+**RESOLVED 2026-07-06 via Route C (browser-unverified)** — neither the sub-world Route A
+ nor the core Route B: `family_of` grew three answers in priority order, all render-side:
+- 1) `c.vfamily` — an explicit c-side tag on the live particle (read via `node_src`).
+   `VoroMitosis` now stamps each genus cell with its real botanical family
+    (`Botany_family`: Metrosideros+Kunzea+Leptospermum = Myrtaceae, Olearia+Brachyglottis
+     = Asteraceae…), and `Botany_genera` is REORDERED so both multi-genus families
+      radiate into being within reach (one split per beat reaches ~index 9; Pseudopanax
+       gave way to Brachyglottis). Model data changed → the owed re-record covers it.
+- 2) the compound ancestor one below the outermost (the classic route, unchanged).
+- 3) the MODEL parent (`c.up`) when it isn't w/H/A — sibling folds under one Pier or
+   Artist hull together on ANY real graph, no tag needed (MusuReplica's inbox/outbox
+    pairs hull per Pier for free).
+The earlier diagnosis stands as the why: every genus cell sits directly under `w`, so
+ the ancestor route alone could never fire there — the owner's "%Coprosma child notes"
+  hunch was one level off (hulls group sibling CELLS, not one cell's interior).
 
 Outline all the cells of each direct child of w — e.g. everything under `Pier/**` gets
  one shared outer outline — but only for families with real structure: at least
@@ -203,15 +203,20 @@ Built: `Voro_swarmable` in Voro.g — a STRUCTURAL container whose children are 
       machinery overlaps), and the ≥0.8-dominant loosening if strict homogeneity
        proves too shy on real traffic.
 
-**OPEN — co-crush scattered same-mainkey leaves (2026-07-06 owner ask).** The owner
- wants `%witnessed` and `%reached` "crushed further — together into one cell+Stuffing
-  each": all the loose `%witnessed` leaves collapse to ONE cell, all `%reached` to
-   another. That is exactly the leaf-sibling-GANG above — `Voro_swarmable` today only
-    folds a container whose CHILDREN are homogeneous; these are homogeneous leaves with
-     NO container, scattered directly under `w`. Folding them needs the ghost to gather
-      siblings by mainkey and mint a synthetic fold node (the elected representative) to
-       hang `c.stuff`/`c.stuffy` on — new machinery (overlaps task 6). The owner flagged
-        it "a lot more work" and agrees; deferred, tracked here.
+**BUILT 2026-07-06 — the gang co-crush (browser-unverified).** `Voro_gang_fold`
+ (Voro.g): the walk gathers loose LEAVES per container by mainkey; a big enough gang
+  (noisy `req|witnessed|see|reached` ≥3 at level 0, looser under the governor) ELECTS
+   its first member as representative — the rep wears the fold stamps plus `c.gang`
+    (live member refs, `.c` only) and the rest are `c.represented` (skipped by
+     `cytyle_classify` — the one line of Cyto walk support, inert anywhere the crusher
+      never ran). NOTHING is minted or reparented in the model: no synthetic particle
+       ever enters the tree, so no snap and no fixture can see a gang.
+- The rep's pane material is a Cytui-side MIRROR (`gang_stuff`): a free `_C` container
+   (unreachable from H** → never snapped) rebuilt from the members' sc when the gang
+    size changes; the mounted Stuffing keeps its ref and re-groups on the normal flush.
+     Same-size membership swaps can lag a beat — acceptable for assertion confetti.
+- Election is stable (first member; newcomers append) so the gang's cell identity —
+   and its morph — survive growth. Rep death births a fresh cell (fine, it's a death).
 
 `Voro_crushable` wants same-ish children, so `%witnessed:$different_stuff` (same key,
  different sentences — they aren't resolving as same) and swarms of `%req:awaitbuf`
@@ -224,12 +229,22 @@ Built: `Voro_swarmable` in Voro.g — a STRUCTURAL container whose children are 
     just get them folded and the graph tidier.
 - Verify on VoroMitosis: the genus panes must still read; fixtures must not move.
 
-### 6. Composite shapes: layout WITHIN a cell + zoom-recursion — DESIGN-FIRST — NOTE WRITTEN
+### 6. Composite shapes: layout WITHIN a cell + zoom-recursion — (a)+(b) BUILT 2026-07-06 (browser-unverified)
 
-`Voro_microcosm.md` (2026-07-06): no second w:Cyto, no channels — crunch on subsets
- in-pixel (the crush only suppressed descent; members are `fold.o()` away). Carves
-  (a) grid microcosm, (b) hysteretic zoom-swap, (c) pixel-capped recursion. Await
-   owner agreement, then build (a).
+`Voro_microcosm.md`: no second w:Cyto, no channels — crunch on subsets in-pixel.
+ Owner green-lit the attempt 2026-07-06; carves (a)+(b) landed in `paint_final`:
+- (a) grid microcosm: a fold's members (`c.gang` or `fold.o()`) render as row-cards in
+   a mini grid inside the cell — SETTLE ONLY (`paint_final(L, settled)`;
+    `voronoi_paint_now` passes false, so the drag budget never pays), char-estimate
+     card sizes (no DOM measure — §6), clipped to the cell polygon, capped at 24 cards
+      with a visible `+N more` tail. Card colour = member kind's Matstyle, read-only.
+       v1 grid is bbox-aligned, pulled 10% in from the walls; the eigenframe-φ
+        alignment from the note is a refinement, not built.
+- (b) hysteretic zoom-swap: depth = √(rendered cell area) (zoom is already folded into
+   rendered px); above MICRO_Z=300 the molded Stuffing crossfades out (opacity, 200ms)
+    and the card grid fades in — ×1.15 up / ×0.85 down so a breathing zoom never flaps.
+- NOT built: (c) recursion (pixel-capped inner cells), member click-to-identify. The
+   cards are pointer-events:none v1.
 
 Can the composite shapes be custom — i.e. lay a fold's members out INSIDE its cell (a
  microcosm: mini grid or mini force pass in the cell's own frame), instead of one flat
@@ -241,11 +256,17 @@ Can the composite shapes be custom — i.e. lay a fold's members out INSIDE its 
 - Write the design note first: coordinate frames, when the mini-layout runs (settle
    only), and how it stays inside the budget self-heal.
 
-### 7. Scroll = pinch|spread the locale — DESIGN-FIRST (toggleable) — NOTE WRITTEN
+### 7. Scroll = pinch|spread the locale — BUILT 2026-07-06 (browser-unverified)
 
-`Voro_pinch.md` (2026-07-06): gaussian brush (σ≈140px) via model-position writes
- through cy, guarded off running layouts, riding pan_zoom_motion; fcose undoes the
-  sculpt and the note says so plainly (fine for a play-mode). Await agreement.
+`Voro_pinch.md`, built as designed after the owner's green light: 🌀 on the ◈ bar
+ (stash `Cyto_gravity_brush`); while armed, a plain wheel over the graph sculpts the
+  locale (gaussian σ=140 rendered px, cutoff 0.05, k≈±0.06/notch scaled by delta,
+   MODEL-position writes through cy so strength is zoom-independent) and Ctrl/Cmd+wheel
+    passes through to the camera zoom. Guards: never while a layout runs
+     (`live_layout`), compounds and nuclei never move, soft 40px frame clamp so a
+      spread can't fling slivers off-screen. Every burst rides `pan_zoom_motion` — the
+       brush is just another motion, live re-tessellation + settle for free. The visor
+        keeps stealing its strip first. fcose's next wave undoes the sculpt, by design.
 
 A mode where the wheel does not zoom the camera but contracts|spreads THAT LOCALE of
  nodes — wheel toward pulls the neighbourhood under the cursor together, wheel away

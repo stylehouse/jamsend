@@ -31,3 +31,6 @@ logs
 
 # investigation scaffold (relay-socket dumps) — TEMP
 wormhole/_socklog/
+
+# dev-instance marker — flips Dev_instance.md's commit relaxation on; must never travel to the construction site
+.dev-instance

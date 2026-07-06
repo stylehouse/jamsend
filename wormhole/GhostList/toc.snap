@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783265905223
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783288979997
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -29,6 +29,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:Ghost/N/Tribunal.g,name:Tribunal,noticed_at=1781771905413
     Doc:Ghost/N/Tyrant.g,name:Tyrant,noticed_at=1781995792551
     Doc:Ghost/N/Reliable.g,name:Reliable,noticed_at=1782310356887
+    Doc:Ghost/N/Repli.g,name:Repli,noticed_at=1783288979997
   open_dir:Ghost/Story
   group:Ghost/Story,dir:Ghost/Story
     Doc:Ghost/Story/Peregrination.g,name:Peregrination,noticed_at=1781771909101

@@ -451,7 +451,7 @@
         if (!L) { if (vcells.length || vtips.length) clear_voronoi(); return }
         vregion_w = L.CW
         for (const c of L.cells) shown_pts.set(c.id, resample(c.inset, RESAMPLE_N))
-        paint_final(L)
+        paint_final(L, false)   // live cadence — the microcosm only rebuilds at settle
     }
 
     function show_overlays_soon() {
@@ -533,6 +533,33 @@
         return parts.join('/')
     }
 
+    // ── gang mirrors ─────────────────────────────────────────────────────────
+    //  a gang REPRESENTATIVE (the Voro crusher's elected leaf, carrying its
+    //   scattered same-mainkey siblings on c.gang) has no children of its own —
+    //    so the Stuffing it hosts shows a MIRROR container instead: a free
+    //     particle (never reachable from H**, so never snapped) whose children
+    //      are sc-copies of the live members.  Rebuilt in place when the gang's
+    //       size changes (the mounted Stuffing keeps its ref; rows refresh at
+    //        the normal register_stuffing cadence).  Membership swaps at equal
+    //         count can lag one beat — acceptable for assertion confetti.
+    const gang_mirrors = new Map<string, { mirror: TheC, n: number }>()
+    function gang_stuff(id: string, src: TheC): TheC {
+        const members = (src as any).c?.gang as TheC[] | undefined
+        if (!members?.length) return src
+        const got = gang_mirrors.get(id)
+        if (got && got.n === members.length) return got.mirror
+        const mirror = got?.mirror ?? _C({ gang_of: Object.keys(src.sc ?? {})[0] ?? 'gang' })
+        for (const ch of mirror.o()) ch.drop(ch)
+        for (const m of members) {
+            const sc: any = {}
+            for (const [k, v] of Object.entries(m.sc ?? {}))
+                if (typeof v !== 'object' && typeof v !== 'function') sc[k] = v
+            mirror.i(sc)
+        }
+        gang_mirrors.set(id, { mirror, n: members.length })
+        return mirror
+    }
+
     function create_stuff_overlay(id: string, source_n: TheC | undefined, bg?: string, self_mode?: boolean) {
         if (!overlay_container || !source_n) return
         if (overlays.has(id)) return   // already mounted — the Stuffing self-refreshes via register_stuffing
@@ -545,7 +572,7 @@
         // seed the zoom-scaled font BEFORE the first measure, else the observer sizes off 16px
         if (cy) el.style.fontSize = `${Math.max(6, 12 * cy.zoom())}px`
         const mem = (H as any).imem('cytostuff:' + stuff_stash_key(source_n))
-        const app = mount(Stuffing, { target: el, props: { stuff: source_n, mem, H, self_row: !!self_mode } })
+        const app = mount(Stuffing, { target: el, props: { stuff: gang_stuff(id, source_n), mem, H, self_row: !!self_mode } })
         // grow the node when the Stuffing's rendered size changes — content events only (commits,
         //  zoom font steps), not render frames, so the layout can settle between waves (waitCyto).
         const ro = new ResizeObserver(() => size_stuff_node(id, el))
@@ -597,6 +624,7 @@
     function remove_overlay(id: string) {
         const sm = stuff_mounts.get(id)
         if (sm) { sm.ro?.disconnect(); try { unmount(sm.app) } catch (e) {} ; stuff_mounts.delete(id) }
+        gang_mirrors.delete(id)
         const el = overlays.get(id)
         if (!el) return
         el.remove()
@@ -784,14 +812,82 @@
     //        The page's own shape is the switch; no prop, no mode.
     function visor_guard(e: WheelEvent) {
         const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
-        if (e.clientX < r.right - r.width * VISOR_FRAC) return
-        const doc = document.scrollingElement ?? document.documentElement
-        if (doc.scrollHeight <= doc.clientHeight) return
-        e.stopPropagation()
-        visor_light()
+        if (e.clientX >= r.right - r.width * VISOR_FRAC) {
+            const doc = document.scrollingElement ?? document.documentElement
+            if (doc.scrollHeight > doc.clientHeight) {
+                e.stopPropagation()
+                visor_light()
+                return
+            }
+        }
+        // 🌀 the gravity brush takes what reaches the graph (the visor stole its
+        //  strip first, as ever): plain wheel sculpts the locale; Ctrl/Cmd+wheel
+        //   passes through untouched so the camera zoom stays reachable.
+        if (brush_pref && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault()
+            e.stopPropagation()
+            brush_wheel(e)
+        }
+    }
+    // ── the gravity brush (task 7, Voro_pinch.md) ─────────────────────────────
+    //  a toggleable mode where the wheel does not zoom the camera but sculpts
+    //   THAT LOCALE: wheel-toward pulls the neighbourhood under the cursor
+    //    together, wheel-away spreads it.  MODEL-position writes through cy —
+    //     layout-side input exactly like a user drag (metaphysics §1 allows
+    //      it) — gated off running layouts, and every burst rides
+    //       pan_zoom_motion so the live loop re-tessellates per frame and the
+    //        settle repaints at quiet.  fcose's next wave UNDOES the sculpt:
+    //         a hand-gesture on the rest state, fine for a play-mode.
+    let brush_pref = $state(false)
+    function toggle_brush() {
+        brush_pref = !brush_pref
+        const stb = (H as any).stashed
+        if (stb) stb.Cyto_gravity_brush = brush_pref
+    }
+    function brush_wheel(e: WheelEvent) {
+        if (!cy || live_layout) return          // a running layout owns positions
+        const rect = container.getBoundingClientRect()
+        const rx = e.clientX - rect.left, ry = e.clientY - rect.top
+        const zoom = cy.zoom(), pan = cy.pan()
+        const cmx = (rx - pan.x) / zoom, cmy = (ry - pan.y) / zoom
+        // gaussian falloff in RENDERED px (about one cell); the move itself is in
+        //  MODEL coords so the sculpt strength doesn't depend on zoom level
+        const SIG = 140
+        const k = (e.deltaY > 0 ? -0.06 : 0.06)
+            * Math.min(2, Math.max(0.2, Math.abs(e.deltaY) / 100))
+        const M = 40   // soft frame clamp: a spread can't fling slivers off-screen
+        cy.startBatch()
+        cy.nodes().forEach((node: any) => {
+            if (node.isParent() || is_nucleus(node)) return
+            const rp = node.renderedPosition()
+            const d = Math.hypot(rp.x - rx, rp.y - ry)
+            const wgt = Math.exp(-(d * d) / (2 * SIG * SIG))
+            if (wgt < 0.05) return
+            const p = node.position()
+            let nx2 = p.x + (p.x - cmx) * k * wgt
+            let ny2 = p.y + (p.y - cmy) * k * wgt
+            const rxn = nx2 * zoom + pan.x, ryn = ny2 * zoom + pan.y
+            const cxn = Math.max(M, Math.min(rect.width - M, rxn))
+            const cyn = Math.max(M, Math.min(rect.height - M, ryn))
+            if (cxn !== rxn || cyn !== ryn) { nx2 = (cxn - pan.x) / zoom; ny2 = (cyn - pan.y) / zoom }
+            node.position({ x: nx2, y: ny2 })
+        })
+        cy.endBatch()
+        pan_zoom_motion()   // the brush is just another motion
     }
     let vcells        = $state<{ id: string, d: string, color: string }[]>([])
     let vtips         = $state<{ id: string, x: number, y: number, color: string }[]>([])
+    // ── the microcosm (task 6a/6b, Voro_microcosm.md) ─────────────────────────
+    //  a big-enough cell swaps its molded Stuffing for its fold's MEMBERS laid
+    //   out as a mini grid of row-cards in the cell's own frame — "just
+    //    crunching on subsets": no second graph machine, the members are one
+    //     fold.o() (or c.gang) away from the live particle we already hold.
+    //  Settle-only (the live painter never pays for it), char-estimate card
+    //   sizes (no DOM measure — metaphysics §6), clipped to the cell polygon.
+    type MicroCard = { text: string, color: string, x: number, y: number, w: number, h: number }
+    let vmicro       = $state<{ id: string, x: number, y: number, w: number, h: number, clip: string, cards: MicroCard[] }[]>([])
+    let micro_hidden = $state(false)   // live motion hides the layer (it repaints only at settle)
+    let micro_on_ids = new Set<string>()   // hysteresis memory: which cells are swapped in
     let vregion_w     = $state(0)                      // veil covers the tessellated region ([0, CW] — the full width unless the shelved rack returns)
     // ── the wheel-button grip ─────────────────────────────────────────────────
     //  middle-click-drag pans: grab the whole viewport by the wheel button, from
@@ -1169,31 +1265,55 @@
         return { cells, seeds, CW }
     }
 
-    // a fold's cell carries its dominant KIND's colour (c.fold_kind, stamped by
-    //  the crusher, read via node_src) — looked up READ-ONLY in the Styles
-    //   container (metaphysics §5: a render path must never autovivify a style;
-    //    o() only, no get_or_create).  Fallback: the node's own border colour,
-    //     which is the fold's OWN mainkey's Matstyle from cyto_nstyle.
-    function cell_color(id: string, node: any): string {
-        const kind = (node_src.get(id) as any)?.c?.fold_kind as string | undefined
-        if (kind) {
-            try {
-                const stylesC = (H as any).Awo('Cyto')?.c?.Styles
-                const ms = stylesC?.o({ matstyle: kind })[0]
-                const bg = ms ? (H as any).ms_css(ms)['background-color'] : null
-                if (bg) return bg as string
-            } catch {}
-        }
-        return node.style('border-color') as string
+    // a kind's Matstyle colour, READ-ONLY (metaphysics §5: a render path must
+    //  never autovivify a style — o() only, no get_or_create); null when the
+    //   style is absent so callers fall back to their own palette.
+    function kind_color(kind: string | undefined): string | null {
+        if (!kind) return null
+        try {
+            const stylesC = (H as any).Awo('Cyto')?.c?.Styles
+            const ms = stylesC?.o({ matstyle: kind })[0]
+            const bg = ms ? (H as any).ms_css(ms)['background-color'] : null
+            if (bg) return bg as string
+        } catch {}
+        return null
     }
 
-    // the family of a cell: the compound ancestor one below the outermost (the
-    //  outermost is the w container itself).  A cell sitting directly under w
-    //   has no family; siblings of one house share one hull.
+    // a fold's cell carries its dominant KIND's colour (c.fold_kind, stamped by
+    //  the crusher, read via node_src).  Fallback: the node's own border colour,
+    //   which is the fold's OWN mainkey's Matstyle from cyto_nstyle.
+    function cell_color(id: string, node: any): string {
+        const kind = (node_src.get(id) as any)?.c?.fold_kind as string | undefined
+        return kind_color(kind) ?? (node.style('border-color') as string)
+    }
+
+    // the family of a cell, for the ⬡ hulls — three answers, in priority order:
+    //  1) an explicit c-side c.vfamily on the live particle (a Book stamps it —
+    //     VoroMitosis tags each genus cell with its botanical family; c-side,
+    //      so no snap ever sees it and no core changed for the demo),
+    //  2) the compound ancestor one below the outermost — the classic route,
+    //     which only fires when an intermediate cyto-compound exists,
+    //  3) the MODEL parent (c.up) when it isn't the scan frame (w/H/A) — so
+    //     sibling folds under one Pier/Artist hull together even though their
+    //      parent drew as a plain node, not a compound.  Cells directly under
+    //       w stay family-less unless route 1 names one.
+    const fam_ids = new WeakMap<object, string>()
+    let fam_seq = 0
     function family_of(node: any): string | null {
+        const src = node_src.get(node.id()) as any
+        if (src?.c?.vfamily) return `vfam:${src.c.vfamily}`
         const anc = node.ancestors().toArray()
-        if (anc.length < 2) return null
-        return anc[anc.length - 2].id()
+        if (anc.length >= 2) return anc[anc.length - 2].id()
+        const up = src?.c?.up
+        if (up?.sc) {
+            const mk = Object.keys(up.sc)[0]
+            if (mk && mk !== 'w' && mk !== 'H' && mk !== 'A') {
+                let fid = fam_ids.get(up)
+                if (!fid) { fid = `vup:${++fam_seq}`; fam_ids.set(up, fid) }
+                return fid
+            }
+        }
+        return null
     }
 
     const poly_d = (pts: {x:number,y:number}[]) =>
@@ -1244,7 +1364,7 @@
     // wrap_applied: the last wrap width handed to each cell's content —
     //  the hysteresis memory that keeps the measure→wrap→measure loop damped
     const wrap_applied = new Map<string, number>()
-    function paint_final(L: { cells: VCell[], seeds: any[], CW: number }) {
+    function paint_final(L: { cells: VCell[], seeds: any[], CW: number }, settled = true) {
         const crossings = new Map<string, { wall: number, t: number, m: {x:number,y:number}, color: string }[]>()
         const cell_by_id = new Map(L.cells.map(c => [c.id, c]))
         cy.edges().forEach((e: any) => {
@@ -1395,6 +1515,78 @@
             }
         }
         vfams = fams
+
+        // ── the microcosm swap (6b's hysteretic zoom-threshold) ──────────────
+        //  depth = √(rendered cell area) — how much of the cell is on screen
+        //   (inset is already in rendered px, so zoom is folded in).  Above
+        //    MICRO_Z the Stuffing crossfades out and the member grid fades in;
+        //     ×1.15 up / ×0.85 down so a breathing zoom never flaps.  SETTLE
+        //      ONLY: the per-frame live painter passes settled=false and skips
+        //       straight to hiding the layer — the drag budget never pays.
+        if (settled) {
+            const MICRO_Z = 300
+            const micro: typeof vmicro = []
+            const next_on = new Set<string>()
+            for (const c of L.cells) {
+                const src = node_src.get(c.id) as any
+                const members: TheC[] | null =
+                    (src?.c?.gang as TheC[] | undefined)
+                    ?? (src?.c?.stuff && typeof src.o === 'function' ? src.o() as TheC[] : null)
+                if (!members?.length) continue
+                let area2 = 0
+                for (let i = 0; i < c.inset.length; i++) {
+                    const p = c.inset[i], q = c.inset[(i + 1) % c.inset.length]
+                    area2 += p.x * q.y - q.x * p.y
+                }
+                const px = Math.sqrt(Math.abs(area2) / 2)
+                const was = micro_on_ids.has(c.id)
+                if (!(was ? px > MICRO_Z * 0.85 : px > MICRO_Z * 1.15)) continue
+                next_on.add(c.id)
+                const xs = c.inset.map(p => p.x), ys = c.inset.map(p => p.y)
+                const bx = Math.min(...xs), by = Math.min(...ys)
+                const bw = Math.max(...xs) - bx, bh = Math.max(...ys) - by
+                // cards: one per member, capped with a visible +N tail (no silent caps)
+                const CAP = 24
+                const show = members.slice(0, CAP)
+                const texts = show.map(m => {
+                    const mk = Object.keys(m.sc ?? {})[0] ?? '?'
+                    const v = (m.sc as any)?.[mk]
+                    const deep = typeof m.o === 'function' ? m.o().length : 0
+                    const t = (v === 1 || v == null) ? mk : String(v)
+                    return { t: deep ? `${t} +${deep}` : t, mk }
+                })
+                if (members.length > CAP) texts.push({ t: `+${members.length - CAP} more`, mk: '' })
+                // mini grid in the cell's bbox, pulled 10% in from the walls so
+                //  corner cards survive the polygon clip; columns follow the
+                //   cell's aspect (the eigenframe-φ alignment can come later)
+                const k = texts.length
+                const cols = Math.max(1, Math.ceil(Math.sqrt(k * (bh > 0 ? bw / bh : 1))))
+                const rows = Math.ceil(k / cols)
+                const gx = bw * 0.10, gy = bh * 0.10
+                const slot_w = (bw - 2 * gx) / cols, slot_h = (bh - 2 * gy) / rows
+                const cards: MicroCard[] = texts.map((tx, i) => {
+                    const col = i % cols, row = Math.floor(i / cols)
+                    const cw = Math.max(24, Math.min(slot_w - 4, 14 + tx.t.length * 5.6))
+                    const ch = Math.min(Math.max(12, slot_h - 6), 16)
+                    return { text: tx.t, color: kind_color(tx.mk) ?? '#3d5a72',
+                        x: gx + col * slot_w + (slot_w - cw) / 2,
+                        y: gy + row * slot_h + (slot_h - ch) / 2, w: cw, h: ch }
+                })
+                micro.push({ id: c.id, x: bx, y: by, w: bw, h: bh,
+                    clip: 'polygon(' + c.inset.map(p =>
+                        `${(p.x - bx).toFixed(1)}px ${(p.y - by).toFixed(1)}px`).join(',') + ')',
+                    cards })
+            }
+            // crossfade: dim the molded Stuffing of every micro'd cell; restore leavers
+            for (const id of next_on) { const mel = overlays.get(id); if (mel) mel.style.opacity = '0' }
+            for (const id of micro_on_ids) if (!next_on.has(id)) {
+                const mel = overlays.get(id); if (mel) mel.style.opacity = ''
+            }
+            micro_on_ids = next_on
+            vmicro = micro
+            micro_hidden = false
+        } else micro_hidden = true
+
         // a seed whose cell got swallowed falls back to plain node-centering
         for (const s of L.seeds) {
             if (cell_by_id.has(s.id)) continue
@@ -1492,6 +1684,9 @@
         vcells = []
         vtips = []
         vfams = []
+        vmicro = []
+        for (const id of micro_on_ids) { const mel = overlays.get(id); if (mel) mel.style.opacity = '' }
+        micro_on_ids.clear()
         shown_pts.clear()
         shown_color.clear()
         wrap_applied.clear()
@@ -1604,6 +1799,9 @@
                 if ((src as any)?.c?.stuffy) saw_stuffy = true
                 proper_mounted.delete(id)    // wave-owned now; toggling proper off must not strip it
                 create_stuff_overlay(id, src, overlay_bg, !!nd.sc.overlay_self)
+                // a mounted gang rep whose gang GREW: rebuild the mirror in place
+                //  (the Stuffing keeps its ref and re-groups on the next flush)
+                if ((src as any)?.c?.gang && overlays.has(id)) gang_stuff(id, src as TheC)
             } else if (overlay_str != null) {
                 create_overlay(id, overlay_str, overlay_kind ?? 'code', overlay_bg)
             } else if (proper_on && is_proper(src)) {
@@ -1811,6 +2009,8 @@
         if (typeof stashed_p === 'boolean') proper_pref = stashed_p
         const stashed_f = (H as any).stashed?.Cyto_families
         if (typeof stashed_f === 'boolean') families_pref = stashed_f
+        const stashed_b = (H as any).stashed?.Cyto_gravity_brush
+        if (typeof stashed_b === 'boolean') brush_pref = stashed_b
         cy = cytoscape({
             container,
             // a livelier wheel: the default 1 needs a whole spin to move; the
@@ -1915,6 +2115,8 @@
             title="properCellable — wordy loners (%see) get a Stuffing, and a cell in voronoi mode">❝</button>
         <button class="v-toggle" class:on={families_on} onclick={toggle_families}
             title="family hulls — one faint shared outline per compound house">⬡</button>
+        <button class="v-toggle" class:on={brush_pref} onclick={toggle_brush}
+            title="gravity brush — wheel pinches|spreads the locale under the cursor (Ctrl+wheel still zooms)">🌀</button>
         <span class="cytui-vx" title="taller — double the graph height (50vh ↔ 100vh), then re-fit">
             <Vexpandy bind:expanded={tall} />
         </span>
@@ -1969,6 +2171,23 @@
                 {/each}
             {/if}
         </svg>
+        <!-- microcosm layer: a big-enough cell swaps its molded Stuffing for its
+             fold's members laid out as row-cards IN the cell (settle-only, clipped
+             to the cell polygon, hysteretic zoom-swap — Voro_microcosm.md a+b).
+             Pure pixels; hides during motion like the cells do. -->
+        <div class="cytui-micro-layer" style:opacity={motion_hidden || micro_hidden ? 0 : 1}>
+            {#each vmicro as mc (mc.id)}
+                <div class="cytui-micro" style:left={`${mc.x}px`} style:top={`${mc.y}px`}
+                     style:width={`${mc.w}px`} style:height={`${mc.h}px`} style:clip-path={mc.clip}>
+                    {#each mc.cards as card, ci (ci)}
+                        <div class="cytui-micro-card"
+                             style:left={`${card.x.toFixed(1)}px`} style:top={`${card.y.toFixed(1)}px`}
+                             style:width={`${card.w.toFixed(1)}px`} style:height={`${card.h.toFixed(1)}px`}
+                             style:border-color={card.color}>{card.text}</div>
+                    {/each}
+                </div>
+            {/each}
+        </div>
         <!-- scroll visor: the lit indicator for the wheel gutter over the right
              strip.  Pure pixels (pointer-events:none) — the wrap's capture-phase
              visor_guard does the actual wheel-stealing, so everything beneath
@@ -2166,6 +2385,32 @@
     width: max-content;
     height: max-content;
     max-width: 520px;
+    /* the microcosm crossfade: paint_final dims a micro'd cell's Stuffing to 0
+       and restores it when the swap reverses — ~200ms each way */
+    transition: opacity 0.2s ease;
+}
+
+/* ── microcosm: member row-cards laid out inside a big-enough cell ────────── */
+.cytui-micro-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+.cytui-micro { position: absolute; }
+.cytui-micro-card {
+    position: absolute;
+    border: 1px solid;
+    border-radius: 3px;
+    background: rgba(7, 12, 16, 0.82);
+    color: #cbd3da;
+    font-size: 9px;
+    line-height: 1.3;
+    padding: 1px 3px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
 }
 /* the mounted Stuffing must keep its NATURAL size even when the voronoi mode
    pins the overlay to a cell bbox (flex would shrink it to the container and

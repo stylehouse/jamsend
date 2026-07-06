@@ -1,39 +1,10 @@
 Credulation,of_Book:MusuReplica
-  run=0,at=1783266336.01,ok,ok_pct,mode:check
+  run=0,at=1783309600.711,ok=0,ok_pct=0.93,mode:check
     uses:Ghost_N_Peeroleum,dige:89f7731b8ad5fae2
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
     uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
-    uses:Ghost_Story_Peregrination,dige:b33cab6322ef6320
-    uses:Ghost_M_Radiola,dige:c38a79b40dc8f9e6
-    uses:Ghost_M_Sound,dige:f7dbcd82c50033cc
-    uses:Ghost_M_Crate,dige:c05f526599e015af
-    uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3
-    uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
-    uses:Ghost_Story_Musuation,dige:3d02ba802866f433
-    uses:Ghost_S_Swarm,dige:5903f24bde1fb0d7
-    uses:Ghost_Story_Swarmation,dige:fe5cba472157518d
-    uses:Ghost_V_Voro,dige:07c503eee218bfab
-  run,at=1783266367.589,ok,ok_pct,mode:check
-    uses:Ghost_N_Peeroleum,dige:89f7731b8ad5fae2
-    uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
-    uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
-    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
-    uses:Ghost_Story_Peregrination,dige:b33cab6322ef6320
-    uses:Ghost_M_Radiola,dige:c38a79b40dc8f9e6
-    uses:Ghost_M_Sound,dige:f7dbcd82c50033cc
-    uses:Ghost_M_Crate,dige:c05f526599e015af
-    uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3
-    uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
-    uses:Ghost_Story_Musuation,dige:3d02ba802866f433
-    uses:Ghost_S_Swarm,dige:5903f24bde1fb0d7
-    uses:Ghost_Story_Swarmation,dige:fe5cba472157518d
-    uses:Ghost_V_Voro,dige:07c503eee218bfab
-  run=2,at=1783288804.782,ok,ok_pct,mode:check
-    uses:Ghost_N_Peeroleum,dige:89f7731b8ad5fae2
-    uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
-    uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
-    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
+    uses:Ghost_N_Repli,dige:0c63c7534d9e7e92
     uses:Ghost_Story_Peregrination,dige:b33cab6322ef6320
     uses:Ghost_M_Radiola,dige:c38a79b40dc8f9e6
     uses:Ghost_M_Sound,dige:f7dbcd82c50033cc
@@ -43,5 +14,20 @@ Credulation,of_Book:MusuReplica
     uses:Ghost_Story_Musuation,dige:9c081cdcd8f03b82
     uses:Ghost_S_Swarm,dige:5903f24bde1fb0d7
     uses:Ghost_Story_Swarmation,dige:fe5cba472157518d
-    uses:Ghost_V_Voro,dige:07c503eee218bfab
+    uses:Ghost_V_Voro,dige:be317524fbbc3d2d
+  run,at=1783312211.725,ok=0,ok_pct=0.93,mode:check
+    uses:Ghost_N_Peeroleum,dige:89f7731b8ad5fae2
+    uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
+    uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
+    uses:Ghost_N_Tyrant,dige:ed4fd88c7e2b904a
     uses:Ghost_N_Repli,dige:0c63c7534d9e7e92
+    uses:Ghost_Story_Peregrination,dige:b33cab6322ef6320
+    uses:Ghost_M_Radiola,dige:c38a79b40dc8f9e6
+    uses:Ghost_M_Sound,dige:f7dbcd82c50033cc
+    uses:Ghost_M_Crate,dige:c05f526599e015af
+    uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3
+    uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
+    uses:Ghost_Story_Musuation,dige:9c081cdcd8f03b82
+    uses:Ghost_S_Swarm,dige:5903f24bde1fb0d7
+    uses:Ghost_Story_Swarmation,dige:fe5cba472157518d
+    uses:Ghost_V_Voro,dige:7d977719148a2bb1

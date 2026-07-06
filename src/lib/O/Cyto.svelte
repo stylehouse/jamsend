@@ -655,6 +655,12 @@
             //    the graph reads as pure data.  skip drops its config-leaf subtree.
             || s.Opt
             || s.snapshot || s.cyto_edge_root || s.cyto_z) return 'skip'
+        // a REPRESENTED gang member (c.represented — c-side, only the Voro
+        //  crusher's Voro_gang_fold ever stamps it): its row already shows in
+        //   its gang's representative pane (the rep carries c.gang), so drawing
+        //    the member too would double it.  A world the crusher never touched
+        //     carries no stamp — inert everywhere else.
+        if (n.c?.represented) return 'skip'
         // cyto_fold: a grouping container for constraints/edges. Walked through
         // (so its cyto_cons / cyto_edge children are still emitted), but nothing
         // is drawn for the fold itself. mode:'cyto_fold' is the explicit marker
