@@ -33,10 +33,7 @@ story:VoroMitosis
     dontSnapCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.035
-      sample=0.03,at=1783332842
-      sample=0.023,at=1783344427
-      sample=0.037,at=1783344605
+    TimeTotal:beliefs,avg=0.038
       sample=0.051,at=1783348889
       sample=0.03,at=1783349011
       sample=0.032,at=1783350927
@@ -44,10 +41,10 @@ story:VoroMitosis
       sample=0.035,at=1783351834
       sample=0.051,at=1783352958
       sample=0.029,at=1783353241
+      sample=0.071,at=1783366389
+      sample=0.027,at=1783366476
+      sample=0.027,at=1783366513
     TimeTotal:step,avg=0.003
-      sample=0.003,at=1783332842
-      sample=0.002,at=1783344427
-      sample=0.003,at=1783344605
       sample=0.005,at=1783348889
       sample=0.003,at=1783349011
       sample=0.003,at=1783350927
@@ -55,14 +52,17 @@ story:VoroMitosis
       sample=0.003,at=1783351834
       sample=0.005,at=1783352958
       sample=0.003,at=1783353241
+      sample=0.006,at=1783366389
+      sample=0.002,at=1783366476
+      sample=0.002,at=1783366513
   step,dige:9eb579214a9df3ce
-  step=2,dige:3a06cc53529bea87
-  step=3,dige:42b634192aaaa6d8
-  step=4,dige:3c2a9d932b4e9ce9
-  step=5,dige:90d2df1540cb6b61
-  step=6,dige:6e5898723dcde7be
-  step=7,dige:6d1a9ca3da88b70e
-  step=8,dige:2ef55b8d5019d4f0
-  step=9,dige:ba2563e0c84ccfbb
-  step=10,dige:7bfb7f73bd842382
-  step=11,dige:f90e36ca74f23329
+  step=2,dige:e52a9ae7237d0e47
+  step=3,dige:8c08d7c3fbdc3c09
+  step=4,dige:cff9b019f8345c83
+  step=5,dige:ca11b08a1db1fab8
+  step=6,dige:41a96ee2d4ecf398
+  step=7,dige:6a0eac7c98efa262
+  step=8,dige:9836da93d6fcd368
+  step=9,dige:a1284d3969257164
+  step=10,dige:1a1a14520d9834ea
+  step=11,dige:ac2c820d8a5f48ef

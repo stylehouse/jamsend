@@ -5,19 +5,17 @@ Snap:H
       w:VoroMitosis
         self,round=2	{"mung":["age"]}
         req:wrangle,eternal,ok
-        cell:Coprosma
-          Coprosma:robusta
-          Coprosma:propinqua
-            Coprosma:propinqua var. montana
-            Coprosma:propinqua var. prostrata
-          Coprosma:rhamnoides
-          Coprosma:grandifolia
-            Coprosma:grandifolia var. montana
-            Coprosma:grandifolia var. prostrata
-          Coprosma:lucida
-        cell:Veronica
-          Veronica:grandifolia
-          Veronica:lucida
-            Veronica:lucida var. montana
-            Veronica:lucida var. prostrata
-          Veronica:tenuifolium
+        Coprosma:robusta,habit:vine
+        Coprosma:propinqua
+          Coprosma:propinqua var. montana,habit:tree
+          Coprosma:propinqua var. prostrata,habit:tree
+        Coprosma:rhamnoides,woodystem,habit:vine
+        Coprosma:grandifolia,woodystem,habit:vine
+          Coprosma:grandifolia var. montana
+          Coprosma:grandifolia var. prostrata
+        Coprosma:lucida,habit:vine
+        Veronica:grandifolia
+        Veronica:lucida
+          Veronica:lucida var. montana,woodystem,habit:tree
+          Veronica:lucida var. prostrata,habit:tree
+        Veronica:tenuifolium,woodystem,habit:shrub

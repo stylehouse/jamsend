@@ -6,11 +6,11 @@ Snap:H
         self,round=2	{"mung":["age"]}
         req:wrangle,eternal,ok
         Artist,name:Moonlit
-          Track,title:Tide
-          Track,title:Halo
+          Track,title:Tide,year:1998,remaster
+          Track,title:Halo,year:2007
         Artist,name:Fernway
-          Track,title:Root
-          Track,title:Frond
+          Track,title:Root,year:2019,live
+          Track,title:Frond,year:1998,remaster
         Artist,name:Voxhall
-          Track,title:Echo
+          Track,title:Echo,year:2007,live
         see:the library stands — three artists and five tracks — a shelf of glass with no light through it yet

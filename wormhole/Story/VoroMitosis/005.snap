@@ -5,31 +5,27 @@ Snap:H
       w:VoroMitosis
         self,round=5	{"mung":["age"]}
         req:wrangle,eternal,ok
-        cell:Coprosma
-          Coprosma:lucida
-            Coprosma:lucida var. prostrata
-          Coprosma:colensoi
-          Coprosma:australis
-          Coprosma:serrata
-          Coprosma:montana
-          Coprosma:serrata
-          Coprosma:montana
-        cell:Veronica
-          Veronica:crassifolius
-          Veronica:divaricata
-          Veronica:microphylla
-          Veronica:linearis
-          Veronica:robusta
-        cell:Pittosporum
-          Pittosporum:robusta
-            Pittosporum:robusta var. prostrata
-          Pittosporum:propinqua
-          Pittosporum:rhamnoides
-          Pittosporum:grandifolia
-          Pittosporum:microphylla
-          Pittosporum:serrata
-        cell:Metrosideros
-          Metrosideros:grandifolia
-          Metrosideros:lucida
-          Metrosideros:tenuifolium
-          Metrosideros:tenax
+        Coprosma:lucida,habit:vine
+          Coprosma:lucida var. prostrata
+        Coprosma:colensoi,woodystem,habit:tree
+        Coprosma:australis,habit:tree
+        Veronica:crassifolius,habit:tree
+        Coprosma:serrata,habit:tree
+        Coprosma:montana,woodystem,habit:shrub
+        Veronica:divaricata,woodystem,endemic
+        Veronica:microphylla,woodystem,endemic
+        Metrosideros:robusta,woodystem,habit:vine
+          Metrosideros:robusta var. prostrata,woodystem,endemic
+        Metrosideros:propinqua
+        Metrosideros:rhamnoides,woodystem,habit:vine
+        Metrosideros:grandifolia,habit:vine
+        Coprosma:serrata,habit:tree
+        Coprosma:montana,woodystem,habit:shrub
+        Veronica:linearis,habit:shrub
+        Veronica:robusta,woodystem,endemic
+        Metrosideros:microphylla,habit:shrub
+        Metrosideros:serrata,habit:tree
+        Kunzea:grandifolia,habit:vine
+        Kunzea:lucida,woodystem,habit:vine
+        Kunzea:tenuifolium
+        Kunzea:tenax,habit:shrub

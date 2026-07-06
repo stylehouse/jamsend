@@ -1,0 +1,19 @@
+Snap:H
+  H:SwarmDoor,Run
+    A:SwarmDoor
+      self,round=2	{"mung":["age"]}
+      w:SwarmDoor,now=1751900000
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Account,of:Inviter
+          Identity:47866215d1d749f7,prepub:47866215d1d749f7,friendly:Inviter
+            Peering,name:47866215d1d749f7,friendly:Inviter
+        Account,of:Joiner
+          Identity:5443ee4a8731b711,prepub:5443ee4a8731b711,friendly:Joiner
+            Peering,name:5443ee4a8731b711,friendly:Joiner
+        Peering,name:47866215d1d749f7
+          active_transport,type:mock,open
+        Peering,name:5443ee4a8731b711
+          active_transport,type:mock,open
+        req:witness,eternal,ok
+        see:two bare stations stand on the spine — a carrier each — and neither holds a Pier yet

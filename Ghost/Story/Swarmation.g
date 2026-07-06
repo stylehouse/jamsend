@@ -526,3 +526,144 @@ async SwarmInvite_order(w):
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)
+
+
+// ══ SwarmDoor — the FIFTH Book: FIRST CONTACT at the door (Swarm_spec §10.1 frontier rung) ══════
+//  The others prove the model / wire / address / front-door with SYMMETRIC, pre-handshaked or
+//   mail-wire pairs. SwarmDoor proves the ASYMMETRIC seam the live two-tab join runs — the one the
+//    2026-07-07 station build added and existing Books only proved INERT: a station hears a
+//     STRANGER's pier_hello for a prepub it holds NO %Pier for. That drives three new paths at once:
+//      (1) Peeroleum_deliver's no-pier pier_hello branch (dispatch-then-ack-through-the-just-promoted
+//       route), (2) Swarm_hello promoting the caller's transport %Pier at the door (Swarm_station_pier),
+//        (3) Swarm_deliver counting a live carrier under an UP station as readiness — NO per-Pier
+//         handshake, so peer_ready is false and the station_up arm is the ONLY thing that carries.
+//  What this Book does NOT prove: the REAL Swarm_station_up dialing a websocket (un-Bookable — it
+//   opens a live socket; the two-tab live join is that proof). It stands the deterministic station
+//    SHAPE (a bare %Peering + a paired mock carrier, station_up stamped) its deliver/promote logic
+//     runs on. Own world w:SwarmDoor (dispatch by world name — the usual bomb); seeded keys, pinned clock.
+//   beat 2  two BARE stations stand on the spine — a mock carrier each, station_up, kinds armed, NO Piers
+//   beat 3  the inviter mints an Idzeug — its station still routes to no one
+//   beat 4  the joiner promotes its OWN transport Pier to the inviter (the panel move) and redeems
+//   beat 5  settled: FIRST CONTACT sealed — the door promoted the route at the knock; readiness rode station_up
+
+SwarmDoor(A,w):
+    w oai %req:wrangle,eternal
+        await &SwarmDoor_drive,w,req
+        req%ok = 1
+
+// SwarmDoor_drive — beat dispatch (req-local did_step), then re-sort. No explicit pump: the swarm
+//  frames ride the REAL spine (outbox→mock carrier→inbox), crossing on the post_do cascade across
+//   think passes exactly as SwarmWire's do — the eternal witness polls each pass and notices the seal.
+async SwarmDoor_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.SwarmDoor_stand(w)
+        if (n === 3) await this.SwarmDoor_mint(w)
+        if (n === 4) await this.SwarmDoor_knock(w)
+        if (n === 5) await this.SwarmDoor_settle(w)
+    }
+    await this.SwarmDoor_order(w)
+
+// SwarmDoor_station — stand a BARE transport station under w for `ident`: a %Peering named by its
+//  prepub (the name Socket_real would dial as ?addr=) with a mock carrier, but NO %Pier and NO
+//   %req:handshake — the un-handshaked shape a LIVE station has before anyone calls. Returns the
+//    carrier so two stations pair (partner ↔ partner). The mock carrier is Lake_peer's, minus the
+//     Pier. AUTO-ASYNC'd (its send closure carries a bare await, the Lake_peer footgun) → AWAIT the
+//      call, else the return is a Promise and .partner never pairs. Body runs sync, so the Peering
+//       exists at once; only the returned carrier needs awaiting.
+SwarmDoor_station(w, ident):
+    const H = this
+    let peering = w.oai({ Peering: 1, name: ident.sc.prepub })
+    peering.c.up = w
+    let at = peering.i({ active_transport: 1, type: 'mock', open: 1 })
+    at.c.connection = {
+        type: 'mock', partner: null, reliable: true,
+        send(frame) {
+            let to = frame && frame.header && frame.header.to
+            if (to != null && String(to)[0] === '@') { H.post_do(async () => { await H.Peeroleum_deliver(w, frame) }); return }
+            H.post_do(async () => { await this.partner?.recv(frame) })
+        },
+        recv(frame) { return H.Peeroleum_deliver(w, frame) },
+    }
+    return at.c.connection
+
+// beat 2 — two bare stations, carriers paired. Two fixed selves (%Account each, key-seeded), a
+//  station %Peering + mock carrier for each (NO Pier), station_up stamped, the step-boundary whittle
+//   armed once, and the swarm frame kinds registered on the world. No traffic, no Piers yet.
+async SwarmDoor_stand(w):
+    w.sc.now = 1751900000
+    let inviter = await this.SwarmStaple_person(w, 'Inviter')
+    let joiner = await this.SwarmStaple_person(w, 'Joiner')
+    let ca = await this.SwarmDoor_station(w, inviter)
+    let cb = await this.SwarmDoor_station(w, joiner)
+    ca.partner = cb
+    cb.partner = ca
+    w.c.station_up = 1
+    this.Peeroleum_arm_whittle(w)
+    this.Swarm_arm(w)
+    w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.SwarmDoor_witness(w); req.sc.ok = 1 })
+
+// beat 3 — the inviter mints the Idzeug: an unbound Music offer (Classical), single-use nonce. Its
+//  station still holds no Pier — the invite is the only thing pointing outward.
+async SwarmDoor_mint(w):
+    w.sc.now = 1751900010
+    let inviter = this.SwarmStaple_ident(w, 'Inviter')
+    w.c.iz = await this.Swarm_mint_idzeug(w, inviter, { Music: 1, genre: 'Classical' }, 'door_1')
+
+// beat 4 — the knock: the joiner does exactly what InvitePanel.join does — promote its OWN transport
+//  Pier to the inviter (the redeemer knows the target), then redeem. The pier_hello rides the joiner
+//   station's carrier to the inviter station, which holds NO Pier for the joiner → the first-contact
+//    branch dispatches it, Swarm_hello promotes the inviter-side route, seals, and answers.
+async SwarmDoor_knock(w):
+    w.sc.now = 1751900020
+    let joiner = this.SwarmStaple_ident(w, 'Joiner')
+    let inviter = this.SwarmStaple_ident(w, 'Inviter')
+    this.Swarm_station_pier(w, joiner, inviter.sc.prepub)
+    await this.Swarm_redeem(w, joiner, w.c.iz)
+
+// beat 5 — settle: a whole beat after the knock so the post_do frame cascade has fully crossed
+//  (the transport-frames-ride-post_do rule — witness the SETTLED seal, never mid-flight). Only
+//   re-pins the clock; the witness reads the sealed state.
+async SwarmDoor_settle(w):
+    w.sc.now = 1751900030
+
+// ── the witness — per-beat %see observations, n-gated, reading live truth (no commas, no apostrophes) ──
+SwarmDoor_witness(w):
+    let n = (this.c.run)?.c.step_n
+    let inviter = this.SwarmStaple_ident(w, 'Inviter')
+    let joiner = this.SwarmStaple_ident(w, 'Joiner')
+    if (!inviter || !joiner) return
+    let iStation = w.o({ Peering: 1 }).find(p => p.sc.name === inviter.sc.prepub)
+    let jStation = w.o({ Peering: 1 }).find(p => p.sc.name === joiner.sc.prepub)
+    if (!iStation || !jStation) return
+    let live = (s) => !!this.Peeroleum_carrier(s, w)
+    // beat 2: two BARE stations — a carrier each, station_up, the swarm kinds armed, and NEITHER
+    //  holds a Pier yet (first contact is still to come).
+    if (n === 2 && live(iStation) && live(jStation) && w.c.station_up && w.c.on?.pier_hello && !iStation.o({ Pier: 1 }).length && !jStation.o({ Pier: 1 }).length && !(oa %see:'two bare stations stand on the spine — a carrier each — and neither holds a Pier yet')) i %see:'two bare stations stand on the spine — a carrier each — and neither holds a Pier yet'
+    // beat 3: the inviter holds a single-use Idzeug — its station still routes to no one.
+    let record = this.Swarm_peering(inviter)?.o({ Idzeug: 1 })[0]
+    if (n === 3 && record && record.sc.to === 'Music' && !iStation.o({ Pier: 1 }).length && !(oa %see:'the inviter holds a single-use Idzeug — its station still routes to no one')) i %see:'the inviter holds a single-use Idzeug — its station still routes to no one'
+    // beat 4: the joiner promoted its OWN transport Pier to the inviter before dialing (the panel move).
+    if (n === 4 && jStation.o({ Pier: 1, pub: inviter.sc.prepub })[0] && !(oa %see:'the joiner promotes a transport Pier to the inviter before dialing — the redeemer knows the target')) i %see:'the joiner promotes a transport Pier to the inviter before dialing — the redeemer knows the target'
+    // beat 5: FIRST CONTACT — a stranger reached a station holding no prior Pier; the door promoted
+    //  the transport route AND sealed the durable friendship, each grant signed by the other.
+    let iRoute = iStation.o({ Pier: 1, pub: joiner.sc.prepub })[0]
+    let jRoute = jStation.o({ Pier: 1, pub: inviter.sc.prepub })[0]
+    let iPier = this.Swarm_peering(inviter)?.o({ Pier: 1, pub: joiner.sc.prepub })[0]
+    let jPier = this.Swarm_peering(joiner)?.o({ Pier: 1, pub: inviter.sc.prepub })[0]
+    let iGot = iPier?.o({ Grant: 'Music', by: joiner.c.keys?.pub })[0]
+    let jGot = jPier?.o({ Grant: 'Music', by: inviter.c.keys?.pub })[0]
+    if (n === 5 && iRoute && iGot && jGot && !(oa %see:'first contact — a stranger reached a station with no prior Pier and the door promoted the route and sealed both grants')) i %see:'first contact — a stranger reached a station with no prior Pier and the door promoted the route and sealed both grants'
+    // beat 5: readiness rode station_up — NEITHER transport Pier ran a per-Pier handshake, yet the
+    //  frames crossed (peer_ready false both ends — a live carrier under an up station was enough).
+    if (n === 5 && iRoute && jRoute && w.c.station_up && !this.Peeroleum_peer_ready(iRoute) && !this.Peeroleum_peer_ready(jRoute) && iPier && jPier && !(oa %see:'readiness rode station_up — neither transport Pier ran a handshake yet the frames crossed and sealed')) i %see:'readiness rode station_up — neither transport Pier ran a handshake yet the frames crossed and sealed'
+
+// SwarmDoor_order — float A:SwarmDoor to the front of H/* so the Run snap stays readable.
+async SwarmDoor_order(w):
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'SwarmDoor') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)

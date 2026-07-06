@@ -5,26 +5,23 @@ Snap:H
       w:VoroMitosis
         self,round=4	{"mung":["age"]}
         req:wrangle,eternal,ok
-        cell:Coprosma
-          Coprosma:lucida
-          Coprosma:colensoi
-          Coprosma:australis
-          Coprosma:serrata
-          Coprosma:montana
-        cell:Veronica
-          Veronica:grandifolia
-            Veronica:grandifolia subsp. australis
-              Veronica:grandifolia subsp. australis var. prostrata
-          Veronica:lucida
-            Veronica:lucida var. montana
-            Veronica:lucida var. prostrata
-          Veronica:tenuifolium
-          Veronica:tenax
-          Veronica:crassifolius
-          Veronica:divaricata
-          Veronica:microphylla
-        cell:Pittosporum
-          Pittosporum:robusta
-          Pittosporum:propinqua
-          Pittosporum:rhamnoides
-          Pittosporum:grandifolia
+        Coprosma:lucida,habit:vine
+        Veronica:grandifolia
+          Veronica:grandifolia subsp. australis,woodystem,habit:shrub
+            Veronica:grandifolia subsp. australis var. prostrata,woodystem,endemic
+        Veronica:lucida
+          Veronica:lucida var. montana,woodystem,habit:tree
+          Veronica:lucida var. prostrata,habit:tree
+        Veronica:tenuifolium,woodystem,habit:shrub
+        Coprosma:colensoi,woodystem,habit:tree
+        Coprosma:australis,habit:tree
+        Veronica:tenax
+        Veronica:crassifolius,habit:tree
+        Coprosma:serrata,habit:tree
+        Coprosma:montana,woodystem,habit:shrub
+        Veronica:divaricata,woodystem,endemic
+        Veronica:microphylla,woodystem,endemic
+        Metrosideros:robusta,woodystem,habit:vine
+        Metrosideros:propinqua
+        Metrosideros:rhamnoides,woodystem,habit:vine
+        Metrosideros:grandifolia,habit:vine

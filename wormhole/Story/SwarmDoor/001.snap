@@ -1,0 +1,7 @@
+Snap:H
+  H:SwarmDoor,Run
+    A:SwarmDoor
+      self,round	{"mung":["age"]}
+      w:SwarmDoor
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

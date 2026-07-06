@@ -5,107 +5,95 @@ Snap:H
       w:VoroMitosis
         self,round=11	{"mung":["age"]}
         req:wrangle,eternal,ok
-        cell:Coprosma
-          Coprosma:excelsa
-          Coprosma:tenuifolium
-          Coprosma:excelsa
-          Coprosma:tenax
-          Coprosma:crassifolius
-        cell:Veronica
-          Veronica:lucida
-            Veronica:lucida f. viridis
-          Veronica:grandifolia
-          Veronica:lucida
-          Veronica:totara
-          Veronica:fusca
-          Veronica:totara
-          Veronica:fusca
-        cell:Pittosporum
-          Pittosporum:robusta
-            Pittosporum:robusta var. prostrata
-              Pittosporum:robusta var. prostrata subsp. australis
-              Pittosporum:robusta var. prostrata var. montana
-              Pittosporum:robusta var. prostrata var. prostrata
-              Pittosporum:robusta var. prostrata f. viridis
-              Pittosporum:robusta var. prostrata subsp. australis
-          Pittosporum:propinqua
-          Pittosporum:rhamnoides
-          Pittosporum:grandifolia
-          Pittosporum:microphylla
-          Pittosporum:serrata
-          Pittosporum:robusta
-          Pittosporum:propinqua
-          Pittosporum:lucida
-          Pittosporum:tenuifolium
-          Pittosporum:fusca
-          Pittosporum:tenax
-          Pittosporum:australis
-          Pittosporum:divaricata
-          Pittosporum:montana
-          Pittosporum:linearis
-        cell:Metrosideros
-          Metrosideros:grandifolia
-            Metrosideros:grandifolia f. viridis
-              Metrosideros:grandifolia f. viridis var. montana
-              Metrosideros:grandifolia f. viridis var. prostrata
-              Metrosideros:grandifolia f. viridis f. viridis
-              Metrosideros:grandifolia f. viridis subsp. australis
-          Metrosideros:lucida
-          Metrosideros:tenuifolium
-          Metrosideros:tenax
-          Metrosideros:montana
-          Metrosideros:linearis
-          Metrosideros:rhamnoides
-          Metrosideros:grandifolia
-          Metrosideros:excelsa
-          Metrosideros:totara
-          Metrosideros:crassifolius
-          Metrosideros:colensoi
-          Metrosideros:microphylla
-          Metrosideros:serrata
-        cell:Podocarpus
-          Podocarpus:lucida
-            Podocarpus:lucida subsp. australis
-              Podocarpus:lucida subsp. australis var. prostrata
-              Podocarpus:lucida subsp. australis f. viridis
-              Podocarpus:lucida subsp. australis subsp. australis
-          Podocarpus:colensoi
-          Podocarpus:australis
-          Podocarpus:serrata
-          Podocarpus:robusta
-          Podocarpus:propinqua
-          Podocarpus:lucida
-          Podocarpus:tenuifolium
-          Podocarpus:fusca
-          Podocarpus:tenax
-          Podocarpus:australis
-          Podocarpus:divaricata
-        cell:Nothofagus
-          Nothofagus:crassifolius
-            Nothofagus:crassifolius var. montana
-              Nothofagus:crassifolius var. montana f. viridis
-              Nothofagus:crassifolius var. montana subsp. australis
-          Nothofagus:divaricata
-          Nothofagus:microphylla
-          Nothofagus:linearis
-          Nothofagus:rhamnoides
-          Nothofagus:grandifolia
-          Nothofagus:excelsa
-          Nothofagus:totara
-          Nothofagus:crassifolius
-          Nothofagus:colensoi
-        cell:Phormium
-          Phormium:robusta
-            Phormium:robusta f. viridis
-          Phormium:linearis
-          Phormium:robusta
-          Phormium:grandifolia
-          Phormium:excelsa
-          Phormium:totara
-        cell:Pseudopanax
-          Pseudopanax:rhamnoides
-          Pseudopanax:propinqua
-          Pseudopanax:rhamnoides
-          Pseudopanax:tenuifolium
+        Kunzea:grandifolia,habit:vine
+          Kunzea:grandifolia f. viridis,habit:vine
+            Kunzea:grandifolia f. viridis var. montana
+            Kunzea:grandifolia f. viridis var. prostrata,woodystem,endemic
+            Kunzea:grandifolia f. viridis f. viridis,habit:vine
+            Kunzea:grandifolia f. viridis subsp. australis,woodystem,endemic
+        Kunzea:lucida,woodystem,habit:vine
+        Kunzea:tenuifolium
+        Kunzea:tenax,habit:shrub
+        Coprosma:rhamnoides,woodystem,habit:vine
+          Coprosma:rhamnoides var. prostrata
+            Coprosma:rhamnoides var. prostrata subsp. australis,habit:shrub
+        Metrosideros:propinqua
+          Metrosideros:propinqua f. viridis,woodystem,endemic
+        Kunzea:montana,woodystem,habit:shrub
+        Kunzea:linearis
+        Leptospermum:lucida
+          Leptospermum:lucida subsp. australis,woodystem,habit:shrub
+            Leptospermum:lucida subsp. australis var. prostrata,woodystem,endemic
+            Leptospermum:lucida subsp. australis f. viridis,woodystem,habit:tree
+            Leptospermum:lucida subsp. australis subsp. australis
+        Leptospermum:colensoi
+        Leptospermum:australis,woodystem,endemic
+        Leptospermum:serrata
+        Coprosma:propinqua
+        Coprosma:rhamnoides,woodystem,habit:vine
+        Metrosideros:lucida,woodystem,habit:vine
+        Metrosideros:tenuifolium
+        Kunzea:rhamnoides,habit:vine
+        Kunzea:grandifolia,habit:vine
+        Leptospermum:robusta
+        Leptospermum:propinqua,habit:vine
+        Pittosporum:crassifolius
+          Pittosporum:crassifolius var. montana,habit:tree
+            Pittosporum:crassifolius var. montana f. viridis,habit:vine
+            Pittosporum:crassifolius var. montana subsp. australis,woodystem,endemic
+        Pittosporum:divaricata,woodystem,habit:tree
+        Pittosporum:microphylla,habit:shrub
+        Pittosporum:linearis
+        Coprosma:tenuifolium
+        Coprosma:excelsa
+        Metrosideros:fusca,habit:shrub
+        Metrosideros:tenax,habit:shrub
+        Veronica:grandifolia
+        Veronica:lucida
+        Kunzea:excelsa
+        Kunzea:totara,woodystem,endemic
+        Leptospermum:lucida
+        Leptospermum:tenuifolium,habit:shrub
+        Pittosporum:rhamnoides,habit:vine
+        Pittosporum:grandifolia,woodystem,habit:vine
+        Metrosideros:australis,habit:tree
+        Metrosideros:divaricata,habit:tree
+        Veronica:totara,woodystem,habit:tree
+        Veronica:fusca
+        Kunzea:crassifolius
+        Kunzea:colensoi,habit:tree
+        Coprosma:tenuifolium
+        Coprosma:excelsa
+        Leptospermum:fusca,woodystem,endemic
+        Leptospermum:tenax
+        Pittosporum:excelsa
+        Pittosporum:totara
+        Podocarpus:robusta,woodystem,habit:vine
+          Podocarpus:robusta f. viridis,habit:vine
+        Podocarpus:propinqua,woodystem,endemic
+        Podocarpus:rhamnoides,habit:vine
+        Podocarpus:grandifolia,woodystem,habit:vine
+        Podocarpus:microphylla,woodystem,habit:shrub
+        Podocarpus:serrata,woodystem,habit:tree
+        Podocarpus:robusta,woodystem,habit:vine
+        Veronica:colensoi
+        Veronica:australis
+        Kunzea:microphylla,habit:shrub
+        Kunzea:serrata,woodystem,habit:tree
+        Coprosma:tenax,habit:shrub
+        Coprosma:crassifolius
+        Metrosideros:tenax,habit:shrub
+        Metrosideros:crassifolius,woodystem,endemic
+        Leptospermum:australis,woodystem,endemic
+        Leptospermum:divaricata
+        Pittosporum:crassifolius
+        Pittosporum:colensoi,woodystem,habit:tree
+        Podocarpus:tenax,woodystem,habit:shrub
+        Podocarpus:crassifolius
+        Olearia:robusta
+        Olearia:linearis,habit:shrub
+        Olearia:robusta
+        Olearia:grandifolia
+        Olearia:lucida
         see:the flora radiated — more genera now than were founded and each new one split off an over-full parent
-        see:every living genus is crush-folded behind one chunk keyed to its own name
+        see:the loose flora ganged itself by genus — one representative pane each and no container ever modelled
