@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Swarmation(): string { return 'fe5cba472157518d' },
+    Ghostmeta_Ghost_Story_Swarmation(): string { return '8c437299aa84c3e5' },
 
 // Swarmation.g — the Swarm* social-side tests, in the Musu* mould (spec: Swarm_spec.md §9). The
 //  file is the artifact; SwarmStaple is the Book identity. The Creduler loads this ghost live
@@ -62,11 +62,13 @@ async SwarmStaple_drive(w, req) {
 
 },
 // SwarmStaple_pump — deliverance: every account's undone mail is handled each pass (the spine's
-//  Swarm_pump), so a hello sent this beat is heard and answered before the beat's snap.
+//  Swarm_pump), so a hello sent this beat is heard and answered before the beat's snap. EVERY
+//   identity of the account — an account can hold an identity HISTORY (SwarmInvite's machine keeps
+//    its older deactivated self) and mail lands under the identity it ADDRESSED, so [0] alone
+//     starves the active one's inbox.
 async SwarmStaple_pump(w) {
     for (const acct of w.o({ Account: 1 })) {
-        let ident = acct.o({ Identity: 1 })[0]
-        if (ident) await this.Swarm_pump(w, ident)
+        for (const ident of acct.o({ Identity: 1 })) await this.Swarm_pump(w, ident)
     }
 
 },
@@ -447,6 +449,134 @@ async SwarmSteal_order(w) { const H = this;
     let As = H.o({A: 1})
     if (!As.length) return
     let first = (a) => (a.sc.A === 'SwarmSteal') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+
+},
+// ══ SwarmInvite — the FOURTH Book: the QR front door (Swarm_spec §10.1) ══════════════════════════
+//  SwarmStaple proves the MODEL, SwarmWire the WIRE, SwarmSteal the ADDRESS; SwarmInvite proves the
+//   FRONT DOOR: the invite as a scannable URL minted from the machine's LIVE-shaped identity — the
+//    one Auto's own Clustation_concrete makes (called HERE, the real shape-maker, so Auto shape
+//     drift turns THIS Book red) — parsed back exactly as the ?Iz= boot handler will, sealed into a
+//      Pier, and dead to a second scanner. Mail wire (SwarmWire owns spine carriage); own world
+//       w:SwarmInvite (dispatch by world name, the usual bomb); pinned clock, seeded keys.
+//   beat 2  the machine stands — TWO identities concreted by Clustation_concrete, so only the
+//            second is ACTIVE (its contract) — plus the Phone, a stranger with its own keys
+//   beat 3  the mint — Swarm_invite_url from the ACTIVE self → <base>?Iz=<blob>; the beat itself
+//            re-parses and re-verifies the URL (async crypto stamps %minted for the sync witness)
+//   beat 4  the scan — the Phone pulls the blob out of the URL (Swarm_iz_of_url, the boot handler's
+//            core) and redeems: hello → accept over the mail wire → mutual %Pier + Music grants
+//   beat 5  the photograph — Eve scans the SAME QR later: the nonce is spent, the door refuses
+
+SwarmInvite(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.SwarmInvite_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// SwarmInvite_drive — beat dispatch (req-local did_step), then the per-pass tail: pump every
+//  account's mail (SwarmStaple_pump is generic over w's %Accounts — the machine IS an %Account
+//   here, so its hello gets heard) and re-sort.
+async SwarmInvite_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.SwarmInvite_stand(w)
+        if (n === 3) await this.SwarmInvite_mint(w)
+        if (n === 4) await this.SwarmInvite_scan(w)
+        if (n === 5) await this.SwarmInvite_photograph(w)
+    }
+    await this.SwarmStaple_pump(w)
+    await this.SwarmInvite_order(w)
+
+},
+// beat 2 — the machine stands. The identity is made by the REAL maker: Clustation_concrete, twice —
+//  an older self first, then the current one — proving the active-flag contract (only ONE active,
+//   the front door must pick it). The container is an %Account so the mail wire routes to it (the
+//    A:Clustation hop under top_House is Swarm_live_self's live-only inch, exercised by the panel).
+async SwarmInvite_stand(w) {
+    w.i({reached: "step_2"})
+    w.sc.now = 1751800000
+    let acct = w.oai({ Account: 1, of: 'Machine' })
+    acct.c.up = w
+    let old = await this.Swarm_mint_keys('SwarmInvite-Machine-old')
+    this.Clustation_concrete(acct, old.prepub, old)
+    let cur = await this.Swarm_mint_keys('SwarmInvite-Machine')
+    this.Clustation_concrete(acct, cur.prepub, cur)
+    await this.SwarmStaple_person(w, 'Phone')
+    w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.SwarmInvite_witness(w); req.sc.ok = 1 })
+
+},
+// beat 3 — the mint: the front door resolves the ACTIVE self and dresses the Idzeug as the URL the
+//  QR will carry (base pinned — live it is location.origin + the toplevel path). The beat then does
+//   the round trip itself — parse the URL back, verify the blob — and stamps %minted with what the
+//    crypto SAW, so the sync witness reads a stamp, not an await.
+async SwarmInvite_mint(w) {
+    w.i({reached: "step_3"})
+    w.sc.now = 1751800010
+    let acct = w.o({ Account: 1, of: 'Machine' })[0]
+    let ident = this.Swarm_active_ident(acct)
+    this.Swarm_online(ident, true)
+    w.c.url = await this.Swarm_invite_url(w, ident, { Music: 1 }, 'invite_1', 'https://jamsend.example/BigSoundland')
+    let back = this.Swarm_iz_of_url(w.c.url)
+    let claim = await this.Swarm_verify_idzeug(back)
+    w.i({ minted: 'verified', to: claim.to, of: claim.prepub, nonce: claim.nonce })
+
+},
+// beat 4 — the scan: the Phone does exactly what the ?Iz= boot handler will — pull the blob out of
+//  the URL and redeem it. hello → accept ride the mail wire across this beat's passes; both ends
+//   land a %Pier with cross-signed Music grants.
+async SwarmInvite_scan(w) {
+    w.i({reached: "step_4"})
+    w.sc.now = 1751800020
+    let phone = this.SwarmStaple_ident(w, 'Phone')
+    this.Swarm_online(phone, true)
+    await this.Swarm_redeem(w, phone, this.Swarm_iz_of_url(w.c.url))
+
+},
+// beat 5 — the photograph: Eve shot the QR over a shoulder and opens it later. The signature is
+//  real, but the machine's spend ledger says no — the QR on the screen is single-use.
+async SwarmInvite_photograph(w) {
+    w.i({reached: "step_5"})
+    w.sc.now = 1751800030
+    let eve = await this.SwarmStaple_person(w, 'Eve')
+    this.Swarm_online(eve, true)
+    await this.Swarm_redeem(w, eve, this.Swarm_iz_of_url(w.c.url))
+
+},
+// ── the witness — per-beat %see observations, n-gated, reading live truth (the SwarmSteal lesson) ──
+SwarmInvite_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    let acct = w.o({ Account: 1, of: 'Machine' })[0]
+    let phone = this.SwarmStaple_ident(w, 'Phone')
+    if (!acct || !phone) return
+    let ident = this.Swarm_active_ident(acct)
+    // beat 2: the REAL maker stood the self — keys on .c, nick stamped, Peering owned — and its
+    //  only-one-active contract held: the older self stands by deactivated.
+    let actives = acct.o({ Identity: 1 }).filter(i => i.sc.active)
+    if (n === 2 && ident && ident.c.keys?.key && ident.sc.nick && this.Swarm_peering(ident) && actives.length === 1 && acct.o({ Identity: 1 }).length === 2 && !(w.oa({see: 'the machine self is made by its real maker — keys and nick and Peering — and only one identity is active'}))) w.i({see: 'the machine self is made by its real maker — keys and nick and Peering — and only one identity is active'})
+    // beat 3: the invite IS a URL — parseable back to a blob the crypto verified as a Music offer
+    //  from the active self (the %minted stamp is the crypto's own sighting).
+    let minted = w.o({ minted: 'verified' })[0]
+    if (n === 3 && String(w.c.url).startsWith('https://jamsend.example/BigSoundland?Iz=') && minted && minted.sc.to === 'Music' && minted.sc.of === ident?.sc?.prepub && !(w.oa({see: 'the invite is a URL — the blob inside parses back and verifies as a Music offer from the active self'}))) w.i({see: 'the invite is a URL — the blob inside parses back and verifies as a Music offer from the active self'})
+    // beat 4: the scan sealed it — the Phone holds a Pier for the machine with the machine's signed
+    //  Music grant, and the machine holds the mirror Pier for the Phone.
+    let pPier = this.Swarm_peering(phone)?.o({ Pier: 1, pub: ident?.sc?.prepub })[0]
+    let mPier = ident && this.Swarm_peering(ident)?.o({ Pier: 1, pub: phone.sc.prepub })[0]
+    if (n === 4 && pPier && pPier.o({ Grant: 'Music', by: ident.c.keys?.pub })[0] && mPier && !(w.oa({see: 'the phone scans the URL and gains a Pier — a Music grant signed by the machine rides it both ways'}))) w.i({see: 'the phone scans the URL and gains a Pier — a Music grant signed by the machine rides it both ways'})
+    // beat 5: the photograph is dead — Eve rebuffed on the spent nonce, no Pier forms for her.
+    let eve = this.SwarmStaple_ident(w, 'Eve')
+    if (n === 5 && eve && eve.o({ rebuff: 'rejected_spent' })[0] && !this.Swarm_peering(eve)?.o({ Pier: 1 }).length && !(w.oa({see: 'a photographed QR is dead after its first scan — the spent nonce refuses at the door'}))) w.i({see: 'a photographed QR is dead after its first scan — the spent nonce refuses at the door'})
+
+},
+// SwarmInvite_order — float A:SwarmInvite to the front of H/* so the Run snap stays readable.
+async SwarmInvite_order(w) { const H = this;
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'SwarmInvite') ? 0 : 1
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)

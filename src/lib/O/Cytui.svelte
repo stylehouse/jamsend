@@ -891,10 +891,11 @@
     //     slanted walls instead of a bbox grid.  Runs in BOTH cadences (the tree is cached
     //      .g-side, the fit is pure math) so the rows persist through a drag.  ▤ toggles the
     //       whole swap; member|dip rows are the pop-out surf (Vtuff_pop).
-    type MicroChip = { text: string, n: number, member?: TheC }
+    type MicroChip = { text: string, n: number, member?: TheC, sub?: number }
     type MicroRow  = { text: string, kind: string, x: number, y: number, w: number, h: number, fs: number,
-                       color: string | null, chips?: MicroChip[], member?: TheC, dip?: boolean }
-    type VtuffDesc = { text: string, kind: string, color?: string | null,
+                       color: string | null, tag?: string, sub?: number,
+                       chips?: MicroChip[], member?: TheC, dip?: boolean }
+    type VtuffDesc = { text: string, kind: string, color?: string | null, tag?: string, sub?: number,
                        chips?: MicroChip[], member?: TheC, dip?: boolean }
     let vmicro       = $state<{ id: string, x: number, y: number, w: number, h: number, clip: string, rows: MicroRow[] }[]>([])
     let micro_on_ids = new Set<string>()   // hysteresis memory: which cells are swapped in
@@ -932,23 +933,39 @@
             for (const r of root.o() as any[]) {
                 const kind = (r.sc.row as string) ?? 'fact'
                 const d: VtuffDesc = { text: String(r.sc.text ?? ''), kind }
+                if (r.sc.tag) d.tag = String(r.sc.tag)
+                if (r.sc.sub) d.sub = r.sc.sub as number
                 if (r.c.member) { d.member = r.c.member; d.color = kind_tint(Object.keys(r.c.member.sc ?? {})[0]) }
-                if (kind === 'title') d.color = kind_tint(src?.c?.fold_kind)
+                if (kind === 'title') d.color = kind_tint(d.tag ?? src?.c?.fold_kind)
                 if (kind === 'dip') d.dip = true
                 const bits = r.o() as any[]
-                if (bits.length) d.chips = bits.map((b: any) => ({ text: String(b.sc.text ?? ''), n: (b.sc.n as number) ?? 0, member: b.c.member }))
+                if (bits.length) d.chips = bits.map((b: any) => ({ text: String(b.sc.text ?? ''), n: (b.sc.n as number) ?? 0, member: b.c.member, sub: b.sc.sub as number | undefined }))
                 out.push(d)
             }
             return out
         }
         const members: any[] | null = src?.c?.gang ?? (src?.c?.stuff && typeof src.o === 'function' ? src.o() : null)
         if (!members?.length) return []
-        const out: VtuffDesc[] = [{ text: `${ident_ts(src)}  ×${members.length}`, kind: 'title', color: kind_tint(src?.c?.fold_kind) }]
+        // name|tag split, the TS twin of Vtuff_name (fallback until the gen boots)
+        const name_ts = (m: any): string => {
+            const mk = Object.keys(m?.sc ?? {})[0]
+            const v = m?.sc?.[mk]
+            if (v !== 1 && v != null) return String(v)
+            for (const k of ['name', 'title', 'text', 'nick', 'label'])
+                if (k !== mk && typeof m?.sc?.[k] === 'string') return m.sc[k]
+            return ''
+        }
+        const t_tag = src?.c?.gang ? (src?.c?.fold_kind as string) : Object.keys(src?.sc ?? {})[0]
+        const t_name = src?.c?.gang ? '' : name_ts(src)
+        const out: VtuffDesc[] = [{ text: `${t_name ? t_name + '  ' : ''}×${members.length}`,
+                                    kind: 'title', tag: t_tag, color: kind_tint(t_tag) }]
         const CAP = 8
         for (const m of members.slice(0, CAP)) {
             const sub = typeof m.o === 'function' ? m.o().length : 0
-            out.push({ text: ident_ts(m) + (sub ? ` /*${sub}` : ''), kind: 'member', member: m,
-                       color: kind_tint(Object.keys(m.sc ?? {})[0]) })
+            const mk = Object.keys(m.sc ?? {})[0]
+            const nm = name_ts(m)
+            out.push({ text: nm || mk, kind: 'member', member: m, tag: nm ? mk : undefined,
+                       sub: sub || undefined, color: kind_tint(mk) })
         }
         if (members.length > CAP) out.push({ text: `+${members.length - CAP} more`, kind: 'fact' })
         out.push({ text: `/*${members.length}`, kind: 'dip', dip: true })
@@ -1017,7 +1034,8 @@
                 const fs = (d.kind === 'title' ? unit * 1.35 : unit) * 0.62
                 if (x1 - x0 >= 36) rows.push({
                     text: d.text, kind: d.kind, x: x0 - bx, y: y - by, w: x1 - x0, h, fs,
-                    color: d.color ?? null, chips: d.chips, member: d.member, dip: d.dip })
+                    color: d.color ?? null, tag: d.tag, sub: d.sub,
+                    chips: d.chips, member: d.member, dip: d.dip })
             }
             y += h
         }
@@ -1691,18 +1709,20 @@
         }
         vfams = fams
 
-        // ── the vtuffing swap (6b's hysteretic zoom-threshold, grown an engine) ──
-        //  depth = √(rendered cell area) — how much of the cell is on screen
-        //   (inset is already in rendered px, so zoom is folded in).  Above
-        //    MICRO_Z the molded Stuffing crossfades out and the pane speaks in
-        //     Vtuffing rows chord-fitted to its polygon; ×1.15 up / ×0.85 down
-        //      so a breathing zoom never flaps.  BOTH cadences: the tree is
-        //       cached .g-side and the fit is pure math, so the rows track a
-        //        drag live instead of vanishing (the pane used to go blank —
-        //         its Stuffing dimmed AND its cards hidden).  ▤ turns the whole
-        //          swap off.
+        // ── the vtuffing swap: ▤ on = the ENGINE owns every fold pane ──
+        //  v1 swapped per-cell above a zoom threshold WITH per-cell hysteresis
+        //   memory — so two same-size neighbours could differ purely by zoom
+        //    HISTORY, and the board read as an arbitrary half-Stuffing
+        //     half-Vtuffing mix (the owner: "weird").  One rule now: when ▤ is
+        //      on, every fold|gang pane that can say ANYTHING (clears the tiny
+        //       floor and fits ≥1 row) speaks rows; molded Stuffings live under
+        //        ▤ off.  A sliver that fits nothing keeps its Stuffing — the
+        //         dim only happens once rows really render (v1 could dim the
+        //          Stuffing then fit nothing: a blank pane).  BOTH cadences:
+        //           the tree is cached .g-side and the fit is pure math, so
+        //            the rows track a drag live.
         if (vtuffing_on) {
-            const MICRO_Z = 300
+            const MICRO_MIN = 70   // √px² below which no row is legible anyway
             const micro: typeof vmicro = []
             const next_on = new Set<string>()
             for (const c of L.cells) {
@@ -1714,16 +1734,15 @@
                     area2 += p.x * q.y - q.x * p.y
                 }
                 const px = Math.sqrt(Math.abs(area2) / 2)
-                const was = micro_on_ids.has(c.id)
-                if (!(was ? px > MICRO_Z * 0.85 : px > MICRO_Z * 1.15)) continue
+                if (px < MICRO_MIN) continue
                 const descs = vtuff_rows(src)
                 if (!descs.length) continue
-                next_on.add(c.id)
                 const xs = c.inset.map(p => p.x), ys = c.inset.map(p => p.y)
                 const bx = Math.min(...xs), by = Math.min(...ys)
                 const bw = Math.max(...xs) - bx, bh = Math.max(...ys) - by
                 const rows = micro_fit(c.inset, descs, bx, by, bh)
                 if (!rows.length) continue
+                next_on.add(c.id)
                 micro.push({ id: c.id, x: bx, y: by, w: bw, h: bh,
                     clip: 'polygon(' + c.inset.map(p =>
                         `${(p.x - bx).toFixed(1)}px ${(p.y - by).toFixed(1)}px`).join(',') + ')',
@@ -2380,7 +2399,11 @@
                              style:align-items={row.kind === 'list' ? 'flex-start' : 'center'}
                              style:color={row.color ?? ''}
                              onclick={hot ? () => micro_click(mc.id, row.member) : undefined}>
+                            <!-- the mainkey IS different from other keys: it rides as a small
+                                 type-tag chip beside the bare NAME, never as inline prose -->
+                            {#if row.tag}<span class="ktag">{row.tag}</span>{/if}
                             <span class="t">{row.text}</span>
+                            {#if row.sub}<span class="subn">/*{row.sub}</span>{/if}
                             <!-- a chip carrying a member is its OWN pop-out handle (the
                                  homogeneous list form: 'figaro' pops figaro) -->
                             {#each row.chips ?? [] as chip, ci (ci)}
@@ -2388,7 +2411,7 @@
                                      role={chip.member ? 'button' : undefined}
                                      class="chip" class:hot={chip.member != null}
                                      onclick={chip.member ? (e: Event) => { e.stopPropagation(); micro_click(mc.id, chip.member) } : undefined}>
-                                    {chip.text}{chip.n > 1 ? ` ×${chip.n}` : ''}</svelte:element>
+                                    {chip.text}{chip.n > 1 ? ` ×${chip.n}` : ''}{#if chip.sub}<span class="subn">/*{chip.sub}</span>{/if}</svelte:element>
                             {/each}
                         </svelte:element>
                     {/each}
@@ -2641,6 +2664,25 @@
     overflow: hidden;
 }
 .cytui-micro-row.sub { padding-left: 1.2em; opacity: 0.72; }
+/* the TYPE badge: the mainkey drawn as metaphysics, not prose — a small outlined chip in
+   the row's kind colour ('cell' beside Kunzea, 'Artist' beside Fernway, same shape always) */
+.cytui-micro-row .ktag {
+    flex: none;
+    font-size: 0.68em;
+    letter-spacing: 0.04em;
+    border: 1px solid currentColor;
+    border-radius: 3px;
+    padding: 0 0.32em;
+    opacity: 0.75;
+}
+/* the has-interior glyph: /*N in the dip's lilac wherever it appears (rows AND chips) —
+   one consistent "there's more inside; it pops out with edges" affordance */
+.cytui-micro-row .subn {
+    flex: none;
+    color: rgb(156, 140, 217);
+    font-size: 0.8em;
+}
+.cytui-micro-row .chip .subn { margin-left: 0.25em; font-size: 0.9em; }
 .cytui-micro-row .chip {
     flex: none;
     border: 1px solid #3d5a72;

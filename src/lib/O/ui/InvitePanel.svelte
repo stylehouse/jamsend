@@ -1,0 +1,153 @@
+<script lang="ts">
+    // InvitePanel — the Invite front door's live face (Swarm_spec §10.1). Two directions in one
+    //  chunky panel:
+    //   MINT — resolve the machine's LIVE identity (Swarm_live_self: the one signing key Auto's
+    //    Clustation_concrete stood up — never a parallel self), mint a single-use invite, show it
+    //     as a scannable QR. The inviter stays on this screen; the invite is online-scan (the
+    //      handshake needs both present — a photographed QR is dead after its first scan).
+    //   LAND — this page was OPENED from a scanned ?Iz= link: verify the blob, show who's
+    //    inviting, and offer JOIN. The redeem must reach the inviter (Swarm_deliver's station
+    //     precondition), so with no live link it says so instead of pretending.
+    //  The mint→URL→parse→seal→spent arc is PROVEN by Book SwarmInvite (green, deterministic);
+    //   this panel is only the eyes and buttons over those verbs.
+    import InviteQR from "$lib/O/ui/micro/InviteQR.svelte"
+    import { boot_param } from "$lib/boot"
+
+    let { H }: { H: any } = $props()
+
+    // the live self resolves once the Creduler deposits Swarm.g's verbs AND Auto stands the
+    //  identity — both bump H.version, so a $derived off it settles without racing the boot.
+    let self = $derived.by(() => {
+        void H?.version
+        try { return typeof H?.Swarm_live_self === 'function' ? H.Swarm_live_self() : null } catch { return null }
+    })
+
+    // ── MINT ──────────────────────────────────────────────────────────────────────────────────
+    let url = $state('')
+    let err = $state('')
+    let big = $state(false)          // the full-screen QR face — opens on mint, click-away closes
+    // most-of-the-screen, computed at open (a resize mid-showing is rare; re-open recomputes)
+    let big_size = $state(320)
+    function open_big() {
+        big_size = Math.floor(Math.min(window.innerWidth * 0.92, window.innerHeight * 0.8))
+        big = true
+    }
+    async function mint() {
+        err = ''
+        try {
+            // nonce: random hex live (a Book pins its own); the spend ledger rides the %Peering
+            const nonce = Array.from(crypto.getRandomValues(new Uint8Array(6)), b => b.toString(16).padStart(2, '0')).join('')
+            url = await H.Swarm_invite_url(null, self, { Music: 1 }, nonce, location.origin + location.pathname)
+            open_big()
+        } catch (e) { err = String(e) }
+    }
+
+    // ── LAND (?Iz= in this page's own URL) ────────────────────────────────────────────────────
+    let iz = boot_param('Iz')
+    let invite = $state<any>(null)       // the verified claim {to, by, prepub, friendly, ...}
+    let iz_err = $state('')
+    let joined = $state('')
+    $effect(() => {
+        void H?.version
+        if (!iz || invite || iz_err || typeof H?.Swarm_verify_idzeug !== 'function') return
+        H.Swarm_verify_idzeug(iz)
+            .then((claim: any) => invite = claim)
+            .catch((e: any) => iz_err = 'the invite did not verify — ' + String(e).slice(0, 80))
+    })
+    // Swarm_deliver's precondition, scanned honestly: a station of OUR prepub somewhere in the
+    //  H** worlds (the relay link the hello would ride). None ⇒ join explains instead of failing.
+    function station_world(): any {
+        const top = H?.top_House?.() ?? H
+        for (const house of (top?.all_House ?? (top ? [top] : []))) {
+            for (const A of house.o({ A: 1 })) {
+                for (const w of A.o({ w: 1 })) {
+                    if (w.o({ Peering: 1 }).find((p: any) => p.sc.name === self?.sc?.prepub)) return w
+                }
+            }
+        }
+        return null
+    }
+    async function join() {
+        joined = ''
+        const w = station_world()
+        if (!w) { joined = '⚠ no live link to the inviter yet — the relay station is not up on this page'; return }
+        const claim = await H.Swarm_redeem(w, self, iz)
+        joined = claim
+            ? '✓ joined — a Pier to ' + (claim.friendly || claim.prepub) + ' is standing'
+            : '✗ the inviter refused or is offline — the rebuff rides the identity'
+    }
+</script>
+
+<div class="ip">
+    {#if invite || iz_err}
+        <!-- the LANDING face: this page was opened from a scanned invite -->
+        <div class="ip-land">
+            {#if invite}
+                <span class="ip-title">📨 an invite from <b>{invite.friendly || invite.prepub}</b> — {invite.to}</span>
+                <button class="ip-act" onclick={join}>join</button>
+                {#if joined}<span class="ip-note">{joined}</span>{/if}
+            {:else}
+                <span class="ip-note">{iz_err}</span>
+            {/if}
+        </div>
+    {/if}
+    {#if self}
+        <div class="ip-mint">
+            <span class="ip-title">⨳ <b>{self.sc.nick || self.sc.prepub}</b></span>
+            {#if !url}
+                <button class="ip-act" onclick={mint} title="mint a single-use Music invite and show its QR">invite a friend</button>
+            {:else}
+                <InviteQR {url} size={140} caption="" />
+                <span class="ip-row">
+                    <button class="ip-act" onclick={open_big} title="fill the screen so a phone camera can grab it across the table">fill screen</button>
+                    <button class="ip-act" onclick={mint} title="the shown one stays spendable until scanned; this mints a fresh nonce">fresh QR</button>
+                </span>
+            {/if}
+            {#if err}<span class="ip-note">{err}</span>{/if}
+        </div>
+    {:else}
+        <span class="ip-note">⏳ identity…</span>
+    {/if}
+</div>
+
+{#if url && big}
+    <!-- the full-screen face: the QR takes most of the viewport, white-on-white multiplied into the
+         warm backdrop — the modules stay ink, the quiet zone and cells take the tan (scan-safe: the
+         blend only ever DARKENS toward the backdrop, never lightens the ink). Click-away closes. -->
+    <div class="ip-overlay" onclick={() => big = false}>
+        <div class="ip-big" onclick={(e) => e.stopPropagation()}>
+            <InviteQR {url} size={big_size} pad={Math.max(20, Math.floor(big_size / 24))} bg="#ffffff" bare caption="" />
+            <span class="ip-big-cap">scan to join — single-use, dies after its first scan</span>
+        </div>
+    </div>
+{/if}
+
+<style>
+    .ip {
+        display: inline-flex; align-items: flex-start; gap: 0.6rem; flex-wrap: wrap;
+        padding: 0.35rem 0.5rem; border-radius: 8px;
+        background: #14141c; border: 1px solid #2a2a38; color: #bbc;
+        font-size: 0.8rem;
+    }
+    .ip-mint, .ip-land { display: flex; flex-direction: column; align-items: flex-start; gap: 0.35rem; }
+    .ip-title { white-space: nowrap; }
+    .ip-act {
+        background: #232338; border: 1px solid #44446a; color: #ccd;
+        cursor: pointer; font-size: 0.78rem; padding: 0.15rem 0.6rem; border-radius: 5px;
+    }
+    .ip-act:hover { border-color: #77a; color: #fff; }
+    .ip-note { font-size: 0.72rem; color: #889; max-width: 22rem; }
+    .ip-row { display: flex; gap: 0.4rem; }
+
+    /* ── the full-screen face ── a warm amber-tan radial, lightest where the QR sits */
+    .ip-overlay {
+        position: fixed; inset: 0; z-index: 60;
+        display: flex; align-items: center; justify-content: center;
+        background: radial-gradient(circle at 50% 44%, #f3e3bd 0%, #e2bd85 46%, #a8763f 100%);
+        cursor: pointer;
+    }
+    .ip-big { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; cursor: auto; }
+    /* the blend: the QR's white becomes the backdrop's tan exactly; its ink stays ink */
+    .ip-big :global(img) { mix-blend-mode: multiply; display: block; }
+    .ip-big-cap { font-size: 0.85rem; color: #4a300f; letter-spacing: 0.02em; }
+</style>

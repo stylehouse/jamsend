@@ -1,5 +1,5 @@
-Credulation,of_Book:VoroScape
-  run=0,at=1783351064.672,ok=0,ok_pct=0.17,mode:check
+Credulation,of_Book:SwarmInvite
+  run=0,at=1783350023.876,ok,ok_pct,mode:check
     uses:Ghost_N_Peeroleum,dige:89f7731b8ad5fae2
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71

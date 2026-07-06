@@ -17,9 +17,7 @@ story:VoroMitosis
     dontSnapCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.033
-      sample=0.048,at=1783289860
-      sample=0.04,at=1783328658
+    TimeTotal:beliefs,avg=0.031
       sample=0.028,at=1783330804
       sample=0.026,at=1783331824
       sample=0.022,at=1783332456
@@ -28,9 +26,9 @@ story:VoroMitosis
       sample=0.037,at=1783344605
       sample=0.051,at=1783348889
       sample=0.03,at=1783349011
+      sample=0.032,at=1783350927
+      sample=0.027,at=1783350966
     TimeTotal:step,avg=0.003
-      sample=0.004,at=1783289860
-      sample=0.004,at=1783328658
       sample=0.003,at=1783330804
       sample=0.002,at=1783331824
       sample=0.002,at=1783332456
@@ -39,6 +37,8 @@ story:VoroMitosis
       sample=0.003,at=1783344605
       sample=0.005,at=1783348889
       sample=0.003,at=1783349011
+      sample=0.003,at=1783350927
+      sample=0.002,at=1783350966
   step,dige:9eb579214a9df3ce
   step=2,dige:3a06cc53529bea87
   step=3,dige:42b634192aaaa6d8

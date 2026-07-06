@@ -24,21 +24,32 @@ Minted with `new TheC(...)` and reachable from nothing — snap inclusion is
     calls cost one sum.
 
     %Vtuffing,of:<fold kind>,n:<members>          (c.src → the fold|gang rep)
-      /%Vrow,row:title,text:'Olearia  ×4',wgt:2    a gang titles by FAMILY NAME alone
-                                                    (the rep's own ident reads as one member)
+      /%Vrow,row:title,text:'Kunzea  ×14',tag:cell  NAME + TYPE-TAG, one shape always:
+                                                     tag = the mainkey, drawn as a small
+                                                     kind-coloured badge (the metaphysics
+                                                     visible — mainkey ≠ other keys); a
+                                                     gang has no name, so tag + ×N alone
       /%Vrow,row:list,text:''                      HOMOGENEOUS family: members as chips
-         /%Vbit,text:'figaro',n:1                   of just their distinguishing bit
-         /%Vbit,text:'tenuifolium /*3',n:1           (Vtuff_member_bit; c.member — each
-         /%Vbit,text:'+2',n:0                         chip its own pop-out handle)
-      /%Vrow,row:fact,text:'artist: Neil Young'    a key EVERYONE agrees on, said once
-      /%Vrow,row:spread,text:'title'               a key that varies (Vtuff_keyrows skips
-         /%Vbit,text:'Tide',n:2                     the family mainkey when homogeneous —
-         /%Vbit,text:'+3',n:0                        no 'Olearia ×4' then 'Olearia:' stutter)
-      /%Vrow,row:member,text:'Track · Halo'        per-member when a MIXED family ≤ 5
+         /%Vbit,text:'figaro',n:1                   of just their name (Vtuff_member_bit;
+         /%Vbit,text:'tenuifolium',n:1,sub:3         c.member — each chip its own pop-out
+         /%Vbit,text:'+2',n:0                         handle; sub = the lilac /*N glyph)
+      /%Vrow,row:fact,text:'habit: vine'           a key EVERYONE agrees on, said once
+      /%Vrow,row:spread,text:'year'                a key that varies (Vtuff_keyrows skips
+         /%Vbit,text:'1998',n:2                     the family mainkey when homogeneous —
+         /%Vbit,text:'+1',n:0                        no 'Olearia ×4' then 'Olearia:' stutter)
+      /%Vrow,row:member,text:'Halo',tag:Track      per-member when a MIXED family ≤ 5
                                                     (c.member — the pop-out handle)
-      /%Vrow,row:sub,text:'· cell: Coprosma'       depth-1 openness: a tiny member's own
-                                                    children indent under it (poppable too)
+      /%Vrow,row:sub,text:'Coprosma',tag:cell      depth-1 openness: a tiny member's own
+                                                    children indent under it (poppable too;
+                                                    tag only when its kind differs)
       /%Vrow,row:dip,text:'/*12'                   the surf handle (c.members)
+
+The property level is uniform `key: value` (facts|spreads); the TYPE level is always
+ the tag badge; the NAME stands bare.  `Vtuff_name` is the splitter ({cell:'Kunzea'} →
+  name Kunzea tag cell; {Artist:1,name:'Fernway'} → name Fernway tag Artist) — it ended
+   the two-format stutter ('cell: Kunzea ×14' vs 'Artist · Fernway ×2').  `sub` counts
+    children-to-dig, drawn as the dip-lilac `/*N` on rows AND chips: one consistent
+     "there's more inside; it pops out with edges" affordance.
 
 `Vtuff_default` is the generic distiller (the Stuffusion|Stuffziad|Stuffziado
  compression re-said as rows).  A presence-only key everyone carries (the mainkey's
@@ -156,11 +167,18 @@ Still floating: a popped GANG member directly under `w` gets no edge to its old 
   tiny CORE seam — a generic `n.c.bond` ref that `cyto_scan_refs` draws as a blue
    edge — which is core-touch: isolation-proof first, not a Voro-side patch.
 
-## Toggles (the ▤)
+## Toggles (the ▤) — and ONE swap rule
 
-Every modulation now has a bar toggle: ◈ voronoi, ❝ properCellable, ⬡ family hulls,
- 🌀 gravity brush, **▤ vtuffing** (stash `Cyto_vtuffing`, default on).  ▤ off =
-  molded Stuffings always, at every zoom.
+Every modulation has a bar toggle: ◈ voronoi, ❝ properCellable, ⬡ family hulls,
+ 🌀 gravity brush, **▤ vtuffing** (stash `Cyto_vtuffing`, default on).
+
+**▤ on = the engine owns EVERY fold pane; ▤ off = molded Stuffings always.**  v1
+ swapped per-cell above a zoom threshold with per-cell hysteresis MEMORY — two
+  same-size neighbours could differ purely by zoom history, and the board read as an
+   arbitrary half-Stuffing half-Vtuffing mix (the owner: "weird").  Now the only gate
+    is "can it say anything at all": a tiny floor (√area ≥ 70px) plus the fit actually
+     returning rows; a sliver keeps its molded Stuffing, and the Stuffing only dims
+      once rows really render (v1 could dim it then fit nothing — a blank pane).
 
 ## Fallback until the gen boots
 

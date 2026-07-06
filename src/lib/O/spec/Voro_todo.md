@@ -254,9 +254,11 @@ Built: `Voro_swarmable` in Voro.g — a STRUCTURAL container whose children are 
      normalises + fits; a TS fallback speaks plainly until the new gen boots.
 - FIT: rows chord-fitted to the CONVEX cell polygon (`poly_chord`/`micro_fit`) — text
    follows the slanted walls; overflow keeps title+head+dip and says `+K more`.
-- (b) hysteretic zoom-swap unchanged: depth = √(rendered cell area), MICRO_Z=300,
-   ×1.15/×0.85, 200ms crossfade.  Now BOTH cadences (cache + pure math) so the rows
-    ride a drag live — the v1 vanish-mid-gesture is gone.  ▤ toggles the whole swap.
+- (b) the swap is ONE RULE now (2026-07-07, owner: "weird how half are Stuffing half
+   Vtuffing"): ▤ on = the engine owns EVERY fold pane that clears √area ≥ 70px AND
+    fits ≥1 row (no zoom threshold, no per-cell hysteresis memory — that made
+     same-size neighbours differ by zoom HISTORY); Stuffing dims only once rows
+      really render.  BOTH cadences (cache + pure math) so rows ride a drag live.
 - The /*N surf: member|dip rows are buttons → `Vtuff_pop` pops nodes OUT INTO THE
    GRAPH (c.popped / c.popped_open intent stamps, crusher respects, ◈-clear forgets)
     — never expands inside the pane.
@@ -269,6 +271,12 @@ Built: `Voro_swarmable` in Voro.g — a STRUCTURAL container whose children are 
      + #4 LIST FORM (homogeneous → title once + member-bit chips, each a pop handle;
       Vtuff_keyrows skips the family mainkey) + depth-1 row:sub openness + the fold-hub
        explosion edges arrive free from the scan's non-compound-parent `/` rule.
+- ROUND 3 (2026-07-07, owner review): ONE swap rule (▤ owns all fold panes — no more
+   half/half by zoom history); NAME + TYPE-TAG title split (`Vtuff_name`; 'Kunzea ×14'
+    tagged `cell` ≡ 'Fernway ×2' tagged `Artist` — the two-format stutter dead); the
+     lilac `/*N` `sub` glyph on rows AND chips; 2D list wrap; deterministic trait
+      sprinkle on both Books' data (`Voro_hash` — %woodystem/%habit/%endemic,
+       %year/%live/%remaster) so panes have facts|spreads to speak.
 - Two modes of recursion carved (same-graph vs subgraph-in-cell; mode A first, intent
    AGING sketched for the wandering-landscape problem) — `Voro_vtuffing.md`.
 - NOT built — `Voro_vtuffing.md` §"next moves": #1 spill `w/*/**` auto (top-K governor),

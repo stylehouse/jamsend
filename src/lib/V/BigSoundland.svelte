@@ -30,6 +30,7 @@
     import BootGate   from "$lib/O/ui/BootGate.svelte"
     import Actions    from "$lib/O/ui/Actions.svelte"
     import Lens       from "$lib/O/ui/Lens.svelte"
+    import InvitePanel from "$lib/O/ui/InvitePanel.svelte"
     import { boot_param } from "$lib/boot"
     import { boot_qualand } from "$lib/O/BigQualand.svelte"
 
@@ -183,6 +184,15 @@
                 onclick={toggle_sprawl}>▦</button>
     </header>
 
+    <!-- the strip — chunky panels of varying heights atop the scape (Swarm_spec §10.1: the Invite
+         front door lives here; siblings join beside it as the interface grows). In flow, not
+         sticky — it scrolls away with the page rather than taxing the glass. -->
+    {#if H}
+        <div class="scape-strip">
+            <InvitePanel {H} />
+        </div>
+    {/if}
+
     <!-- the active House's action rack — in flow beneath the bar, scrolls away with the page (sprawl only) -->
     {#if sprawl && show_actions && active}
         <div class="scape-panel">
@@ -319,6 +329,13 @@
 
     /* the active House's action rack — dropped just under the bar, IN FLOW (not sticky) so its
        height pushes the sprawl down and it scrolls away with the page (BigWordland's .bw-panel) */
+    /* the strip — chunky panels of VARYING heights (align-items flex-start lets each size itself:
+        the invite panel is one line until a QR blooms it tall) */
+    .scape-strip {
+        position: relative; z-index: 1;
+        display: flex; align-items: flex-start; gap: 0.6rem; flex-wrap: wrap;
+        padding: 0.3rem 1rem 0;
+    }
     .scape-panel {
         position: relative; z-index: 1;
         display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;

@@ -1,0 +1,21 @@
+Snap:H
+  H:SwarmInvite,Run
+    A:SwarmInvite
+      self,round=3	{"mung":["age"]}
+      w:SwarmInvite,now=1751800010
+        self,round=3	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Account,of:Machine
+          Identity:9ff272fbf4b59795,prepub:9ff272fbf4b59795,nick:lone-mast
+            Peering,name:9ff272fbf4b59795
+          Identity:5c4b63609cd01594,prepub:5c4b63609cd01594,nick:lone-sail,active
+            Peering,name:5c4b63609cd01594,online
+              Idzeug:invite_1,to:Music
+        Account,of:Phone
+          Identity:0bd16fbd60d7b3bb,prepub:0bd16fbd60d7b3bb,friendly:Phone
+            Peering,name:0bd16fbd60d7b3bb,friendly:Phone
+        req:witness,eternal,ok
+        reached:step_3
+        minted:verified,to:Music,of:5c4b63609cd01594,nonce:invite_1
+        see:the invite is a URL — the blob inside parses back and verifies as a Music offer from the active self

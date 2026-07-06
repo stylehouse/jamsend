@@ -498,6 +498,24 @@ The replication protocol is real (Repli_* + the Se, §6/MusuReplica — live-gre
       appearing|vanishing on disk. The same `repli_on_neu` hook then offers REAL music with zero new
        protocol.
 
+**9.1b The share-dir heuristics (owner 2026-07-07).** What KIND of directory did the FSA grant open?
+ Sniff, don't ask:
+ - **No `wormhole/` and no `.git/` inside** ⇒ it is an actual MUSIC COLLECTION. The app's own
+    bookkeeping must not litter someone's record shelves: **rewrite every `wormhole/` request to
+     `.jamsend/wormhole/`** inside the granted dir — the hidden corner is ours, the collection stays
+      theirs. (One rewrite at the nav layer; the four-backend contract stays intact —
+       `full-contract-no-subset-gaps`.)
+ - **We are IN the project git repo** (`.git/` + `wormhole/` present) ⇒ dev mode: **`testmusic/` is
+    the actual share.** The same code path serves the developer and the stranger — the dual purpose
+     is the point, not an accident.
+ - **Consent is mostly all-or-nothing, granted gradually:** the FSA picker IS the consent gesture,
+    and its unit is a directory — a user who wants to share less points the grant at ONE
+     sub-location of their collection (exactly how `testmusic/` works in-repo). No per-file
+      checkbox forest; the filesystem hierarchy is the consent UI.
+ - **The download side is a HIERARCHY too**, not a bucket: received music lands under
+    `<share>/.jamsend/downloads/<friend>/…` (possibly `<username>/`), so what came from whom stays
+     legible on plain disk and a wipe of one friendship is one `rm -r`.
+
 **9.2 Selections sendable to Piers.** The share unit is not the library, it's a SELECTION of it — a
  genre, an artist folder, an occasion. Concretely: a `%Share,label:<name>` particle holding a match
   (what subset) and a to (which Pier|channel), whose own Se runs over just that subset — its neus

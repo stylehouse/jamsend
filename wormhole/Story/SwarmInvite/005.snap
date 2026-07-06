@@ -1,0 +1,47 @@
+Snap:H
+  H:SwarmInvite,Run
+    A:SwarmInvite
+      self,round=5	{"mung":["age"]}
+      w:SwarmInvite,now=1751800030
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Account,of:Machine
+          Identity:9ff272fbf4b59795,prepub:9ff272fbf4b59795,nick:lone-mast
+            Peering,name:9ff272fbf4b59795
+          Identity:5c4b63609cd01594,prepub:5c4b63609cd01594,nick:lone-sail,active
+            Peering,name:5c4b63609cd01594,online
+              Idzeug:invite_1,to:Music,spent
+              Pier,pub:0bd16fbd60d7b3bb,friendly:Phone,since:1751800020
+                Peering,name:0bd16fbd60d7b3bb,friendly:Phone,pub:0bd16fbd60d7b3bb6291e6f8efc9aa810dffc26d79a2e25394615904d187401e
+                Grant:Music,by:0bd16fbd60d7b3bb6291e6f8efc9aa810dffc26d79a2e25394615904d187401e,for:5c4b63609cd01594161e5b826b12541abd3eeaef9f318f1aa7ba1ed050151799,time:1751800020,sign:dc6ea0cc3dafc4ae9467194efb2f16342ad4bef2fda76e138a3b0b968ce017aa0c7da75d2d068a77adf60579a714598dd63ec223b181eaded8f3a8f5c03db808
+                Grant:Music,by:5c4b63609cd01594161e5b826b12541abd3eeaef9f318f1aa7ba1ed050151799,for:0bd16fbd60d7b3bb6291e6f8efc9aa810dffc26d79a2e25394615904d187401e,time:1751800020,sign:75dafed71fa18673acdabf9fc69ac3f31a6a82a0043e2927802d107b3c3784e5a4594476bab8b54ab31657612a22e8fb13e5d708e7ace0b60a37bc8d7724eb0e
+            mail
+              frame:pier_hello,did
+              frame:pier_hello,did
+            SocialGraph
+              Edge,a:5c4b63609cd01594,b:0bd16fbd60d7b3bb,at:1751800020
+            rebuff:hello_spent,say:1e9ba62ff7abf43b
+        Account,of:Phone
+          Identity:0bd16fbd60d7b3bb,prepub:0bd16fbd60d7b3bb,friendly:Phone
+            Peering,name:0bd16fbd60d7b3bb,friendly:Phone,online
+              Pier,pub:5c4b63609cd01594,friendly:,since:1751800020
+                Peering,name:5c4b63609cd01594,friendly:,pub:5c4b63609cd01594161e5b826b12541abd3eeaef9f318f1aa7ba1ed050151799
+                Grant:Music,by:5c4b63609cd01594161e5b826b12541abd3eeaef9f318f1aa7ba1ed050151799,for:0bd16fbd60d7b3bb6291e6f8efc9aa810dffc26d79a2e25394615904d187401e,time:1751800020,sign:75dafed71fa18673acdabf9fc69ac3f31a6a82a0043e2927802d107b3c3784e5a4594476bab8b54ab31657612a22e8fb13e5d708e7ace0b60a37bc8d7724eb0e
+                Grant:Music,by:0bd16fbd60d7b3bb6291e6f8efc9aa810dffc26d79a2e25394615904d187401e,for:5c4b63609cd01594161e5b826b12541abd3eeaef9f318f1aa7ba1ed050151799,time:1751800020,sign:dc6ea0cc3dafc4ae9467194efb2f16342ad4bef2fda76e138a3b0b968ce017aa0c7da75d2d068a77adf60579a714598dd63ec223b181eaded8f3a8f5c03db808
+            mail
+              frame:pier_accept,did
+            SocialGraph
+              Edge,a:0bd16fbd60d7b3bb,b:5c4b63609cd01594,at:1751800020
+        req:witness,eternal,ok
+        reached:step_3
+        minted:verified,to:Music,of:5c4b63609cd01594,nonce:invite_1
+        reached:step_4
+        reached:step_5
+        Account,of:Eve
+          Identity:1e9ba62ff7abf43b,prepub:1e9ba62ff7abf43b,friendly:Eve
+            Peering,name:1e9ba62ff7abf43b,friendly:Eve,online
+            mail
+              frame:pier_reject,did
+            rebuff:rejected_spent,say:5c4b63609cd01594
+        see:a photographed QR is dead after its first scan — the spent nonce refuses at the door

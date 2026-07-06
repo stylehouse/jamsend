@@ -348,23 +348,28 @@ Vtuff_ident(m):
     }
     return t
 
-// Vtuff_member_bit — the SHORT distinguishing bit of a member inside a pane whose title already
-//  names the family: the mainkey's VALUE when it carries one ({Olearia:'figaro'} → 'figaro'),
-//   else a naming key, else the bare mainkey.  ' /*N' marks children to dig.
-Vtuff_member_bit(m):
+// Vtuff_name — the NAME of a particle, type stripped: the mainkey's value when it carries one
+//  ({cell:'Kunzea'} → 'Kunzea'), else a naming key ({Artist:1,name:'Fernway'} → 'Fernway'),
+//   else ''.  The TYPE rides separately as the row's `tag` (a small kind-coloured chip the
+//    renderer draws) — the metaphysics made visible: the mainkey IS different from other keys,
+//     so it stops being inline prose ('cell: Kunzea' here, 'Artist · Fernway' there) and
+//      becomes one consistent type-badge beside one consistent name.
+Vtuff_name(m):
     let mk = Object.keys(m.sc)[0]
     let v = m.sc[mk]
-    let t = null
-    if (v !== 1 && v != null) t = '' + v
-    if (t == null) {
-        let names = ['name', 'title', 'text', 'nick', 'label']
-        for (const k of names) {
-            if (k !== mk && typeof m.sc[k] === 'string') { t = m.sc[k]; break }
-        }
+    if (v !== 1 && v != null) return '' + v
+    let names = ['name', 'title', 'text', 'nick', 'label']
+    for (const k of names) {
+        if (k !== mk && typeof m.sc[k] === 'string') return m.sc[k]
     }
-    if (t == null) t = mk
-    let sub = m.o().length
-    if (sub) t = t + ' /*' + sub
+    return ''
+
+// Vtuff_member_bit — the SHORT distinguishing bit of a member inside a pane whose title already
+//  names the family: its name, else its bare mainkey.  (Children-to-dig ride the row|chip's
+//   `sub` count now, drawn as the lilac /*N glyph — not baked into the text.)
+Vtuff_member_bit(m):
+    let t = this.Vtuff_name(m)
+    if (!t) t = Object.keys(m.sc)[0]
     return t
 
 // Vtuff_default — the generic distiller.  A HOMOGENEOUS family (one mainkey) never repeats
@@ -382,33 +387,50 @@ Vtuff_default(root, members, src):
         kinds[Object.keys(m.sc)[0]] = 1
     }
     let homo = Object.keys(kinds).length === 1
-    let title = this.Vtuff_ident(src)
-    if (src.c.gang) {
-        // a gang rep's own ident reads as ONE member ('Olearia: figaro ×4' looks like 4
-        //  figaros) — the family name alone is the honest title.
-        title = src.c.fold_kind || Object.keys(kinds)[0]
+    // the TITLE: one name + one type-tag, every pane the same shape.  A gang has no name of
+    //  its own (the rep's ident would read as ONE member — '4 figaros'), so its title is just
+    //   the tag + count; a fold container contributes its name ('Kunzea  ×14' tagged `cell`,
+    //    'Fernway  ×2' tagged `Artist` — no more two formats).
+    let tag = src.c.fold_kind || Object.keys(kinds)[0]
+    let name = ''
+    if (!src.c.gang) {
+        tag = Object.keys(src.sc)[0]
+        name = this.Vtuff_name(src)
     }
-    root.i({ Vrow: 1, row: 'title', text: title + '  ×' + members.length, wgt: 2 })
+    let tsc = { Vrow: 1, row: 'title', text: (name ? name + '  ' : '') + '×' + members.length, wgt: 2, tag: tag }
+    root.i(tsc)
     if (homo) {
         let r = root.i({ Vrow: 1, row: 'list', text: '', wgt: 1 })
         let shown = members
         if (members.length > 9) shown = members.slice(0, 9)
         for (const m of shown) {
-            let b = r.i({ Vbit: 1, text: this.Vtuff_member_bit(m), n: 1 })
+            let bsc = { Vbit: 1, text: this.Vtuff_member_bit(m), n: 1 }
+            let bsub = m.o().length
+            if (bsub) bsc.sub = bsub
+            let b = r.i(bsc)
             b.c.member = m
         }
         if (members.length > shown.length) r.i({ Vbit: 1, text: '+' + (members.length - shown.length), n: 0 })
         this.Vtuff_keyrows(root, members, Object.keys(kinds)[0])
     } else if (members.length <= 5) {
         for (const m of members) {
-            let t = this.Vtuff_ident(m)
+            let nm = this.Vtuff_name(m)
+            let mmk = Object.keys(m.sc)[0]
             let sub = m.o().length
-            if (sub) t = t + ' /*' + sub
-            let r = root.i({ Vrow: 1, row: 'member', text: t, wgt: 1 })
+            let rsc = { Vrow: 1, row: 'member', text: nm || mmk, wgt: 1 }
+            if (nm) rsc.tag = mmk
+            if (sub) rsc.sub = sub
+            let r = root.i(rsc)
             r.c.member = m
             if (members.length <= 3 && sub && sub <= 3) {
                 for (const k of m.o()) {
-                    let sr = root.i({ Vrow: 1, row: 'sub', text: '· ' + this.Vtuff_ident(k), wgt: 1 })
+                    let knm = this.Vtuff_name(k)
+                    let kmk = Object.keys(k.sc)[0]
+                    let ksc = { Vrow: 1, row: 'sub', text: knm || kmk, wgt: 1 }
+                    if (knm && kmk !== mmk) ksc.tag = kmk
+                    let ksub = k.o().length
+                    if (ksub) ksc.sub = ksub
+                    let sr = root.i(ksc)
                     sr.c.member = k
                 }
             }

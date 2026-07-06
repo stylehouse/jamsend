@@ -112,6 +112,42 @@ async Swarm_verify_idzeug(iz):
     return await verify_grant(atom)
 //#endregion
 
+//#region front door — the live self, the invite URL (Swarm_spec §10.1: the QR face of the Idzeug)
+//  USER-FACING this is an Invite; the signed mechanics stay the Idzeug verbs above (renaming a green
+//   handshake is a deliberate later pass, not a drive-by). The front door adds NO crypto: it resolves
+//    the machine's ACTIVE identity — the one signing key, the shape Auto's Clustation_concrete makes,
+//     never a parallel self — mints through Swarm_mint_idzeug, and dresses the blob as a scannable URL.
+
+// Swarm_active_ident — the active %Identity in a Clustation-shaped container (active rides 1/absent,
+//  keys on .c). SwarmInvite proves this against the REAL shape — Clustation_concrete's own output —
+//   so shape drift turns the Book red instead of silently returning null in the panel.
+Swarm_active_ident(container):
+    if (!container) return null
+    return container.o({ Identity: 1 }).find(i => i.sc.active) ?? null
+
+// Swarm_live_self — the machine's active identity: A:Clustation under the top House (stood by Auto's
+//  ensure_identity | ensure_default | adopt — every mint funnels through Clustation_concrete). Null
+//   pre-boot: the panel shows its "no identity" face rather than minting a parallel self.
+Swarm_live_self():
+    let A = this.top_House().o({ A: 'Clustation' })[0]
+    return this.Swarm_active_ident(A)
+
+// Swarm_invite_url — the front door itself: mint the single-use Idzeug from `ident` and dress it as
+//  the URL the QR carries — <base>?Iz=<blob>. Live, base = location.origin + the toplevel path (the
+//   scanning phone lands on the SAME app); a Book pins it. The URL is the whole invite.
+async Swarm_invite_url(w, ident, feature, nonce, base):
+    let iz = await this.Swarm_mint_idzeug(w, ident, feature, nonce)
+    return base + '?Iz=' + encodeURIComponent(iz)
+
+// Swarm_iz_of_url — the boot handler's core, isolated pure: pull the ?Iz= blob back out of a scanned
+//  URL. encodeURIComponent above ↔ URLSearchParams here — the base64's +/= survive the round trip.
+Swarm_iz_of_url(href):
+    if (!href) return null
+    let at = href.indexOf('?')
+    if (at < 0) return null
+    return new URLSearchParams(href.slice(at + 1)).get('Iz')
+//#endregion
+
 //#region wire — the deliverance seam
 //  Deliverance is a SEAM with two wires under it. The REAL one is the Peeroleum spine: when the
 //   sender's identity holds a transport station in w (a %Peering,name:<prepub> flock), a swarm

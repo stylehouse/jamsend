@@ -411,9 +411,35 @@ The owner wants the QR invite maker back ("monkey business vibe") as the front d
  invites (the legacy `nRepeating`/`Upper_Number`) remain §6.2 **[want]** — the real build gap once the
   front door lands.
 
-**Prove before the live panel.** A Book (extend `SwarmWire`, or a sibling) that mints from a
- live-shaped `%Identity` → redeems on a second self → asserts a `%Pier` born + `%Music` grant
-  attached, is the regression witness; mount the live QR panel + `?Iz=` boot handler after it's green.
+**Proven.** Book `SwarmInvite` (Swarmation.g, green 2026-07-07): mints from Auto's real
+ `Clustation_concrete` shape (active-of-two selection), URL round-trip + verify, scan→seal
+  (cross-signed Music grants both Piers), photographed-QR-dead. The panel (`O/ui/InvitePanel.svelte`
+   atop BigSoundland) is the live face over those verbs.
+
+**The door asks the MAKER — validity lives with the inviter (owner 2026-07-07).** Structurally
+ already true: a redeem DIALS HOME (`pier_hello`), and the inviter's own ledger answers — there is
+  no offline oracle to fool. That makes invite POLICY a one-sided upgrade: the `%Idzeug` record
+   under the inviter's `%Peering` grows policy fields the DOOR checks at hello-time, no wire or
+    redeemer change at all —
+ - `ttl:` — short-lived invites: `deny('expired')` when `now > time + ttl` (the record remembers
+    its mint time; the blob needs nothing new).
+ - `challenge: voice | name` — the door doesn't seal on the first hello; it answers with a
+    challenge (a live voice call on the already-standing link, or "tell me your name and I check it
+     against what I expect") and only `Swarm_seal`s on the prove. This is `Covenant_design.md`'s
+      claim→challenge→prove→verdict ladder standing at the invite door — the design vocabulary
+       exists; only the `%req:meet`-shaped door step is new.
+ The single-use nonce stays the floor under all of it: policy can only make the door STRICTER.
+
+**The frontier rung — the two BigSoundlands become for each other.** The panel's join stops today at
+ "no live link to the inviter" — honest, because `Swarm_deliver` needs a STATION: a `%Peering` named
+  our prepub holding a `%Pier` to theirs. Both tabs already dial the same relay with the SAME key
+   the swarm signs with (the §3.2a collapse), so the rung is small and all on the join side:
+    resolve the cluster world → promote a Pier to `claim.prepub` (`Lies_runner_pier`'s
+     oai-Pier + c.up + Ud shape, keyed by the inviter's prepub) → `Swarm_arm(w)` so
+      pier_hello|accept|reject land in the handshake verbs → `Swarm_redeem` as today. Then two
+       BigSoundland tabs — two laptops in the cafe — seal a friendship over the real relay, and the
+        Repli pull (`Music_todo §9`) has a real Pier to ride. Needs a live pair of tabs to verify;
+         build it against them, not blind.
 
 ---
 
