@@ -383,6 +383,7 @@
 
         // identity = {ttlilt:1, ...sc}; until_ts not in identity — it's what updates
         let t = req.o({ ttlilt: 1, ...sc })[0] as TheC | undefined
+        const freshly_armed = !t
         if (!t) {
             t = req.i({ ttlilt: 1, until_ts, ...sc })
             // H.trace('ttlilt', `i_req_ttlilt: new +${Math.round(secs*1000)}ms`, { ...sc })
@@ -392,7 +393,28 @@
         // < beliefs() perhaps climbs down into w(/req)+ until
         let node: TheC = req
         while (node.c.up && !node.sc.w) node = node.c.up as TheC
-        if (node.sc.w) node.c.has_req_ttlilt = 1
+        if (node.sc.w) {
+            node.c.has_req_ttlilt = 1
+            // publish-at-arm — seed, at the arm, the flat H-root copy officing would publish, so
+            //  poll_step sees the hold THIS tick.  A ttlilt lives in three places, only the last of them read:
+            //    arm     — the world req carries {ttlilt} (right here).
+            //    publish — officing (i_Story_o_req_ttlilt) gathers the live world reqs → flat
+            //               Run.i({ttlilt,of_w,…}) copies at the H-root.
+            //    read    — poll_step scans ONLY those H-root copies (unmutexed, no walk of the live tree).
+            //  beliefs() publishes (in attend) BEFORE reqdo_sweep pumps the beat that arms, so the arming
+            //   tick's own publish is stale — it ran before the ttlilt existed.
+            //    the editor's interval re-cycles officing within a tick, so the copy lands anyway, unseen.
+            //    a Story Run parks in poll_step, and an expecting's async_fn mints no thinks → officing
+            //     never re-runs → the copy never lands → the pass snaps mid-flight with a live, un-timed-out
+            //     world ttlilt frozen into the snap (the "random snap timing").
+            //  Writes to the same House officing does — `this`, which is officing's own target (Run = this);
+            //   every caller arms on its local House, so for a Story beat `this` is the Run subHouse read.
+            //  Fresh-arm only — a re-arming caller (LiesStore furnishing arms each pass its gate is open)
+            //   would else pile a fresh H-root copy every tick.  Seeding only when a NEW world ttlilt is minted
+            //    matches officing's own new-publish moment; its next replace({ttlilt,of_w}) absorbs the seed,
+            //    and o_Story drops it once req.finished — so no heartbeat is wanted on either edge.
+            if (freshly_armed) H.i({ ttlilt: 1, of_w: node.sc.w, until_ts, req, ...sc })
+        }
 
         return t
     },
@@ -574,25 +596,7 @@
         const H = this as House
         const req = w.oai({ req: name }) as TheC   // named finishing child (oai sets c.up = w)
         req.c.do_fn = () => {}                       // held open — only the resolve below finishes it
-        H.i_req_ttlilt(req, secs)
-        // Heartbeat — the ttlilt is a TWO-SIDED hold: i_req_ttlilt arms it on the world req, but the hold
-        //  poll_step reads is the H-root copy that agency_officing PUBLISHES.  A live editor re-runs officing
-        //   every tick off its interval, so the copy appears within a tick of arming — but a Story Run has NO
-        //    heartbeat mid-step (the drive parks in poll_step) and async_fn runs off the belief mutex, minting
-        //     no thinks of its own.  So officing can fail to re-run before poll_step goes quiescent and snaps
-        //      the pass MID-FLIGHT — a live, un-timed-out world ttlilt serialised into the snap: the un-
-        //       publishable hold (the "random snap timing", and why it fired only when async_fn's own particle
-        //        writes happened to enqueue a think inside the poll window).  So supply the heartbeat expecting
-        //         has always assumed: while the req is unsettled, feebly_ponder (heartbeat-grade — fires only in
-        //          Runtime, never between steps or during a snap) each belief tick, so officing re-publishes the
-        //           PERSISTENT world ttlilt and the hold engages deterministically.  Stops the tick settle()
-        //            finishes the req (its next officing then drops the ttlilt → quiescent → snap the DONE state).
-        const beat = () => {
-            if (req.sc.finished || !req.c.up || H.stopped) return
-            H.feebly_ponder()
-            setTimeout(beat, 50)   // = ANSWER_CALLS_TICK_MS, the belief tick
-        }
-        setTimeout(beat, 50)
+        H.i_req_ttlilt(req, secs)   // arms the ttlilt AND (publish-at-arm, in i_req_ttlilt) seeds its H-root copy
         // settle once, defensively.  A late Promise — a slow async resolving AFTER the run tore the world
         //  down, or a stray double-call — must never drive a finished or detached req: guard on %finished
         //   and a live c.up before reqyoncile.  (Finish on error too, so a throw never wedges the snap open.)

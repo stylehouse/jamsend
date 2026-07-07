@@ -14,9 +14,7 @@ story:PortPain
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.007
-      sample=0.026,at=1782708015
-      sample=0.003,at=1782708024
+    TimeTotal:beliefs,avg=0.004
       sample=0.004,at=1782708031
       sample=0.003,at=1782708040
       sample=0.008,at=1782900721
@@ -25,9 +23,9 @@ story:PortPain
       sample=0.004,at=1783248979
       sample=0.004,at=1783248982
       sample=0.004,at=1783248987
-    TimeTotal:step,avg=0.003
-      sample=0.013,at=1782708015
-      sample=0.001,at=1782708024
+      sample=0.004,at=1783416752
+      sample=0.002,at=1783416761
+    TimeTotal:step,avg=0.002
       sample=0.002,at=1782708031
       sample=0.001,at=1782708040
       sample=0.004,at=1782900721
@@ -36,5 +34,7 @@ story:PortPain
       sample=0.002,at=1783248979
       sample=0.002,at=1783248982
       sample=0.002,at=1783248987
+      sample=0.002,at=1783416752
+      sample=0.001,at=1783416761
   step,dige:af4206a22179c7a9
   step=2,dige:640178d67e87a1af

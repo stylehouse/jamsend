@@ -36,8 +36,7 @@ story:LakeTiles
         dontSnapGhostList
         wantPantheate
   TimeSpool
-    TimeTotal:beliefs,avg=1.77
-      sample=2.37,at=1783255050
+    TimeTotal:beliefs,avg=1.682
       sample=2.37,at=1783255073
       sample=1.942,at=1783255095
       sample=1.786,at=1783255118
@@ -47,8 +46,8 @@ story:LakeTiles
       sample=1.945,at=1783255585
       sample=1.092,at=1783255761
       sample=1.122,at=1783255847
-    TimeTotal:step,avg=0.197
-      sample=0.263,at=1783255050
+      sample=1.488,at=1783416289
+    TimeTotal:step,avg=0.187
       sample=0.263,at=1783255073
       sample=0.216,at=1783255095
       sample=0.198,at=1783255118
@@ -58,6 +57,7 @@ story:LakeTiles
       sample=0.216,at=1783255585
       sample=0.121,at=1783255761
       sample=0.125,at=1783255847
+      sample=0.165,at=1783416289
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
     Entcase:Ting_Point-last

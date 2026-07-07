@@ -1,16 +1,16 @@
 Snap:H
   H:LakeWaftMap,Run
     A:Lies
-      self,round=6	{"mung":["age"]}
+      self,round=11	{"mung":["age"]}
       w:Lies
-        self,round=6	{"mung":["age"]}
+        self,round=11	{"mung":["age"]}
         examining	{"loopy":0}
           req:timemachine,playing=0	{"ref":{"w":"%w:Lies"}}
         Opt
         req:Cortex,eternal,maz=5,ok
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/GhostList/toc.snap,waft_path:GhostList
-            known,dige:f73d8d8839f6e32f,kind:read	{"mung":["at"]}
+            known,dige:92a5cff73520851f,kind:read	{"mung":["at"]}
         req:git
         req:wants
         o_elvis:dock_askies
@@ -100,6 +100,7 @@ Snap:H
             Doc:src/lib/O/spec/Voro_vtuffing.md,name:Voro_vtuffing.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Radio_todo.md,name:Radio_todo.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Radio_lowlevel.md,name:Radio_lowlevel.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Fleet_reds_report.md,name:Fleet_reds_report.md	{"mung":["noticed_at"]}
           open_dir:src/lib/O
           group:src/lib/O,dir:src/lib/O
             sub:src/lib/O/D,name:D

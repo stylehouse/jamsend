@@ -1,10 +1,18 @@
 Snap:H
   H:MusuGenerateTestsMusic,Run
     A:MusuGenerateTestsMusic
-      self,round	{"mung":["age"]}
+      self,round=2	{"mung":["age"]}
       w:MusuGenerateTestsMusic
-        self,round	{"mung":["age"]}
+        self,round=2	{"mung":["age"]}
         req:wrangle,eternal,ok
-        req:gen_testsounds
-          ttlilt	{"mung":["until_ts"]}
-        generating=8,dir:testsounds
+        req:gen_testsounds,finished
+        generated=8,dir:testsounds
+          file_written:The Sines - Deep A.wav
+          file_written:The Sines - Middle A.wav
+          file_written:The Sines - High A.wav
+          file_written:Fourier Four - Query E.wav
+          file_written:Fourier Four - Echo E.wav
+          file_written:DJ Oscillo - Dorian D.wav
+          file_written:DJ Oscillo - Groove G.wav
+          file_written:DJ Oscillo - Cosmic C.wav
+        witnessed:collection_rendered

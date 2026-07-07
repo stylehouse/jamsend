@@ -26,8 +26,7 @@ story:PortPlanet
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.046
-      sample=0.036,at=1782227557
+    TimeTotal:beliefs,avg=0.045
       sample=0.049,at=1782305448
       sample=0.045,at=1782707995
       sample=0.063,at=1782745655
@@ -37,8 +36,8 @@ story:PortPlanet
       sample=0.045,at=1783040852
       sample=0.059,at=1783157640
       sample=0.052,at=1783248929
+      sample=0.025,at=1783416681
     TimeTotal:step,avg=0.008
-      sample=0.006,at=1782227557
       sample=0.008,at=1782305448
       sample=0.007,at=1782707995
       sample=0.011,at=1782745655
@@ -48,6 +47,7 @@ story:PortPlanet
       sample=0.008,at=1783040852
       sample=0.01,at=1783157640
       sample=0.009,at=1783248929
+      sample=0.004,at=1783416681
   step,dige:10ad6fe0be03c510
   step=2,dige:dfef6301f1ee5fc5
   step=3,dige:233e573efb3bfba2
