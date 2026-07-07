@@ -462,7 +462,16 @@ Captured from the live-tab review, in the owner's words + the intended behaviour
          big-ticket `[pane]` item, gated behind #1 (needs neighbouring family panes to
           exist).
 
-10. **The loose-node snake — a node never arrives disconnected.** — **NEXT BUILD (precedes bamboo).**
+10. **The loose-node snake — a node never arrives disconnected.** — **BUILT 2026-07-08 (eyes-on tuning owed).**
+     *Landed (Cytui `install_snake`, was `install_nuclei`):* the per-parent flower of radial star-hubs is
+      replaced by ONE shared snake — a chain of invisible `nucleus-edge` scaffold through every free/edgeless
+       leaf, ordered `(parent, id)` so same-parent leaves sit adjacent (fewest cross-wall seams) and each leaf
+        keeps a STABLE neighbour wave-to-wave.  That stability is what lets `apply()`'s existing `fresh_ids`
+         pins localise a splice: a newcomer chains onto an already-pinned member and settles in place instead of
+          re-tumbling the board.  `SNAKE_MIN=2` (a chain needs a neighbour; a truly lone leaf just floats, held
+           by the pins — not a jitter case).  No hub node today; the legacy `.nucleus` node style is kept for
+            the tether knob.  Two open knobs left for a live eyeball (below).  Verify by eye on a VoroScape /
+             VoroMitosis tab with `%see` claims arriving late — the board should NOT snap to a diagonal.
      Owner, verbatim: *"uniformitise it then explode its diversity within.  no threshold … we always add
       nodes with edges rather than dropping them straight into a situation … set their location to some
        low-density corner of the thing (or a corner with other randomer simpler C in it) … meaningless-edge

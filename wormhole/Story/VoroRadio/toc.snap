@@ -30,33 +30,31 @@ story:VoroRadio
       style:background-color,v:#32618f
   Plan
   Opt
-    waitCyto
     useCyto
-    dontSnapCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.045
-      sample=0.028,at=1783410584
-      sample=0.024,at=1783421751
-      sample=0.024,at=1783422149
-      sample=0.028,at=1783422264
-      sample=0.08,at=1783424910
+    TimeTotal:beliefs,avg=0.041
       sample=0.051,at=1783431138
       sample=0.051,at=1783431144
       sample=0.051,at=1783431148
       sample=0.051,at=1783431149
       sample=0.058,at=1783431162
+      sample=0.043,at=1783439221
+      sample=0.034,at=1783439755
+      sample=0.026,at=1783441477
+      sample=0.02,at=1783441509
+      sample=0.023,at=1783441686
     TimeTotal:step,avg=0.005
-      sample=0.003,at=1783410584
-      sample=0.003,at=1783421751
-      sample=0.003,at=1783422149
-      sample=0.003,at=1783422264
-      sample=0.009,at=1783424910
       sample=0.006,at=1783431138
       sample=0.006,at=1783431144
       sample=0.006,at=1783431148
       sample=0.006,at=1783431149
       sample=0.006,at=1783431162
+      sample=0.005,at=1783439221
+      sample=0.004,at=1783439755
+      sample=0.003,at=1783441477
+      sample=0.002,at=1783441509
+      sample=0.003,at=1783441686
   step,dige:157b38d6d24e7fba
   step=2,dige:5257b2187eec67c7
   step=3,dige:3b69ebe77e887209

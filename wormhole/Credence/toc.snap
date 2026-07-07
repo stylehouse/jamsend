@@ -110,3 +110,6 @@ Waft:Credence
       Funkcion:Storying,of_Book:Engage
       Funkcion:Storying,of_Book:WaftMapPacked
       Funkcion:Storying,of_Book:Educarium,brand_new:1
+  What:Misc,inline
+    Funkcion:StoryTimes
+    Funkcion:Storying,of_Book:RaTerm

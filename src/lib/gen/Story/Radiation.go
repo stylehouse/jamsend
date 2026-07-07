@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Radiation(): string { return 'df71485b2fa6b4c8' },
+    Ghostmeta_Ghost_Story_Radiation(): string { return 'a5416bb44b72e16d' },
 
 // Radiation.g — the Ra* PRODUCT Books (rastock → racast → raterm; Radio_todo.md §3), in the
 //  Musuation/Swarmation mould: the file is the artifact; RaStock is the first Book identity.
@@ -367,6 +367,127 @@ RaCast_witness(w) {
     if (n === 8 && whole && !(w.oa({see: 'the listener pulled the whole Record — every opus segment crossed and the byte weight matches the stock'}))) w.i({see: 'the listener pulled the whole Record — every opus segment crossed and the byte weight matches the stock'})
     // beat 10: the grant is gone and the gate held — a re-cast crossed nothing, the listener heard silence.
     if (n === 10 && w.oa({ revoke_probe: 1 }) && !live && !w.oa({ revoke_offered: 1 }) && !(w.oa({see: 'the revoked listener heard nothing new — a re-cast met the closed gate with silence'}))) w.i({see: 'the revoked listener heard nothing new — a re-cast met the closed gate with silence'})
+
+},
+// ══ RaTerm — the THIRD Ra* Book (Radio_todo.md §3.4): the stock PLAYED, honestly ════════════════════
+//  RaStock proved a library becomes uniform servable stock; RaCast proved that stock CROSSES byte-faithful.
+//   RaTerm proves the last verb — the terminal DECODES the opus back to real PCM and plays it without
+//    lying: the baked -14 LUFS gain reads BACK at the target (no play-time gain node), and a spool that
+//     runs out of stock renders an HONEST hole (a measured gap) rather than papering the underrun over.
+//      The mechanics are Ghost/M/Ra.g's #region term (Ra_term_decode + Ra_term_spool — shared Ra-family
+//       software, no scenario vocabulary); the measurement reuses Ra_lufs (the meter that set the gain)
+//        and Sound_measure (MusuSignal's underrun gate).  This Book plays stock WE ACTUALLY MADE (a real
+//         rastock pass on testsounds), not a synth tone — the point of §3.4.  No transport: the crossing is
+//          RaCast's proven job, so RaTerm stocks locally and plays; the pulled mirror is byte-identical.
+//  DETERMINISTIC snap (no AudibleEntropy Wref yet): the decode + LUFS + gap counts are pure functions of
+//   the stock, so the measurement rows are stable run-to-run.  Only if a live CHECK run shows a field
+//    wobble do we harvest it into Trope/Ra/AudibleEntropy (the RaCast discipline) — do not pre-Wref.
+//   beat 2  STOCK  — stand one real opus Record (Ra_stock take=1, idempotent — builds or resurrects)
+//   beat 4  HEAR   — decode every 2s segment to PCM (held, real decode clock); measure LUFS + render the
+//                    spool healthy and starved; cache the scalar reads on w.c.term and stamp a `heard` row
+//   beat 6  GAIN   — the played-back LUFS reads the baked target back (the gain survived the opus trip)
+//   beat 8  STARVE — a withheld run of segments surfaces as measured gaps — the spool did not lie
+//   beat 10 CLEAN  — the complete stock plays essentially gapless through the SAME spool — gate not vacuous
+//
+// CONVENTION (Musu*/Ra*): no Run_A_ recipe — the world MUST be named RaTerm (do_fn_for dispatches by
+//  w.sc.w) or the wrangle silently never fires.
+
+RaTerm(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.RaTerm_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// RaTerm_drive — the same three skip gates as RaStock/RaCast (it really stocks and decodes, so it needs
+//  decode + WebCodecs Opus + a writable share; needsFSA on its Credence row routes it to the local-FSA
+//   runner), then one beat's work fired once off step_n (req-local did_step).  No Peering pump — RaTerm
+//    has no wire; the whole scenario is stock-then-play.
+async RaTerm_drive(w, req) {
+    if (typeof OfflineAudioContext === 'undefined') {
+        if (!w.oa({ skipped: 'no_audio' })) w.i({ skipped: 'no_audio' })
+        return
+    }
+    if (typeof AudioEncoder === 'undefined') {
+        if (!w.oa({ skipped: 'no_webcodecs' })) w.i({ skipped: 'no_webcodecs' })
+        return
+    }
+    let nav = this.Crate_nav()
+    if (!nav || typeof nav.bin_write !== 'function') {
+        if (!w.oa({ skipped: 'no_writable_share' })) w.i({ skipped: 'no_writable_share' })
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.RaTerm_stock(w)
+        if (n === 4) await this.RaTerm_hear(w)
+    }
+    await this.Musu_float(w)
+
+},
+// beat 2 — stand the stock: a real opus Record built (or resurrected) from testsounds, held by an
+//  expecting for the real encode clock.  A literal library key (no peer, no seal — RaTerm has no wire).
+async RaTerm_stock(w) {
+    w.i({reached: "step_2"})
+    w.c.nav = this.Crate_nav()
+    let lib = this.Ra_library(w, 'raterm.player')
+    w.c.raterm_src = lib
+    await this.expecting(w, 'raterm_stock', 180, async () => { await this.Ra_stock(w, lib, w.c.nav, 'testsounds', 1) })
+    w.doai({ req: 'witness', eternal: 1 })?.(async (req) => { this.RaTerm_witness(w); req.sc.ok = 1 })
+
+},
+// beat 4 — HEAR: the one expensive block, held by an expecting so the real decode clock runs.  Decode the
+//  whole track, then read it three ways: LUFS (baked-gain proof), the healthy spool render, and the
+//   starved render (a middle run of ~1/5 of the segments withheld).  Cache the SCALAR reads on w.c.term
+//    for the witness and stamp a `heard` row so the snap carries the measurement.  Guarded so the decode
+//     runs exactly once (39 decodeAudioData calls per pass would be catastrophic).
+async RaTerm_hear(w) {
+    w.i({reached: "step_4"})
+    if (w.c.term) return
+    let lib = w.c.raterm_src
+    let rec = lib ? lib.o({ Record: 1 })[0] : null
+    if (!rec) return
+    await this.expecting(w, 'raterm_hear', 180, async () => {
+        let d = await this.Ra_term_decode(w, w.c.nav, rec.sc.id)
+        if (d.fail) { w.i({ hear_fail: d.fail }); return }
+        let lufs = await this.Ra_lufs(d.channels, d.sr)
+        let healthy = this.Sound_measure(this.Ra_term_spool(d.channels, d.per, []))
+        let lo = Math.floor(d.segs * 0.4)
+        let hi = Math.floor(d.segs * 0.6)
+        let drop = []
+        let k = lo
+        while (k < hi) { drop.push(k); k = k + 1 }
+        let starved = this.Sound_measure(this.Ra_term_spool(d.channels, d.per, drop))
+        w.c.term = { seconds: d.seconds, segs: d.segs, lufs: lufs, healthy_gaps: healthy.gaps, healthy_bits: healthy.bits, starved_gaps: starved.gaps, dropped: drop.length }
+        let row = { heard: 1, seconds: d.seconds, segs: d.segs, healthy: healthy.gaps, starved: starved.gaps, dropped: drop.length }
+        if (lufs != null) row.lufs = lufs
+        w.i(row)
+    })
+
+},
+// ── the witness — per-beat %see observations, n-gated, reading live truth (no commas, no apostrophes) ──
+//  Thresholds (LUFS ±2 of target, starved > healthy + 3, healthy <= 3) are TUNED off the first live CHECK
+//   run, the RaCast lesson — the `heard` row records the real numbers so the gates can be set from them.
+RaTerm_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    let lib = w.c.raterm_src
+    let rec = lib ? lib.o({ Record: 1 })[0] : null
+    let stream = rec ? rec.o({ Stream: 1, name: 'opus' })[0] : null
+    let total = +(stream?.sc?.total || 0)
+    let t = w.c.term
+    let target = this.Ra_target_lufs(w)
+    let recSecs = +(rec?.sc?.seconds || 0)
+    // beat 2: a real opus Record stands, uniform and whole on the shelf.
+    if (n === 2 && rec && rec.sc.real && total > 0 && !(w.oa({see: 'the terminal stands a real opus Record from the library — uniform stock whole on the shelf'}))) w.i({see: 'the terminal stands a real opus Record from the library — uniform stock whole on the shelf'})
+    // beat 4: the whole stock decoded to real PCM — the played duration matches the stocked source.
+    if (n === 4 && t && t.seconds > 0 && recSecs > 0 && Math.abs(t.seconds - recSecs) < 4 && !(w.oa({see: 'the terminal decoded the whole stock to real PCM — the full track plays from segment zero'}))) w.i({see: 'the terminal decoded the whole stock to real PCM — the full track plays from segment zero'})
+    // beat 6: the played-back loudness reads the baked target back — the gain survived the opus round trip.
+    if (n === 6 && t && t.lufs != null && Math.abs(t.lufs - target) < 2 && !(w.oa({see: 'the played-back audio measures at the uniform target loudness — the baked gain survived the opus round trip'}))) w.i({see: 'the played-back audio measures at the uniform target loudness — the baked gain survived the opus round trip'})
+    // beat 8: a withheld run of segments surfaced as measured gaps — an honest starve not a paper-over.
+    if (n === 8 && t && t.starved_gaps > t.healthy_gaps + 3 && !(w.oa({see: 'a withheld run of segments surfaced as measured gaps — the spool starved without papering over the hole'}))) w.i({see: 'a withheld run of segments surfaced as measured gaps — the spool starved without papering over the hole'})
+    // beat 10: the complete stock plays essentially gapless through the same spool — the gate is not vacuous.
+    if (n === 10 && t && t.healthy_gaps <= 3 && t.starved_gaps > t.healthy_gaps + 3 && !(w.oa({see: 'the complete stock played essentially gapless — the same spool that surfaced the starve runs clean when the stock is whole'}))) w.i({see: 'the complete stock played essentially gapless — the same spool that surfaced the starve runs clean when the stock is whole'})
 
 },
 

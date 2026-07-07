@@ -80,10 +80,36 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
   general" (a protocol-level omit like the body_hash Organ-2 mask) as an alternative to the per-Entcase
    `{TOK}` graft; UNSCOPED — touches Text encode `omit_sc`. (b) dead page-loop in `Ra_cast_send_lines` (the
     husk sender; harmless — empty bufmap) — tidy on the NEXT Ra.g touch, not a standalone compile+record.
- NEXT MOVE — §3.4 **raterm** (the `RaTerm` Book): decode-proof the pulled `.jam` segment — `decodeAudioData`
-  per opus segment back to real PCM in an OfflineAudioContext, the baked -14 LUFS gain applied, honest
-   starve/recover (MusuSignal's claim redone on stock we actually made). It becomes another `AudibleEntropy`
-    consumer (played-back measurement noise) → Wref the profile, do NOT re-inline.
+**AUTHORED 2026-07-08 — RaTerm (§3.4, the LAST verb) — awaiting first live CHECK run.** The terminal that
+ PLAYS: decode the stocked opus back to real PCM and prove honest playback. Written + compiled clean (gens on
+  disk via LocalGen), NOT yet run on a live runner. Design calls:
+ - **Two generic primitives in `Ghost/M/Ra.g` `#region term`** (append, ~lines 809-880): `Ra_term_decode(w,
+    nav, id)` reads `<id>.jam` and `decodeAudioData`s EVERY 2s opus segment (the `Ra_proof` per-segment carve),
+     concatenating per channel into one continuous track → `{channels, sr, seconds, segs, per}`; `Ra_term_spool(
+      channels, per, drop)` downmixes to mono and PUNCHES the `drop` segment indices to SILENCE — the honest
+       hole. No new analysis: measurement REUSES `Ra_lufs` (the meter that set the gain) + `Sound_measure`
+        (`Ghost/M/Sound.g` — MusuSignal's underrun `gaps` gate). Radiobuddies discipline: no scenario words.
+ - **`Ghost/Story/Radiation.g` `RaTerm` Book** — NO transport (crossing is RaCast's proven job; RaTerm stocks
+    locally via `Ra_stock` take=1 and plays — the pulled mirror is byte-identical). Beats: 2 STOCK, 4 HEAR
+     (one held `expecting`: decode + LUFS + healthy/starved spool renders, cache scalars on `w.c.term`, stamp
+      a `heard` row), then witness-only 6 GAIN / 8 STARVE / 10 CLEAN. Five `%see`.
+ - **The claims** (`RaTerm_witness`): (2) a real opus Record stands; (4) decoded seconds ≈ stocked source (±4);
+    (6) played-back LUFS within ±2 of the -14 target = *the baked gain survived the opus round trip*; (8)
+     `starved_gaps > healthy_gaps + 3` = *the spool starved without papering over the hole* (a ~1/5 middle run
+      withheld); (10) `healthy_gaps <= 3 && starved > healthy + 3` = the same spool runs clean when whole (the
+       MusuSignal not-vacuous guard, redrawn on real stock).
+ - **DETERMINISTIC snap, NO AudibleEntropy Wref** (departs from the §3.2 prediction on purpose): decode + LUFS
+    + gaps are pure functions of the stock, so the `heard` row is stable run-to-run. The wall-clock `ms` is
+     deliberately NOT stamped. Only if the live CHECK shows a field wobble do we harvest it (the RaCast way) —
+      do not pre-Wref. `wormhole/Story/RaTerm/toc.snap` seeded (12 `seedNN` step lines, NO EntropyProfile);
+       Credence `of_Book:RaTerm,needsFSA:1,brand_new:1` registered.
+ NEXT MOVE (human, fsa-live :9091 runner — one is up at `49dee91d61a9de64`, idle): (1) RELOAD the runner tab
+  so Creduler re-acquires the fresh `gen/M/Ra.go` + `gen/Story/Radiation.go` + the seeded RaTerm toc (LocalGen
+   wrote disk but did NOT HMR the tab — a running runner still has the old gen; a `total:1` Prep-only run means
+    it did not re-acquire, BOMB 2). (2) `node scripts/runner_ask.mjs run RaTerm --watch` then `snap <n>` the
+     beats. (3) READ the `heard` row's real numbers (seconds/lufs/healthy/starved/dropped) and TUNE the five
+      gates off them (the ±2 LUFS / +3 gaps / ≤3 thresholds are GUESSES — the RaCast beat-6 lesson). (4) ACCEPT
+       → GREEN; install any `%see` re-tune via CHECK-run + manual, NEVER CredRunner ACCEPT. Everything UNCOMMITTED.
  BOMB 1 — DON'T `ghost-compile` an Ra SPINE-ghost change against a live editor: it HANGS. HMR-remixing
   the depended-on Ra spine into the live runtime wedges it (proven — even a trivial valid method hangs;
    only the pristine no-op hash replies). Leaf Book ghosts (Radiation.g) slip through. Use **LocalGen**
@@ -233,7 +259,7 @@ Casting is **Repli, never RPC** (the all-pervading rule): the catalog crosses as
  - **Book: `RaCast`** — a sealed pair; stock stands at A; B pulls one Record whole (pages,
     sha256-verified) and tunes A's live edge; a revoked B hears nothing new.
 
-### 3.4 raterm — the terminal that plays
+### 3.4 raterm — the terminal that plays  — ⚙ AUTHORED 2026-07-08, awaiting first live CHECK (§0)
 
 The Musu cursor machinery finally earns its keep as the REAL spool: want-ahead keyed off the
  playhead (§9.3), `decodeAudioData` per 2s segment (a from-zero full-track listen may instead

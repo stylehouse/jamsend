@@ -1,0 +1,17 @@
+story:RaTerm
+  Styles
+  Plan
+  Opt
+    For
+  step,dige:seed01
+  step=2,dige:seed02
+  step=3,dige:seed03
+  step=4,dige:seed04
+  step=5,dige:seed05
+  step=6,dige:seed06
+  step=7,dige:seed07
+  step=8,dige:seed08
+  step=9,dige:seed09
+  step=10,dige:seed10
+  step=11,dige:seed11
+  step=12,dige:seed12

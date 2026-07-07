@@ -805,3 +805,88 @@ Ra_cast_arm(w):
     this.Peeroleum_on(w, 'racast_lines', async (cw, pier, frame) => { await this.Ra_cast_recv_lines(w, pier, frame); return true })
     this.Peeroleum_on(w, 'racast_page', (cw, pier, frame) => { this.Ra_cast_recv_page(w, pier, frame); return true })
 //#endregion
+
+//#region term — raterm: the stocked|pulled opus DECODED back to real PCM and played honestly
+//  (Radio_todo.md §3.4, the LAST verb).  rastock baked the -14 LUFS gain INTO the samples before the
+//   encode, so the terminal only decodes and the loudness is already uniform — the played-back LUFS reads
+//    the target BACK, which is the round-trip proof (no play-time gain node, no lie).  Playback is a SPOOL:
+//     the segments feed a playhead in order; when a segment is not there in time the spool renders SILENCE
+//      in its span — an honest hole — never a paper-over (a looped stale segment dressed as fresh).  Two
+//       generic primitives (no scenario vocabulary — the Radiobuddies discipline): decode the whole track,
+//        and render the spool with an optional withheld set.  The MEASUREMENT reuses Ra_lufs (the SAME
+//         needles meter that set the gain) and Sound_measure (the underrun gate MusuSignal proved) — so
+//          raterm adds no analysis of its own, it points the proven tools at stock we actually made.
+
+// Ra_term_decode — read <id>.jam and decode EVERY 2s opus segment (each a standalone blob — the Ra_proof
+//  carve, sliced to its own ArrayBuffer so decodeAudioData never detaches the whole .jam) to PCM, then
+//   concatenate per channel into one continuous track: the from-zero full listen.  Returns
+//    { channels, sr, seconds, segs, per, ms } | { fail } — per[] is each segment's sample length, so the
+//     spool locates a boundary without re-decoding.  Each stage rides the 25s race (a throttled tab
+//      stretches a decode; a true hang NAMES its segment instead of bleeding the ttlilt budget — the
+//       Ra_proof lesson, one silent null cost a whole diagnosis round).
+async Ra_term_decode(w, nav, id):
+    let race = (p, tag) => Promise.race([p, new Promise((res) => setTimeout(() => res({ hung: tag }), 25000))])
+    let t1 = Date.now()
+    let raw = await race(nav.bin_read(this.Ra_stock_dir(), this.Ra_stock_name(id)), 'read')
+    if (raw && raw.hung) return { fail: 'hang read ' + id }
+    if (!raw || !raw.byteLength) return { fail: 'no bytes ' + this.Ra_stock_name(id) }
+    let un = this.Ra_unpack(raw)
+    if (!un || !un.bufs.length) return { fail: 'no segments ' + id }
+    let sr = 48000
+    let segbufs = []
+    let nch = 1
+    let per = []
+    let s = 0
+    while (s < un.bufs.length) {
+        let seg = un.bufs[s]
+        let ab = seg.buffer.slice(seg.byteOffset, seg.byteOffset + seg.byteLength)
+        let ctx = new OfflineAudioContext(1, 1, sr)
+        let got = await race(ctx.decodeAudioData(ab).then((d) => ({ d: d })).catch((er) => ({ er: er })), 'decode')
+        if (got.hung) return { fail: 'hang decode seg' + s }
+        if (got.er) return { fail: ('decode seg' + s + ' ' + String(got.er)).replace(/[,:]/g, ' ').slice(0, 80) }
+        let d = got.d
+        if (d.numberOfChannels > 1) nch = 2
+        segbufs.push({ L: d.getChannelData(0).slice(), R: d.numberOfChannels > 1 ? d.getChannelData(1).slice() : null, n: d.length })
+        per.push(d.length)
+        s = s + 1
+    }
+    let total = 0
+    for (const p of per) total = total + p
+    let L = new Float32Array(total)
+    let R = nch > 1 ? new Float32Array(total) : null
+    let off = 0
+    for (const sb of segbufs) {
+        L.set(sb.L, off)
+        if (R) R.set(sb.R || sb.L, off)
+        off = off + sb.n
+    }
+    let channels = R ? [L, R] : [L]
+    return { channels: channels, sr: sr, seconds: +(total / sr).toFixed(3), segs: un.bufs.length, per: per, ms: 'd' + (Date.now() - t1) }
+
+// Ra_term_spool — the playhead render: downmix the channels to one mono line (the underrun gate is level,
+//  not stereo image), then PUNCH each segment index in `drop` to silence — the spool's honest hole where
+//   a starved supply left nothing to play.  Returns the rendered mono Float32; the caller runs it through
+//    Sound_measure, where the hole surfaces as gaps.  drop empty = the complete, gapless play — the same
+//     pipe, so the two reads are directly comparable (MusuSignal's differential, on real stock).
+Ra_term_spool(channels, per, drop):
+    let total = 0
+    for (const p of per) total = total + p
+    let nch = channels.length
+    let mono = new Float32Array(total)
+    let i = 0
+    while (i < total) {
+        let a = channels[0][i]
+        if (nch > 1) a = (a + channels[1][i]) / 2
+        mono[i] = a
+        i = i + 1
+    }
+    let off = 0
+    let s = 0
+    while (s < per.length) {
+        let len = per[s]
+        if ((drop || []).indexOf(s) >= 0) mono.fill(0, off, off + len)
+        off = off + len
+        s = s + 1
+    }
+    return mono
+//#endregion

@@ -1230,54 +1230,66 @@
         voronoi_timer = setTimeout(() => { voronoi_timer = null; morph_voronoi() }, 80)
     }
 
-    // ── flower-wireframe nuclei ──────────────────────────────────────────────
-    //  orderless siblings (no edges among them) grid-jitter under fcose: nothing
-    //  but mutual repulsion holds them, so they shuffle in a twitchy lattice and
-    //  the cells riding them never sit still.  The cure is a radial singularity —
-    //  a hidden hub per parent that every free child star-edges to, so the sim
-    //  seats them as petals around a centre (a flower wireframe that voronois into
-    //  a clean rosette).  Pure cytoscape scaffold: never in C**, never snapped,
-    //  invisible, and skipped by both the tessellator and the rack.
-    const NUC_MIN = 1   // no threshold (owner: "it's okay if there's just one of them") — even a
-                        //  lone edgeless child gets seated on a hub instead of floating.  The full
-                        //   come-and-go snake backbone (Voro_vtuffing.md next-moves #10) is the plan;
-                        //    this is its threshold half.
-    const is_nucleus = (node: any) => !!node.data('nucleus')
+    // ── the come-and-go snake (Voro_vtuffing.md next-moves #10) ──────────────────
+    //  Free (edgeless) leaves — the "randomer simpler C": witness %see claims and any
+    //   other standalone leaf — grid-jitter under fcose (mutual repulsion is the only
+    //    force on them, so they shuffle in a twitchy lattice and the cells riding them
+    //     never sit still).  Worse, a LATE edgeless add arrives as a fresh DISCONNECTED
+    //      component and fcose's packer throws away the grown rosette to re-pack the whole
+    //       board into a diagonal.
+    //  The cure (was a per-parent flower of radial star-hubs; generalised now): thread
+    //   EVERY loose leaf onto ONE shared snake — a chain of MEANINGLESS (layout-only,
+    //    never-snapped) edges, ordered so same-parent leaves sit adjacent (fewest cross-
+    //     wall seams).  Each leaf then always has a neighbour, so a newcomer splices onto
+    //      the chain next to an ALREADY-PINNED member (apply()'s fresh_ids pins) and settles
+    //       LOCALLY instead of re-tumbling everything — "come+go with something else for
+    //        stability."  A departure splices out the same way.
+    //  Pure cytoscape scaffold: never in C**, never snapped, invisible (the `.nucleus-edge`
+    //   style), and skipped by both the tessellator (paint_final's e.data('nucleus') guard)
+    //    and the rack — exactly as the flower spokes were.
+    //  Open knobs, decide with eyes on the first build: (a) the snake stands alone in a
+    //   low-density corner (fcose packs a small component there for free) vs tethers into
+    //    the main cluster — add a hub head (the legacy `.nucleus` node style is still here)
+    //     wired once to the graph; (b) if the cross-wall chain seams visibly drag compounds
+    //      together, chain per-parent instead of one shared snake (re-group by pid).
+    const SNAKE_MIN = 2  // a chain needs a neighbour to splice to, so a truly lone leaf (count 1)
+                         //  just floats — genuinely not a jitter case, and the fresh_ids pins keep
+                         //   it from re-packing the board.  "no threshold" (owner) means we don't
+                         //    gate a PAIR off: two %see thread fine.  (Was NUC_MIN — a star seated
+                         //     even a single child; a snake can't.)
+    const is_nucleus = (node: any) => !!node.data('nucleus')   // legacy hub guard; no hubs today,
+                                                               //  kept for the tether knob (a)
 
-    function install_nuclei() {
+    function install_snake() {
         if (!cy) return
         cy.elements('.nucleus, .nucleus-edge').remove()   // wipe last generation
         if (!voronoi_on) return
-        // gather truly free (edgeless) real nodes, grouped by their parent — those
-        //  are the orderless ones; anything already wired keeps its own structure
-        const groups = new Map<string, any[]>()
+        // gather truly free (edgeless) real nodes — anything already wired keeps its own
+        //  structure and stays off the snake
+        const loose: any[] = []
         cy.nodes().forEach((node: any) => {
             if (node.isParent() || is_nucleus(node) || node.degree(false) > 0) return
-            const pid = node.parent().id() || ''
-            if (!groups.has(pid)) groups.set(pid, [])
-            groups.get(pid)!.push(node)
+            loose.push(node)
         })
-        for (const [pid, kids] of groups) {
-            if (kids.length < NUC_MIN) continue
-            const nid = `nuc:${pid || '__root__'}`
-            const data: any = { id: nid, nucleus: 1, label: '' }
-            if (pid) data.parent = pid
-            const hub = cy.add({ group: 'nodes', classes: 'nucleus', data })
-            // seat the hub at the group's centroid so the petals fold in, not lurch
-            let cx = 0, cyy = 0
-            for (const k of kids) { const p = k.position(); cx += p.x; cyy += p.y }
-            hub.position({ x: cx / kids.length, y: cyy / kids.length })
-            for (const k of kids) {
-                // petal radius grows with the chunk's own box so big Stuffings sit
-                //  clear of the hub instead of cramming (leaves keep the tight 70)
-                const child = overlays.get(k.id())?.firstElementChild as HTMLElement | null
-                const r = child
-                    ? 55 + 0.5 * Math.hypot(child.offsetWidth, child.offsetHeight)
-                    : 70
-                cy.add({ group: 'edges', classes: 'nucleus-edge',
-                    data: { id: `${nid}>${k.id()}`, source: nid, target: k.id(),
-                            ideal_length: Math.round(r), nucleus: 1 } })
-            }
+        if (loose.length < SNAKE_MIN) return
+        // stable order: same-parent leaves adjacent (minimise cross-wall seams), then by id
+        //  so an existing leaf keeps the same neighbour wave-to-wave — that stability is what
+        //   lets the fresh_ids pins localise a splice.
+        loose.sort((a: any, b: any) => {
+            const pa = a.parent().id() || '', pb = b.parent().id() || ''
+            return pa === pb ? a.id().localeCompare(b.id()) : pa.localeCompare(pb)
+        })
+        // meaningless edge length grows with the endpoints' boxes so big Stuffings don't cram
+        //  (leaves keep the tight 70), matching the old petal radius
+        const box = (n: any) => {
+            const child = overlays.get(n.id())?.firstElementChild as HTMLElement | null
+            return child ? 55 + 0.5 * Math.hypot(child.offsetWidth, child.offsetHeight) : 70
+        }
+        for (let i = 0; i + 1 < loose.length; i++) {
+            const a = loose[i], b = loose[i + 1]
+            cy.add({ group: 'edges', classes: 'nucleus-edge',
+                data: { id: `snake:${a.id()}>${b.id()}`, source: a.id(), target: b.id(),
+                        ideal_length: Math.round(Math.max(box(a), box(b))), nucleus: 1 } })
         }
     }
 
@@ -1297,7 +1309,7 @@
             crush_imposed = false
             H.i_elvisto('Cyto/Cyto', 'Cyto_crush', {})   // absence = off (snapped-boolean rule)
         }
-        install_nuclei()              // grow (on) or dissolve (off) the flower hubs
+        install_snake()               // thread (on) or dissolve (off) the loose-leaf snake
         relayout(300)                 // let the sim re-settle around / without them
         proper_sync()                 // properCellable's default follows the mode
         if (voronoi_pref) { reposition_overlays(); morph_voronoi() }
@@ -2188,7 +2200,7 @@
         if (wave.o({ upsert:      1 }).length
          || wave.o({ remove:      1 }).length
          || wave.o({ edge_upsert: 1 }).length) {
-            install_nuclei()   // (re)seat the flower hubs so the sim settles radial
+            install_snake()    // (re)thread the loose leaves so a newcomer splices in local
             // PURELY-ADDITIVE wave (nothing removed) with a grown graph already on screen:
             //  pin the settled nodes so the newcomers tuck in without re-tumbling everything.
             //   The first wave (flora born) is all-fresh → nothing to pin → full free layout.
@@ -2284,10 +2296,10 @@
                 idealEdgeLength: (e: any) => e.data('ideal_length') ?? 80,
                 edgeElasticity:  0.45, nodeRepulsion: () => 4000,
                 ...constraints, ...pinCons }
-            // radial smudge: with the flower on, the nuclei pull orderless nodes
-            //  INTO a central hub — so we push back with stronger repulsion, wider
-            //   separation and relaxed gravity, and the rosette breathes outward
-            //    into an airy centre you can zoom into instead of a crowded knot.
+            // airy field: with the snake on, the loose leaves are threaded (not free-
+            //  repelling) but the cells still want room — so we push out with stronger
+            //   repulsion, wider separation and relaxed gravity, and the board breathes
+            //    into an airy field you can zoom into instead of a crowded knot.
             if (voronoi_on) {
                 opts.nodeRepulsion  = () => 9000
                 opts.nodeSeparation = 60

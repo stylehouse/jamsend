@@ -51,13 +51,15 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
     unambiguously while only it advertises.  NEVER `accept` a run you didn't start — runs broadcast; the
      guard is the `steps`/`snap` identity check (step count + which `%see`) before every accept.
 
-**The frontier.**  Two builds, in order:
-- **NEXT: the loose-node snake** (`Voro_vtuffing.md` next-moves #10).  A node never arrives disconnected —
-   thread the `%see` (and any standalone `randomer simpler C`) onto ONE meaningless-edge snake in a
-    low-density corner, `NUC_MIN`→1 (no threshold), so late edgeless adds stop making fcose re-pack the
-     rosette into a diagonal.  View-only (Cytui layout), no snap|fixture churn.  This also carries the
-      "uniformitise then explode diversity within" intent that feeds bamboo.
-- **THEN: 🎋 bamboo schematica** — make the Vtuffing text structural (a jointed schematic the dumb renderer
+**The frontier.**
+- **BUILT 2026-07-08: the loose-node snake** (`Voro_vtuffing.md` next-moves #10, done in Cytui `install_snake`,
+   was `install_nuclei`).  Every free/edgeless leaf is threaded onto ONE shared meaningless-edge chain, ordered
+    `(parent, id)` so neighbours stay STABLE and `apply()`'s `fresh_ids` pins can localise a splice — late edgeless
+     adds (the `%see` claims) stop making fcose re-pack the rosette into a diagonal.  `SNAKE_MIN=2` (a chain needs a
+      neighbour; a lone leaf floats, held by the pins).  View-only, no snap|fixture churn.  **Eyes-on tuning OWED**
+       + two open knobs: (a) stand-alone-in-corner vs tether-into-cluster; (b) one shared snake vs per-parent chains
+        if cross-wall seams drag compounds.  Eyeball on a VoroScape/VoroMitosis tab with `%see` arriving late.
+- **NEXT: 🎋 bamboo schematica** — make the Vtuffing text structural (a jointed schematic the dumb renderer
    fits into the cell); `Voro_vtuffing.md` §🎋 has the design; Se (surroundings-reactive fold) arrives with
     it.  Tunnel + radio are parked north-stars, not next.
 

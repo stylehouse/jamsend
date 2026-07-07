@@ -1,5 +1,5 @@
 Credulation,of_Book:VoroRadio
-  run=0,at=1783431141.474,ok=0,ok_pct=0.11,mode:check
+  run=0,at=1783439221.454,ok,ok_pct,mode:check
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -11,13 +11,13 @@ Credulation,of_Book:VoroRadio
     uses:Ghost_M_Crate,dige:c05f526599e015af
     uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3
     uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
-    uses:Ghost_M_Ra,dige:399f0e211d00d2fc
+    uses:Ghost_M_Ra,dige:67eff504c3299116
     uses:Ghost_Story_Musuation,dige:50ba98bdc241a8c0
     uses:Ghost_Story_Radiation,dige:df71485b2fa6b4c8
     uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
     uses:Ghost_Story_Swarmation,dige:424a77682127f2ba
     uses:Ghost_V_Voro,dige:77631a3e58d45328
-  run,at=1783431147.535,ok=0,ok_pct=0.11,mode:check
+  run,at=1783439756.034,ok,ok_pct,mode:check
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -29,13 +29,13 @@ Credulation,of_Book:VoroRadio
     uses:Ghost_M_Crate,dige:c05f526599e015af
     uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3
     uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
-    uses:Ghost_M_Ra,dige:399f0e211d00d2fc
+    uses:Ghost_M_Ra,dige:bb2fe3a9a3e1d464
     uses:Ghost_Story_Musuation,dige:50ba98bdc241a8c0
-    uses:Ghost_Story_Radiation,dige:df71485b2fa6b4c8
+    uses:Ghost_Story_Radiation,dige:a5416bb44b72e16d
     uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
     uses:Ghost_Story_Swarmation,dige:424a77682127f2ba
     uses:Ghost_V_Voro,dige:77631a3e58d45328
-  run=2,at=1783431148.502,ok=0,ok_pct=0.22,mode:check
+  run=2,at=1783441477.29,ok,ok_pct,mode:check
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -47,13 +47,13 @@ Credulation,of_Book:VoroRadio
     uses:Ghost_M_Crate,dige:c05f526599e015af
     uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3
     uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
-    uses:Ghost_M_Ra,dige:399f0e211d00d2fc
+    uses:Ghost_M_Ra,dige:bb2fe3a9a3e1d464
     uses:Ghost_Story_Musuation,dige:50ba98bdc241a8c0
-    uses:Ghost_Story_Radiation,dige:df71485b2fa6b4c8
+    uses:Ghost_Story_Radiation,dige:a5416bb44b72e16d
     uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
     uses:Ghost_Story_Swarmation,dige:424a77682127f2ba
     uses:Ghost_V_Voro,dige:77631a3e58d45328
-  run=3,at=1783431149.748,ok=0,ok_pct=0.33,mode:check
+  run=3,at=1783441509.175,ok,ok_pct,mode:check
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -65,13 +65,13 @@ Credulation,of_Book:VoroRadio
     uses:Ghost_M_Crate,dige:c05f526599e015af
     uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3
     uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
-    uses:Ghost_M_Ra,dige:399f0e211d00d2fc
+    uses:Ghost_M_Ra,dige:bb2fe3a9a3e1d464
     uses:Ghost_Story_Musuation,dige:50ba98bdc241a8c0
-    uses:Ghost_Story_Radiation,dige:df71485b2fa6b4c8
+    uses:Ghost_Story_Radiation,dige:a5416bb44b72e16d
     uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
     uses:Ghost_Story_Swarmation,dige:424a77682127f2ba
     uses:Ghost_V_Voro,dige:77631a3e58d45328
-  run=4,at=1783431163.173,ok,ok_pct,mode:check
+  run=4,at=1783441688.596,ok=0,ok_pct=0,mode:check
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -83,9 +83,9 @@ Credulation,of_Book:VoroRadio
     uses:Ghost_M_Crate,dige:c05f526599e015af
     uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3
     uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
-    uses:Ghost_M_Ra,dige:399f0e211d00d2fc
+    uses:Ghost_M_Ra,dige:bb2fe3a9a3e1d464
     uses:Ghost_Story_Musuation,dige:50ba98bdc241a8c0
-    uses:Ghost_Story_Radiation,dige:df71485b2fa6b4c8
+    uses:Ghost_Story_Radiation,dige:a5416bb44b72e16d
     uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
     uses:Ghost_Story_Swarmation,dige:424a77682127f2ba
     uses:Ghost_V_Voro,dige:77631a3e58d45328
