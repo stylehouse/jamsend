@@ -661,6 +661,11 @@
         //    the member too would double it.  A world the crusher never touched
         //     carries no stamp — inert everywhere else.
         if (n.c?.represented) return 'skip'
+        // %dontGraph — a node (typically a self-report world like w:Voronoiology) flags itself OUT
+        //  of the live graph: process-trace noise the view drops.  Snapped (sc) so it survives a
+        //   decode, plus c-side for a world minted before the flag landed; either way 'skip' takes
+        //    the whole subtree with it.
+        if (s.dontGraph || n.c?.dontGraph) return 'skip'
         // cyto_fold: a grouping container for constraints/edges. Walked through
         // (so its cyto_cons / cyto_edge children are still emitted), but nothing
         // is drawn for the fold itself. mode:'cyto_fold' is the explicit marker

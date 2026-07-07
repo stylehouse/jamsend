@@ -40,36 +40,36 @@ story:VoroMitosis
     For
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=0.053
-      sample=0.037,at=1783414411
-      sample=0.037,at=1783415333
-      sample=0.067,at=1783421731
-      sample=0.113,at=1783422289
-      sample=0.043,at=1783424492
-      sample=0.043,at=1783424850
-      sample=0.043,at=1783424854
-      sample=0.043,at=1783424855
+    TimeTotal:beliefs,avg=0.076
       sample=0.043,at=1783424856
       sample=0.064,at=1783424871
-    TimeTotal:step,avg=0.005
-      sample=0.003,at=1783414411
-      sample=0.003,at=1783415333
-      sample=0.006,at=1783421731
-      sample=0.01,at=1783422289
-      sample=0.004,at=1783424492
-      sample=0.004,at=1783424850
-      sample=0.004,at=1783424854
-      sample=0.004,at=1783424855
+      sample=0.065,at=1783428837
+      sample=0.06,at=1783430721
+      sample=0.092,at=1783430839
+      sample=0.061,at=1783431039
+      sample=0.061,at=1783431042
+      sample=0.061,at=1783431048
+      sample=0.127,at=1783431097
+      sample=0.127,at=1783431123
+    TimeTotal:step,avg=0.007
       sample=0.004,at=1783424856
       sample=0.006,at=1783424871
+      sample=0.006,at=1783428837
+      sample=0.005,at=1783430721
+      sample=0.008,at=1783430839
+      sample=0.006,at=1783431039
+      sample=0.006,at=1783431042
+      sample=0.006,at=1783431048
+      sample=0.012,at=1783431097
+      sample=0.012,at=1783431123
   step,dige:9eb579214a9df3ce
-  step=2,dige:70f247d9d756cf6d
-  step=3,dige:9c0fcf35b891fc9e
-  step=4,dige:35b776f0cada7612
-  step=5,dige:1fe20d060a9d99f4
-  step=6,dige:2173b29955b9be5b
-  step=7,dige:3a6af81aa3b1b5d0
-  step=8,dige:4894f9577449fac3
-  step=9,dige:3998e08d5a1ccc77
-  step=10,dige:99d2e2679f3c9730
-  step=11,dige:8522db5456540239
+  step=2,dige:eef35e515d979cd4
+  step=3,dige:ad2683e574097822
+  step=4,dige:58ef3a1eb50661ad
+  step=5,dige:90608f2ae929c7af
+  step=6,dige:f17b859937b9e281
+  step=7,dige:a5775f486904ecbf
+  step=8,dige:120bf532bccd1db7
+  step=9,dige:d94aa0e5fd7de8cd
+  step=10,dige:32707951af6cfe4b
+  step=11,dige:70dc0a0c2c389e99

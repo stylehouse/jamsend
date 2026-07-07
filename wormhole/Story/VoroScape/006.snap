@@ -17,5 +17,5 @@ Snap:H
           Share,track:Tide
           Share,track:Root
           Share,track:Echo
-      w:Voronoiology
+      w:Voronoiology,dontGraph
         Voro,beat=6,level:L0,visible=7,gangs=0,folded:8,count:4

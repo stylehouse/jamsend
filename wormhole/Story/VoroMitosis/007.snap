@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=9	{"mung":["age"]}
+      self,round=10	{"mung":["age"]}
       w:VoroMitosis
-        self,round=9	{"mung":["age"]}
+        self,round=10	{"mung":["age"]}
         req:wrangle,eternal,ok
         Coprosma:montana,woodystem,habit:shrub
           Coprosma:montana subsp. australis
@@ -52,7 +52,7 @@ Snap:H
         Pittosporum:divaricata,woodystem,habit:tree
         Pittosporum:microphylla,habit:shrub
         Pittosporum:linearis
-      w:Voronoiology
+      w:Voronoiology,dontGraph
         Voro,beat=6,level:L1,visible=11,gangs=6,folded:2,count:2
         row:Coprosma,n=7,fold:gang,rep:montana,of=7
         row:Veronica,n=5,fold:gang,rep:robusta,of=5

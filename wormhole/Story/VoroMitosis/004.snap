@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=6	{"mung":["age"]}
+      self,round=7	{"mung":["age"]}
       w:VoroMitosis
-        self,round=6	{"mung":["age"]}
+        self,round=7	{"mung":["age"]}
         req:wrangle,eternal,ok
         Coprosma:lucida,habit:vine
         Veronica:grandifolia
@@ -25,7 +25,7 @@ Snap:H
         Metrosideros:propinqua
         Metrosideros:rhamnoides,woodystem,habit:vine
         Metrosideros:grandifolia,habit:vine
-      w:Voronoiology
+      w:Voronoiology,dontGraph
         Voro,beat=3,level:L1,visible=7,gangs=3,folded:1,count:1
         row:Coprosma,n=5,fold:gang,rep:lucida,of=5
         row:Veronica,n=7,fold:gang,rep:lucida,of=6

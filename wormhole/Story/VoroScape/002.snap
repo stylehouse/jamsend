@@ -14,5 +14,5 @@ Snap:H
         Artist,name:Voxhall
           Track,title:Echo,year:2007,live
         see:the library stands — three artists and five tracks — a shelf of glass with no light through it yet
-      w:Voronoiology
+      w:Voronoiology,dontGraph
         Voro,beat=2,level:L0,visible=7,gangs=0,folded:5,count:3

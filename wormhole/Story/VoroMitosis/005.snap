@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=7	{"mung":["age"]}
+      self,round=8	{"mung":["age"]}
       w:VoroMitosis
-        self,round=7	{"mung":["age"]}
+        self,round=8	{"mung":["age"]}
         req:wrangle,eternal,ok
         Coprosma:lucida,habit:vine
           Coprosma:lucida var. prostrata
@@ -29,7 +29,7 @@ Snap:H
         Kunzea:lucida,woodystem,habit:vine
         Kunzea:tenuifolium
         Kunzea:tenax,habit:shrub
-      w:Voronoiology
+      w:Voronoiology,dontGraph
         Voro,beat=4,level:L1,visible=7,gangs=4,folded:0,count:0
         row:Coprosma,n=7,fold:gang,rep:lucida,of=7
         row:Veronica,n=5,fold:gang,rep:crassifolius,of=5

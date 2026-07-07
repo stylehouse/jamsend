@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=13	{"mung":["age"]}
+      self,round=23	{"mung":["age"]}
       w:VoroMitosis
-        self,round=13	{"mung":["age"]}
+        self,round=23	{"mung":["age"]}
         req:wrangle,eternal,ok
         Kunzea:grandifolia,habit:vine
           Kunzea:grandifolia f. viridis,habit:vine
@@ -97,7 +97,7 @@ Snap:H
         Olearia:lucida
         see:the flora radiated — more genera now than were founded and each new one split off an over-full parent
         see:the loose flora ganged itself by genus — one representative pane each and no container ever modelled
-      w:Voronoiology
+      w:Voronoiology,dontGraph
         Voro,beat=10,level:L1,visible=15,gangs=8,folded:4,count:4
         row:Coprosma,n=9,fold:gang,rep:propinqua,of=8
         row:Veronica,n=6,fold:gang,rep:grandifolia,of=6

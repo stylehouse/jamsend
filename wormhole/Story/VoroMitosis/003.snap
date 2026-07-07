@@ -25,7 +25,7 @@ Snap:H
         Coprosma:australis,habit:tree
         Veronica:tenax
         Veronica:crassifolius,habit:tree
-      w:Voronoiology
+      w:Voronoiology,dontGraph
         Voro,beat=2,level:L0,visible=15,gangs=0,folded:8,count:5
         row:Coprosma,n=7,fold:loose,cells=3
         row:Veronica,n=5,fold:loose,cells=2

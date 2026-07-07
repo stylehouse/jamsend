@@ -2821,16 +2821,16 @@
     text-overflow: ellipsis;
 }
 .cytui-micro-row.sub { padding-left: 1.2em; opacity: 0.72; }
-/* the TYPE badge: the mainkey drawn as metaphysics, not prose — a small outlined chip in
-   the row's kind colour ('cell' beside Kunzea, 'Artist' beside Fernway, same shape always) */
+/* the TYPE: the mainkey drawn as a KEY, not a value.  Owner's call — it read as a value-chip
+   badge (bordered pill, same as the data chips) when it is really a key/label, so it now wears
+   the quiet key-label look (dim, un-boxed, like 'year'|'title' beside the bold name); keys read
+   alike, values read alike, the mainkey stops shouting. */
 .cytui-micro-row .ktag {
     flex: none;
-    font-size: 0.68em;
-    letter-spacing: 0.04em;
-    border: 1px solid currentColor;
-    border-radius: 3px;
-    padding: 0 0.32em;
-    opacity: 0.75;
+    font-size: 0.82em;
+    letter-spacing: 0.02em;
+    opacity: 0.5;
+    font-style: italic;
 }
 /* the has-interior glyph: /*N in the dip's lilac wherever it appears (rows AND chips) —
    one consistent "there's more inside; it pops out with edges" affordance */

@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Voro(): string { return '044bf9cdb3500c62' },
+    Ghostmeta_Ghost_V_Voro(): string { return '77631a3e58d45328' },
 
 // Voro.g — the Vis family home: the Voronoi-Cyto render (Ghost/V/, Waft:Ghost/Vis/Visua).
 //  A late sibling to networking (N), music (M) and society (S).  But where THOSE are spines the
@@ -105,7 +105,13 @@ Voro_report(w, stats) {
     if (!A || !w.sc.w) return null
     let rname = 'Voronoiology'
     let rw = A.o({ w: rname })[0]
-    if (!rw) rw = A.i({ w: rname })
+    if (!rw) rw = A.i({ w: rname, dontGraph: 1 })
+    // %dontGraph — the self-report is process-trace NOISE, not data: keep it OUT of the live graph
+    //  (Cyto's cytyle_classify skips a dontGraph node AND its subtree).  Snapped (sc, set at mint) so
+    //   it SURVIVES encode|decode and is legible in the snap; also re-stamped c-side each beat so a
+    //    world minted before this landed is covered too.  (Books that snap w:Voronoiology gain a
+    //     dontGraph:1 on the world line — re-record picks it up.)
+    rw.c.dontGraph = 1
     for (const c of rw.o().slice()) c.drop(c)
     w.c.report_beat = (w.c.report_beat || 0) + 1
     // level as 'L0'|'L1'|'L2' — a bare numeric 1 would snap as the boolean sentinel (collapse
@@ -472,6 +478,21 @@ Vtuff_name(m) {
     return ''
 
 },
+// Vtuff_namekey — the KEY whose value Vtuff_name displayed (the mainkey itself when it carries the
+//  name, else the naming key like 'title').  The homogeneous list shows members BY this key, so
+//   Vtuff_keyrows must skip it too — else a Track list of titles is followed by a 'title' spread of
+//    the SAME titles (the Frond/Root repeat the owner flagged).
+Vtuff_namekey(m) {
+    let mk = Object.keys(m.sc)[0]
+    let v = m.sc[mk]
+    if (v !== 1 && v != null) return mk
+    let names = ['name', 'title', 'text', 'nick', 'label']
+    for (const k of names) {
+        if (k !== mk && typeof m.sc[k] === 'string') return k
+    }
+    return mk
+
+},
 // Vtuff_member_bit — the SHORT distinguishing bit of a member inside a pane whose title already
 //  names the family: its name, else its bare mainkey.  (Children-to-dig ride the row|chip's
 //   `sub` count now, drawn as the lilac /*N glyph — not baked into the text.)
@@ -522,7 +543,7 @@ Vtuff_default(root, members, src) {
             b.c.member = m
         }
         if (members.length > shown.length) r.i({ Vbit: 1, text: '+' + (members.length - shown.length), n: 0 })
-        this.Vtuff_keyrows(root, members, Object.keys(kinds)[0])
+        this.Vtuff_keyrows(root, members, [Object.keys(kinds)[0], this.Vtuff_namekey(members[0])])
     } else if (members.length <= 5) {
         for (const m of members) {
             let nm = this.Vtuff_name(m)
@@ -547,18 +568,19 @@ Vtuff_default(root, members, src) {
             }
         }
     } else {
-        this.Vtuff_keyrows(root, members, null)
+        this.Vtuff_keyrows(root, members, [])
     }
     let dip = root.i({ Vrow: 1, row: 'dip', text: '/*' + members.length, wgt: 1 })
     dip.c.members = members
 
 },
-// Vtuff_keyrows — shared facts + spreads over the members' keys, skipping `skip` (the family
-//  mainkey when homogeneous — the title and list already said it; a spread repeating it is the
-//   'cell: Olearia ×4' then 'Olearia: figaro' stutter the owner flagged).  A key with ONE
+// Vtuff_keyrows — shared facts + spreads over the members' keys, skipping every key in `skips`
+//  (when homogeneous: the family mainkey AND the naming key the list showed members by — the
+//   title|list already said them; a spread repeating either is the 'cell: Olearia ×4' then
+//    'Olearia: figaro' / Frond,Root stutter the owner flagged).  A key with ONE
 //    distinct value across everyone says it once (fact); a varying key shows value chips with
 //     counts, most-common first, capped with a visible tail.
-Vtuff_keyrows(root, members, skip) {
+Vtuff_keyrows(root, members, skips) {
     let keys = []
     let seen = {}
     for (const m of members) {
@@ -567,7 +589,7 @@ Vtuff_keyrows(root, members, skip) {
         }
     }
     for (const k of keys) {
-        if (k === skip) continue
+        if (skips && skips.includes(k)) continue
         let vals = {}
         let order = []
         let have = 0

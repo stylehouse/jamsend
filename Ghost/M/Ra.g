@@ -600,11 +600,11 @@ async Ra_proof(nav, id, s):
 //       as Float32, and an opus blob must cross unaltered (the terminal decodes it, raterm's job — §3.4).
 //        Not folding a second payload into Repli's codec on a sample size of one is deliberate: the
 //         third Ra* consumer, if it shares this page shape, is the moment to lift a codec hook UP into
-//          Repli — the same "second-consumer → generalise, first → inline" discipline AudibleEntropy set.
+//          Repli — the same 'second-consumer → generalise, first → inline' discipline AudibleEntropy set.
 //  GRANT-GATED every leg (§9.7): the caster serves NOTHING — no husk, no page — to a peer the gate
 //   refuses.  The gate is a QUESTION the mechanics ask (w.c.racast_allow(peer)), never a Swarm import:
 //    the Book wires Swarm_pier_live in, a bare Lake_link demo leaves it open.  A revoked peer answers
-//     false mid-stream → its next want is met with silence — "a revoked B hears nothing new" falls out.
+//     false mid-stream → its next want is met with silence — 'a revoked B hears nothing new' falls out.
 //  ENDPOINTS ride w.c.tx (the caster) / w.c.rx (the listener) — the same two-Pier seam Repli's Books
 //   stand.  The Book seals them (a Swarm pair, or a loopback); the mechanics don't care which carrier.
 //    A page is one whole segment: the stock ALREADY stands on disk, so there is no transcode frontier
@@ -670,7 +670,11 @@ async Ra_cast_jam(w, rec):
     let nav = w.c.racast_nav || this.Crate_nav()
     if (!nav) return null
     let raw = null
-    try { raw = await nav.bin_read(this.Ra_stock_dir(), this.Ra_stock_name(rec.sc.id)) } catch (er) { return null }
+    try {
+        raw = await nav.bin_read(this.Ra_stock_dir(), this.Ra_stock_name(rec.sc.id))
+    } catch (er) {
+        return null
+    }
     if (!raw || !raw.byteLength) return null
     let un = this.Ra_unpack(raw)
     if (!un) return null
@@ -681,7 +685,7 @@ async Ra_cast_jam(w, rec):
 // Ra_cast_serve_want — A got a `want id/from_idx`: page out ONE opus segment [from_idx] off the
 //  Record's .jam and ship it RAW as a racast_page (a self-contained opus blob crosses as its own
 //   bytes — no Float32 reinterpret, decoded only at the terminal).  GATED on the asking peer: refused
-//    ⇒ served nothing (the want dies unanswered, which IS "no grant no bytes").  A segment past the end
+//    ⇒ served nothing (the want dies unanswered, which IS 'no grant no bytes').  A segment past the end
 //     is silence too.  The lines carry the Record identity + a %Stream line whose objecties.buffer
 //      promises the page; B reconciles the two.
 async Ra_cast_serve_want(w, pier, frame):

@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783410530951
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783426627562
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -51,28 +51,20 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/spec/Peeroleum_handover.md,name:Peeroleum_handover.md,noticed_at=1782180409139
     Doc:src/lib/O/spec/Peeroleum_spec.md,name:Peeroleum_spec.md,noticed_at=1782180409139
     Doc:src/lib/O/spec/Story_cli_docs.md,name:Story_cli_docs.md,noticed_at=1782180409139
-    Doc:src/lib/O/spec/Story_next_level_spec.md,name:Story_next_level_spec.md,noticed_at=1782180409139
-    Doc:src/lib/O/spec/Waft_spec.md,name:Waft_spec.md,noticed_at=1782180409139
     Doc:src/lib/O/spec/Waft_styling_todo.md,name:Waft_styling_todo.md,noticed_at=1782180409139
     Doc:src/lib/O/spec/Wire_spec.md,name:Wire_spec.md,noticed_at=1782180409139
-    Doc:src/lib/O/spec/Wormhole_backends_handover.md,name:Wormhole_backends_handover.md,noticed_at=1782180409139
     Doc:src/lib/O/spec/reactivity_docs.md,name:reactivity_docs.md,noticed_at=1782180409139
     Doc:src/lib/O/spec/stho_primer.md,name:stho_primer.md,noticed_at=1782180409139
-    Doc:src/lib/O/spec/Lang_handover.md,name:Lang_handover.md,noticed_at=1782287148306
     Doc:src/lib/O/spec/Lens_posable_TODO.md,name:Lens_posable_TODO.md,noticed_at=1782364945395
     Doc:src/lib/O/spec/Keeping_spec.md,name:Keeping_spec.md,noticed_at=1782542020398
-    Doc:src/lib/O/spec/Backbone_plan.md,name:Backbone_plan.md,noticed_at=1782704068439
     Doc:src/lib/O/spec/Cluster_spec.md,name:Cluster_spec.md,noticed_at=1782719405545
     Doc:src/lib/O/spec/Engage_integration.md,name:Engage_integration.md,noticed_at=1782794992015
     Doc:src/lib/O/spec/Radio_spec.md,name:Radio_spec.md,noticed_at=1782801574293
     Doc:src/lib/O/spec/Coding_guide.md,name:Coding_guide.md,noticed_at=1782892710802
     Doc:src/lib/O/spec/Swarm_spec.md,name:Swarm_spec.md,noticed_at=1782906022320
     Doc:src/lib/O/spec/Lies_handover.md,name:Lies_handover.md,noticed_at=1782915816289
-    Doc:src/lib/O/spec/DocWaftMap_sketch.md,name:DocWaftMap_sketch.md,noticed_at=1782963863709
     Doc:src/lib/O/spec/Perf_todo.md,name:Perf_todo.md,noticed_at=1782964492065
     Doc:src/lib/O/spec/Stemdex_spec.md,name:Stemdex_spec.md,noticed_at=1783057968719
-    Doc:src/lib/O/spec/Robustness_plan.md,name:Robustness_plan.md,noticed_at=1783165854860
-    Doc:src/lib/O/spec/PWA_install_handover.md,name:PWA_install_handover.md,noticed_at=1783178992837
     Doc:src/lib/O/spec/Story_future_directions.md,name:Story_future_directions.md,noticed_at=1783185074390
     Doc:src/lib/O/spec/Radio_scape_handover.md,name:Radio_scape_handover.md,noticed_at=1783238361714
     Doc:src/lib/O/spec/Radiobuddies_handover.md,name:Radiobuddies_handover.md,noticed_at=1783240483093
@@ -84,6 +76,8 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/spec/Radio_todo.md,name:Radio_todo.md,noticed_at=1783395690719
     Doc:src/lib/O/spec/Radio_lowlevel.md,name:Radio_lowlevel.md,noticed_at=1783396868828
     Doc:src/lib/O/spec/Fleet_reds_report.md,name:Fleet_reds_report.md,noticed_at=1783410530951
+    sub:src/lib/O/spec/history,name:history
+    Doc:src/lib/O/spec/Story_future.md,name:Story_future.md,noticed_at=1783426627562
   open_dir:src/lib/O
   group:src/lib/O,dir:src/lib/O
     sub:src/lib/O/D,name:D

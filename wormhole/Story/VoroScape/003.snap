@@ -18,5 +18,5 @@ Snap:H
           Share,track:Root
           Share,track:Echo
         see:a friend arrives and shares — every share is an edge onto a real track — the shelf becomes a graph
-      w:Voronoiology
+      w:Voronoiology,dontGraph
         Voro,beat=3,level:L0,visible=8,gangs=0,folded:8,count:4

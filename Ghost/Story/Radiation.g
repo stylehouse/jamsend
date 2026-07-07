@@ -324,10 +324,11 @@ RaCast_witness(w):
     if (n === 2 && srcRec && srcRec.sc.real && +(srcRec.o({ Stream: 1, name: 'opus' })[0]?.sc?.total || 0) > 0 && stations.length >= 2 && w.c.on?.racast_want && !(oa %see:'the caster stands a real opus Record and two carriers wait on the spine')) i %see:'the caster stands a real opus Record and two carriers wait on the spine'
     // beat 4: the pair sealed over the wire — DJ holds a live Music grant for the listener.
     if (n === 4 && live && !(oa %see:'the pair sealed over the wire — the caster holds a live Music grant for the listener')) i %see:'the pair sealed over the wire — the caster holds a live Music grant for the listener'
-    // beat 6: the catalog husk crossed — a Record head with its segment count and no bytes yet.
+    // beat 6: the catalog husk crossed — the listener has a Record head carrying its stream length.
+    //  Assert the head ARRIVED not that it is empty: RaCast_flow pulls the instant the husk lands, so
+    //   the no-bytes window is gone by any fixed beat (live 2026-07-08 — got was already 39 of 39 by n=6).
     let total = +(mirStream?.sc?.total || 0)
-    let got = +(mirStream?.sc?.got || 0)
-    if (n === 6 && mirRec && total > 0 && got === 0 && !(oa %see:'the listener received the catalog husk — a Record head with its segment count and no bytes yet')) i %see:'the listener received the catalog husk — a Record head with its segment count and no bytes yet'
+    if (n === 6 && mirRec && total > 0 && !(oa %see:'the listener received the catalog husk — a Record head carrying its stream length')) i %see:'the listener received the catalog husk — a Record head carrying its stream length'
     // beat 8: the whole Record crossed — every opus segment landed and the byte weight matches the
     //  stock (sha256 held on each page or the transport floor would have dropped it).
     let srcBytes = +(srcRec?.o({ Stream: 1, name: 'opus' })[0]?.sc?.bytes || 0)

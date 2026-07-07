@@ -3,4 +3,4 @@ Waft:Trope/Ra/AudibleEntropy,boring,dontSnap
     Entcase:Record_proof-ms
       lematch,Record,id
         lematch,proof,seconds,lufs,ms
-          means,spayer,re:proof.seconds.+lufs.+ms:r{INT} d{INT} l{INT},tol:any
+          means,spayer,re:proof.seconds.+lufs=-{NUM}.ms:r{INT} d{INT} l{INT},tol:any

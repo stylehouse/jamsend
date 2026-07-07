@@ -20,7 +20,7 @@ Waft:Credence
     What:real music,desc:real track files walked from testsounds and decoded to PCM
       Funkcion:Storying,of_Book:MusuGenerateTestsMusic,needsFSA:1,unusual:test-data-seeding
       Funkcion:Storying,of_Book:RaStock,needsFSA:1
-      Funkcion:Storying,of_Book:RaCast,needsFSA:1,brand_new:1
+      Funkcion:Storying,of_Book:RaCast,needsFSA:1
       Funkcion:Storying,of_Book:MusuReco,needMusic:1
       What:replication,desc:paginated C** replication of a music library across two Piers
         Funkcion:Storying,of_Book:MusuBounce,needMusic:1

@@ -5,5 +5,5 @@ Snap:H
       w:VoroScape
         self,round	{"mung":["age"]}
         req:wrangle,eternal,ok
-      w:Voronoiology
+      w:Voronoiology,dontGraph
         Voro,beat,level:L0,visible=3,gangs=0,folded:0,count:0

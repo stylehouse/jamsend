@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=11	{"mung":["age"]}
+      self,round=12	{"mung":["age"]}
       w:VoroMitosis
-        self,round=11	{"mung":["age"]}
+        self,round=12	{"mung":["age"]}
         req:wrangle,eternal,ok
         Veronica:robusta,woodystem,endemic
           Veronica:robusta var. montana,woodystem,habit:shrub
@@ -77,7 +77,7 @@ Snap:H
         Podocarpus:microphylla,woodystem,habit:shrub
         Podocarpus:serrata,woodystem,habit:tree
         Podocarpus:robusta,woodystem,habit:vine
-      w:Voronoiology
+      w:Voronoiology,dontGraph
         Voro,beat=8,level:L1,visible=14,gangs=7,folded:4,count:4
         row:Coprosma,n=7,fold:gang,rep:rhamnoides,of=7
         row:Veronica,n=9,fold:gang,rep:linearis,of=8

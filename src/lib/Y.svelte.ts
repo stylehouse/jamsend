@@ -243,7 +243,7 @@ export function erring(label: string, err?: Error | string): Error {
     return wrappedError;
 }
 
-// warning: from here down is AI translated from stylehouse / NutGravy, Pictures, etc
+// warning: from here down is AI translated from earlier projects
 
 // Parser that modifies string and captures matches
 export class Parserify {

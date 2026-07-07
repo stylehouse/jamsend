@@ -52,36 +52,45 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
 **Loose thread — CLEARED.** `MusuGenerateTestsMusic` + `MusuBounce` (the other `expecting` callers
  publish-at-arm flipped) are re-recorded and green. No longer owed.
 
-**RaCast v1 BUILT — LIVE-GATE OWED (2026-07-08).** The middle verb stands in CODE, UNVERIFIED — no
- live editor/runner was up this session, so it is NOT green (and headless is BANNED: false greens).
-  Three artifacts, all in the working tree:
+**RaCast v1 PROVEN WORKING LIVE — green pending fixture-accept (2026-07-08).** Ran the full multi-beat
+ Book on a live fsa runner and READ THE SNAPS: DJ stocked a REAL 39-segment opus Record (Cosmic C, 78s,
+  1290003 bytes), sealed a mutual Music grant, cast the husk, and the listener PULLED THE WHOLE RECORD —
+   `have=39 got=39 total=39`, byte-faithful — then a revoke shut the gate (silence). FOUR of five `%see`
+    fired at their exact gates (n=2/4/8/10); beat-6 was the only miss, now FIXED (BOMB 2). Steps are red
+     ONLY because it is a first CHECK run (no accepted fixture / lie diges), NOT a mechanics failure. Artifacts:
   - **`Ghost/M/Ra.g` `#region cast`** — the shared cast mechanics (`Ra_cast_arm/offer/catalog/
      serve_want/want/pull_record/recv_lines/recv_page/attach/jam/allowed`). THE DESIGN CALL: a page is
       ONE raw opus segment off the `.jam`, so it REUSES Repli's byte-agnostic parts (`Repli_fragment`
        husk-encode + `Repli_merge` mirror-upsert + the Peeroleum sha256 transport) and OWNS only the
-        page path — it does NOT touch `Repli_pack_chunks`/`Repli_unpack_page` (those reinterpret bytes
-         as Float32; an opus blob must cross unaltered, decoded only at the terminal). Generalising
-          Repli's codec is the THIRD consumer's job, not now (the AudibleEntropy first-inline discipline).
-           The grant gate is INJECTED (`w.c.racast_allow` predicate) so Ra imports no Swarm.
-  - **`Ghost/Story/Radiation.g` `RaCast` Book** — transport-real sealed pair (SwarmWire's seam:
-     `Lake_link` + `Swarm_arm` + `mint_idzeug(Music)`/`redeem`); DJ stocks one real `.jam` Record, casts
-      the husk, the listener pulls it WHOLE (byte-faithful), then a revoke shuts the gate (silence).
-       Five `%see` at n=2/4/6/8/10.
-  - **`wormhole/Credence/toc.snap`** — `of_Book:RaCast,needsFSA:1,brand_new:1` under `What:real music`.
- THE BOMB — why it is not green yet, what the live CHECK run must settle: the crossing is precondition-
-  gated (`RaCast_flow` casts when the grant goes live, pulls when the husk lands) BECAUSE a mock send
-   rides `H.post_do` — the settle BEAT is unpredictable. The `%see` gate beats (2/4/6/8/10) are GUESSES;
-    a live CHECK run tunes which beat each truth actually settles on. Endpoints ARE resolved: the sealed
-     friendship `%Pier` (keyed `pub:peer.prepub`, holding the grant) IS the particle Peeroleum routes to
-      (`Swarm_seal`/`Swarm_station_pier` share the `oai`), so `w.c.tx`=`link[0]` lines up; source vs
-       mirror libraries MUST use distinct pier keys (`dj.prepub` vs `lis.prepub`) or they collide in the
-        one world.
- NEXT MOVE (the live gate — needs a human with a :9091 tab): (1) `npm run ghost-compile -- Ghost/M/Ra.g
-  Ghost/Story/Radiation.g` with the editor open, so the gen `.go` HMRs into runners. (2) Seed a ~10-step
-   `toc.snap` for the Book, run a CHECK run on a LIVE local-FSA runner (`needsFSA`) via `runner_ask.mjs`,
-    read the snap diff, tune the `%see` gate beats to where each truth settles. (3) Install the five
-     `%see` via CHECK-run + manual install, NEVER CredRunner ACCEPT. (4) THEN §3.4 raterm — decode-proof
-      the pulled segment (the SECOND `AudibleEntropy` consumer → Wref it, do NOT re-inline).
+        page path — NOT `Repli_pack_chunks`/`Repli_unpack_page` (those reinterpret Float32; opus crosses
+         unaltered, decoded at the terminal). Generalising Repli's codec is the THIRD consumer's job
+          (the AudibleEntropy first-inline discipline). Grant gate INJECTED (`w.c.racast_allow`) so Ra
+           imports no Swarm. Compiles clean; `gen/M/Ra.go` written via LocalGen (BOMB 1). UNCOMMITTED.
+  - **`Ghost/Story/Radiation.g` `RaCast` Book** — transport-real sealed pair (SwarmWire seam: `Lake_link`
+     + `Swarm_arm` + `mint_idzeug(Music)`/`redeem`); DJ stocks one real `.jam` Record, casts the husk,
+      listener pulls it WHOLE (byte-faithful), a revoke shuts the gate (silence). Five `%see` at
+       n=2/4/6/8/10 (gate beats are GUESSES — BOMB 2). Compiled clean via `ghost-compile`; host committed it.
+  - **`wormhole/Credence/toc.snap`** — `of_Book:RaCast,needsFSA:1,brand_new:1` (host committed).
+ BOMB 1 — DON'T `ghost-compile` an Ra SPINE-ghost change against a live editor: it HANGS. HMR-remixing
+  the depended-on Ra spine into the live runtime wedges it (proven — even a trivial valid method hangs;
+   only the pristine no-op hash replies). Leaf Book ghosts (Radiation.g) slip through. Use **LocalGen**
+    for spine `.g` edits: `GFILES='Ghost/M/Ra.g' CHECK=1 npx vitest run -c scripts/Story_cli.vitest.config.mjs
+     scripts/LocalGen.spec.ts` (browserless, no HMR; drop `CHECK=1` to write the gen). That built `gen/M/Ra.go`.
+ BOMB 2 — a brand-new Book runs Prep-only (`total:1`): the runner runs the Book it ACQUIRED AT BOOT and
+  CLOBBERS a mid-session disk `toc.snap` seed. So seed `wormhole/Story/RaCast/toc.snap` with ~10
+   `step,dige:lieN` lines, THEN RELOAD the runner so Creduler re-acquires it → the beats fire. The `%see`
+    gate beats are now TUNED off the live run: 2/4/8/10 fire as authored; beat-6 was WRONG — it asserted
+     `got===0` (husk with no bytes yet), but RaCast_flow pulls the INSTANT the husk lands, so by n=6 `got`
+      was already 39 — FIXED to assert the head ARRIVED (`total>0`), not that it is empty. Endpoints
+       confirmed live: source `Library,pier:dj.prepub` + mirror `pier:lis.prepub` both hold the same
+        Record; sealed `%Pier` routing + `w.c.tx`=`link[0]` all worked.
+ NEXT MOVE (human, fsa-live :9091 runner): (1) RELOAD the stuck runner (it wedged mid-run — eternal
+  wrangle won't settle to `done`; release didn't clear it) so it re-acquires the beat-6-fixed gen
+   (`ghost-compile Ghost/Story/Radiation.g` is a LEAF Book — safe HMR when NO run is active; both gens
+    already on disk via LocalGen). (2) re-run RaCast → confirm all FIVE `%see` now fire (2/4/6/8/10).
+     (3) ACCEPT the fixtures to record the baseline → GREEN; install `%see` via CHECK-run + manual install,
+      NEVER CredRunner ACCEPT. (4) THEN §3.4 raterm — decode-proof the pulled segment (the SECOND
+       `AudibleEntropy` consumer → Wref it, do NOT re-inline).
 
 ---
 
