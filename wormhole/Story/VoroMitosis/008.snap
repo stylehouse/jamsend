@@ -65,7 +65,7 @@ Snap:H
         Pittosporum:rhamnoides,habit:vine
         Pittosporum:grandifolia,woodystem,habit:vine
       w:Voronoiology
-        crush,beat=7,level:L1,visible=12,gangs=6
+        Voro,beat=7,level:L1,visible=12,gangs=6,folded:3,count:3
         row:Coprosma,n=5,fold:gang,rep:rhamnoides,of=5
         row:Veronica,n=7,fold:gang,rep:robusta,of=7
         row:Metrosideros,n=12,fold:gang,rep:propinqua,of=11

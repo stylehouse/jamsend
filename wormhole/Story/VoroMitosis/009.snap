@@ -78,7 +78,7 @@ Snap:H
         Podocarpus:serrata,woodystem,habit:tree
         Podocarpus:robusta,woodystem,habit:vine
       w:Voronoiology
-        crush,beat=8,level:L1,visible=14,gangs=7
+        Voro,beat=8,level:L1,visible=14,gangs=7,folded:4,count:4
         row:Coprosma,n=7,fold:gang,rep:rhamnoides,of=7
         row:Veronica,n=9,fold:gang,rep:linearis,of=8
         row:Metrosideros,n=7,fold:gang,rep:propinqua,of=7

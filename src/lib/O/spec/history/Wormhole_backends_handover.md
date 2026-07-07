@@ -1,3 +1,7 @@
+> **⌛ ARCHIVED — retired from `spec/` to `spec/history/` on 2026-07-07.** Historical; may be stale.
+> The 7-method nav contract across all four backends is built and proven live 2026-07-05; it graduated to
+> `Cluster_spec.md` §3.8 as a hard invariant. Memory `[[remotewormhole-no-binwrite]]`. Original handover follows.
+
 # w:Wormhole — pluggable storage backends
 
 ## Destination

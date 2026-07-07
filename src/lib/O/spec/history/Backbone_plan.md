@@ -1,3 +1,10 @@
+> **⌛ ARCHIVED — retired from `spec/` to `spec/history/` on 2026-07-07.** Historical; may be stale.
+> The Keep·Interest·Lens build-order, P0–P7; **P0–P6 landed.** Living homes: `Keeping_spec.md` (persistence),
+> `Interest.md` (channel), `Lens_posable_TODO.md` (P5 weld). **Still-owed residuals:** P4 live-acceptance
+> (`:9091`, focus-stays-B no-boomerang → drop the conservative guard); fleet re-record of the feed
+> (`req:Langoer` + Cursor Langos) once a runner sits idle; P4 residual (iv) live-eyeball; P7 `%Spotlight`
+> dissolution (a separate later cut). Original plan follows.
+
 # Backbone build plan — Keep · Interest · Lens, as one spine
 
 > **The fourth doc of the attention layer.** `Interest.md` is the channel, `Keeping_spec.md`

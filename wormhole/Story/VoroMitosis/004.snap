@@ -26,7 +26,7 @@ Snap:H
         Metrosideros:rhamnoides,woodystem,habit:vine
         Metrosideros:grandifolia,habit:vine
       w:Voronoiology
-        crush,beat=3,level:L1,visible=7,gangs=3
+        Voro,beat=3,level:L1,visible=7,gangs=3,folded:1,count:1
         row:Coprosma,n=5,fold:gang,rep:lucida,of=5
         row:Veronica,n=7,fold:gang,rep:lucida,of=6
         row:Metrosideros,n=4,fold:gang,rep:robusta,of=4

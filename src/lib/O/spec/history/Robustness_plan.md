@@ -1,3 +1,8 @@
+> **⌛ ARCHIVED — retired from `spec/` to `spec/history/` on 2026-07-07.** Historical; may be stale.
+> Fully sublated into `Cluster_spec.md`: disease principle → §2 head; Organ 1 → §3.2b; Organ 2 → §1;
+> Organ 3 (authoritative absence) → §2.0a; Organ 4 → §3.2a; Organ 5 → §3.8. Original plan (with the
+> `file:line` specimen catalogues) follows.
+
 # Robustness_plan.md — retired into Cluster_spec.md (bar Organ 3)
 
 > **This doc is retired.** It was the plan of record for the 2026-07-04 hardening pass — one disease

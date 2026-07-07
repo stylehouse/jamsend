@@ -1,3 +1,7 @@
+> **⌛ ARCHIVED — retired from `spec/` to `spec/history/` on 2026-07-07.** Historical; may be stale.
+> Built as a Keep Funkcion (LakeWaftMap / `Lies_waftmap_model`). Memory `[[lakewaftmap-plank-v2]]`.
+> Original sketch follows.
+
 # DocWaftMap — sketch of the Doc-relevance Lens
 
 *GhostList reshapes a flat **file** list into a stem tree. This is its sibling: reshape the flat

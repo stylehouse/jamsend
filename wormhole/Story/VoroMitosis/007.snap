@@ -53,7 +53,7 @@ Snap:H
         Pittosporum:microphylla,habit:shrub
         Pittosporum:linearis
       w:Voronoiology
-        crush,beat=6,level:L1,visible=11,gangs=6
+        Voro,beat=6,level:L1,visible=11,gangs=6,folded:2,count:2
         row:Coprosma,n=7,fold:gang,rep:montana,of=7
         row:Veronica,n=5,fold:gang,rep:robusta,of=5
         row:Metrosideros,n=10,fold:gang,rep:propinqua,of=9

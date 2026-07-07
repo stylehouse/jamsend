@@ -271,6 +271,14 @@ The pip (step indicator, `·`/`○`, `ok`/`hollow`/`busy`) gains continuity-awar
  `{TimeTotal:'beliefs'}` keeping the last 10 timing samples, oldest evicted). It
   is timing-only. Generalise it into the home for **acknowledged non-determinism**.
 
+**The existing home is `EntropyArrest.md`.** Acknowledged non-determinism is not a new idea here —
+ `EntropyArrest` is today's machinery for it: click-to-store **Entcase** rules that let a fuzzing field
+  vary without lighting the diff, the v2.7 **shared-profile** spay, and (its §9) anti-unify-over-Samples.
+   This section doesn't replace it, it re-homes it: the fuzz *class* (§4.2) is an Entcase's `means`, the
+    corpus spayer (§4.4) is `EntropyArrest` §9 lifted from one Waft to across Books, and TimeSpool (§4.3)
+     adds the *trend* EntropyArrest doesn't track. Read `EntropyArrest.md` first — this is its next level,
+      not a rewrite.
+
 ### 4.1 The fuzz problem
 
 Most step-to-step `Dif:change` rows in the example snap are *not* real changes —

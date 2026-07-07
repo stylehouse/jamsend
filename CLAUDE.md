@@ -138,6 +138,23 @@ The load-bearing part is `destination + the knowledge that detonates the bomb if
 Show the arc, not just the diff.
 
 
+## Docs: specs, todos, and the history/ shelf
+
+`src/lib/O/spec/` holds the design docs. Two naming stances and one shelf:
+
+- **`*_todo.md` is the default working doc.** A topic gets **one** todo (e.g. `Radio_todo.md`), not a
+   litter of handovers. Every `*_todo.md` opens with a **`## 0.`** section a fresh session reads to learn
+    *what to get on with next* — a few vague candidates is fine — and makes the **overall arc** clear
+     somewhere, so the next person sees the destination, not just the diff.
+- **`*_spec.md` is earned, not chosen.** Only the human promotes a doc to `_spec`, after reading and
+   *preening* it; a spec is a blessed, stable statement. Don't self-promote a working doc — leave it a
+    `_todo` and say so if you think it's spec-worthy. If the human says "spec" about a doc, they mean they
+     want to read + preen it first.
+- **Retiring → `spec/history/`.** When a doc's work has landed or it's superseded, move the WHOLE file
+   into `src/lib/O/spec/history/` and prepend a historicity notice at its top (what it was + where the
+    living content went). Do **not** leave a forwarding stub. Corollary a reader relies on: **a referenced
+     `spec/X.md` that isn't there is almost certainly `spec/history/X.md`.**
+
 ## The ~3k svelte-check warnings are baseline noise
 
 `npm run check` reports ~3000 pre-existing errors|warnings — mostly implicit-`any`

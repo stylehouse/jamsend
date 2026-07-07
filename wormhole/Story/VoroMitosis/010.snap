@@ -96,7 +96,7 @@ Snap:H
         Olearia:grandifolia
         Olearia:lucida
       w:Voronoiology
-        crush,beat=9,level:L1,visible=15,gangs=8
+        Voro,beat=9,level:L1,visible=15,gangs=8,folded:4,count:4
         row:Coprosma,n=9,fold:gang,rep:propinqua,of=8
         row:Veronica,n=6,fold:gang,rep:grandifolia,of=6
         row:Metrosideros,n=9,fold:gang,rep:propinqua,of=9

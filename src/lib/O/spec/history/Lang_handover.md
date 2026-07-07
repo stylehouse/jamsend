@@ -1,3 +1,8 @@
+> **⌛ ARCHIVED — retired from `spec/` to `spec/history/` on 2026-07-07.** Historical; may be stale.
+> The base-layer three-role `dock.c.state` cut shipped and was committed. Living map: `Lies_handover.md`;
+> channel: `Interest.md`. Open thread: Point re-anchoring on recompile (memory `[[lang-base-layer-handover]]`).
+> Original handover follows.
+
 # Lang — the base layer
 
 < this doc eventually becomes Lang_doc

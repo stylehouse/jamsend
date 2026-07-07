@@ -40,7 +40,7 @@ Snap:H
         Leptospermum:australis,woodystem,endemic
         Leptospermum:serrata
       w:Voronoiology
-        crush,beat=5,level:L1,visible=9,gangs=5
+        Voro,beat=5,level:L1,visible=9,gangs=5,folded:1,count:1
         row:Coprosma,n=5,fold:gang,rep:montana,of=5
         row:Veronica,n=7,fold:gang,rep:crassifolius,of=7
         row:Metrosideros,n=8,fold:gang,rep:propinqua,of=7

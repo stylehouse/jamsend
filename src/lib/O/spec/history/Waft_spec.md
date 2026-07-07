@@ -1,3 +1,8 @@
+> **⌛ ARCHIVED — retired from `spec/` to `spec/history/` on 2026-07-07.** Historical; may be stale.
+> The living Waft doc is atop `src/lib/O/ui/Waft.svelte`; the attention trio is `Interest.md` (channel),
+> `Keeping_spec.md` (persistence), `Lies_handover.md` (editor surface). The old-section map below still
+> resolves `Waft_spec §…` back-references. Original pointer doc follows.
+
 # Waft — the medium (pointer doc)
 
 > **2026-06-28 — gutted.** Waft turned out to be *generic-C number one*: a named,

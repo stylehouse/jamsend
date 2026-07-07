@@ -50,6 +50,8 @@ story:MusuReplica
       style:background-color,v:#36c974
     matstyle:crush
       style:background-color,v:#af43db
+    matstyle:Voro
+      style:background-color,v:#8f8f32
   Plan
   Opt
     useCyto

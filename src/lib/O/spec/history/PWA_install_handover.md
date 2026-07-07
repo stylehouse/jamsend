@@ -1,3 +1,7 @@
+> **⌛ ARCHIVED — retired from `spec/` to `spec/history/` on 2026-07-07.** Historical; may be stale.
+> Install path (manifest / SW / iOS / MediaSession) built; only an infra gate remains — an HTTPS phone
+> origin + `ALLOWED_HOSTS`. Status: memory `[[pwa-install-built]]`. Original handover follows.
+
 # PWA install — jamsend on a phone (homescreen icon, and the lockscreen truth)
 
 Spun out of the runner-warmth work (task #35). The audio-keepalive half already shipped

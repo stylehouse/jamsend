@@ -30,7 +30,7 @@ Snap:H
         Kunzea:tenuifolium
         Kunzea:tenax,habit:shrub
       w:Voronoiology
-        crush,beat=4,level:L1,visible=7,gangs=4
+        Voro,beat=4,level:L1,visible=7,gangs=4,folded:0,count:0
         row:Coprosma,n=7,fold:gang,rep:lucida,of=7
         row:Veronica,n=5,fold:gang,rep:crassifolius,of=5
         row:Metrosideros,n=6,fold:gang,rep:robusta,of=6
