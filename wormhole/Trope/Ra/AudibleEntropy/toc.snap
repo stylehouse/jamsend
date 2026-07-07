@@ -1,5 +1,21 @@
 Waft:Trope/Ra/AudibleEntropy,boring,dontSnap
   EntropyArrest
+    Entcase:Peering_Pier-since
+      lematch,Peering
+        lematch,Pier,pub,since
+          means,spayer,re:Pier.pub:(.+)since:{INT},tol:any
+    Entcase:SocialGraph_Edge-at
+      lematch,SocialGraph
+        lematch,Edge,a,b,at
+          means,spayer,re:Edge.a:(.+)at:{INT},tol:any
+    Entcase:Pier_Grant-time
+      lematch,Pier,pub
+        lematch,Grant,by,for,time,sign,genre
+          means,spayer,re:Grant.+by:.+for:.+time:{INT}.sign:{TOK},tol:any
+    Entcase:Pier_NotGrant-time
+      lematch,Pier,pub
+        lematch,NotGrant,by,for,time,sign,genre
+          means,spayer,re:NotGrant.+by:.+for:.+time:{INT}.sign:{TOK},tol:any
     Entcase:Record_proof-ms
       lematch,Record,id
         lematch,proof,seconds,lufs,ms

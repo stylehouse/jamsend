@@ -1,30 +1,30 @@
 Snap:H
   H:RaCast,Run
     A:RaCast
-      self,round=59	{"mung":["age"]}
+      self,round=17	{"mung":["age"]}
       w:RaCast
-        self,round=59	{"mung":["age"]}
+        self,round=17	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Account,of:DJ
           Identity:c012850d69de1318,prepub:c012850d69de1318,friendly:DJ
             Peering,name:c012850d69de1318,friendly:DJ
               Idzeug:racast_1,to:Music,genre:Classical,spent
-              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1783429284
+              Pier,pub:b317b9a776e39d30,friendly:Listener,since:1783437156
                 Peering,name:b317b9a776e39d30,friendly:Listener,pub:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1783429284,sign:9205a5a6f519cc4a487a69490ae0542a34d15484f815fbd38680c330cdf3d812389e1a1becc69b814a8fb8b483ef2969c17d485c781f361cd4988bc00516a908,genre:Classical
-                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783429284,sign:535c3e9b84e9fc2996388376a53c40632c6a312d6362486626c1713a43abd52212be345d1b9d0b51f23b8088f9248d09b596abd0921486f3ad93703b21b27e01,genre:Classical
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1783437156,sign:336b1fdb9204d44754184702a87bd3df9ca8a030f0294e92ade44b6bd4701c4494d9633d2a347bad90c264a4a988cee08d49447ad6326aea35a684b4c6309805,genre:Classical
+                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783437156,sign:1b858f4ba283a1c0fec5b27b54a3c890f182a27bffc955b1260b740d119ee288dca0351d2b64bf2a1043416f8e3c4e5513e3036ee168fd9259dffbfe4cea6804,genre:Classical
             SocialGraph
-              Edge,a:c012850d69de1318,b:b317b9a776e39d30,at:1783429284
+              Edge,a:c012850d69de1318,b:b317b9a776e39d30,at:1783437156
         Account,of:Listener
           Identity:b317b9a776e39d30,prepub:b317b9a776e39d30,friendly:Listener
             Peering,name:b317b9a776e39d30,friendly:Listener
-              Pier,pub:c012850d69de1318,friendly:DJ,since:1783429284
+              Pier,pub:c012850d69de1318,friendly:DJ,since:1783437156
                 Peering,name:c012850d69de1318,friendly:DJ,pub:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535
-                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783429284,sign:535c3e9b84e9fc2996388376a53c40632c6a312d6362486626c1713a43abd52212be345d1b9d0b51f23b8088f9248d09b596abd0921486f3ad93703b21b27e01,genre:Classical
-                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1783429284,sign:9205a5a6f519cc4a487a69490ae0542a34d15484f815fbd38680c330cdf3d812389e1a1becc69b814a8fb8b483ef2969c17d485c781f361cd4988bc00516a908,genre:Classical
+                Grant:Music,by:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,for:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,time:1783437156,sign:1b858f4ba283a1c0fec5b27b54a3c890f182a27bffc955b1260b740d119ee288dca0351d2b64bf2a1043416f8e3c4e5513e3036ee168fd9259dffbfe4cea6804,genre:Classical
+                Grant:Music,by:b317b9a776e39d304dea171dde1d712f9a46cb11e656a655de7a1fdf6a35009e,for:c012850d69de1318762d033c844d61ab5dcb6e2a4a0166162bbafe44ce9b4535,time:1783437156,sign:336b1fdb9204d44754184702a87bd3df9ca8a030f0294e92ade44b6bd4701c4494d9633d2a347bad90c264a4a988cee08d49447ad6326aea35a684b4c6309805,genre:Classical
             SocialGraph
-              Edge,a:b317b9a776e39d30,b:c012850d69de1318,at:1783429284
+              Edge,a:b317b9a776e39d30,b:c012850d69de1318,at:1783437156
         Peering,name:c012850d69de1318,req=2,ok
           Pier,pub:b317b9a776e39d30,req=2,ok
             req:handshake,finished
@@ -41,48 +41,21 @@ Snap:H
                 heard
             outbox
               recent
-                emit=63,type:racast_lines,seq=63
-                emit=64,type:racast_page,seq=64
-                emit=65,type:racast_lines,seq=65
-                emit=66,type:racast_page,seq=66
-                emit=67,type:racast_lines,seq=67
-                emit=68,type:racast_page,seq=68
-                emit=69,type:racast_lines,seq=69
-                emit=70,type:racast_page,seq=70
-                emit=71,type:racast_lines,seq=71
-                emit=72,type:racast_page,seq=72
-                emit=73,type:racast_lines,seq=73
-                emit=74,type:racast_page,seq=74
-                emit=75,type:racast_lines,seq=75
-                emit=76,type:racast_page,seq=76
-                emit=77,type:racast_lines,seq=77
-                emit=78,type:racast_page,seq=78
-                emit=79,type:racast_lines,seq=79
-                emit=80,type:racast_page,seq=80
-                emit=81,type:racast_lines,seq=81
-                emit=82,type:racast_page,seq=82
+                emit,type:hello,seq
+                emit=2,type:trust,seq=2
+                emit=3,type:pier_accept,seq=3
+                emit=4,type:racast_lines,seq=4
+                emit=5,type:racast_page,seq=5
+                emit=6,type:racast_page,seq=6
+                emit=7,type:racast_page,seq=7
+                emit=8,type:racast_page,seq=8
+                emit=9,type:racast_page,seq=9
             inbox
               recent
-                unemit=23,type:racast_want,seq=23
-                unemit=24,type:racast_want,seq=24
-                unemit=25,type:racast_want,seq=25
-                unemit=26,type:racast_want,seq=26
-                unemit=27,type:racast_want,seq=27
-                unemit=28,type:racast_want,seq=28
-                unemit=29,type:racast_want,seq=29
-                unemit=30,type:racast_want,seq=30
-                unemit=31,type:racast_want,seq=31
-                unemit=32,type:racast_want,seq=32
-                unemit=33,type:racast_want,seq=33
-                unemit=34,type:racast_want,seq=34
-                unemit=35,type:racast_want,seq=35
-                unemit=36,type:racast_want,seq=36
-                unemit=37,type:racast_want,seq=37
-                unemit=38,type:racast_want,seq=38
-                unemit=39,type:racast_want,seq=39
-                unemit=40,type:racast_want,seq=40
-                unemit=41,type:racast_want,seq=41
-                unemit=42,type:racast_want,seq=42
+                unemit,type:hello,seq
+                unemit=2,type:trust,seq=2
+                unemit=3,type:pier_hello,seq=3
+                unemit=4,type:racast_want,seq=4
             Ud,pubkey:b317b9a776e39d30
           active_transport,type:mock,open
         Peering,name:b317b9a776e39d30,req=3,ok
@@ -101,48 +74,21 @@ Snap:H
                 heard
             outbox
               recent
-                emit=23,type:racast_want,seq=23
-                emit=24,type:racast_want,seq=24
-                emit=25,type:racast_want,seq=25
-                emit=26,type:racast_want,seq=26
-                emit=27,type:racast_want,seq=27
-                emit=28,type:racast_want,seq=28
-                emit=29,type:racast_want,seq=29
-                emit=30,type:racast_want,seq=30
-                emit=31,type:racast_want,seq=31
-                emit=32,type:racast_want,seq=32
-                emit=33,type:racast_want,seq=33
-                emit=34,type:racast_want,seq=34
-                emit=35,type:racast_want,seq=35
-                emit=36,type:racast_want,seq=36
-                emit=37,type:racast_want,seq=37
-                emit=38,type:racast_want,seq=38
-                emit=39,type:racast_want,seq=39
-                emit=40,type:racast_want,seq=40
-                emit=41,type:racast_want,seq=41
-                emit=42,type:racast_want,seq=42
+                emit,type:hello,seq
+                emit=2,type:trust,seq=2
+                emit=3,type:pier_hello,seq=3
+                emit=4,type:racast_want,seq=4
             inbox
               recent
-                unemit=63,type:racast_lines,seq=63
-                unemit=64,type:racast_page,seq=64
-                unemit=65,type:racast_lines,seq=65
-                unemit=66,type:racast_page,seq=66
-                unemit=67,type:racast_lines,seq=67
-                unemit=68,type:racast_page,seq=68
-                unemit=69,type:racast_lines,seq=69
-                unemit=70,type:racast_page,seq=70
-                unemit=71,type:racast_lines,seq=71
-                unemit=72,type:racast_page,seq=72
-                unemit=73,type:racast_lines,seq=73
-                unemit=74,type:racast_page,seq=74
-                unemit=75,type:racast_lines,seq=75
-                unemit=76,type:racast_page,seq=76
-                unemit=77,type:racast_lines,seq=77
-                unemit=78,type:racast_page,seq=78
-                unemit=79,type:racast_lines,seq=79
-                unemit=80,type:racast_page,seq=80
-                unemit=81,type:racast_lines,seq=81
-                unemit=82,type:racast_page,seq=82
+                unemit,type:hello,seq
+                unemit=2,type:trust,seq=2
+                unemit=3,type:pier_accept,seq=3
+                unemit=4,type:racast_lines,seq=4
+                unemit=5,type:racast_page,seq=5
+                unemit=6,type:racast_page,seq=6
+                unemit=7,type:racast_page,seq=7
+                unemit=8,type:racast_page,seq=8
+                unemit=9,type:racast_page,seq=9
             Ud,pubkey:c012850d69de1318
           active_transport,type:mock,open
         Library,pier:c012850d69de1318

@@ -52,25 +52,38 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
 **Loose thread — CLEARED.** `MusuGenerateTestsMusic` + `MusuBounce` (the other `expecting` callers
  publish-at-arm flipped) are re-recorded and green. No longer owed.
 
-**RaCast v1 PROVEN WORKING LIVE — green pending fixture-accept (2026-07-08).** Ran the full multi-beat
- Book on a live fsa runner and READ THE SNAPS: DJ stocked a REAL 39-segment opus Record (Cosmic C, 78s,
-  1290003 bytes), sealed a mutual Music grant, cast the husk, and the listener PULLED THE WHOLE RECORD —
-   `have=39 got=39 total=39`, byte-faithful — then a revoke shut the gate (silence). FOUR of five `%see`
-    fired at their exact gates (n=2/4/8/10); beat-6 was the only miss, now FIXED (BOMB 2). Steps are red
-     ONLY because it is a first CHECK run (no accepted fixture / lie diges), NOT a mechanics failure. Artifacts:
-  - **`Ghost/M/Ra.g` `#region cast`** — the shared cast mechanics (`Ra_cast_arm/offer/catalog/
-     serve_want/want/pull_record/recv_lines/recv_page/attach/jam/allowed`). THE DESIGN CALL: a page is
-      ONE raw opus segment off the `.jam`, so it REUSES Repli's byte-agnostic parts (`Repli_fragment`
-       husk-encode + `Repli_merge` mirror-upsert + the Peeroleum sha256 transport) and OWNS only the
-        page path — NOT `Repli_pack_chunks`/`Repli_unpack_page` (those reinterpret Float32; opus crosses
-         unaltered, decoded at the terminal). Generalising Repli's codec is the THIRD consumer's job
-          (the AudibleEntropy first-inline discipline). Grant gate INJECTED (`w.c.racast_allow`) so Ra
-           imports no Swarm. Compiles clean; `gen/M/Ra.go` written via LocalGen (BOMB 1). UNCOMMITTED.
-  - **`Ghost/Story/Radiation.g` `RaCast` Book** — transport-real sealed pair (SwarmWire seam: `Lake_link`
-     + `Swarm_arm` + `mint_idzeug(Music)`/`redeem`); DJ stocks one real `.jam` Record, casts the husk,
-      listener pulls it WHOLE (byte-faithful), a revoke shuts the gate (silence). Five `%see` at
-       n=2/4/6/8/10 (gate beats are GUESSES — BOMB 2). Compiled clean via `ghost-compile`; host committed it.
-  - **`wormhole/Credence/toc.snap`** — `of_Book:RaCast,needsFSA:1,brand_new:1` (host committed).
+**Won 2026-07-08 — RaCast SHIPS (§3.3, live-verified GREEN).** The middle verb stands. On a live fsa
+ runner: DJ stocked a REAL 39-segment opus Record (Cosmic C, 78s, 1290003 bytes), sealed a mutual Music
+  grant, cast the husk; the listener PULLED THE WHOLE RECORD byte-faithful (`have=39 got=39 total=39`);
+   a revoke shut the gate (silence). All five `%see` fire at 2/4/6/8/10; fixtures accepted → GREEN. Three
+    refinements landed on top of the first working run:
+  - **Batched pull (the perf rework).** The naïve pull flooded the belief queue — ~39 `racast_want` + ~78
+     line/page frames = ~120 todos, a ~15s beat. Now ONE `racast_want` draws the whole tail and the server
+      strides it in `PAGE=8`-segment `racast_page` frames (1 husk-`racast_lines` + ~5 pages for 39 segs).
+       Each page carves `frame.buffer` by a header `sizes[]` into `.c.segs[seg]` by TRUE index (sparse-safe);
+        `have=got=` count of non-null segs. `self,round` fell 59→17. Knob: `w.c.racast_page`.
+  - **Entropy: HARVESTED, not pinned.** The Swarm seal stamps wall-clock into `since`/`at`/`time` + a
+     signature `sign`. I proposed pinning `w.sc.now`; owner OVERRODE — there is no clock system to base that
+      on, so the pin is DROPPED. Instead the seal-field noise is harvested into `Waft:Trope/Ra/AudibleEntropy`
+       (Entcases graft `since`/`at`/`time` `tol:any`; a `{TOK}` swallows `sign` — the crypto is tested
+        separately). RaCast Wref's the SAME profile (line 6 of its `toc.snap`) — the SECOND consumer, exactly
+         as §3.2 predicted; do NOT re-inline. In a diff these show `Dif:change,spay:graft` = tolerated, green.
+  - **beat-6 `%see` FIXED** — it asserted `got===0` (empty husk), but `RaCast_flow` pulls the INSTANT the
+     husk lands, so by n=6 `got` was already 39. Now asserts the head ARRIVED (`total>0`).
+ Artifacts: **`Ghost/M/Ra.g` `#region cast`** (shared cast mechanics, reuses Repli's byte-agnostic parts —
+  `Repli_fragment`/`Repli_merge` + Peeroleum sha256 — and owns ONLY the opus page path, NOT the Float32
+   `Repli_pack_chunks`/`unpack_page`; grant gate injected via `w.c.racast_allow` so Ra imports no Swarm);
+    **`Ghost/Story/Radiation.g` `RaCast` Book**; `wormhole/Story/RaCast/toc.snap` (12 steps + the Wref);
+     `wormhole/Trope/Ra/AudibleEntropy/toc.snap` (the harvested seal Entcases); Credence entry. Both gens on
+      disk via LocalGen / `ghost-compile`. UNCOMMITTED (host reviews the diff).
+ LOOSE ENDS (small): (a) **general `sign` snap-omit** — owner floated "ignore the signature in snap in
+  general" (a protocol-level omit like the body_hash Organ-2 mask) as an alternative to the per-Entcase
+   `{TOK}` graft; UNSCOPED — touches Text encode `omit_sc`. (b) dead page-loop in `Ra_cast_send_lines` (the
+    husk sender; harmless — empty bufmap) — tidy on the NEXT Ra.g touch, not a standalone compile+record.
+ NEXT MOVE — §3.4 **raterm** (the `RaTerm` Book): decode-proof the pulled `.jam` segment — `decodeAudioData`
+  per opus segment back to real PCM in an OfflineAudioContext, the baked -14 LUFS gain applied, honest
+   starve/recover (MusuSignal's claim redone on stock we actually made). It becomes another `AudibleEntropy`
+    consumer (played-back measurement noise) → Wref the profile, do NOT re-inline.
  BOMB 1 — DON'T `ghost-compile` an Ra SPINE-ghost change against a live editor: it HANGS. HMR-remixing
   the depended-on Ra spine into the live runtime wedges it (proven — even a trivial valid method hangs;
    only the pristine no-op hash replies). Leaf Book ghosts (Radiation.g) slip through. Use **LocalGen**
@@ -78,19 +91,9 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
      scripts/LocalGen.spec.ts` (browserless, no HMR; drop `CHECK=1` to write the gen). That built `gen/M/Ra.go`.
  BOMB 2 — a brand-new Book runs Prep-only (`total:1`): the runner runs the Book it ACQUIRED AT BOOT and
   CLOBBERS a mid-session disk `toc.snap` seed. So seed `wormhole/Story/RaCast/toc.snap` with ~10
-   `step,dige:lieN` lines, THEN RELOAD the runner so Creduler re-acquires it → the beats fire. The `%see`
-    gate beats are now TUNED off the live run: 2/4/8/10 fire as authored; beat-6 was WRONG — it asserted
-     `got===0` (husk with no bytes yet), but RaCast_flow pulls the INSTANT the husk lands, so by n=6 `got`
-      was already 39 — FIXED to assert the head ARRIVED (`total>0`), not that it is empty. Endpoints
-       confirmed live: source `Library,pier:dj.prepub` + mirror `pier:lis.prepub` both hold the same
-        Record; sealed `%Pier` routing + `w.c.tx`=`link[0]` all worked.
- NEXT MOVE (human, fsa-live :9091 runner): (1) RELOAD the stuck runner (it wedged mid-run — eternal
-  wrangle won't settle to `done`; release didn't clear it) so it re-acquires the beat-6-fixed gen
-   (`ghost-compile Ghost/Story/Radiation.g` is a LEAF Book — safe HMR when NO run is active; both gens
-    already on disk via LocalGen). (2) re-run RaCast → confirm all FIVE `%see` now fire (2/4/6/8/10).
-     (3) ACCEPT the fixtures to record the baseline → GREEN; install `%see` via CHECK-run + manual install,
-      NEVER CredRunner ACCEPT. (4) THEN §3.4 raterm — decode-proof the pulled segment (the SECOND
-       `AudibleEntropy` consumer → Wref it, do NOT re-inline).
+   `step,dige:lieN` lines, THEN RELOAD the runner so Creduler re-acquires it → the beats fire. (Same trap
+    for any NEW Book, incl. RaTerm.) Endpoints confirmed live: source `Library,pier:dj.prepub` + mirror
+     `pier:lis.prepub` both hold the same Record; sealed `%Pier` routing + `w.c.tx`=`link[0]` all worked.
 
 ---
 
@@ -220,7 +223,7 @@ The stock is the library made SERVABLE: loudness-uniform, seekable, chunked, sna
     produced segment on the muted AC and the measured loudness lands within tolerance of
      TARGET; a second run is idempotent (stock already standing is recognized, not rebuilt).
 
-### 3.3 racast — the stock cast to Piers
+### 3.3 racast — the stock cast to Piers  — ✓ SHIPPED 2026-07-08 (§0)
 
 Casting is **Repli, never RPC** (the all-pervading rule): the catalog crosses as a replicated
  husk to sealed Piers (the §9.1c re-draw — MusuGot territory), Records cross as Repli pages on

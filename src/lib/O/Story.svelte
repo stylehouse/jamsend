@@ -797,6 +797,10 @@
             H.entropy_mint_into(loc.ea, draft)
             loc.waft.bump_version()
             H.Lies_waft_save(loc.lies_w, loc.waft)
+            // Lies_waft_save only QUEUES the write on loc.lies_w's req:Store (leading throttle → post_do);
+            //  an idle editor wouldn't pump it until the next mo:main heartbeat (~seconds), so the profile's
+            //   toc.snap lagged the live edit.  Keep the loop awake so the queued write lands this beat.
+            H.top_House().demand_time_to_think(1000)
             H.story_analysis(w)
             ;V.Story && console.log(`🛑 entropy_commit (shared ${ref}) Entcase:${draft.slug} (${means.kind}${means.tol ? ' ' + means.tol : ''})`)
             return
@@ -817,6 +821,7 @@
             if (loc && H.entropy_unmint_from(loc.ea, slug)) {
                 loc.waft.bump_version()
                 H.Lies_waft_save(loc.lies_w, loc.waft)
+                H.top_House().demand_time_to_think(1000)   // pump the queued profile write this beat, not on the heartbeat
                 H.story_analysis(w)
                 ;V.Story && console.log(`🗑 entropy_delete (shared ${ref}) Entcase:${slug}`)
             }

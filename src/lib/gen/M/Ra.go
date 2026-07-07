@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_M_Ra(): string { return '399f0e211d00d2fc' },
+    Ghostmeta_Ghost_M_Ra(): string { return '67eff504c3299116' },
 
 // Ra.g — the Radiobuddies PIPELINE spine: rastock → racast → raterm (Radio_todo.md §3, named by
 //  the owner 2026-07-07).  The whole product in three verbs; THIS ghost is their family home.
@@ -725,12 +725,16 @@ async Ra_cast_jam(w, rec) {
     return un.bufs
 
 },
-// Ra_cast_serve_want — A got a `want id/from_idx`: page out ONE opus segment [from_idx] off the
-//  Record's .jam and ship it RAW as a racast_page (a self-contained opus blob crosses as its own
-//   bytes — no Float32 reinterpret, decoded only at the terminal).  GATED on the asking peer: refused
-//    ⇒ served nothing (the want dies unanswered, which IS 'no grant no bytes').  A segment past the end
-//     is silence too.  The lines carry the Record identity + a %Stream line whose objecties.buffer
-//      promises the page; B reconciles the two.
+// Ra_cast_serve_want — A got a `want id/from_idx`: page out the whole tail [from_idx..end] of the
+//  Record's .jam in FIXED-STRIDE frames of PAGE segments each (w.c.racast_page, default 8).  Each frame
+//   is a LEAN racast_page — header names the record + first seg index + the per-segment sizes + the
+//    promised total; body is those PAGE opus buffers back to back (RAW — decoded only at the terminal).
+//     ONE want fans out to ceil(N/PAGE) frames, NOT a round trip per segment: a 39-seg track is ~5
+//      frames, not 39 wants + 78 lines|page frames flooding the belief queue (the old 120-todo, 15s beat).
+//       GATED on the asking peer: refused ⇒ served nothing (the want dies unanswered — no grant no bytes).
+//        The husk (Ra_cast_offer) already carried the %Record + %Stream head, so pages need NO lines —
+//         they are bulk bytes addressed by header, OFF the enWaft-merge path (the per-page merge was the
+//          real cost).
 async Ra_cast_serve_want(w, pier, frame) {
     if (pier !== w.c.tx) return
     let h = frame.header
@@ -740,21 +744,32 @@ async Ra_cast_serve_want(w, pier, frame) {
     if (!rec) return
     let bufs = await this.Ra_cast_jam(w, rec)
     if (!bufs) return
+    let total = bufs.length
+    let PAGE = +(w.c.racast_page || 8)
     let from = +(h.from_idx || 0)
-    if (from >= bufs.length) return
-    let seg = bufs[from]
-    // slice to its OWN Uint8Array so the frame owns its bytes — the .jam bufs are subarrays over one
-    //  shared backing buffer the transport must never detach out from under the cache.
-    let bytes = new Uint8Array(seg.byteLength)
-    bytes.set(seg)
-    let bid = (pier.c.bufseq = (pier.c.bufseq || 0) + 1)
-    let out = []
-    out.push(this.enL({ d: 0, stringies: { Record: 1, id: rec.sc.id }, objecties: { loc: ['Record', 'id'] } }))
-    // total is the PROMISE (segment count) so the mirror's pull window never shrinks; the bytes ride
-    //  the page frame the objecties.buffer=bid names.
-    let sline = { Stream: 1, name: 'opus', total: bufs.length }
-    out.push(this.enL({ d: 1, stringies: sline, objecties: { loc: ['Stream', 'name'], buffer: bid } }))
-    await this.Ra_cast_send_lines(w, pier, h.to, h.from, out.join('\n'), { list: [{ id: bid, bytes: bytes }] })
+    if (from < 0) from = 0
+    while (from < total) {
+        let end = Math.min(from + PAGE, total)
+        // concat this window's opus buffers into ONE page body; sizes[] lets B carve them back apart.
+        let sizes = []
+        let span = 0
+        let i = from
+        while (i < end) { sizes.push(bufs[i].byteLength); span = span + bufs[i].byteLength; i = i + 1 }
+        let bytes = new Uint8Array(span)
+        let off = 0
+        i = from
+        while (i < end) { bytes.set(bufs[i], off); off = off + bufs[i].byteLength; i = i + 1 }
+        await this.Ra_cast_send_page(w, pier, h.to, h.from, rec.sc.id, from, total, sizes, bytes)
+        from = end
+    }
+
+},
+// Ra_cast_send_page — one racast_page frame: the header ADDRESSES the record + first seg + per-seg sizes
+//  + the promised total; the body is the concatenated opus segments, sha256-verified by the transport floor.
+async Ra_cast_send_page(w, tx, from, to, id, seg0, total, sizes, bytes) {
+    let bh = await this.Peeroleum_body_digest(bytes)
+    let sq = this.Pier_next_seq(tx)
+    this.Peeroleum_send(w, { header: { type: 'racast_page', from: from, to: to, seq: sq, id: id, seg0: seg0, total: total, sizes: sizes, body_hash: bh, body_len: bytes.length }, buffer: bytes })
 
 },
 // Ra_cast_want — B asks A for one opus segment of a Record (the PULL), by segment index from_idx.
@@ -765,76 +780,62 @@ async Ra_cast_want(w, rx, from, to, id, fromIdx) {
     this.Peeroleum_send(w, { header: { type: 'racast_want', from: from, to: to, id: id, from_idx: fromIdx, seq: seq, body_hash: bh, body_len: body.length }, buffer: body })
 
 },
-// Ra_cast_pull_record — B pulls ONE Record WHOLE: want every segment 0..total-1 it has not marked,
-//  want-once off a per-segment key (extra passes never re-ask).  Segments are on disk already, so
-//   there is no frontier to walk — every want is answerable at once; B accretes them as they land.
+// Ra_cast_pull_record — B pulls ONE Record WHOLE with a SINGLE want (from 0); the sender strides the
+//  whole tail into paged frames, so B asks ONCE per record — no per-segment want storm.  Want-once off a
+//   per-record flag, so extra belief passes never re-ask.  (A resume from a partial mirror would want
+//    from the first missing seg; whole-record v1 always wants from 0.)
 async Ra_cast_pull_record(w, rx, from, to, id) {
-    let lib = this.Ra_cast_mirror(w)
-    let rec = lib.o({ Record: 1, id: id })[0]
-    if (!rec) return
-    let s = rec.o({ Stream: 1, name: 'opus' })[0]
-    if (!s) return
-    let total = +(s.sc.total || 0)
     w.c.racast_wanted = w.c.racast_wanted || {}
-    let seg = 0
-    while (seg < total) {
-        let key = id + ':' + seg
-        if (!w.c.racast_wanted[key]) {
-            w.c.racast_wanted[key] = 1
-            await this.Ra_cast_want(w, rx, from, to, id, seg)
-        }
-        seg = seg + 1
-    }
+    if (w.c.racast_wanted[id]) return
+    w.c.racast_wanted[id] = 1
+    await this.Ra_cast_want(w, rx, from, to, id, 0)
 
 },
 // ─── receiver (Pier B) ───
-// Ra_cast_recv_lines — B got a racast_lines frame (a husk offer, or a page's accompanying lines):
-//  decode + Repli_merge into B's mirror; for every merged particle referencing objecties.buffer, open a
-//   holding awaitbuf so a page whose bytes lag its lines is reconciled on arrival (they ship together).
+// Ra_cast_recv_lines — B got a racast_lines frame: the HUSK (a %Record head + its %Stream, no bytes).
+//  Merge it into the mirror and that is all — pages arrive separately as header-addressed racast_page
+//   frames, so there is no await_buffer reconciliation any more (the husk carries no buffers).
 async Ra_cast_recv_lines(w, pier, frame) {
     if (pier !== w.c.rx) return
     let text = new TextDecoder().decode(frame.buffer)
     let lib = this.Ra_cast_mirror(w)
-    let touched = await this.Repli_merge(lib, text)
-    for (const c of touched) {
-        if (c.c.await_buffer != null) this.Ra_cast_open_awaitbuf(w, pier, c, c.c.await_buffer)
-    }
+    await this.Repli_merge(lib, text)
 
 },
-// Ra_cast_recv_page — B got a racast_page frame (bytes already sha256-verified by the unemit floor):
-//  stash by bufferid and reconcile against the mirror particle awaiting it.
+// Ra_cast_recv_page — B got a racast_page frame (bytes sha256-verified by the unemit floor): carve its
+//  body into the PAGE opus segments by header.sizes and drop each RAW into the mirror %Stream's .c.segs
+//   at its TRUE index (idempotent by index — a repeat or a reorder can neither double-count nor clobber).
+//    have|got track the segments actually held.  If the husk has not landed (no mirror Record) the page is
+//     dropped — the pull only wants on a fresh record, so in practice the husk always precedes its pages.
 Ra_cast_recv_page(w, pier, frame) {
     if (pier !== w.c.rx) return
-    let id = frame.header.bufferid
-    pier.c.rabufs = pier.c.rabufs || {}
-    pier.c.rabufs[id] = frame.buffer
-    this.Ra_cast_attach(w, pier, id, frame.buffer)
-
-},
-// Ra_cast_open_awaitbuf — remember which mirror particle a buffer id belongs to, and attach at once if
-//  its page already arrived (page-before-lines is order-safe over the async merge).
-Ra_cast_open_awaitbuf(w, pier, mirror, id) {
-    pier.c.raawait = pier.c.raawait || {}
-    pier.c.raawait[id] = mirror
-    if (pier.c.rabufs && pier.c.rabufs[id] != null) this.Ra_cast_attach(w, pier, id, pier.c.rabufs[id])
-
-},
-// Ra_cast_attach — keep the opus page RAW on the mirror %Stream's .c.segs (one Uint8Array per segment,
-//  never reinterpreted — the caster's bytes cross unaltered for the terminal to decode).  have|got
-//   count off the segments actually held, so a repeat | out-of-order page can't inflate the progress.
-Ra_cast_attach(w, pier, id, bytes) {
-    pier.c.raawait = pier.c.raawait || {}
-    let mirror = pier.c.raawait[id]
-    if (!mirror) return
-    let u8 = new Uint8Array(bytes.length)
-    u8.set(bytes)
-    mirror.c.segs = mirror.c.segs || []
-    mirror.c.segs.push(u8)
-    mirror.c.await_buffer = null
-    mirror.sc.have = mirror.c.segs.length
-    mirror.sc.got = mirror.c.segs.length
-    mirror.bump()
-    delete pier.c.raawait[id]
+    let h = frame.header
+    let lib = this.Ra_cast_mirror(w)
+    let rec = lib.o({ Record: 1, id: h.id })[0]
+    if (!rec) return
+    let s = rec.o({ Stream: 1, name: 'opus' })[0]
+    if (!s) return
+    s.c.segs = s.c.segs || []
+    let body = frame.buffer
+    let sizes = h.sizes || []
+    let off = 0
+    let k = 0
+    while (k < sizes.length) {
+        let sz = +sizes[k]
+        let seg = +(h.seg0 || 0) + k
+        if (s.c.segs[seg] == null) {
+            let u8 = new Uint8Array(sz)
+            u8.set(body.subarray(off, off + sz))
+            s.c.segs[seg] = u8
+        }
+        off = off + sz
+        k = k + 1
+    }
+    let have = 0
+    for (const x of s.c.segs) { if (x != null) have = have + 1 }
+    s.sc.have = have
+    s.sc.got = have
+    s.bump()
 
 },
 // Ra_cast_bytes_of — the mirror's held byte weight: sum of its kept opus segments.  The byte-faithful
@@ -843,7 +844,7 @@ Ra_cast_bytes_of(rec) {
     let s = rec ? rec.o({ Stream: 1, name: 'opus' })[0] : null
     if (!s || !s.c.segs) return 0
     let n = 0
-    for (const seg of s.c.segs) n = n + seg.length
+    for (const seg of s.c.segs) { if (seg != null) n = n + seg.length }
     return n
 
 },

@@ -51,9 +51,15 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
     unambiguously while only it advertises.  NEVER `accept` a run you didn't start — runs broadcast; the
      guard is the `steps`/`snap` identity check (step count + which `%see`) before every accept.
 
-**The frontier (next build): 🎋 bamboo schematica** — make the Vtuffing text structural (a jointed
- schematic the dumb renderer fits into the cell).  `Voro_vtuffing.md` §🎋 has the design; Se
-  (surroundings-reactive fold) arrives with it.  Tunnel + radio are parked north-stars, not next.
+**The frontier.**  Two builds, in order:
+- **NEXT: the loose-node snake** (`Voro_vtuffing.md` next-moves #10).  A node never arrives disconnected —
+   thread the `%see` (and any standalone `randomer simpler C`) onto ONE meaningless-edge snake in a
+    low-density corner, `NUC_MIN`→1 (no threshold), so late edgeless adds stop making fcose re-pack the
+     rosette into a diagonal.  View-only (Cytui layout), no snap|fixture churn.  This also carries the
+      "uniformitise then explode diversity within" intent that feeds bamboo.
+- **THEN: 🎋 bamboo schematica** — make the Vtuffing text structural (a jointed schematic the dumb renderer
+   fits into the cell); `Voro_vtuffing.md` §🎋 has the design; Se (surroundings-reactive fold) arrives with
+    it.  Tunnel + radio are parked north-stars, not next.
 
 ## The metaphysics
 

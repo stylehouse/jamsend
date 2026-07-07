@@ -461,3 +461,27 @@ Captured from the live-tab review, in the owner's words + the intended behaviour
         solve are deep-designed in **`Voro_svg_stuffing.md`** (Voro_todo task 8).  The
          big-ticket `[pane]` item, gated behind #1 (needs neighbouring family panes to
           exist).
+
+10. **The loose-node snake — a node never arrives disconnected.** — **NEXT BUILD (precedes bamboo).**
+     Owner, verbatim: *"uniformitise it then explode its diversity within.  no threshold … we always add
+      nodes with edges rather than dropping them straight into a situation … set their location to some
+       low-density corner of the thing (or a corner with other randomer simpler C in it) … meaningless-edge
+        a snake of the randomer C together so everything can come+go with something else for stability."*
+     The disease (found this session): a late, EDGELESS add — the witness `%see` claims — is a fresh
+      DISCONNECTED component, and fcose's packer discards the grown rosette to re-pack the board into a
+       DIAGONAL (Cytui `apply()`, the `fresh_ids` pin-newcomers note at ~:2000).  The nucleus
+        (`install_nuclei`, the hidden per-parent hub free children star-edge to) is the existing cure but
+         GATES at `NUC_MIN=3`, so a lone pair of `%see` slips under it and floats.
+     The principle: **every free|simple particle arrives already threaded.**  Instead of a per-parent star
+      gated on a count, keep ONE shared **snake** — a chain of MEANINGLESS (layout-only, never-snapped)
+       edges through the `randomer simpler C` (the `%see`, and any other standalone leaf), seated in a
+        low-density corner (or wherever the other loose C already sit).  A newcomer splices onto the snake's
+         tail; a departure splices out; because each always has a neighbour, an add|remove settles LOCALLY
+          instead of triggering a global re-pack — "come+go with something else for stability."  `NUC_MIN`
+           drops to 1 (no threshold — "it's okay if there's just one of them").  It generalises the nucleus
+            from a per-parent flower to a single come-and-go backbone: pure cytoscape scaffold, invisible,
+             off-snap, skipped by the tessellator + rack exactly as the nuclei already are.  Whether the
+              snake stands alone in its corner or tethers into the main cluster is the one open knob (a
+               stray-but-tidy blob vs one component) — decide with eyes on the first build.  `[scan]`-adjacent
+                (Cytui layout / graph topology): view-only, no snap|fixture churn.  **Then** the big **🎋 bamboo**
+                 — uniform engine panes, diversity exploded within.

@@ -1238,7 +1238,10 @@
     //  seats them as petals around a centre (a flower wireframe that voronois into
     //  a clean rosette).  Pure cytoscape scaffold: never in C**, never snapped,
     //  invisible, and skipped by both the tessellator and the rack.
-    const NUC_MIN = 3
+    const NUC_MIN = 1   // no threshold (owner: "it's okay if there's just one of them") — even a
+                        //  lone edgeless child gets seated on a hub instead of floating.  The full
+                        //   come-and-go snake backbone (Voro_vtuffing.md next-moves #10) is the plan;
+                        //    this is its threshold half.
     const is_nucleus = (node: any) => !!node.data('nucleus')
 
     function install_nuclei() {
@@ -1832,7 +1835,12 @@
         //           the tree is cached .g-side and the fit is pure math, so
         //            the rows track a drag live.
         if (vtuffing_on) {
-            const MICRO_MIN = 70   // √px² below which no row is legible anyway
+            // UNIFORMITISE (owner) — no size threshold: every fold|gang pane speaks engine rows,
+            //  so the board reads as ONE kind of thing (not a size-sorted Stuffing/engine mix).
+            //   The fit itself stays the only gate — a cell that can say NOTHING (0 rows) keeps its
+            //    molded Stuffing rather than showing blank.  (Was √area ≥ 70px; re-add a floor here
+            //     if the tiniest panes read as noise.)
+            const MICRO_MIN = 0
             const micro: typeof vmicro = []
             const next_on = new Set<string>()
             for (const c of L.cells) {
