@@ -49,6 +49,10 @@
     let status          = $state('no graph')
     let grawave_dur     = $state(0.3)
     let last_tick       = -1
+    // the engine we last laid the graph out with — so a real ENGINE switch relayouts
+    //  but an $effect re-establishment (HMR) does not.  Plain let (not $state): out of
+    //   the dependency set, and null-safe either way HMR leaves it (see the effect below).
+    let laid_out_engine: string | null = null
     let seek_warning = $state<string | null>(null)
 
     // Overlay state lives in the //#region overlays block further down
@@ -75,6 +79,7 @@
         if (!waves.length || tick === last_tick) return
         if (!cy) return
         last_tick = tick
+        laid_out_engine ??= layout_name   // prime on the first real wave, so an ENGINE switch is seen
 
         // drain the queue — each wave gets enqueued in order
         gn.sc.waves = []
@@ -95,10 +100,16 @@
             + ` · ⏱${dur}s`
     })
     $effect(() => {
-        if (layout_name && last_tick >= 0) {
-            // re-run current graph through the new engine
-            if (cy) relayout(400)
-        }
+        if (!layout_name || last_tick < 0 || !cy) return
+        // relayout only on a real ENGINE switch, never on effect re-establishment — a
+        //  bare (un-pinned) relayout lets fcose repack the disconnected components into a
+        //   diagonal, and an $effect re-runs on HMR, so hot-reloading Cytui used to
+        //    reshuffle the whole graph.  laid_out_engine (primed on the first wave)
+        //     remembers the engine; null (a fresh / HMR-reset state) just re-primes and
+        //      never relayouts.
+        if (laid_out_engine !== null && layout_name !== laid_out_engine)
+            relayout(400)   // re-run current graph through the new engine
+        laid_out_engine = layout_name
     })
 
     // ── NON_ANIM ──────────────────────────────────────────────────────────────
@@ -2239,39 +2250,42 @@
     //   - compound pre-sizing: emit phantom children at target parent before migration
     //     so fcose sees correct compound bbox from the start
 
-    const YOINK_MS = 50
-
+    // ── wave cadence: animate every wave, and WAIT for the voronoi morph ──────────
+    //  A batch of waves (Lang emits them faster than we read — Cyto.svelte queues them)
+    //   used to be COLLAPSED: the first wave animated, the rest were yoinked to their
+    //    end state at dur=0.  Manual ←/→ stepping sends one wave per fire, never batched,
+    //     so it always looked great — the tell that the batch-collapse, not the animation
+    //      itself, was the fault.
+    //  Now each wave plays in full and the next one WAITS for it: animCyto (the wave's
+    //   cyto layout) runs, then animVoro (the voronoi morph) takes the stage, and only
+    //    after the morph has had time to reach its settled paint does the next wave run.
+    //     The old advance timer paid for the layout (dur) ONLY, so the next wave's
+    //      hide_overlays_now cut the morph short and no coherent division ever played.
     let wave_queue: TheC[] = []
     let anim_busy   = false
-    let anim_end_at = 0
+    // flood safety-valve: never let the animation lag reality by more than this — beyond
+    //  it, fast-forward the oldest excess at dur=0 (a normal play-through stays well under
+    //   and animates every wave).
+    const MAX_ANIM_BACKLOG = 24
+    const BURST_DUR = 0.16    // brisk per-wave layout while a batch drains (vs the rest dur)
 
     function enqueue(wave: TheC) {
-        const now = Date.now()
-        if (anim_busy && now < anim_end_at - YOINK_MS) {
-            // a wave is mid-flight — yoink all elements to their end state
-            cy.elements().stop(true, true)  // jumps to animation end-values
-            lay?.stop()
-            // drain anything already queued at dur=0 so state is consistent
-            while (wave_queue.length) apply(wave_queue.shift()!, 0)
-            anim_busy = false
-            // small pause so cytoscape commits the jumped positions
-            wave_queue.push(wave)
-            setTimeout(process_queue, YOINK_MS)
-        } else {
-            wave_queue.push(wave)
-            if (!anim_busy) process_queue()
-        }
+        wave_queue.push(wave)
+        while (wave_queue.length > MAX_ANIM_BACKLOG) apply(wave_queue.shift()!, 0)
+        if (!anim_busy) process_queue()
     }
 
     function process_queue() {
         if (!wave_queue.length) { anim_busy = false; return }
         const wave = wave_queue.shift()!
-        // if more waves are already waiting, drain at 25fps
-        const dur = wave_queue.length ? 0.04 : ((wave.sc.duration as number) ?? 0.3)
-        anim_busy   = true
-        anim_end_at = Date.now() + dur * 1000
+        const dur = wave_queue.length ? BURST_DUR : ((wave.sc.duration as number) ?? 0.3)
+        anim_busy = true
         apply(wave, dur)
-        setTimeout(process_queue, dur * 1000 + 20)
+        // waitVoro: pay for the WHOLE animation before the next wave — the layout tween
+        //  (dur), then the overlay-settle debounce + the voronoi morph — so animVoro plays
+        //   out instead of being cut short.  voronoi off → just the layout + a hair.
+        const pad = dur * 1000 + (voronoi_on ? OVERLAY_QUIET_MS + MORPH_MS + 80 : 40)
+        setTimeout(process_queue, pad)
     }
 
 

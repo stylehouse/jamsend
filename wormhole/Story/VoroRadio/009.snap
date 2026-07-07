@@ -61,3 +61,31 @@ Snap:H
         row:Pittosporum,n=4,fold:loose,pop=4
         row:Olearia,n=3,fold:loose,pop=3
         row:Nothofagus,n=3,fold:gang,rep:tenax,of=3
+Snap:cytowave
+  upsert,id:cytoid_1_1_23,label:see:the tuner…,parent:cytoid_1_1
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  upsert,id:cytoid_1_1_24,label:see:the trail…,parent:cytoid_1_1
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  upsert,id:cytoid_1_1_25,label:see:an aged l…,parent:cytoid_1_1
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  upsert,id:cytoid_1_1_26,label:see:the hand …,parent:cytoid_1_1
+    style,background-color:#a34b1f
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  upsert,id:cytoid_1_1_5,overlay_kind:stuff,overlay_self
+    style,height=44
+    style,width=110

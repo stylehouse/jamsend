@@ -57,3 +57,52 @@ Snap:H
         row:Pittosporum,n=4,fold:loose,pop=4
         row:Olearia,n=3,fold:gang,rep:grandifolia,of=3
         row:Nothofagus,n=3,fold:gang,rep:tenax,of=3
+Snap:cytowave
+  upsert,id:cytoid_1_1_2,overlay_kind:stuff
+    style,height=120
+    style,width=220
+  upsert,id:cytoid_1_1_21,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+    style,background-color:#04202a
+    style,background-opacity=0.85
+    style,border-color:#bc2476
+    style,border-width=2
+    style,height=44
+    style,shape:ellipse
+    style,width=110
+  {"upsert":1,"id":"cytoid_1_1_21_1","label":"Olearia:lucida va…\nwoodystem\nhabit:tree","parent":"cytoid_1_1"}
+    style,background-color:#bc2476
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  {"upsert":1,"id":"cytoid_1_1_21_2","label":"Olearia:lucida va…\nhabit:tree","parent":"cytoid_1_1"}
+    style,background-color:#bc2476
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  upsert,id:cytoid_1_1_22,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+    style,background-color:#04202a
+    style,background-opacity=0.85
+    style,border-color:#bc2476
+    style,border-width=2
+    style,height=44
+    style,shape:ellipse
+    style,width=110
+  upsert,id:cytoid_1_1_6,overlay_kind:stuff,overlay_self
+    style,height=44
+    style,width=110
+  edge_upsert,id:cytoid_1_1_21_1_1,source:cytoid_1_1_21,target:cytoid_1_1_21_1
+  edge_upsert,id:cytoid_1_1_21_2_1,source:cytoid_1_1_21,target:cytoid_1_1_21_2
+  remove,id:cytoid_1_1_10
+  remove,id:cytoid_1_1_11
+  remove,id:cytoid_1_1_8
+  remove,id:cytoid_1_1_8_1
+  remove,id:cytoid_1_1_8_2
+  remove,id:cytoid_1_1_9
+  remove,id:cytoid_1_1_9_1
+  remove,id:cytoid_1_1_9_2
+  edge_remove,id:cytoid_1_1_8_1_1
+  edge_remove,id:cytoid_1_1_8_2_1
+  edge_remove,id:cytoid_1_1_9_1_1
+  edge_remove,id:cytoid_1_1_9_2_1

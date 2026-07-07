@@ -117,7 +117,7 @@ Snap:H
             Reco,by:DJ,note:this one grows — stay past the second chord
             preview,seq,from=12,to=24
             preview,seq=2,from=24,to=36
-          Record,id:trk1,title:Dorian D,artist:DJ Oscillo,seconds=76,loudness=0.424,nchunks=240,real
+          Record,id:trk1,title:Dorian D,artist:DJ Oscillo,seconds=76,loudness=0.1413,nchunks=240,real
             Stream,name:audio,total=240,have=0,sr=48000
         reached:step_3
         refused:not_started

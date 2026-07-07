@@ -80,9 +80,14 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
   general" (a protocol-level omit like the body_hash Organ-2 mask) as an alternative to the per-Entcase
    `{TOK}` graft; UNSCOPED — touches Text encode `omit_sc`. (b) dead page-loop in `Ra_cast_send_lines` (the
     husk sender; harmless — empty bufmap) — tidy on the NEXT Ra.g touch, not a standalone compile+record.
-**AUTHORED 2026-07-08 — RaTerm (§3.4, the LAST verb) — awaiting first live CHECK run.** The terminal that
- PLAYS: decode the stocked opus back to real PCM and prove honest playback. Written + compiled clean (gens on
-  disk via LocalGen), NOT yet run on a live runner. Design calls:
+**RAN LIVE GREEN-IN-SUBSTANCE 2026-07-08 — RaTerm (§3.4, the LAST verb), pending fixture-accept + a MusuRa* rename.**
+ The terminal that PLAYS: decode the stocked opus back to real PCM and prove honest playback. Ran clean on a live
+  fsa runner (12/12 beats, no step errors) and READ THE SNAP: Cosmic C stocked (source -7.33 LUFS + a -6.67 dB
+   bake = -14 exactly), decoded whole — `heard,seconds=78,segs=39,lufs=-14,healthy=0,starved=320,dropped=8`: the
+    played-back LUFS reads the -14 target BACK (baked gain survived the opus round trip), zero phantom gaps on the
+     whole track, and withholding 8 middle segments surfaced as 320 gap-windows (16s / 50ms). ALL FIVE `%see` fired
+      at 2/4/6/8/10; every threshold guess held first try; the numbers are deterministic (no Wref, as designed).
+       Steps read red ONLY for want of an accepted baseline (the seed diges). Design calls:
  - **Two generic primitives in `Ghost/M/Ra.g` `#region term`** (append, ~lines 809-880): `Ra_term_decode(w,
     nav, id)` reads `<id>.jam` and `decodeAudioData`s EVERY 2s opus segment (the `Ra_proof` per-segment carve),
      concatenating per channel into one continuous track → `{channels, sr, seconds, segs, per}`; `Ra_term_spool(

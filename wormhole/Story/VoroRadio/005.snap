@@ -57,3 +57,59 @@ Snap:H
         row:Pittosporum,n=4,fold:gang,rep:serrata,of=4
         row:Olearia,n=3,fold:gang,rep:grandifolia,of=3
         row:Nothofagus,n=3,fold:gang,rep:tenax,of=3
+Snap:cytowave
+  upsert,id:cytoid_1_1_10,overlay_kind:stuff,overlay_self
+    style,height=44
+    style,width=110
+  upsert,id:cytoid_1_1_12,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+    style,background-color:#04202a
+    style,background-opacity=0.85
+    style,border-color:#c5b759
+    style,border-width=2
+    style,height=44
+    style,shape:ellipse
+    style,width=110
+  {"upsert":1,"id":"cytoid_1_1_12_1","label":"Veronica:lucida va…\nwoodystem\nhabit:tree","parent":"cytoid_1_1"}
+    style,background-color:#c5b759
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  {"upsert":1,"id":"cytoid_1_1_12_2","label":"Veronica:lucida va…\nhabit:tree","parent":"cytoid_1_1"}
+    style,background-color:#c5b759
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  upsert,id:cytoid_1_1_13,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+    style,background-color:#04202a
+    style,background-opacity=0.85
+    style,border-color:#c5b759
+    style,border-width=2
+    style,height=44
+    style,shape:ellipse
+    style,width=110
+  upsert,id:cytoid_1_1_14,label:,parent:cytoid_1_1,overlay_kind:stuff,overlay_self
+    style,background-color:#04202a
+    style,background-opacity=0.85
+    style,border-color:#c5b759
+    style,border-width=2
+    style,height=44
+    style,shape:ellipse
+    style,width=110
+  upsert,id:cytoid_1_1_14_1,label:Veronica:excelsa v…,parent:cytoid_1_1
+    style,background-color:#c5b759
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  upsert,id:cytoid_1_1_14_2,label:Veronica:excelsa v…,parent:cytoid_1_1
+    style,background-color:#c5b759
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20
+  edge_upsert,id:cytoid_1_1_12_1_1,source:cytoid_1_1_12,target:cytoid_1_1_12_1
+  edge_upsert,id:cytoid_1_1_12_2_1,source:cytoid_1_1_12,target:cytoid_1_1_12_2
+  edge_upsert,id:cytoid_1_1_14_1_1,source:cytoid_1_1_14,target:cytoid_1_1_14_1
+  edge_upsert,id:cytoid_1_1_14_2_1,source:cytoid_1_1_14,target:cytoid_1_1_14_2

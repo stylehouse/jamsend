@@ -1,9 +1,9 @@
 Snap:H
   H:MusuReco,Run
     A:MusuReco
-      self,round=17	{"mung":["age"]}
+      self,round=16	{"mung":["age"]}
       w:MusuReco
-        self,round=17	{"mung":["age"]}
+        self,round=16	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Peering,name:DJ,req=2,ok
@@ -121,7 +121,7 @@ Snap:H
             Stream,name:audio,total=240,have=0,sr=48000
             preview,seq=0,from=0,to=12
             Reco,by:DJ,note:this one grows — stay past the second chord
-          Record,id:trk1,title:Dorian D,artist:DJ Oscillo,seconds=76,loudness=0.424,nchunks=240,real
+          Record,id:trk1,title:Dorian D,artist:DJ Oscillo,seconds=76,loudness=0.1413,nchunks=240,real
             Stream,name:audio,total=240,have=0,sr=48000
         reached:step_3
         refused:not_started

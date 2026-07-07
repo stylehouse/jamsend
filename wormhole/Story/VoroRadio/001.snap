@@ -5,3 +5,21 @@ Snap:H
       w:VoroRadio
         self,round	{"mung":["age"]}
         req:wrangle,eternal,ok
+Snap:cytowave
+  upsert,id:cytoid_1_1,label:VoroRadio,isCompound:true
+    style,background-color:#8f3232
+    style,background-opacity=0.6
+    style,color:#ccc
+    style,font-size:8px
+    style,font-style:italic
+    style,height=20
+    style,padding:7px
+    style,shape:ellipse
+    style,text-valign:top
+    style,width=20
+  {"upsert":1,"id":"cytoid_1_1_1","label":"req:wrangle\neternal\nok","parent":"cytoid_1_1"}
+    style,background-color:#2fb155
+    style,color:#ccc
+    style,height=20
+    style,shape:ellipse
+    style,width=20

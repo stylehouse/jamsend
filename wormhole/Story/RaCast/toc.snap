@@ -5,9 +5,7 @@ story:RaCast
     For
   EntropyProfile,Wref:Trope/Ra/AudibleEntropy
   TimeSpool
-    TimeTotal:beliefs,avg=0.263
-      sample=0.25,at=1783434977
-      sample=0.257,at=1783435221
+    TimeTotal:beliefs,avg=0.262
       sample=0.277,at=1783435240
       sample=0.262,at=1783435294
       sample=0.226,at=1783435534
@@ -16,9 +14,9 @@ story:RaCast
       sample=0.262,at=1783437430
       sample=0.345,at=1783437444
       sample=0.253,at=1783438091
+      sample=0.235,at=1783442599
+      sample=0.265,at=1783443784
     TimeTotal:step,avg=0.022
-      sample=0.021,at=1783434977
-      sample=0.021,at=1783435221
       sample=0.023,at=1783435240
       sample=0.022,at=1783435294
       sample=0.019,at=1783435534
@@ -27,6 +25,8 @@ story:RaCast
       sample=0.022,at=1783437430
       sample=0.029,at=1783437444
       sample=0.021,at=1783438091
+      sample=0.02,at=1783442599
+      sample=0.022,at=1783443784
   step,dige:b2c2a54b53e6bd39
   step=2,dige:671f81577219fb1a
   step=3,dige:07b2a68062157507
