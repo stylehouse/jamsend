@@ -133,14 +133,28 @@ Renders as the **🕳 tunnel** north star above: A:Tunnel is the actor that HOST
  gently-turning drift that vision draws on the tube wall — same word, two faces (the
   render is the wall you see, A:Tunnel is the engine turning behind it).
 
-**Status.**  First step LANDED 2026-07-07 (fork-independent): the crush's projection
- world renamed `w:VoroRadioReport → w:Voronoiology` (one fixed handle across all
-  `Book:Voro*`).  Second step LANDED same day: the fold is now IMPOSED from above —
-   `The/Opt/useVoroCyto` folds a data Book at snap time (twin of `useCyto`), the projection
-    self-reports always and is pruned only by `dontSnapVoronoiology`; the per-worker "blast"
-     and every fold gate are gone.  A:Tunnel itself is **scheduled, not shelved** — its
-    commit point is the undo-history layer, because that is the first capability that
-     cannot be faked on Story.
+**Status & frontier.**  Parameterisation is SETTLED (2026-07-07): the projection world is
+ `w:Voronoiology` (one handle across all `Book:Voro*`), and the fold is IMPOSED from above —
+  `The/Opt/useVoroCyto` folds a *data* Book at snap time (twin of `useCyto`), the projection
+   self-reports always and is pruned only by `dontSnapVoronoiology`; the per-worker "blast" and
+    every fold gate are gone.  A Book whose subject is NOT the fold never touches it (VoroScape,
+     MusuReplica); a Book whose subject IS the fold drives it inline (VoroMitosis, VoroRadio).
+      **The active frontier is now 🎋 Bamboo schematica** (below).  A:Tunnel and the radio are
+       north-stars, NOT the next move — parked until bamboo lands.  Live-record state + the full
+        design: `Voro_todo.md` §0 + memory `voro-imposed-from-above`.
+
+**`w:Voronoiology` is a growing, subject-agnostic process-trace — and that is the architecture
+ that scales.**  It records what the *layout* did, never what the Book is about:
+  `Voro,beat,level:L0,visible,gangs,folded,count` — the same row over music, flora, or replication
+   traffic.  The Book stays pure; the viewer reports on its own working beside it.  So a whole
+    pipeline of processing can pile in without touching a single Book: each analysis is IMPOSED
+     from above (or driven inline by a demo whose subject IS that analysis), SELF-REPORTS into a
+      sibling world, and Story decides RECORDING per-Book with a `dontSnap*` flag.  Today the trace
+       is one terse governor row; to go long it grows a real per-gang / per-genus / what-the-radio-
+        popped account that can *name* what it acted on (a Book particle by mainkey) while never
+         *being* Book-centric.  You don't widen the Book's snap as processing multiplies — you add
+          sibling analysis worlds, subject-agnostic, independently recordable.  (This is the seed
+           A:Tunnel's "separable snap channels" grows from.)
 
 The microcosm cards (Voro_microcosm.md a+b) underexpressed: a VoroScape pane the size
  of a hand said "Track" three times, because the card text was the member's mainkey
@@ -150,6 +164,8 @@ The microcosm cards (Voro_microcosm.md a+b) underexpressed: a VoroScape pane the
      Waft way, the pixels staying pure.
 
 ### 🎋 Bamboo schematica + Se — the text gets structural, the fold reads its surroundings
+
+**← THE ACTIVE FRONTIER (2026-07-07).**  Parameterisation is settled; this is the next build.
 
 The owner, verbatim: *"when we get more bamboo schematica going on to make the text more
  rockin' it's going to get Se going on about what to do given the surroundings probably."*

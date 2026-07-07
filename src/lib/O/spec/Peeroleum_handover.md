@@ -340,7 +340,7 @@ spec §5** ("Realised transport topology — the 'heading 10' design"); this is 
               `not_in_Atime && Run.todo.length` it drives the drain itself (`Run.answer_calls()`), self-healing a
                dropped wakeup on the next 50ms tick; a throttled **`rekick` trace** marks each intervention
                 (rekick-then-lands = lost wakeup; rekick-forever = churn, now loud instead of a silent
-                 forever-wait). Design write-up: `Story_next_level_spec.md` **§15.5**. **Verify on :9091:** the
+                 forever-wait). Design write-up: `Story_future.md` **§15.5**. **Verify on :9091:** the
                   wedged step should now COMPLETE. Deeper follow-up (optional): root-harden (await `_really`,
                    de-throttle the event-driven think) or the §15 **req\*\*** recast (wake becomes ttlilt-owned,
                     so the whole class dissolves rather than being netted).

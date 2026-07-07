@@ -18,8 +18,8 @@ The triad: this is **how it runs**; `Swarm_spec.md` is **who's on it** (the p2p 
 > (§3.2b substrate · §3.3 badges/CLI/ladder · §3.9 quality+liveness · §5 drive→examine→accept) and were
 > deleted 2026-07-06; the retired `Robustness_plan.md`'s five hardening organs distributed to their §homes
 > (the assert-vs-derive **principle** → head of §2; Organ 1 latch → §3.2b; Organ 2 ack → §1; Organ 4
-> identity 9→2 → §3.2a, **DONE + verified**; Organ 5 nav-contract → §3.8), leaving only the app-wide
-> **Organ 3** (authoritative-absence) as a stub in `Robustness_plan.md`. Remote-Wormhole `bin_write` + nav
+> identity 9→2 → §3.2a, **DONE + verified**; Organ 5 nav-contract → §3.8; Organ 3 authoritative-absence → §2.0a). `Robustness_plan.md` is now
+> fully absorbed — retired to `spec/history/`. Remote-Wormhole `bin_write` + nav
 > precedence: §3.8.
 
 ---
@@ -106,9 +106,33 @@ So "Trusting" is not new invention — it is the garden's membership/contact/tru
       source at point of use (or reconcile against it every tick), and make every boundary answer a
        three-valued question — yes / no / couldn't-tell — so "couldn't-tell" can never masquerade as "no".**
         The signing layer below is the trust-vs-confirm half; the identity collapse (§3.2a), the latch
-         reconcile (§3.2b), and the authoritative-absence read (Organ 3, kept in `Robustness_plan.md`) are the
-          derive-not-assert half. *(Distilled from the retired `Robustness_plan.md` — its five organs folded
-           into their §homes here; only the app-wide Organ 3 stayed behind as a stub.)*
+         reconcile (§3.2b), and the authoritative-absence read (Organ 3, §2.0a) are the
+          derive-not-assert half. *(Distilled from the retired `Robustness_plan.md` — all five organs now
+           folded into their §homes here, Organ 3 included.)*
+
+### 2.0a Authoritative absence — the three-valued read (Organ 3, app-wide)
+
+*The one hardening organ that is **not** cluster-specific — it governs every read that can overwrite durable
+ data — folded in here from the retired `Robustness_plan.md`. If this doc is ever gutted, lift this principle
+  into `CLAUDE.md`; it is load-bearing app-wide.*
+
+**Principle.** A read is **three-valued**: `present(content) | absent | unavailable(reason)` — never conflate
+ "genuinely gone" with "couldn't fetch". **A transient or empty read must never overwrite durable data.**
+  Enforce it at the ONE choke point (`LiesStore` `land_good`), which re-confirms once before trusting a
+   `not_found`, so authoritative-absence is inherited by every consumer instead of scattered per-caller
+    `notfound_once` band-aids. Gate any empty-read auto-save on *confirmed* absence only.
+
+**Landed 2026-07-05.** `land_good` re-asks ONCE before landing a `not_found` (deduped per-req via
+ `req.c.nf_counted` across the Phase-2 + read_good sites); a transient not_found for a registry Waft never
+  lands as absence; `Auto.svelte`'s Library got the same re-confirm on its `rw` queue; `text/Doc` is EXEMPT
+   (a not_found doc is a new blank file). This was the grant-registry-wipe thread that started the whole
+    robustness saga.
+
+**Still-open.** The three-valued state at `land_good` is a *re-ask*, not yet a **contract flag on the reply**
+ — so `RemoteWormholeNav` still forwards a `not_found` verbatim (only local FSA re-lists before answering);
+  this is the same seam tracked as **Mode 3** in §3.3. Positive templates already in the tree: `Story.svelte`'s
+   re-confirm-before-accepting-absence, and `LiesKeep`'s one authoritative snapped home + a coalesced mirror
+    that can't feed a write loop.
 
 ### 2.1 The threat & the end state
 `gen_write` (the editor shipping a compiled `.go` down its relay socket → Node writes it to
@@ -506,7 +530,7 @@ The runner tab needs a face to declare and manage what it is: pick/fork its `?I=
      1 = cross-wired; run the duplicate-dige sweep; headless-recompile via the `LocalGen.spec.ts` vitest command
       (self-heals through HMR re-mix, no reload). Upstream cause still OPEN: the compile-source-as-param seam that
        can write one dock's output to another's `gen_path`.
-- **Mode 3 — error-lands-as-empty** (OPEN; the Organ 3 shape at the wormhole seam). `land_good` mapping
+- **Mode 3 — error-lands-as-empty** (OPEN; the Organ 3 shape at the wormhole seam — principle §2.0a). `land_good` mapping
    `{error}`→`content:''` makes a failed read indistinguishable from a genuinely empty one → "Waft:Cluster empty"
     silently resets a registry. Ought to park-and-retry (leave `c.content` undefined). `Wormhole_park` serialises
      one op in-flight per queue, so a degraded down-channel crawls at ~20s/op.

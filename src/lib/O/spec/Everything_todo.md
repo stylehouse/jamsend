@@ -33,7 +33,7 @@ A cross-spec sweep of what is in motion and what is deferred-but-load-bearing,
 ## Still moving — by subsystem
 
 ### Story runner
-`Story_next_level_spec.md` is the biggest live document by far. It frames the
+`Story_future.md` is the biggest live document by far. It frames the
  work as **13 sequential stages, ordered for shippability** (not logical
   dependency), with one explicit parallel track that should ship *first*:
    recasting the test drive as `req:Step` (one-shot, rest = step done) /
@@ -298,7 +298,7 @@ A compiled `.g` becomes a `gen/**.go` that is a **Svelte component**: its `eatfu
  **without a DOM mount** — evaluate the component's deposit path directly, or a headless
   Svelte-component instantiation that runs `onMount`-equivalent. See `Editron.md` §3 + TODO
    ("UIless-include"), `Peeroleum_handover.md` heading 1b, and
-    `Story_next_level_spec.md` §16. Until it lands, the runner is a live browser tab
+    `Story_future.md` §16. Until it lands, the runner is a live browser tab
      (which is fine for v1 — the channel is identical either way).
 
 ## Parked (Lies / Peeroleum)

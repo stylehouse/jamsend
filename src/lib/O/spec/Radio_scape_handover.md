@@ -6,6 +6,12 @@ Session-continuation brief for the **scape** half of the streaming platform: the
  Companion memories: `voronoi-cells-render`, `graph-of-music-scape`, `bigqualand-aufheben`,
   `music-cluster-kickoff`, `creduler-runner-architecture`.
 
+ ⚠ SUPERSEDED for the Voro luxury layer (2026-07-07): the crush is now IMPOSED from the toc
+  (`useVoroCyto`) and DOES trace the snap (`w:Voronoiology`).  Bomb #3 ("crush leaves NO trace")
+   and the "arm via `w.c.crush_wanted=1`" map line below are the OLD model — see `Voro_todo.md` §0
+    + memory `voro-imposed-from-above` for the current truth.  This doc still holds for the
+     scape → Sounditron road.
+
 ## Destination
 
 `/` (BigSoundland) is the music-half toplevel: a **runner booted on a music Book, rendered full-bleed as

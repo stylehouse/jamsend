@@ -3,7 +3,7 @@
 The keeper doc for the UIless Story runner. **How to run it + the pile layout live in
  the header comment of `scripts/Story_cli.spec.ts`** (the `BOOK=…` / `ACCEPT=1` commands,
   the `NNN.got.snap`/`run.json`/`wstory.json` file list, the query examples); the *design*
-   it realises is `Story_next_level_spec.md` §16. This file is the **durable gotchas** — the
+   it realises is `Story_future.md` §16. This file is the **durable gotchas** — the
     things that bit a past session hard enough to be worth re-reading before you touch a
      ttlilt-timed Book, go spelunking in the trace, or wonder why the pump seems dead.
 

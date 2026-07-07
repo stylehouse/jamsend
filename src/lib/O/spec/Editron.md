@@ -289,7 +289,7 @@ Per-Book is `cred.runs` **partitioned by `book` at spool time**, not a directory
    verdict *without a browser tab* — the `req:Step`/`req:Drive` recast + the **UIless-include** problem
     (Pantheate mounts the gen as a UI whose `onMount` injects `Ghostmeta`; a UIless run renders no UIs, so
      `req:include` times out at `waiting:ghostmeta`). Until then "remotely" = a second browser tab, not node.
-      (`Story_next_level_spec.md` §15–16, `Story_cli_docs.md`.)
+      (`Story_future.md` §15–16, `Story_cli_docs.md`.)
 - **Nondeterminism guard** — a Credence cell seen both ✓ and ✗ at the SAME version-set. Capture the version-set
    at START and END of a run: start ≠ end = an HMR drifted mid-run (verdict suspect, discard/re-run); only
     start == end with a differing outcome is true nondeterminism. Don't conflate drift with nondeterminism.

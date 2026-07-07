@@ -4,7 +4,7 @@
 //   you a prompt to drive + inspect a runner already running in a browser (booted ?B=<Book>) — run a
 //    Book, watch it to a verdict, read a step's snap, and DIFF the live snap against the baked expected.
 //  This is the §16 "agent as test driver — read pass/fail plus the diff as text, and iterate" loop
-//   (Story_next_level_spec.md), pointed at the LIVE runner instead of the headless pile.
+//   (Story_future.md), pointed at the LIVE runner instead of the headless pile.
 //
 //  Run:   node scripts/story_repl.mjs            (RUNNER_URL overrides the relay origin)
 //  Then:  story› run MusuLive --watch

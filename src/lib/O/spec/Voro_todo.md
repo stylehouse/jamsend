@@ -4,7 +4,43 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
  time, by a session that has not read the whole arc. Read **The metaphysics** first;
   every task below must leave it intact — a pretty result that violates one of these
    rules is wrong work, not partial credit.
- The arc + bombs: `Radio_scape_handover.md`. The durable spec: `Radio_spec.md §8`.
+ The arc + bombs + frontier live in **§0 below** (rewritten each handover). The durable
+  spec: `Radio_spec.md §8`; the system doc: `Voro_vtuffing.md`.
+
+## 0 · Handover  (rewrite this section each handover; everything below stays current)
+
+**Where we are (2026-07-07).**  The Voro *parameterisation* is SETTLED: the fold ("crush") is a
+ VIEWER, imposed from the toc like Cyto/Matstyle — a Book never asks to be folded.
+- `The/Opt/useVoroCyto` (renamed from crushCyto / crush_wanted / wantsCrush): Story reads it in
+   `story_snap` and folds each run world AT SNAP TIME.  The per-worker "blast" in
+    `Story_settingoff` is GONE; `Voro_crush_scan` / `Voro_report` have NO gate.  Also stamped on
+     the Cyto commission.
+- The Book is **Voro-blind** — never folds, reads `c.stuff`, or logs the fold.  The fold
+   SELF-REPORTS into `w:Voronoiology` (a subject-agnostic process-trace; `Voro_vtuffing.md`
+    §"Status & frontier").  `dontSnapVoronoiology` (renamed from dontVoronoiology) prunes that
+     projection from the snap, Story-side in `snap_H`.
+- **Taxonomy by subject:** DATA Books (VoroScape = music, MusuReplica = replication) carry
+   `useVoroCyto` and are imposed.  FOLD Books (VoroMitosis = the fold, VoroRadio = the radio that
+    eats the fold) DRIVE `Voro_crush_scan` / `Voro_drift_tick` inline and KEEP their fold-`%see`.
+     (So deleting VoroScape's beat-6 + MusuReplica's ratio `%see` was right; touching
+      VoroMitosis's "ganged" or VoroRadio's radio `%see` would be wrong.)
+- Report row renamed `crush:1 → Voro:1`, now carrying `folded` / `count`.  `%see` in general is
+   untouched — only the few that reached into `c.stuff` died.  ◈ stays a live-only lens.
+  Design in full: memory `voro-imposed-from-above`.
+
+**Owed, live (the gate).**  Both `.g` compile clean via LocalGen; `gen/V/Voro.go` +
+ `gen/Story/Musuation.go` written.  **VoroScape re-recorded LIVE + green.**  STILL OWED:
+  `VoroMitosis` (11 steps), `VoroRadio` (9), `MusuReplica` (14 — may STALL on an AudioContext
+   gesture in the runner tab; real muted Web-Audio).  Each: `run --watch` → inspect a snap → `accept`
+    → re-run to verify GREEN.
+- **Runner fleet drifted:** the old pinned `3c5238c68a3641c1` is roster-only (not advertising);
+   `49dee91d61a9de64` is the live one.  ALWAYS `--runner=<id>` (a pin only matches an ADVERTISING
+    runner).  NEVER `accept` a run you didn't start — runs broadcast; check `steps` / `snap`
+     identity (step count + which `%see`) first.
+
+**The frontier (next build): 🎋 bamboo schematica** — make the Vtuffing text structural (a jointed
+ schematic the dumb renderer fits into the cell).  `Voro_vtuffing.md` §🎋 has the design; Se
+  (surroundings-reactive fold) arrives with it.  Tunnel + radio are parked north-stars, not next.
 
 ## The metaphysics
 
@@ -16,11 +52,14 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
         future in|out-group process option. The oddballs just sit where fcose put them.)
        The cautionary tale is `size_stuff_node()`'s voronoi guard: growing a node
         from its own cell's size is a feedback runaway.
-2. **Nothing render-side is ever snapped.** c-side (`n.c.*`) or component `$state` only;
-    no `%keys`, no `sc` writes, no wave participation. A Book underneath must never be
-     able to see the render (the Leaf* Books keep checking Cyto basically works). Free
-      self-test: if any Story fixture diff appears from your change, you broke this rule.
-       If your design seems to need a snapped flag — stop, the design is wrong.
+2. **Nothing RENDER-side is ever snapped.** c-side (`n.c.*`) or component `$state` only;
+    no `%keys`, no `sc` writes, no wave participation. A Book underneath must never be able
+     to see the render (the Leaf* Books keep checking Cyto basically works). The ONE sanctioned
+      snap is `w:Voronoiology` — the fold's own PROCESS-trace (`Voro_report`), a sibling world,
+       NOT render pixels, imposed/pruned Story-side (§0). So the self-test is narrower now: a
+        fixture diff in the *flora* (the Book's own world) means you broke this rule; a
+         `w:Voronoiology` row is the fold reporting itself, by design. If your design seems to
+          need a snapped flag ON THE FLORA — stop, the design is wrong.
 3. **The crusher is the only minter of `c.stuff` / `c.stuffy`** and it lives in
     `Ghost/V/Voro.g` (`Voro_crush_scan / _walk / _crushable / _clear`). Crush-policy work
      goes there, in the LangTiles DSL, not in raw TS. After a `.g` round:
@@ -86,13 +125,10 @@ Grades: **GRIND** = mechanical against this brief; **GRIND+** = needs local judg
 
 Two quick reaches off the owner's first eyes-on pass:
 - **`%Opt` hidden in the graph.** `cytyle_classify` now `skip`s `%Opt` (Cyto.svelte) —
-   the `Opt/crushCyto` nodes the owner still saw were config scaffolding (VoroMitosis's
-    toc declares a vestigial `Opt/crushCyto` even though the seed arms via
-     `w.c.crush_wanted`; MusuReplica keeps its opt for real). The crusher already
-      ignored `%Opt`; the view hides it too now, universally. The model still carries
-       the opt (it gates MusuReplica's crush) — only the render drops it. Optional
-        follow-up: delete the vestigial `Opt/crushCyto` from VoroMitosis's toc during
-         the owed re-record, so the demo is pure `crush_wanted`.
+   the `Opt/*` nodes the owner still saw were config scaffolding (a Book's toc `Opt`, e.g.
+    `useVoroCyto`, is a switch Story reads, not data). The crusher already ignored `%Opt`;
+     the view hides it too now, universally. The model still carries the opt (it is the toc
+      switch Story reads at snap time) — only the render drops it.
 - **Stuffing width → max-width only.** paint_final forced `child.style.width`, so a
    short line measured as a full box and the affine scaled that wide box down → tiny
     text + dead gap (the owner's exact report). Now `width:''` (keeps `.cytui-stuff`
