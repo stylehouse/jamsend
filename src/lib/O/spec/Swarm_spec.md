@@ -214,7 +214,7 @@ An **Idzeug** is a single-use, signed invite carrying the inviter's page, the **
 - **delivery** — a `?Iz=<base64>` **query param** (not a URL `#`-fragment; apps handling those links were
    stripping the fragment off). Copy-paste, a link, or a QR — all the same blob.
 - **once** — single-use; the nonce is spent on the one live redeem.
-- `// <` handling the **legacy** set of Idzeugs (the old garden's format) — owed, deferred.
+- handling the **legacy** set of Idzeugs (the old garden's format) — **rung 1 BUILT 2026-07-07**.
    The concrete shape (surveyed 2026-07-07, `Tyranny.svelte` + `Trust.svelte.ts`): an old link is a
     URL **hash-fragment** `#<13-#-pad><prepub>-<advice>-<sign>` — prepub is the 16-hex address, advice
      a peel-encoded `{name, n}` (`.`-sep, `~`-hier, spaces as `+`), sign an ed25519 over the string
@@ -222,12 +222,17 @@ An **Idzeug** is a single-use, signed invite carrying the inviter's page, the **
        identity KEY that signed it live in the old garden's **Dexie** (`Trusting.OurIdzeugs`,
         `OurPier.stashed`) — nothing on disk, nothing in particles. And an old claim granted the
          hardcoded `'ftp'` trust atom, NOT a Feature grant — do not transcode it as `Music`.
-   So "support the old Idzeugs" = two rungs: (1) **dual-parse at the door** — the boot layer also
-    reads the `#`-fragment shape and rebuilds a claim addressed to its prepub (cheap, pure); (2) a
+   So "support the old Idzeugs" = two rungs: (1) **dual-parse at the door [BUILT — Book SwarmPolicy]**:
+    `Swarm_legacy_of_url` (`Swarm.g #region legacy`) reads the `#`-fragment shape pure — prepub|name|n
+     lifted, `granted:'ftp'` surfaced so nobody transcodes it as Music, null (never a throw) on
+      garbage and modern links. One deliberate mercy: the parser ADMITS `+` (the old ENCODER wrote
+       spaces as `+` but its own matcher never accepted them — spaced names broke old links at their
+        own door; we read what the encoder wrote). `InvitePanel` shows the honest relic face — names
+         the inviter, says the key has not moved into this door yet, suggests a fresh QR. (2) a
      **one-time migrator** that lifts the old Dexie ledger + keys into `%Idzeug` records under the
       live `%Peering` — without which the door can only say `deny('unknown')`, honestly: the maker's
        ledger IS the validity (§10.1). Verification against the OLD signing key requires that key
-        migrated too — an old link whose key never moved is dead, and should say so.
+        migrated too — an old link whose key never moved is dead, and should say so. `// <` rung 2 owed.
 
 ### 6.3 The handshake — live, both online
 
@@ -434,8 +439,12 @@ The owner wants the QR invite maker back ("monkey business vibe") as the front d
   no offline oracle to fool. That makes invite POLICY a one-sided upgrade: the `%Idzeug` record
    under the inviter's `%Peering` grows policy fields the DOOR checks at hello-time, no wire or
     redeemer change at all —
- - `ttl:` — short-lived invites: `deny('expired')` when `now > time + ttl` (the record remembers
-    its mint time; the blob needs nothing new).
+ - `ttl:` — short-lived invites: `deny('expired')` when `now > time + ttl`. **[BUILT 2026-07-07,
+    Book SwarmPolicy]** — ttl rides the mint's feature params onto the `%Idzeug` record (the maker's
+     law), the CLAIM's signed `time` is the clock, and `Swarm_iz_params` STRIPS ttl before any grant
+      mints (grants stay infinite — the expiry is invite policy, never grant policy). An expired
+       redeem leaves the nonce UNSPENT (`%rebuff,hello_expired` maker-side, `rejected_expired`
+        redeemer-side); inside the window the invite seals as ever.
  - `challenge: voice | name` — the door doesn't seal on the first hello; it answers with a
     challenge (a live voice call on the already-standing link, or "tell me your name and I check it
      against what I expect") and only `Swarm_seal`s on the prove. This is `Covenant_design.md`'s
@@ -465,9 +474,12 @@ The owner wants the QR invite maker back ("monkey business vibe") as the front d
       upgrade (first-contact for the spine's own `hello` would need the same no-pier thinking).
  The panel (`InvitePanel`) stands the station on page-presence (being on the page IS being at the
   door), and join = promote → wait-for-open → redeem → watch for the SEAL (the account `%Pier`),
-   shown as a friends row on both faces. Verified live: SwarmStaple/SwarmWire/SwarmInvite all green
-    post-change (station code provably inert in Book worlds). Owed: the owner's two-tab eyeball,
-     and a first-contact Book beat (asymmetric stations — Lake_link only builds pairs).
+   shown as a friends row on both faces (now with the ♪ IveGot chips + the reachable tally —
+    Music_todo §9.1c). **LIVE-PROVEN 2026-07-07**: two real BigSoundland tabs sealed over the relay
+     (`✓ joined — <prepub> is a music Pier now`), and Book **SwarmDoor** gates the asymmetric
+      first-contact seam (the no-pier branch, the door promotion, the station_up readiness — each
+       one-line-revert red). Owed: the REAL per-Pier handshake at the door (above), and the phone
+        scan (PWA/HTTPS origin — `PWA_install_handover`).
 
 ---
 
@@ -508,7 +520,9 @@ Concepts ported (not the pre-C-model `.svelte` code, and **not** the Tyrant, `Cl
    an ephemeral per-place key *vouched* by the identity? Sequence against `Cluster_spec §3`.
 - **Grant ability schema** (§6.1) — is the ability mainkey drawn from a known set (`befriend`/`follow`/
    `play`/`disk`/`compute`) or fully open? Params too (`genre`, quality, quota)?
-- **Legacy Idzeug handling** (§6.2) — decode the old garden's invite format, or drop it? Deferred.
+- **Legacy Idzeug handling** (§6.2) — ANSWERED 2026-07-07: decode it. Rung 1 (dual-parse +
+   honest relic face) is built and Book-gated (SwarmPolicy); the rung-2 Dexie migrator is the
+    remaining decision — without it every old link stays a named-but-dead relic.
 - **Where the social-graph log lands** (§6.6) — owner-side (a local `%SocialGraph` record), relay-side
    (a central tally, the old `/log`), or both? Near-term, ahead of voice-verify.
 - **Voice-call in the invite** (§6.6) — insist on a live call before sealing? Eventually, lower priority.

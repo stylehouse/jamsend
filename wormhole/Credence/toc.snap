@@ -13,6 +13,8 @@ Waft:Credence
     Funkcion:Storying,of_Book:SwarmSteal
     Funkcion:Storying,of_Book:SwarmInvite
     Funkcion:Storying,of_Book:SwarmDoor
+    Funkcion:Storying,of_Book:SwarmGot
+    Funkcion:Storying,of_Book:SwarmPolicy
   What:Musu,desc:the music-piracy streaming platform — from cursor spool to real-audio mesh
     Funkcion:StoryTimes
     What:cursor models,desc:pure cursor-arithmetic simulations of the streaming spine — no audio no wire
@@ -83,6 +85,7 @@ Waft:Credence
       Funkcion:StoryTimes
       Funkcion:Storying,of_Book:VoroMitosis
       Funkcion:Storying,of_Book:VoroScape
+      Funkcion:Storying,of_Book:VoroRadio,brand_new:1
   What:Misc,inline:1,desc:editor codecs LangHold-checkout peering export ttl-waits and reactive-Waft stability
     Funkcion:StoryTimes
     Funkcion:Storying,of_Book:Editron

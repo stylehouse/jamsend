@@ -1,0 +1,14 @@
+Snap:H
+  H:SwarmPolicy,Run
+    A:SwarmPolicy
+      self,round=2	{"mung":["age"]}
+      w:SwarmPolicy,now=1751920000
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Account,of:Vera
+          Identity:69b18b170a8c2fb2,prepub:69b18b170a8c2fb2,friendly:Vera
+            Peering,name:69b18b170a8c2fb2,friendly:Vera,online
+        Account,of:Otto
+          Identity:d54622b2f2557ba4,prepub:d54622b2f2557ba4,friendly:Otto
+            Peering,name:d54622b2f2557ba4,friendly:Otto
+        req:witness,eternal,ok

@@ -11,10 +11,10 @@ Credulate,of_Book:SwarmDoor
   GhostInclude:Ghost_M_Mixer,dige:d5597b5a4132d7f3
   GhostInclude:Ghost_M_Mesh,dige:286eb98843f6e7f9
   GhostInclude:Ghost_Story_Musuation,dige:6f8461d1cb0ddd52
-  GhostInclude:Ghost_S_Swarm,dige:897d9cd237fd685e
-  GhostInclude:Ghost_Story_Swarmation,dige:c4463d074dbc8aff
-  GhostInclude:Ghost_V_Voro,dige:27d43e8594dc7271
-  last_ok,at=1783366452.355,ok_pct
+  GhostInclude:Ghost_S_Swarm,dige:392d9547d537ecc2
+  GhostInclude:Ghost_Story_Swarmation,dige:f6f36c006d9ffcb1
+  GhostInclude:Ghost_V_Voro,dige:65ad3d4b2e3afe16
+  last_ok,at=1783369795.422,ok_pct
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -27,6 +27,6 @@ Credulate,of_Book:SwarmDoor
     uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3
     uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
     uses:Ghost_Story_Musuation,dige:6f8461d1cb0ddd52
-    uses:Ghost_S_Swarm,dige:897d9cd237fd685e
-    uses:Ghost_Story_Swarmation,dige:c4463d074dbc8aff
-    uses:Ghost_V_Voro,dige:27d43e8594dc7271
+    uses:Ghost_S_Swarm,dige:392d9547d537ecc2
+    uses:Ghost_Story_Swarmation,dige:f6f36c006d9ffcb1
+    uses:Ghost_V_Voro,dige:65ad3d4b2e3afe16

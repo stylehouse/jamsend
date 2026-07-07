@@ -295,10 +295,26 @@ Built: `Voro_swarmable` in Voro.g — a STRUCTURAL container whose children are 
      (`popped_auto` — a human's pop never aged) / camera glides; dial-touch = 15s
       holdoff.  SUBSUMES the auto-spill agenda item.  `Voro_vtuffing.md` retitled THE
        SYSTEM DOC — §North stars (radio + the C-arc TUNNEL projection design) leads it.
+- ROUND 6 (2026-07-07, overnight): 🕳 THE TUNNEL v1 skeleton built — NOT per-overlay
+   CSS 3D but ONE remap at the seed-gather (`tube_project` in Cytui): seeds onto the
+    tube wall (θ by fold-mass rank, solidity-left at π; depth from layout y; boxes ×
+     NEAR/d) BEFORE the power diagram, so cells/molding/chips/hulls/morph all follow
+      free — toggling morphs flat glass ↔ rosette.  Per-cell fog; radio dwells advance
+       the drift phase.  Stash `Cyto_tunnel`, 🕳 on the ◈ bar.  UNTUNED — needs eyes.
+  + VoroRadio Book (9 steps, Credence What:Voro, brand_new): the radio determinism
+     gate — FOUR %sees (motion / aging / pool-CYCLE / hand-immunity).  An adversarial
+      audit of v1 caught the aging claim green OFF the very bug it claimed dead: the
+       popped-unstamp deleted c.gang → Vtuff_unpop's sibling sweep was dead code →
+        aged locales leaked permanently-popped orphans (pool shrank silently).  Fixed
+         at the unstamp seam (gang memory survives a popped unstamp; unpop sweeps then
+          retires it) + the cycle %see now reddens on any regression.  RE-RECORD OWED
+           (engine + witness changed after the first recording; runner busy overnight).
+  + runner_ask.mjs auto-courts ONE runner (role-broadcast run fanned to every tab —
+     the double-dispatch the owner watched); sticky /tmp target; story_repl same.
 - NOT built — `Voro_vtuffing.md` §"next moves": #2 the under-w gang bond edge (core
    seam, small), #5 hull layout-nudge, #6 fit refine, #7 deeper recursion, #9 the
-    single worked window; §North stars: radio taste/dwell/audio-coupling/Book, the
-     tunnel entire.
+    single worked window; §North stars: radio taste/dwell/audio-coupling, tunnel
+     camera/solidity-wholes/overlay-fog/pointer-inverse.
 
 Can the composite shapes be custom — i.e. lay a fold's members out INSIDE its cell (a
  microcosm: mini grid or mini force pass in the cell's own frame), instead of one flat

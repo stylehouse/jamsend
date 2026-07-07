@@ -1,0 +1,7 @@
+Snap:H
+  H:SwarmPolicy,Run
+    A:SwarmPolicy
+      self,round	{"mung":["age"]}
+      w:SwarmPolicy
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

@@ -16,7 +16,10 @@
 //    node scripts/runner_ask.mjs runners                 # list the Waft:Cluster registry (prepub  ★fav)
 //    node scripts/runner_ask.mjs run MusuLive --runner=49dee9   # court ONE runner by prepub|prefix and
 //                                                          #  INSIST: retry IT on busy/silence (never failover);
-//                                                           #   no --runner ⇒ legacy role broadcast (first to ack)
+//                                                           #   no --runner ⇒ AUTO-COURT: ping the flock, pin ONE
+//                                                            #    (our-lease ▸ free ▸ first ack) — never the raw
+//                                                             #     role broadcast that double-dispatched a run
+//                                                              #      onto every open runner tab
 //    node scripts/runner_ask.mjs state [--watch]         # verdict + phase/n/total
 //    node scripts/runner_ask.mjs steps                   # per-Step ok/caveat/dige
 //    node scripts/runner_ask.mjs snap 3                  # one Step's got_snap (the live world serialisation)
@@ -38,7 +41,7 @@
 //   from the claude container; use http://localhost:9091 if running on the host).  Exit 1 when a --watch
 //    run finishes red (outcome not ok) or the request errors, else 0 — so it scripts.
 import { WebSocket } from 'ws'
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 // the SHARED liveness thresholds + verdict — the same numbers the ghost (LiesLies.svelte) reads,
 //  so the CLI can no longer drift to a worse death criterion than the layer it's questioning.
 import { DEAD_MS, SLUGGISH_MS, liveness } from '../src/lib/O/runner_liveness.mjs'
@@ -125,8 +128,9 @@ if (op === 'runners') {
 	for (const r of rs) console.log(`${r.pub}${r.favourite_client ? `  ★${r.favourite_client.slice(0, 8)}` : ''}`)
 	process.exit(0)
 }
-// TARGET — who to address.  --runner=<id> courts ONE runner by prepub (insist, no failover); else the legacy
-//  role broadcast 'runner' (the relay fans it; whichever acks first answers).
+// TARGET — who to address.  --runner=<id> courts ONE runner by prepub (insist, no failover); else 'runner'
+//  is a PLACEHOLDER the auto-court below (post-connect) resolves to one prepub — the raw role broadcast
+//   never carries a real ask any more (the relay fans it to every tab: the double-dispatch bug).
 let TARGET = 'runner'
 if (runnerSel !== undefined) {
 	const pub = resolveRunner(runnerSel)
@@ -170,7 +174,7 @@ let corrSeq = 0
 // sendAsk — one runner_ask, settled on the FIRST of: a corr-matched runner_ack, a relay `undeliverable`
 //  (no runner on the relay), or a timeout (a half-open runner leaves the relay falsely "delivering" and
 //   never acks — silence-past-N is the only thing that catches it).
-function sendAsk(ws, theAsk) {
+function sendAsk(ws, theAsk, to = undefined, timeoutMs = TIMEOUT_MS) {
 	const corr = `ra-${stamp}-${corrSeq++}`
 	return new Promise((resolve) => {
 		let done = false
@@ -181,9 +185,32 @@ function sendAsk(ws, theAsk) {
 			if (m.control === 'undeliverable') settle({ ok: false, error: 'no runner connected to the relay (frame dropped)' })
 			else if (m.control === 'runner_ack') settle(m)
 		}
-		const timer = setTimeout(() => settle({ ok: false, error: `no reply in ${Math.round(TIMEOUT_MS / 1000)}s (runner not connected or half-open?)` }), TIMEOUT_MS)
+		const timer = setTimeout(() => settle({ ok: false, error: `no reply in ${Math.round(timeoutMs / 1000)}s (runner not connected or half-open?)` }), timeoutMs)
 		ws.on('message', onMsg)
-		ws.send(JSON.stringify({ header: { type: 'runner_ask', from: cliAddr, to: TARGET, seq: Date.now(), corr }, ask: theAsk, corr }))
+		ws.send(JSON.stringify({ header: { type: 'runner_ask', from: cliAddr, to: to ?? TARGET, seq: Date.now(), corr }, ask: theAsk, corr }))
+	})
+}
+// collectAcks — the courting probe: ONE role-broadcast ping, but instead of settling on the first ack it
+//  gathers EVERY runner's ack (each carries {self, engagement}) for a short grace after the first, so the
+//   CLI can SEE the whole flock and then address one runner by prepub.  A read-only ping fanning to every
+//    tab is harmless; a `run` fanning is the double-dispatch bug this exists to prevent.
+function collectAcks(ws, theAsk, graceMs = 900) {
+	const corr = `ra-${stamp}-${corrSeq++}`
+	return new Promise((resolve) => {
+		const acks = []
+		let grace = null
+		const finish = () => { ws.off('message', onMsg); clearTimeout(first); clearTimeout(grace); resolve(acks) }
+		const onMsg = (data) => {
+			let m; try { m = JSON.parse(String(data)) } catch { return }
+			if (m.corr !== corr) return
+			if (m.control === 'undeliverable') return finish()               // no runner on the relay at all
+			if (m.control !== 'runner_ack') return
+			acks.push(m)
+			if (!grace) { clearTimeout(first); grace = setTimeout(finish, graceMs) }
+		}
+		const first = setTimeout(finish, TIMEOUT_MS)
+		ws.on('message', onMsg)
+		ws.send(JSON.stringify({ header: { type: 'runner_ask', from: cliAddr, to: 'runner', seq: Date.now(), corr }, ask: theAsk, corr }))
 	})
 }
 
@@ -191,6 +218,42 @@ const ws = new WebSocket(`${WS_URL}?addr=${encodeURIComponent(cliAddr)}`)
 ws.on('error', (e) => { console.error(`✗ relay ${WS_URL}: ${String(e?.code ?? e?.message ?? e)}`); process.exit(1) })
 const opened = await new Promise((resolve) => { const wd = setTimeout(() => resolve(false), 5000); ws.on('open', () => { clearTimeout(wd); resolve(true) }) })
 if (!opened) { console.error(`✗ relay ${WS_URL}: connect timeout (5s) — is the dev server up and ?B= a runner booted?`); process.exit(1) }
+
+// COURT — no --runner given ⇒ pick ONE runner before the real ask ever leaves.  The old default addressed
+//  to:'runner' for everything, and the relay FANS a role frame to every runner tab — so with two tabs up a
+//   `run` dispatched to BOTH (two rungos of the same Book racing) and every state/steps poll flip-flopped
+//    between whichever tab acked first.  Now: one broadcast PING, collect every ack, then choose —
+//     STICKY (the prepub the last invocation courted, /tmp stash — so `steps` lands on the runner `run`
+//      used, even when a broadcast-era double-stamp left OUR lease on several tabs) ▸ the runner holding
+//       our lease ▸ for `run` a free one ▸ first to ack — and pin TARGET to its prepub for this whole
+//        invocation (`run --watch` polls included).
+const STICKY_PATH = '/tmp/runner_ask.target'
+const eng    = (a) => a.result?.engagement
+const isMine = (a) => eng(a)?.client === CLIENT && eng(a)?.status === 'active' && !eng(a)?.stale
+const isFree = (a) => { const e = eng(a); return !e || e.status !== 'active' || e.stale || e.client === CLIENT }
+if (TARGET === 'runner') {
+	// 1. STICKY — the prepub the last invocation used (/tmp stash).  Pinged DIRECTLY: the role broadcast
+	//    reaches whichever single socket the relay favours, so it can NOT be trusted to find a *specific*
+	//     runner — only an addressed frame can.  A busy-with-someone-else sticky is skipped for `run`.
+	let sticky = null
+	try { sticky = readFileSync(STICKY_PATH, 'utf8').trim() || null } catch { /* no stash yet */ }
+	if (sticky) {
+		const a = await sendAsk(ws, { op: 'ping', client: CLIENT }, sticky, 4000)
+		if (a.control === 'runner_ack' && (op !== 'run' || isFree(a))) TARGET = sticky
+	}
+	// 2. no (usable) sticky — broadcast-court: one role ping, gather the acks, pick
+	//     our-lease ▸ (run) free ▸ first.
+	if (TARGET === 'runner') {
+		const acks = await collectAcks(ws, { op: 'ping', client: CLIENT })
+		const pick = acks.find(isMine) ?? (op === 'run' ? (acks.find(isFree) ?? acks[0]) : acks[0])
+		if (pick?.result?.self) {
+			TARGET = pick.result.self
+			if (acks.length > 1) console.error(`⇢ ${acks.length} runners acked — courting ${TARGET.slice(0, 8)}${isMine(pick) ? ' (holds our lease)' : ''}; the rest stay untouched`)
+		}
+	}
+	// still 'runner' ⇒ zero acks — let the real ask surface the usual no-reply/undeliverable error
+}
+if (TARGET !== 'runner') { try { writeFileSync(STICKY_PATH, TARGET + '\n') } catch { /* stash is best-effort */ } }
 
 let exitCode = 0
 // INSIST: when courting a named runner (--runner=), DON'T failover — retry the SAME target on a busy refusal

@@ -35,12 +35,20 @@ The owner, verbatim: *"automagically drifting towards some subset of stuff, and
     feeds back into dwell length; leaving early is a skip signal).
 3. **Audio coupling** — in jamsend proper the tuner TUNES: the focus pane's tracks
     feed actual playback; graph drift = the playlist.  This is the product seam.
-4. **A Story Book** — the .g half is deterministic (seq-driven, no wall clock);
-    a Book that ticks the tuner N times and %sees the visit trail proves it.
+4. ~~**A Story Book**~~ — BUILT 2026-07-07: **VoroRadio** (9 steps, on the Credence
+    board under What:Voro) beats the tuner 6 dwells on a fixed flora and %sees FOUR
+     truths: motion, aging (first pick + whole gang stamp-free at the aging beat),
+      the pool CYCLE (the aged locale re-gangs full-size and re-enters), and the hand
+       outranking the tuner.  An adversarial audit of v1 found the aging claim was
+        propped up by the very leak it claimed fixed — the popped-unstamp deleted
+         `c.gang`, so Vtuff_unpop's sibling sweep was dead code and aged locales left
+          permanently-popped orphans that silently shrank the pool.  Fixed at the seam
+           (the popped-tiny unstamp now KEEPS the gang memory; unpop sweeps then
+            retires it) and gated so the leak's return turns the Book red.
 5. **Aging generalised** — beat-stamped intents + the gravity brush refreshing what
     it touches, so the governor folds the stalest attention first everywhere.
 
-### 🕳 The tunnel — the graph on the wall of a tube (like a C)
+### 🕳 The tunnel — the graph on the wall of a tube (like a C) — v1 SKELETON BUILT
 
 The owner: *"drifting down a tunnel... cytoscape computed not in 2d but around us on
  the wall of a tube we're drifting down... then the solidity (families, C\*\*) would
@@ -54,19 +62,29 @@ Design: cytoscape KEEPS computing 2D — we re-project the plane onto a cylinder
      confetti scatters rightward toward the opening.  **Drifting down = the radio**:
       the tuner's dwell advance IS the z-motion; focus panes swell as you pass them.
 
-**What the tunnel needs:**
-1. A **stable 1D ordering** of families along θ (the hull machinery already knows the
-    families; ordering by fold mass gives the left-solid C-spine).
-2. A **projection layer** between cy positions and the screen.  Two candidates:
-    CSS 3D per-overlay transforms (perspective + rotateY per node — REUSES the live
-     DOM Stuffings and SVG as-is, cheap to arm behind a toggle) vs a canvas/WebGL
-      repaint (crisper at depth, but the live HTML panes die).  Start CSS 3D.
-3. A **camera** = `{z, roll}` state + fog LOD (panes far down-tube dim into the dark —
-    depth is also the aging axis: what's behind you has folded).
-4. The **voronoi on the unrolled strip** — cells stay convex under the unroll, so the
-    chord fit and the phi spiral survive untouched; only the final placement warps.
+**v1 skeleton (built 2026-07-07, 🕳 on the ◈ bar, stash `Cyto_tunnel`)** landed on a
+ sharper seam than per-overlay CSS 3D: **project the SEEDS, not the paint**.
+  `tube_project` (Cytui) remaps every seed onto the tube wall — θ by fold-mass rank
+   (heaviest at π = the C's back, alternating ±Δ toward the lips), screen radius
+    `R0/d`, content boxes scaled `NEAR/d` — right before the power diagram runs, so
+     cells, molding, chips, hulls and the MORPH TWEEN all follow unmodified (toggling
+      literally morphs the flat glass into the rosette).  Depth = layout y + a phase
+       each radio dwell advances (wrap-around: past the camera → rejoins the far end);
+        fog = per-cell fill|stroke fade by `NEAR/d`.  cy stays a 2D layout space.
+
+**What the tunnel still needs:**
+1. TUNING pass with eyes on it (arc span, NEAR|FAR, fog floor, dwell step 0.16).
+2. A **true camera** = `{z, roll}` with continuous motion between dwells (the phase
+    jump reads as a hop; an eased glide would read as drift) — and the wrap-around
+     hop of a recycled pane hidden (fade through the fog, not a morph across the middle).
+3. **Solidity-left refinement**: rank currently by per-pane fold mass; families should
+    rank as WHOLES (hull mass) so a family's panes stay contiguous on the arc.
+4. **Overlay fog**: cells fade but the molded Stuffings|rows keep full contrast —
+    right for readability, wrong for depth; a gentle content fade past mid-tube.
 5. **Pointer inverse-mapping** (screen → tube → plane) so the surf and the dial keep
-    working inside the projection.
+    working inside the projection — v1 inherits plain screen hit-testing, which works
+     because the tessellation IS in screen space, but the gravity brush's pinch
+      direction no longer matches the model plane.
 
 The microcosm cards (Voro_microcosm.md a+b) underexpressed: a VoroScape pane the size
  of a hand said "Track" three times, because the card text was the member's mainkey

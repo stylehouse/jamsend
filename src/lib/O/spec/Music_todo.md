@@ -516,15 +516,28 @@ The replication protocol is real (Repli_* + the Se, §6/MusuReplica — live-gre
     `<share>/.jamsend/downloads/<friend>/…` (possibly `<username>/`), so what came from whom stays
      legible on plain disk and a wipe of one friendship is one `rm -r`.
 
-**9.1c IveGotMusic — the reachable-music tally (owner 2026-07-07).** Once two BigSoundlands seal
- (the §10.1 front door — LIVE now), a friend's collection should COUNT: "the music I've got" =
-  my library + every sealed `%Pier`'s counted collection, shown as one number that grows when a
-   friendship does — the front door's payoff made visible. NOT the full tree: after the seal, each
-    side offers a tiny **collection summary** (a Repli husk — counts by genre/artist, no Records;
-     the `Repli_crush_scan` husk shape already masks bodies) that rides the same wire and lands
-      under the `%Pier` as `%IveGot,count,by:` facts. The BigSoundland face (and Voro's scape) read
-       the tally off the Piers — a Pier with music is a BIGGER cell. The full pull (9.2's
-        Selections) stays deliberate; the tally is the appetite for it.
+**9.1c IveGotMusic — the reachable-music tally (owner 2026-07-07). [BUILT 2026-07-07]** Once two
+ BigSoundlands seal (the §10.1 front door — LIVE now), a friend's collection COUNTS: "the music
+  I've got" = my library + every sealed `%Pier`'s counted collection, one number that grows when a
+   friendship does — the front door's payoff made visible. NOT the full tree: each side offers a
+    tiny **collection summary** (counts, no Records) that rides the same wire and lands under the
+     `%Pier` as `%IveGot,by,count` facts. The full pull (9.2's Selections) stays deliberate; the
+      tally is the appetite for it.
+ The build (`Swarm.g #region ive got`, Book **SwarmGot** 9/9): `Swarm_music_census(w, ident)`
+  counts `%Library,pier:<prepub>` (the Musu Library shape keyed by WHOSE — a key, not a nickname;
+   this is now the census convention the real `/music` library must land as). `Swarm_gossip_music`
+    is the DELIBERATE boast — an additive `ive_got` frame to every live sealed Pier (the
+     `Swarm_pier_live` gate: a revoked Pier hears nothing — Book-proven, a post-revocation boast
+      never crosses). `Swarm_ive_got` lands facts ONLY under an already-sealed Pier (a stranger's
+       boast = `%rebuff,ive_got_stranger` and nothing else — gossip never opens a door); facts
+        update IN PLACE (one per dimension). `Swarm_ive_got_tally` folds own census + every live
+         friend's last boast; `InvitePanel` shows the tally + a per-friend ♪ chip and boasts once
+          per new seal (zeros send — an empty shelf is an honest boast, and it proves the live
+           wire). Owed: the real `/music`-share census feeding a live `%Library,pier:` (§9.1);
+            signing the boast (it rides the authenticated link, but the fact itself is unsigned
+             v1); a re-boast cadence when the shelf changes (today: on new seals + deliberate);
+              revocation PROPAGATION (one-sided today — the revoked side still counts the last
+               boast heard, SwarmGot beat 9 says so honestly).
 
 **9.2 Selections sendable to Piers.** The share unit is not the library, it's a SELECTION of it — a
  genre, an artist folder, an occasion. Concretely: a `%Share,label:<name>` particle holding a match

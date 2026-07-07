@@ -875,7 +875,7 @@
         cy.endBatch()
         pan_zoom_motion()   // the brush is just another motion
     }
-    let vcells        = $state<{ id: string, d: string, color: string, swapped?: boolean }[]>([])
+    let vcells        = $state<{ id: string, d: string, color: string, swapped?: boolean, fog?: number }[]>([])
     let vtips         = $state<{ id: string, x: number, y: number, color: string }[]>([])
     // ── the microcosm (task 6a/6b, Voro_microcosm.md) ─────────────────────────
     //  a big-enough cell swaps its molded Stuffing for its fold's MEMBERS laid
@@ -1087,6 +1087,9 @@
         let w: any
         try { w = (H as any).Awo('Cyto') } catch { return }
         if (!w) return
+        // 🕳 coupling: each dwell IS a step down the tube — advance the phase and repaint
+        //  even when the tuner returns no focus, so the drift never stalls the walls
+        if (tunnel_on) { tunnel_phase = (tunnel_phase + 0.16) % 1; voronoi_soon() }
         Promise.resolve(drift.call(H, w)).then((focus: any) => {
             if (!focus || !cy) return
             for (const [id, src] of node_src) if (src === focus) {
@@ -1105,6 +1108,54 @@
         if (stv) stv.Cyto_radio = radio_pref
         if (radio_timer) { clearInterval(radio_timer); radio_timer = null }
         if (radio_pref) { radio_tick(); radio_timer = setInterval(radio_tick, RADIO_DWELL) }
+    }
+    // ── 🕳 the tunnel: the tessellation drifts DOWN A TUBE (north star — spec/Voro_vtuffing.md) ──
+    //  v1 skeleton = ONE projection at the seed-gather: tunnel on ⇒ voronoi_layout remaps every
+    //   seed onto the wall of a tube before the power diagram runs, and EVERYTHING downstream
+    //    (cells, molding, chips, hulls, the morph tween) follows for free — toggling literally
+    //     morphs the flat glass into the rosette and back.  The arc is ~250° with the opening
+    //      facing right, so the cross-section reads as the letter C; SOLIDITY sits LEFT: panes
+    //       rank by fold mass and the heaviest takes θ=180° (the C's back), lighter fanning
+    //        toward the lips.  Depth comes from layout y; near = big, far = small behind fog.
+    //         Each radio dwell advances a phase that cycles panes front→back — drifting down
+    //          the tube IS the tuner's dwell (the §North stars coupling).  cy itself stays 2D:
+    //           this is a VIEW of the same layout, not a second layout space.
+    let tunnel_pref = $state<boolean | null>(null)
+    const tunnel_on = $derived(voronoi_on && (tunnel_pref ?? false))
+    let tunnel_phase = 0                       // camera z as a wrap-around phase [0,1), radio-advanced
+    function toggle_tunnel() {
+        tunnel_pref = !(tunnel_pref ?? false)
+        const stt = (H as any).stashed
+        if (stt) stt.Cyto_tunnel = tunnel_pref
+        voronoi_soon()                         // morph into (or out of) the rosette
+    }
+    // project the seeds onto the tube wall, IN PLACE.  θ by fold-mass rank (solidity-left:
+    //  heaviest at π, then ±Δ alternating toward the C's lips); depth d from normalised layout
+    //   y plus the drift phase (wrapped — a pane past the camera rejoins at the far end);
+    //    screen radius r = R0/d (near ring hugs the frame, far ring recedes toward the axis)
+    //     and k = NEAR/d scales the content boxes, so nearer panes earn bigger cells.  tz = k
+    //      rides out on each seed for the fog downstream.
+    function tube_project(seeds: { id: string, x: number, y: number, hw: number, hh: number, node: any }[], CW: number, HH: number) {
+        const SPAN = Math.PI * 250 / 180, NEAR = 0.8, FAR = 2.6
+        let ymin = Infinity, ymax = -Infinity
+        for (const s of seeds) { if (s.y < ymin) ymin = s.y; if (s.y > ymax) ymax = s.y }
+        const yr = Math.max(1, ymax - ymin)
+        const mass = (s: { id: string, hw: number, hh: number }) =>
+            (((node_src.get(s.id) as any)?.c?.fold_n ?? 1) as number) * 1000 + s.hw * s.hh / 100
+        const order = seeds.slice().sort((a, b) => mass(b) - mass(a))
+        const dth = SPAN / Math.max(1, order.length)
+        const R0 = Math.min(CW, HH) * 0.5 * 0.92 * NEAR
+        order.forEach((s, i) => {
+            const th = Math.PI + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * dth
+            const d = NEAR + (((s.y - ymin) / yr * 0.96 + tunnel_phase) % 1) * (FAR - NEAR)
+            const k = NEAR / d
+            const r = R0 / d
+            s.x = CW / 2 + Math.cos(th) * r
+            s.y = HH / 2 + Math.sin(th) * r
+            s.hw = Math.max(14, s.hw * k)
+            s.hh = Math.max(10, s.hh * k)
+            ;(s as any).tz = k
+        })
     }
     let vregion_w     = $state(0)                      // veil covers the tessellated region ([0, CW] — the full width unless the shelved rack returns)
     // ── the wheel-button grip ─────────────────────────────────────────────────
@@ -1293,6 +1344,8 @@
         //  neighbouring seed id, or null for the frame — the family hulls
         //   read it to find which walls face OUTSIDE the family
         edge_src: (string | null)[],
+        // 🕳 tunnel depth factor (NEAR/d, 1 = nearest) — absent when the tunnel is off
+        tz?: number,
     }
 
     // support of the content box under the molding transform, in direction n̂ —
@@ -1333,6 +1386,7 @@
             seeds.push({ id, x: p.x, y: p.y, hw: Math.min(hw, 260), hh: Math.min(hh, 200), node })
         }
         if (seeds.length < 2) return null
+        if (tunnel_on) tube_project(seeds, W, HH)   // 🕳 one remap, everything downstream follows
 
         // ── the rack, SHELVED ─────────────────────────────────────────────────
         //  hauled non-cell equipment (Piers, reqs, Opt…) into a label-sorted
@@ -1478,7 +1532,7 @@
 
             cells.push({ id: s.id, seed: { x: s.x, y: s.y }, inset, acx, acy,
                 color: cell_color(s.id, s.node), node: s.node,
-                T11, T12, T21, T22, fit, edge_src })
+                T11, T12, T21, T22, fit, edge_src, tz: (s as any).tz })
         }
         return { cells, seeds, CW }
     }
@@ -1681,7 +1735,7 @@
                 d += `L${P(b.x, b.y)}`
             }
             d += 'Z'
-            cells.push({ id: c.id, d, color: c.color })
+            cells.push({ id: c.id, d, color: c.color, fog: c.tz })
 
             // ── the Stuffing, stretched and molded into its cell ─────────────
             const el = overlays.get(c.id)
@@ -2248,6 +2302,8 @@
         if (typeof stashed_t === 'boolean') vtuffing_pref = stashed_t
         const stashed_r = (H as any).stashed?.Cyto_radio
         if (stashed_r === true) { radio_pref = true; radio_timer = setInterval(radio_tick, RADIO_DWELL) }
+        const stashed_tu = (H as any).stashed?.Cyto_tunnel
+        if (typeof stashed_tu === 'boolean') tunnel_pref = stashed_tu
         cy = cytoscape({
             container,
             // a livelier wheel: the default 1 needs a whole spin to move; the
@@ -2377,6 +2433,8 @@
             title="vtuffing — a big-enough pane swaps its molded Stuffing for member rows fitted to the cell (off = Stuffings always)">▤</button>
         <button class="v-toggle" class:on={radio_on} onclick={toggle_radio}
             title="radio — the graph plays you: a tuner drifts attention pane to pane and opens each a little (touch anything to hold it off)">📻</button>
+        <button class="v-toggle" class:on={tunnel_pref ?? false} onclick={toggle_tunnel}
+            title="tunnel — the tessellation drifts down a tube: solidity takes the left wall, the opening reads as a C, and radio dwells advance the drift">🕳</button>
         <span class="cytui-vx" title="taller — double the graph height (50vh ↔ 100vh), then re-fit">
             <Vexpandy bind:expanded={tall} />
         </span>
@@ -2428,9 +2486,12 @@
                     <!-- a swapped (vtuffing) cell wears the Stuffing's tabletty
                          dotted rim + a fuller glass fill; plain cells keep the
                          thin solid stroke.  Colour is the kind's swatch|hue. -->
+                    <!-- fog: a tunnel cell fades with depth (fog = NEAR/d, 1 at the
+                         camera); the stroke keeps a floor so the far glasswork still
+                         draws as leading.  fog absent (tunnel off) = full strength. -->
                     <path d={cell.d}
-                        fill={cell.color} fill-opacity={cell.swapped ? 0.2 : 0.13}
-                        stroke={cell.color} stroke-opacity={cell.swapped ? 0.85 : 0.6}
+                        fill={cell.color} fill-opacity={(cell.swapped ? 0.2 : 0.13) * (cell.fog ?? 1)}
+                        stroke={cell.color} stroke-opacity={(cell.swapped ? 0.85 : 0.6) * (0.35 + 0.65 * (cell.fog ?? 1))}
                         stroke-width={cell.swapped ? 1.75 : 1.5}
                         stroke-dasharray={cell.swapped ? '1.5 3' : undefined}
                         stroke-linecap="round" stroke-linejoin="round" />

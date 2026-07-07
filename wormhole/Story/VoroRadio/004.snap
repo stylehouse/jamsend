@@ -1,0 +1,50 @@
+Snap:H
+  H:VoroRadio,Run
+    A:VoroRadio
+      self,round=4	{"mung":["age"]}
+      w:VoroRadio
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Coprosma:robusta,habit:vine
+        Coprosma:propinqua
+          Coprosma:propinqua var. montana,habit:tree
+          Coprosma:propinqua var. prostrata,habit:tree
+        Coprosma:rhamnoides,woodystem,habit:vine
+        Coprosma:grandifolia,woodystem,habit:vine
+          Coprosma:grandifolia var. montana
+          Coprosma:grandifolia var. prostrata
+        Coprosma:lucida,habit:vine
+        Veronica:grandifolia
+        Veronica:lucida
+          Veronica:lucida var. montana,woodystem,habit:tree
+          Veronica:lucida var. prostrata,habit:tree
+        Veronica:tenuifolium,woodystem,habit:shrub
+        Veronica:excelsa,woodystem,habit:tree
+          Veronica:excelsa var. montana
+          Veronica:excelsa var. prostrata
+        Metrosideros:excelsa,woodystem,endemic
+        Metrosideros:totara,woodystem,endemic
+          Metrosideros:totara var. montana,woodystem,habit:tree
+          Metrosideros:totara var. prostrata,habit:vine
+        Metrosideros:fusca,habit:shrub
+        Metrosideros:tenax,habit:shrub
+          Metrosideros:tenax var. montana
+          Metrosideros:tenax var. prostrata
+        Olearia:grandifolia
+        Olearia:lucida
+          Olearia:lucida var. montana,woodystem,habit:tree
+          Olearia:lucida var. prostrata,habit:tree
+        Olearia:tenuifolium,habit:shrub
+        Pittosporum:serrata,habit:tree
+        Pittosporum:montana,habit:shrub
+          Pittosporum:montana var. montana,woodystem,endemic
+          Pittosporum:montana var. prostrata
+        Pittosporum:linearis
+        Pittosporum:robusta,habit:vine
+          Pittosporum:robusta var. montana,woodystem,endemic
+          Pittosporum:robusta var. prostrata
+        Nothofagus:tenax,habit:shrub
+        Nothofagus:crassifolius
+          Nothofagus:crassifolius var. montana,woodystem,habit:tree
+          Nothofagus:crassifolius var. prostrata,habit:vine
+        Nothofagus:colensoi,habit:tree

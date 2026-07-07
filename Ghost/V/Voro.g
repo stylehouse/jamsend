@@ -97,7 +97,13 @@ Voro_crush_walk(node, d, stats, level):
             //  stands as its own node until un-popped or ◈ un-imposes.  One that later grows
             //   a deep frond re-enters the ordinary rules (a popped DEEP container folds as
             //    its own pane below, which is a node all the same).
+            //  KEEP the gang memory across the unstamp: a popped ex-rep must remember its
+            //   siblings (their pop stamps ride too) or Vtuff_unpop's gang sweep is dead by
+            //    the time aging fires and the locale leaks permanently-popped orphans that
+            //     never re-gang — the pool shrinks silently (the VoroRadio audit's find).
+            let gang = c.c.gang
             this.Voro_unstamp(c)
+            if (gang) c.c.gang = gang
             c.c.stuffy = 1
             stats.visible = stats.visible + 1
             continue
@@ -560,14 +566,21 @@ Vtuff_pop_stamp(src, member, auto):
         guard = guard + 1
     }
 
-// Vtuff_unpop — fold-me-back, the pop's inverse: forget the intents on a node (and one level of
-//  its children, so right-clicking an unfurled HUB folds its whole family back), then wave — the
-//   next authoritative pass re-folds|re-gangs by the ordinary rules.  Gesture: right-click the
-//    popped node (Cytui cxttap).
+// Vtuff_unpop — fold-me-back, the pop's inverse: forget the intents on a node, its GANG (a loose
+//  gang's members sit BESIDE the rep under w — not below it — so without this a gang pop's sibling
+//   stamps leaked and aged locales never re-ganged), and one level of its children (right-clicking
+//    an unfurled HUB folds its whole family back), then wave — the next authoritative pass
+//     re-folds|re-gangs by the ordinary rules.  Gesture: right-click the popped node (Cytui cxttap).
 async Vtuff_unpop(n):
     delete n.c.popped
     delete n.c.popped_open
     delete n.c.popped_auto
+    for (const m of n.c.gang || []) {
+        delete m.c.popped
+        delete m.c.popped_open
+        delete m.c.popped_auto
+    }
+    delete n.c.gang   // the roster served its sweep; the next authoritative pass re-elects fresh
     for (const c of n.o()) {
         delete c.c.popped
         delete c.c.popped_open
@@ -650,6 +663,113 @@ async Voro_drift_tick(w):
     await this.Vtuff_pop(best, null, 1)
     opens.push(best)
     return best
+//#endregion
+
+//#region radio — VoroRadio: the tuner PROVEN (📻 drift as a deterministic Story Book)
+// ══ VoroRadio — six dwells of the tuner on a fixed flora: motion, aging, and the hand ═══════════
+//  The determinism gate the radio owed (spec/Voro_vtuffing.md §North stars): the SAME engine the
+//   📻 button runs live (Voro_drift_tick — scoring, aging, popped_auto) driven here by STEP BEATS
+//    instead of the ~7s dwell clock, on a FIXED flora, so every pick is a pure function of the
+//     board + the tick count and the fixtures are byte-stable.  Four truths witnessed, each
+//      hardened by the 2026-07-07 adversarial audit (evidence read AT its beat, gates that a
+//       named one-line regression reddens — see VoroRadio_witness):
+//      1. the tuner MOVES — six dwells, four+ distinct locales,
+//      2. the trail AGES — at the first aging beat the first pick AND its whole gang stand
+//         stamp-free (the wandering-landscape answer proven as data),
+//      3. attention is a CYCLE — the aged locale re-gangs FULL-SIZE behind the same rep and
+//         re-enters the pool (kills the audit's pool-depletion vacuity: motion is not just
+//          consumption; this is the claim the gang-memory leak turns red),
+//      4. the HAND outranks it — a manual pop (no popped_auto) survives every dwell untouched
+//         (gates the auto|manual stamp split; the pane sits out of the pool BY DESIGN).
+//  Crush re-scans each beat like VoroMitosis, so aged locales re-gang and the candidate pool
+//   replenishes — the Book runs the governor and the tuner TOGETHER, exactly the live pairing.
+//  All radio state c-side (drift_*, radio_*): the snap sees pure flora + the %see claims.
+//   No transport, no audio, no wall clock — runs anywhere.
+VoroRadio(A,w):
+    w oai %req:wrangle,eternal
+        await &VoroRadio_drive,w,req
+        req%ok = 1
+
+async VoroRadio_drive(w, req):
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) this.VoroRadio_seed(w)
+        if (n >= 2) this.Voro_crush_scan(w)
+        if (n === 5) await this.VoroRadio_hand(w)
+        if (n >= 3 && n <= 8) {
+            // REPOOL evidence, read BEFORE the n=8 tick: the locale aged at n=7 re-ganged at
+            //  THIS beat's crush — the SAME rep back in the pool with its WHOLE family behind
+            //   it (gang size = the genus's loose-taxa count).  The full-size gate matters: a
+            //    partial sweep leaves orphan popped siblings and the clean remainder still
+            //     re-gangs as a spill-relaxed MINI gang — same mainkey, same rep, smaller
+            //      family — so anything looser passes with the leak alive.  Attention is a
+            //       cycle, not a consumption; this claim goes RED if the popped-unstamp
+            //        drops the gang memory or the unpop sweep loses the siblings.
+            if (n === 8) {
+                let aged = (w.c.radio_picks || [])[0]
+                let amk = aged ? Object.keys(aged.sc)[0] : null
+                let kin = amk ? w.o().filter(x => Object.keys(x.sc)[0] === amk) : []
+                let cands = this.Voro_drift_candidates(w)
+                if (aged && cands.includes(aged) && (aged.c.gang || []).length === kin.length) w.c.radio_repool = 1
+            }
+            let pick = await this.Voro_drift_tick(w)
+            let picks = w.c.radio_picks || []
+            if (pick) picks.push(pick)
+            w.c.radio_picks = picks
+            // AGED evidence, read AT the aging beat (n=7 is seq 5 — the first shift of the
+            //  opens window): the first pick AND every loose taxon of its genus must be
+            //   stamp-free NOW.  Read here, not at witness — once the genus re-pools the
+            //    tuner may legitimately re-pick it, and a witness-time read would confuse
+            //     that fresh pop with a failed aging.  Goes RED if Vtuff_unpop loses its
+            //      gang sweep (siblings would still carry popped_auto).
+            if (n === 7) {
+                let first = picks[0]
+                let fmk = first ? Object.keys(first.sc)[0] : null
+                let kin = fmk ? w.o().filter(x => Object.keys(x.sc)[0] === fmk) : []
+                if (first && kin.length && !kin.some(x => x.c.popped || x.c.popped_open || x.c.popped_auto)) w.c.radio_aged = 1
+            }
+        }
+        if (n === 9) this.VoroRadio_witness(w)
+    }
+
+// a rich fixed flora — six genera so the pool outlasts six dwells even as picks consume panes
+//  (a popped pane is unstamped and leaves the candidate set until a later pass re-gangs it).
+VoroRadio_seed(w):
+    w.c.crush_wanted = 1
+    this.VoroMitosis_found(w, 'Coprosma', 5)
+    this.VoroMitosis_found(w, 'Veronica', 4)
+    this.VoroMitosis_found(w, 'Metrosideros', 4)
+    this.VoroMitosis_found(w, 'Olearia', 3)
+    this.VoroMitosis_found(w, 'Pittosporum', 4)
+    this.VoroMitosis_found(w, 'Nothofagus', 3)
+
+// the human reaches in mid-run: pop ONE pane by hand (auto ABSENT — the human path), and stash
+//  the nodes that carry the pop stamps so the witness can check every one still holds.
+async VoroRadio_hand(w):
+    let cands = this.Voro_drift_candidates(w)
+    let manual = cands.find(c => c !== w.c.drift_focus)
+    if (!manual) return
+    w.c.radio_manual = manual
+    await this.Vtuff_pop(manual, null)
+    w.c.radio_hand = [manual].concat(manual.c.gang || manual.o()).filter(x => x.c.popped || x.c.popped_open)
+
+// four truths, each gated on evidence a named regression would destroy (adversarially
+//  audited 2026-07-07): MOVING gates the pick spread; AGED gates the unpop gang sweep (read
+//   live at n=7 — see the drive); the CYCLE gates the popped-unstamp gang memory (read live
+//    at n=8); the HAND gates the auto|manual stamp split (drop the `if (auto)` guard in
+//     Vtuff_pop_stamp and it reddens).  The hand pane is out of the pool while popped BY
+//      DESIGN, so its claim proves the stamp discipline, not a contention fight.
+VoroRadio_witness(w):
+    let picks = w.c.radio_picks || []
+    let distinct = picks.filter((p, i) => picks.indexOf(p) === i).length
+    if (picks.length >= 5 && distinct >= 4 && !(oa %see:'the tuner kept moving — six dwells chose four or more distinct locales')) i %see:'the tuner kept moving — six dwells chose four or more distinct locales'
+    let last = picks[picks.length - 1]
+    let fresh = last && (last.c.popped_auto || (last.c.gang || []).some(k => k.c.popped_auto) || last.o().some(k => k.c.popped_auto))
+    if (w.c.radio_aged && fresh && !(oa %see:'the trail behind the listener folded back — the first locale and its whole gang aged clean while the newest stayed open')) i %see:'the trail behind the listener folded back — the first locale and its whole gang aged clean while the newest stayed open'
+    if (w.c.radio_repool && !(oa %see:'an aged locale re-ganged and re-entered the pool — attention is a cycle not a consumption')) i %see:'an aged locale re-ganged and re-entered the pool — attention is a cycle not a consumption'
+    let hand = w.c.radio_hand || []
+    if (hand.length > 0 && hand.every(x => (x.c.popped || x.c.popped_open) && !x.c.popped_auto) && !(oa %see:'the hand outranks the tuner — a manual pop survived every dwell untouched')) i %see:'the hand outranks the tuner — a manual pop survived every dwell untouched'
 //#endregion
 
 //#region mitosis — VoroMitosis: watch the flora divide (the pure crush demo, no music no wire)

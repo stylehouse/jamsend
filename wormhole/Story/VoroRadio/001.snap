@@ -1,0 +1,7 @@
+Snap:H
+  H:VoroRadio,Run
+    A:VoroRadio
+      self,round	{"mung":["age"]}
+      w:VoroRadio
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

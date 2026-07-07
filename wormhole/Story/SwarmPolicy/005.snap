@@ -1,0 +1,37 @@
+Snap:H
+  H:SwarmPolicy,Run
+    A:SwarmPolicy
+      self,round=5	{"mung":["age"]}
+      w:SwarmPolicy,now=1751920120
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Account,of:Vera
+          Identity:69b18b170a8c2fb2,prepub:69b18b170a8c2fb2,friendly:Vera
+            Peering,name:69b18b170a8c2fb2,friendly:Vera,online
+              Idzeug:pol_1,to:Music,genre:Baroque,ttl=60,spent
+              Pier,pub:d54622b2f2557ba4,friendly:Otto,since:1751920010
+                Peering,name:d54622b2f2557ba4,friendly:Otto,pub:d54622b2f2557ba4a4adfbbdb5190599c1bb7494007525cd39e4bd1dfbab32e6
+                Grant:Music,by:d54622b2f2557ba4a4adfbbdb5190599c1bb7494007525cd39e4bd1dfbab32e6,for:69b18b170a8c2fb28d6f9c5c7a3cba0b01be40ac86af4b1f26f9cc7c8bf69e3e,time:1751920010,sign:7e2ae3da7b11be267d4d00e5fea69d9098999c3821f3486408c9134ccacaf68056cd8396e7c2c16744e940750edc74a70dfbbdd3316214b5f1ec4c34391b2e0a,genre:Baroque
+                Grant:Music,by:69b18b170a8c2fb28d6f9c5c7a3cba0b01be40ac86af4b1f26f9cc7c8bf69e3e,for:d54622b2f2557ba4a4adfbbdb5190599c1bb7494007525cd39e4bd1dfbab32e6,time:1751920010,sign:2a8470bdffe6ccfa0c9f734578a113cef8bff4fd28ffed8c2a30e8886e9154f14e648463eb9b65499db3799a83a1002b8fcddbd5f89f796c46e43acadefd8108,genre:Baroque
+              Idzeug:pol_2,to:Music,genre:Baroque,ttl=60
+            mail
+              frame:pier_hello,did
+              frame:pier_hello,did
+            SocialGraph
+              Edge,a:69b18b170a8c2fb2,b:d54622b2f2557ba4,at:1751920010
+            rebuff:hello_expired,say:d54622b2f2557ba4
+        Account,of:Otto
+          Identity:d54622b2f2557ba4,prepub:d54622b2f2557ba4,friendly:Otto
+            Peering,name:d54622b2f2557ba4,friendly:Otto,online
+              Pier,pub:69b18b170a8c2fb2,friendly:Vera,since:1751920010
+                Peering,name:69b18b170a8c2fb2,friendly:Vera,pub:69b18b170a8c2fb28d6f9c5c7a3cba0b01be40ac86af4b1f26f9cc7c8bf69e3e
+                Grant:Music,by:69b18b170a8c2fb28d6f9c5c7a3cba0b01be40ac86af4b1f26f9cc7c8bf69e3e,for:d54622b2f2557ba4a4adfbbdb5190599c1bb7494007525cd39e4bd1dfbab32e6,time:1751920010,sign:2a8470bdffe6ccfa0c9f734578a113cef8bff4fd28ffed8c2a30e8886e9154f14e648463eb9b65499db3799a83a1002b8fcddbd5f89f796c46e43acadefd8108,genre:Baroque
+                Grant:Music,by:d54622b2f2557ba4a4adfbbdb5190599c1bb7494007525cd39e4bd1dfbab32e6,for:69b18b170a8c2fb28d6f9c5c7a3cba0b01be40ac86af4b1f26f9cc7c8bf69e3e,time:1751920010,sign:7e2ae3da7b11be267d4d00e5fea69d9098999c3821f3486408c9134ccacaf68056cd8396e7c2c16744e940750edc74a70dfbbdd3316214b5f1ec4c34391b2e0a,genre:Baroque
+            mail
+              frame:pier_accept,did
+              frame:pier_reject,did
+            SocialGraph
+              Edge,a:d54622b2f2557ba4,b:69b18b170a8c2fb2,at:1751920010
+            rebuff:rejected_expired,say:69b18b170a8c2fb2
+        req:witness,eternal,ok
+        see:an expired invite dies at the door — refused and the nonce stays unspent

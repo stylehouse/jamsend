@@ -12,7 +12,7 @@
 //  stays here in .g): Idento is the ed25519 pair, Grant.ts the signed-capability atom the Idzeug
 //   is COMPOSED from (an Idzeug is an UNBOUND grant — for:'*' — plus a nonce and the inviter's page).
 IMPORT()
-    import { Idento } from "$lib/Y.svelte.ts"
+    import { Idento, peel } from "$lib/Y.svelte.ts"
     import { mint_grant, verify_grant, grant_to_C, mint_revoke } from "$lib/O/Funk/Grant.ts"
     import { signHeader } from "$lib/p2p/cluster_trust"
 
@@ -82,10 +82,12 @@ Swarm_unb64(b):
 
 // Swarm_iz_params — the Feature params riding a claim: every key that isn't the claim's envelope.
 //  (Grant's `to` names the Feature mainkey; its params ride alongside as plain string keys — §6.1.)
+//   ttl is INVITE policy, never grant policy (grants are infinite — §6.1): it stays on the maker's
+//    %Idzeug record and the blob, and is stripped here so no sealed grant ever carries an expiry.
 Swarm_iz_params(claim):
     let params = {}
     for (const k of Object.keys(claim)) {
-        if (!['to', 'by', 'for', 'time', 'sign', 'nonce', 'prepub', 'friendly'].includes(k)) params[k] = claim[k]
+        if (!['to', 'by', 'for', 'time', 'sign', 'nonce', 'prepub', 'friendly', 'ttl'].includes(k)) params[k] = claim[k]
     }
     return params
 
@@ -147,6 +149,57 @@ Swarm_iz_of_url(href):
     let at = href.indexOf('?')
     if (at < 0) return null
     return new URLSearchParams(href.slice(at + 1)).get('Iz')
+//#endregion
+
+//#region legacy — the old garden's Idzeug (§6.2 rung 1: dual-parse at the door)
+//  An OLD link is a URL hash-fragment `#<13-#-pad><prepub>-<advice>-<sign>` (Tyranny.svelte's
+//   Idzeug_i_Idzeugi): prepub the 16-hex address, advice a peel-encoded {name, n} ('.'-sep,
+//    '~'-hier, spaces as '+'), sign an ed25519 over `<prepub>-<advice>` TRUNCATED to 16 (the
+//     presig regime). The parse is CHEAP AND PURE — rung 1. It does NOT verify: the spend ledger
+//      and the signing key live in the old garden's Dexie (Trusting.OurIdzeugs, OurPier.stashed),
+//       so until the rung-2 migrator lifts them into %Idzeug records the door can only say
+//        deny('unknown') — honestly. And an old claim granted the hardcoded 'ftp' trust atom,
+//         NEVER a Feature grant: `granted` surfaces that so nobody transcodes it as Music.
+
+// Swarm_legacy_of_url — detect + parse the old shape; null on anything else (a modern ?Iz= link,
+//  a plain #anchor, a mangled relic — never a throw). Mirrors Tyranny's Idzeugmance entry regex
+//   PLUS '+': the old ENCODER wrote spaces as '+' but its matcher never admitted them — a spaced
+//    name broke old links at their own door; we read what the encoder wrote. Only the '.'|'~'
+//     advice ever rode a URL (the ','|':' peel variant predates the hash entry and reaches us
+//      via Swarm_legacy_advice's other branch).
+Swarm_legacy_of_url(href):
+    if (!href) return null
+    let at = href.indexOf('#')
+    if (at < 0) return null
+    let m = href.slice(at).match(/^#+([\w\.~+\-]{16,})$/)
+    if (!m) return null
+    let parts = m[1].split('-')
+    if (parts.length !== 3) return null
+    if (!/^[0-9a-f]{16}$/.test(parts[0])) return null
+    let c
+    try { c = this.Swarm_legacy_advice(parts[1]) }
+    catch (er) { return null }
+    if (!c || !c.name) return null
+    let out = { legacy: 1, prepub: parts[0], friendly: c.name, sign: parts[2], granted: 'ftp' }
+    if (c.n != null) out.n = Number(c.n)
+    return out
+
+// Swarm_legacy_advice — the old decode_Idzeugi_advice verbatim in spirit: '+' back to spaces,
+//  peel by '.'|'~' (or the older ','|':' when both appear), first key is the name, the rest ride.
+Swarm_legacy_advice(advice):
+    let s = advice.replace(/\+/g, ' ')
+    let c
+    if (s.includes(',') && s.includes(':')) {
+        c = peel(s, {sep: ',', hie: ':'})
+    } else {
+        c = peel(s, {sep: '.', hie: '~'})
+    }
+    let name = Object.keys(c)[0]
+    let out = { name: name }
+    for (const k of Object.keys(c)) {
+        if (k !== name) out[k] = c[k]
+    }
+    return out
 //#endregion
 
 //#region wire — the deliverance seam
@@ -213,9 +266,10 @@ Swarm_arm(w):
         if (frame.header.type === 'pier_hello') await this.Swarm_hello(w2, ident, frame.swarm)
         if (frame.header.type === 'pier_accept') await this.Swarm_accept(w2, ident, frame.swarm)
         if (frame.header.type === 'pier_reject') this.Swarm_rejected(w2, ident, frame.swarm)
+        if (frame.header.type === 'ive_got') this.Swarm_ive_got(w2, ident, frame.swarm)
         return true
     }
-    for (const kind of ['pier_hello', 'pier_accept', 'pier_reject']) w.c.on[kind] = hear
+    for (const kind of ['pier_hello', 'pier_accept', 'pier_reject', 'ive_got']) w.c.on[kind] = hear
 
 // Swarm_pump — handle an identity's undone mail (a Book's drive calls this each pass; production
 //  hangs it off the transport's inbound). Async — every handler crosses the crypto.
@@ -229,6 +283,7 @@ async Swarm_pump(w, ident):
         if (frame.kind === 'pier_hello') await this.Swarm_hello(w, ident, frame)
         if (frame.kind === 'pier_accept') await this.Swarm_accept(w, ident, frame)
         if (frame.kind === 'pier_reject') this.Swarm_rejected(w, ident, frame)
+        if (frame.kind === 'ive_got') this.Swarm_ive_got(w, ident, frame)
     }
 
 // Swarm_rebuff — a failed redeem|hello surfaces as %rebuff under the identity: legible in the
@@ -350,6 +405,9 @@ async Swarm_hello(w, ident, frame):
     let record = this.Swarm_peering(ident).o({ Idzeug: claim.nonce })[0]
     if (!record) return deny('unknown')
     if (record.sc.spent) return deny('spent')
+    // ttl door policy (§10.1: validity lives with the MAKER): the ttl on OUR record is the law,
+    //  the claim's signed mint time the clock. No ttl on the record = the invite waits forever.
+    if (record.sc.ttl && this.Swarm_now(w) > Number(claim.time) + Number(record.sc.ttl)) return deny('expired')
     let theirs
     try { theirs = await verify_grant(frame.grant) }
     catch (er) { return deny('bad_grant') }
@@ -405,6 +463,81 @@ Swarm_seal(w, ident, page, theirGrant, myGrant):
         graph.i({ Edge: 1, a: ident.sc.prepub, b: page.prepub, at: String(this.Swarm_now(w)) })
     }
     return pier
+//#endregion
+
+//#region ive got — the reachable-music tally (Music_todo §9.1c)
+//  After the seal a friendship should COUNT: each side offers a tiny collection summary — counts,
+//   never Records — as an ADDITIVE ive_got frame on the same wire as the handshake. It lands under
+//    MY %Pier for them as %IveGot,by,count facts, and the tally folds my shelf plus every live
+//     friend's last boast into ONE number a face can show (a Pier with music is a BIGGER cell).
+//      The full tree stays a DELIBERATE pull (§9.2 Selections) — the tally is the appetite for it.
+
+// Swarm_music_census — count MY OWN shelf in w: the %Library,pier:<my prepub> convention (Musu's
+//  Library shape, keyed by WHOSE it is — a key, not a nickname, so live and Book read the same).
+//   records = every %Record; artists = distinct sc.artist. No library counts zero — an honest
+//    empty shelf, never an error.
+Swarm_music_census(w, ident):
+    let records = 0
+    let artists = new Set()
+    for (const lib of w.o({ Library: 1, pier: ident.sc.prepub })) {
+        for (const r of lib.o({ Record: 1 })) {
+            records = records + 1
+            if (r.sc.artist) artists.add(r.sc.artist)
+        }
+    }
+    return { records: records, artists: artists.size }
+
+// Swarm_gossip_music — the deliberate boast: census my shelf and tell every LIVE sealed friend
+//  (a revoked Pier hears nothing — the grant gates the gossip). Unsigned v1: the frame rides an
+//   authenticated link already (Books: the mail|mock wire; live: the hello-bound station) and a
+//    boast is advisory — nothing grants off it. Best-effort: returns how many friends heard.
+Swarm_gossip_music(w, ident):
+    let counts = this.Swarm_music_census(w, ident)
+    let told = 0
+    for (const pier of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
+        if (!this.Swarm_pier_live(pier, 'Music')) continue
+        let frame = { kind: 'ive_got', page: this.Swarm_page(ident), records: counts.records, artists: counts.artists }
+        if (this.Swarm_deliver(w, ident, pier.sc.pub, frame)) told = told + 1
+    }
+    return told
+
+// Swarm_ive_got — hear a boast: facts land ONLY under an already-sealed %Pier for the boaster.
+//  A stranger's boast is a %rebuff and nothing else — no fact, no Pier: gossip never opens a door.
+Swarm_ive_got(w, ident, frame):
+    let pier = this.Swarm_peering(ident)?.o({ Pier: 1, pub: frame.page?.prepub })[0]
+    if (!pier) {
+        this.Swarm_rebuff(ident, 'ive_got_stranger', frame.page?.prepub)
+        return null
+    }
+    this.Swarm_ive_got_fact(pier, 'records', frame.records)
+    this.Swarm_ive_got_fact(pier, 'artists', frame.artists)
+    return pier
+
+// Swarm_ive_got_fact — one %IveGot,by,count fact, updated IN PLACE (oai finds by the by: key —
+//  a fresh boast replaces the count, never a second fact).
+Swarm_ive_got_fact(pier, by, count):
+    let fact = pier.oai({ IveGot: 1, by: by })
+    fact.c.up = pier
+    fact.sc.count = String(count ?? 0)
+    fact.bump()
+    return fact
+
+// Swarm_ive_got_tally — the number a face shows: my shelf plus every live friend's last boast.
+//  Artists sum naively (counts cannot dedup across shelves) — a REACHABLE tally, not a union.
+Swarm_ive_got_tally(w, ident):
+    let own = this.Swarm_music_census(w, ident)
+    let records = own.records
+    let artists = own.artists
+    let piers = 0
+    for (const pier of this.Swarm_peering(ident)?.o({ Pier: 1 }) ?? []) {
+        if (!this.Swarm_pier_live(pier, 'Music')) continue
+        let fact = pier.o({ IveGot: 1, by: 'records' })[0]
+        if (!fact) continue
+        piers = piers + 1
+        records = records + Number(fact.sc.count || 0)
+        artists = artists + Number(pier.o({ IveGot: 1, by: 'artists' })[0]?.sc?.count || 0)
+    }
+    return { records: records, artists: artists, piers: piers }
 //#endregion
 
 //#region revocation — the only way a grant ends (§6.4)

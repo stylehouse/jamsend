@@ -43,6 +43,10 @@ const C = { red: s => `\x1b[31m${s}\x1b[0m`, grn: s => `\x1b[32m${s}\x1b[0m`, di
 
 let corrSeq = 0
 let ws = null
+// TARGET — the ONE runner this session talks to.  'runner' is only the pre-court placeholder: the relay
+//  fans a role-addressed frame to EVERY runner tab (two tabs ⇒ a `run` dispatches twice — the
+//   double-dispatch bug), so main() courts a single prepub at connect and everything rides to:<prepub>.
+let TARGET = 'runner'
 function sendAsk(theAsk) {
 	const corr = `sr-${stamp}-${corrSeq++}`
 	return new Promise((resolve) => {
@@ -56,7 +60,28 @@ function sendAsk(theAsk) {
 		}
 		const timer = setTimeout(() => settle({ ok: false, error: `no reply in ${Math.round(TIMEOUT_MS / 1000)}s (runner not connected or half-open?)` }), TIMEOUT_MS)
 		ws.on('message', onMsg)
-		ws.send(JSON.stringify({ header: { type: 'runner_ask', from: cliAddr, to: 'runner', seq: Date.now(), corr }, ask: theAsk, corr }))
+		ws.send(JSON.stringify({ header: { type: 'runner_ask', from: cliAddr, to: TARGET, seq: Date.now(), corr }, ask: theAsk, corr }))
+	})
+}
+// court — one role-broadcast ping, gather EVERY tab's ack (self + engagement) for a short grace after the
+//  first, pick one (a free runner over a leased one), pin TARGET.  Same shape as runner_ask.mjs collectAcks.
+function court() {
+	const corr = `sr-${stamp}-${corrSeq++}`
+	return new Promise((resolve) => {
+		const acks = []
+		let grace = null
+		const finish = () => { ws.off('message', onMsg); clearTimeout(first); clearTimeout(grace); resolve(acks) }
+		const onMsg = (data) => {
+			let m; try { m = JSON.parse(String(data)) } catch { return }
+			if (m.corr !== corr) return
+			if (m.control === 'undeliverable') return finish()
+			if (m.control !== 'runner_ack') return
+			acks.push(m)
+			if (!grace) { clearTimeout(first); grace = setTimeout(finish, 900) }
+		}
+		const first = setTimeout(finish, TIMEOUT_MS)
+		ws.on('message', onMsg)
+		ws.send(JSON.stringify({ header: { type: 'runner_ask', from: cliAddr, to: 'runner', seq: Date.now(), corr }, ask: { op: 'ping' }, corr }))
 	})
 }
 
@@ -243,9 +268,15 @@ async function main() {
 	if (!opened) { console.error(C.red(`✗ relay ${WS_URL}: connect timeout (5s) — is the dev server up and a ?B= runner booted?`)); process.exit(1) }
 
 	console.log(C.bold(`Story REPL`) + C.dim(` → ${WS_URL}  (type help)`))
-	const ping = await sendAsk({ op: 'ping' })
-	if (ping.control === 'runner_ack') { console.log(C.dim(`runner: ${JSON.stringify(ping.result)}`)); if (ping.result?.running?.book) currentBook = ping.result.running.book }
-	else console.log(C.yel(`no runner answered yet (${ping.error}) — boot a ?B=<Book> tab; commands will retry`))
+	const acks = await court()
+	if (acks.length) {
+		const eng  = (a) => a.result?.engagement
+		const pick = acks.find(a => { const e = eng(a); return !e || e.status !== 'active' || e.stale }) ?? acks[0]
+		if (pick.result?.self) TARGET = pick.result.self
+		if (acks.length > 1) console.log(C.yel(`⇢ ${acks.length} runners acked — courting ${TARGET.slice(0, 8)}; the rest stay untouched`))
+		console.log(C.dim(`runner: ${JSON.stringify(pick.result)}`))
+		if (pick.result?.running?.book) currentBook = pick.result.running.book
+	} else console.log(C.yel(`no runner answered yet — boot a ?B=<Book> tab; commands will retry`))
 
 	const rl = readline.createInterface({ input: process.stdin, output: process.stdout, prompt: C.cyan('story› ') })
 	// Serialise line handling — one command finishes before the next starts (so a piped/scripted

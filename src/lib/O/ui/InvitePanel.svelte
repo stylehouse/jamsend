@@ -45,6 +45,33 @@
         } catch { return [] }
     })
 
+    // ── IVE GOT — the reachable-music tally (Music_todo §9.1c): my shelf plus every sealed
+    //  friend's last boast, the facts riding as %IveGot under each %Pier. World-scoped census —
+    //   the station world holds no %Library yet (the real /music census is §9.1's build), so live
+    //    this counts the friends' boasts; Book SwarmGot proves the whole loop with real shelves.
+    let tally = $derived.by(() => {
+        void H?.version
+        try {
+            if (!self || typeof H?.Swarm_ive_got_tally !== 'function') return null
+            const w = H.Swarm_station_world?.()
+            return w ? H.Swarm_ive_got_tally(w, self) : null
+        } catch { return null }
+    })
+    const ivegot = (p: any) => p.o({ IveGot: 1, by: 'records' })[0]?.sc?.count
+    // boast on every NEW seal (both faces run this — the joiner's seal lands async after join,
+    //  the inviter's inside Swarm_hello). Zeros send too: an empty shelf is an honest boast, and
+    //   it proves the live wire today. Growth-only, so a hearing (version bump) never re-boasts.
+    let gossiped = 0
+    $effect(() => {
+        const n = friends.length
+        if (n <= gossiped) { gossiped = n; return }
+        gossiped = n
+        try {
+            const w = H.Swarm_station_world?.()
+            if (w && typeof H?.Swarm_gossip_music === 'function') H.Swarm_gossip_music(w, self)
+        } catch {}
+    })
+
     const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
     async function wait_for<T>(fn: () => T | null | undefined, ms: number): Promise<T | null> {
         for (let t = 0; t < ms; t += 200) { const v = fn(); if (v) return v; await sleep(200) }
@@ -74,6 +101,18 @@
             open_big()
         } catch (e) { err = String(e) }
     }
+
+    // ── LAND legacy (#-fragment relic — Swarm_spec §6.2 rung 1) ───────────────────────────────
+    //  Parse-only: the old ledger and key live in the old garden's Dexie until the rung-2
+    //   migrator, so the door is HONEST — it names the inviter and says the link cannot verify
+    //    here yet, rather than dialing into a deny('unknown').
+    let relic = $derived.by(() => {
+        void H?.version
+        try {
+            if (typeof location === 'undefined' || typeof H?.Swarm_legacy_of_url !== 'function') return null
+            return H.Swarm_legacy_of_url(location.href)
+        } catch { return null }
+    })
 
     // ── LAND (?Iz= in this page's own URL) ────────────────────────────────────────────────────
     let iz = boot_param('Iz')
@@ -114,6 +153,13 @@
 </script>
 
 <div class="ip">
+    {#if relic}
+        <!-- the old garden's invite: recognized, named, and honestly un-honourable (rung 1) -->
+        <div class="ip-land">
+            <span class="ip-title">🕰 an old garden invite — from <b>{relic.friendly}</b></span>
+            <span class="ip-note">it granted the old {relic.granted} trust and its key has not moved into this door yet — ask {relic.friendly} for a fresh QR</span>
+        </div>
+    {/if}
     {#if invite || iz_err}
         <!-- the LANDING face: this page was opened from a scanned invite -->
         <div class="ip-land">
@@ -144,10 +190,14 @@
         <span class="ip-note">⏳ identity…</span>
     {/if}
     {#if friends.length}
-        <!-- the sealed friendships — each a %Pier under our page, its Music grant the proof -->
+        <!-- the sealed friendships — each a %Pier under our page, its Music grant the proof;
+             the ♪ count is their last boast (%IveGot), the tally the sum of every counted shelf -->
         <div class="ip-friends">
+            {#if tally && tally.piers > 0}
+                <span class="ip-tally">♪ {tally.records} records reachable · {tally.piers} {tally.piers === 1 ? 'shelf' : 'shelves'} counted</span>
+            {/if}
             {#each friends as p (p.sc.pub)}
-                <span class="ip-friend" title={p.sc.pub}>⚯ {p.sc.friendly || p.sc.pub}{p.o({ Grant: 'Music' })[0] ? ' · ⇄ Music' : ''}</span>
+                <span class="ip-friend" title={p.sc.pub}>⚯ {p.sc.friendly || p.sc.pub}{p.o({ Grant: 'Music' })[0] ? ' · ⇄ Music' : ''}{ivegot(p) != null ? ' · ♪ ' + ivegot(p) : ''}</span>
             {/each}
         </div>
     {/if}
@@ -186,6 +236,7 @@
         font-size: 0.75rem; color: #cb9; white-space: nowrap;
         padding: 0.1rem 0.5rem; border: 1px solid #443a2a; border-radius: 5px; background: #1c1812;
     }
+    .ip-tally { font-size: 0.75rem; color: #9c8; white-space: nowrap; }
 
     /* ── the full-screen face ── a warm amber-tan radial, lightest where the QR sits */
     .ip-overlay {

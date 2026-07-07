@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Swarmation(): string { return 'c4463d074dbc8aff' },
+    Ghostmeta_Ghost_Story_Swarmation(): string { return 'f6f36c006d9ffcb1' },
 
 // Swarmation.g — the Swarm* social-side tests, in the Musu* mould (spec: Swarm_spec.md §9). The
 //  file is the artifact; SwarmStaple is the Book identity. The Creduler loads this ghost live
@@ -728,6 +728,303 @@ async SwarmDoor_order(w) { const H = this;
     let As = H.o({A: 1})
     if (!As.length) return
     let first = (a) => (a.sc.A === 'SwarmDoor') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+},
+// ══ SwarmGot — the SIXTH Book: IveGotMusic (Music_todo §9.1c) — the reachable-music tally ══════
+//  The front door's PAYOFF: once two stations seal (SwarmDoor's rung) a friendship should COUNT.
+//   Each side boasts a tiny collection summary — counts of records|artists, never Records — an
+//    additive ive_got frame on the same wire; it lands as %IveGot,by,count facts under MY %Pier
+//     for them, and Swarm_ive_got_tally folds my shelf + every live friend into ONE number.
+//  Teeth: a SPOOFED boast (a page claiming a prepub never sealed) lands NOTHING — a %rebuff, no
+//   fact, no Pier (gossip never opens a door); and a FRESH boast updates the standing fact IN
+//    PLACE — one fact per dimension, never a pile.
+//   beat 2  Ella (3 records 2 artists) + Fats (2 records 1 artist) stand: stations + a shelf each
+//   beat 3  the knock — mint + promote + redeem (SwarmDoor compressed to one beat)
+//   beat 4  sealed — and each side boasts its shelf (frames cross on this beat's cascade)
+//   beat 5  the facts stand under each Pier; the tally reads five from either end
+//   beat 6  the teeth — Fats spoofs a stranger boast at Ella; Ella grows a record and boasts again
+//   beat 7  settled — the spoof left a rebuff and nothing else; the fresh boast updated in place
+//   beat 8  the revocation — Ella %NotGrants Fats then grows her shelf again and boasts: the gate
+//   beat 9  settled — the boast never crossed a revoked Pier; her tally let the friend go (his
+//            side still counts the last boast heard — revocation propagation is a later slice)
+
+SwarmGot(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.SwarmGot_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+// SwarmGot_drive — beat dispatch (req-local did_step), then re-sort. No explicit pump: the frames
+//  ride the real spine over the mock carriers exactly as SwarmDoor's do.
+async SwarmGot_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.SwarmGot_stand(w)
+        if (n === 3) await this.SwarmGot_knock(w)
+        if (n === 4) await this.SwarmGot_boast(w)
+        if (n === 5) await this.SwarmGot_read(w)
+        if (n === 6) await this.SwarmGot_teeth(w)
+        if (n === 7) await this.SwarmGot_settle(w)
+        if (n === 8) await this.SwarmGot_unfriend(w)
+        if (n === 9) await this.SwarmGot_quiet(w)
+    }
+    await this.SwarmGot_order(w)
+
+},
+// SwarmGot_shelf — seed (or grow) a %Library,pier:<prepub> — the census convention: a shelf
+//  belongs to a KEY, never a nickname. Single-word titles (a comma in a value is a line-codec
+//   landmine). Idempotent per Record id.
+SwarmGot_shelf(w, ident, rows) {
+    let lib = w.oai({ Library: 1, pier: ident.sc.prepub })
+    lib.c.up = w
+    for (const row of rows) {
+        if (!lib.o({ Record: 1, id: row.id })[0]) lib.i({ Record: 1, id: row.id, title: row.title, artist: row.artist })
+    }
+    return lib
+
+},
+// beat 2 — the pair stands exactly where SwarmDoor leaves off (persons, bare stations, paired mock
+//  carriers, station_up, kinds armed) PLUS a shelf each. Nothing counted yet: no Piers, no facts.
+async SwarmGot_stand(w) {
+    w.sc.now = 1751910000
+    let ella = await this.SwarmStaple_person(w, 'Ella')
+    let fats = await this.SwarmStaple_person(w, 'Fats')
+    let ca = await this.SwarmDoor_station(w, ella)
+    let cb = await this.SwarmDoor_station(w, fats)
+    ca.partner = cb
+    cb.partner = ca
+    w.c.station_up = 1
+    this.Peeroleum_arm_whittle(w)
+    this.Swarm_arm(w)
+    this.SwarmGot_shelf(w, ella, [{id: 'e1', title: 'Air', artist: 'Bach'}, {id: 'e2', title: 'Bourree', artist: 'Bach'}, {id: 'e3', title: 'Gymnopedie', artist: 'Satie'}])
+    this.SwarmGot_shelf(w, fats, [{id: 'f1', title: 'Naima', artist: 'Coltrane'}, {id: 'f2', title: 'Cousin-Mary', artist: 'Coltrane'}])
+    w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.SwarmGot_witness(w); req.sc.ok = 1 })
+
+},
+// beat 3 — the whole door in one beat (SwarmDoor proves its parts separately): mint, promote,
+//  redeem. The seal crosses on the post_do cascade — witnessed settled at beat 4.
+async SwarmGot_knock(w) {
+    w.sc.now = 1751910010
+    let ella = this.SwarmStaple_ident(w, 'Ella')
+    let fats = this.SwarmStaple_ident(w, 'Fats')
+    w.c.iz = await this.Swarm_mint_idzeug(w, ella, { Music: 1, genre: 'Jazz' }, 'got_1')
+    this.Swarm_station_pier(w, fats, ella.sc.prepub)
+    await this.Swarm_redeem(w, fats, w.c.iz)
+
+},
+// beat 4 — sealed; now each side boasts. The ive_got frames cross on this beat's cascade and are
+//  read settled at beat 5 (transport frames ride post_do — never witness mid-flight).
+async SwarmGot_boast(w) {
+    w.sc.now = 1751910020
+    this.Swarm_gossip_music(w, this.SwarmStaple_ident(w, 'Ella'))
+    this.Swarm_gossip_music(w, this.SwarmStaple_ident(w, 'Fats'))
+
+},
+// beat 5 — a reading beat: the witness does the work (facts + tally).
+async SwarmGot_read(w) {
+    w.sc.now = 1751910030
+
+},
+// beat 6 — the teeth. Fats fires a SPOOF: an ive_got whose page claims a prepub Ella never sealed
+//  (it rides his REAL route — the wire is honest, the claim is the lie). And Ella's shelf grows a
+//   record and she boasts again — the standing fact must update, never duplicate.
+async SwarmGot_teeth(w) {
+    w.sc.now = 1751910040
+    let ella = this.SwarmStaple_ident(w, 'Ella')
+    let fats = this.SwarmStaple_ident(w, 'Fats')
+    let spoof = { kind: 'ive_got', page: { pub: 'not-a-real-pub', prepub: 'c0ffee0000000000', friendly: 'Mallory' }, records: 99, artists: 9 }
+    this.Swarm_deliver(w, fats, ella.sc.prepub, spoof)
+    this.SwarmGot_shelf(w, ella, [{id: 'e4', title: 'Sarabande', artist: 'Bach'}])
+    this.Swarm_gossip_music(w, ella)
+
+},
+// beat 7 — settle: the spoof and the fresh boast are both a beat old.
+async SwarmGot_settle(w) {
+    w.sc.now = 1751910050
+
+},
+// beat 8 — the revocation gate (the probe found it unexercised — now it has teeth): Ella
+//  %NotGrants Fats and THEN grows her shelf and boasts again. If the Swarm_pier_live gate holds
+//   the boast never leaves — Fats must keep seeing FOUR while she plays five.
+async SwarmGot_unfriend(w) {
+    w.sc.now = 1751910060
+    let ella = this.SwarmStaple_ident(w, 'Ella')
+    let fats = this.SwarmStaple_ident(w, 'Fats')
+    let ePier = this.Swarm_peering(ella)?.o({ Pier: 1, pub: fats.sc.prepub })[0]
+    if (ePier) await this.Swarm_revoke(w, ella, ePier, 'Music')
+    this.SwarmGot_shelf(w, ella, [{id: 'e5', title: 'Gnossienne', artist: 'Satie'}])
+    this.Swarm_gossip_music(w, ella)
+
+},
+// beat 9 — settle: the revoked quiet is a beat old.
+async SwarmGot_quiet(w) {
+    w.sc.now = 1751910070
+
+},
+// ── the witness — per-beat %see observations, n-gated, reading live truth (no commas, no apostrophes) ──
+SwarmGot_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    let ella = this.SwarmStaple_ident(w, 'Ella')
+    let fats = this.SwarmStaple_ident(w, 'Fats')
+    if (!ella || !fats) return
+    let cE = this.Swarm_music_census(w, ella)
+    let cF = this.Swarm_music_census(w, fats)
+    let ePier = this.Swarm_peering(ella)?.o({ Pier: 1, pub: fats.sc.prepub })[0]
+    let fPier = this.Swarm_peering(fats)?.o({ Pier: 1, pub: ella.sc.prepub })[0]
+    // beat 2: two shelves nobody else can count yet — five records total, no Piers, no facts.
+    if (n === 2 && cE.records === 3 && cE.artists === 2 && cF.records === 2 && cF.artists === 1 && !ePier && !fPier && !(w.oa({see: 'each side holds a shelf the other cannot count yet — five records across the two libraries'}))) w.i({see: 'each side holds a shelf the other cannot count yet — five records across the two libraries'})
+    // beat 4: the seal stands (grants both ways) — the boasts are in flight this very beat.
+    let eGot = ePier?.o({ Grant: 'Music', by: fats.c.keys?.pub })[0]
+    let fGot = fPier?.o({ Grant: 'Music', by: ella.c.keys?.pub })[0]
+    if (n === 4 && eGot && fGot && !(w.oa({see: 'the door sealed the friendship — now each side may boast its shelf'}))) w.i({see: 'the door sealed the friendship — now each side may boast its shelf'})
+    // beat 5: the facts landed under each Pier — my view of THEIR shelf — and the tally folds my
+    //  shelf plus every live friend into the same five from either end.
+    let eFact = ePier?.o({ IveGot: 1, by: 'records' })[0]
+    let fFact = fPier?.o({ IveGot: 1, by: 'records' })[0]
+    let tE = this.Swarm_ive_got_tally(w, ella)
+    let tF = this.Swarm_ive_got_tally(w, fats)
+    if (n === 5 && eFact?.sc?.count === '2' && fFact?.sc?.count === '3' && !(w.oa({see: 'the boasts landed as facts — Ella sees two records at Fats and Fats sees three at Ella'}))) w.i({see: 'the boasts landed as facts — Ella sees two records at Fats and Fats sees three at Ella'})
+    if (n === 5 && tE.records === 5 && tF.records === 5 && tE.artists === 3 && tF.artists === 3 && tE.piers === 1 && tF.piers === 1 && !(w.oa({see: 'the tally reads five records reachable from either end — my shelf plus every sealed friend'}))) w.i({see: 'the tally reads five records reachable from either end — my shelf plus every sealed friend'})
+    // beat 7: the teeth bit. The spoof left ONLY a rebuff (no fact anywhere says 99, no Pier for
+    //  the fake name); the fresh boast updated the standing fact in place (four, still one fact).
+    let spoofPier = this.Swarm_peering(ella)?.o({ Pier: 1, pub: 'c0ffee0000000000' })[0]
+    let spoofRebuff = ella.o({ rebuff: 'ive_got_stranger' })[0]
+    if (n === 7 && spoofRebuff && !spoofPier && eFact?.sc?.count === '2' && !(w.oa({see: 'a spoofed boast from an unsealed name left a rebuff and nothing else — no fact and no door opened'}))) w.i({see: 'a spoofed boast from an unsealed name left a rebuff and nothing else — no fact and no door opened'})
+    if (n === 7 && fFact?.sc?.count === '4' && fPier?.o({ IveGot: 1, by: 'records' }).length === 1 && tF.records === 6 && !(w.oa({see: 'a fresh boast updated the standing fact in place — four records now and still a single fact'}))) w.i({see: 'a fresh boast updated the standing fact in place — four records now and still a single fact'})
+    // beat 9: the revocation gate held. Ella shelves five yet Fats still sees FOUR (the boast never
+    //  crossed a revoked Pier) and her tally let the friend go entirely — while HIS side still
+    //   counts the last boast heard (revocation propagation is a later slice — SwarmStaple beat 7).
+    let eNot = ePier?.o({ NotGrant: 'Music' })[0]
+    if (n === 9 && eNot && cE.records === 5 && fFact?.sc?.count === '4' && tE.records === 5 && tE.piers === 0 && !(w.oa({see: 'a revoked friendship goes quiet — the fresh boast never crossed and the tally lets the friend go'}))) w.i({see: 'a revoked friendship goes quiet — the fresh boast never crossed and the tally lets the friend go'})
+    if (n === 9 && eNot && tF.records === 6 && tF.piers === 1 && !(w.oa({see: 'revocation stays one sided for now — the friend still counts the last boast heard'}))) w.i({see: 'revocation stays one sided for now — the friend still counts the last boast heard'})
+
+},
+// SwarmGot_order — float A:SwarmGot to the front of H/* so the Run snap stays readable.
+async SwarmGot_order(w) { const H = this;
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'SwarmGot') ? 0 : 1
+    let sorted = [...As].sort((a, b) => first(a) - first(b))
+    let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
+    await this.place({}, ordered)
+
+},
+// ══ SwarmPolicy — the SEVENTH Book: door policy (Swarm_spec §10.1 ttl + §6.2 rung 1 legacy) ═════
+//  Validity lives with the MAKER: what the door honours is ITS OWN %Idzeug record, checked at
+//   hello-time. Two policies get teeth here:
+//    ttl — a maker-side expiry riding the record (never the sealed grants — grants stay infinite,
+//     Swarm_iz_params strips ttl): inside the window an invite seals as ever; beyond it the door
+//      says deny('expired') and the nonce stays UNSPENT (an expired invite was never received).
+//    legacy — the old garden's `#<pad><prepub>-<advice>-<sign>` links parse at the new door
+//     (Swarm_legacy_of_url — rung 1, pure): prepub|name|n lifted, granted='ftp' surfaced so nobody
+//      transcodes it as Music. NOT verified — the old ledger and key live in the old Dexie until
+//       the rung-2 migrator; garbage and modern links refuse with null, never a crash.
+//   beat 2  Vera + Otto stand on the mail wire — Vera online (the door that answers)
+//   beat 3  a ttl invite INSIDE its window seals as ever (the policy is not a tax on the living)
+//   beat 4  a second ttl invite waits — sixty seconds of welcome on its face
+//   beat 5  the clock leaps past the welcome — the door refuses expired and the nonce stays unspent
+//   beat 6  the relics — the old link parses (fields lifted) and the mangled|modern refuse null
+
+SwarmPolicy(A,w) {
+    w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
+        await this.SwarmPolicy_drive(w,req)
+        req.sc.ok = 1
+
+    })
+},
+async SwarmPolicy_drive(w, req) {
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.SwarmPolicy_stand(w)
+        if (n === 3) await this.SwarmPolicy_fresh(w)
+        if (n === 4) await this.SwarmPolicy_second(w)
+        if (n === 5) await this.SwarmPolicy_expire(w)
+        if (n === 6) await this.SwarmPolicy_relics(w)
+    }
+    await this.SwarmStaple_pump(w)
+    await this.SwarmPolicy_order(w)
+
+},
+// beat 2 — two selves on the plain mail wire (door policy needs no station): Vera answers her
+//  own door, Otto scans. Vera online so hellos land.
+async SwarmPolicy_stand(w) {
+    w.sc.now = 1751920000
+    let vera = await this.SwarmStaple_person(w, 'Vera')
+    await this.SwarmStaple_person(w, 'Otto')
+    this.Swarm_online(vera, true)
+    w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.SwarmPolicy_witness(w); req.sc.ok = 1 })
+
+},
+// beat 3 — a ttl invite redeemed INSIDE its window: the mail wire settles within the beat (the
+//  SwarmStaple precedent), so the seal is witnessed this same beat.
+async SwarmPolicy_fresh(w) {
+    w.sc.now = 1751920010
+    let vera = this.SwarmStaple_ident(w, 'Vera')
+    let otto = this.SwarmStaple_ident(w, 'Otto')
+    this.Swarm_online(otto, true)
+    let iz = await this.Swarm_mint_idzeug(w, vera, { Music: 1, genre: 'Baroque', ttl: 60 }, 'pol_1')
+    await this.Swarm_redeem(w, otto, iz)
+
+},
+// beat 4 — the second ttl invite is minted and left waiting.
+async SwarmPolicy_second(w) {
+    w.sc.now = 1751920020
+    let vera = this.SwarmStaple_ident(w, 'Vera')
+    w.c.iz2 = await this.Swarm_mint_idzeug(w, vera, { Music: 1, genre: 'Baroque', ttl: 60 }, 'pol_2')
+
+},
+// beat 5 — the clock leaps a hundred seconds (past 020+60) and Otto redeems the stale invite:
+//  the door must refuse expired — and the nonce must stay UNSPENT.
+async SwarmPolicy_expire(w) {
+    w.sc.now = 1751920120
+    let otto = this.SwarmStaple_ident(w, 'Otto')
+    await this.Swarm_redeem(w, otto, w.c.iz2)
+
+},
+// beat 6 — a reading beat: the witness parses the relics (pure — constants inline there).
+async SwarmPolicy_relics(w) {
+    w.sc.now = 1751920130
+
+},
+// ── the witness — per-beat %see observations, n-gated, reading live truth (no commas, no apostrophes) ──
+SwarmPolicy_witness(w) {
+    let n = (this.c.run)?.c.step_n
+    let vera = this.SwarmStaple_ident(w, 'Vera')
+    let otto = this.SwarmStaple_ident(w, 'Otto')
+    if (!vera || !otto) return
+    let vPier = this.Swarm_peering(vera)?.o({ Pier: 1, pub: otto.sc.prepub })[0]
+    let oPier = this.Swarm_peering(otto)?.o({ Pier: 1, pub: vera.sc.prepub })[0]
+    // beat 3: the fresh ttl invite sealed — the policy is no tax on the living; and no grant
+    //  carries the ttl (it was invite policy, stripped before minting).
+    let vGot = vPier?.o({ Grant: 'Music', by: otto.c.keys?.pub })[0]
+    let ttlLeak = vPier?.o({ Grant: 1, ttl: 1 })[0] ?? oPier?.o({ Grant: 1, ttl: 1 })[0]
+    if (n === 3 && vGot && oPier && !ttlLeak && !(w.oa({see: 'a ttl invite inside its window seals as ever — and no sealed grant carries the expiry'}))) w.i({see: 'a ttl invite inside its window seals as ever — and no sealed grant carries the expiry'})
+    // beat 4: the second invite waits with sixty seconds of welcome on its face.
+    let rec2 = this.Swarm_peering(vera)?.o({ Idzeug: 'pol_2' })[0]
+    if (n === 4 && rec2 && Number(rec2.sc.ttl) === 60 && !rec2.sc.spent && !(w.oa({see: 'a second invite waits — sixty seconds of welcome on its face'}))) w.i({see: 'a second invite waits — sixty seconds of welcome on its face'})
+    // beat 5: the door refused expired — the rebuff landed at the redeemer and the nonce stays
+    //  UNSPENT (an expired invite was never received; spending it would be theft by clock).
+    if (n === 5 && otto.o({ rebuff: 'rejected_expired' })[0] && rec2 && !rec2.sc.spent && !(w.oa({see: 'an expired invite dies at the door — refused and the nonce stays unspent'}))) w.i({see: 'an expired invite dies at the door — refused and the nonce stays unspent'})
+    // beat 6: the relics. The old garden link parses — prepub|name|n lifted, granted=ftp surfaced —
+    //  while garbage and a modern ?Iz= link refuse with null.
+    let relic = this.Swarm_legacy_of_url('https://jam.example/BigSoundland#############a1b2c3d4e5f60718-Elder+Gardener.n~7-deadbeefdeadbeef')
+    let relicOk = relic && relic.prepub === 'a1b2c3d4e5f60718' && relic.friendly === 'Elder Gardener' && relic.n === 7 && relic.granted === 'ftp' && relic.legacy === 1
+    if (n === 6 && relicOk && !(w.oa({see: 'the old garden link parses at the new door — prepub and name and count lifted from the fragment'}))) w.i({see: 'the old garden link parses at the new door — prepub and name and count lifted from the fragment'})
+    let dead = !this.Swarm_legacy_of_url('https://jam.example/BigSoundland#garbage') && !this.Swarm_legacy_of_url('https://jam.example/BigSoundland?Iz=abcdef') && !this.Swarm_legacy_of_url(null) && !this.Swarm_legacy_of_url('https://jam.example/#############nothexadecimal-Name.n~1-signsignsignsign')
+    if (n === 6 && dead && !(w.oa({see: 'a mangled relic and a modern link both refuse cleanly — null never a crash'}))) w.i({see: 'a mangled relic and a modern link both refuse cleanly — null never a crash'})
+
+},
+// SwarmPolicy_order — float A:SwarmPolicy to the front of H/* so the Run snap stays readable.
+async SwarmPolicy_order(w) { const H = this;
+    let As = H.o({A: 1})
+    if (!As.length) return
+    let first = (a) => (a.sc.A === 'SwarmPolicy') ? 0 : 1
     let sorted = [...As].sort((a, b) => first(a) - first(b))
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)
