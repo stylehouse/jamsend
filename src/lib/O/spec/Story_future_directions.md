@@ -215,6 +215,12 @@ The blunt, general lever: watch todo depth over a window (a `reactap` sibling �
 
 ### Technique B — finish → re-pump the upper req (poll becomes event)
 
+**One line:** a deep req's parent only notices its child finished on the next 150 ms *trickle* poke, so the
+ Lies stack pays ~150 ms **per maz level** just to walk down itself; make the child's `finish()` re-pump
+  `do()` on its parent *immediately* and that per-level poll becomes an event.  (NOT built.  Demoted for a
+   tight Story step — trickle is ~11 % there — but the **prime suspect for editor startup**, which is
+    trickle-bound; see `Perf_todo.md`'s scorecard.  Measure the boot first.)
+
 The structural lever, aimed at the Lies stack's *depth* (`Perf_todo.md` §4: Store `maz:7` → Cortex `maz:5` →
  Codebit `maz:2` → Rundown `maz:1`). `do()` (`Stuff.svelte.ts:647`) descends multiple maz levels in one pass —
   **but halts the moment a level bows out on a ttlilt** (`level.some(needs_work) → return`). Re-entry from the
@@ -263,3 +269,76 @@ This is the real reason it was left loose, and it's correct to guard. The **ttli
 - **Payoff:** flattening the gate during a gallop + event-driving the up-walk saves the `N × 50 ms`/150 ms
    pacing *and* the per-pass O(N) tax (§3) × the passes removed — the deepest lever in the perf map, and the one
     that most directly speeds Lies+Lang.
+
+---
+
+## 4 — An execution-optimisation layer — scheduling the machine's own callback-returns
+
+*(A dream the human has been circling for a while: "another layer of execution smarts apart from our C-like
+ languages of today."  Technique A/B are two hand-coded, blunt instances of it; this section is the general,
+  observed, visualised, self-tuning version they point at.  Build-ready only in its instrument (§2 + Cyto);
+   the optimiser itself is research.)*
+
+### The itch
+
+Every ghost method is written like C: a sequential callback that does its work and, at some point, hands
+ control back to the main process (the belief loop) — via a `finish()`, a `think()` wake, an `i_elvisto`
+  hop, a bowed-out ttlilt.  **When** it hands back, and **what it re-pumps** when it does, is today either
+   hard-wired in that C-like code or left to the 150 ms trickle to notice later.  That "handback schedule" is
+    a second, invisible program riding on top of the visible one — and it's currently dumb: a finished child
+     waits for a poll; a parent re-runs on a timer, not on its child's completion.  The dream is to make that
+      second program **first-class, observed, and optimised** — a layer of execution smarts *above* the
+       C-like ghost code, tuning when returns to the main process happen so the machine stops paying latency
+        it doesn't have to.
+
+### The mechanism — the algebra of re-pump interventions, each tested
+
+The unit of optimisation is an **intervention**: "at the moment req X `finish()`es, fire a `do()` on
+ ancestor Y" (or the cheaper "insert a `think()` here").  The target is always **up** from where the work
+  landed — the blocked parent that today only notices via the trickle.  This is a small algebra:
+- **Elements:** directed edges *finish-site → re-pump-target* in the live req** tree.
+- **Search space:** every finish-site × every ancestor × every moment — combinatorial, but almost all dead
+   weight.  An edge only matters if its gap is **on the critical path** (the longest dependency chain to
+    quiescence); §2's dense track finds that path and prunes the space to a handful of candidates.
+- **Test oracle (make-or-break):** an edge is a keeper only if it collapses the wait **AND leaves every
+   downstream snap byte-identical**.  A `think()`/`do()` fired earlier is a *wake*, and a wake that changes
+    *when* something lands can change an *observable* if that observable was cadence-coupled (the LakeTiles
+     warming-point lesson).  Faster-with-a-changed-snap is a *rejected* candidate, not a win.
+- **Determinism filter:** "deterministic moments" is testable — snap the same settle N times densely; the
+   finish→idle-gap patterns that recur *every* run are safe to hard-wire, the jittery ones are races
+    (wake≠hold) that must stay on the trickle.  The instrument that finds candidates is the same one that
+     certifies them.
+
+Technique B is the blunt special case (re-pump on *every* finish); the algebra is how you'd find the *safe
+ subset* if blanket re-pump turns out to break a snap somewhere — or, if it's snap-invariant everywhere, the
+  algebra's first payoff is simply *proving that*, and you ship the blunt version.
+
+### Watch it in Cyto — edge length is latency
+
+The payoff surface: render the reconstructed causal timeline in Cyto (the live view already walks the
+ particles).  **Nodes** are reqs/particles; **edges** are "waits-on"; **edge length encodes the latency**
+  between a finish and its dependent's re-run — so the 150 ms trickle gaps show up as *long* edges you can
+   see at a glance, the critical path is the longest chain, and as you apply interventions you **watch the
+    slow edges shorten** (Matstyle already does dose→size interpolation; latency→length is the same idea on
+     edges).  The dense snap stream (§2) feeds it between handlings; the in-flight console (§2) is where you'd
+      poke a candidate intervention and see the graph re-settle.  Optimising the machine's own scheduling
+       becomes a thing you *look at*, not infer from wall-clock.
+
+### Why it's a new layer, not just more levers
+
+Today's control flow is hand-authored twice over: the ghost C-like code, and the req** stack's implicit
+ handback schedule.  This is a **meta-layer** that observes the second one, measures where returns to the
+  main process cost latency, and re-schedules them — declaratively (an edge catalog), measured (the snap
+   oracle), and eventually self-tuning (search the algebra, keep the snap-invariant winners).  It sits to the
+    languages of today as a query planner sits to hand-written loops: same results, scheduled smarter.
+
+### Prerequisite + open questions
+
+- **Prerequisite:** the §2 dense between-handlings snap track (reactap is the coarse seed — it counts bump
+   churn; this needs the *causal* version: a scoped subtree snap at the drain edge, ring-buffered to scrub the
+    descent frame-by-frame).  Same instrument the editor-boot investigation needs — build it once.
+- Does the edge catalog live in code (generated `finish→do` hooks) or as data the loop reads?  The latter is
+   more "layer," the former simpler to ship.
+- How to bound the search so the optimiser never itself becomes the tax it removes (a hard candidate-count +
+   `log()` when it clips, cf. §3's budget guard).
+- Cross-machine edges never collapse (network RTT, not schedule) — the algebra must mark and skip them.

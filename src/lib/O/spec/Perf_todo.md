@@ -113,9 +113,33 @@ The old ranking below was written from the causal map (structure), not from meas
 - **The ~428 ms/step quiescence guard is a NEW candidate** (old ranking missed it): a contiguous idle wait
    after `beliefs/done`, ~428 ms in *every* step (the design assumed ~75 ms).  Understand `poll_step`'s
     trailing timer / any ttlilt it waits out before building — could be ~2.5 s across a 7-step Book.
-- **Technique B (old lever #3 req-side twin) is DEMOTED** — the trickle is only ~11% of a step, and the
-   maz descent is *already* mostly event-driven (`Hovercraft.svelte:281` `if (req.sc.finished) await
-    host.do()`).  Small win, highest risk; do it last, if at all.
+- **Technique B (old lever #3 req-side twin) is DEMOTED for a Story STEP** — the trickle is only ~11% of a
+   step, and the maz descent is *already* mostly event-driven (`Hovercraft.svelte:281` `if (req.sc.finished)
+    await host.do()`).  Small win there, highest risk.  **BUT the workload flips for EDITOR STARTUP** — see
+     the scorecard: boot is trickle-bound, so Technique B may be THE lever there.
+
+## Where we are — the scorecard (2026-07-08)
+
+**Done + shipped to main** (branch merged 2026-07-08): #1 `V.req_legs` off · #2 graft cache key ·
+ #6 `Lang_build_mapules` gate · **#A / Technique A — the gallop** (`perf/gallop-tighten`, −13/−14% on a
+  warm Lies+Lang step, the biggest measured slice; two cadence-sensitive Books opted out via
+   `The/Opt/{no_gallop:1}`).  **Abandoned:** #4 organise/attend dige-gate (zero upside by construction).
+
+**NOT done — the two that remain, both belief-loop-structural (not cheap levers):**
+- **Technique B** (= old lever #3, "trickle → single-wake").  **What it is, in one line:** the deep Lies req
+   stack (Store `maz:7` → Cortex → Codebit → Rundown) pays **~150 ms PER LEVEL** because a finished child is
+    only noticed by the next 150 ms *trickle* poke — Technique B makes the child's `finish()` **re-pump
+     `do()` on its parent immediately**, turning that poll into an event (dev in `Story_future_directions.md`
+      §3).  Demoted for a tight Story step (~11 % there), but it is the **prime suspect for EDITOR STARTUP**:
+       the ~400 ms gallop win off a ~12 s boot proved the drain gate is a thin slice of boot; the other
+        ~11.6 s is trickle-paced maz descent + real async (compile/CodeMirror/reindex) + idle lulls, and
+         gallop touches none of it.  Technique B attacks the trickle-paced part.  **Measure first** — trace
+          the boot and bucket the gaps (the boot-instrument owed, gated on "todo empty AND nothing pending",
+           NOT the naive quiet-window that under-measured 653 ms vs a felt ~12 s) to confirm trickle-bound
+            vs async-bound before building.
+- **The ~428 ms/step quiescence guard** (NEW candidate the trace gap-analysis surfaced): a fixed trailing
+   idle after `beliefs/done`, ~22 % of every step, still unexplained — needs a `poll_step` read (any ttlilt
+    it waits out before building).
 
 ## Ranked levers (cheapest ratio first) — original structural ranking, see RE-RANK above
 
@@ -140,7 +164,10 @@ The old ranking below was written from the causal map (structure), not from meas
           See the Status log for the full autopsy + the measurement-methodology findings it surfaced.**
 5. Longer game: collapse the 12-13-hop chain — the `N × 50 ms` floor caps everything. **Examined in
     `Story_future_directions.md` §3** (time-sliced greedy drain + observation-driven targeted collapse; the
-     deepest lever — it attacks the 50 ms × N *and* the per-pass O(N) × N together).
+     deepest lever — it attacks the 50 ms × N *and* the per-pass O(N) × N together). **(§status: the
+      blunt half — the time-sliced greedy drain — is DONE as Technique A / the gallop, shipped 2026-07-08.
+       The observation-driven TARGETED collapse is future work; see `Story_future_directions.md` §3 + the new
+        §4 execution-optimisation layer.)**
 6. Digest-gate `Lang_build_mapules` the way `Lang_Map_report` is. **(§status: DONE —
     branch `perf/mapules-digest-gate`, verified live; see the Status log.)**
 
