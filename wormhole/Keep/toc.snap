@@ -1,15 +1,15 @@
 Waft:Keep,equip:Keep,lte_expanded,isx_show_cold
-  WaftTimes,of_Waft:Ghost/Net/Easy,discovered_at=1782449847030,accessed_at=1783407669887,enthusiasm=0
-    Cursor,what:What:the peer,at=1783407669791
-  WaftTimes,of_Waft:Ghost/Music/Ality,discovered_at=1782449847030,accessed_at=1783407681123,enthusiasm
-    Cursor,what:What:the stock pass (Ghost/M/Ra.g — needles LUFS → baked gain → 2s Opus segments → Ogg mux → disk),at=1783407681123
-  WaftTimes,of_Waft:Credence,discovered_at=1782550950085,accessed_at=1783407670304
+  WaftTimes,of_Waft:Ghost/Net/Easy,discovered_at=1782449847030,accessed_at=1783410530000,enthusiasm=0
+    Cursor,what:What:the peer,at=1783410529882
+  WaftTimes,of_Waft:Ghost/Music/Ality,discovered_at=1782449847030,accessed_at=1783410536662,enthusiasm
+    Cursor,what:What:the stock pass (Ghost/M/Ra.g — needles LUFS → baked gain → 2s Opus segments → Ogg mux → disk),at=1783410536662
+  WaftTimes,of_Waft:Credence,discovered_at=1782550950085,accessed_at=1783410530504
     Cursor,what:What:cursor models,at=1783177002906
-  Cursor,waft:Ghost/Music/Ality,at=1783407681123
-  WaftTimes,of_Waft:Cluster,discovered_at=1782641801641,accessed_at=1783407670609
+  Cursor,waft:Ghost/Music/Ality,at=1783410536662
+  WaftTimes,of_Waft:Cluster,discovered_at=1782641801641,accessed_at=1783410530574
   WaftTimes,of_Waft:Keep
-  WaftTimes,of_Waft:GhostList,discovered_at=1782807094692,accessed_at=1783407670781
-  DocScroll,of_Doc:Ghost/N/Peeroleum.g,scroll_line=6
+  WaftTimes,of_Waft:GhostList,discovered_at=1782807094692,accessed_at=1783410530720
+  DocScroll,of_Doc:Ghost/N/Peeroleum.g
   DocScroll,of_Doc:Ghost/N/Tyrant.g
   DocScroll,of_Doc:Ghost/M/Radiola.g
   DocScroll,of_Doc:Ghost/Story/Musuation.g,scroll_line=2608
@@ -22,9 +22,9 @@ Waft:Keep,equip:Keep,lte_expanded,isx_show_cold
   DocScroll,of_Doc:Ghost/M/Crate.g,scroll_line=27
   DocScroll,of_Doc:src/lib/p2p/ftp/Audio.svelte.ts,scroll_line=19
   DocScroll,of_Doc:Ghost/N/Tribunal.g,scroll_line=3
-  WaftTimes,of_Waft:Aside/2026-07-03,discovered_at=1783055842350,accessed_at=1783407670870
+  WaftTimes,of_Waft:Aside/2026-07-03,discovered_at=1783055842350,accessed_at=1783410530793
     Cursor,what:What:1,at=1783402249267
   DocScroll,of_Doc:src/lib/O/Lies.svelte
-  WaftTimes,of_Waft:Aside/2026-07-04,discovered_at=1783080228115,accessed_at=1783407670965
+  WaftTimes,of_Waft:Aside/2026-07-04,discovered_at=1783080228115,accessed_at=1783410530874
     Cursor,what:What:1,at=1783173648127
   DocScroll,of_Doc:Ghost/M/Ra.g

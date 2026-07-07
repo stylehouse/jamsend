@@ -48,48 +48,50 @@ story:MusuReplica
       style:background-color,v:#a6483a
     matstyle:msg
       style:background-color,v:#36c974
+    matstyle:crush
+      style:background-color,v:#af43db
   Plan
   Opt
-    For
-      w:MusuReplica
-        crushCyto
     useCyto
+    useVoroCyto
     dontSnapCyto
+    dontVoronoiology
     waitCyto
+    For
   TimeSpool
-    TimeTotal:beliefs,avg=0.387
-      sample=0.325,at=1783266278
-      sample=0.204,at=1783266335
-      sample=1.479,at=1783278361
-      sample=0.353,at=1783288804
-      sample=0.19,at=1783309600
-      sample=0.226,at=1783312211
-      sample=0.348,at=1783336780
-      sample=0.343,at=1783337988
-      sample=0.207,at=1783343842
-      sample=0.2,at=1783343870
-    TimeTotal:step,avg=0.028
-      sample=0.023,at=1783266278
-      sample=0.015,at=1783266335
-      sample=0.106,at=1783278361
-      sample=0.025,at=1783288804
-      sample=0.014,at=1783309600
-      sample=0.016,at=1783312211
-      sample=0.025,at=1783336780
-      sample=0.025,at=1783337988
-      sample=0.015,at=1783343842
-      sample=0.014,at=1783343870
-  step,dige:b74244526b42c964
-  step=2,dige:79a249d5be1dee10
-  step=3,dige:20876322ce5142ea
-  step=4,dige:3af1ae94304c103e
-  step=5,dige:fc6c4ba79b412d40
-  step=6,dige:fdc479e908e09a9b
-  step=7,dige:71cdbe2281aea817
-  step=8,dige:729422f4a36a21d7
-  step=9,dige:716cc614b4d01c33
-  step=10,dige:49d8758d31d86e6c
-  step=11,dige:d33330f1c3538d0e
-  step=12,dige:686a2d49e7c7dfa6
-  step=13,dige:a73db85c5ff56368
-  step=14,dige:40ca4fc088ee67f1
+    TimeTotal:beliefs,avg=0.204
+      sample=0.21,at=1783409537
+      sample=0.199,at=1783410470
+      sample=0.206,at=1783410605
+      sample=0.206,at=1783410773
+      sample=0.208,at=1783410817
+      sample=0.227,at=1783411025
+      sample=0.195,at=1783411296
+      sample=0.187,at=1783414384
+      sample=0.187,at=1783414388
+      sample=0.211,at=1783415380
+    TimeTotal:step,avg=0.015
+      sample=0.015,at=1783409537
+      sample=0.014,at=1783410470
+      sample=0.015,at=1783410605
+      sample=0.015,at=1783410773
+      sample=0.015,at=1783410817
+      sample=0.016,at=1783411025
+      sample=0.014,at=1783411296
+      sample=0.013,at=1783414384
+      sample=0.013,at=1783414388
+      sample=0.015,at=1783415380
+  step,dige:50568e7a78216459
+  step=2,dige:c8a132a351a7379f
+  step=3,dige:6752f74cd69207c7
+  step=4,dige:0f2802cd08cd3420
+  step=5,dige:441a17fee347ff66
+  step=6,dige:4d64aead9f61d74e
+  step=7,dige:b344c4ffb0e93ee4
+  step=8,dige:babb58049e8fc2ac
+  step=9,dige:1ab4668b79b4cd7b
+  step=10,dige:4e0cd0e3d78bf505
+  step=11,dige:be70a5d2bf483690
+  step=12,dige:272436cb6f6b4920
+  step=13,dige:16b9c029ad206bf0
+  step=14,dige:0a7912d9e6ffad5f

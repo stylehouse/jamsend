@@ -30,9 +30,10 @@
 //    change what a Story records.  There is NO report particle any more (the old flat %Crush_Tree
 //     is gone — it was the one thing the crush still snapped): the fold TOTALS a proof Book wants
 //      come back as live stats from the scan, read off the c-side stamps, never modelled.
-//  GATED on the Book opt %crushCyto (toc Opt/For/w:<Book>/crushCyto, pushed into w/%Opt at
-//   settingoff) OR the scan-root's c.crush_wanted (a Voro demo Book arms it in setup; the ◈
-//    button arms it via Cyto's e_Cyto_crush to impose the layer on a world that never asked).
+//  GATED on the scan-root's c.crush_wanted, armed three ways: a top-level %useVoroCyto Opt (Story
+//   reads it at settingoff and stamps crush_wanted — how a non-Voro Book like MusuReplica opts the
+//    layer on), a Voro demo Book's own seed, or the ◈ button (Cyto's e_Cyto_crush imposes it on a
+//     world that never asked).
 
 // Voro_crush_scan — the INTENSITY GOVERNOR (the owner's "hover around a sensible intensity,
 //  aim for 9 families or so").  Each pass is authoritative (it stamps AND unstamps, so a level
@@ -44,7 +45,7 @@
 //  RETURN shape: {folded,count} keep their RECORDED meaning (container folds only — MusuReplica's
 //   ratio %see reads them); gang folds ride separately as {gangs,ganged}, plus {visible,level}.
 Voro_crush_scan(w):
-    if (!w.o({ Opt: 1 })[0]?.oa({ crushCyto: 1 }) && !w.c.crush_wanted) return null
+    if (!w.c.crush_wanted) return null
     let level = w.c.crush_level || 0
     let stats = this.Voro_crush_pass(w, level)
     while (stats.visible > 15 && level < 2) {
@@ -685,7 +686,7 @@ Voro_drift_scan(node, d, out):
     }
 
 async Voro_drift_tick(w):
-    if (!w.c.crush_wanted && !w.o({ Opt: 1 })[0]?.oa({ crushCyto: 1 })) return null
+    if (!w.c.crush_wanted) return null
     w.c.drift_seq = (w.c.drift_seq || 0) + 1
     let seq = w.c.drift_seq
     let opens = w.c.drift_opens || []

@@ -3,7 +3,5 @@ Snap:H
     A:MusuReplica
       self,round	{"mung":["age"]}
       w:MusuReplica
-        Opt
-          crushCyto
         self,round	{"mung":["age"]}
         req:wrangle,eternal,ok

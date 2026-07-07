@@ -575,6 +575,24 @@
         const req = w.oai({ req: name }) as TheC   // named finishing child (oai sets c.up = w)
         req.c.do_fn = () => {}                       // held open — only the resolve below finishes it
         H.i_req_ttlilt(req, secs)
+        // Heartbeat — the ttlilt is a TWO-SIDED hold: i_req_ttlilt arms it on the world req, but the hold
+        //  poll_step reads is the H-root copy that agency_officing PUBLISHES.  A live editor re-runs officing
+        //   every tick off its interval, so the copy appears within a tick of arming — but a Story Run has NO
+        //    heartbeat mid-step (the drive parks in poll_step) and async_fn runs off the belief mutex, minting
+        //     no thinks of its own.  So officing can fail to re-run before poll_step goes quiescent and snaps
+        //      the pass MID-FLIGHT — a live, un-timed-out world ttlilt serialised into the snap: the un-
+        //       publishable hold (the "random snap timing", and why it fired only when async_fn's own particle
+        //        writes happened to enqueue a think inside the poll window).  So supply the heartbeat expecting
+        //         has always assumed: while the req is unsettled, feebly_ponder (heartbeat-grade — fires only in
+        //          Runtime, never between steps or during a snap) each belief tick, so officing re-publishes the
+        //           PERSISTENT world ttlilt and the hold engages deterministically.  Stops the tick settle()
+        //            finishes the req (its next officing then drops the ttlilt → quiescent → snap the DONE state).
+        const beat = () => {
+            if (req.sc.finished || !req.c.up || H.stopped) return
+            H.feebly_ponder()
+            setTimeout(beat, 50)   // = ANSWER_CALLS_TICK_MS, the belief tick
+        }
+        setTimeout(beat, 50)
         // settle once, defensively.  A late Promise — a slow async resolving AFTER the run tore the world
         //  down, or a stray double-call — must never drive a finished or detached req: guard on %finished
         //   and a live c.up before reqyoncile.  (Finish on error too, so a throw never wedges the snap open.)

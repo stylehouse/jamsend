@@ -4,30 +4,30 @@ story:RaStock
   Opt
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.026
-      sample=0.039,at=1783407710
-      sample=0.025,at=1783407725
-      sample=0.023,at=1783407849
-      sample=0.032,at=1783407994
-      sample=0.026,at=1783408189
-      sample=0.026,at=1783408279
-      sample=0.024,at=1783408332
-      sample=0.022,at=1783408707
-      sample=0.016,at=1783408715
-      sample=0.022,at=1783408817
-    TimeTotal:step,avg=0.005
-      sample=0.008,at=1783407710
-      sample=0.005,at=1783407725
-      sample=0.005,at=1783407849
-      sample=0.006,at=1783407994
-      sample=0.005,at=1783408189
-      sample=0.005,at=1783408279
-      sample=0.005,at=1783408332
-      sample=0.004,at=1783408707
-      sample=0.003,at=1783408715
-      sample=0.004,at=1783408817
+    TimeTotal:beliefs,avg=0.045
+      sample=0.018,at=1783409827
+      sample=0.036,at=1783409917
+      sample=0.066,at=1783410118
+      sample=0.038,at=1783411664
+      sample=0.038,at=1783411680
+      sample=0.029,at=1783411691
+      sample=0.038,at=1783412488
+      sample=0.051,at=1783414300
+      sample=0.07,at=1783415972
+      sample=0.07,at=1783416093
+    TimeTotal:step,avg=0.009
+      sample=0.004,at=1783409827
+      sample=0.007,at=1783409917
+      sample=0.013,at=1783410118
+      sample=0.008,at=1783411664
+      sample=0.008,at=1783411680
+      sample=0.006,at=1783411691
+      sample=0.008,at=1783412488
+      sample=0.01,at=1783414300
+      sample=0.014,at=1783415972
+      sample=0.014,at=1783416093
   step,dige:0fc4682f0919c3b8
   step=2,dige:f96f8f602056e8a5
-  step=3,dige:7e9490de21a941b5
-  step=4,dige:ae28e55c9125da52
-  step=5,dige:8bded4ed9cc80692
+  step=3,dige:86e014c41c90db3f
+  step=4,dige:2978b7b16c70b050
+  step=5,dige:edbdcf38829b4094

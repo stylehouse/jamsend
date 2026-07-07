@@ -1384,21 +1384,31 @@
             H.i_elvisto('Cyto/Cyto', 'Cyto_commission', { req: commission })
         }
 
-        // ── arm Voronoiology ──────────────────────────────────────────
-        // The crush's thinking (Voro_report, Ghost/V/Voro.g) projects onto a SIBLING world
-        //  w:Voronoiology — SNAP-ONLY (a sibling isn't in the run world's subtree, so cyto_scan
-        //   never renders it).  Declarative twin of useCyto: any Book:Voro* opts in via
-        //    The/Opt/useVoronoiology.  Mind the two worlds: the Opt lives on the STORY world
-        //     (only it carries c.The, so The_Opt_val must read `w`), but the crush runs on the
-        //      RUN worlds under Run — Story_subHouse minted Run/%A/%w:<Book> before settingoff —
-        //       and Voro_report's gate reads !runworld.c.voronoiology.  So read here, stamp THERE,
-        //        on each run worker.  c-side, so the arming itself never snaps.
-        if (H.The_Opt_val(w, 'useVoronoiology'))
-            for (const rw of (Run.o({ A: 1 }) as TheC[]).flatMap((a: TheC) => a.o({ w: 1 }) as TheC[]))
-                rw.c.voronoiology = 1
-
         // The doorstep moment: gifts of Opt delivered for the journey.
         this.push_opt_to_run(w)
+
+        // ── arm the crush + default Voronoiology on ───────────────────
+        // The crush and its SNAP-ONLY projection (w:Voronoiology, Voro_report in Ghost/V/Voro.g)
+        //  run on the RUN worlds under Run (Story_subHouse minted them before settingoff), but
+        //   their Book-level switches are TOP-LEVEL The/Opt on the STORY world (only it carries
+        //    c.The) — so read the Opt on `w`, then stamp the c-side flag (never snaps) on each
+        //     run worker.  Top-level ON PURPOSE: a For/w:<worker> opt would ride INTO the worker
+        //      and clutter its got_snap; a top-level Opt lives only in toc.snap, snap stays clean.
+        //  • useVoroCyto — a non-Voro Cyto Book (MusuReplica) opts the crush ON declaratively; it
+        //     just stamps crush_wanted, the same flag a Voro Book's seed sets and the ◈ button
+        //      imposes (so Voro_crush_scan's gate is now a single !w.c.crush_wanted).
+        //  • Voronoiology projection — default-ON wherever Cyto runs (inert unless a world actually
+        //     runs the crush; Voro_report is only reached from Voro_crush_scan), opt-OUT with a
+        //      top-level dontVoronoiology (how MusuReplica keeps the projection off its snap).  The
+        //       ◈ button imposes on the Cyto MIRROR, which never comes through Story — so a live
+        //        imposition arms neither flag here and still projects NOTHING.
+        const wantsCrush = H.The_Opt_val(w, 'useVoroCyto')
+        const wantsVoro  = H.The_Opt_val(w, 'useCyto') && !H.The_Opt_val(w, 'dontVoronoiology')
+        if (wantsCrush || wantsVoro)
+            for (const rw of (Run.o({ A: 1 }) as TheC[]).flatMap((a: TheC) => a.o({ w: 1 }) as TheC[])) {
+                if (wantsCrush) rw.c.crush_wanted = 1
+                if (wantsVoro)  rw.c.voronoiology = 1
+            }
     },
 
     push_opt_to_run(w: TheC) {

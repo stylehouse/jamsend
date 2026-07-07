@@ -147,6 +147,34 @@ The microcosm cards (Voro_microcosm.md a+b) underexpressed: a VoroScape pane the
     dumb renderer fits into the cell shape** — the smarts .g-side and extensible the
      Waft way, the pixels staying pure.
 
+### 🎋 Bamboo schematica + Se — the text gets structural, the fold reads its surroundings
+
+The owner, verbatim: *"when we get more bamboo schematica going on to make the text more
+ rockin' it's going to get Se going on about what to do given the surroundings probably."*
+  Two moves that arrive together.  **Bamboo schematica** is the next grade of Vtuffing: a
+   pane's text stops being a flat string and grows a *schematic* — jointed, segmented
+    structure (the bamboo) that reads at a glance.  It rides the pipeline already named
+     above — a Stuffing-grade `C\*\*` the dumb renderer fits — so the smarts stay .g-side.
+  Once a pane can SAY something structured, the fold wants an **Se**: a surroundings-reactive
+   sense (the owner's word, kept verbatim) that decides what to do *given the neighbourhood*,
+    not just the local count.  Today `Voro_crushable|swarmable` judge a node in isolation;
+     Se is that verdict widened to read its siblings, what is popped nearby, what the radio
+      is lighting — a context-aware fold.  **Not built** — the hook is a neighbourhood pass
+       feeding the crushable verdict.
+
+### 🔊 Quiet ↔ rampage — a throttle on the fold's thinking
+
+The owner, verbatim: *"have some way to quiet or rampage its thinking sometimes."*  The
+ **intensity governor already exists** (`Voro_crush_scan` hovers around a sensible density
+  via `crush_level` + hysteresis).  What is missing is an *external dial* on its target band:
+   **quiet** = think less — fewer passes, hold the current fold, let the display settle;
+    **rampage** = fold harder — deeper descent, tighter panes, chew everything.  It is the
+     partner of the display law the owner named in the same breath — *watching how the display
+      changes with minimal disruption as processings toggle is important* — so the dial must
+       MORPH between bands (stable node identity across a re-fold), never blow the layout up.
+  Mechanism: a bias on the governor's target, sourced from a `◈`-bar toggle (live) or the
+   commission (per-Book default), read where `crush_level` is chosen.  **Not built.**
+
 ## The split
 
 - **Voro.g owns MEANING** — `Vtuff_build(src)` distils a fold|gang's members into a

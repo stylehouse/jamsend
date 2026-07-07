@@ -17,9 +17,11 @@
 //     inherits the uniformity for free).  TARGET_LUFS = -14 with a -1 dBFS peak ceiling: an
 //      up-gain that would clip caps at the ceiling (capped:1 — that track sits honestly quieter).
 //
-//  ON DISK (under the granted share):  <out_base>/<id>/seg000.opus … + stock.snap (a k=v text
-//   sidecar: the resurrection card — a later pass or a fresh boot re-minted the %Record from it
-//    without a decode).  The SOURCE collection stays untouched — no sidecar litters it (§9.1b).
+//  ON DISK (the app's private '.jamsend/' corner of the share):  radiostock/<id>.jam — ONE non-media
+//   file per record: a one-line JSON header (the resurrection card — a later pass or a fresh boot
+//    re-mints the %Record from it without a decode), a '\n', then the 2s opus buffers back to back.
+//     It opens as json, never as audio, so a media indexer walking the library ignores it.  The
+//      SOURCE collection stays untouched — nothing of ours litters it (§9.1b).
 //  IN THE WORLD:  %Library,pier:<whose> (the census convention — a key, not a nickname) holding
 //   %Record,id (title|artist|seconds|lufs|gain|real) each with %Stream,name:opus (total|sr|br|
 //    seg_secs|bytes).  Per-segment particles would be snap bulk: the FILES are the chunk rows.
@@ -323,10 +325,12 @@ Ra_ogg_opus(enc, total_samples):
 Ra_stock_dir():
     return '.jamsend/radiostock'
 
-// Ra_seg_name — segNNN.opus: sortable, legible, a REAL extension (the file plays in anything
-//  that deigns to support the open standard).
-Ra_seg_name(s):
-    return 'seg' + String(s).padStart(3, '0') + '.opus'
+// Ra_stock_name — ONE file per record, <id>.jam, NOT one per segment.  '.jamsend/' lives INSIDE the
+//  user's music library, so nothing here may read as media: a scanner keys on extension + a magic
+//   sniff, and a .jam that opens with '{' is json|text, never audio.  The whole track (card + every
+//    2s buffer) rides this single file, each buffer addressable by the sizes[] in its header.
+Ra_stock_name(id):
+    return id + '.jam'
 
 // Ra_id — a stable id from the source path (djb2 hex): the stock dir's name, the %Record's id,
 //  the same across every pass and boot.
@@ -362,54 +366,72 @@ Ra_library(w, whose):
     lib.c.up = w
     return lib
 
-// Ra_snap_text — the stock.snap sidecar: k=v lines, the %Record's resurrection card.  Text, tiny,
-//  legible on plain disk; the SOURCE collection gets no sidecar — this lives in OUR stock dir.
-Ra_snap_text(info):
-    let keys = ['id', 'path', 'col', 'src_size', 'src_hash', 'title', 'artist', 'album', 'seconds', 'lufs', 'gain', 'capped', 'segs', 'sizes', 'sr', 'br', 'seg_secs', 'target']
-    let lines = []
-    for (const k of keys) {
-        if (info[k] != null && info[k] !== '') lines.push(k + '=' + info[k])
+// Ra_pack — the .jam wire.  A one-line JSON header (the resurrection card; sizes[] = each buffer's
+//  byte length) + a single '\n' (JSON.stringify never emits a raw newline, so the FIRST 0x0A is an
+//   unambiguous delimiter) + the buffers back to back.  bufs are Uint8Arrays; info.sizes is filled
+//    FROM them here, so the header and the body can never disagree.
+Ra_pack(info, bufs):
+    let sizes = []
+    for (const b of bufs) sizes.push(b.length)
+    info.sizes = sizes
+    let head = new TextEncoder().encode(JSON.stringify(info) + '\n')
+    let total = head.length
+    for (const b of bufs) total = total + b.length
+    let out = new Uint8Array(total)
+    out.set(head, 0)
+    let off = head.length
+    for (const b of bufs) {
+        out.set(b, off)
+        off = off + b.length
     }
-    return lines.join('\n') + '\n'
+    return out
 
-// Ra_stock_standing — the idempotence probe: a track already stocked?  Truth lives ON DISK (a
-//  fresh boot has no particles): stock.snap parses AND every promised segment file stands.  A
-//   wiped dir or a short count reads as not-standing — rebuild, never trust a stale card.
+// Ra_unpack — the read twin: split at the first '\n', JSON.parse the header, then carve the body
+//  into buffers by the header's sizes[].  Returns {info, bufs, end} | null; `end` is where the last
+//   buffer should stop — a caller compares it to the real byte length to catch a truncated write.
+Ra_unpack(raw):
+    let bytes = new Uint8Array(raw)
+    let nl = bytes.indexOf(10)
+    if (nl < 0) return null
+    let info = null
+    try {
+        info = JSON.parse(new TextDecoder().decode(bytes.subarray(0, nl)))
+    } catch (er) {
+        return null
+    }
+    if (!info || !info.sizes) return null
+    let bufs = []
+    let off = nl + 1
+    for (const sz of info.sizes) {
+        bufs.push(bytes.subarray(off, off + sz))
+        off = off + sz
+    }
+    return { info: info, bufs: bufs, end: off }
+
+// Ra_stock_standing — the idempotence probe: this track already stocked?  Truth lives ON DISK (a
+//  fresh boot has no particles): the <id>.jam parses AND its body reaches exactly where the header's
+//   sizes[] promise.  A wiped | short (interrupted write) | old-.opus-layout file reads as not-
+//    standing — rebuild, never trust a stale or partial card.
 async Ra_stock_standing(nav, id):
-    let dir = this.Ra_stock_dir() + '/' + id
-    let txt = null
+    let raw = null
     try {
-        txt = await nav.read_file(dir, 'stock.snap')
+        raw = await nav.bin_read(this.Ra_stock_dir(), this.Ra_stock_name(id))
     } catch (er) {
         return null
     }
-    if (!txt) return null
-    let info = {}
-    for (const line of txt.split('\n')) {
-        let eq = line.indexOf('=')
-        if (eq > 0) info[line.slice(0, eq)] = line.slice(eq + 1)
-    }
+    if (!raw || !raw.byteLength) return null
+    let un = this.Ra_unpack(raw)
+    if (!un) return null
+    let info = un.info
     if (!info.id || !(+info.segs > 0)) return null
-    let have = 0
-    try {
-        let dl = await nav.dir_at(dir)
-        if (!dl) return null
-        if (!dl.expanded) await dl.expand()
-        for (const f of dl.files) {
-            if (f.name.endsWith('.opus')) have = have + 1
-        }
-    } catch (er) {
-        return null
-    }
-    if (have < +info.segs) return null
-    info.segs = +info.segs
-    info.seconds = +info.seconds
-    info.lufs = +info.lufs
-    info.gain = +info.gain
+    // a complete file ends exactly where the last buffer ends; a short body (un.end past EOF) or a
+    //  buffer-count that misses the promised segs means an interrupted write — rebuild.
+    if (un.end > raw.byteLength) return null
+    if (un.bufs.length !== +info.segs) return null
     return info
 
 // Ra_record_from — mint|refresh the %Record (+ its %Stream,name:opus) from a stock info card —
-//  the ONE minting spot whether the info came from a fresh build or a standing stock.snap.
+//  the ONE minting spot whether the info came from a fresh build or a standing .jam header.
 Ra_record_from(lib, info):
     let rec = lib.oai({ Record: 1, id: info.id })
     rec.c.up = lib
@@ -433,35 +455,37 @@ Ra_record_from(lib, info):
     stream.sc.br = +info.br
     stream.sc.seg_secs = +info.seg_secs
     let bytes = 0
+    // info.sizes is the per-buffer length array from the .jam header (build and resurrect both hand
+    //  it in) — the stream's byte weight is just their sum.
     if (info.sizes) {
-        for (const sz of String(info.sizes).split(',')) bytes = bytes + (+sz || 0)
+        for (const sz of info.sizes) bytes = bytes + (+sz || 0)
     }
     if (bytes) stream.sc.bytes = bytes
     rec.bump()
     return rec
 
-// Ra_stock_one — the whole pass for ONE track: standing? resurrect and stand aside.  Else read →
-//  decode ONCE (OfflineAudioContext resamples to 48k, gesture-free) → needles LUFS → bake the
-//   gain → cut at 2s boundaries, each cut a fresh encoder → mux real .opus files → write them in
-//    ONE parallel window (local share; the wormhole write precedent) → sidecar → %Record.
-//     Returns {stood:1}|{built:1}|null (unreadable/undecodable — the caller counts it skipped).
+// Ra_stock_one — the whole pass for ONE track: standing & fresh? resurrect and stand aside.  Else
+//  read → decode → measure → bake the gain → cut into 2s opus buffers → pack the card + every buffer
+//   into the one non-media <id>.jam and write it in a single shot → %Record.
+//    Returns {stood:1}|{built:1}|null (unreadable/undecodable — the caller counts it skipped).
 async Ra_stock_one(w, lib, nav, src_base, path):
     let id = this.Ra_id(path)
-    // read the source ONCE, up front: its bytes are the freshness oracle (a re-render keeps its name,
-    //  so its id, but not its hash) AND the raw material the rebuild below reuses — a changed source
-    //   is never a double read.  A standing card whose src_hash still matches skips the decode + the
-    //    per-2s encodes (the CPU worth saving); absent | old-format | mismatched ⇒ rebuild.
+    // — read the source ONCE, up front —
+    // its bytes are BOTH the freshness oracle (a re-render keeps its name→id but not its hash) and the
+    //  raw material the rebuild reuses, so a changed source is never a double read.
     let parts = (src_base + '/' + path).split('/').filter(Boolean)
     let fname = parts.pop()
     let raw = await nav.bin_read(parts.join('/'), fname)
     if (!raw) return null
     let src_size = raw.byteLength
     let src_hash = this.Ra_bytes_hash(raw)
+    // — standing AND still matching the source? resurrect from disk and skip the whole decode+encode —
     let stand = await this.Ra_stock_standing(nav, id)
     if (stand && stand.src_hash === src_hash) {
         this.Ra_record_from(lib, stand)
         return { stood: 1, id: id }
     }
+    // — decode ONCE (OfflineAudioContext resamples to 48k, no user gesture needed) —
     let ctx = new OfflineAudioContext(1, 1, 48000)
     let decoded = null
     try {
@@ -469,6 +493,7 @@ async Ra_stock_one(w, lib, nav, src_base, path):
     } catch (er) {
         return null
     }
+    // — lift the channels (mono|stereo) out of the decoded buffer —
     let nch = Math.min(2, decoded.numberOfChannels)
     let channels = []
     let ch = 0
@@ -476,15 +501,15 @@ async Ra_stock_one(w, lib, nav, src_base, path):
         channels.push(decoded.getChannelData(ch))
         ch = ch + 1
     }
+    // — measure loudness, then BAKE the gain into the PCM so every downstream reader is already uniform —
     let lufs = await this.Ra_lufs(channels, 48000)
     let gain = this.Ra_gain_for(w, lufs, this.Ra_peak(channels))
     this.Ra_bake(channels, gain.linear)
+    // — cut at 2s boundaries; each cut gets its OWN fresh encoder (segment independence) → an opus buffer —
     let SEG = this.Ra_seg_secs() * 48000
     let total = channels[0].length
     let segs = Math.ceil(total / SEG)
-    let dir = this.Ra_stock_dir() + '/' + id
-    let sizes = []
-    let writes = []
+    let bufs = []
     let s = 0
     while (s < segs) {
         let from = s * SEG
@@ -493,14 +518,14 @@ async Ra_stock_one(w, lib, nav, src_base, path):
         if (!enc) return null
         let ogg = this.Ra_ogg_opus(enc, to - from)
         if (!ogg) return null
-        sizes.push(ogg.length)
-        writes.push(nav.bin_write(dir, this.Ra_seg_name(s), ogg))
+        bufs.push(ogg)
         s = s + 1
     }
-    await Promise.all(writes)
+    // — build the card (Ra_pack fills its sizes[] from the buffers) and write the ONE .jam in a single shot —
     let meta = this.Crate_meta_from_path(path)
-    let info = { id: id, path: path, col: 1, src_size: src_size, src_hash: src_hash, title: meta.title, artist: meta.artist, album: meta.album, seconds: +decoded.duration.toFixed(2), lufs: lufs, gain: gain.db, capped: gain.capped, segs: segs, sizes: sizes.join(','), sr: 48000, br: this.Ra_bitrate(), seg_secs: this.Ra_seg_secs(), target: this.Ra_target_lufs(w) }
-    await nav.write_file(dir, 'stock.snap', this.Ra_snap_text(info))
+    let info = { id: id, path: path, col: 1, src_size: src_size, src_hash: src_hash, title: meta.title, artist: meta.artist, album: meta.album, seconds: +decoded.duration.toFixed(2), lufs: lufs, gain: gain.db, capped: gain.capped, segs: segs, sr: 48000, br: this.Ra_bitrate(), seg_secs: this.Ra_seg_secs(), target: this.Ra_target_lufs(w) }
+    await nav.bin_write(this.Ra_stock_dir(), this.Ra_stock_name(id), this.Ra_pack(info, bufs))
+    // — mint|refresh the %Record from that same card (build path and resurrect path share Ra_record_from) —
     this.Ra_record_from(lib, info)
     return { built: 1, id: id }
 
@@ -536,12 +561,19 @@ async Ra_stock(w, lib, nav, src_base, take):
 async Ra_proof(nav, id, s):
     let race = (p, tag) => Promise.race([p, new Promise((res) => setTimeout(() => res({ hung: tag }), 25000))])
     let t0 = Date.now()
-    let raw = await race(nav.bin_read(this.Ra_stock_dir() + '/' + id, this.Ra_seg_name(s)), 'bin_read')
+    // — read the whole <id>.jam (card + buffers) and carve out buffer s —
+    let raw = await race(nav.bin_read(this.Ra_stock_dir(), this.Ra_stock_name(id)), 'bin_read')
     let t1 = Date.now()
     if (raw && raw.hung) return { fail: 'hang bin_read r' + (t1 - t0) }
-    if (!raw || !raw.byteLength) return { fail: 'no bytes ' + this.Ra_stock_dir() + '/' + id + '/' + this.Ra_seg_name(s) }
+    if (!raw || !raw.byteLength) return { fail: 'no bytes ' + this.Ra_stock_dir() + '/' + this.Ra_stock_name(id) }
+    let un = this.Ra_unpack(raw)
+    if (!un || !un.bufs[s]) return { fail: 'no segment ' + s }
+    // — decode that ONE buffer (each is a standalone opus blob) — slice to its own ArrayBuffer, since
+    //    decodeAudioData wants an ArrayBuffer and would otherwise detach the whole .jam.
+    let seg = un.bufs[s]
+    let ab = seg.buffer.slice(seg.byteOffset, seg.byteOffset + seg.byteLength)
     let ctx = new OfflineAudioContext(1, 1, 48000)
-    let got = await race(ctx.decodeAudioData(raw).then((d) => ({ d: d })).catch((er) => ({ er: er })), 'decode')
+    let got = await race(ctx.decodeAudioData(ab).then((d) => ({ d: d })).catch((er) => ({ er: er })), 'decode')
     let t2 = Date.now()
     if (got.hung) return { fail: 'hang decode r' + (t1 - t0) + ' d' + (t2 - t1) }
     if (got.er) return { fail: ('decode ' + String(got.er)).replace(/[,:]/g, ' ').slice(0, 90) + ' d' + (t2 - t1) }

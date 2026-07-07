@@ -21,7 +21,7 @@ export const ANSWER_CALLS_TICK_MS = 50
 export const AMBIENT_MAIN_TICK_MS = 200
 // see also reset_interval() 3600ms
 
-V.gallop = 1     // Technique A master switch — flip to 0 (+ HMR) to disarm for an A/B arm
+V.gallop = 0     // Technique A master switch — flip to 0 (+ HMR) to disarm for an A/B arm
 
 // Technique A — gallop-tighten (Story_future_directions.md §3; Perf_todo.md re-rank #A).
 //  When H.todo is OCCUPIED at gate after gate the machine is visibly mid-settle, and the

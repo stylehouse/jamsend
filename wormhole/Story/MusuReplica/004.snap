@@ -1,21 +1,18 @@
 Snap:H
   H:MusuReplica,Run
     A:MusuReplica
-      self,round=9	{"mung":["age"]}
+      self,round=10	{"mung":["age"]}
       w:MusuReplica
-        Opt
-          crushCyto
-        self,round=9	{"mung":["age"]}
+        self,round=10	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Peering,name:DJ,req=2,ok
           Pier,pub:Crowd,req=2,ok
             Ud,pubkey:Crowd
             outbox
-              recent
-                emit,type:repli_lines,seq
-                emit=2,type:repli_lines,seq=2
-                emit=3,type:repli_lines,seq=3
+              emit,type:repli_lines,seq,sent,body_hash:e23f64572fa552ca3804b14820503a487347e4de494ceb12d504f5bd7bc9e3d9,body_len=160,acked
+              emit=2,type:repli_lines,seq=2,sent,body_hash:10ebc47d04f51634a25f62703d7941e6e7de1e53b786be43f2a8b9d634cfd016,body_len=160,acked
+              emit=3,type:repli_lines,seq=3,sent,body_hash:4b3b462e8a76d5ed04a3cbda574a28d19e4c3f6fb8af357e9ab1b89dafa1e192,body_len=160,acked
               emit=4,type:repli_lines,seq=4,sent,body_hash:743e6fa00fc179e7518374e2d9d1140bdc680617a6a4d1ea89844914d0d39563,body_len=132,acked
             inbox
               req:unemit,seq,type:repli_want,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,done,to:repli_want,finished
@@ -24,10 +21,9 @@ Snap:H
           Pier,pub:DJ,req=2,ok
             Ud,pubkey:DJ
             inbox
-              recent
-                unemit,type:repli_lines,seq
-                unemit=2,type:repli_lines,seq=2
-                unemit=3,type:repli_lines,seq=3
+              req:unemit,seq,type:repli_lines,body_hash:e23f64572fa552ca3804b14820503a487347e4de494ceb12d504f5bd7bc9e3d9,body_len=160,done,to:repli_lines,finished
+              req:unemit,seq=2,type:repli_lines,body_hash:10ebc47d04f51634a25f62703d7941e6e7de1e53b786be43f2a8b9d634cfd016,body_len=160,done,to:repli_lines,finished
+              req:unemit,seq=3,type:repli_lines,body_hash:4b3b462e8a76d5ed04a3cbda574a28d19e4c3f6fb8af357e9ab1b89dafa1e192,body_len=160,done,to:repli_lines,finished
               req:unemit,seq=4,type:repli_lines,body_hash:743e6fa00fc179e7518374e2d9d1140bdc680617a6a4d1ea89844914d0d39563,body_len=132,done,to:repli_lines,finished
             outbox
               emit,type:repli_want,seq,sent,body_hash:8656aa55d393b032b7f05fd40daac127c4862315017072b231d726ccf0d686e6,body_len=4,acked

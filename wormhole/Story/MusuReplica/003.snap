@@ -3,8 +3,6 @@ Snap:H
     A:MusuReplica
       self,round=6	{"mung":["age"]}
       w:MusuReplica
-        Opt
-          crushCyto
         self,round=6	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2

@@ -26,6 +26,10 @@ story:VoroMitosis
       style:background-color,v:#bd36c9
     matstyle:Olearia
       style:background-color,v:#bbdb43
+    matstyle:crush
+      style:background-color,v:#32618f
+    matstyle:row
+      style:background-color,v:#b12f4a
   Plan
   Opt
     waitCyto
@@ -35,9 +39,6 @@ story:VoroMitosis
     trickle
   TimeSpool
     TimeTotal:beliefs,avg=0.045
-      sample=0.027,at=1783350966
-      sample=0.035,at=1783351834
-      sample=0.051,at=1783352958
       sample=0.029,at=1783353241
       sample=0.071,at=1783366389
       sample=0.027,at=1783366476
@@ -45,10 +46,10 @@ story:VoroMitosis
       sample=0.084,at=1783367650
       sample=0.031,at=1783370523
       sample=0.069,at=1783397886
+      sample=0.038,at=1783410835
+      sample=0.037,at=1783414411
+      sample=0.037,at=1783415333
     TimeTotal:step,avg=0.004
-      sample=0.002,at=1783350966
-      sample=0.003,at=1783351834
-      sample=0.005,at=1783352958
       sample=0.003,at=1783353241
       sample=0.006,at=1783366389
       sample=0.002,at=1783366476
@@ -56,14 +57,17 @@ story:VoroMitosis
       sample=0.008,at=1783367650
       sample=0.003,at=1783370523
       sample=0.006,at=1783397886
+      sample=0.003,at=1783410835
+      sample=0.003,at=1783414411
+      sample=0.003,at=1783415333
   step,dige:9eb579214a9df3ce
-  step=2,dige:e52a9ae7237d0e47
-  step=3,dige:8c08d7c3fbdc3c09
-  step=4,dige:cff9b019f8345c83
-  step=5,dige:ca11b08a1db1fab8
-  step=6,dige:41a96ee2d4ecf398
-  step=7,dige:6a0eac7c98efa262
-  step=8,dige:9836da93d6fcd368
-  step=9,dige:a1284d3969257164
-  step=10,dige:1a1a14520d9834ea
-  step=11,dige:ac2c820d8a5f48ef
+  step=2,dige:dba90cd53b99e465
+  step=3,dige:904008c96d77ae8b
+  step=4,dige:98945a4ecda5f52e
+  step=5,dige:e0fa9dedd12d8344
+  step=6,dige:57b4161b3dca7225
+  step=7,dige:2a7743537ef3e2f8
+  step=8,dige:4f213447b365d9b6
+  step=9,dige:2e388004a4678b00
+  step=10,dige:370e4696deb7324f
+  step=11,dige:6221e19232d92759

@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=8	{"mung":["age"]}
+      self,round=10	{"mung":["age"]}
       w:VoroMitosis
-        self,round=8	{"mung":["age"]}
+        self,round=10	{"mung":["age"]}
         req:wrangle,eternal,ok
         Metrosideros:robusta,woodystem,habit:vine
           Metrosideros:robusta var. prostrata,woodystem,endemic
@@ -64,3 +64,11 @@ Snap:H
         Leptospermum:tenuifolium,habit:shrub
         Pittosporum:rhamnoides,habit:vine
         Pittosporum:grandifolia,woodystem,habit:vine
+      w:Voronoiology
+        crush,beat=7,level:L1,visible=12,gangs=6
+        row:Coprosma,n=5,fold:gang,rep:rhamnoides,of=5
+        row:Veronica,n=7,fold:gang,rep:robusta,of=7
+        row:Metrosideros,n=12,fold:gang,rep:propinqua,of=11
+        row:Kunzea,n=10,fold:gang,rep:lucida,of=9
+        row:Leptospermum,n=8,fold:gang,rep:colensoi,of=7
+        row:Pittosporum,n=6,fold:gang,rep:crassifolius,of=6

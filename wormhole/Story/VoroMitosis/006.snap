@@ -1,9 +1,9 @@
 Snap:H
   H:VoroMitosis,Run
     A:VoroMitosis
-      self,round=6	{"mung":["age"]}
+      self,round=8	{"mung":["age"]}
       w:VoroMitosis
-        self,round=6	{"mung":["age"]}
+        self,round=8	{"mung":["age"]}
         req:wrangle,eternal,ok
         Veronica:crassifolius,habit:tree
           Veronica:crassifolius f. viridis,habit:shrub
@@ -39,3 +39,10 @@ Snap:H
         Leptospermum:colensoi
         Leptospermum:australis,woodystem,endemic
         Leptospermum:serrata
+      w:Voronoiology
+        crush,beat=5,level:L1,visible=9,gangs=5
+        row:Coprosma,n=5,fold:gang,rep:montana,of=5
+        row:Veronica,n=7,fold:gang,rep:crassifolius,of=7
+        row:Metrosideros,n=8,fold:gang,rep:propinqua,of=7
+        row:Kunzea,n=6,fold:gang,rep:grandifolia,of=6
+        row:Leptospermum,n=4,fold:gang,rep:lucida,of=4
