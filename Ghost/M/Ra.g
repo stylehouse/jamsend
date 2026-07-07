@@ -317,11 +317,11 @@ Ra_ogg_opus(enc, total_samples):
 //#endregion
 
 //#region stock — the rastock pass: library in, uniform stock out
-// Ra_stock_dir — where the stock lands under the share.  'radiostock' at the share root for the
-//  in-repo dev share; the real-collection corner rewrite (§9.1b — .jamsend/) happens at the nav
-//   layer when it lands, not here.
+// Ra_stock_dir — where the stock lands under the share: the app's private '.jamsend/' corner (the
+//  same home the old Records.svelte used — $share/.jamsend/radiostock — and the one Agency/Structure
+//   already step around), so our stock never litters the granted collection's top level.
 Ra_stock_dir():
-    return 'radiostock'
+    return '.jamsend/radiostock'
 
 // Ra_seg_name — segNNN.opus: sortable, legible, a REAL extension (the file plays in anything
 //  that deigns to support the open standard).
@@ -339,6 +339,22 @@ Ra_id(path):
     }
     return h.toString(16).padStart(8, '0')
 
+// Ra_bytes_hash — a content fingerprint (djb2 over the raw source bytes): the freshness oracle a
+//  path-derived Ra_id can't be.  A re-render keeps its filename (its id) but not its bytes, so this
+//   hash rides the stock card; a standing stock whose source hash still matches skips the decode +
+//    per-2s encodes, a mismatch rebuilds.  Full-file for correctness (I/O, not the CPU that matters);
+//     a real library would window it or lean on a nav-level size|mtime stat.
+Ra_bytes_hash(buf):
+    let b = new Uint8Array(buf)
+    let h = 5381
+    let i = 0
+    let n = b.length
+    while (i < n) {
+        h = (((h << 5) + h) ^ b[i]) >>> 0
+        i = i + 1
+    }
+    return h.toString(16).padStart(8, '0')
+
 // Ra_library — the census-convention home (%Library,pier:<whose> — a KEY, not a nickname): the
 //  same shape Swarm_music_census counts, so a stocked library is a countable shelf with no adapter.
 Ra_library(w, whose):
@@ -349,7 +365,7 @@ Ra_library(w, whose):
 // Ra_snap_text — the stock.snap sidecar: k=v lines, the %Record's resurrection card.  Text, tiny,
 //  legible on plain disk; the SOURCE collection gets no sidecar — this lives in OUR stock dir.
 Ra_snap_text(info):
-    let keys = ['id', 'path', 'title', 'artist', 'album', 'seconds', 'lufs', 'gain', 'capped', 'segs', 'sizes', 'sr', 'br', 'seg_secs', 'target']
+    let keys = ['id', 'path', 'col', 'src_size', 'src_hash', 'title', 'artist', 'album', 'seconds', 'lufs', 'gain', 'capped', 'segs', 'sizes', 'sr', 'br', 'seg_secs', 'target']
     let lines = []
     for (const k of keys) {
         if (info[k] != null && info[k] !== '') lines.push(k + '=' + info[k])
@@ -405,6 +421,11 @@ Ra_record_from(lib, info):
     rec.sc.gain = +info.gain
     if (+(info.capped || 0)) rec.sc.capped = 1
     rec.sc.real = 1
+    // origin breadcrumbs on the portable %Record: col (one FSA per Pier ⇒ 1 — the share identity a
+    //  future multi-share world widens without a card migration) + the content hash it re-finds by.
+    //   The full origin path stays in the sidecar (local, and comma-hazardous as a snapped sc key).
+    if (info.col != null && info.col !== '') rec.sc.col = +info.col
+    if (info.src_hash) rec.sc.src_hash = info.src_hash
     let stream = rec.oai({ Stream: 1, name: 'opus' })
     stream.c.up = rec
     stream.sc.total = +info.segs
@@ -426,15 +447,21 @@ Ra_record_from(lib, info):
 //     Returns {stood:1}|{built:1}|null (unreadable/undecodable — the caller counts it skipped).
 async Ra_stock_one(w, lib, nav, src_base, path):
     let id = this.Ra_id(path)
-    let stand = await this.Ra_stock_standing(nav, id)
-    if (stand) {
-        this.Ra_record_from(lib, stand)
-        return { stood: 1, id: id }
-    }
+    // read the source ONCE, up front: its bytes are the freshness oracle (a re-render keeps its name,
+    //  so its id, but not its hash) AND the raw material the rebuild below reuses — a changed source
+    //   is never a double read.  A standing card whose src_hash still matches skips the decode + the
+    //    per-2s encodes (the CPU worth saving); absent | old-format | mismatched ⇒ rebuild.
     let parts = (src_base + '/' + path).split('/').filter(Boolean)
     let fname = parts.pop()
     let raw = await nav.bin_read(parts.join('/'), fname)
     if (!raw) return null
+    let src_size = raw.byteLength
+    let src_hash = this.Ra_bytes_hash(raw)
+    let stand = await this.Ra_stock_standing(nav, id)
+    if (stand && stand.src_hash === src_hash) {
+        this.Ra_record_from(lib, stand)
+        return { stood: 1, id: id }
+    }
     let ctx = new OfflineAudioContext(1, 1, 48000)
     let decoded = null
     try {
@@ -472,7 +499,7 @@ async Ra_stock_one(w, lib, nav, src_base, path):
     }
     await Promise.all(writes)
     let meta = this.Crate_meta_from_path(path)
-    let info = { id: id, path: path, title: meta.title, artist: meta.artist, album: meta.album, seconds: +decoded.duration.toFixed(2), lufs: lufs, gain: gain.db, capped: gain.capped, segs: segs, sizes: sizes.join(','), sr: 48000, br: this.Ra_bitrate(), seg_secs: this.Ra_seg_secs(), target: this.Ra_target_lufs(w) }
+    let info = { id: id, path: path, col: 1, src_size: src_size, src_hash: src_hash, title: meta.title, artist: meta.artist, album: meta.album, seconds: +decoded.duration.toFixed(2), lufs: lufs, gain: gain.db, capped: gain.capped, segs: segs, sizes: sizes.join(','), sr: 48000, br: this.Ra_bitrate(), seg_secs: this.Ra_seg_secs(), target: this.Ra_target_lufs(w) }
     await nav.write_file(dir, 'stock.snap', this.Ra_snap_text(info))
     this.Ra_record_from(lib, info)
     return { built: 1, id: id }
