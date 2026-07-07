@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Voro(): string { return 'c0c2e851cb7758ae' },
+    Ghostmeta_Ghost_V_Voro(): string { return '044bf9cdb3500c62' },
 
 // Voro.g — the Vis family home: the Voronoi-Cyto render (Ghost/V/, Waft:Ghost/Vis/Visua).
 //  A late sibling to networking (N), music (M) and society (S).  But where THOSE are spines the
@@ -42,10 +42,12 @@
 //    change what a Story records.  There is NO report particle any more (the old flat %Crush_Tree
 //     is gone — it was the one thing the crush still snapped): the fold TOTALS a proof Book wants
 //      come back as live stats from the scan, read off the c-side stamps, never modelled.
-//  GATED on the scan-root's c.crush_wanted, armed three ways: a top-level %useVoroCyto Opt (Story
-//   reads it at settingoff and stamps crush_wanted — how a non-Voro Book like MusuReplica opts the
-//    layer on), a Voro demo Book's own seed, or the ◈ button (Cyto's e_Cyto_crush imposes it on a
-//     world that never asked).
+//  NO gate: Voro_crush_scan folds whatever w it is handed.  Two callers.  (1) IMPOSED from above —
+//   a Book whose subject is NOT Voro (VoroScape=music, MusuReplica=replication) carries %useVoroCyto
+//    in its toc Opt and Story imposes the fold at SNAP time (story_snap); the Book never touches it.
+//     (2) DRIVEN inline — a Book whose subject IS Voro (VoroMitosis=the fold, VoroRadio=the radio
+//      that eats the fold) calls it in its own do_fn, same-beat, because its behaviour|%see consume
+//       the fold.  The ◈ button (Cyto's e_Cyto_crush) is a third, LIVE-only path on the Cyto mirror.
 
 // Voro_crush_scan — the INTENSITY GOVERNOR (the owner's "hover around a sensible intensity,
 //  aim for 9 families or so").  Each pass is authoritative (it stamps AND unstamps, so a level
@@ -54,10 +56,9 @@
 //     represented members don't count).  Too dense → escalate the crush level and re-pass; too sparse
 //      → relax, but never back past the ceiling.  The level rides w.c.crush_level (c-side) as
 //       hysteresis across beats, so the graph doesn't flap between levels while it grows.
-//  RETURN shape: {folded,count} keep their RECORDED meaning (container folds only — MusuReplica's
-//   ratio %see reads them); gang folds ride separately as {gangs,ganged}, plus {visible,level}.
+//  RETURN shape: {folded,count} = container folds only (now surfaced in w:Voronoiology's row, no
+//   longer a Book %see); gang folds ride separately as {gangs,ganged}, plus {visible,level}.
 Voro_crush_scan(w) {
-    if (!w.c.crush_wanted) return null
     let level = w.c.crush_level || 0
     let stats = this.Voro_crush_pass(w, level)
     while (stats.visible > 15 && level < 2) {
@@ -95,12 +96,11 @@ Voro_crush_pass(w, level) {
 //        panes the radio popped, and the drift focus.  A sibling world is NOT in the flora
 //         world's subtree, so cyto_scan never renders it — it is SNAP-ONLY, the seed of Story's
 //          future separable snap channels (capture certain A/w on their own layer, trace always
-//           on).  GATED on w.c.voronoiology — armed declaratively by The/Opt/useVoronoiology in
-//            the toc (Story stamps the c-side arm in Story_settingoff, the twin of useCyto); the
-//             arm is c-side, so the arming itself never snaps, and a Book that doesn't opt in (or
-//              an ◈ imposition on the Cyto mirror) reports NOTHING — its flora snap is untouched.
+//           on).  NO gate: whenever the fold runs (imposed or inline) it self-reports here.  Story
+//            decides RECORDING not building — it prunes w:Voronoiology from the snap for a Book with
+//             %dontSnapVoronoiology (MusuReplica keeps its replication fixture clean); the ◈ button
+//              folds the Cyto MIRROR, which never reaches Story, so it reports live only.
 Voro_report(w, stats) {
-    if (!w.c.voronoiology) return null
     let A = w.c.up
     if (!A || !w.sc.w) return null
     let rname = 'Voronoiology'
@@ -110,7 +110,7 @@ Voro_report(w, stats) {
     w.c.report_beat = (w.c.report_beat || 0) + 1
     // level as 'L0'|'L1'|'L2' — a bare numeric 1 would snap as the boolean sentinel (collapse
     //  to a flag) and 0 would VANISH, so the governor level must ride as a string to stay legible.
-    rw.i({ crush: 1, beat: w.c.report_beat, level: 'L' + stats.level, visible: stats.visible, gangs: stats.gangs })
+    rw.i({ Voro: 1, beat: w.c.report_beat, level: 'L' + stats.level, visible: stats.visible, gangs: stats.gangs, folded: '' + stats.folded, count: '' + stats.count })
     if (w.c.drift_focus) {
         let f = w.c.drift_focus
         let fk = Object.keys(f.sc)[0]
@@ -720,7 +720,6 @@ Voro_drift_scan(node, d, out) {
 
 },
 async Voro_drift_tick(w) {
-    if (!w.c.crush_wanted) return null
     w.c.drift_seq = (w.c.drift_seq || 0) + 1
     let seq = w.c.drift_seq
     let opens = w.c.drift_opens || []
@@ -830,8 +829,6 @@ async VoroRadio_drive(w, req) {
 // a rich fixed flora — six genera so the pool outlasts six dwells even as picks consume panes
 //  (a popped pane is unstamped and leaves the candidate set until a later pass re-gangs it).
 VoroRadio_seed(w) {
-    w.c.crush_wanted = 1
-    // the sibling-world projection (w:Voronoiology) is armed declaratively now — The/Opt/useVoronoiology
     this.VoroMitosis_found(w, 'Coprosma', 5)
     this.VoroMitosis_found(w, 'Veronica', 4)
     this.VoroMitosis_found(w, 'Metrosideros', 4)
@@ -882,8 +879,8 @@ VoroRadio_witness(w) {
 //         (half its species re-key to a fresh genus — a new cell births); one genus dies mid-run
 //          (apoptosis — its territory reclaimed).  Deterministic throughout: growth count-driven,
 //           names off fixed lists, no randomness.  No transport, no audio — runs anywhere.
-//  The crush is armed C-SIDE (w.c.crush_wanted, set in seed) — NOT the %crushCyto opt — so nothing
-//   about the fold (no %Opt, no report) ever reaches the snap; the model is pure flora.
+//  Its subject IS the fold, so VoroMitosis DRIVES Voro_crush_scan inline (its do_fn) — not imposed.
+//   The fold's working now surfaces in w:Voronoiology beside the flora; the model itself stays pure.
 VoroMitosis(A,w) {
     w.doai({req: "wrangle", eternal: 1})?.(async (req) => {
         await this.VoroMitosis_drive(w,req)
@@ -993,7 +990,6 @@ VoroMitosis_found(w, genus, k) {
 
 },
 VoroMitosis_seed(w) {
-    w.c.crush_wanted = 1
     this.VoroMitosis_found(w, 'Coprosma', 5)
     this.VoroMitosis_found(w, 'Veronica', 3)
 
@@ -1092,7 +1088,6 @@ async VoroScape_drive(w, req) {
         if (n === 3) this.VoroScape_peer(w, 'Bo', ['Tide', 'Root', 'Echo'])
         if (n === 4) this.VoroScape_peer(w, 'Ada', ['Tide', 'Halo'])
         if (n === 5) this.VoroScape_leave(w, 'Ada')
-        if (n === 6) this.Voro_crush_scan(w)
     }
     this.VoroScape_witness(w)
     await this.VoroScape_order(w)
@@ -1100,9 +1095,8 @@ async VoroScape_drive(w, req) {
 },
 // beat 2 — the library: three artists, each an %Artist pane holding its %Track songs (five in all).  The
 //  crushable rule folds any container with children, so each artist becomes one voronoi pane; the tracks
-//   ride inside it (a pane's interior).  No peers yet — a shelf, not a graph.  crush armed here (n===2).
+//   ride inside it (a pane's interior).  No peers yet — a shelf, not a graph.
 VoroScape_library(w) {
-    w.c.crush_wanted = 1
     let moon = w.i({ Artist: 1, name: 'Moonlit' })
     this.VoroScape_track(moon, 'Tide')
     this.VoroScape_track(moon, 'Halo')
@@ -1182,10 +1176,8 @@ VoroScape_witness(w) {
     if (n === 4 && peers.length === 2 && this.VoroScape_hub(w, 'Tide') === 2 && this.VoroScape_hub(w, 'Root') === 1 && this.VoroScape_hub(w, 'Frond') === 0 && !(w.oa({see: 'two friends share one track — it lights up as a hub — its pane claims more room while a deep cut stays a sliver'}))) w.i({see: 'two friends share one track — it lights up as a hub — its pane claims more room while a deep cut stays a sliver'})
     // beat 5: a friend leaves — the hub cools LIVE (2 -> 1) and a track she alone lit goes dark (1 -> 0).
     if (n === 5 && peers.length === 1 && this.VoroScape_hub(w, 'Tide') === 1 && this.VoroScape_hub(w, 'Halo') === 0 && !(w.oa({see: 'a friend leaves and the hub cools — the shared track drops to one and a track only she lit goes dark'}))) w.i({see: 'a friend leaves and the hub cools — the shared track drops to one and a track only she lit goes dark'})
-    // beat 6: the crush folds every artist and friend into one stuffed pane — the graph arms as stained glass.
-    let folded_a = artists.filter(a => a.c.stuff != null)
-    let folded_p = peers.filter(p => p.c.stuff != null)
-    if (n === 6 && artists.length && folded_a.length === artists.length && peers.length && folded_p.length === peers.length && !(w.oa({see: 'the crush folds every artist and friend into one stuffed pane — the graph of music arms as stained glass'}))) w.i({see: 'the crush folds every artist and friend into one stuffed pane — the graph of music arms as stained glass'})
+    // the fold is IMPOSED by Story (%useVoroCyto) and self-reports in w:Voronoiology — VoroScape asserts
+    //  only its own music-graph truths (hubs, dangling, apoptosis), never the fold.  See fig.1 in Story.
 
 },
 // float A:VoroScape to the front of H/* so the Run snap stays readable (MusuSkip_order's twin).
@@ -1201,9 +1193,9 @@ async VoroScape_order(w) { const H = this;
 
 //#region reference — the canonical Voro sets, as data (a nav aid + a future sweep target)
 
-// Voro_books — the Books that exercise this render (crush + voronoi auto-arm).  VoroMitosis and
-//  VoroScape live HERE (crush armed c-side, nothing modelled); MusuReplica (Ghost/Story/Musuation.g)
-//   still opts %crushCyto and folds real replication traffic, reading fold totals off Voro_crush_scan.
+// Voro_books — the Books that exercise this render.  VoroMitosis + VoroRadio DRIVE the fold inline
+//  (their subject is Voro); VoroScape + MusuReplica (Ghost/Story/Musuation.g) carry %useVoroCyto and
+//   have the fold IMPOSED by Story at snap time — the data Book never touches it.
 Voro_books() {
     return ['VoroMitosis', 'VoroScape', 'MusuReplica']
 

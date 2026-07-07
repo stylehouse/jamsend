@@ -17,6 +17,49 @@ This file is the destination + the bombs + the next move. Keep it current; it is
 
 ---
 
+## 0. Latest handover — fold into the sections below as it's absorbed
+
+A rolling brief: the newest work sits here first, then gets baked into its home section
+ (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
+
+**Won 2026-07-07 — rastock SHIPS (§3.2, live-verified).** RaStock is green, ttlilt-free, and
+ proven on a live runner. Three things landed with it:
+ - **The `.jam` stock format** — one file per `%Record`, shaped `json-header + \n + length-
+    prefixed buffers` (`Ra_pack`/`Ra_unpack`). Nothing in `.jamsend/` may LOOK like media (it
+     lives inside the user's library dir), so a json header + no audio magic replaces the old
+      `radiostock/<id>/*.opus` + `stock.snap` spread. Buffers are still ogg-opus blobs for now →
+       swapping them for raw Opus packets (delete the RFC-7845 mux) is a clean follow-up.
+ - **-14 LUFS uniform, baked** — a src-hash freshness guard (`Ra_bytes_hash`) killed a stale
+    cache that had been serving old gains; stock now re-reads whenever source content changes.
+ - **`Waft:Trope/Ra/AudibleEntropy`** — a SHARED entropy profile grafting the `%proof` line's
+    `ms:r{}d{}l{}` wall-clock noise (`tol:any` on r/d/l only; `seconds`+`lufs` stay literal so a
+     real loudness regression still diffs). RaStock Wref's it. ONE consumer today; the moment
+      RaCast/RaTerm prove a pulled/played segment they are the SECOND → Wref it, do NOT re-inline
+       (owner called this recurrence 2026-07-07).
+
+**THE BOMB — publish-at-arm (anyone touching an `expecting`/Story hold MUST carry this).** A
+ ttlilt lives in THREE places: **arm** (`i_req_ttlilt` → `{ttlilt}` on the world req), **publish**
+  (agency_officing → flat `Run.i({ttlilt,of_w})` copies at the H-root), **read** (`poll_step`
+   scans ONLY those H-root copies, unmutexed, no tree dive). `beliefs()` publishes in attend
+    BEFORE `reqdo_sweep` arms → a sweep-armed hold is invisible its own tick; on a parked Story
+     Run (no heartbeat, an `expecting`'s async_fn mints no thinks) officing never re-runs → the
+      pass snaps MID-FLIGHT with a live un-timed-out ttlilt frozen in (the "random snap timing").
+       Fix: `i_req_ttlilt` now SEEDS the H-root copy at the arm (fresh-arm only, same House =
+        `this`). DON'T "fix" it with a heartbeat — that spins the belief loop at ~20Hz and inflates
+         `self,round` (the tell: with publish-at-arm, `self,round` is a flat 3, deterministic across
+          runs). Blast radius = every `expecting` caller; memory `ttlilt-in-snap-means-timeout`.
+
+**Loose thread owed.** `MusuGenerateTestsMusic` + `MusuBounce` are the other `expecting` callers;
+ publish-at-arm flips their old fixtures (they now snap the finished req, not a mid-pass ttlilt).
+  Re-record each via `accept` on a live runner — first thing next session.
+
+**Next move → RaCast (§3.3).** The middle verb: cast the `.jam` catalog to a sealed Pier via Repli
+ (husk crosses, Records page on pull), modelled on `MusuReplica`/`MusuReco` (`Repli_*` in
+  `Musuation.g`). Use `expecting` for the cast's real-clock holds — it is solid now. The second
+   consumer of `AudibleEntropy` lands here.
+
+---
+
 ## 1. Destination
 
 `Radios.svelte` is 1500 lines of pre-Housing machinery: a hand-rolled spin loop over
@@ -109,7 +152,7 @@ Safari/WebKit refuses Ogg|WebM Opus — and **Chrome-on-iOS IS WebKit** (Apple m
  - **WebRTC** — Opus is mandatory in RTP and Safari decodes it there; a live racast leg over a
     PeerJS track reaches an iPhone today.
 
-### 3.2 rastock — uniform stock from the library
+### 3.2 rastock — uniform stock from the library  — ✓ SHIPPED 2026-07-07 (§0)
 
 The stock is the library made SERVABLE: loudness-uniform, seekable, chunked, snap-described.
  Even from `.opus` sources we RE-ENCODE — the transport unit is the **nice little ~2s frame**

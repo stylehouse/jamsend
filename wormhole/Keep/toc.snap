@@ -1,14 +1,14 @@
 Waft:Keep,equip:Keep,lte_expanded,isx_show_cold
-  WaftTimes,of_Waft:Ghost/Net/Easy,discovered_at=1782449847030,accessed_at=1783416136687,enthusiasm=0
-    Cursor,what:What:the peer,at=1783416136571
-  WaftTimes,of_Waft:Ghost/Music/Ality,discovered_at=1782449847030,accessed_at=1783416142225,enthusiasm
-    Cursor,what:What:the stock pass (Ghost/M/Ra.g — needles LUFS → baked gain → 2s Opus segments → Ogg mux → disk),at=1783416142225
-  WaftTimes,of_Waft:Credence,discovered_at=1782550950085,accessed_at=1783416137064
+  WaftTimes,of_Waft:Ghost/Net/Easy,discovered_at=1782449847030,accessed_at=1783420065894,enthusiasm=0,minimised
+    Cursor,what:What:the peer,at=1783420065235
+  WaftTimes,of_Waft:Ghost/Music/Ality,discovered_at=1782449847030,accessed_at=1783420070761,enthusiasm
+    Cursor,what:What:RaStock (the Book — survey / stock / prove / again),at=1783421206423
+  WaftTimes,of_Waft:Credence,discovered_at=1782550950085,accessed_at=1783420066049
     Cursor,what:What:cursor models,at=1783177002906
-  Cursor,waft:Ghost/Music/Ality,at=1783416142225
-  WaftTimes,of_Waft:Cluster,discovered_at=1782641801641,accessed_at=1783416137303
-  WaftTimes,of_Waft:Keep
-  WaftTimes,of_Waft:GhostList,discovered_at=1782807094692,accessed_at=1783416137444
+  Cursor,waft:Ghost/Music/Ality,at=1783420070761
+  WaftTimes,of_Waft:Cluster,discovered_at=1782641801641,accessed_at=1783420066121,minimised
+  WaftTimes,of_Waft:Keep,minimised
+  WaftTimes,of_Waft:GhostList,discovered_at=1782807094692,accessed_at=1783420066271,minimised
   DocScroll,of_Doc:Ghost/N/Peeroleum.g
   DocScroll,of_Doc:Ghost/N/Tyrant.g
   DocScroll,of_Doc:Ghost/M/Radiola.g
@@ -22,9 +22,13 @@ Waft:Keep,equip:Keep,lte_expanded,isx_show_cold
   DocScroll,of_Doc:Ghost/M/Crate.g,scroll_line=27
   DocScroll,of_Doc:src/lib/p2p/ftp/Audio.svelte.ts,scroll_line=19
   DocScroll,of_Doc:Ghost/N/Tribunal.g,scroll_line=3
-  WaftTimes,of_Waft:Aside/2026-07-03,discovered_at=1783055842350,accessed_at=1783416137522
+  WaftTimes,of_Waft:Aside/2026-07-03,discovered_at=1783055842350,accessed_at=1783420066342,minimised
     Cursor,what:What:1,at=1783402249267
   DocScroll,of_Doc:src/lib/O/Lies.svelte
-  WaftTimes,of_Waft:Aside/2026-07-04,discovered_at=1783080228115,accessed_at=1783416137598
+  WaftTimes,of_Waft:Aside/2026-07-04,discovered_at=1783080228115,accessed_at=1783420066411,minimised
     Cursor,what:What:1,at=1783173648127
   DocScroll,of_Doc:Ghost/M/Ra.g
+  DocScroll,of_Doc:Ghost/Story/Radiation.g,scroll_line=57
+  WaftTimes,of_Waft:Ghost/Vis/Visua,discovered_at=1783421538699,accessed_at=1783421538699
+    Cursor,what:What:the demo Books,at=1783421549488
+  DocScroll,of_Doc:Ghost/V/Voro.g,scroll_line=697

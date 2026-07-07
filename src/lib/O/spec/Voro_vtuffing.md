@@ -89,8 +89,8 @@ Design: cytoscape KEEPS computing 2D — we re-project the plane onto a cylinder
 ### 🏛️ A:Tunnel — the compute grows its own home (architecture, greenlit 2026-07-07)
 
 Today the whole Voro layer is a **parasite on Story**: a feature-toggle on `A:Cyto`
- under `H:Run`, engaged by an ad-hoc mix — the ◈ button imposing on the Cyto mirror, a
-  Book `_seed` stamping `w.c.crush_wanted`, `Opt/crushCyto` in a toc.  It rides Story's
+ under `H:Run`, engaged from the toc — `Opt/useVoroCyto` imposes the fold at snap time (or a
+  Voro demo drives it inline), the ◈ button imposes on the Cyto mirror.  It rides Story's
    step metronome because Story is the most robust timekeeper we have — and Story's
     process supervision (start-check a run, damn+restart it, or let it wander into
      entropic runtime) is real tech worth keeping.  But a plaything bolted to a finite
@@ -135,8 +135,10 @@ Renders as the **🕳 tunnel** north star above: A:Tunnel is the actor that HOST
 
 **Status.**  First step LANDED 2026-07-07 (fork-independent): the crush's projection
  world renamed `w:VoroRadioReport → w:Voronoiology` (one fixed handle across all
-  `Book:Voro*`) and armed declaratively via `The/Opt/useVoronoiology` (twin of `useCyto`,
-   stamped in `Story_settingoff`).  A:Tunnel itself is **scheduled, not shelved** — its
+  `Book:Voro*`).  Second step LANDED same day: the fold is now IMPOSED from above —
+   `The/Opt/useVoroCyto` folds a data Book at snap time (twin of `useCyto`), the projection
+    self-reports always and is pruned only by `dontSnapVoronoiology`; the per-worker "blast"
+     and every fold gate are gone.  A:Tunnel itself is **scheduled, not shelved** — its
     commit point is the undo-history layer, because that is the first capability that
      cannot be faked on Story.
 

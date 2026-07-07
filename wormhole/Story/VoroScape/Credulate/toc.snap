@@ -10,13 +10,13 @@ Credulate,of_Book:VoroScape
   GhostInclude:Ghost_M_Crate,dige:c05f526599e015af
   GhostInclude:Ghost_M_Mixer,dige:d5597b5a4132d7f3
   GhostInclude:Ghost_M_Mesh,dige:286eb98843f6e7f9
-  GhostInclude:Ghost_M_Ra,dige:fe216a40bd94b939
-  GhostInclude:Ghost_Story_Musuation,dige:e211738916dfe5e0
+  GhostInclude:Ghost_M_Ra,dige:9dc74674bf600252
+  GhostInclude:Ghost_Story_Musuation,dige:50ba98bdc241a8c0
   GhostInclude:Ghost_Story_Radiation,dige:bf0eb8f0e64ad471
   GhostInclude:Ghost_S_Swarm,dige:a5980d5d4830e92b
   GhostInclude:Ghost_Story_Swarmation,dige:424a77682127f2ba
-  GhostInclude:Ghost_V_Voro,dige:ce1c0661ae4181e9
-  last_ok,at=1783417965.303,ok_pct
+  GhostInclude:Ghost_V_Voro,dige:044bf9cdb3500c62
+  last_ok,at=1783421694.038,ok_pct
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -28,9 +28,9 @@ Credulate,of_Book:VoroScape
     uses:Ghost_M_Crate,dige:c05f526599e015af
     uses:Ghost_M_Mixer,dige:d5597b5a4132d7f3
     uses:Ghost_M_Mesh,dige:286eb98843f6e7f9
-    uses:Ghost_M_Ra,dige:fe216a40bd94b939
-    uses:Ghost_Story_Musuation,dige:e211738916dfe5e0
+    uses:Ghost_M_Ra,dige:9dc74674bf600252
+    uses:Ghost_Story_Musuation,dige:50ba98bdc241a8c0
     uses:Ghost_Story_Radiation,dige:bf0eb8f0e64ad471
     uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
     uses:Ghost_Story_Swarmation,dige:424a77682127f2ba
-    uses:Ghost_V_Voro,dige:ce1c0661ae4181e9
+    uses:Ghost_V_Voro,dige:044bf9cdb3500c62

@@ -26,6 +26,8 @@ story:VoroRadio
       style:background-color,v:#bd36c9
     matstyle:drift
       style:background-color,v:#bbdb43
+    matstyle:Voro
+      style:background-color,v:#32618f
   Plan
   Opt
     waitCyto
@@ -33,10 +35,7 @@ story:VoroRadio
     dontSnapCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.049
-      sample=0.083,at=1783396471
-      sample=0.036,at=1783397981
-      sample=0.024,at=1783398066
+    TimeTotal:beliefs,avg=0.042
       sample=0.059,at=1783398273
       sample=0.053,at=1783401662
       sample=0.057,at=1783402013
@@ -44,10 +43,10 @@ story:VoroRadio
       sample=0.053,at=1783402384
       sample=0.036,at=1783409478
       sample=0.028,at=1783410584
+      sample=0.024,at=1783421751
+      sample=0.024,at=1783422149
+      sample=0.028,at=1783422264
     TimeTotal:step,avg=0.005
-      sample=0.009,at=1783396471
-      sample=0.004,at=1783397981
-      sample=0.003,at=1783398066
       sample=0.007,at=1783398273
       sample=0.006,at=1783401662
       sample=0.006,at=1783402013
@@ -55,12 +54,15 @@ story:VoroRadio
       sample=0.006,at=1783402384
       sample=0.004,at=1783409478
       sample=0.003,at=1783410584
+      sample=0.003,at=1783421751
+      sample=0.003,at=1783422149
+      sample=0.003,at=1783422264
   step,dige:157b38d6d24e7fba
-  step=2,dige:c425e90ff372ba3e
-  step=3,dige:3261b3b9b480078b
-  step=4,dige:ebd6f7c99333de64
-  step=5,dige:b059e472c534a813
-  step=6,dige:f0e294b4e5de0682
-  step=7,dige:da6c58c49a3cff23
-  step=8,dige:8f5a6b2dad51b582
-  step=9,dige:1262e782af328c0c
+  step=2,dige:5802c5498724d09e
+  step=3,dige:6a90c76097746679
+  step=4,dige:b62ca34f632fd7ab
+  step=5,dige:56fcd17aca14b809
+  step=6,dige:b326ebe91de263db
+  step=7,dige:3687dd6bae5fbf69
+  step=8,dige:8ab3a5745f069d72
+  step=9,dige:ef67da4223c1d117

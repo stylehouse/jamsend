@@ -2630,7 +2630,6 @@ async MusuReplica_drive(w, req):
         if (n === 4) await this.MusuReplica_drop(w)
         if (n >= 5 && n <= 10) await this.MusuReplica_pull(w)
         if (n === 11) await this.MusuReplica_settle(w)
-        if (n >= 2) this.Voro_crush_scan(w)   // c-side fold; the witness reads live stats + stamps
         if (n === 12) this.MusuReplica_witness(w)
         if (n === 13) await this.MusuReplica_retire(w)
         if (n === 14) await this.MusuReplica_witness_retire(w)
@@ -2746,32 +2745,10 @@ MusuReplica_witness(w):
     let stuck = rx ? rx.o({ req: 'awaitbuf' }).some(r => !r.oa({ landed: 1 })) : false
     let warned = rx ? rx.o({ req: 'awaitbuf' }).some(r => r.oa({ warned: 1 })) : false
     if ((stuck || warned) && !(oa %witnessed:warns_missing)) i %witnessed:warns_missing
-    // ── the crush, analysed — the replica's confetti folds into big chunks of classification ─────
-    //  %see claims (once-noticed).  The first three read the c-side fold stamps (c.stuff) and the live
-    //   {folded,count} the scan returns — NOTHING modelled, the crush leaves no snap trace.  The last
-    //    reads cyto_folded — the LIVE graph's own c-side stamp, only ever written by a real Cyto walk
-    //     stopping at the chunk — so it is the one that dies if descent suppression is deleted (and
-    //      dies headless too — which is the point: record on a live runner).
-    let stats = this.Voro_crush_scan(w) || { folded: 0, count: 0 }
-    let boxes = []
-    for (const pg of w.o({ Peering: 1 })) {
-        for (const pier of pg.o({ Pier: 1 })) {
-            boxes.push(...pier.o({ outbox: 1 }))
-            boxes.push(...pier.o({ inbox: 1 }))
-        }
-    }
-    // the last box's frames ride post_do and arrive the beat AFTER step 12 — always one lagging box
-    //  (diagnosed live via a one-shot w/%log: boxes=4 stuffed=3 at the witness beat, every run)
-    let stuffed_boxes = boxes.filter(b => b.c.stuff)
-    let libs = w.o({ Library: 1 })
-    if (boxes.length >= 4 && stuffed_boxes.length >= boxes.length - 1 && !(oa %see:'the wire traffic folds — each inbox and outbox rides as one stuffed chunk')) i %see:'the wire traffic folds — each inbox and outbox rides as one stuffed chunk'
-    if (libs.length >= 2 && libs.every(l => l.c.stuff) && !(oa %see:'both libraries fold — a Record chunk each side of the wire')) i %see:'both libraries fold — a Record chunk each side of the wire'
-    // fold RATIO not a magic count: single-digit chunks each folding ≥3 bits IS the compression, and it
-    //  survives a traffic-volume trim (the absolute >=24 drifted under the fix-networking cut and dropped
-    //   this proof silently on Accept — a ratio fails only if the fold itself weakens toward folded≈count).
-    if (stats.count > 0 && stats.count <= 9 && stats.folded >= stats.count * 3 && !(oa %see:'dozens of little bits fold into single-digit chunks of classification')) i %see:'dozens of little bits fold into single-digit chunks of classification'
-    let srcl = w.c.repli_src
-    if (srcl && srcl.c.cyto_folded != null && !(oa %see:'the live graph stops at a stuffed chunk — the fold is real not cosmetic')) i %see:'the live graph stops at a stuffed chunk — the fold is real not cosmetic'
+    // the crush is no longer MusuReplica's concern: the fold is IMPOSED by Story (%useVoroCyto) and
+    //  reports itself in w:Voronoiology (pruned from this snap by %dontSnapVoronoiology, so the
+    //   replication fixture stays clean).  Fold correctness lives in the Voro demos — VoroMitosis
+    //    owns "the loose flora ganged itself" — not smeared into a replication test.
 
 // MusuReplica_retire — A withdraws rec2 from its library (the record whose page it dropped) and lets the
 //  Se find out: the pass pairs rec0/rec1 and leaves rec2's %Sent unclaimed — the goner — so repli_on_goner

@@ -1105,6 +1105,10 @@
         //  At encode these contribute only structural means (drop); their blank/band
         //   spayers are consumed at compare time by spay_normalize / collect_spayers.
         const entropy = this.entropy_rules(w?.c.The as TheC | undefined)
+        // %dontSnapVoronoiology (fig.1) — a Story-side snap concern: the fold still BUILDS its
+        //  w:Voronoiology self-report, but this Book prunes it from the record (MusuReplica keeps
+        //   its replication fixture clean).  Vanish entirely, like %boring, targeted at that world.
+        const dropVoro = w ? Boolean((this as any).The_Opt_val(w, 'dontSnapVoronoiology')) : false
 
         Run.c.snap_Se ??= new Selection()
         const Se: Selection = Run.c.snap_Se
@@ -1134,6 +1138,8 @@
                 //   rebuild pass below re-collects every D with a snap_line, and only T.sc.not
                 //    survives that — story_process_node already stamped this node's snap_line.
                 if (n.sc.boring || T.sc.boring) { T.sc.more = []; T.sc.not = true; return }
+                // %dontSnapVoronoiology: the fold's projection world vanishes entirely from this snap.
+                if (dropVoro && n.sc.w === 'Voronoiology') { T.sc.more = []; T.sc.not = true; return }
                 // fold: a %dontSnap node emits its own line but hides its subtree.
                 //  Snap-only — the node keeps pumping; orthogonal to inclusion. Used
                 //  to retire compile scaffolding (w:Lies/w:Lang) from a runner snap
@@ -1221,6 +1227,15 @@
 
     async story_snap(w:TheC,run:TheC,Run: House): Promise<string> {
         const H = this as House
+
+        // Voro imposed from above (fig.1, Story_settingoff): fold a useVoroCyto Book's inner worlds
+        //  HERE, at snap time, so the fold's c.stuff (live render) and its w:Voronoiology self-report
+        //   (this snap) are both current before snap_H encodes.  Skip w:Voronoiology itself — never
+        //    fold the projection.  Fold-DRIVING demos (VoroMitosis/VoroRadio) lack the Opt and fold
+        //     themselves inline, so they are untouched here.
+        if (H.The_Opt_val(w, 'useVoroCyto'))
+            for (const rw of (Run.o({ A: 1 }) as TheC[]).flatMap((a: TheC) => a.o({ w: 1 }) as TheC[]))
+                if (rw.sc.w !== 'Voronoiology') (H as any).Voro_crush_scan?.(rw)
 
         // Snap:H — indent +1 so content nests under the header
         const h_snap  = await this.snap_H(Run, w)
@@ -1381,34 +1396,37 @@
                 wants_animation_done: true,  // Cyto sends these unconditionally
                                              //  Story ignores when !The/Opt/waitCyto
             }})
+            // useVoroCyto rides ON the commission (fig.1) — the declared home for the fold switch;
+            //  the imposition itself is Story-side in story_snap, but Cyto/◈ can read it here.
+            if (H.The_Opt_val(w, 'useVoroCyto')) commission.sc.useVoroCyto = 1
             H.i_elvisto('Cyto/Cyto', 'Cyto_commission', { req: commission })
         }
 
         // The doorstep moment: gifts of Opt delivered for the journey.
         this.push_opt_to_run(w)
 
-        // ── arm the crush + default Voronoiology on ───────────────────
-        // The crush and its SNAP-ONLY projection (w:Voronoiology, Voro_report in Ghost/V/Voro.g)
-        //  run on the RUN worlds under Run (Story_subHouse minted them before settingoff), but
-        //   their Book-level switches are TOP-LEVEL The/Opt on the STORY world (only it carries
-        //    c.The) — so read the Opt on `w`, then stamp the c-side flag (never snaps) on each
-        //     run worker.  Top-level ON PURPOSE: a For/w:<worker> opt would ride INTO the worker
-        //      and clutter its got_snap; a top-level Opt lives only in toc.snap, snap stays clean.
-        //  • useVoroCyto — a non-Voro Cyto Book (MusuReplica) opts the crush ON declaratively; it
-        //     just stamps crush_wanted, the same flag a Voro Book's seed sets and the ◈ button
-        //      imposes (so Voro_crush_scan's gate is now a single !w.c.crush_wanted).
-        //  • Voronoiology projection — default-ON wherever Cyto runs (inert unless a world actually
-        //     runs the crush; Voro_report is only reached from Voro_crush_scan), opt-OUT with a
-        //      top-level dontVoronoiology (how MusuReplica keeps the projection off its snap).  The
-        //       ◈ button imposes on the Cyto MIRROR, which never comes through Story — so a live
-        //        imposition arms neither flag here and still projects NOTHING.
-        const wantsCrush = H.The_Opt_val(w, 'useVoroCyto')
-        const wantsVoro  = H.The_Opt_val(w, 'useCyto') && !H.The_Opt_val(w, 'dontVoronoiology')
-        if (wantsCrush || wantsVoro)
-            for (const rw of (Run.o({ A: 1 }) as TheC[]).flatMap((a: TheC) => a.o({ w: 1 }) as TheC[])) {
-                if (wantsCrush) rw.c.crush_wanted = 1
-                if (wantsVoro)  rw.c.voronoiology = 1
-            }
+        // ── fig.1 · Voro is IMPOSED from above, like Cyto and Matstyle ──────────────────
+        //  The fold ("crush") is a VIEWER.  A Book whose subject is not Voro never asks to be
+        //   folded — Story imposes it, reading one toc Opt, right where it reads useCyto.  The old
+        //    "blast" (stamp crush_wanted + voronoiology onto every Run/A/w) is GONE: no per-worker
+        //     arming, and Voro_crush_scan/Voro_report carry no gate at all.
+        //
+        //    The/Opt (toc)          does                    read where
+        //    ─────────────────────  ──────────────────────  ──────────────────────────────────────
+        //    useCyto                commission a Cyto        Story_settingoff (above)
+        //    useVoroCyto            impose the fold          story_snap → Voro_crush_scan per world
+        //                             ↳ also stamped on the commission, beside Scannable/Styles
+        //    dontSnapCyto           drop the cytowave        story_snap (skips Snap:cytowave)
+        //    dontSnapVoronoiology   prune the projection     snap_H    (vanishes w:Voronoiology)
+        //    waitCyto               block on animation       advance
+        //
+        //    Run/A:<Book>/
+        //      w:<Book>        folded in place (c.stuff) at snap time — the Book never touched it
+        //      w:Voronoiology  the fold's SELF-REPORT (Voro_report); snapped unless dontSnapVoronoiology
+        //
+        //  Exception BY SUBJECT: VoroMitosis (the fold) and VoroRadio (the radio that eats the fold)
+        //   DRIVE Voro_crush_scan inline in their own do_fn — a test of the fold drives the fold — so
+        //    they carry no useVoroCyto and Story imposes nothing on them.
     },
 
     push_opt_to_run(w: TheC) {

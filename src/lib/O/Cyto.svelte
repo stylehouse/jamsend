@@ -714,8 +714,8 @@
         //    height here are only the birth size).  The border takes the mainkey's Matstyle colour
         //     so a chunk reads as its class even zoomed out.
         //  Two skins:
-        //   c.stuffy — the CRUSHED-WORLD skin: only the Voro crusher (Ghost/V/Voro.g — gated on
-        //    the Book opt %crushCyto or the ◈ imposition's c.crush_wanted) stamps it, on
+        //   c.stuffy — the CRUSHED-WORLD skin: only the Voro crusher (Ghost/V/Voro.g — run when Story
+        //    imposes %useVoroCyto, a Voro demo drives it inline, or ◈ arms c.crush_wanted) stamps it, on
         //     EVERYTHING it touches — folded chunks included — so this look never leaks into
         //      other Books' graphs (Leaf* check that Cyto basically works).  No heading (the
         //       Stuffing IS the words); c.stuff beside it = FOLDED (Stuffing of the children,

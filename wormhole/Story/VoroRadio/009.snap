@@ -53,7 +53,7 @@ Snap:H
         see:an aged locale re-ganged and re-entered the pool — attention is a cycle not a consumption
         see:the hand outranks the tuner — a manual pop survived every dwell untouched
       w:Voronoiology
-        crush,beat=8,level:L2,visible=20,gangs=2
+        Voro,beat=8,level:L2,visible=20,gangs=2,folded:0,count:0
         drift,focus:Olearia grandifolia,opens=4
         row:Coprosma,n=5,fold:gang,rep:robusta,of=5
         row:Veronica,n=4,fold:loose,pop=4
