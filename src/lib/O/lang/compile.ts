@@ -68,9 +68,11 @@ export const LANG_COMPILER_VERSION = 'g1'
 //  version.  This is the currency Ghostmeta bakes and req_rungo / req_include compare against,
 //   so it MOVES on a compiler bump — unlike source_dige, which stays pure for source-on-disk
 //    truth (disk_dige, the surprise-read check, the ghost_compile CLI ack).  Kept human-legible
-//     (source prefix first) so `dige.slice(0,8)` still reads the source part at a glance.
+//     (source prefix first) so `dige.slice(0,8)` still reads the source part at a glance.  The
+//      separator is `~`, deliberately NOT a dot — a `.g1` tail would read as a file extension
+//       next to this repo's `.g`/`.go` convention.
 export function ghost_dige_of(source_dige: string): string {
-    return `${source_dige}.${LANG_COMPILER_VERSION}`
+    return `${source_dige}~${LANG_COMPILER_VERSION}`
 }
 
 export const LANG_COMPILE = {
