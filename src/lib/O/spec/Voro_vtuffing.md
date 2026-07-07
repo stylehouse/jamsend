@@ -494,3 +494,85 @@ Captured from the live-tab review, in the owner's words + the intended behaviour
                stray-but-tidy blob vs one component) — decide with eyes on the first build.  `[scan]`-adjacent
                 (Cytui layout / graph topology): view-only, no snap|fixture churn.  **Then** the big **🎋 bamboo**
                  — uniform engine panes, diversity exploded within.
+
+11. **The wave cadence — animate every wave, and WAIT for the voronoi morph (waitVoro).** — **BUILT 2026-07-08.**
+     The tell: manual `←/→` stepping always animated beautifully; only *auto play-through* fell apart (giant
+      flashing panes, no coherent division).  Cause: the `$effect` drains a whole *batch* of waves at once
+       (Lang emits them faster than Cytui reads — Cyto queues them), and `enqueue`'s **yoink** collapsed every
+        wave after the first at `dur=0` — no animation.  Manual stepping sends one wave per fire, never batched,
+         so it looked great: the batch-collapse, not the animation, was the fault.  Fix (`Cytui.svelte`
+          enqueue/process_queue): no more yoink; each wave plays in full and the *next one waits* — **animCyto**
+           (the cyto layout, `BURST_DUR` while a batch drains) runs, then **animVoro** (the voronoi morph) takes
+            the stage, and only after the morph has had time to reach its settled paint does the next wave run.
+             The old advance timer paid for the layout leg only, so the next wave's `hide_overlays_now` cut the
+              morph short.  A `MAX_ANIM_BACKLOG` valve fast-forwards a genuine flood.  Owner's own model: *"a
+               req:animCyto finishes after each animation, but before it does a %maz lets its /req:animVoro take
+                on the task of responding"* — implemented as a settle-gated advance, not the belief-loop reqs
+                 (frame animation is the wrong substrate; [[req-not-mandatory]]).  OPEN: it's a fixed budget
+                  sized to the morph, not an event fired off the morph's real completion — make it event-driven
+                   if the budget ever feels off; and `MORPH_MS`/`BURST_DUR` are the pace knobs.
+
+12. **The diagonal — stop it firing involuntarily; then make it VOLUNTARY.**  The "diagonal reconfiguration" is
+     fcose's component **packer** arranging ≥2 disconnected components — it fires on ANY *un-pinned full relayout*
+      of a graph that HAS disconnected components.  Known triggers: (a) a late edgeless add — the `%see` claims —
+       the original #10 disease; (b) **HMR of Cytui** — an `$effect` re-runs on hot-update and fired a bare
+        `relayout(400)` — **FIXED 2026-07-08** (`Cytui.svelte:97` now relayouts only on a real engine switch,
+         primed on the first wave, null-safe across HMR); (c) a **nav >1 step away** — a non-adjacent seek sends
+          an `absolute` wave (`Cyto.svelte`: `adjacent = !absolute`), and `apply()`'s absolute branch wipes and
+           re-adds every node FRESH → `saw_stuffy=false` (cells vanish until the stuff nodes re-arrive) AND no
+            `fresh_ids` pins → the packer draws the diagonal.  So "cells vanish at step 6" was a *jump to* 6, not
+             a play *into* it (the recorded step-6 wave is a plain incremental add).  (d) manual `⟳`.
+     Cures share a root — **don't hand fcose a disconnected graph un-pinned**: thread/cluster the loose leaves
+      (the star-not-chain seed fix, or the #11-cell relaxation which pulls an isolated seed back), and on the
+       absolute-rebuild path either PIN what carries over or re-detect `saw_stuffy` before laying out.
+     Owner wants the diagonal kept as a *deliberate* layout mode too (they admire it) — expose it as a chosen
+      pack/scatter option rather than only ever an accident.  `[scan]`-adjacent, view-only.
+
+13. **The star-not-chain seed fix** (immediate, precedes #14).  #10's snake threads *every* free leaf into a
+     CHAIN, including the voronoi seeds (edgeless fold-chunks under the compound `w`).  A chain SPREADS seeds
+      along a line; each cell starts as the whole container polygon and is only cut back by *near* neighbours, so
+       an isolated seed keeps a viewport-spanning cell → a Stuffing "blown up larger than the viewport, clipped."
+        The old per-parent flower CLUSTERED the same seeds into a rosette (good cells).  Fix: make the loose-leaf
+         scaffold a **star** (one shared hub) not a chain — one component (keeps the diagonal fixed) but clustered
+          (restores cell sizes).  ~10 lines in `install_snake`.  Cheap band-aid that #14 subsumes.
+
+14. **Cell-quality relaxation — Voro proposes, Cyto disposes** (the general cure for bad cell shapes|sizes).
+     The metaphysics (`Cyto is the engine, Voro interprets — pixels never push back, ZERO exceptions`) bans a
+      *continuous servo*; it does NOT ban a *discrete, terminating* correction.  So: ONCE per structural graph
+       change (a `layout_gen` latch; "or less" — skip when every cell already passes), **analyse** the cell layer
+        (area vs median, frame-contact = the runaway giant, seed→centroid offset, sliver aspect), **decide** a
+         Lloyd nudge for the flagged seeds only (`target = lerp(seed, centroid, λ)`, clamped to a max px kick),
+          and **do** it as a *seed hint*: write the nudged positions and run ONE fcose pass with the good nodes
+           pinned (the existing `fresh_ids`/`fixedNodeConstraint` path — "treat flagged seeds like newcomers, pin
+            the rest"), then morph.  The relaxation's own re-layout does NOT bump `layout_gen` → it can't re-arm
+             → it terminates; Lloyd is contractive so the single step is a guaranteed improvement, never an
+              oscillation — exactly the property the ZERO-exceptions rule protects.  It subsumes #13 (an isolated
+               giant cell pulls its own seed back toward the crowd) and softens #12 (fewer runaway components).
+     `[scan]` (writes cyto positions) — prove in ISOLATION first ([[fight-back-on-core-changes]]).
+     **#14 is the LAST feedback we can cleanly run THROUGH fcose — and the pilot for the one we can't.**
+      Everything the current system affords is a ONE-SHOT hint fcose then *disposes* (set positions, pin,
+       scaffold-edge, tweak params); it cannot host a *running* per-node program, because between passes fcose
+        re-minimises its OWN objective and owns the state.  That is why metaphysics #1 ("pixels never push back —
+         ZERO exceptions") is not merely taste: a *continuous* servo through fcose would RING — fcose is not our
+          integrator.  #14's cell-quality metric is the FIRST **Se** in the geometry domain (§🎋): a node forming a
+           verdict by reading its surroundings (its cell + its neighbours' cells) and acting — the geometry twin of
+            `Voro_crushable`.  To CHAIN Se (Se₁ bad-shape? → Se₂ pull-to-family-or-centroid? → force) and to
+             "program via the graph", a node must carry little verdict-programs on its `.c` and *something must run
+              them each tick* — which fcose structurally cannot give (no per-node program, no owned tick).  So the
+               deliberate BRANCH, when chains of Se are wanted, is a **Voro-native relaxation tick that owns the
+                state**: fcose demoted to the initial *seeder*, our own loop integrating a SUM of per-node forces
+                 (Lloyd + family-attract + repel + radio-pull + Se verdicts) — Mode B's "hand-rolled mini-force pass"
+                  generalised from inside-one-cell to the whole board.  Don't branch for #14; DO build it as the
+                   one-shot cage NOW (safe, contractive, terminating), because taking the cage off — the SAME
+                    analyse→decide→do kernel, run every tick under our own integrator — IS that branch.  #14 de-risks
+                     it: prove the metric + nudge with eyes on, and the hand-rolled substrate is "own the tick".
+
+*Seed→cell→mold, for the record (surfaced 2026-07-08 chasing VoroScape).*  A node earns a **cell** only by being
+ a `stuff` seed — either the crush emits `overlay_kind:stuff` (a fold chunk) or proper-mode mounts a Stuffing on a
+  loner whose mainkey ∈ `PROPER_KINDS = {'see'}`.  On VoroScape the imposed crush is folding NOTHING (`folded:0`,
+   snap `stuff=0`), so the only seeds are `req` (arrived as a wave stuff node) + `see` (proper loner) — "a bunch of
+    nodes didn't make it to a cell" because they are neither.  Those two show as **molded Stuffings** (the Stuffing
+     skewed/clipped into the cell — "skews into place kinda nice but often has bits occluded"), NOT the row-fitted
+      **Vtuffing**, because Vtuffing needs a fold WITH MEMBERS to lay into the cell and a lone see/req has none.
+       So the missing cells are really **missing folds** — open thread: why VoroScape's imposed crush produces no
+        gangs.  (Vtuffing, the occlusion-free successor to the molded Stuffing, is the near frontier — see §🎋.)

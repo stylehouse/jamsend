@@ -1,7 +1,0 @@
-Snap:H
-  H:RaTerm,Run
-    A:RaTerm
-      self,round	{"mung":["age"]}
-      w:RaTerm
-        self,round	{"mung":["age"]}
-        req:wrangle,eternal,ok

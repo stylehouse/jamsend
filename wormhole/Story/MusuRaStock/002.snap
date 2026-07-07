@@ -1,0 +1,12 @@
+Snap:H
+  H:MusuRaStock,Run
+    A:MusuRaStock
+      self,round=2	{"mung":["age"]}
+      w:MusuRaStock
+        self,round=2	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        survey,tracks=8
+        Library,pier:DJ
+        req:witness,eternal,ok
+        see:the share holds real tracks and the library stands empty

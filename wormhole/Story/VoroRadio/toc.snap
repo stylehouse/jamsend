@@ -33,8 +33,7 @@ story:VoroRadio
     useCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.032
-      sample=0.043,at=1783439221
+    TimeTotal:beliefs,avg=0.031
       sample=0.034,at=1783439755
       sample=0.026,at=1783441477
       sample=0.02,at=1783441509
@@ -44,8 +43,8 @@ story:VoroRadio
       sample=0.041,at=1783443175
       sample=0.041,at=1783443176
       sample=0.026,at=1783443565
+      sample=0.034,at=1783448081
     TimeTotal:step,avg=0.004
-      sample=0.005,at=1783439221
       sample=0.004,at=1783439755
       sample=0.003,at=1783441477
       sample=0.002,at=1783441509
@@ -55,6 +54,7 @@ story:VoroRadio
       sample=0.005,at=1783443175
       sample=0.005,at=1783443176
       sample=0.003,at=1783443565
+      sample=0.004,at=1783448081
   step,dige:604eb571a0e11262
   step=2,dige:159bdacc1cf4100b
   step=3,dige:945f01811367adff

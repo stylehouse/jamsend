@@ -1,0 +1,17 @@
+Snap:H
+  H:MusuRaTerm,Run
+    A:MusuRaTerm
+      self,round=10	{"mung":["age"]}
+      w:MusuRaTerm
+        self,round=10	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        Library,pier:raterm.player
+          Record,id:848b336a,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,src_hash:0d9cc36d
+            Stream,name:opus,total=39,sr=48000,br=128000,seg_secs=2,bytes=1290003
+        req:raterm_stock,finished
+        req:witness,eternal,ok
+        reached:step_4
+        req:raterm_hear,finished
+        heard,seconds=78,segs=39,healthy=0,starved=320,dropped=8,lufs=-14
+        see:a withheld run of segments surfaced as measured gaps — the spool starved without papering over the hole

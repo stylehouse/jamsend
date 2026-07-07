@@ -22,7 +22,7 @@ This file is the destination + the bombs + the next move. Keep it current; it is
 A rolling brief: the newest work sits here first, then gets baked into its home section
  (§3.x, §9) once it is no longer "latest". An empty §0 means the doc is caught up.
 
-**Won 2026-07-07 — rastock SHIPS (§3.2, live-verified).** RaStock is green, ttlilt-free, and
+**Won 2026-07-07 — rastock SHIPS (§3.2, live-verified).** MusuRaStock is green, ttlilt-free, and
  proven on a live runner. Three things landed with it:
  - **The `.jam` stock format** — one file per `%Record`, shaped `json-header + \n + length-
     prefixed buffers` (`Ra_pack`/`Ra_unpack`). Nothing in `.jamsend/` may LOOK like media (it
@@ -33,26 +33,11 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
     cache that had been serving old gains; stock now re-reads whenever source content changes.
  - **`Waft:Trope/Ra/AudibleEntropy`** — a SHARED entropy profile grafting the `%proof` line's
     `ms:r{}d{}l{}` wall-clock noise (`tol:any` on r/d/l only; `seconds`+`lufs` stay literal so a
-     real loudness regression still diffs). RaStock Wref's it. ONE consumer today; the moment
-      RaCast/RaTerm prove a pulled/played segment they are the SECOND → Wref it, do NOT re-inline
+     real loudness regression still diffs). MusuRaStock Wref's it. ONE consumer today; the moment
+      MusuRaCast/MusuRaTerm prove a pulled/played segment they are the SECOND → Wref it, do NOT re-inline
        (owner called this recurrence 2026-07-07).
 
-**THE BOMB — publish-at-arm (anyone touching an `expecting`/Story hold MUST carry this).** A
- ttlilt lives in THREE places: **arm** (`i_req_ttlilt` → `{ttlilt}` on the world req), **publish**
-  (agency_officing → flat `Run.i({ttlilt,of_w})` copies at the H-root), **read** (`poll_step`
-   scans ONLY those H-root copies, unmutexed, no tree dive). `beliefs()` publishes in attend
-    BEFORE `reqdo_sweep` arms → a sweep-armed hold is invisible its own tick; on a parked Story
-     Run (no heartbeat, an `expecting`'s async_fn mints no thinks) officing never re-runs → the
-      pass snaps MID-FLIGHT with a live un-timed-out ttlilt frozen in (the "random snap timing").
-       Fix: `i_req_ttlilt` now SEEDS the H-root copy at the arm (fresh-arm only, same House =
-        `this`). DON'T "fix" it with a heartbeat — that spins the belief loop at ~20Hz and inflates
-         `self,round` (the tell: with publish-at-arm, `self,round` is a flat 3, deterministic across
-          runs). Blast radius = every `expecting` caller; memory `ttlilt-in-snap-means-timeout`.
-
-**Loose thread — CLEARED.** `MusuGenerateTestsMusic` + `MusuBounce` (the other `expecting` callers
- publish-at-arm flipped) are re-recorded and green. No longer owed.
-
-**Won 2026-07-08 — RaCast SHIPS (§3.3, live-verified GREEN).** The middle verb stands. On a live fsa
+**Won 2026-07-08 — MusuRaCast SHIPS (§3.3, live-verified GREEN).** The middle verb stands. On a live fsa
  runner: DJ stocked a REAL 39-segment opus Record (Cosmic C, 78s, 1290003 bytes), sealed a mutual Music
   grant, cast the husk; the listener PULLED THE WHOLE RECORD byte-faithful (`have=39 got=39 total=39`);
    a revoke shut the gate (silence). All five `%see` fire at 2/4/6/8/10; fixtures accepted → GREEN. Three
@@ -66,21 +51,21 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
      signature `sign`. I proposed pinning `w.sc.now`; owner OVERRODE — there is no clock system to base that
       on, so the pin is DROPPED. Instead the seal-field noise is harvested into `Waft:Trope/Ra/AudibleEntropy`
        (Entcases graft `since`/`at`/`time` `tol:any`; a `{TOK}` swallows `sign` — the crypto is tested
-        separately). RaCast Wref's the SAME profile (line 6 of its `toc.snap`) — the SECOND consumer, exactly
+        separately). MusuRaCast Wref's the SAME profile (line 6 of its `toc.snap`) — the SECOND consumer, exactly
          as §3.2 predicted; do NOT re-inline. In a diff these show `Dif:change,spay:graft` = tolerated, green.
-  - **beat-6 `%see` FIXED** — it asserted `got===0` (empty husk), but `RaCast_flow` pulls the INSTANT the
+  - **beat-6 `%see` FIXED** — it asserted `got===0` (empty husk), but `MusuRaCast_flow` pulls the INSTANT the
      husk lands, so by n=6 `got` was already 39. Now asserts the head ARRIVED (`total>0`).
  Artifacts: **`Ghost/M/Ra.g` `#region cast`** (shared cast mechanics, reuses Repli's byte-agnostic parts —
   `Repli_fragment`/`Repli_merge` + Peeroleum sha256 — and owns ONLY the opus page path, NOT the Float32
    `Repli_pack_chunks`/`unpack_page`; grant gate injected via `w.c.racast_allow` so Ra imports no Swarm);
-    **`Ghost/Story/Radiation.g` `RaCast` Book**; `wormhole/Story/RaCast/toc.snap` (12 steps + the Wref);
+    **`Ghost/Story/Radiation.g` `MusuRaCast` Book**; `wormhole/Story/MusuRaCast/toc.snap` (12 steps + the Wref);
      `wormhole/Trope/Ra/AudibleEntropy/toc.snap` (the harvested seal Entcases); Credence entry. Both gens on
       disk via LocalGen / `ghost-compile`. UNCOMMITTED (host reviews the diff).
  LOOSE ENDS (small): (a) **general `sign` snap-omit** — owner floated "ignore the signature in snap in
   general" (a protocol-level omit like the body_hash Organ-2 mask) as an alternative to the per-Entcase
    `{TOK}` graft; UNSCOPED — touches Text encode `omit_sc`. (b) dead page-loop in `Ra_cast_send_lines` (the
     husk sender; harmless — empty bufmap) — tidy on the NEXT Ra.g touch, not a standalone compile+record.
-**RAN LIVE GREEN-IN-SUBSTANCE 2026-07-08 — RaTerm (§3.4, the LAST verb), pending fixture-accept + a MusuRa* rename.**
+**RAN LIVE GREEN-IN-SUBSTANCE 2026-07-08 — MusuRaTerm (§3.4, the LAST verb); the Ra*→MusuRa* rename LANDED — all three MusuRa* Books now pending re-record.**
  The terminal that PLAYS: decode the stocked opus back to real PCM and prove honest playback. Ran clean on a live
   fsa runner (12/12 beats, no step errors) and READ THE SNAP: Cosmic C stocked (source -7.33 LUFS + a -6.67 dB
    bake = -14 exactly), decoded whole — `heard,seconds=78,segs=39,lufs=-14,healthy=0,starved=320,dropped=8`: the
@@ -94,36 +79,44 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
       channels, per, drop)` downmixes to mono and PUNCHES the `drop` segment indices to SILENCE — the honest
        hole. No new analysis: measurement REUSES `Ra_lufs` (the meter that set the gain) + `Sound_measure`
         (`Ghost/M/Sound.g` — MusuSignal's underrun `gaps` gate). Radiobuddies discipline: no scenario words.
- - **`Ghost/Story/Radiation.g` `RaTerm` Book** — NO transport (crossing is RaCast's proven job; RaTerm stocks
+ - **`Ghost/Story/Radiation.g` `MusuRaTerm` Book** — NO transport (crossing is MusuRaCast's proven job; MusuRaTerm stocks
     locally via `Ra_stock` take=1 and plays — the pulled mirror is byte-identical). Beats: 2 STOCK, 4 HEAR
      (one held `expecting`: decode + LUFS + healthy/starved spool renders, cache scalars on `w.c.term`, stamp
       a `heard` row), then witness-only 6 GAIN / 8 STARVE / 10 CLEAN. Five `%see`.
- - **The claims** (`RaTerm_witness`): (2) a real opus Record stands; (4) decoded seconds ≈ stocked source (±4);
+ - **The claims** (`MusuRaTerm_witness`): (2) a real opus Record stands; (4) decoded seconds ≈ stocked source (±4);
     (6) played-back LUFS within ±2 of the -14 target = *the baked gain survived the opus round trip*; (8)
      `starved_gaps > healthy_gaps + 3` = *the spool starved without papering over the hole* (a ~1/5 middle run
       withheld); (10) `healthy_gaps <= 3 && starved > healthy + 3` = the same spool runs clean when whole (the
        MusuSignal not-vacuous guard, redrawn on real stock).
  - **DETERMINISTIC snap, NO AudibleEntropy Wref** (departs from the §3.2 prediction on purpose): decode + LUFS
     + gaps are pure functions of the stock, so the `heard` row is stable run-to-run. The wall-clock `ms` is
-     deliberately NOT stamped. Only if the live CHECK shows a field wobble do we harvest it (the RaCast way) —
-      do not pre-Wref. `wormhole/Story/RaTerm/toc.snap` seeded (12 `seedNN` step lines, NO EntropyProfile);
-       Credence `of_Book:RaTerm,needsFSA:1,brand_new:1` registered.
- NEXT MOVE (human, fsa-live :9091 runner — one is up at `49dee91d61a9de64`, idle): (1) RELOAD the runner tab
-  so Creduler re-acquires the fresh `gen/M/Ra.go` + `gen/Story/Radiation.go` + the seeded RaTerm toc (LocalGen
-   wrote disk but did NOT HMR the tab — a running runner still has the old gen; a `total:1` Prep-only run means
-    it did not re-acquire, BOMB 2). (2) `node scripts/runner_ask.mjs run RaTerm --watch` then `snap <n>` the
-     beats. (3) READ the `heard` row's real numbers (seconds/lufs/healthy/starved/dropped) and TUNE the five
-      gates off them (the ±2 LUFS / +3 gaps / ≤3 thresholds are GUESSES — the RaCast beat-6 lesson). (4) ACCEPT
-       → GREEN; install any `%see` re-tune via CHECK-run + manual, NEVER CredRunner ACCEPT. Everything UNCOMMITTED.
+     deliberately NOT stamped. Only if the live CHECK shows a field wobble do we harvest it (the MusuRaCast way) —
+      do not pre-Wref. `wormhole/Story/MusuRaTerm/toc.snap` seeded (12 `seedNN` step lines, NO EntropyProfile);
+       Credence `of_Book:MusuRaTerm,needsFSA:1` registered under `What:mostly` (the renamed home).
+ **THE RENAME (2026-07-08, owner call).** The Ra* Book SUITE is stemmed under Musu*: `RaStock`→`MusuRaStock`,
+  `RaCast`→`MusuRaCast`, `RaTerm`→`MusuRaTerm` (Book identity + world name + `<Book>_*` fns + `wormhole/Story/<Book>/`
+   dirs + Credence rows all done; gen rebuilt via LocalGen). **THE NAMING RULE (owner, 2026-07-08):**
+    test-specific Book code is FULLY-NAMED with the long prefix — `MusuRaTerm_witness()`, `MusuRaStock_stock()`,
+     `MusuRaCast_seal()`; the shared/common ENGINE in `Ghost/M/Ra.g` stays SHORT `Ra_*` — `Ra_stock`, `Ra_cast_*`,
+      `Ra_term_*`, `Ra_lufs` — NEVER `MusuRa_*` (snake). So a fully-named Book method DRIVES a short engine verb
+       (`MusuRaTerm_hear` → `Ra_term_decode`), the same way the `Musu*` Books drive `Sound_*`. Consequence: MusuRaStock + MusuRaCast were green as RaStock/RaCast and the name is baked into their
+      snaps (`H:RaStock`→`H:MusuRaStock`), so all three go red and re-record together.
+ NEXT MOVE (human, fsa-live :9091 runner — one is up at `49dee91d61a9de64`, idle): (1) RELOAD the runner tab so
+  Creduler re-acquires the fresh `gen/Story/Radiation.go` + the renamed `wormhole/Story/MusuRa*/` tocs (LocalGen wrote
+   disk but did NOT HMR the tab; a `total:1` Prep-only run = it did not re-acquire, BOMB 2). (2) `run MusuRaStock`,
+    `run MusuRaCast`, `run MusuRaTerm` (each `--watch`), then `snap <n>`. (3) MusuRaTerm's five gates already HELD on
+     the live CHECK (`heard,seconds=78,segs=39,lufs=-14,healthy=0,starved=320`), so accept records its baseline;
+      MusuRaStock/MusuRaCast re-record their prior-green content under the new names (identical bar the `H:`/`w:` name
+       → fresh diges). (4) ACCEPT all three → GREEN; `%see` via CHECK-run + manual, NEVER CredRunner ACCEPT. UNCOMMITTED.
  BOMB 1 — DON'T `ghost-compile` an Ra SPINE-ghost change against a live editor: it HANGS. HMR-remixing
   the depended-on Ra spine into the live runtime wedges it (proven — even a trivial valid method hangs;
    only the pristine no-op hash replies). Leaf Book ghosts (Radiation.g) slip through. Use **LocalGen**
     for spine `.g` edits: `GFILES='Ghost/M/Ra.g' CHECK=1 npx vitest run -c scripts/Story_cli.vitest.config.mjs
      scripts/LocalGen.spec.ts` (browserless, no HMR; drop `CHECK=1` to write the gen). That built `gen/M/Ra.go`.
  BOMB 2 — a brand-new Book runs Prep-only (`total:1`): the runner runs the Book it ACQUIRED AT BOOT and
-  CLOBBERS a mid-session disk `toc.snap` seed. So seed `wormhole/Story/RaCast/toc.snap` with ~10
+  CLOBBERS a mid-session disk `toc.snap` seed. So seed `wormhole/Story/MusuRaCast/toc.snap` with ~10
    `step,dige:lieN` lines, THEN RELOAD the runner so Creduler re-acquires it → the beats fire. (Same trap
-    for any NEW Book, incl. RaTerm.) Endpoints confirmed live: source `Library,pier:dj.prepub` + mirror
+    for any NEW Book, incl. MusuRaTerm.) Endpoints confirmed live: source `Library,pier:dj.prepub` + mirror
      `pier:lis.prepub` both hold the same Record; sealed `%Pier` routing + `w.c.tx`=`link[0]` all worked.
 
 ---
@@ -250,7 +243,7 @@ The stock is the library made SERVABLE: loudness-uniform, seekable, chunked, sna
       `testmusic/` in-repo) + `%Record`/`%Stream,name:opus` rows that SNAP (per-segment `%Chunk`
        particles would be snap bulk — the segment FILES are the chunk rows, `%Stream.total`
         counts them, and Repli pages them onto the wire later).
- - **Book: `RaStock`** — real `/music` in, uniform stock out, and the audio-proof: decode a
+ - **Book: `MusuRaStock`** — real `/music` in, uniform stock out, and the audio-proof: decode a
     produced segment on the muted AC and the measured loudness lands within tolerance of
      TARGET; a second run is idempotent (stock already standing is recognized, not rebuilt).
 
@@ -261,7 +254,7 @@ Casting is **Repli, never RPC** (the all-pervading rule): the catalog crosses as
   the pull, and the LIVE edge — hear what I hear NOW — rides `@channel` multicast (§9.4) from
    a station in `role:music`. The grant gates every leg (§9.7): no Music grant, no husk, no
     pages, no edge.
- - **Book: `RaCast`** — a sealed pair; stock stands at A; B pulls one Record whole (pages,
+ - **Book: `MusuRaCast`** — a sealed pair; stock stands at A; B pulls one Record whole (pages,
     sha256-verified) and tunes A's live edge; a revoked B hears nothing new.
 
 ### 3.4 raterm — the terminal that plays  — ⚙ AUTHORED 2026-07-08, awaiting first live CHECK (§0)
@@ -275,14 +268,14 @@ The Musu cursor machinery finally earns its keep as the REAL spool: want-ahead k
      line: *"your ISP is likely oppressing direct peer connections — you are riding the shared
       1Gbps relay."* Detection = the PeerJS connection state we already watch; sustained
        relay-leg traffic where a direct lane should be is the tell.
- - **Book: `RaTerm`** — segments in, honest playback out: gain applied, spool starves and
+ - **Book: `MusuRaTerm`** — segments in, honest playback out: gain applied, spool starves and
     recovers without lying (the MusuSignal claim redone on stock we actually made).
 
 ### 3.5 What retires
 
 The tiny aspect proofs become `Radio_lowlevel.md` material as `Ra*` goes green — the
  higher-level re-draws: MusuCrowd's many-listeners claim re-proves ON racast, the spool slices
-  re-prove INSIDE raterm, MusuSignal's starve gate inside RaTerm. Nothing is deleted until its
+  re-prove INSIDE raterm, MusuSignal's starve gate inside MusuRaTerm. Nothing is deleted until its
    re-draw stands.
 
 ---

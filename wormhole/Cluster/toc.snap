@@ -3,3 +3,4 @@ Waft:Cluster,equip:Cluster
   HostedIdentity:0de425eeaead0220,role:editor
   HostedIdentity:c505e99b42347856,role:editor
   HostedIdentity:49dee91d61a9de64,role:runner,pub:49dee91d61a9de6450a81a67283b564962bb7bff19153b828aedebe6938b5e69
+  HostedIdentity:77d26228517f512e,role:runner,pub:77d26228517f512e5ed2f5f94f731c175e5811a5d8e7984398e066e59068a9b6

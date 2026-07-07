@@ -1,0 +1,21 @@
+Snap:H
+  H:MusuRaStock,Run
+    A:MusuRaStock
+      self,round=4	{"mung":["age"]}
+      w:MusuRaStock
+        self,round=4	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        survey,tracks=8
+        Library,pier:DJ
+          Record,id:848b336a,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real,col,src_hash:0d9cc36d
+            Stream,name:opus,total=39,sr=48000,br=128000,seg_secs=2,bytes=1290003
+          Record,id:8233c2ea,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-17.58,gain=3.58,real,col,src_hash:9471f8fc
+            Stream,name:opus,total=38,sr=48000,br=128000,seg_secs=2,bytes=1256926
+          Record,id:4afd7f10,title:Groove G,artist:DJ Oscillo,seconds=66,lufs=-7.84,gain=-6.16,real,col,src_hash:f331bff6
+            Stream,name:opus,total=33,sr=48000,br=128000,seg_secs=2,bytes=1091541
+        req:witness,eternal,ok
+        reached:step_3
+        req:rastock,finished
+        stocked:first,of=3,ready=3
+        see:three real tracks stand as loudness uniform opus stock on disk

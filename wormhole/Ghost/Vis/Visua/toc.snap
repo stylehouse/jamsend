@@ -20,3 +20,12 @@ Waft:Ghost/Vis/Visua,active
   What:the render
     Doc:src/lib/O/Cytui.svelte
     Doc:src/lib/O/Cyto.svelte
+  What:docs
+    Doc:src/lib/O/spec/Voro_vtuffing.md
+    Doc:src/lib/O/spec/Voro_todo.md
+    Doc:src/lib/O/spec/Voro_microcosm.md
+    Doc:src/lib/O/spec/Voro_pinch.md
+    Doc:src/lib/O/spec/Voro_svg_stuffing.md
+    What:further-reading
+      Doc:src/lib/O/spec/Lens_posable_TODO.md
+      Doc:src/lib/O/spec/Waft_styling_todo.md

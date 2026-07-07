@@ -51,17 +51,40 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
     unambiguously while only it advertises.  NEVER `accept` a run you didn't start — runs broadcast; the
      guard is the `steps`/`snap` identity check (step count + which `%see`) before every accept.
 
-**The frontier.**
-- **BUILT 2026-07-08: the loose-node snake** (`Voro_vtuffing.md` next-moves #10, done in Cytui `install_snake`,
-   was `install_nuclei`).  Every free/edgeless leaf is threaded onto ONE shared meaningless-edge chain, ordered
-    `(parent, id)` so neighbours stay STABLE and `apply()`'s `fresh_ids` pins can localise a splice — late edgeless
-     adds (the `%see` claims) stop making fcose re-pack the rosette into a diagonal.  `SNAKE_MIN=2` (a chain needs a
-      neighbour; a lone leaf floats, held by the pins).  View-only, no snap|fixture churn.  **Eyes-on tuning OWED**
-       + two open knobs: (a) stand-alone-in-corner vs tether-into-cluster; (b) one shared snake vs per-parent chains
-        if cross-wall seams drag compounds.  Eyeball on a VoroScape/VoroMitosis tab with `%see` arriving late.
-- **NEXT: 🎋 bamboo schematica** — make the Vtuffing text structural (a jointed schematic the dumb renderer
+**The frontier.**  *(2026-07-08 session surfaced a whole cluster around seed→cell→mold + the diagonal; two
+ fixes landed, the rest is the agenda below — all in `Voro_vtuffing.md` next-moves #10–#14.)*
+- **LANDED 2026-07-08:**
+  - **#11 the wave cadence (waitVoro)** — auto play-through animated like garbage because a *batch* of waves
+     was yoink-collapsed at `dur=0`; manual `←/→` (one wave per fire) always looked great, which was the tell.
+      `Cytui` enqueue/process_queue now animate every wave and WAIT for the voronoi morph before the next
+       (animCyto → animVoro).  Pace knobs `MORPH_MS`/`BURST_DUR`; a `MAX_ANIM_BACKLOG` valve for floods.
+  - **#12b HMR diagonal** — hot-reloading Cytui fired a bare un-pinned `relayout(400)` (an `$effect` re-runs on
+     HMR) → the graph fell into the diagonal.  `Cytui.svelte:97` now relayouts only on a real engine switch.
+  - **#10 the loose-node snake** (Cytui `install_snake`, was `install_nuclei`) — every free leaf threaded onto ONE
+     shared chain, `(parent,id)`-ordered, so late `%see` adds stop re-packing the rosette.  BUT it also chains the
+      voronoi SEEDS and a chain SPREADS them → giant isolated cells (#13 is the cure).  Eyes-on tuning still OWED.
+- **THE AGENDA (seed→cell→mold cluster):**
+  - **#13 star-not-chain** — un-spread the seeds: one shared *hub* not a chain (restores cell sizes, keeps the
+     diagonal fixed).  ~10 lines, the immediate band-aid.
+  - **#14 cell-quality relaxation** — the real cure: once per graph change, nudge bad-shape seeds toward their cell
+     centroid as a *seed hint* fcose then disposes (a sanctioned, terminating exception to pixels-never-push-back).
+      Subsumes #13.  `[scan]` — prove in isolation.
+  - **#12 diagonal, the rest** — kill the *nav-jump* trigger (a >1 seek sends an `absolute` wave → wipes cells +
+     un-pinned rebuild → diagonal; that's why "cells vanish at step 6" — a jump *to* 6, not play *into* it), then
+      expose the diagonal as a *voluntary* pack mode (owner admires it).
+  - **VoroScape folds NOTHING** (`folded:0`, snap `stuff=0`) — so only `req`+`see` seed cells and everything else
+     gets none; and they show as molded Stuffings (occlude), not row-fitted Vtuffings, because there are no
+      multi-member folds to Vtuff.  Open: why the imposed crush produces no gangs on VoroScape.
+- **NEXT (big): 🎋 bamboo schematica** — make the Vtuffing text structural (a jointed schematic the dumb renderer
    fits into the cell); `Voro_vtuffing.md` §🎋 has the design; Se (surroundings-reactive fold) arrives with
     it.  Tunnel + radio are parked north-stars, not next.
+- **↑ These two are ONE frontier — the real one atop this list.**  Se is a SINGLE primitive (a node forming a
+   verdict by reading its surroundings): #14's cell-quality metric is the FIRST Se in *geometry*; 🎋 bamboo's Se is
+    the SAME verdict in *text*.  Chaining Se + owning a per-node tick ("program via the graph") is exactly what fcose
+     structurally CAN'T host — so #14 is not merely the seed→cell→mold cure, it's the **pilot** for the owned-
+      integrator branch (fcose demoted to *seeder*, our own loop integrating a sum of per-node forces) that program-
+       via-graph needs.  Build #14 in the cage NOW (safe, contractive, terminating); taking the cage off IS the branch.
+        Full arc folded into `Voro_vtuffing.md` #14 (landed this preen) + §🎋.
 
 ## The metaphysics
 
