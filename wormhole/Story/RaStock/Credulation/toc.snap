@@ -1,5 +1,5 @@
 Credulation,of_Book:RaStock
-  run=0,at=1783405036.788,ok=0,ok_pct=0,mode:check
+  run=0,at=1783405858.784,ok=0,ok_pct=0.4,mode:check
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -17,7 +17,7 @@ Credulation,of_Book:RaStock
     uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
     uses:Ghost_Story_Swarmation,dige:424a77682127f2ba
     uses:Ghost_V_Voro,dige:ce1c0661ae4181e9
-  run,at=1783405109.23,ok=0,ok_pct=0,mode:check
+  run,at=1783405873.898,ok=0,ok_pct=0.8,mode:check
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -35,7 +35,7 @@ Credulation,of_Book:RaStock
     uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
     uses:Ghost_Story_Swarmation,dige:424a77682127f2ba
     uses:Ghost_V_Voro,dige:ce1c0661ae4181e9
-  run=2,at=1783405113.015,ok=0,ok_pct=0,mode:check
+  run=2,at=1783407021.836,ok=0,ok_pct=0.4,mode:check
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71

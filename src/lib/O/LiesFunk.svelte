@@ -41,17 +41,17 @@ let { M } = $props()
 //   played each 50ms.  Musical + well-spaced (≥110Hz apart) so an FFT bin never confuses two.  artist-title
 //    rides the filename ("Artist - Title.wav") — exactly what Crate_meta_from_name reads back.
 //  Real-length (60-80s each) so streaming/preview/restock behave against a proper track, not a 4s stub.
-//  Loudness: every tone shares one amplitude (its measured integrated loudness ≈ the -14 LUFS HiFi
-//   target RaStock levels to) EXCEPT Dorian D, laid down ~6 dB quieter (amp).  A uniform-loudness set
-//    makes RaStock's normalisation a no-op (gain ≈ 0); the one off-target track gives the gain-to-target
-//     path a real job — measure low, bake positive gain back up to -14 — which is what proofs RaStock.
+//  Loudness: the shared 0.6 amplitude measures ~-7.5 LUFS on these tones (a sine's 3 dB crest factor
+//   is loud for its peak) — so RaStock already gains the whole set DOWN ~6 dB to its -14 target and the
+//    attenuate path is well covered.  Dorian D is laid down much quieter (amp) so it lands BELOW -14 and
+//     RaStock has to gain it UP instead: the one track that exercises the boost direction (positive gain).
 const TEST_TONES: Array<{ artist: string, title: string, freq: number, secs: number, amp?: number }> = [
     { artist: 'The Sines',    title: 'Deep A',   freq: 220.00, secs: 72 },
     { artist: 'The Sines',    title: 'Middle A', freq: 440.00, secs: 64 },
     { artist: 'The Sines',    title: 'High A',   freq: 1760.0, secs: 80 },
     { artist: 'Fourier Four', title: 'Query E',  freq: 329.63, secs: 68 },
     { artist: 'Fourier Four', title: 'Echo E',   freq: 1318.5, secs: 60 },
-    { artist: 'DJ Oscillo',   title: 'Dorian D', freq: 587.33, secs: 76, amp: 0.3 },   // ~6 dB quiet — RaStock's off-target proof track
+    { artist: 'DJ Oscillo',   title: 'Dorian D', freq: 587.33, secs: 76, amp: 0.2 },   // ~-17 LUFS, below target — RaStock's boost-direction proof track
     { artist: 'DJ Oscillo',   title: 'Groove G', freq: 783.99, secs: 66 },
     { artist: 'DJ Oscillo',   title: 'Cosmic C', freq: 1046.5, secs: 78 },
 ]
@@ -63,8 +63,9 @@ const TEST_TONES: Array<{ artist: string, title: string, freq: number, secs: num
 //    ~1.1MB, not ~6.7MB).  That matters because these tracks travel the beat-latency wormhole to the
 //     consumer Books (MusuReco/MusuBounce) and a fat file overruns a step's budget.  Consumers decodeAudioData
 //      + resample to the context rate anyway, and MusuBounce's peak still lands on the true fundamental.
-//  amp is the sine's linear amplitude (0.6 = the shared default ≈ -14 LUFS for these tones); a caller
-//   passes a quieter value to lay down an off-target track (Dorian D) for RaStock's leveling to fix.
+//  amp is the sine's linear amplitude (0.6 = the shared default, ~-7.5 LUFS on these tones — RaStock
+//   gains that DOWN to -14); a caller passes a quieter value to lay down a below-target track (Dorian D)
+//    that RaStock has to gain UP to -14 instead, proving the boost direction.
 function wav_bytes(freq: number, secs: number, sr = 8000, amp = 0.6): Uint8Array {
     const n = Math.floor(sr * secs)
     const fade = Math.min(Math.floor(sr * 0.02), Math.floor(n / 2))
