@@ -96,10 +96,16 @@ async function signFrame(t: { path: string; dige: string }, from: string, key: s
 // pollServed — the GROUND TRUTH that the byte actually landed: fetch the .go vite serves and check the
 //  new dige is baked into its Ghostmeta. Independent of any ack (an editor with no ack code still flips the
 //   dige), so this is what keeps the client backward-compatible. Resolves true once seen, false at deadline.
+//  Ghostmeta now bakes ghost_dige = `${source_dige}.${LANG_COMPILER_VERSION}` (compile.ts:ghost_dige_of),
+//   so the source dige is the PREFIX, not the whole quoted value.  This CLI is deliberately compiler-free
+//    (it content-addresses the .g off disk), so it can't know the compiler version — it ground-truths the
+//     SOURCE leg by matching the open-quote + source dige prefix (`'<dige>`), which the recompiled .go always
+//      contains.  Compiler-version currency is a RUN-time concern (req_rungo / req_include vs Ghostmeta), not
+//       this write-landed check.
 async function pollServed(base: string, gen_path: string, dige: string, deadline: number): Promise<boolean> {
 	const url = `${base.replace(/\/$/, '')}/src/lib/${gen_path}`
 	while (Date.now() < deadline) {
-		try { const r = await fetch(url); if (r.ok && (await r.text()).includes(`'${dige}'`)) return true }
+		try { const r = await fetch(url); if (r.ok && (await r.text()).includes(`'${dige}`)) return true }
 		catch { /* unreachable — keep trying until the deadline */ }
 		await new Promise(res => setTimeout(res, 500))
 	}

@@ -54,6 +54,25 @@ function tsScriptOfModule(mod: string): string {
     return '\n'.repeat(linesBefore) + body
 }
 
+// LANG_COMPILER_VERSION — the compiler's OWN version tag, folded into every ghost's identity
+//  (ghost_dige) so that a change to what `compile` EMITS re-versions every dock even when its
+//   source text is byte-identical.  BUMP THIS whenever you change the translator, the gen
+//    template, or Lang_compile_render_module in a way that changes output-given-input.  A bump
+//     makes every .go's Ghostmeta return a NEW dige, so a stale runner (holding a .go compiled
+//      by an older compiler) no longer FALSELY matches a fresh demand, and the Codebit memo
+//       un-finishes to re-confirm.  Pure whitespace/comment churn in the compiler should NOT
+//        bump it — this is a deliberate output-semantics version, not a source hash.
+export const LANG_COMPILER_VERSION = 'g1'
+
+// ghost_dige_of — the ghost VERSION identity: the raw source_dige folded with the compiler
+//  version.  This is the currency Ghostmeta bakes and req_rungo / req_include compare against,
+//   so it MOVES on a compiler bump — unlike source_dige, which stays pure for source-on-disk
+//    truth (disk_dige, the surprise-read check, the ghost_compile CLI ack).  Kept human-legible
+//     (source prefix first) so `dige.slice(0,8)` still reads the source part at a glance.
+export function ghost_dige_of(source_dige: string): string {
+    return `${source_dige}.${LANG_COMPILER_VERSION}`
+}
+
 export const LANG_COMPILE = {
 //#region collect
 
@@ -1614,7 +1633,7 @@ export const LANG_COMPILE = {
     //   braces, commas all come from the user (we inject no wrapper).
     //   extras.header — IMPORT lines, after the builtin imports, before `let { H }` (imports
     //    must sit at module top).  extras.tail — RENDER markup below </script> (mount children).
-    Lang_compile_render_module(body: string, ghost?: { ghostmeta_name: string, source_dige: string },
+    Lang_compile_render_module(body: string, ghost?: { ghostmeta_name: string, ghost_dige: string },
                                extras?: { header?: string, tail?: string }): string {
         const header = extras?.header ? '\n' + extras.header : ''
         const tail   = extras?.tail   ? '\n' + extras.tail + '\n' : ''
@@ -1622,9 +1641,10 @@ export const LANG_COMPILE = {
         const OPEN  = '<' + 'script lang="ts">'
         const CLOSE = '<' + '/script>'
         // Ghostmeta sits first in the eatfunc so it's reachable even if the user's methods
-        //  fail to parse.  Returns the source_dige → Pantheate confirms the right version is live.
+        //  fail to parse.  Returns the ghost_dige (source_dige ⊗ compiler version) → Pantheate /
+        //   req_rungo confirm the right version is live AND that it was baked by this compiler.
         const meta = ghost
-            ? `    ${ghost.ghostmeta_name}(): string { return '${ghost.source_dige}' },\n\n`
+            ? `    ${ghost.ghostmeta_name}(): string { return '${ghost.ghost_dige}' },\n\n`
             : ''
         return (
 `${OPEN}

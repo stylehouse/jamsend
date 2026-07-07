@@ -61,13 +61,14 @@
                 w.i({ include: me.sc.include })
             }
             // permanent req:include monitors this gen_path's Ghostmeta.
-            //  a re-compile mutates source_dige → maybe_mutate_sc un-finishes the permanent req
-            //   so it re-confirms the new version without being dropped and re-minted.
-            const gen_path       = me.sc.include     as string
-            const path           = me.sc.path        as string
-            const source_dige    = me.sc.source_dige as string
+            //  a re-compile (or a compiler-version bump) mutates ghost_dige → maybe_mutate_sc
+            //   un-finishes the permanent req so it re-confirms the new version without being
+            //    dropped and re-minted.
+            const gen_path       = me.sc.include    as string
+            const path           = me.sc.path       as string
+            const ghost_dige     = me.sc.ghost_dige as string
             const ghostmeta_name = H.Lang_ghostmeta_name(path)
-            await w.oai({ req: 'include', gen_path }, { path, source_dige, ghostmeta_name, permanent: 1 })
+            await w.oai({ req: 'include', gen_path }, { path, ghost_dige, ghostmeta_name, permanent: 1 })
         }
 
         // drive req:include + req:run_method each tick
@@ -77,21 +78,21 @@
     // ── req:include — monitor a compiled module's Ghostmeta ──────────────────
     //
     //   Polls this[ghostmeta_name]() — the method injected at the top of every
-    //   compiled eatfunc — against the expected source_dige.  When they match
+    //   compiled eatfunc — against the expected ghost_dige.  When they match
     //   the module has mounted and deposited its methods; finish.
     //
     //   A 2s ttlilt (one-only) gives the initial mount window.  After it expires
-    //   the ambient heartbeat re-checks periodically.  Permanent: a re-compile
-    //   mutates source_dige → req%mutated + permanent → un-finishes and re-confirms
-    //    the new version without being dropped.  Finishes as soon as dige matches.
+    //   the ambient heartbeat re-checks periodically.  Permanent: a re-compile (or a
+    //   compiler-version bump) mutates ghost_dige → req%mutated + permanent → un-finishes
+    //    and re-confirms the new version without being dropped.  Finishes as soon as dige matches.
     async req_include(req: TheC) {
         const H            = this as House
         const pw           = req.c.up as TheC   // include → w:Pantheate (the host)
         const ghostmeta_name = req.sc.ghostmeta_name as string
-        const source_dige    = req.sc.source_dige    as string
+        const ghost_dige     = req.sc.ghost_dige     as string
 
         const live = (H as any)[ghostmeta_name]?.() as string | undefined
-        if (live !== source_dige) {
+        if (live !== ghost_dige) {
             // module not mounted yet or wrong version — hold briefly for first mount
             H.i_req_ttlilt(req, 2, { waiting: 'ghostmeta' })
             return

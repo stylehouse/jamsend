@@ -65,7 +65,7 @@
     import type { SyntaxNode } from "@lezer/common"
     import { onMount } from "svelte"
     import type { House } from "$lib/O/Housing.svelte"
-import { LANG_COMPILE } from "./lang/compile"
+import { LANG_COMPILE, ghost_dige_of } from "./lang/compile"
 import { lang, lang_for_path } from "./lang/lang"
 
     let { M } = $props()
@@ -208,6 +208,7 @@ import { lang, lang_for_path } from "./lang/lang"
 
         let source = ''
         let source_dige = ''
+        let ghost_dige = ''   // source_dige ⊗ compiler version — the currency Ghostmeta bakes (ghost_dige_of)
         try {
             // Refuse to compile with no parser wired: every line passes verbatim (compile.ts
             //  "not found → raw"), so the .go would be uncompiled .g source — and pushed to a
@@ -228,10 +229,12 @@ import { lang, lang_for_path } from "./lang/lang"
 
                 if (gen_path) {
                     const { body, header, tail } = this.Lang_split_compiled(lines)
-                    // source_dige: dige of the raw source → Ghostmeta method, so Pantheate confirms
-                    //  the live version after mount. Before render, so independent of the wrapper.
+                    // source_dige: dige of the raw source → folded with the compiler version into
+                    //  ghost_dige, the value Ghostmeta bakes so Pantheate / req_rungo confirm the live
+                    //   version AND that this compiler produced it. Before render, independent of wrapper.
                     source_dige = await dig(state.doc.sliceString(0))
-                    const ghost = { ghostmeta_name: H.Lang_ghostmeta_name(path), source_dige }
+                    ghost_dige  = ghost_dige_of(source_dige)
+                    const ghost = { ghostmeta_name: H.Lang_ghostmeta_name(path), ghost_dige }
                     source = this.Lang_compile_render_module(body, ghost, { header, tail })
                     // esbuild parse gate: prove the emitted JS parses before anyone trusts it.
                     //  A raw-JS passthrough can mangle a brace into invalid JS even WITH a parser
@@ -257,14 +260,14 @@ import { lang, lang_for_path } from "./lang/lang"
             //   (H.c.mungOutputstring, set by Run_A_Editron) redacts it to a marker — hundreds of
             //    generated lines per dock is snap noise; dige still moves, so the compile's witnessed.
             const out_source = H.c.mungOutputstring ? `«munged: ${source.length}c, see dige»` : source
-            job.oai({ Output: 1, gen_path, source: out_source, dige, source_dige })
+            job.oai({ Output: 1, gen_path, source: out_source, dige, source_dige, ghost_dige })
 
             // Hand off to Lies (decides write | softgen | nogen): e_Lies_compiled parks
             //  req:Cortex + req:Codebit (Rundown separate). Only hard compiles use the airlock —
             //   e_Lies_compiled throws without a gen_path by design (nothing to write or settle).
             H.i_elvisto('Lies/Lies', 'Lies_compiled', {
                 path: dock.sc.dock, gen_path, source,
-                dige, source_dige,
+                dige, source_dige, ghost_dige,
                 // dock_source: raw .g text (editor only) the runner re-lands + recompiles over
                 //  the channel — the cross-origin runner has no shared disk, so the frame must
                 //   CARRY the source, not poke a re-read. Only the editor pays it; omitted elsewhere.

@@ -124,6 +124,7 @@
         const source      = e.sc.source      as string
         const dige        = e.sc.dige        as string | undefined
         const source_dige = e.sc.source_dige as string | undefined
+        const ghost_dige  = e.sc.ghost_dige  as string | undefined   // currency (source ⊗ compiler ver)
         if (!path || !gen_path) throw 'e_Lies_compiled: needs path + gen_path'
 
         const nowriting = H.Lies_nowriting(w, gen_path)
@@ -145,14 +146,14 @@
         }
 
         // Editor: send the Rungo to the runner FIRST — permission to run before we even write.
-        //  The authority demands this dock's just-compiled version (source_dige, known the moment
-        //   we compiled) be live on the runner.  The frame crosses the slow relay channel while,
-        //    in parallel, we write the .go below and Vite HMR delivers it to the runner LOCALLY —
-        //     so permission and code arrive together instead of the channel RTT trickling on after
-        //      the write settles.  We ship only the dige (not source); the runner acquires the
-        //       version via that same HMR.  No-op until a runner is connected (drops silently).
+        //  The authority demands this dock's just-compiled version (ghost_dige = source ⊗ compiler
+        //   version, known the moment we compiled) be live on the runner.  The frame crosses the slow
+        //    relay channel while, in parallel, we write the .go below and Vite HMR delivers it to the
+        //     runner LOCALLY — so permission and code arrive together instead of the channel RTT
+        //      trickling on after the write settles.  We ship only the dige (not source); the runner
+        //       acquires the version via that same HMR.  No-op until a runner is connected (drops silently).
         if (e.sc.dock_source != null && H.Lies_is_editor(w))
-            H.Lies_send_rungo(w, { path, dige: source_dige })
+            H.Lies_send_rungo(w, { path, dige: ghost_dige })
 
         // Write the .go.  PREFER the relay: ship it down the editor's socket for Node to write to
         //  disk (~1ms) instead of the browser's ~0.5s File-System-Access write — Vite HMRs the
@@ -176,7 +177,7 @@
         const had_cb = cortex.o({ req: 'Codebit', path })[0] as TheC | undefined
         const cb = await cortex.oai(
             { req: 'Codebit', path, maz: 2 },
-            { gen_path, source_dige, dige, permanent: 1 },
+            { gen_path, source_dige, dige, ghost_dige, permanent: 1 },
         )
 
         // Unchanged recompile: a permanent+finished Codebit whose {gen_path, source_dige,
@@ -270,7 +271,7 @@
             : undefined
 
         // import goes first — the dynamic import needs the file on disk;
-        //  source_dige lets req:include confirm the right version mounted.
+        //  ghost_dige lets req:include confirm the right version mounted (source ⊗ compiler ver).
         // The Pantheate split: an editor-flavoured Run compiles + writes the .go
         //  but must NOT take it up — mounting would make the editor run the very
         //   code it is only meant to edit.  So the mount-notify is gated off when
@@ -283,12 +284,12 @@
         //          so must one testing the include-confirm mechanics (LakeSurfer).
         //           The .go is on disk either way; the settle below still fires so the
         //            compile job closes and lint/translation views update.
-        if (req.sc.source_dige && !H.Lies_is_editor()
+        if (req.sc.ghost_dige && !H.Lies_is_editor()
             && H.o_Opt_val(cortex.c.up as TheC, 'wantPantheate')) {
             H.i_elvisto('Pantheate/Pantheate', 'Ghost_update_notify', {
-                include:     gen_path,
+                include:    gen_path,
                 path,
-                source_dige: req.sc.source_dige,
+                ghost_dige: req.sc.ghost_dige,
             })
         }
         H.feebly_i_elvisto('Lang/Lang', 'Lies_compile_settled', {
