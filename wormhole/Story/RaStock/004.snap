@@ -1,0 +1,23 @@
+Snap:H
+  H:RaStock,Run
+    A:RaStock
+      self,round=5	{"mung":["age"]}
+      w:RaStock
+        self,round=5	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        reached:step_2
+        survey,tracks=8
+        Library,pier:DJ
+          Record,id:848b336a,title:Cosmic C,artist:DJ Oscillo,seconds=78,lufs=-7.33,gain=-6.67,real
+            Stream,name:opus,total=39,sr=48000,br=128000,seg_secs=2,bytes=1290003
+          Record,id:8233c2ea,title:Dorian D,artist:DJ Oscillo,seconds=76,lufs=-8.04,gain=-5.96,real
+            Stream,name:opus,total=38,sr=48000,br=128000,seg_secs=2,bytes=1256926
+          Record,id:4afd7f10,title:Groove G,artist:DJ Oscillo,seconds=66,lufs=-7.84,gain=-6.16,real
+            Stream,name:opus,total=33,sr=48000,br=128000,seg_secs=2,bytes=1091541
+        req:witness,eternal,ok
+        reached:step_3
+        req:rastock,finished
+        stocked:first,of=3,ready=3
+        reached:step_4
+        req:raproof
+          ttlilt	{"mung":["until_ts"]}

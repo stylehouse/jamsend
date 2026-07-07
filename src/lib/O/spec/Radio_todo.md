@@ -122,16 +122,23 @@ The stock is the library made SERVABLE: loudness-uniform, seekable, chunked, sna
         segments are chosen for **random access, fault isolation (a bad chunk poisons 2s, not a
          stream), and unit-alignment** (segment = Repli page = wear unit = the want-cursor's
           count), not out of decoder fear. Continuous WebCodecs decode is the LIVE-edge tool
-           (§3.3) where you join once and follow; `decodeAudioData` per segment stays the dumb
-            fallback that works everywhere we deign to support.
+           (§3.3) where you join once and follow — and equally the FROM-THE-START tool [owner
+            2026-07-07]: a listener taking a whole track from zero rides ONE continuous WebCodecs
+             stream fed segment after segment, no per-segment decode tax at all; `decodeAudioData`
+              per segment stays the dumb fallback that works everywhere we deign to support.
  - **measure**: needles (`@domchristie/needles`, the `Records.svelte` prior art) on the decoded
     PCM — LUFS per track. `TARGET_LUFS` is ONE constant (the old machine ran **-8** — hot,
-     radio-style; streaming platforms normalize to -14; decide at build). Stamp BOTH
-      `lufs:<measured>` and `gain:<applied dB>` on the `%Record`.
+     radio-style; streaming platforms normalize to -14). **Decided at build 2026-07-07: -14,
+      with a -1 dBFS peak ceiling** — the gain is BAKED into the PCM, so an up-gain that would
+       clip instead caps at the ceiling (`capped:1` stamped; that track sits honestly quieter).
+        A -8 target would cap half a real library and defeat the uniformity it exists for.
+         Stamp BOTH `lufs:<measured>` and `gain:<applied dB>` on the `%Record`.
  - **the pass**: nav `bin_read` → decode ONCE (OfflineAudioContext, gesture-free — the
     `Crate_transcode_begin` seam) → apply gain to the PCM → WebCodecs Opus encode →
      cut at ~2s boundaries → segments to the share (`§9.1b` heuristics: `.jamsend/` corner or
-      `testmusic/` in-repo) + `%Record`/`%Stream,name:opus`/`%Chunk` rows that SNAP.
+      `testmusic/` in-repo) + `%Record`/`%Stream,name:opus` rows that SNAP (per-segment `%Chunk`
+       particles would be snap bulk — the segment FILES are the chunk rows, `%Stream.total`
+        counts them, and Repli pages them onto the wire later).
  - **Book: `RaStock`** — real `/music` in, uniform stock out, and the audio-proof: decode a
     produced segment on the muted AC and the measured loudness lands within tolerance of
      TARGET; a second run is idempotent (stock already standing is recognized, not rebuilt).
@@ -149,8 +156,9 @@ Casting is **Repli, never RPC** (the all-pervading rule): the catalog crosses as
 ### 3.4 raterm — the terminal that plays
 
 The Musu cursor machinery finally earns its keep as the REAL spool: want-ahead keyed off the
- playhead (§9.3), `decodeAudioData` per 2s segment, the uniform gain already baked, crossfade
-  at track joins (MusuMix's deck math). Faces: BigSoundland + the Voro radio tuner as the dial.
+ playhead (§9.3), `decodeAudioData` per 2s segment (a from-zero full-track listen may instead
+  ride one continuous WebCodecs decode — the §3.3 live-edge tool pointed at a whole track),
+   the uniform gain already baked, crossfade at track joins (MusuMix's deck math). Faces: BigSoundland + the Voro radio tuner as the dial.
  - **the ISP-oppression warning [owner 2026-07-07]**: when Piers cannot WebRTC (CGNAT, blocked
     UDP, symmetric NAT) and traffic falls back to the relay, SAY SO — a Brink badge + a face
      line: *"your ISP is likely oppressing direct peer connections — you are riding the shared

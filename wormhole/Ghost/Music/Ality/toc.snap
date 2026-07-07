@@ -19,6 +19,24 @@ Waft:Ghost/Music/Ality,active
     Funkcion:Storying,of_Book:MusuConceal
     Funkcion:Storying,of_Book:MusuBounce
     Funkcion:Storying,of_Book:MusuReplica
+    Funkcion:Storying,of_Book:RaStock
+  What:the pipeline — rastock → racast → raterm (Radio_todo §3 — the product itself)
+    What:the stock pass (Ghost/M/Ra.g — needles LUFS → baked gain → 2s Opus segments → Ogg mux → disk)
+      Doc:Ghost/M/Ra.g
+      Point,method:Ra_stock
+      Point,method:Ra_stock_one
+      Point,method:Ra_lufs
+      Point,method:Ra_gain_for
+      Point,method:Ra_encode_opus
+      Point,method:Ra_ogg_opus
+      Point,method:Ra_stock_standing
+      Point,method:Ra_proof
+    What:RaStock (the Book — survey / stock / prove / again)
+      Doc:Ghost/Story/Radiation.g
+      Point,method:RaStock_drive
+      Point,method:RaStock_pass
+      Point,method:RaStock_proofs
+      Point,method:RaStock_witness
   What:the machine
     What:1 the spool
       Doc:Ghost/M/Radiola.g
@@ -242,7 +260,7 @@ Waft:Ghost/Music/Ality,active
       Point,method:Crate_transcode_begin
       Point,method:Crate_transcode_release
   What:Pier reality (spec §9 — the replication goes real)
-    Doc:src/lib/O/spec/Music_todo.md
+    Doc:src/lib/O/spec/Radio_todo.md
     Point,text:9.1
     What:the real library (FSA share gate → Records off /music)
       Doc:Ghost/Story/Musuation.g
@@ -278,65 +296,66 @@ Waft:Ghost/Music/Ality,active
     Point,method:enqueue
     Point,method:raterminal_recordWear
     Point,method:turn_knob
-  What:the spec
-    Doc:src/lib/O/spec/Music_todo.md
+  What:the spec (split 2026-07-07 — todo carries the spring + §3 pipeline / lowlevel keeps the ladder)
+    Doc:src/lib/O/spec/Radio_todo.md
+    Doc:src/lib/O/spec/Radio_lowlevel.md
   What:bridges
     What:STAY_AHEAD_OF_ACK_SEQ
-      Doc:src/lib/O/spec/Music_todo.md
+      Doc:src/lib/O/spec/Radio_lowlevel.md
       Point,text:STAY_AHEAD_OF_ACK_SEQ
       Doc:Ghost/M/Radiola.g
       Point,text:STAY_AHEAD_OF_ACK_SEQ
       Doc:src/lib/ghost/Radios.svelte
       Point,text:STAY_AHEAD_OF_ACK_SEQ
     What:KEEP_AHEAD
-      Doc:src/lib/O/spec/Music_todo.md
+      Doc:src/lib/O/spec/Radio_lowlevel.md
       Point,text:KEEP_AHEAD
       Doc:src/lib/ghost/Radios.svelte
       Point,text:KEEP_AHEAD
       Doc:Ghost/M/Radiola.g
       Point,text:keep_ahead
     What:MIN_LEFT_TO_WANT_STREAMING
-      Doc:src/lib/O/spec/Music_todo.md
+      Doc:src/lib/O/spec/Radio_lowlevel.md
       Point,text:MIN_LEFT_TO_WANT_STREAMING
       Doc:src/lib/ghost/Radios.svelte
       Point,text:MIN_LEFT_TO_WANT_STREAMING
       Doc:Ghost/M/Radiola.g
       Point,text:want_left
     What:streamability
-      Doc:src/lib/O/spec/Music_todo.md
+      Doc:src/lib/O/spec/Radio_lowlevel.md
       Point,text:streamability
       Doc:Ghost/M/Radiola.g
       Point,text:req_streamability
       Doc:src/lib/ghost/Radios.svelte
       Point,text:streamability
     What:radiostock
-      Doc:src/lib/O/spec/Music_todo.md
+      Doc:src/lib/O/spec/Radio_lowlevel.md
       Point,text:radiostock
       Doc:Ghost/M/Radiola.g
       Point,text:radiostock
       Doc:src/lib/ghost/Radios.svelte
       Point,text:radiostock
     What:preview
-      Doc:src/lib/O/spec/Music_todo.md
+      Doc:src/lib/O/spec/Radio_lowlevel.md
       Point,text:preview
       Doc:Ghost/M/Radiola.g
       Point,text:preview
       Doc:src/lib/ghost/Radios.svelte
       Point,text:radiopreview
     What:playhead
-      Doc:src/lib/O/spec/Music_todo.md
+      Doc:src/lib/O/spec/Radio_lowlevel.md
       Point,text:playhead
       Doc:Ghost/M/Radiola.g
       Point,text:playhead
       Doc:src/lib/ghost/Radios.svelte
       Point,text:playhead
     What:not_too_far_ahead
-      Doc:src/lib/O/spec/Music_todo.md
+      Doc:src/lib/O/spec/Radio_lowlevel.md
       Point,text:not_too_far_ahead
       Doc:src/lib/ghost/Radios.svelte
       Point,text:not_too_far_ahead
     What:wore_out
-      Doc:src/lib/O/spec/Music_todo.md
+      Doc:src/lib/O/spec/Radio_lowlevel.md
       Point,text:wore_out
       Doc:Ghost/M/Radiola.g
       Point,text:wore_out

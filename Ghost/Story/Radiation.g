@@ -1,0 +1,157 @@
+// Radiation.g — the Ra* PRODUCT Books (rastock → racast → raterm; Radio_todo.md §3), in the
+//  Musuation/Swarmation mould: the file is the artifact; RaStock is the first Book identity.
+//   The Creduler loads this ghost live BEFORE the Story begins (once it is in CREDULER_GHOSTS),
+//    so Ghost/M/Ra.g's pipeline spine is on H.  These Books test the PRODUCT — a low-level Musu*
+//     Book retires only when its Ra* re-draw here is green (the consolidation rule).
+//
+//  RaStock — a real library becomes SERVABLE STOCK, end to end (needsFSA: the stock really writes):
+//   beat 2  SURVEY — walk testsounds off the granted share; the census home (%Library,pier:DJ)
+//                    stands empty — nothing pre-stocked in the world
+//   beat 3  STOCK  — the first three tracks (three DIFFERENT source loudnesses) re-encode into
+//                    loudness-uniform 2s Ogg-Opus segments under radiostock/<id>/ + a stock.snap
+//                    card + a %Record/%Stream row each (held by an expecting — real encode clock)
+//   beat 4  PROVE  — segment 0 of each read BACK off the disk → decodeAudioData (the dumb-fallback
+//                    path: if it decodes here it decodes anywhere) → the SAME meter that set the
+//                    gain reads the target loudness at ~2.00s (the EOS granule trim doing its job)
+//   beat 5  AGAIN  — a second pass finds the stock STANDING (stock.snap parses + every segment
+//                    file present) and rebuilds nothing: the idempotence that makes rastock a
+//                    resumable library pass instead of a nightly re-encode
+//
+// CONVENTION (Musu*): no Run_A_ recipe — Story_subHouse stands up A:RaStock/w:RaStock by default.
+//  The world MUST be named after the Book (do_fn_for dispatches by w.sc.w) or the wrangle silently
+//   never fires.
+
+RaStock(A,w):
+    w oai %req:wrangle,eternal
+        await &RaStock_drive,w,req
+        req%ok = 1
+
+// RaStock_drive — three skip gates (the Book needs decode + WebCodecs Opus encode + a writable
+//  share; needsFSA on its Credence row routes dispatch to the local-FSA runner), then one beat's
+//   setup fired once off step_n (req-local did_step, the Pere* lesson).
+async RaStock_drive(w, req):
+    if (typeof OfflineAudioContext === 'undefined') {
+        if (!w.oa({ skipped: 'no_audio' })) w.i({ skipped: 'no_audio' })
+        return
+    }
+    if (typeof AudioEncoder === 'undefined') {
+        if (!w.oa({ skipped: 'no_webcodecs' })) w.i({ skipped: 'no_webcodecs' })
+        return
+    }
+    let nav = this.Crate_nav()
+    if (!nav || typeof nav.bin_write !== 'function') {
+        if (!w.oa({ skipped: 'no_writable_share' })) w.i({ skipped: 'no_writable_share' })
+        return
+    }
+    let n = (this.c.run)?.c.step_n
+    if (n != null && n !== req.c.did_step) {
+        req.c.did_step = n
+        if (n === 2) await this.RaStock_survey(w)
+        if (n === 3) await this.RaStock_stock(w)
+        if (n === 4) await this.RaStock_prove(w)
+        if (n === 5) await this.RaStock_again(w)
+    }
+    await this.Musu_float(w)
+
+// beat 2 — the survey: walk the share (the same sorted walk the stock pass will take), stand the
+//  census home, install the witness.  take=3 pins the pass to the first three tracks — the three
+//   DJ Oscillo tones, whose different K-weightings make the uniformity claim real.
+async RaStock_survey(w):
+    w i reached:step_2
+    w.c.nav = this.Crate_nav()
+    w.c.take = 3
+    let paths = await this.Crate_nav_paths(w.c.nav, 'testsounds')
+    w.i({ survey: 1, tracks: paths.length })
+    this.Ra_library(w, 'DJ')
+    w.doai({req: 'witness', eternal: 1})?.(async (req) => { this.RaStock_witness(w); req.sc.ok = 1 })
+
+// beat 3 — the stock pass, held by an expecting (decode + needles + ~35 fresh encoders per track
+//  is real wall clock — and a throttled background tab stretches each meter call, so the budget
+//   carries margin; Story must not snap mid-pass).
+async RaStock_stock(w):
+    w i reached:step_3
+    await this.expecting(w, 'rastock', 180, async () => { await this.RaStock_pass(w, 'first') })
+
+// beat 4 — the proof read, expecting-held.  90s and PARALLEL proofs: a background runner tab is
+//  timer-throttled and each needles meter call can stretch to ~30s of wall clock — three serial
+//   proofs blew a 30s budget while every one of them was actually SUCCEEDING (lufs -14.02).
+async RaStock_prove(w):
+    w i reached:step_4
+    await this.expecting(w, 'raproof', 240, async () => { await this.RaStock_proofs(w) })
+
+// beat 5 — the second pass: same verb, same take — the disk truth decides what happens.
+async RaStock_again(w):
+    w i reached:step_5
+    await this.expecting(w, 'rastock_again', 60, async () => { await this.RaStock_pass(w, 'again') })
+
+// RaStock_pass — one whole Ra_stock pass + its %stocked row (beat 3 and the beat-5 re-run share
+//  it).  'first' stamps READY = built+stood — run-stable whether the disk started clean or a prior
+//   RUN left the stock standing (built|stood split there would diff the fixture on every rerun).
+//    'again' stamps the split raw: IN-run it is determined — everything stands, nothing builds —
+//     and that determinism IS the claim.  Zero counts stay absent (the snapped-boolean discipline).
+async RaStock_pass(w, which):
+    let lib = this.Ra_library(w, 'DJ')
+    let r = await this.Ra_stock(w, lib, w.c.nav, 'testsounds', w.c.take)
+    let p = { stocked: which, of: r.of }
+    if (which === 'first' && r.built + r.stood) p.ready = r.built + r.stood
+    if (which === 'again' && r.built) p.built = r.built
+    if (which === 'again' && r.stood) p.stood = r.stood
+    if (r.skipped) p.skipped = r.skipped
+    w.i(p)
+
+// RaStock_proofs — segment 0 of every %Record back off the disk, all records IN PARALLEL (the
+//  throttled waits overlap instead of stacking); the %proof child rides the %Record it proves.
+async RaStock_proofs(w):
+    let lib = this.Ra_library(w, 'DJ')
+    let jobs = lib.o({ Record: 1 }).map((rec) => this.RaStock_proof_one(w, rec))
+    await Promise.all(jobs)
+
+// RaStock_proof_one — one record's proof.  A failed proof stamps its REASON (fail=) instead of
+//  vanishing — the row reads off the snap while red and never mints once green (the see gates
+//   never pass a fail).
+async RaStock_proof_one(w, rec):
+    let got = null
+    try {
+        got = await this.Ra_proof(w.c.nav, rec.sc.id, 0)
+    } catch (er) {
+        rec.i({ proof: 1, fail: ('threw ' + String(er)).replace(/[,:]/g, ' ').slice(0, 90) })
+        return
+    }
+    if (!got) return
+    if (got.fail) {
+        rec.i({ proof: 1, fail: got.fail })
+        return
+    }
+    let pr = { proof: 1, seconds: got.seconds }
+    if (got.lufs != null) pr.lufs = got.lufs
+    if (got.ms) pr.ms = got.ms
+    rec.i(pr)
+
+// ── the witness — per-beat %see observations, n-gated, reading live truth (no commas, no apostrophes) ──
+RaStock_witness(w):
+    let n = (this.c.run)?.c.step_n
+    let lib = w.o({ Library: 1, pier: 'DJ' })[0]
+    if (!lib) return
+    let recs = lib.o({ Record: 1 })
+    // beat 2: the walk gave tracks and the census home stands empty — nothing pre-stocked.
+    let sv = w.o({ survey: 1 })[0]
+    if (n === 2 && sv && +(sv.sc.tracks || 0) >= 3 && recs.length === 0 && !(oa %see:'the share holds real tracks and the library stands empty')) i %see:'the share holds real tracks and the library stands empty'
+    // beat 3: three real %Records each with a live opus %Stream — every wanted track ready, none skipped.
+    let p1 = w.o({ stocked: 'first' })[0]
+    let streams_ok = recs.length === 3 && recs.every(r => r.sc.real && +(r.o({ Stream: 1, name: 'opus' })[0]?.sc?.total || 0) > 0)
+    if (n === 3 && p1 && +(p1.sc.ready || 0) === 3 && !p1.sc.skipped && streams_ok && !(oa %see:'three real tracks stand as loudness uniform opus stock on disk')) i %see:'three real tracks stand as loudness uniform opus stock on disk'
+    // beat 4: the read-back proof — every segment ~2.00s and ON target by the meter that set the
+    //  gain; and the uniformity is REAL — the tones took DIFFERENT gains yet landed together.
+    let proofs = []
+    for (const r of recs) { let pf = r.o({ proof: 1 })[0]; if (pf) proofs.push(pf) }
+    let target = this.Ra_target_lufs(w)
+    let on_target = proofs.length === 3 && proofs.every(pf => pf.sc.lufs != null && Math.abs(+(pf.sc.lufs) - target) <= 1 && Math.abs(+(pf.sc.seconds) - 2) <= 0.1)
+    if (n === 4 && on_target && !(oa %see:'a stock segment read back decodes to two seconds at the target loudness')) i %see:'a stock segment read back decodes to two seconds at the target loudness'
+    let gains = new Set()
+    for (const r of recs) gains.add(r.sc.gain)
+    let vals = proofs.map(pf => +(pf.sc.lufs))
+    let spread = (proofs.length === 3) ? Math.max(...vals) - Math.min(...vals) : 99
+    if (n === 4 && gains.size >= 2 && spread <= 1 && !(oa %see:'different tones took different gains yet landed within one LU of each other')) i %see:'different tones took different gains yet landed within one LU of each other'
+    // beat 5: idempotence — the second pass found everything standing and built nothing.
+    let p2 = w.o({ stocked: 'again' })[0]
+    if (n === 5 && p2 && !p2.sc.built && +(p2.sc.stood || 0) === 3 && !p2.sc.skipped && !(oa %see:'a second pass recognized the standing stock and rebuilt nothing')) i %see:'a second pass recognized the standing stock and rebuilt nothing'

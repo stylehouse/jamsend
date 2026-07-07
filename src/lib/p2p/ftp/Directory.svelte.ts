@@ -196,6 +196,10 @@ function sort_by_name(a:name_haver,b:name_haver,k?:string) {
     k ||= 'name'
     return a[k] > b[k] ? 1 : a[k] < b[k] ? -1 : 0
 }
+// How long to wait after seeing a .crswap (a write in flight) before re-expanding.
+//  A close()/rename settles in well under this; 3s is the human's "read again once it's
+//   settled" instinct with slack for a slow disk.  One debounced timer per listing.
+const CRSWAP_SETTLE_MS = 3000
 // many files|dirs
 export class DirectoryListing {
     up?: DirectoryListing
@@ -205,9 +209,12 @@ export class DirectoryListing {
 
     files: FileListing[] = $state([])
     directories: DirectoryListing[] = $state([])
-    
+
     expanded = $state(false);
-    
+    // debounced re-expand handle, armed when an expand() catches the dir mid-write (a .crswap
+    //  present, or an entry that vanished under us).  Internal plumbing — not reactive.
+    _resettle_timer:any = null
+
     constructor(init: Partial<DirectoryListing> = {}) {
         Object.assign(this,init)
     }
@@ -270,8 +277,17 @@ export class DirectoryListing {
         //       toc.snap fixture with a Step-less re-record.
         const files: FileListing[] = []
         const directories: DirectoryListing[] = []
+        // A .crswap is Chrome's atomic-write journal: createWritable() writes foo.crswap, then
+        //  close() renames it onto foo.  Seeing one means a write is in flight RIGHT NOW — so it
+        //   is never a real listing entry (skip by name; don't getFile() something about to
+        //    vanish — that WAS the "Skipping problematic entry ….crswap: NotFoundError" noise),
+        //     and this whole listing is provisional: the settled foo may not be visible yet.
+        //      Flag the flux and re-expand once it settles, converging to post-rename truth rather
+        //       than caching a mid-rename listing — the exact race the comment below warns about.
+        let saw_flux = false
         // < tabulates|reduces into a Selection later
         for await (const entry of this.handle.values()) {
+            if (entry.name.endsWith('.crswap')) { saw_flux = true; continue }
             try {
                 let generally = {
                     up: this,
@@ -296,12 +312,17 @@ export class DirectoryListing {
                     }));
                 }
             } catch (err) {
+                // An entry can vanish between values() yielding it and our getFile() — a concurrent
+                //  delete/rename completing.  Benign churn, not a corrupt entry: note the flux (the
+                //   re-expand picks up the settled truth) and stay quiet.  Warn only on a real surprise.
+                if (err?.name === 'NotFoundError') { saw_flux = true; continue }
                 console.warn(`Skipping problematic entry ${entry.name}:`, err);
             }
         }
         this.files = files.sort(sort_by_name)
         this.directories = directories.sort(sort_by_name)
         this.expanded = true
+        if (saw_flux) this._resettle()
         return this
     }
     collapse() {
@@ -309,6 +330,18 @@ export class DirectoryListing {
         this.files = []
         this.directories = []
         this.expanded = false;
+    }
+    // Arm a single debounced re-expand after a mid-write expand (a .crswap seen / an entry
+    //  vanished under us).  Debounced so a burst of writes coalesces to one re-read; converges
+    //   because a settled dir shows no .crswap → saw_flux false → nothing re-arms.  Detached
+    //    (fire-and-forget onto the reactive $state), so guard a since-dropped handle and swallow.
+    _resettle() {
+        if (this._resettle_timer) clearTimeout(this._resettle_timer)
+        this._resettle_timer = setTimeout(() => {
+            this._resettle_timer = null
+            if (!this.handle) return   // listing torn down before it settled
+            this.expand().catch(() => {})
+        }, CRSWAP_SETTLE_MS)
     }
 
 

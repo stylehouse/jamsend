@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_V_Voro(): string { return 'a6328e246bf549fd' },
+    Ghostmeta_Ghost_V_Voro(): string { return 'ce1c0661ae4181e9' },
 
 // Voro.g — the Vis family home: the Voronoi-Cyto render (Ghost/V/, Waft:Ghost/Vis/Visua).
 //  A late sibling to networking (N), music (M) and society (S).  But where THOSE are spines the
@@ -86,21 +86,23 @@ Voro_crush_pass(w, level) {
 // Voro_report — the crush's WORKING, projected onto a SIBLING world (the owner's "a different
 //  w, a projection on the wall next to it").  The flora world stays PURE flora — the c-side
 //   discipline holds THERE, nothing the fold does reaches its snap — while the thinking lands
-//    NEXT to it in w:<name>Report, rewritten each crush beat.  So every Story step now DIFFS
+//    NEXT to it in w:Voronoiology (one fixed name across all Book:Voro*), rewritten each crush
+//     beat.  So every Story step now DIFFS
 //     and the model Cyto renders is finally legible in the snap: the governor level, the
 //      visible count, per-genus whether it folded to a gang or scattered loose (the owner's
 //       "why are some Pittosporum non-cells" — level-dependent ganging, now readable), which
 //        panes the radio popped, and the drift focus.  A sibling world is NOT in the flora
 //         world's subtree, so cyto_scan never renders it — it is SNAP-ONLY, the seed of Story's
 //          future separable snap channels (capture certain A/w on their own layer, trace always
-//           on).  GATED on w.c.crush_report (a Book arms it in setup); the arm is c-side, so the
-//            arming itself never snaps, and an un-armed world (VoroMitosis, VoroScape, an ◈
-//             imposition) reports NOTHING — its flora snap is untouched.
+//           on).  GATED on w.c.voronoiology — armed declaratively by The/Opt/useVoronoiology in
+//            the toc (Story stamps the c-side arm in Story_settingoff, the twin of useCyto); the
+//             arm is c-side, so the arming itself never snaps, and a Book that doesn't opt in (or
+//              an ◈ imposition on the Cyto mirror) reports NOTHING — its flora snap is untouched.
 Voro_report(w, stats) {
-    if (!w.c.crush_report) return null
+    if (!w.c.voronoiology) return null
     let A = w.c.up
     if (!A || !w.sc.w) return null
-    let rname = w.sc.w + 'Report'
+    let rname = 'Voronoiology'
     let rw = A.o({ w: rname })[0]
     if (!rw) rw = A.i({ w: rname })
     for (const c of rw.o().slice()) c.drop(c)
@@ -828,7 +830,7 @@ async VoroRadio_drive(w, req) {
 //  (a popped pane is unstamped and leaves the candidate set until a later pass re-gangs it).
 VoroRadio_seed(w) {
     w.c.crush_wanted = 1
-    w.c.crush_report = 1   // arm the sibling-world projection (w:VoroRadioReport) — proves it in isolation
+    // the sibling-world projection (w:Voronoiology) is armed declaratively now — The/Opt/useVoronoiology
     this.VoroMitosis_found(w, 'Coprosma', 5)
     this.VoroMitosis_found(w, 'Veronica', 4)
     this.VoroMitosis_found(w, 'Metrosideros', 4)

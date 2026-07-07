@@ -65,7 +65,9 @@
         'Ghost/M/Crate.g',              // crate-digging — walk a music collection → records → the radiostock override
         'Ghost/M/Mixer.g',              // cellular mixer — beat detection, beatmatch, multi-cell sum, crossfade (stage 6)
         'Ghost/M/Mesh.g',               // the sync that sees itself — replicas/edges, cheapest-route, multicast stretch (8+9)
+        'Ghost/M/Ra.g',                 // the PIPELINE spine — rastock: needles LUFS → baked gain → 2s WebCodecs Opus segments → Ogg mux → stock on disk
         'Ghost/Story/Musuation.g',      // the Musu* tests — MusuStaple; more pile on here
+        'Ghost/Story/Radiation.g',      // the Ra* PRODUCT tests — RaStock; racast/raterm Books pile on here
 
         'Ghost/S/Swarm.g',              // swarm spine — identity/page/pier + the Idzeug invite (Swarm_spec.md)
         'Ghost/Story/Swarmation.g',     // the Swarm* tests — SwarmStaple; more pile on here

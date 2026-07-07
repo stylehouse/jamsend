@@ -1384,6 +1384,19 @@
             H.i_elvisto('Cyto/Cyto', 'Cyto_commission', { req: commission })
         }
 
+        // ── arm Voronoiology ──────────────────────────────────────────
+        // The crush's thinking (Voro_report, Ghost/V/Voro.g) projects onto a SIBLING world
+        //  w:Voronoiology — SNAP-ONLY (a sibling isn't in the run world's subtree, so cyto_scan
+        //   never renders it).  Declarative twin of useCyto: any Book:Voro* opts in via
+        //    The/Opt/useVoronoiology.  Mind the two worlds: the Opt lives on the STORY world
+        //     (only it carries c.The, so The_Opt_val must read `w`), but the crush runs on the
+        //      RUN worlds under Run — Story_subHouse minted Run/%A/%w:<Book> before settingoff —
+        //       and Voro_report's gate reads !runworld.c.voronoiology.  So read here, stamp THERE,
+        //        on each run worker.  c-side, so the arming itself never snaps.
+        if (H.The_Opt_val(w, 'useVoronoiology'))
+            for (const rw of (Run.o({ A: 1 }) as TheC[]).flatMap((a: TheC) => a.o({ w: 1 }) as TheC[]))
+                rw.c.voronoiology = 1
+
         // The doorstep moment: gifts of Opt delivered for the journey.
         this.push_opt_to_run(w)
     },

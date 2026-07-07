@@ -86,6 +86,60 @@ Design: cytoscape KEEPS computing 2D — we re-project the plane onto a cylinder
      because the tessellation IS in screen space, but the gravity brush's pinch
       direction no longer matches the model plane.
 
+### 🏛️ A:Tunnel — the compute grows its own home (architecture, greenlit 2026-07-07)
+
+Today the whole Voro layer is a **parasite on Story**: a feature-toggle on `A:Cyto`
+ under `H:Run`, engaged by an ad-hoc mix — the ◈ button imposing on the Cyto mirror, a
+  Book `_seed` stamping `w.c.crush_wanted`, `Opt/crushCyto` in a toc.  It rides Story's
+   step metronome because Story is the most robust timekeeper we have — and Story's
+    process supervision (start-check a run, damn+restart it, or let it wander into
+     entropic runtime) is real tech worth keeping.  But a plaything bolted to a finite
+      test-runner can only ever run *inside a Book*.
+
+**The compute is already substrate-neutral — that is the whole hinge.**  `Voro_crush_scan(w)`,
+ `Voro_crush_walk`, `Voro_report(w, stats)` take **a world and nothing else**; they
+  read|write c-side on `w` and never reach into Story.  The ONLY Story coupling in the
+   layer is the one line that *calls* them each beat (`Musuation.g` do_fn,
+    `if (n >= 2) this.Voro_crush_scan(w)`).  So **A:Cyto-now vs A:Tunnel-later is a
+     re-home, not a rewrite** — whoever holds the metronome (a Story step now, a Tunnel
+      heartbeat later) drives the identical code.
+
+**Why Story is the birthplace but not the home.**  The real Radiological sound land is a
+ **toplevel app** — BigSoundland (`src/lib/V/`, `boot_qualand`, no Auto→Story chain
+  above it).  Compute that lives *on* Story cannot ship there.  So the layer must
+   eventually own a home that doesn't require Story — and that home is **A:Tunnel**, a
+    first-class actor under `H:Run`, mountable directly by a toplevel app.
+
+**What A:Tunnel earns — and only then.**  Two capabilities Story structurally can't give:
+1. **A cadence off the step-grid.**  Story runs N steps and halts with a verdict; a
+    *gently-turning-over* ambient landscape has no `done`.  Tunnel's own req-heartbeat
+     turns the crush over continuously.
+2. **A durable owner for history** — the load-bearing one.  Waves are **discarded**
+    today (`Cytui gn.sc.waves = []`) and camera|positions **never snap** (pure live
+     cytoscape state).  To "walk back the waves + your position + all their positions so
+      everything looks exactly as it was WITHOUT re-running layout," something must
+       **retain** what those two seams throw away.  On a transient Cyto mirror under a
+        halting Story there is no such owner; on A:Tunnel it is a natural history ring.
+
+**Story stays — promoted, not evicted.**  When Tunnel exists Story becomes its
+ **supervisor** (start-check, damn+restart, release into entropic runtime); A:Tunnel
+  **owns** the compute + history + camera.  Ownership and supervision are two jobs fused
+   today only because there is one House.
+
+**The one rule that keeps the port free:** the Voro layer never learns Story's name — it
+ only ever "runs on a world."  (Already true; keep it true.)
+
+Renders as the **🕳 tunnel** north star above: A:Tunnel is the actor that HOSTS the
+ gently-turning drift that vision draws on the tube wall — same word, two faces (the
+  render is the wall you see, A:Tunnel is the engine turning behind it).
+
+**Status.**  First step LANDED 2026-07-07 (fork-independent): the crush's projection
+ world renamed `w:VoroRadioReport → w:Voronoiology` (one fixed handle across all
+  `Book:Voro*`) and armed declaratively via `The/Opt/useVoronoiology` (twin of `useCyto`,
+   stamped in `Story_settingoff`).  A:Tunnel itself is **scheduled, not shelved** — its
+    commit point is the undo-history layer, because that is the first capability that
+     cannot be faked on Story.
+
 The microcosm cards (Voro_microcosm.md a+b) underexpressed: a VoroScape pane the size
  of a hand said "Track" three times, because the card text was the member's mainkey
   value and nothing else.  The molded Stuffings they replaced were rich.  Vtuffing is

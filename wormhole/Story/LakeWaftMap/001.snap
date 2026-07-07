@@ -10,7 +10,7 @@ Snap:H
         req:Cortex,eternal,maz=5,ok
         req:Store,eternal,maz=7,ok
           Good,type:text/Waft,path:wormhole/GhostList/toc.snap,waft_path:GhostList
-            known,dige:c9c186702acb7fa3,kind:read	{"mung":["at"]}
+            known,dige:f73d8d8839f6e32f,kind:read	{"mung":["at"]}
         req:git
         req:wants
         o_elvis:dock_askies
@@ -52,6 +52,7 @@ Snap:H
             Doc:Ghost/Story/Peregrination.g,name:Peregrination	{"mung":["noticed_at"]}
             Doc:Ghost/Story/Musuation.g,name:Musuation	{"mung":["noticed_at"]}
             Doc:Ghost/Story/Swarmation.g,name:Swarmation	{"mung":["noticed_at"]}
+            Doc:Ghost/Story/Radiation.g,name:Radiation	{"mung":["noticed_at"]}
           open_dir:src/lib/O/spec
           group:src/lib/O/spec,dir:src/lib/O/spec
             Doc:src/lib/O/spec/Covenant_design.md,name:Covenant_design.md	{"mung":["noticed_at"]}
@@ -76,7 +77,6 @@ Snap:H
             Doc:src/lib/O/spec/stho_primer.md,name:stho_primer.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Lang_handover.md,name:Lang_handover.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Lens_posable_TODO.md,name:Lens_posable_TODO.md	{"mung":["noticed_at"]}
-            Doc:src/lib/O/spec/Music_todo.md,name:Music_todo.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Keeping_spec.md,name:Keeping_spec.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Backbone_plan.md,name:Backbone_plan.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Cluster_spec.md,name:Cluster_spec.md	{"mung":["noticed_at"]}
@@ -98,6 +98,8 @@ Snap:H
             Doc:src/lib/O/spec/Voro_svg_stuffing.md,name:Voro_svg_stuffing.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Voro_pinch.md,name:Voro_pinch.md	{"mung":["noticed_at"]}
             Doc:src/lib/O/spec/Voro_vtuffing.md,name:Voro_vtuffing.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Radio_todo.md,name:Radio_todo.md	{"mung":["noticed_at"]}
+            Doc:src/lib/O/spec/Radio_lowlevel.md,name:Radio_lowlevel.md	{"mung":["noticed_at"]}
           open_dir:src/lib/O
           group:src/lib/O,dir:src/lib/O
             sub:src/lib/O/D,name:D
@@ -156,6 +158,7 @@ Snap:H
             Doc:Ghost/M/Mixer.g,name:Mixer	{"mung":["noticed_at"]}
             Doc:Ghost/M/Mesh.g,name:Mesh	{"mung":["noticed_at"]}
             Doc:Ghost/M/Sound.g,name:Sound	{"mung":["noticed_at"]}
+            Doc:Ghost/M/Ra.g,name:Ra	{"mung":["noticed_at"]}
         Funkcions
           req:Waftica,waft:GhostList,eternal,main:dirlist,ok
         o_elvis:Lies_desire_play

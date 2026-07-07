@@ -18,7 +18,8 @@ Waft:Credence
   What:Musu,desc:the music-piracy streaming platform — the rastock racast raterm pipeline of Radio_todo
     Funkcion:StoryTimes
     What:real music,desc:real track files walked from testsounds and decoded to PCM
-      Funkcion:Storying,of_Book:MusuGenerateTestsMusic,needsFSA:1
+      Funkcion:Storying,of_Book:MusuGenerateTestsMusic,needsFSA:1,unusual:test-data-seeding
+      Funkcion:Storying,of_Book:RaStock,needsFSA:1,brand_new:1
       Funkcion:Storying,of_Book:MusuReco,needMusic:1
       What:replication,desc:paginated C** replication of a music library across two Piers
         Funkcion:Storying,of_Book:MusuBounce,needMusic:1
@@ -99,7 +100,7 @@ Waft:Credence
       Funkcion:Storying,of_Book:PeeringLive
       Funkcion:Storying,of_Book:Peeringinst
       Funkcion:Storying,of_Book:ReactiveWaft
-      Funkcion:Storying,of_Book:Snapmigrating
+      Funkcion:Storying,of_Book:Snapmigrating,unusual:data-migration
       Funkcion:Storying,of_Book:Snaptesting
       Funkcion:Storying,of_Book:TextInca
       Funkcion:Storying,of_Book:Understandication

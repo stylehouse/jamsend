@@ -1,0 +1,7 @@
+Snap:H
+  H:RaStock,Run
+    A:RaStock
+      self,round	{"mung":["age"]}
+      w:RaStock
+        self,round	{"mung":["age"]}
+        req:wrangle,eternal,ok

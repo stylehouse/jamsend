@@ -32,9 +32,9 @@ story:VoroMitosis
     useCyto
     dontSnapCyto
     For
+    trickle
   TimeSpool
-    TimeTotal:beliefs,avg=0.041
-      sample=0.032,at=1783350927
+    TimeTotal:beliefs,avg=0.045
       sample=0.027,at=1783350966
       sample=0.035,at=1783351834
       sample=0.051,at=1783352958
@@ -44,8 +44,8 @@ story:VoroMitosis
       sample=0.027,at=1783366513
       sample=0.084,at=1783367650
       sample=0.031,at=1783370523
+      sample=0.069,at=1783397886
     TimeTotal:step,avg=0.004
-      sample=0.003,at=1783350927
       sample=0.002,at=1783350966
       sample=0.003,at=1783351834
       sample=0.005,at=1783352958
@@ -55,6 +55,7 @@ story:VoroMitosis
       sample=0.002,at=1783366513
       sample=0.008,at=1783367650
       sample=0.003,at=1783370523
+      sample=0.006,at=1783397886
   step,dige:9eb579214a9df3ce
   step=2,dige:e52a9ae7237d0e47
   step=3,dige:8c08d7c3fbdc3c09

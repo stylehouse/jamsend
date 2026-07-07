@@ -229,6 +229,22 @@
     async Snapmigrating(A: TheC, w: TheC) {
         const H = this as House
 
+        // ── NEUTERED — a no-op until you actually want to migrate wormhole/ data ──
+        //   This Book rewrites EVERY .snap under wormhole/, so a stray/random run is
+        //   dangerous.  It has already served its couple of migrations (the last was
+        //   the obj\tstr → str\tobj protocol flip in migrate_lines below, kept intact
+        //   as the worked example).  MIGRATION_ARMED gates the whole scan-and-rewrite
+        //   machine: while false the handler touches nothing and only emits the see.
+        //     To run the NEXT migration: put the fresh transform in migrate_lines, then
+        //     flip this to true (and expect to re-record this Book's fixtures).
+        const MIGRATION_ARMED: boolean = false
+        if (!MIGRATION_ARMED) {
+            // unaccepted %see — a self-describing claim that this Book does nothing now.
+            //   No comma/semicolon: it snaps and gets re-peeled, so use an em-dash (the idiom).
+            w.i({ see: 'Snapmigrating is a noop until you want to migrate wormhole/ data — arm MIGRATION_ARMED to run' })
+            return
+        }
+
         const MAX_INFLIGHT  = 10
         const RATE_PER_SEC  = 3
         const TICK_MS       = Math.ceil(1000 / RATE_PER_SEC)

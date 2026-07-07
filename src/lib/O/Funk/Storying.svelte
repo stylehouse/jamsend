@@ -50,6 +50,10 @@
     //   it on the first green verdict.  Never-green is the DURABLE truth (no NNN.snap on disk) and
     //    'working' can't carry it — run_result is TTL'd, so a fresh board reads every cell as working.
     let is_new = $derived((() => { void funk.version; return !!funk.sc.brand_new })())
+    // unusual — a Book with dangerous side effects (data-migration, test-data-seeding).  Authored
+    //  as %unusual:<why> on the board cell.  The "run all" sweep skips it (Lies_storytimes_books);
+    //   here it wears a ⚠ pill so you know a deliberate click is the only way it ever runs.
+    let unusual = $derived((() => { void funk.version; return funk.sc.unusual as string | undefined })())
     // the light shown: a real red|green verdict always wins; else NEW if never-green; else awaiting.
     let disp   = $derived(v.phase === 'good' ? 'good' : v.phase === 'bad' ? 'bad' : is_new ? 'new' : 'working')
     const leaf = (p: any) => String(p ?? '').split('/').pop()
@@ -68,10 +72,11 @@
 {#if raw}
     <div class="fk-raw">Funkcion:{funk.sc.Funkcion}{bound ? ` → ${bound}` : ''}</div>
 {:else}
-    <button class="fk fk-{disp}" onclick={strike}
-        title="Credence cell · click to run · {bound ?? 'unbound'} — {disp === 'good' ? `green, ${v.pass}/${v.total} steps` : disp === 'bad' ? `red, ${v.pass}/${v.total} steps` : disp === 'new' ? 'never recorded a green run — brand new' : 'awaiting a run'}{v.dige ? ` @ ${String(v.dige).slice(0,8)}` : ''}">
+    <button class="fk fk-{disp}" class:fk-unusual={unusual} onclick={strike}
+        title="Credence cell · click to run · {bound ?? 'unbound'} — {disp === 'good' ? `green, ${v.pass}/${v.total} steps` : disp === 'bad' ? `red, ${v.pass}/${v.total} steps` : disp === 'new' ? 'never recorded a green run — brand new' : 'awaiting a run'}{v.dige ? ` @ ${String(v.dige).slice(0,8)}` : ''}{unusual ? ` · ⚠ unusual (${unusual}) — skipped by run-all, click to run deliberately` : ''}">
         <span class="fk-ico">{disp === 'good' ? '✓' : disp === 'bad' ? '✗' : disp === 'new' ? '✦' : '◴'}</span>
         <span class="fk-name">{funk.sc.of_Book ?? funk.sc.Funkcion}</span>
+        {#if unusual}<span class="fk-unusualtag" title="⚠ {unusual} — skipped by the run-all sweep">⚠ {unusual}</span>{/if}
         {#if disp === 'new'}<span class="fk-newtag">NEW</span>{/if}
         {#if v.total}<span class="fk-steps">{v.pass}/{v.total}</span>{/if}
         {#if funk.sc.of_dock}<span class="fk-dock">{leaf(funk.sc.of_dock)}</span>{/if}
@@ -102,6 +107,9 @@
     .fk-new     { border-color: rgba(224, 176, 96, 0.5); background: rgba(224, 176, 96, 0.09); color: #e0b060; }
     .fk-new     .fk-name { color: #f0c887; }
     .fk-newtag  { font-size: 0.6rem; font-weight: bold; letter-spacing: 0.05em; color: #1a1408; background: #e0b060; padding: 0.02rem 0.28rem; border-radius: 3px; }
+    /* unusual: a dangerous-to-run Book (migration|seeding) — a dusky ⚠ pill, skipped by run-all. */
+    .fk-unusual     { border-style: dashed; }
+    .fk-unusualtag  { font-size: 0.58rem; font-weight: bold; letter-spacing: 0.03em; color: #e8b4b4; background: rgba(180, 70, 70, 0.22); border: 1px solid rgba(180, 70, 70, 0.4); padding: 0.02rem 0.3rem; border-radius: 3px; }
     .fk-raw {
         font-family: monospace; font-size: 0.74rem; color: #8a7a5a; padding: 0.1rem 0.2rem;
     }

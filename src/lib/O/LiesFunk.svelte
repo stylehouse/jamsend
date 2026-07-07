@@ -41,13 +41,17 @@ let { M } = $props()
 //   played each 50ms.  Musical + well-spaced (≥110Hz apart) so an FFT bin never confuses two.  artist-title
 //    rides the filename ("Artist - Title.wav") — exactly what Crate_meta_from_name reads back.
 //  Real-length (60-80s each) so streaming/preview/restock behave against a proper track, not a 4s stub.
-const TEST_TONES: Array<{ artist: string, title: string, freq: number, secs: number }> = [
+//  Loudness: every tone shares one amplitude (its measured integrated loudness ≈ the -14 LUFS HiFi
+//   target RaStock levels to) EXCEPT Dorian D, laid down ~6 dB quieter (amp).  A uniform-loudness set
+//    makes RaStock's normalisation a no-op (gain ≈ 0); the one off-target track gives the gain-to-target
+//     path a real job — measure low, bake positive gain back up to -14 — which is what proofs RaStock.
+const TEST_TONES: Array<{ artist: string, title: string, freq: number, secs: number, amp?: number }> = [
     { artist: 'The Sines',    title: 'Deep A',   freq: 220.00, secs: 72 },
     { artist: 'The Sines',    title: 'Middle A', freq: 440.00, secs: 64 },
     { artist: 'The Sines',    title: 'High A',   freq: 1760.0, secs: 80 },
     { artist: 'Fourier Four', title: 'Query E',  freq: 329.63, secs: 68 },
     { artist: 'Fourier Four', title: 'Echo E',   freq: 1318.5, secs: 60 },
-    { artist: 'DJ Oscillo',   title: 'Dorian D', freq: 587.33, secs: 76 },
+    { artist: 'DJ Oscillo',   title: 'Dorian D', freq: 587.33, secs: 76, amp: 0.3 },   // ~6 dB quiet — RaStock's off-target proof track
     { artist: 'DJ Oscillo',   title: 'Groove G', freq: 783.99, secs: 66 },
     { artist: 'DJ Oscillo',   title: 'Cosmic C', freq: 1046.5, secs: 78 },
 ]
@@ -59,7 +63,9 @@ const TEST_TONES: Array<{ artist: string, title: string, freq: number, secs: num
 //    ~1.1MB, not ~6.7MB).  That matters because these tracks travel the beat-latency wormhole to the
 //     consumer Books (MusuReco/MusuBounce) and a fat file overruns a step's budget.  Consumers decodeAudioData
 //      + resample to the context rate anyway, and MusuBounce's peak still lands on the true fundamental.
-function wav_bytes(freq: number, secs: number, sr = 8000): Uint8Array {
+//  amp is the sine's linear amplitude (0.6 = the shared default ≈ -14 LUFS for these tones); a caller
+//   passes a quieter value to lay down an off-target track (Dorian D) for RaStock's leveling to fix.
+function wav_bytes(freq: number, secs: number, sr = 8000, amp = 0.6): Uint8Array {
     const n = Math.floor(sr * secs)
     const fade = Math.min(Math.floor(sr * 0.02), Math.floor(n / 2))
     const dataLen = n * 2
@@ -74,7 +80,7 @@ function wav_bytes(freq: number, secs: number, sr = 8000): Uint8Array {
         let env = 1
         if (i < fade) env = i / fade
         else if (i > n - fade) env = (n - i) / fade
-        const s = Math.sin(2 * Math.PI * freq * i / sr) * 0.6 * env
+        const s = Math.sin(2 * Math.PI * freq * i / sr) * amp * env
         dv.setInt16(44 + i * 2, Math.max(-1, Math.min(1, s)) * 32767, true)
     }
     return new Uint8Array(buf)
@@ -2000,7 +2006,7 @@ await M.eatfunc({
                 const prog = w.i({ generating: TEST_TONES.length, dir })
                 const writes = TEST_TONES.map(t => {
                     const name = `${t.artist} - ${t.title}.wav`
-                    const run = bounded(nav.bin_write(dir, name, wav_bytes(t.freq, t.secs)), `bin_write ${name}`)
+                    const run = bounded(nav.bin_write(dir, name, wav_bytes(t.freq, t.secs, undefined, t.amp)), `bin_write ${name}`)
                         .then(r => { prog.i({ file_written: name }); return r })
                     return { name, run }
                 })
@@ -2741,8 +2747,11 @@ await M.eatfunc({
         Lies_storytimes_books(funk: TheC, host: TheC): string[] {
             const scope = (this as House).Lies_storytimes_scope_c(funk, host)
             const out: string[] = []
+            // %unusual cells (data-migration, test-data-seeding) are skipped by the bulk sweep —
+            //  they have side effects too dangerous to run at random.  A deliberate cell CLICK
+            //   still runs them (Storying.svelte); only "run all" leaves them alone.
             const walk = (c: TheC) => { for (const k of c.o() as TheC[]) {
-                if (k.sc.Funkcion === 'Storying' && k.sc.of_Book) out.push(k.sc.of_Book as string); walk(k) } }
+                if (k.sc.Funkcion === 'Storying' && k.sc.of_Book && !k.sc.unusual) out.push(k.sc.of_Book as string); walk(k) } }
             if (scope) walk(scope)
             return [...new Set(out)]
         },

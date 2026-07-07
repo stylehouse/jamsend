@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783396868828
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783399957902
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -35,6 +35,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:Ghost/Story/Peregrination.g,name:Peregrination,noticed_at=1781771909101
     Doc:Ghost/Story/Musuation.g,name:Musuation,noticed_at=1782375234557
     Doc:Ghost/Story/Swarmation.g,name:Swarmation,noticed_at=1782995677261
+    Doc:Ghost/Story/Radiation.g,name:Radiation,noticed_at=1783399957902
   open_dir:src/lib/O/spec
   group:src/lib/O/spec,dir:src/lib/O/spec
     Doc:src/lib/O/spec/Covenant_design.md,name:Covenant_design.md,noticed_at=1782180409139
@@ -140,3 +141,4 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:Ghost/M/Mixer.g,name:Mixer,noticed_at=1782747044367
     Doc:Ghost/M/Mesh.g,name:Mesh,noticed_at=1782747097002
     Doc:Ghost/M/Sound.g,name:Sound,noticed_at=1783244364366
+    Doc:Ghost/M/Ra.g,name:Ra,noticed_at=1783398968104
