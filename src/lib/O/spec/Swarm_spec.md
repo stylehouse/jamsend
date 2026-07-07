@@ -7,6 +7,11 @@ The non-Radio, non-infra half of jamsend: the **people** and the fabric between 
     friend the **%Grants** that open a Pier.
 
 The triad: `Cluster_spec` is **how it runs**, `Radio_spec` is **what streams**, this is **who's on it**.
+ And as a layer story (owner 2026-07-07): **Swarm is the first thing you'd show someone about the
+  Pier**; Cluster is its **proto self** — an Identity that can use the relay without really being a
+   Pier or anything about Radio; that intersects **Peeroleum**, which goes on to be the fullest
+    networking gear underneath. Radio (`Radio_todo.md` — the main conceptual spring) is the
+     experience the layers converge into.
 
 > **Supersedes `Swarm_doc.md`** (the earlier starting doc, now deleted — its identity substrate is
 >  folded in; the `Cluster_spec.md` / `Radio_spec.md` cross-refs point here).
@@ -318,7 +323,7 @@ An identity **offers** things (audio, disk, compute) — "who can do what, who's
 - **crypto reached via `IMPORT()`** — the `.g`→`.go` header pulls in `Grant.ts` / `Idento` / `cluster_trust`
    (a capability for real external deps, *not* an excuse to scatter logic — the invite/grant/UX logic
     itself stays in `.g`). The Idzeug is *composed* in `.g` from imported Grant atoms.
-- **BOMB — registration order** (`NOTATION`/Music_todo): a ghost is enrolled in `CREDULER_GHOSTS`
+- **BOMB — registration order** (`NOTATION`/Radio_todo): a ghost is enrolled in `CREDULER_GHOSTS`
    (`LiesLies.svelte`), and **a gen `.go` that does not yet exist hangs the runner boot**. So enroll a
     Swarm `.g` only after it has been ghost-compiled; that one edit outside `Ghost/S/` is the deferred
      human touch.
@@ -475,7 +480,7 @@ The owner wants the QR invite maker back ("monkey business vibe") as the front d
  The panel (`InvitePanel`) stands the station on page-presence (being on the page IS being at the
   door), and join = promote → wait-for-open → redeem → watch for the SEAL (the account `%Pier`),
    shown as a friends row on both faces (now with the ♪ IveGot chips + the reachable tally —
-    Music_todo §9.1c). **LIVE-PROVEN 2026-07-07**: two real BigSoundland tabs sealed over the relay
+    Radio_todo §9.1c). **LIVE-PROVEN 2026-07-07**: two real BigSoundland tabs sealed over the relay
      (`✓ joined — <prepub> is a music Pier now`), and Book **SwarmDoor** gates the asymmetric
       first-contact seam (the no-pier branch, the door promotion, the station_up readiness — each
        one-line-revert red). Owed: the REAL per-Pier handshake at the door (above), and the phone

@@ -988,7 +988,7 @@ The runner is built (`scripts/Story_cli.*`, via vitest's transform instead of th
       colourised `diff <n>` (live `got_snap` vs the baked expected) **as text**, the §16 loop pointed at a
        real-time / real-audio browser run instead of the headless pile. First use caught a MusuLive stale-bake
         counter drift (`self,round`) as fuzz, not surprise (§4.2) — the diff localised it instantly. Brief:
-         `spec/Music_todo.md` §6.2. The expected side still rides the shared-disk fixture; driving the
+         `spec/Radio_todo.md` §6.2. The expected side still rides the shared-disk fixture; driving the
           `fetch_snap` read in the handler so it travels over the socket too is the natural completion of
            "diff channels" above.
 

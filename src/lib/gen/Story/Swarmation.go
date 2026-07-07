@@ -8,7 +8,7 @@
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Swarmation(): string { return 'f6f36c006d9ffcb1' },
+    Ghostmeta_Ghost_Story_Swarmation(): string { return '424a77682127f2ba' },
 
 // Swarmation.g — the Swarm* social-side tests, in the Musu* mould (spec: Swarm_spec.md §9). The
 //  file is the artifact; SwarmStaple is the Book identity. The Creduler loads this ghost live
@@ -733,7 +733,7 @@ async SwarmDoor_order(w) { const H = this;
     await this.place({}, ordered)
 
 },
-// ══ SwarmGot — the SIXTH Book: IveGotMusic (Music_todo §9.1c) — the reachable-music tally ══════
+// ══ SwarmGot — the SIXTH Book: IveGotMusic (Radio_todo §9.1c) — the reachable-music tally ══════
 //  The front door's PAYOFF: once two stations seal (SwarmDoor's rung) a friendship should COUNT.
 //   Each side boasts a tiny collection summary — counts of records|artists, never Records — an
 //    additive ive_got frame on the same wire; it lands as %IveGot,by,count facts under MY %Pier

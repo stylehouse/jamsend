@@ -3,7 +3,7 @@
 A continuation brief, not a changelog. The destination, the one bomb that ruins it if the next
  fork lacks it, and the next move. Written 2026-07-05 against the live tree; correct anything drifted.
 
-Companions: `Music_todo.md` (the M-cluster living doc), `Radio_spec.md` (the 9 platform stages),
+Companions: `Radio_todo.md` (the M-cluster living doc), `Radio_spec.md` (the 9 platform stages),
  `Swarm_spec.md` / `Cluster_spec.md` (identity + coordination). This doc sits *above* all of them —
   it is about the seam between the product and the test machine, which no single one of them owns.
 
@@ -57,7 +57,7 @@ The destination is: **those two slabs in family homes, `Musuation.g` reduced to 
     shows up in a red run. The file boundary must be dragged to match the boundary the comments
      already drew, by hand, on purpose.
 
-Two mechanical bombs guard the move (both from `Music_todo.md §2`, both real):
+Two mechanical bombs guard the move (both from `Radio_todo.md §2`, both real):
 
 - **gen `.go` before enrollment.** `Creduler_ensure` loads each `CREDULER_GHOSTS` entry's *compiled*
    `.go` and waits on `%Creduler_pending` until every `Ghostmeta_*` reports live. **A gen `.go` that

@@ -45,7 +45,7 @@
         } catch { return [] }
     })
 
-    // ── IVE GOT — the reachable-music tally (Music_todo §9.1c): my shelf plus every sealed
+    // ── IVE GOT — the reachable-music tally (Radio_todo §9.1c): my shelf plus every sealed
     //  friend's last boast, the facts riding as %IveGot under each %Pier. World-scoped census —
     //   the station world holds no %Library yet (the real /music census is §9.1's build), so live
     //    this counts the friends' boasts; Book SwarmGot proves the whole loop with real shelves.

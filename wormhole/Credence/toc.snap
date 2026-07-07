@@ -15,92 +15,96 @@ Waft:Credence
     Funkcion:Storying,of_Book:SwarmDoor
     Funkcion:Storying,of_Book:SwarmGot
     Funkcion:Storying,of_Book:SwarmPolicy
-  What:Musu,desc:the music-piracy streaming platform — from cursor spool to real-audio mesh
+  What:Musu,desc:the music-piracy streaming platform — the rastock racast raterm pipeline of Radio_todo
     Funkcion:StoryTimes
-    What:cursor models,desc:pure cursor-arithmetic simulations of the streaming spine — no audio no wire
-      What:slices,desc:one streaming mechanism each — spool preview restock live-edge wear skip
-        Funkcion:Storying,of_Book:MusuStaple
-        Funkcion:Storying,of_Book:MusuStream
-        Funkcion:Storying,of_Book:MusuStock
-        Funkcion:Storying,of_Book:MusuLive
-        Funkcion:Storying,of_Book:MusuWear
-        Funkcion:Storying,of_Book:MusuSkip
-      What:composite,desc:several mechanisms in one world — one source many independent listeners
-        Funkcion:Storying,of_Book:MusuCrowd
-    What:real audio,desc:claims measured off real PCM an OfflineAudioContext actually rendered
-      What:signal,desc:a real live stream that can starve — the measured underrun gate
-        Funkcion:Storying,of_Book:MusuSignal
-      What:rate control,desc:rate policies trading latency for gaps off the live edge
-        Funkcion:Storying,of_Book:MusuGlide
-        Funkcion:Storying,of_Book:MusuTune,needAC:1
-        Funkcion:Storying,of_Book:MusuEdge
-      What:showcase,desc:a watchable ~25s synth radio set — real rendered audio you hear
-        Funkcion:Storying,of_Book:MusuRadio,needAC:1
-      What:concealment,desc:filling a dropout with real audio beats dropping to silence
-        Funkcion:Storying,of_Book:MusuConceal
     What:real music,desc:real track files walked from testsounds and decoded to PCM
       Funkcion:Storying,of_Book:MusuGenerateTestsMusic,needsFSA:1
       Funkcion:Storying,of_Book:MusuReco,needMusic:1
       What:replication,desc:paginated C** replication of a music library across two Piers
         Funkcion:Storying,of_Book:MusuBounce,needMusic:1
         Funkcion:Storying,of_Book:MusuReplica
-    What:the platform,desc:real transport and DJ-deck software beneath the streaming stack
-      What:mixer cells,desc:beatmatch and crossfade real-audio decks — plus a monitored DJ cue
-        Funkcion:Storying,of_Book:MusuMix
-        Funkcion:Storying,of_Book:MusuCue
-      What:the network,desc:audio frames and content routing over the real Peeroleum transport
-        Funkcion:Storying,of_Book:MusuMesh
-        Funkcion:Storying,of_Book:MusuPier
-  What:Lake,desc:the editor machine — the Lies compile-run pipeline over Docs Wafts and focus
-    Funkcion:StoryTimes
-    Funkcion:Storying,of_Book:LakeSurfer
-    Funkcion:Storying,of_Book:LakeNets
-    Funkcion:Storying,of_Book:LakeFlush
-    Funkcion:Storying,of_Book:LakeTiles
-    Funkcion:Storying,of_Book:LakeSurprise
-    Funkcion:Storying,of_Book:LakeLocate
-    Funkcion:Storying,of_Book:LakeFunk
-    Funkcion:Storying,of_Book:LakeKeep
-    Funkcion:Storying,of_Book:LakeLango
-    Funkcion:Storying,of_Book:LakeWaftMap
-  What:Leaf,desc:multi-worker particle worlds — cross-worker transfers and juggling rendered in Cyto
-    Funkcion:StoryTimes
-    Funkcion:Storying,of_Book:LeafFarm
-    Funkcion:Storying,of_Book:LeafJuggle
-  What:Port,desc:req and Desire machinery — timed waits ttl reconciliation and dependency scheduling
-    Funkcion:StoryTimes
-    Funkcion:Storying,of_Book:PortPlan
-    Funkcion:Storying,of_Book:PortPlanet
-    Funkcion:Storying,of_Book:PortPlant
-    Funkcion:Storying,of_Book:PortPain
-  What:Stuff,desc:C.resolve()/replace() particle-identity pairing — before/after across past and future
-    Funkcion:StoryTimes
-    Funkcion:Storying,of_Book:StuffFlipping
-    Funkcion:Storying,of_Book:StuffResolving
-  What:Toy,desc:diagnostic toys — a snap-diff step-machine and floating live-world Stuffings in Cyto
-    Funkcion:StoryTimes
-    Funkcion:Storying,of_Book:Diffmatication
-    Funkcion:Storying,of_Book:AwFloat,brand_new:1
-    What:Voro,desc:the Voronoi-Cyto render — Cyto's force layout reinterpreted as power-diagram cells with the crushed Stuffings molded into a rosette
+    What:lowlevels,desc:the ladder of tiny aspect proofs — spec Radio_lowlevel.md — kept for regression hunts not for direction
       Funkcion:StoryTimes
-      Funkcion:Storying,of_Book:VoroMitosis
-      Funkcion:Storying,of_Book:VoroScape
-      Funkcion:Storying,of_Book:VoroRadio,brand_new:1
-  What:Misc,inline:1,desc:editor codecs LangHold-checkout peering export ttl-waits and reactive-Waft stability
+      What:cursor models,desc:pure cursor-arithmetic simulations of the streaming spine — no audio no wire
+        What:slices,desc:one streaming mechanism each — spool preview restock live-edge wear skip
+          Funkcion:Storying,of_Book:MusuStaple
+          Funkcion:Storying,of_Book:MusuStream
+          Funkcion:Storying,of_Book:MusuStock
+          Funkcion:Storying,of_Book:MusuLive
+          Funkcion:Storying,of_Book:MusuWear
+          Funkcion:Storying,of_Book:MusuSkip
+        What:composite,desc:several mechanisms in one world — one source many independent listeners
+          Funkcion:Storying,of_Book:MusuCrowd
+      What:real audio,desc:claims measured off real PCM an OfflineAudioContext actually rendered
+        What:signal,desc:a real live stream that can starve — the measured underrun gate
+          Funkcion:Storying,of_Book:MusuSignal
+        What:rate control,desc:rate policies trading latency for gaps off the live edge
+          Funkcion:Storying,of_Book:MusuGlide
+          Funkcion:Storying,of_Book:MusuTune,needAC:1
+          Funkcion:Storying,of_Book:MusuEdge
+        What:showcase,desc:a watchable ~25s synth radio set — real rendered audio you hear
+          Funkcion:Storying,of_Book:MusuRadio,needAC:1
+        What:concealment,desc:filling a dropout with real audio beats dropping to silence
+          Funkcion:Storying,of_Book:MusuConceal
+      What:the platform,desc:real transport and DJ-deck software beneath the streaming stack
+        What:mixer cells,desc:beatmatch and crossfade real-audio decks — plus a monitored DJ cue
+          Funkcion:Storying,of_Book:MusuMix
+          Funkcion:Storying,of_Book:MusuCue
+        What:the network,desc:audio frames and content routing over the real Peeroleum transport
+          Funkcion:Storying,of_Book:MusuMesh
+          Funkcion:Storying,of_Book:MusuPier
+  What:Voro,desc:the Voronoi-Cyto render — Cyto's force layout reinterpreted as power-diagram cells with the crushed Stuffings molded into a rosette
     Funkcion:StoryTimes
-    Funkcion:Storying,of_Book:Editron
-    Funkcion:Storying,of_Book:Interesting
-    Funkcion:Storying,of_Book:MundaneStation
-    Funkcion:Storying,of_Book:MundaneStaying
-    Funkcion:Storying,of_Book:PeeringLive
-    Funkcion:Storying,of_Book:Peeringinst
-    Funkcion:Storying,of_Book:ReactiveWaft
-    Funkcion:Storying,of_Book:Snapmigrating
-    Funkcion:Storying,of_Book:Snaptesting
-    Funkcion:Storying,of_Book:TextInca
-    Funkcion:Storying,of_Book:Understandication
-    Funkcion:Storying,of_Book:Understandity
-    Funkcion:Storying,of_Book:Understandium
-    Funkcion:Storying,of_Book:Engage
-    Funkcion:Storying,of_Book:WaftMapPacked
-    Funkcion:Storying,of_Book:Educarium,brand_new:1
+    Funkcion:Storying,of_Book:VoroMitosis
+    Funkcion:Storying,of_Book:VoroScape
+    Funkcion:Storying,of_Book:VoroRadio
+  What:Puddle,desc:the lower-level instruments in one puddle — machinery proven once and kept for regression hunts not for relitigating
+    Funkcion:StoryTimes
+    What:Lake,desc:the editor machine — the Lies compile-run pipeline over Docs Wafts and focus
+      Funkcion:StoryTimes
+      Funkcion:Storying,of_Book:LakeSurfer
+      Funkcion:Storying,of_Book:LakeNets
+      Funkcion:Storying,of_Book:LakeFlush
+      Funkcion:Storying,of_Book:LakeTiles
+      Funkcion:Storying,of_Book:LakeSurprise
+      Funkcion:Storying,of_Book:LakeLocate
+      Funkcion:Storying,of_Book:LakeFunk
+      Funkcion:Storying,of_Book:LakeKeep
+      Funkcion:Storying,of_Book:LakeLango
+      Funkcion:Storying,of_Book:LakeWaftMap
+    What:Leaf,desc:multi-worker particle worlds — cross-worker transfers and juggling rendered in Cyto
+      Funkcion:StoryTimes
+      Funkcion:Storying,of_Book:LeafFarm
+      Funkcion:Storying,of_Book:LeafJuggle
+    What:Port,desc:req and Desire machinery — timed waits ttl reconciliation and dependency scheduling
+      Funkcion:StoryTimes
+      Funkcion:Storying,of_Book:PortPlan
+      Funkcion:Storying,of_Book:PortPlanet
+      Funkcion:Storying,of_Book:PortPlant
+      Funkcion:Storying,of_Book:PortPain
+    What:Stuff,desc:C.resolve()/replace() particle-identity pairing — before/after across past and future
+      Funkcion:StoryTimes
+      Funkcion:Storying,of_Book:StuffFlipping
+      Funkcion:Storying,of_Book:StuffResolving
+    What:Toy,desc:diagnostic toys — a snap-diff step-machine and floating live-world Stuffings in Cyto
+      Funkcion:StoryTimes
+      Funkcion:Storying,of_Book:Diffmatication
+      Funkcion:Storying,of_Book:AwFloat,brand_new:1
+    What:Misc,inline:1,desc:editor codecs LangHold-checkout peering export ttl-waits and reactive-Waft stability
+      Funkcion:StoryTimes
+      Funkcion:Storying,of_Book:Editron
+      Funkcion:Storying,of_Book:Interesting
+      Funkcion:Storying,of_Book:MundaneStation
+      Funkcion:Storying,of_Book:MundaneStaying
+      Funkcion:Storying,of_Book:PeeringLive
+      Funkcion:Storying,of_Book:Peeringinst
+      Funkcion:Storying,of_Book:ReactiveWaft
+      Funkcion:Storying,of_Book:Snapmigrating
+      Funkcion:Storying,of_Book:Snaptesting
+      Funkcion:Storying,of_Book:TextInca
+      Funkcion:Storying,of_Book:Understandication
+      Funkcion:Storying,of_Book:Understandity
+      Funkcion:Storying,of_Book:Understandium
+      Funkcion:Storying,of_Book:Engage
+      Funkcion:Storying,of_Book:WaftMapPacked
+      Funkcion:Storying,of_Book:Educarium,brand_new:1

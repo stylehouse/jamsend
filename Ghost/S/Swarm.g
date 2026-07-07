@@ -465,7 +465,7 @@ Swarm_seal(w, ident, page, theirGrant, myGrant):
     return pier
 //#endregion
 
-//#region ive got — the reachable-music tally (Music_todo §9.1c)
+//#region ive got — the reachable-music tally (Radio_todo §9.1c)
 //  After the seal a friendship should COUNT: each side offers a tiny collection summary — counts,
 //   never Records — as an ADDITIVE ive_got frame on the same wire as the handshake. It lands under
 //    MY %Pier for them as %IveGot,by,count facts, and the tally folds my shelf plus every live

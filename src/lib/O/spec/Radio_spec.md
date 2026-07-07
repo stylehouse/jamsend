@@ -5,7 +5,7 @@ The high-level shape of the music-piracy platform and the functions we string to
   (itemised here — the stage Books' test snaps carry only the compact `stage,of,name,built`
    map and a pointer back to this doc).
 
-The companion docs: `Music_todo.md` (the older running todo), `Hovercraft.design.md` (req/ttlilt),
+The companion docs: `Radio_todo.md` (the older running todo), `Hovercraft.design.md` (req/ttlilt),
  `EntropyArrest.md` (snap-noise taming + the caveat band the transport Books lean on). `Swarm_spec.md` is
   the non-Radio half — the p2p social side (identity, presence, sharing) this streams over.
    `Radio_scape_handover.md` is the live session brief for the **scape** (§8) — the Voro layer, the demo

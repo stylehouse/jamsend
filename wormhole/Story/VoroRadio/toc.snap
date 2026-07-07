@@ -20,6 +20,12 @@ story:VoroRadio
       style:background-color,v:#534ed0
     matstyle:see
       style:background-color,v:#a34b1f
+    matstyle:crush
+      style:background-color,v:#3aa67e
+    matstyle:row
+      style:background-color,v:#bd36c9
+    matstyle:drift
+      style:background-color,v:#bbdb43
   Plan
   Opt
     waitCyto
@@ -28,33 +34,33 @@ story:VoroRadio
     For
   TimeSpool
     TimeTotal:beliefs,avg=0.045
-      sample=0.043,at=1783368512
-      sample=0.043,at=1783368513
-      sample=0.043,at=1783368514
-      sample=0.043,at=1783368515
-      sample=0.043,at=1783368516
-      sample=0.043,at=1783368517
       sample=0.055,at=1783370449
       sample=0.055,at=1783370477
       sample=0.055,at=1783370478
       sample=0.022,at=1783370494
+      sample=0.023,at=1783394682
+      sample=0.017,at=1783394841
+      sample=0.018,at=1783394973
+      sample=0.043,at=1783396346
+      sample=0.083,at=1783396462
+      sample=0.083,at=1783396471
     TimeTotal:step,avg=0.005
-      sample=0.005,at=1783368512
-      sample=0.005,at=1783368513
-      sample=0.005,at=1783368514
-      sample=0.005,at=1783368515
-      sample=0.005,at=1783368516
-      sample=0.005,at=1783368517
       sample=0.006,at=1783370449
       sample=0.006,at=1783370477
       sample=0.006,at=1783370478
       sample=0.002,at=1783370494
+      sample=0.003,at=1783394682
+      sample=0.002,at=1783394841
+      sample=0.002,at=1783394973
+      sample=0.005,at=1783396346
+      sample=0.009,at=1783396462
+      sample=0.009,at=1783396471
   step,dige:157b38d6d24e7fba
-  step=2,dige:b528ce160d9bbb0e
-  step=3,dige:b46b9a876e4734dd
-  step=4,dige:8862851c127eb372
-  step=5,dige:1cda1414a11aa505
-  step=6,dige:0535a2d0df2d22d4
-  step=7,dige:c1e502114db67946
-  step=8,dige:a406514e41b9b5d6
-  step=9,dige:e85fa20044de70ba
+  step=2,dige:1510f1f8892d295e
+  step=3,dige:b2100c76a9eae894
+  step=4,dige:a14c586ff9db2bab
+  step=5,dige:dfde26355d5c7aac
+  step=6,dige:6d6d6ad74a2fa18e
+  step=7,dige:12033f095104c718
+  step=8,dige:6ffc921115a09c0e
+  step=9,dige:0970373b0200f8e3

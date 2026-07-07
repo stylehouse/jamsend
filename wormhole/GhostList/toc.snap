@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783333919726
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783396868828
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -59,7 +59,6 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/spec/stho_primer.md,name:stho_primer.md,noticed_at=1782180409139
     Doc:src/lib/O/spec/Lang_handover.md,name:Lang_handover.md,noticed_at=1782287148306
     Doc:src/lib/O/spec/Lens_posable_TODO.md,name:Lens_posable_TODO.md,noticed_at=1782364945395
-    Doc:src/lib/O/spec/Music_todo.md,name:Music_todo.md,noticed_at=1782375234557
     Doc:src/lib/O/spec/Keeping_spec.md,name:Keeping_spec.md,noticed_at=1782542020398
     Doc:src/lib/O/spec/Backbone_plan.md,name:Backbone_plan.md,noticed_at=1782704068439
     Doc:src/lib/O/spec/Cluster_spec.md,name:Cluster_spec.md,noticed_at=1782719405545
@@ -81,6 +80,8 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/spec/Voro_svg_stuffing.md,name:Voro_svg_stuffing.md,noticed_at=1783265884788
     Doc:src/lib/O/spec/Voro_pinch.md,name:Voro_pinch.md,noticed_at=1783265905223
     Doc:src/lib/O/spec/Voro_vtuffing.md,name:Voro_vtuffing.md,noticed_at=1783333919726
+    Doc:src/lib/O/spec/Radio_todo.md,name:Radio_todo.md,noticed_at=1783395690719
+    Doc:src/lib/O/spec/Radio_lowlevel.md,name:Radio_lowlevel.md,noticed_at=1783396868828
   open_dir:src/lib/O
   group:src/lib/O,dir:src/lib/O
     sub:src/lib/O/D,name:D

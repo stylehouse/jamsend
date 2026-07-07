@@ -48,3 +48,11 @@ Snap:H
           Nothofagus:crassifolius var. montana,woodystem,habit:tree
           Nothofagus:crassifolius var. prostrata,habit:vine
         Nothofagus:colensoi,habit:tree
+      w:VoroRadioReport
+        crush,beat=2,level:L1,visible=9,gangs=6
+        row:Coprosma,n=5,fold:gang,rep:robusta,of=5
+        row:Veronica,n=4,fold:gang,rep:grandifolia,of=4
+        row:Metrosideros,n=4,fold:gang,rep:excelsa,of=4
+        row:Pittosporum,n=4,fold:gang,rep:serrata,of=4
+        row:Olearia,n=3,fold:gang,rep:grandifolia,of=3
+        row:Nothofagus,n=3,fold:gang,rep:tenax,of=3

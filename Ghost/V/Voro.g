@@ -61,12 +61,65 @@ Voro_crush_scan(w):
         stats = trial
     }
     w.c.crush_level = level
+    this.Voro_report(w, stats)
     return stats
 
 Voro_crush_pass(w, level):
     let stats = { folded: 0, count: 0, gangs: 0, ganged: 0, visible: 0, level: level }
     this.Voro_crush_walk(w, 0, stats, level)
     return stats
+
+// Voro_report — the crush's WORKING, projected onto a SIBLING world (the owner's "a different
+//  w, a projection on the wall next to it").  The flora world stays PURE flora — the c-side
+//   discipline holds THERE, nothing the fold does reaches its snap — while the thinking lands
+//    NEXT to it in w:<name>Report, rewritten each crush beat.  So every Story step now DIFFS
+//     and the model Cyto renders is finally legible in the snap: the governor level, the
+//      visible count, per-genus whether it folded to a gang or scattered loose (the owner's
+//       "why are some Pittosporum non-cells" — level-dependent ganging, now readable), which
+//        panes the radio popped, and the drift focus.  A sibling world is NOT in the flora
+//         world's subtree, so cyto_scan never renders it — it is SNAP-ONLY, the seed of Story's
+//          future separable snap channels (capture certain A/w on their own layer, trace always
+//           on).  GATED on w.c.crush_report (a Book arms it in setup); the arm is c-side, so the
+//            arming itself never snaps, and an un-armed world (VoroMitosis, VoroScape, an ◈
+//             imposition) reports NOTHING — its flora snap is untouched.
+Voro_report(w, stats):
+    if (!w.c.crush_report) return null
+    let A = w.c.up
+    if (!A || !w.sc.w) return null
+    let rname = w.sc.w + 'Report'
+    let rw = A.o({ w: rname })[0]
+    if (!rw) rw = A.i({ w: rname })
+    for (const c of rw.o().slice()) c.drop(c)
+    w.c.report_beat = (w.c.report_beat || 0) + 1
+    // level as 'L0'|'L1'|'L2' — a bare numeric 1 would snap as the boolean sentinel (collapse
+    //  to a flag) and 0 would VANISH, so the governor level must ride as a string to stay legible.
+    rw.i({ crush: 1, beat: w.c.report_beat, level: 'L' + stats.level, visible: stats.visible, gangs: stats.gangs })
+    if (w.c.drift_focus) {
+        let f = w.c.drift_focus
+        let fk = Object.keys(f.sc)[0]
+        rw.i({ drift: 1, focus: fk + ' ' + f.sc[fk], opens: (w.c.drift_opens || []).length })
+    }
+    // one row per genus present, in the fixed Botany order (deterministic): the fold verdict
+    //  the crush reached this beat — a gang (n folded behind a rep) or loose (each its own
+    //   node|cell), plus how many the radio has popped out right now.
+    for (const g of this.Botany_genera()) {
+        let members = w.o().filter(c => Object.keys(c.sc)[0] === g)
+        if (!members.length) continue
+        let rep = members.find(m => m.c.stuff && m.c.gang)
+        let pop = members.filter(m => m.c.popped).length
+        let row = { row: g, n: members.length }
+        if (rep) {
+            row.fold = 'gang'
+            row.rep = rep.sc[g]
+            row.of = rep.c.fold_n
+        } else {
+            row.fold = 'loose'
+            let cells = members.filter(m => m.c.stuff).length
+            if (cells) row.cells = cells
+        }
+        if (pop) row.pop = pop
+        rw.i(row)
+    }
 
 // Voro_crush_walk — recurse; structural mainkeys stay graph (the skeleton must remain readable) but
 //  are walked THROUGH; a crushed container's subtree is NOT descended (folded here = folded in the
@@ -737,6 +790,7 @@ async VoroRadio_drive(w, req):
 //  (a popped pane is unstamped and leaves the candidate set until a later pass re-gangs it).
 VoroRadio_seed(w):
     w.c.crush_wanted = 1
+    w.c.crush_report = 1   // arm the sibling-world projection (w:VoroRadioReport) — proves it in isolation
     this.VoroMitosis_found(w, 'Coprosma', 5)
     this.VoroMitosis_found(w, 'Veronica', 4)
     this.VoroMitosis_found(w, 'Metrosideros', 4)

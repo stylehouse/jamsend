@@ -1995,6 +1995,11 @@
         animations = _C({ animations: 1, started_at: performance.now() / 1000 })
         const ms = Math.round(dur * 1000)
         let length = wave.o({ upsert: 1 }).length
+        // node ids BORN this wave — so a purely-additive wave can PIN the already-settled
+        //  graph and let fcose place only the newcomers (see the layout step below): a late
+        //   add of disconnected nodes (the witness %see claims) otherwise makes fcose re-pack
+        //    the whole graph into a diagonal and throws away the grown rosette.
+        const fresh_ids = new Set<string>()
 
         console.log(`🌊 apply() this wave: upsert x${length}`)
         for (let wa of wave.o()) {
@@ -2062,6 +2067,7 @@
                 const parent = nd.sc.parent as string | undefined
                 if (parent && !migrating.has(id)) data.parent = parent
                 const added = cy.add({ group: 'nodes', data })
+                fresh_ids.add(id)
                 added.style({ ...imm, ...anim })
                 if (nd.sc.appear_from) {
                     const spawn = cy.getElementById(nd.sc.appear_from as string)
@@ -2175,7 +2181,18 @@
          || wave.o({ remove:      1 }).length
          || wave.o({ edge_upsert: 1 }).length) {
             install_nuclei()   // (re)seat the flower hubs so the sim settles radial
-            relayout(ms)
+            // PURELY-ADDITIVE wave (nothing removed) with a grown graph already on screen:
+            //  pin the settled nodes so the newcomers tuck in without re-tumbling everything.
+            //   The first wave (flora born) is all-fresh → nothing to pin → full free layout.
+            let pins: any[] | null = null
+            const additive = !wave.o({ remove: 1 }).length && !wave.o({ edge_remove: 1 }).length
+            if (additive && fresh_ids.size) {
+                const settled = cy.nodes().filter((n: any) =>
+                    !fresh_ids.has(n.id()) && !n.hasClass('nucleus') && n.inside())
+                if (settled.length)
+                    pins = settled.map((n: any) => ({ nodeId: n.id(), position: { x: n.position('x'), y: n.position('y') } }))
+            }
+            relayout(ms, pins)
         } else {
             // no layout needed — bring overlays back now instead of waiting
             // for a layoutstop that will never fire
@@ -2241,7 +2258,7 @@
     // ── layout ────────────────────────────────────────────────────────────────
 
     let lay: any
-    function relayout(animMs = 300) {
+    function relayout(animMs = 300, pins: any[] | null = null) {
         lay?.stop()
         const common = {
             animate:                     animMs > 0,
@@ -2249,12 +2266,16 @@
             nodeDimensionsIncludeLabels: true,
             randomize:                   false,
         }
+        // fixedNodeConstraint pins already-settled nodes (apply() passes them on a purely-
+        //  additive wave) so a late node-add can't re-tumble the grown layout; a manual ⟳
+        //   passes none and re-lays the whole graph freely.  Only fcose honours it.
+        const pinCons = pins && pins.length ? { fixedNodeConstraint: pins } : {}
         let opts: any
         if (layout_name === 'fcose') {
             opts = { name: 'fcose', ...common, nodeSeparation: 30, quality: 'default',
                 idealEdgeLength: (e: any) => e.data('ideal_length') ?? 80,
                 edgeElasticity:  0.45, nodeRepulsion: () => 4000,
-                ...constraints }
+                ...constraints, ...pinCons }
             // radial smudge: with the flower on, the nuclei pull orderless nodes
             //  INTO a central hub — so we push back with stronger repulsion, wider
             //   separation and relaxed gravity, and the rosette breathes outward

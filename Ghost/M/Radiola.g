@@ -1,5 +1,5 @@
 //#region radiola
-// Radiola — the music-piracy spine, reborn on Housing+req (spec: src/lib/O/spec/Music_todo.md).
+// Radiola — the music-piracy spine, reborn on Housing+req (spec: src/lib/O/spec/Radio_todo.md).
 //  Slice 1 lifts ONE instance out of src/lib/ghost/Radios.svelte: the ACK-backpressure spool
 //   (its STAY_AHEAD_OF_ACK_SEQ caster loop) into a pure particle simulation — no audio, no
 //    WebRTC, just the cursor arithmetic the old eatfunc machine tangled with codecs and the wire.

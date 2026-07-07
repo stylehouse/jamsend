@@ -751,7 +751,7 @@ Creduler acquire, which already loads a `CREDULER_GHOSTS` manifest.)
     fan-out end-to-end. **Open seams (spec §18):** the
      crypto-signed claim gate (the community thing), cross-relay topic fan-out (one instance for now — a topic
       is LOCAL-only, the bridge isn't forwarded), a per-channel inseq + NACK for a lossy multicast carrier, and
-       re-subscribe-on-reconnect. **First real customer = the music app** (`Music_todo.md` slice-3 radiostock
+       re-subscribe-on-reconnect. **First real customer = the music app** (`Radio_todo.md` slice-3 radiostock
         fan-out is exactly one-source→many-listeners — wire `Radiola` publish/subscribe onto these calls).
 
 ### Two parallel Books — PereStaple (liveness) | PereProof (correctness)  `[x]`  split this session

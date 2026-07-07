@@ -668,7 +668,7 @@ async SwarmDoor_order(w):
     let ordered = [...sorted, ...H.o().filter(c => !c.sc.A)]
     await this.place({}, ordered)
 
-// ══ SwarmGot — the SIXTH Book: IveGotMusic (Music_todo §9.1c) — the reachable-music tally ══════
+// ══ SwarmGot — the SIXTH Book: IveGotMusic (Radio_todo §9.1c) — the reachable-music tally ══════
 //  The front door's PAYOFF: once two stations seal (SwarmDoor's rung) a friendship should COUNT.
 //   Each side boasts a tiny collection summary — counts of records|artists, never Records — an
 //    additive ive_got frame on the same wire; it lands as %IveGot,by,count facts under MY %Pier

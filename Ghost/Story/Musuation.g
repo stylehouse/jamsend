@@ -1,4 +1,4 @@
-// Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Music_todo.md).  The file
+// Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Radio_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
 //   Story begins (once it is in CREDULER_GHOSTS), so its sibling methods + Ghost/M/Radiola.g's spine
 //    are on H.  Story_subHouse auto-stands-up A:Book/w:Book (no Run_A_ needed); MusuStaple(A,w) installs the eternal

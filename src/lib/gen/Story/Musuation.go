@@ -10,9 +10,9 @@ import { SoundSystem } from "$lib/p2p/ftp/Audio.svelte.ts"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_Story_Musuation(): string { return '6f8461d1cb0ddd52' },
+    Ghostmeta_Ghost_Story_Musuation(): string { return 'e211738916dfe5e0' },
 
-// Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Music_todo.md).  The file
+// Musuation.g — the Musu* music-piracy tests, in the Pere* mould (spec: Radio_todo.md).  The file
 //  is the artifact; MusuStaple is the Book identity.  The Creduler loads this ghost live BEFORE the
 //   Story begins (once it is in CREDULER_GHOSTS), so its sibling methods + Ghost/M/Radiola.g's spine
 //    are on H.  Story_subHouse auto-stands-up A:Book/w:Book (no Run_A_ needed); MusuStaple(A,w) installs the eternal

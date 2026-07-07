@@ -12,7 +12,7 @@ import { signHeader } from "$lib/p2p/cluster_trust"
     onMount(async () => {
     await H.eatfunc({
 
-    Ghostmeta_Ghost_S_Swarm(): string { return '392d9547d537ecc2' },
+    Ghostmeta_Ghost_S_Swarm(): string { return 'a5980d5d4830e92b' },
 
 // Swarm.g — the swarm spine: identity, contacts, and the Idzeug invite (spec: Swarm_spec.md).
 //  First of the S family (Ghost/S/, Waft:Ghost/Swarm/*) — the SOCIETY beside networking (N) and
@@ -506,7 +506,7 @@ Swarm_seal(w, ident, page, theirGrant, myGrant) {
 },
 //#endregion
 
-//#region ive got — the reachable-music tally (Music_todo §9.1c)
+//#region ive got — the reachable-music tally (Radio_todo §9.1c)
 //  After the seal a friendship should COUNT: each side offers a tiny collection summary — counts,
 //   never Records — as an ADDITIVE ive_got frame on the same wire as the handshake. It lands under
 //    MY %Pier for them as %IveGot,by,count facts, and the tally folds my shelf plus every live
