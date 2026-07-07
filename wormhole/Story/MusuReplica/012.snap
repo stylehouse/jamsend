@@ -1,9 +1,9 @@
 Snap:H
   H:MusuReplica,Run
     A:MusuReplica
-      self,round=30	{"mung":["age"]}
+      self,round=26	{"mung":["age"]}
       w:MusuReplica
-        self,round=30	{"mung":["age"]}
+        self,round=26	{"mung":["age"]}
         req:wrangle,eternal,ok
         reached:step_2
         Peering,name:DJ,req=2,ok
@@ -99,6 +99,3 @@ Snap:H
         witnessed:bytes_faithful
         witnessed:tracked
         witnessed:warns_missing
-        see:the wire traffic folds — each inbox and outbox rides as one stuffed chunk
-        see:both libraries fold — a Record chunk each side of the wire
-        see:the live graph stops at a stuffed chunk — the fold is real not cosmetic

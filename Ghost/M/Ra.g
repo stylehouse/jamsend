@@ -590,3 +590,212 @@ async Ra_proof(nav, id, s):
     if (lufs && lufs.hung) return { fail: 'hang lufs r' + (t1 - t0) + ' d' + (t2 - t1) + ' l' + (t3 - t2) }
     return { lufs: lufs, seconds: +decoded.duration.toFixed(3), nch: nch, ms: 'r' + (t1 - t0) + ' d' + (t2 - t1) + ' l' + (t3 - t2) }
 //#endregion
+
+//#region cast — racast: the .jam stock CAST to a sealed Pier (Radio_todo.md §3.3, the middle verb).
+//  It is Repli's SHAPE (communicate-about a Record's head, then deal-out its body page by page) worn
+//   over Ra's PAYLOAD: a page here is ONE 2s opus buffer, shipped RAW off the <id>.jam — not Repli's
+//    Float32 PCM staged in memory.  So it REUSES the byte-agnostic Repli parts — Repli_fragment (the
+//     husk encode) + Repli_merge (the mirror upsert) + the Peeroleum sha256 transport — and OWNS only
+//      the page path.  It does NOT touch Repli_pack_chunks / Repli_unpack_page: those reinterpret bytes
+//       as Float32, and an opus blob must cross unaltered (the terminal decodes it, raterm's job — §3.4).
+//        Not folding a second payload into Repli's codec on a sample size of one is deliberate: the
+//         third Ra* consumer, if it shares this page shape, is the moment to lift a codec hook UP into
+//          Repli — the same "second-consumer → generalise, first → inline" discipline AudibleEntropy set.
+//  GRANT-GATED every leg (§9.7): the caster serves NOTHING — no husk, no page — to a peer the gate
+//   refuses.  The gate is a QUESTION the mechanics ask (w.c.racast_allow(peer)), never a Swarm import:
+//    the Book wires Swarm_pier_live in, a bare Lake_link demo leaves it open.  A revoked peer answers
+//     false mid-stream → its next want is met with silence — "a revoked B hears nothing new" falls out.
+//  ENDPOINTS ride w.c.tx (the caster) / w.c.rx (the listener) — the same two-Pier seam Repli's Books
+//   stand.  The Book seals them (a Swarm pair, or a loopback); the mechanics don't care which carrier.
+//    A page is one whole segment: the stock ALREADY stands on disk, so there is no transcode frontier
+//     to outrun (no parking, unlike Repli) — every want is answerable the instant it arrives.
+
+// Ra_cast_allowed — the grant gate as a question.  Open only when no predicate is wired (a bare demo);
+//  otherwise exactly what w.c.racast_allow answers for that peer name.  Asked at EVERY leg, cached
+//   nowhere — a grant revoked between two wants shuts the second one (the gate retires at use, like
+//    Swarm_pier_live itself).
+Ra_cast_allowed(w, peer):
+    if (!w.c.racast_allow) return true
+    return !!w.c.racast_allow(peer)
+
+// Ra_cast_mirror — B's growing MIRROR collection of what it has pulled (find-or-create).  Keyed by a
+//  pier name (default 'Listener') so a future multi-caster listener keeps one shelf per source.
+Ra_cast_mirror(w):
+    let lib = w.oai({ Library: 1, pier: w.c.racast_mirror_pier || 'Listener' })
+    lib.c.up = w
+    return lib
+
+// Ra_cast_send_lines — emit a racast_lines frame (enWaft text, sha256-verified body) + one racast_page
+//  frame per staged buffer (objecties.buffer=id ↔ header.bufferid=id).  Repli_send_lines' twin, RETYPED
+//   racast_* so a cast world and a repli world never cross-wire on the shared Peeroleum_on dispatch.
+async Ra_cast_send_lines(w, tx, from, to, text, bufmap):
+    let body = new TextEncoder().encode(text)
+    let bh = await this.Peeroleum_body_digest(body)
+    let seq = this.Pier_next_seq(tx)
+    this.Peeroleum_send(w, { header: { type: 'racast_lines', from: from, to: to, seq: seq, body_hash: bh, body_len: body.length }, buffer: body })
+    for (const page of (bufmap.list || [])) {
+        let ph = await this.Peeroleum_body_digest(page.bytes)
+        let pseq = this.Pier_next_seq(tx)
+        this.Peeroleum_send(w, { header: { type: 'racast_page', from: from, to: to, seq: pseq, bufferid: page.id, body_hash: ph, body_len: page.bytes.length }, buffer: page.bytes })
+    }
+
+// Ra_cast_offer — communicate about a stocked Record: ship its head (the %Record + its %Stream,name:opus
+//  handle) as a racast_lines frame.  No bytes — the catalog card.  GATED: a peer without the grant gets
+//   no card at all.  Reuses Repli_fragment: the Record's subtree has no .c.page_bytes, so the husk is
+//    lines-only (the %Stream's total|bytes tell B how much there is to pull).  Returns did-it-cross.
+async Ra_cast_offer(w, tx, from, to, rec):
+    if (!this.Ra_cast_allowed(w, to)) return false
+    let frag = this.Repli_fragment(rec, tx)
+    await this.Ra_cast_send_lines(w, tx, from, to, frag.text, frag.bufmap)
+    return true
+
+// Ra_cast_catalog — cast the whole stock's husk to a peer: one Ra_cast_offer per stocked %Record in
+//  w.c.racast_src.  Gated as a whole — no grant, no catalog.  Returns how many cards crossed (0 refused).
+async Ra_cast_catalog(w, tx, from, to):
+    if (!this.Ra_cast_allowed(w, to)) return 0
+    let lib = w.c.racast_src
+    if (!lib) return 0
+    let n = 0
+    for (const rec of lib.o({ Record: 1 })) {
+        if (await this.Ra_cast_offer(w, tx, from, to, rec)) n = n + 1
+    }
+    return n
+
+// Ra_cast_jam — the caster's page SOURCE: the Record's opus segments off its <id>.jam, read ONCE and
+//  cached on rec.c (a whole-Record cast reads the file once, pages it many times).  null if the stock
+//   is gone or a partial | old-.opus-layout file won't unpack — the caster then serves that Record
+//    nothing (Ra_unpack is the same carve Ra_proof and Ra_stock_standing trust).
+async Ra_cast_jam(w, rec):
+    if (rec.c.jam_bufs) return rec.c.jam_bufs
+    let nav = w.c.racast_nav || this.Crate_nav()
+    if (!nav) return null
+    let raw = null
+    try { raw = await nav.bin_read(this.Ra_stock_dir(), this.Ra_stock_name(rec.sc.id)) } catch (er) { return null }
+    if (!raw || !raw.byteLength) return null
+    let un = this.Ra_unpack(raw)
+    if (!un) return null
+    rec.c.jam_info = un.info
+    rec.c.jam_bufs = un.bufs
+    return un.bufs
+
+// Ra_cast_serve_want — A got a `want id/from_idx`: page out ONE opus segment [from_idx] off the
+//  Record's .jam and ship it RAW as a racast_page (a self-contained opus blob crosses as its own
+//   bytes — no Float32 reinterpret, decoded only at the terminal).  GATED on the asking peer: refused
+//    ⇒ served nothing (the want dies unanswered, which IS "no grant no bytes").  A segment past the end
+//     is silence too.  The lines carry the Record identity + a %Stream line whose objecties.buffer
+//      promises the page; B reconciles the two.
+async Ra_cast_serve_want(w, pier, frame):
+    if (pier !== w.c.tx) return
+    let h = frame.header
+    if (!this.Ra_cast_allowed(w, h.from)) return
+    let lib = w.c.racast_src
+    let rec = lib ? lib.o({ Record: 1, id: h.id })[0] : null
+    if (!rec) return
+    let bufs = await this.Ra_cast_jam(w, rec)
+    if (!bufs) return
+    let from = +(h.from_idx || 0)
+    if (from >= bufs.length) return
+    let seg = bufs[from]
+    // slice to its OWN Uint8Array so the frame owns its bytes — the .jam bufs are subarrays over one
+    //  shared backing buffer the transport must never detach out from under the cache.
+    let bytes = new Uint8Array(seg.byteLength)
+    bytes.set(seg)
+    let bid = (pier.c.bufseq = (pier.c.bufseq || 0) + 1)
+    let out = []
+    out.push(this.enL({ d: 0, stringies: { Record: 1, id: rec.sc.id }, objecties: { loc: ['Record', 'id'] } }))
+    // total is the PROMISE (segment count) so the mirror's pull window never shrinks; the bytes ride
+    //  the page frame the objecties.buffer=bid names.
+    let sline = { Stream: 1, name: 'opus', total: bufs.length }
+    out.push(this.enL({ d: 1, stringies: sline, objecties: { loc: ['Stream', 'name'], buffer: bid } }))
+    await this.Ra_cast_send_lines(w, pier, h.to, h.from, out.join('\n'), { list: [{ id: bid, bytes: bytes }] })
+
+// Ra_cast_want — B asks A for one opus segment of a Record (the PULL), by segment index from_idx.
+async Ra_cast_want(w, rx, from, to, id, fromIdx):
+    let body = new TextEncoder().encode('want')
+    let bh = await this.Peeroleum_body_digest(body)
+    let seq = this.Pier_next_seq(rx)
+    this.Peeroleum_send(w, { header: { type: 'racast_want', from: from, to: to, id: id, from_idx: fromIdx, seq: seq, body_hash: bh, body_len: body.length }, buffer: body })
+
+// Ra_cast_pull_record — B pulls ONE Record WHOLE: want every segment 0..total-1 it has not marked,
+//  want-once off a per-segment key (extra passes never re-ask).  Segments are on disk already, so
+//   there is no frontier to walk — every want is answerable at once; B accretes them as they land.
+async Ra_cast_pull_record(w, rx, from, to, id):
+    let lib = this.Ra_cast_mirror(w)
+    let rec = lib.o({ Record: 1, id: id })[0]
+    if (!rec) return
+    let s = rec.o({ Stream: 1, name: 'opus' })[0]
+    if (!s) return
+    let total = +(s.sc.total || 0)
+    w.c.racast_wanted = w.c.racast_wanted || {}
+    let seg = 0
+    while (seg < total) {
+        let key = id + ':' + seg
+        if (!w.c.racast_wanted[key]) {
+            w.c.racast_wanted[key] = 1
+            await this.Ra_cast_want(w, rx, from, to, id, seg)
+        }
+        seg = seg + 1
+    }
+
+// ─── receiver (Pier B) ───
+// Ra_cast_recv_lines — B got a racast_lines frame (a husk offer, or a page's accompanying lines):
+//  decode + Repli_merge into B's mirror; for every merged particle referencing objecties.buffer, open a
+//   holding awaitbuf so a page whose bytes lag its lines is reconciled on arrival (they ship together).
+async Ra_cast_recv_lines(w, pier, frame):
+    if (pier !== w.c.rx) return
+    let text = new TextDecoder().decode(frame.buffer)
+    let lib = this.Ra_cast_mirror(w)
+    let touched = await this.Repli_merge(lib, text)
+    for (const c of touched) {
+        if (c.c.await_buffer != null) this.Ra_cast_open_awaitbuf(w, pier, c, c.c.await_buffer)
+    }
+
+// Ra_cast_recv_page — B got a racast_page frame (bytes already sha256-verified by the unemit floor):
+//  stash by bufferid and reconcile against the mirror particle awaiting it.
+Ra_cast_recv_page(w, pier, frame):
+    if (pier !== w.c.rx) return
+    let id = frame.header.bufferid
+    pier.c.rabufs = pier.c.rabufs || {}
+    pier.c.rabufs[id] = frame.buffer
+    this.Ra_cast_attach(w, pier, id, frame.buffer)
+
+// Ra_cast_open_awaitbuf — remember which mirror particle a buffer id belongs to, and attach at once if
+//  its page already arrived (page-before-lines is order-safe over the async merge).
+Ra_cast_open_awaitbuf(w, pier, mirror, id):
+    pier.c.raawait = pier.c.raawait || {}
+    pier.c.raawait[id] = mirror
+    if (pier.c.rabufs && pier.c.rabufs[id] != null) this.Ra_cast_attach(w, pier, id, pier.c.rabufs[id])
+
+// Ra_cast_attach — keep the opus page RAW on the mirror %Stream's .c.segs (one Uint8Array per segment,
+//  never reinterpreted — the caster's bytes cross unaltered for the terminal to decode).  have|got
+//   count off the segments actually held, so a repeat | out-of-order page can't inflate the progress.
+Ra_cast_attach(w, pier, id, bytes):
+    pier.c.raawait = pier.c.raawait || {}
+    let mirror = pier.c.raawait[id]
+    if (!mirror) return
+    let u8 = new Uint8Array(bytes.length)
+    u8.set(bytes)
+    mirror.c.segs = mirror.c.segs || []
+    mirror.c.segs.push(u8)
+    mirror.c.await_buffer = null
+    mirror.sc.have = mirror.c.segs.length
+    mirror.sc.got = mirror.c.segs.length
+    mirror.bump()
+    delete pier.c.raawait[id]
+
+// Ra_cast_bytes_of — the mirror's held byte weight: sum of its kept opus segments.  The byte-faithful
+//  check compares it to the husk-carried %Stream.bytes (what the caster promised the whole track weighs).
+Ra_cast_bytes_of(rec):
+    let s = rec ? rec.o({ Stream: 1, name: 'opus' })[0] : null
+    if (!s || !s.c.segs) return 0
+    let n = 0
+    for (const seg of s.c.segs) n = n + seg.length
+    return n
+
+// Ra_cast_arm — register the three handlers (both directions share w.c.on; each disambiguates by the
+//  Pier the frame arrived at: A serves wants at w.c.tx, B receives lines|pages at w.c.rx).
+Ra_cast_arm(w):
+    this.Peeroleum_on(w, 'racast_want', async (cw, pier, frame) => { await this.Ra_cast_serve_want(w, pier, frame); return true })
+    this.Peeroleum_on(w, 'racast_lines', async (cw, pier, frame) => { await this.Ra_cast_recv_lines(w, pier, frame); return true })
+    this.Peeroleum_on(w, 'racast_page', (cw, pier, frame) => { this.Ra_cast_recv_page(w, pier, frame); return true })
+//#endregion

@@ -28,15 +28,28 @@ Task list for the Voronoi luxury layer. Written to be picked up COLD, one task a
    untouched — only the few that reached into `c.stuff` died.  ◈ stays a live-only lens.
   Design in full: memory `voro-imposed-from-above`.
 
-**Owed, live (the gate).**  Both `.g` compile clean via LocalGen; `gen/V/Voro.go` +
- `gen/Story/Musuation.go` written.  **VoroScape re-recorded LIVE + green.**  STILL OWED:
-  `VoroMitosis` (11 steps), `VoroRadio` (9), `MusuReplica` (14 — may STALL on an AudioContext
-   gesture in the runner tab; real muted Web-Audio).  Each: `run --watch` → inspect a snap → `accept`
-    → re-run to verify GREEN.
-- **Runner fleet drifted:** the old pinned `3c5238c68a3641c1` is roster-only (not advertising);
-   `49dee91d61a9de64` is the live one.  ALWAYS `--runner=<id>` (a pin only matches an ADVERTISING
-    runner).  NEVER `accept` a run you didn't start — runs broadcast; check `steps` / `snap`
-     identity (step count + which `%see`) first.
+**The gate is CLEARED (2026-07-08 — all four Books GREEN live on `49dee91d61a9de64`).**  Both `.g`
+ compile clean via LocalGen; `gen/V/Voro.go` + `gen/Story/Musuation.go` written.
+- `VoroScape` — re-recorded LIVE + green (earlier).
+- `VoroMitosis` (11) — re-recorded LIVE + green; committed by the host (`da0eee49`).  The stale red was
+   pure rename-drift (report row `Voro:1` + `w:Voronoiology` self-report).  NB the extinction `%see`
+    ("a genus went extinct — stayed gone") is a LATENT assertion that never gates green: `VoroMitosis_die`
+     runs at n=8 but a later split reclaims the freed genus name from the fixed `genera` pool, so the
+      genus is back by the n=11 witness.  NOT a regression (flora logic is rename-invariant) — decide
+       later whether to make death sticky or drop the claim.
+- `VoroRadio` (9) — was ALREADY green vs committed fixtures (this handover was pessimistic; it saw a
+   stale `failed` run).  No re-record needed.
+- `MusuReplica` (14) — re-recorded LIVE + green; fixtures UNCOMMITTED in the working tree (`012.snap` +
+   tocs) for the human.  Only the n=12 witness redded — three FOLD `%see` (wire/libraries/graph "folds…
+    stuffed chunk") linger in the stale fixture but were INTENTIONALLY deleted from source (Voro-blind
+     Data Book), so re-record correctly drops them.  **CORRECTION to the old note:** MusuReplica is
+      **AC-free** (the header says so) — it does NOT stall on an AudioContext gesture.  Its cold-first-run
+       stall was a TRANSIENT spine race at n=3 (`MusuReplica_offer` → `Repli_sent_se`, the loopback
+        offer's first frame lost before the spine warmed); `release` + re-run clears it.
+- **Runner fleet drifted:** `wormhole/Cluster/toc.snap` roster is EMPTY, so `--runner=<id>` can't resolve
+   (fails "no matching runner") — plain broadcast `ping`/`run` reaches the one live runner (`49dee9…`)
+    unambiguously while only it advertises.  NEVER `accept` a run you didn't start — runs broadcast; the
+     guard is the `steps`/`snap` identity check (step count + which `%see`) before every accept.
 
 **The frontier (next build): 🎋 bamboo schematica** — make the Vtuffing text structural (a jointed
  schematic the dumb renderer fits into the cell).  `Voro_vtuffing.md` §🎋 has the design; Se

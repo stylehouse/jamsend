@@ -49,14 +49,39 @@ A rolling brief: the newest work sits here first, then gets baked into its home 
          `self,round` (the tell: with publish-at-arm, `self,round` is a flat 3, deterministic across
           runs). Blast radius = every `expecting` caller; memory `ttlilt-in-snap-means-timeout`.
 
-**Loose thread owed.** `MusuGenerateTestsMusic` + `MusuBounce` are the other `expecting` callers;
- publish-at-arm flips their old fixtures (they now snap the finished req, not a mid-pass ttlilt).
-  Re-record each via `accept` on a live runner — first thing next session.
+**Loose thread — CLEARED.** `MusuGenerateTestsMusic` + `MusuBounce` (the other `expecting` callers
+ publish-at-arm flipped) are re-recorded and green. No longer owed.
 
-**Next move → RaCast (§3.3).** The middle verb: cast the `.jam` catalog to a sealed Pier via Repli
- (husk crosses, Records page on pull), modelled on `MusuReplica`/`MusuReco` (`Repli_*` in
-  `Musuation.g`). Use `expecting` for the cast's real-clock holds — it is solid now. The second
-   consumer of `AudibleEntropy` lands here.
+**RaCast v1 BUILT — LIVE-GATE OWED (2026-07-08).** The middle verb stands in CODE, UNVERIFIED — no
+ live editor/runner was up this session, so it is NOT green (and headless is BANNED: false greens).
+  Three artifacts, all in the working tree:
+  - **`Ghost/M/Ra.g` `#region cast`** — the shared cast mechanics (`Ra_cast_arm/offer/catalog/
+     serve_want/want/pull_record/recv_lines/recv_page/attach/jam/allowed`). THE DESIGN CALL: a page is
+      ONE raw opus segment off the `.jam`, so it REUSES Repli's byte-agnostic parts (`Repli_fragment`
+       husk-encode + `Repli_merge` mirror-upsert + the Peeroleum sha256 transport) and OWNS only the
+        page path — it does NOT touch `Repli_pack_chunks`/`Repli_unpack_page` (those reinterpret bytes
+         as Float32; an opus blob must cross unaltered, decoded only at the terminal). Generalising
+          Repli's codec is the THIRD consumer's job, not now (the AudibleEntropy first-inline discipline).
+           The grant gate is INJECTED (`w.c.racast_allow` predicate) so Ra imports no Swarm.
+  - **`Ghost/Story/Radiation.g` `RaCast` Book** — transport-real sealed pair (SwarmWire's seam:
+     `Lake_link` + `Swarm_arm` + `mint_idzeug(Music)`/`redeem`); DJ stocks one real `.jam` Record, casts
+      the husk, the listener pulls it WHOLE (byte-faithful), then a revoke shuts the gate (silence).
+       Five `%see` at n=2/4/6/8/10.
+  - **`wormhole/Credence/toc.snap`** — `of_Book:RaCast,needsFSA:1,brand_new:1` under `What:real music`.
+ THE BOMB — why it is not green yet, what the live CHECK run must settle: the crossing is precondition-
+  gated (`RaCast_flow` casts when the grant goes live, pulls when the husk lands) BECAUSE a mock send
+   rides `H.post_do` — the settle BEAT is unpredictable. The `%see` gate beats (2/4/6/8/10) are GUESSES;
+    a live CHECK run tunes which beat each truth actually settles on. Endpoints ARE resolved: the sealed
+     friendship `%Pier` (keyed `pub:peer.prepub`, holding the grant) IS the particle Peeroleum routes to
+      (`Swarm_seal`/`Swarm_station_pier` share the `oai`), so `w.c.tx`=`link[0]` lines up; source vs
+       mirror libraries MUST use distinct pier keys (`dj.prepub` vs `lis.prepub`) or they collide in the
+        one world.
+ NEXT MOVE (the live gate — needs a human with a :9091 tab): (1) `npm run ghost-compile -- Ghost/M/Ra.g
+  Ghost/Story/Radiation.g` with the editor open, so the gen `.go` HMRs into runners. (2) Seed a ~10-step
+   `toc.snap` for the Book, run a CHECK run on a LIVE local-FSA runner (`needsFSA`) via `runner_ask.mjs`,
+    read the snap diff, tune the `%see` gate beats to where each truth settles. (3) Install the five
+     `%see` via CHECK-run + manual install, NEVER CredRunner ACCEPT. (4) THEN §3.4 raterm — decode-proof
+      the pulled segment (the SECOND `AudibleEntropy` consumer → Wref it, do NOT re-inline).
 
 ---
 
