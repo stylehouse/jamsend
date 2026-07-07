@@ -67,10 +67,7 @@ story:LakeNets
     quiesce_snap_time=0.4
     trickle
   TimeSpool
-    TimeTotal:beliefs,avg=1.842
-      sample=2.855,at=1782915670
-      sample=1.674,at=1782915700
-      sample=0.986,at=1782959339
+    TimeTotal:beliefs,avg=1.62
       sample=2.646,at=1782962749
       sample=3.209,at=1782991008
       sample=1.703,at=1783003107
@@ -78,10 +75,10 @@ story:LakeNets
       sample=1.603,at=1783255160
       sample=1.336,at=1783255185
       sample=0.757,at=1783416260
-    TimeTotal:step,avg=0.142
-      sample=0.22,at=1782915670
-      sample=0.129,at=1782915700
-      sample=0.076,at=1782959339
+      sample=1.065,at=1783450351
+      sample=1.065,at=1783450388
+      sample=1.165,at=1783450417
+    TimeTotal:step,avg=0.125
       sample=0.204,at=1782962749
       sample=0.247,at=1782991008
       sample=0.131,at=1783003107
@@ -89,22 +86,25 @@ story:LakeNets
       sample=0.123,at=1783255160
       sample=0.103,at=1783255185
       sample=0.058,at=1783416260
+      sample=0.082,at=1783450351
+      sample=0.082,at=1783450388
+      sample=0.09,at=1783450417
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
   EntropyArrest
     Entcase:wants_want
       lematch,req:wants
         lematch,want,kind
           means,spayer,re:want={INT}.kind,tol:band,factor=1.5
-  step,dige:8e92b64225b3b211
-  step=2,dige:6f28e5b46342dd27
-  step=3,dige:323a05b812e232b3
-  step=4,dige:d113630c20fa3199
-  step=5,dige:35179f3742fe0126
-  step=6,dige:f029439012c28690
-  step=7,dige:7f37c810784b81b2
-  step=8,dige:66806269ad50dd37
-  step=9,dige:03b7c7e2726782a7
-  step=10,dige:2fba2f2ba47bba42
-  step=11,dige:a7ddd10749d17833
-  step=12,dige:c6eb0778c54beaf7
-  step=13,dige:3b8898d00dc4e569
+  step,dige:af94f744d529e0d9
+  step=2,dige:c5123976b9b7f39b
+  step=3,dige:49279790b69fac39
+  step=4,dige:9500d96a2aa14bf4
+  step=5,dige:42420f43ba51a48c
+  step=6,dige:89793ff20e6acc16
+  step=7,dige:28cd087de1ca9f49
+  step=8,dige:6d4a6d805ddcc3cf
+  step=9,dige:633e2b6023c5160c
+  step=10,dige:6f3d876a3fae67ea
+  step=11,dige:c9601c4af9fa90cf
+  step=12,dige:d54c5bf4a78caaf7
+  step=13,dige:4e6a334c0bfc42d7

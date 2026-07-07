@@ -52,37 +52,37 @@ story:LakeSurprise
         nogen
         nopush
   TimeSpool
-    TimeTotal:beliefs,avg=0.862
-      sample=0.861,at=1782898440
-      sample=0.861,at=1782898443
-      sample=0.803,at=1782898876
-      sample=0.7,at=1782899898
-      sample=0.7,at=1782899905
-      sample=0.728,at=1782900411
-      sample=1.219,at=1782916151
+    TimeTotal:beliefs,avg=1.072
       sample=0.654,at=1783255412
       sample=1.526,at=1783255438
       sample=0.566,at=1783416305
-    TimeTotal:step,avg=0.078
-      sample=0.078,at=1782898440
-      sample=0.078,at=1782898443
-      sample=0.073,at=1782898876
-      sample=0.064,at=1782899898
-      sample=0.064,at=1782899905
-      sample=0.066,at=1782900411
-      sample=0.111,at=1782916151
+      sample=1.131,at=1783450468
+      sample=1.131,at=1783450485
+      sample=1.131,at=1783450486
+      sample=1.131,at=1783450487
+      sample=1.131,at=1783450487
+      sample=1.131,at=1783450488
+      sample=1.189,at=1783450502
+    TimeTotal:step,avg=0.097
       sample=0.059,at=1783255412
       sample=0.139,at=1783255438
       sample=0.051,at=1783416305
+      sample=0.103,at=1783450468
+      sample=0.103,at=1783450485
+      sample=0.103,at=1783450486
+      sample=0.103,at=1783450487
+      sample=0.103,at=1783450487
+      sample=0.103,at=1783450488
+      sample=0.108,at=1783450502
   EntropyProfile,Wref:Trope/Lies/NormalEntropy
-  step,dige:88b7390772c1ea4b
-  step=2,dige:9da2cc9b32a0a8db
-  step=3,dige:7c9e673b9521603a
-  step=4,dige:e84924fbf1b88264
-  step=5,dige:77d15966145400fc
-  step=6,dige:10abc85eee453822
-  step=7,dige:9c57d6635ee6e2cf
-  step=8,dige:37e913dc1d746b85
-  step=9,dige:c8a5028997838154
-  step=10,dige:c669d8e7de5cef9f
-  step=11,dige:ca1b96dbcbbe3f90
+  step,dige:94d290f6cccaf394
+  step=2,dige:9ad74aab30d9ead9
+  step=3,dige:e5e377acb74d93b9
+  step=4,dige:3fa3246a51580609
+  step=5,dige:938384b460a0d1a3
+  step=6,dige:533adaaa6bc567e1
+  step=7,dige:d2150ca1ed90f586
+  step=8,dige:9acea9c74eeecacd
+  step=9,dige:6cbcf3c281619c30
+  step=10,dige:a7816d5d6c7f1eda
+  step=11,dige:f3790e0f5e4054cf
