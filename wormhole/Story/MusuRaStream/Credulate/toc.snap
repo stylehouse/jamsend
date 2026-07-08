@@ -15,8 +15,8 @@ Credulate,of_Book:MusuRaStream
   GhostInclude:Ghost_Story_Radiation,dige:ab7bd276be542267
   GhostInclude:Ghost_S_Swarm,dige:a5980d5d4830e92b
   GhostInclude:Ghost_Story_Swarmation,dige:424a77682127f2ba
-  GhostInclude:Ghost_V_Voro,dige:597643d9e75fc63b
-  last_ok,at=1783488299.497,ok_pct
+  GhostInclude:Ghost_V_Voro,dige:b45fafb7d8c0ea98
+  last_ok,at=1783514281.213,ok_pct
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -33,4 +33,4 @@ Credulate,of_Book:MusuRaStream
     uses:Ghost_Story_Radiation,dige:ab7bd276be542267
     uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
     uses:Ghost_Story_Swarmation,dige:424a77682127f2ba
-    uses:Ghost_V_Voro,dige:597643d9e75fc63b
+    uses:Ghost_V_Voro,dige:b45fafb7d8c0ea98

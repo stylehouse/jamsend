@@ -31,18 +31,20 @@ story:VoroRadioPier
     useCyto
     For
   TimeSpool
-    TimeTotal:beliefs,avg=0.04
+    TimeTotal:beliefs,avg=0.038
       sample=0.053,at=1783450986
       sample=0.026,at=1783451166
       sample=0.041,at=1783487787
       sample=0.041,at=1783487988
       sample=0.041,at=1783487992
+      sample=0.024,at=1783489601
     TimeTotal:step,avg=0.005
       sample=0.006,at=1783450986
       sample=0.003,at=1783451166
       sample=0.005,at=1783487787
       sample=0.005,at=1783487988
       sample=0.005,at=1783487992
+      sample=0.003,at=1783489601
   step,dige:c6ca1653b9d96824
   step=2,dige:5565e44415b020e1
   step=3,dige:dedac936bbfccbbe

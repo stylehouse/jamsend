@@ -22,7 +22,7 @@ Waft:Credence
       Funkcion:Storying,of_Book:MusuRaStock,needsFSA:1
       Funkcion:Storying,of_Book:MusuRaCast,needsFSA:1
       Funkcion:Storying,of_Book:MusuRaTerm,needsFSA:1
-      Funkcion:Storying,of_Book:MusuRaStream,needsFSA:1,brand_new:1,born:2026-07-08
+      Funkcion:Storying,of_Book:MusuRaStream,needsFSA:1,born:2026-07-08
       Funkcion:Storying,of_Book:MusuReco,needMusic:1
       What:replication,desc:paginated C** replication of a music library across two Piers
         Funkcion:Storying,of_Book:MusuBounce,needMusic:1
@@ -62,7 +62,8 @@ Waft:Credence
     Funkcion:Storying,of_Book:VoroMitosis
     Funkcion:Storying,of_Book:VoroScape
     Funkcion:Storying,of_Book:VoroRadio
-    Funkcion:Storying,of_Book:VoroRadioPier,brand_new:1,born:2026-07-08
+    Funkcion:Storying,of_Book:VoroRadioPier,born:2026-07-08
+    Funkcion:Storying,of_Book:VoroClinic,born:2026-07-08,unusual:crush-invariant-diagnostic
   What:Puddle,desc:the lower-level instruments in one puddle — machinery proven once and kept for regression hunts not for relitigating
     Funkcion:StoryTimes
     What:Lake,desc:the editor machine — the Lies compile-run pipeline over Docs Wafts and focus

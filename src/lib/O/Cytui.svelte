@@ -2449,6 +2449,11 @@
         cy.on('grab pan zoom', () => { if (!radio_gliding) radio_hold_until = Date.now() + 15000 })
         cy.on('layoutstart', () => start_live_layout())
         cy.on('layoutstop',  () => { stop_live_layout(); show_overlays_soon() })
+        // stash the live cytoscape handle where a GHOST can reach it — scripts/runner_shot.mjs asks
+        //  Lies_runner_ask_recv (op:'shot') for cy.png() so a headless caller can finally SEE the
+        //   rendered power-diagram: the one fault class no snap carries (pixels never round-trip a
+        //    fixture).  top_House.c.cy is per-tab + never snapped (a live object belongs only in .c).
+        try { (H.top_House().c as any).cy = cy } catch { /* no House root yet — a shot just reports none */ }
         // ── click-to-identify ─────────────────────────────────────────────────
         // Tap any node or edge to log its id / parent / data / style. Useful for
         // finding mystery greys (which are usually n particles falling through
@@ -2493,6 +2498,7 @@
             lay?.stop()
             if (radio_timer) { clearInterval(radio_timer); radio_timer = null }
             clear_all_overlays()
+            try { const top = H.top_House?.(); if (top && (top.c as any).cy === cy) delete (top.c as any).cy } catch { /* nothing to unstash */ }
             cy?.destroy()
         }
     })

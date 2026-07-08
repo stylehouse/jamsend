@@ -1,8 +1,18 @@
-Waft:Ghost/Vis/Visua,active
+Waft:Ghost/Vis/Visua
   Funkcion:CreduFunk
     Funkcion:Storying,of_Book:VoroMitosis
     Funkcion:Storying,of_Book:VoroScape
     Funkcion:Storying,of_Book:MusuReplica
+    CreduCoherence:latest
+      Credulate,of_Book:VoroMitosis,vset:Ghost_N_Peeroleum@054dff5c07f2987b|Ghost_N_Tribunal@df09d03ad06f3d71,finished_at=1783516163032
+        GhostInclude:Ghost_N_Peeroleum,dige:054dff5c07f2987b
+        GhostInclude:Ghost_N_Tribunal,dige:df09d03ad06f3d71
+      Credulate,of_Book:VoroScape,vset:Ghost_N_Peeroleum@054dff5c07f2987b|Ghost_N_Tribunal@df09d03ad06f3d71,finished_at=1783516163032
+        GhostInclude:Ghost_N_Peeroleum,dige:054dff5c07f2987b
+        GhostInclude:Ghost_N_Tribunal,dige:df09d03ad06f3d71
+      Credulate,of_Book:MusuReplica,vset:Ghost_N_Peeroleum@054dff5c07f2987b|Ghost_N_Tribunal@df09d03ad06f3d71,finished_at=1783516163032
+        GhostInclude:Ghost_N_Peeroleum,dige:054dff5c07f2987b
+        GhostInclude:Ghost_N_Tribunal,dige:df09d03ad06f3d71
   What:the home
     Doc:Ghost/V/Voro.g
     Point,method:Voro_books
@@ -13,7 +23,7 @@ Waft:Ghost/Vis/Visua,active
     Point,method:Voro_crushable
     Point,method:Voro_crush_clear
   What:the demo Books
-    Doc:Ghost/V/Voro.g
+    Doc:Ghost/Story/Voronation.g
     Point,method:VoroMitosis_seed
     Point,method:Botany_plant
     Point,method:VoroScape_library

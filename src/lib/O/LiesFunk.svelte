@@ -2203,6 +2203,18 @@ await M.eatfunc({
                             result = { n: s.n, ok: s.ok, dige: s.dige, book, uid, got_snap: s.got_snap, exp_snap: s.exp_snap }
                         }
                     }
+                } else if (op === 'shot') {
+                    // a live PNG of the Cyto canvas (scripts/runner_shot.mjs).  The ONE fault class a
+                    //  snap can NOT carry: pixels never round-trip a fixture, so a headless caller could
+                    //   never SEE cells-not-drawn / everything-Stuffing / the diagonal collapse.  cy is
+                    //    stashed on top_House by Cytui onMount; the base64 rides straight back on the ack.
+                    const cy = (H.top_House().c as any).cy
+                    if (!cy || typeof cy.png !== 'function') { ok = false; result = { error: 'no Cytoscape canvas — is a useCyto Book mounted + this tab reloaded since the shot handler landed?' } }
+                    else {
+                        const a = ask as any   // shot-only knobs, off the typed ask
+                        const png = cy.png({ output: 'base64', bg: a.bg ?? '#111', full: a.full !== false, scale: a.scale ?? 1, maxWidth: a.maxWidth ?? 1600, maxHeight: a.maxHeight })
+                        result = { png, full: a.full !== false, w: cy.width(), h: cy.height(), nodes: cy.nodes().length, edges: cy.edges().length }
+                    }
                 } else { ok = false; result = { error: `unknown op ${op}` } }
             } catch (e) { ok = false; result = { error: String((e as Error).message) } }
             const port = (w.o({ transport: 1, type: 'websocket' })[0] as TheC | undefined)?.c.port as any

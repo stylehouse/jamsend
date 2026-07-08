@@ -1,5 +1,5 @@
 Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
-  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783426627562
+  Funkcion:dirlist,interval_ms=8000,main,walked_at=1783517188793
   group:src/lib,dir:src/lib
     sub:src/lib/O,name:O
     sub:src/lib/data,name:data
@@ -36,6 +36,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:Ghost/Story/Musuation.g,name:Musuation,noticed_at=1782375234557
     Doc:Ghost/Story/Swarmation.g,name:Swarmation,noticed_at=1782995677261
     Doc:Ghost/Story/Radiation.g,name:Radiation,noticed_at=1783399957902
+    Doc:Ghost/Story/Voronation.g,name:Voronation,noticed_at=1783517188793
   open_dir:src/lib/O/spec
   group:src/lib/O/spec,dir:src/lib/O/spec
     Doc:src/lib/O/spec/Covenant_design.md,name:Covenant_design.md,noticed_at=1782180409139
@@ -78,6 +79,7 @@ Waft:GhostList,lists,seeded=1781603839925,O_defaulted,minimised
     Doc:src/lib/O/spec/Fleet_reds_report.md,name:Fleet_reds_report.md,noticed_at=1783410530951
     sub:src/lib/O/spec/history,name:history
     Doc:src/lib/O/spec/Story_future.md,name:Story_future.md,noticed_at=1783426627562
+    Doc:src/lib/O/spec/Voro_render_faults_todo.md,name:Voro_render_faults_todo.md,noticed_at=1783489335560
   open_dir:src/lib/O
   group:src/lib/O,dir:src/lib/O
     sub:src/lib/O/D,name:D

@@ -1,0 +1,27 @@
+Snap:H
+  H:VoroClinic,Run
+    A:VoroClinic
+      self,round=9	{"mung":["age"]}
+      w:VoroClinic
+        self,round=9	{"mung":["age"]}
+        req:wrangle,eternal,ok
+        Artist,name:Alpha
+          Track,title:a1
+          Track,title:a2
+          Track,title:a3
+          Track,title:a4
+        Artist,name:Beta
+          Track,title:b1
+          Track,title:b2
+          Track,title:b3
+          Track,title:b4
+        witnessed:w0
+        witnessed:w1
+        witnessed:w2
+        witnessed:w3
+      w:Voronoiology,dontGraph
+        Voro,beat=17,level:L0,visible=6,gangs,folded:8,count:2
+Snap:cytowave
+  remove,id:cytoid_1_1_5
+  remove,id:cytoid_1_1_6
+  remove,id:cytoid_1_1_7

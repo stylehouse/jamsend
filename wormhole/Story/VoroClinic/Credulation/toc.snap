@@ -1,5 +1,5 @@
-Credulation,of_Book:VoroRadioPier
-  run=0,at=1783487789.574,ok=0,ok_pct=0,mode:check
+Credulation,of_Book:VoroClinic
+  run=0,at=1783518839.26,ok,ok_pct,mode:new
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -16,8 +16,8 @@ Credulation,of_Book:VoroRadioPier
     uses:Ghost_Story_Radiation,dige:ab7bd276be542267
     uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
     uses:Ghost_Story_Swarmation,dige:424a77682127f2ba
-    uses:Ghost_V_Voro,dige:597643d9e75fc63b
-  run,at=1783487991.769,ok=0,ok_pct=0,mode:check
+    uses:Ghost_V_Voro,dige:5c841d7ef8f0a9fd
+  run,at=1783518903.905,ok=0,ok_pct=0.11,mode:check
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -34,8 +34,8 @@ Credulation,of_Book:VoroRadioPier
     uses:Ghost_Story_Radiation,dige:ab7bd276be542267
     uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
     uses:Ghost_Story_Swarmation,dige:424a77682127f2ba
-    uses:Ghost_V_Voro,dige:597643d9e75fc63b
-  run=2,at=1783487992.692,ok=0,ok_pct=0.11,mode:check
+    uses:Ghost_V_Voro,dige:5c841d7ef8f0a9fd
+  run=2,at=1783519008.524,ok=0,ok_pct=0,mode:check
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -52,8 +52,8 @@ Credulation,of_Book:VoroRadioPier
     uses:Ghost_Story_Radiation,dige:ab7bd276be542267
     uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
     uses:Ghost_Story_Swarmation,dige:424a77682127f2ba
-    uses:Ghost_V_Voro,dige:597643d9e75fc63b
-  run=3,at=1783489601.159,ok,ok_pct,mode:check
+    uses:Ghost_V_Voro,dige:5c841d7ef8f0a9fd
+  run=3,at=1783519609.023,ok=0,ok_pct=0,mode:check
     uses:Ghost_N_Peeroleum,dige:3b44c41dc8f08af3
     uses:Ghost_N_Reliable,dige:48e8948c7d8da3ed
     uses:Ghost_N_Tribunal,dige:df09d03ad06f3d71
@@ -70,4 +70,4 @@ Credulation,of_Book:VoroRadioPier
     uses:Ghost_Story_Radiation,dige:ab7bd276be542267
     uses:Ghost_S_Swarm,dige:a5980d5d4830e92b
     uses:Ghost_Story_Swarmation,dige:424a77682127f2ba
-    uses:Ghost_V_Voro,dige:b45fafb7d8c0ea98
+    uses:Ghost_V_Voro,dige:5c841d7ef8f0a9fd
